@@ -758,6 +758,10 @@ class TestIO:
 
         for column in df_geog.columns:
             if column != df_geog.geometry.name:
-                assert all(df_geog.loc[:, column].values == df_geog_read.loc[:, column].values)
+                assert all(
+                    df_geog.loc[:, column].values == df_geog_read.loc[:, column].values
+                )
         for attr in ["x", "y"]:
-            assert all(getattr(df_geog.geometry, attr) == getattr(df_geog_read.geometry, attr))
+            assert all(
+                getattr(df_geog.geometry, attr) == getattr(df_geog_read.geometry, attr)
+            )
