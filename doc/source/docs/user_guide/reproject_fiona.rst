@@ -1,13 +1,17 @@
-Re-projecting with Fiona
-============================
+Re-projecting with Rasterio/Fiona
+==================================
 
 The simplest method of re-projecting is :meth:`GeoDataFrame.to_crs`.
 It uses ``pyproj`` as the engine and transforms the points within the geometries.
 
-This example demonstrates how to use ``Fiona`` as the engine to re-project your data.
-Fiona is powered by GDAL and with algorithms that consider the geometry instead of
+These examples demonstrate how to use ``Fiona`` or ``rasterio`` as the engine to re-project your data.
+Fiona and rasterio are powered by GDAL and with algorithms that consider the geometry instead of
 just the points the geometry contains. This is particularly useful for antimeridian cutting.
 However, this also means the transformation is not as fast.
+
+
+Fiona Example
+--------------
 
 .. code-block:: python
 
@@ -52,3 +56,32 @@ However, this also means the transformation is not as fast.
     world = world[(world.name != "Antarctica") & (world.name != "Fr. S. Antarctic Lands")]
     with fiona.Env(OGR_ENABLE_PARTIAL_REPROJECTION="YES"):
         mercator_world = world.set_geometry(world.geometry.apply(forward_transformer), crs=destination_crs)
+
+
+Rasterio Example
+-----------------
+
+This example requires rasterio 1.2+ and GDAL 3+.
+
+
+.. code-block:: python
+
+    import geopandas
+    import rasterio.warp
+    from shapely.geometry import shape
+
+    # load example data
+    world = geopandas.read_file(geopandas.datasets.get_path('naturalearth_lowres'))
+    # Reproject to Mercator (after dropping Antartica)
+    world = world[(world.name != "Antarctica") & (world.name != "Fr. S. Antarctic Lands")]
+
+    destination_crs = "EPSG:3395"
+    geometry = rasterio.warp.transform_geom(
+        src_crs=world.crs,
+        dst_crs=destination_crs,
+        geom=world.geometry.values,
+    )
+    mercator_world = world.set_geometry(
+        [shape(geom) for geom in geometry],
+        crs=destination_crs,
+    )
