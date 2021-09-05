@@ -16,6 +16,8 @@ from geopandas.base import GeoPandasBase, is_geometry_type
 from geopandas.geoseries import GeoSeries
 import geopandas.io
 from geopandas.explore import _explore
+
+from . import _vectorized as vectorized
 from . import _compat as compat
 from ._decorator import doc
 
@@ -1682,21 +1684,53 @@ individually so that features may have different properties
                 warnings.warn("dropna kwarg is not supported for pandas < 1.1.0")
 
         # Process non-spatial component
-        data = self.drop(labels=self.geometry.name, axis=1)
-        aggregated_data = data.groupby(**groupby_kwargs).agg(aggfunc)
+        geom_col = self.geometry.name
+        data_cols = self.columns[self.columns != geom_col]
+        groups = self.groupby(**groupby_kwargs)
+
+        if not isinstance(by, np.ndarray) and groups.keys is not None:
+            data_cols = data_cols.drop(groups.keys)
+
+        aggregated_data = groups[data_cols].agg(aggfunc)
         aggregated_data.columns = aggregated_data.columns.to_flat_index()
 
         # Process spatial component
-        def merge_geometries(block):
-            merged_geom = block.unary_union
-            return merged_geom
+        to_agg = groups.size() > 1
+        grps_indices = groups.indices
 
-        g = self.groupby(group_keys=False, **groupby_kwargs)[self.geometry.name].agg(
-            merge_geometries
+        # Have to right join on this bool mask instead of doing a .loc for
+        # dropna and observed
+        singletons_loc = to_agg.loc[~to_agg].rename("a")
+        if by is not None:
+            geoms_to_be_kept = self.set_index(by)[[geom_col]].join(
+                singletons_loc, how="right", rsuffix="a"
+            )[geom_col]
+
+        else:
+            level_names = groups.grouper.names
+            lvls_to_drop = np.setdiff1d(self.index.names, level_names).tolist()
+            geoms_to_be_kept = self.join(singletons_loc, how="right", rsuffix="a")[
+                geom_col
+            ].droplevel(lvls_to_drop)
+            geoms_to_be_kept = geoms_to_be_kept
+
+        geom_arr = self.geometry.values.data
+        grp_names_to_agg = to_agg.loc[to_agg].index.unique()
+        dissolved_geoms = []
+
+        for grp_name in grp_names_to_agg:
+            grp_idc = grps_indices[grp_name]
+            dissolved_geoms.append(vectorized.unary_union(geom_arr[grp_idc]))
+
+        dissolved_geoms = GeoSeries(dissolved_geoms, index=grp_names_to_agg)
+        geoms = (
+            pd.concat([geoms_to_be_kept, dissolved_geoms])
+            .rename(geom_col)
+            .reindex(aggregated_data.index)
         )
 
         # Aggregate
-        aggregated_geometry = GeoDataFrame(g, geometry=self.geometry.name, crs=self.crs)
+        aggregated_geometry = GeoDataFrame(geoms, geometry=geom_col, crs=self.crs)
         # Recombine
         aggregated = aggregated_geometry.join(aggregated_data)
 
