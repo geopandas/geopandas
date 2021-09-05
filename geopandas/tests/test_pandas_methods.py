@@ -602,6 +602,10 @@ def test_preserve_flags(df):
         pd.concat([df, df])
 
 
+@pytest.mark.filterwarnings(
+    "ignore:GeoDataFrame does not support inferring "
+    "geometry column name with MultiIndex columns"
+)
 def test_pivot(df):
     # https://github.com/geopandas/geopandas/issues/2057
     # pivot failing due to creating a MultiIndex
