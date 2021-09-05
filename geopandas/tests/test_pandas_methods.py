@@ -600,3 +600,14 @@ def test_preserve_flags(df):
 
     with pytest.raises(ValueError):
         pd.concat([df, df])
+
+
+def test_pivot(df):
+    # https://github.com/geopandas/geopandas/issues/2057
+    # pivot failing due to creating a MultiIndex
+    expected = GeoDataFrame(pd.DataFrame(df.pivot(columns="value1")))
+    actual = df.pivot(columns="value1")
+    assert_geodataframe_equal(expected, actual)
+    # Note this not a useful gdf, ideally would return a DataFrame
+    # along the lines of GH2060 when implemented
+    assert actual._geometry_column_name == "geometry"
