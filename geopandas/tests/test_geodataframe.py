@@ -1056,12 +1056,13 @@ class TestConstructor:
         )
 
         df.columns = pd.MultiIndex.from_tuples(columns)
-        exception_msg = (
-            "GeoDataFrame does not support inferring geometry column name "
-            "with MultiIndex columns, and must be set with 'set_geometry'.\n"
-            "Please provide the geometry column name explicitly in constructor."
+        warning_msg = (
+            "GeoDataFrame does not support inferring geometry column "
+            "name with MultiIndex columns, and must now be set explicitly "
+            "with 'set_geometry'.\nTo solve this directly, provide the "
+            "geometry column name explicitly in GeoDataFrame constructor."
         )
-        with pytest.warns(UserWarning, match=exception_msg):
+        with pytest.warns(UserWarning, match=warning_msg):
             gdf = GeoDataFrame(df)
         # default value is used, which is most likely broken
         assert gdf._geometry_column_name == "geometry"
