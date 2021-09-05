@@ -108,7 +108,7 @@ def _overlay_symmetric_diff(df1, df2):
     _ensure_geometry_column(dfdiff1)
     _ensure_geometry_column(dfdiff2)
     # combine both 'difference' dataframes
-    dfsym = pd.concat([dfdiff1, dfdiff2], ignore_index=True)
+    dfsym = pd.concat([dfdiff1, dfdiff2], ignore_index=True, sort=False)
     # keep geometry column last
     columns = list(dfsym.columns)
     columns.remove("geometry")
