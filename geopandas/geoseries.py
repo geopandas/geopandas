@@ -140,17 +140,12 @@ class GeoSeries(GeoPandasBase, Series):
                 data = data.copy()
             else:
                 if not data.crs == crs:
-                    warnings.warn(
+                    raise ValueError(
                         "CRS mismatch between CRS of the passed geometries "
                         "and 'crs'. Use 'GeoDataFrame.set_crs(crs, "
                         "allow_override=True)' to overwrite CRS or "
                         "'GeoSeries.to_crs(crs)' to reproject geometries. "
-                        "CRS mismatch will raise an error in the future versions "
-                        "of GeoPandas.",
-                        FutureWarning,
-                        stacklevel=2,
                     )
-                    # TODO: raise error in 0.9 or 0.10.
 
         if isinstance(data, SingleBlockManager):
             if isinstance(data.blocks[0].dtype, GeometryDtype):
