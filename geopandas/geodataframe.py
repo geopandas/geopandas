@@ -126,16 +126,23 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                     "GeoDataFrame does not support multiple columns "
                     "using the geometry column name 'geometry'."
                 )
-            elif (
-                isinstance(self.columns, MultiIndex)
-                and (self.columns.get_level_values(0) == "geometry").sum() > 1
-            ):
-                raise ValueError(
-                    "GeoDataFrame does not support inferring geometry column name "
-                    "with MultiIndex columns containing more than one level 0 "
-                    "entry using the geometry column name 'geometry'. Please "
-                    "provide the geometry column name explicitly."
+            elif isinstance(self.columns, MultiIndex):
+                # TODO Perhaps this shouldn't even warn.
+                #  Behaviour should be the same as if "geometry" not in self.columns
+                # Note this introduces warnings into e.g. df.pivot
+
+                # MultiIndex case is prevented to stop recursion errors / crashes
+                # arising from self["geometry"] returning GeoDataFrames/ not returning
+                # a GeoSeries
+                warnings.warn(
+                    "GeoDataFrame does not support inferring geometry column "
+                    "name with MultiIndex columns, and must now be set explicitly "
+                    "with 'set_geometry'.\nTo solve this directly, provide the "
+                    "geometry column name explicitly in GeoDataFrame constructor.",
+                    UserWarning,
+                    stacklevel=2,
                 )
+                return
 
             # only if we have actual geometry values -> call set_geometry
             index = self.index

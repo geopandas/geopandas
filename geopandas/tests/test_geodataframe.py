@@ -1034,14 +1034,20 @@ class TestConstructor:
         with pytest.raises(ValueError):
             GeoDataFrame(df3, geometry="geom")
 
-    # TODO what if the fuzzy match is unique (e.g. (geometry, ""))?
+    # TODO what if the MultiIndex.get_loc match is unique e.g.
+    #   [("geometry", "foo"), ("spam", "bar")]) or
+    #   [("geometry", ""), ("spam", "bar")])
     @pytest.mark.parametrize(
         "columns",
         [
             [("geometry", "foo"), ("geometry", "bar")],
             [("foo", "geometry"), ("geometry", "bar")],
             [("geometry", "foo"), ("bar", "geometry")],
-            [("foo", "geometry"), ("bar", "geometry")],
+            # case where geometry not in first level means
+            # "geometry" in gdf.columns is False, so there is no ambiguity,
+            # behaviour is the same as if no geometry supplied and
+            # "geometry" not in gdf.columns for list like columns
+            # [("foo", "geometry"), ("bar", "geometry")],
         ],
     )
     def test_repeat_geo_col_multiindex(self, columns):
