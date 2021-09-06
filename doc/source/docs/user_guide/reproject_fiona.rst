@@ -1,5 +1,5 @@
 Re-projecting using GDAL with Rasterio and Fiona
-==================================
+================================================
 
 The simplest method of re-projecting is :meth:`GeoDataFrame.to_crs`.
 It uses ``pyproj`` as the engine and transforms the points within the geometries.
@@ -11,7 +11,7 @@ However, this also means the transformation is not as fast.
 
 
 Fiona Example
---------------
+-------------
 
 .. code-block:: python
 
@@ -59,7 +59,7 @@ Fiona Example
 
 
 Rasterio Example
------------------
+----------------
 
 This example requires rasterio 1.2+ and GDAL 3+.
 
