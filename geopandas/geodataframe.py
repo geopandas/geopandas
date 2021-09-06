@@ -1409,8 +1409,9 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         # concat operation: using metadata of the first object
         elif method == "concat":
             for name in self._metadata:
-                #  if name == '_crs':
-                #  continue
+                # do not overwrite CRS if already set for the case axis=0
+                if name == "_crs" and self._crs is not None:
+                    continue
                 object.__setattr__(self, name, getattr(other.objs[0], name, None))
 
             if (self.columns == self._geometry_column_name).sum() > 1:
