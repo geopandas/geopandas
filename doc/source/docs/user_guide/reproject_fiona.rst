@@ -1,4 +1,4 @@
-Re-projecting with Rasterio/Fiona
+Re-projecting using GDAL with Rasterio and Fiona
 ==================================
 
 The simplest method of re-projecting is :meth:`GeoDataFrame.to_crs`.
