@@ -93,6 +93,88 @@ def _df_to_geodf(df, geom_col="geom", crs=None):
     return GeoDataFrame(df, crs=crs, geometry=geom_col)
 
 
+def _get_srid_and_geom_from_postgis(name, con, schema=None, geom_name=None):
+    """
+    Get Geometry/Geography column name, SRID, and SQLalchemy type.
+
+    Parameters
+    ----------
+    name : str
+        Name of the target table.
+    con : sqlalchemy.engine.Connection or sqlalchemy.engine.Engine
+        Active connection to the PostGIS database.
+    schema : str, optional
+        Specify the schema. If None, use default schema: 'public'.
+    geom_name : str, optional
+        Geometry/Geography column name.
+        If None (default) tries to infer it from database.
+
+    Returns
+    -------
+    str
+        Geometry/Geography column name.
+    int
+        Geometry/Geography column SRID.
+    Geometry or Geography
+        geoalchemy2 class used to query the Geometry/Geography column.
+
+    """
+    try:
+        from geoalchemy2 import Geography, Geometry
+    except ImportError:
+        raise ImportError(
+            "geopandas requires the geoalchemy2 package to interface with PostGIS."
+        )
+
+    if schema is None:
+        schema = "public"
+
+    with _get_conn(con) as connection:
+        if not connection.dialect.has_table(connection, name, schema):
+            raise ValueError(f"table {name} doesn't exist in {schema} schema")
+
+        for gtype, gclass in [("geometry", Geometry), ("geography", Geography)]:
+            query = (
+                f"SELECT F_{gtype.upper()}_COLUMN, SRID, TYPE "
+                f"FROM {gtype.upper()}_COLUMNS "
+                f"WHERE "
+                f"F_TABLE_SCHEMA = '{schema}' AND "
+                f"F_TABLE_NAME = '{name}'"
+            )
+            if geom_name is None:
+                result = connection.execute(query).all()
+                if result is not None:
+                    if len(result) > 1:
+                        raise ValueError(
+                            f"found multiple {gtype} columns in {name} table, "
+                            f"please provide geom_name"
+                        )
+                    geom_name, srid, geom_type = result[0]
+                    return (
+                        geom_name,
+                        int(srid),
+                        gclass(geometry_type=geom_type, srid=int(srid)),
+                    )
+            else:
+                query += f" AND F_GEOMETRY_COLUMN = '{geom_name}'"
+                result = connection.execute(query).first()
+                if result is not None:
+                    geom_name, srid, geom_type = result
+                    return (
+                        geom_name,
+                        int(srid),
+                        glcass(geometry_type=geom_type, srid=int(srid)),
+                    )
+
+    msg = [
+        f"Cannot find Geometry or Geography column ",
+        f"in table {name} in schema {schema}",
+    ]
+    if geom_name is not None:
+        msg[0] += f"{geom_name} "
+    raise ValueError(msg)
+
+
 def _read_postgis(
     sql,
     con,
