@@ -485,59 +485,26 @@ def _write_postgis(
     if dtype is None:
         dtype = {}
     if if_exists == "append":
-        with _get_conn(con) as connection:
-            # Check if table exists
-            if connection.dialect.has_table(connection, name, schema):
-                # Table exists - check whether `geom_name` column is
-                # Geometry or Geography
-                target_srid = connection.execute(
-                    f"SELECT SRID FROM GEOMETRY_COLUMNS WHERE "
-                    f"F_TABLE_SCHEMA = '{schema}' AND "
-                    f"F_TABLE_NAME = '{name}' AND "
-                    f"F_GEOMETRY_COLUMN = '{geom_name}'"
-                ).first()
-                if target_srid is not None:
-                    # `geom_name` is Geometry - set dtype for it if not provided by user
-                    if geom_name not in dtype:
-                        dtype[geom_name] = Geometry(
-                            geometry_type=geometry_type, srid=srid
-                        )
-                else:
-                    # `geom_name` column is not Geometry - check if it is Geography
-                    target_srid = connection.execute(
-                        f"SELECT SRID FROM GEOGRAPHY_COLUMNS WHERE "
-                        f"F_TABLE_SCHEMA = '{schema}' AND "
-                        f"F_TABLE_NAME = '{name}' AND "
-                        f"F_GEOGRAPHY_COLUMN = '{geom_name}'"
-                    ).first()
-                    if target_srid is not None:
-                        # `geom_name` is Geography - set dtype for it
-                        # if not provided by user
-                        if geom_name not in dtype:
-                            dtype[geom_name] = Geography(
-                                geometry_type=geometry_type, srid=srid
-                            )
-                # Make sure SRID of `geom_name` in the database was found
-                if target_srid is None:
-                    msg = (
-                        f"Cannot find Geometry or Geography column {geom_name} "
-                        f"in table {name} in schema {schema}"
-                    )
-                    raise ValueError(msg)
-                # Check if GeoDataFrame's SRID is compatible with it
-                if target_srid[0] != srid:
-                    msg = (
-                        "The CRS of the target table (EPSG:{epsg_t}) differs from the "
-                        "CRS of current GeoDataFrame (EPSG:{epsg_src}).".format(
-                            epsg_t=target_srid[0], epsg_src=srid
-                        )
-                    )
-                    raise ValueError(msg)
-            else:
-                # Table doesn't exist
-                if geom_name not in dtype:
-                    # Use Geometry by default
-                    dtype[geom_name] = Geometry(geometry_type=geometry_type, srid=srid)
+        # Get SRID and SQLalchemy mapping class from the PostGIS table
+        (_, target_srid, target_geom_class) = _get_srid_and_geom_from_postgis(
+            name=name,
+            con=con,
+            schema=schema,
+            geom_name=geom_name,
+        )
+
+        # Check if GeoDataFrame's SRID is compatible with it
+        if target_srid != srid:
+            msg = (
+                "The CRS of the target table (EPSG:{epsg_t}) differs from the "
+                "CRS of current GeoDataFrame (EPSG:{epsg_src}).".format(
+                    epsg_t=target_srid, epsg_src=srid
+                )
+            )
+            raise ValueError(msg)
+
+        if geom_name not in dtype:
+            dtype[geom_name] = target_geom_class
     else:
         # We don't care if table exists for "replace" or "fail" `if_exists` values
         if geom_name not in dtype:
