@@ -17,7 +17,6 @@ from geopandas.geoseries import GeoSeries
 import geopandas.io
 from geopandas.explore import _explore
 
-from . import _vectorized as vectorized
 from . import _compat as compat
 from ._decorator import doc
 
@@ -1715,18 +1714,15 @@ individually so that features may have different properties
             geoms = geoms_to_be_kept
 
         else:
-            # Getting the groups' indices can be costly when there are many, so
-            # only do it when there are geometries to dissolve.
-            grps_indices = groups.indices
-            geom_arr = self.geometry.values.data
-            grp_names_to_agg = to_agg.loc[to_agg].index.unique()
-            dissolved_geoms = []
-
-            for grp_name in grp_names_to_agg:
-                grp_idc = grps_indices[grp_name]
-                dissolved_geoms.append(vectorized.unary_union(geom_arr[grp_idc]))
-
-            dissolved_geoms = GeoSeries(dissolved_geoms, index=grp_names_to_agg)
+            # The non-observed are not aggregated anyway, so in here we should
+            # not introduce unobserved values, hence we set observed to True.
+            groupby_kwargs["observed"] = True
+            to_agg = groups[geom_col].transform("count") > 1
+            dissolved_geoms = (
+                self.loc[to_agg]
+                .groupby(**groupby_kwargs)[geom_col]
+                .agg(lambda block: block.unary_union)
+            )
             geoms = pd.concat([geoms_to_be_kept, dissolved_geoms])
 
         geoms = geoms.rename(geom_col).reindex(aggregated_data.index)
