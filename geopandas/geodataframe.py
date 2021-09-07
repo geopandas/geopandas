@@ -1685,16 +1685,16 @@ individually so that features may have different properties
         # Process non-spatial component
         geom_col = self.geometry.name
         data_cols = self.columns[self.columns != geom_col]
-        groups = self.groupby(**groupby_kwargs)
+        grouped = self.groupby(**groupby_kwargs)
 
-        if not isinstance(by, np.ndarray) and groups.keys is not None:
-            data_cols = data_cols.drop(groups.keys)
+        if not isinstance(by, np.ndarray) and grouped.keys is not None:
+            data_cols = data_cols.drop(grouped.keys)
 
-        aggregated_data = groups[data_cols].agg(aggfunc)
+        aggregated_data = grouped[data_cols].agg(aggfunc)
         aggregated_data.columns = aggregated_data.columns.to_flat_index()
 
         # Process spatial component
-        to_agg = groups.size() > 1
+        to_agg = grouped.size() > 1
         # Have to right join on this bool mask instead of doing a .loc for
         # dropna and observed
         singletons_loc = to_agg.loc[~to_agg].rename("a")
@@ -1704,7 +1704,7 @@ individually so that features may have different properties
             )[geom_col]
 
         else:
-            level_names = groups.grouper.names
+            level_names = grouped.grouper.names
             lvls_to_drop = np.setdiff1d(self.index.names, level_names).tolist()
             geoms_to_be_kept = self.join(singletons_loc, how="right", rsuffix="a")[
                 geom_col
@@ -1717,7 +1717,7 @@ individually so that features may have different properties
             # The non-observed are not aggregated anyway, so in here we should
             # not introduce unobserved values, hence we set observed to True.
             groupby_kwargs["observed"] = True
-            to_agg = groups[geom_col].transform("count") > 1
+            to_agg = grouped[geom_col].transform("count") > 1
             dissolved_geoms = (
                 self.loc[to_agg]
                 .groupby(**groupby_kwargs)[geom_col]
