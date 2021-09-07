@@ -121,6 +121,7 @@ def _get_srid_and_geom_from_postgis(name, con, schema=None, geom_name=None):
     """
     try:
         from geoalchemy2 import Geography, Geometry
+        from sqlalchemy.exc import NoSuchTableError
     except ImportError:
         raise ImportError(
             "geopandas requires the geoalchemy2 package to interface with PostGIS."
@@ -131,7 +132,7 @@ def _get_srid_and_geom_from_postgis(name, con, schema=None, geom_name=None):
 
     with _get_conn(con) as connection:
         if not connection.dialect.has_table(connection, name, schema):
-            raise ValueError(f"table {name} doesn't exist in {schema} schema")
+            raise NoSuchTableError(f"table {name} doesn't exist in {schema} schema")
 
         for gtype, gclass in [("geometry", Geometry), ("geography", Geography)]:
             query = (
@@ -450,6 +451,7 @@ def _write_postgis(
     """
     try:
         from geoalchemy2 import Geometry
+        from sqlalchemy.exc import NoSuchTableError
     except ImportError:
         raise ImportError("'to_postgis()' requires geoalchemy2 package. ")
 
@@ -503,13 +505,10 @@ def _write_postgis(
                     )
                 )
                 raise ValueError(msg)
-        except ValueError as error:
-            if str(error) == f"table {name} doesn't exist in {schema} schema":
-                if geom_name not in dtype:
-                    # Use Geometry by default
-                    dtype[geom_name] = Geometry(geometry_type=geometry_type, srid=srid)
-            else:
-                raise
+        except NoSuchTableError:
+            if geom_name not in dtype:
+                # Use Geometry by default
+                dtype[geom_name] = Geometry(geometry_type=geometry_type, srid=srid)
 
         if geom_name not in dtype:
             dtype[geom_name] = target_geom_class
