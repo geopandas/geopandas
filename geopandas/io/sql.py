@@ -172,7 +172,7 @@ def _get_srid_and_geom_from_postgis(name, con, schema=None, geom_name=None):
     ]
     if geom_name is not None:
         msg[0] += f"{geom_name} "
-    raise ValueError(msg)
+    raise ValueError("".join(msg))
 
 
 def _read_postgis(
