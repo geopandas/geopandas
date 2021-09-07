@@ -167,7 +167,7 @@ def _get_srid_and_geom_from_postgis(name, con, schema=None, geom_name=None):
                     )
 
     msg = [
-        f"Cannot find Geometry or Geography column ",
+        "Cannot find Geometry or Geography column ",
         f"in table {name} in schema {schema}",
     ]
     if geom_name is not None:
