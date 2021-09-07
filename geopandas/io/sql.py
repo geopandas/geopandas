@@ -157,7 +157,7 @@ def _get_srid_and_geom_from_postgis(name, con, schema=None, geom_name=None):
                         gclass(geometry_type=geom_type, srid=int(srid)),
                     )
             else:
-                query += f" AND F_GEOMETRY_COLUMN = '{geom_name}'"
+                query += f" AND F_{gtype.upper()}_COLUMN = '{geom_name}'"
                 result = connection.execute(query).first()
                 if result is not None:
                     geom_name, srid, geom_type = result
