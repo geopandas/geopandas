@@ -449,7 +449,7 @@ def _write_postgis(
     >>> gdf.to_postgis("my_table", engine)  # doctest: +SKIP
     """
     try:
-        from geoalchemy2 import Geography, Geometry
+        from geoalchemy2 import Geometry
     except ImportError:
         raise ImportError("'to_postgis()' requires geoalchemy2 package. ")
 
