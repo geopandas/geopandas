@@ -1696,13 +1696,11 @@ individually so that features may have different properties
 
         # Process spatial component
         to_agg = groups.size() > 1
-        grps_indices = groups.indices
-
         # Have to right join on this bool mask instead of doing a .loc for
         # dropna and observed
         singletons_loc = to_agg.loc[~to_agg].rename("a")
         if by is not None:
-            geoms_to_be_kept = self.set_index(by)[[geom_col]].join(
+            geoms_to_be_kept = self.set_index(by).join(
                 singletons_loc, how="right", rsuffix="a"
             )[geom_col]
 
@@ -1712,23 +1710,26 @@ individually so that features may have different properties
             geoms_to_be_kept = self.join(singletons_loc, how="right", rsuffix="a")[
                 geom_col
             ].droplevel(lvls_to_drop)
-            geoms_to_be_kept = geoms_to_be_kept
 
-        geom_arr = self.geometry.values.data
-        grp_names_to_agg = to_agg.loc[to_agg].index.unique()
-        dissolved_geoms = []
+        if geoms_to_be_kept.shape[0] == aggregated_data.shape[0]:
+            geoms = geoms_to_be_kept
 
-        for grp_name in grp_names_to_agg:
-            grp_idc = grps_indices[grp_name]
-            dissolved_geoms.append(vectorized.unary_union(geom_arr[grp_idc]))
+        else:
+            # Getting the groups' indices can be costly when there are many, so
+            # only do it when there are geometries to dissolve.
+            grps_indices = groups.indices
+            geom_arr = self.geometry.values.data
+            grp_names_to_agg = to_agg.loc[to_agg].index.unique()
+            dissolved_geoms = []
 
-        dissolved_geoms = GeoSeries(dissolved_geoms, index=grp_names_to_agg)
-        geoms = (
-            pd.concat([geoms_to_be_kept, dissolved_geoms])
-            .rename(geom_col)
-            .reindex(aggregated_data.index)
-        )
+            for grp_name in grp_names_to_agg:
+                grp_idc = grps_indices[grp_name]
+                dissolved_geoms.append(vectorized.unary_union(geom_arr[grp_idc]))
 
+            dissolved_geoms = GeoSeries(dissolved_geoms, index=grp_names_to_agg)
+            geoms = pd.concat([geoms_to_be_kept, dissolved_geoms])
+
+        geoms = geoms.rename(geom_col).reindex(aggregated_data.index)
         # Aggregate
         aggregated_geometry = GeoDataFrame(geoms, geometry=geom_col, crs=self.crs)
         # Recombine
