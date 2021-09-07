@@ -163,7 +163,7 @@ def _get_srid_and_geom_from_postgis(name, con, schema=None, geom_name=None):
                     return (
                         geom_name,
                         int(srid),
-                        glcass(geometry_type=geom_type, srid=int(srid)),
+                        gclass(geometry_type=geom_type, srid=int(srid)),
                     )
 
     msg = [
@@ -485,23 +485,31 @@ def _write_postgis(
     if dtype is None:
         dtype = {}
     if if_exists == "append":
-        # Get SRID and SQLalchemy mapping class from the PostGIS table
-        (_, target_srid, target_geom_class) = _get_srid_and_geom_from_postgis(
-            name=name,
-            con=con,
-            schema=schema,
-            geom_name=geom_name,
-        )
-
-        # Check if GeoDataFrame's SRID is compatible with it
-        if target_srid != srid:
-            msg = (
-                "The CRS of the target table (EPSG:{epsg_t}) differs from the "
-                "CRS of current GeoDataFrame (EPSG:{epsg_src}).".format(
-                    epsg_t=target_srid, epsg_src=srid
-                )
+        try:
+            # Get SRID and SQLalchemy mapping class from the PostGIS table
+            (_, target_srid, target_geom_class) = _get_srid_and_geom_from_postgis(
+                name=name,
+                con=con,
+                schema=schema,
+                geom_name=geom_name,
             )
-            raise ValueError(msg)
+
+            # Check if GeoDataFrame's SRID is compatible with it
+            if target_srid != srid:
+                msg = (
+                    "The CRS of the target table (EPSG:{epsg_t}) differs from the "
+                    "CRS of current GeoDataFrame (EPSG:{epsg_src}).".format(
+                        epsg_t=target_srid, epsg_src=srid
+                    )
+                )
+                raise ValueError(msg)
+        except ValueError as error:
+            if str(error) == f"table {name} doesn't exist in {schema} schema":
+                if geom_name not in dtype:
+                    # Use Geometry by default
+                    dtype[geom_name] = Geometry(geometry_type=geometry_type, srid=srid)
+            else:
+                raise
 
         if geom_name not in dtype:
             dtype[geom_name] = target_geom_class
