@@ -1694,36 +1694,40 @@ individually so that features may have different properties
         aggregated_data.columns = aggregated_data.columns.to_flat_index()
 
         # Process spatial component
-        to_agg = grouped.size() > 1
-        # Have to right join on this bool mask instead of doing a .loc for
-        # dropna and observed
-        singletons_loc = to_agg.loc[~to_agg].rename("a")
-        if by is not None:
-            geoms_to_be_kept = self.set_index(by).join(
-                singletons_loc, how="right", rsuffix="a"
-            )[geom_col]
+        rows_to_agg = grouped[geom_col].transform("count") > 1
+        to_keep = not rows_to_agg.all()
+        if to_keep:
+            grps_to_agg = grouped.size() > 1
+            # Have to right join on this bool mask instead of doing a .loc for
+            # dropna and observed
+            singletons_loc = grps_to_agg.loc[~grps_to_agg].rename("a")
+            if by is not None:
+                geoms = self.set_index(by).join(
+                    singletons_loc, how="right", rsuffix="a"
+                )[geom_col]
 
-        else:
-            level_names = grouped.grouper.names
-            lvls_to_drop = np.setdiff1d(self.index.names, level_names).tolist()
-            geoms_to_be_kept = self.join(singletons_loc, how="right", rsuffix="a")[
-                geom_col
-            ].droplevel(lvls_to_drop)
+            else:
+                level_names = grouped.grouper.names
+                lvls_to_drop = np.setdiff1d(self.index.names, level_names).tolist()
+                geoms = self.join(singletons_loc, how="right", rsuffix="a")[
+                    geom_col
+                ].droplevel(lvls_to_drop)
 
-        if geoms_to_be_kept.shape[0] == aggregated_data.shape[0]:
-            geoms = geoms_to_be_kept
-
-        else:
+        to_dissolve = rows_to_agg.any()
+        if to_dissolve:
             # The non-observed are not aggregated anyway, so in here we should
             # not introduce unobserved values, hence we set observed to True.
             groupby_kwargs["observed"] = True
-            to_agg = grouped[geom_col].transform("count") > 1
             dissolved_geoms = (
-                self.loc[to_agg]
+                self.loc[rows_to_agg]
                 .groupby(**groupby_kwargs)[geom_col]
                 .agg(lambda block: block.unary_union)
             )
-            geoms = pd.concat([geoms_to_be_kept, dissolved_geoms])
+
+            if to_keep:
+                geoms = pd.concat([geoms, dissolved_geoms])
+            else:
+                geoms = dissolved_geoms
 
         geoms = geoms.rename(geom_col).reindex(aggregated_data.index)
         # Aggregate
