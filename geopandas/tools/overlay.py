@@ -319,9 +319,13 @@ def overlay(df1, df2, how="intersection", keep_geom_type=None, make_valid=True):
     if keep_geom_type:
         geom_type = df1.geom_type.iloc[0]
 
-        if (result.geom_type == "GeometryCollection").any():
-            key_order = result.keys()
-            exploded = result.reset_index(drop=True).explode()
+        # before filtering on the actual geometry type
+        is_collection = result.geom_type == "GeometryCollection"
+        if is_collection.any():
+            geom_col = result._geometry_column_name
+            collections = result[[geom_col]][is_collection]
+
+            exploded = collections.reset_index(drop=True).explode()
             exploded = exploded.reset_index(level=0)
 
             orig_num_geoms_exploded = exploded.shape[0]
@@ -339,7 +343,8 @@ def overlay(df1, df2, how="intersection", keep_geom_type=None, make_valid=True):
 
             # level_0 created with above reset_index operation
             # and represents the original geometry collections
-            result = exploded.dissolve(by="level_0")[key_order]
+            dissolved = exploded.dissolve(by="level_0")
+            result.loc[is_collection, geom_col] = dissolved[geom_col].values
         else:
             num_dropped_collection = 0
 
