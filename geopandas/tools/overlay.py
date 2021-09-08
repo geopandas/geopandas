@@ -319,7 +319,10 @@ def overlay(df1, df2, how="intersection", keep_geom_type=None, make_valid=True):
     if keep_geom_type:
         geom_type = df1.geom_type.iloc[0]
 
-        # before filtering on the actual geometry type
+        # First we filter the geometry types inside GeometryCollections objects
+        # (e.g. GeometryCollection([polygon, point]) -> polygon)
+        # we do this separately on only the relevant rows, as this is an expensive
+        # operation (an expensive no-op for geometry types other than collections)
         is_collection = result.geom_type == "GeometryCollection"
         if is_collection.any():
             geom_col = result._geometry_column_name
@@ -348,6 +351,10 @@ def overlay(df1, df2, how="intersection", keep_geom_type=None, make_valid=True):
         else:
             num_dropped_collection = 0
 
+        # Now we filter all geometries (in theory we don't need to do this
+        # again for the rows handled above for GeometryCollections, but filtering
+        # them out is probably more expensive as simply including them when this
+        # is typically about only a few rows)
         orig_num_geoms = result.shape[0]
         if geom_type in polys:
             result = result.loc[result.geom_type.isin(polys)]
