@@ -317,32 +317,49 @@ def overlay(df1, df2, how="intersection", keep_geom_type=None, make_valid=True):
             result = dfunion[dfunion["__idx1"].notnull()].copy()
 
     if keep_geom_type:
-        key_order = result.keys()
-        exploded = result.reset_index(drop=True).explode()
-        exploded = exploded.reset_index(level=0)
+        geom_type = df1.geom_type.iloc[0]
+
+        if (result.geom_type == "GeometryCollection").any():
+            key_order = result.keys()
+            exploded = result.reset_index(drop=True).explode()
+            exploded = exploded.reset_index(level=0)
+
+            orig_num_geoms_exploded = exploded.shape[0]
+            if geom_type in polys:
+                exploded = exploded.loc[exploded.geom_type.isin(polys)]
+            elif geom_type in lines:
+                exploded = exploded.loc[exploded.geom_type.isin(lines)]
+            elif geom_type in points:
+                exploded = exploded.loc[exploded.geom_type.isin(points)]
+            else:
+                raise TypeError(
+                    "`keep_geom_type` does not support {}.".format(geom_type)
+                )
+            num_dropped_collection = orig_num_geoms_exploded - exploded.shape[0]
+
+            # level_0 created with above reset_index operation
+            # and represents the original geometry collections
+            result = exploded.dissolve(by="level_0")[key_order]
+        else:
+            num_dropped_collection = 0
 
         orig_num_geoms = result.shape[0]
-        geom_type = df1.geom_type.iloc[0]
         if geom_type in polys:
-            exploded = exploded.loc[exploded.geom_type.isin(polys)]
+            result = result.loc[result.geom_type.isin(polys)]
         elif geom_type in lines:
-            exploded = exploded.loc[exploded.geom_type.isin(lines)]
+            result = result.loc[result.geom_type.isin(lines)]
         elif geom_type in points:
-            exploded = exploded.loc[exploded.geom_type.isin(points)]
+            result = result.loc[result.geom_type.isin(points)]
         else:
             raise TypeError("`keep_geom_type` does not support {}.".format(geom_type))
+        num_dropped = orig_num_geoms - result.shape[0]
 
-        # level_0 created with above reset_index operation
-        # and represents the original geometry collections
-        result = exploded.dissolve(by="level_0")[key_order]
-
-        if (result.shape[0] != orig_num_geoms) and keep_geom_type_warning:
-            num_dropped = orig_num_geoms - result.shape[0]
+        if (num_dropped > 0 or num_dropped_collection > 0) and keep_geom_type_warning:
             warnings.warn(
                 "`keep_geom_type=True` in overlay resulted in {} dropped "
                 "geometries of different geometry types than df1 has. "
                 "Set `keep_geom_type=False` to retain all "
-                "geometries".format(num_dropped),
+                "geometries".format(num_dropped + num_dropped_collection),
                 UserWarning,
                 stacklevel=2,
             )
