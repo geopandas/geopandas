@@ -1694,6 +1694,7 @@ individually so that features may have different properties
         aggregated_data.columns = aggregated_data.columns.to_flat_index()
 
         # Process spatial component
+        geoms = GeoSeries()
         rows_to_agg = grouped[geom_col].transform("count") > 1
         to_keep = not rows_to_agg.all()
         if to_keep:
@@ -1702,16 +1703,18 @@ individually so that features may have different properties
             # dropna and observed
             singletons_loc = grps_to_agg.loc[~grps_to_agg].rename("a")
             if by is not None:
-                geoms = self.set_index(by).join(
+                single_geoms = self.set_index(by).join(
                     singletons_loc, how="right", rsuffix="a"
                 )[geom_col]
 
             else:
                 level_names = grouped.grouper.names
                 lvls_to_drop = np.setdiff1d(self.index.names, level_names).tolist()
-                geoms = self.join(singletons_loc, how="right", rsuffix="a")[
+                single_geoms = self.join(singletons_loc, how="right", rsuffix="a")[
                     geom_col
                 ].droplevel(lvls_to_drop)
+
+            geoms = pd.concat([geoms, single_geoms])
 
         to_dissolve = rows_to_agg.any()
         if to_dissolve:
@@ -1723,11 +1726,7 @@ individually so that features may have different properties
                 .groupby(**groupby_kwargs)[geom_col]
                 .agg(lambda block: block.unary_union)
             )
-
-            if to_keep:
-                geoms = pd.concat([geoms, dissolved_geoms])
-            else:
-                geoms = dissolved_geoms
+            geoms = pd.concat([geoms, dissolved_geoms])
 
         geoms = geoms.rename(geom_col).reindex(aggregated_data.index)
         # Aggregate
