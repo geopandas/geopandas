@@ -158,7 +158,7 @@ def test_from_wkb():
     assert res[0] == multi_poly
 
 
-def test_from_wkb__hex():
+def test_from_wkb_hex():
     geometry_hex = ["0101000000CDCCCCCCCCCC1440CDCCCCCCCC0C4A40"]
     res = from_wkb(geometry_hex)
     assert isinstance(res, GeometryArray)
