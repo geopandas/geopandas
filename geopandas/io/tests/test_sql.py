@@ -6,9 +6,10 @@ see geopandas.tests.util for more information.
 """
 import os
 
-import geopandas
 import pandas as pd
 import pytest
+
+import geopandas
 
 from geopandas import GeoDataFrame, read_file, read_postgis
 from geopandas.io.sql import _get_conn as get_conn
