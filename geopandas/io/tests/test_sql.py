@@ -11,8 +11,8 @@ import pytest
 
 import geopandas
 from geopandas import GeoDataFrame, read_file, read_postgis
-from geopandas.io.sql import _get_conn as get_conn
 from geopandas.io.sql import (
+    _get_conn as get_conn,
     _get_srid_and_geom_from_postgis as get_srid_and_geom_from_postgis,
     _get_srid_from_crs as get_srid_from_crs,
     _write_postgis as write_postgis,
