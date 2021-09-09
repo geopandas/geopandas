@@ -169,7 +169,7 @@ def from_wkb(data):
 
     for geom in data:
         if not isna(geom) and len(geom):
-            geom = shapely.wkb.loads(geom)
+            geom = shapely.wkb.loads(geom, hex=isinstance(geom, str))
         else:
             geom = None
         out.append(geom)
