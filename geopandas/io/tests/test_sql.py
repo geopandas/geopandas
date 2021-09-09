@@ -10,7 +10,6 @@ import pandas as pd
 import pytest
 
 import geopandas
-
 from geopandas import GeoDataFrame, read_file, read_postgis
 from geopandas.io.sql import _get_conn as get_conn
 from geopandas.io.sql import (
@@ -190,6 +189,23 @@ def df_3D_geoms():
         crs="epsg:4326",
     )
     return df
+
+
+@pytest.fixture(scope="function")
+def create_temp_table(engine_postgis):
+
+    created_tables = []
+
+    def _create_temp_table(sql, table_name: str):
+        with get_conn(engine_postgis) as connection:
+            connection.execute(sql)
+        created_tables.append(table_name)
+
+    yield _create_temp_table
+
+    for table_name in created_tables:
+        with get_conn(engine_postgis) as connection:
+            connection.execute(f"DROP TABLE {table_name.upper()}")
 
 
 class TestIO:
@@ -683,7 +699,9 @@ class TestIO:
         with pytest.raises(ValueError, match="CRS of the target table"):
             write_postgis(df_nybb2, con=engine, name=table, if_exists="append")
 
-    def test_get_srid_and_geom_from_postgis_errors(engine_postgis):
+    def test_get_srid_and_geom_from_postgis_errors(
+        self, engine_postgis, create_temp_table
+    ):
         from sqlalchemy.exc import NoSuchTableError
 
         # Test error: table doesn't exist
@@ -694,10 +712,10 @@ class TestIO:
             )
 
         # Test error: multiple Geometry/Geography columns
-        table_name = "test_table_multiple_geom"
         for gtype in ["geometry", "geography"]:
-            with get_conn(engine_postgis) as connection:
-                connection.execute(
+            table_name = f"test_table_multiple_{gtype}"
+            create_temp_table(
+                sql=(
                     f"CREATE TABLE {table_name.upper()} "
                     f"("
                     f"id INTEGER PRIMARY KEY, "
@@ -706,32 +724,33 @@ class TestIO:
                     f"{gtype[:4]}1 {gtype.upper()}(POINT,4326), "
                     f"{gtype[:4]}2 {gtype.upper()}(POINT,4326)"
                     f")"
-                )
+                ),
+                table_name=table_name,
+            )
             with pytest.raises(
                 ValueError,
                 match=rf"found multiple {gtype} columns in {table_name} table.+",
             ):
                 get_srid_and_geom_from_postgis(name=table_name, con=engine_postgis)
-            with get_conn(engine_postgis) as connection:
-                connection.execute(f"DROP TABLE {table_name.upper()}")
 
         # Test error: table without Geometry/Geography columns
-        with get_conn(engine_postgis) as connection:
-            connection.execute(
+        table_name = "test_table_without_geom"
+        create_temp_table(
+            sql=(
                 f"CREATE TABLE {table_name.upper()} "
                 f"("
                 f"id INTEGER PRIMARY KEY, "
                 f"name VARCHAR, "
                 f"size INTEGER"
                 f")"
-            )
-            with pytest.raises(
-                ValueError,
-                match=r"Cannot find Geometry or Geography column.+",
-            ):
-                get_srid_and_geom_from_postgis(name=table_name, con=engine_postgis)
-            with get_conn(engine_postgis) as connection:
-                connection.execute(f"DROP TABLE {table_name.upper()}")
+            ),
+            table_name=table_name,
+        )
+        with pytest.raises(
+            ValueError,
+            match=r"Cannot find Geometry or Geography column.+",
+        ):
+            get_srid_and_geom_from_postgis(name=table_name, con=engine_postgis)
 
     @pytest.mark.parametrize(
         "gtype,srid",
@@ -741,7 +760,9 @@ class TestIO:
             ("geography", 4326),
         ],
     )
-    def test_get_srid_and_geom_from_postgis(engine_postgis, gtype, srid):
+    def test_get_srid_and_geom_from_postgis(
+        self, engine_postgis, create_temp_table, gtype, srid
+    ):
         from geoalchemy2 import Geography, Geometry
 
         geom_class = {
@@ -749,12 +770,11 @@ class TestIO:
             "geometry": Geometry,
         }[gtype]
 
-        table_name = "test_table_get_srid_geom"
-
         # Create test table
         column_name = gtype[:4]
-        with get_conn(engine_postgis) as connection:
-            connection.execute(
+        table_name = "test_table_get_srid_geom"
+        create_temp_table(
+            sql=(
                 f"CREATE TABLE {table_name.upper()} "
                 f"("
                 f"id INTEGER PRIMARY KEY, "
@@ -762,11 +782,14 @@ class TestIO:
                 f"size INTEGER, "
                 f"{column_name} {gtype.upper()}(POINT,{srid:d}), "
                 f")"
-            )
+            ),
+            table_name=table_name,
+        )
 
         # Execute function
         db_column_name, db_srid, db_geom_obj = get_srid_and_geom_from_postgis(
-            name=table_name, con=connection
+            name=table_name,
+            con=engine_postgis,
         )
 
         # Compare values
@@ -774,11 +797,9 @@ class TestIO:
         assert db_srid == srid
         assert isinstance(db_geom_obj, geom_class)
 
-        # Clean up the table
-        with get_conn(engine_postgis) as connection:
-            connection.execute(f"DROP TABLE {table_name.upper()}")
-
-    def test_write_postgis_with_geography_column(self, engine_postgis):
+    def test_write_postgis_with_geography_column(
+        self, engine_postgis, create_temp_table
+    ):
         """
         Tests writing to an existing PostGIS table with Geography column.
         """
@@ -795,6 +816,19 @@ class TestIO:
         ).rename_geometry("geog")
 
         table_name = "test_table_with_geog_column"
+        create_temp_table(
+            sql=(
+                f"CREATE TABLE {table_name.upper()} "
+                f"("
+                f"id INTEGER PRIMARY KEY, "
+                f"name VARCHAR, "
+                f"size INTEGER, "
+                f"geog GEOMETRY(POINT,4326), "
+                f")"
+            ),
+            table_name=table_name,
+        )
+
         write_postgis(
             df_geog,
             name=table_name,
