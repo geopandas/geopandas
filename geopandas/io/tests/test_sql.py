@@ -823,7 +823,7 @@ class TestIO:
                 f"id INTEGER PRIMARY KEY, "
                 f"name VARCHAR, "
                 f"size INTEGER, "
-                f"geog GEOMETRY(POINT,4326), "
+                f"geog GEOGRAPHY(POINT,4326), "
                 f")"
             ),
             table_name=table_name,
