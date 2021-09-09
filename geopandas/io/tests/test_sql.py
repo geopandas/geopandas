@@ -6,18 +6,18 @@ see geopandas.tests.util for more information.
 """
 import os
 
-import pandas as pd
-
 import geopandas
-from geopandas import GeoDataFrame, read_file, read_postgis
+import pandas as pd
+import pytest
 
+from geopandas import GeoDataFrame, read_file, read_postgis
+from geopandas.io.sql import _get_conn as get_conn
 from geopandas.io.sql import (
-    _get_conn as get_conn,
+    _get_srid_and_geom_from_postgis as get_srid_and_geom_from_postgis,
     _get_srid_from_crs as get_srid_from_crs,
     _write_postgis as write_postgis,
 )
 from geopandas.tests.util import create_postgis, create_spatialite, validate_boro_df
-import pytest
 
 
 @pytest.fixture
@@ -128,7 +128,7 @@ def drop_table_if_exists(conn_or_engine, table):
 
 @pytest.fixture
 def df_mixed_single_and_multi():
-    from shapely.geometry import Point, LineString, MultiLineString
+    from shapely.geometry import LineString, MultiLineString, Point
 
     df = geopandas.GeoDataFrame(
         {
@@ -145,7 +145,7 @@ def df_mixed_single_and_multi():
 
 @pytest.fixture
 def df_geom_collection():
-    from shapely.geometry import Point, LineString, Polygon, GeometryCollection
+    from shapely.geometry import GeometryCollection, LineString, Point, Polygon
 
     df = geopandas.GeoDataFrame(
         {
@@ -176,7 +176,7 @@ def df_linear_ring():
 
 @pytest.fixture
 def df_3D_geoms():
-    from shapely.geometry import Point, LineString, Polygon
+    from shapely.geometry import LineString, Point, Polygon
 
     df = geopandas.GeoDataFrame(
         {
@@ -189,46 +189,6 @@ def df_3D_geoms():
         crs="epsg:4326",
     )
     return df
-
-
-@pytest.fixture(scope="function")
-def df_geog():
-    """
-    Dummy GeoDataFrame with lon/lat geometry to be used for PostGIS Geography tests.
-    """
-    from shapely.geometry import Point
-
-    return GeoDataFrame(
-        data={
-            "id": [1, 2],
-            "name": ["bar", "baz"],
-            "size": [12, 7],
-        },
-        geometry=[Point(-40, 75), Point(63, -30)],
-        crs="EPSG:4326",
-    ).rename_geometry("geog")
-
-
-@pytest.fixture(scope="function")
-def create_postgis_geography_table(engine_postgis):
-    """
-    Creates dummy table with Geography column in the PostGIS database.
-    Removes it on fixture scope exit.
-    """
-    table_name = "TEST_GEOG_POINTS"
-    with get_conn(engine_postgis) as connection:
-        connection.execute(
-            f"CREATE TABLE {table_name} "
-            f"("
-            f"id INTEGER PRIMARY KEY, "
-            f"name VARCHAR, "
-            f"size INTEGER, "
-            f"geog GEOGRAPHY(POINT,4326)"
-            f")"
-        )
-    yield table_name
-    with get_conn(engine_postgis) as connection:
-        connection.execute(f"DROP TABLE {table_name}")
 
 
 class TestIO:
@@ -722,36 +682,118 @@ class TestIO:
         with pytest.raises(ValueError, match="CRS of the target table"):
             write_postgis(df_nybb2, con=engine, name=table, if_exists="append")
 
-    def test_write_postgis_wrong_geometry_column(
-        self,
-        engine_postgis,
-        df_nybb: GeoDataFrame,
-    ):
-        """
-        Tests that an exception is raised when attempting to append to an existing
-        PostGIS table with wrong geometry column name.
-        """
-        with pytest.raises(
-            ValueError,
-            match="Cannot find Geometry or Geography column",
-        ):
-            write_postgis(
-                df_nybb.rename_geometry("_wrong_column_name_"),
-                name="nybb",
+    def test_get_srid_and_geom_from_postgis_errors(engine_postgis):
+        from sqlalchemy.exc import NoSuchTableError
+
+        # Test error: table doesn't exist
+        with pytest.raises(NoSuchTableError, match=r"table.+doesn't exist in.+"):
+            get_srid_and_geom_from_postgis(
+                name="TABLE_NAME_WHICH_DOESNT_EXIST",
                 con=engine_postgis,
-                if_exists="append",
             )
 
-    def test_write_postgis_with_geography_column(
-        self,
-        engine_postgis,
-        df_geog: GeoDataFrame,
-        create_postgis_geography_table: str,
-    ):
+        # Test error: multiple Geometry/Geography columns
+        table_name = "test_table_multiple_geom"
+        for gtype in ["geometry", "geography"]:
+            with get_conn(engine_postgis) as connection:
+                connection.execute(
+                    f"CREATE TABLE {table_name.upper()} "
+                    f"("
+                    f"id INTEGER PRIMARY KEY, "
+                    f"name VARCHAR, "
+                    f"size INTEGER, "
+                    f"{gtype[:4]}1 {gtype.upper()}(POINT,4326), "
+                    f"{gtype[:4]}2 {gtype.upper()}(POINT,4326)"
+                    f")"
+                )
+            with pytest.raises(
+                ValueError,
+                match=rf"found multiple {gtype} columns in {table_name} table.+",
+            ):
+                get_srid_and_geom_from_postgis(name=table_name, con=engine_postgis)
+            with get_conn(engine_postgis) as connection:
+                connection.execute(f"DROP TABLE {table_name.upper()}")
+
+        # Test error: table without Geometry/Geography columns
+        with get_conn(engine_postgis) as connection:
+            connection.execute(
+                f"CREATE TABLE {table_name.upper()} "
+                f"("
+                f"id INTEGER PRIMARY KEY, "
+                f"name VARCHAR, "
+                f"size INTEGER"
+                f")"
+            )
+            with pytest.raises(
+                ValueError,
+                match=r"Cannot find Geometry or Geography column.+",
+            ):
+                get_srid_and_geom_from_postgis(name=table_name, con=engine_postgis)
+            with get_conn(engine_postgis) as connection:
+                connection.execute(f"DROP TABLE {table_name.upper()}")
+
+    @pytest.mark.parametrize(
+        "gtype,srid",
+        [
+            ("geometry", 4326),
+            ("geometry", 6539),
+            ("geography", 4326),
+        ],
+    )
+    def test_get_srid_and_geom_from_postgis(engine_postgis, gtype, srid):
+        from geoalchemy2 import Geography, Geometry
+
+        geom_class = {
+            "geography": Geography,
+            "geometry": Geometry,
+        }[gtype]
+
+        table_name = "test_table_get_srid_geom"
+
+        # Create test table
+        column_name = gtype[:4]
+        with get_conn(engine_postgis) as connection:
+            connection.execute(
+                f"CREATE TABLE {table_name.upper()} "
+                f"("
+                f"id INTEGER PRIMARY KEY, "
+                f"name VARCHAR, "
+                f"size INTEGER, "
+                f"{column_name} {gtype.upper()}(POINT,{srid:d}), "
+                f")"
+            )
+
+        # Execute function
+        db_column_name, db_srid, db_geom_obj = get_srid_and_geom_from_postgis(
+            name=table_name, con=connection
+        )
+
+        # Compare values
+        assert db_column_name == column_name
+        assert db_srid == srid
+        assert isinstance(db_geom_obj, geom_class)
+
+        # Clean up the table
+        with get_conn(engine_postgis) as connection:
+            connection.execute(f"DROP TABLE {table_name.upper()}")
+
+    def test_write_postgis_with_geography_column(self, engine_postgis):
         """
         Tests writing to an existing PostGIS table with Geography column.
         """
-        table_name = create_postgis_geography_table
+        from shapely.geometry import Point
+
+        df_geog = GeoDataFrame(
+            data={
+                "id": [1, 2],
+                "name": ["bar", "baz"],
+                "size": [12, 7],
+            },
+            geometry=[Point(-40, 75), Point(63, -30)],
+            crs="EPSG:4326",
+        ).rename_geometry("geog")
+
+        table_name = "test_table_with_geog_column"
         write_postgis(
             df_geog,
             name=table_name,
@@ -760,15 +802,11 @@ class TestIO:
         )
 
         df_geog_read = read_postgis(
-            sql=f"SELECT * FROM {table_name}",
+            sql=f"SELECT * FROM {table_name.upper()}",
             con=engine_postgis,
             geom_col=df_geog.geometry.name,
             crs=df_geog.crs,
         )
-
-        # Sort both dataframes by "id" prior to comparison
-        df_geog = df_geog.sort_values(by="id", ascending=True)
-        df_geog_read = df_geog_read.sort_values(by="id", ascending=True)
 
         # Compare geometries
         assert get_srid_from_crs(df_geog) == get_srid_from_crs(df_geog_read)
