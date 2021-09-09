@@ -780,7 +780,7 @@ class TestIO:
                 f"id INTEGER PRIMARY KEY, "
                 f"name VARCHAR, "
                 f"size INTEGER, "
-                f"{column_name} {gtype.upper()}(POINT,{srid:d}), "
+                f"{column_name} {gtype.upper()}(POINT,{srid:d})"
                 f")"
             ),
             table_name=table_name,
