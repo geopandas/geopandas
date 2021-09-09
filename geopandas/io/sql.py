@@ -144,7 +144,7 @@ def _get_srid_and_geom_from_postgis(name, con, schema=None, geom_name=None):
             )
             if geom_name is None:
                 result = connection.execute(query).all()
-                if result is not None:
+                if result is not None and len(result) > 0:
                     if len(result) > 1:
                         raise ValueError(
                             f"found multiple {gtype} columns in {name} table, "
