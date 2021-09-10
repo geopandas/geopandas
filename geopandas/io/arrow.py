@@ -32,6 +32,14 @@ METADATA_VERSION = "0.1.0"
 # }
 
 
+def _is_fsspec_url(url):
+    return (
+        isinstance(url, str)
+        and "://" in url
+        and not url.startswith(("http://", "https://"))
+    )
+
+
 def _create_metadata(df):
     """Create and encode geo metadata dict.
 
@@ -339,7 +347,7 @@ def _arrow_to_geopandas(table):
     return GeoDataFrame(df, geometry=geometry)
 
 
-def _read_parquet(path, columns=None, **kwargs):
+def _read_parquet(path, columns=None, storage_options=None, **kwargs):
     """
     Load a Parquet object from the file path, returning a GeoDataFrame.
 
@@ -366,6 +374,12 @@ def _read_parquet(path, columns=None, **kwargs):
         geometry read from the file will be set as the geometry column
         of the returned GeoDataFrame.  If no geometry columns are present,
         a ``ValueError`` will be raised.
+    storage_options : dict, optional
+        Extra options that make sense for a particular storage connection, e.g. host,
+        port, username, password, etc. For HTTP(S) URLs the key-value pairs are
+        forwarded to urllib as header options. For other URLs (e.g. starting with
+        "s3://", and "gcs://") the key-value pairs are forwarded to fsspec. Please
+        see fsspec and urllib for more details.
     **kwargs
         Any additional kwargs passed to pyarrow.parquet.read_table().
 
@@ -388,9 +402,16 @@ def _read_parquet(path, columns=None, **kwargs):
     parquet = import_optional_dependency(
         "pyarrow.parquet", extra="pyarrow is required for Parquet support."
     )
+    filesystem = kwargs.get("filesystem")
+
+    if _is_fsspec_url(path) and filesystem is None:
+        fsspec = import_optional_dependency(
+            "fsspec", extra="fsspec is requred for 'storage_options'."
+        )
+        filesystem, path = fsspec.core.url_to_fs(path, **(storage_options or {}))
 
     kwargs["use_pandas_metadata"] = True
-    table = parquet.read_table(path, columns=columns, **kwargs)
+    table = parquet.read_table(path, columns=columns, filesystem=filesystem, **kwargs)
 
     return _arrow_to_geopandas(table)
 

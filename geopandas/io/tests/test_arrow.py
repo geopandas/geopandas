@@ -478,3 +478,27 @@ def test_feather_arrow_version(tmpdir):
         ImportError, match="pyarrow >= 0.17 required for Feather support"
     ):
         df.to_feather(filename)
+
+
+def test_fsspec_url():
+    fsspec = pytest.importorskip("fsspec")
+    import fsspec.implementations.memory
+
+    class MyMemoryFileSystem(fsspec.implementations.memory.MemoryFileSystem):
+        # Simple fsspec filesystem that adds a required keyword.
+        # Attempting to use this filesystem without the keyword will raise an exception.
+        def __init__(self, is_set, *args, **kwargs):
+            self.is_set = is_set
+            super().__init__(*args, **kwargs)
+
+    fsspec.register_implementation("memory", MyMemoryFileSystem, clobber=True)
+    memfs = MyMemoryFileSystem(is_set=True)
+
+    test_dataset = "naturalearth_lowres"
+    df = GeoDataFrame(read_file(get_path(test_dataset)))
+
+    with memfs.open("data.parquet", "wb") as f:
+        df.to_parquet(f)
+
+    result = read_parquet("memory://data.parquet", storage_options=dict(is_set=True))
+    assert_geodataframe_equal(result, df)
