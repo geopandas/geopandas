@@ -58,8 +58,38 @@ class TestMakeGridSquare:
         )
         assert_geoseries_equal(out, exp_out)
 
+    def test_square_polygons(self, square):
+        cell_size = 1
+        out = make_grid(square, cell_size, what="polygons", cell_type="square")
+        print(out)
+        exp_out = GeoSeries(
+            [
+                geometry.Polygon([(0, 0), (1, 0), (1, 1), (0, 1)]),
+                geometry.Polygon([(0, 1), (1, 1), (1, 2), (0, 2)]),
+                geometry.Polygon([(1, 0), (2, 0), (2, 1), (1, 1)]),
+                geometry.Polygon([(1, 1), (2, 1), (2, 2), (1, 2)]),
+            ]
+        )
+        assert_geoseries_equal(out, exp_out)
+
     def test_square_cellsize_too_large(self, square):
         cell_size = 5
         out = make_grid(square, cell_size, what="centers", cell_type="square")
         exp_out = GeoSeries([])
         assert_geoseries_equal(out, exp_out)
+
+
+"""
+class TestMakeGridHexagon:
+    def test_hexagon_centers(self, square):
+        cell_size = 1
+        out = make_grid(square, cell_size, what="centers", cell_type="hexagon")
+        exp_out = GeoSeries(
+            [
+                geometry.Point(2, 0),
+                geometry.Point(0.5, np.sqrt(3) / 2),
+                geometry.Point(2, np.sqrt(3)),
+            ]
+        )
+        assert_geoseries_equal(out, exp_out)
+"""
