@@ -11,8 +11,32 @@ from geopandas.array import from_shapely
 def make_grid(
     polygon, cell_size, offset=(0, 0), crs=None, what="polygons", cell_type="square",
 ):
+    """Provides the centers, corners, or polygons of a square or hexagonal grid.
+
+        Parameters
+        ------------
+        polygon : geometry.Polygon
+            Polygon within its boundaries the grid is created
+        cell_size : float
+            Side length of the square or the hexagon
+        offset : tuple
+            x, y shift of the grid realtive to its original position.
+        what : str, one of "centers", "corners", "polygons"
+            return type
+        cell_type : str, one of "square", "hexagon"
+            grid type
+
+        Returns
+        -------
+        GeoSeries
+            The returned GeoSeries contains the centers/corners of the grid or the
+            polygons of the grid cells.
+
+        """
+
     # TODO Consider adding `n` as a parameter to stick with R implementation.
     # However, n introduces redundancy.
+    # TODO Extend functionality to Geoseries and GeoDataframe
 
     # Run basic checks
     _basic_checks(polygon, cell_size, offset, what, cell_type)
@@ -201,7 +225,6 @@ def _basic_checks(polygon, cell_size, offset, what, cell_type):
         grid type
     """
 
-    # TODO Check for cell_size larger than poylgon boounds
     # TODO Check for offset beyond polygon bounds
 
     if not isinstance(polygon, geometry.Polygon):
