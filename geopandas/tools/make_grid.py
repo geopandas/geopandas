@@ -1,17 +1,11 @@
 import warnings
 
-import pandas as pd
 import numpy as np
 
 from shapely import geometry
-from shapely.geometry.polygon import Polygon
 
-from geopandas import GeoDataFrame, GeoSeries, points_from_xy
+from geopandas import GeoSeries, points_from_xy
 from geopandas.array import from_shapely
-
-
-# Delete again
-import matplotlib.pyplot as plt
 
 
 def make_grid(
@@ -26,18 +20,24 @@ def make_grid(
     bounds = np.array(polygon.bounds)
 
     if cell_type == "square":
-        x_coords_corn = np.arange(bounds[0], bounds[2] + cell_size, cell_size)
-        y_coords_corn = np.arange(bounds[1], bounds[3] + cell_size, cell_size)
+        x_coords_corn = np.arange(
+            bounds[0] + offset[0], bounds[2] + cell_size + offset[0], cell_size
+        )
+        y_coords_corn = np.arange(
+            bounds[1] + offset[1], bounds[3] + cell_size + offset[1], cell_size
+        )
         xv, yv = np.meshgrid(x_coords_corn, y_coords_corn)
-        sq_corners_np = np.array([xv, yv]).T.reshape(-1, 2)
 
         if what == "corners":
+            sq_corners_np = np.array([xv, yv]).T.reshape(-1, 2)
             sq_corners = points_from_xy(sq_corners_np[:, 0], sq_corners_np[:, 1])
 
             return GeoSeries(sq_corners[sq_corners.intersects(polygon)])
 
         elif what == "centers":
-            sq_centers_np = sq_corners_np + cell_size / 2
+            sq_centers_np = (
+                np.array([xv[:-1, :-1], yv[:-1, :-1]]).T.reshape(-1, 2) + cell_size / 2
+            )
             sq_centers = points_from_xy(sq_centers_np[:, 0], sq_centers_np[:, 1])
 
             return GeoSeries(sq_centers[sq_centers.intersects(polygon)])
@@ -53,9 +53,10 @@ def make_grid(
                 axis=1,
             )
 
-            sq_polygons = [geometry.Polygon(sq_set) for sq_set in sq_coords]
+            sq_polygons_np = np.array(
+                [geometry.Polygon(sq_set) for sq_set in sq_coords]
+            )
 
-            sq_polygons_np = np.array(sq_polygons)
             sq_polygons = from_shapely(sq_polygons_np)
 
             return GeoSeries(sq_polygons[sq_polygons.intersects(polygon)])
@@ -67,10 +68,12 @@ def make_grid(
         dx = cell_size
         dy = cell_size * np.sqrt(3) / 2
 
-        x_coords = np.arange(bounds[0], bounds[2] + 2 * cell_size, dx)
+        x_coords = np.arange(
+            bounds[0] + offset[0], bounds[2] + 2 * cell_size + offset[0], dx
+        )
         y_coords = np.arange(
-            bounds[1] - np.sqrt(3) / 2 * cell_size,
-            bounds[3] + np.sqrt(3) * cell_size,
+            bounds[1] - np.sqrt(3) / 2 * cell_size + offset[1],
+            bounds[3] + np.sqrt(3) * cell_size + offset[1],
             dy,
         )
         xv, yv = np.meshgrid(x_coords, y_coords)
