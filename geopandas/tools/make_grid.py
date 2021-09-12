@@ -69,7 +69,7 @@ def make_grid(
         dy = cell_size * np.sqrt(3) / 2
 
         x_coords = np.arange(
-            bounds[0] + offset[0], bounds[2] + 2 * cell_size + offset[0], dx
+            bounds[0] + offset[0], bounds[2] + 3 * cell_size + offset[0], dx
         )
         y_coords = np.arange(
             bounds[1] - np.sqrt(3) / 2 * cell_size + offset[1],
@@ -145,8 +145,8 @@ def _hex_polygon_corners(xv, yv, index_0=(0, 0)):
             # Bottom right corner of the hexagon
             np.array(
                 [
-                    xv[i_y0:max_i_y:2, (i_x0 + 1) :: 3],
-                    yv[i_y0:max_i_y:2, (i_x0 + 1) :: 3],
+                    xv[i_y0:max_i_y:2, (i_x0 + 1) : max_i_x : 3],
+                    yv[i_y0:max_i_y:2, (i_x0 + 1) : max_i_x : 3],
                 ]
             ).T.reshape(-1, 1, 2),
             # Middle right corner of the hexagon
@@ -159,8 +159,8 @@ def _hex_polygon_corners(xv, yv, index_0=(0, 0)):
             # Top right corner of the hexagon
             np.array(
                 [
-                    xv[(i_y0 + 2) :: 2, (i_x0 + 1) :: 3],
-                    yv[(i_y0 + 2) :: 2, (i_x0 + 1) :: 3],
+                    xv[(i_y0 + 2) :: 2, (i_x0 + 1) : max_i_x : 3],
+                    yv[(i_y0 + 2) :: 2, (i_x0 + 1) : max_i_x : 3],
                 ]
             ).T.reshape(-1, 1, 2),
             # Top left corner of the hexagon
