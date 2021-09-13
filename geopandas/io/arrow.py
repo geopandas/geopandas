@@ -434,7 +434,7 @@ def _read_parquet(path, columns=None, storage_options=None, **kwargs):
         )
         filesystem, path = fsspec.core.url_to_fs(path, **(storage_options or {}))
 
-    if filesystem is None:
+    if filesystem is None and storage_options:
         raise ValueError(
             "Cannot provide 'storage_options' with non-fsspec path '{}'".format(path)
         )
