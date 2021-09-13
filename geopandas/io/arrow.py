@@ -380,6 +380,11 @@ def _read_parquet(path, columns=None, storage_options=None, **kwargs):
         forwarded to urllib as header options. For other URLs (e.g. starting with
         "s3://", and "gcs://") the key-value pairs are forwarded to fsspec. Please
         see fsspec and urllib for more details.
+
+        When no storage options are provided and a filesystem is implemented by
+        both ``pyarrow.fs`` and ``fsspec`` (e.g. "s3://") then the ``pyarrow.fs``
+        filesystem is preferred. Provide the instantiated fsspec filesystem using
+        the ``filesystem`` keyword if you wish to use its implementation.
     **kwargs
         Any additional kwargs passed to pyarrow.parquet.read_table().
 
