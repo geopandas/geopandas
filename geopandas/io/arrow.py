@@ -405,6 +405,23 @@ def _read_parquet(path, columns=None, storage_options=None, **kwargs):
     # TODO(https://github.com/pandas-dev/pandas/pull/41194): see if pandas
     # adds filesystem as a keyword and match that.
     filesystem = kwargs.pop("filesystem", None)
+    import pyarrow
+
+    if (
+        isinstance(path, str)
+        and storage_options is None
+        and filesystem is None
+        and LooseVersion(pyarrow.__version__) >= "5.0.0"
+    ):
+        # Use the native pyarrow filesystem if possible.
+        try:
+            from pyarrow.fs import FileSystem
+
+            filesystem, path = FileSystem.from_uri(path)
+        except Exception:
+            # fallback to use get_handle / fsspec for filesystems
+            # that pyarrow doesn't support
+            pass
 
     if _is_fsspec_url(path) and filesystem is None:
         fsspec = import_optional_dependency(
