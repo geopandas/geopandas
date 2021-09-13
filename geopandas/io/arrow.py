@@ -402,13 +402,20 @@ def _read_parquet(path, columns=None, storage_options=None, **kwargs):
     parquet = import_optional_dependency(
         "pyarrow.parquet", extra="pyarrow is required for Parquet support."
     )
-    filesystem = kwargs.get("filesystem")
+    # TODO(https://github.com/pandas-dev/pandas/pull/41194): see if pandas
+    # adds filesystem as a keyword and match that.
+    filesystem = kwargs.pop("filesystem", None)
 
     if _is_fsspec_url(path) and filesystem is None:
         fsspec = import_optional_dependency(
             "fsspec", extra="fsspec is requred for 'storage_options'."
         )
         filesystem, path = fsspec.core.url_to_fs(path, **(storage_options or {}))
+
+    if filesystem is None:
+        raise ValueError(
+            "Cannot provide 'storage_options' with non-fsspec path '{}'".format(path)
+        )
 
     kwargs["use_pandas_metadata"] = True
     table = parquet.read_table(path, columns=columns, filesystem=filesystem, **kwargs)

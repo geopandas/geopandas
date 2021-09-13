@@ -495,10 +495,19 @@ def test_fsspec_url():
     memfs = MyMemoryFileSystem(is_set=True)
 
     test_dataset = "naturalearth_lowres"
-    df = GeoDataFrame(read_file(get_path(test_dataset)))
+    df = read_file(get_path(test_dataset))
 
     with memfs.open("data.parquet", "wb") as f:
         df.to_parquet(f)
 
     result = read_parquet("memory://data.parquet", storage_options=dict(is_set=True))
     assert_geodataframe_equal(result, df)
+
+    result = read_parquet("memory://data.parquet", filesystem=memfs)
+    assert_geodataframe_equal(result, df)
+
+
+def test_non_fsspec_url_with_storage_options_raises():
+    with pytest.raises(ValueError, match="storage_options"):
+        test_dataset = "naturalearth_lowres"
+        read_parquet(get_path(test_dataset), storage_options={"foo": "bar"})
