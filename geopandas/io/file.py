@@ -8,20 +8,22 @@ import pyproj
 from shapely.geometry import mapping
 from shapely.geometry.base import BaseGeometry
 
+IMPORT_ERRORS = (ImportError, AttributeError)
+
 try:
     import fiona
 
     fiona_import_error = None
-except ImportError as err:
+except IMPORT_ERRORS as err:
     fiona = None
     fiona_import_error = str(err)
 
 try:
     from fiona import Env as fiona_env
-except ImportError:
+except IMPORT_ERRORS:
     try:
         from fiona import drivers as fiona_env
-    except ImportError:
+    except IMPORT_ERRORS:
         fiona_env = None
 
 from geopandas import GeoDataFrame, GeoSeries
