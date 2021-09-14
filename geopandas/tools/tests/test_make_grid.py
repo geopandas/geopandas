@@ -31,6 +31,9 @@ class TestBasicChecks:
             make_grid(polygon, 1)
 
 
+# TODO create shape with non rect boarders, test empty polygon, polygon with negative coordinates
+
+
 class TestMakeGridSquare:
     def test_square_centers(self, square):
         cell_size = 1
@@ -79,7 +82,6 @@ class TestMakeGridSquare:
         assert_geoseries_equal(out, exp_out)
 
 
-"""
 class TestMakeGridHexagon:
     def test_hexagon_centers(self, square):
         cell_size = 1
@@ -91,5 +93,32 @@ class TestMakeGridHexagon:
                 geometry.Point(2, np.sqrt(3)),
             ]
         )
-        assert_geoseries_equal(out, exp_out)
-"""
+        assert_geoseries_equal(out, exp_out, check_less_precise=True)
+
+    def test_hexagon_corners(self, square):
+        cell_size = 1
+        out = make_grid(square, cell_size, what="corners", cell_type="hexagon")
+        exp_out = GeoSeries(
+            [
+                geometry.Point(0, 0),
+                geometry.Point(1, 0),
+                geometry.Point(1.5, np.sqrt(3) / 2),
+                geometry.Point(0, np.sqrt(3)),
+                geometry.Point(1, np.sqrt(3)),
+            ]
+        )
+        assert_geoseries_equal(out, exp_out, check_less_precise=True)
+
+    # TODO Add polygon Test
+    """def test_hexagon_polygons(self, square):
+        cell_size = 1
+        out = make_grid(square, cell_size, what="polygons", cell_type="hexagon")
+        exp_out = GeoSeries(
+            [
+                geometry.Polygon(),
+                geometry.Polygon(),
+                geometry.Polygon(),
+            ]
+        )
+        assert_geoseries_equal(out, exp_out, check_less_precise=True)"""
+
