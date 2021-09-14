@@ -1,5 +1,14 @@
 from distutils.version import LooseVersion
 
+# Adapted from pandas.io.common
+from urllib.request import urlopen as _urlopen
+from urllib.parse import (
+    urlparse as parse_url,
+    uses_netloc,
+    uses_params,
+    uses_relative,
+)
+
 import warnings
 import numpy as np
 import pandas as pd
@@ -26,13 +35,7 @@ except IMPORT_ERRORS:
     except IMPORT_ERRORS:
         fiona_env = None
 
-from geopandas import GeoDataFrame, GeoSeries
-
-
-# Adapted from pandas.io.common
-from urllib.request import urlopen as _urlopen
-from urllib.parse import urlparse as parse_url
-from urllib.parse import uses_netloc, uses_params, uses_relative
+from geopandas import GeoDataFrame, GeoSeries  # noqa E402
 
 
 _VALID_URLS = set(uses_relative + uses_netloc + uses_params)
