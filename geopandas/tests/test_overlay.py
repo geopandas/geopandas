@@ -333,8 +333,12 @@ def test_bad_how(dfs):
         overlay(df1, df2, how="spandex")
 
 
-@pytest.mark.xfail(pandas_133, reason="Regression in pandas 1.3.3 (GH #2101)")
 def test_duplicate_column_name(dfs, how):
+    if pandas_133 and how in ["symmetric_difference", "identity", "union"]:
+        pytest.xfail("Regression in pandas 1.3.3 (GH #2101)")
+
+    if how == "difference":
+        pytest.skip("Difference uses columns from one df only.")
     df1, df2 = dfs
     df2r = df2.rename(columns={"col2": "col1"})
     res = overlay(df1, df2r, how=how)
