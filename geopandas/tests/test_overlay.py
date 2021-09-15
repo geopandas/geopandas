@@ -361,6 +361,11 @@ def test_preserve_crs(dfs, how):
     result = overlay(df1, df2, how=how)
     assert result.crs == crs
 
+
+def test_crs_mismatch(dfs, how):
+    if pandas_133 and how in ["symmetric_difference", "identity", "union"]:
+        pytest.xfail("Regression in pandas 1.3.3 (GH #2101)")
+
     df1, df2 = dfs
     df1.crs = 4326
     df2.crs = 3857
