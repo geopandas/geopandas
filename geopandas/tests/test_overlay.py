@@ -334,10 +334,10 @@ def test_bad_how(dfs):
 
 
 @pytest.mark.xfail(pandas_133, reason="Regression in pandas 1.3.3 (GH #2101)")
-def test_duplicate_column_name(dfs):
+def test_duplicate_column_name(dfs, how):
     df1, df2 = dfs
     df2r = df2.rename(columns={"col2": "col1"})
-    res = overlay(df1, df2r, how="union")
+    res = overlay(df1, df2r, how=how)
     assert ("col1_1" in res.columns) and ("col1_2" in res.columns)
 
 
