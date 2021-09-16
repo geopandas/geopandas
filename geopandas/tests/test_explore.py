@@ -578,7 +578,10 @@ class TestExplore:
             '"https://a.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png"'
             in out_str
         )
-        assert '"attribution":"(C)OpenStreetMapcontributors(C)CARTO"' in out_str
+        assert (
+            'attribution":"\\u0026copy;\\u003cahref=\\"https://www.openstreetmap.org'
+            in out_str
+        )
         assert '"maxNativeZoom":19,"maxZoom":19,"minZoom":0' in out_str
 
     def test_linearrings(self):

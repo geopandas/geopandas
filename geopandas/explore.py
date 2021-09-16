@@ -294,7 +294,7 @@ GON (((180.00000 -16.06713, 180.00000...
 
         # xyzservices.providers object
         if hasattr(tiles, "build_url"):
-            attr = attr if attr else tiles.attribution
+            attr = attr if attr else tiles.html_attribution
             map_kwds["min_zoom"] = tiles.get("min_zoom", 0)
             map_kwds["max_zoom"] = tiles.get("max_zoom", 18)
             tiles = tiles.build_url()
