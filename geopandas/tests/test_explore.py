@@ -454,16 +454,6 @@ class TestExplore:
         assert 'case"119":return{"color":"#414287","fillColor":"#414287"' in out_str
         assert 'case"3":return{"color":"#482173","fillColor":"#482173"' in out_str
 
-        with pytest.warns(
-            UserWarning, match="vmin' cannot be higher than minimum value"
-        ):
-            m = df.explore("range", vmin=100000)
-
-        with pytest.warns(
-            UserWarning, match="'vmax' cannot be lower than maximum value"
-        ):
-            m = df.explore("range", vmax=10)
-
     def test_missing_vals(self):
         m = self.missing.explore("continent")
         assert '"fillColor":null' in self._fetch_map_string(m)

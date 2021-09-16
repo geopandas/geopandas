@@ -1,5 +1,4 @@
 from statistics import mean
-from warnings import warn
 
 import geopandas
 from shapely.geometry import LineString
@@ -130,10 +129,10 @@ def _explore(
         Number of classes
     vmin : None or float (default None)
         Minimum value of ``cmap``. If ``None``, the minimum data value
-        in the column to be plotted is used. Cannot be higher than minimum data value.
+        in the column to be plotted is used.
     vmax : None or float (default None)
         Maximum value of ``cmap``. If ``None``, the maximum data value
-        in the column to be plotted is used. Cannot be lower than maximum data value.
+        in the column to be plotted is used.
     width : pixel int or percentage string (default: '100%')
         Width of the folium :class:`~folium.folium.Map`. If the argument
         m is given explicitly, width is ignored.
@@ -224,7 +223,7 @@ def _explore(
             Maximum number of colorbar tick labels (requires branca>=0.5.0)
 
     **kwargs : dict
-        Additional options to be passed on to the folium.
+        Additional options to be passed on to the folium object.
 
     Returns
     -------
@@ -323,7 +322,7 @@ GON (((180.00000 -16.06713, 180.00000...
         if pd.api.types.is_list_like(column):
             if len(column) != gdf.shape[0]:
                 raise ValueError(
-                    "The GeoDataframe and given column have different number of rows."
+                    "The GeoDataFrame and given column have different number of rows."
                 )
             else:
                 column_name = "__plottable_column"
@@ -380,23 +379,6 @@ GON (((180.00000 -16.06713, 180.00000...
         else:
             vmin = gdf[column].min() if not vmin else vmin
             vmax = gdf[column].max() if not vmax else vmax
-
-            if vmin > gdf[column].min():
-                warn(
-                    "'vmin' cannot be higher than minimum value. "
-                    "Setting vmin to minimum.",
-                    UserWarning,
-                    stacklevel=3,
-                )
-                vmin = gdf[column].min()
-            if vmax < gdf[column].max():
-                warn(
-                    "'vmax' cannot be lower than maximum value. "
-                    "Setting vmax to maximum.",
-                    UserWarning,
-                    stacklevel=3,
-                )
-                vmax = gdf[column].max()
 
             # get bins
             if scheme is not None:
