@@ -53,6 +53,8 @@ def dfs_index(request, dfs):
     params=["union", "intersection", "difference", "symmetric_difference", "identity"]
 )
 def how(request):
+    if pandas_133 and request.param in ["symmetric_difference", "identity", "union"]:
+        pytest.xfail("Regression in pandas 1.3.3 (GH #2101)")
     return request.param
 
 
@@ -67,9 +69,6 @@ def test_overlay(dfs_index, how):
     Results obtained using QGIS 2.16 (Vector -> Geoprocessing Tools ->
     Intersection / Union / ...), saved to GeoJSON
     """
-    if pandas_133 and how in ["symmetric_difference", "identity", "union"]:
-        pytest.xfail("Regression in pandas 1.3.3 (GH #2101)")
-
     df1, df2 = dfs_index
     result = overlay(df1, df2, how=how)
 
@@ -110,9 +109,6 @@ def test_overlay(dfs_index, how):
 
 @pytest.mark.filterwarnings("ignore:GeoSeries crs mismatch:UserWarning")
 def test_overlay_nybb(how):
-    if pandas_133 and how in ["symmetric_difference", "identity", "union"]:
-        pytest.xfail("Regression in pandas 1.3.3 (GH #2101)")
-
     polydf = read_file(geopandas.datasets.get_path("nybb"))
 
     # The circles have been constructed and saved at the time the expected
@@ -245,9 +241,6 @@ def test_overlay_overlap(how):
     (Vector -> Geoprocessing Tools -> Intersection / Union / ...),
     saved to GeoJSON.
     """
-    if pandas_133 and how in ["symmetric_difference", "identity", "union"]:
-        pytest.xfail("Regression in pandas 1.3.3 (GH #2101)")
-
     df1 = read_file(os.path.join(DATA, "overlap", "df1_overlap.geojson"))
     df2 = read_file(os.path.join(DATA, "overlap", "df2_overlap.geojson"))
 
@@ -280,9 +273,6 @@ def test_overlay_overlap(how):
 
 @pytest.mark.parametrize("other_geometry", [False, True])
 def test_geometry_not_named_geometry(dfs, how, other_geometry):
-    if pandas_133 and how in ["symmetric_difference", "identity", "union"]:
-        pytest.xfail("Regression in pandas 1.3.3 (GH #2101)")
-
     # Issue #306
     # Add points and flip names
     df1, df2 = dfs
@@ -334,9 +324,6 @@ def test_bad_how(dfs):
 
 
 def test_duplicate_column_name(dfs, how):
-    if pandas_133 and how in ["symmetric_difference", "identity", "union"]:
-        pytest.xfail("Regression in pandas 1.3.3 (GH #2101)")
-
     if how == "difference":
         pytest.skip("Difference uses columns from one df only.")
     df1, df2 = dfs
@@ -353,9 +340,6 @@ def test_geoseries_warning(dfs):
 
 
 def test_preserve_crs(dfs, how):
-    if pandas_133 and how in ["symmetric_difference", "identity", "union"]:
-        pytest.xfail("Regression in pandas 1.3.3 (GH #2101)")
-
     df1, df2 = dfs
     result = overlay(df1, df2, how=how)
     assert result.crs is None
@@ -367,9 +351,6 @@ def test_preserve_crs(dfs, how):
 
 
 def test_crs_mismatch(dfs, how):
-    if pandas_133 and how in ["symmetric_difference", "identity", "union"]:
-        pytest.xfail("Regression in pandas 1.3.3 (GH #2101)")
-
     df1, df2 = dfs
     df1.crs = 4326
     df2.crs = 3857
@@ -475,9 +456,6 @@ def test_overlay_strict(how, keep_geom_type, geom_types):
                     exp.to_file('poly_point_{p}_{s}.geojson'.format(p=p, s=s),
                                 driver='GeoJSON')
     """
-    if pandas_133 and how in ["symmetric_difference", "identity", "union"]:
-        pytest.xfail("Regression in pandas 1.3.3 (GH #2101)")
-
     polys1 = GeoSeries(
         [
             Polygon([(1, 1), (3, 1), (3, 3), (1, 3)]),

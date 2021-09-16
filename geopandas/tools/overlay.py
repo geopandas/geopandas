@@ -179,7 +179,7 @@ def overlay(df1, df2, how="intersection", keep_geom_type=None, make_valid=True):
     >>> df1 = geopandas.GeoDataFrame({'geometry': polys1, 'df1_data':[1,2]})
     >>> df2 = geopandas.GeoDataFrame({'geometry': polys2, 'df2_data':[1,2]})
 
-    >>> geopandas.overlay(df1, df2, how='union') # doctest: +SKIP
+    >>> geopandas.overlay(df1, df2, how='union')
        df1_data  df2_data                                           geometry
     0       1.0       1.0  POLYGON ((2.00000 2.00000, 2.00000 1.00000, 1....
     1       2.0       1.0  POLYGON ((2.00000 2.00000, 2.00000 3.00000, 3....
@@ -195,7 +195,7 @@ def overlay(df1, df2, how="intersection", keep_geom_type=None, make_valid=True):
     1         2         1  POLYGON ((2.00000 2.00000, 2.00000 3.00000, 3....
     2         2         2  POLYGON ((4.00000 4.00000, 4.00000 3.00000, 3....
 
-    >>> geopandas.overlay(df1, df2, how='symmetric_difference') # doctest: +SKIP
+    >>> geopandas.overlay(df1, df2, how='symmetric_difference')
        df1_data  df2_data                                           geometry
     0       1.0       NaN  POLYGON ((2.00000 0.00000, 0.00000 0.00000, 0....
     1       2.0       NaN  MULTIPOLYGON (((4.00000 3.00000, 4.00000 2.000...
@@ -207,7 +207,7 @@ def overlay(df1, df2, how="intersection", keep_geom_type=None, make_valid=True):
     0  POLYGON ((2.00000 0.00000, 0.00000 0.00000, 0....         1
     1  MULTIPOLYGON (((3.00000 3.00000, 4.00000 3.000...         2
 
-    >>> geopandas.overlay(df1, df2, how='identity') # doctest: +SKIP
+    >>> geopandas.overlay(df1, df2, how='identity')
        df1_data  df2_data                                           geometry
     0       1.0       1.0  POLYGON ((2.00000 2.00000, 2.00000 1.00000, 1....
     1       2.0       1.0  POLYGON ((2.00000 2.00000, 2.00000 3.00000, 3....
