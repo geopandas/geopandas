@@ -197,7 +197,7 @@ Spatial databases
 Writing to PostGIS::
 
     from sqlalchemy import create_engine
-    db_connection_url = "postgres://myusername:mypassword@myhost:5432/mydatabase";
+    db_connection_url = "postgresql://myusername:mypassword@myhost:5432/mydatabase";
     engine = create_engine(db_connection_url)
     countries_gdf.to_postgis("countries_table", con=engine)
 

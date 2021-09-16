@@ -123,8 +123,12 @@ def _query(data, forward, provider, throttle_time, **kwargs):
     from geopy.geocoders.base import GeocoderQueryError
     from geopy.geocoders import get_geocoder_for_service
 
-    if not isinstance(data, pd.Series):
-        data = pd.Series(data)
+    if forward:
+        if not isinstance(data, pd.Series):
+            data = pd.Series(data)
+    else:
+        if not isinstance(data, geopandas.GeoSeries):
+            data = geopandas.GeoSeries(data)
 
     if isinstance(provider, str):
         provider = get_geocoder_for_service(provider)

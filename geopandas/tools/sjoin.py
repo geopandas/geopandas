@@ -7,7 +7,13 @@ from geopandas.array import _check_crs, _crs_mismatch_warn
 
 
 def sjoin(
-    left_df, right_df, how="inner", op="intersects", lsuffix="left", rsuffix="right"
+    left_df,
+    right_df,
+    how="inner",
+    predicate="intersects",
+    lsuffix="left",
+    rsuffix="right",
+    **kwargs,
 ):
     """Spatial join of two GeoDataFrames.
 
@@ -24,11 +30,12 @@ def sjoin(
         * 'right': use keys from right_df; retain only right_df geometry column
         * 'inner': use intersection of keys from both dfs; retain only
           left_df geometry column
-    op : string, default 'intersects'
+    predicate : string, default 'intersects'
         Binary predicate. Valid values are determined by the spatial index used.
         You can check the valid values in left_df or right_df as
         ``left_df.sindex.valid_query_predicates`` or
         ``right_df.sindex.valid_query_predicates``
+        Replaces deprecated ``op`` parameter.
     lsuffix : string, default 'left'
         Suffix to apply to overlapping column names (left GeoDataFrame).
     rsuffix : string, default 'right'
@@ -84,6 +91,30 @@ stria    AUT    416600.0
     Every operation in GeoPandas is planar, i.e. the potential third
     dimension is not taken into account.
     """
+    if "op" in kwargs:
+        op = kwargs.pop("op")
+        deprecation_message = (
+            "The `op` parameter is deprecated and will be removed"
+            " in a future release. Please use the `predicate` parameter"
+            " instead."
+        )
+        if predicate != "intersects" and op != predicate:
+            override_message = (
+                "A non-default value for `predicate` was passed"
+                f' (got `predicate="{predicate}"`'
+                f' in combination with `op="{op}"`).'
+                " The value of `predicate` will be overriden by the value of `op`,"
+                " , which may result in unexpected behavior."
+                f"\n{deprecation_message}"
+            )
+            warnings.warn(override_message, UserWarning, stacklevel=4)
+        else:
+            warnings.warn(deprecation_message, FutureWarning, stacklevel=4)
+        predicate = op
+    if kwargs:
+        first = next(iter(kwargs.keys()))
+        raise TypeError(f"sjoin() got an unexpected keyword argument '{first}'")
+
     _basic_checks(left_df, right_df, how, lsuffix, rsuffix)
 
     box_left_gdf = left_df.total_bounds
@@ -106,7 +137,7 @@ stria    AUT    416600.0
         copy_df = _frame_join(indices, left_df, right_df, how, lsuffix, rsuffix)
         return copy_df.iloc[:0]
 
-    indices = _geom_predicate_query(left_df, right_df, op)
+    indices = _geom_predicate_query(left_df, right_df, predicate)
 
     joined = _frame_join(indices, left_df, right_df, how, lsuffix, rsuffix)
 
@@ -163,14 +194,14 @@ def _basic_checks(left_df, right_df, how, lsuffix, rsuffix):
         )
 
 
-def _geom_predicate_query(left_df, right_df, op):
+def _geom_predicate_query(left_df, right_df, predicate):
     """Compute geometric comparisons and get matching indices.
 
     Parameters
     ----------
     left_df : GeoDataFrame
     right_df : GeoDataFrame
-    op : string
+    predicate : string
         Binary predicate to query.
 
     Returns
@@ -185,7 +216,10 @@ def _geom_predicate_query(left_df, right_df, op):
         warnings.filterwarnings(
             "ignore", "Generated spatial index is empty", FutureWarning
         )
-        if op == "within":
+
+        original_predicate = predicate
+
+        if predicate == "within":
             # within is implemented as the inverse of contains
             # contains is a faster predicate
             # see discussion at https://github.com/geopandas/geopandas/pull/1421
@@ -195,7 +229,6 @@ def _geom_predicate_query(left_df, right_df, op):
         else:
             # all other predicates are symmetric
             # keep them the same
-            predicate = op
             sindex = right_df.sindex
             input_geoms = left_df.geometry
 
@@ -205,7 +238,8 @@ def _geom_predicate_query(left_df, right_df, op):
     else:
         # when sindex is empty / has no valid geometries
         indices = pd.DataFrame(columns=["_key_left", "_key_right"], dtype=float)
-    if op == "within":
+
+    if original_predicate == "within":
         # within is implemented as the inverse of contains
         # flip back the results
         indices = indices.rename(
@@ -319,6 +353,7 @@ def _frame_join(indices, left_df, right_df, how, lsuffix, rsuffix):
                 left_index=True,
                 right_on="_key_left",
                 how="right",
+                suffixes=("_{}".format(lsuffix), "_{}".format(rsuffix)),
             )
             .set_index(index_right)
             .drop(["_key_left", "_key_right"], axis=1)
