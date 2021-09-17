@@ -1,8 +1,10 @@
 """Tests for the clip module."""
 
 import warnings
+from distutils.version import LooseVersion
 
 import numpy as np
+import pandas as pd
 
 import shapely
 from shapely.geometry import Polygon, Point, LineString, LinearRing, GeometryCollection
@@ -15,6 +17,7 @@ import pytest
 
 
 pytestmark = pytest.mark.skip_no_sindex
+pandas_133 = pd.__version__ == LooseVersion("1.3.3")
 
 
 @pytest.fixture
@@ -239,6 +242,7 @@ def test_clip_poly_series(buffered_locations, single_rectangle_gdf):
     assert all(clipped_poly.geom_type == "Polygon")
 
 
+@pytest.mark.xfail(pandas_133, reason="Regression in pandas 1.3.3 (GH #2101)")
 def test_clip_multipoly_keep_slivers(multi_poly_gdf, single_rectangle_gdf):
     """Test a multi poly object where the return includes a sliver.
     Also the bounds of the object should == the bounds of the clip object
@@ -249,6 +253,7 @@ def test_clip_multipoly_keep_slivers(multi_poly_gdf, single_rectangle_gdf):
     assert "GeometryCollection" in clipped.geom_type[0]
 
 
+@pytest.mark.xfail(pandas_133, reason="Regression in pandas 1.3.3 (GH #2101)")
 def test_clip_multipoly_keep_geom_type(multi_poly_gdf, single_rectangle_gdf):
     """Test a multi poly object where the return includes a sliver.
     Also the bounds of the object should == the bounds of the clip object
