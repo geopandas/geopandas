@@ -267,23 +267,29 @@ def test_convert_dtypes(df):
 
     # Test geom first, geom_col=geometry (order is important in concat,
     #   used internally)
+    expected1 = GeoDataFrame(
+        pd.DataFrame(df).convert_dtypes(), crs=df.crs, geometry=df.geometry.name
+    )
     res1 = df.convert_dtypes()
     # Checking type and metadata are right
-    assert_geodataframe_equal(df, res1)
+    assert_geodataframe_equal(expected1, res1)
 
     # Test geom last, geom_col=geometry
     res2 = df[["value1", "value2", "geometry"]].convert_dtypes()
-    assert_geodataframe_equal(df[["value1", "value2", "geometry"]], res2)
+    assert_geodataframe_equal(expected1[["value1", "value2", "geometry"]], res2)
 
     # Test again with crs set and custom geom col name
     df2 = df.set_crs(epsg=4326).rename_geometry("points")
+    expected2 = GeoDataFrame(
+        pd.DataFrame(df2).convert_dtypes(), crs=df2.crs, geometry=df2.geometry.name
+    )
     res3 = df2.convert_dtypes()
     # Checking type and metadata are right
-    assert_geodataframe_equal(df2, res3)
+    assert_geodataframe_equal(expected2, res3)
 
     # Test geom last, geom_col=geometry
-    res4 = df2[["value1", "value2", "geometry"]].convert_dtypes()
-    assert_geodataframe_equal(df2[["value1", "value2", "geometry"]], res4)
+    res4 = df2[["value1", "value2", "points"]].convert_dtypes()
+    assert_geodataframe_equal(expected2[["value1", "value2", "points"]], res4)
 
 
 def test_to_csv(df):
