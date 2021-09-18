@@ -262,6 +262,30 @@ def test_astype_invalid_geodataframe():
     assert res["a"].dtype == object
 
 
+def test_convert_dtypes(df):
+    # https://github.com/geopandas/geopandas/issues/1870
+
+    # Test geom first, geom_col=geometry (order is important in concat,
+    #   used internally)
+    res1 = df.convert_dtypes()
+    # Checking type and metadata are right
+    assert_geodataframe_equal(df, res1)
+
+    # Test geom last, geom_col=geometry
+    res2 = df[["value1", "value2", "geometry"]].convert_dtypes()
+    assert_geodataframe_equal(df[["value1", "value2", "geometry"]], res2)
+
+    # Test again with crs set and custom geom col name
+    df2 = df.set_crs(epsg=4326).rename_geometry("points")
+    res3 = df2.convert_dtypes()
+    # Checking type and metadata are right
+    assert_geodataframe_equal(df2, res3)
+
+    # Test geom last, geom_col=geometry
+    res4 = df2[["value1", "value2", "geometry"]].convert_dtypes()
+    assert_geodataframe_equal(df2[["value1", "value2", "geometry"]], res4)
+
+
 def test_to_csv(df):
 
     exp = (
