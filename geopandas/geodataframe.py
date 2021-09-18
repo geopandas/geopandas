@@ -1652,6 +1652,41 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         # do not return a GeoDataFrame
         return pd.DataFrame(df)
 
+    def convert_dtypes(
+        self,
+        infer_objects=True,
+        convert_string=True,
+        convert_integer=True,
+        convert_boolean=True,
+        convert_floating=True,
+    ):
+        """
+        Convert columns to best possible dtypes using dtypes supporting ``pd.NA``.
+
+        Returns a GeoDataFrame always, as no conversions are applied to the
+        geometry column.
+
+        See the pandas.DataFrame.convert_dtypes docstring for more details.
+
+        Returns
+        -------
+        GeoDataFrame
+
+        """
+        # Overidden to fix GH1870, that return type is not preserved always
+        # (and where it was, geometry col was not)
+        return GeoDataFrame(
+            super().convert_dtypes(
+                infer_objects,
+                convert_string,
+                convert_integer,
+                convert_boolean,
+                convert_floating,
+            ),
+            geometry=self.geometry.name,
+            crs=self.crs,
+        )
+
     def to_postgis(
         self,
         name,
