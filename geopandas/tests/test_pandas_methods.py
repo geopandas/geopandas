@@ -262,19 +262,26 @@ def test_astype_invalid_geodataframe():
     assert res["a"].dtype == object
 
 
+@pytest.mark.xfail(
+    not compat.PANDAS_GE_10,
+    reason="Convert dtypes new in pandas 1.0",
+    raises=NotImplementedError,
+)
 def test_convert_dtypes(df):
     # https://github.com/geopandas/geopandas/issues/1870
 
-    # Test geom first, geom_col=geometry (order is important in concat,
-    #   used internally)
+    # Test geometry col is first col, first, geom_col_name=geometry
+    # (order is important in concat, used internally)
+    res1 = df.convert_dtypes()  # note res1 done first for pandas < 1 xfail check
+
     expected1 = GeoDataFrame(
         pd.DataFrame(df).convert_dtypes(), crs=df.crs, geometry=df.geometry.name
     )
-    res1 = df.convert_dtypes()
+
     # Checking type and metadata are right
     assert_geodataframe_equal(expected1, res1)
 
-    # Test geom last, geom_col=geometry
+    # Test geom last, geom_col_name=geometry
     res2 = df[["value1", "value2", "geometry"]].convert_dtypes()
     assert_geodataframe_equal(expected1[["value1", "value2", "geometry"]], res2)
 
@@ -284,7 +291,6 @@ def test_convert_dtypes(df):
         pd.DataFrame(df2).convert_dtypes(), crs=df2.crs, geometry=df2.geometry.name
     )
     res3 = df2.convert_dtypes()
-    # Checking type and metadata are right
     assert_geodataframe_equal(expected2, res3)
 
     # Test geom last, geom_col=geometry

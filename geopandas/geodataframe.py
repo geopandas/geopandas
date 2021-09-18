@@ -1673,16 +1673,32 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         GeoDataFrame
 
         """
-        # Overidden to fix GH1870, that return type is not preserved always
+        # Overridden to fix GH1870, that return type is not preserved always
         # (and where it was, geometry col was not)
+
+        kwargs = dict(
+            infer_objects=infer_objects,
+            convert_string=convert_string,
+            convert_integer=convert_integer,
+            convert_boolean=convert_boolean,
+            convert_floating=convert_floating,
+        )
+        print(compat.PANDAS_GE_10)
+        if not compat.PANDAS_GE_10:
+            raise NotImplementedError(
+                "GeoDataFrame.convert_dtypes requires pandas >= 1.0"
+            )
+        if not compat.PANDAS_GE_11:
+            kwargs.pop("convert_floating")
+            if (
+                not convert_floating
+            ):  # If they passed a non-default convert_floating value
+                warnings.warn(
+                    "convert_floating kwarg is not supported for pandas < 1.1.0"
+                )
+
         return GeoDataFrame(
-            super().convert_dtypes(
-                infer_objects,
-                convert_string,
-                convert_integer,
-                convert_boolean,
-                convert_floating,
-            ),
+            super().convert_dtypes(kwargs),
             geometry=self.geometry.name,
             crs=self.crs,
         )
