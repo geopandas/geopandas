@@ -17,3 +17,4 @@ specification in the :doc:`API Reference <reference>`.
   :maxdepth: 2
 
   user_guide/missing_empty
+  user_guide/reproject_fiona

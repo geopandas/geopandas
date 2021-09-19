@@ -1528,6 +1528,8 @@ class TestGeoplotAccessor:
                 kwargs = {"y": "y"}
             elif kind in _xy_kinds:
                 kwargs = {"x": "x", "y": "y"}
+                if kind == "hexbin":  # increase gridsize to reduce duration
+                    kwargs["gridsize"] = 10
 
             self.compare_figures(kind, fig_test, fig_ref, kwargs)
             plt.close("all")
