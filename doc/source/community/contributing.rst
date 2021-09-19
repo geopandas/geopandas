@@ -257,6 +257,9 @@ The docstrings follow the `Numpy Docstring standard
 and examples are Jupyter notebooks converted to docs using `nbsphinx
 <https://nbsphinx.readthedocs.io/>`_. Jupyter notebooks should be stored without the output.
 
+We highly encourage you to follow the `Google developer documentation style guide
+<https://developers.google.com/style/highlights>`_ when updating or creating new documentation.
+
 Once you have made your changes, you may try if they render correctly by
 building the docs using sphinx. To do so, you can navigate to the `doc` folder::
 
