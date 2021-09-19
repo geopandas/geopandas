@@ -338,6 +338,26 @@ def test_parquet_missing_metadata(tmpdir):
         read_parquet(filename)
 
 
+def test_parquet_missing_metadata2(tmpdir):
+    """Missing geo metadata, such as from a parquet file created
+    from a pyarrow Table (which will also not contain pandas metadata),
+    will raise a ValueError.
+    """
+    import pyarrow.parquet as pq
+
+    table = pyarrow.table({"a": [1, 2, 3]})
+    filename = os.path.join(str(tmpdir), "test.pq")
+
+    # use pyarrow.parquet write_table (no geo metadata, but also no pandas metadata)
+    pq.write_table(table, filename)
+
+    # missing metadata will raise ValueError
+    with pytest.raises(
+        ValueError, match="Missing geo metadata in Parquet/Feather file."
+    ):
+        read_parquet(filename)
+
+
 @pytest.mark.parametrize(
     "geo_meta,error",
     [

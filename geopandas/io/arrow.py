@@ -301,7 +301,7 @@ def _arrow_to_geopandas(table):
     df = table.to_pandas()
 
     metadata = table.schema.metadata
-    if b"geo" not in metadata:
+    if metadata is None or b"geo" not in metadata:
         raise ValueError(
             """Missing geo metadata in Parquet/Feather file.
             Use pandas.read_parquet/read_feather() instead."""

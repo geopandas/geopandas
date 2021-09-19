@@ -1,4 +1,5 @@
 import os
+from distutils.version import LooseVersion
 
 import pandas as pd
 
@@ -15,6 +16,7 @@ DATA = os.path.join(os.path.abspath(os.path.dirname(__file__)), "data", "overlay
 
 
 pytestmark = pytest.mark.skip_no_sindex
+pandas_133 = pd.__version__ == LooseVersion("1.3.3")
 
 
 @pytest.fixture
@@ -51,6 +53,8 @@ def dfs_index(request, dfs):
     params=["union", "intersection", "difference", "symmetric_difference", "identity"]
 )
 def how(request):
+    if pandas_133 and request.param in ["symmetric_difference", "identity", "union"]:
+        pytest.xfail("Regression in pandas 1.3.3 (GH #2101)")
     return request.param
 
 
@@ -319,10 +323,12 @@ def test_bad_how(dfs):
         overlay(df1, df2, how="spandex")
 
 
-def test_duplicate_column_name(dfs):
+def test_duplicate_column_name(dfs, how):
+    if how == "difference":
+        pytest.skip("Difference uses columns from one df only.")
     df1, df2 = dfs
     df2r = df2.rename(columns={"col2": "col1"})
-    res = overlay(df1, df2r, how="union")
+    res = overlay(df1, df2r, how=how)
     assert ("col1_1" in res.columns) and ("col1_2" in res.columns)
 
 
