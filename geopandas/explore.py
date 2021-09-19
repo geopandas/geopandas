@@ -147,13 +147,15 @@ def _explore(
         Whether to add a control scale on the map.
     marker_type : str, folium.Circle, folium.CircleMarker, folium.Marker (default None)
         Allowed string options are ('marker', 'circle', 'circle_marker'). Defaults to
-        folium.Marker.
+        folium.CircleMarker.
     marker_kwds: dict (default {})
         Additional keywords to be passed to the selected ``marker_type``, e.g.:
 
-        radius : float
-            Radius of the circle, in meters (for ``'circle'``) or pixels
+        radius : float (default 2 for ``circle_marker`` and 50 for ``circle``))
+            Radius of the circle, in meters (for ``circle``) or pixels
             (for ``circle_marker``).
+        fill : bool (default True)
+            Whether to fill the ``circle`` or ``circle_marker`` with color.
         icon : folium.map.Icon
             the :class:`folium.map.Icon` object to use to render the marker.
         draggable : bool (default False)
@@ -406,10 +408,6 @@ GON (((180.00000 -16.06713, 180.00000...
                     colors.to_hex, 1, cm.get_cmap(cmap, 256)(binning.yb)
                 )
 
-        # we cannot color default 'marker'
-        if marker_type is None:
-            marker_type = "circle"
-
     # set default style
     if "fillOpacity" not in style_kwds:
         style_kwds["fillOpacity"] = 0.5
@@ -482,13 +480,19 @@ GON (((180.00000 -16.06713, 180.00000...
     else:
         highlight_function = None
 
+    # define default for points
+    if marker_type is None:
+        marker_type = "circle_marker"
+
     marker = marker_type
-    if marker_type is not None and isinstance(marker_type, str):
+    if isinstance(marker_type, str):
         if marker_type == "marker":
             marker = folium.Marker(**marker_kwds)
         elif marker_type == "circle":
             marker = folium.Circle(**marker_kwds)
         elif marker_type == "circle_marker":
+            marker_kwds["radius"] = marker_kwds.get("radius", 2)
+            marker_kwds["fill"] = marker_kwds.get("fill", True)
             marker = folium.CircleMarker(**marker_kwds)
         else:
             raise ValueError(

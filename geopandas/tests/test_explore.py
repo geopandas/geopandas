@@ -20,7 +20,7 @@ class TestExplore:
     def setup_method(self):
         self.nybb = gpd.read_file(gpd.datasets.get_path("nybb"))
         self.world = gpd.read_file(gpd.datasets.get_path("naturalearth_lowres"))
-        self.cities = gpd.read_file(gpd.datasets.get_path("naturalearth_lowres"))
+        self.cities = gpd.read_file(gpd.datasets.get_path("naturalearth_cities"))
         self.world["range"] = range(len(self.world))
         self.missing = self.world.copy()
         np.random.seed(42)
@@ -413,6 +413,20 @@ class TestExplore:
         m = gdf.explore()
         out_str = self._fetch_map_string(m)
         assert "BoroName" in out_str
+
+    def test_default_markers(self):
+        # check overriden default for points
+        m = self.cities.explore()
+        strings = ['"radius":2', '"fill":true', "CircleMarker(latlng,opts)"]
+        out_str = self._fetch_map_string(m)
+        for s in strings:
+            assert s in out_str
+
+        m = self.cities.explore(marker_kwds=dict(radius=5, fill=False))
+        strings = ['"radius":5', '"fill":false', "CircleMarker(latlng,opts)"]
+        out_str = self._fetch_map_string(m)
+        for s in strings:
+            assert s in out_str
 
     def test_custom_markers(self):
         # Markers
