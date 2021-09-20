@@ -67,7 +67,6 @@ class TestExplore:
             zoom_control=False,
             width=200,
             height=200,
-            tiles="CartoDB positron",
         )
         assert m.location == [
             pytest.approx(40.70582377450201, rel=1e-6),
@@ -77,7 +76,6 @@ class TestExplore:
         assert m.options["zoomControl"] is False
         assert m.height == (200.0, "px")
         assert m.width == (200.0, "px")
-        assert "cartodbpositron" in m.to_dict()["children"].keys()
 
         # custom XYZ tiles
         m = self.nybb.explore(
@@ -582,14 +580,30 @@ class TestExplore:
         for tick in tick_values:
             assert str(tick) in out_str
 
-    def test_providers(self):
+    def test_xyzservices_providers(self):
         xyzservices = pytest.importorskip("xyzservices")
 
         m = self.nybb.explore(tiles=xyzservices.providers.CartoDB.PositronNoLabels)
         out_str = self._fetch_map_string(m)
 
         assert (
-            '"https://a.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png"'
+            '"https://a.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png"'
+            in out_str
+        )
+        assert (
+            'attribution":"\\u0026copy;\\u003cahref=\\"https://www.openstreetmap.org'
+            in out_str
+        )
+        assert '"maxNativeZoom":19,"maxZoom":19,"minZoom":0' in out_str
+
+    def test_xyzservices_query_name(self):
+        pytest.importorskip("xyzservices")
+
+        m = self.nybb.explore(tiles="CartoDB Positron No Labels")
+        out_str = self._fetch_map_string(m)
+
+        assert (
+            '"https://a.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png"'
             in out_str
         )
         assert (

@@ -84,9 +84,11 @@ def _explore(
         Named color or a list-like of colors (named or hex).
     m : folium.Map (default None)
         Existing map instance on which to draw the plot.
-    tiles : str, xyzservices.TileProvider (default 'OpenStreetMap')
-        Map tileset to use. Can choose from this list of built-in tiles or pass
-        :class:`xyzservices.TileProvider`:
+    tiles : str, xyzservices.TileProvider (default 'OpenStreetMap Mapnik')
+        Map tileset to use. Can choose from the list supported by folium, query a
+        :class:`xyzservices.TileProvider` by a name from ``xyzservices.providers``,
+        pass :class:`xyzservices.TileProvider` object or pass custom XYZ URL.
+        The current list of built-in providers (when ``xyzservices`` is not available):
 
         ``["OpenStreetMap", "Stamen Terrain", “Stamen Toner", “Stamen Watercolor"
         "CartoDB positron", “CartoDB dark_matter"]``
@@ -252,13 +254,21 @@ GON (((180.00000 -16.06713, 180.00000...
         import matplotlib.colors as colors
         import matplotlib.pyplot as plt
         from mapclassify import classify
-    except ImportError:
+    except (ImportError, ModuleNotFoundError):
         raise ImportError(
             "The 'folium', 'matplotlib' and 'mapclassify' packages are required for "
             "'explore()'. You can install them using "
             "'conda install -c conda-forge folium matplotlib mapclassify' "
             "or 'pip install folium matplotlib mapclassify'."
         )
+
+    # xyservices is an optional dependency
+    try:
+        import xyzservices
+
+        HAS_XYZSERVICES = True
+    except (ImportError, ModuleNotFoundError):
+        HAS_XYZSERVICES = False
 
     gdf = df.copy()
 
@@ -294,12 +304,19 @@ GON (((180.00000 -16.06713, 180.00000...
         # get a subset of kwargs to be passed to folium.Map
         map_kwds = {i: kwargs[i] for i in kwargs.keys() if i in _MAP_KWARGS}
 
-        # xyzservices.providers object
-        if hasattr(tiles, "build_url"):
-            attr = attr if attr else tiles.html_attribution
-            map_kwds["min_zoom"] = tiles.get("min_zoom", 0)
-            map_kwds["max_zoom"] = tiles.get("max_zoom", 18)
-            tiles = tiles.build_url()
+        if HAS_XYZSERVICES:
+            # match provider name string to xyzservices.TileProvider
+            if isinstance(tiles, str):
+                try:
+                    tiles = xyzservices.providers.query_name(tiles)
+                except ValueError:
+                    pass
+
+            if isinstance(tiles, xyzservices.TileProvider):
+                attr = attr if attr else tiles.html_attribution
+                map_kwds["min_zoom"] = tiles.get("min_zoom", 0)
+                map_kwds["max_zoom"] = tiles.get("max_zoom", 18)
+                tiles = tiles.build_url(scale_factor="{r}")
 
         m = folium.Map(
             location=location,
@@ -791,17 +808,19 @@ def _explore_geoseries(
         Named color or a list-like of colors (named or hex).
     m : folium.Map (default None)
         Existing map instance on which to draw the plot.
-    tiles : str, xyzservices.TileProvider (default 'OpenStreetMap')
-        Map tileset to use. Can choose from this list of built-in tiles or pass
-        :class:`xyzservices.TileProvider`:
+    tiles : str, xyzservices.TileProvider (default 'OpenStreetMap Mapnik')
+        Map tileset to use. Can choose from the list supported by folium, query a
+        :class:`xyzservices.TileProvider` by a name from ``xyzservices.providers``,
+        pass :class:`xyzservices.TileProvider` object or pass custom XYZ URL.
+        The current list of built-in providers (when ``xyzservices`` is not available):
 
         ``["OpenStreetMap", "Stamen Terrain", “Stamen Toner", “Stamen Watercolor"
         "CartoDB positron", “CartoDB dark_matter"]``
 
         You can pass a custom tileset to Folium by passing a Leaflet-style URL
         to the tiles parameter: ``http://{s}.yourtiles.com/{z}/{x}/{y}.png``.
-        Be sure to check their terms and conditions and
-        to provide attribution with the ``attr`` keyword.
+        Be sure to check their terms and conditions and to provide attribution with
+        the ``attr`` keyword.
     attr : str (default None)
         Map tile attribution; only required if passing custom tile URL.
     highlight : bool (default True)
