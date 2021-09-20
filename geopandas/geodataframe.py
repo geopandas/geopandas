@@ -23,20 +23,6 @@ from ._decorator import doc
 DEFAULT_GEO_COLUMN_NAME = "geometry"
 
 
-def _geodataframe_constructor_with_fallback(*args, **kwargs):
-    """
-    A flexible constructor for GeoDataFrame._constructor, which falls back
-    to returning a DataFrame (if a certain operation does not preserve the
-    geometry column)
-    """
-    df = GeoDataFrame(*args, **kwargs)
-    geometry_cols_mask = df.dtypes == "geometry"
-    if len(geometry_cols_mask) == 0 or geometry_cols_mask.sum() == 0:
-        df = pd.DataFrame(df)
-
-    return df
-
-
 def _ensure_geometry(data, crs=None):
     """
     Ensure the data is of geometry dtype or converted to it.
@@ -1422,6 +1408,30 @@ individually so that features may have different properties
 
     @property
     def _constructor(self):
+        geometry_default = getattr(self, "_geometry_column_name")
+        crs_default = getattr(self, "crs")
+
+        def _geodataframe_constructor_with_fallback(
+            data=None, index=None, crs=crs_default, geometry=geometry_default, **kwargs
+        ):
+            df = pd.DataFrame(data, index=index)  # TODO inefficient if not used?
+            if geometry in df.columns:
+                geo_col = df[geometry]
+                if isinstance(geo_col, pd.DataFrame):
+                    raise ValueError(
+                        "GeoDataFrame does not support multiple columns"
+                        f" using the geometry column name '{geometry}'"
+                    )
+                elif isinstance(df[geometry].dtype, GeometryDtype):
+                    df = GeoDataFrame(
+                        data=data, index=index, crs=crs, geometry=geometry, **kwargs
+                    )
+
+            return df
+
+        if compat.PANDAS_GE_10 and not compat.PANDAS_GE_11:  # i.e. on pandas 1.0.x
+            _geodataframe_constructor_with_fallback._from_axes = GeoDataFrame._from_axes
+
         return _geodataframe_constructor_with_fallback
 
     @property
@@ -2232,6 +2242,3 @@ def _dataframe_set_geometry(self, col, drop=False, inplace=False, crs=None):
 
 
 DataFrame.set_geometry = _dataframe_set_geometry
-
-if compat.PANDAS_GE_10 and not compat.PANDAS_GE_11:  # i.e. on pandas 1.0.x
-    _geodataframe_constructor_with_fallback._from_axes = GeoDataFrame._from_axes
