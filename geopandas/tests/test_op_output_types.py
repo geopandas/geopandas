@@ -95,13 +95,17 @@ class TestDataFrameMethodReturnTypes:
         """Helper method to make tests easier to read. Checks result is of the expected
         type. If result is a GeoDataFrame or GeoSeries, checks geo_name
         and crs match. If geo_name is None, then we expect a GeoDataFrame
-        where the geometry column is invalid/ isn't set
+        where the geometry column is invalid/ isn't set. This is never desirable,
+        but is a reality of this first stage of implementation.
         """
         assert type(result) is expected_type
 
         if expected_type == GeoDataFrame:
             if geo_name is not None:
                 self._check_metadata_gdf(result, geo_name=geo_name, crs=crs)
+            else:
+                with pytest.raises(AttributeError, match="No geometry data set yet"):
+                    result.geometry.name  # be explicit that geometry is invalid here
         elif expected_type == GeoSeries:
             self._check_metadata_gs(result, name=geo_name, crs=crs)
 
@@ -160,7 +164,7 @@ class TestDataFrameMethodReturnTypes:
 
     def test_to_frame(self, df):
         geo_name = df.geometry.name
-        # This shouldn't be a specical case,
+        # This shouldn't be a special case,
         # need to update GeoSeries._constructor_expanddim
         if geo_name == "geometry":
             self._assert_object(df[geo_name].to_frame(), GeoDataFrame, geo_name)
