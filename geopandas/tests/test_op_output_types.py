@@ -6,7 +6,7 @@ from shapely.geometry import Point
 
 from geopandas import GeoDataFrame, GeoSeries
 
-crsgs_osgb = pyproj.CRS(27700)
+crs_osgb = pyproj.CRS(27700)
 crs_wgs = pyproj.CRS(27700)
 
 
@@ -30,7 +30,7 @@ def df(request):
         geometry=geo_name,
     )
     # want geometry2 to be a GeoSeries not Series, test behaviour of non geom col
-    df["geometry2"] = df[geo_name].set_crs(crsgs_osgb, allow_override=True)
+    df["geometry2"] = df[geo_name].set_crs(crs_osgb, allow_override=True)
     return df
 
 
@@ -46,42 +46,6 @@ class TestDataFrameMethodReturnTypes:
     def _check_metadata_gs(gs, name="geometry", crs=crs_wgs):
         assert gs.name == name
         assert gs.crs == crs
-
-    def _check_standard_df(self, results, geo_name, method=None):
-        for i in results:
-            print(i.columns if isinstance(i, pd.DataFrame) else i.name)
-
-        assert type(results[0]) is pd.DataFrame
-        assert type(results[1]) is GeoDataFrame
-        self._check_metadata_gdf(results[1], geo_name=geo_name)
-        assert type(results[2]) is GeoDataFrame
-        self._check_metadata_gdf(results[2], geo_name=geo_name)
-        # Non geometry column is not treated specially, we get a DataFrame
-        # Not sure this is the most desirable behaviour, but it is at least consistent
-        # If there is only one geometry column left, returning a gdf is not ambiguous,
-        # but if there are 2 geom cols, and non are the set geom col, behaviour is
-        # unclear. Therefore opting to return dataframes.
-        # assert type(results[3]) is pd.DataFrame
-        # # Exception is if there is only one column in the dataframe, then seems
-        # # wrong to return a dataframe. Not implemented as inconsistent with old
-        # # __getitem__ behaviour.
-        # assert type(results[4]) is pd.DataFrame
-        # losing geom col still returns gdf - TODO different from logic in text above
-
-        # End goal is to mimic getitem completely, that's not happening right now
-        exceptions_for_now = ["getitem", "apply"]
-
-        if method in exceptions_for_now:
-            assert type(results[3]) is pd.DataFrame
-        else:
-            assert type(results[3]) is GeoDataFrame
-
-        if method in exceptions_for_now:
-            assert type(results[4]) is pd.DataFrame
-        else:
-            assert type(results[4]) is GeoDataFrame
-        # self._check_metadata_gs(results[4], crsgs_osgb)
-        assert type(results[5]) is pd.DataFrame
 
     def _check_standard_srs(self, results, geo_name):
         assert type(results[0]) is GeoSeries
@@ -164,18 +128,18 @@ class TestDataFrameMethodReturnTypes:
 
     def test_to_frame(self, df):
         geo_name = df.geometry.name
-        # This shouldn't be a special case,
-        # need to update GeoSeries._constructor_expanddim
-        if geo_name == "geometry":
-            self._assert_object(df[geo_name].to_frame(), GeoDataFrame, geo_name)
-        assert df[geo_name].to_frame()._geometry_column_name == "geometry"
-
-        res2 = df["geometry2"].to_frame()
         # TODO this reflects current behaviour, but we should fix
         #  GeoSeries._constructor_expanddim so this doesn't happen
+        res1 = df[geo_name].to_frame()
+        if geo_name == "geometry":  # -> this should be doable for any geo_name
+            self._assert_object(res1, GeoDataFrame, geo_name)
+        assert res1._geometry_column_name == "geometry"  # -> should be geo_name
+
+        res2 = df["geometry2"].to_frame()
+
         assert type(res2) is GeoDataFrame
-        assert res2._geometry_column_name == "geometry"  # -> should be geo_name
-        assert res2.crs is None  # -> should be self.osgb
+        assert res2._geometry_column_name == "geometry"  # -> should be geometry2
+        assert res2.crs is None  # -> should be crs_osgb
         # also res2.geometry should not crash because geometry isn't set
         self._assert_object(df["value1"].to_frame(), pd.DataFrame)
 
