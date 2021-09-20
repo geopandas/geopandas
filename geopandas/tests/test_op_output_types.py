@@ -5,7 +5,6 @@ import pytest
 from shapely.geometry import Point
 
 from geopandas import GeoDataFrame, GeoSeries
-import geopandas._compat as compat
 
 crsgs_osgb = pyproj.CRS(27700)
 crs_wgs = pyproj.CRS(27700)
@@ -237,23 +236,3 @@ class TestDataFrameMethodReturnTypes:
         test_func(df[["geometry2", "value1"]].apply(identity, axis=1), pd.DataFrame)
         test_func(df[["geometry2"]].apply(identity, axis=1), pd.DataFrame)
         test_func(df[["value1"]].apply(identity, axis=1), pd.DataFrame)
-
-    @pytest.mark.skipif(
-        not compat.PANDAS_GE_10, reason="Convert dtypes new in pandas 1.0"
-    )
-    def test_convert_dtypes(self, df):
-        if not compat.PANDAS_GE_11:
-            pytest.xfail(
-                "pandas 1.0 hard codes types, "
-                "concat([GeoSeries, GeoSeries]) -> DataFrame"
-            )
-        geo_name = df.geometry.name
-
-        # convert_dtypes also relies on constructor_expanddim, so crs and geom col
-        # are lost right now. #TODO fix this
-        assert type(df[["value1", "value2"]].convert_dtypes()) is pd.DataFrame
-        assert type(df[[geo_name, "geometry2"]].convert_dtypes()) is GeoDataFrame
-        assert type(df[[geo_name]].convert_dtypes()) is GeoDataFrame
-        assert type(df[["geometry2", "value1"]].convert_dtypes()) is pd.DataFrame
-        assert type(df[["geometry2"]].convert_dtypes()) is pd.DataFrame
-        assert type(df[["value1"]].convert_dtypes()) is pd.DataFrame
