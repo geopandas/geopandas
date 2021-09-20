@@ -158,6 +158,16 @@ def test_from_wkb():
     assert res[0] == multi_poly
 
 
+def test_from_wkb_hex():
+    geometry_hex = ["0101000000CDCCCCCCCCCC1440CDCCCCCCCC0C4A40"]
+    res = from_wkb(geometry_hex)
+    assert isinstance(res, GeometryArray)
+
+    # array
+    res = from_wkb(np.array(geometry_hex, dtype=object))
+    assert isinstance(res, GeometryArray)
+
+
 def test_to_wkb():
     P = from_shapely(points_no_missing)
     res = to_wkb(P)
@@ -447,7 +457,18 @@ def test_binary_geo_scalar(attr):
 
 
 @pytest.mark.parametrize(
-    "attr", ["is_closed", "is_valid", "is_empty", "is_simple", "has_z", "is_ring"]
+    "attr",
+    [
+        "is_closed",
+        "is_valid",
+        "is_empty",
+        "is_simple",
+        "has_z",
+        # for is_ring we raise a warning about the value for Polygon changing
+        pytest.param(
+            "is_ring", marks=pytest.mark.filterwarnings("ignore:is_ring:FutureWarning")
+        ),
+    ],
 )
 def test_unary_predicates(attr):
     na_value = False
@@ -484,6 +505,8 @@ def test_unary_predicates(attr):
     assert result.tolist() == expected
 
 
+# for is_ring we raise a warning about the value for Polygon changing
+@pytest.mark.filterwarnings("ignore:is_ring:FutureWarning")
 def test_is_ring():
     g = [
         shapely.geometry.LinearRing([(0, 0), (1, 1), (1, -1)]),
