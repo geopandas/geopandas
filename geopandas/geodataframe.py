@@ -1663,7 +1663,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         """
         Convert columns to best possible dtypes using dtypes supporting ``pd.NA``.
 
-        Returns a GeoDataFrame always, as no conversions are applied to the
+        Always returns a GeoDataFrame as no conversions are applied to the
         geometry column.
 
         See the pandas.DataFrame.convert_dtypes docstring for more details.
