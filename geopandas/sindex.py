@@ -218,7 +218,7 @@ class BaseSpatialIndex:
         If max_distance is not set, this will effectively be a left join
         because every geometry in ``geometry`` will have a nearest geometry in
         the tree. However, if ``max_distance`` is used, this becomes an
-        inner-join, since some geometries in ``geometry`` may not have a match
+        inner join, since some geometries in ``geometry`` may not have a match
         in the tree.
 
         For performance reasons, it is highly recommended that you utilize
