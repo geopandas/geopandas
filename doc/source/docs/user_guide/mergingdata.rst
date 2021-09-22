@@ -103,7 +103,7 @@ GeoPandas provides two spatial-join functions:
 Binary Predicate Joins
 ~~~~~~~~~~~~~~~~~~~~~~
 
-Binary predicte joins are available via ``sjoin()``.
+Binary predicate joins are available via :func:`sjoin`.
 
 :func:`sjoin` has two core arguments: ``how`` and ``op``.
 
