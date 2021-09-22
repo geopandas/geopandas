@@ -97,8 +97,8 @@ In a Spatial Join, two geometry objects are merged based on their spatial relati
 
 GeoPandas provides two spatial-join functions:
 
-- ``sjoin()``: joins based on binary predicates (intersects, contains, etc.)
-- ``sjoin_nearest()``: joins based on proximity, with the ability to set a maximum search radius.
+- :func:`sjoin_nearest`: joins based on binary predicates (intersects, contains, etc.)
+- :func:`sjoin`: joins based on proximity, with the ability to set a maximum search radius.
 
 Binary Predicate Joins
 ~~~~~~~~~~~~~~~~~~~~~~
