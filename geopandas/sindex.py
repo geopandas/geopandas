@@ -221,7 +221,7 @@ class BaseSpatialIndex:
         inner join, since some geometries in ``geometry`` may not have a match
         in the tree.
 
-        For performance reasons, it is highly recommended that you utilize
+        For performance reasons, it is highly recommended that you set
         the ``max_distance`` parameter.
 
         Parameters
