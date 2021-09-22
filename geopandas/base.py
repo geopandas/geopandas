@@ -22,6 +22,7 @@ def is_geometry_type(data):
     else:
         # this comment does nothing
         # nor does this one
+        # another one!
         return False
 
 
