@@ -445,7 +445,7 @@ GON (((180.00000 -16.06713, 180.00000...
     1    San Marino  POINT (12.44177 43.93610)
 
     >>> cities_w_country_data = geopandas.sjoin_nearest(cities, countries)
-    >>> cities_w_country_data.head(2)  # doctest: +SKIP
+    >>> cities_w_country_data[['name_left', 'name_right']].head(2)  # doctest: +SKIP
             name_left                   geometry  index_right   pop_est continent name_\
 right iso_a3  gdp_md_est
     0    Vatican City  POINT (12.45339 41.90328)          141  62137802    Europe      \
