@@ -452,7 +452,9 @@ right iso_a3  gdp_md_est
 Italy    ITA   2221000.0
     1      San Marino  POINT (12.44177 43.93610)          141  62137802    Europe      \
 Italy    ITA   2221000.0
+
     To include the distances:
+
     >>> cities_w_country_data = geopandas.sjoin_nearest\
 (cities, countries, distance_col="distances")
     >>> cities_w_country_data[["name_left", "name_right", \
