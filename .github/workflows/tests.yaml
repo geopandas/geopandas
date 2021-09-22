@@ -8,6 +8,10 @@ on:
   schedule:
     - cron: "0 0 * * *"
 
+concurrency: 
+  group: ${{ github.head_ref }}
+  cancel-in-progress: true
+
 jobs:
   Linting:
     runs-on: ubuntu-latest
