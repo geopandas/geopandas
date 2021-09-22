@@ -365,7 +365,8 @@ def _nearest_query(
         if return_distance:
             (input_idx, tree_idx), distances = res
         else:
-            (input_idx, tree_idx), distances = res, None
+            (input_idx, tree_idx) = res
+            distances = None
         if use_left_as_sindex:
             l_idx, r_idx = tree_idx, input_idx
             sort_order = np.argsort(l_idx, kind="stable")
