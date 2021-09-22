@@ -210,7 +210,7 @@ class BaseSpatialIndex:
         """Return the nearest geometry in the tree for each input geometry in
         ``geometry``.
 
-        Note: ``nearest_all`` currently only works with PyGEOS.
+        Note: ``nearest_all`` currently only works with PyGEOS >= 0.10.
 
         In the context of a spatial join, input geometries are the “left”
         geometries that determine the order of the results, and tree geometries
