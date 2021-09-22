@@ -439,7 +439,7 @@ iso_a3  gdp_md_est                                           geometry
 GON (((180.00000 -16.06713, 180.00000...
     1   53950935         Africa                  Tanzania    TZA    150600.0  POLYGON (\
 (33.90371 -0.95000, 34.07262 -1.05982...
-    >>> cities.head(2)  # doctest: +SKIP
+    >>> cities.head(2).name  # doctest: +SKIP
             name                   geometry
     0  Vatican City  POINT (12.45339 41.90328)
     1    San Marino  POINT (12.44177 43.93610)
