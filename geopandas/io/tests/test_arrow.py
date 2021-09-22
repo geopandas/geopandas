@@ -16,6 +16,7 @@ from geopandas.io.arrow import (
     _create_metadata,
     _decode_metadata,
     _encode_metadata,
+    _get_filesystem_path,
     _validate_dataframe,
     _validate_metadata,
     METADATA_VERSION,
@@ -531,3 +532,12 @@ def test_non_fsspec_url_with_storage_options_raises():
     with pytest.raises(ValueError, match="storage_options"):
         test_dataset = "naturalearth_lowres"
         read_parquet(get_path(test_dataset), storage_options={"foo": "bar"})
+
+
+@pytest.mark.skipif(
+    pyarrow.__version__ < LooseVersion("5.0.0"),
+    reason="pyarrow.fs requires pyarrow>=5.0.0",
+)
+def test_prefers_pyarrow_fs():
+    filesystem, _ = _get_filesystem_path("file:///data.parquet")
+    assert isinstance(filesystem, pyarrow.fs.LocalFileSystem)

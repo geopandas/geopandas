@@ -347,6 +347,44 @@ def _arrow_to_geopandas(table):
     return GeoDataFrame(df, geometry=geometry)
 
 
+def _get_filesystem_path(path, filesystem=None, storage_options=None):
+    """
+    Get the filesystem and path for a given filesystem and path.
+
+    If the filesystem is not None then it's just returned as is.
+    """
+    import pyarrow
+
+    if (
+        isinstance(path, str)
+        and storage_options is None
+        and filesystem is None
+        and LooseVersion(pyarrow.__version__) >= "5.0.0"
+    ):
+        # Use the native pyarrow filesystem if possible.
+        try:
+            from pyarrow.fs import FileSystem
+
+            filesystem, path = FileSystem.from_uri(path)
+        except Exception:
+            # fallback to use get_handle / fsspec for filesystems
+            # that pyarrow doesn't support
+            pass
+
+    if _is_fsspec_url(path) and filesystem is None:
+        fsspec = import_optional_dependency(
+            "fsspec", extra="fsspec is requred for 'storage_options'."
+        )
+        filesystem, path = fsspec.core.url_to_fs(path, **(storage_options or {}))
+
+    if filesystem is None and storage_options:
+        raise ValueError(
+            "Cannot provide 'storage_options' with non-fsspec path '{}'".format(path)
+        )
+
+    return filesystem, path
+
+
 def _read_parquet(path, columns=None, storage_options=None, **kwargs):
     """
     Load a Parquet object from the file path, returning a GeoDataFrame.
@@ -410,34 +448,9 @@ def _read_parquet(path, columns=None, storage_options=None, **kwargs):
     # TODO(https://github.com/pandas-dev/pandas/pull/41194): see if pandas
     # adds filesystem as a keyword and match that.
     filesystem = kwargs.pop("filesystem", None)
-    import pyarrow
-
-    if (
-        isinstance(path, str)
-        and storage_options is None
-        and filesystem is None
-        and LooseVersion(pyarrow.__version__) >= "5.0.0"
-    ):
-        # Use the native pyarrow filesystem if possible.
-        try:
-            from pyarrow.fs import FileSystem
-
-            filesystem, path = FileSystem.from_uri(path)
-        except Exception:
-            # fallback to use get_handle / fsspec for filesystems
-            # that pyarrow doesn't support
-            pass
-
-    if _is_fsspec_url(path) and filesystem is None:
-        fsspec = import_optional_dependency(
-            "fsspec", extra="fsspec is requred for 'storage_options'."
-        )
-        filesystem, path = fsspec.core.url_to_fs(path, **(storage_options or {}))
-
-    if filesystem is None and storage_options:
-        raise ValueError(
-            "Cannot provide 'storage_options' with non-fsspec path '{}'".format(path)
-        )
+    filesystem, path = _get_filesystem_path(
+        path, filesystem=filesystem, storage_options=storage_options
+    )
 
     kwargs["use_pandas_metadata"] = True
     table = parquet.read_table(path, columns=columns, filesystem=filesystem, **kwargs)
