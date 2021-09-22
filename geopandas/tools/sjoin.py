@@ -463,7 +463,7 @@ path("naturalearth_lowres"))
             name_left name_right distances
     0    Vatican City      Italy       0.0
     1      San Marino      Italy       0.0
-    Note that in this case we get multiple results for Italy because all cities are
+    In the following example we get multiple cities for Italy because all results are
     equidistant (in this case zero). In fact, we get 3 results in total:
     >>> countries_w_city_data = geopandas.sjoin_nearest\
 (cities, countries, distance_col="distances", how="right")
