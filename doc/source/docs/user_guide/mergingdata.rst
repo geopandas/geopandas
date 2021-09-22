@@ -143,7 +143,7 @@ point into a circle of appropriate radius, then intersect those buffered circles
 Nearest Joins
 ~~~~~~~~~~~~~
 
-Proximity based joins can be done via ``sjoin_nearest()``.
+Proximity-based joins can be done via :func:`sjoin_nearest`.
 
 :func:`sjoin_nearest` shares the ``how`` argument with :func:`sjoin` but does not support the ``"inner"`` option.
 
