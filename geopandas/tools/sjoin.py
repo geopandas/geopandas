@@ -345,6 +345,11 @@ def _nearest_query(
     how: str,
     return_distance: bool,
 ):
+    if not (compat.PYGEOS_GE_010 and compat.USE_PYGEOS):
+        raise NotImplementedError(
+            "Currently, only PyGEOS >= 0.10.0 supports `nearest_all`. "
+            + compat.INSTALL_PYGEOS_ERROR
+        )
     # use the opposite of the join direction for the index
     use_left_as_sindex = how == "right"
     if use_left_as_sindex:
@@ -353,11 +358,6 @@ def _nearest_query(
     else:
         sindex = right_df.sindex
         query = left_df.geometry
-    if not (compat.PYGEOS_GE_010 and compat.USE_PYGEOS):
-        raise NotImplementedError(
-            "Currently, only PyGEOS >= 0.10.0 supports `nearest_all`. "
-            + compat.INSTALL_PYGEOS_ERROR
-        )
     if sindex:
         res = sindex.nearest_all(
             query, max_distance=max_distance, return_distance=return_distance
