@@ -215,7 +215,7 @@ class BaseSpatialIndex:
         In the context of a spatial join, input geometries are the “left”
         geometries that determine the order of the results, and tree geometries
         are “right” geometries that are joined against the left geometries.
-        If max_distance is not set, this will effectively be a left-join
+        If max_distance is not set, this will effectively be a left join
         because every geometry in ``geometry`` will have a nearest geometry in
         the tree. However, if ``max_distance`` is used, this becomes an
         inner-join, since some geometries in ``geometry`` may not have a match
