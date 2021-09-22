@@ -91,7 +91,7 @@ In a Spatial Join, two geometry objects are merged based on their spatial relati
 
    # Execute spatial join
 
-   cities_with_country = geopandas.sjoin(cities, countries, how="inner", op='intersects')
+   cities_with_country = geopandas.sjoin(cities, countries, how="inner", predicate='intersects')
    cities_with_country.head()
 
 
@@ -105,17 +105,17 @@ Binary Predicate Joins
 
 Binary predicate joins are available via :func:`sjoin`.
 
-:func:`sjoin` has two core arguments: ``how`` and ``op``.
+:func:`sjoin` has two core arguments: ``how`` and ``predicate``.
 
-**op**
+**predicate**
 
-The ``op`` argument specifies how ``geopandas`` decides whether or not to join the attributes of one
+The ``predicate`` argument specifies how ``geopandas`` decides whether or not to join the attributes of one
 object to another, based on their geometric relationship.
 
-The values for ``op`` correspond to the names of geometric binary predicates and depend on the spatial
+The values for ``predicate`` correspond to the names of geometric binary predicates and depend on the spatial
 index implementation.
 
-The default spatial index in ``geopandas`` currently supports the following values for ``op`` which are
+The default spatial index in ``geopandas`` currently supports the following values for ``predicate`` which are
 defined in the
 `Shapely documentation <http://shapely.readthedocs.io/en/latest/manual.html#binary-predicates>`__:
 
