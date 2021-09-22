@@ -528,7 +528,7 @@ class TestSpatialJoinNaturalEarth:
 
 @pytest.mark.skipif(
     TEST_NEAREST,
-    reason=("This test can only be run _without_ PyGEOS installed"),
+    reason=("This test can only be run _without_ PyGEOS >= 0.10 installed"),
 )
 def test_no_nearest_all():
     df1 = geopandas.GeoDataFrame({"geometry": []})
@@ -749,7 +749,7 @@ class TestNearest:
             ),
         ],
     )
-    def test_join_left(
+    def test_sjoin_nearest_left(
         self,
         geo_left,
         geo_right,
@@ -824,7 +824,7 @@ class TestNearest:
             ),
         ],
     )
-    def test_join_right(
+    def test_sjoin_nearest_right(
         self,
         geo_left,
         geo_right,

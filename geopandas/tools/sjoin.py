@@ -365,7 +365,8 @@ def _nearest_query(
         if return_distance:
             (input_idx, tree_idx), distances = res
         else:
-            (input_idx, tree_idx), distances = res, None
+            (input_idx, tree_idx) = res
+            distances = None
         if use_left_as_sindex:
             l_idx, r_idx = tree_idx, input_idx
             sort_order = np.argsort(l_idx, kind="stable")
@@ -431,20 +432,20 @@ def sjoin_nearest(
     >>> countries = geopandas.read_file(geopandas.datasets.get_\
 path("naturalearth_lowres"))
     >>> cities = geopandas.read_file(geopandas.datasets.get_path("naturalearth_cities"))
-    >>> countries.head(2)  # doctest: +SKIP
+    >>> countries.head(2).name  # doctest: +SKIP
         pop_est      continent                      name \
 iso_a3  gdp_md_est                                           geometry
     0     920938        Oceania                      Fiji    FJI      8374.0  MULTIPOLY\
 GON (((180.00000 -16.06713, 180.00000...
     1   53950935         Africa                  Tanzania    TZA    150600.0  POLYGON (\
 (33.90371 -0.95000, 34.07262 -1.05982...
-    >>> cities.head(2)  # doctest: +SKIP
+    >>> cities.head(2).name  # doctest: +SKIP
             name                   geometry
     0  Vatican City  POINT (12.45339 41.90328)
     1    San Marino  POINT (12.44177 43.93610)
 
     >>> cities_w_country_data = geopandas.sjoin_nearest(cities, countries)
-    >>> cities_w_country_data.head(2)  # doctest: +SKIP
+    >>> cities_w_country_data[['name_left', 'name_right']].head(2)  # doctest: +SKIP
             name_left                   geometry  index_right   pop_est continent name_\
 right iso_a3  gdp_md_est
     0    Vatican City  POINT (12.45339 41.90328)          141  62137802    Europe      \
@@ -459,8 +460,8 @@ Italy    ITA   2221000.0
             name_left name_right distances
     0    Vatican City      Italy       0.0
     1      San Marino      Italy       0.0
-    Note that in this case we get multiple results for Italy because all cities are
-    equidistant (in this case zero). In fact, we get 3 results in total:
+    In the following example we get multiple cities for Italy because all results are
+    equidistant (in this case zero because they intersect). In fact, we get 3 results in total:
     >>> countries_w_city_data = geopandas.sjoin_nearest\
 (cities, countries, distance_col="distances", how="right")
     >>> italy_results = \
