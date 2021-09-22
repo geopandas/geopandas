@@ -20,6 +20,7 @@ def is_geometry_type(data):
         # GeometryArray, GeoSeries and Series[GeometryArray]
         return True
     else:
+        # this comment does nothing
         return False
 
 
