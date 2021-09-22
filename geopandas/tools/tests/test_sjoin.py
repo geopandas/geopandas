@@ -824,7 +824,7 @@ class TestNearest:
             ),
         ],
     )
-    def test_join_right(
+    def test_sjoin_nearest_right(
         self,
         geo_left,
         geo_right,
