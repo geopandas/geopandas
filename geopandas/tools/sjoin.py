@@ -460,7 +460,8 @@ Italy    ITA   2221000.0
             name_left name_right distances
     0    Vatican City      Italy       0.0
     1      San Marino      Italy       0.0
-    In the following example we get multiple cities for Italy because all results are
+
+    In the following example, we get multiple cities for Italy because all results are
     equidistant (in this case zero because they intersect).
     In fact, we get 3 results in total:
 
