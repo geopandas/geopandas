@@ -18,6 +18,8 @@ dependencies:
   - rtree
   - matplotlib
   - mapclassify
+  - folium
+  - xyzservices
   - scipy
   - geopy
   # installed in tests.yaml, because not available on windows

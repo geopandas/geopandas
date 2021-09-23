@@ -11,6 +11,7 @@ from shapely.geometry.base import BaseGeometry
 
 from geopandas.base import GeoPandasBase, _delegate_property
 from geopandas.plotting import plot_series
+from geopandas.explore import _explore_geoseries
 
 from . import _compat as compat
 from ._decorator import doc
@@ -748,6 +749,11 @@ class GeoSeries(GeoPandasBase, Series):
     @doc(plot_series)
     def plot(self, *args, **kwargs):
         return plot_series(self, *args, **kwargs)
+
+    @doc(_explore_geoseries)
+    def explore(self, *args, **kwargs):
+        """Interactive map based on folium/leaflet.js"""
+        return _explore_geoseries(self, *args, **kwargs)
 
     def explode(self):
         """
