@@ -818,13 +818,13 @@ class GeoSeries(GeoPandasBase, Series):
             # extract original index values based on integer index
             outer_index = self.index.take(outer_idx)
 
-            index = zip(outer_index, inner_index)
+            nlevels = outer_index.nlevels
+            index_arrays = [outer_index.get_level_values(lvl) for lvl in range(nlevels)]
+            index_arrays.append(inner_index)
 
-            # if self.index is a MultiIndex then index is a list of nested tuples
-            if isinstance(self.index, MultiIndex):
-                index = [tuple(outer) + (inner,) for outer, inner in index]
-
-            index = MultiIndex.from_tuples(index, names=self.index.names + [None])
+            index = MultiIndex.from_arrays(
+                index_arrays, names=self.index.names + [None]
+            )
             return GeoSeries(geometries, index=index, crs=self.crs).__finalize__(self)
 
         # else PyGEOS is not available or version <= 0.8
