@@ -15,7 +15,7 @@ from geopandas.array import GeometryArray, GeometryDtype, from_shapely, to_wkb, 
 from geopandas.base import GeoPandasBase, is_geometry_type
 from geopandas.geoseries import GeoSeries
 import geopandas.io
-
+from geopandas.explore import _explore
 from . import _compat as compat
 from ._decorator import doc
 
@@ -1652,6 +1652,34 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         # do not return a GeoDataFrame
         return pd.DataFrame(df)
 
+    def convert_dtypes(self, *args, **kwargs):
+        """
+        Convert columns to best possible dtypes using dtypes supporting ``pd.NA``.
+
+        Always returns a GeoDataFrame as no conversions are applied to the
+        geometry column.
+
+        See the pandas.DataFrame.convert_dtypes docstring for more details.
+
+        Returns
+        -------
+        GeoDataFrame
+
+        """
+        # Overridden to fix GH1870, that return type is not preserved always
+        # (and where it was, geometry col was not)
+
+        if not compat.PANDAS_GE_10:
+            raise NotImplementedError(
+                "GeoDataFrame.convert_dtypes requires pandas >= 1.0"
+            )
+
+        return GeoDataFrame(
+            super().convert_dtypes(*args, **kwargs),
+            geometry=self.geometry.name,
+            crs=self.crs,
+        )
+
     def to_postgis(
         self,
         name,
@@ -1758,6 +1786,11 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         return self.geometry.difference(other)
 
     plot = CachedAccessor("plot", geopandas.plotting.GeoplotAccessor)
+
+    @doc(_explore)
+    def explore(self, *args, **kwargs):
+        """Interactive map based on folium/leaflet.js"""
+        return _explore(self, *args, **kwargs)
 
 
 def _dataframe_set_geometry(self, col, drop=False, inplace=False, crs=None):
