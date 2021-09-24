@@ -73,9 +73,9 @@ def _expand_kwargs(kwargs, multiindex):
     mpl = matplotlib.__version__
     if mpl >= LooseVersion("3.4") or (mpl > LooseVersion("3.3.2") and "+" in mpl):
         # alpha is supported as array argument with matplotlib 3.4+
-        scalar_kwargs = ["marker"]
+        scalar_kwargs = ["marker", "path_effects"]
     else:
-        scalar_kwargs = ["marker", "alpha"]
+        scalar_kwargs = ["marker", "alpha", "path_effects"]
 
     for att, value in kwargs.items():
         if "color" in att:  # color(s), edgecolor(s), facecolor(s)
