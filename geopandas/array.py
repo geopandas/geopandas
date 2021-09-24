@@ -1181,7 +1181,7 @@ class GeometryArray(ExtensionArray):
 
         result = take(self._data, indices, allow_fill=allow_fill, fill_value=fill_value)
         if allow_fill and fill_value is None:
-            result[pd.isna(result)] = None
+            result[~shapely.is_valid_input(result)] = None
         return GeometryArray(result, crs=self.crs)
 
     def _fill(self, idx, value):

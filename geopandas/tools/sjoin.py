@@ -106,7 +106,7 @@ def sjoin(
 
     indices = _geom_predicate_query(left_df, right_df, predicate, distance)
 
-    joined = _frame_join(indices, left_df, right_df, how, lsuffix, rsuffix)
+    joined, _ = _frame_join(left_df, right_df, indices, None, how, lsuffix, rsuffix)
 
     return joined
 
@@ -185,19 +185,16 @@ def _geom_predicate_query(left_df, right_df, predicate, distance):
         l_idx, r_idx = sindex.query(
             input_geoms, predicate=predicate, sort=False, distance=distance
         )
-        indices = pd.DataFrame({"_key_left": l_idx, "_key_right": r_idx})
     else:
         # when sindex is empty / has no valid geometries
-        indices = pd.DataFrame(columns=["_key_left", "_key_right"], dtype=float)
+        l_idx, r_idx = np.array([], dtype=np.intp), np.array([], dtype=np.intp)
 
     if original_predicate == "within":
         # within is implemented as the inverse of contains
         # flip back the results
-        indices = indices.rename(
-            columns={"_key_left": "_key_right", "_key_right": "_key_left"}
-        )
+        r_idx, l_idx = l_idx, r_idx
 
-    return indices
+    return l_idx, r_idx
 
 
 def _reset_index_with_suffix(df, suffix, other):
@@ -251,8 +248,16 @@ def _process_column_names_with_suffix(
             return f"{x}_{suffix}"
         return x
 
-    lrenamer = partial(renamer, suffix=lsuffix, geometry=left_df._geometry_column_name)
-    rrenamer = partial(renamer, suffix=rsuffix, geometry=right_df._geometry_column_name)
+    lrenamer = partial(
+        renamer,
+        suffix=lsuffix,
+        geometry=getattr(left_df, "_geometry_column_name", None),
+    )
+    rrenamer = partial(
+        renamer,
+        suffix=rsuffix,
+        geometry=getattr(right_df, "_geometry_column_name", None),
+    )
 
     # TODO retain index name?
     left_renamed = pd.Index([lrenamer(lab) for lab in left])
@@ -284,7 +289,7 @@ def _restore_index(joined, index_names, index_names_original):
     Set back the the original index columns, and restoring their name as `None`
     if they didn't have a name originally.
     """
-    joined = joined.set_index(list(index_names))
+    joined.set_index(list(index_names), inplace=True)
 
     # restore the fact that the index didn't have a name
     joined_index_names = list(joined.index.names)
@@ -295,7 +300,48 @@ def _restore_index(joined, index_names, index_names_original):
     return joined
 
 
-def _frame_join(join_df, left_df, right_df, how, lsuffix, rsuffix):
+def _adjust_indexers(indices, distances, original_length, how):
+    """
+    The left/right indexers from the query represents an inner join.
+    For a left or right join, we need to adjust them to include the rows
+    that would not be present in an inner join.
+    """
+    # the indices represent an inner join, no adjustment needed
+    if how == "inner":
+        return indices, distances
+
+    l_idx, r_idx = indices
+
+    if how == "right":
+        # re-sort so it is sorted by the right indexer
+        indexer = np.lexsort((l_idx, r_idx))
+        l_idx, r_idx = l_idx[indexer], r_idx[indexer]
+        if distances is not None:
+            distances = distances[indexer]
+
+        # switch order
+        r_idx, l_idx = l_idx, r_idx
+
+    # determine which indices are missing and where they would need to be inserted
+    idx = np.arange(original_length)
+    l_idx_missing = idx[~np.isin(idx, l_idx)]
+    insert_idx = np.searchsorted(l_idx, l_idx_missing)
+    # for the left indexer, insert those missing indices
+    l_idx = np.insert(l_idx, insert_idx, l_idx_missing)
+    # for the right indexer, insert -1 -> to get missing values in pandas' reindexing
+    r_idx = np.insert(r_idx, insert_idx, -1)
+    # for the indices, already insert those missing values manually
+    if distances is not None:
+        distances = np.insert(distances, insert_idx, np.nan)
+
+    if how == "right":
+        # switch back
+        l_idx, r_idx = r_idx, l_idx
+
+    return (l_idx, r_idx), distances
+
+
+def _frame_join(left_df, right_df, indices, distances, how, lsuffix, rsuffix):
     """Join the GeoDataFrames at the DataFrame level.
 
     Parameters
@@ -325,6 +371,12 @@ def _frame_join(join_df, left_df, right_df, how, lsuffix, rsuffix):
     # index in geopandas may be any arbitrary dtype. so reset both indices now
     # and store references to the original indices, to be reaffixed later.
     # GH 352
+
+    if how == "inner" or how == "left":
+        right_df = right_df.drop(right_df.geometry.name, axis=1)
+    else:  # how == 'right':
+        left_df = left_df.drop(left_df.geometry.name, axis=1)
+
     left_df = left_df.copy(deep=True)
     left_nlevels = left_df.index.nlevels
     left_index_original = left_df.index.names
@@ -350,53 +402,22 @@ def _frame_join(join_df, left_df, right_df, how, lsuffix, rsuffix):
     right_index = right_df.columns[:right_nlevels]
 
     # perform join on the dataframes
-    if how == "inner":
-        join_df = join_df.set_index("_key_left")
-        joined = (
-            left_df.merge(join_df, left_index=True, right_index=True)
-            .merge(
-                right_df.drop(right_df.geometry.name, axis=1),
-                left_on="_key_right",
-                right_index=True,
-                suffixes=(None, None),
-            )
-            .drop(["_key_right"], axis=1)
-        )
-        joined = _restore_index(joined, left_index, left_index_original)
+    (l_idx, r_idx), distances = _adjust_indexers(
+        indices, distances, len(right_df) if how == "right" else len(left_df), how
+    )
+    # left = left_df.take(l_idx)
+    new_index = pd.RangeIndex(len(l_idx))
+    left = left_df._reindex_with_indexers({0: (new_index, l_idx)})
+    right = right_df._reindex_with_indexers({0: (new_index, r_idx)})
+    joined = pd.concat([left, right], axis=1, copy=False)
 
-    elif how == "left":
-        join_df = join_df.set_index("_key_left")
-        joined = (
-            left_df.merge(join_df, left_index=True, right_index=True, how="left")
-            .merge(
-                right_df.drop(right_df.geometry.name, axis=1),
-                how="left",
-                left_on="_key_right",
-                right_index=True,
-                suffixes=(None, None),
-            )
-            .drop(["_key_right"], axis=1)
-        )
+    if how == "inner" or how == "left":
         joined = _restore_index(joined, left_index, left_index_original)
-
     else:  # how == 'right':
-        joined = (
-            left_df.drop(left_df.geometry.name, axis=1)
-            .merge(
-                join_df.merge(
-                    right_df, left_on="_key_right", right_index=True, how="right"
-                ),
-                left_index=True,
-                right_on="_key_left",
-                how="right",
-                suffixes=(None, None),
-            )
-            .drop(["_key_left", "_key_right"], axis=1)
-            .set_geometry(right_df.geometry.name)
-        )
+        joined = joined.set_geometry(right_df.geometry.name)
         joined = _restore_index(joined, right_index, right_index_original)
 
-    return joined
+    return joined, distances
 
 
 def _nearest_query(
@@ -436,15 +457,14 @@ def _nearest_query(
                 distances = distances[sort_order]
         else:
             l_idx, r_idx = input_idx, tree_idx
-        join_df = pd.DataFrame(
-            {"_key_left": l_idx, "_key_right": r_idx, "distances": distances}
-        )
     else:
         # when sindex is empty / has no valid geometries
-        join_df = pd.DataFrame(
-            columns=["_key_left", "_key_right", "distances"], dtype=float
-        )
-    return join_df
+        l_idx, r_idx = np.array([], dtype=np.intp), np.array([], dtype=np.intp)
+        if return_distance:
+            distances = np.array([], dtype=np.float64)
+        else:
+            distances = None
+    return (l_idx, r_idx), distances
 
 
 def sjoin_nearest(
@@ -577,19 +597,14 @@ chicago_w_groceries[chicago_w_groceries["community"] == "UPTOWN"]
 
     return_distance = distance_col is not None
 
-    join_df = _nearest_query(
+    indices, distances = _nearest_query(
         left_df, right_df, max_distance, how, return_distance, exclusive
+    )
+    joined, distances = _frame_join(
+        left_df, right_df, indices, distances, how, lsuffix, rsuffix
     )
 
     if return_distance:
-        join_df = join_df.rename(columns={"distances": distance_col})
-    else:
-        join_df.pop("distances")
-
-    joined = _frame_join(join_df, left_df, right_df, how, lsuffix, rsuffix)
-
-    if return_distance:
-        columns = [c for c in joined.columns if c != distance_col] + [distance_col]
-        joined = joined[columns]
+        joined[distance_col] = distances
 
     return joined

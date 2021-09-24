@@ -574,7 +574,6 @@ class TestIndexNames:
         with pytest.raises(ValueError, match="'index_right' cannot be a column name"):
             sjoin(df1, df2, how=how)
 
-    @pytest.mark.xfail
     @pytest.mark.parametrize("how", ["inner", "left", "right"])
     def test_conflicting_column_with_suffix(self, how):
         # test case where the auto-generated index name conflicts
