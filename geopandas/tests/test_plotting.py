@@ -551,9 +551,9 @@ class TestLineStringPlotting:
             )
 
     def test_style_kwargs_path_effects(self):
-        import matplotlib.patheffects as PathEffects
+        from matplotlib.patheffects import withStroke
 
-        effects = [PathEffects.withStroke(linewidth=8, foreground="b")]
+        effects = [withStroke(linewidth=8, foreground="b")]
         ax = self.df.plot(color="orange", path_effects=effects)
         assert ax.collections[0].get_path_effects()[0].__dict__["_gc"] == {
             "linewidth": 8,
