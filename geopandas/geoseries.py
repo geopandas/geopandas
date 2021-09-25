@@ -766,7 +766,7 @@ class GeoSeries(GeoPandasBase, Series):
         second level of the returned MultiIndex
 
         Returns
-        ------
+        -------
         A GeoSeries with a MultiIndex. The levels of the MultiIndex are the
         original index and a zero-based integer index that counts the
         number of single geometries within a multi-part geometry.
