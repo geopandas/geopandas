@@ -24,6 +24,11 @@ DEFAULT_GEO_COLUMN_NAME = "geometry"
 
 
 def _geodataframe_constructor_with_fallback(*args, **kwargs):
+    """
+    A flexible constructor for GeoDataFrame._constructor, which falls back
+    to returning a DataFrame (if a certain operation does not preserve the
+    geometry column)
+    """
     df = GeoDataFrame(*args, **kwargs)
     geometry_cols_mask = df.dtypes == "geometry"
     if len(geometry_cols_mask) == 0 or geometry_cols_mask.sum() == 0:
