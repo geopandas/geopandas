@@ -544,7 +544,7 @@ def test_prefers_pyarrow_fs():
     assert isinstance(filesystem, pyarrow.fs.LocalFileSystem)
 
 
-def test_write_read_parquet():
+def test_write_read_parquet_expand_user():
     gdf = geopandas.GeoDataFrame(geometry=[box(0, 0, 10, 10)], crs="epsg:4326")
     test_file = "~/test_file.parquet"
     gdf.to_parquet(test_file)
@@ -553,7 +553,7 @@ def test_write_read_parquet():
     os.remove(os.path.expanduser(test_file))
 
 
-def test_write_read_feather():
+def test_write_read_feather_expand_user():
     gdf = geopandas.GeoDataFrame(geometry=[box(0, 0, 10, 10)], crs="epsg:4326")
     test_file = "~/test_file.feather"
     gdf.to_feather(test_file)
