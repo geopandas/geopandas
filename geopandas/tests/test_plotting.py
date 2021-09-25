@@ -516,7 +516,7 @@ class TestLineStringPlotting:
             self.df.plot(linestyle=ls, linewidth=1),
             self.df.plot(column="values", linestyle=ls, linewidth=1),
         ]:
-            np.testing.assert_array_equal(exp_ls, ax.collections[0].get_linestyle())
+            assert exp_ls == ax.collections[0].get_linestyle()
 
     def test_style_kwargs_linewidth(self):
         # single
@@ -549,6 +549,16 @@ class TestLineStringPlotting:
             np.testing.assert_array_equal(
                 np.linspace(0, 0.0, 1.0, self.N), ax.collections[0].get_alpha()
             )
+
+    def test_style_kwargs_path_effects(self):
+        from matplotlib.patheffects import withStroke
+
+        effects = [withStroke(linewidth=8, foreground="b")]
+        ax = self.df.plot(color="orange", path_effects=effects)
+        assert ax.collections[0].get_path_effects()[0].__dict__["_gc"] == {
+            "linewidth": 8,
+            "foreground": "b",
+        }
 
     def test_subplots_norm(self):
         # colors of subplots are the same as for plot (norm is applied)
@@ -947,7 +957,7 @@ class TestNonuniformGeometryPlotting:
             self.series.plot(linestyles=ls, linewidth=1),
             self.df.plot(linestyles=ls, linewidth=1),
         ]:
-            np.testing.assert_array_equal(exp_ls, ax.collections[0].get_linestyle())
+            assert exp_ls == ax.collections[0].get_linestyle()
 
     def test_style_kwargs_linewidth(self):
         # single
@@ -1652,6 +1662,8 @@ class TestGeoplotAccessor:
                 kwargs = {"y": "y"}
             elif kind in _xy_kinds:
                 kwargs = {"x": "x", "y": "y"}
+                if kind == "hexbin":  # increase gridsize to reduce duration
+                    kwargs["gridsize"] = 10
 
             self.compare_figures(kind, fig_test, fig_ref, kwargs)
             plt.close("all")
@@ -1687,7 +1699,7 @@ def test_column_values():
     polys = GeoSeries([t1, t2], index=list("AB"))
     df = GeoDataFrame({"geometry": polys, "values": [0, 1]})
 
-    # Test with continous values
+    # Test with continuous values
     ax = df.plot(column="values")
     colors = ax.collections[0].get_facecolors()
     ax = df.plot(column=df["values"])
@@ -1707,7 +1719,7 @@ def test_column_values():
     colors_array = ax.collections[0].get_facecolors()
     np.testing.assert_array_equal(colors, colors_array)
 
-    # Check raised error: is df rows number equal to column legth?
+    # Check raised error: is df rows number equal to column length?
     with pytest.raises(ValueError, match="different number of rows"):
         ax = df.plot(column=np.array([1, 2, 3]))
 

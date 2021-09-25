@@ -414,7 +414,7 @@ Improvements:
 * Permit setting markersize for Point GeoSeries plots with column values (#633)
 * Started an example gallery (#463, #690, #717)
 * Support for plotting MultiPoints (#683)
-* Testing functionalty (e.g. `assert_geodataframe_equal`) is now publicly exposed (#707)
+* Testing functionality (e.g. `assert_geodataframe_equal`) is now publicly exposed (#707)
 * Add `explode` method to GeoDataFrame (similar to the GeoSeries method) (#671)
 * Set equal aspect on active axis on multi-axis figures (#718)
 * Pass array of values to column argument in `plot` (#770)

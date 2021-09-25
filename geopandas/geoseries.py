@@ -11,6 +11,7 @@ from shapely.geometry.base import BaseGeometry
 
 from geopandas.base import GeoPandasBase, _delegate_property
 from geopandas.plotting import plot_series
+from geopandas.explore import _explore_geoseries
 
 from . import _compat as compat
 from ._decorator import doc
@@ -187,10 +188,17 @@ class GeoSeries(GeoPandasBase, Series):
             kwargs.pop("dtype", None)
             # Use Series constructor to handle input data
             with compat.ignore_shapely2_warnings():
+                # suppress additional warning from pandas for empty data
+                # (will always give object dtype instead of float dtype in the future,
+                # making the `if s.empty: s = s.astype(object)` below unnecessary)
+                empty_msg = "The default dtype for empty Series"
+                warnings.filterwarnings("ignore", empty_msg, DeprecationWarning)
+                warnings.filterwarnings("ignore", empty_msg, FutureWarning)
                 s = pd.Series(data, index=index, name=name, **kwargs)
             # prevent trying to convert non-geometry objects
             if s.dtype != object:
-                if s.empty or data is None:
+                if (s.empty and s.dtype == "float64") or data is None:
+                    # pd.Series with empty data gives float64 for older pandas versions
                     s = s.astype(object)
                 else:
                     warnings.warn(_SERIES_WARNING_MSG, FutureWarning, stacklevel=2)
@@ -468,7 +476,7 @@ class GeoSeries(GeoPandasBase, Series):
 
         return GeoDataFrame({"geometry": self}).__geo_interface__
 
-    def to_file(self, filename, driver="ESRI Shapefile", index=None, **kwargs):
+    def to_file(self, filename, driver=None, index=None, **kwargs):
         """Write the ``GeoSeries`` to a file.
 
         By default, an ESRI shapefile is written, but any OGR data source
@@ -478,8 +486,10 @@ class GeoSeries(GeoPandasBase, Series):
         ----------
         filename : string
             File path or file handle to write to.
-        driver : string, default: 'ESRI Shapefile'
+        driver : string, default None
             The OGR format driver used to write the vector file.
+            If not specified, it attempts to infer it from the file extension.
+            If no extension is specified, it saves ESRI Shapefile to a folder.
         index : bool, default None
             If True, write index into one or more columns (for MultiIndex).
             Default None writes the index into one or more columns only if
@@ -531,7 +541,7 @@ class GeoSeries(GeoPandasBase, Series):
 
     def _wrapped_pandas_method(self, mtd, *args, **kwargs):
         """Wrap a generic pandas method to ensure it returns a GeoSeries"""
-        val = getattr(super(GeoSeries, self), mtd)(*args, **kwargs)
+        val = getattr(super(), mtd)(*args, **kwargs)
         if type(val) == Series:
             val.__class__ = GeoSeries
             val.crs = self.crs
@@ -620,7 +630,7 @@ class GeoSeries(GeoPandasBase, Series):
                 stacklevel=2,
             )
 
-        return super(GeoSeries, self).isna()
+        return super().isna()
 
     def isnull(self):
         """Alias for `isna` method. See `isna` for more detail."""
@@ -678,7 +688,7 @@ class GeoSeries(GeoPandasBase, Series):
                 UserWarning,
                 stacklevel=2,
             )
-        return super(GeoSeries, self).notna()
+        return super().notna()
 
     def notnull(self):
         """Alias for `notna` method. See `notna` for more detail."""
@@ -724,9 +734,7 @@ class GeoSeries(GeoPandasBase, Series):
         """
         if value is None:
             value = BaseGeometry()
-        return super(GeoSeries, self).fillna(
-            value=value, method=method, inplace=inplace, **kwargs
-        )
+        return super().fillna(value=value, method=method, inplace=inplace, **kwargs)
 
     def __contains__(self, other):
         """Allow tests of the form "geom in s"
@@ -743,6 +751,11 @@ class GeoSeries(GeoPandasBase, Series):
     @doc(plot_series)
     def plot(self, *args, **kwargs):
         return plot_series(self, *args, **kwargs)
+
+    @doc(_explore_geoseries)
+    def explore(self, *args, **kwargs):
+        """Interactive map based on folium/leaflet.js"""
+        return _explore_geoseries(self, *args, **kwargs)
 
     def explode(self):
         """
@@ -807,13 +820,13 @@ class GeoSeries(GeoPandasBase, Series):
             # extract original index values based on integer index
             outer_index = self.index.take(outer_idx)
 
-            index = zip(outer_index, inner_index)
+            nlevels = outer_index.nlevels
+            index_arrays = [outer_index.get_level_values(lvl) for lvl in range(nlevels)]
+            index_arrays.append(inner_index)
 
-            # if self.index is a MultiIndex then index is a list of nested tuples
-            if isinstance(self.index, MultiIndex):
-                index = [tuple(outer) + (inner,) for outer, inner in index]
-
-            index = MultiIndex.from_tuples(index, names=self.index.names + [None])
+            index = MultiIndex.from_arrays(
+                index_arrays, names=self.index.names + [None]
+            )
             return GeoSeries(geometries, index=index, crs=self.crs).__finalize__(self)
 
         # else PyGEOS is not available or version <= 0.8
