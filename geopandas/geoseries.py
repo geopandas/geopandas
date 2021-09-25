@@ -11,7 +11,10 @@ from shapely.geometry.base import BaseGeometry
 
 from geopandas.base import GeoPandasBase, _delegate_property
 from geopandas.plotting import plot_series
+from geopandas.explore import _explore_geoseries
 
+from . import _compat as compat
+from ._decorator import doc
 from .array import (
     GeometryDtype,
     from_shapely,
@@ -21,7 +24,6 @@ from .array import (
     to_wkt,
 )
 from .base import is_geometry_type
-from . import _compat as compat
 
 
 _SERIES_WARNING_MSG = """\
@@ -47,24 +49,6 @@ def _geoseries_constructor_with_fallback(data=None, index=None, crs=None, **kwar
             return GeoSeries(data=data, index=index, crs=crs, **kwargs)
     except TypeError:
         return Series(data=data, index=index, **kwargs)
-
-
-def inherit_doc(cls):
-    """
-    A decorator adding a docstring from an existing method.
-    """
-
-    def decorator(decorated):
-        original_method = getattr(cls, decorated.__name__, None)
-        if original_method:
-            doc = original_method.__doc__ or ""
-        else:
-            doc = ""
-
-        decorated.__doc__ = doc
-        return decorated
-
-    return decorator
 
 
 class GeoSeries(GeoPandasBase, Series):
@@ -132,9 +116,9 @@ class GeoSeries(GeoPandasBase, Series):
     - Lat[north]: Geodetic latitude (degree)
     - Lon[east]: Geodetic longitude (degree)
     Area of Use:
-    - name: World
+    - name: World.
     - bounds: (-180.0, -90.0, 180.0, 90.0)
-    Datum: World Geodetic System 1984
+    Datum: World Geodetic System 1984 ensemble
     - Ellipsoid: WGS 84
     - Prime Meridian: Greenwich
 
@@ -204,10 +188,17 @@ class GeoSeries(GeoPandasBase, Series):
             kwargs.pop("dtype", None)
             # Use Series constructor to handle input data
             with compat.ignore_shapely2_warnings():
+                # suppress additional warning from pandas for empty data
+                # (will always give object dtype instead of float dtype in the future,
+                # making the `if s.empty: s = s.astype(object)` below unnecessary)
+                empty_msg = "The default dtype for empty Series"
+                warnings.filterwarnings("ignore", empty_msg, DeprecationWarning)
+                warnings.filterwarnings("ignore", empty_msg, FutureWarning)
                 s = pd.Series(data, index=index, name=name, **kwargs)
             # prevent trying to convert non-geometry objects
             if s.dtype != object:
-                if s.empty or data is None:
+                if (s.empty and s.dtype == "float64") or data is None:
+                    # pd.Series with empty data gives float64 for older pandas versions
                     s = s.astype(object)
                 else:
                     warnings.warn(_SERIES_WARNING_MSG, FutureWarning, stacklevel=2)
@@ -485,7 +476,7 @@ class GeoSeries(GeoPandasBase, Series):
 
         return GeoDataFrame({"geometry": self}).__geo_interface__
 
-    def to_file(self, filename, driver="ESRI Shapefile", index=None, **kwargs):
+    def to_file(self, filename, driver=None, index=None, **kwargs):
         """Write the ``GeoSeries`` to a file.
 
         By default, an ESRI shapefile is written, but any OGR data source
@@ -495,8 +486,10 @@ class GeoSeries(GeoPandasBase, Series):
         ----------
         filename : string
             File path or file handle to write to.
-        driver : string, default: 'ESRI Shapefile'
+        driver : string, default None
             The OGR format driver used to write the vector file.
+            If not specified, it attempts to infer it from the file extension.
+            If no extension is specified, it saves ESRI Shapefile to a folder.
         index : bool, default None
             If True, write index into one or more columns (for MultiIndex).
             Default None writes the index into one or more columns only if
@@ -548,7 +541,7 @@ class GeoSeries(GeoPandasBase, Series):
 
     def _wrapped_pandas_method(self, mtd, *args, **kwargs):
         """Wrap a generic pandas method to ensure it returns a GeoSeries"""
-        val = getattr(super(GeoSeries, self), mtd)(*args, **kwargs)
+        val = getattr(super(), mtd)(*args, **kwargs)
         if type(val) == Series:
             val.__class__ = GeoSeries
             val.crs = self.crs
@@ -557,19 +550,19 @@ class GeoSeries(GeoPandasBase, Series):
     def __getitem__(self, key):
         return self._wrapped_pandas_method("__getitem__", key)
 
-    @inherit_doc(pd.Series)
+    @doc(pd.Series)
     def sort_index(self, *args, **kwargs):
         return self._wrapped_pandas_method("sort_index", *args, **kwargs)
 
-    @inherit_doc(pd.Series)
+    @doc(pd.Series)
     def take(self, *args, **kwargs):
         return self._wrapped_pandas_method("take", *args, **kwargs)
 
-    @inherit_doc(pd.Series)
+    @doc(pd.Series)
     def select(self, *args, **kwargs):
         return self._wrapped_pandas_method("select", *args, **kwargs)
 
-    @inherit_doc(pd.Series)
+    @doc(pd.Series)
     def apply(self, func, convert_dtype=True, args=(), **kwargs):
         result = super().apply(func, convert_dtype=convert_dtype, args=args, **kwargs)
         if isinstance(result, GeoSeries):
@@ -578,7 +571,7 @@ class GeoSeries(GeoPandasBase, Series):
         return result
 
     def __finalize__(self, other, method=None, **kwargs):
-        """ propagate metadata from other to self """
+        """propagate metadata from other to self"""
         # NOTE: backported from pandas master (upcoming v0.13)
         for name in self._metadata:
             object.__setattr__(self, name, getattr(other, name, None))
@@ -637,7 +630,7 @@ class GeoSeries(GeoPandasBase, Series):
                 stacklevel=2,
             )
 
-        return super(GeoSeries, self).isna()
+        return super().isna()
 
     def isnull(self):
         """Alias for `isna` method. See `isna` for more detail."""
@@ -695,7 +688,7 @@ class GeoSeries(GeoPandasBase, Series):
                 UserWarning,
                 stacklevel=2,
             )
-        return super(GeoSeries, self).notna()
+        return super().notna()
 
     def notnull(self):
         """Alias for `notna` method. See `notna` for more detail."""
@@ -741,9 +734,7 @@ class GeoSeries(GeoPandasBase, Series):
         """
         if value is None:
             value = BaseGeometry()
-        return super(GeoSeries, self).fillna(
-            value=value, method=method, inplace=inplace, **kwargs
-        )
+        return super().fillna(value=value, method=method, inplace=inplace, **kwargs)
 
     def __contains__(self, other):
         """Allow tests of the form "geom in s"
@@ -757,15 +748,14 @@ class GeoSeries(GeoPandasBase, Series):
         else:
             return False
 
+    @doc(plot_series)
     def plot(self, *args, **kwargs):
-        """Generate a plot of the geometries in the ``GeoSeries``.
-
-        Wraps the ``plot_series()`` function, and documentation is copied from
-        there.
-        """
         return plot_series(self, *args, **kwargs)
 
-    plot.__doc__ = plot_series.__doc__
+    @doc(_explore_geoseries)
+    def explore(self, *args, **kwargs):
+        """Interactive map based on folium/leaflet.js"""
+        return _explore_geoseries(self, *args, **kwargs)
 
     def explode(self):
         """
@@ -776,7 +766,7 @@ class GeoSeries(GeoPandasBase, Series):
         second level of the returned MultiIndex
 
         Returns
-        ------
+        -------
         A GeoSeries with a MultiIndex. The levels of the MultiIndex are the
         original index and a zero-based integer index that counts the
         number of single geometries within a multi-part geometry.
@@ -830,10 +820,13 @@ class GeoSeries(GeoPandasBase, Series):
             # extract original index values based on integer index
             outer_index = self.index.take(outer_idx)
 
-            index = MultiIndex.from_arrays(
-                [outer_index, inner_index], names=self.index.names + [None]
-            )
+            nlevels = outer_index.nlevels
+            index_arrays = [outer_index.get_level_values(lvl) for lvl in range(nlevels)]
+            index_arrays.append(inner_index)
 
+            index = MultiIndex.from_arrays(
+                index_arrays, names=self.index.names + [None]
+            )
             return GeoSeries(geometries, index=index, crs=self.crs).__finalize__(self)
 
         # else PyGEOS is not available or version <= 0.8
@@ -849,6 +842,11 @@ class GeoSeries(GeoPandasBase, Series):
                 idxs = [(idx, 0)]
             index.extend(idxs)
             geometries.extend(geoms)
+
+        # if self.index is a MultiIndex then index is a list of nested tuples
+        if isinstance(self.index, MultiIndex):
+            index = [tuple(outer) + (inner,) for outer, inner in index]
+
         index = MultiIndex.from_tuples(index, names=self.index.names + [None])
         return GeoSeries(geometries, index=index, crs=self.crs).__finalize__(self)
 

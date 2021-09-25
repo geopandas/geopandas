@@ -828,16 +828,34 @@ class GeometryArray(ExtensionArray):
             raise RuntimeError("crs must be set to estimate UTM CRS.")
 
         minx, miny, maxx, maxy = self.total_bounds
-        # ensure using geographic coordinates
-        if not self.crs.is_geographic:
-            lon, lat = Transformer.from_crs(
-                self.crs, "EPSG:4326", always_xy=True
-            ).transform((minx, maxx, minx, maxx), (miny, miny, maxy, maxy))
-            x_center = np.mean(lon)
-            y_center = np.mean(lat)
-        else:
+        if self.crs.is_geographic:
             x_center = np.mean([minx, maxx])
             y_center = np.mean([miny, maxy])
+        # ensure using geographic coordinates
+        else:
+            transformer = Transformer.from_crs(self.crs, "EPSG:4326", always_xy=True)
+            if compat.PYPROJ_GE_31:
+                minx, miny, maxx, maxy = transformer.transform_bounds(
+                    minx, miny, maxx, maxy
+                )
+                y_center = np.mean([miny, maxy])
+                # crossed the antimeridian
+                if minx > maxx:
+                    # shift maxx from [-180,180] to [0,360]
+                    # so both numbers are positive for center calculation
+                    # Example: -175 to 185
+                    maxx += 360
+                    x_center = np.mean([minx, maxx])
+                    # shift back to [-180,180]
+                    x_center = ((x_center + 180) % 360) - 180
+                else:
+                    x_center = np.mean([minx, maxx])
+            else:
+                lon, lat = transformer.transform(
+                    (minx, maxx, minx, maxx), (miny, miny, maxy, maxy)
+                )
+                x_center = np.mean(lon)
+                y_center = np.mean(lat)
 
         utm_crs_list = query_utm_crs_info(
             datum_name=datum_name,
@@ -951,7 +969,8 @@ class GeometryArray(ExtensionArray):
             )
         # self.data[idx] = value
         value_arr = np.empty(1, dtype=object)
-        value_arr[:] = [value]
+        with compat.ignore_shapely2_warnings():
+            value_arr[:] = [value]
         self.data[idx] = value_arr
         return self
 
@@ -1030,7 +1049,7 @@ class GeometryArray(ExtensionArray):
                 pd_dtype = pd.api.types.pandas_dtype(dtype)
                 if isinstance(pd_dtype, pd.StringDtype):
                     # ensure to return a pandas string array instead of numpy array
-                    return pd.array(string_values, dtype="string")
+                    return pd.array(string_values, dtype=pd_dtype)
             return string_values.astype(dtype, copy=False)
         else:
             return np.array(self, dtype=dtype, copy=copy)
@@ -1043,6 +1062,38 @@ class GeometryArray(ExtensionArray):
             return pygeos.is_missing(self.data)
         else:
             return np.array([g is None for g in self.data], dtype="bool")
+
+    def value_counts(
+        self,
+        dropna: bool = True,
+    ):
+        """
+        Compute a histogram of the counts of non-null values.
+
+        Parameters
+        ----------
+        dropna : bool, default True
+            Don't include counts of NaN
+
+        Returns
+        -------
+        pd.Series
+        """
+
+        # note ExtensionArray usage of value_counts only specifies dropna,
+        # so sort, normalize and bins are not arguments
+        values = to_wkb(self)
+        from pandas import Series, Index
+
+        result = Series(values).value_counts(dropna=dropna)
+        # value_counts converts None to nan, need to convert back for from_wkb to work
+        # note result.index already has object dtype, not geometry
+        # Can't use fillna(None) or Index.putmask, as this gets converted back to nan
+        # for object dtypes
+        result.index = Index(
+            from_wkb(np.where(result.index.isna(), None, result.index))
+        )
+        return result
 
     def unique(self):
         """Compute the ExtensionArray of unique values.
@@ -1091,7 +1142,7 @@ class GeometryArray(ExtensionArray):
         len(self) is returned, with all values filled with
         ``self.dtype.na_value``.
         """
-        shifted = super(GeometryArray, self).shift(periods, fill_value)
+        shifted = super().shift(periods, fill_value)
         shifted.crs = self.crs
         return shifted
 

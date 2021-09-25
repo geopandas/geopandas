@@ -20,7 +20,7 @@ from shapely.geometry import (
 from shapely.geometry.base import BaseGeometry
 
 from geopandas import GeoSeries, GeoDataFrame
-from geopandas._compat import PYPROJ_LT_3
+from geopandas._compat import PYPROJ_LT_3, ignore_shapely2_warnings
 from geopandas.array import GeometryArray, GeometryDtype
 from geopandas.testing import assert_geoseries_equal
 
@@ -262,25 +262,25 @@ class TestSeries:
 
     def test_proj4strings(self):
         # As string
-        reprojected = self.g3.to_crs("+proj=utm +zone=30N")
+        reprojected = self.g3.to_crs("+proj=utm +zone=30")
         reprojected_back = reprojected.to_crs(epsg=4326)
         assert np.all(self.g3.geom_almost_equals(reprojected_back))
 
         # As dict
-        reprojected = self.g3.to_crs({"proj": "utm", "zone": "30N"})
+        reprojected = self.g3.to_crs({"proj": "utm", "zone": "30"})
         reprojected_back = reprojected.to_crs(epsg=4326)
         assert np.all(self.g3.geom_almost_equals(reprojected_back))
 
         # Set to equivalent string, convert, compare to original
         copy = self.g3.copy()
         copy.crs = "epsg:4326"
-        reprojected = copy.to_crs({"proj": "utm", "zone": "30N"})
+        reprojected = copy.to_crs({"proj": "utm", "zone": "30"})
         reprojected_back = reprojected.to_crs(epsg=4326)
         assert np.all(self.g3.geom_almost_equals(reprojected_back))
 
         # Conversions by different format
-        reprojected_string = self.g3.to_crs("+proj=utm +zone=30N")
-        reprojected_dict = self.g3.to_crs({"proj": "utm", "zone": "30N"})
+        reprojected_string = self.g3.to_crs("+proj=utm +zone=30")
+        reprojected_dict = self.g3.to_crs({"proj": "utm", "zone": "30"})
         assert np.all(reprojected_string.geom_almost_equals(reprojected_dict))
 
     def test_from_wkb(self):
@@ -353,6 +353,13 @@ def test_missing_values():
     # dropna drops the missing values
     assert not s.dropna().isna().any()
     assert len(s.dropna()) == 3
+
+
+def test_isna_empty_geoseries():
+    # ensure that isna() result for emtpy GeoSeries has the correct bool dtype
+    s = GeoSeries([])
+    result = s.isna()
+    assert_series_equal(result, pd.Series([], dtype="bool"))
 
 
 def test_geoseries_crs():
@@ -434,12 +441,45 @@ class TestConstructor:
         s = GeoSeries(index=range(3))
         check_geoseries(s)
 
+    def test_empty_array(self):
+        # with empty data that have an explicit dtype, we use the fallback or
+        # not depending on the dtype
+        arr = np.array([], dtype="bool")
+
+        # dtypes that can never hold geometry-like data
+        for arr in [
+            np.array([], dtype="bool"),
+            np.array([], dtype="int64"),
+            np.array([], dtype="float32"),
+            # this gets converted to object dtype by pandas
+            # np.array([], dtype="str"),
+        ]:
+            with pytest.warns(FutureWarning):
+                s = GeoSeries(arr)
+            assert not isinstance(s, GeoSeries)
+            assert type(s) == pd.Series
+
+        # dtypes that can potentially hold geometry-like data (object) or
+        # can come from empty data (float64)
+        for arr in [
+            np.array([], dtype="object"),
+            np.array([], dtype="float64"),
+            np.array([], dtype="str"),
+        ]:
+            with pytest.warns(None) as record:
+                s = GeoSeries(arr)
+            assert not record
+            assert isinstance(s, GeoSeries)
+
     def test_from_series(self):
         shapes = [
             Polygon([(random.random(), random.random()) for _ in range(3)])
             for _ in range(10)
         ]
-        s = pd.Series(shapes, index=list("abcdefghij"), name="foo")
+        with ignore_shapely2_warnings():
+            # the warning here is not suppressed by GeoPandas, as this is a pure
+            # pandas construction call
+            s = pd.Series(shapes, index=list("abcdefghij"), name="foo")
         g = GeoSeries(s)
         check_geoseries(g)
 

@@ -4,6 +4,7 @@ import importlib
 import os
 import warnings
 
+import numpy as np
 import pandas as pd
 import pyproj
 import shapely
@@ -14,7 +15,6 @@ import shapely.geos
 # pandas compat
 # -----------------------------------------------------------------------------
 
-PANDAS_GE_025 = str(pd.__version__) >= LooseVersion("0.25.0")
 PANDAS_GE_10 = str(pd.__version__) >= LooseVersion("1.0.0")
 PANDAS_GE_11 = str(pd.__version__) >= LooseVersion("1.1.0")
 PANDAS_GE_115 = str(pd.__version__) >= LooseVersion("1.1.5")
@@ -148,6 +148,19 @@ if shapely_warning is not None and not SHAPELY_GE_20:
             yield
 
 
+elif (str(np.__version__) >= LooseVersion("1.21")) and not SHAPELY_GE_20:
+
+    @contextlib.contextmanager
+    def ignore_shapely2_warnings():
+        with warnings.catch_warnings():
+            # warning from numpy for existing Shapely releases (this is fixed
+            # with Shapely 1.8)
+            warnings.filterwarnings(
+                "ignore", "An exception was ignored while fetching", DeprecationWarning
+            )
+            yield
+
+
 else:
 
     @contextlib.contextmanager
@@ -210,3 +223,4 @@ except ImportError:
 # -----------------------------------------------------------------------------
 
 PYPROJ_LT_3 = LooseVersion(pyproj.__version__) < LooseVersion("3")
+PYPROJ_GE_31 = LooseVersion(pyproj.__version__) >= LooseVersion("3.1")

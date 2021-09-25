@@ -158,6 +158,16 @@ def test_from_wkb():
     assert res[0] == multi_poly
 
 
+def test_from_wkb_hex():
+    geometry_hex = ["0101000000CDCCCCCCCCCC1440CDCCCCCCCC0C4A40"]
+    res = from_wkb(geometry_hex)
+    assert isinstance(res, GeometryArray)
+
+    # array
+    res = from_wkb(np.array(geometry_hex, dtype=object))
+    assert isinstance(res, GeometryArray)
+
+
 def test_to_wkb():
     P = from_shapely(points_no_missing)
     res = to_wkb(P)
@@ -447,7 +457,18 @@ def test_binary_geo_scalar(attr):
 
 
 @pytest.mark.parametrize(
-    "attr", ["is_closed", "is_valid", "is_empty", "is_simple", "has_z", "is_ring"]
+    "attr",
+    [
+        "is_closed",
+        "is_valid",
+        "is_empty",
+        "is_simple",
+        "has_z",
+        # for is_ring we raise a warning about the value for Polygon changing
+        pytest.param(
+            "is_ring", marks=pytest.mark.filterwarnings("ignore:is_ring:FutureWarning")
+        ),
+    ],
 )
 def test_unary_predicates(attr):
     na_value = False
@@ -484,6 +505,8 @@ def test_unary_predicates(attr):
     assert result.tolist() == expected
 
 
+# for is_ring we raise a warning about the value for Polygon changing
+@pytest.mark.filterwarnings("ignore:is_ring:FutureWarning")
 def test_is_ring():
     g = [
         shapely.geometry.LinearRing([(0, 0), (1, 1), (1, -1)]),
@@ -924,6 +947,17 @@ class TestEstimateUtmCrs:
         assert self.landmarks.to_crs("EPSG:3857").estimate_utm_crs() == CRS(
             "EPSG:32618"
         )
+
+    @pytest.mark.skipif(not compat.PYPROJ_GE_31, reason="requires pyproj 3.1 or higher")
+    def test_estimate_utm_crs__antimeridian(self):
+        antimeridian = from_shapely(
+            [
+                shapely.geometry.Point(1722483.900174921, 5228058.6143420935),
+                shapely.geometry.Point(4624385.494808555, 8692574.544944234),
+            ],
+            crs="EPSG:3851",
+        )
+        assert antimeridian.estimate_utm_crs() == CRS("EPSG:32760")
 
     @pytest.mark.skipif(compat.PYPROJ_LT_3, reason="requires pyproj 3 or higher")
     def test_estimate_utm_crs__out_of_bounds(self):

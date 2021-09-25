@@ -4,19 +4,20 @@ import warnings
 import numpy as np
 import pandas as pd
 from pandas import DataFrame, Series
+from pandas.core.accessor import CachedAccessor
 
 from shapely.geometry import mapping, shape
 from shapely.geometry.base import BaseGeometry
-
 
 from pyproj import CRS
 
 from geopandas.array import GeometryArray, GeometryDtype, from_shapely, to_wkb, to_wkt
 from geopandas.base import GeoPandasBase, is_geometry_type
-from geopandas.geoseries import GeoSeries, inherit_doc
+from geopandas.geoseries import GeoSeries
 import geopandas.io
-from geopandas.plotting import plot_dataframe
+from geopandas.explore import _explore
 from . import _compat as compat
+from ._decorator import doc
 
 
 DEFAULT_GEO_COLUMN_NAME = "geometry"
@@ -33,7 +34,9 @@ def _ensure_geometry(data, crs=None):
     """
     if is_geometry_type(data):
         if isinstance(data, Series):
-            return GeoSeries(data)
+            data = GeoSeries(data)
+        if data.crs is None:
+            data.crs = crs
         return data
     else:
         if isinstance(data, Series):
@@ -102,7 +105,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
     def __init__(self, *args, geometry=None, crs=None, **kwargs):
         with compat.ignore_shapely2_warnings():
-            super(GeoDataFrame, self).__init__(*args, **kwargs)
+            super().__init__(*args, **kwargs)
 
         # need to set this before calling self['geometry'], because
         # getitem accesses crs
@@ -115,6 +118,15 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         # allowed in that case
         # TODO do we want to raise / return normal DataFrame in this case?
         if geometry is None and "geometry" in self.columns:
+            # Check for multiple columns with name "geometry". If there are,
+            # self["geometry"] is a gdf and constructor gets recursively recalled
+            # by pandas internals trying to access this
+            if (self.columns == "geometry").sum() > 1:
+                raise ValueError(
+                    "GeoDataFrame does not support multiple columns "
+                    "using the geometry column name 'geometry'."
+                )
+
             # only if we have actual geometry values -> call set_geometry
             index = self.index
             try:
@@ -179,7 +191,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         if attr == "geometry":
             object.__setattr__(self, attr, val)
         else:
-            super(GeoDataFrame, self).__setattr__(attr, val)
+            super().__setattr__(attr, val)
 
     def _get_geometry(self):
         if self._geometry_column_name not in self:
@@ -268,11 +280,17 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             raise ValueError("Must pass array with one dimension only.")
         else:
             try:
-                level = frame[col].values
+                level = frame[col]
             except KeyError:
                 raise ValueError("Unknown column %s" % col)
             except Exception:
                 raise
+            if isinstance(level, DataFrame):
+                raise ValueError(
+                    "GeoDataFrame does not support setting the geometry column where "
+                    "the column name is shared by multiple columns."
+                )
+
             if drop:
                 to_remove = col
                 geo_column_name = self._geometry_column_name
@@ -429,7 +447,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
     def from_dict(cls, data, geometry=None, crs=None, **kwargs):
         """
         Construct GeoDataFrame from dict of array-like or dicts by
-        overiding DataFrame.from_dict method with geometry and crs
+        overriding DataFrame.from_dict method with geometry and crs
 
         Parameters
         ----------
@@ -636,7 +654,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         PostGIS
 
         >>> from sqlalchemy import create_engine  # doctest: +SKIP
-        >>> db_connection_url = "postgres://myusername:mypassword@myhost:5432/mydb"
+        >>> db_connection_url = "postgresql://myusername:mypassword@myhost:5432/mydb"
         >>> con = create_engine(db_connection_url)  # doctest: +SKIP
         >>> sql = "SELECT geom, highway FROM roads"
         >>> df = geopandas.GeoDataFrame.from_postgis(sql, con)  # doctest: +SKIP
@@ -770,11 +788,12 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         na : str, optional
             Options are {'null', 'drop', 'keep'}, default 'null'.
             Indicates how to output missing (NaN) values in the GeoDataFrame
-            * null: ouput the missing entries as JSON null
-            * drop: remove the property from the feature. This applies to
-                    each feature individually so that features may have
-                    different properties
-            * keep: output the missing entries as NaN
+
+            - null: output the missing entries as JSON null
+            - drop: remove the property from the feature. This applies to each feature \
+individually so that features may have different properties
+            - keep: output the missing entries as NaN
+
         show_bbox : bool, optional
             Include bbox (bounds) in the geojson. Default False.
         drop_id : bool, default: False
@@ -959,7 +978,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         compression : {'snappy', 'gzip', 'brotli', None}, default 'snappy'
             Name of the compression to use. Use ``None`` for no compression.
         kwargs
-            Additional keyword arguments passed to to pyarrow.parquet.write_table().
+            Additional keyword arguments passed to :func:`pyarrow.parquet.write_table`.
 
         Examples
         --------
@@ -1007,7 +1026,8 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
             Name of the compression to use. Use ``"uncompressed"`` for no
             compression. By default uses LZ4 if available, otherwise uncompressed.
         kwargs
-            Additional keyword arguments passed to to pyarrow.feather.write_feather().
+            Additional keyword arguments passed to to
+            :func:`pyarrow.feather.write_feather`.
 
         Examples
         --------
@@ -1024,9 +1044,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
 
         _to_feather(self, path, index=index, compression=compression, **kwargs)
 
-    def to_file(
-        self, filename, driver="ESRI Shapefile", schema=None, index=None, **kwargs
-    ):
+    def to_file(self, filename, driver=None, schema=None, index=None, **kwargs):
         """Write the ``GeoDataFrame`` to a file.
 
         By default, an ESRI shapefile is written, but any OGR data source
@@ -1040,8 +1058,10 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         ----------
         filename : string
             File path or file handle to write to.
-        driver : string, default: 'ESRI Shapefile'
+        driver : string, default None
             The OGR format driver used to write the vector file.
+            If not specified, it attempts to infer it from the file extension.
+            If no extension is specified, it saves ESRI Shapefile to a folder.
         schema : dict, default: None
             If specified, the schema dictionary is passed to Fiona to
             better control how the file is written.
@@ -1299,7 +1319,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         GeoSeries. If it's a DataFrame with a 'geometry' column, return a
         GeoDataFrame.
         """
-        result = super(GeoDataFrame, self).__getitem__(key)
+        result = super().__getitem__(key)
         geo_col = self._geometry_column_name
         if isinstance(result, Series) and isinstance(result.dtype, GeometryDtype):
             result.__class__ = GeoSeries
@@ -1320,9 +1340,10 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
                 value = [value] * self.shape[0]
             try:
                 value = _ensure_geometry(value, crs=self.crs)
+                self._crs = value.crs
             except TypeError:
                 warnings.warn("Geometry column does not contain geometry.")
-        super(GeoDataFrame, self).__setitem__(key, value)
+        super().__setitem__(key, value)
 
     #
     # Implement pandas methods
@@ -1359,7 +1380,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
             result.__class__ = DataFrame
         return result
 
-    @inherit_doc(pd.DataFrame)
+    @doc(pd.DataFrame)
     def apply(self, func, axis=0, raw=False, result_type=None, args=(), **kwargs):
         result = super().apply(
             func, axis=axis, raw=raw, result_type=result_type, args=args, **kwargs
@@ -1367,8 +1388,10 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         if (
             isinstance(result, GeoDataFrame)
             and self._geometry_column_name in result.columns
-            and any(isinstance(t, GeometryDtype) for t in result.dtypes)
+            and isinstance(result[self._geometry_column_name].dtype, GeometryDtype)
         ):
+            # apply calls _constructor which resets geom col name to geometry
+            result._geometry_column_name = self._geometry_column_name
             if self.crs is not None and result.crs is None:
                 result.set_crs(self.crs, inplace=True)
         return result
@@ -1378,7 +1401,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         return GeoDataFrame
 
     def __finalize__(self, other, method=None, **kwargs):
-        """propagate metadata from other to self """
+        """propagate metadata from other to self"""
         self = super().__finalize__(other, method=method, **kwargs)
 
         # merge operation: using metadata of the left object
@@ -1390,6 +1413,13 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
             for name in self._metadata:
                 object.__setattr__(self, name, getattr(other.objs[0], name, None))
 
+            if (self.columns == self._geometry_column_name).sum() > 1:
+                raise ValueError(
+                    "Concat operation has resulted in multiple columns using "
+                    f"the geometry column name '{self._geometry_column_name}'.\n"
+                    f"Please ensure this column from the first DataFrame is not "
+                    f"repeated."
+                )
         return self
 
     def dissolve(
@@ -1571,7 +1601,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
             column = self.geometry.name
         # If the specified column is not a geometry dtype use pandas explode
         if not isinstance(self[column].dtype, GeometryDtype):
-            return super(GeoDataFrame, self).explode(column, **kwargs)
+            return super().explode(column, **kwargs)
             # TODO: make sure index behaviour is consistent
 
         df_copy = self.copy()
@@ -1582,9 +1612,12 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         exploded_geom = df_copy.geometry.explode().reset_index(level=-1)
         exploded_index = exploded_geom.columns[0]
 
-        df = pd.concat(
-            [df_copy.drop(df_copy._geometry_column_name, axis=1), exploded_geom], axis=1
+        df = (
+            df_copy.drop(df_copy._geometry_column_name, axis=1)
+            .join(exploded_geom)
+            .__finalize__(self)
         )
+
         # reset to MultiIndex, otherwise df index is only first level of
         # exploded GeoSeries index.
         df.set_index(exploded_index, append=True, inplace=True)
@@ -1610,7 +1643,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         -------
         GeoDataFrame or DataFrame
         """
-        df = super(GeoDataFrame, self).astype(dtype, copy=copy, errors=errors, **kwargs)
+        df = super().astype(dtype, copy=copy, errors=errors, **kwargs)
 
         try:
             geoms = df[self._geometry_column_name]
@@ -1621,6 +1654,34 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         # if the geometry column is converted to non-geometries or did not exist
         # do not return a GeoDataFrame
         return pd.DataFrame(df)
+
+    def convert_dtypes(self, *args, **kwargs):
+        """
+        Convert columns to best possible dtypes using dtypes supporting ``pd.NA``.
+
+        Always returns a GeoDataFrame as no conversions are applied to the
+        geometry column.
+
+        See the pandas.DataFrame.convert_dtypes docstring for more details.
+
+        Returns
+        -------
+        GeoDataFrame
+
+        """
+        # Overridden to fix GH1870, that return type is not preserved always
+        # (and where it was, geometry col was not)
+
+        if not compat.PANDAS_GE_10:
+            raise NotImplementedError(
+                "GeoDataFrame.convert_dtypes requires pandas >= 1.0"
+            )
+
+        return GeoDataFrame(
+            super().convert_dtypes(*args, **kwargs),
+            geometry=self.geometry.name,
+            crs=self.crs,
+        )
 
     def to_postgis(
         self,
@@ -1633,7 +1694,6 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         chunksize=None,
         dtype=None,
     ):
-
         """
         Upload GeoDataFrame into PostGIS database.
 
@@ -1673,7 +1733,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         --------
 
         >>> from sqlalchemy import create_engine
-        >>> engine = create_engine("postgres://myusername:mypassword@myhost:5432\
+        >>> engine = create_engine("postgresql://myusername:mypassword@myhost:5432\
 /mydatabase")  # doctest: +SKIP
         >>> gdf.to_postgis("my_table", engine)  # doctest: +SKIP
 
@@ -1728,23 +1788,12 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         )
         return self.geometry.difference(other)
 
-    if compat.PANDAS_GE_025:
-        from pandas.core.accessor import CachedAccessor
+    plot = CachedAccessor("plot", geopandas.plotting.GeoplotAccessor)
 
-        plot = CachedAccessor("plot", geopandas.plotting.GeoplotAccessor)
-    else:
-
-        def plot(self, *args, **kwargs):
-            """Generate a plot of the geometries in the ``GeoDataFrame``.
-            If the ``column`` parameter is given, colors plot according to values
-            in that column, otherwise calls ``GeoSeries.plot()`` on the
-            ``geometry`` column.
-            Wraps the ``plot_dataframe()`` function, and documentation is copied
-            from there.
-            """
-            return plot_dataframe(self, *args, **kwargs)
-
-    plot.__doc__ = plot_dataframe.__doc__
+    @doc(_explore)
+    def explore(self, *args, **kwargs):
+        """Interactive map based on folium/leaflet.js"""
+        return _explore(self, *args, **kwargs)
 
 
 def _dataframe_set_geometry(self, col, drop=False, inplace=False, crs=None):

@@ -201,10 +201,6 @@ def test_dissolve_sort():
     assert_frame_equal(expected_unsorted, gdf.dissolve("a", sort=False))
 
 
-@pytest.mark.skipif(
-    not compat.PANDAS_GE_025,
-    reason="'observed' param behavior changed in pandas 0.25.0",
-)
 def test_dissolve_categorical():
     gdf = geopandas.GeoDataFrame(
         {

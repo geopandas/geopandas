@@ -16,6 +16,7 @@ from geopandas.io.arrow import (
     _create_metadata,
     _decode_metadata,
     _encode_metadata,
+    _get_filesystem_path,
     _validate_dataframe,
     _validate_metadata,
     METADATA_VERSION,
@@ -338,6 +339,26 @@ def test_parquet_missing_metadata(tmpdir):
         read_parquet(filename)
 
 
+def test_parquet_missing_metadata2(tmpdir):
+    """Missing geo metadata, such as from a parquet file created
+    from a pyarrow Table (which will also not contain pandas metadata),
+    will raise a ValueError.
+    """
+    import pyarrow.parquet as pq
+
+    table = pyarrow.table({"a": [1, 2, 3]})
+    filename = os.path.join(str(tmpdir), "test.pq")
+
+    # use pyarrow.parquet write_table (no geo metadata, but also no pandas metadata)
+    pq.write_table(table, filename)
+
+    # missing metadata will raise ValueError
+    with pytest.raises(
+        ValueError, match="Missing geo metadata in Parquet/Feather file."
+    ):
+        read_parquet(filename)
+
+
 @pytest.mark.parametrize(
     "geo_meta,error",
     [
@@ -478,3 +499,45 @@ def test_feather_arrow_version(tmpdir):
         ImportError, match="pyarrow >= 0.17 required for Feather support"
     ):
         df.to_feather(filename)
+
+
+def test_fsspec_url():
+    fsspec = pytest.importorskip("fsspec")
+    import fsspec.implementations.memory
+
+    class MyMemoryFileSystem(fsspec.implementations.memory.MemoryFileSystem):
+        # Simple fsspec filesystem that adds a required keyword.
+        # Attempting to use this filesystem without the keyword will raise an exception.
+        def __init__(self, is_set, *args, **kwargs):
+            self.is_set = is_set
+            super().__init__(*args, **kwargs)
+
+    fsspec.register_implementation("memory", MyMemoryFileSystem, clobber=True)
+    memfs = MyMemoryFileSystem(is_set=True)
+
+    test_dataset = "naturalearth_lowres"
+    df = read_file(get_path(test_dataset))
+
+    with memfs.open("data.parquet", "wb") as f:
+        df.to_parquet(f)
+
+    result = read_parquet("memory://data.parquet", storage_options=dict(is_set=True))
+    assert_geodataframe_equal(result, df)
+
+    result = read_parquet("memory://data.parquet", filesystem=memfs)
+    assert_geodataframe_equal(result, df)
+
+
+def test_non_fsspec_url_with_storage_options_raises():
+    with pytest.raises(ValueError, match="storage_options"):
+        test_dataset = "naturalearth_lowres"
+        read_parquet(get_path(test_dataset), storage_options={"foo": "bar"})
+
+
+@pytest.mark.skipif(
+    pyarrow.__version__ < LooseVersion("5.0.0"),
+    reason="pyarrow.fs requires pyarrow>=5.0.0",
+)
+def test_prefers_pyarrow_fs():
+    filesystem, _ = _get_filesystem_path("file:///data.parquet")
+    assert isinstance(filesystem, pyarrow.fs.LocalFileSystem)
