@@ -597,6 +597,12 @@ def test_apply_no_geometry_result(df, crs):
     assert_frame_equal(result, expected)
 
 
+def test_apply_preserves_geom_col_name(df):
+    df = df.rename_geometry("geom")
+    result = df.apply(lambda col: col, axis=0)
+    assert result.geometry.name == "geom"
+
+
 @pytest.mark.skipif(not compat.PANDAS_GE_10, reason="attrs introduced in pandas 1.0")
 def test_preserve_attrs(df):
     # https://github.com/geopandas/geopandas/issues/1654
