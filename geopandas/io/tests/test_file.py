@@ -13,7 +13,7 @@ from shapely.geometry import Point, Polygon, box
 
 import geopandas
 from geopandas import GeoDataFrame, read_file
-from geopandas.io.file import fiona_env
+from geopandas.io.file import fiona_env, _detect_driver, _EXTENSION_TO_DRIVER
 
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 from geopandas.tests.util import PACKAGE_DIR, validate_boro_df
@@ -61,7 +61,22 @@ def df_points():
 # to_file tests
 # -----------------------------------------------------------------------------
 
-driver_ext_pairs = [("ESRI Shapefile", "shp"), ("GeoJSON", "geojson"), ("GPKG", "gpkg")]
+driver_ext_pairs = [
+    ("ESRI Shapefile", ".shp"),
+    ("GeoJSON", ".geojson"),
+    ("GPKG", ".gpkg"),
+    (None, ".shp"),
+    (None, ""),
+    (None, ".geojson"),
+    (None, ".gpkg"),
+]
+
+
+def assert_correct_driver(file_path, ext):
+    # check the expected driver
+    expected_driver = "ESRI Shapefile" if ext == "" else _EXTENSION_TO_DRIVER[ext]
+    with fiona.open(str(file_path)) as fds:
+        assert fds.driver == expected_driver
 
 
 @pytest.mark.parametrize("driver,ext", driver_ext_pairs)
@@ -76,13 +91,15 @@ def test_to_file(tmpdir, df_nybb, df_null, driver, ext):
     assert np.alltrue(df["BoroName"].values == df_nybb["BoroName"])
 
     # Write layer with null geometry out to file
-    tempfilename = os.path.join(str(tmpdir), "null_geom." + ext)
+    tempfilename = os.path.join(str(tmpdir), "null_geom" + ext)
     df_null.to_file(tempfilename, driver=driver)
     # Read layer back in
     df = GeoDataFrame.from_file(tempfilename)
     assert "geometry" in df
     assert len(df) == 2
     assert np.alltrue(df["Name"].values == df_null["Name"])
+    # check the expected driver
+    assert_correct_driver(tempfilename, ext)
 
 
 @pytest.mark.parametrize("driver,ext", driver_ext_pairs)
@@ -95,6 +112,8 @@ def test_to_file_pathlib(tmpdir, df_nybb, df_null, driver, ext):
     assert "geometry" in df
     assert len(df) == 5
     assert np.alltrue(df["BoroName"].values == df_nybb["BoroName"])
+    # check the expected driver
+    assert_correct_driver(temppath, ext)
 
 
 @pytest.mark.parametrize("driver,ext", driver_ext_pairs)
@@ -112,10 +131,12 @@ def test_to_file_bool(tmpdir, driver, ext):
 
     df.to_file(tempfilename, driver=driver)
     result = read_file(tempfilename)
-    if driver == "ESRI Shapefile":
+    if ext in (".shp", ""):
         # Shapefile does not support boolean, so is read back as int
         df["b"] = df["b"].astype("int64")
     assert_geodataframe_equal(result, df)
+    # check the expected driver
+    assert_correct_driver(tempfilename, ext)
 
 
 def test_to_file_datetime(tmpdir):
@@ -133,26 +154,30 @@ def test_to_file_datetime(tmpdir):
 def test_to_file_with_point_z(tmpdir, ext, driver):
     """Test that 3D geometries are retained in writes (GH #612)."""
 
-    tempfilename = os.path.join(str(tmpdir), "test_3Dpoint." + ext)
+    tempfilename = os.path.join(str(tmpdir), "test_3Dpoint" + ext)
     point3d = Point(0, 0, 500)
     point2d = Point(1, 1)
     df = GeoDataFrame({"a": [1, 2]}, geometry=[point3d, point2d], crs=_CRS)
     df.to_file(tempfilename, driver=driver)
     df_read = GeoDataFrame.from_file(tempfilename)
     assert_geoseries_equal(df.geometry, df_read.geometry)
+    # check the expected driver
+    assert_correct_driver(tempfilename, ext)
 
 
 @pytest.mark.parametrize("driver,ext", driver_ext_pairs)
 def test_to_file_with_poly_z(tmpdir, ext, driver):
     """Test that 3D geometries are retained in writes (GH #612)."""
 
-    tempfilename = os.path.join(str(tmpdir), "test_3Dpoly." + ext)
+    tempfilename = os.path.join(str(tmpdir), "test_3Dpoly" + ext)
     poly3d = Polygon([[0, 0, 5], [0, 1, 5], [1, 1, 5], [1, 0, 5]])
     poly2d = Polygon([[0, 0], [0, 1], [1, 1], [1, 0]])
     df = GeoDataFrame({"a": [1, 2]}, geometry=[poly3d, poly2d], crs=_CRS)
     df.to_file(tempfilename, driver=driver)
     df_read = GeoDataFrame.from_file(tempfilename)
     assert_geoseries_equal(df.geometry, df_read.geometry)
+    # check the expected driver
+    assert_correct_driver(tempfilename, ext)
 
 
 def test_to_file_types(tmpdir, df_points):
@@ -248,10 +273,11 @@ def test_append_file(tmpdir, df_nybb, df_null, driver, ext):
     """Test to_file with append mode and from_file"""
     from fiona import supported_drivers
 
+    tempfilename = os.path.join(str(tmpdir), "boros" + ext)
+    driver = driver if driver else _detect_driver(tempfilename)
     if "a" not in supported_drivers[driver]:
         return None
 
-    tempfilename = os.path.join(str(tmpdir), "boros." + ext)
     df_nybb.to_file(tempfilename, driver=driver)
     df_nybb.to_file(tempfilename, mode="a", driver=driver)
     # Read layer back in
@@ -262,7 +288,7 @@ def test_append_file(tmpdir, df_nybb, df_null, driver, ext):
     assert_geodataframe_equal(df, expected, check_less_precise=True)
 
     # Write layer with null geometry out to file
-    tempfilename = os.path.join(str(tmpdir), "null_geom." + ext)
+    tempfilename = os.path.join(str(tmpdir), "null_geom" + ext)
     df_null.to_file(tempfilename, driver=driver)
     df_null.to_file(tempfilename, mode="a", driver=driver)
     # Read layer back in
@@ -276,10 +302,10 @@ def test_append_file(tmpdir, df_nybb, df_null, driver, ext):
 @pytest.mark.parametrize("driver,ext", driver_ext_pairs)
 def test_empty_crs(tmpdir, driver, ext):
     """Test handling of undefined CRS with GPKG driver (GH #1975)."""
-    if driver == "GPKG":
+    if ext == ".gpkg":
         pytest.xfail("GPKG is read with Undefined geographic SRS.")
 
-    tempfilename = os.path.join(str(tmpdir), "boros." + ext)
+    tempfilename = os.path.join(str(tmpdir), "boros" + ext)
     df = GeoDataFrame(
         {
             "a": [1, 2, 3],
@@ -290,7 +316,7 @@ def test_empty_crs(tmpdir, driver, ext):
     df.to_file(tempfilename, driver=driver)
     result = read_file(tempfilename)
 
-    if driver == "GeoJSON":
+    if ext == ".geojson":
         # geojson by default assumes epsg:4326
         df.crs = "EPSG:4326"
 
@@ -802,3 +828,10 @@ def test_write_index_to_file(tmpdir, df_points, driver, ext):
     # named DatetimeIndex
     df.index.name = "datetime"
     do_checks(df, index_is_used=True)
+
+
+def test_to_file__undetermined_driver(tmp_path, df_nybb):
+    shpdir = tmp_path / "boros.invalid"
+    df_nybb.to_file(shpdir)
+    assert shpdir.is_dir()
+    assert list(shpdir.glob("*.shp"))
