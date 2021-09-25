@@ -1063,7 +1063,7 @@ class TestGeomMethods:
             index=index,
         )
 
-        test_df = df.explode(ignore_index=True, add_multiindex=True)
+        test_df = df.explode(ignore_index=True)
 
         expected_s = GeoSeries(
             [
@@ -1078,6 +1078,10 @@ class TestGeomMethods:
         expected_df = GeoDataFrame({"vals": [1, 1, 2, 2, 3, 3], "geometry": expected_s})
         expected_index = Index(range(len(expected_df)))
         expected_df = expected_df.set_index(expected_index)
+        assert_frame_equal(test_df, expected_df)
+
+        # add_multiindex is ignored if ignore_index=True
+        test_df = df.explode(ignore_index=True, add_multiindex=True)
         assert_frame_equal(test_df, expected_df)
 
     #

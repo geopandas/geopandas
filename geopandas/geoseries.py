@@ -806,7 +806,7 @@ class GeoSeries(GeoPandasBase, Series):
         GeoDataFrame.explode
 
         """
-        if add_multiindex is None:
+        if add_multiindex is None and not ignore_index:
             warnings.warn(
                 "Currently, add_multiindex defaults to True, but in the future, "
                 "it will default to False to be consistent with Pandas. "

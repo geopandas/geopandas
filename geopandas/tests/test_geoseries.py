@@ -509,7 +509,11 @@ class TestConstructor:
         s = GeoSeries(
             [MultiPoint([(0, 0), (1, 1)]), MultiPoint([(2, 2), (3, 3), (4, 4)])]
         )
-        s = s.explode(add_multiindex=True, ignore_index=True)
+        s = s.explode(ignore_index=True)
         expected_index = pd.Index(range(len(s)))
         print(expected_index)
+        assert_index_equal(s.index, expected_index)
+
+        # add_multiindex is ignored if ignore_index=True
+        s = s.explode(add_multiindex=True, ignore_index=True)
         assert_index_equal(s.index, expected_index)

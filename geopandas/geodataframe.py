@@ -1635,14 +1635,15 @@ individually so that features may have different properties
                 return super().explode(column, **kwargs)
 
         if add_multiindex is None:
-            warnings.warn(
-                "Currently, add_multiindex defaults to True, but in the future, "
-                "it will default to False to be consistent with Pandas. "
-                "Use `add_multiindex=True` to keep the current behavior and True/False "
-                "to silence the warning.",
-                FutureWarning,
-                stacklevel=2,
-            )
+            if not ignore_index:
+                warnings.warn(
+                    "Currently, add_multiindex defaults to True, but in the future, "
+                    "it will default to False to be consistent with Pandas. "
+                    "Use `add_multiindex=True` to keep the current behavior and "
+                    "True/False to silence the warning.",
+                    FutureWarning,
+                    stacklevel=2,
+                )
             add_multiindex = True
 
         df_copy = self.copy()
@@ -1655,7 +1656,7 @@ individually so that features may have different properties
         if add_multiindex:
             exploded_geom = df_copy.geometry.explode(add_multiindex=True)
             exploded_index = exploded_geom.index
-            exploded_geom = exploded_geom.reset_index(level=-1).drop(level_str, axis=1)
+            exploded_geom = exploded_geom.reset_index(level=-1, drop=True)
         else:
             exploded_geom = df_copy.geometry.explode(add_multiindex=True).reset_index(
                 level=-1, drop=True
