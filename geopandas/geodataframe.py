@@ -1657,10 +1657,8 @@ individually so that features may have different properties
             exploded_index = exploded_geom.index
             exploded_geom = exploded_geom.reset_index(level=-1).drop(level_str, axis=1)
         else:
-            exploded_geom = (
-                df_copy.geometry.explode(add_multiindex=True)
-                .reset_index(level=-1)
-                .drop(level_str, axis=1)
+            exploded_geom = df_copy.geometry.explode(add_multiindex=True).reset_index(
+                level=-1, drop=True
             )
             exploded_index = exploded_geom.index
 
@@ -1670,22 +1668,21 @@ individually so that features may have different properties
             .__finalize__(self)
         )
 
-        # reset to MultiIndex, otherwise df index is only first level of
-        # exploded GeoSeries index.
-        df.set_index(exploded_index, inplace=True)
-
-        if add_multiindex:
+        if ignore_index:
+            df.reset_index(inplace=True, drop=True)
+        elif add_multiindex:
+            # reset to MultiIndex, otherwise df index is only first level of
+            # exploded GeoSeries index.
+            df.set_index(exploded_index, inplace=True)
             df.index.names = list(self.index.names) + [None]
         else:
+            df.set_index(exploded_index, inplace=True)
             df.index.names = self.index.names
+
         if f"__{level_str}" in df.columns:
             df = df.rename(columns={f"__{level_str}": level_str})
 
         geo_df = df.set_geometry(self._geometry_column_name)
-
-        if ignore_index:
-            geo_df.reset_index(inplace=True, drop=True)
-
         return geo_df
 
     # overrides the pandas astype method to ensure the correct return type

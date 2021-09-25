@@ -793,7 +793,7 @@ class GeoSeries(GeoPandasBase, Series):
         1    MULTIPOINT (2.00000 2.00000, 3.00000 3.00000, ...
         dtype: geometry
 
-        >>> s.explode()
+        >>> s.explode(add_multiindex=True)
         0  0    POINT (0.00000 0.00000)
            1    POINT (1.00000 1.00000)
         1  0    POINT (2.00000 2.00000)
