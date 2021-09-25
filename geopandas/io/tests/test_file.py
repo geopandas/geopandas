@@ -13,7 +13,7 @@ from shapely.geometry import Point, Polygon, box
 
 import geopandas
 from geopandas import GeoDataFrame, read_file
-from geopandas.io.file import fiona_env, _detect_driver
+from geopandas.io.file import fiona_env, _detect_driver, _EXTENSION_TO_DRIVER
 
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 from geopandas.tests.util import PACKAGE_DIR, validate_boro_df
@@ -72,6 +72,13 @@ driver_ext_pairs = [
 ]
 
 
+def assert_correct_driver(file_path, ext):
+    # check the expected driver
+    expected_driver = "ESRI Shapefile" if ext == "" else _EXTENSION_TO_DRIVER[ext]
+    with fiona.open(str(file_path)) as fds:
+        assert fds.driver == expected_driver
+
+
 @pytest.mark.parametrize("driver,ext", driver_ext_pairs)
 def test_to_file(tmpdir, df_nybb, df_null, driver, ext):
     """Test to_file and from_file"""
@@ -91,6 +98,8 @@ def test_to_file(tmpdir, df_nybb, df_null, driver, ext):
     assert "geometry" in df
     assert len(df) == 2
     assert np.alltrue(df["Name"].values == df_null["Name"])
+    # check the expected driver
+    assert_correct_driver(tempfilename, ext)
 
 
 @pytest.mark.parametrize("driver,ext", driver_ext_pairs)
@@ -103,6 +112,8 @@ def test_to_file_pathlib(tmpdir, df_nybb, df_null, driver, ext):
     assert "geometry" in df
     assert len(df) == 5
     assert np.alltrue(df["BoroName"].values == df_nybb["BoroName"])
+    # check the expected driver
+    assert_correct_driver(temppath, ext)
 
 
 @pytest.mark.parametrize("driver,ext", driver_ext_pairs)
@@ -124,6 +135,8 @@ def test_to_file_bool(tmpdir, driver, ext):
         # Shapefile does not support boolean, so is read back as int
         df["b"] = df["b"].astype("int64")
     assert_geodataframe_equal(result, df)
+    # check the expected driver
+    assert_correct_driver(tempfilename, ext)
 
 
 def test_to_file_datetime(tmpdir):
@@ -148,6 +161,8 @@ def test_to_file_with_point_z(tmpdir, ext, driver):
     df.to_file(tempfilename, driver=driver)
     df_read = GeoDataFrame.from_file(tempfilename)
     assert_geoseries_equal(df.geometry, df_read.geometry)
+    # check the expected driver
+    assert_correct_driver(tempfilename, ext)
 
 
 @pytest.mark.parametrize("driver,ext", driver_ext_pairs)
@@ -161,6 +176,8 @@ def test_to_file_with_poly_z(tmpdir, ext, driver):
     df.to_file(tempfilename, driver=driver)
     df_read = GeoDataFrame.from_file(tempfilename)
     assert_geoseries_equal(df.geometry, df_read.geometry)
+    # check the expected driver
+    assert_correct_driver(tempfilename, ext)
 
 
 def test_to_file_types(tmpdir, df_points):
