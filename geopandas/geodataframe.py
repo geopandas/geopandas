@@ -1561,17 +1561,16 @@ individually so that features may have different properties
         column : string, default None
             Column to explode.
             In the case of GeoSeries, multi-part in geometries are converted
-             to single-part.
+            to single-part.
             If None, an active geometry column is used.
         ignore_index : bool, default False
-             If True, the resulting index will be labelled 0, 1, …, n - 1,
-              ignoring add_multiindex.
+            If True, the resulting index will be labelled 0, 1, …, n - 1,
+            ignoring add_multiindex.
         add_multiindex : boolean, default True
             If True, the resulting index will be a multi-index
             (original index with an additional level
             indicating the multiple geometries: a new zero-based index for each
             single part geometry per multi-part geometry).
-
 
         Returns
         -------
@@ -1620,23 +1619,11 @@ individually so that features may have different properties
         2  name2  POINT (2.00000 1.00000)
         3  name2  POINT (0.00000 0.00000)
 
-
         See also
         --------
         GeoDataFrame.dissolve : dissolve geometries into a single observation.
 
         """
-
-        if add_multiindex is None:
-            warnings.warn(
-                "add_multiindex defaults to True to be consistent with old behaviour. "
-                "In GeoPandas 1.0 will default to False to be consistent with Pandas. "
-                "Use add_multiindex=True to keep the current behaviour and silent "
-                "the warning.",
-                FutureWarning,
-                stacklevel=2,
-            )
-            add_multiindex = True
 
         # If no column is specified then default to the active geometry column
         if column is None:
@@ -1648,6 +1635,17 @@ individually so that features may have different properties
             else:
                 return super().explode(column, **kwargs)
 
+        if add_multiindex is None:
+            warnings.warn(
+                "Currently, add_multiindex defaults to True, but in the future, "
+                "it will default to False to be consistent with Pandas. "
+                "Use `add_multiindex=True` to keep the current behavior and True/False "
+                "to silence the warning.",
+                FutureWarning,
+                stacklevel=2,
+            )
+            add_multiindex = True
+
         df_copy = self.copy()
 
         level_str = f"level_{df_copy.index.nlevels}"
@@ -1656,13 +1654,11 @@ individually so that features may have different properties
             df_copy = df_copy.rename(columns={level_str: f"__{level_str}"})
 
         if add_multiindex:
-            exploded_geom = df_copy.geometry.explode()
+            exploded_geom = df_copy.geometry.explode(add_multiindex=True)
             exploded_index = exploded_geom.index
             exploded_geom = exploded_geom.reset_index(level=-1).drop(level_str, axis=1)
         else:
-            exploded_geom = (
-                df_copy.geometry.explode().reset_index(level=-1).drop(level_str, axis=1)
-            )
+            exploded_geom = df_copy.geometry.explode(add_multiindex=False)
             exploded_index = exploded_geom.index
 
         df = (

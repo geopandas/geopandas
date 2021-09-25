@@ -808,10 +808,10 @@ class GeoSeries(GeoPandasBase, Series):
         """
         if add_multiindex is None:
             warnings.warn(
-                "add_multiindex defaults to True to be consistent with old behaviour. "
-                "In GeoPandas 1.0 will default to False to be consistent with Pandas. "
-                "Use add_multiindex=True to keep the current behaviour and silent "
-                "the warning.",
+                "Currently, add_multiindex defaults to True, but in the future, "
+                "it will default to False to be consistent with Pandas. "
+                "Use `add_multiindex=True` to keep the current behavior and True/False "
+                "to silence the warning.",
                 FutureWarning,
                 stacklevel=2,
             )

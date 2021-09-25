@@ -104,7 +104,7 @@ class TestGeomMethods:
         )
 
     def _test_unary_real(self, op, expected, a):
-        """ Tests for 'area', 'length', 'is_valid', etc. """
+        """Tests for 'area', 'length', 'is_valid', etc."""
         fcmp = assert_series_equal
         self._test_unary(op, expected, a, fcmp)
 
@@ -119,7 +119,7 @@ class TestGeomMethods:
         self._test_unary(op, expected, a, fcmp)
 
     def _test_binary_topological(self, op, expected, a, b, *args, **kwargs):
-        """ Tests for 'intersection', 'union', 'symmetric_difference', etc. """
+        """Tests for 'intersection', 'union', 'symmetric_difference', etc."""
         if isinstance(expected, GeoPandasBase):
             fcmp = assert_geoseries_equal
         else:
@@ -861,7 +861,8 @@ class TestGeomMethods:
             index=MultiIndex.from_tuples(index, names=expected_index_name),
             crs=4326,
         )
-        assert_geoseries_equal(expected, s.explode())
+        with pytest.warns(FutureWarning, match="Currently, add_multiindex defaults"):
+            assert_geoseries_equal(expected, s.explode())
 
     @pytest.mark.parametrize("index_name", [None, "test"])
     def test_explode_geodataframe(self, index_name):
@@ -869,7 +870,8 @@ class TestGeomMethods:
         df = GeoDataFrame({"col": [1, 2], "geometry": s})
         df.index.name = index_name
 
-        test_df = df.explode()
+        with pytest.warns(FutureWarning, match="Currently, add_multiindex defaults"):
+            test_df = df.explode()
 
         expected_s = GeoSeries([Point(1, 2), Point(2, 3), Point(5, 5)])
         expected_df = GeoDataFrame({"col": [1, 1, 2], "geometry": expected_s})
@@ -888,7 +890,7 @@ class TestGeomMethods:
         df = GeoDataFrame({"level_1": [1, 2], "geometry": s})
         df.index.name = index_name
 
-        test_df = df.explode()
+        test_df = df.explode(add_multiindex=True)
 
         expected_s = GeoSeries([Point(1, 2), Point(2, 3), Point(5, 5)])
         expected_df = GeoDataFrame({"level_1": [1, 1, 2], "geometry": expected_s})
@@ -987,7 +989,7 @@ class TestGeomMethods:
             index=index,
         )
 
-        test_df = df.explode()
+        test_df = df.explode(add_multiindex=True)
 
         expected_s = GeoSeries(
             [
@@ -1061,7 +1063,7 @@ class TestGeomMethods:
             index=index,
         )
 
-        test_df = df.explode(ignore_index=True)
+        test_df = df.explode(ignore_index=True, add_multiindex=True)
 
         expected_s = GeoSeries(
             [
