@@ -82,10 +82,10 @@ def test_getitem(df):
 
 def test_loc(df):
     geo_name = df.geometry.name
-
     assert_object(df.loc[:, ["value1", "value2"]], pd.DataFrame)
     assert_object(df.loc[:, [geo_name, "geometry2"]], GeoDataFrame, geo_name)
     assert_object(df.loc[:, [geo_name]], GeoDataFrame, geo_name)
+    # TODO: should this set the geometry column to geometry2 or return a DataFrame?
     assert_object(df.loc[:, ["geometry2", "value1"]], GeoDataFrame, None)
     assert_object(df.loc[:, ["geometry2"]], GeoDataFrame, None)
     # Ideally this would mirror __getitem__ and below would be true
@@ -103,6 +103,7 @@ def test_iloc(df):
     assert_object(df.iloc[:, 0:2], pd.DataFrame)
     assert_object(df.iloc[:, 2:4], GeoDataFrame, geo_name)
     assert_object(df.iloc[:, [2]], GeoDataFrame, geo_name)
+    # TODO: should this set the geometry column to geometry2 or return a DataFrame?
     assert_object(df.iloc[:, [3, 0]], GeoDataFrame, None)
     assert_object(df.iloc[:, [3]], GeoDataFrame, None)
     # Ideally this would mirror __getitem__ and below would be true
@@ -133,12 +134,13 @@ def test_to_frame(df):
     assert res1._geometry_column_name == "geometry"  # -> should be geo_name
 
     res2 = df["geometry2"].to_frame()
-
     assert type(res2) is GeoDataFrame
     assert res2._geometry_column_name == "geometry"  # -> should be geometry2
     assert res2.crs is None  # -> should be crs_osgb
     # also res2.geometry should not crash because geometry isn't set
-    assert_object(df["value1"].to_frame(), pd.DataFrame)
+
+    res3 = df["value1"].to_frame()
+    assert_object(res3, pd.DataFrame)
 
 
 def test_reindex(df):
@@ -146,12 +148,23 @@ def test_reindex(df):
     assert_object(df.reindex(columns=["value1", "value2"]), pd.DataFrame)
     assert_object(df.reindex(columns=[geo_name, "geometry2"]), GeoDataFrame, geo_name)
     assert_object(df.reindex(columns=[geo_name]), GeoDataFrame, geo_name)
+    assert_object(df.reindex(columns=["new_col", geo_name]), GeoDataFrame, geo_name)
+    # TODO: should this set the geometry column to geometry2 or return a DataFrame?
     assert_object(df.reindex(columns=["geometry2", "value1"]), GeoDataFrame, None)
     assert_object(df.reindex(columns=["geometry2"]), GeoDataFrame, None)
     # Ideally this would mirror __getitem__ and below would be true
     # assert_object(df.reindex(columns=["geometry2", "value1"]), pd.DataFrame)
     # assert_object(df.reindex(columns=["geometry2"]), pd.DataFrame)
     assert_object(df.reindex(columns=["value1"]), pd.DataFrame)
+
+    # reindexing the rows always preserves the GeoDataFrame
+    assert_object(df.reindex(index=[0, 1, 20]), GeoDataFrame, geo_name)
+
+    # reindexing both rows and columns
+    assert_object(
+        df.reindex(index=[0, 1, 20], columns=[geo_name]), GeoDataFrame, geo_name
+    )
+    assert_object(df.reindex(index=[0, 1, 20], columns=["value1"]), pd.DataFrame)
 
 
 def test_drop(df):
@@ -160,6 +173,7 @@ def test_drop(df):
     assert_object(df.drop(columns=["value1", "value2"]), GeoDataFrame, geo_name)
     cols = ["value1", "value2", "geometry2"]
     assert_object(df.drop(columns=cols), GeoDataFrame, geo_name)
+    # TODO: should this set the geometry column to geometry2 or return a DataFrame?
     assert_object(df.drop(columns=[geo_name, "value2"]), GeoDataFrame, None)
     assert_object(df.drop(columns=["value1", "value2", geo_name]), GeoDataFrame, None)
     # Ideally this would mirror __getitem__ and below would be true
@@ -187,7 +201,7 @@ def test_apply(df):
     assert_object(df["geometry2"].apply(identity), GeoSeries, "geometry2", crs=crs_osgb)
     assert_object(df["value1"].apply(identity), pd.Series)
 
-    # axis =0, Series, no longer geometry
+    # axis = 0, Series, no longer geometry
     assert_object(df[geo_name].apply(lambda x: str(x)), pd.Series)
     assert_object(df["geometry2"].apply(lambda x: str(x)), pd.Series)
 
