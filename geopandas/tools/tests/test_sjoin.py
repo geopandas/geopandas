@@ -147,6 +147,7 @@ class TestSpatialJoin:
         ):
             sjoin(df1, df2, extra_param="test")
 
+    @pytest.mark.filterwarnings("ignore:The `op` parameter:FutureWarning")
     @pytest.mark.parametrize(
         "dfs",
         [

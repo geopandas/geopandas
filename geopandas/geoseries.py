@@ -191,9 +191,9 @@ class GeoSeries(GeoPandasBase, Series):
                 # suppress additional warning from pandas for empty data
                 # (will always give object dtype instead of float dtype in the future,
                 # making the `if s.empty: s = s.astype(object)` below unnecessary)
-                warnings.filterwarnings(
-                    "ignore", "The default dtype for empty Series", FutureWarning
-                )
+                empty_msg = "The default dtype for empty Series"
+                warnings.filterwarnings("ignore", empty_msg, DeprecationWarning)
+                warnings.filterwarnings("ignore", empty_msg, FutureWarning)
                 s = pd.Series(data, index=index, name=name, **kwargs)
             # prevent trying to convert non-geometry objects
             if s.dtype != object:
