@@ -758,14 +758,9 @@ GON (((-122.84000 49.00000, -120.0000...
             if not show_interval:
                 labels = [c[1:-1] for c in labels]
 
-        lowest = values[~nan_idx].min()
-        if lowest > binning.bins[0]:
-            lowest = np.NINF
-        values = pd.cut(
-            values,
-            bins=np.insert(binning.bins, 0, lowest),
-            labels=labels,
-            include_lowest=True,
+        values = pd.Categorical([np.nan] * len(values), categories=labels, ordered=True)
+        values[~nan_idx] = pd.Categorical.from_codes(
+            binning.yb, categories=labels, ordered=True
         )
         if cmap is None:
             cmap = "viridis"
