@@ -293,7 +293,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         geo_column_name = self._geometry_column_name
         if isinstance(col, (Series, list, np.ndarray, GeometryArray)):
             level = col
-        elif hasattr(col, "ndim") and col.ndim == 1:
+        elif hasattr(col, "ndim") and col.ndim != 1:
             raise ValueError("Must pass array with one dimension only.")
         else:
             try:
@@ -1405,11 +1405,10 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         if self._geometry_column_name in result.columns:
             # axis=1 apply will split GeometryDType to object, try and cast back
             try:
-                _ensure_geometry(result[self._geometry_column_name], crs=self.crs)
+                result = result.set_geometry(self._geometry_column_name)
             except TypeError:
                 pass
             else:
-                result = result.set_geometry(self._geometry_column_name)
                 if self.crs is not None and result.crs is None:
                     result.set_crs(self.crs, inplace=True)
 
@@ -1634,6 +1633,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
 
         exploded_geom = df_copy.geometry.explode().reset_index(level=-1)
         exploded_index = exploded_geom.columns[0]
+
         df = (
             df_copy.drop(df_copy._geometry_column_name, axis=1)
             .join(exploded_geom)
