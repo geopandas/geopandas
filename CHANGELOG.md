@@ -1,6 +1,74 @@
 Changelog
 =========
 
+Version 0.10.0 (September ??, 2021)
+-----------------------------------
+
+
+Highlights of this release:
+
+- A new `explore()` method on GeoDataFrame and GeoSeries with native support
+  for interactive visualization based on folium / leaflet.js (#1953)
+- [.. sjoin nearest ..]
+
+New features and improvements:
+
+- Add support for pandas' `value_counts()` method for geometry dtype (#2047). 
+- The `to_file()` method will now attempt to detect the driver (if not
+  specified) based on the extension of the provided filename, instead of
+  defaulting to ESRI Shapefile (#1609).
+- Support for the `storage_options` keyword in `read_parquet()` for
+  specifying filesystem-specific options (e.g. for S3) based on fsspec (#2107).
+- Support the `convert_dtypes()` method from pandas to preserve the
+  GeoDataFrame class (#2115).
+- Support WKB values in the hex format in `GeoSeries.from_wkb()` (#2106).
+- Update the `estimate_utm_crs()` method to handle crossing the antimeridian
+  with pyproj 3.1+ (#2049).
+- Improved heuristic to decide how many decimals to show in the repr based on
+  whether the CRS is projected or geographic (#1895).
+- Switched the default for `geocode()` from GeoCode.Farm to the Photon
+  geocoding API (https://photon.komoot.io) (#2007).
+
+Deprecations and compatibility notes:
+
+- The `op=` keyword of `sjoin()` to indicate which spatial predicate to use
+  for joining is being deprecated and renamed in favor of a new `predicate=`
+  keyword (#1626).
+- The `cascaded_union` attribute is deprecated, use `unary_union` instead (#2074).
+- Constructing a GeoDataFrame with a duplicated "geometry" column is now
+  disallowed. This can also raise an error in the `pd.concat(.., axis=1)`
+  function if this results in duplicated active geometry columns (#2046).
+
+Bug fixes:
+
+- Fix `GeoSeries.isna()` to correctly return a boolean Series in case of an
+  empty GeoSeries (#2073).
+- Fix loss of the values' CRS when setting those values as a column
+  (`GeoDataFrame.__setitem__`) (#1963)
+- Fix in `GeoDataFrame.apply()` to preserve the active geometry column name
+  (#1955).
+- Fix in `sjoin()` to not ignore the suffixes in case of a right-join
+  (`how="right`) (#2065).
+- Fix `GeoDataFrame.explode()` with a MultiIndex (#1945).
+- Fix the handling of missing values in `to/from_wkb` and `to_from_wkt` (#1891).
+- Fix `to_file()` and `to_json()` when DataFrame has duplicate columns to
+  raise an error (#1900).
+- Fix bug in the colors shown with user-defined classification scheme (#2019).
+- Fix handling of the `path_effects` keyword in `plot()` (#2127).
+
+Notes on (optional) dependencies:
+
+- GeoPandas 0.9.0 dropped support for Python 3.6 and pandas 0.24. Further,
+  the minimum required versions are numpy 1.18, shapely 1.6, fiona 1.8,
+  matplotlib 3.1 and pyproj 2.2.
+- Plotting with a classification schema now requires mapclassify version >=
+  2.4 (#1737).
+- Compatibility with the latest numpy in combination with Shapely 1.7 (#2072)
+- Compatibility with the upcoming Shapely 1.8 (#2087).
+- Compatibility fixes for the latest PyGEOS (#1872, #2014) and matplotlib
+  (colorbar issue, #2066).
+
+
 Version 0.9.0 (February 28, 2021)
 ---------------------------------
 
