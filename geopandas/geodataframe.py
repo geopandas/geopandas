@@ -1658,11 +1658,7 @@ individually so that features may have different properties
             exploded_index = exploded_geom.index
             exploded_geom = exploded_geom.reset_index(level=-1).drop(level_str, axis=1)
         else:
-            exploded_geom = (
-                df_copy.geometry.explode(add_multiindex=True)
-                .reset_index(level=-1)
-                .drop(level_str, axis=1)
-            )
+            exploded_geom = df_copy.geometry.explode(add_multiindex=False).to_frame()
             exploded_index = exploded_geom.index
 
         df = (
