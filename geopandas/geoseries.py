@@ -768,13 +768,13 @@ class GeoSeries(GeoPandasBase, Series):
         Parameters
         ----------
         ignore_index : bool, default False
-             If True, the resulting index will be labelled 0, 1, …, n - 1,
-              ignoring add_multiindex.
+            If True, the resulting index will be labelled 0, 1, …, n - 1,
+            ignoring `add_multiindex`.
         add_multiindex : boolean, default True
-            If True, the resulting index will be a multi-index
-            (original index with an additional level
-            indicating the multiple geometries: a new zero-based index for each
-            single part geometry per multi-part geometry).
+            If True, the resulting index will be a multi-index (original
+            index with an additional level indicating the multiple
+            geometries: a new zero-based index for each single part geometry
+            per multi-part geometry).
 
         Returns
         -------
