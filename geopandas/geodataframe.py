@@ -15,7 +15,7 @@ from geopandas.array import GeometryArray, GeometryDtype, from_shapely, to_wkb, 
 from geopandas.base import GeoPandasBase, is_geometry_type
 from geopandas.geoseries import GeoSeries, _geoseries_constructor_with_fallback
 import geopandas.io
-
+from geopandas.explore import _explore
 from . import _compat as compat
 from ._decorator import doc
 
@@ -1806,6 +1806,11 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         return self.geometry.difference(other)
 
     plot = CachedAccessor("plot", geopandas.plotting.GeoplotAccessor)
+
+    @doc(_explore)
+    def explore(self, *args, **kwargs):
+        """Interactive map based on folium/leaflet.js"""
+        return _explore(self, *args, **kwargs)
 
 
 def _dataframe_set_geometry(self, col, drop=False, inplace=False, crs=None):

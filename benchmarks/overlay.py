@@ -1,10 +1,11 @@
 from geopandas import GeoDataFrame, GeoSeries, read_file, datasets, overlay
-from shapely.geometry import Polygon
+import numpy as np
+from shapely.geometry import Point, Polygon
 
 
 class Countries:
 
-    param_names = ['op']
+    param_names = ['how']
     params = [('intersection', 'union', 'identity', 'symmetric_difference',
                'difference')]
 
@@ -20,13 +21,13 @@ class Countries:
         self.countries = countries
         self.capitals = capitals
 
-    def time_overlay(self, op):
-        overlay(self.countries, self.capitals, how=op)
+    def time_overlay(self, how):
+        overlay(self.countries, self.capitals, how=how)
 
 
 class Small:
 
-    param_names = ['op']
+    param_names = ['how']
     params = [('intersection', 'union', 'identity', 'symmetric_difference',
                'difference')]
 
@@ -41,5 +42,24 @@ class Small:
 
         self.df1, self.df2 = df1, df2
 
-    def time_overlay(self, op):
-        overlay(self.df1, self.df2, how=op)
+    def time_overlay(self, how):
+        overlay(self.df1, self.df2, how=how)
+
+
+class ManyPoints:
+
+    param_names = ['how']
+    params = [('intersection', 'union', 'identity', 'symmetric_difference',
+               'difference')]
+
+    def setup(self, *args):
+
+        points = GeoDataFrame(geometry=[Point(i, i) for i in range(1000)])
+        base = np.array([[0, 0], [0, 100], [100, 100], [100, 0]])
+        polys = GeoDataFrame(
+            geometry=[Polygon(base + i * 100) for i in range(10)])
+
+        self.df1, self.df2 = points, polys
+
+    def time_overlay(self, how):
+        overlay(self.df1, self.df2, how=how)
