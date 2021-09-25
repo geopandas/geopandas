@@ -346,6 +346,9 @@ def overlay(df1, df2, how="intersection", keep_geom_type=None, make_valid=True):
 
             # level_0 created with above reset_index operation
             # and represents the original geometry collections
+            # TODO avoiding dissolve to call unary_union in this case could further
+            # improve performance (we only need to collect geometries in their
+            # respective Multi version)
             dissolved = exploded.dissolve(by="level_0")
             result.loc[is_collection, geom_col] = dissolved[geom_col].values
         else:
