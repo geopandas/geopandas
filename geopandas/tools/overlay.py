@@ -318,7 +318,7 @@ def overlay(df1, df2, how="intersection", keep_geom_type=None, make_valid=True):
 
     if keep_geom_type:
         key_order = result.keys()
-        exploded = result.reset_index(drop=True).explode()
+        exploded = result.reset_index(drop=True).explode(add_multiindex=True)
         exploded = exploded.reset_index(level=0)
 
         orig_num_geoms = result.shape[0]

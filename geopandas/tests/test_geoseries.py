@@ -173,7 +173,7 @@ class TestSeries:
         assert_series_equal(res, exp)
 
     def test_to_file(self):
-        """ Test to_file and from_file """
+        """Test to_file and from_file"""
         tempfilename = os.path.join(self.tempdir, "test.shp")
         self.g3.to_file(tempfilename)
         # Read layer back in?
@@ -240,7 +240,7 @@ class TestSeries:
         # self.na_none.fillna(method='backfill')
 
     def test_coord_slice(self):
-        """ Test CoordinateSlicer """
+        """Test CoordinateSlicer"""
         # need some better test cases
         assert geom_equals(self.g3, self.g3.cx[:, :])
         assert geom_equals(self.g3[[True, False]], self.g3.cx[0.9:, :0.1])
@@ -493,7 +493,7 @@ class TestConstructor:
         s = GeoSeries(
             [MultiPoint([(0, 0), (1, 1)]), MultiPoint([(2, 2), (3, 3), (4, 4)])]
         )
-        s = s.explode()
+        s = s.explode(add_multiindex=True)
         df = s.reset_index()
         assert type(df) == GeoDataFrame
 
