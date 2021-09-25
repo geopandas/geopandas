@@ -108,7 +108,7 @@ This creates the directory `geopandas-yourname` and connects your repository to
 the upstream (main project) *GeoPandas* repository.
 
 The testing suite will run automatically on GitHub Actions once your pull request is
-submitted. The test suite will also autmatically run on your branch so you can
+submitted. The test suite will also automatically run on your branch so you can
 check it prior to submitting the pull request.
 
 Creating a branch
@@ -256,6 +256,9 @@ The docstrings follow the `Numpy Docstring standard
 <https://github.com/numpy/numpy/blob/master/doc/HOWTO_DOCUMENT.rst.txt>`_. Some pages
 and examples are Jupyter notebooks converted to docs using `nbsphinx
 <https://nbsphinx.readthedocs.io/>`_. Jupyter notebooks should be stored without the output.
+
+We highly encourage you to follow the `Google developer documentation style guide
+<https://developers.google.com/style/highlights>`_ when updating or creating new documentation.
 
 Once you have made your changes, you may try if they render correctly by
 building the docs using sphinx. To do so, you can navigate to the `doc` folder::
