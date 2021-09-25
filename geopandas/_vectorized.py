@@ -169,7 +169,7 @@ def from_wkb(data):
 
     for geom in data:
         if not isna(geom) and len(geom):
-            geom = shapely.wkb.loads(geom)
+            geom = shapely.wkb.loads(geom, hex=isinstance(geom, str))
         else:
             geom = None
         out.append(geom)
@@ -250,7 +250,8 @@ def points_from_xy(x, y, z=None):
     else:
         out = _points_from_xy(x, y, z)
         aout = np.empty(len(x), dtype=object)
-        aout[:] = out
+        with compat.ignore_shapely2_warnings():
+            aout[:] = out
         return aout
 
 
@@ -612,7 +613,8 @@ def interiors(data):
             "geometry types, None is returned."
         )
     data = np.empty(len(data), dtype=object)
-    data[:] = inner_rings
+    with compat.ignore_shapely2_warnings():
+        data[:] = inner_rings
     return data
 
 
@@ -622,9 +624,11 @@ def representative_point(data):
     else:
         # method and not a property -> can't use _unary_geo
         out = np.empty(len(data), dtype=object)
-        out[:] = [
-            geom.representative_point() if geom is not None else None for geom in data
-        ]
+        with compat.ignore_shapely2_warnings():
+            out[:] = [
+                geom.representative_point() if geom is not None else None
+                for geom in data
+            ]
         return out
 
 
@@ -809,13 +813,17 @@ def interpolate(data, distance, normalized=False):
                     "Length of distance sequence does not match "
                     "length of the GeoSeries"
                 )
-            out[:] = [
-                geom.interpolate(dist, normalized=normalized)
-                for geom, dist in zip(data, distance)
-            ]
+            with compat.ignore_shapely2_warnings():
+                out[:] = [
+                    geom.interpolate(dist, normalized=normalized)
+                    for geom, dist in zip(data, distance)
+                ]
             return out
 
-        out[:] = [geom.interpolate(distance, normalized=normalized) for geom in data]
+        with compat.ignore_shapely2_warnings():
+            out[:] = [
+                geom.interpolate(distance, normalized=normalized) for geom in data
+            ]
         return out
 
 
