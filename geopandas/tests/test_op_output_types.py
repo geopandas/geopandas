@@ -6,8 +6,9 @@ from shapely.geometry import Point
 
 from geopandas import GeoDataFrame, GeoSeries
 
+
 crs_osgb = pyproj.CRS(27700)
-crs_wgs = pyproj.CRS(27700)
+crs_wgs = pyproj.CRS(4326)
 
 
 N = 10
@@ -83,7 +84,7 @@ class TestDataFrameMethodReturnTypes:
         self._assert_object(df[["value1"]], pd.DataFrame)
         # Series
         self._assert_object(df[geo_name], GeoSeries, geo_name)
-        self._assert_object(df["geometry2"], GeoSeries, "geometry2")
+        self._assert_object(df["geometry2"], GeoSeries, "geometry2", crs=crs_osgb)
         self._assert_object(df["value1"], pd.Series)
 
     def test_loc(self, df):
@@ -100,7 +101,9 @@ class TestDataFrameMethodReturnTypes:
         self._assert_object(df.loc[:, ["value1"]], pd.DataFrame)
         # Series
         self._assert_object(df.loc[:, geo_name], GeoSeries, geo_name)
-        self._assert_object(df.loc[:, "geometry2"], GeoSeries, "geometry2")
+        self._assert_object(
+            df.loc[:, "geometry2"], GeoSeries, "geometry2", crs=crs_osgb
+        )
         self._assert_object(df.loc[:, "value1"], pd.Series)
 
     def test_iloc(self, df):
@@ -116,7 +119,7 @@ class TestDataFrameMethodReturnTypes:
         self._assert_object(df.iloc[:, [0]], pd.DataFrame)
         # Series
         self._assert_object(df.iloc[:, 2], GeoSeries, geo_name)
-        self._assert_object(df.iloc[:, 3], GeoSeries, "geometry2")
+        self._assert_object(df.iloc[:, 3], GeoSeries, "geometry2", crs=crs_osgb)
         self._assert_object(df.iloc[:, 0], pd.Series)
 
     def test_squeeze(self, df):
@@ -188,7 +191,7 @@ class TestDataFrameMethodReturnTypes:
 
         # axis = 0, Series
         test_func(df[geo_name].apply(identity), GeoSeries, geo_name)
-        test_func(df["geometry2"].apply(identity), GeoSeries, "geometry2")
+        test_func(df["geometry2"].apply(identity), GeoSeries, "geometry2", crs=crs_osgb)
         test_func(df["value1"].apply(identity), pd.Series)
 
         # axis =0, Series, no longer geometry
