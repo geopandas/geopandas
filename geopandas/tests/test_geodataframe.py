@@ -1034,6 +1034,20 @@ class TestConstructor:
         with pytest.raises(ValueError):
             GeoDataFrame(df3, geometry="geom")
 
+    def test_from_gdf_geom_set(self):
+        df = pd.DataFrame(
+            [
+                {"geometry": Point(x, y), "geom": Point(x, y)}
+                for x, y in zip(range(3), range(3))
+            ],
+        )
+        df = df.set_geometry("geom")
+        # If constructing from a gdf with a geom col set, we should honour that,
+        # rather than defaulting to "geometry" being the geometry column
+        res = GeoDataFrame(df)
+        assert res.geometry.name == "geom"
+        assert res._geometry_column_name == "geom"
+
 
 def test_geodataframe_crs():
     gdf = GeoDataFrame(columns=["geometry"])

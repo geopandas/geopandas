@@ -103,13 +103,17 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
     _geometry_column_name = DEFAULT_GEO_COLUMN_NAME
 
-    def __init__(self, *args, geometry=None, crs=None, **kwargs):
+    def __init__(self, data=None, *args, geometry=None, crs=None, **kwargs):
         with compat.ignore_shapely2_warnings():
-            super().__init__(*args, **kwargs)
+            super().__init__(data, *args, **kwargs)
 
         # need to set this before calling self['geometry'], because
         # getitem accesses crs
         self._crs = CRS.from_user_input(crs) if crs else None
+        # if gdf passed in and geo_col is set, we use that for geometry,
+        # instead of looking for a column named "geometry"
+        if geometry is None and hasattr(data, "_geometry_column_name"):
+            geometry = data.geometry.name
 
         # set_geometry ensures the geometry data have the proper dtype,
         # but is not called if `geometry=None` ('geometry' column present
