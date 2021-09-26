@@ -112,8 +112,19 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         self._crs = CRS.from_user_input(crs) if crs else None
         # if gdf passed in and geo_col is set, we use that for geometry,
         # instead of looking for a column named "geometry"
-        if geometry is None and hasattr(data, "_geometry_column_name"):
+        if geometry is None and isinstance(data, GeoDataFrame):
             geometry = data.geometry.name
+            if crs is not None and data.crs != crs:
+                warnings.warn(
+                    "CRS mismatch between CRS of the passed geometries "
+                    "and 'crs'. Use 'GeoDataFrame.set_crs(crs, "
+                    "allow_override=True)' to overwrite CRS or "
+                    "'GeoDataFrame.to_crs(crs)' to reproject geometries. "
+                    "CRS mismatch will raise an error in the future versions "
+                    "of GeoPandas.",
+                    FutureWarning,
+                    stacklevel=2,
+                )
 
         # set_geometry ensures the geometry data have the proper dtype,
         # but is not called if `geometry=None` ('geometry' column present
