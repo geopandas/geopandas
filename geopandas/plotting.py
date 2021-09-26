@@ -4,11 +4,22 @@ import numpy as np
 import pandas as pd
 from pandas.plotting import PlotAccessor
 
-import geopandas
-
 from distutils.version import LooseVersion
 
 from ._decorator import doc
+
+_MPL_COLL_KWD_ALIASES = {
+    "antialiased": ["antialiaseds", "aa"],
+    "edgecolor": ["edgecolors", "ec"],
+    "facecolor": ["facecolors", "fc"],
+    "linestyle": ["linestyles", "dashes", "ls"],
+    "linewidth": ["linewidths", "lw"],
+}
+_MPL_COLL_KWD_NORM = {
+    alias: key
+    for key, alias_list in _MPL_COLL_KWD_ALIASES.items()
+    for alias in alias_list
+}
 
 
 def deprecated(new):
@@ -28,60 +39,69 @@ def deprecated(new):
 
 def _flatten_multi_geoms(geoms, prefix="Multi"):
     """
-    Returns Series like geoms and index, except that any Multi geometries
-    are split into their components and indices are repeated for all component
-    in the same Multi geometry.  Maintains 1:1 matching of geometry to value.
+    Returns Series like geoms and index, except that any Multi geometries are
+    split into their components and indices are repeated for all component in
+    the same Multi geometry. Also gets rid of empty geometries, but
+    `component_index` still refers to the original position in `geoms`. This way
+    the corresponding values can be extracted.
 
-    Prefix specifies type of geometry to be flatten. 'Multi' for MultiPoint and similar,
-    "Geom" for GeometryCollection.
+    Prefix specifies type of geometry to be flatten. "Multi" for MultiPoint and
+    similar, "Geom" for GeometryCollection.
 
     Returns
     -------
-    components : list of geometry
+    components : GeoSeries
 
-    component_index : index array
-        indices are repeated for all components in the same Multi geometry
+    component_index : index array indices are repeated for all components in the
+        same Multi geometry
     """
-    components, component_index = [], []
+    from shapely.geometry import Point
 
-    if not geoms.geom_type.str.startswith(prefix).any():
-        return geoms, np.arange(len(geoms))
+    geoms = geoms.fillna(Point())
+    has_multi_geom = (geoms.geom_type.str.startswith(prefix) & ~geoms.is_empty).any()
 
-    for ix, geom in enumerate(geoms):
-        if geom is not None and geom.type.startswith(prefix) and not geom.is_empty:
-            for poly in geom.geoms:
-                components.append(poly)
-                component_index.append(ix)
-        else:
-            components.append(geom)
-            component_index.append(ix)
+    if has_multi_geom:
+        exploded_geoms = geoms.explode()
+        not_empty = ~exploded_geoms.is_empty.values
+        geo_series = exploded_geoms
+        component_index = exploded_geoms.index.codes[1]
+        component_index = (component_index == 0).cumsum() - 1
 
-    return components, np.array(component_index)
+    else:
+        not_empty = ~geoms.is_empty
+        geo_series = geoms
+        component_index = np.arange(len(geoms))
+
+    geo_series = geo_series.loc[not_empty].reset_index(drop=True)
+    component_index = component_index[not_empty]
+    return geo_series, component_index
 
 
-def _expand_kwargs(kwargs, multiindex):
+def _expand_kwargs(kwargs, multiindex, is_final_expansion=False):
     """
     Most arguments to the plot functions must be a (single) value, or a sequence
     of values. This function checks each key-value pair in 'kwargs' and expands
     it (in place) to the correct length/formats with help of 'multiindex', unless
     the value appears to already be a valid (single) value for the key.
+    `multiindex` should be list_like
     """
     import matplotlib
     from matplotlib.colors import is_color_like
     from typing import Iterable
 
     mpl = matplotlib.__version__
-    if mpl >= LooseVersion("3.4") or (mpl > LooseVersion("3.3.2") and "+" in mpl):
+    if not (mpl >= LooseVersion("3.4") or (mpl > LooseVersion("3.3.2") and "+" in mpl)):
         # alpha is supported as array argument with matplotlib 3.4+
-        scalar_kwargs = ["marker", "path_effects"]
+        single_value_kwargs = ["hatch", "marker", "path_effects"]
     else:
-        scalar_kwargs = ["marker", "alpha", "path_effects"]
+        single_value_kwargs = ["hatch", "marker", "alpha", "path_effects"]
 
+    to_pop = []
     for att, value in kwargs.items():
         if "color" in att:  # color(s), edgecolor(s), facecolor(s)
             if is_color_like(value):
                 continue
-        elif "linestyle" in att:  # linestyle(s)
+        elif att == "linestyle":
             # A single linestyle can be 2-tuple of a number and an iterable.
             if (
                 isinstance(value, tuple)
@@ -89,12 +109,32 @@ def _expand_kwargs(kwargs, multiindex):
                 and isinstance(value[1], Iterable)
             ):
                 continue
-        elif att in scalar_kwargs:
-            # For these attributes, only a single value is allowed, so never expand.
-            continue
 
-        if pd.api.types.is_list_like(value):
-            kwargs[att] = np.take(value, multiindex, axis=0)
+        if pd.api.types.is_list_like(value) and multiindex[-1] < len(value):
+            value = np.take(value, multiindex, axis=0)
+            # If value only contains null values, which can happen for a
+            # categorical plot, pop the argument to later retrieve the
+            # matplotlib default, which is not necessarily None or np.nan.
+            if pd.isnull(value).all():
+                to_pop.append(att)
+            elif (
+                att in single_value_kwargs
+                and is_final_expansion
+                and np.all(value == value[0])
+            ):
+                value = value[0]
+            # For plain text styles, a single-value array cannot be passed
+            # as a linestyle to a Collection.
+            elif (
+                att == "linestyle"
+                and isinstance(value, np.ndarray)
+                and is_final_expansion
+            ):
+                value = value.tolist()
+            kwargs[att] = value
+
+    for att in to_pop:
+        kwargs.pop(att)
 
 
 def _PolygonPatch(polygon, **kwargs):
@@ -124,7 +164,7 @@ def _PolygonPatch(polygon, **kwargs):
 
 
 def _plot_polygon_collection(
-    ax, geoms, values=None, color=None, cmap=None, vmin=None, vmax=None, **kwargs
+    ax, geoms, values=None, color=None, cmap=None, norm=None, **kwargs
 ):
     """
     Plots a collection of Polygon and MultiPolygon geometries to `ax`
@@ -134,54 +174,61 @@ def _plot_polygon_collection(
     ax : matplotlib.axes.Axes
         where shapes will be plotted
     geoms : a sequence of `N` Polygons and/or MultiPolygons (can be mixed)
-
     values : a sequence of `N` values, optional
         Values will be mapped to colors using vmin/vmax/cmap. They should
         have 1:1 correspondence with the geometries (not their components).
         Otherwise follows `color` / `facecolor` kwargs.
-    edgecolor : single color or sequence of `N` colors
-        Color for the edge of the polygons
-    facecolor : single color or sequence of `N` colors
-        Color to fill the polygons. Cannot be used together with `values`.
     color : single color or sequence of `N` colors
         Sets both `edgecolor` and `facecolor`
     **kwargs
         Additional keyword arguments passed to the collection
-
-    Returns
-    -------
-    collection : matplotlib.collections.Collection that was plotted
     """
     from matplotlib.collections import PatchCollection
-
-    geoms, multiindex = _flatten_multi_geoms(geoms)
-    if values is not None:
-        values = np.take(values, multiindex, axis=0)
 
     # PatchCollection does not accept some kwargs.
     kwargs = {
         att: value
         for att, value in kwargs.items()
-        if att not in ["markersize", "marker"]
+        if att not in ["markersize", "marker", "s"]
     }
 
-    # Add to kwargs for easier checking below.
-    if color is not None:
-        kwargs["color"] = color
+    geoms, multiindex = _flatten_multi_geoms(geoms)
+    poly_patches = geoms.apply(_PolygonPatch)
 
-    _expand_kwargs(kwargs, multiindex)
+    if isinstance(values, pd.Categorical):
+        # This should never be entered when called through `plot_series`.
+        _expand_kwargs(kwargs, multiindex)
+        values = values[multiindex]
+        codes = values.codes
+        ucodes = np.unique(codes)
+        categories = values.categories[ucodes]
+        # Have to iterate because an Artist.label can only be a (single) str.
+        for cat, cat_code in zip(categories, ucodes):
+            cat_kwargs = kwargs.copy()
+            cat_idx = np.where(codes == cat_code)[0]
+            # some properties like hatch can only be a single value, so:
+            _expand_kwargs(cat_kwargs, cat_idx[[0]], is_final_expansion=True)
+            cat_patches = np.take(poly_patches, cat_idx, axis=0)
+            collection = PatchCollection(cat_patches, label=cat, **cat_kwargs)
+            collection.set_facecolor(color.get(cat, "none"))
+            ax.add_collection(collection, autolim=True)
 
-    collection = PatchCollection(
-        [_PolygonPatch(poly) for poly in geoms if not poly.is_empty], **kwargs
-    )
+    else:
+        # Add to kwargs for easier checking below.
+        if color is not None:
+            kwargs["color"] = color
+        _expand_kwargs(kwargs, multiindex, is_final_expansion=True)
 
-    if values is not None:
-        collection.set_array(np.asarray(values))
-        collection.set_cmap(cmap)
-        if "norm" not in kwargs:
-            collection.set_clim(vmin, vmax)
+        collection = PatchCollection(poly_patches, **kwargs)
 
-    ax.add_collection(collection, autolim=True)
+        if values is not None:
+            values = np.take(values, multiindex, axis=0)
+            collection.set_array(values)
+            collection.set_cmap(cmap)
+            collection.set_norm(norm)
+
+        ax.add_collection(collection, autolim=True)
+
     ax.autoscale_view()
     return collection
 
@@ -190,7 +237,7 @@ plot_polygon_collection = deprecated(_plot_polygon_collection)
 
 
 def _plot_linestring_collection(
-    ax, geoms, values=None, color=None, cmap=None, vmin=None, vmax=None, **kwargs
+    ax, geoms, values=None, color=None, cmap=None, norm=None, **kwargs
 ):
     """
     Plots a collection of LineString and MultiLineString geometries to `ax`
@@ -206,40 +253,52 @@ def _plot_linestring_collection(
         have 1:1 correspondence with the geometries (not their components).
     color : single color or sequence of `N` colors
         Cannot be used together with `values`.
-
-    Returns
-    -------
-    collection : matplotlib.collections.Collection that was plotted
     """
     from matplotlib.collections import LineCollection
-
-    geoms, multiindex = _flatten_multi_geoms(geoms)
-    if values is not None:
-        values = np.take(values, multiindex, axis=0)
 
     # LineCollection does not accept some kwargs.
     kwargs = {
         att: value
         for att, value in kwargs.items()
-        if att not in ["markersize", "marker"]
+        if att not in ["markersize", "marker", "s"]
     }
 
-    # Add to kwargs for easier checking below.
-    if color is not None:
-        kwargs["color"] = color
-
-    _expand_kwargs(kwargs, multiindex)
-
+    geoms, multiindex = _flatten_multi_geoms(geoms)
     segments = [np.array(linestring.coords)[:, :2] for linestring in geoms]
-    collection = LineCollection(segments, **kwargs)
 
-    if values is not None:
-        collection.set_array(np.asarray(values))
-        collection.set_cmap(cmap)
-        if "norm" not in kwargs:
-            collection.set_clim(vmin, vmax)
+    if isinstance(values, pd.Categorical):
+        # This should never be entered when called through `plot_series`.
+        _expand_kwargs(kwargs, multiindex)
+        values = values[multiindex]
+        codes = values.codes
+        ucodes = np.unique(codes)
+        categories = values.categories[ucodes]
+        # Have to iterate because an Artist.label can only be a (single) str.
+        for cat, cat_code in zip(categories, ucodes):
+            cat_kwargs = kwargs.copy()
+            cat_idx = np.where(codes == cat_code)[0]
+            _expand_kwargs(cat_kwargs, cat_idx[[0]], is_final_expansion=True)
+            cat_segments = np.take(segments, cat_idx, axis=0)
+            collection = LineCollection(cat_segments, label=cat, **cat_kwargs)
+            collection.set_color(color.get(cat, "none"))
+            ax.add_collection(collection, autolim=True)
 
-    ax.add_collection(collection, autolim=True)
+    else:
+        # Add to kwargs for easier checking below.
+        if color is not None:
+            kwargs["color"] = color
+        _expand_kwargs(kwargs, multiindex, is_final_expansion=True)
+
+        collection = LineCollection(segments, **kwargs)
+
+        if values is not None:
+            values = np.take(values, multiindex, axis=0)
+            collection.set_array(np.asarray(values))
+            collection.set_cmap(cmap)
+            collection.set_norm(norm)
+
+        ax.add_collection(collection, autolim=True)
+
     ax.autoscale_view()
     return collection
 
@@ -248,16 +307,7 @@ plot_linestring_collection = deprecated(_plot_linestring_collection)
 
 
 def _plot_point_collection(
-    ax,
-    geoms,
-    values=None,
-    color=None,
-    cmap=None,
-    vmin=None,
-    vmax=None,
-    marker="o",
-    markersize=None,
-    **kwargs,
+    ax, geoms, values=None, color=None, cmap=None, norm=None, **kwargs
 ):
     """
     Plots a collection of Point and MultiPoint geometries to `ax`
@@ -271,41 +321,44 @@ def _plot_point_collection(
     values : a sequence of `N` values, optional
         Values mapped to colors using vmin, vmax, and cmap.
         Cannot be specified together with `color`.
-    markersize : scalar or array-like, optional
-        Size of the markers. Note that under the hood ``scatter`` is
-        used, so the specified value will be proportional to the
-        area of the marker (size in points^2).
-
-    Returns
-    -------
-    collection : matplotlib.collections.Collection that was plotted
     """
-    if values is not None and color is not None:
-        raise ValueError("Can only specify one of 'values' and 'color' kwargs")
+    # matplotlib < 2.0 does not support s=None.
+    if kwargs.get("markersize") is not None:
+        # We square to match the units.
+        kwargs["s"] = kwargs.pop("markersize") ** 2
 
     geoms, multiindex = _flatten_multi_geoms(geoms)
-    # values are expanded below as kwargs["c"]
+    x, y = geoms.x, geoms.y
 
-    x = [p.x if not p.is_empty else None for p in geoms]
-    y = [p.y if not p.is_empty else None for p in geoms]
+    if isinstance(values, pd.Categorical):
+        # This should never be entered when called through `plot_series`.
+        _expand_kwargs(kwargs, multiindex)
+        values = values[multiindex]
+        codes = values.codes
+        ucodes = np.unique(codes)
+        categories = values.categories[ucodes]
+        # Have to iterate because an Artist.label can only be a (single) str.
+        for cat, cat_code in zip(categories, ucodes):
+            cat_kwargs = kwargs.copy()
+            cat_idx = np.where(codes == cat_code)[0]
+            _expand_kwargs(cat_kwargs, cat_idx[[0]], is_final_expansion=True)
+            cat_x = np.take(x, cat_idx, axis=0)
+            cat_y = np.take(y, cat_idx, axis=0)
+            collection = ax.scatter(cat_x, cat_y, label=cat, **cat_kwargs)
+            collection.set_color(color.get(cat, "none"))
 
-    # matplotlib 1.4 does not support c=None, and < 2.0 does not support s=None
-    if values is not None:
-        kwargs["c"] = values
-    if markersize is not None:
-        kwargs["s"] = markersize
-
-    # Add to kwargs for easier checking below.
-    if color is not None:
-        kwargs["color"] = color
-    if marker is not None:
-        kwargs["marker"] = marker
-    _expand_kwargs(kwargs, multiindex)
-
-    if "norm" not in kwargs:
-        collection = ax.scatter(x, y, vmin=vmin, vmax=vmax, cmap=cmap, **kwargs)
     else:
-        collection = ax.scatter(x, y, cmap=cmap, **kwargs)
+        # Add to kwargs for easier checking below.
+        if color is not None:
+            kwargs["color"] = color
+        _expand_kwargs(kwargs, multiindex, is_final_expansion=True)
+
+        # matplotlib 1.4 does not support c=None. `values` has not been expanded
+        # by the multiindex so _expand_kwargs should not be called for "c".
+        if values is not None:
+            kwargs["c"] = np.take(values, multiindex, axis=0)
+
+        collection = ax.scatter(x, y, cmap=cmap, norm=norm, **kwargs)
 
     return collection
 
@@ -314,7 +367,14 @@ plot_point_collection = deprecated(_plot_point_collection)
 
 
 def plot_series(
-    s, cmap=None, color=None, ax=None, figsize=None, aspect="auto", **style_kwds
+    s,
+    cmap=None,
+    norm=None,
+    color=None,
+    ax=None,
+    figsize=None,
+    aspect="auto",
+    **style_kwds,
 ):
     """
     Plot a GeoSeries.
@@ -334,7 +394,7 @@ def plot_series(
         colormaps include:
 
             tab10, tab20, Accent, Dark2, Paired, Pastel1, Set1, Set2
-
+    TODO: norm
     color : str (default None)
         If specified, all objects will be colored uniformly.
     ax : matplotlib.pyplot.Artist (default None)
@@ -359,6 +419,19 @@ def plot_series(
     -------
     ax : matplotlib axes instance
     """
+    try:
+        import matplotlib.pyplot as plt
+    except ImportError:
+        raise ImportError(
+            "The matplotlib package is required for plotting in geopandas. "
+            "You can install it using 'conda install -c conda-forge matplotlib' or "
+            "'pip install matplotlib'."
+        )
+
+    for kwd, normed_kwd in _MPL_COLL_KWD_NORM.items():
+        if kwd in style_kwds:
+            style_kwds[normed_kwd] = style_kwds.pop(kwd)
+
     if "colormap" in style_kwds:
         warnings.warn(
             "'colormap' is deprecated, please use 'cmap' instead "
@@ -373,15 +446,6 @@ def plot_series(
             FutureWarning,
         )
         ax = style_kwds.pop("axes")
-
-    try:
-        import matplotlib.pyplot as plt
-    except ImportError:
-        raise ImportError(
-            "The matplotlib package is required for plotting in geopandas. "
-            "You can install it using 'conda install -c conda-forge matplotlib' or "
-            "'pip install matplotlib'."
-        )
 
     if ax is None:
         fig, ax = plt.subplots(figsize=figsize)
@@ -414,21 +478,23 @@ def plot_series(
         )
         return ax
 
-    # if cmap is specified, create range of colors based on cmap
+    # If `cmap` is specified, create range of colors based on `cmap`.
     values = None
     if cmap is not None:
         values = np.arange(len(s))
         if hasattr(cmap, "N"):
             values = values % cmap.N
-        style_kwds["vmin"] = style_kwds.get("vmin", values.min())
-        style_kwds["vmax"] = style_kwds.get("vmax", values.max())
+        if norm is None:
+            vmin = style_kwds.get("vmin", values.min())
+            vmax = style_kwds.get("vmax", values.max())
+            from matplotlib.colors import Normalize
+
+            norm = Normalize(vmin=vmin, vmax=vmax)
 
     # decompose GeometryCollections
     geoms, multiindex = _flatten_multi_geoms(s.geometry, prefix="Geom")
     values = np.take(values, multiindex, axis=0) if cmap else None
-    expl_series = geopandas.GeoSeries(geoms)
-
-    geom_types = expl_series.type
+    geom_types = geoms.type
     poly_idx = np.asarray((geom_types == "Polygon") | (geom_types == "MultiPolygon"))
     line_idx = np.asarray(
         (geom_types == "LineString")
@@ -437,34 +503,45 @@ def plot_series(
     )
     point_idx = np.asarray((geom_types == "Point") | (geom_types == "MultiPoint"))
 
+    if color is not None:
+        style_kwds["color"] = color
+
     # plot all Polygons and all MultiPolygon components in the same collection
-    polys = expl_series[poly_idx]
+    polys = geoms[poly_idx]
     if not polys.empty:
-        # color overrides both face and edgecolor. As we want people to be
-        # able to use edgecolor as well, pass color to facecolor
-        facecolor = style_kwds.pop("facecolor", None)
-        if color is not None:
-            facecolor = color
+        polys_style_kwds = style_kwds.copy()
+        _expand_kwargs(polys_style_kwds, multiindex[poly_idx])
+        # `color` overrides both `facecolor` and `edgecolor`. As we want users
+        # to be able to use `edgecolor` as well, pass `color` to `facecolor`:
+        default_fc = polys_style_kwds.pop("color", None)
+        if polys_style_kwds.get("facecolor") is None:
+            polys_style_kwds["facecolor"] = default_fc
 
         values_ = values[poly_idx] if cmap else None
         _plot_polygon_collection(
-            ax, polys, values_, facecolor=facecolor, cmap=cmap, **style_kwds
+            ax, polys, values_, cmap=cmap, norm=norm, **polys_style_kwds
         )
 
     # plot all LineStrings and MultiLineString components in same collection
-    lines = expl_series[line_idx]
+    lines = geoms[line_idx]
     if not lines.empty:
+        lines_style_kwds = style_kwds.copy()
+        _expand_kwargs(lines_style_kwds, multiindex[line_idx])
+
         values_ = values[line_idx] if cmap else None
         _plot_linestring_collection(
-            ax, lines, values_, color=color, cmap=cmap, **style_kwds
+            ax, lines, values_, cmap=cmap, norm=norm, **lines_style_kwds
         )
 
     # plot all Points in the same collection
-    points = expl_series[point_idx]
+    points = geoms[point_idx]
     if not points.empty:
+        pts_style_kwds = style_kwds.copy()
+        _expand_kwargs(pts_style_kwds, multiindex[point_idx])
+
         values_ = values[point_idx] if cmap else None
         _plot_point_collection(
-            ax, points, values_, color=color, cmap=cmap, **style_kwds
+            ax, points, values_, cmap=cmap, norm=norm, **pts_style_kwds
         )
 
     plt.draw()
@@ -475,6 +552,7 @@ def plot_dataframe(
     df,
     column=None,
     cmap=None,
+    norm=None,
     color=None,
     ax=None,
     cax=None,
@@ -484,7 +562,6 @@ def plot_dataframe(
     k=5,
     vmin=None,
     vmax=None,
-    markersize=None,
     figsize=None,
     legend_kwds=None,
     categories=None,
@@ -524,8 +601,11 @@ def plot_dataframe(
          - 'hexbin' : hexbin plot.
     cmap : str (default None)
         The name of a colormap recognized by matplotlib.
-    color : str (default None)
-        If specified, all objects will be colored uniformly.
+    TODO: norm
+    color : str or dict (default None)
+        If specified, all objects will be colored uniformly, if str, or
+        according to the mapping it defines of values in `column` to colors if
+        dict.
     ax : matplotlib.pyplot.Artist (default None)
         axes on which to draw the plot
     cax : matplotlib.pyplot Artist (default None)
@@ -553,12 +633,6 @@ def plot_dataframe(
     vmax : None or float (default None)
         Maximum value of cmap. If None, the maximum data value
         in the column to be plotted is used.
-    markersize : str or float or sequence (default None)
-        Only applies to point geometries within a frame.
-        If a str, will use the values in the column of the frame specified
-        by markersize to set the size of markers. Otherwise can be a value
-        to apply to all points, or a sequence of the same length as the
-        number of points.
     figsize : tuple of integers (default None)
         Size of the resulting matplotlib.figure.Figure. If the argument
         axes is given explicitly, figsize is ignored.
@@ -626,6 +700,21 @@ GON (((-122.84000 49.00000, -120.0000...
     See the User Guide page :doc:`../../user_guide/mapping` for details.
 
     """
+    try:
+        import matplotlib.pyplot as plt
+    except ImportError:
+        raise ImportError(
+            "The matplotlib package is required for plotting in geopandas. "
+            "You can install it using 'conda install -c conda-forge matplotlib' or "
+            "'pip install matplotlib'."
+        )
+
+    for kwd, normed_kwd in _MPL_COLL_KWD_NORM.items():
+        if kwd in style_kwds:
+            style_kwds[normed_kwd] = style_kwds.pop(kwd)
+        if missing_kwds is not None and kwd in missing_kwds:
+            missing_kwds[normed_kwd] = missing_kwds.pop(kwd)
+
     if "colormap" in style_kwds:
         warnings.warn(
             "'colormap' is deprecated, please use 'cmap' instead "
@@ -640,20 +729,14 @@ GON (((-122.84000 49.00000, -120.0000...
             FutureWarning,
         )
         ax = style_kwds.pop("axes")
-    if column is not None and color is not None:
+
+    from matplotlib.colors import is_color_like
+
+    if column is not None and is_color_like(color):
         warnings.warn(
             "Only specify one of 'column' or 'color'. Using 'color'.", UserWarning
         )
         column = None
-
-    try:
-        import matplotlib.pyplot as plt
-    except ImportError:
-        raise ImportError(
-            "The matplotlib package is required for plotting in geopandas. "
-            "You can install it using 'conda install -c conda-forge matplotlib' or "
-            "'pip install matplotlib'."
-        )
 
     if ax is None:
         if cax is not None:
@@ -685,17 +768,14 @@ GON (((-122.84000 49.00000, -120.0000...
         )
         return ax
 
-    if isinstance(markersize, str):
-        markersize = df[markersize].values
-
     if column is None:
         return plot_series(
             df.geometry,
             cmap=cmap,
+            norm=norm,
             color=color,
             ax=ax,
             figsize=figsize,
-            markersize=markersize,
             aspect=aspect,
             **style_kwds,
         )
@@ -707,13 +787,10 @@ GON (((-122.84000 49.00000, -120.0000...
                 "The dataframe and given column have different number of rows."
             )
         else:
-            values = column
+            values = np.asarray(column)
 
-            # Make sure index of a Series matches index of df
-            if isinstance(values, pd.Series):
-                values = values.reindex(df.index)
     else:
-        values = df[column]
+        values = df[column].values
 
     if pd.api.types.is_categorical_dtype(values.dtype):
         if categories is not None:
@@ -725,6 +802,9 @@ GON (((-122.84000 49.00000, -120.0000...
         categorical = True
 
     nan_idx = np.asarray(pd.isna(values), dtype="bool")
+
+    is_color_mapping = isinstance(color, dict)
+    categorical = categorical or is_color_mapping
 
     if scheme is not None:
         mc_err = (
@@ -782,12 +862,9 @@ GON (((-122.84000 49.00000, -120.0000...
 
     # Define `values` as a Series
     if categorical:
-        if cmap is None:
-            cmap = "tab10"
-
-        cat = pd.Categorical(values, categories=categories)
+        # We order to avoid raising an error when taking the min
+        cat = pd.Categorical(values, categories=categories).as_ordered()
         categories = list(cat.categories)
-
         # values missing in the Categorical but not in original values
         missing = list(np.unique(values[~nan_idx & cat.isna()]))
         if missing:
@@ -796,26 +873,49 @@ GON (((-122.84000 49.00000, -120.0000...
                 "Missing categories: {}.".format(missing)
             )
 
-        values = cat.codes[~nan_idx]
+        values = cat[~nan_idx]
         vmin = 0 if vmin is None else vmin
         vmax = len(categories) - 1 if vmax is None else vmax
 
-    # fill values with placeholder where were NaNs originally to map them properly
-    # (after removing them in categorical or scheme)
-    if categorical:
-        for n in np.where(nan_idx)[0]:
-            values = np.insert(values, n, values[0])
+        if cmap is None and scheme is None:
+            cmap = "tab10"
 
-    mn = values[~np.isnan(values)].min() if vmin is None else vmin
-    mx = values[~np.isnan(values)].max() if vmax is None else vmax
+        for key, value in style_kwds.items():
+            if isinstance(value, dict):
+                style_kwds[key] = np.asarray(cat.map(value))
 
-    # decompose GeometryCollections
+        # fill values with placeholder where were NaNs originally to map them
+        # properly (after removing them in categorical or scheme)
+        values = cat.fillna(values[0])
+
+    # else, raise if given dictionaries and cateforical=False??
+
+    # If `color` is not a mapping, the colors will then depend on a norm.
+    if not is_color_mapping:
+        # If the `norm` was not provided, generate one either with provided
+        # `vmin` and `vmax`, or based on the `values` array.
+        if norm is None:
+            from matplotlib.colors import Normalize
+
+            # If categorical vmin and vmax cannot be None, so the fact that
+            # value.min() is a string does not matter.
+            mn = values[~np.isnan(values)].min() if vmin is None else vmin
+            mx = values[~np.isnan(values)].max() if vmax is None else vmax
+            norm = Normalize(vmin=mn, vmax=mx)
+
+        # For categorical plots in this case we still need to assign a color per
+        # category:
+        if categorical:
+            from matplotlib import cm
+
+            n_cmap = cm.ScalarMappable(norm=norm, cmap=cmap)
+            cat_colors = n_cmap.to_rgba(np.arange(len(categories)))
+            color = {cat: cat_color for cat, cat_color in zip(categories, cat_colors)}
+
     geoms, multiindex = _flatten_multi_geoms(df.geometry, prefix="Geom")
-    values = np.take(values, multiindex, axis=0)
+    values = values[multiindex]
     nan_idx = np.take(nan_idx, multiindex, axis=0)
-    expl_series = geopandas.GeoSeries(geoms)
-
-    geom_types = expl_series.type
+    geom_types = geoms.type
     poly_idx = np.asarray((geom_types == "Polygon") | (geom_types == "MultiPolygon"))
     line_idx = np.asarray(
         (geom_types == "LineString")
@@ -825,108 +925,73 @@ GON (((-122.84000 49.00000, -120.0000...
     point_idx = np.asarray((geom_types == "Point") | (geom_types == "MultiPoint"))
 
     # plot all Polygons and all MultiPolygon components in the same collection
-    polys = expl_series[poly_idx & np.invert(nan_idx)]
-    subset = values[poly_idx & np.invert(nan_idx)]
+    polys_mask = poly_idx & np.invert(nan_idx)
+    polys = geoms[polys_mask]
+    subset = values[polys_mask]
+
     if not polys.empty:
+        polys_style_kwds = style_kwds.copy()
+        _expand_kwargs(polys_style_kwds, multiindex[polys_mask])
         _plot_polygon_collection(
-            ax, polys, subset, vmin=mn, vmax=mx, cmap=cmap, **style_kwds
+            ax, polys, subset, color=color, cmap=cmap, norm=norm, **polys_style_kwds
         )
+        if categorical:
+            ax.legend = _legend_with_poly_wrapper(ax.legend)
+            ax.get_legend_handles_labels = _legend_with_poly_wrapper(
+                ax.get_legend_handles_labels,
+                handler_map_kwarg_name="legend_handler_map",
+            )
 
     # plot all LineStrings and MultiLineString components in same collection
-    lines = expl_series[line_idx & np.invert(nan_idx)]
-    subset = values[line_idx & np.invert(nan_idx)]
+    lines_mask = line_idx & np.invert(nan_idx)
+    lines = geoms[lines_mask]
+    subset = values[lines_mask]
     if not lines.empty:
+        lines_style_kwds = style_kwds.copy()
+        _expand_kwargs(lines_style_kwds, multiindex[lines_mask])
         _plot_linestring_collection(
-            ax, lines, subset, vmin=mn, vmax=mx, cmap=cmap, **style_kwds
+            ax, lines, subset, color=color, cmap=cmap, norm=norm, **lines_style_kwds
         )
 
     # plot all Points in the same collection
-    points = expl_series[point_idx & np.invert(nan_idx)]
-    subset = values[point_idx & np.invert(nan_idx)]
+    pts_mask = point_idx & np.invert(nan_idx)
+    points = geoms[pts_mask]
+    subset = values[pts_mask]
     if not points.empty:
-        if isinstance(markersize, np.ndarray):
-            markersize = np.take(markersize, multiindex, axis=0)
-            markersize = markersize[point_idx & np.invert(nan_idx)]
+        pts_style_kwds = style_kwds.copy()
+        _expand_kwargs(pts_style_kwds, multiindex[pts_mask])
         _plot_point_collection(
-            ax,
-            points,
-            subset,
-            vmin=mn,
-            vmax=mx,
-            markersize=markersize,
-            cmap=cmap,
-            **style_kwds,
+            ax, points, subset, color=color, cmap=cmap, norm=norm, **pts_style_kwds
         )
 
-    if missing_kwds is not None and not expl_series[nan_idx].empty:
+    if missing_kwds is not None and not geoms[nan_idx].empty:
         if color:
-            if "color" not in missing_kwds:
-                missing_kwds["color"] = color
-
+            missing_kwds["color"] = missing_kwds.get("color", color)
         merged_kwds = style_kwds.copy()
         merged_kwds.update(missing_kwds)
+        _expand_kwargs(merged_kwds, multiindex[nan_idx])
+        merged_kwds["label"] = merged_kwds.get("label", "NaN")
+        plot_series(geoms[nan_idx], ax=ax, **merged_kwds)
 
-        plot_series(expl_series[nan_idx], ax=ax, **merged_kwds)
-
-    if legend and not color:
-
+    if legend:
         if legend_kwds is None:
             legend_kwds = {}
         if "fmt" in legend_kwds:
             legend_kwds.pop("fmt")
 
-        from matplotlib.lines import Line2D
-        from matplotlib.colors import Normalize
-        from matplotlib import cm
-
-        norm = style_kwds.get("norm", None)
-        if not norm:
-            norm = Normalize(vmin=mn, vmax=mx)
-        n_cmap = cm.ScalarMappable(norm=norm, cmap=cmap)
         if categorical:
-            patches = []
-            for value, cat in enumerate(categories):
-                patches.append(
-                    Line2D(
-                        [0],
-                        [0],
-                        linestyle="none",
-                        marker="o",
-                        alpha=style_kwds.get("alpha", 1),
-                        markersize=10,
-                        markerfacecolor=n_cmap.to_rgba(value),
-                        markeredgewidth=0,
-                    )
-                )
-            if missing_kwds is not None:
-                if "color" in merged_kwds:
-                    merged_kwds["facecolor"] = merged_kwds["color"]
-                patches.append(
-                    Line2D(
-                        [0],
-                        [0],
-                        linestyle="none",
-                        marker="o",
-                        alpha=merged_kwds.get("alpha", 1),
-                        markersize=10,
-                        markerfacecolor=merged_kwds.get("facecolor", None),
-                        markeredgecolor=merged_kwds.get("edgecolor", None),
-                        markeredgewidth=merged_kwds.get(
-                            "linewidth", 1 if merged_kwds.get("edgecolor", False) else 0
-                        ),
-                    )
-                )
-                categories.append(merged_kwds.get("label", "NaN"))
             legend_kwds.setdefault("numpoints", 1)
             legend_kwds.setdefault("loc", "best")
-            ax.legend(patches, categories, **legend_kwds)
+            ax.legend(**legend_kwds)
+
         else:
+            from matplotlib import cm
 
             if cax is not None:
                 legend_kwds.setdefault("cax", cax)
             else:
                 legend_kwds.setdefault("ax", ax)
-
+            n_cmap = cm.ScalarMappable(norm=norm, cmap=cmap)
             n_cmap.set_array(np.array([]))
             ax.get_figure().colorbar(n_cmap, **legend_kwds)
 
@@ -953,3 +1018,18 @@ class GeoplotAccessor(PlotAccessor):
 
     def geo(self, *args, **kwargs):
         return self(kind="geo", *args, **kwargs)
+
+
+def _legend_with_poly_wrapper(fun, handler_map_kwarg_name="handler_map"):
+    """
+    Decorator for ax.legend that enables `PatchCollection` objects plotted by
+    `_plot_polygon_collection` to be rendered correctly in the legend.
+    """
+    from matplotlib.legend_handler import HandlerPolyCollection
+    from matplotlib.collections import PatchCollection
+
+    def legend(*args, **kwargs):
+        kwargs[handler_map_kwarg_name] = {PatchCollection: HandlerPolyCollection()}
+        return fun(*args, **kwargs)
+
+    return legend

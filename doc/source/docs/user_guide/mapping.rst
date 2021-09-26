@@ -49,7 +49,10 @@ Choropleth Maps
    :okwarning:
 
     # Plot by GDP per capita
-    world = world[(world.pop_est>0) & (world.name!="Antarctica")]
+    world = world.loc[
+        (world['pop_est'] > 0)
+        & ~(world['continent'].isin(("Antarctica", "Seven seas (open ocean)")))
+    ]
     world['gdp_per_cap'] = world.gdp_md_est / world.pop_est
     @savefig world_gdp_per_cap.png
     world.plot(column='gdp_per_cap');
@@ -66,7 +69,7 @@ When plotting a map, one can enable a legend using the ``legend`` argument:
     import matplotlib.pyplot as plt
     fig, ax = plt.subplots(1, 1)
     @savefig world_pop_est.png
-    world.plot(column='pop_est', ax=ax, legend=True)
+    world.plot(column='pop_est', ax=ax, legend=True);
 
 However, the default appearance of the legend and plot axes may not be desirable. One can define the plot axes (with ``ax``) and the legend axes (with ``cax``) and then pass those in to the :meth:`~GeoDataFrame.plot` call. The following example uses ``mpl_toolkits`` to vertically align the plot axes and the legend axes:
 
@@ -78,7 +81,7 @@ However, the default appearance of the legend and plot axes may not be desirable
     divider = make_axes_locatable(ax)
     cax = divider.append_axes("right", size="5%", pad=0.1)
     @savefig world_pop_est_fixed_legend_height.png
-    world.plot(column='pop_est', ax=ax, legend=True, cax=cax)
+    world.plot(column='pop_est', ax=ax, legend=True, cax=cax);
 
 
 And the following example plots the color bar below the map and adds its label using ``legend_kwds``:
@@ -93,7 +96,7 @@ And the following example plots the color bar below the map and adds its label u
                ax=ax,
                legend=True,
                legend_kwds={'label': "Population by Country",
-                            'orientation': "horizontal"})
+                            'orientation': "horizontal"});
 
 
 Choosing colors
@@ -209,8 +212,8 @@ Before combining maps, however, remember to always ensure they share a common CR
     # working with pyplot directly.
     ax.set_aspect('equal')
 
-    world.plot(ax=ax, color='white', edgecolor='black')
-    cities.plot(ax=ax, marker='o', color='red', markersize=5)
+    world.plot(ax=ax, color='white', edgecolor='black');
+    cities.plot(ax=ax, marker='o', color='red', markersize=5);
     @savefig capitals_over_countries_2.png
     plt.show();
 
@@ -237,6 +240,29 @@ We can set the ``zorder`` for cities higher than for world to move it of top.
     world.plot(ax=ax, zorder=1);
 
 
+Categorical data
+----------------
+Categorical
+
+.. ipython:: python
+
+    ax = world.plot(
+        column='continent',
+        categorical=True,
+        cmap='Pastel2',
+        legend=True,
+        legend_kwds={
+            'loc': 'center',
+            'bbox_to_anchor': [0.5, 1.1],
+            'ncol': world['continent'].nunique()
+        }
+    )
+    markersize = 10 * world['gdp_per_cap'] / world['gdp_per_cap'].max()
+    @savefig world_continents_cat_color_gdp_ms.png
+    world.representative_point().plot(ax=ax, markersize=markersize, marker='^');
+    
+
+
 Pandas Plots
 -----------------
 
@@ -259,14 +285,14 @@ the ``kind`` keyword argument in :meth:`~GeoDataFrame.plot`, and include:
 
     gdf = world.head(10)
     @savefig pandas_line_plot.png
-    gdf.plot(kind='scatter', x="pop_est", y="gdp_md_est")
+    gdf.plot(kind='scatter', x="pop_est", y="gdp_md_est");
 
 You can also create these other plots using the ``GeoDataFrame.plot.<kind>`` accessor methods instead of providing the ``kind`` keyword argument.
 
 .. ipython:: python
 
     @savefig pandas_bar_plot.png
-    gdf.plot.bar()
+    gdf.plot.bar();
 
 For more information check out the `pandas documentation <https://pandas.pydata.org/pandas-docs/stable/user_guide/visualization.html>`_.
 
