@@ -58,7 +58,6 @@ def _flatten_multi_geoms(geoms, prefix="Multi"):
     from shapely.geometry import Point
 
     geoms = geoms.fillna(Point())
-    # TODO meh
     has_multi_geom = (geoms.geom_type.str.startswith(prefix) & ~geoms.is_empty).any()
 
     if has_multi_geom:
@@ -308,13 +307,7 @@ plot_linestring_collection = deprecated(_plot_linestring_collection)
 
 
 def _plot_point_collection(
-    ax,
-    geoms,
-    values=None,
-    color=None,
-    cmap=None,
-    norm=None,
-    **kwargs,
+    ax, geoms, values=None, color=None, cmap=None, norm=None, **kwargs
 ):
     """
     Plots a collection of Point and MultiPoint geometries to `ax`
@@ -796,9 +789,6 @@ GON (((-122.84000 49.00000, -120.0000...
         else:
             values = np.asarray(column)
 
-            # # Make sure index of a Series matches index of df
-            # if isinstance(values, pd.Series):
-            # values = values.reindex(df.index)
     else:
         values = df[column].values
 
@@ -874,9 +864,6 @@ GON (((-122.84000 49.00000, -120.0000...
     if categorical:
         # We order to avoid raising an error when taking the min
         cat = pd.Categorical(values, categories=categories).as_ordered()
-        # TODO: Tests implied the categories should be reordered even if
-        # specified, desirable? certainly not for scheme
-        # cat = cat.reorder_categories(sorted(cat.categories), ordered=True)
         categories = list(cat.categories)
         # values missing in the Categorical but not in original values
         missing = list(np.unique(values[~nan_idx & cat.isna()]))
@@ -893,12 +880,9 @@ GON (((-122.84000 49.00000, -120.0000...
         if cmap is None and scheme is None:
             cmap = "tab10"
 
-        expand_kwds = {
-            key: np.asarray(cat.map(value))
-            for key, value in style_kwds.items()
-            if isinstance(value, dict)
-        }
-        style_kwds.update(expand_kwds)
+        for key, value in style_kwds.items():
+            if isinstance(value, dict):
+                style_kwds[key] = np.asarray(cat.map(value))
 
         # fill values with placeholder where were NaNs originally to map them
         # properly (after removing them in categorical or scheme)
