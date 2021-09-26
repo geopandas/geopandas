@@ -8,6 +8,19 @@ from distutils.version import LooseVersion
 
 from ._decorator import doc
 
+_MPL_COLL_KWD_ALIASES = {
+    "antialiased": ["antialiaseds", "aa"],
+    "edgecolor": ["edgecolors", "ec"],
+    "facecolor": ["facecolors", "fc"],
+    "linestyle": ["linestyles", "dashes", "ls"],
+    "linewidth": ["linewidths", "lw"],
+}
+_MPL_COLL_KWD_NORM = {
+    alias: key
+    for key, alias_list in _MPL_COLL_KWD_ALIASES.items()
+    for alias in alias_list
+}
+
 
 def deprecated(new):
     """Helper to provide deprecation warning."""
@@ -84,11 +97,12 @@ def _expand_kwargs(kwargs, multiindex, is_final_expansion=False):
     else:
         single_value_kwargs = ["hatch", "marker", "alpha", "path_effects"]
 
+    to_pop = []
     for att, value in kwargs.items():
         if "color" in att:  # color(s), edgecolor(s), facecolor(s)
             if is_color_like(value):
                 continue
-        elif "linestyle" in att:  # linestyle(s)
+        elif att == "linestyle":
             # A single linestyle can be 2-tuple of a number and an iterable.
             if (
                 isinstance(value, tuple)
@@ -97,9 +111,14 @@ def _expand_kwargs(kwargs, multiindex, is_final_expansion=False):
             ):
                 continue
 
-        if pd.api.types.is_list_like(value):
+        if pd.api.types.is_list_like(value) and multiindex[-1] < len(value):
             value = np.take(value, multiindex, axis=0)
-            if (
+            # If value only contains null values, which can happen for a
+            # categorical plot, pop the argument to later retrieve the
+            # matplotlib default, which is not necessarily None or np.nan.
+            if pd.isnull(value).all():
+                to_pop.append(att)
+            elif (
                 att in single_value_kwargs
                 and is_final_expansion
                 and np.all(value == value[0])
@@ -107,9 +126,16 @@ def _expand_kwargs(kwargs, multiindex, is_final_expansion=False):
                 value = value[0]
             # For plain text styles, a single-value array cannot be passed
             # as a linestyle to a Collection.
-            if "linestyle" in att and isinstance(value, np.ndarray):
+            elif (
+                att == "linestyle"
+                and isinstance(value, np.ndarray)
+                and is_final_expansion
+            ):
                 value = value.tolist()
             kwargs[att] = value
+
+    for att in to_pop:
+        kwargs.pop(att)
 
 
 def _PolygonPatch(polygon, **kwargs):
@@ -400,6 +426,19 @@ def plot_series(
     -------
     ax : matplotlib axes instance
     """
+    try:
+        import matplotlib.pyplot as plt
+    except ImportError:
+        raise ImportError(
+            "The matplotlib package is required for plotting in geopandas. "
+            "You can install it using 'conda install -c conda-forge matplotlib' or "
+            "'pip install matplotlib'."
+        )
+
+    for kwd, normed_kwd in _MPL_COLL_KWD_NORM.items():
+        if kwd in style_kwds:
+            style_kwds[normed_kwd] = style_kwds.pop(kwd)
+
     if "colormap" in style_kwds:
         warnings.warn(
             "'colormap' is deprecated, please use 'cmap' instead "
@@ -414,15 +453,6 @@ def plot_series(
             FutureWarning,
         )
         ax = style_kwds.pop("axes")
-
-    try:
-        import matplotlib.pyplot as plt
-    except ImportError:
-        raise ImportError(
-            "The matplotlib package is required for plotting in geopandas. "
-            "You can install it using 'conda install -c conda-forge matplotlib' or "
-            "'pip install matplotlib'."
-        )
 
     if ax is None:
         fig, ax = plt.subplots(figsize=figsize)
@@ -685,6 +715,12 @@ GON (((-122.84000 49.00000, -120.0000...
             "You can install it using 'conda install -c conda-forge matplotlib' or "
             "'pip install matplotlib'."
         )
+
+    for kwd, normed_kwd in _MPL_COLL_KWD_NORM.items():
+        if kwd in style_kwds:
+            style_kwds[normed_kwd] = style_kwds.pop(kwd)
+        if missing_kwds is not None and kwd in missing_kwds:
+            missing_kwds[normed_kwd] = missing_kwds.pop(kwd)
 
     if "colormap" in style_kwds:
         warnings.warn(
