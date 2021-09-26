@@ -949,6 +949,7 @@ GON (((-122.84000 49.00000, -120.0000...
             missing_kwds["color"] = missing_kwds.get("color", color)
         merged_kwds = style_kwds.copy()
         merged_kwds.update(missing_kwds)
+        _expand_kwargs(merged_kwds, multiindex[nan_idx])
         merged_kwds["label"] = merged_kwds.get("label", "NaN")
         plot_series(geoms[nan_idx], ax=ax, **merged_kwds)
 
