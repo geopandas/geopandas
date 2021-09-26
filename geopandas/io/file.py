@@ -14,17 +14,22 @@ try:
     import fiona
 
     fiona_import_error = None
+
+    # only try to import fiona.Env if the main fiona import succeeded (otherwise you
+    # can get confusing "AttributeError: module 'fiona' has no attribute '_loading'"
+    # / partially initialized module errors)
+    try:
+        from fiona import Env as fiona_env
+    except ImportError:
+        try:
+            from fiona import drivers as fiona_env
+        except ImportError:
+            fiona_env = None
+
 except ImportError as err:
     fiona = None
     fiona_import_error = str(err)
 
-try:
-    from fiona import Env as fiona_env
-except ImportError:
-    try:
-        from fiona import drivers as fiona_env
-    except ImportError:
-        fiona_env = None
 
 from geopandas import GeoDataFrame, GeoSeries
 
