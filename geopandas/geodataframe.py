@@ -110,21 +110,6 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         # need to set this before calling self['geometry'], because
         # getitem accesses crs
         self._crs = CRS.from_user_input(crs) if crs else None
-        # if gdf passed in and geo_col is set, we use that for geometry,
-        # instead of looking for a column named "geometry"
-        if geometry is None and isinstance(data, GeoDataFrame):
-            geometry = data.geometry.name
-            if crs is not None and data.crs != crs:
-                warnings.warn(
-                    "CRS mismatch between CRS of the passed geometries "
-                    "and 'crs'. Use 'GeoDataFrame.set_crs(crs, "
-                    "allow_override=True)' to overwrite CRS or "
-                    "'GeoDataFrame.to_crs(crs)' to reproject geometries. "
-                    "CRS mismatch will raise an error in the future versions "
-                    "of GeoPandas.",
-                    FutureWarning,
-                    stacklevel=2,
-                )
 
         # set_geometry ensures the geometry data have the proper dtype,
         # but is not called if `geometry=None` ('geometry' column present
@@ -132,11 +117,27 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         # but within a try/except because currently non-geometries are
         # allowed in that case
         # TODO do we want to raise / return normal DataFrame in this case?
-        if geometry is None and "geometry" in self.columns:
+
+        # by default, if geometry is None, look for a geo col named geometry
+        assumed_geo_col_name = "geometry"
+
+        # if gdf passed in and geo_col is set, we use that for geometry,
+        # # instead of looking for a column named "geometry"
+        if geometry is None and isinstance(data, GeoDataFrame):
+            # it is possible to construct a geodataframe without a geometry column,
+            # it gets the default geometry column name, "geometry", even though this
+            # column isn't present.
+            # For this to happen and isinstance(data, GeoDataFrame), this has to
+            # occur via a call to GeoDataFrame._constructor. After GH1260 (or an
+            # extension of it, this should no longer be possible via _constructor,
+            # and checking isinstance should suffice.
+            assumed_geo_col_name = getattr(data, "_geometry_column_name", "geometry")
+
+        if geometry is None and assumed_geo_col_name in self.columns:
             # Check for multiple columns with name "geometry". If there are,
             # self["geometry"] is a gdf and constructor gets recursively recalled
             # by pandas internals trying to access this
-            if (self.columns == "geometry").sum() > 1:
+            if (self.columns == assumed_geo_col_name).sum() > 1:
                 raise ValueError(
                     "GeoDataFrame does not support multiple columns "
                     "using the geometry column name 'geometry'."
@@ -146,10 +147,10 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             index = self.index
             try:
                 if (
-                    hasattr(self["geometry"].values, "crs")
-                    and self["geometry"].values.crs
+                    hasattr(self[assumed_geo_col_name].values, "crs")
+                    and self[assumed_geo_col_name].values.crs
                     and crs
-                    and not self["geometry"].values.crs == crs
+                    and not self[assumed_geo_col_name].values.crs == crs
                 ):
                     warnings.warn(
                         "CRS mismatch between CRS of the passed geometries "
@@ -162,7 +163,9 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                         stacklevel=2,
                     )
                     # TODO: raise error in 0.9 or 0.10.
-                self["geometry"] = _ensure_geometry(self["geometry"].values, crs)
+                self[assumed_geo_col_name] = _ensure_geometry(
+                    self[assumed_geo_col_name].values, crs
+                )
             except TypeError:
                 pass
             else:
@@ -171,7 +174,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                     # gets reset to a default RangeIndex -> set back the original
                     # index if needed
                     self.index = index
-                geometry = "geometry"
+                geometry = assumed_geo_col_name
 
         if geometry is not None:
             if (
