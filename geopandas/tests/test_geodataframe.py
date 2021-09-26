@@ -930,11 +930,11 @@ class TestConstructor:
             res = GeoDataFrame(df, geometry="other_geom")
             check_geodataframe(res, "other_geom")
 
-        # when passing GeoDataFrame with custom geometry name to constructor
-        # an invalid geodataframe is the result TODO is this desired ?
+        # when passing GeoDataFrame with custom geometry name to constructor we should
+        # honour that, rather than defaulting to "geometry" being the geometry column
+        # https://github.com/geopandas/geopandas/issues/2129
         df = GeoDataFrame(gpdf)
-        with pytest.raises(AttributeError):
-            df.geometry
+        check_geodataframe(df, "other_geom")
 
     def test_only_geometry(self):
         exp = GeoDataFrame(
@@ -1033,20 +1033,6 @@ class TestConstructor:
         df3 = df.rename(columns={"geometry": "geom"})
         with pytest.raises(ValueError):
             GeoDataFrame(df3, geometry="geom")
-
-    def test_from_gdf_geom_set(self):
-        df = pd.DataFrame(
-            [
-                {"geometry": Point(x, y), "geom": Point(x, y)}
-                for x, y in zip(range(3), range(3))
-            ],
-        )
-        df = df.set_geometry("geom")
-        # If constructing from a gdf with a geom col set, we should honour that,
-        # rather than defaulting to "geometry" being the geometry column
-        res = GeoDataFrame(df)
-        assert res.geometry.name == "geom"
-        assert res._geometry_column_name == "geom"
 
 
 def test_geodataframe_crs():
