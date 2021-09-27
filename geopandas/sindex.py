@@ -183,7 +183,7 @@ class BaseSpatialIndex:
 
         Parameters
         ----------
-        geometry : {shapely geometry, GeoSeries, GeometryArray, numpy.array of PyGEOS
+        geometry : {shapely.geometry, GeoSeries, GeometryArray, numpy.array of PyGEOS
             geometries}
             A single shapely geometry, one of the GeoPandas geometry iterables
             (GeoSeries, GeometryArray), or a numpy array of PyGEOS geometries to query
@@ -251,9 +251,11 @@ class BaseSpatialIndex:
 
         Parameters
         ----------
-        geometry : {GeoSeries, GeometryArray, numpy.array of PyGEOS geometries}
-            Accepts GeoPandas geometry iterables (GeoSeries, GeometryArray)
-            or a numpy array of PyGEOS geometries.
+        geometry : {shapely.geometry, GeoSeries, GeometryArray, numpy.array of PyGEOS
+            geometries}
+            A single shapely geometry, one of the GeoPandas geometry iterables
+            (GeoSeries, GeometryArray), or a numpy array of PyGEOS geometries to query
+            against the spatial index.
         max_distance : float, optional
             Maximum distance within which to query for nearest items in tree.
             Must be greater than 0. By default None, indicating no distance limit.
@@ -549,14 +551,13 @@ if compat.HAS_RTREE:
             Returns the nearest object or objects to the given coordinates.
 
             Requires rtree, and passes parameters directly to
-            rtree.index.Index.nearest.
+            :meth:`rtree.index.Index.nearest`.
 
             This behaviour is deprecated and will be updated to be consistent
             with the pygeos PyGEOSSTRTreeIndex in a future release.
 
-            If longer-term compatibility is required, use rtree.index.Index.nearest
-            instead - this could be accessed by calling
-            super(type(s.sindex), s.sindex).nearest()
+            If longer-term compatibility is required, use
+            :meth:`rtree.index.Index.nearest` directly instead.
 
             Examples
             --------
