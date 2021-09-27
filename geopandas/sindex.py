@@ -510,6 +510,8 @@ if compat.HAS_PYGEOS:
     from . import array  # noqa
     import pygeos  # noqa
 
+    _PYGEOS_PREDICATES = {p.name for p in pygeos.strtree.BinaryPredicate} | set([None])
+
     class PyGEOSSTRTreeIndex(pygeos.STRtree):
         """A simple wrapper around pygeos's STRTree.
 
@@ -549,7 +551,7 @@ if compat.HAS_PYGEOS:
             {'contains', 'crosses', 'covered_by', None, 'intersects', 'within', \
 'touches', 'overlaps', 'contains_properly', 'covers'}
             """
-            return {p.name for p in pygeos.strtree.BinaryPredicate} | set([None])
+            return _PYGEOS_PREDICATES
 
         @doc(BaseSpatialIndex.query)
         def query(self, geometry, predicate=None, sort=False):

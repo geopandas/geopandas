@@ -15,7 +15,7 @@ from geopandas.array import GeometryArray, GeometryDtype, from_shapely, to_wkb, 
 from geopandas.base import GeoPandasBase, is_geometry_type
 from geopandas.geoseries import GeoSeries
 import geopandas.io
-
+from geopandas.explore import _explore
 from . import _compat as compat
 from ._decorator import doc
 
@@ -788,11 +788,12 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         na : str, optional
             Options are {'null', 'drop', 'keep'}, default 'null'.
             Indicates how to output missing (NaN) values in the GeoDataFrame
-            * null: output the missing entries as JSON null
-            * drop: remove the property from the feature. This applies to
-                    each feature individually so that features may have
-                    different properties
-            * keep: output the missing entries as NaN
+
+            - null: output the missing entries as JSON null
+            - drop: remove the property from the feature. This applies to each feature \
+individually so that features may have different properties
+            - keep: output the missing entries as NaN
+
         show_bbox : bool, optional
             Include bbox (bounds) in the geojson. Default False.
         drop_id : bool, default: False
@@ -1043,9 +1044,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
 
         _to_feather(self, path, index=index, compression=compression, **kwargs)
 
-    def to_file(
-        self, filename, driver="ESRI Shapefile", schema=None, index=None, **kwargs
-    ):
+    def to_file(self, filename, driver=None, schema=None, index=None, **kwargs):
         """Write the ``GeoDataFrame`` to a file.
 
         By default, an ESRI shapefile is written, but any OGR data source
@@ -1059,8 +1058,10 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         ----------
         filename : string
             File path or file handle to write to.
-        driver : string, default: 'ESRI Shapefile'
+        driver : string, default None
             The OGR format driver used to write the vector file.
+            If not specified, it attempts to infer it from the file extension.
+            If no extension is specified, it saves ESRI Shapefile to a folder.
         schema : dict, default: None
             If specified, the schema dictionary is passed to Fiona to
             better control how the file is written.
@@ -1387,8 +1388,10 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         if (
             isinstance(result, GeoDataFrame)
             and self._geometry_column_name in result.columns
-            and any(isinstance(t, GeometryDtype) for t in result.dtypes)
+            and isinstance(result[self._geometry_column_name].dtype, GeometryDtype)
         ):
+            # apply calls _constructor which resets geom col name to geometry
+            result._geometry_column_name = self._geometry_column_name
             if self.crs is not None and result.crs is None:
                 result.set_crs(self.crs, inplace=True)
         return result
@@ -1786,6 +1789,11 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         return self.geometry.difference(other)
 
     plot = CachedAccessor("plot", geopandas.plotting.GeoplotAccessor)
+
+    @doc(_explore)
+    def explore(self, *args, **kwargs):
+        """Interactive map based on folium/leaflet.js"""
+        return _explore(self, *args, **kwargs)
 
 
 def _dataframe_set_geometry(self, col, drop=False, inplace=False, crs=None):

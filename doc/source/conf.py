@@ -404,4 +404,12 @@ intersphinx_mapping = {
         "https://shapely.readthedocs.io/en/stable/",
         "https://shapely.readthedocs.io/en/stable/objects.inv",
     ),
+    "branca": (
+        "https://python-visualization.github.io/branca/",
+        "https://python-visualization.github.io/branca/objects.inv",
+    ),
+    "xyzservices": (
+        "https://xyzservices.readthedocs.io/en/stable/",
+        "https://xyzservices.readthedocs.io/en/stable/objects.inv",
+    ),
 }

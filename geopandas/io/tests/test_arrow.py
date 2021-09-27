@@ -7,6 +7,7 @@ import pytest
 from pandas import DataFrame, read_parquet as pd_read_parquet
 from pandas.testing import assert_frame_equal
 import numpy as np
+from shapely.geometry import box
 
 import geopandas
 from geopandas import GeoDataFrame, read_file, read_parquet, read_feather
@@ -16,6 +17,7 @@ from geopandas.io.arrow import (
     _create_metadata,
     _decode_metadata,
     _encode_metadata,
+    _get_filesystem_path,
     _validate_dataframe,
     _validate_metadata,
     METADATA_VERSION,
@@ -498,3 +500,63 @@ def test_feather_arrow_version(tmpdir):
         ImportError, match="pyarrow >= 0.17 required for Feather support"
     ):
         df.to_feather(filename)
+
+
+def test_fsspec_url():
+    fsspec = pytest.importorskip("fsspec")
+    import fsspec.implementations.memory
+
+    class MyMemoryFileSystem(fsspec.implementations.memory.MemoryFileSystem):
+        # Simple fsspec filesystem that adds a required keyword.
+        # Attempting to use this filesystem without the keyword will raise an exception.
+        def __init__(self, is_set, *args, **kwargs):
+            self.is_set = is_set
+            super().__init__(*args, **kwargs)
+
+    fsspec.register_implementation("memory", MyMemoryFileSystem, clobber=True)
+    memfs = MyMemoryFileSystem(is_set=True)
+
+    test_dataset = "naturalearth_lowres"
+    df = read_file(get_path(test_dataset))
+
+    with memfs.open("data.parquet", "wb") as f:
+        df.to_parquet(f)
+
+    result = read_parquet("memory://data.parquet", storage_options=dict(is_set=True))
+    assert_geodataframe_equal(result, df)
+
+    result = read_parquet("memory://data.parquet", filesystem=memfs)
+    assert_geodataframe_equal(result, df)
+
+
+def test_non_fsspec_url_with_storage_options_raises():
+    with pytest.raises(ValueError, match="storage_options"):
+        test_dataset = "naturalearth_lowres"
+        read_parquet(get_path(test_dataset), storage_options={"foo": "bar"})
+
+
+@pytest.mark.skipif(
+    pyarrow.__version__ < LooseVersion("5.0.0"),
+    reason="pyarrow.fs requires pyarrow>=5.0.0",
+)
+def test_prefers_pyarrow_fs():
+    filesystem, _ = _get_filesystem_path("file:///data.parquet")
+    assert isinstance(filesystem, pyarrow.fs.LocalFileSystem)
+
+
+def test_write_read_parquet_expand_user():
+    gdf = geopandas.GeoDataFrame(geometry=[box(0, 0, 10, 10)], crs="epsg:4326")
+    test_file = "~/test_file.parquet"
+    gdf.to_parquet(test_file)
+    pq_df = geopandas.read_parquet(test_file)
+    assert_geodataframe_equal(gdf, pq_df, check_crs=True)
+    os.remove(os.path.expanduser(test_file))
+
+
+def test_write_read_feather_expand_user():
+    gdf = geopandas.GeoDataFrame(geometry=[box(0, 0, 10, 10)], crs="epsg:4326")
+    test_file = "~/test_file.feather"
+    gdf.to_feather(test_file)
+    f_df = geopandas.read_feather(test_file)
+    assert_geodataframe_equal(gdf, f_df, check_crs=True)
+    os.remove(os.path.expanduser(test_file))
