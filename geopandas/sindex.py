@@ -183,8 +183,8 @@ class BaseSpatialIndex:
 
         Parameters
         ----------
-        geometry : {shapely geometry, GeoSeries, GeometryArray, numpy.array of PyGEOS
-            geometries}
+        geometry : {shapely geometry, GeoSeries, GeometryArray, numpy.array of PyGEOS \
+geometries}
             A single shapely geometry, one of the GeoPandas geometry iterables
             (GeoSeries, GeometryArray), or a numpy array of PyGEOS geometries to query
             against the spatial index.
