@@ -193,10 +193,6 @@ class BaseSpatialIndex:
             The first subarray contains input geometry integer indexes.
             The second subarray contains tree geometry integer indexes.
 
-        See also
-        --------
-        ~nearest_all
-
         Examples
         --------
         >>> from shapely.geometry import Point, box
@@ -711,8 +707,8 @@ if compat.HAS_PYGEOS:
             Parameters
             ----------
             geometry
-                An array-like of PyGEOS geometries
-                or a GeoPandas GeoSeries/GeometryArray.
+                An array-like of PyGEOS geometries, a GeoPandas GeoSeries/GeometryArray,
+                shapely.geometry or list of shapely geometries.
 
             Returns
             -------
@@ -725,6 +721,17 @@ if compat.HAS_PYGEOS:
                 return geometry.values.data
             elif isinstance(geometry, array.GeometryArray):
                 return geometry.data
+            elif isinstance(geometry, BaseGeometry):
+                return array._shapely_to_geom(geometry)
+            elif isinstance(geometry, list):
+                return np.asarray(
+                    [
+                        array._shapely_to_geom(el)
+                        if isinstance(el, BaseGeometry)
+                        else el
+                        for el in geometry
+                    ]
+                )
             else:
                 return np.asarray(geometry)
 
@@ -754,22 +761,7 @@ if compat.HAS_PYGEOS:
             if not compat.PYGEOS_GE_010:
                 raise NotImplementedError("sindex.nearest requires pygeos >= 0.10")
 
-            if isinstance(geometry, np.ndarray):
-                pass
-            elif isinstance(geometry, BaseGeometry):
-                geometry = array._shapely_to_geom(geometry)
-            elif isinstance(geometry, list):
-                geometry = [
-                    array._shapely_to_geom(el) if isinstance(el, BaseGeometry) else el
-                    for el in geometry
-                ]
-            elif isinstance(geometry, geoseries.GeoSeries):
-                geometry = geometry.values.data
-            elif isinstance(geometry, array.GeometryArray):
-                geometry = geometry.data
-            else:
-                geometry = np.asarray(geometry)
-
+            geometry = self._as_geometry_array(geometry)
             return super().nearest(geometry)
 
         @doc(BaseSpatialIndex.nearest_all)
