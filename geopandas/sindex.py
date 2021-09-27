@@ -210,6 +210,9 @@ class BaseSpatialIndex:
         """Return the nearest geometry in the tree for each input geometry in
         ``geometry``.
 
+        If multiple tree geometries have the same distance from an input geometry,
+        multiple results will be returned for that input geometry.
+
         .. note::
             ``nearest_all`` currently only works with PyGEOS >= 0.10.
 
