@@ -172,9 +172,12 @@ class BaseSpatialIndex:
         """
         Returns the nearest geometry to the input geometries.
 
-        Requires pygeos >= 0.10. Note that if pygeos is not available, geopandas
+        .. note::
+            ``nearest_all`` currently only works with PyGEOS >= 0.10.
+
+        Note that if pygeos is not available, geopandas
         will use rtree for the spatial index, where nearest temporarily has a different
-        function signature to preserve existing functionality for one release.
+        function signature to temporarily preserve existing functionality.
 
         Parameters
         ----------
@@ -188,75 +191,41 @@ class BaseSpatialIndex:
         -------
         matches : ndarray with shape (2, n)
             The first subarray contains input geometry integer indexes.
-            The second subarray contains spatial index geometry integer indexes.
+            The second subarray contains tree geometry integer indexes.
+
+        See also
+        --------
+        ~nearest_all
 
         Examples
         --------
         >>> from shapely.geometry import Point, box
         >>> s = geopandas.GeoSeries(geopandas.points_from_xy(range(10), range(10)))
-        >>> s
+        >>> s.head()
         0    POINT (0.00000 0.00000)
         1    POINT (1.00000 1.00000)
         2    POINT (2.00000 2.00000)
         3    POINT (3.00000 3.00000)
         4    POINT (4.00000 4.00000)
-        5    POINT (5.00000 5.00000)
-        6    POINT (6.00000 6.00000)
-        7    POINT (7.00000 7.00000)
-        8    POINT (8.00000 8.00000)
-        9    POINT (9.00000 9.00000)
         dtype: geometry
 
-        >>> s.sindex.nearest(Point(1, 1)).tolist()
-        [[0], [1]]
-        >>> s.sindex.nearest([box(4.9, 4.9, 5.1, 5.1)]).tolist()
-        [[0], [5]]
+        >>> s.sindex.nearest(Point(1, 1))
+        array([[0],
+               [1]])
+
+        >>> s.sindex.nearest([box(4.9, 4.9, 5.1, 5.1)])
+        array([[0],
+               [5]])
+
         >>> s2 = geopandas.GeoSeries(geopandas.points_from_xy([7.6, 10], [7.6, 10]))
         >>> s2
         0    POINT (7.60000 7.60000)
         1    POINT (10.00000 10.00000)
         dtype: geometry
 
-        >>> s.sindex.nearest(s2).tolist()
-        [[0, 1], [8, 9]]
-        """
-        raise NotImplementedError
-
-    def intersection(self, coordinates):
-        """Compatibility wrapper for rtree.index.Index.intersection,
-        use ``query`` instead.
-
-        Parameters
-        ----------
-        coordinates : sequence or array
-            Sequence of the form (min_x, min_y, max_x, max_y)
-            to query a rectangle or (x, y) to query a point.
-
-        Examples
-        --------
-        >>> from shapely.geometry import Point, box
-        >>> s = geopandas.GeoSeries(geopandas.points_from_xy(range(10), range(10)))
-        >>> s
-        0    POINT (0.00000 0.00000)
-        1    POINT (1.00000 1.00000)
-        2    POINT (2.00000 2.00000)
-        3    POINT (3.00000 3.00000)
-        4    POINT (4.00000 4.00000)
-        5    POINT (5.00000 5.00000)
-        6    POINT (6.00000 6.00000)
-        7    POINT (7.00000 7.00000)
-        8    POINT (8.00000 8.00000)
-        9    POINT (9.00000 9.00000)
-        dtype: geometry
-
-        >>> s.sindex.intersection(box(1, 1, 3, 3).bounds)
-        array([1, 2, 3])
-
-        Alternatively, you can use ``query``:
-
-        >>> s.sindex.query(box(1, 1, 3, 3))
-        array([1, 2, 3])
-
+        >>> s.sindex.nearest(s2)
+        array([[0, 1],
+               [8, 9]])
         """
         raise NotImplementedError
 
@@ -300,6 +269,44 @@ class BaseSpatialIndex:
             ndarray of shape (n).
             The first subarray of indices contains input geometry indices.
             The second subarray of indices contains tree geometry indices.
+        """
+        raise NotImplementedError
+
+    def intersection(self, coordinates):
+        """Compatibility wrapper for rtree.index.Index.intersection,
+        use ``query`` instead.
+
+        Parameters
+        ----------
+        coordinates : sequence or array
+            Sequence of the form (min_x, min_y, max_x, max_y)
+            to query a rectangle or (x, y) to query a point.
+
+        Examples
+        --------
+        >>> from shapely.geometry import Point, box
+        >>> s = geopandas.GeoSeries(geopandas.points_from_xy(range(10), range(10)))
+        >>> s
+        0    POINT (0.00000 0.00000)
+        1    POINT (1.00000 1.00000)
+        2    POINT (2.00000 2.00000)
+        3    POINT (3.00000 3.00000)
+        4    POINT (4.00000 4.00000)
+        5    POINT (5.00000 5.00000)
+        6    POINT (6.00000 6.00000)
+        7    POINT (7.00000 7.00000)
+        8    POINT (8.00000 8.00000)
+        9    POINT (9.00000 9.00000)
+        dtype: geometry
+
+        >>> s.sindex.intersection(box(1, 1, 3, 3).bounds)
+        array([1, 2, 3])
+
+        Alternatively, you can use ``query``:
+
+        >>> s.sindex.query(box(1, 1, 3, 3))
+        array([1, 2, 3])
+
         """
         raise NotImplementedError
 
