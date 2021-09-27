@@ -1,5 +1,3 @@
-import sys
-
 from shapely.geometry import (
     Point,
     Polygon,
@@ -21,7 +19,6 @@ if compat.USE_PYGEOS:
     import pygeos
 
 
-@pytest.mark.skipif(sys.platform.startswith("win"), reason="fails on AppVeyor")
 @pytest.mark.skip_no_sindex
 class TestSeriesSindex:
     def test_has_sindex(self):
@@ -110,7 +107,6 @@ class TestSeriesSindex:
         assert sliced.sindex is not original_index
 
 
-@pytest.mark.skipif(sys.platform.startswith("win"), reason="fails on AppVeyor")
 @pytest.mark.skip_no_sindex
 class TestFrameSindex:
     def setup_method(self):

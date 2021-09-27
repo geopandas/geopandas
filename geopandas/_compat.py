@@ -4,6 +4,7 @@ import importlib
 import os
 import warnings
 
+import numpy as np
 import pandas as pd
 import pyproj
 import shapely
@@ -38,6 +39,9 @@ PYGEOS_SHAPELY_COMPAT = None
 
 PYGEOS_GE_09 = None
 PYGEOS_GE_010 = None
+
+INSTALL_PYGEOS_ERROR = "To use PyGEOS within GeoPandas, you need to install PyGEOS: \
+'conda install pygeos' or 'pip install pygeos'"
 
 try:
     import pygeos  # noqa
@@ -116,10 +120,7 @@ def set_use_pygeos(val=None):
                 PYGEOS_SHAPELY_COMPAT = True
 
         except ImportError:
-            raise ImportError(
-                "To use the PyGEOS speed-ups within GeoPandas, you need to install "
-                "PyGEOS: 'conda install pygeos' or 'pip install pygeos'"
-            )
+            raise ImportError(INSTALL_PYGEOS_ERROR)
 
 
 set_use_pygeos()
@@ -145,6 +146,19 @@ if shapely_warning is not None and not SHAPELY_GE_20:
         with warnings.catch_warnings():
             warnings.filterwarnings(
                 "ignore", "Iteration|The array interface|__len__", shapely_warning
+            )
+            yield
+
+
+elif (str(np.__version__) >= LooseVersion("1.21")) and not SHAPELY_GE_20:
+
+    @contextlib.contextmanager
+    def ignore_shapely2_warnings():
+        with warnings.catch_warnings():
+            # warning from numpy for existing Shapely releases (this is fixed
+            # with Shapely 1.8)
+            warnings.filterwarnings(
+                "ignore", "An exception was ignored while fetching", DeprecationWarning
             )
             yield
 
@@ -211,3 +225,4 @@ except ImportError:
 # -----------------------------------------------------------------------------
 
 PYPROJ_LT_3 = LooseVersion(pyproj.__version__) < LooseVersion("3")
+PYPROJ_GE_31 = LooseVersion(pyproj.__version__) >= LooseVersion("3.1")

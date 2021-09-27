@@ -31,6 +31,7 @@ methods:
     intersection
     is_empty
     nearest
+    nearest_all
     query
     query_bulk
     size
@@ -43,4 +44,10 @@ In addition to the methods listed above, the ``rtree``-based spatial index
 (``geopandas.sindex.RTreeIndex``) offers the full capability of
 ``rtree.index.Index`` - see the full API in the `rtree documentation`_.
 
+Similarly, the ``pygeos``-based spatial index
+(``geopandas.sindex.PyGEOSSTRTreeIndex``) offers the full capability of
+``pygeos.STRtree``, including nearest-neighbor queries.
+See the full API in the `PyGEOS STRTree documentation`_.
+
 .. _rtree documentation: https://rtree.readthedocs.io/en/stable/class.html
+.. _PyGEOS documentation: https://pygeos.readthedocs.io/en/latest/strtree.html
