@@ -173,11 +173,13 @@ class BaseSpatialIndex:
         Returns the nearest geometry to the input geometries.
 
         .. note::
-            ``nearest_all`` currently only works with PyGEOS >= 0.10.
+            ``nearest`` currently only works with PyGEOS >= 0.10.
 
         Note that if pygeos is not available, geopandas
         will use rtree for the spatial index, where nearest temporarily has a different
-        function signature to temporarily preserve existing functionality.
+        function signature to temporarily preserve existing functionality. See the
+        documentation of :meth:`rtree.index.Index.nearest` for the details on the
+        ``rtree``-based implementation.
 
         Parameters
         ----------
@@ -387,6 +389,10 @@ if compat.HAS_RTREE:
         @doc(BaseSpatialIndex.intersection)
         def intersection(self, coordinates, *args, **kwargs):
             return super().intersection(coordinates, *args, **kwargs)
+
+        @doc(BaseSpatialIndex.nearest)
+        def nearest(self, *args, **kwargs):
+            return super().nearest(*args, **kwargs)
 
         @property
         @doc(BaseSpatialIndex.size)
