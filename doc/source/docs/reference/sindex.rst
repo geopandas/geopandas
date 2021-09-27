@@ -50,4 +50,4 @@ Similarly, the ``pygeos``-based spatial index
 See the full API in the `PyGEOS STRTree documentation`_.
 
 .. _rtree documentation: https://rtree.readthedocs.io/en/stable/class.html
-.. _PyGEOS documentation: https://pygeos.readthedocs.io/en/latest/strtree.html
+.. _PyGEOS STRTree documentation: https://pygeos.readthedocs.io/en/latest/strtree.html
