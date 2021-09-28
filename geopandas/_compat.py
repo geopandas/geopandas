@@ -94,7 +94,7 @@ def set_use_pygeos(val=None):
             # validate the pygeos version
             if not str(pygeos.__version__) >= LooseVersion("0.8"):
                 raise ImportError(
-                    "PyGEOS >= 0.6 is required, version {0} is installed".format(
+                    "PyGEOS >= 0.8 is required, version {0} is installed".format(
                         pygeos.__version__
                     )
                 )
