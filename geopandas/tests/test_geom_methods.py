@@ -861,7 +861,7 @@ class TestGeomMethods:
             index=MultiIndex.from_tuples(index, names=expected_index_name),
             crs=4326,
         )
-        with pytest.warns(FutureWarning, match="Currently, add_multiindex defaults"):
+        with pytest.warns(FutureWarning, match="Currently, index_parts defaults"):
             assert_geoseries_equal(expected, s.explode())
 
     @pytest.mark.parametrize("index_name", [None, "test"])
@@ -870,7 +870,7 @@ class TestGeomMethods:
         df = GeoDataFrame({"col": [1, 2], "geometry": s})
         df.index.name = index_name
 
-        with pytest.warns(FutureWarning, match="Currently, add_multiindex defaults"):
+        with pytest.warns(FutureWarning, match="Currently, index_parts defaults"):
             test_df = df.explode()
 
         expected_s = GeoSeries([Point(1, 2), Point(2, 3), Point(5, 5)])
@@ -1080,7 +1080,7 @@ class TestGeomMethods:
         expected_df = expected_df.set_index(expected_index)
         assert_frame_equal(test_df, expected_df)
 
-        # add_multiindex is ignored if ignore_index=True
+        # index_parts is ignored if ignore_index=True
         test_df = df.explode(ignore_index=True, index_parts=True)
         assert_frame_equal(test_df, expected_df)
 

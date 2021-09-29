@@ -769,7 +769,7 @@ class GeoSeries(GeoPandasBase, Series):
         ----------
         ignore_index : bool, default False
             If True, the resulting index will be labelled 0, 1, …, n - 1,
-            ignoring `add_multiindex`.
+            ignoring `index_parts`.
         index_parts : boolean, default True
             If True, the resulting index will be a multi-index (original
             index with an additional level indicating the multiple
@@ -808,9 +808,9 @@ class GeoSeries(GeoPandasBase, Series):
         """
         if index_parts is None and not ignore_index:
             warnings.warn(
-                "Currently, add_multiindex defaults to True, but in the future, "
+                "Currently, index_parts defaults to True, but in the future, "
                 "it will default to False to be consistent with Pandas. "
-                "Use `add_multiindex=True` to keep the current behavior and True/False "
+                "Use `index_parts=True` to keep the current behavior and True/False "
                 "to silence the warning.",
                 FutureWarning,
                 stacklevel=2,
