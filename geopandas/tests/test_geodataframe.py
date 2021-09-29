@@ -930,9 +930,7 @@ class TestConstructor:
             res = GeoDataFrame(df, geometry="other_geom")
             check_geodataframe(res, "other_geom")
 
-        # when passing GeoDataFrame with custom geometry name to constructor we should
-        # honour that, rather than defaulting to "geometry" being the geometry column
-        # https://github.com/geopandas/geopandas/issues/2129
+        # gdf from gdf should preserve active geometry column name
         df = GeoDataFrame(gpdf)
         check_geodataframe(df, "other_geom")
 

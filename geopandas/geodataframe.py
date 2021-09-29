@@ -124,14 +124,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         # if gdf passed in and geo_col is set, we use that for geometry,
         # # instead of looking for a column named "geometry"
         if geometry is None and isinstance(data, GeoDataFrame):
-            # it is possible to construct a geodataframe without a geometry column,
-            # it gets the default geometry column name, "geometry", even though this
-            # column isn't present.
-            # For this to happen and isinstance(data, GeoDataFrame), this has to
-            # occur via a call to GeoDataFrame._constructor. After GH1260 (or an
-            # extension of it, this should no longer be possible via _constructor,
-            # and checking isinstance should suffice.
-            assumed_geo_col_name = getattr(data, "_geometry_column_name", "geometry")
+            assumed_geo_col_name = data._geometry_column_name
 
         if geometry is None and assumed_geo_col_name in self.columns:
             # Check for multiple columns with name "geometry". If there are,
