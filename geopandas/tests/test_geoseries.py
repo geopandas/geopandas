@@ -493,7 +493,7 @@ class TestConstructor:
         s = GeoSeries(
             [MultiPoint([(0, 0), (1, 1)]), MultiPoint([(2, 2), (3, 3), (4, 4)])]
         )
-        s = s.explode(add_multiindex=True)
+        s = s.explode(index_parts=True)
         df = s.reset_index()
         assert type(df) == GeoDataFrame
 
@@ -501,7 +501,7 @@ class TestConstructor:
         s = GeoSeries(
             [MultiPoint([(0, 0), (1, 1)]), MultiPoint([(2, 2), (3, 3), (4, 4)])]
         )
-        s = s.explode(add_multiindex=False)
+        s = s.explode(index_parts=False)
         expected_index = pd.Index([0, 0, 1, 1, 1])
         assert_index_equal(s.index, expected_index)
 

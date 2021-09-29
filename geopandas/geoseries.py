@@ -757,7 +757,7 @@ class GeoSeries(GeoPandasBase, Series):
         """Interactive map based on folium/leaflet.js"""
         return _explore_geoseries(self, *args, **kwargs)
 
-    def explode(self, ignore_index=False, add_multiindex=None):
+    def explode(self, ignore_index=False, index_parts=None):
         """
         Explode multi-part geometries into multiple single geometries.
 
@@ -770,7 +770,7 @@ class GeoSeries(GeoPandasBase, Series):
         ignore_index : bool, default False
             If True, the resulting index will be labelled 0, 1, …, n - 1,
             ignoring `add_multiindex`.
-        add_multiindex : boolean, default True
+        index_parts : boolean, default True
             If True, the resulting index will be a multi-index (original
             index with an additional level indicating the multiple
             geometries: a new zero-based index for each single part geometry
@@ -806,7 +806,7 @@ class GeoSeries(GeoPandasBase, Series):
         GeoDataFrame.explode
 
         """
-        if add_multiindex is None and not ignore_index:
+        if index_parts is None and not ignore_index:
             warnings.warn(
                 "Currently, add_multiindex defaults to True, but in the future, "
                 "it will default to False to be consistent with Pandas. "
@@ -815,7 +815,7 @@ class GeoSeries(GeoPandasBase, Series):
                 FutureWarning,
                 stacklevel=2,
             )
-            add_multiindex = True
+            index_parts = True
 
         if compat.USE_PYGEOS and compat.PYGEOS_GE_09:
             import pygeos  # noqa
@@ -843,7 +843,7 @@ class GeoSeries(GeoPandasBase, Series):
             if ignore_index:
                 index = range(len(geometries))
 
-            elif add_multiindex:
+            elif index_parts:
                 nlevels = outer_index.nlevels
                 index_arrays = [
                     outer_index.get_level_values(lvl) for lvl in range(nlevels)
@@ -876,7 +876,7 @@ class GeoSeries(GeoPandasBase, Series):
         if ignore_index:
             index = range(len(geometries))
 
-        elif add_multiindex:
+        elif index_parts:
             # if self.index is a MultiIndex then index is a list of nested tuples
             if isinstance(self.index, MultiIndex):
                 index = [tuple(outer) + (inner,) for outer, inner in index]
