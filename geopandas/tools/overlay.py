@@ -328,7 +328,7 @@ def overlay(df1, df2, how="intersection", keep_geom_type=None, make_valid=True):
             geom_col = result._geometry_column_name
             collections = result[[geom_col]][is_collection]
 
-            exploded = collections.reset_index(drop=True).explode(add_multiindex=True)
+            exploded = collections.reset_index(drop=True).explode(index_parts=True)
             exploded = exploded.reset_index(level=0)
 
             orig_num_geoms_exploded = exploded.shape[0]

@@ -890,7 +890,7 @@ class TestGeomMethods:
         df = GeoDataFrame({"level_1": [1, 2], "geometry": s})
         df.index.name = index_name
 
-        test_df = df.explode(add_multiindex=True)
+        test_df = df.explode(index_parts=True)
 
         expected_s = GeoSeries([Point(1, 2), Point(2, 3), Point(5, 5)])
         expected_df = GeoDataFrame({"level_1": [1, 1, 2], "geometry": expected_s})
@@ -909,7 +909,7 @@ class TestGeomMethods:
         df = GeoDataFrame({"level_1": [1, 2], "geometry": s})
         df.index.name = index_name
 
-        test_df = df.explode(add_multiindex=False)
+        test_df = df.explode(index_parts=False)
 
         expected_s = GeoSeries([Point(1, 2), Point(2, 3), Point(5, 5)])
         expected_df = GeoDataFrame({"level_1": [1, 1, 2], "geometry": expected_s})
@@ -989,7 +989,7 @@ class TestGeomMethods:
             index=index,
         )
 
-        test_df = df.explode(add_multiindex=True)
+        test_df = df.explode(index_parts=True)
 
         expected_s = GeoSeries(
             [
@@ -1024,7 +1024,7 @@ class TestGeomMethods:
             index=index,
         )
 
-        test_df = df.explode(add_multiindex=False)
+        test_df = df.explode(index_parts=False)
 
         expected_s = GeoSeries(
             [
@@ -1081,7 +1081,7 @@ class TestGeomMethods:
         assert_frame_equal(test_df, expected_df)
 
         # add_multiindex is ignored if ignore_index=True
-        test_df = df.explode(ignore_index=True, add_multiindex=True)
+        test_df = df.explode(ignore_index=True, index_parts=True)
         assert_frame_equal(test_df, expected_df)
 
     #

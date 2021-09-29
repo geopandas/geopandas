@@ -515,5 +515,5 @@ class TestConstructor:
         assert_index_equal(s.index, expected_index)
 
         # add_multiindex is ignored if ignore_index=True
-        s = s.explode(add_multiindex=True, ignore_index=True)
+        s = s.explode(index_parts=True, ignore_index=True)
         assert_index_equal(s.index, expected_index)

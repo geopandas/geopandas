@@ -1546,7 +1546,7 @@ individually so that features may have different properties
         return aggregated
 
     # overrides the pandas native explode method to break up features geometrically
-    def explode(self, column=None, ignore_index=False, add_multiindex=None, **kwargs):
+    def explode(self, column=None, ignore_index=False, index_parts=None, **kwargs):
         """
         Explode muti-part geometries into multiple single geometries.
 
@@ -1565,7 +1565,7 @@ individually so that features may have different properties
         ignore_index : bool, default False
             If True, the resulting index will be labelled 0, 1, …, n - 1,
             ignoring `add_multiindex`.
-        add_multiindex : boolean, default True
+        index_parts : boolean, default True
             If True, the resulting index will be a multi-index (original
             index with an additional level indicating the multiple
             geometries: a new zero-based index for each single part geometry
@@ -1594,7 +1594,7 @@ individually so that features may have different properties
         0  name1  MULTIPOINT (1.00000 2.00000, 3.00000 4.00000)
         1  name2  MULTIPOINT (2.00000 1.00000, 0.00000 0.00000)
 
-        >>> exploded = gdf.explode(add_multiindex=True)
+        >>> exploded = gdf.explode(index_parts=True)
         >>> exploded
               col1                 geometry
         0 0  name1  POINT (1.00000 2.00000)
@@ -1602,7 +1602,7 @@ individually so that features may have different properties
         1 0  name2  POINT (2.00000 1.00000)
           1  name2  POINT (0.00000 0.00000)
 
-        >>> exploded = gdf.explode(add_multiindex=False)
+        >>> exploded = gdf.explode(index_parts=False)
         >>> exploded
             col1                 geometry
         0  name1  POINT (1.00000 2.00000)
@@ -1634,7 +1634,7 @@ individually so that features may have different properties
             else:
                 return super().explode(column, **kwargs)
 
-        if add_multiindex is None:
+        if index_parts is None:
             if not ignore_index:
                 warnings.warn(
                     "Currently, add_multiindex defaults to True, but in the future, "
@@ -1644,7 +1644,7 @@ individually so that features may have different properties
                     FutureWarning,
                     stacklevel=2,
                 )
-            add_multiindex = True
+            index_parts = True
 
         df_copy = self.copy()
 
@@ -1653,12 +1653,12 @@ individually so that features may have different properties
         if level_str in df_copy.columns:  # GH1393
             df_copy = df_copy.rename(columns={level_str: f"__{level_str}"})
 
-        if add_multiindex:
-            exploded_geom = df_copy.geometry.explode(add_multiindex=True)
+        if index_parts:
+            exploded_geom = df_copy.geometry.explode(index_parts=True)
             exploded_index = exploded_geom.index
             exploded_geom = exploded_geom.reset_index(level=-1, drop=True)
         else:
-            exploded_geom = df_copy.geometry.explode(add_multiindex=True).reset_index(
+            exploded_geom = df_copy.geometry.explode(index_parts=True).reset_index(
                 level=-1, drop=True
             )
             exploded_index = exploded_geom.index
@@ -1671,7 +1671,7 @@ individually so that features may have different properties
 
         if ignore_index:
             df.reset_index(inplace=True, drop=True)
-        elif add_multiindex:
+        elif index_parts:
             # reset to MultiIndex, otherwise df index is only first level of
             # exploded GeoSeries index.
             df.set_index(exploded_index, inplace=True)
