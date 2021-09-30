@@ -2,7 +2,7 @@ import string
 
 import numpy as np
 from numpy.testing import assert_array_equal
-from pandas import DataFrame, MultiIndex, Series
+from pandas import DataFrame, Index, MultiIndex, Series
 
 from shapely.geometry import LinearRing, LineString, MultiPoint, Point, Polygon
 from shapely.geometry.collection import GeometryCollection
@@ -104,7 +104,7 @@ class TestGeomMethods:
         )
 
     def _test_unary_real(self, op, expected, a):
-        """ Tests for 'area', 'length', 'is_valid', etc. """
+        """Tests for 'area', 'length', 'is_valid', etc."""
         fcmp = assert_series_equal
         self._test_unary(op, expected, a, fcmp)
 
@@ -119,7 +119,7 @@ class TestGeomMethods:
         self._test_unary(op, expected, a, fcmp)
 
     def _test_binary_topological(self, op, expected, a, b, *args, **kwargs):
-        """ Tests for 'intersection', 'union', 'symmetric_difference', etc. """
+        """Tests for 'intersection', 'union', 'symmetric_difference', etc."""
         if isinstance(expected, GeoPandasBase):
             fcmp = assert_geoseries_equal
         else:
@@ -861,7 +861,8 @@ class TestGeomMethods:
             index=MultiIndex.from_tuples(index, names=expected_index_name),
             crs=4326,
         )
-        assert_geoseries_equal(expected, s.explode())
+        with pytest.warns(FutureWarning, match="Currently, index_parts defaults"):
+            assert_geoseries_equal(expected, s.explode())
 
     @pytest.mark.parametrize("index_name", [None, "test"])
     def test_explode_geodataframe(self, index_name):
@@ -869,7 +870,8 @@ class TestGeomMethods:
         df = GeoDataFrame({"col": [1, 2], "geometry": s})
         df.index.name = index_name
 
-        test_df = df.explode()
+        with pytest.warns(FutureWarning, match="Currently, index_parts defaults"):
+            test_df = df.explode()
 
         expected_s = GeoSeries([Point(1, 2), Point(2, 3), Point(5, 5)])
         expected_df = GeoDataFrame({"col": [1, 1, 2], "geometry": expected_s})
@@ -888,7 +890,7 @@ class TestGeomMethods:
         df = GeoDataFrame({"level_1": [1, 2], "geometry": s})
         df.index.name = index_name
 
-        test_df = df.explode()
+        test_df = df.explode(index_parts=True)
 
         expected_s = GeoSeries([Point(1, 2), Point(2, 3), Point(5, 5)])
         expected_df = GeoDataFrame({"level_1": [1, 1, 2], "geometry": expected_s})
@@ -900,13 +902,26 @@ class TestGeomMethods:
         expected_df = expected_df.set_index(expected_index)
         assert_frame_equal(test_df, expected_df)
 
+    @pytest.mark.parametrize("index_name", [None, "test"])
+    def test_explode_geodataframe_no_multiindex(self, index_name):
+        # GH1393
+        s = GeoSeries([MultiPoint([Point(1, 2), Point(2, 3)]), Point(5, 5)])
+        df = GeoDataFrame({"level_1": [1, 2], "geometry": s})
+        df.index.name = index_name
+
+        test_df = df.explode(index_parts=False)
+
+        expected_s = GeoSeries([Point(1, 2), Point(2, 3), Point(5, 5)])
+        expected_df = GeoDataFrame({"level_1": [1, 1, 2], "geometry": expected_s})
+
+        expected_index = Index([0, 0, 1], name=index_name)
+        expected_df = expected_df.set_index(expected_index)
+        assert_frame_equal(test_df, expected_df)
+
     def test_explode_pandas_fallback(self):
         d = {
             "col1": [["name1", "name2"], ["name3", "name4"]],
-            "geometry": [
-                MultiPoint([(1, 2), (3, 4)]),
-                MultiPoint([(2, 1), (0, 0)]),
-            ],
+            "geometry": [MultiPoint([(1, 2), (3, 4)]), MultiPoint([(2, 1), (0, 0)])],
         }
         gdf = GeoDataFrame(d, crs=4326)
         expected_df = GeoDataFrame(
@@ -938,10 +953,7 @@ class TestGeomMethods:
     def test_explode_pandas_fallback_ignore_index(self):
         d = {
             "col1": [["name1", "name2"], ["name3", "name4"]],
-            "geometry": [
-                MultiPoint([(1, 2), (3, 4)]),
-                MultiPoint([(2, 1), (0, 0)]),
-            ],
+            "geometry": [MultiPoint([(1, 2), (3, 4)]), MultiPoint([(2, 1), (0, 0)])],
         }
         gdf = GeoDataFrame(d, crs=4326)
         expected_df = GeoDataFrame(
@@ -977,7 +989,7 @@ class TestGeomMethods:
             index=index,
         )
 
-        test_df = df.explode()
+        test_df = df.explode(index_parts=True)
 
         expected_s = GeoSeries(
             [
@@ -998,6 +1010,78 @@ class TestGeomMethods:
             names=["first", "second", None],
         )
         expected_df = expected_df.set_index(expected_index)
+        assert_frame_equal(test_df, expected_df)
+
+    @pytest.mark.parametrize("outer_index", [1, (1, 2), "1"])
+    def test_explode_pandas_multi_index_false(self, outer_index):
+        index = MultiIndex.from_arrays(
+            [[outer_index, outer_index, outer_index], [1, 2, 3]],
+            names=("first", "second"),
+        )
+        df = GeoDataFrame(
+            {"vals": [1, 2, 3]},
+            geometry=[MultiPoint([(x, x), (x, 0)]) for x in range(3)],
+            index=index,
+        )
+
+        test_df = df.explode(index_parts=False)
+
+        expected_s = GeoSeries(
+            [
+                Point(0, 0),
+                Point(0, 0),
+                Point(1, 1),
+                Point(1, 0),
+                Point(2, 2),
+                Point(2, 0),
+            ]
+        )
+        expected_df = GeoDataFrame({"vals": [1, 1, 2, 2, 3, 3], "geometry": expected_s})
+        expected_index = MultiIndex.from_tuples(
+            [
+                (outer_index, 1),
+                (outer_index, 1),
+                (outer_index, 2),
+                (outer_index, 2),
+                (outer_index, 3),
+                (outer_index, 3),
+            ],
+            names=["first", "second"],
+        )
+        expected_df = expected_df.set_index(expected_index)
+        assert_frame_equal(test_df, expected_df)
+
+    @pytest.mark.parametrize("outer_index", [1, (1, 2), "1"])
+    def test_explode_pandas_multi_index_ignore_index(self, outer_index):
+        index = MultiIndex.from_arrays(
+            [[outer_index, outer_index, outer_index], [1, 2, 3]],
+            names=("first", "second"),
+        )
+        df = GeoDataFrame(
+            {"vals": [1, 2, 3]},
+            geometry=[MultiPoint([(x, x), (x, 0)]) for x in range(3)],
+            index=index,
+        )
+
+        test_df = df.explode(ignore_index=True)
+
+        expected_s = GeoSeries(
+            [
+                Point(0, 0),
+                Point(0, 0),
+                Point(1, 1),
+                Point(1, 0),
+                Point(2, 2),
+                Point(2, 0),
+            ]
+        )
+        expected_df = GeoDataFrame({"vals": [1, 1, 2, 2, 3, 3], "geometry": expected_s})
+        expected_index = Index(range(len(expected_df)))
+        expected_df = expected_df.set_index(expected_index)
+        assert_frame_equal(test_df, expected_df)
+
+        # index_parts is ignored if ignore_index=True
+        test_df = df.explode(ignore_index=True, index_parts=True)
         assert_frame_equal(test_df, expected_df)
 
     #

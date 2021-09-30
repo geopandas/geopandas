@@ -757,13 +757,24 @@ class GeoSeries(GeoPandasBase, Series):
         """Interactive map based on folium/leaflet.js"""
         return _explore_geoseries(self, *args, **kwargs)
 
-    def explode(self):
+    def explode(self, ignore_index=False, index_parts=None):
         """
         Explode multi-part geometries into multiple single geometries.
 
         Single rows can become multiple rows.
         This is analogous to PostGIS's ST_Dump(). The 'path' index is the
         second level of the returned MultiIndex
+
+        Parameters
+        ----------
+        ignore_index : bool, default False
+            If True, the resulting index will be labelled 0, 1, …, n - 1,
+            ignoring `index_parts`.
+        index_parts : boolean, default True
+            If True, the resulting index will be a multi-index (original
+            index with an additional level indicating the multiple
+            geometries: a new zero-based index for each single part geometry
+            per multi-part geometry).
 
         Returns
         -------
@@ -782,7 +793,7 @@ class GeoSeries(GeoPandasBase, Series):
         1    MULTIPOINT (2.00000 2.00000, 3.00000 3.00000, ...
         dtype: geometry
 
-        >>> s.explode()
+        >>> s.explode(index_parts=True)
         0  0    POINT (0.00000 0.00000)
            1    POINT (1.00000 1.00000)
         1  0    POINT (2.00000 2.00000)
@@ -795,6 +806,16 @@ class GeoSeries(GeoPandasBase, Series):
         GeoDataFrame.explode
 
         """
+        if index_parts is None and not ignore_index:
+            warnings.warn(
+                "Currently, index_parts defaults to True, but in the future, "
+                "it will default to False to be consistent with Pandas. "
+                "Use `index_parts=True` to keep the current behavior and True/False "
+                "to silence the warning.",
+                FutureWarning,
+                stacklevel=2,
+            )
+            index_parts = True
 
         if compat.USE_PYGEOS and compat.PYGEOS_GE_09:
             import pygeos  # noqa
@@ -819,14 +840,23 @@ class GeoSeries(GeoPandasBase, Series):
 
             # extract original index values based on integer index
             outer_index = self.index.take(outer_idx)
+            if ignore_index:
+                index = range(len(geometries))
 
-            nlevels = outer_index.nlevels
-            index_arrays = [outer_index.get_level_values(lvl) for lvl in range(nlevels)]
-            index_arrays.append(inner_index)
+            elif index_parts:
+                nlevels = outer_index.nlevels
+                index_arrays = [
+                    outer_index.get_level_values(lvl) for lvl in range(nlevels)
+                ]
+                index_arrays.append(inner_index)
 
-            index = MultiIndex.from_arrays(
-                index_arrays, names=self.index.names + [None]
-            )
+                index = MultiIndex.from_arrays(
+                    index_arrays, names=self.index.names + [None]
+                )
+
+            else:
+                index = outer_index
+
             return GeoSeries(geometries, index=index, crs=self.crs).__finalize__(self)
 
         # else PyGEOS is not available or version <= 0.8
@@ -843,11 +873,18 @@ class GeoSeries(GeoPandasBase, Series):
             index.extend(idxs)
             geometries.extend(geoms)
 
-        # if self.index is a MultiIndex then index is a list of nested tuples
-        if isinstance(self.index, MultiIndex):
-            index = [tuple(outer) + (inner,) for outer, inner in index]
+        if ignore_index:
+            index = range(len(geometries))
 
-        index = MultiIndex.from_tuples(index, names=self.index.names + [None])
+        elif index_parts:
+            # if self.index is a MultiIndex then index is a list of nested tuples
+            if isinstance(self.index, MultiIndex):
+                index = [tuple(outer) + (inner,) for outer, inner in index]
+            index = MultiIndex.from_tuples(index, names=self.index.names + [None])
+
+        else:
+            index = [idx for idx, _ in index]
+
         return GeoSeries(geometries, index=index, crs=self.crs).__finalize__(self)
 
     #

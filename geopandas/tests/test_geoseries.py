@@ -7,6 +7,7 @@ import tempfile
 import numpy as np
 from numpy.testing import assert_array_equal
 import pandas as pd
+from pandas.util.testing import assert_index_equal
 
 from pyproj import CRS
 from shapely.geometry import (
@@ -172,7 +173,7 @@ class TestSeries:
         assert_series_equal(res, exp)
 
     def test_to_file(self):
-        """ Test to_file and from_file """
+        """Test to_file and from_file"""
         tempfilename = os.path.join(self.tempdir, "test.shp")
         self.g3.to_file(tempfilename)
         # Read layer back in?
@@ -239,7 +240,7 @@ class TestSeries:
         # self.na_none.fillna(method='backfill')
 
     def test_coord_slice(self):
-        """ Test CoordinateSlicer """
+        """Test CoordinateSlicer"""
         # need some better test cases
         assert geom_equals(self.g3, self.g3.cx[:, :])
         assert geom_equals(self.g3[[True, False]], self.g3.cx[0.9:, :0.1])
@@ -492,6 +493,27 @@ class TestConstructor:
         s = GeoSeries(
             [MultiPoint([(0, 0), (1, 1)]), MultiPoint([(2, 2), (3, 3), (4, 4)])]
         )
-        s = s.explode()
+        s = s.explode(index_parts=True)
         df = s.reset_index()
         assert type(df) == GeoDataFrame
+
+    def test_explode_without_multiindex(self):
+        s = GeoSeries(
+            [MultiPoint([(0, 0), (1, 1)]), MultiPoint([(2, 2), (3, 3), (4, 4)])]
+        )
+        s = s.explode(index_parts=False)
+        expected_index = pd.Index([0, 0, 1, 1, 1])
+        assert_index_equal(s.index, expected_index)
+
+    def test_explode_ignore_index(self):
+        s = GeoSeries(
+            [MultiPoint([(0, 0), (1, 1)]), MultiPoint([(2, 2), (3, 3), (4, 4)])]
+        )
+        s = s.explode(ignore_index=True)
+        expected_index = pd.Index(range(len(s)))
+        print(expected_index)
+        assert_index_equal(s.index, expected_index)
+
+        # index_parts is ignored if ignore_index=True
+        s = s.explode(index_parts=True, ignore_index=True)
+        assert_index_equal(s.index, expected_index)
