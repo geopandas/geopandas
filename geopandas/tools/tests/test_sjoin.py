@@ -890,3 +890,31 @@ class TestNearest:
         expected_gdf["distance_col"] = np.array(distances, dtype=float)
         joined = sjoin_nearest(left, right, how="right", distance_col="distance_col")
         assert_geodataframe_equal(expected_gdf, joined)
+
+    @pytest.mark.filterwarnings("ignore:Geometry is in a geographic CRS")
+    def test_sjoin_nearest_inner(self):
+        # check equivalency of left and inner join
+        countries = read_file(geopandas.datasets.get_path("naturalearth_lowres"))
+        cities = read_file(geopandas.datasets.get_path("naturalearth_cities"))
+        countries = countries[["geometry", "name"]].rename(columns={"name": "country"})
+
+        # default: inner and left give the same result
+        result1 = sjoin_nearest(cities, countries, distance_col="dist")
+        assert result1.shape[0] == cities.shape[0]
+        result2 = sjoin_nearest(cities, countries, distance_col="dist", how="inner")
+        assert_geodataframe_equal(result2, result1)
+        result3 = sjoin_nearest(cities, countries, distance_col="dist", how="left")
+        assert_geodataframe_equal(result3, result1, check_like=True)
+
+        # with max_distance: rows that go above are dropped in case of inner
+        result4 = sjoin_nearest(cities, countries, distance_col="dist", max_distance=1)
+        assert_geodataframe_equal(
+            result4, result1[result1["dist"] < 1], check_like=True
+        )
+        result5 = sjoin_nearest(
+            cities, countries, distance_col="dist", max_distance=1, how="left"
+        )
+        assert result5.shape[0] == cities.shape[0]
+        result5 = result5.dropna()
+        result5["index_right"] = result5["index_right"].astype("int64")
+        assert_geodataframe_equal(result5, result4, check_like=True)
