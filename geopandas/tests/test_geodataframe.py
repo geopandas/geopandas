@@ -13,6 +13,7 @@ from pyproj.exceptions import CRSError
 from shapely.geometry import Point
 
 import geopandas
+import geopandas._compat as compat
 from geopandas import GeoDataFrame, GeoSeries, read_file
 from geopandas.array import GeometryArray, GeometryDtype, from_shapely
 from geopandas._compat import ignore_shapely2_warnings
@@ -24,6 +25,7 @@ import pytest
 
 
 PYPROJ_LT_3 = LooseVersion(pyproj.__version__) < LooseVersion("3")
+TEST_NEAREST = compat.PYGEOS_GE_010 and compat.USE_PYGEOS
 
 
 class TestDataFrame:
@@ -774,6 +776,29 @@ class TestDataFrame:
 
         expected_df = pd.DataFrame({"gs0": wkts0, "gs1": wkts1})
         assert_frame_equal(expected_df, gdf.to_wkt())
+
+    @pytest.mark.parametrize("how", ["left", "inner", "right"])
+    @pytest.mark.parametrize("max_distance", [None, 1])
+    @pytest.mark.parametrize("distance_col", [None, "distance"])
+    @pytest.mark.skipif(
+        not TEST_NEAREST,
+        reason=(
+            "PyGEOS >= 0.10.0"
+            " must be installed and activated via the geopandas.compat module to"
+            " test sjoin_nearest"
+        ),
+    )
+    def test_sjoin_nearest(self, how, max_distance, distance_col):
+        left = read_file(geopandas.datasets.get_path("naturalearth_cities"))
+        right = read_file(geopandas.datasets.get_path("naturalearth_lowres"))
+
+        expected = geopandas.sjoin_nearest(
+            left, right, how=how, max_distance=max_distance, distance_col=distance_col
+        )
+        result = left.sjoin_nearest(
+            right, how=how, max_distance=max_distance, distance_col=distance_col
+        )
+        assert_geodataframe_equal(result, expected)
 
 
 def check_geodataframe(df, geometry_column="geometry"):

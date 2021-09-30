@@ -59,12 +59,20 @@ Aggregating and exploding
    GeoDataFrame.dissolve
    GeoDataFrame.explode
 
+Overlay operations
+------------------
+
+.. autosummary::
+   :toctree: api/
+
+   GeoDataFrame.sjoin_nearest
+
 Plotting
 --------
 
 .. autosummary::
    :toctree: api/
-   
+
    GeoDataFrame.explore
 
 

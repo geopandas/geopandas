@@ -1852,6 +1852,125 @@ individually so that features may have different properties
         """Interactive map based on folium/leaflet.js"""
         return _explore(self, *args, **kwargs)
 
+    def sjoin_nearest(
+        self,
+        right,
+        how="inner",
+        max_distance=None,
+        lsuffix="left",
+        rsuffix="right",
+        distance_col=None,
+    ):
+        """
+        Spatial join of two GeoDataFrames based on the distance between their
+        geometries.
+
+        Results will include multiple output records for a single input record
+        where there are multiple equidistant nearest or intersected neighbors.
+
+        See the User Guide page
+        https://geopandas.readthedocs.io/en/latest/docs/user_guide/mergingdata.html
+        for more details.
+
+
+        Parameters
+        ----------
+        right : GeoDataFrames
+        how : string, default 'inner'
+            The type of join:
+
+            * 'left': use keys from left_df; retain only left_df geometry column
+            * 'right': use keys from right_df; retain only right_df geometry column
+            * 'inner': use intersection of keys from both dfs; retain only
+            left_df geometry column
+
+        max_distance : float, default None
+            Maximum distance within which to query for nearest geometry.
+            Must be greater than 0.
+            The max_distance used to search for nearest items in the tree may have a
+            significant impact on performance by reducing the number of input
+            geometries that are evaluated for nearest items in the tree.
+        lsuffix : string, default 'left'
+            Suffix to apply to overlapping column names (left GeoDataFrame).
+        rsuffix : string, default 'right'
+            Suffix to apply to overlapping column names (right GeoDataFrame).
+        distance_col : string, default None
+            If set, save the distances computed between matching geometries under a
+            column of this name in the joined GeoDataFrame.
+
+        Examples
+        --------
+        >>> countries = geopandas.read_file(geopandas.datasets.get_\
+    path("naturalearth_lowres"))
+        >>> cities = geopandas.read_file(geopandas.datasets.get_path("naturalearth_citi\
+    es"))
+        >>> countries.head(2).name  # doctest: +SKIP
+            pop_est      continent                      name \
+    iso_a3  gdp_md_est                                           geometry
+        0     920938        Oceania                      Fiji    FJI      8374.0  MULTI\
+    POLYGON (((180.00000 -16.06713, 180.00000...
+        1   53950935         Africa                  Tanzania    TZA    150600.0  POLYG\
+    ON ((33.90371 -0.95000, 34.07262 -1.05982...
+        >>> cities.head(2).name  # doctest: +SKIP
+                name                   geometry
+        0  Vatican City  POINT (12.45339 41.90328)
+        1    San Marino  POINT (12.44177 43.93610)
+
+        >>> cities_w_country_data = cities.sjoin_nearest(countries)
+        >>> cities_w_country_data[['name_left', 'name_right']].head(2)  # doctest: +SKIP
+                name_left                   geometry  index_right   pop_est continent n\
+    ame_right iso_a3  gdp_md_est
+        0    Vatican City  POINT (12.45339 41.90328)          141  62137802    Europe  \
+        Italy    ITA   2221000.0
+        1      San Marino  POINT (12.44177 43.93610)          141  62137802    Europe  \
+        Italy    ITA   2221000.0
+
+        To include the distances:
+
+        >>> cities_w_country_data = cities.sjoin_nearest(countries, \
+    distance_col="distances")
+        >>> cities_w_country_data[["name_left", "name_right", \
+    "distances"]].head(2)  # doctest: +SKIP
+                name_left name_right distances
+        0    Vatican City      Italy       0.0
+        1      San Marino      Italy       0.0
+
+        In the following example, we get multiple cities for Italy because all results
+        are equidistant (in this case zero because they intersect).
+        In fact, we get 3 results in total:
+
+        >>> countries_w_city_data = cities.sjoin_nearest(countries, \
+    distance_col="distances", how="right")
+        >>> italy_results = \
+    countries_w_city_data[countries_w_city_data["name_left"] == "Italy"]
+        >>> italy_results  # doctest: +SKIP
+            name_x        name_y
+        141  Vatican City  Italy
+        141    San Marino  Italy
+        141          Rome  Italy
+
+        See also
+        --------
+        GeoDataFrame.sjoin : binary predicate joins
+
+        Notes
+        -----
+        Since this join relies on distances, results will be innaccurate
+        if your geometries are in a geographic CRS.
+
+        Every operation in GeoPandas is planar, i.e. the potential third
+        dimension is not taken into account.
+        """
+        return geopandas.sjoin_nearest(
+            self,
+            right,
+            how=how,
+            max_distance=max_distance,
+            lsuffix=lsuffix,
+            rsuffix=rsuffix,
+            distance_col=distance_col,
+        )
+
 
 def _dataframe_set_geometry(self, col, drop=False, inplace=False, crs=None):
     if inplace:
