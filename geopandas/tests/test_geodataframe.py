@@ -800,6 +800,16 @@ class TestDataFrame:
         )
         assert_geodataframe_equal(result, expected)
 
+    @pytest.mark.skip_no_sindex
+    def test_clip(self):
+        left = read_file(geopandas.datasets.get_path("naturalearth_cities"))
+        world = read_file(geopandas.datasets.get_path("naturalearth_lowres"))
+        south_america = world[world["continent"] == "South America"]
+
+        expected = geopandas.clip(left, south_america)
+        result = left.clip(south_america)
+        assert_geodataframe_equal(result, expected)
+
 
 def check_geodataframe(df, geometry_column="geometry"):
     assert isinstance(df, GeoDataFrame)

@@ -143,6 +143,14 @@ Missing values
    GeoSeries.isna
    GeoSeries.notna
 
+Overlay operations
+------------------
+
+.. autosummary::
+   :toctree: api/
+
+   GeoSeries.clip
+
 Plotting
 --------
 

@@ -65,6 +65,8 @@ Overlay operations
 .. autosummary::
    :toctree: api/
 
+   GeoDataFrame.clip
+   GeoDataFrame.overlay
    GeoDataFrame.sjoin_nearest
 
 Plotting

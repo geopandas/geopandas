@@ -20,7 +20,7 @@ from shapely.geometry import (
 )
 from shapely.geometry.base import BaseGeometry
 
-from geopandas import GeoSeries, GeoDataFrame
+from geopandas import GeoSeries, GeoDataFrame, read_file, datasets, clip
 from geopandas._compat import PYPROJ_LT_3, ignore_shapely2_warnings
 from geopandas.array import GeometryArray, GeometryDtype
 from geopandas.testing import assert_geoseries_equal
@@ -322,6 +322,16 @@ class TestSeries:
 
     def test_to_wkt(self):
         assert_series_equal(pd.Series([self.t1.wkt, self.sq.wkt]), self.g1.to_wkt())
+
+    @pytest.mark.skip_no_sindex
+    def test_clip(self):
+        left = read_file(datasets.get_path("naturalearth_cities"))
+        world = read_file(datasets.get_path("naturalearth_lowres"))
+        south_america = world[world["continent"] == "South America"]
+
+        expected = clip(left.geometry, south_america)
+        result = left.geometry.clip(south_america)
+        assert_geoseries_equal(result, expected)
 
 
 def test_missing_values_empty_warning():
