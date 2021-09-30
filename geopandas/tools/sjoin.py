@@ -502,7 +502,7 @@ countries_w_city_data[countries_w_city_data["name_left"] == "Italy"]
     Every operation in GeoPandas is planar, i.e. the potential third
     dimension is not taken into account.
     """
-    _basic_checks(left_df, right_df, how, lsuffix)
+    _basic_checks(left_df, right_df, how, lsuffix, rsuffix)
 
     left_df.geometry.values.check_geographic_crs(stacklevel=1)
     right_df.geometry.values.check_geographic_crs(stacklevel=1)
