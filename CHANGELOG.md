@@ -7,18 +7,26 @@ Version 0.10.0 (September ??, 2021)
 
 Highlights of this release:
 
+- A new `sjoin_nearest()` function to join based on proximity, with the
+  ability to set a maximum search radius (#1865). In addition, the `sindex`
+  attribute gained new methdods for a "nearest" spatial index query (#1865,
+  #2053).
 - A new `explore()` method on GeoDataFrame and GeoSeries with native support
   for interactive visualization based on folium / leaflet.js (#1953)
-- [.. sjoin nearest ..]
 
 New features and improvements:
 
 - Add support for pandas' `value_counts()` method for geometry dtype (#2047). 
+- The `explode()` method has a new `ignore_index` keyword (consistent with
+  pandas' explode method) to reset the index in the result, and a new
+  `index_parts` keywords to control whether a cumulative count indexing the
+  parts of the exploded multi-geometries should be added (#1871).
 - The `to_file()` method will now attempt to detect the driver (if not
   specified) based on the extension of the provided filename, instead of
   defaulting to ESRI Shapefile (#1609).
 - Support for the `storage_options` keyword in `read_parquet()` for
   specifying filesystem-specific options (e.g. for S3) based on fsspec (#2107).
+- The read/write functions now support `~` (user home directory) expansion (#1876).
 - Support the `convert_dtypes()` method from pandas to preserve the
   GeoDataFrame class (#2115).
 - Support WKB values in the hex format in `GeoSeries.from_wkb()` (#2106).
@@ -38,6 +46,10 @@ Deprecations and compatibility notes:
 - Constructing a GeoDataFrame with a duplicated "geometry" column is now
   disallowed. This can also raise an error in the `pd.concat(.., axis=1)`
   function if this results in duplicated active geometry columns (#2046).
+- The `explode()` method currently returns a GeoSeries/GeoDataFrame with a
+  MultiIndex, with an additional level with indices of the parts of the
+  exploded multi-geometries. For consistency with pandas, this will change in
+  the future and the new `index_parts` keyword is added to control this.
 
 Bug fixes:
 
