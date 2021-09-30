@@ -267,7 +267,10 @@ def _frame_join(join_df, left_df, right_df, how, lsuffix, rsuffix):
     left_df = left_df.copy(deep=True)
     try:
         left_index_name = left_df.index.name
-        left_df.index = left_df.index.rename(index_left)
+        if left_index_name is not None:
+            index_left = left_index_name
+        else:
+            left_df.index = left_df.index.rename(index_left)
     except TypeError:
         index_left = [
             "index_{}".format(lsuffix + str(pos))
@@ -281,7 +284,10 @@ def _frame_join(join_df, left_df, right_df, how, lsuffix, rsuffix):
     right_df = right_df.copy(deep=True)
     try:
         right_index_name = right_df.index.name
-        right_df.index = right_df.index.rename(index_right)
+        if right_index_name is not None:
+            index_right = right_index_name
+        else:
+            right_df.index = right_df.index.rename(index_right)
     except TypeError:
         index_right = [
             "index_{}".format(rsuffix + str(pos))

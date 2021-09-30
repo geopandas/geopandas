@@ -183,7 +183,7 @@ class TestSpatialJoin:
             ].astype("int64")
         if index == "named-index":
             exp[["df1_ix", "df2_ix"]] = exp[["df1_ix", "df2_ix"]].astype("int64")
-            exp = exp.set_index("df1_ix").rename(columns={"df2_ix": "index_right"})
+            exp = exp.set_index("df1_ix")
         if index in ["default-index", "string-index"]:
             exp = exp.set_index("index_left")
             exp.index.name = None
@@ -233,7 +233,7 @@ class TestSpatialJoin:
             res["index_right"] = res["index_right"].astype(float)
         elif index == "named-index":
             exp[["df1_ix"]] = exp[["df1_ix"]].astype("int64")
-            exp = exp.set_index("df1_ix").rename(columns={"df2_ix": "index_right"})
+            exp = exp.set_index("df1_ix")
         if index in ["default-index", "string-index"]:
             exp = exp.set_index("index_left")
             exp.index.name = None
@@ -337,7 +337,7 @@ class TestSpatialJoin:
             res["index_left"] = res["index_left"].astype(float)
         elif index == "named-index":
             exp[["df2_ix"]] = exp[["df2_ix"]].astype("int64")
-            exp = exp.set_index("df2_ix").rename(columns={"df1_ix": "index_left"})
+            exp = exp.set_index("df2_ix")
         if index in ["default-index", "string-index"]:
             exp = exp.set_index("index_right")
             exp = exp.reindex(columns=res.columns)
