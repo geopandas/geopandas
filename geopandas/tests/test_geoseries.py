@@ -323,6 +323,22 @@ class TestSeries:
     def test_to_wkt(self):
         assert_series_equal(pd.Series([self.t1.wkt, self.sq.wkt]), self.g1.to_wkt())
 
+    def test_from_xy_points(self):
+        x = self.landmarks.x.values
+        y = self.landmarks.y.values
+        index = self.landmarks.index.tolist()
+        crs = self.landmarks.crs
+        assert_geoseries_equal(
+            self.landmarks, GeoSeries.from_xy(x, y, index=index, crs=crs)
+        )
+
+    def test_from_xy_points_indexless(self):
+        x = np.array([0.0, 3.0])
+        y = np.array([2.0, 5.0])
+        z = np.array([-1.0, 4.0])
+        expected = GeoSeries([Point(0, 2, -1), Point(3, 5, 4)])
+        assert_geoseries_equal(expected, GeoSeries.from_xy(x, y, z))
+
 
 def test_missing_values_empty_warning():
     s = GeoSeries([Point(1, 1), None, np.nan, BaseGeometry(), Polygon()])
