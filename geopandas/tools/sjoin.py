@@ -347,9 +347,12 @@ def _frame_join(join_df, left_df, right_df, how, lsuffix, rsuffix):
                 how="right",
                 suffixes=("_{}".format(lsuffix), "_{}".format(rsuffix)),
             )
-            .set_index(index_right)
             .drop(["_key_left", "_key_right"], axis=1)
         )
+        try:
+            joined = joined.set_index(index_right)
+        except KeyError:
+            joined = joined.set_index(index_right + "_{}".format(rsuffix))
         if isinstance(index_right, list):
             joined.index.names = right_index_name
         else:

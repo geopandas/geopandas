@@ -359,12 +359,7 @@ class TestSpatialJoin:
 
         assert_frame_equal(res, exp, check_index_type=False)
 
-    @pytest.mark.parametrize(
-        # TODO for right join with duplicate column/index name, it cannot set
-        # the index since the name changed
-        "how",
-        ["inner", "left", pytest.param("right", marks=pytest.mark.xfail)],
-    )
+    @pytest.mark.parametrize("how", ["inner", "left", "right"])
     def test_duplicate_column_index_name(self, how):
         geoms = [Point(1, 1), Point(2, 2)]
         left = GeoDataFrame(
@@ -377,9 +372,16 @@ class TestSpatialJoin:
             {"geometry": geoms}, index=pd.Index(["a", "b"], name="myidx")
         )
         result = sjoin(left, right, how=how)
-        expected = GeoDataFrame(
-            {"myidx_left": [1, 2], "geometry": geoms, "myidx_right": ["a", "b"]}
-        )
+        if how in ("inner", "left"):
+            expected = GeoDataFrame(
+                {"myidx_left": [1, 2], "geometry": geoms, "myidx_right": ["a", "b"]}
+            )
+        else:
+            # right join
+            expected = GeoDataFrame(
+                {"index_left": [0, 1], "myidx_left": [1, 2], "geometry": geoms},
+                index=pd.Index(["a", "b"], name="myidx"),
+            )
         assert_geodataframe_equal(result, expected)
 
 
