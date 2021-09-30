@@ -47,6 +47,20 @@ def _ensure_geometry(data, crs=None):
             return out
 
 
+def _crs_mismatch_warning():
+    # TODO: raise error in 0.9 or 0.10.
+    warnings.warn(
+        "CRS mismatch between CRS of the passed geometries "
+        "and 'crs'. Use 'GeoDataFrame.set_crs(crs, "
+        "allow_override=True)' to overwrite CRS or "
+        "'GeoDataFrame.to_crs(crs)' to reproject geometries. "
+        "CRS mismatch will raise an error in the future versions "
+        "of GeoPandas.",
+        FutureWarning,
+        stacklevel=2,
+    )
+
+
 class GeoDataFrame(GeoPandasBase, DataFrame):
     """
     A GeoDataFrame object is a pandas.DataFrame that has a column
@@ -118,19 +132,19 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         # allowed in that case
         # TODO do we want to raise / return normal DataFrame in this case?
 
-        # by default, if geometry is None, look for a geo col named geometry
-        assumed_geo_col_name = "geometry"
-
-        # if gdf passed in and geo_col is set, we use that for geometry,
-        # # instead of looking for a column named "geometry"
+        # if gdf passed in and geo_col is set, we use that for geometry
         if geometry is None and isinstance(data, GeoDataFrame):
-            assumed_geo_col_name = data._geometry_column_name
+            self._geometry_column_name = data._geometry_column_name
+            if crs is not None and data.crs != crs:
+                _crs_mismatch_warning()
+                # TODO: raise error in 0.9 or 0.10.
+            return
 
-        if geometry is None and assumed_geo_col_name in self.columns:
+        if geometry is None and "geometry" in self.columns:
             # Check for multiple columns with name "geometry". If there are,
             # self["geometry"] is a gdf and constructor gets recursively recalled
             # by pandas internals trying to access this
-            if (self.columns == assumed_geo_col_name).sum() > 1:
+            if (self.columns == "geometry").sum() > 1:
                 raise ValueError(
                     "GeoDataFrame does not support multiple columns "
                     "using the geometry column name 'geometry'."
@@ -140,25 +154,14 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             index = self.index
             try:
                 if (
-                    hasattr(self[assumed_geo_col_name].values, "crs")
-                    and self[assumed_geo_col_name].values.crs
+                    hasattr(self["geometry"].values, "crs")
+                    and self["geometry"].values.crs
                     and crs
-                    and not self[assumed_geo_col_name].values.crs == crs
+                    and not self["geometry"].values.crs == crs
                 ):
-                    warnings.warn(
-                        "CRS mismatch between CRS of the passed geometries "
-                        "and 'crs'. Use 'GeoDataFrame.set_crs(crs, "
-                        "allow_override=True)' to overwrite CRS or "
-                        "'GeoDataFrame.to_crs(crs)' to reproject geometries. "
-                        "CRS mismatch will raise an error in the future versions "
-                        "of GeoPandas.",
-                        FutureWarning,
-                        stacklevel=2,
-                    )
+                    _crs_mismatch_warning()
                     # TODO: raise error in 0.9 or 0.10.
-                self[assumed_geo_col_name] = _ensure_geometry(
-                    self[assumed_geo_col_name].values, crs
-                )
+                self["geometry"] = _ensure_geometry(self["geometry"].values, crs)
             except TypeError:
                 pass
             else:
@@ -167,7 +170,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                     # gets reset to a default RangeIndex -> set back the original
                     # index if needed
                     self.index = index
-                geometry = assumed_geo_col_name
+                geometry = "geometry"
 
         if geometry is not None:
             if (
@@ -176,16 +179,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 and crs
                 and not geometry.crs == crs
             ):
-                warnings.warn(
-                    "CRS mismatch between CRS of the passed geometries "
-                    "and 'crs'. Use 'GeoDataFrame.set_crs(crs, "
-                    "allow_override=True)' to overwrite CRS or "
-                    "'GeoDataFrame.to_crs(crs)' to reproject geometries. "
-                    "CRS mismatch will raise an error in the future versions "
-                    "of GeoPandas.",
-                    FutureWarning,
-                    stacklevel=2,
-                )
+                _crs_mismatch_warning()
                 # TODO: raise error in 0.9 or 0.10.
             self.set_geometry(geometry, inplace=True)
 
