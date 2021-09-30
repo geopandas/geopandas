@@ -633,7 +633,7 @@ class TestNearest:
 
     @pytest.mark.parametrize("how", ["inner", "left"])
     @pytest.mark.parametrize("distance_col", (None, "distance"))
-    def test_empty_left_df_how_left(self, how, distance_col: str):
+    def test_empty_left_df(self, how, distance_col: str):
         right = geopandas.GeoDataFrame({"geometry": [Point(0, 0), Point(1, 1)]})
         left = geopandas.GeoDataFrame({"geometry": []})
         joined = sjoin_nearest(left, right, how=how, distance_col=distance_col)
@@ -657,7 +657,7 @@ class TestNearest:
             assert joined[distance_col].isna().all()
 
     @pytest.mark.parametrize("how", ["inner", "left"])
-    def test_empty_join_due_to_max_distance_how_left(self, how):
+    def test_empty_join_due_to_max_distance(self, how):
         # after applying max_distance the join comes back empty
         # (as in NaN in the joined columns)
         left = geopandas.GeoDataFrame({"geometry": [Point(0, 0)]})
@@ -696,7 +696,7 @@ class TestNearest:
         assert_geodataframe_equal(joined, expected)
 
     @pytest.mark.parametrize("how", ["inner", "left"])
-    def test_max_distance_how_left(self, how):
+    def test_max_distance(self, how):
         left = geopandas.GeoDataFrame({"geometry": [Point(0, 0), Point(1, 1)]})
         right = geopandas.GeoDataFrame({"geometry": [Point(1, 1), Point(2, 2)]})
         joined = sjoin_nearest(
