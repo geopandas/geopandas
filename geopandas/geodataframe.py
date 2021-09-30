@@ -1901,9 +1901,9 @@ individually so that features may have different properties
         Examples
         --------
         >>> countries = geopandas.read_file(geopandas.datasets.get_\
-    path("naturalearth_lowres"))
+path("naturalearth_lowres"))
         >>> cities = geopandas.read_file(geopandas.datasets.get_path("naturalearth_citi\
-    es"))
+es"))
         >>> countries.head(2).name  # doctest: +SKIP
             pop_est      continent                      name \
     iso_a3  gdp_md_est                                           geometry
@@ -1928,9 +1928,9 @@ individually so that features may have different properties
         To include the distances:
 
         >>> cities_w_country_data = cities.sjoin_nearest(countries, \
-    distance_col="distances")
+distance_col="distances")
         >>> cities_w_country_data[["name_left", "name_right", \
-    "distances"]].head(2)  # doctest: +SKIP
+"distances"]].head(2)  # doctest: +SKIP
                 name_left name_right distances
         0    Vatican City      Italy       0.0
         1      San Marino      Italy       0.0
@@ -1940,9 +1940,9 @@ individually so that features may have different properties
         In fact, we get 3 results in total:
 
         >>> countries_w_city_data = cities.sjoin_nearest(countries, \
-    distance_col="distances", how="right")
+distance_col="distances", how="right")
         >>> italy_results = \
-    countries_w_city_data[countries_w_city_data["name_left"] == "Italy"]
+countries_w_city_data[countries_w_city_data["name_left"] == "Italy"]
         >>> italy_results  # doctest: +SKIP
             name_x        name_y
         141  Vatican City  Italy
