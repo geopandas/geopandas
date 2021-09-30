@@ -333,7 +333,7 @@ class TestSeries:
         )
         assert_geoseries_equal(
             self.landmarks,
-            GeoSeries.from_xy(self.landmarks.x, self.landmarks.y, crs=crs)
+            GeoSeries.from_xy(self.landmarks.x, self.landmarks.y, crs=crs),
         )
 
     def test_from_xy_points_indexless(self):
