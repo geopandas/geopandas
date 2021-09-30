@@ -14,7 +14,7 @@ When working with multiple spatial datasets -- especially multiple *polygon* or
 those datasets overlap (or don't overlap). These manipulations are often
 referred using the language of sets -- intersections, unions, and differences.
 These types of operations are made available in the *geopandas* library through
-the :meth:`GeoDataFrame.overlay` method.
+the :meth:`~geopandas.GeoDataFrame.overlay` method.
 
 The basic idea is demonstrated by the graphic below but keep in mind that
 overlays operate at the DataFrame level, not on individual geometries, and the
@@ -27,7 +27,7 @@ properties from both are retained. In effect, for every shape in the left
 **Source: QGIS Documentation**
 
 .. note::
-   Note to users familiar with the *shapely* library: :meth:`GeoDataFrame.overlay` can be thought
+   Note to users familiar with the *shapely* library: :meth:`~geopandas.GeoDataFrame.overlay` can be thought
    of as offering versions of the standard *shapely* set-operations that deal with
    the complexities of applying set operations to two *GeoSeries*. The standard
    *shapely* set-operations are also available as :class:`~geopandas.GeoSeries` methods.
@@ -58,7 +58,7 @@ These two GeoDataFrames have some overlapping areas:
     df2.plot(ax=ax, color='green', alpha=0.5);
 
 We illustrate the different overlay modes with the above example.
-The :meth:`GeoDataFrame.overlay` method will determine the set of all individual geometries
+The :meth:`~geopandas.GeoDataFrame.overlay` method will determine the set of all individual geometries
 from overlaying the two input GeoDataFrames. This result covers the area covered
 by the two input GeoDataFrames, and also preserves all unique regions defined by
 the combined boundaries of the two GeoDataFrames.
@@ -147,7 +147,7 @@ First, we load the countries and cities example datasets and select :
     countries = countries.to_crs('epsg:3395')
     capitals = capitals.to_crs('epsg:3395')
 
-To illustrate the :meth:`GeoDataFrame.overlay` method, consider the following case in which one
+To illustrate the :meth:`~geopandas.GeoDataFrame.overlay` method, consider the following case in which one
 wishes to identify the "core" portion of each country -- defined as areas within
 500km of a capital -- using a ``GeoDataFrame`` of countries and a
 ``GeoDataFrame`` of capitals.
@@ -195,7 +195,7 @@ Changing the "how" option allows for different types of overlay operations. For 
 keep_geom_type keyword
 ----------------------
 
-In default settings, :meth:`GeoDataFrame.overlay` returns only geometries of the same geometry type as GeoDataFrame
+In default settings, :meth:`~geopandas.GeoDataFrame.overlay` returns only geometries of the same geometry type as GeoDataFrame
 (left one) has, where Polygon and MultiPolygon is considered as a same type (other types likewise).
 You can control this behavior using ``keep_geom_type`` option, which is set to
 True by default. Once set to False, ``overlay`` will return all geometry types resulting from
@@ -206,7 +206,7 @@ where two polygons intersects in a line or a point.
 More Examples
 -------------
 
-A larger set of examples of the use of :meth:`GeoDataFrame.overlay` can be found `here <https://nbviewer.jupyter.org/github/geopandas/geopandas/blob/master/doc/source/gallery/overlays.ipynb>`_
+A larger set of examples of the use of :meth:`~geopandas.GeoDataFrame.overlay` can be found `here <https://nbviewer.jupyter.org/github/geopandas/geopandas/blob/master/doc/source/gallery/overlays.ipynb>`_
 
 
 
