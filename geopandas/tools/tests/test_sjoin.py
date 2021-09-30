@@ -361,17 +361,19 @@ class TestSpatialJoin:
 
     @pytest.mark.parametrize("how", ["inner", "left", "right"])
     def test_duplicate_column_index_name(self, how):
+        # case where a left column and the right index have the same name or the
+        # other way around -> correctly add suffix or preserve index name
         geoms = [Point(1, 1), Point(2, 2)]
-        left = GeoDataFrame(
+        df1 = GeoDataFrame(
             {
                 "myidx": [1, 2],
                 "geometry": geoms,
             }
         )
-        right = GeoDataFrame(
+        df2 = GeoDataFrame(
             {"geometry": geoms}, index=pd.Index(["a", "b"], name="myidx")
         )
-        result = sjoin(left, right, how=how)
+        result = sjoin(df1, df2, how=how)
         if how in ("inner", "left"):
             expected = GeoDataFrame(
                 {"myidx_left": [1, 2], "geometry": geoms, "myidx_right": ["a", "b"]}
@@ -381,6 +383,19 @@ class TestSpatialJoin:
             expected = GeoDataFrame(
                 {"index_left": [0, 1], "myidx_left": [1, 2], "geometry": geoms},
                 index=pd.Index(["a", "b"], name="myidx"),
+            )
+        assert_geodataframe_equal(result, expected)
+
+        result = sjoin(df2, df1, how=how)
+        if how in ("inner", "left"):
+            expected = GeoDataFrame(
+                {"geometry": geoms, "index_right": [0, 1], "myidx_right": [1, 2]},
+                index=pd.Index(["a", "b"], name="myidx"),
+            )
+        else:
+            # right join
+            expected = GeoDataFrame(
+                {"myidx_left": ["a", "b"], "myidx_right": [1, 2], "geometry": geoms},
             )
         assert_geodataframe_equal(result, expected)
 

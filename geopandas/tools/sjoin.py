@@ -308,9 +308,12 @@ def _frame_join(join_df, left_df, right_df, how, lsuffix, rsuffix):
                 right_index=True,
                 suffixes=("_{}".format(lsuffix), "_{}".format(rsuffix)),
             )
-            .set_index(index_left)
             .drop(["_key_right"], axis=1)
         )
+        try:
+            joined = joined.set_index(index_left)
+        except KeyError:
+            joined = joined.set_index(index_left + "_{}".format(lsuffix))
         if isinstance(index_left, list):
             joined.index.names = left_index_name
         else:
@@ -327,9 +330,12 @@ def _frame_join(join_df, left_df, right_df, how, lsuffix, rsuffix):
                 right_index=True,
                 suffixes=("_{}".format(lsuffix), "_{}".format(rsuffix)),
             )
-            .set_index(index_left)
             .drop(["_key_right"], axis=1)
         )
+        try:
+            joined = joined.set_index(index_left)
+        except KeyError:
+            joined = joined.set_index(index_left + "_{}".format(lsuffix))
         if isinstance(index_left, list):
             joined.index.names = left_index_name
         else:
