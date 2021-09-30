@@ -2015,6 +2015,97 @@ individually so that features may have different properties
         """
         return geopandas.clip(self, mask=mask, keep_geom_type=keep_geom_type)
 
+    def overlay(self, right, how="intersection", keep_geom_type=None, make_valid=True):
+        """Perform spatial overlay between GeoDataFrames.
+
+        Currently only supports data GeoDataFrames with uniform geometry types,
+        i.e. containing only (Multi)Polygons, or only (Multi)Points, or a
+        combination of (Multi)LineString and LinearRing shapes.
+        Implements several methods that are all effectively subsets of the union.
+
+        See the User Guide page :doc:`../../user_guide/set_operations` for details.
+
+        Parameters
+        ----------
+        right : GeoDataFrame
+        how : string
+            Method of spatial overlay: 'intersection', 'union',
+            'identity', 'symmetric_difference' or 'difference'.
+        keep_geom_type : bool
+            If True, return only geometries of the same geometry type the GeoDataFrame
+            has, if False, return all resulting geometries. Default is None,
+            which will set keep_geom_type to True but warn upon dropping
+            geometries.
+        make_valid : bool, default True
+            If True, any invalid input geometries are corrected with a call to
+            `buffer(0)`, if False, a `ValueError` is raised if any input geometries
+            are invalid.
+
+        Returns
+        -------
+        df : GeoDataFrame
+            GeoDataFrame with new set of polygons and attributes
+            resulting from the overlay
+
+        Examples
+        --------
+        >>> from shapely.geometry import Polygon
+        >>> polys1 = geopandas.GeoSeries([Polygon([(0,0), (2,0), (2,2), (0,2)]),
+        ...                               Polygon([(2,2), (4,2), (4,4), (2,4)])])
+        >>> polys2 = geopandas.GeoSeries([Polygon([(1,1), (3,1), (3,3), (1,3)]),
+        ...                               Polygon([(3,3), (5,3), (5,5), (3,5)])])
+        >>> df1 = geopandas.GeoDataFrame({'geometry': polys1, 'df1_data':[1,2]})
+        >>> df2 = geopandas.GeoDataFrame({'geometry': polys2, 'df2_data':[1,2]})
+
+        >>> df1.overlay(df2, how='union')
+        df1_data  df2_data                                           geometry
+        0       1.0       1.0  POLYGON ((2.00000 2.00000, 2.00000 1.00000, 1....
+        1       2.0       1.0  POLYGON ((2.00000 2.00000, 2.00000 3.00000, 3....
+        2       2.0       2.0  POLYGON ((4.00000 4.00000, 4.00000 3.00000, 3....
+        3       1.0       NaN  POLYGON ((2.00000 0.00000, 0.00000 0.00000, 0....
+        4       2.0       NaN  MULTIPOLYGON (((3.00000 3.00000, 4.00000 3.000...
+        5       NaN       1.0  MULTIPOLYGON (((2.00000 2.00000, 3.00000 2.000...
+        6       NaN       2.0  POLYGON ((3.00000 5.00000, 5.00000 5.00000, 5....
+
+        >>> df1.overlay(df2, how='intersection')
+        df1_data  df2_data                                           geometry
+        0         1         1  POLYGON ((2.00000 2.00000, 2.00000 1.00000, 1....
+        1         2         1  POLYGON ((2.00000 2.00000, 2.00000 3.00000, 3....
+        2         2         2  POLYGON ((4.00000 4.00000, 4.00000 3.00000, 3....
+
+        >>> df1.overlay(df2, how='symmetric_difference')
+        df1_data  df2_data                                           geometry
+        0       1.0       NaN  POLYGON ((2.00000 0.00000, 0.00000 0.00000, 0....
+        1       2.0       NaN  MULTIPOLYGON (((3.00000 3.00000, 4.00000 3.000...
+        2       NaN       1.0  MULTIPOLYGON (((2.00000 2.00000, 3.00000 2.000...
+        3       NaN       2.0  POLYGON ((3.00000 5.00000, 5.00000 5.00000, 5....
+
+        >>> df1.overlay(df2, how='difference')
+                                                geometry  df1_data
+        0  POLYGON ((2.00000 0.00000, 0.00000 0.00000, 0....         1
+        1  MULTIPOLYGON (((3.00000 3.00000, 4.00000 3.000...         2
+
+        >>> df1.overlay(df2, how='identity')
+        df1_data  df2_data                                           geometry
+        0       1.0       1.0  POLYGON ((2.00000 2.00000, 2.00000 1.00000, 1....
+        1       2.0       1.0  POLYGON ((2.00000 2.00000, 2.00000 3.00000, 3....
+        2       2.0       2.0  POLYGON ((4.00000 4.00000, 4.00000 3.00000, 3....
+        3       1.0       NaN  POLYGON ((2.00000 0.00000, 0.00000 0.00000, 0....
+        4       2.0       NaN  MULTIPOLYGON (((3.00000 3.00000, 4.00000 3.000...
+
+        See also
+        --------
+        GeoDataFrame.sjoin : spatial join
+
+        Notes
+        ------
+        Every operation in GeoPandas is planar, i.e. the potential third
+        dimension is not taken into account.
+        """
+        return geopandas.overlay(
+            self, right, how=how, keep_geom_type=keep_geom_type, make_valid=make_valid
+        )
+
 
 def _dataframe_set_geometry(self, col, drop=False, inplace=False, crs=None):
     if inplace:
