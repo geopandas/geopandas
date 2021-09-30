@@ -613,7 +613,7 @@ class TestExplore:
         assert '"maxNativeZoom":19,"maxZoom":19,"minZoom":0' in out_str
 
     def test_linearrings(self):
-        rings = self.nybb.explode().exterior
+        rings = self.nybb.explode(index_parts=True).exterior
         m = rings.explore()
         out_str = self._fetch_map_string(m)
 
