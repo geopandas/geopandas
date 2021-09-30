@@ -38,16 +38,20 @@ def _clip_gdf_with_polygon(gdf, poly):
     # For performance reasons points don't need to be intersected with poly
     non_point_mask = gdf_sub.geom_type != "Point"
 
+    if not non_point_mask.any():
+        # only points, directly return
+        return gdf_sub
+
     # Clip the data with the polygon
     if isinstance(gdf_sub, GeoDataFrame):
         clipped = gdf_sub.copy()
-        clipped.loc[non_point_mask, clipped._geometry_column_name] = gdf_sub.geometry[
-            non_point_mask
-        ].intersection(poly)
+        clipped.loc[
+            non_point_mask, clipped._geometry_column_name
+        ] = gdf_sub.geometry.values[non_point_mask].intersection(poly)
     else:
         # GeoSeries
         clipped = gdf_sub.copy()
-        clipped[non_point_mask] = gdf_sub[non_point_mask].intersection(poly)
+        clipped[non_point_mask] = gdf_sub.values[non_point_mask].intersection(poly)
 
     return clipped
 
