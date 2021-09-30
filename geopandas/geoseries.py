@@ -484,13 +484,12 @@ class GeoSeries(GeoPandasBase, Series):
         dtype: geometry
         """
         if index is None:
-            is_index_reusable = (
+            if (
                 isinstance(x, Series)
                 and isinstance(y, Series)
                 and x.index is y.index
                 and (z is None or (isinstance(z, Series) and x.index is z.index))
-            )
-            if is_index_reusable:
+            ):  # check if we can reuse index
                 index = x.index
         return cls(points_from_xy(x, y, z, crs=crs), index=index, crs=crs, **kwargs)
 
