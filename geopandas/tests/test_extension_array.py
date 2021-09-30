@@ -23,6 +23,7 @@ from pandas.tests.extension import base as extension_tests
 import shapely.geometry
 
 from geopandas.array import GeometryArray, GeometryDtype, from_shapely
+from geopandas._compat import ignore_shapely2_warnings
 
 import pytest
 
@@ -48,7 +49,8 @@ def dtype():
 
 def make_data():
     a = np.empty(100, dtype=object)
-    a[:] = [shapely.geometry.Point(i, i) for i in range(100)]
+    with ignore_shapely2_warnings():
+        a[:] = [shapely.geometry.Point(i, i) for i in range(100)]
     ga = from_shapely(a)
     return ga
 
@@ -299,11 +301,12 @@ class TestInterface(extension_tests.BaseInterfaceTests):
         result = np.array(data, dtype=object)
         # expected = np.array(list(data), dtype=object)
         expected = np.empty(len(data), dtype=object)
-        expected[:] = list(data)
+        with ignore_shapely2_warnings():
+            expected[:] = list(data)
         assert_array_equal(result, expected)
 
     def test_contains(self, data, data_missing):
-        # overrided due to the inconsistency between
+        # overridden due to the inconsistency between
         # GeometryDtype.na_value = np.nan
         # and None being used as NA in array
 
@@ -399,11 +402,16 @@ def all_arithmetic_operators(request):
     """
     Fixture for dunder names for common arithmetic operations
 
-    Adapted to excluse __sub__, as this is implemented as "difference".
+    Adapted to exclude __sub__, as this is implemented as "difference".
     """
     return request.param
 
 
+# an inherited test from pandas creates a Series from a list of geometries, which
+# triggers the warning from Shapely, out of control of GeoPandas, so ignoring here
+@pytest.mark.filterwarnings(
+    "ignore:The array interface is deprecated and will no longer work in Shapely 2.0"
+)
 class TestArithmeticOps(extension_tests.BaseArithmeticOpsTests):
     @pytest.mark.skip(reason="not applicable")
     def test_divmod_series_array(self, data, data_for_twos):
@@ -414,6 +422,11 @@ class TestArithmeticOps(extension_tests.BaseArithmeticOpsTests):
         pass
 
 
+# an inherited test from pandas creates a Series from a list of geometries, which
+# triggers the warning from Shapely, out of control of GeoPandas, so ignoring here
+@pytest.mark.filterwarnings(
+    "ignore:The array interface is deprecated and will no longer work in Shapely 2.0"
+)
 class TestComparisonOps(extension_tests.BaseComparisonOpsTests):
     def _compare_other(self, s, data, op_name, other):
         op = getattr(operator, op_name.strip("_"))
@@ -434,12 +447,12 @@ class TestComparisonOps(extension_tests.BaseComparisonOpsTests):
 
 
 class TestMethods(extension_tests.BaseMethodsTests):
-    @not_yet_implemented
+    @no_sorting
     @pytest.mark.parametrize("dropna", [True, False])
     def test_value_counts(self, all_data, dropna):
         pass
 
-    @not_yet_implemented
+    @no_sorting
     def test_value_counts_with_normalize(self, data):
         pass
 

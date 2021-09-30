@@ -1,5 +1,3 @@
-import sys
-
 from shapely.geometry import (
     Point,
     Polygon,
@@ -17,8 +15,10 @@ from geopandas import GeoDataFrame, GeoSeries, read_file, datasets
 import pytest
 import numpy as np
 
+if compat.USE_PYGEOS:
+    import pygeos
 
-@pytest.mark.skipif(sys.platform.startswith("win"), reason="fails on AppVeyor")
+
 @pytest.mark.skip_no_sindex
 class TestSeriesSindex:
     def test_has_sindex(self):
@@ -107,7 +107,6 @@ class TestSeriesSindex:
         assert sliced.sindex is not original_index
 
 
-@pytest.mark.skipif(sys.platform.startswith("win"), reason="fails on AppVeyor")
 @pytest.mark.skip_no_sindex
 class TestFrameSindex:
     def setup_method(self):
@@ -669,6 +668,100 @@ class TestPygeosInterface:
                     + "Got:\n {}\n".format(res.tolist())
                 )
             raise e
+
+    # ------------------------- `nearest` tests ------------------------- #
+    @pytest.mark.skipif(
+        compat.USE_PYGEOS,
+        reason=("RTree supports sindex.nearest with different behaviour"),
+    )
+    def test_rtree_nearest_warns(self):
+        df = geopandas.GeoDataFrame({"geometry": []})
+        with pytest.warns(
+            FutureWarning, match="sindex.nearest using the rtree backend"
+        ):
+            df.sindex.nearest((0, 0, 1, 1), num_results=2)
+
+    @pytest.mark.skipif(
+        not (compat.USE_PYGEOS and not compat.PYGEOS_GE_010),
+        reason=("PyGEOS < 0.10 does not support sindex.nearest"),
+    )
+    def test_pygeos_error(self):
+        df = geopandas.GeoDataFrame({"geometry": []})
+        with pytest.raises(NotImplementedError, match="requires pygeos >= 0.10"):
+            df.sindex.nearest(None)
+
+    @pytest.mark.skipif(
+        not (compat.USE_PYGEOS and compat.PYGEOS_GE_010),
+        reason=("PyGEOS >= 0.10 is required to test sindex.nearest"),
+    )
+    @pytest.mark.parametrize(
+        "geometry,expected",
+        [
+            ([0.25, 0.25], [[0], [0]]),
+            ([0.75, 0.75], [[0], [1]]),
+        ],
+    )
+    def test_nearest_single(self, geometry, expected):
+        geoms = pygeos.points(np.arange(10), np.arange(10))
+        df = geopandas.GeoDataFrame({"geometry": geoms})
+
+        p = Point(geometry)
+        res = df.sindex.nearest(p)
+        assert_array_equal(res, expected)
+
+        p = pygeos.points(geometry)
+        res = df.sindex.nearest(p)
+        assert_array_equal(res, expected)
+
+    @pytest.mark.skipif(
+        not compat.USE_PYGEOS or not compat.PYGEOS_GE_010,
+        reason=("PyGEOS >= 0.10 is required to test sindex.nearest"),
+    )
+    @pytest.mark.parametrize(
+        "geometry,expected",
+        [
+            ([(1, 1), (0, 0)], [[0, 1], [1, 0]]),
+            ([(1, 1), (0.25, 1)], [[0, 1], [1, 1]]),
+        ],
+    )
+    def test_nearest_multi(self, geometry, expected):
+        geoms = pygeos.points(np.arange(10), np.arange(10))
+        df = geopandas.GeoDataFrame({"geometry": geoms})
+
+        ps = [Point(p) for p in geometry]
+        res = df.sindex.nearest(ps)
+        assert_array_equal(res, expected)
+
+        ps = pygeos.points(geometry)
+        res = df.sindex.nearest(ps)
+        assert_array_equal(res, expected)
+
+        s = geopandas.GeoSeries(ps)
+        res = df.sindex.nearest(s)
+        assert_array_equal(res, expected)
+
+        x, y = zip(*geometry)
+        ga = geopandas.points_from_xy(x, y)
+        res = df.sindex.nearest(ga)
+        assert_array_equal(res, expected)
+
+    @pytest.mark.skipif(
+        not compat.USE_PYGEOS or not compat.PYGEOS_GE_010,
+        reason=("PyGEOS >= 0.10 is required to test sindex.nearest"),
+    )
+    @pytest.mark.parametrize(
+        "geometry,expected",
+        [
+            (None, [[], []]),
+            ([None], [[], []]),
+        ],
+    )
+    def test_nearest_none(self, geometry, expected):
+        geoms = pygeos.points(np.arange(10), np.arange(10))
+        df = geopandas.GeoDataFrame({"geometry": geoms})
+
+        res = df.sindex.nearest(geometry)
+        assert_array_equal(res, expected)
 
     # --------------------------- misc tests ---------------------------- #
 

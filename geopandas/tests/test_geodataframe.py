@@ -17,6 +17,8 @@ import geopandas
 import geopandas._compat as compat
 from geopandas import GeoDataFrame, GeoSeries, read_file
 from geopandas.array import GeometryArray, GeometryDtype, from_shapely
+from geopandas._compat import ignore_shapely2_warnings
+
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 from geopandas.tests.util import PACKAGE_DIR, validate_boro_df
 
@@ -368,6 +370,9 @@ class TestDataFrame:
         assert len(data["features"]) == 5
         assert "id" in data["features"][0].keys()
 
+    @pytest.mark.filterwarnings(
+        "ignore:Geometry column does not contain geometry:UserWarning"
+    )
     def test_to_json_geom_col(self):
         df = self.df.copy()
         df["geom"] = df["geometry"]
@@ -650,7 +655,7 @@ class TestDataFrame:
         df = self.df.iloc[:1].copy()
         df.loc[0, "BoroName"] = np.nan
         # when containing missing values
-        # null: ouput the missing entries as JSON null
+        # null: output the missing entries as JSON null
         result = list(df.iterfeatures(na="null"))[0]["properties"]
         assert result["BoroName"] is None
         # drop: remove the property from the feature.
@@ -908,7 +913,8 @@ class TestConstructor:
             "B": np.arange(3.0),
             "geometry": [Point(x, x) for x in range(3)],
         }
-        a = np.array([data["A"], data["B"], data["geometry"]], dtype=object).T
+        with ignore_shapely2_warnings():
+            a = np.array([data["A"], data["B"], data["geometry"]], dtype=object).T
 
         df = GeoDataFrame(a, columns=["A", "B", "geometry"])
         check_geodataframe(df)
@@ -923,7 +929,8 @@ class TestConstructor:
             "geometry": [Point(x, x) for x in range(3)],
         }
         gpdf = GeoDataFrame(data)
-        pddf = pd.DataFrame(data)
+        with ignore_shapely2_warnings():
+            pddf = pd.DataFrame(data)
         check_geodataframe(gpdf)
         assert type(pddf) == pd.DataFrame
 
@@ -953,7 +960,8 @@ class TestConstructor:
 
         gpdf = GeoDataFrame(data, geometry="other_geom")
         check_geodataframe(gpdf, "other_geom")
-        pddf = pd.DataFrame(data)
+        with ignore_shapely2_warnings():
+            pddf = pd.DataFrame(data)
 
         for df in [gpdf, pddf]:
             res = GeoDataFrame(df, geometry="other_geom")
@@ -1039,13 +1047,32 @@ class TestConstructor:
     def test_overwrite_geometry(self):
         # GH602
         data = pd.DataFrame({"geometry": [1, 2, 3], "col1": [4, 5, 6]})
-        geoms = pd.Series([Point(i, i) for i in range(3)])
+        with ignore_shapely2_warnings():
+            geoms = pd.Series([Point(i, i) for i in range(3)])
         # passed geometry kwarg should overwrite geometry column in data
         res = GeoDataFrame(data, geometry=geoms)
         assert_geoseries_equal(res.geometry, GeoSeries(geoms))
 
+    def test_repeat_geo_col(self):
+        df = pd.DataFrame(
+            [
+                {"geometry": Point(x, y), "geom": Point(x, y)}
+                for x, y in zip(range(3), range(3))
+            ],
+        )
+        # explicitly prevent construction of gdf with repeat geometry column names
+        # two columns called "geometry", geom col inferred
+        df2 = df.rename(columns={"geom": "geometry"})
+        with pytest.raises(ValueError):
+            GeoDataFrame(df2)
+        # ensure case is caught when custom geom column name is used
+        # two columns called "geom", geom col explicit
+        df3 = df.rename(columns={"geometry": "geom"})
+        with pytest.raises(ValueError):
+            GeoDataFrame(df3, geometry="geom")
+
 
 def test_geodataframe_crs():
-    gdf = GeoDataFrame()
+    gdf = GeoDataFrame(columns=["geometry"])
     gdf.crs = "IGNF:ETRS89UTM28"
     assert gdf.crs.to_authority() == ("IGNF", "ETRS89UTM28")

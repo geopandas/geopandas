@@ -83,7 +83,7 @@ Bug fixes:
   of different type are dropped from the result (#1554).
 - Fix the repr of an empty GeoSeries to not show spurious warnings (#1673).
 - Fix the `.crs` for empty GeoDataFrames (#1560).
-- Fix `geopandas.clip` to preserve the correct geometry column name (#1566). 
+- Fix `geopandas.clip` to preserve the correct geometry column name (#1566).
 - Fix bug in `plot()` method when using `legend_kwds` with multiple subplots
   (#1583)
 - Fix spurious warning with `missing_kwds` keyword of the `plot()` method
@@ -149,6 +149,7 @@ for more info and how to enable it.
 New features and improvements:
 
 - IO enhancements:
+
   - New `GeoDataFrame.to_postgis()` method to write to PostGIS database (#1248).
   - New Apache Parquet and Feather file format support (#1180, #1435)
   - Allow appending to files with `GeoDataFrame.to_file` (#1229).
@@ -157,10 +158,12 @@ New features and improvements:
     returned (#1383).
   - `geopandas.read_file` now supports reading from file-like objects (#1329).
   - `GeoDataFrame.to_file` now supports specifying the CRS to write to the file
-  (#802). By default it still uses the CRS of the GeoDataFrame.
+    (#802). By default it still uses the CRS of the GeoDataFrame.
   - New `chunksize` keyword in `geopandas.read_postgis` to read a query in
     chunks (#1123).
+
 - Improvements related to geometry columns and CRS:
+
   - Any column of the GeoDataFrame that has a "geometry" dtype is now returned
     as a GeoSeries. This means that when having multiple geometry columns, not
     only the "active" geometry column is returned as a GeoSeries, but also
@@ -172,7 +175,9 @@ New features and improvements:
     from the column itself (eg `gdf["other_geom_column"].crs`) (#1339).
   - New `set_crs()` method on GeoDataFrame/GeoSeries to set the CRS of naive
     geometries (#747).
+
 - Improvements related to plotting:
+
   - The y-axis is now scaled depending on the center of the plot when using a
     geographic CRS, instead of using an equal aspect ratio (#1290).
   - When passing a column of categorical dtype to the `column=` keyword of the
@@ -183,6 +188,7 @@ New features and improvements:
     `legend_kwds` accept two new keywords to control the formatting of the
     legend: `fmt` with a format string for the bin edges (#1253), and `labels`
     to pass fully custom class labels (#1302).
+
 - New `covers()` and `covered_by()` methods on GeoSeries/GeoDataframe for the
   equivalent spatial predicates (#1460, #1462).
 - GeoPandas now warns when using distance-based methods with data in a
@@ -194,7 +200,7 @@ Deprecations:
   CRS, a deprecation warning is raised when both CRS don't match, and in the
   future an error will be raised in such a case. You can use the new `set_crs`
   method to override an existing CRS. See
-  [the docs](https://geopandas.readthedocs.io/en/latest/projections.html#projection-for-multiple-geometry-columns).  
+  [the docs](https://geopandas.readthedocs.io/en/latest/projections.html#projection-for-multiple-geometry-columns).
 - The helper functions in the `geopandas.plotting` module are deprecated for
   public usage (#656).
 - The `geopandas.io` functions are deprecated, use the top-level `read_file` and
@@ -315,10 +321,13 @@ Important note! This will be the last release to support Python 2.7 (#1031)
 API changes:
 
 - A refactor of the internals based on the pandas ExtensionArray interface (#1000). The main user visible changes are:
+
   - The `.dtype` of a GeoSeries is now a `'geometry'` dtype (and no longer a numpy `object` dtype).
   - The `.values` of a GeoSeries now returns a custom `GeometryArray`, and no longer a numpy array. To get back a numpy array of Shapely scalars, you can convert explicitly using `np.asarray(..)`.
+
 - The `GeoSeries` constructor now raises a warning when passed non-geometry data. Currently the constructor falls back to return a pandas `Series`, but in the future this will raise an error (#1085).
 - The missing value handling has been changed to now separate the concepts of missing geometries and empty geometries (#601, 1062). In practice this means that (see [the docs](https://geopandas.readthedocs.io/en/v0.6.0/missing_empty.html) for more details):
+
   - `GeoSeries.isna` now considers only missing values, and if you want to check for empty geometries, you can use `GeoSeries.is_empty` (`GeoDataFrame.isna` already only looked at missing values).
   - `GeoSeries.dropna` now actually drops missing values (before it didn't drop either missing or empty geometries)
   - `GeoSeries.fillna` only fills missing values (behaviour unchanged).
@@ -361,16 +370,20 @@ Improvements:
 * Significant performance improvement (around 10x) for `GeoDataFrame.iterfeatures`,
   which also improves `GeoDataFrame.to_file` (#864).
 * File IO enhancements based on Fiona 1.8:
+
     * Support for writing bool dtype (#855) and datetime dtype, if the file format supports it (#728).
     * Support for writing dataframes with multiple geometry types, if the file format allows it (e.g. GeoJSON for all types, or ESRI Shapefile for Polygon+MultiPolygon) (#827, #867, #870).
+
 * Compatibility with pyproj >= 2 (#962).
 * A new `geopandas.points_from_xy()` helper function to convert x and y coordinates to Point objects (#896).
-* The `buffer` and `interpolate` methods now accept an array-like to specify a variable distance for each geometry (#781). 
+* The `buffer` and `interpolate` methods now accept an array-like to specify a variable distance for each geometry (#781).
 * Addition of a `relate` method, corresponding to the shapely method that returns the DE-9IM matrix (#853).
 * Plotting improvements:
+
     * Performance improvement in plotting by only flattening the geometries if there are actually 'Multi' geometries (#785).
     * Choropleths: access to all `mapclassify` classification schemes and addition of the `classification_kwds` keyword in the `plot` method to specify options for the scheme (#876).
     * Ability to specify a matplotlib axes object on which to plot the color bar with the `cax` keyword, in order to have more control over the color bar placement (#894).
+
 * Changed the default provider in ``geopandas.tools.geocode`` from Google (now requires an API key) to Geocode.Farm (#907, #975).
 
 Bug fixes:
@@ -414,7 +427,7 @@ Improvements:
 * Permit setting markersize for Point GeoSeries plots with column values (#633)
 * Started an example gallery (#463, #690, #717)
 * Support for plotting MultiPoints (#683)
-* Testing functionalty (e.g. `assert_geodataframe_equal`) is now publicly exposed (#707)
+* Testing functionality (e.g. `assert_geodataframe_equal`) is now publicly exposed (#707)
 * Add `explode` method to GeoDataFrame (similar to the GeoSeries method) (#671)
 * Set equal aspect on active axis on multi-axis figures (#718)
 * Pass array of values to column argument in `plot` (#770)
