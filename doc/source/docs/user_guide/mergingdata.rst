@@ -145,9 +145,8 @@ Nearest Joins
 
 Proximity-based joins can be done via :func:`sjoin_nearest`.
 
-:func:`sjoin_nearest` shares the ``how`` argument with :func:`sjoin` but does not support the ``"inner"`` option.
-
-:func:`sjoin_nearest` includes two additional arguments: ``max_distance`` and ``distance_col``.
+:func:`sjoin_nearest` shares the ``how`` argument with :func:`sjoin`, and
+includes two additional arguments: ``max_distance`` and ``distance_col``.
 
 **max_distance**
 

@@ -585,13 +585,15 @@ def test_no_nearest_all():
     ),
 )
 class TestNearest:
-    @pytest.mark.parametrize("how_kwargs", ({}, {"how": "left"}, {"how": "right"}))
+    @pytest.mark.parametrize(
+        "how_kwargs", ({}, {"how": "inner"}, {"how": "left"}, {"how": "right"})
+    )
     def test_allowed_hows(self, how_kwargs):
         left = geopandas.GeoDataFrame({"geometry": []})
         right = geopandas.GeoDataFrame({"geometry": []})
         sjoin_nearest(left, right, **how_kwargs)  # no error
 
-    @pytest.mark.parametrize("how", ("inner", "abcde"))
+    @pytest.mark.parametrize("how", ("outer", "abcde"))
     def test_invalid_hows(self, how: str):
         left = geopandas.GeoDataFrame({"geometry": []})
         right = geopandas.GeoDataFrame({"geometry": []})
@@ -629,16 +631,12 @@ class TestNearest:
         if distance_col is not None:
             assert distance_col in joined
 
+    @pytest.mark.parametrize("how", ["inner", "left"])
     @pytest.mark.parametrize("distance_col", (None, "distance"))
-    def test_empty_left_df_how_left(self, distance_col: str):
+    def test_empty_left_df_how_left(self, how, distance_col: str):
         right = geopandas.GeoDataFrame({"geometry": [Point(0, 0), Point(1, 1)]})
         left = geopandas.GeoDataFrame({"geometry": []})
-        joined = sjoin_nearest(
-            left,
-            right,
-            how="left",
-            distance_col=distance_col,
-        )
+        joined = sjoin_nearest(left, right, how=how, distance_col=distance_col)
         assert joined.empty
         if distance_col is not None:
             assert distance_col in joined
@@ -658,7 +656,8 @@ class TestNearest:
         if distance_col is not None:
             assert joined[distance_col].isna().all()
 
-    def test_empty_join_due_to_max_distance_how_left(self):
+    @pytest.mark.parametrize("how", ["inner", "left"])
+    def test_empty_join_due_to_max_distance_how_left(self, how):
         # after applying max_distance the join comes back empty
         # (as in NaN in the joined columns)
         left = geopandas.GeoDataFrame({"geometry": [Point(0, 0)]})
@@ -666,13 +665,16 @@ class TestNearest:
         joined = sjoin_nearest(
             left,
             right,
-            how="left",
+            how=how,
             max_distance=1,
             distance_col="distances",
         )
         expected = left.copy()
         expected["index_right"] = [np.nan]
         expected["distances"] = [np.nan]
+        if how == "inner":
+            expected = expected.dropna()
+            expected["index_right"] = expected["index_right"].astype("int64")
         assert_geodataframe_equal(joined, expected)
 
     def test_empty_join_due_to_max_distance_how_right(self):
@@ -693,19 +695,23 @@ class TestNearest:
         expected = expected[["index_left", "geometry", "distances"]]
         assert_geodataframe_equal(joined, expected)
 
-    def test_max_distance_how_left(self):
+    @pytest.mark.parametrize("how", ["inner", "left"])
+    def test_max_distance_how_left(self, how):
         left = geopandas.GeoDataFrame({"geometry": [Point(0, 0), Point(1, 1)]})
         right = geopandas.GeoDataFrame({"geometry": [Point(1, 1), Point(2, 2)]})
         joined = sjoin_nearest(
             left,
             right,
-            how="left",
+            how=how,
             max_distance=1,
             distance_col="distances",
         )
         expected = left.copy()
         expected["index_right"] = [np.nan, 0]
         expected["distances"] = [np.nan, 0]
+        if how == "inner":
+            expected = expected.dropna()
+            expected["index_right"] = expected["index_right"].astype("int64")
         assert_geodataframe_equal(joined, expected)
 
     def test_max_distance_how_right(self):
@@ -724,6 +730,7 @@ class TestNearest:
         expected = expected[["index_left", "geometry", "distances"]]
         assert_geodataframe_equal(joined, expected)
 
+    @pytest.mark.parametrize("how", ["inner", "left"])
     @pytest.mark.parametrize(
         "geo_left, geo_right, expected_left, expected_right, distances",
         [
@@ -792,18 +799,21 @@ class TestNearest:
         expected_left: Sequence[int],
         expected_right: Sequence[int],
         distances: Sequence[float],
+        how,
     ):
         left = geopandas.GeoDataFrame({"geometry": geo_left})
         right = geopandas.GeoDataFrame({"geometry": geo_right})
-        expected_gdf = left.iloc[expected_left]
+        expected_gdf = left.iloc[expected_left].copy()
         expected_gdf["index_right"] = expected_right
         # without distance col
-        joined = sjoin_nearest(left, right, how="left")
-        assert_geodataframe_equal(expected_gdf, joined)
+        joined = sjoin_nearest(left, right, how=how)
+        # inner / left join give a different row order
+        check_like = how == "inner"
+        assert_geodataframe_equal(expected_gdf, joined, check_like=check_like)
         # with distance col
         expected_gdf["distance_col"] = np.array(distances, dtype=float)
-        joined = sjoin_nearest(left, right, how="left", distance_col="distance_col")
-        assert_geodataframe_equal(expected_gdf, joined)
+        joined = sjoin_nearest(left, right, how=how, distance_col="distance_col")
+        assert_geodataframe_equal(expected_gdf, joined, check_like=check_like)
 
     @pytest.mark.parametrize(
         "geo_left, geo_right, expected_left, expected_right, distances",
@@ -870,7 +880,7 @@ class TestNearest:
     ):
         left = geopandas.GeoDataFrame({"geometry": geo_left})
         right = geopandas.GeoDataFrame({"geometry": geo_right})
-        expected_gdf = right.iloc[expected_right]
+        expected_gdf = right.iloc[expected_right].copy()
         expected_gdf["index_left"] = expected_left
         expected_gdf = expected_gdf[["index_left", "geometry"]]
         # without distance col
@@ -880,3 +890,31 @@ class TestNearest:
         expected_gdf["distance_col"] = np.array(distances, dtype=float)
         joined = sjoin_nearest(left, right, how="right", distance_col="distance_col")
         assert_geodataframe_equal(expected_gdf, joined)
+
+    @pytest.mark.filterwarnings("ignore:Geometry is in a geographic CRS")
+    def test_sjoin_nearest_inner(self):
+        # check equivalency of left and inner join
+        countries = read_file(geopandas.datasets.get_path("naturalearth_lowres"))
+        cities = read_file(geopandas.datasets.get_path("naturalearth_cities"))
+        countries = countries[["geometry", "name"]].rename(columns={"name": "country"})
+
+        # default: inner and left give the same result
+        result1 = sjoin_nearest(cities, countries, distance_col="dist")
+        assert result1.shape[0] == cities.shape[0]
+        result2 = sjoin_nearest(cities, countries, distance_col="dist", how="inner")
+        assert_geodataframe_equal(result2, result1)
+        result3 = sjoin_nearest(cities, countries, distance_col="dist", how="left")
+        assert_geodataframe_equal(result3, result1, check_like=True)
+
+        # with max_distance: rows that go above are dropped in case of inner
+        result4 = sjoin_nearest(cities, countries, distance_col="dist", max_distance=1)
+        assert_geodataframe_equal(
+            result4, result1[result1["dist"] < 1], check_like=True
+        )
+        result5 = sjoin_nearest(
+            cities, countries, distance_col="dist", max_distance=1, how="left"
+        )
+        assert result5.shape[0] == cities.shape[0]
+        result5 = result5.dropna()
+        result5["index_right"] = result5["index_right"].astype("int64")
+        assert_geodataframe_equal(result5, result4, check_like=True)
