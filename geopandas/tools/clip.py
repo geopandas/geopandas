@@ -8,16 +8,11 @@ A module to clip vector data using GeoPandas.
 import warnings
 
 import pandas as pd
+
 from shapely.geometry import Polygon, MultiPolygon
 
 from geopandas import GeoDataFrame, GeoSeries
 from geopandas.array import _check_crs, _crs_mismatch_warn
-
-
-_POINT_TYPES = ["Point", "MultiPoint"]
-_LINE_TYPES = ["LineString", "MultiLineString", "LinearRing"]
-_POLYGON_TYPES = ["Polygon", "MultiPolygon"]
-_GEOMETRY_TYPES = [_POINT_TYPES, _LINE_TYPES, _POLYGON_TYPES]
 
 
 def _intersect_non_point_geometries_with_poly(gdf, poly):
@@ -42,13 +37,13 @@ def _clip_gdf_with_polygon(gdf, poly):
         Dataframe to clip.
 
     poly : (Multi)Polygon
-        Reference geometry used to spatially clip the data.
+        Reference polygon for clipping.
 
     Returns
     -------
     GeoDataFrame
-        The returned GeoDataFrame is a subset of gdf that intersects
-        with poly.
+        The returned GeoDataFrame is a clipped subset of gdf
+        that intersects with poly.
     """
     clipping_candidates = gdf.iloc[gdf.sindex.query(poly, predicate="intersects")]
     point_indices = clipping_candidates.geom_type == "Point"
@@ -58,85 +53,6 @@ def _clip_gdf_with_polygon(gdf, poly):
     non_points = clipping_candidates[~point_indices]
     non_points_intersected = _intersect_non_point_geometries_with_poly(non_points, poly)
     return pd.concat([points, non_points_intersected])
-
-
-def _validate_inputs(gdf, mask):
-    if not isinstance(gdf, (GeoDataFrame, GeoSeries)):
-        raise TypeError(
-            "'gdf' should be GeoDataFrame or GeoSeries, got {}".format(type(gdf))
-        )
-
-    if not isinstance(mask, (GeoDataFrame, GeoSeries, Polygon, MultiPolygon)):
-        raise TypeError(
-            "'mask' should be GeoDataFrame, GeoSeries or"
-            "(Multi)Polygon, got {}".format(type(mask))
-        )
-    if isinstance(mask, (GeoDataFrame, GeoSeries)):
-        if not _check_crs(gdf, mask):
-            _crs_mismatch_warn(gdf, mask, stacklevel=4)
-
-
-def _keeping_geometry_type_is_possible(gdf):
-    if (gdf.geom_type == "GeometryCollection").any():
-        warnings.warn(
-            "keep_geom_type can not be called on a GeoDataFrame with "
-            "GeometryCollection."
-        )
-        return False
-    number_of_unique_geometry_types = sum(
-        gdf.geom_type.isin(geom_type).any() for geom_type in _GEOMETRY_TYPES
-    )
-    if number_of_unique_geometry_types > 1:
-        warnings.warn("keep_geom_type can not be called on a mixed type GeoDataFrame.")
-        return False
-    return True
-
-
-def _input_bounding_boxes_intersect(gdf, mask):
-    box_gdf = gdf.total_bounds
-    if isinstance(mask, (GeoDataFrame, GeoSeries)):
-        box_mask = mask.total_bounds
-    else:
-        box_mask = mask.bounds
-    x_overlaps = (box_mask[0] <= box_gdf[2]) and (box_gdf[0] <= box_mask[2])
-    y_overlaps = (box_mask[1] <= box_gdf[3]) and (box_gdf[1] <= box_mask[3])
-    return x_overlaps and y_overlaps
-
-
-def _create_mask_polygon(mask):
-    if isinstance(mask, (GeoDataFrame, GeoSeries)):
-        poly = mask.geometry.unary_union
-    else:
-        poly = mask
-    return poly
-
-
-def _keep_only_original_geom_type(clipped_gdf, original_type):
-    new_collections_were_created = (clipped_gdf.geom_type == "GeometryCollection").any()
-    unique_geom_count_clipped = sum(
-        clipped_gdf.geom_type.isin(geom_type).any() for geom_type in _GEOMETRY_TYPES
-    )
-    type_count_has_increased = unique_geom_count_clipped > 1
-    if new_collections_were_created or type_count_has_increased:
-        if new_collections_were_created:
-            clipped_gdf = clipped_gdf.explode()
-
-        if original_type in _LINE_TYPES:
-            clipped_gdf = clipped_gdf.loc[clipped_gdf.geom_type.isin(_LINE_TYPES)]
-        elif original_type in _POLYGON_TYPES:
-            clipped_gdf = clipped_gdf.loc[clipped_gdf.geom_type.isin(_POLYGON_TYPES)]
-    return clipped_gdf
-
-
-def _recreate_initial_order(original_gdf, clipped_gdf):
-    order = pd.Series(range(len(original_gdf)), index=original_gdf.index)
-    if isinstance(clipped_gdf, GeoDataFrame):
-        clipped_gdf["_order"] = order
-        return clipped_gdf.sort_values(by="_order").drop(columns="_order")
-    else:
-        clipped_gdf = GeoDataFrame(geometry=clipped_gdf)
-        clipped_gdf["_order"] = order
-        return clipped_gdf.sort_values(by="_order").geometry
 
 
 def clip(gdf, mask, keep_geom_type=False):
@@ -183,19 +99,102 @@ def clip(gdf, mask, keep_geom_type=False):
     >>> sa_capitals.shape
     (12, 2)
     """
-    _validate_inputs(gdf, mask)
-    if not _input_bounding_boxes_intersect(gdf, mask):
+    if not isinstance(gdf, (GeoDataFrame, GeoSeries)):
+        raise TypeError(
+            "'gdf' should be GeoDataFrame or GeoSeries, got {}".format(type(gdf))
+        )
+
+    if not isinstance(mask, (GeoDataFrame, GeoSeries, Polygon, MultiPolygon)):
+        raise TypeError(
+            "'mask' should be GeoDataFrame, GeoSeries or"
+            "(Multi)Polygon, got {}".format(type(mask))
+        )
+
+    if isinstance(mask, (GeoDataFrame, GeoSeries)):
+        if not _check_crs(gdf, mask):
+            _crs_mismatch_warn(gdf, mask, stacklevel=3)
+
+    if isinstance(mask, (GeoDataFrame, GeoSeries)):
+        box_mask = mask.total_bounds
+    else:
+        box_mask = mask.bounds
+    box_gdf = gdf.total_bounds
+    if not (
+        ((box_mask[0] <= box_gdf[2]) and (box_gdf[0] <= box_mask[2]))
+        and ((box_mask[1] <= box_gdf[3]) and (box_gdf[1] <= box_mask[3]))
+    ):
         return gdf.iloc[:0]
 
-    mask_polygon = _create_mask_polygon(mask)
-    clipped_gdf = _clip_gdf_with_polygon(gdf, mask_polygon)
-    if clipped_gdf.empty:
+    if isinstance(mask, (GeoDataFrame, GeoSeries)):
+        poly = mask.geometry.unary_union
+    else:
+        poly = mask
+
+    clipped = _clip_gdf_with_polygon(gdf, poly)
+    if clipped.empty:
         return gdf.iloc[:0]
 
-    keeping_geometry_type_is_possible = (
-        keep_geom_type and _keeping_geometry_type_is_possible(gdf)
-    )
-    if keeping_geometry_type_is_possible:
-        clipped_gdf = _keep_only_original_geom_type(clipped_gdf, gdf.geom_type.iloc[0])
+    order = pd.Series(range(len(gdf)), index=gdf.index)
 
-    return _recreate_initial_order(gdf, clipped_gdf)
+    if keep_geom_type:
+        geomcoll_concat = (clipped.geom_type == "GeometryCollection").any()
+        geomcoll_orig = (gdf.geom_type == "GeometryCollection").any()
+
+        new_collection = geomcoll_concat and not geomcoll_orig
+
+        if geomcoll_orig:
+            warnings.warn(
+                "keep_geom_type can not be called on a "
+                "GeoDataFrame with GeometryCollection."
+            )
+        else:
+            polys = ["Polygon", "MultiPolygon"]
+            lines = ["LineString", "MultiLineString", "LinearRing"]
+            points = ["Point", "MultiPoint"]
+
+            # Check that the gdf for multiple geom types (points, lines and/or polys)
+            orig_types_total = sum(
+                [
+                    gdf.geom_type.isin(polys).any(),
+                    gdf.geom_type.isin(lines).any(),
+                    gdf.geom_type.isin(points).any(),
+                ]
+            )
+
+            # Check how many geometry types are in the clipped GeoDataFrame
+            clip_types_total = sum(
+                [
+                    clipped.geom_type.isin(polys).any(),
+                    clipped.geom_type.isin(lines).any(),
+                    clipped.geom_type.isin(points).any(),
+                ]
+            )
+
+            # Check there aren't any new geom types in the clipped GeoDataFrame
+            more_types = orig_types_total < clip_types_total
+
+            if orig_types_total > 1:
+                warnings.warn(
+                    "keep_geom_type can not be called on a mixed type GeoDataFrame."
+                )
+            elif new_collection or more_types:
+                orig_type = gdf.geom_type.iloc[0]
+                if new_collection:
+                    clipped = clipped.explode()
+                if orig_type in polys:
+                    clipped = clipped.loc[clipped.geom_type.isin(polys)]
+                elif orig_type in lines:
+                    clipped = clipped.loc[clipped.geom_type.isin(lines)]
+
+    # Return empty GeoDataFrame or GeoSeries if no shapes remain
+    if len(clipped) == 0:
+        return gdf.iloc[:0]
+
+    # Preserve the original order of the input
+    if isinstance(clipped, GeoDataFrame):
+        clipped["_order"] = order
+        return clipped.sort_values(by="_order").drop(columns="_order")
+    else:
+        clipped = GeoDataFrame(geometry=clipped)
+        clipped["_order"] = order
+        return clipped.sort_values(by="_order").geometry
