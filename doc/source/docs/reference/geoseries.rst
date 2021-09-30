@@ -151,6 +151,7 @@ Plotting
    :toctree: api/
 
    GeoSeries.plot
+   GeoSeries.explore
 
 
 Spatial index

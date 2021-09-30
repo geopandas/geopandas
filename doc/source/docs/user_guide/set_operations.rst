@@ -205,7 +205,7 @@ where two polygons intersects in a line or a point.
 More Examples
 -------------
 
-A larger set of examples of the use of :func:`~geopandas.overlay` can be found `here <http://nbviewer.jupyter.org/github/geopandas/geopandas/blob/master/examples/overlays.ipynb>`_
+A larger set of examples of the use of :func:`~geopandas.overlay` can be found `here <https://nbviewer.jupyter.org/github/geopandas/geopandas/blob/master/doc/source/gallery/overlays.ipynb>`_
 
 
 

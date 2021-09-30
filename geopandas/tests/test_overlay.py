@@ -1,4 +1,5 @@
 import os
+from distutils.version import LooseVersion
 
 import pandas as pd
 
@@ -7,6 +8,7 @@ from fiona.errors import DriverError
 
 import geopandas
 from geopandas import GeoDataFrame, GeoSeries, overlay, read_file
+from geopandas import _compat
 
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 import pytest
@@ -15,6 +17,7 @@ DATA = os.path.join(os.path.abspath(os.path.dirname(__file__)), "data", "overlay
 
 
 pytestmark = pytest.mark.skip_no_sindex
+pandas_133 = pd.__version__ == LooseVersion("1.3.3")
 
 
 @pytest.fixture
@@ -51,6 +54,8 @@ def dfs_index(request, dfs):
     params=["union", "intersection", "difference", "symmetric_difference", "identity"]
 )
 def how(request):
+    if pandas_133 and request.param in ["symmetric_difference", "identity", "union"]:
+        pytest.xfail("Regression in pandas 1.3.3 (GH #2101)")
     return request.param
 
 
@@ -183,11 +188,15 @@ def test_overlay_nybb(how):
 
     # first, check that all bounds and areas are approx equal
     # this is a very rough check for multipolygon equality
+    if not _compat.PANDAS_GE_11:
+        kwargs = dict(check_less_precise=True)
+    else:
+        kwargs = {}
     pd.testing.assert_series_equal(
-        result.geometry.area, expected.geometry.area, check_less_precise=True
+        result.geometry.area, expected.geometry.area, **kwargs
     )
     pd.testing.assert_frame_equal(
-        result.geometry.bounds, expected.geometry.bounds, check_less_precise=True
+        result.geometry.bounds, expected.geometry.bounds, **kwargs
     )
 
     # There are two cases where the multipolygon have a different number
@@ -319,10 +328,12 @@ def test_bad_how(dfs):
         overlay(df1, df2, how="spandex")
 
 
-def test_duplicate_column_name(dfs):
+def test_duplicate_column_name(dfs, how):
+    if how == "difference":
+        pytest.skip("Difference uses columns from one df only.")
     df1, df2 = dfs
     df2r = df2.rename(columns={"col2": "col1"})
-    res = overlay(df1, df2r, how="union")
+    res = overlay(df1, df2r, how=how)
     assert ("col1_1" in res.columns) and ("col1_2" in res.columns)
 
 
@@ -564,6 +575,11 @@ def test_keep_geom_type_geometry_collection():
     df1 = read_file(os.path.join(DATA, "geom_type", "df1.geojson"))
     df2 = read_file(os.path.join(DATA, "geom_type", "df2.geojson"))
 
+    with pytest.warns(UserWarning, match="`keep_geom_type=True` in overlay"):
+        intersection = overlay(df1, df2, keep_geom_type=None)
+    assert len(intersection) == 1
+    assert (intersection.geom_type == "Polygon").all()
+
     intersection = overlay(df1, df2, keep_geom_type=True)
     assert len(intersection) == 1
     assert (intersection.geom_type == "Polygon").all()
@@ -571,6 +587,44 @@ def test_keep_geom_type_geometry_collection():
     intersection = overlay(df1, df2, keep_geom_type=False)
     assert len(intersection) == 1
     assert (intersection.geom_type == "GeometryCollection").all()
+
+
+def test_keep_geom_type_geometry_collection2():
+    polys1 = [
+        box(0, 0, 1, 1),
+        box(1, 1, 3, 3).union(box(1, 3, 5, 5)),
+    ]
+
+    polys2 = [
+        box(0, 0, 1, 1),
+        box(3, 1, 4, 2).union(box(4, 1, 5, 4)),
+    ]
+    df1 = GeoDataFrame({"left": [0, 1], "geometry": polys1})
+    df2 = GeoDataFrame({"right": [0, 1], "geometry": polys2})
+
+    result1 = overlay(df1, df2, keep_geom_type=True)
+    expected1 = GeoDataFrame(
+        {
+            "left": [0, 1],
+            "right": [0, 1],
+            "geometry": [box(0, 0, 1, 1), box(4, 3, 5, 4)],
+        }
+    )
+    assert_geodataframe_equal(result1, expected1)
+
+    result1 = overlay(df1, df2, keep_geom_type=False)
+    expected1 = GeoDataFrame(
+        {
+            "left": [0, 1, 1],
+            "right": [0, 0, 1],
+            "geometry": [
+                box(0, 0, 1, 1),
+                Point(1, 1),
+                GeometryCollection([box(4, 3, 5, 4), LineString([(3, 1), (3, 2)])]),
+            ],
+        }
+    )
+    assert_geodataframe_equal(result1, expected1)
 
 
 @pytest.mark.parametrize("make_valid", [True, False])

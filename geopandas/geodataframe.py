@@ -15,7 +15,7 @@ from geopandas.array import GeometryArray, GeometryDtype, from_shapely, to_wkb, 
 from geopandas.base import GeoPandasBase, is_geometry_type
 from geopandas.geoseries import GeoSeries
 import geopandas.io
-
+from geopandas.explore import _explore
 from . import _compat as compat
 from ._decorator import doc
 
@@ -118,6 +118,15 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         # allowed in that case
         # TODO do we want to raise / return normal DataFrame in this case?
         if geometry is None and "geometry" in self.columns:
+            # Check for multiple columns with name "geometry". If there are,
+            # self["geometry"] is a gdf and constructor gets recursively recalled
+            # by pandas internals trying to access this
+            if (self.columns == "geometry").sum() > 1:
+                raise ValueError(
+                    "GeoDataFrame does not support multiple columns "
+                    "using the geometry column name 'geometry'."
+                )
+
             # only if we have actual geometry values -> call set_geometry
             index = self.index
             try:
@@ -271,11 +280,17 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             raise ValueError("Must pass array with one dimension only.")
         else:
             try:
-                level = frame[col].values
+                level = frame[col]
             except KeyError:
                 raise ValueError("Unknown column %s" % col)
             except Exception:
                 raise
+            if isinstance(level, DataFrame):
+                raise ValueError(
+                    "GeoDataFrame does not support setting the geometry column where "
+                    "the column name is shared by multiple columns."
+                )
+
             if drop:
                 to_remove = col
                 geo_column_name = self._geometry_column_name
@@ -432,7 +447,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
     def from_dict(cls, data, geometry=None, crs=None, **kwargs):
         """
         Construct GeoDataFrame from dict of array-like or dicts by
-        overiding DataFrame.from_dict method with geometry and crs
+        overriding DataFrame.from_dict method with geometry and crs
 
         Parameters
         ----------
@@ -639,7 +654,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         PostGIS
 
         >>> from sqlalchemy import create_engine  # doctest: +SKIP
-        >>> db_connection_url = "postgres://myusername:mypassword@myhost:5432/mydb"
+        >>> db_connection_url = "postgresql://myusername:mypassword@myhost:5432/mydb"
         >>> con = create_engine(db_connection_url)  # doctest: +SKIP
         >>> sql = "SELECT geom, highway FROM roads"
         >>> df = geopandas.GeoDataFrame.from_postgis(sql, con)  # doctest: +SKIP
@@ -773,11 +788,12 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         na : str, optional
             Options are {'null', 'drop', 'keep'}, default 'null'.
             Indicates how to output missing (NaN) values in the GeoDataFrame
-            * null: ouput the missing entries as JSON null
-            * drop: remove the property from the feature. This applies to
-                    each feature individually so that features may have
-                    different properties
-            * keep: output the missing entries as NaN
+
+            - null: output the missing entries as JSON null
+            - drop: remove the property from the feature. This applies to each feature \
+individually so that features may have different properties
+            - keep: output the missing entries as NaN
+
         show_bbox : bool, optional
             Include bbox (bounds) in the geojson. Default False.
         drop_id : bool, default: False
@@ -1028,9 +1044,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
 
         _to_feather(self, path, index=index, compression=compression, **kwargs)
 
-    def to_file(
-        self, filename, driver="ESRI Shapefile", schema=None, index=None, **kwargs
-    ):
+    def to_file(self, filename, driver=None, schema=None, index=None, **kwargs):
         """Write the ``GeoDataFrame`` to a file.
 
         By default, an ESRI shapefile is written, but any OGR data source
@@ -1044,8 +1058,10 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         ----------
         filename : string
             File path or file handle to write to.
-        driver : string, default: 'ESRI Shapefile'
+        driver : string, default None
             The OGR format driver used to write the vector file.
+            If not specified, it attempts to infer it from the file extension.
+            If no extension is specified, it saves ESRI Shapefile to a folder.
         schema : dict, default: None
             If specified, the schema dictionary is passed to Fiona to
             better control how the file is written.
@@ -1372,8 +1388,10 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         if (
             isinstance(result, GeoDataFrame)
             and self._geometry_column_name in result.columns
-            and any(isinstance(t, GeometryDtype) for t in result.dtypes)
+            and isinstance(result[self._geometry_column_name].dtype, GeometryDtype)
         ):
+            # apply calls _constructor which resets geom col name to geometry
+            result._geometry_column_name = self._geometry_column_name
             if self.crs is not None and result.crs is None:
                 result.set_crs(self.crs, inplace=True)
         return result
@@ -1395,6 +1413,13 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
             for name in self._metadata:
                 object.__setattr__(self, name, getattr(other.objs[0], name, None))
 
+            if (self.columns == self._geometry_column_name).sum() > 1:
+                raise ValueError(
+                    "Concat operation has resulted in multiple columns using "
+                    f"the geometry column name '{self._geometry_column_name}'.\n"
+                    f"Please ensure this column from the first DataFrame is not "
+                    f"repeated."
+                )
         return self
 
     def dissolve(
@@ -1521,7 +1546,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         return aggregated
 
     # overrides the pandas native explode method to break up features geometrically
-    def explode(self, column=None, **kwargs):
+    def explode(self, column=None, ignore_index=False, index_parts=None, **kwargs):
         """
         Explode muti-part geometries into multiple single geometries.
 
@@ -1529,10 +1554,22 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         multiple rows with single geometries, thereby increasing the vertical
         size of the GeoDataFrame.
 
-        The index of the input geodataframe is no longer unique and is
-        replaced with a multi-index (original index with additional level
-        indicating the multiple geometries: a new zero-based index for each
-        single part geometry per multi-part geometry).
+        .. note:: ignore_index requires pandas 1.1.0 or newer.
+
+        Parameters
+        ----------
+        column : string, default None
+            Column to explode. In the case of a geometry column, multi-part
+            geometries are converted to single-part.
+            If None, the active geometry column is used.
+        ignore_index : bool, default False
+            If True, the resulting index will be labelled 0, 1, …, n - 1,
+            ignoring `index_parts`.
+        index_parts : boolean, default True
+            If True, the resulting index will be a multi-index (original
+            index with an additional level indicating the multiple
+            geometries: a new zero-based index for each single part geometry
+            per multi-part geometry).
 
         Returns
         -------
@@ -1557,13 +1594,29 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         0  name1  MULTIPOINT (1.00000 2.00000, 3.00000 4.00000)
         1  name2  MULTIPOINT (2.00000 1.00000, 0.00000 0.00000)
 
-        >>> exploded = gdf.explode()
+        >>> exploded = gdf.explode(index_parts=True)
         >>> exploded
               col1                 geometry
         0 0  name1  POINT (1.00000 2.00000)
           1  name1  POINT (3.00000 4.00000)
         1 0  name2  POINT (2.00000 1.00000)
           1  name2  POINT (0.00000 0.00000)
+
+        >>> exploded = gdf.explode(index_parts=False)
+        >>> exploded
+            col1                 geometry
+        0  name1  POINT (1.00000 2.00000)
+        0  name1  POINT (3.00000 4.00000)
+        1  name2  POINT (2.00000 1.00000)
+        1  name2  POINT (0.00000 0.00000)
+
+        >>> exploded = gdf.explode(ignore_index=True)
+        >>> exploded
+            col1                 geometry
+        0  name1  POINT (1.00000 2.00000)
+        1  name1  POINT (3.00000 4.00000)
+        2  name2  POINT (2.00000 1.00000)
+        3  name2  POINT (0.00000 0.00000)
 
         See also
         --------
@@ -1576,16 +1629,39 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
             column = self.geometry.name
         # If the specified column is not a geometry dtype use pandas explode
         if not isinstance(self[column].dtype, GeometryDtype):
-            return super().explode(column, **kwargs)
-            # TODO: make sure index behaviour is consistent
+            if compat.PANDAS_GE_11:
+                return super().explode(column, ignore_index=ignore_index, **kwargs)
+            else:
+                return super().explode(column, **kwargs)
+
+        if index_parts is None:
+            if not ignore_index:
+                warnings.warn(
+                    "Currently, index_parts defaults to True, but in the future, "
+                    "it will default to False to be consistent with Pandas. "
+                    "Use `index_parts=True` to keep the current behavior and "
+                    "True/False to silence the warning.",
+                    FutureWarning,
+                    stacklevel=2,
+                )
+            index_parts = True
 
         df_copy = self.copy()
 
-        if "level_1" in df_copy.columns:  # GH1393
-            df_copy = df_copy.rename(columns={"level_1": "__level_1"})
+        level_str = f"level_{df_copy.index.nlevels}"
 
-        exploded_geom = df_copy.geometry.explode().reset_index(level=-1)
-        exploded_index = exploded_geom.columns[0]
+        if level_str in df_copy.columns:  # GH1393
+            df_copy = df_copy.rename(columns={level_str: f"__{level_str}"})
+
+        if index_parts:
+            exploded_geom = df_copy.geometry.explode(index_parts=True)
+            exploded_index = exploded_geom.index
+            exploded_geom = exploded_geom.reset_index(level=-1, drop=True)
+        else:
+            exploded_geom = df_copy.geometry.explode(index_parts=True).reset_index(
+                level=-1, drop=True
+            )
+            exploded_index = exploded_geom.index
 
         df = (
             df_copy.drop(df_copy._geometry_column_name, axis=1)
@@ -1593,13 +1669,19 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
             .__finalize__(self)
         )
 
-        # reset to MultiIndex, otherwise df index is only first level of
-        # exploded GeoSeries index.
-        df.set_index(exploded_index, append=True, inplace=True)
-        df.index.names = list(self.index.names) + [None]
+        if ignore_index:
+            df.reset_index(inplace=True, drop=True)
+        elif index_parts:
+            # reset to MultiIndex, otherwise df index is only first level of
+            # exploded GeoSeries index.
+            df.set_index(exploded_index, inplace=True)
+            df.index.names = list(self.index.names) + [None]
+        else:
+            df.set_index(exploded_index, inplace=True)
+            df.index.names = self.index.names
 
-        if "__level_1" in df.columns:
-            df = df.rename(columns={"__level_1": "level_1"})
+        if f"__{level_str}" in df.columns:
+            df = df.rename(columns={f"__{level_str}": level_str})
 
         geo_df = df.set_geometry(self._geometry_column_name)
         return geo_df
@@ -1629,6 +1711,34 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         # if the geometry column is converted to non-geometries or did not exist
         # do not return a GeoDataFrame
         return pd.DataFrame(df)
+
+    def convert_dtypes(self, *args, **kwargs):
+        """
+        Convert columns to best possible dtypes using dtypes supporting ``pd.NA``.
+
+        Always returns a GeoDataFrame as no conversions are applied to the
+        geometry column.
+
+        See the pandas.DataFrame.convert_dtypes docstring for more details.
+
+        Returns
+        -------
+        GeoDataFrame
+
+        """
+        # Overridden to fix GH1870, that return type is not preserved always
+        # (and where it was, geometry col was not)
+
+        if not compat.PANDAS_GE_10:
+            raise NotImplementedError(
+                "GeoDataFrame.convert_dtypes requires pandas >= 1.0"
+            )
+
+        return GeoDataFrame(
+            super().convert_dtypes(*args, **kwargs),
+            geometry=self.geometry.name,
+            crs=self.crs,
+        )
 
     def to_postgis(
         self,
@@ -1680,7 +1790,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         --------
 
         >>> from sqlalchemy import create_engine
-        >>> engine = create_engine("postgres://myusername:mypassword@myhost:5432\
+        >>> engine = create_engine("postgresql://myusername:mypassword@myhost:5432\
 /mydatabase")  # doctest: +SKIP
         >>> gdf.to_postgis("my_table", engine)  # doctest: +SKIP
 
@@ -1736,6 +1846,11 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         return self.geometry.difference(other)
 
     plot = CachedAccessor("plot", geopandas.plotting.GeoplotAccessor)
+
+    @doc(_explore)
+    def explore(self, *args, **kwargs):
+        """Interactive map based on folium/leaflet.js"""
+        return _explore(self, *args, **kwargs)
 
 
 def _dataframe_set_geometry(self, col, drop=False, inplace=False, crs=None):

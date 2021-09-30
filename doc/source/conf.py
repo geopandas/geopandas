@@ -65,7 +65,7 @@ autosummary_generate = True
 
 nbsphinx_execute = "always"
 nbsphinx_allow_errors = True
-nbsphinx_kernel_name = 'python3'
+nbsphinx_kernel_name = "python3"
 
 # suppress matplotlib warning in examples
 warnings.filterwarnings(
@@ -379,10 +379,6 @@ intersphinx_mapping = {
     "pyepsg": (
         "https://pyepsg.readthedocs.io/en/stable/",
         "https://pyepsg.readthedocs.io/en/stable/objects.inv",
-    ),   
-    "pyepsg": (
-        "https://pyepsg.readthedocs.io/en/stable/",
-        "https://pyepsg.readthedocs.io/en/stable/objects.inv",
     ),
     "pygeos": (
         "https://pygeos.readthedocs.io/en/latest/",
@@ -392,7 +388,10 @@ intersphinx_mapping = {
         "https://pyproj4.github.io/pyproj/stable/",
         "https://pyproj4.github.io/pyproj/stable/objects.inv",
     ),
-    "python": ("https://docs.python.org/3", "https://docs.python.org/3/objects.inv"),
+    "python": (
+        "https://docs.python.org/3",
+        "https://docs.python.org/3/objects.inv",
+    ),
     "rtree": (
         "https://rtree.readthedocs.io/en/stable/",
         "https://rtree.readthedocs.io/en/stable/objects.inv",
@@ -404,5 +403,13 @@ intersphinx_mapping = {
     "shapely": (
         "https://shapely.readthedocs.io/en/stable/",
         "https://shapely.readthedocs.io/en/stable/objects.inv",
+    ),
+    "branca": (
+        "https://python-visualization.github.io/branca/",
+        "https://python-visualization.github.io/branca/objects.inv",
+    ),
+    "xyzservices": (
+        "https://xyzservices.readthedocs.io/en/stable/",
+        "https://xyzservices.readthedocs.io/en/stable/objects.inv",
     ),
 }
