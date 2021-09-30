@@ -450,7 +450,9 @@ class GeoSeries(GeoPandasBase, Series):
         ----------
         x, y, z : iterable
         index : array-like or Index, optional
-            The index for the GeoSeries.
+            The index for the GeoSeries. If not given and all coordinate inputs
+            are Series with an identical index (using the ``is`` check),
+            that index is reused.
         crs : value, optional
             Coordinate Reference System of the geometry objects. Can be anything
             accepted by
@@ -481,6 +483,14 @@ class GeoSeries(GeoPandasBase, Series):
         2    POINT (-3.00000 1.50000)
         dtype: geometry
         """
+        if index is None:
+            is_index_reusable = (
+                isinstance(x, Series)
+                and isinstance(y, Series) and x.index is y.index
+                and (z is None or (isinstance(z, Series) and x.index is z.index))
+            )
+            if is_index_reusable:
+                index = x.index
         return cls(points_from_xy(x, y, z, crs=crs), index=index, crs=crs, **kwargs)
 
     @classmethod

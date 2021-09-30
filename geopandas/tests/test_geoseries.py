@@ -331,6 +331,10 @@ class TestSeries:
         assert_geoseries_equal(
             self.landmarks, GeoSeries.from_xy(x, y, index=index, crs=crs)
         )
+        assert_geoseries_equal(
+            self.landmarks,
+            GeoSeries.from_xy(self.landmarks.x, self.landmarks.y, crs=crs)
+        )
 
     def test_from_xy_points_indexless(self):
         x = np.array([0.0, 3.0])
