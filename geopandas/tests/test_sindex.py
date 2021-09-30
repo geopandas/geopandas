@@ -706,11 +706,11 @@ class TestPygeosInterface:
         df = geopandas.GeoDataFrame({"geometry": geoms})
 
         p = Point(geometry)
-        res = df.sindex.nearest(p)
+        res = df.sindex.nearest(p, return_all=False)
         assert_array_equal(res, expected)
 
         p = pygeos.points(geometry)
-        res = df.sindex.nearest(p)
+        res = df.sindex.nearest(p, return_all=False)
         assert_array_equal(res, expected)
 
     @pytest.mark.skipif(
@@ -729,26 +729,27 @@ class TestPygeosInterface:
         df = geopandas.GeoDataFrame({"geometry": geoms})
 
         ps = [Point(p) for p in geometry]
-        res = df.sindex.nearest(ps)
+        res = df.sindex.nearest(ps, return_all=False)
         assert_array_equal(res, expected)
 
         ps = pygeos.points(geometry)
-        res = df.sindex.nearest(ps)
+        res = df.sindex.nearest(ps, return_all=False)
         assert_array_equal(res, expected)
 
         s = geopandas.GeoSeries(ps)
-        res = df.sindex.nearest(s)
+        res = df.sindex.nearest(s, return_all=False)
         assert_array_equal(res, expected)
 
         x, y = zip(*geometry)
         ga = geopandas.points_from_xy(x, y)
-        res = df.sindex.nearest(ga)
+        res = df.sindex.nearest(ga, return_all=False)
         assert_array_equal(res, expected)
 
     @pytest.mark.skipif(
         not compat.USE_PYGEOS or not compat.PYGEOS_GE_010,
         reason=("PyGEOS >= 0.10 is required to test sindex.nearest"),
     )
+    @pytest.mark.parametrize("return_all", [True, False])
     @pytest.mark.parametrize(
         "geometry,expected",
         [
@@ -756,11 +757,11 @@ class TestPygeosInterface:
             ([None], [[], []]),
         ],
     )
-    def test_nearest_none(self, geometry, expected):
+    def test_nearest_none(self, geometry, expected, return_all):
         geoms = pygeos.points(np.arange(10), np.arange(10))
         df = geopandas.GeoDataFrame({"geometry": geoms})
 
-        res = df.sindex.nearest(geometry)
+        res = df.sindex.nearest(geometry, return_all=return_all)
         assert_array_equal(res, expected)
 
     # --------------------------- misc tests ---------------------------- #
