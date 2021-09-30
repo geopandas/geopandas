@@ -333,6 +333,22 @@ class TestSeries:
         result = left.geometry.clip(south_america)
         assert_geoseries_equal(result, expected)
 
+    def test_from_xy_points(self):
+        x = self.landmarks.x.values
+        y = self.landmarks.y.values
+        index = self.landmarks.index.tolist()
+        crs = self.landmarks.crs
+        assert_geoseries_equal(
+            self.landmarks, GeoSeries.from_xy(x, y, index=index, crs=crs)
+        )
+
+    def test_from_xy_points_indexless(self):
+        x = np.array([0.0, 3.0])
+        y = np.array([2.0, 5.0])
+        z = np.array([-1.0, 4.0])
+        expected = GeoSeries([Point(0, 2, -1), Point(3, 5, 4)])
+        assert_geoseries_equal(expected, GeoSeries.from_xy(x, y, z))
+
 
 def test_missing_values_empty_warning():
     s = GeoSeries([Point(1, 1), None, np.nan, BaseGeometry(), Polygon()])
