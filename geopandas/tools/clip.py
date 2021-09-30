@@ -128,8 +128,6 @@ def clip(gdf, mask, keep_geom_type=False):
         poly = mask
 
     clipped = _clip_gdf_with_polygon(gdf, poly)
-    if clipped.empty:
-        return gdf.iloc[:0]
 
     if keep_geom_type:
         geomcoll_concat = (clipped.geom_type == "GeometryCollection").any()
@@ -180,9 +178,5 @@ def clip(gdf, mask, keep_geom_type=False):
                     clipped = clipped.loc[clipped.geom_type.isin(polys)]
                 elif orig_type in lines:
                     clipped = clipped.loc[clipped.geom_type.isin(lines)]
-
-    # Return empty GeoDataFrame or GeoSeries if no shapes remain
-    if len(clipped) == 0:
-        return gdf.iloc[:0]
 
     return clipped
