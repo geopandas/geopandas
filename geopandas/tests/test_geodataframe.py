@@ -777,40 +777,19 @@ class TestDataFrame:
         expected_df = pd.DataFrame({"gs0": wkts0, "gs1": wkts1})
         assert_frame_equal(expected_df, gdf.to_wkt())
 
+    @pytest.mark.parametrize("how", ["left", "inner", "right"])
+    @pytest.mark.parametrize("predicate", ["intersects", "within", "contains"])
     @pytest.mark.skipif(
         not compat.USE_PYGEOS and not compat.HAS_RTREE,
         reason="sjoin need `rtree` or `pygeos` dependency",
     )
-    def test_sjoin(self):
-        zippath = geopandas.datasets.get_path("nybb")
-        polydf = read_file(zippath)
+    def test_sjoin(self, how, predicate):
+        left = read_file(geopandas.datasets.get_path("naturalearth_cities"))
+        right = read_file(geopandas.datasets.get_path("naturalearth_lowres"))
 
-        b = [int(x) for x in polydf.total_bounds]
-        N = 8
-        pointdf = GeoDataFrame(
-            [
-                {"geometry": Point(x, y), "value1": x + y, "value2": x - y}
-                for x, y in zip(
-                    range(b[0], b[2], int((b[2] - b[0]) / N)),
-                    range(b[1], b[3], int((b[3] - b[1]) / N)),
-                )
-            ],
-            crs=polydf.crs,
-        )
-
-        join_df = pointdf.sjoin(polydf)
-        expected_df = GeoSeries(
-            [
-                Point(932450, 139211),
-                Point(951725, 158301),
-                Point(1009550, 215571),
-                Point(1028825, 234661),
-            ],
-            name="geometry",
-            index=[1, 2, 5, 6],
-        )
-
-        assert_series_equal(join_df.geometry, expected_df)
+        expected = geopandas.sjoin(left, right, how=how, predicate=predicate)
+        result = left.sjoin(right, how=how, predicate=predicate)
+        assert_geodataframe_equal(result, expected)
 
 
 def check_geodataframe(df, geometry_column="geometry"):

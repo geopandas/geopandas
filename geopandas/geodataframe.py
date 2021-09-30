@@ -1859,7 +1859,7 @@ individually so that features may have different properties
 
         Parameters
         ----------
-        df : GeoDataFrames
+        df : GeoDataFrame
         how : string, default 'inner'
             The type of join:
 
@@ -1867,6 +1867,7 @@ individually so that features may have different properties
             * 'right': use keys from right_df; retain only right_df geometry column
             * 'inner': use intersection of keys from both dfs; retain only
             left_df geometry column
+
         op : string, default 'intersects'
             Binary predicate. Valid values are determined by the spatial index used.
             You can check the valid values in left_df or right_df as
@@ -1918,10 +1919,6 @@ individually so that features may have different properties
     Europe    Au    stria    AUT    416600.0
         184        Vienna  POINT (16.36469 48.20196)          114   8754413 \
     Europe    Austria    AUT    416600.0
-
-        See also
-        --------
-        sjoin
 
         Notes
         ------

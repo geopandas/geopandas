@@ -59,8 +59,8 @@ Aggregating and exploding
    GeoDataFrame.dissolve
    GeoDataFrame.explode
 
-Spatial operations
--------------------------
+Overlay operations
+------------------
 
 .. autosummary::
    :toctree: api/
@@ -72,7 +72,7 @@ Plotting
 
 .. autosummary::
    :toctree: api/
-   
+
    GeoDataFrame.explore
 
 
