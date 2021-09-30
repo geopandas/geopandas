@@ -758,7 +758,7 @@ if compat.HAS_PYGEOS:
 
             geometry = self._as_geometry_array(geometry)
 
-            if not return_all and max_distance is None:
+            if not return_all and max_distance is None and not return_distance:
                 return super().nearest(geometry)
 
             result = super().nearest_all(
