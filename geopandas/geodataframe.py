@@ -1989,7 +1989,7 @@ countries_w_city_data[countries_w_city_data["name_left"] == "Italy"]
         keep_geom_type : boolean, default False
             If True, return only geometries of original type in case of intersection
             resulting in multiple geometry types or GeometryCollections.
-            If False, return all resulting geometries (potentially mixed-types).
+            If False, return all resulting geometries (potentially mixed types).
 
         Returns
         -------
