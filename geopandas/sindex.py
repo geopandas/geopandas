@@ -210,8 +210,9 @@ geometries}
             (GeoSeries, GeometryArray), or a numpy array of PyGEOS geometries to query
             against the spatial index.
         return_all : bool, default True
-            If there are multiple equidistant or intersecting nearest geometries, return all those
-            geometries instead of a single nearest geometry.
+            If there are multiple equidistant or intersecting nearest
+            geometries, return all those geometries instead of a single
+            nearest geometry.
         max_distance : float, optional
             Maximum distance within which to query for nearest items in tree.
             Must be greater than 0. By default None, indicating no distance limit.
@@ -771,14 +772,14 @@ if compat.HAS_PYGEOS:
 
             if not return_all:
                 # first subarray of geometry indices is sorted, so we can use this
-                # trick to get
-                uniques = np.diff(indices[0, :])
+                # trick to get the first of each index value
+                mask = np.diff(indices[0, :]).astype("bool")
                 # always select the first element
-                uniques = np.insert(uniques, 0, 1).astype('bool')
+                mask = np.insert(mask, 0, True)
 
-                indices = indices[:, uniques]
+                indices = indices[:, mask]
                 if return_distance:
-                    distances = distances[uniques]
+                    distances = distances[mask]
 
             if return_distance:
                 return indices, distances
