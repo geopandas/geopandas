@@ -361,7 +361,6 @@ class TestSeries:
             GeoSeries.from_xy(x, y, crs=crs),
         )
 
-
     def test_from_xy_points_indexless(self):
         x = np.array([0.0, 3.0])
         y = np.array([2.0, 5.0])
