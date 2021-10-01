@@ -487,8 +487,8 @@ class GeoSeries(GeoPandasBase, Series):
             if (
                 isinstance(x, Series)
                 and isinstance(y, Series)
-                and x.index is y.index
-                and (z is None or (isinstance(z, Series) and x.index is z.index))
+                and x.index.equals(y.index)
+                and (z is None or (isinstance(z, Series) and x.index.equals(z.index)))
             ):  # check if we can reuse index
                 index = x.index
         return cls(points_from_xy(x, y, z, crs=crs), index=index, crs=crs, **kwargs)
