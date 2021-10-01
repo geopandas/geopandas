@@ -57,7 +57,7 @@ def _crs_mismatch_warning():
         "CRS mismatch will raise an error in the future versions "
         "of GeoPandas.",
         FutureWarning,
-        stacklevel=2,
+        stacklevel=3,
     )
 
 
