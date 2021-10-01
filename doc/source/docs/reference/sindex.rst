@@ -31,7 +31,6 @@ methods:
     intersection
     is_empty
     nearest
-    nearest_all
     query
     query_bulk
     size
