@@ -342,8 +342,7 @@ class TestSeries:
         y = pd.Series([8, 3, 1], index=index_values)
         z = pd.Series([5, -6, 7], index=index_values)
         expected = GeoSeries(
-            [Point(0, 8, 5), Point(-1, 3, -6), Point(2, 1, 7)],
-            index=index_values
+            [Point(0, 8, 5), Point(-1, 3, -6), Point(2, 1, 7)], index=index_values
         )
         assert_geoseries_equal(expected, GeoSeries.from_xy(x, y, z))
 
