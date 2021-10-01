@@ -730,7 +730,8 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         '{"type": "FeatureCollection", "features": [{"id": "0", "type": "Feature", \
 "properties": {"col1": "name1"}, "geometry": {"type": "Point", "coordinates": [1.0,\
  2.0]}}, {"id": "1", "type": "Feature", "properties": {"col1": "name2"}, "geometry"\
-: {"type": "Point", "coordinates": [2.0, 1.0]}}]}'
+: {"type": "Point", "coordinates": [2.0, 1.0]}}], "crs": {"type": "name", "properti\
+es": {"name": "urn:ogc:def:crs:EPSG::4326"}}}'
 
         Alternatively, you can write GeoJSON to file:
 
@@ -772,7 +773,8 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 'properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.0\
 , 2.0)}, 'bbox': (1.0, 2.0, 1.0, 2.0)}, {'id': '1', 'type': 'Feature', 'properties\
 ': {'col1': 'name2'}, 'geometry': {'type': 'Point', 'coordinates': (2.0, 1.0)}, 'b\
-box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
+box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0), 'crs': {'type': 'name'\
+, 'properties': {'name': 'urn:ogc:def:crs:EPSG::4326'}}}
 
 
         """
