@@ -179,7 +179,7 @@ class BaseSpatialIndex:
             ``nearest`` currently only works with PyGEOS >= 0.10.
 
             Note that if PyGEOS is not available, geopandas will use rtree
-            for the spatial index, where nearest temporarily has a different
+            for the spatial index, where nearest has a different
             function signature to temporarily preserve existing
             functionality. See the documentation of
             :meth:`rtree.index.Index.nearest` for the details on the
