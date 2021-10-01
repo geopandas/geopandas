@@ -1039,3 +1039,20 @@ def test_geodataframe_crs():
     gdf = GeoDataFrame(columns=["geometry"])
     gdf.crs = "IGNF:ETRS89UTM28"
     assert gdf.crs.to_authority() == ("IGNF", "ETRS89UTM28")
+
+
+def test_geodataframe_nocrs_json():
+    gdf = GeoDataFrame(columns=["geometry"])
+    gdf_geojson = gdf.__geo_interface__
+    assert 'crs' not in gdf_geojson
+
+
+def test_geodataframe_crs_json():
+    gdf = GeoDataFrame(columns=["geometry"])
+    gdf.crs = 25833
+    gdf_geojson = gdf.__geo_interface__
+    assert 'crs' in gdf_geojson
+    assert gdf_geojson['crs'] == {
+        'type': 'name',
+        'properties': {'name': 'urn:ogc:def:crs:EPSG::25833'},
+    }

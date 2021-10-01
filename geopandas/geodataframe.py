@@ -895,6 +895,11 @@ individually so that features may have different properties
         if kwargs.get("show_bbox", False):
             geo["bbox"] = tuple(self.total_bounds)
 
+        if self.crs is not None:
+            authority, code = self.crs.to_authority()
+            ogc_crs = f"urn:ogc:def:crs:{authority}::{code}"
+            geo["crs"] = {"type": "name", "properties": {"name": ogc_crs}}
+
         return geo
 
     def to_wkb(self, hex=False, **kwargs):
