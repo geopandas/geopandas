@@ -263,38 +263,44 @@ def _frame_join(join_df, left_df, right_df, how, lsuffix, rsuffix):
     # index in geopandas may be any arbitrary dtype. so reset both indices now
     # and store references to the original indices, to be reaffixed later.
     # GH 352
-    index_left = "index_{}".format(lsuffix)
     left_df = left_df.copy(deep=True)
     try:
         left_index_name = left_df.index.name
         if left_index_name is not None:
             index_left = left_index_name
         else:
+            index_left = "index_{}".format(lsuffix)
             left_df.index = left_df.index.rename(index_left)
     except TypeError:
-        index_left = [
-            "index_{}".format(lsuffix + str(pos))
-            for pos, ix in enumerate(left_df.index.names)
-        ]
         left_index_name = left_df.index.names
-        left_df.index = left_df.index.rename(index_left)
+        if all(name is not None for name in left_index_name):
+            index_left = left_index_name
+        else:
+            index_left = [
+                "index_{}".format(lsuffix + str(pos))
+                for pos, ix in enumerate(left_df.index.names)
+            ]
+            left_df.index = left_df.index.rename(index_left)
     left_df = left_df.reset_index()
 
-    index_right = "index_{}".format(rsuffix)
     right_df = right_df.copy(deep=True)
     try:
         right_index_name = right_df.index.name
         if right_index_name is not None:
             index_right = right_index_name
         else:
+            index_right = "index_{}".format(rsuffix)
             right_df.index = right_df.index.rename(index_right)
     except TypeError:
-        index_right = [
-            "index_{}".format(rsuffix + str(pos))
-            for pos, ix in enumerate(right_df.index.names)
-        ]
         right_index_name = right_df.index.names
-        right_df.index = right_df.index.rename(index_right)
+        if all(name is not None for name in right_index_name):
+            index_right = right_index_name
+        else:
+            index_right = [
+                "index_{}".format(rsuffix + str(pos))
+                for pos, ix in enumerate(right_df.index.names)
+            ]
+            right_df.index = right_df.index.rename(index_right)
     right_df = right_df.reset_index()
 
     # perform join on the dataframes

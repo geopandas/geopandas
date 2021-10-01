@@ -193,10 +193,7 @@ class TestSpatialJoin:
             )
             exp.index.names = df1.index.names
         if index == "named-multi-index":
-            exp = exp.set_index(["df1_ix1", "df1_ix2"]).rename(
-                columns={"df2_ix1": "index_right0", "df2_ix2": "index_right1"}
-            )
-            exp.index.names = df1.index.names
+            exp = exp.set_index(["df1_ix1", "df1_ix2"])
 
         assert_frame_equal(res, exp)
 
@@ -243,10 +240,7 @@ class TestSpatialJoin:
             )
             exp.index.names = df1.index.names
         if index == "named-multi-index":
-            exp = exp.set_index(["df1_ix1", "df1_ix2"]).rename(
-                columns={"df2_ix1": "index_right0", "df2_ix2": "index_right1"}
-            )
-            exp.index.names = df1.index.names
+            exp = exp.set_index(["df1_ix1", "df1_ix2"])
 
         assert_frame_equal(res, exp)
 
@@ -348,10 +342,7 @@ class TestSpatialJoin:
             )
             exp.index.names = df2.index.names
         if index == "named-multi-index":
-            exp = exp.set_index(["df2_ix1", "df2_ix2"]).rename(
-                columns={"df1_ix1": "index_left0", "df1_ix2": "index_left1"}
-            )
-            exp.index.names = df2.index.names
+            exp = exp.set_index(["df2_ix1", "df2_ix2"])
 
         # GH 1364 fix of behaviour was done in pandas 1.1.0
         if predicate == "within" and str(pd.__version__) >= LooseVersion("1.1.0"):
