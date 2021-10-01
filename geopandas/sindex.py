@@ -774,7 +774,7 @@ if compat.HAS_PYGEOS:
                 # trick to get
                 uniques = np.diff(indices[0, :])
                 # always select the first element
-                uniques = np.insert(uniques, 0, 1)
+                uniques = np.insert(uniques, 0, 1).astype('bool')
 
                 indices = indices[:, uniques]
                 if return_distance:
