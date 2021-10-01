@@ -7,6 +7,7 @@ import tempfile
 import numpy as np
 from numpy.testing import assert_array_equal
 import pandas as pd
+from pandas.util.testing import assert_index_equal
 
 from pyproj import CRS
 from shapely.geometry import (
@@ -172,7 +173,7 @@ class TestSeries:
         assert_series_equal(res, exp)
 
     def test_to_file(self):
-        """ Test to_file and from_file """
+        """Test to_file and from_file"""
         tempfilename = os.path.join(self.tempdir, "test.shp")
         self.g3.to_file(tempfilename)
         # Read layer back in?
@@ -239,7 +240,7 @@ class TestSeries:
         # self.na_none.fillna(method='backfill')
 
     def test_coord_slice(self):
-        """ Test CoordinateSlicer """
+        """Test CoordinateSlicer"""
         # need some better test cases
         assert geom_equals(self.g3, self.g3.cx[:, :])
         assert geom_equals(self.g3[[True, False]], self.g3.cx[0.9:, :0.1])
@@ -321,6 +322,51 @@ class TestSeries:
 
     def test_to_wkt(self):
         assert_series_equal(pd.Series([self.t1.wkt, self.sq.wkt]), self.g1.to_wkt())
+
+    def test_from_xy_points(self):
+        x = self.landmarks.x.values
+        y = self.landmarks.y.values
+        index = self.landmarks.index.tolist()
+        crs = self.landmarks.crs
+        assert_geoseries_equal(
+            self.landmarks, GeoSeries.from_xy(x, y, index=index, crs=crs)
+        )
+        assert_geoseries_equal(
+            self.landmarks,
+            GeoSeries.from_xy(self.landmarks.x, self.landmarks.y, crs=crs),
+        )
+
+    def test_from_xy_points_w_z(self):
+        index_values = [5, 6, 7]
+        x = pd.Series([0, -1, 2], index=index_values)
+        y = pd.Series([8, 3, 1], index=index_values)
+        z = pd.Series([5, -6, 7], index=index_values)
+        expected = GeoSeries(
+            [Point(0, 8, 5), Point(-1, 3, -6), Point(2, 1, 7)], index=index_values
+        )
+        assert_geoseries_equal(expected, GeoSeries.from_xy(x, y, z))
+
+    def test_from_xy_points_unequal_index(self):
+        x = self.landmarks.x
+        y = self.landmarks.y
+        y.index = -np.arange(len(y))
+        crs = self.landmarks.crs
+        assert_geoseries_equal(
+            self.landmarks, GeoSeries.from_xy(x, y, index=x.index, crs=crs)
+        )
+        unindexed_landmarks = self.landmarks.copy()
+        unindexed_landmarks.reset_index(inplace=True, drop=True)
+        assert_geoseries_equal(
+            unindexed_landmarks,
+            GeoSeries.from_xy(x, y, crs=crs),
+        )
+
+    def test_from_xy_points_indexless(self):
+        x = np.array([0.0, 3.0])
+        y = np.array([2.0, 5.0])
+        z = np.array([-1.0, 4.0])
+        expected = GeoSeries([Point(0, 2, -1), Point(3, 5, 4)])
+        assert_geoseries_equal(expected, GeoSeries.from_xy(x, y, z))
 
 
 def test_missing_values_empty_warning():
@@ -492,6 +538,27 @@ class TestConstructor:
         s = GeoSeries(
             [MultiPoint([(0, 0), (1, 1)]), MultiPoint([(2, 2), (3, 3), (4, 4)])]
         )
-        s = s.explode()
+        s = s.explode(index_parts=True)
         df = s.reset_index()
         assert type(df) == GeoDataFrame
+
+    def test_explode_without_multiindex(self):
+        s = GeoSeries(
+            [MultiPoint([(0, 0), (1, 1)]), MultiPoint([(2, 2), (3, 3), (4, 4)])]
+        )
+        s = s.explode(index_parts=False)
+        expected_index = pd.Index([0, 0, 1, 1, 1])
+        assert_index_equal(s.index, expected_index)
+
+    def test_explode_ignore_index(self):
+        s = GeoSeries(
+            [MultiPoint([(0, 0), (1, 1)]), MultiPoint([(2, 2), (3, 3), (4, 4)])]
+        )
+        s = s.explode(ignore_index=True)
+        expected_index = pd.Index(range(len(s)))
+        print(expected_index)
+        assert_index_equal(s.index, expected_index)
+
+        # index_parts is ignored if ignore_index=True
+        s = s.explode(index_parts=True, ignore_index=True)
+        assert_index_equal(s.index, expected_index)

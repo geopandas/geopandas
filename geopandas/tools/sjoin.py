@@ -127,9 +127,7 @@ stria    AUT    416600.0
     return joined
 
 
-def _basic_checks(
-    left_df, right_df, how, lsuffix, rsuffix, allowed_hows=("left", "right", "inner")
-):
+def _basic_checks(left_df, right_df, how, lsuffix, rsuffix):
     """Checks the validity of join input parameters.
 
     `how` must be one of the valid options.
@@ -140,7 +138,7 @@ def _basic_checks(
     ------------
     left_df : GeoDataFrame
     right_df : GeoData Frame
-    how : str, one of allowed_hows
+    how : str, one of 'left', 'right', 'inner'
         join type
     lsuffix : str
         left index suffix
@@ -157,6 +155,7 @@ def _basic_checks(
             "'right_df' should be GeoDataFrame, got {}".format(type(right_df))
         )
 
+    allowed_hows = ["left", "right", "inner"]
     if how not in allowed_hows:
         raise ValueError(
             '`how` was "{}" but is expected to be in {}'.format(how, allowed_hows)
@@ -424,7 +423,7 @@ def _nearest_query(
 def sjoin_nearest(
     left_df: GeoDataFrame,
     right_df: GeoDataFrame,
-    how: str = "left",
+    how: str = "inner",
     max_distance: Optional[float] = None,
     lsuffix: str = "left",
     rsuffix: str = "right",
@@ -443,11 +442,13 @@ def sjoin_nearest(
     Parameters
     ----------
     left_df, right_df : GeoDataFrames
-    how : string, default 'left'
+    how : string, default 'inner'
         The type of join:
 
         * 'left': use keys from left_df; retain only left_df geometry column
         * 'right': use keys from right_df; retain only right_df geometry column
+        * 'inner': use intersection of keys from both dfs; retain only
+          left_df geometry column
     max_distance : float, default None
         Maximum distance within which to query for nearest geometry.
         Must be greater than 0.
@@ -524,9 +525,7 @@ countries_w_city_data[countries_w_city_data["name_left"] == "Italy"]
     Every operation in GeoPandas is planar, i.e. the potential third
     dimension is not taken into account.
     """
-    _basic_checks(
-        left_df, right_df, how, lsuffix, rsuffix, allowed_hows=("left", "right")
-    )
+    _basic_checks(left_df, right_df, how, lsuffix, rsuffix)
 
     left_df.geometry.values.check_geographic_crs(stacklevel=1)
     right_df.geometry.values.check_geographic_crs(stacklevel=1)
