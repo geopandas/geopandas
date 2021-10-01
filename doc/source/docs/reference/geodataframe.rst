@@ -59,6 +59,15 @@ Aggregating and exploding
    GeoDataFrame.dissolve
    GeoDataFrame.explode
 
+Spatial joins
+-------------
+
+.. autosummary::
+   :toctree: api/
+
+   GeoDataFrame.sjoin
+   GeoDataFrame.sjoin_nearest
+
 Overlay operations
 ------------------
 
@@ -67,7 +76,6 @@ Overlay operations
 
    GeoDataFrame.clip
    GeoDataFrame.overlay
-   GeoDataFrame.sjoin_nearest
 
 Plotting
 --------
