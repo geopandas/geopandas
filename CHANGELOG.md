@@ -67,6 +67,7 @@ Bug fixes:
   raise an error (#1900).
 - Fix bug in the colors shown with user-defined classification scheme (#2019).
 - Fix handling of the `path_effects` keyword in `plot()` (#2127).
+- Fix `GeoDataFrame.explode()` to preserve `attrs` (#1935)
 
 Notes on (optional) dependencies:
 
