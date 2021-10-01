@@ -930,11 +930,9 @@ class TestConstructor:
             res = GeoDataFrame(df, geometry="other_geom")
             check_geodataframe(res, "other_geom")
 
-        # when passing GeoDataFrame with custom geometry name to constructor
-        # an invalid geodataframe is the result TODO is this desired ?
+        # gdf from gdf should preserve active geometry column name
         df = GeoDataFrame(gpdf)
-        with pytest.raises(AttributeError):
-            df.geometry
+        check_geodataframe(df, "other_geom")
 
     def test_only_geometry(self):
         exp = GeoDataFrame(
