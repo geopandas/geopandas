@@ -1868,7 +1868,7 @@ individually so that features may have different properties
             * 'inner': use intersection of keys from both dfs; retain only
             left_df geometry column
 
-        op : string, default 'intersects'
+        predicate : string, default 'intersects'
             Binary predicate. Valid values are determined by the spatial index used.
             You can check the valid values in left_df or right_df as
             ``left_df.sindex.valid_query_predicates`` or
