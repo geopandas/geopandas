@@ -210,7 +210,7 @@ geometries}
             (GeoSeries, GeometryArray), or a numpy array of PyGEOS geometries to query
             against the spatial index.
         return_all : bool, default True
-            If there are multiple equi-distance nearest geometries, return all those
+            If there are multiple equidistant or intersecting nearest geometries, return all those
             geometries instead of a single nearest geometry.
         max_distance : float, optional
             Maximum distance within which to query for nearest items in tree.
