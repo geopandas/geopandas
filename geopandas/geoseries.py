@@ -451,8 +451,7 @@ class GeoSeries(GeoPandasBase, Series):
         x, y, z : iterable
         index : array-like or Index, optional
             The index for the GeoSeries. If not given and all coordinate inputs
-            are Series with an identical index (using the ``is`` check),
-            that index is used.
+            are Series with an equal index, that index is used.
         crs : value, optional
             Coordinate Reference System of the geometry objects. Can be anything
             accepted by
