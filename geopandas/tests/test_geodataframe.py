@@ -781,7 +781,7 @@ class TestDataFrame:
     @pytest.mark.parametrize("predicate", ["intersects", "within", "contains"])
     @pytest.mark.skipif(
         not compat.USE_PYGEOS and not compat.HAS_RTREE,
-        reason="sjoin need `rtree` or `pygeos` dependency",
+        reason="sjoin needs `rtree` or `pygeos` dependency",
     )
     def test_sjoin(self, how, predicate):
         left = read_file(geopandas.datasets.get_path("naturalearth_cities"))
