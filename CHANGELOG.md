@@ -1,26 +1,28 @@
 Changelog
 =========
 
-Version 0.10.0 (September ??, 2021)
------------------------------------
-
+Version 0.10.0 (October 3, 2021)
+--------------------------------
 
 Highlights of this release:
 
 - A new `sjoin_nearest()` function to join based on proximity, with the
   ability to set a maximum search radius (#1865). In addition, the `sindex`
-  attribute gained new methdods for a "nearest" spatial index query (#1865,
+  attribute gained a new method for a "nearest" spatial index query (#1865,
   #2053).
 - A new `explore()` method on GeoDataFrame and GeoSeries with native support
   for interactive visualization based on folium / leaflet.js (#1953)
+- The `geopandas.sjoin()`/`overlay()`/`clip()` functions are now also
+  available as methods on the GeoDataFrame (#2141, #1984, #2150).
 
 New features and improvements:
 
-- Add support for pandas' `value_counts()` method for geometry dtype (#2047). 
+- Add support for pandas' `value_counts()` method for geometry dtype (#2047).
 - The `explode()` method has a new `ignore_index` keyword (consistent with
   pandas' explode method) to reset the index in the result, and a new
   `index_parts` keywords to control whether a cumulative count indexing the
   parts of the exploded multi-geometries should be added (#1871).
+- `points_from_xy()` is now available as a GeoSeries method (#1936).
 - The `to_file()` method will now attempt to detect the driver (if not
   specified) based on the extension of the provided filename, instead of
   defaulting to ESRI Shapefile (#1609).
@@ -53,8 +55,12 @@ Deprecations and compatibility notes:
 
 Bug fixes:
 
+- Fix in the `clip()` function to correctly clip MultiPoints instead of
+  leaving them intact when partly outside of the clip bounds (#2148).
 - Fix `GeoSeries.isna()` to correctly return a boolean Series in case of an
   empty GeoSeries (#2073).
+- Fix the GeoDataFrame constructor to preserve the geometry name when the
+  argument is already a GeoDataFrame object (i.e. `GeoDataFrame(gdf)`) (#2138).
 - Fix loss of the values' CRS when setting those values as a column
   (`GeoDataFrame.__setitem__`) (#1963)
 - Fix in `GeoDataFrame.apply()` to preserve the active geometry column name
@@ -76,8 +82,8 @@ Notes on (optional) dependencies:
   matplotlib 3.1 and pyproj 2.2.
 - Plotting with a classification schema now requires mapclassify version >=
   2.4 (#1737).
-- Compatibility with the latest numpy in combination with Shapely 1.7 (#2072)
-- Compatibility with the upcoming Shapely 1.8 (#2087).
+- Compatibility fixes for the latest numpy in combination with Shapely 1.7 (#2072)
+- Compatibility fixes for the upcoming Shapely 1.8 (#2087).
 - Compatibility fixes for the latest PyGEOS (#1872, #2014) and matplotlib
   (colorbar issue, #2066).
 
