@@ -88,6 +88,7 @@ stria    AUT    416600.0
     See also
     --------
     overlay : overlay operation resulting in a new geometry
+    GeoDataFrame.sjoin : equivalent method
 
     Notes
     ------

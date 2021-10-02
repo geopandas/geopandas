@@ -13,6 +13,7 @@ from pyproj.exceptions import CRSError
 from shapely.geometry import Point
 
 import geopandas
+import geopandas._compat as compat
 from geopandas import GeoDataFrame, GeoSeries, read_file
 from geopandas.array import GeometryArray, GeometryDtype, from_shapely
 from geopandas._compat import ignore_shapely2_warnings
@@ -774,6 +775,24 @@ class TestDataFrame:
 
         expected_df = pd.DataFrame({"gs0": wkts0, "gs1": wkts1})
         assert_frame_equal(expected_df, gdf.to_wkt())
+
+    @pytest.mark.parametrize("how", ["left", "inner", "right"])
+    @pytest.mark.parametrize("predicate", ["intersects", "within", "contains"])
+    @pytest.mark.skipif(
+        not compat.USE_PYGEOS and not compat.HAS_RTREE,
+        reason="sjoin needs `rtree` or `pygeos` dependency",
+    )
+    def test_sjoin(self, how, predicate):
+        """
+        Basic test for availability of the GeoDataFrame method. Other
+        sjoin tests are located in /tools/tests/test_sjoin.py
+        """
+        left = read_file(geopandas.datasets.get_path("naturalearth_cities"))
+        right = read_file(geopandas.datasets.get_path("naturalearth_lowres"))
+
+        expected = geopandas.sjoin(left, right, how=how, predicate=predicate)
+        result = left.sjoin(right, how=how, predicate=predicate)
+        assert_geodataframe_equal(result, expected)
 
 
 def check_geodataframe(df, geometry_column="geometry"):
