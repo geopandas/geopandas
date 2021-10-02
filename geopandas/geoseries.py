@@ -1315,6 +1315,10 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
             Vector data (points, lines, polygons) from `gdf` clipped to
             polygon boundary from mask.
 
+        See also
+        --------
+        clip : top-level function for clip
+
         Examples
         --------
         Clip points (global cities) with a polygon (the South American continent):

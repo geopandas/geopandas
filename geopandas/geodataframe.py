@@ -1952,6 +1952,7 @@ countries_w_city_data[countries_w_city_data["name_left"] == "Italy"]
         See also
         --------
         GeoDataFrame.sjoin : binary predicate joins
+        sjoin_nearest : top-level function for sjoin_nearest
 
         Notes
         -----
@@ -1996,6 +1997,10 @@ countries_w_city_data[countries_w_city_data["name_left"] == "Italy"]
         GeoDataFrame
             Vector data (points, lines, polygons) from `gdf` clipped to
             polygon boundary from mask.
+
+        See also
+        --------
+        clip : top-level function for clip
 
         Examples
         --------
@@ -2096,6 +2101,7 @@ countries_w_city_data[countries_w_city_data["name_left"] == "Italy"]
         See also
         --------
         GeoDataFrame.sjoin : spatial join
+        overlay : top-level function for overlay
 
         Notes
         ------
