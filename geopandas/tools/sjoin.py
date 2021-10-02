@@ -88,6 +88,7 @@ stria    AUT    416600.0
     See also
     --------
     overlay : overlay operation resulting in a new geometry
+    GeoDataFrame.sjoin : equivalent method
 
     Notes
     ------
@@ -372,8 +373,11 @@ def _nearest_query(
         sindex = right_df.sindex
         query = left_df.geometry
     if sindex:
-        res = sindex.nearest_all(
-            query, max_distance=max_distance, return_distance=return_distance
+        res = sindex.nearest(
+            query,
+            return_all=True,
+            max_distance=max_distance,
+            return_distance=return_distance,
         )
         if return_distance:
             (input_idx, tree_idx), distances = res

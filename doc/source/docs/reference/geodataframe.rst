@@ -92,7 +92,6 @@ Plotting
 
    GeoDataFrame.plot
 
-
 Spatial index
 -------------
 
@@ -122,4 +121,3 @@ Interface
 All pandas ``DataFrame`` methods are also available, although they may
 not operate in a meaningful way on the ``geometry`` column. All methods
 listed in `GeoSeries <geoseries>`__ work directly on an active geometry column of GeoDataFrame.
-

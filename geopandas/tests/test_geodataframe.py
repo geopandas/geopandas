@@ -807,6 +807,24 @@ class TestDataFrame:
         assert_frame_equal(expected_df, gdf.to_wkt())
 
     @pytest.mark.parametrize("how", ["left", "inner", "right"])
+    @pytest.mark.parametrize("predicate", ["intersects", "within", "contains"])
+    @pytest.mark.skipif(
+        not compat.USE_PYGEOS and not compat.HAS_RTREE,
+        reason="sjoin needs `rtree` or `pygeos` dependency",
+    )
+    def test_sjoin(self, how, predicate):
+        """
+        Basic test for availability of the GeoDataFrame method. Other
+        sjoin tests are located in /tools/tests/test_sjoin.py
+        """
+        left = read_file(geopandas.datasets.get_path("naturalearth_cities"))
+        right = read_file(geopandas.datasets.get_path("naturalearth_lowres"))
+
+        expected = geopandas.sjoin(left, right, how=how, predicate=predicate)
+        result = left.sjoin(right, how=how, predicate=predicate)
+        assert_geodataframe_equal(result, expected)
+
+    @pytest.mark.parametrize("how", ["left", "inner", "right"])
     @pytest.mark.parametrize("max_distance", [None, 1])
     @pytest.mark.parametrize("distance_col", [None, "distance"])
     @pytest.mark.skipif(
@@ -818,6 +836,10 @@ class TestDataFrame:
         ),
     )
     def test_sjoin_nearest(self, how, max_distance, distance_col):
+        """
+        Basic test for availability of the GeoDataFrame method. Other
+        sjoin tests are located in /tools/tests/test_sjoin.py
+        """
         left = read_file(geopandas.datasets.get_path("naturalearth_cities"))
         right = read_file(geopandas.datasets.get_path("naturalearth_lowres"))
 
@@ -831,6 +853,10 @@ class TestDataFrame:
 
     @pytest.mark.skip_no_sindex
     def test_clip(self):
+        """
+        Basic test for availability of the GeoDataFrame method. Other
+        clip tests are located in /tools/tests/test_clip.py
+        """
         left = read_file(geopandas.datasets.get_path("naturalearth_cities"))
         world = read_file(geopandas.datasets.get_path("naturalearth_lowres"))
         south_america = world[world["continent"] == "South America"]
@@ -841,6 +867,10 @@ class TestDataFrame:
 
     @pytest.mark.skip_no_sindex
     def test_overlay(self, dfs, how):
+        """
+        Basic test for availability of the GeoDataFrame method. Other
+        overlay tests are located in tests/test_overlay.py
+        """
         df1, df2 = dfs
 
         expected = geopandas.overlay(df1, df2, how=how)
@@ -1002,11 +1032,9 @@ class TestConstructor:
             res = GeoDataFrame(df, geometry="other_geom")
             check_geodataframe(res, "other_geom")
 
-        # when passing GeoDataFrame with custom geometry name to constructor
-        # an invalid geodataframe is the result TODO is this desired ?
+        # gdf from gdf should preserve active geometry column name
         df = GeoDataFrame(gpdf)
-        with pytest.raises(AttributeError):
-            df.geometry
+        check_geodataframe(df, "other_geom")
 
     def test_only_geometry(self):
         exp = GeoDataFrame(

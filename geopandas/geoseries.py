@@ -451,7 +451,8 @@ class GeoSeries(GeoPandasBase, Series):
         ----------
         x, y, z : iterable
         index : array-like or Index, optional
-            The index for the GeoSeries.
+            The index for the GeoSeries. If not given and all coordinate inputs
+            are Series with an equal index, that index is used.
         crs : value, optional
             Coordinate Reference System of the geometry objects. Can be anything
             accepted by
@@ -482,6 +483,14 @@ class GeoSeries(GeoPandasBase, Series):
         2    POINT (-3.00000 1.50000)
         dtype: geometry
         """
+        if index is None:
+            if (
+                isinstance(x, Series)
+                and isinstance(y, Series)
+                and x.index.equals(y.index)
+                and (z is None or (isinstance(z, Series) and x.index.equals(z.index)))
+            ):  # check if we can reuse index
+                index = x.index
         return cls(points_from_xy(x, y, z, crs=crs), index=index, crs=crs, **kwargs)
 
     @classmethod

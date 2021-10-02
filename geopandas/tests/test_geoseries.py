@@ -341,6 +341,35 @@ class TestSeries:
         assert_geoseries_equal(
             self.landmarks, GeoSeries.from_xy(x, y, index=index, crs=crs)
         )
+        assert_geoseries_equal(
+            self.landmarks,
+            GeoSeries.from_xy(self.landmarks.x, self.landmarks.y, crs=crs),
+        )
+
+    def test_from_xy_points_w_z(self):
+        index_values = [5, 6, 7]
+        x = pd.Series([0, -1, 2], index=index_values)
+        y = pd.Series([8, 3, 1], index=index_values)
+        z = pd.Series([5, -6, 7], index=index_values)
+        expected = GeoSeries(
+            [Point(0, 8, 5), Point(-1, 3, -6), Point(2, 1, 7)], index=index_values
+        )
+        assert_geoseries_equal(expected, GeoSeries.from_xy(x, y, z))
+
+    def test_from_xy_points_unequal_index(self):
+        x = self.landmarks.x
+        y = self.landmarks.y
+        y.index = -np.arange(len(y))
+        crs = self.landmarks.crs
+        assert_geoseries_equal(
+            self.landmarks, GeoSeries.from_xy(x, y, index=x.index, crs=crs)
+        )
+        unindexed_landmarks = self.landmarks.copy()
+        unindexed_landmarks.reset_index(inplace=True, drop=True)
+        assert_geoseries_equal(
+            unindexed_landmarks,
+            GeoSeries.from_xy(x, y, crs=crs),
+        )
 
     def test_from_xy_points_indexless(self):
         x = np.array([0.0, 3.0])
