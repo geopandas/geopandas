@@ -1875,14 +1875,14 @@ individually so that features may have different properties
 
         Parameters
         ----------
-        right : GeoDataFrames
+        right : GeoDataFrame
         how : string, default 'inner'
             The type of join:
 
             * 'left': use keys from left_df; retain only left_df geometry column
             * 'right': use keys from right_df; retain only right_df geometry column
             * 'inner': use intersection of keys from both dfs; retain only
-            left_df geometry column
+              left_df geometry column
 
         max_distance : float, default None
             Maximum distance within which to query for nearest geometry.
