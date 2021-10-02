@@ -1929,6 +1929,11 @@ individually so that features may have different properties
         ------
         Every operation in GeoPandas is planar, i.e. the potential third
         dimension is not taken into account.
+
+        See also
+        --------
+        GeoDataFrame.sjoin_nearest : nearest neighbor join
+        sjoin : equivalent top-level function
         """
         return geopandas.sjoin(left_df=self, right_df=df, *args, **kwargs)
 
@@ -2032,7 +2037,7 @@ countries_w_city_data[countries_w_city_data["name_left"] == "Italy"]
         See also
         --------
         GeoDataFrame.sjoin : binary predicate joins
-        sjoin_nearest : top-level function for sjoin_nearest
+        sjoin_nearest : equivalent top-level function
 
         Notes
         -----
@@ -2080,7 +2085,7 @@ countries_w_city_data[countries_w_city_data["name_left"] == "Italy"]
 
         See also
         --------
-        clip : top-level function for clip
+        clip : equivalent top-level function
 
         Examples
         --------
@@ -2181,7 +2186,7 @@ countries_w_city_data[countries_w_city_data["name_left"] == "Italy"]
         See also
         --------
         GeoDataFrame.sjoin : spatial join
-        overlay : top-level function for overlay
+        overlay : equivalent top-level function
 
         Notes
         ------

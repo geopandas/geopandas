@@ -1,3 +1,5 @@
+.. currentmodule:: geopandas
+
 .. ipython:: python
    :suppress:
 
@@ -62,6 +64,10 @@ The :meth:`~geopandas.GeoDataFrame.overlay` method will determine the set of all
 from overlaying the two input GeoDataFrames. This result covers the area covered
 by the two input GeoDataFrames, and also preserves all unique regions defined by
 the combined boundaries of the two GeoDataFrames.
+
+.. note::
+   For historical reasons, the overlay method is also available as a top-level function :func:`overlay`.
+   It is recommended to use the method as the function may be deprecated in the future.
 
 When using ``how='union'``, all those possible geometries are returned:
 

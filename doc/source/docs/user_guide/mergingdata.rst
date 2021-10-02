@@ -100,6 +100,10 @@ GeoPandas provides two spatial-join functions:
 - :meth:`GeoDataFrame.sjoin`: joins based on binary predicates (intersects, contains, etc.)
 - :meth:`GeoDataFrame.sjoin_nearest`: joins based on proximity, with the ability to set a maximum search radius.
 
+.. note::
+   For historical reasons, both methods are also available as top-level functions :func:`sjoin` and :func:`sjoin_nearest`.
+   It is recommended to use methods as the functions may be deprecated in the future.
+
 Binary Predicate Joins
 ~~~~~~~~~~~~~~~~~~~~~~
 
