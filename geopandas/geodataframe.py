@@ -1866,7 +1866,7 @@ individually so that features may have different properties
             * 'left': use keys from left_df; retain only left_df geometry column
             * 'right': use keys from right_df; retain only right_df geometry column
             * 'inner': use intersection of keys from both dfs; retain only
-            left_df geometry column
+              left_df geometry column
 
         predicate : string, default 'intersects'
             Binary predicate. Valid values are determined by the spatial index used.
