@@ -1,6 +1,0 @@
-﻿geopandas.sindex.RTreeIndex.size
-================================
-
-.. currentmodule:: geopandas.sindex
-
-.. autoproperty:: RTreeIndex.size

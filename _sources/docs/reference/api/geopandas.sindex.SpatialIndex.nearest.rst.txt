@@ -1,0 +1,6 @@
+﻿geopandas.sindex.SpatialIndex.nearest
+=====================================
+
+.. currentmodule:: geopandas.sindex
+
+.. automethod:: SpatialIndex.nearest

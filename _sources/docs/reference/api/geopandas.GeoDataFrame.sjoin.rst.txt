@@ -1,0 +1,6 @@
+﻿geopandas.GeoDataFrame.sjoin
+============================
+
+.. currentmodule:: geopandas
+
+.. automethod:: GeoDataFrame.sjoin

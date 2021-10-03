@@ -1,0 +1,6 @@
+﻿geopandas.GeoDataFrame.explore
+==============================
+
+.. currentmodule:: geopandas
+
+.. automethod:: GeoDataFrame.explore

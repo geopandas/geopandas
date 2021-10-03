@@ -5,9 +5,10 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Changelog &#8212; GeoPandas 0.9.0 documentation</title>
+    <title>Changelog &#8212; GeoPandas 0.10.0 documentation</title>
     
-  <link rel="stylesheet" href="../_static/css/index.f658d18f9b420779cfdf24aa0a7e2d77.css">
+  <link href="../_static/css/theme.css" rel="stylesheet" />
+  <link href="../_static/css/index.c5995385ac14fb8791e8eb36b4908be2.css" rel="stylesheet" />
 
     
   <link rel="stylesheet"
@@ -19,20 +20,17 @@
 
     
       
-  <link rel="stylesheet"
-    href="../_static/vendor/open-sans_all/1.44.1/index.css">
-  <link rel="stylesheet"
-    href="../_static/vendor/lato_latin-ext/1.44.1/index.css">
 
     
-    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-    <link rel="stylesheet" href="../_static/basic.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/basic.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/plot_directive.css" />
     <link rel="stylesheet" type="text/css" href="../_static/custom.css" />
     <link rel="stylesheet" type="text/css" href="../_static/gallery.css" />
     
-  <link rel="preload" as="script" href="../_static/js/index.d3f166471bb80abb5163.js">
+  <link rel="preload" as="script" href="../_static/js/index.1c5a1a01449ed65a7b51.js">
 
-    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
     <script src="../_static/jquery.js"></script>
     <script src="../_static/underscore.js"></script>
     <script src="../_static/doctools.js"></script>
@@ -46,68 +44,94 @@
     <link rel="prev" title="geopandas.testing.assert_geodataframe_equal" href="reference/api/geopandas.testing.assert_geodataframe_equal.html" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="docsearch:language" content="en" />
+    
   </head>
   <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="80">
     
-    <nav class="navbar navbar-light navbar-expand-lg bg-light fixed-top bd-navbar" id="navbar-main">
-<div class="container-xl">
+    <div class="container-fluid" id="banner"></div>
 
-    <a class="navbar-brand" href="../index.html">
     
-      <img src="../_static/geopandas_logo_web.svg" class="logo" alt="logo" />
+    <nav class="navbar navbar-light navbar-expand-lg bg-light fixed-top bd-navbar" id="navbar-main"><div class="container-xl">
+
+  <div id="navbar-start">
     
-    </a>
-    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-menu" aria-controls="navbar-menu" aria-expanded="false" aria-label="Toggle navigation">
-        <span class="navbar-toggler-icon"></span>
-    </button>
+    
 
-    <div id="navbar-menu" class="col-lg-9 collapse navbar-collapse">
-      <ul id="navbar-main-elements" class="navbar-nav mr-auto">
-        
-        
-        <li class="nav-item ">
-            <a class="nav-link" href="../index.html">Home</a>
-        </li>
-        
-        <li class="nav-item ">
-            <a class="nav-link" href="../about.html">About</a>
-        </li>
-        
-        <li class="nav-item ">
-            <a class="nav-link" href="../getting_started.html">Getting started</a>
-        </li>
-        
-        <li class="nav-item active">
-            <a class="nav-link" href="../docs.html">Documentation</a>
-        </li>
-        
-        <li class="nav-item ">
-            <a class="nav-link" href="../community.html">Community</a>
-        </li>
-        
-        
-      </ul>
+<a class="navbar-brand" href="../index.html">
+  <img src="../_static/geopandas_logo_web.svg" class="logo" alt="logo">
+</a>
 
 
+    
+  </div>
+
+  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-collapsible" aria-controls="navbar-collapsible" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+
+  
+  <div id="navbar-collapsible" class="col-lg-9 collapse navbar-collapse">
+    <div id="navbar-center" class="mr-auto">
       
+      <div class="navbar-center-item">
+        <ul id="navbar-main-elements" class="navbar-nav">
+    <li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../index.html">
+  Home
+ </a>
+</li>
 
-      <ul class="navbar-nav">
-        
-          <li class="nav-item">
-            <a class="nav-link" href="https://github.com/geopandas/geopandas" target="_blank" rel="noopener">
-              <span><i class="fab fa-github-square"></i></span>
-            </a>
-          </li>
-        
-        
-          <li class="nav-item">
-            <a class="nav-link" href="https://twitter.com/geopandas" target="_blank" rel="noopener">
-              <span><i class="fab fa-twitter-square"></i></span>
-            </a>
-          </li>
-        
-      </ul>
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../about.html">
+  About
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../getting_started.html">
+  Getting started
+ </a>
+</li>
+
+<li class="toctree-l1 current active nav-item">
+ <a class="reference internal nav-link" href="../docs.html">
+  Documentation
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../community.html">
+  Community
+ </a>
+</li>
+
+    
+</ul>
+      </div>
+      
     </div>
+
+    <div id="navbar-end">
+      
+      <div class="navbar-end-item">
+        <ul id="navbar-icon-links" class="navbar-nav" aria-label="Icon Links">
+        <li class="nav-item">
+          <a class="nav-link" href="https://github.com/geopandas/geopandas" rel="noopener" target="_blank" title="GitHub">
+            <span><i class="fab fa-github-square"></i></span>
+            <label class="sr-only">GitHub</label>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="https://twitter.com/geopandas" rel="noopener" target="_blank" title="Twitter">
+            <span><i class="fab fa-twitter-square"></i></span>
+            <label class="sr-only">Twitter</label>
+          </a>
+        </li>
+      </ul>
+      </div>
+      
+    </div>
+  </div>
 </div>
     </nav>
     
@@ -115,137 +139,974 @@
     <div class="container-xl">
       <div class="row">
           
-          <div class="col-12 col-md-3 bd-sidebar"><form class="bd-search d-flex align-items-center" action="../search.html" method="get">
+            
+            <!-- Only show if we have sidebars configured, else just a small margin  -->
+            <div class="col-12 col-md-3 bd-sidebar"><form class="bd-search d-flex align-items-center" action="../search.html" method="get">
   <i class="icon fas fa-search"></i>
   <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
-</form>
-<nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
+</form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
+  <div class="bd-toc-item active">
+    <p class="caption" role="heading">
+ <span class="caption-text">
+  Documentation
+ </span>
+</p>
+<ul class="current nav bd-sidenav">
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="user_guide.html">
+   User Guide
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/>
+  <label for="toctree-checkbox-1">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="user_guide/data_structures.html">
+     Data Structures
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="user_guide/io.html">
+     Reading and Writing Files
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="user_guide/indexing.html">
+     Indexing and Selecting Data
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="user_guide/mapping.html">
+     Making Maps and plots
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="user_guide/interactive_mapping.html">
+     Interactive mapping
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="user_guide/projections.html">
+     Managing Projections
+    </a>
+   </li>
+   <li class="toctree-l2 has-children">
+    <a class="reference internal" href="user_guide/geometric_manipulations.html">
+     Geometric Manipulations
+    </a>
+    <input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" type="checkbox"/>
+    <label for="toctree-checkbox-2">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul class="simple">
+    </ul>
+   </li>
+   <li class="toctree-l2 has-children">
+    <a class="reference internal" href="user_guide/set_operations.html">
+     Set Operations with overlay
+    </a>
+    <input class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" type="checkbox"/>
+    <label for="toctree-checkbox-3">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul class="simple">
+    </ul>
+   </li>
+   <li class="toctree-l2 has-children">
+    <a class="reference internal" href="user_guide/aggregation_with_dissolve.html">
+     Aggregation with dissolve
+    </a>
+    <input class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" type="checkbox"/>
+    <label for="toctree-checkbox-4">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul class="simple">
+    </ul>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="user_guide/mergingdata.html">
+     Merging Data
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="user_guide/geocoding.html">
+     Geocoding
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="advanced_guide.html">
+   Advanced Guide
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" type="checkbox"/>
+  <label for="toctree-checkbox-5">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="user_guide/missing_empty.html">
+     Missing and empty geometries
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="user_guide/reproject_fiona.html">
+     Re-projecting using GDAL with Rasterio and Fiona
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="reference.html">
+   API reference
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" type="checkbox"/>
+  <label for="toctree-checkbox-6">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2 has-children">
+    <a class="reference internal" href="reference/geoseries.html">
+     GeoSeries
+    </a>
+    <input class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" type="checkbox"/>
+    <label for="toctree-checkbox-7">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoSeries.html">
+       geopandas.GeoSeries
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoSeries.area.html">
+       geopandas.GeoSeries.area
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoSeries.boundary.html">
+       geopandas.GeoSeries.boundary
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoSeries.bounds.html">
+       geopandas.GeoSeries.bounds
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoSeries.total_bounds.html">
+       geopandas.GeoSeries.total_bounds
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoSeries.length.html">
+       geopandas.GeoSeries.length
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoSeries.geom_type.html">
+       geopandas.GeoSeries.geom_type
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoSeries.distance.html">
+       geopandas.GeoSeries.distance
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoSeries.representative_point.html">
+       geopandas.GeoSeries.representative_point
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoSeries.exterior.html">
+       geopandas.GeoSeries.exterior
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoSeries.interiors.html">
+       geopandas.GeoSeries.interiors
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoSeries.x.html">
+       geopandas.GeoSeries.x
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoSeries.y.html">
+       geopandas.GeoSeries.y
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoSeries.z.html">
+       geopandas.GeoSeries.z
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoSeries.is_empty.html">
+       geopandas.GeoSeries.is_empty
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoSeries.is_ring.html">
+       geopandas.GeoSeries.is_ring
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoSeries.is_simple.html">
+       geopandas.GeoSeries.is_simple
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoSeries.is_valid.html">
+       geopandas.GeoSeries.is_valid
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoSeries.has_z.html">
+       geopandas.GeoSeries.has_z
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoSeries.contains.html">
+       geopandas.GeoSeries.contains
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoSeries.crosses.html">
+       geopandas.GeoSeries.crosses
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoSeries.disjoint.html">
+       geopandas.GeoSeries.disjoint
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoSeries.geom_equals.html">
+       geopandas.GeoSeries.geom_equals
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoSeries.geom_almost_equals.html">
+       geopandas.GeoSeries.geom_almost_equals
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoSeries.geom_equals_exact.html">
+       geopandas.GeoSeries.geom_equals_exact
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoSeries.intersects.html">
+       geopandas.GeoSeries.intersects
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoSeries.overlaps.html">
+       geopandas.GeoSeries.overlaps
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoSeries.touches.html">
+       geopandas.GeoSeries.touches
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoSeries.within.html">
+       geopandas.GeoSeries.within
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoSeries.covers.html">
+       geopandas.GeoSeries.covers
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoSeries.covered_by.html">
+       geopandas.GeoSeries.covered_by
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoSeries.difference.html">
+       geopandas.GeoSeries.difference
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoSeries.intersection.html">
+       geopandas.GeoSeries.intersection
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoSeries.symmetric_difference.html">
+       geopandas.GeoSeries.symmetric_difference
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoSeries.union.html">
+       geopandas.GeoSeries.union
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoSeries.buffer.html">
+       geopandas.GeoSeries.buffer
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoSeries.boundary.html">
+       geopandas.GeoSeries.boundary
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoSeries.centroid.html">
+       geopandas.GeoSeries.centroid
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoSeries.convex_hull.html">
+       geopandas.GeoSeries.convex_hull
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoSeries.envelope.html">
+       geopandas.GeoSeries.envelope
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoSeries.simplify.html">
+       geopandas.GeoSeries.simplify
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoSeries.affine_transform.html">
+       geopandas.GeoSeries.affine_transform
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoSeries.rotate.html">
+       geopandas.GeoSeries.rotate
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoSeries.scale.html">
+       geopandas.GeoSeries.scale
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoSeries.skew.html">
+       geopandas.GeoSeries.skew
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoSeries.translate.html">
+       geopandas.GeoSeries.translate
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoSeries.unary_union.html">
+       geopandas.GeoSeries.unary_union
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoSeries.explode.html">
+       geopandas.GeoSeries.explode
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoSeries.from_file.html">
+       geopandas.GeoSeries.from_file
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoSeries.from_wkb.html">
+       geopandas.GeoSeries.from_wkb
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoSeries.from_wkt.html">
+       geopandas.GeoSeries.from_wkt
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoSeries.from_xy.html">
+       geopandas.GeoSeries.from_xy
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoSeries.to_file.html">
+       geopandas.GeoSeries.to_file
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoSeries.to_json.html">
+       geopandas.GeoSeries.to_json
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoSeries.to_wkb.html">
+       geopandas.GeoSeries.to_wkb
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoSeries.to_wkt.html">
+       geopandas.GeoSeries.to_wkt
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoSeries.crs.html">
+       geopandas.GeoSeries.crs
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoSeries.set_crs.html">
+       geopandas.GeoSeries.set_crs
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoSeries.to_crs.html">
+       geopandas.GeoSeries.to_crs
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoSeries.estimate_utm_crs.html">
+       geopandas.GeoSeries.estimate_utm_crs
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoSeries.fillna.html">
+       geopandas.GeoSeries.fillna
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoSeries.isna.html">
+       geopandas.GeoSeries.isna
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoSeries.notna.html">
+       geopandas.GeoSeries.notna
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoSeries.clip.html">
+       geopandas.GeoSeries.clip
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoSeries.plot.html">
+       geopandas.GeoSeries.plot
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoSeries.explore.html">
+       geopandas.GeoSeries.explore
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoSeries.sindex.html">
+       geopandas.GeoSeries.sindex
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoSeries.has_sindex.html">
+       geopandas.GeoSeries.has_sindex
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoSeries.cx.html">
+       geopandas.GeoSeries.cx
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoSeries.__geo_interface__.html">
+       geopandas.GeoSeries.__geo_interface__
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toctree-l2 has-children">
+    <a class="reference internal" href="reference/geodataframe.html">
+     GeoDataFrame
+    </a>
+    <input class="toctree-checkbox" id="toctree-checkbox-8" name="toctree-checkbox-8" type="checkbox"/>
+    <label for="toctree-checkbox-8">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoDataFrame.html">
+       geopandas.GeoDataFrame
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoDataFrame.from_file.html">
+       geopandas.GeoDataFrame.from_file
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoDataFrame.from_features.html">
+       geopandas.GeoDataFrame.from_features
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoDataFrame.from_postgis.html">
+       geopandas.GeoDataFrame.from_postgis
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoDataFrame.to_file.html">
+       geopandas.GeoDataFrame.to_file
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoDataFrame.to_json.html">
+       geopandas.GeoDataFrame.to_json
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoDataFrame.to_parquet.html">
+       geopandas.GeoDataFrame.to_parquet
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoDataFrame.to_feather.html">
+       geopandas.GeoDataFrame.to_feather
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoDataFrame.to_postgis.html">
+       geopandas.GeoDataFrame.to_postgis
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoDataFrame.to_wkb.html">
+       geopandas.GeoDataFrame.to_wkb
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoDataFrame.to_wkt.html">
+       geopandas.GeoDataFrame.to_wkt
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoDataFrame.crs.html">
+       geopandas.GeoDataFrame.crs
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoDataFrame.set_crs.html">
+       geopandas.GeoDataFrame.set_crs
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoDataFrame.to_crs.html">
+       geopandas.GeoDataFrame.to_crs
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoDataFrame.estimate_utm_crs.html">
+       geopandas.GeoDataFrame.estimate_utm_crs
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoDataFrame.rename_geometry.html">
+       geopandas.GeoDataFrame.rename_geometry
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoDataFrame.set_geometry.html">
+       geopandas.GeoDataFrame.set_geometry
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoDataFrame.dissolve.html">
+       geopandas.GeoDataFrame.dissolve
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoDataFrame.explode.html">
+       geopandas.GeoDataFrame.explode
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoDataFrame.sjoin.html">
+       geopandas.GeoDataFrame.sjoin
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoDataFrame.sjoin_nearest.html">
+       geopandas.GeoDataFrame.sjoin_nearest
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoDataFrame.clip.html">
+       geopandas.GeoDataFrame.clip
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoDataFrame.overlay.html">
+       geopandas.GeoDataFrame.overlay
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoDataFrame.explore.html">
+       geopandas.GeoDataFrame.explore
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoDataFrame.plot.html">
+       geopandas.GeoDataFrame.plot
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoDataFrame.sindex.html">
+       geopandas.GeoDataFrame.sindex
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoDataFrame.has_sindex.html">
+       geopandas.GeoDataFrame.has_sindex
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoDataFrame.cx.html">
+       geopandas.GeoDataFrame.cx
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoDataFrame.__geo_interface__.html">
+       geopandas.GeoDataFrame.__geo_interface__
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoDataFrame.iterfeatures.html">
+       geopandas.GeoDataFrame.iterfeatures
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toctree-l2 has-children">
+    <a class="reference internal" href="reference/io.html">
+     Input/output
+    </a>
+    <input class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" type="checkbox"/>
+    <label for="toctree-checkbox-9">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.read_file.html">
+       geopandas.read_file
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoDataFrame.to_file.html">
+       geopandas.GeoDataFrame.to_file
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.read_postgis.html">
+       geopandas.read_postgis
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoDataFrame.to_postgis.html">
+       geopandas.GeoDataFrame.to_postgis
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.read_feather.html">
+       geopandas.read_feather
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoDataFrame.to_feather.html">
+       geopandas.GeoDataFrame.to_feather
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.read_parquet.html">
+       geopandas.read_parquet
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoDataFrame.to_parquet.html">
+       geopandas.GeoDataFrame.to_parquet
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toctree-l2 has-children">
+    <a class="reference internal" href="reference/tools.html">
+     Tools
+    </a>
+    <input class="toctree-checkbox" id="toctree-checkbox-10" name="toctree-checkbox-10" type="checkbox"/>
+    <label for="toctree-checkbox-10">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.sjoin.html">
+       geopandas.sjoin
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.sjoin_nearest.html">
+       geopandas.sjoin_nearest
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.overlay.html">
+       geopandas.overlay
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.clip.html">
+       geopandas.clip
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.tools.geocode.html">
+       geopandas.tools.geocode
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.tools.reverse_geocode.html">
+       geopandas.tools.reverse_geocode
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.tools.collect.html">
+       geopandas.tools.collect
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.points_from_xy.html">
+       geopandas.points_from_xy
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.datasets.available.html">
+       geopandas.datasets.available
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.datasets.get_path.html">
+       geopandas.datasets.get_path
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toctree-l2 has-children">
+    <a class="reference internal" href="reference/sindex.html">
+     Spatial index
+    </a>
+    <input class="toctree-checkbox" id="toctree-checkbox-11" name="toctree-checkbox-11" type="checkbox"/>
+    <label for="toctree-checkbox-11">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.GeoSeries.sindex.html">
+       geopandas.GeoSeries.sindex
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.sindex.SpatialIndex.intersection.html">
+       geopandas.sindex.SpatialIndex.intersection
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.sindex.SpatialIndex.is_empty.html">
+       geopandas.sindex.SpatialIndex.is_empty
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.sindex.SpatialIndex.nearest.html">
+       geopandas.sindex.SpatialIndex.nearest
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.sindex.SpatialIndex.query.html">
+       geopandas.sindex.SpatialIndex.query
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.sindex.SpatialIndex.query_bulk.html">
+       geopandas.sindex.SpatialIndex.query_bulk
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.sindex.SpatialIndex.size.html">
+       geopandas.sindex.SpatialIndex.size
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.sindex.SpatialIndex.valid_query_predicates.html">
+       geopandas.sindex.SpatialIndex.valid_query_predicates
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toctree-l2 has-children">
+    <a class="reference internal" href="reference/testing.html">
+     Testing
+    </a>
+    <input class="toctree-checkbox" id="toctree-checkbox-12" name="toctree-checkbox-12" type="checkbox"/>
+    <label for="toctree-checkbox-12">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.testing.assert_geoseries_equal.html">
+       geopandas.testing.assert_geoseries_equal
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="reference/api/geopandas.testing.assert_geodataframe_equal.html">
+       geopandas.testing.assert_geodataframe_equal
+      </a>
+     </li>
+    </ul>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1 current active">
+  <a class="current reference internal" href="#">
+   Changelog
+  </a>
+ </li>
+</ul>
 
-    <div class="bd-toc-item active">
-    
-  
-    <ul class="nav bd-sidenav">
-        
-        
-        
-        
-        
-        
-        
-        
-          
+  </div>
+</nav>
+            </div>
             
-                <li class="">
-                    <a href="user_guide.html">User Guide</a>
-                </li>
-            
-          
-            
-                <li class="">
-                    <a href="advanced_guide.html">Advanced Guide</a>
-                </li>
-            
-          
-            
-                <li class="">
-                    <a href="reference.html">API reference</a>
-                </li>
-            
-          
-            
-                <li class="active">
-                    <a href="">Changelog</a>
-                </li>
-            
-          
-        
-        
-        
-        
-      </ul>
-  
-  </nav>
-          </div>
           
 
           
           <div class="d-none d-xl-block col-xl-2 bd-toc">
+            
               
+              <div class="toc-item">
+                
 <div class="tocsection onthispage pt-5 pb-3">
     <i class="fas fa-list"></i> On this page
 </div>
 
 <nav id="bd-toc-nav">
-    <ul class="nav section-nav flex-column">
-    
-        <li class="nav-item toc-entry toc-h2">
-            <a href="#version-0-9-0-february-28-2021" class="nav-link">Version 0.9.0 (February 28, 2021)</a>
-        </li>
-    
-        <li class="nav-item toc-entry toc-h2">
-            <a href="#version-0-8-2-january-25-2021" class="nav-link">Version 0.8.2 (January 25, 2021)</a>
-        </li>
-    
-        <li class="nav-item toc-entry toc-h2">
-            <a href="#version-0-8-1-july-15-2020" class="nav-link">Version 0.8.1 (July 15, 2020)</a>
-        </li>
-    
-        <li class="nav-item toc-entry toc-h2">
-            <a href="#version-0-8-0-june-24-2020" class="nav-link">Version 0.8.0 (June 24, 2020)</a>
-        </li>
-    
-        <li class="nav-item toc-entry toc-h2">
-            <a href="#version-0-7-0-february-16-2020" class="nav-link">Version 0.7.0 (February 16, 2020)</a>
-        </li>
-    
-        <li class="nav-item toc-entry toc-h2">
-            <a href="#version-0-6-3-february-6-2020" class="nav-link">Version 0.6.3 (February 6, 2020)</a>
-        </li>
-    
-        <li class="nav-item toc-entry toc-h2">
-            <a href="#version-0-6-2-november-18-2019" class="nav-link">Version 0.6.2 (November 18, 2019)</a>
-        </li>
-    
-        <li class="nav-item toc-entry toc-h2">
-            <a href="#version-0-6-1-october-12-2019" class="nav-link">Version 0.6.1 (October 12, 2019)</a>
-        </li>
-    
-        <li class="nav-item toc-entry toc-h2">
-            <a href="#version-0-6-0-september-27-2019" class="nav-link">Version 0.6.0 (September 27, 2019)</a>
-        </li>
-    
-        <li class="nav-item toc-entry toc-h2">
-            <a href="#version-0-5-1-july-11-2019" class="nav-link">Version 0.5.1 (July 11, 2019)</a>
-        </li>
-    
-        <li class="nav-item toc-entry toc-h2">
-            <a href="#version-0-5-0-april-25-2019" class="nav-link">Version 0.5.0 (April 25, 2019)</a>
-        </li>
-    
-        <li class="nav-item toc-entry toc-h2">
-            <a href="#version-0-4-1-march-5-2019" class="nav-link">Version 0.4.1 (March 5, 2019)</a>
-        </li>
-    
-        <li class="nav-item toc-entry toc-h2">
-            <a href="#version-0-4-0-july-15-2018" class="nav-link">Version 0.4.0 (July 15, 2018)</a>
-        </li>
-    
-        <li class="nav-item toc-entry toc-h2">
-            <a href="#version-0-3-0-august-29-2017" class="nav-link">Version 0.3.0 (August 29, 2017)</a>
-        </li>
-    
-        <li class="nav-item toc-entry toc-h2">
-            <a href="#version-0-2-0" class="nav-link">Version 0.2.0</a>
-        </li>
-    
-    </ul>
+    <ul class="visible nav section-nav flex-column">
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#version-0-10-0-october-3-2021">
+   Version 0.10.0 (October 3, 2021)
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#version-0-9-0-february-28-2021">
+   Version 0.9.0 (February 28, 2021)
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#version-0-8-2-january-25-2021">
+   Version 0.8.2 (January 25, 2021)
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#version-0-8-1-july-15-2020">
+   Version 0.8.1 (July 15, 2020)
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#version-0-8-0-june-24-2020">
+   Version 0.8.0 (June 24, 2020)
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#version-0-7-0-february-16-2020">
+   Version 0.7.0 (February 16, 2020)
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#version-0-6-3-february-6-2020">
+   Version 0.6.3 (February 6, 2020)
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#version-0-6-2-november-18-2019">
+   Version 0.6.2 (November 18, 2019)
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#version-0-6-1-october-12-2019">
+   Version 0.6.1 (October 12, 2019)
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#version-0-6-0-september-27-2019">
+   Version 0.6.0 (September 27, 2019)
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#version-0-5-1-july-11-2019">
+   Version 0.5.1 (July 11, 2019)
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#version-0-5-0-april-25-2019">
+   Version 0.5.0 (April 25, 2019)
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#version-0-4-1-march-5-2019">
+   Version 0.4.1 (March 5, 2019)
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#version-0-4-0-july-15-2018">
+   Version 0.4.0 (July 15, 2018)
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#version-0-3-0-august-29-2017">
+   Version 0.3.0 (August 29, 2017)
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#version-0-2-0">
+   Version 0.2.0
+  </a>
+ </li>
+</ul>
+
 </nav>
-
-
+              </div>
               
+              <div class="toc-item">
+                
+              </div>
+              
+            
           </div>
           
 
+          
+          
+            
           
           <main class="col-12 col-md-9 col-xl-7 py-md-5 pl-md-5 pr-md-4 bd-content" role="main">
               
@@ -253,6 +1114,92 @@
                 
   <div class="section" id="changelog">
 <h1>Changelog<a class="headerlink" href="#changelog" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="version-0-10-0-october-3-2021">
+<h2>Version 0.10.0 (October 3, 2021)<a class="headerlink" href="#version-0-10-0-october-3-2021" title="Permalink to this headline">¶</a></h2>
+<p>Highlights of this release:</p>
+<ul class="simple">
+<li><p>A new <cite>sjoin_nearest()</cite> method to join based on proximity, with the
+ability to set a maximum search radius (#1865). In addition, the <cite>sindex</cite>
+attribute gained a new method for a “nearest” spatial index query (#1865,
+#2053).</p></li>
+<li><p>A new <cite>explore()</cite> method on GeoDataFrame and GeoSeries with native support
+for interactive visualization based on folium / leaflet.js (#1953)</p></li>
+<li><p>The <cite>geopandas.sjoin()</cite>/<cite>overlay()</cite>/<cite>clip()</cite> functions are now also
+available as methods on the GeoDataFrame (#2141, #1984, #2150).</p></li>
+</ul>
+<p>New features and improvements:</p>
+<ul class="simple">
+<li><p>Add support for pandas’ <cite>value_counts()</cite> method for geometry dtype (#2047).</p></li>
+<li><p>The <cite>explode()</cite> method has a new <cite>ignore_index</cite> keyword (consistent with
+pandas’ explode method) to reset the index in the result, and a new
+<cite>index_parts</cite> keywords to control whether a cumulative count indexing the
+parts of the exploded multi-geometries should be added (#1871).</p></li>
+<li><p><cite>points_from_xy()</cite> is now available as a GeoSeries method <cite>from_xy</cite> (#1936).</p></li>
+<li><p>The <cite>to_file()</cite> method will now attempt to detect the driver (if not
+specified) based on the extension of the provided filename, instead of
+defaulting to ESRI Shapefile (#1609).</p></li>
+<li><p>Support for the <cite>storage_options</cite> keyword in <cite>read_parquet()</cite> for
+specifying filesystem-specific options (e.g. for S3) based on fsspec (#2107).</p></li>
+<li><p>The read/write functions now support <cite>~</cite> (user home directory) expansion (#1876).</p></li>
+<li><p>Support the <cite>convert_dtypes()</cite> method from pandas to preserve the
+GeoDataFrame class (#2115).</p></li>
+<li><p>Support WKB values in the hex format in <cite>GeoSeries.from_wkb()</cite> (#2106).</p></li>
+<li><p>Update the <cite>estimate_utm_crs()</cite> method to handle crossing the antimeridian
+with pyproj 3.1+ (#2049).</p></li>
+<li><p>Improved heuristic to decide how many decimals to show in the repr based on
+whether the CRS is projected or geographic (#1895).</p></li>
+<li><p>Switched the default for <cite>geocode()</cite> from GeoCode.Farm to the Photon
+geocoding API (<a class="reference external" href="https://photon.komoot.io">https://photon.komoot.io</a>) (#2007).</p></li>
+</ul>
+<p>Deprecations and compatibility notes:</p>
+<ul class="simple">
+<li><p>The <cite>op=</cite> keyword of <cite>sjoin()</cite> to indicate which spatial predicate to use
+for joining is being deprecated and renamed in favor of a new <cite>predicate=</cite>
+keyword (#1626).</p></li>
+<li><p>The <cite>cascaded_union</cite> attribute is deprecated, use <cite>unary_union</cite> instead (#2074).</p></li>
+<li><p>Constructing a GeoDataFrame with a duplicated “geometry” column is now
+disallowed. This can also raise an error in the <cite>pd.concat(.., axis=1)</cite>
+function if this results in duplicated active geometry columns (#2046).</p></li>
+<li><p>The <cite>explode()</cite> method currently returns a GeoSeries/GeoDataFrame with a
+MultiIndex, with an additional level with indices of the parts of the
+exploded multi-geometries. For consistency with pandas, this will change in
+the future and the new <cite>index_parts</cite> keyword is added to control this.</p></li>
+</ul>
+<p>Bug fixes:</p>
+<ul class="simple">
+<li><p>Fix in the <cite>clip()</cite> function to correctly clip MultiPoints instead of
+leaving them intact when partly outside of the clip bounds (#2148).</p></li>
+<li><p>Fix <cite>GeoSeries.isna()</cite> to correctly return a boolean Series in case of an
+empty GeoSeries (#2073).</p></li>
+<li><p>Fix the GeoDataFrame constructor to preserve the geometry name when the
+argument is already a GeoDataFrame object (i.e. <cite>GeoDataFrame(gdf)</cite>) (#2138).</p></li>
+<li><p>Fix loss of the values’ CRS when setting those values as a column
+(<cite>GeoDataFrame.__setitem__</cite>) (#1963)</p></li>
+<li><p>Fix in <cite>GeoDataFrame.apply()</cite> to preserve the active geometry column name
+(#1955).</p></li>
+<li><p>Fix in <cite>sjoin()</cite> to not ignore the suffixes in case of a right-join
+(<cite>how=”right</cite>) (#2065).</p></li>
+<li><p>Fix <cite>GeoDataFrame.explode()</cite> with a MultiIndex (#1945).</p></li>
+<li><p>Fix the handling of missing values in <cite>to/from_wkb</cite> and <cite>to_from_wkt</cite> (#1891).</p></li>
+<li><p>Fix <cite>to_file()</cite> and <cite>to_json()</cite> when DataFrame has duplicate columns to
+raise an error (#1900).</p></li>
+<li><p>Fix bug in the colors shown with user-defined classification scheme (#2019).</p></li>
+<li><p>Fix handling of the <cite>path_effects</cite> keyword in <cite>plot()</cite> (#2127).</p></li>
+<li><p>Fix <cite>GeoDataFrame.explode()</cite> to preserve <cite>attrs</cite> (#1935)</p></li>
+</ul>
+<p>Notes on (optional) dependencies:</p>
+<ul class="simple">
+<li><p>GeoPandas 0.9.0 dropped support for Python 3.6 and pandas 0.24. Further,
+the minimum required versions are numpy 1.18, shapely 1.6, fiona 1.8,
+matplotlib 3.1 and pyproj 2.2.</p></li>
+<li><p>Plotting with a classification schema now requires mapclassify version &gt;=
+2.4 (#1737).</p></li>
+<li><p>Compatibility fixes for the latest numpy in combination with Shapely 1.7 (#2072)</p></li>
+<li><p>Compatibility fixes for the upcoming Shapely 1.8 (#2087).</p></li>
+<li><p>Compatibility fixes for the latest PyGEOS (#1872, #2014) and matplotlib
+(colorbar issue, #2066).</p></li>
+</ul>
+</div>
 <div class="section" id="version-0-9-0-february-28-2021">
 <h2>Version 0.9.0 (February 28, 2021)<a class="headerlink" href="#version-0-9-0-february-28-2021" title="Permalink to this headline">¶</a></h2>
 <p>Many documentation improvements and a restyled and restructured website with
@@ -392,35 +1339,29 @@ spatial index in e.g. <cite>sjoin</cite> (#1343, #1401, #1421, #1427, #1428). Se
 [installation docs](<a class="reference external" href="https://geopandas.readthedocs.io/en/latest/install.html#using-the-optional-pygeos-dependency">https://geopandas.readthedocs.io/en/latest/install.html#using-the-optional-pygeos-dependency</a>)
 for more info and how to enable it.</p>
 <p>New features and improvements:</p>
-<ul>
-<li><p>IO enhancements:
-- New <cite>GeoDataFrame.to_postgis()</cite> method to write to PostGIS database (#1248).
-- New Apache Parquet and Feather file format support (#1180, #1435)
-- Allow appending to files with <cite>GeoDataFrame.to_file</cite> (#1229).
-- Add support for the <cite>ignore_geometry</cite> keyword in <cite>read_file</cite> to only read</p>
-<blockquote>
-<div><p>the attribute data. If set to True, a pandas DataFrame without geometry is
-returned (#1383).</p>
-</div></blockquote>
 <ul class="simple">
+<li><p>IO enhancements:</p>
+<ul>
+<li><p>New <cite>GeoDataFrame.to_postgis()</cite> method to write to PostGIS database (#1248).</p></li>
+<li><p>New Apache Parquet and Feather file format support (#1180, #1435)</p></li>
+<li><p>Allow appending to files with <cite>GeoDataFrame.to_file</cite> (#1229).</p></li>
+<li><p>Add support for the <cite>ignore_geometry</cite> keyword in <cite>read_file</cite> to only read
+the attribute data. If set to True, a pandas DataFrame without geometry is
+returned (#1383).</p></li>
 <li><p><cite>geopandas.read_file</cite> now supports reading from file-like objects (#1329).</p></li>
-<li><p><cite>GeoDataFrame.to_file</cite> now supports specifying the CRS to write to the file</p></li>
+<li><p><cite>GeoDataFrame.to_file</cite> now supports specifying the CRS to write to the file
+(#802). By default it still uses the CRS of the GeoDataFrame.</p></li>
+<li><p>New <cite>chunksize</cite> keyword in <cite>geopandas.read_postgis</cite> to read a query in
+chunks (#1123).</p></li>
 </ul>
-<p>(#802). By default it still uses the CRS of the GeoDataFrame.
-- New <cite>chunksize</cite> keyword in <cite>geopandas.read_postgis</cite> to read a query in</p>
-<blockquote>
-<div><p>chunks (#1123).</p>
-</div></blockquote>
 </li>
-<li><p>Improvements related to geometry columns and CRS:
-- Any column of the GeoDataFrame that has a “geometry” dtype is now returned</p>
-<blockquote>
-<div><p>as a GeoSeries. This means that when having multiple geometry columns, not
+<li><p>Improvements related to geometry columns and CRS:</p>
+<ul>
+<li><p>Any column of the GeoDataFrame that has a “geometry” dtype is now returned
+as a GeoSeries. This means that when having multiple geometry columns, not
 only the “active” geometry column is returned as a GeoSeries, but also
 accessing another geometry column (<cite>gdf[“other_geom_column”]</cite>) gives a
-GeoSeries (#1336).</p>
-</div></blockquote>
-<ul class="simple">
+GeoSeries (#1336).</p></li>
 <li><p>Multiple geometry columns in a GeoDataFrame can now each have a different
 CRS. The global <cite>gdf.crs</cite> attribute continues to returns the CRS of the
 “active” geometry column. The CRS of other geometry columns can be accessed
@@ -429,12 +1370,10 @@ from the column itself (eg <cite>gdf[“other_geom_column”].crs</cite>) (#1339
 geometries (#747).</p></li>
 </ul>
 </li>
-<li><p>Improvements related to plotting:
-- The y-axis is now scaled depending on the center of the plot when using a</p>
-<blockquote>
-<div><p>geographic CRS, instead of using an equal aspect ratio (#1290).</p>
-</div></blockquote>
-<ul class="simple">
+<li><p>Improvements related to plotting:</p>
+<ul>
+<li><p>The y-axis is now scaled depending on the center of the plot when using a
+geographic CRS, instead of using an equal aspect ratio (#1290).</p></li>
 <li><p>When passing a column of categorical dtype to the <cite>column=</cite> keyword of the
 GeoDataFrame <cite>plot()</cite>, we now honor all categories and its order (#1483).
 In addition, a new <cite>categories</cite> keyword allows to specify all categories
@@ -565,15 +1504,21 @@ with an empty result (#1190).</p></li>
 <p>Important note! This will be the last release to support Python 2.7 (#1031)</p>
 <p>API changes:</p>
 <ul class="simple">
-<li><p>A refactor of the internals based on the pandas ExtensionArray interface (#1000). The main user visible changes are:
-- The <cite>.dtype</cite> of a GeoSeries is now a <cite>‘geometry’</cite> dtype (and no longer a numpy <cite>object</cite> dtype).
-- The <cite>.values</cite> of a GeoSeries now returns a custom <cite>GeometryArray</cite>, and no longer a numpy array. To get back a numpy array of Shapely scalars, you can convert explicitly using <cite>np.asarray(..)</cite>.</p></li>
+<li><p>A refactor of the internals based on the pandas ExtensionArray interface (#1000). The main user visible changes are:</p>
+<ul>
+<li><p>The <cite>.dtype</cite> of a GeoSeries is now a <cite>‘geometry’</cite> dtype (and no longer a numpy <cite>object</cite> dtype).</p></li>
+<li><p>The <cite>.values</cite> of a GeoSeries now returns a custom <cite>GeometryArray</cite>, and no longer a numpy array. To get back a numpy array of Shapely scalars, you can convert explicitly using <cite>np.asarray(..)</cite>.</p></li>
+</ul>
+</li>
 <li><p>The <cite>GeoSeries</cite> constructor now raises a warning when passed non-geometry data. Currently the constructor falls back to return a pandas <cite>Series</cite>, but in the future this will raise an error (#1085).</p></li>
-<li><p>The missing value handling has been changed to now separate the concepts of missing geometries and empty geometries (#601, 1062). In practice this means that (see [the docs](<a class="reference external" href="https://geopandas.readthedocs.io/en/v0.6.0/missing_empty.html">https://geopandas.readthedocs.io/en/v0.6.0/missing_empty.html</a>) for more details):
-- <cite>GeoSeries.isna</cite> now considers only missing values, and if you want to check for empty geometries, you can use <cite>GeoSeries.is_empty</cite> (<cite>GeoDataFrame.isna</cite> already only looked at missing values).
-- <cite>GeoSeries.dropna</cite> now actually drops missing values (before it didn’t drop either missing or empty geometries)
-- <cite>GeoSeries.fillna</cite> only fills missing values (behaviour unchanged).
-- <cite>GeoSeries.align</cite> uses missing values instead of empty geometries by default to fill non-matching index entries.</p></li>
+<li><p>The missing value handling has been changed to now separate the concepts of missing geometries and empty geometries (#601, 1062). In practice this means that (see [the docs](<a class="reference external" href="https://geopandas.readthedocs.io/en/v0.6.0/missing_empty.html">https://geopandas.readthedocs.io/en/v0.6.0/missing_empty.html</a>) for more details):</p>
+<ul>
+<li><p><cite>GeoSeries.isna</cite> now considers only missing values, and if you want to check for empty geometries, you can use <cite>GeoSeries.is_empty</cite> (<cite>GeoDataFrame.isna</cite> already only looked at missing values).</p></li>
+<li><p><cite>GeoSeries.dropna</cite> now actually drops missing values (before it didn’t drop either missing or empty geometries)</p></li>
+<li><p><cite>GeoSeries.fillna</cite> only fills missing values (behaviour unchanged).</p></li>
+<li><p><cite>GeoSeries.align</cite> uses missing values instead of empty geometries by default to fill non-matching index entries.</p></li>
+</ul>
+</li>
 </ul>
 <p>New features and improvements:</p>
 <ul class="simple">
@@ -606,29 +1551,29 @@ with an empty result (#1190).</p></li>
 <div class="section" id="version-0-5-0-april-25-2019">
 <h2>Version 0.5.0 (April 25, 2019)<a class="headerlink" href="#version-0-5-0-april-25-2019" title="Permalink to this headline">¶</a></h2>
 <p>Improvements:</p>
-<ul class="simple">
+<ul>
 <li><p>Significant performance improvement (around 10x) for <cite>GeoDataFrame.iterfeatures</cite>,
 which also improves <cite>GeoDataFrame.to_file</cite> (#864).</p></li>
-<li><dl class="simple">
-<dt>File IO enhancements based on Fiona 1.8:</dt><dd><ul>
+<li><p>File IO enhancements based on Fiona 1.8:</p>
+<blockquote>
+<div><ul class="simple">
 <li><p>Support for writing bool dtype (#855) and datetime dtype, if the file format supports it (#728).</p></li>
 <li><p>Support for writing dataframes with multiple geometry types, if the file format allows it (e.g. GeoJSON for all types, or ESRI Shapefile for Polygon+MultiPolygon) (#827, #867, #870).</p></li>
 </ul>
-</dd>
-</dl>
+</div></blockquote>
 </li>
 <li><p>Compatibility with pyproj &gt;= 2 (#962).</p></li>
 <li><p>A new <cite>geopandas.points_from_xy()</cite> helper function to convert x and y coordinates to Point objects (#896).</p></li>
 <li><p>The <cite>buffer</cite> and <cite>interpolate</cite> methods now accept an array-like to specify a variable distance for each geometry (#781).</p></li>
 <li><p>Addition of a <cite>relate</cite> method, corresponding to the shapely method that returns the DE-9IM matrix (#853).</p></li>
-<li><dl class="simple">
-<dt>Plotting improvements:</dt><dd><ul>
+<li><p>Plotting improvements:</p>
+<blockquote>
+<div><ul class="simple">
 <li><p>Performance improvement in plotting by only flattening the geometries if there are actually ‘Multi’ geometries (#785).</p></li>
 <li><p>Choropleths: access to all <cite>mapclassify</cite> classification schemes and addition of the <cite>classification_kwds</cite> keyword in the <cite>plot</cite> method to specify options for the scheme (#876).</p></li>
 <li><p>Ability to specify a matplotlib axes object on which to plot the color bar with the <cite>cax</cite> keyword, in order to have more control over the color bar placement (#894).</p></li>
 </ul>
-</dd>
-</dl>
+</div></blockquote>
 </li>
 <li><p>Changed the default provider in <code class="docutils literal notranslate"><span class="pre">geopandas.tools.geocode</span></code> from Google (now requires an API key) to Geocode.Farm (#907, #975).</p></li>
 </ul>
@@ -671,7 +1616,7 @@ dependency for choropleth mapping with the <cite>scheme</cite> keyword (#872).</
 <li><p>Permit setting markersize for Point GeoSeries plots with column values (#633)</p></li>
 <li><p>Started an example gallery (#463, #690, #717)</p></li>
 <li><p>Support for plotting MultiPoints (#683)</p></li>
-<li><p>Testing functionalty (e.g. <cite>assert_geodataframe_equal</cite>) is now publicly exposed (#707)</p></li>
+<li><p>Testing functionality (e.g. <cite>assert_geodataframe_equal</cite>) is now publicly exposed (#707)</p></li>
 <li><p>Add <cite>explode</cite> method to GeoDataFrame (similar to the GeoSeries method) (#671)</p></li>
 <li><p>Set equal aspect on active axis on multi-axis figures (#718)</p></li>
 <li><p>Pass array of values to column argument in <cite>plot</cite> (#770)</p></li>
@@ -766,17 +1711,24 @@ for consistency with matplotlib (#208, #228, #240).</p></li>
 
       </div>
     </div>
+  
+  <script src="../_static/js/index.1c5a1a01449ed65a7b51.js"></script>
 
-    
-  <script src="../_static/js/index.d3f166471bb80abb5163.js"></script>
-
-
-    <footer class="footer mt-5 mt-md-0">
+  <footer class="footer mt-5 mt-md-0">
   <div class="container">
-    <p>
-          &copy; Copyright 2013–2021, GeoPandas developers.<br/>
-        Created using <a href="http://sphinx-doc.org/">Sphinx</a> 3.4.3.<br/>
-    </p>
+    
+    <div class="footer-item">
+      <p class="copyright">
+    &copy; Copyright 2013–2021, GeoPandas developers.<br/>
+</p>
+    </div>
+    
+    <div class="footer-item">
+      <p class="sphinx-version">
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.2.0.<br/>
+</p>
+    </div>
+    
   </div>
 </footer>
   </body>

@@ -1,6 +1,0 @@
-﻿geopandas.sindex.RTreeIndex.intersection
-========================================
-
-.. currentmodule:: geopandas.sindex
-
-.. automethod:: RTreeIndex.intersection

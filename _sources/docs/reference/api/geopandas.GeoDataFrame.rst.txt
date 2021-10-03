@@ -77,6 +77,7 @@
       ~GeoDataFrame.ewm
       ~GeoDataFrame.expanding
       ~GeoDataFrame.explode
+      ~GeoDataFrame.explore
       ~GeoDataFrame.ffill
       ~GeoDataFrame.fillna
       ~GeoDataFrame.filter
@@ -142,6 +143,7 @@
       ~GeoDataFrame.nsmallest
       ~GeoDataFrame.nunique
       ~GeoDataFrame.overlaps
+      ~GeoDataFrame.overlay
       ~GeoDataFrame.pad
       ~GeoDataFrame.pct_change
       ~GeoDataFrame.pipe
@@ -188,6 +190,8 @@
       ~GeoDataFrame.set_index
       ~GeoDataFrame.shift
       ~GeoDataFrame.simplify
+      ~GeoDataFrame.sjoin
+      ~GeoDataFrame.sjoin_nearest
       ~GeoDataFrame.skew
       ~GeoDataFrame.slice_shift
       ~GeoDataFrame.sort_index
@@ -229,6 +233,7 @@
       ~GeoDataFrame.to_wkb
       ~GeoDataFrame.to_wkt
       ~GeoDataFrame.to_xarray
+      ~GeoDataFrame.to_xml
       ~GeoDataFrame.touches
       ~GeoDataFrame.transform
       ~GeoDataFrame.translate

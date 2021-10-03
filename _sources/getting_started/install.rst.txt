@@ -138,7 +138,7 @@ Dependencies
 Required dependencies:
 
 - `numpy`_
-- `pandas`_ (version 0.24 or later)
+- `pandas`_ (version 0.25 or later)
 - `shapely`_ (interface to `GEOS`_)
 - `fiona`_ (interface to `GDAL`_)
 - `pyproj`_ (interface to `PROJ`_; version 2.2.0 or later)
@@ -154,8 +154,8 @@ Further, optional dependencies are:
 
 For plotting, these additional packages may be used:
 
-- `matplotlib`_ (>= 2.2.0)
-- `mapclassify`_ (>= 2.2.0)
+- `matplotlib`_ (>= 3.1.0)
+- `mapclassify`_ (>= 2.4.0)
 
 
 Using the optional PyGEOS dependency

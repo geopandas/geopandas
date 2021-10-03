@@ -1,0 +1,6 @@
+﻿geopandas.sjoin\_nearest
+========================
+
+.. currentmodule:: geopandas
+
+.. autofunction:: sjoin_nearest

@@ -1,6 +1,0 @@
-﻿geopandas.sindex.PyGEOSSTRTreeIndex.is\_empty
-=============================================
-
-.. currentmodule:: geopandas.sindex
-
-.. autoproperty:: PyGEOSSTRTreeIndex.is_empty

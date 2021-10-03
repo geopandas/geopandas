@@ -5,9 +5,10 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Contributing to GeoPandas &#8212; GeoPandas 0.9.0 documentation</title>
+    <title>Contributing to GeoPandas &#8212; GeoPandas 0.10.0 documentation</title>
     
-  <link rel="stylesheet" href="../_static/css/index.f658d18f9b420779cfdf24aa0a7e2d77.css">
+  <link href="../_static/css/theme.css" rel="stylesheet" />
+  <link href="../_static/css/index.c5995385ac14fb8791e8eb36b4908be2.css" rel="stylesheet" />
 
     
   <link rel="stylesheet"
@@ -19,20 +20,17 @@
 
     
       
-  <link rel="stylesheet"
-    href="../_static/vendor/open-sans_all/1.44.1/index.css">
-  <link rel="stylesheet"
-    href="../_static/vendor/lato_latin-ext/1.44.1/index.css">
 
     
-    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-    <link rel="stylesheet" href="../_static/basic.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/basic.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/plot_directive.css" />
     <link rel="stylesheet" type="text/css" href="../_static/custom.css" />
     <link rel="stylesheet" type="text/css" href="../_static/gallery.css" />
     
-  <link rel="preload" as="script" href="../_static/js/index.d3f166471bb80abb5163.js">
+  <link rel="preload" as="script" href="../_static/js/index.1c5a1a01449ed65a7b51.js">
 
-    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
     <script src="../_static/jquery.js"></script>
     <script src="../_static/underscore.js"></script>
     <script src="../_static/doctools.js"></script>
@@ -46,68 +44,94 @@
     <link rel="prev" title="Community" href="../community.html" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="docsearch:language" content="en" />
+    
   </head>
   <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="80">
     
-    <nav class="navbar navbar-light navbar-expand-lg bg-light fixed-top bd-navbar" id="navbar-main">
-<div class="container-xl">
+    <div class="container-fluid" id="banner"></div>
 
-    <a class="navbar-brand" href="../index.html">
     
-      <img src="../_static/geopandas_logo_web.svg" class="logo" alt="logo" />
+    <nav class="navbar navbar-light navbar-expand-lg bg-light fixed-top bd-navbar" id="navbar-main"><div class="container-xl">
+
+  <div id="navbar-start">
     
-    </a>
-    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-menu" aria-controls="navbar-menu" aria-expanded="false" aria-label="Toggle navigation">
-        <span class="navbar-toggler-icon"></span>
-    </button>
+    
 
-    <div id="navbar-menu" class="col-lg-9 collapse navbar-collapse">
-      <ul id="navbar-main-elements" class="navbar-nav mr-auto">
-        
-        
-        <li class="nav-item ">
-            <a class="nav-link" href="../index.html">Home</a>
-        </li>
-        
-        <li class="nav-item ">
-            <a class="nav-link" href="../about.html">About</a>
-        </li>
-        
-        <li class="nav-item ">
-            <a class="nav-link" href="../getting_started.html">Getting started</a>
-        </li>
-        
-        <li class="nav-item ">
-            <a class="nav-link" href="../docs.html">Documentation</a>
-        </li>
-        
-        <li class="nav-item active">
-            <a class="nav-link" href="../community.html">Community</a>
-        </li>
-        
-        
-      </ul>
+<a class="navbar-brand" href="../index.html">
+  <img src="../_static/geopandas_logo_web.svg" class="logo" alt="logo">
+</a>
 
 
+    
+  </div>
+
+  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-collapsible" aria-controls="navbar-collapsible" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+
+  
+  <div id="navbar-collapsible" class="col-lg-9 collapse navbar-collapse">
+    <div id="navbar-center" class="mr-auto">
       
+      <div class="navbar-center-item">
+        <ul id="navbar-main-elements" class="navbar-nav">
+    <li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../index.html">
+  Home
+ </a>
+</li>
 
-      <ul class="navbar-nav">
-        
-          <li class="nav-item">
-            <a class="nav-link" href="https://github.com/geopandas/geopandas" target="_blank" rel="noopener">
-              <span><i class="fab fa-github-square"></i></span>
-            </a>
-          </li>
-        
-        
-          <li class="nav-item">
-            <a class="nav-link" href="https://twitter.com/geopandas" target="_blank" rel="noopener">
-              <span><i class="fab fa-twitter-square"></i></span>
-            </a>
-          </li>
-        
-      </ul>
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../about.html">
+  About
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../getting_started.html">
+  Getting started
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../docs.html">
+  Documentation
+ </a>
+</li>
+
+<li class="toctree-l1 current active nav-item">
+ <a class="reference internal nav-link" href="../community.html">
+  Community
+ </a>
+</li>
+
+    
+</ul>
+      </div>
+      
     </div>
+
+    <div id="navbar-end">
+      
+      <div class="navbar-end-item">
+        <ul id="navbar-icon-links" class="navbar-nav" aria-label="Icon Links">
+        <li class="nav-item">
+          <a class="nav-link" href="https://github.com/geopandas/geopandas" rel="noopener" target="_blank" title="GitHub">
+            <span><i class="fab fa-github-square"></i></span>
+            <label class="sr-only">GitHub</label>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="https://twitter.com/geopandas" rel="noopener" target="_blank" title="Twitter">
+            <span><i class="fab fa-twitter-square"></i></span>
+            <label class="sr-only">Twitter</label>
+          </a>
+        </li>
+      </ul>
+      </div>
+      
+    </div>
+  </div>
 </div>
     </nav>
     
@@ -115,141 +139,160 @@
     <div class="container-xl">
       <div class="row">
           
-          <div class="col-12 col-md-3 bd-sidebar"><form class="bd-search d-flex align-items-center" action="../search.html" method="get">
+            
+            <!-- Only show if we have sidebars configured, else just a small margin  -->
+            <div class="col-12 col-md-3 bd-sidebar"><form class="bd-search d-flex align-items-center" action="../search.html" method="get">
   <i class="icon fas fa-search"></i>
   <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
-</form>
-<nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
+</form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
+  <div class="bd-toc-item active">
+    <p class="caption" role="heading">
+ <span class="caption-text">
+  Community
+ </span>
+</p>
+<ul class="current nav bd-sidenav">
+ <li class="toctree-l1 current active">
+  <a class="current reference internal" href="#">
+   Contributing
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="code_of_conduct.html">
+   Code of Conduct
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="ecosystem.html">
+   Ecosystem
+  </a>
+ </li>
+</ul>
 
-    <div class="bd-toc-item active">
-    
-  
-    <ul class="nav bd-sidenav">
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-          
+  </div>
+</nav>
+            </div>
             
-                <li class="active">
-                    <a href="">Contributing</a>
-                </li>
-            
-          
-            
-                <li class="">
-                    <a href="code_of_conduct.html">Code of Conduct</a>
-                </li>
-            
-          
-            
-                <li class="">
-                    <a href="ecosystem.html">Ecosystem</a>
-                </li>
-            
-          
-        
-        
-      </ul>
-  
-  </nav>
-          </div>
           
 
           
           <div class="d-none d-xl-block col-xl-2 bd-toc">
+            
               
+              <div class="toc-item">
+                
 <div class="tocsection onthispage pt-5 pb-3">
     <i class="fas fa-list"></i> On this page
 </div>
 
 <nav id="bd-toc-nav">
-    <ul class="nav section-nav flex-column">
-    
-        <li class="nav-item toc-entry toc-h2">
-            <a href="#overview" class="nav-link">Overview</a><ul class="nav section-nav flex-column">
-                
-        <li class="nav-item toc-entry toc-h3">
-            <a href="#seven-steps-for-contributing" class="nav-link">Seven Steps for Contributing</a>
-        </li>
-    
-            </ul>
-        </li>
-    
-        <li class="nav-item toc-entry toc-h2">
-            <a href="#forking-the-geopandas-repository-using-git" class="nav-link">1) Forking the GeoPandas repository using Git</a><ul class="nav section-nav flex-column">
-                
-        <li class="nav-item toc-entry toc-h3">
-            <a href="#getting-started-with-git" class="nav-link">Getting started with Git</a>
-        </li>
-    
-        <li class="nav-item toc-entry toc-h3">
-            <a href="#forking" class="nav-link">Forking</a>
-        </li>
-    
-        <li class="nav-item toc-entry toc-h3">
-            <a href="#creating-a-branch" class="nav-link">Creating a branch</a>
-        </li>
-    
-            </ul>
-        </li>
-    
-        <li class="nav-item toc-entry toc-h2">
-            <a href="#creating-a-development-environment" class="nav-link">2) Creating a development environment</a>
-        </li>
-    
-        <li class="nav-item toc-entry toc-h2">
-            <a href="#installing-dependencies" class="nav-link">3) Installing Dependencies</a>
-        </li>
-    
-        <li class="nav-item toc-entry toc-h2">
-            <a href="#making-a-development-build" class="nav-link">4) Making a development build</a>
-        </li>
-    
-        <li class="nav-item toc-entry toc-h2">
-            <a href="#making-changes-and-writing-tests" class="nav-link">5) Making changes and writing tests</a><ul class="nav section-nav flex-column">
-                
-        <li class="nav-item toc-entry toc-h3">
-            <a href="#writing-tests" class="nav-link">Writing tests</a>
-        </li>
-    
-        <li class="nav-item toc-entry toc-h3">
-            <a href="#running-the-test-suite" class="nav-link">Running the test suite</a>
-        </li>
-    
-            </ul>
-        </li>
-    
-        <li class="nav-item toc-entry toc-h2">
-            <a href="#updating-the-documentation" class="nav-link">6) Updating the Documentation</a>
-        </li>
-    
-        <li class="nav-item toc-entry toc-h2">
-            <a href="#submitting-a-pull-request" class="nav-link">7) Submitting a Pull Request</a>
-        </li>
-    
-        <li class="nav-item toc-entry toc-h2">
-            <a href="#style-guide-linting" class="nav-link">Style Guide & Linting</a>
-        </li>
-    
-        <li class="nav-item toc-entry toc-h2">
-            <a href="#commit-message-conventions" class="nav-link">Commit message conventions</a>
-        </li>
-    
-    </ul>
+    <ul class="visible nav section-nav flex-column">
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#overview">
+   Overview
+  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#seven-steps-for-contributing">
+     Seven Steps for Contributing
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#forking-the-geopandas-repository-using-git">
+   1) Forking the
+   <em>
+    GeoPandas
+   </em>
+   repository using Git
+  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#getting-started-with-git">
+     Getting started with Git
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#forking">
+     Forking
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#creating-a-branch">
+     Creating a branch
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#creating-a-development-environment">
+   2) Creating a development environment
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#installing-dependencies">
+   3) Installing Dependencies
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#making-a-development-build">
+   4) Making a development build
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#making-changes-and-writing-tests">
+   5) Making changes and writing tests
+  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#writing-tests">
+     Writing tests
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#running-the-test-suite">
+     Running the test suite
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#updating-the-documentation">
+   6) Updating the Documentation
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#submitting-a-pull-request">
+   7) Submitting a Pull Request
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#style-guide-linting">
+   Style Guide &amp; Linting
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#commit-message-conventions">
+   Commit message conventions
+  </a>
+ </li>
+</ul>
+
 </nav>
-
-
+              </div>
               
+              <div class="toc-item">
+                
+              </div>
+              
+            
           </div>
           
 
+          
+          
+            
           
           <main class="col-12 col-md-9 col-xl-7 py-md-5 pl-md-5 pr-md-4 bd-content" role="main">
               
@@ -288,7 +331,7 @@ format throughout the project. For more details see
 grouping, imports should be alphabetized.  Always use absolute
 imports when possible, and explicit relative imports for local
 imports when necessary in tests.</p></li>
-<li><p>GeoPandas supports Python 3.6+ only. The last version of GeoPandas
+<li><p>GeoPandas supports Python 3.7+ only. The last version of GeoPandas
 supporting Python 2 is 0.6.</p></li>
 </ul>
 <div class="section" id="seven-steps-for-contributing">
@@ -341,8 +384,8 @@ want to clone your fork to your machine:</p>
 <p>This creates the directory <cite>geopandas-yourname</cite> and connects your repository to
 the upstream (main project) <em>GeoPandas</em> repository.</p>
 <p>The testing suite will run automatically on GitHub Actions once your pull request is
-submitted. The test suite will also autmatically run on your branch so you can
-check it  prior to submitting the pull request.</p>
+submitted. The test suite will also automatically run on your branch so you can
+check it prior to submitting the pull request.</p>
 </div>
 <div class="section" id="creating-a-branch">
 <h3>Creating a branch<a class="headerlink" href="#creating-a-branch" title="Permalink to this headline">¶</a></h3>
@@ -462,29 +505,34 @@ install <em>GeoPandas</em>) by typing:</p>
 </div>
 <div class="section" id="updating-the-documentation">
 <h2>6) Updating the Documentation<a class="headerlink" href="#updating-the-documentation" title="Permalink to this headline">¶</a></h2>
-<p><em>GeoPandas</em> documentation resides in the <code class="docutils literal notranslate"><span class="pre">doc</span></code> folder. Changes to the docs are make by
-modifying the appropriate file in the <cite>source</cite> folder within <code class="docutils literal notranslate"><span class="pre">doc</span></code>. <em>GeoPandas</em> docs use
+<p><em>GeoPandas</em> documentation resides in the <code class="docutils literal notranslate"><span class="pre">doc</span></code> folder. Changes to the docs are made by
+modifying the appropriate file in the <code class="docutils literal notranslate"><span class="pre">source</span></code> folder within <code class="docutils literal notranslate"><span class="pre">doc</span></code>. <em>GeoPandas</em> docs use
 mixture of reStructuredText syntax for <code class="docutils literal notranslate"><span class="pre">rst</span></code> files, <a class="reference external" href="http://www.sphinx-doc.org/en/stable/rest.html#rst-primer">which is explained here</a> and MyST syntax for <code class="docutils literal notranslate"><span class="pre">md</span></code>
 files <a class="reference external" href="https://myst-parser.readthedocs.io/en/latest/index.html">explained here</a>.
 The docstrings follow the <a class="reference external" href="https://github.com/numpy/numpy/blob/master/doc/HOWTO_DOCUMENT.rst.txt">Numpy Docstring standard</a>. Some pages
 and examples are Jupyter notebooks converted to docs using <a class="reference external" href="https://nbsphinx.readthedocs.io/">nbsphinx</a>. Jupyter notebooks should be stored without the output.</p>
+<p>We highly encourage you to follow the <a class="reference external" href="https://developers.google.com/style/highlights">Google developer documentation style guide</a> when updating or creating new documentation.</p>
 <p>Once you have made your changes, you may try if they render correctly by
-building the docs using sphinx. To do so, you can navigate to the <cite>doc</cite> folder
-and type:</p>
+building the docs using sphinx. To do so, you can navigate to the <cite>doc</cite> folder:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">cd</span> <span class="n">doc</span>
+</pre></div>
+</div>
+<p>and type:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">make</span> <span class="n">html</span>
 </pre></div>
 </div>
-<p>The resulting html pages will be located in <code class="docutils literal notranslate"><span class="pre">doc/build/html</span></code>. In case of any errors, you
-can try to use <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">html</span></code> within a new environment based on environment.yml
-specification in the <code class="docutils literal notranslate"><span class="pre">doc</span></code> folder. You may need to register Jupyter kernel as
+<p>The resulting html pages will be located in <code class="docutils literal notranslate"><span class="pre">doc/build/html</span></code>.</p>
+<p>In case of any errors, you can try to use <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">html</span></code> within a new environment based on
+environment.yml specification in the <code class="docutils literal notranslate"><span class="pre">doc</span></code> folder. You may need to register Jupyter kernel as
 <code class="docutils literal notranslate"><span class="pre">geopandas_docs</span></code>. Using conda:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">conda</span> <span class="n">env</span> <span class="n">create</span> <span class="o">-</span><span class="n">f</span> <span class="n">environment</span><span class="o">.</span><span class="n">yml</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">cd</span> <span class="n">doc</span>
+<span class="n">conda</span> <span class="n">env</span> <span class="n">create</span> <span class="o">-</span><span class="n">f</span> <span class="n">environment</span><span class="o">.</span><span class="n">yml</span>
 <span class="n">conda</span> <span class="n">activate</span> <span class="n">geopandas_docs</span>
 <span class="n">python</span> <span class="o">-</span><span class="n">m</span> <span class="n">ipykernel</span> <span class="n">install</span> <span class="o">--</span><span class="n">user</span> <span class="o">--</span><span class="n">name</span> <span class="n">geopandas_docs</span>
 <span class="n">make</span> <span class="n">html</span>
 </pre></div>
 </div>
-<p>For minor updates, you can skip whole <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">html</span></code> part as reStructuredText and MyST
+<p>For minor updates, you can skip the <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">html</span></code> part as reStructuredText and MyST
 syntax are usually quite straightforward.</p>
 </div>
 <div class="section" id="submitting-a-pull-request">
@@ -569,17 +617,24 @@ is fine, but the former is generally preferred:</p>
 
       </div>
     </div>
+  
+  <script src="../_static/js/index.1c5a1a01449ed65a7b51.js"></script>
 
-    
-  <script src="../_static/js/index.d3f166471bb80abb5163.js"></script>
-
-
-    <footer class="footer mt-5 mt-md-0">
+  <footer class="footer mt-5 mt-md-0">
   <div class="container">
-    <p>
-          &copy; Copyright 2013–2021, GeoPandas developers.<br/>
-        Created using <a href="http://sphinx-doc.org/">Sphinx</a> 3.4.3.<br/>
-    </p>
+    
+    <div class="footer-item">
+      <p class="copyright">
+    &copy; Copyright 2013–2021, GeoPandas developers.<br/>
+</p>
+    </div>
+    
+    <div class="footer-item">
+      <p class="sphinx-version">
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.2.0.<br/>
+</p>
+    </div>
+    
   </div>
 </footer>
   </body>

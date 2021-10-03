@@ -1,0 +1,6 @@
+﻿geopandas.GeoSeries.clip
+========================
+
+.. currentmodule:: geopandas
+
+.. automethod:: GeoSeries.clip

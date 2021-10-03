@@ -14,8 +14,8 @@ Data Structures
 =========================================
 
 GeoPandas implements two main data structures, a :class:`GeoSeries` and a
-:class:`GeoDataFrame`.  These are subclasses of pandas ``Series`` and
-``DataFrame``, respectively.
+:class:`GeoDataFrame`.  These are subclasses of :class:`pandas.Series` and
+:class:`pandas.DataFrame`, respectively.
 
 GeoSeries
 ---------
@@ -45,7 +45,7 @@ operation is carried out elementwise.  The two series will be aligned
 by matching indices.  Binary operations can also be applied to a
 single geometry, in which case the operation is carried out for each
 element of the series with that geometry.  In either case, a
-``Series`` or a :class:`GeoSeries` will be returned, as appropriate.
+:class:`~pandas.Series` or a :class:`GeoSeries` will be returned, as appropriate.
 
 A short summary of a few attributes and methods for GeoSeries is
 presented here, and a full list can be found in the :doc:`all attributes and methods page <../reference/geoseries>`.
@@ -64,7 +64,7 @@ Attributes
 Basic Methods
 ^^^^^^^^^^^^^^
 
-* :meth:`~GeoSeries.distance`: returns ``Series`` with minimum distance from each entry to ``other``
+* :meth:`~GeoSeries.distance`: returns :class:`~pandas.Series` with minimum distance from each entry to ``other``
 * :attr:`~GeoSeries.centroid`: returns :class:`GeoSeries` of centroids
 * :meth:`~GeoSeries.representative_point`:  returns :class:`GeoSeries` of points that are guaranteed to be within each geometry. It does **NOT** return centroids.
 * :meth:`~GeoSeries.to_crs`: change coordinate reference system. See :doc:`projections <projections>`
@@ -117,6 +117,7 @@ We can also rename this column to "borders":
 Now, we create centroids and make it the geometry:
 
 .. ipython:: python
+   :okwarning:
 
     world['centroid_column'] = world.centroid
     world = world.set_geometry('centroid_column')
@@ -129,14 +130,14 @@ Now, we create centroids and make it the geometry:
 
     gdf = gdf.rename(columns={'old_name': 'new_name'}).set_geometry('new_name')
 
-**Note 2:** Somewhat confusingly, by default when you use the ``read_file`` command, the column containing spatial objects from the file is named "geometry" by default, and will be set as the active geometry column. However, despite using the same term for the name of the column and the name of the special attribute that keeps track of the active column, they are distinct. You can easily shift the active geometry column to a different :class:`GeoSeries` with the :meth:`~GeoDataFrame.set_geometry` command. Further, ``gdf.geometry`` will always return the active geometry column, *not* the column named ``geometry``. If you wish to call a column named "geometry", and a different column is the active geometry column, use ``gdf['geometry']``, not ``gdf.geometry``.
+**Note 2:** Somewhat confusingly, by default when you use the :func:`~geopandas.read_file` command, the column containing spatial objects from the file is named "geometry" by default, and will be set as the active geometry column. However, despite using the same term for the name of the column and the name of the special attribute that keeps track of the active column, they are distinct. You can easily shift the active geometry column to a different :class:`GeoSeries` with the :meth:`~GeoDataFrame.set_geometry` command. Further, ``gdf.geometry`` will always return the active geometry column, *not* the column named ``geometry``. If you wish to call a column named "geometry", and a different column is the active geometry column, use ``gdf['geometry']``, not ``gdf.geometry``.
 
 Attributes and Methods
 ~~~~~~~~~~~~~~~~~~~~~~
 
 Any of the attributes calls or methods described for a :class:`GeoSeries` will work on a :class:`GeoDataFrame` -- effectively, they are just applied to the "geometry" :class:`GeoSeries`.
 
-However, ``GeoDataFrames`` also have a few extra methods for input and output which are described on the :doc:`Input and Output <io>` page and for geocoding with are described in :doc:`Geocoding <geocoding>`.
+However, :class:`GeoDataFrames <GeoDataFrame>` also have a few extra methods for input and output which are described on the :doc:`Input and Output <io>` page and for geocoding with are described in :doc:`Geocoding <geocoding>`.
 
 
 .. ipython:: python
@@ -157,7 +158,7 @@ option to control:
     geopandas.options
 
 The ``geopandas.options.display_precision`` option can control the number of
-decimals to show in the display of coordinates in the geometry column. 
+decimals to show in the display of coordinates in the geometry column.
 In the ``world`` example of above, the default is to show 5 decimals for
 geographic coordinates:
 

@@ -1,6 +1,0 @@
-﻿geopandas.sindex.PyGEOSSTRTreeIndex.intersection
-================================================
-
-.. currentmodule:: geopandas.sindex
-
-.. automethod:: PyGEOSSTRTreeIndex.intersection

@@ -1,0 +1,6 @@
+﻿geopandas.GeoDataFrame.sjoin\_nearest
+=====================================
+
+.. currentmodule:: geopandas
+
+.. automethod:: GeoDataFrame.sjoin_nearest

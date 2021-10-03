@@ -1,6 +1,0 @@
-﻿geopandas.sindex.RTreeIndex.is\_empty
-=====================================
-
-.. currentmodule:: geopandas.sindex
-
-.. autoproperty:: RTreeIndex.is_empty

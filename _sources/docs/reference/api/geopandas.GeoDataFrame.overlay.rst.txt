@@ -1,0 +1,6 @@
+﻿geopandas.GeoDataFrame.overlay
+==============================
+
+.. currentmodule:: geopandas
+
+.. automethod:: GeoDataFrame.overlay

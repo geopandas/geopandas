@@ -1,0 +1,6 @@
+﻿geopandas.GeoSeries.to\_wkb
+===========================
+
+.. currentmodule:: geopandas
+
+.. automethod:: GeoSeries.to_wkb

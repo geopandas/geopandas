@@ -18,7 +18,7 @@ library, which in turn makes use of a massive open-source program called
 transformations.
 
 Any arguments passed to :func:`geopandas.read_file` after the file name will be
-passed directly to ``fiona.open``, which does the actual data importation. In
+passed directly to :func:`fiona.open`, which does the actual data importation. In
 general, :func:`geopandas.read_file` is pretty smart and should do what you want
 without extra arguments, but for more help, type::
 
@@ -30,7 +30,7 @@ the ``layer`` keyword::
 
     countries_gdf = geopandas.read_file("package.gpkg", layer='countries')
 
-Where supported in ``fiona``, *geopandas* can also load resources directly from
+Where supported in :mod:`fiona`, *geopandas* can also load resources directly from
 a web URL, for example for GeoJSON files from `geojson.xyz <http://geojson.xyz/>`_::
 
     url = "http://d2ad6b4ur7yvpq.cloudfront.net/naturalearth-3.3.0/ne_110m_land.geojson"
@@ -50,8 +50,8 @@ specify the filename::
 
     zipfile = "zip:///Users/name/Downloads/gadm36_AFG_shp.zip!data/gadm36_AFG_1.shp"
 
-It is also possible to read any file-like objects with a ``read()`` method, such
-as a file handler (e.g. via built-in ``open`` function) or ``StringIO``::
+It is also possible to read any file-like objects with a :func:`os.read` method, such
+as a file handler (e.g. via built-in :func:`open` function) or :class:`~io.StringIO`::
 
     filename = "test.geojson"
     file = open(filename)
@@ -197,7 +197,7 @@ Spatial databases
 Writing to PostGIS::
 
     from sqlalchemy import create_engine
-    db_connection_url = "postgres://myusername:mypassword@myhost:5432/mydatabase";
+    db_connection_url = "postgresql://myusername:mypassword@myhost:5432/mydatabase";
     engine = create_engine(db_connection_url)
     countries_gdf.to_postgis("countries_table", con=engine)
 

@@ -1,0 +1,6 @@
+﻿geopandas.GeoDataFrame.to\_wkt
+==============================
+
+.. currentmodule:: geopandas
+
+.. automethod:: GeoDataFrame.to_wkt

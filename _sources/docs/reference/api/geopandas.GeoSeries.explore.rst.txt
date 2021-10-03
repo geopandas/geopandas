@@ -1,0 +1,6 @@
+﻿geopandas.GeoSeries.explore
+===========================
+
+.. currentmodule:: geopandas
+
+.. automethod:: GeoSeries.explore

@@ -1,6 +1,0 @@
-﻿geopandas.sindex.RTreeIndex.query
-=================================
-
-.. currentmodule:: geopandas.sindex
-
-.. automethod:: RTreeIndex.query
