@@ -837,3 +837,14 @@ def test_to_file__undetermined_driver(tmp_path, df_nybb):
     df_nybb.to_file(shpdir)
     assert shpdir.is_dir()
     assert list(shpdir.glob("*.shp"))
+
+
+@pytest.mark.parametrize(
+    "test_file", [(pathlib.Path("~/test_file.geojson")), "~/test_file.geojson"]
+)
+def test_write_read_file(test_file):
+    gdf = geopandas.GeoDataFrame(geometry=[box(0, 0, 10, 10)], crs=_CRS)
+    gdf.to_file(test_file, driver="GeoJSON")
+    df_json = geopandas.read_file(test_file)
+    assert_geodataframe_equal(gdf, df_json, check_crs=True)
+    os.remove(os.path.expanduser(test_file))

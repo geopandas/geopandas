@@ -7,6 +7,7 @@ import pytest
 from pandas import DataFrame, read_parquet as pd_read_parquet
 from pandas.testing import assert_frame_equal
 import numpy as np
+from shapely.geometry import box
 
 import geopandas
 from geopandas import GeoDataFrame, read_file, read_parquet, read_feather
@@ -541,3 +542,21 @@ def test_non_fsspec_url_with_storage_options_raises():
 def test_prefers_pyarrow_fs():
     filesystem, _ = _get_filesystem_path("file:///data.parquet")
     assert isinstance(filesystem, pyarrow.fs.LocalFileSystem)
+
+
+def test_write_read_parquet_expand_user():
+    gdf = geopandas.GeoDataFrame(geometry=[box(0, 0, 10, 10)], crs="epsg:4326")
+    test_file = "~/test_file.parquet"
+    gdf.to_parquet(test_file)
+    pq_df = geopandas.read_parquet(test_file)
+    assert_geodataframe_equal(gdf, pq_df, check_crs=True)
+    os.remove(os.path.expanduser(test_file))
+
+
+def test_write_read_feather_expand_user():
+    gdf = geopandas.GeoDataFrame(geometry=[box(0, 0, 10, 10)], crs="epsg:4326")
+    test_file = "~/test_file.feather"
+    gdf.to_feather(test_file)
+    f_df = geopandas.read_feather(test_file)
+    assert_geodataframe_equal(gdf, f_df, check_crs=True)
+    os.remove(os.path.expanduser(test_file))

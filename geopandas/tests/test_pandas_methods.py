@@ -619,7 +619,7 @@ def test_preserve_attrs(df):
     assert df2.attrs == attrs
 
     # https://github.com/geopandas/geopandas/issues/1875
-    df3 = df2.explode()
+    df3 = df2.explode(index_parts=True)
     assert df3.attrs == attrs
 
 

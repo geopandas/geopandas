@@ -12,6 +12,7 @@ from shapely.geometry.base import BaseGeometry
 from geopandas.base import GeoPandasBase, _delegate_property
 from geopandas.plotting import plot_series
 from geopandas.explore import _explore_geoseries
+import geopandas
 
 from . import _compat as compat
 from ._decorator import doc
@@ -20,6 +21,7 @@ from .array import (
     from_shapely,
     from_wkb,
     from_wkt,
+    points_from_xy,
     to_wkb,
     to_wkt,
 )
@@ -437,6 +439,61 @@ class GeoSeries(GeoPandasBase, Series):
         return cls._from_wkb_or_wkb(from_wkt, data, index=index, crs=crs, **kwargs)
 
     @classmethod
+    def from_xy(cls, x, y, z=None, index=None, crs=None, **kwargs):
+        """
+        Alternate constructor to create a :class:`~geopandas.GeoSeries` of Point
+        geometries from lists or arrays of x, y(, z) coordinates
+
+        In case of geographic coordinates, it is assumed that longitude is captured
+        by ``x`` coordinates and latitude by ``y``.
+
+        Parameters
+        ----------
+        x, y, z : iterable
+        index : array-like or Index, optional
+            The index for the GeoSeries. If not given and all coordinate inputs
+            are Series with an equal index, that index is used.
+        crs : value, optional
+            Coordinate Reference System of the geometry objects. Can be anything
+            accepted by
+            :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
+            such as an authority string (eg "EPSG:4326") or a WKT string.
+        **kwargs
+            Additional arguments passed to the Series constructor,
+            e.g. ``name``.
+
+        Returns
+        -------
+        GeoSeries
+
+        See Also
+        --------
+        GeoSeries.from_wkt
+        points_from_xy
+
+        Examples
+        --------
+
+        >>> x = [2.5, 5, -3.0]
+        >>> y = [0.5, 1, 1.5]
+        >>> s = geopandas.GeoSeries.from_xy(x, y, crs="EPSG:4326")
+        >>> s
+        0    POINT (2.50000 0.50000)
+        1    POINT (5.00000 1.00000)
+        2    POINT (-3.00000 1.50000)
+        dtype: geometry
+        """
+        if index is None:
+            if (
+                isinstance(x, Series)
+                and isinstance(y, Series)
+                and x.index.equals(y.index)
+                and (z is None or (isinstance(z, Series) and x.index.equals(z.index)))
+            ):  # check if we can reuse index
+                index = x.index
+        return cls(points_from_xy(x, y, z, crs=crs), index=index, crs=crs, **kwargs)
+
+    @classmethod
     def _from_wkb_or_wkb(
         cls, from_wkb_or_wkt_function, data, index=None, crs=None, **kwargs
     ):
@@ -757,13 +814,24 @@ class GeoSeries(GeoPandasBase, Series):
         """Interactive map based on folium/leaflet.js"""
         return _explore_geoseries(self, *args, **kwargs)
 
-    def explode(self):
+    def explode(self, ignore_index=False, index_parts=None):
         """
         Explode multi-part geometries into multiple single geometries.
 
         Single rows can become multiple rows.
         This is analogous to PostGIS's ST_Dump(). The 'path' index is the
         second level of the returned MultiIndex
+
+        Parameters
+        ----------
+        ignore_index : bool, default False
+            If True, the resulting index will be labelled 0, 1, …, n - 1,
+            ignoring `index_parts`.
+        index_parts : boolean, default True
+            If True, the resulting index will be a multi-index (original
+            index with an additional level indicating the multiple
+            geometries: a new zero-based index for each single part geometry
+            per multi-part geometry).
 
         Returns
         -------
@@ -782,7 +850,7 @@ class GeoSeries(GeoPandasBase, Series):
         1    MULTIPOINT (2.00000 2.00000, 3.00000 3.00000, ...
         dtype: geometry
 
-        >>> s.explode()
+        >>> s.explode(index_parts=True)
         0  0    POINT (0.00000 0.00000)
            1    POINT (1.00000 1.00000)
         1  0    POINT (2.00000 2.00000)
@@ -795,6 +863,16 @@ class GeoSeries(GeoPandasBase, Series):
         GeoDataFrame.explode
 
         """
+        if index_parts is None and not ignore_index:
+            warnings.warn(
+                "Currently, index_parts defaults to True, but in the future, "
+                "it will default to False to be consistent with Pandas. "
+                "Use `index_parts=True` to keep the current behavior and True/False "
+                "to silence the warning.",
+                FutureWarning,
+                stacklevel=2,
+            )
+            index_parts = True
 
         if compat.USE_PYGEOS and compat.PYGEOS_GE_09:
             import pygeos  # noqa
@@ -819,14 +897,23 @@ class GeoSeries(GeoPandasBase, Series):
 
             # extract original index values based on integer index
             outer_index = self.index.take(outer_idx)
+            if ignore_index:
+                index = range(len(geometries))
 
-            nlevels = outer_index.nlevels
-            index_arrays = [outer_index.get_level_values(lvl) for lvl in range(nlevels)]
-            index_arrays.append(inner_index)
+            elif index_parts:
+                nlevels = outer_index.nlevels
+                index_arrays = [
+                    outer_index.get_level_values(lvl) for lvl in range(nlevels)
+                ]
+                index_arrays.append(inner_index)
 
-            index = MultiIndex.from_arrays(
-                index_arrays, names=self.index.names + [None]
-            )
+                index = MultiIndex.from_arrays(
+                    index_arrays, names=self.index.names + [None]
+                )
+
+            else:
+                index = outer_index
+
             return GeoSeries(geometries, index=index, crs=self.crs).__finalize__(self)
 
         # else PyGEOS is not available or version <= 0.8
@@ -843,11 +930,18 @@ class GeoSeries(GeoPandasBase, Series):
             index.extend(idxs)
             geometries.extend(geoms)
 
-        # if self.index is a MultiIndex then index is a list of nested tuples
-        if isinstance(self.index, MultiIndex):
-            index = [tuple(outer) + (inner,) for outer, inner in index]
+        if ignore_index:
+            index = range(len(geometries))
 
-        index = MultiIndex.from_tuples(index, names=self.index.names + [None])
+        elif index_parts:
+            # if self.index is a MultiIndex then index is a list of nested tuples
+            if isinstance(self.index, MultiIndex):
+                index = [tuple(outer) + (inner,) for outer, inner in index]
+            index = MultiIndex.from_tuples(index, names=self.index.names + [None])
+
+        else:
+            index = [idx for idx, _ in index]
+
         return GeoSeries(geometries, index=index, crs=self.crs).__finalize__(self)
 
     #
@@ -1203,3 +1297,51 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
             stacklevel=2,
         )
         return self.difference(other)
+
+    def clip(self, mask, keep_geom_type=False):
+        """Clip points, lines, or polygon geometries to the mask extent.
+
+        Both layers must be in the same Coordinate Reference System (CRS).
+        The GeoSeries will be clipped to the full extent of the `mask` object.
+
+        If there are multiple polygons in mask, data from the GeoSeries will be
+        clipped to the total boundary of all polygons in mask.
+
+        Parameters
+        ----------
+        mask : GeoDataFrame, GeoSeries, (Multi)Polygon
+            Polygon vector layer used to clip `gdf`.
+            The mask's geometry is dissolved into one geometric feature
+            and intersected with `gdf`.
+        keep_geom_type : boolean, default False
+            If True, return only geometries of original type in case of intersection
+            resulting in multiple geometry types or GeometryCollections.
+            If False, return all resulting geometries (potentially mixed-types).
+
+        Returns
+        -------
+        GeoSeries
+            Vector data (points, lines, polygons) from `gdf` clipped to
+            polygon boundary from mask.
+
+        See also
+        --------
+        clip : top-level function for clip
+
+        Examples
+        --------
+        Clip points (global cities) with a polygon (the South American continent):
+
+        >>> world = geopandas.read_file(
+        ...     geopandas.datasets.get_path('naturalearth_lowres'))
+        >>> south_america = world[world['continent'] == "South America"]
+        >>> capitals = geopandas.read_file(
+        ...     geopandas.datasets.get_path('naturalearth_cities'))
+        >>> capitals.shape
+        (202, 2)
+
+        >>> sa_capitals = capitals.geometry.clip(south_america)
+        >>> sa_capitals.shape
+        (12,)
+        """
+        return geopandas.clip(self, mask=mask, keep_geom_type=keep_geom_type)

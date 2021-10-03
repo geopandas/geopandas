@@ -7,50 +7,22 @@ A module to clip vector data using GeoPandas.
 """
 import warnings
 
-import numpy as np
-import pandas as pd
-
 from shapely.geometry import Polygon, MultiPolygon
 
 from geopandas import GeoDataFrame, GeoSeries
 from geopandas.array import _check_crs, _crs_mismatch_warn
 
 
-def _clip_points(gdf, poly):
-    """Clip point geometry to the polygon extent.
+def _clip_gdf_with_polygon(gdf, poly):
+    """Clip geometry to the polygon extent.
 
-    Clip an input point GeoDataFrame to the polygon extent of the poly
-    parameter. Points that intersect the poly geometry are extracted with
-    associated attributes and returned.
-
-    Parameters
-    ----------
-    gdf : GeoDataFrame, GeoSeries
-        Composed of point geometry that will be clipped to the poly.
-
-    poly : (Multi)Polygon
-        Reference geometry used to spatially clip the data.
-
-    Returns
-    -------
-    GeoDataFrame
-        The returned GeoDataFrame is a subset of gdf that intersects
-        with poly.
-    """
-    return gdf.iloc[gdf.sindex.query(poly, predicate="intersects")]
-
-
-def _clip_line_poly(gdf, poly):
-    """Clip line and polygon geometry to the polygon extent.
-
-    Clip an input line or polygon to the polygon extent of the poly
-    parameter. Parts of Lines or Polygons that intersect the poly geometry are
-    extracted with associated attributes and returned.
+    Clip an input GeoDataFrame to the polygon extent of the poly
+    parameter.
 
     Parameters
     ----------
     gdf : GeoDataFrame, GeoSeries
-        Line or polygon geometry that is clipped to poly.
+        Dataframe to clip.
 
     poly : (Multi)Polygon
         Reference polygon for clipping.
@@ -63,13 +35,23 @@ def _clip_line_poly(gdf, poly):
     """
     gdf_sub = gdf.iloc[gdf.sindex.query(poly, predicate="intersects")]
 
+    # For performance reasons points don't need to be intersected with poly
+    non_point_mask = gdf_sub.geom_type != "Point"
+
+    if not non_point_mask.any():
+        # only points, directly return
+        return gdf_sub
+
     # Clip the data with the polygon
     if isinstance(gdf_sub, GeoDataFrame):
         clipped = gdf_sub.copy()
-        clipped[gdf.geometry.name] = gdf_sub.intersection(poly)
+        clipped.loc[
+            non_point_mask, clipped._geometry_column_name
+        ] = gdf_sub.geometry.values[non_point_mask].intersection(poly)
     else:
         # GeoSeries
-        clipped = gdf_sub.intersection(poly)
+        clipped = gdf_sub.copy()
+        clipped[non_point_mask] = gdf_sub.values[non_point_mask].intersection(poly)
 
     return clipped
 
@@ -101,6 +83,11 @@ def clip(gdf, mask, keep_geom_type=False):
     GeoDataFrame or GeoSeries
          Vector data (points, lines, polygons) from `gdf` clipped to
          polygon boundary from mask.
+
+    See also
+    --------
+    GeoDataFrame.clip : equivalent GeoDataFrame method
+    GeoSeries.clip : equivalent GeoSeries method
 
     Examples
     --------
@@ -149,42 +136,11 @@ def clip(gdf, mask, keep_geom_type=False):
     else:
         poly = mask
 
-    geom_types = gdf.geometry.type
-    poly_idx = np.asarray((geom_types == "Polygon") | (geom_types == "MultiPolygon"))
-    line_idx = np.asarray(
-        (geom_types == "LineString")
-        | (geom_types == "LinearRing")
-        | (geom_types == "MultiLineString")
-    )
-    point_idx = np.asarray((geom_types == "Point") | (geom_types == "MultiPoint"))
-    geomcoll_idx = np.asarray((geom_types == "GeometryCollection"))
-
-    if point_idx.any():
-        point_gdf = _clip_points(gdf[point_idx], poly)
-    else:
-        point_gdf = None
-
-    if poly_idx.any():
-        poly_gdf = _clip_line_poly(gdf[poly_idx], poly)
-    else:
-        poly_gdf = None
-
-    if line_idx.any():
-        line_gdf = _clip_line_poly(gdf[line_idx], poly)
-    else:
-        line_gdf = None
-
-    if geomcoll_idx.any():
-        geomcoll_gdf = _clip_line_poly(gdf[geomcoll_idx], poly)
-    else:
-        geomcoll_gdf = None
-
-    order = pd.Series(range(len(gdf)), index=gdf.index)
-    concat = pd.concat([point_gdf, line_gdf, poly_gdf, geomcoll_gdf])
+    clipped = _clip_gdf_with_polygon(gdf, poly)
 
     if keep_geom_type:
-        geomcoll_concat = (concat.geom_type == "GeometryCollection").any()
-        geomcoll_orig = geomcoll_idx.any()
+        geomcoll_concat = (clipped.geom_type == "GeometryCollection").any()
+        geomcoll_orig = (gdf.geom_type == "GeometryCollection").any()
 
         new_collection = geomcoll_concat and not geomcoll_orig
 
@@ -210,9 +166,9 @@ def clip(gdf, mask, keep_geom_type=False):
             # Check how many geometry types are in the clipped GeoDataFrame
             clip_types_total = sum(
                 [
-                    concat.geom_type.isin(polys).any(),
-                    concat.geom_type.isin(lines).any(),
-                    concat.geom_type.isin(points).any(),
+                    clipped.geom_type.isin(polys).any(),
+                    clipped.geom_type.isin(lines).any(),
+                    clipped.geom_type.isin(points).any(),
                 ]
             )
 
@@ -226,21 +182,10 @@ def clip(gdf, mask, keep_geom_type=False):
             elif new_collection or more_types:
                 orig_type = gdf.geom_type.iloc[0]
                 if new_collection:
-                    concat = concat.explode()
+                    clipped = clipped.explode()
                 if orig_type in polys:
-                    concat = concat.loc[concat.geom_type.isin(polys)]
+                    clipped = clipped.loc[clipped.geom_type.isin(polys)]
                 elif orig_type in lines:
-                    concat = concat.loc[concat.geom_type.isin(lines)]
+                    clipped = clipped.loc[clipped.geom_type.isin(lines)]
 
-    # Return empty GeoDataFrame or GeoSeries if no shapes remain
-    if len(concat) == 0:
-        return gdf.iloc[:0]
-
-    # Preserve the original order of the input
-    if isinstance(concat, GeoDataFrame):
-        concat["_order"] = order
-        return concat.sort_values(by="_order").drop(columns="_order")
-    else:
-        concat = GeoDataFrame(geometry=concat)
-        concat["_order"] = order
-        return concat.sort_values(by="_order").geometry
+    return clipped
