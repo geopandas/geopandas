@@ -6,7 +6,7 @@ Version 0.10.0 (October 3, 2021)
 
 Highlights of this release:
 
-- A new `sjoin_nearest()` function to join based on proximity, with the
+- A new `sjoin_nearest()` method to join based on proximity, with the
   ability to set a maximum search radius (#1865). In addition, the `sindex`
   attribute gained a new method for a "nearest" spatial index query (#1865,
   #2053).
