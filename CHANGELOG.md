@@ -22,7 +22,7 @@ New features and improvements:
   pandas' explode method) to reset the index in the result, and a new
   `index_parts` keywords to control whether a cumulative count indexing the
   parts of the exploded multi-geometries should be added (#1871).
-- `points_from_xy()` is now available as a GeoSeries method (#1936).
+- `points_from_xy()` is now available as a GeoSeries method `from_xy` (#1936).
 - The `to_file()` method will now attempt to detect the driver (if not
   specified) based on the extension of the provided filename, instead of
   defaulting to ESRI Shapefile (#1609).
