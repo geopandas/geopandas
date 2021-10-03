@@ -218,6 +218,7 @@ def overlay(df1, df2, how="intersection", keep_geom_type=None, make_valid=True):
     See also
     --------
     sjoin : spatial join
+    GeoDataFrame.overlay : equivalent method
 
     Notes
     ------

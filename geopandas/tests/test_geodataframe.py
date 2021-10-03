@@ -10,7 +10,7 @@ import pandas as pd
 import pyproj
 from pyproj import CRS
 from pyproj.exceptions import CRSError
-from shapely.geometry import Point
+from shapely.geometry import Point, Polygon
 
 import geopandas
 import geopandas._compat as compat
@@ -25,6 +25,36 @@ import pytest
 
 
 PYPROJ_LT_3 = LooseVersion(pyproj.__version__) < LooseVersion("3")
+TEST_NEAREST = compat.PYGEOS_GE_010 and compat.USE_PYGEOS
+pandas_133 = pd.__version__ == LooseVersion("1.3.3")
+
+
+@pytest.fixture
+def dfs(request):
+    s1 = GeoSeries(
+        [
+            Polygon([(0, 0), (2, 0), (2, 2), (0, 2)]),
+            Polygon([(2, 2), (4, 2), (4, 4), (2, 4)]),
+        ]
+    )
+    s2 = GeoSeries(
+        [
+            Polygon([(1, 1), (3, 1), (3, 3), (1, 3)]),
+            Polygon([(3, 3), (5, 3), (5, 5), (3, 5)]),
+        ]
+    )
+    df1 = GeoDataFrame({"col1": [1, 2], "geometry": s1})
+    df2 = GeoDataFrame({"col2": [1, 2], "geometry": s2})
+    return df1, df2
+
+
+@pytest.fixture(
+    params=["union", "intersection", "difference", "symmetric_difference", "identity"]
+)
+def how(request):
+    if pandas_133 and request.param in ["symmetric_difference", "identity", "union"]:
+        pytest.xfail("Regression in pandas 1.3.3 (GH #2101)")
+    return request.param
 
 
 class TestDataFrame:
@@ -792,6 +822,59 @@ class TestDataFrame:
 
         expected = geopandas.sjoin(left, right, how=how, predicate=predicate)
         result = left.sjoin(right, how=how, predicate=predicate)
+        assert_geodataframe_equal(result, expected)
+
+    @pytest.mark.parametrize("how", ["left", "inner", "right"])
+    @pytest.mark.parametrize("max_distance", [None, 1])
+    @pytest.mark.parametrize("distance_col", [None, "distance"])
+    @pytest.mark.skipif(
+        not TEST_NEAREST,
+        reason=(
+            "PyGEOS >= 0.10.0"
+            " must be installed and activated via the geopandas.compat module to"
+            " test sjoin_nearest"
+        ),
+    )
+    def test_sjoin_nearest(self, how, max_distance, distance_col):
+        """
+        Basic test for availability of the GeoDataFrame method. Other
+        sjoin tests are located in /tools/tests/test_sjoin.py
+        """
+        left = read_file(geopandas.datasets.get_path("naturalearth_cities"))
+        right = read_file(geopandas.datasets.get_path("naturalearth_lowres"))
+
+        expected = geopandas.sjoin_nearest(
+            left, right, how=how, max_distance=max_distance, distance_col=distance_col
+        )
+        result = left.sjoin_nearest(
+            right, how=how, max_distance=max_distance, distance_col=distance_col
+        )
+        assert_geodataframe_equal(result, expected)
+
+    @pytest.mark.skip_no_sindex
+    def test_clip(self):
+        """
+        Basic test for availability of the GeoDataFrame method. Other
+        clip tests are located in /tools/tests/test_clip.py
+        """
+        left = read_file(geopandas.datasets.get_path("naturalearth_cities"))
+        world = read_file(geopandas.datasets.get_path("naturalearth_lowres"))
+        south_america = world[world["continent"] == "South America"]
+
+        expected = geopandas.clip(left, south_america)
+        result = left.clip(south_america)
+        assert_geodataframe_equal(result, expected)
+
+    @pytest.mark.skip_no_sindex
+    def test_overlay(self, dfs, how):
+        """
+        Basic test for availability of the GeoDataFrame method. Other
+        overlay tests are located in tests/test_overlay.py
+        """
+        df1, df2 = dfs
+
+        expected = geopandas.overlay(df1, df2, how=how)
+        result = df1.overlay(df2, how=how)
         assert_geodataframe_equal(result, expected)
 
 

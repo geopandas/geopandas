@@ -84,6 +84,11 @@ def clip(gdf, mask, keep_geom_type=False):
          Vector data (points, lines, polygons) from `gdf` clipped to
          polygon boundary from mask.
 
+    See also
+    --------
+    GeoDataFrame.clip : equivalent GeoDataFrame method
+    GeoSeries.clip : equivalent GeoSeries method
+
     Examples
     --------
     Clip points (global cities) with a polygon (the South American continent):

@@ -499,6 +499,7 @@ countries_w_city_data[countries_w_city_data["name_left"] == "Italy"]
     See also
     --------
     sjoin : binary predicate joins
+    GeoDataFrame.sjoin_nearest : equivalent method
 
     Notes
     -----
