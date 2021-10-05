@@ -55,14 +55,20 @@ def make_grid(
     if isinstance(input_geometry, (GeoDataFrame, GeoSeries)):
         bounds = np.array(input_geometry.total_bounds)
     else:
+        # TODO Test if multipolygons also work
         bounds = np.array(input_geometry.bounds)
 
+    x_dist = bounds[2] - bounds[0] - offset[0]
+    y_dist = bounds[3] - bounds[1] - offset[1]
+
     if cell_type == "square":
+        # Set corner coordinates: Also in case of an offse,
+        # grid always ends at the right/upper end of the bounding box
         x_coords_corn = np.arange(
-            bounds[0] + offset[0], bounds[2] + cell_size + offset[0], cell_size
+            bounds[0] + offset[0], bounds[2] + cell_size, cell_size
         )
         y_coords_corn = np.arange(
-            bounds[1] + offset[1], bounds[3] + cell_size + offset[1], cell_size
+            bounds[1] + offset[1], bounds[3] + cell_size, cell_size
         )
         xv, yv = np.meshgrid(x_coords_corn, y_coords_corn)
 
@@ -71,26 +77,31 @@ def make_grid(
             output_grid = points_from_xy(sq_corners_np[:, 0], sq_corners_np[:, 1])
 
         elif what == "centers":
+            # Use int() to ensure that half decimal numbers are
+            # rounded to the next higher int.
+            n_cent_x = int(x_dist / cell_size + 0.5)
+            n_cent_y = int(y_dist / cell_size + 0.5)
+
             sq_centers_np = (
-                np.array([xv[:-1, :-1], yv[:-1, :-1]]).T.reshape(-1, 2) + cell_size / 2
+                np.array(
+                    [xv[:n_cent_y, :n_cent_x], yv[:n_cent_y, :n_cent_x]]
+                ).T.reshape(-1, 2)
+                + cell_size / 2
             )
+
             output_grid = points_from_xy(sq_centers_np[:, 0], sq_centers_np[:, 1])
 
         elif what == "polygons":
-            # Extracting corners of all square grid cells.
-            bottom_left_corners = np.array([xv[:-1, :-1], yv[:-1, :-1]]).T.reshape(
-                -1, 1, 2
-            )
-            bottom_right_corners = np.array([xv[1:, 1:], yv[:-1, :-1]]).T.reshape(
-                -1, 1, 2
-            )
+            # Extracting corners of all square-grid cells.
+            bt_left_corners = np.array([xv[:-1, :-1], yv[:-1, :-1]]).T.reshape(-1, 1, 2)
+            bt_right_corners = np.array([xv[1:, 1:], yv[:-1, :-1]]).T.reshape(-1, 1, 2)
             top_right_corners = np.array([xv[1:, 1:], yv[1:, 1:]]).T.reshape(-1, 1, 2)
             top_left_corners = np.array([xv[:-1, :-1], yv[1:, 1:]]).T.reshape(-1, 1, 2)
 
             sq_coords = np.concatenate(
                 (
-                    bottom_left_corners,
-                    bottom_right_corners,
+                    bt_left_corners,
+                    bt_right_corners,
                     top_right_corners,
                     top_left_corners,
                 ),
