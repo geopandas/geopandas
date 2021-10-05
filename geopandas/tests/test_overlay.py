@@ -702,4 +702,4 @@ def test_non_overlapping(how):
             }
         )
 
-    assert_geodataframe_equal(result, expected)
+    assert_geodataframe_equal(result, expected, check_like=True)
