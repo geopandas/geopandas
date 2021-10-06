@@ -682,7 +682,14 @@ def test_non_overlapping(how):
     result = overlay(df1, df2, how=how)
 
     if how == "intersection":
-        expected = GeoDataFrame(columns=["col1", "col2", "geometry"])
+        expected = GeoDataFrame(
+            {
+                "col1": np.array([], dtype="int64"),
+                "col2": np.array([], dtype="int64"),
+                "geometry": [],
+            },
+            index=pd.Index([], dtype="object"),
+        )
     elif how == "union":
         expected = GeoDataFrame(
             {
@@ -715,4 +722,4 @@ def test_non_overlapping(how):
             }
         )
 
-    assert_geodataframe_equal(result, expected, check_dtype=False)
+    assert_geodataframe_equal(result, expected)
