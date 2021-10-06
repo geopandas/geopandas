@@ -59,8 +59,8 @@ def _overlay_intersection(df1, df2):
 
         return GeoDataFrame(dfinter, geometry=geom_intersect, crs=df1.crs)
     else:
-        result = df1[:0].merge(
-            df2[:0].drop(df2.geometry.name, axis=1),
+        result = df1.iloc[:0].merge(
+            df2.iloc[:0].drop(df2.geometry.name, axis=1),
             left_index=True,
             right_index=True,
             suffixes=("_1", "_2"),
@@ -277,8 +277,8 @@ def overlay(df1, df2, how="intersection", keep_geom_type=None, make_valid=True):
             ((box_gdf1[0] <= box_gdf2[2]) and (box_gdf2[0] <= box_gdf1[2]))
             and ((box_gdf1[1] <= box_gdf2[3]) and (box_gdf2[1] <= box_gdf1[3]))
         ):
-            result = df1[:0].merge(
-                df2[:0].drop(df2.geometry.name, axis=1),
+            result = df1.iloc[:0].merge(
+                df2.iloc[:0].drop(df2.geometry.name, axis=1),
                 left_index=True,
                 right_index=True,
                 suffixes=("_1", "_2"),
