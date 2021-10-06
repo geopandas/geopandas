@@ -1,6 +1,15 @@
 Changelog
 =========
 
+Version 0.10.1 (October 6, 2021)
+--------------------------------
+
+Small bug-fix release:
+
+- Fix regression in `overlay()` with non-overlapping geometries and a
+  non-default `how` (.e. not "intersection") (#2157).
+
+
 Version 0.10.0 (October 3, 2021)
 --------------------------------
 
