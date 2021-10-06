@@ -375,7 +375,7 @@ def test_empty_intersection(dfs):
     df3 = GeoDataFrame({"geometry": polys3, "col3": [1, 2]})
     expected = GeoDataFrame([], columns=["col1", "col3", "geometry"])
     result = overlay(df1, df3)
-    assert_geodataframe_equal(result, expected, check_like=True)
+    assert_geodataframe_equal(result, expected, check_dtype=False)
 
 
 def test_correct_index(dfs):
@@ -657,8 +657,21 @@ def test_empty_overlay_return_non_duplicated_columns():
 
     result = geopandas.overlay(nybb, nybb2)
 
-    assert all(result.columns.isin(nybb.columns))
-    assert len(result.columns) == len(nybb.columns)
+    expected = GeoDataFrame(
+        columns=[
+            "BoroCode_1",
+            "BoroName_1",
+            "Shape_Leng_1",
+            "Shape_Area_1",
+            "BoroCode_2",
+            "BoroName_2",
+            "Shape_Leng_2",
+            "Shape_Area_2",
+            "geometry",
+        ],
+        crs=nybb.crs,
+    )
+    assert_geodataframe_equal(result, expected, check_dtype=False)
 
 
 def test_non_overlapping(how):
@@ -702,4 +715,4 @@ def test_non_overlapping(how):
             }
         )
 
-    assert_geodataframe_equal(result, expected, check_like=True)
+    assert_geodataframe_equal(result, expected, check_dtype=False)
