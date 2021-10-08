@@ -59,11 +59,15 @@ def _overlay_intersection(df1, df2):
 
         return GeoDataFrame(dfinter, geometry=geom_intersect, crs=df1.crs)
     else:
-        return GeoDataFrame(
-            [],
-            columns=list(set(df1.columns).union(df2.columns)) + ["__idx1", "__idx2"],
-            crs=df1.crs,
+        result = df1.iloc[:0].merge(
+            df2.iloc[:0].drop(df2.geometry.name, axis=1),
+            left_index=True,
+            right_index=True,
+            suffixes=("_1", "_2"),
         )
+        return result[
+            result.columns.drop(df1.geometry.name).tolist() + [df1.geometry.name]
+        ]
 
 
 def _overlay_difference(df1, df2):
@@ -265,23 +269,23 @@ def overlay(df1, df2, how="intersection", keep_geom_type=None, make_valid=True):
                 "df{} contains mixed geometry types.".format(i + 1)
             )
 
-    box_gdf1 = df1.total_bounds
-    box_gdf2 = df2.total_bounds
+    if how == "intersection":
+        box_gdf1 = df1.total_bounds
+        box_gdf2 = df2.total_bounds
 
-    if not (
-        ((box_gdf1[0] <= box_gdf2[2]) and (box_gdf2[0] <= box_gdf1[2]))
-        and ((box_gdf1[1] <= box_gdf2[3]) and (box_gdf2[1] <= box_gdf1[3]))
-    ):
-        return GeoDataFrame(
-            [],
-            columns=list(
-                set(
-                    df1.drop(df1.geometry.name, axis=1).columns.to_list()
-                    + df2.drop(df2.geometry.name, axis=1).columns.to_list()
-                )
+        if not (
+            ((box_gdf1[0] <= box_gdf2[2]) and (box_gdf2[0] <= box_gdf1[2]))
+            and ((box_gdf1[1] <= box_gdf2[3]) and (box_gdf2[1] <= box_gdf1[3]))
+        ):
+            result = df1.iloc[:0].merge(
+                df2.iloc[:0].drop(df2.geometry.name, axis=1),
+                left_index=True,
+                right_index=True,
+                suffixes=("_1", "_2"),
             )
-            + ["geometry"],
-        )
+            return result[
+                result.columns.drop(df1.geometry.name).tolist() + [df1.geometry.name]
+            ]
 
     # Computations
     def _make_valid(df):
