@@ -410,7 +410,10 @@ class TestIO:
         df = read_postgis(sql, engine, geom_col="geometry")
         validate_boro_df(df)
 
-    def test_write_postgis_append_when_table_exists(self, engine_postgis, df_nybb):
+    @pytest.mark.parametrize("use_crs", [True, False])
+    def test_write_postgis_append_when_table_exists(
+        self, engine_postgis, df_nybb, use_crs
+    ):
         """
         Tests that appending to existing table produces correct results when:
         if_replace='append'.
@@ -418,6 +421,9 @@ class TestIO:
         engine = engine_postgis
 
         table = "nybb"
+
+        if not use_crs:
+            df_nybb.crs = None
 
         orig_rows, orig_cols = df_nybb.shape
         write_postgis(df_nybb, con=engine, name=table, if_exists="replace")

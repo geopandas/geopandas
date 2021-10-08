@@ -417,6 +417,10 @@ def _write_postgis(
                     )
                 ).fetchone()[0]
 
+                # Postgis uses SRID 0 to signify the absence of CRS, we use -1
+                if target_srid == 0:
+                    target_srid = -1
+
                 if target_srid != srid:
                     msg = (
                         "The CRS of the target table (EPSG:{epsg_t}) differs from the "
