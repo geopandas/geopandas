@@ -82,7 +82,7 @@ Some great resources for learning Git:
 * Software Carpentry's `Git Tutorial <http://swcarpentry.github.io/git-novice/>`_
 * `Atlassian <https://www.atlassian.com/git/tutorials/what-is-version-control>`_
 * the `GitHub help pages <http://help.github.com/>`_.
-* Matthew Brett's `Pydagogue <http://matthew-brett.github.com/pydagogue/>`_.
+* Matthew Brett's `Pydagogue <https://matthew-brett.github.io/pydagogue/>`_.
 
 Getting started with Git
 ~~~~~~~~~~~~~~~~~~~~~~~~
