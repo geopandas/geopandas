@@ -1073,6 +1073,8 @@ class TestMapclassifyPlotting:
         cls.df["mid_vals"] = np.linspace(0.3, 0.7, cls.df.shape[0])
         cls.df["high_vals"] = np.linspace(0.7, 1.0, cls.df.shape[0])
         cls.df.loc[cls.df.index[:20:2], "high_vals"] = np.nan
+        cls.nybb = read_file(get_path("nybb"))
+        cls.nybb["vals"] = [0.001, 0.002, 0.003, 0.004, 0.005]
 
     def test_legend(self):
         with warnings.catch_warnings(record=True) as _:  # don't print warning
@@ -1332,6 +1334,35 @@ class TestMapclassifyPlotting:
         assert [
             line.get_markerfacecolor() for line in ax3.get_legend().get_lines()
         ] == legend_colors_exp
+
+    def test_equally_formatted_bins(self):
+        ax = self.nybb.plot(
+            "vals",
+            scheme="quantiles",
+            legend=True,
+        )
+        labels = [t.get_text() for t in ax.get_legend().get_texts()]
+        expected = [
+            "0.00, 0.00",
+            "0.00, 0.00",
+            "0.00, 0.00",
+            "0.00, 0.00",
+            "0.00, 0.01",
+        ]
+        assert labels == expected
+
+        ax2 = self.nybb.plot(
+            "vals", scheme="quantiles", legend=True, legend_kwds=dict(fmt="{:.3f}")
+        )
+        labels = [t.get_text() for t in ax2.get_legend().get_texts()]
+        expected = [
+            "0.001, 0.002",
+            "0.002, 0.003",
+            "0.003, 0.003",
+            "0.003, 0.004",
+            "0.004, 0.005",
+        ]
+        assert labels == expected
 
 
 class TestPlotCollections:
