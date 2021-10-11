@@ -19,6 +19,7 @@ from shapely.geometry import (
     Polygon,
 )
 from shapely.geometry.base import BaseGeometry
+from shapely import wkt
 
 from geopandas import GeoSeries, GeoDataFrame, read_file, datasets, clip
 from geopandas._compat import PYPROJ_LT_3, ignore_shapely2_warnings
@@ -579,7 +580,23 @@ class TestConstructor:
     )
     def test_explode_empty_geometrycollection(self, geom_types):
         type_singular, type_multi = geom_types
+
+        # Test that empty constructors yield the same result for singular and multi geom
+        # In this case the type is not possible to retain
+        # as shapely instantiate GeometryCollection
         empty_singular_exploded = GeoSeries([type_singular()]).explode()
         empty_multi_exploded = GeoSeries([type_multi()]).explode()
 
         assert_geoseries_equal(empty_singular_exploded, empty_multi_exploded)
+
+        # Test that instantiation of empty geoms from wkt
+        # yields same result for singular and multi geom
+        # In this case the geom type is retained
+        empty_singular_exploded2 = GeoSeries(
+            [wkt.loads(f"{type_singular.__name__.upper()} EMPTY")]
+        ).explode()
+        empty_multi_exploded2 = GeoSeries(
+            [wkt.loads(f"{type_multi.__name__.upper()} EMPTY")]
+        ).explode()
+
+        assert_geoseries_equal(empty_singular_exploded2, empty_multi_exploded2)

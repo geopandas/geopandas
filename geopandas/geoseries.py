@@ -8,6 +8,7 @@ from pandas.core.internals import SingleBlockManager
 
 from pyproj import CRS
 from shapely.geometry.base import BaseGeometry
+from shapely import wkt
 
 from geopandas.base import GeoPandasBase, _delegate_property
 from geopandas.plotting import plot_series
@@ -923,9 +924,13 @@ class GeoSeries(GeoPandasBase, Series):
         for idx, s in self.geometry.iteritems():
             if s.type == "GeometryCollection" and s.is_empty:
                 continue
-            elif s.type.startswith("Multi") or (
-                s.type == "GeometryCollection" and hasattr(s, "geoms")
-            ):
+            elif s.type.startswith("Multi") and s.is_empty:
+                # Hack to retain type after exploding
+                s_type_exploded = s.type.removeprefix("Multi").upper()
+                s_exploded = wkt.loads(f"{s_type_exploded} EMPTY")
+                geoms = [s_exploded]
+                idxs = [(idx, 0)]
+            elif s.type.startswith("Multi") or s.type == "GeometryCollection":
                 geoms = s.geoms
                 idxs = [(idx, i) for i in range(len(geoms))]
             else:
