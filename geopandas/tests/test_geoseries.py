@@ -572,3 +572,14 @@ class TestConstructor:
         # index_parts is ignored if ignore_index=True
         s = s.explode(index_parts=True, ignore_index=True)
         assert_index_equal(s.index, expected_index)
+
+    @pytest.mark.parametrize(
+        "geom_types",
+        [(Point, MultiPoint), (LineString, MultiLineString), (Polygon, MultiPolygon)],
+    )
+    def test_explode_empty_geometrycollection(self, geom_types):
+        type_singular, type_multi = geom_types
+        empty_singular_exploded = GeoSeries([type_singular()]).explode()
+        empty_multi_exploded = GeoSeries([type_multi()]).explode()
+
+        assert_geoseries_equal(empty_singular_exploded, empty_multi_exploded)
