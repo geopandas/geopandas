@@ -773,9 +773,11 @@ GON (((-122.84000 49.00000, -120.0000...
             if not show_interval:
                 labels = [c[1:-1] for c in labels]
 
-        values = pd.Categorical([np.nan] * len(values), categories=labels, ordered=True)
+        values = pd.Categorical(
+            [np.nan] * len(values), categories=binning.bins, ordered=True
+        )
         values[~nan_idx] = pd.Categorical.from_codes(
-            binning.yb, categories=labels, ordered=True
+            binning.yb, categories=binning.bins, ordered=True
         )
         if cmap is None:
             cmap = "viridis"
@@ -884,6 +886,8 @@ GON (((-122.84000 49.00000, -120.0000...
             norm = Normalize(vmin=mn, vmax=mx)
         n_cmap = cm.ScalarMappable(norm=norm, cmap=cmap)
         if categorical:
+            if scheme is not None:
+                categories = labels
             patches = []
             for value, cat in enumerate(categories):
                 patches.append(
