@@ -628,6 +628,35 @@ def test_keep_geom_type_geometry_collection2():
     assert_geodataframe_equal(result1, expected1)
 
 
+def test_keep_geom_type_geometry_collection_difference():
+    # GH 2163
+
+    polys1 = [
+        box(0, 0, 1, 1),
+        box(1, 1, 2, 2),
+    ]
+
+    # the tiny sliver in the second geometry may be converted to a
+    # linestring during the overlay process due to floating point errors
+    # on some platforms
+    polys2 = [
+        box(0, 0, 1, 1),
+        box(1, 1, 2, 3).union(box(2, 2, 3, 2.00000000000000001)),
+    ]
+    df1 = GeoDataFrame({"left": [0, 1], "geometry": polys1})
+    df2 = GeoDataFrame({"right": [0, 1], "geometry": polys2})
+
+    result1 = overlay(df2, df1, keep_geom_type=True, how="difference")
+    expected1 = GeoDataFrame(
+        {
+            "right": [1],
+            "geometry": [box(1, 2, 2, 3)],
+        },
+    )
+
+    assert_geodataframe_equal(result1, expected1)
+
+
 @pytest.mark.parametrize("make_valid", [True, False])
 def test_overlap_make_valid(make_valid):
     bowtie = Polygon([(1, 1), (9, 9), (9, 1), (1, 9), (1, 1)])
