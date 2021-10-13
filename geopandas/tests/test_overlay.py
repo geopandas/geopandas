@@ -723,3 +723,14 @@ def test_non_overlapping(how):
         )
 
     assert_geodataframe_equal(result, expected)
+
+
+def test_no_intersection():
+    # overlapping bounds but non-overlapping geometries
+    gs = GeoSeries([Point(x, x).buffer(0.1) for x in range(3)])
+    gdf1 = GeoDataFrame({"foo": ["a", "b", "c"]}, geometry=gs)
+    gdf2 = GeoDataFrame({"bar": ["1", "3", "5"]}, geometry=gs.translate(1))
+
+    expected = GeoDataFrame(columns=["foo", "bar", "geometry"])
+    result = overlay(gdf1, gdf2, how="intersection")
+    assert_geodataframe_equal(result, expected, check_index_type=False)
