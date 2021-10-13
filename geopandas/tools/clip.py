@@ -182,7 +182,7 @@ def clip(gdf, mask, keep_geom_type=False):
             elif new_collection or more_types:
                 orig_type = gdf.geom_type.iloc[0]
                 if new_collection:
-                    clipped = clipped.explode()
+                    clipped = clipped.explode(index_parts=True)
                 if orig_type in polys:
                     clipped = clipped.loc[clipped.geom_type.isin(polys)]
                 elif orig_type in lines:
