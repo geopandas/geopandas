@@ -338,16 +338,18 @@ def overlay(df1, df2, how="intersection", keep_geom_type=None, make_valid=True):
 
             orig_num_geoms_exploded = exploded.shape[0]
             if geom_type in polys:
-                exploded = exploded.loc[exploded.geom_type.isin(polys)]
+                exploded.loc[~exploded.geom_type.isin(polys), geom_col] = None
             elif geom_type in lines:
-                exploded = exploded.loc[exploded.geom_type.isin(lines)]
+                exploded.loc[~exploded.geom_type.isin(lines), geom_col] = None
             elif geom_type in points:
-                exploded = exploded.loc[exploded.geom_type.isin(points)]
+                exploded.loc[~exploded.geom_type.isin(points), geom_col] = None
             else:
                 raise TypeError(
                     "`keep_geom_type` does not support {}.".format(geom_type)
                 )
-            num_dropped_collection = orig_num_geoms_exploded - exploded.shape[0]
+            num_dropped_collection = (
+                orig_num_geoms_exploded - exploded.geometry.isna().sum()
+            )
 
             # level_0 created with above reset_index operation
             # and represents the original geometry collections
@@ -356,6 +358,7 @@ def overlay(df1, df2, how="intersection", keep_geom_type=None, make_valid=True):
             # respective Multi version)
             dissolved = exploded.dissolve(by="level_0")
             result.loc[is_collection, geom_col] = dissolved[geom_col].values
+            result = result[result.geometry.notna()]
         else:
             num_dropped_collection = 0
 
