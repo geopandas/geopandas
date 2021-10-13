@@ -68,9 +68,7 @@ def _overlay_intersection(df1, df2):
         result["__idx1"] = None
         result["__idx2"] = None
         return result[
-            result.columns.drop(df1.geometry.name).tolist()
-            + [df1.geometry.name]
-            + ["__idx1", "__idx2"]
+            result.columns.drop(df1.geometry.name).tolist() + [df1.geometry.name]
         ]
 
 
