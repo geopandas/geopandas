@@ -312,7 +312,7 @@ def overlay(df1, df2, how="intersection", keep_geom_type=None, make_valid=True):
     with warnings.catch_warnings():  # CRS checked above, suppress array-level warning
         warnings.filterwarnings("ignore", message="CRS mismatch between the CRS")
         if how == "difference":
-            return _overlay_difference(df1, df2)
+            result = _overlay_difference(df1, df2)
         elif how == "intersection":
             result = _overlay_intersection(df1, df2)
         elif how == "symmetric_difference":
@@ -322,6 +322,9 @@ def overlay(df1, df2, how="intersection", keep_geom_type=None, make_valid=True):
         elif how == "identity":
             dfunion = _overlay_union(df1, df2)
             result = dfunion[dfunion["__idx1"].notnull()].copy()
+
+        if how in ["intersection", "symmetric_difference", "union", "identity"]:
+            result.drop(["__idx1", "__idx2"], axis=1, inplace=True)
 
     if keep_geom_type:
         geom_type = df1.geom_type.iloc[0]
@@ -387,5 +390,4 @@ def overlay(df1, df2, how="intersection", keep_geom_type=None, make_valid=True):
             )
 
     result.reset_index(drop=True, inplace=True)
-    result.drop(["__idx1", "__idx2"], axis=1, inplace=True)
     return result
