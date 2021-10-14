@@ -396,8 +396,8 @@ GON (((180.00000 -16.06713, 180.00000...
             color = list(map(lambda x: cmap(x), df[column]))
 
         else:
-            vmin = gdf[column].min() if not vmin else vmin
-            vmax = gdf[column].max() if not vmax else vmax
+            vmin = gdf[column].min() if vmin is None else vmin
+            vmax = gdf[column].max() if vmax is None else vmax
 
             # get bins
             if scheme is not None:

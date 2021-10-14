@@ -466,6 +466,20 @@ class TestExplore:
         assert 'case"119":return{"color":"#414287","fillColor":"#414287"' in out_str
         assert 'case"3":return{"color":"#482173","fillColor":"#482173"' in out_str
 
+        # test 0
+        df2 = self.nybb.copy()
+        df2["values"] = df2["BoroCode"] * 10.0
+        m = df2[df2["values"] >= 30].explore("values", vmin=0)
+        out_str = self._fetch_map_string(m)
+        assert 'case"1":return{"color":"#7ad151","fillColor":"#7ad151"' in out_str
+        assert 'case"2":return{"color":"#22a884","fillColor":"#22a884"' in out_str
+
+        df2["values_negative"] = df2["BoroCode"] * -10.0
+        m = df2[df2["values_negative"] <= 30].explore("values_negative", vmax=0)
+        out_str = self._fetch_map_string(m)
+        assert 'case"1":return{"color":"#414487","fillColor":"#414487"' in out_str
+        assert 'case"2":return{"color":"#2a788e","fillColor":"#2a788e"' in out_str
+
     def test_missing_vals(self):
         m = self.missing.explore("continent")
         assert '"fillColor":null' in self._fetch_map_string(m)
