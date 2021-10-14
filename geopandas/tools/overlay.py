@@ -363,7 +363,6 @@ def overlay(df1, df2, how="intersection", keep_geom_type=None, make_valid=True):
             # respective Multi version)
             dissolved = exploded.dissolve(by="level_0")
             result.loc[is_collection, geom_col] = dissolved[geom_col].values
-            result = result[result.geometry.notna()]
         else:
             num_dropped_collection = 0
 
