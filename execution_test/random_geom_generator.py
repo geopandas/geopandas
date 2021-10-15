@@ -5,6 +5,7 @@ import os
 import time
 import uuid
 import warnings
+from pprint import pprint
 from typing import Dict, List, Tuple, Union
 
 import geopandas as gpd
@@ -118,7 +119,7 @@ class RandomTargetsGenerator(RandomPolyGenerator):
 class ExecutionTest:
     data_generator: RandomPolyGenerator
 
-    def __call__(self, seed: int) -> Dict:
+    def __call__(self, seed: int, stop_at_breakpoint: bool = False) -> Dict:
         gdf1 = self.data_generator(seed)
         gdf2 = self.data_generator(seed + 1_000_000_000)
         _ = gdf1.sindex, gdf2.sindex  # pre-calculate to avoid impacting timings
@@ -144,11 +145,14 @@ class ExecutionTest:
                 result[errcol] = str(e)
             finally:
                 result[timecol] = time.monotonic() - t0
+        if stop_at_breakpoint:
+            breakpoint()
         return result
 
 
 def main():
     test = ExecutionTest(RandomTargetsGenerator())
+
     n_workers = os.cpu_count()
     n_tests = 10 * n_workers
     with concurrent.futures.ProcessPoolExecutor(max_workers=n_workers) as pool:
@@ -156,13 +160,16 @@ def main():
     result = pd.DataFrame(cf_result)
 
     time_cols = [c for c in result.columns if c.startswith("time_")]
+    print("*" * 80)
     print(result[time_cols].describe().T)
 
     err_cols = [c for c in result.columns if c.startswith("err_")]
-    errors = result.loc[(~result[err_cols].isna()).any(axis=1)]
-    if len(errors) > 0:
-        print(errors)
+    print("*" * 80)
+    pprint({c: result[c].dropna().unique() for c in err_cols})
     breakpoint()
+
+    # To dig into the details of one of the failing cases, just use the seed value
+    # test(0, stop_at_breakpoint=True)
 
 
 if __name__ == "__main__":
