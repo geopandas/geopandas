@@ -11,8 +11,8 @@ Small bug-fix release:
 - Fix regression in `overlay()` with `keep_geom_type=True` in case the
   overlay of two geometries in a GeometryCollection with other geometry types
   (#2177).
-- Fix `overlay()` to honor the `keep_geom_type` keyword for all overlay
-  methods (i.e. not only for the default `op="intersection"`) (#2164).
+- Fix `overlay()` to honor the `keep_geom_type` keyword for the
+  `op="differnce"` case (#2164).
 - Fix regression in `plot()` with a mapclassify `scheme` in case the
   formatted legend labels have duplicates (#2166).
 - Fix a bug in the `explore()` method ignoring the `vmin` and `vmax` keywords
@@ -27,7 +27,7 @@ Version 0.10.1 (October 8, 2021)
 Small bug-fix release:
 
 - Fix regression in `overlay()` with non-overlapping geometries and a
-  non-default `how` (.e. not "intersection") (#2157).
+  non-default `how` (i.e. not "intersection") (#2157).
 
 
 Version 0.10.0 (October 3, 2021)
