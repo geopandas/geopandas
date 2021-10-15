@@ -18,7 +18,7 @@ Small bug-fix release:
 - Fix a bug in the `explore()` method ignoring the `vmin` and `vmax` keywords
   in case they are set to 0 (#2175).
 - Fix `unary_union` to correctly handle a GeoSeries with missing values (#2181).
-
+- Avoid internal deprecation warning in `clip()` (#2179).
 
 
 Version 0.10.1 (October 8, 2021)
