@@ -550,6 +550,16 @@ class TestLineStringPlotting:
                 np.linspace(0, 0.0, 1.0, self.N), ax.collections[0].get_alpha()
             )
 
+    def test_style_kwargs_path_effects(self):
+        from matplotlib.patheffects import withStroke
+
+        effects = [withStroke(linewidth=8, foreground="b")]
+        ax = self.df.plot(color="orange", path_effects=effects)
+        assert ax.collections[0].get_path_effects()[0].__dict__["_gc"] == {
+            "linewidth": 8,
+            "foreground": "b",
+        }
+
     def test_subplots_norm(self):
         # colors of subplots are the same as for plot (norm is applied)
         cmap = matplotlib.cm.viridis_r
@@ -1059,6 +1069,12 @@ class TestMapclassifyPlotting:
         pth = get_path("naturalearth_lowres")
         cls.df = read_file(pth)
         cls.df["NEGATIVES"] = np.linspace(-10, 10, len(cls.df.index))
+        cls.df["low_vals"] = np.linspace(0, 0.3, cls.df.shape[0])
+        cls.df["mid_vals"] = np.linspace(0.3, 0.7, cls.df.shape[0])
+        cls.df["high_vals"] = np.linspace(0.7, 1.0, cls.df.shape[0])
+        cls.df.loc[cls.df.index[:20:2], "high_vals"] = np.nan
+        cls.nybb = read_file(get_path("nybb"))
+        cls.nybb["vals"] = [0.001, 0.002, 0.003, 0.004, 0.005]
 
     def test_legend(self):
         with warnings.catch_warnings(record=True) as _:  # don't print warning
@@ -1198,6 +1214,155 @@ class TestMapclassifyPlotting:
         plot_height = _get_ax(fig, "").get_position().height
         legend_height = _get_ax(fig, "fixed_colorbar").get_position().height
         assert abs(plot_height - legend_height) < 1e-6
+
+    def test_empty_bins(self):
+        bins = np.arange(1, 11) / 10
+        ax = self.df.plot(
+            "low_vals",
+            scheme="UserDefined",
+            classification_kwds={"bins": bins},
+            legend=True,
+        )
+        expected = np.array(
+            [
+                [0.281412, 0.155834, 0.469201, 1.0],
+                [0.267004, 0.004874, 0.329415, 1.0],
+                [0.244972, 0.287675, 0.53726, 1.0],
+            ]
+        )
+        assert all(
+            [
+                (z == expected).all(axis=1).any()
+                for z in ax.collections[0].get_facecolors()
+            ]
+        )
+        labels = [
+            "0.00, 0.10",
+            "0.10, 0.20",
+            "0.20, 0.30",
+            "0.30, 0.40",
+            "0.40, 0.50",
+            "0.50, 0.60",
+            "0.60, 0.70",
+            "0.70, 0.80",
+            "0.80, 0.90",
+            "0.90, 1.00",
+        ]
+        legend = [t.get_text() for t in ax.get_legend().get_texts()]
+        assert labels == legend
+
+        legend_colors_exp = [
+            (0.267004, 0.004874, 0.329415, 1.0),
+            (0.281412, 0.155834, 0.469201, 1.0),
+            (0.244972, 0.287675, 0.53726, 1.0),
+            (0.190631, 0.407061, 0.556089, 1.0),
+            (0.147607, 0.511733, 0.557049, 1.0),
+            (0.119699, 0.61849, 0.536347, 1.0),
+            (0.20803, 0.718701, 0.472873, 1.0),
+            (0.430983, 0.808473, 0.346476, 1.0),
+            (0.709898, 0.868751, 0.169257, 1.0),
+            (0.993248, 0.906157, 0.143936, 1.0),
+        ]
+
+        assert [
+            line.get_markerfacecolor() for line in ax.get_legend().get_lines()
+        ] == legend_colors_exp
+
+        ax2 = self.df.plot(
+            "mid_vals",
+            scheme="UserDefined",
+            classification_kwds={"bins": bins},
+            legend=True,
+        )
+        expected = np.array(
+            [
+                [0.244972, 0.287675, 0.53726, 1.0],
+                [0.190631, 0.407061, 0.556089, 1.0],
+                [0.147607, 0.511733, 0.557049, 1.0],
+                [0.119699, 0.61849, 0.536347, 1.0],
+                [0.20803, 0.718701, 0.472873, 1.0],
+            ]
+        )
+        assert all(
+            [
+                (z == expected).all(axis=1).any()
+                for z in ax2.collections[0].get_facecolors()
+            ]
+        )
+
+        labels = [
+            "-inf, 0.10",
+            "0.10, 0.20",
+            "0.20, 0.30",
+            "0.30, 0.40",
+            "0.40, 0.50",
+            "0.50, 0.60",
+            "0.60, 0.70",
+            "0.70, 0.80",
+            "0.80, 0.90",
+            "0.90, 1.00",
+        ]
+        legend = [t.get_text() for t in ax2.get_legend().get_texts()]
+        assert labels == legend
+        assert [
+            line.get_markerfacecolor() for line in ax2.get_legend().get_lines()
+        ] == legend_colors_exp
+
+        ax3 = self.df.plot(
+            "high_vals",
+            scheme="UserDefined",
+            classification_kwds={"bins": bins},
+            legend=True,
+        )
+        expected = np.array(
+            [
+                [0.709898, 0.868751, 0.169257, 1.0],
+                [0.993248, 0.906157, 0.143936, 1.0],
+                [0.430983, 0.808473, 0.346476, 1.0],
+            ]
+        )
+        assert all(
+            [
+                (z == expected).all(axis=1).any()
+                for z in ax3.collections[0].get_facecolors()
+            ]
+        )
+
+        legend = [t.get_text() for t in ax3.get_legend().get_texts()]
+        assert labels == legend
+
+        assert [
+            line.get_markerfacecolor() for line in ax3.get_legend().get_lines()
+        ] == legend_colors_exp
+
+    def test_equally_formatted_bins(self):
+        ax = self.nybb.plot(
+            "vals",
+            scheme="quantiles",
+            legend=True,
+        )
+        labels = [t.get_text() for t in ax.get_legend().get_texts()]
+        expected = [
+            "0.00, 0.00",
+            "0.00, 0.00",
+            "0.00, 0.00",
+            "0.00, 0.00",
+            "0.00, 0.01",
+        ]
+        assert labels == expected
+
+        ax2 = self.nybb.plot(
+            "vals", scheme="quantiles", legend=True, legend_kwds=dict(fmt="{:.3f}")
+        )
+        labels = [t.get_text() for t in ax2.get_legend().get_texts()]
+        expected = [
+            "0.001, 0.002",
+            "0.002, 0.003",
+            "0.003, 0.003",
+            "0.003, 0.004",
+            "0.004, 0.005",
+        ]
+        assert labels == expected
 
 
 class TestPlotCollections:
@@ -1660,7 +1825,7 @@ def _style_to_linestring_onoffseq(linestyle, linewidth):
 
 
 def _style_to_vertices(markerstyle):
-    """ Converts a markerstyle string to a path. """
+    """Converts a markerstyle string to a path."""
     # TODO: Vertices values are twice the actual path; unclear, why.
     path = matplotlib.markers.MarkerStyle(markerstyle).get_path()
     return path.vertices / 2

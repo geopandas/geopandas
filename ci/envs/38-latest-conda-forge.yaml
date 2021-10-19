@@ -4,7 +4,7 @@ channels:
 dependencies:
   - python=3.8
   # required
-  - pandas
+  - pandas=1.3.2  # temporary pin because 1.3.3 has regression for overlay (GH2101)
   - shapely
   - fiona
   - pyproj
@@ -18,6 +18,8 @@ dependencies:
   - rtree
   - matplotlib
   - mapclassify
+  - folium
+  - xyzservices
   - scipy
   - geopy
   # installed in tests.yaml, because not available on windows

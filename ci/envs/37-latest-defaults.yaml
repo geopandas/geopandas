@@ -24,3 +24,5 @@ dependencies:
       - geopy
       - mapclassify
       - pyarrow
+      - folium
+      - xyzservices
