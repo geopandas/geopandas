@@ -925,10 +925,13 @@ class GeoSeries(GeoPandasBase, Series):
             if s.type == "GeometryCollection" and s.is_empty:
                 continue
             elif s.type.startswith("Multi") and s.is_empty:
-                # Hack to retain type after exploding
-                s_type_exploded = s.type.removeprefix("Multi").upper()
-                s_exploded = wkt.loads(f"{s_type_exploded} EMPTY")
-                geoms = [s_exploded]
+                # Create empty geometry of singular type
+                start_idx = len("Multi")
+                s_type_singular = s.type[start_idx:]
+                s_singular = wkt.loads(
+                    f"{s_type_singular.upper()} EMPTY"
+                )  # e.g. POINT EMPTY
+                geoms = [s_singular]
                 idxs = [(idx, 0)]
             elif s.type.startswith("Multi") or s.type == "GeometryCollection":
                 geoms = s.geoms
