@@ -15,6 +15,7 @@ def make_grid(
     what="polygons",
     cell_type="square",
     intersect=False,
+    flat_topped=True,
 ):
     """Provides the grid-cell centers, corners, or polygons of a square or hexagonal grid.
 
@@ -62,8 +63,8 @@ def make_grid(
     y_dist = bounds[3] - bounds[1] - offset[1]
 
     if cell_type == "square":
-        # Set corner coordinates: Also in case of an offse,
-        # grid always ends at the right/upper end of the bounding box
+        # Set corner coordinates of square grid. Grid always ends at the right/upper edge
+        # of the bounding box; also if an offset is defined.
         x_coords_corn = np.arange(
             bounds[0] + offset[0], bounds[2] + cell_size, cell_size
         )
@@ -79,7 +80,7 @@ def make_grid(
         elif what == "centers":
             # Use int() to ensure that half decimal numbers are
             # rounded to the next higher int.
-            n_cent_x = int(x_dist / cell_size + 0.5)
+            n_cent_x = int(x_dist / cell_size + 0.5)  # avoid Bankers Rounding
             n_cent_y = int(y_dist / cell_size + 0.5)
 
             sq_centers_np = (
@@ -116,48 +117,65 @@ def make_grid(
             raise ValueError("Invalid value for parameter `what`")
 
     elif cell_type == "hexagon":
-        # Create rectangular meshgrid containing both centers and cornes
+        if not flat_topped:
+            y_dist = bounds[2] - bounds[0] - offset[0]
+            x_dist = bounds[3] - bounds[1] - offset[1]
+
+        # Create rectangular meshgrid containing both the centers and the cornes
         # of the hexagonal grid
         dx = cell_size
         dy = cell_size * np.sqrt(3) / 2
 
-        x_coords = np.arange(
-            bounds[0] + offset[0], bounds[2] + 3 * cell_size + offset[0], dx
-        )
-        y_coords = np.arange(
-            bounds[1] - np.sqrt(3) / 2 * cell_size + offset[1],
-            bounds[3] + np.sqrt(3) * cell_size + offset[1],
-            dy,
-        )
+        # Determine number of grid points along x/y direction such that the area of
+        # any bounding box is fully covered with polygons.
+        n_dx = x_dist / dx
+        n_grid_point_x = int((np.ceil((n_dx - 1) / 1.5) + 2) * 1.5)
+        n_dy = y_dist / dy
+        n_grid_point_y = int(n_dy) + 3
+
+        x_coords = np.arange(bounds[0] + offset[0], n_grid_point_x * dx, dx)
+        y_coords = np.arange(bounds[1] - dy + offset[1], n_grid_point_y * dy, dy)
         xv, yv = np.meshgrid(x_coords, y_coords)
 
         # Shift every second row to transform the rectangular into a hexagonal grid
         xv[::2, :] = xv[::2, :] - dx / 2
 
-        # Create mask to select only the centers
         mask_center = np.zeros_like(xv, dtype=bool)
         mask_center[1::2, 2::3] = True
-        mask_center[2::2, 1::3] = True
+        mask_center[::2, 1::3] = True
 
         if what == "centers":
             hex_centers_np = np.array([xv[mask_center], yv[mask_center]]).T.reshape(
                 -1, 2
             )
             output_grid = points_from_xy(hex_centers_np[:, 0], hex_centers_np[:, 1])
+            if not flat_topped:
+                output_grid = points_from_xy(hex_centers_np[:, 1], hex_centers_np[:, 0])
+
+            # output_grid = output_grid[output_grid.intersects(bounding_box)]
 
         elif what == "corners":
-            # The inverted center mask is the corner mask
+            # The inverted center mask is the corner mask. Now consider all corners
             mask_corners = np.invert(mask_center)
+
             hex_corners_np = np.array([xv[mask_corners], yv[mask_corners]]).T.reshape(
                 -1, 2
             )
             output_grid = points_from_xy(hex_corners_np[:, 0], hex_corners_np[:, 1])
+
+            if not flat_topped:
+                output_grid = points_from_xy(hex_corners_np[:, 1], hex_corners_np[:, 0])
+            # output_grid = output_grid[output_grid.intersects(bounding_box)]
 
         elif what == "polygons":
             hex_coords_a = _hex_polygon_corners(xv, yv, (0, 1))
             hex_coords_b = _hex_polygon_corners(xv, yv, (2, 0))
 
             hex_coords = np.concatenate((hex_coords_a, hex_coords_b), axis=0)
+            if not flat_topped:
+                hex_coords = hex_coords[:, :, ::-1]
+
+            # TODO Could a pygeos solution be used to replace below expression
             hex_polygons = [Polygon(hex_set) for hex_set in hex_coords]
 
             hex_polygons_np = np.array(hex_polygons)
