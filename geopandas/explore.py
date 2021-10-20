@@ -504,13 +504,13 @@ GON (((180.00000 -16.06713, 180.00000...
     marker = marker_type
     if isinstance(marker_type, str):
         if marker_type == "marker":
-            marker = folium.Marker(**marker_kwds)
+            marker = folium.Marker(location=None, **marker_kwds)
         elif marker_type == "circle":
             marker = folium.Circle(**marker_kwds)
         elif marker_type == "circle_marker":
             marker_kwds["radius"] = marker_kwds.get("radius", 2)
             marker_kwds["fill"] = marker_kwds.get("fill", True)
-            marker = folium.CircleMarker(**marker_kwds)
+            marker = folium.CircleMarker(location=None, **marker_kwds)
         else:
             raise ValueError(
                 "Only 'marker', 'circle', and 'circle_marker' are "
