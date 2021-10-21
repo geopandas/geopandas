@@ -27,3 +27,4 @@ dependencies:
   - pyarrow
   - pip:
       - pyproj==2.2.2
+      - mapclassify==2.4.0
