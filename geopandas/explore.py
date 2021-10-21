@@ -282,7 +282,7 @@ GON (((180.00000 -16.06713, 180.00000...
     if gdf.crs is None:
         kwargs["crs"] = "Simple"
         tiles = None
-    elif not gdf.crs.equals(4326):
+    elif not gdf.crs == "EPSG:4326":
         gdf = gdf.to_crs(4326)
 
     # create folium.Map object
