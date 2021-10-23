@@ -14,6 +14,7 @@ import matplotlib.colors as colors  # noqa
 from branca.colormap import StepColormap  # noqa
 
 BRANCA_05 = str(branca.__version__) > LooseVersion("0.4.2")
+FOLIUM_GE_012 = str(folium.__version__) >= LooseVersion("0.12.0")
 
 
 class TestExplore:
@@ -412,6 +413,7 @@ class TestExplore:
         out_str = self._fetch_map_string(m)
         assert "BoroName" in out_str
 
+    @pytest.mark.skipif(not FOLIUM_GE_012, reason="need folium 0.12 for markers")
     def test_default_markers(self):
         # check overriden default for points
         m = self.cities.explore()
@@ -426,6 +428,7 @@ class TestExplore:
         for s in strings:
             assert s in out_str
 
+    @pytest.mark.skipif(not FOLIUM_GE_012, reason="need folium 0.12 for markers")
     def test_custom_markers(self):
         # Markers
         m = self.cities.explore(

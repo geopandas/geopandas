@@ -1,3 +1,4 @@
+from distutils.version import LooseVersion
 from statistics import mean
 
 import geopandas
@@ -270,6 +271,8 @@ GON (((180.00000 -16.06713, 180.00000...
     except (ImportError, ModuleNotFoundError):
         HAS_XYZSERVICES = False
 
+    FOLIUM_GE_012 = str(folium.__version__) >= LooseVersion("0.12.0")
+
     gdf = df.copy()
 
     # convert LinearRing to LineString
@@ -500,17 +503,19 @@ GON (((180.00000 -16.06713, 180.00000...
     # define default for points
     if marker_type is None:
         marker_type = "circle_marker"
+    elif not FOLIUM_GE_012 and marker_type != "marker":
+        raise ValueError("need folium >= 0.12 to customize the marker")
 
     marker = marker_type
-    if isinstance(marker_type, str):
+    if FOLIUM_GE_012 and isinstance(marker_type, str):
         if marker_type == "marker":
-            marker = folium.Marker(location=None, **marker_kwds)
+            marker = folium.Marker(**marker_kwds)
         elif marker_type == "circle":
             marker = folium.Circle(**marker_kwds)
         elif marker_type == "circle_marker":
             marker_kwds["radius"] = marker_kwds.get("radius", 2)
             marker_kwds["fill"] = marker_kwds.get("fill", True)
-            marker = folium.CircleMarker(location=None, **marker_kwds)
+            marker = folium.CircleMarker(**marker_kwds)
         else:
             raise ValueError(
                 "Only 'marker', 'circle', and 'circle_marker' are "
@@ -538,12 +543,13 @@ GON (((180.00000 -16.06713, 180.00000...
         tooltip = None
         popup = None
 
+    if FOLIUM_GE_012:
+        kwargs["marker"] = marker
     # add dataframe to map
     folium.GeoJson(
         gdf.__geo_interface__,
         tooltip=tooltip,
         popup=popup,
-        marker=marker,
         style_function=style_function,
         highlight_function=highlight_function,
         **kwargs,
