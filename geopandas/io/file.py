@@ -1,4 +1,6 @@
 import os
+import tempfile
+import zipfile
 from distutils.version import LooseVersion
 from pathlib import Path
 import warnings
@@ -379,21 +381,42 @@ def _to_file(
             "ESRI Shapefile.",
             stacklevel=3,
         )
+    import io
 
-    with fiona_env():
-        crs_wkt = None
-        try:
-            gdal_version = fiona.env.get_gdal_release_name()
-        except AttributeError:
-            gdal_version = "2.0.0"  # just assume it is not the latest
-        if LooseVersion(gdal_version) >= LooseVersion("3.0.0") and crs:
-            crs_wkt = crs.to_wkt()
-        elif crs:
-            crs_wkt = crs.to_wkt("WKT1_GDAL")
-        with fiona.open(
-            filename, mode=mode, driver=driver, crs_wkt=crs_wkt, schema=schema, **kwargs
-        ) as colxn:
-            colxn.writerecords(df.iterfeatures())
+    if filename.endswith(".zip"):
+        with zipfile.ZipFile(filename, 'w') as zip_file:
+            with io.BytesIO() as tmp:
+                with fiona_env():
+                    crs_wkt = None
+                    try:
+                        gdal_version = fiona.env.get_gdal_release_name()
+                    except AttributeError:
+                        gdal_version = "2.0.0"  # just assume it is not the latest
+                    if LooseVersion(gdal_version) >= LooseVersion("3.0.0") and crs:
+                        crs_wkt = crs.to_wkt()
+                    elif crs:
+                        crs_wkt = crs.to_wkt("WKT1_GDAL")
+                    with fiona.open(
+                            tmp, mode=mode, driver=driver, crs_wkt=crs_wkt, schema=schema, **kwargs
+                    ) as colxn:
+                        colxn.writerecords(df.iterfeatures())
+                zip_file.writestr(filename.rsplit(".zip", maxsplit=1)[0], tmp.getvalue())
+
+    else:
+        with fiona_env():
+            crs_wkt = None
+            try:
+                gdal_version = fiona.env.get_gdal_release_name()
+            except AttributeError:
+                gdal_version = "2.0.0"  # just assume it is not the latest
+            if LooseVersion(gdal_version) >= LooseVersion("3.0.0") and crs:
+                crs_wkt = crs.to_wkt()
+            elif crs:
+                crs_wkt = crs.to_wkt("WKT1_GDAL")
+            with fiona.open(
+                filename, mode=mode, driver=driver, crs_wkt=crs_wkt, schema=schema, **kwargs
+            ) as colxn:
+                colxn.writerecords(df.iterfeatures())
 
 
 def infer_schema(df):
