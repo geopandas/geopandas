@@ -1,9 +1,9 @@
 import os
 import tempfile
-import zipfile
 from distutils.version import LooseVersion
 from pathlib import Path
 import warnings
+from shutil import make_archive
 
 import numpy as np
 import pandas as pd
@@ -383,7 +383,6 @@ def _to_file(
             "ESRI Shapefile.",
             stacklevel=3,
         )
-    import io
 
     try:
         gdal_version = LooseVersion(fiona.env.get_gdal_release_name())
@@ -394,24 +393,28 @@ def _to_file(
         # If we have GDAL >=3.1, use that shapefile zipping implementation
         # https://gdal.org/drivers/vector/shapefile.html#compressed-files
         if (driver != "ESRI Shapefile") or (gdal_version < LooseVersion("3.1.0")):
-            zip_filename = filename
-            filename_obj = Path(filename)
-            filename = filename_obj.stem
-            print(zip_filename, filename)
-            with tempfile.TemporaryDirectory() as tmp_dirname:
-                tmp_dir = Path(tmp_dirname)
-                print(tmp_dirname)
-                with zipfile.ZipFile(zip_filename, 'w',compression=zipfile.ZIP_DEFLATED) as zip_file:
-                    _to_file_write_step(df, crs, tmp_dir / filename, mode, driver, schema, gdal_version, **kwargs)
-                    for file in tmp_dir.iterdir():
-                        print(file)
-                        zip_file.write(file, arcname=file.name)
+            file_obj = Path(filename)
+            with tempfile.TemporaryDirectory() as tmp_dir:
+                tmp_dir = Path(tmp_dir)
+                _to_file_write_step(
+                    df,
+                    crs,
+                    tmp_dir / file_obj.stem,
+                    mode,
+                    driver,
+                    schema,
+                    gdal_version,
+                    **kwargs,
+                )
+                make_archive(file_obj.with_suffix(""), format="zip", root_dir=tmp_dir)
             return
 
     _to_file_write_step(df, crs, filename, mode, driver, schema, gdal_version, **kwargs)
 
 
-def _to_file_write_step(df, crs, filename, mode, driver, schema, gdal_version, **kwargs):
+def _to_file_write_step(
+    df, crs, filename, mode, driver, schema, gdal_version, **kwargs
+):
     with fiona_env():
         crs_wkt = None
 
@@ -420,9 +423,10 @@ def _to_file_write_step(df, crs, filename, mode, driver, schema, gdal_version, *
         elif crs:
             crs_wkt = crs.to_wkt("WKT1_GDAL")
         with fiona.open(
-                filename, mode=mode, driver=driver, crs_wkt=crs_wkt, schema=schema, **kwargs
+            filename, mode=mode, driver=driver, crs_wkt=crs_wkt, schema=schema, **kwargs
         ) as colxn:
             colxn.writerecords(df.iterfeatures())
+
 
 def infer_schema(df):
     from collections import OrderedDict
