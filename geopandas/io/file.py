@@ -383,41 +383,39 @@ def _to_file(
         )
     import io
 
+    try:
+        gdal_version = LooseVersion(fiona.env.get_gdal_release_name())
+    except AttributeError:
+        gdal_version = LooseVersion("2.0.0")  # just assume it is not the latest
+
     if filename.endswith(".zip"):
-        with zipfile.ZipFile(filename, 'w') as zip_file:
-            with io.BytesIO() as tmp:
-                with fiona_env():
-                    crs_wkt = None
-                    try:
-                        gdal_version = fiona.env.get_gdal_release_name()
-                    except AttributeError:
-                        gdal_version = "2.0.0"  # just assume it is not the latest
-                    if LooseVersion(gdal_version) >= LooseVersion("3.0.0") and crs:
-                        crs_wkt = crs.to_wkt()
-                    elif crs:
-                        crs_wkt = crs.to_wkt("WKT1_GDAL")
-                    with fiona.open(
-                            tmp, mode=mode, driver=driver, crs_wkt=crs_wkt, schema=schema, **kwargs
-                    ) as colxn:
-                        colxn.writerecords(df.iterfeatures())
-                zip_file.writestr(filename.rsplit(".zip", maxsplit=1)[0], tmp.getvalue())
+        # If we have GDAL >=3.1, use that shapefile zipping implementation
+        # https://gdal.org/drivers/vector/shapefile.html#compressed-files
+        if (driver != "ESRI Shapefile") or (gdal_version < LooseVersion("3.1.0")):
+            zip_filename = filename
+            filename = filename.rsplit(".zip", maxsplit=1)[0]
+            print(zip_filename, filename)
+            with zipfile.ZipFile(zip_filename, 'w') as zip_file:
+                with io.BytesIO() as tmp:
+                    _to_file_write_step(df, crs, tmp, mode, driver, schema, gdal_version, **kwargs)
+                    zip_file.writestr(filename, tmp.getvalue())
+            return
 
-    else:
-        with fiona_env():
-            crs_wkt = None
-            try:
-                gdal_version = fiona.env.get_gdal_release_name()
-            except AttributeError:
-                gdal_version = "2.0.0"  # just assume it is not the latest
-            if LooseVersion(gdal_version) >= LooseVersion("3.0.0") and crs:
-                crs_wkt = crs.to_wkt()
-            elif crs:
-                crs_wkt = crs.to_wkt("WKT1_GDAL")
-            with fiona.open(
+    _to_file_write_step(df, crs, filename, mode, driver, schema, gdal_version, **kwargs)
+
+
+def _to_file_write_step(df, crs, filename, mode, driver, schema, gdal_version, **kwargs):
+    with fiona_env():
+        crs_wkt = None
+
+        if gdal_version >= LooseVersion("3.0.0") and crs:
+            crs_wkt = crs.to_wkt()
+        elif crs:
+            crs_wkt = crs.to_wkt("WKT1_GDAL")
+        with fiona.open(
                 filename, mode=mode, driver=driver, crs_wkt=crs_wkt, schema=schema, **kwargs
-            ) as colxn:
-                colxn.writerecords(df.iterfeatures())
-
+        ) as colxn:
+            colxn.writerecords(df.iterfeatures())
 
 def infer_schema(df):
     from collections import OrderedDict
