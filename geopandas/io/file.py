@@ -1,5 +1,5 @@
 import os
-import tempfile
+from tempfile import TemporaryDirectory
 from distutils.version import LooseVersion
 from pathlib import Path
 import warnings
@@ -348,8 +348,8 @@ def _to_file(
 
     The *kwargs* are passed to fiona.open and can be used to write
     to multi-layer data, store data within archives (zip files), etc.
-    The path may specify a fiona VSI scheme.
-
+    The path may specify a fiona VSI scheme. # TODO https://github.com/geopandas/geopandas/pull/1124/files
+    # TODO https://gdal.org/user/virtual_file_systems.html
     Notes
     -----
     The format drivers will attempt to detect the encoding of your data, but
@@ -389,39 +389,38 @@ def _to_file(
     except AttributeError:
         gdal_version = LooseVersion("2.0.0")  # just assume it is not the latest
 
-    if str(filename).endswith(".zip"):
-        # If we have GDAL >=3.1, use that shapefile zipping implementation
-        # https://gdal.org/drivers/vector/shapefile.html#compressed-files
-        if (driver != "ESRI Shapefile") or (gdal_version < LooseVersion("3.1.0")):
-            file_obj = Path(filename)
-            with tempfile.TemporaryDirectory() as tmp_dir:
-                tmp_dir = Path(tmp_dir)
-                _to_file_write_step(
-                    df,
-                    crs,
-                    tmp_dir / file_obj.stem,
-                    mode,
-                    driver,
-                    schema,
-                    gdal_version,
-                    **kwargs,
-                )
-                make_archive(file_obj.with_suffix(""), format="zip", root_dir=tmp_dir)
-            return
+    crs_wkt = None
+    if gdal_version >= LooseVersion("3.0.0") and crs:
+        crs_wkt = crs.to_wkt()
+    elif crs:
+        crs_wkt = crs.to_wkt("WKT1_GDAL")
 
-    _to_file_write_step(df, crs, filename, mode, driver, schema, gdal_version, **kwargs)
+    # If we have GDAL >=3.1, use that shapefile zipping implementation
+    # https://gdal.org/drivers/vector/shapefile.html#compressed-files
+    if str(filename).endswith(".zip") and (
+        (driver != "ESRI Shapefile") or (gdal_version < LooseVersion("3.1.0"))
+    ):
+        file_obj = Path(filename)
+        with TemporaryDirectory() as tmp_dir:
+            tmp_dir = Path(tmp_dir)
+            tmp_filepath = tmp_dir / file_obj.stem
+            zip_path_no_suffix = file_obj.with_suffix("")
+            _to_file_write_step(
+                df,
+                crs_wkt,
+                tmp_filepath,
+                mode,
+                driver,
+                schema,
+                **kwargs,
+            )
+            make_archive(zip_path_no_suffix, format="zip", root_dir=tmp_dir)
+    else:
+        _to_file_write_step(df, crs_wkt, filename, mode, driver, schema, **kwargs)
 
 
-def _to_file_write_step(
-    df, crs, filename, mode, driver, schema, gdal_version, **kwargs
-):
+def _to_file_write_step(df, crs_wkt, filename, mode, driver, schema, **kwargs):
     with fiona_env():
-        crs_wkt = None
-
-        if gdal_version >= LooseVersion("3.0.0") and crs:
-            crs_wkt = crs.to_wkt()
-        elif crs:
-            crs_wkt = crs.to_wkt("WKT1_GDAL")
         with fiona.open(
             filename, mode=mode, driver=driver, crs_wkt=crs_wkt, schema=schema, **kwargs
         ) as colxn:
