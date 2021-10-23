@@ -182,6 +182,7 @@ def _read_file(filename, bbox=None, mask=None, rows=None, **kwargs):
         # if missing.
         if _is_zip(str(filename)):
             parsed = fiona.parse_path(str(filename))
+            print("is a zip, pasrsed", parsed)
             if isinstance(parsed, fiona.path.ParsedPath):
                 # If fiona is able to parse the path, we can safely look at the scheme
                 # and update it to have a zip scheme if necessary.
@@ -197,6 +198,7 @@ def _read_file(filename, bbox=None, mask=None, rows=None, **kwargs):
                 # it is a legacy GDAL path type, so let it pass unmodified.
                 filename = "zip://" + parsed.name
         path_or_bytes = filename
+        print("fiona getting", filename, path_or_bytes)
         reader = fiona.open
 
     with fiona_env():
@@ -388,17 +390,22 @@ def _to_file(
     except AttributeError:
         gdal_version = LooseVersion("2.0.0")  # just assume it is not the latest
 
-    if filename.endswith(".zip"):
+    if str(filename).endswith(".zip"):
         # If we have GDAL >=3.1, use that shapefile zipping implementation
         # https://gdal.org/drivers/vector/shapefile.html#compressed-files
         if (driver != "ESRI Shapefile") or (gdal_version < LooseVersion("3.1.0")):
             zip_filename = filename
-            filename = filename.rsplit(".zip", maxsplit=1)[0]
+            filename_obj = Path(filename)
+            filename = filename_obj.stem
             print(zip_filename, filename)
-            with zipfile.ZipFile(zip_filename, 'w') as zip_file:
-                with io.BytesIO() as tmp:
-                    _to_file_write_step(df, crs, tmp, mode, driver, schema, gdal_version, **kwargs)
-                    zip_file.writestr(filename, tmp.getvalue())
+            with tempfile.TemporaryDirectory() as tmp_dirname:
+                tmp_dir = Path(tmp_dirname)
+                print(tmp_dirname)
+                with zipfile.ZipFile(zip_filename, 'w',compression=zipfile.ZIP_DEFLATED) as zip_file:
+                    _to_file_write_step(df, crs, tmp_dir / filename, mode, driver, schema, gdal_version, **kwargs)
+                    for file in tmp_dir.iterdir():
+                        print(file)
+                        zip_file.write(file, arcname=file.name)
             return
 
     _to_file_write_step(df, crs, filename, mode, driver, schema, gdal_version, **kwargs)
