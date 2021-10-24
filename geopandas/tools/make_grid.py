@@ -1,36 +1,51 @@
 import warnings
+
 import numpy as np
 
-from shapely.geometry import Polygon, MultiPolygon
+from shapely.geometry import MultiPolygon, Polygon
 
-from geopandas import GeoSeries, GeoDataFrame, points_from_xy
+from geopandas import GeoDataFrame, GeoSeries, points_from_xy
 from geopandas.array import from_shapely
 
 
 def make_grid(
     input_geometry,
     cell_size,
-    offset=(0, 0),
-    crs=None,
-    what="polygons",
     cell_type="square",
-    intersect=False,
+    what="polygons",
+    offset=(0, 0),
+    intersect=True,
     flat_topped=True,
 ):
-    """Provides the grid-cell centers, corners, or polygons of a square or hexagonal grid.
+    """Provides the centers, corners, or polygons of a square or hexagonal grid.
+
+        The output covers the area ot the `input_geometry`. The origin of the grid is
+        at the lower left corner of the bouding box of the `input_geometry`. By default,
+        the grid is intersected with the `input_geometry`. Automatic intersecting can
+        be avoided by adjusting the `intersect` parameter to `False`.
+
+        If there are multiple geometries in a GeoSeries/GeoDataFrame, the grid will
+        be created over the total bounds of the GeoSeries/GeoDataFrame. Subsequently,
+        the grid is intersected with the individual geometries.
 
         Parameters
         ------------
         input_geometry : (Multi)Polygon, GeoSeries, GeoDataFrame
-            Polygon within its boundaries the grid is created
+            Polygon within its boundaries the grid is made.
         cell_size : float
-            Side length of the individual square or the hexagon
+            Side length of the square or hexagonal grid cell.
+        cell_type : str, one of "square", "hexagon", default "square"
+            Grid type that is returned.
+        what : str, one of "centers", "corners", "polygons", default "polygons"
+            Grid feature that is returned.
         offset : tuple
-            x, y shift of the grid realtive to its original position.
-        what : str, one of "centers", "corners", "polygons"
-            return type
-        cell_type : str, one of "square", "hexagon"
-            grid type
+            x, y offset of the grid realtive to lower-left corner of the input
+            geometry's bounding box.
+        intersect : bool, default True
+            If False, the grid is not intersected with the `input_geometry`.
+        flat_topped : bool, default True
+            If False, the orientation of the hexagonal cells are rotated by 90 degree
+            such that a corner points upwards.
 
         Returns
         -------
@@ -40,12 +55,17 @@ def make_grid(
 
         Examples
         --------
-        Cover a input_geometry (the South American continent) with a square grid:
+        Cover a input_geometry, here Uruguay, with a square grid:
+        >>> import geopandas
         >>> world = geopandas.read_file(
         ...     geopandas.datasets.get_path('naturalearth_lowres'))
-        >>> south_america = world[world['continent'] == "South America"]
-        # TODO Finalize example
-
+        >>> uruguay = world[world["name"] == "Uruguay"]
+        >>> sq_grid = geopandas.makegrid(uruguay,3)
+        >>> sq_grid
+        0    POLYGON ((-58.42707 -34.95265, -55.42707 -34.9...
+        1    POLYGON ((-58.42707 -31.95265, -55.42707 -31.9...
+        2    POLYGON ((-55.42707 -34.95265, -52.42707 -34.9...
+        3    POLYGON ((-55.42707 -31.95265, -52.42707 -31.9...
         """
 
     # Run basic checks
@@ -56,15 +76,17 @@ def make_grid(
     if isinstance(input_geometry, (GeoDataFrame, GeoSeries)):
         bounds = np.array(input_geometry.total_bounds)
     else:
-        # TODO Test if multipolygons also work
         bounds = np.array(input_geometry.bounds)
 
     x_dist = bounds[2] - bounds[0] - offset[0]
     y_dist = bounds[3] - bounds[1] - offset[1]
 
+    grid_origin_x = bounds[0] + offset[0]
+    grid_origin_y = bounds[1] + offset[1]
+
     if cell_type == "square":
-        # Set corner coordinates of square grid. Grid always ends at the right/upper edge
-        # of the bounding box; also if an offset is defined.
+        # Set corner coordinates of square grid. Grid always ends at the right/upper
+        # edge of the bounding box; also if an offset is defined.
         x_coords_corn = np.arange(
             bounds[0] + offset[0], bounds[2] + cell_size, cell_size
         )
@@ -78,16 +100,8 @@ def make_grid(
             output_grid = points_from_xy(sq_corners_np[:, 0], sq_corners_np[:, 1])
 
         elif what == "centers":
-            # Use int() to ensure that half decimal numbers are
-            # rounded to the next higher int.
-            n_cent_x = int(x_dist / cell_size + 0.5)  # avoid Bankers Rounding
-            n_cent_y = int(y_dist / cell_size + 0.5)
-
             sq_centers_np = (
-                np.array(
-                    [xv[:n_cent_y, :n_cent_x], yv[:n_cent_y, :n_cent_x]]
-                ).T.reshape(-1, 2)
-                + cell_size / 2
+                np.array([xv[:-1, :-1], yv[:-1, :-1]]).T.reshape(-1, 2) + cell_size / 2
             )
 
             output_grid = points_from_xy(sq_centers_np[:, 0], sq_centers_np[:, 1])
@@ -108,7 +122,6 @@ def make_grid(
                 ),
                 axis=1,
             )
-            # TODO Could a pygeos solution be used to replace below expression
             sq_polygons_np = np.array([Polygon(sq_set) for sq_set in sq_coords])
 
             output_grid = from_shapely(sq_polygons_np)
@@ -131,14 +144,14 @@ def make_grid(
         n_dx = x_dist / dx
         n_grid_point_x = int((np.ceil((n_dx - 1) / 1.5) + 2) * 1.5)
         n_dy = y_dist / dy
-        n_grid_point_y = int(n_dy) + 3
+        n_grid_point_y = int(n_dy) + 4
 
-        x_coords = np.arange(bounds[0] + offset[0], n_grid_point_x * dx, dx)
-        y_coords = np.arange(bounds[1] - dy + offset[1], n_grid_point_y * dy, dy)
+        x_coords = np.arange(0, n_grid_point_x).astype(float) * dx
+        y_coords = np.arange(0, n_grid_point_y).astype(float) * dy - dy
         xv, yv = np.meshgrid(x_coords, y_coords)
 
         # Shift every second row to transform the rectangular into a hexagonal grid
-        xv[::2, :] = xv[::2, :] - dx / 2
+        xv[::2, :] = xv[::2, :] - (dx / 2)
 
         mask_center = np.zeros_like(xv, dtype=bool)
         mask_center[1::2, 2::3] = True
@@ -148,11 +161,13 @@ def make_grid(
             hex_centers_np = np.array([xv[mask_center], yv[mask_center]]).T.reshape(
                 -1, 2
             )
-            output_grid = points_from_xy(hex_centers_np[:, 0], hex_centers_np[:, 1])
             if not flat_topped:
-                output_grid = points_from_xy(hex_centers_np[:, 1], hex_centers_np[:, 0])
+                hex_centers_np = hex_centers_np[:, ::-1]
 
-            # output_grid = output_grid[output_grid.intersects(bounding_box)]
+            output_grid = points_from_xy(
+                hex_centers_np[:, 0] + grid_origin_x,
+                hex_centers_np[:, 1] + grid_origin_y,
+            )
 
         elif what == "corners":
             # The inverted center mask is the corner mask. Now consider all corners
@@ -161,21 +176,27 @@ def make_grid(
             hex_corners_np = np.array([xv[mask_corners], yv[mask_corners]]).T.reshape(
                 -1, 2
             )
-            output_grid = points_from_xy(hex_corners_np[:, 0], hex_corners_np[:, 1])
 
             if not flat_topped:
-                output_grid = points_from_xy(hex_corners_np[:, 1], hex_corners_np[:, 0])
-            # output_grid = output_grid[output_grid.intersects(bounding_box)]
+                hex_corners_np = hex_corners_np[:, ::-1]
+
+            output_grid = points_from_xy(
+                hex_corners_np[:, 0] + grid_origin_x,
+                hex_corners_np[:, 1] + grid_origin_y,
+            )
 
         elif what == "polygons":
             hex_coords_a = _hex_polygon_corners(xv, yv, (0, 1))
             hex_coords_b = _hex_polygon_corners(xv, yv, (2, 0))
 
             hex_coords = np.concatenate((hex_coords_a, hex_coords_b), axis=0)
+
             if not flat_topped:
                 hex_coords = hex_coords[:, :, ::-1]
 
-            # TODO Could a pygeos solution be used to replace below expression
+            hex_coords[:, :, 0] += grid_origin_x
+            hex_coords[:, :, 1] += grid_origin_y
+
             hex_polygons = [Polygon(hex_set) for hex_set in hex_coords]
 
             hex_polygons_np = np.array(hex_polygons)
@@ -187,9 +208,10 @@ def make_grid(
         raise ValueError("Invalid value for parameter `cell_type`")
 
     output_grid = GeoSeries(output_grid)
+
     if isinstance(input_geometry, (GeoDataFrame, GeoSeries)):
         if input_geometry.crs is not None:
-            output_grid.set_crs(input_geometry.crs)
+            output_grid = output_grid.set_crs(input_geometry.crs)
 
     if intersect:
         if isinstance(input_geometry, (GeoDataFrame, GeoSeries)):
@@ -220,11 +242,10 @@ def _hex_polygon_corners(xv, yv, index_0=(0, 0)):
     -------
     np.array
         The array has the shape (n, 6, 2) where n is the number of grid cells,
-        6 corresponds to the hexagon corners and 2 to the x,y coordinates.
+        "6" corresponds to the hexagon corners and "2" to the corresponding
+        x,y coordinates.
 
     """
-
-    # TODO Check again the number of polygons. To many centers are returned.
 
     # Input checks
     if xv.shape != yv.shape:
@@ -252,7 +273,7 @@ def _hex_polygon_corners(xv, yv, index_0=(0, 0)):
     else:
         x_corr = 0
 
-    # Labeling of hexagon corners assumes that hexagon stands on a flat side.
+    # Labeling of hexagon corners assumes that hexagon stands on a flat side:
     # Middle right corner of the hexagon
     n_poly_x = xv[(i_y0 + 1) :: 2, (i_x0 + 2 - x_corr) :: 3].shape[1]
     max_i_x = i_x0 + n_poly_x * 3 - 1

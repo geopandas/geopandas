@@ -1,18 +1,12 @@
-from distutils.version import LooseVersion
-from shapely import geos
+import numpy as np
+import pytest
 
-from shapely.geometry.multipolygon import MultiPolygon
+from shapely.geometry import MultiPolygon, Point, Polygon
+
+from geopandas import GeoDataFrame, GeoSeries
 from geopandas.tools.make_grid import make_grid
 
-import numpy as np
-
-from shapely.geometry import Point, Polygon, MultiPolygon
-
-import geopandas
-from geopandas import GeoDataFrame, GeoSeries
 from geopandas.testing import assert_geoseries_equal
-
-import pytest
 
 
 @pytest.fixture
@@ -33,7 +27,20 @@ def geo_series():
     polygon_1 = Polygon([(0.1, 0.1), (0.9, 0), (0.9, 0.9), (0, 0.1)])
     polygon_2 = Polygon([(1.1, 1.1), (1.9, 1.1), (1.9, 1.9)])
     point_1 = Point((1.5, 0.4))
-    return GeoSeries([polygon_1, polygon_2, point_1])
+    return GeoSeries([polygon_1, polygon_2, point_1], crs="EPSG:4326")
+
+
+@pytest.fixture
+def geo_dataframe():
+    polygon_1 = Polygon([(0.1, 0.1), (0.9, 0), (0.9, 0.9), (0, 0.1)])
+    polygon_2 = Polygon([(1.1, 1.1), (1.9, 1.1), (1.9, 1.9)])
+    point_1 = Point((1.5, 0.4))
+
+    d = {
+        "col1": ["poly1", "poly2", "point1"],
+        "geometry": [polygon_1, polygon_2, point_1],
+    }
+    return GeoDataFrame(d, crs="EPSG:4326")
 
 
 @pytest.fixture
@@ -82,13 +89,12 @@ class TestBasicChecks:
             make_grid(square, 1, what="corner")
 
 
-# TODO create shape with non rect boarders
-
-
 class TestMakeGridSquare:
     def test_square_centers(self, square):
         cell_size = 1
-        out = make_grid(square, cell_size, what="centers", cell_type="square")
+        out = make_grid(
+            square, cell_size, what="centers", cell_type="square", intersect=False
+        )
         exp_out = GeoSeries(
             [Point(0.5, 0.5), Point(0.5, 1.5), Point(1.5, 0.5), Point(1.5, 1.5)]
         )
@@ -96,7 +102,9 @@ class TestMakeGridSquare:
 
     def test_neg_square_centers(self, neg_square):
         cell_size = 1
-        out = make_grid(neg_square, cell_size, what="centers", cell_type="square")
+        out = make_grid(
+            neg_square, cell_size, what="centers", cell_type="square", intersect=False
+        )
         exp_out = GeoSeries(
             [
                 Point(-1.5, -1.5),
@@ -109,7 +117,13 @@ class TestMakeGridSquare:
 
     def test_square_centers_multipolygon(self, multi_polygon):
         cell_size = 1
-        out = make_grid(multi_polygon, cell_size, what="centers", cell_type="square")
+        out = make_grid(
+            multi_polygon,
+            cell_size,
+            what="centers",
+            cell_type="square",
+            intersect=False,
+        )
         exp_out = GeoSeries(
             [Point(0.5, 0.5), Point(0.5, 1.5), Point(1.5, 0.5), Point(1.5, 1.5)]
         )
@@ -117,41 +131,41 @@ class TestMakeGridSquare:
 
     def test_square_centers_multipolygon_intersect(self, multi_polygon):
         cell_size = 1
-        out = make_grid(
-            multi_polygon, cell_size, what="centers", cell_type="square", intersect=True
-        )
+        out = make_grid(multi_polygon, cell_size, what="centers", cell_type="square")
         exp_out = GeoSeries([Point(0.5, 0.5), Point(1.5, 1.5)])
         assert_geoseries_equal(out, exp_out)
 
     def test_exotic_square_centers(self, excotic_polygon):
         cell_size = 1
-        out = make_grid(
-            excotic_polygon,
-            cell_size,
-            what="centers",
-            cell_type="square",
-            intersect=True,
-        )
+        out = make_grid(excotic_polygon, cell_size, what="centers", cell_type="square",)
         exp_out = GeoSeries([Point(0.5, 0.5), Point(0.5, 1.5), Point(1.5, 0.5)])
         assert_geoseries_equal(out, exp_out)
 
     def test_square_centers_geoseries(self, geo_series):
         cell_size = 1
-        out = make_grid(
-            geo_series, cell_size, what="centers", cell_type="square", intersect=True
-        )
-        exp_out = GeoSeries([Point(0.5, 0.5), Point(1.5, 1.5)])
+        out = make_grid(geo_series, cell_size, what="centers", cell_type="square")
+        exp_out = GeoSeries([Point(0.5, 0.5), Point(1.5, 1.5)], crs="EPSG:4326")
+        assert_geoseries_equal(out, exp_out)
+
+    def test_square_centers_geodataframe(self, geo_dataframe):
+        cell_size = 1
+        out = make_grid(geo_dataframe, cell_size, what="centers", cell_type="square")
+        exp_out = GeoSeries([Point(0.5, 0.5), Point(1.5, 1.5)], crs="EPSG:4326")
         assert_geoseries_equal(out, exp_out)
 
     def test_square_corners(self, square):
         cell_size = 2
-        out = make_grid(square, cell_size, what="corners", cell_type="square")
+        out = make_grid(
+            square, cell_size, what="corners", cell_type="square", intersect=False
+        )
         exp_out = GeoSeries([Point(0, 0), Point(0, 2), Point(2, 0), Point(2, 2)])
         assert_geoseries_equal(out, exp_out)
 
     def test_square_polygons(self, square):
         cell_size = 1
-        out = make_grid(square, cell_size, what="polygons", cell_type="square")
+        out = make_grid(
+            square, cell_size, what="polygons", cell_type="square", intersect=False
+        )
         exp_out = GeoSeries(
             [
                 Polygon([(0, 0), (1, 0), (1, 1), (0, 1)]),
@@ -164,13 +178,7 @@ class TestMakeGridSquare:
 
     def test_square_polygons_multipolygon(self, multi_polygon):
         cell_size = 1
-        out = make_grid(
-            multi_polygon,
-            cell_size,
-            what="polygons",
-            cell_type="square",
-            intersect=True,
-        )
+        out = make_grid(multi_polygon, cell_size, what="polygons", cell_type="square",)
         exp_out = GeoSeries(
             [
                 Polygon([(0, 0), (1, 0), (1, 1), (0, 1)]),
@@ -181,28 +189,53 @@ class TestMakeGridSquare:
 
     def test_square_polygons_geoseries(self, geo_series):
         cell_size = 1
-        out = make_grid(
-            geo_series, cell_size, what="polygons", cell_type="square", intersect=True
-        )
+        out = make_grid(geo_series, cell_size, what="polygons", cell_type="square")
         exp_out = GeoSeries(
             [
                 Polygon([(0, 0), (1, 0), (1, 1), (0, 1)]),
                 Polygon([(1, 0), (2, 0), (2, 1), (1, 1)]),
                 Polygon([(1, 1), (2, 1), (2, 2), (1, 2)]),
-            ]
+            ],
+            crs="EPSG:4326",
+        )
+        assert_geoseries_equal(out, exp_out)
+
+    def test_square_polygons_geodataframe(self, geo_dataframe):
+        cell_size = 1
+        out = make_grid(geo_dataframe, cell_size, what="polygons", cell_type="square")
+        exp_out = GeoSeries(
+            [
+                Polygon([(0, 0), (1, 0), (1, 1), (0, 1)]),
+                Polygon([(1, 0), (2, 0), (2, 1), (1, 1)]),
+                Polygon([(1, 1), (2, 1), (2, 2), (1, 2)]),
+            ],
+            crs="EPSG:4326",
         )
         assert_geoseries_equal(out, exp_out)
 
     def test_square_cellsize_too_large(self, square):
         cell_size = 5
-        out = make_grid(square, cell_size, what="centers", cell_type="square")
+        out = make_grid(
+            square, cell_size, what="centers", cell_type="square", intersect=False
+        )
         exp_out = GeoSeries([Point(2.5, 2.5)])
+        assert_geoseries_equal(out, exp_out)
+
+    def test_square_cellsize_too_large_intersect(self, square):
+        cell_size = 5
+        out = make_grid(square, cell_size, what="centers", cell_type="square")
+        exp_out = GeoSeries()
         assert_geoseries_equal(out, exp_out)
 
     def test_square_centers_offset(self, square):
         cell_size = 1
         out = make_grid(
-            square, cell_size, what="centers", cell_type="square", offset=(0.1, 0.1)
+            square,
+            cell_size,
+            what="centers",
+            cell_type="square",
+            offset=(0.1, 0.1),
+            intersect=False,
         )
         exp_out = GeoSeries(
             [Point(0.6, 0.6), Point(0.6, 1.6), Point(1.6, 0.6), Point(1.6, 1.6)]
@@ -213,27 +246,125 @@ class TestMakeGridSquare:
 class TestMakeGridHexagon:
     def test_hexagon_centers(self, square):
         cell_size = 1
+        out = make_grid(
+            square, cell_size, what="centers", cell_type="hexagon", intersect=False
+        )
+
+        exp_out = GeoSeries(
+            [
+                Point(0.5, -0.5 * np.sqrt(3)),
+                Point(2, 0),
+                Point(0.5, 0.5 * np.sqrt(3)),
+                Point(2, np.sqrt(3)),
+                Point(0.5, 1.5 * np.sqrt(3)),
+                Point(2, 2 * np.sqrt(3)),
+            ]
+        )
+        assert_geoseries_equal(out, exp_out, check_less_precise=True)
+
+    def test_hexagon_centers_offset(self, square):
+        cell_size = 1
+        out = make_grid(
+            square,
+            cell_size,
+            what="centers",
+            cell_type="hexagon",
+            offset=(0.1, 0.1),
+            intersect=False,
+        )
+        exp_out = GeoSeries(
+            [
+                Point(0.5, -0.5 * np.sqrt(3)),
+                Point(2, 0),
+                Point(0.5, 0.5 * np.sqrt(3)),
+                Point(2, np.sqrt(3)),
+                Point(0.5, 1.5 * np.sqrt(3)),
+                Point(2, 2 * np.sqrt(3)),
+            ]
+        ).translate(xoff=0.1, yoff=0.1)
+
+        assert_geoseries_equal(out, exp_out, check_less_precise=True)
+
+    def test_hexagon_centers_intersect(self, square):
+        cell_size = 1
         out = make_grid(square, cell_size, what="centers", cell_type="hexagon")
         exp_out = GeoSeries(
             [Point(2, 0), Point(0.5, np.sqrt(3) / 2), Point(2, np.sqrt(3))]
         )
         assert_geoseries_equal(out, exp_out, check_less_precise=True)
 
-    def test_hexagon_centers_intersect(self, square):
-        cell_size = 1
+    def test_hexagon_corners_cs_larger_bb(self, square):
+        cell_size = 3
         out = make_grid(
-            square, cell_size, what="centers", cell_type="hexagon", intersect=True
+            square, cell_size, what="corners", cell_type="hexagon", intersect=False
         )
         exp_out = GeoSeries(
-            [Point(2, 0), Point(0.5, np.sqrt(3) / 2), Point(2, np.sqrt(3))]
+            [
+                Point(-1.5, -1.5 * np.sqrt(3)),
+                Point(4.5, -1.5 * np.sqrt(3)),
+                Point(0, 0),
+                Point(3, 0),
+                Point(-1.5, 1.5 * np.sqrt(3)),
+                Point(4.5, 1.5 * np.sqrt(3)),
+                Point(0, 3 * np.sqrt(3)),
+                Point(3, 3 * np.sqrt(3)),
+            ]
         )
         assert_geoseries_equal(out, exp_out, check_less_precise=True)
 
-    def test_hexagon_corners(self, square):
+    def test_hexagon_corners_cs_eq_bb(self, square):
+        cell_size = 2
+        out = make_grid(
+            square, cell_size, what="corners", cell_type="hexagon", intersect=False
+        )
+        exp_out = GeoSeries(
+            [
+                Point(-1, -np.sqrt(3)),
+                Point(3, -np.sqrt(3)),
+                Point(0, 0),
+                Point(2, 0),
+                Point(-1, np.sqrt(3)),
+                Point(3, np.sqrt(3)),
+                Point(0, 2 * np.sqrt(3)),
+                Point(2, 2 * np.sqrt(3)),
+                Point(-1, 3 * np.sqrt(3)),
+                Point(3, 3 * np.sqrt(3)),
+            ]
+        )
+        assert_geoseries_equal(out, exp_out, check_less_precise=True)
+
+    def test_hexagon_corners_cs_smaller_bb(self, square):
         cell_size = 1
         out = make_grid(
-            square, cell_size, what="corners", cell_type="hexagon", intersect=True
+            square, cell_size, what="corners", cell_type="hexagon", intersect=False
         )
+        exp_out = GeoSeries(
+            [
+                Point(-0.5, -0.5 * np.sqrt(3)),
+                Point(1.5, -0.5 * np.sqrt(3)),
+                Point(2.5, -0.5 * np.sqrt(3)),
+                Point(0, 0),
+                Point(1, 0),
+                Point(3, 0),
+                Point(-0.5, 0.5 * np.sqrt(3)),
+                Point(1.5, 0.5 * np.sqrt(3)),
+                Point(2.5, 0.5 * np.sqrt(3)),
+                Point(0, np.sqrt(3)),
+                Point(1, np.sqrt(3)),
+                Point(3, np.sqrt(3)),
+                Point(-0.5, 1.5 * np.sqrt(3)),
+                Point(1.5, 1.5 * np.sqrt(3)),
+                Point(2.5, 1.5 * np.sqrt(3)),
+                Point(0, 2 * np.sqrt(3)),
+                Point(1, 2 * np.sqrt(3)),
+                Point(3, 2 * np.sqrt(3)),
+            ]
+        )
+        assert_geoseries_equal(out, exp_out, check_less_precise=True)
+
+    def test_hexagon_corners_intersect(self, square):
+        cell_size = 1
+        out = make_grid(square, cell_size, what="corners", cell_type="hexagon")
         exp_out = GeoSeries(
             [
                 Point(0, 0),
@@ -246,10 +377,30 @@ class TestMakeGridHexagon:
         assert_geoseries_equal(out, exp_out, check_less_precise=True)
 
     def test_hexagon_polygons(self, square):
-        cell_size = 1.5
+        cell_size = 3
         out = make_grid(
-            square, cell_size, what="polygons", cell_type="hexagon", intersect=True
+            square, cell_size, what="polygons", cell_type="hexagon", intersect=False
         )
+        exp_out = GeoSeries(
+            [
+                Polygon(
+                    [
+                        (0, 0),
+                        (3, 0),
+                        (4.5, 1.5 * np.sqrt(3)),
+                        (3, 3 * np.sqrt(3)),
+                        (0, 3 * np.sqrt(3)),
+                        (-1.5, 1.5 * np.sqrt(3)),
+                    ]
+                ),
+            ]
+        )
+
+        assert_geoseries_equal(out, exp_out, check_less_precise=True)
+
+    def test_hexagon_polygons_intersect(self, square):
+        cell_size = 1.5
+        out = make_grid(square, cell_size, what="polygons", cell_type="hexagon")
         exp_out = GeoSeries(
             [
                 Polygon(
