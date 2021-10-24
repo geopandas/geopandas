@@ -4,6 +4,7 @@ from .overlay import overlay
 from .sjoin import sjoin, sjoin_nearest
 from .util import collect
 from .clip import clip
+from .make_grid import make_grid
 
 __all__ = [
     "collect",
@@ -14,4 +15,5 @@ __all__ = [
     "sjoin",
     "sjoin_nearest",
     "clip",
+    "make_grid",
 ]

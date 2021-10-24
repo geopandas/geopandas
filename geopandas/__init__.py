@@ -12,6 +12,7 @@ from geopandas.tools import sjoin, sjoin_nearest  # noqa
 from geopandas.tools import overlay  # noqa
 from geopandas.tools._show_versions import show_versions  # noqa
 from geopandas.tools import clip  # noqa
+from geopandas.tools import make_grid  # noqa
 
 
 import geopandas.datasets  # noqa
