@@ -608,7 +608,7 @@ class TestExplore:
             'attribution":"\\u0026copy;\\u003cahref=\\"https://www.openstreetmap.org'
             in out_str
         )
-        assert '"maxNativeZoom":19,"maxZoom":19,"minZoom":0' in out_str
+        assert '"maxNativeZoom":20,"maxZoom":20,"minZoom":0' in out_str
 
     def test_xyzservices_query_name(self):
         pytest.importorskip("xyzservices")
@@ -624,7 +624,7 @@ class TestExplore:
             'attribution":"\\u0026copy;\\u003cahref=\\"https://www.openstreetmap.org'
             in out_str
         )
-        assert '"maxNativeZoom":19,"maxZoom":19,"minZoom":0' in out_str
+        assert '"maxNativeZoom":20,"maxZoom":20,"minZoom":0' in out_str
 
     def test_linearrings(self):
         rings = self.nybb.explode(index_parts=True).exterior
