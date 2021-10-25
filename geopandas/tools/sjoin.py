@@ -416,7 +416,7 @@ def sjoin_nearest(
 
     Results will include multiple output records for a single input record
     where there are multiple equidistant nearest or intersected neighbors.
-    
+
     Distant is calculated in CRS units and can be returned using the
     `distance_col` parameter.
 
