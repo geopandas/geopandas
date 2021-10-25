@@ -416,6 +416,9 @@ def sjoin_nearest(
 
     Results will include multiple output records for a single input record
     where there are multiple equidistant nearest or intersected neighbors.
+    
+    Distant is calculated in CRS units and can be returned using the
+    `distance_col` parameter.
 
     See the User Guide page
     https://geopandas.readthedocs.io/en/latest/docs/user_guide/mergingdata.html
@@ -444,7 +447,7 @@ def sjoin_nearest(
         Suffix to apply to overlapping column names (right GeoDataFrame).
     distance_col : string, default None
         If set, save the distances computed between matching geometries under a
-        column of this name in the joined GeoDataFrame. Units are CRS units.
+        column of this name in the joined GeoDataFrame.
 
     Examples
     --------
