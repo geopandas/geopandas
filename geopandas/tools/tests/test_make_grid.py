@@ -137,7 +137,7 @@ class TestMakeGridSquare:
 
     def test_exotic_square_centers(self, excotic_polygon):
         cell_size = 1
-        out = make_grid(excotic_polygon, cell_size, what="centers", cell_type="square",)
+        out = make_grid(excotic_polygon, cell_size, what="centers", cell_type="square")
         exp_out = GeoSeries([Point(0.5, 0.5), Point(0.5, 1.5), Point(1.5, 0.5)])
         assert_geoseries_equal(out, exp_out)
 
@@ -178,7 +178,7 @@ class TestMakeGridSquare:
 
     def test_square_polygons_multipolygon(self, multi_polygon):
         cell_size = 1
-        out = make_grid(multi_polygon, cell_size, what="polygons", cell_type="square",)
+        out = make_grid(multi_polygon, cell_size, what="polygons", cell_type="square")
         exp_out = GeoSeries(
             [
                 Polygon([(0, 0), (1, 0), (1, 1), (0, 1)]),

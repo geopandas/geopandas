@@ -19,54 +19,53 @@ def make_grid(
 ):
     """Provides the centers, corners, or polygons of a square or hexagonal grid.
 
-        The output covers the area ot the `input_geometry`. The origin of the grid is
-        at the lower left corner of the bouding box of the `input_geometry`. By default,
-        the grid is intersected with the `input_geometry`. Automatic intersecting can
-        be avoided by adjusting the `intersect` parameter to `False`.
+    The output covers the area ot the `input_geometry`. The origin of the grid is
+    at the lower left corner of the bouding box of the `input_geometry`. By default,
+    the grid is intersected with the `input_geometry`. Automatic intersecting can
+    be avoided by adjusting the `intersect` parameter to `False`.
 
-        If there are multiple geometries in a GeoSeries/GeoDataFrame, the grid will
-        be created over the total bounds of the GeoSeries/GeoDataFrame. Subsequently,
-        the grid is intersected with the individual geometries.
+    If there are multiple geometries in a GeoSeries/GeoDataFrame, the grid will
+    be created over the total bounds of the GeoSeries/GeoDataFrame. Subsequently,
+    the grid is intersected with the individual geometries.
 
-        Parameters
-        ------------
-        input_geometry : (Multi)Polygon, GeoSeries, GeoDataFrame
-            Polygon within its boundaries the grid is made.
-        cell_size : float
-            Side length of the square or hexagonal grid cell.
-        cell_type : str, one of "square", "hexagon", default "square"
-            Grid type that is returned.
-        what : str, one of "centers", "corners", "polygons", default "polygons"
-            Grid feature that is returned.
-        offset : tuple
-            x, y offset of the grid realtive to lower-left corner of the input
-            geometry's bounding box.
-        intersect : bool, default True
-            If False, the grid is not intersected with the `input_geometry`.
-        flat_topped : bool, default True
-            If False, the orientation of the hexagonal cells are rotated by 90 degree
-            such that a corner points upwards.
+    Parameters
+    ------------
+    input_geometry : (Multi)Polygon, GeoSeries, GeoDataFrame
+        Polygon within its boundaries the grid is made.
+    cell_size : float
+        Side length of the square or hexagonal grid cell.
+    cell_type : str, one of "square", "hexagon", default "square"
+        Grid type that is returned.
+    what : str, one of "centers", "corners", "polygons", default "polygons"
+        Grid feature that is returned.
+    offset : tuple
+        x, y offset of the grid realtive to lower-left corner of the input
+        geometry's bounding box.
+    intersect : bool, default True
+        If False, the grid is not intersected with the `input_geometry`.
+    flat_topped : bool, default True
+        If False, the orientation of the hexagonal cells are rotated by 90 degree
+        such that a corner points upwards.
 
-        Returns
-        -------
-        GeoSeries
-            The returned GeoSeries contains the grid-cell centers, corners, or
-            polygons.
+    Returns
+    -------
+    GeoSeries
+        The returned GeoSeries contains the grid-cell centers, corners, or
+        polygons.
 
-        Examples
-        --------
-        Cover a input_geometry, here Uruguay, with a square grid:
-        >>> import geopandas
-        >>> world = geopandas.read_file(
-        ...     geopandas.datasets.get_path('naturalearth_lowres'))
-        >>> uruguay = world[world["name"] == "Uruguay"]
-        >>> sq_grid = geopandas.makegrid(uruguay,3)
-        >>> sq_grid
-        0    POLYGON ((-58.42707 -34.95265, -55.42707 -34.9...
-        1    POLYGON ((-58.42707 -31.95265, -55.42707 -31.9...
-        2    POLYGON ((-55.42707 -34.95265, -52.42707 -34.9...
-        3    POLYGON ((-55.42707 -31.95265, -52.42707 -31.9...
-        """
+    Examples
+    --------
+    >>> import geopandas
+    >>> world = geopandas.read_file(
+    ...     geopandas.datasets.get_path('naturalearth_lowres'))
+    >>> uruguay = world[world["name"] == "Uruguay"]
+    >>> sq_grid = geopandas.makegrid(uruguay,3)
+    >>> sq_grid
+    0    POLYGON ((-58.42707 -34.95265, -55.42707 -34.9...
+    1    POLYGON ((-58.42707 -31.95265, -55.42707 -31.9...
+    2    POLYGON ((-55.42707 -34.95265, -52.42707 -34.9...
+    3    POLYGON ((-55.42707 -31.95265, -52.42707 -31.9...
+    """
 
     # Run basic checks
     _basic_checks(input_geometry, cell_size, offset, what, cell_type, intersect)
@@ -386,4 +385,3 @@ def _basic_checks(input_geometry, cell_size, offset, what, cell_type, intersect)
         warnings.warn("`offset` is larger than input_geometry bounds")
     if (cell_size > (bounds[2] - bounds[0])) and (cell_size > (bounds[3] - bounds[1])):
         warnings.warn("`cell_size` is larger than input_geometry bounds")
-
