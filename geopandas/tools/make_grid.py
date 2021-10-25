@@ -59,7 +59,7 @@ def make_grid(
     >>> world = geopandas.read_file(
     ...     geopandas.datasets.get_path('naturalearth_lowres'))
     >>> uruguay = world[world["name"] == "Uruguay"]
-    >>> sq_grid = geopandas.makegrid(uruguay,3)
+    >>> sq_grid = geopandas.make_grid(uruguay,3)
     >>> sq_grid
     0    POLYGON ((-58.42707 -34.95265, -55.42707 -34.9...
     1    POLYGON ((-58.42707 -31.95265, -55.42707 -31.9...
