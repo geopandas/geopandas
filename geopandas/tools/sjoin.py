@@ -445,7 +445,7 @@ def sjoin_nearest(
     distance_col : string, default None
         If set, save the distances computed between matching geometries under a
         column of this name in the joined GeoDataFrame. Units are CRS units
-        except if CRS is geographic then units are meters. 
+        except if CRS is geographic then units are meters.
 
     Examples
     --------
