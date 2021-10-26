@@ -2537,6 +2537,58 @@ GeometryCollection
         return _binary_geo("intersection", self, other, align)
 
     def clip_by_rect(self, xmin, ymin, xmax, ymax):
+        """Returns a ``GeoSeries`` of the intersection with the rectangle
+        given by `xmin`, `ymin`, `xmax`, `ymax`.
+
+        Internally this leverages shapely's or pygeos' `.clip_by_rect()` method, which
+        is faster as the more powerful `.intersection()`. Note that the results
+        are not exactly equal to `.intersection()`. E.g. in edge cases,
+        `.clip_by_rect()` will not return a point just touching the rectangle.
+        Check the examples section below for some of these exceptions.
+
+        Parameters
+        ----------
+        xmin: float
+            Left side of the rectangle
+        ymin: float
+            Bottom of the rectangle
+        xmax: float
+            Right side of the rectangle
+        ymax: float
+            Top of the rectangle
+
+        Returns
+        -------
+        GeoSeries
+
+        Examples
+        --------
+        >>> from shapely.geometry import Polygon, LineString, Point
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0, 0), (2, 2), (0, 2)]),
+        ...         Polygon([(0, 0), (2, 2), (0, 2)]),
+        ...         LineString([(0, 0), (2, 2)]),
+        ...         LineString([(2, 0), (0, 2)]),
+        ...         Point(0, 1),
+        ...     ],
+        ... )
+        >>> bounds = (0, 0, 1, 1)
+        >>> s
+                0    POLYGON ((0.00000 0.00000, 2.00000 2.00000, 0....
+        1    POLYGON ((0.00000 0.00000, 2.00000 2.00000, 0....
+        2        LINESTRING (0.00000 0.00000, 2.00000 2.00000)
+        3        LINESTRING (2.00000 0.00000, 0.00000 2.00000)
+        4                              POINT (0.00000 1.00000)
+        dtype: geometry
+        >>> s.clip_by_rect(*bounds)
+        0    POLYGON ((0.00000 0.00000, 0.00000 1.00000, 1....
+        1    POLYGON ((0.00000 0.00000, 0.00000 1.00000, 1....
+        2        LINESTRING (0.00000 0.00000, 1.00000 1.00000)
+        3                             GEOMETRYCOLLECTION EMPTY
+        4                             GEOMETRYCOLLECTION EMPTY
+        dtype: geometry
+        """
         from .geoseries import GeoSeries
 
         geometry_array = GeometryArray(self.geometry.values)
