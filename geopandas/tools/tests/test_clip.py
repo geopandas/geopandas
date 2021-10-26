@@ -196,7 +196,11 @@ def test_not_gdf(single_rectangle_gdf):
     with pytest.raises(TypeError):
         clip((2, 3), single_rectangle_gdf)
     with pytest.raises(TypeError):
-        clip(single_rectangle_gdf, (2, 3))
+        clip(single_rectangle_gdf, "foobar")
+    with pytest.raises(TypeError):
+        clip(single_rectangle_gdf, (1, 2, 3))
+    with pytest.raises(TypeError):
+        clip(single_rectangle_gdf, (1, 2, 3, 4, 5))
 
 
 def test_non_overlapping_geoms():
