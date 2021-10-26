@@ -177,18 +177,6 @@ def test_not_gdf(single_rectangle_gdf):
         clip(single_rectangle_gdf, (2, 3))
 
 
-def test_returns_gdf(point_gdf, single_rectangle_gdf):
-    """Test that function returns a GeoDataFrame (or GDF-like) object."""
-    out = clip(point_gdf, single_rectangle_gdf)
-    assert isinstance(out, GeoDataFrame)
-
-
-def test_returns_series(point_gdf, single_rectangle_gdf):
-    """Test that function returns a GeoSeries if GeoSeries is passed."""
-    out = clip(point_gdf.geometry, single_rectangle_gdf)
-    assert isinstance(out, GeoSeries)
-
-
 def test_non_overlapping_geoms():
     """Test that a bounding box returns empty if the extents don't overlap"""
     unit_box = Polygon([(0, 0), (0, 1), (1, 1), (1, 0), (0, 0)])
@@ -201,6 +189,18 @@ def test_non_overlapping_geoms():
     assert_geodataframe_equal(out, unit_gdf.iloc[:0])
     out2 = clip(unit_gdf.geometry, non_overlapping_gdf)
     assert_geoseries_equal(out2, GeoSeries(crs=unit_gdf.crs))
+
+
+def test_returns_gdf(point_gdf, single_rectangle_gdf):
+    """Test that function returns a GeoDataFrame (or GDF-like) object."""
+    out = clip(point_gdf, single_rectangle_gdf)
+    assert isinstance(out, GeoDataFrame)
+
+
+def test_returns_series(point_gdf, single_rectangle_gdf):
+    """Test that function returns a GeoSeries if GeoSeries is passed."""
+    out = clip(point_gdf.geometry, single_rectangle_gdf)
+    assert isinstance(out, GeoSeries)
 
 
 def test_clip_points(point_gdf, single_rectangle_gdf):
@@ -250,17 +250,6 @@ def test_clip_poly_series(buffered_locations, single_rectangle_gdf):
 
 
 @pytest.mark.xfail(pandas_133, reason="Regression in pandas 1.3.3 (GH #2101)")
-def test_clip_multipoly_keep_slivers(multi_poly_gdf, single_rectangle_gdf):
-    """Test a multi poly object where the return includes a sliver.
-    Also the bounds of the object should == the bounds of the clip object
-    if they fully overlap (as they do in these fixtures)."""
-    clipped = clip(multi_poly_gdf, single_rectangle_gdf)
-    assert np.array_equal(clipped.total_bounds, single_rectangle_gdf.total_bounds)
-    # Assert returned data is a geometry collection given sliver geoms
-    assert "GeometryCollection" in clipped.geom_type[0]
-
-
-@pytest.mark.xfail(pandas_133, reason="Regression in pandas 1.3.3 (GH #2101)")
 def test_clip_multipoly_keep_geom_type(multi_poly_gdf, single_rectangle_gdf):
     """Test a multi poly object where the return includes a sliver.
     Also the bounds of the object should == the bounds of the clip object
@@ -271,23 +260,13 @@ def test_clip_multipoly_keep_geom_type(multi_poly_gdf, single_rectangle_gdf):
     assert (clipped.geom_type == "Polygon").any()
 
 
-def test_clip_single_multipoly_no_extra_geoms(
-    buffered_locations, larger_single_rectangle_gdf
-):
-    """When clipping a multi-polygon feature, no additional geom types
-    should be returned."""
-    multi = buffered_locations.dissolve(by="type").reset_index()
-    clipped = clip(multi, larger_single_rectangle_gdf)
-    assert clipped.geom_type[0] == "Polygon"
-
-
 def test_clip_multiline(multi_line, single_rectangle_gdf):
     """Test that clipping a multiline feature with a poly returns expected output."""
     clipped = clip(multi_line, single_rectangle_gdf)
     assert clipped.geom_type[0] == "MultiLineString"
 
 
-def test_clip_multipoint(single_rectangle_gdf, multi_point):
+def test_clip_multipoint(multi_point, single_rectangle_gdf):
     """Clipping a multipoint feature with a polygon works as expected.
     should return a geodataframe with a single multi point feature"""
     clipped = clip(multi_point, single_rectangle_gdf)
@@ -310,13 +289,6 @@ def test_clip_lines(two_line_gdf, single_rectangle_gdf):
     """Test what happens when you give the clip_extent a line GDF."""
     clip_line = clip(two_line_gdf, single_rectangle_gdf)
     assert len(clip_line.geometry) == 2
-
-
-def test_clip_with_multipolygon(buffered_locations, single_rectangle_gdf):
-    """Test clipping a polygon with a multipolygon."""
-    multi = buffered_locations.dissolve(by="type").reset_index()
-    clipped = clip(single_rectangle_gdf, multi)
-    assert clipped.geom_type[0] == "Polygon"
 
 
 def test_mixed_geom(mixed_gdf, single_rectangle_gdf):
@@ -349,34 +321,13 @@ def test_clip_warning_no_extra_geoms(buffered_locations, single_rectangle_gdf):
         )
 
 
-def test_clip_with_polygon(single_rectangle_gdf):
-    """Test clip when using a shapely object"""
-    polygon = Polygon([(0, 0), (5, 12), (10, 0), (0, 0)])
-    clipped = clip(single_rectangle_gdf, polygon)
-    exp_poly = polygon.intersection(
-        Polygon([(0, 0), (0, 10), (10, 10), (10, 0), (0, 0)])
-    )
-    exp = GeoDataFrame([1], geometry=[exp_poly], crs="EPSG:3857")
-    exp["attr2"] = "site-boundary"
-    assert_geodataframe_equal(clipped, exp)
-
-
-def test_clip_with_line_extra_geom(single_rectangle_gdf, sliver_line):
+def test_clip_with_line_extra_geom(sliver_line, single_rectangle_gdf):
     """When the output of a clipped line returns a geom collection,
     and keep_geom_type is True, no geometry collections should be returned."""
     clipped = clip(sliver_line, single_rectangle_gdf, keep_geom_type=True)
     assert len(clipped.geometry) == 1
     # Assert returned data is a not geometry collection
     assert not (clipped.geom_type == "GeometryCollection").any()
-
-
-def test_clip_line_keep_slivers(single_rectangle_gdf, sliver_line):
-    """Test the correct output if a point is returned
-    from a line only geometry type."""
-    clipped = clip(sliver_line, single_rectangle_gdf)
-    # Assert returned data is a geometry collection given sliver geoms
-    assert "Point" == clipped.geom_type[0]
-    assert "LineString" == clipped.geom_type[1]
 
 
 def test_clip_no_box_overlap(pointsoutside_nooverlap_gdf, single_rectangle_gdf):
@@ -391,20 +342,69 @@ def test_clip_box_overlap(pointsoutside_overlap_gdf, single_rectangle_gdf):
     assert len(clipped) == 0
 
 
-def test_warning_extra_geoms_mixed(single_rectangle_gdf, mixed_gdf):
+def test_warning_extra_geoms_mixed(mixed_gdf, single_rectangle_gdf):
     """Test the correct warnings are raised if keep_geom_type is
     called on a mixed GDF"""
     with pytest.warns(UserWarning):
         clip(mixed_gdf, single_rectangle_gdf, keep_geom_type=True)
 
 
-def test_warning_geomcoll(single_rectangle_gdf, geomcol_gdf):
+def test_warning_geomcoll(geomcol_gdf, single_rectangle_gdf):
     """Test the correct warnings are raised if keep_geom_type is
     called on a GDF with GeometryCollection"""
     with pytest.warns(UserWarning):
         clip(geomcol_gdf, single_rectangle_gdf, keep_geom_type=True)
 
 
+def test_clip_line_keep_slivers(sliver_line, single_rectangle_gdf):
+    """Test the correct output if a point is returned
+    from a line only geometry type."""
+    clipped = clip(sliver_line, single_rectangle_gdf)
+    # Assert returned data is a geometry collection given sliver geoms
+    assert "Point" == clipped.geom_type[0]
+    assert "LineString" == clipped.geom_type[1]
+
+
+@pytest.mark.xfail(pandas_133, reason="Regression in pandas 1.3.3 (GH #2101)")
+def test_clip_multipoly_keep_slivers(multi_poly_gdf, single_rectangle_gdf):
+    """Test a multi poly object where the return includes a sliver.
+    Also the bounds of the object should == the bounds of the clip object
+    if they fully overlap (as they do in these fixtures)."""
+    clipped = clip(multi_poly_gdf, single_rectangle_gdf)
+    assert np.array_equal(clipped.total_bounds, single_rectangle_gdf.total_bounds)
+    # Assert returned data is a geometry collection given sliver geoms
+    assert "GeometryCollection" in clipped.geom_type[0]
+
+
 def test_warning_crs_mismatch(point_gdf, single_rectangle_gdf):
     with pytest.warns(UserWarning, match="CRS mismatch between the CRS"):
         clip(point_gdf, single_rectangle_gdf.to_crs(4326))
+
+
+def test_clip_with_polygon(single_rectangle_gdf):
+    """Test clip when using a shapely object"""
+    polygon = Polygon([(0, 0), (5, 12), (10, 0), (0, 0)])
+    clipped = clip(single_rectangle_gdf, polygon)
+    exp_poly = polygon.intersection(
+        Polygon([(0, 0), (0, 10), (10, 10), (10, 0), (0, 0)])
+    )
+    exp = GeoDataFrame([1], geometry=[exp_poly], crs="EPSG:3857")
+    exp["attr2"] = "site-boundary"
+    assert_geodataframe_equal(clipped, exp)
+
+
+def test_clip_with_multipolygon(buffered_locations, single_rectangle_gdf):
+    """Test clipping a polygon with a multipolygon."""
+    multi = buffered_locations.dissolve(by="type").reset_index()
+    clipped = clip(single_rectangle_gdf, multi)
+    assert clipped.geom_type[0] == "Polygon"
+
+
+def test_clip_single_multipoly_no_extra_geoms(
+    buffered_locations, larger_single_rectangle_gdf
+):
+    """When clipping a multi-polygon feature, no additional geom types
+    should be returned."""
+    multi = buffered_locations.dissolve(by="type").reset_index()
+    clipped = clip(multi, larger_single_rectangle_gdf)
+    assert clipped.geom_type[0] == "Polygon"
