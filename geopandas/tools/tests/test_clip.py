@@ -83,6 +83,12 @@ def larger_single_rectangle_gdf():
 
 
 @pytest.fixture
+def larger_single_rectangle_gdf_bounds(larger_single_rectangle_gdf):
+    """Bounds of the created single rectangle"""
+    return tuple(larger_single_rectangle_gdf.total_bounds)
+
+
+@pytest.fixture
 def buffered_locations(point_gdf):
     """Buffer points to create a multi-polygon."""
     buffered_locs = point_gdf
@@ -402,11 +408,16 @@ def test_clip_with_multipolygon(buffered_locations, single_rectangle_gdf):
     assert clipped.geom_type[0] == "Polygon"
 
 
+@pytest.mark.parametrize(
+    "mask_fixture_name",
+    ["larger_single_rectangle_gdf", "larger_single_rectangle_gdf_bounds"],
+)
 def test_clip_single_multipoly_no_extra_geoms(
-    buffered_locations, larger_single_rectangle_gdf
+    buffered_locations, mask_fixture_name, request
 ):
     """When clipping a multi-polygon feature, no additional geom types
     should be returned."""
+    masks = request.getfixturevalue(mask_fixture_name)
     multi = buffered_locations.dissolve(by="type").reset_index()
-    clipped = clip(multi, larger_single_rectangle_gdf)
+    clipped = clip(multi, masks)
     assert clipped.geom_type[0] == "Polygon"
