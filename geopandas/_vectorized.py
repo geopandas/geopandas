@@ -735,7 +735,7 @@ def clip_by_rect(data, xmin, ymin, xmax, ymax):
     else:
         if not compat.SHAPELY_GE_17:
             raise ValueError(
-                "Fast clipping by rectangle is not available in your shapely version."
+                "Fast clipping by rectangle is not available in your shapely version. "
                 "It was introduced in shapely 1.7. Please update your version of "
                 "shapely or use geopandas with pygeos (https://geopandas.org/"
                 "getting_started/install.html#using-the-optional-pygeos-dependency)"

@@ -259,7 +259,7 @@ class TestGeomMethods:
         assert len(self.g0.intersection(self.g9, align=False) == 7)
 
     @pytest.mark.skipif(
-        not compat.SHAPELY_GE_17,
+        not compat.SHAPELY_GE_17 and not compat.USE_PYGEOS,
         reason="shapely.ops.clip_by_rect introduced in shapely 1.7",
     )
     def test_clip_by_rect(self):

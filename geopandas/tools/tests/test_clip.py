@@ -19,6 +19,7 @@ from shapely.geometry import (
 
 import geopandas
 from geopandas import GeoDataFrame, GeoSeries, clip
+from geopandas import _compat as compat
 
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 import pytest
@@ -26,6 +27,14 @@ import pytest
 
 pytestmark = pytest.mark.skip_no_sindex
 pandas_133 = Version(pd.__version__) == Version("1.3.3")
+mask_variants_single_rectangle = ["single_rectangle_gdf", "single_rectangle_gdf_bounds"]
+mask_variants_large_rectangle = [
+    "larger_single_rectangle_gdf",
+    "larger_single_rectangle_gdf_bounds",
+]
+if not compat.SHAPELY_GE_17 and not compat.USE_PYGEOS:
+    mask_variants_single_rectangle = ["single_rectangle_gdf"]
+    mask_variants_large_rectangle = ["larger_single_rectangle_gdf"]
 
 
 @pytest.fixture
@@ -204,9 +213,7 @@ def test_non_overlapping_geoms():
     assert_geoseries_equal(out2, GeoSeries(crs=unit_gdf.crs))
 
 
-@pytest.mark.parametrize(
-    "mask_fixture_name", ["single_rectangle_gdf", "single_rectangle_gdf_bounds"]
-)
+@pytest.mark.parametrize("mask_fixture_name", mask_variants_single_rectangle)
 class TestClipWithSingleRectangleGdf:
     @pytest.fixture
     def mask(self, mask_fixture_name, request):
@@ -410,7 +417,7 @@ def test_clip_with_multipolygon(buffered_locations, single_rectangle_gdf):
 
 @pytest.mark.parametrize(
     "mask_fixture_name",
-    ["larger_single_rectangle_gdf", "larger_single_rectangle_gdf_bounds"],
+    mask_variants_large_rectangle,
 )
 def test_clip_single_multipoly_no_extra_geoms(
     buffered_locations, mask_fixture_name, request
