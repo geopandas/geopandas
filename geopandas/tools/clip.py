@@ -7,16 +7,16 @@ A module to clip vector data using GeoPandas.
 """
 import warnings
 
-from shapely.geometry import Polygon, MultiPolygon
+from shapely.geometry import Polygon, MultiPolygon, box
 
 from geopandas import GeoDataFrame, GeoSeries
 from geopandas.array import _check_crs, _crs_mismatch_warn
 
 
-def _clip_gdf_with_polygon(gdf, poly):
-    """Clip geometry to the polygon extent.
+def _clip_gdf_with_mask(gdf, mask):
+    """Clip geometry to the polygon/rectangle extent.
 
-    Clip an input GeoDataFrame to the polygon extent of the poly
+    Clip an input GeoDataFrame to the polygon extent of the polygon
     parameter.
 
     Parameters
@@ -24,16 +24,20 @@ def _clip_gdf_with_polygon(gdf, poly):
     gdf : GeoDataFrame, GeoSeries
         Dataframe to clip.
 
-    poly : (Multi)Polygon
-        Reference polygon for clipping.
+    mask : (Multi)Polygon, tuple
+        Reference polygon/rectangle for clipping.
 
     Returns
     -------
     GeoDataFrame
         The returned GeoDataFrame is a clipped subset of gdf
-        that intersects with poly.
+        that intersects with polygon/rectangle.
     """
-    gdf_sub = gdf.iloc[gdf.sindex.query(poly, predicate="intersects")]
+    intersection_polygon = mask
+    if isinstance(mask, tuple):
+        intersection_polygon = box(*mask)
+
+    gdf_sub = gdf.iloc[gdf.sindex.query(intersection_polygon, predicate="intersects")]
 
     # For performance reasons points don't need to be intersected with poly
     non_point_mask = gdf_sub.geom_type != "Point"
@@ -45,14 +49,24 @@ def _clip_gdf_with_polygon(gdf, poly):
     # Clip the data with the polygon
     if isinstance(gdf_sub, GeoDataFrame):
         clipped = gdf_sub.copy()
-        clipped.loc[
-            non_point_mask, clipped._geometry_column_name
-        ] = gdf_sub.geometry.values[non_point_mask].intersection(poly)
+        if isinstance(mask, tuple):
+            clipped.loc[
+                non_point_mask, clipped._geometry_column_name
+            ] = gdf_sub.geometry.values[non_point_mask].clip_by_rect(*mask)
+        else:
+            clipped.loc[
+                non_point_mask, clipped._geometry_column_name
+            ] = gdf_sub.geometry.values[non_point_mask].intersection(mask)
     else:
         # GeoSeries
         clipped = gdf_sub.copy()
-        clipped[non_point_mask] = gdf_sub.values[non_point_mask].intersection(poly)
+        if isinstance(mask, tuple):
+            clipped[non_point_mask] = gdf_sub.values[non_point_mask].clip_by_rect(*mask)
+        else:
+            clipped[non_point_mask] = gdf_sub.values[non_point_mask].intersection(mask)
 
+    # clip_by_rect might return empty geometry collections in edge cases
+    clipped = clipped[~clipped.is_empty]
     return clipped
 
 
@@ -110,10 +124,15 @@ def clip(gdf, mask, keep_geom_type=False):
             "'gdf' should be GeoDataFrame or GeoSeries, got {}".format(type(gdf))
         )
 
-    if not isinstance(mask, (GeoDataFrame, GeoSeries, Polygon, MultiPolygon)):
+    if not isinstance(mask, (GeoDataFrame, GeoSeries, Polygon, MultiPolygon, tuple)):
         raise TypeError(
-            "'mask' should be GeoDataFrame, GeoSeries or"
-            "(Multi)Polygon, got {}".format(type(mask))
+            "'mask' should be GeoDataFrame, GeoSeries,"
+            "(Multi)Polygon or 4 element tuple got {}".format(type(mask))
+        )
+
+    if isinstance(mask, tuple) and len(mask) != 4:
+        raise TypeError(
+            "If 'mask' is a tuple, it must have four values (minx, miny, maxx, maxy)"
         )
 
     if isinstance(mask, (GeoDataFrame, GeoSeries)):
@@ -122,6 +141,8 @@ def clip(gdf, mask, keep_geom_type=False):
 
     if isinstance(mask, (GeoDataFrame, GeoSeries)):
         box_mask = mask.total_bounds
+    elif isinstance(mask, tuple):
+        box_mask = mask
     else:
         box_mask = mask.bounds
     box_gdf = gdf.total_bounds
@@ -132,11 +153,11 @@ def clip(gdf, mask, keep_geom_type=False):
         return gdf.iloc[:0]
 
     if isinstance(mask, (GeoDataFrame, GeoSeries)):
-        poly = mask.geometry.unary_union
+        combined_mask = mask.geometry.unary_union
     else:
-        poly = mask
+        combined_mask = mask
 
-    clipped = _clip_gdf_with_polygon(gdf, poly)
+    clipped = _clip_gdf_with_mask(gdf, combined_mask)
 
     if keep_geom_type:
         geomcoll_concat = (clipped.geom_type == "GeometryCollection").any()
