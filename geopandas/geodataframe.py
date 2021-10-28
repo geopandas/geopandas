@@ -630,7 +630,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 )
                 return _maybe_use_feature_id(gdf)
 
-            gdf.set_index("feature_id", inplace=True, verify_integrity=True)
+            gdf.set_index("feature_id", inplace=True)
             gdf.index.name = None
         else:  # "feature_id" column still present in GeoDataFrame
             gdf = _maybe_use_feature_id(gdf)
@@ -2229,7 +2229,7 @@ def _maybe_use_feature_id(gdf):
     if "id" not in gdf.columns:  # use it
         gdf.rename(columns={"feature_id": "id"}, inplace=True)
     else:  # ignore it
-        gdf.drop(["feature_id"], axis=1, inplace=True)
+        gdf.drop(["feature_id"], axis=1, errors="ignore", inplace=True)
     return gdf
 
 

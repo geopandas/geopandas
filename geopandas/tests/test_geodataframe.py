@@ -620,30 +620,33 @@ class TestDataFrame:
         p2 = Point(3, 3)
         f2 = Placemark(p2, 0)
         df = GeoDataFrame.from_features([f1, f2])
-        assert sorted(df.columns) == ["a", "geometry"]
+        assert sorted(df.columns) == ["a", "geometry", "id"]
         assert df.geometry.tolist() == [p1, p2]
 
     def test_from_feature_collection(self):
 
+        # Create a GeoDataFrame which contains an "id" column which does not
+        # represent the feature ids, but some other data
         gdf = GeoDataFrame(
-            {"data": [0.1, 0.2], "id": [1, 2], "geometry": [Point(1, 1), Point(2, 2)]}
+            {
+                "geometry": [Point(1, 1), Point(2, 2)],
+                "data": [0.1, 0.2],
+                "id": [1, 2],
+            }
         )
-        # from_features returns sorted columns
-        expected = gdf[["geometry", "data", "id"]]
 
         # test FeatureCollection
         res = GeoDataFrame.from_features(gdf.__geo_interface__)
-        assert_frame_equal(res, expected)
+        assert_frame_equal(res, gdf)
 
         # test feature id as index
         feature_id = []
         for feat in gdf.__geo_interface__["features"]:
             feature_id.append(feat["id"])
         res = GeoDataFrame.from_features(gdf.__geo_interface__, id_as_index=True)
-        expected1 = expected.copy()
-        #  expected1.index = pd.Index(feature_id, name="id")
-        expected1.index = feature_id
-        assert_frame_equal(res, expected1)
+        gdf1 = gdf.copy()
+        gdf1.index = feature_id
+        assert_frame_equal(res, gdf1)
 
         # test id field not present in FeatureCollection
         feature_coll1 = gdf.__geo_interface__.copy()
@@ -663,11 +666,11 @@ class TestDataFrame:
 
         # test list of Features
         res = GeoDataFrame.from_features(gdf.__geo_interface__["features"])
-        assert_frame_equal(res, expected)
+        assert_frame_equal(res, gdf)
 
         # test __geo_interface__ attribute (a GeoDataFrame has one)
         res = GeoDataFrame.from_features(gdf)
-        assert_frame_equal(res, expected)
+        assert_frame_equal(res, gdf)
 
     def test_dataframe_to_geodataframe(self):
         df = pd.DataFrame(
