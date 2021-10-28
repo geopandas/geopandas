@@ -625,6 +625,13 @@ class TestDataFrame:
 
     def test_from_feature_collection(self):
 
+        gdf_no_id = GeoDataFrame(
+            {
+                "geometry": [Point(1, 1), Point(2, 2)],
+                "data": [0.1, 0.2],
+            }
+        )
+
         # Create a GeoDataFrame which contains an "id" column which does not
         # represent the feature ids, but some other data
         gdf = GeoDataFrame(
@@ -635,9 +642,35 @@ class TestDataFrame:
             }
         )
 
-        # test FeatureCollection
+        # test the feature id has been retrieved
+        res_no_id = GeoDataFrame.from_features(gdf_no_id.__geo_interface__)
+        exp_no_id = gdf_no_id.copy()
+        exp_no_id["id"] = ["0", "1"]
+        assert_frame_equal(res_no_id, exp_no_id)
+
+        # test the feature id has NOT been retrieved
         res = GeoDataFrame.from_features(gdf.__geo_interface__)
         assert_frame_equal(res, gdf)
+
+        # test list of Features
+        res = GeoDataFrame.from_features(gdf.__geo_interface__["features"])
+        assert_frame_equal(res, gdf)
+
+        # test __geo_interface__ attribute (a GeoDataFrame has one)
+        res = GeoDataFrame.from_features(gdf)
+        assert_frame_equal(res, gdf)
+
+    def test_from_feature_collection_id_as_index(self):
+
+        # Create a GeoDataFrame which contains an "id" column which does not
+        # represent the feature ids, but some other data
+        gdf = GeoDataFrame(
+            {
+                "geometry": [Point(1, 1), Point(2, 2)],
+                "data": [0.1, 0.2],
+                "id": [1, 2],
+            }
+        )
 
         # test feature id as index
         feature_id = []
@@ -663,14 +696,6 @@ class TestDataFrame:
         del feat["properties"]["id"]
         with pytest.warns(UserWarning, match=r".* features contains missing data."):
             GeoDataFrame.from_features(feature_coll2, id_as_index=True)
-
-        # test list of Features
-        res = GeoDataFrame.from_features(gdf.__geo_interface__["features"])
-        assert_frame_equal(res, gdf)
-
-        # test __geo_interface__ attribute (a GeoDataFrame has one)
-        res = GeoDataFrame.from_features(gdf)
-        assert_frame_equal(res, gdf)
 
     def test_dataframe_to_geodataframe(self):
         df = pd.DataFrame(

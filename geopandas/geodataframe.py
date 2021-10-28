@@ -600,6 +600,8 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             features_lst = features
 
         rows = []
+        ids = []
+
         for feature in features_lst:
             # load geometry
             if hasattr(feature, "__geo_interface__"):
@@ -609,31 +611,29 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             }
             # load properties
             row.update(feature["properties"])
-            # store feature id in dedicated column
-            id_row = feature["id"] if "id" in feature else np.nan
-            row.update({"feature_id": id_row})
+            ids.append(feature["id"] if "id" in feature else None)
             rows.append(row)
 
         gdf = GeoDataFrame(rows, columns=columns, crs=crs)
+        feature_id = pd.Series(ids)
 
         if id_as_index:
-            if gdf.feature_id.isna().all():
+            if feature_id.isna().all():
                 warnings.warn(
                     "id_as_index=True is ignored since there is"
                     " no `id` field in the given features."
                 )
-                return _maybe_use_feature_id(gdf)
-            if gdf.feature_id.isna().any():
+                _maybe_add_feature_id(gdf, feature_id)
+            elif feature_id.isna().any():
                 warnings.warn(
                     "id_as_index=True is ignored since "
                     "the `id` field of the given features contains missing data."
                 )
-                return _maybe_use_feature_id(gdf)
-
-            gdf.set_index("feature_id", inplace=True)
-            gdf.index.name = None
-        else:  # "feature_id" column still present in GeoDataFrame
-            gdf = _maybe_use_feature_id(gdf)
+                _maybe_add_feature_id(gdf, feature_id)
+            else:
+                gdf.index = feature_id
+        else:
+            _maybe_add_feature_id(gdf, feature_id)
         return gdf
 
     @classmethod
@@ -2225,12 +2225,11 @@ countries_w_city_data[countries_w_city_data["name_left"] == "Italy"]
         )
 
 
-def _maybe_use_feature_id(gdf):
-    if "id" not in gdf.columns:  # use it
-        gdf.rename(columns={"feature_id": "id"}, inplace=True)
-    else:  # ignore it
-        gdf.drop(["feature_id"], axis=1, errors="ignore", inplace=True)
-    return gdf
+def _maybe_add_feature_id(gdf, feature_id):
+    # Add the feature id column to the GeoDataFrame only if we are
+    # not overwriting an existing "id" column
+    if "id" not in gdf.columns:
+        gdf["id"] = feature_id
 
 
 def _dataframe_set_geometry(self, col, drop=False, inplace=False, crs=None):
