@@ -72,6 +72,13 @@ driver_ext_pairs = [
     (None, ".gpkg"),
 ]
 
+path_types = {
+    "pathlib": pathlib.Path,
+    "absolute": os.path.abspath,
+    "relative": lambda x: os.path.relpath(x, os.getcwd()),
+}
+# [pathlib.Path, os.path.abspath, lambda x: os.path.relpath(x, os.getcwd())]
+
 
 def assert_correct_driver(file_path, ext):
     # check the expected driver
@@ -117,10 +124,13 @@ def test_to_file_pathlib(tmpdir, df_nybb, df_null, driver, ext):
     assert_correct_driver(temppath, ext)
 
 
+@pytest.mark.parametrize("path_type", path_types.keys())
 @pytest.mark.parametrize("driver,ext", driver_ext_pairs)
-def test_to_file_zipped(tmpdir, df_nybb, df_null, driver, ext):
+def test_to_file_zipped(tmpdir, df_nybb, df_null, driver, ext, path_type):
     """Test to_file and from_file"""
-    temppath = os.path.join(str(tmpdir), "boros" + ext + ".zip")
+    pathfunc = path_types[path_type]
+    print(tmpdir)
+    temppath = pathfunc(os.path.join(str(tmpdir), "boros" + ext + ".zip"))
     df_nybb.to_file(temppath, driver=driver)
     print(os.listdir(tmpdir))
 
@@ -131,7 +141,7 @@ def test_to_file_zipped(tmpdir, df_nybb, df_null, driver, ext):
     assert len(df) == 5
     assert np.alltrue(df["BoroName"].values == df_nybb["BoroName"])
     # check the expected driver (fiona doesn't infer from .zip ext)
-    assert_correct_driver("zip://" + temppath, ext)
+    assert_correct_driver("zip://" + str(temppath), ext)
 
 
 @pytest.mark.parametrize("driver,ext", driver_ext_pairs)
