@@ -346,10 +346,12 @@ def _to_file(
         by :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
         such as an authority string (eg "EPSG:4326") or a WKT string.
 
+    `filename`s starting with Fiona URI schemes such as "zip+s3://" are also supported.
+    Files with the .zip extension will be automatically zipped. For example,
+    filename `boros.shp.zip` will yield a zip file named `boros.shp.zip`
+    containing `boros.cpg`, `boros.dbf`, `boros.prj`, `boros.shp` and `boros.shx`
 
-    The *kwargs* are passed to fiona.open and can be used to write
-    to multi-layer data, store data within archives (zip files), etc.
-    The path may specify a fiona VSI scheme.
+
     Notes
     -----
     The format drivers will attempt to detect the encoding of your data, but
