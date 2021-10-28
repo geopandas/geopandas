@@ -21,7 +21,7 @@ try:
     # can get confusing "AttributeError: module 'fiona' has no attribute '_loading'"
     # / partially initialized module errors)
     try:
-        from fiona import Env as fiona_env
+        from fiona import Env as fiona_env, parse_path
     except ImportError:
         try:
             from fiona import drivers as fiona_env
@@ -360,6 +360,7 @@ def _to_file(
     """
     _check_fiona("'to_file' method")
     filename = _expand_user(filename)
+    filename_str = str(filename)
 
     if index is None:
         # Determine if index attribute(s) should be saved to file
@@ -385,11 +386,20 @@ def _to_file(
             "ESRI Shapefile.",
             stacklevel=3,
         )
+    fio_path = parse_path(filename_str)
+    if isinstance(fio_path, fiona.ParsedPath):
+        schemes = fio_path.scheme.split("+")
+        if "zip" in schemes and not filename_str.endswith(".zip"):
+            raise ValueError("Zip URI only supported for files with suffix .zip")
+        filepath_no_prefix = fio_path.path
+    else:
+        schemes = []
+        filepath_no_prefix = filename
 
     # GDAL >=3.1 https://gdal.org/drivers/vector/shapefile.html#compressed-files
-    # can handle .shp.zip/ .shx on its own, but not using it
-    if str(filename).endswith(".zip"):
-        file_obj = Path(filename)
+    # can handle .shp.zip/ .shx on its own, but not using it here
+    if filename_str.endswith(".zip") and "s3" not in schemes:
+        file_obj = Path(filepath_no_prefix)
         with TemporaryDirectory() as tmp_dir:
             tmp_dir = Path(tmp_dir)
             tmp_filepath = tmp_dir / file_obj.stem

@@ -76,6 +76,7 @@ path_types = {
     "pathlib": pathlib.Path,
     "absolute": os.path.abspath,
     "relative": lambda x: os.path.relpath(x, os.getcwd()),
+    "zip_uri": lambda x: "zip://" + x,
 }
 
 
@@ -128,19 +129,22 @@ def test_to_file_pathlib(tmpdir, df_nybb, df_null, driver, ext):
 def test_to_file_zipped(tmpdir, df_nybb, df_null, driver, ext, path_type):
     """Test to_file and from_file"""
     pathfunc = path_types[path_type]
-    print(tmpdir)
+    print(os.path.join(str(tmpdir), "boros" + ext + ".zip"))
     temppath = pathfunc(os.path.join(str(tmpdir), "boros" + ext + ".zip"))
+    if str(temppath).startswith("zip://"):
+        temppath_no_prefix = temppath.split("zip://", maxsplit=1)[-1]
+    else:
+        temppath_no_prefix = temppath
     df_nybb.to_file(temppath, driver=driver)
-    print(os.listdir(tmpdir))
 
-    assert zipfile.is_zipfile(temppath)
+    assert zipfile.is_zipfile(temppath_no_prefix)
     # Read layer back in
     df = GeoDataFrame.from_file(temppath)
     assert "geometry" in df
     assert len(df) == 5
     assert np.alltrue(df["BoroName"].values == df_nybb["BoroName"])
     # check the expected driver (fiona doesn't infer from .zip ext)
-    assert_correct_driver("zip://" + str(temppath), ext)
+    assert_correct_driver("zip://" + str(temppath_no_prefix), ext)
 
 
 @pytest.mark.parametrize("driver,ext", driver_ext_pairs)
