@@ -398,13 +398,14 @@ def _to_file(
 
     # If we have GDAL >=3.1, use that shapefile zipping implementation
     # https://gdal.org/drivers/vector/shapefile.html#compressed-files
-    if str(filename).endswith(".zip") and (
-        (driver != "ESRI Shapefile") or (gdal_version < LooseVersion("3.1.0"))
-    ):
+    if str(filename).endswith(".zip"):
         file_obj = Path(filename)
         with TemporaryDirectory() as tmp_dir:
             tmp_dir = Path(tmp_dir)
             tmp_filepath = tmp_dir / file_obj.stem
+            if len(tmp_filepath.suffix) == 0 and driver == "ESRI Shapefile":
+                # Handle the no suffix -> folder of shapefiles case
+                tmp_filepath = tmp_filepath.with_suffix(".shp")
             zip_path_no_suffix = file_obj.with_suffix("")
             _to_file_write_step(
                 df,
