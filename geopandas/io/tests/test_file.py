@@ -4,6 +4,7 @@ import io
 import os
 import pathlib
 import tempfile
+import zipfile
 
 import numpy as np
 import pandas as pd
@@ -114,6 +115,23 @@ def test_to_file_pathlib(tmpdir, df_nybb, df_null, driver, ext):
     assert np.alltrue(df["BoroName"].values == df_nybb["BoroName"])
     # check the expected driver
     assert_correct_driver(temppath, ext)
+
+
+@pytest.mark.parametrize("driver,ext", driver_ext_pairs)
+def test_to_file_zipped(tmpdir, df_nybb, df_null, driver, ext):
+    """Test to_file and from_file"""
+    temppath = os.path.join(str(tmpdir), "boros" + ext + ".zip")
+    df_nybb.to_file(temppath, driver=driver)
+    print(os.listdir(tmpdir))
+
+    assert zipfile.is_zipfile(temppath)
+    # Read layer back in
+    df = GeoDataFrame.from_file(temppath)
+    assert "geometry" in df
+    assert len(df) == 5
+    assert np.alltrue(df["BoroName"].values == df_nybb["BoroName"])
+    # check the expected driver (fiona doesn't infer from .zip ext)
+    assert_correct_driver("zip://" + temppath, ext)
 
 
 @pytest.mark.parametrize("driver,ext", driver_ext_pairs)
