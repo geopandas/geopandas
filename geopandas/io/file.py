@@ -182,7 +182,6 @@ def _read_file(filename, bbox=None, mask=None, rows=None, **kwargs):
         # if missing.
         if _is_zip(str(filename)):
             parsed = fiona.parse_path(str(filename))
-            print("is a zip, pasrsed", parsed)
             if isinstance(parsed, fiona.path.ParsedPath):
                 # If fiona is able to parse the path, we can safely look at the scheme
                 # and update it to have a zip scheme if necessary.
@@ -198,7 +197,6 @@ def _read_file(filename, bbox=None, mask=None, rows=None, **kwargs):
                 # it is a legacy GDAL path type, so let it pass unmodified.
                 filename = "zip://" + parsed.name
         path_or_bytes = filename
-        print("fiona getting", filename, path_or_bytes)
         reader = fiona.open
 
     with fiona_env():
@@ -348,6 +346,7 @@ def _to_file(
         by :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
         such as an authority string (eg "EPSG:4326") or a WKT string.
 
+
     The *kwargs* are passed to fiona.open and can be used to write
     to multi-layer data, store data within archives (zip files), etc.
     The path may specify a fiona VSI scheme.
@@ -412,18 +411,16 @@ def _to_file(
 
 
 def _to_file_write_step(df, crs, filename, mode, driver, schema, **kwargs):
-    try:
-        gdal_version = LooseVersion(fiona.env.get_gdal_release_name())
-    except AttributeError:
-        gdal_version = LooseVersion("2.0.0")  # just assume it is not the latest
-
-    crs_wkt = None
-    if gdal_version >= LooseVersion("3.0.0") and crs:
-        crs_wkt = crs.to_wkt()
-    elif crs:
-        crs_wkt = crs.to_wkt("WKT1_GDAL")
-
     with fiona_env():
+        crs_wkt = None
+        try:
+            gdal_version = LooseVersion(fiona.env.get_gdal_release_name())
+        except AttributeError:
+            gdal_version = LooseVersion("2.0.0")  # just assume it is not the latest
+        if gdal_version >= LooseVersion("3.0.0") and crs:
+            crs_wkt = crs.to_wkt()
+        elif crs:
+            crs_wkt = crs.to_wkt("WKT1_GDAL")
         with fiona.open(
             filename, mode=mode, driver=driver, crs_wkt=crs_wkt, schema=schema, **kwargs
         ) as colxn:
