@@ -624,26 +624,26 @@ class TestDataFrame:
         assert df.geometry.tolist() == [p1, p2]
 
     def test_from_feature_collection(self):
-        data = {
-            "name": ["a", "b", "c"],
-            "lat": [45, 46, 47.5],
-            "lon": [-120, -121.2, -122.9],
-            "id": ["0", "1", "2"],
-        }
 
-        df = pd.DataFrame(data)
-        geometry = [Point(xy) for xy in zip(df["lon"], df["lat"])]
-        gdf = GeoDataFrame(df, geometry=geometry)
+        gdf = GeoDataFrame(
+            {"data": [0.1, 0.2], "id": [1, 2], "geometry": [Point(1, 1), Point(2, 2)]}
+        )
         # from_features returns sorted columns
-        expected = gdf[["geometry", "id", "lat", "lon", "name"]]
+        expected = gdf[["geometry", "data", "id"]]
 
         # test FeatureCollection
         res = GeoDataFrame.from_features(gdf.__geo_interface__)
         assert_frame_equal(res, expected)
 
-        # test id as index
+        # test feature id as index
+        feature_id = []
+        for feat in gdf.__geo_interface__["features"]:
+            feature_id.append(feat["id"])
         res = GeoDataFrame.from_features(gdf.__geo_interface__, id_as_index=True)
-        assert_frame_equal(res, expected.set_index("id"))
+        expected1 = expected.copy()
+        #  expected1.index = pd.Index(feature_id, name="id")
+        expected1.index = feature_id
+        assert_frame_equal(res, expected1)
 
         # test id field not present in FeatureCollection
         feature_coll1 = gdf.__geo_interface__.copy()

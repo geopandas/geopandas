@@ -609,26 +609,31 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             }
             # load properties
             row.update(feature["properties"])
-            if "id" in feature:
-                row.update({"id": feature["id"]})
+            # store feature id in dedicated column
+            id_row = feature["id"] if "id" in feature else np.nan
+            row.update({"feature_id": id_row})
             rows.append(row)
 
         gdf = GeoDataFrame(rows, columns=columns, crs=crs)
+
         if id_as_index:
-            if "id" not in gdf:
+            if gdf.feature_id.isna().all():
                 warnings.warn(
                     "id_as_index=True is ignored since there is"
                     " no `id` field in the given features."
                 )
-                return gdf
-            if gdf.id.isna().any():
+                return _maybe_use_feature_id(gdf)
+            if gdf.feature_id.isna().any():
                 warnings.warn(
                     "id_as_index=True is ignored since "
                     "the `id` field of the given features contains missing data."
                 )
-                return gdf
-            gdf.set_index("id", inplace=True)
+                return _maybe_use_feature_id(gdf)
 
+            gdf.set_index("feature_id", inplace=True, verify_integrity=True)
+            gdf.index.name = None
+        else:  # "feature_id" column still present in GeoDataFrame
+            gdf = _maybe_use_feature_id(gdf)
         return gdf
 
     @classmethod
@@ -2218,6 +2223,14 @@ countries_w_city_data[countries_w_city_data["name_left"] == "Italy"]
         return geopandas.overlay(
             self, right, how=how, keep_geom_type=keep_geom_type, make_valid=make_valid
         )
+
+
+def _maybe_use_feature_id(gdf):
+    if "id" not in gdf.columns:  # use it
+        gdf.rename(columns={"feature_id": "id"}, inplace=True)
+    else:  # ignore it
+        gdf.drop(["feature_id"], axis=1, inplace=True)
+    return gdf
 
 
 def _dataframe_set_geometry(self, col, drop=False, inplace=False, crs=None):
