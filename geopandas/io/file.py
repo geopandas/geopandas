@@ -385,6 +385,33 @@ def _to_file(
             stacklevel=3,
         )
 
+    # GDAL >=3.1 https://gdal.org/drivers/vector/shapefile.html#compressed-files
+    # can handle .shp.zip/ .shx on its own, but not using it
+    if str(filename).endswith(".zip"):
+        file_obj = Path(filename)
+        with TemporaryDirectory() as tmp_dir:
+            tmp_dir = Path(tmp_dir)
+            tmp_filepath = tmp_dir / file_obj.stem
+            if len(tmp_filepath.suffix) == 0 and driver == "ESRI Shapefile":
+                # Handle the no suffix -> folder of shapefiles case
+                tmp_filepath = tmp_filepath.with_suffix(".shp")
+            zip_path_no_suffix = file_obj.with_suffix("")
+
+            _to_file_write_step(
+                df,
+                crs,
+                tmp_filepath,
+                mode,
+                driver,
+                schema,
+                **kwargs,
+            )
+            make_archive(zip_path_no_suffix, format="zip", root_dir=tmp_dir)
+    else:
+        _to_file_write_step(df, crs, filename, mode, driver, schema, **kwargs)
+
+
+def _to_file_write_step(df, crs, filename, mode, driver, schema, **kwargs):
     try:
         gdal_version = LooseVersion(fiona.env.get_gdal_release_name())
     except AttributeError:
@@ -396,33 +423,6 @@ def _to_file(
     elif crs:
         crs_wkt = crs.to_wkt("WKT1_GDAL")
 
-    # If we have GDAL >=3.1, use that shapefile zipping implementation
-    # https://gdal.org/drivers/vector/shapefile.html#compressed-files
-    if str(filename).endswith(".zip"):
-        file_obj = Path(filename)
-        with TemporaryDirectory() as tmp_dir:
-            tmp_dir = Path(tmp_dir)
-            tmp_filepath = tmp_dir / file_obj.stem
-            if len(tmp_filepath.suffix) == 0 and driver == "ESRI Shapefile":
-                # Handle the no suffix -> folder of shapefiles case
-                tmp_filepath = tmp_filepath.with_suffix(".shp")
-            zip_path_no_suffix = file_obj.with_suffix("")
-            _to_file_write_step(
-                df,
-                crs_wkt,
-                tmp_filepath,
-                mode,
-                driver,
-                schema,
-                **kwargs,
-            )
-            print("making archive", zip_path_no_suffix)
-            make_archive(zip_path_no_suffix, format="zip", root_dir=tmp_dir)
-    else:
-        _to_file_write_step(df, crs_wkt, filename, mode, driver, schema, **kwargs)
-
-
-def _to_file_write_step(df, crs_wkt, filename, mode, driver, schema, **kwargs):
     with fiona_env():
         with fiona.open(
             filename, mode=mode, driver=driver, crs_wkt=crs_wkt, schema=schema, **kwargs

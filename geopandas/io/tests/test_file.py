@@ -77,7 +77,6 @@ path_types = {
     "absolute": os.path.abspath,
     "relative": lambda x: os.path.relpath(x, os.getcwd()),
 }
-# [pathlib.Path, os.path.abspath, lambda x: os.path.relpath(x, os.getcwd())]
 
 
 def assert_correct_driver(file_path, ext):
