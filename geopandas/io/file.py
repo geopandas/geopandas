@@ -286,6 +286,8 @@ def _detect_driver(path):
         path = path.name
     except AttributeError:
         pass
+    if path.endswith(".zip"):
+        path = path[:-4]
     try:
         return _EXTENSION_TO_DRIVER[Path(path).suffix.lower()]
     except KeyError:
@@ -348,8 +350,7 @@ def _to_file(
 
     The *kwargs* are passed to fiona.open and can be used to write
     to multi-layer data, store data within archives (zip files), etc.
-    The path may specify a fiona VSI scheme. # TODO https://github.com/geopandas/geopandas/pull/1124/files
-    # TODO https://gdal.org/user/virtual_file_systems.html
+    The path may specify a fiona VSI scheme.
     Notes
     -----
     The format drivers will attempt to detect the encoding of your data, but
@@ -414,6 +415,7 @@ def _to_file(
                 schema,
                 **kwargs,
             )
+            print("making archive", zip_path_no_suffix)
             make_archive(zip_path_no_suffix, format="zip", root_dir=tmp_dir)
     else:
         _to_file_write_step(df, crs_wkt, filename, mode, driver, schema, **kwargs)
