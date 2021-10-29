@@ -1182,7 +1182,7 @@ class GeometryArray(ExtensionArray):
         Returns
         -------
         values : ndarray
-            An array suitable for factoraization. This should maintain order
+            An array suitable for factorization. This should maintain order
             and be a supported dtype (Float64, Int64, UInt64, String, Object).
             By default, the extension array is cast to object dtype.
         na_value : object
