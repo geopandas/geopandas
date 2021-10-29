@@ -147,7 +147,7 @@ def test_to_file_datetime(tmpdir):
     df = GeoDataFrame({"a": [1, 2], "b": [now, now]}, geometry=[point, point], crs=4326)
     df.to_file(tempfilename, driver="GPKG")
     df_read = read_file(tempfilename)
-    assert_geoseries_equal(df.geometry, df_read.geometry)
+    assert_geodataframe_equal(df, df_read)
 
 
 @pytest.mark.parametrize("driver,ext", driver_ext_pairs)
