@@ -139,13 +139,16 @@ def test_to_file_bool(tmpdir, driver, ext):
     assert_correct_driver(tempfilename, ext)
 
 
-def test_to_file_datetime(tmpdir):
+@pytest.mark.parametrize("driver,ext", driver_ext_pairs)
+def test_to_file_datetime(tmpdir, driver, ext):
     """Test writing a data file with the datetime column type"""
-    tempfilename = os.path.join(str(tmpdir), "test_datetime.gpkg")
+    if ext in (".shp", ""):
+        pytest.xfail(f"Driver corresponding to ext {ext} doesn't support dt fields")
+    tempfilename = os.path.join(str(tmpdir), f"test_datetime{ext}")
     point = Point(0, 0)
     now = datetime.datetime.now()
     df = GeoDataFrame({"a": [1, 2], "b": [now, now]}, geometry=[point, point], crs=4326)
-    df.to_file(tempfilename, driver="GPKG")
+    df.to_file(tempfilename, driver=driver)
     df_read = read_file(tempfilename)
     assert_geodataframe_equal(df, df_read)
 
