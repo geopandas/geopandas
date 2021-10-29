@@ -12,7 +12,7 @@ import fiona
 from shapely.geometry import Point, Polygon, box
 
 import geopandas
-from geopandas import GeoDataFrame, read_file
+from geopandas import GeoDataFrame, read_file, _compat as compat
 from geopandas.io.file import fiona_env, _detect_driver, _EXTENSION_TO_DRIVER
 
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
@@ -161,9 +161,15 @@ def test_to_file_datetime(tmpdir, driver, ext, dt_res):
     # fiona supports up to ms precision, but rounding seems to differ randomly
     assert_geodataframe_equal(df.drop(columns=["b"]), df_read.drop(columns=["b"]))
     # permit 1 ms of variation
-    df_ms = (df["b"] - pd.Timestamp("1970-01-01")) // pd.Timedelta("1ms")
-    df_read_ms = (df_read["b"] - pd.Timestamp("1970-01-01")) // pd.Timedelta("1ms")
-    assert ((df_ms - df_read_ms).abs() < 2).all()
+    if compat.FIONA_GE_1814:
+        unit = "1ms"
+        tolerance = 1
+    else:
+        unit = "1s"
+        tolerance = 0
+    df_ms = (df["b"] - pd.Timestamp("1970-01-01")) // pd.Timedelta(unit)
+    df_read_ms = (df_read["b"] - pd.Timestamp("1970-01-01")) // pd.Timedelta(unit)
+    assert ((df_ms - df_read_ms).abs() <= tolerance).all()
 
 
 @pytest.mark.parametrize("driver,ext", driver_ext_pairs)

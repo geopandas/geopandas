@@ -20,6 +20,11 @@ PANDAS_GE_11 = str(pd.__version__) >= LooseVersion("1.1.0")
 PANDAS_GE_115 = str(pd.__version__) >= LooseVersion("1.1.5")
 PANDAS_GE_12 = str(pd.__version__) >= LooseVersion("1.2.0")
 
+# -----------------------------------------------------------------------------
+# fiona compat
+# -----------------------------------------------------------------------------
+FIONA_GE_1814 = str(pd.__version__) >= LooseVersion("1.8.14")  # datetime roundtrip
+
 
 # -----------------------------------------------------------------------------
 # Shapely / PyGEOS compat
