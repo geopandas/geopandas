@@ -93,39 +93,33 @@ def test_to_file(tmpdir, df_nybb, df_null, driver, ext):
     df_nybb.to_file(tempfilename, driver=driver)
     # Read layer back in
     df = GeoDataFrame.from_file(tempfilename)
-    assert "geometry" in df
-    assert len(df) == 5
-    assert np.alltrue(df["BoroName"].values == df_nybb["BoroName"])
+    assert_geodataframe_equal(df, df_nybb, check_less_precise=ext == ".geojson")
 
     # Write layer with null geometry out to file
     tempfilename = os.path.join(str(tmpdir), "null_geom" + ext)
     df_null.to_file(tempfilename, driver=driver)
     # Read layer back in
     df = GeoDataFrame.from_file(tempfilename)
-    assert "geometry" in df
-    assert len(df) == 2
-    assert np.alltrue(df["Name"].values == df_null["Name"])
+    assert_geodataframe_equal(df, df_null, check_less_precise=ext == ".geojson")
     # check the expected driver
     assert_correct_driver(tempfilename, ext)
 
 
 @pytest.mark.parametrize("driver,ext", driver_ext_pairs)
-def test_to_file_pathlib(tmpdir, df_nybb, df_null, driver, ext):
+def test_to_file_pathlib(tmpdir, df_nybb, driver, ext):
     """Test to_file and from_file"""
     temppath = pathlib.Path(os.path.join(str(tmpdir), "boros." + ext))
     df_nybb.to_file(temppath, driver=driver)
     # Read layer back in
     df = GeoDataFrame.from_file(temppath)
-    assert "geometry" in df
-    assert len(df) == 5
-    assert np.alltrue(df["BoroName"].values == df_nybb["BoroName"])
+    assert_geodataframe_equal(df, df_nybb, check_less_precise=ext == ".geojson")
     # check the expected driver
     assert_correct_driver(temppath, ext)
 
 
 @pytest.mark.parametrize("path_type", path_types.keys())
 @pytest.mark.parametrize("driver,ext", driver_ext_pairs)
-def test_to_file_zipped(tmpdir, df_nybb, df_null, driver, ext, path_type):
+def test_to_file_zipped(tmpdir, df_nybb, driver, ext, path_type):
     """Test to_file and from_file"""
     pathfunc = path_types[path_type]
     print(os.path.join(str(tmpdir), "boros" + ext + ".zip"))
@@ -139,9 +133,7 @@ def test_to_file_zipped(tmpdir, df_nybb, df_null, driver, ext, path_type):
     assert zipfile.is_zipfile(temppath_no_prefix)
     # Read layer back in
     df = GeoDataFrame.from_file(temppath)
-    assert "geometry" in df
-    assert len(df) == 5
-    assert np.alltrue(df["BoroName"].values == df_nybb["BoroName"])
+    assert_geodataframe_equal(df, df_nybb, check_less_precise=ext == ".geojson")
     # check the expected driver (fiona doesn't infer from .zip ext)
     assert_correct_driver("zip://" + str(temppath_no_prefix), ext)
 
@@ -878,3 +870,12 @@ def test_write_read_file(test_file):
     df_json = geopandas.read_file(test_file)
     assert_geodataframe_equal(gdf, df_json, check_crs=True)
     os.remove(os.path.expanduser(test_file))
+
+
+@pytest.mark.parametrize("driver,ext", driver_ext_pairs)
+def test_write_zip_uri_ext_mismatch_errors(tmpdir, df_nybb, driver, ext):
+    """test zip:// uri requires a .zip extension"""
+    temppath = "zip://" + os.path.join(str(tmpdir), "boros" + ext)
+    match_txt = "Zip URI only supported for files with suffix .zip"
+    with pytest.raises(ValueError, match=match_txt):
+        df_nybb.to_file(temppath, driver=driver)
