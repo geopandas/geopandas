@@ -75,7 +75,6 @@ driver_ext_pairs = [
 path_types = {
     "pathlib": pathlib.Path,
     "absolute": os.path.abspath,
-    "relative": lambda x: os.path.relpath(x, os.getcwd()),
     "zip_uri": lambda x: "zip://" + x,
 }
 
