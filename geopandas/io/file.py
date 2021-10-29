@@ -426,10 +426,10 @@ def _to_file_write_step(df, crs, filename, mode, driver, schema, **kwargs):
     with fiona_env():
         crs_wkt = None
         try:
-            gdal_version = LooseVersion(fiona.env.get_gdal_release_name())
+            gdal_version = fiona.env.get_gdal_release_name()
         except AttributeError:
-            gdal_version = LooseVersion("2.0.0")  # just assume it is not the latest
-        if gdal_version >= LooseVersion("3.0.0") and crs:
+            gdal_version = "2.0.0"  # just assume it is not the latest
+        if LooseVersion(gdal_version) >= LooseVersion("3.0.0") and crs:
             crs_wkt = crs.to_wkt()
         elif crs:
             crs_wkt = crs.to_wkt("WKT1_GDAL")
