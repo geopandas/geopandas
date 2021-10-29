@@ -236,14 +236,20 @@ def _read_file(filename, bbox=None, mask=None, rows=None, **kwargs):
                 f_filt = features
             # get list of columns
             columns = list(features.schema["properties"])
+            datetime_fields = [
+                k for (k, v) in features.schema["properties"].items() if "datetime" in v
+            ]
             if kwargs.get("ignore_geometry", False):
-                return pd.DataFrame(
+                df = pd.DataFrame(
                     [record["properties"] for record in f_filt], columns=columns
                 )
-
-            return GeoDataFrame.from_features(
-                f_filt, crs=crs, columns=columns + ["geometry"]
-            )
+            else:
+                df = GeoDataFrame.from_features(
+                    f_filt, crs=crs, columns=columns + ["geometry"]
+                )
+            for k in datetime_fields:
+                df[k] = pd.to_datetime(df[k])
+            return df
 
 
 def read_file(*args, **kwargs):

@@ -139,8 +139,12 @@ def test_to_file_bool(tmpdir, driver, ext):
     assert_correct_driver(tempfilename, ext)
 
 
+dt_resolution = [None, "ms", "s", "min", "h", "D"]
+
+
+@pytest.mark.parametrize("dt_res", dt_resolution)
 @pytest.mark.parametrize("driver,ext", driver_ext_pairs)
-def test_to_file_datetime(tmpdir, driver, ext):
+def test_to_file_datetime(tmpdir, driver, ext, dt_res):
     """Test writing a data file with the datetime column type"""
     if ext in (".shp", ""):
         pytest.xfail(f"Driver corresponding to ext {ext} doesn't support dt fields")
@@ -148,9 +152,18 @@ def test_to_file_datetime(tmpdir, driver, ext):
     point = Point(0, 0)
     now = datetime.datetime.now()
     df = GeoDataFrame({"a": [1, 2], "b": [now, now]}, geometry=[point, point], crs=4326)
+
+    if dt_res is not None:
+        df["b"] = df["b"].dt.round(freq=dt_res)
     df.to_file(tempfilename, driver=driver)
     df_read = read_file(tempfilename)
-    assert_geodataframe_equal(df, df_read)
+
+    # fiona supports up to ms precision, but rounding seems to differ randomly
+    assert_geodataframe_equal(df.drop(columns=["b"]), df_read.drop(columns=["b"]))
+    # permit 1 ms of variation
+    df_ms = (df["b"] - pd.Timestamp("1970-01-01")) // pd.Timedelta("1ms")
+    df_read_ms = (df_read["b"] - pd.Timestamp("1970-01-01")) // pd.Timedelta("1ms")
+    assert ((df_ms - df_read_ms).abs() < 2).all()
 
 
 @pytest.mark.parametrize("driver,ext", driver_ext_pairs)
