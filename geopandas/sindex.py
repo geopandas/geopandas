@@ -453,7 +453,7 @@ if compat.HAS_RTREE:
 
             # handle empty / invalid geometries
             if geometry is None:
-                # return an empty integer array, similar to pygeys.STRtree.query.
+                # return an empty integer array, similar to pygeos.STRtree.query.
                 return np.array([], dtype=np.intp)
 
             if not isinstance(geometry, BaseGeometry):

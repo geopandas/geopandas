@@ -62,7 +62,7 @@ class TestExplore:
         assert "openstreetmap" in m.to_dict()["children"].keys()
 
     def test_map_settings_custom(self):
-        """Check custom map settins"""
+        """Check custom map settings"""
         m = self.nybb.explore(
             zoom_control=False,
             width=200,
@@ -413,7 +413,7 @@ class TestExplore:
         assert "BoroName" in out_str
 
     def test_default_markers(self):
-        # check overriden default for points
+        # check overridden default for points
         m = self.cities.explore()
         strings = ['"radius":2', '"fill":true', "CircleMarker(latlng,opts)"]
         out_str = self._fetch_map_string(m)
@@ -542,7 +542,7 @@ class TestExplore:
         assert out_str.count("#5ec962ff") == 100
         assert out_str.count("#fde725ff") == 100
 
-        # scale legend accorrdingly
+        # scale legend accordingly
         m = self.world.explore(
             "pop_est",
             legend=True,

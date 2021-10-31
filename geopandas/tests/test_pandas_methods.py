@@ -88,7 +88,7 @@ def test_repr_empty():
 
 def test_indexing(s, df):
 
-    # accessing scalar from the geometry (colunm)
+    # accessing scalar from the geometry (column)
     exp = Point(1, 1)
     assert s[1] == exp
     assert s.loc[1] == exp
@@ -241,7 +241,7 @@ def test_astype(s, df):
     res = df.astype({"value1": float})
     assert isinstance(res, GeoDataFrame)
 
-    # check whether returned object is a datafrane
+    # check whether returned object is a dataframe
     res = df.astype(str)
     assert isinstance(res, pd.DataFrame) and not isinstance(res, GeoDataFrame)
 
