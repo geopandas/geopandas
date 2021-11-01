@@ -66,13 +66,15 @@ _doc_register_accessor = dedent(
                 return self._obj.apply(func)
 
     Back in an interactive IPython session:
-        .. code-block:: ipython
-            In [1]: s = gpd.GeoSeries.from_wkt(["POINT (1 1)", None])
-            In [2]: s.coords.count_coordinates
-            Out[2]:
-            0    1
-            1    0
-            dtype: int64
+
+    .. code-block:: ipython
+
+        In [1]: s = gpd.GeoSeries.from_wkt(["POINT (1 1)", None])
+        In [2]: s.coords.count_coordinates
+        Out[2]:
+        0    1
+        1    0
+        dtype: int64
     """
 )
 
