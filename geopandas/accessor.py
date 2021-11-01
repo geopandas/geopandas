@@ -53,6 +53,7 @@ _doc_register_accessor = dedent(
         from pygeos import count_coordinates, from_shapely
 
 
+        @gpd.api.extensions.register_geodataframe_accessor("coords")
         @gpd.api.extensions.register_geoseries_accessor("coords")
         class CoordinateAccessor:
             def __init__(self, gpd_obj):
@@ -63,18 +64,37 @@ _doc_register_accessor = dedent(
                 # Counts the number of coordinate pairs in geometry
 
                 func = lambda x: count_coordinates(from_shapely(x))
-                return self._obj.apply(func)
+                return self._obj.geometry.apply(func)
 
     Back in an interactive IPython session:
 
     .. code-block:: ipython
 
         In [1]: s = gpd.GeoSeries.from_wkt(["POINT (1 1)", None])
-        In [2]: s.coords.count_coordinates
+        In [2]: s
         Out[2]:
+        0    POINT (1.00000 1.00000)
+        1                       None
+        dtype: geometry
+
+        In [3]: s.coords.count_coordinates
+        Out[3]:
         0    1
         1    0
         dtype: int64
+
+        In [4]: d = s.to_frame("geometry")
+        In [5]: d
+        Out[5]:
+                        geometry
+        0  POINT (1.00000 1.00000)
+        1                     None
+
+        In [6]: d.coords.countdinates
+        Out[6]:
+        0    1
+        1    0
+        Name: geometry, dtype: int64
     """
 )
 
