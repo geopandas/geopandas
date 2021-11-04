@@ -234,15 +234,26 @@ def _read_file(filename, bbox=None, mask=None, rows=None, **kwargs):
                 f_filt = features.filter(bbox=bbox, mask=mask)
             else:
                 f_filt = features
+
+            if kwargs.pop('verbose', False):
+                try:
+                    get_ipython()
+                except NameError:
+                    from tqdm import tqdm
+                else:            
+                    from tqdm.notebook import tqdm
+            else:
+                tqdm = lambda x: x
+
             # get list of columns
             columns = list(features.schema["properties"])
             if kwargs.get("ignore_geometry", False):
                 return pd.DataFrame(
-                    [record["properties"] for record in f_filt], columns=columns
+                    [record["properties"] for record in tqdm(f_filt, desc='Reading')], columns=columns
                 )
 
             return GeoDataFrame.from_features(
-                f_filt, crs=crs, columns=columns + ["geometry"]
+                tqdm(f_filt, desc='Reading'), crs=crs, columns=columns + ["geometry"]
             )
 
 
@@ -380,6 +391,16 @@ def _to_file(
             stacklevel=3,
         )
 
+    if kwargs.pop('verbose', False):
+        try:
+            get_ipython()
+        except NameError:
+            from tqdm import tqdm
+        else:            
+            from tqdm.notebook import tqdm
+    else:
+        tqdm = lambda x: x
+
     with fiona_env():
         crs_wkt = None
         try:
@@ -393,7 +414,7 @@ def _to_file(
         with fiona.open(
             filename, mode=mode, driver=driver, crs_wkt=crs_wkt, schema=schema, **kwargs
         ) as colxn:
-            colxn.writerecords(df.iterfeatures())
+            colxn.writerecords(tqdm(df.iterfeatures(), desc='Saving', total=df.shape[0]))
 
 
 def infer_schema(df):
