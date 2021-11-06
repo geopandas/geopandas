@@ -363,10 +363,12 @@ class GeometryArray(ExtensionArray):
             # for pandas >= 1.0, validate and convert IntegerArray/BooleanArray
             # to numpy array, pass-through non-array-like indexers
             idx = pd.api.indexers.check_array_indexer(self, idx)
-        if isinstance(idx, (Iterable, slice)):
             return GeometryArray(self.data[idx], crs=self.crs)
         else:
-            raise TypeError("Index type not supported", idx)
+            if isinstance(idx, (Iterable, slice)):
+                return GeometryArray(self.data[idx], crs=self.crs)
+            else:
+                raise TypeError("Index type not supported", idx)
 
     def __setitem__(self, key, value):
         if compat.PANDAS_GE_10:
