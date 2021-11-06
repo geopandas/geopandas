@@ -246,7 +246,12 @@ def ogr_driver(request):
     return request.param
 
 
-def test_to_file_roundtrip(tmpdir, geodataframe, ogr_driver):
+@pytest.fixture(params=["fiona", "pyogrio"])
+def engine(request):
+    return request.param
+
+
+def test_to_file_roundtrip(tmpdir, geodataframe, ogr_driver, engine):
     output_file = os.path.join(str(tmpdir), "output_file")
 
     expected_error = _expected_error_on(geodataframe, ogr_driver)
@@ -256,6 +261,6 @@ def test_to_file_roundtrip(tmpdir, geodataframe, ogr_driver):
     else:
         geodataframe.to_file(output_file, driver=ogr_driver)
 
-        reloaded = geopandas.read_file(output_file)
+        reloaded = geopandas.read_file(output_file, engine=engine)
 
         assert_geodataframe_equal(geodataframe, reloaded, check_column_type="equiv")

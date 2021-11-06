@@ -24,6 +24,11 @@ import pytest
 _CRS = "epsg:4326"
 
 
+@pytest.fixture(params=["fiona", "pyogrio"])
+def engine(request):
+    return request.param
+
+
 @pytest.fixture
 def df_nybb():
     nybb_path = geopandas.datasets.get_path("nybb")
@@ -333,7 +338,8 @@ with fiona.open(geopandas.datasets.get_path("nybb")) as f:
     NYBB_COLUMNS = list(f.meta["schema"]["properties"].keys())
 
 
-def test_read_file(df_nybb):
+def test_read_file(engine):
+    df_nybb = read_file(geopandas.datasets.get_path("nybb"), engine=engine)
     df = df_nybb.rename(columns=lambda x: x.lower())
     validate_boro_df(df)
     assert df.crs == CRS
@@ -343,56 +349,56 @@ def test_read_file(df_nybb):
 
 
 @pytest.mark.web
-def test_read_file_remote_geojson_url():
+def test_read_file_remote_geojson_url(engine):
     url = (
         "https://raw.githubusercontent.com/geopandas/geopandas/"
         "master/geopandas/tests/data/null_geom.geojson"
     )
-    gdf = read_file(url)
+    gdf = read_file(url, engine=engine)
     assert isinstance(gdf, geopandas.GeoDataFrame)
 
 
 @pytest.mark.web
-def test_read_file_remote_zipfile_url():
+def test_read_file_remote_zipfile_url(engine):
     url = (
         "https://raw.githubusercontent.com/geopandas/geopandas/"
         "master/geopandas/datasets/nybb_16a.zip"
     )
-    gdf = read_file(url)
+    gdf = read_file(url, engine=engine)
     assert isinstance(gdf, geopandas.GeoDataFrame)
 
 
-def test_read_file_textio(file_path):
+def test_read_file_textio(file_path, engine):
     file_text_stream = open(file_path)
     file_stringio = io.StringIO(open(file_path).read())
-    gdf_text_stream = read_file(file_text_stream)
-    gdf_stringio = read_file(file_stringio)
+    gdf_text_stream = read_file(file_text_stream, engine=engine)
+    gdf_stringio = read_file(file_stringio, engine=engine)
     assert isinstance(gdf_text_stream, geopandas.GeoDataFrame)
     assert isinstance(gdf_stringio, geopandas.GeoDataFrame)
 
 
-def test_read_file_bytesio(file_path):
+def test_read_file_bytesio(file_path, engine):
     file_binary_stream = open(file_path, "rb")
     file_bytesio = io.BytesIO(open(file_path, "rb").read())
-    gdf_binary_stream = read_file(file_binary_stream)
-    gdf_bytesio = read_file(file_bytesio)
+    gdf_binary_stream = read_file(file_binary_stream, engine=engine)
+    gdf_bytesio = read_file(file_bytesio, engine=engine)
     assert isinstance(gdf_binary_stream, geopandas.GeoDataFrame)
     assert isinstance(gdf_bytesio, geopandas.GeoDataFrame)
 
 
-def test_read_file_raw_stream(file_path):
+def test_read_file_raw_stream(file_path, engine):
     file_raw_stream = open(file_path, "rb", buffering=0)
-    gdf_raw_stream = read_file(file_raw_stream)
+    gdf_raw_stream = read_file(file_raw_stream, engine=engine)
     assert isinstance(gdf_raw_stream, geopandas.GeoDataFrame)
 
 
-def test_read_file_pathlib(file_path):
+def test_read_file_pathlib(file_path, engine):
     path_object = pathlib.Path(file_path)
-    gdf_path_object = read_file(path_object)
+    gdf_path_object = read_file(path_object, engine=engine)
     assert isinstance(gdf_path_object, geopandas.GeoDataFrame)
 
 
-def test_read_file_tempfile():
+def test_read_file_tempfile(engine):
     temp = tempfile.TemporaryFile()
     temp.write(
         b"""
@@ -409,54 +415,58 @@ def test_read_file_tempfile():
     """
     )
     temp.seek(0)
-    gdf_tempfile = geopandas.read_file(temp)
+    gdf_tempfile = geopandas.read_file(temp, engine=engine)
     assert isinstance(gdf_tempfile, geopandas.GeoDataFrame)
     temp.close()
 
 
-def test_read_binary_file_fsspec():
+def test_read_binary_file_fsspec(engine):
     fsspec = pytest.importorskip("fsspec")
     # Remove the zip scheme so fsspec doesn't open as a zipped file,
     # instead we want to read as bytes and let fiona decode it.
     path = geopandas.datasets.get_path("nybb")[6:]
     with fsspec.open(path, "rb") as f:
-        gdf = read_file(f)
+        gdf = read_file(f, engine=engine)
         assert isinstance(gdf, geopandas.GeoDataFrame)
 
 
-def test_read_text_file_fsspec(file_path):
+def test_read_text_file_fsspec(file_path, engine):
     fsspec = pytest.importorskip("fsspec")
     with fsspec.open(file_path, "r") as f:
-        gdf = read_file(f)
+        gdf = read_file(f, engine=engine)
         assert isinstance(gdf, geopandas.GeoDataFrame)
 
 
-def test_infer_zipped_file():
+def test_infer_zipped_file(engine):
     # Remove the zip scheme so that the test for a zipped file can
     # check it and add it back.
     path = geopandas.datasets.get_path("nybb")[6:]
-    gdf = read_file(path)
+    gdf = read_file(path, engine=engine)
     assert isinstance(gdf, geopandas.GeoDataFrame)
+
+    if engine == "pyogrio":
+        # TODO(pyogrio) remainder is not yet supported
+        return
 
     # Check that it can successfully add a zip scheme to a path that already has a
     # scheme
-    gdf = read_file("file+file://" + path)
+    gdf = read_file("file+file://" + path, engine=engine)
     assert isinstance(gdf, geopandas.GeoDataFrame)
 
     # Check that it can add a zip scheme for a path that includes a subpath
     # within the archive.
-    gdf = read_file(path + "!nybb.shp")
+    gdf = read_file(path + "!nybb.shp", engine=engine)
     assert isinstance(gdf, geopandas.GeoDataFrame)
 
 
-def test_allow_legacy_gdal_path():
+def test_allow_legacy_gdal_path(engine):
     # Construct a GDAL-style zip path.
     path = "/vsizip/" + geopandas.datasets.get_path("nybb")[6:]
-    gdf = read_file(path)
+    gdf = read_file(path, engine=engine)
     assert isinstance(gdf, geopandas.GeoDataFrame)
 
 
-def test_read_file_filtered__bbox(df_nybb):
+def test_read_file_filtered__bbox(df_nybb, engine):
     nybb_filename = geopandas.datasets.get_path("nybb")
     bbox = (
         1031051.7879884212,
@@ -464,37 +474,44 @@ def test_read_file_filtered__bbox(df_nybb):
         1047224.3104931959,
         244317.30894023244,
     )
-    filtered_df = read_file(nybb_filename, bbox=bbox)
+    filtered_df = read_file(nybb_filename, bbox=bbox, engine=engine)
+    filtered_df["BoroCode"] = filtered_df["BoroCode"].astype("int64")
     expected = df_nybb[df_nybb["BoroName"].isin(["Bronx", "Queens"])]
     assert_geodataframe_equal(filtered_df, expected.reset_index(drop=True))
 
 
-def test_read_file_filtered__bbox__polygon(df_nybb):
+def test_read_file_filtered__bbox__polygon(df_nybb, engine):
     nybb_filename = geopandas.datasets.get_path("nybb")
     bbox = box(
         1031051.7879884212, 224272.49231459625, 1047224.3104931959, 244317.30894023244
     )
-    filtered_df = read_file(nybb_filename, bbox=bbox)
+    filtered_df = read_file(nybb_filename, bbox=bbox, engine=engine)
     expected = df_nybb[df_nybb["BoroName"].isin(["Bronx", "Queens"])]
     assert_geodataframe_equal(filtered_df, expected.reset_index(drop=True))
 
 
-def test_read_file_filtered__rows(df_nybb):
+def test_read_file_filtered__rows(df_nybb, engine):
     nybb_filename = geopandas.datasets.get_path("nybb")
-    filtered_df = read_file(nybb_filename, rows=1)
+    filtered_df = read_file(nybb_filename, rows=1, engine=engine)
+    filtered_df["BoroCode"] = filtered_df["BoroCode"].astype("int64")
     assert_geodataframe_equal(filtered_df, df_nybb.iloc[[0], :])
 
 
-def test_read_file_filtered__rows_slice(df_nybb):
+def test_read_file_filtered__rows_slice(df_nybb, engine):
     nybb_filename = geopandas.datasets.get_path("nybb")
-    filtered_df = read_file(nybb_filename, rows=slice(1, 3))
+    filtered_df = read_file(nybb_filename, rows=slice(1, 3), engine=engine)
+    filtered_df["BoroCode"] = filtered_df["BoroCode"].astype("int64")
     assert_geodataframe_equal(filtered_df, df_nybb.iloc[1:3, :].reset_index(drop=True))
 
 
 @pytest.mark.filterwarnings(
     "ignore:Layer does not support OLC_FASTFEATURECOUNT:RuntimeWarning"
 )  # for the slice with -1
-def test_read_file_filtered__rows_bbox(df_nybb):
+def test_read_file_filtered__rows_bbox(df_nybb, engine):
+    if engine == "pyogrio":
+        # TODO(pyogrio) the problem is that because of the bbox filtering, the
+        # row slice is out of bounds -> pyogrio fails on that
+        pytest.xfail("pyogrio does not support bbox / rows combo")
     nybb_filename = geopandas.datasets.get_path("nybb")
     bbox = (
         1031051.7879884212,
@@ -503,15 +520,22 @@ def test_read_file_filtered__rows_bbox(df_nybb):
         244317.30894023244,
     )
     # combination bbox and rows (rows slice applied after bbox filtering!)
-    filtered_df = read_file(nybb_filename, bbox=bbox, rows=slice(4, None))
+    filtered_df = read_file(
+        nybb_filename, bbox=bbox, rows=slice(4, None), engine=engine
+    )
     assert filtered_df.empty
-    filtered_df = read_file(nybb_filename, bbox=bbox, rows=slice(-1, None))
+    filtered_df = read_file(
+        nybb_filename, bbox=bbox, rows=slice(-1, None), engine=engine
+    )
+    filtered_df["BoroCode"] = filtered_df["BoroCode"].astype("int64")
     assert_geodataframe_equal(filtered_df, df_nybb.iloc[4:, :].reset_index(drop=True))
 
 
-def test_read_file_filtered_rows_invalid():
+def test_read_file_filtered_rows_invalid(engine):
     with pytest.raises(TypeError):
-        read_file(geopandas.datasets.get_path("nybb"), rows="not_a_slice")
+        read_file(
+            geopandas.datasets.get_path("nybb"), rows="not_a_slice", engine=engine
+        )
 
 
 def test_read_file__ignore_geometry():
@@ -530,7 +554,7 @@ def test_read_file__ignore_all_fields():
     assert gdf.columns.tolist() == ["geometry"]
 
 
-def test_read_file_filtered_with_gdf_boundary(df_nybb):
+def test_read_file_filtered_with_gdf_boundary(df_nybb, engine):
     full_df_shape = df_nybb.shape
     nybb_filename = geopandas.datasets.get_path("nybb")
     bbox = geopandas.GeoDataFrame(
@@ -544,7 +568,7 @@ def test_read_file_filtered_with_gdf_boundary(df_nybb):
         ],
         crs=CRS,
     )
-    filtered_df = read_file(nybb_filename, bbox=bbox)
+    filtered_df = read_file(nybb_filename, bbox=bbox, engine=engine)
     filtered_df_shape = filtered_df.shape
     assert full_df_shape != filtered_df_shape
     assert filtered_df_shape == (2, 5)
@@ -614,7 +638,7 @@ def test_read_file_filtered_with_gdf_boundary_mismatched_crs__mask(df_nybb):
     assert filtered_df_shape == (2, 5)
 
 
-def test_read_file_empty_shapefile(tmpdir):
+def test_read_file_empty_shapefile(tmpdir, engine):
 
     # create empty shapefile
     meta = {
@@ -633,7 +657,7 @@ def test_read_file_empty_shapefile(tmpdir):
         with fiona.open(fname, "w", **meta) as _:  # noqa
             pass
 
-    empty = read_file(fname)
+    empty = read_file(fname, engine=engine)
     assert isinstance(empty, geopandas.GeoDataFrame)
     assert all(empty.columns == ["A", "Z", "geometry"])
 

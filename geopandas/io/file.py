@@ -101,7 +101,7 @@ def _is_zip(path):
     )
 
 
-def _read_file(filename, bbox=None, mask=None, rows=None, **kwargs):
+def _read_file(filename, bbox=None, mask=None, rows=None, engine="fiona", **kwargs):
     """
     Returns a GeoDataFrame from a file or URL.
 
@@ -163,17 +163,20 @@ def _read_file(filename, bbox=None, mask=None, rows=None, **kwargs):
     may fail. In this case, the proper encoding can be specified explicitly
     by using the encoding keyword parameter, e.g. ``encoding='utf-8'``.
     """
-    _check_fiona("'read_file' function")
+    if engine == "fiona":
+        _check_fiona("'read_file' function")
+
     filename = _expand_user(filename)
 
+    from_bytes = False
     if _is_url(filename):
         req = _urlopen(filename)
         path_or_bytes = req.read()
-        reader = fiona.BytesCollection
+        from_bytes = True
     elif pd.api.types.is_file_like(filename):
         data = filename.read()
         path_or_bytes = data.encode("utf-8") if isinstance(data, str) else data
-        reader = fiona.BytesCollection
+        from_bytes = True
     else:
         # Opening a file via URL or file-like-object above automatically detects a
         # zipped file. In order to match that behavior, attempt to add a zip scheme
@@ -195,6 +198,26 @@ def _read_file(filename, bbox=None, mask=None, rows=None, **kwargs):
                 # it is a legacy GDAL path type, so let it pass unmodified.
                 filename = "zip://" + parsed.name
         path_or_bytes = filename
+
+    if engine == "fiona":
+        return _read_file_fiona(
+            path_or_bytes, from_bytes, bbox=bbox, mask=mask, rows=rows, **kwargs
+        )
+    elif engine == "pyogrio":
+        return _read_file_pyogrio(
+            path_or_bytes, from_bytes, bbox=bbox, mask=mask, rows=rows, **kwargs
+        )
+    else:
+        raise ValueError(f"unknown engine '{engine}'")
+
+
+def _read_file_fiona(
+    path_or_bytes, from_bytes, bbox=None, mask=None, rows=None, **kwargs
+):
+
+    if from_bytes:
+        reader = fiona.BytesCollection
+    else:
         reader = fiona.open
 
     with fiona_env():
@@ -244,6 +267,36 @@ def _read_file(filename, bbox=None, mask=None, rows=None, **kwargs):
             return GeoDataFrame.from_features(
                 f_filt, crs=crs, columns=columns + ["geometry"]
             )
+
+
+def _read_file_pyogrio(
+    path_or_bytes, from_bytes, bbox=None, mask=None, rows=None, **kwargs
+):
+    import pyogrio
+
+    if rows is not None:
+        if isinstance(rows, int):
+            kwargs["max_features"] = rows
+        elif isinstance(rows, slice):
+            if rows.start is not None:
+                kwargs["skip_features"] = rows.start
+            if rows.stop is not None:
+                kwargs["max_features"] = rows.stop - (rows.start or 0)
+            if rows.step is not None:
+                raise ValueError("slice with step is not supported")
+        else:
+            raise TypeError("'rows' must be an integer or a slice.")
+    if bbox is not None:
+        if isinstance(bbox, (GeoDataFrame, GeoSeries)):
+            bbox = tuple(bbox.total_bounds)
+        elif isinstance(bbox, BaseGeometry):
+            bbox = bbox.bounds
+        assert len(bbox) == 4
+
+    if isinstance(path_or_bytes, str):
+        path_or_bytes = path_or_bytes.replace("zip://", "/vsizip/")
+
+    return pyogrio.read_dataframe(path_or_bytes, bbox=bbox, **kwargs)
 
 
 def read_file(*args, **kwargs):
