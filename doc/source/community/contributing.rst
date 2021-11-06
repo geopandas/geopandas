@@ -21,7 +21,7 @@ In particular, when submitting a pull request:
 
 - All existing tests should pass.  Please make sure that the test
   suite passes, both locally and on
-  `GitHub Actions <hhttps://github.com/geopandas/geopandas/actions>`_.  Status on
+  `GitHub Actions <https://github.com/geopandas/geopandas/actions>`_.  Status on
   GHA will be visible on a pull request. GHA are automatically enabled
   on your own fork as well. To trigger a check, make a PR to your own fork.
 
