@@ -18,7 +18,7 @@ import shapely.geometry
 from shapely.geometry.base import BaseGeometry
 import shapely.ops
 import shapely.wkt
-from pyproj import CRS
+from pyproj import CRS, Transformer
 
 try:
     import pygeos
@@ -54,23 +54,6 @@ class GeometryDtype(ExtensionDtype):
 
 
 register_extension_dtype(GeometryDtype)
-
-
-def _isna(value):
-    """
-    Check if scalar value is NA-like (None, np.nan or pd.NA).
-
-    Custom version that only works for scalars (returning True or False),
-    as `pd.isna` also works for array-like input returning a boolean array.
-    """
-    if value is None:
-        return True
-    elif isinstance(value, float) and np.isnan(value):
-        return True
-    elif compat.PANDAS_GE_10 and value is pd.NA:
-        return True
-    else:
-        return False
 
 
 def _check_crs(left, right, allow_none=False):
@@ -194,13 +177,13 @@ def from_wkb(data, crs=None):
     return GeometryArray(vectorized.from_wkb(data), crs=crs)
 
 
-def to_wkb(geoms, hex=False):
+def to_wkb(geoms, hex=False, **kwargs):
     """
     Convert GeometryArray to a numpy object array of WKB objects.
     """
     if not isinstance(geoms, GeometryArray):
         raise ValueError("'geoms' must be a GeometryArray")
-    return vectorized.to_wkb(geoms.data, hex=hex)
+    return vectorized.to_wkb(geoms.data, hex=hex, **kwargs)
 
 
 def from_wkt(data, crs=None):
@@ -398,8 +381,8 @@ class GeometryArray(ExtensionArray):
             if isinstance(key, numbers.Integral):
                 raise ValueError("cannot set a single element with an array")
             self.data[key] = value.data
-        elif isinstance(value, BaseGeometry) or _isna(value):
-            if _isna(value):
+        elif isinstance(value, BaseGeometry) or vectorized.isna(value):
+            if vectorized.isna(value):
                 # internally only use None as missing value indicator
                 # but accept others
                 value = None
@@ -708,6 +691,186 @@ class GeometryArray(ExtensionArray):
             crs=self.crs,
         )
 
+    def to_crs(self, crs=None, epsg=None):
+        """Returns a ``GeometryArray`` with all geometries transformed to a new
+        coordinate reference system.
+
+        Transform all geometries in a GeometryArray to a different coordinate
+        reference system.  The ``crs`` attribute on the current GeometryArray must
+        be set.  Either ``crs`` or ``epsg`` may be specified for output.
+
+        This method will transform all points in all objects.  It has no notion
+        or projecting entire geometries.  All segments joining points are
+        assumed to be lines in the current projection, not geodesics.  Objects
+        crossing the dateline (or other projection boundary) will have
+        undesirable behavior.
+
+        Parameters
+        ----------
+        crs : pyproj.CRS, optional if `epsg` is specified
+            The value can be anything accepted
+            by :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
+            such as an authority string (eg "EPSG:4326") or a WKT string.
+        epsg : int, optional if `crs` is specified
+            EPSG code specifying output projection.
+
+        Returns
+        -------
+        GeometryArray
+
+        Examples
+        --------
+        >>> from shapely.geometry import Point
+        >>> from geopandas.array import from_shapely, to_wkt
+        >>> a = from_shapely([Point(1, 1), Point(2, 2), Point(3, 3)], crs=4326)
+        >>> to_wkt(a)
+        array(['POINT (1 1)', 'POINT (2 2)', 'POINT (3 3)'], dtype=object)
+        >>> a.crs  # doctest: +SKIP
+        <Geographic 2D CRS: EPSG:4326>
+        Name: WGS 84
+        Axis Info [ellipsoidal]:
+        - Lat[north]: Geodetic latitude (degree)
+        - Lon[east]: Geodetic longitude (degree)
+        Area of Use:
+        - name: World
+        - bounds: (-180.0, -90.0, 180.0, 90.0)
+        Datum: World Geodetic System 1984
+        - Ellipsoid: WGS 84
+        - Prime Meridian: Greenwich
+
+        >>> a = a.to_crs(3857)
+        >>> to_wkt(a)
+        array(['POINT (111319 111325)', 'POINT (222639 222684)',
+               'POINT (333958 334111)'], dtype=object)
+        >>> a.crs  # doctest: +SKIP
+        <Projected CRS: EPSG:3857>
+        Name: WGS 84 / Pseudo-Mercator
+        Axis Info [cartesian]:
+        - X[east]: Easting (metre)
+        - Y[north]: Northing (metre)
+        Area of Use:
+        - name: World - 85°S to 85°N
+        - bounds: (-180.0, -85.06, 180.0, 85.06)
+        Coordinate Operation:
+        - name: Popular Visualisation Pseudo-Mercator
+        - method: Popular Visualisation Pseudo Mercator
+        Datum: World Geodetic System 1984
+        - Ellipsoid: WGS 84
+        - Prime Meridian: Greenwich
+
+        """
+        if self.crs is None:
+            raise ValueError(
+                "Cannot transform naive geometries.  "
+                "Please set a crs on the object first."
+            )
+        if crs is not None:
+            crs = CRS.from_user_input(crs)
+        elif epsg is not None:
+            crs = CRS.from_epsg(epsg)
+        else:
+            raise ValueError("Must pass either crs or epsg.")
+
+        # skip if the input CRS and output CRS are the exact same
+        if self.crs.is_exact_same(crs):
+            return self
+
+        transformer = Transformer.from_crs(self.crs, crs, always_xy=True)
+
+        new_data = vectorized.transform(self.data, transformer.transform)
+        return GeometryArray(new_data, crs=crs)
+
+    def estimate_utm_crs(self, datum_name="WGS 84"):
+        """Returns the estimated UTM CRS based on the bounds of the dataset.
+
+        .. versionadded:: 0.9
+
+        .. note:: Requires pyproj 3+
+
+        Parameters
+        ----------
+        datum_name : str, optional
+            The name of the datum to use in the query. Default is WGS 84.
+
+        Returns
+        -------
+        pyproj.CRS
+
+        Examples
+        --------
+        >>> world = geopandas.read_file(
+        ...     geopandas.datasets.get_path("naturalearth_lowres")
+        ... )
+        >>> germany = world.loc[world.name == "Germany"]
+        >>> germany.geometry.values.estimate_utm_crs()  # doctest: +SKIP
+        <Projected CRS: EPSG:32632>
+        Name: WGS 84 / UTM zone 32N
+        Axis Info [cartesian]:
+        - E[east]: Easting (metre)
+        - N[north]: Northing (metre)
+        Area of Use:
+        - name: World - N hemisphere - 6°E to 12°E - by country
+        - bounds: (6.0, 0.0, 12.0, 84.0)
+        Coordinate Operation:
+        - name: UTM zone 32N
+        - method: Transverse Mercator
+        Datum: World Geodetic System 1984
+        - Ellipsoid: WGS 84
+        - Prime Meridian: Greenwich
+        """
+        try:
+            from pyproj.aoi import AreaOfInterest
+            from pyproj.database import query_utm_crs_info
+        except ImportError:
+            raise RuntimeError("pyproj 3+ required for estimate_utm_crs.")
+
+        if not self.crs:
+            raise RuntimeError("crs must be set to estimate UTM CRS.")
+
+        minx, miny, maxx, maxy = self.total_bounds
+        if self.crs.is_geographic:
+            x_center = np.mean([minx, maxx])
+            y_center = np.mean([miny, maxy])
+        # ensure using geographic coordinates
+        else:
+            transformer = Transformer.from_crs(self.crs, "EPSG:4326", always_xy=True)
+            if compat.PYPROJ_GE_31:
+                minx, miny, maxx, maxy = transformer.transform_bounds(
+                    minx, miny, maxx, maxy
+                )
+                y_center = np.mean([miny, maxy])
+                # crossed the antimeridian
+                if minx > maxx:
+                    # shift maxx from [-180,180] to [0,360]
+                    # so both numbers are positive for center calculation
+                    # Example: -175 to 185
+                    maxx += 360
+                    x_center = np.mean([minx, maxx])
+                    # shift back to [-180,180]
+                    x_center = ((x_center + 180) % 360) - 180
+                else:
+                    x_center = np.mean([minx, maxx])
+            else:
+                lon, lat = transformer.transform(
+                    (minx, maxx, minx, maxx), (miny, miny, maxy, maxy)
+                )
+                x_center = np.mean(lon)
+                y_center = np.mean(lat)
+
+        utm_crs_list = query_utm_crs_info(
+            datum_name=datum_name,
+            area_of_interest=AreaOfInterest(
+                west_lon_degree=x_center,
+                south_lat_degree=y_center,
+                east_lon_degree=x_center,
+                north_lat_degree=y_center,
+            ),
+        )
+        try:
+            return CRS.from_epsg(utm_crs_list[0].code)
+        except IndexError:
+            raise RuntimeError("Unable to determine UTM CRS")
+
     #
     # Coordinate related properties
     #
@@ -806,7 +969,8 @@ class GeometryArray(ExtensionArray):
             )
         # self.data[idx] = value
         value_arr = np.empty(1, dtype=object)
-        value_arr[:] = [value]
+        with compat.ignore_shapely2_warnings():
+            value_arr[:] = [value]
         self.data[idx] = value_arr
         return self
 
@@ -843,7 +1007,7 @@ class GeometryArray(ExtensionArray):
 
         if mask.any():
             # fill with value
-            if _isna(value):
+            if vectorized.isna(value):
                 value = None
             elif not isinstance(value, BaseGeometry):
                 raise NotImplementedError(
@@ -885,7 +1049,7 @@ class GeometryArray(ExtensionArray):
                 pd_dtype = pd.api.types.pandas_dtype(dtype)
                 if isinstance(pd_dtype, pd.StringDtype):
                     # ensure to return a pandas string array instead of numpy array
-                    return pd.array(string_values, dtype="string")
+                    return pd.array(string_values, dtype=pd_dtype)
             return string_values.astype(dtype, copy=False)
         else:
             return np.array(self, dtype=dtype, copy=copy)
@@ -898,6 +1062,38 @@ class GeometryArray(ExtensionArray):
             return pygeos.is_missing(self.data)
         else:
             return np.array([g is None for g in self.data], dtype="bool")
+
+    def value_counts(
+        self,
+        dropna: bool = True,
+    ):
+        """
+        Compute a histogram of the counts of non-null values.
+
+        Parameters
+        ----------
+        dropna : bool, default True
+            Don't include counts of NaN
+
+        Returns
+        -------
+        pd.Series
+        """
+
+        # note ExtensionArray usage of value_counts only specifies dropna,
+        # so sort, normalize and bins are not arguments
+        values = to_wkb(self)
+        from pandas import Series, Index
+
+        result = Series(values).value_counts(dropna=dropna)
+        # value_counts converts None to nan, need to convert back for from_wkb to work
+        # note result.index already has object dtype, not geometry
+        # Can't use fillna(None) or Index.putmask, as this gets converted back to nan
+        # for object dtypes
+        result.index = Index(
+            from_wkb(np.where(result.index.isna(), None, result.index))
+        )
+        return result
 
     def unique(self):
         """Compute the ExtensionArray of unique values.
@@ -914,6 +1110,41 @@ class GeometryArray(ExtensionArray):
     @property
     def nbytes(self):
         return self.data.nbytes
+
+    def shift(self, periods=1, fill_value=None):
+        """
+        Shift values by desired number.
+
+        Newly introduced missing values are filled with
+        ``self.dtype.na_value``.
+
+        Parameters
+        ----------
+        periods : int, default 1
+            The number of periods to shift. Negative values are allowed
+            for shifting backwards.
+
+        fill_value : object, optional (default None)
+            The scalar value to use for newly introduced missing values.
+            The default is ``self.dtype.na_value``.
+
+        Returns
+        -------
+        GeometryArray
+            Shifted.
+
+        Notes
+        -----
+        If ``self`` is empty or ``periods`` is 0, a copy of ``self`` is
+        returned.
+
+        If ``periods > len(self)``, then an array of size
+        len(self) is returned, with all values filled with
+        ``self.dtype.na_value``.
+        """
+        shifted = super().shift(periods, fill_value)
+        shifted.crs = self.crs
+        return shifted
 
     # -------------------------------------------------------------------------
     # ExtensionArray specific
@@ -951,7 +1182,7 @@ class GeometryArray(ExtensionArray):
         Returns
         -------
         values : ndarray
-            An array suitable for factoraization. This should maintain order
+            An array suitable for factorization. This should maintain order
             and be a supported dtype (Float64, Int64, UInt64, String, Object).
             By default, the extension array is cast to object dtype.
         na_value : object
@@ -980,7 +1211,7 @@ class GeometryArray(ExtensionArray):
         pandas.factorize
         ExtensionArray.factorize
         """
-        return from_wkb(values)
+        return from_wkb(values, crs=original.crs)
 
     def _values_for_argsort(self):
         # type: () -> np.ndarray
@@ -1027,23 +1258,30 @@ class GeometryArray(ExtensionArray):
 
             precision = geopandas.options.display_precision
             if precision is None:
-                # dummy heuristic based on 10 first geometries that should
-                # work in most cases
-                with warnings.catch_warnings():
-                    warnings.simplefilter("ignore", category=RuntimeWarning)
-                    xmin, ymin, xmax, ymax = self[~self.isna()][:10].total_bounds
-                if (
-                    (-180 <= xmin <= 180)
-                    and (-180 <= xmax <= 180)
-                    and (-90 <= ymin <= 90)
-                    and (-90 <= ymax <= 90)
-                ):
-                    # geographic coordinates
-                    precision = 5
+                if self.crs:
+                    if self.crs.is_projected:
+                        precision = 3
+                    else:
+                        precision = 5
                 else:
-                    # typically projected coordinates
-                    # (in case of unit meter: mm precision)
-                    precision = 3
+                    # fallback
+                    # dummy heuristic based on 10 first geometries that should
+                    # work in most cases
+                    with warnings.catch_warnings():
+                        warnings.simplefilter("ignore", category=RuntimeWarning)
+                        xmin, ymin, xmax, ymax = self[~self.isna()][:10].total_bounds
+                    if (
+                        (-180 <= xmin <= 180)
+                        and (-180 <= xmax <= 180)
+                        and (-90 <= ymin <= 90)
+                        and (-90 <= ymax <= 90)
+                    ):
+                        # geographic coordinates
+                        precision = 5
+                    else:
+                        # typically projected coordinates
+                        # (in case of unit meter: mm precision)
+                        precision = 3
             return lambda geom: shapely.wkt.dumps(geom, rounding_precision=precision)
         return repr
 
@@ -1122,7 +1360,7 @@ class GeometryArray(ExtensionArray):
         """
         Return for `item in self`.
         """
-        if _isna(item):
+        if vectorized.isna(item):
             if (
                 item is self.dtype.na_value
                 or isinstance(item, self.dtype.type)

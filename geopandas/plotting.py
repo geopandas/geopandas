@@ -2,10 +2,13 @@ import warnings
 
 import numpy as np
 import pandas as pd
+from pandas.plotting import PlotAccessor
 
 import geopandas
 
 from distutils.version import LooseVersion
+
+from ._decorator import doc
 
 
 def deprecated(new):
@@ -70,9 +73,9 @@ def _expand_kwargs(kwargs, multiindex):
     mpl = matplotlib.__version__
     if mpl >= LooseVersion("3.4") or (mpl > LooseVersion("3.3.2") and "+" in mpl):
         # alpha is supported as array argument with matplotlib 3.4+
-        scalar_kwargs = ["marker"]
+        scalar_kwargs = ["marker", "path_effects"]
     else:
-        scalar_kwargs = ["marker", "alpha"]
+        scalar_kwargs = ["marker", "alpha", "path_effects"]
 
     for att, value in kwargs.items():
         if "color" in att:  # color(s), edgecolor(s), facecolor(s)
@@ -115,7 +118,7 @@ def _PolygonPatch(polygon, **kwargs):
 
     path = Path.make_compound_path(
         Path(np.asarray(polygon.exterior.coords)[:, :2]),
-        *[Path(np.asarray(ring.coords)[:, :2]) for ring in polygon.interiors]
+        *[Path(np.asarray(ring.coords)[:, :2]) for ring in polygon.interiors],
     )
     return PathPatch(path, **kwargs)
 
@@ -254,7 +257,7 @@ def _plot_point_collection(
     vmax=None,
     marker="o",
     markersize=None,
-    **kwargs
+    **kwargs,
 ):
     """
     Plots a collection of Point and MultiPoint geometries to `ax`
@@ -488,7 +491,7 @@ def plot_dataframe(
     classification_kwds=None,
     missing_kwds=None,
     aspect="auto",
-    **style_kwds
+    **style_kwds,
 ):
     """
     Plot a GeoDataFrame.
@@ -499,15 +502,26 @@ def plot_dataframe(
 
     Parameters
     ----------
-    df : GeoDataFrame
-        The GeoDataFrame to be plotted.  Currently Polygon,
-        MultiPolygon, LineString, MultiLineString and Point
-        geometries can be plotted.
     column : str, np.array, pd.Series (default None)
         The name of the dataframe column, np.array, or pd.Series to be plotted.
         If np.array or pd.Series are used then it must have same length as
         dataframe. Values are used to color the plot. Ignored if `color` is
         also set.
+    kind: str
+        The kind of plots to produce:
+         - 'geo': Map (default)
+         Pandas Kinds
+         - 'line' : line plot
+         - 'bar' : vertical bar plot
+         - 'barh' : horizontal bar plot
+         - 'hist' : histogram
+         - 'box' : BoxPlot
+         - 'kde' : Kernel Density Estimation plot
+         - 'density' : same as 'kde'
+         - 'area' : area plot
+         - 'pie' : pie plot
+         - 'scatter' : scatter plot
+         - 'hexbin' : hexbin plot.
     cmap : str (default None)
         The name of a colormap recognized by matplotlib.
     color : str (default None)
@@ -560,6 +574,9 @@ def plot_dataframe(
             A list of legend labels to override the auto-generated labels.
             Needs to have the same number of elements as the number of
             classes (`k`).
+        interval : boolean (default False)
+            An option to control brackets from mapclassify legend.
+            If True, open/closed interval brackets are shown in the legend.
     categories : list-like
         Ordered list-like object of categories to be used for categorical plot.
     classification_kwds : dict (default None)
@@ -680,7 +697,7 @@ GON (((-122.84000 49.00000, -120.0000...
             figsize=figsize,
             markersize=markersize,
             aspect=aspect,
-            **style_kwds
+            **style_kwds,
         )
 
     # To accept pd.Series and np.arrays as column
@@ -709,6 +726,62 @@ GON (((-122.84000 49.00000, -120.0000...
 
     nan_idx = np.asarray(pd.isna(values), dtype="bool")
 
+    if scheme is not None:
+        mc_err = (
+            "The 'mapclassify' package (>= 2.4.0) is "
+            "required to use the 'scheme' keyword."
+        )
+        try:
+            import mapclassify
+
+        except ImportError:
+            raise ImportError(mc_err)
+
+        if mapclassify.__version__ < LooseVersion("2.4.0"):
+            raise ImportError(mc_err)
+
+        if classification_kwds is None:
+            classification_kwds = {}
+        if "k" not in classification_kwds:
+            classification_kwds["k"] = k
+
+        binning = mapclassify.classify(
+            np.asarray(values[~nan_idx]), scheme, **classification_kwds
+        )
+        # set categorical to True for creating the legend
+        categorical = True
+        if legend_kwds is not None and "labels" in legend_kwds:
+            if len(legend_kwds["labels"]) != binning.k:
+                raise ValueError(
+                    "Number of labels must match number of bins, "
+                    "received {} labels for {} bins".format(
+                        len(legend_kwds["labels"]), binning.k
+                    )
+                )
+            else:
+                labels = list(legend_kwds.pop("labels"))
+        else:
+            fmt = "{:.2f}"
+            if legend_kwds is not None and "fmt" in legend_kwds:
+                fmt = legend_kwds.pop("fmt")
+
+            labels = binning.get_legend_classes(fmt)
+            if legend_kwds is not None:
+                show_interval = legend_kwds.pop("interval", False)
+            else:
+                show_interval = False
+            if not show_interval:
+                labels = [c[1:-1] for c in labels]
+
+        values = pd.Categorical(
+            [np.nan] * len(values), categories=binning.bins, ordered=True
+        )
+        values[~nan_idx] = pd.Categorical.from_codes(
+            binning.yb, categories=binning.bins, ordered=True
+        )
+        if cmap is None:
+            cmap = "viridis"
+
     # Define `values` as a Series
     if categorical:
         if cmap is None:
@@ -728,32 +801,6 @@ GON (((-122.84000 49.00000, -120.0000...
         values = cat.codes[~nan_idx]
         vmin = 0 if vmin is None else vmin
         vmax = len(categories) - 1 if vmax is None else vmax
-
-    if scheme is not None:
-        if classification_kwds is None:
-            classification_kwds = {}
-        if "k" not in classification_kwds:
-            classification_kwds["k"] = k
-
-        binning = _mapclassify_choro(values[~nan_idx], scheme, **classification_kwds)
-        # set categorical to True for creating the legend
-        categorical = True
-        if legend_kwds is not None and "labels" in legend_kwds:
-            if len(legend_kwds["labels"]) != binning.k:
-                raise ValueError(
-                    "Number of labels must match number of bins, "
-                    "received {} labels for {} bins".format(
-                        len(legend_kwds["labels"]), binning.k
-                    )
-                )
-            else:
-                categories = list(legend_kwds.pop("labels"))
-        else:
-            fmt = "{:.2f}"
-            if legend_kwds is not None and "fmt" in legend_kwds:
-                fmt = legend_kwds.pop("fmt")
-            categories = binning.get_legend_classes(fmt)
-        values = np.array(binning.yb)
 
     # fill values with placeholder where were NaNs originally to map them properly
     # (after removing them in categorical or scheme)
@@ -810,7 +857,7 @@ GON (((-122.84000 49.00000, -120.0000...
             vmax=mx,
             markersize=markersize,
             cmap=cmap,
-            **style_kwds
+            **style_kwds,
         )
 
     if missing_kwds is not None and not expl_series[nan_idx].empty:
@@ -839,6 +886,8 @@ GON (((-122.84000 49.00000, -120.0000...
             norm = Normalize(vmin=mn, vmax=mx)
         n_cmap = cm.ScalarMappable(norm=norm, cmap=cmap)
         if categorical:
+            if scheme is not None:
+                categories = labels
             patches = []
             for value, cat in enumerate(categories):
                 patches.append(
@@ -882,105 +931,29 @@ GON (((-122.84000 49.00000, -120.0000...
             else:
                 legend_kwds.setdefault("ax", ax)
 
-            n_cmap.set_array([])
+            n_cmap.set_array(np.array([]))
             ax.get_figure().colorbar(n_cmap, **legend_kwds)
 
     plt.draw()
     return ax
 
 
-def _mapclassify_choro(values, scheme, **classification_kwds):
-    """
-    Wrapper for choropleth schemes from mapclassify for use with plot_dataframe
+@doc(plot_dataframe)
+class GeoplotAccessor(PlotAccessor):
 
-    Parameters
-    ----------
-    values
-        Series to be plotted
-    scheme : str
-        One of mapclassify classification schemes
-        Options are BoxPlot, EqualInterval, FisherJenks,
-        FisherJenksSampled, HeadTailBreaks, JenksCaspall,
-        JenksCaspallForced, JenksCaspallSampled, MaxP,
-        MaximumBreaks, NaturalBreaks, Quantiles, Percentiles, StdMean,
-        UserDefined
+    _pandas_kinds = PlotAccessor._all_kinds
 
-    **classification_kwds : dict
-        Keyword arguments for classification scheme
-        For details see mapclassify documentation:
-        https://pysal.org/mapclassify/api.html
+    def __call__(self, *args, **kwargs):
+        data = self._parent.copy()
+        kind = kwargs.pop("kind", "geo")
+        if kind == "geo":
+            return plot_dataframe(data, *args, **kwargs)
+        if kind in self._pandas_kinds:
+            # Access pandas plots
+            return PlotAccessor(data)(kind=kind, **kwargs)
+        else:
+            # raise error
+            raise ValueError(f"{kind} is not a valid plot kind")
 
-    Returns
-    -------
-    binning
-        Binning objects that holds the Series with values replaced with
-        class identifier and the bins.
-    """
-    try:
-        import mapclassify.classifiers as classifiers
-
-    except ImportError:
-        raise ImportError(
-            "The 'mapclassify' >= 2.2.0 package is required to use the 'scheme' keyword"
-        )
-    from mapclassify import __version__ as mc_version
-
-    if mc_version < LooseVersion("2.2.0"):
-        raise ImportError(
-            "The 'mapclassify' >= 2.2.0 package is required to "
-            "use the 'scheme' keyword"
-        )
-    schemes = {}
-    for classifier in classifiers.CLASSIFIERS:
-        schemes[classifier.lower()] = getattr(classifiers, classifier)
-
-    scheme = scheme.lower()
-
-    # mapclassify < 2.1 cleaned up the scheme names (removing underscores)
-    # trying both to keep compatibility with older versions and provide
-    # compatibility with newer versions of mapclassify
-    oldnew = {
-        "Box_Plot": "BoxPlot",
-        "Equal_Interval": "EqualInterval",
-        "Fisher_Jenks": "FisherJenks",
-        "Fisher_Jenks_Sampled": "FisherJenksSampled",
-        "HeadTail_Breaks": "HeadTailBreaks",
-        "Jenks_Caspall": "JenksCaspall",
-        "Jenks_Caspall_Forced": "JenksCaspallForced",
-        "Jenks_Caspall_Sampled": "JenksCaspallSampled",
-        "Max_P_Plassifier": "MaxP",
-        "Maximum_Breaks": "MaximumBreaks",
-        "Natural_Breaks": "NaturalBreaks",
-        "Std_Mean": "StdMean",
-        "User_Defined": "UserDefined",
-    }
-    scheme_names_mapping = {}
-    scheme_names_mapping.update(
-        {old.lower(): new.lower() for old, new in oldnew.items()}
-    )
-    scheme_names_mapping.update(
-        {new.lower(): old.lower() for old, new in oldnew.items()}
-    )
-
-    try:
-        scheme_class = schemes[scheme]
-    except KeyError:
-        scheme = scheme_names_mapping.get(scheme, scheme)
-        try:
-            scheme_class = schemes[scheme]
-        except KeyError:
-            raise ValueError(
-                "Invalid scheme. Scheme must be in the set: %r" % schemes.keys()
-            )
-
-    if classification_kwds["k"] is not None:
-        from inspect import getfullargspec as getspec
-
-        spec = getspec(scheme_class.__init__)
-        if "k" not in spec.args:
-            del classification_kwds["k"]
-    try:
-        binning = scheme_class(np.asarray(values), **classification_kwds)
-    except TypeError:
-        raise TypeError("Invalid keyword argument for %r " % scheme)
-    return binning
+    def geo(self, *args, **kwargs):
+        return self(kind="geo", *args, **kwargs)

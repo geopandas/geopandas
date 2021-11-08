@@ -29,15 +29,15 @@ import warnings
 extensions = [
     "IPython.sphinxext.ipython_console_highlighting",
     "IPython.sphinxext.ipython_directive",
-    "sphinx_gallery.gen_gallery",
+    "sphinx_gallery.load_style",
     "sphinx.ext.autosummary",
     "sphinx.ext.intersphinx",
     "sphinx.ext.autodoc",
     "myst_parser",
     "nbsphinx",
     "numpydoc",
-    'sphinx_toggleprompt',
-    "matplotlib.sphinxext.plot_directive"
+    "sphinx_toggleprompt",
+    "matplotlib.sphinxext.plot_directive",
 ]
 
 # continue doc build and only print warnings/errors in examples
@@ -54,7 +54,7 @@ numpydoc_show_class_members = False
 
 
 def setup(app):
-    app.add_stylesheet("custom.css")  # may also be an URL
+    app.add_css_file("custom.css")  # may also be an URL
 
 
 # Add any paths that contain templates here, relative to this directory.
@@ -63,22 +63,10 @@ templates_path = ["_templates"]
 
 autosummary_generate = True
 
-# Sphinx gallery configuration
-sphinx_gallery_conf = {
-    "examples_dirs": ["../../examples"],
-    "filename_pattern": "^((?!sgskip).)*$",
-    "gallery_dirs": ["gallery"],
-    "doc_module": ("geopandas",),
-    "reference_url": {
-        "matplotlib": "http://matplotlib.org",
-        "numpy": "http://docs.scipy.org/doc/numpy",
-        "scipy": "http://docs.scipy.org/doc/scipy/reference",
-        "geopandas": None,
-    },
-    "backreferences_dir": "reference",
-}
-# connect docs in other projects
-intersphinx_mapping = {"pyproj": ("http://pyproj4.github.io/pyproj/stable/", None)}
+nbsphinx_execute = "always"
+nbsphinx_allow_errors = True
+nbsphinx_kernel_name = "python3"
+
 # suppress matplotlib warning in examples
 warnings.filterwarnings(
     "ignore",
@@ -326,3 +314,102 @@ texinfo_documents = [
 
 # How to display URL addresses: 'footnote', 'no', or 'inline'.
 # texinfo_show_urls = 'footnote'
+
+nbsphinx_prolog = r"""
+{% set docname = env.doc2path(env.docname, base=None) %}
+
+.. only:: html
+
+    .. role:: raw-html(raw)
+        :format: html
+
+    .. note::
+
+        | This page was generated from `{{ docname }}`__.
+        | Interactive online version: :raw-html:`<a href="https://mybinder.org/v2/gh/geopandas/geopandas/master?urlpath=lab/tree/doc/source/{{ docname }}"><img alt="Binder badge" src="https://mybinder.org/badge_logo.svg" style="vertical-align:text-bottom"></a>`
+
+        __ https://github.com/geopandas/geopandas/blob/master/doc/source/{{ docname }}
+"""
+
+#  --Options for sphinx extensions -----------------------------------------------
+
+# connect docs in other projects
+intersphinx_mapping = {
+    "cartopy": (
+        "https://scitools.org.uk/cartopy/docs/latest/",
+        "https://scitools.org.uk/cartopy/docs/latest/objects.inv",
+    ),
+    "contextily": (
+        "https://contextily.readthedocs.io/en/stable/",
+        "https://contextily.readthedocs.io/en/stable/objects.inv",
+    ),
+    "fiona": (
+        "https://fiona.readthedocs.io/en/stable/",
+        "https://fiona.readthedocs.io/en/stable/objects.inv",
+    ),
+    "folium": (
+        "https://python-visualization.github.io/folium/",
+        "https://python-visualization.github.io/folium/objects.inv",
+    ),
+    "geoplot": (
+        "https://residentmario.github.io/geoplot/index.html",
+        "https://residentmario.github.io/geoplot/objects.inv",
+    ),
+    "geopy": (
+        "https://geopy.readthedocs.io/en/stable/",
+        "https://geopy.readthedocs.io/en/stable/objects.inv",
+    ),
+    "libpysal": (
+        "https://pysal.org/libpysal/",
+        "https://pysal.org/libpysal/objects.inv",
+    ),
+    "mapclassify": (
+        "https://pysal.org/mapclassify/",
+        "https://pysal.org/mapclassify/objects.inv",
+    ),
+    "matplotlib": (
+        "https://matplotlib.org/stable/",
+        "https://matplotlib.org/stable/objects.inv",
+    ),
+    "pandas": (
+        "https://pandas.pydata.org/pandas-docs/stable/",
+        "https://pandas.pydata.org/pandas-docs/stable/objects.inv",
+    ),
+    "pyarrow": ("https://arrow.apache.org/docs/", None),
+    "pyepsg": (
+        "https://pyepsg.readthedocs.io/en/stable/",
+        "https://pyepsg.readthedocs.io/en/stable/objects.inv",
+    ),
+    "pygeos": (
+        "https://pygeos.readthedocs.io/en/latest/",
+        "https://pygeos.readthedocs.io/en/latest/objects.inv",
+    ),
+    "pyproj": (
+        "https://pyproj4.github.io/pyproj/stable/",
+        "https://pyproj4.github.io/pyproj/stable/objects.inv",
+    ),
+    "python": (
+        "https://docs.python.org/3",
+        "https://docs.python.org/3/objects.inv",
+    ),
+    "rtree": (
+        "https://rtree.readthedocs.io/en/stable/",
+        "https://rtree.readthedocs.io/en/stable/objects.inv",
+    ),
+    "rasterio": (
+        "https://rasterio.readthedocs.io/en/stable/",
+        "https://rasterio.readthedocs.io/en/stable/objects.inv",
+    ),
+    "shapely": (
+        "https://shapely.readthedocs.io/en/stable/",
+        "https://shapely.readthedocs.io/en/stable/objects.inv",
+    ),
+    "branca": (
+        "https://python-visualization.github.io/branca/",
+        "https://python-visualization.github.io/branca/objects.inv",
+    ),
+    "xyzservices": (
+        "https://xyzservices.readthedocs.io/en/stable/",
+        "https://xyzservices.readthedocs.io/en/stable/objects.inv",
+    ),
+}

@@ -26,7 +26,7 @@ def df_nybb():
 @pytest.fixture()
 def connection_postgis():
     """
-    Initiaties a connection to a postGIS database that must already exist.
+    Initiates a connection to a postGIS database that must already exist.
     See create_postgis for more information.
     """
     psycopg2 = pytest.importorskip("psycopg2")
@@ -51,7 +51,7 @@ def connection_postgis():
 @pytest.fixture()
 def engine_postgis():
     """
-    Initiaties a connection engine to a postGIS database that must already exist.
+    Initiates a connection engine to a postGIS database that must already exist.
     """
     sqlalchemy = pytest.importorskip("sqlalchemy")
     from sqlalchemy.engine.url import URL
@@ -64,7 +64,7 @@ def engine_postgis():
 
     try:
         con = sqlalchemy.create_engine(
-            URL(
+            URL.create(
                 drivername="postgresql+psycopg2",
                 username=user,
                 database=dbname,
@@ -114,7 +114,7 @@ def connection_spatialite():
 def drop_table_if_exists(conn_or_engine, table):
     sqlalchemy = pytest.importorskip("sqlalchemy")
 
-    if conn_or_engine.dialect.has_table(conn_or_engine, table):
+    if sqlalchemy.inspect(conn_or_engine).has_table(table):
         metadata = sqlalchemy.MetaData(conn_or_engine)
         metadata.reflect()
         table = metadata.tables.get(table)
@@ -341,6 +341,21 @@ class TestIO:
         write_postgis(df_nybb, con=engine, name=table, if_exists="fail")
         # Validate
         sql = "SELECT * FROM {table};".format(table=table)
+        df = read_postgis(sql, engine, geom_col="geometry")
+        validate_boro_df(df)
+
+    def test_write_postgis_uppercase_tablename(self, engine_postgis, df_nybb):
+        """Tests writing GeoDataFrame to PostGIS with uppercase tablename."""
+        engine = engine_postgis
+        table = "aTestTable"
+
+        # If table exists, delete it before trying to write with defaults
+        drop_table_if_exists(engine, table)
+
+        # Write to db
+        write_postgis(df_nybb, con=engine, name=table, if_exists="fail")
+        # Validate
+        sql = 'SELECT * FROM "{table}";'.format(table=table)
         df = read_postgis(sql, engine, geom_col="geometry")
         validate_boro_df(df)
 

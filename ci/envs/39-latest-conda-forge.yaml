@@ -17,8 +17,10 @@ dependencies:
   # optional
   - rtree
   - matplotlib
-  - descartes
   - mapclassify
+  - folium
+  - xyzservices
+  - scipy
   - geopy
   # installed in tests.yaml, because not available on windows
   # - postgis
@@ -29,3 +31,4 @@ dependencies:
   - pyarrow
   # doctest testing
   - pytest-doctestplus
+

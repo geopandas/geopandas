@@ -1,6 +1,8 @@
+import os
 from distutils.version import LooseVersion
-
+from pathlib import Path
 import warnings
+
 import numpy as np
 import pandas as pd
 
@@ -12,17 +14,22 @@ try:
     import fiona
 
     fiona_import_error = None
+
+    # only try to import fiona.Env if the main fiona import succeeded (otherwise you
+    # can get confusing "AttributeError: module 'fiona' has no attribute '_loading'"
+    # / partially initialized module errors)
+    try:
+        from fiona import Env as fiona_env
+    except ImportError:
+        try:
+            from fiona import drivers as fiona_env
+        except ImportError:
+            fiona_env = None
+
 except ImportError as err:
     fiona = None
     fiona_import_error = str(err)
 
-try:
-    from fiona import Env as fiona_env
-except ImportError:
-    try:
-        from fiona import drivers as fiona_env
-    except ImportError:
-        fiona_env = None
 
 from geopandas import GeoDataFrame, GeoSeries
 
@@ -35,6 +42,37 @@ from urllib.parse import uses_netloc, uses_params, uses_relative
 
 _VALID_URLS = set(uses_relative + uses_netloc + uses_params)
 _VALID_URLS.discard("")
+
+_EXTENSION_TO_DRIVER = {
+    ".bna": "BNA",
+    ".dxf": "DXF",
+    ".csv": "CSV",
+    ".shp": "ESRI Shapefile",
+    ".dbf": "ESRI Shapefile",
+    ".json": "GeoJSON",
+    ".geojson": "GeoJSON",
+    ".geojsonl": "GeoJSONSeq",
+    ".geojsons": "GeoJSONSeq",
+    ".gpkg": "GPKG",
+    ".gml": "GML",
+    ".xml": "GML",
+    ".gpx": "GPX",
+    ".gtm": "GPSTrackMaker",
+    ".gtz": "GPSTrackMaker",
+    ".tab": "MapInfo File",
+    ".mif": "MapInfo File",
+    ".mid": "MapInfo File",
+    ".dgn": "DGN",
+}
+
+
+def _expand_user(path):
+    """Expand paths that use ~."""
+    if isinstance(path, str):
+        path = os.path.expanduser(path)
+    elif isinstance(path, Path):
+        path = path.expanduser()
+    return path
 
 
 def _check_fiona(func):
@@ -78,7 +116,8 @@ def _read_file(filename, bbox=None, mask=None, rows=None, **kwargs):
     bbox : tuple | GeoDataFrame or GeoSeries | shapely Geometry, default None
         Filter features by given bounding box, GeoSeries, GeoDataFrame or a
         shapely geometry. CRS mis-matches are resolved if given a GeoSeries
-        or GeoDataFrame. Cannot be used with mask.
+        or GeoDataFrame. Tuple is (minx, miny, maxx, maxy) to match the
+        bounds property of shapely geometry objects. Cannot be used with mask.
     mask : dict | GeoDataFrame or GeoSeries | shapely Geometry, default None
         Filter for features that intersect with the given dict-like geojson
         geometry, GeoSeries, GeoDataFrame or shapely geometry.
@@ -111,7 +150,7 @@ def _read_file(filename, bbox=None, mask=None, rows=None, **kwargs):
 
     Reading only geometries intersecting ``bbox``:
 
-    >>> df = geopandas.read_file("nybb.shp", bbox=(0, 10, 0, 20))  # doctest: +SKIP
+    >>> df = geopandas.read_file("nybb.shp", bbox=(0, 0, 10, 20))  # doctest: +SKIP
 
     Returns
     -------
@@ -125,6 +164,8 @@ def _read_file(filename, bbox=None, mask=None, rows=None, **kwargs):
     by using the encoding keyword parameter, e.g. ``encoding='utf-8'``.
     """
     _check_fiona("'read_file' function")
+    filename = _expand_user(filename)
+
     if _is_url(filename):
         req = _urlopen(filename)
         path_or_bytes = req.read()
@@ -232,10 +273,28 @@ def to_file(*args, **kwargs):
     return _to_file(*args, **kwargs)
 
 
+def _detect_driver(path):
+    """
+    Attempt to auto-detect driver based on the extension
+    """
+    try:
+        # in case the path is a file handle
+        path = path.name
+    except AttributeError:
+        pass
+    try:
+        return _EXTENSION_TO_DRIVER[Path(path).suffix.lower()]
+    except KeyError:
+        # Assume it is a shapefile folder for now. In the future,
+        # will likely raise an exception when the expected
+        # folder writing behavior is more clearly defined.
+        return "ESRI Shapefile"
+
+
 def _to_file(
     df,
     filename,
-    driver="ESRI Shapefile",
+    driver=None,
     schema=None,
     index=None,
     mode="w",
@@ -254,8 +313,10 @@ def _to_file(
     df : GeoDataFrame to be written
     filename : string
         File path or file handle to write to.
-    driver : string, default 'ESRI Shapefile'
+    driver : string, default None
         The OGR format driver used to write the vector file.
+        If not specified, it attempts to infer it from the file extension.
+        If no extension is specified, it saves ESRI Shapefile to a folder.
     schema : dict, default None
         If specified, the schema dictionary is passed to Fiona to
         better control how the file is written. If None, GeoPandas
@@ -292,6 +353,8 @@ def _to_file(
     by using the encoding keyword parameter, e.g. ``encoding='utf-8'``.
     """
     _check_fiona("'to_file' method")
+    filename = _expand_user(filename)
+
     if index is None:
         # Determine if index attribute(s) should be saved to file
         index = list(df.index.names) != [None] or type(df.index) not in (
@@ -306,6 +369,9 @@ def _to_file(
         crs = pyproj.CRS.from_user_input(crs)
     else:
         crs = df.crs
+
+    if driver is None:
+        driver = _detect_driver(filename)
 
     if driver == "ESRI Shapefile" and any([len(c) > 10 for c in df.columns.tolist()]):
         warnings.warn(

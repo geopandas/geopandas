@@ -10,11 +10,13 @@ import pandas as pd
 import pyproj
 from pyproj import CRS
 from pyproj.exceptions import CRSError
-from shapely.geometry import Point
+from shapely.geometry import Point, Polygon
 
 import geopandas
+import geopandas._compat as compat
 from geopandas import GeoDataFrame, GeoSeries, read_file
 from geopandas.array import GeometryArray, GeometryDtype, from_shapely
+from geopandas._compat import ignore_shapely2_warnings
 
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 from geopandas.tests.util import PACKAGE_DIR, validate_boro_df
@@ -23,6 +25,36 @@ import pytest
 
 
 PYPROJ_LT_3 = LooseVersion(pyproj.__version__) < LooseVersion("3")
+TEST_NEAREST = compat.PYGEOS_GE_010 and compat.USE_PYGEOS
+pandas_133 = pd.__version__ == LooseVersion("1.3.3")
+
+
+@pytest.fixture
+def dfs(request):
+    s1 = GeoSeries(
+        [
+            Polygon([(0, 0), (2, 0), (2, 2), (0, 2)]),
+            Polygon([(2, 2), (4, 2), (4, 4), (2, 4)]),
+        ]
+    )
+    s2 = GeoSeries(
+        [
+            Polygon([(1, 1), (3, 1), (3, 3), (1, 3)]),
+            Polygon([(3, 3), (5, 3), (5, 5), (3, 5)]),
+        ]
+    )
+    df1 = GeoDataFrame({"col1": [1, 2], "geometry": s1})
+    df2 = GeoDataFrame({"col2": [1, 2], "geometry": s2})
+    return df1, df2
+
+
+@pytest.fixture(
+    params=["union", "intersection", "difference", "symmetric_difference", "identity"]
+)
+def how(request):
+    if pandas_133 and request.param in ["symmetric_difference", "identity", "union"]:
+        pytest.xfail("Regression in pandas 1.3.3 (GH #2101)")
+    return request.param
 
 
 class TestDataFrame:
@@ -40,7 +72,9 @@ class TestDataFrame:
             ],
             crs=self.crs,
         )
-        self.df3 = read_file(os.path.join(PACKAGE_DIR, "examples", "null_geom.geojson"))
+        self.df3 = read_file(
+            os.path.join(PACKAGE_DIR, "geopandas", "tests", "data", "null_geom.geojson")
+        )
 
     def teardown_method(self):
         shutil.rmtree(self.tempdir)
@@ -363,7 +397,11 @@ class TestDataFrame:
         data = json.loads(text)
         assert data["type"] == "FeatureCollection"
         assert len(data["features"]) == 5
+        assert "id" in data["features"][0].keys()
 
+    @pytest.mark.filterwarnings(
+        "ignore:Geometry column does not contain geometry:UserWarning"
+    )
     def test_to_json_geom_col(self):
         df = self.df.copy()
         df["geom"] = df["geometry"]
@@ -374,6 +412,12 @@ class TestDataFrame:
         data = json.loads(text)
         assert data["type"] == "FeatureCollection"
         assert len(data["features"]) == 5
+
+    def test_to_json_only_geom_column(self):
+        text = self.df[["geometry"]].to_json()
+        data = json.loads(text)
+        assert len(data["features"]) == 5
+        assert "id" in data["features"][0].keys()
 
     def test_to_json_na(self):
         # Set a value as nan and make sure it's written
@@ -434,6 +478,29 @@ class TestDataFrame:
                 assert np.isnan(props["Shape_Leng"])
                 assert "Shape_Area" in props
 
+    def test_to_json_drop_id(self):
+        text = self.df.to_json(drop_id=True)
+        data = json.loads(text)
+        assert len(data["features"]) == 5
+        for f in data["features"]:
+            assert "id" not in f.keys()
+
+    def test_to_json_drop_id_only_geom_column(self):
+        text = self.df[["geometry"]].to_json(drop_id=True)
+        data = json.loads(text)
+        assert len(data["features"]) == 5
+        for f in data["features"]:
+            assert "id" not in f.keys()
+
+    def test_to_json_with_duplicate_columns(self):
+        df = GeoDataFrame(
+            data=[[1, 2, 3]], columns=["a", "b", "a"], geometry=[Point(1, 1)]
+        )
+        with pytest.raises(
+            ValueError, match="GeoDataFrame cannot contain duplicated column names."
+        ):
+            df.to_json()
+
     def test_copy(self):
         df2 = self.df.copy()
         assert type(df2) is GeoDataFrame
@@ -461,6 +528,16 @@ class TestDataFrame:
         df2.to_file(tempfilename, crs=2263)
         df = GeoDataFrame.from_file(tempfilename)
         assert df.crs == "epsg:2263"
+
+    def test_to_file_with_duplicate_columns(self):
+        df = GeoDataFrame(
+            data=[[1, 2, 3]], columns=["a", "b", "a"], geometry=[Point(1, 1)]
+        )
+        with pytest.raises(
+            ValueError, match="GeoDataFrame cannot contain duplicated column names."
+        ):
+            tempfilename = os.path.join(self.tempdir, "crs.shp")
+            df.to_file(tempfilename)
 
     def test_bool_index(self):
         # Find boros with 'B' in their name
@@ -607,7 +684,7 @@ class TestDataFrame:
         df = self.df.iloc[:1].copy()
         df.loc[0, "BoroName"] = np.nan
         # when containing missing values
-        # null: ouput the missing entries as JSON null
+        # null: output the missing entries as JSON null
         result = list(df.iterfeatures(na="null"))[0]["properties"]
         assert result["BoroName"] is None
         # drop: remove the property from the feature.
@@ -642,6 +719,14 @@ class TestDataFrame:
         # keep
         result = list(df_only_numerical_cols.iterfeatures(na="keep"))[0]
         assert type(result["properties"]["Shape_Leng"]) is float
+
+        with pytest.raises(
+            ValueError, match="GeoDataFrame cannot contain duplicated column names."
+        ):
+            df_with_duplicate_columns = df[
+                ["Shape_Leng", "Shape_Leng", "Shape_Area", "geometry"]
+            ]
+            list(df_with_duplicate_columns.iterfeatures())
 
         # geometry not set
         df = GeoDataFrame({"values": [0, 1], "geom": [Point(0, 1), Point(1, 0)]})
@@ -682,6 +767,115 @@ class TestDataFrame:
         else:
             assert self.df.estimate_utm_crs() == CRS("EPSG:32618")
             assert self.df.estimate_utm_crs("NAD83") == CRS("EPSG:26918")
+
+    def test_to_wkb(self):
+        wkbs0 = [
+            (
+                b"\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+                b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+            ),  # POINT (0 0)
+            (
+                b"\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00"
+                b"\x00\xf0?\x00\x00\x00\x00\x00\x00\xf0?"
+            ),  # POINT (1 1)
+        ]
+        wkbs1 = [
+            (
+                b"\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00"
+                b"\x00\x00@\x00\x00\x00\x00\x00\x00\x00@"
+            ),  # POINT (2 2)
+            (
+                b"\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00"
+                b"\x00\x08@\x00\x00\x00\x00\x00\x00\x08@"
+            ),  # POINT (3 3)
+        ]
+        gs0 = GeoSeries.from_wkb(wkbs0)
+        gs1 = GeoSeries.from_wkb(wkbs1)
+        gdf = GeoDataFrame({"geom_col0": gs0, "geom_col1": gs1})
+
+        expected_df = pd.DataFrame({"geom_col0": wkbs0, "geom_col1": wkbs1})
+        assert_frame_equal(expected_df, gdf.to_wkb())
+
+    def test_to_wkt(self):
+        wkts0 = ["POINT (0 0)", "POINT (1 1)"]
+        wkts1 = ["POINT (2 2)", "POINT (3 3)"]
+        gs0 = GeoSeries.from_wkt(wkts0)
+        gs1 = GeoSeries.from_wkt(wkts1)
+        gdf = GeoDataFrame({"gs0": gs0, "gs1": gs1})
+
+        expected_df = pd.DataFrame({"gs0": wkts0, "gs1": wkts1})
+        assert_frame_equal(expected_df, gdf.to_wkt())
+
+    @pytest.mark.parametrize("how", ["left", "inner", "right"])
+    @pytest.mark.parametrize("predicate", ["intersects", "within", "contains"])
+    @pytest.mark.skipif(
+        not compat.USE_PYGEOS and not compat.HAS_RTREE,
+        reason="sjoin needs `rtree` or `pygeos` dependency",
+    )
+    def test_sjoin(self, how, predicate):
+        """
+        Basic test for availability of the GeoDataFrame method. Other
+        sjoin tests are located in /tools/tests/test_sjoin.py
+        """
+        left = read_file(geopandas.datasets.get_path("naturalearth_cities"))
+        right = read_file(geopandas.datasets.get_path("naturalearth_lowres"))
+
+        expected = geopandas.sjoin(left, right, how=how, predicate=predicate)
+        result = left.sjoin(right, how=how, predicate=predicate)
+        assert_geodataframe_equal(result, expected)
+
+    @pytest.mark.parametrize("how", ["left", "inner", "right"])
+    @pytest.mark.parametrize("max_distance", [None, 1])
+    @pytest.mark.parametrize("distance_col", [None, "distance"])
+    @pytest.mark.skipif(
+        not TEST_NEAREST,
+        reason=(
+            "PyGEOS >= 0.10.0"
+            " must be installed and activated via the geopandas.compat module to"
+            " test sjoin_nearest"
+        ),
+    )
+    def test_sjoin_nearest(self, how, max_distance, distance_col):
+        """
+        Basic test for availability of the GeoDataFrame method. Other
+        sjoin tests are located in /tools/tests/test_sjoin.py
+        """
+        left = read_file(geopandas.datasets.get_path("naturalearth_cities"))
+        right = read_file(geopandas.datasets.get_path("naturalearth_lowres"))
+
+        expected = geopandas.sjoin_nearest(
+            left, right, how=how, max_distance=max_distance, distance_col=distance_col
+        )
+        result = left.sjoin_nearest(
+            right, how=how, max_distance=max_distance, distance_col=distance_col
+        )
+        assert_geodataframe_equal(result, expected)
+
+    @pytest.mark.skip_no_sindex
+    def test_clip(self):
+        """
+        Basic test for availability of the GeoDataFrame method. Other
+        clip tests are located in /tools/tests/test_clip.py
+        """
+        left = read_file(geopandas.datasets.get_path("naturalearth_cities"))
+        world = read_file(geopandas.datasets.get_path("naturalearth_lowres"))
+        south_america = world[world["continent"] == "South America"]
+
+        expected = geopandas.clip(left, south_america)
+        result = left.clip(south_america)
+        assert_geodataframe_equal(result, expected)
+
+    @pytest.mark.skip_no_sindex
+    def test_overlay(self, dfs, how):
+        """
+        Basic test for availability of the GeoDataFrame method. Other
+        overlay tests are located in tests/test_overlay.py
+        """
+        df1, df2 = dfs
+
+        expected = geopandas.overlay(df1, df2, how=how)
+        result = df1.overlay(df2, how=how)
+        assert_geodataframe_equal(result, expected)
 
 
 def check_geodataframe(df, geometry_column="geometry"):
@@ -784,7 +978,8 @@ class TestConstructor:
             "B": np.arange(3.0),
             "geometry": [Point(x, x) for x in range(3)],
         }
-        a = np.array([data["A"], data["B"], data["geometry"]], dtype=object).T
+        with ignore_shapely2_warnings():
+            a = np.array([data["A"], data["B"], data["geometry"]], dtype=object).T
 
         df = GeoDataFrame(a, columns=["A", "B", "geometry"])
         check_geodataframe(df)
@@ -799,7 +994,8 @@ class TestConstructor:
             "geometry": [Point(x, x) for x in range(3)],
         }
         gpdf = GeoDataFrame(data)
-        pddf = pd.DataFrame(data)
+        with ignore_shapely2_warnings():
+            pddf = pd.DataFrame(data)
         check_geodataframe(gpdf)
         assert type(pddf) == pd.DataFrame
 
@@ -829,17 +1025,16 @@ class TestConstructor:
 
         gpdf = GeoDataFrame(data, geometry="other_geom")
         check_geodataframe(gpdf, "other_geom")
-        pddf = pd.DataFrame(data)
+        with ignore_shapely2_warnings():
+            pddf = pd.DataFrame(data)
 
         for df in [gpdf, pddf]:
             res = GeoDataFrame(df, geometry="other_geom")
             check_geodataframe(res, "other_geom")
 
-        # when passing GeoDataFrame with custom geometry name to constructor
-        # an invalid geodataframe is the result TODO is this desired ?
+        # gdf from gdf should preserve active geometry column name
         df = GeoDataFrame(gpdf)
-        with pytest.raises(AttributeError):
-            df.geometry
+        check_geodataframe(df, "other_geom")
 
     def test_only_geometry(self):
         exp = GeoDataFrame(
@@ -915,13 +1110,32 @@ class TestConstructor:
     def test_overwrite_geometry(self):
         # GH602
         data = pd.DataFrame({"geometry": [1, 2, 3], "col1": [4, 5, 6]})
-        geoms = pd.Series([Point(i, i) for i in range(3)])
+        with ignore_shapely2_warnings():
+            geoms = pd.Series([Point(i, i) for i in range(3)])
         # passed geometry kwarg should overwrite geometry column in data
         res = GeoDataFrame(data, geometry=geoms)
         assert_geoseries_equal(res.geometry, GeoSeries(geoms))
 
+    def test_repeat_geo_col(self):
+        df = pd.DataFrame(
+            [
+                {"geometry": Point(x, y), "geom": Point(x, y)}
+                for x, y in zip(range(3), range(3))
+            ],
+        )
+        # explicitly prevent construction of gdf with repeat geometry column names
+        # two columns called "geometry", geom col inferred
+        df2 = df.rename(columns={"geom": "geometry"})
+        with pytest.raises(ValueError):
+            GeoDataFrame(df2)
+        # ensure case is caught when custom geom column name is used
+        # two columns called "geom", geom col explicit
+        df3 = df.rename(columns={"geometry": "geom"})
+        with pytest.raises(ValueError):
+            GeoDataFrame(df3, geometry="geom")
+
 
 def test_geodataframe_crs():
-    gdf = GeoDataFrame()
+    gdf = GeoDataFrame(columns=["geometry"])
     gdf.crs = "IGNF:ETRS89UTM28"
     assert gdf.crs.to_authority() == ("IGNF", "ETRS89UTM28")

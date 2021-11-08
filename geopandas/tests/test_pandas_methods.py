@@ -5,7 +5,7 @@ from numpy.testing import assert_array_equal
 import pandas as pd
 
 import shapely
-from shapely.geometry import Point, GeometryCollection
+from shapely.geometry import Point, GeometryCollection, LineString
 
 import geopandas
 from geopandas import GeoDataFrame, GeoSeries
@@ -46,11 +46,19 @@ def test_repr_boxed_display_precision():
     s1 = GeoSeries([p1, p2, None])
     assert "POINT (10.12346 50.12346)" in repr(s1)
 
+    # geographic coordinates 4326
+    s3 = GeoSeries([p1, p2], crs=4326)
+    assert "POINT (10.12346 50.12346)" in repr(s3)
+
     # projected coordinates
     p1 = Point(3000.123456789, 3000.123456789)
     p2 = Point(4000.123456789, 4000.123456789)
     s2 = GeoSeries([p1, p2, None])
     assert "POINT (3000.123 3000.123)" in repr(s2)
+
+    # projected geographic coordinate
+    s4 = GeoSeries([p1, p2], crs=3857)
+    assert "POINT (3000.123 3000.123)" in repr(s4)
 
     geopandas.options.display_precision = 1
     assert "POINT (10.1 50.1)" in repr(s1)
@@ -71,11 +79,7 @@ def test_repr_all_missing():
 def test_repr_empty():
     # https://github.com/geopandas/geopandas/issues/1195
     s = GeoSeries([])
-    if compat.PANDAS_GE_025:
-        # repr with correct name fixed in pandas 0.25
-        assert repr(s) == "GeoSeries([], dtype: geometry)"
-    else:
-        assert repr(s) == "Series([], dtype: geometry)"
+    assert repr(s) == "GeoSeries([], dtype: geometry)"
     df = GeoDataFrame({"a": [], "geometry": s})
     assert "Empty GeoDataFrame" in repr(df)
     # https://github.com/geopandas/geopandas/issues/1184
@@ -84,7 +88,7 @@ def test_repr_empty():
 
 def test_indexing(s, df):
 
-    # accessing scalar from the geometry (colunm)
+    # accessing scalar from the geometry (column)
     exp = Point(1, 1)
     assert s[1] == exp
     assert s.loc[1] == exp
@@ -237,7 +241,7 @@ def test_astype(s, df):
     res = df.astype({"value1": float})
     assert isinstance(res, GeoDataFrame)
 
-    # check whether returned object is a datafrane
+    # check whether returned object is a dataframe
     res = df.astype(str)
     assert isinstance(res, pd.DataFrame) and not isinstance(res, GeoDataFrame)
 
@@ -256,6 +260,42 @@ def test_astype_invalid_geodataframe():
     res = df.astype(object)
     assert isinstance(res, pd.DataFrame) and not isinstance(res, GeoDataFrame)
     assert res["a"].dtype == object
+
+
+@pytest.mark.xfail(
+    not compat.PANDAS_GE_10,
+    reason="Convert dtypes new in pandas 1.0",
+    raises=NotImplementedError,
+)
+def test_convert_dtypes(df):
+    # https://github.com/geopandas/geopandas/issues/1870
+
+    # Test geometry col is first col, first, geom_col_name=geometry
+    # (order is important in concat, used internally)
+    res1 = df.convert_dtypes()  # note res1 done first for pandas < 1 xfail check
+
+    expected1 = GeoDataFrame(
+        pd.DataFrame(df).convert_dtypes(), crs=df.crs, geometry=df.geometry.name
+    )
+
+    # Checking type and metadata are right
+    assert_geodataframe_equal(expected1, res1)
+
+    # Test geom last, geom_col_name=geometry
+    res2 = df[["value1", "value2", "geometry"]].convert_dtypes()
+    assert_geodataframe_equal(expected1[["value1", "value2", "geometry"]], res2)
+
+    # Test again with crs set and custom geom col name
+    df2 = df.set_crs(epsg=4326).rename_geometry("points")
+    expected2 = GeoDataFrame(
+        pd.DataFrame(df2).convert_dtypes(), crs=df2.crs, geometry=df2.geometry.name
+    )
+    res3 = df2.convert_dtypes()
+    assert_geodataframe_equal(expected2, res3)
+
+    # Test geom last, geom_col=geometry
+    res4 = df2[["value1", "value2", "points"]].convert_dtypes()
+    assert_geodataframe_equal(expected2[["value1", "value2", "points"]], res4)
 
 
 def test_to_csv(df):
@@ -404,13 +444,35 @@ def test_unique():
     assert_array_equal(s.unique(), exp)
 
 
-@pytest.mark.xfail
 def test_value_counts():
     # each object is considered unique
     s = GeoSeries([Point(0, 0), Point(1, 1), Point(0, 0)])
     res = s.value_counts()
-    exp = pd.Series([2, 1], index=[Point(0, 0), Point(1, 1)])
+    with compat.ignore_shapely2_warnings():
+        exp = pd.Series([2, 1], index=[Point(0, 0), Point(1, 1)])
     assert_series_equal(res, exp)
+    # Check crs doesn't make a difference - note it is not kept in output index anyway
+    s2 = GeoSeries([Point(0, 0), Point(1, 1), Point(0, 0)], crs="EPSG:4326")
+    res2 = s2.value_counts()
+    assert_series_equal(res2, exp)
+
+    # check mixed geometry
+    s3 = GeoSeries([Point(0, 0), LineString([[1, 1], [2, 2]]), Point(0, 0)])
+    res3 = s3.value_counts()
+    with compat.ignore_shapely2_warnings():
+        exp3 = pd.Series([2, 1], index=[Point(0, 0), LineString([[1, 1], [2, 2]])])
+    assert_series_equal(res3, exp3)
+
+    # check None is handled
+    s4 = GeoSeries([Point(0, 0), None, Point(0, 0)])
+    res4 = s4.value_counts(dropna=True)
+    with compat.ignore_shapely2_warnings():
+        exp4_dropna = pd.Series([2], index=[Point(0, 0)])
+    assert_series_equal(res4, exp4_dropna)
+    with compat.ignore_shapely2_warnings():
+        exp4_keepna = pd.Series([2, 1], index=[Point(0, 0), None])
+    res4_keepna = s4.value_counts(dropna=False)
+    assert_series_equal(res4_keepna, exp4_keepna)
 
 
 @pytest.mark.xfail(strict=False)
@@ -454,7 +516,7 @@ def test_groupby(df):
     assert_frame_equal(res, exp)
 
     # applying on the geometry column
-    res = df.groupby("value2")["geometry"].apply(lambda x: x.cascaded_union)
+    res = df.groupby("value2")["geometry"].apply(lambda x: x.unary_union)
     if compat.PANDAS_GE_11:
         exp = GeoSeries(
             [shapely.geometry.MultiPoint([(0, 0), (2, 2)]), Point(1, 1)],
@@ -520,6 +582,27 @@ def test_apply_convert_dtypes_keyword(s):
     assert_geoseries_equal(res, s)
 
 
+@pytest.mark.parametrize("crs", [None, "EPSG:4326"])
+def test_apply_no_geometry_result(df, crs):
+    if crs:
+        df = df.set_crs(crs)
+    result = df.apply(lambda col: col.astype(str), axis=0)
+    # TODO this should actually not return a GeoDataFrame
+    assert isinstance(result, GeoDataFrame)
+    expected = df.astype(str)
+    assert_frame_equal(result, expected)
+
+    result = df.apply(lambda col: col.astype(str), axis=1)
+    assert isinstance(result, GeoDataFrame)
+    assert_frame_equal(result, expected)
+
+
+def test_apply_preserves_geom_col_name(df):
+    df = df.rename_geometry("geom")
+    result = df.apply(lambda col: col, axis=0)
+    assert result.geometry.name == "geom"
+
+
 @pytest.mark.skipif(not compat.PANDAS_GE_10, reason="attrs introduced in pandas 1.0")
 def test_preserve_attrs(df):
     # https://github.com/geopandas/geopandas/issues/1654
@@ -534,6 +617,10 @@ def test_preserve_attrs(df):
     # preserve attrs in methods
     df2 = df.reset_index()
     assert df2.attrs == attrs
+
+    # https://github.com/geopandas/geopandas/issues/1875
+    df3 = df2.explode(index_parts=True)
+    assert df3.attrs == attrs
 
 
 @pytest.mark.skipif(not compat.PANDAS_GE_12, reason="attrs introduced in pandas 1.0")

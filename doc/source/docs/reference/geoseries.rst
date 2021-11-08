@@ -49,11 +49,12 @@ Binary Predicates
 .. autosummary::
    :toctree: api/
 
-   GeoSeries.geom_almost_equals
    GeoSeries.contains
    GeoSeries.crosses
    GeoSeries.disjoint
    GeoSeries.geom_equals
+   GeoSeries.geom_almost_equals
+   GeoSeries.geom_equals_exact
    GeoSeries.intersects
    GeoSeries.overlaps
    GeoSeries.touches
@@ -107,15 +108,20 @@ Aggregating and exploding
    GeoSeries.unary_union
    GeoSeries.explode
 
-Reading and writing files
--------------------------
+Serialization / IO / conversion
+-------------------------------
 
 .. autosummary::
    :toctree: api/
 
    GeoSeries.from_file
+   GeoSeries.from_wkb
+   GeoSeries.from_wkt
+   GeoSeries.from_xy
    GeoSeries.to_file
    GeoSeries.to_json
+   GeoSeries.to_wkb
+   GeoSeries.to_wkt
 
 Projection handling
 -------------------
@@ -138,6 +144,14 @@ Missing values
    GeoSeries.isna
    GeoSeries.notna
 
+Overlay operations
+------------------
+
+.. autosummary::
+   :toctree: api/
+
+   GeoSeries.clip
+
 Plotting
 --------
 
@@ -145,6 +159,7 @@ Plotting
    :toctree: api/
 
    GeoSeries.plot
+   GeoSeries.explore
 
 
 Spatial index

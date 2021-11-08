@@ -7,6 +7,7 @@ Uses PyGEOS if available/set, otherwise loops through Shapely geometries.
 import warnings
 
 import numpy as np
+import pandas as pd
 
 import shapely.geometry
 import shapely.geos
@@ -44,9 +45,9 @@ else:
     type_mapping, geometry_type_ids, geometry_type_values = None, None, None
 
 
-def _isna(value):
+def isna(value):
     """
-    Check if scalar value is NA-like (None or np.nan).
+    Check if scalar value is NA-like (None, np.nan or pd.NA).
 
     Custom version that only works for scalars (returning True or False),
     as `pd.isna` also works for array-like input returning a boolean array.
@@ -54,6 +55,8 @@ def _isna(value):
     if value is None:
         return True
     elif isinstance(value, float) and np.isnan(value):
+        return True
+    elif compat.PANDAS_GE_10 and value is pd.NA:
         return True
     else:
         return False
@@ -127,7 +130,7 @@ def from_shapely(data):
                 out.append(_shapely_to_pygeos(geom))
             else:
                 out.append(geom)
-        elif _isna(geom):
+        elif isna(geom):
             out.append(None)
         else:
             raise TypeError("Input must be valid geometry objects: {0}".format(geom))
@@ -165,8 +168,8 @@ def from_wkb(data):
     out = []
 
     for geom in data:
-        if geom is not None and len(geom):
-            geom = shapely.wkb.loads(geom)
+        if not isna(geom) and len(geom):
+            geom = shapely.wkb.loads(geom, hex=isinstance(geom, str))
         else:
             geom = None
         out.append(geom)
@@ -177,9 +180,9 @@ def from_wkb(data):
     return aout
 
 
-def to_wkb(data, hex=False):
+def to_wkb(data, hex=False, **kwargs):
     if compat.USE_PYGEOS:
-        return pygeos.to_wkb(data, hex=hex)
+        return pygeos.to_wkb(data, hex=hex, **kwargs)
     else:
         if hex:
             out = [geom.wkb_hex if geom is not None else None for geom in data]
@@ -200,7 +203,7 @@ def from_wkt(data):
     out = []
 
     for geom in data:
-        if geom is not None and len(geom):
+        if not isna(geom) and len(geom):
             if isinstance(geom, bytes):
                 geom = geom.decode("utf-8")
             geom = shapely.wkt.loads(geom)
@@ -247,7 +250,8 @@ def points_from_xy(x, y, z=None):
     else:
         out = _points_from_xy(x, y, z)
         aout = np.empty(len(x), dtype=object)
-        aout[:] = out
+        with compat.ignore_shapely2_warnings():
+            aout[:] = out
         return aout
 
 
@@ -609,7 +613,8 @@ def interiors(data):
             "geometry types, None is returned."
         )
     data = np.empty(len(data), dtype=object)
-    data[:] = inner_rings
+    with compat.ignore_shapely2_warnings():
+        data[:] = inner_rings
     return data
 
 
@@ -619,9 +624,11 @@ def representative_point(data):
     else:
         # method and not a property -> can't use _unary_geo
         out = np.empty(len(data), dtype=object)
-        out[:] = [
-            geom.representative_point() if geom is not None else None for geom in data
-        ]
+        with compat.ignore_shapely2_warnings():
+            out[:] = [
+                geom.representative_point() if geom is not None else None
+                for geom in data
+            ]
         return out
 
 
@@ -794,7 +801,10 @@ def buffer(data, distance, resolution=16, **kwargs):
 
 def interpolate(data, distance, normalized=False):
     if compat.USE_PYGEOS:
-        return pygeos.line_interpolate_point(data, distance, normalize=normalized)
+        try:
+            return pygeos.line_interpolate_point(data, distance, normalized=normalized)
+        except TypeError:  # support for pygeos<0.9
+            return pygeos.line_interpolate_point(data, distance, normalize=normalized)
     else:
         out = np.empty(len(data), dtype=object)
         if isinstance(distance, np.ndarray):
@@ -803,13 +813,17 @@ def interpolate(data, distance, normalized=False):
                     "Length of distance sequence does not match "
                     "length of the GeoSeries"
                 )
-            out[:] = [
-                geom.interpolate(dist, normalized=normalized)
-                for geom, dist in zip(data, distance)
-            ]
+            with compat.ignore_shapely2_warnings():
+                out[:] = [
+                    geom.interpolate(dist, normalized=normalized)
+                    for geom, dist in zip(data, distance)
+                ]
             return out
 
-        out[:] = [geom.interpolate(distance, normalized=normalized) for geom in data]
+        with compat.ignore_shapely2_warnings():
+            out[:] = [
+                geom.interpolate(distance, normalized=normalized) for geom in data
+            ]
         return out
 
 
@@ -858,7 +872,10 @@ def normalize(data):
 
 def project(data, other, normalized=False):
     if compat.USE_PYGEOS:
-        return pygeos.line_locate_point(data, other, normalize=normalized)
+        try:
+            return pygeos.line_locate_point(data, other, normalized=normalized)
+        except TypeError:  # support for pygeos<0.9
+            return pygeos.line_locate_point(data, other, normalize=normalized)
     else:
         return _binary_op("project", data, other, normalized=normalized)
 
@@ -874,7 +891,11 @@ def unary_union(data):
     if compat.USE_PYGEOS:
         return _pygeos_to_shapely(pygeos.union_all(data))
     else:
-        return shapely.ops.unary_union(data)
+        data = [g for g in data if g is not None]
+        if data:
+            return shapely.ops.unary_union(data)
+        else:
+            return None
 
 
 #
@@ -941,7 +962,7 @@ def transform(data, func):
         result = np.empty(n, dtype=object)
         for i in range(n):
             geom = data[i]
-            if _isna(geom):
+            if isna(geom):
                 result[i] = geom
             else:
                 result[i] = transform(func, geom)

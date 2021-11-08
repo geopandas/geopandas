@@ -13,7 +13,8 @@ Advanced topics can be found in the :doc:`Advanced Guide <advanced_guide>` and f
   Data Structures <user_guide/data_structures>
   Reading and Writing Files <user_guide/io>
   Indexing and Selecting Data <user_guide/indexing>
-  Making Maps <user_guide/mapping>
+  Making Maps and plots <user_guide/mapping>
+  Interactive mapping <user_guide/interactive_mapping>
   Managing Projections <user_guide/projections>
   Geometric Manipulations <user_guide/geometric_manipulations>
   Set Operations with overlay <user_guide/set_operations>

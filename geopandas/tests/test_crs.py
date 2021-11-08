@@ -220,16 +220,16 @@ class TestGeometryArrayCRS:
         assert df.geometry.values.crs == self.osgb
 
         # different passed CRS than array CRS is ignored
-        with pytest.warns(FutureWarning):
+        with pytest.warns(FutureWarning, match="CRS mismatch"):
             df = GeoDataFrame(geometry=s, crs=4326)
         assert df.crs == self.osgb
         assert df.geometry.crs == self.osgb
         assert df.geometry.values.crs == self.osgb
-        with pytest.warns(FutureWarning):
+        with pytest.warns(FutureWarning, match="CRS mismatch"):
             GeoDataFrame(geometry=s, crs=4326)
-        with pytest.warns(FutureWarning):
+        with pytest.warns(FutureWarning, match="CRS mismatch"):
             GeoDataFrame({"data": [1, 2], "geometry": s}, crs=4326)
-        with pytest.warns(FutureWarning):
+        with pytest.warns(FutureWarning, match="CRS mismatch"):
             GeoDataFrame(df, crs=4326).crs
 
         # manually change CRS
@@ -268,6 +268,8 @@ class TestGeometryArrayCRS:
         assert df.geometry.crs == self.wgs
         assert df.geometry.values.crs == self.wgs
 
+        arr = from_shapely(self.geoms)
+        s = GeoSeries(arr, crs=27700)
         df = GeoDataFrame()
         df = df.set_geometry(s)
         assert df.crs == self.osgb
@@ -297,6 +299,42 @@ class TestGeometryArrayCRS:
         df = GeoDataFrame({"geometry": [0, 1]})
         df.crs = 27700
         assert df.crs == self.osgb
+
+    def test_dataframe_setitem(self):
+        # new geometry CRS has priority over GDF CRS
+        arr = from_shapely(self.geoms)
+        s = GeoSeries(arr, crs=27700)
+        df = GeoDataFrame()
+        df["geometry"] = s
+        assert df.crs == self.osgb
+        assert df.geometry.crs == self.osgb
+        assert df.geometry.values.crs == self.osgb
+
+        arr = from_shapely(self.geoms, crs=27700)
+        df = GeoDataFrame()
+        df["geometry"] = arr
+        assert df.crs == self.osgb
+        assert df.geometry.crs == self.osgb
+        assert df.geometry.values.crs == self.osgb
+
+        # test to_crs case (GH1960)
+        arr = from_shapely(self.geoms)
+        df = GeoDataFrame({"col1": [1, 2], "geometry": arr}, crs=4326)
+        df["geometry"] = df["geometry"].to_crs(27700)
+        assert df.crs == self.osgb
+        assert df.geometry.crs == self.osgb
+        assert df.geometry.values.crs == self.osgb
+
+        # test changing geometry crs not in the geometry column doesn't change the crs
+        arr = from_shapely(self.geoms)
+        df = GeoDataFrame(
+            {"col1": [1, 2], "geometry": arr, "other_geom": arr}, crs=4326
+        )
+        df["other_geom"] = from_shapely(self.geoms, crs=27700)
+        assert df.crs == self.wgs
+        assert df.geometry.crs == self.wgs
+        assert df["geometry"].crs == self.wgs
+        assert df["other_geom"].crs == self.osgb
 
     @pytest.mark.parametrize(
         "scalar", [None, Point(0, 0), LineString([(0, 0), (1, 1)])]
@@ -392,7 +430,7 @@ class TestGeometryArrayCRS:
         assert df.column1.crs == self.wgs
         assert df.column1.values.crs == self.wgs
 
-    def test_to_crs(self):
+    def test_geoseries_to_crs(self):
         s = GeoSeries(self.geoms, crs=27700)
         s = s.to_crs(4326)
         assert s.crs == self.wgs
@@ -411,6 +449,11 @@ class TestGeometryArrayCRS:
         df = df.to_crs(3857)
         assert df.col1.crs == self.wgs
         assert df.col1.values.crs == self.wgs
+
+    def test_array_to_crs(self):
+        arr = from_shapely(self.geoms, crs=27700)
+        arr = arr.to_crs(4326)
+        assert arr.crs == self.wgs
 
     def test_from_shapely(self):
         arr = from_shapely(self.geoms, crs=27700)
@@ -574,6 +617,16 @@ class TestGeometryArrayCRS:
 
         # apply preserves the CRS if the result is a GeoSeries
         result = s.apply(lambda x: x.centroid)
+        assert result.crs == 27700
+
+    def test_apply_geodataframe(self):
+        df = GeoDataFrame({"col1": [0, 1]}, geometry=self.geoms, crs=27700)
+        assert df.crs == 27700
+
+        # apply preserves the CRS if the result is a GeoDataFrame
+        result = df.apply(lambda col: col, axis=0)
+        assert result.crs == 27700
+        result = df.apply(lambda row: row, axis=1)
         assert result.crs == 27700
 
 
