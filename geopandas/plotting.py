@@ -116,6 +116,9 @@ def _PolygonPatch(polygon, **kwargs):
     from matplotlib.patches import PathPatch
     from matplotlib.path import Path
 
+    if polygon.is_empty:
+        return PathPatch(Path(np.zeros((0,2)))) # empty patch
+
     path = Path.make_compound_path(
         Path(np.asarray(polygon.exterior.coords)[:, :2]),
         *[Path(np.asarray(ring.coords)[:, :2]) for ring in polygon.interiors],
@@ -172,7 +175,7 @@ def _plot_polygon_collection(
     _expand_kwargs(kwargs, multiindex)
 
     collection = PatchCollection(
-        [_PolygonPatch(poly) for poly in geoms if not poly.is_empty], **kwargs
+        [_PolygonPatch(poly) for poly in geoms], **kwargs
     )
 
     if values is not None:
