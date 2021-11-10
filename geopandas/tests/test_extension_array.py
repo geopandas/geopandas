@@ -293,7 +293,7 @@ class TestDtype(extension_tests.BaseDtypeTests):
 class TestInterface(extension_tests.BaseInterfaceTests):
     def test_array_interface(self, data):
         # we are overriding this base test because the creation of `expected`
-        # potentionally doesn't work for shapely geometries
+        # potentially doesn't work for shapely geometries
         # TODO can be removed with Shapely 2.0
         result = np.array(data)
         assert result[0] == data[0]

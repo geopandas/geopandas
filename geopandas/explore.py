@@ -526,7 +526,7 @@ GON (((180.00000 -16.06713, 180.00000...
         ]
         gdf = gdf.drop(columns=non_active_geoms)
 
-    # preprare tooltip and popup
+    # prepare tooltip and popup
     if isinstance(gdf, geopandas.GeoDataFrame):
         # add named index to the tooltip
         if gdf.index.name is not None:
