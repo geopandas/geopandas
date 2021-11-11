@@ -363,10 +363,12 @@ class GeometryArray(ExtensionArray):
             # for pandas >= 1.0, validate and convert IntegerArray/BooleanArray
             # to numpy array, pass-through non-array-like indexers
             idx = pd.api.indexers.check_array_indexer(self, idx)
-        if isinstance(idx, (Iterable, slice)):
             return GeometryArray(self.data[idx], crs=self.crs)
         else:
-            raise TypeError("Index type not supported", idx)
+            if isinstance(idx, (Iterable, slice)):
+                return GeometryArray(self.data[idx], crs=self.crs)
+            else:
+                raise TypeError("Index type not supported", idx)
 
     def __setitem__(self, key, value):
         if compat.PANDAS_GE_10:
@@ -740,8 +742,9 @@ class GeometryArray(ExtensionArray):
 
         >>> a = a.to_crs(3857)
         >>> to_wkt(a)
-        array(['POINT (111319 111325)', 'POINT (222639 222684)',
-               'POINT (333958 334111)'], dtype=object)
+        array(['POINT (111319.490793 111325.142866)',
+               'POINT (222638.981587 222684.208506)',
+               'POINT (333958.47238 334111.171402)'], dtype=object)
         >>> a.crs  # doctest: +SKIP
         <Projected CRS: EPSG:3857>
         Name: WGS 84 / Pseudo-Mercator
