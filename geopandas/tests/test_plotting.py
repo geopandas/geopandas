@@ -334,6 +334,90 @@ class TestPointPlotting:
         ax = gdf.plot()
         assert len(ax.collections) == 1
 
+    def test_empty_geometry_colors(self):
+
+        from matplotlib.collections import (
+            PatchCollection,
+            LineCollection,
+            PathCollection,
+        )
+        from shapely.geometry import box
+
+        # second shape (x>5) should be blue (colors shouldn't
+        # reassigned if some shapes are cropped to be empty)
+        test_shapes = [
+            GeoSeries(
+                [
+                    box(0, 0, 1, 1),
+                    box(7, 7, 8, 8),
+                ],
+                index=["r", "b"],
+            ),
+            GeoSeries(
+                [
+                    LineString([(1, 1), (1, 2)]),
+                    LineString([(7, 1), (7, 2)]),
+                ],
+                index=["r", "b"],
+            ),
+            GeoSeries(
+                [
+                    Point(1, 1),
+                    Point(7, 7),
+                ],
+                index=["r", "b"],
+            ),
+        ]
+
+        for s in test_shapes:
+            type_name = type(s.iat[0]).__name__
+
+            # only covers blue shape, cropping red shape to be empty
+            s2 = s.intersection(box(5, 0, 10, 10))
+
+            # should show blue (red should not be reassigned just
+            # because first shape is empty)
+            ax = s2.plot(color=["red", "blue"])
+
+            # find the color of anything with x>5, and make sure it is
+            # blue
+            for child in ax.get_children():
+                if isinstance(child, (PatchCollection)):
+                    for path, color in zip(child.get_paths(), child.get_facecolor()):
+                        if len(path.vertices) == 0:
+                            continue
+                        x1 = path.vertices[0][0]
+                        if x1 > 5:
+                            assert color[2] == 1, f"{type_name} should be blue"
+                        break
+                    else:
+                        raise Exception(f"shape not found in {type_name} test")
+                    break
+                if isinstance(child, (LineCollection)):
+                    for path, color in zip(child.get_paths(), child.get_color()):
+                        if len(path.vertices) == 0:
+                            continue
+                        x1 = path.vertices[0][0]
+                        if x1 > 5:
+                            assert color[2] == 1, f"{type_name} should be blue"
+                        break
+                    else:
+                        raise Exception(f"shape not found in {type_name} test")
+                    break
+                if isinstance(child, PathCollection):
+                    for coord, color in zip(
+                        child.get_offsets().data, child.get_facecolor()
+                    ):
+                        x1 = coord[0]
+                        if x1 > 5:
+                            assert color[2] == 1, f"{type_name} should be blue"
+                        break
+                    else:
+                        raise Exception(f"shape not found in {type_name} test")
+                    break
+            else:
+                raise Exception(f"collection not found in {type_name} test")
+
     def test_multipoints(self):
 
         # MultiPoints
@@ -1084,9 +1168,9 @@ class TestMapclassifyPlotting:
             )
         labels = [t.get_text() for t in ax.get_legend().get_texts()]
         expected = [
-            u"       140.00,    5217064.00",
-            u"   5217064.00,   19532732.33",
-            u"  19532732.33, 1379302771.00",
+            "       140.00,    5217064.00",
+            "   5217064.00,   19532732.33",
+            "  19532732.33, 1379302771.00",
         ]
         assert labels == expected
 
@@ -1119,7 +1203,7 @@ class TestMapclassifyPlotting:
             column="NEGATIVES", scheme="FISHER_JENKS", k=3, cmap="OrRd", legend=True
         )
         labels = [t.get_text() for t in ax.get_legend().get_texts()]
-        expected = [u"-10.00,  -3.41", u" -3.41,   3.30", u"  3.30,  10.00"]
+        expected = ["-10.00,  -3.41", " -3.41,   3.30", "  3.30,  10.00"]
         assert labels == expected
 
     def test_fmt(self):
@@ -1132,7 +1216,7 @@ class TestMapclassifyPlotting:
             legend_kwds={"fmt": "{:.0f}"},
         )
         labels = [t.get_text() for t in ax.get_legend().get_texts()]
-        expected = [u"-10,  -3", u" -3,   3", u"  3,  10"]
+        expected = ["-10,  -3", " -3,   3", "  3,  10"]
         assert labels == expected
 
     def test_interval(self):
@@ -1145,7 +1229,7 @@ class TestMapclassifyPlotting:
             legend_kwds={"interval": True},
         )
         labels = [t.get_text() for t in ax.get_legend().get_texts()]
-        expected = [u"[-10.00,  -3.41]", u"( -3.41,   3.30]", u"(  3.30,  10.00]"]
+        expected = ["[-10.00,  -3.41]", "( -3.41,   3.30]", "(  3.30,  10.00]"]
         assert labels == expected
 
     @pytest.mark.parametrize("scheme", ["FISHER_JENKS", "FISHERJENKS"])

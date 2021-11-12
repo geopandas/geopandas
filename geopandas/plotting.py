@@ -117,7 +117,7 @@ def _PolygonPatch(polygon, **kwargs):
     from matplotlib.path import Path
 
     if polygon.is_empty:
-        return PathPatch(Path(np.zeros((0,2)))) # empty patch
+        return PathPatch(Path(np.zeros((0, 2))))  # empty patch
 
     path = Path.make_compound_path(
         Path(np.asarray(polygon.exterior.coords)[:, :2]),
@@ -174,9 +174,7 @@ def _plot_polygon_collection(
 
     _expand_kwargs(kwargs, multiindex)
 
-    collection = PatchCollection(
-        [_PolygonPatch(poly) for poly in geoms], **kwargs
-    )
+    collection = PatchCollection([_PolygonPatch(poly) for poly in geoms], **kwargs)
 
     if values is not None:
         collection.set_array(np.asarray(values))
@@ -233,7 +231,12 @@ def _plot_linestring_collection(
 
     _expand_kwargs(kwargs, multiindex)
 
-    segments = [np.array(linestring.coords)[:, :2] for linestring in geoms]
+    segments = [
+        np.array(linestring.coords)[:, :2]
+        if len(linestring.coords) > 0
+        else np.zeros((0, 2))
+        for linestring in geoms
+    ]
     collection = LineCollection(segments, **kwargs)
 
     if values is not None:
