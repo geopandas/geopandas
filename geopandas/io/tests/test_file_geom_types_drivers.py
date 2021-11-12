@@ -15,6 +15,9 @@ from geopandas import GeoDataFrame
 from geopandas.testing import assert_geodataframe_equal
 import pytest
 
+from .test_file import PYOGRIO_MARK
+
+
 # Credit: Polygons below come from Montreal city Open Data portal
 # http://donnees.ville.montreal.qc.ca/dataset/unites-evaluation-fonciere
 city_hall_boundaries = Polygon(
@@ -246,7 +249,7 @@ def ogr_driver(request):
     return request.param
 
 
-@pytest.fixture(params=["fiona", "pyogrio"])
+@pytest.fixture(params=["fiona", pytest.param("pyogrio", marks=PYOGRIO_MARK)])
 def engine(request):
     return request.param
 
