@@ -21,10 +21,19 @@ from geopandas.tests.util import PACKAGE_DIR, validate_boro_df
 import pytest
 
 
+try:
+    import pyogrio
+except ImportError:
+    pyogrio = False
+
+
+PYOGRIO_MARK = pytest.mark.skipif(not pyogrio, reason="pyogrio not installed")
+
+
 _CRS = "epsg:4326"
 
 
-@pytest.fixture(params=["fiona", "pyogrio"])
+@pytest.fixture(params=["fiona", pytest.param("pyogrio", marks=PYOGRIO_MARK)])
 def engine(request):
     return request.param
 
