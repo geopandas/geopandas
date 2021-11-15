@@ -1024,6 +1024,15 @@ individually so that features may have different properties
         GeoDataFrame.to_file : write GeoDataFrame to file
         """
 
+        # The only engine currently supported by GeoPandas is pyarrow, so no
+        # other engine should be specified.
+        engine = kwargs.pop("engine", "auto")
+        if engine not in ("auto", "pyarrow"):
+            raise ValueError(
+                f"GeoPandas only supports using pyarrow as the engine for "
+                f"to_parquet: {engine!r}"
+            )
+
         from geopandas.io.arrow import _to_parquet
 
         _to_parquet(self, path, compression=compression, index=index, **kwargs)
