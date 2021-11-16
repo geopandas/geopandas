@@ -1,6 +1,122 @@
 Changelog
 =========
 
+Version 0.10.2 (October 16, 2021)
+---------------------------------
+
+Small bug-fix release:
+
+- Fix regression in `overlay()` in case no geometries are intersecting (but
+  have overlapping total bounds) (#2172).
+- Fix regression in `overlay()` with `keep_geom_type=True` in case the
+  overlay of two geometries in a GeometryCollection with other geometry types
+  (#2177).
+- Fix `overlay()` to honor the `keep_geom_type` keyword for the
+  `op="differnce"` case (#2164).
+- Fix regression in `plot()` with a mapclassify `scheme` in case the
+  formatted legend labels have duplicates (#2166).
+- Fix a bug in the `explore()` method ignoring the `vmin` and `vmax` keywords
+  in case they are set to 0 (#2175).
+- Fix `unary_union` to correctly handle a GeoSeries with missing values (#2181).
+- Avoid internal deprecation warning in `clip()` (#2179).
+
+
+Version 0.10.1 (October 8, 2021)
+--------------------------------
+
+Small bug-fix release:
+
+- Fix regression in `overlay()` with non-overlapping geometries and a
+  non-default `how` (i.e. not "intersection") (#2157).
+
+
+Version 0.10.0 (October 3, 2021)
+--------------------------------
+
+Highlights of this release:
+
+- A new `sjoin_nearest()` method to join based on proximity, with the
+  ability to set a maximum search radius (#1865). In addition, the `sindex`
+  attribute gained a new method for a "nearest" spatial index query (#1865,
+  #2053).
+- A new `explore()` method on GeoDataFrame and GeoSeries with native support
+  for interactive visualization based on folium / leaflet.js (#1953)
+- The `geopandas.sjoin()`/`overlay()`/`clip()` functions are now also
+  available as methods on the GeoDataFrame (#2141, #1984, #2150).
+
+New features and improvements:
+
+- Add support for pandas' `value_counts()` method for geometry dtype (#2047).
+- The `explode()` method has a new `ignore_index` keyword (consistent with
+  pandas' explode method) to reset the index in the result, and a new
+  `index_parts` keywords to control whether a cumulative count indexing the
+  parts of the exploded multi-geometries should be added (#1871).
+- `points_from_xy()` is now available as a GeoSeries method `from_xy` (#1936).
+- The `to_file()` method will now attempt to detect the driver (if not
+  specified) based on the extension of the provided filename, instead of
+  defaulting to ESRI Shapefile (#1609).
+- Support for the `storage_options` keyword in `read_parquet()` for
+  specifying filesystem-specific options (e.g. for S3) based on fsspec (#2107).
+- The read/write functions now support `~` (user home directory) expansion (#1876).
+- Support the `convert_dtypes()` method from pandas to preserve the
+  GeoDataFrame class (#2115).
+- Support WKB values in the hex format in `GeoSeries.from_wkb()` (#2106).
+- Update the `estimate_utm_crs()` method to handle crossing the antimeridian
+  with pyproj 3.1+ (#2049).
+- Improved heuristic to decide how many decimals to show in the repr based on
+  whether the CRS is projected or geographic (#1895).
+- Switched the default for `geocode()` from GeoCode.Farm to the Photon
+  geocoding API (https://photon.komoot.io) (#2007).
+
+Deprecations and compatibility notes:
+
+- The `op=` keyword of `sjoin()` to indicate which spatial predicate to use
+  for joining is being deprecated and renamed in favor of a new `predicate=`
+  keyword (#1626).
+- The `cascaded_union` attribute is deprecated, use `unary_union` instead (#2074).
+- Constructing a GeoDataFrame with a duplicated "geometry" column is now
+  disallowed. This can also raise an error in the `pd.concat(.., axis=1)`
+  function if this results in duplicated active geometry columns (#2046).
+- The `explode()` method currently returns a GeoSeries/GeoDataFrame with a
+  MultiIndex, with an additional level with indices of the parts of the
+  exploded multi-geometries. For consistency with pandas, this will change in
+  the future and the new `index_parts` keyword is added to control this.
+
+Bug fixes:
+
+- Fix in the `clip()` function to correctly clip MultiPoints instead of
+  leaving them intact when partly outside of the clip bounds (#2148).
+- Fix `GeoSeries.isna()` to correctly return a boolean Series in case of an
+  empty GeoSeries (#2073).
+- Fix the GeoDataFrame constructor to preserve the geometry name when the
+  argument is already a GeoDataFrame object (i.e. `GeoDataFrame(gdf)`) (#2138).
+- Fix loss of the values' CRS when setting those values as a column
+  (`GeoDataFrame.__setitem__`) (#1963)
+- Fix in `GeoDataFrame.apply()` to preserve the active geometry column name
+  (#1955).
+- Fix in `sjoin()` to not ignore the suffixes in case of a right-join
+  (`how="right`) (#2065).
+- Fix `GeoDataFrame.explode()` with a MultiIndex (#1945).
+- Fix the handling of missing values in `to/from_wkb` and `to_from_wkt` (#1891).
+- Fix `to_file()` and `to_json()` when DataFrame has duplicate columns to
+  raise an error (#1900).
+- Fix bug in the colors shown with user-defined classification scheme (#2019).
+- Fix handling of the `path_effects` keyword in `plot()` (#2127).
+- Fix `GeoDataFrame.explode()` to preserve `attrs` (#1935)
+
+Notes on (optional) dependencies:
+
+- GeoPandas 0.10.0 dropped support for Python 3.6 and pandas 0.24. Further,
+  the minimum required versions are numpy 1.18, shapely 1.6, fiona 1.8,
+  matplotlib 3.1 and pyproj 2.2.
+- Plotting with a classification schema now requires mapclassify version >=
+  2.4 (#1737).
+- Compatibility fixes for the latest numpy in combination with Shapely 1.7 (#2072)
+- Compatibility fixes for the upcoming Shapely 1.8 (#2087).
+- Compatibility fixes for the latest PyGEOS (#1872, #2014) and matplotlib
+  (colorbar issue, #2066).
+
+
 Version 0.9.0 (February 28, 2021)
 ---------------------------------
 
@@ -83,7 +199,7 @@ Bug fixes:
   of different type are dropped from the result (#1554).
 - Fix the repr of an empty GeoSeries to not show spurious warnings (#1673).
 - Fix the `.crs` for empty GeoDataFrames (#1560).
-- Fix `geopandas.clip` to preserve the correct geometry column name (#1566). 
+- Fix `geopandas.clip` to preserve the correct geometry column name (#1566).
 - Fix bug in `plot()` method when using `legend_kwds` with multiple subplots
   (#1583)
 - Fix spurious warning with `missing_kwds` keyword of the `plot()` method
@@ -149,6 +265,7 @@ for more info and how to enable it.
 New features and improvements:
 
 - IO enhancements:
+
   - New `GeoDataFrame.to_postgis()` method to write to PostGIS database (#1248).
   - New Apache Parquet and Feather file format support (#1180, #1435)
   - Allow appending to files with `GeoDataFrame.to_file` (#1229).
@@ -157,10 +274,12 @@ New features and improvements:
     returned (#1383).
   - `geopandas.read_file` now supports reading from file-like objects (#1329).
   - `GeoDataFrame.to_file` now supports specifying the CRS to write to the file
-  (#802). By default it still uses the CRS of the GeoDataFrame.
+    (#802). By default it still uses the CRS of the GeoDataFrame.
   - New `chunksize` keyword in `geopandas.read_postgis` to read a query in
     chunks (#1123).
+
 - Improvements related to geometry columns and CRS:
+
   - Any column of the GeoDataFrame that has a "geometry" dtype is now returned
     as a GeoSeries. This means that when having multiple geometry columns, not
     only the "active" geometry column is returned as a GeoSeries, but also
@@ -172,7 +291,9 @@ New features and improvements:
     from the column itself (eg `gdf["other_geom_column"].crs`) (#1339).
   - New `set_crs()` method on GeoDataFrame/GeoSeries to set the CRS of naive
     geometries (#747).
+
 - Improvements related to plotting:
+
   - The y-axis is now scaled depending on the center of the plot when using a
     geographic CRS, instead of using an equal aspect ratio (#1290).
   - When passing a column of categorical dtype to the `column=` keyword of the
@@ -183,6 +304,7 @@ New features and improvements:
     `legend_kwds` accept two new keywords to control the formatting of the
     legend: `fmt` with a format string for the bin edges (#1253), and `labels`
     to pass fully custom class labels (#1302).
+
 - New `covers()` and `covered_by()` methods on GeoSeries/GeoDataframe for the
   equivalent spatial predicates (#1460, #1462).
 - GeoPandas now warns when using distance-based methods with data in a
@@ -194,7 +316,7 @@ Deprecations:
   CRS, a deprecation warning is raised when both CRS don't match, and in the
   future an error will be raised in such a case. You can use the new `set_crs`
   method to override an existing CRS. See
-  [the docs](https://geopandas.readthedocs.io/en/latest/projections.html#projection-for-multiple-geometry-columns).  
+  [the docs](https://geopandas.readthedocs.io/en/latest/projections.html#projection-for-multiple-geometry-columns).
 - The helper functions in the `geopandas.plotting` module are deprecated for
   public usage (#656).
 - The `geopandas.io` functions are deprecated, use the top-level `read_file` and
@@ -315,10 +437,13 @@ Important note! This will be the last release to support Python 2.7 (#1031)
 API changes:
 
 - A refactor of the internals based on the pandas ExtensionArray interface (#1000). The main user visible changes are:
+
   - The `.dtype` of a GeoSeries is now a `'geometry'` dtype (and no longer a numpy `object` dtype).
   - The `.values` of a GeoSeries now returns a custom `GeometryArray`, and no longer a numpy array. To get back a numpy array of Shapely scalars, you can convert explicitly using `np.asarray(..)`.
+
 - The `GeoSeries` constructor now raises a warning when passed non-geometry data. Currently the constructor falls back to return a pandas `Series`, but in the future this will raise an error (#1085).
 - The missing value handling has been changed to now separate the concepts of missing geometries and empty geometries (#601, 1062). In practice this means that (see [the docs](https://geopandas.readthedocs.io/en/v0.6.0/missing_empty.html) for more details):
+
   - `GeoSeries.isna` now considers only missing values, and if you want to check for empty geometries, you can use `GeoSeries.is_empty` (`GeoDataFrame.isna` already only looked at missing values).
   - `GeoSeries.dropna` now actually drops missing values (before it didn't drop either missing or empty geometries)
   - `GeoSeries.fillna` only fills missing values (behaviour unchanged).
@@ -361,16 +486,20 @@ Improvements:
 * Significant performance improvement (around 10x) for `GeoDataFrame.iterfeatures`,
   which also improves `GeoDataFrame.to_file` (#864).
 * File IO enhancements based on Fiona 1.8:
+
     * Support for writing bool dtype (#855) and datetime dtype, if the file format supports it (#728).
     * Support for writing dataframes with multiple geometry types, if the file format allows it (e.g. GeoJSON for all types, or ESRI Shapefile for Polygon+MultiPolygon) (#827, #867, #870).
+
 * Compatibility with pyproj >= 2 (#962).
 * A new `geopandas.points_from_xy()` helper function to convert x and y coordinates to Point objects (#896).
-* The `buffer` and `interpolate` methods now accept an array-like to specify a variable distance for each geometry (#781). 
+* The `buffer` and `interpolate` methods now accept an array-like to specify a variable distance for each geometry (#781).
 * Addition of a `relate` method, corresponding to the shapely method that returns the DE-9IM matrix (#853).
 * Plotting improvements:
+
     * Performance improvement in plotting by only flattening the geometries if there are actually 'Multi' geometries (#785).
     * Choropleths: access to all `mapclassify` classification schemes and addition of the `classification_kwds` keyword in the `plot` method to specify options for the scheme (#876).
     * Ability to specify a matplotlib axes object on which to plot the color bar with the `cax` keyword, in order to have more control over the color bar placement (#894).
+
 * Changed the default provider in ``geopandas.tools.geocode`` from Google (now requires an API key) to Geocode.Farm (#907, #975).
 
 Bug fixes:

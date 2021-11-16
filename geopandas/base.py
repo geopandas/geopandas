@@ -6,7 +6,6 @@ from pandas import DataFrame, Series
 
 from shapely.geometry import box
 from shapely.geometry.base import BaseGeometry
-from shapely.ops import cascaded_union
 
 from .array import GeometryArray, GeometryDtype
 
@@ -699,8 +698,13 @@ GeometryCollection
 
     @property
     def cascaded_union(self):
-        """Deprecated: Return the unary_union of all geometries"""
-        return cascaded_union(np.asarray(self.geometry.values))
+        """Deprecated: use `unary_union` instead"""
+        warn(
+            "The 'cascaded_union' attribute is deprecated, use 'unary_union' instead",
+            FutureWarning,
+            stacklevel=2,
+        )
+        return self.geometry.values.unary_union()
 
     @property
     def unary_union(self):
@@ -970,7 +974,7 @@ GeometryCollection
         other : GeoSeries or geometric object
             The GeoSeries (elementwise) or geometric object to compare to.
         decimal : int
-            Decimal place presion used when testing for approximate equality.
+            Decimal place precision used when testing for approximate equality.
         align : bool (default True)
             If True, automatically aligns GeoSeries based on their indices.
             If False, the order of elements is preserved.
@@ -1038,7 +1042,7 @@ GeometryCollection
         other : GeoSeries or geometric object
             The GeoSeries (elementwise) or geometric object to compare to.
         tolerance : float
-            Decimal place presion used when testing for approximate equality.
+            Decimal place precision used when testing for approximate equality.
         align : bool (default True)
             If True, automatically aligns GeoSeries based on their indices.
             If False, the order of elements is preserved.

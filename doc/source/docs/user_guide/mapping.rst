@@ -46,6 +46,7 @@ Choropleth Maps
 *geopandas* makes it easy to create Choropleth maps (maps where the color of each shape is based on the value of an associated variable). Simply use the plot command with the ``column`` argument set to the column whose values you want used to assign colors.
 
 .. ipython:: python
+   :okwarning:
 
     # Plot by GDP per capita
     world = world[(world.pop_est>0) & (world.name!="Antarctica")]
