@@ -1510,7 +1510,7 @@ individually so that features may have different properties
 
         See also
         --------
-        GeoDataFrame.explode : explode muti-part geometries into single geometries
+        GeoDataFrame.explode : explode multi-part geometries into single geometries
 
         """
 
@@ -1553,7 +1553,7 @@ individually so that features may have different properties
     # overrides the pandas native explode method to break up features geometrically
     def explode(self, column=None, ignore_index=False, index_parts=None, **kwargs):
         """
-        Explode muti-part geometries into multiple single geometries.
+        Explode multi-part geometries into multiple single geometries.
 
         Each row containing a multi-part geometry will be split into
         multiple rows with single geometries, thereby increasing the vertical
@@ -2041,7 +2041,7 @@ countries_w_city_data[countries_w_city_data["name_left"] == "Italy"]
 
         Notes
         -----
-        Since this join relies on distances, results will be innaccurate
+        Since this join relies on distances, results will be inaccurate
         if your geometries are in a geographic CRS.
 
         Every operation in GeoPandas is planar, i.e. the potential third
