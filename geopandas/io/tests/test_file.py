@@ -9,6 +9,7 @@ import numpy as np
 import pandas as pd
 
 import fiona
+from numpy.testing import assert_allclose
 from shapely.geometry import Point, Polygon, box
 
 import geopandas
@@ -150,7 +151,11 @@ def test_to_file_datetime(tmpdir, driver, ext, dt_res):
         pytest.skip(f"Driver corresponding to ext {ext} doesn't support dt fields")
     tempfilename = os.path.join(str(tmpdir), f"test_datetime{ext}")
     point = Point(0, 0)
-    now = datetime.datetime.now()
+    now = datetime.datetime(2021, 11, 21, 1, 7, 43, 17500)
+    # left: 1637456996510000000, right: 1637456996509998000
+    # left: 1637456863175000000, right: 1637456863174999000
+    # left: 1637457037286000000, right: 1637457037285999000
+
     df = GeoDataFrame({"a": [1, 2], "b": [now, now]}, geometry=[point, point], crs=4326)
     if compat.FIONA_GE_1814:
         fiona_precision_limit = "ms"
@@ -163,7 +168,9 @@ def test_to_file_datetime(tmpdir, driver, ext, dt_res):
     df.to_file(tempfilename, driver=driver)
     df_read = read_file(tempfilename)
 
-    assert_geodataframe_equal(df, df_read)
+    assert_geodataframe_equal(df.drop(columns=["b"]), df_read.drop(columns=["b"]))
+    # fiona seems to introduce up to 2 microseconds of error on reading back in
+    assert_allclose(df["b"].view("int64"), df["b"].view("int64"), atol=2000)
 
 
 @pytest.mark.parametrize("driver,ext", driver_ext_pairs)
