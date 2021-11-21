@@ -4,6 +4,7 @@ import importlib
 import os
 import warnings
 
+import fiona
 import numpy as np
 import pandas as pd
 import pyproj
@@ -23,7 +24,7 @@ PANDAS_GE_12 = str(pd.__version__) >= LooseVersion("1.2.0")
 # -----------------------------------------------------------------------------
 # fiona compat
 # -----------------------------------------------------------------------------
-FIONA_GE_1814 = str(pd.__version__) >= LooseVersion("1.8.14")  # datetime roundtrip
+FIONA_GE_1814 = str(fiona.__version__) >= LooseVersion("1.8.14")  # datetime roundtrip
 
 
 # -----------------------------------------------------------------------------
