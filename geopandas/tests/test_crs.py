@@ -356,7 +356,7 @@ class TestGeometryArrayCRS:
         assert gdf.geometry.dtype == "geometry"
         assert gdf._geometry_column_name == ("geometry", "")
 
-    def test_dataframe_multiindex_cols_level(self):
+    def test_dataframe_multiindex_cols_3level(self):
         # GH1763 https://github.com/geopandas/geopandas/issues/1763
         df = pd.DataFrame(
             [[1, 0], [0, 1]],
