@@ -974,7 +974,7 @@ GeometryCollection
         other : GeoSeries or geometric object
             The GeoSeries (elementwise) or geometric object to compare to.
         decimal : int
-            Decimal place presion used when testing for approximate equality.
+            Decimal place precision used when testing for approximate equality.
         align : bool (default True)
             If True, automatically aligns GeoSeries based on their indices.
             If False, the order of elements is preserved.
@@ -1042,7 +1042,7 @@ GeometryCollection
         other : GeoSeries or geometric object
             The GeoSeries (elementwise) or geometric object to compare to.
         tolerance : float
-            Decimal place presion used when testing for approximate equality.
+            Decimal place precision used when testing for approximate equality.
         align : bool (default True)
             If True, automatically aligns GeoSeries based on their indices.
             If False, the order of elements is preserved.

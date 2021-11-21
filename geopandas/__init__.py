@@ -8,7 +8,7 @@ from geopandas.io.file import _read_file as read_file  # noqa
 from geopandas.io.arrow import _read_parquet as read_parquet  # noqa
 from geopandas.io.arrow import _read_feather as read_feather  # noqa
 from geopandas.io.sql import _read_postgis as read_postgis  # noqa
-from geopandas.tools import sjoin  # noqa
+from geopandas.tools import sjoin, sjoin_nearest  # noqa
 from geopandas.tools import overlay  # noqa
 from geopandas.tools._show_versions import show_versions  # noqa
 from geopandas.tools import clip  # noqa
