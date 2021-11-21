@@ -336,25 +336,52 @@ class TestGeometryArrayCRS:
         assert df["geometry"].crs == self.wgs
         assert df["other_geom"].crs == self.osgb
 
-    def test_dataframe_multiindex_cols(self):
+    def test_dataframe_multiindex_cols_2level(self):
         # GH1763 https://github.com/geopandas/geopandas/issues/1763
         df = pd.DataFrame(
             [[1, 0], [0, 1]], columns=[["location", "location"], ["x", "y"]]
         )
-        gdf = GeoDataFrame(
-            df,
-            crs=self.wgs,
-            geometry=points_from_xy(df["location", "x"], df["location", "y"]),
-        )
-        assert gdf.crs == self.wgs
+        x_col = df["location", "x"]
+        y_col = df["location", "y"]
 
-        gdf = GeoDataFrame(
-            df,
-            geometry=points_from_xy(
-                df["location", "x"], df["location", "y"], crs=self.wgs
-            ),
-        )
+        gdf = GeoDataFrame(df, crs=self.wgs, geometry=points_from_xy(x_col, y_col))
         assert gdf.crs == self.wgs
+        assert gdf.geometry.crs == self.wgs
+        assert gdf.geometry.dtype == "geometry"
+        assert gdf._geometry_column_name == ("geometry", "")
+
+        gdf = GeoDataFrame(df, geometry=points_from_xy(x_col, y_col, crs=self.wgs))
+        assert gdf.crs == self.wgs
+        assert gdf.geometry.crs == self.wgs
+        assert gdf.geometry.dtype == "geometry"
+        assert gdf._geometry_column_name == ("geometry", "")
+
+    def test_dataframe_multiindex_cols_level(self):
+        # GH1763 https://github.com/geopandas/geopandas/issues/1763
+        df = pd.DataFrame(
+            [[1, 0], [0, 1]],
+            columns=[
+                ["bar", "bar"],
+                ["foo", "foo"],
+                ["location", "location"],
+                ["x", "y"],
+            ],
+        )
+
+        x_col = df["bar", "foo", "location", "x"]
+        y_col = df["bar", "foo", "location", "y"]
+
+        gdf = GeoDataFrame(df, crs=self.wgs, geometry=points_from_xy(x_col, y_col))
+        assert gdf.crs == self.wgs
+        assert gdf.geometry.crs == self.wgs
+        assert gdf._geometry_column_name == "geometry"
+        assert gdf.geometry.dtype == "geometry"
+
+        gdf = GeoDataFrame(df, geometry=points_from_xy(x_col, y_col, crs=self.wgs))
+        assert gdf.crs == self.wgs
+        assert gdf.geometry.crs == self.wgs
+        assert gdf._geometry_column_name == "geometry"
+        assert gdf.geometry.dtype == "geometry"
 
     @pytest.mark.parametrize(
         "scalar", [None, Point(0, 0), LineString([(0, 0), (1, 1)])]
