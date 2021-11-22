@@ -28,6 +28,5 @@ dependencies:
     - git+https://github.com/matplotlib/matplotlib.git@main
     - git+https://github.com/Toblerity/Shapely.git@main
     - git+https://github.com/pygeos/pygeos.git@master
-    - git+https://github.com/python-visualization/folium.git@master
+    - git+https://github.com/python-visualization/folium.git@main
     - git+https://github.com/geopandas/xyzservices.git@main
-
