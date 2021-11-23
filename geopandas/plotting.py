@@ -563,8 +563,8 @@ def plot_dataframe(
         Size of the resulting matplotlib.figure.Figure. If the argument
         axes is given explicitly, figsize is ignored.
     legend_kwds : dict (default None)
-        Keyword arguments to pass to matplotlib.pyplot.legend() or
-        matplotlib.pyplot.colorbar().
+        Keyword arguments to pass to :func:`matplotlib.pyplot.legend` or
+        :func:`matplotlib.pyplot.colorbar`.
         Additional accepted keywords when `scheme` is specified:
 
         fmt : string
