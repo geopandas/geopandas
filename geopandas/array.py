@@ -1392,5 +1392,6 @@ def _get_common_crs(elements):
         return crss_not_none[0]
 
     raise ValueError(
-        f"Can not determine common CRS for concatenation inputs among {names}"
+        f"Can not determine common CRS for concatenation inputs among {names}."
+        f" Use .to_crs() to transform geometries to the same CRS"
     )
