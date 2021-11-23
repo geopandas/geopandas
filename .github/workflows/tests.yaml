@@ -2,9 +2,9 @@ name: Tests
 
 on:
   push:
-    branches: [master]
+    branches: [master, 0.**]
   pull_request:
-    branches: [master]
+    branches: [master, 0.**]
   schedule:
     - cron: "0 0 * * *"
 
@@ -19,7 +19,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v2
-      - uses: pre-commit/action@v2.0.0
+      - uses: pre-commit/action@v2.0.3
 
   Test:
     needs: Linting
@@ -120,4 +120,4 @@ jobs:
         run: |
           pytest -v --color=yes --doctest-only geopandas --ignore=geopandas/datasets
 
-      - uses: codecov/codecov-action@v1
+      - uses: codecov/codecov-action@v2
