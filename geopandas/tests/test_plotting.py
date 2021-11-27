@@ -1301,27 +1301,17 @@ class TestMapclassifyPlotting:
             scheme="quantiles",
             legend=True,
         )
-        labels = [t.get_text() for t in ax.get_legend().get_texts()]
-        expected = [
-            "0.00, 0.00",
-            "0.00, 0.00",
-            "0.00, 0.00",
-            "0.00, 0.00",
-            "0.00, 0.01",
-        ]
+        cax = _get_colorbar_ax(ax.get_figure())
+        labels = [t.get_text() for t in cax.get_yticklabels()]
+        expected = ["0.00", "0.00", "0.00", "0.00", "0.00", "0.01"]
         assert labels == expected
 
         ax2 = self.nybb.plot(
-            "vals", scheme="quantiles", legend=True, legend_kwds=dict(fmt="{:.3f}")
+            "vals", scheme="quantiles", legend=True, legend_kwds=dict(fmt="%.3f")
         )
-        labels = [t.get_text() for t in ax2.get_legend().get_texts()]
-        expected = [
-            "0.001, 0.002",
-            "0.002, 0.003",
-            "0.003, 0.003",
-            "0.003, 0.004",
-            "0.004, 0.005",
-        ]
+        cax2 = _get_colorbar_ax(ax2.get_figure())
+        labels = [t.get_text() for t in cax2.get_yticklabels()]
+        expected = ["0.001", "0.002", "0.003", "0.003", "0.004", "0.005"]
         assert labels == expected
 
 
