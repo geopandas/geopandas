@@ -70,6 +70,9 @@ jobs:
         uses: conda-incubator/setup-miniconda@v2
         with:
           environment-file: ${{ matrix.env }}
+          miniforge-version: latest
+          miniforge-variant: Mambaforge
+          use-mamba: true
 
       - name: Check and Log Environment
         run: |
