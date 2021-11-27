@@ -82,7 +82,7 @@ Some great resources for learning Git:
 * Software Carpentry's `Git Tutorial <http://swcarpentry.github.io/git-novice/>`_
 * `Atlassian <https://www.atlassian.com/git/tutorials/what-is-version-control>`_
 * the `GitHub help pages <http://help.github.com/>`_.
-* Matthew Brett's `Pydagogue <http://matthew-brett.github.com/pydagogue/>`_.
+* Matthew Brett's `Pydagogue <https://matthew-brett.github.io/pydagogue/>`_.
 
 Getting started with Git
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -256,6 +256,9 @@ The docstrings follow the `Numpy Docstring standard
 <https://github.com/numpy/numpy/blob/master/doc/HOWTO_DOCUMENT.rst.txt>`_. Some pages
 and examples are Jupyter notebooks converted to docs using `nbsphinx
 <https://nbsphinx.readthedocs.io/>`_. Jupyter notebooks should be stored without the output.
+
+We highly encourage you to follow the `Google developer documentation style guide
+<https://developers.google.com/style/highlights>`_ when updating or creating new documentation.
 
 Once you have made your changes, you may try if they render correctly by
 building the docs using sphinx. To do so, you can navigate to the `doc` folder::

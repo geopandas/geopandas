@@ -169,7 +169,7 @@ def from_wkb(data):
 
     for geom in data:
         if not isna(geom) and len(geom):
-            geom = shapely.wkb.loads(geom)
+            geom = shapely.wkb.loads(geom, hex=isinstance(geom, str))
         else:
             geom = None
         out.append(geom)
@@ -891,7 +891,11 @@ def unary_union(data):
     if compat.USE_PYGEOS:
         return _pygeos_to_shapely(pygeos.union_all(data))
     else:
-        return shapely.ops.unary_union(data)
+        data = [g for g in data if g is not None]
+        if data:
+            return shapely.ops.unary_union(data)
+        else:
+            return None
 
 
 #

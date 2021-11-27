@@ -117,6 +117,7 @@ We can also rename this column to "borders":
 Now, we create centroids and make it the geometry:
 
 .. ipython:: python
+   :okwarning:
 
     world['centroid_column'] = world.centroid
     world = world.set_geometry('centroid_column')
@@ -157,7 +158,7 @@ option to control:
     geopandas.options
 
 The ``geopandas.options.display_precision`` option can control the number of
-decimals to show in the display of coordinates in the geometry column. 
+decimals to show in the display of coordinates in the geometry column.
 In the ``world`` example of above, the default is to show 5 decimals for
 geographic coordinates:
 
