@@ -1088,24 +1088,22 @@ class TestMapclassifyPlotting:
             ax = self.df.plot(
                 column="pop_est", scheme="QUANTILES", k=3, cmap="OrRd", legend=True
             )
-        labels = [t.get_text() for t in ax.get_legend().get_texts()]
-        expected = [
-            u"       140.00,    5217064.00",
-            u"   5217064.00,   19532732.33",
-            u"  19532732.33, 1379302771.00",
-        ]
+        cax = _get_colorbar_ax(ax.get_figure())
+        labels = [t.get_text() for t in cax.get_yticklabels()]
+        expected = ["140.00", "5217064.00", "19532732.33", "1379302771.00"]
         assert labels == expected
 
     def test_bin_labels(self):
         ax = self.df.plot(
             column="pop_est",
             scheme="QUANTILES",
-            k=3,
+            k=2,
             cmap="OrRd",
             legend=True,
             legend_kwds={"labels": ["foo", "bar", "baz"]},
         )
-        labels = [t.get_text() for t in ax.get_legend().get_texts()]
+        cax = _get_colorbar_ax(ax.get_figure())
+        labels = [t.get_text() for t in cax.get_yticklabels()]
         expected = ["foo", "bar", "baz"]
         assert labels == expected
 
@@ -1124,8 +1122,9 @@ class TestMapclassifyPlotting:
         ax = self.df.plot(
             column="NEGATIVES", scheme="FISHER_JENKS", k=3, cmap="OrRd", legend=True
         )
-        labels = [t.get_text() for t in ax.get_legend().get_texts()]
-        expected = [u"-10.00,  -3.41", u" -3.41,   3.30", u"  3.30,  10.00"]
+        cax = _get_colorbar_ax(ax.get_figure())
+        labels = [t.get_text() for t in cax.get_yticklabels()]
+        expected = ["-10.00", "-3.41", "3.30", "10.00"]
         assert labels == expected
 
     def test_fmt(self):
@@ -1135,29 +1134,18 @@ class TestMapclassifyPlotting:
             k=3,
             cmap="OrRd",
             legend=True,
-            legend_kwds={"fmt": "{:.0f}"},
+            legend_kwds={"fmt": "%.0f"},
         )
-        labels = [t.get_text() for t in ax.get_legend().get_texts()]
-        expected = [u"-10,  -3", u" -3,   3", u"  3,  10"]
-        assert labels == expected
-
-    def test_interval(self):
-        ax = self.df.plot(
-            column="NEGATIVES",
-            scheme="FISHER_JENKS",
-            k=3,
-            cmap="OrRd",
-            legend=True,
-            legend_kwds={"interval": True},
-        )
-        labels = [t.get_text() for t in ax.get_legend().get_texts()]
-        expected = [u"[-10.00,  -3.41]", u"( -3.41,   3.30]", u"(  3.30,  10.00]"]
+        cax = _get_colorbar_ax(ax.get_figure())
+        labels = [t.get_text() for t in cax.get_yticklabels()]
+        expected = ["-10", "-3", "3", "10"]
         assert labels == expected
 
     @pytest.mark.parametrize("scheme", ["FISHER_JENKS", "FISHERJENKS"])
     def test_scheme_name_compat(self, scheme):
         ax = self.df.plot(column="NEGATIVES", scheme=scheme, k=3, legend=True)
-        assert len(ax.get_legend().get_texts()) == 3
+        cax = _get_colorbar_ax(ax.get_figure())
+        assert len(cax.get_yticklabels()) == 4
 
     def test_schemes(self):
         # test if all available classifiers pass
@@ -1173,8 +1161,10 @@ class TestMapclassifyPlotting:
             cmap="OrRd",
             legend=True,
         )
-        labels = [t.get_text() for t in ax.get_legend().get_texts()]
-        expected = ["       140.00,    9961396.00", "   9961396.00, 1379302771.00"]
+
+        cax = _get_colorbar_ax(ax.get_figure())
+        labels = [t.get_text() for t in cax.get_yticklabels()]
+        expected = ["140.00", "9961396.00", "1379302771.00"]
         assert labels == expected
 
     def test_invalid_scheme(self):
@@ -1223,56 +1213,43 @@ class TestMapclassifyPlotting:
 
     def test_empty_bins(self):
         bins = np.arange(1, 11) / 10
+        labels = ["0.00"] + ["{:.2f}".format(x) for x in bins]
+        legend_colors_exp = np.array(
+            [
+                (0.267004, 0.004874, 0.329415, 1.0),
+                (0.281412, 0.155834, 0.469201, 1.0),
+                (0.244972, 0.287675, 0.53726, 1.0),
+                (0.190631, 0.407061, 0.556089, 1.0),
+                (0.147607, 0.511733, 0.557049, 1.0),
+                (0.119699, 0.61849, 0.536347, 1.0),
+                (0.20803, 0.718701, 0.472873, 1.0),
+                (0.430983, 0.808473, 0.346476, 1.0),
+                (0.709898, 0.868751, 0.169257, 1.0),
+                (0.993248, 0.906157, 0.143936, 1.0),
+            ]
+        )
+
         ax = self.df.plot(
             "low_vals",
             scheme="UserDefined",
             classification_kwds={"bins": bins},
             legend=True,
         )
-        expected = np.array(
-            [
-                [0.281412, 0.155834, 0.469201, 1.0],
-                [0.267004, 0.004874, 0.329415, 1.0],
-                [0.244972, 0.287675, 0.53726, 1.0],
-            ]
-        )
+        cax = _get_colorbar_ax(ax.get_figure())
+        expected = legend_colors_exp[:4, :]
         assert all(
             [
                 (z == expected).all(axis=1).any()
                 for z in ax.collections[0].get_facecolors()
             ]
         )
-        labels = [
-            "0.00, 0.10",
-            "0.10, 0.20",
-            "0.20, 0.30",
-            "0.30, 0.40",
-            "0.40, 0.50",
-            "0.50, 0.60",
-            "0.60, 0.70",
-            "0.70, 0.80",
-            "0.80, 0.90",
-            "0.90, 1.00",
-        ]
-        legend = [t.get_text() for t in ax.get_legend().get_texts()]
-        assert labels == legend
 
-        legend_colors_exp = [
-            (0.267004, 0.004874, 0.329415, 1.0),
-            (0.281412, 0.155834, 0.469201, 1.0),
-            (0.244972, 0.287675, 0.53726, 1.0),
-            (0.190631, 0.407061, 0.556089, 1.0),
-            (0.147607, 0.511733, 0.557049, 1.0),
-            (0.119699, 0.61849, 0.536347, 1.0),
-            (0.20803, 0.718701, 0.472873, 1.0),
-            (0.430983, 0.808473, 0.346476, 1.0),
-            (0.709898, 0.868751, 0.169257, 1.0),
-            (0.993248, 0.906157, 0.143936, 1.0),
-        ]
+        legend = [t.get_text() for t in cax.get_yticklabels()]
+        assert legend == labels[::2]
 
-        assert [
-            line.get_markerfacecolor() for line in ax.get_legend().get_lines()
-        ] == legend_colors_exp
+        np.testing.assert_array_equal(
+            cax.collections[-1].get_facecolors(), legend_colors_exp
+        )
 
         ax2 = self.df.plot(
             "mid_vals",
@@ -1280,15 +1257,8 @@ class TestMapclassifyPlotting:
             classification_kwds={"bins": bins},
             legend=True,
         )
-        expected = np.array(
-            [
-                [0.244972, 0.287675, 0.53726, 1.0],
-                [0.190631, 0.407061, 0.556089, 1.0],
-                [0.147607, 0.511733, 0.557049, 1.0],
-                [0.119699, 0.61849, 0.536347, 1.0],
-                [0.20803, 0.718701, 0.472873, 1.0],
-            ]
-        )
+        cax2 = _get_colorbar_ax(ax2.get_figure())
+        expected = legend_colors_exp[3:9, :]
         assert all(
             [
                 (z == expected).all(axis=1).any()
@@ -1296,23 +1266,12 @@ class TestMapclassifyPlotting:
             ]
         )
 
-        labels = [
-            "-inf, 0.10",
-            "0.10, 0.20",
-            "0.20, 0.30",
-            "0.30, 0.40",
-            "0.40, 0.50",
-            "0.50, 0.60",
-            "0.60, 0.70",
-            "0.70, 0.80",
-            "0.80, 0.90",
-            "0.90, 1.00",
-        ]
-        legend = [t.get_text() for t in ax2.get_legend().get_texts()]
-        assert labels == legend
-        assert [
-            line.get_markerfacecolor() for line in ax2.get_legend().get_lines()
-        ] == legend_colors_exp
+        legend = [t.get_text() for t in cax2.get_yticklabels()]
+        assert legend == labels[1:]
+
+        np.testing.assert_array_equal(
+            cax2.collections[-1].get_facecolors(), legend_colors_exp
+        )
 
         ax3 = self.df.plot(
             "high_vals",
@@ -1320,13 +1279,8 @@ class TestMapclassifyPlotting:
             classification_kwds={"bins": bins},
             legend=True,
         )
-        expected = np.array(
-            [
-                [0.709898, 0.868751, 0.169257, 1.0],
-                [0.993248, 0.906157, 0.143936, 1.0],
-                [0.430983, 0.808473, 0.346476, 1.0],
-            ]
-        )
+        cax3 = _get_colorbar_ax(ax3.get_figure())
+        expected = legend_colors_exp[7:, :]
         assert all(
             [
                 (z == expected).all(axis=1).any()
@@ -1334,12 +1288,12 @@ class TestMapclassifyPlotting:
             ]
         )
 
-        legend = [t.get_text() for t in ax3.get_legend().get_texts()]
-        assert labels == legend
+        legend = [t.get_text() for t in cax3.get_yticklabels()]
+        assert legend == labels[1:]
 
-        assert [
-            line.get_markerfacecolor() for line in ax3.get_legend().get_lines()
-        ] == legend_colors_exp
+        np.testing.assert_array_equal(
+            cax3.collections[-1].get_facecolors(), legend_colors_exp
+        )
 
     def test_equally_formatted_bins(self):
         ax = self.nybb.plot(
