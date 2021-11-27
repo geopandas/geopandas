@@ -354,7 +354,9 @@ class TestGeometryArrayCRS:
     def test_dataframe_multiindex_cols_3level(self):
         # GH1763 https://github.com/geopandas/geopandas/issues/1763
         df = pd.DataFrame(
-            [[1, 0], [0, 1]],
+            # np.array required, fixed somewhere between pandas 1.0 and 1.3
+            # https://github.com/pandas-dev/pandas/issues/14467
+            np.array([[1, 0], [0, 1]]),
             columns=[
                 ["foo", "foo"],
                 ["location", "location"],
