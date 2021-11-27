@@ -10,7 +10,7 @@ import pandas as pd
 
 import fiona
 import pytz
-from pandas._testing import assert_series_equal
+from pandas.testing import assert_series_equal
 from shapely.geometry import Point, Polygon, box
 
 import geopandas
@@ -155,6 +155,10 @@ def test_to_file_datetime(tmpdir, driver, ext, time):
     """Test writing a data file with the datetime column type"""
     if ext in (".shp", ""):
         pytest.skip(f"Driver corresponding to ext {ext} doesn't support dt fields")
+    if time.tzinfo is not None and compat.FIONA_GE_1814 is False:
+        # https://github.com/Toblerity/Fiona/pull/915
+        pytest.skip("Fiona >= 1.8.14 needed for timezone support")
+
     tempfilename = os.path.join(str(tmpdir), f"test_datetime{ext}")
     point = Point(0, 0)
 
