@@ -349,39 +349,28 @@ class TestGeometryArrayCRS:
         assert gdf.geometry.crs == self.wgs
         assert gdf.geometry.dtype == "geometry"
         assert gdf._geometry_column_name == ("geometry", "")
-
-        gdf = GeoDataFrame(df, geometry=points_from_xy(x_col, y_col, crs=self.wgs))
-        assert gdf.crs == self.wgs
-        assert gdf.geometry.crs == self.wgs
-        assert gdf.geometry.dtype == "geometry"
-        assert gdf._geometry_column_name == ("geometry", "")
+        assert gdf.geometry.name == ("geometry", "")  # or is "geometry" this expected?
 
     def test_dataframe_multiindex_cols_3level(self):
         # GH1763 https://github.com/geopandas/geopandas/issues/1763
         df = pd.DataFrame(
             [[1, 0], [0, 1]],
             columns=[
-                ["bar", "bar"],
                 ["foo", "foo"],
                 ["location", "location"],
                 ["x", "y"],
             ],
         )
 
-        x_col = df["bar", "foo", "location", "x"]
-        y_col = df["bar", "foo", "location", "y"]
+        x_col = df["foo", "location", "x"]
+        y_col = df["foo", "location", "y"]
 
         gdf = GeoDataFrame(df, crs=self.wgs, geometry=points_from_xy(x_col, y_col))
         assert gdf.crs == self.wgs
         assert gdf.geometry.crs == self.wgs
-        assert gdf._geometry_column_name == "geometry"
         assert gdf.geometry.dtype == "geometry"
-
-        gdf = GeoDataFrame(df, geometry=points_from_xy(x_col, y_col, crs=self.wgs))
-        assert gdf.crs == self.wgs
-        assert gdf.geometry.crs == self.wgs
-        assert gdf._geometry_column_name == "geometry"
-        assert gdf.geometry.dtype == "geometry"
+        assert gdf._geometry_column_name == ("geometry", "", "")
+        assert gdf.geometry.name == ("geometry", "", "")
 
     @pytest.mark.parametrize(
         "scalar", [None, Point(0, 0), LineString([(0, 0), (1, 1)])]
