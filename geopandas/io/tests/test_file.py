@@ -171,15 +171,12 @@ def test_to_file_datetime(tmpdir, driver, ext, time):
     df_read = read_file(tempfilename)
 
     assert_geodataframe_equal(df.drop(columns=["b"]), df_read.drop(columns=["b"]))
-    # On reading, US/Eastern is the same as pytz.FixedOffset(-300)
-
     if df["b"].dt.tz is not None:
         # US/Eastern becomes pytz.FixedOffset(-300) when read from file
         # so compare fairly in terms of UTC
         assert_series_equal(
             df["b"].dt.tz_convert(pytz.utc), df_read["b"].dt.tz_convert(pytz.utc)
         )
-
     else:
         assert_series_equal(df["b"], df_read["b"])
 
