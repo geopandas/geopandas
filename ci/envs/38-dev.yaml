@@ -19,12 +19,13 @@ dependencies:
   - SQLalchemy
   - libspatialite
   - pyarrow
+  - pip
   - pip:
     - geopy
     - mapclassify>=2.4.0
     # dev versions of packages
-    - git+https://github.com/numpy/numpy.git@main
-    - git+https://github.com/pydata/pandas.git@master
+    - --pre --extra-index https://pypi.anaconda.org/scipy-wheels-nightly/simple numpy
+    - --pre --extra-index https://pypi.anaconda.org/scipy-wheels-nightly/simple pandas
     - git+https://github.com/matplotlib/matplotlib.git@main
     - git+https://github.com/Toblerity/Shapely.git@main
     - git+https://github.com/pygeos/pygeos.git@master
