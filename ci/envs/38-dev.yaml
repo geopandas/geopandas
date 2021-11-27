@@ -25,7 +25,7 @@ dependencies:
     # dev versions of packages
     - git+https://github.com/numpy/numpy.git@main
     - git+https://github.com/pydata/pandas.git@master
-    - git+https://github.com/matplotlib/matplotlib.git@master
+    - git+https://github.com/matplotlib/matplotlib.git@main
     - git+https://github.com/Toblerity/Shapely.git@master
     - git+https://github.com/pygeos/pygeos.git@master
     - git+https://github.com/python-visualization/folium.git@master

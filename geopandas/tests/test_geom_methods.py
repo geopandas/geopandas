@@ -354,6 +354,12 @@ class TestGeomMethods:
 
         self._test_unary_topological("unary_union", expected, g)
 
+        g2 = GeoSeries([p1, None])
+        self._test_unary_topological("unary_union", p1, g2)
+
+        g3 = GeoSeries([None, None])
+        assert g3.unary_union is None
+
     def test_cascaded_union_deprecated(self):
         p1 = self.t1
         p2 = Polygon([(2, 0), (3, 0), (3, 1)])

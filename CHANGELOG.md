@@ -1,13 +1,33 @@
 Changelog
 =========
 
+Version 0.10.2 (October 16, 2021)
+---------------------------------
+
+Small bug-fix release:
+
+- Fix regression in `overlay()` in case no geometries are intersecting (but
+  have overlapping total bounds) (#2172).
+- Fix regression in `overlay()` with `keep_geom_type=True` in case the
+  overlay of two geometries in a GeometryCollection with other geometry types
+  (#2177).
+- Fix `overlay()` to honor the `keep_geom_type` keyword for the
+  `op="differnce"` case (#2164).
+- Fix regression in `plot()` with a mapclassify `scheme` in case the
+  formatted legend labels have duplicates (#2166).
+- Fix a bug in the `explore()` method ignoring the `vmin` and `vmax` keywords
+  in case they are set to 0 (#2175).
+- Fix `unary_union` to correctly handle a GeoSeries with missing values (#2181).
+- Avoid internal deprecation warning in `clip()` (#2179).
+
+
 Version 0.10.1 (October 8, 2021)
 --------------------------------
 
 Small bug-fix release:
 
 - Fix regression in `overlay()` with non-overlapping geometries and a
-  non-default `how` (.e. not "intersection") (#2157).
+  non-default `how` (i.e. not "intersection") (#2157).
 
 
 Version 0.10.0 (October 3, 2021)
@@ -86,7 +106,7 @@ Bug fixes:
 
 Notes on (optional) dependencies:
 
-- GeoPandas 0.9.0 dropped support for Python 3.6 and pandas 0.24. Further,
+- GeoPandas 0.10.0 dropped support for Python 3.6 and pandas 0.24. Further,
   the minimum required versions are numpy 1.18, shapely 1.6, fiona 1.8,
   matplotlib 3.1 and pyproj 2.2.
 - Plotting with a classification schema now requires mapclassify version >=
