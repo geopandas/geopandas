@@ -872,6 +872,7 @@ GON (((-122.84000 49.00000, -120.0000...
             norm = Normalize(vmin=mn, vmax=mx)
         n_cmap = cm.ScalarMappable(norm=norm, cmap=cmap)
         if categorical and scheme is None:
+            legend_kwds.pop("format", None)
             # TODO: if scheme is not None, add legend for missing if 'label' in
             # missing_kwds
             patches = []
