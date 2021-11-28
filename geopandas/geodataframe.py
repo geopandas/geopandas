@@ -462,7 +462,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         GeoDataFrame
 
         """
-        dataframe = super().from_dict(data, **kwargs)
+        dataframe = DataFrame.from_dict(data, **kwargs)
         return GeoDataFrame(dataframe, geometry=geometry, crs=crs)
 
     @classmethod
