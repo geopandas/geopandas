@@ -247,8 +247,6 @@ def _read_file(filename, bbox=None, mask=None, rows=None, **kwargs):
 
 
 def read_file(*args, **kwargs):
-    import warnings
-
     warnings.warn(
         "geopandas.io.file.read_file() is intended for internal "
         "use only, and will be deprecated. Use geopandas.read_file() instead.",
@@ -260,8 +258,6 @@ def read_file(*args, **kwargs):
 
 
 def to_file(*args, **kwargs):
-    import warnings
-
     warnings.warn(
         "geopandas.io.file.to_file() is intended for internal "
         "use only, and will be deprecated. Use GeoDataFrame.to_file() "
@@ -425,7 +421,12 @@ def infer_schema(df):
     )
 
     if df.empty:
-        raise ValueError("Cannot write empty DataFrame to file.")
+        warnings.warn(
+            "You are attempting to write an empty DataFrame to file. "
+            "For some drivers, this operation may fail.",
+            UserWarning,
+            stacklevel=3,
+        )
 
     # Since https://github.com/Toblerity/Fiona/issues/446 resolution,
     # Fiona allows a list of geometry types
