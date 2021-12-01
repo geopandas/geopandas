@@ -82,6 +82,40 @@ def engine_postgis():
 
 
 @pytest.fixture()
+def engine_postgis_custom_search_path():
+    """
+    Initiaties a connection engine to a postGIS database that must already exist.
+    """
+    sqlalchemy = pytest.importorskip("sqlalchemy")
+    from sqlalchemy.engine.url import URL
+
+    user = os.environ.get("PGUSER")
+    password = os.environ.get("PGPASSWORD")
+    host = os.environ.get("PGHOST")
+    port = os.environ.get("PGPORT")
+    dbname = "test_geopandas"
+
+    try:
+        con = sqlalchemy.create_engine(
+            URL.create(
+                drivername="postgresql+psycopg2",
+                username=user,
+                database=dbname,
+                password=password,
+                host=host,
+                port=port,
+            ),
+            connect_args={'options': f'-csearch_path=test,public'}
+        )
+        con.begin()
+    except Exception:
+        pytest.skip("Cannot connect with postgresql database")
+
+    yield con
+    con.dispose()
+
+
+@pytest.fixture()
 def connection_spatialite():
     """
     Return a memory-based SQLite3 connection with SpatiaLite enabled & initialized.
@@ -677,3 +711,25 @@ class TestIO:
         # Should raise error when appending
         with pytest.raises(ValueError, match="CRS of the target table"):
             write_postgis(df_nybb2, con=engine, name=table, if_exists="append")
+
+    def test_write_postgis_to_different_default_schema(self, engine_postgis_custom_search_path, df_nybb):
+        """
+
+        """
+        engine = engine_postgis_custom_search_path
+
+        table = "nybb"
+        schema_to_use = "test"
+        sql = "CREATE SCHEMA IF NOT EXISTS {schema};".format(schema=schema_to_use)
+        engine.execute(sql)
+
+        write_postgis(
+            df_nybb, con=engine, name=table, if_exists="replace"
+        )
+        # Validate
+        sql = "SELECT * FROM {schema}.{table};".format(
+            schema=schema_to_use, table=table
+        )
+
+        df = read_postgis(sql, engine, geom_col="geometry")
+        validate_boro_df(df)
