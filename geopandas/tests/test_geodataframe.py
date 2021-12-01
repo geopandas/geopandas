@@ -587,7 +587,7 @@ class TestDataFrame:
         p2 = Point(2, 2)
         f2 = {
             "type": "Feature",
-            "properties": {"b": 1},
+            "properties": 'null',
             "geometry": p2.__geo_interface__,
         }
 
@@ -602,7 +602,7 @@ class TestDataFrame:
 
         result = df[["a", "b"]]
         expected = pd.DataFrame.from_dict(
-            [{"a": 0, "b": np.nan}, {"a": np.nan, "b": 1}, {"a": 2, "b": np.nan}]
+            [{"a": 0, "b": np.nan}, {"a": np.nan, "b": np.nan}, {"a": 2, "b": np.nan}]
         )
         assert_frame_equal(expected, result)
 
