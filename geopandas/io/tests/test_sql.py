@@ -8,6 +8,8 @@ import os
 
 import pandas as pd
 
+from sqlalchemy.exc import ProgrammingError
+
 import geopandas
 from geopandas import GeoDataFrame, read_file, read_postgis
 
@@ -82,7 +84,7 @@ def engine_postgis():
 
 
 @pytest.fixture()
-def engine_postgis_custom_search_path():
+def engine_postgis_custom_search_path_with_fallback():
     """
     Initiaties a connection engine to a postGIS database that must already exist.
     """
@@ -106,6 +108,39 @@ def engine_postgis_custom_search_path():
                 port=port,
             ),
             connect_args={'options': f'-csearch_path=test,public'}
+        )
+        con.begin()
+    except Exception:
+        pytest.skip("Cannot connect with postgresql database")
+
+    yield con
+    con.dispose()
+
+@pytest.fixture()
+def engine_postgis_custom_search_path_no_fallback():
+    """
+    Initiaties a connection engine to a postGIS database that must already exist.
+    """
+    sqlalchemy = pytest.importorskip("sqlalchemy")
+    from sqlalchemy.engine.url import URL
+
+    user = os.environ.get("PGUSER")
+    password = os.environ.get("PGPASSWORD")
+    host = os.environ.get("PGHOST")
+    port = os.environ.get("PGPORT")
+    dbname = "test_geopandas"
+
+    try:
+        con = sqlalchemy.create_engine(
+            URL.create(
+                drivername="postgresql+psycopg2",
+                username=user,
+                database=dbname,
+                password=password,
+                host=host,
+                port=port,
+            ),
+            connect_args={'options': f'-csearch_path=test'}
         )
         con.begin()
     except Exception:
@@ -712,11 +747,12 @@ class TestIO:
         with pytest.raises(ValueError, match="CRS of the target table"):
             write_postgis(df_nybb2, con=engine, name=table, if_exists="append")
 
-    def test_write_postgis_to_different_default_schema(self, engine_postgis_custom_search_path, df_nybb):
+    def test_write_postgis_to_different_default_schema(self, engine_postgis_custom_search_path_with_fallback, df_nybb):
         """
-
+        Tests that the table is inserted into the custom schema if a custom search_path variable has been specified at
+        the Postgres connection level.
         """
-        engine = engine_postgis_custom_search_path
+        engine = engine_postgis_custom_search_path_with_fallback
 
         table = "nybb"
         schema_to_use = "test"
@@ -727,6 +763,92 @@ class TestIO:
             df_nybb, con=engine, name=table, if_exists="replace"
         )
         # Validate
+        sql = "SELECT * FROM {schema}.{table};".format(
+            schema=schema_to_use, table=table
+        )
+
+        df = read_postgis(sql, engine, geom_col="geometry")
+        validate_boro_df(df)
+
+    def test_write_postgis_to_different_default_nonexistent_schema_fallback_to_second(self, engine_postgis_custom_search_path_with_fallback, df_nybb):
+        """
+        Tests that the table is inserted into the public schema (second in line according to the search_path), even
+        though the custom schema has been specified as the first choice, because the custom schema does not actually
+        exist (this is allowed in the Postgres search_path).
+        """
+        engine = engine_postgis_custom_search_path_with_fallback
+
+        table = "nybb"
+
+        write_postgis(
+            df_nybb, con=engine, name=table, if_exists="replace"
+        )
+        # Validate
+        sql = "SELECT * FROM public.{table};".format(
+            table=table
+        )
+
+        df = read_postgis(sql, engine, geom_col="geometry")
+        validate_boro_df(df)
+
+    def test_write_postgis_to_different_default_restricted_schema_fallback_to_second(self, engine_postgis_custom_search_path_with_fallback, df_nybb):
+        """
+        Tests that the table is inserted into the public schema (second in line according to the search_path), even
+        though the custom schema has been specified as the first choice, because the first schema does exist, but the
+        user lacks the priveleges to do so.
+        """
+
+        engine = engine_postgis_custom_search_path_with_fallback
+        table = "nybb_no_priveleges"
+        schema_to_use = "test"
+        try:
+            sql = "CREATE SCHEMA IF NOT EXISTS {schema};".format(schema=schema_to_use)
+            engine.execute(sql)
+            sql = "REVOKE ALL PRIVILEGES ON {schema}.{table} FROM {role};".format(schema=schema_to_use, table=table, role=os.environ.get("PGUSER"))
+            engine.execute(sql)
+
+            write_postgis(
+                df_nybb, con=engine, name=table, if_exists="replace"
+            )
+            # Validate
+            sql = "SELECT * FROM {schema}.{table};".format(
+                schema=schema_to_use, table=table
+            )
+
+            df = read_postgis(sql, engine, geom_col="geometry")
+
+            # We have to clean up after this one, otherwise the test will fail on the next run due to lack of priveleges
+        finally:
+            sql = "GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA {schema} TO {role};".format(schema=schema_to_use, role=os.environ.get("PGUSER"))
+            engine.execute(sql)
+
+        validate_boro_df(df)
+
+    def test_write_postgis_to_different_default_schema_when_table_also_exists_in_second(self, engine_postgis_custom_search_path_with_fallback, df_nybb):
+        """
+        Tests that if the same table exists in the fallback schema (public), then writing with an implicit default schema
+        as per search_path will go to the default schema and not the fallback.
+        """
+        engine = engine_postgis_custom_search_path_with_fallback
+
+        table = "nybb"
+        schema_to_use = "test"
+
+        sql = "CREATE SCHEMA IF NOT EXISTS {schema};".format(schema=schema_to_use)
+        engine.execute(sql)
+
+        # Explicitly write a spoiled version of the table first to public schema
+        df_nybb_spoiled = df_nybb.copy()
+        df_nybb_spoiled["test_diff"] = 0
+        write_postgis(
+            df_nybb_spoiled, con=engine, name=table, if_exists="replace", schema="public"
+        )
+
+        # Write the table to "test" schema implicitly
+        write_postgis(
+            df_nybb, con=engine, name=table, if_exists="replace"
+        )
+        # Validate (if it grabbed the one from public schema, it will be spoiled and trigger a failure)
         sql = "SELECT * FROM {schema}.{table};".format(
             schema=schema_to_use, table=table
         )
