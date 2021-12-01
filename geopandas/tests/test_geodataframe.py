@@ -587,7 +587,7 @@ class TestDataFrame:
         p2 = Point(2, 2)
         f2 = {
             "type": "Feature",
-            "properties": 'null',
+            "properties": None,
             "geometry": p2.__geo_interface__,
         }
 
