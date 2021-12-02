@@ -606,7 +606,8 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             }
             # load properties
             properties = feature["properties"]
-            if properties is None: properties = {}
+            if properties is None:
+                properties = {}
             row.update(properties)
             rows.append(row)
         return GeoDataFrame(rows, columns=columns, crs=crs)
