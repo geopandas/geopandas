@@ -1,0 +1,28 @@
+# See https://github.com/python-versioneer/python-versioneer
+name: "Update Versioneer"
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 6 1 * *' # 1st day of each month at 06:00 UTC
+  push:
+    paths:
+    - 'setup.cfg'
+    - '.github/workflows/versioneer.yml'
+
+jobs:
+  versioneer:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-python@v2
+    - run: pip install versioneer
+    - run: versioneer install
+    - uses: actions/upload-artifact@v2
+      with:
+        path: versioneer.py
+    - uses: peter-evans/create-pull-request@v3
+      with:
+        title: "Update Versioneer"
+        branch: update-versioneer
+        base: master
+        commit-message: "[Bot] Update Versioneer"
