@@ -13,7 +13,7 @@ def test_explain():
         ],
     )
     result = s.explain_validity()
-    assert result[1] != 'Valid Geometry'
+    assert result[1] != "Valid Geometry"
 
 
 def test_make_valid():
@@ -28,4 +28,4 @@ def test_make_valid():
     )
     sn = s.make_valid()
     result = sn.explain_validity()
-    assert result[1] == 'Valid Geometry'
+    assert result[1] == "Valid Geometry"

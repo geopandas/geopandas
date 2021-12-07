@@ -2203,7 +2203,8 @@ GeometryCollection
         -------
         Series
 
-        the Shapely Docs: https://shapely.readthedocs.io/en/stable/manual.html#diagnostics
+        the Shapely Docs:
+        https://shapely.readthedocs.io/en/stable/manual.html#diagnostics
 
         example:
          >>> from shapely.geometry import Polygon,LineString,Point
@@ -2228,16 +2229,21 @@ GeometryCollection
         try:
             from shapely.validation import explain_validity
         except ImportError:
-            raise ImportError('cannot import explain_validity from shapely.validation.Please upgrade your shapely')
+            raise ImportError(
+                "cannot import explain_validity from shapely.validation."
+                "Please upgrade your shapely"
+            )
         this = self.geometry
         a_this = GeometryArray(this.values)
         return Series([explain_validity(i) for i in a_this])
 
     def make_valid(self):
         """
-        Returns a valid representation of the GeoSeries, if it is invalid. If it is valid, the raw GeoSeries will be returned.
+        Returns a valid representation of the GeoSeries, if it is invalid.
+        If it is valid, the raw GeoSeries will be returned.
 
-        the Shapely Docs:https://shapely.readthedocs.io/en/stable/manual.html#validation.make_valid
+        the Shapely Docs:
+        https://shapely.readthedocs.io/en/stable/manual.html#validation.make_valid
 
         Returns
         -------
@@ -2276,7 +2282,10 @@ GeometryCollection
             from shapely.validation import make_valid
             from .geoseries import GeoSeries
         except ImportError:
-            raise ImportError('cannot import make_valid from shapely.validation.Please upgrade your shapely')
+            raise ImportError(
+                "cannot import make_valid from shapely.validation."
+                "Please upgrade your shapely"
+            )
         this = self.geometry
         a_this = GeometryArray(this.values)
         return GeoSeries([make_valid(i) for i in a_this])
