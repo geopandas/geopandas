@@ -2195,6 +2195,92 @@ GeometryCollection
         """
         return _binary_geo("difference", self, other, align)
 
+    def explain_validity(self):
+        """
+        Returns a string explaining the validity or invalidity of the object.
+
+        Returns
+        -------
+        Series
+
+        the Shapely Docs: https://shapely.readthedocs.io/en/stable/manual.html#diagnostics
+
+        example:
+         >>> from shapely.geometry import Polygon,LineString,Point
+            s = geopandas.GeoSeries(
+                [
+                    Polygon([(0, 0), (2, 2), (0, 2)]),
+                    Polygon([(0, 0), (2, 2), (0, 2), (2, 2)]),
+                    LineString([(0, 0), (2, 2)]),
+                    LineString([(2, 0), (0, 2)]),
+                    Point(0, 1),
+                ],
+            )
+            s.explain_validity()
+            --------------------------------
+            0            Valid Geometry
+            1    Self-intersection[0 0]
+            2            Valid Geometry
+            3            Valid Geometry
+            4            Valid Geometry
+            dtype: object
+        """
+        try:
+            from shapely.validation import explain_validity
+        except ImportError:
+            raise ImportError('cannot import explain_validity from shapely.validation.Please upgrade your shapely')
+        this = self.geometry
+        a_this = GeometryArray(this.values)
+        return Series([explain_validity(i) for i in a_this])
+
+    def make_valid(self):
+        """
+        Returns a valid representation of the GeoSeries, if it is invalid. If it is valid, the raw GeoSeries will be returned.
+
+        the Shapely Docs:https://shapely.readthedocs.io/en/stable/manual.html#validation.make_valid
+
+        Returns
+        -------
+        GeoSeries
+
+        example:
+        from shapely.geometry import Polygon,LineString,Point
+        s = geopandas.GeoSeries(
+                [
+                    Polygon([(0, 0), (2, 2), (0, 2)]),
+                    Polygon([(0, 0), (2, 2), (0, 2), (2, 2)]),
+                    LineString([(0, 0), (2, 2)]),
+                    LineString([(2, 0), (0, 2)]),
+                    Point(0, 1),
+                ],
+            )
+        s.make_valid()
+        ---------------------------
+        0    POLYGON ((0.00000 0.00000, 2.00000 2.00000, 0....
+        1    MULTILINESTRING ((0.00000 0.00000, 2.00000 2.0...
+        2        LINESTRING (0.00000 0.00000, 2.00000 2.00000)
+        3        LINESTRING (2.00000 0.00000, 0.00000 2.00000)
+        4                              POINT (0.00000 1.00000)
+        dtype: geometry
+
+        >>> s.make_valid().explain_validity()
+        ---------------------------
+        0    Valid Geometry
+        1    Valid Geometry
+        2    Valid Geometry
+        3    Valid Geometry
+        4    Valid Geometry
+        dtype: object
+        """
+        try:
+            from shapely.validation import make_valid
+            from .geoseries import GeoSeries
+        except ImportError:
+            raise ImportError('cannot import make_valid from shapely.validation.Please upgrade your shapely')
+        this = self.geometry
+        a_this = GeometryArray(this.values)
+        return GeoSeries([make_valid(i) for i in a_this])
+
     def symmetric_difference(self, other, align=True):
         """Returns a ``GeoSeries`` of the symmetric difference of points in
         each aligned geometry with `other`.
