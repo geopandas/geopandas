@@ -2207,7 +2207,7 @@ GeometryCollection
         https://shapely.readthedocs.io/en/stable/manual.html#diagnostics
 
         example:
-         >>> from shapely.geometry import Polygon,LineString,Point
+            from shapely.geometry import Polygon,LineString,Point
             s = geopandas.GeoSeries(
                 [
                     Polygon([(0, 0), (2, 2), (0, 2)]),
@@ -2269,7 +2269,7 @@ GeometryCollection
         4                              POINT (0.00000 1.00000)
         dtype: geometry
 
-        >>> s.make_valid().explain_validity()
+        s.make_valid().explain_validity()
         ---------------------------
         0    Valid Geometry
         1    Valid Geometry
