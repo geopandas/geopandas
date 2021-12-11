@@ -1662,12 +1662,13 @@ individually so that features may have different properties
 
         if index_parts:
             exploded_geom = df_copy.geometry.explode(index_parts=True)
+            exploded_index = exploded_geom.index.droplevel("__unique_key")
             exploded_geom = exploded_geom.reset_index(level=-1, drop=True)
         else:
             exploded_geom = df_copy.geometry.explode(index_parts=True).reset_index(
                 level=-1, drop=True
             )
-        exploded_index = exploded_geom.index.droplevel("__unique_key")
+            exploded_index = exploded_geom.index.droplevel("__unique_key")
 
         df = (
             df_copy.drop(df_copy._geometry_column_name, axis=1)
