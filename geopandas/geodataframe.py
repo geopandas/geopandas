@@ -1650,8 +1650,10 @@ individually so that features may have different properties
                     stacklevel=2,
                 )
             index_parts = True
-
-        df_copy = self.copy()
+        # self.index may not be unique, add guaranteed unique level to join on
+        df_copy = self.set_index(
+            pd.RangeIndex(len(self), name="__unique_key"), append=True
+        )
 
         level_str = f"level_{df_copy.index.nlevels}"
 
@@ -1660,19 +1662,17 @@ individually so that features may have different properties
 
         if index_parts:
             exploded_geom = df_copy.geometry.explode(index_parts=True)
-            exploded_index = exploded_geom.index
+            exploded_index = exploded_geom.index.droplevel("__unique_key")
             exploded_geom = exploded_geom.reset_index(level=-1, drop=True)
         else:
             exploded_geom = df_copy.geometry.explode(index_parts=True).reset_index(
                 level=-1, drop=True
             )
-            exploded_index = exploded_geom.index
+            exploded_index = exploded_geom.index.droplevel("__unique_key")
 
         df = (
-            df_copy.drop(df_copy._geometry_column_name, axis=1)
-            .join(exploded_geom)
-            .__finalize__(self)
-        )
+            df_copy.drop(df_copy._geometry_column_name, axis=1).join(exploded_geom)
+        ).__finalize__(self)
 
         if ignore_index:
             df.reset_index(inplace=True, drop=True)
