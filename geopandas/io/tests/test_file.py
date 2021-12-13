@@ -214,7 +214,7 @@ def test_to_file_int64(tmpdir, df_points):
 
 
 def test_to_file_empty(tmpdir):
-    input_empty_df = GeoDataFrame()
+    input_empty_df = GeoDataFrame(geometry=[])
     tempfilename = os.path.join(str(tmpdir), "test.shp")
     with pytest.warns(UserWarning):
         input_empty_df.to_file(tempfilename)
