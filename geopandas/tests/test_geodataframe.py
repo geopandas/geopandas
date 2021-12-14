@@ -606,6 +606,99 @@ class TestDataFrame:
         )
         assert_frame_equal(expected, result)
 
+    def test_from_features_empty_properties(self):
+        geojson_properties_object = '''{
+          "type": "FeatureCollection",
+          "features": [
+            {
+              "type": "Feature",
+              "properties": {},
+              "geometry": {
+                "type": "Polygon",
+                "coordinates": [
+                  [
+                    [
+                      11.3456529378891,
+                      46.49461446367692
+                    ],
+                    [
+                      11.345674395561216,
+                      46.494097442978195
+                    ],
+                    [
+                      11.346918940544128,
+                      46.49385370294394
+                    ],
+                    [
+                      11.347616314888,
+                      46.4938352377453
+                    ],
+                    [
+                      11.347514390945435,
+                      46.49466985846028
+                    ],
+                    [
+                      11.3456529378891,
+                      46.49461446367692
+                    ]
+                  ]
+                ]
+              }
+            }
+          ]
+        }'''
+
+        geojson_properties_null = '''{
+          "type": "FeatureCollection",
+          "features": [
+            {
+              "type": "Feature",
+              "properties": null,
+              "geometry": {
+                "type": "Polygon",
+                "coordinates": [
+                  [
+                    [
+                      11.3456529378891,
+                      46.49461446367692
+                    ],
+                    [
+                      11.345674395561216,
+                      46.494097442978195
+                    ],
+                    [
+                      11.346918940544128,
+                      46.49385370294394
+                    ],
+                    [
+                      11.347616314888,
+                      46.4938352377453
+                    ],
+                    [
+                      11.347514390945435,
+                      46.49466985846028
+                    ],
+                    [
+                      11.3456529378891,
+                      46.49461446367692
+                    ]
+                  ]
+                ]
+              }
+            }
+          ]
+        }'''
+
+        # geoJSON with empty properties
+        gjson_po = json.loads(geojson_properties_object)
+        gdf1 = GeoDataFrame.from_features(gjson_po)
+
+        # geoJSON with null properties
+        gjson_null = json.loads(geojson_properties_null)
+        gdf2 = GeoDataFrame.from_features(gjson_null)
+
+        assert_frame_equal(gdf1, gdf2)
+
     def test_from_features_geom_interface_feature(self):
         class Placemark(object):
             def __init__(self, geom, val):
