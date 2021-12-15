@@ -380,6 +380,11 @@ def _to_file(
             stacklevel=3,
         )
 
+    if driver == "MapInfo File":
+        for col, dtype in schema["properties"].items():
+            if dtype == "int" or dtype == "int64":
+                    schema["properties"][col] = "int32"
+    
     with fiona_env():
         crs_wkt = None
         try:
