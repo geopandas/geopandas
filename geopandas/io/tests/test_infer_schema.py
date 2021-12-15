@@ -11,7 +11,7 @@ from shapely.geometry import (
 
 import pandas as pd
 import numpy as np
-from geopandas import GeoDataFrame
+from geopandas import GeoDataFrame, points_from_xy
 from geopandas.io.file import infer_schema
 
 # Credit: Polygons below come from Montreal city Open Data portal
@@ -287,3 +287,25 @@ def test_infer_schema_int64():
         "geometry": "Point",
         "properties": OrderedDict([("int64", "int")]),
     }
+
+def test_infer_schema_int32():
+    data = pd.DataFrame({'City': ['Buenos Aires', 'Brasilia', 'Santiago', 'Bogota', 'Caracas'],
+                        'Country': ['Argentina', 'Brazil', 'Chile', 'Colombia', 'Venezuela'],
+                        'Latitude': [-34.58, -15.78, -33.45, 4.60, 10.48],
+                        'Longitude': [-58.66, -47.91, -70.66, -74.08, -66.86]})
+
+    df = GeoDataFrame(
+                       data, geometry=points_from_xy(data.Longitude, data.Latitude),
+                       crs='epsg:4326')
+    df = df.assign(Citizens=[1000000, 1000000, 2000000, 300000, 400000])
+    df = df.astype({'Citizens': 'int32'})
+
+    assert infer_schema(df) == {"geometry": "Point",
+        'properties': OrderedDict([
+                    ('City', 'str'),
+                    ('Country', 'str'),
+                    ('Latitude', 'float'),
+                    ('Longitude', 'float'),
+                    ('Citizens', 'int32')])
+}
+

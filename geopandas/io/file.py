@@ -380,11 +380,6 @@ def _to_file(
             stacklevel=3,
         )
 
-    if driver == "MapInfo File":
-        for col, dtype in schema["properties"].items():
-            if dtype == "int" or dtype == "int64":
-                    schema["properties"][col] = "int32"
-    
     with fiona_env():
         crs_wkt = None
         try:
@@ -405,7 +400,9 @@ def infer_schema(df):
     from collections import OrderedDict
 
     # TODO: test pandas string type and boolean type once released
-    types = {"Int64": "int", "string": "str", "boolean": "bool"}
+    # "Int64":"int" is used by pandas for conversions
+    # Other types are to ensure conversions work properly
+    types = {"Int64":"int", "int64": "int32", "string": "str", "boolean": "bool", "int32": "int32"}
 
     def convert_type(column, in_type):
         if in_type == object:
