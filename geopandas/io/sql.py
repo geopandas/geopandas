@@ -272,7 +272,7 @@ def _convert_linearring_to_linestring(gdf, geom_name):
 
 
 def _convert_to_ewkb(gdf, geom_name, srid):
-    """Convert geometries to ewkb. """
+    """Convert geometries to ewkb."""
     if compat.USE_PYGEOS:
         from pygeos import set_srid, to_wkb
 

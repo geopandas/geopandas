@@ -149,7 +149,6 @@ if shapely_warning is not None and not SHAPELY_GE_20:
             )
             yield
 
-
 elif (str(np.__version__) >= LooseVersion("1.21")) and not SHAPELY_GE_20:
 
     @contextlib.contextmanager
@@ -161,7 +160,6 @@ elif (str(np.__version__) >= LooseVersion("1.21")) and not SHAPELY_GE_20:
                 "ignore", "An exception was ignored while fetching", DeprecationWarning
             )
             yield
-
 
 else:
 

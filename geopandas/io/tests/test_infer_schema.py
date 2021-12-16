@@ -11,7 +11,7 @@ from shapely.geometry import (
 
 import pandas as pd
 import numpy as np
-from geopandas import GeoDataFrame, points_from_xy
+from geopandas import GeoDataFrame
 from geopandas.io.file import infer_schema
 
 # Credit: Polygons below come from Montreal city Open Data portal
@@ -287,4 +287,3 @@ def test_infer_schema_int64():
         "geometry": "Point",
         "properties": OrderedDict([("int64", "int")]),
     }
-
