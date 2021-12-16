@@ -271,23 +271,27 @@ def test_to_file_column_len(tmpdir, df_points):
 def test_to_file_MapInfo():
     try:
         df = pd.DataFrame(
-                          {'City': ['Buenos Aires', 'Brasilia', 'Santiago', 'Bogota', 'Caracas'],
-                          'Country': ['Argentina', 'Brazil', 'Chile', 'Colombia', 'Venezuela'],
-                          'Latitude': [-34.58, -15.78, -33.45, 4.60, 10.48],
-                          'Longitude': [-58.66, -47.91, -70.66, -74.08, -66.86]})
+            {
+                "City": ["Buenos Aires", "Brasilia", "Santiago", "Bogota", "Caracas"],
+                "Country": ["Argentina", "Brazil", "Chile", "Colombia", "Venezuela"],
+                "Latitude": [-34.58, -15.78, -33.45, 4.60, 10.48],
+                "Longitude": [-58.66, -47.91, -70.66, -74.08, -66.86],
+            }
+        )
 
         gdf = GeoDataFrame(
-                           df, geometry=points_from_xy(df.Longitude, df.Latitude),
-                           crs='epsg:4326')
-        gdf.to_file('map_info_folder_test1', driver='MapInfo File')
+            df, geometry=points_from_xy(df.Longitude, df.Latitude), crs="epsg:4326"
+        )
+        gdf.to_file("map_info_folder_test1", driver="MapInfo File")
 
         gdf = gdf.assign(Citizens=[1000000, 1000000, 2000000, 300000, 400000])
-        gdf = gdf.astype({'Citizens': 'int32'})
+        gdf = gdf.astype({"Citizens": "int32"})
         gdf.info()
 
-        gdf.to_file('map_info_folder_test2', driver='MapInfo File')
+        gdf.to_file("map_info_folder_test2", driver="MapInfo File")
     except Exception as exc:
         assert False, f"test raised an exception {exc}"
+
 
 @pytest.mark.parametrize("driver,ext", driver_ext_pairs)
 def test_append_file(tmpdir, df_nybb, df_null, driver, ext):
