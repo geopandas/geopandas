@@ -205,12 +205,14 @@ def test_from_wkt(string_type):
     L_wkt = [f(p.wkt) for p in points_no_missing]
     res = from_wkt(L_wkt)
     assert isinstance(res, GeometryArray)
-    assert all(v.almost_equals(t) for v, t in zip(res, points_no_missing))
+    tol = 0.5 * 10 ** (-6)
+    assert all(v.equals_exact(t, tolerance=tol) for v, t in zip(res, points_no_missing))
+    assert all(v.equals_exact(t, tolerance=tol) for v, t in zip(res, points_no_missing))
 
     # array
     res = from_wkt(np.array(L_wkt, dtype=object))
     assert isinstance(res, GeometryArray)
-    assert all(v.almost_equals(t) for v, t in zip(res, points_no_missing))
+    assert all(v.equals_exact(t, tolerance=tol) for v, t in zip(res, points_no_missing))
 
     # missing values
     # TODO(pygeos) does not support empty strings, np.nan, or pd.NA
