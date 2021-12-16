@@ -563,24 +563,6 @@ class GeometryArray(ExtensionArray):
         return self.geom_equals_exact(other, 0.5 * 10 ** (-decimal))
         # return _binary_predicate("almost_equals", self, other, decimal=decimal)
 
-    def equals_exact(self, other, tolerance):
-        warnings.warn(
-            "GeometryArray.equals_exact() is now GeometryArray.geom_equals_exact(). "
-            "GeometryArray.equals_exact() will be deprecated in the future.",
-            FutureWarning,
-            stacklevel=2,
-        )
-        return self._binary_method("equals_exact", self, other, tolerance=tolerance)
-
-    def almost_equals(self, other, decimal):
-        warnings.warn(
-            "GeometryArray.almost_equals() is now GeometryArray.geom_almost_equals(). "
-            "GeometryArray.almost_equals() will be deprecated in the future.",
-            FutureWarning,
-            stacklevel=2,
-        )
-        return self.geom_equals_exact(other, 0.5 * 10 ** (-decimal))
-
     #
     # Binary operations that return new geometries
     #
