@@ -401,7 +401,7 @@ def infer_schema(df):
 
     # TODO: test pandas string type and boolean type once released
     # "Int64":"int" is used by pandas for conversions
-    # Other types are to ensure conversions work properly
+    # "int32":"int32" used to ensure that int32 is used instead of regular int
     types = {"Int64": "int", "string": "str", "boolean": "bool", "int32": "int32"}
 
     def convert_type(column, in_type):
