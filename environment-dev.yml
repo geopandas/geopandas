@@ -2,9 +2,11 @@ name: geopandas-dev
 channels:
     - conda-forge
 dependencies:
+    - python=3.9
     # required
     - fiona>=1.8
     - pandas>=0.25
+    - pygeos
     - pyproj>=2.2.0
     - shapely>=1.6
 
@@ -22,6 +24,8 @@ dependencies:
     # testing
     - pytest>=3.1.0
     - pytest-cov
+    - pytest-xdist
+    - fsspec
     - codecov
 
     # spatial access methods
@@ -30,3 +34,13 @@ dependencies:
     # styling
     - black
     - pre-commit
+
+    # optional
+    - folium
+    - xyzservices
+    - scipy
+    - libspatialite
+    - geoalchemy2
+    - pyarrow
+    # doctest testing
+    - pytest-doctestplus
