@@ -155,13 +155,32 @@ An easy way to create a *GeoPandas* development environment is as follows:
 - Make sure that you have :ref:`cloned the repository <contributing.forking>`
 - ``cd`` to the *geopandas** source directory
 
-Tell conda to create a new environment, named ``geopandas_dev``, or any other name you would like
+Using the provided environment
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+*GeoPandas* provides an environment which includes the required dependencies for development.
+The environment file is located in the top level of the repo and is named ``environment-dev.yml``.
+You can create this environment by navigating to the git clone of the *GeoPandas* repository
+and running::
+
+      conda env create -f environment-dev.yml
+
+This will create a new conda environment named ``geopandas_dev``.
+
+Creating the environment manually
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Alternatively, it is possible to create a development environment manually.  To do this,
+tell conda to create a new environment named ``geopandas_dev``, or any other name you would like
 for this environment, by running::
 
       conda create -n geopandas_dev python
 
 This will create the new environment, and not touch any of your existing environments,
 nor any existing python installation.
+
+Working with the environment
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 To work in this environment, you need to ``activate`` it. The instructions below
 should work for both Windows, Mac and Linux::
@@ -183,12 +202,14 @@ See the full conda docs `here <http://conda.pydata.org/docs>`__.
 
 At this point you can easily do a *development* install, as detailed in the next sections.
 
+
 3) Installing Dependencies
 --------------------------
 
 To run *GeoPandas* in an development environment, you must first install
-*GeoPandas*'s dependencies. We suggest doing so using the following commands
-(executed after your development environment has been activated)::
+*GeoPandas*'s dependencies. If you used the provided environment in section 2, skip this
+step and continue to section 4. If you created the environment manually, we suggest installing
+dependencies using the following commands (executed after your development environment has been activated)::
 
     conda install -c conda-forge pandas fiona shapely pyproj rtree pytest
 
