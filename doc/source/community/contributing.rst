@@ -335,8 +335,8 @@ to auto-format your code. Additionally, many editors have plugins that will
 apply ``black`` as you edit files.
 
 Optionally (but recommended), you can setup `pre-commit hooks <https://pre-commit.com/>`_
-to automatically run ``black`` and ``flake8`` when you make a git commit. This
-can be done by installing ``pre-commit``::
+to automatically run ``black`` and ``flake8`` when you make a git commit. If you did not
+use the provided development environment in ``environment-dev.yml``, you must first install ``pre-commit``::
 
    $ python -m pip install pre-commit
 
