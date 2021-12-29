@@ -10,6 +10,7 @@ import shapely.affinity
 import shapely.geometry
 from shapely.geometry.base import CAP_STYLE, JOIN_STYLE
 import shapely.wkb
+import shapely.wkt
 from shapely._buildcfg import geos_version
 
 import geopandas
@@ -32,7 +33,7 @@ triangle_no_missing = [
     shapely.geometry.Polygon([(random.random(), random.random()) for i in range(3)])
     for _ in range(10)
 ]
-triangles = triangle_no_missing + [shapely.geometry.Polygon(), None]
+triangles = triangle_no_missing + [shapely.wkt.loads("POLYGON EMPTY"), None]
 T = from_shapely(triangles)
 
 points_no_missing = [
@@ -381,17 +382,7 @@ def test_unary_geo(attr):
         A = T
 
     result = getattr(A, attr)
-    if attr == "exterior" and compat.USE_PYGEOS:
-        # TODO(pygeos)
-        # empty Polygon() has an exterior with shapely > 1.7, which gives
-        # empty LinearRing instead of None,
-        # but conversion to pygeos still results in empty GeometryCollection
-        expected = [
-            getattr(t, attr) if t is not None and not t.is_empty else na_value
-            for t in values
-        ]
-    else:
-        expected = [getattr(t, attr) if t is not None else na_value for t in values]
+    expected = [getattr(t, attr) if t is not None else na_value for t in values]
 
     assert equal_geometries(result, expected)
 
@@ -484,11 +475,9 @@ def test_unary_predicates(attr):
 
     result = getattr(V, attr)
 
-    if attr == "is_simple" and (geos_version < (3, 8) or compat.USE_PYGEOS):
+    if attr == "is_simple" and geos_version < (3, 8):
         # poly.is_simple raises an error for empty polygon for GEOS < 3.8
         # with shapely, pygeos always returns False for all GEOS versions
-        # But even for Shapely with GEOS >= 3.8, empty GeometryCollection
-        # returns True instead of False
         expected = [
             getattr(t, attr) if t is not None and not t.is_empty else na_value
             for t in vals
@@ -500,6 +489,9 @@ def test_unary_predicates(attr):
             else na_value
             for t in vals
         ]
+        # empty Linearring.is_ring gives False with Shapely < 2.0
+        if not compat.SHAPELY_GE_20:
+            expected[-2] = True
     else:
         expected = [getattr(t, attr) if t is not None else na_value for t in vals]
     assert result.tolist() == expected
@@ -513,10 +505,10 @@ def test_is_ring():
         shapely.geometry.LineString([(0, 0), (1, 1), (1, -1)]),
         shapely.geometry.LineString([(0, 0), (1, 1), (1, -1), (0, 0)]),
         shapely.geometry.Polygon([(0, 0), (1, 1), (1, -1)]),
-        shapely.geometry.Polygon(),
+        shapely.wkt.loads("POLYGON EMPTY"),
         None,
     ]
-    expected = [True, False, True, True, False, False]
+    expected = [True, False, True, True, True, False]
 
     result = from_shapely(g).is_ring
 
@@ -536,7 +528,7 @@ def test_unary_float(attr):
 def test_geom_types():
     cat = T.geom_type
     # empty polygon has GeometryCollection type
-    assert list(cat) == ["Polygon"] * (len(T) - 2) + ["GeometryCollection", None]
+    assert list(cat) == ["Polygon"] * (len(T) - 1) + [None]
 
 
 def test_geom_types_null_mixed():
