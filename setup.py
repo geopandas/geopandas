@@ -31,7 +31,7 @@ if os.environ.get("READTHEDOCS", False) == "True":
 else:
     INSTALL_REQUIRES = [
         "pandas >= 0.25.0",
-        "shapely >= 1.6",
+        "shapely >= 1.6, < 2",
         "fiona >= 1.8",
         "pyproj >= 2.2.0",
     ]
