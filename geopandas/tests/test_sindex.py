@@ -684,7 +684,8 @@ class TestPygeosInterface:
             df.sindex.nearest((0, 0, 1, 1), num_results=2)
 
     @pytest.mark.skipif(
-        compat.SHAPELY_GE_20 or (compat.USE_PYGEOS and compat.PYGEOS_GE_010),
+        # TODO skip for SHAPELY_GE_20 once sindex is working
+        not (compat.USE_PYGEOS and not compat.PYGEOS_GE_010),
         reason=("PyGEOS < 0.10 does not support sindex.nearest"),
     )
     def test_pygeos_error(self):

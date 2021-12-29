@@ -371,31 +371,8 @@ def test_equals_deprecation(attr, args):
 def test_unary_geo(attr):
     na_value = None
 
-    if attr == "boundary":
-        # pygeos returns None for empty geometries
-        if not (compat.SHAPELY_GE_20 or compat.USE_PYGEOS):
-            # boundary raises for empty geometry
-            with pytest.raises(Exception):
-                T.boundary
-
-        values = triangle_no_missing + [None]
-        A = from_shapely(values)
-    else:
-        values = triangles
-        A = T
-
-    result = getattr(A, attr)
-    if attr == "exterior" and compat.USE_PYGEOS:
-        # TODO(pygeos)
-        # empty Polygon() has an exterior with shapely > 1.7, which gives
-        # empty LinearRing instead of None,
-        # but conversion to pygeos still results in empty GeometryCollection
-        expected = [
-            getattr(t, attr) if t is not None and not t.is_empty else na_value
-            for t in values
-        ]
-    else:
-        expected = [getattr(t, attr) if t is not None else na_value for t in values]
+    result = getattr(T, attr)
+    expected = [getattr(t, attr) if t is not None else na_value for t in triangles]
 
     assert equal_geometries(result, expected)
 
@@ -470,7 +447,14 @@ def test_binary_geo_scalar(attr):
         "has_z",
         # for is_ring we raise a warning about the value for Polygon changing
         pytest.param(
-            "is_ring", marks=pytest.mark.filterwarnings("ignore:is_ring:FutureWarning")
+            "is_ring",
+            marks=[
+                pytest.mark.filterwarnings("ignore:is_ring:FutureWarning"),
+                pytest.mark.skipif(
+                    not compat.SHAPELY_GE_17,
+                    reason="is_ring on empty Polygon doesn't work in Shapely 1.6",
+                ),
+            ],
         ),
     ],
 )
@@ -488,11 +472,9 @@ def test_unary_predicates(attr):
 
     result = getattr(V, attr)
 
-    if attr == "is_simple" and (geos_version < (3, 8) or compat.USE_PYGEOS):
+    if attr == "is_simple" and geos_version < (3, 8):
         # poly.is_simple raises an error for empty polygon for GEOS < 3.8
         # with shapely, pygeos always returns False for all GEOS versions
-        # But even for Shapely with GEOS >= 3.8, empty GeometryCollection
-        # returns True instead of False
         expected = [
             getattr(t, attr) if t is not None and not t.is_empty else na_value
             for t in vals
@@ -504,6 +486,9 @@ def test_unary_predicates(attr):
             else na_value
             for t in vals
         ]
+        # empty Linearring.is_ring gives False with Shapely < 2.0
+        if compat.USE_PYGEOS and not compat.SHAPELY_GE_20:
+            expected[-2] = True
     else:
         expected = [getattr(t, attr) if t is not None else na_value for t in vals]
     assert result.tolist() == expected
@@ -511,6 +496,10 @@ def test_unary_predicates(attr):
 
 # for is_ring we raise a warning about the value for Polygon changing
 @pytest.mark.filterwarnings("ignore:is_ring:FutureWarning")
+@pytest.mark.skipif(
+    not compat.SHAPELY_GE_17,
+    reason="is_ring on empty Polygon doesn't work in Shapely 1.6",
+)
 def test_is_ring():
     g = [
         shapely.geometry.LinearRing([(0, 0), (1, 1), (1, -1)]),
@@ -521,6 +510,9 @@ def test_is_ring():
         None,
     ]
     expected = [True, False, True, True, True, False]
+    if not compat.USE_PYGEOS and not compat.SHAPELY_GE_20:
+        # empty polygon is_ring gives False with Shapely < 2.0
+        expected[-2] = False
 
     result = from_shapely(g).is_ring
 
