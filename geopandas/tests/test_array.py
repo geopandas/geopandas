@@ -444,7 +444,14 @@ def test_binary_geo_scalar(attr):
         "has_z",
         # for is_ring we raise a warning about the value for Polygon changing
         pytest.param(
-            "is_ring", marks=pytest.mark.filterwarnings("ignore:is_ring:FutureWarning")
+            "is_ring",
+            marks=[
+                pytest.mark.filterwarnings("ignore:is_ring:FutureWarning"),
+                pytest.mark.skipif(
+                    not compat.SHAPELY_GE_17,
+                    reason="is_ring on empty Polygon doesn't work in Shapely 1.6",
+                ),
+            ],
         ),
     ],
 )
@@ -486,6 +493,10 @@ def test_unary_predicates(attr):
 
 # for is_ring we raise a warning about the value for Polygon changing
 @pytest.mark.filterwarnings("ignore:is_ring:FutureWarning")
+@pytest.mark.skipif(
+    not compat.SHAPELY_GE_17,
+    reason="is_ring on empty Polygon doesn't work in Shapely 1.6",
+)
 def test_is_ring():
     g = [
         shapely.geometry.LinearRing([(0, 0), (1, 1), (1, -1)]),
