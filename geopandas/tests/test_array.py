@@ -368,21 +368,8 @@ def test_equals_deprecation(attr, args):
 def test_unary_geo(attr):
     na_value = None
 
-    if attr == "boundary":
-        # pygeos returns None for empty geometries
-        if not compat.USE_PYGEOS:
-            # boundary raises for empty geometry
-            with pytest.raises(Exception):
-                T.boundary
-
-        values = triangle_no_missing + [None]
-        A = from_shapely(values)
-    else:
-        values = triangles
-        A = T
-
-    result = getattr(A, attr)
-    expected = [getattr(t, attr) if t is not None else na_value for t in values]
+    result = getattr(T, attr)
+    expected = [getattr(t, attr) if t is not None else na_value for t in triangles]
 
     assert equal_geometries(result, expected)
 
@@ -490,7 +477,7 @@ def test_unary_predicates(attr):
             for t in vals
         ]
         # empty Linearring.is_ring gives False with Shapely < 2.0
-        if not compat.SHAPELY_GE_20:
+        if compat.USE_PYGEOS and not compat.SHAPELY_GE_20:
             expected[-2] = True
     else:
         expected = [getattr(t, attr) if t is not None else na_value for t in vals]
@@ -509,6 +496,9 @@ def test_is_ring():
         None,
     ]
     expected = [True, False, True, True, True, False]
+    if not compat.USE_PYGEOS and not compat.SHAPELY_GE_20:
+        # empty polygon is_ring gives False with Shapely < 2.0
+        expected[-2] = False
 
     result = from_shapely(g).is_ring
 
