@@ -10,7 +10,11 @@ import shapely.affinity
 import shapely.geometry
 from shapely.geometry.base import CAP_STYLE, JOIN_STYLE
 import shapely.wkb
-from shapely._buildcfg import geos_version
+
+try:
+    from shapely import geos_version
+except ImportError:
+    from shapely._buildcfg import geos_version
 
 import geopandas
 from geopandas.array import (
@@ -32,7 +36,7 @@ triangle_no_missing = [
     shapely.geometry.Polygon([(random.random(), random.random()) for i in range(3)])
     for _ in range(10)
 ]
-triangles = triangle_no_missing + [shapely.geometry.Polygon(), None]
+triangles = triangle_no_missing + [shapely.wkt.loads("POLYGON EMPTY"), None]
 T = from_shapely(triangles)
 
 points_no_missing = [
@@ -141,7 +145,7 @@ def test_from_wkb():
     # missing values
     # TODO(pygeos) does not support empty strings, np.nan, or pd.NA
     missing_values = [None]
-    if not compat.USE_PYGEOS:
+    if not (compat.SHAPELY_GE_20 or compat.USE_PYGEOS):
         missing_values.extend([b"", np.nan])
 
         if compat.PANDAS_GE_10:
@@ -215,7 +219,7 @@ def test_from_wkt(string_type):
     # missing values
     # TODO(pygeos) does not support empty strings, np.nan, or pd.NA
     missing_values = [None]
-    if not compat.USE_PYGEOS:
+    if not (compat.SHAPELY_GE_20 or compat.USE_PYGEOS):
         missing_values.extend([f(""), np.nan])
 
         if compat.PANDAS_GE_10:
@@ -369,7 +373,7 @@ def test_unary_geo(attr):
 
     if attr == "boundary":
         # pygeos returns None for empty geometries
-        if not compat.USE_PYGEOS:
+        if not (compat.SHAPELY_GE_20 or compat.USE_PYGEOS):
             # boundary raises for empty geometry
             with pytest.raises(Exception):
                 T.boundary
@@ -513,10 +517,10 @@ def test_is_ring():
         shapely.geometry.LineString([(0, 0), (1, 1), (1, -1)]),
         shapely.geometry.LineString([(0, 0), (1, 1), (1, -1), (0, 0)]),
         shapely.geometry.Polygon([(0, 0), (1, 1), (1, -1)]),
-        shapely.geometry.Polygon(),
+        shapely.wkt.loads("POLYGON EMPTY"),
         None,
     ]
-    expected = [True, False, True, True, False, False]
+    expected = [True, False, True, True, True, False]
 
     result = from_shapely(g).is_ring
 
@@ -536,7 +540,7 @@ def test_unary_float(attr):
 def test_geom_types():
     cat = T.geom_type
     # empty polygon has GeometryCollection type
-    assert list(cat) == ["Polygon"] * (len(T) - 2) + ["GeometryCollection", None]
+    assert list(cat) == ["Polygon"] * (len(T) - 1) + [None]
 
 
 def test_geom_types_null_mixed():

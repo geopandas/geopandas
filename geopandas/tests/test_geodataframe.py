@@ -25,7 +25,7 @@ import pytest
 
 
 PYPROJ_LT_3 = LooseVersion(pyproj.__version__) < LooseVersion("3")
-TEST_NEAREST = compat.PYGEOS_GE_010 and compat.USE_PYGEOS
+TEST_NEAREST = compat.SHAPELY_GE_20 or (compat.PYGEOS_GE_010 and compat.USE_PYGEOS)
 pandas_133 = pd.__version__ == LooseVersion("1.3.3")
 
 
@@ -809,7 +809,7 @@ class TestDataFrame:
     @pytest.mark.parametrize("how", ["left", "inner", "right"])
     @pytest.mark.parametrize("predicate", ["intersects", "within", "contains"])
     @pytest.mark.skipif(
-        not compat.USE_PYGEOS and not compat.HAS_RTREE,
+        not compat.USE_PYGEOS and not compat.HAS_RTREE and not compat.SHAPELY_GE_20,
         reason="sjoin needs `rtree` or `pygeos` dependency",
     )
     def test_sjoin(self, how, predicate):

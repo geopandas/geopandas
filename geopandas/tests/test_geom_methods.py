@@ -573,7 +573,7 @@ class TestGeomMethods:
         assert_series_equal(res, exp)
 
     @pytest.mark.skipif(
-        not compat.USE_PYGEOS,
+        not compat.USE_PYGEOS or not compat.SHAPELY_GE_20,
         reason="covered_by is only implemented for pygeos, not shapely",
     )
     def test_covered_by(self):

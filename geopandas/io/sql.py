@@ -3,6 +3,7 @@ from contextlib import contextmanager
 
 import pandas as pd
 
+import shapely
 import shapely.wkb
 
 from geopandas import GeoDataFrame
@@ -273,6 +274,13 @@ def _convert_linearring_to_linestring(gdf, geom_name):
 
 def _convert_to_ewkb(gdf, geom_name, srid):
     """Convert geometries to ewkb. """
+    if compat.SHAPELY_GE_20:
+        geoms = shapely.to_wkb(
+            shapely.set_srid(gdf[geom_name].values.data, srid=srid),
+            hex=True,
+            include_srid=True,
+        )
+
     if compat.USE_PYGEOS:
         from pygeos import set_srid, to_wkb
 

@@ -625,15 +625,27 @@ if compat.HAS_RTREE:
             return self.size
 
 
+# if compat.SHAPELY_GE_20 or compat.HAS_PYGEOS:
 if compat.HAS_PYGEOS:
 
     from . import geoseries  # noqa
     from . import array  # noqa
-    import pygeos  # noqa
 
-    _PYGEOS_PREDICATES = {p.name for p in pygeos.strtree.BinaryPredicate} | set([None])
+    if compat.SHAPELY_GE_20:
+        import shapely as mod  # noqa
 
-    class PyGEOSSTRTreeIndex(pygeos.STRtree):
+        # temporary until https://github.com/shapely/shapely/pull/1251 is merged
+        import shapely.strtree_pygeos
+
+        _PYGEOS_PREDICATES = {p.name for p in mod.strtree_pygeos.BinaryPredicate} | set(
+            [None]
+        )
+    else:
+        import pygeos as mod  # noqa
+
+        _PYGEOS_PREDICATES = {p.name for p in mod.strtree.BinaryPredicate} | set([None])
+
+    class PyGEOSSTRTreeIndex(mod.STRtree):
         """A simple wrapper around pygeos's STRTree.
 
 
@@ -649,7 +661,7 @@ if compat.HAS_PYGEOS:
             # https://github.com/pygeos/pygeos/issues/146
             # https://github.com/pygeos/pygeos/issues/147
             non_empty = geometry.copy()
-            non_empty[pygeos.is_empty(non_empty)] = None
+            non_empty[mod.is_empty(non_empty)] = None
             # set empty geometries to None to maintain indexing
             super().__init__(non_empty)
             # store geometries, including empty geometries for user access
@@ -804,9 +816,9 @@ if compat.HAS_PYGEOS:
 
             # need to convert tuple of bounds to a geometry object
             if len(coordinates) == 4:
-                indexes = super().query(pygeos.box(*coordinates))
+                indexes = super().query(mod.box(*coordinates))
             elif len(coordinates) == 2:
-                indexes = super().query(pygeos.points(*coordinates))
+                indexes = super().query(mod.points(*coordinates))
             else:
                 raise TypeError(
                     "Invalid coordinates, must be iterable in format "
