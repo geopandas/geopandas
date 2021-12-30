@@ -331,9 +331,9 @@ nbsphinx_prolog = r"""
     .. note::
 
         | This page was generated from `{{ docname }}`__.
-        | Interactive online version: :raw-html:`<a href="https://mybinder.org/v2/gh/geopandas/geopandas/master?urlpath=lab/tree/doc/source/{{ docname }}"><img alt="Binder badge" src="https://mybinder.org/badge_logo.svg" style="vertical-align:text-bottom"></a>`
+        | Interactive online version: :raw-html:`<a href="https://mybinder.org/v2/gh/geopandas/geopandas/main?urlpath=lab/tree/doc/source/{{ docname }}"><img alt="Binder badge" src="https://mybinder.org/badge_logo.svg" style="vertical-align:text-bottom"></a>`
 
-        __ https://github.com/geopandas/geopandas/blob/master/doc/source/{{ docname }}
+        __ https://github.com/geopandas/geopandas/blob/main/doc/source/{{ docname }}
 """
 
 #  --Options for sphinx extensions -----------------------------------------------
