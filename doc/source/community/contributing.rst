@@ -21,11 +21,9 @@ In particular, when submitting a pull request:
 
 - All existing tests should pass.  Please make sure that the test
   suite passes, both locally and on
-  `Travis CI <https://travis-ci.org/geopandas/geopandas>`_.  Status on
-  Travis will be visible on a pull request.  If you want to enable
-  Travis CI on your own fork, please read the pandas guidelines link
-  above or the
-  `getting started docs <https://docs.travis-ci.com/user/tutorial/>`_.
+  `GitHub Actions <https://github.com/geopandas/geopandas/actions>`_.  Status on
+  GHA will be visible on a pull request. GHA are automatically enabled
+  on your own fork as well. To trigger a check, make a PR to your own fork.
 
 - New functionality should include tests.  Please write reasonable
   tests for your code and make sure that they pass on your pull request.
@@ -46,7 +44,7 @@ In particular, when submitting a pull request:
   imports when possible, and explicit relative imports for local
   imports when necessary in tests.
 
-- GeoPandas supports Python 3.5+ only. The last version of GeoPandas
+- GeoPandas supports Python 3.7+ only. The last version of GeoPandas
   supporting Python 2 is 0.6.
 
 
@@ -84,7 +82,7 @@ Some great resources for learning Git:
 * Software Carpentry's `Git Tutorial <http://swcarpentry.github.io/git-novice/>`_
 * `Atlassian <https://www.atlassian.com/git/tutorials/what-is-version-control>`_
 * the `GitHub help pages <http://help.github.com/>`_.
-* Matthew Brett's `Pydagogue <http://matthew-brett.github.com/pydagogue/>`_.
+* Matthew Brett's `Pydagogue <https://matthew-brett.github.io/pydagogue/>`_.
 
 Getting started with Git
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -109,16 +107,14 @@ want to clone your fork to your machine::
 This creates the directory `geopandas-yourname` and connects your repository to
 the upstream (main project) *GeoPandas* repository.
 
-The testing suite will run automatically on Travis-CI once your pull request is
-submitted.  However, if you wish to run the test suite on a branch prior to
-submitting the pull request, then Travis-CI needs to be hooked up to your
-GitHub repository.  Instructions for doing so are `here
-<http://about.travis-ci.org/docs/user/getting-started/>`__.
+The testing suite will run automatically on GitHub Actions once your pull request is
+submitted. The test suite will also automatically run on your branch so you can
+check it prior to submitting the pull request.
 
 Creating a branch
 ~~~~~~~~~~~~~~~~~~
 
-You want your master branch to reflect only production-ready code, so create a
+You want your main branch to reflect only production-ready code, so create a
 feature branch for making your changes. For example::
 
     git branch shiny-new-feature
@@ -133,12 +129,12 @@ changes in this branch specific to one bug or feature so it is clear
 what the branch brings to *GeoPandas*. You can have many shiny-new-features
 and switch in between them using the git checkout command.
 
-To update this branch, you need to retrieve the changes from the master branch::
+To update this branch, you need to retrieve the changes from the main branch::
 
     git fetch upstream
-    git rebase upstream/master
+    git rebase upstream/main
 
-This will replay your commits on top of the latest GeoPandas git master.  If this
+This will replay your commits on top of the latest GeoPandas git main.  If this
 leads to merge conflicts, you must resolve these before submitting your pull
 request.  If you have uncommitted changes, you will need to ``stash`` them prior
 to updating.  This will effectively store your changes and they can be reapplied
@@ -251,27 +247,42 @@ install *GeoPandas*) by typing::
 6) Updating the Documentation
 -----------------------------
 
-*GeoPandas* documentation resides in the `doc` folder. Changes to the docs are
-make by modifying the appropriate file in the `source` folder within `doc`.
-*GeoPandas* docs use reStructuredText syntax, `which is explained here <http://www.sphinx-doc.org/en/stable/rest.html#rst-primer>`_
-and the docstrings follow the `Numpy Docstring standard <https://github.com/numpy/numpy/blob/master/doc/HOWTO_DOCUMENT.rst.txt>`_.
+*GeoPandas* documentation resides in the ``doc`` folder. Changes to the docs are made by
+modifying the appropriate file in the ``source`` folder within ``doc``. *GeoPandas* docs use
+mixture of reStructuredText syntax for ``rst`` files, `which is explained here
+<http://www.sphinx-doc.org/en/stable/rest.html#rst-primer>`_ and MyST syntax for ``md``
+files `explained here <https://myst-parser.readthedocs.io/en/latest/index.html>`_.
+The docstrings follow the `Numpy Docstring standard
+<https://github.com/numpy/numpy/blob/main/doc/HOWTO_DOCUMENT.rst.txt>`_. Some pages
+and examples are Jupyter notebooks converted to docs using `nbsphinx
+<https://nbsphinx.readthedocs.io/>`_. Jupyter notebooks should be stored without the output.
+
+We highly encourage you to follow the `Google developer documentation style guide
+<https://developers.google.com/style/highlights>`_ when updating or creating new documentation.
 
 Once you have made your changes, you may try if they render correctly by
-building the docs using sphinx. To do so, you can navigate to the `doc` folder
+building the docs using sphinx. To do so, you can navigate to the `doc` folder::
+
+    cd doc
+
 and type::
 
     make html
 
-The resulting html pages will be located in `doc/build/html`. In case of any
-errors, you can try to use `make html` within a new environment based on
-environment.yml specification in the `doc` folder. Using conda::
+The resulting html pages will be located in ``doc/build/html``.
 
+In case of any errors, you can try to use ``make html`` within a new environment based on
+environment.yml specification in the ``doc`` folder. You may need to register Jupyter kernel as
+``geopandas_docs``. Using conda::
+
+    cd doc
     conda env create -f environment.yml
     conda activate geopandas_docs
+    python -m ipykernel install --user --name geopandas_docs
     make html
 
-For minor updates, you can skip whole `make html` part as reStructuredText syntax
-is usually quite straightforward.
+For minor updates, you can skip the ``make html`` part as reStructuredText and MyST
+syntax are usually quite straightforward.
 
 
 7) Submitting a Pull Request
@@ -292,12 +303,12 @@ and uses `Black <https://black.readthedocs.io/en/stable/>`_ and
 `Flake8 <http://flake8.pycqa.org/en/latest/>`_ to ensure a consistent code
 format throughout the project.
 
-Continuous Integration (Travis CI) will run those tools and
+Continuous Integration (GitHub Actions) will run those tools and
 report any stylistic errors in your code. Therefore, it is helpful before
 submitting code to run the check yourself::
 
    black geopandas
-   git diff upstream/master -u -- "*.py" | flake8 --diff
+   git diff upstream/main -u -- "*.py" | flake8 --diff
 
 to auto-format your code. Additionally, many editors have plugins that will
 apply ``black`` as you edit files.
@@ -344,4 +355,3 @@ is fine, but the former is generally preferred:
 Now you can commit your changes in your local repository::
 
     git commit -m
-    

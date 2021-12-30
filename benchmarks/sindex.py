@@ -1,8 +1,13 @@
-from geopandas import read_file, datasets
-from geopandas.sindex import VALID_QUERY_PREDICATES
+from shapely.geometry import Point
+
+from geopandas import read_file, datasets, GeoSeries
 
 
-predicates = sorted(VALID_QUERY_PREDICATES, key=lambda x: (x is None, x))
+# Derive list of valid query predicates based on underlying index backend;
+# we have to create a non-empty instance of the index to get these
+index = GeoSeries([Point(0, 0)]).sindex
+predicates = sorted(p for p in index.valid_query_predicates if p is not None)
+
 geom_types = ("mixed", "points", "polygons")
 
 
@@ -65,9 +70,8 @@ class BenchIndexCreation:
         lazy-building indexes are actually built.
         """
         # Note: the GeoDataFram._sindex_generated attribute will
-        # be removed by GH#1444 but is kept so that
-        # benchmarks can be run comparing pre GH#1444 to
-        # post GH#1444
+        # be removed by GH#1444 but is kept here (in the benchmarks
+        # so that we can compare pre GH#1444 to post GH#1444 if needed
         self.data[tree_geom_type]._sindex_generated = None
         self.data[tree_geom_type].geometry.values._sindex = None
         tree = self.data[tree_geom_type].sindex

@@ -9,13 +9,13 @@
 Indexing and Selecting Data
 ===========================
 
-GeoPandas inherits the standard ``pandas`` methods for indexing/selecting data. This includes label based indexing with ``.loc`` and integer position based indexing with ``.iloc``, which apply to both ``GeoSeries`` and ``GeoDataFrame`` objects. For more information on indexing/selecting, see the pandas_ documentation.
+GeoPandas inherits the standard pandas_ methods for indexing/selecting data. This includes label based indexing with :attr:`~pandas.DataFrame.loc` and integer position based indexing with :attr:`~pandas.DataFrame.iloc`, which apply to both :class:`GeoSeries` and :class:`GeoDataFrame` objects. For more information on indexing/selecting, see the pandas_ documentation.
 
 .. _pandas: http://pandas.pydata.org/pandas-docs/stable/indexing.html
 
-In addition to the standard ``pandas`` methods, GeoPandas also provides
-coordinate based indexing with the ``cx`` indexer, which slices using a bounding
-box. Geometries in the ``GeoSeries`` or ``GeoDataFrame`` that intersect the
+In addition to the standard pandas_ methods, GeoPandas also provides
+coordinate based indexing with the :attr:`~GeoDataFrame.cx` indexer, which slices using a bounding
+box. Geometries in the :class:`GeoSeries` or :class:`GeoDataFrame` that intersect the
 bounding box will be returned.
 
 Using the ``world`` dataset, we can use this functionality to quickly select all
@@ -27,4 +27,3 @@ countries whose boundaries extend into the southern hemisphere.
    southern_world = world.cx[:, :0]
    @savefig world_southern.png
    southern_world.plot(figsize=(10, 3));
-

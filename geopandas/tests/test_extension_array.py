@@ -16,12 +16,14 @@ expected to be available to pytest by the inherited pandas tests).
 import operator
 
 import numpy as np
+from numpy.testing import assert_array_equal
 import pandas as pd
 from pandas.tests.extension import base as extension_tests
 
 import shapely.geometry
 
 from geopandas.array import GeometryArray, GeometryDtype, from_shapely
+from geopandas._compat import ignore_shapely2_warnings
 
 import pytest
 
@@ -46,7 +48,9 @@ def dtype():
 
 
 def make_data():
-    a = np.array([shapely.geometry.Point(i, i) for i in range(100)], dtype=object)
+    a = np.empty(100, dtype=object)
+    with ignore_shapely2_warnings():
+        a[:] = [shapely.geometry.Point(i, i) for i in range(100)]
     ga = from_shapely(a)
     return ga
 
@@ -227,6 +231,18 @@ def as_array(request):
     return request.param
 
 
+@pytest.fixture
+def invalid_scalar(data):
+    """
+    A scalar that *cannot* be held by this ExtensionArray.
+
+    The default should work for most subclasses, but is not guaranteed.
+
+    If the array can hold any item (i.e. object dtype), then use pytest.skip.
+    """
+    return object.__new__(object)
+
+
 # Fixtures defined in pandas/conftest.py that are also needed: defining them
 # here instead of importing for compatibility
 
@@ -287,7 +303,35 @@ class TestDtype(extension_tests.BaseDtypeTests):
 
 
 class TestInterface(extension_tests.BaseInterfaceTests):
-    pass
+    def test_array_interface(self, data):
+        # we are overriding this base test because the creation of `expected`
+        # potentially doesn't work for shapely geometries
+        # TODO can be removed with Shapely 2.0
+        result = np.array(data)
+        assert result[0] == data[0]
+
+        result = np.array(data, dtype=object)
+        # expected = np.array(list(data), dtype=object)
+        expected = np.empty(len(data), dtype=object)
+        with ignore_shapely2_warnings():
+            expected[:] = list(data)
+        assert_array_equal(result, expected)
+
+    def test_contains(self, data, data_missing):
+        # overridden due to the inconsistency between
+        # GeometryDtype.na_value = np.nan
+        # and None being used as NA in array
+
+        # ensure data without missing values
+        data = data[~data.isna()]
+
+        # first elements are non-missing
+        assert data[0] in data
+        assert data_missing[0] in data_missing
+
+        assert None in data_missing
+        assert None not in data
+        assert pd.NaT not in data_missing
 
 
 class TestConstructors(extension_tests.BaseConstructorsTests):
@@ -337,6 +381,10 @@ class TestMissing(extension_tests.BaseMissingTests):
     def test_fillna_series_method(self, data_missing, method):
         pass
 
+    @pytest.mark.skip("fillna method not supported")
+    def test_fillna_no_op_returns_copy(self, data):
+        pass
+
 
 class TestReduce(extension_tests.BaseNoReduceTests):
     @pytest.mark.skip("boolean reduce (any/all) tested in test_pandas_methods")
@@ -366,11 +414,16 @@ def all_arithmetic_operators(request):
     """
     Fixture for dunder names for common arithmetic operations
 
-    Adapted to excluse __sub__, as this is implemented as "difference".
+    Adapted to exclude __sub__, as this is implemented as "difference".
     """
     return request.param
 
 
+# an inherited test from pandas creates a Series from a list of geometries, which
+# triggers the warning from Shapely, out of control of GeoPandas, so ignoring here
+@pytest.mark.filterwarnings(
+    "ignore:The array interface is deprecated and will no longer work in Shapely 2.0"
+)
 class TestArithmeticOps(extension_tests.BaseArithmeticOpsTests):
     @pytest.mark.skip(reason="not applicable")
     def test_divmod_series_array(self, data, data_for_twos):
@@ -381,6 +434,11 @@ class TestArithmeticOps(extension_tests.BaseArithmeticOpsTests):
         pass
 
 
+# an inherited test from pandas creates a Series from a list of geometries, which
+# triggers the warning from Shapely, out of control of GeoPandas, so ignoring here
+@pytest.mark.filterwarnings(
+    "ignore:The array interface is deprecated and will no longer work in Shapely 2.0"
+)
 class TestComparisonOps(extension_tests.BaseComparisonOpsTests):
     def _compare_other(self, s, data, op_name, other):
         op = getattr(operator, op_name.strip("_"))
@@ -401,12 +459,12 @@ class TestComparisonOps(extension_tests.BaseComparisonOpsTests):
 
 
 class TestMethods(extension_tests.BaseMethodsTests):
-    @not_yet_implemented
+    @no_sorting
     @pytest.mark.parametrize("dropna", [True, False])
     def test_value_counts(self, all_data, dropna):
         pass
 
-    @not_yet_implemented
+    @no_sorting
     def test_value_counts_with_normalize(self, data):
         pass
 
@@ -490,6 +548,14 @@ class TestMethods(extension_tests.BaseMethodsTests):
 
     @no_sorting
     def test_argmin_argmax_all_na(self):
+        pass
+
+    @no_sorting
+    def test_argreduce_series(self):
+        pass
+
+    @no_sorting
+    def test_argmax_argmin_no_skipna_notimplemented(self):
         pass
 
 

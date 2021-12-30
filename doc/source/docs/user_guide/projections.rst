@@ -30,7 +30,7 @@ referred to using the authority code ``"EPSG:4326"``.
 - CRS WKT string
 - An authority string (i.e. "epsg:4326")
 - An EPSG integer code (i.e. 4326)
-- A ``pyproj.CRS``
+- A :class:`pyproj.CRS <pyproj.crs.CRS>`
 - An object with a to_wkt method.
 - PROJ string
 - Dictionary of PROJ parameters
@@ -71,7 +71,7 @@ the :attr:`GeoSeries.crs` attribute):
 
 .. sourcecode:: python
 
-    my_geoseries = my_geoseries.set_crs("EPSG:4326"})
+    my_geoseries = my_geoseries.set_crs("EPSG:4326")
     my_geoseries = my_geoseries.set_crs(epsg=4326)
 
 
@@ -86,7 +86,7 @@ Re-projecting is the process of changing the representation of locations from on
     world = geopandas.read_file(geopandas.datasets.get_path('naturalearth_lowres'))
 
     # Check original projection
-    # (it's Platte Carre! x-y are long and lat)
+    # (it's Plate Carrée! x-y are long and lat)
     world.crs
 
     # Visualize
@@ -145,7 +145,7 @@ Upgrading to GeoPandas 0.7 with pyproj > 2.2 and PROJ > 6
 ---------------------------------------------------------
 
 Starting with GeoPandas 0.7, the `.crs` attribute of a GeoSeries or GeoDataFrame
-stores the CRS information as a ``pyproj.CRS``, and no longer as a proj4 string
+stores the CRS information as a :class:`pyproj.CRS <pyproj.crs.CRS>`, and no longer as a proj4 string
 or dict.
 
 Before, you might have seen this:
@@ -176,7 +176,7 @@ for some more background, and the subsections below cover different possible
 migration issues.
 
 See the `pyproj docs <https://pyproj4.github.io/pyproj/stable/>`__ for more on
-the ``pyproj.CRS`` object.
+the :class:`pyproj.CRS <pyproj.crs.CRS>` object.
 
 Importing data from files
 ^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -240,7 +240,7 @@ For example, instead of:
 
    gdf.crs = "+proj=laea +lat_0=45 +lon_0=-100 +x_0=0 +y_0=0 +a=6370997 +b=6370997 +units=m +no_defs"
 
-we recommenend to do:
+we recommend to do:
 
 .. code-block:: python
 
@@ -267,11 +267,11 @@ including their EPSG codes and proj4 string definitions.
 **Other formats**
 
 Next to the EPSG code mentioned above, there are also other ways to specify the
-CRS: an actual ``pyproj.CRS`` object, a WKT string, a PROJ JSON string, etc.
-Anything that is accepted by ``pyproj.CRS.from_user_input`` can by specified
+CRS: an actual :class:`pyproj.CRS <pyproj.crs.CRS>` object, a WKT string, a PROJ JSON string, etc.
+Anything that is accepted by :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>` can by specified
 to the ``crs`` keyword/attribute in GeoPandas.
 
-Also compatible CRS objects, such as from the ``rasterio`` package, can be
+Also compatible CRS objects, such as from the :mod:`rasterio` package, can be
 passed directly to GeoPandas.
 
 
@@ -306,7 +306,7 @@ Why is it not properly recognizing my CRS?
 There are many file sources and CRS definitions out there "in the wild" that
 might have a CRS description that does not fully conform to the new standards of
 PROJ > 6 (proj4 strings, older WKT formats, ...). In such cases, you will get a
-``pyproj.CRS`` object that might not be fully what you expected (e.g. not equal
+:class:`pyproj.CRS <pyproj.crs.CRS>` object that might not be fully what you expected (e.g. not equal
 to the expected EPSG code). Below we list a few possible cases.
 
 I get a "Bound CRS"?
@@ -447,7 +447,7 @@ The ``.crs`` attribute is no longer a dict or string
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 If you relied on the ``.crs`` object being a dict or a string, such code can
-be broken given it is now a ``pyproj.CRS`` object. But this object actually
+be broken given it is now a :class:`pyproj.CRS <pyproj.crs.CRS>` object. But this object actually
 provides a more robust interface to get information about the CRS.
 
 For example, if you used the following code to get the EPSG code:
@@ -457,7 +457,7 @@ For example, if you used the following code to get the EPSG code:
    gdf.crs['init']
 
 This will no longer work. To get the EPSG code from a ``crs`` object, you can use
-the ``to_epsg()`` method.
+the :meth:`~pyproj.crs.CRS.to_epsg` method.
 
 Or to check if a CRS was a certain UTM zone:
 
@@ -465,11 +465,11 @@ Or to check if a CRS was a certain UTM zone:
 
    '+proj=utm ' in gdf.crs
 
-could be replaced with the longer but more robust check:
+could be replaced with the more robust check (requires pyproj 2.6+):
 
 .. code-block:: python
 
-   gdf.crs.is_projected and gdf.crs.coordinate_operation.name.upper().startswith('UTM')
+   gdf.crs.utm_zone is not None
 
-And there are many other methods available on the ``pyproj.CRS`` class to get
+And there are many other methods available on the :class:`pyproj.CRS <pyproj.crs.CRS>` class to get
 information about the CRS.

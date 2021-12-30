@@ -1,9 +1,11 @@
+from distutils.version import LooseVersion
 import itertools
 import warnings
 
 import numpy as np
 import pandas as pd
 
+from shapely import wkt
 from shapely.affinity import rotate
 from shapely.geometry import (
     MultiPolygon,
@@ -19,12 +21,25 @@ from shapely.geometry import (
 
 from geopandas import GeoDataFrame, GeoSeries, read_file
 from geopandas.datasets import get_path
+import geopandas._compat as compat
+from geopandas.plotting import GeoplotAccessor
 
 import pytest
 
 matplotlib = pytest.importorskip("matplotlib")
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa
+
+try:  # skipif and importorskip do not work for decorators
+    from matplotlib.testing.decorators import check_figures_equal
+
+    if matplotlib.__version__ >= LooseVersion("3.3.0"):
+
+        MPL_DECORATORS = True
+    else:
+        MPL_DECORATORS = False
+except ImportError:
+    MPL_DECORATORS = False
 
 
 @pytest.fixture(autouse=True)
@@ -38,6 +53,8 @@ try:
     MPL_DFT_COLOR = cycle["color"][0]
 except KeyError:
     MPL_DFT_COLOR = matplotlib.rcParams["axes.color_cycle"][0]
+
+plt.rcParams.update({"figure.max_open_warning": 0})
 
 
 class TestPointPlotting:
@@ -86,6 +103,43 @@ class TestPointPlotting:
         expected_colors = cmap(np.arange(self.N) / (self.N - 1))
         _check_colors(self.N, ax.collections[0].get_facecolors(), expected_colors)
 
+    def test_series_color_no_index(self):
+
+        # Color order with ordered index
+        colors_ord = pd.Series(["a", "b", "c", "a", "b", "c", "a", "b", "c", "a"])
+
+        # Plot using Series as color
+        ax1 = self.df.plot(colors_ord)
+
+        # Correct answer: Add as column to df and plot
+        self.df["colors_ord"] = colors_ord
+        ax2 = self.df.plot("colors_ord")
+
+        # Confirm out-of-order index re-sorted
+        point_colors1 = ax1.collections[0].get_facecolors()
+        point_colors2 = ax2.collections[0].get_facecolors()
+        np.testing.assert_array_equal(point_colors1[1], point_colors2[1])
+
+    def test_series_color_index(self):
+
+        # Color order with out-of-order index
+        colors_ord = pd.Series(
+            ["a", "a", "a", "a", "b", "b", "b", "c", "c", "c"],
+            index=[0, 3, 6, 9, 1, 4, 7, 2, 5, 8],
+        )
+
+        # Plot using Series as color
+        ax1 = self.df.plot(colors_ord)
+
+        # Correct answer: Add as column to df and plot
+        self.df["colors_ord"] = colors_ord
+        ax2 = self.df.plot("colors_ord")
+
+        # Confirm out-of-order index re-sorted
+        point_colors1 = ax1.collections[0].get_facecolors()
+        point_colors2 = ax2.collections[0].get_facecolors()
+        np.testing.assert_array_equal(point_colors1[1], point_colors2[1])
+
     def test_colormap(self):
 
         # without specifying values but cmap specified -> no uniform color
@@ -109,7 +163,7 @@ class TestPointPlotting:
         # colors
         ax = self.points.plot(cmap=plt.get_cmap("Set1", lut=5))
         cmap = plt.get_cmap("Set1", lut=5)
-        exp_colors = cmap(list(range(5)) * 3)
+        exp_colors = cmap(list(range(5)) * 2)
         _check_colors(self.N, ax.collections[0].get_facecolors(), exp_colors)
 
     def test_single_color(self):
@@ -171,8 +225,15 @@ class TestPointPlotting:
     def test_style_kwargs_alpha(self):
         ax = self.df.plot(alpha=0.7)
         np.testing.assert_array_equal([0.7], ax.collections[0].get_alpha())
-        with pytest.raises(TypeError):  # no list allowed for alpha
-            ax = self.df.plot(alpha=[0.7, 0.2])
+        try:
+            ax = self.df.plot(alpha=np.linspace(0, 0.0, 1.0, self.N))
+        except TypeError:
+            # no list allowed for alpha up to matplotlib 3.3
+            pass
+        else:
+            np.testing.assert_array_equal(
+                np.linspace(0, 0.0, 1.0, self.N), ax.collections[0].get_alpha()
+            )
 
     def test_legend(self):
         with warnings.catch_warnings(record=True) as _:  # don't print warning
@@ -188,7 +249,7 @@ class TestPointPlotting:
         # the colorbar matches the Point colors
         ax = self.df.plot(column="values", cmap="RdYlGn", legend=True)
         point_colors = ax.collections[0].get_facecolors()
-        cbar_colors = ax.get_figure().axes[1].collections[0].get_facecolors()
+        cbar_colors = _get_colorbar_ax(ax.get_figure()).collections[-1].get_facecolors()
         # first point == bottom of colorbar
         np.testing.assert_array_equal(point_colors[0], cbar_colors[0])
         # last point == top of colorbar
@@ -198,7 +259,7 @@ class TestPointPlotting:
         # the colorbar matches the Point colors
         ax = self.df.plot(column="values", categorical=True, legend=True)
         point_colors = ax.collections[0].get_facecolors()
-        cbar_colors = ax.get_legend().axes.collections[0].get_facecolors()
+        cbar_colors = ax.get_legend().axes.collections[-1].get_facecolors()
         # first point == bottom of colorbar
         np.testing.assert_array_equal(point_colors[0], cbar_colors[0])
         # last point == top of colorbar
@@ -211,7 +272,7 @@ class TestPointPlotting:
         )
         ax = self.df[1:].plot(column="exp", cmap="RdYlGn", legend=True, norm=norm)
         point_colors = ax.collections[0].get_facecolors()
-        cbar_colors = ax.get_figure().axes[1].collections[0].get_facecolors()
+        cbar_colors = _get_colorbar_ax(ax.get_figure()).collections[-1].get_facecolors()
         # first point == bottom of colorbar
         np.testing.assert_array_equal(point_colors[0], cbar_colors[0])
         # last point == top of colorbar
@@ -233,6 +294,11 @@ class TestPointPlotting:
         np.testing.assert_array_equal(actual_colors_orig[1], actual_colors_sub[0])
 
     def test_empty_plot(self):
+
+        s = GeoSeries([Polygon()])
+        with pytest.warns(UserWarning):
+            ax = s.plot()
+        assert len(ax.collections) == 0
         s = GeoSeries([])
         with pytest.warns(UserWarning):
             ax = s.plot()
@@ -242,6 +308,32 @@ class TestPointPlotting:
             ax = df.plot()
         assert len(ax.collections) == 0
 
+    def test_empty_geometry(self):
+
+        if compat.USE_PYGEOS:
+            s = GeoSeries([wkt.loads("POLYGON EMPTY")])
+            s = GeoSeries(
+                [Polygon([(0, 0), (1, 0), (1, 1)]), wkt.loads("POLYGON EMPTY")]
+            )
+            ax = s.plot()
+            assert len(ax.collections) == 1
+        if not compat.USE_PYGEOS:
+            s = GeoSeries([Polygon([(0, 0), (1, 0), (1, 1)]), Polygon()])
+            ax = s.plot()
+            assert len(ax.collections) == 1
+
+        # more complex case with GEOMETRYCOLLECTION EMPTY, POINT EMPTY and NONE
+        poly = Polygon([(-1, -1), (-1, 2), (2, 2), (2, -1), (-1, -1)])
+        point = Point(0, 1)
+        point_ = Point(10, 10)
+        empty_point = Point()
+
+        gdf = GeoDataFrame(geometry=[point, empty_point, point_])
+        gdf["geometry"] = gdf.intersection(poly)
+        gdf.loc[3] = [None]
+        ax = gdf.plot()
+        assert len(ax.collections) == 1
+
     def test_multipoints(self):
 
         # MultiPoints
@@ -249,19 +341,26 @@ class TestPointPlotting:
         _check_colors(4, ax.collections[0].get_facecolors(), [MPL_DFT_COLOR] * 4)
 
         ax = self.df2.plot(column="values")
-        cmap = plt.get_cmap()
+        cmap = plt.get_cmap(lut=2)
         expected_colors = [cmap(0)] * self.N + [cmap(1)] * self.N
-        _check_colors(2, ax.collections[0].get_facecolors(), expected_colors)
+        _check_colors(20, ax.collections[0].get_facecolors(), expected_colors)
 
         ax = self.df2.plot(color=["r", "b"])
         # colors are repeated for all components within a MultiPolygon
-        _check_colors(2, ax.collections[0].get_facecolors(), ["r"] * 10 + ["b"] * 10)
+        _check_colors(20, ax.collections[0].get_facecolors(), ["r"] * 10 + ["b"] * 10)
 
     def test_multipoints_alpha(self):
         ax = self.df2.plot(alpha=0.7)
         np.testing.assert_array_equal([0.7], ax.collections[0].get_alpha())
-        with pytest.raises(TypeError):  # no list allowed for alpha
+        try:
             ax = self.df2.plot(alpha=[0.7, 0.2])
+        except TypeError:
+            # no list allowed for alpha up to matplotlib 3.3
+            pass
+        else:
+            np.testing.assert_array_equal(
+                [0.7] * 10 + [0.2] * 10, ax.collections[0].get_alpha()
+            )
 
     def test_categories(self):
         self.df["cats_object"] = ["cat1", "cat2"] * 5
@@ -417,7 +516,7 @@ class TestLineStringPlotting:
             self.df.plot(linestyle=ls, linewidth=1),
             self.df.plot(column="values", linestyle=ls, linewidth=1),
         ]:
-            np.testing.assert_array_equal(exp_ls, ax.collections[0].get_linestyle())
+            assert exp_ls == ax.collections[0].get_linestyle()
 
     def test_style_kwargs_linewidth(self):
         # single
@@ -441,8 +540,25 @@ class TestLineStringPlotting:
     def test_style_kwargs_alpha(self):
         ax = self.df.plot(alpha=0.7)
         np.testing.assert_array_equal([0.7], ax.collections[0].get_alpha())
-        with pytest.raises(TypeError):  # no list allowed for alpha
-            ax = self.df.plot(alpha=[0.7, 0.2])
+        try:
+            ax = self.df.plot(alpha=np.linspace(0, 0.0, 1.0, self.N))
+        except TypeError:
+            # no list allowed for alpha up to matplotlib 3.3
+            pass
+        else:
+            np.testing.assert_array_equal(
+                np.linspace(0, 0.0, 1.0, self.N), ax.collections[0].get_alpha()
+            )
+
+    def test_style_kwargs_path_effects(self):
+        from matplotlib.patheffects import withStroke
+
+        effects = [withStroke(linewidth=8, foreground="b")]
+        ax = self.df.plot(color="orange", path_effects=effects)
+        assert ax.collections[0].get_path_effects()[0].__dict__["_gc"] == {
+            "linewidth": 8,
+            "foreground": "b",
+        }
 
     def test_subplots_norm(self):
         # colors of subplots are the same as for plot (norm is applied)
@@ -462,17 +578,17 @@ class TestLineStringPlotting:
         # MultiLineStrings
         ax = self.df2.plot()
         assert len(ax.collections[0].get_paths()) == 4
-        _check_colors(4, ax.collections[0].get_facecolors(), [MPL_DFT_COLOR] * 4)
+        _check_colors(4, ax.collections[0].get_edgecolors(), [MPL_DFT_COLOR] * 4)
 
         ax = self.df2.plot("values")
         cmap = plt.get_cmap(lut=2)
         # colors are repeated for all components within a MultiLineString
         expected_colors = [cmap(0), cmap(0), cmap(1), cmap(1)]
-        _check_colors(4, ax.collections[0].get_facecolors(), expected_colors)
+        _check_colors(4, ax.collections[0].get_edgecolors(), expected_colors)
 
         ax = self.df2.plot(color=["r", "b"])
         # colors are repeated for all components within a MultiLineString
-        _check_colors(4, ax.collections[0].get_facecolors(), ["r", "r", "b", "b"])
+        _check_colors(4, ax.collections[0].get_edgecolors(), ["r", "r", "b", "b"])
 
 
 class TestPolygonPlotting:
@@ -498,11 +614,11 @@ class TestPolygonPlotting:
         ax = self.polys.plot(color="green")
         _check_colors(2, ax.collections[0].get_facecolors(), ["green"] * 2)
         # color only sets facecolor
-        _check_colors(2, ax.collections[0].get_edgecolors(), ["k"] * 2)
+        assert len(ax.collections[0].get_edgecolors()) == 0
 
         ax = self.df.plot(color="green")
         _check_colors(2, ax.collections[0].get_facecolors(), ["green"] * 2)
-        _check_colors(2, ax.collections[0].get_edgecolors(), ["k"] * 2)
+        assert len(ax.collections[0].get_edgecolors()) == 0
 
         # check rgba tuple GH1178
         ax = self.df.plot(color=(0.5, 0.5, 0.5))
@@ -602,8 +718,13 @@ class TestPolygonPlotting:
         # alpha
         ax = self.df.plot(alpha=0.7)
         np.testing.assert_array_equal([0.7], ax.collections[0].get_alpha())
-        with pytest.raises(TypeError):  # no list allowed for alpha
+        try:
             ax = self.df.plot(alpha=[0.7, 0.2])
+        except TypeError:
+            # no list allowed for alpha up to matplotlib 3.3
+            pass
+        else:
+            np.testing.assert_array_equal([0.7, 0.2], ax.collections[0].get_alpha())
 
     def test_legend_kwargs(self):
 
@@ -626,8 +747,8 @@ class TestPolygonPlotting:
             legend=True,
             legend_kwds={"label": label_txt},
         )
-
-        assert ax.get_figure().axes[1].get_ylabel() == label_txt
+        cax = _get_colorbar_ax(ax.get_figure())
+        assert cax.get_ylabel() == label_txt
 
         ax = self.df.plot(
             column="values",
@@ -636,7 +757,8 @@ class TestPolygonPlotting:
             legend_kwds={"label": label_txt, "orientation": "horizontal"},
         )
 
-        assert ax.get_figure().axes[1].get_xlabel() == label_txt
+        cax = _get_colorbar_ax(ax.get_figure())
+        assert cax.get_xlabel() == label_txt
 
     def test_fmt_ignore(self):
         # test if fmt is removed if scheme is not passed (it would raise Error)
@@ -700,8 +822,15 @@ class TestPolygonPlotting:
     def test_multipolygons_alpha(self):
         ax = self.df2.plot(alpha=0.7)
         np.testing.assert_array_equal([0.7], ax.collections[0].get_alpha())
-        with pytest.raises(TypeError):  # no list allowed for alpha
+        try:
             ax = self.df2.plot(alpha=[0.7, 0.2])
+        except TypeError:
+            # no list allowed for alpha up to matplotlib 3.3
+            pass
+        else:
+            np.testing.assert_array_equal(
+                [0.7, 0.7, 0.2, 0.2], ax.collections[0].get_alpha()
+            )
 
     def test_subplots_norm(self):
         # colors of subplots are the same as for plot (norm is applied)
@@ -754,17 +883,23 @@ class TestGeometryCollectionPlotting:
     def test_colors(self):
         # default uniform color
         ax = self.series.plot()
-        _check_colors(1, ax.collections[0].get_facecolors(), [MPL_DFT_COLOR])  # poly
-        _check_colors(2, ax.collections[1].get_edgecolors(), [MPL_DFT_COLOR])  # line
-        _check_colors(2, ax.collections[2].get_facecolors(), [MPL_DFT_COLOR])  # point
+        _check_colors(
+            2, ax.collections[0].get_facecolors(), [MPL_DFT_COLOR] * 2
+        )  # poly
+        _check_colors(
+            2, ax.collections[1].get_edgecolors(), [MPL_DFT_COLOR] * 2
+        )  # line
+        _check_colors(1, ax.collections[2].get_facecolors(), [MPL_DFT_COLOR])  # point
 
     def test_values(self):
         ax = self.df.plot("values")
         cmap = plt.get_cmap()
-        exp_colors = cmap(np.arange(2) / 1)
-        _check_colors(1, ax.collections[0].get_facecolors(), exp_colors)  # poly
-        _check_colors(2, ax.collections[1].get_edgecolors(), [exp_colors[0]])  # line
-        _check_colors(2, ax.collections[2].get_facecolors(), [exp_colors[1]])  # point
+        exp_colors = cmap([0.0, 1.0])
+        _check_colors(2, ax.collections[0].get_facecolors(), exp_colors)  # poly
+        _check_colors(
+            2, ax.collections[1].get_edgecolors(), [exp_colors[0]] * 2
+        )  # line
+        _check_colors(1, ax.collections[2].get_facecolors(), [exp_colors[1]])  # point
 
 
 class TestNonuniformGeometryPlotting:
@@ -822,7 +957,7 @@ class TestNonuniformGeometryPlotting:
             self.series.plot(linestyles=ls, linewidth=1),
             self.df.plot(linestyles=ls, linewidth=1),
         ]:
-            np.testing.assert_array_equal(exp_ls, ax.collections[0].get_linestyle())
+            assert exp_ls == ax.collections[0].get_linestyle()
 
     def test_style_kwargs_linewidth(self):
         # single
@@ -846,8 +981,17 @@ class TestNonuniformGeometryPlotting:
     def test_style_kwargs_alpha(self):
         ax = self.df.plot(alpha=0.7)
         np.testing.assert_array_equal([0.7], ax.collections[0].get_alpha())
-        with pytest.raises(TypeError):  # no list allowed for alpha
-            ax = self.df.plot(alpha=[0.7, 0.2, 0.9])
+        # TODO splitting array-like arguments for the different plot types
+        # is not yet supported - https://github.com/geopandas/geopandas/issues/1379
+        # try:
+        #     ax = self.df.plot(alpha=[0.7, 0.2, 0.9])
+        # except TypeError:
+        #     # no list allowed for alpha up to matplotlib 3.3
+        #     pass
+        # else:
+        #     np.testing.assert_array_equal(
+        #         [0.7, 0.2, 0.9], ax.collections[0].get_alpha()
+        #     )
 
 
 class TestGeographicAspect:
@@ -877,21 +1021,39 @@ class TestGeographicAspect:
     def test_manual(self):
         ax = self.north.geometry.plot(aspect="equal")
         assert ax.get_aspect() in ["equal", 1.0]
+        self.north.geometry.plot(ax=ax, aspect=None)
+        assert ax.get_aspect() in ["equal", 1.0]
         ax2 = self.north.geometry.plot(aspect=0.5)
+        assert ax2.get_aspect() == 0.5
+        self.north.geometry.plot(ax=ax2, aspect=None)
         assert ax2.get_aspect() == 0.5
         ax3 = self.north_proj.geometry.plot(aspect=0.5)
         assert ax3.get_aspect() == 0.5
+        self.north_proj.geometry.plot(ax=ax3, aspect=None)
+        assert ax3.get_aspect() == 0.5
         ax = self.north.plot(aspect="equal")
+        assert ax.get_aspect() in ["equal", 1.0]
+        self.north.plot(ax=ax, aspect=None)
         assert ax.get_aspect() in ["equal", 1.0]
         ax2 = self.north.plot(aspect=0.5)
         assert ax2.get_aspect() == 0.5
+        self.north.plot(ax=ax2, aspect=None)
+        assert ax2.get_aspect() == 0.5
         ax3 = self.north_proj.plot(aspect=0.5)
+        assert ax3.get_aspect() == 0.5
+        self.north_proj.plot(ax=ax3, aspect=None)
         assert ax3.get_aspect() == 0.5
         ax = self.north.plot("pop_est", aspect="equal")
         assert ax.get_aspect() in ["equal", 1.0]
+        self.north.plot("pop_est", ax=ax, aspect=None)
+        assert ax.get_aspect() in ["equal", 1.0]
         ax2 = self.north.plot("pop_est", aspect=0.5)
         assert ax2.get_aspect() == 0.5
+        self.north.plot("pop_est", ax=ax2, aspect=None)
+        assert ax2.get_aspect() == 0.5
         ax3 = self.north_proj.plot("pop_est", aspect=0.5)
+        assert ax3.get_aspect() == 0.5
+        self.north_proj.plot("pop_est", ax=ax3, aspect=None)
         assert ax3.get_aspect() == 0.5
 
 
@@ -907,6 +1069,12 @@ class TestMapclassifyPlotting:
         pth = get_path("naturalearth_lowres")
         cls.df = read_file(pth)
         cls.df["NEGATIVES"] = np.linspace(-10, 10, len(cls.df.index))
+        cls.df["low_vals"] = np.linspace(0, 0.3, cls.df.shape[0])
+        cls.df["mid_vals"] = np.linspace(0.3, 0.7, cls.df.shape[0])
+        cls.df["high_vals"] = np.linspace(0.7, 1.0, cls.df.shape[0])
+        cls.df.loc[cls.df.index[:20:2], "high_vals"] = np.nan
+        cls.nybb = read_file(get_path("nybb"))
+        cls.nybb["vals"] = [0.001, 0.002, 0.003, 0.004, 0.005]
 
     def test_legend(self):
         with warnings.catch_warnings(record=True) as _:  # don't print warning
@@ -916,9 +1084,9 @@ class TestMapclassifyPlotting:
             )
         labels = [t.get_text() for t in ax.get_legend().get_texts()]
         expected = [
-            u"[       140.00,    5217064.00]",
-            u"(   5217064.00,   19532732.33]",
-            u"(  19532732.33, 1379302771.00]",
+            u"       140.00,    5217064.00",
+            u"   5217064.00,   19532732.33",
+            u"  19532732.33, 1379302771.00",
         ]
         assert labels == expected
 
@@ -951,7 +1119,7 @@ class TestMapclassifyPlotting:
             column="NEGATIVES", scheme="FISHER_JENKS", k=3, cmap="OrRd", legend=True
         )
         labels = [t.get_text() for t in ax.get_legend().get_texts()]
-        expected = [u"[-10.00,  -3.41]", u"( -3.41,   3.30]", u"(  3.30,  10.00]"]
+        expected = [u"-10.00,  -3.41", u" -3.41,   3.30", u"  3.30,  10.00"]
         assert labels == expected
 
     def test_fmt(self):
@@ -964,7 +1132,20 @@ class TestMapclassifyPlotting:
             legend_kwds={"fmt": "{:.0f}"},
         )
         labels = [t.get_text() for t in ax.get_legend().get_texts()]
-        expected = [u"[-10,  -3]", u"( -3,   3]", u"(  3,  10]"]
+        expected = [u"-10,  -3", u" -3,   3", u"  3,  10"]
+        assert labels == expected
+
+    def test_interval(self):
+        ax = self.df.plot(
+            column="NEGATIVES",
+            scheme="FISHER_JENKS",
+            k=3,
+            cmap="OrRd",
+            legend=True,
+            legend_kwds={"interval": True},
+        )
+        labels = [t.get_text() for t in ax.get_legend().get_texts()]
+        expected = [u"[-10.00,  -3.41]", u"( -3.41,   3.30]", u"(  3.30,  10.00]"]
         assert labels == expected
 
     @pytest.mark.parametrize("scheme", ["FISHER_JENKS", "FISHERJENKS"])
@@ -987,7 +1168,7 @@ class TestMapclassifyPlotting:
             legend=True,
         )
         labels = [t.get_text() for t in ax.get_legend().get_texts()]
-        expected = ["[       140.00,    9961396.00]", "(   9961396.00, 1379302771.00]"]
+        expected = ["       140.00,    9961396.00", "   9961396.00, 1379302771.00"]
         assert labels == expected
 
     def test_invalid_scheme(self):
@@ -1017,22 +1198,171 @@ class TestMapclassifyPlotting:
         # base case
         with warnings.catch_warnings(record=True) as _:  # don't print warning
             ax = self.df.plot(column="pop_est", cmap="OrRd", legend=True)
-        plot_height = ax.get_figure().get_axes()[0].get_position().height
-        legend_height = ax.get_figure().get_axes()[1].get_position().height
+        plot_height = _get_ax(ax.get_figure(), "").get_position().height
+        legend_height = _get_ax(ax.get_figure(), "<colorbar>").get_position().height
         assert abs(plot_height - legend_height) >= 1e-6
         # fix heights with cax argument
-        ax2 = plt.axes()
+        fig, ax2 = plt.subplots()
         from mpl_toolkits.axes_grid1 import make_axes_locatable
 
         divider = make_axes_locatable(ax2)
-        cax = divider.append_axes("right", size="5%", pad=0.1)
+        cax = divider.append_axes("right", size="5%", pad=0.1, label="fixed_colorbar")
         with warnings.catch_warnings(record=True) as _:
             ax2 = self.df.plot(
                 column="pop_est", cmap="OrRd", legend=True, cax=cax, ax=ax2
             )
-        plot_height = ax2.get_figure().get_axes()[0].get_position().height
-        legend_height = ax2.get_figure().get_axes()[1].get_position().height
+        plot_height = _get_ax(fig, "").get_position().height
+        legend_height = _get_ax(fig, "fixed_colorbar").get_position().height
         assert abs(plot_height - legend_height) < 1e-6
+
+    def test_empty_bins(self):
+        bins = np.arange(1, 11) / 10
+        ax = self.df.plot(
+            "low_vals",
+            scheme="UserDefined",
+            classification_kwds={"bins": bins},
+            legend=True,
+        )
+        expected = np.array(
+            [
+                [0.281412, 0.155834, 0.469201, 1.0],
+                [0.267004, 0.004874, 0.329415, 1.0],
+                [0.244972, 0.287675, 0.53726, 1.0],
+            ]
+        )
+        assert all(
+            [
+                (z == expected).all(axis=1).any()
+                for z in ax.collections[0].get_facecolors()
+            ]
+        )
+        labels = [
+            "0.00, 0.10",
+            "0.10, 0.20",
+            "0.20, 0.30",
+            "0.30, 0.40",
+            "0.40, 0.50",
+            "0.50, 0.60",
+            "0.60, 0.70",
+            "0.70, 0.80",
+            "0.80, 0.90",
+            "0.90, 1.00",
+        ]
+        legend = [t.get_text() for t in ax.get_legend().get_texts()]
+        assert labels == legend
+
+        legend_colors_exp = [
+            (0.267004, 0.004874, 0.329415, 1.0),
+            (0.281412, 0.155834, 0.469201, 1.0),
+            (0.244972, 0.287675, 0.53726, 1.0),
+            (0.190631, 0.407061, 0.556089, 1.0),
+            (0.147607, 0.511733, 0.557049, 1.0),
+            (0.119699, 0.61849, 0.536347, 1.0),
+            (0.20803, 0.718701, 0.472873, 1.0),
+            (0.430983, 0.808473, 0.346476, 1.0),
+            (0.709898, 0.868751, 0.169257, 1.0),
+            (0.993248, 0.906157, 0.143936, 1.0),
+        ]
+
+        assert [
+            line.get_markerfacecolor() for line in ax.get_legend().get_lines()
+        ] == legend_colors_exp
+
+        ax2 = self.df.plot(
+            "mid_vals",
+            scheme="UserDefined",
+            classification_kwds={"bins": bins},
+            legend=True,
+        )
+        expected = np.array(
+            [
+                [0.244972, 0.287675, 0.53726, 1.0],
+                [0.190631, 0.407061, 0.556089, 1.0],
+                [0.147607, 0.511733, 0.557049, 1.0],
+                [0.119699, 0.61849, 0.536347, 1.0],
+                [0.20803, 0.718701, 0.472873, 1.0],
+            ]
+        )
+        assert all(
+            [
+                (z == expected).all(axis=1).any()
+                for z in ax2.collections[0].get_facecolors()
+            ]
+        )
+
+        labels = [
+            "-inf, 0.10",
+            "0.10, 0.20",
+            "0.20, 0.30",
+            "0.30, 0.40",
+            "0.40, 0.50",
+            "0.50, 0.60",
+            "0.60, 0.70",
+            "0.70, 0.80",
+            "0.80, 0.90",
+            "0.90, 1.00",
+        ]
+        legend = [t.get_text() for t in ax2.get_legend().get_texts()]
+        assert labels == legend
+        assert [
+            line.get_markerfacecolor() for line in ax2.get_legend().get_lines()
+        ] == legend_colors_exp
+
+        ax3 = self.df.plot(
+            "high_vals",
+            scheme="UserDefined",
+            classification_kwds={"bins": bins},
+            legend=True,
+        )
+        expected = np.array(
+            [
+                [0.709898, 0.868751, 0.169257, 1.0],
+                [0.993248, 0.906157, 0.143936, 1.0],
+                [0.430983, 0.808473, 0.346476, 1.0],
+            ]
+        )
+        assert all(
+            [
+                (z == expected).all(axis=1).any()
+                for z in ax3.collections[0].get_facecolors()
+            ]
+        )
+
+        legend = [t.get_text() for t in ax3.get_legend().get_texts()]
+        assert labels == legend
+
+        assert [
+            line.get_markerfacecolor() for line in ax3.get_legend().get_lines()
+        ] == legend_colors_exp
+
+    def test_equally_formatted_bins(self):
+        ax = self.nybb.plot(
+            "vals",
+            scheme="quantiles",
+            legend=True,
+        )
+        labels = [t.get_text() for t in ax.get_legend().get_texts()]
+        expected = [
+            "0.00, 0.00",
+            "0.00, 0.00",
+            "0.00, 0.00",
+            "0.00, 0.00",
+            "0.00, 0.01",
+        ]
+        assert labels == expected
+
+        ax2 = self.nybb.plot(
+            "vals", scheme="quantiles", legend=True, legend_kwds=dict(fmt="{:.3f}")
+        )
+        labels = [t.get_text() for t in ax2.get_legend().get_texts()]
+        expected = [
+            "0.001, 0.002",
+            "0.002, 0.003",
+            "0.003, 0.003",
+            "0.003, 0.004",
+            "0.004, 0.005",
+        ]
+        assert labels == expected
 
 
 class TestPlotCollections:
@@ -1207,8 +1537,8 @@ class TestPlotCollections:
         coll = _plot_linestring_collection(ax, self.lines, self.values, vmin=3, vmax=5)
         fig.canvas.draw_idle()
         cmap = plt.get_cmap()
-        expected_colors = cmap([0])
-        _check_colors(self.N, coll.get_color(), expected_colors)
+        expected_colors = [cmap(0)]
+        _check_colors(self.N, coll.get_color(), expected_colors * 3)
         ax.cla()
 
     def test_polygons(self):
@@ -1223,7 +1553,7 @@ class TestPlotCollections:
         # default: single default matplotlib color
         coll = _plot_polygon_collection(ax, self.polygons)
         _check_colors(self.N, coll.get_facecolor(), [MPL_DFT_COLOR] * self.N)
-        _check_colors(self.N, coll.get_edgecolor(), ["k"] * self.N)
+        assert len(coll.get_edgecolor()) == 0
         ax.cla()
 
         # default: color sets both facecolor and edgecolor
@@ -1258,7 +1588,7 @@ class TestPlotCollections:
         # only setting facecolor keeps default for edgecolor
         coll = _plot_polygon_collection(ax, self.polygons, facecolor="g")
         _check_colors(self.N, coll.get_facecolor(), ["g"] * self.N)
-        _check_colors(self.N, coll.get_edgecolor(), ["k"] * self.N)
+        assert len(coll.get_edgecolor()) == 0
         ax.cla()
 
         # custom facecolor and edgecolor
@@ -1301,8 +1631,8 @@ class TestPlotCollections:
         coll = _plot_polygon_collection(ax, self.polygons, self.values, vmin=3, vmax=5)
         fig.canvas.draw_idle()
         cmap = plt.get_cmap()
-        exp_colors = cmap([0])
-        _check_colors(self.N, coll.get_facecolor(), exp_colors)
+        exp_colors = [cmap(0)]
+        _check_colors(self.N, coll.get_facecolor(), exp_colors * 3)
         ax.cla()
 
         # override edgecolor
@@ -1313,6 +1643,80 @@ class TestPlotCollections:
         _check_colors(self.N, coll.get_facecolor(), exp_colors)
         _check_colors(self.N, coll.get_edgecolor(), ["g"] * self.N)
         ax.cla()
+
+
+class TestGeoplotAccessor:
+    def setup_method(self):
+        geometries = [Polygon([(0, 0), (1, 0), (1, 1)]), Point(1, 3)]
+        x = [1, 2]
+        y = [10, 20]
+        self.gdf = GeoDataFrame(
+            {"geometry": geometries, "x": x, "y": y}, crs="EPSG:4326"
+        )
+        self.df = pd.DataFrame({"x": x, "y": y})
+
+    def compare_figures(self, kind, fig_test, fig_ref, kwargs):
+        """Compare Figures."""
+        ax_pandas_1 = fig_test.subplots()
+        self.df.plot(kind=kind, ax=ax_pandas_1, **kwargs)
+        ax_geopandas_1 = fig_ref.subplots()
+        self.gdf.plot(kind=kind, ax=ax_geopandas_1, **kwargs)
+
+        ax_pandas_2 = fig_test.subplots()
+        getattr(self.df.plot, kind)(ax=ax_pandas_2, **kwargs)
+        ax_geopandas_2 = fig_ref.subplots()
+        getattr(self.gdf.plot, kind)(ax=ax_geopandas_2, **kwargs)
+
+    _pandas_kinds = []
+
+    _pandas_kinds = GeoplotAccessor._pandas_kinds
+
+    if MPL_DECORATORS:
+
+        @pytest.mark.parametrize("kind", _pandas_kinds)
+        @check_figures_equal(extensions=["png", "pdf"])
+        def test_pandas_kind(self, kind, fig_test, fig_ref):
+            """Test Pandas kind."""
+            import importlib
+
+            _scipy_dependent_kinds = ["kde", "density"]  # Needs scipy
+            _y_kinds = ["pie"]  # Needs y
+            _xy_kinds = ["scatter", "hexbin"]  # Needs x & y
+            kwargs = {}
+            if kind in _scipy_dependent_kinds:
+                if not importlib.util.find_spec("scipy"):
+                    with pytest.raises(
+                        ModuleNotFoundError, match="No module named 'scipy'"
+                    ):
+                        self.gdf.plot(kind=kind)
+            elif kind in _y_kinds:
+                kwargs = {"y": "y"}
+            elif kind in _xy_kinds:
+                kwargs = {"x": "x", "y": "y"}
+                if kind == "hexbin":  # increase gridsize to reduce duration
+                    kwargs["gridsize"] = 10
+
+            self.compare_figures(kind, fig_test, fig_ref, kwargs)
+            plt.close("all")
+
+        @check_figures_equal(extensions=["png", "pdf"])
+        def test_geo_kind(self, fig_test, fig_ref):
+            """Test Geo kind."""
+            ax1 = fig_test.subplots()
+            self.gdf.plot(ax=ax1)
+            ax2 = fig_ref.subplots()
+            getattr(self.gdf.plot, "geo")(ax=ax2)
+            plt.close("all")
+
+    def test_invalid_kind(self):
+        """Test invalid kinds."""
+        with pytest.raises(ValueError, match="error is not a valid plot kind"):
+            self.gdf.plot(kind="error")
+        with pytest.raises(
+            AttributeError,
+            match="'GeoplotAccessor' object has no attribute 'error'",
+        ):
+            self.gdf.plot.error()
 
 
 def test_column_values():
@@ -1326,7 +1730,7 @@ def test_column_values():
     polys = GeoSeries([t1, t2], index=list("AB"))
     df = GeoDataFrame({"geometry": polys, "values": [0, 1]})
 
-    # Test with continous values
+    # Test with continuous values
     ax = df.plot(column="values")
     colors = ax.collections[0].get_facecolors()
     ax = df.plot(column=df["values"])
@@ -1346,9 +1750,28 @@ def test_column_values():
     colors_array = ax.collections[0].get_facecolors()
     np.testing.assert_array_equal(colors, colors_array)
 
-    # Check raised error: is df rows number equal to column legth?
+    # Check raised error: is df rows number equal to column length?
     with pytest.raises(ValueError, match="different number of rows"):
         ax = df.plot(column=np.array([1, 2, 3]))
+
+
+def test_polygon_patch():
+    # test adapted from descartes by Sean Gillies
+    # (BSD license, https://pypi.org/project/descartes).
+    from geopandas.plotting import _PolygonPatch
+    from matplotlib.patches import PathPatch
+
+    polygon = (
+        Point(0, 0).buffer(10.0).difference(MultiPoint([(-5, 0), (5, 0)]).buffer(3.0))
+    )
+
+    patch = _PolygonPatch(polygon)
+    assert isinstance(patch, PathPatch)
+    path = patch.get_path()
+    if compat.GEOS_GE_390:
+        assert len(path.vertices) == len(path.codes) == 195
+    else:
+        assert len(path.vertices) == len(path.codes) == 198
 
 
 def _check_colors(N, actual_colors, expected_colors, alpha=None):
@@ -1381,6 +1804,10 @@ def _check_colors(N, actual_colors, expected_colors, alpha=None):
     actual_colors = map(tuple, actual_colors)
     all_actual_colors = list(itertools.islice(itertools.cycle(actual_colors), N))
 
+    assert len(all_actual_colors) == len(expected_colors), (
+        "Different " "lengths of actual and expected colors!"
+    )
+
     for actual, expected in zip(all_actual_colors, expected_colors):
         assert actual == conv.to_rgba(expected, alpha=alpha), "{} != {}".format(
             actual, conv.to_rgba(expected, alpha=alpha)
@@ -1388,17 +1815,39 @@ def _check_colors(N, actual_colors, expected_colors, alpha=None):
 
 
 def _style_to_linestring_onoffseq(linestyle, linewidth):
-    """ Converts a linestyle string representation, namely one of:
-            ['dashed',  'dotted', 'dashdot', 'solid'],
-        documented in `Collections.set_linestyle`,
-        to the form `onoffseq`.
+    """Converts a linestyle string representation, namely one of:
+        ['dashed',  'dotted', 'dashdot', 'solid'],
+    documented in `Collections.set_linestyle`,
+    to the form `onoffseq`.
     """
     offset, dashes = matplotlib.lines._get_dash_pattern(linestyle)
     return matplotlib.lines._scale_dashes(offset, dashes, linewidth)
 
 
 def _style_to_vertices(markerstyle):
-    """ Converts a markerstyle string to a path. """
+    """Converts a markerstyle string to a path."""
     # TODO: Vertices values are twice the actual path; unclear, why.
     path = matplotlib.markers.MarkerStyle(markerstyle).get_path()
     return path.vertices / 2
+
+
+def _get_ax(fig, label):
+    """
+    Helper function to not rely on the order of `fig.axes`.
+    Previously, we did `fig.axes[1]`, but in matplotlib 3.4 the order switched
+    and the colorbar ax was first and subplot ax second.
+    """
+    if matplotlib.__version__ < LooseVersion("3.0.0"):
+        if label == "<colorbar>":
+            return fig.axes[1]
+        elif label == "":
+            return fig.axes[0]
+    for ax in fig.axes:
+        if ax.get_label() == label:
+            return ax
+    else:
+        raise ValueError("no ax found with label {0}".format(label))
+
+
+def _get_colorbar_ax(fig):
+    return _get_ax(fig, "<colorbar>")

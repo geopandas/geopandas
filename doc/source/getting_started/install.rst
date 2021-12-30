@@ -94,14 +94,13 @@ as well::
 
     - `fiona`_ provides binary wheels with the dependencies included for Mac and Linux,
       but not for Windows.
-    - `pyproj`_ and `shapely`_ provide binary wheels with dependencies included
+    - `pyproj`_, `rtree`_, and `shapely`_ provide binary wheels with dependencies included
       for Mac, Linux, and Windows.
-    - `rtree`_ does not provide wheels.
     - Windows wheels for `shapely`, `fiona`, `pyproj` and `rtree`
       can be found at `Christopher Gohlke's website
       <https://www.lfd.uci.edu/~gohlke/pythonlibs/>`_.
 
-    So depending on your platform, you might need to compile and install their
+    Depending on your platform, you might need to compile and install their
     C dependencies manually. We refer to the individual packages for more
     details on installing those.
     Using conda (see above) avoids the need to compile the dependencies yourself.
@@ -139,7 +138,7 @@ Dependencies
 Required dependencies:
 
 - `numpy`_
-- `pandas`_ (version 0.24 or later)
+- `pandas`_ (version 0.25 or later)
 - `shapely`_ (interface to `GEOS`_)
 - `fiona`_ (interface to `GDAL`_)
 - `pyproj`_ (interface to `PROJ`_; version 2.2.0 or later)
@@ -155,9 +154,8 @@ Further, optional dependencies are:
 
 For plotting, these additional packages may be used:
 
-- `matplotlib`_ (>= 2.2.0)
-- `descartes`_
-- `mapclassify`_ (>= 2.2.0)
+- `matplotlib`_ (>= 3.1.0)
+- `mapclassify`_ (>= 2.4.0)
 
 
 Using the optional PyGEOS dependency
@@ -177,9 +175,9 @@ experimental speedups by installing PyGEOS. This can be done with conda
 
 More specifically, whether the speedups are used or not is determined by:
 
-- If PyGEOS is installed, it will be used by default (but installing GeoPandas
-  will not yet automatically install PyGEOS as dependency, you need to do this
-  manually).
+- If PyGEOS >= 0.8 is installed, it will be used by default (but installing
+  GeoPandas will not yet automatically install PyGEOS as dependency, you need
+  to do this manually).
 
 - You can still toggle the use of PyGEOS when it is available, by:
 
@@ -213,8 +211,6 @@ More specifically, whether the speedups are used or not is determined by:
 
 .. _fiona: https://fiona.readthedocs.io
 
-.. _Descartes: https://pypi.python.org/pypi/descartes
-
 .. _matplotlib: http://matplotlib.org
 
 .. _geopy: https://github.com/geopy/geopy
@@ -230,8 +226,6 @@ More specifically, whether the speedups are used or not is determined by:
 .. _rtree: https://github.com/Toblerity/rtree
 
 .. _libspatialindex: https://github.com/libspatialindex/libspatialindex
-
-.. _Travis CI: https://travis-ci.org/geopandas/geopandas
 
 .. _conda: https://conda.io/en/latest/
 
