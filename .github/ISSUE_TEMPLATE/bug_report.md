@@ -11,7 +11,7 @@ labels: "bug, needs triage"
 
 - [ ] I have confirmed this bug exists on the latest version of geopandas.
 
-- [ ] (optional) I have confirmed this bug exists on the master branch of geopandas.
+- [ ] (optional) I have confirmed this bug exists on the main branch of geopandas.
 
 ---
 
