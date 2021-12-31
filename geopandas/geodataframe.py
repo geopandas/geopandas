@@ -61,6 +61,20 @@ def _ensure_geometry(data, crs=None):
             return out
 
 
+def _crs_mismatch_warning():
+    # TODO: raise error in 0.9 or 0.10.
+    warnings.warn(
+        "CRS mismatch between CRS of the passed geometries "
+        "and 'crs'. Use 'GeoDataFrame.set_crs(crs, "
+        "allow_override=True)' to overwrite CRS or "
+        "'GeoDataFrame.to_crs(crs)' to reproject geometries. "
+        "CRS mismatch will raise an error in the future versions "
+        "of GeoPandas.",
+        FutureWarning,
+        stacklevel=3,
+    )
+
+
 class GeoDataFrame(GeoPandasBase, DataFrame):
     """
     A GeoDataFrame object is a pandas.DataFrame that has a column
@@ -117,9 +131,9 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
     _geometry_column_name = DEFAULT_GEO_COLUMN_NAME
 
-    def __init__(self, *args, geometry=None, crs=None, **kwargs):
+    def __init__(self, data=None, *args, geometry=None, crs=None, **kwargs):
         with compat.ignore_shapely2_warnings():
-            super().__init__(*args, **kwargs)
+            super().__init__(data, *args, **kwargs)
 
         # need to set this before calling self['geometry'], because
         # getitem accesses crs
@@ -131,6 +145,15 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         # but within a try/except because currently non-geometries are
         # allowed in that case
         # TODO do we want to raise / return normal DataFrame in this case?
+
+        # if gdf passed in and geo_col is set, we use that for geometry
+        if geometry is None and isinstance(data, GeoDataFrame):
+            self._geometry_column_name = data._geometry_column_name
+            if crs is not None and data.crs != crs:
+                _crs_mismatch_warning()
+                # TODO: raise error in 0.9 or 0.10.
+            return
+
         if geometry is None and "geometry" in self.columns:
             # Check for multiple columns with name "geometry". If there are,
             # self["geometry"] is a gdf and constructor gets recursively recalled
@@ -150,16 +173,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                     and crs
                     and not self["geometry"].values.crs == crs
                 ):
-                    warnings.warn(
-                        "CRS mismatch between CRS of the passed geometries "
-                        "and 'crs'. Use 'GeoDataFrame.set_crs(crs, "
-                        "allow_override=True)' to overwrite CRS or "
-                        "'GeoDataFrame.to_crs(crs)' to reproject geometries. "
-                        "CRS mismatch will raise an error in the future versions "
-                        "of GeoPandas.",
-                        FutureWarning,
-                        stacklevel=2,
-                    )
+                    _crs_mismatch_warning()
                     # TODO: raise error in 0.9 or 0.10.
                 self["geometry"] = _ensure_geometry(self["geometry"].values, crs)
             except TypeError:
@@ -179,16 +193,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 and crs
                 and not geometry.crs == crs
             ):
-                warnings.warn(
-                    "CRS mismatch between CRS of the passed geometries "
-                    "and 'crs'. Use 'GeoDataFrame.set_crs(crs, "
-                    "allow_override=True)' to overwrite CRS or "
-                    "'GeoDataFrame.to_crs(crs)' to reproject geometries. "
-                    "CRS mismatch will raise an error in the future versions "
-                    "of GeoPandas.",
-                    FutureWarning,
-                    stacklevel=2,
-                )
+                _crs_mismatch_warning()
                 # TODO: raise error in 0.9 or 0.10.
             self.set_geometry(geometry, inplace=True)
 
@@ -805,11 +810,12 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         na : str, optional
             Options are {'null', 'drop', 'keep'}, default 'null'.
             Indicates how to output missing (NaN) values in the GeoDataFrame
-            * null: output the missing entries as JSON null
-            * drop: remove the property from the feature. This applies to
-                    each feature individually so that features may have
-                    different properties
-            * keep: output the missing entries as NaN
+
+            - null: output the missing entries as JSON null
+            - drop: remove the property from the feature. This applies to each feature \
+individually so that features may have different properties
+            - keep: output the missing entries as NaN
+
         show_bbox : bool, optional
             Include bbox (bounds) in the geojson. Default False.
         drop_id : bool, default: False
@@ -1527,7 +1533,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
 
         See also
         --------
-        GeoDataFrame.explode : explode muti-part geometries into single geometries
+        GeoDataFrame.explode : explode multi-part geometries into single geometries
 
         """
 
@@ -1568,18 +1574,30 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         return aggregated
 
     # overrides the pandas native explode method to break up features geometrically
-    def explode(self, column=None, **kwargs):
+    def explode(self, column=None, ignore_index=False, index_parts=None, **kwargs):
         """
-        Explode muti-part geometries into multiple single geometries.
+        Explode multi-part geometries into multiple single geometries.
 
         Each row containing a multi-part geometry will be split into
         multiple rows with single geometries, thereby increasing the vertical
         size of the GeoDataFrame.
 
-        The index of the input geodataframe is no longer unique and is
-        replaced with a multi-index (original index with additional level
-        indicating the multiple geometries: a new zero-based index for each
-        single part geometry per multi-part geometry).
+        .. note:: ignore_index requires pandas 1.1.0 or newer.
+
+        Parameters
+        ----------
+        column : string, default None
+            Column to explode. In the case of a geometry column, multi-part
+            geometries are converted to single-part.
+            If None, the active geometry column is used.
+        ignore_index : bool, default False
+            If True, the resulting index will be labelled 0, 1, …, n - 1,
+            ignoring `index_parts`.
+        index_parts : boolean, default True
+            If True, the resulting index will be a multi-index (original
+            index with an additional level indicating the multiple
+            geometries: a new zero-based index for each single part geometry
+            per multi-part geometry).
 
         Returns
         -------
@@ -1604,13 +1622,29 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         0  name1  MULTIPOINT (1.00000 2.00000, 3.00000 4.00000)
         1  name2  MULTIPOINT (2.00000 1.00000, 0.00000 0.00000)
 
-        >>> exploded = gdf.explode()
+        >>> exploded = gdf.explode(index_parts=True)
         >>> exploded
               col1                 geometry
         0 0  name1  POINT (1.00000 2.00000)
           1  name1  POINT (3.00000 4.00000)
         1 0  name2  POINT (2.00000 1.00000)
           1  name2  POINT (0.00000 0.00000)
+
+        >>> exploded = gdf.explode(index_parts=False)
+        >>> exploded
+            col1                 geometry
+        0  name1  POINT (1.00000 2.00000)
+        0  name1  POINT (3.00000 4.00000)
+        1  name2  POINT (2.00000 1.00000)
+        1  name2  POINT (0.00000 0.00000)
+
+        >>> exploded = gdf.explode(ignore_index=True)
+        >>> exploded
+            col1                 geometry
+        0  name1  POINT (1.00000 2.00000)
+        1  name1  POINT (3.00000 4.00000)
+        2  name2  POINT (2.00000 1.00000)
+        3  name2  POINT (0.00000 0.00000)
 
         See also
         --------
@@ -1623,16 +1657,39 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
             column = self.geometry.name
         # If the specified column is not a geometry dtype use pandas explode
         if not isinstance(self[column].dtype, GeometryDtype):
-            return super().explode(column, **kwargs)
-            # TODO: make sure index behaviour is consistent
+            if compat.PANDAS_GE_11:
+                return super().explode(column, ignore_index=ignore_index, **kwargs)
+            else:
+                return super().explode(column, **kwargs)
+
+        if index_parts is None:
+            if not ignore_index:
+                warnings.warn(
+                    "Currently, index_parts defaults to True, but in the future, "
+                    "it will default to False to be consistent with Pandas. "
+                    "Use `index_parts=True` to keep the current behavior and "
+                    "True/False to silence the warning.",
+                    FutureWarning,
+                    stacklevel=2,
+                )
+            index_parts = True
 
         df_copy = self.copy()
 
-        if "level_1" in df_copy.columns:  # GH1393
-            df_copy = df_copy.rename(columns={"level_1": "__level_1"})
+        level_str = f"level_{df_copy.index.nlevels}"
 
-        exploded_geom = df_copy.geometry.explode().reset_index(level=-1)
-        exploded_index = exploded_geom.columns[0]
+        if level_str in df_copy.columns:  # GH1393
+            df_copy = df_copy.rename(columns={level_str: f"__{level_str}"})
+
+        if index_parts:
+            exploded_geom = df_copy.geometry.explode(index_parts=True)
+            exploded_index = exploded_geom.index
+            exploded_geom = exploded_geom.reset_index(level=-1, drop=True)
+        else:
+            exploded_geom = df_copy.geometry.explode(index_parts=True).reset_index(
+                level=-1, drop=True
+            )
+            exploded_index = exploded_geom.index
 
         df = (
             df_copy.drop(df_copy._geometry_column_name, axis=1)
@@ -1641,13 +1698,19 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
             .__finalize__(self)
         )
 
-        # reset to MultiIndex, otherwise df index is only first level of
-        # exploded GeoSeries index.
-        df.set_index(exploded_index, append=True, inplace=True)
-        df.index.names = list(self.index.names) + [None]
+        if ignore_index:
+            df.reset_index(inplace=True, drop=True)
+        elif index_parts:
+            # reset to MultiIndex, otherwise df index is only first level of
+            # exploded GeoSeries index.
+            df.set_index(exploded_index, inplace=True)
+            df.index.names = list(self.index.names) + [None]
+        else:
+            df.set_index(exploded_index, inplace=True)
+            df.index.names = self.index.names
 
-        if "__level_1" in df.columns:
-            df = df.rename(columns={"__level_1": "level_1"})
+        if f"__{level_str}" in df.columns:
+            df = df.rename(columns={f"__{level_str}": level_str})
 
         return df
 
@@ -1816,6 +1879,346 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
     def explore(self, *args, **kwargs):
         """Interactive map based on folium/leaflet.js"""
         return _explore(self, *args, **kwargs)
+
+    def sjoin(self, df, *args, **kwargs):
+        """Spatial join of two GeoDataFrames.
+
+        See the User Guide page :doc:`../../user_guide/mergingdata` for details.
+
+        Parameters
+        ----------
+        df : GeoDataFrame
+        how : string, default 'inner'
+            The type of join:
+
+            * 'left': use keys from left_df; retain only left_df geometry column
+            * 'right': use keys from right_df; retain only right_df geometry column
+            * 'inner': use intersection of keys from both dfs; retain only
+              left_df geometry column
+
+        predicate : string, default 'intersects'
+            Binary predicate. Valid values are determined by the spatial index used.
+            You can check the valid values in left_df or right_df as
+            ``left_df.sindex.valid_query_predicates`` or
+            ``right_df.sindex.valid_query_predicates``
+        lsuffix : string, default 'left'
+            Suffix to apply to overlapping column names (left GeoDataFrame).
+        rsuffix : string, default 'right'
+            Suffix to apply to overlapping column names (right GeoDataFrame).
+
+        Examples
+        --------
+        >>> countries = geopandas.read_file( \
+    geopandas.datasets.get_path("naturalearth_lowres"))
+        >>> cities = geopandas.read_file( \
+    geopandas.datasets.get_path("naturalearth_cities"))
+        >>> countries.head()  # doctest: +SKIP
+            pop_est      continent                      name \
+    iso_a3  gdp_md_est                                           geometry
+        0     920938        Oceania                      Fiji    FJI      8374.0 \
+    MULTIPOLYGON (((180.00000 -16.06713, 180.00000...
+        1   53950935         Africa                  Tanzania    TZA    150600.0 \
+    POLYGON ((33.90371 -0.95000, 34.07262 -1.05982...
+        2     603253         Africa                 W. Sahara    ESH       906.5 \
+    POLYGON ((-8.66559 27.65643, -8.66512 27.58948...
+        3   35623680  North America                    Canada    CAN   1674000.0 \
+    MULTIPOLYGON (((-122.84000 49.00000, -122.9742...
+        4  326625791  North America  United States of America    USA  18560000.0 \
+    MULTIPOLYGON (((-122.84000 49.00000, -120.0000...
+        >>> cities.head()
+                name                   geometry
+        0  Vatican City  POINT (12.45339 41.90328)
+        1    San Marino  POINT (12.44177 43.93610)
+        2         Vaduz   POINT (9.51667 47.13372)
+        3    Luxembourg   POINT (6.13000 49.61166)
+        4       Palikir  POINT (158.14997 6.91664)
+
+        >>> cities_w_country_data = cities.sjoin(countries)
+        >>> cities_w_country_data.head()  # doctest: +SKIP
+                name_left                   geometry  index_right   pop_est \
+    continent name_right iso_a3  gdp_md_est
+        0    Vatican City  POINT (12.45339 41.90328)          141  62137802 \
+    Europe    Italy    ITA   2221000.0
+        1    San Marino  POINT (12.44177 43.93610)          141  62137802 \
+    Europe    Italy    ITA   2221000.0
+        192          Rome  POINT (12.48131 41.89790)          141  62137802 \
+    Europe    Italy    ITA   2221000.0
+        2           Vaduz   POINT (9.51667 47.13372)          114   8754413 \
+    Europe    Au    stria    AUT    416600.0
+        184        Vienna  POINT (16.36469 48.20196)          114   8754413 \
+    Europe    Austria    AUT    416600.0
+
+        Notes
+        ------
+        Every operation in GeoPandas is planar, i.e. the potential third
+        dimension is not taken into account.
+
+        See also
+        --------
+        GeoDataFrame.sjoin_nearest : nearest neighbor join
+        sjoin : equivalent top-level function
+        """
+        return geopandas.sjoin(left_df=self, right_df=df, *args, **kwargs)
+
+    def sjoin_nearest(
+        self,
+        right,
+        how="inner",
+        max_distance=None,
+        lsuffix="left",
+        rsuffix="right",
+        distance_col=None,
+    ):
+        """
+        Spatial join of two GeoDataFrames based on the distance between their
+        geometries.
+
+        Results will include multiple output records for a single input record
+        where there are multiple equidistant nearest or intersected neighbors.
+
+        See the User Guide page
+        https://geopandas.readthedocs.io/en/latest/docs/user_guide/mergingdata.html
+        for more details.
+
+
+        Parameters
+        ----------
+        right : GeoDataFrame
+        how : string, default 'inner'
+            The type of join:
+
+            * 'left': use keys from left_df; retain only left_df geometry column
+            * 'right': use keys from right_df; retain only right_df geometry column
+            * 'inner': use intersection of keys from both dfs; retain only
+              left_df geometry column
+
+        max_distance : float, default None
+            Maximum distance within which to query for nearest geometry.
+            Must be greater than 0.
+            The max_distance used to search for nearest items in the tree may have a
+            significant impact on performance by reducing the number of input
+            geometries that are evaluated for nearest items in the tree.
+        lsuffix : string, default 'left'
+            Suffix to apply to overlapping column names (left GeoDataFrame).
+        rsuffix : string, default 'right'
+            Suffix to apply to overlapping column names (right GeoDataFrame).
+        distance_col : string, default None
+            If set, save the distances computed between matching geometries under a
+            column of this name in the joined GeoDataFrame.
+
+        Examples
+        --------
+        >>> countries = geopandas.read_file(geopandas.datasets.get_\
+path("naturalearth_lowres"))
+        >>> cities = geopandas.read_file(geopandas.datasets.get_path("naturalearth_citi\
+es"))
+        >>> countries.head(2).name  # doctest: +SKIP
+            pop_est      continent                      name \
+    iso_a3  gdp_md_est                                           geometry
+        0     920938        Oceania                      Fiji    FJI      8374.0  MULTI\
+    POLYGON (((180.00000 -16.06713, 180.00000...
+        1   53950935         Africa                  Tanzania    TZA    150600.0  POLYG\
+    ON ((33.90371 -0.95000, 34.07262 -1.05982...
+        >>> cities.head(2).name  # doctest: +SKIP
+                name                   geometry
+        0  Vatican City  POINT (12.45339 41.90328)
+        1    San Marino  POINT (12.44177 43.93610)
+
+        >>> cities_w_country_data = cities.sjoin_nearest(countries)
+        >>> cities_w_country_data[['name_left', 'name_right']].head(2)  # doctest: +SKIP
+                name_left                   geometry  index_right   pop_est continent n\
+    ame_right iso_a3  gdp_md_est
+        0    Vatican City  POINT (12.45339 41.90328)          141  62137802    Europe  \
+        Italy    ITA   2221000.0
+        1      San Marino  POINT (12.44177 43.93610)          141  62137802    Europe  \
+        Italy    ITA   2221000.0
+
+        To include the distances:
+
+        >>> cities_w_country_data = cities.sjoin_nearest(countries, \
+distance_col="distances")
+        >>> cities_w_country_data[["name_left", "name_right", \
+"distances"]].head(2)  # doctest: +SKIP
+                name_left name_right distances
+        0    Vatican City      Italy       0.0
+        1      San Marino      Italy       0.0
+
+        In the following example, we get multiple cities for Italy because all results
+        are equidistant (in this case zero because they intersect).
+        In fact, we get 3 results in total:
+
+        >>> countries_w_city_data = cities.sjoin_nearest(countries, \
+distance_col="distances", how="right")
+        >>> italy_results = \
+countries_w_city_data[countries_w_city_data["name_left"] == "Italy"]
+        >>> italy_results  # doctest: +SKIP
+            name_x        name_y
+        141  Vatican City  Italy
+        141    San Marino  Italy
+        141          Rome  Italy
+
+        See also
+        --------
+        GeoDataFrame.sjoin : binary predicate joins
+        sjoin_nearest : equivalent top-level function
+
+        Notes
+        -----
+        Since this join relies on distances, results will be inaccurate
+        if your geometries are in a geographic CRS.
+
+        Every operation in GeoPandas is planar, i.e. the potential third
+        dimension is not taken into account.
+        """
+        return geopandas.sjoin_nearest(
+            self,
+            right,
+            how=how,
+            max_distance=max_distance,
+            lsuffix=lsuffix,
+            rsuffix=rsuffix,
+            distance_col=distance_col,
+        )
+
+    def clip(self, mask, keep_geom_type=False):
+        """Clip points, lines, or polygon geometries to the mask extent.
+
+        Both layers must be in the same Coordinate Reference System (CRS).
+        The GeoDataFrame will be clipped to the full extent of the `mask` object.
+
+        If there are multiple polygons in mask, data from the GeoDataFrame will be
+        clipped to the total boundary of all polygons in mask.
+
+        Parameters
+        ----------
+        mask : GeoDataFrame, GeoSeries, (Multi)Polygon
+            Polygon vector layer used to clip `gdf`.
+            The mask's geometry is dissolved into one geometric feature
+            and intersected with `gdf`.
+        keep_geom_type : boolean, default False
+            If True, return only geometries of original type in case of intersection
+            resulting in multiple geometry types or GeometryCollections.
+            If False, return all resulting geometries (potentially mixed types).
+
+        Returns
+        -------
+        GeoDataFrame
+            Vector data (points, lines, polygons) from `gdf` clipped to
+            polygon boundary from mask.
+
+        See also
+        --------
+        clip : equivalent top-level function
+
+        Examples
+        --------
+        Clip points (global cities) with a polygon (the South American continent):
+
+        >>> world = geopandas.read_file(
+        ...     geopandas.datasets.get_path('naturalearth_lowres'))
+        >>> south_america = world[world['continent'] == "South America"]
+        >>> capitals = geopandas.read_file(
+        ...     geopandas.datasets.get_path('naturalearth_cities'))
+        >>> capitals.shape
+        (202, 2)
+
+        >>> sa_capitals = capitals.clip(south_america)
+        >>> sa_capitals.shape
+        (12, 2)
+        """
+        return geopandas.clip(self, mask=mask, keep_geom_type=keep_geom_type)
+
+    def overlay(self, right, how="intersection", keep_geom_type=None, make_valid=True):
+        """Perform spatial overlay between GeoDataFrames.
+
+        Currently only supports data GeoDataFrames with uniform geometry types,
+        i.e. containing only (Multi)Polygons, or only (Multi)Points, or a
+        combination of (Multi)LineString and LinearRing shapes.
+        Implements several methods that are all effectively subsets of the union.
+
+        See the User Guide page :doc:`../../user_guide/set_operations` for details.
+
+        Parameters
+        ----------
+        right : GeoDataFrame
+        how : string
+            Method of spatial overlay: 'intersection', 'union',
+            'identity', 'symmetric_difference' or 'difference'.
+        keep_geom_type : bool
+            If True, return only geometries of the same geometry type the GeoDataFrame
+            has, if False, return all resulting geometries. Default is None,
+            which will set keep_geom_type to True but warn upon dropping
+            geometries.
+        make_valid : bool, default True
+            If True, any invalid input geometries are corrected with a call to
+            `buffer(0)`, if False, a `ValueError` is raised if any input geometries
+            are invalid.
+
+        Returns
+        -------
+        df : GeoDataFrame
+            GeoDataFrame with new set of polygons and attributes
+            resulting from the overlay
+
+        Examples
+        --------
+        >>> from shapely.geometry import Polygon
+        >>> polys1 = geopandas.GeoSeries([Polygon([(0,0), (2,0), (2,2), (0,2)]),
+        ...                               Polygon([(2,2), (4,2), (4,4), (2,4)])])
+        >>> polys2 = geopandas.GeoSeries([Polygon([(1,1), (3,1), (3,3), (1,3)]),
+        ...                               Polygon([(3,3), (5,3), (5,5), (3,5)])])
+        >>> df1 = geopandas.GeoDataFrame({'geometry': polys1, 'df1_data':[1,2]})
+        >>> df2 = geopandas.GeoDataFrame({'geometry': polys2, 'df2_data':[1,2]})
+
+        >>> df1.overlay(df2, how='union')
+        df1_data  df2_data                                           geometry
+        0       1.0       1.0  POLYGON ((2.00000 2.00000, 2.00000 1.00000, 1....
+        1       2.0       1.0  POLYGON ((2.00000 2.00000, 2.00000 3.00000, 3....
+        2       2.0       2.0  POLYGON ((4.00000 4.00000, 4.00000 3.00000, 3....
+        3       1.0       NaN  POLYGON ((2.00000 0.00000, 0.00000 0.00000, 0....
+        4       2.0       NaN  MULTIPOLYGON (((3.00000 3.00000, 4.00000 3.000...
+        5       NaN       1.0  MULTIPOLYGON (((2.00000 2.00000, 3.00000 2.000...
+        6       NaN       2.0  POLYGON ((3.00000 5.00000, 5.00000 5.00000, 5....
+
+        >>> df1.overlay(df2, how='intersection')
+        df1_data  df2_data                                           geometry
+        0         1         1  POLYGON ((2.00000 2.00000, 2.00000 1.00000, 1....
+        1         2         1  POLYGON ((2.00000 2.00000, 2.00000 3.00000, 3....
+        2         2         2  POLYGON ((4.00000 4.00000, 4.00000 3.00000, 3....
+
+        >>> df1.overlay(df2, how='symmetric_difference')
+        df1_data  df2_data                                           geometry
+        0       1.0       NaN  POLYGON ((2.00000 0.00000, 0.00000 0.00000, 0....
+        1       2.0       NaN  MULTIPOLYGON (((3.00000 3.00000, 4.00000 3.000...
+        2       NaN       1.0  MULTIPOLYGON (((2.00000 2.00000, 3.00000 2.000...
+        3       NaN       2.0  POLYGON ((3.00000 5.00000, 5.00000 5.00000, 5....
+
+        >>> df1.overlay(df2, how='difference')
+                                                geometry  df1_data
+        0  POLYGON ((2.00000 0.00000, 0.00000 0.00000, 0....         1
+        1  MULTIPOLYGON (((3.00000 3.00000, 4.00000 3.000...         2
+
+        >>> df1.overlay(df2, how='identity')
+        df1_data  df2_data                                           geometry
+        0       1.0       1.0  POLYGON ((2.00000 2.00000, 2.00000 1.00000, 1....
+        1       2.0       1.0  POLYGON ((2.00000 2.00000, 2.00000 3.00000, 3....
+        2       2.0       2.0  POLYGON ((4.00000 4.00000, 4.00000 3.00000, 3....
+        3       1.0       NaN  POLYGON ((2.00000 0.00000, 0.00000 0.00000, 0....
+        4       2.0       NaN  MULTIPOLYGON (((3.00000 3.00000, 4.00000 3.000...
+
+        See also
+        --------
+        GeoDataFrame.sjoin : spatial join
+        overlay : equivalent top-level function
+
+        Notes
+        ------
+        Every operation in GeoPandas is planar, i.e. the potential third
+        dimension is not taken into account.
+        """
+        return geopandas.overlay(
+            self, right, how=how, keep_geom_type=keep_geom_type, make_valid=make_valid
+        )
 
 
 def _dataframe_set_geometry(self, col, drop=False, inplace=False, crs=None):

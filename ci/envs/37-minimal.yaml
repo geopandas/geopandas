@@ -24,5 +24,6 @@ dependencies:
   - SQLalchemy
   - libspatialite
   - pyarrow
+  - pip
   - pip:
       - pyproj==2.2.2

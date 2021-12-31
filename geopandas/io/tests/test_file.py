@@ -346,7 +346,7 @@ def test_read_file(df_nybb):
 def test_read_file_remote_geojson_url():
     url = (
         "https://raw.githubusercontent.com/geopandas/geopandas/"
-        "master/geopandas/tests/data/null_geom.geojson"
+        "main/geopandas/tests/data/null_geom.geojson"
     )
     gdf = read_file(url)
     assert isinstance(gdf, geopandas.GeoDataFrame)
@@ -356,7 +356,7 @@ def test_read_file_remote_geojson_url():
 def test_read_file_remote_zipfile_url():
     url = (
         "https://raw.githubusercontent.com/geopandas/geopandas/"
-        "master/geopandas/datasets/nybb_16a.zip"
+        "main/geopandas/datasets/nybb_16a.zip"
     )
     gdf = read_file(url)
     assert isinstance(gdf, geopandas.GeoDataFrame)
@@ -456,8 +456,7 @@ def test_allow_legacy_gdal_path():
     assert isinstance(gdf, geopandas.GeoDataFrame)
 
 
-def test_read_file_filtered(df_nybb):
-    full_df_shape = df_nybb.shape
+def test_read_file_filtered__bbox(df_nybb):
     nybb_filename = geopandas.datasets.get_path("nybb")
     bbox = (
         1031051.7879884212,
@@ -466,22 +465,36 @@ def test_read_file_filtered(df_nybb):
         244317.30894023244,
     )
     filtered_df = read_file(nybb_filename, bbox=bbox)
-    filtered_df_shape = filtered_df.shape
-    assert full_df_shape != filtered_df_shape
-    assert filtered_df_shape == (2, 5)
+    expected = df_nybb[df_nybb["BoroName"].isin(["Bronx", "Queens"])]
+    assert_geodataframe_equal(filtered_df, expected.reset_index(drop=True))
+
+
+def test_read_file_filtered__bbox__polygon(df_nybb):
+    nybb_filename = geopandas.datasets.get_path("nybb")
+    bbox = box(
+        1031051.7879884212, 224272.49231459625, 1047224.3104931959, 244317.30894023244
+    )
+    filtered_df = read_file(nybb_filename, bbox=bbox)
+    expected = df_nybb[df_nybb["BoroName"].isin(["Bronx", "Queens"])]
+    assert_geodataframe_equal(filtered_df, expected.reset_index(drop=True))
 
 
 def test_read_file_filtered__rows(df_nybb):
-    full_df_shape = df_nybb.shape
     nybb_filename = geopandas.datasets.get_path("nybb")
     filtered_df = read_file(nybb_filename, rows=1)
-    filtered_df_shape = filtered_df.shape
-    assert full_df_shape != filtered_df_shape
-    assert filtered_df_shape == (1, 5)
+    assert_geodataframe_equal(filtered_df, df_nybb.iloc[[0], :])
 
 
+def test_read_file_filtered__rows_slice(df_nybb):
+    nybb_filename = geopandas.datasets.get_path("nybb")
+    filtered_df = read_file(nybb_filename, rows=slice(1, 3))
+    assert_geodataframe_equal(filtered_df, df_nybb.iloc[1:3, :].reset_index(drop=True))
+
+
+@pytest.mark.filterwarnings(
+    "ignore:Layer does not support OLC_FASTFEATURECOUNT:RuntimeWarning"
+)  # for the slice with -1
 def test_read_file_filtered__rows_bbox(df_nybb):
-    full_df_shape = df_nybb.shape
     nybb_filename = geopandas.datasets.get_path("nybb")
     bbox = (
         1031051.7879884212,
@@ -489,22 +502,11 @@ def test_read_file_filtered__rows_bbox(df_nybb):
         1047224.3104931959,
         244317.30894023244,
     )
+    # combination bbox and rows (rows slice applied after bbox filtering!)
+    filtered_df = read_file(nybb_filename, bbox=bbox, rows=slice(4, None))
+    assert filtered_df.empty
     filtered_df = read_file(nybb_filename, bbox=bbox, rows=slice(-1, None))
-    filtered_df_shape = filtered_df.shape
-    assert full_df_shape != filtered_df_shape
-    assert filtered_df_shape == (1, 5)
-
-
-def test_read_file_filtered__rows_bbox__polygon(df_nybb):
-    full_df_shape = df_nybb.shape
-    nybb_filename = geopandas.datasets.get_path("nybb")
-    bbox = box(
-        1031051.7879884212, 224272.49231459625, 1047224.3104931959, 244317.30894023244
-    )
-    filtered_df = read_file(nybb_filename, bbox=bbox, rows=slice(-1, None))
-    filtered_df_shape = filtered_df.shape
-    assert full_df_shape != filtered_df_shape
-    assert filtered_df_shape == (1, 5)
+    assert_geodataframe_equal(filtered_df, df_nybb.iloc[4:, :].reset_index(drop=True))
 
 
 def test_read_file_filtered_rows_invalid():
@@ -835,3 +837,14 @@ def test_to_file__undetermined_driver(tmp_path, df_nybb):
     df_nybb.to_file(shpdir)
     assert shpdir.is_dir()
     assert list(shpdir.glob("*.shp"))
+
+
+@pytest.mark.parametrize(
+    "test_file", [(pathlib.Path("~/test_file.geojson")), "~/test_file.geojson"]
+)
+def test_write_read_file(test_file):
+    gdf = geopandas.GeoDataFrame(geometry=[box(0, 0, 10, 10)], crs=_CRS)
+    gdf.to_file(test_file, driver="GeoJSON")
+    df_json = geopandas.read_file(test_file)
+    assert_geodataframe_equal(gdf, df_json, check_crs=True)
+    os.remove(os.path.expanduser(test_file))

@@ -88,7 +88,7 @@ def test_repr_empty():
 
 def test_indexing(s, df):
 
-    # accessing scalar from the geometry (colunm)
+    # accessing scalar from the geometry (column)
     exp = Point(1, 1)
     assert s[1] == exp
     assert s.loc[1] == exp
@@ -242,7 +242,7 @@ def test_astype(s, df):
     res = df.astype({"value1": float})
     assert isinstance(res, GeoDataFrame)
 
-    # check whether returned object is a datafrane
+    # check whether returned object is a dataframe
     res = df.astype(str)
     assert isinstance(res, pd.DataFrame) and not isinstance(res, GeoDataFrame)
 
@@ -449,7 +449,8 @@ def test_value_counts():
     # each object is considered unique
     s = GeoSeries([Point(0, 0), Point(1, 1), Point(0, 0)])
     res = s.value_counts()
-    exp = pd.Series([2, 1], index=[Point(0, 0), Point(1, 1)])
+    with compat.ignore_shapely2_warnings():
+        exp = pd.Series([2, 1], index=[Point(0, 0), Point(1, 1)])
     assert_series_equal(res, exp)
     # Check crs doesn't make a difference - note it is not kept in output index anyway
     s2 = GeoSeries([Point(0, 0), Point(1, 1), Point(0, 0)], crs="EPSG:4326")
@@ -459,15 +460,18 @@ def test_value_counts():
     # check mixed geometry
     s3 = GeoSeries([Point(0, 0), LineString([[1, 1], [2, 2]]), Point(0, 0)])
     res3 = s3.value_counts()
-    exp3 = pd.Series([2, 1], index=[Point(0, 0), LineString([[1, 1], [2, 2]])])
+    with compat.ignore_shapely2_warnings():
+        exp3 = pd.Series([2, 1], index=[Point(0, 0), LineString([[1, 1], [2, 2]])])
     assert_series_equal(res3, exp3)
 
     # check None is handled
     s4 = GeoSeries([Point(0, 0), None, Point(0, 0)])
     res4 = s4.value_counts(dropna=True)
-    exp4_dropna = pd.Series([2], index=[Point(0, 0)])
+    with compat.ignore_shapely2_warnings():
+        exp4_dropna = pd.Series([2], index=[Point(0, 0)])
     assert_series_equal(res4, exp4_dropna)
-    exp4_keepna = pd.Series([2, 1], index=[Point(0, 0), None])
+    with compat.ignore_shapely2_warnings():
+        exp4_keepna = pd.Series([2, 1], index=[Point(0, 0), None])
     res4_keepna = s4.value_counts(dropna=False)
     assert_series_equal(res4_keepna, exp4_keepna)
 
@@ -615,7 +619,7 @@ def test_preserve_attrs(df):
     assert df2.attrs == attrs
 
     # https://github.com/geopandas/geopandas/issues/1875
-    df3 = df2.explode()
+    df3 = df2.explode(index_parts=True)
     assert df3.attrs == attrs
 
 

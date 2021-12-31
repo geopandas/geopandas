@@ -38,6 +38,10 @@ USE_PYGEOS = None
 PYGEOS_SHAPELY_COMPAT = None
 
 PYGEOS_GE_09 = None
+PYGEOS_GE_010 = None
+
+INSTALL_PYGEOS_ERROR = "To use PyGEOS within GeoPandas, you need to install PyGEOS: \
+'conda install pygeos' or 'pip install pygeos'"
 
 try:
     import pygeos  # noqa
@@ -46,6 +50,7 @@ try:
     if str(pygeos.__version__) >= LooseVersion("0.8"):
         HAS_PYGEOS = True
         PYGEOS_GE_09 = str(pygeos.__version__) >= LooseVersion("0.9")
+        PYGEOS_GE_010 = str(pygeos.__version__) >= LooseVersion("0.10")
     else:
         warnings.warn(
             "The installed version of PyGEOS is too old ({0} installed, 0.8 required),"
@@ -89,7 +94,7 @@ def set_use_pygeos(val=None):
             # validate the pygeos version
             if not str(pygeos.__version__) >= LooseVersion("0.8"):
                 raise ImportError(
-                    "PyGEOS >= 0.6 is required, version {0} is installed".format(
+                    "PyGEOS >= 0.8 is required, version {0} is installed".format(
                         pygeos.__version__
                     )
                 )
@@ -115,10 +120,7 @@ def set_use_pygeos(val=None):
                 PYGEOS_SHAPELY_COMPAT = True
 
         except ImportError:
-            raise ImportError(
-                "To use the PyGEOS speed-ups within GeoPandas, you need to install "
-                "PyGEOS: 'conda install pygeos' or 'pip install pygeos'"
-            )
+            raise ImportError(INSTALL_PYGEOS_ERROR)
 
 
 set_use_pygeos()
