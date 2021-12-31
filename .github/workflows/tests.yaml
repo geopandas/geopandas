@@ -2,13 +2,13 @@ name: Tests
 
 on:
   push:
-    branches: [master, 0.**]
+    branches: [main, 0.**]
   pull_request:
-    branches: [master, 0.**]
+    branches: [main, 0.**]
   schedule:
     - cron: "0 0 * * *"
 
-concurrency: 
+concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
@@ -42,6 +42,7 @@ jobs:
           - ci/envs/37-latest-conda-forge.yaml
           - ci/envs/38-latest-conda-forge.yaml
           - ci/envs/39-latest-conda-forge.yaml
+          - ci/envs/310-latest-conda-forge.yaml
         include:
           - env: ci/envs/37-latest-conda-forge.yaml
             os: macos-latest
@@ -70,6 +71,9 @@ jobs:
         uses: conda-incubator/setup-miniconda@v2
         with:
           environment-file: ${{ matrix.env }}
+          miniforge-version: latest
+          miniforge-variant: Mambaforge
+          use-mamba: true
 
       - name: Check and Log Environment
         run: |

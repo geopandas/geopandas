@@ -114,7 +114,7 @@ check it prior to submitting the pull request.
 Creating a branch
 ~~~~~~~~~~~~~~~~~~
 
-You want your master branch to reflect only production-ready code, so create a
+You want your main branch to reflect only production-ready code, so create a
 feature branch for making your changes. For example::
 
     git branch shiny-new-feature
@@ -129,12 +129,12 @@ changes in this branch specific to one bug or feature so it is clear
 what the branch brings to *GeoPandas*. You can have many shiny-new-features
 and switch in between them using the git checkout command.
 
-To update this branch, you need to retrieve the changes from the master branch::
+To update this branch, you need to retrieve the changes from the main branch::
 
     git fetch upstream
-    git rebase upstream/master
+    git rebase upstream/main
 
-This will replay your commits on top of the latest GeoPandas git master.  If this
+This will replay your commits on top of the latest GeoPandas git main.  If this
 leads to merge conflicts, you must resolve these before submitting your pull
 request.  If you have uncommitted changes, you will need to ``stash`` them prior
 to updating.  This will effectively store your changes and they can be reapplied
@@ -253,7 +253,7 @@ mixture of reStructuredText syntax for ``rst`` files, `which is explained here
 <http://www.sphinx-doc.org/en/stable/rest.html#rst-primer>`_ and MyST syntax for ``md``
 files `explained here <https://myst-parser.readthedocs.io/en/latest/index.html>`_.
 The docstrings follow the `Numpy Docstring standard
-<https://github.com/numpy/numpy/blob/master/doc/HOWTO_DOCUMENT.rst.txt>`_. Some pages
+<https://github.com/numpy/numpy/blob/main/doc/HOWTO_DOCUMENT.rst.txt>`_. Some pages
 and examples are Jupyter notebooks converted to docs using `nbsphinx
 <https://nbsphinx.readthedocs.io/>`_. Jupyter notebooks should be stored without the output.
 
@@ -308,7 +308,7 @@ report any stylistic errors in your code. Therefore, it is helpful before
 submitting code to run the check yourself::
 
    black geopandas
-   git diff upstream/master -u -- "*.py" | flake8 --diff
+   git diff upstream/main -u -- "*.py" | flake8 --diff
 
 to auto-format your code. Additionally, many editors have plugins that will
 apply ``black`` as you edit files.
