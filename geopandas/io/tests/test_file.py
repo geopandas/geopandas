@@ -381,7 +381,7 @@ def test_read_file(df_nybb):
 def test_read_file_remote_geojson_url():
     url = (
         "https://raw.githubusercontent.com/geopandas/geopandas/"
-        "master/geopandas/tests/data/null_geom.geojson"
+        "main/geopandas/tests/data/null_geom.geojson"
     )
     gdf = read_file(url)
     assert isinstance(gdf, geopandas.GeoDataFrame)
@@ -391,7 +391,7 @@ def test_read_file_remote_geojson_url():
 def test_read_file_remote_zipfile_url():
     url = (
         "https://raw.githubusercontent.com/geopandas/geopandas/"
-        "master/geopandas/datasets/nybb_16a.zip"
+        "main/geopandas/datasets/nybb_16a.zip"
     )
     gdf = read_file(url)
     assert isinstance(gdf, geopandas.GeoDataFrame)
