@@ -4,7 +4,6 @@ import importlib
 import os
 import warnings
 
-import fiona
 import numpy as np
 import pandas as pd
 import pyproj
@@ -227,10 +226,3 @@ except ImportError:
 
 PYPROJ_LT_3 = LooseVersion(pyproj.__version__) < LooseVersion("3")
 PYPROJ_GE_31 = LooseVersion(pyproj.__version__) >= LooseVersion("3.1")
-
-
-# -----------------------------------------------------------------------------
-# fiona compat
-# -----------------------------------------------------------------------------
-
-FIONA_GE_1814 = str(fiona.__version__) >= LooseVersion("1.8.14")  # datetime roundtrip

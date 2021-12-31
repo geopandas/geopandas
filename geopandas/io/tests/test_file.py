@@ -1,5 +1,6 @@
 from collections import OrderedDict
 import datetime
+from distutils.version import LooseVersion
 import io
 import os
 import pathlib
@@ -14,13 +15,16 @@ from pandas.testing import assert_series_equal
 from shapely.geometry import Point, Polygon, box
 
 import geopandas
-from geopandas import GeoDataFrame, read_file, _compat as compat
+from geopandas import GeoDataFrame, read_file
 from geopandas.io.file import fiona_env, _detect_driver, _EXTENSION_TO_DRIVER
 
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 from geopandas.tests.util import PACKAGE_DIR, validate_boro_df
 
 import pytest
+
+
+FIONA_GE_1814 = str(fiona.__version__) >= LooseVersion("1.8.14")  # datetime roundtrip
 
 
 _CRS = "epsg:4326"
@@ -155,7 +159,7 @@ def test_to_file_datetime(tmpdir, driver, ext, time):
     """Test writing a data file with the datetime column type"""
     if ext in (".shp", ""):
         pytest.skip(f"Driver corresponding to ext {ext} doesn't support dt fields")
-    if time.tzinfo is not None and compat.FIONA_GE_1814 is False:
+    if time.tzinfo is not None and FIONA_GE_1814 is False:
         # https://github.com/Toblerity/Fiona/pull/915
         pytest.skip("Fiona >= 1.8.14 needed for timezone support")
 
@@ -165,7 +169,7 @@ def test_to_file_datetime(tmpdir, driver, ext, time):
     df = GeoDataFrame(
         {"a": [1, 2], "b": [time, time]}, geometry=[point, point], crs=4326
     )
-    if compat.FIONA_GE_1814:
+    if FIONA_GE_1814:
         fiona_precision_limit = "ms"
     else:
         fiona_precision_limit = "s"
