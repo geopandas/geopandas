@@ -44,7 +44,7 @@ Although it is possible to use icon independently, we would prefer using the com
 
 ## Download
 
-You can download all version in SVG and PNG from [GitHub repository](https://github.com/geopandas/geopandas/tree/master/doc/source/_static/logo).
+You can download all version in SVG and PNG from [GitHub repository](https://github.com/geopandas/geopandas/tree/main/doc/source/_static/logo).
 
 
 ## Colors

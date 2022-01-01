@@ -422,13 +422,16 @@ class GeometryArray(ExtensionArray):
             return self.__dict__
 
     def __setstate__(self, state):
-        if compat.USE_PYGEOS:
-            geoms = pygeos.from_wkb(state[0])
+        if not isinstance(state, dict):
+            # pickle file saved with pygeos
+            geoms = vectorized.from_wkb(state[0])
             self._crs = state[1]
             self._sindex = None  # pygeos.STRtree could not be pickled yet
             self.data = geoms
             self.base = None
         else:
+            if compat.USE_PYGEOS:
+                state["data"] = vectorized.from_shapely(state["data"])
             if "_crs" not in state:
                 state["_crs"] = None
             self.__dict__.update(state)
