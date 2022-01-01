@@ -13,7 +13,7 @@ from pyproj import CRS
 
 from geopandas.array import GeometryArray, GeometryDtype, from_shapely, to_wkb, to_wkt
 from geopandas.base import GeoPandasBase, is_geometry_type
-from geopandas.geoseries import GeoSeries
+from geopandas.geoseries import GeoSeries, _geoseries_constructor_with_fallback
 import geopandas.io
 from geopandas.explore import _explore
 from . import _compat as compat
@@ -21,6 +21,20 @@ from ._decorator import doc
 
 
 DEFAULT_GEO_COLUMN_NAME = "geometry"
+
+
+def _geodataframe_constructor_with_fallback(*args, **kwargs):
+    """
+    A flexible constructor for GeoDataFrame._constructor, which falls back
+    to returning a DataFrame (if a certain operation does not preserve the
+    geometry column)
+    """
+    df = GeoDataFrame(*args, **kwargs)
+    geometry_cols_mask = df.dtypes == "geometry"
+    if len(geometry_cols_mask) == 0 or geometry_cols_mask.sum() == 0:
+        df = pd.DataFrame(df)
+
+    return df
 
 
 def _ensure_geometry(data, crs=None):
@@ -276,6 +290,9 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             frame = self
         else:
             frame = self.copy()
+            # if there is no previous self.geometry, self.copy() will downcast
+            if type(frame) == DataFrame:
+                frame = GeoDataFrame(frame)
 
         to_remove = None
         geo_column_name = self._geometry_column_name
@@ -1390,20 +1407,26 @@ individually so that features may have different properties
         result = super().apply(
             func, axis=axis, raw=raw, result_type=result_type, args=args, **kwargs
         )
-        if (
-            isinstance(result, GeoDataFrame)
-            and self._geometry_column_name in result.columns
-            and isinstance(result[self._geometry_column_name].dtype, GeometryDtype)
-        ):
-            # apply calls _constructor which resets geom col name to geometry
-            result._geometry_column_name = self._geometry_column_name
-            if self.crs is not None and result.crs is None:
-                result.set_crs(self.crs, inplace=True)
+        # Reconstruct gdf if it was lost by apply
+        if self._geometry_column_name in result.columns:
+            # axis=1 apply will split GeometryDType to object, try and cast back
+            try:
+                result = result.set_geometry(self._geometry_column_name)
+            except TypeError:
+                pass
+            else:
+                if self.crs is not None and result.crs is None:
+                    result.set_crs(self.crs, inplace=True)
+
         return result
 
     @property
     def _constructor(self):
-        return GeoDataFrame
+        return _geodataframe_constructor_with_fallback
+
+    @property
+    def _constructor_sliced(self):
+        return _geoseries_constructor_with_fallback
 
     def __finalize__(self, other, method=None, **kwargs):
         """propagate metadata from other to self"""
@@ -1510,7 +1533,7 @@ individually so that features may have different properties
 
         See also
         --------
-        GeoDataFrame.explode : explode muti-part geometries into single geometries
+        GeoDataFrame.explode : explode multi-part geometries into single geometries
 
         """
 
@@ -1553,7 +1576,7 @@ individually so that features may have different properties
     # overrides the pandas native explode method to break up features geometrically
     def explode(self, column=None, ignore_index=False, index_parts=None, **kwargs):
         """
-        Explode muti-part geometries into multiple single geometries.
+        Explode multi-part geometries into multiple single geometries.
 
         Each row containing a multi-part geometry will be split into
         multiple rows with single geometries, thereby increasing the vertical
@@ -1671,6 +1694,7 @@ individually so that features may have different properties
         df = (
             df_copy.drop(df_copy._geometry_column_name, axis=1)
             .join(exploded_geom)
+            .set_geometry(self._geometry_column_name)
             .__finalize__(self)
         )
 
@@ -1688,8 +1712,7 @@ individually so that features may have different properties
         if f"__{level_str}" in df.columns:
             df = df.rename(columns={f"__{level_str}": level_str})
 
-        geo_df = df.set_geometry(self._geometry_column_name)
-        return geo_df
+        return df
 
     # overrides the pandas astype method to ensure the correct return type
     def astype(self, dtype, copy=True, errors="raise", **kwargs):
@@ -2041,7 +2064,7 @@ countries_w_city_data[countries_w_city_data["name_left"] == "Italy"]
 
         Notes
         -----
-        Since this join relies on distances, results will be innaccurate
+        Since this join relies on distances, results will be inaccurate
         if your geometries are in a geographic CRS.
 
         Every operation in GeoPandas is planar, i.e. the potential third
@@ -2209,3 +2232,6 @@ def _dataframe_set_geometry(self, col, drop=False, inplace=False, crs=None):
 
 
 DataFrame.set_geometry = _dataframe_set_geometry
+
+if compat.PANDAS_GE_10 and not compat.PANDAS_GE_11:  # i.e. on pandas 1.0.x
+    _geodataframe_constructor_with_fallback._from_axes = GeoDataFrame._from_axes

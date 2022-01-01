@@ -88,7 +88,7 @@ def test_repr_empty():
 
 def test_indexing(s, df):
 
-    # accessing scalar from the geometry (colunm)
+    # accessing scalar from the geometry (column)
     exp = Point(1, 1)
     assert s[1] == exp
     assert s.loc[1] == exp
@@ -139,8 +139,9 @@ def test_reindex(s, df):
     assert isinstance(res.geometry, GeoSeries)
     assert_frame_equal(res, df[["value1", "geometry"]])
 
-    # TODO df.reindex(columns=['value1', 'value2']) still returns GeoDataFrame,
-    # should it return DataFrame instead ?
+    res = df.reindex(columns=["value1", "value2"])
+    assert type(res) == pd.DataFrame
+    assert_frame_equal(res, df[["value1", "value2"]])
 
 
 def test_take(s, df):
@@ -241,7 +242,7 @@ def test_astype(s, df):
     res = df.astype({"value1": float})
     assert isinstance(res, GeoDataFrame)
 
-    # check whether returned object is a datafrane
+    # check whether returned object is a dataframe
     res = df.astype(str)
     assert isinstance(res, pd.DataFrame) and not isinstance(res, GeoDataFrame)
 
@@ -587,13 +588,12 @@ def test_apply_no_geometry_result(df, crs):
     if crs:
         df = df.set_crs(crs)
     result = df.apply(lambda col: col.astype(str), axis=0)
-    # TODO this should actually not return a GeoDataFrame
-    assert isinstance(result, GeoDataFrame)
+    assert type(result) is pd.DataFrame
     expected = df.astype(str)
     assert_frame_equal(result, expected)
 
     result = df.apply(lambda col: col.astype(str), axis=1)
-    assert isinstance(result, GeoDataFrame)
+    assert type(result) is pd.DataFrame
     assert_frame_equal(result, expected)
 
 

@@ -363,10 +363,12 @@ class GeometryArray(ExtensionArray):
             # for pandas >= 1.0, validate and convert IntegerArray/BooleanArray
             # to numpy array, pass-through non-array-like indexers
             idx = pd.api.indexers.check_array_indexer(self, idx)
-        if isinstance(idx, (Iterable, slice)):
             return GeometryArray(self.data[idx], crs=self.crs)
         else:
-            raise TypeError("Index type not supported", idx)
+            if isinstance(idx, (Iterable, slice)):
+                return GeometryArray(self.data[idx], crs=self.crs)
+            else:
+                raise TypeError("Index type not supported", idx)
 
     def __setitem__(self, key, value):
         if compat.PANDAS_GE_10:
@@ -420,13 +422,16 @@ class GeometryArray(ExtensionArray):
             return self.__dict__
 
     def __setstate__(self, state):
-        if compat.USE_PYGEOS:
-            geoms = pygeos.from_wkb(state[0])
+        if not isinstance(state, dict):
+            # pickle file saved with pygeos
+            geoms = vectorized.from_wkb(state[0])
             self._crs = state[1]
             self._sindex = None  # pygeos.STRtree could not be pickled yet
             self.data = geoms
             self.base = None
         else:
+            if compat.USE_PYGEOS:
+                state["data"] = vectorized.from_shapely(state["data"])
             if "_crs" not in state:
                 state["_crs"] = None
             self.__dict__.update(state)
@@ -740,8 +745,9 @@ class GeometryArray(ExtensionArray):
 
         >>> a = a.to_crs(3857)
         >>> to_wkt(a)
-        array(['POINT (111319 111325)', 'POINT (222639 222684)',
-               'POINT (333958 334111)'], dtype=object)
+        array(['POINT (111319.490793 111325.142866)',
+               'POINT (222638.981587 222684.208506)',
+               'POINT (333958.47238 334111.171402)'], dtype=object)
         >>> a.crs  # doctest: +SKIP
         <Projected CRS: EPSG:3857>
         Name: WGS 84 / Pseudo-Mercator
@@ -1182,7 +1188,7 @@ class GeometryArray(ExtensionArray):
         Returns
         -------
         values : ndarray
-            An array suitable for factoraization. This should maintain order
+            An array suitable for factorization. This should maintain order
             and be a supported dtype (Float64, Int64, UInt64, String, Object).
             By default, the extension array is cast to object dtype.
         na_value : object

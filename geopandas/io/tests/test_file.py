@@ -1,5 +1,6 @@
 from collections import OrderedDict
 import datetime
+from distutils.version import LooseVersion
 import io
 import os
 import pathlib
@@ -10,6 +11,8 @@ import numpy as np
 import pandas as pd
 
 import fiona
+import pytz
+from pandas.testing import assert_series_equal
 from shapely.geometry import Point, Polygon, box
 
 import geopandas
@@ -20,6 +23,9 @@ from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 from geopandas.tests.util import PACKAGE_DIR, validate_boro_df
 
 import pytest
+
+
+FIONA_GE_1814 = str(fiona.__version__) >= LooseVersion("1.8.14")  # datetime roundtrip
 
 
 _CRS = "epsg:4326"
@@ -161,15 +167,48 @@ def test_to_file_bool(tmpdir, driver, ext):
     assert_correct_driver(tempfilename, ext)
 
 
-def test_to_file_datetime(tmpdir):
+TEST_DATE = datetime.datetime(2021, 11, 21, 1, 7, 43, 17500)
+eastern = pytz.timezone("US/Eastern")
+
+datetime_type_tests = (TEST_DATE, eastern.localize(TEST_DATE))
+
+
+@pytest.mark.parametrize(
+    "time", datetime_type_tests, ids=("naive_datetime", "datetime_with_timezone")
+)
+@pytest.mark.parametrize("driver,ext", driver_ext_pairs)
+def test_to_file_datetime(tmpdir, driver, ext, time):
     """Test writing a data file with the datetime column type"""
-    tempfilename = os.path.join(str(tmpdir), "test_datetime.gpkg")
+    if ext in (".shp", ""):
+        pytest.skip(f"Driver corresponding to ext {ext} doesn't support dt fields")
+    if time.tzinfo is not None and FIONA_GE_1814 is False:
+        # https://github.com/Toblerity/Fiona/pull/915
+        pytest.skip("Fiona >= 1.8.14 needed for timezone support")
+
+    tempfilename = os.path.join(str(tmpdir), f"test_datetime{ext}")
     point = Point(0, 0)
-    now = datetime.datetime.now()
-    df = GeoDataFrame({"a": [1, 2], "b": [now, now]}, geometry=[point, point], crs=4326)
-    df.to_file(tempfilename, driver="GPKG")
+
+    df = GeoDataFrame(
+        {"a": [1, 2], "b": [time, time]}, geometry=[point, point], crs=4326
+    )
+    if FIONA_GE_1814:
+        fiona_precision_limit = "ms"
+    else:
+        fiona_precision_limit = "s"
+    df["b"] = df["b"].dt.round(freq=fiona_precision_limit)
+
+    df.to_file(tempfilename, driver=driver)
     df_read = read_file(tempfilename)
-    assert_geoseries_equal(df.geometry, df_read.geometry)
+
+    assert_geodataframe_equal(df.drop(columns=["b"]), df_read.drop(columns=["b"]))
+    if df["b"].dt.tz is not None:
+        # US/Eastern becomes pytz.FixedOffset(-300) when read from file
+        # so compare fairly in terms of UTC
+        assert_series_equal(
+            df["b"].dt.tz_convert(pytz.utc), df_read["b"].dt.tz_convert(pytz.utc)
+        )
+    else:
+        assert_series_equal(df["b"], df_read["b"])
 
 
 @pytest.mark.parametrize("driver,ext", driver_ext_pairs)
@@ -236,7 +275,7 @@ def test_to_file_int64(tmpdir, df_points):
 
 
 def test_to_file_empty(tmpdir):
-    input_empty_df = GeoDataFrame()
+    input_empty_df = GeoDataFrame(columns=["geometry"])
     tempfilename = os.path.join(str(tmpdir), "test.shp")
     with pytest.raises(ValueError, match="Cannot write empty DataFrame to file."):
         input_empty_df.to_file(tempfilename)
@@ -368,7 +407,7 @@ def test_read_file(df_nybb):
 def test_read_file_remote_geojson_url():
     url = (
         "https://raw.githubusercontent.com/geopandas/geopandas/"
-        "master/geopandas/tests/data/null_geom.geojson"
+        "main/geopandas/tests/data/null_geom.geojson"
     )
     gdf = read_file(url)
     assert isinstance(gdf, geopandas.GeoDataFrame)
@@ -378,7 +417,7 @@ def test_read_file_remote_geojson_url():
 def test_read_file_remote_zipfile_url():
     url = (
         "https://raw.githubusercontent.com/geopandas/geopandas/"
-        "master/geopandas/datasets/nybb_16a.zip"
+        "main/geopandas/datasets/nybb_16a.zip"
     )
     gdf = read_file(url)
     assert isinstance(gdf, geopandas.GeoDataFrame)
