@@ -117,6 +117,7 @@ Serialization / IO / conversion
    GeoSeries.from_file
    GeoSeries.from_wkb
    GeoSeries.from_wkt
+   GeoSeries.from_xy
    GeoSeries.to_file
    GeoSeries.to_json
    GeoSeries.to_wkb
@@ -143,6 +144,14 @@ Missing values
    GeoSeries.isna
    GeoSeries.notna
 
+Overlay operations
+------------------
+
+.. autosummary::
+   :toctree: api/
+
+   GeoSeries.clip
+
 Plotting
 --------
 
@@ -150,6 +159,7 @@ Plotting
    :toctree: api/
 
    GeoSeries.plot
+   GeoSeries.explore
 
 
 Spatial index

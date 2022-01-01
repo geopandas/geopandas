@@ -20,7 +20,10 @@ dependencies:
   #- geopy
   - SQLalchemy
   - libspatialite
+  - pip
   - pip:
       - geopy
       - mapclassify
       - pyarrow
+      - folium
+      - xyzservices

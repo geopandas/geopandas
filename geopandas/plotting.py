@@ -73,9 +73,9 @@ def _expand_kwargs(kwargs, multiindex):
     mpl = matplotlib.__version__
     if mpl >= LooseVersion("3.4") or (mpl > LooseVersion("3.3.2") and "+" in mpl):
         # alpha is supported as array argument with matplotlib 3.4+
-        scalar_kwargs = ["marker"]
+        scalar_kwargs = ["marker", "path_effects"]
     else:
-        scalar_kwargs = ["marker", "alpha"]
+        scalar_kwargs = ["marker", "alpha", "path_effects"]
 
     for att, value in kwargs.items():
         if "color" in att:  # color(s), edgecolor(s), facecolor(s)
@@ -563,8 +563,8 @@ def plot_dataframe(
         Size of the resulting matplotlib.figure.Figure. If the argument
         axes is given explicitly, figsize is ignored.
     legend_kwds : dict (default None)
-        Keyword arguments to pass to matplotlib.pyplot.legend() or
-        matplotlib.pyplot.colorbar().
+        Keyword arguments to pass to :func:`matplotlib.pyplot.legend` or
+        :func:`matplotlib.pyplot.colorbar`.
         Additional accepted keywords when `scheme` is specified:
 
         fmt : string
@@ -726,26 +726,6 @@ GON (((-122.84000 49.00000, -120.0000...
 
     nan_idx = np.asarray(pd.isna(values), dtype="bool")
 
-    # Define `values` as a Series
-    if categorical:
-        if cmap is None:
-            cmap = "tab10"
-
-        cat = pd.Categorical(values, categories=categories)
-        categories = list(cat.categories)
-
-        # values missing in the Categorical but not in original values
-        missing = list(np.unique(values[~nan_idx & cat.isna()]))
-        if missing:
-            raise ValueError(
-                "Column contains values not listed in categories. "
-                "Missing categories: {}.".format(missing)
-            )
-
-        values = cat.codes[~nan_idx]
-        vmin = 0 if vmin is None else vmin
-        vmax = len(categories) - 1 if vmax is None else vmax
-
     if scheme is not None:
         mc_err = (
             "The 'mapclassify' package (>= 2.4.0) is "
@@ -779,20 +759,48 @@ GON (((-122.84000 49.00000, -120.0000...
                     )
                 )
             else:
-                categories = list(legend_kwds.pop("labels"))
+                labels = list(legend_kwds.pop("labels"))
         else:
             fmt = "{:.2f}"
             if legend_kwds is not None and "fmt" in legend_kwds:
                 fmt = legend_kwds.pop("fmt")
 
-            categories = binning.get_legend_classes(fmt)
+            labels = binning.get_legend_classes(fmt)
             if legend_kwds is not None:
                 show_interval = legend_kwds.pop("interval", False)
             else:
                 show_interval = False
             if not show_interval:
-                categories = [c[1:-1] for c in categories]
-        values = np.array(binning.yb)
+                labels = [c[1:-1] for c in labels]
+
+        values = pd.Categorical(
+            [np.nan] * len(values), categories=binning.bins, ordered=True
+        )
+        values[~nan_idx] = pd.Categorical.from_codes(
+            binning.yb, categories=binning.bins, ordered=True
+        )
+        if cmap is None:
+            cmap = "viridis"
+
+    # Define `values` as a Series
+    if categorical:
+        if cmap is None:
+            cmap = "tab10"
+
+        cat = pd.Categorical(values, categories=categories)
+        categories = list(cat.categories)
+
+        # values missing in the Categorical but not in original values
+        missing = list(np.unique(values[~nan_idx & cat.isna()]))
+        if missing:
+            raise ValueError(
+                "Column contains values not listed in categories. "
+                "Missing categories: {}.".format(missing)
+            )
+
+        values = cat.codes[~nan_idx]
+        vmin = 0 if vmin is None else vmin
+        vmax = len(categories) - 1 if vmax is None else vmax
 
     # fill values with placeholder where were NaNs originally to map them properly
     # (after removing them in categorical or scheme)
@@ -878,6 +886,8 @@ GON (((-122.84000 49.00000, -120.0000...
             norm = Normalize(vmin=mn, vmax=mx)
         n_cmap = cm.ScalarMappable(norm=norm, cmap=cmap)
         if categorical:
+            if scheme is not None:
+                categories = labels
             patches = []
             for value, cat in enumerate(categories):
                 patches.append(

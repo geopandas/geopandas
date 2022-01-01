@@ -7,6 +7,7 @@ Tools
    :toctree: api/
 
    sjoin
+   sjoin_nearest
    overlay
    clip
    tools.geocode

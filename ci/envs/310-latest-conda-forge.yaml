@@ -2,7 +2,7 @@ name: test
 channels:
   - conda-forge
 dependencies:
-  - python=3.9
+  - python=3.10
   # required
   - pandas
   - shapely
@@ -16,7 +16,7 @@ dependencies:
   - fsspec
   # optional
   - rtree
-  - matplotlib
+  - matplotlib-base
   - mapclassify
   - folium
   - xyzservices
@@ -31,4 +31,3 @@ dependencies:
   - pyarrow
   # doctest testing
   - pytest-doctestplus
-
