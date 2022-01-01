@@ -1424,8 +1424,11 @@ individually so that features may have different properties
                     )
                 elif isinstance(df[geometry].dtype, GeometryDtype):
                     df = GeoDataFrame(
-                        data=data, index=index, crs=crs, geometry=geometry, **kwargs
+                        data=data, index=index, crs=crs, geometry=None, **kwargs
                     )
+                    # Note we cannot supply in constructor or use set_geometry, as
+                    # cached sindex on slices will be reset
+                    df._geometry_column_name = geometry
 
             return df
 
