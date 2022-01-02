@@ -1414,15 +1414,17 @@ individually so that features may have different properties
         def _geodataframe_constructor_with_fallback(
             data=None, index=None, crs=crs_default, geometry=geometry_default, **kwargs
         ):
-            df = pd.DataFrame(data, index=index)  # TODO inefficient if not used?
+            df = pd.DataFrame(data, index=index)
             if geometry in df.columns:
                 geo_col = df[geometry]
-                if isinstance(geo_col, pd.DataFrame):
-                    raise ValueError(
-                        "GeoDataFrame does not support multiple columns"
-                        f" using the geometry column name '{geometry}'"
-                    )
-                elif isinstance(df[geometry].dtype, GeometryDtype):
+                if isinstance(geo_col, pd.DataFrame) or isinstance(
+                    geo_col.dtype, GeometryDtype
+                ):
+                    # DataFrame check is for when multiple columns are named
+                    # `geometry`. This case should error, but is passed through so that
+                    # we can have a specific error message for specific contexts,
+                    # e.g. concat, caught in __finalize__.
+
                     df = GeoDataFrame(
                         data=data, index=index, crs=crs, geometry=None, **kwargs
                     )
