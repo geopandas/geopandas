@@ -430,7 +430,9 @@ class TestPointPlotting:
 
     def test_no_missing_and_missing_kwds(self):
         # GH2210
-        self.df.plot("values", missing_kwds={"facecolor": "none"})
+        df = self.df.copy()
+        df["category"] = df["values"].astype("str")
+        df.plot("category", missing_kwds={"facecolor": "none"}, legend=True)
 
 
 class TestPointZPlotting:
