@@ -860,7 +860,8 @@ GON (((-122.84000 49.00000, -120.0000...
             **style_kwds,
         )
 
-    if missing_kwds is not None and not expl_series[nan_idx].empty:
+    missing_data = not expl_series[nan_idx].empty
+    if missing_kwds is not None and missing_data:
         if color:
             if "color" not in missing_kwds:
                 missing_kwds["color"] = color
@@ -902,7 +903,7 @@ GON (((-122.84000 49.00000, -120.0000...
                         markeredgewidth=0,
                     )
                 )
-            if missing_kwds is not None:
+            if missing_kwds is not None and missing_data:
                 if "color" in merged_kwds:
                     merged_kwds["facecolor"] = merged_kwds["color"]
                 patches.append(
