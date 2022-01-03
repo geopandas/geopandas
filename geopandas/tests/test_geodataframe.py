@@ -607,7 +607,7 @@ class TestDataFrame:
         assert_frame_equal(expected, result)
 
     def test_from_features_empty_properties(self):
-        geojson_properties_object = '''{
+        geojson_properties_object = """{
           "type": "FeatureCollection",
           "features": [
             {
@@ -646,9 +646,9 @@ class TestDataFrame:
               }
             }
           ]
-        }'''
+        }"""
 
-        geojson_properties_null = '''{
+        geojson_properties_null = """{
           "type": "FeatureCollection",
           "features": [
             {
@@ -687,7 +687,7 @@ class TestDataFrame:
               }
             }
           ]
-        }'''
+        }"""
 
         # geoJSON with empty properties
         gjson_po = json.loads(geojson_properties_object)
