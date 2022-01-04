@@ -603,6 +603,11 @@ def test_apply_preserves_geom_col_name(df):
     assert result.geometry.name == "geom"
 
 
+def test_df_apply_returning_series(df):
+    # https://github.com/geopandas/geopandas/issues/2283
+    df.apply(lambda row: row.geometry, axis=1)
+
+
 @pytest.mark.skipif(not compat.PANDAS_GE_10, reason="attrs introduced in pandas 1.0")
 def test_preserve_attrs(df):
     # https://github.com/geopandas/geopandas/issues/1654
