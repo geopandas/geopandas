@@ -13,7 +13,7 @@ from pyproj import CRS
 
 from geopandas.array import GeometryArray, GeometryDtype, from_shapely, to_wkb, to_wkt
 from geopandas.base import GeoPandasBase, is_geometry_type
-from geopandas.geoseries import GeoSeries, _geoseries_constructor_with_fallback
+from geopandas.geoseries import GeoSeries
 import geopandas.io
 from geopandas.explore import _explore
 from . import _compat as compat
@@ -35,6 +35,17 @@ def _geodataframe_constructor_with_fallback(*args, **kwargs):
         df = pd.DataFrame(df)
 
     return df
+
+
+def _geodataframe_constructor_sliced(data=None, index=None, crs=None, **kwargs):
+    srs = pd.Series(data, index, **kwargs)
+    # avoid preserving geoseries for row slices of single cols
+    # https://github.com/geopandas/geopandas/issues/2282
+    # This feels very flaky
+    if isinstance(srs.dtype, GeometryDtype) and srs.shape != (1,):
+        return GeoSeries(srs, crs=crs)
+    else:
+        return srs
 
 
 def _ensure_geometry(data, crs=None):
@@ -1426,7 +1437,7 @@ individually so that features may have different properties
 
     @property
     def _constructor_sliced(self):
-        return _geoseries_constructor_with_fallback
+        return _geodataframe_constructor_sliced
 
     def __finalize__(self, other, method=None, **kwargs):
         """propagate metadata from other to self"""
