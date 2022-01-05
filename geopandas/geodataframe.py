@@ -1414,7 +1414,7 @@ individually so that features may have different properties
         def _geodataframe_constructor_with_fallback(
             data=None, index=None, crs=crs_default, geometry=geometry_default, **kwargs
         ):
-            df = pd.DataFrame(data, index=index)
+            df = pd.DataFrame(data, index=index, **kwargs)
             if geometry in df.columns:
                 geo_col = df[geometry]
                 if isinstance(geo_col, pd.DataFrame) or isinstance(
