@@ -605,7 +605,8 @@ def test_apply_preserves_geom_col_name(df):
 
 def test_df_apply_returning_series(df):
     # https://github.com/geopandas/geopandas/issues/2283
-    df.apply(lambda row: row.geometry, axis=1)
+    result = df.apply(lambda row: row.geometry, axis=1)
+    assert_geoseries_equal(result, df.geometry, check_crs=False)
 
 
 @pytest.mark.skipif(not compat.PANDAS_GE_10, reason="attrs introduced in pandas 1.0")
