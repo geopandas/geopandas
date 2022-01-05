@@ -1425,9 +1425,7 @@ individually so that features may have different properties
                     # we can have a specific error message for specific contexts,
                     # e.g. concat, caught in __finalize__.
 
-                    df = GeoDataFrame(
-                        data=data, index=index, crs=crs, geometry=None, **kwargs
-                    )
+                    df = GeoDataFrame(df, crs=crs, geometry=None)
                     # Note we cannot supply in constructor or use set_geometry, as
                     # cached sindex on slices will be reset
                     df._geometry_column_name = geometry
