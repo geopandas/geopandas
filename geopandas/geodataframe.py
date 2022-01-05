@@ -1408,8 +1408,8 @@ individually so that features may have different properties
 
     @property
     def _constructor(self):
-        geometry_default = getattr(self, "_geometry_column_name")
-        crs_default = getattr(self, "crs")
+        geometry_default = self._geometry_column_name
+        crs_default = self.crs
 
         def _geodataframe_constructor_with_fallback(
             data=None, index=None, crs=crs_default, geometry=geometry_default, **kwargs
