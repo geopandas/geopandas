@@ -2,6 +2,7 @@
 See generate_legacy_storage_files.py for the creation of the legacy files.
 
 """
+from contextlib import contextmanager
 from packaging.version import Version
 import glob
 import os
@@ -36,12 +37,14 @@ def legacy_pickle(request):
     return request.param
 
 
-@pytest.fixture
-def with_use_pygeos_false():
+@contextmanager
+def with_use_pygeos(option):
     orig = geopandas.options.use_pygeos
-    geopandas.options.use_pygeos = not orig
-    yield
-    geopandas.options.use_pygeos = orig
+    geopandas.options.use_pygeos = option
+    try:
+        yield
+    finally:
+        geopandas.options.use_pygeos = orig
 
 
 @pytest.mark.skipif(
@@ -70,13 +73,41 @@ def test_round_trip_current(tmpdir, current_pickle_data):
         assert isinstance(result.has_sindex, bool)
 
 
-@pytest.mark.skipif(not compat.HAS_PYGEOS, reason="requires pygeos to test #1745")
-def test_pygeos_switch(tmpdir, with_use_pygeos_false):
-    gdf_crs = geopandas.GeoDataFrame(
+def _create_gdf():
+    return geopandas.GeoDataFrame(
         {"a": [0.1, 0.2, 0.3], "geometry": [Point(1, 1), Point(2, 2), Point(3, 3)]},
         crs="EPSG:4326",
     )
-    path = str(tmpdir / "gdf_crs.pickle")
-    gdf_crs.to_pickle(path)
-    result = pd.read_pickle(path)
-    assert_geodataframe_equal(result, gdf_crs)
+
+
+@pytest.mark.skipif(not compat.HAS_PYGEOS, reason="requires pygeos to test #1745")
+def test_pygeos_switch(tmpdir):
+    # writing and reading with pygeos disabled
+    with with_use_pygeos(False):
+        gdf = _create_gdf()
+        path = str(tmpdir / "gdf_crs1.pickle")
+        gdf.to_pickle(path)
+        result = pd.read_pickle(path)
+        assert_geodataframe_equal(result, gdf)
+
+    # writing without pygeos, reading with pygeos
+    with with_use_pygeos(False):
+        gdf = _create_gdf()
+        path = str(tmpdir / "gdf_crs1.pickle")
+        gdf.to_pickle(path)
+
+    with with_use_pygeos(True):
+        result = pd.read_pickle(path)
+        gdf = _create_gdf()
+        assert_geodataframe_equal(result, gdf)
+
+    # writing with pygeos, reading without pygeos
+    with with_use_pygeos(True):
+        gdf = _create_gdf()
+        path = str(tmpdir / "gdf_crs1.pickle")
+        gdf.to_pickle(path)
+
+    with with_use_pygeos(False):
+        result = pd.read_pickle(path)
+        gdf = _create_gdf()
+        assert_geodataframe_equal(result, gdf)

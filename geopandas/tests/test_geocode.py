@@ -134,7 +134,7 @@ def test_bad_provider_reverse():
     from geopy.exc import GeocoderNotFound
 
     with pytest.raises(GeocoderNotFound):
-        reverse_geocode(["cambridge, ma"], "badprovider")
+        reverse_geocode([Point(0, 0)], "badprovider")
 
 
 def test_forward(locations, points):

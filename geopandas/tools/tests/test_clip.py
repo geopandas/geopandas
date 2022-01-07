@@ -1,11 +1,20 @@
 """Tests for the clip module."""
 
 import warnings
+from packaging.version import Version
 
 import numpy as np
+import pandas as pd
 
 import shapely
-from shapely.geometry import Polygon, Point, LineString, LinearRing, GeometryCollection
+from shapely.geometry import (
+    Polygon,
+    Point,
+    LineString,
+    LinearRing,
+    GeometryCollection,
+    MultiPoint,
+)
 
 import geopandas
 from geopandas import GeoDataFrame, GeoSeries, clip
@@ -15,13 +24,14 @@ import pytest
 
 
 pytestmark = pytest.mark.skip_no_sindex
+pandas_133 = Version(pd.__version__) == Version("1.3.3")
 
 
 @pytest.fixture
 def point_gdf():
     """Create a point GeoDataFrame."""
     pts = np.array([[2, 2], [3, 4], [9, 8], [-12, -15]])
-    gdf = GeoDataFrame([Point(xy) for xy in pts], columns=["geometry"], crs="EPSG:4326")
+    gdf = GeoDataFrame([Point(xy) for xy in pts], columns=["geometry"], crs="EPSG:3857")
     return gdf
 
 
@@ -30,7 +40,7 @@ def pointsoutside_nooverlap_gdf():
     """Create a point GeoDataFrame. Its points are all outside the single
     rectangle, and its bounds are outside the single rectangle's."""
     pts = np.array([[5, 15], [15, 15], [15, 20]])
-    gdf = GeoDataFrame([Point(xy) for xy in pts], columns=["geometry"], crs="EPSG:4326")
+    gdf = GeoDataFrame([Point(xy) for xy in pts], columns=["geometry"], crs="EPSG:3857")
     return gdf
 
 
@@ -39,7 +49,7 @@ def pointsoutside_overlap_gdf():
     """Create a point GeoDataFrame. Its points are all outside the single
     rectangle, and its bounds are overlapping the single rectangle's."""
     pts = np.array([[5, 15], [15, 15], [15, 5]])
-    gdf = GeoDataFrame([Point(xy) for xy in pts], columns=["geometry"], crs="EPSG:4326")
+    gdf = GeoDataFrame([Point(xy) for xy in pts], columns=["geometry"], crs="EPSG:3857")
     return gdf
 
 
@@ -47,7 +57,7 @@ def pointsoutside_overlap_gdf():
 def single_rectangle_gdf():
     """Create a single rectangle for clipping."""
     poly_inters = Polygon([(0, 0), (0, 10), (10, 10), (10, 0), (0, 0)])
-    gdf = GeoDataFrame([1], geometry=[poly_inters], crs="EPSG:4326")
+    gdf = GeoDataFrame([1], geometry=[poly_inters], crs="EPSG:3857")
     gdf["attr2"] = "site-boundary"
     return gdf
 
@@ -60,7 +70,7 @@ def larger_single_rectangle_gdf():
     eliminates the slivers in the clip return.
     """
     poly_inters = Polygon([(-5, -5), (-5, 15), (15, 15), (15, -5), (-5, -5)])
-    gdf = GeoDataFrame([1], geometry=[poly_inters], crs="EPSG:4326")
+    gdf = GeoDataFrame([1], geometry=[poly_inters], crs="EPSG:3857")
     gdf["attr2"] = ["study area"]
     return gdf
 
@@ -88,7 +98,7 @@ def two_line_gdf():
     """Create Line Objects For Testing"""
     linea = LineString([(1, 1), (2, 2), (3, 2), (5, 3)])
     lineb = LineString([(3, 4), (5, 7), (12, 2), (10, 5), (9, 7.5)])
-    gdf = GeoDataFrame([1, 2], geometry=[linea, lineb], crs="EPSG:4326")
+    gdf = GeoDataFrame([1, 2], geometry=[linea, lineb], crs="EPSG:3857")
     return gdf
 
 
@@ -96,7 +106,7 @@ def two_line_gdf():
 def multi_poly_gdf(donut_geometry):
     """Create a multi-polygon GeoDataFrame."""
     multi_poly = donut_geometry.unary_union
-    out_df = GeoDataFrame(geometry=GeoSeries(multi_poly), crs="EPSG:4326")
+    out_df = GeoDataFrame(geometry=GeoSeries(multi_poly), crs="EPSG:3857")
     out_df["attr"] = ["pool"]
     return out_df
 
@@ -108,7 +118,7 @@ def multi_line(two_line_gdf):
     # Create a single and multi line object
     multiline_feat = two_line_gdf.unary_union
     linec = LineString([(2, 1), (3, 1), (4, 1), (5, 2)])
-    out_df = GeoDataFrame(geometry=GeoSeries([multiline_feat, linec]), crs="EPSG:4326")
+    out_df = GeoDataFrame(geometry=GeoSeries([multiline_feat, linec]), crs="EPSG:3857")
     out_df["attr"] = ["road", "stream"]
     return out_df
 
@@ -121,7 +131,7 @@ def multi_point(point_gdf):
         geometry=GeoSeries(
             [multi_point, Point(2, 5), Point(-11, -14), Point(-10, -12)]
         ),
-        crs="EPSG:4326",
+        crs="EPSG:3857",
     )
     out_df["attr"] = ["tree", "another tree", "shrub", "berries"]
     return out_df
@@ -135,7 +145,7 @@ def mixed_gdf():
     poly = Polygon([(3, 4), (5, 2), (12, 2), (10, 5), (9, 7.5)])
     ring = LinearRing([(1, 1), (2, 2), (3, 2), (5, 3), (12, 1)])
     gdf = GeoDataFrame(
-        [1, 2, 3, 4], geometry=[point, poly, line, ring], crs="EPSG:4326"
+        [1, 2, 3, 4], geometry=[point, poly, line, ring], crs="EPSG:3857"
     )
     return gdf
 
@@ -146,7 +156,7 @@ def geomcol_gdf():
     point = Point([(2, 3), (11, 4), (7, 2), (8, 9), (1, 13)])
     poly = Polygon([(3, 4), (5, 2), (12, 2), (10, 5), (9, 7.5)])
     coll = GeometryCollection([point, poly])
-    gdf = GeoDataFrame([1], geometry=[coll], crs="EPSG:4326")
+    gdf = GeoDataFrame([1], geometry=[coll], crs="EPSG:3857")
     return gdf
 
 
@@ -155,7 +165,7 @@ def sliver_line():
     """Create a line that will create a point when clipped."""
     linea = LineString([(10, 5), (13, 5), (15, 5)])
     lineb = LineString([(1, 1), (2, 2), (3, 2), (5, 3), (12, 1)])
-    gdf = GeoDataFrame([1, 2], geometry=[linea, lineb], crs="EPSG:4326")
+    gdf = GeoDataFrame([1, 2], geometry=[linea, lineb], crs="EPSG:3857")
     return gdf
 
 
@@ -182,7 +192,7 @@ def test_returns_series(point_gdf, single_rectangle_gdf):
 def test_non_overlapping_geoms():
     """Test that a bounding box returns empty if the extents don't overlap"""
     unit_box = Polygon([(0, 0), (0, 1), (1, 1), (1, 0), (0, 0)])
-    unit_gdf = GeoDataFrame([1], geometry=[unit_box], crs="EPSG:4326")
+    unit_gdf = GeoDataFrame([1], geometry=[unit_box], crs="EPSG:3857")
     non_overlapping_gdf = unit_gdf.copy()
     non_overlapping_gdf = non_overlapping_gdf.geometry.apply(
         lambda x: shapely.affinity.translate(x, xoff=20)
@@ -197,7 +207,7 @@ def test_clip_points(point_gdf, single_rectangle_gdf):
     """Test clipping a points GDF with a generic polygon geometry."""
     clip_pts = clip(point_gdf, single_rectangle_gdf)
     pts = np.array([[2, 2], [3, 4], [9, 8]])
-    exp = GeoDataFrame([Point(xy) for xy in pts], columns=["geometry"], crs="EPSG:4326")
+    exp = GeoDataFrame([Point(xy) for xy in pts], columns=["geometry"], crs="EPSG:3857")
     assert_geodataframe_equal(clip_pts, exp)
 
 
@@ -209,7 +219,7 @@ def test_clip_points_geom_col_rename(point_gdf, single_rectangle_gdf):
     exp = GeoDataFrame(
         [Point(xy) for xy in pts],
         columns=["geometry2"],
-        crs="EPSG:4326",
+        crs="EPSG:3857",
         geometry="geometry2",
     )
     assert_geodataframe_equal(clip_pts, exp)
@@ -239,6 +249,7 @@ def test_clip_poly_series(buffered_locations, single_rectangle_gdf):
     assert all(clipped_poly.geom_type == "Polygon")
 
 
+@pytest.mark.xfail(pandas_133, reason="Regression in pandas 1.3.3 (GH #2101)")
 def test_clip_multipoly_keep_slivers(multi_poly_gdf, single_rectangle_gdf):
     """Test a multi poly object where the return includes a sliver.
     Also the bounds of the object should == the bounds of the clip object
@@ -249,6 +260,7 @@ def test_clip_multipoly_keep_slivers(multi_poly_gdf, single_rectangle_gdf):
     assert "GeometryCollection" in clipped.geom_type[0]
 
 
+@pytest.mark.xfail(pandas_133, reason="Regression in pandas 1.3.3 (GH #2101)")
 def test_clip_multipoly_keep_geom_type(multi_poly_gdf, single_rectangle_gdf):
     """Test a multi poly object where the return includes a sliver.
     Also the bounds of the object should == the bounds of the clip object
@@ -282,6 +294,15 @@ def test_clip_multipoint(single_rectangle_gdf, multi_point):
     assert clipped.geom_type[0] == "MultiPoint"
     assert hasattr(clipped, "attr")
     # All points should intersect the clip geom
+    assert len(clipped) == 2
+    clipped_mutltipoint = MultiPoint(
+        [
+            Point(2, 2),
+            Point(3, 4),
+            Point(9, 8),
+        ]
+    )
+    assert clipped.iloc[0].geometry.wkt == clipped_mutltipoint.wkt
     assert all(clipped.intersects(single_rectangle_gdf.unary_union))
 
 
@@ -335,7 +356,7 @@ def test_clip_with_polygon(single_rectangle_gdf):
     exp_poly = polygon.intersection(
         Polygon([(0, 0), (0, 10), (10, 10), (10, 0), (0, 0)])
     )
-    exp = GeoDataFrame([1], geometry=[exp_poly], crs="EPSG:4326")
+    exp = GeoDataFrame([1], geometry=[exp_poly], crs="EPSG:3857")
     exp["attr2"] = "site-boundary"
     assert_geodataframe_equal(clipped, exp)
 
@@ -386,4 +407,4 @@ def test_warning_geomcoll(single_rectangle_gdf, geomcol_gdf):
 
 def test_warning_crs_mismatch(point_gdf, single_rectangle_gdf):
     with pytest.warns(UserWarning, match="CRS mismatch between the CRS"):
-        clip(point_gdf, single_rectangle_gdf.to_crs(3857))
+        clip(point_gdf, single_rectangle_gdf.to_crs(4326))
