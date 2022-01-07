@@ -1,4 +1,4 @@
-from packaging import version
+from packaging.version import Version
 import itertools
 import warnings
 
@@ -33,7 +33,7 @@ import matplotlib.pyplot as plt  # noqa
 try:  # skipif and importorskip do not work for decorators
     from matplotlib.testing.decorators import check_figures_equal
 
-    if version.parse(matplotlib.__version__) >= version.parse("3.3.0"):
+    if Version(matplotlib.__version__) >= Version("3.3.0"):
 
         MPL_DECORATORS = True
     else:
@@ -1670,7 +1670,7 @@ def _get_ax(fig, label):
     Previously, we did `fig.axes[1]`, but in matplotlib 3.4 the order switched
     and the colorbar ax was first and subplot ax second.
     """
-    if version.parse(matplotlib.__version__) < version.parse("3.0.0"):
+    if Version(matplotlib.__version__) < Version("3.0.0"):
         if label == "<colorbar>":
             return fig.axes[1]
         elif label == "":

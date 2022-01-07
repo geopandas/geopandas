@@ -1,5 +1,5 @@
 import contextlib
-from packaging import version
+from packaging.version import Version
 import importlib
 import os
 import warnings
@@ -15,10 +15,10 @@ import shapely.geos
 # pandas compat
 # -----------------------------------------------------------------------------
 
-PANDAS_GE_10 = version.parse(pd.__version__) >= version.parse("1.0.0")
-PANDAS_GE_11 = version.parse(pd.__version__) >= version.parse("1.1.0")
-PANDAS_GE_115 = version.parse(pd.__version__) >= version.parse("1.1.5")
-PANDAS_GE_12 = version.parse(pd.__version__) >= version.parse("1.2.0")
+PANDAS_GE_10 = Version(pd.__version__) >= Version("1.0.0")
+PANDAS_GE_11 = Version(pd.__version__) >= Version("1.1.0")
+PANDAS_GE_115 = Version(pd.__version__) >= Version("1.1.5")
+PANDAS_GE_12 = Version(pd.__version__) >= Version("1.2.0")
 
 
 # -----------------------------------------------------------------------------
@@ -26,9 +26,9 @@ PANDAS_GE_12 = version.parse(pd.__version__) >= version.parse("1.2.0")
 # -----------------------------------------------------------------------------
 
 
-SHAPELY_GE_17 = version.parse(shapely.__version__) >= version.parse("1.7.0")
-SHAPELY_GE_18 = version.parse(shapely.__version__) >= version.parse("1.8")
-SHAPELY_GE_20 = version.parse(shapely.__version__) >= version.parse("2.0")
+SHAPELY_GE_17 = Version(shapely.__version__) >= Version("1.7.0")
+SHAPELY_GE_18 = Version(shapely.__version__) >= Version("1.8")
+SHAPELY_GE_20 = Version(shapely.__version__) >= Version("2.0")
 
 GEOS_GE_390 = shapely.geos.geos_version >= (3, 9, 0)
 
@@ -43,9 +43,9 @@ try:
     import pygeos  # noqa
 
     # only automatically use pygeos if version is high enough
-    if version.parse(pygeos.__version__) >= version.parse("0.8"):
+    if Version(pygeos.__version__) >= Version("0.8"):
         HAS_PYGEOS = True
-        PYGEOS_GE_09 = version.parse(pygeos.__version__) >= version.parse("0.9")
+        PYGEOS_GE_09 = Version(pygeos.__version__) >= Version("0.9")
     else:
         warnings.warn(
             "The installed version of PyGEOS is too old ({0} installed, 0.8 required),"
@@ -87,7 +87,7 @@ def set_use_pygeos(val=None):
             import pygeos  # noqa
 
             # validate the pygeos version
-            if not version.parse(pygeos.__version__) >= version.parse("0.8"):
+            if not Version(pygeos.__version__) >= Version("0.8"):
                 raise ImportError(
                     "PyGEOS >= 0.6 is required, version {0} is installed".format(
                         pygeos.__version__
@@ -148,7 +148,7 @@ if shapely_warning is not None and not SHAPELY_GE_20:
             yield
 
 
-elif (version.parse(np.__version__) >= version.parse("1.21")) and not SHAPELY_GE_20:
+elif (Version(np.__version__) >= Version("1.21")) and not SHAPELY_GE_20:
 
     @contextlib.contextmanager
     def ignore_shapely2_warnings():
@@ -222,4 +222,4 @@ except ImportError:
 # pyproj compat
 # -----------------------------------------------------------------------------
 
-PYPROJ_LT_3 = version.parse(pyproj.__version__) < version.parse("3")
+PYPROJ_LT_3 = Version(pyproj.__version__) < Version("3")

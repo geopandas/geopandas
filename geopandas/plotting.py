@@ -6,7 +6,7 @@ from pandas.plotting import PlotAccessor
 
 import geopandas
 
-from packaging import version
+from packaging.version import Version
 
 from ._decorator import doc
 
@@ -70,8 +70,8 @@ def _expand_kwargs(kwargs, multiindex):
     from matplotlib.colors import is_color_like
     from typing import Iterable
 
-    mpl = version.parse(matplotlib.__version__)
-    if mpl >= version.parse("3.4") or (mpl > version.parse("3.3.2") and "+" in mpl):
+    mpl = Version(matplotlib.__version__)
+    if mpl >= Version("3.4") or (mpl > Version("3.3.2") and "+" in mpl):
         # alpha is supported as array argument with matplotlib 3.4+
         scalar_kwargs = ["marker"]
     else:
@@ -757,7 +757,7 @@ GON (((-122.84000 49.00000, -120.0000...
         except ImportError:
             raise ImportError(mc_err)
 
-        if version.parse(mapclassify.__version__) < version.parse("2.4.0"):
+        if Version(mapclassify.__version__) < Version("2.4.0"):
             raise ImportError(mc_err)
 
         if classification_kwds is None:
