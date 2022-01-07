@@ -160,7 +160,7 @@ Using the provided environment
 
 *GeoPandas* provides an environment which includes the required dependencies for development.
 The environment file is located in the top level of the repo and is named ``environment-dev.yml``.
-You can create this environment by navigating to the git clone of the *GeoPandas* repository
+You can create this environment by navigating to the the *GeoPandas* source directory
 and running::
 
       conda env create -f environment-dev.yml
