@@ -2,7 +2,7 @@ name: geopandas-dev
 channels:
     - conda-forge
 dependencies:
-    - python=3.9
+    - python
     # required
     - fiona>=1.8
     - pandas>=0.25
