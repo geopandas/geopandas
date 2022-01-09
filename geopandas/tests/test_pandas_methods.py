@@ -463,7 +463,7 @@ def test_value_counts():
     s2 = GeoSeries([Point(0, 0), Point(1, 1), Point(0, 0)], crs="EPSG:4326")
     res2 = s2.value_counts()
     assert_series_equal(res2, exp)
-    if compat.PANDAS_GE_20:
+    if compat.PANDAS_GE_14:
         # TODO should/ can we fix CRS being lost
         assert s2.value_counts().index.array.crs is None
 
