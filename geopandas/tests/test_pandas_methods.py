@@ -446,7 +446,7 @@ def test_unique():
 
 
 def pd20_compat_index(index):
-    if compat.PANDAS_GE_20:
+    if compat.PANDAS_GE_14:
         return from_shapely(index)
     else:
         return index
