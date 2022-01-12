@@ -126,18 +126,11 @@ def test_squeeze(df):
 
 def test_to_frame(df):
     geo_name = df.geometry.name
-    # TODO this reflects current behaviour, but we should fix
-    #  GeoSeries._constructor_expanddim so this doesn't happen
     res1 = df[geo_name].to_frame()
-    if geo_name == "geometry":  # -> this should be doable for any geo_name
-        assert_object(res1, GeoDataFrame, geo_name)
-    assert res1._geometry_column_name == "geometry"  # -> should be geo_name
+    assert_object(res1, GeoDataFrame, geo_name, crs=df[geo_name].crs)
 
     res2 = df["geometry2"].to_frame()
-    assert type(res2) is GeoDataFrame
-    assert res2._geometry_column_name == "geometry"  # -> should be geometry2
-    assert res2.crs is None  # -> should be crs_osgb
-    # also res2.geometry should not crash because geometry isn't set
+    assert_object(res2, GeoDataFrame, "geometry2", crs=crs_osgb)
 
     res3 = df["value1"].to_frame()
     assert_object(res3, pd.DataFrame)
