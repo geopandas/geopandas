@@ -594,7 +594,28 @@ class GeoSeries(GeoPandasBase, Series):
     def _constructor_expanddim(self):
         from geopandas import GeoDataFrame
 
-        return GeoDataFrame
+        def expanddim(data=None, index=None, crs=None, **kwargs):
+            # if geometry is somehow supplied, ignore it because we don't need it
+            kwargs.pop("geometry", None)
+            if isinstance(data, GeoSeries):
+                # pandas default column name is 0, keep convention
+                geo_col_name = data.name if data.name is not None else 0
+            else:  # Dict of {name : (Geo)Series}
+                # if only one key, this is not ambiguous, if more than one
+                # i.e. from pd.concat([GeoSeries, GeoSeries]) the geom col comes
+                # from the left (same as for multiple gdfs in concat)
+                geo_col_name = list(data.keys())[0]
+            # TODO elif blockmanager?
+            df = GeoDataFrame(
+                data=data, index=index, crs=crs, geometry=geo_col_name, **kwargs
+            )
+            return df
+
+        # pd.concat (pandas/core/reshape/concat.py) requires this for the
+        # concatenation of series since pandas 1.1
+        # (https://github.com/pandas-dev/pandas/commit/f9e4c8c84bcef987973f2624cc2932394c171c8c)
+        expanddim._get_axis_number = GeoDataFrame._get_axis_number
+        return expanddim
 
     def _wrapped_pandas_method(self, mtd, *args, **kwargs):
         """Wrap a generic pandas method to ensure it returns a GeoSeries"""
