@@ -595,7 +595,6 @@ class TestConstructor:
         )
         s = s.explode(ignore_index=True)
         expected_index = pd.Index(range(len(s)))
-        print(expected_index)
         assert_index_equal(s.index, expected_index)
 
         # index_parts is ignored if ignore_index=True
