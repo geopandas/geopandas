@@ -600,12 +600,14 @@ class GeoSeries(GeoPandasBase, Series):
             if isinstance(data, GeoSeries):
                 # pandas default column name is 0, keep convention
                 geo_col_name = data.name if data.name is not None else 0
-            else:  # Dict of {name : (Geo)Series}
+            elif isinstance(data, dict):  # Dict of {name : (Geo)Series}
                 # if only one key, this is not ambiguous, if more than one
                 # i.e. from pd.concat([GeoSeries, GeoSeries]) the geom col comes
                 # from the left (same as for multiple gdfs in concat)
                 geo_col_name = list(data.keys())[0]
-            # TODO elif blockmanager?
+            else:  # blockmanager
+                geo_col_name = data.axes[0][0]
+
             df = GeoDataFrame(
                 data=data, index=index, crs=crs, geometry=geo_col_name, **kwargs
             )
