@@ -546,8 +546,6 @@ class TestConstructor:
     # GH 1216
     @pytest.mark.parametrize("name", [None, "geometry", "Points"])
     @pytest.mark.parametrize("crs", [None, "epsg:4326"])
-    # @pytest.mark.parametrize("name", ["Points"])
-    # @pytest.mark.parametrize("crs", ["epsg:4326"])
     def test_reset_index(self, name, crs):
         s = GeoSeries(
             [MultiPoint([(0, 0), (1, 1)]), MultiPoint([(2, 2), (3, 3), (4, 4)])],
