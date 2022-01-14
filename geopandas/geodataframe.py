@@ -1696,7 +1696,7 @@ individually so that features may have different properties
                 exploded_geom.index
             ],
             geometry=exploded_geom,
-        )
+        ).__finalize__(self)
 
         if ignore_index:
             df.reset_index(inplace=True, drop=True)
