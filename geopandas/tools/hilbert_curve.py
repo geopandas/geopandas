@@ -88,11 +88,10 @@ def _continuous_to_discrete(vals, val_range, n):
     """
 
     width = val_range[1] - val_range[0]
-    res = ((vals - val_range[0]) * (n / width)).astype(np.int64)
+    res = (vals - val_range[0]) * (n / width)
 
-    np.clip(res, min=0, max=n, out=res)
-
-    return res
+    np.clip(res, 0, n - 1, out=res)
+    return res.astype(np.uint32)
 
 
 # Fast Hilbert curve algorithm by http://threadlocalmutex.com/
