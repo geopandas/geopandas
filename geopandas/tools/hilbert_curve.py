@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 
 
-def _hilbert_distance(gdf, total_bounds, p):
+def _hilbert_distance(gdf, total_bounds=None, p=15):
     """
     Calculate hilbert distance for a GeoDataFrame
     int coordinates
@@ -22,6 +22,17 @@ def _hilbert_distance(gdf, total_bounds, p):
     """
     # Calculate bounds as numpy array
     bounds = gdf.bounds.to_numpy()
+
+    if total_bounds is None:
+        total_bounds = np.array(
+            (
+                np.nanmin(bounds[:, 0]),  # minx
+                np.nanmin(bounds[:, 1]),  # miny
+                np.nanmax(bounds[:, 2]),  # maxx
+                np.nanmax(bounds[:, 3]),  # maxy
+            )
+        )
+
     # Calculate discrete coords based on total bounds and bounds
     x, y = _continuous_to_discrete_coords(total_bounds, bounds, p)
     # Calculate distance from morton curve
