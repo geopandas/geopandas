@@ -1119,6 +1119,52 @@ class TestGeomMethods:
         )
         assert_geodataframe_equal(test_df, expected_df)
 
+    def test_explode_order_no_multi(self):
+        df = GeoDataFrame(
+            {"vals": [1, 2, 3]},
+            geometry=[Point(0, x) for x in range(3)],
+            index=[2, 9, 7],
+        )
+        test_df = df.explode(index_parts=True)
+
+        expected_index = MultiIndex.from_arrays(
+            [[2, 9, 7], [0, 0, 0]],
+        )
+        expected_df = GeoDataFrame(
+            {"vals": [1, 2, 3]},
+            geometry=[Point(0, x) for x in range(3)],
+            index=expected_index,
+        )
+        assert_geodataframe_equal(test_df, expected_df)
+
+    def test_explode_order_mixed(self):
+        df = GeoDataFrame(
+            {"vals": [1, 2, 3]},
+            geometry=[MultiPoint([(x, x), (x, 0)]) for x in range(2)] + [Point(0, 10)],
+            index=[2, 9, 7],
+        )
+        test_df = df.explode(index_parts=True)
+
+        expected_index = MultiIndex.from_arrays(
+            [[2, 2, 9, 9, 7], [0, 1, 0, 1, 0]],
+        )
+        expected_geometry = GeoSeries(
+            [
+                Point(0, 0),
+                Point(0, 0),
+                Point(1, 1),
+                Point(1, 0),
+                Point(0, 10),
+            ],
+            index=expected_index,
+        )
+        expected_df = GeoDataFrame(
+            {"vals": [1, 1, 2, 2, 3]},
+            geometry=expected_geometry,
+            index=expected_index,
+        )
+        assert_geodataframe_equal(test_df, expected_df)
+
     #
     # Test '&', '|', '^', and '-'
     #

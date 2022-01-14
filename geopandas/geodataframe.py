@@ -1684,7 +1684,6 @@ individually so that features may have different properties
         if index_parts:
             exploded_geom = df_copy.geometry.explode(index_parts=True)
             exploded_index = exploded_geom.index
-            sorter = pd.Series(range(len(exploded_geom)), index=exploded_index)
             exploded_geom = exploded_geom.reset_index(level=-1, drop=True)
         else:
             exploded_geom = df_copy.geometry.explode(index_parts=True).reset_index(
@@ -1692,18 +1691,16 @@ individually so that features may have different properties
             )
             exploded_index = exploded_geom.index
 
-        df = (
-            df_copy.drop(df_copy._geometry_column_name, axis=1)
-            .join(exploded_geom)
-            .set_geometry(self._geometry_column_name)
-            .__finalize__(self)
+        df = GeoDataFrame(
+            df_copy.drop(df_copy._geometry_column_name, axis=1).loc[
+                exploded_geom.index
+            ],
+            geometry=exploded_geom,
         )
 
         if ignore_index:
             df.reset_index(inplace=True, drop=True)
         elif index_parts:
-            # preserve order because join sometimes sorts index lexicographically
-            df = df.iloc[sorter.sort_index().values]
             # reset to MultiIndex, otherwise df index is only first level of
             # exploded GeoSeries index.
             df.set_index(exploded_index, inplace=True)
