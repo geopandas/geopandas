@@ -133,7 +133,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
     def __init__(self, data=None, *args, geometry=None, crs=None, **kwargs):
         with compat.ignore_shapely2_warnings():
-            if kwargs.get("copy") is None and isinstance(data, DataFrame):
+            if kwargs.get("copy") is None and not isinstance(data, GeoDataFrame):
                 kwargs.update(copy=True)
             super().__init__(data, *args, **kwargs)
 
