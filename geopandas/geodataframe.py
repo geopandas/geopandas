@@ -1552,6 +1552,7 @@ individually so that features may have different properties
         # Process non-spatial component
         data = self.drop(labels=self.geometry.name, axis=1)
         aggregated_data = data.groupby(**groupby_kwargs).agg(aggfunc)
+        aggregated_data.columns = aggregated_data.columns.to_flat_index()
 
         # Process spatial component
         def merge_geometries(block):
