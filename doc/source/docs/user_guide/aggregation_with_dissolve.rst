@@ -87,11 +87,13 @@ and the ``'pop_est'`` column using ``'min'`` and ``'max'``:
 
 .. ipython:: python
 
-   world = geopandas.read_file(geopandas.datasets.get_path('naturalearth_lowres'))
-   continents = world.dissolve(by='continent', aggfunc=
-   {
-      'name': 'count',
-      'pop_est': ['min', 'max'],
-   })
+    world = geopandas.read_file(geopandas.datasets.get_path("naturalearth_lowres"))
+    continents = world.dissolve(
+        by="continent",
+        aggfunc={
+            "name": "count",
+            "pop_est": ["min", "max"],
+        },
+    )
 
    continents.head()
