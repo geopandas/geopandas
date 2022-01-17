@@ -560,7 +560,7 @@ def test_groupby_groups(df):
 
 @pytest.mark.skipif(
     compat.PANDAS_GE_13 and not compat.PANDAS_GE_14,
-    reason="this was broken in pandas 1.3.5",
+    reason="this was broken in pandas 1.3.5 (GH-2294)",
 )
 @pytest.mark.parametrize("crs", [None, "EPSG:4326"])
 def test_groupby_metadata(crs):
