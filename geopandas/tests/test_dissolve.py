@@ -297,3 +297,21 @@ def test_dissolve_dropna_warn(nybb_polydf):
         UserWarning, match="dropna kwarg is not supported for pandas < 1.1.0"
     ):
         nybb_polydf.dissolve(dropna=False)
+
+
+def test_dissolve_multi_agg(nybb_polydf, merged_shapes):
+
+    merged_shapes[("BoroCode", "min")] = [3, 1]
+    merged_shapes[("BoroCode", "max")] = [5, 2]
+    merged_shapes[("BoroName", "count")] = [3, 2]
+
+    with pytest.warns(None) as record:
+        test = nybb_polydf.dissolve(
+            by="manhattan_bronx",
+            aggfunc={
+                "BoroCode": ["min", "max"],
+                "BoroName": "count",
+            },
+        )
+    assert test.geom_almost_equals(merged_shapes).all()
+    assert len(record) == 0
