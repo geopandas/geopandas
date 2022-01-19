@@ -558,6 +558,44 @@ def test_groupby_groups(df):
     assert_frame_equal(res, exp)
 
 
+@pytest.mark.skipif(
+    compat.PANDAS_GE_13 and not compat.PANDAS_GE_14,
+    reason="this was broken in pandas 1.3.5 (GH-2294)",
+)
+@pytest.mark.parametrize("crs", [None, "EPSG:4326"])
+def test_groupby_metadata(crs):
+    # https://github.com/geopandas/geopandas/issues/2294
+    df = GeoDataFrame(
+        {
+            "geometry": [Point(0, 0), Point(1, 1), Point(0, 0)],
+            "value1": np.arange(3, dtype="int64"),
+            "value2": np.array([1, 2, 1], dtype="int64"),
+        },
+        crs=crs,
+    )
+
+    # dummy test asserting we can access the crs
+    def func(group):
+        assert isinstance(group, GeoDataFrame)
+        assert group.crs == crs
+
+    df.groupby("value2").apply(func)
+
+    # actual test with functionality
+    res = df.groupby("value2").apply(
+        lambda x: geopandas.sjoin(x, x[["geometry", "value1"]], how="inner")
+    )
+
+    expected = (
+        df.take([0, 2, 0, 2, 1])
+        .set_index("value2", drop=False, append=True)
+        .swaplevel()
+        .rename(columns={"value1": "value1_left"})
+        .assign(value1_right=[0, 0, 2, 2, 1])
+    )
+    assert_geodataframe_equal(res.drop(columns=["index_right"]), expected)
+
+
 def test_apply(s):
     # function that returns geometry preserves GeoSeries class
     def geom_func(geom):
