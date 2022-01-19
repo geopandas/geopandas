@@ -1477,6 +1477,7 @@ individually so that features may have different properties
             Aggregation function for manipulation of data associated
             with each group. Passed to pandas `groupby.agg` method.
             Accepted combinations are:
+
             - function
             - string function name
             - list of functions and/or function names, e.g. [np.sum, 'mean']
