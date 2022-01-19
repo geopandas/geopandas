@@ -1676,26 +1676,15 @@ individually so that features may have different properties
 
         df_copy = self.copy()
 
-        level_str = f"level_{df_copy.index.nlevels}"
+        exploded_geom = df_copy.geometry.reset_index(drop=True).explode(
+            index_parts=True
+        )
 
-        if level_str in df_copy.columns:  # GH1393
-            df_copy = df_copy.rename(columns={level_str: f"__{level_str}"})
-
-        if index_parts:
-            exploded_geom = df_copy.geometry.explode(index_parts=True)
-            exploded_index = exploded_geom.index
-            exploded_geom = exploded_geom.reset_index(level=-1, drop=True)
-        else:
-            exploded_geom = df_copy.geometry.explode(index_parts=True).reset_index(
-                level=-1, drop=True
-            )
-            exploded_index = exploded_geom.index
-
-        df = GeoDataFrame(
-            df_copy.drop(df_copy._geometry_column_name, axis=1).loc[
-                exploded_geom.index
-            ],
-            geometry=exploded_geom,
+        df = geopandas.GeoDataFrame(
+            df_copy.drop(self._geometry_column_name, axis=1).take(
+                exploded_geom.reset_index(level=-1, drop=True).index
+            ),
+            geometry=exploded_geom.values,
         ).__finalize__(self)
 
         if ignore_index:
@@ -1703,14 +1692,12 @@ individually so that features may have different properties
         elif index_parts:
             # reset to MultiIndex, otherwise df index is only first level of
             # exploded GeoSeries index.
-            df.set_index(exploded_index, inplace=True)
-            df.index.names = list(self.index.names) + [None]
-        else:
-            df.set_index(exploded_index, inplace=True)
-            df.index.names = self.index.names
-
-        if f"__{level_str}" in df.columns:
-            df = df.rename(columns={f"__{level_str}": level_str})
+            if isinstance(df.index, pd.MultiIndex):
+                df = df.set_index(exploded_geom.reset_index(level=0).index, append=True)
+            else:
+                df.index = pd.MultiIndex.from_arrays(
+                    [df.index, exploded_geom.reset_index(level=0).index]
+                )
 
         return df
 
