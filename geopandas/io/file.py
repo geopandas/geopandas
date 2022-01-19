@@ -1,7 +1,9 @@
 import os
+from tempfile import TemporaryDirectory
 from distutils.version import LooseVersion
 from pathlib import Path
 import warnings
+from shutil import make_archive
 
 import numpy as np
 import pandas as pd
@@ -19,7 +21,7 @@ try:
     # can get confusing "AttributeError: module 'fiona' has no attribute '_loading'"
     # / partially initialized module errors)
     try:
-        from fiona import Env as fiona_env
+        from fiona import Env as fiona_env, parse_path
     except ImportError:
         try:
             from fiona import drivers as fiona_env
@@ -290,6 +292,8 @@ def _detect_driver(path):
         path = path.name
     except AttributeError:
         pass
+    if path.endswith(".zip"):
+        path = path[:-4]
     try:
         return _EXTENSION_TO_DRIVER[Path(path).suffix.lower()]
     except KeyError:
@@ -350,9 +354,11 @@ def _to_file(
         by :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
         such as an authority string (eg "EPSG:4326") or a WKT string.
 
-    The *kwargs* are passed to fiona.open and can be used to write
-    to multi-layer data, store data within archives (zip files), etc.
-    The path may specify a fiona VSI scheme.
+    `filename`s starting with Fiona URI schemes such as "zip+s3://" are also supported.
+    Files with the .zip extension will be automatically zipped. For example,
+    filename `boros.shp.zip` will yield a zip file named `boros.shp.zip`
+    containing `boros.cpg`, `boros.dbf`, `boros.prj`, `boros.shp` and `boros.shx`
+
 
     Notes
     -----
@@ -362,6 +368,7 @@ def _to_file(
     """
     _check_fiona("'to_file' method")
     filename = _expand_user(filename)
+    filename_str = str(filename)
 
     if index is None:
         # Determine if index attribute(s) should be saved to file
@@ -387,7 +394,43 @@ def _to_file(
             "ESRI Shapefile.",
             stacklevel=3,
         )
+    fio_path = parse_path(filename_str)
+    if isinstance(fio_path, fiona.ParsedPath):
+        schemes = fio_path.scheme.split("+")
+        if "zip" in schemes and not filename_str.endswith(".zip"):
+            raise ValueError("Zip URI only supported for files with suffix .zip")
+        filepath_no_prefix = fio_path.path
+    else:
+        schemes = []
+        filepath_no_prefix = filename
 
+    # GDAL >=3.1 https://gdal.org/drivers/vector/shapefile.html#compressed-files
+    # can handle .shp.zip/ .shx on its own, but not using it here
+    if filename_str.endswith(".zip") and "s3" not in schemes:
+        file_obj = Path(filepath_no_prefix)
+        with TemporaryDirectory() as tmp_dir:
+            tmp_dir = Path(tmp_dir)
+            tmp_filepath = tmp_dir / file_obj.stem
+            if len(tmp_filepath.suffix) == 0 and driver == "ESRI Shapefile":
+                # Handle the no suffix -> folder of shapefiles case
+                tmp_filepath = tmp_filepath.with_suffix(".shp")
+            zip_path_no_suffix = file_obj.with_suffix("")
+
+            _to_file_write_step(
+                df,
+                crs,
+                tmp_filepath,
+                mode,
+                driver,
+                schema,
+                **kwargs,
+            )
+            make_archive(zip_path_no_suffix, format="zip", root_dir=tmp_dir)
+    else:
+        _to_file_write_step(df, crs, filename, mode, driver, schema, **kwargs)
+
+
+def _to_file_write_step(df, crs, filename, mode, driver, schema, **kwargs):
     with fiona_env():
         crs_wkt = None
         try:
