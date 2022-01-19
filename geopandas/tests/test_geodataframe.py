@@ -1057,4 +1057,4 @@ def test_geodataframe_crs_json():
         "properties": {"name": "urn:ogc:def:crs:EPSG::25833"},
     }
     gdf_geointerface = gdf.__geo_interface__
-    assert "crs" not in gdf_geojson
+    assert "crs" not in gdf_geointerface
