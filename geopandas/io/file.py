@@ -252,11 +252,9 @@ def _read_file(filename, bbox=None, mask=None, rows=None, **kwargs):
                         break
                     else:
                         geom_colname+='_'
-                    
                 df = GeoDataFrame.from_features(
                     f_filt, crs=crs, columns=columns + [geom_colname], geom_colname=geom_colname
                 )
-    
             for k in datetime_fields:
                 # fiona only supports up to ms precision, any microseconds are
                 # floating point rounding error
