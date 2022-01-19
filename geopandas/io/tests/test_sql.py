@@ -26,7 +26,7 @@ def df_nybb():
 @pytest.fixture()
 def connection_postgis():
     """
-    Initiaties a connection to a postGIS database that must already exist.
+    Initiates a connection to a postGIS database that must already exist.
     See create_postgis for more information.
     """
     psycopg2 = pytest.importorskip("psycopg2")
@@ -51,7 +51,7 @@ def connection_postgis():
 @pytest.fixture()
 def engine_postgis():
     """
-    Initiaties a connection engine to a postGIS database that must already exist.
+    Initiates a connection engine to a postGIS database that must already exist.
     """
     sqlalchemy = pytest.importorskip("sqlalchemy")
     from sqlalchemy.engine.url import URL

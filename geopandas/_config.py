@@ -16,13 +16,13 @@ class Options(object):
     """Provide attribute-style access to configuration dict."""
 
     def __init__(self, options):
-        super(Options, self).__setattr__("_options", options)
+        super().__setattr__("_options", options)
         # populate with default values
         config = {}
         for key, option in options.items():
             config[key] = option.default_value
 
-        super(Options, self).__setattr__("_config", config)
+        super().__setattr__("_config", config)
 
     def __setattr__(self, key, value):
         # you can't set new keys
@@ -59,28 +59,11 @@ class Options(object):
                 doc_text = "\n".join(textwrap.wrap(option.doc, width=70))
             else:
                 doc_text = u"No description available."
-            doc_text = indent(doc_text, prefix="    ")
+            doc_text = textwrap.indent(doc_text, prefix="    ")
             description += doc_text + "\n"
         space = "\n  "
         description = description.replace("\n", space)
         return "{}({}{})".format(cls, space, description)
-
-
-def indent(text, prefix, predicate=None):
-    """
-    This is the python 3 textwrap.indent function, which is not available in
-    python 2.
-    """
-    if predicate is None:
-
-        def predicate(line):
-            return line.strip()
-
-    def prefixed_lines():
-        for line in text.splitlines(True):
-            yield (prefix + line if predicate(line) else line)
-
-    return "".join(prefixed_lines())
 
 
 def _validate_display_precision(value):
