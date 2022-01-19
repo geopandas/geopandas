@@ -1043,16 +1043,18 @@ def test_geodataframe_crs():
 
 def test_geodataframe_nocrs_json():
     gdf = GeoDataFrame(columns=["geometry"])
-    gdf_geojson = gdf.__geo_interface__
+    gdf_geojson = json.loads(gdf.to_json())
     assert "crs" not in gdf_geojson
 
 
 def test_geodataframe_crs_json():
     gdf = GeoDataFrame(columns=["geometry"])
     gdf.crs = 25833
-    gdf_geojson = gdf.__geo_interface__
+    gdf_geojson = json.loads(gdf.to_json())
     assert "crs" in gdf_geojson
     assert gdf_geojson["crs"] == {
         "type": "name",
         "properties": {"name": "urn:ogc:def:crs:EPSG::25833"},
     }
+    gdf_geointerface = gdf.__geo_interface__
+    assert "crs" not in gdf_geojson

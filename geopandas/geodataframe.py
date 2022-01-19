@@ -715,6 +715,9 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
           feature individually so that features may have different properties.
         - ``keep``: output the missing entries as NaN.
 
+        If the GeoDataFrame has a defined CRS, its definition will be included
+        in the output.
+
         Examples
         --------
 
@@ -742,9 +745,14 @@ es": {"name": "urn:ogc:def:crs:EPSG::4326"}}}'
         GeoDataFrame.to_file : write GeoDataFrame to file
 
         """
-        return json.dumps(
-            self._to_geo(na=na, show_bbox=show_bbox, drop_id=drop_id), **kwargs
-        )
+        geo = self._to_geo(na=na, show_bbox=show_bbox, drop_id=drop_id)
+
+        if self.crs is not None:
+            authority, code = self.crs.to_authority()
+            ogc_crs = f"urn:ogc:def:crs:{authority}::{code}"
+            geo["crs"] = {"type": "name", "properties": {"name": ogc_crs}}
+
+        return json.dumps(geo, **kwargs)
 
     @property
     def __geo_interface__(self):
@@ -755,7 +763,9 @@ es": {"name": "urn:ogc:def:crs:EPSG::4326"}}}'
         ``FeatureCollection``.
 
         This differs from `_to_geo()` only in that it is a property with
-        default args instead of a method
+        default args instead of a method.
+
+        CRS of the dataframe is not passed on to the output, unlike `to_json()`.
 
         Examples
         --------
@@ -773,10 +783,7 @@ es": {"name": "urn:ogc:def:crs:EPSG::4326"}}}'
 'properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.0\
 , 2.0)}, 'bbox': (1.0, 2.0, 1.0, 2.0)}, {'id': '1', 'type': 'Feature', 'properties\
 ': {'col1': 'name2'}, 'geometry': {'type': 'Point', 'coordinates': (2.0, 1.0)}, 'b\
-box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0), 'crs': {'type': 'name'\
-, 'properties': {'name': 'urn:ogc:def:crs:EPSG::4326'}}}
-
-
+box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         """
         return self._to_geo(na="null", show_bbox=True, drop_id=False)
 
@@ -896,11 +903,6 @@ individually so that features may have different properties
 
         if kwargs.get("show_bbox", False):
             geo["bbox"] = tuple(self.total_bounds)
-
-        if self.crs is not None:
-            authority, code = self.crs.to_authority()
-            ogc_crs = f"urn:ogc:def:crs:{authority}::{code}"
-            geo["crs"] = {"type": "name", "properties": {"name": ogc_crs}}
 
         return geo
 
