@@ -9,6 +9,8 @@ dependencies:
     - pygeos
     - pyproj>=2.2.0
     - shapely>=1.6
+    - packaging
+
     # testing
     - pytest>=3.1.0
     - pytest-cov
