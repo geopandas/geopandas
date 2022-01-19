@@ -199,9 +199,18 @@ def _read_file(filename, bbox=None, mask=None, rows=None, **kwargs):
                 return pd.DataFrame(
                     [record["properties"] for record in f_filt], columns=columns
                 )
-
+            
+            # Finding name for column containing shapely geometries
+            geom_colname = 'geometry'
+            columns_set = set(columns)
+            while True:
+                if geom_colname not in columns_set:
+                    break
+                else:
+                    geom_colname+='_'
+                    
             return GeoDataFrame.from_features(
-                f_filt, crs=crs, columns=columns + ["geometry"]
+                f_filt, crs=crs, columns=columns + [geom_colname], geom_colname=geom_colname
             )
 
 
