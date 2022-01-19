@@ -1476,6 +1476,12 @@ individually so that features may have different properties
         aggfunc : function or string, default "first"
             Aggregation function for manipulation of data associated
             with each group. Passed to pandas `groupby.agg` method.
+            Accepted combinations are:
+
+            - function
+            - string function name
+            - list of functions and/or function names, e.g. [np.sum, 'mean']
+            - dict of axis labels -> functions, function names or list of such.
         as_index : boolean, default True
             If true, groupby columns become index of result.
         level : int or str or sequence of int or sequence of str, default None

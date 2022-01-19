@@ -19,6 +19,8 @@ PANDAS_GE_10 = Version(pd.__version__) >= Version("1.0.0")
 PANDAS_GE_11 = Version(pd.__version__) >= Version("1.1.0")
 PANDAS_GE_115 = Version(pd.__version__) >= Version("1.1.5")
 PANDAS_GE_12 = Version(pd.__version__) >= Version("1.2.0")
+PANDAS_GE_13 = Version(pd.__version__) >= Version("1.3.0")
+PANDAS_GE_14 = Version(pd.__version__) >= Version("1.4.0")
 
 
 # -----------------------------------------------------------------------------
