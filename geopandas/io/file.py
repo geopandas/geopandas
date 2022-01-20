@@ -255,7 +255,7 @@ def _read_file(filename, bbox=None, mask=None, rows=None, **kwargs):
                 df = GeoDataFrame.from_features(
                     f_filt,
                     crs=crs,
-                    columns=columns + [geom_colname],
+                    columns=columns + [geom_colname_unique],
                     geom_colname=geom_colname_unique,
                 )
             for k in datetime_fields:
