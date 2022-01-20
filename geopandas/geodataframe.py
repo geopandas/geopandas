@@ -1674,15 +1674,11 @@ individually so that features may have different properties
                 )
             index_parts = True
 
-        df_copy = self.copy()
+        exploded_geom = self.geometry.reset_index(drop=True).explode(index_parts=True)
 
-        exploded_geom = df_copy.geometry.reset_index(drop=True).explode(
-            index_parts=True
-        )
-
-        df = geopandas.GeoDataFrame(
-            df_copy.drop(self._geometry_column_name, axis=1).take(
-                exploded_geom.reset_index(level=-1, drop=True).index
+        df = GeoDataFrame(
+            self.drop(self._geometry_column_name, axis=1).take(
+                exploded_geom.index.droplevel(-1)
             ),
             geometry=exploded_geom.values,
         ).__finalize__(self)
@@ -1692,12 +1688,12 @@ individually so that features may have different properties
         elif index_parts:
             # reset to MultiIndex, otherwise df index is only first level of
             # exploded GeoSeries index.
-            if isinstance(df.index, pd.MultiIndex):
-                df = df.set_index(exploded_geom.reset_index(level=0).index, append=True)
-            else:
-                df.index = pd.MultiIndex.from_arrays(
-                    [df.index, exploded_geom.reset_index(level=0).index]
-                )
+            df = df.set_index(
+                exploded_geom.index.droplevel(
+                    list(range(exploded_geom.index.nlevels - 1))
+                ),
+                append=True,
+            )
 
         return df
 
