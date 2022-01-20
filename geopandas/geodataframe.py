@@ -564,7 +564,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             This does not overwrite the property names of the input, but can
             ensure a consistent output format.
         geom_colname : str
-            Name of the column that will contain the shapely geometries. When 
+            Name of the column that will contain the shapely geometries. When
             this attribute isn't set, it will default to "geometry".'
 
         Returns
@@ -625,7 +625,9 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             if hasattr(feature, "__geo_interface__"):
                 feature = feature.__geo_interface__
             row = {
-                geom_colname: shape(feature["geometry"]) if feature["geometry"] else None
+                geom_colname: shape(feature["geometry"])
+                if feature["geometry"]
+                else None
             }
             # load properties
             row.update(feature["properties"])
