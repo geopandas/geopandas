@@ -607,6 +607,9 @@ def test_df_apply_returning_series(df):
     # https://github.com/geopandas/geopandas/issues/2283
     result = df.apply(lambda row: row.geometry, axis=1)
     assert_geoseries_equal(result, df.geometry, check_crs=False)
+    
+    result = df.apply(lambda row: row.value1, axis=1)
+    assert_series_equal(result, df["value1"])
 
 
 @pytest.mark.skipif(not compat.PANDAS_GE_10, reason="attrs introduced in pandas 1.0")
