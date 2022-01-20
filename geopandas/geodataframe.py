@@ -1408,7 +1408,10 @@ individually so that features may have different properties
             func, axis=axis, raw=raw, result_type=result_type, args=args, **kwargs
         )
         # Reconstruct gdf if it was lost by apply
-        if self._geometry_column_name in result.columns:
+        if (
+            isinstance(result, DataFrame)
+            and self._geometry_column_name in result.columns
+        ):
             # axis=1 apply will split GeometryDType to object, try and cast back
             try:
                 result = result.set_geometry(self._geometry_column_name)
