@@ -77,8 +77,9 @@ class TestDataFrame:
         )
         # GeoJSON file that has an attribute called "geometry" that isn't an actual geometry
         self.df4 = read_file(
-            os.path.join(PACKAGE_DIR, "geopandas", "tests", "data", "geometry_col.geojson")
-        )
+            os.path.join(
+                PACKAGE_DIR, "geopandas", "tests", "data", "geometry_col.geojson"
+            )
 
 
     def teardown_method(self):
