@@ -245,15 +245,18 @@ def _read_file(filename, bbox=None, mask=None, rows=None, **kwargs):
                 )
             else:
                 # Finding name for column containing shapely geometries
-                geom_colname_unique = 'geometry'
+                geom_colname_unique = "geometry"
                 columns_set = set(columns)
                 while True:
                     if geom_colname_unique not in columns_set:
                         break
                     else:
-                        geom_colname_unique+='_'
+                        geom_colname_unique += "_"
                 df = GeoDataFrame.from_features(
-                    f_filt, crs=crs, columns=columns + [geom_colname], geom_colname=geom_colname_unique
+                    f_filt,
+                    crs=crs,
+                    columns=columns + [geom_colname],
+                    geom_colname=geom_colname_unique
                 )
             for k in datetime_fields:
                 # fiona only supports up to ms precision, any microseconds are
