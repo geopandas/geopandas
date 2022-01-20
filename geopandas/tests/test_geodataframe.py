@@ -82,7 +82,6 @@ class TestDataFrame:
             )
         )
 
-
     def teardown_method(self):
         shutil.rmtree(self.tempdir)
 
