@@ -256,7 +256,7 @@ def _read_file(filename, bbox=None, mask=None, rows=None, **kwargs):
                     f_filt,
                     crs=crs,
                     columns=columns + [geom_colname],
-                    geom_colname=geom_colname_unique
+                    geom_colname=geom_colname_unique,
                 )
             for k in datetime_fields:
                 # fiona only supports up to ms precision, any microseconds are
