@@ -75,7 +75,7 @@ class TestDataFrame:
         self.df3 = read_file(
             os.path.join(PACKAGE_DIR, "geopandas", "tests", "data", "null_geom.geojson")
         )
-        # GeoJSON file that has an attribute called "geometry" that isn't an actual geometry
+        # GeoJSON file w/ an attribute called "geometry" that isn't an actual geometry
         self.df4 = read_file(
             os.path.join(
                 PACKAGE_DIR, "geopandas", "tests", "data", "geometry_col.geojson"
