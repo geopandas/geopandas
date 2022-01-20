@@ -172,8 +172,10 @@ class GeoSeries(GeoPandasBase, Series):
                 super(GeoSeries, self).__init__(data, index=index, **kwargs)
                 self.crs = getattr(self.values, "crs", crs)
                 return self
-            warnings.warn(_SERIES_WARNING_MSG, FutureWarning, stacklevel=2)
-            return Series(data, index=index, **kwargs)
+            raise TypeError(
+                "Non geometry data passed to GeoSeries constructor, "
+                f"received data of dtype '{data.blocks[0].dtype}'"
+            )
 
         if isinstance(data, BaseGeometry):
             # fix problem for scalar geometries passed, ensure the list of
@@ -203,14 +205,18 @@ class GeoSeries(GeoPandasBase, Series):
                     # pd.Series with empty data gives float64 for older pandas versions
                     s = s.astype(object)
                 else:
-                    warnings.warn(_SERIES_WARNING_MSG, FutureWarning, stacklevel=2)
-                    return s
+                    raise TypeError(
+                        "Non geometry data passed to GeoSeries constructor, "
+                        f"received data of dtype '{s.dtype}'"
+                    )
             # try to convert to GeometryArray, if fails return plain Series
             try:
                 data = from_shapely(s.values, crs)
             except TypeError:
-                warnings.warn(_SERIES_WARNING_MSG, FutureWarning, stacklevel=2)
-                return s
+                raise TypeError(
+                    "Non geometry data passed to GeoSeries constructor, "
+                    f"received data of dtype '{s.dtype}'"
+                )
             index = s.index
             name = s.name
 
