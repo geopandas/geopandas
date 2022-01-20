@@ -80,6 +80,7 @@ class TestDataFrame:
             os.path.join(
                 PACKAGE_DIR, "geopandas", "tests", "data", "geometry_col.geojson"
             )
+        )
 
 
     def teardown_method(self):
