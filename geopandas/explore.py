@@ -57,6 +57,7 @@ def _explore(
     tooltip_kwds={},
     popup_kwds={},
     legend_kwds={},
+    map_kwds={},
     **kwargs,
 ):
     """Interactive map based on GeoPandas and folium/leaflet.js
@@ -302,7 +303,7 @@ GON (((180.00000 -16.06713, 180.00000...
             fit = False
 
         # get a subset of kwargs to be passed to folium.Map
-        map_kwds = {i: kwargs[i] for i in kwargs.keys() if i in _MAP_KWARGS}
+        map_kwds = {**map_kwds, **{i: kwargs[i] for i in kwargs.keys() if i in _MAP_KWARGS}}
 
         if HAS_XYZSERVICES:
             # match provider name string to xyzservices.TileProvider
