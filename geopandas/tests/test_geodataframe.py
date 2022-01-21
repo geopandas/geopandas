@@ -754,7 +754,12 @@ class TestDataFrame:
             assert "bbox" in feature.keys()
 
     def test_geojson_with_geometry_attribute(self):
-        df5 = read_file(self.df4.to_json())
+        data = {"col1": {0: 1, 1: 2},
+                "col2": {0: "testA", 1: "testB"},
+                "geometry": {0: "1234", 1: "wxyz"},
+                "geometry_": {0: Point(0,0),
+                              1: Point(1,1)}}
+        df5 = GeoDataFrame(data, geometry="geometry_", crs="epsg:4326")
         assert assert_geodataframe_equal(self.df4, df5, check_crs=False)
 
     def test_pickle(self):
