@@ -28,12 +28,6 @@ from .array import (
 from .base import is_geometry_type
 
 
-_SERIES_WARNING_MSG = """\
-    You are passing non-geometry data to the GeoSeries constructor. Currently,
-    it falls back to returning a pandas Series. But in the future, we will start
-    to raise a TypeError instead."""
-
-
 def _geoseries_constructor_with_fallback(data=None, index=None, crs=None, **kwargs):
     """
     A flexible constructor for GeoSeries._constructor, which needs to be able
@@ -41,14 +35,7 @@ def _geoseries_constructor_with_fallback(data=None, index=None, crs=None, **kwar
     geometries)
     """
     try:
-        with warnings.catch_warnings():
-            warnings.filterwarnings(
-                "ignore",
-                message=_SERIES_WARNING_MSG,
-                category=FutureWarning,
-                module="geopandas[.*]",
-            )
-            return GeoSeries(data=data, index=index, crs=crs, **kwargs)
+        return GeoSeries(data=data, index=index, crs=crs, **kwargs)
     except TypeError:
         return Series(data=data, index=index, **kwargs)
 
