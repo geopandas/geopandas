@@ -797,3 +797,26 @@ class TestExplore:
         gdf["centroid"] = gdf.centroid
 
         gdf.explore()
+
+    def test_map_kwds(self):
+        def check():
+            out_str = self._fetch_map_string(m)
+            assert "zoomControl:false" in out_str
+            assert "dragging:false" in out_str
+            assert "scrollWheelZoom:false" in out_str
+
+        # check that folium and leaflet Map() parameters can be passed
+        m = self.world.explore(
+            zoom_control=False, map_kwds=dict(dragging=False, scrollWheelZoom=False)
+        )
+        check()
+        # named kwarg takes priority over map_kwds
+        m = self.world.explore(
+            zoom_control=False,
+            map_kwds=dict(dragging=False, scrollWheelZoom=False, zoom_control=True),
+        )
+        check()
+        m = self.world.explore(
+            map_kwds=dict(dragging=False, scrollWheelZoom=False, zoom_control=False)
+        )
+        check()
