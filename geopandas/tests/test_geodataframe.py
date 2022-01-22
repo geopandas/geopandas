@@ -756,15 +756,16 @@ class TestDataFrame:
     def test_geojson_nongeometry_col(self):
         pass
         df5 = GeoDataFrame(
-            data={'col1': {0: 1, 1: 2},
-                  'col2': {0: 'testA', 1: 'testB'},
-                  'geometry': {0: '1234', 1: 'wxyz'},
-                  'geometry_': {0: Point([0,0]), 1: Point([1,1])}},
-            geometry='geometry_',
-            crs='epsg:4326'
+            data={
+                "col1": {0: 1, 1: 2},
+                "col2": {0: "testA", 1: "testB"},
+                "geometry": {0: "1234", 1: "wxyz"},
+                "geometry_": {0: Point([0, 0]), 1: Point([1, 1])},
+            },
+            geometry="geometry_",
+            crs="epsg:4326",
         )
         assert_frame_equal(self.df4, df5)
-        
 
     def test_pickle(self):
         import pickle
