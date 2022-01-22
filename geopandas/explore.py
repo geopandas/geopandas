@@ -226,6 +226,10 @@ def _explore(
             Applies if ``colorbar=False``.
         max_labels : int, default 10
             Maximum number of colorbar tick labels (requires branca>=0.5.0)
+    map_kwds : dict (default {})
+        Additional keywords to be passed to :class:`folium.Map`,
+        e.g. ``dragging``, or ``scrollWheelZoom``.
+
 
     **kwargs : dict
         Additional options to be passed on to the folium object.
@@ -303,7 +307,10 @@ GON (((180.00000 -16.06713, 180.00000...
             fit = False
 
         # get a subset of kwargs to be passed to folium.Map
-        map_kwds = {**map_kwds, **{i: kwargs[i] for i in kwargs.keys() if i in _MAP_KWARGS}}
+        map_kwds = {
+            **map_kwds,
+            **{i: kwargs[i] for i in kwargs.keys() if i in _MAP_KWARGS},
+        }
 
         if HAS_XYZSERVICES:
             # match provider name string to xyzservices.TileProvider
