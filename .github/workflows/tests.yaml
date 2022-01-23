@@ -2,9 +2,9 @@ name: Tests
 
 on:
   push:
-    branches: [master, 0.**]
+    branches: [main, 0.**]
   pull_request:
-    branches: [master, 0.**]
+    branches: [main, 0.**]
   schedule:
     - cron: "0 0 * * *"
 
@@ -60,7 +60,10 @@ jobs:
             os: windows-latest
             postgis: false
             dev: false
-          - env: ci/envs/38-dev.yaml
+          - env: ci/envs/39-rc.yaml
+            os: ubuntu-latest
+            dev: true
+          - env: ci/envs/310-dev.yaml
             os: ubuntu-latest
             dev: true
 

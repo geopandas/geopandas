@@ -316,7 +316,7 @@ def assert_geodataframe_equal(
     )
 
     # geometry comparison
-    for col, dtype in left.dtypes.iteritems():
+    for col, dtype in left.dtypes.items():
         if isinstance(dtype, GeometryDtype):
             assert_geoseries_equal(
                 left[col],

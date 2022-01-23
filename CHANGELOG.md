@@ -345,7 +345,7 @@ Bug fixes:
 - Fix bug in `GeoSeries.equals()` (#1451).
 - Fix plotting of multi-part geometries with additional style keywords (#1385).
 
-And we now have a [Code of Conduct](https://github.com/geopandas/geopandas/blob/master/CODE_OF_CONDUCT.md)!
+And we now have a [Code of Conduct](https://github.com/geopandas/geopandas/blob/main/CODE_OF_CONDUCT.md)!
 
 GeoPandas 0.8.0 is the last release to support Python 3.5. The next release
 will require Python 3.6, pandas 0.24, numpy 1.15 and shapely 1.6 or higher.

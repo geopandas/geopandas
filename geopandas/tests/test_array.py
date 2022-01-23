@@ -206,12 +206,14 @@ def test_from_wkt(string_type):
     L_wkt = [f(p.wkt) for p in points_no_missing]
     res = from_wkt(L_wkt)
     assert isinstance(res, GeometryArray)
-    assert all(v.almost_equals(t) for v, t in zip(res, points_no_missing))
+    tol = 0.5 * 10 ** (-6)
+    assert all(v.equals_exact(t, tolerance=tol) for v, t in zip(res, points_no_missing))
+    assert all(v.equals_exact(t, tolerance=tol) for v, t in zip(res, points_no_missing))
 
     # array
     res = from_wkt(np.array(L_wkt, dtype=object))
     assert isinstance(res, GeometryArray)
-    assert all(v.almost_equals(t) for v, t in zip(res, points_no_missing))
+    assert all(v.equals_exact(t, tolerance=tol) for v, t in zip(res, points_no_missing))
 
     # missing values
     # TODO(pygeos) does not support empty strings, np.nan, or pd.NA
@@ -339,19 +341,6 @@ def test_predicates_vector_vector(attr, args):
             )
 
     assert result.tolist() == expected
-
-
-@pytest.mark.parametrize(
-    "attr,args", [("equals_exact", (0.1,)), ("almost_equals", (3,))]
-)
-def test_equals_deprecation(attr, args):
-    point = points[0]
-    tri = triangles[0]
-
-    for other in [point, tri, shapely.geometry.Polygon()]:
-        with pytest.warns(FutureWarning):
-            result = getattr(T, attr)(other, *args)
-        assert result.tolist() == getattr(T, "geom_" + attr)(other, *args).tolist()
 
 
 @pytest.mark.parametrize(
