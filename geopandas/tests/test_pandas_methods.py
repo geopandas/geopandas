@@ -558,6 +558,7 @@ def test_groupby_groups(df):
     assert_frame_equal(res, exp)
 
 
+@pytest.mark.skip_no_sindex
 @pytest.mark.skipif(
     compat.PANDAS_GE_13 and not compat.PANDAS_GE_14,
     reason="this was broken in pandas 1.3.5 (GH-2294)",
