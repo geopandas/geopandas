@@ -71,7 +71,7 @@ def test_dissolve_retains_nonexisting_crs(nybb_polydf):
     assert test.crs is None
 
 
-def first_dissolve(nybb_polydf, first):
+def test_first_dissolve(nybb_polydf, first):
     test = nybb_polydf.dissolve("manhattan_bronx")
     assert_frame_equal(first, test, check_column_type=False)
 
