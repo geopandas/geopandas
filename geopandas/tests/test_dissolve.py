@@ -8,6 +8,8 @@ from geopandas import _compat as compat
 from pandas.testing import assert_frame_equal
 import pytest
 
+from geopandas.testing import assert_geodataframe_equal
+
 
 @pytest.fixture
 def nybb_polydf():
@@ -313,5 +315,5 @@ def test_dissolve_multi_agg(nybb_polydf, merged_shapes):
                 "BoroName": "count",
             },
         )
-    assert test.geom_almost_equals(merged_shapes).all()
+    assert_geodataframe_equal(test, merged_shapes)
     assert len(record) == 0
