@@ -312,19 +312,27 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             level_crs = getattr(level, "crs", None)
             crs = level_crs if level_crs is not None else self._crs
 
-        if isinstance(level, (GeoSeries, GeometryArray)) and level.crs != crs:
-            # Avoids caching issues/crs sharing issues
-            level = level.copy()
-            level.crs = crs
+        # skip assignment when not needed (sindex preservation)
+        assignment_required = (
+            not isinstance(col, str)
+            or not isinstance(level, GeoSeries)
+            or crs != level.crs
+            or drop
+        )
+        if assignment_required:
+            if isinstance(level, (GeoSeries, GeometryArray)) and level.crs != crs:
+                # Avoids caching issues/crs sharing issues
+                level = level.copy()
+                level.crs = crs
 
-        # Check that we are using a listlike of geometries
-        level = _ensure_geometry(level, crs=crs)
-        index = frame.index
-        frame[geo_column_name] = level
-        if frame.index is not index and len(frame.index) == len(index):
-            # With pandas < 1.0 and an empty frame (no rows), the index gets reset
-            # to a default RangeIndex -> set back the original index if needed
-            frame.index = index
+            # Check that we are using a listlike of geometries
+            level = _ensure_geometry(level, crs=crs)
+            index = frame.index
+            frame[geo_column_name] = level
+            if frame.index is not index and len(frame.index) == len(index):
+                # With pandas < 1.0 and an empty frame (no rows), the index gets reset
+                # to a default RangeIndex -> set back the original index if needed
+                frame.index = index
         frame._geometry_column_name = geo_column_name
         frame.crs = crs
         if not inplace:
@@ -1425,10 +1433,7 @@ individually so that features may have different properties
                     # we can have a specific error message for specific contexts,
                     # e.g. concat, caught in __finalize__.
 
-                    df = GeoDataFrame(df, crs=crs, geometry=None)
-                    # Note we cannot supply in constructor or use set_geometry, as
-                    # cached sindex on slices will be reset
-                    df._geometry_column_name = geometry
+                    df = GeoDataFrame(df, crs=crs, geometry=geometry)
 
             return df
 
