@@ -202,7 +202,6 @@ class GeoSeries(GeoPandasBase, Series):
             index = s.index
             name = s.name
 
-        # TODO what about GeoSeries from GeoSeries?
         super().__init__(data, index=index, name=name, **kwargs)
         if not self.crs:
             self.crs = crs
