@@ -120,10 +120,7 @@ class GeoSeries(GeoPandasBase, Series):
 
     _metadata = ["name"]
 
-    def __new__(cls, data=None, index=None, crs=None, **kwargs):
-        # we need to use __new__ because we want to return Series instance
-        # instead of GeoSeries instance in case of non-geometry data
-
+    def __init__(self, data=None, index=None, crs=None, **kwargs):
         if hasattr(data, "crs") and crs:
             if not data.crs:
                 # make a copy to avoid setting CRS to passed GeometryArray
@@ -155,14 +152,12 @@ class GeoSeries(GeoPandasBase, Series):
                     values = data.blocks[0].values
                     block = ExtensionBlock(values, slice(0, len(values), 1), ndim=1)
                     data = SingleBlockManager([block], data.axes[0], fastpath=True)
-                self = super(GeoSeries, cls).__new__(cls)
-                super(GeoSeries, self).__init__(data, index=index, **kwargs)
-                self.crs = getattr(self.values, "crs", crs)
-                return self
-            raise TypeError(
-                "Non geometry data passed to GeoSeries constructor, "
-                f"received data of dtype '{data.blocks[0].dtype}'"
-            )
+                    crs = getattr(values, "crs", crs)
+            else:
+                raise TypeError(
+                    "Non geometry data passed to GeoSeries constructor, "
+                    f"received data of dtype '{data.blocks[0].dtype}'"
+                )
 
         if isinstance(data, BaseGeometry):
             # fix problem for scalar geometries passed, ensure the list of
@@ -207,17 +202,10 @@ class GeoSeries(GeoPandasBase, Series):
             index = s.index
             name = s.name
 
-        self = super(GeoSeries, cls).__new__(cls)
-        super(GeoSeries, self).__init__(data, index=index, name=name, **kwargs)
-
+        # TODO what about GeoSeries from GeoSeries?
+        super().__init__(data, index=index, name=name, **kwargs)
         if not self.crs:
             self.crs = crs
-        return self
-
-    def __init__(self, *args, **kwargs):
-        # need to overwrite Series init to prevent calling it for GeoSeries
-        # (doesn't know crs, all work is already done above)
-        pass
 
     def append(self, *args, **kwargs):
         return self._wrapped_pandas_method("append", *args, **kwargs)
