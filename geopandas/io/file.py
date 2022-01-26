@@ -5,6 +5,7 @@ import warnings
 
 import numpy as np
 import pandas as pd
+from pandas.api.types import is_integer_dtype
 
 import pyproj
 from shapely.geometry import mapping
@@ -365,10 +366,8 @@ def _to_file(
 
     if index is None:
         # Determine if index attribute(s) should be saved to file
-        index = list(df.index.names) != [None] or type(df.index) not in (
-            pd.RangeIndex,
-            pd.Int64Index,
-        )
+        # (only if they are named or are non-integer)
+        index = list(df.index.names) != [None] or not is_integer_dtype(df.index.dtype)
     if index:
         df = df.reset_index(drop=False)
     if schema is None:
