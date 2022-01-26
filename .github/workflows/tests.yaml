@@ -2,13 +2,13 @@ name: Tests
 
 on:
   push:
-    branches: [master]
+    branches: [main, 0.**]
   pull_request:
-    branches: [master]
+    branches: [main, 0.**]
   schedule:
     - cron: "0 0 * * *"
 
-concurrency: 
+concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
@@ -19,7 +19,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v2
-      - uses: pre-commit/action@v2.0.0
+      - uses: pre-commit/action@v2.0.3
 
   Test:
     needs: Linting
@@ -42,6 +42,7 @@ jobs:
           - ci/envs/37-latest-conda-forge.yaml
           - ci/envs/38-latest-conda-forge.yaml
           - ci/envs/39-latest-conda-forge.yaml
+          - ci/envs/310-latest-conda-forge.yaml
         include:
           - env: ci/envs/37-latest-conda-forge.yaml
             os: macos-latest
@@ -59,7 +60,10 @@ jobs:
             os: windows-latest
             postgis: false
             dev: false
-          - env: ci/envs/38-dev.yaml
+          - env: ci/envs/39-rc.yaml
+            os: ubuntu-latest
+            dev: true
+          - env: ci/envs/310-dev.yaml
             os: ubuntu-latest
             dev: true
 
@@ -70,6 +74,9 @@ jobs:
         uses: conda-incubator/setup-miniconda@v2
         with:
           environment-file: ${{ matrix.env }}
+          miniforge-version: latest
+          miniforge-variant: Mambaforge
+          use-mamba: true
 
       - name: Check and Log Environment
         run: |
@@ -120,4 +127,4 @@ jobs:
         run: |
           pytest -v --color=yes --doctest-only geopandas --ignore=geopandas/datasets
 
-      - uses: codecov/codecov-action@v1
+      - uses: codecov/codecov-action@v2

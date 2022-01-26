@@ -1,5 +1,5 @@
 import os
-from distutils.version import LooseVersion
+from packaging.version import Version
 from pathlib import Path
 import warnings
 
@@ -236,14 +236,22 @@ def _read_file(filename, bbox=None, mask=None, rows=None, **kwargs):
                 f_filt = features
             # get list of columns
             columns = list(features.schema["properties"])
+            datetime_fields = [
+                k for (k, v) in features.schema["properties"].items() if v == "datetime"
+            ]
             if kwargs.get("ignore_geometry", False):
-                return pd.DataFrame(
+                df = pd.DataFrame(
                     [record["properties"] for record in f_filt], columns=columns
                 )
-
-            return GeoDataFrame.from_features(
-                f_filt, crs=crs, columns=columns + ["geometry"]
-            )
+            else:
+                df = GeoDataFrame.from_features(
+                    f_filt, crs=crs, columns=columns + ["geometry"]
+                )
+            for k in datetime_fields:
+                # fiona only supports up to ms precision, any microseconds are
+                # floating point rounding error
+                df[k] = pd.to_datetime(df[k]).dt.round(freq="ms")
+            return df
 
 
 def read_file(*args, **kwargs):
@@ -386,7 +394,7 @@ def _to_file(
             gdal_version = fiona.env.get_gdal_release_name()
         except AttributeError:
             gdal_version = "2.0.0"  # just assume it is not the latest
-        if LooseVersion(gdal_version) >= LooseVersion("3.0.0") and crs:
+        if Version(gdal_version) >= Version("3.0.0") and crs:
             crs_wkt = crs.to_wkt()
         elif crs:
             crs_wkt = crs.to_wkt("WKT1_GDAL")

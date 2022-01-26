@@ -1,14 +1,13 @@
 name: test
 channels:
-  - defaults
+  - conda-forge
 dependencies:
-  - python=3.7
+  - python=3.9
+  - cython
   # required
-  - pandas
   - shapely
   - fiona
   - pyproj
-  - geos
   - packaging
   # testing
   - pytest
@@ -17,14 +16,17 @@ dependencies:
   - fsspec
   # optional
   - rtree
-  - matplotlib
+  - matplotlib-base
+  - mapclassify
+  - folium
+  - xyzservices
+  - scipy
+  - geopy
   #- geopy
   - SQLalchemy
   - libspatialite
+  - pyarrow
   - pip
   - pip:
-      - geopy
-      - mapclassify
-      - pyarrow
-      - folium
-      - xyzservices
+    # dev versions of packages
+    - git+https://github.com/pydata/pandas.git@1.4.x
