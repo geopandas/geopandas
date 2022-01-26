@@ -1430,7 +1430,8 @@ individually so that features may have different properties
                 try:
                     df = GeoDataFrame(df)
                     df._geometry_column_name = geometry
-                    df.set_crs(crs, inplace=True)
+                    if crs is not None:
+                        df.set_crs(crs, inplace=True)
                 except TypeError:
                     pass
 
