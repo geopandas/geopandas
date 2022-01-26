@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 
 import pyproj
+from geopandas.base import is_geometry_type
 from pyproj import CRS
 from pyproj.exceptions import CRSError
 from shapely.geometry import Point, Polygon
@@ -1139,3 +1140,13 @@ def test_geodataframe_crs():
     gdf = GeoDataFrame(columns=["geometry"])
     gdf.crs = "IGNF:ETRS89UTM28"
     assert gdf.crs.to_authority() == ("IGNF", "ETRS89UTM28")
+
+
+def test_setitem_new_index(dfs):
+    gdf = dfs[0]
+
+    gdf.loc[3, "geometry"] = None
+    assert is_geometry_type(gdf.geometry)
+    # internally two blockmanagers are concatenated here
+    gdf.loc[4] = [1, None]
+    assert is_geometry_type(gdf.geometry)
