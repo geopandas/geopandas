@@ -6,7 +6,7 @@ from pandas.plotting import PlotAccessor
 
 import geopandas
 
-from distutils.version import LooseVersion
+from packaging.version import Version
 
 from ._decorator import doc
 
@@ -70,8 +70,8 @@ def _expand_kwargs(kwargs, multiindex):
     from matplotlib.colors import is_color_like
     from typing import Iterable
 
-    mpl = matplotlib.__version__
-    if mpl >= LooseVersion("3.4") or (mpl > LooseVersion("3.3.2") and "+" in mpl):
+    mpl = Version(matplotlib.__version__)
+    if mpl >= Version("3.4") or (mpl > Version("3.3.2") and "+" in mpl):
         # alpha is supported as array argument with matplotlib 3.4+
         scalar_kwargs = ["marker", "path_effects"]
     else:
@@ -563,8 +563,8 @@ def plot_dataframe(
         Size of the resulting matplotlib.figure.Figure. If the argument
         axes is given explicitly, figsize is ignored.
     legend_kwds : dict (default None)
-        Keyword arguments to pass to matplotlib.pyplot.legend() or
-        matplotlib.pyplot.colorbar().
+        Keyword arguments to pass to :func:`matplotlib.pyplot.legend` or
+        :func:`matplotlib.pyplot.colorbar`.
         Additional accepted keywords when `scheme` is specified:
 
         fmt : string
@@ -737,7 +737,7 @@ GON (((-122.84000 49.00000, -120.0000...
         except ImportError:
             raise ImportError(mc_err)
 
-        if mapclassify.__version__ < LooseVersion("2.4.0"):
+        if Version(mapclassify.__version__) < Version("2.4.0"):
             raise ImportError(mc_err)
 
         if classification_kwds is None:
@@ -860,7 +860,8 @@ GON (((-122.84000 49.00000, -120.0000...
             **style_kwds,
         )
 
-    if missing_kwds is not None and not expl_series[nan_idx].empty:
+    missing_data = not expl_series[nan_idx].empty
+    if missing_kwds is not None and missing_data:
         if color:
             if "color" not in missing_kwds:
                 missing_kwds["color"] = color
@@ -902,7 +903,7 @@ GON (((-122.84000 49.00000, -120.0000...
                         markeredgewidth=0,
                     )
                 )
-            if missing_kwds is not None:
+            if missing_kwds is not None and missing_data:
                 if "color" in merged_kwds:
                     merged_kwds["facecolor"] = merged_kwds["color"]
                 patches.append(

@@ -1,4 +1,4 @@
-from distutils.version import LooseVersion
+from packaging.version import Version
 import math
 from typing import Sequence
 from geopandas.testing import assert_geodataframe_equal
@@ -137,7 +137,7 @@ class TestSpatialJoin:
         if op != predicate:
             warntype = UserWarning
             match = (
-                "`predicate` will be overriden by the value of `op`"
+                "`predicate` will be overridden by the value of `op`"
                 + r"(.|\s)*"
                 + match
             )
@@ -354,7 +354,7 @@ class TestSpatialJoin:
             exp.index.names = df2.index.names
 
         # GH 1364 fix of behaviour was done in pandas 1.1.0
-        if predicate == "within" and str(pd.__version__) >= LooseVersion("1.1.0"):
+        if predicate == "within" and Version(pd.__version__) >= Version("1.1.0"):
             exp = exp.sort_index()
 
         assert_frame_equal(res, exp, check_index_type=False)

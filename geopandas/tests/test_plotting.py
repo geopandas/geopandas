@@ -1,4 +1,4 @@
-from distutils.version import LooseVersion
+from packaging.version import Version
 import itertools
 import warnings
 
@@ -33,7 +33,7 @@ import matplotlib.pyplot as plt  # noqa
 try:  # skipif and importorskip do not work for decorators
     from matplotlib.testing.decorators import check_figures_equal
 
-    if matplotlib.__version__ >= LooseVersion("3.3.0"):
+    if Version(matplotlib.__version__) >= Version("3.3.0"):
 
         MPL_DECORATORS = True
     else:
@@ -303,7 +303,7 @@ class TestPointPlotting:
         with pytest.warns(UserWarning):
             ax = s.plot()
         assert len(ax.collections) == 0
-        df = GeoDataFrame([])
+        df = GeoDataFrame([], columns=["geometry"])
         with pytest.warns(UserWarning):
             ax = df.plot()
         assert len(ax.collections) == 0
@@ -404,7 +404,7 @@ class TestPointPlotting:
         ):
             self.df.plot(column="cats", categories=["cat1"])
 
-    def test_misssing(self):
+    def test_missing(self):
         self.df.loc[0, "values"] = np.nan
         ax = self.df.plot("values")
         cmap = plt.get_cmap()
@@ -427,6 +427,12 @@ class TestPointPlotting:
         leg_colors1 = ax.get_legend().axes.collections[1].get_facecolors()
         np.testing.assert_array_equal(point_colors[0], leg_colors[0])
         np.testing.assert_array_equal(nan_color[0], leg_colors1[0])
+
+    def test_no_missing_and_missing_kwds(self):
+        # GH2210
+        df = self.df.copy()
+        df["category"] = df["values"].astype("str")
+        df.plot("category", missing_kwds={"facecolor": "none"}, legend=True)
 
 
 class TestPointZPlotting:
@@ -1837,7 +1843,7 @@ def _get_ax(fig, label):
     Previously, we did `fig.axes[1]`, but in matplotlib 3.4 the order switched
     and the colorbar ax was first and subplot ax second.
     """
-    if matplotlib.__version__ < LooseVersion("3.0.0"):
+    if Version(matplotlib.__version__) < Version("3.0.0"):
         if label == "<colorbar>":
             return fig.axes[1]
         elif label == "":

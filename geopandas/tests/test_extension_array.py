@@ -231,6 +231,18 @@ def as_array(request):
     return request.param
 
 
+@pytest.fixture
+def invalid_scalar(data):
+    """
+    A scalar that *cannot* be held by this ExtensionArray.
+
+    The default should work for most subclasses, but is not guaranteed.
+
+    If the array can hold any item (i.e. object dtype), then use pytest.skip.
+    """
+    return object.__new__(object)
+
+
 # Fixtures defined in pandas/conftest.py that are also needed: defining them
 # here instead of importing for compatibility
 
@@ -293,7 +305,7 @@ class TestDtype(extension_tests.BaseDtypeTests):
 class TestInterface(extension_tests.BaseInterfaceTests):
     def test_array_interface(self, data):
         # we are overriding this base test because the creation of `expected`
-        # potentionally doesn't work for shapely geometries
+        # potentially doesn't work for shapely geometries
         # TODO can be removed with Shapely 2.0
         result = np.array(data)
         assert result[0] == data[0]
