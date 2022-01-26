@@ -1424,12 +1424,10 @@ individually so that features may have different properties
         ):
             df = pd.DataFrame(data, index=index, **kwargs)
             if geometry in df.columns:
-                geo_col = df[geometry]
-                if isinstance(geo_col, pd.DataFrame) or is_geometry_type(geo_col):
-                    # DataFrame check is for when multiple columns are named
-                    # geometry`. Case is passed through so that for error messages
-                    # specific to contexts, e.g. concat, caught in __finalize__.
+                try:
                     df = GeoDataFrame(df, crs=crs, geometry=geometry)
+                except TypeError:
+                    pass
 
             return df
 
