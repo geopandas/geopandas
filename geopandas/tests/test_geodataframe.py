@@ -2,7 +2,7 @@ import json
 import os
 import shutil
 import tempfile
-from distutils.version import LooseVersion
+from packaging.version import Version
 
 import numpy as np
 import pandas as pd
@@ -25,9 +25,9 @@ from pandas.testing import assert_frame_equal, assert_index_equal, assert_series
 import pytest
 
 
-PYPROJ_LT_3 = LooseVersion(pyproj.__version__) < LooseVersion("3")
+PYPROJ_LT_3 = Version(pyproj.__version__) < Version("3")
 TEST_NEAREST = compat.PYGEOS_GE_010 and compat.USE_PYGEOS
-pandas_133 = pd.__version__ == LooseVersion("1.3.3")
+pandas_133 = Version(pd.__version__) == Version("1.3.3")
 
 
 @pytest.fixture
