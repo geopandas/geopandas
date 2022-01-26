@@ -1,5 +1,5 @@
 import os
-from distutils.version import LooseVersion
+from packaging.version import Version
 from pathlib import Path
 import warnings
 
@@ -394,7 +394,7 @@ def _to_file(
             gdal_version = fiona.env.get_gdal_release_name()
         except AttributeError:
             gdal_version = "2.0.0"  # just assume it is not the latest
-        if LooseVersion(gdal_version) >= LooseVersion("3.0.0") and crs:
+        if Version(gdal_version) >= Version("3.0.0") and crs:
             crs_wkt = crs.to_wkt()
         elif crs:
             crs_wkt = crs.to_wkt("WKT1_GDAL")

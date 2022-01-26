@@ -2,13 +2,14 @@ name: test
 channels:
   - conda-forge
 dependencies:
-  - python=3.8
+  - python=3.10
   - cython
   # required
   - shapely
   - fiona
   - pyproj
   - geos
+  - packaging
   # testing
   - pytest
   - pytest-cov

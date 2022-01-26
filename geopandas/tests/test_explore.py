@@ -2,7 +2,7 @@ import geopandas as gpd
 import numpy as np
 import pandas as pd
 import pytest
-from distutils.version import LooseVersion
+from packaging.version import Version
 
 folium = pytest.importorskip("folium")
 branca = pytest.importorskip("branca")
@@ -13,7 +13,7 @@ import matplotlib.cm as cm  # noqa
 import matplotlib.colors as colors  # noqa
 from branca.colormap import StepColormap  # noqa
 
-BRANCA_05 = str(branca.__version__) > LooseVersion("0.4.2")
+BRANCA_05 = Version(branca.__version__) > Version("0.4.2")
 
 
 class TestExplore:
