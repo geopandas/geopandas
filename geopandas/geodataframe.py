@@ -1428,7 +1428,9 @@ individually so that features may have different properties
             df = pd.DataFrame(data, index=index, **kwargs)
             if geometry in df.columns:
                 try:
-                    df = GeoDataFrame(df, crs=crs, geometry=geometry)
+                    df = GeoDataFrame(df)
+                    df._geometry_column_name = geometry
+                    df.set_crs(crs, inplace=True)
                 except TypeError:
                     pass
 
