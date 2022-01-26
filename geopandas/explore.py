@@ -227,7 +227,7 @@ def _explore(
         max_labels : int, default 10
             Maximum number of colorbar tick labels (requires branca>=0.5.0)
     map_kwds : dict (default {})
-        Additional keywords to be passed to :class:`folium.Map`,
+        Additional keywords to be passed to folium :class:`~folium.folium.Map`,
         e.g. ``dragging``, or ``scrollWheelZoom``.
 
 
@@ -307,6 +307,12 @@ GON (((180.00000 -16.06713, 180.00000...
             fit = False
 
         # get a subset of kwargs to be passed to folium.Map
+        for i in _MAP_KWARGS:
+            if i in map_kwds:
+                raise ValueError(
+                    f"'{i}' cannot be specified in 'map_kwds'. "
+                    f"Use the '{i}={map_kwds[i]}' argument instead."
+                )
         map_kwds = {
             **map_kwds,
             **{i: kwargs[i] for i in kwargs.keys() if i in _MAP_KWARGS},

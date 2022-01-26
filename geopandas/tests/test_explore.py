@@ -810,13 +810,9 @@ class TestExplore:
             zoom_control=False, map_kwds=dict(dragging=False, scrollWheelZoom=False)
         )
         check()
-        # named kwarg takes priority over map_kwds
-        m = self.world.explore(
-            zoom_control=False,
-            map_kwds=dict(dragging=False, scrollWheelZoom=False, zoom_control=True),
-        )
-        check()
-        m = self.world.explore(
-            map_kwds=dict(dragging=False, scrollWheelZoom=False, zoom_control=False)
-        )
-        check()
+        with pytest.raises(
+            ValueError, match="'zoom_control' cannot be specified in 'map_kwds'"
+        ):
+            self.world.explore(
+                map_kwds=dict(dragging=False, scrollWheelZoom=False, zoom_control=False)
+            )
