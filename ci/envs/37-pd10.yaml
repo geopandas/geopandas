@@ -10,6 +10,7 @@ dependencies:
   - numpy=<1.19
   #- pyproj
   - geos
+  - packaging
   # testing
   - pytest
   - pytest-cov

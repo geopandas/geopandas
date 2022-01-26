@@ -1405,7 +1405,10 @@ individually so that features may have different properties
             func, axis=axis, raw=raw, result_type=result_type, args=args, **kwargs
         )
         # Reconstruct gdf if it was lost by apply
-        if self._geometry_column_name in result.columns:
+        if (
+            isinstance(result, DataFrame)
+            and self._geometry_column_name in result.columns
+        ):
             # axis=1 apply will split GeometryDType to object, try and cast back
             try:
                 result = result.set_geometry(self._geometry_column_name)
@@ -1473,6 +1476,12 @@ individually so that features may have different properties
         aggfunc : function or string, default "first"
             Aggregation function for manipulation of data associated
             with each group. Passed to pandas `groupby.agg` method.
+            Accepted combinations are:
+
+            - function
+            - string function name
+            - list of functions and/or function names, e.g. [np.sum, 'mean']
+            - dict of axis labels -> functions, function names or list of such.
         as_index : boolean, default True
             If true, groupby columns become index of result.
         level : int or str or sequence of int or sequence of str, default None
@@ -1549,6 +1558,7 @@ individually so that features may have different properties
         # Process non-spatial component
         data = self.drop(labels=self.geometry.name, axis=1)
         aggregated_data = data.groupby(**groupby_kwargs).agg(aggfunc)
+        aggregated_data.columns = aggregated_data.columns.to_flat_index()
 
         # Process spatial component
         def merge_geometries(block):
