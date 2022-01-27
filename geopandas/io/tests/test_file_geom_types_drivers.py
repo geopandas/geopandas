@@ -266,4 +266,8 @@ def test_to_file_roundtrip(tmpdir, geodataframe, ogr_driver, engine):
 
         reloaded = geopandas.read_file(output_file, engine=engine)
 
+        if ogr_driver == "GeoJSON" and engine == "pyogrio":
+            # For GeoJSON files, the int64 column comes back as int32
+            reloaded["a"] = reloaded["a"].astype("int64")
+
         assert_geodataframe_equal(geodataframe, reloaded, check_column_type="equiv")

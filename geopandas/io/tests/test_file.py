@@ -534,6 +534,7 @@ def test_read_file_filtered__bbox__polygon(df_nybb, engine):
     )
     filtered_df = read_file(nybb_filename, bbox=bbox, engine=engine)
     expected = df_nybb[df_nybb["BoroName"].isin(["Bronx", "Queens"])]
+    filtered_df["BoroCode"] = filtered_df["BoroCode"].astype("int64")
     assert_geodataframe_equal(filtered_df, expected.reset_index(drop=True))
 
 
