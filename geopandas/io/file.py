@@ -127,11 +127,14 @@ def _read_file(filename, bbox=None, mask=None, rows=None, engine="fiona", **kwar
     rows : int or slice, default None
         Load in specific rows by passing an integer (first `n` rows) or a
         slice() object.
+    engine : str, default "fiona"
+        The underlying library that is used to read the file. Currently, the
+        supported options are "fiona" and "pyogrio".
     **kwargs :
-        Keyword args to be passed to the `open` or `BytesCollection` method
-        in the fiona library when opening the file. For more information on
-        possible keywords, type:
-        ``import fiona; help(fiona.open)``
+        Keyword args to be passed to the engine. In case of the "fiona" engine,
+        the keyword arguments are passed to the `open` or `BytesCollection`
+        method in the fiona library when opening the file. For more information
+        on possible keywords, type: ``import fiona; help(fiona.open)``
 
     Examples
     --------
