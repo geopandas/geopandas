@@ -57,6 +57,7 @@ def _explore(
     tooltip_kwds={},
     popup_kwds={},
     legend_kwds={},
+    map_kwds={},
     **kwargs,
 ):
     """Interactive map based on GeoPandas and folium/leaflet.js
@@ -225,6 +226,10 @@ def _explore(
             Applies if ``colorbar=False``.
         max_labels : int, default 10
             Maximum number of colorbar tick labels (requires branca>=0.5.0)
+    map_kwds : dict (default {})
+        Additional keywords to be passed to folium :class:`~folium.folium.Map`,
+        e.g. ``dragging``, or ``scrollWheelZoom``.
+
 
     **kwargs : dict
         Additional options to be passed on to the folium object.
@@ -302,7 +307,16 @@ GON (((180.00000 -16.06713, 180.00000...
             fit = False
 
         # get a subset of kwargs to be passed to folium.Map
-        map_kwds = {i: kwargs[i] for i in kwargs.keys() if i in _MAP_KWARGS}
+        for i in _MAP_KWARGS:
+            if i in map_kwds:
+                raise ValueError(
+                    f"'{i}' cannot be specified in 'map_kwds'. "
+                    f"Use the '{i}={map_kwds[i]}' argument instead."
+                )
+        map_kwds = {
+            **map_kwds,
+            **{i: kwargs[i] for i in kwargs.keys() if i in _MAP_KWARGS},
+        }
 
         if HAS_XYZSERVICES:
             # match provider name string to xyzservices.TileProvider
@@ -526,7 +540,7 @@ GON (((180.00000 -16.06713, 180.00000...
         ]
         gdf = gdf.drop(columns=non_active_geoms)
 
-    # preprare tooltip and popup
+    # prepare tooltip and popup
     if isinstance(gdf, geopandas.GeoDataFrame):
         # add named index to the tooltip
         if gdf.index.name is not None:

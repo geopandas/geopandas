@@ -412,7 +412,7 @@ def test_missing_values():
 
 
 def test_isna_empty_geoseries():
-    # ensure that isna() result for emtpy GeoSeries has the correct bool dtype
+    # ensure that isna() result for empty GeoSeries has the correct bool dtype
     s = GeoSeries([])
     result = s.isna()
     assert_series_equal(result, pd.Series([], dtype="bool"))

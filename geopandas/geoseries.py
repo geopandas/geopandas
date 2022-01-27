@@ -627,13 +627,6 @@ class GeoSeries(GeoPandasBase, Series):
                 result.set_crs(self.crs, inplace=True)
         return result
 
-    def __finalize__(self, other, method=None, **kwargs):
-        """propagate metadata from other to self"""
-        # NOTE: backported from pandas master (upcoming v0.13)
-        for name in self._metadata:
-            object.__setattr__(self, name, getattr(other, name, None))
-        return self
-
     def isna(self):
         """
         Detect missing values.
@@ -920,7 +913,7 @@ class GeoSeries(GeoPandasBase, Series):
 
         index = []
         geometries = []
-        for idx, s in self.geometry.iteritems():
+        for idx, s in self.geometry.items():
             if s.type.startswith("Multi") or s.type == "GeometryCollection":
                 geoms = s.geoms
                 idxs = [(idx, i) for i in range(len(geoms))]

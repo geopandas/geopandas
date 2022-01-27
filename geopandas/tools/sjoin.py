@@ -107,7 +107,7 @@ stria    AUT    416600.0
                 "A non-default value for `predicate` was passed"
                 f' (got `predicate="{predicate}"`'
                 f' in combination with `op="{op}"`).'
-                " The value of `predicate` will be overriden by the value of `op`,"
+                " The value of `predicate` will be overridden by the value of `op`,"
                 " , which may result in unexpected behavior."
                 f"\n{deprecation_message}"
             )
@@ -343,6 +343,7 @@ def _frame_join(join_df, left_df, right_df, how, lsuffix, rsuffix):
             )
             .set_index(index_right)
             .drop(["_key_left", "_key_right"], axis=1)
+            .set_geometry(right_df.geometry.name)
         )
         if isinstance(index_right, list):
             joined.index.names = right_index_name
@@ -416,6 +417,9 @@ def sjoin_nearest(
 
     Results will include multiple output records for a single input record
     where there are multiple equidistant nearest or intersected neighbors.
+
+    Distance is calculated in CRS units and can be returned using the
+    `distance_col` parameter.
 
     See the User Guide page
     https://geopandas.readthedocs.io/en/latest/docs/user_guide/mergingdata.html
@@ -503,7 +507,7 @@ countries_w_city_data[countries_w_city_data["name_left"] == "Italy"]
 
     Notes
     -----
-    Since this join relies on distances, results will be innaccurate
+    Since this join relies on distances, results will be inaccurate
     if your geometries are in a geographic CRS.
 
     Every operation in GeoPandas is planar, i.e. the potential third
