@@ -56,8 +56,6 @@ def _geoseries_constructor_with_fallback(data=None, index=None, crs=None, **kwar
 def _geoseries_expanddim(data=None, index=None, crs=None, **kwargs):
     from geopandas import GeoDataFrame
 
-    # if geometry is somehow supplied, ignore it because we don't need it
-    kwargs.pop("geometry", None)
     if isinstance(data, GeoSeries):
         # pandas default column name is 0, keep convention
         geo_col_name = data.name if data.name is not None else 0
