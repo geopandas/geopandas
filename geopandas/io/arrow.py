@@ -174,21 +174,6 @@ def _geopandas_to_arrow(df, index=None):
     """
     from pyarrow import Table
 
-    warnings.warn(
-        "this is an initial implementation of Parquet/Feather file support and "
-        "associated metadata.  This is tracking version 0.1.0 of the metadata "
-        "specification at "
-        "https://github.com/geopandas/geo-arrow-spec\n\n"
-        "This metadata specification does not yet make stability promises.  "
-        "We do not yet recommend using this in a production setting unless you "
-        "are able to rewrite your Parquet/Feather files.\n\n"
-        "To further ignore this warning, you can do: \n"
-        "import warnings; warnings.filterwarnings('ignore', "
-        "message='.*initial implementation of Parquet.*')",
-        UserWarning,
-        stacklevel=4,
-    )
-
     _validate_dataframe(df)
 
     # create geo metadata before altering incoming data frame
