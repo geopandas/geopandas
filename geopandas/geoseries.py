@@ -152,7 +152,6 @@ class GeoSeries(GeoPandasBase, Series):
                     values = data.blocks[0].values
                     block = ExtensionBlock(values, slice(0, len(values), 1), ndim=1)
                     data = SingleBlockManager([block], data.axes[0], fastpath=True)
-                    crs = getattr(values, "crs", crs)
             else:
                 raise TypeError(
                     "Non geometry data passed to GeoSeries constructor, "

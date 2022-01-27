@@ -470,7 +470,7 @@ class TestConstructor:
             for x in gs:
                 assert x.equals(g)
 
-    def test_no_geometries_fallback(self):
+    def test_non_geometry_raises(self):
         with pytest.raises(TypeError, match="Non geometry data passed to GeoSeries"):
             GeoSeries([True, False, True])
 
