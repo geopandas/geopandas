@@ -258,7 +258,7 @@ def _read_file(
                         f"There already is a non-geometry column named "
                         f"'{geometry_colname}' in the input data. Please "
                         f"select a different name for the 'geometry_colname'"
-                        f"parameter."
+                        f" parameter."
                     )
 
                 df = GeoDataFrame.from_features(
