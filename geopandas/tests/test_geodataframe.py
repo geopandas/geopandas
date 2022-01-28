@@ -79,7 +79,8 @@ class TestDataFrame:
         self.df4 = read_file(
             os.path.join(
                 PACKAGE_DIR, "geopandas", "tests", "data", "geometry_col.geojson"
-            )
+            ),
+            geometry_colname="geometry_",
         )
 
     def teardown_method(self):

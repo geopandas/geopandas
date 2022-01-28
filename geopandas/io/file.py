@@ -32,7 +32,7 @@ except ImportError as err:
 
 
 from geopandas import GeoDataFrame, GeoSeries
-
+from geopandas.geodataframe import DEFAULT_GEO_COLUMN_NAME
 
 # Adapted from pandas.io.common
 from urllib.request import urlopen as _urlopen
@@ -101,7 +101,9 @@ def _is_zip(path):
     )
 
 
-def _read_file(filename, bbox=None, mask=None, rows=None, **kwargs):
+def _read_file(
+    filename, bbox=None, mask=None, rows=None, geometry_colname=None, **kwargs
+):
     """
     Returns a GeoDataFrame from a file or URL.
 
@@ -244,19 +246,26 @@ def _read_file(filename, bbox=None, mask=None, rows=None, **kwargs):
                     [record["properties"] for record in f_filt], columns=columns
                 )
             else:
-                # Finding name for column containing shapely geometries
-                geom_colname_unique = "geometry"
+                if geometry_colname is None:
+                    geometry_colname = DEFAULT_GEO_COLUMN_NAME
+
+                if not isinstance(geometry_colname, str):
+                    raise TypeError("The 'geometry_colname' parameter must be string.")
+
                 columns_set = set(columns)
-                while True:
-                    if geom_colname_unique not in columns_set:
-                        break
-                    else:
-                        geom_colname_unique += "_"
+                if geometry_colname in columns_set:
+                    raise ValueError(
+                        f"There already is a non-geometry column named "
+                        f"'{geometry_colname}' in the input data. Please "
+                        f"select a different name for the 'geometry_colname'"
+                        f"parameter."
+                    )
+
                 df = GeoDataFrame.from_features(
                     f_filt,
                     crs=crs,
-                    columns=columns + [geom_colname_unique],
-                    geom_colname=geom_colname_unique,
+                    columns=columns + [geometry_colname],
+                    geometry_colname=geometry_colname,
                 )
             for k in datetime_fields:
                 # fiona only supports up to ms precision, any microseconds are
