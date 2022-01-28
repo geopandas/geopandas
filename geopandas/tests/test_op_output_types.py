@@ -71,8 +71,8 @@ def test_getitem(df):
     assert_object(df[["value1", "value2"]], pd.DataFrame)
     assert_object(df[[geo_name, "geometry2"]], GeoDataFrame, geo_name)
     assert_object(df[[geo_name]], GeoDataFrame, geo_name)
-    assert_object(df[["geometry2", "value1"]], pd.DataFrame)
-    assert_object(df[["geometry2"]], pd.DataFrame)
+    assert_object(df[["geometry2", "value1"]], GeoDataFrame, None, None)
+    assert_object(df[["geometry2"]], GeoDataFrame, None, None)
     assert_object(df[["value1"]], pd.DataFrame)
     # Series
     assert_object(df[geo_name], GeoSeries, geo_name)
@@ -119,9 +119,7 @@ def test_iloc(df):
 def test_squeeze(df):
     geo_name = df.geometry.name
     assert_object(df[[geo_name]].squeeze(), GeoSeries, geo_name)
-
-    # Not ideal behaviour, but this is consistent with __getitem__
-    assert_object(df[["geometry2"]].squeeze(), pd.Series)
+    assert_object(df[["geometry2"]].squeeze(), GeoSeries, "geometry2", crs=crs_osgb)
 
 
 def test_to_frame(df):
@@ -192,8 +190,8 @@ def test_apply(df):
     assert_object(df[["value1", "value2"]].apply(identity), pd.DataFrame)
     assert_object(df[[geo_name, "geometry2"]].apply(identity), GeoDataFrame, geo_name)
     assert_object(df[[geo_name]].apply(identity), GeoDataFrame, geo_name)
-    assert_object(df[["geometry2", "value1"]].apply(identity), pd.DataFrame)
-    assert_object(df[["geometry2"]].apply(identity), pd.DataFrame)
+    assert_object(df[["geometry2", "value1"]].apply(identity), GeoDataFrame, None, None)
+    assert_object(df[["geometry2"]].apply(identity), GeoDataFrame, None, None)
     assert_object(df[["value1"]].apply(identity), pd.DataFrame)
 
     # axis = 0, Series
@@ -212,5 +210,5 @@ def test_apply(df):
     )
     assert_object(df[[geo_name]].apply(identity, axis=1), GeoDataFrame, geo_name)
     assert_object(df[["geometry2", "value1"]].apply(identity, axis=1), pd.DataFrame)
-    assert_object(df[["geometry2"]].apply(identity, axis=1), pd.DataFrame)
+    assert_object(df[["geometry2"]].apply(identity, axis=1), GeoDataFrame, None, None)
     assert_object(df[["value1"]].apply(identity, axis=1), pd.DataFrame)
