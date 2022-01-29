@@ -1,6 +1,7 @@
 import pandas as pd
 import pyproj
 import pytest
+import geopandas._compat as compat
 
 from shapely.geometry import Point
 
@@ -219,6 +220,10 @@ def test_expanddim_in_apply():
     assert_object(s.apply(lambda x: pd.Series([x.x, x.y])), pd.DataFrame)
 
 
+@pytest.mark.xfail(
+    not compat.PANDAS_GE_11,
+    reason="pandas <1.1 don't preserve subclass through groupby ops",  # Pandas GH33884
+)
 def test_expandim_in_groupby_aggregate_multiple_funcs():
     # https://github.com/geopandas/geopandas/pull/2296#issuecomment-1021966443
     # There are two calls to _constructor_expanddim here
@@ -241,6 +246,10 @@ def test_expandim_in_groupby_aggregate_multiple_funcs():
     assert_object(grouped.agg([total_area]), pd.DataFrame)
 
 
+@pytest.mark.xfail(
+    not compat.PANDAS_GE_11,
+    reason="pandas <1.1 uses concat([Series]) in unstack",  # Pandas GH33356
+)
 def test_expanddim_in_unstack():
     # https://github.com/geopandas/geopandas/pull/2296#issuecomment-1021966443
     s = GeoSeries.from_xy(
