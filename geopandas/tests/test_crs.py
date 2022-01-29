@@ -338,6 +338,14 @@ class TestGeometryArrayCRS:
         "scalar", [None, Point(0, 0), LineString([(0, 0), (1, 1)])]
     )
     def test_scalar(self, scalar):
+        df = GeoDataFrame()
+        df["geometry"] = scalar
+        df.crs = 4326
+        assert df.crs == self.wgs
+        assert df.geometry.crs == self.wgs
+        assert df.geometry.values.crs == self.wgs
+
+    def test_crs_with_no_geom_fails(self):
         with pytest.raises(ValueError, match="Assigning CRS to a GeoDataFrame without"):
             df = GeoDataFrame()
             df.crs = 4326
