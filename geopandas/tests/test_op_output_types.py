@@ -207,3 +207,40 @@ def test_apply(df):
     assert_object(df[["geometry2", "value1"]].apply(identity, axis=1), pd.DataFrame)
     assert_object(df[["geometry2"]].apply(identity, axis=1), pd.DataFrame)
     assert_object(df[["value1"]].apply(identity, axis=1), pd.DataFrame)
+
+
+def test_expanddim_in_apply():
+    # https://github.com/geopandas/geopandas/pull/2296#issuecomment-1021966443
+    s = GeoSeries.from_xy([0, 1], [0, 1])
+    assert_object(s.apply(lambda x: pd.Series([x.x, x.y])), pd.DataFrame)
+
+
+def test_expandim_in_groupby_aggregate_multiple_funcs():
+    # https://github.com/geopandas/geopandas/pull/2296#issuecomment-1021966443
+    # There are two calls to _constructor_expanddim here
+    # SeriesGroupBy._aggregate_multiple_funcs() and
+    # SeriesGroupBy._wrap_series_output() len(output) > 1
+
+    s = GeoSeries.from_xy([0, 1, 2], [0, 1, 3])
+
+    def union(s):
+        return s.unary_union
+
+    def total_area(s):
+        return s.area.sum()
+
+    grouped = s.groupby([0, 1, 0])
+    assert_object(grouped.agg([total_area, union]), GeoDataFrame, None, None)
+    assert_object(grouped.agg([union, total_area]), GeoDataFrame, None, None)
+    assert_object(grouped.agg([total_area, total_area]), pd.DataFrame)
+    assert_object(grouped.agg([total_area]), pd.DataFrame)
+
+
+def test_expanddim_in_unstack():
+    # https://github.com/geopandas/geopandas/pull/2296#issuecomment-1021966443
+    s = GeoSeries.from_xy(
+        [0, 1, 2],
+        [0, 1, 3],
+        index=pd.MultiIndex.from_tuples([("A", "a"), ("A", "b"), ("B", "a")]),
+    )
+    assert_object(s.unstack(), GeoDataFrame, None, None)

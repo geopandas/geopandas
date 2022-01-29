@@ -4,6 +4,7 @@ import warnings
 import numpy as np
 import pandas as pd
 from pandas import Series, MultiIndex, DataFrame
+from pandas.core.arrays import PandasArray
 from pandas.core.internals import SingleBlockManager
 
 from pyproj import CRS
@@ -56,6 +57,11 @@ def _geoseries_constructor_with_fallback(data=None, index=None, crs=None, **kwar
 def _geoseries_expanddim(data=None, index=None, crs=None, **kwargs):
     from geopandas import GeoDataFrame
 
+    if isinstance(data, DataFrame):  # or GeoDataFrame implicitly
+        return data
+    if type(data) == pd.Series:
+        return DataFrame(data)  # pd.Series._constructor_expanddim(data)
+
     if isinstance(data, GeoSeries):
         # pandas default column name is 0, keep convention
         geo_col_name = data.name if data.name is not None else 0
@@ -64,6 +70,16 @@ def _geoseries_expanddim(data=None, index=None, crs=None, **kwargs):
         # i.e. from pd.concat([GeoSeries, GeoSeries]) the geom col comes
         # from the left (same as for multiple gdfs in concat)
         geo_col_name = list(data.keys())[0]
+        if not is_geometry_type(data[geo_col_name]):
+            if "geometry" in [i.dtype.name for i in data.values()]:
+                geo_col_name = None
+                crs = None
+            else:
+                return pd.DataFrame(data=data, index=index, **kwargs)
+
+    elif isinstance(data, PandasArray):  # from GeoSeries.apply
+        return pd.DataFrame(data=data, index=index, **kwargs)
+
     else:  # blockmanager
         geo_col_name = data.axes[0][0]
 
