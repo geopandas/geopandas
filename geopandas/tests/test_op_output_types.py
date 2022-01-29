@@ -46,7 +46,9 @@ def _check_metadata_gs(gs, name="geometry", crs=crs_wgs):
     assert gs.crs == crs
 
 
-def assert_object(result, expected_type, geo_name="geometry", crs=crs_wgs):
+def assert_object(
+    result, expected_type, geo_name="geometry", crs=crs_wgs, check_none_name=False
+):
     """
     Helper method to make tests easier to read. Checks result is of the expected
     type. If result is a GeoDataFrame or GeoSeries, checks geo_name
@@ -60,6 +62,8 @@ def assert_object(result, expected_type, geo_name="geometry", crs=crs_wgs):
         if geo_name is not None:
             _check_metadata_gdf(result, geo_name=geo_name, crs=crs)
         else:
+            if check_none_name:
+                assert result._geometry_column_name is None
             with pytest.raises(AttributeError, match="No geometry data set yet"):
                 result.geometry.name  # be explicit that geometry is invalid here
     elif expected_type == GeoSeries:
@@ -230,8 +234,9 @@ def test_expandim_in_groupby_aggregate_multiple_funcs():
         return s.area.sum()
 
     grouped = s.groupby([0, 1, 0])
-    assert_object(grouped.agg([total_area, union]), GeoDataFrame, None, None)
-    assert_object(grouped.agg([union, total_area]), GeoDataFrame, None, None)
+    agg = grouped.agg([total_area, union])
+    assert_object(agg, GeoDataFrame, None, None, True)
+    assert_object(grouped.agg([union, total_area]), GeoDataFrame, None, None, True)
     assert_object(grouped.agg([total_area, total_area]), pd.DataFrame)
     assert_object(grouped.agg([total_area]), pd.DataFrame)
 
@@ -243,4 +248,8 @@ def test_expanddim_in_unstack():
         [0, 1, 3],
         index=pd.MultiIndex.from_tuples([("A", "a"), ("A", "b"), ("B", "a")]),
     )
-    assert_object(s.unstack(), GeoDataFrame, None, None)
+    unstack = s.unstack()
+    assert_object(unstack, GeoDataFrame, None, None, False)
+    # TODO this is not what we want, but have to overload GeoDataFrame.droplevel to fix
+    # (In 10.2 unstack._geometry_column_name = "geometry", sideways regression)
+    assert unstack._geometry_column_name == 0
