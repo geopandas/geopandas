@@ -2,7 +2,7 @@ import geopandas as gpd
 import numpy as np
 import pandas as pd
 import pytest
-from distutils.version import LooseVersion
+from packaging.version import Version
 
 folium = pytest.importorskip("folium")
 branca = pytest.importorskip("branca")
@@ -13,7 +13,7 @@ import matplotlib.cm as cm  # noqa
 import matplotlib.colors as colors  # noqa
 from branca.colormap import StepColormap  # noqa
 
-BRANCA_05 = str(branca.__version__) > LooseVersion("0.4.2")
+BRANCA_05 = Version(branca.__version__) > Version("0.4.2")
 
 
 class TestExplore:
@@ -62,7 +62,7 @@ class TestExplore:
         assert "openstreetmap" in m.to_dict()["children"].keys()
 
     def test_map_settings_custom(self):
-        """Check custom map settins"""
+        """Check custom map settings"""
         m = self.nybb.explore(
             zoom_control=False,
             width=200,
@@ -413,7 +413,7 @@ class TestExplore:
         assert "BoroName" in out_str
 
     def test_default_markers(self):
-        # check overriden default for points
+        # check overridden default for points
         m = self.cities.explore()
         strings = ['"radius":2', '"fill":true', "CircleMarker(latlng,opts)"]
         out_str = self._fetch_map_string(m)
@@ -465,6 +465,20 @@ class TestExplore:
         assert 'case"176":return{"color":"#3b528b","fillColor":"#3b528b"' in out_str
         assert 'case"119":return{"color":"#414287","fillColor":"#414287"' in out_str
         assert 'case"3":return{"color":"#482173","fillColor":"#482173"' in out_str
+
+        # test 0
+        df2 = self.nybb.copy()
+        df2["values"] = df2["BoroCode"] * 10.0
+        m = df2[df2["values"] >= 30].explore("values", vmin=0)
+        out_str = self._fetch_map_string(m)
+        assert 'case"1":return{"color":"#7ad151","fillColor":"#7ad151"' in out_str
+        assert 'case"2":return{"color":"#22a884","fillColor":"#22a884"' in out_str
+
+        df2["values_negative"] = df2["BoroCode"] * -10.0
+        m = df2[df2["values_negative"] <= 30].explore("values_negative", vmax=0)
+        out_str = self._fetch_map_string(m)
+        assert 'case"1":return{"color":"#414487","fillColor":"#414487"' in out_str
+        assert 'case"2":return{"color":"#2a788e","fillColor":"#2a788e"' in out_str
 
     def test_missing_vals(self):
         m = self.missing.explore("continent")
@@ -528,7 +542,7 @@ class TestExplore:
         assert out_str.count("#5ec962ff") == 100
         assert out_str.count("#fde725ff") == 100
 
-        # scale legend accorrdingly
+        # scale legend accordingly
         m = self.world.explore(
             "pop_est",
             legend=True,
@@ -594,7 +608,7 @@ class TestExplore:
             'attribution":"\\u0026copy;\\u003cahref=\\"https://www.openstreetmap.org'
             in out_str
         )
-        assert '"maxNativeZoom":19,"maxZoom":19,"minZoom":0' in out_str
+        assert '"maxNativeZoom":20,"maxZoom":20,"minZoom":0' in out_str
 
     def test_xyzservices_query_name(self):
         pytest.importorskip("xyzservices")
@@ -610,7 +624,7 @@ class TestExplore:
             'attribution":"\\u0026copy;\\u003cahref=\\"https://www.openstreetmap.org'
             in out_str
         )
-        assert '"maxNativeZoom":19,"maxZoom":19,"minZoom":0' in out_str
+        assert '"maxNativeZoom":20,"maxZoom":20,"minZoom":0' in out_str
 
     def test_linearrings(self):
         rings = self.nybb.explode(index_parts=True).exterior
@@ -783,3 +797,22 @@ class TestExplore:
         gdf["centroid"] = gdf.centroid
 
         gdf.explore()
+
+    def test_map_kwds(self):
+        def check():
+            out_str = self._fetch_map_string(m)
+            assert "zoomControl:false" in out_str
+            assert "dragging:false" in out_str
+            assert "scrollWheelZoom:false" in out_str
+
+        # check that folium and leaflet Map() parameters can be passed
+        m = self.world.explore(
+            zoom_control=False, map_kwds=dict(dragging=False, scrollWheelZoom=False)
+        )
+        check()
+        with pytest.raises(
+            ValueError, match="'zoom_control' cannot be specified in 'map_kwds'"
+        ):
+            self.world.explore(
+                map_kwds=dict(dragging=False, scrollWheelZoom=False, zoom_control=False)
+            )

@@ -12,6 +12,7 @@ from shapely.geometry.base import BaseGeometry
 from geopandas.base import GeoPandasBase, _delegate_property
 from geopandas.plotting import plot_series
 from geopandas.explore import _explore_geoseries
+import geopandas
 
 from . import _compat as compat
 from ._decorator import doc
@@ -626,13 +627,6 @@ class GeoSeries(GeoPandasBase, Series):
                 result.set_crs(self.crs, inplace=True)
         return result
 
-    def __finalize__(self, other, method=None, **kwargs):
-        """propagate metadata from other to self"""
-        # NOTE: backported from pandas master (upcoming v0.13)
-        for name in self._metadata:
-            object.__setattr__(self, name, getattr(other, name, None))
-        return self
-
     def isna(self):
         """
         Detect missing values.
@@ -919,7 +913,7 @@ class GeoSeries(GeoPandasBase, Series):
 
         index = []
         geometries = []
-        for idx, s in self.geometry.iteritems():
+        for idx, s in self.geometry.items():
             if s.type.startswith("Multi") or s.type == "GeometryCollection":
                 geoms = s.geoms
                 idxs = [(idx, i) for i in range(len(geoms))]
@@ -1296,3 +1290,51 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
             stacklevel=2,
         )
         return self.difference(other)
+
+    def clip(self, mask, keep_geom_type=False):
+        """Clip points, lines, or polygon geometries to the mask extent.
+
+        Both layers must be in the same Coordinate Reference System (CRS).
+        The GeoSeries will be clipped to the full extent of the `mask` object.
+
+        If there are multiple polygons in mask, data from the GeoSeries will be
+        clipped to the total boundary of all polygons in mask.
+
+        Parameters
+        ----------
+        mask : GeoDataFrame, GeoSeries, (Multi)Polygon
+            Polygon vector layer used to clip `gdf`.
+            The mask's geometry is dissolved into one geometric feature
+            and intersected with `gdf`.
+        keep_geom_type : boolean, default False
+            If True, return only geometries of original type in case of intersection
+            resulting in multiple geometry types or GeometryCollections.
+            If False, return all resulting geometries (potentially mixed-types).
+
+        Returns
+        -------
+        GeoSeries
+            Vector data (points, lines, polygons) from `gdf` clipped to
+            polygon boundary from mask.
+
+        See also
+        --------
+        clip : top-level function for clip
+
+        Examples
+        --------
+        Clip points (global cities) with a polygon (the South American continent):
+
+        >>> world = geopandas.read_file(
+        ...     geopandas.datasets.get_path('naturalearth_lowres'))
+        >>> south_america = world[world['continent'] == "South America"]
+        >>> capitals = geopandas.read_file(
+        ...     geopandas.datasets.get_path('naturalearth_cities'))
+        >>> capitals.shape
+        (202, 2)
+
+        >>> sa_capitals = capitals.geometry.clip(south_america)
+        >>> sa_capitals.shape
+        (12,)
+        """
+        return geopandas.clip(self, mask=mask, keep_geom_type=keep_geom_type)

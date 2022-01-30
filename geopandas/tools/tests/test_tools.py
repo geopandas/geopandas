@@ -1,4 +1,4 @@
-from distutils.version import LooseVersion
+from packaging.version import Version
 
 from shapely.geometry import LineString, MultiPoint, Point
 import pyproj
@@ -13,7 +13,7 @@ import pytest
 
 # pyproj 2.3.1 fixed a segfault for the case working in an environment with
 # 'init' dicts (https://github.com/pyproj4/pyproj/issues/415)
-PYPROJ_LT_231 = LooseVersion(pyproj.__version__) < LooseVersion("2.3.1")
+PYPROJ_LT_231 = Version(pyproj.__version__) < Version("2.3.1")
 
 
 class TestTools:

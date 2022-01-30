@@ -1,6 +1,7 @@
 import os
-from distutils.version import LooseVersion
+from packaging.version import Version
 
+import numpy as np
 import pandas as pd
 
 from shapely.geometry import Point, Polygon, LineString, GeometryCollection, box
@@ -17,7 +18,7 @@ DATA = os.path.join(os.path.abspath(os.path.dirname(__file__)), "data", "overlay
 
 
 pytestmark = pytest.mark.skip_no_sindex
-pandas_133 = pd.__version__ == LooseVersion("1.3.3")
+pandas_133 = Version(pd.__version__) == Version("1.3.3")
 
 
 @pytest.fixture
@@ -374,7 +375,7 @@ def test_empty_intersection(dfs):
     df3 = GeoDataFrame({"geometry": polys3, "col3": [1, 2]})
     expected = GeoDataFrame([], columns=["col1", "col3", "geometry"])
     result = overlay(df1, df3)
-    assert_geodataframe_equal(result, expected, check_like=True)
+    assert_geodataframe_equal(result, expected, check_dtype=False)
 
 
 def test_correct_index(dfs):
@@ -627,6 +628,67 @@ def test_keep_geom_type_geometry_collection2():
     assert_geodataframe_equal(result1, expected1)
 
 
+def test_keep_geom_type_geomcoll_different_types():
+    polys1 = [box(0, 1, 1, 3), box(10, 10, 12, 12)]
+    polys2 = [
+        Polygon([(1, 0), (3, 0), (3, 3), (1, 3), (1, 2), (2, 2), (2, 1), (1, 1)]),
+        box(11, 11, 13, 13),
+    ]
+    df1 = GeoDataFrame({"left": [0, 1], "geometry": polys1})
+    df2 = GeoDataFrame({"right": [0, 1], "geometry": polys2})
+    result1 = overlay(df1, df2, keep_geom_type=True)
+    expected1 = GeoDataFrame(
+        {
+            "left": [1],
+            "right": [1],
+            "geometry": [box(11, 11, 12, 12)],
+        }
+    )
+    assert_geodataframe_equal(result1, expected1)
+
+    result2 = overlay(df1, df2, keep_geom_type=False)
+    expected2 = GeoDataFrame(
+        {
+            "left": [0, 1],
+            "right": [0, 1],
+            "geometry": [
+                GeometryCollection([LineString([(1, 2), (1, 3)]), Point(1, 1)]),
+                box(11, 11, 12, 12),
+            ],
+        }
+    )
+    assert_geodataframe_equal(result2, expected2)
+
+
+def test_keep_geom_type_geometry_collection_difference():
+    # GH 2163
+
+    polys1 = [
+        box(0, 0, 1, 1),
+        box(1, 1, 2, 2),
+    ]
+
+    # the tiny sliver in the second geometry may be converted to a
+    # linestring during the overlay process due to floating point errors
+    # on some platforms
+    polys2 = [
+        box(0, 0, 1, 1),
+        box(1, 1, 2, 3).union(box(2, 2, 3, 2.00000000000000001)),
+    ]
+    df1 = GeoDataFrame({"left": [0, 1], "geometry": polys1})
+    df2 = GeoDataFrame({"right": [0, 1], "geometry": polys2})
+
+    result1 = overlay(df2, df1, keep_geom_type=True, how="difference")
+    expected1 = GeoDataFrame(
+        {
+            "right": [1],
+            "geometry": [box(1, 2, 2, 3)],
+        },
+    )
+
+    assert_geodataframe_equal(result1, expected1)
+
+
 @pytest.mark.parametrize("make_valid", [True, False])
 def test_overlap_make_valid(make_valid):
     bowtie = Polygon([(1, 1), (9, 9), (9, 1), (1, 9), (1, 1)])
@@ -656,5 +718,80 @@ def test_empty_overlay_return_non_duplicated_columns():
 
     result = geopandas.overlay(nybb, nybb2)
 
-    assert all(result.columns.isin(nybb.columns))
-    assert len(result.columns) == len(nybb.columns)
+    expected = GeoDataFrame(
+        columns=[
+            "BoroCode_1",
+            "BoroName_1",
+            "Shape_Leng_1",
+            "Shape_Area_1",
+            "BoroCode_2",
+            "BoroName_2",
+            "Shape_Leng_2",
+            "Shape_Area_2",
+            "geometry",
+        ],
+        crs=nybb.crs,
+    )
+    assert_geodataframe_equal(result, expected, check_dtype=False)
+
+
+def test_non_overlapping(how):
+    p1 = Polygon([(0, 0), (2, 0), (2, 2), (0, 2)])
+    p2 = Polygon([(3, 3), (5, 3), (5, 5), (3, 5)])
+    df1 = GeoDataFrame({"col1": [1], "geometry": [p1]})
+    df2 = GeoDataFrame({"col2": [2], "geometry": [p2]})
+    result = overlay(df1, df2, how=how)
+
+    if how == "intersection":
+        expected = GeoDataFrame(
+            {
+                "col1": np.array([], dtype="int64"),
+                "col2": np.array([], dtype="int64"),
+                "geometry": [],
+            },
+            index=pd.Index([], dtype="object"),
+        )
+    elif how == "union":
+        expected = GeoDataFrame(
+            {
+                "col1": [1, np.nan],
+                "col2": [np.nan, 2],
+                "geometry": [p1, p2],
+            }
+        )
+    elif how == "identity":
+        expected = GeoDataFrame(
+            {
+                "col1": [1.0],
+                "col2": [np.nan],
+                "geometry": [p1],
+            }
+        )
+    elif how == "symmetric_difference":
+        expected = GeoDataFrame(
+            {
+                "col1": [1, np.nan],
+                "col2": [np.nan, 2],
+                "geometry": [p1, p2],
+            }
+        )
+    elif how == "difference":
+        expected = GeoDataFrame(
+            {
+                "col1": [1],
+                "geometry": [p1],
+            }
+        )
+
+    assert_geodataframe_equal(result, expected)
+
+
+def test_no_intersection():
+    # overlapping bounds but non-overlapping geometries
+    gs = GeoSeries([Point(x, x).buffer(0.1) for x in range(3)])
+    gdf1 = GeoDataFrame({"foo": ["a", "b", "c"]}, geometry=gs)
+    gdf2 = GeoDataFrame({"bar": ["1", "3", "5"]}, geometry=gs.translate(1))
+
+    expected = GeoDataFrame(columns=["foo", "bar", "geometry"])
+    result = overlay(gdf1, gdf2, how="intersection")
+    assert_geodataframe_equal(result, expected, check_index_type=False)

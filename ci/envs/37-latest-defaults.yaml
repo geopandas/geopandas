@@ -9,6 +9,7 @@ dependencies:
   - fiona
   - pyproj
   - geos
+  - packaging
   # testing
   - pytest
   - pytest-cov
@@ -20,6 +21,7 @@ dependencies:
   #- geopy
   - SQLalchemy
   - libspatialite
+  - pip
   - pip:
       - geopy
       - mapclassify

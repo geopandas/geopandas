@@ -84,6 +84,11 @@ def clip(gdf, mask, keep_geom_type=False):
          Vector data (points, lines, polygons) from `gdf` clipped to
          polygon boundary from mask.
 
+    See also
+    --------
+    GeoDataFrame.clip : equivalent GeoDataFrame method
+    GeoSeries.clip : equivalent GeoSeries method
+
     Examples
     --------
     Clip points (global cities) with a polygon (the South American continent):
@@ -177,7 +182,7 @@ def clip(gdf, mask, keep_geom_type=False):
             elif new_collection or more_types:
                 orig_type = gdf.geom_type.iloc[0]
                 if new_collection:
-                    clipped = clipped.explode()
+                    clipped = clipped.explode(index_parts=False)
                 if orig_type in polys:
                     clipped = clipped.loc[clipped.geom_type.isin(polys)]
                 elif orig_type in lines:

@@ -354,6 +354,12 @@ class TestGeomMethods:
 
         self._test_unary_topological("unary_union", expected, g)
 
+        g2 = GeoSeries([p1, None])
+        self._test_unary_topological("unary_union", p1, g2)
+
+        g3 = GeoSeries([None, None])
+        assert g3.unary_union is None
+
     def test_cascaded_union_deprecated(self):
         p1 = self.t1
         p2 = Polygon([(2, 0), (3, 0), (3, 1)])
@@ -1083,6 +1089,109 @@ class TestGeomMethods:
         # index_parts is ignored if ignore_index=True
         test_df = df.explode(ignore_index=True, index_parts=True)
         assert_frame_equal(test_df, expected_df)
+
+    def test_explode_order(self):
+        df = GeoDataFrame(
+            {"vals": [1, 2, 3]},
+            geometry=[MultiPoint([(x, x), (x, 0)]) for x in range(3)],
+            index=[2, 9, 7],
+        )
+        test_df = df.explode(index_parts=True)
+
+        expected_index = MultiIndex.from_arrays(
+            [[2, 2, 9, 9, 7, 7], [0, 1, 0, 1, 0, 1]],
+        )
+        expected_geometry = GeoSeries(
+            [
+                Point(0, 0),
+                Point(0, 0),
+                Point(1, 1),
+                Point(1, 0),
+                Point(2, 2),
+                Point(2, 0),
+            ],
+            index=expected_index,
+        )
+        expected_df = GeoDataFrame(
+            {"vals": [1, 1, 2, 2, 3, 3]},
+            geometry=expected_geometry,
+            index=expected_index,
+        )
+        assert_geodataframe_equal(test_df, expected_df)
+
+    def test_explode_order_no_multi(self):
+        df = GeoDataFrame(
+            {"vals": [1, 2, 3]},
+            geometry=[Point(0, x) for x in range(3)],
+            index=[2, 9, 7],
+        )
+        test_df = df.explode(index_parts=True)
+
+        expected_index = MultiIndex.from_arrays(
+            [[2, 9, 7], [0, 0, 0]],
+        )
+        expected_df = GeoDataFrame(
+            {"vals": [1, 2, 3]},
+            geometry=[Point(0, x) for x in range(3)],
+            index=expected_index,
+        )
+        assert_geodataframe_equal(test_df, expected_df)
+
+    def test_explode_order_mixed(self):
+        df = GeoDataFrame(
+            {"vals": [1, 2, 3]},
+            geometry=[MultiPoint([(x, x), (x, 0)]) for x in range(2)] + [Point(0, 10)],
+            index=[2, 9, 7],
+        )
+        test_df = df.explode(index_parts=True)
+
+        expected_index = MultiIndex.from_arrays(
+            [[2, 2, 9, 9, 7], [0, 1, 0, 1, 0]],
+        )
+        expected_geometry = GeoSeries(
+            [
+                Point(0, 0),
+                Point(0, 0),
+                Point(1, 1),
+                Point(1, 0),
+                Point(0, 10),
+            ],
+            index=expected_index,
+        )
+        expected_df = GeoDataFrame(
+            {"vals": [1, 1, 2, 2, 3]},
+            geometry=expected_geometry,
+            index=expected_index,
+        )
+        assert_geodataframe_equal(test_df, expected_df)
+
+    def test_explode_duplicated_index(self):
+        df = GeoDataFrame(
+            {"vals": [1, 2, 3]},
+            geometry=[MultiPoint([(x, x), (x, 0)]) for x in range(3)],
+            index=[1, 1, 2],
+        )
+        test_df = df.explode(index_parts=True)
+        expected_index = MultiIndex.from_arrays(
+            [[1, 1, 1, 1, 2, 2], [0, 1, 0, 1, 0, 1]],
+        )
+        expected_geometry = GeoSeries(
+            [
+                Point(0, 0),
+                Point(0, 0),
+                Point(1, 1),
+                Point(1, 0),
+                Point(2, 2),
+                Point(2, 0),
+            ],
+            index=expected_index,
+        )
+        expected_df = GeoDataFrame(
+            {"vals": [1, 1, 2, 2, 3, 3]},
+            geometry=expected_geometry,
+            index=expected_index,
+        )
+        assert_geodataframe_equal(test_df, expected_df)
 
     #
     # Test '&', '|', '^', and '-'
