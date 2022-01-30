@@ -1,4 +1,4 @@
-from distutils.version import LooseVersion
+from packaging.version import Version
 import json
 import warnings
 
@@ -288,7 +288,7 @@ def _to_feather(df, path, index=None, compression=None, **kwargs):
     # TODO move this into `import_optional_dependency`
     import pyarrow
 
-    if pyarrow.__version__ < LooseVersion("0.17.0"):
+    if Version(pyarrow.__version__) < Version("0.17.0"):
         raise ImportError("pyarrow >= 0.17 required for Feather support")
 
     path = _expand_user(path)
@@ -361,7 +361,7 @@ def _get_filesystem_path(path, filesystem=None, storage_options=None):
         isinstance(path, str)
         and storage_options is None
         and filesystem is None
-        and LooseVersion(pyarrow.__version__) >= "5.0.0"
+        and Version(pyarrow.__version__) >= Version("5.0.0")
     ):
         # Use the native pyarrow filesystem if possible.
         try:
@@ -513,7 +513,7 @@ def _read_feather(path, columns=None, **kwargs):
     # TODO move this into `import_optional_dependency`
     import pyarrow
 
-    if pyarrow.__version__ < LooseVersion("0.17.0"):
+    if Version(pyarrow.__version__) < Version("0.17.0"):
         raise ImportError("pyarrow >= 0.17 required for Feather support")
 
     path = _expand_user(path)

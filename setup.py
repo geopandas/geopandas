@@ -34,6 +34,7 @@ else:
         "shapely >= 1.6",
         "fiona >= 1.8",
         "pyproj >= 2.2.0",
+        "packaging",
     ]
 
 # get all data dirs in the datasets module

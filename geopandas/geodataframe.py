@@ -1432,7 +1432,10 @@ individually so that features may have different properties
             func, axis=axis, raw=raw, result_type=result_type, args=args, **kwargs
         )
         # Reconstruct gdf if it was lost by apply
-        if self._geometry_column_name in result.columns:
+        if (
+            isinstance(result, DataFrame)
+            and self._geometry_column_name in result.columns
+        ):
             # axis=1 apply will split GeometryDType to object, try and cast back
             try:
                 result = result.set_geometry(self._geometry_column_name)
@@ -1496,6 +1499,12 @@ individually so that features may have different properties
         aggfunc : function or string, default "first"
             Aggregation function for manipulation of data associated
             with each group. Passed to pandas `groupby.agg` method.
+            Accepted combinations are:
+
+            - function
+            - string function name
+            - list of functions and/or function names, e.g. [np.sum, 'mean']
+            - dict of axis labels -> functions, function names or list of such.
         as_index : boolean, default True
             If true, groupby columns become index of result.
         level : int or str or sequence of int or sequence of str, default None
@@ -1572,6 +1581,7 @@ individually so that features may have different properties
         # Process non-spatial component
         data = self.drop(labels=self.geometry.name, axis=1)
         aggregated_data = data.groupby(**groupby_kwargs).agg(aggfunc)
+        aggregated_data.columns = aggregated_data.columns.to_flat_index()
 
         # Process spatial component
         def merge_geometries(block):
@@ -1694,43 +1704,26 @@ individually so that features may have different properties
                 )
             index_parts = True
 
-        df_copy = self.copy()
+        exploded_geom = self.geometry.reset_index(drop=True).explode(index_parts=True)
 
-        level_str = f"level_{df_copy.index.nlevels}"
-
-        if level_str in df_copy.columns:  # GH1393
-            df_copy = df_copy.rename(columns={level_str: f"__{level_str}"})
-
-        if index_parts:
-            exploded_geom = df_copy.geometry.explode(index_parts=True)
-            exploded_index = exploded_geom.index
-            exploded_geom = exploded_geom.reset_index(level=-1, drop=True)
-        else:
-            exploded_geom = df_copy.geometry.explode(index_parts=True).reset_index(
-                level=-1, drop=True
-            )
-            exploded_index = exploded_geom.index
-
-        df = (
-            df_copy.drop(df_copy._geometry_column_name, axis=1)
-            .join(exploded_geom)
-            .set_geometry(self._geometry_column_name)
-            .__finalize__(self)
-        )
+        df = GeoDataFrame(
+            self.drop(self._geometry_column_name, axis=1).take(
+                exploded_geom.index.droplevel(-1)
+            ),
+            geometry=exploded_geom.values,
+        ).__finalize__(self)
 
         if ignore_index:
             df.reset_index(inplace=True, drop=True)
         elif index_parts:
             # reset to MultiIndex, otherwise df index is only first level of
             # exploded GeoSeries index.
-            df.set_index(exploded_index, inplace=True)
-            df.index.names = list(self.index.names) + [None]
-        else:
-            df.set_index(exploded_index, inplace=True)
-            df.index.names = self.index.names
-
-        if f"__{level_str}" in df.columns:
-            df = df.rename(columns={f"__{level_str}": level_str})
+            df = df.set_index(
+                exploded_geom.index.droplevel(
+                    list(range(exploded_geom.index.nlevels - 1))
+                ),
+                append=True,
+            )
 
         return df
 

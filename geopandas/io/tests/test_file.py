@@ -1,6 +1,6 @@
 from collections import OrderedDict
 import datetime
-from distutils.version import LooseVersion
+from packaging.version import Version
 import io
 import os
 import pathlib
@@ -24,7 +24,7 @@ from geopandas.tests.util import PACKAGE_DIR, validate_boro_df
 import pytest
 
 
-FIONA_GE_1814 = str(fiona.__version__) >= LooseVersion("1.8.14")  # datetime roundtrip
+FIONA_GE_1814 = Version(fiona.__version__) >= Version("1.8.14")  # datetime roundtrip
 
 
 _CRS = "epsg:4326"
