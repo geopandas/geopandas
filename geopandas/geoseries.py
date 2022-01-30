@@ -4,7 +4,7 @@ import warnings
 import numpy as np
 import pandas as pd
 from pandas import Series, MultiIndex, DataFrame
-from pandas.core.internals import SingleBlockManager
+from pandas.core.internals import SingleBlockManager, BlockManager
 
 from pyproj import CRS
 from shapely.geometry.base import BaseGeometry
@@ -63,16 +63,16 @@ def _geoseries_expanddim(data=None, index=None, crs=None, **kwargs):
         # pandas default column name is 0, keep convention
         geo_col_name = data.name if data.name is not None else 0
 
-    elif isinstance(data, dict):  # Dict of {name : (Geo)Series}
-        # if more than one key i.e. from pd.concat([GeoSeries, GeoSeries])
-        # geom col comes from the left (same as for multiple gdfs in concat)
+    elif isinstance(data, dict) and len(data) == 1:
         geo_col_name = list(data.keys())[0]
+    elif isinstance(data, BlockManager) and len(data.items) == 1:
+        geo_col_name = data.items[0]
 
     if (df.dtypes == "geometry").sum() > 0:
         df = GeoDataFrame(df)
-        if geo_col_name is None:
+        if geo_col_name is None or not is_geometry_type(df[geo_col_name]):
             df._geometry_column_name = None
-        elif is_geometry_type(df[geo_col_name]):
+        else:
             df = df.set_geometry(geo_col_name, crs)
 
     return df
