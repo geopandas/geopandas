@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 from pandas import DataFrame, Series
 from pandas.core.accessor import CachedAccessor
+from pandas.core.indexing import _iLocIndexer
 
 from shapely.geometry import mapping, shape
 from shapely.geometry.base import BaseGeometry
@@ -23,6 +24,25 @@ from ._decorator import doc
 DEFAULT_GEO_COLUMN_NAME = "geometry"
 
 
+class _GeoiLocIndexer(_iLocIndexer):
+    # Overload iloc without _constructor_sliced to avoid
+    # https://github.com/geopandas/geopandas/issues/2282
+    # Long term could rename GeoSeries.geometry attribute to avoid needing to do this
+    def __init__(self, name, df):
+        self.df = df
+        self._geo_col = df._geometry_column_name
+        super().__init__(name=name, obj=df)
+
+    def __getitem__(self, item):
+        result = super(_iLocIndexer, self.df.iloc).__getitem__(item)
+        if type(result) == pd.Series and is_geometry_type(result):
+            result = GeoSeries(result)
+        elif type(result) == pd.DataFrame:
+            if self._geo_col in result:
+                result = result.set_geometry(self._geo_col)
+        return result
+
+
 def _geodataframe_constructor_with_fallback(*args, **kwargs):
     """
     A flexible constructor for GeoDataFrame._constructor, which falls back
@@ -35,17 +55,6 @@ def _geodataframe_constructor_with_fallback(*args, **kwargs):
         df = pd.DataFrame(df)
 
     return df
-
-
-def _geodataframe_constructor_sliced(data=None, index=None, crs=None, **kwargs):
-    srs = pd.Series(data, index, **kwargs)
-    # avoid preserving geoseries for row slices of single cols
-    # https://github.com/geopandas/geopandas/issues/2282
-    # This feels very flaky
-    if isinstance(srs.dtype, GeometryDtype) and srs.shape != (1,):
-        return GeoSeries(srs, crs=crs)
-    else:
-        return srs
 
 
 def _ensure_geometry(data, crs=None):
@@ -1378,6 +1387,10 @@ individually so that features may have different properties
                 warnings.warn("Geometry column does not contain geometry.")
         super().__setitem__(key, value)
 
+    @property
+    def iloc(self):
+        return _GeoiLocIndexer("iloc", self)
+
     #
     # Implement pandas methods
     #
@@ -1434,10 +1447,6 @@ individually so that features may have different properties
     @property
     def _constructor(self):
         return _geodataframe_constructor_with_fallback
-
-    @property
-    def _constructor_sliced(self):
-        return _geodataframe_constructor_sliced
 
     def __finalize__(self, other, method=None, **kwargs):
         """propagate metadata from other to self"""
