@@ -1444,7 +1444,12 @@ individually so that features may have different properties
             else:
                 if self.crs is not None and result.crs is None:
                     result.set_crs(self.crs, inplace=True)
-
+        elif isinstance(result, Series) and not isinstance(result, GeoSeries):
+            # This would be fixed by _constructor_sliced
+            try:
+                result = _ensure_geometry(result)
+            except TypeError:
+                pass
         return result
 
     @property
