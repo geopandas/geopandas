@@ -41,8 +41,16 @@ def _geodataframe_constructor_sliced(data=None, index=None, crs=None, **kwargs):
     srs = pd.Series(data, index, **kwargs)
     # avoid preserving geoseries for row slices of single cols
     # https://github.com/geopandas/geopandas/issues/2282
-    # This feels very flaky
-    if isinstance(srs.dtype, GeometryDtype) and srs.shape != (1,):
+    if not isinstance(data, (list, int, dict)):
+        print(f"\ncontructor fallback got data {type(data)} ->{data.dtype}:\n{data}")
+    # Row slices of homogenous dtypes e.g df[["geometry", "geometry2"]].loc[0]
+    # pass GeometryArrays
+    if isinstance(data, GeometryArray):
+        print("\t got geometry array, shape was ", data.shape)
+    if isinstance(data, GeometryArray):  # and data.shape==(1,)
+        return srs
+
+    if isinstance(srs.dtype, GeometryDtype):
         return GeoSeries(srs, crs=crs)
     else:
         return srs
