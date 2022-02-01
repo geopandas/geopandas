@@ -39,21 +39,12 @@ def _geodataframe_constructor_with_fallback(*args, **kwargs):
 
 def _geodataframe_constructor_sliced(data=None, index=None, crs=None, **kwargs):
     srs = pd.Series(data, index, **kwargs)
-    # avoid preserving geoseries for row slices of single cols
-    # https://github.com/geopandas/geopandas/issues/2282
-    if not isinstance(data, (list, int, dict)):
-        print(f"\ncontructor fallback got data {type(data)} ->{data.dtype}:\n{data}")
     # Row slices of homogenous dtypes e.g df[["geometry", "geometry2"]].loc[0]
-    # pass GeometryArrays
-    if isinstance(data, GeometryArray):
-        print("\t got geometry array, shape was ", data.shape)
-    if isinstance(data, GeometryArray):  # and data.shape==(1,)
-        return srs
-
-    if isinstance(srs.dtype, GeometryDtype):
-        return GeoSeries(srs, crs=crs)
-    else:
-        return srs
+    # pass GeometryArrays, these should stay as pd.Series
+    # https://github.com/geopandas/geopandas/issues/2282
+    if is_geometry_type(srs) and not isinstance(data, GeometryArray):
+        srs = GeoSeries(srs, crs=crs)
+    return srs
 
 
 def _ensure_geometry(data, crs=None):
