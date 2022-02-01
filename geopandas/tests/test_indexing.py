@@ -59,7 +59,7 @@ def test_constructor_sliced_column_slices(df):
     assert type(sub.iloc[:, geo_idx]) == GeoSeries
 
     # check iloc columns slices are pd.Series instead
-    assert type(df.iloc[0, :], pd.Series)
+    assert type(df.iloc[0, :]) == pd.Series
 
 
 def test_constructor_sliced_in_pandas_methods(df):
