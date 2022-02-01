@@ -127,8 +127,10 @@ def test_indexing_loc_getattr_geometry(df):
     # https://github.com/geopandas/geopandas/issues/2282
     res = df[["geometry"]].loc[0]
     # row slices shouldn't be GeoSeries, even if they have a geometry col
-    # so that row.geometry returns a shapely object, not GeoSeries.geometry
     assert type(res) == pd.Series
+    # if res is a Series, then GeoSeries.geometry shouldn't precede
+    # Series.__getattr__("geometry")
+    # This is technically redundant, but was the key point in the issue
     assert res.geometry == Point(0, 0)
 
 
