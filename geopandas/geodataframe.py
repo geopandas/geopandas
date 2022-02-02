@@ -765,7 +765,8 @@ es": {"name": "urn:ogc:def:crs:EPSG::4326"}}}'
         This differs from `_to_geo()` only in that it is a property with
         default args instead of a method.
 
-        CRS of the dataframe is not passed on to the output, unlike `to_json()`.
+        CRS of the dataframe is not passed on to the output, unlike
+        :meth:`~GeoDataFrame.to_json()`.
 
         Examples
         --------
