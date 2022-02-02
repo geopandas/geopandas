@@ -7,6 +7,7 @@ from pandas import DataFrame, Index, MultiIndex, Series
 from shapely.geometry import LinearRing, LineString, MultiPoint, Point, Polygon
 from shapely.geometry.collection import GeometryCollection
 from shapely.ops import unary_union
+from shapely import wkt
 
 from geopandas import GeoDataFrame, GeoSeries
 from geopandas.base import GeoPandasBase
@@ -72,6 +73,10 @@ class TestGeomMethods:
         self.landmarks = GeoSeries([self.esb, self.sol], crs="epsg:4326")
         self.pt2d = Point(-73.9847, 40.7484)
         self.landmarks_mixed = GeoSeries([self.esb, self.sol, self.pt2d], crs=4326)
+        self.pt_empty = wkt.loads("POINT EMPTY")
+        self.landmarks_mixed_empty = GeoSeries([
+            self.esb, self.sol, self.pt2d, self.pt_empty
+        ], crs=4326)
         self.l1 = LineString([(0, 0), (0, 1), (1, 1)])
         self.l2 = LineString([(0, 0), (1, 0), (1, 1), (0, 1)])
         self.g5 = GeoSeries([self.l1, self.l2])
@@ -616,6 +621,15 @@ class TestGeomMethods:
         # mixed dimensions
         expected_z = [30.3244, 31.2344, np.nan]
         assert_array_dtype_equal(expected_z, self.landmarks_mixed.geometry.z)
+
+    def test_xyz_points_empty(self):
+        expected_x = [-73.9847, -74.0446, -73.9847, np.nan]
+        expected_y = [40.7484, 40.6893, 40.7484, np.nan]
+        expected_z = [30.3244, 31.2344, np.nan, np.nan]
+
+        assert_array_dtype_equal(expected_x, self.landmarks_mixed_empty.geometry.x)
+        assert_array_dtype_equal(expected_y, self.landmarks_mixed_empty.geometry.y)
+        assert_array_dtype_equal(expected_z, self.landmarks_mixed_empty.geometry.z)
 
     def test_xyz_polygons(self):
         # accessing x attribute in polygon geoseries should raise an error
