@@ -74,9 +74,9 @@ class TestGeomMethods:
         self.pt2d = Point(-73.9847, 40.7484)
         self.landmarks_mixed = GeoSeries([self.esb, self.sol, self.pt2d], crs=4326)
         self.pt_empty = wkt.loads("POINT EMPTY")
-        self.landmarks_mixed_empty = GeoSeries([
-            self.esb, self.sol, self.pt2d, self.pt_empty
-        ], crs=4326)
+        self.landmarks_mixed_empty = GeoSeries(
+            [self.esb, self.sol, self.pt2d, self.pt_empty], crs=4326
+        )
         self.l1 = LineString([(0, 0), (0, 1), (1, 1)])
         self.l2 = LineString([(0, 0), (1, 0), (1, 1), (0, 1)])
         self.g5 = GeoSeries([self.l1, self.l2])
