@@ -5,6 +5,7 @@ import pytest
 from shapely.geometry import Point
 
 from geopandas import GeoDataFrame, GeoSeries
+import geopandas._compat as compat
 
 
 crs_osgb = pyproj.CRS(27700)
@@ -210,5 +211,18 @@ def test_apply(df):
     )
     assert_object(df[[geo_name]].apply(identity, axis=1), GeoDataFrame, geo_name)
     assert_object(df[["geometry2", "value1"]].apply(identity, axis=1), pd.DataFrame)
-    assert_object(df[["geometry2"]].apply(identity, axis=1), GeoDataFrame, None, None)
+
     assert_object(df[["value1"]].apply(identity, axis=1), pd.DataFrame)
+    # if compat # https://github.com/pandas-dev/pandas/pull/30091
+
+
+@pytest.mark.skipif(
+    not compat.PANDAS_GE_10,
+    reason="pre pandas 1.0, transpose does not preserve EA types",
+    # https://github.com/pandas-dev/pandas/pull/30091
+)
+def test_apply_axis1_secondary_geo_cols(df):
+    def identity(x):
+        return x
+
+    assert_object(df[["geometry2"]].apply(identity, axis=1), GeoDataFrame, None, None)
