@@ -214,10 +214,33 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
     def _get_geometry(self):
         if self._geometry_column_name not in self:
-            raise AttributeError(
-                "No geometry data set yet (expected in"
-                " column '%s'.)" % self._geometry_column_name
-            )
+            if self._geometry_column_name is None:
+                msg = (
+                    "You are calling a geospatial method on the GeoDataFrame, "
+                    "but the default active geometry column to use has not been set. "
+                )
+            else:
+                msg = (
+                    "You are calling a geospatial method on the GeoDataFrame, "
+                    f"but the active geometry column ({self._geometry_column_name}) "
+                    "is no longer present. "
+                )
+            geo_cols = self.columns[self.dtypes == "geometry"]
+            if len(geo_cols) > 0:
+                msg += (
+                    f"There are columns with geometry data type ({geo_cols}), and you "
+                    "can either set this as the active geometry with "
+                    'df.set_geometry("name") or access this column as a '
+                    'GeoSeries (df["name"]) and call the method directly on it.'
+                )
+            else:
+                msg += (
+                    "There are no existing columns with geometry data type, you can "
+                    "add a geometry column as the active geometry column with "
+                    "df.set_geometry. "
+                )
+
+            raise AttributeError(msg)
         return self[self._geometry_column_name]
 
     def _set_geometry(self, col):

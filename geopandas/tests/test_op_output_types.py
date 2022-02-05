@@ -61,7 +61,18 @@ def assert_object(result, expected_type, geo_name="geometry", crs=crs_wgs):
         if geo_name is not None:
             _check_metadata_gdf(result, geo_name=geo_name, crs=crs)
         else:
-            with pytest.raises(AttributeError, match="No geometry data set yet"):
+            if result._geometry_column_name is None:
+                msg = (
+                    "You are calling a geospatial method on the GeoDataFrame, "
+                    "but the default active"
+                )
+            else:
+                msg = (
+                    "You are calling a geospatial method on the GeoDataFrame, but "
+                    r"the active geometry column \("
+                    rf"{result._geometry_column_name}\) is no longer present"
+                )
+            with pytest.raises(AttributeError, match=msg):
                 result.geometry.name  # be explicit that geometry is invalid here
     elif expected_type == GeoSeries:
         _check_metadata_gs(result, name=geo_name, crs=crs)
