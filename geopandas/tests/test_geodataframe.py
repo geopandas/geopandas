@@ -336,6 +336,28 @@ class TestDataFrame:
         assert isinstance(result, GeoDataFrame)
         assert isinstance(result.index, pd.DatetimeIndex)
 
+    def test_get_geometry_invalid(self):
+        df = GeoDataFrame()
+        df["geom"] = self.df.geometry
+        msg_geo_col_none = "default active geometry column to use has not been set. "
+        msg_geo_col_missing = "is no longer present. "
+
+        with pytest.raises(AttributeError, match=msg_geo_col_missing):
+            df.geometry
+        df2 = self.df.copy()
+        df2["geom2"] = df2.geometry
+        df2 = df2[["BoroCode", "BoroName", "geom2"]]
+        with pytest.raises(AttributeError, match=msg_geo_col_none):
+            df2.geometry
+
+        msg_other_geo_cols_present = "There are columns with geometry data type"
+        msg_no_other_geo_cols = "There are no existing columns with geometry data type"
+        with pytest.raises(AttributeError, match=msg_other_geo_cols_present):
+            df2.geometry
+
+        with pytest.raises(AttributeError, match=msg_no_other_geo_cols):
+            GeoDataFrame().geometry
+
     def test_align(self):
         df = self.df2
 
