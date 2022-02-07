@@ -370,6 +370,21 @@ class TestSpatialJoin:
             ).set_index("myidx2")
         assert_geodataframe_equal(result, expected)
 
+        # but also add suffixes if both left and right have the same index
+        df1.index.name = "myidx"
+        df2.index.name = "myidx"
+        result = sjoin(df1, df2, how=how)
+        if how in ("inner", "left"):
+            expected = GeoDataFrame(
+                {"myidx_left": [1, 2], "geometry": geoms, "myidx_right": ["a", "b"]}
+            ).set_index("myidx_left")
+        else:
+            # right join
+            expected = GeoDataFrame(
+                {"myidx_right": ["a", "b"], "myidx_left": [1, 2], "geometry": geoms},
+            ).set_index("myidx_right")
+        assert_geodataframe_equal(result, expected)
+
     @pytest.mark.parametrize("how", ["inner", "left", "right"])
     def test_duplicate_column_index_name(self, how):
         # case where a left column and the right index have the same name or the
