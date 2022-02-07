@@ -252,7 +252,7 @@ def _reset_index_with_suffix(df, suffix, other):
 
 def _process_column_names_with_suffix(
     left: pd.Index, right: pd.Index, suffixes, left_df, right_df
-) -> tuple[pd.Index, pd.Index]:
+):
     """
     Add suffixes to overlapping labels (ignoring the geometry column).
 
