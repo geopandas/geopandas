@@ -351,16 +351,31 @@ class TestSpatialJoin:
         assert_frame_equal(res, exp, check_index_type=False)
 
     @pytest.mark.parametrize("how", ["inner", "left", "right"])
+    def test_index_names(self, how):
+        # preserve names of both left and right index
+        geoms = [Point(1, 1), Point(2, 2)]
+        df1 = GeoDataFrame({"geometry": geoms}, index=pd.Index([1, 2], name="myidx1"))
+        df2 = GeoDataFrame(
+            {"geometry": geoms}, index=pd.Index(["a", "b"], name="myidx2")
+        )
+        result = sjoin(df1, df2, how=how)
+        if how in ("inner", "left"):
+            expected = GeoDataFrame(
+                {"myidx1": [1, 2], "geometry": geoms, "myidx2": ["a", "b"]}
+            ).set_index("myidx1")
+        else:
+            # right join
+            expected = GeoDataFrame(
+                {"myidx2": ["a", "b"], "myidx1": [1, 2], "geometry": geoms},
+            ).set_index("myidx2")
+        assert_geodataframe_equal(result, expected)
+
+    @pytest.mark.parametrize("how", ["inner", "left", "right"])
     def test_duplicate_column_index_name(self, how):
         # case where a left column and the right index have the same name or the
         # other way around -> correctly add suffix or preserve index name
         geoms = [Point(1, 1), Point(2, 2)]
-        df1 = GeoDataFrame(
-            {
-                "myidx": [1, 2],
-                "geometry": geoms,
-            }
-        )
+        df1 = GeoDataFrame({"myidx": [1, 2], "geometry": geoms})
         df2 = GeoDataFrame(
             {"geometry": geoms}, index=pd.Index(["a", "b"], name="myidx")
         )
@@ -373,7 +388,7 @@ class TestSpatialJoin:
             # right join
             expected = GeoDataFrame(
                 {"index_left": [0, 1], "myidx_left": [1, 2], "geometry": geoms},
-                index=pd.Index(["a", "b"], name="myidx"),
+                index=pd.Index(["a", "b"], name="myidx_right"),
             )
         assert_geodataframe_equal(result, expected)
 
@@ -381,13 +396,110 @@ class TestSpatialJoin:
         if how in ("inner", "left"):
             expected = GeoDataFrame(
                 {"geometry": geoms, "index_right": [0, 1], "myidx_right": [1, 2]},
-                index=pd.Index(["a", "b"], name="myidx"),
+                index=pd.Index(["a", "b"], name="myidx_left"),
             )
         else:
             # right join
             expected = GeoDataFrame(
                 {"myidx_left": ["a", "b"], "myidx_right": [1, 2], "geometry": geoms},
             )
+        assert_geodataframe_equal(result, expected)
+
+    @pytest.mark.parametrize("how", ["inner", "left", "right"])
+    def test_duplicate_column_index_name_multiindex(self, how):
+        # case where a left column and the right index have the same name or the
+        # other way around -> correctly add suffix or preserve index name
+        geoms = [Point(1, 1), Point(2, 2)]
+        df1 = GeoDataFrame({"myidx": [1, 2], "geometry": geoms})
+        df2 = GeoDataFrame(
+            {"geometry": geoms},
+            index=pd.MultiIndex.from_tuples(
+                [("a", 1), ("b", 2)], names=["myidx", "level2"]
+            ),
+        )
+        result = sjoin(df1, df2, how=how)
+        if how in ("inner", "left"):
+            expected = GeoDataFrame(
+                {
+                    "myidx_left": [1, 2],
+                    "geometry": geoms,
+                    "myidx_right": ["a", "b"],
+                    "level2": [1, 2],
+                }
+            )
+        else:
+            # right join
+            expected = GeoDataFrame(
+                {"index_left": [0, 1], "myidx_left": [1, 2], "geometry": geoms},
+                index=pd.MultiIndex.from_tuples(
+                    [("a", 1), ("b", 2)], names=["myidx_right", "level2"]
+                ),
+            )
+        assert_geodataframe_equal(result, expected)
+
+        result = sjoin(df2, df1, how=how)
+        if how in ("inner", "left"):
+            expected = GeoDataFrame(
+                {"geometry": geoms, "index_right": [0, 1], "myidx_right": [1, 2]},
+                index=pd.MultiIndex.from_tuples(
+                    [("a", 1), ("b", 2)], names=["myidx_left", "level2"]
+                ),
+            )
+        else:
+            # right join
+            expected = GeoDataFrame(
+                {
+                    "myidx_left": ["a", "b"],
+                    "level2": [1, 2],
+                    "myidx_right": [1, 2],
+                    "geometry": geoms,
+                },
+            )
+        assert_geodataframe_equal(result, expected)
+
+    @pytest.mark.parametrize("how", ["inner", "left", "right"])
+    def test_conflicting_column_index_name(self, how):
+        # test case where the auto-generated index name conflicts
+        geoms = [Point(1, 1), Point(2, 2)]
+        df1 = GeoDataFrame({"index_right": [1, 2], "geometry": geoms})
+        df2 = GeoDataFrame({"geometry": geoms})
+        with pytest.raises(ValueError, match="'index_right' cannot be a column name"):
+            sjoin(df1, df2, how=how)
+
+    @pytest.mark.xfail
+    @pytest.mark.parametrize("how", ["inner", "left", "right"])
+    def test_conflicting_column_with_suffix(self, how):
+        # test case where the auto-generated index name conflicts
+        geoms = [Point(1, 1), Point(2, 2)]
+        df1 = GeoDataFrame(
+            {"column": [1, 2], "column_right": ["a", "b"], "geometry": geoms}
+        )
+        df2 = GeoDataFrame({"column": [0.1, 0.2], "geometry": geoms})
+
+        result = sjoin(df1, df2, how=how)
+        if how in ("inner", "left"):
+            expected = GeoDataFrame(
+                {1: [1, 2], 2: ["a", "b"], 3: geoms, 4: [0, 1], 5: [0.1, 0.2]}
+            )
+            expected.columns = [
+                "column_left",
+                "column_right",
+                "geometry",
+                "index_right",
+                "column_right",
+            ]
+        else:
+            # right join
+            expected = GeoDataFrame(
+                {1: [0, 1], 2: [1, 2], 3: ["a", "b"], 4: [0.1, 0.2], 5: geoms}
+            )
+            expected.columns = [
+                "index_left",
+                "column_left",
+                "column_right",
+                "column_right",
+                "geometry",
+            ]
         assert_geodataframe_equal(result, expected)
 
 

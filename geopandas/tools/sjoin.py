@@ -1,3 +1,4 @@
+from functools import partial
 from typing import Optional
 import warnings
 
@@ -165,18 +166,6 @@ def _basic_checks(left_df, right_df, how, lsuffix, rsuffix):
     if not _check_crs(left_df, right_df):
         _crs_mismatch_warn(left_df, right_df, stacklevel=4)
 
-    index_left = "index_{}".format(lsuffix)
-    index_right = "index_{}".format(rsuffix)
-
-    # due to GH 352
-    if any(left_df.columns.isin([index_left, index_right])) or any(
-        right_df.columns.isin([index_left, index_right])
-    ):
-        raise ValueError(
-            "'{0}' and '{1}' cannot be names in the frames being"
-            " joined".format(index_left, index_right)
-        )
-
 
 def _geom_predicate_query(left_df, right_df, predicate):
     """Compute geometric comparisons and get matching indices.
@@ -233,6 +222,99 @@ def _geom_predicate_query(left_df, right_df, predicate):
     return indices
 
 
+def _reset_index_with_suffix(df, suffix, other):
+    """
+    Equivalent of df.reset_index(), but with adding 'suffix' to auto-generated
+    column names.
+    """
+    index_original = df.index.names
+    df_reset = df.reset_index()
+    column_names = df_reset.columns.values
+    for i, label in enumerate(index_original):
+        # if the original label was None, add suffix to auto-generated name
+        if label is None:
+            new_label = column_names[i]
+            if "level" in new_label:
+                # reset_index of MultiIndex gives "level_i" names, preserve the "i"
+                lev = new_label.split("_")[1]
+                new_label = f"index_{suffix}{lev}"
+            else:
+                new_label = f"index_{suffix}"
+            # check new label will not be in other dataframe
+            if new_label in df.columns or new_label in other.columns:
+                raise ValueError(
+                    "'{0}' cannot be a column name in the frames being"
+                    " joined".format(new_label)
+                )
+            column_names[i] = new_label
+    return df_reset, pd.Index(column_names)
+
+
+def _process_column_names_with_suffix(
+    left: pd.Index, right: pd.Index, suffixes, left_df, right_df
+) -> tuple[pd.Index, pd.Index]:
+    """
+    Add suffixes to overlapping labels (ignoring the geometry column).
+
+    This is based on pandas' merge logic at https://github.com/pandas-dev/pandas/blob/
+    a0779adb183345a8eb4be58b3ad00c223da58768/pandas/core/reshape/merge.py#L2300-L2370
+    """
+    to_rename = left.intersection(right)
+    if len(to_rename) == 0:
+        return left, right
+
+    lsuffix, rsuffix = suffixes
+
+    if not lsuffix and not rsuffix:
+        raise ValueError(f"columns overlap but no suffix specified: {to_rename}")
+
+    def renamer(x, suffix, geometry):
+        if x in to_rename and x != geometry and suffix is not None:
+            return f"{x}_{suffix}"
+        return x
+
+    lrenamer = partial(renamer, suffix=lsuffix, geometry=left_df._geometry_column_name)
+    rrenamer = partial(renamer, suffix=rsuffix, geometry=right_df._geometry_column_name)
+
+    left_renamed = pd.Index([lrenamer(lab) for lab in left])
+    right_renamed = pd.Index([rrenamer(lab) for lab in right])
+
+    dups = []
+    if not left_renamed.is_unique:
+        # Only warn when duplicates are caused because of suffixes, already duplicated
+        # columns in origin should not warn
+        dups = left_renamed[(left_renamed.duplicated()) & (~left.duplicated())].tolist()
+    if not right_renamed.is_unique:
+        dups.extend(
+            right_renamed[(right_renamed.duplicated()) & (~right.duplicated())].tolist()
+        )
+    if dups:
+        warnings.warn(
+            f"Passing 'suffixes' which cause duplicate columns {set(dups)} in the "
+            f"result is deprecated and will raise a MergeError in a future version.",
+            FutureWarning,
+            stacklevel=4,
+        )
+
+    return left_renamed, right_renamed
+
+
+def _restore_index(joined, index_names, index_names_original):
+    """
+    Set back the the original index columns, and restoring their name as `None`
+    if they didn't have a name originally.
+    """
+    joined = joined.set_index(list(index_names))
+
+    # restore the fact that the index didn't have a name
+    joined_index_names = list(joined.index.names)
+    for i, label in enumerate(index_names_original):
+        if label is None:
+            joined_index_names[i] = None
+    joined.index.names = joined_index_names
+    return joined
+
+
 def _frame_join(join_df, left_df, right_df, how, lsuffix, rsuffix):
     """Join the GeoDataFrames at the DataFrame level.
 
@@ -264,44 +346,28 @@ def _frame_join(join_df, left_df, right_df, how, lsuffix, rsuffix):
     # and store references to the original indices, to be reaffixed later.
     # GH 352
     left_df = left_df.copy(deep=True)
-    try:
-        left_index_name = left_df.index.name
-        if left_index_name is not None:
-            index_left = left_index_name
-        else:
-            index_left = "index_{}".format(lsuffix)
-            left_df.index = left_df.index.rename(index_left)
-    except TypeError:
-        left_index_name = left_df.index.names
-        if all(name is not None for name in left_index_name):
-            index_left = left_index_name
-        else:
-            index_left = [
-                "index_{}".format(lsuffix + str(pos))
-                for pos, ix in enumerate(left_df.index.names)
-            ]
-            left_df.index = left_df.index.rename(index_left)
-    left_df = left_df.reset_index()
+    left_nlevels = left_df.index.nlevels
+    left_index_original = left_df.index.names
+    left_df, left_column_names = _reset_index_with_suffix(left_df, lsuffix, right_df)
 
     right_df = right_df.copy(deep=True)
-    try:
-        right_index_name = right_df.index.name
-        if right_index_name is not None:
-            index_right = right_index_name
-        else:
-            index_right = "index_{}".format(rsuffix)
-            right_df.index = right_df.index.rename(index_right)
-    except TypeError:
-        right_index_name = right_df.index.names
-        if all(name is not None for name in right_index_name):
-            index_right = right_index_name
-        else:
-            index_right = [
-                "index_{}".format(rsuffix + str(pos))
-                for pos, ix in enumerate(right_df.index.names)
-            ]
-            right_df.index = right_df.index.rename(index_right)
-    right_df = right_df.reset_index()
+    right_nlevels = right_df.index.nlevels
+    right_index_original = right_df.index.names
+    right_df, right_column_names = _reset_index_with_suffix(right_df, rsuffix, left_df)
+
+    # if conflicting names in left and right, add suffix
+    left_column_names, right_column_names = _process_column_names_with_suffix(
+        left_column_names,
+        right_column_names,
+        (lsuffix, rsuffix),
+        left_df,
+        right_df,
+    )
+    left_df.columns = left_column_names
+    right_df.columns = right_column_names
+
+    left_index = left_df.columns[:left_nlevels]
+    right_index = right_df.columns[:right_nlevels]
 
     # perform join on the dataframes
     if how == "inner":
@@ -312,18 +378,11 @@ def _frame_join(join_df, left_df, right_df, how, lsuffix, rsuffix):
                 right_df.drop(right_df.geometry.name, axis=1),
                 left_on="_key_right",
                 right_index=True,
-                suffixes=("_{}".format(lsuffix), "_{}".format(rsuffix)),
+                suffixes=(None, None),
             )
             .drop(["_key_right"], axis=1)
         )
-        try:
-            joined = joined.set_index(index_left)
-        except KeyError:
-            joined = joined.set_index(index_left + "_{}".format(lsuffix))
-        if isinstance(index_left, list):
-            joined.index.names = left_index_name
-        else:
-            joined.index.name = left_index_name
+        joined = _restore_index(joined, left_index, left_index_original)
 
     elif how == "left":
         join_df = join_df.set_index("_key_left")
@@ -334,18 +393,11 @@ def _frame_join(join_df, left_df, right_df, how, lsuffix, rsuffix):
                 how="left",
                 left_on="_key_right",
                 right_index=True,
-                suffixes=("_{}".format(lsuffix), "_{}".format(rsuffix)),
+                suffixes=(None, None),
             )
             .drop(["_key_right"], axis=1)
         )
-        try:
-            joined = joined.set_index(index_left)
-        except KeyError:
-            joined = joined.set_index(index_left + "_{}".format(lsuffix))
-        if isinstance(index_left, list):
-            joined.index.names = left_index_name
-        else:
-            joined.index.name = left_index_name
+        joined = _restore_index(joined, left_index, left_index_original)
 
     else:  # how == 'right':
         joined = (
@@ -357,19 +409,12 @@ def _frame_join(join_df, left_df, right_df, how, lsuffix, rsuffix):
                 left_index=True,
                 right_on="_key_left",
                 how="right",
-                suffixes=("_{}".format(lsuffix), "_{}".format(rsuffix)),
+                suffixes=(None, None),
             )
             .drop(["_key_left", "_key_right"], axis=1)
             .set_geometry(right_df.geometry.name)
         )
-        try:
-            joined = joined.set_index(index_right)
-        except KeyError:
-            joined = joined.set_index(index_right + "_{}".format(rsuffix))
-        if isinstance(index_right, list):
-            joined.index.names = right_index_name
-        else:
-            joined.index.name = right_index_name
+        joined = _restore_index(joined, right_index, right_index_original)
 
     return joined
 
