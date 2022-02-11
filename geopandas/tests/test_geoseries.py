@@ -379,15 +379,6 @@ class TestSeries:
         assert_geoseries_equal(expected, GeoSeries.from_xy(x, y, z))
 
 
-def test_missing_values_empty_warning():
-    s = GeoSeries([Point(1, 1), None, np.nan, BaseGeometry(), Polygon()])
-    with pytest.warns(UserWarning):
-        s.isna()
-
-    with pytest.warns(UserWarning):
-        s.notna()
-
-
 @pytest.mark.filterwarnings("ignore::UserWarning")
 def test_missing_values():
     s = GeoSeries([Point(1, 1), None, np.nan, BaseGeometry(), Polygon()])
