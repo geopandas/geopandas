@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 from pandas import DataFrame, Series
 from pandas.core.accessor import CachedAccessor
+from pandas.core.internals import BlockManager
 
 from shapely.geometry import mapping, shape
 from shapely.geometry.base import BaseGeometry
@@ -30,8 +31,10 @@ def _geodataframe_constructor_with_fallback(*args, **kwargs):
     geometry column)
     """
     df = GeoDataFrame(*args, **kwargs)
-    geometry_cols_mask = df.dtypes == "geometry"
-    if len(geometry_cols_mask) == 0 or geometry_cols_mask.sum() == 0:
+    # df._data.get_dtypes() is fast version of data.dtypes
+    # (without constructing a (Geo)Series)
+    dtypes = df._data.get_dtypes()
+    if len(dtypes) == 0 or (dtypes == "geometry").sum() == 0:
         df = pd.DataFrame(df)
 
     return df
@@ -73,6 +76,15 @@ def _crs_mismatch_warning():
         FutureWarning,
         stacklevel=3,
     )
+
+
+def _ensure_no_duplicated_geometry_column(df):
+    if "geometry" in df.columns:
+        if (np.asarray(df.columns) == "geometry").sum() > 1:
+            raise ValueError(
+                "GeoDataFrame does not support multiple columns "
+                "using the geometry column name 'geometry'."
+            )
 
 
 class GeoDataFrame(GeoPandasBase, DataFrame):
@@ -135,6 +147,19 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         with compat.ignore_shapely2_warnings():
             super().__init__(data, *args, **kwargs)
 
+        # fastpath - BlockManager is only passed when this is coming from
+        # internal code with _constructor -> if there are no other keywords,
+        # we can return directly avoid setting the geometry column
+        if (
+            isinstance(data, BlockManager)
+            and geometry is None
+            and crs is None
+            and not args
+            and not kwargs
+        ):
+            _ensure_no_duplicated_geometry_column(self)
+            return
+
         # need to set this before calling self['geometry'], because
         # getitem accesses crs
         self._crs = CRS.from_user_input(crs) if crs else None
@@ -158,11 +183,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             # Check for multiple columns with name "geometry". If there are,
             # self["geometry"] is a gdf and constructor gets recursively recalled
             # by pandas internals trying to access this
-            if (self.columns == "geometry").sum() > 1:
-                raise ValueError(
-                    "GeoDataFrame does not support multiple columns "
-                    "using the geometry column name 'geometry'."
-                )
+            _ensure_no_duplicated_geometry_column(self)
 
             # only if we have actual geometry values -> call set_geometry
             index = self.index
