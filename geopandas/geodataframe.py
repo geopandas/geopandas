@@ -147,6 +147,10 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         with compat.ignore_shapely2_warnings():
             super().__init__(data, *args, **kwargs)
 
+        # need to set this before calling self['geometry'], because
+        # getitem accesses crs
+        self._crs = CRS.from_user_input(crs) if crs else None
+
         # fastpath - BlockManager is only passed when this is coming from
         # internal code with _constructor -> if there are no other keywords,
         # we can return directly avoid setting the geometry column
@@ -159,10 +163,6 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         ):
             _ensure_no_duplicated_geometry_column(self)
             return
-
-        # need to set this before calling self['geometry'], because
-        # getitem accesses crs
-        self._crs = CRS.from_user_input(crs) if crs else None
 
         # set_geometry ensures the geometry data have the proper dtype,
         # but is not called if `geometry=None` ('geometry' column present
