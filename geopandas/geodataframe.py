@@ -225,17 +225,17 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                     f"but the active geometry column ({self._geometry_column_name}) "
                     "is no longer present. "
                 )
-            geo_cols = self.columns[self.dtypes == "geometry"]
+            geo_cols = list(self.columns[self.dtypes == "geometry"])
             if len(geo_cols) > 0:
                 msg += (
-                    f"There are columns with geometry data type ({geo_cols}), and you "
+                    f"\nThere are columns with geometry data type ({geo_cols}), and you "
                     "can either set this as the active geometry with "
                     'df.set_geometry("name") or access this column as a '
                     'GeoSeries (df["name"]) and call the method directly on it.'
                 )
             else:
                 msg += (
-                    "There are no existing columns with geometry data type, you can "
+                    "\nThere are no existing columns with geometry data type, you can "
                     "add a geometry column as the active geometry column with "
                     "df.set_geometry. "
                 )
@@ -1375,7 +1375,7 @@ individually so that features may have different properties
                     result._geometry_column_name = geo_col
                 else:
                     result._geometry_column_name = None
-                    result.crs = None
+                    result._crs = None
             else:
                 result.__class__ = DataFrame
         return result
