@@ -228,7 +228,8 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             geo_cols = list(self.columns[self.dtypes == "geometry"])
             if len(geo_cols) > 0:
                 msg += (
-                    f"\nThere are columns with geometry data type ({geo_cols}), and you "
+                    f"\nThere are columns with geometry data type ({geo_cols}), and "
+                    "you "
                     "can either set this as the active geometry with "
                     'df.set_geometry("name") or access this column as a '
                     'GeoSeries (df["name"]) and call the method directly on it.'
