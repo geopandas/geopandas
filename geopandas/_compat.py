@@ -2,6 +2,7 @@ import contextlib
 from packaging.version import Version
 import importlib
 import os
+import sys
 import warnings
 
 import numpy as np
@@ -170,6 +171,16 @@ else:
     @contextlib.contextmanager
     def ignore_shapely2_warnings():
         yield
+
+
+if HAS_PYGEOS:
+    _geom = pygeos.Geometry("POINT (1 1)")
+    GEOMETRY_OBJECT_SIZE = sys.getsizeof(_geom)
+else:
+    import shapely.geometry
+
+    _geom = shapely.geometry.Point(1, 1)
+    GEOMETRY_OBJECT_SIZE = sys.getsizeof(_geom)
 
 
 def import_optional_dependency(name: str, extra: str = ""):

@@ -1118,7 +1118,7 @@ class GeometryArray(ExtensionArray):
 
     @property
     def nbytes(self):
-        return self.data.nbytes
+        return self.data.nbytes + len(self) * compat.GEOMETRY_OBJECT_SIZE
 
     def shift(self, periods=1, fill_value=None):
         """
