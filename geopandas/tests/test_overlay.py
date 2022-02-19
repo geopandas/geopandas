@@ -597,7 +597,7 @@ def test_overlap_make_valid(make_valid):
 
 class TestOverlayWikiExample:
     def setup_method(self):
-        self.layer_a = GeoDataFrame([{"geometry": box(0, 2, 6, 6)}])
+        self.layer_a = GeoDataFrame(geometry=[box(0, 2, 6, 6)])
 
         self.layer_b = GeoDataFrame([{"geometry": box(4, 0, 10, 4)}])
 
