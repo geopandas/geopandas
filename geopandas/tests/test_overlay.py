@@ -802,80 +802,46 @@ class TestOverlayWikiExample:
     def setup_method(self):
         self.layer_a = GeoDataFrame(geometry=[box(0, 2, 6, 6)])
 
-        self.layer_b = GeoDataFrame([{"geometry": box(4, 0, 10, 4)}])
+        self.layer_b = GeoDataFrame(geometry=[box(4, 0, 10, 4)])
 
-        self.intersection = GeoDataFrame([{"geometry": box(4, 2, 6, 4)}])
+        self.intersection = GeoDataFrame(geometry=[box(4, 2, 6, 4)])
 
         self.union = GeoDataFrame(
-            [
-                {"geometry": box(4, 2, 6, 4)},
-                {
-                    "geometry": Polygon(
-                        [(4, 2), (0, 2), (0, 6), (6, 6), (6, 4), (4, 4), (4, 2)]
-                    )
-                },
-                {
-                    "geometry": Polygon(
-                        [(10, 0), (4, 0), (4, 2), (6, 2), (6, 4), (10, 4), (10, 0)]
-                    )
-                },
+            geometry=[
+                box(4, 2, 6, 4),
+                Polygon([(4, 2), (0, 2), (0, 6), (6, 6), (6, 4), (4, 4), (4, 2)]),
+                Polygon([(10, 0), (4, 0), (4, 2), (6, 2), (6, 4), (10, 4), (10, 0)]),
             ]
         )
 
         self.a_difference_b = GeoDataFrame(
-            [
-                {
-                    "geometry": Polygon(
-                        [(4, 2), (0, 2), (0, 6), (6, 6), (6, 4), (4, 4), (4, 2)]
-                    )
-                }
-            ]
+            geometry=[Polygon([(4, 2), (0, 2), (0, 6), (6, 6), (6, 4), (4, 4), (4, 2)])]
         )
 
         self.b_difference_a = GeoDataFrame(
-            [
-                {
-                    "geometry": Polygon(
-                        [(10, 0), (4, 0), (4, 2), (6, 2), (6, 4), (10, 4), (10, 0)]
-                    )
-                }
+            geometry=[
+                Polygon([(10, 0), (4, 0), (4, 2), (6, 2), (6, 4), (10, 4), (10, 0)])
             ]
         )
 
         self.symmetric_difference = GeoDataFrame(
-            [
-                {
-                    "geometry": Polygon(
-                        [(4, 2), (0, 2), (0, 6), (6, 6), (6, 4), (4, 4), (4, 2)]
-                    )
-                },
-                {
-                    "geometry": Polygon(
-                        [(10, 0), (4, 0), (4, 2), (6, 2), (6, 4), (10, 4), (10, 0)]
-                    )
-                },
+            geometry=[
+                Polygon([(4, 2), (0, 2), (0, 6), (6, 6), (6, 4), (4, 4), (4, 2)]),
+                Polygon([(10, 0), (4, 0), (4, 2), (6, 2), (6, 4), (10, 4), (10, 0)]),
             ]
         )
 
         self.a_identity_b = GeoDataFrame(
-            [
-                {"geometry": box(4, 2, 6, 4)},
-                {
-                    "geometry": Polygon(
-                        [(4, 2), (0, 2), (0, 6), (6, 6), (6, 4), (4, 4), (4, 2)]
-                    )
-                },
+            geometry=[
+                box(4, 2, 6, 4),
+                Polygon([(4, 2), (0, 2), (0, 6), (6, 6), (6, 4), (4, 4), (4, 2)]),
             ]
         )
 
         self.b_identity_a = GeoDataFrame(
-            [
-                {"geometry": box(4, 2, 6, 4)},
-                {
-                    "geometry": Polygon(
-                        [(10, 0), (4, 0), (4, 2), (6, 2), (6, 4), (10, 4), (10, 0)]
-                    )
-                },
+            geometry=[
+                box(4, 2, 6, 4),
+                Polygon([(10, 0), (4, 0), (4, 2), (6, 2), (6, 4), (10, 4), (10, 0)]),
             ]
         )
 
