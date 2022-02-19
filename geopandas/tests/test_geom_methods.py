@@ -2,11 +2,12 @@ import string
 
 import numpy as np
 from numpy.testing import assert_array_equal
-from pandas import DataFrame, MultiIndex, Series
+from pandas import DataFrame, Index, MultiIndex, Series
 
 from shapely.geometry import LinearRing, LineString, MultiPoint, Point, Polygon
 from shapely.geometry.collection import GeometryCollection
 from shapely.ops import unary_union
+from shapely import wkt
 
 from geopandas import GeoDataFrame, GeoSeries
 from geopandas.base import GeoPandasBase
@@ -72,6 +73,10 @@ class TestGeomMethods:
         self.landmarks = GeoSeries([self.esb, self.sol], crs="epsg:4326")
         self.pt2d = Point(-73.9847, 40.7484)
         self.landmarks_mixed = GeoSeries([self.esb, self.sol, self.pt2d], crs=4326)
+        self.pt_empty = wkt.loads("POINT EMPTY")
+        self.landmarks_mixed_empty = GeoSeries(
+            [self.esb, self.sol, self.pt2d, self.pt_empty], crs=4326
+        )
         self.l1 = LineString([(0, 0), (0, 1), (1, 1)])
         self.l2 = LineString([(0, 0), (1, 0), (1, 1), (0, 1)])
         self.g5 = GeoSeries([self.l1, self.l2])
@@ -104,7 +109,7 @@ class TestGeomMethods:
         )
 
     def _test_unary_real(self, op, expected, a):
-        """ Tests for 'area', 'length', 'is_valid', etc. """
+        """Tests for 'area', 'length', 'is_valid', etc."""
         fcmp = assert_series_equal
         self._test_unary(op, expected, a, fcmp)
 
@@ -119,7 +124,7 @@ class TestGeomMethods:
         self._test_unary(op, expected, a, fcmp)
 
     def _test_binary_topological(self, op, expected, a, b, *args, **kwargs):
-        """ Tests for 'intersection', 'union', 'symmetric_difference', etc. """
+        """Tests for 'intersection', 'union', 'symmetric_difference', etc."""
         if isinstance(expected, GeoPandasBase):
             fcmp = assert_geoseries_equal
         else:
@@ -229,7 +234,7 @@ class TestGeomMethods:
         result = getattr(gdf, op)
         fcmp(result, expected)
 
-    # TODO reenable for all operations once we use pyproj > 2
+    # TODO re-enable for all operations once we use pyproj > 2
     # def test_crs_warning(self):
     #     # operations on geometries should warn for different CRS
     #     no_crs_g3 = self.g3.copy()
@@ -245,13 +250,15 @@ class TestGeomMethods:
                 "intersection", self.all_none, self.g1, self.empty
             )
 
-        assert len(self.g0.intersection(self.g9, align=True) == 8)
+        with pytest.warns(UserWarning, match="The indices .+ different"):
+            assert len(self.g0.intersection(self.g9, align=True) == 8)
         assert len(self.g0.intersection(self.g9, align=False) == 7)
 
     def test_union_series(self):
         self._test_binary_topological("union", self.sq, self.g1, self.g2)
 
-        assert len(self.g0.union(self.g9, align=True) == 8)
+        with pytest.warns(UserWarning, match="The indices .+ different"):
+            assert len(self.g0.union(self.g9, align=True) == 8)
         assert len(self.g0.union(self.g9, align=False) == 7)
 
     def test_union_polygon(self):
@@ -260,7 +267,8 @@ class TestGeomMethods:
     def test_symmetric_difference_series(self):
         self._test_binary_topological("symmetric_difference", self.sq, self.g3, self.g4)
 
-        assert len(self.g0.symmetric_difference(self.g9, align=True) == 8)
+        with pytest.warns(UserWarning, match="The indices .+ different"):
+            assert len(self.g0.symmetric_difference(self.g9, align=True) == 8)
         assert len(self.g0.symmetric_difference(self.g9, align=False) == 7)
 
     def test_symmetric_difference_poly(self):
@@ -273,7 +281,8 @@ class TestGeomMethods:
         expected = GeoSeries([GeometryCollection(), self.t2])
         self._test_binary_topological("difference", expected, self.g1, self.g2)
 
-        assert len(self.g0.difference(self.g9, align=True) == 8)
+        with pytest.warns(UserWarning, match="The indices .+ different"):
+            assert len(self.g0.difference(self.g9, align=True) == 8)
         assert len(self.g0.difference(self.g9, align=False) == 7)
 
     def test_difference_poly(self):
@@ -290,7 +299,7 @@ class TestGeomMethods:
         # binary geo empty result with right GeoSeries
         result = GeoSeries([l1]).intersection(GeoSeries([l2]))
         assert_geoseries_equal(result, expected)
-        # unary geo resulting in emtpy geometry
+        # unary geo resulting in empty geometry
         result = GeoSeries([GeometryCollection()]).convex_hull
         assert_geoseries_equal(result, expected)
 
@@ -350,12 +359,29 @@ class TestGeomMethods:
 
         self._test_unary_topological("unary_union", expected, g)
 
+        g2 = GeoSeries([p1, None])
+        self._test_unary_topological("unary_union", p1, g2)
+
+        g3 = GeoSeries([None, None])
+        assert g3.unary_union is None
+
+    def test_cascaded_union_deprecated(self):
+        p1 = self.t1
+        p2 = Polygon([(2, 0), (3, 0), (3, 1)])
+        g = GeoSeries([p1, p2])
+        with pytest.warns(
+            FutureWarning, match="The 'cascaded_union' attribute is deprecated"
+        ):
+            result = g.cascaded_union
+        assert result == g.unary_union
+
     def test_contains(self):
         expected = [True, False, True, False, False, False, False]
         assert_array_dtype_equal(expected, self.g0.contains(self.t1))
 
         expected = [False, True, True, True, True, True, False, False]
-        assert_array_dtype_equal(expected, self.g0.contains(self.g9, align=True))
+        with pytest.warns(UserWarning, match="The indices .+ different"):
+            assert_array_dtype_equal(expected, self.g0.contains(self.g9, align=True))
 
         expected = [False, False, True, False, False, False, False]
         assert_array_dtype_equal(expected, self.g0.contains(self.g9, align=False))
@@ -379,7 +405,8 @@ class TestGeomMethods:
         assert_array_dtype_equal(expected, self.crossed_lines.crosses(self.l3))
 
         expected = [False] * 8
-        assert_array_dtype_equal(expected, self.g0.crosses(self.g9, align=True))
+        with pytest.warns(UserWarning, match="The indices .+ different"):
+            assert_array_dtype_equal(expected, self.g0.crosses(self.g9, align=True))
 
         expected = [False] * 7
         assert_array_dtype_equal(expected, self.g0.crosses(self.g9, align=False))
@@ -389,7 +416,8 @@ class TestGeomMethods:
         assert_array_dtype_equal(expected, self.g0.disjoint(self.t1))
 
         expected = [False] * 8
-        assert_array_dtype_equal(expected, self.g0.disjoint(self.g9, align=True))
+        with pytest.warns(UserWarning, match="The indices .+ different"):
+            assert_array_dtype_equal(expected, self.g0.disjoint(self.g9, align=True))
 
         expected = [False, False, False, False, True, False, False]
         assert_array_dtype_equal(expected, self.g0.disjoint(self.g9, align=False))
@@ -426,7 +454,8 @@ class TestGeomMethods:
             index=range(8),
         )
 
-        assert_array_dtype_equal(expected, self.g0.relate(self.g9, align=True))
+        with pytest.warns(UserWarning, match="The indices .+ different"):
+            assert_array_dtype_equal(expected, self.g0.relate(self.g9, align=True))
 
         expected = Series(
             [
@@ -452,7 +481,8 @@ class TestGeomMethods:
         assert_array_dtype_equal(expected, self.g6.distance(self.na_none))
 
         expected = Series(np.array([np.nan, 0, 0, 0, 0, 0, np.nan, np.nan]), range(8))
-        assert_array_dtype_equal(expected, self.g0.distance(self.g9, align=True))
+        with pytest.warns(UserWarning, match="The indices .+ different"):
+            assert_array_dtype_equal(expected, self.g0.distance(self.g9, align=True))
 
         val = self.g0.iloc[4].distance(self.g9.iloc[4])
         expected = Series(np.array([0, 0, 0, 0, val, np.nan, np.nan]), self.g0.index)
@@ -479,7 +509,8 @@ class TestGeomMethods:
         assert_array_dtype_equal(expected, self.g0.intersects(self.empty_poly))
 
         expected = [False, True, True, True, True, True, False, False]
-        assert_array_dtype_equal(expected, self.g0.intersects(self.g9, align=True))
+        with pytest.warns(UserWarning, match="The indices .+ different"):
+            assert_array_dtype_equal(expected, self.g0.intersects(self.g9, align=True))
 
         expected = [True, True, True, True, False, False, False]
         assert_array_dtype_equal(expected, self.g0.intersects(self.g9, align=False))
@@ -492,7 +523,8 @@ class TestGeomMethods:
         assert_array_dtype_equal(expected, self.g4.overlaps(self.t1))
 
         expected = [False] * 8
-        assert_array_dtype_equal(expected, self.g0.overlaps(self.g9, align=True))
+        with pytest.warns(UserWarning, match="The indices .+ different"):
+            assert_array_dtype_equal(expected, self.g0.overlaps(self.g9, align=True))
 
         expected = [False] * 7
         assert_array_dtype_equal(expected, self.g0.overlaps(self.g9, align=False))
@@ -502,7 +534,8 @@ class TestGeomMethods:
         assert_array_dtype_equal(expected, self.g0.touches(self.t1))
 
         expected = [False] * 8
-        assert_array_dtype_equal(expected, self.g0.touches(self.g9, align=True))
+        with pytest.warns(UserWarning, match="The indices .+ different"):
+            assert_array_dtype_equal(expected, self.g0.touches(self.g9, align=True))
 
         expected = [True, False, False, True, False, False, False]
         assert_array_dtype_equal(expected, self.g0.touches(self.g9, align=False))
@@ -515,7 +548,8 @@ class TestGeomMethods:
         assert_array_dtype_equal(expected, self.g0.within(self.sq))
 
         expected = [False, True, True, True, True, True, False, False]
-        assert_array_dtype_equal(expected, self.g0.within(self.g9, align=True))
+        with pytest.warns(UserWarning, match="The indices .+ different"):
+            assert_array_dtype_equal(expected, self.g0.within(self.g9, align=True))
 
         expected = [False, True, False, False, False, False, False]
         assert_array_dtype_equal(expected, self.g0.within(self.g9, align=False))
@@ -532,7 +566,8 @@ class TestGeomMethods:
         assert_series_equal(res, exp)
 
         expected = [False, True, True, True, True, True, False, False]
-        assert_array_dtype_equal(expected, self.g0.covers(self.g9, align=True))
+        with pytest.warns(UserWarning, match="The indices .+ different"):
+            assert_array_dtype_equal(expected, self.g0.covers(self.g9, align=True))
 
         expected = [False, False, True, False, False, False, False]
         assert_array_dtype_equal(expected, self.g0.covers(self.g9, align=False))
@@ -552,7 +587,8 @@ class TestGeomMethods:
         assert_series_equal(res, exp)
 
         expected = [False, True, True, True, True, True, False, False]
-        assert_array_dtype_equal(expected, self.g0.covered_by(self.g9, align=True))
+        with pytest.warns(UserWarning, match="The indices .+ different"):
+            assert_array_dtype_equal(expected, self.g0.covered_by(self.g9, align=True))
 
         expected = [False, True, False, False, False, False, False]
         assert_array_dtype_equal(expected, self.g0.covered_by(self.g9, align=False))
@@ -565,6 +601,8 @@ class TestGeomMethods:
         expected = Series(np.array([False] * len(self.g1)), self.g1.index)
         self._test_unary_real("is_empty", expected, self.g1)
 
+    # for is_ring we raise a warning about the value for Polygon changing
+    @pytest.mark.filterwarnings("ignore:is_ring:FutureWarning")
     def test_is_ring(self):
         expected = Series(np.array([True] * len(self.g1)), self.g1.index)
         self._test_unary_real("is_ring", expected, self.g1)
@@ -589,6 +627,15 @@ class TestGeomMethods:
         # mixed dimensions
         expected_z = [30.3244, 31.2344, np.nan]
         assert_array_dtype_equal(expected_z, self.landmarks_mixed.geometry.z)
+
+    def test_xyz_points_empty(self):
+        expected_x = [-73.9847, -74.0446, -73.9847, np.nan]
+        expected_y = [40.7484, 40.6893, 40.7484, np.nan]
+        expected_z = [30.3244, 31.2344, np.nan, np.nan]
+
+        assert_array_dtype_equal(expected_x, self.landmarks_mixed_empty.geometry.x)
+        assert_array_dtype_equal(expected_y, self.landmarks_mixed_empty.geometry.y)
+        assert_array_dtype_equal(expected_z, self.landmarks_mixed_empty.geometry.z)
 
     def test_xyz_polygons(self):
         # accessing x attribute in polygon geoseries should raise an error
@@ -678,7 +725,8 @@ class TestGeomMethods:
 
         s = GeoSeries([Point(2, 2), Point(0.5, 0.5)], index=[1, 2])
         expected = Series([np.nan, 2.0, np.nan])
-        assert_series_equal(self.g5.project(s), expected)
+        with pytest.warns(UserWarning, match="The indices .+ different"):
+            assert_series_equal(self.g5.project(s), expected)
 
         expected = Series([2.0, 0.5], index=self.g5.index)
         assert_series_equal(self.g5.project(s, align=False), expected)
@@ -833,7 +881,8 @@ class TestGeomMethods:
             index=MultiIndex.from_tuples(index, names=expected_index_name),
             crs=4326,
         )
-        assert_geoseries_equal(expected, s.explode())
+        with pytest.warns(FutureWarning, match="Currently, index_parts defaults"):
+            assert_geoseries_equal(expected, s.explode())
 
     @pytest.mark.parametrize("index_name", [None, "test"])
     def test_explode_geodataframe(self, index_name):
@@ -841,7 +890,8 @@ class TestGeomMethods:
         df = GeoDataFrame({"col": [1, 2], "geometry": s})
         df.index.name = index_name
 
-        test_df = df.explode()
+        with pytest.warns(FutureWarning, match="Currently, index_parts defaults"):
+            test_df = df.explode()
 
         expected_s = GeoSeries([Point(1, 2), Point(2, 3), Point(5, 5)])
         expected_df = GeoDataFrame({"col": [1, 1, 2], "geometry": expected_s})
@@ -860,7 +910,7 @@ class TestGeomMethods:
         df = GeoDataFrame({"level_1": [1, 2], "geometry": s})
         df.index.name = index_name
 
-        test_df = df.explode()
+        test_df = df.explode(index_parts=True)
 
         expected_s = GeoSeries([Point(1, 2), Point(2, 3), Point(5, 5)])
         expected_df = GeoDataFrame({"level_1": [1, 1, 2], "geometry": expected_s})
@@ -872,17 +922,26 @@ class TestGeomMethods:
         expected_df = expected_df.set_index(expected_index)
         assert_frame_equal(test_df, expected_df)
 
-    @pytest.mark.skipif(
-        not compat.PANDAS_GE_025,
-        reason="pandas explode introduced in pandas 0.25",
-    )
+    @pytest.mark.parametrize("index_name", [None, "test"])
+    def test_explode_geodataframe_no_multiindex(self, index_name):
+        # GH1393
+        s = GeoSeries([MultiPoint([Point(1, 2), Point(2, 3)]), Point(5, 5)])
+        df = GeoDataFrame({"level_1": [1, 2], "geometry": s})
+        df.index.name = index_name
+
+        test_df = df.explode(index_parts=False)
+
+        expected_s = GeoSeries([Point(1, 2), Point(2, 3), Point(5, 5)])
+        expected_df = GeoDataFrame({"level_1": [1, 1, 2], "geometry": expected_s})
+
+        expected_index = Index([0, 0, 1], name=index_name)
+        expected_df = expected_df.set_index(expected_index)
+        assert_frame_equal(test_df, expected_df)
+
     def test_explode_pandas_fallback(self):
         d = {
             "col1": [["name1", "name2"], ["name3", "name4"]],
-            "geometry": [
-                MultiPoint([(1, 2), (3, 4)]),
-                MultiPoint([(2, 1), (0, 0)]),
-            ],
+            "geometry": [MultiPoint([(1, 2), (3, 4)]), MultiPoint([(2, 1), (0, 0)])],
         }
         gdf = GeoDataFrame(d, crs=4326)
         expected_df = GeoDataFrame(
@@ -914,10 +973,7 @@ class TestGeomMethods:
     def test_explode_pandas_fallback_ignore_index(self):
         d = {
             "col1": [["name1", "name2"], ["name3", "name4"]],
-            "geometry": [
-                MultiPoint([(1, 2), (3, 4)]),
-                MultiPoint([(2, 1), (0, 0)]),
-            ],
+            "geometry": [MultiPoint([(1, 2), (3, 4)]), MultiPoint([(2, 1), (0, 0)])],
         }
         gdf = GeoDataFrame(d, crs=4326)
         expected_df = GeoDataFrame(
@@ -940,6 +996,216 @@ class TestGeomMethods:
         # Test with column provided as kwarg
         exploded_df = gdf.explode(column="col1", ignore_index=True)
         assert_geodataframe_equal(exploded_df, expected_df)
+
+    @pytest.mark.parametrize("outer_index", [1, (1, 2), "1"])
+    def test_explode_pandas_multi_index(self, outer_index):
+        index = MultiIndex.from_arrays(
+            [[outer_index, outer_index, outer_index], [1, 2, 3]],
+            names=("first", "second"),
+        )
+        df = GeoDataFrame(
+            {"vals": [1, 2, 3]},
+            geometry=[MultiPoint([(x, x), (x, 0)]) for x in range(3)],
+            index=index,
+        )
+
+        test_df = df.explode(index_parts=True)
+
+        expected_s = GeoSeries(
+            [
+                Point(0, 0),
+                Point(0, 0),
+                Point(1, 1),
+                Point(1, 0),
+                Point(2, 2),
+                Point(2, 0),
+            ]
+        )
+        expected_df = GeoDataFrame({"vals": [1, 1, 2, 2, 3, 3], "geometry": expected_s})
+        expected_index = MultiIndex.from_tuples(
+            [
+                (outer_index, *pair)
+                for pair in [(1, 0), (1, 1), (2, 0), (2, 1), (3, 0), (3, 1)]
+            ],
+            names=["first", "second", None],
+        )
+        expected_df = expected_df.set_index(expected_index)
+        assert_frame_equal(test_df, expected_df)
+
+    @pytest.mark.parametrize("outer_index", [1, (1, 2), "1"])
+    def test_explode_pandas_multi_index_false(self, outer_index):
+        index = MultiIndex.from_arrays(
+            [[outer_index, outer_index, outer_index], [1, 2, 3]],
+            names=("first", "second"),
+        )
+        df = GeoDataFrame(
+            {"vals": [1, 2, 3]},
+            geometry=[MultiPoint([(x, x), (x, 0)]) for x in range(3)],
+            index=index,
+        )
+
+        test_df = df.explode(index_parts=False)
+
+        expected_s = GeoSeries(
+            [
+                Point(0, 0),
+                Point(0, 0),
+                Point(1, 1),
+                Point(1, 0),
+                Point(2, 2),
+                Point(2, 0),
+            ]
+        )
+        expected_df = GeoDataFrame({"vals": [1, 1, 2, 2, 3, 3], "geometry": expected_s})
+        expected_index = MultiIndex.from_tuples(
+            [
+                (outer_index, 1),
+                (outer_index, 1),
+                (outer_index, 2),
+                (outer_index, 2),
+                (outer_index, 3),
+                (outer_index, 3),
+            ],
+            names=["first", "second"],
+        )
+        expected_df = expected_df.set_index(expected_index)
+        assert_frame_equal(test_df, expected_df)
+
+    @pytest.mark.parametrize("outer_index", [1, (1, 2), "1"])
+    def test_explode_pandas_multi_index_ignore_index(self, outer_index):
+        index = MultiIndex.from_arrays(
+            [[outer_index, outer_index, outer_index], [1, 2, 3]],
+            names=("first", "second"),
+        )
+        df = GeoDataFrame(
+            {"vals": [1, 2, 3]},
+            geometry=[MultiPoint([(x, x), (x, 0)]) for x in range(3)],
+            index=index,
+        )
+
+        test_df = df.explode(ignore_index=True)
+
+        expected_s = GeoSeries(
+            [
+                Point(0, 0),
+                Point(0, 0),
+                Point(1, 1),
+                Point(1, 0),
+                Point(2, 2),
+                Point(2, 0),
+            ]
+        )
+        expected_df = GeoDataFrame({"vals": [1, 1, 2, 2, 3, 3], "geometry": expected_s})
+        expected_index = Index(range(len(expected_df)))
+        expected_df = expected_df.set_index(expected_index)
+        assert_frame_equal(test_df, expected_df)
+
+        # index_parts is ignored if ignore_index=True
+        test_df = df.explode(ignore_index=True, index_parts=True)
+        assert_frame_equal(test_df, expected_df)
+
+    def test_explode_order(self):
+        df = GeoDataFrame(
+            {"vals": [1, 2, 3]},
+            geometry=[MultiPoint([(x, x), (x, 0)]) for x in range(3)],
+            index=[2, 9, 7],
+        )
+        test_df = df.explode(index_parts=True)
+
+        expected_index = MultiIndex.from_arrays(
+            [[2, 2, 9, 9, 7, 7], [0, 1, 0, 1, 0, 1]],
+        )
+        expected_geometry = GeoSeries(
+            [
+                Point(0, 0),
+                Point(0, 0),
+                Point(1, 1),
+                Point(1, 0),
+                Point(2, 2),
+                Point(2, 0),
+            ],
+            index=expected_index,
+        )
+        expected_df = GeoDataFrame(
+            {"vals": [1, 1, 2, 2, 3, 3]},
+            geometry=expected_geometry,
+            index=expected_index,
+        )
+        assert_geodataframe_equal(test_df, expected_df)
+
+    def test_explode_order_no_multi(self):
+        df = GeoDataFrame(
+            {"vals": [1, 2, 3]},
+            geometry=[Point(0, x) for x in range(3)],
+            index=[2, 9, 7],
+        )
+        test_df = df.explode(index_parts=True)
+
+        expected_index = MultiIndex.from_arrays(
+            [[2, 9, 7], [0, 0, 0]],
+        )
+        expected_df = GeoDataFrame(
+            {"vals": [1, 2, 3]},
+            geometry=[Point(0, x) for x in range(3)],
+            index=expected_index,
+        )
+        assert_geodataframe_equal(test_df, expected_df)
+
+    def test_explode_order_mixed(self):
+        df = GeoDataFrame(
+            {"vals": [1, 2, 3]},
+            geometry=[MultiPoint([(x, x), (x, 0)]) for x in range(2)] + [Point(0, 10)],
+            index=[2, 9, 7],
+        )
+        test_df = df.explode(index_parts=True)
+
+        expected_index = MultiIndex.from_arrays(
+            [[2, 2, 9, 9, 7], [0, 1, 0, 1, 0]],
+        )
+        expected_geometry = GeoSeries(
+            [
+                Point(0, 0),
+                Point(0, 0),
+                Point(1, 1),
+                Point(1, 0),
+                Point(0, 10),
+            ],
+            index=expected_index,
+        )
+        expected_df = GeoDataFrame(
+            {"vals": [1, 1, 2, 2, 3]},
+            geometry=expected_geometry,
+            index=expected_index,
+        )
+        assert_geodataframe_equal(test_df, expected_df)
+
+    def test_explode_duplicated_index(self):
+        df = GeoDataFrame(
+            {"vals": [1, 2, 3]},
+            geometry=[MultiPoint([(x, x), (x, 0)]) for x in range(3)],
+            index=[1, 1, 2],
+        )
+        test_df = df.explode(index_parts=True)
+        expected_index = MultiIndex.from_arrays(
+            [[1, 1, 1, 1, 2, 2], [0, 1, 0, 1, 0, 1]],
+        )
+        expected_geometry = GeoSeries(
+            [
+                Point(0, 0),
+                Point(0, 0),
+                Point(1, 1),
+                Point(1, 0),
+                Point(2, 2),
+                Point(2, 0),
+            ],
+            index=expected_index,
+        )
+        expected_df = GeoDataFrame(
+            {"vals": [1, 1, 2, 2, 3, 3]},
+            geometry=expected_geometry,
+            index=expected_index,
+        )
+        assert_geodataframe_equal(test_df, expected_df)
 
     #
     # Test '&', '|', '^', and '-'

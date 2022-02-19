@@ -34,7 +34,7 @@ def collect(x, multi=False):
     # Point and MultiPoint... or even just MultiPoint
     t = x[0].type
     if not all(g.type == t for g in x):
-        raise ValueError("Geometry type must be homogenous")
+        raise ValueError("Geometry type must be homogeneous")
     if len(x) > 1 and t.startswith("Multi"):
         raise ValueError("Cannot collect {0}. Must have single geometries".format(t))
 

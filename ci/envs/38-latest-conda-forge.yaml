@@ -4,11 +4,12 @@ channels:
 dependencies:
   - python=3.8
   # required
-  - pandas
+  - pandas=1.2
   - shapely
   - fiona
   - pyproj
   - pygeos
+  - packaging
   # testing
   - pytest
   - pytest-cov
@@ -18,6 +19,8 @@ dependencies:
   - rtree
   - matplotlib
   - mapclassify
+  - folium
+  - xyzservices
   - scipy
   - geopy
   # installed in tests.yaml, because not available on windows

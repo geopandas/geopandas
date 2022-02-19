@@ -1,4 +1,4 @@
-from distutils.version import LooseVersion
+from packaging.version import Version
 import json
 import warnings
 
@@ -8,7 +8,7 @@ from geopandas._compat import import_optional_dependency
 from geopandas.array import from_wkb
 from geopandas import GeoDataFrame
 import geopandas
-
+from .file import _expand_user
 
 METADATA_VERSION = "0.1.0"
 # reference: https://github.com/geopandas/geo-arrow-spec
@@ -30,6 +30,14 @@ METADATA_VERSION = "0.1.0"
 #         "schema_version": "<METADATA_VERSION>"
 #     }
 # }
+
+
+def _is_fsspec_url(url):
+    return (
+        isinstance(url, str)
+        and "://" in url
+        and not url.startswith(("http://", "https://"))
+    )
 
 
 def _create_metadata(df):
@@ -166,21 +174,6 @@ def _geopandas_to_arrow(df, index=None):
     """
     from pyarrow import Table
 
-    warnings.warn(
-        "this is an initial implementation of Parquet/Feather file support and "
-        "associated metadata.  This is tracking version 0.1.0 of the metadata "
-        "specification at "
-        "https://github.com/geopandas/geo-arrow-spec\n\n"
-        "This metadata specification does not yet make stability promises.  "
-        "We do not yet recommend using this in a production setting unless you "
-        "are able to rewrite your Parquet/Feather files.\n\n"
-        "To further ignore this warning, you can do: \n"
-        "import warnings; warnings.filterwarnings('ignore', "
-        "message='.*initial implementation of Parquet.*')",
-        UserWarning,
-        stacklevel=4,
-    )
-
     _validate_dataframe(df)
 
     # create geo metadata before altering incoming data frame
@@ -205,15 +198,10 @@ def _to_parquet(df, path, index=None, compression="snappy", **kwargs):
 
     Requires 'pyarrow'.
 
-    WARNING: this is an initial implementation of Parquet file support and
+    This is an initial implementation of Parquet file support and
     associated metadata.  This is tracking version 0.1.0 of the metadata
     specification at:
     https://github.com/geopandas/geo-arrow-spec
-
-    This metadata specification does not yet make stability promises.  As such,
-    we do not yet recommend using this in a production setting unless you are
-    able to rewrite your Parquet files.
-
 
     .. versionadded:: 0.8
 
@@ -235,6 +223,7 @@ def _to_parquet(df, path, index=None, compression="snappy", **kwargs):
         "pyarrow.parquet", extra="pyarrow is required for Parquet support."
     )
 
+    path = _expand_user(path)
     table = _geopandas_to_arrow(df, index=index)
     parquet.write_table(table, path, compression=compression, **kwargs)
 
@@ -247,14 +236,10 @@ def _to_feather(df, path, index=None, compression=None, **kwargs):
 
     Requires 'pyarrow' >= 0.17.
 
-    WARNING: this is an initial implementation of Feather file support and
+    This is an initial implementation of Feather file support and
     associated metadata.  This is tracking version 0.1.0 of the metadata
     specification at:
     https://github.com/geopandas/geo-arrow-spec
-
-    This metadata specification does not yet make stability promises.  As such,
-    we do not yet recommend using this in a production setting unless you are
-    able to rewrite your Feather files.
 
     .. versionadded:: 0.8
 
@@ -279,9 +264,10 @@ def _to_feather(df, path, index=None, compression=None, **kwargs):
     # TODO move this into `import_optional_dependency`
     import pyarrow
 
-    if pyarrow.__version__ < LooseVersion("0.17.0"):
+    if Version(pyarrow.__version__) < Version("0.17.0"):
         raise ImportError("pyarrow >= 0.17 required for Feather support")
 
+    path = _expand_user(path)
     table = _geopandas_to_arrow(df, index=index)
     feather.write_feather(table, path, compression=compression, **kwargs)
 
@@ -293,7 +279,7 @@ def _arrow_to_geopandas(table):
     df = table.to_pandas()
 
     metadata = table.schema.metadata
-    if b"geo" not in metadata:
+    if metadata is None or b"geo" not in metadata:
         raise ValueError(
             """Missing geo metadata in Parquet/Feather file.
             Use pandas.read_parquet/read_feather() instead."""
@@ -339,7 +325,45 @@ def _arrow_to_geopandas(table):
     return GeoDataFrame(df, geometry=geometry)
 
 
-def _read_parquet(path, columns=None, **kwargs):
+def _get_filesystem_path(path, filesystem=None, storage_options=None):
+    """
+    Get the filesystem and path for a given filesystem and path.
+
+    If the filesystem is not None then it's just returned as is.
+    """
+    import pyarrow
+
+    if (
+        isinstance(path, str)
+        and storage_options is None
+        and filesystem is None
+        and Version(pyarrow.__version__) >= Version("5.0.0")
+    ):
+        # Use the native pyarrow filesystem if possible.
+        try:
+            from pyarrow.fs import FileSystem
+
+            filesystem, path = FileSystem.from_uri(path)
+        except Exception:
+            # fallback to use get_handle / fsspec for filesystems
+            # that pyarrow doesn't support
+            pass
+
+    if _is_fsspec_url(path) and filesystem is None:
+        fsspec = import_optional_dependency(
+            "fsspec", extra="fsspec is requred for 'storage_options'."
+        )
+        filesystem, path = fsspec.core.url_to_fs(path, **(storage_options or {}))
+
+    if filesystem is None and storage_options:
+        raise ValueError(
+            "Cannot provide 'storage_options' with non-fsspec path '{}'".format(path)
+        )
+
+    return filesystem, path
+
+
+def _read_parquet(path, columns=None, storage_options=None, **kwargs):
     """
     Load a Parquet object from the file path, returning a GeoDataFrame.
 
@@ -366,6 +390,17 @@ def _read_parquet(path, columns=None, **kwargs):
         geometry read from the file will be set as the geometry column
         of the returned GeoDataFrame.  If no geometry columns are present,
         a ``ValueError`` will be raised.
+    storage_options : dict, optional
+        Extra options that make sense for a particular storage connection, e.g. host,
+        port, username, password, etc. For HTTP(S) URLs the key-value pairs are
+        forwarded to urllib as header options. For other URLs (e.g. starting with
+        "s3://", and "gcs://") the key-value pairs are forwarded to fsspec. Please
+        see fsspec and urllib for more details.
+
+        When no storage options are provided and a filesystem is implemented by
+        both ``pyarrow.fs`` and ``fsspec`` (e.g. "s3://") then the ``pyarrow.fs``
+        filesystem is preferred. Provide the instantiated fsspec filesystem using
+        the ``filesystem`` keyword if you wish to use its implementation.
     **kwargs
         Any additional kwargs passed to pyarrow.parquet.read_table().
 
@@ -388,9 +423,16 @@ def _read_parquet(path, columns=None, **kwargs):
     parquet = import_optional_dependency(
         "pyarrow.parquet", extra="pyarrow is required for Parquet support."
     )
+    # TODO(https://github.com/pandas-dev/pandas/pull/41194): see if pandas
+    # adds filesystem as a keyword and match that.
+    filesystem = kwargs.pop("filesystem", None)
+    filesystem, path = _get_filesystem_path(
+        path, filesystem=filesystem, storage_options=storage_options
+    )
 
+    path = _expand_user(path)
     kwargs["use_pandas_metadata"] = True
-    table = parquet.read_table(path, columns=columns, **kwargs)
+    table = parquet.read_table(path, columns=columns, filesystem=filesystem, **kwargs)
 
     return _arrow_to_geopandas(table)
 
@@ -447,8 +489,9 @@ def _read_feather(path, columns=None, **kwargs):
     # TODO move this into `import_optional_dependency`
     import pyarrow
 
-    if pyarrow.__version__ < LooseVersion("0.17.0"):
+    if Version(pyarrow.__version__) < Version("0.17.0"):
         raise ImportError("pyarrow >= 0.17 required for Feather support")
 
+    path = _expand_user(path)
     table = feather.read_table(path, columns=columns, **kwargs)
     return _arrow_to_geopandas(table)
