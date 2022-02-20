@@ -1,0 +1,30 @@
+name: test
+channels:
+  - defaults
+  - conda-forge
+dependencies:
+  - python=3.7
+  # required
+  - numpy=1.18
+  - pandas==0.25
+  - shapely=1.6
+  - fiona=1.8.13
+  - packaging
+  #- pyproj
+  # testing
+  - pytest
+  - pytest-cov
+  - pytest-xdist
+  - fsspec
+  # optional
+  - rtree
+  - matplotlib
+  - matplotlib=3.1
+  # - mapclassify=2.4.0 - doesn't build due to conflicts
+  - geopy
+  - SQLalchemy
+  - libspatialite
+  - pyarrow
+  - pip
+  - pip:
+      - pyproj==2.2.2

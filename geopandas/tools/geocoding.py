@@ -1,7 +1,6 @@
 from collections import defaultdict
 import time
 
-import numpy as np
 import pandas as pd
 
 from shapely.geometry import Point
@@ -32,13 +31,12 @@ def geocode(strings, provider=None, **kwargs):
     strings : list or Series of addresses to geocode
     provider : str or geopy.geocoder
         Specifies geocoding service to use. If none is provided,
-        will use 'geocodefarm' with a rate limit applied (see the geocodefarm
-        terms of service at:
-        https://geocode.farm/geocoding/free-api-documentation/ ).
+        will use 'photon' (see the Photon's terms of service at:
+        https://photon.komoot.io).
 
         Either the string name used by geopy (as specified in
         geopy.geocoders.SERVICE_TO_GEOCODER) or a geopy Geocoder instance
-        (e.g., geopy.geocoders.GeocodeFarm) may be used.
+        (e.g., geopy.geocoders.Photon) may be used.
 
         Some providers require additional arguments such as access keys
         See each geocoder's specific parameters in geopy.geocoders
@@ -53,22 +51,18 @@ def geocode(strings, provider=None, **kwargs):
 
     Examples
     --------
-    >>> df = geocode(['boston, ma', '1600 pennsylvania ave. washington, dc'])
-    >>> df
-                                                 address  \\
-    0                                    Boston, MA, USA
-    1  1600 Pennsylvania Avenue Northwest, President'...
-                             geometry
-    0  POINT (-71.0597732 42.3584308)
-    1  POINT (-77.0365305 38.8977332)
+    >>> df = geopandas.tools.geocode(  # doctest: +SKIP
+    ...         ["boston, ma", "1600 pennsylvania ave. washington, dc"]
+    ...     )
+    >>> df  # doctest: +SKIP
+                        geometry                                            address
+    0  POINT (-71.05863 42.35899)                          Boston, MA, United States
+    1  POINT (-77.03651 38.89766)  1600 Pennsylvania Ave NW, Washington, DC 20006...
     """
 
     if provider is None:
-        # https://geocode.farm/geocoding/free-api-documentation/
-        provider = "geocodefarm"
-        throttle_time = 0.25
-    else:
-        throttle_time = _get_throttle_time(provider)
+        provider = "photon"
+    throttle_time = _get_throttle_time(provider)
 
     return _query(strings, True, provider, throttle_time, **kwargs)
 
@@ -87,13 +81,12 @@ def reverse_geocode(points, provider=None, **kwargs):
         y coordinate is latitude
     provider : str or geopy.geocoder (opt)
         Specifies geocoding service to use. If none is provided,
-        will use 'geocodefarm' with a rate limit applied (see the geocodefarm
-        terms of service at:
-        https://geocode.farm/geocoding/free-api-documentation/ ).
+        will use 'photon' (see the Photon's terms of service at:
+        https://photon.komoot.io).
 
         Either the string name used by geopy (as specified in
         geopy.geocoders.SERVICE_TO_GEOCODER) or a geopy Geocoder instance
-        (e.g., geopy.geocoders.GeocodeFarm) may be used.
+        (e.g., geopy.geocoders.Photon) may be used.
 
         Some providers require additional arguments such as access keys
         See each geocoder's specific parameters in geopy.geocoders
@@ -108,23 +101,19 @@ def reverse_geocode(points, provider=None, **kwargs):
 
     Examples
     --------
-    >>> df = reverse_geocode([Point(-71.0594869, 42.3584697),
-                              Point(-77.0365305, 38.8977332)])
-    >>> df
-                                             address  \\
-    0             29 Court Square, Boston, MA 02108, USA
-    1  1600 Pennsylvania Avenue Northwest, President'...
-                             geometry
-    0  POINT (-71.0594869 42.3584697)
-    1  POINT (-77.0365305 38.8977332)
+    >>> from shapely.geometry import Point
+    >>> df = geopandas.tools.reverse_geocode(  # doctest: +SKIP
+    ...     [Point(-71.0594869, 42.3584697), Point(-77.0365305, 38.8977332)]
+    ... )
+    >>> df  # doctest: +SKIP
+                         geometry                                            address
+    0  POINT (-71.05941 42.35837)       29 Court Sq, Boston, MA 02108, United States
+    1  POINT (-77.03641 38.89766)  1600 Pennsylvania Ave NW, Washington, DC 20006...
     """
 
     if provider is None:
-        # https://geocode.farm/geocoding/free-api-documentation/
-        provider = "geocodefarm"
-        throttle_time = 0.25
-    else:
-        throttle_time = _get_throttle_time(provider)
+        provider = "photon"
+    throttle_time = _get_throttle_time(provider)
 
     return _query(points, False, provider, throttle_time, **kwargs)
 
@@ -134,8 +123,12 @@ def _query(data, forward, provider, throttle_time, **kwargs):
     from geopy.geocoders.base import GeocoderQueryError
     from geopy.geocoders import get_geocoder_for_service
 
-    if not isinstance(data, pd.Series):
-        data = pd.Series(data)
+    if forward:
+        if not isinstance(data, pd.Series):
+            data = pd.Series(data)
+    else:
+        if not isinstance(data, geopandas.GeoSeries):
+            data = geopandas.GeoSeries(data)
 
     if isinstance(provider, str):
         provider = get_geocoder_for_service(provider)
@@ -169,16 +162,19 @@ def _prepare_geocode_result(results):
     index = []
 
     for i, s in results.items():
-        address, loc = s
 
-        # loc is lat, lon and we want lon, lat
-        if loc is None:
+        if s is None:
             p = Point()
-        else:
-            p = Point(loc[1], loc[0])
+            address = None
 
-        if address is None:
-            address = np.nan
+        else:
+            address, loc = s
+
+            # loc is lat, lon and we want lon, lat
+            if loc is None:
+                p = Point()
+            else:
+                p = Point(loc[1], loc[0])
 
         d["geometry"].append(p)
         d["address"].append(address)

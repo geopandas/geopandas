@@ -46,6 +46,14 @@ s4 = s1.copy()
 s4.crs = 4326
 s5 = s2.copy()
 s5.crs = 27700
+
+s6 = GeoSeries(
+    [
+        Polygon([(0, 3), (0, 0), (2, 0), (2, 2)]),
+        Polygon([(2, 2), (4, 2), (4, 4), (2, 4)]),
+    ]
+)
+
 df4 = GeoDataFrame(
     {"col1": [1, 2], "geometry": s1.copy(), "geom2": s4.copy(), "geom3": s5.copy()},
     crs=3857,
@@ -63,8 +71,15 @@ def test_geoseries():
     assert_geoseries_equal(s3, s2, check_series_type=False, check_dtype=False)
     assert_geoseries_equal(s1, s4, check_series_type=False)
 
-    with pytest.raises(AssertionError):
+    with pytest.raises(AssertionError) as error:
         assert_geoseries_equal(s1, s2, check_less_precise=True)
+    assert "1 out of 2 geometries are not almost equal" in str(error.value)
+    assert "not almost equal: [0]" in str(error.value)
+
+    with pytest.raises(AssertionError) as error:
+        assert_geoseries_equal(s2, s6, check_less_precise=False)
+    assert "1 out of 2 geometries are not equal" in str(error.value)
+    assert "not equal: [0]" in str(error.value)
 
 
 def test_geodataframe():
@@ -114,3 +129,11 @@ def test_ignore_crs_mismatch():
         assert_geodataframe_equal(df1, df2, check_crs=False)
 
     assert len(record) == 0
+
+
+def test_almost_equal_but_not_equal():
+    s_origin = GeoSeries([Point(0, 0)])
+    s_almost_origin = GeoSeries([Point(0.0000001, 0)])
+    assert_geoseries_equal(s_origin, s_almost_origin, check_less_precise=True)
+    with pytest.raises(AssertionError):
+        assert_geoseries_equal(s_origin, s_almost_origin)

@@ -1,12 +1,13 @@
 from __future__ import absolute_import
 
-from distutils.version import LooseVersion
+from packaging.version import Version
 import os
 
 import pytest
 from pandas import DataFrame, read_parquet as pd_read_parquet
 from pandas.testing import assert_frame_equal
 import numpy as np
+from shapely.geometry import box
 
 import geopandas
 from geopandas import GeoDataFrame, read_file, read_parquet, read_feather
@@ -16,7 +17,7 @@ from geopandas.io.arrow import (
     _create_metadata,
     _decode_metadata,
     _encode_metadata,
-    _encode_wkb,
+    _get_filesystem_path,
     _validate_dataframe,
     _validate_metadata,
     METADATA_VERSION,
@@ -27,9 +28,6 @@ from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 # Skip all tests in this module if pyarrow is not available
 pyarrow = pytest.importorskip("pyarrow")
 
-# TEMPORARY: hide warning from to_parquet
-pytestmark = pytest.mark.filterwarnings("ignore:.*initial implementation of Parquet.*")
-
 
 @pytest.fixture(
     params=[
@@ -37,7 +35,7 @@ pytestmark = pytest.mark.filterwarnings("ignore:.*initial implementation of Parq
         pytest.param(
             "feather",
             marks=pytest.mark.skipif(
-                pyarrow.__version__ < LooseVersion("0.17.0"),
+                Version(pyarrow.__version__) < Version("0.17.0"),
                 reason="needs pyarrow >= 0.17",
             ),
         ),
@@ -174,20 +172,6 @@ def test_validate_metadata_invalid(metadata, error):
         _validate_metadata(metadata)
 
 
-def test_encode_wkb():
-    test_dataset = "naturalearth_lowres"
-    df = read_file(get_path(test_dataset))
-
-    encoded = _encode_wkb(df)
-
-    # make sure original is not modified
-    assert isinstance(df, GeoDataFrame)
-    assert (
-        encoded.geometry.iloc[0][:16]
-        == b"\x01\x06\x00\x00\x00\x03\x00\x00\x00\x01\x03\x00\x00\x00\x01\x00"
-    )
-
-
 # TEMPORARY: used to determine if pyarrow fails for roundtripping pandas data
 # without geometries
 def test_pandas_parquet_roundtrip1(tmpdir):
@@ -230,9 +214,7 @@ def test_roundtrip(tmpdir, file_format, test_dataset):
 
     filename = os.path.join(str(tmpdir), "test.pq")
 
-    # TEMP: Initial implementation should raise a UserWarning
-    with pytest.warns(UserWarning, match="initial implementation"):
-        writer(df, filename)
+    writer(df, filename)
 
     assert os.path.exists(filename)
 
@@ -284,7 +266,7 @@ def test_parquet_compression(compression, tmpdir):
 
 
 @pytest.mark.skipif(
-    pyarrow.__version__ < LooseVersion("0.17.0"),
+    Version(pyarrow.__version__) < Version("0.17.0"),
     reason="Feather only supported for pyarrow >= 0.17",
 )
 @pytest.mark.parametrize("compression", ["uncompressed", "lz4", "zstd"])
@@ -345,6 +327,26 @@ def test_parquet_missing_metadata(tmpdir):
 
     # use pandas to_parquet (no geo metadata)
     df.to_parquet(filename)
+
+    # missing metadata will raise ValueError
+    with pytest.raises(
+        ValueError, match="Missing geo metadata in Parquet/Feather file."
+    ):
+        read_parquet(filename)
+
+
+def test_parquet_missing_metadata2(tmpdir):
+    """Missing geo metadata, such as from a parquet file created
+    from a pyarrow Table (which will also not contain pandas metadata),
+    will raise a ValueError.
+    """
+    import pyarrow.parquet as pq
+
+    table = pyarrow.table({"a": [1, 2, 3]})
+    filename = os.path.join(str(tmpdir), "test.pq")
+
+    # use pyarrow.parquet write_table (no geo metadata, but also no pandas metadata)
+    pq.write_table(table, filename)
 
     # missing metadata will raise ValueError
     with pytest.raises(
@@ -416,22 +418,6 @@ def test_subset_columns(tmpdir, file_format):
         reader(filename, columns=["name"])
 
 
-def test_parquet_repeat_columns(tmpdir):
-    """Reading repeated columns should return first value of each repeated column
-    """
-
-    test_dataset = "naturalearth_lowres"
-    df = read_file(get_path(test_dataset))
-
-    filename = os.path.join(str(tmpdir), "test.pq")
-    df.to_parquet(filename)
-
-    columns = ["name", "name", "iso_a3", "name", "geometry"]
-    pq_df = read_parquet(filename, columns=columns)
-
-    assert pq_df.columns.tolist() == ["name", "iso_a3", "geometry"]
-
-
 def test_promote_secondary_geometry(tmpdir, file_format):
     """Reading a subset of columns that does not include the primary geometry
     column should promote the first geometry column present.
@@ -498,7 +484,7 @@ def test_missing_crs(tmpdir, file_format):
 
 
 @pytest.mark.skipif(
-    pyarrow.__version__ >= LooseVersion("0.17.0"),
+    Version(pyarrow.__version__) >= Version("0.17.0"),
     reason="Feather only supported for pyarrow >= 0.17",
 )
 def test_feather_arrow_version(tmpdir):
@@ -509,3 +495,63 @@ def test_feather_arrow_version(tmpdir):
         ImportError, match="pyarrow >= 0.17 required for Feather support"
     ):
         df.to_feather(filename)
+
+
+def test_fsspec_url():
+    fsspec = pytest.importorskip("fsspec")
+    import fsspec.implementations.memory
+
+    class MyMemoryFileSystem(fsspec.implementations.memory.MemoryFileSystem):
+        # Simple fsspec filesystem that adds a required keyword.
+        # Attempting to use this filesystem without the keyword will raise an exception.
+        def __init__(self, is_set, *args, **kwargs):
+            self.is_set = is_set
+            super().__init__(*args, **kwargs)
+
+    fsspec.register_implementation("memory", MyMemoryFileSystem, clobber=True)
+    memfs = MyMemoryFileSystem(is_set=True)
+
+    test_dataset = "naturalearth_lowres"
+    df = read_file(get_path(test_dataset))
+
+    with memfs.open("data.parquet", "wb") as f:
+        df.to_parquet(f)
+
+    result = read_parquet("memory://data.parquet", storage_options=dict(is_set=True))
+    assert_geodataframe_equal(result, df)
+
+    result = read_parquet("memory://data.parquet", filesystem=memfs)
+    assert_geodataframe_equal(result, df)
+
+
+def test_non_fsspec_url_with_storage_options_raises():
+    with pytest.raises(ValueError, match="storage_options"):
+        test_dataset = "naturalearth_lowres"
+        read_parquet(get_path(test_dataset), storage_options={"foo": "bar"})
+
+
+@pytest.mark.skipif(
+    Version(pyarrow.__version__) < Version("5.0.0"),
+    reason="pyarrow.fs requires pyarrow>=5.0.0",
+)
+def test_prefers_pyarrow_fs():
+    filesystem, _ = _get_filesystem_path("file:///data.parquet")
+    assert isinstance(filesystem, pyarrow.fs.LocalFileSystem)
+
+
+def test_write_read_parquet_expand_user():
+    gdf = geopandas.GeoDataFrame(geometry=[box(0, 0, 10, 10)], crs="epsg:4326")
+    test_file = "~/test_file.parquet"
+    gdf.to_parquet(test_file)
+    pq_df = geopandas.read_parquet(test_file)
+    assert_geodataframe_equal(gdf, pq_df, check_crs=True)
+    os.remove(os.path.expanduser(test_file))
+
+
+def test_write_read_feather_expand_user():
+    gdf = geopandas.GeoDataFrame(geometry=[box(0, 0, 10, 10)], crs="epsg:4326")
+    test_file = "~/test_file.feather"
+    gdf.to_feather(test_file)
+    f_df = geopandas.read_feather(test_file)
+    assert_geodataframe_equal(gdf, f_df, check_crs=True)
+    os.remove(os.path.expanduser(test_file))

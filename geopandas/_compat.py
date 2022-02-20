@@ -1,19 +1,26 @@
-from distutils.version import LooseVersion
+import contextlib
+from packaging.version import Version
 import importlib
 import os
 import warnings
 
+import numpy as np
 import pandas as pd
+import pyproj
 import shapely
+import shapely.geos
+
 
 # -----------------------------------------------------------------------------
 # pandas compat
 # -----------------------------------------------------------------------------
 
-PANDAS_GE_024 = str(pd.__version__) >= LooseVersion("0.24.0")
-PANDAS_GE_025 = str(pd.__version__) >= LooseVersion("0.25.0")
-PANDAS_GE_10 = str(pd.__version__) >= LooseVersion("0.26.0.dev")
-PANDAS_GE_11 = str(pd.__version__) >= LooseVersion("1.1.0.dev")
+PANDAS_GE_10 = Version(pd.__version__) >= Version("1.0.0")
+PANDAS_GE_11 = Version(pd.__version__) >= Version("1.1.0")
+PANDAS_GE_115 = Version(pd.__version__) >= Version("1.1.5")
+PANDAS_GE_12 = Version(pd.__version__) >= Version("1.2.0")
+PANDAS_GE_13 = Version(pd.__version__) >= Version("1.3.0")
+PANDAS_GE_14 = Version(pd.__version__) >= Version("1.4.0rc0")
 
 
 # -----------------------------------------------------------------------------
@@ -21,16 +28,38 @@ PANDAS_GE_11 = str(pd.__version__) >= LooseVersion("1.1.0.dev")
 # -----------------------------------------------------------------------------
 
 
-SHAPELY_GE_17 = str(shapely.__version__) >= LooseVersion("1.7.0")
+SHAPELY_GE_17 = Version(shapely.__version__) >= Version("1.7.0")
+SHAPELY_GE_18 = Version(shapely.__version__) >= Version("1.8")
+SHAPELY_GE_20 = Version(shapely.__version__) >= Version("2.0")
+
+GEOS_GE_390 = shapely.geos.geos_version >= (3, 9, 0)
+
 
 HAS_PYGEOS = None
 USE_PYGEOS = None
 PYGEOS_SHAPELY_COMPAT = None
 
+PYGEOS_GE_09 = None
+PYGEOS_GE_010 = None
+
+INSTALL_PYGEOS_ERROR = "To use PyGEOS within GeoPandas, you need to install PyGEOS: \
+'conda install pygeos' or 'pip install pygeos'"
+
 try:
     import pygeos  # noqa
 
-    HAS_PYGEOS = True
+    # only automatically use pygeos if version is high enough
+    if Version(pygeos.__version__) >= Version("0.8"):
+        HAS_PYGEOS = True
+        PYGEOS_GE_09 = Version(pygeos.__version__) >= Version("0.9")
+        PYGEOS_GE_010 = Version(pygeos.__version__) >= Version("0.10")
+    else:
+        warnings.warn(
+            "The installed version of PyGEOS is too old ({0} installed, 0.8 required),"
+            " and thus GeoPandas will not use PyGEOS.".format(pygeos.__version__),
+            UserWarning,
+        )
+        HAS_PYGEOS = False
 except ImportError:
     HAS_PYGEOS = False
 
@@ -65,9 +94,9 @@ def set_use_pygeos(val=None):
             import pygeos  # noqa
 
             # validate the pygeos version
-            if not str(pygeos.__version__) >= LooseVersion("0.6"):
+            if not Version(pygeos.__version__) >= Version("0.8"):
                 raise ImportError(
-                    "PyGEOS >= 0.6 is required, version {0} is installed".format(
+                    "PyGEOS >= 0.8 is required, version {0} is installed".format(
                         pygeos.__version__
                     )
                 )
@@ -93,13 +122,54 @@ def set_use_pygeos(val=None):
                 PYGEOS_SHAPELY_COMPAT = True
 
         except ImportError:
-            raise ImportError(
-                "To use the PyGEOS speed-ups within GeoPandas, you need to install "
-                "PyGEOS: 'conda install pygeos' or 'pip install pygeos'"
-            )
+            raise ImportError(INSTALL_PYGEOS_ERROR)
 
 
 set_use_pygeos()
+
+
+# compat related to deprecation warnings introduced in Shapely 1.8
+# -> creating a numpy array from a list-like of Multi-part geometries,
+# although doing the correct thing (not expanding in its parts), still raises
+# the warning about iteration being deprecated
+# This adds a context manager to explicitly ignore this warning
+
+
+try:
+    from shapely.errors import ShapelyDeprecationWarning as shapely_warning
+except ImportError:
+    shapely_warning = None
+
+
+if shapely_warning is not None and not SHAPELY_GE_20:
+
+    @contextlib.contextmanager
+    def ignore_shapely2_warnings():
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", "Iteration|The array interface|__len__", shapely_warning
+            )
+            yield
+
+
+elif (Version(np.__version__) >= Version("1.21")) and not SHAPELY_GE_20:
+
+    @contextlib.contextmanager
+    def ignore_shapely2_warnings():
+        with warnings.catch_warnings():
+            # warning from numpy for existing Shapely releases (this is fixed
+            # with Shapely 1.8)
+            warnings.filterwarnings(
+                "ignore", "An exception was ignored while fetching", DeprecationWarning
+            )
+            yield
+
+
+else:
+
+    @contextlib.contextmanager
+    def ignore_shapely2_warnings():
+        yield
 
 
 def import_optional_dependency(name: str, extra: str = ""):
@@ -151,3 +221,10 @@ try:
     HAS_RTREE = True
 except ImportError:
     HAS_RTREE = False
+
+# -----------------------------------------------------------------------------
+# pyproj compat
+# -----------------------------------------------------------------------------
+
+PYPROJ_LT_3 = Version(pyproj.__version__) < Version("3")
+PYPROJ_GE_31 = Version(pyproj.__version__) >= Version("3.1")

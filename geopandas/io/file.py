@@ -1,18 +1,36 @@
-from distutils.version import LooseVersion
+import os
+from packaging.version import Version
+from pathlib import Path
+import warnings
 
-import io
 import numpy as np
 import pandas as pd
+from pandas.api.types import is_integer_dtype
 
-import fiona
 import pyproj
 from shapely.geometry import mapping
 from shapely.geometry.base import BaseGeometry
 
 try:
-    from fiona import Env as fiona_env
-except ImportError:
-    from fiona import drivers as fiona_env
+    import fiona
+
+    fiona_import_error = None
+
+    # only try to import fiona.Env if the main fiona import succeeded (otherwise you
+    # can get confusing "AttributeError: module 'fiona' has no attribute '_loading'"
+    # / partially initialized module errors)
+    try:
+        from fiona import Env as fiona_env
+    except ImportError:
+        try:
+            from fiona import drivers as fiona_env
+        except ImportError:
+            fiona_env = None
+
+except ImportError as err:
+    fiona = None
+    fiona_import_error = str(err)
+
 
 from geopandas import GeoDataFrame, GeoSeries
 
@@ -23,9 +41,47 @@ from urllib.parse import urlparse as parse_url
 from urllib.parse import uses_netloc, uses_params, uses_relative
 
 
-_FIONA18 = LooseVersion(fiona.__version__) >= LooseVersion("1.8")
 _VALID_URLS = set(uses_relative + uses_netloc + uses_params)
 _VALID_URLS.discard("")
+
+_EXTENSION_TO_DRIVER = {
+    ".bna": "BNA",
+    ".dxf": "DXF",
+    ".csv": "CSV",
+    ".shp": "ESRI Shapefile",
+    ".dbf": "ESRI Shapefile",
+    ".json": "GeoJSON",
+    ".geojson": "GeoJSON",
+    ".geojsonl": "GeoJSONSeq",
+    ".geojsons": "GeoJSONSeq",
+    ".gpkg": "GPKG",
+    ".gml": "GML",
+    ".xml": "GML",
+    ".gpx": "GPX",
+    ".gtm": "GPSTrackMaker",
+    ".gtz": "GPSTrackMaker",
+    ".tab": "MapInfo File",
+    ".mif": "MapInfo File",
+    ".mid": "MapInfo File",
+    ".dgn": "DGN",
+}
+
+
+def _expand_user(path):
+    """Expand paths that use ~."""
+    if isinstance(path, str):
+        path = os.path.expanduser(path)
+    elif isinstance(path, Path):
+        path = path.expanduser()
+    return path
+
+
+def _check_fiona(func):
+    if fiona is None:
+        raise ImportError(
+            f"the {func} requires the 'fiona' package, but it is not installed or does "
+            f"not import correctly.\nImporting fiona resulted in: {fiona_import_error}"
+        )
 
 
 def _is_url(url):
@@ -34,6 +90,16 @@ def _is_url(url):
         return parse_url(url).scheme in _VALID_URLS
     except Exception:
         return False
+
+
+def _is_zip(path):
+    """Check if a given path is a zipfile"""
+    parsed = fiona.path.ParsedPath.from_uri(path)
+    return (
+        parsed.archive.endswith(".zip")
+        if parsed.archive
+        else parsed.path.endswith(".zip")
+    )
 
 
 def _read_file(filename, bbox=None, mask=None, rows=None, **kwargs):
@@ -51,7 +117,8 @@ def _read_file(filename, bbox=None, mask=None, rows=None, **kwargs):
     bbox : tuple | GeoDataFrame or GeoSeries | shapely Geometry, default None
         Filter features by given bounding box, GeoSeries, GeoDataFrame or a
         shapely geometry. CRS mis-matches are resolved if given a GeoSeries
-        or GeoDataFrame. Cannot be used with mask.
+        or GeoDataFrame. Tuple is (minx, miny, maxx, maxy) to match the
+        bounds property of shapely geometry objects. Cannot be used with mask.
     mask : dict | GeoDataFrame or GeoSeries | shapely Geometry, default None
         Filter for features that intersect with the given dict-like geojson
         geometry, GeoSeries, GeoDataFrame or shapely geometry.
@@ -68,7 +135,23 @@ def _read_file(filename, bbox=None, mask=None, rows=None, **kwargs):
 
     Examples
     --------
-    >>> df = geopandas.read_file("nybb.shp")
+    >>> df = geopandas.read_file("nybb.shp")  # doctest: +SKIP
+
+    Specifying layer of GPKG:
+
+    >>> df = geopandas.read_file("file.gpkg", layer='cities')  # doctest: +SKIP
+
+    Reading only first 10 rows:
+
+    >>> df = geopandas.read_file("nybb.shp", rows=10)  # doctest: +SKIP
+
+    Reading only geometries intersecting ``mask``:
+
+    >>> df = geopandas.read_file("nybb.shp", mask=polygon)  # doctest: +SKIP
+
+    Reading only geometries intersecting ``bbox``:
+
+    >>> df = geopandas.read_file("nybb.shp", bbox=(0, 0, 10, 20))  # doctest: +SKIP
 
     Returns
     -------
@@ -81,14 +164,37 @@ def _read_file(filename, bbox=None, mask=None, rows=None, **kwargs):
     may fail. In this case, the proper encoding can be specified explicitly
     by using the encoding keyword parameter, e.g. ``encoding='utf-8'``.
     """
+    _check_fiona("'read_file' function")
+    filename = _expand_user(filename)
+
     if _is_url(filename):
         req = _urlopen(filename)
         path_or_bytes = req.read()
         reader = fiona.BytesCollection
-    elif isinstance(filename, io.TextIOBase):
-        path_or_bytes = filename.read()
-        reader = fiona.open
+    elif pd.api.types.is_file_like(filename):
+        data = filename.read()
+        path_or_bytes = data.encode("utf-8") if isinstance(data, str) else data
+        reader = fiona.BytesCollection
     else:
+        # Opening a file via URL or file-like-object above automatically detects a
+        # zipped file. In order to match that behavior, attempt to add a zip scheme
+        # if missing.
+        if _is_zip(str(filename)):
+            parsed = fiona.parse_path(str(filename))
+            if isinstance(parsed, fiona.path.ParsedPath):
+                # If fiona is able to parse the path, we can safely look at the scheme
+                # and update it to have a zip scheme if necessary.
+                schemes = (parsed.scheme or "").split("+")
+                if "zip" not in schemes:
+                    parsed.scheme = "+".join(["zip"] + schemes)
+                filename = parsed.name
+            elif isinstance(parsed, fiona.path.UnparsedPath) and not str(
+                filename
+            ).startswith("/vsi"):
+                # If fiona is unable to parse the path, it might have a Windows drive
+                # scheme. Try adding zip:// to the front. If the path starts with "/vsi"
+                # it is a legacy GDAL path type, so let it pass unmodified.
+                filename = "zip://" + parsed.name
         path_or_bytes = filename
         reader = fiona.open
 
@@ -131,19 +237,25 @@ def _read_file(filename, bbox=None, mask=None, rows=None, **kwargs):
                 f_filt = features
             # get list of columns
             columns = list(features.schema["properties"])
+            datetime_fields = [
+                k for (k, v) in features.schema["properties"].items() if v == "datetime"
+            ]
             if kwargs.get("ignore_geometry", False):
-                return pd.DataFrame(
+                df = pd.DataFrame(
                     [record["properties"] for record in f_filt], columns=columns
                 )
-
-            return GeoDataFrame.from_features(
-                f_filt, crs=crs, columns=columns + ["geometry"]
-            )
+            else:
+                df = GeoDataFrame.from_features(
+                    f_filt, crs=crs, columns=columns + ["geometry"]
+                )
+            for k in datetime_fields:
+                # fiona only supports up to ms precision, any microseconds are
+                # floating point rounding error
+                df[k] = pd.to_datetime(df[k]).dt.round(freq="ms")
+            return df
 
 
 def read_file(*args, **kwargs):
-    import warnings
-
     warnings.warn(
         "geopandas.io.file.read_file() is intended for internal "
         "use only, and will be deprecated. Use geopandas.read_file() instead.",
@@ -155,8 +267,6 @@ def read_file(*args, **kwargs):
 
 
 def to_file(*args, **kwargs):
-    import warnings
-
     warnings.warn(
         "geopandas.io.file.to_file() is intended for internal "
         "use only, and will be deprecated. Use GeoDataFrame.to_file() "
@@ -168,30 +278,50 @@ def to_file(*args, **kwargs):
     return _to_file(*args, **kwargs)
 
 
+def _detect_driver(path):
+    """
+    Attempt to auto-detect driver based on the extension
+    """
+    try:
+        # in case the path is a file handle
+        path = path.name
+    except AttributeError:
+        pass
+    try:
+        return _EXTENSION_TO_DRIVER[Path(path).suffix.lower()]
+    except KeyError:
+        # Assume it is a shapefile folder for now. In the future,
+        # will likely raise an exception when the expected
+        # folder writing behavior is more clearly defined.
+        return "ESRI Shapefile"
+
+
 def _to_file(
     df,
     filename,
-    driver="ESRI Shapefile",
+    driver=None,
     schema=None,
     index=None,
     mode="w",
     crs=None,
-    **kwargs
+    **kwargs,
 ):
     """
     Write this GeoDataFrame to an OGR data source
 
     A dictionary of supported OGR providers is available via:
     >>> import fiona
-    >>> fiona.supported_drivers
+    >>> fiona.supported_drivers  # doctest: +SKIP
 
     Parameters
     ----------
     df : GeoDataFrame to be written
     filename : string
         File path or file handle to write to.
-    driver : string, default 'ESRI Shapefile'
+    driver : string, default None
         The OGR format driver used to write the vector file.
+        If not specified, it attempts to infer it from the file extension.
+        If no extension is specified, it saves ESRI Shapefile to a folder.
     schema : dict, default None
         If specified, the schema dictionary is passed to Fiona to
         better control how the file is written. If None, GeoPandas
@@ -227,12 +357,13 @@ def _to_file(
     may fail. In this case, the proper encoding can be specified explicitly
     by using the encoding keyword parameter, e.g. ``encoding='utf-8'``.
     """
+    _check_fiona("'to_file' method")
+    filename = _expand_user(filename)
+
     if index is None:
         # Determine if index attribute(s) should be saved to file
-        index = list(df.index.names) != [None] or type(df.index) not in (
-            pd.RangeIndex,
-            pd.Int64Index,
-        )
+        # (only if they are named or are non-integer)
+        index = list(df.index.names) != [None] or not is_integer_dtype(df.index.dtype)
     if index:
         df = df.reset_index(drop=False)
     if schema is None:
@@ -241,13 +372,24 @@ def _to_file(
         crs = pyproj.CRS.from_user_input(crs)
     else:
         crs = df.crs
+
+    if driver is None:
+        driver = _detect_driver(filename)
+
+    if driver == "ESRI Shapefile" and any([len(c) > 10 for c in df.columns.tolist()]):
+        warnings.warn(
+            "Column names longer than 10 characters will be truncated when saved to "
+            "ESRI Shapefile.",
+            stacklevel=3,
+        )
+
     with fiona_env():
         crs_wkt = None
         try:
             gdal_version = fiona.env.get_gdal_release_name()
         except AttributeError:
             gdal_version = "2.0.0"  # just assume it is not the latest
-        if LooseVersion(gdal_version) >= LooseVersion("3.0.0") and crs:
+        if Version(gdal_version) >= Version("3.0.0") and crs:
             crs_wkt = crs.to_wkt()
         elif crs:
             crs_wkt = crs.to_wkt("WKT1_GDAL")
@@ -275,12 +417,6 @@ def infer_schema(df):
             out_type = type(np.zeros(1, in_type).item()).__name__
         if out_type == "long":
             out_type = "int"
-        if not _FIONA18 and out_type == "bool":
-            raise ValueError(
-                'column "{}" is boolean type, '.format(column)
-                + "which is unsupported in file writing with fiona "
-                "< 1.8. Consider casting the column to int type."
-            )
         return out_type
 
     properties = OrderedDict(
@@ -292,7 +428,12 @@ def infer_schema(df):
     )
 
     if df.empty:
-        raise ValueError("Cannot write empty DataFrame to file.")
+        warnings.warn(
+            "You are attempting to write an empty DataFrame to file. "
+            "For some drivers, this operation may fail.",
+            UserWarning,
+            stacklevel=3,
+        )
 
     # Since https://github.com/Toblerity/Fiona/issues/446 resolution,
     # Fiona allows a list of geometry types
@@ -307,24 +448,11 @@ def _geometry_types(df):
     """
     Determine the geometry types in the GeoDataFrame for the schema.
     """
-    if _FIONA18:
-        # Starting from Fiona 1.8, schema submitted to fiona to write a gdf
-        # can have mixed geometries:
-        # - 3D and 2D shapes can coexist in inferred schema
-        # - Shape and MultiShape types can (and must) coexist in inferred
-        #   schema
-        geom_types_2D = df[~df.geometry.has_z].geometry.geom_type.unique()
-        geom_types_2D = [gtype for gtype in geom_types_2D if gtype is not None]
-        geom_types_3D = df[df.geometry.has_z].geometry.geom_type.unique()
-        geom_types_3D = ["3D " + gtype for gtype in geom_types_3D if gtype is not None]
-        geom_types = geom_types_3D + geom_types_2D
-
-    else:
-        # Before Fiona 1.8, schema submitted to write a gdf should have
-        # one single geometry type whenever possible:
-        # - 3D and 2D shapes cannot coexist in inferred schema
-        # - Shape and MultiShape can not coexist in inferred schema
-        geom_types = _geometry_types_back_compat(df)
+    geom_types_2D = df[~df.geometry.has_z].geometry.geom_type.unique()
+    geom_types_2D = [gtype for gtype in geom_types_2D if gtype is not None]
+    geom_types_3D = df[df.geometry.has_z].geometry.geom_type.unique()
+    geom_types_3D = ["3D " + gtype for gtype in geom_types_3D if gtype is not None]
+    geom_types = geom_types_3D + geom_types_2D
 
     if len(geom_types) == 0:
         # Default geometry type supported by Fiona
@@ -335,25 +463,3 @@ def _geometry_types(df):
         geom_types = geom_types[0]
 
     return geom_types
-
-
-def _geometry_types_back_compat(df):
-    """
-    for backward compatibility with Fiona<1.8 only
-    """
-    unique_geom_types = df.geometry.geom_type.unique()
-    unique_geom_types = [gtype for gtype in unique_geom_types if gtype is not None]
-
-    # merge single and Multi types (eg Polygon and MultiPolygon)
-    unique_geom_types = [
-        gtype
-        for gtype in unique_geom_types
-        if not gtype.startswith("Multi") or gtype[5:] not in unique_geom_types
-    ]
-
-    if df.geometry.has_z.any():
-        # declare all geometries as 3D geometries
-        unique_geom_types = ["3D " + type for type in unique_geom_types]
-    # by default, all geometries are 2D geometries
-
-    return unique_geom_types

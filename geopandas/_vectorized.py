@@ -7,6 +7,7 @@ Uses PyGEOS if available/set, otherwise loops through Shapely geometries.
 import warnings
 
 import numpy as np
+import pandas as pd
 
 import shapely.geometry
 import shapely.geos
@@ -24,6 +25,7 @@ except ImportError:
 
 
 _names = {
+    "MISSING": None,
     "NAG": None,
     "POINT": "Point",
     "LINESTRING": "LineString",
@@ -43,9 +45,9 @@ else:
     type_mapping, geometry_type_ids, geometry_type_values = None, None, None
 
 
-def _isna(value):
+def isna(value):
     """
-    Check if scalar value is NA-like (None or np.nan).
+    Check if scalar value is NA-like (None, np.nan or pd.NA).
 
     Custom version that only works for scalars (returning True or False),
     as `pd.isna` also works for array-like input returning a boolean array.
@@ -53,6 +55,8 @@ def _isna(value):
     if value is None:
         return True
     elif isinstance(value, float) and np.isnan(value):
+        return True
+    elif compat.PANDAS_GE_10 and value is pd.NA:
         return True
     else:
         return False
@@ -101,7 +105,8 @@ def from_shapely(data):
     if compat.USE_PYGEOS and compat.PYGEOS_SHAPELY_COMPAT:
         if not isinstance(data, np.ndarray):
             arr = np.empty(len(data), dtype=object)
-            arr[:] = data
+            with compat.ignore_shapely2_warnings():
+                arr[:] = data
         else:
             arr = data
         try:
@@ -120,15 +125,12 @@ def from_shapely(data):
             else:
                 out.append(geom)
         elif hasattr(geom, "__geo_interface__"):
-            geom = shapely.geometry.asShape(geom)
-            # asShape returns GeometryProxy -> trigger actual materialization
-            # with one of its methods
-            geom.wkb
+            geom = shapely.geometry.shape(geom)
             if compat.USE_PYGEOS:
                 out.append(_shapely_to_pygeos(geom))
             else:
                 out.append(geom)
-        elif _isna(geom):
+        elif isna(geom):
             out.append(None)
         else:
             raise TypeError("Input must be valid geometry objects: {0}".format(geom))
@@ -139,14 +141,16 @@ def from_shapely(data):
         # numpy can expand geometry collections into 2D arrays, use this
         # two-step construction to avoid this
         aout = np.empty(len(data), dtype=object)
-        aout[:] = out
+        with compat.ignore_shapely2_warnings():
+            aout[:] = out
         return aout
 
 
 def to_shapely(data):
     if compat.USE_PYGEOS:
         out = np.empty(len(data), dtype=object)
-        out[:] = [_pygeos_to_shapely(geom) for geom in data]
+        with compat.ignore_shapely2_warnings():
+            out[:] = [_pygeos_to_shapely(geom) for geom in data]
         return out
     else:
         return data
@@ -164,20 +168,21 @@ def from_wkb(data):
     out = []
 
     for geom in data:
-        if geom is not None and len(geom):
-            geom = shapely.wkb.loads(geom)
+        if not isna(geom) and len(geom):
+            geom = shapely.wkb.loads(geom, hex=isinstance(geom, str))
         else:
             geom = None
         out.append(geom)
 
     aout = np.empty(len(data), dtype=object)
-    aout[:] = out
+    with compat.ignore_shapely2_warnings():
+        aout[:] = out
     return aout
 
 
-def to_wkb(data, hex=False):
+def to_wkb(data, hex=False, **kwargs):
     if compat.USE_PYGEOS:
-        return pygeos.to_wkb(data, hex=hex)
+        return pygeos.to_wkb(data, hex=hex, **kwargs)
     else:
         if hex:
             out = [geom.wkb_hex if geom is not None else None for geom in data]
@@ -198,7 +203,7 @@ def from_wkt(data):
     out = []
 
     for geom in data:
-        if geom is not None and len(geom):
+        if not isna(geom) and len(geom):
             if isinstance(geom, bytes):
                 geom = geom.decode("utf-8")
             geom = shapely.wkt.loads(geom)
@@ -207,7 +212,8 @@ def from_wkt(data):
         out.append(geom)
 
     aout = np.empty(len(data), dtype=object)
-    aout[:] = out
+    with compat.ignore_shapely2_warnings():
+        aout[:] = out
     return aout
 
 
@@ -244,7 +250,8 @@ def points_from_xy(x, y, z=None):
     else:
         out = _points_from_xy(x, y, z)
         aout = np.empty(len(x), dtype=object)
-        aout[:] = out
+        with compat.ignore_shapely2_warnings():
+            aout[:] = out
         return aout
 
 
@@ -262,7 +269,7 @@ def _binary_method(op, left, right, **kwargs):
 
 def _binary_geo(op, left, right):
     # type: (str, np.array[geoms], [np.array[geoms]/BaseGeometry]) -> np.array[geoms]
-    """ Apply geometry-valued operation
+    """Apply geometry-valued operation
 
     Supports:
 
@@ -280,10 +287,11 @@ def _binary_geo(op, left, right):
         # intersection can return empty GeometryCollections, and if the
         # result are only those, numpy will coerce it to empty 2D array
         data = np.empty(len(left), dtype=object)
-        data[:] = [
-            getattr(s, op)(right) if s is not None and right is not None else None
-            for s in left
-        ]
+        with compat.ignore_shapely2_warnings():
+            data[:] = [
+                getattr(s, op)(right) if s is not None and right is not None else None
+                for s in left
+            ]
         return data
     elif isinstance(right, np.ndarray):
         if len(left) != len(right):
@@ -292,12 +300,13 @@ def _binary_geo(op, left, right):
             )
             raise ValueError(msg)
         data = np.empty(len(left), dtype=object)
-        data[:] = [
-            getattr(this_elem, op)(other_elem)
-            if this_elem is not None and other_elem is not None
-            else None
-            for this_elem, other_elem in zip(left, right)
-        ]
+        with compat.ignore_shapely2_warnings():
+            data[:] = [
+                getattr(this_elem, op)(other_elem)
+                if this_elem is not None and other_elem is not None
+                else None
+                for this_elem, other_elem in zip(left, right)
+            ]
         return data
     else:
         raise TypeError("Type not known: {0} vs {1}".format(type(left), type(right)))
@@ -431,7 +440,8 @@ def _affinity_method(op, left, *args, **kwargs):
             res = getattr(shapely.affinity, op)(geom, *args, **kwargs)
         out.append(res)
     data = np.empty(len(left), dtype=object)
-    data[:] = out
+    with compat.ignore_shapely2_warnings():
+        data[:] = out
     return from_shapely(data)
 
 
@@ -474,23 +484,28 @@ def is_simple(data):
 
 
 def is_ring(data):
-    if compat.USE_PYGEOS:
-        return pygeos.is_ring(pygeos.get_exterior_ring(data))
-    else:
-        # operates on the exterior, so can't use _unary_op()
-        # XXX needed to change this because there is now a geometry collection
-        # in the shapely ones that was something else before?
-        return np.array(
-            [
-                geom.exterior.is_ring
-                if geom is not None
-                and hasattr(geom, "exterior")
-                and geom.exterior is not None
-                else False
-                for geom in data
-            ],
-            dtype=bool,
+    if "Polygon" in geom_type(data):
+        warnings.warn(
+            "is_ring currently returns True for Polygons, which is not correct. "
+            "This will be corrected to False in a future release.",
+            FutureWarning,
+            stacklevel=3,
         )
+    if compat.USE_PYGEOS:
+        return pygeos.is_ring(data) | pygeos.is_ring(pygeos.get_exterior_ring(data))
+    else:
+        # for polygons operates on the exterior, so can't use _unary_op()
+        results = []
+        for geom in data:
+            if geom is None:
+                results.append(False)
+            elif geom.type == "Polygon":
+                results.append(geom.exterior.is_ring)
+            elif geom.type in ["LineString", "LinearRing"]:
+                results.append(geom.is_ring)
+            else:
+                results.append(False)
+        return np.array(results, dtype=bool)
 
 
 def is_closed(data):
@@ -539,7 +554,8 @@ def _unary_geo(op, left, *args, **kwargs):
     """Unary operation that returns new geometries"""
     # ensure 1D output, see note above
     data = np.empty(len(left), dtype=object)
-    data[:] = [getattr(geom, op, None) for geom in left]
+    with compat.ignore_shapely2_warnings():
+        data[:] = [getattr(geom, op, None) for geom in left]
     return data
 
 
@@ -597,7 +613,8 @@ def interiors(data):
             "geometry types, None is returned."
         )
     data = np.empty(len(data), dtype=object)
-    data[:] = inner_rings
+    with compat.ignore_shapely2_warnings():
+        data[:] = inner_rings
     return data
 
 
@@ -607,9 +624,11 @@ def representative_point(data):
     else:
         # method and not a property -> can't use _unary_geo
         out = np.empty(len(data), dtype=object)
-        out[:] = [
-            geom.representative_point() if geom is not None else None for geom in data
-        ]
+        with compat.ignore_shapely2_warnings():
+            out[:] = [
+                geom.representative_point() if geom is not None else None
+                for geom in data
+            ]
         return out
 
 
@@ -761,22 +780,31 @@ def buffer(data, distance, resolution=16, **kwargs):
                     "length of the GeoSeries"
                 )
 
-            out[:] = [
-                geom.buffer(dist, resolution, **kwargs) if geom is not None else None
-                for geom, dist in zip(data, distance)
-            ]
+            with compat.ignore_shapely2_warnings():
+                out[:] = [
+                    geom.buffer(dist, resolution, **kwargs)
+                    if geom is not None
+                    else None
+                    for geom, dist in zip(data, distance)
+                ]
             return out
 
-        out[:] = [
-            geom.buffer(distance, resolution, **kwargs) if geom is not None else None
-            for geom in data
-        ]
+        with compat.ignore_shapely2_warnings():
+            out[:] = [
+                geom.buffer(distance, resolution, **kwargs)
+                if geom is not None
+                else None
+                for geom in data
+            ]
         return out
 
 
 def interpolate(data, distance, normalized=False):
     if compat.USE_PYGEOS:
-        return pygeos.line_interpolate_point(data, distance, normalize=normalized)
+        try:
+            return pygeos.line_interpolate_point(data, distance, normalized=normalized)
+        except TypeError:  # support for pygeos<0.9
+            return pygeos.line_interpolate_point(data, distance, normalize=normalized)
     else:
         out = np.empty(len(data), dtype=object)
         if isinstance(distance, np.ndarray):
@@ -785,13 +813,17 @@ def interpolate(data, distance, normalized=False):
                     "Length of distance sequence does not match "
                     "length of the GeoSeries"
                 )
-            out[:] = [
-                geom.interpolate(dist, normalized=normalized)
-                for geom, dist in zip(data, distance)
-            ]
+            with compat.ignore_shapely2_warnings():
+                out[:] = [
+                    geom.interpolate(dist, normalized=normalized)
+                    for geom, dist in zip(data, distance)
+                ]
             return out
 
-        out[:] = [geom.interpolate(distance, normalized=normalized) for geom in data]
+        with compat.ignore_shapely2_warnings():
+            out[:] = [
+                geom.interpolate(distance, normalized=normalized) for geom in data
+            ]
         return out
 
 
@@ -802,16 +834,48 @@ def simplify(data, tolerance, preserve_topology=True):
     else:
         # method and not a property -> can't use _unary_geo
         out = np.empty(len(data), dtype=object)
-        out[:] = [
-            geom.simplify(tolerance, preserve_topology=preserve_topology)
-            for geom in data
-        ]
+        with compat.ignore_shapely2_warnings():
+            out[:] = [
+                geom.simplify(tolerance, preserve_topology=preserve_topology)
+                for geom in data
+            ]
+        return out
+
+
+def _shapely_normalize(geom):
+    """
+    Small helper function for now because it is not yet available in Shapely.
+    """
+    from shapely.geos import lgeos
+    from shapely.geometry.base import geom_factory
+    from ctypes import c_void_p, c_int
+
+    lgeos._lgeos.GEOSNormalize_r.restype = c_int
+    lgeos._lgeos.GEOSNormalize_r.argtypes = [c_void_p, c_void_p]
+
+    geom_cloned = lgeos.GEOSGeom_clone(geom._geom)
+    lgeos._lgeos.GEOSNormalize_r(lgeos.geos_handle, geom_cloned)
+    return geom_factory(geom_cloned)
+
+
+def normalize(data):
+    if compat.USE_PYGEOS:
+        return pygeos.normalize(data)
+    else:
+        out = np.empty(len(data), dtype=object)
+        with compat.ignore_shapely2_warnings():
+            out[:] = [
+                _shapely_normalize(geom) if geom is not None else None for geom in data
+            ]
         return out
 
 
 def project(data, other, normalized=False):
     if compat.USE_PYGEOS:
-        return pygeos.line_locate_point(data, other, normalize=normalized)
+        try:
+            return pygeos.line_locate_point(data, other, normalized=normalized)
+        except TypeError:  # support for pygeos<0.9
+            return pygeos.line_locate_point(data, other, normalize=normalized)
     else:
         return _binary_op("project", data, other, normalized=normalized)
 
@@ -827,7 +891,11 @@ def unary_union(data):
     if compat.USE_PYGEOS:
         return _pygeos_to_shapely(pygeos.union_all(data))
     else:
-        return shapely.ops.unary_union(data)
+        data = [g for g in data if g is not None]
+        if data:
+            return shapely.ops.unary_union(data)
+        else:
+            return None
 
 
 #
@@ -847,6 +915,14 @@ def get_y(data):
         return pygeos.get_y(data)
     else:
         return _unary_op("y", data, null_value=np.nan)
+
+
+def get_z(data):
+    if compat.USE_PYGEOS:
+        return pygeos.get_z(data)
+    else:
+        data = [geom.z if geom.has_z else np.nan for geom in data]
+        return np.array(data, dtype=np.dtype(float))
 
 
 def bounds(data):
@@ -886,6 +962,9 @@ def transform(data, func):
         result = np.empty(n, dtype=object)
         for i in range(n):
             geom = data[i]
-            result[i] = transform(func, geom)
+            if isna(geom):
+                result[i] = geom
+            else:
+                result[i] = transform(func, geom)
 
         return result

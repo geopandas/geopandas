@@ -2,10 +2,13 @@ import warnings
 
 import numpy as np
 import pandas as pd
+from pandas.plotting import PlotAccessor
 
 import geopandas
 
-from distutils.version import LooseVersion
+from packaging.version import Version
+
+from ._decorator import doc
 
 
 def deprecated(new):
@@ -45,8 +48,8 @@ def _flatten_multi_geoms(geoms, prefix="Multi"):
         return geoms, np.arange(len(geoms))
 
     for ix, geom in enumerate(geoms):
-        if geom.type.startswith(prefix):
-            for poly in geom:
+        if geom is not None and geom.type.startswith(prefix) and not geom.is_empty:
+            for poly in geom.geoms:
                 components.append(poly)
                 component_index.append(ix)
         else:
@@ -63,8 +66,16 @@ def _expand_kwargs(kwargs, multiindex):
     it (in place) to the correct length/formats with help of 'multiindex', unless
     the value appears to already be a valid (single) value for the key.
     """
+    import matplotlib
     from matplotlib.colors import is_color_like
     from typing import Iterable
+
+    mpl = Version(matplotlib.__version__)
+    if mpl >= Version("3.4") or (mpl > Version("3.3.2") and "+" in mpl):
+        # alpha is supported as array argument with matplotlib 3.4+
+        scalar_kwargs = ["marker", "path_effects"]
+    else:
+        scalar_kwargs = ["marker", "alpha", "path_effects"]
 
     for att, value in kwargs.items():
         if "color" in att:  # color(s), edgecolor(s), facecolor(s)
@@ -78,12 +89,38 @@ def _expand_kwargs(kwargs, multiindex):
                 and isinstance(value[1], Iterable)
             ):
                 continue
-        elif att in ["marker", "alpha"]:
+        elif att in scalar_kwargs:
             # For these attributes, only a single value is allowed, so never expand.
             continue
 
         if pd.api.types.is_list_like(value):
             kwargs[att] = np.take(value, multiindex, axis=0)
+
+
+def _PolygonPatch(polygon, **kwargs):
+    """Constructs a matplotlib patch from a Polygon geometry
+
+    The `kwargs` are those supported by the matplotlib.patches.PathPatch class
+    constructor. Returns an instance of matplotlib.patches.PathPatch.
+
+    Example (using Shapely Point and a matplotlib axes)::
+
+        b = shapely.geometry.Point(0, 0).buffer(1.0)
+        patch = _PolygonPatch(b, fc='blue', ec='blue', alpha=0.5)
+        ax.add_patch(patch)
+
+    GeoPandas originally relied on the descartes package by Sean Gillies
+    (BSD license, https://pypi.org/project/descartes) for PolygonPatch, but
+    this dependency was removed in favor of the below matplotlib code.
+    """
+    from matplotlib.patches import PathPatch
+    from matplotlib.path import Path
+
+    path = Path.make_compound_path(
+        Path(np.asarray(polygon.exterior.coords)[:, :2]),
+        *[Path(np.asarray(ring.coords)[:, :2]) for ring in polygon.interiors],
+    )
+    return PathPatch(path, **kwargs)
 
 
 def _plot_polygon_collection(
@@ -115,15 +152,6 @@ def _plot_polygon_collection(
     -------
     collection : matplotlib.collections.Collection that was plotted
     """
-
-    try:
-        from descartes.patch import PolygonPatch
-    except ImportError:
-        raise ImportError(
-            "The descartes package is required for plotting polygons in geopandas. "
-            "You can install it using 'conda install -c conda-forge descartes' or "
-            "'pip install descartes'."
-        )
     from matplotlib.collections import PatchCollection
 
     geoms, multiindex = _flatten_multi_geoms(geoms)
@@ -143,7 +171,9 @@ def _plot_polygon_collection(
 
     _expand_kwargs(kwargs, multiindex)
 
-    collection = PatchCollection([PolygonPatch(poly) for poly in geoms], **kwargs)
+    collection = PatchCollection(
+        [_PolygonPatch(poly) for poly in geoms if not poly.is_empty], **kwargs
+    )
 
     if values is not None:
         collection.set_array(np.asarray(values))
@@ -200,7 +230,7 @@ def _plot_linestring_collection(
 
     _expand_kwargs(kwargs, multiindex)
 
-    segments = [np.array(linestring)[:, :2] for linestring in geoms]
+    segments = [np.array(linestring.coords)[:, :2] for linestring in geoms]
     collection = LineCollection(segments, **kwargs)
 
     if values is not None:
@@ -227,7 +257,7 @@ def _plot_point_collection(
     vmax=None,
     marker="o",
     markersize=None,
-    **kwargs
+    **kwargs,
 ):
     """
     Plots a collection of Point and MultiPoint geometries to `ax`
@@ -254,11 +284,10 @@ def _plot_point_collection(
         raise ValueError("Can only specify one of 'values' and 'color' kwargs")
 
     geoms, multiindex = _flatten_multi_geoms(geoms)
-    if values is not None:
-        values = np.take(values, multiindex, axis=0)
+    # values are expanded below as kwargs["c"]
 
-    x = [p.x for p in geoms]
-    y = [p.y for p in geoms]
+    x = [p.x if not p.is_empty else None for p in geoms]
+    y = [p.y if not p.is_empty else None for p in geoms]
 
     # matplotlib 1.4 does not support c=None, and < 2.0 does not support s=None
     if values is not None:
@@ -313,14 +342,14 @@ def plot_series(
     figsize : pair of floats (default None)
         Size of the resulting matplotlib.figure.Figure. If the argument
         ax is given explicitly, figsize is ignored.
-    aspect : 'auto', 'equal' or float (default 'auto')
+    aspect : 'auto', 'equal', None or float (default 'auto')
         Set aspect of axis. If 'auto', the default aspect for map plots is 'equal'; if
         however data are not projected (coordinates are long/lat), the aspect is by
         default set to 1/cos(s_y * pi/180) with s_y the y coordinate of the middle of
         the GeoSeries (the mean of the y range of bounding box) so that a long/lat
         square appears square in the middle of the plot. This implies an
-        Equirectangular projection. It can also be set manually (float) as the ratio
-        of y-unit to x-unit.
+        Equirectangular projection. If None, the aspect of `ax` won't be changed. It can
+        also be set manually (float) as the ratio of y-unit to x-unit.
     **style_kwds : dict
         Color options to be passed on to the actual plot function, such
         as ``edgecolor``, ``facecolor``, ``linewidth``, ``markersize``,
@@ -366,13 +395,21 @@ def plot_series(
             # https://github.com/edzer/sp/blob/master/R/mapasp.R
         else:
             ax.set_aspect("equal")
-    else:
+    elif aspect is not None:
         ax.set_aspect(aspect)
 
     if s.empty:
         warnings.warn(
             "The GeoSeries you are attempting to plot is "
             "empty. Nothing has been displayed.",
+            UserWarning,
+        )
+        return ax
+
+    if s.is_empty.all():
+        warnings.warn(
+            "The GeoSeries you are attempting to plot is "
+            "composed of empty geometries. Nothing has been displayed.",
             UserWarning,
         )
         return ax
@@ -454,7 +491,7 @@ def plot_dataframe(
     classification_kwds=None,
     missing_kwds=None,
     aspect="auto",
-    **style_kwds
+    **style_kwds,
 ):
     """
     Plot a GeoDataFrame.
@@ -465,15 +502,26 @@ def plot_dataframe(
 
     Parameters
     ----------
-    df : GeoDataFrame
-        The GeoDataFrame to be plotted.  Currently Polygon,
-        MultiPolygon, LineString, MultiLineString and Point
-        geometries can be plotted.
     column : str, np.array, pd.Series (default None)
         The name of the dataframe column, np.array, or pd.Series to be plotted.
         If np.array or pd.Series are used then it must have same length as
         dataframe. Values are used to color the plot. Ignored if `color` is
         also set.
+    kind: str
+        The kind of plots to produce:
+         - 'geo': Map (default)
+         Pandas Kinds
+         - 'line' : line plot
+         - 'bar' : vertical bar plot
+         - 'barh' : horizontal bar plot
+         - 'hist' : histogram
+         - 'box' : BoxPlot
+         - 'kde' : Kernel Density Estimation plot
+         - 'density' : same as 'kde'
+         - 'area' : area plot
+         - 'pie' : pie plot
+         - 'scatter' : scatter plot
+         - 'hexbin' : hexbin plot.
     cmap : str (default None)
         The name of a colormap recognized by matplotlib.
     color : str (default None)
@@ -515,8 +563,8 @@ def plot_dataframe(
         Size of the resulting matplotlib.figure.Figure. If the argument
         axes is given explicitly, figsize is ignored.
     legend_kwds : dict (default None)
-        Keyword arguments to pass to matplotlib.pyplot.legend() or
-        matplotlib.pyplot.colorbar().
+        Keyword arguments to pass to :func:`matplotlib.pyplot.legend` or
+        :func:`matplotlib.pyplot.colorbar`.
         Additional accepted keywords when `scheme` is specified:
 
         fmt : string
@@ -526,6 +574,9 @@ def plot_dataframe(
             A list of legend labels to override the auto-generated labels.
             Needs to have the same number of elements as the number of
             classes (`k`).
+        interval : boolean (default False)
+            An option to control brackets from mapclassify legend.
+            If True, open/closed interval brackets are shown in the legend.
     categories : list-like
         Ordered list-like object of categories to be used for categorical plot.
     classification_kwds : dict (default None)
@@ -535,14 +586,14 @@ def plot_dataframe(
         to be passed on to geometries with missing values in addition to
         or overwriting other style kwds. If None, geometries with missing
         values are not plotted.
-    aspect : 'auto', 'equal' or float (default 'auto')
+    aspect : 'auto', 'equal', None or float (default 'auto')
         Set aspect of axis. If 'auto', the default aspect for map plots is 'equal'; if
         however data are not projected (coordinates are long/lat), the aspect is by
         default set to 1/cos(df_y * pi/180) with df_y the y coordinate of the middle of
         the GeoDataFrame (the mean of the y range of bounding box) so that a long/lat
         square appears square in the middle of the plot. This implies an
-        Equirectangular projection. It can also be set manually (float) as the ratio
-        of y-unit to x-unit.
+        Equirectangular projection. If None, the aspect of `ax` won't be changed. It can
+        also be set manually (float) as the ratio of y-unit to x-unit.
 
     **style_kwds : dict
         Style options to be passed on to the actual plot function, such
@@ -552,6 +603,27 @@ def plot_dataframe(
     Returns
     -------
     ax : matplotlib axes instance
+
+    Examples
+    --------
+    >>> df = geopandas.read_file(geopandas.datasets.get_path("naturalearth_lowres"))
+    >>> df.head()  # doctest: +SKIP
+        pop_est      continent                      name iso_a3  \
+gdp_md_est                                           geometry
+    0     920938        Oceania                      Fiji    FJI      8374.0  MULTIPOLY\
+GON (((180.00000 -16.06713, 180.00000...
+    1   53950935         Africa                  Tanzania    TZA    150600.0  POLYGON (\
+(33.90371 -0.95000, 34.07262 -1.05982...
+    2     603253         Africa                 W. Sahara    ESH       906.5  POLYGON (\
+(-8.66559 27.65643, -8.66512 27.58948...
+    3   35623680  North America                    Canada    CAN   1674000.0  MULTIPOLY\
+GON (((-122.84000 49.00000, -122.9742...
+    4  326625791  North America  United States of America    USA  18560000.0  MULTIPOLY\
+GON (((-122.84000 49.00000, -120.0000...
+
+    >>> df.plot("pop_est", cmap="Blues")  # doctest: +SKIP
+
+    See the User Guide page :doc:`../../user_guide/mapping` for details.
 
     """
     if "colormap" in style_kwds:
@@ -597,8 +669,13 @@ def plot_dataframe(
             # https://github.com/edzer/sp/blob/master/R/mapasp.R
         else:
             ax.set_aspect("equal")
-    else:
+    elif aspect is not None:
         ax.set_aspect(aspect)
+
+    # GH 1555
+    # if legend_kwds set, copy so we don't update it in place
+    if legend_kwds is not None:
+        legend_kwds = legend_kwds.copy()
 
     if df.empty:
         warnings.warn(
@@ -620,7 +697,7 @@ def plot_dataframe(
             figsize=figsize,
             markersize=markersize,
             aspect=aspect,
-            **style_kwds
+            **style_kwds,
         )
 
     # To accept pd.Series and np.arrays as column
@@ -631,6 +708,10 @@ def plot_dataframe(
             )
         else:
             values = column
+
+            # Make sure index of a Series matches index of df
+            if isinstance(values, pd.Series):
+                values = values.reindex(df.index)
     else:
         values = df[column]
 
@@ -644,6 +725,62 @@ def plot_dataframe(
         categorical = True
 
     nan_idx = np.asarray(pd.isna(values), dtype="bool")
+
+    if scheme is not None:
+        mc_err = (
+            "The 'mapclassify' package (>= 2.4.0) is "
+            "required to use the 'scheme' keyword."
+        )
+        try:
+            import mapclassify
+
+        except ImportError:
+            raise ImportError(mc_err)
+
+        if Version(mapclassify.__version__) < Version("2.4.0"):
+            raise ImportError(mc_err)
+
+        if classification_kwds is None:
+            classification_kwds = {}
+        if "k" not in classification_kwds:
+            classification_kwds["k"] = k
+
+        binning = mapclassify.classify(
+            np.asarray(values[~nan_idx]), scheme, **classification_kwds
+        )
+        # set categorical to True for creating the legend
+        categorical = True
+        if legend_kwds is not None and "labels" in legend_kwds:
+            if len(legend_kwds["labels"]) != binning.k:
+                raise ValueError(
+                    "Number of labels must match number of bins, "
+                    "received {} labels for {} bins".format(
+                        len(legend_kwds["labels"]), binning.k
+                    )
+                )
+            else:
+                labels = list(legend_kwds.pop("labels"))
+        else:
+            fmt = "{:.2f}"
+            if legend_kwds is not None and "fmt" in legend_kwds:
+                fmt = legend_kwds.pop("fmt")
+
+            labels = binning.get_legend_classes(fmt)
+            if legend_kwds is not None:
+                show_interval = legend_kwds.pop("interval", False)
+            else:
+                show_interval = False
+            if not show_interval:
+                labels = [c[1:-1] for c in labels]
+
+        values = pd.Categorical(
+            [np.nan] * len(values), categories=binning.bins, ordered=True
+        )
+        values[~nan_idx] = pd.Categorical.from_codes(
+            binning.yb, categories=binning.bins, ordered=True
+        )
+        if cmap is None:
+            cmap = "viridis"
 
     # Define `values` as a Series
     if categorical:
@@ -664,32 +801,6 @@ def plot_dataframe(
         values = cat.codes[~nan_idx]
         vmin = 0 if vmin is None else vmin
         vmax = len(categories) - 1 if vmax is None else vmax
-
-    if scheme is not None:
-        if classification_kwds is None:
-            classification_kwds = {}
-        if "k" not in classification_kwds:
-            classification_kwds["k"] = k
-
-        binning = _mapclassify_choro(values[~nan_idx], scheme, **classification_kwds)
-        # set categorical to True for creating the legend
-        categorical = True
-        if legend_kwds is not None and "labels" in legend_kwds:
-            if len(legend_kwds["labels"]) != binning.k:
-                raise ValueError(
-                    "Number of labels must match number of bins, "
-                    "received {} labels for {} bins".format(
-                        len(legend_kwds["labels"]), binning.k
-                    )
-                )
-            else:
-                categories = list(legend_kwds.pop("labels"))
-        else:
-            fmt = "{:.2f}"
-            if legend_kwds is not None and "fmt" in legend_kwds:
-                fmt = legend_kwds.pop("fmt")
-            categories = binning.get_legend_classes(fmt)
-        values = np.array(binning.yb)
 
     # fill values with placeholder where were NaNs originally to map them properly
     # (after removing them in categorical or scheme)
@@ -746,10 +857,11 @@ def plot_dataframe(
             vmax=mx,
             markersize=markersize,
             cmap=cmap,
-            **style_kwds
+            **style_kwds,
         )
 
-    if missing_kwds is not None:
+    missing_data = not expl_series[nan_idx].empty
+    if missing_kwds is not None and missing_data:
         if color:
             if "color" not in missing_kwds:
                 missing_kwds["color"] = color
@@ -775,6 +887,8 @@ def plot_dataframe(
             norm = Normalize(vmin=mn, vmax=mx)
         n_cmap = cm.ScalarMappable(norm=norm, cmap=cmap)
         if categorical:
+            if scheme is not None:
+                categories = labels
             patches = []
             for value, cat in enumerate(categories):
                 patches.append(
@@ -789,7 +903,7 @@ def plot_dataframe(
                         markeredgewidth=0,
                     )
                 )
-            if missing_kwds is not None:
+            if missing_kwds is not None and missing_data:
                 if "color" in merged_kwds:
                     merged_kwds["facecolor"] = merged_kwds["color"]
                 patches.append(
@@ -818,105 +932,29 @@ def plot_dataframe(
             else:
                 legend_kwds.setdefault("ax", ax)
 
-            n_cmap.set_array([])
+            n_cmap.set_array(np.array([]))
             ax.get_figure().colorbar(n_cmap, **legend_kwds)
 
     plt.draw()
     return ax
 
 
-def _mapclassify_choro(values, scheme, **classification_kwds):
-    """
-    Wrapper for choropleth schemes from mapclassify for use with plot_dataframe
+@doc(plot_dataframe)
+class GeoplotAccessor(PlotAccessor):
 
-    Parameters
-    ----------
-    values
-        Series to be plotted
-    scheme : str
-        One of mapclassify classification schemes
-        Options are BoxPlot, EqualInterval, FisherJenks,
-        FisherJenksSampled, HeadTailBreaks, JenksCaspall,
-        JenksCaspallForced, JenksCaspallSampled, MaxP,
-        MaximumBreaks, NaturalBreaks, Quantiles, Percentiles, StdMean,
-        UserDefined
+    _pandas_kinds = PlotAccessor._all_kinds
 
-    **classification_kwds : dict
-        Keyword arguments for classification scheme
-        For details see mapclassify documentation:
-        https://mapclassify.readthedocs.io/en/latest/api.html
+    def __call__(self, *args, **kwargs):
+        data = self._parent.copy()
+        kind = kwargs.pop("kind", "geo")
+        if kind == "geo":
+            return plot_dataframe(data, *args, **kwargs)
+        if kind in self._pandas_kinds:
+            # Access pandas plots
+            return PlotAccessor(data)(kind=kind, **kwargs)
+        else:
+            # raise error
+            raise ValueError(f"{kind} is not a valid plot kind")
 
-    Returns
-    -------
-    binning
-        Binning objects that holds the Series with values replaced with
-        class identifier and the bins.
-    """
-    try:
-        import mapclassify.classifiers as classifiers
-
-    except ImportError:
-        raise ImportError(
-            "The 'mapclassify' >= 2.2.0 package is required to use the 'scheme' keyword"
-        )
-    from mapclassify import __version__ as mc_version
-
-    if mc_version < LooseVersion("2.2.0"):
-        raise ImportError(
-            "The 'mapclassify' >= 2.2.0 package is required to "
-            "use the 'scheme' keyword"
-        )
-    schemes = {}
-    for classifier in classifiers.CLASSIFIERS:
-        schemes[classifier.lower()] = getattr(classifiers, classifier)
-
-    scheme = scheme.lower()
-
-    # mapclassify < 2.1 cleaned up the scheme names (removing underscores)
-    # trying both to keep compatibility with older versions and provide
-    # compatibility with newer versions of mapclassify
-    oldnew = {
-        "Box_Plot": "BoxPlot",
-        "Equal_Interval": "EqualInterval",
-        "Fisher_Jenks": "FisherJenks",
-        "Fisher_Jenks_Sampled": "FisherJenksSampled",
-        "HeadTail_Breaks": "HeadTailBreaks",
-        "Jenks_Caspall": "JenksCaspall",
-        "Jenks_Caspall_Forced": "JenksCaspallForced",
-        "Jenks_Caspall_Sampled": "JenksCaspallSampled",
-        "Max_P_Plassifier": "MaxP",
-        "Maximum_Breaks": "MaximumBreaks",
-        "Natural_Breaks": "NaturalBreaks",
-        "Std_Mean": "StdMean",
-        "User_Defined": "UserDefined",
-    }
-    scheme_names_mapping = {}
-    scheme_names_mapping.update(
-        {old.lower(): new.lower() for old, new in oldnew.items()}
-    )
-    scheme_names_mapping.update(
-        {new.lower(): old.lower() for old, new in oldnew.items()}
-    )
-
-    try:
-        scheme_class = schemes[scheme]
-    except KeyError:
-        scheme = scheme_names_mapping.get(scheme, scheme)
-        try:
-            scheme_class = schemes[scheme]
-        except KeyError:
-            raise ValueError(
-                "Invalid scheme. Scheme must be in the set: %r" % schemes.keys()
-            )
-
-    if classification_kwds["k"] is not None:
-        from inspect import getfullargspec as getspec
-
-        spec = getspec(scheme_class.__init__)
-        if "k" not in spec.args:
-            del classification_kwds["k"]
-    try:
-        binning = scheme_class(values, **classification_kwds)
-    except TypeError:
-        raise TypeError("Invalid keyword argument for %r " % scheme)
-    return binning
+    def geo(self, *args, **kwargs):
+        return self(kind="geo", *args, **kwargs)
