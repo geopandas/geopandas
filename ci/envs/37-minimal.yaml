@@ -8,7 +8,8 @@ dependencies:
   - numpy=1.18
   - pandas==1.0.0
   - shapely=1.7
-  - fiona=1.8.13
+  - fiona=1.8.13.post1
+  - pyproj=3.1.0
   - packaging
   #- pyproj
   # testing
@@ -25,6 +26,3 @@ dependencies:
   - SQLalchemy
   - libspatialite
   - pyarrow
-  - pip
-  - pip:
-      - pyproj==3.1.0
