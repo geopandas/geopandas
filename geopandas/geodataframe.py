@@ -748,9 +748,14 @@ es": {"name": "urn:ogc:def:crs:EPSG::4326"}}}'
         geo = self._to_geo(na=na, show_bbox=show_bbox, drop_id=drop_id)
 
         if self.crs is not None:
-            authority, code = self.crs.to_authority()
-            ogc_crs = f"urn:ogc:def:crs:{authority}::{code}"
-            geo["crs"] = {"type": "name", "properties": {"name": ogc_crs}}
+            auth_crsdef = self.crs.to_authority()
+            if auth_crsdef is None:
+                warnings.warn(f"Geodataframe CRS {self.crs!r} is not representable in URN OGC format."
+                              f"Resulting JSON will bear no CRS information.")
+            else:
+                authority, code = auth_crsdef
+                ogc_crs = f"urn:ogc:def:crs:{authority}::{code}"
+                geo["crs"] = {"type": "name", "properties": {"name": ogc_crs}}
 
         return json.dumps(geo, **kwargs)
 
