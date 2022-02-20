@@ -764,23 +764,25 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         """
         if to_wgs84 is None:
-            if self.crs and not self.crs.equals == 4326:
+            if self.crs and not self.crs.equals(4326, ignore_axis_order=True):
+                srs = self.crs.to_string()
+                srs = srs if len(srs) <= 50 else " ".join([srs[:50], "..."])
                 warnings.warn(
                     "GeoJSON specification requires WGS84 CRS. Geometry will "
                     "be automatically re-projected in future versions of GeoPandas. "
                     "To keep existing behavior use 'to_wgs84=False', to silence the "
                     "warning and get the future behaviour use 'to_wgs_84=True'. "
                     "GeoDataFrame's CRS:\n"
-                    "{}".format(self.crs.__repr__()),
+                    "{}".format(srs),
                     FutureWarning,
                     stacklevel=2,
-                )  # TODO: use warning below and default to re-projection in 0.9 or 0.10
+                )  # TODO: use warning below and default to re-projection in 1.0
                 # warnings.warn(
                 #  "GeoJSON specification requires WGS84 CRS. "
                 #  "Active geometry column has been automatically re-projected to WGS84"
                 #   "(EPSG:4326)."
                 # )
-        if self.crs and to_wgs84 and not self.crs == 4326:
+        if self.crs and to_wgs84 and not self.crs.equals(4326, ignore_axis_order=True):
             df = self.to_crs(epsg=4326)
         else:
             df = self
