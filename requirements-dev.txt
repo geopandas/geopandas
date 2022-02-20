@@ -1,7 +1,7 @@
 # required
 fiona>=1.8
 pandas>=1.0.0
-pyproj>=3.1.0
+pyproj>=2.6.1.post1
 shapely>=1.7
 packaging
 

@@ -33,7 +33,7 @@ else:
         "pandas >= 1.0.0",
         "shapely >= 1.7",
         "fiona >= 1.8",
-        "pyproj >= 3.1.0",
+        "pyproj >= 2.6.1.post1",
         "packaging",
     ]
 
