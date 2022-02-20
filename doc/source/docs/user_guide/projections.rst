@@ -123,7 +123,7 @@ projection during the creation of a GeoSeries or GeoDataFrame:
    ...
    >>> GeoSeries(array, crs=4326)  # crs=4326 is okay, as it matches the existing CRS
    >>> GeoSeries(array, crs=3395)  # crs=3395 is forbidden as array already has CRS
-   ValueError: CRS mismatch between CRS of the passed geometries and 'crs'. Use 'GeoDataFrame.set_crs(crs, allow_override=True)' to overwrite CRS or 'GeoDataFrame.to_crs(crs)' to reproject geometries.
+   ValueError: CRS mismatch between CRS of the passed geometries and 'crs'. Use 'GeoSeries.set_crs(crs, allow_override=True)' to overwrite CRS or 'GeoSeries.to_crs(crs)' to reproject geometries.
        GeoSeries(array, crs=3395).crs
 
 If you want to overwrite the projection, you can then assign it to the GeoSeries
