@@ -6,6 +6,7 @@ import warnings
 
 import numpy as np
 import pandas as pd
+import pyproj
 import shapely
 import shapely.geos
 
@@ -218,3 +219,10 @@ try:
     HAS_RTREE = True
 except ImportError:
     HAS_RTREE = False
+
+
+# -----------------------------------------------------------------------------
+# pyproj compat
+# -----------------------------------------------------------------------------
+
+PYPROJ_GE_32 = Version(pyproj.__version__) >= Version("3.2")

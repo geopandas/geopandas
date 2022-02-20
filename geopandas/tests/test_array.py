@@ -897,6 +897,9 @@ def test_unique_has_crs():
     assert t.unique().crs == t.crs
 
 
+@pytest.mark.skipif(
+    not compat.PYPROJ_GE_32, reason="requires pyproj 3.2 or higher to be stable"
+)
 class TestEstimateUtmCrs:
     def setup_method(self):
         self.esb = shapely.geometry.Point(-73.9847, 40.7484)
