@@ -7,7 +7,6 @@ dependencies:
   - pandas
   - shapely
   - fiona
-  - pyproj
   - geos
   - packaging
   # testing
@@ -28,3 +27,4 @@ dependencies:
       - pyarrow
       - folium
       - xyzservices
+      - pyproj

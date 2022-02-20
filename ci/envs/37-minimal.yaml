@@ -9,7 +9,6 @@ dependencies:
   - pandas==1.0.0
   - shapely=1.7
   - fiona=1.8.13
-  - pyproj=3.1.0
   - packaging
   #- pyproj
   # testing
@@ -21,8 +20,11 @@ dependencies:
   - rtree
   - matplotlib
   - matplotlib=3.2
-  - mapclassify=2.4.0
+  # - mapclassify=2.4.0
   - geopy
   - SQLalchemy
   - libspatialite
   - pyarrow
+  - pip
+  - pip:
+      - pyproj==3.1.0

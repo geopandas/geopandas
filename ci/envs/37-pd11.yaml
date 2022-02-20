@@ -8,6 +8,7 @@ dependencies:
   - shapely
   - fiona
   - numpy=<1.19
+  - pyproj=3.1.0
   #- pyproj
   - geos
   - packaging
@@ -24,7 +25,6 @@ dependencies:
   - libspatialite
   - pip
   - pip:
-      - pyproj==3.1.0
       - geopy
       - mapclassify==2.4.0
       - pyarrow
