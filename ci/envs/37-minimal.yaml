@@ -9,6 +9,7 @@ dependencies:
   - pandas==0.25
   - shapely=1.6
   - fiona=1.8.13
+  - packaging
   #- pyproj
   # testing
   - pytest

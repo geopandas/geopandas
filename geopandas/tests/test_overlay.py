@@ -1,5 +1,5 @@
 import os
-from distutils.version import LooseVersion
+from packaging.version import Version
 
 import numpy as np
 import pandas as pd
@@ -18,7 +18,7 @@ DATA = os.path.join(os.path.abspath(os.path.dirname(__file__)), "data", "overlay
 
 
 pytestmark = pytest.mark.skip_no_sindex
-pandas_133 = pd.__version__ == LooseVersion("1.3.3")
+pandas_133 = Version(pd.__version__) == Version("1.3.3")
 
 
 @pytest.fixture
