@@ -1,4 +1,3 @@
-from collections.abc import Iterable
 import numbers
 import operator
 import warnings
@@ -359,22 +358,15 @@ class GeometryArray(ExtensionArray):
         if isinstance(idx, numbers.Integral):
             return _geom_to_shapely(self.data[idx])
         # array-like, slice
-        if compat.PANDAS_GE_10:
-            # for pandas >= 1.0, validate and convert IntegerArray/BooleanArray
-            # to numpy array, pass-through non-array-like indexers
-            idx = pd.api.indexers.check_array_indexer(self, idx)
-            return GeometryArray(self.data[idx], crs=self.crs)
-        else:
-            if isinstance(idx, (Iterable, slice)):
-                return GeometryArray(self.data[idx], crs=self.crs)
-            else:
-                raise TypeError("Index type not supported", idx)
+        # validate and convert IntegerArray/BooleanArray
+        # to numpy array, pass-through non-array-like indexers
+        idx = pd.api.indexers.check_array_indexer(self, idx)
+        return GeometryArray(self.data[idx], crs=self.crs)
 
     def __setitem__(self, key, value):
-        if compat.PANDAS_GE_10:
-            # for pandas >= 1.0, validate and convert IntegerArray/BooleanArray
-            # keys to numpy array, pass-through non-array-like indexers
-            key = pd.api.indexers.check_array_indexer(self, key)
+        # validate and convert IntegerArray/BooleanArray
+        # keys to numpy array, pass-through non-array-like indexers
+        key = pd.api.indexers.check_array_indexer(self, key)
         if isinstance(value, pd.Series):
             value = value.values
         if isinstance(value, (list, np.ndarray)):
@@ -822,28 +814,21 @@ class GeometryArray(ExtensionArray):
         # ensure using geographic coordinates
         else:
             transformer = Transformer.from_crs(self.crs, "EPSG:4326", always_xy=True)
-            if compat.PYPROJ_GE_31:
-                minx, miny, maxx, maxy = transformer.transform_bounds(
-                    minx, miny, maxx, maxy
-                )
-                y_center = np.mean([miny, maxy])
-                # crossed the antimeridian
-                if minx > maxx:
-                    # shift maxx from [-180,180] to [0,360]
-                    # so both numbers are positive for center calculation
-                    # Example: -175 to 185
-                    maxx += 360
-                    x_center = np.mean([minx, maxx])
-                    # shift back to [-180,180]
-                    x_center = ((x_center + 180) % 360) - 180
-                else:
-                    x_center = np.mean([minx, maxx])
+            minx, miny, maxx, maxy = transformer.transform_bounds(
+                minx, miny, maxx, maxy
+            )
+            y_center = np.mean([miny, maxy])
+            # crossed the antimeridian
+            if minx > maxx:
+                # shift maxx from [-180,180] to [0,360]
+                # so both numbers are positive for center calculation
+                # Example: -175 to 185
+                maxx += 360
+                x_center = np.mean([minx, maxx])
+                # shift back to [-180,180]
+                x_center = ((x_center + 180) % 360) - 180
             else:
-                lon, lat = transformer.transform(
-                    (minx, maxx, minx, maxx), (miny, miny, maxy, maxy)
-                )
-                x_center = np.mean(lon)
-                y_center = np.mean(lat)
+                x_center = np.mean([minx, maxx])
 
         utm_crs_list = query_utm_crs_info(
             datum_name=datum_name,
@@ -1054,11 +1039,10 @@ class GeometryArray(ExtensionArray):
             dtype
         ):
             string_values = to_wkt(self)
-            if compat.PANDAS_GE_10:
-                pd_dtype = pd.api.types.pandas_dtype(dtype)
-                if isinstance(pd_dtype, pd.StringDtype):
-                    # ensure to return a pandas string array instead of numpy array
-                    return pd.array(string_values, dtype=pd_dtype)
+            pd_dtype = pd.api.types.pandas_dtype(dtype)
+            if isinstance(pd_dtype, pd.StringDtype):
+                # ensure to return a pandas string array instead of numpy array
+                return pd.array(string_values, dtype=pd_dtype)
             return string_values.astype(dtype, copy=False)
         else:
             return np.array(self, dtype=dtype, copy=copy)

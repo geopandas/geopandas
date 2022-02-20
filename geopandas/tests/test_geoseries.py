@@ -21,7 +21,7 @@ from shapely.geometry import (
 from shapely.geometry.base import BaseGeometry
 
 from geopandas import GeoSeries, GeoDataFrame, read_file, datasets, clip
-from geopandas._compat import PYPROJ_LT_3, ignore_shapely2_warnings
+from geopandas._compat import ignore_shapely2_warnings
 from geopandas.array import GeometryArray, GeometryDtype
 from geopandas.testing import assert_geoseries_equal
 
@@ -205,27 +205,20 @@ class TestSeries:
             self.landmarks.to_crs(crs=None, epsg=None)
 
     def test_estimate_utm_crs__geographic(self):
-        if PYPROJ_LT_3:
-            with pytest.raises(RuntimeError, match=r"pyproj 3\+ required"):
-                self.landmarks.estimate_utm_crs()
-        else:
-            assert self.landmarks.estimate_utm_crs() == CRS("EPSG:32618")
-            assert self.landmarks.estimate_utm_crs("NAD83") == CRS("EPSG:26918")
+        assert self.landmarks.estimate_utm_crs() == CRS("EPSG:32618")
+        assert self.landmarks.estimate_utm_crs("NAD83") == CRS("EPSG:26918")
 
-    @pytest.mark.skipif(PYPROJ_LT_3, reason="requires pyproj 3 or higher")
     def test_estimate_utm_crs__projected(self):
         assert self.landmarks.to_crs("EPSG:3857").estimate_utm_crs() == CRS(
             "EPSG:32618"
         )
 
-    @pytest.mark.skipif(PYPROJ_LT_3, reason="requires pyproj 3 or higher")
     def test_estimate_utm_crs__out_of_bounds(self):
         with pytest.raises(RuntimeError, match="Unable to determine UTM CRS"):
             GeoSeries(
                 [Polygon([(0, 90), (1, 90), (2, 90)])], crs="EPSG:4326"
             ).estimate_utm_crs()
 
-    @pytest.mark.skipif(PYPROJ_LT_3, reason="requires pyproj 3 or higher")
     def test_estimate_utm_crs__missing_crs(self):
         with pytest.raises(RuntimeError, match="crs must be set"):
             GeoSeries([Polygon([(0, 90), (1, 90), (2, 90)])]).estimate_utm_crs()
