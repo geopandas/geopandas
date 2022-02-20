@@ -1675,43 +1675,26 @@ individually so that features may have different properties
                 )
             index_parts = True
 
-        df_copy = self.copy()
+        exploded_geom = self.geometry.reset_index(drop=True).explode(index_parts=True)
 
-        level_str = f"level_{df_copy.index.nlevels}"
-
-        if level_str in df_copy.columns:  # GH1393
-            df_copy = df_copy.rename(columns={level_str: f"__{level_str}"})
-
-        if index_parts:
-            exploded_geom = df_copy.geometry.explode(index_parts=True)
-            exploded_index = exploded_geom.index
-            exploded_geom = exploded_geom.reset_index(level=-1, drop=True)
-        else:
-            exploded_geom = df_copy.geometry.explode(index_parts=True).reset_index(
-                level=-1, drop=True
-            )
-            exploded_index = exploded_geom.index
-
-        df = (
-            df_copy.drop(df_copy._geometry_column_name, axis=1)
-            .join(exploded_geom)
-            .set_geometry(self._geometry_column_name)
-            .__finalize__(self)
-        )
+        df = GeoDataFrame(
+            self.drop(self._geometry_column_name, axis=1).take(
+                exploded_geom.index.droplevel(-1)
+            ),
+            geometry=exploded_geom.values,
+        ).__finalize__(self)
 
         if ignore_index:
             df.reset_index(inplace=True, drop=True)
         elif index_parts:
             # reset to MultiIndex, otherwise df index is only first level of
             # exploded GeoSeries index.
-            df.set_index(exploded_index, inplace=True)
-            df.index.names = list(self.index.names) + [None]
-        else:
-            df.set_index(exploded_index, inplace=True)
-            df.index.names = self.index.names
-
-        if f"__{level_str}" in df.columns:
-            df = df.rename(columns={f"__{level_str}": level_str})
+            df = df.set_index(
+                exploded_geom.index.droplevel(
+                    list(range(exploded_geom.index.nlevels - 1))
+                ),
+                append=True,
+            )
 
         return df
 
