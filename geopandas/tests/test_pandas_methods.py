@@ -384,7 +384,7 @@ def test_fillna(s, df):
     df2["geometry"] = s2
     res = df2.fillna(Point(1, 1))
     assert_geodataframe_equal(res, df)
-    with pytest.raises(NotImplementedError):
+    with pytest.raises((NotImplementedError, TypeError)):  # GH2351
         df2.fillna(0)
 
     # allow non-geometry fill value if there are no missing values
