@@ -227,3 +227,4 @@ except ImportError:
 
 PYPROJ_LT_3 = Version(pyproj.__version__) < Version("3")
 PYPROJ_GE_31 = Version(pyproj.__version__) >= Version("3.1")
+PYPROJ_GE_32 = Version(pyproj.__version__) >= Version("3.2")

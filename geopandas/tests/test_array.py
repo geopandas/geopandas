@@ -909,7 +909,8 @@ class TestEstimateUtmCrs:
                 self.landmarks.estimate_utm_crs()
         else:
             assert self.landmarks.estimate_utm_crs() == CRS("EPSG:32618")
-            assert self.landmarks.estimate_utm_crs("NAD83") == CRS("EPSG:26918")
+            if compat.PYPROJ_GE_32:  # result is unstable in older pyproj
+                assert self.landmarks.estimate_utm_crs("NAD83") == CRS("EPSG:26918")
 
     @pytest.mark.skipif(compat.PYPROJ_LT_3, reason="requires pyproj 3 or higher")
     def test_estimate_utm_crs__projected(self):
@@ -917,7 +918,7 @@ class TestEstimateUtmCrs:
             "EPSG:32618"
         )
 
-    @pytest.mark.skipif(compat.PYPROJ_LT_3, reason="requires pyproj 3 or higher")
+    @pytest.mark.skipif(not compat.PYPROJ_GE_31, reason="requires pyproj 3.1 or higher")
     def test_estimate_utm_crs__antimeridian(self):
         antimeridian = from_shapely(
             [
