@@ -665,21 +665,6 @@ class GeoSeries(GeoPandasBase, Series):
         GeoSeries.notna : inverse of isna
         GeoSeries.is_empty : detect empty geometries
         """
-        if self.is_empty.any():
-            warnings.warn(
-                "GeoSeries.isna() previously returned True for both missing (None) "
-                "and empty geometries. Now, it only returns True for missing values. "
-                "Since the calling GeoSeries contains empty geometries, the result "
-                "has changed compared to previous versions of GeoPandas.\n"
-                "Given a GeoSeries 's', you can use 's.is_empty | s.isna()' to get "
-                "back the old behaviour.\n\n"
-                "To further ignore this warning, you can do: \n"
-                "import warnings; warnings.filterwarnings('ignore', 'GeoSeries.isna', "
-                "UserWarning)",
-                UserWarning,
-                stacklevel=2,
-            )
-
         return super().isna()
 
     def isnull(self):

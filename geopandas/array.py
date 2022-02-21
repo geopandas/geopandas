@@ -867,7 +867,14 @@ class GeometryArray(ExtensionArray):
     def x(self):
         """Return the x location of point geometries in a GeoSeries"""
         if (self.geom_type[~self.isna()] == "Point").all():
-            return vectorized.get_x(self.data)
+            empty = self.is_empty
+            if empty.any():
+                nonempty = ~empty
+                coords = np.full_like(nonempty, dtype=float, fill_value=np.nan)
+                coords[nonempty] = vectorized.get_x(self.data[nonempty])
+                return coords
+            else:
+                return vectorized.get_x(self.data)
         else:
             message = "x attribute access only provided for Point geometries"
             raise ValueError(message)
@@ -876,7 +883,14 @@ class GeometryArray(ExtensionArray):
     def y(self):
         """Return the y location of point geometries in a GeoSeries"""
         if (self.geom_type[~self.isna()] == "Point").all():
-            return vectorized.get_y(self.data)
+            empty = self.is_empty
+            if empty.any():
+                nonempty = ~empty
+                coords = np.full_like(nonempty, dtype=float, fill_value=np.nan)
+                coords[nonempty] = vectorized.get_y(self.data[nonempty])
+                return coords
+            else:
+                return vectorized.get_y(self.data)
         else:
             message = "y attribute access only provided for Point geometries"
             raise ValueError(message)
@@ -885,7 +899,14 @@ class GeometryArray(ExtensionArray):
     def z(self):
         """Return the z location of point geometries in a GeoSeries"""
         if (self.geom_type[~self.isna()] == "Point").all():
-            return vectorized.get_z(self.data)
+            empty = self.is_empty
+            if empty.any():
+                nonempty = ~empty
+                coords = np.full_like(nonempty, dtype=float, fill_value=np.nan)
+                coords[nonempty] = vectorized.get_z(self.data[nonempty])
+                return coords
+            else:
+                return vectorized.get_z(self.data)
         else:
             message = "z attribute access only provided for Point geometries"
             raise ValueError(message)
