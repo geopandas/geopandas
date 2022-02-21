@@ -751,8 +751,9 @@ es": {"name": "urn:ogc:def:crs:EPSG::4326"}}}'
             auth_crsdef = self.crs.to_authority()
             if auth_crsdef is None:
                 warnings.warn(
-                    f"Geodataframe CRS {self.crs!r} is not representable in URN OGC "
-                    " format. Resulting JSON will bear no CRS information."
+                    "Geodataframe CRS is not representable in URN OGC "
+                    "format. Resulting JSON will bear no CRS information.",
+                    stacklevel=2,
                 )
             else:
                 authority, code = auth_crsdef
