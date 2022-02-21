@@ -1064,7 +1064,7 @@ def test_geodataframe_crs_nonrepresentable_json():
     gdf = GeoDataFrame(
         [Point(1000, 1000)],
         columns=["geometry"],
-        crs='+proj=cea +lon_0=0 +lat_ts=45 +x_0=0 +y_0=0 +ellps=WGS84 +units=m +no_defs'
+        crs="+proj=cea +lon_0=0 +lat_ts=45 +x_0=0 +y_0=0 +ellps=WGS84 +units=m",
     )
     with pytest.warns(UserWarning):
         gdf_geojson = json.loads(gdf.to_json())
