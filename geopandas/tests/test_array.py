@@ -766,6 +766,29 @@ def test_getitem():
     assert P5.equals(points[1])
 
 
+@pytest.mark.parametrize(
+    "item",
+    [
+        geopandas.GeoDataFrame(
+            geometry=[shapely.geometry.Polygon([(0, 0), (2, 0), (2, 2), (0, 2)])]
+        ),
+        geopandas.GeoSeries(
+            [shapely.geometry.Polygon([(0, 0), (2, 0), (2, 2), (0, 2)])]
+        ),
+        np.array([shapely.geometry.Polygon([(0, 0), (2, 0), (2, 2), (0, 2)])]),
+        [shapely.geometry.Polygon([(0, 0), (2, 0), (2, 2), (0, 2)])],
+        shapely.geometry.Polygon([(0, 0), (2, 0), (2, 2), (0, 2)]),
+    ],
+)
+def test_setitem(item):
+    points = [shapely.geometry.Point(i, i) for i in range(10)]
+    P = from_shapely(points)
+
+    P[[0]] = item
+
+    assert isinstance(P[0], shapely.geometry.Polygon)
+
+
 def test_equality_ops():
     with pytest.raises(ValueError):
         P[:5] == P[:7]

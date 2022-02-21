@@ -377,6 +377,8 @@ class GeometryArray(ExtensionArray):
             key = pd.api.indexers.check_array_indexer(self, key)
         if isinstance(value, pd.Series):
             value = value.values
+        if isinstance(value, pd.DataFrame):
+            value = value.values.flatten()
         if isinstance(value, (list, np.ndarray)):
             value = from_shapely(value)
         if isinstance(value, GeometryArray):
