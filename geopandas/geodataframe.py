@@ -1773,11 +1773,6 @@ individually so that features may have different properties
         # Overridden to fix GH1870, that return type is not preserved always
         # (and where it was, geometry col was not)
 
-        if not compat.PANDAS_GE_10:
-            raise NotImplementedError(
-                "GeoDataFrame.convert_dtypes requires pandas >= 1.0"
-            )
-
         return GeoDataFrame(
             super().convert_dtypes(*args, **kwargs),
             geometry=self.geometry.name,
@@ -2249,5 +2244,5 @@ def _dataframe_set_geometry(self, col, drop=False, inplace=False, crs=None):
 
 DataFrame.set_geometry = _dataframe_set_geometry
 
-if compat.PANDAS_GE_10 and not compat.PANDAS_GE_11:  # i.e. on pandas 1.0.x
+if not compat.PANDAS_GE_11:  # i.e. on pandas 1.0.x
     _geodataframe_constructor_with_fallback._from_axes = GeoDataFrame._from_axes

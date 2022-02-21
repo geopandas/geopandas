@@ -1,4 +1,3 @@
-from collections.abc import Iterable
 import numbers
 import operator
 import warnings
@@ -359,24 +358,19 @@ class GeometryArray(ExtensionArray):
         if isinstance(idx, numbers.Integral):
             return _geom_to_shapely(self.data[idx])
         # array-like, slice
-        if compat.PANDAS_GE_10:
-            # for pandas >= 1.0, validate and convert IntegerArray/BooleanArray
-            # to numpy array, pass-through non-array-like indexers
-            idx = pd.api.indexers.check_array_indexer(self, idx)
-            return GeometryArray(self.data[idx], crs=self.crs)
-        else:
-            if isinstance(idx, (Iterable, slice)):
-                return GeometryArray(self.data[idx], crs=self.crs)
-            else:
-                raise TypeError("Index type not supported", idx)
+        # validate and convert IntegerArray/BooleanArray
+        # to numpy array, pass-through non-array-like indexers
+        idx = pd.api.indexers.check_array_indexer(self, idx)
+        return GeometryArray(self.data[idx], crs=self.crs)
 
     def __setitem__(self, key, value):
-        if compat.PANDAS_GE_10:
-            # for pandas >= 1.0, validate and convert IntegerArray/BooleanArray
-            # keys to numpy array, pass-through non-array-like indexers
-            key = pd.api.indexers.check_array_indexer(self, key)
+        # validate and convert IntegerArray/BooleanArray
+        # keys to numpy array, pass-through non-array-like indexers
+        key = pd.api.indexers.check_array_indexer(self, key)
         if isinstance(value, pd.Series):
             value = value.values
+        if isinstance(value, pd.DataFrame):
+            value = value.values.flatten()
         if isinstance(value, (list, np.ndarray)):
             value = from_shapely(value)
         if isinstance(value, GeometryArray):
@@ -1054,11 +1048,10 @@ class GeometryArray(ExtensionArray):
             dtype
         ):
             string_values = to_wkt(self)
-            if compat.PANDAS_GE_10:
-                pd_dtype = pd.api.types.pandas_dtype(dtype)
-                if isinstance(pd_dtype, pd.StringDtype):
-                    # ensure to return a pandas string array instead of numpy array
-                    return pd.array(string_values, dtype=pd_dtype)
+            pd_dtype = pd.api.types.pandas_dtype(dtype)
+            if isinstance(pd_dtype, pd.StringDtype):
+                # ensure to return a pandas string array instead of numpy array
+                return pd.array(string_values, dtype=pd_dtype)
             return string_values.astype(dtype, copy=False)
         else:
             return np.array(self, dtype=dtype, copy=copy)

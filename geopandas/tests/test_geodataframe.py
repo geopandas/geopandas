@@ -7,7 +7,6 @@ from packaging.version import Version
 import numpy as np
 import pandas as pd
 
-import pyproj
 from pyproj import CRS
 from pyproj.exceptions import CRSError
 from shapely.geometry import Point, Polygon
@@ -24,7 +23,6 @@ from pandas.testing import assert_frame_equal, assert_index_equal, assert_series
 import pytest
 
 
-PYPROJ_LT_3 = Version(pyproj.__version__) < Version("3")
 TEST_NEAREST = compat.PYGEOS_GE_010 and compat.USE_PYGEOS
 pandas_133 = Version(pd.__version__) == Version("1.3.3")
 
@@ -794,12 +792,13 @@ class TestDataFrame:
         assert self.df.crs == unpickled.crs
 
     def test_estimate_utm_crs(self):
-        if PYPROJ_LT_3:
+        if compat.PYPROJ_LT_3:
             with pytest.raises(RuntimeError, match=r"pyproj 3\+ required"):
                 self.df.estimate_utm_crs()
         else:
             assert self.df.estimate_utm_crs() == CRS("EPSG:32618")
-            assert self.df.estimate_utm_crs("NAD83") == CRS("EPSG:26918")
+            if compat.PYPROJ_GE_32:  # result is unstable in older pyproj
+                assert self.df.estimate_utm_crs("NAD83") == CRS("EPSG:26918")
 
     def test_to_wkb(self):
         wkbs0 = [
