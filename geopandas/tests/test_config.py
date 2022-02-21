@@ -6,7 +6,7 @@ import pytest
 def test_options():
     assert "display_precision: " in repr(geopandas.options)
 
-    assert dir(geopandas.options) == ["display_precision"]
+    assert dir(geopandas.options) == ["display_precision", "use_pygeos"]
 
     with pytest.raises(AttributeError):
         geopandas.options.non_existing_option

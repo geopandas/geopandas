@@ -7,7 +7,9 @@ import tempfile
 import numpy as np
 from numpy.testing import assert_array_equal
 import pandas as pd
+from pandas.util.testing import assert_index_equal
 
+from pyproj import CRS
 from shapely.geometry import (
     LineString,
     MultiLineString,
@@ -18,8 +20,10 @@ from shapely.geometry import (
 )
 from shapely.geometry.base import BaseGeometry
 
-from geopandas import GeoSeries, GeoDataFrame
+from geopandas import GeoSeries, GeoDataFrame, read_file, datasets, clip
+from geopandas._compat import PYPROJ_LT_3, ignore_shapely2_warnings
 from geopandas.array import GeometryArray, GeometryDtype
+from geopandas.testing import assert_geoseries_equal
 
 from geopandas.tests.util import geom_equals
 from pandas.testing import assert_series_equal
@@ -98,13 +102,44 @@ class TestSeries:
         exp2 = pd.Series([np.nan, 1, 2], index=["A", "B", "C"])
         assert_series_equal(res2, exp2)
 
+    def test_warning_if_not_aligned(self):
+        # GH-816
+        # Test that warning is issued when operating on non-aligned series
+
+        # _series_op
+        with pytest.warns(UserWarning, match="The indices .+ different"):
+            self.a1.contains(self.a2)
+
+        # _geo_op
+        with pytest.warns(UserWarning, match="The indices .+ different"):
+            self.a1.union(self.a2)
+
+    def test_no_warning_if_aligned(self):
+        # GH-816
+        # Test that warning is not issued when operating on aligned series
+        a1, a2 = self.a1.align(self.a2)
+
+        with pytest.warns(None) as warnings:
+            a1.contains(a2)  # _series_op, explicitly aligned
+            self.g1.intersects(self.g2)  # _series_op, implicitly aligned
+            a2.union(a1)  # _geo_op, explicitly aligned
+            self.g2.intersection(self.g1)  # _geo_op, implicitly aligned
+
+        user_warnings = [w for w in warnings if w.category is UserWarning]
+        assert not user_warnings, user_warnings[0].message
+
     def test_geom_equals(self):
         assert np.all(self.g1.geom_equals(self.g1))
         assert_array_equal(self.g1.geom_equals(self.sq), [False, True])
 
     def test_geom_equals_align(self):
-        a = self.a1.geom_equals(self.a2)
+        with pytest.warns(UserWarning, match="The indices .+ different"):
+            a = self.a1.geom_equals(self.a2, align=True)
         exp = pd.Series([False, True, False], index=["A", "B", "C"])
+        assert_series_equal(a, exp)
+
+        a = self.a1.geom_equals(self.a2, align=False)
+        exp = pd.Series([False, False], index=["A", "B"])
         assert_series_equal(a, exp)
 
     def test_geom_almost_equals(self):
@@ -112,10 +147,24 @@ class TestSeries:
         assert np.all(self.g1.geom_almost_equals(self.g1))
         assert_array_equal(self.g1.geom_almost_equals(self.sq), [False, True])
 
+        assert_array_equal(
+            self.a1.geom_almost_equals(self.a2, align=True), [False, True, False]
+        )
+        assert_array_equal(
+            self.a1.geom_almost_equals(self.a2, align=False), [False, False]
+        )
+
     def test_geom_equals_exact(self):
         # TODO: test tolerance parameter
         assert np.all(self.g1.geom_equals_exact(self.g1, 0.001))
         assert_array_equal(self.g1.geom_equals_exact(self.sq, 0.001), [False, True])
+
+        assert_array_equal(
+            self.a1.geom_equals_exact(self.a2, 0.001, align=True), [False, True, False]
+        )
+        assert_array_equal(
+            self.a1.geom_equals_exact(self.a2, 0.001, align=False), [False, False]
+        )
 
     def test_equal_comp_op(self):
         s = GeoSeries([Point(x, x) for x in range(3)])
@@ -124,7 +173,7 @@ class TestSeries:
         assert_series_equal(res, exp)
 
     def test_to_file(self):
-        """ Test to_file and from_file """
+        """Test to_file and from_file"""
         tempfilename = os.path.join(self.tempdir, "test.shp")
         self.g3.to_file(tempfilename)
         # Read layer back in?
@@ -155,6 +204,32 @@ class TestSeries:
         with pytest.raises(ValueError):
             self.landmarks.to_crs(crs=None, epsg=None)
 
+    def test_estimate_utm_crs__geographic(self):
+        if PYPROJ_LT_3:
+            with pytest.raises(RuntimeError, match=r"pyproj 3\+ required"):
+                self.landmarks.estimate_utm_crs()
+        else:
+            assert self.landmarks.estimate_utm_crs() == CRS("EPSG:32618")
+            assert self.landmarks.estimate_utm_crs("NAD83") == CRS("EPSG:26918")
+
+    @pytest.mark.skipif(PYPROJ_LT_3, reason="requires pyproj 3 or higher")
+    def test_estimate_utm_crs__projected(self):
+        assert self.landmarks.to_crs("EPSG:3857").estimate_utm_crs() == CRS(
+            "EPSG:32618"
+        )
+
+    @pytest.mark.skipif(PYPROJ_LT_3, reason="requires pyproj 3 or higher")
+    def test_estimate_utm_crs__out_of_bounds(self):
+        with pytest.raises(RuntimeError, match="Unable to determine UTM CRS"):
+            GeoSeries(
+                [Polygon([(0, 90), (1, 90), (2, 90)])], crs="EPSG:4326"
+            ).estimate_utm_crs()
+
+    @pytest.mark.skipif(PYPROJ_LT_3, reason="requires pyproj 3 or higher")
+    def test_estimate_utm_crs__missing_crs(self):
+        with pytest.raises(RuntimeError, match="crs must be set"):
+            GeoSeries([Polygon([(0, 90), (1, 90), (2, 90)])]).estimate_utm_crs()
+
     def test_fillna(self):
         # default is to fill with empty geometry
         na = self.na_none.fillna()
@@ -165,7 +240,7 @@ class TestSeries:
         # self.na_none.fillna(method='backfill')
 
     def test_coord_slice(self):
-        """ Test CoordinateSlicer """
+        """Test CoordinateSlicer"""
         # need some better test cases
         assert geom_equals(self.g3, self.g3.cx[:, :])
         assert geom_equals(self.g3[[True, False]], self.g3.cx[0.9:, :0.1])
@@ -188,35 +263,120 @@ class TestSeries:
 
     def test_proj4strings(self):
         # As string
-        reprojected = self.g3.to_crs("+proj=utm +zone=30N")
+        reprojected = self.g3.to_crs("+proj=utm +zone=30")
         reprojected_back = reprojected.to_crs(epsg=4326)
         assert np.all(self.g3.geom_almost_equals(reprojected_back))
 
         # As dict
-        reprojected = self.g3.to_crs({"proj": "utm", "zone": "30N"})
+        reprojected = self.g3.to_crs({"proj": "utm", "zone": "30"})
         reprojected_back = reprojected.to_crs(epsg=4326)
         assert np.all(self.g3.geom_almost_equals(reprojected_back))
 
         # Set to equivalent string, convert, compare to original
         copy = self.g3.copy()
         copy.crs = "epsg:4326"
-        reprojected = copy.to_crs({"proj": "utm", "zone": "30N"})
+        reprojected = copy.to_crs({"proj": "utm", "zone": "30"})
         reprojected_back = reprojected.to_crs(epsg=4326)
         assert np.all(self.g3.geom_almost_equals(reprojected_back))
 
         # Conversions by different format
-        reprojected_string = self.g3.to_crs("+proj=utm +zone=30N")
-        reprojected_dict = self.g3.to_crs({"proj": "utm", "zone": "30N"})
+        reprojected_string = self.g3.to_crs("+proj=utm +zone=30")
+        reprojected_dict = self.g3.to_crs({"proj": "utm", "zone": "30"})
         assert np.all(reprojected_string.geom_almost_equals(reprojected_dict))
 
+    def test_from_wkb(self):
+        assert_geoseries_equal(self.g1, GeoSeries.from_wkb([self.t1.wkb, self.sq.wkb]))
 
-def test_missing_values_empty_warning():
-    s = GeoSeries([Point(1, 1), None, np.nan, BaseGeometry(), Polygon()])
-    with pytest.warns(UserWarning):
-        s.isna()
+    def test_from_wkb_series(self):
+        s = pd.Series([self.t1.wkb, self.sq.wkb], index=[1, 2])
+        expected = self.g1.copy()
+        expected.index = pd.Index([1, 2])
+        assert_geoseries_equal(expected, GeoSeries.from_wkb(s))
 
-    with pytest.warns(UserWarning):
-        s.notna()
+    def test_from_wkb_series_with_index(self):
+        index = [0]
+        s = pd.Series([self.t1.wkb, self.sq.wkb], index=[0, 2])
+        expected = self.g1.reindex(index)
+        assert_geoseries_equal(expected, GeoSeries.from_wkb(s, index=index))
+
+    def test_from_wkt(self):
+        assert_geoseries_equal(self.g1, GeoSeries.from_wkt([self.t1.wkt, self.sq.wkt]))
+
+    def test_from_wkt_series(self):
+        s = pd.Series([self.t1.wkt, self.sq.wkt], index=[1, 2])
+        expected = self.g1.copy()
+        expected.index = pd.Index([1, 2])
+        assert_geoseries_equal(expected, GeoSeries.from_wkt(s))
+
+    def test_from_wkt_series_with_index(self):
+        index = [0]
+        s = pd.Series([self.t1.wkt, self.sq.wkt], index=[0, 2])
+        expected = self.g1.reindex(index)
+        assert_geoseries_equal(expected, GeoSeries.from_wkt(s, index=index))
+
+    def test_to_wkb(self):
+        assert_series_equal(pd.Series([self.t1.wkb, self.sq.wkb]), self.g1.to_wkb())
+        assert_series_equal(
+            pd.Series([self.t1.wkb_hex, self.sq.wkb_hex]), self.g1.to_wkb(hex=True)
+        )
+
+    def test_to_wkt(self):
+        assert_series_equal(pd.Series([self.t1.wkt, self.sq.wkt]), self.g1.to_wkt())
+
+    @pytest.mark.skip_no_sindex
+    def test_clip(self):
+        left = read_file(datasets.get_path("naturalearth_cities"))
+        world = read_file(datasets.get_path("naturalearth_lowres"))
+        south_america = world[world["continent"] == "South America"]
+
+        expected = clip(left.geometry, south_america)
+        result = left.geometry.clip(south_america)
+        assert_geoseries_equal(result, expected)
+
+    def test_from_xy_points(self):
+        x = self.landmarks.x.values
+        y = self.landmarks.y.values
+        index = self.landmarks.index.tolist()
+        crs = self.landmarks.crs
+        assert_geoseries_equal(
+            self.landmarks, GeoSeries.from_xy(x, y, index=index, crs=crs)
+        )
+        assert_geoseries_equal(
+            self.landmarks,
+            GeoSeries.from_xy(self.landmarks.x, self.landmarks.y, crs=crs),
+        )
+
+    def test_from_xy_points_w_z(self):
+        index_values = [5, 6, 7]
+        x = pd.Series([0, -1, 2], index=index_values)
+        y = pd.Series([8, 3, 1], index=index_values)
+        z = pd.Series([5, -6, 7], index=index_values)
+        expected = GeoSeries(
+            [Point(0, 8, 5), Point(-1, 3, -6), Point(2, 1, 7)], index=index_values
+        )
+        assert_geoseries_equal(expected, GeoSeries.from_xy(x, y, z))
+
+    def test_from_xy_points_unequal_index(self):
+        x = self.landmarks.x
+        y = self.landmarks.y
+        y.index = -np.arange(len(y))
+        crs = self.landmarks.crs
+        assert_geoseries_equal(
+            self.landmarks, GeoSeries.from_xy(x, y, index=x.index, crs=crs)
+        )
+        unindexed_landmarks = self.landmarks.copy()
+        unindexed_landmarks.reset_index(inplace=True, drop=True)
+        assert_geoseries_equal(
+            unindexed_landmarks,
+            GeoSeries.from_xy(x, y, crs=crs),
+        )
+
+    def test_from_xy_points_indexless(self):
+        x = np.array([0.0, 3.0])
+        y = np.array([2.0, 5.0])
+        z = np.array([-1.0, 4.0])
+        expected = GeoSeries([Point(0, 2, -1), Point(3, 5, 4)])
+        assert_geoseries_equal(expected, GeoSeries.from_xy(x, y, z))
 
 
 @pytest.mark.filterwarnings("ignore::UserWarning")
@@ -240,6 +400,13 @@ def test_missing_values():
     # dropna drops the missing values
     assert not s.dropna().isna().any()
     assert len(s.dropna()) == 3
+
+
+def test_isna_empty_geoseries():
+    # ensure that isna() result for empty GeoSeries has the correct bool dtype
+    s = GeoSeries([])
+    result = s.isna()
+    assert_series_equal(result, pd.Series([], dtype="bool"))
 
 
 def test_geoseries_crs():
@@ -286,6 +453,7 @@ class TestConstructor:
         for g in geoms:
             gs = GeoSeries(g)
             assert len(gs) == 1
+            # accessing elements no longer give identical objects
             assert gs.iloc[0].equals(g)
 
             gs = GeoSeries(g, index=index)
@@ -316,12 +484,49 @@ class TestConstructor:
         s = GeoSeries()
         check_geoseries(s)
 
+    def test_data_is_none(self):
+        s = GeoSeries(index=range(3))
+        check_geoseries(s)
+
+    def test_empty_array(self):
+        # with empty data that have an explicit dtype, we use the fallback or
+        # not depending on the dtype
+        arr = np.array([], dtype="bool")
+
+        # dtypes that can never hold geometry-like data
+        for arr in [
+            np.array([], dtype="bool"),
+            np.array([], dtype="int64"),
+            np.array([], dtype="float32"),
+            # this gets converted to object dtype by pandas
+            # np.array([], dtype="str"),
+        ]:
+            with pytest.warns(FutureWarning):
+                s = GeoSeries(arr)
+            assert not isinstance(s, GeoSeries)
+            assert type(s) == pd.Series
+
+        # dtypes that can potentially hold geometry-like data (object) or
+        # can come from empty data (float64)
+        for arr in [
+            np.array([], dtype="object"),
+            np.array([], dtype="float64"),
+            np.array([], dtype="str"),
+        ]:
+            with pytest.warns(None) as record:
+                s = GeoSeries(arr)
+            assert not record
+            assert isinstance(s, GeoSeries)
+
     def test_from_series(self):
         shapes = [
             Polygon([(random.random(), random.random()) for _ in range(3)])
             for _ in range(10)
         ]
-        s = pd.Series(shapes, index=list("abcdefghij"), name="foo")
+        with ignore_shapely2_warnings():
+            # the warning here is not suppressed by GeoPandas, as this is a pure
+            # pandas construction call
+            s = pd.Series(shapes, index=list("abcdefghij"), name="foo")
         g = GeoSeries(s)
         check_geoseries(g)
 
@@ -334,6 +539,27 @@ class TestConstructor:
         s = GeoSeries(
             [MultiPoint([(0, 0), (1, 1)]), MultiPoint([(2, 2), (3, 3), (4, 4)])]
         )
-        s = s.explode()
+        s = s.explode(index_parts=True)
         df = s.reset_index()
         assert type(df) == GeoDataFrame
+
+    def test_explode_without_multiindex(self):
+        s = GeoSeries(
+            [MultiPoint([(0, 0), (1, 1)]), MultiPoint([(2, 2), (3, 3), (4, 4)])]
+        )
+        s = s.explode(index_parts=False)
+        expected_index = pd.Index([0, 0, 1, 1, 1])
+        assert_index_equal(s.index, expected_index)
+
+    def test_explode_ignore_index(self):
+        s = GeoSeries(
+            [MultiPoint([(0, 0), (1, 1)]), MultiPoint([(2, 2), (3, 3), (4, 4)])]
+        )
+        s = s.explode(ignore_index=True)
+        expected_index = pd.Index(range(len(s)))
+        print(expected_index)
+        assert_index_equal(s.index, expected_index)
+
+        # index_parts is ignored if ignore_index=True
+        s = s.explode(index_parts=True, ignore_index=True)
+        assert_index_equal(s.index, expected_index)

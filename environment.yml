@@ -1,0 +1,21 @@
+name: geopandas
+channels:
+  - conda-forge
+dependencies:
+  - geopandas
+  - shapely
+  - fiona
+  - pyproj
+  - pygeos
+  - rtree
+  - mapclassify
+  - libpysal
+  - matplotlib
+  - geopy
+  - cartopy
+  - pyepsg
+  - contextily
+  - rasterio
+  - geoplot
+  - folium
+  - packaging

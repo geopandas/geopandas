@@ -1,9 +1,11 @@
+import warnings
 from functools import reduce
 
 import numpy as np
 import pandas as pd
 
 from geopandas import GeoDataFrame, GeoSeries
+from geopandas.array import _check_crs, _crs_mismatch_warn
 
 
 def _ensure_geometry_column(df):
@@ -25,27 +27,20 @@ def _overlay_intersection(df1, df2):
     Overlay Intersection operation used in overlay function
     """
     # Spatial Index to create intersections
-    spatial_index = df2.sindex
-    bbox = df1.geometry.apply(lambda x: x.bounds)
-    sidx = bbox.apply(lambda x: list(spatial_index.intersection(x)))
+    idx1, idx2 = df2.sindex.query_bulk(df1.geometry, predicate="intersects", sort=True)
     # Create pairs of geometries in both dataframes to be intersected
-    nei = []
-    for i, j in enumerate(sidx):
-        for k in j:
-            nei.append([i, k])
-    if nei != []:
-        pairs = pd.DataFrame(nei, columns=["__idx1", "__idx2"])
-        left = df1.geometry.take(pairs["__idx1"].values)
+    if idx1.size > 0 and idx2.size > 0:
+        left = df1.geometry.take(idx1)
         left.reset_index(drop=True, inplace=True)
-        right = df2.geometry.take(pairs["__idx2"].values)
+        right = df2.geometry.take(idx2)
         right.reset_index(drop=True, inplace=True)
         intersections = left.intersection(right)
         poly_ix = intersections.type.isin(["Polygon", "MultiPolygon"])
         intersections.loc[poly_ix] = intersections[poly_ix].buffer(0)
 
         # only keep actual intersecting geometries
-        pairs_intersect = pairs[~intersections.is_empty]
-        geom_intersect = intersections[~intersections.is_empty]
+        pairs_intersect = pd.DataFrame({"__idx1": idx1, "__idx2": idx2})
+        geom_intersect = intersections
 
         # merge data for intersecting geometries
         df1 = df1.reset_index(drop=True)
@@ -59,26 +54,36 @@ def _overlay_intersection(df1, df2):
             df2.drop(df2._geometry_column_name, axis=1),
             left_on="__idx2",
             right_index=True,
-            suffixes=["_1", "_2"],
+            suffixes=("_1", "_2"),
         )
 
         return GeoDataFrame(dfinter, geometry=geom_intersect, crs=df1.crs)
     else:
-        return GeoDataFrame(
-            [],
-            columns=list(set(df1.columns).union(df2.columns)) + ["__idx1", "__idx2"],
-            crs=df1.crs,
+        result = df1.iloc[:0].merge(
+            df2.iloc[:0].drop(df2.geometry.name, axis=1),
+            left_index=True,
+            right_index=True,
+            suffixes=("_1", "_2"),
         )
+        result["__idx1"] = None
+        result["__idx2"] = None
+        return result[
+            result.columns.drop(df1.geometry.name).tolist() + [df1.geometry.name]
+        ]
 
 
 def _overlay_difference(df1, df2):
     """
     Overlay Difference operation used in overlay function
     """
-    # Spatial Index to create intersections
-    spatial_index = df2.sindex
-    bbox = df1.geometry.apply(lambda x: x.bounds)
-    sidx = bbox.apply(lambda x: list(spatial_index.intersection(x)))
+    # spatial index query to find intersections
+    idx1, idx2 = df2.sindex.query_bulk(df1.geometry, predicate="intersects", sort=True)
+    idx1_unique, idx1_unique_indices = np.unique(idx1, return_index=True)
+    idx2_split = np.split(idx2, idx1_unique_indices[1:])
+    sidx = [
+        idx2_split.pop(0) if idx in idx1_unique else []
+        for idx in range(df1.geometry.size)
+    ]
     # Create differences
     new_g = []
     for geom, neighbours in zip(df1.geometry, sidx):
@@ -86,7 +91,7 @@ def _overlay_difference(df1, df2):
             lambda x, y: x.difference(y), [geom] + list(df2.geometry.iloc[neighbours])
         )
         new_g.append(new)
-    differences = GeoSeries(new_g, index=df1.index)
+    differences = GeoSeries(new_g, index=df1.index, crs=df1.crs)
     poly_ix = differences.type.isin(["Polygon", "MultiPolygon"])
     differences.loc[poly_ix] = differences[poly_ix].buffer(0)
     geom_diff = differences[~differences.is_empty].copy()
@@ -110,7 +115,7 @@ def _overlay_symmetric_diff(df1, df2):
     _ensure_geometry_column(dfdiff2)
     # combine both 'difference' dataframes
     dfsym = dfdiff1.merge(
-        dfdiff2, on=["__idx1", "__idx2"], how="outer", suffixes=["_1", "_2"]
+        dfdiff2, on=["__idx1", "__idx2"], how="outer", suffixes=("_1", "_2")
     )
     geometry = dfsym.geometry_1.copy()
     geometry.name = "geometry"
@@ -138,23 +143,31 @@ def _overlay_union(df1, df2):
     return dfunion.reindex(columns=columns)
 
 
-def overlay(df1, df2, how="intersection", make_valid=True, keep_geom_type=True):
-    """Perform spatial overlay between two polygons.
+def overlay(df1, df2, how="intersection", keep_geom_type=None, make_valid=True):
+    """Perform spatial overlay between two GeoDataFrames.
 
-    Currently only supports data GeoDataFrames with polygons.
-    Implements several methods that are all effectively subsets of
-    the union.
+    Currently only supports data GeoDataFrames with uniform geometry types,
+    i.e. containing only (Multi)Polygons, or only (Multi)Points, or a
+    combination of (Multi)LineString and LinearRing shapes.
+    Implements several methods that are all effectively subsets of the union.
+
+    See the User Guide page :doc:`../../user_guide/set_operations` for details.
 
     Parameters
     ----------
-    df1 : GeoDataFrame with MultiPolygon or Polygon geometry column
-    df2 : GeoDataFrame with MultiPolygon or Polygon geometry column
+    df1 : GeoDataFrame
+    df2 : GeoDataFrame
     how : string
         Method of spatial overlay: 'intersection', 'union',
         'identity', 'symmetric_difference' or 'difference'.
     keep_geom_type : bool
         If True, return only geometries of the same geometry type as df1 has,
-        if False, return all resulting gemetries.
+        if False, return all resulting geometries. Default is None,
+        which will set keep_geom_type to True but warn upon dropping
+        geometries.
+    make_valid : bool, default True
+        If True, any invalid input geometries are corrected with a call to `buffer(0)`,
+        if False, a `ValueError` is raised if any input geometries are invalid.
 
     Returns
     -------
@@ -162,6 +175,61 @@ def overlay(df1, df2, how="intersection", make_valid=True, keep_geom_type=True):
         GeoDataFrame with new set of polygons and attributes
         resulting from the overlay
 
+    Examples
+    --------
+    >>> from shapely.geometry import Polygon
+    >>> polys1 = geopandas.GeoSeries([Polygon([(0,0), (2,0), (2,2), (0,2)]),
+    ...                               Polygon([(2,2), (4,2), (4,4), (2,4)])])
+    >>> polys2 = geopandas.GeoSeries([Polygon([(1,1), (3,1), (3,3), (1,3)]),
+    ...                               Polygon([(3,3), (5,3), (5,5), (3,5)])])
+    >>> df1 = geopandas.GeoDataFrame({'geometry': polys1, 'df1_data':[1,2]})
+    >>> df2 = geopandas.GeoDataFrame({'geometry': polys2, 'df2_data':[1,2]})
+
+    >>> geopandas.overlay(df1, df2, how='union')
+       df1_data  df2_data                                           geometry
+    0       1.0       1.0  POLYGON ((2.00000 2.00000, 2.00000 1.00000, 1....
+    1       2.0       1.0  POLYGON ((2.00000 2.00000, 2.00000 3.00000, 3....
+    2       2.0       2.0  POLYGON ((4.00000 4.00000, 4.00000 3.00000, 3....
+    3       1.0       NaN  POLYGON ((2.00000 0.00000, 0.00000 0.00000, 0....
+    4       2.0       NaN  MULTIPOLYGON (((3.00000 3.00000, 4.00000 3.000...
+    5       NaN       1.0  MULTIPOLYGON (((2.00000 2.00000, 3.00000 2.000...
+    6       NaN       2.0  POLYGON ((3.00000 5.00000, 5.00000 5.00000, 5....
+
+    >>> geopandas.overlay(df1, df2, how='intersection')
+       df1_data  df2_data                                           geometry
+    0         1         1  POLYGON ((2.00000 2.00000, 2.00000 1.00000, 1....
+    1         2         1  POLYGON ((2.00000 2.00000, 2.00000 3.00000, 3....
+    2         2         2  POLYGON ((4.00000 4.00000, 4.00000 3.00000, 3....
+
+    >>> geopandas.overlay(df1, df2, how='symmetric_difference')
+       df1_data  df2_data                                           geometry
+    0       1.0       NaN  POLYGON ((2.00000 0.00000, 0.00000 0.00000, 0....
+    1       2.0       NaN  MULTIPOLYGON (((3.00000 3.00000, 4.00000 3.000...
+    2       NaN       1.0  MULTIPOLYGON (((2.00000 2.00000, 3.00000 2.000...
+    3       NaN       2.0  POLYGON ((3.00000 5.00000, 5.00000 5.00000, 5....
+
+    >>> geopandas.overlay(df1, df2, how='difference')
+                                            geometry  df1_data
+    0  POLYGON ((2.00000 0.00000, 0.00000 0.00000, 0....         1
+    1  MULTIPOLYGON (((3.00000 3.00000, 4.00000 3.000...         2
+
+    >>> geopandas.overlay(df1, df2, how='identity')
+       df1_data  df2_data                                           geometry
+    0       1.0       1.0  POLYGON ((2.00000 2.00000, 2.00000 1.00000, 1....
+    1       2.0       1.0  POLYGON ((2.00000 2.00000, 2.00000 3.00000, 3....
+    2       2.0       2.0  POLYGON ((4.00000 4.00000, 4.00000 3.00000, 3....
+    3       1.0       NaN  POLYGON ((2.00000 0.00000, 0.00000 0.00000, 0....
+    4       2.0       NaN  MULTIPOLYGON (((3.00000 3.00000, 4.00000 3.000...
+
+    See also
+    --------
+    sjoin : spatial join
+    GeoDataFrame.overlay : equivalent method
+
+    Notes
+    ------
+    Every operation in GeoPandas is planar, i.e. the potential third
+    dimension is not taken into account.
     """
     # Allowed operations
     allowed_hows = [
@@ -174,13 +242,23 @@ def overlay(df1, df2, how="intersection", make_valid=True, keep_geom_type=True):
     # Error Messages
     if how not in allowed_hows:
         raise ValueError(
-            "`how` was '{0}' but is expected to be in %s".format(how, allowed_hows)
+            "`how` was '{0}' but is expected to be in {1}".format(how, allowed_hows)
         )
 
     if isinstance(df1, GeoSeries) or isinstance(df2, GeoSeries):
         raise NotImplementedError(
             "overlay currently only implemented for " "GeoDataFrames"
         )
+
+    if not _check_crs(df1, df2):
+        _crs_mismatch_warn(df1, df2, stacklevel=3)
+
+    if keep_geom_type is None:
+        keep_geom_type = True
+        keep_geom_type_warning = True
+    else:
+        keep_geom_type_warning = False
+
     polys = ["Polygon", "MultiPolygon"]
     lines = ["LineString", "MultiLineString", "LinearRing"]
     points = ["Point", "MultiPoint"]
@@ -193,37 +271,125 @@ def overlay(df1, df2, how="intersection", make_valid=True, keep_geom_type=True):
                 "df{} contains mixed geometry types.".format(i + 1)
             )
 
-    # Computations
-    df1 = df1.copy()
-    df2 = df2.copy()
-    if df1.geom_type.isin(polys).all():
-        df1[df1._geometry_column_name] = df1.geometry.buffer(0)
-    if df2.geom_type.isin(polys).all():
-        df2[df2._geometry_column_name] = df2.geometry.buffer(0)
+    if how == "intersection":
+        box_gdf1 = df1.total_bounds
+        box_gdf2 = df2.total_bounds
 
-    if how == "difference":
-        return _overlay_difference(df1, df2)
-    elif how == "intersection":
-        result = _overlay_intersection(df1, df2)
-    elif how == "symmetric_difference":
-        result = _overlay_symmetric_diff(df1, df2)
-    elif how == "union":
-        result = _overlay_union(df1, df2)
-    elif how == "identity":
-        dfunion = _overlay_union(df1, df2)
-        result = dfunion[dfunion["__idx1"].notnull()].copy()
+        if not (
+            ((box_gdf1[0] <= box_gdf2[2]) and (box_gdf2[0] <= box_gdf1[2]))
+            and ((box_gdf1[1] <= box_gdf2[3]) and (box_gdf2[1] <= box_gdf1[3]))
+        ):
+            result = df1.iloc[:0].merge(
+                df2.iloc[:0].drop(df2.geometry.name, axis=1),
+                left_index=True,
+                right_index=True,
+                suffixes=("_1", "_2"),
+            )
+            return result[
+                result.columns.drop(df1.geometry.name).tolist() + [df1.geometry.name]
+            ]
+
+    # Computations
+    def _make_valid(df):
+        df = df.copy()
+        if df.geom_type.isin(polys).all():
+            mask = ~df.geometry.is_valid
+            col = df._geometry_column_name
+            if make_valid:
+                df.loc[mask, col] = df.loc[mask, col].buffer(0)
+            elif mask.any():
+                raise ValueError(
+                    "You have passed make_valid=False along with "
+                    f"{mask.sum()} invalid input geometries. "
+                    "Use make_valid=True or make sure that all geometries "
+                    "are valid before using overlay."
+                )
+        return df
+
+    df1 = _make_valid(df1)
+    df2 = _make_valid(df2)
+
+    with warnings.catch_warnings():  # CRS checked above, suppress array-level warning
+        warnings.filterwarnings("ignore", message="CRS mismatch between the CRS")
+        if how == "difference":
+            result = _overlay_difference(df1, df2)
+        elif how == "intersection":
+            result = _overlay_intersection(df1, df2)
+        elif how == "symmetric_difference":
+            result = _overlay_symmetric_diff(df1, df2)
+        elif how == "union":
+            result = _overlay_union(df1, df2)
+        elif how == "identity":
+            dfunion = _overlay_union(df1, df2)
+            result = dfunion[dfunion["__idx1"].notnull()].copy()
+
+        if how in ["intersection", "symmetric_difference", "union", "identity"]:
+            result.drop(["__idx1", "__idx2"], axis=1, inplace=True)
 
     if keep_geom_type:
-        type = df1.geom_type.iloc[0]
-        if type in polys:
+        geom_type = df1.geom_type.iloc[0]
+
+        # First we filter the geometry types inside GeometryCollections objects
+        # (e.g. GeometryCollection([polygon, point]) -> polygon)
+        # we do this separately on only the relevant rows, as this is an expensive
+        # operation (an expensive no-op for geometry types other than collections)
+        is_collection = result.geom_type == "GeometryCollection"
+        if is_collection.any():
+            geom_col = result._geometry_column_name
+            collections = result[[geom_col]][is_collection]
+
+            exploded = collections.reset_index(drop=True).explode(index_parts=True)
+            exploded = exploded.reset_index(level=0)
+
+            orig_num_geoms_exploded = exploded.shape[0]
+            if geom_type in polys:
+                exploded.loc[~exploded.geom_type.isin(polys), geom_col] = None
+            elif geom_type in lines:
+                exploded.loc[~exploded.geom_type.isin(lines), geom_col] = None
+            elif geom_type in points:
+                exploded.loc[~exploded.geom_type.isin(points), geom_col] = None
+            else:
+                raise TypeError(
+                    "`keep_geom_type` does not support {}.".format(geom_type)
+                )
+            num_dropped_collection = (
+                orig_num_geoms_exploded - exploded.geometry.isna().sum()
+            )
+
+            # level_0 created with above reset_index operation
+            # and represents the original geometry collections
+            # TODO avoiding dissolve to call unary_union in this case could further
+            # improve performance (we only need to collect geometries in their
+            # respective Multi version)
+            dissolved = exploded.dissolve(by="level_0")
+            result.loc[is_collection, geom_col] = dissolved[geom_col].values
+        else:
+            num_dropped_collection = 0
+
+        # Now we filter all geometries (in theory we don't need to do this
+        # again for the rows handled above for GeometryCollections, but filtering
+        # them out is probably more expensive as simply including them when this
+        # is typically about only a few rows)
+        orig_num_geoms = result.shape[0]
+        if geom_type in polys:
             result = result.loc[result.geom_type.isin(polys)]
-        elif type in lines:
+        elif geom_type in lines:
             result = result.loc[result.geom_type.isin(lines)]
-        elif type in points:
+        elif geom_type in points:
             result = result.loc[result.geom_type.isin(points)]
         else:
-            raise TypeError("`keep_geom_type` does not support {}.".format(type))
+            raise TypeError("`keep_geom_type` does not support {}.".format(geom_type))
+        num_dropped = orig_num_geoms - result.shape[0]
+
+        if (num_dropped > 0 or num_dropped_collection > 0) and keep_geom_type_warning:
+            warnings.warn(
+                "`keep_geom_type=True` in overlay resulted in {} dropped "
+                "geometries of different geometry types than df1 has. "
+                "Set `keep_geom_type=False` to retain all "
+                "geometries".format(num_dropped + num_dropped_collection),
+                UserWarning,
+                stacklevel=2,
+            )
 
     result.reset_index(drop=True, inplace=True)
-    result.drop(["__idx1", "__idx2"], axis=1, inplace=True)
     return result

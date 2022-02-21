@@ -29,7 +29,13 @@ such as PostGIS.
 if os.environ.get("READTHEDOCS", False) == "True":
     INSTALL_REQUIRES = []
 else:
-    INSTALL_REQUIRES = ["pandas >= 0.23.0", "shapely", "fiona", "pyproj >= 2.2.0"]
+    INSTALL_REQUIRES = [
+        "pandas >= 0.25.0",
+        "shapely >= 1.6",
+        "fiona >= 1.8",
+        "pyproj >= 2.2.0",
+        "packaging",
+    ]
 
 # get all data dirs in the datasets module
 data_files = []
@@ -62,7 +68,7 @@ setup(
         "geopandas.tools.tests",
     ],
     package_data={"geopandas": data_files},
-    python_requires=">=3.5",
+    python_requires=">=3.7",
     install_requires=INSTALL_REQUIRES,
     cmdclass=versioneer.get_cmdclass(),
 )

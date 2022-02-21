@@ -5,11 +5,11 @@ from numpy.testing import assert_array_equal
 import pandas as pd
 
 import shapely
-from shapely.geometry import Point, GeometryCollection
+from shapely.geometry import Point, GeometryCollection, LineString
 
 import geopandas
 from geopandas import GeoDataFrame, GeoSeries
-from geopandas._compat import PANDAS_GE_024, PANDAS_GE_025
+import geopandas._compat as compat
 from geopandas.array import from_shapely
 
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
@@ -39,9 +39,6 @@ def test_repr(s, df):
     assert "POINT" in df._repr_html_()
 
 
-@pytest.mark.skipif(
-    not PANDAS_GE_024, reason="formatting for EA only implemented in 0.24.0"
-)
 def test_repr_boxed_display_precision():
     # geographic coordinates
     p1 = Point(10.123456789, 50.123456789)
@@ -49,11 +46,19 @@ def test_repr_boxed_display_precision():
     s1 = GeoSeries([p1, p2, None])
     assert "POINT (10.12346 50.12346)" in repr(s1)
 
+    # geographic coordinates 4326
+    s3 = GeoSeries([p1, p2], crs=4326)
+    assert "POINT (10.12346 50.12346)" in repr(s3)
+
     # projected coordinates
     p1 = Point(3000.123456789, 3000.123456789)
     p2 = Point(4000.123456789, 4000.123456789)
     s2 = GeoSeries([p1, p2, None])
     assert "POINT (3000.123 3000.123)" in repr(s2)
+
+    # projected geographic coordinate
+    s4 = GeoSeries([p1, p2], crs=3857)
+    assert "POINT (3000.123 3000.123)" in repr(s4)
 
     geopandas.options.display_precision = 1
     assert "POINT (10.1 50.1)" in repr(s1)
@@ -74,11 +79,7 @@ def test_repr_all_missing():
 def test_repr_empty():
     # https://github.com/geopandas/geopandas/issues/1195
     s = GeoSeries([])
-    if PANDAS_GE_025:
-        # repr with correct name fixed in pandas 0.25
-        assert repr(s) == "GeoSeries([], dtype: geometry)"
-    else:
-        assert repr(s) == "Series([], dtype: geometry)"
+    assert repr(s) == "GeoSeries([], dtype: geometry)"
     df = GeoDataFrame({"a": [], "geometry": s})
     assert "Empty GeoDataFrame" in repr(df)
     # https://github.com/geopandas/geopandas/issues/1184
@@ -87,7 +88,7 @@ def test_repr_empty():
 
 def test_indexing(s, df):
 
-    # accessing scalar from the geometry (colunm)
+    # accessing scalar from the geometry (column)
     exp = Point(1, 1)
     assert s[1] == exp
     assert s.loc[1] == exp
@@ -138,8 +139,9 @@ def test_reindex(s, df):
     assert isinstance(res.geometry, GeoSeries)
     assert_frame_equal(res, df[["value1", "geometry"]])
 
-    # TODO df.reindex(columns=['value1', 'value2']) still returns GeoDataFrame,
-    # should it return DataFrame instead ?
+    res = df.reindex(columns=["value1", "value2"])
+    assert type(res) == pd.DataFrame
+    assert_frame_equal(res, df[["value1", "value2"]])
 
 
 def test_take(s, df):
@@ -240,7 +242,7 @@ def test_astype(s, df):
     res = df.astype({"value1": float})
     assert isinstance(res, GeoDataFrame)
 
-    # check whether returned object is a datafrane
+    # check whether returned object is a dataframe
     res = df.astype(str)
     assert isinstance(res, pd.DataFrame) and not isinstance(res, GeoDataFrame)
 
@@ -261,6 +263,42 @@ def test_astype_invalid_geodataframe():
     assert res["a"].dtype == object
 
 
+@pytest.mark.xfail(
+    not compat.PANDAS_GE_10,
+    reason="Convert dtypes new in pandas 1.0",
+    raises=NotImplementedError,
+)
+def test_convert_dtypes(df):
+    # https://github.com/geopandas/geopandas/issues/1870
+
+    # Test geometry col is first col, first, geom_col_name=geometry
+    # (order is important in concat, used internally)
+    res1 = df.convert_dtypes()  # note res1 done first for pandas < 1 xfail check
+
+    expected1 = GeoDataFrame(
+        pd.DataFrame(df).convert_dtypes(), crs=df.crs, geometry=df.geometry.name
+    )
+
+    # Checking type and metadata are right
+    assert_geodataframe_equal(expected1, res1)
+
+    # Test geom last, geom_col_name=geometry
+    res2 = df[["value1", "value2", "geometry"]].convert_dtypes()
+    assert_geodataframe_equal(expected1[["value1", "value2", "geometry"]], res2)
+
+    # Test again with crs set and custom geom col name
+    df2 = df.set_crs(epsg=4326).rename_geometry("points")
+    expected2 = GeoDataFrame(
+        pd.DataFrame(df2).convert_dtypes(), crs=df2.crs, geometry=df2.geometry.name
+    )
+    res3 = df2.convert_dtypes()
+    assert_geodataframe_equal(expected2, res3)
+
+    # Test geom last, geom_col=geometry
+    res4 = df2[["value1", "value2", "points"]].convert_dtypes()
+    assert_geodataframe_equal(expected2[["value1", "value2", "points"]], res4)
+
+
 def test_to_csv(df):
 
     exp = (
@@ -275,14 +313,15 @@ def test_numerical_operations(s, df):
     exp = pd.Series([3, 4], index=["value1", "value2"])
     assert_series_equal(df.sum(), exp)
 
-    # series methods raise error
+    # series methods raise error (not supported for geometry)
     with pytest.raises(TypeError):
         s.sum()
 
     with pytest.raises(TypeError):
         s.max()
 
-    with pytest.raises(TypeError):
+    with pytest.raises((TypeError, ValueError)):
+        # TODO: remove ValueError after pandas-dev/pandas#32749
         s.idxmax()
 
     # numerical ops raise an error
@@ -299,9 +338,6 @@ def test_numerical_operations(s, df):
     assert_frame_equal(res, exp)
 
 
-@pytest.mark.skipif(
-    not PANDAS_GE_024, reason="where for EA only implemented in 0.24.0 (GH24114)"
-)
 def test_where(s):
     res = s.where(np.array([True, False, True]))
     exp = GeoSeries([Point(0, 0), None, Point(2, 2)])
@@ -312,6 +348,22 @@ def test_select_dtypes(df):
     res = df.select_dtypes(include=[np.number])
     exp = df[["value1", "value2"]]
     assert_frame_equal(res, exp)
+
+
+def test_equals(s, df):
+    # https://github.com/geopandas/geopandas/issues/1420
+    s2 = s.copy()
+    assert s.equals(s2) is True
+    s2.iloc[0] = None
+    assert s.equals(s2) is False
+
+    df2 = df.copy()
+    assert df.equals(df2) is True
+    df2.loc[0, "geometry"] = Point(10, 10)
+    assert df.equals(df2) is False
+    df2 = df.copy()
+    df2.loc[0, "value1"] = 10
+    assert df.equals(df2) is False
 
 
 # Missing values
@@ -332,7 +384,7 @@ def test_fillna(s, df):
     df2["geometry"] = s2
     res = df2.fillna(Point(1, 1))
     assert_geodataframe_equal(res, df)
-    with pytest.raises(NotImplementedError):
+    with pytest.raises((NotImplementedError, TypeError)):  # GH2351
         df2.fillna(0)
 
     # allow non-geometry fill value if there are no missing values
@@ -393,13 +445,46 @@ def test_unique():
     assert_array_equal(s.unique(), exp)
 
 
-@pytest.mark.xfail
+def pd14_compat_index(index):
+    if compat.PANDAS_GE_14:
+        return from_shapely(index)
+    else:
+        return index
+
+
 def test_value_counts():
     # each object is considered unique
     s = GeoSeries([Point(0, 0), Point(1, 1), Point(0, 0)])
     res = s.value_counts()
-    exp = pd.Series([2, 1], index=[Point(0, 0), Point(1, 1)])
+    with compat.ignore_shapely2_warnings():
+        exp = pd.Series([2, 1], index=pd14_compat_index([Point(0, 0), Point(1, 1)]))
     assert_series_equal(res, exp)
+    # Check crs doesn't make a difference - note it is not kept in output index anyway
+    s2 = GeoSeries([Point(0, 0), Point(1, 1), Point(0, 0)], crs="EPSG:4326")
+    res2 = s2.value_counts()
+    assert_series_equal(res2, exp)
+    if compat.PANDAS_GE_14:
+        # TODO should/ can we fix CRS being lost
+        assert s2.value_counts().index.array.crs is None
+
+    # check mixed geometry
+    s3 = GeoSeries([Point(0, 0), LineString([[1, 1], [2, 2]]), Point(0, 0)])
+    res3 = s3.value_counts()
+    index = pd14_compat_index([Point(0, 0), LineString([[1, 1], [2, 2]])])
+    with compat.ignore_shapely2_warnings():
+        exp3 = pd.Series([2, 1], index=index)
+    assert_series_equal(res3, exp3)
+
+    # check None is handled
+    s4 = GeoSeries([Point(0, 0), None, Point(0, 0)])
+    res4 = s4.value_counts(dropna=True)
+    with compat.ignore_shapely2_warnings():
+        exp4_dropna = pd.Series([2], index=pd14_compat_index([Point(0, 0)]))
+    assert_series_equal(res4, exp4_dropna)
+    with compat.ignore_shapely2_warnings():
+        exp4_keepna = pd.Series([2, 1], index=pd14_compat_index([Point(0, 0), None]))
+    res4_keepna = s4.value_counts(dropna=False)
+    assert_series_equal(res4_keepna, exp4_keepna)
 
 
 @pytest.mark.xfail(strict=False)
@@ -443,12 +528,25 @@ def test_groupby(df):
     assert_frame_equal(res, exp)
 
     # applying on the geometry column
-    res = df.groupby("value2")["geometry"].apply(lambda x: x.cascaded_union)
-    exp = pd.Series(
-        [shapely.geometry.MultiPoint([(0, 0), (2, 2)]), Point(1, 1)],
-        index=pd.Index([1, 2], name="value2"),
-        name="geometry",
-    )
+    res = df.groupby("value2")["geometry"].apply(lambda x: x.unary_union)
+    if compat.PANDAS_GE_11:
+        exp = GeoSeries(
+            [shapely.geometry.MultiPoint([(0, 0), (2, 2)]), Point(1, 1)],
+            index=pd.Index([1, 2], name="value2"),
+            name="geometry",
+        )
+    else:
+        exp = pd.Series(
+            [shapely.geometry.MultiPoint([(0, 0), (2, 2)]), Point(1, 1)],
+            index=pd.Index([1, 2], name="value2"),
+            name="geometry",
+        )
+    assert_series_equal(res, exp)
+
+    # apply on geometry column not resulting in new geometry
+    res = df.groupby("value2")["geometry"].apply(lambda x: x.unary_union.area)
+    exp = pd.Series([0.0, 0.0], index=pd.Index([1, 2], name="value2"), name="geometry")
+
     assert_series_equal(res, exp)
 
 
@@ -460,6 +558,65 @@ def test_groupby_groups(df):
     assert_frame_equal(res, exp)
 
 
+@pytest.mark.skip_no_sindex
+@pytest.mark.skipif(
+    compat.PANDAS_GE_13 and not compat.PANDAS_GE_14,
+    reason="this was broken in pandas 1.3.5 (GH-2294)",
+)
+@pytest.mark.parametrize("crs", [None, "EPSG:4326"])
+def test_groupby_metadata(crs):
+    # https://github.com/geopandas/geopandas/issues/2294
+    df = GeoDataFrame(
+        {
+            "geometry": [Point(0, 0), Point(1, 1), Point(0, 0)],
+            "value1": np.arange(3, dtype="int64"),
+            "value2": np.array([1, 2, 1], dtype="int64"),
+        },
+        crs=crs,
+    )
+
+    # dummy test asserting we can access the crs
+    def func(group):
+        assert isinstance(group, GeoDataFrame)
+        assert group.crs == crs
+
+    df.groupby("value2").apply(func)
+
+    # actual test with functionality
+    res = df.groupby("value2").apply(
+        lambda x: geopandas.sjoin(x, x[["geometry", "value1"]], how="inner")
+    )
+
+    expected = (
+        df.take([0, 2, 0, 2, 1])
+        .set_index("value2", drop=False, append=True)
+        .swaplevel()
+        .rename(columns={"value1": "value1_left"})
+        .assign(value1_right=[0, 0, 2, 2, 1])
+    )
+    assert_geodataframe_equal(res.drop(columns=["index_right"]), expected)
+
+
+def test_apply(s):
+    # function that returns geometry preserves GeoSeries class
+    def geom_func(geom):
+        assert isinstance(geom, Point)
+        return geom
+
+    result = s.apply(geom_func)
+    assert isinstance(result, GeoSeries)
+    assert_geoseries_equal(result, s)
+
+    # function that returns non-geometry results in Series
+    def numeric_func(geom):
+        assert isinstance(geom, Point)
+        return geom.x
+
+    result = s.apply(numeric_func)
+    assert not isinstance(result, GeoSeries)
+    assert_series_equal(result, pd.Series([0.0, 1.0, 2.0]))
+
+
 def test_apply_loc_len1(df):
     # subset of len 1 with loc -> bug in pandas with inconsistent Block ndim
     # resulting in bug in apply
@@ -468,3 +625,83 @@ def test_apply_loc_len1(df):
     result = subset.apply(lambda geom: geom.is_empty)
     expected = subset.is_empty
     np.testing.assert_allclose(result, expected)
+
+
+def test_apply_convert_dtypes_keyword(s):
+    # ensure the convert_dtypes keyword is accepted
+    res = s.apply(lambda x: x, convert_dtype=True, args=())
+    assert_geoseries_equal(res, s)
+
+
+@pytest.mark.parametrize("crs", [None, "EPSG:4326"])
+def test_apply_no_geometry_result(df, crs):
+    if crs:
+        df = df.set_crs(crs)
+    result = df.apply(lambda col: col.astype(str), axis=0)
+    assert type(result) is pd.DataFrame
+    expected = df.astype(str)
+    assert_frame_equal(result, expected)
+
+    result = df.apply(lambda col: col.astype(str), axis=1)
+    assert type(result) is pd.DataFrame
+    assert_frame_equal(result, expected)
+
+
+def test_apply_preserves_geom_col_name(df):
+    df = df.rename_geometry("geom")
+    result = df.apply(lambda col: col, axis=0)
+    assert result.geometry.name == "geom"
+
+
+def test_df_apply_returning_series(df):
+    # https://github.com/geopandas/geopandas/issues/2283
+    result = df.apply(lambda row: row.geometry, axis=1)
+    assert_geoseries_equal(result, df.geometry, check_crs=False)
+
+    result = df.apply(lambda row: row.value1, axis=1)
+    assert_series_equal(result, df["value1"].rename(None))
+
+
+@pytest.mark.skipif(not compat.PANDAS_GE_10, reason="attrs introduced in pandas 1.0")
+def test_preserve_attrs(df):
+    # https://github.com/geopandas/geopandas/issues/1654
+    df.attrs["name"] = "my_name"
+    attrs = {"name": "my_name"}
+    assert df.attrs == attrs
+
+    # preserve attrs in indexing operations
+    for subset in [df[:2], df[df["value1"] > 2], df[["value2", "geometry"]]]:
+        assert df.attrs == attrs
+
+    # preserve attrs in methods
+    df2 = df.reset_index()
+    assert df2.attrs == attrs
+
+    # https://github.com/geopandas/geopandas/issues/1875
+    df3 = df2.explode(index_parts=True)
+    assert df3.attrs == attrs
+
+
+@pytest.mark.skipif(not compat.PANDAS_GE_12, reason="attrs introduced in pandas 1.0")
+def test_preserve_flags(df):
+    # https://github.com/geopandas/geopandas/issues/1654
+    df = df.set_flags(allows_duplicate_labels=False)
+    assert df.flags.allows_duplicate_labels is False
+
+    # preserve flags in indexing operations
+    for subset in [df[:2], df[df["value1"] > 2], df[["value2", "geometry"]]]:
+        assert df.flags.allows_duplicate_labels is False
+
+    # preserve attrs in methods
+    df2 = df.reset_index()
+    assert df2.flags.allows_duplicate_labels is False
+
+    # it is honored for operations that introduce duplicate labels
+    with pytest.raises(ValueError):
+        df.reindex([0, 0, 1])
+
+    with pytest.raises(ValueError):
+        df[["value1", "value1", "geometry"]]
+
+    with pytest.raises(ValueError):
+        pd.concat([df, df])
