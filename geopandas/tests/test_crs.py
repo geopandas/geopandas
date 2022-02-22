@@ -200,7 +200,10 @@ class TestGeometryArrayCRS:
         assert s.crs == self.osgb
         assert s.values.crs == self.osgb
 
-        with pytest.warns(FutureWarning):
+        with pytest.raises(
+            ValueError,
+            match="CRS mismatch between CRS of the passed geometries and 'crs'",
+        ):
             s = GeoSeries(arr, crs=4326)
         assert s.crs == self.osgb
 
@@ -219,17 +222,15 @@ class TestGeometryArrayCRS:
         assert df.geometry.crs == self.osgb
         assert df.geometry.values.crs == self.osgb
 
-        # different passed CRS than array CRS is ignored
-        with pytest.warns(FutureWarning, match="CRS mismatch"):
+        # different passed CRS than array CRS is now an error
+        match_str = "CRS mismatch between CRS of the passed geometries and 'crs'"
+        with pytest.raises(ValueError, match=match_str):
             df = GeoDataFrame(geometry=s, crs=4326)
-        assert df.crs == self.osgb
-        assert df.geometry.crs == self.osgb
-        assert df.geometry.values.crs == self.osgb
-        with pytest.warns(FutureWarning, match="CRS mismatch"):
+        with pytest.raises(ValueError, match=match_str):
             GeoDataFrame(geometry=s, crs=4326)
-        with pytest.warns(FutureWarning, match="CRS mismatch"):
+        with pytest.raises(ValueError, match=match_str):
             GeoDataFrame({"data": [1, 2], "geometry": s}, crs=4326)
-        with pytest.warns(FutureWarning, match="CRS mismatch"):
+        with pytest.raises(ValueError, match=match_str):
             GeoDataFrame(df, crs=4326).crs
 
         # manually change CRS

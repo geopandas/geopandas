@@ -10,6 +10,7 @@ import shapely.affinity
 import shapely.geometry
 from shapely.geometry.base import CAP_STYLE, JOIN_STYLE
 import shapely.wkb
+import shapely.wkt
 from shapely._buildcfg import geos_version
 
 import geopandas
@@ -32,7 +33,7 @@ triangle_no_missing = [
     shapely.geometry.Polygon([(random.random(), random.random()) for i in range(3)])
     for _ in range(10)
 ]
-triangles = triangle_no_missing + [shapely.geometry.Polygon(), None]
+triangles = triangle_no_missing + [shapely.wkt.loads("POLYGON EMPTY"), None]
 T = from_shapely(triangles)
 
 points_no_missing = [
@@ -143,9 +144,7 @@ def test_from_wkb():
     missing_values = [None]
     if not compat.USE_PYGEOS:
         missing_values.extend([b"", np.nan])
-
-        if compat.PANDAS_GE_10:
-            missing_values.append(pd.NA)
+        missing_values.append(pd.NA)
 
     res = from_wkb(missing_values)
     np.testing.assert_array_equal(res, np.full(len(missing_values), None))
@@ -219,9 +218,7 @@ def test_from_wkt(string_type):
     missing_values = [None]
     if not compat.USE_PYGEOS:
         missing_values.extend([f(""), np.nan])
-
-        if compat.PANDAS_GE_10:
-            missing_values.append(pd.NA)
+        missing_values.append(pd.NA)
 
     res = from_wkb(missing_values)
     np.testing.assert_array_equal(res, np.full(len(missing_values), None))
@@ -356,31 +353,8 @@ def test_predicates_vector_vector(attr, args):
 def test_unary_geo(attr):
     na_value = None
 
-    if attr == "boundary":
-        # pygeos returns None for empty geometries
-        if not compat.USE_PYGEOS:
-            # boundary raises for empty geometry
-            with pytest.raises(Exception):
-                T.boundary
-
-        values = triangle_no_missing + [None]
-        A = from_shapely(values)
-    else:
-        values = triangles
-        A = T
-
-    result = getattr(A, attr)
-    if attr == "exterior" and compat.USE_PYGEOS:
-        # TODO(pygeos)
-        # empty Polygon() has an exterior with shapely > 1.7, which gives
-        # empty LinearRing instead of None,
-        # but conversion to pygeos still results in empty GeometryCollection
-        expected = [
-            getattr(t, attr) if t is not None and not t.is_empty else na_value
-            for t in values
-        ]
-    else:
-        expected = [getattr(t, attr) if t is not None else na_value for t in values]
+    result = getattr(T, attr)
+    expected = [getattr(t, attr) if t is not None else na_value for t in triangles]
 
     assert equal_geometries(result, expected)
 
@@ -455,7 +429,10 @@ def test_binary_geo_scalar(attr):
         "has_z",
         # for is_ring we raise a warning about the value for Polygon changing
         pytest.param(
-            "is_ring", marks=pytest.mark.filterwarnings("ignore:is_ring:FutureWarning")
+            "is_ring",
+            marks=[
+                pytest.mark.filterwarnings("ignore:is_ring:FutureWarning"),
+            ],
         ),
     ],
 )
@@ -473,11 +450,9 @@ def test_unary_predicates(attr):
 
     result = getattr(V, attr)
 
-    if attr == "is_simple" and (geos_version < (3, 8) or compat.USE_PYGEOS):
+    if attr == "is_simple" and geos_version < (3, 8):
         # poly.is_simple raises an error for empty polygon for GEOS < 3.8
         # with shapely, pygeos always returns False for all GEOS versions
-        # But even for Shapely with GEOS >= 3.8, empty GeometryCollection
-        # returns True instead of False
         expected = [
             getattr(t, attr) if t is not None and not t.is_empty else na_value
             for t in vals
@@ -489,6 +464,9 @@ def test_unary_predicates(attr):
             else na_value
             for t in vals
         ]
+        # empty Linearring.is_ring gives False with Shapely < 2.0
+        if compat.USE_PYGEOS and not compat.SHAPELY_GE_20:
+            expected[-2] = True
     else:
         expected = [getattr(t, attr) if t is not None else na_value for t in vals]
     assert result.tolist() == expected
@@ -502,10 +480,13 @@ def test_is_ring():
         shapely.geometry.LineString([(0, 0), (1, 1), (1, -1)]),
         shapely.geometry.LineString([(0, 0), (1, 1), (1, -1), (0, 0)]),
         shapely.geometry.Polygon([(0, 0), (1, 1), (1, -1)]),
-        shapely.geometry.Polygon(),
+        shapely.wkt.loads("POLYGON EMPTY"),
         None,
     ]
-    expected = [True, False, True, True, False, False]
+    expected = [True, False, True, True, True, False]
+    if not compat.USE_PYGEOS and not compat.SHAPELY_GE_20:
+        # empty polygon is_ring gives False with Shapely < 2.0
+        expected[-2] = False
 
     result = from_shapely(g).is_ring
 
@@ -525,7 +506,7 @@ def test_unary_float(attr):
 def test_geom_types():
     cat = T.geom_type
     # empty polygon has GeometryCollection type
-    assert list(cat) == ["Polygon"] * (len(T) - 2) + ["GeometryCollection", None]
+    assert list(cat) == ["Polygon"] * (len(T) - 1) + [None]
 
 
 def test_geom_types_null_mixed():
@@ -773,6 +754,29 @@ def test_getitem():
     assert P5.equals(points[1])
 
 
+@pytest.mark.parametrize(
+    "item",
+    [
+        geopandas.GeoDataFrame(
+            geometry=[shapely.geometry.Polygon([(0, 0), (2, 0), (2, 2), (0, 2)])]
+        ),
+        geopandas.GeoSeries(
+            [shapely.geometry.Polygon([(0, 0), (2, 0), (2, 2), (0, 2)])]
+        ),
+        np.array([shapely.geometry.Polygon([(0, 0), (2, 0), (2, 2), (0, 2)])]),
+        [shapely.geometry.Polygon([(0, 0), (2, 0), (2, 2), (0, 2)])],
+        shapely.geometry.Polygon([(0, 0), (2, 0), (2, 2), (0, 2)]),
+    ],
+)
+def test_setitem(item):
+    points = [shapely.geometry.Point(i, i) for i in range(10)]
+    P = from_shapely(points)
+
+    P[[0]] = item
+
+    assert isinstance(P[0], shapely.geometry.Polygon)
+
+
 def test_equality_ops():
     with pytest.raises(ValueError):
         P[:5] == P[:7]
@@ -893,7 +897,6 @@ def test_isna(NA):
     assert t1[0] is None
 
 
-@pytest.mark.skipif(not compat.PANDAS_GE_10, reason="pd.NA introduced in pandas 1.0")
 def test_isna_pdNA():
     t1 = T.copy()
     t1[0] = pd.NA
@@ -929,7 +932,8 @@ class TestEstimateUtmCrs:
                 self.landmarks.estimate_utm_crs()
         else:
             assert self.landmarks.estimate_utm_crs() == CRS("EPSG:32618")
-            assert self.landmarks.estimate_utm_crs("NAD83") == CRS("EPSG:26918")
+            if compat.PYPROJ_GE_32:  # result is unstable in older pyproj
+                assert self.landmarks.estimate_utm_crs("NAD83") == CRS("EPSG:26918")
 
     @pytest.mark.skipif(compat.PYPROJ_LT_3, reason="requires pyproj 3 or higher")
     def test_estimate_utm_crs__projected(self):
