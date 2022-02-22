@@ -281,6 +281,4 @@ def test_expanddim_in_unstack():
     )
     unstack = s.unstack()
     assert_object(unstack, GeoDataFrame, None, None, False)
-    # TODO this is not what we want, but have to overload GeoDataFrame.droplevel to fix
-    # (In 10.2 unstack._geometry_column_name = "geometry", sideways regression)
-    assert unstack._geometry_column_name == 0
+    assert unstack._geometry_column_name == "geometry"

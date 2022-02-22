@@ -1482,6 +1482,11 @@ individually so that features may have different properties
                     f"Please ensure this column from the first DataFrame is not "
                     f"repeated."
                 )
+        elif method == "unstack":
+            # unstack adds multiindex columns and reshapes data.
+            # it never makes sense to retain geometry column
+            self._geometry_column_name = DEFAULT_GEO_COLUMN_NAME
+            self._crs = None
         return self
 
     def dissolve(
