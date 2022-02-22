@@ -29,7 +29,17 @@ the ``driver`` keyword, or pick a single layer from a multi-layered file with
 the ``layer`` keyword::
 
     countries_gdf = geopandas.read_file("package.gpkg", layer='countries')
+    
+Currently fiona only exposes the default drivers. To display those, type::
 
+    import fiona; fiona.supported_drivers 
+
+There is an `array <https://github.com/Toblerity/Fiona/blob/master/fiona/drvsupport.py>`_
+of unexposed but supported (depending on the GDAL-build) drivers. One can activate 
+these on runtime by updating the `supported_drivers` dictionary like::
+
+    fiona.supported_drivers["NAS"] = "raw"
+    
 Where supported in :mod:`fiona`, *geopandas* can also load resources directly from
 a web URL, for example for GeoJSON files from `geojson.xyz <http://geojson.xyz/>`_::
 
