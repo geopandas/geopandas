@@ -28,9 +28,6 @@ from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 # Skip all tests in this module if pyarrow is not available
 pyarrow = pytest.importorskip("pyarrow")
 
-# TEMPORARY: hide warning from to_parquet
-pytestmark = pytest.mark.filterwarnings("ignore:.*initial implementation of Parquet.*")
-
 
 @pytest.fixture(
     params=[
@@ -217,9 +214,7 @@ def test_roundtrip(tmpdir, file_format, test_dataset):
 
     filename = os.path.join(str(tmpdir), "test.pq")
 
-    # TEMP: Initial implementation should raise a UserWarning
-    with pytest.warns(UserWarning, match="initial implementation"):
-        writer(df, filename)
+    writer(df, filename)
 
     assert os.path.exists(filename)
 
