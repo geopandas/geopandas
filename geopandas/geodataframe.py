@@ -24,6 +24,22 @@ from ._decorator import doc
 DEFAULT_GEO_COLUMN_NAME = "geometry"
 
 
+def _is_geometry_dtype(dtype):
+    try:
+        return dtype == "geometry"
+    except TypeError:
+        # numpy <= 1.20 raise a TypeError instead of returning False on unknown dtype
+        return False
+
+
+def _columns_are_geometry(df):
+    # df._data.get_dtypes() is fast version of data.dtypes
+    # (without constructing a (Geo)Series)
+    dtypes = df._data.get_dtypes()
+    # equivalent of `dtypes == "geometry"` with workaround for older numpy
+    return np.array([_is_geometry_dtype(dtype) for dtype in dtypes], dtype=bool)
+
+
 def _geodataframe_constructor_with_fallback(*args, **kwargs):
     """
     A flexible constructor for GeoDataFrame._constructor, which falls back
@@ -31,10 +47,7 @@ def _geodataframe_constructor_with_fallback(*args, **kwargs):
     geometry column)
     """
     df = GeoDataFrame(*args, **kwargs)
-    # df._data.get_dtypes() is fast version of data.dtypes
-    # (without constructing a (Geo)Series)
-    dtypes = df._data.get_dtypes()
-    if len(dtypes) == 0 or (dtypes == "geometry").sum() == 0:
+    if len(df.columns) == 0 or _columns_are_geometry(df).sum() == 0:
         df = pd.DataFrame(df)
 
     return df
