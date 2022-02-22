@@ -18,10 +18,8 @@ class TestMerging:
         self.df = pd.DataFrame({"col1": [1, 2, 3], "col2": [0.1, 0.2, 0.3]})
 
     def _check_metadata(self, gdf, geometry_column_name="geometry", crs=None):
-        if geometry_column_name is None:
-            assert gdf._geometry_column_name is None
-        else:
-            assert gdf._geometry_column_name == geometry_column_name
+
+        assert gdf._geometry_column_name == geometry_column_name
         assert gdf.crs == crs
 
     def test_merge(self):
@@ -113,11 +111,11 @@ class TestMerging:
         # result columns are [0, 1], not an explicit way to rename them.
         # geometry column is leftmost (0) to mirror dataframe concat
         assert type(result) is GeoDataFrame
-        self._check_metadata(result, geometry_column_name=None, crs=None)
+        self._check_metadata(result, geometry_column_name=0, crs="epsg:4326")
         assert_index_equal(pd.Index([0, 1]), result.columns)
 
         gseries2.name = "foo"
         result2 = pd.concat([gseries2, self.gseries], axis=1)
         assert type(result2) is GeoDataFrame
-        self._check_metadata(result2, geometry_column_name=None, crs=None)
+        self._check_metadata(result2, geometry_column_name="foo", crs="epsg:4326")
         assert_index_equal(pd.Index(["foo", 0]), result2.columns)
