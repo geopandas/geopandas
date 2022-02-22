@@ -63,9 +63,21 @@ def assert_object(
         if geo_name is not None:
             _check_metadata_gdf(result, geo_name=geo_name, crs=crs)
         else:
-            if check_none_name:
+            if check_none_name:  # TODO this is awkward
                 assert result._geometry_column_name is None
-            with pytest.raises(AttributeError, match="No geometry data set yet"):
+
+            if result._geometry_column_name is None:
+                msg = (
+                    "You are calling a geospatial method on the GeoDataFrame, "
+                    "but the active"
+                )
+            else:
+                msg = (
+                    "You are calling a geospatial method on the GeoDataFrame, but "
+                    r"the active geometry column \("
+                    rf"'{result._geometry_column_name}'\) is not present"
+                )
+            with pytest.raises(AttributeError, match=msg):
                 result.geometry.name  # be explicit that geometry is invalid here
     elif expected_type == GeoSeries:
         _check_metadata_gs(result, name=geo_name, crs=crs)
@@ -76,8 +88,8 @@ def test_getitem(df):
     assert_object(df[["value1", "value2"]], pd.DataFrame)
     assert_object(df[[geo_name, "geometry2"]], GeoDataFrame, geo_name)
     assert_object(df[[geo_name]], GeoDataFrame, geo_name)
-    assert_object(df[["geometry2", "value1"]], pd.DataFrame)
-    assert_object(df[["geometry2"]], pd.DataFrame)
+    assert_object(df[["geometry2", "value1"]], GeoDataFrame, None, None)
+    assert_object(df[["geometry2"]], GeoDataFrame, None, None)
     assert_object(df[["value1"]], pd.DataFrame)
     # Series
     assert_object(df[geo_name], GeoSeries, geo_name)
@@ -124,9 +136,7 @@ def test_iloc(df):
 def test_squeeze(df):
     geo_name = df.geometry.name
     assert_object(df[[geo_name]].squeeze(), GeoSeries, geo_name)
-
-    # Not ideal behaviour, but this is consistent with __getitem__
-    assert_object(df[["geometry2"]].squeeze(), pd.Series)
+    assert_object(df[["geometry2"]].squeeze(), GeoSeries, "geometry2", crs=crs_osgb)
 
 
 def test_to_frame(df):
@@ -190,8 +200,8 @@ def test_apply(df):
     assert_object(df[["value1", "value2"]].apply(identity), pd.DataFrame)
     assert_object(df[[geo_name, "geometry2"]].apply(identity), GeoDataFrame, geo_name)
     assert_object(df[[geo_name]].apply(identity), GeoDataFrame, geo_name)
-    assert_object(df[["geometry2", "value1"]].apply(identity), pd.DataFrame)
-    assert_object(df[["geometry2"]].apply(identity), pd.DataFrame)
+    assert_object(df[["geometry2", "value1"]].apply(identity), GeoDataFrame, None, None)
+    assert_object(df[["geometry2"]].apply(identity), GeoDataFrame, None, None)
     assert_object(df[["value1"]].apply(identity), pd.DataFrame)
 
     # axis = 0, Series
@@ -209,9 +219,21 @@ def test_apply(df):
         df[[geo_name, "geometry2"]].apply(identity, axis=1), GeoDataFrame, geo_name
     )
     assert_object(df[[geo_name]].apply(identity, axis=1), GeoDataFrame, geo_name)
+    # TODO below should be a GeoDataFrame to be consistent with new getitem logic
+    #   leave as follow up as quite complicated
+    #   FrameColumnApply.series_generator returns object dtypes Series, so will have
+    #   patch result of apply
     assert_object(df[["geometry2", "value1"]].apply(identity, axis=1), pd.DataFrame)
-    assert_object(df[["geometry2"]].apply(identity, axis=1), pd.DataFrame)
+
     assert_object(df[["value1"]].apply(identity, axis=1), pd.DataFrame)
+    # if compat # https://github.com/pandas-dev/pandas/pull/30091
+
+
+def test_apply_axis1_secondary_geo_cols(df):
+    def identity(x):
+        return x
+
+    assert_object(df[["geometry2"]].apply(identity, axis=1), GeoDataFrame, None, None)
 
 
 def test_expanddim_in_apply():
