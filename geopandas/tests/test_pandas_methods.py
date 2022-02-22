@@ -263,11 +263,6 @@ def test_astype_invalid_geodataframe():
     assert res["a"].dtype == object
 
 
-@pytest.mark.xfail(
-    not compat.PANDAS_GE_10,
-    reason="Convert dtypes new in pandas 1.0",
-    raises=NotImplementedError,
-)
 def test_convert_dtypes(df):
     # https://github.com/geopandas/geopandas/issues/1870
 
@@ -384,7 +379,7 @@ def test_fillna(s, df):
     df2["geometry"] = s2
     res = df2.fillna(Point(1, 1))
     assert_geodataframe_equal(res, df)
-    with pytest.raises(NotImplementedError):
+    with pytest.raises((NotImplementedError, TypeError)):  # GH2351
         df2.fillna(0)
 
     # allow non-geometry fill value if there are no missing values
@@ -558,6 +553,7 @@ def test_groupby_groups(df):
     assert_frame_equal(res, exp)
 
 
+@pytest.mark.skip_no_sindex
 @pytest.mark.skipif(
     compat.PANDAS_GE_13 and not compat.PANDAS_GE_14,
     reason="this was broken in pandas 1.3.5 (GH-2294)",
@@ -661,7 +657,6 @@ def test_df_apply_returning_series(df):
     assert_series_equal(result, df["value1"].rename(None))
 
 
-@pytest.mark.skipif(not compat.PANDAS_GE_10, reason="attrs introduced in pandas 1.0")
 def test_preserve_attrs(df):
     # https://github.com/geopandas/geopandas/issues/1654
     df.attrs["name"] = "my_name"

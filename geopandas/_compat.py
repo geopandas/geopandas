@@ -15,7 +15,6 @@ import shapely.geos
 # pandas compat
 # -----------------------------------------------------------------------------
 
-PANDAS_GE_10 = Version(pd.__version__) >= Version("1.0.0")
 PANDAS_GE_11 = Version(pd.__version__) >= Version("1.1.0")
 PANDAS_GE_115 = Version(pd.__version__) >= Version("1.1.5")
 PANDAS_GE_12 = Version(pd.__version__) >= Version("1.2.0")
@@ -28,7 +27,6 @@ PANDAS_GE_14 = Version(pd.__version__) >= Version("1.4.0rc0")
 # -----------------------------------------------------------------------------
 
 
-SHAPELY_GE_17 = Version(shapely.__version__) >= Version("1.7.0")
 SHAPELY_GE_18 = Version(shapely.__version__) >= Version("1.8")
 SHAPELY_GE_20 = Version(shapely.__version__) >= Version("2.0")
 
@@ -222,9 +220,11 @@ try:
 except ImportError:
     HAS_RTREE = False
 
+
 # -----------------------------------------------------------------------------
 # pyproj compat
 # -----------------------------------------------------------------------------
 
 PYPROJ_LT_3 = Version(pyproj.__version__) < Version("3")
 PYPROJ_GE_31 = Version(pyproj.__version__) >= Version("3.1")
+PYPROJ_GE_32 = Version(pyproj.__version__) >= Version("3.2")

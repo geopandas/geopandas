@@ -8,6 +8,8 @@ from geopandas import _compat as compat
 from pandas.testing import assert_frame_equal
 import pytest
 
+from geopandas.testing import assert_geodataframe_equal
+
 
 @pytest.fixture
 def nybb_polydf():
@@ -71,7 +73,7 @@ def test_dissolve_retains_nonexisting_crs(nybb_polydf):
     assert test.crs is None
 
 
-def first_dissolve(nybb_polydf, first):
+def test_first_dissolve(nybb_polydf, first):
     test = nybb_polydf.dissolve("manhattan_bronx")
     assert_frame_equal(first, test, check_column_type=False)
 
@@ -297,3 +299,21 @@ def test_dissolve_dropna_warn(nybb_polydf):
         UserWarning, match="dropna kwarg is not supported for pandas < 1.1.0"
     ):
         nybb_polydf.dissolve(dropna=False)
+
+
+def test_dissolve_multi_agg(nybb_polydf, merged_shapes):
+
+    merged_shapes[("BoroCode", "min")] = [3, 1]
+    merged_shapes[("BoroCode", "max")] = [5, 2]
+    merged_shapes[("BoroName", "count")] = [3, 2]
+
+    with pytest.warns(None) as record:
+        test = nybb_polydf.dissolve(
+            by="manhattan_bronx",
+            aggfunc={
+                "BoroCode": ["min", "max"],
+                "BoroName": "count",
+            },
+        )
+    assert_geodataframe_equal(test, merged_shapes)
+    assert len(record) == 0
