@@ -470,6 +470,12 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         GeoDataFrame.to_crs : re-project to another CRS
 
         """
+        if self._crs is None:
+            try:
+                return self.geometry.crs
+            except AttributeError:
+                # the active geometry column might not be set
+                pass
         return self._crs
 
     @crs.setter
