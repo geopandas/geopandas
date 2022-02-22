@@ -1460,20 +1460,9 @@ individually so that features may have different properties
                 object.__setattr__(self, name, getattr(other.left, name, None))
         # concat operation: using metadata of the first object
         elif method == "concat":
-            reference_obj = other.objs[0]
-            geosrs_metadata_mapping = {"_crs": "crs", "_geometry_column_name": "name"}
 
             for name in self._metadata:
-                if isinstance(reference_obj, GeoSeries):
-                    # propagate geo col info post series concat
-                    # (column names are dummy values inside _constructor_expanddim)
-                    name_alias = geosrs_metadata_mapping.get(name, name)
-                    metadata_value = getattr(reference_obj, name_alias, None)
-                    if name == "_geometry_column_name" and metadata_value is None:
-                        metadata_value = 0
-                else:
-                    metadata_value = getattr(reference_obj, name, None)
-                object.__setattr__(self, name, metadata_value)
+                object.__setattr__(self, name, getattr(other.objs[0], name, None))
 
             if (self.columns == self._geometry_column_name).sum() > 1:
                 raise ValueError(
