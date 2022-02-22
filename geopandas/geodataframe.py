@@ -205,10 +205,33 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
     def _get_geometry(self):
         if self._geometry_column_name not in self:
-            raise AttributeError(
-                "No geometry data set yet (expected in"
-                " column '%s'.)" % self._geometry_column_name
-            )
+            if self._geometry_column_name is None:
+                msg = (
+                    "You are calling a geospatial method on the GeoDataFrame, "
+                    "but the active geometry column to use has not been set. "
+                )
+            else:
+                msg = (
+                    "You are calling a geospatial method on the GeoDataFrame, "
+                    f"but the active geometry column ('{self._geometry_column_name}') "
+                    "is not present. "
+                )
+            geo_cols = list(self.columns[self.dtypes == "geometry"])
+            if len(geo_cols) > 0:
+                msg += (
+                    f"\nThere are columns with geometry data type ({geo_cols}), and "
+                    "you can either set one as the active geometry with "
+                    'df.set_geometry("name") or access the column as a '
+                    'GeoSeries (df["name"]) and call the method directly on it.'
+                )
+            else:
+                msg += (
+                    "\nThere are no existing columns with geometry data type. You can "
+                    "add a geometry column as the active geometry column with "
+                    "df.set_geometry. "
+                )
+
+            raise AttributeError(msg)
         return self[self._geometry_column_name]
 
     def _set_geometry(self, col):
@@ -1329,18 +1352,23 @@ individually so that features may have different properties
     def __getitem__(self, key):
         """
         If the result is a column containing only 'geometry', return a
-        GeoSeries. If it's a DataFrame with a 'geometry' column, return a
-        GeoDataFrame.
+        GeoSeries. If it's a DataFrame with any columns of GeometryDtype,
+        return a GeoDataFrame.
         """
         result = super().__getitem__(key)
         geo_col = self._geometry_column_name
         if isinstance(result, Series) and isinstance(result.dtype, GeometryDtype):
             result.__class__ = GeoSeries
-        elif isinstance(result, DataFrame) and geo_col in result:
-            result.__class__ = GeoDataFrame
-            result._geometry_column_name = geo_col
-        elif isinstance(result, DataFrame) and geo_col not in result:
-            result.__class__ = DataFrame
+        elif isinstance(result, DataFrame):
+            if (result.dtypes == "geometry").sum() > 0:
+                result.__class__ = GeoDataFrame
+                if geo_col in result:
+                    result._geometry_column_name = geo_col
+                else:
+                    result._geometry_column_name = None
+                    result._crs = None
+            else:
+                result.__class__ = DataFrame
         return result
 
     def __setitem__(self, key, value):
