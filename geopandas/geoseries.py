@@ -53,7 +53,7 @@ def _geoseries_constructor_with_fallback(data=None, index=None, crs=None, **kwar
         return Series(data=data, index=index, **kwargs)
 
 
-def _geoseries_expanddim(data=None, index=None, crs=None, **kwargs):
+def _geoseries_expanddim(data=None, index=None, **kwargs):
     from geopandas import GeoDataFrame
 
     # DataFrame == pd.Series._constructor_expanddim
@@ -73,7 +73,7 @@ def _geoseries_expanddim(data=None, index=None, crs=None, **kwargs):
         if geo_col_name is None or not is_geometry_type(df[geo_col_name]):
             df._geometry_column_name = None
         else:
-            df = df.set_geometry(geo_col_name, crs)
+            df = df.set_geometry(geo_col_name)
 
     return df
 
