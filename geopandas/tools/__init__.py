@@ -3,6 +3,8 @@ from .overlay import overlay
 from .sjoin import sjoin, sjoin_nearest
 from .util import collect
 from .clip import clip
+from . import grids
+from . import _random
 
 __all__ = [
     "collect",

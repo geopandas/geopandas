@@ -1347,22 +1347,78 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
         """
         return geopandas.clip(self, mask=mask, keep_geom_type=keep_geom_type)
 
-    def sample_points(self, method='uniform', size=1, by_part=False, **sample_kwargs):
-        if method=='uniform':
-            ...
-        elif method=='hex':
-            ...
-        elif method=='grid':
-            ...
+    def sample_points(self, size=10, method="random", by_parts=False, **sample_kwargs):
+        """
+        Sample points from each geometry.
+        # TODO: clean the docstring & provide examples
+
+        Parameters
+        ----------
+        size : the size of the sample requested. If method='random', this indicates the
+            number of samples to draw from each geometry. If a tuple is provided,
+            then the first value must indicate the number of samples for each geometry,
+            and the second value must indicate the number of replications to sample.
+            if method='hexgrid' or method='squaregrid', this gives the number
+            points along each side of the grid. If a tuple is provided, then the first
+            value must indicate the number of grid points on the x axis, and second
+            value must indicate the number of grid points on the y axis.
+        method : the method requested. must be either random, hexgrid, or squaregrid
+        by_parts : whether to split the dataframe and sample from parts
+        sample_kwargs : options for the sampling algorithms, especially useful when
+            picking distributions from the pointpats.random module
+
+        Returns
+        -------
+        GeoSeries or GeoDataFrame
+            Points sampled within (or along) each geometry, according to the
+            requested method. Only a GeoDataFrame if there are multiple replications
+            requested for the sampling
+
+        Examples
+        --------
+
+        """
+        from .geodataframe import GeoDataFrame
+
+        if by_parts:
+            target = self.explode()
         else:
+            target = self
+        if method == "random":
+            from .tools._random import uniform
+
+            result = target.geometry.apply(uniform, size=size, **sample_kwargs)
+            result.columns = [f"sample_{i}" for i in range(len(result.columns))]
+            result = GeoDataFrame(result, geometry="sample_0")
+        elif method == "hexgrid":
+            # TODO: clean & validate the hexgridding
+            # TODO: decide if there should be a random displacement for the grids.
+            from .tools.grids import hex
+
+            result = target.geometry.apply(
+                make_grid, size=size, method="hex", as_polygons=False, clip=True
+            )
+        elif method == "squaregrid":
+            result = target.geometry.apply(
+                make_grid, size=size, method="square", as_polygons=False, clip=True
+            )
+        else:
+            # TODO: validate this works w/ normal or cluster_poisson
             try:
-                import pointpats
-                assert hasattr(pointpats, method)
+                from pointpats import random
+
+                assert hasattr(random, method)
                 sample_function = getattr(pointpats, method)
                 result = sample_function(size=size, **sample_kwargs)
             except ImportError:
                 ...
             except AssertionError:
                 ...
-        return result
-
+        if by_parts:
+            result = (
+                pd.DataFrame(result)
+                .groupby(level=0)
+                .agg(lambda x: geopandas.GeoSeries(x).unary_union)
+            )
+            result = GeoDataFrame(result, geometry="sample_0")
+        return result.squeeze()
