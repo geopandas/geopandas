@@ -1346,3 +1346,23 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
         (12,)
         """
         return geopandas.clip(self, mask=mask, keep_geom_type=keep_geom_type)
+
+    def sample_points(self, method='uniform', size=1, by_part=False, **sample_kwargs):
+        if method=='uniform':
+            ...
+        elif method=='hex':
+            ...
+        elif method=='grid':
+            ...
+        else:
+            try:
+                import pointpats
+                assert hasattr(pointpats, method)
+                sample_function = getattr(pointpats, method)
+                result = sample_function(size=size, **sample_kwargs)
+            except ImportError:
+                ...
+            except AssertionError:
+                ...
+        return result
+
