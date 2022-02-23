@@ -556,15 +556,13 @@ class TestConstructor:
     @pytest.mark.parametrize("name", [None, "geometry", "Points"])
     @pytest.mark.parametrize("crs", [None, "epsg:4326"])
     def test_to_frame(self, name, crs):
-        s = GeoSeries(
-            [MultiPoint([(0, 0), (1, 1)]), MultiPoint([(2, 2), (3, 3), (4, 4)])],
-            name=name,
-            crs=crs,
-        )
+        s = GeoSeries([Point(0, 0), Point(1, 1)], name=name, crs=crs)
         df = s.to_frame()
         assert type(df) == GeoDataFrame
         # name None -> 0, otherwise name preserved
-        assert df.geometry.name == (name if name is not None else 0)
+        expected_name = name if name is not None else 0
+        assert df.geometry.name == expected_name
+        assert df._geometry_column_name == expected_name
         assert df.crs == s.crs
 
         # if name is provided to to_frame, it should override

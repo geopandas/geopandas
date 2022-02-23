@@ -239,7 +239,8 @@ def test_apply_axis1_secondary_geo_cols(df):
 def test_expanddim_in_apply():
     # https://github.com/geopandas/geopandas/pull/2296#issuecomment-1021966443
     s = GeoSeries.from_xy([0, 1], [0, 1])
-    assert_object(s.apply(lambda x: pd.Series([x.x, x.y])), pd.DataFrame)
+    result = s.apply(lambda x: pd.Series([x.x, x.y]))
+    assert_object(result, pd.DataFrame)
 
 
 @pytest.mark.xfail(
@@ -262,8 +263,9 @@ def test_expandim_in_groupby_aggregate_multiple_funcs():
 
     grouped = s.groupby([0, 1, 0])
     agg = grouped.agg([total_area, union])
-    assert_object(agg, GeoDataFrame, None, None, True)
-    assert_object(grouped.agg([union, total_area]), GeoDataFrame, None, None, True)
+    assert_object(agg, GeoDataFrame, None, None, check_none_name=True)
+    result = grouped.agg([union, total_area])
+    assert_object(result, GeoDataFrame, None, None, check_none_name=True)
     assert_object(grouped.agg([total_area, total_area]), pd.DataFrame)
     assert_object(grouped.agg([total_area]), pd.DataFrame)
 
