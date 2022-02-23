@@ -4,7 +4,7 @@ import warnings
 import numpy as np
 import pandas as pd
 from pandas import Series, MultiIndex, DataFrame
-from pandas.core.internals import SingleBlockManager, BlockManager
+from pandas.core.internals import SingleBlockManager
 
 from pyproj import CRS
 from shapely.geometry.base import BaseGeometry
@@ -63,10 +63,8 @@ def _geoseries_expanddim(data=None, index=None, **kwargs):
         # pandas default column name is 0, keep convention
         geo_col_name = data.name if data.name is not None else 0
 
-    elif isinstance(data, dict) and len(data) == 1:
-        geo_col_name = list(data.keys())[0]
-    elif isinstance(data, BlockManager) and len(data.items) == 1:
-        geo_col_name = data.items[0]
+    if df.shape[1] == 1:
+        geo_col_name = df.columns[0]
 
     if (df.dtypes == "geometry").sum() > 0:
         if geo_col_name is None or not is_geometry_type(df[geo_col_name]):
