@@ -2,7 +2,8 @@ import numpy
 from ..array import points_from_xy, GeometryArray, from_shapely
 from ..geoseries import GeoSeries
 from ..geodataframe import GeoDataFrame
-import pygeos
+from .._compat import import_optional_dependency
+from shapely import geometry
 
 
 def uniform(geom, size=(1, 1), batch_size=None, exact=False):
@@ -33,6 +34,7 @@ def uniform(geom, size=(1, 1), batch_size=None, exact=False):
     --------
 
     """
+
     if isinstance(size, int):
         size = (size, 1)
     try:
@@ -44,6 +46,8 @@ def uniform(geom, size=(1, 1), batch_size=None, exact=False):
             " or a tuple of integers with the number of samples and "
             " the number of replications to simulate."
         )
+
+    _, n_replications = size
     if geom.type in ("Polygon", "MultiPolygon"):
         multipoints = _uniform_polygon(
             geom, size=size, batch_size=batch_size, exact=exact
@@ -55,10 +59,8 @@ def uniform(geom, size=(1, 1), batch_size=None, exact=False):
         multipoints = from_shapely(multipoints)
     else:
         # TODO: Should we recurse through geometrycollections?
-        multipoints = pygeos.empty(
-            (size[-1],), geom_type=pygeos.GeometryType.MULTIPOINT
-        )
-    _, n_replications = size
+        multipoints = [geometry.MultiPoint()] * n_replications
+
     output = GeoSeries(
         multipoints,
         index=[f"sample_{i}" for i in range(len(multipoints))],
@@ -87,6 +89,9 @@ def _uniform_line(geom, size=(1, 1), batch_size=None, exact=False):
     """
     Sample points from an input shapely linestring
     """
+    pygeos = import_optional_dependency(
+        "pygeos", "pygeos is required to randomly sample along LineString geometries"
+    )
     geom = pygeos.from_shapely(geom)
     n_points, n_reps = size
     splits = _split_line(geom)
@@ -116,6 +121,9 @@ def _split_line(geom):
     """
     Split an input linestring into component sub-segments.
     """
+    pygeos = import_optional_dependency(
+        "pygeos", "pygeos is required to randomly sample along LineString geometries"
+    )
     parts = pygeos.get_parts(geom)
     splits = numpy.empty((0,))
     for part in parts:
