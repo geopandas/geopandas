@@ -158,7 +158,3 @@ def _uniform_polygon(geom, size=(1, 1), batch_size=None, exact=False):
             candidates.extend(valid_samples)
         result.append(GeoSeries(candidates[:n_points]).unary_union)
     return result
-
-
-def _null_geom(*args, **kwargs):
-    return None
