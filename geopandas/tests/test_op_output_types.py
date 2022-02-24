@@ -283,4 +283,4 @@ def test_expanddim_in_unstack():
     )
     unstack = s.unstack()
     assert_object(unstack, GeoDataFrame, None, None, False)
-    assert unstack._geometry_column_name == "geometry"
+    assert unstack._geometry_column_name is None
