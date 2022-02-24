@@ -1,6 +1,5 @@
-from copyreg import dispatch_table
 import numpy
-from ..array import points_from_xy
+from ..array import points_from_xy, GeometryArray, from_shapely
 from ..geoseries import GeoSeries
 from ..geodataframe import GeoDataFrame
 import pygeos
@@ -49,16 +48,16 @@ def uniform(geom, size=(1, 1), batch_size=None, exact=False):
         multipoints = _uniform_polygon(
             geom, size=size, batch_size=batch_size, exact=exact
         )
+        multipoints = from_shapely(multipoints)
 
     elif geom.type in ("LineString", "MultiLineString"):
         multipoints = _uniform_line(geom, size=size, batch_size=batch_size, exact=exact)
+        multipoints = from_shapely(multipoints)
     else:
         # TODO: Should we recurse through geometrycollections?
         multipoints = pygeos.empty(size, geom_type=pygeos.GeometryType.MULTIPOINT)
-    return GeoDataFrame(
-        [multipoints],
-        columns=[f"sample_{i}" for i in range(len(multipoints))],
-        geometry="sample_0",
+    return GeoSeries(
+        multipoints, index=[f"sample_{i}" for i in range(size[-1])], name="geometry"
     ).squeeze()
 
 
