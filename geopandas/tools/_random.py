@@ -120,7 +120,7 @@ def _split_line(geom):
     splits = numpy.empty((0,))
     for part in parts:
         points = pygeos.get_coordinates(part)
-        substring_splits = pygeos.linestrings(points[:-1], points[1:])
+        substring_splits = pygeos.linestrings(list(zip(points[:-1], points[1:])))
         splits = numpy.hstack((splits, substring_splits))
     return splits
 
