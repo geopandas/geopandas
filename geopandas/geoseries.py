@@ -1380,21 +1380,32 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
         """
         from .geodataframe import GeoDataFrame
 
+        if isinstance(size, int):
+            size = (size, 1)
+        try:
+            assert isinstance(size, (tuple, list))
+            assert len(size) == 2
+        except AssertionError:
+            raise TypeError(
+                "Size must be an integer denoting the number of samples"
+                " or a tuple of integers with the number of samples and "
+                " the number of replications to simulate."
+            )
 
         if method == "random":
             from .tools._random import uniform
 
-            result = target.geometry.apply(uniform, size=size, **sample_kwargs)
+            result = self.geometry.apply(uniform, size=size, **sample_kwargs)
         elif method == "hexgrid":
             # TODO: clean & validate the hexgridding
             # TODO: decide if there should be a random displacement for the grids.
             from .tools.grids import hex
 
-            result = target.geometry.apply(
+            result = self.geometry.apply(
                 make_grid, size=size, method="hex", as_polygons=False, clip=True
             )
         elif method == "squaregrid":
-            result = target.geometry.apply(
+            result = self.geometry.apply(
                 make_grid, size=size, method="square", as_polygons=False, clip=True
             )
         else:
@@ -1404,10 +1415,15 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
 
                 assert hasattr(random, method)
                 sample_function = getattr(pointpats, method)
-                result = sample_function(size=size, **sample_kwargs)
+                result = self.geometry.apply(
+                    sample_function, size=size, **sample_kwargs
+                )
             except ImportError:
                 ...
             except AssertionError:
                 ...
-
-        return result.squeeze()
+        result = result.set_geometry("sample_0")
+        if size[-1] == 1:
+            return result.geometry
+        else:
+            return result

@@ -55,12 +55,16 @@ def uniform(geom, size=(1, 1), batch_size=None, exact=False):
         multipoints = from_shapely(multipoints)
     else:
         # TODO: Should we recurse through geometrycollections?
-        multipoints = pygeos.empty(size[-1], geom_type=pygeos.GeometryType.MULTIPOINT)
-    return GeoSeries(
+        multipoints = pygeos.empty(
+            (size[-1],), geom_type=pygeos.GeometryType.MULTIPOINT
+        )
+    _, n_replications = size
+    output = GeoSeries(
         multipoints,
         index=[f"sample_{i}" for i in range(len(multipoints))],
         name="geometry",
-    ).squeeze()
+    )
+    return output
 
 
 def grid():
