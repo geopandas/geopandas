@@ -1388,8 +1388,6 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
             from .tools._random import uniform
 
             result = target.geometry.apply(uniform, size=size, **sample_kwargs)
-            result.columns = [f"sample_{i}" for i in range(len(result.columns))]
-            result = GeoDataFrame(result, geometry="sample_0")
         elif method == "hexgrid":
             # TODO: clean & validate the hexgridding
             # TODO: decide if there should be a random displacement for the grids.
@@ -1415,10 +1413,5 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
             except AssertionError:
                 ...
         if by_parts:
-            result = (
-                pd.DataFrame(result)
-                .groupby(level=0)
-                .agg(lambda x: geopandas.GeoSeries(x).unary_union)
-            )
-            result = GeoDataFrame(result, geometry="sample_0")
+            result = result.groupby(level=0).agg(lambda x: GeoSeries(x).unary_union)
         return result.squeeze()
