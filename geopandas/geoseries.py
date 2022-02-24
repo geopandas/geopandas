@@ -1347,7 +1347,7 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
         """
         return geopandas.clip(self, mask=mask, keep_geom_type=keep_geom_type)
 
-    def sample_points(self, size=10, method="random", by_parts=False, **sample_kwargs):
+    def sample_points(self, size=10, method="random", **sample_kwargs):
         """
         Sample points from each geometry.
         # TODO: clean the docstring & provide examples
@@ -1380,10 +1380,7 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
         """
         from .geodataframe import GeoDataFrame
 
-        if by_parts:
-            target = self.explode()
-        else:
-            target = self
+
         if method == "random":
             from .tools._random import uniform
 
@@ -1412,6 +1409,5 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
                 ...
             except AssertionError:
                 ...
-        if by_parts:
-            result = result.groupby(level=0).agg(lambda x: GeoSeries(x).unary_union)
+
         return result.squeeze()
