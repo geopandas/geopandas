@@ -1,5 +1,5 @@
 import numpy
-from ..array import points_from_xy, GeometryArray, from_shapely
+from ..array import points_from_xy, from_shapely
 from ..geoseries import GeoSeries
 from ..geodataframe import GeoDataFrame
 from .._compat import import_optional_dependency

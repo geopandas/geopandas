@@ -1,4 +1,3 @@
-from .clip import clip
 from ..array import points_from_xy
 from ..geoseries import GeoSeries
 from ..geodataframe import GeoDataFrame

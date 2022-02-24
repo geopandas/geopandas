@@ -1378,7 +1378,6 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
         --------
 
         """
-        from .geodataframe import GeoDataFrame
 
         if isinstance(size, int):
             size = (size, 1)
@@ -1399,12 +1398,14 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
         elif method == "hexgrid":
             # TODO: clean & validate the hexgridding
             # TODO: decide if there should be a random displacement for the grids.
-            from .tools.grids import hex
+            from .tools.grids import make_grid
 
             result = self.geometry.apply(
                 make_grid, size=size, method="hex", as_polygons=False, clip=True
             )
         elif method == "squaregrid":
+            from .tools.grids import make_grid
+
             result = self.geometry.apply(
                 make_grid, size=size, method="square", as_polygons=False, clip=True
             )
