@@ -108,14 +108,14 @@ class TestMerging:
     def test_concat_axis1_geoseries(self):
         gseries2 = GeoSeries([Point(i, i) for i in range(3, 6)], crs="epsg:4326")
         result = pd.concat([gseries2, self.gseries], axis=1)
-        # result columns are [0, 1], not an explicit way to rename them.
-        # geometry column is leftmost (0) to mirror dataframe concat
+        # Note this is not consistent with concat([gdf, gdf], axis=1) where the
+        # left metadata is set on the result. This is deliberate for now.
         assert type(result) is GeoDataFrame
-        self._check_metadata(result, geometry_column_name=0, crs="epsg:4326")
+        self._check_metadata(result, geometry_column_name=None, crs=None)
         assert_index_equal(pd.Index([0, 1]), result.columns)
 
         gseries2.name = "foo"
         result2 = pd.concat([gseries2, self.gseries], axis=1)
         assert type(result2) is GeoDataFrame
-        self._check_metadata(result2, geometry_column_name="foo", crs="epsg:4326")
+        self._check_metadata(result2, geometry_column_name=None, crs=None)
         assert_index_equal(pd.Index(["foo", 0]), result2.columns)
