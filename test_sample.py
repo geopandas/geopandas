@@ -26,58 +26,45 @@ from matplotlib import pyplot as plt
 make_grid(polygons)
 
 
-overall = multipolygons.geometry.sample_points(10, method="random", by_parts=False)
+overall = multipolygons.geometry.sample_points(10, method="random")
 assert isinstance(overall, geopandas.GeoSeries)
-by_parts = multipolygons.geometry.sample_points(10, method="random", by_parts=True)
-assert isinstance(by_parts, geopandas.GeoSeries)
-assert by_parts.geometry.apply(lambda x: len(x.geoms) > 10).all()
 
-overall_multi = multipolygons.geometry.sample_points(
-    (10, 2), method="random", by_parts=False
-)
+overall_multi = multipolygons.geometry.sample_points((10, 2), method="random")
 assert isinstance(overall_multi, geopandas.GeoDataFrame)
 
-line_overall = multilinestrings.geometry.sample_points(
-    10, method="random", by_parts=False
-)
+line_overall = multilinestrings.geometry.sample_points(10, method="random")
 assert isinstance(line_overall, geopandas.GeoSeries)
 
 
-line_overall_multi = multilinestrings.geometry.sample_points(
-    (10, 2), method="random", by_parts=False
-)
+line_overall_multi = multilinestrings.geometry.sample_points((10, 2), method="random")
 assert isinstance(line_overall_multi, geopandas.GeoDataFrame)
 
 
-point_overall = points.geometry.sample_points(10, method="random", by_parts=False)
+point_overall = points.geometry.sample_points(10, method="random")
 assert isinstance(point_overall, geopandas.GeoSeries)
 
-point_overall_multi = points.geometry.sample_points(
-    (10, 2), method="random", by_parts=False
-)
-assert isinstance(point_overall_multi, geopandas.GeoSeries)
+point_overall_multi = points.geometry.sample_points((10, 2), method="random")
+assert isinstance(point_overall_multi, geopandas.GeoDataFrame)
 
-point_by_parts_multi = points.geometry.sample_points(
-    (10, 2), method="random", by_parts=True
-)
-assert isinstance(point_by_parts_multi, geopandas.GeoDataFrame)
-
-mixed_overall = mixed.geometry.sample_points((10, 2), method="random", by_parts=False)
+mixed_overall = mixed.geometry.sample_points(10, method="random")
 assert isinstance(line_overall_multi, geopandas.GeoDataFrame)
 
-f, ax = plt.subplots(4, 2, figsize=(16, 4))
+mixed_overall_multi = mixed.geometry.sample_points((10, 2), method="random")
+assert isinstance(line_overall_multi, geopandas.GeoDataFrame)
+
+f, ax = plt.subplots(2, 4, figsize=(16, 4))
 for i in range(8):
     ax_ = ax.flatten()[i]
 
     df = (
         overall,
-        by_parts,
         overall_multi,
-        by_parts_multi,
         line_overall,
-        line_by_parts,
         line_overall_multi,
-        line_by_parts_multi,
+        point_overall,
+        point_overall_multi,
+        mixed_overall,
+        mixed_overall_multi,
     )[i]
     df.set_crs(polygons.crs)
     target = multipolygons if i < 4 else multilinestrings
