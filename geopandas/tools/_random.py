@@ -129,9 +129,53 @@ def grid(
     return output
 
 
-def _grid_line():
-    ...
+def _grid_polygon(
+    geom, size=None, spacing=None, method="square", batch_size=None, exact=False
+):
+    pygeos = import_optional_dependency(
+        "pygeos", "pygeos is required to randomly sample spatial grids from polygons"
+    )
+    n_rows, n_cols, n_reps = size
+    pg_geom = pygeos.from_shapely(geom)
+    pg_mbc = pygeos.minimum_bounding_circle(pg_geom)
+    sh_mbc = pygeos.to_shapely(pg_mbc)
+    mbc_center = pygeos.get_coordinates(pygeos.centroid(pg_mbc))
+    target_center = pygeos.get_coordinates(pygeos.centroid(pg_geom))
 
+    # get spacing
+    if spacing is None:
+        x_min, y_min, x_max, y_max = pygeos.bounds(pg_mbc)
+        x_res, y_res, *_ = size
+        x_range, y_range = x_max - x_min, y_max - y_min
+        x_step, y_step = x_range / x_res, y_range / y_res
+        spacing = (x_step + y_step) / 2
+
+    mbc_bounds = pygeos.bounds(pg_mbc)
+    pg_radius = (mbc_bounds[2] - mbc_bounds[0]) / 2
+    grid_radius = numpy.ceil(pg_radius / spacing).astype(int)
+    if method == "square":
+        raw_grid = _squaregrid_circle(grid_radius)
+        raw_grid /= grid_radius
+    elif method == "hex":
+        raw_grid = _hexgrid_circle(grid_radius)
+        raw_grid /= grid_radius * numpy.sqrt(3)
+    else:
+        ValueError(f'Method must be either "square" or "hex". Recieved {method}.')
+
+    raw_grid *= pg_radius
+
+    if method == "square":
+        e_max = spacing / 2
+    else:
+        e_max = spacing / (numpy.sqrt(3) / 2)
+    output = []
+    for _ in range(n_reps):
+        displacement = numpy.random.uniform(-e_max, e_max, size=(1, 2))
+        rotation = numpy.random.uniform(0, numpy.pi * 2)
+
+        c_rot, s_rot = numpy.cos(rotation), numpy.sin(rotation)
+
+        rotation_matrix = numpy.array([[c_rot, s_rot], [-s_rot, c_rot]])
 
         rot_grid = rotation_matrix @ raw_grid.T
         disp_grid = rot_grid.T + displacement + target_center
