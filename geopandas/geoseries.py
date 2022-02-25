@@ -1415,7 +1415,7 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
                 from pointpats import random
 
                 assert hasattr(random, method)
-                sample_function = getattr(pointpats, method)
+                sample_function = getattr(random, method)
                 result = self.geometry.apply(
                     sample_function, size=size, **sample_kwargs
                 )
