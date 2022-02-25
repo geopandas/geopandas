@@ -73,45 +73,72 @@ def _square_mesh(size, bounds):
     raise NotImplementedError
 
 
-def _hex_points(size, bounds, spacing):
-    """
-    A hexagonal grid is formed of an "inner" and an "outer" rectangular
-    grid with side lengths 3,sqrt(3). The two grids are offset by (.5,.5).
-    Let size = x_size,y_size. We build the grid in 0,x_size and 0,y_size,
-    then translate & scale the grid to the target bounds.
-    """
+def _hex_points(size, bounds, spacing, flat=True):
     x_min, y_min, x_max, y_max = bounds
     x_range, y_range = x_max - x_min, y_max - y_min
+    center = numpy.array([[x_min + x_range / 2, y_min + y_range / 2]])
 
     if spacing is None:
         x_res, y_res = size
         x_step, y_step = x_range / x_res, y_range / y_res
         spacing = (x_step + y_step) / 2
 
-    x_eff, y_eff = numpy.ceil(x_range / spacing).astype(int), numpy.ceil(
-        y_range / spacing
-    ).astype(int)
+    # build a hexcircle big enough to cover the bounds
+    bounds_diagonal = numpy.sqrt(x_range ** 2 + y_range ** 2)
 
-    if size is None:
-        size = (x_res, y_res) = (x_eff, y_eff)  # not needed, but for safety
+    hex_radius = numpy.ceil(bounds_diagonal / 2 / spacing)
+    hex_circle = _hexgrid_circle(hex_radius, flat=flat)
+    hex_circle /= hex_radius * numpy.sqrt(3)
+    hex_inradius = numpy.sqrt(3) / 2
+    theta = numpy.arctan(y_range / 2 / x_range / 2)
+    phi = (numpy.pi) / 2 - theta
+    chord_remainder = (y_range / 2) / numpy.tan(phi)
 
-    map_scale = numpy.array([[x_max - x_min, y_max - y_min]])
+    rescaling_factor = chord_remainder + (x_range / 2)
 
-    x_ids, y_ids = numpy.arange(x_eff), numpy.arange(y_eff)
-    points = numpy.empty((0, 2))
-    for inner in range(2):
-        x_locs, y_locs = (
-            3 * (x_ids[: -1 if ((x_res % 2) & inner) else None] + 0.5 * inner),
-            numpy.sqrt(3)
-            * (y_ids[: -1 if ((y_res % 2) & inner) else None] + 0.5 * inner),
-        )
-        x_grid, y_grid = numpy.meshgrid(x_locs, y_locs)
-        subgrid_points = numpy.column_stack((x_grid.flatten(), y_grid.flatten()))
-        points = numpy.row_stack((points, subgrid_points))
-    grid_scale = points.max(axis=0) - points.min(axis=0)
-    points *= map_scale / grid_scale
-    points += numpy.array([[x_min, y_min]])
-    return points
+    hex_circle *= rescaling_factor / hex_inradius
+    hex_circle += center
+    mask = (
+        (hex_circle[:, 0] >= x_min)
+        & (hex_circle[:, 0] <= x_max)
+        & (hex_circle[:, 1] >= y_min)
+        & (hex_circle[:, 1] <= y_max)
+    )
+
+    return hex_circle[mask]
+
+
+def _hexgrid_circle(radius, flat=True):
+    i = j = numpy.arange(radius * 2 + 1) - radius
+    i_grid, j_grid = numpy.meshgrid(i, j)
+    i_grid = i_grid.flatten()
+    j_grid = j_grid.flatten()
+    k_grid = -i_grid - j_grid
+
+    all_locs = numpy.column_stack((i_grid, j_grid, k_grid))
+    mask = numpy.all(numpy.abs(all_locs) <= radius, axis=1)
+
+    rotation = numpy.array([[numpy.sqrt(3), numpy.sqrt(3) / 2], [0, 3 / 2]])
+    rotation = numpy.fliplr(rotation)[::-1] if (not flat) else rotation
+
+    final_points = (rotation @ all_locs[:, :-1].T).T[mask]
+
+    return final_points
+
+
+def _squaregrid_circle(radius, flat=True):
+    i = j = numpy.arange(radius * 2 + 1) - radius
+    i_grid, j_grid = numpy.meshgrid(i, j)
+    i_grid = i_grid.flatten()
+    j_grid = j_grid.flatten()
+
+    all_locs = numpy.column_stack((i_grid, j_grid))
+
+    rotation = numpy.eye(2) if flat else numpy.array([[1, 1], [-1, 1]])
+
+    rotated = (rotation @ all_locs.T).T
+    mask = (rotated ** 2).sum(axis=1) <= (radius ** 2)
+    return rotated[mask]
 
 
 def _square_points(size, bounds, spacing):
