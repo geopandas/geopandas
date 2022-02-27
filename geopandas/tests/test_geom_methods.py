@@ -258,10 +258,6 @@ class TestGeomMethods:
             assert len(self.g0.intersection(self.g9, align=True) == 8)
         assert len(self.g0.intersection(self.g9, align=False) == 7)
 
-    @pytest.mark.skipif(
-        not compat.SHAPELY_GE_17 and not compat.USE_PYGEOS,
-        reason="shapely.ops.clip_by_rect introduced in shapely 1.7",
-    )
     def test_clip_by_rect(self):
         self._test_binary_topological(
             "clip_by_rect", self.g1, self.g10, *self.sq.bounds
@@ -270,19 +266,6 @@ class TestGeomMethods:
         self._test_binary_topological(
             "clip_by_rect", self.all_geometry_collection_empty, self.g1, *self.t3.bounds
         )
-
-    @pytest.mark.skipif(
-        compat.SHAPELY_GE_17 or compat.USE_PYGEOS,
-        reason="shapely.ops.clip_by_rect introduced in shapely 1.7",
-    )
-    def test_clip_by_rect_raises_error_when_shapely_lt_1_7(self):
-        with pytest.raises(
-            ValueError,
-            match="Fast clipping by rectangle is not available in your shapely version",
-        ):
-            self._test_binary_topological(
-                "clip_by_rect", self.g1, self.g10, *self.sq.bounds
-            )
 
     def test_union_series(self):
         self._test_binary_topological("union", self.sq, self.g1, self.g2)

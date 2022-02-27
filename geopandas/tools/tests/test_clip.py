@@ -19,7 +19,6 @@ from shapely.geometry import (
 
 import geopandas
 from geopandas import GeoDataFrame, GeoSeries, clip
-from geopandas import _compat as compat
 
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 import pytest
@@ -32,9 +31,6 @@ mask_variants_large_rectangle = [
     "larger_single_rectangle_gdf",
     "larger_single_rectangle_gdf_bounds",
 ]
-if not compat.SHAPELY_GE_17 and not compat.USE_PYGEOS:
-    mask_variants_single_rectangle = ["single_rectangle_gdf"]
-    mask_variants_large_rectangle = ["larger_single_rectangle_gdf"]
 
 
 @pytest.fixture
