@@ -33,8 +33,10 @@ def _clip_gdf_with_mask(gdf, mask):
         The returned GeoDataFrame is a clipped subset of gdf
         that intersects with polygon/rectangle.
     """
+    clipping_by_rectangle = isinstance(mask, tuple)
+
     intersection_polygon = mask
-    if isinstance(mask, tuple):
+    if clipping_by_rectangle:
         intersection_polygon = box(*mask)
 
     gdf_sub = gdf.iloc[gdf.sindex.query(intersection_polygon, predicate="intersects")]
@@ -49,7 +51,7 @@ def _clip_gdf_with_mask(gdf, mask):
     # Clip the data with the polygon
     if isinstance(gdf_sub, GeoDataFrame):
         clipped = gdf_sub.copy()
-        if isinstance(mask, tuple):
+        if clipping_by_rectangle:
             clipped.loc[
                 non_point_mask, clipped._geometry_column_name
             ] = gdf_sub.geometry.values[non_point_mask].clip_by_rect(*mask)
@@ -60,13 +62,14 @@ def _clip_gdf_with_mask(gdf, mask):
     else:
         # GeoSeries
         clipped = gdf_sub.copy()
-        if isinstance(mask, tuple):
+        if clipping_by_rectangle:
             clipped[non_point_mask] = gdf_sub.values[non_point_mask].clip_by_rect(*mask)
         else:
             clipped[non_point_mask] = gdf_sub.values[non_point_mask].intersection(mask)
 
-    # clip_by_rect might return empty geometry collections in edge cases
-    clipped = clipped[~clipped.is_empty]
+    if clipping_by_rectangle:
+        # clip_by_rect might return empty geometry collections in edge cases
+        clipped = clipped[~clipped.is_empty]
     return clipped
 
 
