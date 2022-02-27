@@ -79,7 +79,7 @@ def clip(gdf, mask, keep_geom_type=False):
     If there are multiple polygons in mask, data from `gdf` will be
     clipped to the total boundary of all polygons in mask.
 
-    If there `mask` is a tuple of `(minx, miny, maxx, maxy)`, a faster rectangle
+    If the `mask` is a tuple of `(minx, miny, maxx, maxy)`, a faster rectangle
     clipping algorithm will be used. Note that this can lead to slightly different
     results in edge cases, e.g. if a line would be reduced to a point, this point might
     not be returned.
@@ -135,7 +135,7 @@ def clip(gdf, mask, keep_geom_type=False):
     if not isinstance(mask, (GeoDataFrame, GeoSeries, Polygon, MultiPolygon, tuple)):
         raise TypeError(
             "'mask' should be GeoDataFrame, GeoSeries,"
-            "(Multi)Polygon or 4 element tuple got {}".format(type(mask))
+            f"(Multi)Polygon or 4 element tuple, got {type(mask)}"
         )
 
     if isinstance(mask, tuple) and len(mask) != 4:
