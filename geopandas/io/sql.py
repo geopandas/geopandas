@@ -430,10 +430,15 @@ def _write_postgis(
             dtype=dtype,
             method=_psql_insert_copy,
         )
+        print(gdf._index_name(gdf.index, gdf.index_label))
 
     if index_label:
         with _get_conn(con) as connection:
-            connection.execute('ALTER TABLE \"{name}\" ADD PRIMARY KEY (\"{key}\");'.format(name=name, key=index_label))
+            connection.execute(
+                'ALTER TABLE \"{name}\" ADD PRIMARY KEY (\"{key}\");'.format(
+                    name=name, key=index_label
+                 )
+            )
     else:
         print("Without an index, the tables will be in readonly for QGIS")
 
