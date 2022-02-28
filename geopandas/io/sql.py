@@ -440,6 +440,6 @@ def _write_postgis(
                  )
             )
     else:
-        print("Without an index, the tables will be in readonly for QGIS")
+        print("Without an index, the tables will be in read-only for QGIS")
 
     return
