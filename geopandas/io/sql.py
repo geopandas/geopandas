@@ -419,7 +419,6 @@ def _write_postgis(
                     raise ValueError(msg)
 
     with _get_conn(con) as connection:
-
         gdf.to_sql(
             name,
             connection,
@@ -431,5 +430,11 @@ def _write_postgis(
             dtype=dtype,
             method=_psql_insert_copy,
         )
+
+    if index_label:
+        with _get_conn(con) as connection:
+            connection.execute('ALTER TABLE \"{name}\" ADD PRIMARY KEY (\"{key}\");'.format(name=name, key=index_label))
+    else:
+        print("Without an index, the tables will be in readonly for QGIS")
 
     return
