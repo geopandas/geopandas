@@ -58,6 +58,9 @@ setup(
     author="GeoPandas contributors",
     author_email="kjordahl@alum.mit.edu",
     url="http://geopandas.org",
+    project_urls={
+        "Source": "https://github.com/geopandas/geopandas",
+    },
     long_description=LONG_DESCRIPTION,
     packages=[
         "geopandas",
