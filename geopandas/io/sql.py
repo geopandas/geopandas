@@ -453,7 +453,7 @@ def _write_postgis(
             index = index_label
         else:
             print(
-                "There is no index or primary key," \
+                "There is no index or primary key,"
                 "the data will be in read-only for QGIS"
             )
             return
