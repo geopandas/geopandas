@@ -311,13 +311,16 @@ def _psql_insert_copy(tbl, conn, keys, data_iter):
         )
         cur.copy_expert(sql=sql, file=s_buf)
 
-#Tricky class to get the names of the index columns
-#Check pandas.io.sql.SQLTable.__init__ to know how the index names are constructed and what is needed
+
+# Tricky class to get the names of the index columns
+# Check pandas.io.sql.SQLTable.__init__ to know how the index names are constructed and what is needed
 class _pdIndex:
     def __init__(self, frame):
         self.frame = frame
+
     def _index_name(self, index, index_label):
         return pd.io.sql.SQLTable._index_name(self, index, index_label)
+
 
 def _write_postgis(
     gdf,
