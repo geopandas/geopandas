@@ -438,7 +438,7 @@ def _write_postgis(
             method=_psql_insert_copy,
         )
 
-    #Just fill the SQLTable with enough data to get the index column names used by pandas
+    # Just fill the SQLTable with enough data to get the index column names used by pandas
     index = _pdIndex(gdf)._index_name(index, index_label)
 
     if index == None:
@@ -447,7 +447,9 @@ def _write_postgis(
         elif isinstance(index_label, list):
             index = index_label
         else:
-            print("There is no index or primary key, the data will be in read-only for QGIS")
+            print(
+                "There is no index or primary key, the data will be in read-only for QGIS"
+            )
             return
 
     with _get_conn(con) as connection:
