@@ -2537,17 +2537,19 @@ GeometryCollection
         return _binary_geo("intersection", self, other, align)
 
     def clip_by_rect(self, xmin, ymin, xmax, ymax):
-        """Returns a ``GeoSeries`` of the portions of geometry within the given rectangle.
+        """Returns a ``GeoSeries`` of the portions of geometry within the given
+        rectangle.
 
-        Note that the results are not exactly equal to `.intersection()`. E.g. in edge
-        cases, `.clip_by_rect()` will not return a point just touching the rectangle.
-        Check the examples section below for some of these exceptions.
+        Note that the results are not exactly equal to
+        :meth:`~GeoSeries.intersection()`. E.g. in edge cases,
+        :meth:`~GeoSeries.clip_by_rect()` will not return a point just touching the
+        rectangle. Check the examples section below for some of these exceptions.
 
         The geometry is clipped in a fast but possibly dirty way. The output is not
         guaranteed to be valid. No exceptions will be raised for topological errors.
 
         Note: empty geometries or geometries that do not overlap with the specified
-        bounds will result in GEOMETRYCOLLECTION EMPTY.
+        bounds will result in ``GEOMETRYCOLLECTION EMPTY``.
 
         Parameters
         ----------
@@ -2566,7 +2568,6 @@ GeometryCollection
 
         Examples
         --------
-        >>> import geopandas
         >>> from shapely.geometry import Polygon, LineString, Point
         >>> s = geopandas.GeoSeries(
         ...     [
@@ -2593,6 +2594,10 @@ GeometryCollection
         3                             GEOMETRYCOLLECTION EMPTY
         4                             GEOMETRYCOLLECTION EMPTY
         dtype: geometry
+
+        See also
+        --------
+        GeoSeries.intersection
         """
         from .geoseries import GeoSeries
 
