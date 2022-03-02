@@ -3,6 +3,7 @@ from matplotlib import pyplot as plt
 
 from geopandas.tools.grids import make_grid
 from geopandas.tools._random import grid as random_grid
+from geopandas.tools._random import uniform
 from shapely import geometry
 
 size = (10, 12)
@@ -76,22 +77,41 @@ shapes = (
     pygeos.to_shapely(pygeos.box(1, 1, 10, 12)),
     nybb.geometry.iloc[0],
 )
-f, ax = plt.subplots(3, 2, sharex=False, sharey=False)
+f, ax = plt.subplots(3, 5, sharex=False, sharey=False)
 n_reps = 5
 for j in range(3):
     shape = shapes[j]
     for k in range(2):
         for i in range(n_reps):
-            random_grid(shape, method=["square", "hex"][k]).plot(
+            geopandas.GeoSeries(random_grid(shape, method=["square", "hex"][k])).plot(
                 ax=ax[j, k], alpha=0.5, markersize=2
             )
+    for i in range(n_reps):
+        geopandas.GeoSeries(uniform(shape, size=100)).plot(
+            ax=ax[j, k + 1], alpha=0.5, markersize=2
+        )
+
+    for i in range(2):
+        make_grid(shape, method=("square", "hex")[i]).plot(
+            ax=ax[j, k + 2 + i], markersize=2, color="k"
+        )
+    ax[j, 0].set_ylabel(("square", "rect", "staten")[j])
+
+    for k in range(5):
         geopandas.GeoSeries([shape]).plot(ax=ax[j, k], zorder=-1, alpha=0.5)
-        ax[j, k].set_title(["square", "hex"][k])
+        ax[j, k].set_title(
+            [
+                "random\nsquaregrid",
+                "random\nhexgrid",
+                "uniform",
+                "squaregrid",
+                "hexgrid",
+            ][k]
+        )
         ax[j, k].set_xticks([])
         ax[j, k].set_xticklabels([])
         ax[j, k].set_yticks([])
         ax[j, k].set_yticklabels([])
-
-    ax[j, 0].set_ylabel(("square", "rect", "staten")[j])
 f.tight_layout()
+plt.savefig("/Users/lw17329/Downloads/sample_points.png", dpi=300, bbox_inches="tight")
 plt.show()
