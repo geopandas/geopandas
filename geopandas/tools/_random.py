@@ -1,5 +1,5 @@
 import numpy
-from ..array import points_from_xy, from_shapely
+from ..array import points_from_xy
 from ..geoseries import GeoSeries
 from ..geodataframe import GeoDataFrame
 from .._compat import import_optional_dependency
@@ -7,7 +7,7 @@ from .grids import make_grid, _hexgrid_circle, _squaregrid_circle
 from shapely import geometry
 
 
-def uniform(geom, size=(1, 1), batch_size=None, exact=False):
+def uniform(geom, size=1, batch_size=None, exact=False):
     """
     # TODO: Write full docstring
 
@@ -36,77 +36,55 @@ def uniform(geom, size=(1, 1), batch_size=None, exact=False):
 
     """
 
-    if isinstance(size, int):
-        size = (size, 1)
     try:
-        assert isinstance(size, (tuple, list))
-        assert len(size) == 2
+        assert int(size) == size
+        size = int(size)
     except AssertionError:
         raise TypeError(
-            "Size must be an integer denoting the number of samples"
-            " or a tuple of integers with the number of samples and "
-            " the number of replications to simulate."
+            "Size must be an integer denoting the number of samples to draw."
         )
 
-    _, n_replications = size
     if geom.type in ("Polygon", "MultiPolygon"):
         multipoints = _uniform_polygon(
             geom, size=size, batch_size=batch_size, exact=exact
         )
-        multipoints = from_shapely(multipoints)
 
     elif geom.type in ("LineString", "MultiLineString"):
         multipoints = _uniform_line(geom, size=size, batch_size=batch_size, exact=exact)
-        multipoints = from_shapely(multipoints)
     else:
         # TODO: Should we recurse through geometrycollections?
-        multipoints = [geometry.MultiPoint()] * n_replications
+        multipoints = geometry.MultiPoint()
 
-    output = GeoSeries(
-        multipoints,
-        index=[f"sample_{i}" for i in range(len(multipoints))],
-        name="geometry",
-    )
-    return output
+    return multipoints
 
 
-def grid(
-    geom=None, size=None, spacing=None, method="square", batch_size=None, exact=False
-):
+def grid(geom=None, size=None, spacing=None, method="square"):
     if geom is None:
         geom = geometry.box(0, 0, 1, 1)
     if size is None:
         if spacing is None:
-            size = (10, 10, 1)
+            size = (10, 10)
         else:
             ValueError("Either size or spacing options can be provided, not both.")
-    else:
+    else:  # only process size if it's provided; otherwise, allow spacing to lead.
         if isinstance(size, int):
-            size = (size, size, 1)
+            size = (size, size)
         try:
             assert isinstance(size, (tuple, list))
-            if len(size) == 2:
-                size = (*size, 1)
-            assert len(size) == 3
+            assert len(size) == 2
         except AssertionError:
             raise TypeError(
                 "Size must be an integer denoting the size of one side of the grid, "
-                " a tuple of two integers denoting the grid dimensions, "
-                " or a tuple of three integers denoting the grid dimensions "
-                " and the number of replications to generate."
+                " or a tuple of two integers denoting the grid dimensions."
             )
 
-    n_rows, n_cols, n_replications = size
     if geom.type in ("Polygon", "MultiPolygon"):
         multipoints = _grid_polygon(
             geom,
             size=size,
             spacing=spacing,
             method=method,
-            batch_size=batch_size,
-            exact=exact,
         )
-        multipoints = from_shapely(multipoints)
 
     elif geom.type in ("LineString", "MultiLineString"):
         multipoints = _grid_line(
@@ -114,38 +92,31 @@ def grid(
             size=size,
             spacing=spacing,
             method=method,
-            batch_size=batch_size,
-            exact=exact,
         )
-        multipoints = from_shapely(multipoints)
     else:
         # TODO: Should we recurse through geometrycollections?
-        multipoints = [geometry.MultiPoint()] * n_replications
-    output = GeoSeries(
-        multipoints,
-        index=[f"sample_{i}" for i in range(len(multipoints))],
-        name="geometry",
-    )
-    return output
+        multipoints = geometry.MultiPoint()
+
+    return multipoints
 
 
 def _grid_polygon(
-    geom, size=None, spacing=None, method="square", batch_size=None, exact=False
+    geom,
+    size=None,
+    spacing=None,
+    method="square",
 ):
     pygeos = import_optional_dependency(
         "pygeos", "pygeos is required to randomly sample spatial grids from polygons"
     )
-    n_rows, n_cols, n_reps = size
     pg_geom = pygeos.from_shapely(geom)
     pg_mbc = pygeos.minimum_bounding_circle(pg_geom)
-    sh_mbc = pygeos.to_shapely(pg_mbc)
-    mbc_center = pygeos.get_coordinates(pygeos.centroid(pg_mbc))
     target_center = pygeos.get_coordinates(pygeos.centroid(pg_geom))
 
     # get spacing
     if spacing is None:
         x_min, y_min, x_max, y_max = pygeos.bounds(pg_mbc)
-        x_res, y_res, *_ = size
+        x_res, y_res = size
         x_range, y_range = x_max - x_min, y_max - y_min
         x_step, y_step = x_range / x_res, y_range / y_res
         spacing = (x_step + y_step) / 2
@@ -165,33 +136,33 @@ def _grid_polygon(
     raw_grid *= pg_radius
 
     if method == "square":
-        e_max = spacing / 2
+        displacement = numpy.random.uniform(-spacing / 2, spacing / 2, size=(1, 2))
+
     else:
-        e_max = spacing / (numpy.sqrt(3) / 2)
-    output = []
-    for _ in range(n_reps):
-        displacement = numpy.random.uniform(-e_max, e_max, size=(1, 2))
-        rotation = numpy.random.uniform(0, numpy.pi * 2)
+        hex_displacement = numpy.random.uniform(-spacing, spacing, size=(2, 1))
+        hex_rotation = numpy.array([[numpy.sqrt(3), numpy.sqrt(3) / 2], [0, 3 / 2]])
+        displacement = (hex_rotation @ hex_displacement).T
 
-        c_rot, s_rot = numpy.cos(rotation), numpy.sin(rotation)
+    rotation = numpy.random.uniform(0, numpy.pi * 2)
+    c_rot, s_rot = numpy.cos(rotation), numpy.sin(rotation)
+    rotation_matrix = numpy.array([[c_rot, s_rot], [-s_rot, c_rot]])
 
-        rotation_matrix = numpy.array([[c_rot, s_rot], [-s_rot, c_rot]])
+    rot_grid = rotation_matrix @ raw_grid.T
 
-        rot_grid = rotation_matrix @ raw_grid.T
-        disp_grid = rot_grid.T + displacement + target_center
-        x, y = disp_grid.T
-        tmp = GeoSeries(points_from_xy(x=x, y=y)).clip(geom).unary_union
-        output.append(tmp)
-    return output
+    disp_grid = rot_grid.T + displacement + target_center
+
+    x, y = disp_grid.T
+
+    return GeoSeries(points_from_xy(x=x, y=y)).clip(geom).unary_union
 
 
-def _grid_line():
+def _grid_line(*args, **kwargs):
     # use segmentize to split the line into even segments
-
+    raise NotImplementedError()
     ...
 
 
-def _uniform_line(geom, size=(1, 1), batch_size=None, exact=False):
+def _uniform_line(geom, size=1, batch_size=None, exact=False):
     """
     Sample points from an input shapely linestring
     """
@@ -199,28 +170,22 @@ def _uniform_line(geom, size=(1, 1), batch_size=None, exact=False):
         "pygeos", "pygeos is required to randomly sample along LineString geometries"
     )
     geom = pygeos.from_shapely(geom)
-    n_points, n_reps = size
+    n_points = size
     splits = _split_line(geom)
     lengths = pygeos.length(splits)
-    points_per_split = numpy.random.multinomial(
-        n_points, pvals=lengths / lengths.sum(), size=n_reps
-    )
+    points_per_split = numpy.random.multinomial(n_points, pvals=lengths / lengths.sum())
     random_fracs = numpy.random.uniform(size=size).T
-    output = []
-    for rep in range(n_reps):
-        points_to_assign = points_per_split[rep]
-        fracs = random_fracs[rep]
-        split_to_point = numpy.repeat(numpy.arange(len(splits)), points_to_assign)
-        samples = pygeos.line_interpolate_point(
-            splits[split_to_point], fracs, normalized=True
-        )
-        grouped_samples = (
-            GeoDataFrame(geometry=samples, index=split_to_point)
-            .dissolve(level=0)
-            .geometry
-        )
-        output.append(grouped_samples.unary_union)
-    return output
+
+    points_to_assign = points_per_split
+    fracs = random_fracs
+    split_to_point = numpy.repeat(numpy.arange(len(splits)), points_to_assign)
+    samples = pygeos.line_interpolate_point(
+        splits[split_to_point], fracs, normalized=True
+    )
+    grouped_samples = (
+        GeoDataFrame(geometry=samples, index=split_to_point).dissolve(level=0).geometry
+    )
+    return grouped_samples.unary_union
 
 
 def _split_line(geom):
@@ -239,20 +204,18 @@ def _split_line(geom):
     return splits
 
 
-def _uniform_polygon(geom, size=(1, 1), batch_size=None, exact=False):
-    n_points, n_reps = size
+def _uniform_polygon(geom, size=1, batch_size=None, exact=False):
+    n_points = size
     if batch_size is None:
         batch_size = n_points
     xmin, ymin, xmax, ymax = geom.bounds
     result = []
-    for rep in range(n_reps):
-        candidates = []
-        while len(candidates) < n_points:
-            batch = points_from_xy(
-                x=numpy.random.uniform(xmin, xmax, size=batch_size),
-                y=numpy.random.uniform(ymin, ymax, size=batch_size),
-            )
-            valid_samples = batch[batch.sindex.query(geom, predicate="contains")]
-            candidates.extend(valid_samples)
-        result.append(GeoSeries(candidates[:n_points]).unary_union)
-    return result
+    candidates = []
+    while len(candidates) < n_points:
+        batch = points_from_xy(
+            x=numpy.random.uniform(xmin, xmax, size=batch_size),
+            y=numpy.random.uniform(ymin, ymax, size=batch_size),
+        )
+        valid_samples = batch[batch.sindex.query(geom, predicate="contains")]
+        candidates.extend(valid_samples)
+    return GeoSeries(candidates[:n_points]).unary_union
