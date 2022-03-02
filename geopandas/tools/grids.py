@@ -2,6 +2,7 @@ from ..array import points_from_xy
 from ..geoseries import GeoSeries
 from ..geodataframe import GeoDataFrame
 import numpy
+from warnings import warn
 
 
 def make_grid(
@@ -56,11 +57,35 @@ def make_grid(
             f'Cannot build a grid using method="{method}". '
             f'Only "hex" and "square" grid methods are supported.'
         )
-    if clip:
+
+    # clip if not forbidden.
+    if clip or (clip is None):
         if isinstance(geom, (GeoSeries, GeoDataFrame)):
-            result = result.clip(geom.cascaded_union, keep_geom_type=True)
+            mask = geom.unary_union
+            was_df = True
         else:
+            mask = geom
+            was_df = False
+
+        # if the mask is a polygon, clip if not forbidden
+        if mask.type in ("Polygon", "MultiPolygon"):
             result = result.clip(geom, keep_geom_type=True)
+        # otherwise, if explicitly requested and the mask is not valid, warn:
+        elif clip:
+            if was_df:
+                warning_string = f"GeoSeries/GeoDataFrame with types ({', '.join(geom.geometry.type.unique())})"
+
+            else:
+                warning_string = f"geometry of type {geom.type}"
+            warn(
+                f"clip only makes sense when gridding (Multi)Polygon geometries. Your input "
+                f" was a {warning_string} that resulted in a mask of type {mask.type}. You may"
+                f" need to use the .clip() method with a specific mask on this grid to get"
+                f" the result you want."
+            )
+        # finally, if clip is None or the mask isn't usable, ignore it
+        else:
+            pass
 
     return result
 

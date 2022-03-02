@@ -3405,6 +3405,7 @@ GeometryCollection
         from .geoseries import GeoSeries
         from .array import points_from_xy
         from ._compat import import_optional_dependency
+        from .tools._random import uniform, grid
 
         user_wants_grid = (method == "grid") or (tile is not None)
 
@@ -3428,9 +3429,7 @@ GeometryCollection
                         "an integer denoting the number of sample sites along both axes when method='grid', "
                         " or a tuple of two integers denoting the grid dimensions when method='grid'."
                     )
-
         if method == "random":
-            from .tools._random import uniform, grid
 
             if tile is None:
                 result = self.geometry.apply(uniform, size=size, **sample_kwargs)
@@ -3445,7 +3444,6 @@ GeometryCollection
                 )
 
         elif method == "grid":
-            from .tools.grids import make_grid
 
             if tile not in (None, "hex", "square"):
                 raise ValueError(
@@ -3453,10 +3451,13 @@ GeometryCollection
                 )
             if tile is None:
                 tile = "square"
-
-            result = self.geometry.apply(
-                make_grid, size=size, method=tile, as_polygons=False, clip=True
+            sample_kwargs.update({"random_offset": False})
+            sample_kwargs.update({"random_rotation": False})
+            point_sets = self.geometry.apply(
+                grid, size=size, method=tile, **sample_kwargs
             )
+
+            result = point_sets.T.apply(lambda x: GeoSeries(x).dropna().unary_union)
         else:
             # TODO: validate this works w/ normal or cluster_poisson
             try:

@@ -1,13 +1,14 @@
+from argparse import REMAINDER
 import numpy
 from ..array import points_from_xy
 from ..geoseries import GeoSeries
 from ..geodataframe import GeoDataFrame
 from .._compat import import_optional_dependency
-from .grids import make_grid, _hexgrid_circle, _squaregrid_circle
+from .grids import _hexgrid_circle, _squaregrid_circle
 from shapely import geometry
 
 
-def uniform(geom, size=1, batch_size=None, exact=False):
+def uniform(geom, size=1, batch_size=None):
     """
     # TODO: Write full docstring
 
@@ -22,11 +23,10 @@ def uniform(geom, size=1, batch_size=None, exact=False):
     geom : a shapely geometry
     size : an integer denoting how many points to sample, or a tuple
         denoting how many points to sample, and how many tines to conduct sampling.
-    batch_size: integer denoting how large each simulation round should be. Should
-        be approximately on the order of the number of points requested to sample.
-        Some complex shapes may be faster to sample if the batch size increases.
-    exact: whether or not to force there to be exactly the requested number of
-        samples within the shape.
+    batch_size: integer denoting how large each round of simulation and checking
+        should be. Should be approximately on the order of the number of points
+        requested to sample. Some complex shapes may be faster to sample if the
+        batch size increases. Only useful for (Multi)Polygon geometries.
 
     Returns
     -------
@@ -45,12 +45,10 @@ def uniform(geom, size=1, batch_size=None, exact=False):
         )
 
     if geom.type in ("Polygon", "MultiPolygon"):
-        multipoints = _uniform_polygon(
-            geom, size=size, batch_size=batch_size, exact=exact
-        )
+        multipoints = _uniform_polygon(geom, size=size, batch_size=batch_size)
 
     elif geom.type in ("LineString", "MultiLineString"):
-        multipoints = _uniform_line(geom, size=size, batch_size=batch_size, exact=exact)
+        multipoints = _uniform_line(geom, size=size)
     else:
         # TODO: Should we recurse through geometrycollections?
         multipoints = geometry.MultiPoint()
@@ -58,7 +56,14 @@ def uniform(geom, size=1, batch_size=None, exact=False):
     return multipoints
 
 
-def grid(geom=None, size=None, spacing=None, method="square"):
+def grid(
+    geom=None,
+    size=None,
+    spacing=None,
+    method="square",
+    random_offset=True,
+    random_rotation=True,
+):
     if geom is None:
         geom = geometry.box(0, 0, 1, 1)
     if size is None:
@@ -77,6 +82,10 @@ def grid(geom=None, size=None, spacing=None, method="square"):
                 "Size must be an integer denoting the size of one side of the grid, "
                 " or a tuple of two integers denoting the grid dimensions."
             )
+    if method not in ("square", "hex"):
+        raise ValueError(
+            f'The method option must be either "square" or "hex". Recieved {method}.'
+        )
 
     if geom.type in ("Polygon", "MultiPolygon"):
         multipoints = _grid_polygon(
@@ -84,14 +93,13 @@ def grid(geom=None, size=None, spacing=None, method="square"):
             size=size,
             spacing=spacing,
             method=method,
+            random_offset=random_offset,
+            random_rotation=random_rotation,
         )
 
     elif geom.type in ("LineString", "MultiLineString"):
         multipoints = _grid_line(
-            geom,
-            size=size,
-            spacing=spacing,
-            method=method,
+            geom, size=size, spacing=spacing, method=method, random_offset=random_offset
         )
     else:
         # TODO: Should we recurse through geometrycollections?
@@ -105,6 +113,9 @@ def _grid_polygon(
     size=None,
     spacing=None,
     method="square",
+    random_offset=True,
+    random_rotation=True,
+    **unused_kws,
 ):
     pygeos = import_optional_dependency(
         "pygeos", "pygeos is required to randomly sample spatial grids from polygons"
@@ -136,14 +147,16 @@ def _grid_polygon(
     raw_grid *= pg_radius
 
     if method == "square":
-        displacement = numpy.random.uniform(-spacing / 2, spacing / 2, size=(1, 2))
+        displacement = (
+            numpy.random.uniform(-spacing / 2, spacing / 2, size=(1, 2)) * random_offset
+        )
 
     else:
         hex_displacement = numpy.random.uniform(-spacing, spacing, size=(2, 1))
         hex_rotation = numpy.array([[numpy.sqrt(3), numpy.sqrt(3) / 2], [0, 3 / 2]])
         displacement = (hex_rotation @ hex_displacement).T
 
-    rotation = numpy.random.uniform(0, numpy.pi * 2)
+    rotation = numpy.random.uniform(0, numpy.pi * 2) * random_rotation
     c_rot, s_rot = numpy.cos(rotation), numpy.sin(rotation)
     rotation_matrix = numpy.array([[c_rot, s_rot], [-s_rot, c_rot]])
 
@@ -156,13 +169,49 @@ def _grid_polygon(
     return GeoSeries(points_from_xy(x=x, y=y)).clip(geom).unary_union
 
 
-def _grid_line(*args, **kwargs):
-    # use segmentize to split the line into even segments
-    raise NotImplementedError()
-    ...
+def _grid_line(geom, size, spacing, random_offset=True, **unused_kws):
+    pygeos = import_optional_dependency(
+        "pygeos", "pygeos is required to randomly sample along LineString geometries"
+    )
+
+    geom = pygeos.from_shapely(geom)
+
+    if size is not None:
+        if isinstance(size, tuple):
+            # TODO: document this behavior: if you grid-sample geoms *and* they're mixed, any
+            # size tuple will get truncated to its first element when sampling lines.
+            # The most clear alternative is to divide LineStrings into "horizontal" and "vertical"
+            # segments based on the angle the segment makes with the bottom of the bounding box,
+            # and then sample size[0] if "horizontal" and size[1] if "vertical." That's a lot
+            # of assumption, though, for an unclear benefit, so it's of dubious necessity.
+            size = size[0]
+        spacing = pygeos.length(geom) / size
+    else:
+        size = spacing * pygeos.length(geom)
+
+    parts = pygeos.get_parts(geom)
+    grid = []
+    for part in parts:
+        # this does exactly one pass because "part" is always LineString after pygeos.get_parts
+        segs = _split_line(part)
+        remainder = numpy.random.uniform(0, spacing * random_offset)
+        lengths = pygeos.length(segs)
+        for i, seg in enumerate(segs):
+            locs = numpy.arange(remainder, lengths[i], spacing)
+
+            if len(locs) > 0:
+                # get points
+                points = pygeos.line_interpolate_point(seg, locs, normalized=False)
+                grid.extend(points)
+
+                # the remainder is the "overhang" onto the next segment,
+                remainder = spacing - (lengths[i] - locs[-1])
+            else:
+                remainder -= lengths[i]
+    return pygeos.to_shapely(pygeos.union_all(grid))
 
 
-def _uniform_line(geom, size=1, batch_size=None, exact=False):
+def _uniform_line(geom, size=1, **unused_kws):
     """
     Sample points from an input shapely linestring
     """
@@ -204,7 +253,7 @@ def _split_line(geom):
     return splits
 
 
-def _uniform_polygon(geom, size=1, batch_size=None, exact=False):
+def _uniform_polygon(geom, size=1, batch_size=None, **unused_kws):
     n_points = size
     if batch_size is None:
         batch_size = n_points
