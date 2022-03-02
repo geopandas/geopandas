@@ -139,7 +139,7 @@ def _overlay_union(df1, df2):
     # keep geometry column last
     columns = list(dfunion.columns)
     columns.remove("geometry")
-    columns = columns + ["geometry"]
+    columns.append("geometry")
     return dfunion.reindex(columns=columns)
 
 

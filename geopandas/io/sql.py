@@ -230,7 +230,7 @@ def _get_geometry_type(gdf):
 
     # Check for 3D-coordinates
     if any(gdf.geometry.has_z):
-        target_geom_type = target_geom_type + "Z"
+        target_geom_type += "Z"
 
     return target_geom_type, has_curve
 
