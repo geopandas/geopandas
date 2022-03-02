@@ -3047,7 +3047,8 @@ GeometryCollection
 
     def interpolate(self, distance, normalized=False):
         """
-        Return a point at the specified distance along each geometry
+        Return a point at the specified distance along each geometry. For multi-part geometries,
+        the first geometry is taken and the rest is ignored.
 
         Parameters
         ----------
