@@ -9,7 +9,7 @@ linestrings = polygons.boundary
 multipoints = None
 points = multipolygons.centroid
 mixed = geopandas.pd.concat(
-    (multipolygons.geometry.head(), multilinestrings.geometry.head(), points.head())
+    (multipolygons.geometry.head(2), multilinestrings.geometry.tail(2), points)
 )
 
 
@@ -25,39 +25,57 @@ from matplotlib import pyplot as plt
 
 make_grid(polygons)
 
-for method in ("random", "grid"):
-    for tile in (None, "square", "hex"):
-        print(method, tile)
+f, ax = plt.subplots(6, 4, figsize=(10, 15))
+
+for ji, method in enumerate(("random", "grid")):
+    for jj, tile in enumerate((None, "square", "hex")):
         if method == "grid":
             size = (10, 10)
         else:
             size = 10
-        print(method, tile, "polygons")
         overall = multipolygons.geometry.sample_points(
             size=size, method=method, tile=tile
         )
         assert isinstance(overall, geopandas.GeoSeries)
-
-        print(method, tile, "lines")
 
         line_overall = multilinestrings.geometry.sample_points(
             size=size, method=method, tile=tile
         )
         assert isinstance(line_overall, geopandas.GeoSeries)
 
-        print(method, tile, "points")
-
         point_overall = points.geometry.sample_points(
             size=size, method=method, tile=tile
         )
         assert isinstance(point_overall, geopandas.GeoSeries)
 
-        print(method, tile, "mixed")
-
         mixed_overall = mixed.geometry.sample_points(
             size=size, method=method, tile=tile
         )
         assert isinstance(mixed_overall, geopandas.GeoSeries)
+
+        j = ji * 3 + jj
+        for i in range(4):
+            sample, data = (
+                (overall, multipolygons),
+                (line_overall, multilinestrings),
+                (point_overall, points),
+                (mixed_overall, mixed),
+            )[i]
+            data.plot(ax=ax[j, i], zorder=-1)
+            sample.plot(ax=ax[j, i], color="r", marker=".", markersize=10)
+
+            if i == 0:
+                ax[j, i].set_ylabel(f"{method}\n{tile}")
+            if j == 0:
+                ax[j, i].set_title(("polygons", "lines", "points", "mixed")[i])
+            ax[j, i].set_xticks([])
+            ax[j, i].set_xticklabels([])
+            ax[j, i].set_yticks([])
+            ax[j, i].set_yticklabels([])
+
+f.tight_layout()
+plt.show()
+
 
 # f, ax = plt.subplots(2, 4, figsize=(16, 4))
 # for i in range(8):
