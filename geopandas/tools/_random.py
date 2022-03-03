@@ -1,4 +1,3 @@
-from argparse import REMAINDER
 import numpy
 from ..array import points_from_xy
 from ..geoseries import GeoSeries
@@ -178,12 +177,13 @@ def _grid_line(geom, size, spacing, random_offset=True, **unused_kws):
 
     if size is not None:
         if isinstance(size, tuple):
-            # TODO: document this behavior: if you grid-sample geoms *and* they're mixed, any
-            # size tuple will get truncated to its first element when sampling lines.
-            # The most clear alternative is to divide LineStrings into "horizontal" and "vertical"
-            # segments based on the angle the segment makes with the bottom of the bounding box,
-            # and then sample size[0] if "horizontal" and size[1] if "vertical." That's a lot
-            # of assumption, though, for an unclear benefit, so it's of dubious necessity.
+            # TODO: document this behavior: if you grid-sample geoms *and* they're
+            # mixed, anysize tuple will get truncated to its first element when
+            # sampling lines.The most clear alternative is to divide LineStrings
+            # into "horizontal" and "vertical" segments based on the angle the
+            # segment makes with the bottom of the bounding box, and then sample
+            # size[0] if "horizontal" and size[1] if "vertical." That's a lot
+            # of assumption for an unclear benefit, so it's not done here.
             size = size[0]
         spacing = pygeos.length(geom) / size
     else:
@@ -192,7 +192,8 @@ def _grid_line(geom, size, spacing, random_offset=True, **unused_kws):
     parts = pygeos.get_parts(geom)
     grid = []
     for part in parts:
-        # this does exactly one pass because "part" is always LineString after pygeos.get_parts
+        # this does exactly one pass because "part" is always
+        # LineString after pygeos.get_parts
         segs = _split_line(part)
         remainder = numpy.random.uniform(0, spacing * random_offset)
         lengths = pygeos.length(segs)
@@ -258,7 +259,6 @@ def _uniform_polygon(geom, size=1, batch_size=None, **unused_kws):
     if batch_size is None:
         batch_size = n_points
     xmin, ymin, xmax, ymax = geom.bounds
-    result = []
     candidates = []
     while len(candidates) < n_points:
         batch = points_from_xy(

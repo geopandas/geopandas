@@ -3047,8 +3047,9 @@ GeometryCollection
 
     def interpolate(self, distance, normalized=False):
         """
-        Return a point at the specified distance along each geometry. For multi-part geometries,
-        the first geometry is taken and the rest is ignored.
+        Return a point at the specified distance along each geometry.
+        For multi-part geometries,the first geometry is taken and
+        the rest is ignored.
 
         Parameters
         ----------
@@ -3426,8 +3427,9 @@ GeometryCollection
                 except AssertionError:
                     raise TypeError(
                         "Size must be an integer denoting the size a sample, "
-                        "an integer denoting the number of sample sites along both axes when method='grid', "
-                        " or a tuple of two integers denoting the grid dimensions when method='grid'."
+                        "an integer denoting the number of sample sites along"
+                        " both axes when method='grid', or a tuple of two "
+                        " integers denoting the grid dimensions when method='grid'."
                     )
         if method == "random":
 
@@ -3463,9 +3465,10 @@ GeometryCollection
             try:
                 pointpats = import_optional_dependency(
                     "pointpats",
-                    f"For complex sampling methods, the pointpats module is required. "
-                    f"Your requested method, '{method}' was not a supported option (either"
-                    f" 'grid' or 'random') and the pointpats package was not able to be imported.",
+                    f"For complex sampling methods, the pointpats module is required."
+                    f" Your requested method, '{method}' was not a supported option"
+                    f" (either 'grid' or 'random') and the pointpats package was "
+                    f"not able to be imported.",
                 )
 
                 assert hasattr(pointpats.random, method)
