@@ -189,11 +189,10 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             self.set_geometry(geometry, inplace=True)
 
         if geometry is None and crs:
-            warnings.warn(
-                "Assigning CRS to a GeoDataFrame without a geometry column is now "
-                "deprecated and will not be supported in the future.",
-                FutureWarning,
-                stacklevel=2,
+            raise ValueError(
+                "Assigning CRS to a GeoDataFrame without a geometry column is not "
+                "supported. Supply geometry using the 'geometry=' keyword argument, "
+                "or by providing a DataFrame with column name 'geometry'",
             )
 
     def __setattr__(self, attr, val):
@@ -442,13 +441,11 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
     def crs(self, value):
         """Sets the value of the crs"""
         if self._geometry_column_name not in self:
-            warnings.warn(
-                "Assigning CRS to a GeoDataFrame without a geometry column is now "
-                "deprecated and will not be supported in the future.",
-                FutureWarning,
-                stacklevel=4,
+            raise ValueError(
+                "Assigning CRS to a GeoDataFrame without a geometry column is not "
+                "supported. Use GeoDataFrame.set_geometry to set the active "
+                "geometry column.",
             )
-            self._crs = None if not value else CRS.from_user_input(value)
         else:
             if hasattr(self.geometry.values, "crs"):
                 self.geometry.values.crs = value
