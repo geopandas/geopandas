@@ -71,7 +71,7 @@ def _expand_kwargs(kwargs, multiindex):
     from typing import Iterable
 
     mpl = Version(matplotlib.__version__)
-    if mpl >= Version("3.4") or (mpl > Version("3.3.2") and "+" in mpl):
+    if mpl >= Version("3.4"):
         # alpha is supported as array argument with matplotlib 3.4+
         scalar_kwargs = ["marker", "path_effects"]
     else:

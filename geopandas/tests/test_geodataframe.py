@@ -7,8 +7,6 @@ from packaging.version import Version
 import numpy as np
 import pandas as pd
 
-import pyproj
-from geopandas.base import is_geometry_type
 from pyproj import CRS
 from pyproj.exceptions import CRSError
 from shapely.geometry import Point, Polygon
@@ -18,6 +16,7 @@ import geopandas._compat as compat
 from geopandas import GeoDataFrame, GeoSeries, read_file
 from geopandas.array import GeometryArray, GeometryDtype, from_shapely
 from geopandas._compat import ignore_shapely2_warnings
+from geopandas.base import is_geometry_type
 
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 from geopandas.tests.util import PACKAGE_DIR, validate_boro_df
@@ -25,7 +24,6 @@ from pandas.testing import assert_frame_equal, assert_index_equal, assert_series
 import pytest
 
 
-PYPROJ_LT_3 = Version(pyproj.__version__) < Version("3")
 TEST_NEAREST = compat.PYGEOS_GE_010 and compat.USE_PYGEOS
 pandas_133 = Version(pd.__version__) == Version("1.3.3")
 
@@ -336,6 +334,28 @@ class TestDataFrame:
         result = df.set_geometry("geometry")
         assert isinstance(result, GeoDataFrame)
         assert isinstance(result.index, pd.DatetimeIndex)
+
+    def test_get_geometry_invalid(self):
+        df = GeoDataFrame()
+        df["geom"] = self.df.geometry
+        msg_geo_col_none = "active geometry column to use has not been set. "
+        msg_geo_col_missing = "is not present. "
+
+        with pytest.raises(AttributeError, match=msg_geo_col_missing):
+            df.geometry
+        df2 = self.df.copy()
+        df2["geom2"] = df2.geometry
+        df2 = df2[["BoroCode", "BoroName", "geom2"]]
+        with pytest.raises(AttributeError, match=msg_geo_col_none):
+            df2.geometry
+
+        msg_other_geo_cols_present = "There are columns with geometry data type"
+        msg_no_other_geo_cols = "There are no existing columns with geometry data type"
+        with pytest.raises(AttributeError, match=msg_other_geo_cols_present):
+            df2.geometry
+
+        with pytest.raises(AttributeError, match=msg_no_other_geo_cols):
+            GeoDataFrame().geometry
 
     def test_align(self):
         df = self.df2
@@ -762,12 +782,13 @@ class TestDataFrame:
         assert self.df.crs == unpickled.crs
 
     def test_estimate_utm_crs(self):
-        if PYPROJ_LT_3:
+        if compat.PYPROJ_LT_3:
             with pytest.raises(RuntimeError, match=r"pyproj 3\+ required"):
                 self.df.estimate_utm_crs()
         else:
             assert self.df.estimate_utm_crs() == CRS("EPSG:32618")
-            assert self.df.estimate_utm_crs("NAD83") == CRS("EPSG:26918")
+            if compat.PYPROJ_GE_32:  # result is unstable in older pyproj
+                assert self.df.estimate_utm_crs("NAD83") == CRS("EPSG:26918")
 
     def test_to_wkb(self):
         wkbs0 = [
