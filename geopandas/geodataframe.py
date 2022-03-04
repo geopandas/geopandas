@@ -471,14 +471,18 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             if hasattr(self.geometry.values, "crs"):
                 self.geometry.values.crs = value
             else:
-                # NOTE: this is a hard-breaking change now. We don't have a place where
-                # we could store CRS in this situation.
                 # column called 'geometry' without geometry
-                raise ValueError(
-                    "Assigning CRS to a GeoDataFrame without an active geometry column "
-                    "is not supported. Use GeoDataFrame.set_geometry to set the active "
-                    "geometry column.",
-                )
+                import pyproj
+
+                self._crs = pyproj.CRS.from_user_input(value)
+
+                # TODO: raise this error in 0.12. This already raises a FutureWarning
+                # TODO: defined in the crs property above
+                # raise ValueError(
+                #     "Assigning CRS to a GeoDataFrame without an active geometry "
+                #     "column is not supported. Use GeoDataFrame.set_geometry to set "
+                #     "the active geometry column.",
+                # )
 
     def __setstate__(self, state):
         # overriding DataFrame method for compat with older pickles (CRS handling)
