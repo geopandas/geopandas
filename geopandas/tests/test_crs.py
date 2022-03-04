@@ -295,9 +295,14 @@ class TestGeometryArrayCRS:
         assert df.geometry.values.crs == self.wgs
 
         # geometry column without geometry
-        df = GeoDataFrame({"geometry": [0, 1]})
-        df.crs = 27700
-        assert df.crs == self.osgb
+        with pytest.warns(
+            FutureWarning,
+            match="Accessing CRS of a GeoDataFrame without a geometry column",
+        ):
+
+            df = GeoDataFrame({"geometry": [0, 1]})
+            df.crs = 27700
+            assert df.crs == self.osgb
 
     def test_dataframe_setitem(self):
         # new geometry CRS has priority over GDF CRS
@@ -346,6 +351,7 @@ class TestGeometryArrayCRS:
         assert df.geometry.crs == self.wgs
         assert df.geometry.values.crs == self.wgs
 
+    @pytest.mark.filterwarnings("ignore:Accessing CRS")
     def test_crs_with_no_geom_fails(self):
         with pytest.raises(ValueError, match="Assigning CRS to a GeoDataFrame without"):
             df = GeoDataFrame()
