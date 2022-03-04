@@ -172,14 +172,15 @@ def _squaregrid_circle(radius, flat=True):
 def _square_points(size, bounds, spacing):
     x_min, y_min, x_max, y_max = bounds
     if spacing is not None:
-        size = (
-            numpy.ceil((x_max - x_min) / spacing).astype(int) + 1,
-            numpy.ceil((y_max - y_min) / spacing).astype(int) + 1,
+        x_locs, y_locs = numpy.arange(x_min, x_max+spacing, spacing), numpy.arange(
+            y_min, y_max+spacing, spacing
+        )
+    else:
+        x_res, y_res = size
+        x_locs, y_locs = numpy.linspace(x_min, x_max, x_res), numpy.linspace(
+            y_min, y_max, y_res
         )
 
-    x_res, y_res = size
-    x, y = numpy.meshgrid(
-        numpy.linspace(x_min, x_max, x_res), numpy.linspace(y_min, y_max, y_res)
-    )
+    x, y = numpy.meshgrid(x_locs, y_locs)
 
     return numpy.column_stack((x.flatten(), y.flatten()))
