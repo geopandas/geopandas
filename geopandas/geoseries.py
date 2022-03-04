@@ -3,7 +3,7 @@ import warnings
 
 import numpy as np
 import pandas as pd
-from pandas import Series, MultiIndex
+from pandas import Series, MultiIndex, DataFrame
 from pandas.core.internals import SingleBlockManager
 
 from pyproj import CRS
@@ -51,6 +51,35 @@ def _geoseries_constructor_with_fallback(data=None, index=None, crs=None, **kwar
             return GeoSeries(data=data, index=index, crs=crs, **kwargs)
     except TypeError:
         return Series(data=data, index=index, **kwargs)
+
+
+def _geoseries_expanddim(data=None, *args, **kwargs):
+    from geopandas import GeoDataFrame
+
+    # pd.Series._constructor_expanddim == pd.DataFrame
+    df = pd.DataFrame(data, *args, **kwargs)
+    geo_col_name = None
+    if isinstance(data, GeoSeries):
+        # pandas default column name is 0, keep convention
+        geo_col_name = data.name if data.name is not None else 0
+
+    if df.shape[1] == 1:
+        geo_col_name = df.columns[0]
+
+    if (df.dtypes == "geometry").sum() > 0:
+        if geo_col_name is None or not is_geometry_type(df[geo_col_name]):
+            df = GeoDataFrame(df)
+            df._geometry_column_name = None
+        else:
+            df = df.set_geometry(geo_col_name)
+
+    return df
+
+
+# pd.concat (pandas/core/reshape/concat.py) requires this for the
+# concatenation of series since pandas 1.1
+# (https://github.com/pandas-dev/pandas/commit/f9e4c8c84bcef987973f2624cc2932394c171c8c)
+_geoseries_expanddim._get_axis_number = DataFrame._get_axis_number
 
 
 class GeoSeries(GeoPandasBase, Series):
@@ -587,9 +616,7 @@ class GeoSeries(GeoPandasBase, Series):
 
     @property
     def _constructor_expanddim(self):
-        from geopandas import GeoDataFrame
-
-        return GeoDataFrame
+        return _geoseries_expanddim
 
     def _wrapped_pandas_method(self, mtd, *args, **kwargs):
         """Wrap a generic pandas method to ensure it returns a GeoSeries"""
