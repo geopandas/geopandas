@@ -311,7 +311,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         geo_column_name = self._geometry_column_name
         if isinstance(col, (Series, list, np.ndarray, GeometryArray)):
             level = col
-        elif hasattr(col, "ndim") and col.ndim != 1:
+        elif hasattr(col, "ndim") and col.ndim > 1:
             raise ValueError("Must pass array with one dimension only.")
         else:
             try:
@@ -1467,6 +1467,11 @@ individually so that features may have different properties
                     f"Please ensure this column from the first DataFrame is not "
                     f"repeated."
                 )
+        elif method == "unstack":
+            # unstack adds multiindex columns and reshapes data.
+            # it never makes sense to retain geometry column
+            self._geometry_column_name = None
+            self._crs = None
         return self
 
     def dissolve(
