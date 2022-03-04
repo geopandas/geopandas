@@ -116,7 +116,7 @@ def _hex_points(size, bounds, spacing, flat=True):
 
     hex_radius = numpy.ceil(bounds_diagonal / 2 / spacing)
     hex_circle = _hexgrid_circle(hex_radius, flat=flat)
-    hex_circle /= hex_radius * numpy.sqrt(3)
+    hex_circle /= hex_radius
     hex_inradius = numpy.sqrt(3) / 2
     theta = numpy.arctan(y_range / 2 / x_range / 2)
     phi = (numpy.pi) / 2 - theta
@@ -151,7 +151,7 @@ def _hexgrid_circle(radius, flat=True):
 
     final_points = (rotation @ all_locs[:, :-1].T).T[mask]
 
-    return final_points
+    return final_points / numpy.sqrt(3)
 
 
 def _squaregrid_circle(radius, flat=True):
@@ -172,8 +172,8 @@ def _squaregrid_circle(radius, flat=True):
 def _square_points(size, bounds, spacing):
     x_min, y_min, x_max, y_max = bounds
     if spacing is not None:
-        x_locs, y_locs = numpy.arange(x_min, x_max+spacing, spacing), numpy.arange(
-            y_min, y_max+spacing, spacing
+        x_locs, y_locs = numpy.arange(x_min, x_max + spacing, spacing), numpy.arange(
+            y_min, y_max + spacing, spacing
         )
     else:
         x_res, y_res = size

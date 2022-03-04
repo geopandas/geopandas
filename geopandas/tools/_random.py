@@ -136,14 +136,12 @@ def _grid_polygon(
     grid_radius = numpy.ceil(pg_radius / spacing).astype(int)
     if method == "square":
         raw_grid = _squaregrid_circle(grid_radius)
-        raw_grid /= grid_radius
     elif method == "hex":
         raw_grid = _hexgrid_circle(grid_radius)
-        raw_grid /= grid_radius * numpy.sqrt(3)
     else:
         ValueError(f'Method must be either "square" or "hex". Recieved {method}.')
 
-    raw_grid *= pg_radius
+    raw_grid *= pg_radius / grid_radius
 
     if method == "square":
         displacement = (
