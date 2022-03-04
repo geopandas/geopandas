@@ -131,6 +131,9 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         with compat.ignore_shapely2_warnings():
             super().__init__(data, *args, **kwargs)
 
+        # TODO: to be removed in 0.12
+        self._crs = None
+
         # set_geometry ensures the geometry data have the proper dtype,
         # but is not called if `geometry=None` ('geometry' column present
         # in the data), so therefore need to ensure it here manually
@@ -357,6 +360,9 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             # to a default RangeIndex -> set back the original index if needed
             frame.index = index
         frame._geometry_column_name = geo_column_name
+
+        # TODO: to be removed in 0.12
+        frame._crs = level.crs
         if not inplace:
             return frame
 
@@ -438,7 +444,19 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         GeoDataFrame.to_crs : re-project to another CRS
 
         """
-        return self.geometry.crs
+        # TODO: remove try/except in 0.12
+        try:
+            return self.geometry.crs
+        except AttributeError:
+            # the active geometry column might not be set
+            warnings.warn(
+                "Accessing CRS of a GeoDataFrame without a geometry column is "
+                "deprecated and will be removed in GeoPandas 0.12. "
+                "Use GeoDataFrame.set_geometry to set the active geometry column.",
+                FutureWarning,
+                stacklevel=2,
+            )
+            return self._crs
 
     @crs.setter
     def crs(self, value):
@@ -1383,7 +1401,8 @@ individually so that features may have different properties
             if pd.api.types.is_scalar(value) or isinstance(value, BaseGeometry):
                 value = [value] * self.shape[0]
             try:
-                value = _ensure_geometry(value, crs=getattr(self, "crs", None))
+                # TODO: use `crs=getattr(self, "crs", None)` in 0.12
+                value = _ensure_geometry(value, crs=self._crs)
             except TypeError:
                 warnings.warn("Geometry column does not contain geometry.")
         super().__setitem__(key, value)
