@@ -123,7 +123,8 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
     GeoSeries : Series object designed to store shapely geometry objects
     """
 
-    _metadata = ["_geometry_column_name"]
+    # TODO: remove "_crs" in 0.12
+    _metadata = ["_crs", "_geometry_column_name"]
 
     _geometry_column_name = DEFAULT_GEO_COLUMN_NAME
 
@@ -472,9 +473,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 self.geometry.values.crs = value
             else:
                 # column called 'geometry' without geometry
-                import pyproj
-
-                self._crs = pyproj.CRS.from_user_input(value)
+                self._crs = CRS.from_user_input(value)
 
                 # TODO: raise this error in 0.12. This already raises a FutureWarning
                 # TODO: defined in the crs property above
