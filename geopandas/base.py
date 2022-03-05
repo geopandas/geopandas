@@ -3368,6 +3368,41 @@ GeometryCollection
             return False
         return self._data.equals(other._data)
 
+    def hilbert_distance(self, total_bounds=None, level=16):
+        """
+        Calculate the distance along a Hilbert curve.
+
+        The distances are calculated for the midpoints of the geometries in the
+        GeoDataFrame, and using the total bounds of the GeoDataFrame.
+
+        The Hilbert distance can be used to spatially partition Dask-GeoPandas
+        objects, by mapping two dimensional geometries along the Hilbert curve.
+
+        Parameters
+        ----------
+        total_bounds : 4-element array, optional
+            The spatial extent in which the curve is constructed (used to
+            rescale the geometry midpoints). By default, the total bounds
+            of the full dask GeoDataFrame will be computed (from the spatial
+            partitions, if available, otherwise computed from the full
+            dataframe). If known, you can pass the total bounds to avoid this
+            extra computation.
+        level : int (1 - 16), default 16
+            Determines the precision of the curve (points on the curve will
+            have coordinates in the range [0, 2^level - 1]).
+
+        Returns
+        -------
+        dask.Series
+            Series containing distances for each partition
+
+        """
+        from geopandas.tools.hilbert_curve import _hilbert_distance
+
+        distances = _hilbert_distance(self, total_bounds=total_bounds, level=level)
+
+        return distances
+
 
 class _CoordinateIndexer(object):
     # see docstring GeoPandasBase.cx property above
