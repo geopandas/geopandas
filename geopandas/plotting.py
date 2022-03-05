@@ -567,10 +567,19 @@ def plot_dataframe(
         :func:`matplotlib.pyplot.colorbar`.
         Additional accepted keywords when `scheme` is specified:
 
+        as_cbar : boolean (default False)
+            Draw a discrete colorbar as legend if True, else (historical behavior) add a
+            normal legend expliciting the intervals corresponding to each color.
+        fmt : string
+            A formatting specification for the bin edges of the classes in the
+            legend. For example, to have no decimals: ``{"fmt": "{:.0f}"}``.
         labels : list-like
             A list of legend labels to override the auto-generated labels.
             Needs to have the same number of elements as the number of
             classes (`k`).
+        interval : boolean (default False)
+            An option to control brackets from mapclassify legend.
+            If True, open/closed interval brackets are shown in the legend.
     categories : list-like
         Ordered list-like object of categories to be used for categorical plot.
     classification_kwds : dict (default None)
@@ -741,29 +750,67 @@ GON (((-122.84000 49.00000, -120.0000...
         if "k" not in classification_kwds:
             classification_kwds["k"] = k
 
+        if cmap is None:
+            cmap = "viridis"
+
         binning = mapclassify.classify(
             np.asarray(values[~nan_idx]), scheme, **classification_kwds
         )
-        bounds = binning.bins
-        lowest = binning.y.min()
-        if hasattr(binning, "lowest"):
-            if binning.lowest is not None:
-                lowest = binning.lowest
-        lower_open = lowest > bounds[0]
-        if lower_open:
-            legend_kwds.setdefault("extend", "min")
+
+        # TODO: eventually switch default to True
+        scheme_as_cbar = legend_kwds.pop("as_cbar", False)
+        if scheme_as_cbar:
+            bounds = binning.bins
+            lowest = binning.y.min()
+            if hasattr(binning, "lowest"):
+                if binning.lowest is not None:
+                    lowest = binning.lowest
+            lower_open = lowest > bounds[0]
+            if lower_open:
+                legend_kwds.setdefault("extend", "min")
+            else:
+                bounds = np.insert(binning.bins, 0, lowest)
+
+            from matplotlib import cm
+
+            cmap = cm.get_cmap(cmap, binning.k)
+            if style_kwds.get("norm") is None:
+                from matplotlib.colors import BoundaryNorm
+
+                style_kwds["norm"] = BoundaryNorm(
+                    bounds, binning.k, extend=legend_kwds.get("extend", "neither")
+                )
         else:
-            bounds = np.insert(binning.bins, 0, lowest)
-        if cmap is None:
-            cmap = "viridis"
-        from matplotlib import cm
+            # set categorical to True for creating the legend
+            categorical = True
+            if "labels" in legend_kwds:
+                if len(legend_kwds["labels"]) != binning.k:
+                    raise ValueError(
+                        "Number of labels must match number of bins, "
+                        "received {} labels for {} bins".format(
+                            len(legend_kwds["labels"]), binning.k
+                        )
+                    )
+                else:
+                    labels = list(legend_kwds.pop("labels"))
+            else:
+                fmt = "{:.2f}"
+                if legend_kwds is not None and "fmt" in legend_kwds:
+                    fmt = legend_kwds.pop("fmt")
 
-        cmap = cm.get_cmap(cmap, binning.k)
-        if style_kwds.get("norm") is None:
-            from matplotlib.colors import BoundaryNorm
+                labels = binning.get_legend_classes(fmt)
+                if legend_kwds is not None:
+                    show_interval = legend_kwds.pop("interval", False)
+                else:
+                    show_interval = False
+                if not show_interval:
+                    labels = [c[1:-1] for c in labels]
 
-            style_kwds["norm"] = BoundaryNorm(
-                bounds, binning.k, extend=legend_kwds.get("extend", "neither")
+            values = pd.Categorical(
+                [np.nan] * len(values), categories=binning.bins, ordered=True
+            )
+            values[~nan_idx] = pd.Categorical.from_codes(
+                binning.yb, categories=binning.bins, ordered=True
             )
 
     # Define `values` as a Series
@@ -871,7 +918,9 @@ GON (((-122.84000 49.00000, -120.0000...
         if not norm:
             norm = Normalize(vmin=mn, vmax=mx)
         n_cmap = cm.ScalarMappable(norm=norm, cmap=cmap)
-        if categorical and scheme is None:
+        if categorical:
+            if scheme is not None:
+                categories = labels
             legend_kwds.pop("format", None)
             # TODO: if scheme is not None, add legend for missing if 'label' in
             # missing_kwds
