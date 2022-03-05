@@ -1,48 +1,45 @@
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 
-def _hilbert_distance(gdf, total_bounds=None, p=15):
+def _hilbert_distance(gdf, total_bounds=None, level=16):
     """
-    Calculate hilbert distance for a GeoDataFrame
-    int coordinates
+    Calculate the distance along a Hilbert curve.
+
+    The distances are calculated for the midpoints of the geometries in the
+    GeoDataFrame.
 
     Parameters
     ----------
     gdf : GeoDataFrame
-
-    total_bounds : Total bounds of geometries - array
-
-    p : The number of iterations used in constructing the Hilbert curve
+    total_bounds : 4-element array
+        Total bounds of geometries - array
+    level : int (1 - 16), default 16
+        Determines the precision of the curve (points on the curve will
+        have coordinates in the range [0, 2^level - 1]).
 
     Returns
     ---------
-    Pandas Series containing hilbert distances
+    Pandas Series containing distances along the Hilbert curve
 
     """
+    if gdf.is_empty.any() | gdf.geometry.isna().any():
+        raise ValueError(
+            "Hilbert distance cannot be computed on a GeoSeries with empty or "
+            "missing geometries.",
+        )
     # Calculate bounds as numpy array
     bounds = gdf.bounds.to_numpy()
 
-    if total_bounds is None:
-        total_bounds = np.array(
-            (
-                np.nanmin(bounds[:, 0]),  # minx
-                np.nanmin(bounds[:, 1]),  # miny
-                np.nanmax(bounds[:, 2]),  # maxx
-                np.nanmax(bounds[:, 3]),  # maxy
-            )
-        )
-
     # Calculate discrete coords based on total bounds and bounds
-    x, y = _continuous_to_discrete_coords(total_bounds, bounds, p)
-    # Calculate distance from morton curve
-    distances = _encode(p, x, y)
+    x, y = _continuous_to_discrete_coords(bounds, level, total_bounds)
+    # Compute distance along hilbert curve
+    distances = _encode(level, x, y)
 
     return pd.Series(distances, index=gdf.index, name="hilbert_distance")
 
 
-def _continuous_to_discrete_coords(total_bounds, bounds, p):
-
+def _continuous_to_discrete_coords(bounds, level, total_bounds):
     """
     Calculates mid points & ranges of geoms and returns
     as discrete coords
@@ -50,29 +47,37 @@ def _continuous_to_discrete_coords(total_bounds, bounds, p):
     Parameters
     ----------
 
-    total_bounds : Total bounds of geometries - array
-
     bounds : Bounds of each geometry - array
 
     p : The number of iterations used in constructing the Hilbert curve
+
+    total_bounds : Total bounds of geometries - array
 
     Returns
     ---------
     Discrete two-dimensional numpy array
     Two-dimensional array Array of hilbert distances for each geom
+
     """
-
-    # Hilbert Side len
-    side_length = 2 ** p
-
-    # Calculate x and y range of total bound coords - returns array
-    xmin, ymin, xmax, ymax = total_bounds
+    # Hilbert Side length
+    side_length = (2 ** level) - 1
 
     # Calculate mid points for x and y bound coords - returns array
     x_mids = (bounds[:, 0] + bounds[:, 2]) / 2.0
     y_mids = (bounds[:, 1] + bounds[:, 3]) / 2.0
 
-    # Transform continuous int to discrete int for each dimension
+    # Calculate x and y range of total bound coords - returns array
+    if total_bounds is None:
+        total_bounds = (
+            np.nanmin(x_mids),
+            np.nanmin(y_mids),
+            np.nanmax(x_mids),
+            np.nanmax(y_mids),
+        )
+
+    xmin, ymin, xmax, ymax = total_bounds
+
+    # Transform continuous value to discrete integer for each dimension
     x_int = _continuous_to_discrete(x_mids, (xmin, xmax), side_length)
     y_int = _continuous_to_discrete(y_mids, (ymin, ymax), side_length)
 
@@ -80,10 +85,9 @@ def _continuous_to_discrete_coords(total_bounds, bounds, p):
 
 
 def _continuous_to_discrete(vals, val_range, n):
-
     """
-    Convert a continuous one-dimensional array to discrete int
-    based on values and their ranges
+    Convert a continuous one-dimensional array to discrete integer values
+    based their ranges
 
     Parameters
     ----------
@@ -96,12 +100,12 @@ def _continuous_to_discrete(vals, val_range, n):
     Returns
     ---------
     One-dimensional array of discrete ints
-    """
 
+    """
     width = val_range[1] - val_range[0]
     res = (vals - val_range[0]) * (n / width)
 
-    np.clip(res, 0, n - 1, out=res)
+    np.clip(res, 0, n, out=res)
     return res.astype(np.uint32)
 
 
