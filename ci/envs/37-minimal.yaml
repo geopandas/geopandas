@@ -6,9 +6,11 @@ dependencies:
   - python=3.7
   # required
   - numpy=1.18
-  - pandas==0.25
-  - shapely=1.6
-  - fiona=1.8.13
+  - pandas==1.0.5
+  - shapely=1.7
+  - fiona=1.8.13.post1
+  - pyproj=2.6.1.post1
+  - packaging
   #- pyproj
   # testing
   - pytest
@@ -18,12 +20,9 @@ dependencies:
   # optional
   - rtree
   - matplotlib
-  - matplotlib=3.1
-  # - mapclassify=2.4.0 - doesn't build due to conflicts
+  - matplotlib=3.2
+  - mapclassify=2.4.0
   - geopy
   - SQLalchemy
   - libspatialite
   - pyarrow
-  - pip
-  - pip:
-      - pyproj==2.2.2

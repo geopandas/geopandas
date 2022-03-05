@@ -3,7 +3,7 @@ import warnings
 
 import numpy as np
 import pandas as pd
-from pandas import Series, MultiIndex
+from pandas import Series, MultiIndex, DataFrame
 from pandas.core.internals import SingleBlockManager
 
 from pyproj import CRS
@@ -51,6 +51,35 @@ def _geoseries_constructor_with_fallback(data=None, index=None, crs=None, **kwar
             return GeoSeries(data=data, index=index, crs=crs, **kwargs)
     except TypeError:
         return Series(data=data, index=index, **kwargs)
+
+
+def _geoseries_expanddim(data=None, *args, **kwargs):
+    from geopandas import GeoDataFrame
+
+    # pd.Series._constructor_expanddim == pd.DataFrame
+    df = pd.DataFrame(data, *args, **kwargs)
+    geo_col_name = None
+    if isinstance(data, GeoSeries):
+        # pandas default column name is 0, keep convention
+        geo_col_name = data.name if data.name is not None else 0
+
+    if df.shape[1] == 1:
+        geo_col_name = df.columns[0]
+
+    if (df.dtypes == "geometry").sum() > 0:
+        if geo_col_name is None or not is_geometry_type(df[geo_col_name]):
+            df = GeoDataFrame(df)
+            df._geometry_column_name = None
+        else:
+            df = df.set_geometry(geo_col_name)
+
+    return df
+
+
+# pd.concat (pandas/core/reshape/concat.py) requires this for the
+# concatenation of series since pandas 1.1
+# (https://github.com/pandas-dev/pandas/commit/f9e4c8c84bcef987973f2624cc2932394c171c8c)
+_geoseries_expanddim._get_axis_number = DataFrame._get_axis_number
 
 
 class GeoSeries(GeoPandasBase, Series):
@@ -143,17 +172,12 @@ class GeoSeries(GeoPandasBase, Series):
                 data = data.copy()
             else:
                 if not data.crs == crs:
-                    warnings.warn(
+                    raise ValueError(
                         "CRS mismatch between CRS of the passed geometries "
-                        "and 'crs'. Use 'GeoDataFrame.set_crs(crs, "
+                        "and 'crs'. Use 'GeoSeries.set_crs(crs, "
                         "allow_override=True)' to overwrite CRS or "
                         "'GeoSeries.to_crs(crs)' to reproject geometries. "
-                        "CRS mismatch will raise an error in the future versions "
-                        "of GeoPandas.",
-                        FutureWarning,
-                        stacklevel=2,
                     )
-                    # TODO: raise error in 0.9 or 0.10.
 
         if isinstance(data, SingleBlockManager):
             if isinstance(data.blocks[0].dtype, GeometryDtype):
@@ -592,9 +616,7 @@ class GeoSeries(GeoPandasBase, Series):
 
     @property
     def _constructor_expanddim(self):
-        from geopandas import GeoDataFrame
-
-        return GeoDataFrame
+        return _geoseries_expanddim
 
     def _wrapped_pandas_method(self, mtd, *args, **kwargs):
         """Wrap a generic pandas method to ensure it returns a GeoSeries"""
@@ -665,21 +687,6 @@ class GeoSeries(GeoPandasBase, Series):
         GeoSeries.notna : inverse of isna
         GeoSeries.is_empty : detect empty geometries
         """
-        if self.is_empty.any():
-            warnings.warn(
-                "GeoSeries.isna() previously returned True for both missing (None) "
-                "and empty geometries. Now, it only returns True for missing values. "
-                "Since the calling GeoSeries contains empty geometries, the result "
-                "has changed compared to previous versions of GeoPandas.\n"
-                "Given a GeoSeries 's', you can use 's.is_empty | s.isna()' to get "
-                "back the old behaviour.\n\n"
-                "To further ignore this warning, you can do: \n"
-                "import warnings; warnings.filterwarnings('ignore', 'GeoSeries.isna', "
-                "UserWarning)",
-                UserWarning,
-                stacklevel=2,
-            )
-
         return super().isna()
 
     def isnull(self):
@@ -913,7 +920,7 @@ class GeoSeries(GeoPandasBase, Series):
 
         index = []
         geometries = []
-        for idx, s in self.geometry.iteritems():
+        for idx, s in self.geometry.items():
             if s.type.startswith("Multi") or s.type == "GeometryCollection":
                 geoms = s.geoms
                 idxs = [(idx, i) for i in range(len(geoms))]

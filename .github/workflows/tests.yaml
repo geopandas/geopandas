@@ -37,7 +37,7 @@ jobs:
         env:
           - ci/envs/37-minimal.yaml
           - ci/envs/38-no-optional-deps.yaml
-          - ci/envs/37-pd10.yaml
+          - ci/envs/37-pd11.yaml
           - ci/envs/37-latest-defaults.yaml
           - ci/envs/37-latest-conda-forge.yaml
           - ci/envs/38-latest-conda-forge.yaml
@@ -60,7 +60,7 @@ jobs:
             os: windows-latest
             postgis: false
             dev: false
-          - env: ci/envs/38-dev.yaml
+          - env: ci/envs/310-dev.yaml
             os: ubuntu-latest
             dev: true
 

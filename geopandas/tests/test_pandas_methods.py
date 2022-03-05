@@ -263,11 +263,6 @@ def test_astype_invalid_geodataframe():
     assert res["a"].dtype == object
 
 
-@pytest.mark.xfail(
-    not compat.PANDAS_GE_10,
-    reason="Convert dtypes new in pandas 1.0",
-    raises=NotImplementedError,
-)
 def test_convert_dtypes(df):
     # https://github.com/geopandas/geopandas/issues/1870
 
@@ -384,7 +379,7 @@ def test_fillna(s, df):
     df2["geometry"] = s2
     res = df2.fillna(Point(1, 1))
     assert_geodataframe_equal(res, df)
-    with pytest.raises(NotImplementedError):
+    with pytest.raises((NotImplementedError, TypeError)):  # GH2351
         df2.fillna(0)
 
     # allow non-geometry fill value if there are no missing values
@@ -558,6 +553,45 @@ def test_groupby_groups(df):
     assert_frame_equal(res, exp)
 
 
+@pytest.mark.skip_no_sindex
+@pytest.mark.skipif(
+    compat.PANDAS_GE_13 and not compat.PANDAS_GE_14,
+    reason="this was broken in pandas 1.3.5 (GH-2294)",
+)
+@pytest.mark.parametrize("crs", [None, "EPSG:4326"])
+def test_groupby_metadata(crs):
+    # https://github.com/geopandas/geopandas/issues/2294
+    df = GeoDataFrame(
+        {
+            "geometry": [Point(0, 0), Point(1, 1), Point(0, 0)],
+            "value1": np.arange(3, dtype="int64"),
+            "value2": np.array([1, 2, 1], dtype="int64"),
+        },
+        crs=crs,
+    )
+
+    # dummy test asserting we can access the crs
+    def func(group):
+        assert isinstance(group, GeoDataFrame)
+        assert group.crs == crs
+
+    df.groupby("value2").apply(func)
+
+    # actual test with functionality
+    res = df.groupby("value2").apply(
+        lambda x: geopandas.sjoin(x, x[["geometry", "value1"]], how="inner")
+    )
+
+    expected = (
+        df.take([0, 2, 0, 2, 1])
+        .set_index("value2", drop=False, append=True)
+        .swaplevel()
+        .rename(columns={"value1": "value1_left"})
+        .assign(value1_right=[0, 0, 2, 2, 1])
+    )
+    assert_geodataframe_equal(res.drop(columns=["index_right"]), expected)
+
+
 def test_apply(s):
     # function that returns geometry preserves GeoSeries class
     def geom_func(geom):
@@ -614,7 +648,15 @@ def test_apply_preserves_geom_col_name(df):
     assert result.geometry.name == "geom"
 
 
-@pytest.mark.skipif(not compat.PANDAS_GE_10, reason="attrs introduced in pandas 1.0")
+def test_df_apply_returning_series(df):
+    # https://github.com/geopandas/geopandas/issues/2283
+    result = df.apply(lambda row: row.geometry, axis=1)
+    assert_geoseries_equal(result, df.geometry, check_crs=False)
+
+    result = df.apply(lambda row: row.value1, axis=1)
+    assert_series_equal(result, df["value1"].rename(None))
+
+
 def test_preserve_attrs(df):
     # https://github.com/geopandas/geopandas/issues/1654
     df.attrs["name"] = "my_name"

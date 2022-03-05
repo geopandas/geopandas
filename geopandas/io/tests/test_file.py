@@ -1,6 +1,6 @@
 from collections import OrderedDict
 import datetime
-from distutils.version import LooseVersion
+from packaging.version import Version
 import io
 import os
 import pathlib
@@ -24,7 +24,7 @@ from geopandas.tests.util import PACKAGE_DIR, validate_boro_df
 import pytest
 
 
-FIONA_GE_1814 = str(fiona.__version__) >= LooseVersion("1.8.14")  # datetime roundtrip
+FIONA_GE_1814 = Version(fiona.__version__) >= Version("1.8.14")  # datetime roundtrip
 
 
 _CRS = "epsg:4326"
@@ -255,7 +255,7 @@ def test_to_file_int64(tmpdir, df_points):
 def test_to_file_empty(tmpdir):
     input_empty_df = GeoDataFrame(columns=["geometry"])
     tempfilename = os.path.join(str(tmpdir), "test.shp")
-    with pytest.raises(ValueError, match="Cannot write empty DataFrame to file."):
+    with pytest.warns(UserWarning):
         input_empty_df.to_file(tempfilename)
 
 

@@ -1,10 +1,11 @@
 import os
-from distutils.version import LooseVersion
+from packaging.version import Version
 from pathlib import Path
 import warnings
 
 import numpy as np
 import pandas as pd
+from pandas.api.types import is_integer_dtype
 
 import pyproj
 from shapely.geometry import mapping
@@ -255,8 +256,6 @@ def _read_file(filename, bbox=None, mask=None, rows=None, **kwargs):
 
 
 def read_file(*args, **kwargs):
-    import warnings
-
     warnings.warn(
         "geopandas.io.file.read_file() is intended for internal "
         "use only, and will be deprecated. Use geopandas.read_file() instead.",
@@ -268,8 +267,6 @@ def read_file(*args, **kwargs):
 
 
 def to_file(*args, **kwargs):
-    import warnings
-
     warnings.warn(
         "geopandas.io.file.to_file() is intended for internal "
         "use only, and will be deprecated. Use GeoDataFrame.to_file() "
@@ -365,10 +362,8 @@ def _to_file(
 
     if index is None:
         # Determine if index attribute(s) should be saved to file
-        index = list(df.index.names) != [None] or type(df.index) not in (
-            pd.RangeIndex,
-            pd.Int64Index,
-        )
+        # (only if they are named or are non-integer)
+        index = list(df.index.names) != [None] or not is_integer_dtype(df.index.dtype)
     if index:
         df = df.reset_index(drop=False)
     if schema is None:
@@ -394,7 +389,7 @@ def _to_file(
             gdal_version = fiona.env.get_gdal_release_name()
         except AttributeError:
             gdal_version = "2.0.0"  # just assume it is not the latest
-        if LooseVersion(gdal_version) >= LooseVersion("3.0.0") and crs:
+        if Version(gdal_version) >= Version("3.0.0") and crs:
             crs_wkt = crs.to_wkt()
         elif crs:
             crs_wkt = crs.to_wkt("WKT1_GDAL")
@@ -433,7 +428,12 @@ def infer_schema(df):
     )
 
     if df.empty:
-        raise ValueError("Cannot write empty DataFrame to file.")
+        warnings.warn(
+            "You are attempting to write an empty DataFrame to file. "
+            "For some drivers, this operation may fail.",
+            UserWarning,
+            stacklevel=3,
+        )
 
     # Since https://github.com/Toblerity/Fiona/issues/446 resolution,
     # Fiona allows a list of geometry types

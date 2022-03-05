@@ -9,6 +9,7 @@ dependencies:
   - fiona
   - pyproj
   - geos
+  - packaging
   # testing
   - pytest
   - pytest-cov
