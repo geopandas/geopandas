@@ -35,9 +35,10 @@ def _clip_gdf_with_mask(gdf, mask):
     """
     clipping_by_rectangle = isinstance(mask, tuple)
 
-    intersection_polygon = mask
     if clipping_by_rectangle:
         intersection_polygon = box(*mask)
+    else:
+        intersection_polygon = mask
 
     gdf_sub = gdf.iloc[gdf.sindex.query(intersection_polygon, predicate="intersects")]
 
@@ -77,27 +78,29 @@ def clip(gdf, mask, keep_geom_type=False):
     """Clip points, lines, or polygon geometries to the mask extent.
 
     Both layers must be in the same Coordinate Reference System (CRS).
-    The `gdf` will be clipped to the full extent of the clip object.
+    The ``gdf`` will be clipped to the full extent of the clip object.
 
-    If there are multiple polygons in mask, data from `gdf` will be
+    If there are multiple polygons in mask, data from ``gdf`` will be
     clipped to the total boundary of all polygons in mask.
 
-    If the `mask` is a tuple of `(minx, miny, maxx, maxy)`, a faster rectangle
+    If the ``mask`` is a tuple of ``(minx, miny, maxx, maxy)``, a faster rectangle
     clipping algorithm will be used. Note that this can lead to slightly different
     results in edge cases, e.g. if a line would be reduced to a point, this point might
-    not be returned.
+    not be returned. The geometry is clipped in a fast but possibly dirty way. The
+    output is not guaranteed to be valid. No exceptions will be raised for topological
+    errors.
 
     Parameters
     ----------
     gdf : GeoDataFrame or GeoSeries
         Vector layer (point, line, polygon) to be clipped to mask.
     mask : GeoDataFrame, GeoSeries, (Multi)Polygon, tuple
-        Polygon vector layer used to clip `gdf`.
+        Polygon vector layer used to clip ``gdf``.
         The mask's geometry is dissolved into one geometric feature
-        and intersected with `gdf`.
-        If the mask is a tuple of `(minx, miny, maxx, maxy)`, `clip` will use a faster
-        rectangle clipping (`.clip_by_rect()`), possibly leading to slightly different
-        results.
+        and intersected with ``gdf``.
+        If the mask is a tuple of ``(minx, miny, maxx, maxy)``, ``clip`` will use a
+        faster rectangle clipping (:meth:`~GeoSeries.clip_by_rect`), possibly leading
+        to slightly different results.
     keep_geom_type : boolean, default False
         If True, return only geometries of original type in case of intersection
         resulting in multiple geometry types or GeometryCollections.
@@ -106,7 +109,7 @@ def clip(gdf, mask, keep_geom_type=False):
     Returns
     -------
     GeoDataFrame or GeoSeries
-         Vector data (points, lines, polygons) from `gdf` clipped to
+         Vector data (points, lines, polygons) from ``gdf`` clipped to
          polygon boundary from mask.
 
     See also
@@ -138,7 +141,7 @@ def clip(gdf, mask, keep_geom_type=False):
     if not isinstance(mask, (GeoDataFrame, GeoSeries, Polygon, MultiPolygon, tuple)):
         raise TypeError(
             "'mask' should be GeoDataFrame, GeoSeries,"
-            f"(Multi)Polygon or 4 element tuple, got {type(mask)}"
+            f"(Multi)Polygon or a tuple, got {type(mask)}"
         )
 
     if isinstance(mask, tuple) and len(mask) != 4:
