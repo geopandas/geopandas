@@ -23,10 +23,16 @@ from geopandas import GeoDataFrame, GeoSeries, clip
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 import pytest
 
+from geopandas.tools.clip import _mask_is_list_like_rectangle
 
 pytestmark = pytest.mark.skip_no_sindex
 pandas_133 = Version(pd.__version__) == Version("1.3.3")
-mask_variants_single_rectangle = ["single_rectangle_gdf", "single_rectangle_gdf_bounds"]
+mask_variants_single_rectangle = [
+    "single_rectangle_gdf",
+    "single_rectangle_gdf_list_bounds",
+    "single_rectangle_gdf_tuple_bounds",
+    "single_rectangle_gdf_array_bounds",
+]
 mask_variants_large_rectangle = [
     "larger_single_rectangle_gdf",
     "larger_single_rectangle_gdf_bounds",
@@ -69,9 +75,21 @@ def single_rectangle_gdf():
 
 
 @pytest.fixture
-def single_rectangle_gdf_bounds(single_rectangle_gdf):
+def single_rectangle_gdf_tuple_bounds(single_rectangle_gdf):
     """Bounds of the created single rectangle"""
     return tuple(single_rectangle_gdf.total_bounds)
+
+
+@pytest.fixture
+def single_rectangle_gdf_list_bounds(single_rectangle_gdf):
+    """Bounds of the created single rectangle"""
+    return list(single_rectangle_gdf.total_bounds)
+
+
+@pytest.fixture
+def single_rectangle_gdf_array_bounds(single_rectangle_gdf):
+    """Bounds of the created single rectangle"""
+    return single_rectangle_gdf.total_bounds
 
 
 @pytest.fixture
@@ -278,7 +296,9 @@ class TestClipWithSingleRectangleGdf:
         Also the bounds of the object should == the bounds of the clip object
         if they fully overlap (as they do in these fixtures)."""
         clipped = clip(multi_poly_gdf, mask, keep_geom_type=True)
-        expected_bounds = mask if isinstance(mask, tuple) else mask.total_bounds
+        expected_bounds = (
+            mask if _mask_is_list_like_rectangle(mask) else mask.total_bounds
+        )
         assert np.array_equal(clipped.total_bounds, expected_bounds)
         # Assert returned data is a not geometry collection
         assert (clipped.geom_type.isin(["Polygon", "MultiPolygon"])).all()
@@ -305,7 +325,9 @@ class TestClipWithSingleRectangleGdf:
             ]
         )
         assert clipped.iloc[0].geometry.wkt == clipped_mutltipoint.wkt
-        shape_for_points = box(*mask) if isinstance(mask, tuple) else mask.unary_union
+        shape_for_points = (
+            box(*mask) if _mask_is_list_like_rectangle(mask) else mask.unary_union
+        )
         assert all(clipped.intersects(shape_for_points))
 
     def test_clip_lines(self, two_line_gdf, mask):

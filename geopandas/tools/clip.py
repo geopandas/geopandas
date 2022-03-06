@@ -7,10 +7,17 @@ A module to clip vector data using GeoPandas.
 """
 import warnings
 
+import pandas.api.types
 from shapely.geometry import Polygon, MultiPolygon, box
 
 from geopandas import GeoDataFrame, GeoSeries
 from geopandas.array import _check_crs, _crs_mismatch_warn
+
+
+def _mask_is_list_like_rectangle(mask):
+    return pandas.api.types.is_list_like(mask) and not isinstance(
+        mask, (GeoDataFrame, GeoSeries, Polygon, MultiPolygon)
+    )
 
 
 def _clip_gdf_with_mask(gdf, mask):
@@ -24,7 +31,7 @@ def _clip_gdf_with_mask(gdf, mask):
     gdf : GeoDataFrame, GeoSeries
         Dataframe to clip.
 
-    mask : (Multi)Polygon, tuple
+    mask : (Multi)Polygon, list-like
         Reference polygon/rectangle for clipping.
 
     Returns
@@ -33,8 +40,7 @@ def _clip_gdf_with_mask(gdf, mask):
         The returned GeoDataFrame is a clipped subset of gdf
         that intersects with polygon/rectangle.
     """
-    clipping_by_rectangle = isinstance(mask, tuple)
-
+    clipping_by_rectangle = _mask_is_list_like_rectangle(mask)
     if clipping_by_rectangle:
         intersection_polygon = box(*mask)
     else:
@@ -83,24 +89,24 @@ def clip(gdf, mask, keep_geom_type=False):
     If there are multiple polygons in mask, data from ``gdf`` will be
     clipped to the total boundary of all polygons in mask.
 
-    If the ``mask`` is a tuple of ``(minx, miny, maxx, maxy)``, a faster rectangle
-    clipping algorithm will be used. Note that this can lead to slightly different
-    results in edge cases, e.g. if a line would be reduced to a point, this point might
-    not be returned. The geometry is clipped in a fast but possibly dirty way. The
-    output is not guaranteed to be valid. No exceptions will be raised for topological
-    errors.
+    If the ``mask`` is list-like with four elements ``(minx, miny, maxx, maxy)``, a
+    faster rectangle clipping algorithm will be used. Note that this can lead to
+    slightly different results in edge cases, e.g. if a line would be reduced to a
+    point, this point might not be returned.
+    The geometry is clipped in a fast but possibly dirty way. The output is not
+    guaranteed to be valid. No exceptions will be raised for topological errors.
 
     Parameters
     ----------
     gdf : GeoDataFrame or GeoSeries
         Vector layer (point, line, polygon) to be clipped to mask.
-    mask : GeoDataFrame, GeoSeries, (Multi)Polygon, tuple
+    mask : GeoDataFrame, GeoSeries, (Multi)Polygon, list-like
         Polygon vector layer used to clip ``gdf``.
         The mask's geometry is dissolved into one geometric feature
         and intersected with ``gdf``.
-        If the mask is a tuple of ``(minx, miny, maxx, maxy)``, ``clip`` will use a
-        faster rectangle clipping (:meth:`~GeoSeries.clip_by_rect`), possibly leading
-        to slightly different results.
+        If the mask is list-like with four elements ``(minx, miny, maxx, maxy)``,
+        ``clip`` will use a faster rectangle clipping (:meth:`~GeoSeries.clip_by_rect`),
+        possibly leading to slightly different results.
     keep_geom_type : boolean, default False
         If True, return only geometries of original type in case of intersection
         resulting in multiple geometry types or GeometryCollections.
@@ -138,15 +144,19 @@ def clip(gdf, mask, keep_geom_type=False):
             "'gdf' should be GeoDataFrame or GeoSeries, got {}".format(type(gdf))
         )
 
-    if not isinstance(mask, (GeoDataFrame, GeoSeries, Polygon, MultiPolygon, tuple)):
+    mask_is_list_like = _mask_is_list_like_rectangle(mask)
+    if (
+        not isinstance(mask, (GeoDataFrame, GeoSeries, Polygon, MultiPolygon))
+        and not mask_is_list_like
+    ):
         raise TypeError(
             "'mask' should be GeoDataFrame, GeoSeries,"
-            f"(Multi)Polygon or a tuple, got {type(mask)}"
+            f"(Multi)Polygon or list-like, got {type(mask)}"
         )
 
-    if isinstance(mask, tuple) and len(mask) != 4:
+    if mask_is_list_like and len(mask) != 4:
         raise TypeError(
-            "If 'mask' is a tuple, it must have four values (minx, miny, maxx, maxy)"
+            "If 'mask' is list-like, it must have four values (minx, miny, maxx, maxy)"
         )
 
     if isinstance(mask, (GeoDataFrame, GeoSeries)):
@@ -155,7 +165,7 @@ def clip(gdf, mask, keep_geom_type=False):
 
     if isinstance(mask, (GeoDataFrame, GeoSeries)):
         box_mask = mask.total_bounds
-    elif isinstance(mask, tuple):
+    elif mask_is_list_like:
         box_mask = mask
     else:
         box_mask = mask.bounds
