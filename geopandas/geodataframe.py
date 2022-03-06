@@ -554,7 +554,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         return geopandas.io.file._read_file(filename, **kwargs)
 
     @classmethod
-    def from_features(cls, features, crs=None, columns=None):
+    def from_features(cls, features, crs=None, columns=None, id_as_index=False):
         """
         Alternate constructor to create GeoDataFrame from an iterable of
         features or a feature collection.
@@ -574,6 +574,9 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             Optionally specify the column names to include in the output frame.
             This does not overwrite the property names of the input, but can
             ensure a consistent output format.
+        id_as_index: bool (optional)
+            Controls whether the 'id' column is used as index of the
+            GeoDataFrame
 
         Returns
         -------
@@ -608,9 +611,9 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         ... }
         >>> df = geopandas.GeoDataFrame.from_features(feature_coll)
         >>> df
-                          geometry   col1
-        0  POINT (1.00000 2.00000)  name1
-        1  POINT (2.00000 1.00000)  name2
+                          geometry   col1  id
+        0  POINT (1.00000 2.00000)  name1   0
+        1  POINT (2.00000 1.00000)  name2   1
 
         """
         # Handle feature collections
@@ -625,6 +628,8 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             features_lst = features
 
         rows = []
+        ids = []
+
         for feature in features_lst:
             # load geometry
             if hasattr(feature, "__geo_interface__"):
@@ -634,8 +639,30 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             }
             # load properties
             row.update(feature["properties"])
+            ids.append(feature["id"] if "id" in feature else None)
             rows.append(row)
-        return GeoDataFrame(rows, columns=columns, crs=crs)
+
+        gdf = GeoDataFrame(rows, columns=columns, crs=crs)
+        feature_id = pd.Series(ids)
+
+        if id_as_index:
+            if feature_id.isna().all():
+                warnings.warn(
+                    "id_as_index=True is ignored since there is"
+                    " no `id` field in the given features."
+                )
+                _maybe_add_feature_id(gdf, feature_id)
+            elif feature_id.isna().any():
+                warnings.warn(
+                    "id_as_index=True is ignored since "
+                    "the `id` field of the given features contains missing data."
+                )
+                _maybe_add_feature_id(gdf, feature_id)
+            else:
+                gdf.index = feature_id
+        else:
+            _maybe_add_feature_id(gdf, feature_id)
+        return gdf
 
     @classmethod
     def from_postgis(
@@ -2228,6 +2255,13 @@ countries_w_city_data[countries_w_city_data["name_left"] == "Italy"]
         return geopandas.overlay(
             self, right, how=how, keep_geom_type=keep_geom_type, make_valid=make_valid
         )
+
+
+def _maybe_add_feature_id(gdf, feature_id):
+    # Add the feature id column to the GeoDataFrame only if we are
+    # not overwriting an existing "id" column
+    if "id" not in gdf.columns:
+        gdf["id"] = feature_id
 
 
 def _dataframe_set_geometry(self, col, drop=False, inplace=False, crs=None):

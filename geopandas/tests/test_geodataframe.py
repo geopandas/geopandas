@@ -645,33 +645,82 @@ class TestDataFrame:
         p2 = Point(3, 3)
         f2 = Placemark(p2, 0)
         df = GeoDataFrame.from_features([f1, f2])
-        assert sorted(df.columns) == ["a", "geometry"]
+        assert sorted(df.columns) == ["a", "geometry", "id"]
         assert df.geometry.tolist() == [p1, p2]
 
     def test_from_feature_collection(self):
-        data = {
-            "name": ["a", "b", "c"],
-            "lat": [45, 46, 47.5],
-            "lon": [-120, -121.2, -122.9],
-        }
 
-        df = pd.DataFrame(data)
-        geometry = [Point(xy) for xy in zip(df["lon"], df["lat"])]
-        gdf = GeoDataFrame(df, geometry=geometry)
-        # from_features returns sorted columns
-        expected = gdf[["geometry", "lat", "lon", "name"]]
+        gdf_no_id = GeoDataFrame(
+            {
+                "geometry": [Point(1, 1), Point(2, 2)],
+                "data": [0.1, 0.2],
+            }
+        )
 
-        # test FeatureCollection
+        # Create a GeoDataFrame which contains an "id" column which does not
+        # represent the feature ids, but some other data
+        gdf = GeoDataFrame(
+            {
+                "geometry": [Point(1, 1), Point(2, 2)],
+                "data": [0.1, 0.2],
+                "id": [1, 2],
+            }
+        )
+
+        # test the feature id has been retrieved
+        res_no_id = GeoDataFrame.from_features(gdf_no_id.__geo_interface__)
+        exp_no_id = gdf_no_id.copy()
+        exp_no_id["id"] = ["0", "1"]
+        assert_frame_equal(res_no_id, exp_no_id)
+
+        # test the feature id has NOT been retrieved
         res = GeoDataFrame.from_features(gdf.__geo_interface__)
-        assert_frame_equal(res, expected)
+        assert_frame_equal(res, gdf)
 
         # test list of Features
         res = GeoDataFrame.from_features(gdf.__geo_interface__["features"])
-        assert_frame_equal(res, expected)
+        assert_frame_equal(res, gdf)
 
         # test __geo_interface__ attribute (a GeoDataFrame has one)
         res = GeoDataFrame.from_features(gdf)
-        assert_frame_equal(res, expected)
+        assert_frame_equal(res, gdf)
+
+    def test_from_feature_collection_id_as_index(self):
+
+        # Create a GeoDataFrame which contains an "id" column which does not
+        # represent the feature ids, but some other data
+        gdf = GeoDataFrame(
+            {
+                "geometry": [Point(1, 1), Point(2, 2)],
+                "data": [0.1, 0.2],
+                "id": [1, 2],
+            }
+        )
+
+        # test feature id as index
+        feature_id = []
+        for feat in gdf.__geo_interface__["features"]:
+            feature_id.append(feat["id"])
+        res = GeoDataFrame.from_features(gdf.__geo_interface__, id_as_index=True)
+        gdf1 = gdf.copy()
+        gdf1.index = feature_id
+        assert_frame_equal(res, gdf1)
+
+        # test id field not present in FeatureCollection
+        feature_coll1 = gdf.__geo_interface__.copy()
+        for feat in feature_coll1["features"]:
+            del feat["id"]
+            del feat["properties"]["id"]
+        with pytest.warns(UserWarning, match=r".* field in the given features."):
+            GeoDataFrame.from_features(feature_coll1, id_as_index=True)
+
+        # test id field with missing data in FeatureCollection
+        feature_coll2 = gdf.__geo_interface__.copy()
+        feat = feature_coll2["features"][0]
+        del feat["id"]
+        del feat["properties"]["id"]
+        with pytest.warns(UserWarning, match=r".* features contains missing data."):
+            GeoDataFrame.from_features(feature_coll2, id_as_index=True)
 
     def test_dataframe_to_geodataframe(self):
         df = pd.DataFrame(
