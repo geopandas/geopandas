@@ -21,7 +21,9 @@ def make_grid(
         if not isinstance(size, tuple):
             raise TypeError("Grid sizes must be integers or tuples of integers")
         if spacing is not None:
-            ValueError("Either size or spacing options can be provided, not both.")
+            raise ValueError(
+                "Either size or spacing options can be provided, not both."
+            )
     elif size is None and spacing is None:
         size = (10, 10)
     else:  # size is None but spacing is known, so compute size in grid makers.
