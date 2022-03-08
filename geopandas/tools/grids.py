@@ -118,15 +118,8 @@ def _hex_points(size, bounds, spacing, flat=True):
 
     hex_radius = numpy.ceil(bounds_diagonal / 2 / spacing)
     hex_circle = _hexgrid_circle(hex_radius, flat=flat)
-    hex_circle /= hex_radius
-    hex_inradius = numpy.sqrt(3) / 2
-    theta = numpy.arctan(y_range / 2 / x_range / 2)
-    phi = (numpy.pi) / 2 - theta
-    chord_remainder = (y_range / 2) / numpy.tan(phi)
 
-    rescaling_factor = chord_remainder + (x_range / 2)
-
-    hex_circle *= rescaling_factor / hex_inradius
+    hex_circle *= spacing
     hex_circle += center
     mask = (
         (hex_circle[:, 0] >= x_min)
