@@ -180,13 +180,13 @@ def _grid_line(geom, size, spacing, random_offset=True, **unused_kws):
     if size is not None:
         if isinstance(size, tuple):
             # TODO: document this behavior: if you grid-sample geoms *and* they're
-            # mixed, anysize tuple will get truncated to its first element when
-            # sampling lines.The most clear alternative is to divide LineStrings
+            # mixed, any tuple size specification will get converted into a flat size
+            # when sampling lines. The most clear alternative is to divide LineStrings
             # into "horizontal" and "vertical" segments based on the angle the
             # segment makes with the bottom of the bounding box, and then sample
             # size[0] if "horizontal" and size[1] if "vertical." That's a lot
             # of assumption for an unclear benefit, so it's not done here.
-            size = size[0]
+            size = size[0] * size[1]
         spacing = pygeos.length(geom) / size
     else:
         size = spacing * pygeos.length(geom)
