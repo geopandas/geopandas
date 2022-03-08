@@ -69,8 +69,12 @@ def grid(
         if spacing is None:
             size = (10, 10)
         else:
-            ValueError("Either size or spacing options can be provided, not both.")
-    else:  # only process size if it's provided; otherwise, allow spacing to lead.
+            ValueError("Either size or spacing options must be provided.")
+    else:  # only process size if it's provided; otherwise, allow spacing to lead
+        if spacing is not None:
+            raise ValueError(
+                "Either size or spacing options can be provided, not both."
+            )
         if isinstance(size, int):
             size = (size, size)
         try:
