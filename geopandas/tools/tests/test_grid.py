@@ -1,117 +1,120 @@
-import geopandas, pygeos, numpy
-from matplotlib import pyplot as plt
+import geopandas
+import pytest
+from shapely import geometry
+from scipy.spatial import distance
+import numpy
 
 from geopandas.tools.grids import make_grid
-from geopandas.tools._random import grid as random_grid
-from geopandas.tools._random import uniform
-from shapely import geometry
-
-size = (10, 12)
-bounds = (1, 1, 10, 12)
 
 
-def show_grid(size=None, method="hex", shape=None, bounds=None, spacing=None, ax=None):
-    if bounds is None:
-        if shape is None:
-            bounds = (0, 0, 1, 1)
-        else:
-            try:
-                bounds = shape.bounds
-            except AttributeError:
-                shape = pygeos.to_shapely(shape)
-                bounds = shape.bounds
+nybb = geopandas.read_file(geopandas.datasets.get_path("nybb")).to_crs(epsg=4326)
+
+box = geometry.box(-1, -1, 1, 1)
+
+staten = nybb.iloc[0].geometry
+
+rect = geometry.box(0, 0, 0.5, 1)
+
+
+def find_spacing(input, return_distances=False):
+    x, y = input.x, input.y
+    first = numpy.array([[x[0], y[0]]])
+    rest = numpy.column_stack((x[1:], y[1:]))
+    distances = distance.cdist(first, rest)
+    if return_distances:
+        return distances.min(), distances
     else:
-        shape = pygeos.to_shapely(pygeos.box(*bounds))
-
-    ax = geopandas.tools.grids.make_grid(
-        shape, size=size, method=method, spacing=spacing
-    ).plot(color="k", ax=ax, markersize=4)
-    geopandas.GeoDataFrame(geometry=[shape]).plot(ax=ax, zorder=-1)
-    return ax
+        return distances.min()
 
 
-nybb = geopandas.read_file(geopandas.datasets.get_path("nybb"))
-bboxes = geopandas.GeoSeries(nybb.bounds.apply(lambda x: geometry.box(*x), axis=1))
-
-staten = nybb.geometry.iloc[0]
-
-f, ax = plt.subplots(3, 4, figsize=(24, 8))
-ax = ax.flatten()
-show_grid((10, 12), method="hex", bounds=(1, 1, 10, 2), ax=ax[0])
-show_grid((10, 12), method="hex", bounds=(1, 1, 10, 12), ax=ax[1])
-show_grid(spacing=0.5, method="hex", bounds=(1, 1, 10, 2), ax=ax[2])
-show_grid(spacing=0.5, method="hex", bounds=(1, 1, 10, 12), ax=ax[3])
-show_grid((10, 12), method="square", bounds=(1, 1, 10, 2), ax=ax[4])
-show_grid((10, 12), method="square", bounds=(1, 1, 10, 12), ax=ax[5])
-show_grid(spacing=0.5, method="square", bounds=(1, 1, 10, 2), ax=ax[6])
-show_grid(spacing=0.5, method="square", bounds=(1, 1, 10, 12), ax=ax[7])
-show_grid((10, 12), method="hex", shape=staten, ax=ax[8])
-show_grid((10, 12), method="square", shape=staten, ax=ax[9])
-show_grid(spacing=10000, method="hex", shape=staten, ax=ax[10])
-show_grid(spacing=10000, method="square", shape=staten, ax=ax[11])
-for i in range(12):
-    ax[i].set_title(
-        (
-            "hex 10x12 in longboi",
-            "hex 10x12 in rectangle",
-            "hex spaced in longboi",
-            "hex spaced in rectangle",
-            "square 10x12 in longboi",
-            "square 10x12 in rectangle",
-            "square spaced in longboi",
-            "square spaced in rectangle",
-            "hex 10x12 in staten",
-            "square 10x12 in staten",
-            "hex spaced in staten",
-            "square spaced in staten",
-        )[i]
-    )
-f.tight_layout()
-plt.show()
-plt.close()
-
-
-nybb = geopandas.read_file(geopandas.datasets.get_path("nybb"))
-shapes = (
-    pygeos.to_shapely(pygeos.box(0, 0, 1, 1)),
-    pygeos.to_shapely(pygeos.box(1, 1, 10, 12)),
-    nybb.geometry.iloc[0],
+@pytest.mark.parametrize(
+    ["geom", "size", "spacing", "method"],
+    [
+        (geom, size, spacing, method)
+        for geom in (None, box, rect, nybb, staten)
+        for size in ((5, 8), 10, None)
+        for spacing in (None, 0.05)
+        for method in ("hex", "square")
+        if (not ((size is not None) & (spacing is not None)))
+    ],
 )
-f, ax = plt.subplots(3, 5, sharex=False, sharey=False)
-n_reps = 5
-for j in range(3):
-    shape = shapes[j]
-    for k in range(2):
-        for i in range(n_reps):
-            geopandas.GeoSeries(random_grid(shape, method=["square", "hex"][k])).plot(
-                ax=ax[j, k], alpha=0.5, markersize=2
+def test_grid(
+    geom,
+    size,
+    spacing,
+    method,
+):
+    clipped = make_grid(
+        geom=geom,
+        size=size,
+        spacing=spacing,
+        method=method,
+        as_polygons=False,
+        clip=True,
+    )
+
+    implied_spacing = find_spacing(clipped)
+
+    assert isinstance(clipped, geopandas.GeoSeries)
+    if size is not None:
+        n_obs = clipped.shape[0]
+        if method == "square":
+            implied_size = size ** 2 if isinstance(size, int) else (size[0] * size[1])
+            assert n_obs <= implied_size, (
+                f"The clipped grid is not smaller than "
+                f"the implied size: {n_obs} !< {implied_size}"
             )
-    for i in range(n_reps):
-        geopandas.GeoSeries(uniform(shape, size=100)).plot(
-            ax=ax[j, k + 1], alpha=0.5, markersize=2
+
+    if spacing is not None:
+        numpy.testing.assert_allclose(
+            spacing,
+            implied_spacing,
+            err_msg=f"Spacing was provided to make_grid()"
+            f"but output spacing differs from input spacing:"
+            f"\noutput:{implied_spacing}\tinput:{spacing}",
         )
 
-    for i in range(2):
-        make_grid(shape, method=("square", "hex")[i]).plot(
-            ax=ax[j, k + 2 + i], markersize=2, color="k"
-        )
-    ax[j, 0].set_ylabel(("square", "rect", "staten")[j])
+    not_clipped = make_grid(
+        geom=geom,
+        size=size,
+        spacing=spacing,
+        method=method,
+        as_polygons=False,
+        clip=False,
+    )
 
-    for k in range(5):
-        geopandas.GeoSeries([shape]).plot(ax=ax[j, k], zorder=-1, alpha=0.5)
-        ax[j, k].set_title(
-            [
-                "random\nsquaregrid",
-                "random\nhexgrid",
-                "uniform",
-                "squaregrid",
-                "hexgrid",
-            ][k]
+    assert len(clipped) <= len(
+        not_clipped
+    ), "Clipped output is larger than the unclipped output."
+    implied_spacing_unclipped = find_spacing(not_clipped)
+    numpy.testing.assert_allclose(
+        implied_spacing_unclipped,
+        implied_spacing,
+        err_msg=f"Spacing differs between clipped and unclipped data:\n"
+        f"clipped: {implied_spacing}, unclipped:{implied_spacing_unclipped}",
+    )
+
+    if spacing is not None:
+        dmat = distance.squareform(
+            distance.pdist(numpy.column_stack((not_clipped.x, not_clipped.y)))
         )
-        ax[j, k].set_xticks([])
-        ax[j, k].set_xticklabels([])
-        ax[j, k].set_yticks([])
-        ax[j, k].set_yticklabels([])
-f.tight_layout()
-plt.savefig("/Users/lw17329/Downloads/sample_points.png", dpi=300, bbox_inches="tight")
-plt.show()
+        min_dists = numpy.ones_like(dmat) * implied_spacing_unclipped
+        n_at_minimum = numpy.isclose(min_dists, dmat).sum(axis=1)
+        if method == "hex":
+            assert n_at_minimum.max() == 6, (
+                f"hexagonal gridpoints "
+                f"should have 6 neighbors, maximum was {n_at_minimum.max()}"
+            )
+            assert n_at_minimum.min() == 3, (
+                f"hexagonal gridpoints "
+                f"should have 3 neighbors, minimum was {n_at_minimum.min()}"
+            )
+        else:
+            assert n_at_minimum.max() == 4, (
+                f"square gridpoints "
+                f"should have 4 neighbors, maximum was {n_at_minimum.max()}"
+            )
+            assert n_at_minimum.min() == 2, (
+                f"square gridpoints "
+                f"should have 2 neighbors, minimum was {n_at_minimum.min()}"
+            )
