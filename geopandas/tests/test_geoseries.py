@@ -583,3 +583,6 @@ class TestConstructor:
         # index_parts is ignored if ignore_index=True
         s = s.explode(index_parts=True, ignore_index=True)
         assert_index_equal(s.index, expected_index)
+
+    def test_sample(self):
+        raise NotImplementedError()

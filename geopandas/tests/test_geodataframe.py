@@ -1220,6 +1220,9 @@ class TestConstructor:
         with pytest.raises(ValueError):
             GeoDataFrame(df3, geometry="geom")
 
+    def test_sample(self):
+        raise NotImplementedError()
+
 
 def test_geodataframe_crs():
     gdf = GeoDataFrame(columns=["geometry"])
