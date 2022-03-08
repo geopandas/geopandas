@@ -92,7 +92,7 @@ def make_grid(
         else:
             pass
 
-    return result
+    return result.reset_index(drop=True)
 
 
 def _hex_mesh(size, bounds):
