@@ -183,6 +183,10 @@ def _explore(
             Fill color. Defaults to the value of the color option
         fillOpacity : float (default 0.5)
             Fill opacity.
+        style_function : callable
+            style attributes based on geojson properties
+            e.g.: ``lambda x: {"color":"red" if x["properties"]["gdp_md_est"]<10**6
+                                             else "blue"}``
 
         Plus all supported by :func:`folium.vector_layers.path_options`. See the
         documentation of :class:`folium.features.GeoJson` for details.
@@ -444,6 +448,17 @@ GON (((180.00000 -16.06713, 180.00000...
         style_kwds["fillOpacity"] = 0.5
     if "weight" not in style_kwds:
         style_kwds["weight"] = 2
+    if "style_function" in style_kwds:
+        style_kwds_function = style_kwds["style_function"]
+        if not callable(style_kwds_function):
+            raise ValueError("style_function has to be a callable")
+        style_kwds.pop("style_function")
+    else:
+
+        def _no_style(x):
+            return {}
+
+        style_kwds_function = _no_style
 
     # specify color
     if color is not None:
@@ -455,8 +470,11 @@ GON (((180.00000 -16.06713, 180.00000...
 
             def _style_color(x):
                 return {
-                    "fillColor": x["properties"][color],
-                    **style_kwds,
+                    **{
+                        "fillColor": x["properties"][color],
+                        **style_kwds,
+                    },
+                    **style_kwds_function(x),
                 }
 
             style_function = _style_color
@@ -477,9 +495,12 @@ GON (((180.00000 -16.06713, 180.00000...
 
                 def _style_column(x):
                     return {
-                        "fillColor": x["properties"]["__folium_color"],
-                        "color": x["properties"]["__folium_color"],
-                        **style_kwds,
+                        **{
+                            "fillColor": x["properties"]["__folium_color"],
+                            "color": x["properties"]["__folium_color"],
+                            **style_kwds,
+                        },
+                        **style_kwds_function(x),
                     }
 
                 style_function = _style_column
@@ -487,16 +508,19 @@ GON (((180.00000 -16.06713, 180.00000...
 
                 def _style_stroke(x):
                     return {
-                        "fillColor": x["properties"]["__folium_color"],
-                        "color": stroke_color,
-                        **style_kwds,
+                        **{
+                            "fillColor": x["properties"]["__folium_color"],
+                            "color": stroke_color,
+                            **style_kwds,
+                        },
+                        **style_kwds_function(x),
                     }
 
                 style_function = _style_stroke
     else:  # use folium default
 
         def _style_default(x):
-            return {**style_kwds}
+            return {**style_kwds, **style_kwds_function(x)}
 
         style_function = _style_default
 
