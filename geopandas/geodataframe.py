@@ -1442,11 +1442,11 @@ individually so that features may have different properties
             data=None, index=None, crs=crs_default, geometry=geometry_default, **kwargs
         ):
             df = pd.DataFrame(data, index=index, **kwargs)
-            if geometry in df.columns:
+            if (df.dtypes == "geometry").sum() > 0:
                 try:
                     df = GeoDataFrame(df)
                     df._geometry_column_name = geometry
-                    if crs is not None:
+                    if crs is not None and geometry in df.columns:
                         df.set_crs(crs, inplace=True)
                 except TypeError:
                     pass
