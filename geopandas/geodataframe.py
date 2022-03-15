@@ -1024,6 +1024,7 @@ individually so that features may have different properties
         GeoDataFrame.to_file : write GeoDataFrame to file
         """
 
+        # Accept engine keyword for compatibility with pandas.DataFrame.to_parquet
         # The only engine currently supported by GeoPandas is pyarrow, so no
         # other engine should be specified.
         engine = kwargs.pop("engine", "auto")
