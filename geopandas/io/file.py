@@ -102,7 +102,26 @@ def _is_zip(path):
     )
 
 
-def _read_file(filename, bbox=None, mask=None, rows=None, **kwargs):
+class ContextWrapper(GeoDataFrame):
+    def __init__(self, obj, chunksize):
+        self.__class__ = type(
+            obj.__class__.__name__,
+            (self.__class__, obj.__class__),
+            {},
+        )
+        self.__dict__ = obj.__dict__
+        self.obj = obj
+        self.chunksize = chunksize
+
+    def __enter__(self):
+        num_chunks = len(self.obj) // self.chunksize + 1
+        return np.array_split(self.obj, num_chunks)
+
+    def __exit__(self, *exc):
+        return True
+
+
+def _read_file(filename, bbox=None, mask=None, rows=None, chunksize=None, **kwargs):
     """
     Returns a GeoDataFrame from a file or URL.
 
@@ -127,6 +146,8 @@ def _read_file(filename, bbox=None, mask=None, rows=None, **kwargs):
     rows : int or slice, default None
         Load in specific rows by passing an integer (first `n` rows) or a
         slice() object.
+    chunksize : int, default None
+        Return an generator yielding GeoDataFrames of up to `n` rows at a time.
     **kwargs :
         Keyword args to be passed to the `open` or `BytesCollection` method
         in the fiona library when opening the file. For more information on
@@ -152,6 +173,12 @@ def _read_file(filename, bbox=None, mask=None, rows=None, **kwargs):
     Reading only geometries intersecting ``bbox``:
 
     >>> df = geopandas.read_file("nybb.shp", bbox=(0, 0, 10, 20))  # doctest: +SKIP
+
+    Reading by chunks of 10 rows:
+
+    >>> with geopandas.read_file("nybb.shp", chunksize=10) as reader: # doctest: +SKIP
+        for chunk in reader:
+         print(chunk)
 
     Returns
     -------
@@ -231,8 +258,6 @@ def _read_file(filename, bbox=None, mask=None, rows=None, **kwargs):
                 f_filt = features.filter(
                     rows.start, rows.stop, rows.step, bbox=bbox, mask=mask
                 )
-            elif any((bbox, mask)):
-                f_filt = features.filter(bbox=bbox, mask=mask)
             else:
                 f_filt = features
             # get list of columns
@@ -252,7 +277,10 @@ def _read_file(filename, bbox=None, mask=None, rows=None, **kwargs):
                 # fiona only supports up to ms precision, any microseconds are
                 # floating point rounding error
                 df[k] = pd.to_datetime(df[k]).dt.round(freq="ms")
-            return df
+            if chunksize is not None:
+                return ContextWrapper(df, chunksize)
+            else:
+                return df
 
 
 def read_file(*args, **kwargs):
