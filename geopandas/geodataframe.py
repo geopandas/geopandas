@@ -1031,7 +1031,7 @@ individually so that features may have different properties
         if engine not in ("auto", "pyarrow"):
             raise ValueError(
                 f"GeoPandas only supports using pyarrow as the engine for "
-                f"to_parquet: {engine!r}"
+                f"to_parquet: {engine!r} passed instead."
             )
 
         from geopandas.io.arrow import _to_parquet
