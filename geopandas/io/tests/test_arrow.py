@@ -184,7 +184,7 @@ def test_to_parquet_fails_on_invalid_engine():
             ValueError,
             match=(
                 "GeoPandas only supports using pyarrow as the engine for "
-                "to_parquet: 'fastparquet'"
+                "to_parquet: 'fastparquet' passed instead."
             ),
         ):
             df.to_parquet("", engine="fastparquet")
