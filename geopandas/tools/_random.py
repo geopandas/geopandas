@@ -82,6 +82,8 @@ def grid(
                 size = (size, 1)
         try:
             assert isinstance(size, (tuple, list))
+            assert int(size[0]) == size[0]
+            assert int(size[1]) == size[1]
             assert len(size) == 2
         except AssertionError:
             raise TypeError(
@@ -208,6 +210,7 @@ def _grid_line(geom, size, spacing, random_offset=True, **unused_kws):
             if len(locs) > 0:
                 # get points
                 points = pygeos.line_interpolate_point(seg, locs, normalized=False)
+
                 grid.extend(points)
 
                 # the remainder is the "overhang" onto the next segment,
