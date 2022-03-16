@@ -173,17 +173,21 @@ def test_validate_metadata_invalid(metadata, error):
         _validate_metadata(metadata)
 
 
-@mock.patch("geopandas.io.arrow._to_parquet")
-def test_to_parquet_fails_on_invalid_engine(mock_to_parquet):
+def test_to_parquet_fails_on_invalid_engine():
     df = GeoDataFrame(data=[[1, 2, 3]], columns=["a", "b", "a"], geometry=[Point(1, 1)])
-    with pytest.raises(
-        ValueError,
-        match=(
-            "GeoPandas only supports using pyarrow as the engine for "
-            "to_parquet: 'fastparquet'"
-        ),
-    ):
-        df.to_parquet("", engine="fastparquet")
+
+    # Patch geopandas.io.arrow._to_parquet to ensure that it doesn't try to run
+    # in the event that df.to_parquet doesn't raise a ValueError like it should.
+    with mock.patch("geopandas.io.arrow._to_parquet"):
+
+        with pytest.raises(
+            ValueError,
+            match=(
+                "GeoPandas only supports using pyarrow as the engine for "
+                "to_parquet: 'fastparquet'"
+            ),
+        ):
+            df.to_parquet("", engine="fastparquet")
 
 
 @mock.patch("geopandas.io.arrow._to_parquet")
