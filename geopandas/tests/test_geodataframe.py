@@ -18,7 +18,7 @@ from geopandas.array import GeometryArray, GeometryDtype, from_shapely
 from geopandas._compat import ignore_shapely2_warnings
 
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
-from geopandas.tests.util import mock, PACKAGE_DIR, validate_boro_df
+from geopandas.tests.util import PACKAGE_DIR, validate_boro_df
 from pandas.testing import assert_frame_equal, assert_index_equal, assert_series_equal
 import pytest
 
@@ -831,28 +831,6 @@ class TestDataFrame:
 
         expected_df = pd.DataFrame({"gs0": wkts0, "gs1": wkts1})
         assert_frame_equal(expected_df, gdf.to_wkt())
-
-    @mock.patch("geopandas.io.arrow._to_parquet")
-    def test_to_parquet_fails_on_invalid_engine(self, mock_to_parquet):
-        df = GeoDataFrame(
-            data=[[1, 2, 3]], columns=["a", "b", "a"], geometry=[Point(1, 1)]
-        )
-        with pytest.raises(
-            ValueError,
-            match=(
-                "GeoPandas only supports using pyarrow as the engine for "
-                "to_parquet: 'fastparquet'"
-            ),
-        ):
-            df.to_parquet("", engine="fastparquet")
-
-    @mock.patch("geopandas.io.arrow._to_parquet")
-    def test_to_parquet_does_not_pass_engine_along(self, mock_to_parquet):
-        df = GeoDataFrame(
-            data=[[1, 2, 3]], columns=["a", "b", "a"], geometry=[Point(1, 1)]
-        )
-        df.to_parquet("", engine="pyarrow")
-        mock_to_parquet.assert_called_with(df, "", compression="snappy", index=None)
 
     @pytest.mark.parametrize("how", ["left", "inner", "right"])
     @pytest.mark.parametrize("predicate", ["intersects", "within", "contains"])
