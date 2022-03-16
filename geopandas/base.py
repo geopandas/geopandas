@@ -3477,9 +3477,7 @@ GeometryCollection
                     sample_function, size=size, **sample_kwargs
                 )
                 result = GeoSeries(
-                    geometry=raw_points.apply(
-                        lambda x: points_from_xy(*x.T).unary_union()
-                    ),
+                    raw_points.apply(lambda x: points_from_xy(*x.T).unary_union()),
                 )
             except ImportError as e:
                 raise e
