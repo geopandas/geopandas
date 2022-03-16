@@ -38,7 +38,7 @@ def uniform(geom, size=1, batch_size=None):
     try:
         assert int(size) == size
         size = int(size)
-    except AssertionError:
+    except (AssertionError, TypeError):
         raise TypeError(
             "Size must be an integer denoting the number of samples to draw."
         )
@@ -76,7 +76,10 @@ def grid(
                 "Either size or spacing options can be provided, not both."
             )
         if isinstance(size, int):
-            size = (size, size)
+            if geom.type in ("Polygon", "MultiPolygon"):
+                size = (size, size)
+            else:
+                size = (size, 1)
         try:
             assert isinstance(size, (tuple, list))
             assert len(size) == 2
