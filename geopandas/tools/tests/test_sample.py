@@ -1,11 +1,9 @@
 import geopandas
-
-import pytest
-from shapely import geometry
-from scipy.spatial import distance
 import numpy
+import pytest
+
+from scipy.spatial import distance
 from geopandas.tools._random import uniform, grid
-import warnings
 
 multipolygons = geopandas.read_file(geopandas.datasets.get_path("nybb")).geometry
 polygons = multipolygons.explode().geometry
@@ -74,9 +72,10 @@ def test_grid(data, size, spacing, method, seed):
     sample = grid(data, size=size, spacing=spacing, method=method)
     if spacing is not None:
         implied_spacing = find_spacing(sample)
-        assert (
-            implied_spacing <= spacing
-        ), f"spacing is wrong for size={size}, spacing={spacing}, method={method} on {data.type}"
+        assert implied_spacing <= spacing, (
+            f"spacing is wrong for size={size}, "
+            f"spacing={spacing}, method={method} on {data.type}"
+        )
     else:
         if isinstance(size, tuple):
             n_specified = size[0] * size[1]
@@ -90,7 +89,8 @@ def test_grid(data, size, spacing, method, seed):
             f"Sampled {len(sample.geoms)} points instead of "
             f"{n_specified} for size={size}, spacing={spacing}, "
             f"method={method} on {data.type}"
-        )  # This is an artefact of the way lines are sampled; check numpy.arange docstring for the details.
+        )  # This is an artefact of the way lines are sampled;
+        # check numpy.arange docstring for the details.
 
     points_in_grid = geopandas.GeoSeries(sample).explode()
     intersects = points_in_grid.sindex.query(data.buffer(1e-7), predicate="intersects")
