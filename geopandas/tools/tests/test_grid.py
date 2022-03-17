@@ -40,7 +40,7 @@ def find_spacing(input, return_distances=False):
 )
 @pytest.mark.skipif(
     not (compat.HAS_PYGEOS | compat.HAS_RTREE),
-    msg="Sampling requires a spatial index",
+    reason="Sampling requires a spatial index",
 )
 def test_grid(
     geom,

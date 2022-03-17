@@ -965,7 +965,7 @@ class TestDataFrame:
 
     @pytest.mark.skipif(
         not (compat.HAS_PYGEOS | compat.HAS_RTREE),
-        msg="Sampling requires a spatial index",
+        reason="Sampling requires a spatial index",
     )
     def test_sample(self):
         for frame in (self.df, self.df2):
