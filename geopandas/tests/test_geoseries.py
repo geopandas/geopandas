@@ -381,7 +381,10 @@ class TestSeries:
         expected = GeoSeries([Point(0, 2, -1), Point(3, 5, 4)])
         assert_geoseries_equal(expected, GeoSeries.from_xy(x, y, z))
 
-    @pytest.mark.skipif
+    @pytest.mark.skipif(
+        not (compat.HAS_PYGEOS | compat.HAS_RTREE),
+        msg="Sampling requires a spatial index",
+    )
     def test_sample(self):
         for frame in (
             self.g1,

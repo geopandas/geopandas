@@ -3405,8 +3405,16 @@ GeometryCollection
         """
         from .geoseries import GeoSeries
         from .array import points_from_xy
-        from ._compat import import_optional_dependency
+        from ._compat import import_optional_dependency, HAS_PYGEOS, HAS_RTREE
         from .tools._random import uniform, grid
+
+        HAS_SINDEX = HAS_PYGEOS | HAS_RTREE
+
+        if not HAS_SINDEX:
+            raise ImportError(
+                "Either the pygeos or rtree package is required to "
+                " sample points from within geometries."
+            )
 
         user_wants_grid = (method == "grid") or (tile is not None)
 

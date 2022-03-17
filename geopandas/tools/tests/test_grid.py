@@ -5,7 +5,7 @@ from scipy.spatial import distance
 import numpy
 
 from geopandas.tools.grids import make_grid
-
+from geopandas import _compat as compat
 
 nybb = geopandas.read_file(geopandas.datasets.get_path("nybb")).to_crs(epsg=4326)
 
@@ -37,6 +37,10 @@ def find_spacing(input, return_distances=False):
         for tile in ("hex", "square")
         if (not ((size is not None) & (spacing is not None)))
     ],
+)
+@pytest.mark.skipif(
+    not (compat.HAS_PYGEOS | compat.HAS_RTREE),
+    msg="Sampling requires a spatial index",
 )
 def test_grid(
     geom,

@@ -963,6 +963,10 @@ class TestDataFrame:
         result = df1.overlay(df2, how=how)
         assert_geodataframe_equal(result, expected)
 
+    @pytest.mark.skipif(
+        not (compat.HAS_PYGEOS | compat.HAS_RTREE),
+        msg="Sampling requires a spatial index",
+    )
     def test_sample(self):
         for frame in (self.df, self.df2):
             output = frame.sample_points(10)
