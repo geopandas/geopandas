@@ -381,17 +381,20 @@ class TestSeries:
         expected = GeoSeries([Point(0, 2, -1), Point(3, 5, 4)])
         assert_geoseries_equal(expected, GeoSeries.from_xy(x, y, z))
 
+    @pytest.mark.skipif
     def test_sample(self):
         for frame in (
             self.g1,
             self.na,
             self.a1,
-            self.g5,
             self.landmarks,
-            pd.concat((self.g1, self.g5, self.landmarks)),
+            pd.concat((self.g1, self.landmarks)),
         ):
             output = frame.sample_points(10)
             assert_index_equal(frame.index, output.index)
+        if compat.HAS_PYGEOS:
+            output = self.g5.sample_points(10)
+            assert_index_equal(self.g5.index, output.index)
 
 
 @pytest.mark.filterwarnings("ignore::UserWarning")

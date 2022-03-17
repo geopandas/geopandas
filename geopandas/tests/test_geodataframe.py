@@ -966,8 +966,7 @@ class TestDataFrame:
     def test_sample(self):
         for frame in (
             self.df,
-            self.df2,
-            self.df3,
+            self.df2
         ):
             output = frame.sample_points(10)
             assert_index_equal(frame.index, output.index)
