@@ -381,6 +381,18 @@ class TestSeries:
         expected = GeoSeries([Point(0, 2, -1), Point(3, 5, 4)])
         assert_geoseries_equal(expected, GeoSeries.from_xy(x, y, z))
 
+    def test_sample(self):
+        for frame in (
+            self.g1,
+            self.na,
+            self.a1,
+            self.g5,
+            self.landmarks,
+            pd.concat((self.g1, self.g5, self.landmarks)),
+        ):
+            output = frame.sample_points(10)
+            assert_index_equal(frame.index, output.index)
+
 
 @pytest.mark.filterwarnings("ignore::UserWarning")
 def test_missing_values():
@@ -583,6 +595,3 @@ class TestConstructor:
         # index_parts is ignored if ignore_index=True
         s = s.explode(index_parts=True, ignore_index=True)
         assert_index_equal(s.index, expected_index)
-
-    def test_sample(self):
-        raise NotImplementedError()

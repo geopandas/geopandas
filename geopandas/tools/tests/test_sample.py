@@ -56,25 +56,25 @@ def test_uniform(data, size, batch_size):
 
 
 @pytest.mark.parametrize(
-    ["data", "size", "spacing", "method", "seed"],
+    ["data", "size", "spacing", "tile", "seed"],
     [
-        (data, size, spacing, method, seed)
+        (data, size, spacing, tile, seed)
         for data in (multipolygon, polygon, multilinestring, linestring)
         for size in (None, 10, (5, 3))
         for spacing in (None, 500)
-        for method in ("hex", "square")
+        for tile in ("hex", "square")
         for seed in (112112, 123456)
         if ((not ((spacing is not None) and (size is not None))))
     ],
 )
-def test_grid(data, size, spacing, method, seed):
+def test_grid(data, size, spacing, tile, seed):
     numpy.random.seed(seed)
-    sample = grid(data, size=size, spacing=spacing, method=method)
+    sample = grid(data, size=size, spacing=spacing, tile=tile)
     if spacing is not None:
         implied_spacing = find_spacing(sample)
         assert implied_spacing <= spacing, (
             f"spacing is wrong for size={size}, "
-            f"spacing={spacing}, method={method} on {data.type}"
+            f"spacing={spacing}, tile={tile} on {data.type}"
         )
     else:
         if isinstance(size, tuple):
@@ -88,7 +88,7 @@ def test_grid(data, size, spacing, method, seed):
         assert (len(sample.geoms) - n_specified) <= 1, (
             f"Sampled {len(sample.geoms)} points instead of "
             f"{n_specified} for size={size}, spacing={spacing}, "
-            f"method={method} on {data.type}"
+            f"tile={tile} on {data.type}"
         )  # This is an artefact of the way lines are sampled;
         # check numpy.arange docstring for the details.
 

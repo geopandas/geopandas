@@ -963,6 +963,15 @@ class TestDataFrame:
         result = df1.overlay(df2, how=how)
         assert_geodataframe_equal(result, expected)
 
+    def test_sample(self):
+        for frame in (
+            self.df,
+            self.df2,
+            self.df3,
+        ):
+            output = frame.sample_points(10)
+            assert_index_equal(frame.index, output.index)
+
 
 def check_geodataframe(df, geometry_column="geometry"):
     assert isinstance(df, GeoDataFrame)
@@ -1219,9 +1228,6 @@ class TestConstructor:
         df3 = df.rename(columns={"geometry": "geom"})
         with pytest.raises(ValueError):
             GeoDataFrame(df3, geometry="geom")
-
-    def test_sample(self):
-        raise NotImplementedError()
 
 
 def test_geodataframe_crs():

@@ -28,13 +28,13 @@ def find_spacing(input, return_distances=False):
 
 
 @pytest.mark.parametrize(
-    ["geom", "size", "spacing", "method"],
+    ["geom", "size", "spacing", "tile"],
     [
-        (geom, size, spacing, method)
+        (geom, size, spacing, tile)
         for geom in (None, box, rect, nybb, staten)
         for size in ((5, 8), 10, None)
         for spacing in (None, 0.05)
-        for method in ("hex", "square")
+        for tile in ("hex", "square")
         if (not ((size is not None) & (spacing is not None)))
     ],
 )
@@ -42,13 +42,13 @@ def test_grid(
     geom,
     size,
     spacing,
-    method,
+    tile,
 ):
     clipped = make_grid(
         geom=geom,
         size=size,
         spacing=spacing,
-        method=method,
+        tile=tile,
         as_polygons=False,
         clip=True,
     )
@@ -58,7 +58,7 @@ def test_grid(
     assert isinstance(clipped, geopandas.GeoSeries)
     if size is not None:
         n_obs = clipped.shape[0]
-        if method == "square":
+        if tile == "square":
             implied_size = size ** 2 if isinstance(size, int) else (size[0] * size[1])
             assert n_obs <= implied_size, (
                 f"The clipped grid is not smaller than "
@@ -78,7 +78,7 @@ def test_grid(
         geom=geom,
         size=size,
         spacing=spacing,
-        method=method,
+        tile=tile,
         as_polygons=False,
         clip=False,
     )
@@ -100,7 +100,7 @@ def test_grid(
         )
         min_dists = numpy.ones_like(dmat) * implied_spacing_unclipped
         n_at_minimum = numpy.isclose(min_dists, dmat).sum(axis=1)
-        if method == "hex":
+        if tile == "hex":
             assert n_at_minimum.max() == 6, (
                 f"hexagonal gridpoints "
                 f"should have 6 neighbors, maximum was {n_at_minimum.max()}"
