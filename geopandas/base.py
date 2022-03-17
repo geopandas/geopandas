@@ -3371,7 +3371,7 @@ GeometryCollection
         return self._data.equals(other._data)
 
     def sample_points(
-        self, size=10, spacing=None, method="random", tile=None, **sample_kwargs
+        self, size=None, spacing=None, method="random", tile=None, **sample_kwargs
     ):
         """
         Sample points from each geometry.
@@ -3412,7 +3412,7 @@ GeometryCollection
 
         if size is None:
             if spacing is None:
-                size = (10, 10)
+                size = 10
             else:
                 ValueError("Either size or spacing options can be provided, not both.")
         else:  # only process size if it's provided; otherwise, allow spacing to lead.
@@ -3437,7 +3437,7 @@ GeometryCollection
                 result = self.geometry.apply(uniform, size=size, **sample_kwargs)
             elif tile in ("hex", "square"):
                 result = self.geometry.apply(
-                    grid, size=size, method=tile, **sample_kwargs
+                    grid, size=size, spacing=spacing, tile=tile, **sample_kwargs
                 )
             else:
                 raise ValueError(
@@ -3456,7 +3456,7 @@ GeometryCollection
             sample_kwargs.update({"random_offset": False})
             sample_kwargs.update({"random_rotation": False})
             point_sets = self.geometry.apply(
-                grid, size=size, method=tile, **sample_kwargs
+                grid, size=size, spacing=spacing, tile=tile, **sample_kwargs
             )
 
             result = point_sets.T.apply(lambda x: GeoSeries(x).dropna().unary_union)
