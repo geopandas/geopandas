@@ -964,10 +964,7 @@ class TestDataFrame:
         assert_geodataframe_equal(result, expected)
 
     def test_sample(self):
-        for frame in (
-            self.df,
-            self.df2
-        ):
+        for frame in (self.df, self.df2):
             output = frame.sample_points(10)
             assert_index_equal(frame.index, output.index)
 
