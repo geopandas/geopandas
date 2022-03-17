@@ -3488,7 +3488,7 @@ GeometryCollection
                     f" available random sampling methods."
                 )
 
-        return GeoSeries(result, name="sampled_points", crs=self.crs)
+        return GeoSeries(result, name="sampled_points", crs=self.crs, index=self.index)
 
 
 class _CoordinateIndexer(object):
