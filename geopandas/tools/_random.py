@@ -9,30 +9,41 @@ from shapely import geometry
 
 def uniform(geom, size=1, batch_size=None):
     """
-    # TODO: Write full docstring
 
     Sample uniformly at random from a geometry.
 
-    For points, return a null geometry.
-    For lines, sample uniformly along the length of the linestring.
-    For polygons, sample uniformly within the area of the linestring.
+    For polygons, this samples uniformly within the area of the polygon. For lines,
+    this samples uniformly along the length of the linestring. For multi-part
+    geometries, the weights of each part are selected according to their relevant
+    attribute (area for Polygons, length for LineStrings), and then points are
+    sampled from each part uniformly.
+
+    Any other geometry type (e.g. Point, GeometryCollection) are ignored, and an
+    empty MultiPoint geometry is returned.
 
     Parameters
     ----------
-    geom : a shapely geometry
-    size : an integer denoting how many points to sample, or a tuple
+    geom : any shapely.geometry.BaseGeometry type
+        the shape that describes the area in which to sample.
+
+    size : integer, tuple
+        an integer denoting how many points to sample, or a tuple
         denoting how many points to sample, and how many tines to conduct sampling.
-    batch_size: integer denoting how large each round of simulation and checking
+    batch_size: integer
+        a number denoting how large each round of simulation and checking
         should be. Should be approximately on the order of the number of points
         requested to sample. Some complex shapes may be faster to sample if the
         batch size increases. Only useful for (Multi)Polygon geometries.
 
     Returns
     -------
+    shapely.MultiPoint geometry containing the sampled points
 
     Examples
     --------
-
+    >>> from shapely.geometry import box
+    >>> square = box(0,0,1,1)
+    >>> uniform(square, size=100, batch_size=2)
     """
 
     try:
@@ -42,14 +53,16 @@ def uniform(geom, size=1, batch_size=None):
         raise TypeError(
             "Size must be an integer denoting the number of samples to draw."
         )
+    if hasattr(geom, "type"):
+        if geom.type in ("Polygon", "MultiPolygon"):
+            multipoints = _uniform_polygon(geom, size=size, batch_size=batch_size)
 
-    if geom.type in ("Polygon", "MultiPolygon"):
-        multipoints = _uniform_polygon(geom, size=size, batch_size=batch_size)
-
-    elif geom.type in ("LineString", "MultiLineString"):
-        multipoints = _uniform_line(geom, size=size)
+        elif geom.type in ("LineString", "MultiLineString"):
+            multipoints = _uniform_line(geom, size=size)
+        else:
+            # TODO: Should we recurse through geometrycollections?
+            multipoints = geometry.MultiPoint()
     else:
-        # TODO: Should we recurse through geometrycollections?
         multipoints = geometry.MultiPoint()
 
     return multipoints
@@ -59,10 +72,40 @@ def grid(
     geom=None,
     size=None,
     spacing=None,
-    method="square",
+    tile="square",
     random_offset=True,
     random_rotation=True,
 ):
+    """
+    Sample a grid from within a given shape, possibly with a random
+    rotation and offset.
+
+    Parameters
+    ----------
+    geom : any shapely.geometry.BaseGeometry type
+        the shape that describes the area in which to sample. Can sample
+        within polygons, along lines, or within/along their multi-part forms.
+        Any other geometry type will be ignored, and a MultiPoint returned.
+    size : integer, tuple
+        an integer denoting how many points to sample, or a tuple
+        denoting how many points to sample, and how many tines to conduct sampling.
+    batch_size: integer
+        a number denoting how large each round of simulation and checking
+        should be. Should be approximately on the order of the number of points
+        requested to sample. Some complex shapes may be faster to sample if the
+        batch size increases. Only useful for (Multi)Polygon geometries.
+
+    Returns
+    -------
+    shapely.MultiPoint geometry containing the sampled points
+
+    Examples
+    --------
+    >>> from shapely.geometry import box
+    >>> square = box(0,0,1,1)
+    >>> grid(square, size=(8,8), tile='hex')
+    """
+
     if geom is None:
         geom = geometry.box(0, 0, 1, 1)
     if size is None:
@@ -90,9 +133,9 @@ def grid(
                 "Size must be an integer denoting the size of one side of the grid, "
                 " or a tuple of two integers denoting the grid dimensions."
             )
-    if method not in ("square", "hex"):
+    if tile not in ("square", "hex"):
         raise ValueError(
-            f'The method option must be either "square" or "hex". Recieved {method}.'
+            f'The tile option must be either "square" or "hex". Recieved {tile}.'
         )
 
     if geom.type in ("Polygon", "MultiPolygon"):
@@ -100,14 +143,14 @@ def grid(
             geom,
             size=size,
             spacing=spacing,
-            method=method,
+            tile=tile,
             random_offset=random_offset,
             random_rotation=random_rotation,
         )
 
     elif geom.type in ("LineString", "MultiLineString"):
         multipoints = _grid_line(
-            geom, size=size, spacing=spacing, method=method, random_offset=random_offset
+            geom, size=size, spacing=spacing, tile=tile, random_offset=random_offset
         )
     else:
         # TODO: Should we recurse through geometrycollections?
@@ -120,11 +163,14 @@ def _grid_polygon(
     geom,
     size=None,
     spacing=None,
-    method="square",
+    tile="square",
     random_offset=True,
     random_rotation=True,
     **unused_kws,
 ):
+    """
+    Sample points from within a polygon according to a given spacing.
+    """
     pygeos = import_optional_dependency(
         "pygeos", "pygeos is required to randomly sample spatial grids from polygons"
     )
@@ -143,16 +189,16 @@ def _grid_polygon(
     mbc_bounds = pygeos.bounds(pg_mbc)
     pg_radius = (mbc_bounds[2] - mbc_bounds[0]) / 2
     grid_radius = numpy.ceil(pg_radius / spacing).astype(int)
-    if method == "square":
+    if tile == "square":
         raw_grid = _squaregrid_circle(grid_radius)
-    elif method == "hex":
+    elif tile == "hex":
         raw_grid = _hexgrid_circle(grid_radius)
     else:
-        ValueError(f'Method must be either "square" or "hex". Recieved {method}.')
+        ValueError(f'tile must be either "square" or "hex". Recieved {tile}.')
 
     raw_grid *= pg_radius / grid_radius
 
-    if method == "square":
+    if tile == "square":
         displacement = (
             numpy.random.uniform(-spacing / 2, spacing / 2, size=(1, 2)) * random_offset
         )
@@ -176,6 +222,9 @@ def _grid_polygon(
 
 
 def _grid_line(geom, size, spacing, random_offset=True, **unused_kws):
+    """
+    Sample points from along a line according to a given spacing.
+    """
     pygeos = import_optional_dependency(
         "pygeos", "pygeos is required to randomly sample along LineString geometries"
     )
@@ -263,6 +312,9 @@ def _split_line(geom):
 
 
 def _uniform_polygon(geom, size=1, batch_size=None, **unused_kws):
+    """
+    Sample uniformly from within a polygon using batched sampling.
+    """
     n_points = size
     if batch_size is None:
         batch_size = n_points

@@ -9,10 +9,47 @@ def make_grid(
     geom=None,
     size=None,
     spacing=None,
-    method="square",
+    tile="square",
     as_polygons=False,
     clip=True,
 ):
+    """
+
+    Sample uniformly at random from a geometry.
+
+    For polygons, this samples uniformly within the area of the polygon. For lines,
+    this samples uniformly along the length of the linestring. For multi-part
+    geometries, the weights of each part are selected according to their relevant
+    attribute (area for Polygons, length for LineStrings), and then points are
+    sampled from each part uniformly.
+
+    Any other geometry type (e.g. Point, GeometryCollection) are ignored, and an
+    empty MultiPoint geometry is returned.
+
+    Parameters
+    ----------
+    geom : any shapely.geometry.BaseGeometry type
+        the shape that describes the area in which to sample.
+
+    size : integer, tuple
+        an integer denoting how many points to sample, or a tuple
+        denoting how many points to sample, and how many tines to conduct sampling.
+    batch_size: integer
+        a number denoting how large each round of simulation and checking
+        should be. Should be approximately on the order of the number of points
+        requested to sample. Some complex shapes may be faster to sample if the
+        batch size increases. Only useful for (Multi)Polygon geometries.
+
+    Returns
+    -------
+    shapely.MultiPoint geometry containing the sampled points
+
+    Examples
+    --------
+    >>> from shapely.geometry import box
+    >>> square = box(0,0,1,1)
+    >>> uniform(square, size=100, batch_size=2)
+    """
     if size is not None:
         if isinstance(size, float):
             raise TypeError("Grid sizes must be integers or tuples of integers")
@@ -37,14 +74,14 @@ def make_grid(
         bounds = geom.total_bounds
     else:
         bounds = geom.bounds
-    if method == "square":
+    if tile == "square":
         if as_polygons:
             grid = _square_mesh(size=size, bounds=bounds, spacing=spacing)
         else:
             grid = _square_points(size=size, bounds=bounds, spacing=spacing)
             result = GeoSeries(points_from_xy(*grid.T, crs=getattr(geom, "crs", None)))
 
-    elif method == "hex":
+    elif tile == "hex":
         if as_polygons:
             grid = _hex_mesh(size=size, bounds=bounds)
         else:
@@ -56,8 +93,8 @@ def make_grid(
             result = GeoSeries(points_from_xy(*grid.T, crs=getattr(geom, "crs", None)))
     else:
         raise NotImplementedError(
-            f'Cannot build a grid using method="{method}". '
-            f'Only "hex" and "square" grid methods are supported.'
+            f'Cannot build a grid using tile="{tile}". '
+            f'Only "hex" and "square" grid tilings are supported.'
         )
 
     # clip if not forbidden.
