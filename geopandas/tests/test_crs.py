@@ -1,5 +1,6 @@
 from packaging.version import Version
 import os
+from typing import Optional
 
 import random
 
@@ -21,7 +22,7 @@ import pytest
 PYPROJ_LT_231 = Version(pyproj.__version__) < Version("2.3.1")
 
 
-def _create_df(x, y=None, crs=None):
+def _create_df(x, y=None, crs: Optional[pyproj.CRS] = None):
     y = y or x
     x = np.asarray(x)
     y = np.asarray(y)
