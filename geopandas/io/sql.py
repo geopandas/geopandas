@@ -1,6 +1,8 @@
 import warnings
 from contextlib import contextmanager
+from typing import Union
 
+import pyproj
 import pandas as pd
 
 import shapely.wkb
@@ -39,7 +41,9 @@ def _get_conn(conn_or_engine):
         raise ValueError(f"Unknown Connectable: {conn_or_engine}")
 
 
-def _df_to_geodf(df, geom_col="geom", crs=None):
+def _df_to_geodf(
+    df: pd.DataFrame, geom_col: str = "geom", crs: pyproj.CRS = None
+) -> GeoDataFrame:
     """
     Transforms a pandas DataFrame into a GeoDataFrame.
     The column 'geom_col' must be a geometry column in WKB representation.
@@ -94,16 +98,16 @@ def _df_to_geodf(df, geom_col="geom", crs=None):
 
 
 def _read_postgis(
-    sql,
+    sql: str,
     con,
-    geom_col="geom",
-    crs=None,
-    index_col=None,
-    coerce_float=True,
-    parse_dates=None,
-    params=None,
-    chunksize=None,
-):
+    geom_col: str = "geom",
+    crs: Union[dict, str] = None,
+    index_col: Union[str, list] = None,
+    coerce_float: bool = True,
+    parse_dates: Union[list, dict] = None,
+    params: Union[list, tuple, dict] = None,
+    chunksize: int = None,
+) -> GeoDataFrame:
     """
     Returns a GeoDataFrame corresponding to the result of the query
     string, which must contain a geometry column in WKB representation.
@@ -113,7 +117,7 @@ def _read_postgis(
     sql : string
         SQL query to execute in selecting entries from database, or name
         of the table to read from the database.
-    con : sqlalchemy.engine.Connection or sqlalchemy.engine.Engine
+    con : sqlalchemy.engine.base.Connection or sqlalchemy.engine.base.Engine
         Active connection to the database to query.
     geom_col : string, default 'geom'
         column name to convert to shapely geometries
@@ -176,7 +180,7 @@ def _read_postgis(
         return (_df_to_geodf(df, geom_col=geom_col, crs=crs) for df in df_generator)
 
 
-def read_postgis(*args, **kwargs):
+def read_postgis(*args, **kwargs) -> GeoDataFrame:
     import warnings
 
     warnings.warn(
@@ -189,7 +193,7 @@ def read_postgis(*args, **kwargs):
     return _read_postgis(*args, **kwargs)
 
 
-def _get_geometry_type(gdf):
+def _get_geometry_type(gdf: GeoDataFrame) -> Union[list, tuple]:
     """
     Get basic geometry type of a GeoDataFrame. See more info from:
     https://geoalchemy-2.readthedocs.io/en/latest/types.html#geoalchemy2.types._GISType
@@ -235,7 +239,7 @@ def _get_geometry_type(gdf):
     return target_geom_type, has_curve
 
 
-def _get_srid_from_crs(gdf):
+def _get_srid_from_crs(gdf: GeoDataFrame) -> int:
     """
     Get EPSG code from CRS if available. If not, return -1.
     """
@@ -258,7 +262,9 @@ def _get_srid_from_crs(gdf):
     return srid
 
 
-def _convert_linearring_to_linestring(gdf, geom_name):
+def _convert_linearring_to_linestring(
+    gdf: GeoDataFrame, geom_name: str
+) -> GeoDataFrame:
     from shapely.geometry import LineString
 
     # Todo: Use Pygeos function once it's implemented:
@@ -271,8 +277,8 @@ def _convert_linearring_to_linestring(gdf, geom_name):
     return gdf
 
 
-def _convert_to_ewkb(gdf, geom_name, srid):
-    """Convert geometries to ewkb. """
+def _convert_to_ewkb(gdf: GeoDataFrame, geom_name: str, srid: int) -> pd.DataFrame:
+    """Convert geometries to ewkb."""
     if compat.USE_PYGEOS:
         from pygeos import set_srid, to_wkb
 
@@ -293,7 +299,7 @@ def _convert_to_ewkb(gdf, geom_name, srid):
     return df
 
 
-def _psql_insert_copy(tbl, conn, keys, data_iter):
+def _psql_insert_copy(tbl, conn, keys, data_iter) -> None:
     import io
     import csv
 
@@ -313,16 +319,16 @@ def _psql_insert_copy(tbl, conn, keys, data_iter):
 
 
 def _write_postgis(
-    gdf,
-    name,
+    gdf: GeoDataFrame,
+    name: str,
     con,
-    schema=None,
-    if_exists="fail",
-    index=False,
-    index_label=None,
-    chunksize=None,
-    dtype=None,
-):
+    schema: str = None,
+    if_exists: str = "fail",
+    index: bool = False,
+    index_label: Union[str, list, tuple] = None,
+    chunksize: int = None,
+    dtype: dict = None,
+) -> None:
     """
     Upload GeoDataFrame into PostGIS database.
 
