@@ -1808,7 +1808,7 @@ individually so that features may have different properties
             - append: Insert new values to the existing table.
         schema : string, optional
             Specify the schema. If None, use default schema: 'public'.
-        index : bool, default True
+        index : bool, default False
             Write DataFrame index as a column.
             Uses *index_label* as the column name in the table.
         index_label : string or sequence, default None
