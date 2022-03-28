@@ -695,43 +695,61 @@ class TestIO:
         JOIN information_schema.columns AS c ON c.table_schema = tc.constraint_schema
         AND tc.table_name = c.table_name AND ccu.column_name = c.column_name
         WHERE constraint_type = 'PRIMARY KEY' and tc.table_name = '{table}';
-        """.format(table)
+        """.format(
+            table
+        )
         engine = engine_postgis
-        #write table without primery key, table as read-only for QGIS
+        # write table without primery key, table as read-only for QGIS
         write_postgis(df_nybb, con=engine, name=table, if_exists="replace")
         ret = pd.read_sql_query(sql, engine)
         index_class = geopandas.io.sql._pdIndex(df_nybb, None, None)
-        assert(index_class.index_name() is None)
-        assert(len(ret)==0)
-        #write table with primary key, with indefined column name
+        assert index_class.index_name() is None
+        assert len(ret)==0
+        # write table with primary key, with indefined column name
         write_postgis(df_nybb, con=engine, name=table, if_exists="replace", index=True)
         ret = pd.read_sql_query(sql, engine)
         index_class = geopandas.io.sql._pdIndex(df_nybb, True)
-        assert(len(ret)==1)
-        assert(ret.iloc[0]['column_name'] == index_class.index_name())
-        #if index==True and there is a index_label,
-        #will made a new column with index_label as a primary key
+        assert len(ret)==1
+        assert ret.iloc[0]['column_name'] == index_class.index_name()
+        # if index==True and there is a index_label,
+        # will made a new column with index_label as a primary key
         index_label = "id"
-        write_postgis(df_nybb, con=engine, name=table, if_exists="replace", index=True, index_label=index_label)
+        write_postgis(
+            df_nybb,
+            con=engine,
+            name=table,
+            if_exists="replace",
+            index=True,
+            index_label=index_label
+        )
         index_class = geopandas.io.sql._pdIndex(df_nybb, True, index_label)
-        assert(index_class.index_name() == index_label)
         ret = pd.read_sql_query(sql, engine)
-        assert(len(ret)==1)
-        assert(ret.iloc[0]['column_name'] == index_label)
-        #if index is string, will made a new primary column with that name
+        assert index_class.index_name() == index_label
+        assert len(ret)==1
+        assert ret.iloc[0]['column_name'] == index_label
+        # if index is string, will made a new primary column with that name
         index_label = "id"
-        write_postgis(df_nybb, con=engine, name=table, if_exists="replace", index=index_label)
+        write_postgis(
+            df_nybb, con=engine, name=table, if_exists="replace", index=index_label
+        )
         ret = pd.read_sql_query(sql, engine)
         index_class = geopandas.io.sql._pdIndex(df_nybb, index_label)
-        assert(index_class.index_name() == index_label)
-        assert(len(ret)==1)
-        assert(ret.iloc[0]['column_name'] == index_label)
-        #If index==False will not create anew column,
-        #but will use the column specified in index_label
+        assert index_class.index_name() == index_label
+        assert len(ret)==1
+        assert ret.iloc[0]['column_name'] == index_label
+        # If index==False will not create anew column,
+        # but will use the column specified in index_label
         index_label = "BoroCode"
-        write_postgis(df_nybb, con=engine, name=table, if_exists="replace", index=False, index_label=index_label)
+        write_postgis(
+            df_nybb,
+            con=engine,
+            name=table,
+            if_exists="replace",
+            index=False,
+            index_label=index_label
+        )
         ret = pd.read_sql_query(sql, engine)
         index_class = geopandas.io.sql._pdIndex(df_nybb, False, index_label)
-        assert(index_class.index_name() is None)
-        assert(len(ret)==1)
-        assert(ret.iloc[0]['column_name'] == index_label)
+        assert index_class.index_name() is None
+        assert len(ret)==1
+        assert ret.iloc[0]['column_name'] == index_label
