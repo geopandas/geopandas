@@ -865,7 +865,7 @@ individually so that features may have different properties
         if not self.columns.is_unique:
             raise ValueError("GeoDataFrame cannot contain duplicated column names.")
 
-        properties_cols = self.columns.difference([self._geometry_column_name])
+        properties_cols = [c for c in self.columns if c != self._geometry_column_name]
 
         if len(properties_cols) > 0:
             # convert to object to get python scalars.
