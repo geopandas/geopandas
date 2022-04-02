@@ -173,27 +173,25 @@ def test_validate_metadata_invalid(metadata, error):
         _validate_metadata(metadata)
 
 
-def test_to_parquet_fails_on_invalid_engine():
+def test_to_parquet_fails_on_invalid_engine(tmpdir):
     df = GeoDataFrame(data=[[1, 2, 3]], columns=["a", "b", "a"], geometry=[Point(1, 1)])
 
-    # Patch geopandas.io.arrow._to_parquet to ensure that it doesn't try to run
-    # in the event that df.to_parquet doesn't raise a ValueError like it should.
-    with mock.patch("geopandas.io.arrow._to_parquet"):
-
-        with pytest.raises(
-            ValueError,
-            match=(
-                "GeoPandas only supports using pyarrow as the engine for "
-                "to_parquet: 'fastparquet' passed instead."
-            ),
-        ):
-            df.to_parquet("", engine="fastparquet")
+    with pytest.raises(
+        ValueError,
+        match=(
+            "GeoPandas only supports using pyarrow as the engine for "
+            "to_parquet: 'fastparquet' passed instead."
+        ),
+    ):
+        df.to_parquet(tmpdir / "test.parquet", engine="fastparquet")
 
 
 @mock.patch("geopandas.io.arrow._to_parquet")
 def test_to_parquet_does_not_pass_engine_along(mock_to_parquet):
     df = GeoDataFrame(data=[[1, 2, 3]], columns=["a", "b", "a"], geometry=[Point(1, 1)])
     df.to_parquet("", engine="pyarrow")
+    # assert that engine keyword is not passed through to _to_parquet (and thus
+    # parquet.write_table)
     mock_to_parquet.assert_called_with(df, "", compression="snappy", index=None)
 
 
