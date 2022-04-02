@@ -865,7 +865,7 @@ individually so that features may have different properties
         if not self.columns.is_unique:
             raise ValueError("GeoDataFrame cannot contain duplicated column names.")
 
-        properties_cols = self.columns.difference([self._geometry_column_name])
+        properties_cols = self.columns.drop(self._geometry_column_name)
 
         if len(properties_cols) > 0:
             # convert to object to get python scalars.
@@ -1808,7 +1808,7 @@ individually so that features may have different properties
             - append: Insert new values to the existing table.
         schema : string, optional
             Specify the schema. If None, use default schema: 'public'.
-        index : bool, default True
+        index : bool, default False
             Write DataFrame index as a column.
             Uses *index_label* as the column name in the table.
         index_label : string or sequence, default None
