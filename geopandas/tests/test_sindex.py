@@ -188,6 +188,7 @@ class TestFrameSindex:
         # sorting should still have happened though
         assert gdf.index.tolist() == [4, 3, 2, 1, 0]
 
+    @pytest.mark.skipif(not compat.PANDAS_GE_11, reason="fails on pd<1.1.0")
     def test_update_inplace_no_rebuild(self):
         gdf = self.df.copy()
         old_sindex = gdf.sindex
