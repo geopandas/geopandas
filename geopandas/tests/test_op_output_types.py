@@ -88,8 +88,8 @@ def test_getitem(df):
     assert_object(df[["value1", "value2"]], pd.DataFrame)
     assert_object(df[[geo_name, "geometry2"]], GeoDataFrame, geo_name)
     assert_object(df[[geo_name]], GeoDataFrame, geo_name)
-    assert_object(df[["geometry2", "value1"]], GeoDataFrame, None, None)
-    assert_object(df[["geometry2"]], GeoDataFrame, None, None)
+    assert_object(df[["geometry2", "value1"]], GeoDataFrame, None)
+    assert_object(df[["geometry2"]], GeoDataFrame, None)
     assert_object(df[["value1"]], pd.DataFrame)
     # Series
     assert_object(df[geo_name], GeoSeries, geo_name)
@@ -102,12 +102,8 @@ def test_loc(df):
     assert_object(df.loc[:, ["value1", "value2"]], pd.DataFrame)
     assert_object(df.loc[:, [geo_name, "geometry2"]], GeoDataFrame, geo_name)
     assert_object(df.loc[:, [geo_name]], GeoDataFrame, geo_name)
-    # TODO: should this set the geometry column to geometry2 or return a DataFrame?
     assert_object(df.loc[:, ["geometry2", "value1"]], GeoDataFrame, None)
     assert_object(df.loc[:, ["geometry2"]], GeoDataFrame, None)
-    # Ideally this would mirror __getitem__ and below would be true
-    # assert_object(df.loc[:, ["geometry2", "value1"]], pd.DataFrame)
-    # assert_object(df.loc[:, ["geometry2"]], pd.DataFrame)
     assert_object(df.loc[:, ["value1"]], pd.DataFrame)
     # Series
     assert_object(df.loc[:, geo_name], GeoSeries, geo_name)
@@ -120,12 +116,8 @@ def test_iloc(df):
     assert_object(df.iloc[:, 0:2], pd.DataFrame)
     assert_object(df.iloc[:, 2:4], GeoDataFrame, geo_name)
     assert_object(df.iloc[:, [2]], GeoDataFrame, geo_name)
-    # TODO: should this set the geometry column to geometry2 or return a DataFrame?
     assert_object(df.iloc[:, [3, 0]], GeoDataFrame, None)
     assert_object(df.iloc[:, [3]], GeoDataFrame, None)
-    # Ideally this would mirror __getitem__ and below would be true
-    # assert_object(df.iloc[:, [3, 0]], pd.DataFrame)
-    # assert_object(df.iloc[:, [3]], pd.DataFrame)
     assert_object(df.iloc[:, [0]], pd.DataFrame)
     # Series
     assert_object(df.iloc[:, 2], GeoSeries, geo_name)
@@ -157,12 +149,8 @@ def test_reindex(df):
     assert_object(df.reindex(columns=[geo_name, "geometry2"]), GeoDataFrame, geo_name)
     assert_object(df.reindex(columns=[geo_name]), GeoDataFrame, geo_name)
     assert_object(df.reindex(columns=["new_col", geo_name]), GeoDataFrame, geo_name)
-    # TODO: should this set the geometry column to geometry2 or return a DataFrame?
     assert_object(df.reindex(columns=["geometry2", "value1"]), GeoDataFrame, None)
     assert_object(df.reindex(columns=["geometry2"]), GeoDataFrame, None)
-    # Ideally this would mirror __getitem__ and below would be true
-    # assert_object(df.reindex(columns=["geometry2", "value1"]), pd.DataFrame)
-    # assert_object(df.reindex(columns=["geometry2"]), pd.DataFrame)
     assert_object(df.reindex(columns=["value1"]), pd.DataFrame)
 
     # reindexing the rows always preserves the GeoDataFrame
@@ -181,12 +169,8 @@ def test_drop(df):
     assert_object(df.drop(columns=["value1", "value2"]), GeoDataFrame, geo_name)
     cols = ["value1", "value2", "geometry2"]
     assert_object(df.drop(columns=cols), GeoDataFrame, geo_name)
-    # TODO: should this set the geometry column to geometry2 or return a DataFrame?
     assert_object(df.drop(columns=[geo_name, "value2"]), GeoDataFrame, None)
     assert_object(df.drop(columns=["value1", "value2", geo_name]), GeoDataFrame, None)
-    # Ideally this would mirror __getitem__ and below would be true
-    # assert_object(df.drop(columns=[geo_name, "value2"]), pd.DataFrame)
-    # assert_object(df.drop(columns=["value1", "value2", geo_name]), pd.DataFrame)
     assert_object(df.drop(columns=["geometry2", "value2", geo_name]), pd.DataFrame)
 
 
@@ -226,7 +210,6 @@ def test_apply(df):
     assert_object(df[["geometry2", "value1"]].apply(identity, axis=1), pd.DataFrame)
 
     assert_object(df[["value1"]].apply(identity, axis=1), pd.DataFrame)
-    # if compat # https://github.com/pandas-dev/pandas/pull/30091
 
 
 def test_apply_axis1_secondary_geo_cols(df):
