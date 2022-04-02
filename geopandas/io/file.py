@@ -209,7 +209,7 @@ def _read_file(filename, bbox=None, mask=None, rows=None, engine="fiona", **kwar
         )
     elif engine == "pyogrio":
         return _read_file_pyogrio(
-            path_or_bytes, from_bytes, bbox=bbox, mask=mask, rows=rows, **kwargs
+            path_or_bytes, bbox=bbox, mask=mask, rows=rows, **kwargs
         )
     else:
         raise ValueError(f"unknown engine '{engine}'")
@@ -281,9 +281,7 @@ def _read_file_fiona(
             return df
 
 
-def _read_file_pyogrio(
-    path_or_bytes, from_bytes, bbox=None, mask=None, rows=None, **kwargs
-):
+def _read_file_pyogrio(path_or_bytes, bbox=None, mask=None, rows=None, **kwargs):
     import pyogrio
 
     if rows is not None:
@@ -300,13 +298,17 @@ def _read_file_pyogrio(
             raise TypeError("'rows' must be an integer or a slice.")
     if bbox is not None:
         if isinstance(bbox, (GeoDataFrame, GeoSeries)):
+            # TODO: reproject to CRS of the file?
             bbox = tuple(bbox.total_bounds)
         elif isinstance(bbox, BaseGeometry):
             bbox = bbox.bounds
-        assert len(bbox) == 4
-
-    if isinstance(path_or_bytes, str):
-        path_or_bytes = path_or_bytes.replace("zip://", "/vsizip/")
+        if len(bbox) != 4:
+            raise ValueError("'bbox' should be a length-4 tuple.")
+    if mask is not None:
+        raise ValueError(
+            "The 'mask' keyword is not supported with the 'pyogrio' engine. "
+            "You can use 'bbox' instead."
+        )
 
     return pyogrio.read_dataframe(path_or_bytes, bbox=bbox, **kwargs)
 

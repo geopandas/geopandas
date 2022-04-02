@@ -491,10 +491,6 @@ def test_infer_zipped_file(engine):
     gdf = read_file(path, engine=engine)
     assert isinstance(gdf, geopandas.GeoDataFrame)
 
-    if engine == "pyogrio":
-        # TODO(pyogrio) remainder is not yet supported
-        return
-
     # Check that it can successfully add a zip scheme to a path that already has a
     # scheme
     gdf = read_file("file+file://" + path, engine=engine)
@@ -598,8 +594,19 @@ def test_read_file__ignore_all_fields():
     gdf = geopandas.read_file(
         geopandas.datasets.get_path("naturalearth_lowres"),
         ignore_fields=["pop_est", "continent", "name", "iso_a3", "gdp_md_est"],
+        engine="fiona",
     )
     assert gdf.columns.tolist() == ["geometry"]
+
+
+def test_read_file__columns():
+    # TODO: this is only support for pyogrio, but we could mimic it for fiona as well
+    gdf = geopandas.read_file(
+        geopandas.datasets.get_path("naturalearth_lowres"),
+        columns=["name", "pop_est"],
+        engine="pyogrio",
+    )
+    assert gdf.columns.tolist() == ["name", "pop_est", "geometry"]
 
 
 def test_read_file_filtered_with_gdf_boundary(df_nybb, engine):
@@ -686,6 +693,9 @@ def test_read_file_filtered_with_gdf_boundary_mismatched_crs__mask(df_nybb):
     assert filtered_df_shape == (2, 5)
 
 
+@pytest.mark.filterwarnings(
+    "ignore:Layer 'b'test_empty'' does not have any features:UserWarning"
+)
 def test_read_file_empty_shapefile(tmpdir, engine):
 
     # create empty shapefile
@@ -914,9 +924,9 @@ def test_to_file__undetermined_driver(tmp_path, df_nybb):
 @pytest.mark.parametrize(
     "test_file", [(pathlib.Path("~/test_file.geojson")), "~/test_file.geojson"]
 )
-def test_write_read_file(test_file):
+def test_write_read_file(test_file, engine):
     gdf = geopandas.GeoDataFrame(geometry=[box(0, 0, 10, 10)], crs=_CRS)
     gdf.to_file(test_file, driver="GeoJSON")
-    df_json = geopandas.read_file(test_file)
+    df_json = geopandas.read_file(test_file, engine=engine)
     assert_geodataframe_equal(gdf, df_json, check_crs=True)
     os.remove(os.path.expanduser(test_file))
