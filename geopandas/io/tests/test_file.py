@@ -268,7 +268,7 @@ def test_to_file_int64(tmpdir, df_points):
 def test_to_file_empty(tmpdir):
     input_empty_df = GeoDataFrame(columns=["geometry"])
     tempfilename = os.path.join(str(tmpdir), "test.shp")
-    with pytest.raises(ValueError, match="Cannot write empty DataFrame to file."):
+    with pytest.warns(UserWarning):
         input_empty_df.to_file(tempfilename)
 
 

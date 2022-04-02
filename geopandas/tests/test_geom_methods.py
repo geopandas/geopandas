@@ -7,6 +7,7 @@ from pandas import DataFrame, Index, MultiIndex, Series
 from shapely.geometry import LinearRing, LineString, MultiPoint, Point, Polygon
 from shapely.geometry.collection import GeometryCollection
 from shapely.ops import unary_union
+from shapely import wkt
 
 from geopandas import GeoDataFrame, GeoSeries
 from geopandas.base import GeoPandasBase
@@ -72,6 +73,10 @@ class TestGeomMethods:
         self.landmarks = GeoSeries([self.esb, self.sol], crs="epsg:4326")
         self.pt2d = Point(-73.9847, 40.7484)
         self.landmarks_mixed = GeoSeries([self.esb, self.sol, self.pt2d], crs=4326)
+        self.pt_empty = wkt.loads("POINT EMPTY")
+        self.landmarks_mixed_empty = GeoSeries(
+            [self.esb, self.sol, self.pt2d, self.pt_empty], crs=4326
+        )
         self.l1 = LineString([(0, 0), (0, 1), (1, 1)])
         self.l2 = LineString([(0, 0), (1, 0), (1, 1), (0, 1)])
         self.g5 = GeoSeries([self.l1, self.l2])
@@ -80,8 +85,12 @@ class TestGeomMethods:
         self.g8 = GeoSeries([self.t1, self.t5])
         self.empty = GeoSeries([])
         self.all_none = GeoSeries([None, None])
+        self.all_geometry_collection_empty = GeoSeries(
+            [GeometryCollection([]), GeometryCollection([])]
+        )
         self.empty_poly = Polygon()
         self.g9 = GeoSeries(self.g0, index=range(1, 8))
+        self.g10 = GeoSeries([self.t1, self.t4])
 
         # Crossed lines
         self.l3 = LineString([(0, 0), (1, 1)])
@@ -248,6 +257,15 @@ class TestGeomMethods:
         with pytest.warns(UserWarning, match="The indices .+ different"):
             assert len(self.g0.intersection(self.g9, align=True) == 8)
         assert len(self.g0.intersection(self.g9, align=False) == 7)
+
+    def test_clip_by_rect(self):
+        self._test_binary_topological(
+            "clip_by_rect", self.g1, self.g10, *self.sq.bounds
+        )
+        # self.g1 and self.t3.bounds do not intersect
+        self._test_binary_topological(
+            "clip_by_rect", self.all_geometry_collection_empty, self.g1, *self.t3.bounds
+        )
 
     def test_union_series(self):
         self._test_binary_topological("union", self.sq, self.g1, self.g2)
@@ -622,6 +640,15 @@ class TestGeomMethods:
         # mixed dimensions
         expected_z = [30.3244, 31.2344, np.nan]
         assert_array_dtype_equal(expected_z, self.landmarks_mixed.geometry.z)
+
+    def test_xyz_points_empty(self):
+        expected_x = [-73.9847, -74.0446, -73.9847, np.nan]
+        expected_y = [40.7484, 40.6893, 40.7484, np.nan]
+        expected_z = [30.3244, 31.2344, np.nan, np.nan]
+
+        assert_array_dtype_equal(expected_x, self.landmarks_mixed_empty.geometry.x)
+        assert_array_dtype_equal(expected_y, self.landmarks_mixed_empty.geometry.y)
+        assert_array_dtype_equal(expected_z, self.landmarks_mixed_empty.geometry.z)
 
     def test_xyz_polygons(self):
         # accessing x attribute in polygon geoseries should raise an error

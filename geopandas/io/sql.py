@@ -230,7 +230,7 @@ def _get_geometry_type(gdf):
 
     # Check for 3D-coordinates
     if any(gdf.geometry.has_z):
-        target_geom_type = target_geom_type + "Z"
+        target_geom_type += "Z"
 
     return target_geom_type, has_curve
 
@@ -369,15 +369,7 @@ def _write_postgis(
     try:
         from geoalchemy2 import Geometry
     except ImportError:
-        raise ImportError("'to_postgis()' requires geoalchemy2 package. ")
-
-    if not compat.SHAPELY_GE_17:
-        raise ImportError(
-            "'to_postgis()' requires newer version of Shapely "
-            "(>= '1.7.0').\nYou can update the library using "
-            "'pip install shapely --upgrade' or using "
-            "'conda update shapely' if using conda package manager."
-        )
+        raise ImportError("'to_postgis()' requires geoalchemy2 package.")
 
     gdf = gdf.copy()
     geom_name = gdf.geometry.name
