@@ -599,6 +599,7 @@ def test_read_file__ignore_all_fields():
     assert gdf.columns.tolist() == ["geometry"]
 
 
+@PYOGRIO_MARK
 def test_read_file__columns():
     # TODO: this is only support for pyogrio, but we could mimic it for fiona as well
     gdf = geopandas.read_file(
