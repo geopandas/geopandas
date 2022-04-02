@@ -144,9 +144,7 @@ def test_from_wkb():
     missing_values = [None]
     if not compat.USE_PYGEOS:
         missing_values.extend([b"", np.nan])
-
-        if compat.PANDAS_GE_10:
-            missing_values.append(pd.NA)
+        missing_values.append(pd.NA)
 
     res = from_wkb(missing_values)
     np.testing.assert_array_equal(res, np.full(len(missing_values), None))
@@ -220,9 +218,7 @@ def test_from_wkt(string_type):
     missing_values = [None]
     if not compat.USE_PYGEOS:
         missing_values.extend([f(""), np.nan])
-
-        if compat.PANDAS_GE_10:
-            missing_values.append(pd.NA)
+        missing_values.append(pd.NA)
 
     res = from_wkb(missing_values)
     np.testing.assert_array_equal(res, np.full(len(missing_values), None))
@@ -436,10 +432,6 @@ def test_binary_geo_scalar(attr):
             "is_ring",
             marks=[
                 pytest.mark.filterwarnings("ignore:is_ring:FutureWarning"),
-                pytest.mark.skipif(
-                    not compat.SHAPELY_GE_17,
-                    reason="is_ring on empty Polygon doesn't work in Shapely 1.6",
-                ),
             ],
         ),
     ],
@@ -482,10 +474,6 @@ def test_unary_predicates(attr):
 
 # for is_ring we raise a warning about the value for Polygon changing
 @pytest.mark.filterwarnings("ignore:is_ring:FutureWarning")
-@pytest.mark.skipif(
-    not compat.SHAPELY_GE_17,
-    reason="is_ring on empty Polygon doesn't work in Shapely 1.6",
-)
 def test_is_ring():
     g = [
         shapely.geometry.LinearRing([(0, 0), (1, 1), (1, -1)]),
@@ -909,7 +897,6 @@ def test_isna(NA):
     assert t1[0] is None
 
 
-@pytest.mark.skipif(not compat.PANDAS_GE_10, reason="pd.NA introduced in pandas 1.0")
 def test_isna_pdNA():
     t1 = T.copy()
     t1[0] = pd.NA
@@ -945,7 +932,8 @@ class TestEstimateUtmCrs:
                 self.landmarks.estimate_utm_crs()
         else:
             assert self.landmarks.estimate_utm_crs() == CRS("EPSG:32618")
-            assert self.landmarks.estimate_utm_crs("NAD83") == CRS("EPSG:26918")
+            if compat.PYPROJ_GE_32:  # result is unstable in older pyproj
+                assert self.landmarks.estimate_utm_crs("NAD83") == CRS("EPSG:26918")
 
     @pytest.mark.skipif(compat.PYPROJ_LT_3, reason="requires pyproj 3 or higher")
     def test_estimate_utm_crs__projected(self):

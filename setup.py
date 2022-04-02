@@ -30,10 +30,10 @@ if os.environ.get("READTHEDOCS", False) == "True":
     INSTALL_REQUIRES = []
 else:
     INSTALL_REQUIRES = [
-        "pandas >= 0.25.0",
-        "shapely >= 1.6",
+        "pandas >= 1.0.0",
+        "shapely >= 1.7",
         "fiona >= 1.8",
-        "pyproj >= 2.2.0",
+        "pyproj >= 2.6.1.post1",
         "packaging",
     ]
 
@@ -58,6 +58,9 @@ setup(
     author="GeoPandas contributors",
     author_email="kjordahl@alum.mit.edu",
     url="http://geopandas.org",
+    project_urls={
+        "Source": "https://github.com/geopandas/geopandas",
+    },
     long_description=LONG_DESCRIPTION,
     packages=[
         "geopandas",

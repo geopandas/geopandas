@@ -85,8 +85,12 @@ class TestGeomMethods:
         self.g8 = GeoSeries([self.t1, self.t5])
         self.empty = GeoSeries([])
         self.all_none = GeoSeries([None, None])
+        self.all_geometry_collection_empty = GeoSeries(
+            [GeometryCollection([]), GeometryCollection([])]
+        )
         self.empty_poly = Polygon()
         self.g9 = GeoSeries(self.g0, index=range(1, 8))
+        self.g10 = GeoSeries([self.t1, self.t4])
 
         # Crossed lines
         self.l3 = LineString([(0, 0), (1, 1)])
@@ -253,6 +257,15 @@ class TestGeomMethods:
         with pytest.warns(UserWarning, match="The indices .+ different"):
             assert len(self.g0.intersection(self.g9, align=True) == 8)
         assert len(self.g0.intersection(self.g9, align=False) == 7)
+
+    def test_clip_by_rect(self):
+        self._test_binary_topological(
+            "clip_by_rect", self.g1, self.g10, *self.sq.bounds
+        )
+        # self.g1 and self.t3.bounds do not intersect
+        self._test_binary_topological(
+            "clip_by_rect", self.all_geometry_collection_empty, self.g1, *self.t3.bounds
+        )
 
     def test_union_series(self):
         self._test_binary_topological("union", self.sq, self.g1, self.g2)

@@ -11,6 +11,7 @@ import pandas as pd
 
 import shapely.geometry
 import shapely.geos
+import shapely.ops
 import shapely.wkb
 import shapely.wkt
 
@@ -56,7 +57,7 @@ def isna(value):
         return True
     elif isinstance(value, float) and np.isnan(value):
         return True
-    elif compat.PANDAS_GE_10 and value is pd.NA:
+    elif value is pd.NA:
         return True
     else:
         return False
@@ -726,6 +727,20 @@ def almost_equals(self, other, decimal):
 #
 # Binary operations that return new geometries
 #
+
+
+def clip_by_rect(data, xmin, ymin, xmax, ymax):
+    if compat.USE_PYGEOS:
+        return pygeos.clip_by_rect(data, xmin, ymin, xmax, ymax)
+    else:
+        clipped_geometries = np.empty(len(data), dtype=object)
+        clipped_geometries[:] = [
+            shapely.ops.clip_by_rect(s, xmin, ymin, xmax, ymax)
+            if s is not None
+            else None
+            for s in data
+        ]
+        return clipped_geometries
 
 
 def difference(data, other):
