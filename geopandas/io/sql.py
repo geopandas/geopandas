@@ -124,7 +124,7 @@ def _get_srid_and_geom_from_postgis(name, con, schema=None, geom_name=None):
         from sqlalchemy.exc import NoSuchTableError
     except ImportError:
         raise ImportError(
-            "geopandas requires the geoalchemy2 package to interface with PostGIS."
+            "geopandas requires the geoalchemy2/sqlalchemy packages to interface with PostGIS."
         )
 
     if schema is None:
