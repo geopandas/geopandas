@@ -490,7 +490,7 @@ class TestGeomMethods:
         )
         assert_array_dtype_equal(expected, self.na_none.distance(self.p0))
 
-        expected = Series(np.array([np.sqrt(4 ** 2 + 4 ** 2), np.nan]), self.g6.index)
+        expected = Series(np.array([np.sqrt(4**2 + 4**2), np.nan]), self.g6.index)
         assert_array_dtype_equal(expected, self.g6.distance(self.na_none))
 
         expected = Series(np.array([np.nan, 0, 0, 0, 0, 0, np.nan, np.nan]), range(8))
