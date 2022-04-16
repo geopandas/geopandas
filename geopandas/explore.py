@@ -184,8 +184,14 @@ def _explore(
         fillOpacity : float (default 0.5)
             Fill opacity.
         style_function : callable
-            style attributes based on geojson properties
-            e.g.: ``lambda x: {"color":"red" if x["properties"]["gdp_md_est"]<10**6
+            Function mapping a GeoJson Feature to a style ``dict``.
+
+            * Style properties :func:`folium.vector_layers.path_options`
+            * GeoJson features :class:`GeoDataFrame.__geo_interface__`
+
+            e.g.::
+
+                lambda x: {"color":"red" if x["properties"]["gdp_md_est"]<10**6
                                              else "blue"}``
 
         Plus all supported by :func:`folium.vector_layers.path_options`. See the
@@ -451,7 +457,7 @@ GON (((180.00000 -16.06713, 180.00000...
     if "style_function" in style_kwds:
         style_kwds_function = style_kwds["style_function"]
         if not callable(style_kwds_function):
-            raise ValueError("style_function has to be a callable")
+            raise ValueError("'style_function' has to be a callable")
         style_kwds.pop("style_function")
     else:
 
@@ -834,6 +840,7 @@ def _explore_geoseries(
     marker_kwds={},
     style_kwds={},
     highlight_kwds={},
+    map_kwds={},
     **kwargs,
 ):
     """Interactive map based on GeoPandas and folium/leaflet.js
@@ -904,6 +911,17 @@ def _explore_geoseries(
             Fill color. Defaults to the value of the color option
         fillOpacity : float (default 0.5)
             Fill opacity.
+        style_function : callable
+            Function mapping a GeoJson Feature to a style ``dict``.
+
+            * Style properties :func:`folium.vector_layers.path_options`
+            * GeoJson features :class:`GeoSeries.__geo_interface__`
+
+            e.g.::
+
+                lambda x: {"color":"red" if x["properties"]["gdp_md_est"]<10**6
+                                             else "blue"}``
+
 
         Plus all supported by :func:`folium.vector_layers.path_options`. See the
         documentation of :class:`folium.features.GeoJson` for details.
@@ -911,6 +929,9 @@ def _explore_geoseries(
     highlight_kwds : dict (default {})
         Style to be passed to folium highlight_function. Uses the same keywords
         as ``style_kwds``. When empty, defaults to ``{"fillOpacity": 0.75}``.
+    map_kwds : dict (default {})
+        Additional keywords to be passed to folium :class:`~folium.folium.Map`,
+        e.g. ``dragging``, or ``scrollWheelZoom``.
 
     **kwargs : dict
         Additional options to be passed on to the folium.
@@ -935,5 +956,6 @@ def _explore_geoseries(
         marker_kwds=marker_kwds,
         style_kwds=style_kwds,
         highlight_kwds=highlight_kwds,
+        map_kwds=map_kwds,
         **kwargs,
     )

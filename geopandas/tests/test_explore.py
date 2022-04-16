@@ -336,6 +336,10 @@ class TestExplore:
             ]
         )
 
+        # style function has to be callable
+        with pytest.raises(ValueError, match="'style_function' has to be a callable"):
+            self.world.explore(style_kwds={"style_function": "not callable"})
+
     def test_tooltip(self):
         """Test tooltip"""
         # default with no tooltip or popup
