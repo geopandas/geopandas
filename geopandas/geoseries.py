@@ -1282,10 +1282,14 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
 
         Parameters
         ----------
-        mask : GeoDataFrame, GeoSeries, (Multi)Polygon
+        mask : GeoDataFrame, GeoSeries, (Multi)Polygon, list-like
             Polygon vector layer used to clip `gdf`.
             The mask's geometry is dissolved into one geometric feature
-            and intersected with `gdf`.
+            and intersected with GeoSeries.
+            If the mask is list-like with four elements ``(minx, miny, maxx, maxy)``,
+            ``clip`` will use a faster rectangle clipping
+            (:meth:`~GeoSeries.clip_by_rect`), possibly leading to slightly different
+            results.
         keep_geom_type : boolean, default False
             If True, return only geometries of original type in case of intersection
             resulting in multiple geometry types or GeometryCollections.
