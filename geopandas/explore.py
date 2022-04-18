@@ -475,11 +475,12 @@ GON (((180.00000 -16.06713, 180.00000...
         ):  # use existing column
 
             def _style_color(x):
+                base_style = {
+                    "fillColor": x["properties"][color],
+                    **style_kwds,
+                }
                 return {
-                    **{
-                        "fillColor": x["properties"][color],
-                        **style_kwds,
-                    },
+                    **base_style,
                     **style_kwds_function(x),
                 }
 
@@ -500,12 +501,13 @@ GON (((180.00000 -16.06713, 180.00000...
             if not stroke_color:
 
                 def _style_column(x):
+                    base_style = {
+                        "fillColor": x["properties"]["__folium_color"],
+                        "color": x["properties"]["__folium_color"],
+                        **style_kwds,
+                    }
                     return {
-                        **{
-                            "fillColor": x["properties"]["__folium_color"],
-                            "color": x["properties"]["__folium_color"],
-                            **style_kwds,
-                        },
+                        **base_style,
                         **style_kwds_function(x),
                     }
 
@@ -513,12 +515,13 @@ GON (((180.00000 -16.06713, 180.00000...
             else:
 
                 def _style_stroke(x):
+                    base_style = {
+                        "fillColor": x["properties"]["__folium_color"],
+                        "color": stroke_color,
+                        **style_kwds,
+                    }
                     return {
-                        **{
-                            "fillColor": x["properties"]["__folium_color"],
-                            "color": stroke_color,
-                            **style_kwds,
-                        },
+                        **base_style,
                         **style_kwds_function(x),
                     }
 
