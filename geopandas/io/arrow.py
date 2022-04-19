@@ -2,7 +2,7 @@ from packaging.version import Version
 import json
 import warnings
 
-from pandas import DataFrame
+from pandas import DataFrame, Series
 
 from geopandas._compat import import_optional_dependency
 from geopandas.array import from_wkb
@@ -10,8 +10,8 @@ from geopandas import GeoDataFrame
 import geopandas
 from .file import _expand_user
 
-METADATA_VERSION = "0.1.0"
-# reference: https://github.com/geopandas/geo-arrow-spec
+METADATA_VERSION = "0.2.0"
+# reference: https://github.com/opengeospatial/geoparquet
 
 # Metadata structure:
 # {
@@ -57,15 +57,17 @@ def _create_metadata(df):
     for col in df.columns[df.dtypes == "geometry"]:
         series = df[col]
         column_metadata[col] = {
-            "crs": series.crs.to_wkt() if series.crs else None,
             "encoding": "WKB",
+            "geometry_type": list(Series(series.geom_type.unique()).dropna()),
             "bbox": series.total_bounds.tolist(),
         }
+        if series.crs:
+            column_metadata[col]["crs"] = series.crs.to_wkt()
 
     return {
         "primary_column": df._geometry_column_name,
         "columns": column_metadata,
-        "schema_version": METADATA_VERSION,
+        "version": METADATA_VERSION,
         "creator": {"library": "geopandas", "version": geopandas.__version__},
     }
 
@@ -155,7 +157,8 @@ def _validate_metadata(metadata):
         raise ValueError("'columns' in 'geo' metadata must be a dict")
 
     # Validate that geometry columns have required metadata and values
-    required_col_keys = ("crs", "encoding")
+    # leaving out "geometry_type" for compatibility with 0.1
+    required_col_keys = ("encoding",)
     for col, column_metadata in metadata["columns"].items():
         for key in required_col_keys:
             if key not in column_metadata:
@@ -320,7 +323,8 @@ def _arrow_to_geopandas(table):
 
     # Convert the WKB columns that are present back to geometry.
     for col in geometry_columns:
-        df[col] = from_wkb(df[col].values, crs=metadata["columns"][col]["crs"])
+        crs = metadata["columns"][col].get("crs", None)
+        df[col] = from_wkb(df[col].values, crs=crs)
 
     return GeoDataFrame(df, geometry=geometry)
 

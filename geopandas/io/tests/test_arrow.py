@@ -55,13 +55,17 @@ def test_create_metadata():
     metadata = _create_metadata(df)
 
     assert isinstance(metadata, dict)
-    assert metadata["schema_version"] == METADATA_VERSION
+    assert metadata["version"] == METADATA_VERSION
     assert metadata["creator"]["library"] == "geopandas"
     assert metadata["creator"]["version"] == geopandas.__version__
     assert metadata["primary_column"] == "geometry"
     assert "geometry" in metadata["columns"]
     assert metadata["columns"]["geometry"]["crs"] == df.geometry.crs.to_wkt()
     assert metadata["columns"]["geometry"]["encoding"] == "WKB"
+    assert metadata["columns"]["geometry"]["geometry_type"] == [
+        "MultiPolygon",
+        "Polygon",
+    ]
 
     assert np.array_equal(
         metadata["columns"]["geometry"]["bbox"], df.geometry.total_bounds
@@ -140,16 +144,12 @@ def test_validate_metadata_valid():
         (
             {"primary_column": "foo", "columns": {"foo": {}}},
             (
-                "'geo' metadata in Parquet/Feather file is missing required key 'crs' "
-                "for column 'foo'"
+                "'geo' metadata in Parquet/Feather file is missing required key "
+                "'encoding' for column 'foo'"
             ),
         ),
         (
             {"primary_column": "foo", "columns": {"foo": {"crs": None}}},
-            "'geo' metadata in Parquet/Feather file is missing required key",
-        ),
-        (
-            {"primary_column": "foo", "columns": {"foo": {"encoding": None}}},
             "'geo' metadata in Parquet/Feather file is missing required key",
         ),
         (
