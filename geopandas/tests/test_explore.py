@@ -317,6 +317,37 @@ class TestExplore:
         m = self.world.explore(column="pop_est", style_kwds=dict(color="black"))
         assert '"color":"black"' in self._fetch_map_string(m)
 
+        # custom style_function - geopandas/issues/2350
+        m = self.world.explore(
+            style_kwds={
+                "style_function": lambda x: {
+                    "fillColor": "red"
+                    if x["properties"]["gdp_md_est"] < 10**6
+                    else "green",
+                    "color": "black"
+                    if x["properties"]["gdp_md_est"] < 10**6
+                    else "white",
+                }
+            }
+        )
+        # two lines with formatting instructions from style_function.
+        # make sure each passes test
+        assert all(
+            [
+                ('"fillColor":"green"' in t and '"color":"white"' in t)
+                or ('"fillColor":"red"' in t and '"color":"black"' in t)
+                for t in [
+                    "".join(line.split())
+                    for line in m._parent.render().split("\n")
+                    if "return" in line and "color" in line
+                ]
+            ]
+        )
+
+        # style function has to be callable
+        with pytest.raises(ValueError, match="'style_function' has to be a callable"):
+            self.world.explore(style_kwds={"style_function": "not callable"})
+
     def test_tooltip(self):
         """Test tooltip"""
         # default with no tooltip or popup
