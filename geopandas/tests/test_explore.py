@@ -253,6 +253,14 @@ class TestExplore:
         with pytest.raises(ValueError, match="Cannot specify 'categories'"):
             df.explore("categorical", categories=["Brooklyn", "Staten Island"])
 
+    def test_bool(self):
+        df = self.nybb.copy()
+        df["bool"] = [True, False, True, False, True]
+        m = df.explore("bool")
+        out_str = self._fetch_map_string(m)
+        assert '"__folium_color":"#9edae5","bool":true' in out_str
+        assert '"__folium_color":"#1f77b4","bool":false' in out_str
+
     def test_column_values(self):
         """
         Check that the dataframe plot method returns same values with an
