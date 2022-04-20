@@ -242,7 +242,7 @@ def _get_srid_from_crs(gdf):
 
     # Use geoalchemy2 default for srid
     # Note: undefined srid in PostGIS is 0
-    srid = -1
+    srid = None
     warning_msg = (
         "Could not parse CRS from the GeoDataFrame. "
         "Inserting data without defined CRS."
@@ -259,11 +259,12 @@ def _get_srid_from_crs(gdf):
                 if auth_srid is not None:
                     srid = int(auth_srid[1])
                     break
-            else:
-                srid = -1
-                warnings.warn(warning_msg, UserWarning, stacklevel=2)
         except Exception:
             warnings.warn(warning_msg, UserWarning, stacklevel=2)
+
+    if srid is None:
+        srid = -1
+        warnings.warn(warning_msg, UserWarning, stacklevel=2)
 
     return srid
 
