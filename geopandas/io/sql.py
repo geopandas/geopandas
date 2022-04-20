@@ -249,11 +249,11 @@ def _get_srid_from_crs(gdf):
     )
     if gdf.crs is not None:
         try:
-            authority, srid = gdf.crs.to_authority(min_confidence=25)
-            srid = int(srid)
-            if srid is None:
+            auth_srid = gdf.crs.to_authority(min_confidence=25)
+            if auth_srid is None:
                 srid = -1
                 warnings.warn(warning_msg, UserWarning, stacklevel=2)
+            srid = int(auth_srid[1])
         except Exception:
             warnings.warn(warning_msg, UserWarning, stacklevel=2)
     return srid
