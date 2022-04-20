@@ -249,7 +249,8 @@ def _get_srid_from_crs(gdf):
     )
     if gdf.crs is not None:
         try:
-            srid = gdf.crs.to_epsg(min_confidence=25)
+            authority, srid = gdf.crs.to_authority(min_confidence=25)
+            srid = int(srid)
             if srid is None:
                 srid = -1
                 warnings.warn(warning_msg, UserWarning, stacklevel=2)
