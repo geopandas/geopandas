@@ -367,7 +367,11 @@ GON (((180.00000 -16.06713, 180.00000...
                     "Cannot specify 'categories' when column has categorical dtype"
                 )
             categorical = True
-        elif gdf[column].dtype is np.dtype("O") or categories:
+        elif (
+            gdf[column].dtype is np.dtype("O")
+            or gdf[column].dtype is np.dtype(bool)
+            or categories
+        ):
             categorical = True
 
         nan_idx = pd.isna(gdf[column])
