@@ -192,7 +192,7 @@ def _explore(
             e.g.::
 
                 lambda x: {"color":"red" if x["properties"]["gdp_md_est"]<10**6
-                                             else "blue"}``
+                                             else "blue"}
 
         Plus all supported by :func:`folium.vector_layers.path_options`. See the
         documentation of :class:`folium.features.GeoJson` for details.
@@ -923,7 +923,7 @@ def _explore_geoseries(
             e.g.::
 
                 lambda x: {"color":"red" if x["properties"]["gdp_md_est"]<10**6
-                                             else "blue"}``
+                                             else "blue"}
 
 
         Plus all supported by :func:`folium.vector_layers.path_options`. See the
