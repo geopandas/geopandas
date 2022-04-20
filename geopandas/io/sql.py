@@ -250,17 +250,17 @@ def _get_srid_from_crs(gdf):
     if gdf.crs is not None:
         try:
             for confidence in (100, 70, 25):
-                srid_check = gdf.crs.to_epsg(min_confidence=confidence)
-                if srid_check is None:
-                    auth_srid = gdf.crs.to_authority(
-                        auth_name="ESRI", min_confidence=confidence
-                    )
-                    if auth_srid is not None:
-                        srid = int(auth_srid[1])
-                        break
-                else:
-                    srid = srid_check
+                srid = gdf.crs.to_epsg(min_confidence=confidence)
+                if srid is not None:
                     break
+                auth_srid = gdf.crs.to_authority(
+                    auth_name="ESRI", min_confidence=confidence
+                )
+                if auth_srid is not None:
+                    srid = int(auth_srid[1])
+                    break
+                else:
+                    srid = -1
         except Exception:
             warnings.warn(warning_msg, UserWarning, stacklevel=2)
 
