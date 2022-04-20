@@ -245,17 +245,28 @@ def _get_srid_from_crs(gdf):
     srid = -1
     warning_msg = (
         "Could not parse CRS from the GeoDataFrame. "
-        + "Inserting data without defined CRS.",
+        "Inserting data without defined CRS."
     )
     if gdf.crs is not None:
         try:
-            auth_srid = gdf.crs.to_authority(min_confidence=25)
-            if auth_srid is None:
-                srid = -1
-                warnings.warn(warning_msg, UserWarning, stacklevel=2)
-            srid = int(auth_srid[1])
+            for confidence in (100, 70, 25):
+                srid_check = gdf.crs.to_epsg(min_confidence=confidence)
+                if srid_check is None:
+                    auth_srid = gdf.crs.to_authority(
+                        auth_name="ESRI", min_confidence=confidence
+                    )
+                    if auth_srid is not None:
+                        srid = int(auth_srid[1])
+                        break
+                else:
+                    srid = srid_check
+                    break
         except Exception:
             warnings.warn(warning_msg, UserWarning, stacklevel=2)
+
+    if srid == -1:
+        warnings.warn(warning_msg, UserWarning, stacklevel=2)
+
     return srid
 
 
