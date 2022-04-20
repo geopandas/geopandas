@@ -259,13 +259,11 @@ def _get_srid_from_crs(gdf):
                 if auth_srid is not None:
                     srid = int(auth_srid[1])
                     break
-                else:
-                    srid = -1
+            else:
+                srid = -1
+                warnings.warn(warning_msg, UserWarning, stacklevel=2)
         except Exception:
             warnings.warn(warning_msg, UserWarning, stacklevel=2)
-
-    if srid == -1:
-        warnings.warn(warning_msg, UserWarning, stacklevel=2)
 
     return srid
 
