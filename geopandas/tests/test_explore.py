@@ -609,29 +609,33 @@ class TestExplore:
 
     @pytest.mark.skipif(not BRANCA_05, reason="requires branca >= 0.5.0")
     def test_colorbar_max_labels(self):
+        import re
+
         # linear
         m = self.world.explore("pop_est", legend_kwds=dict(max_labels=3))
         out_str = self._fetch_map_string(m)
-
-        tick_values = [140.0, 465176713.5921569, 930353287.1843138]
-        for tick in tick_values:
-            assert str(tick) in out_str
+        tick_str = re.search(r"tickValues\(\[[\',\,\.,0-9]*\]\)", out_str).group(0)
+        assert (
+            tick_str.replace(",''", "")
+            == "tickValues([140.0,471386328.07843137,942772516.1568627])"
+        )
 
         # scheme
         m = self.world.explore(
             "pop_est", scheme="headtailbreaks", legend_kwds=dict(max_labels=3)
         )
         out_str = self._fetch_map_string(m)
-
-        assert "tickValues([140,'',182567501.0,'',1330619341.0,''])" in out_str
+        assert "tickValues([140.0,'',184117213.1818182,'',1382066377.0,''])" in out_str
 
         # short cmap
         m = self.world.explore("pop_est", legend_kwds=dict(max_labels=3), cmap="tab10")
         out_str = self._fetch_map_string(m)
 
-        tick_values = [140.0, 551721192.4, 1103442244.8]
-        for tick in tick_values:
-            assert str(tick) in out_str
+        tick_str = re.search(r"tickValues\(\[[\',\,\.,0-9]*\]\)", out_str).group(0)
+        assert (
+            tick_str
+            == "tickValues([140.0,'','','',559086084.0,'','','',1118172028.0,'','',''])"
+        )
 
     def test_xyzservices_providers(self):
         xyzservices = pytest.importorskip("xyzservices")
