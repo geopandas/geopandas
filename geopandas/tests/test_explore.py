@@ -589,10 +589,10 @@ class TestExplore:
         )
         out_str = self._fetch_map_string(m)
         assert out_str.count("#440154ff") == 16
-        assert out_str.count("#3b528bff") == 51
-        assert out_str.count("#21918cff") == 133
-        assert out_str.count("#5ec962ff") == 282
-        assert out_str.count("#fde725ff") == 18
+        assert out_str.count("#3b528bff") == 50
+        assert out_str.count("#21918cff") == 138
+        assert out_str.count("#5ec962ff") == 290
+        assert out_str.count("#fde725ff") == 6
 
         # discrete cmap
         m = self.world.explore("pop_est", legend=True, cmap="Pastel2")
@@ -683,11 +683,11 @@ class TestExplore:
         out_str = self._fetch_map_string(m)
 
         strings = [
-            "[140.00,33986655.00]",
-            "(33986655.00,105350020.00]",
-            "(105350020.00,207353391.00]",
-            "(207353391.00,326625791.00]",
-            "(326625791.00,1379302771.00]",
+            "[140.00,21803000.00]",
+            "(21803000.00,66834405.00]",
+            "(66834405.00,163046161.00]",
+            "(163046161.00,328239523.00]",
+            "(328239523.00,1397715000.00]",
             "missing",
         ]
         for s in strings:
@@ -704,11 +704,11 @@ class TestExplore:
         out_str = self._fetch_map_string(m)
 
         strings = [
-            ">140.00,33986655.00",
-            ">33986655.00,105350020.00",
-            ">105350020.00,207353391.00",
-            ">207353391.00,326625791.00",
-            ">326625791.00,1379302771.00",
+            ">140.00,21803000.00",
+            ">21803000.00,66834405.00",
+            ">66834405.00,163046161.00",
+            ">163046161.00,328239523.00",
+            ">328239523.00,1397715000.00",
             "missing",
         ]
         for s in strings:
@@ -739,11 +739,11 @@ class TestExplore:
         out_str = self._fetch_map_string(m)
 
         strings = [
-            ">140,33986655",
-            ">33986655,105350020",
-            ">105350020,207353391",
-            ">207353391,326625791",
-            ">326625791,1379302771",
+            ">140,21803000",
+            ">21803000,66834405",
+            ">66834405,163046161",
+            ">163046161,328239523",
+            ">328239523,1397715000",
             "missing",
         ]
         for s in strings:
@@ -789,9 +789,9 @@ class TestExplore:
         for s in strings:
             assert s in out_str
 
-        assert out_str.count("008000ff") == 306
-        assert out_str.count("ffff00ff") == 187
-        assert out_str.count("ff0000ff") == 190
+        assert out_str.count("008000ff") == 304
+        assert out_str.count("ffff00ff") == 188
+        assert out_str.count("ff0000ff") == 191
 
         # Using custom function colormap
         def my_color_function(field):
