@@ -458,6 +458,26 @@ class TestIO:
         ).fetchone()[0]
         assert target_srid == 0, "SRID should be 0, found %s" % target_srid
 
+    def test_write_postgis_with_esri_authority(self, engine_postgis, df_nybb):
+        """
+        Tests that GeoDataFrame can be written to PostGIS with ESRI Authority
+        CRS information (GH #2414).
+        """
+        engine = engine_postgis
+
+        table = "nybb"
+
+        # Write to db
+        df_nybb_esri = df_nybb.to_crs("ESRI:102003")
+        write_postgis(df_nybb_esri, con=engine, name=table, if_exists="replace")
+        # Validate that srid is 102003
+        target_srid = engine.execute(
+            "SELECT Find_SRID('{schema}', '{table}', '{geom_col}');".format(
+                schema="public", table=table, geom_col="geometry"
+            )
+        ).fetchone()[0]
+        assert target_srid == 102003, "SRID should be 102003, found %s" % target_srid
+
     def test_write_postgis_geometry_collection(
         self, engine_postgis, df_geom_collection
     ):
