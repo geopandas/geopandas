@@ -66,6 +66,7 @@ doc/source/docs/reference/api/*.rst
 
 geopandas.egg-info
 geopandas/version.py
+geopandas/datasets/*.zip
 
 .asv
 doc/source/getting_started/my_file.geojson
