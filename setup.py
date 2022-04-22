@@ -4,13 +4,13 @@
 """
 
 import os
+import sys
 
-try:
-    from setuptools import setup
-except ImportError:
-    from distutils.core import setup
+from setuptools import setup
 
-import versioneer
+sys.path.append(os.path.dirname(__file__))
+
+import versioneer  # noqa: E402
 
 LONG_DESCRIPTION = """GeoPandas is a project to add support for geographic data to
 `pandas`_ objects.
@@ -62,6 +62,7 @@ setup(
         "Source": "https://github.com/geopandas/geopandas",
     },
     long_description=LONG_DESCRIPTION,
+    long_description_content_type="text/x-rst",
     packages=[
         "geopandas",
         "geopandas.io",

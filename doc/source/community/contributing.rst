@@ -222,7 +222,7 @@ This should install all necessary dependencies.
 Once dependencies are in place, make an in-place build by navigating to the git
 clone of the *GeoPandas* repository and running::
 
-    python setup.py develop
+    pip install -e .
 
 
 5) Making changes and writing tests
