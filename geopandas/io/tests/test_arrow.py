@@ -7,7 +7,7 @@ import pytest
 from pandas import DataFrame, read_parquet as pd_read_parquet
 from pandas.testing import assert_frame_equal
 import numpy as np
-from shapely.geometry import box
+from shapely.geometry import box, Point
 
 import geopandas
 from geopandas import GeoDataFrame, read_file, read_parquet, read_feather
@@ -23,6 +23,7 @@ from geopandas.io.arrow import (
     METADATA_VERSION,
 )
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
+from geopandas.tests.util import mock
 
 
 # Skip all tests in this module if pyarrow is not available
@@ -170,6 +171,28 @@ def test_validate_metadata_valid():
 def test_validate_metadata_invalid(metadata, error):
     with pytest.raises(ValueError, match=error):
         _validate_metadata(metadata)
+
+
+def test_to_parquet_fails_on_invalid_engine(tmpdir):
+    df = GeoDataFrame(data=[[1, 2, 3]], columns=["a", "b", "a"], geometry=[Point(1, 1)])
+
+    with pytest.raises(
+        ValueError,
+        match=(
+            "GeoPandas only supports using pyarrow as the engine for "
+            "to_parquet: 'fastparquet' passed instead."
+        ),
+    ):
+        df.to_parquet(tmpdir / "test.parquet", engine="fastparquet")
+
+
+@mock.patch("geopandas.io.arrow._to_parquet")
+def test_to_parquet_does_not_pass_engine_along(mock_to_parquet):
+    df = GeoDataFrame(data=[[1, 2, 3]], columns=["a", "b", "a"], geometry=[Point(1, 1)])
+    df.to_parquet("", engine="pyarrow")
+    # assert that engine keyword is not passed through to _to_parquet (and thus
+    # parquet.write_table)
+    mock_to_parquet.assert_called_with(df, "", compression="snappy", index=None)
 
 
 # TEMPORARY: used to determine if pyarrow fails for roundtripping pandas data

@@ -633,7 +633,10 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 "geometry": shape(feature["geometry"]) if feature["geometry"] else None
             }
             # load properties
-            row.update(feature["properties"])
+            properties = feature["properties"]
+            if properties is None:
+                properties = {}
+            row.update(properties)
             rows.append(row)
         return GeoDataFrame(rows, columns=columns, crs=crs)
 
@@ -1023,6 +1026,16 @@ individually so that features may have different properties
         GeoDataFrame.to_feather : write GeoDataFrame to feather
         GeoDataFrame.to_file : write GeoDataFrame to file
         """
+
+        # Accept engine keyword for compatibility with pandas.DataFrame.to_parquet
+        # The only engine currently supported by GeoPandas is pyarrow, so no
+        # other engine should be specified.
+        engine = kwargs.pop("engine", "auto")
+        if engine not in ("auto", "pyarrow"):
+            raise ValueError(
+                f"GeoPandas only supports using pyarrow as the engine for "
+                f"to_parquet: {engine!r} passed instead."
+            )
 
         from geopandas.io.arrow import _to_parquet
 
