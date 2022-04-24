@@ -415,9 +415,7 @@ def plot_series(
         return ax
 
     # have colors been given for all geometries?
-    color_given = isinstance(color, (list, pd.core.series.Series, np.ndarray)) and len(
-        color
-    ) == len(s)
+    color_given = pd.api.types.is_list_like(color) and len(color) == len(s)
 
     # if cmap is specified, create range of colors based on cmap
     values = None
