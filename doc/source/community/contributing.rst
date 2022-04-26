@@ -44,7 +44,7 @@ In particular, when submitting a pull request:
   imports when possible, and explicit relative imports for local
   imports when necessary in tests.
 
-- GeoPandas supports Python 3.7+ only. The last version of GeoPandas
+- GeoPandas supports Python 3.8+ only. The last version of GeoPandas
   supporting Python 2 is 0.6.
 
 
@@ -114,7 +114,7 @@ check it prior to submitting the pull request.
 Creating a branch
 ~~~~~~~~~~~~~~~~~~
 
-You want your master branch to reflect only production-ready code, so create a
+You want your main branch to reflect only production-ready code, so create a
 feature branch for making your changes. For example::
 
     git branch shiny-new-feature
@@ -129,12 +129,12 @@ changes in this branch specific to one bug or feature so it is clear
 what the branch brings to *GeoPandas*. You can have many shiny-new-features
 and switch in between them using the git checkout command.
 
-To update this branch, you need to retrieve the changes from the master branch::
+To update this branch, you need to retrieve the changes from the main branch::
 
     git fetch upstream
-    git rebase upstream/master
+    git rebase upstream/main
 
-This will replay your commits on top of the latest GeoPandas git master.  If this
+This will replay your commits on top of the latest GeoPandas git main.  If this
 leads to merge conflicts, you must resolve these before submitting your pull
 request.  If you have uncommitted changes, you will need to ``stash`` them prior
 to updating.  This will effectively store your changes and they can be reapplied
@@ -155,13 +155,32 @@ An easy way to create a *GeoPandas* development environment is as follows:
 - Make sure that you have :ref:`cloned the repository <contributing.forking>`
 - ``cd`` to the *geopandas** source directory
 
-Tell conda to create a new environment, named ``geopandas_dev``, or any other name you would like
+Using the provided environment
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+*GeoPandas* provides an environment which includes the required dependencies for development.
+The environment file is located in the top level of the repo and is named ``environment-dev.yml``.
+You can create this environment by navigating to the the *GeoPandas* source directory
+and running::
+
+      conda env create -f environment-dev.yml
+
+This will create a new conda environment named ``geopandas_dev``.
+
+Creating the environment manually
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Alternatively, it is possible to create a development environment manually.  To do this,
+tell conda to create a new environment named ``geopandas_dev``, or any other name you would like
 for this environment, by running::
 
       conda create -n geopandas_dev python
 
 This will create the new environment, and not touch any of your existing environments,
 nor any existing python installation.
+
+Working with the environment
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 To work in this environment, you need to ``activate`` it. The instructions below
 should work for both Windows, Mac and Linux::
@@ -183,12 +202,14 @@ See the full conda docs `here <http://conda.pydata.org/docs>`__.
 
 At this point you can easily do a *development* install, as detailed in the next sections.
 
+
 3) Installing Dependencies
 --------------------------
 
 To run *GeoPandas* in an development environment, you must first install
-*GeoPandas*'s dependencies. We suggest doing so using the following commands
-(executed after your development environment has been activated)::
+*GeoPandas*'s dependencies. If you used the provided environment in section 2, skip this
+step and continue to section 4. If you created the environment manually, we suggest installing
+dependencies using the following commands (executed after your development environment has been activated)::
 
     conda install -c conda-forge pandas fiona shapely pyproj rtree pytest
 
@@ -253,7 +274,7 @@ mixture of reStructuredText syntax for ``rst`` files, `which is explained here
 <http://www.sphinx-doc.org/en/stable/rest.html#rst-primer>`_ and MyST syntax for ``md``
 files `explained here <https://myst-parser.readthedocs.io/en/latest/index.html>`_.
 The docstrings follow the `Numpy Docstring standard
-<https://github.com/numpy/numpy/blob/master/doc/HOWTO_DOCUMENT.rst.txt>`_. Some pages
+<https://github.com/numpy/numpy/blob/main/doc/HOWTO_DOCUMENT.rst.txt>`_. Some pages
 and examples are Jupyter notebooks converted to docs using `nbsphinx
 <https://nbsphinx.readthedocs.io/>`_. Jupyter notebooks should be stored without the output.
 
@@ -308,14 +329,14 @@ report any stylistic errors in your code. Therefore, it is helpful before
 submitting code to run the check yourself::
 
    black geopandas
-   git diff upstream/master -u -- "*.py" | flake8 --diff
+   git diff upstream/main -u -- "*.py" | flake8 --diff
 
 to auto-format your code. Additionally, many editors have plugins that will
 apply ``black`` as you edit files.
 
 Optionally (but recommended), you can setup `pre-commit hooks <https://pre-commit.com/>`_
-to automatically run ``black`` and ``flake8`` when you make a git commit. This
-can be done by installing ``pre-commit``::
+to automatically run ``black`` and ``flake8`` when you make a git commit. If you did not
+use the provided development environment in ``environment-dev.yml``, you must first install ``pre-commit``::
 
    $ python -m pip install pre-commit
 

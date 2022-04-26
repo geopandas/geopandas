@@ -1,13 +1,13 @@
 from __future__ import absolute_import
 
-from distutils.version import LooseVersion
+from packaging.version import Version
 import os
 
 import pytest
 from pandas import DataFrame, read_parquet as pd_read_parquet
 from pandas.testing import assert_frame_equal
 import numpy as np
-from shapely.geometry import box
+from shapely.geometry import box, Point
 
 import geopandas
 from geopandas import GeoDataFrame, read_file, read_parquet, read_feather
@@ -23,13 +23,11 @@ from geopandas.io.arrow import (
     METADATA_VERSION,
 )
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
+from geopandas.tests.util import mock
 
 
 # Skip all tests in this module if pyarrow is not available
 pyarrow = pytest.importorskip("pyarrow")
-
-# TEMPORARY: hide warning from to_parquet
-pytestmark = pytest.mark.filterwarnings("ignore:.*initial implementation of Parquet.*")
 
 
 @pytest.fixture(
@@ -38,7 +36,7 @@ pytestmark = pytest.mark.filterwarnings("ignore:.*initial implementation of Parq
         pytest.param(
             "feather",
             marks=pytest.mark.skipif(
-                pyarrow.__version__ < LooseVersion("0.17.0"),
+                Version(pyarrow.__version__) < Version("0.17.0"),
                 reason="needs pyarrow >= 0.17",
             ),
         ),
@@ -175,6 +173,28 @@ def test_validate_metadata_invalid(metadata, error):
         _validate_metadata(metadata)
 
 
+def test_to_parquet_fails_on_invalid_engine(tmpdir):
+    df = GeoDataFrame(data=[[1, 2, 3]], columns=["a", "b", "a"], geometry=[Point(1, 1)])
+
+    with pytest.raises(
+        ValueError,
+        match=(
+            "GeoPandas only supports using pyarrow as the engine for "
+            "to_parquet: 'fastparquet' passed instead."
+        ),
+    ):
+        df.to_parquet(tmpdir / "test.parquet", engine="fastparquet")
+
+
+@mock.patch("geopandas.io.arrow._to_parquet")
+def test_to_parquet_does_not_pass_engine_along(mock_to_parquet):
+    df = GeoDataFrame(data=[[1, 2, 3]], columns=["a", "b", "a"], geometry=[Point(1, 1)])
+    df.to_parquet("", engine="pyarrow")
+    # assert that engine keyword is not passed through to _to_parquet (and thus
+    # parquet.write_table)
+    mock_to_parquet.assert_called_with(df, "", compression="snappy", index=None)
+
+
 # TEMPORARY: used to determine if pyarrow fails for roundtripping pandas data
 # without geometries
 def test_pandas_parquet_roundtrip1(tmpdir):
@@ -217,9 +237,7 @@ def test_roundtrip(tmpdir, file_format, test_dataset):
 
     filename = os.path.join(str(tmpdir), "test.pq")
 
-    # TEMP: Initial implementation should raise a UserWarning
-    with pytest.warns(UserWarning, match="initial implementation"):
-        writer(df, filename)
+    writer(df, filename)
 
     assert os.path.exists(filename)
 
@@ -271,7 +289,7 @@ def test_parquet_compression(compression, tmpdir):
 
 
 @pytest.mark.skipif(
-    pyarrow.__version__ < LooseVersion("0.17.0"),
+    Version(pyarrow.__version__) < Version("0.17.0"),
     reason="Feather only supported for pyarrow >= 0.17",
 )
 @pytest.mark.parametrize("compression", ["uncompressed", "lz4", "zstd"])
@@ -489,7 +507,7 @@ def test_missing_crs(tmpdir, file_format):
 
 
 @pytest.mark.skipif(
-    pyarrow.__version__ >= LooseVersion("0.17.0"),
+    Version(pyarrow.__version__) >= Version("0.17.0"),
     reason="Feather only supported for pyarrow >= 0.17",
 )
 def test_feather_arrow_version(tmpdir):
@@ -536,7 +554,7 @@ def test_non_fsspec_url_with_storage_options_raises():
 
 
 @pytest.mark.skipif(
-    pyarrow.__version__ < LooseVersion("5.0.0"),
+    Version(pyarrow.__version__) < Version("5.0.0"),
     reason="pyarrow.fs requires pyarrow>=5.0.0",
 )
 def test_prefers_pyarrow_fs():

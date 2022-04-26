@@ -174,6 +174,31 @@ class TestFrameSindex:
         subset2 = self.df[["A", "geom"]]
         assert subset2.sindex is original_index
 
+    def test_rebuild_on_update_inplace(self):
+        gdf = self.df.copy()
+        old_sindex = gdf.sindex
+        # sorting in place
+        gdf.sort_values("A", ascending=False, inplace=True)
+        # spatial index should be invalidated
+        assert not gdf.has_sindex
+        new_sindex = gdf.sindex
+        # and should be different
+        assert new_sindex is not old_sindex
+
+        # sorting should still have happened though
+        assert gdf.index.tolist() == [4, 3, 2, 1, 0]
+
+    @pytest.mark.skipif(not compat.PANDAS_GE_11, reason="fails on pd<1.1.0")
+    def test_update_inplace_no_rebuild(self):
+        gdf = self.df.copy()
+        old_sindex = gdf.sindex
+        gdf.rename(columns={"A": "AA"}, inplace=True)
+        # a rename shouldn't invalidate the index
+        assert gdf.has_sindex
+        # and the "new" should be the same
+        new_sindex = gdf.sindex
+        assert old_sindex is new_sindex
+
 
 # Skip to accommodate Shapely geometries being unhashable
 @pytest.mark.skip

@@ -1,4 +1,4 @@
-from distutils.version import LooseVersion
+from packaging.version import Version
 import json
 import warnings
 
@@ -174,21 +174,6 @@ def _geopandas_to_arrow(df, index=None):
     """
     from pyarrow import Table
 
-    warnings.warn(
-        "this is an initial implementation of Parquet/Feather file support and "
-        "associated metadata.  This is tracking version 0.1.0 of the metadata "
-        "specification at "
-        "https://github.com/geopandas/geo-arrow-spec\n\n"
-        "This metadata specification does not yet make stability promises.  "
-        "We do not yet recommend using this in a production setting unless you "
-        "are able to rewrite your Parquet/Feather files.\n\n"
-        "To further ignore this warning, you can do: \n"
-        "import warnings; warnings.filterwarnings('ignore', "
-        "message='.*initial implementation of Parquet.*')",
-        UserWarning,
-        stacklevel=4,
-    )
-
     _validate_dataframe(df)
 
     # create geo metadata before altering incoming data frame
@@ -213,15 +198,10 @@ def _to_parquet(df, path, index=None, compression="snappy", **kwargs):
 
     Requires 'pyarrow'.
 
-    WARNING: this is an initial implementation of Parquet file support and
+    This is an initial implementation of Parquet file support and
     associated metadata.  This is tracking version 0.1.0 of the metadata
     specification at:
     https://github.com/geopandas/geo-arrow-spec
-
-    This metadata specification does not yet make stability promises.  As such,
-    we do not yet recommend using this in a production setting unless you are
-    able to rewrite your Parquet files.
-
 
     .. versionadded:: 0.8
 
@@ -256,14 +236,10 @@ def _to_feather(df, path, index=None, compression=None, **kwargs):
 
     Requires 'pyarrow' >= 0.17.
 
-    WARNING: this is an initial implementation of Feather file support and
+    This is an initial implementation of Feather file support and
     associated metadata.  This is tracking version 0.1.0 of the metadata
     specification at:
     https://github.com/geopandas/geo-arrow-spec
-
-    This metadata specification does not yet make stability promises.  As such,
-    we do not yet recommend using this in a production setting unless you are
-    able to rewrite your Feather files.
 
     .. versionadded:: 0.8
 
@@ -288,7 +264,7 @@ def _to_feather(df, path, index=None, compression=None, **kwargs):
     # TODO move this into `import_optional_dependency`
     import pyarrow
 
-    if pyarrow.__version__ < LooseVersion("0.17.0"):
+    if Version(pyarrow.__version__) < Version("0.17.0"):
         raise ImportError("pyarrow >= 0.17 required for Feather support")
 
     path = _expand_user(path)
@@ -361,7 +337,7 @@ def _get_filesystem_path(path, filesystem=None, storage_options=None):
         isinstance(path, str)
         and storage_options is None
         and filesystem is None
-        and LooseVersion(pyarrow.__version__) >= "5.0.0"
+        and Version(pyarrow.__version__) >= Version("5.0.0")
     ):
         # Use the native pyarrow filesystem if possible.
         try:
@@ -513,7 +489,7 @@ def _read_feather(path, columns=None, **kwargs):
     # TODO move this into `import_optional_dependency`
     import pyarrow
 
-    if pyarrow.__version__ < LooseVersion("0.17.0"):
+    if Version(pyarrow.__version__) < Version("0.17.0"):
         raise ImportError("pyarrow >= 0.17 required for Feather support")
 
     path = _expand_user(path)

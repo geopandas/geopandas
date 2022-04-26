@@ -3,7 +3,7 @@ import warnings
 
 import numpy as np
 import pandas as pd
-from pandas import Series, MultiIndex
+from pandas import Series, MultiIndex, DataFrame
 from pandas.core.internals import SingleBlockManager
 
 from pyproj import CRS
@@ -29,12 +29,6 @@ from .array import (
 from .base import is_geometry_type
 
 
-_SERIES_WARNING_MSG = """\
-    You are passing non-geometry data to the GeoSeries constructor. Currently,
-    it falls back to returning a pandas Series. But in the future, we will start
-    to raise a TypeError instead."""
-
-
 def _geoseries_constructor_with_fallback(data=None, index=None, crs=None, **kwargs):
     """
     A flexible constructor for GeoSeries._constructor, which needs to be able
@@ -42,16 +36,38 @@ def _geoseries_constructor_with_fallback(data=None, index=None, crs=None, **kwar
     geometries)
     """
     try:
-        with warnings.catch_warnings():
-            warnings.filterwarnings(
-                "ignore",
-                message=_SERIES_WARNING_MSG,
-                category=FutureWarning,
-                module="geopandas[.*]",
-            )
-            return GeoSeries(data=data, index=index, crs=crs, **kwargs)
+        return GeoSeries(data=data, index=index, crs=crs, **kwargs)
     except TypeError:
         return Series(data=data, index=index, **kwargs)
+
+
+def _geoseries_expanddim(data=None, *args, **kwargs):
+    from geopandas import GeoDataFrame
+
+    # pd.Series._constructor_expanddim == pd.DataFrame
+    df = pd.DataFrame(data, *args, **kwargs)
+    geo_col_name = None
+    if isinstance(data, GeoSeries):
+        # pandas default column name is 0, keep convention
+        geo_col_name = data.name if data.name is not None else 0
+
+    if df.shape[1] == 1:
+        geo_col_name = df.columns[0]
+
+    if (df.dtypes == "geometry").sum() > 0:
+        if geo_col_name is None or not is_geometry_type(df[geo_col_name]):
+            df = GeoDataFrame(df)
+            df._geometry_column_name = None
+        else:
+            df = df.set_geometry(geo_col_name)
+
+    return df
+
+
+# pd.concat (pandas/core/reshape/concat.py) requires this for the
+# concatenation of series since pandas 1.1
+# (https://github.com/pandas-dev/pandas/commit/f9e4c8c84bcef987973f2624cc2932394c171c8c)
+_geoseries_expanddim._get_axis_number = DataFrame._get_axis_number
 
 
 class GeoSeries(GeoPandasBase, Series):
@@ -134,27 +150,19 @@ class GeoSeries(GeoPandasBase, Series):
 
     _metadata = ["name"]
 
-    def __new__(cls, data=None, index=None, crs=None, **kwargs):
-        # we need to use __new__ because we want to return Series instance
-        # instead of GeoSeries instance in case of non-geometry data
-
+    def __init__(self, data=None, index=None, crs=None, **kwargs):
         if hasattr(data, "crs") and crs:
             if not data.crs:
                 # make a copy to avoid setting CRS to passed GeometryArray
                 data = data.copy()
             else:
                 if not data.crs == crs:
-                    warnings.warn(
+                    raise ValueError(
                         "CRS mismatch between CRS of the passed geometries "
-                        "and 'crs'. Use 'GeoDataFrame.set_crs(crs, "
+                        "and 'crs'. Use 'GeoSeries.set_crs(crs, "
                         "allow_override=True)' to overwrite CRS or "
                         "'GeoSeries.to_crs(crs)' to reproject geometries. "
-                        "CRS mismatch will raise an error in the future versions "
-                        "of GeoPandas.",
-                        FutureWarning,
-                        stacklevel=2,
                     )
-                    # TODO: raise error in 0.9 or 0.10.
 
         if isinstance(data, SingleBlockManager):
             if isinstance(data.blocks[0].dtype, GeometryDtype):
@@ -169,12 +177,11 @@ class GeoSeries(GeoPandasBase, Series):
                     values = data.blocks[0].values
                     block = ExtensionBlock(values, slice(0, len(values), 1), ndim=1)
                     data = SingleBlockManager([block], data.axes[0], fastpath=True)
-                self = super(GeoSeries, cls).__new__(cls)
-                super(GeoSeries, self).__init__(data, index=index, **kwargs)
-                self.crs = getattr(self.values, "crs", crs)
-                return self
-            warnings.warn(_SERIES_WARNING_MSG, FutureWarning, stacklevel=2)
-            return Series(data, index=index, **kwargs)
+            else:
+                raise TypeError(
+                    "Non geometry data passed to GeoSeries constructor, "
+                    f"received data of dtype '{data.blocks[0].dtype}'"
+                )
 
         if isinstance(data, BaseGeometry):
             # fix problem for scalar geometries passed, ensure the list of
@@ -204,28 +211,24 @@ class GeoSeries(GeoPandasBase, Series):
                     # pd.Series with empty data gives float64 for older pandas versions
                     s = s.astype(object)
                 else:
-                    warnings.warn(_SERIES_WARNING_MSG, FutureWarning, stacklevel=2)
-                    return s
+                    raise TypeError(
+                        "Non geometry data passed to GeoSeries constructor, "
+                        f"received data of dtype '{s.dtype}'"
+                    )
             # try to convert to GeometryArray, if fails return plain Series
             try:
                 data = from_shapely(s.values, crs)
             except TypeError:
-                warnings.warn(_SERIES_WARNING_MSG, FutureWarning, stacklevel=2)
-                return s
+                raise TypeError(
+                    "Non geometry data passed to GeoSeries constructor, "
+                    f"received data of dtype '{s.dtype}'"
+                )
             index = s.index
             name = s.name
 
-        self = super(GeoSeries, cls).__new__(cls)
-        super(GeoSeries, self).__init__(data, index=index, name=name, **kwargs)
-
+        super().__init__(data, index=index, name=name, **kwargs)
         if not self.crs:
             self.crs = crs
-        return self
-
-    def __init__(self, *args, **kwargs):
-        # need to overwrite Series init to prevent calling it for GeoSeries
-        # (doesn't know crs, all work is already done above)
-        pass
 
     def append(self, *args, **kwargs):
         return self._wrapped_pandas_method("append", *args, **kwargs)
@@ -593,9 +596,7 @@ class GeoSeries(GeoPandasBase, Series):
 
     @property
     def _constructor_expanddim(self):
-        from geopandas import GeoDataFrame
-
-        return GeoDataFrame
+        return _geoseries_expanddim
 
     def _wrapped_pandas_method(self, mtd, *args, **kwargs):
         """Wrap a generic pandas method to ensure it returns a GeoSeries"""
@@ -627,13 +628,6 @@ class GeoSeries(GeoPandasBase, Series):
             if self.crs is not None:
                 result.set_crs(self.crs, inplace=True)
         return result
-
-    def __finalize__(self, other, method=None, **kwargs):
-        """propagate metadata from other to self"""
-        # NOTE: backported from pandas master (upcoming v0.13)
-        for name in self._metadata:
-            object.__setattr__(self, name, getattr(other, name, None))
-        return self
 
     def isna(self):
         """
@@ -673,21 +667,6 @@ class GeoSeries(GeoPandasBase, Series):
         GeoSeries.notna : inverse of isna
         GeoSeries.is_empty : detect empty geometries
         """
-        if self.is_empty.any():
-            warnings.warn(
-                "GeoSeries.isna() previously returned True for both missing (None) "
-                "and empty geometries. Now, it only returns True for missing values. "
-                "Since the calling GeoSeries contains empty geometries, the result "
-                "has changed compared to previous versions of GeoPandas.\n"
-                "Given a GeoSeries 's', you can use 's.is_empty | s.isna()' to get "
-                "back the old behaviour.\n\n"
-                "To further ignore this warning, you can do: \n"
-                "import warnings; warnings.filterwarnings('ignore', 'GeoSeries.isna', "
-                "UserWarning)",
-                UserWarning,
-                stacklevel=2,
-            )
-
         return super().isna()
 
     def isnull(self):
@@ -926,7 +905,7 @@ class GeoSeries(GeoPandasBase, Series):
 
         index = []
         geometries = []
-        for idx, s in self.geometry.iteritems():
+        for idx, s in self.geometry.items():
             if s.type.startswith("Multi") or s.type == "GeometryCollection":
                 geoms = s.geoms
                 idxs = [(idx, i) for i in range(len(geoms))]
