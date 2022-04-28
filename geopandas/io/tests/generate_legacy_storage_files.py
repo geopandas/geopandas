@@ -31,7 +31,7 @@ from shapely.geometry import Point
 
 
 def create_pickle_data():
-    """ create the pickle data """
+    """create the pickle data"""
 
     # custom geometry column name
     gdf_the_geom = geopandas.GeoDataFrame(
