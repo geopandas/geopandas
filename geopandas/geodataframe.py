@@ -2106,17 +2106,21 @@ countries_w_city_data[countries_w_city_data["name_left"] == "Italy"]
         """Clip points, lines, or polygon geometries to the mask extent.
 
         Both layers must be in the same Coordinate Reference System (CRS).
-        The GeoDataFrame will be clipped to the full extent of the `mask` object.
+        The GeoDataFrame will be clipped to the full extent of the ``mask`` object.
 
         If there are multiple polygons in mask, data from the GeoDataFrame will be
         clipped to the total boundary of all polygons in mask.
 
         Parameters
         ----------
-        mask : GeoDataFrame, GeoSeries, (Multi)Polygon
-            Polygon vector layer used to clip `gdf`.
+        mask : GeoDataFrame, GeoSeries, (Multi)Polygon, list-like
+            Polygon vector layer used to clip the GeoDataFrame.
             The mask's geometry is dissolved into one geometric feature
-            and intersected with `gdf`.
+            and intersected with GeoDataFrame.
+            If the mask is list-like with four elements ``(minx, miny, maxx, maxy)``,
+            ``clip`` will use a faster rectangle clipping
+            (:meth:`~GeoSeries.clip_by_rect`), possibly leading to slightly different
+            results.
         keep_geom_type : boolean, default False
             If True, return only geometries of original type in case of intersection
             resulting in multiple geometry types or GeometryCollections.
@@ -2125,7 +2129,7 @@ countries_w_city_data[countries_w_city_data["name_left"] == "Italy"]
         Returns
         -------
         GeoDataFrame
-            Vector data (points, lines, polygons) from `gdf` clipped to
+            Vector data (points, lines, polygons) from the GeoDataFrame clipped to
             polygon boundary from mask.
 
         See also
