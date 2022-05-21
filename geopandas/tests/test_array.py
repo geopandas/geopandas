@@ -467,6 +467,15 @@ def test_unary_predicates(attr):
         # empty Linearring.is_ring gives False with Shapely < 2.0
         if compat.USE_PYGEOS and not compat.SHAPELY_GE_20:
             expected[-2] = True
+    elif (
+        attr == "is_closed"
+        and compat.USE_PYGEOS
+        and compat.SHAPELY_GE_182
+        and not compat.SHAPELY_GE_20
+    ):
+        # In shapely 1.8.2, is_closed was changed to return always True for
+        # Polygon/MultiPolygon, while PyGEOS returns always False
+        expected[:-2] = True
     else:
         expected = [getattr(t, attr) if t is not None else na_value for t in vals]
     assert result.tolist() == expected
