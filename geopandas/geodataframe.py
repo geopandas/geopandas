@@ -1437,18 +1437,25 @@ individually so that features may have different properties
             func, axis=axis, raw=raw, result_type=result_type, args=args, **kwargs
         )
         # Reconstruct gdf if it was lost by apply
-        if (
-            isinstance(result, DataFrame)
-            and self._geometry_column_name in result.columns
-        ):
-            # axis=1 apply will split GeometryDType to object, try and cast back
-            try:
-                result = result.set_geometry(self._geometry_column_name)
-            except TypeError:
-                pass
-            else:
-                if self.crs is not None and result.crs is None:
-                    result.set_crs(self.crs, inplace=True)
+        if isinstance(result, DataFrame):
+            if self._geometry_column_name in result.columns:
+                # axis=1 apply will split GeometryDType to object, try and cast back
+                try:
+                    result = result.set_geometry(self._geometry_column_name)
+                except TypeError:
+                    pass
+                else:
+                    if self.crs is not None and result.crs is None:
+                        result.set_crs(self.crs, inplace=True)
+            # preserve other geom col dtypes
+            other_geom_cols = set(self.columns[self.dtypes == "geometry"]) - {
+                self._geometry_column_name
+            }
+            for c in other_geom_cols:
+                result.loc[:, c] = _ensure_geometry(result[c], crs=self[c].crs)
+            # if active geom col lost, but still have geometry
+            if type(result) == pd.DataFrame and (result.dtypes == "geometry").any():
+                result = GeoDataFrame(result, geometry=None)
 
         return result
 
