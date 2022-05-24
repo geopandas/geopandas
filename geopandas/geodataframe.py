@@ -37,16 +37,6 @@ def _geodataframe_constructor_with_fallback(*args, **kwargs):
     return df
 
 
-# def _geodataframe_constructor_sliced(data=None, index=None, crs=None, **kwargs):
-#     srs = pd.Series(data, index, **kwargs)
-#     # Row slices of homogenous dtypes e.g df[["geometry", "geometry2"]].loc[0]
-#     # pass GeometryArrays, these should stay as pd.Series
-#     # https://github.com/geopandas/geopandas/issues/2282
-#     if is_geometry_type(srs) and not isinstance(data, GeometryArray):
-#         srs = GeoSeries(srs, crs=crs)
-#     return srs
-
-
 def _ensure_geometry(data, crs=None):
     """
     Ensure the data is of geometry dtype or converted to it.
@@ -1489,7 +1479,6 @@ individually so that features may have different properties
         ):
 
             srs = pd.Series(data, index, **kwargs)
-            # is_col_proxy = not srs.index.equals(self.columns)
             is_col_proxy = srs.index is self_df.index
             if is_geometry_type(srs) and is_col_proxy:
                 srs = GeoSeries(srs, crs=crs)

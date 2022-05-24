@@ -37,10 +37,8 @@ test_case_column_sets = [
 )
 def test_constructor_sliced_row_slices(df, column_set):
     # https://github.com/geopandas/geopandas/issues/2282
-    print("TEST START")
     df_subset = df[column_set]
     assert isinstance(df_subset, pd.DataFrame)
-    print("PRE LOC SUBSET")
     res = df_subset.loc[0]
     # row slices shouldn't be GeoSeries, even if they have a geometry col
     assert type(res) == pd.Series
@@ -50,7 +48,7 @@ def test_constructor_sliced_row_slices(df, column_set):
 
 
 def test_constructor_sliced_column_slices(df):
-    # Note loc doesn't used _constructor_sliced so it's not tested here
+    # Note loc doesn't use _constructor_sliced so it's not tested here
     geo_idx = df.columns.get_loc("geometry")
     sub = df.head(1)
     # column slices should be GeoSeries if of geometry type
@@ -58,7 +56,7 @@ def test_constructor_sliced_column_slices(df):
     sub = df.head(2)
     assert type(sub.iloc[:, geo_idx]) == GeoSeries
 
-    # check iloc columns slices are pd.Series instead
+    # check iloc row slices are pd.Series instead
     assert type(df.iloc[0, :]) == pd.Series
 
 
@@ -67,6 +65,7 @@ def test_constructor_sliced_in_pandas_methods(df):
     # geometry cases are sensible
     assert type(df.count()) == pd.Series
     # drop the secondary geometry columns as not hashable
-    assert type(df.drop(columns=["geometry2", "geometry3"]).duplicated()) == pd.Series
+    hashable_test_df = df.drop(columns=["geometry2", "geometry3"])
+    assert type(hashable_test_df.duplicated()) == pd.Series
     assert type(df.quantile()) == pd.Series
     assert type(df.memory_usage()) == pd.Series
