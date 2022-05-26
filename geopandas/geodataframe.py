@@ -554,7 +554,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         return geopandas.io.file._read_file(filename, **kwargs)
 
     @classmethod
-    def from_features(cls, features, crs=None, columns=None):
+    def from_features(cls, features, crs=None, columns=None, geometry_colname=None):
         """
         Alternate constructor to create GeoDataFrame from an iterable of
         features or a feature collection.
@@ -574,6 +574,9 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             Optionally specify the column names to include in the output frame.
             This does not overwrite the property names of the input, but can
             ensure a consistent output format.
+        geometry_colname : str
+            Name of the column that will contain the shapely geometries. When
+            this attribute isn't set, it will default to "geometry".'
 
         Returns
         -------
@@ -624,13 +627,21 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         else:
             features_lst = features
 
+        if geometry_colname is None:
+            geometry_colname = DEFAULT_GEO_COLUMN_NAME
+
+        if not isinstance(geometry_colname, str):
+            raise TypeError("The 'geometry_colname' parameter must be string.")
+
         rows = []
         for feature in features_lst:
             # load geometry
             if hasattr(feature, "__geo_interface__"):
                 feature = feature.__geo_interface__
             row = {
-                "geometry": shape(feature["geometry"]) if feature["geometry"] else None
+                geometry_colname: shape(feature["geometry"])
+                if feature["geometry"]
+                else None
             }
             # load properties
             properties = feature["properties"]
@@ -638,7 +649,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 properties = {}
             row.update(properties)
             rows.append(row)
-        return GeoDataFrame(rows, columns=columns, crs=crs)
+        return GeoDataFrame(rows, columns=columns, crs=crs, geometry=geometry_colname)
 
     @classmethod
     def from_postgis(

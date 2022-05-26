@@ -73,6 +73,13 @@ class TestDataFrame:
         self.df3 = read_file(
             os.path.join(PACKAGE_DIR, "geopandas", "tests", "data", "null_geom.geojson")
         )
+        # GeoJSON file w/ an attribute called "geometry" that isn't an actual geometry
+        self.df4 = read_file(
+            os.path.join(
+                PACKAGE_DIR, "geopandas", "tests", "data", "geometry_col.geojson"
+            ),
+            geometry_colname="geometry_",
+        )
 
     def teardown_method(self):
         shutil.rmtree(self.tempdir)
@@ -864,6 +871,20 @@ class TestDataFrame:
         assert isinstance(geo["bbox"], tuple)
         for feature in geo["features"]:
             assert "bbox" in feature.keys()
+
+    def test_geojson_nongeometry_col(self):
+        pass
+        df5 = GeoDataFrame(
+            data={
+                "col1": {0: 1, 1: 2},
+                "col2": {0: "testA", 1: "testB"},
+                "geometry": {0: "1234", 1: "wxyz"},
+                "geometry_": {0: Point([0, 0]), 1: Point([1, 1])},
+            },
+            geometry="geometry_",
+            crs="epsg:4326",
+        )
+        assert_frame_equal(self.df4, df5)
 
     def test_pickle(self):
         import pickle
