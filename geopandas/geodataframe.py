@@ -627,7 +627,10 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 "geometry": shape(feature["geometry"]) if feature["geometry"] else None
             }
             # load properties
-            row.update(feature["properties"])
+            properties = feature["properties"]
+            if properties is None:
+                properties = {}
+            row.update(properties)
             rows.append(row)
         return GeoDataFrame(rows, columns=columns, crs=crs)
 
@@ -859,7 +862,7 @@ individually so that features may have different properties
         if not self.columns.is_unique:
             raise ValueError("GeoDataFrame cannot contain duplicated column names.")
 
-        properties_cols = self.columns.difference([self._geometry_column_name])
+        properties_cols = self.columns.drop(self._geometry_column_name)
 
         if len(properties_cols) > 0:
             # convert to object to get python scalars.
@@ -1017,6 +1020,16 @@ individually so that features may have different properties
         GeoDataFrame.to_feather : write GeoDataFrame to feather
         GeoDataFrame.to_file : write GeoDataFrame to file
         """
+
+        # Accept engine keyword for compatibility with pandas.DataFrame.to_parquet
+        # The only engine currently supported by GeoPandas is pyarrow, so no
+        # other engine should be specified.
+        engine = kwargs.pop("engine", "auto")
+        if engine not in ("auto", "pyarrow"):
+            raise ValueError(
+                f"GeoPandas only supports using pyarrow as the engine for "
+                f"to_parquet: {engine!r} passed instead."
+            )
 
         from geopandas.io.arrow import _to_parquet
 
@@ -1823,7 +1836,7 @@ individually so that features may have different properties
             - append: Insert new values to the existing table.
         schema : string, optional
             Specify the schema. If None, use default schema: 'public'.
-        index : bool, default True
+        index : bool, default False
             Write DataFrame index as a column.
             Uses *index_label* as the column name in the table.
         index_label : string or sequence, default None
@@ -2108,17 +2121,21 @@ countries_w_city_data[countries_w_city_data["name_left"] == "Italy"]
         """Clip points, lines, or polygon geometries to the mask extent.
 
         Both layers must be in the same Coordinate Reference System (CRS).
-        The GeoDataFrame will be clipped to the full extent of the `mask` object.
+        The GeoDataFrame will be clipped to the full extent of the ``mask`` object.
 
         If there are multiple polygons in mask, data from the GeoDataFrame will be
         clipped to the total boundary of all polygons in mask.
 
         Parameters
         ----------
-        mask : GeoDataFrame, GeoSeries, (Multi)Polygon
-            Polygon vector layer used to clip `gdf`.
+        mask : GeoDataFrame, GeoSeries, (Multi)Polygon, list-like
+            Polygon vector layer used to clip the GeoDataFrame.
             The mask's geometry is dissolved into one geometric feature
-            and intersected with `gdf`.
+            and intersected with GeoDataFrame.
+            If the mask is list-like with four elements ``(minx, miny, maxx, maxy)``,
+            ``clip`` will use a faster rectangle clipping
+            (:meth:`~GeoSeries.clip_by_rect`), possibly leading to slightly different
+            results.
         keep_geom_type : boolean, default False
             If True, return only geometries of original type in case of intersection
             resulting in multiple geometry types or GeometryCollections.
@@ -2127,7 +2144,7 @@ countries_w_city_data[countries_w_city_data["name_left"] == "Italy"]
         Returns
         -------
         GeoDataFrame
-            Vector data (points, lines, polygons) from `gdf` clipped to
+            Vector data (points, lines, polygons) from the GeoDataFrame clipped to
             polygon boundary from mask.
 
         See also
