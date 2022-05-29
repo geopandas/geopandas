@@ -157,7 +157,6 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 )
 
             # only if we have actual geometry values -> call set_geometry
-            index = self.index
             try:
                 if (
                     hasattr(self["geometry"].values, "crs")
@@ -170,11 +169,6 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             except TypeError:
                 pass
             else:
-                if self.index is not index:
-                    # With pandas < 1.0 and an empty frame (no rows), the index
-                    # gets reset to a default RangeIndex -> set back the original
-                    # index if needed
-                    self.index = index
                 geometry = "geometry"
 
         if geometry is not None:
