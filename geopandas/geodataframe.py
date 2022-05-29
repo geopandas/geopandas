@@ -1462,8 +1462,7 @@ individually so that features may have different properties
             except TypeError:
                 df = pd.DataFrame(data, index=index, **kwargs)
             else:
-                geometry_cols_mask = df.dtypes == "geometry"
-                if len(geometry_cols_mask) == 0 or geometry_cols_mask.sum() == 0:
+                if (df.dtypes == "geometry").sum() == 0:
                     df = pd.DataFrame(df)
                 else:
                     if crs is not None and geometry in df.columns:
