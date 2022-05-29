@@ -1775,7 +1775,7 @@ individually so that features may have different properties
         -------
         GeoDataFrame or DataFrame
         """
-        df = pd.DataFrame(self).astype(dtype, copy=copy, errors=errors, **kwargs)
+        df = super().astype(dtype, copy=copy, errors=errors, **kwargs)
 
         try:
             geoms = df[self._geometry_column_name]
