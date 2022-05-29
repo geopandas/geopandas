@@ -143,7 +143,6 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 )
 
             # only if we have actual geometry values -> call set_geometry
-            index = self.index
             try:
                 if (
                     hasattr(self["geometry"].values, "crs")
@@ -156,11 +155,6 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             except TypeError:
                 pass
             else:
-                if self.index is not index:
-                    # With pandas < 1.0 and an empty frame (no rows), the index
-                    # gets reset to a default RangeIndex -> set back the original
-                    # index if needed
-                    self.index = index
                 geometry = "geometry"
 
         if geometry is not None:
@@ -340,12 +334,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
             # Check that we are using a listlike of geometries
             level = _ensure_geometry(level, crs=crs)
-            index = frame.index
             frame[geo_column_name] = level
-            if frame.index is not index and len(frame.index) == len(index):
-                # With pandas < 1.0 and an empty frame (no rows), the index gets reset
-                # to a default RangeIndex -> set back the original index if needed
-                frame.index = index
         frame._geometry_column_name = geo_column_name
         frame.crs = crs
         if not inplace:
