@@ -1454,15 +1454,20 @@ individually so that features may have different properties
         def _geodataframe_constructor_with_fallback(
             data=None, index=None, crs=crs_default, geometry=geometry_default, **kwargs
         ):
-            df = pd.DataFrame(data, index=index, **kwargs)
-            if (df.dtypes == "geometry").sum() > 0:
-                try:
-                    df = GeoDataFrame(df)
-                    df._geometry_column_name = geometry
+            try:
+                df = GeoDataFrame(data, index=index, **kwargs)
+                # TODO does this need to do an ensure_geometry? for geom col?
+                df._geometry_column_name = geometry
+
+            except TypeError:
+                df = pd.DataFrame(data, index=index, **kwargs)
+            else:
+                geometry_cols_mask = df.dtypes == "geometry"
+                if len(geometry_cols_mask) == 0 or geometry_cols_mask.sum() == 0:
+                    df = pd.DataFrame(df)
+                else:
                     if crs is not None and geometry in df.columns:
                         df.set_crs(crs, inplace=True)
-                except TypeError:
-                    pass
 
             return df
 
