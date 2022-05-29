@@ -10,7 +10,7 @@ from geopandas import GeoDataFrame
 import geopandas
 from .file import _expand_user
 
-METADATA_VERSION = "0.2.0"
+METADATA_VERSION = "0.4.0"
 # reference: https://github.com/opengeospatial/geoparquet
 
 # Metadata structure:
@@ -18,16 +18,23 @@ METADATA_VERSION = "0.2.0"
 #     "geo": {
 #         "columns": {
 #             "<name>": {
-#                 "crs": "<WKT or None: REQUIRED>",
 #                 "encoding": "WKB"
+#                 "geometry_type": <str or list of str: REQUIRED>
+#                 "crs": "<PROJJSON or None: OPTIONAL>",
+#                 "orientation": "<'counterclockwise' or None: OPTIONAL>"
+#                 "edges": "planar"
+#                 "bbox": <list of [xmin, ymin, xmax, ymax]: OPTIONAL>
+#                 "epoch": <float: OPTIONAL>
 #             }
 #         },
+#         "primary_column": "<str: REQUIRED>",
+#         "version": "<METADATA_VERSION>",
+#
+#         # Additional GeoPandas specific metadata (not in metadata spec)
 #         "creator": {
 #             "library": "geopandas",
 #             "version": "<geopandas.__version__>"
 #         }
-#         "primary_column": "<str: REQUIRED>",
-#         "schema_version": "<METADATA_VERSION>"
 #     }
 # }
 
@@ -56,13 +63,15 @@ def _create_metadata(df):
     column_metadata = {}
     for col in df.columns[df.dtypes == "geometry"]:
         series = df[col]
+        geometry_types = sorted(Series(series.geom_type.unique()).dropna())
         column_metadata[col] = {
             "encoding": "WKB",
-            "geometry_type": list(Series(series.geom_type.unique()).dropna()),
+            "crs": series.crs.to_json_dict() if series.crs else None,
+            "geometry_type": geometry_types[0]
+            if len(geometry_types) == 1
+            else geometry_types,
             "bbox": series.total_bounds.tolist(),
         }
-        if series.crs:
-            column_metadata[col]["crs"] = series.crs.to_wkt()
 
     return {
         "primary_column": df._geometry_column_name,
@@ -144,6 +153,14 @@ def _validate_metadata(metadata):
 
     if not metadata:
         raise ValueError("Missing or malformed geo metadata in Parquet/Feather file")
+
+    # version was schema_version in 0.1.0
+    version = metadata.get("version", metadata.get("schema_version"))
+    if not version:
+        raise ValueError(
+            "'geo' metadata in Parquet/Feather file is missing required key: "
+            "'version'"
+        )
 
     required_keys = ("primary_column", "columns")
     for key in required_keys:
@@ -323,7 +340,14 @@ def _arrow_to_geopandas(table):
 
     # Convert the WKB columns that are present back to geometry.
     for col in geometry_columns:
-        crs = metadata["columns"][col].get("crs", None)
+        col_metadata = metadata["columns"][col]
+        if "crs" in col_metadata:
+            crs = col_metadata.get("crs", None)
+        else:
+            # per the GeoParquet spec, missing CRS is to be interpreted as
+            # OGC:CRS84
+            crs = "OGC:CRS84"
+
         df[col] = from_wkb(df[col].values, crs=crs)
 
     return GeoDataFrame(df, geometry=geometry)

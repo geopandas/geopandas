@@ -2,6 +2,7 @@ from __future__ import absolute_import
 
 from packaging.version import Version
 import os
+import pathlib
 
 import pytest
 from pandas import DataFrame, read_parquet as pd_read_parquet
@@ -24,6 +25,9 @@ from geopandas.io.arrow import (
 )
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 from geopandas.tests.util import mock
+
+
+DATA_PATH = pathlib.Path(os.path.dirname(__file__)) / "data"
 
 
 # Skip all tests in this module if pyarrow is not available
@@ -56,11 +60,9 @@ def test_create_metadata():
 
     assert isinstance(metadata, dict)
     assert metadata["version"] == METADATA_VERSION
-    assert metadata["creator"]["library"] == "geopandas"
-    assert metadata["creator"]["version"] == geopandas.__version__
     assert metadata["primary_column"] == "geometry"
     assert "geometry" in metadata["columns"]
-    assert metadata["columns"]["geometry"]["crs"] == df.geometry.crs.to_wkt()
+    assert metadata["columns"]["geometry"]["crs"] == df.geometry.crs.to_json_dict()
     assert metadata["columns"]["geometry"]["encoding"] == "WKB"
     assert metadata["columns"]["geometry"]["geometry_type"] == [
         "MultiPolygon",
@@ -70,6 +72,9 @@ def test_create_metadata():
     assert np.array_equal(
         metadata["columns"]["geometry"]["bbox"], df.geometry.total_bounds
     )
+
+    assert metadata["creator"]["library"] == "geopandas"
+    assert metadata["creator"]["version"] == geopandas.__version__
 
 
 def test_encode_metadata():
@@ -114,13 +119,32 @@ def test_validate_metadata_valid():
         {
             "primary_column": "geometry",
             "columns": {"geometry": {"crs": None, "encoding": "WKB"}},
+            "schema_version": "0.1.0",
         }
     )
 
     _validate_metadata(
         {
             "primary_column": "geometry",
-            "columns": {"geometry": {"crs": "WKT goes here", "encoding": "WKB"}},
+            "columns": {"geometry": {"crs": None, "encoding": "WKB"}},
+            "version": "<version>",
+        }
+    )
+
+    _validate_metadata(
+        {
+            "primary_column": "geometry",
+            "columns": {
+                "geometry": {
+                    "crs": {
+                        # truncated PROJJSON for testing, as PROJJSON contents
+                        # not validated here
+                        "id": {"authority": "EPSG", "code": 4326},
+                    },
+                    "encoding": "WKB",
+                }
+            },
+            "version": "0.4.0",
         }
     )
 
@@ -129,33 +153,41 @@ def test_validate_metadata_valid():
     "metadata,error",
     [
         ({}, "Missing or malformed geo metadata in Parquet/Feather file"),
+        # missing "columns" key:
         (
             {"primary_column": "foo"},
             "'geo' metadata in Parquet/Feather file is missing required key:",
         ),
+        # missing "version" key:
         (
             {"primary_column": "foo", "columns": None},
             "'geo' metadata in Parquet/Feather file is missing required key",
         ),
         (
-            {"primary_column": "foo", "columns": []},
+            {"primary_column": "foo", "columns": [], "version": "<version>"},
             "'columns' in 'geo' metadata must be a dict",
         ),
         (
-            {"primary_column": "foo", "columns": {"foo": {}}},
+            {"primary_column": "foo", "columns": {"foo": {}}, "version": "<version>"},
             (
                 "'geo' metadata in Parquet/Feather file is missing required key "
                 "'encoding' for column 'foo'"
             ),
         ),
+        # missing "encoding" for column
         (
-            {"primary_column": "foo", "columns": {"foo": {"crs": None}}},
+            {
+                "primary_column": "foo",
+                "columns": {"foo": {"crs": None}},
+                "version": "<version>",
+            },
             "'geo' metadata in Parquet/Feather file is missing required key",
         ),
         (
             {
                 "primary_column": "foo",
                 "columns": {"foo": {"crs": None, "encoding": None}},
+                "version": "<version>",
             },
             "Only WKB geometry encoding is supported",
         ),
@@ -163,6 +195,7 @@ def test_validate_metadata_valid():
             {
                 "primary_column": "foo",
                 "columns": {"foo": {"crs": None, "encoding": "BKW"}},
+                "version": "<version>",
             },
             "Only WKB geometry encoding is supported",
         ),
@@ -578,3 +611,22 @@ def test_write_read_feather_expand_user():
     f_df = geopandas.read_feather(test_file)
     assert_geodataframe_equal(gdf, f_df, check_crs=True)
     os.remove(os.path.expanduser(test_file))
+
+
+@pytest.mark.parametrize("version", ["0.1.0", "0.4.0"])
+def test_read_spec_versions(version):
+    # Verify that files for different metadata spec versions can be read
+    # created for each supported version:
+    # df = geopandas.read_file(geopandas.datasets.get_path('naturalearth_lowres'))
+    # df.head(2).to_feather(DATA_PATH / 'arrow' / f'naturalearth_lowres_top2_v{METADATA_VERSION}.feather')
+    # df.head(2).to_parquet(DATA_PATH / 'arrow' / f'naturalearth_lowres_top2_v{METADATA_VERSION}.parquet')
+
+    df = geopandas.read_feather(
+        DATA_PATH / "arrow" / f"naturalearth_lowres_top2_v{version}.feather"
+    )
+    assert len(df) == 2
+
+    df = geopandas.read_parquet(
+        DATA_PATH / "arrow" / f"naturalearth_lowres_top2_v{version}.parquet"
+    )
+    assert len(df) == 2
