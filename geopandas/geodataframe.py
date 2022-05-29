@@ -319,22 +319,14 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             level_crs = getattr(level, "crs", None)
             crs = level_crs if level_crs is not None else self._crs
 
-        # skip assignment when not needed (sindex preservation)
-        assignment_required = (
-            not isinstance(col, str)
-            or not isinstance(level, GeoSeries)
-            or crs != level.crs
-            or drop
-        )
-        if assignment_required:
-            if isinstance(level, (GeoSeries, GeometryArray)) and level.crs != crs:
-                # Avoids caching issues/crs sharing issues
-                level = level.copy()
-                level.crs = crs
+        if isinstance(level, (GeoSeries, GeometryArray)) and level.crs != crs:
+            # Avoids caching issues/crs sharing issues
+            level = level.copy()
+            level.crs = crs
 
-            # Check that we are using a listlike of geometries
-            level = _ensure_geometry(level, crs=crs)
-            frame[geo_column_name] = level
+        # Check that we are using a listlike of geometries
+        level = _ensure_geometry(level, crs=crs)
+        frame[geo_column_name] = level
         frame._geometry_column_name = geo_column_name
         frame.crs = crs
         if not inplace:
