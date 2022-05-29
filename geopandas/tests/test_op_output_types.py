@@ -270,4 +270,4 @@ def test_expanddim_in_unstack():
     if compat.PANDAS_GE_12:
         assert unstack._geometry_column_name is None
     else:  # pandas GH37369, unstack doesn't call finalize
-        assert unstack._geometry_column_name == "geometry"
+        assert unstack._geometry_column_name == 0
