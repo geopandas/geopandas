@@ -618,8 +618,8 @@ def test_read_spec_versions(version):
     # Verify that files for different metadata spec versions can be read
     # created for each supported version:
     # df = geopandas.read_file(geopandas.datasets.get_path('naturalearth_lowres'))
-    # df.head(2).to_feather(DATA_PATH / 'arrow' / f'naturalearth_lowres_top2_v{METADATA_VERSION}.feather')
-    # df.head(2).to_parquet(DATA_PATH / 'arrow' / f'naturalearth_lowres_top2_v{METADATA_VERSION}.parquet')
+    # df.head(2).to_feather(DATA_PATH / 'arrow' / f'naturalearth_lowres_top2_v{METADATA_VERSION}.feather')  # noqa: E501
+    # df.head(2).to_parquet(DATA_PATH / 'arrow' / f'naturalearth_lowres_top2_v{METADATA_VERSION}.parquet')  # noqa: E501
 
     df = geopandas.read_feather(
         DATA_PATH / "arrow" / f"naturalearth_lowres_top2_v{version}.feather"
