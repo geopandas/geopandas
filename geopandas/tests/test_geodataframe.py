@@ -16,7 +16,6 @@ import geopandas._compat as compat
 from geopandas import GeoDataFrame, GeoSeries, read_file
 from geopandas.array import GeometryArray, GeometryDtype, from_shapely
 from geopandas._compat import ignore_shapely2_warnings
-from geopandas.base import is_geometry_type
 
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 from geopandas.tests.util import PACKAGE_DIR, validate_boro_df
@@ -1259,13 +1258,3 @@ def test_geodataframe_crs():
     gdf = GeoDataFrame(columns=["geometry"])
     gdf.crs = "IGNF:ETRS89UTM28"
     assert gdf.crs.to_authority() == ("IGNF", "ETRS89UTM28")
-
-
-def test_setitem_new_index(dfs):
-    gdf = dfs[0]
-
-    gdf.loc[3, "geometry"] = None
-    assert is_geometry_type(gdf.geometry)
-    # internally two blockmanagers are concatenated here
-    gdf.loc[4] = [1, None]
-    assert is_geometry_type(gdf.geometry)
