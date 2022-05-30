@@ -8,6 +8,7 @@ import pytest
 from pandas import DataFrame, read_parquet as pd_read_parquet
 from pandas.testing import assert_frame_equal
 import numpy as np
+from pyproj import CRS
 from shapely.geometry import box, Point
 
 import geopandas
@@ -18,6 +19,7 @@ from geopandas.io.arrow import (
     _create_metadata,
     _decode_metadata,
     _encode_metadata,
+    _geopandas_to_arrow,
     _get_filesystem_path,
     _validate_dataframe,
     _validate_metadata,
@@ -611,6 +613,33 @@ def test_write_read_feather_expand_user():
     f_df = geopandas.read_feather(test_file)
     assert_geodataframe_equal(gdf, f_df, check_crs=True)
     os.remove(os.path.expanduser(test_file))
+
+
+@pytest.mark.parametrize("ext", ["feather", "parquet"])
+def test_write_read_default_crs(tmpdir, ext):
+    if ext == "feather":
+        from pyarrow.feather import write_feather as write
+
+        read = getattr(geopandas, "read_feather")
+    else:
+        from pyarrow.parquet import write_table as write
+
+        read = getattr(geopandas, "read_parquet")
+
+    filename = os.path.join(str(tmpdir), f"test.{ext}")
+    gdf = geopandas.GeoDataFrame(geometry=[box(0, 0, 10, 10)])
+    table = _geopandas_to_arrow(gdf)
+
+    # update the geo metadata to strip 'crs' entry
+    metadata = table.schema.metadata
+    geo_metadata = _decode_metadata(metadata[b"geo"])
+    del geo_metadata["columns"]["geometry"]["crs"]
+    metadata.update({b"geo": _encode_metadata(geo_metadata)})
+    table = table.replace_schema_metadata(metadata)
+
+    write(table, filename)
+    df = read(filename)
+    assert df.crs.equals(CRS("OGC:CRS84"))
 
 
 @pytest.mark.parametrize("version", ["0.1.0", "0.4.0"])
