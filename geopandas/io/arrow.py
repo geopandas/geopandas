@@ -272,13 +272,13 @@ def _to_feather(df, path, index=None, compression=None, **kwargs):
     feather.write_feather(table, path, compression=compression, **kwargs)
 
 
-def _arrow_to_geopandas(table):
+def _arrow_to_geopandas(table, metadata=None):
     """
     Helper function with main, shared logic for read_parquet/read_feather.
     """
     df = table.to_pandas()
 
-    metadata = table.schema.metadata
+    metadata = metadata or table.schema.metadata
     if metadata is None or b"geo" not in metadata:
         raise ValueError(
             """Missing geo metadata in Parquet/Feather file.
@@ -363,6 +363,24 @@ def _get_filesystem_path(path, filesystem=None, storage_options=None):
     return filesystem, path
 
 
+def _ensure_arrow_fs(filesystem):
+    from pyarrow import fs
+
+    if isinstance(filesystem, fs.FileSystem):
+        return filesystem
+
+    # handle fsspec-compatible filesystems
+    try:
+        import fsspec
+    except ImportError:
+        pass
+    else:
+        if isinstance(filesystem, fsspec.AbstractFileSystem):
+            return fs.PyFileSystem(fs.FSSpecHandler(filesystem))
+
+    return filesystem
+
+
 def _read_parquet(path, columns=None, storage_options=None, **kwargs):
     """
     Load a Parquet object from the file path, returning a GeoDataFrame.
@@ -434,7 +452,20 @@ def _read_parquet(path, columns=None, storage_options=None, **kwargs):
     kwargs["use_pandas_metadata"] = True
     table = parquet.read_table(path, columns=columns, filesystem=filesystem, **kwargs)
 
-    return _arrow_to_geopandas(table)
+    # read metadata separately to get the raw Parquet FileMetaData metadata
+    # (pyarrow doesn't properly exposes those in schema.metadata for files
+    # created by GDAL - https://issues.apache.org/jira/browse/ARROW-16688)
+    try:
+        if filesystem is not None:
+            pa_filesystem = _ensure_arrow_fs(filesystem)
+            with pa_filesystem.open_input_file(path) as source:
+                metadata = parquet.read_metadata(source).metadata
+        else:
+            metadata = parquet.read_metadata(path).metadata
+    except Exception:
+        metadata = None
+
+    return _arrow_to_geopandas(table, metadata)
 
 
 def _read_feather(path, columns=None, **kwargs):

@@ -2,6 +2,7 @@ from __future__ import absolute_import
 
 from packaging.version import Version
 import os
+import pathlib
 
 import pytest
 from pandas import DataFrame, read_parquet as pd_read_parquet
@@ -24,6 +25,9 @@ from geopandas.io.arrow import (
 )
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 from geopandas.tests.util import mock
+
+
+DATA_PATH = pathlib.Path(os.path.dirname(__file__)) / "data"
 
 
 # Skip all tests in this module if pyarrow is not available
@@ -578,3 +582,32 @@ def test_write_read_feather_expand_user():
     f_df = geopandas.read_feather(test_file)
     assert_geodataframe_equal(gdf, f_df, check_crs=True)
     os.remove(os.path.expanduser(test_file))
+
+
+def test_read_gdal_files():
+    """
+    Verify that files written by GDAL can be read by geopandas.
+
+    Since it is currently not yet straightforward to install GDAL with
+    Parquet/Arrow enabled in our conda setup, we are testing with some
+    generated files included in the repo (using GDAL 3.5.0):
+
+    df = geopandas.read_file(geopandas.datasets.get_path('naturalearth_lowres'))
+    df.head(2).to_file("naturalearth_lowres_top2.gpkg", GEOMETRY_NAME="geometry")
+
+    and then the gpkg file is converted to Parquet/Arrow with:
+
+    $ ogr2ogr -f Parquet -lco FID= naturalearth_lowres_top2_gdal350.parquet naturalearth_lowres_top2.gpkg  # noqa: E501
+    $ ogr2ogr -f Arrow -lco FID= -lco GEOMETRY_ENCODING=WKB naturalearth_lowres_top2_gdal350.arrow naturalearth_lowres_top2.gpkg  # noqa: E501
+    """
+    expected = geopandas.read_file(get_path("naturalearth_lowres")).head(2)
+
+    df = geopandas.read_parquet(
+        DATA_PATH / "arrow" / "naturalearth_lowres_top2_gdal350.parquet"
+    )
+    assert_geodataframe_equal(df, expected)
+
+    df = geopandas.read_feather(
+        DATA_PATH / "arrow" / "naturalearth_lowres_top2_gdal350.arrow"
+    )
+    assert_geodataframe_equal(df, expected)
