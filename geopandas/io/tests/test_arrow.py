@@ -1,5 +1,7 @@
 from __future__ import absolute_import
 
+from itertools import product
+import json
 from packaging.version import Version
 import os
 import pathlib
@@ -16,6 +18,7 @@ from geopandas import GeoDataFrame, read_file, read_parquet, read_feather
 from geopandas.array import to_wkb
 from geopandas.datasets import get_path
 from geopandas.io.arrow import (
+    SUPPORTED_VERSIONS,
     _create_metadata,
     _decode_metadata,
     _encode_metadata,
@@ -79,6 +82,12 @@ def test_create_metadata():
     assert metadata["creator"]["version"] == geopandas.__version__
 
 
+def test_write_metadata_invalid_spec_version():
+    gdf = geopandas.GeoDataFrame(geometry=[box(0, 0, 10, 10)], crs="EPSG:4326")
+    with pytest.raises(ValueError, match="version must be one of"):
+        _create_metadata(gdf, version="invalid")
+
+
 def test_encode_metadata():
     metadata = {"a": "b"}
 
@@ -91,6 +100,8 @@ def test_decode_metadata():
 
     expected = {"a": "b"}
     assert _decode_metadata(metadata_str) == expected
+
+    assert _decode_metadata(None) is None
 
 
 def test_validate_dataframe():
@@ -155,20 +166,23 @@ def test_validate_metadata_valid():
     "metadata,error",
     [
         ({}, "Missing or malformed geo metadata in Parquet/Feather file"),
-        # missing "columns" key:
-        (
-            {"primary_column": "foo"},
-            "'geo' metadata in Parquet/Feather file is missing required key:",
-        ),
         # missing "version" key:
         (
             {"primary_column": "foo", "columns": None},
             "'geo' metadata in Parquet/Feather file is missing required key",
         ),
+        # missing "columns" key:
+        (
+            {"primary_column": "foo", "version": "<version>"},
+            "'geo' metadata in Parquet/Feather file is missing required key:",
+        ),
+        # missing "primary_column"
+        ({"columns": [], "version": "<version>"}),
         (
             {"primary_column": "foo", "columns": [], "version": "<version>"},
             "'columns' in 'geo' metadata must be a dict",
         ),
+        # missing "encoding" for column
         (
             {"primary_column": "foo", "columns": {"foo": {}}, "version": "<version>"},
             (
@@ -176,15 +190,7 @@ def test_validate_metadata_valid():
                 "'encoding' for column 'foo'"
             ),
         ),
-        # missing "encoding" for column
-        (
-            {
-                "primary_column": "foo",
-                "columns": {"foo": {"crs": None}},
-                "version": "<version>",
-            },
-            "'geo' metadata in Parquet/Feather file is missing required key",
-        ),
+        # invalid column encoding
         (
             {
                 "primary_column": "foo",
@@ -227,7 +233,9 @@ def test_to_parquet_does_not_pass_engine_along(mock_to_parquet):
     df.to_parquet("", engine="pyarrow")
     # assert that engine keyword is not passed through to _to_parquet (and thus
     # parquet.write_table)
-    mock_to_parquet.assert_called_with(df, "", compression="snappy", index=None)
+    mock_to_parquet.assert_called_with(
+        df, "", compression="snappy", index=None, version=None
+    )
 
 
 # TEMPORARY: used to determine if pyarrow fails for roundtripping pandas data
@@ -615,18 +623,14 @@ def test_write_read_feather_expand_user():
     os.remove(os.path.expanduser(test_file))
 
 
-@pytest.mark.parametrize("ext", ["feather", "parquet"])
-def test_write_read_default_crs(tmpdir, ext):
-    if ext == "feather":
+@pytest.mark.parametrize("format", ["feather", "parquet"])
+def test_write_read_default_crs(tmpdir, format):
+    if format == "feather":
         from pyarrow.feather import write_feather as write
-
-        read = getattr(geopandas, "read_feather")
     else:
         from pyarrow.parquet import write_table as write
 
-        read = getattr(geopandas, "read_parquet")
-
-    filename = os.path.join(str(tmpdir), f"test.{ext}")
+    filename = os.path.join(str(tmpdir), f"test.{format}")
     gdf = geopandas.GeoDataFrame(geometry=[box(0, 0, 10, 10)])
     table = _geopandas_to_arrow(gdf)
 
@@ -638,24 +642,60 @@ def test_write_read_default_crs(tmpdir, ext):
     table = table.replace_schema_metadata(metadata)
 
     write(table, filename)
+
+    read = getattr(geopandas, f"read_{format}")
     df = read(filename)
     assert df.crs.equals(CRS("OGC:CRS84"))
 
 
+@pytest.mark.parametrize(
+    "format,version", product(["feather", "parquet"], [None] + SUPPORTED_VERSIONS)
+)
+def test_write_spec_version(tmpdir, format, version):
+    if format == "feather":
+        from pyarrow.feather import read_table
+
+    else:
+        from pyarrow.parquet import read_table
+
+    filename = os.path.join(str(tmpdir), f"test.{format}")
+    gdf = geopandas.GeoDataFrame(geometry=[box(0, 0, 10, 10)], crs="EPSG:4326")
+    write = getattr(gdf, f"to_{format}")
+    write(filename, version=version)
+
+    # ensure that we can roundtrip data regardless of version
+    read = getattr(geopandas, f"read_{format}")
+    df = read(filename)
+    assert_geodataframe_equal(df, gdf)
+
+    table = read_table(filename)
+    metadata = json.loads(table.schema.metadata[b"geo"])
+    assert metadata["version"] == version or METADATA_VERSION
+
+    # verify that CRS is correctly handled between versions
+    if version == "0.1.0":
+        assert metadata["columns"]["geometry"]["crs"] == gdf.crs.to_wkt()
+
+    else:
+        assert metadata["columns"]["geometry"]["crs"] == gdf.crs.to_json_dict()
+
+
 @pytest.mark.parametrize("version", ["0.1.0", "0.4.0"])
-def test_read_spec_versions(version):
+def test_read_versioned_file(version):
     # Verify that files for different metadata spec versions can be read
     # created for each supported version:
     # df = geopandas.read_file(geopandas.datasets.get_path('naturalearth_lowres'))
     # df.head(2).to_feather(DATA_PATH / 'arrow' / f'naturalearth_lowres_top2_v{METADATA_VERSION}.feather')  # noqa: E501
     # df.head(2).to_parquet(DATA_PATH / 'arrow' / f'naturalearth_lowres_top2_v{METADATA_VERSION}.parquet')  # noqa: E501
 
+    expected = geopandas.read_file(get_path("naturalearth_lowres")).head(2)
+
     df = geopandas.read_feather(
         DATA_PATH / "arrow" / f"naturalearth_lowres_top2_v{version}.feather"
     )
-    assert len(df) == 2
+    assert_geodataframe_equal(df, expected)
 
     df = geopandas.read_parquet(
         DATA_PATH / "arrow" / f"naturalearth_lowres_top2_v{version}.parquet"
     )
-    assert len(df) == 2
+    assert_geodataframe_equal(df, expected)
