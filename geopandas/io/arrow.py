@@ -424,6 +424,12 @@ def _read_parquet(path, columns=None, storage_options=None, **kwargs):
       columns, the first available geometry column will be set as the geometry
       column of the returned GeoDataFrame.
 
+    Supports versions 0.1.0, 0.4.0 of the GeoParquet specification at:
+    https://github.com/opengeospatial/geoparquet
+
+    If 'crs' key is not present in the GeoParquet metadata associated with the
+    Parquet object, it will default to "OGC:CRS84" according to the specification.
+
     Requires 'pyarrow'.
 
     .. versionadded:: 0.8
@@ -497,6 +503,12 @@ def _read_feather(path, columns=None, **kwargs):
     * if the primary geometry column saved to this file is not included in
       columns, the first available geometry column will be set as the geometry
       column of the returned GeoDataFrame.
+
+    Supports versions 0.1.0, 0.4.0 of the GeoParquet specification at:
+    https://github.com/opengeospatial/geoparquet
+
+    If 'crs' key is not present in the Feather metadata associated with the
+    Parquet object, it will default to "OGC:CRS84" according to the specification.
 
     Requires 'pyarrow' >= 0.17.
 
