@@ -10,6 +10,7 @@ import pytest
 from pandas import DataFrame, read_parquet as pd_read_parquet
 from pandas.testing import assert_frame_equal
 import numpy as np
+import pyproj
 from pyproj import CRS
 from shapely.geometry import box, Point
 
@@ -165,6 +166,7 @@ def test_validate_metadata_valid():
 @pytest.mark.parametrize(
     "metadata,error",
     [
+        (None, "Missing or malformed geo metadata in Parquet/Feather file"),
         ({}, "Missing or malformed geo metadata in Parquet/Feather file"),
         # missing "version" key:
         (
@@ -177,7 +179,10 @@ def test_validate_metadata_valid():
             "'geo' metadata in Parquet/Feather file is missing required key:",
         ),
         # missing "primary_column"
-        ({"columns": [], "version": "<version>"}),
+        (
+            {"columns": [], "version": "<version>"},
+            "'geo' metadata in Parquet/Feather file is missing required key:",
+        ),
         (
             {"primary_column": "foo", "columns": [], "version": "<version>"},
             "'columns' in 'geo' metadata must be a dict",
@@ -688,14 +693,16 @@ def test_read_versioned_file(version):
     # df.head(2).to_feather(DATA_PATH / 'arrow' / f'naturalearth_lowres_top2_v{METADATA_VERSION}.feather')  # noqa: E501
     # df.head(2).to_parquet(DATA_PATH / 'arrow' / f'naturalearth_lowres_top2_v{METADATA_VERSION}.parquet')  # noqa: E501
 
+    check_crs = Version(pyproj.__version__) >= Version("3.0.0")
+
     expected = geopandas.read_file(get_path("naturalearth_lowres")).head(2)
 
     df = geopandas.read_feather(
         DATA_PATH / "arrow" / f"naturalearth_lowres_top2_v{version}.feather"
     )
-    assert_geodataframe_equal(df, expected)
+    assert_geodataframe_equal(df, expected, check_crs=check_crs)
 
     df = geopandas.read_parquet(
         DATA_PATH / "arrow" / f"naturalearth_lowres_top2_v{version}.parquet"
     )
-    assert_geodataframe_equal(df, expected)
+    assert_geodataframe_equal(df, expected, check_crs=check_crs)
