@@ -8,6 +8,7 @@ import pytest
 from pandas import DataFrame, read_parquet as pd_read_parquet
 from pandas.testing import assert_frame_equal
 import numpy as np
+import pyproj
 from shapely.geometry import box, Point
 
 import geopandas
@@ -600,14 +601,16 @@ def test_read_gdal_files():
     $ ogr2ogr -f Parquet -lco FID= naturalearth_lowres_top2_gdal350.parquet naturalearth_lowres_top2.gpkg  # noqa: E501
     $ ogr2ogr -f Arrow -lco FID= -lco GEOMETRY_ENCODING=WKB naturalearth_lowres_top2_gdal350.arrow naturalearth_lowres_top2.gpkg  # noqa: E501
     """
+    check_crs = Version(pyproj.__version__) >= Version("3.0.0")
+
     expected = geopandas.read_file(get_path("naturalearth_lowres")).head(2)
 
     df = geopandas.read_parquet(
         DATA_PATH / "arrow" / "naturalearth_lowres_top2_gdal350.parquet"
     )
-    assert_geodataframe_equal(df, expected)
+    assert_geodataframe_equal(df, expected, check_crs=check_crs)
 
     df = geopandas.read_feather(
         DATA_PATH / "arrow" / "naturalearth_lowres_top2_gdal350.arrow"
     )
-    assert_geodataframe_equal(df, expected)
+    assert_geodataframe_equal(df, expected, check_crs=check_crs)
