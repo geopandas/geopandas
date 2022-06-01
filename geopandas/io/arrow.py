@@ -361,7 +361,7 @@ def _arrow_to_geopandas(table):
     for col in geometry_columns:
         col_metadata = metadata["columns"][col]
         if "crs" in col_metadata:
-            crs = col_metadata.get("crs", None)
+            crs = col_metadata["crs"]
         else:
             # per the GeoParquet spec, missing CRS is to be interpreted as
             # OGC:CRS84
