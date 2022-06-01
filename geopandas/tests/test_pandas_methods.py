@@ -268,7 +268,7 @@ def test_convert_dtypes(df):
 
     # Test geometry col is first col, first, geom_col_name=geometry
     # (order is important in concat, used internally)
-    res1 = df.convert_dtypes()  # note res1 done first for pandas < 1 xfail check
+    res1 = df.convert_dtypes()
 
     expected1 = GeoDataFrame(
         pd.DataFrame(df).convert_dtypes(), crs=df.crs, geometry=df.geometry.name

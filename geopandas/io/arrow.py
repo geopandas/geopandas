@@ -2,7 +2,7 @@ from packaging.version import Version
 import json
 import warnings
 
-from pandas import DataFrame
+from pandas import DataFrame, Series
 
 from geopandas._compat import import_optional_dependency
 from geopandas.array import from_wkb
@@ -10,24 +10,32 @@ from geopandas import GeoDataFrame
 import geopandas
 from .file import _expand_user
 
-METADATA_VERSION = "0.1.0"
-# reference: https://github.com/geopandas/geo-arrow-spec
+METADATA_VERSION = "0.4.0"
+SUPPORTED_VERSIONS = ["0.1.0", "0.4.0"]
+# reference: https://github.com/opengeospatial/geoparquet
 
 # Metadata structure:
 # {
 #     "geo": {
 #         "columns": {
 #             "<name>": {
-#                 "crs": "<WKT or None: REQUIRED>",
 #                 "encoding": "WKB"
+#                 "geometry_type": <str or list of str: REQUIRED>
+#                 "crs": "<PROJJSON or None: OPTIONAL>",
+#                 "orientation": "<'counterclockwise' or None: OPTIONAL>"
+#                 "edges": "planar"
+#                 "bbox": <list of [xmin, ymin, xmax, ymax]: OPTIONAL>
+#                 "epoch": <float: OPTIONAL>
 #             }
 #         },
+#         "primary_column": "<str: REQUIRED>",
+#         "version": "<METADATA_VERSION>",
+#
+#         # Additional GeoPandas specific metadata (not in metadata spec)
 #         "creator": {
 #             "library": "geopandas",
 #             "version": "<geopandas.__version__>"
 #         }
-#         "primary_column": "<str: REQUIRED>",
-#         "schema_version": "<METADATA_VERSION>"
 #     }
 # }
 
@@ -40,32 +48,52 @@ def _is_fsspec_url(url):
     )
 
 
-def _create_metadata(df):
+def _create_metadata(df, version=None):
     """Create and encode geo metadata dict.
 
     Parameters
     ----------
     df : GeoDataFrame
+    version : {'0.1.0', '0.4.0', None}
+        GeoParquet specification version; if not provided will default to
+        latest supported version.
 
     Returns
     -------
     dict
     """
 
+    version = version or METADATA_VERSION
+
+    if version not in SUPPORTED_VERSIONS:
+        raise ValueError(f"version must be one of: {', '.join(SUPPORTED_VERSIONS)}")
+
     # Construct metadata for each geometry
     column_metadata = {}
     for col in df.columns[df.dtypes == "geometry"]:
         series = df[col]
+        geometry_types = sorted(Series(series.geom_type.unique()).dropna())
+
+        crs = None
+        if series.crs:
+            if version == "0.1.0":
+                crs = series.crs.to_wkt()
+            else:  # version >= 0.4.0
+                crs = series.crs.to_json_dict()
+
         column_metadata[col] = {
-            "crs": series.crs.to_wkt() if series.crs else None,
             "encoding": "WKB",
+            "crs": crs,
+            "geometry_type": geometry_types[0]
+            if len(geometry_types) == 1
+            else geometry_types,
             "bbox": series.total_bounds.tolist(),
         }
 
     return {
         "primary_column": df._geometry_column_name,
         "columns": column_metadata,
-        "schema_version": METADATA_VERSION,
+        "version": METADATA_VERSION,
         "creator": {"library": "geopandas", "version": geopandas.__version__},
     }
 
@@ -143,6 +171,14 @@ def _validate_metadata(metadata):
     if not metadata:
         raise ValueError("Missing or malformed geo metadata in Parquet/Feather file")
 
+    # version was schema_version in 0.1.0
+    version = metadata.get("version", metadata.get("schema_version"))
+    if not version:
+        raise ValueError(
+            "'geo' metadata in Parquet/Feather file is missing required key: "
+            "'version'"
+        )
+
     required_keys = ("primary_column", "columns")
     for key in required_keys:
         if metadata.get(key, None) is None:
@@ -155,7 +191,8 @@ def _validate_metadata(metadata):
         raise ValueError("'columns' in 'geo' metadata must be a dict")
 
     # Validate that geometry columns have required metadata and values
-    required_col_keys = ("crs", "encoding")
+    # leaving out "geometry_type" for compatibility with 0.1
+    required_col_keys = ("encoding",)
     for col, column_metadata in metadata["columns"].items():
         for key in required_col_keys:
             if key not in column_metadata:
@@ -168,7 +205,7 @@ def _validate_metadata(metadata):
             raise ValueError("Only WKB geometry encoding is supported")
 
 
-def _geopandas_to_arrow(df, index=None):
+def _geopandas_to_arrow(df, index=None, version=None):
     """
     Helper function with main, shared logic for to_parquet/to_feather.
     """
@@ -177,7 +214,7 @@ def _geopandas_to_arrow(df, index=None):
     _validate_dataframe(df)
 
     # create geo metadata before altering incoming data frame
-    geo_metadata = _create_metadata(df)
+    geo_metadata = _create_metadata(df, version=version)
 
     df = df.to_wkb()
 
@@ -190,7 +227,7 @@ def _geopandas_to_arrow(df, index=None):
     return table.replace_schema_metadata(metadata)
 
 
-def _to_parquet(df, path, index=None, compression="snappy", **kwargs):
+def _to_parquet(df, path, index=None, compression="snappy", version=None, **kwargs):
     """
     Write a GeoDataFrame to the Parquet format.
 
@@ -198,10 +235,8 @@ def _to_parquet(df, path, index=None, compression="snappy", **kwargs):
 
     Requires 'pyarrow'.
 
-    This is an initial implementation of Parquet file support and
-    associated metadata.  This is tracking version 0.1.0 of the metadata
-    specification at:
-    https://github.com/geopandas/geo-arrow-spec
+    This is tracking version 0.4.0 of the GeoParquet specification at:
+    https://github.com/opengeospatial/geoparquet
 
     .. versionadded:: 0.8
 
@@ -216,6 +251,9 @@ def _to_parquet(df, path, index=None, compression="snappy", **kwargs):
         output except `RangeIndex` which is stored as metadata only.
     compression : {'snappy', 'gzip', 'brotli', None}, default 'snappy'
         Name of the compression to use. Use ``None`` for no compression.
+    version : {'0.1.0', '0.4.0', None}
+        GeoParquet specification version; if not provided will default to
+        latest supported version.
     kwargs
         Additional keyword arguments passed to pyarrow.parquet.write_table().
     """
@@ -224,11 +262,11 @@ def _to_parquet(df, path, index=None, compression="snappy", **kwargs):
     )
 
     path = _expand_user(path)
-    table = _geopandas_to_arrow(df, index=index)
+    table = _geopandas_to_arrow(df, index=index, version=version)
     parquet.write_table(table, path, compression=compression, **kwargs)
 
 
-def _to_feather(df, path, index=None, compression=None, **kwargs):
+def _to_feather(df, path, index=None, compression=None, version=None, **kwargs):
     """
     Write a GeoDataFrame to the Feather format.
 
@@ -236,10 +274,8 @@ def _to_feather(df, path, index=None, compression=None, **kwargs):
 
     Requires 'pyarrow' >= 0.17.
 
-    This is an initial implementation of Feather file support and
-    associated metadata.  This is tracking version 0.1.0 of the metadata
-    specification at:
-    https://github.com/geopandas/geo-arrow-spec
+    This is tracking version 0.4.0 of the GeoParquet specification at:
+    https://github.com/opengeospatial/geoparquet
 
     .. versionadded:: 0.8
 
@@ -255,6 +291,9 @@ def _to_feather(df, path, index=None, compression=None, **kwargs):
     compression : {'zstd', 'lz4', 'uncompressed'}, optional
         Name of the compression to use. Use ``"uncompressed"`` for no
         compression. By default uses LZ4 if available, otherwise uncompressed.
+    version : {'0.1.0', '0.4.0', None}
+        GeoParquet specification version; if not provided will default to
+        latest supported version.
     kwargs
         Additional keyword arguments passed to pyarrow.feather.write_feather().
     """
@@ -268,7 +307,7 @@ def _to_feather(df, path, index=None, compression=None, **kwargs):
         raise ImportError("pyarrow >= 0.17 required for Feather support")
 
     path = _expand_user(path)
-    table = _geopandas_to_arrow(df, index=index)
+    table = _geopandas_to_arrow(df, index=index, version=version)
     feather.write_feather(table, path, compression=compression, **kwargs)
 
 
@@ -320,7 +359,15 @@ def _arrow_to_geopandas(table, metadata=None):
 
     # Convert the WKB columns that are present back to geometry.
     for col in geometry_columns:
-        df[col] = from_wkb(df[col].values, crs=metadata["columns"][col]["crs"])
+        col_metadata = metadata["columns"][col]
+        if "crs" in col_metadata:
+            crs = col_metadata["crs"]
+        else:
+            # per the GeoParquet spec, missing CRS is to be interpreted as
+            # OGC:CRS84
+            crs = "OGC:CRS84"
+
+        df[col] = from_wkb(df[col].values, crs=crs)
 
     return GeoDataFrame(df, geometry=geometry)
 
@@ -394,6 +441,12 @@ def _read_parquet(path, columns=None, storage_options=None, **kwargs):
     * if the primary geometry column saved to this file is not included in
       columns, the first available geometry column will be set as the geometry
       column of the returned GeoDataFrame.
+
+    Supports versions 0.1.0, 0.4.0 of the GeoParquet specification at:
+    https://github.com/opengeospatial/geoparquet
+
+    If 'crs' key is not present in the GeoParquet metadata associated with the
+    Parquet object, it will default to "OGC:CRS84" according to the specification.
 
     Requires 'pyarrow'.
 
@@ -481,6 +534,12 @@ def _read_feather(path, columns=None, **kwargs):
     * if the primary geometry column saved to this file is not included in
       columns, the first available geometry column will be set as the geometry
       column of the returned GeoDataFrame.
+
+    Supports versions 0.1.0, 0.4.0 of the GeoParquet specification at:
+    https://github.com/opengeospatial/geoparquet
+
+    If 'crs' key is not present in the Feather metadata associated with the
+    Parquet object, it will default to "OGC:CRS84" according to the specification.
 
     Requires 'pyarrow' >= 0.17.
 
