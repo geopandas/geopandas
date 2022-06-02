@@ -157,7 +157,6 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 )
 
             # only if we have actual geometry values -> call set_geometry
-            index = self.index
             try:
                 if (
                     hasattr(self["geometry"].values, "crs")
@@ -170,11 +169,6 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             except TypeError:
                 pass
             else:
-                if self.index is not index:
-                    # With pandas < 1.0 and an empty frame (no rows), the index
-                    # gets reset to a default RangeIndex -> set back the original
-                    # index if needed
-                    self.index = index
                 geometry = "geometry"
 
         if geometry is not None:
@@ -346,12 +340,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         # Check that we are using a listlike of geometries
         level = _ensure_geometry(level, crs=crs)
-        index = frame.index
         frame[geo_column_name] = level
-        if frame.index is not index and len(frame.index) == len(index):
-            # With pandas < 1.0 and an empty frame (no rows), the index gets reset
-            # to a default RangeIndex -> set back the original index if needed
-            frame.index = index
         frame._geometry_column_name = geo_column_name
         frame.crs = crs
         if not inplace:
@@ -984,17 +973,19 @@ individually so that features may have different properties
 
         return df
 
-    def to_parquet(self, path, index=None, compression="snappy", **kwargs):
+    def to_parquet(
+        self, path, index=None, compression="snappy", version=None, **kwargs
+    ):
         """Write a GeoDataFrame to the Parquet format.
 
         Any geometry columns present are serialized to WKB format in the file.
 
         Requires 'pyarrow'.
 
-        WARNING: this is an initial implementation of Parquet file support and
-        associated metadata.  This is tracking version 0.1.0 of the metadata
-        specification at:
-        https://github.com/geopandas/geo-arrow-spec
+        WARNING: this is an early implementation of Parquet file support and
+        associated metadata, the specification for which continues to evolve.
+        This is tracking version 0.4.0 of the GeoParquet specification at:
+        https://github.com/opengeospatial/geoparquet
 
         This metadata specification does not yet make stability promises.  As such,
         we do not yet recommend using this in a production setting unless you are
@@ -1013,6 +1004,9 @@ individually so that features may have different properties
             output except `RangeIndex` which is stored as metadata only.
         compression : {'snappy', 'gzip', 'brotli', None}, default 'snappy'
             Name of the compression to use. Use ``None`` for no compression.
+        version : {'0.1.0', '0.4.0', None}
+            GeoParquet specification version; if not provided will default to
+            latest supported version.
         kwargs
             Additional keyword arguments passed to :func:`pyarrow.parquet.write_table`.
 
@@ -1039,19 +1033,21 @@ individually so that features may have different properties
 
         from geopandas.io.arrow import _to_parquet
 
-        _to_parquet(self, path, compression=compression, index=index, **kwargs)
+        _to_parquet(
+            self, path, compression=compression, index=index, version=version, **kwargs
+        )
 
-    def to_feather(self, path, index=None, compression=None, **kwargs):
+    def to_feather(self, path, index=None, compression=None, version=None, **kwargs):
         """Write a GeoDataFrame to the Feather format.
 
         Any geometry columns present are serialized to WKB format in the file.
 
         Requires 'pyarrow' >= 0.17.
 
-        WARNING: this is an initial implementation of Feather file support and
-        associated metadata.  This is tracking version 0.1.0 of the metadata
-        specification at:
-        https://github.com/geopandas/geo-arrow-spec
+        WARNING: this is an early implementation of Parquet file support and
+        associated metadata, the specification for which continues to evolve.
+        This is tracking version 0.4.0 of the GeoParquet specification at:
+        https://github.com/opengeospatial/geoparquet
 
         This metadata specification does not yet make stability promises.  As such,
         we do not yet recommend using this in a production setting unless you are
@@ -1071,6 +1067,9 @@ individually so that features may have different properties
         compression : {'zstd', 'lz4', 'uncompressed'}, optional
             Name of the compression to use. Use ``"uncompressed"`` for no
             compression. By default uses LZ4 if available, otherwise uncompressed.
+        version : {'0.1.0', '0.4.0', None}
+            GeoParquet specification version; if not provided will default to
+            latest supported version.
         kwargs
             Additional keyword arguments passed to to
             :func:`pyarrow.feather.write_feather`.
@@ -1088,7 +1087,9 @@ individually so that features may have different properties
 
         from geopandas.io.arrow import _to_feather
 
-        _to_feather(self, path, index=index, compression=compression, **kwargs)
+        _to_feather(
+            self, path, index=index, compression=compression, version=version, **kwargs
+        )
 
     def to_file(self, filename, driver=None, schema=None, index=None, **kwargs):
         """Write the ``GeoDataFrame`` to a file.
