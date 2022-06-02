@@ -1467,12 +1467,10 @@ individually so that features may have different properties
 
     @property
     def _constructor_sliced(self):
-        def _geodataframe_constructor_sliced(
-            data=None, index=None, crs=None, *, self_df=self, **kwargs
-        ):
+        def _geodataframe_constructor_sliced(data=None, index=None, crs=None, **kwargs):
 
             srs = pd.Series(data, index, **kwargs)
-            is_col_proxy = srs.index is self_df.index
+            is_col_proxy = srs.index is self.index
             if is_geometry_type(srs) and is_col_proxy:
                 srs = GeoSeries(srs, crs=crs)
             return srs
