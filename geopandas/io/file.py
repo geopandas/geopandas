@@ -11,29 +11,7 @@ import pyproj
 from shapely.geometry import mapping
 from shapely.geometry.base import BaseGeometry
 
-try:
-    import fiona
-
-    fiona_import_error = None
-
-    # only try to import fiona.Env if the main fiona import succeeded (otherwise you
-    # can get confusing "AttributeError: module 'fiona' has no attribute '_loading'"
-    # / partially initialized module errors)
-    try:
-        from fiona import Env as fiona_env
-    except ImportError:
-        try:
-            from fiona import drivers as fiona_env
-        except ImportError:
-            fiona_env = None
-
-except ImportError as err:
-    fiona = None
-    fiona_import_error = str(err)
-
-
 from geopandas import GeoDataFrame, GeoSeries
-
 
 # Adapted from pandas.io.common
 from urllib.request import urlopen as _urlopen
@@ -43,6 +21,37 @@ from urllib.parse import uses_netloc, uses_params, uses_relative
 
 _VALID_URLS = set(uses_relative + uses_netloc + uses_params)
 _VALID_URLS.discard("")
+
+
+fiona = None
+fiona_env = None
+fiona_import_error = None
+
+
+def _import_fiona():
+    global fiona
+    global fiona_env
+    global fiona_import_error
+
+    if fiona is None:
+        try:
+            import fiona
+
+            # only try to import fiona.Env if the main fiona import succeeded
+            # (otherwise you can get confusing "AttributeError: module 'fiona'
+            # has no attribute '_loading'" / partially initialized module errors)
+            try:
+                from fiona import Env as fiona_env
+            except ImportError:
+                try:
+                    from fiona import drivers as fiona_env
+                except ImportError:
+                    fiona_env = None
+
+        except ImportError as err:
+            fiona = False
+            fiona_import_error = str(err)
+
 
 _EXTENSION_TO_DRIVER = {
     ".bna": "BNA",
@@ -164,6 +173,7 @@ def _read_file(filename, bbox=None, mask=None, rows=None, **kwargs):
     may fail. In this case, the proper encoding can be specified explicitly
     by using the encoding keyword parameter, e.g. ``encoding='utf-8'``.
     """
+    _import_fiona()
     _check_fiona("'read_file' function")
     filename = _expand_user(filename)
 
@@ -357,6 +367,7 @@ def _to_file(
     may fail. In this case, the proper encoding can be specified explicitly
     by using the encoding keyword parameter, e.g. ``encoding='utf-8'``.
     """
+    _import_fiona()
     _check_fiona("'to_file' method")
     filename = _expand_user(filename)
 
