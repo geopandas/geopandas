@@ -82,6 +82,8 @@ def test_overlay(dfs_index, how):
             os.path.join(DATA, "polys", "df1_df2-{0}.geojson".format(name))
         )
         expected.crs = None
+        for col in expected.columns[expected.dtypes == "int32"]:
+            expected[col] = expected[col].astype("int64")
         return expected
 
     if how == "identity":
@@ -528,6 +530,9 @@ def test_overlay_strict(how, keep_geom_type, geom_types):
         assert result.empty
 
     except OSError:  # fiona < 1.8
+        assert result.empty
+
+    except RuntimeError:  # pyogrio.DataSourceError
         assert result.empty
 
 

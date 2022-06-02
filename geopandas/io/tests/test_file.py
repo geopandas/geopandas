@@ -9,7 +9,6 @@ import tempfile
 import numpy as np
 import pandas as pd
 
-import fiona
 import pytz
 from pandas.testing import assert_series_equal
 from shapely.geometry import Point, Polygon, box
@@ -30,17 +29,37 @@ except ImportError:
     pyogrio = False
 
 
-PYOGRIO_MARK = pytest.mark.skipif(not pyogrio, reason="pyogrio not installed")
+try:
+    import fiona
 
-FIONA_GE_1814 = Version(fiona.__version__) >= Version("1.8.14")  # datetime roundtrip
+    FIONA_GE_1814 = Version(fiona.__version__) >= Version(
+        "1.8.14"
+    )  # datetime roundtrip
+except ImportError:
+    fiona = False
+    FIONA_GE_1814 = False
+
+
+PYOGRIO_MARK = pytest.mark.skipif(not pyogrio, reason="pyogrio not installed")
+FIONA_MARK = pytest.mark.skipif(not fiona, reason="fiona not installed")
 
 
 _CRS = "epsg:4326"
 
 
-@pytest.fixture(params=["fiona", pytest.param("pyogrio", marks=PYOGRIO_MARK)])
+@pytest.fixture(
+    params=[
+        pytest.param("fiona", marks=FIONA_MARK),
+        pytest.param("pyogrio", marks=PYOGRIO_MARK),
+    ]
+)
 def engine(request):
     return request.param
+
+
+def skip_pyogrio_not_supported(engine):
+    if engine == "pyogrio":
+        pytest.skip("not supported for the pyogrio engine")
 
 
 @pytest.fixture
@@ -519,6 +538,7 @@ def test_read_file_filtered__bbox(df_nybb, engine):
     )
     filtered_df = read_file(nybb_filename, bbox=bbox, engine=engine)
     filtered_df["BoroCode"] = filtered_df["BoroCode"].astype("int64")
+    df_nybb["BoroCode"] = df_nybb["BoroCode"].astype("int64")
     expected = df_nybb[df_nybb["BoroName"].isin(["Bronx", "Queens"])]
     assert_geodataframe_equal(filtered_df, expected.reset_index(drop=True))
 
@@ -630,23 +650,26 @@ def test_read_file_filtered_with_gdf_boundary(df_nybb, engine):
     assert filtered_df_shape == (2, 5)
 
 
-def test_read_file_filtered_with_gdf_boundary__mask(df_nybb):
+def test_read_file_filtered_with_gdf_boundary__mask(df_nybb, engine):
+    skip_pyogrio_not_supported(engine)
     gdf_mask = geopandas.read_file(geopandas.datasets.get_path("naturalearth_lowres"))
     gdf = geopandas.read_file(
         geopandas.datasets.get_path("naturalearth_cities"),
         mask=gdf_mask[gdf_mask.continent == "Africa"],
+        engine=engine,
     )
     filtered_df_shape = gdf.shape
     assert filtered_df_shape == (50, 2)
 
 
-def test_read_file_filtered_with_gdf_boundary__mask__polygon(df_nybb):
+def test_read_file_filtered_with_gdf_boundary__mask__polygon(df_nybb, engine):
+    skip_pyogrio_not_supported(engine)
     full_df_shape = df_nybb.shape
     nybb_filename = geopandas.datasets.get_path("nybb")
     mask = box(
         1031051.7879884212, 224272.49231459625, 1047224.3104931959, 244317.30894023244
     )
-    filtered_df = read_file(nybb_filename, mask=mask)
+    filtered_df = read_file(nybb_filename, mask=mask, engine=engine)
     filtered_df_shape = filtered_df.shape
     assert full_df_shape != filtered_df_shape
     assert filtered_df_shape == (2, 5)
@@ -673,7 +696,8 @@ def test_read_file_filtered_with_gdf_boundary_mismatched_crs(df_nybb):
     assert filtered_df_shape == (2, 5)
 
 
-def test_read_file_filtered_with_gdf_boundary_mismatched_crs__mask(df_nybb):
+def test_read_file_filtered_with_gdf_boundary_mismatched_crs__mask(df_nybb, engine):
+    skip_pyogrio_not_supported(engine)
     full_df_shape = df_nybb.shape
     nybb_filename = geopandas.datasets.get_path("nybb")
     mask = geopandas.GeoDataFrame(
@@ -688,7 +712,7 @@ def test_read_file_filtered_with_gdf_boundary_mismatched_crs__mask(df_nybb):
         crs=CRS,
     )
     mask.to_crs(epsg=4326, inplace=True)
-    filtered_df = read_file(nybb_filename, mask=mask.geometry)
+    filtered_df = read_file(nybb_filename, mask=mask.geometry, engine=engine)
     filtered_df_shape = filtered_df.shape
     assert full_df_shape != filtered_df_shape
     assert filtered_df_shape == (2, 5)

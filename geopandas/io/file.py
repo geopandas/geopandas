@@ -102,7 +102,7 @@ def _is_zip(path):
     )
 
 
-def _read_file(filename, bbox=None, mask=None, rows=None, engine="fiona", **kwargs):
+def _read_file(filename, bbox=None, mask=None, rows=None, engine=None, **kwargs):
     """
     Returns a GeoDataFrame from a file or URL.
 
@@ -127,9 +127,10 @@ def _read_file(filename, bbox=None, mask=None, rows=None, engine="fiona", **kwar
     rows : int or slice, default None
         Load in specific rows by passing an integer (first `n` rows) or a
         slice() object.
-    engine : str, default "fiona"
+    engine : str, "fiona" or "pyogrio"
         The underlying library that is used to read the file. Currently, the
-        supported options are "fiona" and "pyogrio".
+        supported options are "fiona" and "pyogrio". Defaults to "fiona" if
+        installed, otherwise tries "pyogrio".
     **kwargs :
         Keyword args to be passed to the engine. In case of the "fiona" engine,
         the keyword arguments are passed to the `open` or `BytesCollection`
@@ -167,6 +168,13 @@ def _read_file(filename, bbox=None, mask=None, rows=None, engine="fiona", **kwar
     may fail. In this case, the proper encoding can be specified explicitly
     by using the encoding keyword parameter, e.g. ``encoding='utf-8'``.
     """
+    # default to "fiona" if installed, otherwise fall back to pyogrio
+    if engine is None:
+        if fiona is not None:
+            engine = "fiona"
+        else:
+            engine = "pyogrio"
+
     if engine == "fiona":
         _check_fiona("'read_file' function")
 
