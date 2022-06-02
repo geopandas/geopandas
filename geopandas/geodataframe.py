@@ -1449,6 +1449,14 @@ individually so that features may have different properties
             else:
                 if self.crs is not None and result.crs is None:
                     result.set_crs(self.crs, inplace=True)
+        elif isinstance(result, Series):
+            # Reconstruct series GeometryDtype if lost by apply
+            try:
+                # Note CRS cannot be preserved in this case as func could refer
+                # to any column
+                result = _ensure_geometry(result)
+            except TypeError:
+                pass
 
         return result
 

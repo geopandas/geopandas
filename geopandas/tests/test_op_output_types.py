@@ -203,9 +203,11 @@ def test_apply(df):
         df[[geo_name, "geometry2"]].apply(identity, axis=1), GeoDataFrame, geo_name
     )
     assert_object(df[[geo_name]].apply(identity, axis=1), GeoDataFrame, geo_name)
-    assert_object(
-        df[["geometry2", "value1"]].apply(identity, axis=1), GeoDataFrame, None
-    )
+    # TODO below should be a GeoDataFrame to be consistent with new getitem logic
+    #   leave as follow up as quite complicated
+    #   FrameColumnApply.series_generator returns object dtypes Series, so will have
+    #   patch result of apply
+    assert_object(df[["geometry2", "value1"]].apply(identity, axis=1), pd.DataFrame)
 
     assert_object(df[["value1"]].apply(identity, axis=1), pd.DataFrame)
 
