@@ -411,6 +411,11 @@ def _get_filesystem_path(path, filesystem=None, storage_options=None):
 
 
 def _ensure_arrow_fs(filesystem):
+    """
+    Simplified version of pyarrow.fs._ensure_filesystem. This is only needed
+    below because `pyarrow.parquet.read_metadata` does not yet accept a
+    filesystem keyword (https://issues.apache.org/jira/browse/ARROW-16719)
+    """
     from pyarrow import fs
 
     if isinstance(filesystem, fs.FileSystem):
@@ -509,6 +514,8 @@ def _read_parquet(path, columns=None, storage_options=None, **kwargs):
     # (pyarrow doesn't properly exposes those in schema.metadata for files
     # created by GDAL - https://issues.apache.org/jira/browse/ARROW-16688)
     try:
+        # read_metadata does not accept a filesystem keyword, so need to
+        # handle this manually (https://issues.apache.org/jira/browse/ARROW-16719)
         if filesystem is not None:
             pa_filesystem = _ensure_arrow_fs(filesystem)
             with pa_filesystem.open_input_file(path) as source:
