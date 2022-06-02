@@ -227,7 +227,9 @@ def test_apply(df):
     assert_object(df[["value1"]].apply(identity, axis=1), pd.DataFrame)
 
 
+@pytest.mark.xfail(not compat.PANDAS_GE_11, reason="apply is different in pandas 1.0.5")
 def test_apply_axis1_secondary_geo_cols(df):
+    # note #GH2436 would also fix this
     def identity(x):
         return x
 
