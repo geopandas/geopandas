@@ -1,38 +1,17 @@
 import os
-from distutils.version import LooseVersion
+from packaging.version import Version
 from pathlib import Path
 import warnings
 
 import numpy as np
 import pandas as pd
+from pandas.api.types import is_integer_dtype
 
 import pyproj
 from shapely.geometry import mapping
 from shapely.geometry.base import BaseGeometry
 
-try:
-    import fiona
-
-    fiona_import_error = None
-
-    # only try to import fiona.Env if the main fiona import succeeded (otherwise you
-    # can get confusing "AttributeError: module 'fiona' has no attribute '_loading'"
-    # / partially initialized module errors)
-    try:
-        from fiona import Env as fiona_env
-    except ImportError:
-        try:
-            from fiona import drivers as fiona_env
-        except ImportError:
-            fiona_env = None
-
-except ImportError as err:
-    fiona = None
-    fiona_import_error = str(err)
-
-
 from geopandas import GeoDataFrame, GeoSeries
-
 
 # Adapted from pandas.io.common
 from urllib.request import urlopen as _urlopen
@@ -42,6 +21,37 @@ from urllib.parse import uses_netloc, uses_params, uses_relative
 
 _VALID_URLS = set(uses_relative + uses_netloc + uses_params)
 _VALID_URLS.discard("")
+
+
+fiona = None
+fiona_env = None
+fiona_import_error = None
+
+
+def _import_fiona():
+    global fiona
+    global fiona_env
+    global fiona_import_error
+
+    if fiona is None:
+        try:
+            import fiona
+
+            # only try to import fiona.Env if the main fiona import succeeded
+            # (otherwise you can get confusing "AttributeError: module 'fiona'
+            # has no attribute '_loading'" / partially initialized module errors)
+            try:
+                from fiona import Env as fiona_env
+            except ImportError:
+                try:
+                    from fiona import drivers as fiona_env
+                except ImportError:
+                    fiona_env = None
+
+        except ImportError as err:
+            fiona = False
+            fiona_import_error = str(err)
+
 
 _EXTENSION_TO_DRIVER = {
     ".bna": "BNA",
@@ -163,6 +173,7 @@ def _read_file(filename, bbox=None, mask=None, rows=None, **kwargs):
     may fail. In this case, the proper encoding can be specified explicitly
     by using the encoding keyword parameter, e.g. ``encoding='utf-8'``.
     """
+    _import_fiona()
     _check_fiona("'read_file' function")
     filename = _expand_user(filename)
 
@@ -236,19 +247,25 @@ def _read_file(filename, bbox=None, mask=None, rows=None, **kwargs):
                 f_filt = features
             # get list of columns
             columns = list(features.schema["properties"])
+            datetime_fields = [
+                k for (k, v) in features.schema["properties"].items() if v == "datetime"
+            ]
             if kwargs.get("ignore_geometry", False):
-                return pd.DataFrame(
+                df = pd.DataFrame(
                     [record["properties"] for record in f_filt], columns=columns
                 )
-
-            return GeoDataFrame.from_features(
-                f_filt, crs=crs, columns=columns + ["geometry"]
-            )
+            else:
+                df = GeoDataFrame.from_features(
+                    f_filt, crs=crs, columns=columns + ["geometry"]
+                )
+            for k in datetime_fields:
+                # fiona only supports up to ms precision, any microseconds are
+                # floating point rounding error
+                df[k] = pd.to_datetime(df[k]).dt.round(freq="ms")
+            return df
 
 
 def read_file(*args, **kwargs):
-    import warnings
-
     warnings.warn(
         "geopandas.io.file.read_file() is intended for internal "
         "use only, and will be deprecated. Use geopandas.read_file() instead.",
@@ -260,8 +277,6 @@ def read_file(*args, **kwargs):
 
 
 def to_file(*args, **kwargs):
-    import warnings
-
     warnings.warn(
         "geopandas.io.file.to_file() is intended for internal "
         "use only, and will be deprecated. Use GeoDataFrame.to_file() "
@@ -352,15 +367,14 @@ def _to_file(
     may fail. In this case, the proper encoding can be specified explicitly
     by using the encoding keyword parameter, e.g. ``encoding='utf-8'``.
     """
+    _import_fiona()
     _check_fiona("'to_file' method")
     filename = _expand_user(filename)
 
     if index is None:
         # Determine if index attribute(s) should be saved to file
-        index = list(df.index.names) != [None] or type(df.index) not in (
-            pd.RangeIndex,
-            pd.Int64Index,
-        )
+        # (only if they are named or are non-integer)
+        index = list(df.index.names) != [None] or not is_integer_dtype(df.index.dtype)
     if index:
         df = df.reset_index(drop=False)
     if schema is None:
@@ -386,7 +400,7 @@ def _to_file(
             gdal_version = fiona.env.get_gdal_release_name()
         except AttributeError:
             gdal_version = "2.0.0"  # just assume it is not the latest
-        if LooseVersion(gdal_version) >= LooseVersion("3.0.0") and crs:
+        if Version(gdal_version) >= Version("3.0.0") and crs:
             crs_wkt = crs.to_wkt()
         elif crs:
             crs_wkt = crs.to_wkt("WKT1_GDAL")
@@ -425,7 +439,12 @@ def infer_schema(df):
     )
 
     if df.empty:
-        raise ValueError("Cannot write empty DataFrame to file.")
+        warnings.warn(
+            "You are attempting to write an empty DataFrame to file. "
+            "For some drivers, this operation may fail.",
+            UserWarning,
+            stacklevel=3,
+        )
 
     # Since https://github.com/Toblerity/Fiona/issues/446 resolution,
     # Fiona allows a list of geometry types

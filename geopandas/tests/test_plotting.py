@@ -1,4 +1,4 @@
-from distutils.version import LooseVersion
+from packaging.version import Version
 import itertools
 import warnings
 
@@ -33,7 +33,7 @@ import matplotlib.pyplot as plt  # noqa
 try:  # skipif and importorskip do not work for decorators
     from matplotlib.testing.decorators import check_figures_equal
 
-    if matplotlib.__version__ >= LooseVersion("3.3.0"):
+    if Version(matplotlib.__version__) >= Version("3.3.0"):
 
         MPL_DECORATORS = True
     else:
@@ -303,7 +303,7 @@ class TestPointPlotting:
         with pytest.warns(UserWarning):
             ax = s.plot()
         assert len(ax.collections) == 0
-        df = GeoDataFrame([])
+        df = GeoDataFrame([], columns=["geometry"])
         with pytest.warns(UserWarning):
             ax = df.plot()
         assert len(ax.collections) == 0
@@ -404,7 +404,7 @@ class TestPointPlotting:
         ):
             self.df.plot(column="cats", categories=["cat1"])
 
-    def test_misssing(self):
+    def test_missing(self):
         self.df.loc[0, "values"] = np.nan
         ax = self.df.plot("values")
         cmap = plt.get_cmap()
@@ -427,6 +427,12 @@ class TestPointPlotting:
         leg_colors1 = ax.get_legend().axes.collections[1].get_facecolors()
         np.testing.assert_array_equal(point_colors[0], leg_colors[0])
         np.testing.assert_array_equal(nan_color[0], leg_colors1[0])
+
+    def test_no_missing_and_missing_kwds(self):
+        # GH2210
+        df = self.df.copy()
+        df["category"] = df["values"].astype("str")
+        df.plot("category", missing_kwds={"facecolor": "none"}, legend=True)
 
 
 class TestPointZPlotting:
@@ -1084,9 +1090,9 @@ class TestMapclassifyPlotting:
             )
         labels = [t.get_text() for t in ax.get_legend().get_texts()]
         expected = [
-            u"       140.00,    5217064.00",
-            u"   5217064.00,   19532732.33",
-            u"  19532732.33, 1379302771.00",
+            "       140.00,    5217064.00",
+            "   5217064.00,   19532732.33",
+            "  19532732.33, 1379302771.00",
         ]
         assert labels == expected
 
@@ -1119,7 +1125,7 @@ class TestMapclassifyPlotting:
             column="NEGATIVES", scheme="FISHER_JENKS", k=3, cmap="OrRd", legend=True
         )
         labels = [t.get_text() for t in ax.get_legend().get_texts()]
-        expected = [u"-10.00,  -3.41", u" -3.41,   3.30", u"  3.30,  10.00"]
+        expected = ["-10.00,  -3.41", " -3.41,   3.30", "  3.30,  10.00"]
         assert labels == expected
 
     def test_fmt(self):
@@ -1132,7 +1138,7 @@ class TestMapclassifyPlotting:
             legend_kwds={"fmt": "{:.0f}"},
         )
         labels = [t.get_text() for t in ax.get_legend().get_texts()]
-        expected = [u"-10,  -3", u" -3,   3", u"  3,  10"]
+        expected = ["-10,  -3", " -3,   3", "  3,  10"]
         assert labels == expected
 
     def test_interval(self):
@@ -1145,7 +1151,7 @@ class TestMapclassifyPlotting:
             legend_kwds={"interval": True},
         )
         labels = [t.get_text() for t in ax.get_legend().get_texts()]
-        expected = [u"[-10.00,  -3.41]", u"( -3.41,   3.30]", u"(  3.30,  10.00]"]
+        expected = ["[-10.00,  -3.41]", "( -3.41,   3.30]", "(  3.30,  10.00]"]
         assert labels == expected
 
     @pytest.mark.parametrize("scheme", ["FISHER_JENKS", "FISHERJENKS"])
@@ -1378,9 +1384,6 @@ class TestPlotCollections:
         )
 
     def test_points(self):
-        # failing with matplotlib 1.4.3 (edge stays black even when specified)
-        pytest.importorskip("matplotlib", "1.5.0")
-
         from geopandas.plotting import _plot_point_collection, plot_point_collection
         from matplotlib.collections import PathCollection
 
@@ -1837,11 +1840,6 @@ def _get_ax(fig, label):
     Previously, we did `fig.axes[1]`, but in matplotlib 3.4 the order switched
     and the colorbar ax was first and subplot ax second.
     """
-    if matplotlib.__version__ < LooseVersion("3.0.0"):
-        if label == "<colorbar>":
-            return fig.axes[1]
-        elif label == "":
-            return fig.axes[0]
     for ax in fig.axes:
         if ax.get_label() == label:
             return ax

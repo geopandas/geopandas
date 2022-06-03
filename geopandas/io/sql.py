@@ -230,7 +230,7 @@ def _get_geometry_type(gdf):
 
     # Check for 3D-coordinates
     if any(gdf.geometry.has_z):
-        target_geom_type = target_geom_type + "Z"
+        target_geom_type += "Z"
 
     return target_geom_type, has_curve
 
@@ -242,19 +242,30 @@ def _get_srid_from_crs(gdf):
 
     # Use geoalchemy2 default for srid
     # Note: undefined srid in PostGIS is 0
-    srid = -1
+    srid = None
     warning_msg = (
         "Could not parse CRS from the GeoDataFrame. "
-        + "Inserting data without defined CRS.",
+        "Inserting data without defined CRS."
     )
     if gdf.crs is not None:
         try:
-            srid = gdf.crs.to_epsg(min_confidence=25)
-            if srid is None:
-                srid = -1
-                warnings.warn(warning_msg, UserWarning, stacklevel=2)
+            for confidence in (100, 70, 25):
+                srid = gdf.crs.to_epsg(min_confidence=confidence)
+                if srid is not None:
+                    break
+                auth_srid = gdf.crs.to_authority(
+                    auth_name="ESRI", min_confidence=confidence
+                )
+                if auth_srid is not None:
+                    srid = int(auth_srid[1])
+                    break
         except Exception:
             warnings.warn(warning_msg, UserWarning, stacklevel=2)
+
+    if srid is None:
+        srid = -1
+        warnings.warn(warning_msg, UserWarning, stacklevel=2)
+
     return srid
 
 
@@ -272,7 +283,7 @@ def _convert_linearring_to_linestring(gdf, geom_name):
 
 
 def _convert_to_ewkb(gdf, geom_name, srid):
-    """Convert geometries to ewkb. """
+    """Convert geometries to ewkb."""
     if compat.USE_PYGEOS:
         from pygeos import set_srid, to_wkb
 
@@ -369,15 +380,7 @@ def _write_postgis(
     try:
         from geoalchemy2 import Geometry
     except ImportError:
-        raise ImportError("'to_postgis()' requires geoalchemy2 package. ")
-
-    if not compat.SHAPELY_GE_17:
-        raise ImportError(
-            "'to_postgis()' requires newer version of Shapely "
-            "(>= '1.7.0').\nYou can update the library using "
-            "'pip install shapely --upgrade' or using "
-            "'conda update shapely' if using conda package manager."
-        )
+        raise ImportError("'to_postgis()' requires geoalchemy2 package.")
 
     gdf = gdf.copy()
     geom_name = gdf.geometry.name

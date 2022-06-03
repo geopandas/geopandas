@@ -2,12 +2,11 @@ import json
 import os
 import shutil
 import tempfile
-from distutils.version import LooseVersion
+from packaging.version import Version
 
 import numpy as np
 import pandas as pd
 
-import pyproj
 from pyproj import CRS
 from pyproj.exceptions import CRSError
 from shapely.geometry import Point, Polygon
@@ -24,9 +23,8 @@ from pandas.testing import assert_frame_equal, assert_index_equal, assert_series
 import pytest
 
 
-PYPROJ_LT_3 = LooseVersion(pyproj.__version__) < LooseVersion("3")
 TEST_NEAREST = compat.PYGEOS_GE_010 and compat.USE_PYGEOS
-pandas_133 = pd.__version__ == LooseVersion("1.3.3")
+pandas_133 = Version(pd.__version__) == Version("1.3.3")
 
 
 @pytest.fixture
@@ -336,6 +334,33 @@ class TestDataFrame:
         assert isinstance(result, GeoDataFrame)
         assert isinstance(result.index, pd.DatetimeIndex)
 
+    def test_set_geometry_np_int(self):
+        self.df.loc[:, 0] = self.df.geometry
+        df = self.df.set_geometry(np.int64(0))
+        assert df.geometry.name == 0
+
+    def test_get_geometry_invalid(self):
+        df = GeoDataFrame()
+        df["geom"] = self.df.geometry
+        msg_geo_col_none = "active geometry column to use has not been set. "
+        msg_geo_col_missing = "is not present. "
+
+        with pytest.raises(AttributeError, match=msg_geo_col_missing):
+            df.geometry
+        df2 = self.df.copy()
+        df2["geom2"] = df2.geometry
+        df2 = df2[["BoroCode", "BoroName", "geom2"]]
+        with pytest.raises(AttributeError, match=msg_geo_col_none):
+            df2.geometry
+
+        msg_other_geo_cols_present = "There are columns with geometry data type"
+        msg_no_other_geo_cols = "There are no existing columns with geometry data type"
+        with pytest.raises(AttributeError, match=msg_other_geo_cols_present):
+            df2.geometry
+
+        with pytest.raises(AttributeError, match=msg_no_other_geo_cols):
+            GeoDataFrame().geometry
+
     def test_align(self):
         df = self.df2
 
@@ -594,7 +619,7 @@ class TestDataFrame:
         p3 = Point(3, 3)
         f3 = {
             "type": "Feature",
-            "properties": {"a": 2},
+            "properties": None,
             "geometry": p3.__geo_interface__,
         }
 
@@ -602,9 +627,102 @@ class TestDataFrame:
 
         result = df[["a", "b"]]
         expected = pd.DataFrame.from_dict(
-            [{"a": 0, "b": np.nan}, {"a": np.nan, "b": 1}, {"a": 2, "b": np.nan}]
+            [{"a": 0, "b": np.nan}, {"a": np.nan, "b": 1}, {"a": np.nan, "b": np.nan}]
         )
         assert_frame_equal(expected, result)
+
+    def test_from_features_empty_properties(self):
+        geojson_properties_object = """{
+          "type": "FeatureCollection",
+          "features": [
+            {
+              "type": "Feature",
+              "properties": {},
+              "geometry": {
+                "type": "Polygon",
+                "coordinates": [
+                  [
+                    [
+                      11.3456529378891,
+                      46.49461446367692
+                    ],
+                    [
+                      11.345674395561216,
+                      46.494097442978195
+                    ],
+                    [
+                      11.346918940544128,
+                      46.49385370294394
+                    ],
+                    [
+                      11.347616314888,
+                      46.4938352377453
+                    ],
+                    [
+                      11.347514390945435,
+                      46.49466985846028
+                    ],
+                    [
+                      11.3456529378891,
+                      46.49461446367692
+                    ]
+                  ]
+                ]
+              }
+            }
+          ]
+        }"""
+
+        geojson_properties_null = """{
+          "type": "FeatureCollection",
+          "features": [
+            {
+              "type": "Feature",
+              "properties": null,
+              "geometry": {
+                "type": "Polygon",
+                "coordinates": [
+                  [
+                    [
+                      11.3456529378891,
+                      46.49461446367692
+                    ],
+                    [
+                      11.345674395561216,
+                      46.494097442978195
+                    ],
+                    [
+                      11.346918940544128,
+                      46.49385370294394
+                    ],
+                    [
+                      11.347616314888,
+                      46.4938352377453
+                    ],
+                    [
+                      11.347514390945435,
+                      46.49466985846028
+                    ],
+                    [
+                      11.3456529378891,
+                      46.49461446367692
+                    ]
+                  ]
+                ]
+              }
+            }
+          ]
+        }"""
+
+        # geoJSON with empty properties
+        gjson_po = json.loads(geojson_properties_object)
+        gdf1 = GeoDataFrame.from_features(gjson_po)
+
+        # geoJSON with null properties
+        gjson_null = json.loads(geojson_properties_null)
+        gdf2 = GeoDataFrame.from_features(gjson_null)
+
+        assert_frame_equal(gdf1, gdf2)
 
     def test_from_features_geom_interface_feature(self):
         class Placemark(object):
@@ -634,7 +752,7 @@ class TestDataFrame:
         geometry = [Point(xy) for xy in zip(df["lon"], df["lat"])]
         gdf = GeoDataFrame(df, geometry=geometry)
         # from_features returns sorted columns
-        expected = gdf[["geometry", "lat", "lon", "name"]]
+        expected = gdf[["geometry", "name", "lat", "lon"]]
 
         # test FeatureCollection
         res = GeoDataFrame.from_features(gdf.__geo_interface__)
@@ -761,12 +879,13 @@ class TestDataFrame:
         assert self.df.crs == unpickled.crs
 
     def test_estimate_utm_crs(self):
-        if PYPROJ_LT_3:
+        if compat.PYPROJ_LT_3:
             with pytest.raises(RuntimeError, match=r"pyproj 3\+ required"):
                 self.df.estimate_utm_crs()
         else:
             assert self.df.estimate_utm_crs() == CRS("EPSG:32618")
-            assert self.df.estimate_utm_crs("NAD83") == CRS("EPSG:26918")
+            if compat.PYPROJ_GE_32:  # result is unstable in older pyproj
+                assert self.df.estimate_utm_crs("NAD83") == CRS("EPSG:26918")
 
     def test_to_wkb(self):
         wkbs0 = [

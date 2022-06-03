@@ -2,13 +2,14 @@ name: test
 channels:
   - defaults
 dependencies:
-  - python=3.7
+  - python=3.8
   # required
   - pandas
   - shapely
   - fiona
   - pyproj
   - geos
+  - packaging
   # testing
   - pytest
   - pytest-cov
