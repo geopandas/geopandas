@@ -327,8 +327,10 @@ def test_constructor_sliced_column_slices(df2):
     sub = df2.head(1)
     # column slices should be GeoSeries if of geometry type
     assert type(sub.iloc[:, geo_idx]) == GeoSeries
+    assert type(sub.iloc[[0], geo_idx]) == GeoSeries
     sub = df2.head(2)
     assert type(sub.iloc[:, geo_idx]) == GeoSeries
+    assert type(sub.iloc[[0, 1], geo_idx]) == GeoSeries
 
     # check iloc row slices are pd.Series instead
     assert type(df2.iloc[0, :]) == pd.Series
