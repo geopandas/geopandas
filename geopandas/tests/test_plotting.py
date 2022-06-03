@@ -1090,9 +1090,9 @@ class TestMapclassifyPlotting:
             )
         labels = [t.get_text() for t in ax.get_legend().get_texts()]
         expected = [
-            u"       140.00,    5217064.00",
-            u"   5217064.00,   19532732.33",
-            u"  19532732.33, 1379302771.00",
+            "       140.00,    5217064.00",
+            "   5217064.00,   19532732.33",
+            "  19532732.33, 1379302771.00",
         ]
         assert labels == expected
 
@@ -1125,7 +1125,7 @@ class TestMapclassifyPlotting:
             column="NEGATIVES", scheme="FISHER_JENKS", k=3, cmap="OrRd", legend=True
         )
         labels = [t.get_text() for t in ax.get_legend().get_texts()]
-        expected = [u"-10.00,  -3.41", u" -3.41,   3.30", u"  3.30,  10.00"]
+        expected = ["-10.00,  -3.41", " -3.41,   3.30", "  3.30,  10.00"]
         assert labels == expected
 
     def test_fmt(self):
@@ -1138,7 +1138,7 @@ class TestMapclassifyPlotting:
             legend_kwds={"fmt": "{:.0f}"},
         )
         labels = [t.get_text() for t in ax.get_legend().get_texts()]
-        expected = [u"-10,  -3", u" -3,   3", u"  3,  10"]
+        expected = ["-10,  -3", " -3,   3", "  3,  10"]
         assert labels == expected
 
     def test_interval(self):
@@ -1151,7 +1151,7 @@ class TestMapclassifyPlotting:
             legend_kwds={"interval": True},
         )
         labels = [t.get_text() for t in ax.get_legend().get_texts()]
-        expected = [u"[-10.00,  -3.41]", u"( -3.41,   3.30]", u"(  3.30,  10.00]"]
+        expected = ["[-10.00,  -3.41]", "( -3.41,   3.30]", "(  3.30,  10.00]"]
         assert labels == expected
 
     @pytest.mark.parametrize("scheme", ["FISHER_JENKS", "FISHERJENKS"])
@@ -1438,8 +1438,8 @@ class TestPlotCollections:
         with pytest.raises((TypeError, ValueError)):
             _plot_point_collection(ax, self.points, color="not color")
 
-        # check DeprecationWarning
-        with pytest.warns(DeprecationWarning):
+        # check FutureWarning
+        with pytest.warns(FutureWarning):
             plot_point_collection(ax, self.points)
 
     def test_points_values(self):
@@ -1511,8 +1511,8 @@ class TestPlotCollections:
         # not a color
         with pytest.raises((TypeError, ValueError)):
             _plot_linestring_collection(ax, self.lines, color="not color")
-        # check DeprecationWarning
-        with pytest.warns(DeprecationWarning):
+        # check FutureWarning
+        with pytest.warns(FutureWarning):
             plot_linestring_collection(ax, self.lines)
 
     def test_linestrings_values(self):
@@ -1603,8 +1603,8 @@ class TestPlotCollections:
         # not a color
         with pytest.raises((TypeError, ValueError)):
             _plot_polygon_collection(ax, self.polygons, color="not color")
-        # check DeprecationWarning
-        with pytest.warns(DeprecationWarning):
+        # check FutureWarning
+        with pytest.warns(FutureWarning):
             plot_polygon_collection(ax, self.polygons)
 
     def test_polygons_values(self):

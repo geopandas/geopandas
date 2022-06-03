@@ -1,5 +1,4 @@
 from packaging.version import Version
-import os
 
 import random
 
@@ -19,6 +18,7 @@ import pytest
 # pyproj 2.3.1 fixed a segfault for the case working in an environment with
 # 'init' dicts (https://github.com/pyproj4/pyproj/issues/415)
 PYPROJ_LT_231 = Version(pyproj.__version__) < Version("2.3.1")
+PYPROJ_GE_3 = Version(pyproj.__version__) >= Version("3.0.0")
 
 
 def _create_df(x, y=None, crs=None):
@@ -125,7 +125,9 @@ def test_transform2(epsg4326, epsg26918):
     # with PROJ >= 7, the transformation using EPSG code vs proj4 string is
     # slightly different due to use of grid files or not -> turn off network
     # to not use grid files at all for this test
-    os.environ["PROJ_NETWORK"] = "OFF"
+    if PYPROJ_GE_3:
+        pyproj.network.set_network_enabled(False)
+
     df = df_epsg26918()
     lonlat = df.to_crs(**epsg4326)
     utm = lonlat.to_crs(**epsg26918)

@@ -28,6 +28,7 @@ PANDAS_GE_14 = Version(pd.__version__) >= Version("1.4.0rc0")
 
 
 SHAPELY_GE_18 = Version(shapely.__version__) >= Version("1.8")
+SHAPELY_GE_182 = Version(shapely.__version__) >= Version("1.8.2")
 SHAPELY_GE_20 = Version(shapely.__version__) >= Version("2.0")
 
 GEOS_GE_390 = shapely.geos.geos_version >= (3, 9, 0)
@@ -149,7 +150,6 @@ if shapely_warning is not None and not SHAPELY_GE_20:
             )
             yield
 
-
 elif (Version(np.__version__) >= Version("1.21")) and not SHAPELY_GE_20:
 
     @contextlib.contextmanager
@@ -161,7 +161,6 @@ elif (Version(np.__version__) >= Version("1.21")) and not SHAPELY_GE_20:
                 "ignore", "An exception was ignored while fetching", DeprecationWarning
             )
             yield
-
 
 else:
 
