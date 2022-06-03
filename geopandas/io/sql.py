@@ -182,7 +182,7 @@ def read_postgis(*args, **kwargs):
     warnings.warn(
         "geopandas.io.sql.read_postgis() is intended for internal "
         "use only, and will be deprecated. Use geopandas.read_postgis() instead.",
-        DeprecationWarning,
+        FutureWarning,
         stacklevel=2,
     )
 
