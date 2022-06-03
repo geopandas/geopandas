@@ -168,11 +168,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                     and not self["geometry"].values.crs == crs
                 ):
                     raise ValueError(crs_mismatch_error)
-                geometry = GeoSeries(
-                    _ensure_geometry(self["geometry"].values, crs),
-                    index=index,
-                    name="geometry",
-                )
+                self["geometry"] = _ensure_geometry(self["geometry"].values, crs)
             except TypeError:
                 pass
             else:
@@ -242,10 +238,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
     def _set_geometry(self, col):
         if not pd.api.types.is_list_like(col):
             raise ValueError("Must use a list-like to set the geometry property")
-        if not hasattr(col, "crs"):
-            self.set_geometry(col, inplace=True, crs=self.crs)
-        else:
-            self.set_geometry(col, inplace=True)
+        self.set_geometry(col, inplace=True)
 
     geometry = property(
         fget=_get_geometry, fset=_set_geometry, doc="Geometry data for GeoDataFrame"
