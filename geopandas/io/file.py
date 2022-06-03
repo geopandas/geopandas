@@ -259,7 +259,7 @@ def read_file(*args, **kwargs):
     warnings.warn(
         "geopandas.io.file.read_file() is intended for internal "
         "use only, and will be deprecated. Use geopandas.read_file() instead.",
-        DeprecationWarning,
+        FutureWarning,
         stacklevel=2,
     )
 
@@ -271,7 +271,7 @@ def to_file(*args, **kwargs):
         "geopandas.io.file.to_file() is intended for internal "
         "use only, and will be deprecated. Use GeoDataFrame.to_file() "
         "or GeoSeries.to_file() instead.",
-        DeprecationWarning,
+        FutureWarning,
         stacklevel=2,
     )
 

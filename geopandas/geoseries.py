@@ -1245,7 +1245,7 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
         warnings.warn(
             "'^' operator will be deprecated. Use the 'symmetric_difference' "
             "method instead.",
-            DeprecationWarning,
+            FutureWarning,
             stacklevel=2,
         )
         return self.symmetric_difference(other)
@@ -1254,7 +1254,7 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
         """Implement | operator as for builtin set type"""
         warnings.warn(
             "'|' operator will be deprecated. Use the 'union' method instead.",
-            DeprecationWarning,
+            FutureWarning,
             stacklevel=2,
         )
         return self.union(other)
@@ -1263,7 +1263,7 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
         """Implement & operator as for builtin set type"""
         warnings.warn(
             "'&' operator will be deprecated. Use the 'intersection' method instead.",
-            DeprecationWarning,
+            FutureWarning,
             stacklevel=2,
         )
         return self.intersection(other)
@@ -1272,7 +1272,7 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
         """Implement - operator as for builtin set type"""
         warnings.warn(
             "'-' operator will be deprecated. Use the 'difference' method instead.",
-            DeprecationWarning,
+            FutureWarning,
             stacklevel=2,
         )
         return self.difference(other)

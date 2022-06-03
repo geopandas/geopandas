@@ -1852,7 +1852,7 @@ individually so that features may have different properties
         warnings.warn(
             "'^' operator will be deprecated. Use the 'symmetric_difference' "
             "method instead.",
-            DeprecationWarning,
+            FutureWarning,
             stacklevel=2,
         )
         return self.geometry.symmetric_difference(other)
@@ -1861,7 +1861,7 @@ individually so that features may have different properties
         """Implement | operator as for builtin set type"""
         warnings.warn(
             "'|' operator will be deprecated. Use the 'union' method instead.",
-            DeprecationWarning,
+            FutureWarning,
             stacklevel=2,
         )
         return self.geometry.union(other)
@@ -1870,7 +1870,7 @@ individually so that features may have different properties
         """Implement & operator as for builtin set type"""
         warnings.warn(
             "'&' operator will be deprecated. Use the 'intersection' method instead.",
-            DeprecationWarning,
+            FutureWarning,
             stacklevel=2,
         )
         return self.geometry.intersection(other)
@@ -1879,7 +1879,7 @@ individually so that features may have different properties
         """Implement - operator as for builtin set type"""
         warnings.warn(
             "'-' operator will be deprecated. Use the 'difference' method instead.",
-            DeprecationWarning,
+            FutureWarning,
             stacklevel=2,
         )
         return self.geometry.difference(other)

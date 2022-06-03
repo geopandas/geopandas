@@ -261,7 +261,7 @@ def test_to_file_empty(tmpdir):
 
 def test_to_file_privacy(tmpdir, df_nybb):
     tempfilename = os.path.join(str(tmpdir), "test.shp")
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(FutureWarning):
         geopandas.io.file.to_file(df_nybb, tempfilename)
 
 
@@ -678,7 +678,7 @@ def test_read_file_empty_shapefile(tmpdir):
 
 
 def test_read_file_privacy(tmpdir, df_nybb):
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(FutureWarning):
         geopandas.io.file.read_file(geopandas.datasets.get_path("nybb"))
 
 
