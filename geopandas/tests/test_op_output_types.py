@@ -42,9 +42,9 @@ def df2():
     """For constructor_sliced tests"""
     return GeoDataFrame(
         {
-            "geometry": [Point(x, x) for x in range(3)],
-            "geometry2": [Point(x, x) for x in range(3)],
-            "geometry3": [Point(x, x) for x in range(3)],
+            "geometry": GeoSeries([Point(x, x) for x in range(3)]),
+            "geometry2": GeoSeries([Point(x, x) for x in range(3)]),
+            "geometry3": GeoSeries([Point(x, x) for x in range(3)]),
             "value": [1, 2, 1],
             "value_nan": np.nan,
         }
@@ -312,7 +312,7 @@ test_case_column_sets = [
 def test_constructor_sliced_row_slices(df2, column_set):
     # https://github.com/geopandas/geopandas/issues/2282
     df_subset = df2[column_set]
-    assert isinstance(df_subset, pd.DataFrame)
+    assert isinstance(df_subset, GeoDataFrame)
     res = df_subset.loc[0]
     # row slices shouldn't be GeoSeries, even if they have a geometry col
     assert type(res) == pd.Series
