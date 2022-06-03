@@ -49,7 +49,7 @@ def _ensure_geometry(data, crs=None):
     if is_geometry_type(data):
         if isinstance(data, Series):
             data = GeoSeries(data)
-        if data.crs is None:
+        if data.crs is None and crs is not None:
             # Avoids caching issues/crs sharing issues
             data = data.copy()
             data.crs = crs
