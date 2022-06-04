@@ -306,6 +306,15 @@ class TestGeometryArrayCRS:
         ):
             assert df.crs == self.osgb
 
+    def test_dataframe_getitem_without_geometry_column(self):
+        df = GeoDataFrame({"col": range(10)}, geometry=self.arr)
+        df["geom2"] = df.geometry.centroid
+        subset = df[["col", "geom2"]]
+        with pytest.warns(
+            FutureWarning, match="Accessing CRS of a GeoDataFrame without a geometry"
+        ):
+            assert subset.crs == self.osgb
+
     def test_dataframe_setitem(self):
         # new geometry CRS has priority over GDF CRS
         arr = from_shapely(self.geoms)
