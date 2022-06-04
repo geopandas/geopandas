@@ -13,7 +13,7 @@ from pyproj import CRS
 
 from geopandas.array import GeometryArray, GeometryDtype, from_shapely, to_wkb, to_wkt
 from geopandas.base import GeoPandasBase, is_geometry_type
-from geopandas.geoseries import GeoSeries, _geoseries_constructor_with_fallback
+from geopandas.geoseries import GeoSeries
 import geopandas.io
 from geopandas.explore import _explore
 from . import _compat as compat
@@ -1450,6 +1450,14 @@ individually so that features may have different properties
             else:
                 if self.crs is not None and result.crs is None:
                     result.set_crs(self.crs, inplace=True)
+        elif isinstance(result, Series):
+            # Reconstruct series GeometryDtype if lost by apply
+            try:
+                # Note CRS cannot be preserved in this case as func could refer
+                # to any column
+                result = _ensure_geometry(result)
+            except TypeError:
+                pass
 
         return result
 
@@ -1459,7 +1467,29 @@ individually so that features may have different properties
 
     @property
     def _constructor_sliced(self):
-        return _geoseries_constructor_with_fallback
+        def _geodataframe_constructor_sliced(data=None, index=None, crs=None, **kwargs):
+            """
+            A specialized (Geo)Series constructor which can fall back to a
+            Series if a certain operation does not produce geometries:
+
+            - We only return a GeoSeries if the data is actually of geometry
+              dtype (and so we don't try to convert geometry objects such as
+              the normal GeoSeries(..) constructor does with `_ensure_geometry`).
+            - When we get here from obtaining a row or column from a
+              GeoDataFrame, the goal is to only return a GeoSeries for a
+              geometry column, and not return a GeoSeries for a row that happened
+              to come from a DataFrame with only geometry dtype columns (and
+              thus could have a geometry dtype). Therefore, we don't return a
+              GeoSeries if we are sure we are in a row selection case (by
+              checking the identity of the index)
+            """
+            srs = pd.Series(data, index, **kwargs)
+            is_row_proxy = srs.index is self.columns
+            if is_geometry_type(srs) and not is_row_proxy:
+                srs = GeoSeries(srs, crs=crs)
+            return srs
+
+        return _geodataframe_constructor_sliced
 
     def __finalize__(self, other, method=None, **kwargs):
         """propagate metadata from other to self"""
