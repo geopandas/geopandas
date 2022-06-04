@@ -1467,7 +1467,7 @@ individually so that features may have different properties
 
     @property
     def _constructor_sliced(self):
-        def _geodataframe_constructor_sliced(data=None, index=None, crs=None, **kwargs):
+        def _geodataframe_constructor_sliced(*args, **kwargs):
             """
             A specialized (Geo)Series constructor which can fall back to a
             Series if a certain operation does not produce geometries:
@@ -1483,10 +1483,10 @@ individually so that features may have different properties
               GeoSeries if we are sure we are in a row selection case (by
               checking the identity of the index)
             """
-            srs = pd.Series(data, index, **kwargs)
+            srs = pd.Series(*args, **kwargs)
             is_row_proxy = srs.index is self.columns
             if is_geometry_type(srs) and not is_row_proxy:
-                srs = GeoSeries(srs, crs=crs)
+                srs = GeoSeries(srs)
             return srs
 
         return _geodataframe_constructor_sliced
