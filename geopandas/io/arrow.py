@@ -513,6 +513,7 @@ def _read_parquet(path, columns=None, storage_options=None, **kwargs):
     # read metadata separately to get the raw Parquet FileMetaData metadata
     # (pyarrow doesn't properly exposes those in schema.metadata for files
     # created by GDAL - https://issues.apache.org/jira/browse/ARROW-16688)
+    metadata = None
     if table.schema.metadata is None or b"geo" not in table.schema.metadata:
         try:
             # read_metadata does not accept a filesystem keyword, so need to
@@ -524,7 +525,7 @@ def _read_parquet(path, columns=None, storage_options=None, **kwargs):
             else:
                 metadata = parquet.read_metadata(path).metadata
         except Exception:
-            metadata = None
+            pass
 
     return _arrow_to_geopandas(table, metadata)
 
