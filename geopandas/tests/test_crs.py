@@ -209,7 +209,6 @@ class TestGeometryArrayCRS:
             s = GeoSeries(arr, crs=4326)
         assert s.crs == self.osgb
 
-    @pytest.mark.filterwarnings("ignore:Assigning CRS")
     def test_dataframe(self):
         arr = from_shapely(self.geoms, crs=27700)
         df = GeoDataFrame(geometry=arr)
@@ -297,13 +296,14 @@ class TestGeometryArrayCRS:
         assert df.geometry.values.crs == self.wgs
 
         # geometry column without geometry
+        df = GeoDataFrame({"geometry": [0, 1]})
         with pytest.warns(
-            FutureWarning,
-            match="Accessing CRS of a GeoDataFrame without a geometry column",
+            FutureWarning, match="Accessing CRS of a GeoDataFrame without a geometry"
         ):
-
-            df = GeoDataFrame({"geometry": [0, 1]})
             df.crs = 27700
+        with pytest.warns(
+            FutureWarning, match="Accessing CRS of a GeoDataFrame without a geometry"
+        ):
             assert df.crs == self.osgb
 
     def test_dataframe_setitem(self):
