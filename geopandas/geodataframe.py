@@ -1411,8 +1411,24 @@ individually so that features may have different properties
             if pd.api.types.is_scalar(value) or isinstance(value, BaseGeometry):
                 value = [value] * self.shape[0]
             try:
-                # TODO: use `crs=getattr(self, "crs", None)` in 0.12
-                value = _ensure_geometry(value, crs=self._crs)
+                # TODO: remove this use of _crs in 0.12
+                warn = False
+                if not hasattr(hasattr(self, "geometry"), "crs"):
+                    crs = self._crs
+                    warn = True
+                else:
+                    crs = getattr(self, "crs", None)
+                value = _ensure_geometry(value, crs=crs)
+                if warn and crs is not None:
+                    warnings.warn(
+                        "Setting geometries to a GeoDataFrame without a geometry "
+                        "column will currently preserve the CRS, if present. "
+                        "This is deprecated, and in the future the CRS will be lost "
+                        "in this case. You can use set_crs(..) on the result to "
+                        "set the CRS manually.",
+                        FutureWarning,
+                        stacklevel=2,
+                    )
             except TypeError:
                 warnings.warn("Geometry column does not contain geometry.")
         super().__setitem__(key, value)

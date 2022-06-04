@@ -351,6 +351,22 @@ class TestGeometryArrayCRS:
         assert df["geometry"].crs == self.wgs
         assert df["other_geom"].crs == self.osgb
 
+    def test_dataframe_setitem_without_geometry_column(self):
+        arr = from_shapely(self.geoms)
+        df = GeoDataFrame({"col1": [1, 2], "geometry": arr}, crs=4326)
+
+        # create a dataframe without geometry column, but currently has cached _crs
+        with pytest.warns(UserWarning):
+            df["geometry"] = 1
+
+        # assigning a list of geometry object will currently use _crs
+        with pytest.warns(
+            FutureWarning,
+            match="Setting geometries to a GeoDataFrame without a geometry",
+        ):
+            df["geometry"] = self.geoms
+        assert df.crs == self.wgs
+
     @pytest.mark.parametrize(
         "scalar", [None, Point(0, 0), LineString([(0, 0), (1, 1)])]
     )
