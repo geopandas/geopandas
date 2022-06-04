@@ -455,7 +455,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 self.geometry.values.crs = value
             else:
                 # column called 'geometry' without geometry
-                self._crs = CRS.from_user_input(value)
+                self._crs = None if not value else CRS.from_user_input(value)
 
                 # TODO: raise this error in 0.12. This already raises a FutureWarning
                 # TODO: defined in the crs property above
