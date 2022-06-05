@@ -876,7 +876,7 @@ class TestColorParamArray:
     def setup_method(self):
         geom = []
         color = []
-        for a, b in zip(np.linspace(0, 10, 4)[::2], np.linspace(0, 10, 4)[1::2]):
+        for a, b in [(0, 2), (4, 6)]:
             b = box(a, a, b, b)
             geom += [b, b.buffer(0.8).exterior, b.centroid]
             color += ["red", "green", "blue"]
