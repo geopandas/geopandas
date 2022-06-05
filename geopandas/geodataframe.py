@@ -33,7 +33,7 @@ def _is_geometry_dtype(dtype):
 
 
 def _columns_are_geometry(df):
-    # df._data.get_dtypes() is fast version of data.dtypes
+    # df._data.get_dtypes() is a fast version of df.dtypes
     # (without constructing a (Geo)Series)
     dtypes = df._data.get_dtypes()
     # equivalent of `dtypes == "geometry"` with workaround for older numpy
