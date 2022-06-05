@@ -16,7 +16,7 @@ from shapely.geometry import Point, Polygon, box
 
 import geopandas
 from geopandas import GeoDataFrame, read_file
-from geopandas.io.file import fiona_env, _detect_driver, _EXTENSION_TO_DRIVER
+from geopandas.io.file import _detect_driver, _EXTENSION_TO_DRIVER
 
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 from geopandas.tests.util import PACKAGE_DIR, validate_boro_df
@@ -261,7 +261,7 @@ def test_to_file_empty(tmpdir):
 
 def test_to_file_privacy(tmpdir, df_nybb):
     tempfilename = os.path.join(str(tmpdir), "test.shp")
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(FutureWarning):
         geopandas.io.file.to_file(df_nybb, tempfilename)
 
 
@@ -654,6 +654,7 @@ def test_read_file_filtered_with_gdf_boundary_mismatched_crs__mask(df_nybb):
 
 
 def test_read_file_empty_shapefile(tmpdir):
+    from geopandas.io.file import fiona_env
 
     # create empty shapefile
     meta = {
@@ -678,7 +679,7 @@ def test_read_file_empty_shapefile(tmpdir):
 
 
 def test_read_file_privacy(tmpdir, df_nybb):
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(FutureWarning):
         geopandas.io.file.read_file(geopandas.datasets.get_path("nybb"))
 
 
