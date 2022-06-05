@@ -12,7 +12,7 @@ from pandas.testing import assert_frame_equal
 import numpy as np
 import pyproj
 from pyproj import CRS
-from shapely.geometry import box, Point
+from shapely.geometry import box, Point, MultiPolygon
 
 import geopandas
 from geopandas import GeoDataFrame, read_file, read_parquet, read_feather
@@ -687,22 +687,28 @@ def test_write_spec_version(tmpdir, format, version):
 
 @pytest.mark.parametrize("version", ["0.1.0", "0.4.0"])
 def test_read_versioned_file(version):
-    # Verify that files for different metadata spec versions can be read
-    # created for each supported version:
-    # df = geopandas.read_file(geopandas.datasets.get_path('naturalearth_lowres'))
-    # df.head(2).to_feather(DATA_PATH / 'arrow' / f'naturalearth_lowres_top2_v{METADATA_VERSION}.feather')  # noqa: E501
-    # df.head(2).to_parquet(DATA_PATH / 'arrow' / f'naturalearth_lowres_top2_v{METADATA_VERSION}.parquet')  # noqa: E501
+    """
+    Verify that files for different metadata spec versions can be read
+    created for each supported version:
 
+    # small dummy test dataset (not naturalearth_lowres, as this can change over time)
+    from shapely.geometry import box, MultiPolygon
+    df = geopandas.GeoDataFrame(
+        {"col_str": ["a", "b"], "col_int": [1, 2], "col_float": [0.1, 0.2]},
+        geometry=[MultiPolygon([box(0, 0, 1, 1), box(2, 2, 3, 3)]), box(4, 4, 5,5)]
+    )
+    df.to_feather(DATA_PATH / 'arrow' / f'test_data_v{METADATA_VERSION}.feather')  # noqa: E501
+    df.to_parquet(DATA_PATH / 'arrow' / f'test_data_v{METADATA_VERSION}.parquet')  # noqa: E501
+    """
     check_crs = Version(pyproj.__version__) >= Version("3.0.0")
 
-    expected = geopandas.read_file(get_path("naturalearth_lowres")).head(2)
-
-    df = geopandas.read_feather(
-        DATA_PATH / "arrow" / f"naturalearth_lowres_top2_v{version}.feather"
+    expected = geopandas.GeoDataFrame(
+        {"col_str": ["a", "b"], "col_int": [1, 2], "col_float": [0.1, 0.2]},
+        geometry=[MultiPolygon([box(0, 0, 1, 1), box(2, 2, 3, 3)]), box(4, 4, 5, 5)],
     )
+
+    df = geopandas.read_feather(DATA_PATH / "arrow" / f"test_data_v{version}.feather")
     assert_geodataframe_equal(df, expected, check_crs=check_crs)
 
-    df = geopandas.read_parquet(
-        DATA_PATH / "arrow" / f"naturalearth_lowres_top2_v{version}.parquet"
-    )
+    df = geopandas.read_parquet(DATA_PATH / "arrow" / f"test_data_v{version}.parquet")
     assert_geodataframe_equal(df, expected, check_crs=check_crs)
