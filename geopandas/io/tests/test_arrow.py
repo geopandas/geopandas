@@ -695,7 +695,8 @@ def test_read_versioned_file(version):
     from shapely.geometry import box, MultiPolygon
     df = geopandas.GeoDataFrame(
         {"col_str": ["a", "b"], "col_int": [1, 2], "col_float": [0.1, 0.2]},
-        geometry=[MultiPolygon([box(0, 0, 1, 1), box(2, 2, 3, 3)]), box(4, 4, 5,5)]
+        geometry=[MultiPolygon([box(0, 0, 1, 1), box(2, 2, 3, 3)]), box(4, 4, 5,5)],
+        crs="EPSG:4326",
     )
     df.to_feather(DATA_PATH / 'arrow' / f'test_data_v{METADATA_VERSION}.feather')  # noqa: E501
     df.to_parquet(DATA_PATH / 'arrow' / f'test_data_v{METADATA_VERSION}.parquet')  # noqa: E501
@@ -705,6 +706,7 @@ def test_read_versioned_file(version):
     expected = geopandas.GeoDataFrame(
         {"col_str": ["a", "b"], "col_int": [1, 2], "col_float": [0.1, 0.2]},
         geometry=[MultiPolygon([box(0, 0, 1, 1), box(2, 2, 3, 3)]), box(4, 4, 5, 5)],
+        crs="EPSG:4326",
     )
 
     df = geopandas.read_feather(DATA_PATH / "arrow" / f"test_data_v{version}.feather")
