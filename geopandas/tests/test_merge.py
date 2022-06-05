@@ -105,6 +105,7 @@ class TestMerging:
         reason="pandas <=1.0 hard codes concat([GeoSeries, GeoSeries]) -> "
         "DataFrame or Union[DataFrame, SparseDataFrame] in 0.25",
     )
+    @pytest.mark.filterwarnings("ignore:Accessing CRS")
     def test_concat_axis1_geoseries(self):
         gseries2 = GeoSeries([Point(i, i) for i in range(3, 6)], crs="epsg:4326")
         result = pd.concat([gseries2, self.gseries], axis=1)

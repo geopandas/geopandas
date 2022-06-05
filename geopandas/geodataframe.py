@@ -49,7 +49,9 @@ def _ensure_geometry(data, crs=None):
     if is_geometry_type(data):
         if isinstance(data, Series):
             data = GeoSeries(data)
-        if data.crs is None:
+        if data.crs is None and crs is not None:
+            # Avoids caching issues/crs sharing issues
+            data = data.copy()
             data.crs = crs
         return data
     else:
@@ -121,6 +123,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
     GeoSeries : Series object designed to store shapely geometry objects
     """
 
+    # TODO: remove "_crs" in 0.12
     _metadata = ["_crs", "_geometry_column_name"]
 
     _geometry_column_name = DEFAULT_GEO_COLUMN_NAME
@@ -129,9 +132,8 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         with compat.ignore_shapely2_warnings():
             super().__init__(data, *args, **kwargs)
 
-        # need to set this before calling self['geometry'], because
-        # getitem accesses crs
-        self._crs = CRS.from_user_input(crs) if crs else None
+        # TODO: to be removed in 0.12
+        self._crs = None
 
         # set_geometry ensures the geometry data have the proper dtype,
         # but is not called if `geometry=None` ('geometry' column present
@@ -180,7 +182,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             ):
                 raise ValueError(crs_mismatch_error)
 
-            self.set_geometry(geometry, inplace=True)
+            self.set_geometry(geometry, inplace=True, crs=crs)
 
         if geometry is None and crs:
             raise ValueError(
@@ -330,8 +332,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             del frame[to_remove]
 
         if not crs:
-            level_crs = getattr(level, "crs", None)
-            crs = level_crs if level_crs is not None else self._crs
+            crs = getattr(level, "crs", None)
 
         if isinstance(level, (GeoSeries, GeometryArray)) and level.crs != crs:
             # Avoids caching issues/crs sharing issues
@@ -342,7 +343,9 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         level = _ensure_geometry(level, crs=crs)
         frame[geo_column_name] = level
         frame._geometry_column_name = geo_column_name
-        frame.crs = crs
+
+        # TODO: to be removed in 0.12
+        frame._crs = level.crs
         if not inplace:
             return frame
 
@@ -424,7 +427,19 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         GeoDataFrame.to_crs : re-project to another CRS
 
         """
-        return self._crs
+        # TODO: remove try/except in 0.12
+        try:
+            return self.geometry.crs
+        except AttributeError:
+            # the active geometry column might not be set
+            warnings.warn(
+                "Accessing CRS of a GeoDataFrame without a geometry column is "
+                "deprecated and will be removed in GeoPandas 0.12. "
+                "Use GeoDataFrame.set_geometry to set the active geometry column.",
+                FutureWarning,
+                stacklevel=2,
+            )
+            return self._crs
 
     @crs.setter
     def crs(self, value):
@@ -438,20 +453,27 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         else:
             if hasattr(self.geometry.values, "crs"):
                 self.geometry.values.crs = value
-                self._crs = self.geometry.values.crs
             else:
                 # column called 'geometry' without geometry
                 self._crs = None if not value else CRS.from_user_input(value)
 
+                # TODO: raise this error in 0.12. This already raises a FutureWarning
+                # TODO: defined in the crs property above
+                # raise ValueError(
+                #     "Assigning CRS to a GeoDataFrame without an active geometry "
+                #     "column is not supported. Use GeoDataFrame.set_geometry to set "
+                #     "the active geometry column.",
+                # )
+
     def __setstate__(self, state):
         # overriding DataFrame method for compat with older pickles (CRS handling)
+        crs = None
         if isinstance(state, dict):
-            if "_metadata" in state and "crs" in state["_metadata"]:
-                metadata = state["_metadata"]
-                metadata[metadata.index("crs")] = "_crs"
             if "crs" in state and "_crs" not in state:
-                crs = state.pop("crs")
-                state["_crs"] = CRS.from_user_input(crs) if crs is not None else crs
+                crs = state.pop("crs", None)
+            else:
+                crs = state.pop("_crs", None)
+            crs = CRS.from_user_input(crs) if crs is not None else crs
 
         super().__setstate__(state)
 
@@ -459,9 +481,9 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         # at GeoDataFrame level with '_crs' (and not 'crs'), so without propagating
         # to the GeoSeries/GeometryArray
         try:
-            if self.crs is not None:
+            if crs is not None:
                 if self.geometry.values.crs is None:
-                    self.crs = self.crs
+                    self.crs = crs
         except Exception:
             pass
 
@@ -1316,7 +1338,6 @@ individually so that features may have different properties
             df = self.copy()
         geom = df.geometry.to_crs(crs=crs, epsg=epsg)
         df.geometry = geom
-        df.crs = geom.crs
         if not inplace:
             return df
 
@@ -1377,7 +1398,6 @@ individually so that features may have different properties
                     result._geometry_column_name = geo_col
                 else:
                     result._geometry_column_name = None
-                    result._crs = None
             else:
                 result.__class__ = DataFrame
         return result
@@ -1391,8 +1411,24 @@ individually so that features may have different properties
             if pd.api.types.is_scalar(value) or isinstance(value, BaseGeometry):
                 value = [value] * self.shape[0]
             try:
-                value = _ensure_geometry(value, crs=self.crs)
-                self._crs = value.crs
+                # TODO: remove this use of _crs in 0.12
+                warn = False
+                if not (hasattr(self, "geometry") and hasattr(self.geometry, "crs")):
+                    crs = self._crs
+                    warn = True
+                else:
+                    crs = getattr(self, "crs", None)
+                value = _ensure_geometry(value, crs=crs)
+                if warn and crs is not None:
+                    warnings.warn(
+                        "Setting geometries to a GeoDataFrame without a geometry "
+                        "column will currently preserve the CRS, if present. "
+                        "This is deprecated, and in the future the CRS will be lost "
+                        "in this case. You can use set_crs(..) on the result to "
+                        "set the CRS manually.",
+                        FutureWarning,
+                        stacklevel=2,
+                    )
             except TypeError:
                 warnings.warn("Geometry column does not contain geometry.")
         super().__setitem__(key, value)
