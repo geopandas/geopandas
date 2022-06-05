@@ -511,7 +511,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         """
         dataframe = DataFrame.from_dict(data, **kwargs)
-        return GeoDataFrame(dataframe, geometry=geometry, crs=crs)
+        return cls(dataframe, geometry=geometry, crs=crs)
 
     @classmethod
     def from_file(cls, filename, **kwargs):
@@ -649,7 +649,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 properties = {}
             row.update(properties)
             rows.append(row)
-        return GeoDataFrame(rows, columns=columns, crs=crs)
+        return cls(rows, columns=columns, crs=crs)
 
     @classmethod
     def from_postgis(
