@@ -11,14 +11,14 @@ from packaging.version import Version
 from ._decorator import doc
 
 
-def deprecated(new):
+def deprecated(new, warning_type=FutureWarning):
     """Helper to provide deprecation warning."""
 
     def old(*args, **kwargs):
         warnings.warn(
             "{} is intended for internal ".format(new.__name__[1:])
             + "use only, and will be deprecated.",
-            DeprecationWarning,
+            warning_type,
             stacklevel=2,
         )
         new(*args, **kwargs)

@@ -4,6 +4,7 @@ import pytest
 import geopandas._compat as compat
 
 from shapely.geometry import Point
+import numpy as np
 
 from geopandas import GeoDataFrame, GeoSeries
 
@@ -34,6 +35,20 @@ def df(request):
     # want geometry2 to be a GeoSeries not Series, test behaviour of non geom col
     df["geometry2"] = df[geo_name].set_crs(crs_osgb, allow_override=True)
     return df
+
+
+@pytest.fixture
+def df2():
+    """For constructor_sliced tests"""
+    return GeoDataFrame(
+        {
+            "geometry": GeoSeries([Point(x, x) for x in range(3)]),
+            "geometry2": GeoSeries([Point(x, x) for x in range(3)]),
+            "geometry3": GeoSeries([Point(x, x) for x in range(3)]),
+            "value": [1, 2, 1],
+            "value_nan": np.nan,
+        }
+    )
 
 
 def _check_metadata_gdf(gdf, geo_name="geometry", crs=crs_wgs):
@@ -212,7 +227,9 @@ def test_apply(df):
     assert_object(df[["value1"]].apply(identity, axis=1), pd.DataFrame)
 
 
+@pytest.mark.xfail(not compat.PANDAS_GE_11, reason="apply is different in pandas 1.0.5")
 def test_apply_axis1_secondary_geo_cols(df):
+    # note #GH2436 would also fix this
     def identity(x):
         return x
 
@@ -271,3 +288,60 @@ def test_expanddim_in_unstack():
         assert unstack._geometry_column_name is None
     else:  # pandas GH37369, unstack doesn't call finalize
         assert unstack._geometry_column_name == "geometry"
+
+
+# indexing /  constructor_sliced tests
+
+test_case_column_sets = [
+    ["geometry"],
+    ["geometry2"],
+    ["geometry", "geometry2"],
+    # non active geo col case
+    ["geometry", "value"],
+    ["geometry", "value_nan"],
+    ["geometry2", "value"],
+    ["geometry2", "value_nan"],
+]
+
+
+@pytest.mark.parametrize(
+    "column_set",
+    test_case_column_sets,
+    ids=[", ".join(i) for i in test_case_column_sets],
+)
+def test_constructor_sliced_row_slices(df2, column_set):
+    # https://github.com/geopandas/geopandas/issues/2282
+    df_subset = df2[column_set]
+    assert isinstance(df_subset, GeoDataFrame)
+    res = df_subset.loc[0]
+    # row slices shouldn't be GeoSeries, even if they have a geometry col
+    assert type(res) == pd.Series
+    if "geometry" in column_set:
+        assert not isinstance(res.geometry, pd.Series)
+        assert res.geometry == Point(0, 0)
+
+
+def test_constructor_sliced_column_slices(df2):
+    # Note loc doesn't use _constructor_sliced so it's not tested here
+    geo_idx = df2.columns.get_loc("geometry")
+    sub = df2.head(1)
+    # column slices should be GeoSeries if of geometry type
+    assert type(sub.iloc[:, geo_idx]) == GeoSeries
+    assert type(sub.iloc[[0], geo_idx]) == GeoSeries
+    sub = df2.head(2)
+    assert type(sub.iloc[:, geo_idx]) == GeoSeries
+    assert type(sub.iloc[[0, 1], geo_idx]) == GeoSeries
+
+    # check iloc row slices are pd.Series instead
+    assert type(df2.iloc[0, :]) == pd.Series
+
+
+def test_constructor_sliced_in_pandas_methods(df2):
+    # constructor sliced is used in many places, checking a sample of non
+    # geometry cases are sensible
+    assert type(df2.count()) == pd.Series
+    # drop the secondary geometry columns as not hashable
+    hashable_test_df = df2.drop(columns=["geometry2", "geometry3"])
+    assert type(hashable_test_df.duplicated()) == pd.Series
+    assert type(df2.quantile()) == pd.Series
+    assert type(df2.memory_usage()) == pd.Series

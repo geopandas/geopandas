@@ -28,6 +28,7 @@ PANDAS_GE_14 = Version(pd.__version__) >= Version("1.4.0rc0")
 
 
 SHAPELY_GE_18 = Version(shapely.__version__) >= Version("1.8")
+SHAPELY_GE_182 = Version(shapely.__version__) >= Version("1.8.2")
 SHAPELY_GE_20 = Version(shapely.__version__) >= Version("2.0")
 
 GEOS_GE_390 = shapely.geos.geos_version >= (3, 9, 0)
