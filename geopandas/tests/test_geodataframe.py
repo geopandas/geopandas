@@ -334,6 +334,11 @@ class TestDataFrame:
         assert isinstance(result, GeoDataFrame)
         assert isinstance(result.index, pd.DatetimeIndex)
 
+    def test_set_geometry_np_int(self):
+        self.df.loc[:, 0] = self.df.geometry
+        df = self.df.set_geometry(np.int64(0))
+        assert df.geometry.name == 0
+
     def test_get_geometry_invalid(self):
         df = GeoDataFrame()
         df["geom"] = self.df.geometry
@@ -614,7 +619,7 @@ class TestDataFrame:
         p3 = Point(3, 3)
         f3 = {
             "type": "Feature",
-            "properties": {"a": 2},
+            "properties": None,
             "geometry": p3.__geo_interface__,
         }
 
@@ -622,9 +627,102 @@ class TestDataFrame:
 
         result = df[["a", "b"]]
         expected = pd.DataFrame.from_dict(
-            [{"a": 0, "b": np.nan}, {"a": np.nan, "b": 1}, {"a": 2, "b": np.nan}]
+            [{"a": 0, "b": np.nan}, {"a": np.nan, "b": 1}, {"a": np.nan, "b": np.nan}]
         )
         assert_frame_equal(expected, result)
+
+    def test_from_features_empty_properties(self):
+        geojson_properties_object = """{
+          "type": "FeatureCollection",
+          "features": [
+            {
+              "type": "Feature",
+              "properties": {},
+              "geometry": {
+                "type": "Polygon",
+                "coordinates": [
+                  [
+                    [
+                      11.3456529378891,
+                      46.49461446367692
+                    ],
+                    [
+                      11.345674395561216,
+                      46.494097442978195
+                    ],
+                    [
+                      11.346918940544128,
+                      46.49385370294394
+                    ],
+                    [
+                      11.347616314888,
+                      46.4938352377453
+                    ],
+                    [
+                      11.347514390945435,
+                      46.49466985846028
+                    ],
+                    [
+                      11.3456529378891,
+                      46.49461446367692
+                    ]
+                  ]
+                ]
+              }
+            }
+          ]
+        }"""
+
+        geojson_properties_null = """{
+          "type": "FeatureCollection",
+          "features": [
+            {
+              "type": "Feature",
+              "properties": null,
+              "geometry": {
+                "type": "Polygon",
+                "coordinates": [
+                  [
+                    [
+                      11.3456529378891,
+                      46.49461446367692
+                    ],
+                    [
+                      11.345674395561216,
+                      46.494097442978195
+                    ],
+                    [
+                      11.346918940544128,
+                      46.49385370294394
+                    ],
+                    [
+                      11.347616314888,
+                      46.4938352377453
+                    ],
+                    [
+                      11.347514390945435,
+                      46.49466985846028
+                    ],
+                    [
+                      11.3456529378891,
+                      46.49461446367692
+                    ]
+                  ]
+                ]
+              }
+            }
+          ]
+        }"""
+
+        # geoJSON with empty properties
+        gjson_po = json.loads(geojson_properties_object)
+        gdf1 = GeoDataFrame.from_features(gjson_po)
+
+        # geoJSON with null properties
+        gjson_null = json.loads(geojson_properties_null)
+        gdf2 = GeoDataFrame.from_features(gjson_null)
+
+        assert_frame_equal(gdf1, gdf2)
 
     def test_from_features_geom_interface_feature(self):
         class Placemark(object):
@@ -654,7 +752,7 @@ class TestDataFrame:
         geometry = [Point(xy) for xy in zip(df["lon"], df["lat"])]
         gdf = GeoDataFrame(df, geometry=geometry)
         # from_features returns sorted columns
-        expected = gdf[["geometry", "lat", "lon", "name"]]
+        expected = gdf[["geometry", "name", "lat", "lon"]]
 
         # test FeatureCollection
         res = GeoDataFrame.from_features(gdf.__geo_interface__)

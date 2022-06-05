@@ -4,7 +4,7 @@ channels:
 dependencies:
   - python=3.8
   # required
-  - pandas=1.2
+  - pandas
   - shapely
   - fiona
   - pyproj
@@ -23,12 +23,6 @@ dependencies:
   - xyzservices
   - scipy
   - geopy
-  # installed in tests.yaml, because not available on windows
-  # - postgis
   - SQLalchemy
-  - psycopg2
   - libspatialite
-  - geoalchemy2
   - pyarrow
-  # doctest testing
-  - pytest-doctestplus
