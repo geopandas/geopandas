@@ -1413,7 +1413,6 @@ individually so that features may have different properties
             try:
                 # TODO: remove this use of _crs in 0.12
                 warn = False
-                # breakpoint()
                 if not (hasattr(self, "geometry") and hasattr(self.geometry, "crs")):
                     crs = self._crs
                     warn = True
