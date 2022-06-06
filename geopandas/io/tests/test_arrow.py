@@ -594,6 +594,11 @@ def test_fsspec_url():
     result = read_parquet("memory://data.parquet", filesystem=memfs)
     assert_geodataframe_equal(result, df)
 
+    # reset fsspec registry
+    fsspec.register_implementation(
+        "memory", fsspec.implementations.memory.MemoryFileSystem, clobber=True
+    )
+
 
 def test_non_fsspec_url_with_storage_options_raises():
     with pytest.raises(ValueError, match="storage_options"):
@@ -748,3 +753,35 @@ def test_read_gdal_files():
 
     df = geopandas.read_feather(DATA_PATH / "arrow" / "test_data_gdal350.arrow")
     assert_geodataframe_equal(df, expected, check_crs=check_crs)
+
+
+def test_parquet_read_partitioned_dataset(tmpdir):
+    # we don't yet explicitly support this (in writing), but for Parquet it
+    # works for reading (by relying on pyarrow.read_table)
+    df = read_file(get_path("naturalearth_lowres"))
+
+    # manually create partitioned dataset
+    basedir = tmpdir / "partitioned_dataset"
+    basedir.mkdir()
+    df[:100].to_parquet(basedir / "data1.parquet")
+    df[100:].to_parquet(basedir / "data2.parquet")
+
+    result = read_parquet(basedir)
+    assert_geodataframe_equal(result, df)
+
+
+def test_parquet_read_partitioned_dataset_fsspec(tmpdir):
+    fsspec = pytest.importorskip("fsspec")
+
+    df = read_file(get_path("naturalearth_lowres"))
+
+    # manually create partitioned dataset
+    memfs = fsspec.filesystem("memory")
+    memfs.mkdir("partitioned_dataset")
+    with memfs.open("partitioned_dataset/data1.parquet", "wb") as f:
+        df[:100].to_parquet(f)
+    with memfs.open("partitioned_dataset/data2.parquet", "wb") as f:
+        df[100:].to_parquet(f)
+
+    result = read_parquet("memory://partitioned_dataset")
+    assert_geodataframe_equal(result, df)
