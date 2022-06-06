@@ -48,6 +48,24 @@ def _is_fsspec_url(url):
     )
 
 
+def _remove_id_from_member_of_ensembles(json_dict):
+    """
+    Older PROJ versions will not recognize IDs of datum ensemble members that
+    were added in more recent PROJ database versions.
+
+    Cf https://github.com/opengeospatial/geoparquet/discussions/110
+    and https://github.com/OSGeo/PROJ/pull/3221
+
+    Mimicking the patch to GDAL from https://github.com/OSGeo/gdal/pull/5872
+    """
+    for key, value in json_dict.items():
+        if isinstance(value, dict):
+            _remove_id_from_member_of_ensembles(value)
+        elif key == "members" and isinstance(value, list):
+            for member in value:
+                member.pop("id")
+
+
 def _create_metadata(df, version=None):
     """Create and encode geo metadata dict.
 
@@ -80,6 +98,7 @@ def _create_metadata(df, version=None):
                 crs = series.crs.to_wkt()
             else:  # version >= 0.4.0
                 crs = series.crs.to_json_dict()
+                _remove_id_from_member_of_ensembles(crs)
 
         column_metadata[col] = {
             "encoding": "WKB",
@@ -362,6 +381,8 @@ def _arrow_to_geopandas(table):
         col_metadata = metadata["columns"][col]
         if "crs" in col_metadata:
             crs = col_metadata["crs"]
+            if isinstance(crs, dict):
+                _remove_id_from_member_of_ensembles(crs)
         else:
             # per the GeoParquet spec, missing CRS is to be interpreted as
             # OGC:CRS84
