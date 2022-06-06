@@ -326,7 +326,7 @@ class TestIO:
         create_postgis(con, df_nybb)
 
         sql = "SELECT * FROM nybb;"
-        with pytest.warns(DeprecationWarning):
+        with pytest.warns(FutureWarning):
             geopandas.io.sql.read_postgis(sql, con)
 
     def test_write_postgis_default(self, engine_postgis, df_nybb):

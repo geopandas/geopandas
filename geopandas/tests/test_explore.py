@@ -589,10 +589,10 @@ class TestExplore:
         )
         out_str = self._fetch_map_string(m)
         assert out_str.count("#440154ff") == 16
-        assert out_str.count("#3b528bff") == 51
-        assert out_str.count("#21918cff") == 133
-        assert out_str.count("#5ec962ff") == 282
-        assert out_str.count("#fde725ff") == 18
+        assert out_str.count("#3b528bff") == 50
+        assert out_str.count("#21918cff") == 138
+        assert out_str.count("#5ec962ff") == 290
+        assert out_str.count("#fde725ff") == 6
 
         # discrete cmap
         m = self.world.explore("pop_est", legend=True, cmap="Pastel2")
@@ -609,29 +609,33 @@ class TestExplore:
 
     @pytest.mark.skipif(not BRANCA_05, reason="requires branca >= 0.5.0")
     def test_colorbar_max_labels(self):
+        import re
+
         # linear
         m = self.world.explore("pop_est", legend_kwds=dict(max_labels=3))
         out_str = self._fetch_map_string(m)
-
-        tick_values = [140.0, 465176713.5921569, 930353287.1843138]
-        for tick in tick_values:
-            assert str(tick) in out_str
+        tick_str = re.search(r"tickValues\(\[[\',\,\.,0-9]*\]\)", out_str).group(0)
+        assert (
+            tick_str.replace(",''", "")
+            == "tickValues([140.0,471386328.07843137,942772516.1568627])"
+        )
 
         # scheme
         m = self.world.explore(
             "pop_est", scheme="headtailbreaks", legend_kwds=dict(max_labels=3)
         )
         out_str = self._fetch_map_string(m)
-
-        assert "tickValues([140,'',182567501.0,'',1330619341.0,''])" in out_str
+        assert "tickValues([140.0,'',184117213.1818182,'',1382066377.0,''])" in out_str
 
         # short cmap
         m = self.world.explore("pop_est", legend_kwds=dict(max_labels=3), cmap="tab10")
         out_str = self._fetch_map_string(m)
 
-        tick_values = [140.0, 551721192.4, 1103442244.8]
-        for tick in tick_values:
-            assert str(tick) in out_str
+        tick_str = re.search(r"tickValues\(\[[\',\,\.,0-9]*\]\)", out_str).group(0)
+        assert (
+            tick_str
+            == "tickValues([140.0,'','','',559086084.0,'','','',1118172028.0,'','',''])"
+        )
 
     def test_xyzservices_providers(self):
         xyzservices = pytest.importorskip("xyzservices")
@@ -683,11 +687,11 @@ class TestExplore:
         out_str = self._fetch_map_string(m)
 
         strings = [
-            "[140.00,33986655.00]",
-            "(33986655.00,105350020.00]",
-            "(105350020.00,207353391.00]",
-            "(207353391.00,326625791.00]",
-            "(326625791.00,1379302771.00]",
+            "[140.00,21803000.00]",
+            "(21803000.00,66834405.00]",
+            "(66834405.00,163046161.00]",
+            "(163046161.00,328239523.00]",
+            "(328239523.00,1397715000.00]",
             "missing",
         ]
         for s in strings:
@@ -704,11 +708,11 @@ class TestExplore:
         out_str = self._fetch_map_string(m)
 
         strings = [
-            ">140.00,33986655.00",
-            ">33986655.00,105350020.00",
-            ">105350020.00,207353391.00",
-            ">207353391.00,326625791.00",
-            ">326625791.00,1379302771.00",
+            ">140.00,21803000.00",
+            ">21803000.00,66834405.00",
+            ">66834405.00,163046161.00",
+            ">163046161.00,328239523.00",
+            ">328239523.00,1397715000.00",
             "missing",
         ]
         for s in strings:
@@ -739,11 +743,11 @@ class TestExplore:
         out_str = self._fetch_map_string(m)
 
         strings = [
-            ">140,33986655",
-            ">33986655,105350020",
-            ">105350020,207353391",
-            ">207353391,326625791",
-            ">326625791,1379302771",
+            ">140,21803000",
+            ">21803000,66834405",
+            ">66834405,163046161",
+            ">163046161,328239523",
+            ">328239523,1397715000",
             "missing",
         ]
         for s in strings:
@@ -789,9 +793,9 @@ class TestExplore:
         for s in strings:
             assert s in out_str
 
-        assert out_str.count("008000ff") == 306
-        assert out_str.count("ffff00ff") == 187
-        assert out_str.count("ff0000ff") == 190
+        assert out_str.count("008000ff") == 304
+        assert out_str.count("ffff00ff") == 188
+        assert out_str.count("ff0000ff") == 191
 
         # Using custom function colormap
         def my_color_function(field):

@@ -1070,6 +1070,7 @@ class TestMapclassifyPlotting:
             import mapclassify  # noqa
         except ImportError:
             pytest.importorskip("mapclassify")
+        cls.mc = mapclassify
         cls.classifiers = list(mapclassify.classifiers.CLASSIFIERS)
         cls.classifiers.remove("UserDefined")
         pth = get_path("naturalearth_lowres")
@@ -1090,9 +1091,8 @@ class TestMapclassifyPlotting:
             )
         labels = [t.get_text() for t in ax.get_legend().get_texts()]
         expected = [
-            "       140.00,    5217064.00",
-            "   5217064.00,   19532732.33",
-            "  19532732.33, 1379302771.00",
+            s.split("|")[0][1:-2]
+            for s in str(self.mc.Quantiles(self.df["pop_est"], k=3)).split("\n")[4:]
         ]
         assert labels == expected
 
@@ -1174,7 +1174,13 @@ class TestMapclassifyPlotting:
             legend=True,
         )
         labels = [t.get_text() for t in ax.get_legend().get_texts()]
-        expected = ["       140.00,    9961396.00", "   9961396.00, 1379302771.00"]
+        expected = [
+            s.split("|")[0][1:-2]
+            for s in str(self.mc.Percentiles(self.df["pop_est"], pct=[50, 100])).split(
+                "\n"
+            )[4:]
+        ]
+
         assert labels == expected
 
     def test_invalid_scheme(self):
@@ -1438,8 +1444,8 @@ class TestPlotCollections:
         with pytest.raises((TypeError, ValueError)):
             _plot_point_collection(ax, self.points, color="not color")
 
-        # check DeprecationWarning
-        with pytest.warns(DeprecationWarning):
+        # check FutureWarning
+        with pytest.warns(FutureWarning):
             plot_point_collection(ax, self.points)
 
     def test_points_values(self):
@@ -1511,8 +1517,8 @@ class TestPlotCollections:
         # not a color
         with pytest.raises((TypeError, ValueError)):
             _plot_linestring_collection(ax, self.lines, color="not color")
-        # check DeprecationWarning
-        with pytest.warns(DeprecationWarning):
+        # check FutureWarning
+        with pytest.warns(FutureWarning):
             plot_linestring_collection(ax, self.lines)
 
     def test_linestrings_values(self):
@@ -1603,8 +1609,8 @@ class TestPlotCollections:
         # not a color
         with pytest.raises((TypeError, ValueError)):
             _plot_polygon_collection(ax, self.polygons, color="not color")
-        # check DeprecationWarning
-        with pytest.warns(DeprecationWarning):
+        # check FutureWarning
+        with pytest.warns(FutureWarning):
             plot_polygon_collection(ax, self.polygons)
 
     def test_polygons_values(self):
