@@ -63,7 +63,7 @@ def _remove_id_from_member_of_ensembles(json_dict):
             _remove_id_from_member_of_ensembles(value)
         elif key == "members" and isinstance(value, list):
             for member in value:
-                member.pop("id")
+                member.pop("id", None)
 
 
 def _create_metadata(df, version=None):
