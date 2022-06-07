@@ -330,13 +330,13 @@ def _to_feather(df, path, index=None, compression=None, version=None, **kwargs):
     feather.write_feather(table, path, compression=compression, **kwargs)
 
 
-def _arrow_to_geopandas(table):
+def _arrow_to_geopandas(table, metadata=None):
     """
     Helper function with main, shared logic for read_parquet/read_feather.
     """
     df = table.to_pandas()
 
-    metadata = table.schema.metadata
+    metadata = metadata or table.schema.metadata
     if metadata is None or b"geo" not in metadata:
         raise ValueError(
             """Missing geo metadata in Parquet/Feather file.
@@ -431,6 +431,29 @@ def _get_filesystem_path(path, filesystem=None, storage_options=None):
     return filesystem, path
 
 
+def _ensure_arrow_fs(filesystem):
+    """
+    Simplified version of pyarrow.fs._ensure_filesystem. This is only needed
+    below because `pyarrow.parquet.read_metadata` does not yet accept a
+    filesystem keyword (https://issues.apache.org/jira/browse/ARROW-16719)
+    """
+    from pyarrow import fs
+
+    if isinstance(filesystem, fs.FileSystem):
+        return filesystem
+
+    # handle fsspec-compatible filesystems
+    try:
+        import fsspec
+    except ImportError:
+        pass
+    else:
+        if isinstance(filesystem, fsspec.AbstractFileSystem):
+            return fs.PyFileSystem(fs.FSSpecHandler(filesystem))
+
+    return filesystem
+
+
 def _read_parquet(path, columns=None, storage_options=None, **kwargs):
     """
     Load a Parquet object from the file path, returning a GeoDataFrame.
@@ -508,7 +531,24 @@ def _read_parquet(path, columns=None, storage_options=None, **kwargs):
     kwargs["use_pandas_metadata"] = True
     table = parquet.read_table(path, columns=columns, filesystem=filesystem, **kwargs)
 
-    return _arrow_to_geopandas(table)
+    # read metadata separately to get the raw Parquet FileMetaData metadata
+    # (pyarrow doesn't properly exposes those in schema.metadata for files
+    # created by GDAL - https://issues.apache.org/jira/browse/ARROW-16688)
+    metadata = None
+    if table.schema.metadata is None or b"geo" not in table.schema.metadata:
+        try:
+            # read_metadata does not accept a filesystem keyword, so need to
+            # handle this manually (https://issues.apache.org/jira/browse/ARROW-16719)
+            if filesystem is not None:
+                pa_filesystem = _ensure_arrow_fs(filesystem)
+                with pa_filesystem.open_input_file(path) as source:
+                    metadata = parquet.read_metadata(source).metadata
+            else:
+                metadata = parquet.read_metadata(path).metadata
+        except Exception:
+            pass
+
+    return _arrow_to_geopandas(table, metadata)
 
 
 def _read_feather(path, columns=None, **kwargs):
