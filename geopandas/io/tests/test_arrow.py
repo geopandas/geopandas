@@ -25,6 +25,7 @@ from geopandas.io.arrow import (
     _encode_metadata,
     _geopandas_to_arrow,
     _get_filesystem_path,
+    _remove_id_from_member_of_ensembles,
     _validate_dataframe,
     _validate_metadata,
     METADATA_VERSION,
@@ -68,7 +69,9 @@ def test_create_metadata():
     assert metadata["version"] == METADATA_VERSION
     assert metadata["primary_column"] == "geometry"
     assert "geometry" in metadata["columns"]
-    assert metadata["columns"]["geometry"]["crs"] == df.geometry.crs.to_json_dict()
+    crs_expected = df.crs.to_json_dict()
+    _remove_id_from_member_of_ensembles(crs_expected)
+    assert metadata["columns"]["geometry"]["crs"] == crs_expected
     assert metadata["columns"]["geometry"]["encoding"] == "WKB"
     assert metadata["columns"]["geometry"]["geometry_type"] == [
         "MultiPolygon",
@@ -81,6 +84,23 @@ def test_create_metadata():
 
     assert metadata["creator"]["library"] == "geopandas"
     assert metadata["creator"]["version"] == geopandas.__version__
+
+
+def test_crs_metadata_datum_ensemble():
+    # compatibility for older PROJ versions using PROJJSON with datum ensembles
+    # https://github.com/geopandas/geopandas/pull/2453
+    crs = pyproj.CRS("EPSG:4326")
+    crs_json = crs.to_json_dict()
+    check_ensemble = False
+    if "datum_ensemble" in crs_json:
+        # older version of PROJ don't yet have datum ensembles
+        check_ensemble = True
+        assert "id" in crs_json["datum_ensemble"]["members"][0]
+    _remove_id_from_member_of_ensembles(crs_json)
+    if check_ensemble:
+        assert "id" not in crs_json["datum_ensemble"]["members"][0]
+    # ensure roundtrip still results in an equivalent CRS
+    assert pyproj.CRS(crs_json) == crs
 
 
 def test_write_metadata_invalid_spec_version():
@@ -687,7 +707,9 @@ def test_write_spec_version(tmpdir, format, version):
         assert metadata["columns"]["geometry"]["crs"] == gdf.crs.to_wkt()
 
     else:
-        assert metadata["columns"]["geometry"]["crs"] == gdf.crs.to_json_dict()
+        crs_expected = gdf.crs.to_json_dict()
+        _remove_id_from_member_of_ensembles(crs_expected)
+        assert metadata["columns"]["geometry"]["crs"] == crs_expected
 
 
 @pytest.mark.parametrize("version", ["0.1.0", "0.4.0"])
