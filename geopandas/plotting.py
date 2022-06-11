@@ -11,14 +11,14 @@ from packaging.version import Version
 from ._decorator import doc
 
 
-def deprecated(new):
+def deprecated(new, warning_type=FutureWarning):
     """Helper to provide deprecation warning."""
 
     def old(*args, **kwargs):
         warnings.warn(
             "{} is intended for internal ".format(new.__name__[1:])
             + "use only, and will be deprecated.",
-            DeprecationWarning,
+            warning_type,
             stacklevel=2,
         )
         new(*args, **kwargs)
@@ -325,7 +325,7 @@ def plot_series(
     ----------
     s : Series
         The GeoSeries to be plotted. Currently Polygon,
-        MultiPolygon, LineString, MultiLineString and Point
+        MultiPolygon, LineString, MultiLineString, Point and MultiPoint
         geometries can be plotted.
     cmap : str (default None)
         The name of a colormap recognized by matplotlib. Any
@@ -335,7 +335,7 @@ def plot_series(
 
             tab10, tab20, Accent, Dark2, Paired, Pastel1, Set1, Set2
 
-    color : str (default None)
+    color : str, np.array, pd.Series, List (default None)
         If specified, all objects will be colored uniformly.
     ax : matplotlib.pyplot.Artist (default None)
         axes on which to draw the plot
@@ -414,6 +414,9 @@ def plot_series(
         )
         return ax
 
+    # have colors been given for all geometries?
+    color_given = pd.api.types.is_list_like(color) and len(color) == len(s)
+
     # if cmap is specified, create range of colors based on cmap
     values = None
     if cmap is not None:
@@ -426,6 +429,10 @@ def plot_series(
     # decompose GeometryCollections
     geoms, multiindex = _flatten_multi_geoms(s.geometry, prefix="Geom")
     values = np.take(values, multiindex, axis=0) if cmap else None
+    # ensure indexes are consistent
+    if color_given and isinstance(color, pd.Series):
+        color = color.reindex(s.index)
+    expl_color = np.take(color, multiindex, axis=0) if color_given else color
     expl_series = geopandas.GeoSeries(geoms)
 
     geom_types = expl_series.type
@@ -443,8 +450,9 @@ def plot_series(
         # color overrides both face and edgecolor. As we want people to be
         # able to use edgecolor as well, pass color to facecolor
         facecolor = style_kwds.pop("facecolor", None)
+        color_ = expl_color[poly_idx] if color_given else color
         if color is not None:
-            facecolor = color
+            facecolor = color_
 
         values_ = values[poly_idx] if cmap else None
         _plot_polygon_collection(
@@ -455,16 +463,20 @@ def plot_series(
     lines = expl_series[line_idx]
     if not lines.empty:
         values_ = values[line_idx] if cmap else None
+        color_ = expl_color[line_idx] if color_given else color
+
         _plot_linestring_collection(
-            ax, lines, values_, color=color, cmap=cmap, **style_kwds
+            ax, lines, values_, color=color_, cmap=cmap, **style_kwds
         )
 
     # plot all Points in the same collection
     points = expl_series[point_idx]
     if not points.empty:
         values_ = values[point_idx] if cmap else None
+        color_ = expl_color[point_idx] if color_given else color
+
         _plot_point_collection(
-            ax, points, values_, color=color, cmap=cmap, **style_kwds
+            ax, points, values_, color=color_, cmap=cmap, **style_kwds
         )
 
     plt.draw()
@@ -524,7 +536,7 @@ def plot_dataframe(
          - 'hexbin' : hexbin plot.
     cmap : str (default None)
         The name of a colormap recognized by matplotlib.
-    color : str (default None)
+    color : str, np.array, pd.Series (default None)
         If specified, all objects will be colored uniformly.
     ax : matplotlib.pyplot.Artist (default None)
         axes on which to draw the plot
