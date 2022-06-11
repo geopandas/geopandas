@@ -196,11 +196,12 @@ def _read_file(filename, bbox=None, mask=None, rows=None, engine=None, **kwargs)
         installed, otherwise tries "pyogrio".
     **kwargs :
         Keyword args to be passed to the engine. In case of the "fiona" engine,
-        the keyword arguments are passed to the `open` or `BytesCollection`
-        method in the fiona library when opening the file. For more information
-        on possible keywords, type: ``import fiona; help(fiona.open)``. In
-        case of the "pyogrio" engine, the keyword arguments are passed to
-        `pyogrio.read_dataframe`.
+        the keyword arguments are passed to :func:`fiona.open` or
+        :class:`fiona.collection.BytesCollection` when opening the file.
+        For more information on possible keywords, type:
+        ``import fiona; help(fiona.open)``. In case of the "pyogrio" engine,
+        the keyword arguments are passed to `pyogrio.read_dataframe`.
+
 
     Examples
     --------
