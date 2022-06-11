@@ -1,17 +1,16 @@
 Changelog
 =========
 
-https://github.com/geopandas/geopandas/commits/main?after=1c55343af1a12726cb067c7c1fa7d237ce96b1c1+95&branch=main&qualified_name=refs%2Fheads%2Fmain
-
 Version 0.11 (June x, 2022)
 ---------------------------------
 
 
 Highlights of this release:
 
-- GeoParquet support updated to implement v0.5.0 of the OpenGeoSpatial/GeoParquet spec. Backwards compatibility with 
-  v0.1.0 of the metadata spec (implemented in the previous releases of GeoPandas) is guranteed, reading and writing 
-  parquet/ feather files will no longer produce a `UserWarning` (#2327). 
+- GeoParquet support updated to implement v0.4.0 of the OpenGeospatial/GeoParquet spec (#2441). # TODO emphasise 
+  significance a bit more? interop with GDAL / sf, first class support for columnar data. 
+  Backwards compatibility with v0.1.0 of the metadata spec (implemented in the previous releases of GeoPandas) is guaranteed, 
+  reading and writing parquet/ feather files will no longer produce a `UserWarning` (#2327). 
   
 
 New features and improvements:
@@ -22,9 +21,17 @@ New features and improvements:
 1.8.14 or higher. Previously datetimes were read as strings (#2202).
 - `folium.Map` keyword arguments can now be specified as the `map_kwds` argument to `explore()`
 - It is now possible to write an empty `GeoDataFrame` to file for supported formats (#2240). Attempting to do so 
-  will now raise a `UserWarning` instead of a `ValueError` 
+  will now emit a `UserWarning` instead of a `ValueError` 
 - (#2329) API: improve handling of invalid geo column for .geometry (more infor
 - Fast rectangle clipping has been exposed as `GeoSeries/GeoDataFrame.clip_by_rect()` (#1928)
+- `GeoSeries.to_frame` now creates a `GeoDataFrame` with the geometry column name set correctly (#2296) # TODO is 
+  this more appropriate as a bug fix?
+- Add new parameter `style_function` to `GeoDataFrame.explore()` to enable plot styling based on GeoJSON properties 
+  (#2377).  
+- The `mark` parameter of `GeoSeries/GeoDataFrame.clip()` now accepts a rectangular mask as a list-like to perform 
+  fast rectangle clipping using the new `GeoSeries/GeoDataFrame.clip_by_rect()`  (#2414).
+- Bundled demo dataset `naturalearth_lowres` has been updated to version 5.0.1 of the source, with field `ISO_A3` 
+  manually corrected for some cases (#2418).  
 
 Deprecations and compatibility notes:
 
@@ -37,11 +44,21 @@ Deprecations and compatibility notes:
 - Warning about the behaviour change to `GeoSeries.isna()` in GeoPandas 0.6 with empty geometries present has been 
   removed (#2349). 
 - Specifying a CRS in the `GeoDataFrame/GeoSeries` constructor which contradicted the underlying `GeometryArray` now 
-  raises a ValueError (the previous warning indicating this behaviour change was introduced in GeoPandas 0.8 in June 
+  raises a `ValueError`(the previous warning indicating this behaviour change was introduced in GeoPandas 0.8 in June 
   2020) (#2100).
-- Specifying a CRS in the `GeoDataFrame` constructor when no geometry column is provided  
+- Specifying a CRS in the `GeoDataFrame` constructor when no geometry column is provided and calling `GeoDataFrame.
+  set_crs` on a `GeoDataFrame` without an active geometry column now raise a 
+  `ValueError` 
+  (the warning indicating this behaviour change was introduced in GeoPandas 0.8 in June 2020) (#2100)
+- Passing non-geometry data to the`GeoSeries` constructor is now fully deprecated and will raise a `TypeError` 
+  (the warning indicating this behaviour change was introduced in GeoPandas 0.8 in June 2020) (#2314). Previously, 
+  a `pd.Series` was returned for non-geometry data. 
+  Deprecated `GeoSeries/GeoDataFrame` set operations `__xor__()`, `__or__()`, `__and__()` and `__sub__()`, 
+  `geopandas.io.file.read_file`/`to_file` and `geopandas.io.sql.read_postgis` now 
+  emit `FutureWarning` instead of `DeprecationWarning` and will be completely removed in a future release.
+- `GeoDataFrame._crs` is deprecated and will be removed in GeoPandas 0.12 (this is never directly accessed and 
+  only affects GeoPandas internals (#2373).
   
-
   
 
 Bug fixes:
@@ -58,6 +75,15 @@ Bug fixes:
   corresponding to empty points now contain `np.nan`.
 - Fix `GeoDataFrame.iloc` raising a `TypeError` when indexing a `GeoDataFrame` with only a single column of 
   `GeometryDtype` (#1970).  
+- Fix `GeoDataFrame.iterfeatures()` not returning features with the same field order as `GeoDataFrame.columns` (#2396).
+- Fix `GeoDataFrame.from_features()` to support reading GeoJSON with null properties (#2243).
+- Fix `GeoDataFrame.to_parquet()` not intercepting `engine` keyword argument, breaking consistency with pandas (#2227)
+  . # TODO this might be better off mentioning pyarrow explicitly
+- Fix `GeoDataFrame.explore()` producing an error when `column` is of boolean dtype (#2403).
+- Fix an issue where `GeoDataFrame.to_postgis()` output the wrong SRID for ESRI authority CRS (#2414).
+- Fix `GeoDataFrame.from_dict/from_features` classmethods using `GeoDataFrame` rather than `cls` as the constructor.
+
+
 
 Notes on (optional) dependencies:
 
@@ -85,6 +111,8 @@ TMP to remove commits not mentioned in the above (mainly documentation/ tst)
 - (#2284)
 - (#2343)
 - (#2369)
+- (#2393)
+- (#2412) 
 
 **TST**
 - (#2192)
@@ -95,7 +123,12 @@ TMP to remove commits not mentioned in the above (mainly documentation/ tst)
 - (#2320)
 - (#2274)
 - (#2351)
-
+- (#1899)
+- (#2384)
+- (#1304)
+- (#2437)
+- (#2443)
+- (#2449)
 
 **CI / Maint**
 - (#2206)
@@ -109,14 +142,20 @@ TMP to remove commits not mentioned in the above (mainly documentation/ tst)
 - (#2300)
 - (#2309)
 - (#2084)
-- (#2286) master only regression fix, probably omit
+- (#2286) master only regression fix
 - (#2316)
 - (#2319)
 - (#2331)
 - (#2370)
-
-
-
+- (#2397)
+- (#2404)
+- (#2419)
+- (#2440)
+- (#2427)
+- (#2332)  master only regression fix
+- (#2448)
+- (#2453) projson compat
+- (#2454)
 
 - (#2324) 
 
@@ -224,6 +263,8 @@ Bug fixes:
 - Fix bug in the colors shown with user-defined classification scheme (#2019).
 - Fix handling of the `path_effects` keyword in `plot()` (#2127).
 - Fix `GeoDataFrame.explode()` to preserve `attrs` (#1935)
+- Fix `GeoDataFrame.plot()` producing incorrect colors with mixed geometry types when `colors` keyword is provided.
+  (#2420)
 
 Notes on (optional) dependencies:
 
