@@ -1,6 +1,127 @@
 Changelog
 =========
 
+https://github.com/geopandas/geopandas/commits/main?after=1c55343af1a12726cb067c7c1fa7d237ce96b1c1+95&branch=main&qualified_name=refs%2Fheads%2Fmain
+
+Version 0.11 (June x, 2022)
+---------------------------------
+
+
+Highlights of this release:
+
+- GeoParquet support updated to implement v0.5.0 of the OpenGeoSpatial/GeoParquet spec. Backwards compatibility with 
+  v0.1.0 of the metadata spec (implemented in the previous releases of GeoPandas) is guranteed, reading and writing 
+  parquet/ feather files will no longer produce a `UserWarning` (#2327). 
+  
+
+New features and improvements:
+
+- Improved handling of GeoDataFrame metadata/ state when the active geometry column is lost from the GeoDataFrame 
+  (#2060), with loc, iloc, ...
+- Datetime fields are now round-tripped correctly for GIS formats which support them (e.g. GPKG, geojson) with Fiona 
+1.8.14 or higher. Previously datetimes were read as strings (#2202).
+- `folium.Map` keyword arguments can now be specified as the `map_kwds` argument to `explore()`
+- It is now possible to write an empty `GeoDataFrame` to file for supported formats (#2240). Attempting to do so 
+  will now raise a `UserWarning` instead of a `ValueError` 
+- (#2329) API: improve handling of invalid geo column for .geometry (more infor
+- Fast rectangle clipping has been exposed as `GeoSeries/GeoDataFrame.clip_by_rect()` (#1928)
+
+Deprecations and compatibility notes:
+
+- The active development branch of geopandas on github has been renamed from master to main (#2277).
+- Deprecated methods `GeometryArray.equals_exact()` and `GeometryArray.almost_equals()` have been removed (these were 
+  deprecated in GeoPandas 0.8 in June 2020). They should be replaced with `GeometryArray.geom_equals_exact()` and 
+  `GeometryArray.geom_almost_equals()` respectively (#2267).
+- Deprecated CRS functions `explicit_crs_from_epsg()`, `epsg_from_crs()` and `get_epsg_file_contents()` were removed (these were 
+  deprecated in GeoPandas 0.8 in June 2020) (#2340).
+- Warning about the behaviour change to `GeoSeries.isna()` in GeoPandas 0.6 with empty geometries present has been 
+  removed (#2349). 
+- Specifying a CRS in the `GeoDataFrame/GeoSeries` constructor which contradicted the underlying `GeometryArray` now 
+  raises a ValueError (the previous warning indicating this behaviour change was introduced in GeoPandas 0.8 in June 
+  2020) (#2100).
+- Specifying a CRS in the `GeoDataFrame` constructor when no geometry column is provided  
+  
+
+  
+
+Bug fixes:
+
+- Fix pickle files created with pygeos installed can not being readable when pygeos is not installed (#2237).
+- Fixed `UnboundLocalError` in `GeoDataFrame.plot()` using `legend=True` and `missing_kwds` (#2281).
+- `dissolve()` has been updated to avoid producing a FutureWarning issued by pandas (#2305). # TODO should this live 
+  above in compatibility, or just not be mentioned?
+- Fix `explode()` incorrectly relating index to columns, including where the input index is not unique (#2292) # 
+  TODO not well explained, #2271 and #2229 were fixed by this.
+- `to_file()` no longer emits a `FutureWarning` about `Int64Index`(#2322). # TODO not actually a bug but feels 
+  appropriate to mention.
+- Fix `GeoSeries.[xyz]` raising an `IndexError` when the underlying GeoSeries contains empty points (#2335). Rows 
+  corresponding to empty points now contain `np.nan`.
+- Fix `GeoDataFrame.iloc` raising a `TypeError` when indexing a `GeoDataFrame` with only a single column of 
+  `GeometryDtype` (#1970).  
+
+Notes on (optional) dependencies:
+
+- GeoPandas 0.11 drops support for Python 3.7 and pandas 0.25 (the minimum supported pandas version is now 1.0.5).
+Further, the minimum required versions for the listed dependencies have now changed to shapely 1.7, fiona 1.
+  8.13.post1, pyproj 2.6.1.post1, matplotlib 3.2, mapclassify 2.4.0 (#2358, #2391)  
+
+- GeoPandas 0.10.0 dropped support for Python 3.6 and pandas 0.24. Further,
+  the minimum required versions are numpy 1.18, shapely 1.6, fiona 1.8,
+
+TMP to remove commits not mentioned in the above (mainly documentation/ tst)
+
+**Documentation**
+- (#2203)
+- (#2195)
+- (#2218)
+- (#1831)
+- (#2233)
+- (#2249)
+- (#2259)
+- (#2255)
+- (#2293)
+- (#2303)
+- (#2307)
+- (#2284)
+- (#2343)
+- (#2369)
+
+**TST**
+- (#2192)
+- (#2219)
+- (#2289)
+- (#2298)
+- (#2318)
+- (#2320)
+- (#2274)
+- (#2351)
+
+
+**CI / Maint**
+- (#2206)
+- (#2228)
+- (#2232)
+- (#2238)
+- (#2205)
+- (#2250)
+- (#2276)
+- (#2299)
+- (#2300)
+- (#2309)
+- (#2084)
+- (#2286) master only regression fix, probably omit
+- (#2316)
+- (#2319)
+- (#2331)
+- (#2370)
+
+
+
+
+- (#2324) 
+
+
+
 Version 0.10.2 (October 16, 2021)
 ---------------------------------
 
