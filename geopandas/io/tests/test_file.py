@@ -888,3 +888,12 @@ def test_write_read_file(test_file):
     df_json = geopandas.read_file(test_file)
     assert_geodataframe_equal(gdf, df_json, check_crs=True)
     os.remove(os.path.expanduser(test_file))
+
+def test_t():
+    file = "examples/test_file.geojson"
+    df = read_file(file)
+    print(df)
+    with read_file(file, chunksize=14) as f:
+        for a in f:
+            print(isinstance(a, GeoDataFrame))
+            #print(a)
