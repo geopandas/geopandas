@@ -104,9 +104,6 @@ Notes on (optional) dependencies:
 Further, the minimum required versions for the listed dependencies have now changed to shapely 1.7, fiona 1.
   8.13.post1, pyproj 2.6.1.post1, matplotlib 3.2, mapclassify 2.4.0 (#2358, #2391)  
 
-- GeoPandas 0.10.0 dropped support for Python 3.6 and pandas 0.24. Further,
-  the minimum required versions are numpy 1.18, shapely 1.6, fiona 1.8,
-
 TMP to remove commits not mentioned in the above (mainly documentation/ tst)
 
 **Documentation**
