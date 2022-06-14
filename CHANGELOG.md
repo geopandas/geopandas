@@ -7,7 +7,7 @@ Version 0.11 (June x, 2022)
 
 Highlights of this release:
 
-- GeoParquet support updated to implement v0.4.0 of the OpenGeospatial/GeoParquet spec (#2441). # TODO emphasise 
+- GeoParquet support updated to implement [v0.4.0](https://github.com/opengeospatial/geoparquet/releases/tag/v0.4.0) of the OpenGeospatial/GeoParquet spec (#2441). # TODO emphasise 
   significance a bit more? interop with GDAL / sf, first class support for columnar data. 
   Backwards compatibility with v0.1.0 of the metadata spec (implemented in the previous releases of GeoPandas) is guaranteed, 
   reading and writing parquet/ feather files will no longer produce a `UserWarning` (#2327). 
@@ -82,6 +82,8 @@ Bug fixes:
 - Fix `GeoDataFrame.explore()` producing an error when `column` is of boolean dtype (#2403).
 - Fix an issue where `GeoDataFrame.to_postgis()` output the wrong SRID for ESRI authority CRS (#2414).
 - Fix `GeoDataFrame.from_dict/from_features` classmethods using `GeoDataFrame` rather than `cls` as the constructor.
+- Fix `GeoDataFrame.plot()` producing incorrect colors with mixed geometry types when `colors` keyword is provided.
+  (#2420)
 
 
 
@@ -263,8 +265,6 @@ Bug fixes:
 - Fix bug in the colors shown with user-defined classification scheme (#2019).
 - Fix handling of the `path_effects` keyword in `plot()` (#2127).
 - Fix `GeoDataFrame.explode()` to preserve `attrs` (#1935)
-- Fix `GeoDataFrame.plot()` producing incorrect colors with mixed geometry types when `colors` keyword is provided.
-  (#2420)
 
 Notes on (optional) dependencies:
 
