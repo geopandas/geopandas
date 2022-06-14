@@ -15,14 +15,25 @@ Highlights of this release:
 
 New features and improvements:
 
-- Improved handling of GeoDataFrame metadata/ state when the active geometry column is lost from the GeoDataFrame 
-  (#2060), with loc, iloc, ...
+- Improved handling of GeoDataFrame metadata/ state when the active geometry column is lost from the GeoDataFrame. 
+  Previously, square bracket indexing `gdf[[...]]` returned a GeoDataFrame when the active geometry column was 
+  retained and a DataFrame was returned otherwise. Other pandas indexing methods (`loc`, `iloc`, etc) did not follow 
+  the same rules. The new behaviour for all indexing/ reshaping is (#2329, #2060):
+  - If operations produce a `DataFrame` containing the active geometry column, a GeoDataFrame is returned
+  - If operations produce a `DataFrame` containing `GeometryDtype` columns, but not the active geometry column, a 
+    `GeoDataFrame` is returned, where the active geometry column is set to `None` (set the new geometry column with `
+    set_geometry()`)
+  - If operations produce a `DataFrame` containing no `GeometryDtype` columns, a `DataFrame` is returned (this can be 
+    upcast again by calling `set_geometry()` or the `GeoDataFrame` constructor)
+  - If operations produce a `Series` of `GeometryDtype`, a `GeoSeries` is returned, otherwise `Series` is returned.
+  Error messages for having an invalid geometry column have been improved, indicating the name of the last valid 
+    active geometry column set and whether other geometry columns can be promoted to the active geometry column (#2329).
+    
 - Datetime fields are now round-tripped correctly for GIS formats which support them (e.g. GPKG, geojson) with Fiona 
 1.8.14 or higher. Previously datetimes were read as strings (#2202).
 - `folium.Map` keyword arguments can now be specified as the `map_kwds` argument to `explore()`
 - It is now possible to write an empty `GeoDataFrame` to file for supported formats (#2240). Attempting to do so 
-  will now emit a `UserWarning` instead of a `ValueError` 
-- (#2329) API: improve handling of invalid geo column for .geometry (more infor
+  will now emit a `UserWarning` instead of a `ValueError`
 - Fast rectangle clipping has been exposed as `GeoSeries/GeoDataFrame.clip_by_rect()` (#1928)
 - `GeoSeries.to_frame` now creates a `GeoDataFrame` with the geometry column name set correctly (#2296) # TODO is 
   this more appropriate as a bug fix?
@@ -57,7 +68,7 @@ Deprecations and compatibility notes:
   `geopandas.io.file.read_file`/`to_file` and `geopandas.io.sql.read_postgis` now 
   emit `FutureWarning` instead of `DeprecationWarning` and will be completely removed in a future release.
 - `GeoDataFrame._crs` is deprecated and will be removed in GeoPandas 0.12 (this is never directly accessed and 
-  only affects GeoPandas internals (#2373).
+  only affects GeoPandas internals) (#2373).
   
   
 
