@@ -562,7 +562,7 @@ def _to_file_fiona(df, filename, driver, schema, crs, mode, **kwargs):
     if driver == "MapInfo File":
         unallowed_dtypes = ["int", "int64"]
         properties_dict = schema["properties"]
-        if any(dt in properties_dict.values() for dt in ["int", "int64"]):
+        if any(dt in properties_dict.values() for dt in unallowed_dtypes):
             for k, v in properties_dict.items():
                 if v in unallowed_dtypes:
                     properties_dict[k] = "int32"
