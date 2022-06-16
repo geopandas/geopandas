@@ -108,10 +108,12 @@ driver_ext_pairs = [
     ("ESRI Shapefile", ".shp"),
     ("GeoJSON", ".geojson"),
     ("GPKG", ".gpkg"),
+    ("MapInfo File", ".tab"),
     (None, ".shp"),
     (None, ""),
     (None, ".geojson"),
     (None, ".gpkg"),
+    (None, ".tab"),
 ]
 
 
@@ -178,7 +180,10 @@ def test_to_file_bool(tmpdir, driver, ext, engine):
 
     df.to_file(tempfilename, driver=driver, engine=engine)
     result = read_file(tempfilename, engine=engine)
-    if ext in (".shp", ""):
+    # if ext in (".shp", ".tab", ""):
+    #     # Shapefile and MapInfo File does not support boolean, so is read back as int
+    #     df["b"] = df["b"].astype("int64")
+    if ext in (".shp",".tab", ""):
         # Shapefile does not support boolean, so is read back as int
         if engine == "fiona":
             df["col"] = df["col"].astype("int64")
@@ -204,7 +209,7 @@ def test_to_file_datetime(tmpdir, driver, ext, time, engine):
     if engine == "pyogrio" and time.tzinfo is not None:
         # TODO
         pytest.skip("pyogrio doesn't yet support timezones")
-    if ext in (".shp", ""):
+    if ext in (".shp", ".tab", ""):
         pytest.skip(f"Driver corresponding to ext {ext} doesn't support dt fields")
     if time.tzinfo is not None and FIONA_GE_1814 is False:
         # https://github.com/Toblerity/Fiona/pull/915
@@ -484,6 +489,11 @@ def test_to_file_with_duplicate_columns(tmpdir, engine):
 def test_append_file(tmpdir, df_nybb, df_null, driver, ext, engine):
     """Test to_file with append mode and from_file"""
     skip_pyogrio_not_supported(engine)
+
+    if ext == ".tab":
+        # should there be a warning when this happens?
+        pytest.xfail("MapInfo File doesn't maintain accuracy.")
+
     from fiona import supported_drivers
 
     tempfilename = os.path.join(str(tmpdir), "boros" + ext)
@@ -517,6 +527,9 @@ def test_empty_crs(tmpdir, driver, ext, engine):
     """Test handling of undefined CRS with GPKG driver (GH #1975)."""
     if ext == ".gpkg":
         pytest.xfail("GPKG is read with Undefined geographic SRS.")
+    if ext == ".tab":
+        # Can be partially remidied with comment below
+        pytest.xfail("MapInfo File is read with Undefined geographic ENGCRS.")
 
     tempfilename = os.path.join(str(tmpdir), "boros" + ext)
     df = GeoDataFrame(
@@ -532,6 +545,11 @@ def test_empty_crs(tmpdir, driver, ext, engine):
     if ext == ".geojson":
         # geojson by default assumes epsg:4326
         df.crs = "EPSG:4326"
+    # if ext == ".tab":
+    #     # this will fix the error on the default CRS
+    #     # that gets loaded when reading in the file, but will then cause
+    #     # issue with geometries being equal
+    #     df.set_crs('ENGCRS["Nonearth",EDATUM[""],CS[Cartesian,2],AXIS["easting",east,ORDER[1],LENGTHUNIT["Meter",1]],AXIS["northing",north,ORDER[2],LENGTHUNIT["Meter",1]]]', inplace=True)
 
     assert_geodataframe_equal(result, df)
 

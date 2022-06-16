@@ -559,6 +559,14 @@ def _to_file_fiona(df, filename, driver, schema, crs, mode, **kwargs):
     else:
         crs = df.crs
 
+    if driver == "MapInfo File":
+        unallowed_dtypes = ["int", "int64"]
+        properties_dict = schema["properties"]
+        if any(dt in properties_dict.values() for dt in ["int", "int64"]):
+            for k, v in properties_dict.items():
+                if v in unallowed_dtypes:
+                    properties_dict[k] = "int32"
+
     with fiona_env():
         crs_wkt = None
         try:
