@@ -353,9 +353,10 @@ def test_to_file_with_poly_z(tmpdir, ext, driver, engine):
     assert_correct_driver(tempfilename, ext, engine)
 
 
-def test_to_file_types(tmpdir, df_points, engine):
+@pytest.mark.parametrize("driver,ext", driver_ext_pairs)
+def test_to_file_types(tmpdir, df_points, driver, ext):
     """Test various integer type columns (GH#93)"""
-    tempfilename = os.path.join(str(tmpdir), "int.shp")
+    tempfilename = os.path.join(str(tmpdir), "int.{0}".format(ext))
     int_types = [
         np.int8,
         np.int16,
@@ -373,7 +374,7 @@ def test_to_file_types(tmpdir, df_points, engine):
         for i, dtype in enumerate(int_types)
     )
     df = GeoDataFrame(data, geometry=geometry)
-    df.to_file(tempfilename, engine=engine)
+    df.to_file(tempfilename, driver=driver)
 
 
 def test_to_file_int64(tmpdir, df_points, engine):
@@ -384,6 +385,22 @@ def test_to_file_int64(tmpdir, df_points, engine):
     df["data"] = pd.array([1, np.nan] * 5, dtype=pd.Int64Dtype())
     df.to_file(tempfilename, engine=engine)
     df_read = GeoDataFrame.from_file(tempfilename, engine=engine)
+    assert_geodataframe_equal(df_read, df, check_dtype=False, check_like=True)
+
+
+def test_overflow_int32_mapinfo(tmpdir, df_points):
+    """int64 cast to int32 in _to_file (GH #967)
+    -- have to convert int64 -> int32 for writing
+    with the mapinfo driver
+    """
+    tempfilename = os.path.join(str(tmpdir), "int32.tab")
+    geometry = df_points.geometry
+    df = GeoDataFrame(geometry=geometry)
+    too_big = 2_147_483_648
+    df["data"] = pd.array([too_big, np.nan] * 5, dtype=pd.Int64Dtype())
+    # import pdb; pdb.set_trace()
+    df.to_file(tempfilename)
+    df_read = GeoDataFrame.from_file(tempfilename)
     assert_geodataframe_equal(df_read, df, check_dtype=False, check_like=True)
 
 
@@ -494,8 +511,7 @@ def test_append_file(tmpdir, df_nybb, df_null, driver, ext, engine):
     skip_pyogrio_not_supported(engine)
 
     if ext == ".tab":
-        # should there be a warning when this happens?
-        pytest.xfail("MapInfo File doesn't maintain accuracy.")
+        pytest.xfail("MapInfo File doesn't maintain geometric accuracy.")
 
     from fiona import supported_drivers
 
