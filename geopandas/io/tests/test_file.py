@@ -214,6 +214,9 @@ def test_to_file_datetime(tmpdir, driver, ext, time, engine):
     if time.tzinfo is not None and FIONA_GE_1814 is False:
         # https://github.com/Toblerity/Fiona/pull/915
         pytest.skip("Fiona >= 1.8.14 needed for timezone support")
+    if time.tzinfo is not None and ext == ".tab":
+        # times are converted to UTC on write and read as naive datetimes
+        pytest.skip("MapInfo File does not support time zone aware datetimes")
 
     tempfilename = os.path.join(str(tmpdir), f"test_datetime{ext}")
     point = Point(0, 0)
@@ -528,7 +531,6 @@ def test_empty_crs(tmpdir, driver, ext, engine):
     if ext == ".gpkg":
         pytest.xfail("GPKG is read with Undefined geographic SRS.")
     if ext == ".tab":
-        # Can be partially remidied with comment below
         pytest.xfail("MapInfo File is read with Undefined geographic ENGCRS.")
 
     tempfilename = os.path.join(str(tmpdir), "boros" + ext)
@@ -545,11 +547,6 @@ def test_empty_crs(tmpdir, driver, ext, engine):
     if ext == ".geojson":
         # geojson by default assumes epsg:4326
         df.crs = "EPSG:4326"
-    # if ext == ".tab":
-    #     # this will fix the error on the default CRS
-    #     # that gets loaded when reading in the file, but will then cause
-    #     # issue with geometries being equal
-    #     df.set_crs('ENGCRS["Nonearth",EDATUM[""],CS[Cartesian,2],AXIS["easting",east,ORDER[1],LENGTHUNIT["Meter",1]],AXIS["northing",north,ORDER[2],LENGTHUNIT["Meter",1]]]', inplace=True)
 
     assert_geodataframe_equal(result, df)
 
