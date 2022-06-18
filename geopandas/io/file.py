@@ -180,7 +180,7 @@ def _read_file(filename, bbox=None, mask=None, rows=None, engine=None, **kwargs)
     # default to "fiona" if installed, otherwise try pyogrio
     if engine is None:
         _import_fiona()
-        if fiona is not None:
+        if fiona:
             engine = "fiona"
         else:
             engine = "pyogrio"
@@ -441,7 +441,7 @@ def _to_file(
     # default to "fiona" if installed, otherwise try pyogrio
     if engine is None:
         _import_fiona()
-        if fiona is not None:
+        if fiona:
             engine = "fiona"
         else:
             engine = "pyogrio"
