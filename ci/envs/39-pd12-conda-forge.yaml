@@ -6,7 +6,7 @@ dependencies:
   # required
   - pandas=1.2
   - shapely
-  - fiona
+  # - fiona  # build with only pyogrio
   - pyproj
   - pygeos
   - packaging
@@ -30,5 +30,10 @@ dependencies:
   - libspatialite
   - geoalchemy2
   - pyarrow
+  # - pyogrio
+  - libgdal
   # doctest testing
   - pytest-doctestplus
+  - pip
+  - pip:
+    - git+https://github.com/geopandas/pyogrio.git@main
