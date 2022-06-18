@@ -15,7 +15,7 @@ from geopandas import GeoDataFrame
 from geopandas.testing import assert_geodataframe_equal
 import pytest
 
-from .test_file import PYOGRIO_MARK
+from .test_file import FIONA_MARK, PYOGRIO_MARK
 
 
 # Credit: Polygons below come from Montreal city Open Data portal
@@ -249,7 +249,12 @@ def ogr_driver(request):
     return request.param
 
 
-@pytest.fixture(params=["fiona", pytest.param("pyogrio", marks=PYOGRIO_MARK)])
+@pytest.fixture(
+    params=[
+        pytest.param("fiona", marks=FIONA_MARK),
+        pytest.param("pyogrio", marks=PYOGRIO_MARK),
+    ]
+)
 def engine(request):
     return request.param
 
@@ -259,10 +264,12 @@ def test_to_file_roundtrip(tmpdir, geodataframe, ogr_driver, engine):
 
     expected_error = _expected_error_on(geodataframe, ogr_driver)
     if expected_error:
-        with pytest.raises(RuntimeError, match="Failed to write record"):
-            geodataframe.to_file(output_file, driver=ogr_driver)
+        with pytest.raises(
+            RuntimeError, match="Failed to write record|Could not add feature to layer"
+        ):
+            geodataframe.to_file(output_file, driver=ogr_driver, engine=engine)
     else:
-        geodataframe.to_file(output_file, driver=ogr_driver)
+        geodataframe.to_file(output_file, driver=ogr_driver, engine=engine)
 
         reloaded = geopandas.read_file(output_file, engine=engine)
 

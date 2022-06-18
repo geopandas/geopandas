@@ -177,7 +177,7 @@ def _read_file(filename, bbox=None, mask=None, rows=None, engine=None, **kwargs)
     may fail. In this case, the proper encoding can be specified explicitly
     by using the encoding keyword parameter, e.g. ``encoding='utf-8'``.
     """
-    # default to "fiona" if installed, otherwise fall back to pyogrio
+    # default to "fiona" if installed, otherwise try pyogrio
     if engine is None:
         _import_fiona()
         if fiona is not None:
@@ -186,6 +186,7 @@ def _read_file(filename, bbox=None, mask=None, rows=None, engine=None, **kwargs)
             engine = "pyogrio"
 
     if engine == "fiona":
+        _import_fiona()
         _check_fiona("'read_file' function")
 
     filename = _expand_user(filename)
@@ -328,6 +329,8 @@ def _read_file_pyogrio(path_or_bytes, bbox=None, mask=None, rows=None, **kwargs)
             "The 'mask' keyword is not supported with the 'pyogrio' engine. "
             "You can use 'bbox' instead."
         )
+    if kwargs.pop("ignore_geometry", False):
+        kwargs["read_geometry"] = False
 
     return pyogrio.read_dataframe(path_or_bytes, bbox=bbox, **kwargs)
 
@@ -381,6 +384,7 @@ def _to_file(
     index=None,
     mode="w",
     crs=None,
+    engine=None,
     **kwargs,
 ):
     """
@@ -434,8 +438,18 @@ def _to_file(
     may fail. In this case, the proper encoding can be specified explicitly
     by using the encoding keyword parameter, e.g. ``encoding='utf-8'``.
     """
-    _import_fiona()
-    _check_fiona("'to_file' method")
+    # default to "fiona" if installed, otherwise try pyogrio
+    if engine is None:
+        _import_fiona()
+        if fiona is not None:
+            engine = "fiona"
+        else:
+            engine = "pyogrio"
+
+    if engine == "fiona":
+        _import_fiona()
+        _check_fiona("'to_file' method")
+
     filename = _expand_user(filename)
 
     if index is None:
@@ -444,12 +458,6 @@ def _to_file(
         index = list(df.index.names) != [None] or not is_integer_dtype(df.index.dtype)
     if index:
         df = df.reset_index(drop=False)
-    if schema is None:
-        schema = infer_schema(df)
-    if crs:
-        crs = pyproj.CRS.from_user_input(crs)
-    else:
-        crs = df.crs
 
     if driver is None:
         driver = _detect_driver(filename)
@@ -460,6 +468,24 @@ def _to_file(
             "ESRI Shapefile.",
             stacklevel=3,
         )
+
+    if engine == "fiona":
+        _to_file_fiona(df, filename, driver, schema, crs, mode, **kwargs)
+    elif engine == "pyogrio":
+        _to_file_pyogrio(df, filename, driver, schema, crs, mode, **kwargs)
+    else:
+        raise ValueError(f"unknown engine '{engine}'")
+
+
+def _to_file_fiona(df, filename, driver, schema, crs, mode, **kwargs):
+
+    if schema is None:
+        schema = infer_schema(df)
+
+    if crs:
+        crs = pyproj.CRS.from_user_input(crs)
+    else:
+        crs = df.crs
 
     with fiona_env():
         crs_wkt = None
@@ -475,6 +501,25 @@ def _to_file(
             filename, mode=mode, driver=driver, crs_wkt=crs_wkt, schema=schema, **kwargs
         ) as colxn:
             colxn.writerecords(df.iterfeatures())
+
+
+def _to_file_pyogrio(df, filename, driver, schema, crs, mode, **kwargs):
+    import pyogrio
+
+    if schema is not None:
+        raise ValueError(
+            "The 'schema' argument is not supported with the 'pyogrio' engine."
+        )
+
+    if mode != "w":
+        raise ValueError(
+            "Only mode='w' is supported for now with the 'pyogrio' engine."
+        )
+
+    if crs is not None:
+        raise ValueError("Passing 'crs' it not supported with the 'pyogrio' engine.")
+
+    pyogrio.write_dataframe(df, filename, driver=driver, **kwargs)
 
 
 def infer_schema(df):

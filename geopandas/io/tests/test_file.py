@@ -63,9 +63,9 @@ def skip_pyogrio_not_supported(engine):
 
 
 @pytest.fixture
-def df_nybb():
+def df_nybb(engine):
     nybb_path = geopandas.datasets.get_path("nybb")
-    df = read_file(nybb_path)
+    df = read_file(nybb_path, engine=engine)
     return df
 
 
@@ -118,21 +118,21 @@ def assert_correct_driver(file_path, ext):
 
 
 @pytest.mark.parametrize("driver,ext", driver_ext_pairs)
-def test_to_file(tmpdir, df_nybb, df_null, driver, ext):
+def test_to_file(tmpdir, df_nybb, df_null, driver, ext, engine):
     """Test to_file and from_file"""
     tempfilename = os.path.join(str(tmpdir), "boros." + ext)
-    df_nybb.to_file(tempfilename, driver=driver)
+    df_nybb.to_file(tempfilename, driver=driver, engine=engine)
     # Read layer back in
-    df = GeoDataFrame.from_file(tempfilename)
+    df = GeoDataFrame.from_file(tempfilename, engine=engine)
     assert "geometry" in df
     assert len(df) == 5
     assert np.alltrue(df["BoroName"].values == df_nybb["BoroName"])
 
     # Write layer with null geometry out to file
     tempfilename = os.path.join(str(tmpdir), "null_geom" + ext)
-    df_null.to_file(tempfilename, driver=driver)
+    df_null.to_file(tempfilename, driver=driver, engine=engine)
     # Read layer back in
-    df = GeoDataFrame.from_file(tempfilename)
+    df = GeoDataFrame.from_file(tempfilename, engine=engine)
     assert "geometry" in df
     assert len(df) == 2
     assert np.alltrue(df["Name"].values == df_null["Name"])
@@ -141,12 +141,12 @@ def test_to_file(tmpdir, df_nybb, df_null, driver, ext):
 
 
 @pytest.mark.parametrize("driver,ext", driver_ext_pairs)
-def test_to_file_pathlib(tmpdir, df_nybb, df_null, driver, ext):
+def test_to_file_pathlib(tmpdir, df_nybb, driver, ext, engine):
     """Test to_file and from_file"""
     temppath = pathlib.Path(os.path.join(str(tmpdir), "boros." + ext))
-    df_nybb.to_file(temppath, driver=driver)
+    df_nybb.to_file(temppath, driver=driver, engine=engine)
     # Read layer back in
-    df = GeoDataFrame.from_file(temppath)
+    df = GeoDataFrame.from_file(temppath, engine=engine)
     assert "geometry" in df
     assert len(df) == 5
     assert np.alltrue(df["BoroName"].values == df_nybb["BoroName"])
@@ -155,23 +155,25 @@ def test_to_file_pathlib(tmpdir, df_nybb, df_null, driver, ext):
 
 
 @pytest.mark.parametrize("driver,ext", driver_ext_pairs)
-def test_to_file_bool(tmpdir, driver, ext):
+def test_to_file_bool(tmpdir, driver, ext, engine):
     """Test error raise when writing with a boolean column (GH #437)."""
     tempfilename = os.path.join(str(tmpdir), "temp.{0}".format(ext))
     df = GeoDataFrame(
         {
-            "a": [1, 2, 3],
-            "b": [True, False, True],
+            "col": [True, False, True],
             "geometry": [Point(0, 0), Point(1, 1), Point(2, 2)],
         },
         crs=4326,
     )
 
-    df.to_file(tempfilename, driver=driver)
-    result = read_file(tempfilename)
+    df.to_file(tempfilename, driver=driver, engine=engine)
+    result = read_file(tempfilename, engine=engine)
     if ext in (".shp", ""):
         # Shapefile does not support boolean, so is read back as int
-        df["b"] = df["b"].astype("int64")
+        if engine == "fiona":
+            df["col"] = df["col"].astype("int64")
+        else:
+            df["col"] = df["col"].astype("int32")
     assert_geodataframe_equal(result, df)
     # check the expected driver
     assert_correct_driver(tempfilename, ext)
@@ -187,8 +189,11 @@ datetime_type_tests = (TEST_DATE, eastern.localize(TEST_DATE))
     "time", datetime_type_tests, ids=("naive_datetime", "datetime_with_timezone")
 )
 @pytest.mark.parametrize("driver,ext", driver_ext_pairs)
-def test_to_file_datetime(tmpdir, driver, ext, time):
+def test_to_file_datetime(tmpdir, driver, ext, time, engine):
     """Test writing a data file with the datetime column type"""
+    if engine == "pyogrio" and time.tzinfo is not None:
+        # TODO
+        pytest.skip("pyogrio doens't yet support timezones")
     if ext in (".shp", ""):
         pytest.skip(f"Driver corresponding to ext {ext} doesn't support dt fields")
     if time.tzinfo is not None and FIONA_GE_1814 is False:
@@ -199,7 +204,7 @@ def test_to_file_datetime(tmpdir, driver, ext, time):
     point = Point(0, 0)
 
     df = GeoDataFrame(
-        {"a": [1, 2], "b": [time, time]}, geometry=[point, point], crs=4326
+        {"a": [1.0, 2.0], "b": [time, time]}, geometry=[point, point], crs=4326
     )
     if FIONA_GE_1814:
         fiona_precision_limit = "ms"
@@ -207,8 +212,8 @@ def test_to_file_datetime(tmpdir, driver, ext, time):
         fiona_precision_limit = "s"
     df["b"] = df["b"].dt.round(freq=fiona_precision_limit)
 
-    df.to_file(tempfilename, driver=driver)
-    df_read = read_file(tempfilename)
+    df.to_file(tempfilename, driver=driver, engine=engine)
+    df_read = read_file(tempfilename, engine=engine)
 
     assert_geodataframe_equal(df.drop(columns=["b"]), df_read.drop(columns=["b"]))
     if df["b"].dt.tz is not None:
@@ -222,36 +227,36 @@ def test_to_file_datetime(tmpdir, driver, ext, time):
 
 
 @pytest.mark.parametrize("driver,ext", driver_ext_pairs)
-def test_to_file_with_point_z(tmpdir, ext, driver):
+def test_to_file_with_point_z(tmpdir, ext, driver, engine):
     """Test that 3D geometries are retained in writes (GH #612)."""
 
     tempfilename = os.path.join(str(tmpdir), "test_3Dpoint" + ext)
     point3d = Point(0, 0, 500)
     point2d = Point(1, 1)
     df = GeoDataFrame({"a": [1, 2]}, geometry=[point3d, point2d], crs=_CRS)
-    df.to_file(tempfilename, driver=driver)
-    df_read = GeoDataFrame.from_file(tempfilename)
+    df.to_file(tempfilename, driver=driver, engine=engine)
+    df_read = GeoDataFrame.from_file(tempfilename, engine=engine)
     assert_geoseries_equal(df.geometry, df_read.geometry)
     # check the expected driver
     assert_correct_driver(tempfilename, ext)
 
 
 @pytest.mark.parametrize("driver,ext", driver_ext_pairs)
-def test_to_file_with_poly_z(tmpdir, ext, driver):
+def test_to_file_with_poly_z(tmpdir, ext, driver, engine):
     """Test that 3D geometries are retained in writes (GH #612)."""
 
     tempfilename = os.path.join(str(tmpdir), "test_3Dpoly" + ext)
     poly3d = Polygon([[0, 0, 5], [0, 1, 5], [1, 1, 5], [1, 0, 5]])
     poly2d = Polygon([[0, 0], [0, 1], [1, 1], [1, 0]])
     df = GeoDataFrame({"a": [1, 2]}, geometry=[poly3d, poly2d], crs=_CRS)
-    df.to_file(tempfilename, driver=driver)
-    df_read = GeoDataFrame.from_file(tempfilename)
+    df.to_file(tempfilename, driver=driver, engine=engine)
+    df_read = GeoDataFrame.from_file(tempfilename, engine=engine)
     assert_geoseries_equal(df.geometry, df_read.geometry)
     # check the expected driver
     assert_correct_driver(tempfilename, ext)
 
 
-def test_to_file_types(tmpdir, df_points):
+def test_to_file_types(tmpdir, df_points, engine):
     """Test various integer type columns (GH#93)"""
     tempfilename = os.path.join(str(tmpdir), "int.shp")
     int_types = [
@@ -271,24 +276,25 @@ def test_to_file_types(tmpdir, df_points):
         for i, dtype in enumerate(int_types)
     )
     df = GeoDataFrame(data, geometry=geometry)
-    df.to_file(tempfilename)
+    df.to_file(tempfilename, engine=engine)
 
 
-def test_to_file_int64(tmpdir, df_points):
+def test_to_file_int64(tmpdir, df_points, engine):
+    skip_pyogrio_not_supported(engine)  # TODO
     tempfilename = os.path.join(str(tmpdir), "int64.shp")
     geometry = df_points.geometry
     df = GeoDataFrame(geometry=geometry)
     df["data"] = pd.array([1, np.nan] * 5, dtype=pd.Int64Dtype())
-    df.to_file(tempfilename)
-    df_read = GeoDataFrame.from_file(tempfilename)
+    df.to_file(tempfilename, engine=engine)
+    df_read = GeoDataFrame.from_file(tempfilename, engine=engine)
     assert_geodataframe_equal(df_read, df, check_dtype=False, check_like=True)
 
 
-def test_to_file_empty(tmpdir):
+def test_to_file_empty(tmpdir, engine):
     input_empty_df = GeoDataFrame(columns=["geometry"])
     tempfilename = os.path.join(str(tmpdir), "test.shp")
     with pytest.warns(UserWarning):
-        input_empty_df.to_file(tempfilename)
+        input_empty_df.to_file(tempfilename, engine=engine)
 
 
 def test_to_file_privacy(tmpdir, df_nybb):
@@ -297,7 +303,7 @@ def test_to_file_privacy(tmpdir, df_nybb):
         geopandas.io.file.to_file(df_nybb, tempfilename)
 
 
-def test_to_file_schema(tmpdir, df_nybb):
+def test_to_file_schema(tmpdir, df_nybb, engine):
     """
     Ensure that the file is written according to the schema
     if it is specified
@@ -314,13 +320,19 @@ def test_to_file_schema(tmpdir, df_nybb):
     )
     schema = {"geometry": "Polygon", "properties": properties}
 
-    # Take the first 2 features to speed things up a bit
-    df_nybb.iloc[:2].to_file(tempfilename, schema=schema)
+    if engine == "pyogrio":
+        with pytest.raises(ValueError):
+            df_nybb.iloc[:2].to_file(tempfilename, schema=schema, engine=engine)
+    else:
+        # Take the first 2 features to speed things up a bit
+        df_nybb.iloc[:2].to_file(tempfilename, schema=schema, engine=engine)
 
-    with fiona.open(tempfilename) as f:
-        result_schema = f.schema
+        import fiona
 
-    assert result_schema == schema
+        with fiona.open(tempfilename) as f:
+            result_schema = f.schema
+
+        assert result_schema == schema
 
 
 def test_to_file_column_len(tmpdir, df_points):
@@ -340,8 +352,9 @@ def test_to_file_column_len(tmpdir, df_points):
 
 
 @pytest.mark.parametrize("driver,ext", driver_ext_pairs)
-def test_append_file(tmpdir, df_nybb, df_null, driver, ext):
+def test_append_file(tmpdir, df_nybb, df_null, driver, ext, engine):
     """Test to_file with append mode and from_file"""
+    skip_pyogrio_not_supported(engine)
     from fiona import supported_drivers
 
     tempfilename = os.path.join(str(tmpdir), "boros" + ext)
@@ -349,10 +362,10 @@ def test_append_file(tmpdir, df_nybb, df_null, driver, ext):
     if "a" not in supported_drivers[driver]:
         return None
 
-    df_nybb.to_file(tempfilename, driver=driver)
-    df_nybb.to_file(tempfilename, mode="a", driver=driver)
+    df_nybb.to_file(tempfilename, driver=driver, engine=engine)
+    df_nybb.to_file(tempfilename, mode="a", driver=driver, engine=engine)
     # Read layer back in
-    df = GeoDataFrame.from_file(tempfilename)
+    df = GeoDataFrame.from_file(tempfilename, engine=engine)
     assert "geometry" in df
     assert len(df) == (5 * 2)
     expected = pd.concat([df_nybb] * 2, ignore_index=True)
@@ -360,10 +373,10 @@ def test_append_file(tmpdir, df_nybb, df_null, driver, ext):
 
     # Write layer with null geometry out to file
     tempfilename = os.path.join(str(tmpdir), "null_geom" + ext)
-    df_null.to_file(tempfilename, driver=driver)
-    df_null.to_file(tempfilename, mode="a", driver=driver)
+    df_null.to_file(tempfilename, driver=driver, engine=engine)
+    df_null.to_file(tempfilename, mode="a", driver=driver, engine=engine)
     # Read layer back in
-    df = GeoDataFrame.from_file(tempfilename)
+    df = GeoDataFrame.from_file(tempfilename, engine=engine)
     assert "geometry" in df
     assert len(df) == (2 * 2)
     expected = pd.concat([df_null] * 2, ignore_index=True)
@@ -371,7 +384,7 @@ def test_append_file(tmpdir, df_nybb, df_null, driver, ext):
 
 
 @pytest.mark.parametrize("driver,ext", driver_ext_pairs)
-def test_empty_crs(tmpdir, driver, ext):
+def test_empty_crs(tmpdir, driver, ext, engine):
     """Test handling of undefined CRS with GPKG driver (GH #1975)."""
     if ext == ".gpkg":
         pytest.xfail("GPKG is read with Undefined geographic SRS.")
@@ -379,13 +392,13 @@ def test_empty_crs(tmpdir, driver, ext):
     tempfilename = os.path.join(str(tmpdir), "boros" + ext)
     df = GeoDataFrame(
         {
-            "a": [1, 2, 3],
+            "a": [1.0, 2.0, 3.0],
             "geometry": [Point(0, 0), Point(1, 1), Point(2, 2)],
         },
     )
 
-    df.to_file(tempfilename, driver=driver)
-    result = read_file(tempfilename)
+    df.to_file(tempfilename, driver=driver, engine=engine)
+    result = read_file(tempfilename, engine=engine)
 
     if ext == ".geojson":
         # geojson by default assumes epsg:4326
@@ -537,8 +550,6 @@ def test_read_file_filtered__bbox(df_nybb, engine):
         244317.30894023244,
     )
     filtered_df = read_file(nybb_filename, bbox=bbox, engine=engine)
-    filtered_df["BoroCode"] = filtered_df["BoroCode"].astype("int64")
-    df_nybb["BoroCode"] = df_nybb["BoroCode"].astype("int64")
     expected = df_nybb[df_nybb["BoroName"].isin(["Bronx", "Queens"])]
     assert_geodataframe_equal(filtered_df, expected.reset_index(drop=True))
 
@@ -550,21 +561,18 @@ def test_read_file_filtered__bbox__polygon(df_nybb, engine):
     )
     filtered_df = read_file(nybb_filename, bbox=bbox, engine=engine)
     expected = df_nybb[df_nybb["BoroName"].isin(["Bronx", "Queens"])]
-    filtered_df["BoroCode"] = filtered_df["BoroCode"].astype("int64")
     assert_geodataframe_equal(filtered_df, expected.reset_index(drop=True))
 
 
 def test_read_file_filtered__rows(df_nybb, engine):
     nybb_filename = geopandas.datasets.get_path("nybb")
     filtered_df = read_file(nybb_filename, rows=1, engine=engine)
-    filtered_df["BoroCode"] = filtered_df["BoroCode"].astype("int64")
     assert_geodataframe_equal(filtered_df, df_nybb.iloc[[0], :])
 
 
 def test_read_file_filtered__rows_slice(df_nybb, engine):
     nybb_filename = geopandas.datasets.get_path("nybb")
     filtered_df = read_file(nybb_filename, rows=slice(1, 3), engine=engine)
-    filtered_df["BoroCode"] = filtered_df["BoroCode"].astype("int64")
     assert_geodataframe_equal(filtered_df, df_nybb.iloc[1:3, :].reset_index(drop=True))
 
 
@@ -602,9 +610,11 @@ def test_read_file_filtered_rows_invalid(engine):
         )
 
 
-def test_read_file__ignore_geometry():
+def test_read_file__ignore_geometry(engine):
     pdf = geopandas.read_file(
-        geopandas.datasets.get_path("naturalearth_lowres"), ignore_geometry=True
+        geopandas.datasets.get_path("naturalearth_lowres"),
+        ignore_geometry=True,
+        engine=engine,
     )
     assert "geometry" not in pdf.columns
     assert isinstance(pdf, pd.DataFrame) and not isinstance(pdf, geopandas.GeoDataFrame)
@@ -675,7 +685,8 @@ def test_read_file_filtered_with_gdf_boundary__mask__polygon(df_nybb, engine):
     assert filtered_df_shape == (2, 5)
 
 
-def test_read_file_filtered_with_gdf_boundary_mismatched_crs(df_nybb):
+def test_read_file_filtered_with_gdf_boundary_mismatched_crs(df_nybb, engine):
+    skip_pyogrio_not_supported(engine)
     full_df_shape = df_nybb.shape
     nybb_filename = geopandas.datasets.get_path("nybb")
     bbox = geopandas.GeoDataFrame(
@@ -690,7 +701,7 @@ def test_read_file_filtered_with_gdf_boundary_mismatched_crs(df_nybb):
         crs=CRS,
     )
     bbox.to_crs(epsg=4326, inplace=True)
-    filtered_df = read_file(nybb_filename, bbox=bbox)
+    filtered_df = read_file(nybb_filename, bbox=bbox, engine=engine)
     filtered_df_shape = filtered_df.shape
     assert full_df_shape != filtered_df_shape
     assert filtered_df_shape == (2, 5)
