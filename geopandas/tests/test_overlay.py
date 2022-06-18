@@ -5,7 +5,6 @@ import numpy as np
 import pandas as pd
 
 from shapely.geometry import Point, Polygon, LineString, GeometryCollection, box
-from fiona.errors import DriverError
 
 import geopandas
 from geopandas import GeoDataFrame, GeoSeries, overlay, read_file
@@ -13,6 +12,13 @@ from geopandas import _compat
 
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 import pytest
+
+try:
+    from fiona.errors import DriverError
+except ImportError:
+
+    class DriverError(Exception):
+        pass
 
 
 DATA = os.path.join(os.path.abspath(os.path.dirname(__file__)), "data", "overlay")

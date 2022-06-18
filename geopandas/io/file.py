@@ -519,6 +519,10 @@ def _to_file_pyogrio(df, filename, driver, schema, crs, mode, **kwargs):
     if crs is not None:
         raise ValueError("Passing 'crs' it not supported with the 'pyogrio' engine.")
 
+    # for the fiona engine, this check is done in gdf.iterfeatures()
+    if not df.columns.is_unique:
+        raise ValueError("GeoDataFrame cannot contain duplicated column names.")
+
     pyogrio.write_dataframe(df, filename, driver=driver, **kwargs)
 
 

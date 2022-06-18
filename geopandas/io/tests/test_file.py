@@ -335,6 +335,37 @@ def test_to_file_schema(tmpdir, df_nybb, engine):
         assert result_schema == schema
 
 
+def test_to_file_crs(tmpdir, engine):
+    """
+    Ensure that the file is written according to the crs
+    if it is specified
+    """
+    df = read_file(geopandas.datasets.get_path("nybb"), engine=engine)
+    tempfilename = os.path.join(str(tmpdir), "crs.shp")
+
+    # save correct CRS
+    df.to_file(tempfilename, engine=engine)
+    result = GeoDataFrame.from_file(tempfilename, engine=engine)
+    assert result.crs == df.crs
+
+    if engine == "pyogrio":
+        with pytest.raises(ValueError, match="Passing 'crs' it not supported"):
+            df.to_file(tempfilename, crs=3857, engine=engine)
+        return
+
+    # overwrite CRS
+    df.to_file(tempfilename, crs=3857, engine=engine)
+    result = GeoDataFrame.from_file(tempfilename, engine=engine)
+    assert result.crs == "epsg:3857"
+
+    # specify CRS for gdf without one
+    df2 = df.copy()
+    df2.crs = None
+    df2.to_file(tempfilename, crs=2263, engine=engine)
+    df = GeoDataFrame.from_file(tempfilename, engine=engine)
+    assert df.crs == "epsg:2263"
+
+
 def test_to_file_column_len(tmpdir, df_points):
     """
     Ensure that a warning about truncation is given when a geodataframe with
@@ -349,6 +380,15 @@ def test_to_file_column_len(tmpdir, df_points):
         UserWarning, match="Column names longer than 10 characters will be truncated"
     ):
         df.to_file(tempfilename, driver="ESRI Shapefile")
+
+
+def test_to_file_with_duplicate_columns(tmpdir, engine):
+    df = GeoDataFrame(data=[[1, 2, 3]], columns=["a", "b", "a"], geometry=[Point(1, 1)])
+    tempfilename = os.path.join(str(tmpdir), "duplicate.shp")
+    with pytest.raises(
+        ValueError, match="GeoDataFrame cannot contain duplicated column names."
+    ):
+        df.to_file(tempfilename, engine=engine)
 
 
 @pytest.mark.parametrize("driver,ext", driver_ext_pairs)
@@ -412,19 +452,16 @@ def test_empty_crs(tmpdir, driver, ext, engine):
 # -----------------------------------------------------------------------------
 
 
-with fiona.open(geopandas.datasets.get_path("nybb")) as f:
-    CRS = f.crs["init"] if "init" in f.crs else f.crs_wkt
-    NYBB_COLUMNS = list(f.meta["schema"]["properties"].keys())
+NYBB_CRS = "epsg:2263"
 
 
 def test_read_file(engine):
     df_nybb = read_file(geopandas.datasets.get_path("nybb"), engine=engine)
     df = df_nybb.rename(columns=lambda x: x.lower())
     validate_boro_df(df)
-    assert df.crs == CRS
-    # get lower case columns, and exclude geometry column from comparison
-    lower_columns = [c.lower() for c in NYBB_COLUMNS]
-    assert (df.columns[:-1] == lower_columns).all()
+    assert df.crs == NYBB_CRS
+    expected_columns = ["BoroCode", "BoroName", "Shape_Leng", "Shape_Area"]
+    assert (df.columns[:-1] == expected_columns).all()
 
 
 @pytest.mark.web
@@ -652,7 +689,7 @@ def test_read_file_filtered_with_gdf_boundary(df_nybb, engine):
                 244317.30894023244,
             )
         ],
-        crs=CRS,
+        crs=NYBB_CRS,
     )
     filtered_df = read_file(nybb_filename, bbox=bbox, engine=engine)
     filtered_df_shape = filtered_df.shape
@@ -698,7 +735,7 @@ def test_read_file_filtered_with_gdf_boundary_mismatched_crs(df_nybb, engine):
                 244317.30894023244,
             )
         ],
-        crs=CRS,
+        crs=NYBB_CRS,
     )
     bbox.to_crs(epsg=4326, inplace=True)
     filtered_df = read_file(nybb_filename, bbox=bbox, engine=engine)
@@ -720,7 +757,7 @@ def test_read_file_filtered_with_gdf_boundary_mismatched_crs__mask(df_nybb, engi
                 244317.30894023244,
             )
         ],
-        crs=CRS,
+        crs=NYBB_CRS,
     )
     mask.to_crs(epsg=4326, inplace=True)
     filtered_df = read_file(nybb_filename, mask=mask.geometry, engine=engine)
