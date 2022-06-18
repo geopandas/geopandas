@@ -610,7 +610,7 @@ def infer_schema(df):
 
     # TODO: test pandas string type and boolean type once released
     types = {
-        "int64": "int64",
+        "int64": "int",
         "int32": "int32",
         "int16": "int",
         "int8": "int",
