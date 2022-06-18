@@ -456,8 +456,7 @@ NYBB_CRS = "epsg:2263"
 
 
 def test_read_file(engine):
-    df_nybb = read_file(geopandas.datasets.get_path("nybb"), engine=engine)
-    df = df_nybb.rename(columns=lambda x: x.lower())
+    df = read_file(geopandas.datasets.get_path("nybb"), engine=engine)
     validate_boro_df(df)
     assert df.crs == NYBB_CRS
     expected_columns = ["BoroCode", "BoroName", "Shape_Leng", "Shape_Area"]

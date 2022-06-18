@@ -144,7 +144,9 @@ def _read_file(filename, bbox=None, mask=None, rows=None, engine=None, **kwargs)
         Keyword args to be passed to the engine. In case of the "fiona" engine,
         the keyword arguments are passed to the `open` or `BytesCollection`
         method in the fiona library when opening the file. For more information
-        on possible keywords, type: ``import fiona; help(fiona.open)``
+        on possible keywords, type: ``import fiona; help(fiona.open)``. In
+        case of the "pyogrio" engine, the keyword arguments are passed to
+        `pyogrio.read_dataframe`.
 
     Examples
     --------
@@ -398,7 +400,8 @@ def _to_file(
     ----------
     df : GeoDataFrame to be written
     filename : string
-        File path or file handle to write to.
+        File path or file handle to write to. The path may specify a
+        GDAL VSI scheme.
     driver : string, default None
         The OGR format driver used to write the vector file.
         If not specified, it attempts to infer it from the file extension.
@@ -406,7 +409,8 @@ def _to_file(
     schema : dict, default None
         If specified, the schema dictionary is passed to Fiona to
         better control how the file is written. If None, GeoPandas
-        will determine the schema based on each column's dtype
+        will determine the schema based on each column's dtype.
+        Not supported for the "pyogrio" engine.
     index : bool, default None
         If True, write index into one or more columns (for MultiIndex).
         Default None writes the index into one or more columns only if
@@ -427,10 +431,17 @@ def _to_file(
         The value can be anything accepted
         by :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
         such as an authority string (eg "EPSG:4326") or a WKT string.
-
-    The *kwargs* are passed to fiona.open and can be used to write
-    to multi-layer data, store data within archives (zip files), etc.
-    The path may specify a fiona VSI scheme.
+    engine : str, "fiona" or "pyogrio"
+        The underlying library that is used to write the file. Currently, the
+        supported options are "fiona" and "pyogrio". Defaults to "fiona" if
+        installed, otherwise tries "pyogrio".
+    **kwargs :
+        Keyword args to be passed to the engine, and can be used to write
+        to multi-layer data, store data within archives (zip files), etc.
+        In case of the "fiona" engine, the keyword arguments are passed to
+        fiona.open`. For more information on possible keywords, type:
+        ``import fiona; help(fiona.open)``. In case of the "pyogrio" engine,
+        the keyword arguments are passed to `pyogrio.write_dataframe`.
 
     Notes
     -----
