@@ -612,8 +612,8 @@ def infer_schema(df):
     types = {
         "int64": "int",
         "int32": "int32",
-        "int16": "int",
-        "int8": "int",
+        "int16": "int32",
+        "int8": "int32",
         "uint64": "int",
         "uint32": "int",
         "uint16": "int",
