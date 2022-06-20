@@ -6,7 +6,7 @@ dependencies:
   # required
   - pandas
   - shapely
-  - fiona
+  # - fiona  # build with only pyogrio
   - pyproj
   - pygeos
   - packaging
@@ -26,3 +26,7 @@ dependencies:
   - SQLalchemy
   - libspatialite
   - pyarrow
+  - pip
+  - pip:
+    - git+https://github.com/jorisvandenbossche/pyogrio.git@fix-geometry-type-corner-cases
+

@@ -6,7 +6,7 @@ dependencies:
   # required
   - pandas=1.2
   - shapely
-  # - fiona  # build with only pyogrio
+  - fiona
   - pyproj
   - pygeos
   - packaging
@@ -34,6 +34,3 @@ dependencies:
   - libgdal
   # doctest testing
   - pytest-doctestplus
-  - pip
-  - pip:
-    - git+https://github.com/jorisvandenbossche/pyogrio.git@fix-geometry-type-corner-cases
