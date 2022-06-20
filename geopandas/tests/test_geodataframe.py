@@ -2,17 +2,17 @@ import json
 import os
 import shutil
 import tempfile
-from distutils.version import LooseVersion
+from packaging.version import Version
 
 import numpy as np
 import pandas as pd
 
-import pyproj
 from pyproj import CRS
 from pyproj.exceptions import CRSError
-from shapely.geometry import Point
+from shapely.geometry import Point, Polygon
 
 import geopandas
+import geopandas._compat as compat
 from geopandas import GeoDataFrame, GeoSeries, read_file
 from geopandas.array import GeometryArray, GeometryDtype, from_shapely
 from geopandas._compat import ignore_shapely2_warnings
@@ -23,7 +23,36 @@ from pandas.testing import assert_frame_equal, assert_index_equal, assert_series
 import pytest
 
 
-PYPROJ_LT_3 = LooseVersion(pyproj.__version__) < LooseVersion("3")
+TEST_NEAREST = compat.PYGEOS_GE_010 and compat.USE_PYGEOS
+pandas_133 = Version(pd.__version__) == Version("1.3.3")
+
+
+@pytest.fixture
+def dfs(request):
+    s1 = GeoSeries(
+        [
+            Polygon([(0, 0), (2, 0), (2, 2), (0, 2)]),
+            Polygon([(2, 2), (4, 2), (4, 4), (2, 4)]),
+        ]
+    )
+    s2 = GeoSeries(
+        [
+            Polygon([(1, 1), (3, 1), (3, 3), (1, 3)]),
+            Polygon([(3, 3), (5, 3), (5, 5), (3, 5)]),
+        ]
+    )
+    df1 = GeoDataFrame({"col1": [1, 2], "geometry": s1})
+    df2 = GeoDataFrame({"col2": [1, 2], "geometry": s2})
+    return df1, df2
+
+
+@pytest.fixture(
+    params=["union", "intersection", "difference", "symmetric_difference", "identity"]
+)
+def how(request):
+    if pandas_133 and request.param in ["symmetric_difference", "identity", "union"]:
+        pytest.xfail("Regression in pandas 1.3.3 (GH #2101)")
+    return request.param
 
 
 class TestDataFrame:
@@ -305,6 +334,33 @@ class TestDataFrame:
         assert isinstance(result, GeoDataFrame)
         assert isinstance(result.index, pd.DatetimeIndex)
 
+    def test_set_geometry_np_int(self):
+        self.df.loc[:, 0] = self.df.geometry
+        df = self.df.set_geometry(np.int64(0))
+        assert df.geometry.name == 0
+
+    def test_get_geometry_invalid(self):
+        df = GeoDataFrame()
+        df["geom"] = self.df.geometry
+        msg_geo_col_none = "active geometry column to use has not been set. "
+        msg_geo_col_missing = "is not present. "
+
+        with pytest.raises(AttributeError, match=msg_geo_col_missing):
+            df.geometry
+        df2 = self.df.copy()
+        df2["geom2"] = df2.geometry
+        df2 = df2[["BoroCode", "BoroName", "geom2"]]
+        with pytest.raises(AttributeError, match=msg_geo_col_none):
+            df2.geometry
+
+        msg_other_geo_cols_present = "There are columns with geometry data type"
+        msg_no_other_geo_cols = "There are no existing columns with geometry data type"
+        with pytest.raises(AttributeError, match=msg_other_geo_cols_present):
+            df2.geometry
+
+        with pytest.raises(AttributeError, match=msg_no_other_geo_cols):
+            GeoDataFrame().geometry
+
     def test_align(self):
         df = self.df2
 
@@ -563,7 +619,7 @@ class TestDataFrame:
         p3 = Point(3, 3)
         f3 = {
             "type": "Feature",
-            "properties": {"a": 2},
+            "properties": None,
             "geometry": p3.__geo_interface__,
         }
 
@@ -571,9 +627,102 @@ class TestDataFrame:
 
         result = df[["a", "b"]]
         expected = pd.DataFrame.from_dict(
-            [{"a": 0, "b": np.nan}, {"a": np.nan, "b": 1}, {"a": 2, "b": np.nan}]
+            [{"a": 0, "b": np.nan}, {"a": np.nan, "b": 1}, {"a": np.nan, "b": np.nan}]
         )
         assert_frame_equal(expected, result)
+
+    def test_from_features_empty_properties(self):
+        geojson_properties_object = """{
+          "type": "FeatureCollection",
+          "features": [
+            {
+              "type": "Feature",
+              "properties": {},
+              "geometry": {
+                "type": "Polygon",
+                "coordinates": [
+                  [
+                    [
+                      11.3456529378891,
+                      46.49461446367692
+                    ],
+                    [
+                      11.345674395561216,
+                      46.494097442978195
+                    ],
+                    [
+                      11.346918940544128,
+                      46.49385370294394
+                    ],
+                    [
+                      11.347616314888,
+                      46.4938352377453
+                    ],
+                    [
+                      11.347514390945435,
+                      46.49466985846028
+                    ],
+                    [
+                      11.3456529378891,
+                      46.49461446367692
+                    ]
+                  ]
+                ]
+              }
+            }
+          ]
+        }"""
+
+        geojson_properties_null = """{
+          "type": "FeatureCollection",
+          "features": [
+            {
+              "type": "Feature",
+              "properties": null,
+              "geometry": {
+                "type": "Polygon",
+                "coordinates": [
+                  [
+                    [
+                      11.3456529378891,
+                      46.49461446367692
+                    ],
+                    [
+                      11.345674395561216,
+                      46.494097442978195
+                    ],
+                    [
+                      11.346918940544128,
+                      46.49385370294394
+                    ],
+                    [
+                      11.347616314888,
+                      46.4938352377453
+                    ],
+                    [
+                      11.347514390945435,
+                      46.49466985846028
+                    ],
+                    [
+                      11.3456529378891,
+                      46.49461446367692
+                    ]
+                  ]
+                ]
+              }
+            }
+          ]
+        }"""
+
+        # geoJSON with empty properties
+        gjson_po = json.loads(geojson_properties_object)
+        gdf1 = GeoDataFrame.from_features(gjson_po)
+
+        # geoJSON with null properties
+        gjson_null = json.loads(geojson_properties_null)
+        gdf2 = GeoDataFrame.from_features(gjson_null)
+
+        assert_frame_equal(gdf1, gdf2)
 
     def test_from_features_geom_interface_feature(self):
         class Placemark(object):
@@ -603,7 +752,7 @@ class TestDataFrame:
         geometry = [Point(xy) for xy in zip(df["lon"], df["lat"])]
         gdf = GeoDataFrame(df, geometry=geometry)
         # from_features returns sorted columns
-        expected = gdf[["geometry", "lat", "lon", "name"]]
+        expected = gdf[["geometry", "name", "lat", "lon"]]
 
         # test FeatureCollection
         res = GeoDataFrame.from_features(gdf.__geo_interface__)
@@ -730,12 +879,13 @@ class TestDataFrame:
         assert self.df.crs == unpickled.crs
 
     def test_estimate_utm_crs(self):
-        if PYPROJ_LT_3:
+        if compat.PYPROJ_LT_3:
             with pytest.raises(RuntimeError, match=r"pyproj 3\+ required"):
                 self.df.estimate_utm_crs()
         else:
             assert self.df.estimate_utm_crs() == CRS("EPSG:32618")
-            assert self.df.estimate_utm_crs("NAD83") == CRS("EPSG:26918")
+            if compat.PYPROJ_GE_32:  # result is unstable in older pyproj
+                assert self.df.estimate_utm_crs("NAD83") == CRS("EPSG:26918")
 
     def test_to_wkb(self):
         wkbs0 = [
@@ -774,6 +924,77 @@ class TestDataFrame:
 
         expected_df = pd.DataFrame({"gs0": wkts0, "gs1": wkts1})
         assert_frame_equal(expected_df, gdf.to_wkt())
+
+    @pytest.mark.parametrize("how", ["left", "inner", "right"])
+    @pytest.mark.parametrize("predicate", ["intersects", "within", "contains"])
+    @pytest.mark.skipif(
+        not compat.USE_PYGEOS and not compat.HAS_RTREE,
+        reason="sjoin needs `rtree` or `pygeos` dependency",
+    )
+    def test_sjoin(self, how, predicate):
+        """
+        Basic test for availability of the GeoDataFrame method. Other
+        sjoin tests are located in /tools/tests/test_sjoin.py
+        """
+        left = read_file(geopandas.datasets.get_path("naturalearth_cities"))
+        right = read_file(geopandas.datasets.get_path("naturalearth_lowres"))
+
+        expected = geopandas.sjoin(left, right, how=how, predicate=predicate)
+        result = left.sjoin(right, how=how, predicate=predicate)
+        assert_geodataframe_equal(result, expected)
+
+    @pytest.mark.parametrize("how", ["left", "inner", "right"])
+    @pytest.mark.parametrize("max_distance", [None, 1])
+    @pytest.mark.parametrize("distance_col", [None, "distance"])
+    @pytest.mark.skipif(
+        not TEST_NEAREST,
+        reason=(
+            "PyGEOS >= 0.10.0"
+            " must be installed and activated via the geopandas.compat module to"
+            " test sjoin_nearest"
+        ),
+    )
+    def test_sjoin_nearest(self, how, max_distance, distance_col):
+        """
+        Basic test for availability of the GeoDataFrame method. Other
+        sjoin tests are located in /tools/tests/test_sjoin.py
+        """
+        left = read_file(geopandas.datasets.get_path("naturalearth_cities"))
+        right = read_file(geopandas.datasets.get_path("naturalearth_lowres"))
+
+        expected = geopandas.sjoin_nearest(
+            left, right, how=how, max_distance=max_distance, distance_col=distance_col
+        )
+        result = left.sjoin_nearest(
+            right, how=how, max_distance=max_distance, distance_col=distance_col
+        )
+        assert_geodataframe_equal(result, expected)
+
+    @pytest.mark.skip_no_sindex
+    def test_clip(self):
+        """
+        Basic test for availability of the GeoDataFrame method. Other
+        clip tests are located in /tools/tests/test_clip.py
+        """
+        left = read_file(geopandas.datasets.get_path("naturalearth_cities"))
+        world = read_file(geopandas.datasets.get_path("naturalearth_lowres"))
+        south_america = world[world["continent"] == "South America"]
+
+        expected = geopandas.clip(left, south_america)
+        result = left.clip(south_america)
+        assert_geodataframe_equal(result, expected)
+
+    @pytest.mark.skip_no_sindex
+    def test_overlay(self, dfs, how):
+        """
+        Basic test for availability of the GeoDataFrame method. Other
+        overlay tests are located in tests/test_overlay.py
+        """
+        df1, df2 = dfs
+
+        expected = geopandas.overlay(df1, df2, how=how)
+        result = df1.overlay(df2, how=how)
+        assert_geodataframe_equal(result, expected)
 
 
 def check_geodataframe(df, geometry_column="geometry"):
@@ -930,11 +1151,9 @@ class TestConstructor:
             res = GeoDataFrame(df, geometry="other_geom")
             check_geodataframe(res, "other_geom")
 
-        # when passing GeoDataFrame with custom geometry name to constructor
-        # an invalid geodataframe is the result TODO is this desired ?
+        # gdf from gdf should preserve active geometry column name
         df = GeoDataFrame(gpdf)
-        with pytest.raises(AttributeError):
-            df.geometry
+        check_geodataframe(df, "other_geom")
 
     def test_only_geometry(self):
         exp = GeoDataFrame(

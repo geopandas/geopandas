@@ -88,6 +88,7 @@ stria    AUT    416600.0
     See also
     --------
     overlay : overlay operation resulting in a new geometry
+    GeoDataFrame.sjoin : equivalent method
 
     Notes
     ------
@@ -106,7 +107,7 @@ stria    AUT    416600.0
                 "A non-default value for `predicate` was passed"
                 f' (got `predicate="{predicate}"`'
                 f' in combination with `op="{op}"`).'
-                " The value of `predicate` will be overriden by the value of `op`,"
+                " The value of `predicate` will be overridden by the value of `op`,"
                 " , which may result in unexpected behavior."
                 f"\n{deprecation_message}"
             )
@@ -342,6 +343,7 @@ def _frame_join(join_df, left_df, right_df, how, lsuffix, rsuffix):
             )
             .set_index(index_right)
             .drop(["_key_left", "_key_right"], axis=1)
+            .set_geometry(right_df.geometry.name)
         )
         if isinstance(index_right, list):
             joined.index.names = right_index_name
@@ -372,8 +374,11 @@ def _nearest_query(
         sindex = right_df.sindex
         query = left_df.geometry
     if sindex:
-        res = sindex.nearest_all(
-            query, max_distance=max_distance, return_distance=return_distance
+        res = sindex.nearest(
+            query,
+            return_all=True,
+            max_distance=max_distance,
+            return_distance=return_distance,
         )
         if return_distance:
             (input_idx, tree_idx), distances = res
@@ -412,6 +417,9 @@ def sjoin_nearest(
 
     Results will include multiple output records for a single input record
     where there are multiple equidistant nearest or intersected neighbors.
+
+    Distance is calculated in CRS units and can be returned using the
+    `distance_col` parameter.
 
     See the User Guide page
     https://geopandas.readthedocs.io/en/latest/docs/user_guide/mergingdata.html
@@ -495,10 +503,11 @@ countries_w_city_data[countries_w_city_data["name_left"] == "Italy"]
     See also
     --------
     sjoin : binary predicate joins
+    GeoDataFrame.sjoin_nearest : equivalent method
 
     Notes
     -----
-    Since this join relies on distances, results will be innaccurate
+    Since this join relies on distances, results will be inaccurate
     if your geometries are in a geographic CRS.
 
     Every operation in GeoPandas is planar, i.e. the potential third

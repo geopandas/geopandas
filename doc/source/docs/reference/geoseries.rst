@@ -69,6 +69,7 @@ Set-theoretic Methods
 .. autosummary::
    :toctree: api/
 
+   GeoSeries.clip_by_rect
    GeoSeries.difference
    GeoSeries.intersection
    GeoSeries.symmetric_difference
@@ -143,6 +144,14 @@ Missing values
    GeoSeries.fillna
    GeoSeries.isna
    GeoSeries.notna
+
+Overlay operations
+------------------
+
+.. autosummary::
+   :toctree: api/
+
+   GeoSeries.clip
 
 Plotting
 --------

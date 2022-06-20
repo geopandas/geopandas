@@ -168,18 +168,39 @@ class BaseSpatialIndex:
         """
         raise NotImplementedError
 
-    def nearest(self, geometry):
+    def nearest(
+        self, geometry, return_all=True, max_distance=None, return_distance=False
+    ):
         """
-        Returns the nearest geometry to the input geometries.
+        Return the nearest geometry in the tree for each input geometry in
+        ``geometry``.
 
         .. note::
             ``nearest`` currently only works with PyGEOS >= 0.10.
 
-        Note that if pygeos is not available, geopandas
-        will use rtree for the spatial index, where nearest temporarily has a different
-        function signature to temporarily preserve existing functionality. See the
-        documentation of :meth:`rtree.index.Index.nearest` for the details on the
-        ``rtree``-based implementation.
+            Note that if PyGEOS is not available, geopandas will use rtree
+            for the spatial index, where nearest has a different
+            function signature to temporarily preserve existing
+            functionality. See the documentation of
+            :meth:`rtree.index.Index.nearest` for the details on the
+            ``rtree``-based implementation.
+
+        If multiple tree geometries have the same distance from an input geometry,
+        multiple results will be returned for that input geometry by default.
+        Specify ``return_all=False`` to only get a single nearest geometry
+        (non-deterministic which nearest is returned).
+
+        In the context of a spatial join, input geometries are the "left"
+        geometries that determine the order of the results, and tree geometries
+        are "right" geometries that are joined against the left geometries.
+        If ``max_distance`` is not set, this will effectively be a left join
+        because every geometry in ``geometry`` will have a nearest geometry in
+        the tree. However, if ``max_distance`` is used, this becomes an
+        inner join, since some geometries in ``geometry`` may not have a match
+        in the tree.
+
+        For performance reasons, it is highly recommended that you set
+        the ``max_distance`` parameter.
 
         Parameters
         ----------
@@ -188,12 +209,23 @@ geometries}
             A single shapely geometry, one of the GeoPandas geometry iterables
             (GeoSeries, GeometryArray), or a numpy array of PyGEOS geometries to query
             against the spatial index.
+        return_all : bool, default True
+            If there are multiple equidistant or intersecting nearest
+            geometries, return all those geometries instead of a single
+            nearest geometry.
+        max_distance : float, optional
+            Maximum distance within which to query for nearest items in tree.
+            Must be greater than 0. By default None, indicating no distance limit.
+        return_distance : bool, optional
+            If True, will return distances in addition to indexes. By default False
 
         Returns
         -------
-        matches : ndarray with shape (2, n)
-            The first subarray contains input geometry integer indexes.
-            The second subarray contains tree geometry integer indexes.
+        Indices or tuple of (indices, distances)
+            Indices is an ndarray of shape (2,n) and distances (if present) an
+            ndarray of shape (n).
+            The first subarray of indices contains input geometry indices.
+            The second subarray of indices contains tree geometry indices.
 
         Examples
         --------
@@ -224,51 +256,6 @@ geometries}
         >>> s.sindex.nearest(s2)
         array([[0, 1],
                [8, 9]])
-        """
-        raise NotImplementedError
-
-    def nearest_all(self, geometry, max_distance=None, return_distance=False):
-        """Return the nearest geometry in the tree for each input geometry in
-        ``geometry``.
-
-        If multiple tree geometries have the same distance from an input geometry,
-        multiple results will be returned for that input geometry.
-
-        .. note::
-            ``nearest_all`` currently only works with PyGEOS >= 0.10.
-
-        In the context of a spatial join, input geometries are the “left”
-        geometries that determine the order of the results, and tree geometries
-        are “right” geometries that are joined against the left geometries.
-        If max_distance is not set, this will effectively be a left join
-        because every geometry in ``geometry`` will have a nearest geometry in
-        the tree. However, if ``max_distance`` is used, this becomes an
-        inner join, since some geometries in ``geometry`` may not have a match
-        in the tree.
-
-        For performance reasons, it is highly recommended that you set
-        the ``max_distance`` parameter.
-
-        Parameters
-        ----------
-        geometry : {shapely.geometry, GeoSeries, GeometryArray, numpy.array of PyGEOS \
-geometries}
-            A single shapely geometry, one of the GeoPandas geometry iterables
-            (GeoSeries, GeometryArray), or a numpy array of PyGEOS geometries to query
-            against the spatial index.
-        max_distance : float, optional
-            Maximum distance within which to query for nearest items in tree.
-            Must be greater than 0. By default None, indicating no distance limit.
-        return_distance : bool, optional
-            If True, will return distances in addition to indexes. By default False
-
-        Returns
-        -------
-        Indices or tuple of (indices, distances)
-            Indices is an ndarray of shape (2,n) and distances (if present) an
-            ndarray of shape (n).
-            The first subarray of indices contains input geometry indices.
-            The second subarray of indices contains tree geometry indices.
         """
         raise NotImplementedError
 
@@ -466,7 +453,7 @@ if compat.HAS_RTREE:
 
             # handle empty / invalid geometries
             if geometry is None:
-                # return an empty integer array, similar to pygeys.STRtree.query.
+                # return an empty integer array, similar to pygeos.STRtree.query.
                 return np.array([], dtype=np.intp)
 
             if not isinstance(geometry, BaseGeometry):
@@ -646,7 +633,7 @@ if compat.HAS_PYGEOS:
 
     _PYGEOS_PREDICATES = {p.name for p in pygeos.strtree.BinaryPredicate} | set([None])
 
-    class PyGEOSSTRTreeIndex(pygeos.STRtree):
+    class PyGEOSSTRTreeIndex(BaseSpatialIndex):
         """A simple wrapper around pygeos's STRTree.
 
 
@@ -664,7 +651,7 @@ if compat.HAS_PYGEOS:
             non_empty = geometry.copy()
             non_empty[pygeos.is_empty(non_empty)] = None
             # set empty geometries to None to maintain indexing
-            super().__init__(non_empty)
+            self._tree = pygeos.STRtree(non_empty)
             # store geometries, including empty geometries for user access
             self.geometries = geometry.copy()
 
@@ -700,7 +687,7 @@ if compat.HAS_PYGEOS:
             if isinstance(geometry, BaseGeometry):
                 geometry = array._shapely_to_geom(geometry)
 
-            matches = super().query(geometry=geometry, predicate=predicate)
+            matches = self._tree.query(geometry=geometry, predicate=predicate)
 
             if sort:
                 return np.sort(matches)
@@ -753,7 +740,7 @@ if compat.HAS_PYGEOS:
 
             geometry = self._as_geometry_array(geometry)
 
-            res = super().query_bulk(geometry, predicate)
+            res = self._tree.query_bulk(geometry, predicate)
 
             if sort:
                 # sort by first array (geometry) and then second (tree)
@@ -764,19 +751,40 @@ if compat.HAS_PYGEOS:
             return res
 
         @doc(BaseSpatialIndex.nearest)
-        def nearest(self, geometry):
+        def nearest(
+            self, geometry, return_all=True, max_distance=None, return_distance=False
+        ):
             if not compat.PYGEOS_GE_010:
                 raise NotImplementedError("sindex.nearest requires pygeos >= 0.10")
 
             geometry = self._as_geometry_array(geometry)
-            return super().nearest(geometry)
 
-        @doc(BaseSpatialIndex.nearest_all)
-        def nearest_all(self, geometry, max_distance=None, return_distance=False):
-            geometry = self._as_geometry_array(geometry)
-            return super().nearest_all(
+            if not return_all and max_distance is None and not return_distance:
+                return self._tree.nearest(geometry)
+
+            result = self._tree.nearest_all(
                 geometry, max_distance=max_distance, return_distance=return_distance
             )
+            if return_distance:
+                indices, distances = result
+            else:
+                indices = result
+
+            if not return_all:
+                # first subarray of geometry indices is sorted, so we can use this
+                # trick to get the first of each index value
+                mask = np.diff(indices[0, :]).astype("bool")
+                # always select the first element
+                mask = np.insert(mask, 0, True)
+
+                indices = indices[:, mask]
+                if return_distance:
+                    distances = distances[mask]
+
+            if return_distance:
+                return indices, distances
+            else:
+                return indices
 
         @doc(BaseSpatialIndex.intersection)
         def intersection(self, coordinates):
@@ -796,9 +804,9 @@ if compat.HAS_PYGEOS:
 
             # need to convert tuple of bounds to a geometry object
             if len(coordinates) == 4:
-                indexes = super().query(pygeos.box(*coordinates))
+                indexes = self._tree.query(pygeos.box(*coordinates))
             elif len(coordinates) == 2:
-                indexes = super().query(pygeos.points(*coordinates))
+                indexes = self._tree.query(pygeos.points(*coordinates))
             else:
                 raise TypeError(
                     "Invalid coordinates, must be iterable in format "
@@ -811,9 +819,12 @@ if compat.HAS_PYGEOS:
         @property
         @doc(BaseSpatialIndex.size)
         def size(self):
-            return len(self)
+            return len(self._tree)
 
         @property
         @doc(BaseSpatialIndex.is_empty)
         def is_empty(self):
-            return len(self) == 0
+            return len(self._tree) == 0
+
+        def __len__(self):
+            return len(self._tree)

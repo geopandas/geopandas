@@ -4,16 +4,17 @@ channels:
 dependencies:
   - python=3.8
   # required
-  - pandas=1.3.2  # temporary pin because 1.3.3 has regression for overlay (GH2101)
+  - pandas
   - shapely
   - fiona
   - pyproj
   - pygeos
+  - packaging
   # testing
   - pytest
   - pytest-cov
   - pytest-xdist
-  - fsspec
+  # - fsspec  # to have one non-minimal build without fsspec
   # optional
   - rtree
   - matplotlib
@@ -22,12 +23,6 @@ dependencies:
   - xyzservices
   - scipy
   - geopy
-  # installed in tests.yaml, because not available on windows
-  # - postgis
   - SQLalchemy
-  - psycopg2
   - libspatialite
-  - geoalchemy2
   - pyarrow
-  # doctest testing
-  - pytest-doctestplus

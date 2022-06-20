@@ -60,7 +60,7 @@ Affine transformations
 
 .. method:: GeoSeries.scale(self, xfact=1.0, yfact=1.0, zfact=1.0, origin='center')
 
- Scale the geometries of the :class:`~geopandas.GeoSeries` along each (x, y, z) dimensio.
+ Scale the geometries of the :class:`~geopandas.GeoSeries` along each (x, y, z) dimension.
 
 .. method:: GeoSeries.skew(self, angle, origin='center', use_radians=False)
 
