@@ -26,8 +26,6 @@ dependencies:
   - SQLalchemy
   - libspatialite
   - pyarrow
-  - libgdal
   - pip
   - pip:
-    - git+https://github.com/geopandas/pyogrio.git@main; platform_system != "Windows"
-    - fiona ; platform_system == "Windows"
+    - pyogrio
