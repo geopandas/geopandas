@@ -193,7 +193,7 @@ def test_to_file_datetime(tmpdir, driver, ext, time, engine):
     """Test writing a data file with the datetime column type"""
     if engine == "pyogrio" and time.tzinfo is not None:
         # TODO
-        pytest.skip("pyogrio doens't yet support timezones")
+        pytest.skip("pyogrio doesn't yet support timezones")
     if ext in (".shp", ""):
         pytest.skip(f"Driver corresponding to ext {ext} doesn't support dt fields")
     if time.tzinfo is not None and FIONA_GE_1814 is False:
