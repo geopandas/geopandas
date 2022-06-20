@@ -8,9 +8,9 @@ Highlights of this release:
 
 - GeoParquet support updated to implement
   [v0.4.0](https://github.com/opengeospatial/geoparquet/releases/tag/v0.4.0) of the
-  OpenGeospatial/GeoParquet specification (#2441).Backwards compatibility with v0.1.0 of
+  OpenGeospatial/GeoParquet specification (#2441). Backwards compatibility with v0.1.0 of
   the metadata spec (implemented in the previous releases of GeoPandas) is guaranteed,
-  reading and writing Parquet and Feather files will no longer produce a ``UserWarning``
+  and reading and writing Parquet and Feather files will no longer produce a ``UserWarning``
   (#2327).
 
 New features and improvements:
@@ -19,8 +19,8 @@ New features and improvements:
   lost from the GeoDataFrame. Previously, square bracket indexing ``gdf[[...]]`` returned
   a GeoDataFrame when the active geometry column was retained and a DataFrame was
   returned otherwise. Other pandas indexing methods (``loc``, ``iloc``, etc) did not follow
-  the same rules. The new behaviour for all indexing/ reshaping is (#2329, #2060) is as
-  follows:
+  the same rules. The new behaviour for all indexing/reshaping operations is now as
+  follows (#2329, #2060):
   - If operations produce a ``DataFrame`` containing the active geometry column, a
     GeoDataFrame is returned
   - If operations produce a ``DataFrame`` containing ``GeometryDtype`` columns, but not the
@@ -30,16 +30,17 @@ New features and improvements:
     ``DataFrame`` is returned (this can be upcast again by calling ``set_geometry()`` or the
     ``GeoDataFrame`` constructor)
   - If operations produce a ``Series`` of ``GeometryDtype``, a ``GeoSeries`` is returned,
-    otherwise ``Series`` is returned. Error messages for having an invalid geometry column
+    otherwise ``Series`` is returned.
+  - Error messages for having an invalid geometry column
     have been improved, indicating the name of the last valid active geometry column set
     and whether other geometry columns can be promoted to the active geometry column
     (#2329).
 
 - Datetime fields are now read and written correctly for GIS formats which support them
-(e.g. GPKG, GeoJSON) with fiona 1.8.14 or higher. Previously, datetimes were read as
-strings (#2202).
+  (e.g. GPKG, GeoJSON) with fiona 1.8.14 or higher. Previously, datetimes were read as
+  strings (#2202).
 - ``folium.Map`` keyword arguments can now be specified as the ``map_kwds`` argument to
-  ``GeoDataFrame.explore()`` method.
+  ``GeoDataFrame.explore()`` method (#2315).
 - Add a new parameter ``style_function`` to ``GeoDataFrame.explore()`` to enable plot styling
   based on GeoJSON properties (#2377).
 - It is now possible to write an empty ``GeoDataFrame`` to a file for supported formats
@@ -76,7 +77,7 @@ Deprecations and compatibility notes:
   ``__or__()``, ``__and__()`` and ``__sub__()``, ``geopandas.io.file.read_file``/``to_file`` and
   ``geopandas.io.sql.read_postgis`` now emit ``FutureWarning`` instead of
   ``DeprecationWarning`` and will be completely removed in a future release.
-- ``GeoDataFrame._crs`` is deprecated and will be removed in GeoPandas 0.12 (#2373).
+- Accessing the ``crs`` of a ``GeoDataFrame`` without active geometry column is deprecated and will be removed in GeoPandas 0.12 (#2373).
 
 Bug fixes:
 
@@ -111,7 +112,7 @@ Notes on (optional) dependencies:
 
 - GeoPandas 0.11 drops support for Python 3.7 and pandas 0.25 (the minimum supported
   pandas version is now 1.0.5). Further, the minimum required versions for the listed
-  dependencies have now changed to shapely 1.7, fiona 1. 8.13.post1, pyproj 2.6.1.post1,
+  dependencies have now changed to shapely 1.7, fiona 1.8.13.post1, pyproj 2.6.1.post1,
   matplotlib 3.2, mapclassify 2.4.0 (#2358, #2391)
 
 
