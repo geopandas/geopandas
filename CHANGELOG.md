@@ -6,6 +6,12 @@ Version 0.11 (June 20, 2022)
 
 Highlights of this release:
 
+- The ``geopandas.read_file()`` and `GeoDataFrame.to_file()` methods to read
+  and write GIS file formats can now optionally use the
+  [pyogrio](https://github.com/geopandas/pyogrio/) package under the hood
+  through the ``engine="pyogrio"`` keyword. The pyogrio package implements
+  vectorized IO for GDAL/OGR vector data sources, and is faster compared to
+  the ``fiona``-based engine (#2225).
 - GeoParquet support updated to implement
   [v0.4.0](https://github.com/opengeospatial/geoparquet/releases/tag/v0.4.0) of the
   OpenGeospatial/GeoParquet specification (#2441). Backwards compatibility with v0.1.0 of
