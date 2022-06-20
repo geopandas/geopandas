@@ -35,4 +35,4 @@ dependencies:
   - pytest-doctestplus
   - pip
   - pip:
-    - git+https://github.com/jorisvandenbossche/pyogrio.git@fix-geometry-type-corner-cases
+    - git+https://github.com/geopandas/pyogrio.git@main
