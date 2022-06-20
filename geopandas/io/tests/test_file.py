@@ -110,11 +110,16 @@ driver_ext_pairs = [
 ]
 
 
-def assert_correct_driver(file_path, ext):
+def assert_correct_driver(file_path, ext, engine):
     # check the expected driver
     expected_driver = "ESRI Shapefile" if ext == "" else _EXTENSION_TO_DRIVER[ext]
-    with fiona.open(str(file_path)) as fds:
-        assert fds.driver == expected_driver
+
+    if engine == "fiona":
+        with fiona.open(str(file_path)) as fds:
+            assert fds.driver == expected_driver
+    else:
+        # TODO pyogrio doesn't yet provide a way to check the driver of a file
+        return
 
 
 @pytest.mark.parametrize("driver,ext", driver_ext_pairs)
@@ -137,7 +142,7 @@ def test_to_file(tmpdir, df_nybb, df_null, driver, ext, engine):
     assert len(df) == 2
     assert np.alltrue(df["Name"].values == df_null["Name"])
     # check the expected driver
-    assert_correct_driver(tempfilename, ext)
+    assert_correct_driver(tempfilename, ext, engine)
 
 
 @pytest.mark.parametrize("driver,ext", driver_ext_pairs)
@@ -151,7 +156,7 @@ def test_to_file_pathlib(tmpdir, df_nybb, driver, ext, engine):
     assert len(df) == 5
     assert np.alltrue(df["BoroName"].values == df_nybb["BoroName"])
     # check the expected driver
-    assert_correct_driver(temppath, ext)
+    assert_correct_driver(temppath, ext, engine)
 
 
 @pytest.mark.parametrize("driver,ext", driver_ext_pairs)
@@ -176,7 +181,7 @@ def test_to_file_bool(tmpdir, driver, ext, engine):
             df["col"] = df["col"].astype("int32")
     assert_geodataframe_equal(result, df)
     # check the expected driver
-    assert_correct_driver(tempfilename, ext)
+    assert_correct_driver(tempfilename, ext, engine)
 
 
 TEST_DATE = datetime.datetime(2021, 11, 21, 1, 7, 43, 17500)
@@ -238,7 +243,7 @@ def test_to_file_with_point_z(tmpdir, ext, driver, engine):
     df_read = GeoDataFrame.from_file(tempfilename, engine=engine)
     assert_geoseries_equal(df.geometry, df_read.geometry)
     # check the expected driver
-    assert_correct_driver(tempfilename, ext)
+    assert_correct_driver(tempfilename, ext, engine)
 
 
 @pytest.mark.parametrize("driver,ext", driver_ext_pairs)
@@ -253,7 +258,7 @@ def test_to_file_with_poly_z(tmpdir, ext, driver, engine):
     df_read = GeoDataFrame.from_file(tempfilename, engine=engine)
     assert_geoseries_equal(df.geometry, df_read.geometry)
     # check the expected driver
-    assert_correct_driver(tempfilename, ext)
+    assert_correct_driver(tempfilename, ext, engine)
 
 
 def test_to_file_types(tmpdir, df_points, engine):
@@ -656,7 +661,8 @@ def test_read_file__ignore_geometry(engine):
     assert isinstance(pdf, pd.DataFrame) and not isinstance(pdf, geopandas.GeoDataFrame)
 
 
-def test_read_file__ignore_all_fields():
+def test_read_file__ignore_all_fields(engine):
+    skip_pyogrio_not_supported(engine)  # pyogrio has "columns" keyword instead
     gdf = geopandas.read_file(
         geopandas.datasets.get_path("naturalearth_lowres"),
         ignore_fields=["pop_est", "continent", "name", "iso_a3", "gdp_md_est"],
@@ -769,6 +775,8 @@ def test_read_file_filtered_with_gdf_boundary_mismatched_crs__mask(df_nybb, engi
     "ignore:Layer 'b'test_empty'' does not have any features:UserWarning"
 )
 def test_read_file_empty_shapefile(tmpdir, engine):
+    if engine == "pyogrio" and not fiona:
+        pytest.skip("test requires fiona to work")
     from geopandas.io.file import fiona_env
 
     # create empty shapefile
