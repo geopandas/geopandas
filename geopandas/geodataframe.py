@@ -1126,14 +1126,17 @@ individually so that features may have different properties
         Parameters
         ----------
         filename : string
-            File path or file handle to write to.
+            File path or file handle to write to. The path may specify a
+            GDAL VSI scheme.
         driver : string, default None
             The OGR format driver used to write the vector file.
             If not specified, it attempts to infer it from the file extension.
             If no extension is specified, it saves ESRI Shapefile to a folder.
-        schema : dict, default: None
+        schema : dict, default None
             If specified, the schema dictionary is passed to Fiona to
-            better control how the file is written.
+            better control how the file is written. If None, GeoPandas
+            will determine the schema based on each column's dtype.
+            Not supported for the "pyogrio" engine.
         index : bool, default None
             If True, write index into one or more columns (for MultiIndex).
             Default None writes the index into one or more columns only if
@@ -1142,13 +1145,32 @@ individually so that features may have different properties
 
             .. versionadded:: 0.7
                 Previously the index was not written.
+        mode : string, default 'w'
+            The write mode, 'w' to overwrite the existing file and 'a' to append.
+            Not all drivers support appending. The drivers that support appending
+            are listed in fiona.supported_drivers or
+            https://github.com/Toblerity/Fiona/blob/master/fiona/drvsupport.py
+        crs : pyproj.CRS, default None
+            If specified, the CRS is passed to Fiona to
+            better control how the file is written. If None, GeoPandas
+            will determine the crs based on crs df attribute.
+            The value can be anything accepted
+            by :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
+            such as an authority string (eg "EPSG:4326") or a WKT string.
+        engine : str, "fiona" or "pyogrio"
+            The underlying library that is used to write the file. Currently, the
+            supported options are "fiona" and "pyogrio". Defaults to "fiona" if
+            installed, otherwise tries "pyogrio".
+        **kwargs :
+            Keyword args to be passed to the engine, and can be used to write
+            to multi-layer data, store data within archives (zip files), etc.
+            In case of the "fiona" engine, the keyword arguments are passed to
+            fiona.open`. For more information on possible keywords, type:
+            ``import fiona; help(fiona.open)``. In case of the "pyogrio" engine,
+            the keyword arguments are passed to `pyogrio.write_dataframe`.
 
         Notes
         -----
-        The extra keyword arguments ``**kwargs`` are passed to fiona.open and
-        can be used to write to multi-layer data, store data within archives
-        (zip files), etc.
-
         The format drivers will attempt to detect the encoding of your data, but
         may fail. In this case, the proper encoding can be specified explicitly
         by using the encoding keyword parameter, e.g. ``encoding='utf-8'``.

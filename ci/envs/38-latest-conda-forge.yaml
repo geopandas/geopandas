@@ -6,7 +6,8 @@ dependencies:
   # required
   - pandas
   - shapely
-  - fiona
+  # - fiona  # build with only pyogrio
+  - libgdal
   - pyproj
   - pygeos
   - packaging
@@ -26,3 +27,6 @@ dependencies:
   - SQLalchemy
   - libspatialite
   - pyarrow
+  - pip
+  - pip:
+    - pyogrio

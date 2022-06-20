@@ -20,6 +20,7 @@ def nybb_polydf():
     nybb_polydf = nybb_polydf.set_geometry("myshapes")
     nybb_polydf["manhattan_bronx"] = 5
     nybb_polydf.loc[3:4, "manhattan_bronx"] = 6
+    nybb_polydf["BoroCode"] = nybb_polydf["BoroCode"].astype("int64")
     return nybb_polydf
 
 
