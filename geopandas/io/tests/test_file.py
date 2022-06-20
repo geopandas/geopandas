@@ -621,10 +621,6 @@ def test_read_file_filtered__rows_slice(df_nybb, engine):
     "ignore:Layer does not support OLC_FASTFEATURECOUNT:RuntimeWarning"
 )  # for the slice with -1
 def test_read_file_filtered__rows_bbox(df_nybb, engine):
-    if engine == "pyogrio":
-        # TODO(pyogrio) the problem is that because of the bbox filtering, the
-        # row slice is out of bounds -> pyogrio fails on that
-        pytest.xfail("pyogrio does not support bbox / rows combo")
     nybb_filename = geopandas.datasets.get_path("nybb")
     bbox = (
         1031051.7879884212,
@@ -632,16 +628,33 @@ def test_read_file_filtered__rows_bbox(df_nybb, engine):
         1047224.3104931959,
         244317.30894023244,
     )
-    # combination bbox and rows (rows slice applied after bbox filtering!)
-    filtered_df = read_file(
-        nybb_filename, bbox=bbox, rows=slice(4, None), engine=engine
-    )
-    assert filtered_df.empty
-    filtered_df = read_file(
-        nybb_filename, bbox=bbox, rows=slice(-1, None), engine=engine
-    )
-    filtered_df["BoroCode"] = filtered_df["BoroCode"].astype("int64")
-    assert_geodataframe_equal(filtered_df, df_nybb.iloc[4:, :].reset_index(drop=True))
+    if engine == "pyogrio":
+        with pytest.raises(ValueError, match="'skip_features' must be between 0 and 1"):
+            # combination bbox and rows (rows slice applied after bbox filtering!)
+            filtered_df = read_file(
+                nybb_filename, bbox=bbox, rows=slice(4, None), engine=engine
+            )
+    else:  # fiona
+        # combination bbox and rows (rows slice applied after bbox filtering!)
+        filtered_df = read_file(
+            nybb_filename, bbox=bbox, rows=slice(4, None), engine=engine
+        )
+        assert filtered_df.empty
+
+    if engine == "pyogrio":
+        # TODO: support negative rows in pyogrio
+        with pytest.raises(ValueError, match="'skip_features' must be between 0 and 1"):
+            filtered_df = read_file(
+                nybb_filename, bbox=bbox, rows=slice(-1, None), engine=engine
+            )
+    else:
+        filtered_df = read_file(
+            nybb_filename, bbox=bbox, rows=slice(-1, None), engine=engine
+        )
+        filtered_df["BoroCode"] = filtered_df["BoroCode"].astype("int64")
+        assert_geodataframe_equal(
+            filtered_df, df_nybb.iloc[4:, :].reset_index(drop=True)
+        )
 
 
 def test_read_file_filtered_rows_invalid(engine):
