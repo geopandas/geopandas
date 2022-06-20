@@ -53,6 +53,67 @@ def _import_fiona():
             fiona_import_error = str(err)
 
 
+pyogrio = None
+pyogrio_import_error = None
+
+
+def _import_pyogrio():
+    global pyogrio
+    global pyogrio_import_error
+
+    if pyogrio is None:
+        try:
+            import pyogrio
+        except ImportError as err:
+            pyogrio = False
+            pyogrio_import_error = str(err)
+
+
+def _check_fiona(func):
+    if fiona is None:
+        raise ImportError(
+            f"the {func} requires the 'fiona' package, but it is not installed or does "
+            f"not import correctly.\nImporting fiona resulted in: {fiona_import_error}"
+        )
+
+
+def _check_pyogrio(func):
+    if pyogrio is None:
+        raise ImportError(
+            f"the {func} requires the 'pyogrio' package, but it is not installed "
+            "or does not import correctly."
+            "\nImporting pyogrio resulted in: {pyogrio_import_error}"
+        )
+
+
+def _check_engine(engine, func):
+    # default to "fiona" if installed, otherwise try pyogrio
+    if engine is None:
+        _import_fiona()
+        if fiona:
+            engine = "fiona"
+        else:
+            _import_pyogrio()
+            if pyogrio:
+                engine = "pyogrio"
+
+    if engine == "fiona":
+        _import_fiona()
+        _check_fiona(func)
+    elif engine == "pyogrio":
+        _import_pyogrio()
+        _check_pyogrio(func)
+    elif engine is None:
+        raise ImportError(
+            f"The {func} requires the 'pyogrio' or 'fiona' package, "
+            "but neither is installed or imports correctly."
+            f"\nImporting fiona resulted in: {fiona_import_error}"
+            f"\nImporting pyogrio resulted in: {pyogrio_import_error}"
+        )
+
+    return engine
+
+
 _EXTENSION_TO_DRIVER = {
     ".bna": "BNA",
     ".dxf": "DXF",
@@ -83,14 +144,6 @@ def _expand_user(path):
     elif isinstance(path, Path):
         path = path.expanduser()
     return path
-
-
-def _check_fiona(func):
-    if fiona is None:
-        raise ImportError(
-            f"the {func} requires the 'fiona' package, but it is not installed or does "
-            f"not import correctly.\nImporting fiona resulted in: {fiona_import_error}"
-        )
 
 
 def _is_url(url):
@@ -180,17 +233,7 @@ def _read_file(filename, bbox=None, mask=None, rows=None, engine=None, **kwargs)
     may fail. In this case, the proper encoding can be specified explicitly
     by using the encoding keyword parameter, e.g. ``encoding='utf-8'``.
     """
-    # default to "fiona" if installed, otherwise try pyogrio
-    if engine is None:
-        _import_fiona()
-        if fiona:
-            engine = "fiona"
-        else:
-            engine = "pyogrio"
-
-    if engine == "fiona":
-        _import_fiona()
-        _check_fiona("'read_file' function")
+    engine = _check_engine(engine, "'read_file' function")
 
     filename = _expand_user(filename)
 
@@ -450,17 +493,7 @@ def _to_file(
     may fail. In this case, the proper encoding can be specified explicitly
     by using the encoding keyword parameter, e.g. ``encoding='utf-8'``.
     """
-    # default to "fiona" if installed, otherwise try pyogrio
-    if engine is None:
-        _import_fiona()
-        if fiona:
-            engine = "fiona"
-        else:
-            engine = "pyogrio"
-
-    if engine == "fiona":
-        _import_fiona()
-        _check_fiona("'to_file' method")
+    engine = _check_engine(engine, "'to_file' method")
 
     filename = _expand_user(filename)
 

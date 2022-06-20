@@ -371,7 +371,7 @@ def test_to_file_crs(tmpdir, engine):
     assert df.crs == "epsg:2263"
 
 
-def test_to_file_column_len(tmpdir, df_points):
+def test_to_file_column_len(tmpdir, df_points, engine):
     """
     Ensure that a warning about truncation is given when a geodataframe with
     column names longer than 10 characters is saved to shapefile
@@ -384,7 +384,7 @@ def test_to_file_column_len(tmpdir, df_points):
     with pytest.warns(
         UserWarning, match="Column names longer than 10 characters will be truncated"
     ):
-        df.to_file(tempfilename, driver="ESRI Shapefile")
+        df.to_file(tempfilename, driver="ESRI Shapefile", engine=engine)
 
 
 def test_to_file_with_duplicate_columns(tmpdir, engine):
@@ -838,7 +838,7 @@ class FileNumber(object):
 @pytest.mark.parametrize(
     "driver,ext", [("ESRI Shapefile", "shp"), ("GeoJSON", "geojson")]
 )
-def test_write_index_to_file(tmpdir, df_points, driver, ext):
+def test_write_index_to_file(tmpdir, df_points, driver, ext, engine):
     fngen = FileNumber(tmpdir, "check", ext)
 
     def do_checks(df, index_is_used):
@@ -867,8 +867,8 @@ def test_write_index_to_file(tmpdir, df_points, driver, ext):
 
         # check GeoDataFrame with default index=None to autodetect
         tempfilename = next(fngen)
-        df.to_file(tempfilename, driver=driver, index=None)
-        df_check = read_file(tempfilename)
+        df.to_file(tempfilename, driver=driver, index=None, engine=engine)
+        df_check = read_file(tempfilename, engine=engine)
         if len(other_cols) == 0:
             expected_cols = driver_col[:]
         else:
@@ -880,8 +880,8 @@ def test_write_index_to_file(tmpdir, df_points, driver, ext):
 
         # similar check on GeoSeries with index=None
         tempfilename = next(fngen)
-        df.geometry.to_file(tempfilename, driver=driver, index=None)
-        df_check = read_file(tempfilename)
+        df.geometry.to_file(tempfilename, driver=driver, index=None, engine=engine)
+        df_check = read_file(tempfilename, engine=engine)
         if index_is_used:
             expected_cols = index_cols + ["geometry"]
         else:
@@ -890,20 +890,20 @@ def test_write_index_to_file(tmpdir, df_points, driver, ext):
 
         # check GeoDataFrame with index=True
         tempfilename = next(fngen)
-        df.to_file(tempfilename, driver=driver, index=True)
-        df_check = read_file(tempfilename)
+        df.to_file(tempfilename, driver=driver, index=True, engine=engine)
+        df_check = read_file(tempfilename, engine=engine)
         assert list(df_check.columns) == index_cols + other_cols + ["geometry"]
 
         # similar check on GeoSeries with index=True
         tempfilename = next(fngen)
-        df.geometry.to_file(tempfilename, driver=driver, index=True)
-        df_check = read_file(tempfilename)
+        df.geometry.to_file(tempfilename, driver=driver, index=True, engine=engine)
+        df_check = read_file(tempfilename, engine=engine)
         assert list(df_check.columns) == index_cols + ["geometry"]
 
         # check GeoDataFrame with index=False
         tempfilename = next(fngen)
-        df.to_file(tempfilename, driver=driver, index=False)
-        df_check = read_file(tempfilename)
+        df.to_file(tempfilename, driver=driver, index=False, engine=engine)
+        df_check = read_file(tempfilename, engine=engine)
         if len(other_cols) == 0:
             expected_cols = driver_col + ["geometry"]
         else:
@@ -912,8 +912,8 @@ def test_write_index_to_file(tmpdir, df_points, driver, ext):
 
         # similar check on GeoSeries with index=False
         tempfilename = next(fngen)
-        df.geometry.to_file(tempfilename, driver=driver, index=False)
-        df_check = read_file(tempfilename)
+        df.geometry.to_file(tempfilename, driver=driver, index=False, engine=engine)
+        df_check = read_file(tempfilename, engine=engine)
         assert list(df_check.columns) == driver_col + ["geometry"]
 
         return
