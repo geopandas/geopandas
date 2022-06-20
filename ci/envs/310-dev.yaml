@@ -28,7 +28,7 @@ dependencies:
     # dev versions of packages
     - --pre --extra-index https://pypi.anaconda.org/scipy-wheels-nightly/simple
     - numpy
-    - pandas
+    - git+https://github.com/pandas-dev/pandas.git@main
     - git+https://github.com/matplotlib/matplotlib.git@main
     # - git+https://github.com/Toblerity/Shapely.git@main
     - git+https://github.com/pygeos/pygeos.git@master
