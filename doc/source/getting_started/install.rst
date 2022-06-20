@@ -93,12 +93,10 @@ as well::
     installed correctly.
 
     - `fiona`_ provides binary wheels with the dependencies included for Mac and Linux,
-      but not for Windows.
+      but not for Windows. Alternatively, you can install `pyogrio`_ which does
+      have wheels for Windows.
     - `pyproj`_, `rtree`_, and `shapely`_ provide binary wheels with dependencies included
       for Mac, Linux, and Windows.
-    - Windows wheels for `shapely`, `fiona`, `pyproj` and `rtree`
-      can be found at `Christopher Gohlke's website
-      <https://www.lfd.uci.edu/~gohlke/pythonlibs/>`_.
 
     Depending on your platform, you might need to compile and install their
     C dependencies manually. We refer to the individual packages for more
@@ -146,6 +144,7 @@ Required dependencies:
 
 Further, optional dependencies are:
 
+- `pyogrio`_ (optional; experimental alternative for fiona)
 - `rtree`_ (optional; spatial index to improve performance and required for
   overlay operations; interface to `libspatialindex`_)
 - `psycopg2`_ (optional; for PostGIS connection)
@@ -211,6 +210,8 @@ More specifically, whether the speedups are used or not is determined by:
 .. _shapely: https://shapely.readthedocs.io
 
 .. _fiona: https://fiona.readthedocs.io
+
+.. _pyogrio: https://pyogrio.readthedocs.io
 
 .. _matplotlib: http://matplotlib.org
 
