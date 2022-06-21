@@ -380,6 +380,7 @@ GON (((180.00000 -16.06713, 180.00000...
         elif (
             pd.api.types.is_object_dtype(gdf[column])
             or pd.api.types.is_bool_dtype(gdf[column])
+            or pd.api.types.is_string_dtype(gdf[column])
             or categories
         ):
             categorical = True

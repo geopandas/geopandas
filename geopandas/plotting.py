@@ -736,6 +736,7 @@ GON (((-122.84000 49.00000, -120.0000...
     elif (
         pd.api.types.is_object_dtype(values.dtype)
         or pd.api.types.is_bool_dtype(values.dtype)
+        or pd.api.types.is_string_dtype(values.dtype)
         or categories
     ):
         categorical = True
