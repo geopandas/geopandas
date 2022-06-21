@@ -86,7 +86,7 @@ def test_grid(data, size, spacing, tile, seed):
         elif size is None:
             n_specified = 100
         elif data.type in ("Polygon", "MultiPolygon"):
-            n_specified = size ** 2
+            n_specified = size**2
         else:
             n_specified = size
         assert (len(sample.geoms) - n_specified) <= 1, (

@@ -63,7 +63,7 @@ def test_grid(
     if size is not None:
         n_obs = clipped.shape[0]
         if tile == "square":
-            implied_size = size ** 2 if isinstance(size, int) else (size[0] * size[1])
+            implied_size = size**2 if isinstance(size, int) else (size[0] * size[1])
             assert n_obs <= implied_size, (
                 f"The clipped grid is not smaller than "
                 f"the implied size: {n_obs} !< {implied_size}"

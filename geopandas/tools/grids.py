@@ -151,7 +151,7 @@ def _hex_points(size, bounds, spacing, flat=True):
         spacing = (x_step + y_step) / 2
 
     # build a hexcircle big enough to cover the bounds
-    bounds_diagonal = numpy.sqrt(x_range ** 2 + y_range ** 2)
+    bounds_diagonal = numpy.sqrt(x_range**2 + y_range**2)
 
     hex_radius = numpy.ceil(bounds_diagonal / 2 / spacing)
     hex_circle = _hexgrid_circle(hex_radius, flat=flat)
@@ -197,7 +197,7 @@ def _squaregrid_circle(radius, flat=True):
     rotation = numpy.eye(2) if flat else numpy.array([[1, 1], [-1, 1]])
 
     rotated = (rotation @ all_locs.T).T
-    mask = (rotated ** 2).sum(axis=1) <= (radius ** 2)
+    mask = (rotated**2).sum(axis=1) <= (radius**2)
     return rotated[mask]
 
 
