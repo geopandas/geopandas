@@ -407,7 +407,7 @@ class TestPointPlotting:
 
     def test_string_category_plot(self):
         df = self.df.copy()
-        df["string"] = pd.array([1, 2, 3, 4, 5] * 2, dtype="string")
+        df["string"] = pd.array(["1", "2", "3", "4", "5"] * 2, dtype="string")
         df.plot("string", legend=True)
 
     def test_missing(self):
