@@ -733,7 +733,11 @@ GON (((-122.84000 49.00000, -120.0000...
                 "Cannot specify 'categories' when column has categorical dtype"
             )
         categorical = True
-    elif values.dtype is np.dtype("O") or categories:
+    elif (
+        pd.api.types.is_object_dtype(values.dtype)
+        or pd.api.types.is_bool_dtype(values.dtype)
+        or categories
+    ):
         categorical = True
 
     nan_idx = np.asarray(pd.isna(values), dtype="bool")
