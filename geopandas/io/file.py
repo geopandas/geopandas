@@ -292,15 +292,19 @@ def _read_file_fiona(
 
     with fiona_env():
         with reader(path_or_bytes, **kwargs) as features:
-
-            # In a future Fiona release the crs attribute of features will
-            # no longer be a dict, but will behave like a dict. So this should
-            # be forwards compatible
-            crs = (
-                features.crs["init"]
-                if features.crs and "init" in features.crs
-                else features.crs_wkt
-            )
+            crs = features.crs_wkt
+            # attempt to get EPSG code
+            try:
+                # fiona 1.9+
+                epsg = features.crs.to_epsg(confidence_threshold=100)
+                if epsg is not None:
+                    crs = epsg
+            except AttributeError:
+                # fiona <= 1.8
+                try:
+                    crs = features.crs["init"]
+                except (TypeError, KeyError):
+                    pass
 
             # handle loading the bounding box
             if bbox is not None:
