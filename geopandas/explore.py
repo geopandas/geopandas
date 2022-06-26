@@ -490,16 +490,33 @@ GON (((180.00000 -16.06713, 180.00000...
 
             style_function = _style_color
         else:  # assign new column
+            # allow for matplotlib color abbreviations, e.g. "r" for "red"
+            def plt_color(c):
+                def hex_c(c):
+                    return (
+                        colors.to_hex(c)
+                        if isinstance(c, str)
+                        and colors.is_color_like(c)
+                        and not c[0] == "#"
+                        else c
+                    )
+
+                return (
+                    [hex_c(c_) for c_ in c]
+                    if pd.api.types.is_list_like(c)
+                    else hex_c(c)
+                )
+
             if isinstance(gdf, geopandas.GeoSeries):
                 gdf = geopandas.GeoDataFrame(geometry=gdf)
 
             if nan_idx is not None and nan_idx.any():
                 nan_color = missing_kwds.pop("color", None)
 
-                gdf["__folium_color"] = nan_color
-                gdf.loc[~nan_idx, "__folium_color"] = color
+                gdf["__folium_color"] = plt_color(nan_color)
+                gdf.loc[~nan_idx, "__folium_color"] = plt_color(color)
             else:
-                gdf["__folium_color"] = color
+                gdf["__folium_color"] = plt_color(color)
 
             stroke_color = style_kwds.pop("color", None)
             if not stroke_color:
@@ -521,7 +538,7 @@ GON (((180.00000 -16.06713, 180.00000...
                 def _style_stroke(x):
                     base_style = {
                         "fillColor": x["properties"]["__folium_color"],
-                        "color": stroke_color,
+                        "color": plt_color(stroke_color),
                         **style_kwds,
                     }
                     return {

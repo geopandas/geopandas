@@ -111,7 +111,11 @@ class TestExplore:
         # single named color
         m = self.nybb.explore(color="red")
         out_str = self._fetch_map_string(m)
-        assert '"fillColor":"red"' in out_str
+        assert '"fillColor":"#ff0000"' in out_str
+        # abbreviated color
+        m = self.nybb.explore(color="r")
+        out_str = self._fetch_map_string(m)
+        assert '"fillColor":"#ff0000"' in out_str
 
         # list of colors
         colors = ["#333333", "#367324", "#95824f", "#fcaa00", "#ffcc33"]
@@ -131,7 +135,7 @@ class TestExplore:
         # line GeoSeries
         m4 = self.nybb.boundary.explore(color="red")
         out_str = self._fetch_map_string(m4)
-        assert '"fillColor":"red"' in out_str
+        assert '"fillColor":"#ff0000"' in out_str
 
     def test_choropleth_linear(self):
         """Check choropleth colors"""
@@ -315,7 +319,7 @@ class TestExplore:
         out_str = self._fetch_map_string(m)
         assert '"fillColor":"orange","fillOpacity":0.1,"weight":0.5' in out_str
         m = self.world.explore(column="pop_est", style_kwds=dict(color="black"))
-        assert '"color":"black"' in self._fetch_map_string(m)
+        assert '"color":"#000000"' in self._fetch_map_string(m)
 
         # custom style_function - geopandas/issues/2350
         m = self.world.explore(
@@ -527,10 +531,10 @@ class TestExplore:
         assert '"fillColor":null' in self._fetch_map_string(m)
 
         m = self.missing.explore("pop_est", missing_kwds=dict(color="red"))
-        assert '"fillColor":"red"' in self._fetch_map_string(m)
+        assert '"fillColor":"#ff0000"' in self._fetch_map_string(m)
 
         m = self.missing.explore("continent", missing_kwds=dict(color="red"))
-        assert '"fillColor":"red"' in self._fetch_map_string(m)
+        assert '"fillColor":"#ff0000"' in self._fetch_map_string(m)
 
     def test_categorical_legend(self):
         m = self.world.explore("continent", legend=True)
