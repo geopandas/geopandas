@@ -1,6 +1,17 @@
 Changelog
 =========
 
+Development version
+-------------------
+
+New features and improvements:
+
+Deprecations and compatibility notes:
+
+Bug fixes:
+
+Notes on (optional) dependencies:
+
 Version 0.11 (June 20, 2022)
 ----------------------------
 
