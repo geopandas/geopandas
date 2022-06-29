@@ -231,6 +231,23 @@ def test_to_file_datetime(tmpdir, driver, ext, time, engine):
         assert_series_equal(df["b"], df_read["b"])
 
 
+def test_read_file_mixed_datetimes(tmpdir):
+    tempfilename = os.path.join(str(tmpdir), "test_mixed_datetime.geojson")
+    points = [Point(1, 1), Point(1, 1)]
+    df = GeoDataFrame(
+        {
+            "date": [
+                "2014-08-26 10:01:23.040001+02:00",
+                "2019-03-07 17:31:43.118999+01:00",
+            ],
+        },
+        geometry=points,
+    )
+    df.to_file(tempfilename)
+    res = read_file(tempfilename)  # check mixed tz don't crash GH2478
+    assert res["date"].dtype == "object"
+
+
 @pytest.mark.parametrize("driver,ext", driver_ext_pairs)
 def test_to_file_with_point_z(tmpdir, ext, driver, engine):
     """Test that 3D geometries are retained in writes (GH #612)."""

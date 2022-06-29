@@ -9,6 +9,8 @@ New features and improvements:
 Deprecations and compatibility notes:
 
 Bug fixes:
+- Fix a crash in datetime column reading where the file contains mixed timezone
+  offsets (#2479).
 
 Notes on (optional) dependencies:
 
