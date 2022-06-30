@@ -108,14 +108,11 @@ class TestExplore:
 
     def test_simple_color(self):
         """Check color settings"""
-        # single named color
-        m = self.nybb.explore(color="red")
-        out_str = self._fetch_map_string(m)
-        assert '"fillColor":"#ff0000"' in out_str
-        # abbreviated color
-        m = self.nybb.explore(color="r")
-        out_str = self._fetch_map_string(m)
-        assert '"fillColor":"#ff0000"' in out_str
+        # multiple ways to define red
+        for c in ["r", "red", "#ff0000", (1, 0, 0), (1, 0, 0, 1)]:
+            m = self.nybb.explore(color=c)
+            out_str = self._fetch_map_string(m)
+            assert '"fillColor":"#ff0000"' in out_str
 
         # list of colors
         colors = ["#333333", "#367324", "#95824f", "#fcaa00", "#ffcc33"]

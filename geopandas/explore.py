@@ -491,19 +491,23 @@ GON (((180.00000 -16.06713, 180.00000...
             style_function = _style_color
         else:  # assign new column
             # allow for matplotlib color abbreviations, e.g. "r" for "red"
+            # plus allow colors to be defined as RGB(A) tuples e.g. (1,0,0)
             def plt_color(c):
                 def hex_c(c):
                     return (
                         colors.to_hex(c)
-                        if isinstance(c, str)
+                        if (
+                            (isinstance(c, str) and not c[0] == "#")
+                            or isinstance(c, tuple)
+                        )
                         and colors.is_color_like(c)
-                        and not c[0] == "#"
                         else c
                     )
 
                 return (
                     [hex_c(c_) for c_ in c]
                     if pd.api.types.is_list_like(c)
+                    and not (isinstance(c, tuple) and len(c) in (3, 4))
                     else hex_c(c)
                 )
 
