@@ -1,5 +1,7 @@
 from statistics import mean
 
+from matplotlib.colors import is_color_like
+
 import geopandas
 from shapely.geometry import LineString
 import numpy as np
@@ -81,8 +83,8 @@ def _explore(
                     return "green"
                 return "red"
 
-    color : str, array-like (default None)
-        Named color or a list-like of colors (named or hex).
+    color : `color <https://matplotlib.org/stable/tutorials/colors/colors.html>`_, array-like (default None)
+        `matplotlib` compatible color, or list-like of colors 
     m : folium.Map (default None)
         Existing map instance on which to draw the plot.
     tiles : str, xyzservices.TileProvider (default 'OpenStreetMap Mapnik')
@@ -170,7 +172,7 @@ def _explore(
         stroke : bool (default True)
             Whether to draw stroke along the path. Set it to ``False`` to
             disable borders on polygons or circles.
-        color : str
+        color : `color <https://matplotlib.org/stable/tutorials/colors/colors.html>`_
             Stroke color
         weight : int
             Stroke width in pixels
@@ -494,20 +496,23 @@ GON (((180.00000 -16.06713, 180.00000...
             # plus allow colors to be defined as RGB(A) tuples e.g. (1,0,0)
             def plt_color(c):
                 def hex_c(c):
-                    return (
-                        colors.to_hex(c)
-                        if (
-                            (isinstance(c, str) and not c[0] == "#")
-                            or isinstance(c, tuple)
-                        )
+                    # if color is a tuple or RGBA string include alpha
+                    alpha = isinstance(c, tuple) or (
+                        isinstance(c, str)
+                        and c[0] == "#"
+                        and len(c) == 9
                         and colors.is_color_like(c)
+                    )
+                    return (
+                        colors.to_hex(c, keep_alpha=alpha)
+                        if colors.is_color_like(c)
                         else c
                     )
 
                 return (
                     [hex_c(c_) for c_ in c]
                     if pd.api.types.is_list_like(c)
-                    and not (isinstance(c, tuple) and len(c) in (3, 4))
+                    and not (isinstance(c, tuple) and colors.is_color_like(c))
                     else hex_c(c)
                 )
 

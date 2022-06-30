@@ -109,10 +109,22 @@ class TestExplore:
     def test_simple_color(self):
         """Check color settings"""
         # multiple ways to define red
-        for c in ["r", "red", "#ff0000", (1, 0, 0), (1, 0, 0, 1)]:
+        for c, expected in zip(
+            [
+                "r",
+                "red",
+                "#ff0000",
+                "#f00",
+                "#ff0000ff",
+                (1, 0, 0, 1),
+                (1, 0, 0),
+                "xkcd:red",
+            ],
+            ["#ff0000"] * 4 + ["#ff0000ff"] * 3 + ["#e50000"],
+        ):
             m = self.nybb.explore(color=c)
             out_str = self._fetch_map_string(m)
-            assert '"fillColor":"#ff0000"' in out_str
+            assert f'"fillColor":"{expected}"' in out_str
 
         # list of colors
         colors = ["#333333", "#367324", "#95824f", "#fcaa00", "#ffcc33"]
