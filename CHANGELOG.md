@@ -1,7 +1,19 @@
 Changelog
 =========
 
-- #2471 Enable **matplotlib** color abbreviations to be passed as `color`, `style_kwds` and `missing_kwds` paramters to `explore()`.  For example `r` for `red`.   [matplotlib colors](https://matplotlib.org/2.0.1/api/colors_api.html#matplotlib.colors.is_color_like)
+Development version
+-------------------
+
+New features and improvements:
+- #2471 Enable **matplotlib** color abbreviations to be passed as `color`, `style_kwds` 
+  and `missing_kwds` parameters to `explore()`.  For example `r` for `red`. 
+  [matplotlib colors](https://matplotlib.org/2.0.1/api/colors_api.html#matplotlib.colors.is_color_like)
+
+Deprecations and compatibility notes:
+
+Bug fixes:
+
+Notes on (optional) dependencies:
 
 Version 0.11 (June 20, 2022)
 ----------------------------
