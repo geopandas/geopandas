@@ -81,8 +81,9 @@ def _explore(
                     return "green"
                 return "red"
 
-    color : `color <https://matplotlib.org/stable/tutorials/colors/colors.html>`_, array-like (default None)
-        `matplotlib` compatible color, or list-like of colors 
+    color : `color <https://matplotlib.org/stable/tutorials/colors/colors.html>`_,
+        array-like (default None)
+            `matplotlib` compatible color, or list-like of colors
     m : folium.Map (default None)
         Existing map instance on which to draw the plot.
     tiles : str, xyzservices.TileProvider (default 'OpenStreetMap Mapnik')
@@ -880,8 +881,9 @@ def _explore_geoseries(
 
     Parameters
     ----------
-    color : str, array-like (default None)
-        Named color or a list-like of colors (named or hex).
+    color : `color <https://matplotlib.org/stable/tutorials/colors/colors.html>`_,
+        array-like (default None)
+            `matplotlib` compatible color, or list-like of colors
     m : folium.Map (default None)
         Existing map instance on which to draw the plot.
     tiles : str, xyzservices.TileProvider (default 'OpenStreetMap Mapnik')
