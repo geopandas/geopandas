@@ -1,7 +1,5 @@
 from statistics import mean
 
-from matplotlib.colors import is_color_like
-
 import geopandas
 from shapely.geometry import LineString
 import numpy as np
