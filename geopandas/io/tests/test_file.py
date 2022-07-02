@@ -251,6 +251,7 @@ def test_read_file_mixed_datetimes(tmpdir):
     with open(tempfilename, "w") as f:
         print(GEOSJON_WITH_MIXED_TIMEZONES, file=f)
     res = read_file(tempfilename)  # check mixed tz don't crash GH2478
+    print(res)
     assert res["date"].dtype == "object"
 
 
