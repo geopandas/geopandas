@@ -10,6 +10,7 @@ import numpy as np
 import pandas as pd
 
 import pytz
+from pandas.core.dtypes.common import is_datetime64_any_dtype
 from pandas.testing import assert_series_equal
 from shapely.geometry import Point, Polygon, box
 
@@ -251,8 +252,12 @@ def test_read_file_mixed_datetimes(tmpdir):
     with open(tempfilename, "w") as f:
         print(GEOSJON_WITH_MIXED_TIMEZONES, file=f)
     res = read_file(tempfilename)  # check mixed tz don't crash GH2478
-    print(res)
-    assert res["date"].dtype == "object"
+    if FIONA_GE_1814:
+        # cannot represent mixed timezones as datetime type
+        assert res["date"].dtype == "object"
+    else:
+        # old fiona and pyogrio ignore timezones and read as datetimes successfully
+        assert is_datetime64_any_dtype(res["date"])
 
 
 @pytest.mark.parametrize("driver,ext", driver_ext_pairs)
