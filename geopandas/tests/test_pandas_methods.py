@@ -657,6 +657,11 @@ def test_df_apply_returning_series(df):
     assert_series_equal(result, df["value1"].rename(None))
 
 
+def test_df_apply_all_nan_dtype(df):
+    result = df.apply(lambda x: float("NaN"), axis=1)
+    assert result.dtype == "float64"
+
+
 def test_preserve_attrs(df):
     # https://github.com/geopandas/geopandas/issues/1654
     df.attrs["name"] = "my_name"
