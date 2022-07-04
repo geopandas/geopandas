@@ -22,7 +22,12 @@ def _get_throttle_time(provider):
         return 0
 
 
-def geocode(strings, provider=None, **kwargs):
+def geocode(
+    strings,
+    provider: str | "geopy.geocoder" = None,
+    throttle_time: int | float = None,
+    **kwargs
+):
     """
     Geocode a set of strings and get a GeoDataFrame of the resulting points.
 
@@ -62,12 +67,19 @@ def geocode(strings, provider=None, **kwargs):
 
     if provider is None:
         provider = "photon"
-    throttle_time = _get_throttle_time(provider)
+
+    if throttle_time is None:
+        throttle_time = _get_throttle_time(provider)
 
     return _query(strings, True, provider, throttle_time, **kwargs)
 
 
-def reverse_geocode(points, provider=None, **kwargs):
+def reverse_geocode(
+    points,
+    provider: str | "geopy.geocoder" = None,
+    throttle_time: int | float = None,
+    **kwargs,
+):
     """
     Reverse geocode a set of points and get a GeoDataFrame of the resulting
     addresses.
@@ -113,7 +125,9 @@ def reverse_geocode(points, provider=None, **kwargs):
 
     if provider is None:
         provider = "photon"
-    throttle_time = _get_throttle_time(provider)
+
+    if throttle_time is None:
+        throttle_time = _get_throttle_time(provider)
 
     return _query(points, False, provider, throttle_time, **kwargs)
 
