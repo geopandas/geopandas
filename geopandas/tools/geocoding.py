@@ -28,7 +28,7 @@ def geocode(
     provider: str | "geopy.geocoder" = None,
     throttle_time: int | float = None,
     **kwargs,
-):
+) -> geopandas.GeoDataFrame:
     """
     Geocode a set of strings and get a GeoDataFrame of the resulting points.
 
@@ -74,7 +74,7 @@ def reverse_geocode(
     provider: str | "geopy.geocoder" = None,
     throttle_time: int | float = None,
     **kwargs,
-):
+) -> geopandas.GeoDataFrame:
     """
     Reverse geocode a set of points and get a GeoDataFrame of the resulting
     addresses.
