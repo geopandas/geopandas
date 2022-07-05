@@ -129,6 +129,8 @@ def _query(data, forward, provider, throttle_time, **kwargs):
 
     if provider is None:
         provider = "photon"
+    if isinstance(provider, str):
+        provider = get_geocoder_for_service(provider)
 
     if throttle_time is None:
         throttle_time = _get_throttle_time(provider)
@@ -137,9 +139,6 @@ def _query(data, forward, provider, throttle_time, **kwargs):
         data = pd.Series(data)
     elif not isinstance(data, geopandas.GeoSeries):
         data = geopandas.GeoSeries(data)
-
-    if isinstance(provider, str):
-        provider = get_geocoder_for_service(provider)
 
     coder = provider(**kwargs)
     transform = coder.geocode if forward else coder.reverse
