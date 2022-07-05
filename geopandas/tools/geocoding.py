@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from collections import defaultdict
 
 import pandas as pd
@@ -64,12 +66,6 @@ def geocode(
     1  POINT (-77.03651 38.89766)  1600 Pennsylvania Ave NW, Washington, DC 20006...
     """
 
-    if provider is None:
-        provider = "photon"
-
-    if throttle_time is None:
-        throttle_time = _get_throttle_time(provider)
-
     return _query(strings, True, provider, throttle_time, **kwargs)
 
 
@@ -122,12 +118,6 @@ def reverse_geocode(
     1  POINT (-77.03641 38.89766)  1600 Pennsylvania Ave NW, Washington, DC 20006...
     """
 
-    if provider is None:
-        provider = "photon"
-
-    if throttle_time is None:
-        throttle_time = _get_throttle_time(provider)
-
     return _query(points, False, provider, throttle_time, **kwargs)
 
 
@@ -136,6 +126,12 @@ def _query(data, forward, provider, throttle_time, **kwargs):
     from geopy.extra.rate_limiter import RateLimiter
     from geopy.geocoders import get_geocoder_for_service
     from geopy.geocoders.base import GeocoderQueryError
+
+    if provider is None:
+        provider = "photon"
+
+    if throttle_time is None:
+        throttle_time = _get_throttle_time(provider)
 
     if forward and not isinstance(data, pd.Series):
         data = pd.Series(data)
