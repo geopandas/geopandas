@@ -24,7 +24,7 @@ def _get_throttle_time(provider):
 
 
 def geocode(
-    strings,
+    strings: list[str] | pd.Series,
     provider: str | "geopy.geocoder" = None,
     throttle_time: int | float = None,
     **kwargs,
@@ -70,7 +70,7 @@ def geocode(
 
 
 def reverse_geocode(
-    points,
+    points: list[Point] | geopandas.GeoSeries,
     provider: str | "geopy.geocoder" = None,
     throttle_time: int | float = None,
     **kwargs,
