@@ -145,7 +145,6 @@ def _query(data, forward, provider, throttle_time, **kwargs):
     if isinstance(provider, str):
         provider = get_geocoder_for_service(provider)
 
-
     coder = provider(**kwargs)
     transform = coder.geocode if forward else coder.reverse
     transform = RateLimiter(transform, min_delay_seconds=throttle_time)
@@ -153,10 +152,7 @@ def _query(data, forward, provider, throttle_time, **kwargs):
     results = {}
     for i, s in data.items():
         try:
-            if forward:
-                results[i] = transform(s)
-            else:
-                results[i] = transform((s.y, s.x), exactly_one=True)
+            results[i] = transform(s) if forward else transform((s.y, s.x))
         except (GeocoderQueryError, ValueError):
             results[i] = (None, None)
 
