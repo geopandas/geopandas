@@ -39,6 +39,7 @@ dependencies:
   - libpysal=4.5.1
   - pygeos=0.10.2
   - xyzservices=2021.9.1
+  - packaging=21.0
   - pip
   - pip:
       - sphinx-toggleprompt

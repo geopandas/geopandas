@@ -7,7 +7,7 @@ import tempfile
 import numpy as np
 from numpy.testing import assert_array_equal
 import pandas as pd
-from pandas.util.testing import assert_index_equal
+from pandas.testing import assert_index_equal
 
 from pyproj import CRS
 from shapely.geometry import (
@@ -21,13 +21,15 @@ from shapely.geometry import (
 from shapely.geometry.base import BaseGeometry
 
 from geopandas import GeoSeries, GeoDataFrame, read_file, datasets, clip
-from geopandas._compat import PYPROJ_LT_3, ignore_shapely2_warnings
+from geopandas._compat import ignore_shapely2_warnings
 from geopandas.array import GeometryArray, GeometryDtype
 from geopandas.testing import assert_geoseries_equal
 
 from geopandas.tests.util import geom_equals
 from pandas.testing import assert_series_equal
 import pytest
+
+import geopandas._compat as compat
 
 
 class TestSeries:
@@ -205,27 +207,28 @@ class TestSeries:
             self.landmarks.to_crs(crs=None, epsg=None)
 
     def test_estimate_utm_crs__geographic(self):
-        if PYPROJ_LT_3:
+        if compat.PYPROJ_LT_3:
             with pytest.raises(RuntimeError, match=r"pyproj 3\+ required"):
                 self.landmarks.estimate_utm_crs()
         else:
             assert self.landmarks.estimate_utm_crs() == CRS("EPSG:32618")
-            assert self.landmarks.estimate_utm_crs("NAD83") == CRS("EPSG:26918")
+            if compat.PYPROJ_GE_32:  # result is unstable in older pyproj
+                assert self.landmarks.estimate_utm_crs("NAD83") == CRS("EPSG:26918")
 
-    @pytest.mark.skipif(PYPROJ_LT_3, reason="requires pyproj 3 or higher")
+    @pytest.mark.skipif(compat.PYPROJ_LT_3, reason="requires pyproj 3 or higher")
     def test_estimate_utm_crs__projected(self):
         assert self.landmarks.to_crs("EPSG:3857").estimate_utm_crs() == CRS(
             "EPSG:32618"
         )
 
-    @pytest.mark.skipif(PYPROJ_LT_3, reason="requires pyproj 3 or higher")
+    @pytest.mark.skipif(compat.PYPROJ_LT_3, reason="requires pyproj 3 or higher")
     def test_estimate_utm_crs__out_of_bounds(self):
         with pytest.raises(RuntimeError, match="Unable to determine UTM CRS"):
             GeoSeries(
                 [Polygon([(0, 90), (1, 90), (2, 90)])], crs="EPSG:4326"
             ).estimate_utm_crs()
 
-    @pytest.mark.skipif(PYPROJ_LT_3, reason="requires pyproj 3 or higher")
+    @pytest.mark.skipif(compat.PYPROJ_LT_3, reason="requires pyproj 3 or higher")
     def test_estimate_utm_crs__missing_crs(self):
         with pytest.raises(RuntimeError, match="crs must be set"):
             GeoSeries([Polygon([(0, 90), (1, 90), (2, 90)])]).estimate_utm_crs()
@@ -379,15 +382,6 @@ class TestSeries:
         assert_geoseries_equal(expected, GeoSeries.from_xy(x, y, z))
 
 
-def test_missing_values_empty_warning():
-    s = GeoSeries([Point(1, 1), None, np.nan, BaseGeometry(), Polygon()])
-    with pytest.warns(UserWarning):
-        s.isna()
-
-    with pytest.warns(UserWarning):
-        s.notna()
-
-
 @pytest.mark.filterwarnings("ignore::UserWarning")
 def test_missing_values():
     s = GeoSeries([Point(1, 1), None, np.nan, BaseGeometry(), Polygon()])
@@ -412,7 +406,7 @@ def test_missing_values():
 
 
 def test_isna_empty_geoseries():
-    # ensure that isna() result for emtpy GeoSeries has the correct bool dtype
+    # ensure that isna() result for empty GeoSeries has the correct bool dtype
     s = GeoSeries([])
     result = s.isna()
     assert_series_equal(result, pd.Series([], dtype="bool"))
@@ -470,21 +464,15 @@ class TestConstructor:
             for x in gs:
                 assert x.equals(g)
 
-    def test_no_geometries_fallback(self):
-        with pytest.warns(FutureWarning):
-            s = GeoSeries([True, False, True])
-        assert not isinstance(s, GeoSeries)
-        assert type(s) == pd.Series
+    def test_non_geometry_raises(self):
+        with pytest.raises(TypeError, match="Non geometry data passed to GeoSeries"):
+            GeoSeries([True, False, True])
 
-        with pytest.warns(FutureWarning):
-            s = GeoSeries(["a", "b", "c"])
-        assert not isinstance(s, GeoSeries)
-        assert type(s) == pd.Series
+        with pytest.raises(TypeError, match="Non geometry data passed to GeoSeries"):
+            GeoSeries(["a", "b", "c"])
 
-        with pytest.warns(FutureWarning):
-            s = GeoSeries([[1, 2], [3, 4]])
-        assert not isinstance(s, GeoSeries)
-        assert type(s) == pd.Series
+        with pytest.raises(TypeError, match="Non geometry data passed to GeoSeries"):
+            GeoSeries([[1, 2], [3, 4]])
 
     def test_empty(self):
         s = GeoSeries([])
@@ -500,7 +488,6 @@ class TestConstructor:
     def test_empty_array(self):
         # with empty data that have an explicit dtype, we use the fallback or
         # not depending on the dtype
-        arr = np.array([], dtype="bool")
 
         # dtypes that can never hold geometry-like data
         for arr in [
@@ -510,10 +497,10 @@ class TestConstructor:
             # this gets converted to object dtype by pandas
             # np.array([], dtype="str"),
         ]:
-            with pytest.warns(FutureWarning):
-                s = GeoSeries(arr)
-            assert not isinstance(s, GeoSeries)
-            assert type(s) == pd.Series
+            with pytest.raises(
+                TypeError, match="Non geometry data passed to GeoSeries"
+            ):
+                GeoSeries(arr)
 
         # dtypes that can potentially hold geometry-like data (object) or
         # can come from empty data (float64)
@@ -544,13 +531,38 @@ class TestConstructor:
         assert s.index is g.index
 
     # GH 1216
-    def test_expanddim(self):
+    @pytest.mark.parametrize("name", [None, "geometry", "Points"])
+    @pytest.mark.parametrize("crs", [None, "epsg:4326"])
+    def test_reset_index(self, name, crs):
         s = GeoSeries(
-            [MultiPoint([(0, 0), (1, 1)]), MultiPoint([(2, 2), (3, 3), (4, 4)])]
+            [MultiPoint([(0, 0), (1, 1)]), MultiPoint([(2, 2), (3, 3), (4, 4)])],
+            name=name,
+            crs=crs,
         )
         s = s.explode(index_parts=True)
         df = s.reset_index()
         assert type(df) == GeoDataFrame
+        # name None -> 0, otherwise name preserved
+        assert df.geometry.name == (name if name is not None else 0)
+        assert df.crs == s.crs
+
+    @pytest.mark.parametrize("name", [None, "geometry", "Points"])
+    @pytest.mark.parametrize("crs", [None, "epsg:4326"])
+    def test_to_frame(self, name, crs):
+        s = GeoSeries([Point(0, 0), Point(1, 1)], name=name, crs=crs)
+        df = s.to_frame()
+        assert type(df) == GeoDataFrame
+        # name None -> 0, otherwise name preserved
+        expected_name = name if name is not None else 0
+        assert df.geometry.name == expected_name
+        assert df._geometry_column_name == expected_name
+        assert df.crs == s.crs
+
+        # if name is provided to to_frame, it should override
+        df2 = s.to_frame(name="geom")
+        assert type(df) == GeoDataFrame
+        assert df2.geometry.name == "geom"
+        assert df2.crs == s.crs
 
     def test_explode_without_multiindex(self):
         s = GeoSeries(
@@ -566,7 +578,6 @@ class TestConstructor:
         )
         s = s.explode(ignore_index=True)
         expected_index = pd.Index(range(len(s)))
-        print(expected_index)
         assert_index_equal(s.index, expected_index)
 
         # index_parts is ignored if ignore_index=True
