@@ -9,10 +9,9 @@ New features and improvements:
 Deprecations and compatibility notes:
 
 -   The `version` parameter for the `to_feather` and `to_parquet` methods has
-    been replaced with `schema_version` because `version` is a parameter to the
-    underlying parquet writer. It will no longer be used by GeoPandas in a
-    future version. In the interim, `version` will be passed to the parquet
-    writer unless it is one of 0.1.0 or 0.4.0.
+    been replaced with `schema_version`.  `version` will be passed directly to
+    underlying feather or parquet writer. `version` will only be used to set
+    `schema_version` if `version is one of 0.1.0 or 0.4.0 (#2496).
 
 Bug fixes:
 

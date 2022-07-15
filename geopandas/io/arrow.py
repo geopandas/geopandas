@@ -286,16 +286,14 @@ def _to_parquet(
     )
 
     if kwargs and "version" in kwargs and kwargs["version"] is not None:
-        warnings.warn(
-            "the `version` parameter has been replaced with `schema_version` "
-            "and will be removed in a future release.  It will instead be "
-            "passed to the underlying parquet writer.  If it is 0.1.0 or 0.4.0 "
-            "it will temporarily be used for this method and not passed to the "
-            "parquet writer.",
-            FutureWarning,
-            stacklevel=2,
-        )
         if schema_version is None and kwargs["version"] in SUPPORTED_VERSIONS:
+            warnings.warn(
+                "the `version` parameter has been replaced with `schema_version`. "
+                "`version` will instead be passed directly to the underlying "
+                "parquet writer unless `version` is 0.1.0 or 0.4.0.",
+                FutureWarning,
+                stacklevel=2,
+            )
             schema_version = kwargs.pop("version")
 
     path = _expand_user(path)
@@ -344,16 +342,14 @@ def _to_feather(df, path, index=None, compression=None, schema_version=None, **k
         raise ImportError("pyarrow >= 0.17 required for Feather support")
 
     if kwargs and "version" in kwargs and kwargs["version"] is not None:
-        warnings.warn(
-            "the `version` parameter has been replaced with `schema_version` "
-            "and will be removed in a future release.  It will instead be "
-            "passed to the underlying feather writer.  If it is 0.1.0 or 0.4.0 "
-            "it will temporarily be used for this method and not passed to the "
-            "feather writer.",
-            FutureWarning,
-            stacklevel=2,
-        )
         if schema_version is None and kwargs["version"] in SUPPORTED_VERSIONS:
+            warnings.warn(
+                "the `version` parameter has been replaced with `schema_version`. "
+                "`version` will instead be passed directly to the underlying "
+                "feather writer unless `version` is 0.1.0 or 0.4.0.",
+                FutureWarning,
+                stacklevel=2,
+            )
             schema_version = kwargs.pop("version")
 
     path = _expand_user(path)

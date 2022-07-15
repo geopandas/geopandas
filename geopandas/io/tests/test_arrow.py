@@ -696,21 +696,26 @@ def test_write_deprecated_version_parameter(tmpdir, format, version):
     gdf = geopandas.GeoDataFrame(geometry=[box(0, 0, 10, 10)], crs="EPSG:4326")
     write = getattr(gdf, f"to_{format}")
 
-    with pytest.warns(
-        FutureWarning,
-        match="the `version` parameter has been replaced with `schema_version`",
-    ):
+    if version in SUPPORTED_VERSIONS:
+        with pytest.warns(
+            FutureWarning,
+            match="the `version` parameter has been replaced with `schema_version`",
+        ):
+            write(filename, version=version)
+
+    else:
+        # no warning raised if not one of the captured versions
         write(filename, version=version)
 
-        table = read_table(filename)
-        metadata = json.loads(table.schema.metadata[b"geo"])
+    table = read_table(filename)
+    metadata = json.loads(table.schema.metadata[b"geo"])
 
-        if version in SUPPORTED_VERSIONS:
-            # version is captured as a parameter
-            assert metadata["version"] == version
-        else:
-            # version is passed to underlying writer
-            assert metadata["version"] == METADATA_VERSION
+    if version in SUPPORTED_VERSIONS:
+        # version is captured as a parameter
+        assert metadata["version"] == version
+    else:
+        # version is passed to underlying writer
+        assert metadata["version"] == METADATA_VERSION
 
 
 @pytest.mark.parametrize("version", ["0.1.0", "0.4.0"])
