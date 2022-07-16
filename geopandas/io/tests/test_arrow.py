@@ -679,6 +679,40 @@ def test_write_read_default_crs(tmpdir, format):
 
 
 @pytest.mark.parametrize(
+    "format,schema_version", product(["feather", "parquet"], [None] + SUPPORTED_VERSIONS)
+)
+def test_write_spec_version(tmpdir, format, schema_version):
+    if format == "feather":
+        from pyarrow.feather import read_table
+
+    else:
+        from pyarrow.parquet import read_table
+
+    filename = os.path.join(str(tmpdir), f"test.{format}")
+    gdf = geopandas.GeoDataFrame(geometry=[box(0, 0, 10, 10)], crs="EPSG:4326")
+    write = getattr(gdf, f"to_{format}")
+    write(filename, schema_version=schema_version)
+
+    # ensure that we can roundtrip data regardless of version
+    read = getattr(geopandas, f"read_{format}")
+    df = read(filename)
+    assert_geodataframe_equal(df, gdf)
+
+    table = read_table(filename)
+    metadata = json.loads(table.schema.metadata[b"geo"])
+    assert metadata["version"] == schema_version or METADATA_VERSION
+
+    # verify that CRS is correctly handled between versions
+    if schema_version == "0.1.0":
+        assert metadata["columns"]["geometry"]["crs"] == gdf.crs.to_wkt()
+
+    else:
+        crs_expected = gdf.crs.to_json_dict()
+        _remove_id_from_member_of_ensembles(crs_expected)
+        assert metadata["columns"]["geometry"]["crs"] == crs_expected
+
+
+@pytest.mark.parametrize(
     "format,version", product(["feather", "parquet"], [None] + SUPPORTED_VERSIONS)
 )
 def test_write_deprecated_version_parameter(tmpdir, format, version):
