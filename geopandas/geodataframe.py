@@ -996,7 +996,7 @@ individually so that features may have different properties
         return df
 
     def to_parquet(
-        self, path, index=None, compression="snappy", version=None, **kwargs
+        self, path, index=None, compression="snappy", schema_version=None, **kwargs
     ):
         """Write a GeoDataFrame to the Parquet format.
 
@@ -1026,7 +1026,7 @@ individually so that features may have different properties
             output except `RangeIndex` which is stored as metadata only.
         compression : {'snappy', 'gzip', 'brotli', None}, default 'snappy'
             Name of the compression to use. Use ``None`` for no compression.
-        version : {'0.1.0', '0.4.0', None}
+        schema_version : {'0.1.0', '0.4.0', None}
             GeoParquet specification version; if not provided will default to
             latest supported version.
         kwargs
@@ -1056,10 +1056,17 @@ individually so that features may have different properties
         from geopandas.io.arrow import _to_parquet
 
         _to_parquet(
-            self, path, compression=compression, index=index, version=version, **kwargs
+            self,
+            path,
+            compression=compression,
+            index=index,
+            schema_version=schema_version,
+            **kwargs,
         )
 
-    def to_feather(self, path, index=None, compression=None, version=None, **kwargs):
+    def to_feather(
+        self, path, index=None, compression=None, schema_version=None, **kwargs
+    ):
         """Write a GeoDataFrame to the Feather format.
 
         Any geometry columns present are serialized to WKB format in the file.
@@ -1089,7 +1096,7 @@ individually so that features may have different properties
         compression : {'zstd', 'lz4', 'uncompressed'}, optional
             Name of the compression to use. Use ``"uncompressed"`` for no
             compression. By default uses LZ4 if available, otherwise uncompressed.
-        version : {'0.1.0', '0.4.0', None}
+        schema_version : {'0.1.0', '0.4.0', None}
             GeoParquet specification version; if not provided will default to
             latest supported version.
         kwargs
@@ -1110,7 +1117,12 @@ individually so that features may have different properties
         from geopandas.io.arrow import _to_feather
 
         _to_feather(
-            self, path, index=index, compression=compression, version=version, **kwargs
+            self,
+            path,
+            index=index,
+            compression=compression,
+            schema_version=schema_version,
+            **kwargs,
         )
 
     def to_file(self, filename, driver=None, schema=None, index=None, **kwargs):
