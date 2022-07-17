@@ -10,6 +10,10 @@ Deprecations and compatibility notes:
 
 Bug fixes:
 
+- Fix regression (RecursionError) in reshape methods such as ``unstack()``
+  and ``pivot()`` involving MultiIndex, or GeoDataFrame construction with
+  MultiIndex (#2486).
+
 Notes on (optional) dependencies:
 
 Version 0.11 (June 20, 2022)
