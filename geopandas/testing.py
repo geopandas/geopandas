@@ -328,9 +328,12 @@ def assert_geodataframe_equal(
                 check_crs=check_crs,
             )
 
+    # ensure the active geometry column is the same
+    assert left._geometry_column_name == right._geometry_column_name
+
     # drop geometries and check remaining columns
-    left2 = left.drop([left._geometry_column_name], axis=1)
-    right2 = right.drop([right._geometry_column_name], axis=1)
+    left2 = left.select_dtypes(exclude="geometry")
+    right2 = right.select_dtypes(exclude="geometry")
     assert_frame_equal(
         left2,
         right2,
