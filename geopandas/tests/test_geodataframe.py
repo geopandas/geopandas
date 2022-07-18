@@ -1220,6 +1220,25 @@ class TestConstructor:
         with pytest.raises(ValueError):
             GeoDataFrame(df3, geometry="geom")
 
+    @pytest.mark.parametrize("dtype", ["geometry", "object"])
+    def test_multiindex_with_geometry_label(self, dtype):
+        # DataFrame with MultiIndex where "geometry" label corresponds to
+        # multiple columns
+        df = pd.DataFrame([[Point(0, 0), Point(1, 1)], [Point(2, 2), Point(3, 3)]])
+        df = df.astype(dtype)
+        df.columns = pd.MultiIndex.from_product([["geometry"], [0, 1]])
+        # don't error in constructor
+        gdf = GeoDataFrame(df)
+        # Getting the .geometry column gives GeoDataFrame for both columns
+        # (but with first MultiIndex level removed)
+        # TODO should this give an error instead?
+        result = gdf.geometry
+        assert result.shape == gdf.shape
+        assert result.columns.tolist() == [0, 1]
+        assert_frame_equal(result, gdf["geometry"])
+        result = gdf[["geometry"]]
+        assert_frame_equal(result, gdf if dtype == "geometry" else pd.DataFrame(gdf))
+
 
 def test_geodataframe_crs():
     gdf = GeoDataFrame(columns=["geometry"])
