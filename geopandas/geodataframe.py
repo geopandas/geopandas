@@ -1829,7 +1829,7 @@ individually so that features may have different properties
             exploded_geom.index.droplevel(-1)
         )
         df[exploded_geom.name] = exploded_geom.values
-        df = df.set_geometry(self._geometry_column_name)
+        df = df.set_geometry(self._geometry_column_name).__finalize__(self)
 
         if ignore_index:
             df.reset_index(inplace=True, drop=True)
