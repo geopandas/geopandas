@@ -1825,12 +1825,16 @@ individually so that features may have different properties
 
         exploded_geom = self.geometry.reset_index(drop=True).explode(index_parts=True)
 
-        df = GeoDataFrame(
-            self.drop(self._geometry_column_name, axis=1).take(
-                exploded_geom.index.droplevel(-1)
-            ),
-            geometry=exploded_geom.values,
-        ).__finalize__(self)
+        df = (
+            GeoDataFrame(
+                self.drop(self._geometry_column_name, axis=1).take(
+                    exploded_geom.index.droplevel(-1)
+                ),
+                geometry=exploded_geom.values,
+            )
+            .rename(columns={"geometry": self._geometry_column_name})  # GH2501
+            .__finalize__(self)
+        )
 
         if ignore_index:
             df.reset_index(inplace=True, drop=True)

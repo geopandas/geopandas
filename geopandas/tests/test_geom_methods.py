@@ -1220,6 +1220,15 @@ class TestGeomMethods:
         )
         assert_geodataframe_equal(test_df, expected_df)
 
+    @pytest.mark.parametrize("geom_col", ["geom", "geometry"])
+    def test_explode_geometry_name(self, geom_col):
+        s = GeoSeries([MultiPoint([Point(1, 2), Point(2, 3)]), Point(5, 5)])
+        df = GeoDataFrame({"col": [1, 2], geom_col: s}, geometry=geom_col)
+        test_df = df.explode(index_parts=True)
+
+        assert test_df.geometry.name == geom_col
+        assert test_df.geometry.name == test_df._geometry_column_name
+
     #
     # Test '&', '|', '^', and '-'
     #
