@@ -662,9 +662,7 @@ def test_pivot(df):
     # pivot failing due to creating a MultiIndex
     result = df.pivot(columns="value1")
     expected = GeoDataFrame(pd.DataFrame(df).pivot(columns="value1"))
-    # TODO assert_geodataframe_equal crashes
-    assert isinstance(result, GeoDataFrame)
-    assert_frame_equal(result, expected)
+    assert_geodataframe_equal(result, expected)
 
 
 def test_preserve_attrs(df):
