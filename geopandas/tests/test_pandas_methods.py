@@ -657,6 +657,16 @@ def test_df_apply_returning_series(df):
     assert_series_equal(result, df["value1"].rename(None))
 
 
+def test_pivot(df):
+    # https://github.com/geopandas/geopandas/issues/2057
+    # pivot failing due to creating a MultiIndex
+    result = df.pivot(columns="value1")
+    expected = GeoDataFrame(pd.DataFrame(df).pivot(columns="value1"))
+    # TODO assert_geodataframe_equal crashes
+    assert isinstance(result, GeoDataFrame)
+    assert_frame_equal(result, expected)
+
+
 def test_preserve_attrs(df):
     # https://github.com/geopandas/geopandas/issues/1654
     df.attrs["name"] = "my_name"
