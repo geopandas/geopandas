@@ -1229,6 +1229,15 @@ class TestGeomMethods:
         assert test_df.geometry.name == geom_col
         assert test_df.geometry.name == test_df._geometry_column_name
 
+    def test_explode_geometry_name_two_geoms(self):
+        s = GeoSeries([MultiPoint([Point(1, 2), Point(2, 3)]), Point(5, 5)])
+        df = GeoDataFrame({"col": [1, 2], "geom": s, "geometry": s}, geometry="geom")
+        test_df = df.explode(index_parts=True)
+
+        assert test_df.geometry.name == "geom"
+        assert test_df.geometry.name == test_df._geometry_column_name
+        assert "geometry" in test_df.columns
+
     #
     # Test '&', '|', '^', and '-'
     #
