@@ -232,6 +232,56 @@ def test_to_file_datetime(tmpdir, driver, ext, time, engine):
         assert_series_equal(df["b"], df_read["b"])
 
 
+dt_exts = ["gpkg", "geojson"]
+
+
+@pytest.mark.parametrize("dt_ext", dt_exts)
+def test_read_file_invalid_datetime(tmpdir, dt_ext):
+    # https://github.com/geopandas/geopandas/issues/2502
+    tempfilename = os.path.join(str(tmpdir), f"test_invalid_datetime.{dt_ext}")
+    df = GeoDataFrame(
+        {
+            "date": [
+                "2014-08-26T10:01:23",
+                "2014-08-26T10:01:23",
+                "9999-99-99T00:00:00",  # invalid date handled by GDAL
+            ],
+            "geometry": [Point(1, 1), Point(1, 1), Point(1, 1)],
+        }
+    )
+    # Schema not required for GeoJSON since not typed, but needed for GPKG
+    schema = {"geometry": "Point", "properties": {"date": "datetime"}}
+    df.to_file(tempfilename, schema=schema)
+    res = read_file(tempfilename)
+    if dt_ext == "gpkg":
+        assert is_datetime64_any_dtype(res["date"])
+        assert pd.isna(res["date"].iloc[-1])
+    else:
+        assert res["date"].dtype == "object"
+
+
+@pytest.mark.parametrize("dt_ext", dt_exts)
+def test_read_file_pandas_invalid_datetime(tmpdir, dt_ext):
+    # https://github.com/geopandas/geopandas/issues/2502
+    tempfilename = os.path.join(str(tmpdir), f"test_mixed_datetime.{dt_ext}")
+    df = GeoDataFrame(
+        {
+            "date": [
+                "2014-08-26T10:01:23",
+                "2014-08-26T10:01:23",
+                "9999-12-31T00:00:00",  # year outside pandas valid range
+            ],
+            "geometry": [Point(1, 1), Point(1, 1), Point(1, 1)],
+        }
+    )
+    # Schema not required for GeoJSON since not typed, but needed for GPKG
+    schema = {"geometry": "Point", "properties": {"date": "datetime"}}
+    df.to_file(tempfilename, schema=schema)
+    res = read_file(tempfilename)
+    # Pandas invalid datetimes are read in as object dtype
+    assert res["date"].dtype == "object"
+
+
 def test_read_file_mixed_datetimes(tmpdir):
     tempfilename = os.path.join(str(tmpdir), "test_mixed_datetime.geojson")
     df = GeoDataFrame(

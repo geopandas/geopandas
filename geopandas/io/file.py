@@ -343,7 +343,7 @@ def _read_file_fiona(
             for k in datetime_fields:
                 # fiona only supports up to ms precision, any microseconds are
                 # floating point rounding error
-                as_dt = pd.to_datetime(df[k])
+                as_dt = pd.to_datetime(df[k], errors="ignore")
                 # # if to_datetime succeeded, (i.e. not mixed timezone offsets)
                 if not (as_dt.dtype == "object"):
                     df[k] = as_dt.dt.round(freq="ms")
