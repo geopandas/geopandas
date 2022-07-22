@@ -1509,16 +1509,16 @@ individually so that features may have different properties
                 if self.crs is not None and result.crs is None:
                     result.set_crs(self.crs, inplace=True)
         elif isinstance(result, Series) and result.dtype == "object":
-            # Reconstruct series GeometryDtype if lost by apply
-            try:
-                # if all none, assert list of nones is more likely than list of
-                # null geometry.
-                if not result.isna().all():
+            # Try reconstruct series GeometryDtype if lost by apply
+            # If all none and object dtype assert list of nones is more likely
+            # intended than list of null geometry.
+            if not result.isna().all():
+                try:    
                     # not enough info about func to preserve CRS
                     result = _ensure_geometry(result)
 
-            except TypeError:
-                pass
+                except TypeError:
+                    pass
 
         return result
 
