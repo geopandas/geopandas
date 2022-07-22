@@ -11,7 +11,8 @@ Deprecations and compatibility notes:
 Bug fixes:
 - Fix a crash in datetime column reading where the file contains mixed timezone
   offsets (#2479).
-
+- Fix a crash in datetime column reading where the file contains datetimes
+  outside the range supported by [ns] precision (#2505).
 Notes on (optional) dependencies:
 
 Version 0.11 (June 20, 2022)
