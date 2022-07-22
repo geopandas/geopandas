@@ -232,25 +232,18 @@ def test_to_file_datetime(tmpdir, driver, ext, time, engine):
         assert_series_equal(df["b"], df_read["b"])
 
 
-GEOSJON_WITH_MIXED_TIMEZONES = """
-{
-"type": "FeatureCollection",
-"features": [
-{ "type": "Feature", "properties": {
-                    "date": "2014-08-26 10:01:23.040001+02:00" },
-                    "geometry": { "type": "Point", "coordinates": [ 1.0, 1.0 ] } },
-{ "type": "Feature", "properties": {
-                    "date": "2019-03-07 17:31:43.118999+01:00" },
-                    "geometry": { "type": "Point", "coordinates": [ 1.0, 1.0 ] } }
-            ]
-}
-"""
-
-
 def test_read_file_mixed_datetimes(tmpdir):
     tempfilename = os.path.join(str(tmpdir), "test_mixed_datetime.geojson")
-    with open(tempfilename, "w") as f:
-        print(GEOSJON_WITH_MIXED_TIMEZONES, file=f)
+    df = GeoDataFrame(
+        {
+            "date": [
+                "2014-08-26 10:01:23.040001+02:00",
+                "2019-03-07 17:31:43.118999+01:00",
+            ],
+            "geometry": [Point(1, 1), Point(1, 1)],
+        }
+    )
+    df.to_file(tempfilename)
     res = read_file(tempfilename)  # check mixed tz don't crash GH2478
     if FIONA_GE_1814:
         # cannot represent mixed timezones as datetime type
