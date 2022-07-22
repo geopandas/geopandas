@@ -1513,7 +1513,7 @@ individually so that features may have different properties
             # If all none and object dtype assert list of nones is more likely
             # intended than list of null geometry.
             if not result.isna().all():
-                try:    
+                try:
                     # not enough info about func to preserve CRS
                     result = _ensure_geometry(result)
 
