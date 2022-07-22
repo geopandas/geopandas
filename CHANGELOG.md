@@ -10,7 +10,7 @@ Deprecations and compatibility notes:
 
 Bug fixes:
 - Fix a crash in datetime column reading where the file contains mixed timezone
-  offsets (#2479).
+  offsets (#2479). These will be read as UTC localized values.
 
 Notes on (optional) dependencies:
 

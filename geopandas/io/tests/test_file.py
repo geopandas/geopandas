@@ -245,9 +245,10 @@ def test_read_file_mixed_datetimes(tmpdir):
     )
     df.to_file(tempfilename)
     res = read_file(tempfilename)  # check mixed tz don't crash GH2478
+    assert is_datetime64_any_dtype(res["date"])
     if FIONA_GE_1814:
-        # cannot represent mixed timezones as datetime type
-        assert res["date"].dtype == "object"
+        # Convert mixed timezones to UTC equivalent
+        assert res["date"].dt.tz == pytz.utc
     else:
         # old fiona and pyogrio ignore timezones and read as datetimes successfully
         assert is_datetime64_any_dtype(res["date"])
