@@ -40,6 +40,7 @@ try:
 except ImportError:
     fiona = False
     FIONA_GE_1814 = False
+    FIONA_GE_1821 = False
 
 
 PYOGRIO_MARK = pytest.mark.skipif(not pyogrio, reason="pyogrio not installed")
