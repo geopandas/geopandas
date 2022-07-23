@@ -237,27 +237,35 @@ def test_to_file_datetime(tmpdir, driver, ext, time, engine):
 dt_exts = ["gpkg", "geojson"]
 
 
+def write_invalid_date_file(date_str, tmpdir, ext, engine):
+    tempfilename = os.path.join(str(tmpdir), f"test_invalid_datetime.{ext}")
+    df = GeoDataFrame(
+        {
+            "date": ["2014-08-26T10:01:23", "2014-08-26T10:01:23", date_str],
+            "geometry": [Point(1, 1), Point(1, 1), Point(1, 1)],
+        }
+    )
+    # Schema not required for GeoJSON since not typed, but needed for GPKG
+    if ext == "geojson":
+        df.to_file(tempfilename)
+    else:
+        schema = {"geometry": "Point", "properties": {"date": "datetime"}}
+        if engine == "pyogrio" and not fiona:
+            # (use schema to write the invalid date without pandas datetimes
+            pytest.skip("test requires fiona kwarg schema")
+        df.to_file(tempfilename, schema=schema, engine="fiona")
+    return tempfilename
+
+
 @pytest.mark.parametrize("ext", dt_exts)
-def test_read_file_invalid_datetime(tmpdir, ext):
+def test_read_file_invalid_datetime(tmpdir, ext, engine):
     # https://github.com/geopandas/geopandas/issues/2502
     if not FIONA_GE_1821 and ext == "gpkg":
         # https://github.com/Toblerity/Fiona/issues/1035
         pytest.skip("Invalid datetime throws in Fiona<1.8.21")
-    tempfilename = os.path.join(str(tmpdir), f"test_invalid_datetime.{ext}")
-    df = GeoDataFrame(
-        {
-            "date": [
-                "2014-08-26T10:01:23",
-                "2014-08-26T10:01:23",
-                "9999-99-99T00:00:00",  # invalid date handled by GDAL
-            ],
-            "geometry": [Point(1, 1), Point(1, 1), Point(1, 1)],
-        }
-    )
 
-    # Schema not required for GeoJSON since not typed, but needed for GPKG
-    schema = {"geometry": "Point", "properties": {"date": "datetime"}}
-    df.to_file(tempfilename, schema=schema)
+    date_str = "9999-99-99T00:00:00"  # invalid date handled by GDAL
+    tempfilename = write_invalid_date_file(date_str, tmpdir, ext, engine)
     res = read_file(tempfilename)
     if ext == "gpkg":
         assert is_datetime64_any_dtype(res["date"])
@@ -266,27 +274,11 @@ def test_read_file_invalid_datetime(tmpdir, ext):
         assert res["date"].dtype == "object"
 
 
-@pytest.mark.parametrize("dt_ext", dt_exts)
-def test_read_file_pandas_invalid_datetime(tmpdir, dt_ext, engine):
+@pytest.mark.parametrize("ext", dt_exts)
+def test_read_file_pandas_invalid_datetime(tmpdir, ext, engine):
     # https://github.com/geopandas/geopandas/issues/2502
-    tempfilename = os.path.join(str(tmpdir), f"test_mixed_datetime.{dt_ext}")
-    df = GeoDataFrame(
-        {
-            "date": [
-                "2014-08-26T10:01:23",
-                "2014-08-26T10:01:23",
-                "9999-12-31T00:00:00",  # year outside pandas valid range
-            ],
-            "geometry": [Point(1, 1), Point(1, 1), Point(1, 1)],
-        }
-    )
-    # Schema not required for GeoJSON since not typed, but needed for GPKG
-    schema = {"geometry": "Point", "properties": {"date": "datetime"}}
-    if engine == "pyogrio" and not fiona:
-        # (Technically only for GPKG, we need to write the invalid date, but can't
-        # use pandas datetimes because the date is invalid)
-        pytest.skip("test requires fiona kwarg schema")
-    df.to_file(tempfilename, schema=schema, engine="fiona")
+    date_str = "9999-12-31T00:00:00"  # invalid date handled by GDAL
+    tempfilename = write_invalid_date_file(date_str, tmpdir, ext, engine)
     res = read_file(tempfilename)
     # Pandas invalid datetimes are read in as object dtype
     assert res["date"].dtype == "object"
