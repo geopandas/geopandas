@@ -263,6 +263,8 @@ def test_read_file_invalid_datetime(tmpdir, ext, engine):
     if not FIONA_GE_1821 and ext == "gpkg":
         # https://github.com/Toblerity/Fiona/issues/1035
         pytest.skip("Invalid datetime throws in Fiona<1.8.21")
+    elif ext == "geojson":
+        skip_pyogrio_not_supported(engine)
 
     date_str = "9999-99-99T00:00:00"  # invalid date handled by GDAL
     tempfilename = write_invalid_date_file(date_str, tmpdir, ext, engine)
@@ -277,7 +279,7 @@ def test_read_file_invalid_datetime(tmpdir, ext, engine):
 @pytest.mark.parametrize("ext", dt_exts)
 def test_read_file_pandas_invalid_datetime(tmpdir, ext, engine):
     # https://github.com/geopandas/geopandas/issues/2502
-    date_str = "9999-12-31T00:00:00"  # invalid date handled by GDAL
+    date_str = "9999-12-31T00:00:00"  # valid to GDAL, not to [ns] format
     tempfilename = write_invalid_date_file(date_str, tmpdir, ext, engine)
     res = read_file(tempfilename)
     # Pandas invalid datetimes are read in as object dtype
