@@ -3,6 +3,7 @@ import os
 import random
 import shutil
 import tempfile
+import warnings
 
 import numpy as np
 from numpy.testing import assert_array_equal
@@ -121,13 +122,13 @@ class TestSeries:
         # Test that warning is not issued when operating on aligned series
         a1, a2 = self.a1.align(self.a2)
 
-        with pytest.warns(None) as warnings:
+        with warnings.catch_warnings(record=True) as record:
             a1.contains(a2)  # _series_op, explicitly aligned
             self.g1.intersects(self.g2)  # _series_op, implicitly aligned
             a2.union(a1)  # _geo_op, explicitly aligned
             self.g2.intersection(self.g1)  # _geo_op, implicitly aligned
 
-        user_warnings = [w for w in warnings if w.category is UserWarning]
+        user_warnings = [w for w in record if w.category is UserWarning]
         assert not user_warnings, user_warnings[0].message
 
     def test_geom_equals(self):
@@ -509,7 +510,7 @@ class TestConstructor:
             np.array([], dtype="float64"),
             np.array([], dtype="str"),
         ]:
-            with pytest.warns(None) as record:
+            with warnings.catch_warnings(record=True) as record:
                 s = GeoSeries(arr)
             assert not record
             assert isinstance(s, GeoSeries)
