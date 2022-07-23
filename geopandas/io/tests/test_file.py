@@ -33,9 +33,10 @@ except ImportError:
 try:
     import fiona
 
-    FIONA_GE_1814 = Version(fiona.__version__) >= Version(
-        "1.8.14"
-    )  # datetime roundtrip
+    # datetime roundtrip
+    FIONA_GE_1814 = Version(fiona.__version__) >= Version("1.8.14")
+    # invalid datetime handling
+    FIONA_GE_1821 = Version(fiona.__version__) >= Version("1.8.21")
 except ImportError:
     fiona = False
     FIONA_GE_1814 = False
@@ -235,11 +236,13 @@ def test_to_file_datetime(tmpdir, driver, ext, time, engine):
 dt_exts = ["gpkg", "geojson"]
 
 
-@pytest.mark.parametrize("dt_ext", dt_exts)
-@pytest.mark.skipif(not FIONA_GE_1814, reason="Invalid datetime throws in Fiona<1.8.14")
-def test_read_file_invalid_datetime(tmpdir, dt_ext):
+@pytest.mark.parametrize("ext", dt_exts)
+def test_read_file_invalid_datetime(tmpdir, ext):
     # https://github.com/geopandas/geopandas/issues/2502
-    tempfilename = os.path.join(str(tmpdir), f"test_invalid_datetime.{dt_ext}")
+    if not FIONA_GE_1821 and ext == "gpkg":
+        # https://github.com/Toblerity/Fiona/issues/1035
+        pytest.skip("Invalid datetime throws in Fiona<1.8.21")
+    tempfilename = os.path.join(str(tmpdir), f"test_invalid_datetime.{ext}")
     df = GeoDataFrame(
         {
             "date": [
@@ -255,7 +258,7 @@ def test_read_file_invalid_datetime(tmpdir, dt_ext):
     schema = {"geometry": "Point", "properties": {"date": "datetime"}}
     df.to_file(tempfilename, schema=schema)
     res = read_file(tempfilename)
-    if dt_ext == "gpkg":
+    if ext == "gpkg":
         assert is_datetime64_any_dtype(res["date"])
         assert pd.isna(res["date"].iloc[-1])
     else:
