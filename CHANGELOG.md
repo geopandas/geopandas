@@ -21,6 +21,15 @@ Bug fixes:
 
 Notes on (optional) dependencies:
 
+Version 0.11.1 (July xx, 2022)
+---------------------------------
+
+Small bug-fix release:
+
+- Fix regression in ``apply()`` causing row-wise all nan float columns to be 
+  casted to GeometryDtype (#2482). 
+
+
 Version 0.11 (June 20, 2022)
 ----------------------------
 
