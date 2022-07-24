@@ -26,6 +26,8 @@ Small bug-fix release:
   casted to GeometryDtype (#2482). 
 - Fix a crash in datetime column reading where the file contains mixed timezone
   offsets (#2479). These will be read as UTC localized values.
+- Fix a crash in datetime column reading where the file contains datetimes
+  outside the range supported by [ns] precision (#2505).
 - Fix regression in passing the Parquet or Feather format ``version`` in
   ``to_parquet`` and ``to_feather``. As a result, the ``version`` parameter
   for the ``to_parquet`` and ``to_feather`` methods has been replaced with

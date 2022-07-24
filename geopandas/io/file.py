@@ -341,13 +341,14 @@ def _read_file_fiona(
                     f_filt, crs=crs, columns=columns + ["geometry"]
                 )
             for k in datetime_fields:
-                as_dt = pd.to_datetime(df[k])
+                as_dt = pd.to_datetime(df[k], errors="ignore")
                 # if to_datetime failed, try again for mixed timezone offsets
                 if as_dt.dtype == "object":
-                    # This can fail if there are invalid datetimes
-                    as_dt = pd.to_datetime(df[k], utc=True)
+                    # This can still fail if there are invalid datetimes
+                    as_dt = pd.to_datetime(df[k], errors="ignore", utc=True)
                 # if to_datetime succeeded, round datetimes as
-                # fiona only supports up to ms precision
+                # fiona only supports up to ms precision (any microseconds are
+                # floating point rounding error)
                 if not (as_dt.dtype == "object"):
                     df[k] = as_dt.dt.round(freq="ms")
             return df
