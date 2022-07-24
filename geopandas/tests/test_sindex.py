@@ -1,3 +1,4 @@
+import warnings
 from math import sqrt
 
 from shapely.geometry import (
@@ -79,7 +80,13 @@ class TestSeriesSindex:
         sq = Polygon([(0, 0), (1, 0), (1, 1), (0, 1)])
         s = GeoSeries([t1, t2, sq])
         t = GeoSeries([t1, t2, sq], [3, 4, 5])
-        s = s.append(t)
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                category=FutureWarning,
+                message="The series.append method is deprecated",
+            )
+            s = s.append(t)
         assert len(s) == 6
         assert s.sindex.size == 6
 
