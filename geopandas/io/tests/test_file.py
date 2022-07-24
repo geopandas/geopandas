@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 
 import pytz
-from pandas.core.dtypes.common import is_datetime64_any_dtype
+from pandas.api.types import is_datetime64_any_dtype
 from pandas.testing import assert_series_equal
 from shapely.geometry import Point, Polygon, box
 
