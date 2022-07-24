@@ -8,30 +8,30 @@ New features and improvements:
 
 Deprecations and compatibility notes:
 
-- The `version` parameter for the `to_feather` and `to_parquet` methods has
-    been replaced with `schema_version`.  `version` will be passed directly to
-    underlying feather or parquet writer. `version` will only be used to set
-    `schema_version` if `version` is one of 0.1.0 or 0.4.0 (#2496).
-
 Bug fixes:
-- Fix a crash in datetime column reading where the file contains mixed timezone
-  offsets (#2479). These will be read as UTC localized values.
+
+Notes on (optional) dependencies:
+
+Version 0.11.1 (July 24, 2022)
+------------------------------
+
+Small bug-fix release:
 
 - Fix regression (RecursionError) in reshape methods such as ``unstack()``
   and ``pivot()`` involving MultiIndex, or GeoDataFrame construction with
   MultiIndex (#2486).
 - Fix regression in ``GeoDataFrame.explode()`` with non-default
   geometry column name.
-
-Notes on (optional) dependencies:
-
-Version 0.11.1 (July xx, 2022)
----------------------------------
-
-Small bug-fix release:
-
 - Fix regression in ``apply()`` causing row-wise all nan float columns to be 
   casted to GeometryDtype (#2482). 
+- Fix a crash in datetime column reading where the file contains mixed timezone
+  offsets (#2479). These will be read as UTC localized values.
+- Fix regression in passing the Parquet or Feather format ``version`` in
+  ``to_parquet`` and ``to_feather``. As a result, the ``version`` parameter
+  for the ``to_parquet`` and ``to_feather`` methods has been replaced with
+  ``schema_version``. ``version`` will be passed directly to underlying
+  feather or parquet writer. ``version`` will only be used to set
+  ``schema_version`` if `version` is one of 0.1.0 or 0.4.0 (#2496).
 
 
 Version 0.11 (June 20, 2022)
