@@ -14,6 +14,8 @@ Deprecations and compatibility notes:
     `schema_version` if `version` is one of 0.1.0 or 0.4.0 (#2496).
 
 Bug fixes:
+- Fix a crash in datetime column reading where the file contains mixed timezone
+  offsets (#2479). These will be read as UTC localized values.
 
 - Fix regression (RecursionError) in reshape methods such as ``unstack()``
   and ``pivot()`` involving MultiIndex, or GeoDataFrame construction with

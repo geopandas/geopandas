@@ -10,6 +10,7 @@ import numpy as np
 import pandas as pd
 
 import pytz
+from pandas.api.types import is_datetime64_any_dtype
 from pandas.testing import assert_series_equal
 from shapely.geometry import Point, Polygon, box
 
@@ -229,6 +230,28 @@ def test_to_file_datetime(tmpdir, driver, ext, time, engine):
         )
     else:
         assert_series_equal(df["b"], df_read["b"])
+
+
+def test_read_file_mixed_datetimes(tmpdir):
+    tempfilename = os.path.join(str(tmpdir), "test_mixed_datetime.geojson")
+    df = GeoDataFrame(
+        {
+            "date": [
+                "2014-08-26 10:01:23.040001+02:00",
+                "2019-03-07 17:31:43.118999+01:00",
+            ],
+            "geometry": [Point(1, 1), Point(1, 1)],
+        }
+    )
+    df.to_file(tempfilename)
+    res = read_file(tempfilename)  # check mixed tz don't crash GH2478
+    assert is_datetime64_any_dtype(res["date"])
+    if FIONA_GE_1814:
+        # Convert mixed timezones to UTC equivalent
+        assert res["date"].dt.tz == pytz.utc
+    else:
+        # old fiona and pyogrio ignore timezones and read as datetimes successfully
+        assert is_datetime64_any_dtype(res["date"])
 
 
 @pytest.mark.parametrize("driver,ext", driver_ext_pairs)
