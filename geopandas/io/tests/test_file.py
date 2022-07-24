@@ -258,7 +258,7 @@ def write_invalid_date_file(date_str, tmpdir, ext, engine):
 
 
 @pytest.mark.parametrize("ext", dt_exts)
-def test_read_file_invalid_datetime(tmpdir, ext, engine):
+def test_read_file_datetime_invalid(tmpdir, ext, engine):
     # https://github.com/geopandas/geopandas/issues/2502
     if not FIONA_GE_1821 and ext == "gpkg":
         # https://github.com/Toblerity/Fiona/issues/1035
@@ -272,21 +272,24 @@ def test_read_file_invalid_datetime(tmpdir, ext, engine):
         assert pd.isna(res["date"].iloc[-1])
     else:
         assert res["date"].dtype == "object"
+        assert isinstance(res["date"].iloc[-1], str)
 
 
 @pytest.mark.parametrize("ext", dt_exts)
-def test_read_file_pandas_invalid_datetime(tmpdir, ext, engine):
+def test_read_file_datetime_out_of_bounds_ns(tmpdir, ext, engine):
     # https://github.com/geopandas/geopandas/issues/2502
-    date_str = "9999-12-31T00:00:00"  # valid to GDAL, not to [ns] format
     if ext == "geojson":
         skip_pyogrio_not_supported(engine)
+
+    date_str = "9999-12-31T00:00:00"  # valid to GDAL, not to [ns] format
     tempfilename = write_invalid_date_file(date_str, tmpdir, ext, engine)
     res = read_file(tempfilename)
-    # Pandas invalid datetimes are read in as object dtype
+    # Pandas invalid datetimes are read in as object dtype (strings)
     assert res["date"].dtype == "object"
+    assert isinstance(res["date"].iloc[0], str)
 
 
-def test_read_file_mixed_datetimes(tmpdir):
+def test_read_file_datetime_mixed_offsets(tmpdir):
     # https://github.com/geopandas/geopandas/issues/2478
     tempfilename = os.path.join(str(tmpdir), "test_mixed_datetime.geojson")
     df = GeoDataFrame(
