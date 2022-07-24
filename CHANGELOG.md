@@ -31,7 +31,7 @@ Small bug-fix release:
   for the ``to_parquet`` and ``to_feather`` methods has been replaced with
   ``schema_version``. ``version`` will be passed directly to underlying
   feather or parquet writer. ``version`` will only be used to set
-  ``schema_version`` if `version` is one of 0.1.0 or 0.4.0 (#2496).
+  ``schema_version`` if ``version`` is one of 0.1.0 or 0.4.0 (#2496).
 
 
 Version 0.11 (June 20, 2022)
