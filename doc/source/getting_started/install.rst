@@ -93,12 +93,10 @@ as well::
     installed correctly.
 
     - `fiona`_ provides binary wheels with the dependencies included for Mac and Linux,
-      but not for Windows.
+      but not for Windows. Alternatively, you can install `pyogrio`_ which does
+      have wheels for Windows.
     - `pyproj`_, `rtree`_, and `shapely`_ provide binary wheels with dependencies included
       for Mac, Linux, and Windows.
-    - Windows wheels for `shapely`, `fiona`, `pyproj` and `rtree`
-      can be found at `Christopher Gohlke's website
-      <https://www.lfd.uci.edu/~gohlke/pythonlibs/>`_.
 
     Depending on your platform, you might need to compile and install their
     C dependencies manually. We refer to the individual packages for more
@@ -138,13 +136,15 @@ Dependencies
 Required dependencies:
 
 - `numpy`_
-- `pandas`_ (version 0.25 or later)
-- `shapely`_ (interface to `GEOS`_)
-- `fiona`_ (interface to `GDAL`_)
-- `pyproj`_ (interface to `PROJ`_; version 2.2.0 or later)
+- `pandas`_ (version 1.0 or later)
+- `shapely`_ (interface to `GEOS`_; version 1.7 or later)
+- `fiona`_ (interface to `GDAL`_; version 1.8 or later)
+- `pyproj`_ (interface to `PROJ`_; version 2.6.1 or later)
+- `packaging`_
 
 Further, optional dependencies are:
 
+- `pyogrio`_ (optional; experimental alternative for fiona)
 - `rtree`_ (optional; spatial index to improve performance and required for
   overlay operations; interface to `libspatialindex`_)
 - `psycopg2`_ (optional; for PostGIS connection)
@@ -154,8 +154,8 @@ Further, optional dependencies are:
 
 For plotting, these additional packages may be used:
 
-- `matplotlib`_ (>= 3.1.0)
-- `mapclassify`_ (>= 2.2.0)
+- `matplotlib`_ (>= 3.2.0)
+- `mapclassify`_ (>= 2.4.0)
 
 
 Using the optional PyGEOS dependency
@@ -211,6 +211,8 @@ More specifically, whether the speedups are used or not is determined by:
 
 .. _fiona: https://fiona.readthedocs.io
 
+.. _pyogrio: https://pyogrio.readthedocs.io
+
 .. _matplotlib: http://matplotlib.org
 
 .. _geopy: https://github.com/geopy/geopy
@@ -242,3 +244,5 @@ More specifically, whether the speedups are used or not is determined by:
 .. _PROJ: https://proj.org/
 
 .. _PyGEOS: https://github.com/pygeos/pygeos/
+
+.. _packaging: https://packaging.pypa.io/en/latest/

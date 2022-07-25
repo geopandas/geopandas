@@ -11,6 +11,7 @@ import pandas as pd
 
 import shapely.geometry
 import shapely.geos
+import shapely.ops
 import shapely.wkb
 import shapely.wkt
 
@@ -56,7 +57,7 @@ def isna(value):
         return True
     elif isinstance(value, float) and np.isnan(value):
         return True
-    elif compat.PANDAS_GE_10 and value is pd.NA:
+    elif value is pd.NA:
         return True
     else:
         return False
@@ -169,7 +170,7 @@ def from_wkb(data):
 
     for geom in data:
         if not isna(geom) and len(geom):
-            geom = shapely.wkb.loads(geom)
+            geom = shapely.wkb.loads(geom, hex=isinstance(geom, str))
         else:
             geom = None
         out.append(geom)
@@ -250,7 +251,8 @@ def points_from_xy(x, y, z=None):
     else:
         out = _points_from_xy(x, y, z)
         aout = np.empty(len(x), dtype=object)
-        aout[:] = out
+        with compat.ignore_shapely2_warnings():
+            aout[:] = out
         return aout
 
 
@@ -612,7 +614,8 @@ def interiors(data):
             "geometry types, None is returned."
         )
     data = np.empty(len(data), dtype=object)
-    data[:] = inner_rings
+    with compat.ignore_shapely2_warnings():
+        data[:] = inner_rings
     return data
 
 
@@ -622,9 +625,11 @@ def representative_point(data):
     else:
         # method and not a property -> can't use _unary_geo
         out = np.empty(len(data), dtype=object)
-        out[:] = [
-            geom.representative_point() if geom is not None else None for geom in data
-        ]
+        with compat.ignore_shapely2_warnings():
+            out[:] = [
+                geom.representative_point() if geom is not None else None
+                for geom in data
+            ]
         return out
 
 
@@ -724,6 +729,20 @@ def almost_equals(self, other, decimal):
 #
 
 
+def clip_by_rect(data, xmin, ymin, xmax, ymax):
+    if compat.USE_PYGEOS:
+        return pygeos.clip_by_rect(data, xmin, ymin, xmax, ymax)
+    else:
+        clipped_geometries = np.empty(len(data), dtype=object)
+        clipped_geometries[:] = [
+            shapely.ops.clip_by_rect(s, xmin, ymin, xmax, ymax)
+            if s is not None
+            else None
+            for s in data
+        ]
+        return clipped_geometries
+
+
 def difference(data, other):
     if compat.USE_PYGEOS:
         return _binary_method("difference", data, other)
@@ -809,13 +828,17 @@ def interpolate(data, distance, normalized=False):
                     "Length of distance sequence does not match "
                     "length of the GeoSeries"
                 )
-            out[:] = [
-                geom.interpolate(dist, normalized=normalized)
-                for geom, dist in zip(data, distance)
-            ]
+            with compat.ignore_shapely2_warnings():
+                out[:] = [
+                    geom.interpolate(dist, normalized=normalized)
+                    for geom, dist in zip(data, distance)
+                ]
             return out
 
-        out[:] = [geom.interpolate(distance, normalized=normalized) for geom in data]
+        with compat.ignore_shapely2_warnings():
+            out[:] = [
+                geom.interpolate(distance, normalized=normalized) for geom in data
+            ]
         return out
 
 
@@ -883,7 +906,11 @@ def unary_union(data):
     if compat.USE_PYGEOS:
         return _pygeos_to_shapely(pygeos.union_all(data))
     else:
-        return shapely.ops.unary_union(data)
+        data = [g for g in data if g is not None]
+        if data:
+            return shapely.ops.unary_union(data)
+        else:
+            return None
 
 
 #

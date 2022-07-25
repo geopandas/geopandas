@@ -29,7 +29,17 @@ the ``driver`` keyword, or pick a single layer from a multi-layered file with
 the ``layer`` keyword::
 
     countries_gdf = geopandas.read_file("package.gpkg", layer='countries')
+    
+Currently fiona only exposes the default drivers. To display those, type::
 
+    import fiona; fiona.supported_drivers 
+
+There is an `array <https://github.com/Toblerity/Fiona/blob/master/fiona/drvsupport.py>`_
+of unexposed but supported (depending on the GDAL-build) drivers. One can activate 
+these on runtime by updating the `supported_drivers` dictionary like::
+
+    fiona.supported_drivers["NAS"] = "raw"
+    
 Where supported in :mod:`fiona`, *geopandas* can also load resources directly from
 a web URL, for example for GeoJSON files from `geojson.xyz <http://geojson.xyz/>`_::
 
@@ -136,6 +146,15 @@ Field/Column Filters
 
 Load in a subset of fields from the file:
 
+.. note:: Requires Fiona 1.9+
+
+.. code-block:: python
+
+    gdf = geopandas.read_file(
+        geopandas.datasets.get_path("naturalearth_lowres"),
+        include_fields=["pop_est", "continent", "name"],
+    )
+
 .. note:: Requires Fiona 1.8+
 
 .. code-block:: python
@@ -197,7 +216,7 @@ Spatial databases
 Writing to PostGIS::
 
     from sqlalchemy import create_engine
-    db_connection_url = "postgres://myusername:mypassword@myhost:5432/mydatabase";
+    db_connection_url = "postgresql://myusername:mypassword@myhost:5432/mydatabase";
     engine = create_engine(db_connection_url)
     countries_gdf.to_postgis("countries_table", con=engine)
 

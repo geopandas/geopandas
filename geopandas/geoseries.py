@@ -6,7 +6,7 @@ import warnings
 
 import numpy as np
 import pandas as pd
-from pandas import Series, MultiIndex
+from pandas import Series, MultiIndex, DataFrame
 from pandas.core.internals import SingleBlockManager
 
 from pyproj import CRS
@@ -14,6 +14,8 @@ from shapely.geometry.base import BaseGeometry
 
 from geopandas.base import GeoPandasBase, _delegate_property
 from geopandas.plotting import plot_series
+from geopandas.explore import _explore_geoseries
+import geopandas
 
 from . import _compat as compat
 from ._decorator import doc
@@ -22,16 +24,11 @@ from .array import (
     from_shapely,
     from_wkb,
     from_wkt,
+    points_from_xy,
     to_wkb,
     to_wkt,
 )
 from .base import is_geometry_type
-
-
-_SERIES_WARNING_MSG = """\
-    You are passing non-geometry data to the GeoSeries constructor. Currently,
-    it falls back to returning a pandas Series. But in the future, we will start
-    to raise a TypeError instead."""
 
 
 def _geoseries_constructor_with_fallback(
@@ -43,16 +40,38 @@ def _geoseries_constructor_with_fallback(
     geometries)
     """
     try:
-        with warnings.catch_warnings():
-            warnings.filterwarnings(
-                "ignore",
-                message=_SERIES_WARNING_MSG,
-                category=FutureWarning,
-                module="geopandas[.*]",
-            )
-            return GeoSeries(data=data, index=index, crs=crs, **kwargs)
+        return GeoSeries(data=data, index=index, crs=crs, **kwargs)
     except TypeError:
         return Series(data=data, index=index, **kwargs)
+
+
+def _geoseries_expanddim(data=None, *args, **kwargs):
+    from geopandas import GeoDataFrame
+
+    # pd.Series._constructor_expanddim == pd.DataFrame
+    df = pd.DataFrame(data, *args, **kwargs)
+    geo_col_name = None
+    if isinstance(data, GeoSeries):
+        # pandas default column name is 0, keep convention
+        geo_col_name = data.name if data.name is not None else 0
+
+    if df.shape[1] == 1:
+        geo_col_name = df.columns[0]
+
+    if (df.dtypes == "geometry").sum() > 0:
+        if geo_col_name is None or not is_geometry_type(df[geo_col_name]):
+            df = GeoDataFrame(df)
+            df._geometry_column_name = None
+        else:
+            df = df.set_geometry(geo_col_name)
+
+    return df
+
+
+# pd.concat (pandas/core/reshape/concat.py) requires this for the
+# concatenation of series since pandas 1.1
+# (https://github.com/pandas-dev/pandas/commit/f9e4c8c84bcef987973f2624cc2932394c171c8c)
+_geoseries_expanddim._get_axis_number = DataFrame._get_axis_number
 
 
 class GeoSeries(GeoPandasBase, Series):
@@ -135,27 +154,19 @@ class GeoSeries(GeoPandasBase, Series):
 
     _metadata = ["name"]
 
-    def __new__(cls, data=None, index=None, crs: Optional[Any] = None, **kwargs):
-        # we need to use __new__ because we want to return Series instance
-        # instead of GeoSeries instance in case of non-geometry data
-
+    def __init__(self, data=None, index=None, crs: Optional[Any] = None, **kwargs):
         if hasattr(data, "crs") and crs:
             if not data.crs:
                 # make a copy to avoid setting CRS to passed GeometryArray
                 data = data.copy()
             else:
                 if not data.crs == crs:
-                    warnings.warn(
+                    raise ValueError(
                         "CRS mismatch between CRS of the passed geometries "
-                        "and 'crs'. Use 'GeoDataFrame.set_crs(crs, "
+                        "and 'crs'. Use 'GeoSeries.set_crs(crs, "
                         "allow_override=True)' to overwrite CRS or "
                         "'GeoSeries.to_crs(crs)' to reproject geometries. "
-                        "CRS mismatch will raise an error in the future versions "
-                        "of GeoPandas.",
-                        FutureWarning,
-                        stacklevel=2,
                     )
-                    # TODO: raise error in 0.9 or 0.10.
 
         if isinstance(data, SingleBlockManager):
             if isinstance(data.blocks[0].dtype, GeometryDtype):
@@ -170,12 +181,11 @@ class GeoSeries(GeoPandasBase, Series):
                     values = data.blocks[0].values
                     block = ExtensionBlock(values, slice(0, len(values), 1), ndim=1)
                     data = SingleBlockManager([block], data.axes[0], fastpath=True)
-                self = super(GeoSeries, cls).__new__(cls)
-                super(GeoSeries, self).__init__(data, index=index, **kwargs)
-                self.crs = getattr(self.values, "crs", crs)
-                return self
-            warnings.warn(_SERIES_WARNING_MSG, FutureWarning, stacklevel=2)
-            return Series(data, index=index, **kwargs)
+            else:
+                raise TypeError(
+                    "Non geometry data passed to GeoSeries constructor, "
+                    f"received data of dtype '{data.blocks[0].dtype}'"
+                )
 
         if isinstance(data, BaseGeometry):
             # fix problem for scalar geometries passed, ensure the list of
@@ -192,34 +202,37 @@ class GeoSeries(GeoPandasBase, Series):
             kwargs.pop("dtype", None)
             # Use Series constructor to handle input data
             with compat.ignore_shapely2_warnings():
+                # suppress additional warning from pandas for empty data
+                # (will always give object dtype instead of float dtype in the future,
+                # making the `if s.empty: s = s.astype(object)` below unnecessary)
+                empty_msg = "The default dtype for empty Series"
+                warnings.filterwarnings("ignore", empty_msg, DeprecationWarning)
+                warnings.filterwarnings("ignore", empty_msg, FutureWarning)
                 s = pd.Series(data, index=index, name=name, **kwargs)
             # prevent trying to convert non-geometry objects
             if s.dtype != object:
-                if s.empty or data is None:
+                if (s.empty and s.dtype == "float64") or data is None:
+                    # pd.Series with empty data gives float64 for older pandas versions
                     s = s.astype(object)
                 else:
-                    warnings.warn(_SERIES_WARNING_MSG, FutureWarning, stacklevel=2)
-                    return s
+                    raise TypeError(
+                        "Non geometry data passed to GeoSeries constructor, "
+                        f"received data of dtype '{s.dtype}'"
+                    )
             # try to convert to GeometryArray, if fails return plain Series
             try:
                 data = from_shapely(s.values, crs)
             except TypeError:
-                warnings.warn(_SERIES_WARNING_MSG, FutureWarning, stacklevel=2)
-                return s
+                raise TypeError(
+                    "Non geometry data passed to GeoSeries constructor, "
+                    f"received data of dtype '{s.dtype}'"
+                )
             index = s.index
             name = s.name
 
-        self = super(GeoSeries, cls).__new__(cls)
-        super(GeoSeries, self).__init__(data, index=index, name=name, **kwargs)
-
+        super().__init__(data, index=index, name=name, **kwargs)
         if not self.crs:
             self.crs = crs
-        return self
-
-    def __init__(self, *args, **kwargs):
-        # need to overwrite Series init to prevent calling it for GeoSeries
-        # (doesn't know crs, all work is already done above)
-        pass
 
     def append(self, *args, **kwargs):
         return self._wrapped_pandas_method("append", *args, **kwargs)
@@ -438,13 +451,68 @@ class GeoSeries(GeoPandasBase, Series):
         return cls._from_wkb_or_wkb(from_wkt, data, index=index, crs=crs, **kwargs)
 
     @classmethod
+    def from_xy(cls, x, y, z=None, index=None, crs=None, **kwargs):
+        """
+        Alternate constructor to create a :class:`~geopandas.GeoSeries` of Point
+        geometries from lists or arrays of x, y(, z) coordinates
+
+        In case of geographic coordinates, it is assumed that longitude is captured
+        by ``x`` coordinates and latitude by ``y``.
+
+        Parameters
+        ----------
+        x, y, z : iterable
+        index : array-like or Index, optional
+            The index for the GeoSeries. If not given and all coordinate inputs
+            are Series with an equal index, that index is used.
+        crs : value, optional
+            Coordinate Reference System of the geometry objects. Can be anything
+            accepted by
+            :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
+            such as an authority string (eg "EPSG:4326") or a WKT string.
+        **kwargs
+            Additional arguments passed to the Series constructor,
+            e.g. ``name``.
+
+        Returns
+        -------
+        GeoSeries
+
+        See Also
+        --------
+        GeoSeries.from_wkt
+        points_from_xy
+
+        Examples
+        --------
+
+        >>> x = [2.5, 5, -3.0]
+        >>> y = [0.5, 1, 1.5]
+        >>> s = geopandas.GeoSeries.from_xy(x, y, crs="EPSG:4326")
+        >>> s
+        0    POINT (2.50000 0.50000)
+        1    POINT (5.00000 1.00000)
+        2    POINT (-3.00000 1.50000)
+        dtype: geometry
+        """
+        if index is None:
+            if (
+                isinstance(x, Series)
+                and isinstance(y, Series)
+                and x.index.equals(y.index)
+                and (z is None or (isinstance(z, Series) and x.index.equals(z.index)))
+            ):  # check if we can reuse index
+                index = x.index
+        return cls(points_from_xy(x, y, z, crs=crs), index=index, crs=crs, **kwargs)
+
+    @classmethod
     def _from_wkb_or_wkb(
         cls,
         from_wkb_or_wkt_function: Callable,
         data,
         index=None,
         crs: Optional[Any] = None,
-        **kwargs
+        **kwargs,
     ) -> GeoSeries:
         """Create a GeoSeries from either WKT or WKB values"""
         if isinstance(data, Series):
@@ -484,11 +552,11 @@ class GeoSeries(GeoPandasBase, Series):
 
     def to_file(
         self,
-        filename,
-        driver: str = "ESRI Shapefile",
+        filename: str,
+        driver: Optional[str] = None,
         index: Optional[bool] = None,
-        **kwargs
-    ) -> None:
+        **kwargs,
+    ):
         """Write the ``GeoSeries`` to a file.
 
         By default, an ESRI shapefile is written, but any OGR data source
@@ -497,9 +565,12 @@ class GeoSeries(GeoPandasBase, Series):
         Parameters
         ----------
         filename : string
-            File path or file handle to write to.
-        driver : string, default: 'ESRI Shapefile'
+            File path or file handle to write to. The path may specify a
+            GDAL VSI scheme.
+        driver : string, default None
             The OGR format driver used to write the vector file.
+            If not specified, it attempts to infer it from the file extension.
+            If no extension is specified, it saves ESRI Shapefile to a folder.
         index : bool, default None
             If True, write index into one or more columns (for MultiIndex).
             Default None writes the index into one or more columns only if
@@ -508,12 +579,29 @@ class GeoSeries(GeoPandasBase, Series):
 
             .. versionadded:: 0.7
                 Previously the index was not written.
-
-        Notes
-        -----
-        The extra keyword arguments ``**kwargs`` are passed to fiona.open and
-        can be used to write to multi-layer data, store data within archives
-        (zip files), etc.
+        mode : string, default 'w'
+            The write mode, 'w' to overwrite the existing file and 'a' to append.
+            Not all drivers support appending. The drivers that support appending
+            are listed in fiona.supported_drivers or
+            https://github.com/Toblerity/Fiona/blob/master/fiona/drvsupport.py
+        crs : pyproj.CRS, default None
+            If specified, the CRS is passed to Fiona to
+            better control how the file is written. If None, GeoPandas
+            will determine the crs based on crs df attribute.
+            The value can be anything accepted
+            by :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
+            such as an authority string (eg "EPSG:4326") or a WKT string.
+        engine : str, "fiona" or "pyogrio"
+            The underlying library that is used to write the file. Currently, the
+            supported options are "fiona" and "pyogrio". Defaults to "fiona" if
+            installed, otherwise tries "pyogrio".
+        **kwargs :
+            Keyword args to be passed to the engine, and can be used to write
+            to multi-layer data, store data within archives (zip files), etc.
+            In case of the "fiona" engine, the keyword arguments are passed to
+            fiona.open`. For more information on possible keywords, type:
+            ``import fiona; help(fiona.open)``. In case of the "pyogrio" engine,
+            the keyword arguments are passed to `pyogrio.write_dataframe`.
 
         See Also
         --------
@@ -545,9 +633,7 @@ class GeoSeries(GeoPandasBase, Series):
 
     @property
     def _constructor_expanddim(self):
-        from geopandas import GeoDataFrame
-
-        return GeoDataFrame
+        return _geoseries_expanddim
 
     def _wrapped_pandas_method(self, mtd, *args, **kwargs):
         """Wrap a generic pandas method to ensure it returns a GeoSeries"""
@@ -579,13 +665,6 @@ class GeoSeries(GeoPandasBase, Series):
             if self.crs is not None:
                 result.set_crs(self.crs, inplace=True)
         return result
-
-    def __finalize__(self, other, method=None, **kwargs):
-        """propagate metadata from other to self"""
-        # NOTE: backported from pandas master (upcoming v0.13)
-        for name in self._metadata:
-            object.__setattr__(self, name, getattr(other, name, None))
-        return self
 
     def isna(self) -> Series:
         """
@@ -625,21 +704,6 @@ class GeoSeries(GeoPandasBase, Series):
         GeoSeries.notna : inverse of isna
         GeoSeries.is_empty : detect empty geometries
         """
-        if self.is_empty.any():
-            warnings.warn(
-                "GeoSeries.isna() previously returned True for both missing (None) "
-                "and empty geometries. Now, it only returns True for missing values. "
-                "Since the calling GeoSeries contains empty geometries, the result "
-                "has changed compared to previous versions of GeoPandas.\n"
-                "Given a GeoSeries 's', you can use 's.is_empty | s.isna()' to get "
-                "back the old behaviour.\n\n"
-                "To further ignore this warning, you can do: \n"
-                "import warnings; warnings.filterwarnings('ignore', 'GeoSeries.isna', "
-                "UserWarning)",
-                UserWarning,
-                stacklevel=2,
-            )
-
         return super().isna()
 
     def isnull(self) -> Series:
@@ -762,7 +826,12 @@ class GeoSeries(GeoPandasBase, Series):
     def plot(self, *args, **kwargs):
         return plot_series(self, *args, **kwargs)
 
-    def explode(self) -> GeoSeries:
+    @doc(_explore_geoseries)
+    def explore(self, *args, **kwargs):
+        """Interactive map based on folium/leaflet.js"""
+        return _explore_geoseries(self, *args, **kwargs)
+
+    def explode(self, ignore_index=False, index_parts=None) -> GeoSeries:
         """
         Explode multi-part geometries into multiple single geometries.
 
@@ -770,8 +839,19 @@ class GeoSeries(GeoPandasBase, Series):
         This is analogous to PostGIS's ST_Dump(). The 'path' index is the
         second level of the returned MultiIndex
 
+        Parameters
+        ----------
+        ignore_index : bool, default False
+            If True, the resulting index will be labelled 0, 1, …, n - 1,
+            ignoring `index_parts`.
+        index_parts : boolean, default True
+            If True, the resulting index will be a multi-index (original
+            index with an additional level indicating the multiple
+            geometries: a new zero-based index for each single part geometry
+            per multi-part geometry).
+
         Returns
-        ------
+        -------
         A GeoSeries with a MultiIndex. The levels of the MultiIndex are the
         original index and a zero-based integer index that counts the
         number of single geometries within a multi-part geometry.
@@ -787,7 +867,7 @@ class GeoSeries(GeoPandasBase, Series):
         1    MULTIPOINT (2.00000 2.00000, 3.00000 3.00000, ...
         dtype: geometry
 
-        >>> s.explode()
+        >>> s.explode(index_parts=True)
         0  0    POINT (0.00000 0.00000)
            1    POINT (1.00000 1.00000)
         1  0    POINT (2.00000 2.00000)
@@ -800,6 +880,16 @@ class GeoSeries(GeoPandasBase, Series):
         GeoDataFrame.explode
 
         """
+        if index_parts is None and not ignore_index:
+            warnings.warn(
+                "Currently, index_parts defaults to True, but in the future, "
+                "it will default to False to be consistent with Pandas. "
+                "Use `index_parts=True` to keep the current behavior and True/False "
+                "to silence the warning.",
+                FutureWarning,
+                stacklevel=2,
+            )
+            index_parts = True
 
         if compat.USE_PYGEOS and compat.PYGEOS_GE_09:
             import pygeos  # noqa
@@ -824,21 +914,30 @@ class GeoSeries(GeoPandasBase, Series):
 
             # extract original index values based on integer index
             outer_index = self.index.take(outer_idx)
+            if ignore_index:
+                index = range(len(geometries))
 
-            index = zip(outer_index, inner_index)
+            elif index_parts:
+                nlevels = outer_index.nlevels
+                index_arrays = [
+                    outer_index.get_level_values(lvl) for lvl in range(nlevels)
+                ]
+                index_arrays.append(inner_index)
 
-            # if self.index is a MultiIndex then index is a list of nested tuples
-            if isinstance(self.index, MultiIndex):
-                index = [tuple(outer) + (inner,) for outer, inner in index]
+                index = MultiIndex.from_arrays(
+                    index_arrays, names=self.index.names + [None]
+                )
 
-            index = MultiIndex.from_tuples(index, names=self.index.names + [None])
+            else:
+                index = outer_index
+
             return GeoSeries(geometries, index=index, crs=self.crs).__finalize__(self)
 
         # else PyGEOS is not available or version <= 0.8
 
         index = []
         geometries = []
-        for idx, s in self.geometry.iteritems():
+        for idx, s in self.geometry.items():
             if s.type.startswith("Multi") or s.type == "GeometryCollection":
                 geoms = s.geoms
                 idxs = [(idx, i) for i in range(len(geoms))]
@@ -848,11 +947,18 @@ class GeoSeries(GeoPandasBase, Series):
             index.extend(idxs)
             geometries.extend(geoms)
 
-        # if self.index is a MultiIndex then index is a list of nested tuples
-        if isinstance(self.index, MultiIndex):
-            index = [tuple(outer) + (inner,) for outer, inner in index]
+        if ignore_index:
+            index = range(len(geometries))
 
-        index = MultiIndex.from_tuples(index, names=self.index.names + [None])
+        elif index_parts:
+            # if self.index is a MultiIndex then index is a list of nested tuples
+            if isinstance(self.index, MultiIndex):
+                index = [tuple(outer) + (inner,) for outer, inner in index]
+            index = MultiIndex.from_tuples(index, names=self.index.names + [None])
+
+        else:
+            index = [idx for idx, _ in index]
+
         return GeoSeries(geometries, index=index, crs=self.crs).__finalize__(self)
 
     #
@@ -1203,7 +1309,7 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
         """Implement & operator as for builtin set type"""
         warnings.warn(
             "'&' operator will be deprecated. Use the 'intersection' method instead.",
-            DeprecationWarning,
+            FutureWarning,
             stacklevel=2,
         )
         return self.intersection(other)
@@ -1212,7 +1318,59 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
         """Implement - operator as for builtin set type"""
         warnings.warn(
             "'-' operator will be deprecated. Use the 'difference' method instead.",
-            DeprecationWarning,
+            FutureWarning,
             stacklevel=2,
         )
         return self.difference(other)
+
+    def clip(self, mask, keep_geom_type=False):
+        """Clip points, lines, or polygon geometries to the mask extent.
+
+        Both layers must be in the same Coordinate Reference System (CRS).
+        The GeoSeries will be clipped to the full extent of the `mask` object.
+
+        If there are multiple polygons in mask, data from the GeoSeries will be
+        clipped to the total boundary of all polygons in mask.
+
+        Parameters
+        ----------
+        mask : GeoDataFrame, GeoSeries, (Multi)Polygon, list-like
+            Polygon vector layer used to clip `gdf`.
+            The mask's geometry is dissolved into one geometric feature
+            and intersected with GeoSeries.
+            If the mask is list-like with four elements ``(minx, miny, maxx, maxy)``,
+            ``clip`` will use a faster rectangle clipping
+            (:meth:`~GeoSeries.clip_by_rect`), possibly leading to slightly different
+            results.
+        keep_geom_type : boolean, default False
+            If True, return only geometries of original type in case of intersection
+            resulting in multiple geometry types or GeometryCollections.
+            If False, return all resulting geometries (potentially mixed-types).
+
+        Returns
+        -------
+        GeoSeries
+            Vector data (points, lines, polygons) from `gdf` clipped to
+            polygon boundary from mask.
+
+        See also
+        --------
+        clip : top-level function for clip
+
+        Examples
+        --------
+        Clip points (global cities) with a polygon (the South American continent):
+
+        >>> world = geopandas.read_file(
+        ...     geopandas.datasets.get_path('naturalearth_lowres'))
+        >>> south_america = world[world['continent'] == "South America"]
+        >>> capitals = geopandas.read_file(
+        ...     geopandas.datasets.get_path('naturalearth_cities'))
+        >>> capitals.shape
+        (202, 2)
+
+        >>> sa_capitals = capitals.geometry.clip(south_america)
+        >>> sa_capitals.shape
+        (12,)
+        """
+        return geopandas.clip(self, mask=mask, keep_geom_type=keep_geom_type)
