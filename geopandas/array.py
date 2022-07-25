@@ -1379,23 +1379,24 @@ class GeometryArray(ExtensionArray):
         return (self == item).any()
 
 
-def _get_common_crs(elements):
+def _get_common_crs(arr_seq):
 
-    crss = set(el.crs for el in elements)
-    crss_not_none = [c for c in crss if c is not None]
-    names = [c.name for c in crss_not_none]
+    crs_set = {arr.crs for arr in arr_seq}
+    crs_not_none = [crs for crs in crs_set if crs is not None]
+    names = [crs.name for crs in crs_not_none]
 
-    if len(crss_not_none) == 0:
+    if len(crs_not_none) == 0:
         return None
-    if len(crss_not_none) == 1:
-        if len(crss) != 1:
+    if len(crs_not_none) == 1:
+        if len(crs_set) != 1:
             warnings.warn(
-                f"CRS not set for some of the concatenation inputs. "
-                f"Setting output's CRS as {names[0]}"
+                "CRS not set for some of the concatenation inputs. "
+                f"Setting output's CRS as {names[0]} "
+                "(the single non-null crs provided)."
             )
-        return crss_not_none[0]
+        return crs_not_none[0]
 
     raise ValueError(
-        f"Can not determine common CRS for concatenation inputs among {names}."
-        f" Use .to_crs() to transform geometries to the same CRS"
+        f"Cannot determine common CRS for concatenation inputs, got {names}. "
+        "Use `to_crs()` to transform geometries to the same CRS."
     )

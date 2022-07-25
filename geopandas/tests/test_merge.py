@@ -80,7 +80,7 @@ class TestMerging:
 
         # CRS set for both GeoDataFrame, different CRS
         with pytest.raises(
-            ValueError, match=r"Can not determine common CRS for concatenation inputs.*"
+            ValueError, match=r"Cannot determine common CRS for concatenation inputs.*"
         ):
             pd.concat([self.gdf.set_crs("epsg:4326"), self.gdf.set_crs("epsg:4327")])
 
@@ -97,7 +97,7 @@ class TestMerging:
         # CRS not set for one GeoDataFrame, but set for the other GeoDataFrames,
         # different CRS
         with pytest.raises(
-            ValueError, match=r"Can not determine common CRS for concatenation inputs.*"
+            ValueError, match=r"Cannot determine common CRS for concatenation inputs.*"
         ):
             pd.concat(
                 [self.gdf, self.gdf.set_crs("epsg:4326"), self.gdf.set_crs("epsg:4327")]
