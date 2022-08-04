@@ -86,7 +86,10 @@ def _df_to_geodf(df, geom_col="geom", crs=None):
 
         df[geom_col] = geoms = geoms.apply(load_geom)
         if crs is None:
-            srid = shapely.geos.lgeos.GEOSGetSRID(geoms.iat[0]._geom)
+            if compat.SHAPELY_GE_20:
+                srid = shapely.get_srid(geoms.iat[0])
+            else:
+                srid = shapely.geos.lgeos.GEOSGetSRID(geoms.iat[0]._geom)
             # if no defined SRID in geodatabase, returns SRID of 0
             if srid != 0:
                 crs = "epsg:{}".format(srid)
