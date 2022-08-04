@@ -776,8 +776,6 @@ if compat.SHAPELY_GE_20 or compat.HAS_PYGEOS:
             if isinstance(geometry, BaseGeometry) or geometry is None:
                 geometry = [geometry]
 
-            # if not return_all and max_distance is None and not return_distance:
-            #     return self._tree.query_nearest(geometry)
             if compat.SHAPELY_GE_20:
                 result = self._tree.query_nearest(
                     geometry,
@@ -786,6 +784,8 @@ if compat.SHAPELY_GE_20 or compat.HAS_PYGEOS:
                     all_matches=return_all,
                 )
             else:
+                if not return_all and max_distance is None and not return_distance:
+                    return self._tree.nearest(geometry)
                 result = self._tree.nearest_all(
                     geometry, max_distance=max_distance, return_distance=return_distance
                 )
