@@ -148,7 +148,11 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             if crs is not None and data.crs != crs:
                 raise ValueError(crs_mismatch_error)
 
-        if geometry is None and "geometry" in self.columns:
+        if (
+            geometry is None
+            and self.columns.nlevels == 1
+            and "geometry" in self.columns
+        ):
             # Check for multiple columns with name "geometry". If there are,
             # self["geometry"] is a gdf and constructor gets recursively recalled
             # by pandas internals trying to access this
@@ -996,7 +1000,7 @@ individually so that features may have different properties
         return df
 
     def to_parquet(
-        self, path, index=None, compression="snappy", version=None, **kwargs
+        self, path, index=None, compression="snappy", schema_version=None, **kwargs
     ):
         """Write a GeoDataFrame to the Parquet format.
 
@@ -1026,7 +1030,7 @@ individually so that features may have different properties
             output except `RangeIndex` which is stored as metadata only.
         compression : {'snappy', 'gzip', 'brotli', None}, default 'snappy'
             Name of the compression to use. Use ``None`` for no compression.
-        version : {'0.1.0', '0.4.0', None}
+        schema_version : {'0.1.0', '0.4.0', None}
             GeoParquet specification version; if not provided will default to
             latest supported version.
         kwargs
@@ -1056,10 +1060,17 @@ individually so that features may have different properties
         from geopandas.io.arrow import _to_parquet
 
         _to_parquet(
-            self, path, compression=compression, index=index, version=version, **kwargs
+            self,
+            path,
+            compression=compression,
+            index=index,
+            schema_version=schema_version,
+            **kwargs,
         )
 
-    def to_feather(self, path, index=None, compression=None, version=None, **kwargs):
+    def to_feather(
+        self, path, index=None, compression=None, schema_version=None, **kwargs
+    ):
         """Write a GeoDataFrame to the Feather format.
 
         Any geometry columns present are serialized to WKB format in the file.
@@ -1089,7 +1100,7 @@ individually so that features may have different properties
         compression : {'zstd', 'lz4', 'uncompressed'}, optional
             Name of the compression to use. Use ``"uncompressed"`` for no
             compression. By default uses LZ4 if available, otherwise uncompressed.
-        version : {'0.1.0', '0.4.0', None}
+        schema_version : {'0.1.0', '0.4.0', None}
             GeoParquet specification version; if not provided will default to
             latest supported version.
         kwargs
@@ -1110,7 +1121,12 @@ individually so that features may have different properties
         from geopandas.io.arrow import _to_feather
 
         _to_feather(
-            self, path, index=index, compression=compression, version=version, **kwargs
+            self,
+            path,
+            index=index,
+            compression=compression,
+            schema_version=schema_version,
+            **kwargs,
         )
 
     def to_file(self, filename, driver=None, schema=None, index=None, **kwargs):
@@ -1508,14 +1524,17 @@ individually so that features may have different properties
             else:
                 if self.crs is not None and result.crs is None:
                     result.set_crs(self.crs, inplace=True)
-        elif isinstance(result, Series):
-            # Reconstruct series GeometryDtype if lost by apply
-            try:
-                # Note CRS cannot be preserved in this case as func could refer
-                # to any column
-                result = _ensure_geometry(result)
-            except TypeError:
-                pass
+        elif isinstance(result, Series) and result.dtype == "object":
+            # Try reconstruct series GeometryDtype if lost by apply
+            # If all none and object dtype assert list of nones is more likely
+            # intended than list of null geometry.
+            if not result.isna().all():
+                try:
+                    # not enough info about func to preserve CRS
+                    result = _ensure_geometry(result)
+
+                except TypeError:
+                    pass
 
         return result
 
@@ -1809,12 +1828,11 @@ individually so that features may have different properties
 
         exploded_geom = self.geometry.reset_index(drop=True).explode(index_parts=True)
 
-        df = GeoDataFrame(
-            self.drop(self._geometry_column_name, axis=1).take(
-                exploded_geom.index.droplevel(-1)
-            ),
-            geometry=exploded_geom.values,
-        ).__finalize__(self)
+        df = self.drop(self._geometry_column_name, axis=1).take(
+            exploded_geom.index.droplevel(-1)
+        )
+        df[exploded_geom.name] = exploded_geom.values
+        df = df.set_geometry(self._geometry_column_name).__finalize__(self)
 
         if ignore_index:
             df.reset_index(inplace=True, drop=True)

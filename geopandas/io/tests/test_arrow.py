@@ -105,8 +105,8 @@ def test_crs_metadata_datum_ensemble():
 
 def test_write_metadata_invalid_spec_version():
     gdf = geopandas.GeoDataFrame(geometry=[box(0, 0, 10, 10)], crs="EPSG:4326")
-    with pytest.raises(ValueError, match="version must be one of"):
-        _create_metadata(gdf, version="invalid")
+    with pytest.raises(ValueError, match="schema_version must be one of"):
+        _create_metadata(gdf, schema_version="invalid")
 
 
 def test_encode_metadata():
@@ -259,7 +259,7 @@ def test_to_parquet_does_not_pass_engine_along(mock_to_parquet):
     # assert that engine keyword is not passed through to _to_parquet (and thus
     # parquet.write_table)
     mock_to_parquet.assert_called_with(
-        df, "", compression="snappy", index=None, version=None
+        df, "", compression="snappy", index=None, schema_version=None
     )
 
 
@@ -679,9 +679,10 @@ def test_write_read_default_crs(tmpdir, format):
 
 
 @pytest.mark.parametrize(
-    "format,version", product(["feather", "parquet"], [None] + SUPPORTED_VERSIONS)
+    "format,schema_version",
+    product(["feather", "parquet"], [None] + SUPPORTED_VERSIONS),
 )
-def test_write_spec_version(tmpdir, format, version):
+def test_write_spec_version(tmpdir, format, schema_version):
     if format == "feather":
         from pyarrow.feather import read_table
 
@@ -691,7 +692,7 @@ def test_write_spec_version(tmpdir, format, version):
     filename = os.path.join(str(tmpdir), f"test.{format}")
     gdf = geopandas.GeoDataFrame(geometry=[box(0, 0, 10, 10)], crs="EPSG:4326")
     write = getattr(gdf, f"to_{format}")
-    write(filename, version=version)
+    write(filename, schema_version=schema_version)
 
     # ensure that we can roundtrip data regardless of version
     read = getattr(geopandas, f"read_{format}")
@@ -700,16 +701,56 @@ def test_write_spec_version(tmpdir, format, version):
 
     table = read_table(filename)
     metadata = json.loads(table.schema.metadata[b"geo"])
-    assert metadata["version"] == version or METADATA_VERSION
+    assert metadata["version"] == schema_version or METADATA_VERSION
 
     # verify that CRS is correctly handled between versions
-    if version == "0.1.0":
+    if schema_version == "0.1.0":
         assert metadata["columns"]["geometry"]["crs"] == gdf.crs.to_wkt()
 
     else:
         crs_expected = gdf.crs.to_json_dict()
         _remove_id_from_member_of_ensembles(crs_expected)
         assert metadata["columns"]["geometry"]["crs"] == crs_expected
+
+
+@pytest.mark.parametrize(
+    "format,version", product(["feather", "parquet"], [None] + SUPPORTED_VERSIONS)
+)
+def test_write_deprecated_version_parameter(tmpdir, format, version):
+    if format == "feather":
+        from pyarrow.feather import read_table
+
+        version = version or 2
+
+    else:
+        from pyarrow.parquet import read_table
+
+        version = version or "2.6"
+
+    filename = os.path.join(str(tmpdir), f"test.{format}")
+    gdf = geopandas.GeoDataFrame(geometry=[box(0, 0, 10, 10)], crs="EPSG:4326")
+    write = getattr(gdf, f"to_{format}")
+
+    if version in SUPPORTED_VERSIONS:
+        with pytest.warns(
+            FutureWarning,
+            match="the `version` parameter has been replaced with `schema_version`",
+        ):
+            write(filename, version=version)
+
+    else:
+        # no warning raised if not one of the captured versions
+        write(filename, version=version)
+
+    table = read_table(filename)
+    metadata = json.loads(table.schema.metadata[b"geo"])
+
+    if version in SUPPORTED_VERSIONS:
+        # version is captured as a parameter
+        assert metadata["version"] == version
+    else:
+        # version is passed to underlying writer
+        assert metadata["version"] == METADATA_VERSION
 
 
 @pytest.mark.parametrize("version", ["0.1.0", "0.4.0"])

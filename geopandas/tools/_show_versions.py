@@ -86,19 +86,22 @@ def _get_deps_info():
     """
     deps = [
         "geopandas",
-        "pandas",
-        "fiona",
+        # required deps
         "numpy",
-        "shapely",
-        "rtree",
+        "pandas",
         "pyproj",
+        "shapely",
+        # optional deps
+        "fiona",
+        "geoalchemy2",
+        "geopy",
         "matplotlib",
         "mapclassify",
-        "geopy",
-        "psycopg2",
-        "geoalchemy2",
-        "pyarrow",
         "pygeos",
+        "pyogrio",
+        "psycopg2",
+        "pyarrow",
+        "rtree",
     ]
 
     def get_version(module):

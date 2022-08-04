@@ -655,6 +655,22 @@ def test_df_apply_returning_series(df):
 
     result = df.apply(lambda row: row.value1, axis=1)
     assert_series_equal(result, df["value1"].rename(None))
+    # https://github.com/geopandas/geopandas/issues/2480
+    result = df.apply(lambda x: float("NaN"), axis=1)
+    assert result.dtype == "float64"
+    # assert list of nones is not promoted to GeometryDtype
+    result = df.apply(lambda x: None, axis=1)
+    assert result.dtype == "object"
+
+
+def test_pivot(df):
+    # https://github.com/geopandas/geopandas/issues/2057
+    # pivot failing due to creating a MultiIndex
+    result = df.pivot(columns="value1")
+    expected = GeoDataFrame(pd.DataFrame(df).pivot(columns="value1"))
+    # TODO assert_geodataframe_equal crashes
+    assert isinstance(result, GeoDataFrame)
+    assert_frame_equal(result, expected)
 
 
 def test_preserve_attrs(df):

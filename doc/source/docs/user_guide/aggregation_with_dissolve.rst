@@ -80,7 +80,7 @@ However it also accepts other summary statistic options as allowed by :meth:`pan
 * list of functions and/or function names, e.g. [np.sum, 'mean']
 * dict of axis labels -> functions, function names or list of such.
 
-For example, to get the number of contries on each continent, 
+For example, to get the number of countries on each continent, 
 as well as the populations of the largest and smallest country of each,
 we can aggregate the ``'name'`` column using ``'count'``,
 and the ``'pop_est'`` column using ``'min'`` and ``'max'``:
