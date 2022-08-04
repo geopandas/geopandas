@@ -17,8 +17,10 @@ from geopandas import GeoDataFrame, GeoSeries, read_file, datasets
 import pytest
 import numpy as np
 
-if compat.USE_PYGEOS:
-    import pygeos
+if compat.SHAPELY_GE_20:
+    import shapely as geom_mod
+elif compat.USE_PYGEOS:
+    import pygeos as geom_mod
 
 
 @pytest.mark.skip_no_sindex
@@ -709,8 +711,7 @@ class TestPygeosInterface:
             df.sindex.nearest((0, 0, 1, 1), num_results=2)
 
     @pytest.mark.skipif(
-        # TODO skip for SHAPELY_GE_20 once sindex is working
-        not (compat.USE_PYGEOS and not compat.PYGEOS_GE_010),
+        compat.SHAPELY_GE_20 or not (compat.USE_PYGEOS and not compat.PYGEOS_GE_010),
         reason=("PyGEOS < 0.10 does not support sindex.nearest"),
     )
     def test_pygeos_error(self):
@@ -731,19 +732,19 @@ class TestPygeosInterface:
         ],
     )
     def test_nearest_single(self, geometry, expected, return_all):
-        geoms = pygeos.points(np.arange(10), np.arange(10))
+        geoms = geom_mod.points(np.arange(10), np.arange(10))
         df = geopandas.GeoDataFrame({"geometry": geoms})
 
         p = Point(geometry)
         res = df.sindex.nearest(p, return_all=return_all)
         assert_array_equal(res, expected)
 
-        p = pygeos.points(geometry)
+        p = geom_mod.points(geometry)
         res = df.sindex.nearest(p, return_all=return_all)
         assert_array_equal(res, expected)
 
     @pytest.mark.skipif(
-        not compat.SHAPELY_GE_20 or not compat.USE_PYGEOS or not compat.PYGEOS_GE_010,
+        not (compat.SHAPELY_GE_20 or (compat.USE_PYGEOS and compat.PYGEOS_GE_010)),
         reason=("PyGEOS >= 0.10 is required to test sindex.nearest"),
     )
     @pytest.mark.parametrize("return_all", [True, False])
@@ -755,14 +756,14 @@ class TestPygeosInterface:
         ],
     )
     def test_nearest_multi(self, geometry, expected, return_all):
-        geoms = pygeos.points(np.arange(10), np.arange(10))
+        geoms = geom_mod.points(np.arange(10), np.arange(10))
         df = geopandas.GeoDataFrame({"geometry": geoms})
 
         ps = [Point(p) for p in geometry]
         res = df.sindex.nearest(ps, return_all=return_all)
         assert_array_equal(res, expected)
 
-        ps = pygeos.points(geometry)
+        ps = geom_mod.points(geometry)
         res = df.sindex.nearest(ps, return_all=return_all)
         assert_array_equal(res, expected)
 
@@ -776,7 +777,7 @@ class TestPygeosInterface:
         assert_array_equal(res, expected)
 
     @pytest.mark.skipif(
-        not compat.SHAPELY_GE_20 or not compat.USE_PYGEOS or not compat.PYGEOS_GE_010,
+        not (compat.SHAPELY_GE_20 or (compat.USE_PYGEOS and compat.PYGEOS_GE_010)),
         reason=("PyGEOS >= 0.10 is required to test sindex.nearest"),
     )
     @pytest.mark.parametrize("return_all", [True, False])
@@ -788,14 +789,14 @@ class TestPygeosInterface:
         ],
     )
     def test_nearest_none(self, geometry, expected, return_all):
-        geoms = pygeos.points(np.arange(10), np.arange(10))
+        geoms = geom_mod.points(np.arange(10), np.arange(10))
         df = geopandas.GeoDataFrame({"geometry": geoms})
 
         res = df.sindex.nearest(geometry, return_all=return_all)
         assert_array_equal(res, expected)
 
     @pytest.mark.skipif(
-        not compat.SHAPELY_GE_20 or not compat.USE_PYGEOS or not compat.PYGEOS_GE_010,
+        not (compat.SHAPELY_GE_20 or (compat.USE_PYGEOS and compat.PYGEOS_GE_010)),
         reason=("PyGEOS >= 0.10 is required to test sindex.nearest"),
     )
     @pytest.mark.parametrize("return_distance", [True, False])
@@ -811,7 +812,7 @@ class TestPygeosInterface:
     def test_nearest_max_distance(
         self, expected, max_distance, return_all, return_distance
     ):
-        geoms = pygeos.points(np.arange(10), np.arange(10))
+        geoms = geom_mod.points(np.arange(10), np.arange(10))
         df = geopandas.GeoDataFrame({"geometry": geoms})
 
         ps = [Point(0.5, 0.5), Point(0, 10)]
