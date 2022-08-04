@@ -200,7 +200,7 @@ def _read_file(filename, bbox=None, mask=None, rows=None, engine=None, **kwargs)
         :class:`fiona.collection.BytesCollection` when opening the file.
         For more information on possible keywords, type:
         ``import fiona; help(fiona.open)``. In case of the "pyogrio" engine,
-        the keyword arguments are passed to `pyogrio.read_dataframe`.
+        the keyword arguments are passed to :func:`pyogrio.read_dataframe`.
 
 
     Examples
