@@ -48,9 +48,12 @@ def with_use_pygeos(option):
 
 
 @pytest.mark.skipif(
-    compat.USE_PYGEOS or (Version(pyproj.__version__) < Version("2.4")),
+    compat.SHAPELY_GE_20
+    or compat.USE_PYGEOS
+    or (Version(pyproj.__version__) < Version("2.4")),
     reason=(
-        "pygeos-based unpickling currently only works for pygeos-written files; "
+        "shapely 2.0/pygeos-based unpickling currently only works for "
+        "shapely-2.0/pygeos-written files; "
         "old pyproj versions can't read pickles from newer pyproj versions"
     ),
 )
@@ -80,7 +83,10 @@ def _create_gdf():
     )
 
 
-@pytest.mark.skipif(not compat.HAS_PYGEOS, reason="requires pygeos to test #1745")
+@pytest.mark.skipif(
+    not compat.HAS_PYGEOS or compat.SHAPELY_GE_20,
+    reason="requires pygeos to test #1745",
+)
 def test_pygeos_switch(tmpdir):
     # writing and reading with pygeos disabled
     with with_use_pygeos(False):
