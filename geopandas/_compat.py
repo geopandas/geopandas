@@ -124,7 +124,10 @@ def set_use_pygeos(val=None):
             raise ImportError(INSTALL_PYGEOS_ERROR)
 
 
-set_use_pygeos()
+if SHAPELY_GE_20:
+    set_use_pygeos(False)
+else:
+    set_use_pygeos()
 
 
 # compat related to deprecation warnings introduced in Shapely 1.8
