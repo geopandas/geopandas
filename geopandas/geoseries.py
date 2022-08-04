@@ -546,7 +546,8 @@ class GeoSeries(GeoPandasBase, Series):
         Parameters
         ----------
         filename : string
-            File path or file handle to write to.
+            File path or file handle to write to. The path may specify a
+            GDAL VSI scheme.
         driver : string, default None
             The OGR format driver used to write the vector file.
             If not specified, it attempts to infer it from the file extension.
@@ -559,12 +560,29 @@ class GeoSeries(GeoPandasBase, Series):
 
             .. versionadded:: 0.7
                 Previously the index was not written.
-
-        Notes
-        -----
-        The extra keyword arguments ``**kwargs`` are passed to fiona.open and
-        can be used to write to multi-layer data, store data within archives
-        (zip files), etc.
+        mode : string, default 'w'
+            The write mode, 'w' to overwrite the existing file and 'a' to append.
+            Not all drivers support appending. The drivers that support appending
+            are listed in fiona.supported_drivers or
+            https://github.com/Toblerity/Fiona/blob/master/fiona/drvsupport.py
+        crs : pyproj.CRS, default None
+            If specified, the CRS is passed to Fiona to
+            better control how the file is written. If None, GeoPandas
+            will determine the crs based on crs df attribute.
+            The value can be anything accepted
+            by :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
+            such as an authority string (eg "EPSG:4326") or a WKT string.
+        engine : str, "fiona" or "pyogrio"
+            The underlying library that is used to write the file. Currently, the
+            supported options are "fiona" and "pyogrio". Defaults to "fiona" if
+            installed, otherwise tries "pyogrio".
+        **kwargs :
+            Keyword args to be passed to the engine, and can be used to write
+            to multi-layer data, store data within archives (zip files), etc.
+            In case of the "fiona" engine, the keyword arguments are passed to
+            fiona.open`. For more information on possible keywords, type:
+            ``import fiona; help(fiona.open)``. In case of the "pyogrio" engine,
+            the keyword arguments are passed to `pyogrio.write_dataframe`.
 
         See Also
         --------
@@ -1251,7 +1269,7 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
         warnings.warn(
             "'^' operator will be deprecated. Use the 'symmetric_difference' "
             "method instead.",
-            DeprecationWarning,
+            FutureWarning,
             stacklevel=2,
         )
         return self.symmetric_difference(other)
@@ -1260,7 +1278,7 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
         """Implement | operator as for builtin set type"""
         warnings.warn(
             "'|' operator will be deprecated. Use the 'union' method instead.",
-            DeprecationWarning,
+            FutureWarning,
             stacklevel=2,
         )
         return self.union(other)
@@ -1269,7 +1287,7 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
         """Implement & operator as for builtin set type"""
         warnings.warn(
             "'&' operator will be deprecated. Use the 'intersection' method instead.",
-            DeprecationWarning,
+            FutureWarning,
             stacklevel=2,
         )
         return self.intersection(other)
@@ -1278,7 +1296,7 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
         """Implement - operator as for builtin set type"""
         warnings.warn(
             "'-' operator will be deprecated. Use the 'difference' method instead.",
-            DeprecationWarning,
+            FutureWarning,
             stacklevel=2,
         )
         return self.difference(other)
@@ -1294,10 +1312,14 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
 
         Parameters
         ----------
-        mask : GeoDataFrame, GeoSeries, (Multi)Polygon
+        mask : GeoDataFrame, GeoSeries, (Multi)Polygon, list-like
             Polygon vector layer used to clip `gdf`.
             The mask's geometry is dissolved into one geometric feature
-            and intersected with `gdf`.
+            and intersected with GeoSeries.
+            If the mask is list-like with four elements ``(minx, miny, maxx, maxy)``,
+            ``clip`` will use a faster rectangle clipping
+            (:meth:`~GeoSeries.clip_by_rect`), possibly leading to slightly different
+            results.
         keep_geom_type : boolean, default False
             If True, return only geometries of original type in case of intersection
             resulting in multiple geometry types or GeometryCollections.

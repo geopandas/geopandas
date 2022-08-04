@@ -5,7 +5,6 @@ import numpy as np
 import pandas as pd
 
 from shapely.geometry import Point, Polygon, LineString, GeometryCollection, box
-from fiona.errors import DriverError
 
 import geopandas
 from geopandas import GeoDataFrame, GeoSeries, overlay, read_file
@@ -13,6 +12,13 @@ from geopandas import _compat
 
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 import pytest
+
+try:
+    from fiona.errors import DriverError
+except ImportError:
+
+    class DriverError(Exception):
+        pass
 
 
 DATA = os.path.join(os.path.abspath(os.path.dirname(__file__)), "data", "overlay")
@@ -82,6 +88,8 @@ def test_overlay(dfs_index, how):
             os.path.join(DATA, "polys", "df1_df2-{0}.geojson".format(name))
         )
         expected.crs = None
+        for col in expected.columns[expected.dtypes == "int32"]:
+            expected[col] = expected[col].astype("int64")
         return expected
 
     if how == "identity":
@@ -528,6 +536,9 @@ def test_overlay_strict(how, keep_geom_type, geom_types):
         assert result.empty
 
     except OSError:  # fiona < 1.8
+        assert result.empty
+
+    except RuntimeError:  # pyogrio.DataSourceError
         assert result.empty
 
 

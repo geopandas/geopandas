@@ -146,6 +146,15 @@ Field/Column Filters
 
 Load in a subset of fields from the file:
 
+.. note:: Requires Fiona 1.9+
+
+.. code-block:: python
+
+    gdf = geopandas.read_file(
+        geopandas.datasets.get_path("naturalearth_lowres"),
+        include_fields=["pop_est", "continent", "name"],
+    )
+
 .. note:: Requires Fiona 1.8+
 
 .. code-block:: python

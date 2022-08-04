@@ -531,39 +531,6 @@ class TestDataFrame:
         assert type(df2) is GeoDataFrame
         assert self.df.crs == df2.crs
 
-    def test_to_file_crs(self):
-        """
-        Ensure that the file is written according to the crs
-        if it is specified
-
-        """
-        tempfilename = os.path.join(self.tempdir, "crs.shp")
-        # save correct CRS
-        self.df.to_file(tempfilename)
-        df = GeoDataFrame.from_file(tempfilename)
-        assert df.crs == self.df.crs
-        # overwrite CRS
-        self.df.to_file(tempfilename, crs=3857)
-        df = GeoDataFrame.from_file(tempfilename)
-        assert df.crs == "epsg:3857"
-
-        # specify CRS for gdf without one
-        df2 = self.df.copy()
-        df2.crs = None
-        df2.to_file(tempfilename, crs=2263)
-        df = GeoDataFrame.from_file(tempfilename)
-        assert df.crs == "epsg:2263"
-
-    def test_to_file_with_duplicate_columns(self):
-        df = GeoDataFrame(
-            data=[[1, 2, 3]], columns=["a", "b", "a"], geometry=[Point(1, 1)]
-        )
-        with pytest.raises(
-            ValueError, match="GeoDataFrame cannot contain duplicated column names."
-        ):
-            tempfilename = os.path.join(self.tempdir, "crs.shp")
-            df.to_file(tempfilename)
-
     def test_bool_index(self):
         # Find boros with 'B' in their name
         df = self.df[self.df["BoroName"].str.contains("B")]
@@ -1252,6 +1219,25 @@ class TestConstructor:
         df3 = df.rename(columns={"geometry": "geom"})
         with pytest.raises(ValueError):
             GeoDataFrame(df3, geometry="geom")
+
+    @pytest.mark.parametrize("dtype", ["geometry", "object"])
+    def test_multiindex_with_geometry_label(self, dtype):
+        # DataFrame with MultiIndex where "geometry" label corresponds to
+        # multiple columns
+        df = pd.DataFrame([[Point(0, 0), Point(1, 1)], [Point(2, 2), Point(3, 3)]])
+        df = df.astype(dtype)
+        df.columns = pd.MultiIndex.from_product([["geometry"], [0, 1]])
+        # don't error in constructor
+        gdf = GeoDataFrame(df)
+        # Getting the .geometry column gives GeoDataFrame for both columns
+        # (but with first MultiIndex level removed)
+        # TODO should this give an error instead?
+        result = gdf.geometry
+        assert result.shape == gdf.shape
+        assert result.columns.tolist() == [0, 1]
+        assert_frame_equal(result, gdf["geometry"])
+        result = gdf[["geometry"]]
+        assert_frame_equal(result, gdf if dtype == "geometry" else pd.DataFrame(gdf))
 
 
 def test_geodataframe_crs():

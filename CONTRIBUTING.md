@@ -32,6 +32,9 @@ In particular, when submitting a pull request:
   line of a docstring should be a standalone summary. Parameters and
   return values should be documented explicitly.
 
+- Unless your PR implements minor changes or internal work only, make sure
+  it contains a note describing the changes in the `CHANGELOG.md` file.
+
 Improving the documentation and testing for code already in GeoPandas
 is a great way to get started if you'd like to make a contribution.
 
