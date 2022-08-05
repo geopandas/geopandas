@@ -118,19 +118,23 @@ def _query(data, forward, provider, throttle_time, **kwargs):
     from geopy.geocoders.base import GeocoderQueryError
 
 
+    # Get the actual 'geocoder' from the provider name
     if provider is None:
         provider = "photon"
     if isinstance(provider, str):
         provider = get_geocoder_for_service(provider)
 
+    # Set default throttle time if not provided
     if throttle_time is None:
         throttle_time = _get_throttle_time(provider)
 
+    # Transform data into Series
     if forward and not isinstance(data, pd.Series):
         data = pd.Series(data)
     elif not isinstance(data, geopandas.GeoSeries):
         data = geopandas.GeoSeries(data)
 
+    # Init geocoder
     coder = provider(**kwargs)
     transform = coder.geocode if forward else coder.reverse
     transform = partial(transform, exactly_one=True)
