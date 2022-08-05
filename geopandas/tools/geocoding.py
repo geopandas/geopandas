@@ -111,9 +111,12 @@ def reverse_geocode(points, provider=None, throttle_time=None, **kwargs):
 
 def _query(data, forward, provider, throttle_time, **kwargs):
     # generic wrapper for calls over lists to geopy Geocoders
+    from functools import partial
+
     from geopy.extra.rate_limiter import RateLimiter
     from geopy.geocoders import get_geocoder_for_service
     from geopy.geocoders.base import GeocoderQueryError
+
 
     if provider is None:
         provider = "photon"
@@ -130,6 +133,7 @@ def _query(data, forward, provider, throttle_time, **kwargs):
 
     coder = provider(**kwargs)
     transform = coder.geocode if forward else coder.reverse
+    transform = partial(transform, exactly_one=True)
     transform = RateLimiter(transform, min_delay_seconds=throttle_time)
 
     results = {}
