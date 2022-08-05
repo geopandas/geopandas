@@ -365,7 +365,6 @@ class TestPointPlotting:
 
     def test_categories(self):
         self.df["cats_object"] = ["cat1", "cat2"] * 5
-        self.df["cats_string"] = pd.array(["cat1", "cat2"] * 5, dtype="string")
         self.df["nums"] = [1, 2] * 5
         self.df["singlecat_object"] = ["cat2"] * 10
         self.df["cats"] = pd.Categorical(["cat1", "cat2"] * 5)
@@ -377,6 +376,7 @@ class TestPointPlotting:
         )
         self.df["bool"] = [False, True] * 5
         self.df["bool_extension"] = pd.array([False, True] * 5)
+        self.df["cats_string"] = pd.array(["cat1", "cat2"] * 5, dtype="string")
 
         ax1 = self.df.plot("cats_object", legend=True)
         ax2 = self.df.plot("cats", legend=True)
