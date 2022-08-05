@@ -374,6 +374,9 @@ class TestPointPlotting:
         self.df["cats_ordered"] = pd.Categorical(
             ["cat2", "cat1"] * 5, categories=["cat2", "cat1"]
         )
+        self.df["bool"] = [False, True] * 5
+        self.df["bool_extension"] = pd.array([False, True] * 5)
+        self.df["cats_string"] = pd.array(["cat1", "cat2"] * 5, dtype="string")
 
         ax1 = self.df.plot("cats_object", legend=True)
         ax2 = self.df.plot("cats", legend=True)
@@ -381,14 +384,17 @@ class TestPointPlotting:
         ax4 = self.df.plot("singlecat", legend=True)
         ax5 = self.df.plot("cats_ordered", legend=True)
         ax6 = self.df.plot("nums", categories=[1, 2], legend=True)
+        ax7 = self.df.plot("bool", legend=True)
+        ax8 = self.df.plot("bool_extension", legend=True)
+        ax9 = self.df.plot("cats_string", legend=True)
 
         point_colors1 = ax1.collections[0].get_facecolors()
-        for ax in [ax2, ax3, ax4, ax5, ax6]:
+        for ax in [ax2, ax3, ax4, ax5, ax6, ax7, ax8, ax9]:
             point_colors2 = ax.collections[0].get_facecolors()
             np.testing.assert_array_equal(point_colors1[1], point_colors2[1])
 
         legend1 = [x.get_markerfacecolor() for x in ax1.get_legend().get_lines()]
-        for ax in [ax2, ax3, ax4, ax5, ax6]:
+        for ax in [ax2, ax3, ax4, ax5, ax6, ax7, ax8, ax9]:
             legend2 = [x.get_markerfacecolor() for x in ax.get_legend().get_lines()]
             np.testing.assert_array_equal(legend1, legend2)
 
@@ -404,11 +410,6 @@ class TestPointPlotting:
             ValueError, match="Cannot specify 'categories' when column has"
         ):
             self.df.plot(column="cats", categories=["cat1"])
-
-    def test_string_category_plot(self):
-        df = self.df.copy()
-        df["string"] = pd.array(["1", "2", "3", "4", "5"] * 2, dtype="string")
-        df.plot("string", legend=True)
 
     def test_missing(self):
         self.df.loc[0, "values"] = np.nan

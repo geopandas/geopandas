@@ -256,9 +256,9 @@ class TestExplore:
     def test_bool(self):
         df = self.nybb.copy()
         df["bool"] = [True, False, True, False, True]
-        df["bool_extention"] = pd.array([True, False, True, False, True])
+        df["bool_extension"] = pd.array([True, False, True, False, True])
         m1 = df.explore("bool")
-        m2 = df.explore("bool_extention")
+        m2 = df.explore("bool_extension")
 
         out1_str = self._fetch_map_string(m1)
         assert '"__folium_color":"#9edae5","bool":true' in out1_str
