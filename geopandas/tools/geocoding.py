@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from collections import defaultdict
 
 import pandas as pd
@@ -23,12 +21,7 @@ def _get_throttle_time(provider):
         return 0
 
 
-def geocode(
-    strings: list[str] | pd.Series,
-    provider: str | "geopy.geocoder" = None,
-    throttle_time: int | float = None,
-    **kwargs,
-) -> geopandas.GeoDataFrame:
+def geocode(strings, provider=None, throttle_time=None, **kwargs):
     """
     Geocode a set of strings and get a GeoDataFrame of the resulting points.
 
@@ -69,12 +62,7 @@ def geocode(
     return _query(strings, True, provider, throttle_time, **kwargs)
 
 
-def reverse_geocode(
-    points: list[Point] | geopandas.GeoSeries,
-    provider: str | "geopy.geocoder" = None,
-    throttle_time: int | float = None,
-    **kwargs,
-) -> geopandas.GeoDataFrame:
+def reverse_geocode(points, provider=None, throttle_time=None, **kwargs):
     """
     Reverse geocode a set of points and get a GeoDataFrame of the resulting
     addresses.
