@@ -974,7 +974,7 @@ GeometryCollection
         other : GeoSeries or geometric object
             The GeoSeries (elementwise) or geometric object to compare to.
         decimal : int
-            Decimal place presion used when testing for approximate equality.
+            Decimal place precision used when testing for approximate equality.
         align : bool (default True)
             If True, automatically aligns GeoSeries based on their indices.
             If False, the order of elements is preserved.
@@ -1042,7 +1042,7 @@ GeometryCollection
         other : GeoSeries or geometric object
             The GeoSeries (elementwise) or geometric object to compare to.
         tolerance : float
-            Decimal place presion used when testing for approximate equality.
+            Decimal place precision used when testing for approximate equality.
         align : bool (default True)
             If True, automatically aligns GeoSeries based on their indices.
             If False, the order of elements is preserved.
@@ -2535,6 +2535,75 @@ GeometryCollection
         GeoSeries.union
         """
         return _binary_geo("intersection", self, other, align)
+
+    def clip_by_rect(self, xmin, ymin, xmax, ymax):
+        """Returns a ``GeoSeries`` of the portions of geometry within the given
+        rectangle.
+
+        Note that the results are not exactly equal to
+        :meth:`~GeoSeries.intersection()`. E.g. in edge cases,
+        :meth:`~GeoSeries.clip_by_rect()` will not return a point just touching the
+        rectangle. Check the examples section below for some of these exceptions.
+
+        The geometry is clipped in a fast but possibly dirty way. The output is not
+        guaranteed to be valid. No exceptions will be raised for topological errors.
+
+        Note: empty geometries or geometries that do not overlap with the specified
+        bounds will result in ``GEOMETRYCOLLECTION EMPTY``.
+
+        Parameters
+        ----------
+        xmin: float
+            Minimum x value of the rectangle
+        ymin: float
+            Minimum y value of the rectangle
+        xmax: float
+            Maximum x value of the rectangle
+        ymax: float
+            Maximum y value of the rectangle
+
+        Returns
+        -------
+        GeoSeries
+
+        Examples
+        --------
+        >>> from shapely.geometry import Polygon, LineString, Point
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0, 0), (2, 2), (0, 2)]),
+        ...         Polygon([(0, 0), (2, 2), (0, 2)]),
+        ...         LineString([(0, 0), (2, 2)]),
+        ...         LineString([(2, 0), (0, 2)]),
+        ...         Point(0, 1),
+        ...     ],
+        ...     crs=3857,
+        ... )
+        >>> bounds = (0, 0, 1, 1)
+        >>> s
+        0    POLYGON ((0.000 0.000, 2.000 2.000, 0.000 2.00...
+        1    POLYGON ((0.000 0.000, 2.000 2.000, 0.000 2.00...
+        2                LINESTRING (0.000 0.000, 2.000 2.000)
+        3                LINESTRING (2.000 0.000, 0.000 2.000)
+        4                                  POINT (0.000 1.000)
+        dtype: geometry
+        >>> s.clip_by_rect(*bounds)
+        0    POLYGON ((0.000 0.000, 0.000 1.000, 1.000 1.00...
+        1    POLYGON ((0.000 0.000, 0.000 1.000, 1.000 1.00...
+        2                LINESTRING (0.000 0.000, 1.000 1.000)
+        3                             GEOMETRYCOLLECTION EMPTY
+        4                             GEOMETRYCOLLECTION EMPTY
+        dtype: geometry
+
+        See also
+        --------
+        GeoSeries.intersection
+        """
+        from .geoseries import GeoSeries
+
+        geometry_array = GeometryArray(self.geometry.values)
+        clipped_geometry = geometry_array.clip_by_rect(xmin, ymin, xmax, ymax)
+        return GeoSeries(clipped_geometry.data, index=self.index, crs=self.crs)
 
     #
     # Other operations

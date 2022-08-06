@@ -10,3 +10,4 @@ omit =
     geopandas/io/tests/*
     geopandas/tools/tests/*
     geopandas/_version.py
+    geopandas/datasets/naturalearth_creation.py

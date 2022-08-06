@@ -2,7 +2,7 @@ import geopandas as gpd
 import numpy as np
 import pandas as pd
 import pytest
-from distutils.version import LooseVersion
+from packaging.version import Version
 
 folium = pytest.importorskip("folium")
 branca = pytest.importorskip("branca")
@@ -13,7 +13,7 @@ import matplotlib.cm as cm  # noqa
 import matplotlib.colors as colors  # noqa
 from branca.colormap import StepColormap  # noqa
 
-BRANCA_05 = str(branca.__version__) > LooseVersion("0.4.2")
+BRANCA_05 = Version(branca.__version__) > Version("0.4.2")
 
 
 class TestExplore:
@@ -62,7 +62,7 @@ class TestExplore:
         assert "openstreetmap" in m.to_dict()["children"].keys()
 
     def test_map_settings_custom(self):
-        """Check custom map settins"""
+        """Check custom map settings"""
         m = self.nybb.explore(
             zoom_control=False,
             width=200,
@@ -253,6 +253,14 @@ class TestExplore:
         with pytest.raises(ValueError, match="Cannot specify 'categories'"):
             df.explore("categorical", categories=["Brooklyn", "Staten Island"])
 
+    def test_bool(self):
+        df = self.nybb.copy()
+        df["bool"] = [True, False, True, False, True]
+        m = df.explore("bool")
+        out_str = self._fetch_map_string(m)
+        assert '"__folium_color":"#9edae5","bool":true' in out_str
+        assert '"__folium_color":"#1f77b4","bool":false' in out_str
+
     def test_column_values(self):
         """
         Check that the dataframe plot method returns same values with an
@@ -308,6 +316,37 @@ class TestExplore:
         assert '"fillColor":"orange","fillOpacity":0.1,"weight":0.5' in out_str
         m = self.world.explore(column="pop_est", style_kwds=dict(color="black"))
         assert '"color":"black"' in self._fetch_map_string(m)
+
+        # custom style_function - geopandas/issues/2350
+        m = self.world.explore(
+            style_kwds={
+                "style_function": lambda x: {
+                    "fillColor": "red"
+                    if x["properties"]["gdp_md_est"] < 10**6
+                    else "green",
+                    "color": "black"
+                    if x["properties"]["gdp_md_est"] < 10**6
+                    else "white",
+                }
+            }
+        )
+        # two lines with formatting instructions from style_function.
+        # make sure each passes test
+        assert all(
+            [
+                ('"fillColor":"green"' in t and '"color":"white"' in t)
+                or ('"fillColor":"red"' in t and '"color":"black"' in t)
+                for t in [
+                    "".join(line.split())
+                    for line in m._parent.render().split("\n")
+                    if "return" in line and "color" in line
+                ]
+            ]
+        )
+
+        # style function has to be callable
+        with pytest.raises(ValueError, match="'style_function' has to be a callable"):
+            self.world.explore(style_kwds={"style_function": "not callable"})
 
     def test_tooltip(self):
         """Test tooltip"""
@@ -413,7 +452,7 @@ class TestExplore:
         assert "BoroName" in out_str
 
     def test_default_markers(self):
-        # check overriden default for points
+        # check overridden default for points
         m = self.cities.explore()
         strings = ['"radius":2', '"fill":true', "CircleMarker(latlng,opts)"]
         out_str = self._fetch_map_string(m)
@@ -542,7 +581,7 @@ class TestExplore:
         assert out_str.count("#5ec962ff") == 100
         assert out_str.count("#fde725ff") == 100
 
-        # scale legend accorrdingly
+        # scale legend accordingly
         m = self.world.explore(
             "pop_est",
             legend=True,
@@ -550,10 +589,10 @@ class TestExplore:
         )
         out_str = self._fetch_map_string(m)
         assert out_str.count("#440154ff") == 16
-        assert out_str.count("#3b528bff") == 51
-        assert out_str.count("#21918cff") == 133
-        assert out_str.count("#5ec962ff") == 282
-        assert out_str.count("#fde725ff") == 18
+        assert out_str.count("#3b528bff") == 50
+        assert out_str.count("#21918cff") == 138
+        assert out_str.count("#5ec962ff") == 290
+        assert out_str.count("#fde725ff") == 6
 
         # discrete cmap
         m = self.world.explore("pop_est", legend=True, cmap="Pastel2")
@@ -570,29 +609,33 @@ class TestExplore:
 
     @pytest.mark.skipif(not BRANCA_05, reason="requires branca >= 0.5.0")
     def test_colorbar_max_labels(self):
+        import re
+
         # linear
         m = self.world.explore("pop_est", legend_kwds=dict(max_labels=3))
         out_str = self._fetch_map_string(m)
-
-        tick_values = [140.0, 465176713.5921569, 930353287.1843138]
-        for tick in tick_values:
-            assert str(tick) in out_str
+        tick_str = re.search(r"tickValues\(\[[\',\,\.,0-9]*\]\)", out_str).group(0)
+        assert (
+            tick_str.replace(",''", "")
+            == "tickValues([140.0,471386328.07843137,942772516.1568627])"
+        )
 
         # scheme
         m = self.world.explore(
             "pop_est", scheme="headtailbreaks", legend_kwds=dict(max_labels=3)
         )
         out_str = self._fetch_map_string(m)
-
-        assert "tickValues([140,'',182567501.0,'',1330619341.0,''])" in out_str
+        assert "tickValues([140.0,'',184117213.1818182,'',1382066377.0,''])" in out_str
 
         # short cmap
         m = self.world.explore("pop_est", legend_kwds=dict(max_labels=3), cmap="tab10")
         out_str = self._fetch_map_string(m)
 
-        tick_values = [140.0, 551721192.4, 1103442244.8]
-        for tick in tick_values:
-            assert str(tick) in out_str
+        tick_str = re.search(r"tickValues\(\[[\',\,\.,0-9]*\]\)", out_str).group(0)
+        assert (
+            tick_str
+            == "tickValues([140.0,'','','',559086084.0,'','','',1118172028.0,'','',''])"
+        )
 
     def test_xyzservices_providers(self):
         xyzservices = pytest.importorskip("xyzservices")
@@ -608,7 +651,7 @@ class TestExplore:
             'attribution":"\\u0026copy;\\u003cahref=\\"https://www.openstreetmap.org'
             in out_str
         )
-        assert '"maxNativeZoom":19,"maxZoom":19,"minZoom":0' in out_str
+        assert '"maxNativeZoom":20,"maxZoom":20,"minZoom":0' in out_str
 
     def test_xyzservices_query_name(self):
         pytest.importorskip("xyzservices")
@@ -624,7 +667,7 @@ class TestExplore:
             'attribution":"\\u0026copy;\\u003cahref=\\"https://www.openstreetmap.org'
             in out_str
         )
-        assert '"maxNativeZoom":19,"maxZoom":19,"minZoom":0' in out_str
+        assert '"maxNativeZoom":20,"maxZoom":20,"minZoom":0' in out_str
 
     def test_linearrings(self):
         rings = self.nybb.explode(index_parts=True).exterior
@@ -644,11 +687,11 @@ class TestExplore:
         out_str = self._fetch_map_string(m)
 
         strings = [
-            "[140.00,33986655.00]",
-            "(33986655.00,105350020.00]",
-            "(105350020.00,207353391.00]",
-            "(207353391.00,326625791.00]",
-            "(326625791.00,1379302771.00]",
+            "[140.00,21803000.00]",
+            "(21803000.00,66834405.00]",
+            "(66834405.00,163046161.00]",
+            "(163046161.00,328239523.00]",
+            "(328239523.00,1397715000.00]",
             "missing",
         ]
         for s in strings:
@@ -665,11 +708,11 @@ class TestExplore:
         out_str = self._fetch_map_string(m)
 
         strings = [
-            ">140.00,33986655.00",
-            ">33986655.00,105350020.00",
-            ">105350020.00,207353391.00",
-            ">207353391.00,326625791.00",
-            ">326625791.00,1379302771.00",
+            ">140.00,21803000.00",
+            ">21803000.00,66834405.00",
+            ">66834405.00,163046161.00",
+            ">163046161.00,328239523.00",
+            ">328239523.00,1397715000.00",
             "missing",
         ]
         for s in strings:
@@ -700,11 +743,11 @@ class TestExplore:
         out_str = self._fetch_map_string(m)
 
         strings = [
-            ">140,33986655",
-            ">33986655,105350020",
-            ">105350020,207353391",
-            ">207353391,326625791",
-            ">326625791,1379302771",
+            ">140,21803000",
+            ">21803000,66834405",
+            ">66834405,163046161",
+            ">163046161,328239523",
+            ">328239523,1397715000",
             "missing",
         ]
         for s in strings:
@@ -750,9 +793,9 @@ class TestExplore:
         for s in strings:
             assert s in out_str
 
-        assert out_str.count("008000ff") == 306
-        assert out_str.count("ffff00ff") == 187
-        assert out_str.count("ff0000ff") == 190
+        assert out_str.count("008000ff") == 304
+        assert out_str.count("ffff00ff") == 188
+        assert out_str.count("ff0000ff") == 191
 
         # Using custom function colormap
         def my_color_function(field):
@@ -797,3 +840,22 @@ class TestExplore:
         gdf["centroid"] = gdf.centroid
 
         gdf.explore()
+
+    def test_map_kwds(self):
+        def check():
+            out_str = self._fetch_map_string(m)
+            assert "zoomControl:false" in out_str
+            assert "dragging:false" in out_str
+            assert "scrollWheelZoom:false" in out_str
+
+        # check that folium and leaflet Map() parameters can be passed
+        m = self.world.explore(
+            zoom_control=False, map_kwds=dict(dragging=False, scrollWheelZoom=False)
+        )
+        check()
+        with pytest.raises(
+            ValueError, match="'zoom_control' cannot be specified in 'map_kwds'"
+        ):
+            self.world.explore(
+                map_kwds=dict(dragging=False, scrollWheelZoom=False, zoom_control=False)
+            )

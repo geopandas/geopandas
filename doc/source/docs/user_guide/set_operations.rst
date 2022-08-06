@@ -212,7 +212,7 @@ where two polygons intersects in a line or a point.
 More Examples
 -------------
 
-A larger set of examples of the use of :meth:`~geopandas.GeoDataFrame.overlay` can be found `here <https://nbviewer.jupyter.org/github/geopandas/geopandas/blob/master/doc/source/gallery/overlays.ipynb>`_
+A larger set of examples of the use of :meth:`~geopandas.GeoDataFrame.overlay` can be found `here <https://nbviewer.jupyter.org/github/geopandas/geopandas/blob/main/doc/source/gallery/overlays.ipynb>`_
 
 
 

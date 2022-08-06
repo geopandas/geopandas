@@ -69,6 +69,7 @@ Set-theoretic Methods
 .. autosummary::
    :toctree: api/
 
+   GeoSeries.clip_by_rect
    GeoSeries.difference
    GeoSeries.intersection
    GeoSeries.symmetric_difference
