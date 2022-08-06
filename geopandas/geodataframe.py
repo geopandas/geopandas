@@ -1698,7 +1698,7 @@ individually so that features may have different properties
         rows_to_agg = grouped[geom_col].transform("count") > 1
         to_keep = not rows_to_agg.all()
         if to_keep:
-            grps_to_agg = grouped.size() > 1
+            grps_to_agg = grouped[geom_col].count() > 1
             # Have to right join on this bool mask instead of doing a .loc for
             # dropna and observed
             singletons_loc = grps_to_agg.loc[~grps_to_agg].rename("a")
@@ -1714,6 +1714,8 @@ individually so that features may have different properties
                     geom_col
                 ].droplevel(lvls_to_drop)
 
+            # Fixes edge case where a single geometry is grouped with null ones.
+            single_geoms = single_geoms.loc[single_geoms.notnull()]
             geoms = pd.concat([geoms, single_geoms])
 
         to_dissolve = rows_to_agg.any()
