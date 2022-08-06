@@ -3,6 +3,7 @@ from functools import reduce
 
 import numpy as np
 import pandas as pd
+
 try:
     from shapely.errors import GEOSException
 except ImportError:
