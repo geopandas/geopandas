@@ -1,7 +1,9 @@
 import warnings
+from functools import reduce
 
 import numpy as np
 import pandas as pd
+from shapely.errors import GEOSException
 
 from geopandas import GeoDataFrame, GeoSeries
 from geopandas.array import _check_crs, _crs_mismatch_warn
@@ -86,7 +88,18 @@ def _overlay_difference(df1, df2):
     # Create differences
     new_g = []
     for geom, neighbours in zip(df1.geometry, sidx):
-        new = geom.difference(df2.geometry.iloc[neighbours].unary_union)
+        # When using shapely >=2.0 and geometries with get_precision() != 0, there
+        # is a subtle difference in the accumulation of rounding errors between
+        # using reduce and building the difference geometry by geometry, and taking
+        # the difference with a union of the geometries. The reduce method is more
+        # performant, so run that by default, but if it fails with a Topology error,
+        # try the alternative approach as a backup -- testing shows that it may
+        # succeed when the reduce method fails.
+        neighbour_geoms = df2.geometry.iloc[neighbours]
+        try:
+            new = reduce(lambda x, y: x.difference(y), [geom] + list(neighbour_geoms))
+        except GEOSException:
+            new = geom.difference(neighbour_geoms.unary_union)
         new_g.append(new)
     differences = GeoSeries(new_g, index=df1.index, crs=df1.crs)
     poly_ix = differences.type.isin(["Polygon", "MultiPolygon"])
