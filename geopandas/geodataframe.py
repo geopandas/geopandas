@@ -1687,7 +1687,10 @@ individually so that features may have different properties
         data_cols = self.columns[self.columns != geom_col]
         grouped = self.groupby(**groupby_kwargs)
 
-        if not isinstance(by, np.ndarray) and grouped.keys is not None:
+        # If `by` is None or a list-like of length equal to the number of rows, we're
+        # not grouping by a set of columns / index levels so there is no column to drop.
+        by_len_ext = getattr(by, "__len__", lambda: self.shape[0])
+        if isinstance(grouped.keys, str) or by_len_ext() != self.shape[0]:
             data_cols = data_cols.drop(grouped.keys)
 
         aggregated_data = grouped[data_cols].agg(aggfunc)
