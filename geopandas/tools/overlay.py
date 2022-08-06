@@ -3,7 +3,10 @@ from functools import reduce
 
 import numpy as np
 import pandas as pd
-from shapely.errors import GEOSException
+try:
+    from shapely.errors import GEOSException
+except ImportError:
+    GEOSException = Exception
 
 from geopandas import GeoDataFrame, GeoSeries
 from geopandas.array import _check_crs, _crs_mismatch_warn
