@@ -471,6 +471,31 @@ GON (((180.00000 -16.06713, 180.00000...
 
         style_kwds_function = _no_style
 
+    # allow for matplotlib color abbreviations, e.g. "r" for "red"
+    # plus allow colors to be defined as RGB(A) tuples e.g. (1,0,0)
+    def plt_color(c):
+        def hex_c(c):
+            # if color is a tuple or RGBA string include alpha
+            alpha = isinstance(c, tuple) or (
+                isinstance(c, str)
+                and c[0] == "#"
+                and len(c) == 9
+                and colors.is_color_like(c)
+            )
+            return colors.to_hex(c, keep_alpha=alpha) if colors.is_color_like(c) else c
+
+        return (
+            [hex_c(c_) for c_ in c]
+            if pd.api.types.is_list_like(c)
+            and not (isinstance(c, tuple) and colors.is_color_like(c))
+            else hex_c(c)
+        )
+
+    if "fillColor" in style_kwds:
+        style_kwds["fillColor"] = plt_color(style_kwds["fillColor"])
+    if "color" in style_kwds:
+        style_kwds["color"] = plt_color(style_kwds["color"])
+
     # specify color
     if color is not None:
         if (
@@ -491,30 +516,6 @@ GON (((180.00000 -16.06713, 180.00000...
 
             style_function = _style_color
         else:  # assign new column
-            # allow for matplotlib color abbreviations, e.g. "r" for "red"
-            # plus allow colors to be defined as RGB(A) tuples e.g. (1,0,0)
-            def plt_color(c):
-                def hex_c(c):
-                    # if color is a tuple or RGBA string include alpha
-                    alpha = isinstance(c, tuple) or (
-                        isinstance(c, str)
-                        and c[0] == "#"
-                        and len(c) == 9
-                        and colors.is_color_like(c)
-                    )
-                    return (
-                        colors.to_hex(c, keep_alpha=alpha)
-                        if colors.is_color_like(c)
-                        else c
-                    )
-
-                return (
-                    [hex_c(c_) for c_ in c]
-                    if pd.api.types.is_list_like(c)
-                    and not (isinstance(c, tuple) and colors.is_color_like(c))
-                    else hex_c(c)
-                )
-
             if isinstance(gdf, geopandas.GeoSeries):
                 gdf = geopandas.GeoDataFrame(geometry=gdf)
 

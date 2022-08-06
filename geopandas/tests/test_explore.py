@@ -326,7 +326,8 @@ class TestExplore:
             style_kwds=dict(fillOpacity=0.1, weight=0.5, fillColor="orange")
         )
         out_str = self._fetch_map_string(m)
-        assert '"fillColor":"orange","fillOpacity":0.1,"weight":0.5' in out_str
+        # color is transformed to RGB string
+        assert '"fillColor":"#ffa500","fillOpacity":0.1,"weight":0.5' in out_str
         m = self.world.explore(column="pop_est", style_kwds=dict(color="black"))
         assert '"color":"#000000"' in self._fetch_map_string(m)
 
