@@ -1,5 +1,4 @@
 import warnings
-from functools import reduce
 
 import numpy as np
 import pandas as pd
@@ -87,9 +86,7 @@ def _overlay_difference(df1, df2):
     # Create differences
     new_g = []
     for geom, neighbours in zip(df1.geometry, sidx):
-        new = reduce(
-            lambda x, y: x.difference(y), [geom] + list(df2.geometry.iloc[neighbours])
-        )
+        new = geom.difference(df2.geometry.iloc[neighbours].unary_union)
         new_g.append(new)
     differences = GeoSeries(new_g, index=df1.index, crs=df1.crs)
     poly_ix = differences.type.isin(["Polygon", "MultiPolygon"])
