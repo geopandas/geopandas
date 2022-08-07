@@ -14,7 +14,7 @@ def _get_sindex_class():
     Required to comply with _compat.USE_PYGEOS.
     The selection order goes PyGEOS > RTree > Error.
     """
-    if compat.SHAPELY_GE_20 or compat.USE_PYGEOS:
+    if compat.USE_SHAPELY_20 or compat.USE_PYGEOS:
         return PyGEOSSTRTreeIndex
     if compat.HAS_RTREE:
         return RTreeIndex
@@ -625,12 +625,12 @@ if compat.HAS_RTREE:
             return self.size
 
 
-if compat.SHAPELY_GE_20 or compat.HAS_PYGEOS:
+if compat.USE_SHAPELY_20 or compat.HAS_PYGEOS:
 
     from . import geoseries  # noqa
     from . import array  # noqa
 
-    if compat.SHAPELY_GE_20:
+    if compat.USE_SHAPELY_20:
         import shapely as mod  # noqa
 
         _PYGEOS_PREDICATES = {p.name for p in mod.strtree.BinaryPredicate} | set([None])
@@ -748,7 +748,7 @@ if compat.SHAPELY_GE_20 or compat.HAS_PYGEOS:
 
             geometry = self._as_geometry_array(geometry)
 
-            if compat.SHAPELY_GE_20:
+            if compat.USE_SHAPELY_20:
                 res = self._tree.query(geometry, predicate)
             else:
                 res = self._tree.query_bulk(geometry, predicate)
@@ -765,7 +765,7 @@ if compat.SHAPELY_GE_20 or compat.HAS_PYGEOS:
         def nearest(
             self, geometry, return_all=True, max_distance=None, return_distance=False
         ):
-            if not (compat.SHAPELY_GE_20 or compat.PYGEOS_GE_010):
+            if not (compat.USE_SHAPELY_20 or compat.PYGEOS_GE_010):
                 raise NotImplementedError(
                     "sindex.nearest requires shapely >= 2.0 or pygeos >= 0.10"
                 )
@@ -776,7 +776,7 @@ if compat.SHAPELY_GE_20 or compat.HAS_PYGEOS:
             if isinstance(geometry, BaseGeometry) or geometry is None:
                 geometry = [geometry]
 
-            if compat.SHAPELY_GE_20:
+            if compat.USE_SHAPELY_20:
                 result = self._tree.query_nearest(
                     geometry,
                     max_distance=max_distance,
@@ -794,7 +794,7 @@ if compat.SHAPELY_GE_20 or compat.HAS_PYGEOS:
             else:
                 indices = result
 
-            if not return_all and not compat.SHAPELY_GE_20:
+            if not return_all and not compat.USE_SHAPELY_20:
                 # first subarray of geometry indices is sorted, so we can use this
                 # trick to get the first of each index value
                 mask = np.diff(indices[0, :]).astype("bool")

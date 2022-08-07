@@ -48,7 +48,7 @@ def with_use_pygeos(option):
 
 
 @pytest.mark.skipif(
-    compat.SHAPELY_GE_20
+    compat.USE_SHAPELY_20
     or compat.USE_PYGEOS
     or (Version(pyproj.__version__) < Version("2.4")),
     reason=(
@@ -84,7 +84,7 @@ def _create_gdf():
 
 
 @pytest.mark.skipif(
-    not compat.HAS_PYGEOS or compat.SHAPELY_GE_20,
+    not compat.HAS_PYGEOS or compat.USE_SHAPELY_20,
     reason="requires pygeos to test #1745",
 )
 def test_pygeos_switch(tmpdir):

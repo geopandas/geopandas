@@ -146,7 +146,7 @@ def test_from_wkb():
     # missing values
     # TODO(pygeos) does not support empty strings, np.nan, or pd.NA
     missing_values = [None]
-    if not (compat.SHAPELY_GE_20 or compat.USE_PYGEOS):
+    if not (compat.USE_SHAPELY_20 or compat.USE_PYGEOS):
         missing_values.extend([b"", np.nan])
         missing_values.append(pd.NA)
 
@@ -220,7 +220,7 @@ def test_from_wkt(string_type):
     # missing values
     # TODO(pygeos) does not support empty strings, np.nan, or pd.NA
     missing_values = [None]
-    if not (compat.SHAPELY_GE_20 or compat.USE_PYGEOS):
+    if not (compat.USE_SHAPELY_20 or compat.USE_PYGEOS):
         missing_values.extend([f(""), np.nan])
         missing_values.append(pd.NA)
 

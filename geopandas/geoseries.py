@@ -872,8 +872,8 @@ class GeoSeries(GeoPandasBase, Series):
             )
             index_parts = True
 
-        if compat.SHAPELY_GE_20 or (compat.USE_PYGEOS and compat.PYGEOS_GE_09):
-            if compat.SHAPELY_GE_20:
+        if compat.USE_SHAPELY_20 or (compat.USE_PYGEOS and compat.PYGEOS_GE_09):
+            if compat.USE_SHAPELY_20:
                 geometries, outer_idx = shapely.get_parts(
                     self.values.data, return_index=True
                 )

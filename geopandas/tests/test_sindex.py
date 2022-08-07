@@ -17,7 +17,7 @@ from geopandas import GeoDataFrame, GeoSeries, read_file, datasets
 import pytest
 import numpy as np
 
-if compat.SHAPELY_GE_20:
+if compat.USE_SHAPELY_20:
     import shapely as geom_mod
 elif compat.USE_PYGEOS:
     import pygeos as geom_mod
@@ -700,7 +700,7 @@ class TestPygeosInterface:
 
     # ------------------------- `nearest` tests ------------------------- #
     @pytest.mark.skipif(
-        compat.USE_PYGEOS or compat.SHAPELY_GE_20,
+        compat.USE_PYGEOS or compat.USE_SHAPELY_20,
         reason=("RTree supports sindex.nearest with different behaviour"),
     )
     def test_rtree_nearest_warns(self):
@@ -711,7 +711,7 @@ class TestPygeosInterface:
             df.sindex.nearest((0, 0, 1, 1), num_results=2)
 
     @pytest.mark.skipif(
-        compat.SHAPELY_GE_20 or not (compat.USE_PYGEOS and not compat.PYGEOS_GE_010),
+        compat.USE_SHAPELY_20 or not (compat.USE_PYGEOS and not compat.PYGEOS_GE_010),
         reason=("PyGEOS < 0.10 does not support sindex.nearest"),
     )
     def test_pygeos_error(self):
@@ -720,7 +720,7 @@ class TestPygeosInterface:
             df.sindex.nearest(None)
 
     @pytest.mark.skipif(
-        not (compat.SHAPELY_GE_20 or (compat.USE_PYGEOS and compat.PYGEOS_GE_010)),
+        not (compat.USE_SHAPELY_20 or (compat.USE_PYGEOS and compat.PYGEOS_GE_010)),
         reason=("PyGEOS >= 0.10 is required to test sindex.nearest"),
     )
     @pytest.mark.parametrize("return_all", [True, False])
@@ -744,7 +744,7 @@ class TestPygeosInterface:
         assert_array_equal(res, expected)
 
     @pytest.mark.skipif(
-        not (compat.SHAPELY_GE_20 or (compat.USE_PYGEOS and compat.PYGEOS_GE_010)),
+        not (compat.USE_SHAPELY_20 or (compat.USE_PYGEOS and compat.PYGEOS_GE_010)),
         reason=("PyGEOS >= 0.10 is required to test sindex.nearest"),
     )
     @pytest.mark.parametrize("return_all", [True, False])
@@ -777,7 +777,7 @@ class TestPygeosInterface:
         assert_array_equal(res, expected)
 
     @pytest.mark.skipif(
-        not (compat.SHAPELY_GE_20 or (compat.USE_PYGEOS and compat.PYGEOS_GE_010)),
+        not (compat.USE_SHAPELY_20 or (compat.USE_PYGEOS and compat.PYGEOS_GE_010)),
         reason=("PyGEOS >= 0.10 is required to test sindex.nearest"),
     )
     @pytest.mark.parametrize("return_all", [True, False])
@@ -796,7 +796,7 @@ class TestPygeosInterface:
         assert_array_equal(res, expected)
 
     @pytest.mark.skipif(
-        not (compat.SHAPELY_GE_20 or (compat.USE_PYGEOS and compat.PYGEOS_GE_010)),
+        not (compat.USE_SHAPELY_20 or (compat.USE_PYGEOS and compat.PYGEOS_GE_010)),
         reason=("PyGEOS >= 0.10 is required to test sindex.nearest"),
     )
     @pytest.mark.parametrize("return_distance", [True, False])

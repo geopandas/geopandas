@@ -108,7 +108,7 @@ def _geom_to_shapely(geom):
     """
     Convert internal representation (PyGEOS or Shapely) to external Shapely object.
     """
-    if compat.SHAPELY_GE_20:
+    if compat.USE_SHAPELY_20:
         return geom
     elif not compat.USE_PYGEOS:
         return geom
@@ -120,7 +120,7 @@ def _shapely_to_geom(geom):
     """
     Convert external Shapely object to internal representation (PyGEOS or Shapely).
     """
-    if compat.SHAPELY_GE_20:
+    if compat.USE_SHAPELY_20:
         return geom
     elif not compat.USE_PYGEOS:
         return geom
@@ -129,7 +129,7 @@ def _shapely_to_geom(geom):
 
 
 def _is_scalar_geometry(geom):
-    if compat.SHAPELY_GE_20:
+    if compat.USE_SHAPELY_20:
         return isinstance(geom, BaseGeometry)
     elif compat.USE_PYGEOS:
         return isinstance(geom, (pygeos.Geometry, BaseGeometry))
@@ -416,7 +416,7 @@ class GeometryArray(ExtensionArray):
         #         )
 
     def __getstate__(self):
-        if compat.SHAPELY_GE_20:
+        if compat.USE_SHAPELY_20:
             return (shapely.to_wkb(self.data), self._crs)
         elif compat.USE_PYGEOS:
             return (pygeos.to_wkb(self.data), self._crs)
@@ -1073,7 +1073,7 @@ class GeometryArray(ExtensionArray):
         """
         Boolean NumPy array indicating if each value is missing
         """
-        if compat.SHAPELY_GE_20:
+        if compat.USE_SHAPELY_20:
             return shapely.is_missing(self.data)
         elif compat.USE_PYGEOS:
             return pygeos.is_missing(self.data)

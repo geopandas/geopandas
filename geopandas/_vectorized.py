@@ -39,8 +39,8 @@ _names = {
     "GEOMETRYCOLLECTION": "GeometryCollection",
 }
 
-if compat.SHAPELY_GE_20 or compat.USE_PYGEOS:
-    if compat.SHAPELY_GE_20:
+if compat.USE_SHAPELY_20 or compat.USE_PYGEOS:
+    if compat.USE_SHAPELY_20:
         type_mapping = {p.value: _names[p.name] for p in shapely.GeometryType}
     else:
         type_mapping = {p.value: _names[p.name] for p in pygeos.GeometryType}
@@ -71,7 +71,7 @@ def _pygeos_to_shapely(geom):
     if geom is None:
         return None
 
-    if compat.SHAPELY_GE_20:
+    if compat.USE_SHAPELY_20:
         return geom
 
     if compat.PYGEOS_SHAPELY_COMPAT:
@@ -90,7 +90,7 @@ def _shapely_to_pygeos(geom):
     if geom is None:
         return None
 
-    if compat.SHAPELY_GE_20:
+    if compat.USE_SHAPELY_20:
         return geom
 
     if compat.PYGEOS_SHAPELY_COMPAT:
@@ -171,7 +171,7 @@ def from_wkb(data):
     """
     Convert a list or array of WKB objects to a np.ndarray[geoms].
     """
-    if compat.SHAPELY_GE_20:
+    if compat.USE_SHAPELY_20:
         return shapely.from_wkb(data)
     if compat.USE_PYGEOS:
         return pygeos.from_wkb(data)
@@ -192,7 +192,7 @@ def from_wkb(data):
 
 
 def to_wkb(data, hex=False, **kwargs):
-    if compat.SHAPELY_GE_20:
+    if compat.USE_SHAPELY_20:
         return shapely.to_wkb(data, hex=hex, **kwargs)
     elif compat.USE_PYGEOS:
         return pygeos.to_wkb(data, hex=hex, **kwargs)
@@ -208,7 +208,7 @@ def from_wkt(data):
     """
     Convert a list or array of WKT objects to a np.ndarray[geoms].
     """
-    if compat.SHAPELY_GE_20:
+    if compat.USE_SHAPELY_20:
         return shapely.from_wkt(data)
     if compat.USE_PYGEOS:
         return pygeos.from_wkt(data)
@@ -231,7 +231,7 @@ def from_wkt(data):
 
 
 def to_wkt(data, **kwargs):
-    if compat.SHAPELY_GE_20:
+    if compat.USE_SHAPELY_20:
         return shapely.to_wkt(data, **kwargs)
     elif compat.USE_PYGEOS:
         return pygeos.to_wkt(data, **kwargs)
@@ -260,7 +260,7 @@ def points_from_xy(x, y, z=None):
     if z is not None:
         z = np.asarray(z, dtype="float64")
 
-    if compat.SHAPELY_GE_20:
+    if compat.USE_SHAPELY_20:
         return shapely.points(x, y, z)
     elif compat.USE_PYGEOS:
         return pygeos.points(x, y, z)
@@ -480,7 +480,7 @@ def _unary_op(op, left, null_value=False):
 
 
 def is_valid(data):
-    if compat.SHAPELY_GE_20:
+    if compat.USE_SHAPELY_20:
         return shapely.is_valid(data)
     elif compat.USE_PYGEOS:
         return pygeos.is_valid(data)
@@ -489,7 +489,7 @@ def is_valid(data):
 
 
 def is_empty(data):
-    if compat.SHAPELY_GE_20:
+    if compat.USE_SHAPELY_20:
         return shapely.is_empty(data)
     elif compat.USE_PYGEOS:
         return pygeos.is_empty(data)
@@ -498,7 +498,7 @@ def is_empty(data):
 
 
 def is_simple(data):
-    if compat.SHAPELY_GE_20:
+    if compat.USE_SHAPELY_20:
         return shapely.is_simple(data)
     elif compat.USE_PYGEOS:
         return pygeos.is_simple(data)
@@ -532,7 +532,7 @@ def is_ring(data):
 
 
 def is_closed(data):
-    if compat.SHAPELY_GE_20:
+    if compat.USE_SHAPELY_20:
         return shapely.is_closed(data)
     elif compat.USE_PYGEOS:
         return pygeos.is_closed(data)
@@ -541,7 +541,7 @@ def is_closed(data):
 
 
 def has_z(data):
-    if compat.SHAPELY_GE_20:
+    if compat.USE_SHAPELY_20:
         return shapely.has_z(data)
     elif compat.USE_PYGEOS:
         return pygeos.has_z(data)
@@ -550,7 +550,7 @@ def has_z(data):
 
 
 def geom_type(data):
-    if compat.SHAPELY_GE_20:
+    if compat.USE_SHAPELY_20:
         res = shapely.get_type_id(data)
         return geometry_type_values[np.searchsorted(geometry_type_ids, res)]
     elif compat.USE_PYGEOS:
@@ -561,7 +561,7 @@ def geom_type(data):
 
 
 def area(data):
-    if compat.SHAPELY_GE_20:
+    if compat.USE_SHAPELY_20:
         return shapely.area(data)
     elif compat.USE_PYGEOS:
         return pygeos.area(data)
@@ -570,7 +570,7 @@ def area(data):
 
 
 def length(data):
-    if compat.SHAPELY_GE_20:
+    if compat.USE_SHAPELY_20:
         return shapely.length(data)
     elif compat.USE_PYGEOS:
         return pygeos.length(data)
@@ -594,7 +594,7 @@ def _unary_geo(op, left, *args, **kwargs):
 
 
 def boundary(data):
-    if compat.SHAPELY_GE_20:
+    if compat.USE_SHAPELY_20:
         return shapely.boundary(data)
     elif compat.USE_PYGEOS:
         return pygeos.boundary(data)
@@ -603,7 +603,7 @@ def boundary(data):
 
 
 def centroid(data):
-    if compat.SHAPELY_GE_20:
+    if compat.USE_SHAPELY_20:
         return shapely.centroid(data)
     elif compat.USE_PYGEOS:
         return pygeos.centroid(data)
@@ -612,7 +612,7 @@ def centroid(data):
 
 
 def convex_hull(data):
-    if compat.SHAPELY_GE_20:
+    if compat.USE_SHAPELY_20:
         return shapely.convex_hull(data)
     elif compat.USE_PYGEOS:
         return pygeos.convex_hull(data)
@@ -621,7 +621,7 @@ def convex_hull(data):
 
 
 def envelope(data):
-    if compat.SHAPELY_GE_20:
+    if compat.USE_SHAPELY_20:
         return shapely.envelope(data)
     elif compat.USE_PYGEOS:
         return pygeos.envelope(data)
@@ -630,7 +630,7 @@ def envelope(data):
 
 
 def exterior(data):
-    if compat.SHAPELY_GE_20:
+    if compat.USE_SHAPELY_20:
         return shapely.get_exterior_ring(data)
     elif compat.USE_PYGEOS:
         return pygeos.get_exterior_ring(data)
@@ -682,7 +682,7 @@ def representative_point(data):
 
 
 def covers(data, other):
-    if compat.SHAPELY_GE_20:
+    if compat.USE_SHAPELY_20:
         return shapely.covers(data, other)
     elif compat.USE_PYGEOS:
         return _binary_method("covers", data, other)
@@ -691,7 +691,7 @@ def covers(data, other):
 
 
 def covered_by(data, other):
-    if compat.SHAPELY_GE_20:
+    if compat.USE_SHAPELY_20:
         return shapely.covered_by(data, other)
     elif compat.USE_PYGEOS:
         return _binary_method("covered_by", data, other)
@@ -702,7 +702,7 @@ def covered_by(data, other):
 
 
 def contains(data, other):
-    if compat.SHAPELY_GE_20:
+    if compat.USE_SHAPELY_20:
         return shapely.contains(data, other)
     elif compat.USE_PYGEOS:
         return _binary_method("contains", data, other)
@@ -711,7 +711,7 @@ def contains(data, other):
 
 
 def crosses(data, other):
-    if compat.SHAPELY_GE_20:
+    if compat.USE_SHAPELY_20:
         return shapely.crosses(data, other)
     elif compat.USE_PYGEOS:
         return _binary_method("crosses", data, other)
@@ -720,7 +720,7 @@ def crosses(data, other):
 
 
 def disjoint(data, other):
-    if compat.SHAPELY_GE_20:
+    if compat.USE_SHAPELY_20:
         return shapely.disjoint(data, other)
     elif compat.USE_PYGEOS:
         return _binary_method("disjoint", data, other)
@@ -729,7 +729,7 @@ def disjoint(data, other):
 
 
 def equals(data, other):
-    if compat.SHAPELY_GE_20:
+    if compat.USE_SHAPELY_20:
         return shapely.equals(data, other)
     elif compat.USE_PYGEOS:
         return _binary_method("equals", data, other)
@@ -738,7 +738,7 @@ def equals(data, other):
 
 
 def intersects(data, other):
-    if compat.SHAPELY_GE_20:
+    if compat.USE_SHAPELY_20:
         return shapely.intersects(data, other)
     elif compat.USE_PYGEOS:
         return _binary_method("intersects", data, other)
@@ -747,7 +747,7 @@ def intersects(data, other):
 
 
 def overlaps(data, other):
-    if compat.SHAPELY_GE_20:
+    if compat.USE_SHAPELY_20:
         return shapely.overlaps(data, other)
     elif compat.USE_PYGEOS:
         return _binary_method("overlaps", data, other)
@@ -756,7 +756,7 @@ def overlaps(data, other):
 
 
 def touches(data, other):
-    if compat.SHAPELY_GE_20:
+    if compat.USE_SHAPELY_20:
         return shapely.touches(data, other)
     elif compat.USE_PYGEOS:
         return _binary_method("touches", data, other)
@@ -765,7 +765,7 @@ def touches(data, other):
 
 
 def within(data, other):
-    if compat.SHAPELY_GE_20:
+    if compat.USE_SHAPELY_20:
         return shapely.within(data, other)
     elif compat.USE_PYGEOS:
         return _binary_method("within", data, other)
@@ -774,7 +774,7 @@ def within(data, other):
 
 
 def equals_exact(data, other, tolerance):
-    if compat.SHAPELY_GE_20:
+    if compat.USE_SHAPELY_20:
         return shapely.equals_exact(data, other, tolerance=tolerance)
     elif compat.USE_PYGEOS:
         return _binary_method("equals_exact", data, other, tolerance=tolerance)
@@ -783,7 +783,7 @@ def equals_exact(data, other, tolerance):
 
 
 def almost_equals(self, other, decimal):
-    if compat.USE_PYGEOS or compat.SHAPELY_GE_20:
+    if compat.USE_PYGEOS or compat.USE_SHAPELY_20:
         return self.equals_exact(other, 0.5 * 10 ** (-decimal))
     else:
         return _binary_predicate("almost_equals", self, other, decimal=decimal)
@@ -809,7 +809,7 @@ def clip_by_rect(data, xmin, ymin, xmax, ymax):
 
 
 def difference(data, other):
-    if compat.SHAPELY_GE_20:
+    if compat.USE_SHAPELY_20:
         return shapely.difference(data, other)
     elif compat.USE_PYGEOS:
         return _binary_method("difference", data, other)
@@ -818,7 +818,7 @@ def difference(data, other):
 
 
 def intersection(data, other):
-    if compat.SHAPELY_GE_20:
+    if compat.USE_SHAPELY_20:
         return shapely.intersection(data, other)
     elif compat.USE_PYGEOS:
         return _binary_method("intersection", data, other)
@@ -827,7 +827,7 @@ def intersection(data, other):
 
 
 def symmetric_difference(data, other):
-    if compat.SHAPELY_GE_20:
+    if compat.USE_SHAPELY_20:
         return shapely.symmetric_difference(data, other)
     elif compat.USE_PYGEOS:
         return _binary_method("symmetric_difference", data, other)
@@ -836,7 +836,7 @@ def symmetric_difference(data, other):
 
 
 def union(data, other):
-    if compat.SHAPELY_GE_20:
+    if compat.USE_SHAPELY_20:
         return shapely.union(data, other)
     elif compat.USE_PYGEOS:
         return _binary_method("union", data, other)
@@ -850,7 +850,7 @@ def union(data, other):
 
 
 def distance(data, other):
-    if compat.SHAPELY_GE_20:
+    if compat.USE_SHAPELY_20:
         return shapely.distance(data, other)
     elif compat.USE_PYGEOS:
         return _binary_method("distance", data, other)
@@ -859,7 +859,7 @@ def distance(data, other):
 
 
 def buffer(data, distance, resolution=16, **kwargs):
-    if compat.SHAPELY_GE_20:
+    if compat.USE_SHAPELY_20:
         return shapely.buffer(data, distance, quadsegs=resolution, **kwargs)
     elif compat.USE_PYGEOS:
         return pygeos.buffer(data, distance, quadsegs=resolution, **kwargs)
@@ -892,7 +892,7 @@ def buffer(data, distance, resolution=16, **kwargs):
 
 
 def interpolate(data, distance, normalized=False):
-    if compat.SHAPELY_GE_20:
+    if compat.USE_SHAPELY_20:
         return shapely.line_interpolate_point(data, distance, normalized=normalized)
     elif compat.USE_PYGEOS:
         try:
@@ -922,7 +922,7 @@ def interpolate(data, distance, normalized=False):
 
 
 def simplify(data, tolerance, preserve_topology=True):
-    if compat.SHAPELY_GE_20:
+    if compat.USE_SHAPELY_20:
         return shapely.simplify(data, tolerance, preserve_topology=preserve_topology)
     elif compat.USE_PYGEOS:
         # preserve_topology has different default as pygeos!
@@ -955,7 +955,7 @@ def _shapely_normalize(geom):
 
 
 def normalize(data):
-    if compat.SHAPELY_GE_20:
+    if compat.USE_SHAPELY_20:
         return shapely.normalize(data)
     elif compat.USE_PYGEOS:
         return pygeos.normalize(data)
@@ -969,7 +969,7 @@ def normalize(data):
 
 
 def project(data, other, normalized=False):
-    if compat.SHAPELY_GE_20:
+    if compat.USE_SHAPELY_20:
         return shapely.line_locate_point(data, other, normalized=normalized)
     elif compat.USE_PYGEOS:
         try:
@@ -981,7 +981,7 @@ def project(data, other, normalized=False):
 
 
 def relate(data, other):
-    if compat.SHAPELY_GE_20:
+    if compat.USE_SHAPELY_20:
         return shapely.relate(data, other)
     data = to_shapely(data)
     if isinstance(other, np.ndarray):
@@ -990,7 +990,7 @@ def relate(data, other):
 
 
 def unary_union(data):
-    if compat.SHAPELY_GE_20:
+    if compat.USE_SHAPELY_20:
         return shapely.union_all(data)
     elif compat.USE_PYGEOS:
         return _pygeos_to_shapely(pygeos.union_all(data))
@@ -1008,7 +1008,7 @@ def unary_union(data):
 
 
 def get_x(data):
-    if compat.SHAPELY_GE_20:
+    if compat.USE_SHAPELY_20:
         return shapely.get_x(data)
     elif compat.USE_PYGEOS:
         return pygeos.get_x(data)
@@ -1017,7 +1017,7 @@ def get_x(data):
 
 
 def get_y(data):
-    if compat.SHAPELY_GE_20:
+    if compat.USE_SHAPELY_20:
         return shapely.get_y(data)
     elif compat.USE_PYGEOS:
         return pygeos.get_y(data)
@@ -1026,7 +1026,7 @@ def get_y(data):
 
 
 def get_z(data):
-    if compat.SHAPELY_GE_20:
+    if compat.USE_SHAPELY_20:
         return shapely.get_z(data)
     elif compat.USE_PYGEOS:
         return pygeos.get_z(data)
@@ -1036,7 +1036,7 @@ def get_z(data):
 
 
 def bounds(data):
-    if compat.SHAPELY_GE_20:
+    if compat.USE_SHAPELY_20:
         return shapely.bounds(data)
     elif compat.USE_PYGEOS:
         return pygeos.bounds(data)
@@ -1062,7 +1062,7 @@ def bounds(data):
 
 
 def transform(data, func):
-    if compat.SHAPELY_GE_20:
+    if compat.USE_SHAPELY_20:
         coords = shapely.get_coordinates(data)
         new_coords = func(coords[:, 0], coords[:, 1])
         result = shapely.set_coordinates(data.copy(), np.array(new_coords).T)

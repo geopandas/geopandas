@@ -288,7 +288,7 @@ def _convert_linearring_to_linestring(gdf, geom_name):
 
 def _convert_to_ewkb(gdf, geom_name, srid):
     """Convert geometries to ewkb."""
-    if compat.SHAPELY_GE_20:
+    if compat.USE_SHAPELY_20:
         geoms = shapely.to_wkb(
             shapely.set_srid(gdf[geom_name].values.data, srid=srid),
             hex=True,
