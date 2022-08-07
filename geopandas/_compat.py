@@ -132,7 +132,7 @@ def set_use_pygeos(val=None):
         except ImportError:
             raise ImportError(INSTALL_PYGEOS_ERROR)
 
-    USE_SHAPELY_20 = not USE_PYGEOS
+    USE_SHAPELY_20 = (not USE_PYGEOS) and SHAPELY_GE_20
 
 
 set_use_pygeos()
