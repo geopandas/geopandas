@@ -30,6 +30,6 @@ dependencies:
     - git+https://github.com/pandas-dev/pandas.git@main
     - git+https://github.com/matplotlib/matplotlib.git@main
     - git+https://github.com/Toblerity/Shapely.git@main
-    - git+https://github.com/pygeos/pygeos.git@master
+    - git+https://github.com/jorisvandenbossche/pygeos.git@compat-shapely-2
     - git+https://github.com/python-visualization/folium.git@main
     - git+https://github.com/geopandas/xyzservices.git@main
