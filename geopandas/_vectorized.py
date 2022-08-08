@@ -75,8 +75,11 @@ def _pygeos_to_shapely(geom):
         return geom
 
     if compat.PYGEOS_SHAPELY_COMPAT:
-        geom = shapely.geos.lgeos.GEOSGeom_clone(geom._ptr)
-        return shapely.geometry.base.geom_factory(geom)
+        # we can only use this compatible fast path for shapely < 2, because
+        # shapely 2+ doesn't expose clone
+        if not compat.SHAPELY_GE_20:
+            geom = shapely.geos.lgeos.GEOSGeom_clone(geom._ptr)
+            return shapely.geometry.base.geom_factory(geom)
 
     # fallback going through WKB
     if pygeos.is_empty(geom) and pygeos.get_type_id(geom) == 0:
