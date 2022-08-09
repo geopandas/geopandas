@@ -663,6 +663,24 @@ def test_df_apply_returning_series(df):
     assert result.dtype == "object"
 
 
+def test_df_apply_geometry_dtypes(df):
+    # https://github.com/geopandas/geopandas/issues/1852
+    apply_types = []
+
+    def get_dtypes(srs):
+        apply_types.append((srs.name, type(srs)))
+
+    df['geom2'] = df.geometry
+    df.apply(get_dtypes)
+    expected = [
+        ("geometry", GeoSeries),
+        ("value1", pd.Series),
+        ("value2", pd.Series),
+        ("geom2", GeoSeries),
+    ]
+    assert apply_types == expected
+
+
 def test_pivot(df):
     # https://github.com/geopandas/geopandas/issues/2057
     # pivot failing due to creating a MultiIndex
