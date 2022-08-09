@@ -670,7 +670,7 @@ def test_df_apply_geometry_dtypes(df):
     def get_dtypes(srs):
         apply_types.append((srs.name, type(srs)))
 
-    df['geom2'] = df.geometry
+    df["geom2"] = df.geometry
     df.apply(get_dtypes)
     expected = [
         ("geometry", GeoSeries),
