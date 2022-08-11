@@ -2627,6 +2627,10 @@ GeometryCollection
         0   2.0   1.0   2.0   1.0
         1   0.0   0.0   1.0   1.0
         2   0.0   1.0   1.0   2.0
+        
+        You can assign the values to the ``GeoDataFrame`` as:
+        >>> gdf["minx"], gdf["miny"], gdf["maxx"],
+        ... gdf["maxy"] = gdf["geometry"].bounds.values.T
         """
         bounds = GeometryArray(self.geometry.values).bounds
         return DataFrame(
