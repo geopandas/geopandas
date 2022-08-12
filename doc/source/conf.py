@@ -424,6 +424,7 @@ intersphinx_mapping = {
     ),
 }
 
+
 # based on pandas implementation with added support of properties
 def linkcode_resolve(domain, info):
     """
@@ -456,7 +457,7 @@ def linkcode_resolve(domain, info):
     except TypeError:
         try:  # property
             fn = inspect.getsourcefile(inspect.unwrap(obj.fget))
-        except Exception:
+        except AttributeError:
             fn = None
     if not fn:
         return None
@@ -466,7 +467,7 @@ def linkcode_resolve(domain, info):
     except TypeError:  # property
         try:
             source, lineno = inspect.getsourcelines(obj.fget)
-        except Exception:
+        except AttributeError:
             lineno = None
     except OSError:
         lineno = None
