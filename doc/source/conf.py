@@ -464,8 +464,8 @@ def linkcode_resolve(domain, info):
 
     try:
         source, lineno = inspect.getsourcelines(obj)
-    except TypeError:  # property
-        try:
+    except TypeError:
+        try:  # property
             source, lineno = inspect.getsourcelines(obj.fget)
         except AttributeError:
             lineno = None
