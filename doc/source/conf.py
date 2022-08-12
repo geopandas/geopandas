@@ -449,7 +449,6 @@ def linkcode_resolve(domain, info):
                 warnings.simplefilter("ignore", FutureWarning)
                 obj = getattr(obj, part)
         except AttributeError:
-            print(1)
             return None
 
     try:
@@ -458,10 +457,8 @@ def linkcode_resolve(domain, info):
         try:  # property
             fn = inspect.getsourcefile(inspect.unwrap(obj.fget))
         except Exception:
-            print(2)
             fn = None
     if not fn:
-        print(3)
         return None
 
     try:
