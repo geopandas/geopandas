@@ -2628,10 +2628,10 @@ GeometryCollection
         1   0.0   0.0   1.0   1.0
         2   0.0   1.0   1.0   2.0
 
-        You can assign the values to the ``GeoDataFrame`` as:
+        You can assign the bounds to the ``GeoDataFrame`` as:
 
-        >>> gdf["minx"], gdf["miny"], gdf["maxx"],
-        ... gdf["maxy"] = gdf["geometry"].bounds.values.T
+        >>> import pandas as pd
+        >>> gdf = pd.concat([gdf, gdf.bounds], axis=1)
         >>> gdf
                                                     geometry  minx  miny  maxx  maxy
         0                            POINT (2.00000 1.00000)   2.0   1.0   2.0   1.0
