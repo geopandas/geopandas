@@ -1740,6 +1740,7 @@ class TestGeoplotAccessor:
                         ModuleNotFoundError, match="No module named 'scipy'"
                     ):
                         self.gdf.plot(kind=kind)
+                    return
             elif kind in _y_kinds:
                 kwargs = {"y": "y"}
             elif kind in _xy_kinds:
