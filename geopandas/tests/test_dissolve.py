@@ -291,7 +291,7 @@ def test_dissolve_dropna():
 )
 def test_dissolve_dropna_warn(nybb_polydf):
     # No warning with default params
-    with pytest.warns(None) as record:
+    with warnings.catch_warnings(record=True) as record:
         nybb_polydf.dissolve()
 
     for r in record:
