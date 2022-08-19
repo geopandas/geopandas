@@ -1,4 +1,5 @@
 import os
+import warnings
 
 import numpy as np
 from numpy.testing import assert_array_equal
@@ -306,7 +307,14 @@ def test_numerical_operations(s, df):
 
     # df methods ignore the geometry column
     exp = pd.Series([3, 4], index=["value1", "value2"])
-    assert_series_equal(df.sum(), exp)
+    msg = "Dropping of nuisance columns in DataFrame reductions"
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore",
+            category=FutureWarning,
+            message=msg,
+        )
+        assert_series_equal(df.sum(), exp)
 
     # series methods raise error (not supported for geometry)
     with pytest.raises(TypeError):
