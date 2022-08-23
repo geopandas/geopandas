@@ -269,7 +269,18 @@ class TestSpatialJoin:
         empty = sjoin(not_in, polygons, how="inner", predicate="intersects")
         assert empty.empty
 
-    @pytest.mark.parametrize("predicate", ["intersects", "contains", "within"])
+    @pytest.mark.parametrize(
+        "predicate",
+        [
+            "contains",
+            "contains_properly",
+            "covered_by",
+            "covers",
+            "intersects",
+            "touches",
+            "within",
+        ],
+    )
     @pytest.mark.parametrize(
         "empty",
         [

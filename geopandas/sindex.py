@@ -437,6 +437,7 @@ if compat.HAS_RTREE:
                 "overlaps",
                 "crosses",
                 "touches",
+                "covered_by",
                 "covers",
                 "contains_properly",
             }
@@ -502,6 +503,7 @@ if compat.HAS_RTREE:
                 if predicate in (
                     "contains",
                     "intersects",
+                    "covered_by",
                     "covers",
                     "contains_properly",
                 ):
