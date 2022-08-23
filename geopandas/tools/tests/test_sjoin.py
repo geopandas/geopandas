@@ -276,6 +276,7 @@ class TestSpatialJoin:
             "contains_properly",
             "covered_by",
             "covers",
+            "crosses",
             "intersects",
             "touches",
             "within",
