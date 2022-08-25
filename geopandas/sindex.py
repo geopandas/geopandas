@@ -55,8 +55,8 @@ class BaseSpatialIndex:
         ----------
         geometry : shapely geometry
             A single shapely geometry to query against the spatial index.
-        predicate : {None, 'intersects', 'within', 'contains', \
-'overlaps', 'crosses', 'touches'}, optional
+        predicate : {None, "contains", "contains_properly", "covered_by", "covers", \
+"crosses", "intersects", "overlaps", "touches", "within"}, optional
             If predicate is provided, the input geometry is
             tested using the predicate function against each item
             in the tree whose extent intersects the envelope of the
@@ -118,8 +118,8 @@ class BaseSpatialIndex:
         geometry : {GeoSeries, GeometryArray, numpy.array of PyGEOS geometries}
             Accepts GeoPandas geometry iterables (GeoSeries, GeometryArray)
             or a numpy array of PyGEOS geometries.
-        predicate : {None, 'intersects', 'within', 'contains', 'overlaps', \
-'crosses', 'touches'}, optional
+        predicate : {None, "contains", "contains_properly", "covered_by", "covers", \
+"crosses", "intersects", "overlaps", "touches", "within"}, optional
             If predicate is provided, the input geometries are tested using
             the predicate function against each item in the tree whose extent
             intersects the envelope of the each input geometry:
@@ -437,6 +437,7 @@ if compat.HAS_RTREE:
                 "overlaps",
                 "crosses",
                 "touches",
+                "covered_by",
                 "covers",
                 "contains_properly",
             }
@@ -502,6 +503,7 @@ if compat.HAS_RTREE:
                 if predicate in (
                     "contains",
                     "intersects",
+                    "covered_by",
                     "covers",
                     "contains_properly",
                 ):
@@ -669,8 +671,8 @@ if compat.HAS_PYGEOS:
             >>> from shapely.geometry import Point
             >>> s = geopandas.GeoSeries([Point(0, 0), Point(1, 1)])
             >>> s.sindex.valid_query_predicates  # doctest: +SKIP
-            {'contains', 'crosses', 'covered_by', None, 'intersects', 'within', \
-'touches', 'overlaps', 'contains_properly', 'covers'}
+            {None, "contains", "contains_properly", "covered_by", "covers", \
+"crosses", "intersects", "overlaps", "touches", "within"}
             """
             return _PYGEOS_PREDICATES
 
