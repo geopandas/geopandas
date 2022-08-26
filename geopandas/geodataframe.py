@@ -1683,49 +1683,49 @@ individually so that features may have different properties
                 warnings.warn("dropna kwarg is not supported for pandas < 1.1.0")
 
         # Process non-spatial component
-        geom_col = self.geometry.name
-        data_cols = self.columns[self.columns != geom_col]
         grouped = self.groupby(**groupby_kwargs)
-
-        # If `by` is None or a list-like of length equal to the number of rows, we're
-        # not grouping by a set of columns / index levels so there is no column to drop.
-        by_len_ext = getattr(by, "__len__", lambda: self.shape[0])
-        if isinstance(grouped.keys, str) or by_len_ext() != self.shape[0]:
-            data_cols = data_cols.drop(grouped.keys)
-
+        explicit_grps_provided = by is not None and len(grouped.exclusions) == 0
+        # If `by` provides the groups explicitly, force the list-like `by` to an array
+        # for the `set_index` and subset selection potentially performed below.
+        if explicit_grps_provided:
+            by = np.asarray(by)
+        geom_col = self.geometry.name
+        data_cols = self.columns.drop(grouped.exclusions.union({geom_col}))
         aggregated_data = grouped[data_cols].agg(aggfunc)
         aggregated_data.columns = aggregated_data.columns.to_flat_index()
 
         # Process spatial component
         geoms = GeoSeries()
-        rows_to_agg = grouped[geom_col].transform("count") > 1
-        to_keep = not rows_to_agg.all()
-        if to_keep:
-            grps_to_agg = grouped[geom_col].count() > 1
+        grps_to_agg = grouped[geom_col].count() > 1
+        if not grps_to_agg.all():
             # Have to right join on this bool mask instead of doing a .loc for
-            # dropna and observed
+            # dropna and observed.
             singletons_loc = grps_to_agg.loc[~grps_to_agg].rename("a")
-            if by is not None:
-                single_geoms = self.set_index(by).join(
-                    singletons_loc, how="right", rsuffix="a"
-                )[geom_col]
-
-            else:
+            if by is None:
                 level_names = grouped.grouper.names
                 lvls_to_drop = np.setdiff1d(self.index.names, level_names).tolist()
                 single_geoms = self.join(singletons_loc, how="right", rsuffix="a")[
                     geom_col
                 ].droplevel(lvls_to_drop)
 
+            else:
+                single_geoms = self.set_index(by).join(
+                    singletons_loc, how="right", rsuffix="a"
+                )[geom_col]
+
             # Fixes edge case where a single geometry is grouped with null ones.
             single_geoms = single_geoms.loc[single_geoms.notnull()]
             geoms = pd.concat([geoms, single_geoms])
 
-        to_dissolve = rows_to_agg.any()
-        if to_dissolve:
+        if grps_to_agg.any():
             # The non-observed are not aggregated anyway, so in here we should
             # not introduce unobserved values, hence we set observed to True.
             groupby_kwargs["observed"] = True
+            # If `by` provides the groups explicitly, we must perform the following
+            # groupby on the subset of `by` corresponding to the rows to dissolve.
+            rows_to_agg = grouped[geom_col].transform("count") > 1
+            if explicit_grps_provided:
+                groupby_kwargs["by"] = by[rows_to_agg.values]
             dissolved_geoms = (
                 self.loc[rows_to_agg]
                 .groupby(**groupby_kwargs)[geom_col]
