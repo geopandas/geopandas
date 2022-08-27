@@ -505,6 +505,9 @@ class GeometryArray(ExtensionArray):
     def representative_point(self):
         return GeometryArray(vectorized.representative_point(self.data), crs=self.crs)
 
+    def make_valid(self):
+        return GeometryArray(vectorized.make_valid(self.data), crs=self.crs)
+
     #
     # Binary predicates
     #

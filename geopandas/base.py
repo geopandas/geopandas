@@ -692,6 +692,42 @@ GeometryCollection
         """
         return _delegate_geo_method("representative_point", self)
 
+    def make_valid(self):
+        """
+        Returns a valid representation of the geometry, if it is invalid.
+        If it is valid, the input geometry will be returned.
+        In many cases, in order to create a valid geometry,
+        the input geometry must be split into multiple parts or multiple geometries.
+        if the geometry must be split into multiple parts,
+        and the parts are of the same geometry type,
+        then a multipart geometry (e.g. a MultiPolygon) will be returned.
+        if the geometry must be split into multiple parts of different types,
+        then a GeometryCollection will be returned.
+
+        Examples
+        --------
+        >>> from shapely.geometry import Polygon, LineString, Point
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0, 0), (0, 2), (1, 1), (2, 2), (2, 0), (1, 1), (0, 0)]),
+        ...         Polygon([(0, 2), (0, 1), (2, 0), (0, 0), (0, 2)]),
+        ...         LineString([(0, 0), (1, 1), (1, 0)]),
+        ...     ]
+        ... )
+        >>> s
+        0    POLYGON ((0.00000 0.00000, 0.00000 2.00000, 1....
+        1    POLYGON ((0.00000 2.00000, 0.00000 1.00000, 2....
+        2    LINESTRING (0.00000 0.00000, 1.00000 1.00000, ...
+        dtype: geometry
+
+        >>> s.make_valid()
+        0    MULTIPOLYGON (((1.00000 1.00000, 0.00000 0.000...
+        1    GEOMETRYCOLLECTION (POLYGON ((2.00000 0.00000,...
+        2    LINESTRING (0.00000 0.00000, 1.00000 1.00000, ...
+        dtype: geometry
+        """
+        return _delegate_geo_method("make_valid", self)
+
     #
     # Reduction operations that return a Shapely geometry
     #

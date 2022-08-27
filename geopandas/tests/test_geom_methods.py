@@ -672,6 +672,23 @@ class TestGeomMethods:
         with pytest.warns(UserWarning, match="Geometry is in a geographic CRS"):
             self.g4.centroid
 
+    def test_make_valid(self):
+        polygon1 = Polygon([(0, 0), (0, 2), (1, 1), (2, 2), (2, 0), (1, 1), (0, 0)])
+        polygon2 = Polygon([(0, 2), (0, 1), (2, 0), (0, 0), (0, 2)])
+        linestring = LineString([(0, 0), (1, 1), (1, 0)])
+        testGeoseries = GeoSeries([polygon1, polygon2, linestring])
+        out_polygon1 = MultiPolygon(
+            [
+                Polygon([(1, 1), (0, 0), (0, 2), (1, 1)]),
+                Polygon([(2, 0), (1, 1), (2, 2), (2, 0)]),
+            ]
+        )
+        out_polygon2 = GeometryCollection(
+            [Polygon([(2, 0), (0, 0), (0, 1), (2, 0)]), LineString([(0, 2), (0, 1)])]
+        )
+        output = [out_polygon1, out_polygon2, linestring]
+        assert_geoseries_equal(testGeoseries.make_valid(), output)
+
     def test_convex_hull(self):
         # the convex hull of a square should be the same as the square
         squares = GeoSeries([self.sq for i in range(3)])
