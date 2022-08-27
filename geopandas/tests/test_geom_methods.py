@@ -679,6 +679,10 @@ class TestGeomMethods:
         with pytest.warns(UserWarning, match="Geometry is in a geographic CRS"):
             self.g4.centroid
 
+    @pytest.mark.skipif(
+        not compat.SHAPELY_GE_18,
+        reason="ignore_index keyword introduced in shapely 1.8.0",
+    )
     def test_make_valid(self):
         polygon1 = Polygon([(0, 0), (0, 2), (1, 1), (2, 2), (2, 0), (1, 1), (0, 0)])
         polygon2 = Polygon([(0, 2), (0, 1), (2, 0), (0, 0), (0, 2)])
