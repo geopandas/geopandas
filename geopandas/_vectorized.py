@@ -633,6 +633,18 @@ def representative_point(data):
         return out
 
 
+def normalize(data):
+    if compat.USE_PYGEOS:
+        return pygeos.normalize(data)
+    else:
+        # method and not a property -> can't use _unary_geo
+        out = np.empty(len(data), dtype=object)
+        with compat.ignore_shapely2_warnings():
+            out[:] = [
+                geom.normalize() if geom is not None else None
+                for geom in data
+            ]
+        return out
 #
 # Binary predicates
 #

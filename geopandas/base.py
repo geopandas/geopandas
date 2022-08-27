@@ -692,6 +692,37 @@ GeometryCollection
         """
         return _delegate_geo_method("representative_point", self)
 
+    def normalize(self):
+        """Returns a ``GeoSeries`` of normalized geometries to normal form (or canonical form).
+        This method orders the coordinates, rings of a polygon and parts of
+        multi geometries consistently. Typically useful for testing purposes
+        (for example in combination with `equals_exact`).
+
+        Examples
+        --------
+
+        >>> from shapely.geometry import Polygon, LineString, Point
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0, 0), (1, 1), (0, 1)]),
+        ...         LineString([(0, 0), (1, 1), (1, 0)]),
+        ...         Point(0, 0),
+        ...     ]
+        ... )
+        >>> s
+        0    POLYGON ((0.00000 0.00000, 1.00000 1.00000, 0....
+        1    LINESTRING (0.00000 0.00000, 1.00000 1.00000, ...
+        2                               POINT (0.00000 0.00000)
+        dtype: geometry
+
+        >>> s.normalize()
+        0    POLYGON ((0.00000 0.00000, 0.00000 1.00000, 1....
+        1    LINESTRING (0.00000 0.00000, 1.00000 1.00000, ...
+        2                              POINT (0.00000 0.00000)
+        dtype: geometry
+        """
+        return _delegate_geo_method("normalize", self)
+
     #
     # Reduction operations that return a Shapely geometry
     #
