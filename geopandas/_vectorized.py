@@ -640,10 +640,7 @@ def normalize(data):
         # method and not a property -> can't use _unary_geo
         out = np.empty(len(data), dtype=object)
         with compat.ignore_shapely2_warnings():
-            out[:] = [
-                geom.normalize() if geom is not None else None
-                for geom in data
-            ]
+            out[:] = [geom.normalize() if geom is not None else None for geom in data]
         return out
 #
 # Binary predicates
