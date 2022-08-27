@@ -677,8 +677,10 @@ class TestGeomMethods:
         linestring = LineString([(0, 0), (1, 1), (1, 0)])
         point = Point(0, 0)
         testGeoseries = GeoSeries([polygon, linestring, point])
+        polygon2 = Polygon([(0, 0), (0, 1), (1, 1)])
+        testGeoseries2 = GeoSeries([polygon2, linestring, point])
         assert_geoseries_equal(
-            testGeoseries.normalize(), testGeoseries, check_less_precise=True
+            testGeoseries.normalize(), testGeoseries2, check_less_precise=True
         )
 
     def test_convex_hull(self):

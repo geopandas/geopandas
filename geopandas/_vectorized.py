@@ -886,7 +886,7 @@ def normalize(data):
             out[:] = [
                 _shapely_normalize(geom) if geom is not None else None for geom in data
             ]
-        return out
+    return out
 
 
 def project(data, other, normalized=False):
