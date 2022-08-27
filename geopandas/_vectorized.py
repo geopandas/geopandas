@@ -876,6 +876,10 @@ def _shapely_normalize(geom):
 def normalize(data):
     if compat.USE_PYGEOS:
         return pygeos.normalize(data)
+    elif compat.SHAPELY_GE_18:
+        out = np.empty(len(data), dtype=object)
+        with compat.ignore_shapely2_warnings():
+            out[:] = [geom.normalize() if geom is not None else None for geom in data]
     else:
         out = np.empty(len(data), dtype=object)
         with compat.ignore_shapely2_warnings():
