@@ -4,7 +4,14 @@ import numpy as np
 from numpy.testing import assert_array_equal
 from pandas import DataFrame, Index, MultiIndex, Series
 
-from shapely.geometry import LinearRing, LineString, MultiPoint, Point, Polygon
+from shapely.geometry import (
+    LinearRing,
+    LineString,
+    MultiPoint,
+    Point,
+    Polygon,
+    MultiPolygon,
+)
 from shapely.geometry.collection import GeometryCollection
 from shapely.ops import unary_union
 from shapely import wkt
@@ -686,7 +693,7 @@ class TestGeomMethods:
         out_polygon2 = GeometryCollection(
             [Polygon([(2, 0), (0, 0), (0, 1), (2, 0)]), LineString([(0, 2), (0, 1)])]
         )
-        output = [out_polygon1, out_polygon2, linestring]
+        output = GeoSeries([out_polygon1, out_polygon2, linestring])
         assert_geoseries_equal(testGeoseries.make_valid(), output)
 
     def test_convex_hull(self):

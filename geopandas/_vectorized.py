@@ -896,7 +896,7 @@ def make_valid(data):
                 shapely.validation.make_valid(geom) if geom is not None else None
                 for geom in data
             ]
-        return out
+    return out
 
 
 def project(data, other, normalized=False):

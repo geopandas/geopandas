@@ -706,7 +706,7 @@ GeometryCollection
 
         Examples
         --------
-        >>> from shapely.geometry import Polygon, LineString, Point
+        >>> from shapely.geometry import MultiPolygon, Polygon, LineString, Point
         >>> s = geopandas.GeoSeries(
         ...     [
         ...         Polygon([(0, 0), (0, 2), (1, 1), (2, 2), (2, 0), (1, 1), (0, 0)]),
