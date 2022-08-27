@@ -679,7 +679,6 @@ class TestGeomMethods:
         testGeoseries = GeoSeries([polygon, linestring, point])
         assert_geoseries_equal(testGeoseries.normalize(), testGeoseries)
 
-
     def test_convex_hull(self):
         # the convex hull of a square should be the same as the square
         squares = GeoSeries([self.sq for i in range(3)])
