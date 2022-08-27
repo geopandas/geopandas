@@ -694,6 +694,7 @@ GeometryCollection
 
     def normalize(self):
         """Returns a ``GeoSeries`` of normalized geometries to normal form (or canonical form).
+
         This method orders the coordinates, rings of a polygon and parts of
         multi geometries consistently. Typically useful for testing purposes
         (for example in combination with `equals_exact`).
