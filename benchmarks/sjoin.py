@@ -26,5 +26,5 @@ class Bench:
 
         self.df1, self.df2 = df1, df2
 
-    def time_sjoin(self, op):
-        sjoin(self.df1, self.df2, op=op)
+    def time_sjoin(self, predicate):
+        sjoin(self.df1, self.df2, predicate=predicate)
