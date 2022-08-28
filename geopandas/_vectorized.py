@@ -11,6 +11,7 @@ import pandas as pd
 
 import shapely.geometry
 import shapely.geos
+import shapely.object
 import shapely.ops
 import shapely.wkb
 import shapely.wkt
@@ -631,6 +632,10 @@ def representative_point(data):
                 for geom in data
             ]
         return out
+
+
+def minimum_rotated_rectangle(data):
+    pass
 
 
 #
