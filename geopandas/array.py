@@ -967,18 +967,36 @@ class GeometryArray(ExtensionArray):
         return GeometryArray(result, crs=self.crs)
 
     def _fill(self, idx, value):
-        """Fill index locations with value
-
-        Value should be a BaseGeometry
         """
-        if not (_is_scalar_geometry(value) or value is None):
+        Fill index locations with ``value``.
+
+        ``value`` should be a BaseGeometry or a GeometryArray.
+        """
+        from pandas import Series
+
+        if vectorized.isna(value) or _is_scalar_geometry(value):
+            value_arr = np.empty(1, dtype=object)
+            with compat.ignore_shapely2_warnings():
+                value_arr[:] = [value or BaseGeometry()]
+
+        elif isinstance(value, GeometryArray):
+            # If `value` is a GeoSeries, require that it has the same index as `self`.
+            if isinstance(value, Series) and not self.index.equals(value.index):
+                raise ValueError(
+                    "Index values of 'value' sequence does "
+                    "not match index values of the GeoSeries"
+                )
+
+            value_arr = np.empty(len(value), dtype=object)
+            with compat.ignore_shapely2_warnings():
+                value_arr[:] = value[idx]
+
+        else:
             raise TypeError(
-                "Value should be either a BaseGeometry or None, got %s" % str(value)
+                "'value' parameter must be None, a scalar geometry, or a GeoSeries, "
+                f"but you passed a {type(value).__name__!r}"
             )
-        # self.data[idx] = value
-        value_arr = np.empty(1, dtype=object)
-        with compat.ignore_shapely2_warnings():
-            value_arr[:] = [value]
+
         self.data[idx] = value_arr
         return self
 
@@ -1010,17 +1028,9 @@ class GeometryArray(ExtensionArray):
         if method is not None:
             raise NotImplementedError("fillna with a method is not yet supported")
 
-        mask = self.isna()
         new_values = self.copy()
-
+        mask = self.isna()
         if mask.any():
-            # fill with value
-            if vectorized.isna(value):
-                value = None
-            elif not isinstance(value, BaseGeometry):
-                raise NotImplementedError(
-                    "fillna currently only supports filling with a scalar geometry"
-                )
             value = _shapely_to_geom(value)
             new_values = new_values._fill(mask, value)
 
