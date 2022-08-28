@@ -749,13 +749,24 @@ class GeoSeries(GeoPandasBase, Series):
         return self.notna()
 
     def fillna(self, value=None, method=None, inplace=False, **kwargs):
-        """Fill NA values with a geometry (empty polygon by default).
+        """
+        Fill NA values with geometry (or geometries).
 
-        "method" is currently not implemented for pandas <= 0.12.
+        ``method`` is currently not implemented for pandas <= 0.12.
+
+        Parameters
+        ----------
+        value : Geometry or GeoSeries, default None
+            - ``None`` : Fill empty polygon to all missing values.
+            - ``Geometry`` : Fill it to all missing values.
+            - ``GeoSeries`` : It requires having the same length as 'self'.
+
+        Returns
+        -------
+        GeoSeries
 
         Examples
         --------
-
         >>> from shapely.geometry import Polygon
         >>> s = geopandas.GeoSeries(
         ...     [

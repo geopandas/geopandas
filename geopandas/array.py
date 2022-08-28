@@ -1001,18 +1001,21 @@ class GeometryArray(ExtensionArray):
         return self
 
     def fillna(self, value=None, method=None, limit=None):
-        """Fill NA/NaN values using the specified method.
+        """
+        Fill NA/NaN values using the specified method.
 
         Parameters
         ----------
-        value : scalar, array-like
-            If a scalar value is passed it is used to fill all missing values.
-            Alternatively, an array-like 'value' can be given. It's expected
-            that the array-like have the same length as 'self'.
+        value : Geometry or GeoSeries, default None
+            - ``None`` : Fill empty polygon to all missing values.
+            - ``Geometry`` : Fill it to all missing values.
+            - ``GeoSeries`` : It requires having the same length as 'self'.
+
         method : {'backfill', 'bfill', 'pad', 'ffill', None}, default None
             Method to use for filling holes in reindexed Series
             pad / ffill: propagate last valid observation forward to next valid
             backfill / bfill: use NEXT valid observation to fill gap
+
         limit : int, default None
             If method is specified, this is the maximum number of consecutive
             NaN values to forward/backward fill. In other words, if there is
@@ -1023,7 +1026,7 @@ class GeometryArray(ExtensionArray):
 
         Returns
         -------
-        filled : ExtensionArray with NA/NaN filled
+        GeometryArray
         """
         if method is not None:
             raise NotImplementedError("fillna with a method is not yet supported")
