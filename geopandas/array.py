@@ -1029,8 +1029,16 @@ class GeometryArray(ExtensionArray):
         -------
         GeometryArray
         """
-        if method is not None:
-            raise NotImplementedError("fillna with a method is not yet supported")
+        from pandas.core.missing import clean_fill_method
+
+        if value is None and method is None:
+            raise ValueError("Must specify a fill 'value' or 'method'.")
+        elif value is not None and method is not None:
+            raise ValueError("Cannot specify both 'value' and 'method'.")
+
+        if value is None:
+            method = clean_fill_method(method)
+            return super().fillna(method=method, limit=limit)
 
         mask = self.isna()
         new_values = self.copy()
