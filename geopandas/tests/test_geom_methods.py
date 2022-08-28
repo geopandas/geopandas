@@ -871,6 +871,12 @@ class TestGeomMethods:
         assert isinstance(e, GeoSeries)
         assert self.g3.crs == e.crs
 
+    def test_minimum_rotated_rectangle(self):
+        e = self.g3.minimum_rotated_rectangle
+        assert np.all(e.geom_equals(self.sq))
+        assert isinstance(e, GeoSeries)
+        assert self.g3.crs == e.crs
+
     def test_total_bounds(self):
         bbox = self.sol.x, self.sol.y, self.esb.x, self.esb.y
         assert isinstance(self.landmarks.total_bounds, np.ndarray)

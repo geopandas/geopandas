@@ -11,7 +11,6 @@ import pandas as pd
 
 import shapely.geometry
 import shapely.geos
-import shapely.object
 import shapely.ops
 import shapely.wkb
 import shapely.wkt
@@ -589,6 +588,13 @@ def envelope(data):
         return _unary_geo("envelope", data)
 
 
+def minimum_rotated_rectangle(data):
+    if compat.USE_PYGEOS:
+        return pygeos.envelope(data)
+    else:
+        return _unary_geo("minimum_rotated_rectangle", data)
+
+
 def exterior(data):
     if compat.USE_PYGEOS:
         return pygeos.get_exterior_ring(data)
@@ -629,21 +635,6 @@ def representative_point(data):
         with compat.ignore_shapely2_warnings():
             out[:] = [
                 geom.representative_point() if geom is not None else None
-                for geom in data
-            ]
-        return out
-
-
-def minimum_rotated_rectangle(data):
-    if compat.USE_PYGEOS:
-        return pygeos.minimum_rotated_rectangle(data)
-    else:
-        out = np.empty(len(data), dtype=object)
-        with compat.ignore_shapely2_warnings():
-            out[:] = [
-                shapely.object.minimum_rotated_rectangle(geom)
-                if geom is not None
-                else None
                 for geom in data
             ]
         return out
