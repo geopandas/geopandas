@@ -588,7 +588,7 @@ class GeometryArray(ExtensionArray):
         return GeometryArray(self._binary_method("union", self, other), crs=self.crs)
 
     def minimum_rotated_rectangle(self):
-        pass
+        return GeometryArray(self.minimum_rotated_rectangle(), crs=self.crs)
 
     #
     # Other operations

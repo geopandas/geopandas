@@ -635,7 +635,16 @@ def representative_point(data):
 
 
 def minimum_rotated_rectangle(data):
-    pass
+    if compat.USE_PYGEOS:
+        return pygeos.minimum_rotated_rectangle(data)
+    else:
+        out = np.empty(len(data), dtype=object)
+        with compat.ignore_shapely2_warnings():
+            out[:] = [
+                geom.object.minimum_rotated_rectangle() if geom is not None else None
+                for geom in data
+            ]
+        return out
 
 
 #
