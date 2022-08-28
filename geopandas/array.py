@@ -1031,8 +1031,8 @@ class GeometryArray(ExtensionArray):
         if method is not None:
             raise NotImplementedError("fillna with a method is not yet supported")
 
-        new_values = self.copy()
         mask = self.isna()
+        new_values = self.copy()
         if mask.any():
             value = _shapely_to_geom(value)
             new_values = new_values._fill(mask, value)
