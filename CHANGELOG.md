@@ -6,6 +6,8 @@ Development version
 
 New features and improvements:
 
+- added normalize function from shapely 1.8
+
 Deprecations and compatibility notes:
 
 Bug fixes:
