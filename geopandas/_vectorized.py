@@ -641,7 +641,7 @@ def minimum_rotated_rectangle(data):
         out = np.empty(len(data), dtype=object)
         with compat.ignore_shapely2_warnings():
             out[:] = [
-                geom.object.minimum_rotated_rectangle() if geom is not None else None
+                shapely.object.minimum_rotated_rectangle(geom) if geom else None
                 for geom in data
             ]
         return out
