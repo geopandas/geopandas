@@ -977,7 +977,8 @@ class GeometryArray(ExtensionArray):
         if vectorized.isna(value) or _is_scalar_geometry(value):
             value_arr = np.empty(1, dtype=object)
             with compat.ignore_shapely2_warnings():
-                value_arr[:] = [value or BaseGeometry()]
+                value = _shapely_to_geom(value or BaseGeometry())
+                value_arr[:] = [value]
 
         elif isinstance(value, GeometryArray):
             # If `value` is a GeoSeries, require that it has the same index as `self`.
@@ -1033,11 +1034,7 @@ class GeometryArray(ExtensionArray):
 
         mask = self.isna()
         new_values = self.copy()
-        if mask.any():
-            value = _shapely_to_geom(value)
-            new_values = new_values._fill(mask, value)
-
-        return new_values
+        return new_values._fill(mask, value) if mask.any() else new_values
 
     def astype(self, dtype, copy=True):
         """
