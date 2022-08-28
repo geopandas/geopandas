@@ -748,7 +748,7 @@ class GeoSeries(GeoPandasBase, Series):
         """Alias for `notna` method. See `notna` for more detail."""
         return self.notna()
 
-    def fillna(self, value=None, method=None, inplace=False, **kwargs):
+    def fillna(self, value=None, method=None, limit=None, inplace=False, **kwargs):
         """
         Fill NA values with geometry (or geometries).
 
@@ -760,6 +760,19 @@ class GeoSeries(GeoPandasBase, Series):
             - ``None`` : Fill empty polygon to all missing values.
             - ``Geometry`` : Fill it to all missing values.
             - ``GeoSeries`` : It requires having the same length as 'self'.
+
+        method : {'backfill', 'bfill', 'pad', 'ffill', None}, default None
+            Method to use for filling holes in reindexed Series
+            - 'pad' / 'ffill' : propagate last valid observation forward to next valid
+            - 'backfill' / 'bfill' : use NEXT valid observation to fill gap
+
+        limit : int, default None
+            If method is specified, this is the maximum number of consecutive
+            NaN values to forward/backward fill. In other words, if there is
+            a gap with more than this number of consecutive NaNs, it will only
+            be partially filled. If method is not specified, this is the
+            maximum number of entries along the entire axis where NaNs will be
+            filled.
 
         Returns
         -------
@@ -797,7 +810,14 @@ class GeoSeries(GeoPandasBase, Series):
         --------
         GeoSeries.isna : detect missing values
         """
-        return super().fillna(value=value, method=method, inplace=inplace, **kwargs)
+
+        return super().fillna(
+            value=value,
+            method=method,
+            limit=limit,
+            inplace=inplace,
+            **kwargs,
+        )
 
     def __contains__(self, other):
         """Allow tests of the form "geom in s"
