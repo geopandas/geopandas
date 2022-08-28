@@ -6,7 +6,7 @@ Development version
 
 New features and improvements:
 
-- added normalize function from shapely 1.8
+- Added ``normalize()`` method from shapely to GeoSeries/GeoDataframe (#2537)
 
 Deprecations and compatibility notes:
 
