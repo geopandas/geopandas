@@ -797,6 +797,22 @@ class GeoSeries(GeoPandasBase, Series):
         2    POLYGON ((0.00000 0.00000, -1.00000 1.00000, 0...
         dtype: geometry
 
+        Filled with another GeoSeries.
+
+        >>> from shapely.geometry import Point
+        >>> s_fill = geopandas.GeoSeries(
+        ...     [
+        ...         Point(0, 0),
+        ...         Point(1, 1),
+        ...         Point(2, 2),
+        ...     ]
+        ... )
+        >>> s.fillna(s_fill)
+        0    POLYGON ((0.00000 0.00000, 1.00000 1.00000, 0....
+        1                              POINT (1.00000 1.00000)
+        2    POLYGON ((0.00000 0.00000, -1.00000 1.00000, 0...
+        dtype: geometry
+
         See Also
         --------
         GeoSeries.isna : detect missing values
