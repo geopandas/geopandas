@@ -988,9 +988,10 @@ class GeometryArray(ExtensionArray):
                     "not match index values of the GeoSeries"
                 )
 
+            value = _shapely_to_geom(value[idx])
             value_arr = np.empty(len(value), dtype=object)
             with compat.ignore_shapely2_warnings():
-                value_arr[:] = value[idx]
+                value_arr[:] = value  # value is a array
 
         else:
             raise TypeError(
