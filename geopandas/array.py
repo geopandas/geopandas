@@ -1001,7 +1001,7 @@ class GeometryArray(ExtensionArray):
 
     def fillna(self, value=None, method=None, limit=None):
         """
-        Fill NA/NaN values using the specified method.
+        Fill NA values with geometry (or geometries) or using the specified method.
 
         Parameters
         ----------
