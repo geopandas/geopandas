@@ -781,11 +781,15 @@ class GeoSeries(GeoPandasBase, Series):
         2    POLYGON ((0.00000 0.00000, -1.00000 1.00000, 0...
         dtype: geometry
 
+        Filled with a empty polygon.
+
         >>> s.fillna()
         0    POLYGON ((0.00000 0.00000, 1.00000 1.00000, 0....
         1                             GEOMETRYCOLLECTION EMPTY
         2    POLYGON ((0.00000 0.00000, -1.00000 1.00000, 0...
         dtype: geometry
+
+        Filled with a specific polygon.
 
         >>> s.fillna(Polygon([(0, 1), (2, 1), (1, 2)]))
         0    POLYGON ((0.00000 0.00000, 1.00000 1.00000, 0....
