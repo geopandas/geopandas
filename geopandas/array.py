@@ -974,15 +974,10 @@ class GeometryArray(ExtensionArray):
         """
         from pandas import Series
 
-        if vectorized.isna(value) or _is_scalar_geometry(value):
-            if vectorized.isna(value):
-                value = None
-
-            value_arr = np.empty(1, dtype=object)
-            with compat.ignore_shapely2_warnings():
-                value = _shapely_to_geom(value)
-                value_arr[:] = [value]
-
+        if vectorized.isna(value):
+            value = [BaseGeometry()]
+        elif _is_scalar_geometry(value):
+            value = [value]
         elif isinstance(value, GeometryArray):
             # If `value` is a GeoSeries, require that it has the same index as `self`.
             if isinstance(value, Series) and not self.index.equals(value.index):
@@ -990,17 +985,16 @@ class GeometryArray(ExtensionArray):
                     "Index values of 'value' sequence does "
                     "not match index values of the GeoSeries"
                 )
-
-            value = _shapely_to_geom(value[idx])
-            value_arr = np.empty(len(value), dtype=object)
-            with compat.ignore_shapely2_warnings():
-                value_arr[:] = value  # value is a array
-
+            value = value[idx]
         else:
             raise TypeError(
                 "'value' parameter must be None, a scalar geometry, or a GeoSeries, "
                 f"but you passed a {type(value).__name__!r}"
             )
+
+        value_arr = np.empty(len(value), dtype=object)
+        with compat.ignore_shapely2_warnings():
+            value_arr[:] = _shapely_to_geom(value)
 
         self.data[idx] = value_arr
         return self
