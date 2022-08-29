@@ -975,9 +975,12 @@ class GeometryArray(ExtensionArray):
         from pandas import Series
 
         if vectorized.isna(value) or _is_scalar_geometry(value):
+            if vectorized.isna(value):
+                value = None
+
             value_arr = np.empty(1, dtype=object)
             with compat.ignore_shapely2_warnings():
-                value = _shapely_to_geom(value or BaseGeometry())
+                value = _shapely_to_geom(value)
                 value_arr[:] = [value]
 
         elif isinstance(value, GeometryArray):

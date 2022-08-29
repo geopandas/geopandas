@@ -817,6 +817,8 @@ class GeoSeries(GeoPandasBase, Series):
         --------
         GeoSeries.isna : detect missing values
         """
+        if value is None:
+            value = BaseGeometry()
         return super().fillna(value=value, method=method, inplace=inplace, **kwargs)
 
     def __contains__(self, other):
