@@ -889,7 +889,7 @@ def normalize(data):
 def make_valid(data):
     if compat.USE_PYGEOS:
         return pygeos.make_valid(data)
-    elif not SHAPELY_GE_18:
+    elif not compat.SHAPELY_GE_18:
         raise ImportError(
             f"shapely >= 1.8 or PyGEOS is required, "
             f"version {shapely.__version__} is installed"
