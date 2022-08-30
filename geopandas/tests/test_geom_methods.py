@@ -700,7 +700,7 @@ class TestGeomMethods:
         output = GeoSeries([out_polygon1, out_polygon2, linestring])
         testGeoseries.is_valid
         assert_geoseries_equal(testGeoseries.make_valid(), output)
-        testGeoseries.make_valid().is_valid()
+        testGeoseries.make_valid().is_valid
 
     def test_convex_hull(self):
         # the convex hull of a square should be the same as the square
