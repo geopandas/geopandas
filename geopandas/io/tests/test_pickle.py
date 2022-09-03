@@ -83,10 +83,7 @@ def _create_gdf():
     )
 
 
-@pytest.mark.skipif(
-    not compat.HAS_PYGEOS or compat.USE_SHAPELY_20,
-    reason="requires pygeos to test #1745",
-)
+@pytest.mark.skipif(not compat.HAS_PYGEOS, reason="requires pygeos to test #1745")
 def test_pygeos_switch(tmpdir):
     # writing and reading with pygeos disabled
     with with_use_pygeos(False):

@@ -625,7 +625,7 @@ if compat.HAS_RTREE:
             return self.size
 
 
-if compat.USE_SHAPELY_20 or compat.HAS_PYGEOS:
+if compat.SHAPELY_GE_20 or compat.HAS_PYGEOS:
 
     from . import geoseries  # noqa
     from . import array  # noqa

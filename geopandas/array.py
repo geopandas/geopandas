@@ -129,9 +129,7 @@ def _shapely_to_geom(geom):
 
 
 def _is_scalar_geometry(geom):
-    if compat.USE_SHAPELY_20:
-        return isinstance(geom, BaseGeometry)
-    elif compat.USE_PYGEOS:
+    if compat.USE_PYGEOS:
         return isinstance(geom, (pygeos.Geometry, BaseGeometry))
     else:
         return isinstance(geom, BaseGeometry)

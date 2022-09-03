@@ -18,9 +18,9 @@ import pytest
 import numpy as np
 
 if compat.USE_SHAPELY_20:
-    import shapely as geom_mod
+    import shapely as mod
 elif compat.USE_PYGEOS:
-    import pygeos as geom_mod
+    import pygeos as mod
 
 
 @pytest.mark.skip_no_sindex
@@ -732,14 +732,14 @@ class TestPygeosInterface:
         ],
     )
     def test_nearest_single(self, geometry, expected, return_all):
-        geoms = geom_mod.points(np.arange(10), np.arange(10))
+        geoms = mod.points(np.arange(10), np.arange(10))
         df = geopandas.GeoDataFrame({"geometry": geoms})
 
         p = Point(geometry)
         res = df.sindex.nearest(p, return_all=return_all)
         assert_array_equal(res, expected)
 
-        p = geom_mod.points(geometry)
+        p = mod.points(geometry)
         res = df.sindex.nearest(p, return_all=return_all)
         assert_array_equal(res, expected)
 
@@ -756,14 +756,14 @@ class TestPygeosInterface:
         ],
     )
     def test_nearest_multi(self, geometry, expected, return_all):
-        geoms = geom_mod.points(np.arange(10), np.arange(10))
+        geoms = mod.points(np.arange(10), np.arange(10))
         df = geopandas.GeoDataFrame({"geometry": geoms})
 
         ps = [Point(p) for p in geometry]
         res = df.sindex.nearest(ps, return_all=return_all)
         assert_array_equal(res, expected)
 
-        ps = geom_mod.points(geometry)
+        ps = mod.points(geometry)
         res = df.sindex.nearest(ps, return_all=return_all)
         assert_array_equal(res, expected)
 
@@ -789,7 +789,7 @@ class TestPygeosInterface:
         ],
     )
     def test_nearest_none(self, geometry, expected, return_all):
-        geoms = geom_mod.points(np.arange(10), np.arange(10))
+        geoms = mod.points(np.arange(10), np.arange(10))
         df = geopandas.GeoDataFrame({"geometry": geoms})
 
         res = df.sindex.nearest(geometry, return_all=return_all)
@@ -812,7 +812,7 @@ class TestPygeosInterface:
     def test_nearest_max_distance(
         self, expected, max_distance, return_all, return_distance
     ):
-        geoms = geom_mod.points(np.arange(10), np.arange(10))
+        geoms = mod.points(np.arange(10), np.arange(10))
         df = geopandas.GeoDataFrame({"geometry": geoms})
 
         ps = [Point(0.5, 0.5), Point(0, 10)]
