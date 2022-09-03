@@ -360,7 +360,7 @@ def _nearest_query(
     how: str,
     return_distance: bool,
 ):
-    if not (compat.PYGEOS_GE_010 and compat.USE_PYGEOS) and not compat.SHAPELY_GE_20:
+    if not (compat.USE_SHAPELY_20 or (compat.USE_PYGEOS and compat.PYGEOS_GE_010)):
         raise NotImplementedError(
             "Currently, only PyGEOS >= 0.10.0 or Shapely >= 2.0 supports "
             "`nearest_all`. " + compat.INSTALL_PYGEOS_ERROR
