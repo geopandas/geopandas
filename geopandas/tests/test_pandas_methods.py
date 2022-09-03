@@ -663,6 +663,30 @@ def test_df_apply_returning_series(df):
 
     result = df.apply(lambda row: row.value1, axis=1)
     assert_series_equal(result, df["value1"].rename(None))
+    # https://github.com/geopandas/geopandas/issues/2480
+    result = df.apply(lambda x: float("NaN"), axis=1)
+    assert result.dtype == "float64"
+    # assert list of nones is not promoted to GeometryDtype
+    result = df.apply(lambda x: None, axis=1)
+    assert result.dtype == "object"
+
+
+def test_df_apply_geometry_dtypes(df):
+    # https://github.com/geopandas/geopandas/issues/1852
+    apply_types = []
+
+    def get_dtypes(srs):
+        apply_types.append((srs.name, type(srs)))
+
+    df["geom2"] = df.geometry
+    df.apply(get_dtypes)
+    expected = [
+        ("geometry", GeoSeries),
+        ("value1", pd.Series),
+        ("value2", pd.Series),
+        ("geom2", GeoSeries),
+    ]
+    assert apply_types == expected
 
 
 def test_pivot(df):

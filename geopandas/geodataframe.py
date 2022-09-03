@@ -1524,14 +1524,17 @@ individually so that features may have different properties
             else:
                 if self.crs is not None and result.crs is None:
                     result.set_crs(self.crs, inplace=True)
-        elif isinstance(result, Series):
-            # Reconstruct series GeometryDtype if lost by apply
-            try:
-                # Note CRS cannot be preserved in this case as func could refer
-                # to any column
-                result = _ensure_geometry(result)
-            except TypeError:
-                pass
+        elif isinstance(result, Series) and result.dtype == "object":
+            # Try reconstruct series GeometryDtype if lost by apply
+            # If all none and object dtype assert list of nones is more likely
+            # intended than list of null geometry.
+            if not result.isna().all():
+                try:
+                    # not enough info about func to preserve CRS
+                    result = _ensure_geometry(result)
+
+                except TypeError:
+                    pass
 
         return result
 
@@ -1825,12 +1828,11 @@ individually so that features may have different properties
 
         exploded_geom = self.geometry.reset_index(drop=True).explode(index_parts=True)
 
-        df = GeoDataFrame(
-            self.drop(self._geometry_column_name, axis=1).take(
-                exploded_geom.index.droplevel(-1)
-            ),
-            geometry=exploded_geom.values,
-        ).__finalize__(self)
+        df = self.drop(self._geometry_column_name, axis=1).take(
+            exploded_geom.index.droplevel(-1)
+        )
+        df[exploded_geom.name] = exploded_geom.values
+        df = df.set_geometry(self._geometry_column_name).__finalize__(self)
 
         if ignore_index:
             df.reset_index(inplace=True, drop=True)

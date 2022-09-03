@@ -8,18 +8,33 @@ New features and improvements:
 
 Deprecations and compatibility notes:
 
--   The `version` parameter for the `to_feather` and `to_parquet` methods has
-    been replaced with `schema_version`.  `version` will be passed directly to
-    underlying feather or parquet writer. `version` will only be used to set
-    `schema_version` if `version` is one of 0.1.0 or 0.4.0 (#2496).
-
 Bug fixes:
+
+Notes on (optional) dependencies:
+
+Version 0.11.1 (July 24, 2022)
+------------------------------
+
+Small bug-fix release:
 
 - Fix regression (RecursionError) in reshape methods such as ``unstack()``
   and ``pivot()`` involving MultiIndex, or GeoDataFrame construction with
   MultiIndex (#2486).
+- Fix regression in ``GeoDataFrame.explode()`` with non-default
+  geometry column name.
+- Fix regression in ``apply()`` causing row-wise all nan float columns to be 
+  casted to GeometryDtype (#2482). 
+- Fix a crash in datetime column reading where the file contains mixed timezone
+  offsets (#2479). These will be read as UTC localized values.
+- Fix a crash in datetime column reading where the file contains datetimes
+  outside the range supported by [ns] precision (#2505).
+- Fix regression in passing the Parquet or Feather format ``version`` in
+  ``to_parquet`` and ``to_feather``. As a result, the ``version`` parameter
+  for the ``to_parquet`` and ``to_feather`` methods has been replaced with
+  ``schema_version``. ``version`` will be passed directly to underlying
+  feather or parquet writer. ``version`` will only be used to set
+  ``schema_version`` if ``version`` is one of 0.1.0 or 0.4.0 (#2496).
 
-Notes on (optional) dependencies:
 
 Version 0.11 (June 20, 2022)
 ----------------------------
@@ -141,7 +156,6 @@ Notes on (optional) dependencies:
   dependencies have now changed to shapely 1.7, fiona 1.8.13.post1, pyproj 2.6.1.post1,
   matplotlib 3.2, mapclassify 2.4.0 (#2358, #2391)
 
-
 Version 0.10.2 (October 16, 2021)
 ---------------------------------
 
@@ -161,7 +175,6 @@ Small bug-fix release:
 - Fix ``unary_union`` to correctly handle a GeoSeries with missing values (#2181).
 - Avoid internal deprecation warning in ``clip()`` (#2179).
 
-
 Version 0.10.1 (October 8, 2021)
 --------------------------------
 
@@ -169,7 +182,6 @@ Small bug-fix release:
 
 - Fix regression in ``overlay()`` with non-overlapping geometries and a
   non-default ``how`` (i.e. not "intersection") (#2157).
-
 
 Version 0.10.0 (October 3, 2021)
 --------------------------------
@@ -207,7 +219,7 @@ New features and improvements:
 - Improved heuristic to decide how many decimals to show in the repr based on
   whether the CRS is projected or geographic (#1895).
 - Switched the default for ``geocode()`` from GeoCode.Farm to the Photon
-  geocoding API (https://photon.komoot.io) (#2007).
+  geocoding API (<https://photon.komoot.io>) (#2007).
 
 Deprecations and compatibility notes:
 
@@ -256,7 +268,6 @@ Notes on (optional) dependencies:
 - Compatibility fixes for the upcoming Shapely 1.8 (#2087).
 - Compatibility fixes for the latest PyGEOS (#1872, #2014) and matplotlib
   (colorbar issue, #2066).
-
 
 Version 0.9.0 (February 28, 2021)
 ---------------------------------
@@ -374,12 +385,10 @@ Notes on (optional) dependencies:
   is still a default requirement) (#1775).
 - Compatibility with the upcoming Shapely 1.8 (#1659, #1662, #1819).
 
-
 Version 0.8.2 (January 25, 2021)
 --------------------------------
 
 Small bug-fix release for compatibility with PyGEOS 0.9.
-
 
 Version 0.8.1 (July 15, 2020)
 -----------------------------
@@ -391,7 +400,6 @@ Small bug-fix release:
 - Fix spurious warning in ``GeoDataFrame.to_postgis`` (#1497).
 - Fix the un-pickling with ``pd.read_pickle`` of files written with older
   GeoPandas versions (#1511).
-
 
 Version 0.8.0 (June 24, 2020)
 -----------------------------
@@ -491,7 +499,6 @@ And we now have a [Code of Conduct](https://github.com/geopandas/geopandas/blob/
 GeoPandas 0.8.0 is the last release to support Python 3.5. The next release
 will require Python 3.6, pandas 0.24, numpy 1.15 and shapely 1.6 or higher.
 
-
 Version 0.7.0 (February 16, 2020)
 ---------------------------------
 
@@ -536,7 +543,6 @@ Bug fixes:
 - Fixed the ``geopandas.sjoin`` function to handle MultiIndex correctly (#1159).
 - Fixed the ``geopandas.sjoin`` function to preserve the index name of the left GeoDataFrame (#1150).
 
-
 Version 0.6.3 (February 6, 2020)
 ---------------------------------
 
@@ -546,7 +552,6 @@ Small bug-fix release:
 - Fix ``GeoDataFrame.fillna`` to accept non-geometry values again when there are
   no missing values in the geometry column. This should make it easier to fill
   the numerical columns of the GeoDataFrame (#1279).
-
 
 Version 0.6.2 (November 18, 2019)
 ---------------------------------
@@ -560,7 +565,6 @@ Small bug-fix release fixing a few regressions:
 - Fix filtering of a GeoDataFrame to preserve the index type when ending up
   with an empty result (#1190).
 
-
 Version 0.6.1 (October 12, 2019)
 --------------------------------
 
@@ -568,7 +572,6 @@ Small bug-fix release fixing a few regressions:
 
 - Fix ``astype`` when converting to string with Multi geometries (#1145) or when converting a dataframe without geometries (#1144).
 - Fix ``GeoSeries.fillna`` to accept ``np.nan`` again (#1149).
-
 
 Version 0.6.0 (September 27, 2019)
 ----------------------------------
@@ -610,9 +613,7 @@ Bug fixes:
 - Fixed ``GeoDataFrame.to_file`` to preserve VFS file paths (e.g. when a "s3://" path is specified) (#1124).
 - Fixed failing case in ``geopandas.sjoin`` with empty geometries (#1138).
 
-
 In addition, the minimum required versions of some dependencies have been increased: GeoPandas now requirs pandas >=0.23.4 and matplotlib >=2.0.1 (#1002).
-
 
 Version 0.5.1 (July 11, 2019)
 -----------------------------

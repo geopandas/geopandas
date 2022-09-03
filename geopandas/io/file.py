@@ -196,11 +196,12 @@ def _read_file(filename, bbox=None, mask=None, rows=None, engine=None, **kwargs)
         installed, otherwise tries "pyogrio".
     **kwargs :
         Keyword args to be passed to the engine. In case of the "fiona" engine,
-        the keyword arguments are passed to the `open` or `BytesCollection`
-        method in the fiona library when opening the file. For more information
-        on possible keywords, type: ``import fiona; help(fiona.open)``. In
-        case of the "pyogrio" engine, the keyword arguments are passed to
-        `pyogrio.read_dataframe`.
+        the keyword arguments are passed to :func:`fiona.open` or
+        :class:`fiona.collection.BytesCollection` when opening the file.
+        For more information on possible keywords, type:
+        ``import fiona; help(fiona.open)``. In case of the "pyogrio" engine,
+        the keyword arguments are passed to :func:`pyogrio.read_dataframe`.
+
 
     Examples
     --------
@@ -292,15 +293,19 @@ def _read_file_fiona(
 
     with fiona_env():
         with reader(path_or_bytes, **kwargs) as features:
-
-            # In a future Fiona release the crs attribute of features will
-            # no longer be a dict, but will behave like a dict. So this should
-            # be forwards compatible
-            crs = (
-                features.crs["init"]
-                if features.crs and "init" in features.crs
-                else features.crs_wkt
-            )
+            crs = features.crs_wkt
+            # attempt to get EPSG code
+            try:
+                # fiona 1.9+
+                epsg = features.crs.to_epsg(confidence_threshold=100)
+                if epsg is not None:
+                    crs = epsg
+            except AttributeError:
+                # fiona <= 1.8
+                try:
+                    crs = features.crs["init"]
+                except (TypeError, KeyError):
+                    pass
 
             # handle loading the bounding box
             if bbox is not None:
@@ -341,9 +346,16 @@ def _read_file_fiona(
                     f_filt, crs=crs, columns=columns + ["geometry"]
                 )
             for k in datetime_fields:
-                # fiona only supports up to ms precision, any microseconds are
-                # floating point rounding error
-                df[k] = pd.to_datetime(df[k]).dt.round(freq="ms")
+                as_dt = pd.to_datetime(df[k], errors="ignore")
+                # if to_datetime failed, try again for mixed timezone offsets
+                if as_dt.dtype == "object":
+                    # This can still fail if there are invalid datetimes
+                    as_dt = pd.to_datetime(df[k], errors="ignore", utc=True)
+                # if to_datetime succeeded, round datetimes as
+                # fiona only supports up to ms precision (any microseconds are
+                # floating point rounding error)
+                if not (as_dt.dtype == "object"):
+                    df[k] = as_dt.dt.round(freq="ms")
             return df
 
 
