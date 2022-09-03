@@ -71,9 +71,6 @@ def _pygeos_to_shapely(geom):
     if geom is None:
         return None
 
-    if compat.USE_SHAPELY_20:
-        return geom
-
     if compat.PYGEOS_SHAPELY_COMPAT:
         # we can only use this compatible fast path for shapely < 2, because
         # shapely 2+ doesn't expose clone
@@ -92,9 +89,6 @@ def _pygeos_to_shapely(geom):
 def _shapely_to_pygeos(geom):
     if geom is None:
         return None
-
-    if compat.USE_SHAPELY_20:
-        return geom
 
     if compat.PYGEOS_SHAPELY_COMPAT:
         return pygeos.from_shapely(geom)
