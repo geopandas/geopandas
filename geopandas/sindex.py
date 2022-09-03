@@ -796,7 +796,7 @@ if compat.SHAPELY_GE_20 or compat.HAS_PYGEOS:
             else:
                 indices = result
 
-            if not (return_all and compat.USE_SHAPELY_20):
+            if not return_all and not compat.USE_SHAPELY_20:
                 # first subarray of geometry indices is sorted, so we can use this
                 # trick to get the first of each index value
                 mask = np.diff(indices[0, :]).astype("bool")
