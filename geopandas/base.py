@@ -2627,6 +2627,16 @@ GeometryCollection
         0   2.0   1.0   2.0   1.0
         1   0.0   0.0   1.0   1.0
         2   0.0   1.0   1.0   2.0
+
+        You can assign the bounds to the ``GeoDataFrame`` as:
+
+        >>> import pandas as pd
+        >>> gdf = pd.concat([gdf, gdf.bounds], axis=1)
+        >>> gdf
+                                                    geometry  minx  miny  maxx  maxy
+        0                            POINT (2.00000 1.00000)   2.0   1.0   2.0   1.0
+        1  POLYGON ((0.00000 0.00000, 1.00000 1.00000, 1....   0.0   0.0   1.0   1.0
+        2      LINESTRING (0.00000 1.00000, 1.00000 2.00000)   0.0   1.0   1.0   2.0
         """
         bounds = GeometryArray(self.geometry.values).bounds
         return DataFrame(
