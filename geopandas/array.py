@@ -979,12 +979,6 @@ class GeometryArray(ExtensionArray):
         elif _is_scalar_geometry(value):
             value = [value]
         elif isinstance(value, GeometryArray):
-            # If `value` is a GeoSeries, require that it has the same index as `self`.
-            if isinstance(value, Series) and not self.index.equals(value.index):
-                raise ValueError(
-                    "Index values of 'value' sequence does "
-                    "not match index values of the GeoSeries"
-                )
             value = value[idx]
         else:
             raise TypeError(
@@ -1008,7 +1002,6 @@ class GeometryArray(ExtensionArray):
         value : Geometry or GeoSeries, default None
             - ``None`` : Fill empty polygon to all missing values.
             - ``Geometry`` : Fill it to all missing values.
-            - ``GeoSeries`` : It requires having the same length as 'self'.
 
         method : {'backfill', 'bfill', 'pad', 'ffill', None}, default None
             Method to use for filling holes in reindexed Series
