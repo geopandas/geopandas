@@ -972,8 +972,6 @@ class GeometryArray(ExtensionArray):
 
         ``value`` should be a BaseGeometry or a GeometryArray.
         """
-        from pandas import Series
-
         if vectorized.isna(value):
             value = [None]
         elif _is_scalar_geometry(value):
