@@ -389,6 +389,18 @@ def test_fillna(s, df):
     res = df3.fillna(0)
     assert_geodataframe_equal(res.astype({"value1": "int64"}), df)
 
+    # fill na with another GeoSeries
+    # https://github.com/geopandas/geopandas/issues/2535
+    # case 1: same index
+    res = s2.fillna(s)
+    assert_geoseries_equal(res, s)
+    # case 2: different index but same length
+    res = s2.fillna(GeoSeries([Point(1, 1)]*3, index=[1, 2, 3]))
+    assert_geoseries_equal(res, s)
+    # case 3: different length
+    res = s2.fillna(GeoSeries([Point(1, 1)], index=[1]))
+    assert_geoseries_equal(res, s)
+
 
 def test_dropna():
     s2 = GeoSeries([Point(0, 0), None, Point(2, 2)])
