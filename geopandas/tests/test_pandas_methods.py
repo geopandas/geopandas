@@ -395,7 +395,7 @@ def test_fillna(s, df):
     res = s2.fillna(s)
     assert_geoseries_equal(res, s)
     # case 2: different index but same length
-    res = s2.fillna(GeoSeries([Point(1, 1)]*3, index=[1, 2, 3]))
+    res = s2.fillna(GeoSeries([Point(1, 1)] * 3, index=[1, 2, 3]))
     assert_geoseries_equal(res, s)
     # case 3: different length
     res = s2.fillna(GeoSeries([Point(1, 1)], index=[1]))
