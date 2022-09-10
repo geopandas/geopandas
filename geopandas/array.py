@@ -999,9 +999,10 @@ class GeometryArray(ExtensionArray):
 
         Parameters
         ----------
-        value : Geometry or GeoSeries, default None
-            - ``None`` : Fill empty polygon to all missing values.
-            - ``Geometry`` : Fill it to all missing values.
+        value : pygeos.Geometry, shapely geometry object or GeometryArray
+            If a geometry value is passed it is used to fill all missing values.
+            Alternatively, an GeometryArray 'value' can be given. It's expected
+            that the GeometryArray have the same length as 'self'.
 
         method : {'backfill', 'bfill', 'pad', 'ffill', None}, default None
             Method to use for filling holes in reindexed Series
