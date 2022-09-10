@@ -819,12 +819,9 @@ class GeoSeries(GeoPandasBase, Series):
         --------
         GeoSeries.isna : detect missing values
         """
-        return super().fillna(
-            value=value or BaseGeometry(),
-            method=method,
-            inplace=inplace,
-            **kwargs,
-        )
+        if value is None:
+            value = BaseGeometry()
+        return super().fillna(value=value, method=method, inplace=inplace, **kwargs)
 
     def __contains__(self, other):
         """Allow tests of the form "geom in s"
