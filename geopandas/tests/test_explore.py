@@ -2,6 +2,7 @@ import geopandas as gpd
 import numpy as np
 import pandas as pd
 import pytest
+import warnings
 from packaging.version import Version
 
 folium = pytest.importorskip("folium")
@@ -38,6 +39,15 @@ class TestExplore:
         self.world.explore()
         self.cities.explore()
         self.world.geometry.explore()
+
+    def test_invariant_pass(self):
+        """make sure invariant column does not raise a warning"""
+        with warnings.catch_warnings(record=True) as w:
+            self.cities.assign(invariant=0).explore("invariant")
+            for rw in w:
+                assert (
+                    str(rw.message) != "invalid value encountered in double_scalars"
+                ), "color column invariant raised warning"
 
     def test_choropleth_pass(self):
         """Make sure default choropleth pass"""

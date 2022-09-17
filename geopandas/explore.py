@@ -4,6 +4,7 @@ import geopandas
 from shapely.geometry import LineString
 import numpy as np
 import pandas as pd
+import warnings
 
 _MAP_KWARGS = [
     "location",
@@ -428,31 +429,42 @@ GON (((180.00000 -16.06713, 180.00000...
             vmin = gdf[column].min() if vmin is None else vmin
             vmax = gdf[column].max() if vmax is None else vmax
 
-            # get bins
-            if scheme is not None:
+            def get_bins(classification_kwds):
+                # get bins
+                if scheme is not None:
 
-                if classification_kwds is None:
-                    classification_kwds = {}
-                if "k" not in classification_kwds:
-                    classification_kwds["k"] = k
+                    if classification_kwds is None:
+                        classification_kwds = {}
+                    if "k" not in classification_kwds:
+                        classification_kwds["k"] = k
 
-                binning = classify(
-                    np.asarray(gdf[column][~nan_idx]), scheme, **classification_kwds
+                    binning = classify(
+                        np.asarray(gdf[column][~nan_idx]), scheme, **classification_kwds
+                    )
+                    color = np.apply_along_axis(
+                        colors.to_hex, 1, cm.get_cmap(cmap, k)(binning.yb)
+                    )
+
+                else:
+
+                    bins = np.linspace(vmin, vmax, 257)[1:]
+                    binning = classify(
+                        np.asarray(gdf[column][~nan_idx]), "UserDefined", bins=bins
+                    )
+
+                    color = np.apply_along_axis(
+                        colors.to_hex, 1, cm.get_cmap(cmap, 256)(binning.yb)
+                    )
+                return color, binning, classification_kwds
+
+            with warnings.catch_warnings():
+                warnings.filterwarnings(
+                    action="ignore",
+                    message="invalid value encountered in double_scalars",
+                    category=RuntimeWarning,
+                    module=r".*mapclassify*",
                 )
-                color = np.apply_along_axis(
-                    colors.to_hex, 1, cm.get_cmap(cmap, k)(binning.yb)
-                )
-
-            else:
-
-                bins = np.linspace(vmin, vmax, 257)[1:]
-                binning = classify(
-                    np.asarray(gdf[column][~nan_idx]), "UserDefined", bins=bins
-                )
-
-                color = np.apply_along_axis(
-                    colors.to_hex, 1, cm.get_cmap(cmap, 256)(binning.yb)
-                )
+                color, binning, classification_kwds = get_bins(classification_kwds)
 
     # set default style
     if "fillOpacity" not in style_kwds:
