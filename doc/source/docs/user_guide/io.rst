@@ -184,7 +184,7 @@ SQL WHERE Filter
 
 Load in a subset of data with a `SQL WHERE clause <https://gdal.org/user/ogr_sql_dialect.html#where>`__.
 
-.. note:: Requires Fiona 1.9+
+.. note:: Requires Fiona 1.9+ or the pyogrio engine.
 
 .. code-block:: python
 
