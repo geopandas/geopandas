@@ -768,12 +768,11 @@ def test_read_file__ignore_all_fields(engine):
 
 
 def test_read_file__where_filter(engine):
-    skip_pyogrio_not_supported(engine)  # pyogrio has "columns" keyword instead
-    if FIONA_GE_19:
+    if FIONA_GE_19 or engine == "pyogrio":
         gdf = geopandas.read_file(
             geopandas.datasets.get_path("naturalearth_lowres"),
             where="continent='Africa'",
-            engine="fiona",
+            engine=engine,
         )
         assert gdf.continent.unique().tolist() == ["Africa"]
     else:
