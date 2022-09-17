@@ -16,6 +16,7 @@ from shapely.geometry import Point, Polygon, box
 
 import geopandas
 from geopandas import GeoDataFrame, read_file
+from geopandas._compat import FIONA_GE_19
 from geopandas.io.file import _detect_driver, _EXTENSION_TO_DRIVER
 
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
@@ -764,6 +765,24 @@ def test_read_file__ignore_all_fields(engine):
         engine="fiona",
     )
     assert gdf.columns.tolist() == ["geometry"]
+
+
+def test_read_file__where_filter(engine):
+    skip_pyogrio_not_supported(engine)  # pyogrio has "columns" keyword instead
+    if FIONA_GE_19:
+        gdf = geopandas.read_file(
+            geopandas.datasets.get_path("naturalearth_lowres"),
+            where="continent='Africa'",
+            engine="fiona",
+        )
+        assert gdf.continent.unique().tolist() == ["Africa"]
+    else:
+        with pytest.raises(NotImplementedError):
+            geopandas.read_file(
+                geopandas.datasets.get_path("naturalearth_lowres"),
+                where="continent='Africa'",
+                engine="fiona",
+            )
 
 
 @PYOGRIO_MARK

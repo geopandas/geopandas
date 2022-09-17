@@ -12,6 +12,7 @@ from shapely.geometry import mapping
 from shapely.geometry.base import BaseGeometry
 
 from geopandas import GeoDataFrame, GeoSeries
+from geopandas._compat import FIONA_GE_19
 
 # Adapted from pandas.io.common
 from urllib.request import urlopen as _urlopen
@@ -263,8 +264,11 @@ def _read_file(filename, bbox=None, mask=None, rows=None, engine=None, **kwargs)
 
 
 def _read_file_fiona(
-    path_or_bytes, from_bytes, bbox=None, mask=None, rows=None, **kwargs
+    path_or_bytes, from_bytes, bbox=None, mask=None, rows=None, where=None, **kwargs
 ):
+    if where is not None and not FIONA_GE_19:
+        raise NotImplementedError("where requires fiona 1.9+")
+
     if not from_bytes:
         # Opening a file via URL or file-like-object above automatically detects a
         # zipped file. In order to match that behavior, attempt to add a zip scheme
@@ -319,6 +323,15 @@ def _read_file_fiona(
                 mask = mapping(mask.to_crs(crs).unary_union)
             elif isinstance(mask, BaseGeometry):
                 mask = mapping(mask)
+
+            filters = {}
+            if bbox is not None:
+                filters["bbox"] = bbox
+            if mask is not None:
+                filters["mask"] = mask
+            if where is not None:
+                filters["where"] = where
+
             # setup the data loading filter
             if rows is not None:
                 if isinstance(rows, int):
@@ -326,10 +339,13 @@ def _read_file_fiona(
                 elif not isinstance(rows, slice):
                     raise TypeError("'rows' must be an integer or a slice.")
                 f_filt = features.filter(
-                    rows.start, rows.stop, rows.step, bbox=bbox, mask=mask
+                    rows.start,
+                    rows.stop,
+                    rows.step,
+                    **filters,
                 )
-            elif any((bbox, mask)):
-                f_filt = features.filter(bbox=bbox, mask=mask)
+            elif filters:
+                f_filt = features.filter(**filters)
             else:
                 f_filt = features
             # get list of columns
