@@ -282,6 +282,34 @@ class TestIO:
 
         validate_boro_df(df, case_sensitive=False)
 
+    def test_from_postgis_multiple_geom_col(self, connection_postgis, df_nybb):
+        con = connection_postgis
+        geom_col = "the_geom"
+        geom_col_2 = "the_geom_2"
+        create_postgis(con, df_nybb, geom_col=geom_col)
+
+        # create second column with geometry
+        try:
+            cursor = con.cursor()
+            sql = """ALTER TABLE IF EXISTS public.nybb
+                ADD COLUMN {0} geometry;
+                UPDATE public.nybb
+                SET {0}={1};""".format(
+                geom_col_2, geom_col
+            )
+            cursor.execute(sql)
+        finally:
+            cursor.close()
+            con.commit()
+
+        sql = "SELECT * FROM nybb;"
+        df = GeoDataFrame.from_postgis(sql, con, geom_col=[geom_col, geom_col_2])
+
+        validate_boro_df(df, case_sensitive=False)
+
+        # Make sure also the second column was properly loaded as MultiPolygon
+        assert pd.Series(df[geom_col_2].type).dropna().eq("MultiPolygon").all()
+
     def test_read_postgis_null_geom(self, connection_spatialite, df_nybb):
         """Tests that geometry with NULL is accepted."""
         con = connection_spatialite
