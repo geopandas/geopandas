@@ -806,7 +806,7 @@ def test_read_file_filtered_with_gdf_boundary__mask(df_nybb, engine):
         engine=engine,
     )
     filtered_df_shape = gdf.shape
-    assert filtered_df_shape == (50, 2)
+    assert filtered_df_shape == (75, 2)
 
 
 def test_read_file_filtered_with_gdf_boundary__mask__polygon(df_nybb, engine):
