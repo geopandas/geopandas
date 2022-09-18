@@ -32,6 +32,27 @@ class TestExplore:
         out_str = "".join(out.split())
         return out_str
 
+    def test_naturalearth_pass(self):
+        # make sure distributed natural earth shape files
+        # are as expected
+        import hashlib
+
+        def fhash(fname):
+            hash_ = hashlib.sha256()
+            with open(fname, "rb") as f:
+                for chunk in iter(lambda: f.read(4096), b""):
+                    hash_.update(chunk)
+            return hash_.hexdigest()
+
+        assert (
+            fhash(gpd.datasets.get_path("naturalearth_cities"))
+            == "b9e20f6dd2896285370d049f3e09159b64317a4102fbbc2390171246e8b3a7d0"
+        )
+        assert (
+            fhash(gpd.datasets.get_path("naturalearth_lowres"))
+            == "08e341606e8391e458c3f08deb312de664b56bfae376064c5aa0aee6681a5f55"
+        )
+
     def test_simple_pass(self):
         """Make sure default pass"""
         self.nybb.explore()
