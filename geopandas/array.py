@@ -511,9 +511,6 @@ class GeometryArray(ExtensionArray):
     def representative_point(self):
         return GeometryArray(vectorized.representative_point(self.data), crs=self.crs)
 
-    def normalize(self):
-        return GeometryArray(vectorized.normalize(self.data), crs=self.crs)
-
     #
     # Binary predicates
     #
