@@ -593,14 +593,15 @@ GeometryCollection
         >>> from shapely.geometry import MultiPoint
         >>> s = geopandas.GeoSeries([
         ...     MultiPoint([(0,0),(1,1),(2,0.5)])
-        ...     ]
+        ...     ],
+        ...     crs='EPSG:3857'
         ... )
         >>> s
-        0    MULTIPOINT (0.00000 0.00000, 1.00000 1.00000, ...
+        0    MULTIPOINT (0.000 0.000, 1.000 1.000, 2.000 0....
         dtype: geometry
 
         >>> s.minimum_rotated_rectangle()
-        0    POLYGON ((1.82353 1.20588, -0.17647 0.70588, 0...
+        0    POLYGON ((1.824 1.206, -0.176 0.706, 0.000 0.0...
         dtype: geometry
 
         See also

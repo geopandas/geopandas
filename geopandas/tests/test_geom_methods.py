@@ -883,7 +883,7 @@ class TestGeomMethods:
         assert self.g3.crs == e.crs
 
     def test_minimum_rotated_rectangle(self):
-        e = self.g3.minimum_rotated_rectangle
+        e = self.g3.minimum_rotated_rectangle()
         assert np.all(e.geom_equals(self.sq))
         assert isinstance(e, GeoSeries)
         assert self.g3.crs == e.crs
