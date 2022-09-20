@@ -857,7 +857,7 @@ def distance(data, other):
 
 def buffer(data, distance, resolution=16, **kwargs):
     if compat.USE_SHAPELY_20:
-        return shapely.buffer(data, distance, quadsegs=resolution, **kwargs)
+        return shapely.buffer(data, distance, quad_segs=resolution, **kwargs)
     elif compat.USE_PYGEOS:
         return pygeos.buffer(data, distance, quadsegs=resolution, **kwargs)
     else:
