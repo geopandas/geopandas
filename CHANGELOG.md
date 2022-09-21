@@ -6,6 +6,8 @@ Development version
 
 New features and improvements:
 
+  - Add where filter to ``read_file`` (#2552)
+
 Deprecations and compatibility notes:
 
 Bug fixes:
