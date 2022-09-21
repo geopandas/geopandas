@@ -16,8 +16,7 @@ from shapely.geometry import Point, Polygon, box
 
 import geopandas
 from geopandas import GeoDataFrame, read_file
-from geopandas._compat import FIONA_GE_19
-from geopandas.io.file import _detect_driver, _EXTENSION_TO_DRIVER
+from geopandas.io.file import _detect_driver, _EXTENSION_TO_DRIVER, FIONA_GE_19
 
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 from geopandas.tests.util import PACKAGE_DIR, validate_boro_df

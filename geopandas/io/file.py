@@ -12,7 +12,6 @@ from shapely.geometry import mapping
 from shapely.geometry.base import BaseGeometry
 
 from geopandas import GeoDataFrame, GeoSeries
-from geopandas._compat import FIONA_GE_19
 
 # Adapted from pandas.io.common
 from urllib.request import urlopen as _urlopen
@@ -27,12 +26,14 @@ _VALID_URLS.discard("")
 fiona = None
 fiona_env = None
 fiona_import_error = None
+FIONA_GE_19 = False
 
 
 def _import_fiona():
     global fiona
     global fiona_env
     global fiona_import_error
+    global FIONA_GE_19
 
     if fiona is None:
         try:
@@ -49,6 +50,9 @@ def _import_fiona():
                 except ImportError:
                     fiona_env = None
 
+            FIONA_GE_19 = Version(Version(fiona.__version__).base_version) >= Version(
+                "1.9.0"
+            )
         except ImportError as err:
             fiona = False
             fiona_import_error = str(err)
@@ -338,12 +342,7 @@ def _read_file_fiona(
                     rows = slice(rows)
                 elif not isinstance(rows, slice):
                     raise TypeError("'rows' must be an integer or a slice.")
-                f_filt = features.filter(
-                    rows.start,
-                    rows.stop,
-                    rows.step,
-                    **filters,
-                )
+                f_filt = features.filter(rows.start, rows.stop, rows.step, **filters)
             elif filters:
                 f_filt = features.filter(**filters)
             else:
