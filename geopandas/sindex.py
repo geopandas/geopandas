@@ -772,7 +772,6 @@ if compat.SHAPELY_GE_20 or compat.HAS_PYGEOS:
                     "sindex.nearest requires shapely >= 2.0 or pygeos >= 0.10"
                 )
 
-            # breakpoint()
 
             geometry = self._as_geometry_array(geometry)
             if isinstance(geometry, BaseGeometry) or geometry is None:
