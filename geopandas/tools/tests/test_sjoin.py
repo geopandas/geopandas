@@ -17,7 +17,7 @@ from pandas.testing import assert_frame_equal
 import pytest
 
 
-TEST_NEAREST = compat.PYGEOS_GE_010 and compat.USE_PYGEOS
+TEST_NEAREST = compat.USE_SHAPELY_20 or (compat.PYGEOS_GE_010 and compat.USE_PYGEOS)
 
 
 pytestmark = pytest.mark.skip_no_sindex
@@ -583,7 +583,7 @@ def test_no_nearest_all():
     df2 = geopandas.GeoDataFrame({"geometry": []})
     with pytest.raises(
         NotImplementedError,
-        match="Currently, only PyGEOS >= 0.10.0 supports `nearest_all`",
+        match="Currently, only PyGEOS >= 0.10.0 or Shapely >= 2.0 supports",
     ):
         sjoin_nearest(df1, df2)
 
