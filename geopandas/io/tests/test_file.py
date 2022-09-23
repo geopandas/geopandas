@@ -16,7 +16,7 @@ from shapely.geometry import Point, Polygon, box
 
 import geopandas
 from geopandas import GeoDataFrame, read_file
-from geopandas.io.file import _detect_driver, _EXTENSION_TO_DRIVER, FIONA_GE_19
+from geopandas.io.file import _detect_driver, _EXTENSION_TO_DRIVER
 
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 from geopandas.tests.util import PACKAGE_DIR, validate_boro_df
@@ -37,10 +37,12 @@ try:
     FIONA_GE_1814 = Version(fiona.__version__) >= Version("1.8.14")
     # invalid datetime handling
     FIONA_GE_1821 = Version(fiona.__version__) >= Version("1.8.21")
+    FIONA_GE_19 = Version(Version(fiona.__version__).base_version) >= Version("1.9.0")
 except ImportError:
     fiona = False
     FIONA_GE_1814 = False
     FIONA_GE_1821 = False
+    FIONA_GE_19 = False
 
 
 PYOGRIO_MARK = pytest.mark.skipif(not pyogrio, reason="pyogrio not installed")
