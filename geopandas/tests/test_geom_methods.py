@@ -672,6 +672,15 @@ class TestGeomMethods:
         with pytest.warns(UserWarning, match="Geometry is in a geographic CRS"):
             self.g4.centroid
 
+    def test_normalize(self):
+        polygon = Polygon([(0, 0), (1, 1), (0, 1)])
+        linestring = LineString([(0, 0), (1, 1), (1, 0)])
+        point = Point(0, 0)
+        series = GeoSeries([polygon, linestring, point])
+        polygon2 = Polygon([(0, 0), (0, 1), (1, 1)])
+        expected = GeoSeries([polygon2, linestring, point])
+        assert_geoseries_equal(series.normalize(), expected)
+
     def test_convex_hull(self):
         # the convex hull of a square should be the same as the square
         squares = GeoSeries([self.sq for i in range(3)])
