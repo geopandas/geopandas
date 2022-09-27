@@ -5,6 +5,9 @@ Development version
 -------------------
 
 New features and improvements:
+- Enable array-like parameters to be passed to ``GeoDataFrame.explore()`` 
+  ``style_kwds`` and ``marker_kwds``.  Effectively a simpler interface to
+  ``style_function``
 
 Deprecations and compatibility notes:
 

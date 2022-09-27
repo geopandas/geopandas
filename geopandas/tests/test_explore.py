@@ -362,6 +362,34 @@ class TestExplore:
         with pytest.raises(ValueError, match="'style_function' has to be a callable"):
             self.world.explore(style_kwds={"style_function": "not callable"})
 
+        # geopandas/issues/2564 list like paramters to marker_kwds and style_kwds
+        gdf = self.cities.copy()
+        gdf["cool"] = (gdf["name"].str[0].apply(ord) - ord("A")) // 8
+        gdf["size"] = gdf["cool"] * 4
+        gdf["fill"] = gdf["cool"] >= 2
+        m = gdf.explore(
+            marker_kwds={"radius": "size", "fill": pd.Series(gdf["fill"])},
+            style_kwds={
+                "fillColor": gdf["cool"].map(
+                    {0: "red", 1: "blue", 2: "green", 3: "yellow"}
+                )
+            },
+        )
+        actual = [
+            "".join(line.split())
+            for line in m._parent.render().split("\n")
+            if "return" in line and "radius" in line
+        ]
+
+        expected = [
+            'return{"fill":true,"fillColor":"green","fillOpacity":0.5,"radius":8,"weight":2};',    # noqa: E501
+            'return{"fill":false,"fillColor":"red","fillOpacity":0.5,"radius":0,"weight":2};',     # noqa: E501
+            'return{"fill":true,"fillColor":"yellow","fillOpacity":0.5,"radius":12,"weight":2};',  # noqa: E501
+            'return{"fill":false,"fillColor":"blue","fillOpacity":0.5,"radius":4,"weight":2};',    # noqa: E501
+        ]
+
+        assert actual == expected
+
     def test_tooltip(self):
         """Test tooltip"""
         # default with no tooltip or popup
