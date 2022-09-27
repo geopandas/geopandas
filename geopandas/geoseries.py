@@ -7,6 +7,7 @@ from pandas import Series, MultiIndex, DataFrame
 from pandas.core.internals import SingleBlockManager
 
 from pyproj import CRS
+import shapely
 from shapely.geometry.base import BaseGeometry
 
 from geopandas.base import GeoPandasBase, _delegate_property
@@ -871,12 +872,17 @@ class GeoSeries(GeoPandasBase, Series):
             )
             index_parts = True
 
-        if compat.USE_PYGEOS and compat.PYGEOS_GE_09:
-            import pygeos  # noqa
+        if compat.USE_SHAPELY_20 or (compat.USE_PYGEOS and compat.PYGEOS_GE_09):
+            if compat.USE_SHAPELY_20:
+                geometries, outer_idx = shapely.get_parts(
+                    self.values.data, return_index=True
+                )
+            else:
+                import pygeos  # noqa
 
-            geometries, outer_idx = pygeos.get_parts(
-                self.values.data, return_index=True
-            )
+                geometries, outer_idx = pygeos.get_parts(
+                    self.values.data, return_index=True
+                )
 
             if len(outer_idx):
                 # Generate inner index as a range per value of outer_idx

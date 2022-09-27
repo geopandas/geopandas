@@ -7,6 +7,7 @@ Development version
 New features and improvements:
 
 - Added ``normalize()`` method from shapely to GeoSeries/GeoDataframe (#2537)
+- Add where filter to ``read_file`` (#2552)
 
 Deprecations and compatibility notes:
 
