@@ -382,10 +382,10 @@ class TestExplore:
         ]
 
         expected = [
-            'return{"fill":true,"fillColor":"green","fillOpacity":0.5,"radius":8,"weight":2};',    # noqa: E501
-            'return{"fill":false,"fillColor":"red","fillOpacity":0.5,"radius":0,"weight":2};',     # noqa: E501
+            'return{"fill":true,"fillColor":"green","fillOpacity":0.5,"radius":8,"weight":2};',  # noqa: E501
+            'return{"fill":false,"fillColor":"red","fillOpacity":0.5,"radius":0,"weight":2};',  # noqa: E501
             'return{"fill":true,"fillColor":"yellow","fillOpacity":0.5,"radius":12,"weight":2};',  # noqa: E501
-            'return{"fill":false,"fillColor":"blue","fillOpacity":0.5,"radius":4,"weight":2};',    # noqa: E501
+            'return{"fill":false,"fillColor":"blue","fillOpacity":0.5,"radius":4,"weight":2};',  # noqa: E501
         ]
 
         assert actual == expected
