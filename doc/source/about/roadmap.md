@@ -44,16 +44,6 @@ Ahead of GeoPandas 1.0, the API will be revised to ensure
 that all the necessary deprecations occur before the major release to provide the
 stability of the API for the coming years.
 
-### Prepared geometries
-
-GeoPandas is using spatial indexing for the operations that may benefit from it. Further
-performance gains can be achieved using prepared geometries. Preparation creates a
-spatial index of individual line segments of geometries, greatly enhancing the speed of
-spatial predicates like `intersects` or `contains`. Given that the preparation has
-become less computationally expensive in `shapely` 2.0, GeoPandas should expose the
-preparation to the user but, more importantly, use smart automatic geometry preparation
-under the hood.
-
 ### Pruned dependencies
 
 GeoPandas offers functionality for every step of a typical geospatial workflow, from
@@ -91,3 +81,13 @@ be developed and integrated into GeoPandas as optional dependencies.  These shou
 simpler to install and not require binary dependencies, which would lower the barrier to
 entry for GeoPandas users that need basic I/O support for a limited number of GIS
 formats such as ESRI Shapefiles or GeoPackages.
+
+### Prepared geometries
+
+GeoPandas is using spatial indexing for the operations that may benefit from it. Further
+performance gains can be achieved using prepared geometries. Preparation creates a
+spatial index of individual line segments of geometries, greatly enhancing the speed of
+spatial predicates like `intersects` or `contains`. Given that the preparation has
+become less computationally expensive in `shapely` 2.0, GeoPandas should expose the
+preparation to the user but, more importantly, use smart automatic geometry preparation
+under the hood.
