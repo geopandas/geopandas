@@ -390,6 +390,25 @@ class TestExplore:
 
         assert actual == expected
 
+        # test a geoseries as well
+        m = self.cities["geometry"].explore(
+            marker_kwds={"radius": np.tile([6, 8], 500)[0 : len(self.cities)]},
+            style_kwds={
+                "fillColor": np.tile(["red", "green"], 500)[0 : len(self.cities)],
+                "fillOpacity": 0.8,
+            },
+        )
+        actual = [
+            "".join(line.split())
+            for line in m._parent.render().split("\n")
+            if "return" in line and "radius" in line
+        ]
+        expected = [
+            'return{"fillColor":"green","fillOpacity":0.8,"radius":8,"weight":2};',
+            'return{"fillColor":"red","fillOpacity":0.8,"radius":6,"weight":2};',
+        ]
+        assert actual == expected
+
     def test_tooltip(self):
         """Test tooltip"""
         # default with no tooltip or popup
