@@ -63,7 +63,7 @@ depends on a relatively heavy C++ library `GDAL` and CRS management on another C
 library `PROJ`, even though not every application based on GeoPandas is necessarily
 geospatial. GeoPandas 1.0 should eliminate the hard dependency on both `GDAL` and `PROJ`
 and offer the basic capability of a GeoDataFrame with a minimal set of dependencies
-limited to `pandas` `shapely`.
+limited to `pandas` and `shapely`.
 
 ## Beyond GeoPandas 1.0
 
