@@ -519,9 +519,9 @@ def is_ring(data):
         for geom in data:
             if geom is None:
                 results.append(False)
-            elif geom.type == "Polygon":
+            elif geom.geom_type == "Polygon":
                 results.append(geom.exterior.is_ring)
-            elif geom.type in ["LineString", "LinearRing"]:
+            elif geom.geom_type in ["LineString", "LinearRing"]:
                 results.append(geom.is_ring)
             else:
                 results.append(False)

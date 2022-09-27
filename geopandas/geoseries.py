@@ -924,7 +924,7 @@ class GeoSeries(GeoPandasBase, Series):
         index = []
         geometries = []
         for idx, s in self.geometry.items():
-            if s.type.startswith("Multi") or s.type == "GeometryCollection":
+            if s.geom_type.startswith("Multi") or s.geom_type == "GeometryCollection":
                 geoms = s.geoms
                 idxs = [(idx, i) for i in range(len(geoms))]
             else:
