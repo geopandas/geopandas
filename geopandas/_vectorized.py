@@ -796,12 +796,13 @@ def clip_by_rect(data, xmin, ymin, xmax, ymax):
         return pygeos.clip_by_rect(data, xmin, ymin, xmax, ymax)
     else:
         clipped_geometries = np.empty(len(data), dtype=object)
-        clipped_geometries[:] = [
-            shapely.ops.clip_by_rect(s, xmin, ymin, xmax, ymax)
-            if s is not None
-            else None
-            for s in data
-        ]
+        with compat.ignore_shapely2_warnings():
+            clipped_geometries[:] = [
+                shapely.ops.clip_by_rect(s, xmin, ymin, xmax, ymax)
+                if s is not None
+                else None
+                for s in data
+            ]
         return clipped_geometries
 
 
