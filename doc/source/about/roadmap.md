@@ -82,3 +82,12 @@ that should eliminate these limitations and offer an alternative to `GEOS`.
 The GeoPandas community is currently working together with the R-spatial community that has
 already exposed `S2` in an R counterpart of GeoPandas `sf` on Python bindings for `S2`,
 that should be used as a secondary geometry engine in GeoPandas.
+
+### Lighter-weight geospatial I/O
+
+In order to support lighter-weight installations of GeoPandas that do not depend on
+heavier and difficult to install libraries such as GDAL, additional I/O libraries should
+be developed and integrated into GeoPandas as optional dependencies.  These should be
+simpler to install and not require binary dependencies, which would lower the barrier to
+entry for GeoPandas users that need basic I/O support for a limited number of GIS
+formats such as ESRI Shapefiles or GeoPackages.
