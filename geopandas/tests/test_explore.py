@@ -256,10 +256,24 @@ class TestExplore:
     def test_bool(self):
         df = self.nybb.copy()
         df["bool"] = [True, False, True, False, True]
-        m = df.explore("bool")
+        df["bool_extension"] = pd.array([True, False, True, False, True])
+        m1 = df.explore("bool")
+        m2 = df.explore("bool_extension")
+
+        out1_str = self._fetch_map_string(m1)
+        assert '"__folium_color":"#9edae5","bool":true' in out1_str
+        assert '"__folium_color":"#1f77b4","bool":false' in out1_str
+
+        out2_str = self._fetch_map_string(m2)
+        assert '"__folium_color":"#9edae5","bool":true' in out2_str
+        assert '"__folium_color":"#1f77b4","bool":false' in out2_str
+
+    def test_string(self):
+        df = self.nybb.copy()
+        df["string"] = pd.array([1, 2, 3, 4, 5], dtype="string")
+        m = df.explore("string")
         out_str = self._fetch_map_string(m)
-        assert '"__folium_color":"#9edae5","bool":true' in out_str
-        assert '"__folium_color":"#1f77b4","bool":false' in out_str
+        assert '"__folium_color":"#9edae5","string":"5"' in out_str
 
     def test_column_values(self):
         """

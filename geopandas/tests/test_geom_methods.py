@@ -598,7 +598,7 @@ class TestGeomMethods:
         assert_series_equal(res, exp)
 
     @pytest.mark.skipif(
-        not compat.USE_PYGEOS,
+        not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
         reason="covered_by is only implemented for pygeos, not shapely",
     )
     def test_covered_by(self):
@@ -678,6 +678,15 @@ class TestGeomMethods:
     def test_centroid_crs_warn(self):
         with pytest.warns(UserWarning, match="Geometry is in a geographic CRS"):
             self.g4.centroid
+
+    def test_normalize(self):
+        polygon = Polygon([(0, 0), (1, 1), (0, 1)])
+        linestring = LineString([(0, 0), (1, 1), (1, 0)])
+        point = Point(0, 0)
+        series = GeoSeries([polygon, linestring, point])
+        polygon2 = Polygon([(0, 0), (0, 1), (1, 1)])
+        expected = GeoSeries([polygon2, linestring, point])
+        assert_geoseries_equal(series.normalize(), expected)
 
     @pytest.mark.skipif(
         not compat.SHAPELY_GE_18,
