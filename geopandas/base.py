@@ -3418,7 +3418,7 @@ GeometryCollection
         The distances are calculated for the midpoints of the geometries in the
         GeoDataFrame, and using the total bounds of the GeoDataFrame.
 
-        The Hilbert distance can be used to spatially partition Dask-GeoPandas
+        The Hilbert distance can be used to spatially sort GeoPandas
         objects, by mapping two dimensional geometries along the Hilbert curve.
 
         Parameters
@@ -3426,19 +3426,16 @@ GeometryCollection
         total_bounds : 4-element array, optional
             The spatial extent in which the curve is constructed (used to
             rescale the geometry midpoints). By default, the total bounds
-            of the full dask GeoDataFrame will be computed (from the spatial
-            partitions, if available, otherwise computed from the full
-            dataframe). If known, you can pass the total bounds to avoid this
-            extra computation.
+            of the full GeoDataFrame or GeoSeries will be computed. If known,
+            you can pass the total bounds to avoid this extra computation.
         level : int (1 - 16), default 16
             Determines the precision of the curve (points on the curve will
             have coordinates in the range [0, 2^level - 1]).
 
         Returns
         -------
-        dask.Series
-            Series containing distances for each partition
-
+        Series
+            Series containing distance along the curve for geometry
         """
         from geopandas.tools.hilbert_curve import _hilbert_distance
 
