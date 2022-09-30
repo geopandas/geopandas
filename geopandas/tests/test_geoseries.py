@@ -11,6 +11,7 @@ from pandas.testing import assert_index_equal
 
 from pyproj import CRS
 from shapely.geometry import (
+    GeometryCollection,
     LineString,
     MultiLineString,
     MultiPoint,
@@ -384,7 +385,7 @@ class TestSeries:
 
 @pytest.mark.filterwarnings("ignore::UserWarning")
 def test_missing_values():
-    s = GeoSeries([Point(1, 1), None, np.nan, BaseGeometry(), Polygon()])
+    s = GeoSeries([Point(1, 1), None, np.nan, GeometryCollection(), Polygon()])
 
     # construction -> missing values get normalized to None
     assert s[1] is None

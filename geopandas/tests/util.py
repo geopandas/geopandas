@@ -34,7 +34,7 @@ def validate_boro_df(df, case_sensitive=False):
     else:
         for col in columns:
             assert col.lower() in (dfcol.lower() for dfcol in df.columns)
-    assert Series(df.geometry.type).dropna().eq("MultiPolygon").all()
+    assert Series(df.geometry.geom_type).dropna().eq("MultiPolygon").all()
 
 
 def get_srid(df):

@@ -23,7 +23,7 @@ from pandas.testing import assert_frame_equal, assert_index_equal, assert_series
 import pytest
 
 
-TEST_NEAREST = compat.PYGEOS_GE_010 and compat.USE_PYGEOS
+TEST_NEAREST = compat.USE_SHAPELY_20 or (compat.PYGEOS_GE_010 and compat.USE_PYGEOS)
 pandas_133 = Version(pd.__version__) == Version("1.3.3")
 
 
@@ -895,7 +895,7 @@ class TestDataFrame:
     @pytest.mark.parametrize("how", ["left", "inner", "right"])
     @pytest.mark.parametrize("predicate", ["intersects", "within", "contains"])
     @pytest.mark.skipif(
-        not compat.USE_PYGEOS and not compat.HAS_RTREE,
+        not (compat.USE_PYGEOS and compat.HAS_RTREE and compat.USE_SHAPELY_20),
         reason="sjoin needs `rtree` or `pygeos` dependency",
     )
     def test_sjoin(self, how, predicate):

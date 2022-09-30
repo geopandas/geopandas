@@ -17,7 +17,7 @@ from pandas.testing import assert_frame_equal
 import pytest
 
 
-TEST_NEAREST = compat.PYGEOS_GE_010 and compat.USE_PYGEOS
+TEST_NEAREST = compat.USE_SHAPELY_20 or (compat.PYGEOS_GE_010 and compat.USE_PYGEOS)
 
 
 pytestmark = pytest.mark.skip_no_sindex
@@ -404,7 +404,7 @@ class TestSpatialJoinNYBB:
         df = sjoin(self.pointdf, self.polydf, how="left")
         assert df.shape == (21, 8)
         for i, row in df.iterrows():
-            assert row.geometry.type == "Point"
+            assert row.geometry.geom_type == "Point"
         assert "pointattr1" in df.columns
         assert "BoroCode" in df.columns
 
@@ -415,9 +415,9 @@ class TestSpatialJoinNYBB:
         assert df.shape == (12, 8)
         assert df.shape == df2.shape
         for i, row in df.iterrows():
-            assert row.geometry.type == "MultiPolygon"
+            assert row.geometry.geom_type == "MultiPolygon"
         for i, row in df2.iterrows():
-            assert row.geometry.type == "MultiPolygon"
+            assert row.geometry.geom_type == "MultiPolygon"
 
     def test_sjoin_inner(self):
         df = sjoin(self.pointdf, self.polydf, how="inner")
@@ -583,7 +583,7 @@ def test_no_nearest_all():
     df2 = geopandas.GeoDataFrame({"geometry": []})
     with pytest.raises(
         NotImplementedError,
-        match="Currently, only PyGEOS >= 0.10.0 supports `nearest_all`",
+        match="Currently, only PyGEOS >= 0.10.0 or Shapely >= 2.0 supports",
     ):
         sjoin_nearest(df1, df2)
 
