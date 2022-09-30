@@ -60,7 +60,7 @@ def _continuous_to_discrete_coords(bounds, level, total_bounds):
 
     """
     # Hilbert Side length
-    side_length = (2 ** level) - 1
+    side_length = (2**level) - 1
 
     # Calculate mid points for x and y bound coords - returns array
     x_mids = (bounds[:, 0] + bounds[:, 2]) / 2.0
