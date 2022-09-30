@@ -490,7 +490,7 @@ class TestGeomMethods:
         )
         assert_array_dtype_equal(expected, self.na_none.distance(self.p0))
 
-        expected = Series(np.array([np.sqrt(4 ** 2 + 4 ** 2), np.nan]), self.g6.index)
+        expected = Series(np.array([np.sqrt(4**2 + 4**2), np.nan]), self.g6.index)
         assert_array_dtype_equal(expected, self.g6.distance(self.na_none))
 
         expected = Series(np.array([np.nan, 0, 0, 0, 0, 0, np.nan, np.nan]), range(8))
@@ -591,7 +591,7 @@ class TestGeomMethods:
         assert_series_equal(res, exp)
 
     @pytest.mark.skipif(
-        not compat.USE_PYGEOS,
+        not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
         reason="covered_by is only implemented for pygeos, not shapely",
     )
     def test_covered_by(self):
@@ -671,6 +671,15 @@ class TestGeomMethods:
     def test_centroid_crs_warn(self):
         with pytest.warns(UserWarning, match="Geometry is in a geographic CRS"):
             self.g4.centroid
+
+    def test_normalize(self):
+        polygon = Polygon([(0, 0), (1, 1), (0, 1)])
+        linestring = LineString([(0, 0), (1, 1), (1, 0)])
+        point = Point(0, 0)
+        series = GeoSeries([polygon, linestring, point])
+        polygon2 = Polygon([(0, 0), (0, 1), (1, 1)])
+        expected = GeoSeries([polygon2, linestring, point])
+        assert_geoseries_equal(series.normalize(), expected)
 
     def test_convex_hull(self):
         # the convex hull of a square should be the same as the square
@@ -1220,43 +1229,61 @@ class TestGeomMethods:
         )
         assert_geodataframe_equal(test_df, expected_df)
 
+    @pytest.mark.parametrize("geom_col", ["geom", "geometry"])
+    def test_explode_geometry_name(self, geom_col):
+        s = GeoSeries([MultiPoint([Point(1, 2), Point(2, 3)]), Point(5, 5)])
+        df = GeoDataFrame({"col": [1, 2], geom_col: s}, geometry=geom_col)
+        test_df = df.explode(index_parts=True)
+
+        assert test_df.geometry.name == geom_col
+        assert test_df.geometry.name == test_df._geometry_column_name
+
+    def test_explode_geometry_name_two_geoms(self):
+        s = GeoSeries([MultiPoint([Point(1, 2), Point(2, 3)]), Point(5, 5)])
+        df = GeoDataFrame({"col": [1, 2], "geom": s, "geometry": s}, geometry="geom")
+        test_df = df.explode(index_parts=True)
+
+        assert test_df.geometry.name == "geom"
+        assert test_df.geometry.name == test_df._geometry_column_name
+        assert "geometry" in test_df.columns
+
     #
     # Test '&', '|', '^', and '-'
     #
     def test_intersection_operator(self):
-        with pytest.warns(DeprecationWarning):
+        with pytest.warns(FutureWarning):
             self._test_binary_operator("__and__", self.t1, self.g1, self.g2)
-        with pytest.warns(DeprecationWarning):
+        with pytest.warns(FutureWarning):
             self._test_binary_operator("__and__", self.t1, self.gdf1, self.g2)
 
     def test_union_operator(self):
-        with pytest.warns(DeprecationWarning):
+        with pytest.warns(FutureWarning):
             self._test_binary_operator("__or__", self.sq, self.g1, self.g2)
-        with pytest.warns(DeprecationWarning):
+        with pytest.warns(FutureWarning):
             self._test_binary_operator("__or__", self.sq, self.gdf1, self.g2)
 
     def test_union_operator_polygon(self):
-        with pytest.warns(DeprecationWarning):
+        with pytest.warns(FutureWarning):
             self._test_binary_operator("__or__", self.sq, self.g1, self.t2)
-        with pytest.warns(DeprecationWarning):
+        with pytest.warns(FutureWarning):
             self._test_binary_operator("__or__", self.sq, self.gdf1, self.t2)
 
     def test_symmetric_difference_operator(self):
-        with pytest.warns(DeprecationWarning):
+        with pytest.warns(FutureWarning):
             self._test_binary_operator("__xor__", self.sq, self.g3, self.g4)
-        with pytest.warns(DeprecationWarning):
+        with pytest.warns(FutureWarning):
             self._test_binary_operator("__xor__", self.sq, self.gdf3, self.g4)
 
     def test_difference_series2(self):
         expected = GeoSeries([GeometryCollection(), self.t2])
-        with pytest.warns(DeprecationWarning):
+        with pytest.warns(FutureWarning):
             self._test_binary_operator("__sub__", expected, self.g1, self.g2)
-        with pytest.warns(DeprecationWarning):
+        with pytest.warns(FutureWarning):
             self._test_binary_operator("__sub__", expected, self.gdf1, self.g2)
 
     def test_difference_poly2(self):
         expected = GeoSeries([self.t1, self.t1])
-        with pytest.warns(DeprecationWarning):
+        with pytest.warns(FutureWarning):
             self._test_binary_operator("__sub__", expected, self.g1, self.t2)
-        with pytest.warns(DeprecationWarning):
+        with pytest.warns(FutureWarning):
             self._test_binary_operator("__sub__", expected, self.gdf1, self.t2)

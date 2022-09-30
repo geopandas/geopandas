@@ -146,6 +146,15 @@ Field/Column Filters
 
 Load in a subset of fields from the file:
 
+.. note:: Requires Fiona 1.9+
+
+.. code-block:: python
+
+    gdf = geopandas.read_file(
+        geopandas.datasets.get_path("naturalearth_lowres"),
+        include_fields=["pop_est", "continent", "name"],
+    )
+
 .. note:: Requires Fiona 1.8+
 
 .. code-block:: python
@@ -165,6 +174,23 @@ Skip loading geometry from the file:
     pdf = geopandas.read_file(
         geopandas.datasets.get_path("naturalearth_lowres"),
         ignore_geometry=True,
+    )
+
+
+SQL WHERE Filter
+^^^^^^^^^^^^^^^^^
+
+.. versionadded:: 0.12
+
+Load in a subset of data with a `SQL WHERE clause <https://gdal.org/user/ogr_sql_dialect.html#where>`__.
+
+.. note:: Requires Fiona 1.9+ or the pyogrio engine.
+
+.. code-block:: python
+
+    gdf = geopandas.read_file(
+        geopandas.datasets.get_path("naturalearth_lowres"),
+        where="continent='Africa'",
     )
 
 

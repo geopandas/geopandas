@@ -4,13 +4,16 @@
 """
 
 import os
+import sys
 
-try:
-    from setuptools import setup
-except ImportError:
-    from distutils.core import setup
+from setuptools import setup
 
-import versioneer
+# ensure the current directory is on sys.path so versioneer can be imported
+# when pip uses PEP 517/518 build rules.
+# https://github.com/python-versioneer/python-versioneer/issues/193
+sys.path.append(os.path.dirname(__file__))
+
+import versioneer  # noqa: E402
 
 LONG_DESCRIPTION = """GeoPandas is a project to add support for geographic data to
 `pandas`_ objects.
@@ -31,7 +34,7 @@ if os.environ.get("READTHEDOCS", False) == "True":
 else:
     INSTALL_REQUIRES = [
         "pandas >= 1.0.0",
-        "shapely >= 1.7",
+        "shapely >= 1.7, < 2",
         "fiona >= 1.8",
         "pyproj >= 2.6.1.post1",
         "packaging",
@@ -62,6 +65,7 @@ setup(
         "Source": "https://github.com/geopandas/geopandas",
     },
     long_description=LONG_DESCRIPTION,
+    long_description_content_type="text/x-rst",
     packages=[
         "geopandas",
         "geopandas.io",
@@ -71,7 +75,7 @@ setup(
         "geopandas.tools.tests",
     ],
     package_data={"geopandas": data_files},
-    python_requires=">=3.7",
+    python_requires=">=3.8",
     install_requires=INSTALL_REQUIRES,
     cmdclass=versioneer.get_cmdclass(),
 )

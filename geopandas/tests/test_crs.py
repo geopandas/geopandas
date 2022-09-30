@@ -1,5 +1,4 @@
 from packaging.version import Version
-import os
 
 import random
 
@@ -19,6 +18,7 @@ import pytest
 # pyproj 2.3.1 fixed a segfault for the case working in an environment with
 # 'init' dicts (https://github.com/pyproj4/pyproj/issues/415)
 PYPROJ_LT_231 = Version(pyproj.__version__) < Version("2.3.1")
+PYPROJ_GE_3 = Version(pyproj.__version__) >= Version("3.0.0")
 
 
 def _create_df(x, y=None, crs=None):
@@ -125,7 +125,9 @@ def test_transform2(epsg4326, epsg26918):
     # with PROJ >= 7, the transformation using EPSG code vs proj4 string is
     # slightly different due to use of grid files or not -> turn off network
     # to not use grid files at all for this test
-    os.environ["PROJ_NETWORK"] = "OFF"
+    if PYPROJ_GE_3:
+        pyproj.network.set_network_enabled(False)
+
     df = df_epsg26918()
     lonlat = df.to_crs(**epsg4326)
     utm = lonlat.to_crs(**epsg26918)
@@ -207,7 +209,6 @@ class TestGeometryArrayCRS:
             s = GeoSeries(arr, crs=4326)
         assert s.crs == self.osgb
 
-    @pytest.mark.filterwarnings("ignore:Assigning CRS")
     def test_dataframe(self):
         arr = from_shapely(self.geoms, crs=27700)
         df = GeoDataFrame(geometry=arr)
@@ -296,8 +297,23 @@ class TestGeometryArrayCRS:
 
         # geometry column without geometry
         df = GeoDataFrame({"geometry": [0, 1]})
-        df.crs = 27700
-        assert df.crs == self.osgb
+        with pytest.warns(
+            FutureWarning, match="Accessing CRS of a GeoDataFrame without a geometry"
+        ):
+            df.crs = 27700
+        with pytest.warns(
+            FutureWarning, match="Accessing CRS of a GeoDataFrame without a geometry"
+        ):
+            assert df.crs == self.osgb
+
+    def test_dataframe_getitem_without_geometry_column(self):
+        df = GeoDataFrame({"col": range(10)}, geometry=self.arr)
+        df["geom2"] = df.geometry.centroid
+        subset = df[["col", "geom2"]]
+        with pytest.warns(
+            FutureWarning, match="Accessing CRS of a GeoDataFrame without a geometry"
+        ):
+            assert subset.crs == self.osgb
 
     def test_dataframe_setitem(self):
         # new geometry CRS has priority over GDF CRS
@@ -335,6 +351,22 @@ class TestGeometryArrayCRS:
         assert df["geometry"].crs == self.wgs
         assert df["other_geom"].crs == self.osgb
 
+    def test_dataframe_setitem_without_geometry_column(self):
+        arr = from_shapely(self.geoms)
+        df = GeoDataFrame({"col1": [1, 2], "geometry": arr}, crs=4326)
+
+        # create a dataframe without geometry column, but currently has cached _crs
+        with pytest.warns(UserWarning):
+            df["geometry"] = 1
+
+        # assigning a list of geometry object will currently use _crs
+        with pytest.warns(
+            FutureWarning,
+            match="Setting geometries to a GeoDataFrame without a geometry",
+        ):
+            df["geometry"] = self.geoms
+        assert df.crs == self.wgs
+
     @pytest.mark.parametrize(
         "scalar", [None, Point(0, 0), LineString([(0, 0), (1, 1)])]
     )
@@ -346,6 +378,7 @@ class TestGeometryArrayCRS:
         assert df.geometry.crs == self.wgs
         assert df.geometry.values.crs == self.wgs
 
+    @pytest.mark.filterwarnings("ignore:Accessing CRS")
     def test_crs_with_no_geom_fails(self):
         with pytest.raises(ValueError, match="Assigning CRS to a GeoDataFrame without"):
             df = GeoDataFrame()

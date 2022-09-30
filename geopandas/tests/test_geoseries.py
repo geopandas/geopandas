@@ -11,6 +11,7 @@ from pandas.testing import assert_index_equal
 
 from pyproj import CRS
 from shapely.geometry import (
+    GeometryCollection,
     LineString,
     MultiLineString,
     MultiPoint,
@@ -384,7 +385,7 @@ class TestSeries:
 
 @pytest.mark.filterwarnings("ignore::UserWarning")
 def test_missing_values():
-    s = GeoSeries([Point(1, 1), None, np.nan, BaseGeometry(), Polygon()])
+    s = GeoSeries([Point(1, 1), None, np.nan, GeometryCollection(), Polygon()])
 
     # construction -> missing values get normalized to None
     assert s[1] is None
@@ -464,21 +465,15 @@ class TestConstructor:
             for x in gs:
                 assert x.equals(g)
 
-    def test_no_geometries_fallback(self):
-        with pytest.warns(FutureWarning):
-            s = GeoSeries([True, False, True])
-        assert not isinstance(s, GeoSeries)
-        assert type(s) == pd.Series
+    def test_non_geometry_raises(self):
+        with pytest.raises(TypeError, match="Non geometry data passed to GeoSeries"):
+            GeoSeries([True, False, True])
 
-        with pytest.warns(FutureWarning):
-            s = GeoSeries(["a", "b", "c"])
-        assert not isinstance(s, GeoSeries)
-        assert type(s) == pd.Series
+        with pytest.raises(TypeError, match="Non geometry data passed to GeoSeries"):
+            GeoSeries(["a", "b", "c"])
 
-        with pytest.warns(FutureWarning):
-            s = GeoSeries([[1, 2], [3, 4]])
-        assert not isinstance(s, GeoSeries)
-        assert type(s) == pd.Series
+        with pytest.raises(TypeError, match="Non geometry data passed to GeoSeries"):
+            GeoSeries([[1, 2], [3, 4]])
 
     def test_empty(self):
         s = GeoSeries([])
@@ -494,7 +489,6 @@ class TestConstructor:
     def test_empty_array(self):
         # with empty data that have an explicit dtype, we use the fallback or
         # not depending on the dtype
-        arr = np.array([], dtype="bool")
 
         # dtypes that can never hold geometry-like data
         for arr in [
@@ -504,10 +498,10 @@ class TestConstructor:
             # this gets converted to object dtype by pandas
             # np.array([], dtype="str"),
         ]:
-            with pytest.warns(FutureWarning):
-                s = GeoSeries(arr)
-            assert not isinstance(s, GeoSeries)
-            assert type(s) == pd.Series
+            with pytest.raises(
+                TypeError, match="Non geometry data passed to GeoSeries"
+            ):
+                GeoSeries(arr)
 
         # dtypes that can potentially hold geometry-like data (object) or
         # can come from empty data (float64)
