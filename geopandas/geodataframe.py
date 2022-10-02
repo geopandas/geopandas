@@ -123,17 +123,13 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
     GeoSeries : Series object designed to store shapely geometry objects
     """
 
-    # TODO: remove "_crs" in 0.12
-    _metadata = ["_crs", "_geometry_column_name"]
+    _metadata = ["_geometry_column_name"]
 
     _geometry_column_name = DEFAULT_GEO_COLUMN_NAME
 
     def __init__(self, data=None, *args, geometry=None, crs=None, **kwargs):
         with compat.ignore_shapely2_warnings():
             super().__init__(data, *args, **kwargs)
-
-        # TODO: to be removed in 0.12
-        self._crs = None
 
         # set_geometry ensures the geometry data have the proper dtype,
         # but is not called if `geometry=None` ('geometry' column present
@@ -347,9 +343,6 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         level = _ensure_geometry(level, crs=crs)
         frame[geo_column_name] = level
         frame._geometry_column_name = geo_column_name
-
-        # TODO: to be removed in 0.12
-        frame._crs = level.crs
         if not inplace:
             return frame
 
@@ -436,14 +429,10 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             return self.geometry.crs
         except AttributeError:
             # the active geometry column might not be set
-            warnings.warn(
-                "Accessing CRS of a GeoDataFrame without a geometry column is "
-                "deprecated and will be removed in GeoPandas 0.12. "
-                "Use GeoDataFrame.set_geometry to set the active geometry column.",
-                FutureWarning,
-                stacklevel=2,
+            raise AttributeError(
+                "The CRS attribute of a GeoDataFrame without a "
+                "geometry column is not defined."
             )
-            return self._crs
 
     @crs.setter
     def crs(self, value):
@@ -459,15 +448,11 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 self.geometry.values.crs = value
             else:
                 # column called 'geometry' without geometry
-                self._crs = None if not value else CRS.from_user_input(value)
-
-                # TODO: raise this error in 0.12. This already raises a FutureWarning
-                # TODO: defined in the crs property above
-                # raise ValueError(
-                #     "Assigning CRS to a GeoDataFrame without an active geometry "
-                #     "column is not supported. Use GeoDataFrame.set_geometry to set "
-                #     "the active geometry column.",
-                # )
+                raise ValueError(
+                    "Assigning CRS to a GeoDataFrame without an active geometry "
+                    "column is not supported. Use GeoDataFrame.set_geometry to set "
+                    "the active geometry column.",
+                )
 
     def __setstate__(self, state):
         # overriding DataFrame method for compat with older pickles (CRS handling)
@@ -1449,24 +1434,8 @@ individually so that features may have different properties
             if pd.api.types.is_scalar(value) or isinstance(value, BaseGeometry):
                 value = [value] * self.shape[0]
             try:
-                # TODO: remove this use of _crs in 0.12
-                warn = False
-                if not (hasattr(self, "geometry") and hasattr(self.geometry, "crs")):
-                    crs = self._crs
-                    warn = True
-                else:
-                    crs = getattr(self, "crs", None)
+                crs = getattr(self, "crs", None)
                 value = _ensure_geometry(value, crs=crs)
-                if warn and crs is not None:
-                    warnings.warn(
-                        "Setting geometries to a GeoDataFrame without a geometry "
-                        "column will currently preserve the CRS, if present. "
-                        "This is deprecated, and in the future the CRS will be lost "
-                        "in this case. You can use set_crs(..) on the result to "
-                        "set the CRS manually.",
-                        FutureWarning,
-                        stacklevel=2,
-                    )
             except TypeError:
                 warnings.warn("Geometry column does not contain geometry.")
         super().__setitem__(key, value)
