@@ -304,7 +304,7 @@ class TestGeometryArrayCRS:
             df.crs = 27700
         with pytest.raises(
             AttributeError,
-            match="The CRS attribute of a GeoDataFrame without a geometry",
+            match="The CRS attribute of a GeoDataFrame without an active",
         ):
             assert df.crs == self.osgb
 
@@ -314,7 +314,7 @@ class TestGeometryArrayCRS:
         subset = df[["col", "geom2"]]
         with pytest.raises(
             AttributeError,
-            match="The CRS attribute of a GeoDataFrame without a geometry",
+            match="The CRS attribute of a GeoDataFrame without an active",
         ):
             assert subset.crs == self.osgb
 

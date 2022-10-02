@@ -424,14 +424,13 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         GeoDataFrame.to_crs : re-project to another CRS
 
         """
-        # TODO: remove try/except in 0.12
         try:
             return self.geometry.crs
         except AttributeError:
-            # the active geometry column might not be set
             raise AttributeError(
-                "The CRS attribute of a GeoDataFrame without a "
-                "geometry column is not defined."
+                "The CRS attribute of a GeoDataFrame without an active "
+                "geometry column is not defined. Use GeoDataFrame.set_geometry "
+                "to set the active geometry column."
             )
 
     @crs.setter
