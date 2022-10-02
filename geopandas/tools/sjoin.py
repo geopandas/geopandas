@@ -360,10 +360,10 @@ def _nearest_query(
     how: str,
     return_distance: bool,
 ):
-    if not (compat.PYGEOS_GE_010 and compat.USE_PYGEOS):
+    if not (compat.USE_SHAPELY_20 or (compat.USE_PYGEOS and compat.PYGEOS_GE_010)):
         raise NotImplementedError(
-            "Currently, only PyGEOS >= 0.10.0 supports `nearest_all`. "
-            + compat.INSTALL_PYGEOS_ERROR
+            "Currently, only PyGEOS >= 0.10.0 or Shapely >= 2.0 supports "
+            "`nearest_all`. " + compat.INSTALL_PYGEOS_ERROR
         )
     # use the opposite of the join direction for the index
     use_left_as_sindex = how == "right"

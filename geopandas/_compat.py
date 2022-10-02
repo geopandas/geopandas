@@ -29,13 +29,15 @@ PANDAS_GE_14 = Version(pd.__version__) >= Version("1.4.0rc0")
 
 SHAPELY_GE_18 = Version(shapely.__version__) >= Version("1.8")
 SHAPELY_GE_182 = Version(shapely.__version__) >= Version("1.8.2")
-SHAPELY_GE_20 = Version(shapely.__version__) >= Version("2.0")
+SHAPELY_GE_20 = Version(shapely.__version__) >= Version("2.0.0.dev0")
+SHAPELY_G_20a1 = Version(shapely.__version__) > Version("2.0a1")
 
 GEOS_GE_390 = shapely.geos.geos_version >= (3, 9, 0)
 
 
 HAS_PYGEOS = None
 USE_PYGEOS = None
+USE_SHAPELY_20 = None
 PYGEOS_SHAPELY_COMPAT = None
 
 PYGEOS_GE_09 = None
@@ -74,6 +76,7 @@ def set_use_pygeos(val=None):
     Alternatively, pass a value here to force a True/False value.
     """
     global USE_PYGEOS
+    global USE_SHAPELY_20
     global PYGEOS_SHAPELY_COMPAT
 
     if val is not None:
@@ -94,11 +97,18 @@ def set_use_pygeos(val=None):
 
             # validate the pygeos version
             if not Version(pygeos.__version__) >= Version("0.8"):
-                raise ImportError(
-                    "PyGEOS >= 0.8 is required, version {0} is installed".format(
-                        pygeos.__version__
+                if SHAPELY_GE_20:
+                    USE_PYGEOS = False
+                    warnings.warn(
+                        "The PyGEOS version is too old, and Shapely >= 2 is installed, "
+                        "thus using Shapely by default and not PyGEOS."
                     )
-                )
+                else:
+                    raise ImportError(
+                        "PyGEOS >= 0.8 is required, version {0} is installed".format(
+                            pygeos.__version__
+                        )
+                    )
 
             # Check whether Shapely and PyGEOS use the same GEOS version.
             # Based on PyGEOS from_shapely implementation.
@@ -122,6 +132,8 @@ def set_use_pygeos(val=None):
 
         except ImportError:
             raise ImportError(INSTALL_PYGEOS_ERROR)
+
+    USE_SHAPELY_20 = (not USE_PYGEOS) and SHAPELY_GE_20
 
 
 set_use_pygeos()

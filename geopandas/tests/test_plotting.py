@@ -888,7 +888,7 @@ class TestColorParamArray:
             color += ["red", "green", "blue"]
 
         self.gdf = GeoDataFrame({"geometry": geom, "color_rgba": color})
-        self.mgdf = self.gdf.dissolve(self.gdf.type)
+        self.mgdf = self.gdf.dissolve(self.gdf.geom_type)
 
     def test_color_single(self):
         ax = self.gdf.plot(color=self.gdf["color_rgba"])

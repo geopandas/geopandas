@@ -48,9 +48,12 @@ def with_use_pygeos(option):
 
 
 @pytest.mark.skipif(
-    compat.USE_PYGEOS or (Version(pyproj.__version__) < Version("2.4")),
+    compat.USE_SHAPELY_20
+    or compat.USE_PYGEOS
+    or (Version(pyproj.__version__) < Version("2.4")),
     reason=(
-        "pygeos-based unpickling currently only works for pygeos-written files; "
+        "shapely 2.0/pygeos-based unpickling currently only works for "
+        "shapely-2.0/pygeos-written files; "
         "old pyproj versions can't read pickles from newer pyproj versions"
     ),
 )
