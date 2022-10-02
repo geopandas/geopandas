@@ -343,9 +343,8 @@ class TestDataFrame:
         df = GeoDataFrame()
         df["geom"] = self.df.geometry
         msg_geo_col_none = "active geometry column to use has not been set. "
-        msg_geo_col_missing = "is not present. "
 
-        with pytest.raises(AttributeError, match=msg_geo_col_missing):
+        with pytest.raises(AttributeError, match=msg_geo_col_none):
             df.geometry
         df2 = self.df.copy()
         df2["geom2"] = df2.geometry

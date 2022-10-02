@@ -20,7 +20,7 @@ from . import _compat as compat
 from ._decorator import doc
 
 
-DEFAULT_GEO_COLUMN_NAME = "geometry"
+DEFAULT_GEO_COLUMN_NAME = None
 
 
 def _geodataframe_constructor_with_fallback(*args, **kwargs):
@@ -185,6 +185,10 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 and not geometry.crs == crs
             ):
                 raise ValueError(crs_mismatch_error)
+            # If geometry kwarg is an array, set the name of the active
+            # geometry column to geometry
+            if not isinstance(geometry, str):
+                self._geometry_column_name = "geometry"
 
             self.set_geometry(geometry, inplace=True, crs=crs)
 
@@ -2360,6 +2364,9 @@ def _dataframe_set_geometry(self, col, drop=False, inplace=False, crs=None):
             "Can't do inplace setting when converting from DataFrame to GeoDataFrame"
         )
     gf = GeoDataFrame(self)
+    # For drop, treat default geom col name as "geometry"
+    if drop:
+        gf._geometry_column_name = "geometry"
     # this will copy so that BlockManager gets copied
     return gf.set_geometry(col, drop=drop, inplace=False, crs=crs)
 
