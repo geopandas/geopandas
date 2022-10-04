@@ -999,7 +999,7 @@ def relate(data, other):
 def unary_union(data):
     if compat.USE_SHAPELY_20:
         data = shapely.union_all(data)
-        if data.empty:
+        if data.is_empty:
             return None
         else:
             return data
