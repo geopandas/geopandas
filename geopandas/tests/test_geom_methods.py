@@ -4,6 +4,8 @@ import numpy as np
 from numpy.testing import assert_array_equal
 from pandas import DataFrame, Index, MultiIndex, Series
 
+import shapely
+
 from shapely.geometry import (
     LinearRing,
     LineString,
