@@ -712,6 +712,19 @@ class TestGeomMethods:
         assert_geoseries_equal(result, output)
         assert result.is_valid.all()
 
+    @pytest.mark.skipif(
+        compat.SHAPELY_GE_18,
+        reason="make_valid keyword introduced in shapely 1.8.0",
+    )
+    def test_make_valid_shapely_pre18(self):
+        s = GeoSeries([Point(1, 1)])
+        with pytest.raises(
+            NotImplementedError,
+            match=f"shapely >= 1.8 or PyGEOS is required,"
+            f"version {shapely.__version__} is installed",
+        ):
+            s.make_valid()
+
     def test_convex_hull(self):
         # the convex hull of a square should be the same as the square
         squares = GeoSeries([self.sq for i in range(3)])
