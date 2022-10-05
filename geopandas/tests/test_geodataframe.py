@@ -368,7 +368,7 @@ class TestDataFrame:
         assert df._geometry_column_name == "geom2"
         msg_geo_col_missing = "is not present. "
         # Check that df.geometry raises if active geometry column is missing,
-        # it should not fall back to
+        # it should not fall back to column named "geometry"
         with pytest.raises(AttributeError, match=msg_geo_col_missing):
             df.geometry
 
