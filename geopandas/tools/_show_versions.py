@@ -78,6 +78,13 @@ def _get_C_info():
             gdal_dir = None
         except Exception:
             pass
+        try:
+            # get_gdal_data_path is only available in pyogrio >= 0.4.2
+            from pyogrio import get_gdal_data_path
+
+            gdal_dir = get_gdal_data_path()
+        except Exception:
+            pass
 
     blob = [
         ("GEOS", geos_version),
