@@ -302,8 +302,10 @@ def test_to_csv(df):
     assert df.to_csv(index=False) == exp
 
 
+@pytest.mark.filterwarnings(
+    "ignore:Dropping of nuisance columns in DataFrame reductions"
+)
 def test_numerical_operations(s, df):
-
     # df methods ignore the geometry column
     exp = pd.Series([3, 4], index=["value1", "value2"])
     assert_series_equal(df.sum(), exp)

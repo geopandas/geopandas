@@ -48,7 +48,7 @@ def _flatten_multi_geoms(geoms, prefix="Multi"):
         return geoms, np.arange(len(geoms))
 
     for ix, geom in enumerate(geoms):
-        if geom is not None and geom.type.startswith(prefix) and not geom.is_empty:
+        if geom is not None and geom.geom_type.startswith(prefix) and not geom.is_empty:
             for poly in geom.geoms:
                 components.append(poly)
                 component_index.append(ix)
@@ -435,7 +435,7 @@ def plot_series(
     expl_color = np.take(color, multiindex, axis=0) if color_given else color
     expl_series = geopandas.GeoSeries(geoms)
 
-    geom_types = expl_series.type
+    geom_types = expl_series.geom_type
     poly_idx = np.asarray((geom_types == "Polygon") | (geom_types == "MultiPolygon"))
     line_idx = np.asarray(
         (geom_types == "LineString")
@@ -834,7 +834,7 @@ GON (((-122.84000 49.00000, -120.0000...
     nan_idx = np.take(nan_idx, multiindex, axis=0)
     expl_series = geopandas.GeoSeries(geoms)
 
-    geom_types = expl_series.type
+    geom_types = expl_series.geom_type
     poly_idx = np.asarray((geom_types == "Polygon") | (geom_types == "MultiPolygon"))
     line_idx = np.asarray(
         (geom_types == "LineString")
