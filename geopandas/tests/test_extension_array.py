@@ -359,15 +359,8 @@ class TestMissing(extension_tests.BaseMissingTests):
         expected = pd.Series(data_missing._from_sequence([fill_value, fill_value]))
         self.assert_series_equal(result, expected)
 
-        # filling with array-like not yet supported
-
-        # # Fill with a series
-        # result = ser.fillna(expected)
-        # self.assert_series_equal(result, expected)
-
-        # # Fill with a series not affecting the missing values
-        # result = ser.fillna(ser)
-        # self.assert_series_equal(result, ser)
+        # More `GeoSeries.fillna` testcases are in
+        # `geopandas\tests\test_pandas_methods.py::test_fillna_series`.
 
     @pytest.mark.skip("fillna method not supported")
     def test_fillna_limit_pad(self, data_missing):
