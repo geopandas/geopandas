@@ -361,7 +361,8 @@ class TestMissing(extension_tests.BaseMissingTests):
         self.assert_series_equal(result, expected)
 
         # More `GeoSeries.fillna` testcases are in
-        # `geopandas\tests\test_pandas_methods.py::test_fillna_series`.
+        # `geopandas\tests\test_pandas_methods.py::test_fillna_scalar`
+        # and `geopandas\tests\test_pandas_methods.py::test_fillna_series`.
 
     @pytest.mark.skip("fillna method not supported")
     def test_fillna_limit_pad(self, data_missing):
