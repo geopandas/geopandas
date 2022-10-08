@@ -360,6 +360,32 @@ class TestMissing(extension_tests.BaseMissingTests):
         expected = pd.Series(data_missing._from_sequence([fill_value, fill_value]))
         self.assert_series_equal(result, expected)
 
+        # test fillna with a series
+        filler = pd.Series(
+            from_shapely(
+                [
+                    shapely.geometry.Point(1, 1),
+                    shapely.geometry.Point(2, 2),
+                ],
+            )
+        )
+        result = ser.fillna(filler)
+        expected = pd.Series(data_missing._from_sequence([fill_value, fill_value]))
+        self.assert_series_equal(result, expected)
+
+        # Fill with a series not affecting the missing values
+        filler = pd.Series(
+            from_shapely(
+                [
+                    shapely.geometry.Point(2, 2),
+                    shapely.geometry.Point(1, 1),
+                ]
+            ),
+            index=[10, 11],
+        )
+        result = ser.fillna(filler)
+        self.assert_series_equal(result, ser)
+
         # More `GeoSeries.fillna` testcases are in
         # `geopandas\tests\test_pandas_methods.py::test_fillna_scalar`
         # and `geopandas\tests\test_pandas_methods.py::test_fillna_series`.
