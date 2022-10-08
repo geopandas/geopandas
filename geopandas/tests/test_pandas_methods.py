@@ -401,7 +401,8 @@ def test_fillna(s, df):
     # check na filled but the inputting length is different
     res = s2.fillna(GeoSeries([Point(1, 1)], index=[1]))
     assert_geoseries_equal(res, s)
-
+    res = s2.fillna(GeoSeries([Point(1, 1)], index=[9]))
+    assert_geoseries_equal(res, s2)
 
 def test_dropna():
     s2 = GeoSeries([Point(0, 0), None, Point(2, 2)])
