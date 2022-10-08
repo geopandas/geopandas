@@ -392,7 +392,7 @@ def test_fillna(s, df):
     # fill na with another GeoSeries
     # https://github.com/geopandas/geopandas/issues/2535
     # case 1: same index
-    res = s2.fillna(s)
+    res = s2.fillna(GeoSeries([Point(1,1)] *3))
     assert_geoseries_equal(res, s)
     # case 2: different index but same length
     res = s2.fillna(GeoSeries([Point(1, 1)] * 3, index=[1, 2, 3]))
