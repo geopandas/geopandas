@@ -761,7 +761,7 @@ class GeoSeries(GeoPandasBase, Series):
             If ``pygeos.Geometry`` or a shapely geometry object is passed, it will be
             used to fill all missing values. If a ``GeoSeries`` or ``GeometryArray``
             are passed, missing values will be filled based on the corresponding index
-            locations.
+            locations. If pd.NA or np.nan are passed, values will be filled with `None` (not GEOMETRYCOLLECTION EMPTY).
 
         Returns
         -------
