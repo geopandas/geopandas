@@ -360,7 +360,7 @@ class TestMissing(extension_tests.BaseMissingTests):
         expected = pd.Series(data_missing._from_sequence([fill_value, fill_value]))
         self.assert_series_equal(result, expected)
 
-        # test fillna with a series
+        # Fill with a series
         filler = pd.Series(
             from_shapely(
                 [
