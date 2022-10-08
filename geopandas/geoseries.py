@@ -752,7 +752,7 @@ class GeoSeries(GeoPandasBase, Series):
         """
         Fill NA values with geometry (or geometries).
 
-        ``method`` is currently not implemented for pandas <= 0.12.
+        ``method`` is currently not implemented.
 
         Parameters
         ----------
