@@ -269,6 +269,7 @@ GON (((180.00000 -16.06713, 180.00000...
         import matplotlib.colors as colors
         import matplotlib.pyplot as plt
         from mapclassify import classify
+        import warnings
     except (ImportError, ModuleNotFoundError):
         raise ImportError(
             "The 'folium', 'matplotlib' and 'mapclassify' packages are required for "
@@ -293,6 +294,15 @@ GON (((180.00000 -16.06713, 180.00000...
         gdf.geometry[rings_mask] = gdf.geometry[rings_mask].apply(
             lambda g: LineString(g)
         )
+
+    # code works with pd.is_list_like(cmap). series and dataframes need
+    # to be in a true array structure
+    if isinstance(cmap, pd.Series):
+        cmap = cmap.values
+    elif isinstance(cmap, pd.DataFrame):
+        cmap = cmap.values[:, 0]
+    elif isinstance(cmap, str) and cmap not in plt.colormaps():
+        raise ValueError("`cmap` is not known matplotlib colormap")
 
     if gdf.crs is None:
         kwargs["crs"] = "Simple"
@@ -390,10 +400,10 @@ GON (((180.00000 -16.06713, 180.00000...
         if categorical:
             cat = pd.Categorical(gdf[column][~nan_idx], categories=categories)
             N = len(cat.categories)
-            cmap = cmap if cmap else "tab20"
+            cmap = cmap if cmap is not None else "tab20"
 
             # colormap exists in matplotlib
-            if cmap in plt.colormaps():
+            if isinstance(cmap, str) and cmap in plt.colormaps():
 
                 color = np.apply_along_axis(
                     colors.to_hex, 1, cm.get_cmap(cmap, N)(cat.codes)
@@ -402,29 +412,45 @@ GON (((180.00000 -16.06713, 180.00000...
                     colors.to_hex, 1, cm.get_cmap(cmap, N)(range(N))
                 )
 
-            # colormap is matplotlib.Colormap
-            elif isinstance(cmap, colors.Colormap):
-                color = np.apply_along_axis(colors.to_hex, 1, cmap(cat.codes))
-                legend_colors = np.apply_along_axis(colors.to_hex, 1, cmap(range(N)))
+            # cmap is library colormap
+            elif isinstance(cmap, colors.Colormap) or isinstance(
+                cmap, bc.colormap.ColorMap
+            ):
+                cmap_ = (
+                    cmap
+                    if isinstance(cmap, colors.Colormap)
+                    else _binning_cmap(cmap, N)
+                )
+                color = np.apply_along_axis(colors.to_hex, 1, cmap_(cat.codes))
+                legend_colors = np.apply_along_axis(colors.to_hex, 1, cmap_(range(N)))
 
             # custom list of colors
             elif pd.api.types.is_list_like(cmap):
                 if N > len(cmap):
+                    cmap = cmap.tolist() if hasattr(cmap, "tolist") else cmap
                     cmap = cmap * (N // len(cmap) + 1)
-                color = np.take(cmap, cat.codes)
-                legend_colors = np.take(cmap, range(N))
+                cmap_ = cmap.tolist() if hasattr(cmap, "tolist") else cmap
+                cmap_ = [
+                    colors.to_hex(c)
+                    for c, exclude in zip(cmap_, nan_idx)
+                    if not exclude
+                ]
+
+                color = np.take(cmap_, cat.codes)
+                legend_colors = np.take(cmap_, range(N))
 
             else:
                 raise ValueError(
-                    "'cmap' is invalid. For categorical plots, pass either valid "
+                    "`cmap` is invalid. For categorical plots, pass either valid "
                     "named matplotlib colormap or a list-like of colors."
                 )
 
-        elif callable(cmap):
-            # List of colors based on Branca colormaps or self-defined functions
-            color = list(map(lambda x: cmap(x), df[column]))
-
-        else:
+        elif (
+            cmap is None
+            or isinstance(cmap, str)
+            or isinstance(cmap, colors.Colormap)
+            or (isinstance(cmap, bc.colormap.ColorMap) and scheme is not None)
+        ):
             vmin = gdf[column].min() if vmin is None else vmin
             vmax = gdf[column].max() if vmax is None else vmax
 
@@ -440,7 +466,7 @@ GON (((180.00000 -16.06713, 180.00000...
                     np.asarray(gdf[column][~nan_idx]), scheme, **classification_kwds
                 )
                 color = np.apply_along_axis(
-                    colors.to_hex, 1, cm.get_cmap(cmap, k)(binning.yb)
+                    colors.to_hex, 1, _binning_cmap(cmap, k)(binning.yb)
                 )
 
             else:
@@ -451,8 +477,30 @@ GON (((180.00000 -16.06713, 180.00000...
                 )
 
                 color = np.apply_along_axis(
-                    colors.to_hex, 1, cm.get_cmap(cmap, 256)(binning.yb)
+                    colors.to_hex, 1, _binning_cmap(cmap, 256)(binning.yb)
                 )
+        elif callable(cmap) or pd.api.types.is_list_like(cmap):
+            if scheme is not None and legend:
+                warnings.warn(
+                    "`cmap` as callable or list is not supported"
+                    + " with `scheme` and a legend"
+                )
+                legend = False
+            if callable(cmap) or len(cmap) != len(gdf):
+                if pd.api.types.is_list_like(cmap):
+                    cmap_ = cmap.tolist() if hasattr(cmap, "tolist") else cmap
+                    cmap_ = bc.colormap.StepColormap(cmap_, vmin=13, vmax=20)
+                else:
+                    cmap_ = cmap
+
+                # List of colors based on self-defined function
+                color = list(map(lambda x: cmap_(x), gdf.loc[~nan_idx, column]))
+            else:
+                color = [
+                    colors.to_hex(c) for c, exclude in zip(cmap, nan_idx) if not exclude
+                ]
+        else:
+            raise ValueError("should never get here")
 
     # set default style
     if "fillOpacity" not in style_kwds:
@@ -622,7 +670,7 @@ GON (((180.00000 -16.06713, 180.00000...
                 colormap_kwds["max_labels"] = legend_kwds.pop("max_labels")
             if scheme:
                 cb_colors = np.apply_along_axis(
-                    colors.to_hex, 1, cm.get_cmap(cmap, binning.k)(range(binning.k))
+                    colors.to_hex, 1, _binning_cmap(cmap, binning.k)(range(binning.k))
                 )
                 if cbar:
                     if legend_kwds.pop("scale", True):
@@ -656,30 +704,39 @@ GON (((180.00000 -16.06713, 180.00000...
                 if isinstance(cmap, bc.colormap.ColorMap):
                     colorbar = cmap
                 else:
-
-                    mp_cmap = cm.get_cmap(cmap)
-                    cb_colors = np.apply_along_axis(
-                        colors.to_hex, 1, mp_cmap(range(mp_cmap.N))
-                    )
-                    # linear legend
-                    if mp_cmap.N > 20:
-                        colorbar = bc.colormap.LinearColormap(
-                            cb_colors,
-                            vmin=vmin,
-                            vmax=vmax,
-                            caption=caption,
-                            **colormap_kwds,
-                        )
-
-                    # steps
+                    if cmap is None or (
+                        isinstance(cmap, str) and cmap in cmap in plt.colormaps()
+                    ):
+                        mp_cmap = cm.get_cmap(cmap)
+                    elif isinstance(cmap, colors.Colormap):
+                        mp_cmap = cmap
                     else:
-                        colorbar = bc.colormap.StepColormap(
-                            cb_colors,
-                            vmin=vmin,
-                            vmax=vmax,
-                            caption=caption,
-                            **colormap_kwds,
+                        warnings.warn("`cmap` invalid for legend")
+                        cbar = False
+
+                    if cbar:
+                        cb_colors = np.apply_along_axis(
+                            colors.to_hex, 1, mp_cmap(range(mp_cmap.N))
                         )
+                        # linear legend
+                        if mp_cmap.N > 20:
+                            colorbar = bc.colormap.LinearColormap(
+                                cb_colors,
+                                vmin=vmin,
+                                vmax=vmax,
+                                caption=caption,
+                                **colormap_kwds,
+                            )
+
+                        # steps
+                        else:
+                            colorbar = bc.colormap.StepColormap(
+                                cb_colors,
+                                vmin=vmin,
+                                vmax=vmax,
+                                caption=caption,
+                                **colormap_kwds,
+                            )
 
             if cbar:
                 if nan_idx.any() and nan_color:
@@ -689,6 +746,41 @@ GON (((180.00000 -16.06713, 180.00000...
                 m.add_child(colorbar)
 
     return m
+
+
+# utility to handle cmap as string or matplotlib Colormap
+# or branca Colormap then
+# resamples to required number of colors
+def _binning_cmap(cmap, k):
+    import matplotlib.cm as cm
+    import matplotlib.colors as colors
+    import branca as bc
+    import numpy as np
+
+    if not (
+        cmap is None
+        or isinstance(cmap, str)
+        or isinstance(cmap, colors.Colormap)
+        or isinstance(cmap, bc.colormap.ColorMap)
+    ):
+        raise ValueError(
+            """`cmap` has to be `None` or `str`
+            or `matplotlib.colors.Colormap` or `branca.colormap.ColorMap`
+            in this call context"""
+        )
+    if cmap is None or isinstance(cmap, str):
+        return cm.get_cmap(cmap, k)
+    elif isinstance(cmap, colors.Colormap):
+        if k != cmap.N:
+            return colors.LinearSegmentedColormap.from_list(
+                "custom", cmap(np.linspace(0, 1, cmap.N)), k
+            )
+        else:
+            return cmap
+    else:  # branca colormap
+        return colors.LinearSegmentedColormap.from_list(
+            "custom", np.vectorize(cmap)(np.linspace(cmap.vmin, cmap.vmax, 256)), k
+        )
 
 
 def _tooltip_popup(type, fields, gdf, **kwds):
