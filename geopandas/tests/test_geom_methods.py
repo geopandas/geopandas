@@ -722,7 +722,7 @@ class TestGeomMethods:
         s = GeoSeries([Point(1, 1)])
         with pytest.raises(
             NotImplementedError,
-            match=f"shapely >= 1.8 or PyGEOS is required,"
+            match=f"shapely >= 1.8 or PyGEOS is required, "
             f"version {shapely.__version__} is installed",
         ):
             s.make_valid()
