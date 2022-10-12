@@ -125,7 +125,7 @@ class RobustHelper:
             df_log = pd.concat(
                 [
                     df_log,
-                    pd.json_normalize(plot_opts_).assign(cmap_type=cmap_type),
+                    pd.Series(plot_opts_).to_frame().T.assign(cmap_type=cmap_type),
                 ]
             )
 
