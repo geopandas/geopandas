@@ -500,7 +500,7 @@ GON (((180.00000 -16.06713, 180.00000...
                     colors.to_hex(c) for c, exclude in zip(cmap, nan_idx) if not exclude
                 ]
         else:
-            raise ValueError("should never get here")
+            raise ValueError("should never get here")  # noqa ; pragma: no cover
 
     # set default style
     if "fillOpacity" not in style_kwds:
@@ -764,9 +764,10 @@ def _binning_cmap(cmap, k):
         or isinstance(cmap, bc.colormap.ColorMap)
     ):
         raise ValueError(
-            """`cmap` has to be `None` or `str`
-            or `matplotlib.colors.Colormap` or `branca.colormap.ColorMap`
-            in this call context"""
+            (
+                "`cmap` has to be `None` or `str` or `matplotlib.colors.Colormap` or"
+                " `branca.colormap.ColorMap` in this call context"
+            )
         )
     if cmap is None or isinstance(cmap, str):
         return cm.get_cmap(cmap, k)

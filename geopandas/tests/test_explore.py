@@ -221,9 +221,9 @@ class RobustHelper:
                     m = maps[r["name"]]["m"]
                     m.get_root().html.add_child(
                         folium.Element(
-                            f(
-                                '<h5 style="background-color: {r["bc"]}">'
-                                '{row["scheme"]} l:{r["legend"]} {r["warning"]}</h5>'
+                            (
+                                f'<h5 style="background-color: {r["bc"]}">'
+                                f'{r["scheme"]} l:{r["legend"]} {r["warning"]}</h5>'
                             )
                         )
                     )
@@ -258,6 +258,22 @@ class TestExplore:
         self.world.explore()
         self.cities.explore()
         self.world.geometry.explore()
+
+    def test_dependencies(self):
+        from unittest import mock
+        import sys
+
+        with mock.patch.dict(sys.modules):
+            sys.modules["folium"] = None
+            with pytest.raises(
+                ImportError,
+                match=r"^The 'folium', 'matplotlib' and 'mapclassify' packages.*",
+            ):
+                self.nybb.explore()
+
+        with mock.patch.dict(sys.modules):
+            sys.modules["xyzservices"] = None
+            self.nybb.explore()
 
     def test_choropleth_pass(self):
         """Make sure default choropleth pass"""
@@ -1098,3 +1114,16 @@ class TestExplore:
         robust = RobustHelper(self.world.copy())
         df_log, maps, gdf = robust.run()
         robust.expected_result(df_log)
+        # make sure PEP8 formating hasn't broken util function
+        robust.html(df_log[df_log["error"].isna()].head(2), maps)
+
+        cm = gpd.explore._binning_cmap("Purples", 5)
+        assert [colors.to_hex(c) for c in cm(range(cm.N))] == [
+            "#fcfbfd",
+            "#dadaeb",
+            "#9e9ac8",
+            "#6a51a3",
+            "#3f007d",
+        ]
+        with pytest.raises(ValueError, match=r".*in this call context$"):
+            gpd.explore._binning_cmap(["red", "green"], 5)
