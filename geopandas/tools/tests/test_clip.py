@@ -450,3 +450,40 @@ def test_clip_single_multipoly_no_extra_geoms(
     multi = buffered_locations.dissolve(by="type").reset_index()
     clipped = clip(multi, masks)
     assert clipped.geom_type[0] == "Polygon"
+
+
+def empty_mask(frame=False, mixed=False):
+    x = [np.nan] * 3
+    y = np.arange(3) if mixed else x
+    mask = GeoSeries.from_xy(x, y, crs="EPSG:3857").buffer(1)
+    if frame:
+        mask = mask.to_frame()
+    return mask
+
+
+@pytest.mark.filterwarnings("ignore:All-NaN slice encountered")
+@pytest.mark.parametrize(
+    "mask",
+    [
+        Point(0, 0).buffer(0),
+        Point(np.nan, np.nan).buffer(1),
+        Point(1, np.nan).buffer(1),
+        (np.nan,) * 4,
+        (np.nan, 0, np.nan, 1),
+        (0, 0, np.nan, 1),
+        empty_mask(),
+        empty_mask(mixed=True),
+        empty_mask(frame=True),
+        empty_mask(frame=True, mixed=True),
+    ],
+)
+def test_clip_empty_mask(buffered_locations, mask):
+    """Test that clipping with empty mask returns an empty result."""
+    clipped = clip(buffered_locations, mask)
+    assert_geodataframe_equal(
+        clipped,
+        GeoDataFrame([], columns=["geometry", "type"], crs="EPSG:3857"),
+        check_index_type=False,
+    )
+    clipped = clip(buffered_locations.geometry, mask)
+    assert_geoseries_equal(clipped, GeoSeries([], crs="EPSG:3857"))
