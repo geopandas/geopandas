@@ -475,6 +475,8 @@ def empty_mask(frame=False, mixed=False):
         empty_mask(mixed=True),
         empty_mask(frame=True),
         empty_mask(frame=True, mixed=True),
+        GeoSeries([], crs="EPSG:3857"),
+        GeoSeries([], crs="EPSG:3857").to_frame(),
     ],
 )
 def test_clip_empty_mask(buffered_locations, mask):
