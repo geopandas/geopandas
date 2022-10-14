@@ -172,6 +172,7 @@ def clip(gdf, mask, keep_geom_type=False):
         # Avoid empty tuple returned by .bounds when geometry is empty. A tuple of
         # all nan values is consistent with the behavior of
         # {GeoSeries, GeoDataFrame}.total_bounds for empty geometries.
+        # TODO(shapely) can simpely use mask.bounds once relying on Shapely 2.0
         box_mask = mask.bounds if not mask.is_empty else (np.nan,) * 4
     box_gdf = gdf.total_bounds
     if not (
