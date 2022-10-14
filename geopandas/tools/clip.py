@@ -170,7 +170,7 @@ def clip(gdf, mask, keep_geom_type=False):
         box_mask = mask
     else:
         # Avoid empty tuple returned by .bounds when geometry is empty. A tuple of
-        # all nan values is consitent with the behavior of
+        # all nan values is consistent with the behavior of
         # {GeoSeries, GeoDataFrame}.total_bounds for empty geometries.
         box_mask = mask.bounds if not mask.is_empty else (np.nan,) * 4
     box_gdf = gdf.total_bounds
