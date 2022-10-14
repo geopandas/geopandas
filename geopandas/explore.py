@@ -284,12 +284,10 @@ GON (((180.00000 -16.06713, 180.00000...
         from mapclassify import classify
 
         # isolate MPL version - GH#2596
-        mpl = Version(matplotlib.__version__)
-        if mpl >= Version("3.6"):
-            MPL_36 = True
+        MPL_36 = Version(matplotlib.__version__) >= Version("3.6")
+        if MPL_36:
             from matplotlib import colormaps as cm
         else:
-            MPL_36 = False
             import matplotlib.cm as cm
 
     except (ImportError, ModuleNotFoundError):
