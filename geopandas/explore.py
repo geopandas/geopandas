@@ -279,10 +279,19 @@ GON (((180.00000 -16.06713, 180.00000...
         import branca as bc
         import folium
         import matplotlib
-        from matplotlib import colormaps as cm
         import matplotlib.colors as colors
         import matplotlib.pyplot as plt
         from mapclassify import classify
+
+        # isolate MPL version - GH#2596
+        mpl = Version(matplotlib.__version__)
+        if mpl >= Version("3.6"):
+            MPL_36 = True
+            from matplotlib import colormaps as cm
+        else:
+            MPL_36 = False
+            import matplotlib.cm as cm
+
     except (ImportError, ModuleNotFoundError):
         raise ImportError(
             "The 'folium', 'matplotlib' and 'mapclassify' packages are required for "
@@ -298,13 +307,6 @@ GON (((180.00000 -16.06713, 180.00000...
         HAS_XYZSERVICES = True
     except (ImportError, ModuleNotFoundError):
         HAS_XYZSERVICES = False
-
-    # isolate MPL version - GH#2596
-    mpl = Version(matplotlib.__version__)
-    if mpl >= Version("3.6"):
-        MPL_36 = True
-    else:
-        MPL_36 = False
 
     gdf = df.copy()
 
