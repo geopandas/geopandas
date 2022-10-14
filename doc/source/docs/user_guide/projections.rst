@@ -49,7 +49,7 @@ What is the best format to store the CRS information?
 Generally, WKT or SRID's are preferred over PROJ strings as they can contain more information about a given CRS.
 Conversions between WKT and PROJ strings will in most cases cause a loss of information, potentially leading to erroneous transformations. If possible WKT2 should be used.
 
-For more details, see `What is the best format for describing coordinate reference systems <https://proj.org/faq.html#what-is-the-best-format-for-describing-coordinate-reference-systems>` .
+For more details, see `What is the best format for describing coordinate reference systems <https://proj.org/faq.html#what-is-the-best-format-for-describing-coordinate-reference-systems>`_.
 
 
 Setting a projection
@@ -77,7 +77,7 @@ the :attr:`GeoSeries.crs` attribute):
 Re-projecting
 ----------------
 
-Re-projecting is the process of changing the representation of locations from one coordinate system to another. All projections of locations on the Earth into a two-dimensional plane are distortions. See `Which projection is best <https://en.wikipedia.org/wiki/Map_projection#Which_projection_is_best.3F>`_for more information. The projection that is best for your application may be different from the projection associated with the data you import. In these cases, data can be re-projected using the :meth:`GeoDataFrame.to_crs` command:
+Re-projecting is the process of changing the representation of locations from one coordinate system to another. All projections of locations on the Earth into a two-dimensional plane are distortions. See `Which projection is best <https://en.wikipedia.org/wiki/Map_projection#Which_projection_is_best.3F>`_ for more information. The projection that is best for your application may be different from the projection associated with the data you import. In these cases, data can be re-projected using the :meth:`GeoDataFrame.to_crs` command:
 
 .. ipython:: python
 
@@ -168,7 +168,7 @@ PROJ 6, but might also require some changes in your code. See `this blogpost
 for some more information. The subsections below cover different possible
 migration issues.
 
-See the `pyproj docs <https://pyproj4.github.io/pyproj/stable/>`__ for more on
+See the `pyproj documentation <https://pyproj4.github.io/pyproj/stable/>`__ for more on
 the :class:`pyproj.CRS <pyproj.crs.CRS>` object.
 
 Importing data from files
@@ -253,7 +253,7 @@ One possible way to find out the EPSG code is using pyproj for this:
 (you might need to set the ``min_confidence`` keyword of ``to_epsg`` to a lower
 value if the match is not perfect)
 
-Further, on websites such as `spatialreference.org <https://spatialreference.org/>`__
+Further, on websites such as `Spatial Reference <https://spatialreference.org/>`__
 and `epsg.io <https://epsg.io/>`__ the descriptions of many CRS can be found
 including their EPSG codes and proj4 string definitions.
 

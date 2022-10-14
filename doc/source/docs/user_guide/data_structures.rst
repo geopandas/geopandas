@@ -59,7 +59,7 @@ Attributes
 * :attr:`~GeoSeries.bounds`: tuple of max and min coordinates on each axis for each shape
 * :attr:`~GeoSeries.total_bounds`: tuple of max and min coordinates on each axis for entire GeoSeries
 * :attr:`~GeoSeries.geom_type`: type of geometry.
-* :attr:`~GeoSeries.is_valid`: tests if coordinates make a shape that is reasonable geometric shape according to the (`Simple Feature Access <http://www.opengeospatial.org/standards/sfa>`) standard.
+* :attr:`~GeoSeries.is_valid`: tests if coordinates make a shape that is reasonable geometric shape according to the `Simple Feature Access <http://www.opengeospatial.org/standards/sfa>`_ standard.
 
 Basic methods
 ^^^^^^^^^^^^^^
@@ -137,7 +137,7 @@ Attributes and methods
 
 Any of the attributes calls or methods described for a :class:`GeoSeries` will work on a :class:`GeoDataFrame` -- effectively, they are just applied to the "geometry" :class:`GeoSeries`.
 
-However, :class:`GeoDataFrames <GeoDataFrame>` also have a few extra methods for input and output which are described on the :doc:`Input and Output <io>` page and for geocoding with are described in :doc:`Geocoding <geocoding>`.
+However, :class:`GeoDataFrames <GeoDataFrame>` also have a few extra methods for input and output which are described on the :doc:`Reading and writing files <io>` page and for geocoding with are described in :doc:`Geocoding <geocoding>`.
 
 
 .. ipython:: python

@@ -5,7 +5,7 @@ Geometric manipulations
 
 *geopandas* makes available all the tools for geometric manipulations in the `Shapely library <http://shapely.readthedocs.io/en/latest/manual.html>`_.
 
-Note that documentation for all set-theoretic tools for creating new shapes using the relationship between two different spatial datasets -- like creating intersections, or differences -- can be found at :doc:`Set operations with overlay <set_operations>` .
+Note that documentation for all set-theoretic tools for creating new shapes using the relationship between two different spatial datasets -- like creating intersections, or differences -- can be found at :doc:`Set operations with overlay <set_operations>`.
 
 Constructive methods
 ~~~~~~~~~~~~~~~~~~~~
@@ -120,7 +120,7 @@ GeoPandas objects also know how to plot themselves.  GeoPandas uses `matplotlib`
 
     >>> g.plot()
 
-GeoPandas also implements alternate constructors that can read any data format recognized by `fiona`_.  To read a zip file containing an ESRI shapefile with the `borough boundaries of New York City`_ (GeoPandas includes this as an example dataset):
+GeoPandas also implements alternate constructors that can read any data format recognized by `Fiona`_.  To read a zip file containing an ESRI shapefile with the `borough boundaries of New York City`_ (GeoPandas includes this as an example dataset):
 
 .. sourcecode:: python
 
