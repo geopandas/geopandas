@@ -3,14 +3,13 @@ from functools import reduce
 
 import numpy as np
 import pandas as pd
-
-try:
-    from shapely.errors import GEOSException
-except ImportError:
-    GEOSException = Exception
-
-from geopandas import GeoDataFrame, GeoSeries
+from geopandas import GeoDataFrame, GeoSeries, _compat
 from geopandas.array import _check_crs, _crs_mismatch_warn
+
+if _compat.SHAPELY_GE_20:
+    from shapely.errors import GEOSException
+else:
+    GEOSException = Exception
 
 
 def _ensure_geometry_column(df):
