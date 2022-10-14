@@ -452,29 +452,15 @@ def test_clip_single_multipoly_no_extra_geoms(
     assert clipped.geom_type[0] == "Polygon"
 
 
-def empty_mask(frame=False, mixed=False):
-    x = [np.nan] * 3
-    y = np.arange(3) if mixed else x
-    mask = GeoSeries.from_xy(x, y, crs="EPSG:3857").buffer(1)
-    if frame:
-        mask = mask.to_frame()
-    return mask
-
-
 @pytest.mark.filterwarnings("ignore:All-NaN slice encountered")
 @pytest.mark.parametrize(
     "mask",
     [
-        Point(0, 0).buffer(0),
-        Point(np.nan, np.nan).buffer(1),
-        Point(1, np.nan).buffer(1),
+        Polygon(),
         (np.nan,) * 4,
         (np.nan, 0, np.nan, 1),
-        (0, 0, np.nan, 1),
-        empty_mask(),
-        empty_mask(mixed=True),
-        empty_mask(frame=True),
-        empty_mask(frame=True, mixed=True),
+        GeoSeries([Polygon(), Polygon()], crs="EPSG:3857"),
+        GeoSeries([Polygon(), Polygon()], crs="EPSG:3857").to_frame(),
         GeoSeries([], crs="EPSG:3857"),
         GeoSeries([], crs="EPSG:3857").to_frame(),
     ],
