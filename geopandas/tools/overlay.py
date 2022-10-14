@@ -21,7 +21,9 @@ def _ensure_geometry_column(df):
     if not df._geometry_column_name == "geometry":
         if "geometry" in df.columns:
             df.drop("geometry", axis=1, inplace=True)
-        df.rename(columns={df._geometry_column_name: "geometry"}, copy=False, inplace=True)
+        df.rename(
+            columns={df._geometry_column_name: "geometry"}, copy=False, inplace=True
+        )
         df.set_geometry("geometry", inplace=True)
 
 
@@ -70,7 +72,9 @@ def _overlay_intersection(df1, df2):
         )
         result["__idx1"] = None
         result["__idx2"] = None
-        return result[result.columns.drop(df1.geometry.name).tolist() + [df1.geometry.name]]
+        return result[
+            result.columns.drop(df1.geometry.name).tolist() + [df1.geometry.name]
+        ]
 
 
 def _overlay_difference(df1, df2):
@@ -81,7 +85,10 @@ def _overlay_difference(df1, df2):
     idx1, idx2 = df2.sindex.query_bulk(df1.geometry, predicate="intersects", sort=True)
     idx1_unique, idx1_unique_indices = np.unique(idx1, return_index=True)
     idx2_split = np.split(idx2, idx1_unique_indices[1:])
-    sidx = [idx2_split.pop(0) if idx in idx1_unique else [] for idx in range(df1.geometry.size)]
+    sidx = [
+        idx2_split.pop(0) if idx in idx1_unique else []
+        for idx in range(df1.geometry.size)
+    ]
     # Create differences
     new_g = []
     for geom, neighbours in zip(df1.geometry, sidx):
@@ -121,11 +128,15 @@ def _overlay_symmetric_diff(df1, df2):
     _ensure_geometry_column(dfdiff1)
     _ensure_geometry_column(dfdiff2)
     # combine both 'difference' dataframes
-    dfsym = dfdiff1.merge(dfdiff2, on=["__idx1", "__idx2"], how="outer", suffixes=("_1", "_2"))
+    dfsym = dfdiff1.merge(
+        dfdiff2, on=["__idx1", "__idx2"], how="outer", suffixes=("_1", "_2")
+    )
     geometry = dfsym.geometry_1.copy()
     geometry.name = "geometry"
     # https://github.com/pandas-dev/pandas/issues/26468 use loc for now
-    geometry.loc[dfsym.geometry_1.isnull()] = dfsym.loc[dfsym.geometry_1.isnull(), "geometry_2"]
+    geometry.loc[dfsym.geometry_1.isnull()] = dfsym.loc[
+        dfsym.geometry_1.isnull(), "geometry_2"
+    ]
     dfsym.drop(["geometry_1", "geometry_2"], axis=1, inplace=True)
     dfsym.reset_index(drop=True, inplace=True)
     dfsym = GeoDataFrame(dfsym, geometry=geometry, crs=df1.crs)
@@ -244,10 +255,14 @@ def overlay(df1, df2, how="intersection", keep_geom_type=None, make_valid=True):
     ]
     # Error Messages
     if how not in allowed_hows:
-        raise ValueError("`how` was '{0}' but is expected to be in {1}".format(how, allowed_hows))
+        raise ValueError(
+            "`how` was '{0}' but is expected to be in {1}".format(how, allowed_hows)
+        )
 
     if isinstance(df1, GeoSeries) or isinstance(df2, GeoSeries):
-        raise NotImplementedError("overlay currently only implemented for " "GeoDataFrames")
+        raise NotImplementedError(
+            "overlay currently only implemented for " "GeoDataFrames"
+        )
 
     if not _check_crs(df1, df2):
         _crs_mismatch_warn(df1, df2, stacklevel=3)
@@ -266,7 +281,9 @@ def overlay(df1, df2, how="intersection", keep_geom_type=None, make_valid=True):
         lines_check = df.geom_type.isin(lines).any()
         points_check = df.geom_type.isin(points).any()
         if sum([poly_check, lines_check, points_check]) > 1:
-            raise NotImplementedError("df{} contains mixed geometry types.".format(i + 1))
+            raise NotImplementedError(
+                "df{} contains mixed geometry types.".format(i + 1)
+            )
 
     if how == "intersection":
         box_gdf1 = df1.total_bounds
@@ -282,7 +299,9 @@ def overlay(df1, df2, how="intersection", keep_geom_type=None, make_valid=True):
                 right_index=True,
                 suffixes=("_1", "_2"),
             )
-            return result[result.columns.drop(df1.geometry.name).tolist() + [df1.geometry.name]]
+            return result[
+                result.columns.drop(df1.geometry.name).tolist() + [df1.geometry.name]
+            ]
 
     # Computations
     def _make_valid(df):
@@ -344,8 +363,12 @@ def overlay(df1, df2, how="intersection", keep_geom_type=None, make_valid=True):
             elif geom_type in points:
                 exploded.loc[~exploded.geom_type.isin(points), geom_col] = None
             else:
-                raise TypeError("`keep_geom_type` does not support {}.".format(geom_type))
-            num_dropped_collection = orig_num_geoms_exploded - exploded.geometry.isna().sum()
+                raise TypeError(
+                    "`keep_geom_type` does not support {}.".format(geom_type)
+                )
+            num_dropped_collection = (
+                orig_num_geoms_exploded - exploded.geometry.isna().sum()
+            )
 
             # level_0 created with above reset_index operation
             # and represents the original geometry collections
