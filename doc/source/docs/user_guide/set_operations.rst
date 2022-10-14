@@ -8,7 +8,7 @@
    plt.close('all')
 
 
-Set-operations with overlay
+Set operations with overlay
 ============================
 
 When working with multiple spatial datasets -- especially multiple *polygon* or
@@ -30,9 +30,9 @@ properties from both are retained. In effect, for every shape in the left
 
 .. note::
    Note to users familiar with the *shapely* library: :meth:`~geopandas.GeoDataFrame.overlay` can be thought
-   of as offering versions of the standard *shapely* set-operations that deal with
+   of as offering versions of the standard *shapely* set operations that deal with
    the complexities of applying set operations to two *GeoSeries*. The standard
-   *shapely* set-operations are also available as :class:`~geopandas.GeoSeries` methods.
+   *shapely* set operations are also available as :class:`~geopandas.GeoSeries` methods.
 
 
 The different overlay operations
