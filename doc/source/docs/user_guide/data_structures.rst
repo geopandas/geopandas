@@ -48,10 +48,10 @@ element of the series with that geometry.  In either case, a
 :class:`~pandas.Series` or a :class:`GeoSeries` will be returned, as appropriate.
 
 A short summary of a few attributes and methods for GeoSeries is
-presented here, and a full list can be found in the :doc:`all attributes and methods page <../reference/geoseries>`.
+presented here, and a full list can be found in the :doc:`GeoSeries <../reference/geoseries>` API reference.
 There is also a family of methods for creating new shapes by expanding
 existing shapes or applying set-theoretic operations like "union" described
-in :doc:`geometric manipulations <geometric_manipulations>`.
+in :doc:`Geometric manipulations <geometric_manipulations>`.
 
 Attributes
 ^^^^^^^^^^^^^^^
@@ -59,7 +59,7 @@ Attributes
 * :attr:`~GeoSeries.bounds`: tuple of max and min coordinates on each axis for each shape
 * :attr:`~GeoSeries.total_bounds`: tuple of max and min coordinates on each axis for entire GeoSeries
 * :attr:`~GeoSeries.geom_type`: type of geometry.
-* :attr:`~GeoSeries.is_valid`: tests if coordinates make a shape that is reasonable geometric shape (`according to this <http://www.opengeospatial.org/standards/sfa>`_).
+* :attr:`~GeoSeries.is_valid`: tests if coordinates make a shape that is reasonable geometric shape according to the (`Simple Feature Access <http://www.opengeospatial.org/standards/sfa>`) standard.
 
 Basic methods
 ^^^^^^^^^^^^^^

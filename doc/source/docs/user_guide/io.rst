@@ -12,7 +12,7 @@ shapefile, GeoJSON files and more using the command::
     geopandas.read_file()
 
 which returns a GeoDataFrame object. This is possible because *geopandas* makes
-use of the great `fiona <http://fiona.readthedocs.io/en/latest/manual.html>`_
+use of the great `Fiona <http://fiona.readthedocs.io/en/latest/manual.html>`_
 library, which in turn makes use of a massive open-source program called
 `GDAL/OGR <http://www.gdal.org/>`_ designed to facilitate spatial data
 transformations.
@@ -34,13 +34,13 @@ Currently fiona only exposes the default drivers. To display those, type::
 
     import fiona; fiona.supported_drivers 
 
-There is an `array <https://github.com/Toblerity/Fiona/blob/master/fiona/drvsupport.py>`_
-of unexposed but supported (depending on the GDAL-build) drivers. One can activate 
+There is a `list of available drivers <https://github.com/Toblerity/Fiona/blob/master/fiona/drvsupport.py>`_
+which are unexposed but supported (depending on the GDAL-build). You can activate 
 these on runtime by updating the `supported_drivers` dictionary like::
 
     fiona.supported_drivers["NAS"] = "raw"
     
-Where supported in :mod:`fiona`, *geopandas* can also load resources directly from
+Where supported in :mod:`Fiona`, *geopandas* can also load resources directly from
 a web URL, for example for GeoJSON files from `geojson.xyz <http://geojson.xyz/>`_::
 
     url = "http://d2ad6b4ur7yvpq.cloudfront.net/naturalearth-3.3.0/ne_110m_land.geojson"
@@ -182,7 +182,7 @@ SQL WHERE filter
 
 .. versionadded:: 0.12
 
-Load in a subset of data with a `SQL WHERE clause <https://gdal.org/user/ogr_sql_dialect.html#where>`__.
+Load in a subset of data with a SQL `WHERE <https://gdal.org/user/ogr_sql_dialect.html#where>`_clause.
 
 .. note:: Requires Fiona 1.9+ or the pyogrio engine.
 

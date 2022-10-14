@@ -58,7 +58,7 @@ Fiona example
         mercator_world = world.set_geometry(world.geometry.apply(forward_transformer), crs=destination_crs)
 
 
-Rasterio Example
+Rasterio example
 ----------------
 
 This example requires rasterio 1.2+ and GDAL 3+.

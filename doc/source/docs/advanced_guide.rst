@@ -7,7 +7,7 @@ topic and outlines how it is implemented in GeoPandas, with reproducible example
 If you don't know anything about GeoPandas, start with the :doc:`Introduction to
 GeoPandas <../getting_started/introduction>`.
 
-Basic topics can be found in the :doc:`User Guide <user_guide>` and further
+Basic topics can be found in the :doc:`User guide <user_guide>` and further
 specification in the :doc:`API reference <reference>`.
 
 .. note::
