@@ -3,9 +3,9 @@
 Geometric manipulations
 ========================
 
-*geopandas* makes available all the tools for geometric manipulations in the `shapely library <http://shapely.readthedocs.io/en/latest/manual.html>`_.
+*geopandas* makes available all the tools for geometric manipulations in the `Shapely library <http://shapely.readthedocs.io/en/latest/manual.html>`_.
 
-Note that documentation for all set-theoretic tools for creating new shapes using the relationship between two different spatial datasets -- like creating intersections, or differences -- can be found on the :doc:`set operations <set_operations>` page.
+Note that documentation for all set-theoretic tools for creating new shapes using the relationship between two different spatial datasets -- like creating intersections, or differences -- can be found at :doc:`Set operations with overlay <set_operations>` .
 
 Constructive methods
 ~~~~~~~~~~~~~~~~~~~~

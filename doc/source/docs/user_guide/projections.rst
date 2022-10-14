@@ -18,8 +18,7 @@ in a GeoSeries or GeoDataFrame object are simply a collection of coordinates in
 an arbitrary space. A CRS tells Python how those coordinates relate to places on
 the Earth.
 
-You can find the codes for most commonly used projections from
-`www.spatialreference.org <https://spatialreference.org/>`_.
+For reference codes in the most commonly used projections, see `Spatial Reference <https://spatialreference.org/>`_.
 
 The same CRS can often be referred to in many ways. For example, one of the most
 commonly used CRS is the WGS84 latitude-longitude projection. This can be
@@ -50,7 +49,7 @@ What is the best format to store the CRS information?
 Generally, WKT or SRID's are preferred over PROJ strings as they can contain more information about a given CRS.
 Conversions between WKT and PROJ strings will in most cases cause a loss of information, potentially leading to erroneous transformations. If possible WKT2 should be used.
 
-For more details, see https://proj.org/faq.html#what-is-the-best-format-for-describing-coordinate-reference-systems
+For more details, see `What is the best format for describing coordinate reference systems? <https://proj.org/faq.html#what-is-the-best-format-for-describing-coordinate-reference-systems>` .
 
 
 Setting a projection
@@ -78,7 +77,7 @@ the :attr:`GeoSeries.crs` attribute):
 Re-projecting
 ----------------
 
-Re-projecting is the process of changing the representation of locations from one coordinate system to another. All projections of locations on the Earth into a two-dimensional plane `are distortions <https://en.wikipedia.org/wiki/Map_projection#Which_projection_is_best.3F>`_, the projection that is best for your application may be different from the projection associated with the data you import. In these cases, data can be re-projected using the :meth:`GeoDataFrame.to_crs` command:
+Re-projecting is the process of changing the representation of locations from one coordinate system to another. All projections of locations on the Earth into a two-dimensional plane are distortions. See `Which projection is best? <https://en.wikipedia.org/wiki/Map_projection#Which_projection_is_best.3F>`_for more information. The projection that is best for your application may be different from the projection associated with the data you import. In these cases, data can be re-projected using the :meth:`GeoDataFrame.to_crs` command:
 
 .. ipython:: python
 
@@ -166,7 +165,7 @@ while now you will see something like this:
 This gives a better user interface and integrates improvements from pyproj and
 PROJ 6, but might also require some changes in your code. See `this blogpost
 <https://jorisvandenbossche.github.io/blog/2020/02/11/geopandas-pyproj-crs/>`__
-for some more background, and the subsections below cover different possible
+for some more information. The subsections below cover different possible
 migration issues.
 
 See the `pyproj docs <https://pyproj4.github.io/pyproj/stable/>`__ for more on
@@ -309,9 +308,9 @@ I get a "Bound CRS"?
 Some CRS definitions include a *"towgs84" clause*, which can give problems in
 recognizing the actual CRS.
 
-For example, both the proj4 and WKT representation for EPSG:31370 (the local
-projection used in Belgium) as can be found at `https://spatialreference.org/ref/epsg/31370/ <https://spatialreference.org/ref/epsg/31370/>`__
-include this. When taking one of those definitions from that site, and creating
+For example, both the proj4 and WKT representations for EPSG:31370 (the local
+projection used in Belgium) as can be found at `EPSG:31370 <https://spatialreference.org/ref/epsg/31370/>`__
+include this clause. When taking one of those definitions from that site, and creating
 a CRS object:
 
 .. code-block:: python
@@ -364,9 +363,9 @@ As mentioned above, pyproj now honours the axis order of the EPSG definition.
 However, proj4 strings or older WKT versions don't specify this correctly, which
 can be a reason that the CRS object is not equal to the expected EPSG code.
 
-Consider the following example of a Canadian projected CRS "EPSG:2953". When
+Consider the following example of a Canadian projected CRS EPSG:2953. When
 constructing the CRS object from the WKT string as provided on
-`https://epsg.io/2953 <https://epsg.io/2953>`__:
+`EPSG:2953 <https://epsg.io/2953>`__:
 
 .. code-block:: python
 

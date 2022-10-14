@@ -99,7 +99,7 @@ And the following example plots the color bar below the map and adds its label u
 Choosing colors
 ~~~~~~~~~~~~~~~~
 
-One can also modify the colors used by :meth:`~GeoDataFrame.plot` with the ``cmap`` option (for a full list of colormaps, see the `matplotlib website <http://matplotlib.org/users/colormaps.html>`_):
+You can also modify the colors used by :meth:`~GeoDataFrame.plot` with the ``cmap`` option. For a full list of colormaps, see `Choosing Colormaps in Matplotlib <https://matplotlib.org/stable/tutorials/colors/colormaps.html>`_.
 
 .. ipython:: python
 
@@ -268,7 +268,7 @@ You can also create these other plots using the ``GeoDataFrame.plot.<kind>`` acc
     @savefig pandas_bar_plot.png
     gdf.plot.bar()
 
-For more information check out the `pandas documentation <https://pandas.pydata.org/pandas-docs/stable/user_guide/visualization.html>`_.
+For more information, see `Chart visualization <https://pandas.pydata.org/pandas-docs/stable/user_guide/visualization.html>`_.
 
 
 Other resources
