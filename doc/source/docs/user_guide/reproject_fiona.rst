@@ -10,7 +10,7 @@ just the points the geometry contains. This is particularly useful for antimerid
 However, this also means the transformation is not as fast.
 
 
-Fiona Example
+Fiona example
 -------------
 
 .. code-block:: python

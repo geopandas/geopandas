@@ -6,11 +6,11 @@
    import geopandas
 
 
-Managing Projections
-=========================================
+Projections
+===========
 
 
-Coordinate Reference Systems
+Coordinate reference systems
 -----------------------------
 
 The Coordinate Reference System (CRS) is important because the geometric shapes
@@ -53,7 +53,7 @@ Conversions between WKT and PROJ strings will in most cases cause a loss of info
 For more details, see https://proj.org/faq.html#what-is-the-best-format-for-describing-coordinate-reference-systems
 
 
-Setting a Projection
+Setting a projection
 ----------------------
 
 There are two relevant operations for projections: setting a projection and re-projecting.
@@ -75,7 +75,7 @@ the :attr:`GeoSeries.crs` attribute):
     my_geoseries = my_geoseries.set_crs(epsg=4326)
 
 
-Re-Projecting
+Re-projecting
 ----------------
 
 Re-projecting is the process of changing the representation of locations from one coordinate system to another. All projections of locations on the Earth into a two-dimensional plane `are distortions <https://en.wikipedia.org/wiki/Map_projection#Which_projection_is_best.3F>`_, the projection that is best for your application may be different from the projection associated with the data you import. In these cases, data can be re-projected using the :meth:`GeoDataFrame.to_crs` command:

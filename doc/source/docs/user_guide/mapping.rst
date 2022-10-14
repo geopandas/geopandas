@@ -11,7 +11,7 @@
    plt.close('all')
 
 
-Mapping and Plotting Tools
+Mapping and plotting tools
 =========================================
 
 
@@ -40,7 +40,7 @@ We can now plot those GeoDataFrames:
 Note that in general, any options one can pass to `pyplot <http://matplotlib.org/api/pyplot_api.html>`_ in matplotlib_ (or `style options that work for lines <http://matplotlib.org/api/lines_api.html>`_) can be passed to the :meth:`~GeoDataFrame.plot` method.
 
 
-Choropleth Maps
+Choropleth maps
 -----------------
 
 *geopandas* makes it easy to create Choropleth maps (maps where the color of each shape is based on the value of an associated variable). Simply use the plot command with the ``column`` argument set to the column whose values you want used to assign colors.
@@ -168,7 +168,7 @@ Maps usually do not have to have axis labels. You can turn them off using ``set_
     @savefig set_axis_off.png
     ax.set_axis_off();
 
-Maps with Layers
+Maps with layers
 -----------------
 
 There are two strategies for making a map with multiple layers -- one more succinct, and one that is a little more flexible.
@@ -237,7 +237,7 @@ We can set the ``zorder`` for cities higher than for world to move it of top.
     world.plot(ax=ax, zorder=1);
 
 
-Pandas Plots
+Pandas plots
 -----------------
 
 Plotting methods also allow for different plot styles from pandas
@@ -271,9 +271,9 @@ You can also create these other plots using the ``GeoDataFrame.plot.<kind>`` acc
 For more information check out the `pandas documentation <https://pandas.pydata.org/pandas-docs/stable/user_guide/visualization.html>`_.
 
 
-Other Resources
+Other resources
 -----------------
-Links to jupyter Notebooks for different mapping tasks:
+Links to Jupyter Notebooks for different mapping tasks:
 
 `Making Heat Maps <http://nbviewer.jupyter.org/gist/perrygeo/c426355e40037c452434>`_
 

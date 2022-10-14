@@ -1,13 +1,13 @@
 .. _geometric_manipulations:
 
-Geometric Manipulations
+Geometric manipulations
 ========================
 
 *geopandas* makes available all the tools for geometric manipulations in the `shapely library <http://shapely.readthedocs.io/en/latest/manual.html>`_.
 
 Note that documentation for all set-theoretic tools for creating new shapes using the relationship between two different spatial datasets -- like creating intersections, or differences -- can be found on the :doc:`set operations <set_operations>` page.
 
-Constructive Methods
+Constructive methods
 ~~~~~~~~~~~~~~~~~~~~
 
 .. method:: GeoSeries.buffer(distance, resolution=16)
@@ -72,7 +72,7 @@ Affine transformations
 
 
 
-Examples of Geometric Manipulations
+Examples of geometric manipulations
 ------------------------------------
 
 .. sourcecode:: python

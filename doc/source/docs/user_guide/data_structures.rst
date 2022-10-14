@@ -10,7 +10,7 @@
 
 
 
-Data Structures
+Data structures
 =========================================
 
 GeoPandas implements two main data structures, a :class:`GeoSeries` and a
@@ -34,7 +34,7 @@ make up the State of Hawaii or a country like Indonesia).
 
 Note that all entries in  a :class:`GeoSeries` need not be of the same geometric type, although certain export operations will fail if this is not the case.
 
-Overview of Attributes and Methods
+Overview of attributes and methods
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The :class:`GeoSeries` class implements nearly all of the attributes and
@@ -61,7 +61,7 @@ Attributes
 * :attr:`~GeoSeries.geom_type`: type of geometry.
 * :attr:`~GeoSeries.is_valid`: tests if coordinates make a shape that is reasonable geometric shape (`according to this <http://www.opengeospatial.org/standards/sfa>`_).
 
-Basic Methods
+Basic methods
 ^^^^^^^^^^^^^^
 
 * :meth:`~GeoSeries.distance`: returns :class:`~pandas.Series` with minimum distance from each entry to ``other``
@@ -70,7 +70,7 @@ Basic Methods
 * :meth:`~GeoSeries.to_crs`: change coordinate reference system. See :doc:`projections <projections>`
 * :meth:`~GeoSeries.plot`: plot :class:`GeoSeries`. See :doc:`mapping <mapping>`.
 
-Relationship Tests
+Relationship tests
 ^^^^^^^^^^^^^^^^^^^
 
 * :meth:`~GeoSeries.geom_almost_equals`: is shape almost the same as ``other`` (good when floating point precision issues make shapes slightly different)
@@ -132,7 +132,7 @@ Now, we create centroids and make it the geometry:
 
 **Note 2:** Somewhat confusingly, by default when you use the :func:`~geopandas.read_file` command, the column containing spatial objects from the file is named "geometry" by default, and will be set as the active geometry column. However, despite using the same term for the name of the column and the name of the special attribute that keeps track of the active column, they are distinct. You can easily shift the active geometry column to a different :class:`GeoSeries` with the :meth:`~GeoDataFrame.set_geometry` command. Further, ``gdf.geometry`` will always return the active geometry column, *not* the column named ``geometry``. If you wish to call a column named "geometry", and a different column is the active geometry column, use ``gdf['geometry']``, not ``gdf.geometry``.
 
-Attributes and Methods
+Attributes and methods
 ~~~~~~~~~~~~~~~~~~~~~~
 
 Any of the attributes calls or methods described for a :class:`GeoSeries` will work on a :class:`GeoDataFrame` -- effectively, they are just applied to the "geometry" :class:`GeoSeries`.

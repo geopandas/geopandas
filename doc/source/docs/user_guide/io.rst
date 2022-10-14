@@ -1,9 +1,9 @@
 .. _io:
 
-Reading and Writing Files
+Reading and writing files
 =========================
 
-Reading Spatial Data
+Reading spatial data
 ---------------------
 
 *geopandas* can read almost any vector-based spatial data format including ESRI
@@ -88,7 +88,7 @@ Since geopandas is powered by Fiona, which is powered by GDAL, you can take adva
 pre-filtering when loading in larger datasets. This can be done geospatially with a geometry
 or bounding box. You can also filter rows loaded with a slice. Read more at :func:`geopandas.read_file`.
 
-Geometry Filter
+Geometry filter
 ^^^^^^^^^^^^^^^
 
 .. versionadded:: 0.7.0
@@ -105,7 +105,7 @@ The geometry filter only loads data that intersects with the geometry.
         mask=gdf_mask[gdf_mask.continent=="Africa"],
     )
 
-Bounding Box Filter
+Bounding box filter
 ^^^^^^^^^^^^^^^^^^^
 
 .. versionadded:: 0.1.0
@@ -122,7 +122,7 @@ The bounding box filter only loads data that intersects with the bounding box.
         bbox=bbox,
     )
 
-Row Filter
+Row filter
 ^^^^^^^^^^
 
 .. versionadded:: 0.7.0
@@ -141,7 +141,7 @@ or a slice object.
         rows=slice(10, 20),
     )
 
-Field/Column Filters
+Field/column filters
 ^^^^^^^^^^^^^^^^^^^^
 
 Load in a subset of fields from the file:
@@ -177,8 +177,8 @@ Skip loading geometry from the file:
     )
 
 
-SQL WHERE Filter
-^^^^^^^^^^^^^^^^^
+SQL WHERE filter
+^^^^^^^^^^^^^^^^
 
 .. versionadded:: 0.12
 
@@ -194,7 +194,7 @@ Load in a subset of data with a `SQL WHERE clause <https://gdal.org/user/ogr_sql
     )
 
 
-Writing Spatial Data
+Writing spatial data
 ---------------------
 
 GeoDataFrames can be exported to many different standard formats using the
