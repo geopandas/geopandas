@@ -5,6 +5,8 @@ from shapely.geometry import LineString
 import numpy as np
 import pandas as pd
 
+from packaging.version import Version
+
 _MAP_KWARGS = [
     "location",
     "prefer_canvas",
@@ -262,9 +264,21 @@ GON (((180.00000 -16.06713, 180.00000...
 
     >>> df.explore("pop_est", cmap="Blues")  # doctest: +SKIP
     """
+
+    def _colormap_helper(_cmap, n_resample=None, idx=None):
+        """Helper for MPL deprecation - GH#2596"""
+        if not n_resample:
+            return cm.get_cmap(_cmap)
+        else:
+            if MPL_36:
+                return cm.get_cmap(_cmap).resampled(n_resample)(idx)
+            else:
+                return cm.get_cmap(_cmap, n_resample)(idx)
+
     try:
         import branca as bc
         import folium
+        import matplotlib
         from matplotlib import colormaps as cm
         import matplotlib.colors as colors
         import matplotlib.pyplot as plt
@@ -284,6 +298,13 @@ GON (((180.00000 -16.06713, 180.00000...
         HAS_XYZSERVICES = True
     except (ImportError, ModuleNotFoundError):
         HAS_XYZSERVICES = False
+
+    # isolate MPL version - GH#2596
+    mpl = Version(matplotlib.__version__)
+    if mpl >= Version("3.6"):
+        MPL_36 = True
+    else:
+        MPL_36 = False
 
     gdf = df.copy()
 
@@ -396,10 +417,12 @@ GON (((180.00000 -16.06713, 180.00000...
             if cmap in plt.colormaps():
 
                 color = np.apply_along_axis(
-                    colors.to_hex, 1, cm.get_cmap(cmap).resampled(N)(cat.codes)
+                    colors.to_hex,
+                    1,
+                    _colormap_helper(cmap, n_resample=N, idx=cat.codes),
                 )
                 legend_colors = np.apply_along_axis(
-                    colors.to_hex, 1, cm.get_cmap(cmap).resampled(N)(range(N))
+                    colors.to_hex, 1, _colormap_helper(cmap, n_resample=N, idx=range(N))
                 )
 
             # colormap is matplotlib.Colormap
@@ -440,7 +463,9 @@ GON (((180.00000 -16.06713, 180.00000...
                     np.asarray(gdf[column][~nan_idx]), scheme, **classification_kwds
                 )
                 color = np.apply_along_axis(
-                    colors.to_hex, 1, cm.get_cmap(cmap).resampled(k)(binning.yb)
+                    colors.to_hex,
+                    1,
+                    _colormap_helper(cmap, n_resample=k, idx=binning.yb),
                 )
 
             else:
@@ -451,7 +476,9 @@ GON (((180.00000 -16.06713, 180.00000...
                 )
 
                 color = np.apply_along_axis(
-                    colors.to_hex, 1, cm.get_cmap(cmap).resampled(256)(binning.yb)
+                    colors.to_hex,
+                    1,
+                    _colormap_helper(cmap, n_resample=256, idx=binning.yb),
                 )
 
     # set default style
@@ -624,7 +651,7 @@ GON (((180.00000 -16.06713, 180.00000...
                 cb_colors = np.apply_along_axis(
                     colors.to_hex,
                     1,
-                    cm.get_cmap(cmap).resampled(binning.k)(range(binning.k)),
+                    _colormap_helper(cmap, n_resample=binning.k, idx=range(binning.k)),
                 )
                 if cbar:
                     if legend_kwds.pop("scale", True):
@@ -658,7 +685,7 @@ GON (((180.00000 -16.06713, 180.00000...
                 if isinstance(cmap, bc.colormap.ColorMap):
                     colorbar = cmap
                 else:
-                    mp_cmap = cm.get_cmap(cmap)
+                    mp_cmap = _colormap_helper(cmap)
                     cb_colors = np.apply_along_axis(
                         colors.to_hex, 1, mp_cmap(range(mp_cmap.N))
                     )
