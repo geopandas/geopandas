@@ -265,7 +265,7 @@ GON (((180.00000 -16.06713, 180.00000...
     try:
         import branca as bc
         import folium
-        import matplotlib.cm as cm
+        from matplotlib import colormaps as cm
         import matplotlib.colors as colors
         import matplotlib.pyplot as plt
         from mapclassify import classify
@@ -396,10 +396,10 @@ GON (((180.00000 -16.06713, 180.00000...
             if cmap in plt.colormaps():
 
                 color = np.apply_along_axis(
-                    colors.to_hex, 1, cm.get_cmap(cmap, N)(cat.codes)
+                    colors.to_hex, 1, cm.get_cmap(cmap).resampled(N)(cat.codes)
                 )
                 legend_colors = np.apply_along_axis(
-                    colors.to_hex, 1, cm.get_cmap(cmap, N)(range(N))
+                    colors.to_hex, 1, cm.get_cmap(cmap).resampled(N)(range(N))
                 )
 
             # colormap is matplotlib.Colormap
@@ -440,7 +440,7 @@ GON (((180.00000 -16.06713, 180.00000...
                     np.asarray(gdf[column][~nan_idx]), scheme, **classification_kwds
                 )
                 color = np.apply_along_axis(
-                    colors.to_hex, 1, cm.get_cmap(cmap, k)(binning.yb)
+                    colors.to_hex, 1, cm.get_cmap(cmap).resampled(k)(binning.yb)
                 )
 
             else:
@@ -451,7 +451,7 @@ GON (((180.00000 -16.06713, 180.00000...
                 )
 
                 color = np.apply_along_axis(
-                    colors.to_hex, 1, cm.get_cmap(cmap, 256)(binning.yb)
+                    colors.to_hex, 1, cm.get_cmap(cmap).resampled(256)(binning.yb)
                 )
 
     # set default style
@@ -622,7 +622,9 @@ GON (((180.00000 -16.06713, 180.00000...
                 colormap_kwds["max_labels"] = legend_kwds.pop("max_labels")
             if scheme:
                 cb_colors = np.apply_along_axis(
-                    colors.to_hex, 1, cm.get_cmap(cmap, binning.k)(range(binning.k))
+                    colors.to_hex,
+                    1,
+                    cm.get_cmap(cmap).resampled(binning.k)(range(binning.k)),
                 )
                 if cbar:
                     if legend_kwds.pop("scale", True):
@@ -656,11 +658,11 @@ GON (((180.00000 -16.06713, 180.00000...
                 if isinstance(cmap, bc.colormap.ColorMap):
                     colorbar = cmap
                 else:
-
                     mp_cmap = cm.get_cmap(cmap)
                     cb_colors = np.apply_along_axis(
                         colors.to_hex, 1, mp_cmap(range(mp_cmap.N))
                     )
+
                     # linear legend
                     if mp_cmap.N > 20:
                         colorbar = bc.colormap.LinearColormap(
