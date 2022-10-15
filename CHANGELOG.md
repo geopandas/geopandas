@@ -8,6 +8,8 @@ New features and improvements:
 
 - Added ``normalize()`` method from shapely to GeoSeries/GeoDataframe (#2537)
 - Add where filter to ``read_file`` (#2552)
+- Improve error messages when accessing the `geometry` attribute of GeoDataFrame without an active geometry column 
+  related to the default name `"geometry"` being provided in the constructor (#2577)
 
 Deprecations and compatibility notes:
 
