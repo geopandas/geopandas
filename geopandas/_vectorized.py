@@ -998,7 +998,13 @@ def relate(data, other):
 
 def unary_union(data):
     if compat.USE_SHAPELY_20:
-        return shapely.union_all(data)
+        data = shapely.union_all(data)
+        if data is None:  # shapely 2.0a1
+            return None
+        if data.is_empty:  # shapely 2.0
+            return None
+        else:
+            return data
     elif compat.USE_PYGEOS:
         return _pygeos_to_shapely(pygeos.union_all(data))
     else:
