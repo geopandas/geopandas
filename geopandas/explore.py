@@ -338,7 +338,6 @@ GON (((180.00000 -16.06713, 180.00000...
 
             if isinstance(tiles, xyzservices.TileProvider):
                 attr = attr if attr else tiles.html_attribution
-                
                 if "min_zoom" not in map_kwds:
                     map_kwds["min_zoom"] = tiles.get("min_zoom", 0)
                 if "max_zoom" not in map_kwds:
