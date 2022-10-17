@@ -6,7 +6,7 @@ Development version
 
 New features and improvements:
 - ensure that distributed natural earth datasets are consistent version.  Upgraded 
-  **lowres** and **cities** to v5.1
+  **lowres** and **cities** to v5.1 (#2555)
 
 Deprecations and compatibility notes:
 
