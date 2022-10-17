@@ -860,7 +860,7 @@ def _list_like_params(gdf, style_kwds={}, marker_kwds={}):
             if pd.api.types.is_list_like(v) and len(v) == len(gdf):
                 c = f"__folium_{k}"
                 if isinstance(gdf, geopandas.GeoSeries):
-                    gdf = geopandas.GeoDataFrame(geometry=gdf, crs=gdf.crs)
+                    gdf = gdf.to_frame()
                 gdf[c] = v
                 cols[k] = c
                 # a number of list like structures do not serialize into folium/
