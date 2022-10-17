@@ -266,7 +266,7 @@ GON (((180.00000 -16.06713, 180.00000...
         import branca as bc
         import folium
 
-        # import matplotlib.cm as cm
+        import matplotlib.cm as cm
         import matplotlib.colors as colors
         import matplotlib.pyplot as plt
         from mapclassify import classify
@@ -277,22 +277,6 @@ GON (((180.00000 -16.06713, 180.00000...
             "'conda install -c conda-forge folium matplotlib mapclassify' "
             "or 'pip install folium matplotlib mapclassify'."
         )
-    # prepare for change in matplotlib
-    try:
-        from matplotlib import colormaps as cm_
-
-        cm_["viridis"].resampled(10)
-
-        def _cm(cmap, lut=None):
-            cmap = "viridis" if not cmap else cmap
-            cm = cm_[cmap]
-            return cm.resampled(lut) if lut else cm
-
-    except (ImportError, AttributeError):
-        import matplotlib.cm as cm_
-
-        def _cm(cmap, lut=None):
-            return cm_.get_cmap(cmap, lut)
 
     # xyservices is an optional dependency
     try:
@@ -412,9 +396,11 @@ GON (((180.00000 -16.06713, 180.00000...
             # colormap exists in matplotlib
             if cmap in plt.colormaps():
 
-                color = np.apply_along_axis(colors.to_hex, 1, _cm(cmap, N)(cat.codes))
+                color = np.apply_along_axis(
+                    colors.to_hex, 1, cm.get_cmap(cmap, N)(cat.codes)
+                )
                 legend_colors = np.apply_along_axis(
-                    colors.to_hex, 1, _cm(cmap, N)(range(N))
+                    colors.to_hex, 1, cm.get_cmap(cmap, N)(range(N))
                 )
 
             # colormap is matplotlib.Colormap
@@ -454,7 +440,9 @@ GON (((180.00000 -16.06713, 180.00000...
                 binning = classify(
                     np.asarray(gdf[column][~nan_idx]), scheme, **classification_kwds
                 )
-                color = np.apply_along_axis(colors.to_hex, 1, _cm(cmap, k)(binning.yb))
+                color = np.apply_along_axis(
+                    colors.to_hex, 1, cm.get_cmap(cmap, k)(binning.yb)
+                )
 
             else:
 
@@ -464,7 +452,7 @@ GON (((180.00000 -16.06713, 180.00000...
                 )
 
                 color = np.apply_along_axis(
-                    colors.to_hex, 1, _cm(cmap, 256)(binning.yb)
+                    colors.to_hex, 1, cm.get_cmap(cmap, 256)(binning.yb)
                 )
 
     # some marker and style parameters can be list like.
@@ -645,7 +633,7 @@ GON (((180.00000 -16.06713, 180.00000...
                 colormap_kwds["max_labels"] = legend_kwds.pop("max_labels")
             if scheme:
                 cb_colors = np.apply_along_axis(
-                    colors.to_hex, 1, _cm(cmap, binning.k)(range(binning.k))
+                    colors.to_hex, 1, cm.get_cmap(cmap, binning.k)(range(binning.k))
                 )
                 if cbar:
                     if legend_kwds.pop("scale", True):
@@ -680,7 +668,7 @@ GON (((180.00000 -16.06713, 180.00000...
                     colorbar = cmap
                 else:
 
-                    mp_cmap = _cm(cmap)
+                    mp_cmap = cm.get_cmap(cmap)
                     cb_colors = np.apply_along_axis(
                         colors.to_hex, 1, mp_cmap(range(mp_cmap.N))
                     )
