@@ -683,6 +683,30 @@ class TestExplore:
         )
         assert '"maxNativeZoom":20,"maxZoom":20,"minZoom":0' in out_str
 
+    def test_xyzservices_providers_min_zoom_override(self):
+        xyzservices = pytest.importorskip("xyzservices")
+
+        m = self.nybb.explore(tiles=xyzservices.providers.CartoDB.PositronNoLabels, min_zoom=3)
+        out_str = self._fetch_map_string(m)
+
+        assert '"maxNativeZoom":20,"maxZoom":20,"minZoom":3' in out_str
+
+    def test_xyzservices_providers_max_zoom_override(self):
+        xyzservices = pytest.importorskip("xyzservices")
+
+        m = self.nybb.explore(tiles=xyzservices.providers.CartoDB.PositronNoLabels, max_zoom=12)
+        out_str = self._fetch_map_string(m)
+
+        assert '"maxNativeZoom":12,"maxZoom":12,"minZoom":0' in out_str
+
+    def test_xyzservices_providers_both_zooms_override(self):
+        xyzservices = pytest.importorskip("xyzservices")
+
+        m = self.nybb.explore(tiles=xyzservices.providers.CartoDB.PositronNoLabels, min_zoom=3, max_zoom=12)
+        out_str = self._fetch_map_string(m)
+
+        assert '"maxNativeZoom":12,"maxZoom":12,"minZoom":3' in out_str
+
     def test_linearrings(self):
         rings = self.nybb.explode(index_parts=True).exterior
         m = rings.explore()
