@@ -779,13 +779,6 @@ def equals_exact(data, other, tolerance):
         return _binary_predicate("equals_exact", data, other, tolerance=tolerance)
 
 
-def almost_equals(self, other, decimal):
-    if compat.USE_PYGEOS or compat.USE_SHAPELY_20:
-        return self.equals_exact(other, 0.5 * 10 ** (-decimal))
-    else:
-        return _binary_predicate("almost_equals", self, other, decimal=decimal)
-
-
 #
 # Binary operations that return new geometries
 #
