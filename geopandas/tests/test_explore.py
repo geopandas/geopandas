@@ -709,7 +709,7 @@ class TestExplore:
         m = self.nybb.explore(
             tiles=xyzservices.providers.CartoDB.PositronNoLabels,
             min_zoom=3,
-            max_zoom=12
+            max_zoom=12,
         )
         out_str = self._fetch_map_string(m)
 
