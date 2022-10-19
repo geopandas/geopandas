@@ -79,6 +79,8 @@ def set_use_pygeos(val=None):
     global USE_SHAPELY_20
     global PYGEOS_SHAPELY_COMPAT
 
+    env_use_pygeos = os.getenv("USE_PYGEOS", None)
+
     if val is not None:
         USE_PYGEOS = bool(val)
     else:
@@ -86,7 +88,6 @@ def set_use_pygeos(val=None):
 
             USE_PYGEOS = HAS_PYGEOS
 
-            env_use_pygeos = os.getenv("USE_PYGEOS", None)
             if env_use_pygeos is not None:
                 USE_PYGEOS = bool(int(env_use_pygeos))
 
@@ -132,6 +133,17 @@ def set_use_pygeos(val=None):
 
         except ImportError:
             raise ImportError(INSTALL_PYGEOS_ERROR)
+
+    if USE_PYGEOS and env_use_pygeos is None and SHAPELY_GE_20:
+        warnings.warn(
+            "Shapely 2.0 is installed, but because PyGEOS is also installed, "
+            "GeoPandas will still use PyGEOS by default for now. To force to use and "
+            "test Shapely 2.0, you have to set the environment variable USE_PYGEOS=0. "
+            "You can do this before starting the Python process, or in your code "
+            "before importing geopandas:\n\nimport os\nos.environ['USE_PYGEOS'] = '0'"
+            "\nimport geopandas\n\n",
+            stacklevel=6,
+        )
 
     USE_SHAPELY_20 = (not USE_PYGEOS) and SHAPELY_GE_20
 
