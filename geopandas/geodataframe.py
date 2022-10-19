@@ -126,7 +126,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
     # TODO: remove "_crs" in 0.12
     _metadata = ["_crs", "_geometry_column_name"]
 
-    _internal_names = DataFrame._internal_names +  ["geometry"]
+    _internal_names = DataFrame._internal_names + ["geometry"]
     _internal_names_set = set(_internal_names)
 
     _geometry_column_name = DEFAULT_GEO_COLUMN_NAME
