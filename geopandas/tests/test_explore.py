@@ -18,224 +18,6 @@ import branca as bc  # noqa
 BRANCA_05 = Version(branca.__version__) > Version("0.4.2")
 
 
-class RobustHelper:
-    """Helper for testing permuations of parameters to `explore()`
-
-    Can be used in a JupyterLab notebook::
-
-        import geopandas as gpd
-        from geopandas.tests.test_explore import RobustHelper
-        from IPython.display import display, HTML
-
-        gdf = gpd.read_file(gpd.datasets.get_path("naturalearth_lowres"))
-        robust = RobustHelper(gdf)
-        df_log, maps, gdf = robust.run()
-        robust.expected_result(df_log)
-        print({c: (~df_log[c].isna()).sum() for c in ["name", "error", "warning"]})
-        # just expected warnings
-        display(HTML(robust.html(df_log[~df_log["warning"].isna()].copy(), maps)))
-    """
-
-    def __init__(self, gdf):
-        self.gdf = gdf.copy()
-
-        self.plot_opts = dict(
-            height=200,
-            width=250,
-        )
-
-    def run(self):
-        gdf = self.gdf
-        col = "pop_est_log1p"
-        gdf[col] = np.log1p(gdf["pop_est"])
-        # quite a few bugs with nan handling....
-        gdf.loc[gdf.sample(5, random_state=42).index, col] = np.nan
-        gdf[col + "_cat"] = pd.cut(gdf[col], bins=5, labels=range(5)).astype(
-            pd.Int64Dtype()
-        )
-        cl = ["red", "blue", "pink", "yellow", "white"]
-        clrgb = [colors.to_rgb(c) for c in cl]
-        cs = gdf[col + "_cat"].map({i: c for i, c in enumerate(cl)})
-        csrgb = gdf[col + "_cat"].map({i: c for i, c in enumerate(clrgb)})
-        clb = cl.copy()
-        clb[1] = "bluee"
-        csb = gdf[col + "_cat"].map({i: c for i, c in enumerate(clb)})
-
-        # custom cmap permutions
-        cmap_perms = {
-            "None": None,
-            "Purples": "Purples",
-            "invalid": "invalid",
-            "mpl lin": colors.LinearSegmentedColormap.from_list(
-                "custom", ["#e1f2f2", "#A8DCDC", "#115F5F"]
-            ),
-            "callable": lambda x: "red" if x < 16 else "green",
-            "branca lin": bc.colormap.LinearColormap(
-                ["#e1f2f2", "#A8DCDC", "#115F5F"],
-                vmin=5,
-                vmax=20,
-            ),
-            "branca step": bc.colormap.StepColormap(cl, vmin=13, vmax=20),
-        }
-
-        def create_type(t, v):
-            if t.__name__ == "DataFrame":
-                return pd.DataFrame({"c": v})
-            elif t.__name__ == "array":
-                return np.array(v, dtype=object)
-            return t(v)
-
-        # list like cmap permutations
-        cmap_perms = {
-            **cmap_perms,
-            **{
-                f"{n} {t.__name__}": create_type(t, v)
-                for t in [list, tuple, pd.Series, pd.DataFrame, np.array]
-                for v, n in zip(
-                    [cl, cs.tolist(), clrgb, csrgb.tolist(), clb, csb],
-                    ["short", "full", "short rgb", "long rgb", "short bad", "long bad"],
-                )
-            },
-        }
-
-        # schemes = list(mapclassify.classifiers.CLASSIFIERS)[0:-1] + [None]
-        schemes = list(mapclassify.classifiers.CLASSIFIERS)[11:12] + [None]
-
-        maps = {}
-        df_log = pd.DataFrame()
-
-        for scheme_, cmap, cmap_type, legend, cat in [
-            (s, cmap, cmap_type, legend, cat)
-            for s in schemes
-            for cmap_type, cmap in cmap_perms.items()
-            for legend in [True, False]
-            for cat in [True, False]
-        ]:
-            name_ = f"{scheme_} {cmap_type} l:{legend} c:{cat}"
-            plot_opts_ = dict(
-                scheme=scheme_,
-                cmap=cmap,
-                legend=legend,
-                categorical=cat,
-                name=name_,
-                column=col + "_cat" if cat else col,
-                legend_kwds=dict(scale=True, interval=True),
-            )
-            all_opts = {**plot_opts_, **self.plot_opts}
-            df_log = pd.concat(
-                [
-                    df_log,
-                    pd.Series(plot_opts_).to_frame().T.assign(cmap_type=cmap_type),
-                ]
-            )
-
-            # there are some permuations that generate expected
-            # value errors and warnings
-            try:
-                with warnings.catch_warnings():
-                    warnings.simplefilter("error")
-                    warnings.simplefilter("ignore", category=PendingDeprecationWarning)
-                    try:
-                        m = gdf.explore(**all_opts)
-                    except UserWarning as e:
-                        df_log.loc[df_log["name"].eq(name_), "warning"] = str(e)
-                        warnings.simplefilter("ignore")
-                        m = gdf.explore(**all_opts)
-                    maps[name_] = {"m": m, "opts": plot_opts_}
-
-            except ValueError as e:
-                maps[name_] = {"opts": plot_opts_}
-                df_log.loc[df_log["name"].eq(name_), "error"] = str(e)[0:40]
-
-        return df_log, maps, gdf
-
-    def expected_result(self, df_log):
-        # total number of attempts, errors and warnings as expected
-        assert pd.Series(
-            {c: (~df_log[c].isna()).sum() for c in ["name", "error", "warning"]}
-        ).equals(pd.Series({"name": 296, "error": 92, "warning": 52}))
-
-        expected = {
-            "warning": {
-                (
-                    "callable",
-                    (
-                        "`cmap` as callable or list is not supported with "
-                        "`scheme` and a legend"
-                    ),
-                ): 1,
-                ("callable", "`cmap` invalid for legend"): 1,
-                (
-                    "list_like",
-                    (
-                        "`cmap` as callable or list is not supported with "
-                        "`scheme` and a legend"
-                    ),
-                ): 30,
-                ("list_like", "`cmap` invalid for legend"): 20,
-            },
-            "error": {
-                ("callable", "`cmap` is invalid. For categorical plots"): 4,
-                ("invalid", "`cmap` is not known matplotlib colormap"): 8,
-                ("list_like", "Invalid RGBA argument: 'bluee'"): 60,
-                ("list_like", "Unknown color None."): 20,
-            },
-        }
-
-        # group similar tests
-        df_log["cmap_type_agg"] = np.where(
-            df_log["cmap"].apply(pd.api.types.is_list_like),
-            "list_like",
-            df_log["cmap_type"],
-        )
-        for test, test_result in expected.items():
-            assert (
-                df_log[~df_log[test].isna()]
-                .groupby(["cmap_type_agg", test])
-                .size()
-                .equals(pd.Series(test_result))
-            )
-
-    def html(self, df_log=None, maps=None):
-        plot_opts = self.plot_opts
-        fmt = (
-            '<iframe srcdoc="{}" style="width: {}px; height: {}px; '
-            "display:inline-block; width: 24%; margin: 0 auto; border:"
-            ' 2px solid black"></iframe>'
-        )
-
-        rawhtml = ""
-        df_log["bc"] = np.where(df_log["warning"].isna(), "white", "pink")
-        df_log["warning"] = df_log["warning"].fillna("")
-        for i, d in (
-            df_log.sort_values(
-                ["cmap_type_agg", "cmap_type", "categorical", "scheme", "legend"]
-            )
-            .loc[lambda d: d["error"].isna()]
-            .groupby("cmap_type")
-        ):
-            rawhtml += f"<h2>cmap {i}</h2>"
-            for i2, d2 in d.groupby("categorical"):
-                rawhtml += f"<h3>categorical: {i2}</h3>"
-                for i, r in d2.iterrows():
-                    m = maps[r["name"]]["m"]
-                    m.get_root().html.add_child(
-                        folium.Element(
-                            (
-                                f'<h5 style="background-color: {r["bc"]}">'
-                                f'{r["scheme"]} l:{r["legend"]} {r["warning"]}</h5>'
-                            )
-                        )
-                    )
-
-                    rawhtml += fmt.format(
-                        m.get_root().render().replace('"', "&quot;"),
-                        plot_opts["height"],
-                        plot_opts["width"],
-                    )
-        return rawhtml
-
-
 class TestExplore:
     def setup_method(self):
         self.nybb = gpd.read_file(gpd.datasets.get_path("nybb"))
@@ -782,6 +564,16 @@ class TestExplore:
         m = self.missing.explore("continent", missing_kwds=dict(color="red"))
         assert '"fillColor":"red"' in self._fetch_map_string(m)
 
+        m = self.missing.explore(
+            self.missing["continent"].str[0], cmap=["red", "green"]
+        )
+        assert '"fillColor":null' in self._fetch_map_string(m)
+
+        m = self.missing.explore(
+            "pop_est", cmap=lambda x: "red" if x < 10**7 else "green", legend=False
+        )
+        assert '"fillColor":null' in self._fetch_map_string(m)
+
     def test_categorical_legend(self):
         m = self.world.explore("continent", legend=True)
         out_str = self._fetch_map_string(m)
@@ -1111,11 +903,11 @@ class TestExplore:
             )
 
     def test_robust(self):
-        robust = RobustHelper(self.world.copy())
-        df_log, maps, gdf = robust.run()
-        robust.expected_result(df_log)
-        # make sure PEP8 formating hasn't broken util function
-        robust.html(df_log[df_log["error"].isna()].head(2), maps)
+        # robust = RobustHelper(self.world.copy())
+        # df_log, maps, gdf = robust.run()
+        # robust.expected_result(df_log)
+        # # make sure PEP8 formating hasn't broken util function
+        # robust.html(df_log[df_log["error"].isna()].head(2), maps)
 
         cm = gpd.explore._binning_cmap("Purples", 5)
         assert [colors.to_hex(c) for c in cm(range(cm.N))] == [
@@ -1127,3 +919,357 @@ class TestExplore:
         ]
         with pytest.raises(ValueError, match=r".*in this call context$"):
             gpd.explore._binning_cmap(["red", "green"], 5)
+
+
+class RobustHelper:
+    """Helper for testing permuations of parameters to `explore()`
+
+    Can be used in a JupyterLab notebook::
+
+        import geopandas as gpd
+        from geopandas.tests.test_explore import RobustHelper
+        from IPython.display import display, HTML
+
+        gdf = gpd.read_file(gpd.datasets.get_path("naturalearth_lowres"))
+        robust = RobustHelper(gdf)
+        df_log, maps, gdf = robust.run()
+        robust.expected_result(df_log)
+        print({c: (~df_log[c].isna()).sum() for c in ["name", "error", "warning"]})
+        # just expected warnings
+        display(HTML(robust.html(df_log[~df_log["warning"].isna()].copy(), maps)))
+    """
+
+    def __init__(self, gdf, col="pop_est", alpha_col="iso_a3"):
+        self.gdf = gdf.copy()
+        self.col = "__col"
+        self.catcol = "__cat"
+        self.alphacol = "__alpha"
+
+        # create columns that drive testing
+        self.gdf[self.col] = np.log1p(gdf[col])
+        self.gdf[self.catcol] = pd.cut(self.gdf[self.col], bins=5, labels=range(5))
+        self.gdf[self.alphacol] = self.gdf[alpha_col].str[1:2]
+
+        # quite a few bugs with nan handling....
+        self.gdf.loc[
+            self.gdf.sample(int(len(self.gdf) * 0.2), random_state=42).index,
+            [self.col, self.catcol, self.alphacol],
+        ] = np.nan
+
+        self.plot_opts = dict(
+            height=200,
+            width=250,
+        )
+
+    def generate(
+        self,
+        max_tests=100,
+        exclude=[],
+        include_fail_tests=True,
+        ignore_lambda=None,
+        smart_exclude=True,
+    ):
+        import functools
+        import itertools
+
+        gdf = self.gdf
+
+        # colormap list like building blocks
+        cl = ["red", "blue", "pink", "yellow", "white"]
+        clrgb = [colors.to_rgb(c) for c in cl]
+        cs = gdf[self.catcol].replace({i: c for i, c in enumerate(cl)})
+        csrgb = gdf[self.catcol].replace({i: c for i, c in enumerate(clrgb)})
+        clb = cl.copy()
+        clb[1] = "bluee"
+        csb = gdf[self.catcol].replace({i: c for i, c in enumerate(clb)})
+
+        def create_type(t, v):
+            if hasattr(v, "tolist"):
+                v = v.tolist()
+            if t.__name__ == "DataFrame":
+                return pd.DataFrame({"c": v})
+            elif t.__name__ == "array":
+                return np.array(v, dtype=object)
+            return t(v)
+
+        cm_c = ["#e1f2f2", "#A8DCDC", "#115F5F"]
+        cm_l = [
+            None,
+            "Purples",
+            "bad",
+            colors.LinearSegmentedColormap.from_list("custom", cm_c),
+            lambda x: "red" if x < 16 else "green",
+            bc.colormap.LinearColormap(
+                cm_c,
+                vmin=5,
+                vmax=20,
+            ),
+            bc.colormap.StepColormap(cl, vmin=13, vmax=20),
+        ]
+
+        # generate invalid length array for column arg
+        def bad(c):
+            return gdf[c].values[1:]
+
+        test_cases = {
+            "column": [
+                {
+                    "__column_type": c + f.__name__,
+                    "column": f(c),
+                    "__expect_error": f is bad,
+                }
+                for c, f in itertools.product(
+                    [self.col, self.catcol, self.alphacol], [str, gdf.get, bad]
+                )
+            ],
+            "cmap": [
+                {
+                    "__cmap_type": cm.__class__.__name__
+                    if not isinstance(cm, str)
+                    else cm,
+                    "cmap": cm,
+                    "__expect_error": cm == "bad",
+                }
+                for cm in cm_l
+            ]
+            + [
+                {
+                    "__cmap_type": (
+                        f"{'short' if len(v)<len(self.gdf) else 'full'} "
+                        f"{t.__name__} {cat}"
+                    ).strip(),
+                    "cmap": create_type(t, v),
+                    "__expect_error": cat == "bad",
+                }
+                for t in [list, tuple, pd.Series, pd.DataFrame, np.array]
+                for v, cat in zip(
+                    [cl, cs, clrgb, csrgb, clb, csb], np.repeat(["", "rgb", "bad"], 2)
+                )
+            ],
+            "color": [None, "red", "bad"],
+            "categorical": [True, False, None],
+            "legend": [True, False, None],
+            "scheme": list(mapclassify.classifiers.CLASSIFIERS)[11:12] + [None, "bad"],
+            "k": [None, 5, "bad"],
+            "vmin": [None, 3, "bad"],
+            "vmax": [None, 4, "bad"],
+        }
+
+        df = (
+            functools.reduce(
+                lambda left, right: pd.merge(left, right, on="xref"),
+                [
+                    pd.DataFrame(v).assign(xref=1)
+                    if isinstance(v, dict) or isinstance(v[0], dict)
+                    else pd.DataFrame({c: v}).assign(
+                        **{"xref": 1, f"__expect_error_{c}": lambda d: d[c].eq("bad")}
+                    )
+                    for c, v in test_cases.items()
+                    if c not in exclude
+                ],
+            )
+            .drop(columns=["xref"])
+            .assign(__error=np.nan, __warning=np.nan)
+        )
+
+        if "cmap" in df.columns:
+            df["__cmap_type_agg"] = np.where(
+                df["cmap"].apply(pd.api.types.is_list_like),
+                "list_like",
+                df["__cmap_type"],
+            )
+
+        # identifiable invalid combis
+        df["__expect_error_c1"] = df["__cmap_type"].eq("function") & (
+            df["__column_type"].str[2:5].isin(["alp", "cat"]) | df["categorical"]
+        )
+        if "k" in df.columns:
+            df["__expect_error_knone"] = df["k"].isna()
+
+        # only one bad value per row
+        df = df.loc[
+            df.loc[:, [c for c in df.columns if c.startswith("__expect")]]
+            .sum(axis=1)
+            .le(1)
+        ]
+        # summarise columns to one
+        df["__expect_error"] = df.loc[
+            :, [c for c in df.columns if c.startswith("__expect_error")]
+        ].any(axis=1)
+        df = df.drop(columns=[c for c in df.columns if c.startswith("__expect_error_")])
+
+        # only one None (nan) per row
+        df = df.loc[
+            df.loc[:, [c for c in df.columns if not c.startswith("__")]]
+            .isna()
+            .sum(axis=1)
+            .le(1)
+        ]
+
+        # useless combinations
+        if smart_exclude:
+            # categorical and continuous data makes no sense...
+            df = df.loc[
+                ~(
+                    df["__column_type"].str.startswith("__col")
+                    & df["categorical"].isin([True, "bad"])
+                )
+            ]
+
+        if not include_fail_tests:
+            df = df.loc[~df["__expect_error"]]
+        if ignore_lambda is not None:
+            df = df.loc[ignore_lambda]
+        if max_tests is not None:
+            if isinstance(max_tests, int):
+                df = df.sample(max_tests, random_state=42)
+            else:
+                df = df.sample(frac=max_tests, random_state=42)
+
+        rs = np.random.RandomState(42)
+
+        # in a group keep only first test if it's expected to fail, else a proportion
+        def filtergroup(d):
+            names = [d.name] if isinstance(d.name, str) else d.name
+            if any([str(n)[-3:] == "bad" for n in names]):
+                r = pd.Series(index=d.index, data=np.full(len(d), False))
+                r.iat[0] = True
+            else:
+                r = pd.Series(
+                    index=d.index, data=rs.choice([True, False], p=(0.8, 0.2))
+                )
+            return r
+
+        col = "__column_type"
+        cols = ["__column_type", "__cmap_type"] + [
+            c
+            for c in df.columns
+            if not c.startswith("__") and c not in ["column", "cmap"]
+        ]
+
+        for grp in [cols[0 : n + 1] for n in range(len(cols))]:
+            df = df.loc[df.groupby(grp)[col].transform(filtergroup).fillna(True)]
+
+        return df.reset_index(drop=True)
+
+    def run(self, df):
+        gdf = self.gdf
+
+        maps = {}
+
+        for i, args in df.iterrows():
+            all_opts = {k: v for k, v in args.items() if not k.startswith("__")}
+            try:
+                with warnings.catch_warnings():
+                    warnings.simplefilter("error")
+                    warnings.simplefilter("ignore", category=PendingDeprecationWarning)
+                    try:
+                        m = gdf.explore(**{**all_opts, **self.plot_opts})
+                    except UserWarning as e:
+                        df.loc[i, "__warning"] = str(e)
+                        warnings.simplefilter("ignore")
+                        m = gdf.explore(**{**all_opts, **self.plot_opts})
+                    maps[i] = {"m": m, "opts": all_opts}
+
+            except (ValueError, TypeError, IndexError) as e:
+                maps[i] = {"opts": all_opts}
+                df.loc[i, "__error"] = str(e)
+                df.loc[i, "__error_class"] = e.__class__.__name__
+
+        return df, maps
+
+    def expected_result(self, df_log):
+        # total number of attempts, errors and warnings as expected
+        assert pd.Series(
+            {c: (~df_log[c].isna()).sum() for c in ["name", "error", "warning"]}
+        ).equals(pd.Series({"name": 296, "error": 92, "warning": 52}))
+
+        expected = {
+            "warning": {
+                (
+                    "callable",
+                    (
+                        "`cmap` as callable or list is not supported with "
+                        "`scheme` and a legend"
+                    ),
+                ): 1,
+                ("callable", "`cmap` invalid for legend"): 1,
+                (
+                    "list_like",
+                    (
+                        "`cmap` as callable or list is not supported with "
+                        "`scheme` and a legend"
+                    ),
+                ): 30,
+                ("list_like", "`cmap` invalid for legend"): 20,
+            },
+            "error": {
+                ("callable", "`cmap` is invalid. For categorical plots"): 4,
+                ("invalid", "`cmap` is not known matplotlib colormap"): 8,
+                ("list_like", "Invalid RGBA argument: 'bluee'"): 60,
+                ("list_like", "Unknown color None."): 20,
+            },
+        }
+
+        for test, test_result in expected.items():
+            assert (
+                df_log[~df_log[test].isna()]
+                .groupby(["cmap_type_agg", test])
+                .size()
+                .equals(pd.Series(test_result))
+            )
+
+    def html(self, df=None, maps=None):
+        import json
+
+        plot_opts = self.plot_opts
+        fmt = (
+            '<iframe srcdoc="{}" style="width: {}px; height: {}px; '
+            "display:inline-block; width: 24%; margin: 0 auto; border:"
+            ' 2px solid black"></iframe>'
+        )
+
+        rawhtml = ""
+        df["__bc"] = np.where(df["__warning"].isna(), "white", "pink")
+        df["__warning"] = df["__warning"].fillna("")
+        for i, d in (
+            df.sort_values(
+                ["__cmap_type_agg", "__cmap_type"]
+                + [c for c in ["categorical", "scheme", "legend"] if c in df.columns]
+            )
+            .loc[lambda d: d["__error"].isna()]
+            .groupby("__cmap_type")
+        ):
+            rawhtml += f"<h2>cmap {i}</h2>"
+            for i2, d2 in d.groupby(
+                "categorical"
+                if "categorical" in df.columns
+                else np.full(len(d), "no group")
+            ):
+                rawhtml += f"<h3>categorical: {i2}</h3>"
+                for i, r in d2.iterrows():
+                    m = maps[i]["m"]
+                    param_str = json.dumps(
+                        {
+                            k: v
+                            for k, v in r.to_dict().items()
+                            if not k[0:2] == "__"
+                            and not pd.api.types.is_list_like(v)
+                            and not callable(v)
+                        }
+                    )
+                    m.get_root().html.add_child(
+                        folium.Element(
+                            (
+                                f'<h5 style="background-color: {r["__bc"]}">'
+                                f'<b>{i}</b> {param_str} {r["__warning"]}</h5>'
+                            )
+                        )
+                    )
+
+                    rawhtml += fmt.format(
+                        m.get_root().render().replace('"', "&quot;"),
+                        plot_opts["height"],
+                        plot_opts["width"],
+                    )
+        return rawhtml
