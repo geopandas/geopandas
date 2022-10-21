@@ -7,7 +7,7 @@ Development version
 The highlight of this release is the support for Shapely 2.0. This makes it possible to
 test Shapely 2.0 (currently a first beta is released) alongside GeoPandas.
 
-Note that if you also installed PyGEOS, you need to set an environment variable
+Note that if you also have PyGEOS installed, you need to set an environment variable
 (`USE_PYGEOS=0`) before import geopandas to actually test Shapely 2.0. See
 https://geopandas.org/en/latest/getting_started/install.html#using-the-optional-pygeos-dependency
 for more details.
