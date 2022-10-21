@@ -11,6 +11,8 @@ New features and improvements:
 
 Deprecations and compatibility notes:
 
+- resolve ``matplotlib.cm`` warning in ``.explore()`` (#2596)
+
 Bug fixes:
 
 Notes on (optional) dependencies:
