@@ -903,12 +903,7 @@ class TestExplore:
             )
 
     def test_robust(self):
-        # robust = RobustHelper(self.world.copy())
-        # df_log, maps, gdf = robust.run()
-        # robust.expected_result(df_log)
-        # # make sure PEP8 formating hasn't broken util function
-        # robust.html(df_log[df_log["error"].isna()].head(2), maps)
-
+        # this is really only for codecov
         cm = gpd.explore._binning_cmap("Purples", 5)
         assert [colors.to_hex(c) for c in cm(range(cm.N))] == [
             "#fcfbfd",
@@ -920,23 +915,31 @@ class TestExplore:
         with pytest.raises(ValueError, match=r".*in this call context$"):
             gpd.explore._binning_cmap(["red", "green"], 5)
 
+        # main test, just use 25 geometries to speed up the test
+        robust = RobustHelper(self.world.copy().head(25))
+        # 100 still gets 100% codecov
+        df = robust.generate(max_tests=100, exclude=[])
+        df, maps = robust.run(df)
+        robust.expected_result(df)
+        # make sure PEP8 formating hasn't broken util function
+        robust.html(df[df["__error"].isna()].head(2), maps)
+
 
 class RobustHelper:
     """Helper for testing permuations of parameters to `explore()`
 
     Can be used in a JupyterLab notebook::
-
         import geopandas as gpd
         from geopandas.tests.test_explore import RobustHelper
         from IPython.display import display, HTML
 
         gdf = gpd.read_file(gpd.datasets.get_path("naturalearth_lowres"))
         robust = RobustHelper(gdf)
-        df_log, maps, gdf = robust.run()
-        robust.expected_result(df_log)
-        print({c: (~df_log[c].isna()).sum() for c in ["name", "error", "warning"]})
-        # just expected warnings
-        display(HTML(robust.html(df_log[~df_log["warning"].isna()].copy(), maps)))
+        df = robust.generate(max_tests=200, exclude=[])
+        df, maps = robust.run(df)
+        print({c: (~df[c].isna()).sum() for c in
+        ["__column_type", "__error", "__warning"]})
+        display(HTML(robust.html(df, maps)))
     """
 
     def __init__(self, gdf, col="pop_est", alpha_col="iso_a3"):
@@ -965,11 +968,7 @@ class RobustHelper:
         self,
         max_tests=100,
         exclude=[],
-        include_fail_tests=True,
-        ignore_lambda=None,
-        smart_exclude=True,
     ):
-        import functools
         import itertools
 
         gdf = self.gdf
@@ -1012,143 +1011,143 @@ class RobustHelper:
             return gdf[c].values[1:]
 
         test_cases = {
-            "column": [
-                {
-                    "__column_type": c + f.__name__,
-                    "column": f(c),
-                    "__expect_error": f is bad,
-                }
-                for c, f in itertools.product(
-                    [self.col, self.catcol, self.alphacol], [str, gdf.get, bad]
-                )
-            ],
-            "cmap": [
-                {
-                    "__cmap_type": cm.__class__.__name__
-                    if not isinstance(cm, str)
-                    else cm,
-                    "cmap": cm,
-                    "__expect_error": cm == "bad",
-                }
-                for cm in cm_l
-            ]
-            + [
-                {
-                    "__cmap_type": (
-                        f"{'short' if len(v)<len(self.gdf) else 'full'} "
-                        f"{t.__name__} {cat}"
-                    ).strip(),
-                    "cmap": create_type(t, v),
-                    "__expect_error": cat == "bad",
-                }
-                for t in [list, tuple, pd.Series, pd.DataFrame, np.array]
-                for v, cat in zip(
-                    [cl, cs, clrgb, csrgb, clb, csb], np.repeat(["", "rgb", "bad"], 2)
-                )
-            ],
-            "color": [None, "red", "bad"],
-            "categorical": [True, False, None],
-            "legend": [True, False, None],
-            "scheme": list(mapclassify.classifiers.CLASSIFIERS)[11:12] + [None, "bad"],
-            "k": [None, 5, "bad"],
-            "vmin": [None, 3, "bad"],
-            "vmax": [None, 4, "bad"],
+            "batch1": {
+                "filter": lambda d: d.index == d.index,
+                "columns": {
+                    "column": [
+                        {
+                            "__column_type": c + f.__name__,
+                            "column": f(c),
+                            "__expect_error": f is bad,
+                        }
+                        for c, f in itertools.product(
+                            [self.col, self.catcol, self.alphacol], [str, gdf.get, bad]
+                        )
+                    ],
+                    "cmap": [
+                        {
+                            "__cmap_type": cm.__class__.__name__
+                            if not isinstance(cm, str)
+                            else cm,
+                            "cmap": cm,
+                            "__expect_error": cm == "bad",
+                        }
+                        for cm in cm_l
+                    ]
+                    + [
+                        {
+                            "__cmap_type": (
+                                f"{'short' if len(v)<len(self.gdf) else 'full'} "
+                                f"{t.__name__} {cat}"
+                            ).strip(),
+                            "cmap": create_type(t, v),
+                            "__expect_error": cat == "bad",
+                        }
+                        for t in [list, tuple, pd.Series, pd.DataFrame, np.array]
+                        for v, cat in zip(
+                            [cl, cs, clrgb, csrgb, clb, csb],
+                            np.repeat(["", "rgb", "bad"], 2),
+                        )
+                    ],
+                    "color": [None, "red", "bad"],
+                    "legend": [True, False, None],
+                    "categorical": [True, False, None],
+                },
+            },
+            "batch2": {
+                # only used when categorical is False, this also
+                # means column is not categorical
+                "filter": lambda d: ~d["categorical"].fillna(True)
+                & d["__column_type"].str.startswith("__col"),
+                "columns": {
+                    "scheme": list(mapclassify.classifiers.CLASSIFIERS)[11:12]
+                    + [None, "bad"],
+                    "k": [5, "bad"],
+                    "vmin": [None, 3, "bad"],
+                    "vmax": [None, 4, "bad"],
+                },
+            },
         }
 
-        df = (
-            functools.reduce(
-                lambda left, right: pd.merge(left, right, on="xref"),
-                [
-                    pd.DataFrame(v).assign(xref=1)
-                    if isinstance(v, dict) or isinstance(v[0], dict)
-                    else pd.DataFrame({c: v}).assign(
+        def expect_cols(df):
+            return df.loc[:, [c for c in df.columns if c.startswith("__expect_error")]]
+
+        df = pd.DataFrame(columns=["xref", "__error", "__warning"])
+        test_n = 0
+        for batch in test_cases.keys():
+            for c, v in {
+                c: v
+                for c, v in test_cases[batch]["columns"].items()
+                if c not in exclude
+            }.items():
+                if isinstance(v, dict) or isinstance(v[0], dict):
+                    df_ = pd.DataFrame(v).assign(xref=1)
+                else:
+                    df_ = pd.DataFrame({c: v}).assign(
                         **{"xref": 1, f"__expect_error_{c}": lambda d: d[c].eq("bad")}
                     )
-                    for c, v in test_cases.items()
-                    if c not in exclude
-                ],
-            )
-            .drop(columns=["xref"])
-            .assign(__error=np.nan, __warning=np.nan)
-        )
+                # cartesian product of existings tests with new tests. Only if there is
+                # not already a expected fail to reduce perm explosion
+                mask = expect_cols(df).any(axis=1)
+                mask = mask | ~test_cases[batch]["filter"](df)
+                df = pd.concat(
+                    [
+                        df.loc[
+                            ~mask,
+                        ].merge(df_, on="xref", how="right"),
+                        df.loc[
+                            mask,
+                        ],
+                    ]
+                ).reset_index(drop=True)
+                # concat is bashing dtypes
+                for col in expect_cols(df).columns:
+                    df[col] = df[col].convert_dtypes()
+                test_n += 1
+
+        df = df.drop(columns=["xref"])
+        if "k" in df.columns:
+            df["k"] = df["k"].fillna(5)
+        # nan and None do not work in sample way for explore() args
+        # make nan None
+        df.loc[:, [c for c in df.columns if not c.startswith("__")]] = df.loc[
+            :, [c for c in df.columns if not c.startswith("__")]
+        ].replace([np.nan], [None])
 
         if "cmap" in df.columns:
-            df["__cmap_type_agg"] = np.where(
-                df["cmap"].apply(pd.api.types.is_list_like),
-                "list_like",
-                df["__cmap_type"],
+            df["__cmap_type_agg"] = np.select(
+                [
+                    df["cmap"].apply(
+                        lambda c: pd.api.types.is_list_like(c) and len(c) == len(gdf)
+                    ),
+                    df["cmap"].apply(pd.api.types.is_list_like),
+                ],
+                ["full list_like", "short list_like"],
+                df["__cmap_type"].fillna("-"),
             )
 
-        # identifiable invalid combis
-        df["__expect_error_c1"] = df["__cmap_type"].eq("function") & (
-            df["__column_type"].str[2:5].isin(["alp", "cat"]) | df["categorical"]
-        )
-        if "k" in df.columns:
-            df["__expect_error_knone"] = df["k"].isna()
-
-        # only one bad value per row
-        df = df.loc[
-            df.loc[:, [c for c in df.columns if c.startswith("__expect")]]
-            .sum(axis=1)
-            .le(1)
-        ]
         # summarise columns to one
         df["__expect_error"] = df.loc[
             :, [c for c in df.columns if c.startswith("__expect_error")]
         ].any(axis=1)
         df = df.drop(columns=[c for c in df.columns if c.startswith("__expect_error_")])
 
-        # only one None (nan) per row
-        df = df.loc[
-            df.loc[:, [c for c in df.columns if not c.startswith("__")]]
-            .isna()
-            .sum(axis=1)
-            .le(1)
-        ]
-
-        # useless combinations
-        if smart_exclude:
-            # categorical and continuous data makes no sense...
-            df = df.loc[
-                ~(
-                    df["__column_type"].str.startswith("__col")
-                    & df["categorical"].isin([True, "bad"])
-                )
-            ]
-
-        if not include_fail_tests:
-            df = df.loc[~df["__expect_error"]]
-        if ignore_lambda is not None:
-            df = df.loc[ignore_lambda]
         if max_tests is not None:
-            if isinstance(max_tests, int):
-                df = df.sample(max_tests, random_state=42)
-            else:
-                df = df.sample(frac=max_tests, random_state=42)
-
-        rs = np.random.RandomState(42)
-
-        # in a group keep only first test if it's expected to fail, else a proportion
-        def filtergroup(d):
-            names = [d.name] if isinstance(d.name, str) else d.name
-            if any([str(n)[-3:] == "bad" for n in names]):
-                r = pd.Series(index=d.index, data=np.full(len(d), False))
-                r.iat[0] = True
-            else:
-                r = pd.Series(
-                    index=d.index, data=rs.choice([True, False], p=(0.8, 0.2))
+            # smart downsample, get a group number which
+            # can be used to define random state of each group
+            df["__group"] = df.groupby(
+                ["__cmap_type_agg", "__expect_error"], group_keys=True
+            ).ngroup()
+            n = int(max_tests / df["__group"].max())
+            df = (
+                df.groupby("__group", group_keys=True)
+                .apply(
+                    lambda d: d
+                    if len(d) <= n
+                    else d.sample(n=n, random_state=30 + d.name)
                 )
-            return r
-
-        col = "__column_type"
-        cols = ["__column_type", "__cmap_type"] + [
-            c
-            for c in df.columns
-            if not c.startswith("__") and c not in ["column", "cmap"]
-        ]
-
-        for grp in [cols[0 : n + 1] for n in range(len(cols))]:
-            df = df.loc[df.groupby(grp)[col].transform(filtergroup).fillna(True)]
+                .reset_index(drop=True)
+            )
 
         return df.reset_index(drop=True)
 
@@ -1165,59 +1164,47 @@ class RobustHelper:
                     warnings.simplefilter("ignore", category=PendingDeprecationWarning)
                     try:
                         m = gdf.explore(**{**all_opts, **self.plot_opts})
-                    except UserWarning as e:
+                    except (UserWarning, RuntimeWarning) as e:
                         df.loc[i, "__warning"] = str(e)
                         warnings.simplefilter("ignore")
                         m = gdf.explore(**{**all_opts, **self.plot_opts})
                     maps[i] = {"m": m, "opts": all_opts}
 
-            except (ValueError, TypeError, IndexError) as e:
+            except (ValueError, TypeError, IndexError, AttributeError, KeyError) as e:
                 maps[i] = {"opts": all_opts}
                 df.loc[i, "__error"] = str(e)
                 df.loc[i, "__error_class"] = e.__class__.__name__
 
         return df, maps
 
-    def expected_result(self, df_log):
+    def expected_result(self, df):
         # total number of attempts, errors and warnings as expected
         assert pd.Series(
-            {c: (~df_log[c].isna()).sum() for c in ["name", "error", "warning"]}
-        ).equals(pd.Series({"name": 296, "error": 92, "warning": 52}))
+            {
+                c: (~df[c].isna()).sum()
+                for c in ["__column_type", "__error", "__warning"]
+            }
+        ).equals(pd.Series({"__column_type": 88, "__error": 13, "__warning": 37}))
 
         expected = {
-            "warning": {
-                (
-                    "callable",
-                    (
-                        "`cmap` as callable or list is not supported with "
-                        "`scheme` and a legend"
-                    ),
-                ): 1,
-                ("callable", "`cmap` invalid for legend"): 1,
-                (
-                    "list_like",
-                    (
-                        "`cmap` as callable or list is not supported with "
-                        "`scheme` and a legend"
-                    ),
-                ): 30,
-                ("list_like", "`cmap` invalid for legend"): 20,
+            "__error": {
+                "Invalid RGBA argument: 'bluee'": 1,
+                "Invalid scheme. Scheme must be": 2,
+                "The GeoDataFrame and given col": 3,
+                "`cmap` is invalid. For categor": 2,
+                "`cmap` is not known matplotlib": 5,
             },
-            "error": {
-                ("callable", "`cmap` is invalid. For categorical plots"): 4,
-                ("invalid", "`cmap` is not known matplotlib colormap"): 8,
-                ("list_like", "Invalid RGBA argument: 'bluee'"): 60,
-                ("list_like", "Unknown color None."): 20,
+            "__warning": {
+                "`cmap` as callable or list is ": 2,
+                "`cmap` invalid for legend": 2,
+                "`k` is invalid. Defaulted": 3,
+                "`vmax` invalid. Defaulted": 20,
+                "`vmin` invalid. Defaulted": 10,
             },
         }
 
-        for test, test_result in expected.items():
-            assert (
-                df_log[~df_log[test].isna()]
-                .groupby(["cmap_type_agg", test])
-                .size()
-                .equals(pd.Series(test_result))
-            )
+        for col, result in expected.items():
+            assert df.groupby(df[col].str[0:30]).size().equals(pd.Series(result))
 
     def html(self, df=None, maps=None):
         import json
@@ -1238,15 +1225,11 @@ class RobustHelper:
                 + [c for c in ["categorical", "scheme", "legend"] if c in df.columns]
             )
             .loc[lambda d: d["__error"].isna()]
-            .groupby("__cmap_type")
+            .groupby("__cmap_type_agg")
         ):
             rawhtml += f"<h2>cmap {i}</h2>"
-            for i2, d2 in d.groupby(
-                "categorical"
-                if "categorical" in df.columns
-                else np.full(len(d), "no group")
-            ):
-                rawhtml += f"<h3>categorical: {i2}</h3>"
+            for i2, d2 in d.groupby(df["__column_type"].str[:-3]):
+                rawhtml += f"<h3>column: {i2}</h3>"
                 for i, r in d2.iterrows():
                     m = maps[i]["m"]
                     param_str = json.dumps(

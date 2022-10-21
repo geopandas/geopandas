@@ -303,6 +303,16 @@ GON (((180.00000 -16.06713, 180.00000...
         cmap = cmap.values[:, 0]
     elif isinstance(cmap, str) and cmap not in plt.colormaps():
         raise ValueError("`cmap` is not known matplotlib colormap")
+    # default invalid arguments
+    if not pd.api.types.is_integer(k):
+        k = 5
+        warnings.warn("`k` is invalid. Defaulted")
+    if vmin is not None and not pd.api.types.is_number(vmin):
+        warnings.warn("`vmin` invalid. Defaulted")
+        vmin = None
+    if vmax is not None and not pd.api.types.is_number(vmax):
+        warnings.warn("`vmax` invalid. Defaulted")
+        vmax = None
 
     if gdf.crs is None:
         kwargs["crs"] = "Simple"
@@ -381,7 +391,7 @@ GON (((180.00000 -16.06713, 180.00000...
                 column_name = "__plottable_column"
                 gdf[column_name] = column
                 column = column_name
-        elif pd.api.types.is_categorical_dtype(gdf[column]):
+        if pd.api.types.is_categorical_dtype(gdf[column]):
             if categories is not None:
                 raise ValueError(
                     "Cannot specify 'categories' when column has categorical dtype"
@@ -433,7 +443,7 @@ GON (((180.00000 -16.06713, 180.00000...
                 cmap_ = [
                     colors.to_hex(c)
                     for c, exclude in zip(cmap_, nan_idx)
-                    if not exclude
+                    if not exclude or (len(cmap_) != len(gdf))
                 ]
 
                 color = np.take(cmap_, cat.codes)
@@ -488,8 +498,11 @@ GON (((180.00000 -16.06713, 180.00000...
                 legend = False
             if callable(cmap) or len(cmap) != len(gdf):
                 if pd.api.types.is_list_like(cmap):
+                    vmin = gdf[column].min() if vmin is None else vmin
+                    vmax = gdf[column].max() if vmax is None else vmax
+
                     cmap_ = cmap.tolist() if hasattr(cmap, "tolist") else cmap
-                    cmap_ = bc.colormap.StepColormap(cmap_, vmin=13, vmax=20)
+                    cmap_ = bc.colormap.StepColormap(cmap_, vmin=vmin, vmax=vmax)
                 else:
                     cmap_ = cmap
 
