@@ -18,6 +18,7 @@ for more details.
 New features and improvements:
 
 - Added ``normalize()`` method from shapely to GeoSeries/GeoDataframe (#2537)
+- Added ``make_valid()`` method from shapely to GeoSeries/GeoDataframe (#2539)
 - Add ``where`` filter to ``read_file`` (#2552)
 
 Deprecations and compatibility notes:
