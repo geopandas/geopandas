@@ -6,9 +6,14 @@ Development version
 
 New features and improvements:
 
+- Added ``normalize()`` method from shapely to GeoSeries/GeoDataframe (#2537)
+- Add where filter to ``read_file`` (#2552)
+
 Deprecations and compatibility notes:
 
 Bug fixes:
+- Accessing `gdf.geometry` where the active geometry column is missing, and a column named `"geometry"` is present 
+  will now raise an `AttributeError`, rather than returning `gdf["geometry"]` (#2575) 
 
 Notes on (optional) dependencies:
 

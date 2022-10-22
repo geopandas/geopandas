@@ -5,8 +5,6 @@ dependencies:
   - python=3.10
   - cython
   # required
-  - shapely
-  - fiona
   - pyproj
   - geos
   - packaging
@@ -28,9 +26,10 @@ dependencies:
     # dev versions of packages
     - --pre --extra-index https://pypi.anaconda.org/scipy-wheels-nightly/simple
     - numpy
+    - fiona
     - git+https://github.com/pandas-dev/pandas.git@main
     - git+https://github.com/matplotlib/matplotlib.git@main
-    # - git+https://github.com/Toblerity/Shapely.git@main
+    - git+https://github.com/shapely/shapely.git@main
     - git+https://github.com/pygeos/pygeos.git@master
     - git+https://github.com/python-visualization/folium.git@main
     - git+https://github.com/geopandas/xyzservices.git@main
