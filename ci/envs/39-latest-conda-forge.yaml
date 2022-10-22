@@ -37,4 +37,5 @@ dependencies:
   - pytest-doctestplus
   - pip
   - pip:
-    - --pre shapely==2.0b1
+      - --pre
+      - shapely==2.0b1
