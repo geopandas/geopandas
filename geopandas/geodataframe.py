@@ -1541,7 +1541,6 @@ individually so that features may have different properties
 
     def __finalize__(self, other, method=None, **kwargs):
         """propagate metadata from other to self"""
-
         self = super().__finalize__(other, method=method, **kwargs)
 
         # merge operation: using metadata of the left object
@@ -1551,9 +1550,6 @@ individually so that features may have different properties
         # concat operation: using metadata of the first object
         elif method == "concat":
             for name in self._metadata:
-                # do not overwrite CRS if already set for the case axis=0
-                if name == "_crs" and self._crs is not None:
-                    continue
                 object.__setattr__(self, name, getattr(other.objs[0], name, None))
 
             if (self.columns == self._geometry_column_name).sum() > 1:

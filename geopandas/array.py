@@ -1409,5 +1409,5 @@ def _get_common_crs(arr_seq):
 
     raise ValueError(
         f"Cannot determine common CRS for concatenation inputs, got {names}. "
-        "Use `to_crs()` to transform geometries to the same CRS."
+        "Use `to_crs()` to transform geometries to the same CRS before merging."
     )
