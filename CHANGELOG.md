@@ -12,6 +12,7 @@ New features and improvements:
   related to the default name `"geometry"` being provided in the constructor (#2577)
 
 Deprecations and compatibility notes:
+- Deprecated internal GeoDataFrame attribute `_crs` has been removed (#2578).
 
 Bug fixes:
 - Accessing `gdf.geometry` where the active geometry column is missing, and a column named `"geometry"` is present 
