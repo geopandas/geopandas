@@ -273,7 +273,7 @@ GON (((180.00000 -16.06713, 180.00000...
             if MPL_36:
                 return cm.get_cmap(_cmap).resampled(n_resample)(idx)
             else:
-                return cm.get_cmap(_cmap, n_resample)(idx)
+                return cm.get_cmap(_cmap, n_resample)(idx)  # pragma: no cover
 
     try:
         import branca as bc
@@ -284,11 +284,11 @@ GON (((180.00000 -16.06713, 180.00000...
         from mapclassify import classify
 
         # isolate MPL version - GH#2596
-        MPL_36 = Version(matplotlib.__version__) >= Version("3.6")
+        MPL_36 = Version(matplotlib.__version__) >= Version("3.6.1")
         if MPL_36:
             from matplotlib import colormaps as cm
         else:
-            import matplotlib.cm as cm
+            import matplotlib.cm as cm  # pragma: no cover
 
         import warnings
     except (ImportError, ModuleNotFoundError):
@@ -452,7 +452,7 @@ GON (((180.00000 -16.06713, 180.00000...
                 cmap_ = (
                     cmap
                     if isinstance(cmap, colors.Colormap)
-                    else _binning_cmap(cmap, N)
+                    else _binning_cmap(cmap, N, MPL_36)
                 )
                 color = np.apply_along_axis(colors.to_hex, 1, cmap_(cat.codes))
                 legend_colors = np.apply_along_axis(colors.to_hex, 1, cmap_(range(N)))
@@ -499,7 +499,7 @@ GON (((180.00000 -16.06713, 180.00000...
                     np.asarray(gdf[column][~nan_idx]), scheme, **classification_kwds
                 )
                 color = np.apply_along_axis(
-                    colors.to_hex, 1, _binning_cmap(cmap, k)(binning.yb)
+                    colors.to_hex, 1, _binning_cmap(cmap, k, MPL_36)(binning.yb)
                 )
 
             else:
@@ -510,7 +510,7 @@ GON (((180.00000 -16.06713, 180.00000...
                 )
 
                 color = np.apply_along_axis(
-                    colors.to_hex, 1, _binning_cmap(cmap, 256)(binning.yb)
+                    colors.to_hex, 1, _binning_cmap(cmap, 256, MPL_36)(binning.yb)
                 )
         elif callable(cmap) or pd.api.types.is_list_like(cmap):
             if scheme is not None and legend:
@@ -706,7 +706,9 @@ GON (((180.00000 -16.06713, 180.00000...
                 colormap_kwds["max_labels"] = legend_kwds.pop("max_labels")
             if scheme:
                 cb_colors = np.apply_along_axis(
-                    colors.to_hex, 1, _binning_cmap(cmap, binning.k)(range(binning.k))
+                    colors.to_hex,
+                    1,
+                    _binning_cmap(cmap, binning.k, MPL_36)(range(binning.k)),
                 )
                 if cbar:
                     if legend_kwds.pop("scale", True):
@@ -743,7 +745,7 @@ GON (((180.00000 -16.06713, 180.00000...
                     if cmap is None or (
                         isinstance(cmap, str) and cmap in cmap in plt.colormaps()
                     ):
-                        mp_cmap = cm.get_cmap(cmap)
+                        mp_cmap = _colormap_helper(cmap)
                     elif isinstance(cmap, colors.Colormap):
                         mp_cmap = cmap
                     else:
@@ -787,8 +789,11 @@ GON (((180.00000 -16.06713, 180.00000...
 # utility to handle cmap as string or matplotlib Colormap
 # or branca Colormap then
 # resamples to required number of colors
-def _binning_cmap(cmap, k):
-    import matplotlib.cm as cm
+def _binning_cmap(cmap, k, MPL_36=False):
+    if MPL_36:
+        from matplotlib import colormaps as cm
+    else:
+        import matplotlib.cm as cm
     import matplotlib.colors as colors
     import branca as bc
     import numpy as np
@@ -806,7 +811,7 @@ def _binning_cmap(cmap, k):
             )
         )
     if cmap is None or isinstance(cmap, str):
-        return cm.get_cmap(cmap, k)
+        return cm.get_cmap(cmap).resampled(k) if MPL_36 else cm.get_cmap(cmap, k)
     elif isinstance(cmap, colors.Colormap):
         if k != cmap.N:
             return colors.LinearSegmentedColormap.from_list(

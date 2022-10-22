@@ -904,7 +904,9 @@ class TestExplore:
 
     def test_robust(self):
         # this is really only for codecov
-        cm = gpd.explore._binning_cmap("Purples", 5)
+        cm = gpd.explore._binning_cmap(
+            "Purples", 5, Version(matplotlib.__version__) >= Version("3.6.1")
+        )
         assert [colors.to_hex(c) for c in cm(range(cm.N))] == [
             "#fcfbfd",
             "#dadaeb",
@@ -1161,10 +1163,13 @@ class RobustHelper:
             try:
                 with warnings.catch_warnings():
                     warnings.simplefilter("error")
-                    warnings.simplefilter("ignore", category=PendingDeprecationWarning)
                     try:
                         m = gdf.explore(**{**all_opts, **self.plot_opts})
-                    except (UserWarning, RuntimeWarning) as e:
+                    except (
+                        UserWarning,
+                        RuntimeWarning,
+                        PendingDeprecationWarning,
+                    ) as e:
                         df.loc[i, "__warning"] = str(e)
                         warnings.simplefilter("ignore")
                         m = gdf.explore(**{**all_opts, **self.plot_opts})
