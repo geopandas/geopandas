@@ -1,4 +1,5 @@
 import string
+import warnings
 
 import numpy as np
 from numpy.testing import assert_array_equal
@@ -913,7 +914,7 @@ class TestGeomMethods:
         with pytest.warns(UserWarning, match="Geometry is in a geographic CRS"):
             self.g4.buffer(1)
 
-        with pytest.warns(None) as record:
+        with warnings.catch_warnings(record=True) as record:
             # do not warn for 0
             self.g4.buffer(0)
 

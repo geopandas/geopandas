@@ -520,9 +520,9 @@ def is_ring(data):
         for geom in data:
             if geom is None:
                 results.append(False)
-            elif geom.type == "Polygon":
+            elif geom.geom_type == "Polygon":
                 results.append(geom.exterior.is_ring)
-            elif geom.type in ["LineString", "LinearRing"]:
+            elif geom.geom_type in ["LineString", "LinearRing"]:
                 results.append(geom.is_ring)
             else:
                 results.append(False)
@@ -797,12 +797,13 @@ def clip_by_rect(data, xmin, ymin, xmax, ymax):
         return pygeos.clip_by_rect(data, xmin, ymin, xmax, ymax)
     else:
         clipped_geometries = np.empty(len(data), dtype=object)
-        clipped_geometries[:] = [
-            shapely.ops.clip_by_rect(s, xmin, ymin, xmax, ymax)
-            if s is not None
-            else None
-            for s in data
-        ]
+        with compat.ignore_shapely2_warnings():
+            clipped_geometries[:] = [
+                shapely.ops.clip_by_rect(s, xmin, ymin, xmax, ymax)
+                if s is not None
+                else None
+                for s in data
+            ]
         return clipped_geometries
 
 
@@ -1018,7 +1019,13 @@ def relate(data, other):
 
 def unary_union(data):
     if compat.USE_SHAPELY_20:
-        return shapely.union_all(data)
+        data = shapely.union_all(data)
+        if data is None:  # shapely 2.0a1
+            return None
+        if data.is_empty:  # shapely 2.0
+            return None
+        else:
+            return data
     elif compat.USE_PYGEOS:
         return _pygeos_to_shapely(pygeos.union_all(data))
     else:

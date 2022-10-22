@@ -424,7 +424,7 @@ GeometryCollection
     @property
     def boundary(self):
         """Returns a ``GeoSeries`` of lower dimensional objects representing
-        each geometries's set-theoretic `boundary`.
+        each geometry's set-theoretic `boundary`.
 
         Examples
         --------

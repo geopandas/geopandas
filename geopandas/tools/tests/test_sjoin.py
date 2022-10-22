@@ -404,7 +404,7 @@ class TestSpatialJoinNYBB:
         df = sjoin(self.pointdf, self.polydf, how="left")
         assert df.shape == (21, 8)
         for i, row in df.iterrows():
-            assert row.geometry.type == "Point"
+            assert row.geometry.geom_type == "Point"
         assert "pointattr1" in df.columns
         assert "BoroCode" in df.columns
 
@@ -415,9 +415,9 @@ class TestSpatialJoinNYBB:
         assert df.shape == (12, 8)
         assert df.shape == df2.shape
         for i, row in df.iterrows():
-            assert row.geometry.type == "MultiPolygon"
+            assert row.geometry.geom_type == "MultiPolygon"
         for i, row in df2.iterrows():
-            assert row.geometry.type == "MultiPolygon"
+            assert row.geometry.geom_type == "MultiPolygon"
 
     def test_sjoin_inner(self):
         df = sjoin(self.pointdf, self.polydf, how="inner")
@@ -531,9 +531,9 @@ class TestSpatialJoinNYBB:
     def test_sjoin_empty_geometries(self):
         # https://github.com/geopandas/geopandas/issues/944
         empty = GeoDataFrame(geometry=[GeometryCollection()] * 3)
-        df = sjoin(self.pointdf.append(empty), self.polydf, how="left")
+        df = sjoin(pd.concat([self.pointdf, empty]), self.polydf, how="left")
         assert df.shape == (24, 8)
-        df2 = sjoin(self.pointdf, self.polydf.append(empty), how="left")
+        df2 = sjoin(self.pointdf, pd.concat([self.polydf, empty]), how="left")
         assert df2.shape == (21, 8)
 
     @pytest.mark.parametrize("predicate", ["intersects", "within", "contains"])

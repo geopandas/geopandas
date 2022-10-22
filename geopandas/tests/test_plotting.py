@@ -620,7 +620,7 @@ class TestPolygonPlotting:
 
         t3 = Polygon([(2, 0), (3, 0), (3, 1)])
         df_nan = GeoDataFrame({"geometry": t3, "values": [np.nan]})
-        self.df3 = self.df.append(df_nan)
+        self.df3 = pd.concat([self.df, df_nan])
 
     def test_single_color(self):
 
@@ -888,7 +888,7 @@ class TestColorParamArray:
             color += ["red", "green", "blue"]
 
         self.gdf = GeoDataFrame({"geometry": geom, "color_rgba": color})
-        self.mgdf = self.gdf.dissolve(self.gdf.type)
+        self.mgdf = self.gdf.dissolve(self.gdf.geom_type)
 
     def test_color_single(self):
         ax = self.gdf.plot(color=self.gdf["color_rgba"])
