@@ -28,7 +28,8 @@ Deprecations and compatibility notes:
 Bug fixes:
 - Accessing `gdf.geometry` where the active geometry column is missing, and a column named `"geometry"` is present 
   will now raise an `AttributeError`, rather than returning `gdf["geometry"]` (#2575) 
-
+- Combining GeoSeries/GeoDataFrames with ``pandas.concat`` will no longer silently
+  override CRS information if not all inputs have the same CRS (#2056).
 
 Version 0.11.1 (July 24, 2022)
 ------------------------------
