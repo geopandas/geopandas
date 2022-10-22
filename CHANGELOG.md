@@ -10,6 +10,7 @@ New features and improvements:
 - Add where filter to ``read_file`` (#2552)
 
 Deprecations and compatibility notes:
+- Accessing the `crs` of a `GeoDataFrame` without active geometry column was deprecated and this now raises an AttributeError (#2578).
 
 Bug fixes:
 - Accessing `gdf.geometry` where the active geometry column is missing, and a column named `"geometry"` is present 
