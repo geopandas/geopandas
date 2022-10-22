@@ -4,10 +4,21 @@ Changelog
 Development version
 -------------------
 
+Version 0.12 (October xx, 2022)
+-------------------------------
+
+The highlight of this release is the support for Shapely 2.0. This makes it possible to
+test Shapely 2.0 (currently 2.0b1) alongside GeoPandas
+
+Note that if you also have PyGEOS installed, you need to set an environment variable
+(`USE_PYGEOS=0`) before importing geopandas to actually test Shapely 2.0 features instead of PyGEOS. See
+https://geopandas.org/en/latest/getting_started/install.html#using-the-optional-pygeos-dependency
+for more details.
+
 New features and improvements:
 
 - Added ``normalize()`` method from shapely to GeoSeries/GeoDataframe (#2537)
-- Add where filter to ``read_file`` (#2552)
+- Add ``where`` filter to ``read_file`` (#2552)
 
 Deprecations and compatibility notes:
 - Accessing the `crs` of a `GeoDataFrame` without active geometry column was deprecated and this now raises an AttributeError (#2578).
@@ -16,7 +27,6 @@ Bug fixes:
 - Accessing `gdf.geometry` where the active geometry column is missing, and a column named `"geometry"` is present 
   will now raise an `AttributeError`, rather than returning `gdf["geometry"]` (#2575) 
 
-Notes on (optional) dependencies:
 
 Version 0.11.1 (July 24, 2022)
 ------------------------------
