@@ -23,6 +23,8 @@ New features and improvements:
 Deprecations and compatibility notes:
 - Accessing the `crs` of a `GeoDataFrame` without active geometry column was deprecated and this now raises an AttributeError (#2578).
 
+- resolve ``matplotlib.cm`` warning in ``.explore()`` (#2596)
+
 Bug fixes:
 - Accessing `gdf.geometry` where the active geometry column is missing, and a column named `"geometry"` is present 
   will now raise an `AttributeError`, rather than returning `gdf["geometry"]` (#2575) 
