@@ -13,6 +13,8 @@ Deprecations and compatibility notes:
 - Deprecated internal GeoDataFrame attribute `_crs` has been removed (#2578).
 
 Bug fixes:
+- Accessing `gdf.geometry` where the active geometry column is missing, and a column named `"geometry"` is present 
+  will now raise an `AttributeError`, rather than returning `gdf["geometry"]` (#2575) 
 
 Notes on (optional) dependencies:
 
