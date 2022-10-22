@@ -27,6 +27,7 @@ Deprecations and compatibility notes:
 - resolve ``matplotlib.cm`` warning in ``.explore()`` (#2596)
 
 Bug fixes:
+- Fix cryptic error message in ``geopandas.clip()`` when clipping with an empty geometry (#2589)
 - Accessing `gdf.geometry` where the active geometry column is missing, and a column named `"geometry"` is present 
   will now raise an `AttributeError`, rather than returning `gdf["geometry"]` (#2575) 
 - Combining GeoSeries/GeoDataFrames with ``pandas.concat`` will no longer silently
