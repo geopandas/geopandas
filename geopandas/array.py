@@ -514,6 +514,9 @@ class GeometryArray(ExtensionArray):
     def normalize(self):
         return GeometryArray(vectorized.normalize(self.data), crs=self.crs)
 
+    def make_valid(self):
+        return GeometryArray(vectorized.make_valid(self.data), crs=self.crs)
+
     #
     # Binary predicates
     #
