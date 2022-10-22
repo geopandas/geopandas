@@ -10,7 +10,7 @@ New features and improvements:
 - Add where filter to ``read_file`` (#2552)
 
 Deprecations and compatibility notes:
-- Deprecated internal GeoDataFrame attribute `_crs` has been removed (#2578).
+- Accessing the `crs` of a `GeoDataFrame` without active geometry column was deprecated and this now raises an AttributeError (#2578).
 
 Bug fixes:
 
