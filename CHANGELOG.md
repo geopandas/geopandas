@@ -4,6 +4,9 @@ Changelog
 Development version
 -------------------
 
+Version 0.12 (October xx, 2022)
+-------------------------------
+
 The highlight of this release is the support for Shapely 2.0. This makes it possible to
 test Shapely 2.0 (currently 2.0b1) alongside GeoPandas
 
