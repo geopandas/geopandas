@@ -727,15 +727,17 @@ GeometryCollection
 
     def make_valid(self):
         """
-        Returns a valid representation of the geometry, if it is invalid.
-        If it is valid, the input geometry will be returned.
-        In many cases, in order to create a valid geometry,
-        the input geometry must be split into multiple parts or multiple geometries.
-        if the geometry must be split into multiple parts,
-        and the parts are of the same geometry type,
-        then a multipart geometry (e.g. a MultiPolygon) will be returned.
-        if the geometry must be split into multiple parts of different types,
-        then a GeometryCollection will be returned.
+        Repairs invalid geometries.
+
+        Returns a ``GeoSeries`` with valid geometries.
+        If the input geometry is already valid, then it will be preserved.
+        In many cases, in order to create a valid geometry, the input
+        geometry must be split into multiple parts or multiple geometries.
+        If the geometry must be split into multiple parts of the same type
+        to be made valid, then a multi-part geometry will be returned
+        (e.g. a MultiPolygon).
+        If the geometry must be split into multiple parts of different types
+        to be made valid, then a GeometryCollection will be returned.
 
         Examples
         --------
@@ -748,9 +750,7 @@ GeometryCollection
         ...     ],
         ...     crs='EPSG:3857',
         ... )
-
         >>> s
-
         0    POLYGON ((0.000 0.000, 0.000 2.000, 1.000 1.00...
         1    POLYGON ((0.000 2.000, 0.000 1.000, 2.000 0.00...
         2    LINESTRING (0.000 0.000, 1.000 1.000, 1.000 0....

@@ -699,7 +699,7 @@ class TestGeomMethods:
         polygon1 = Polygon([(0, 0), (0, 2), (1, 1), (2, 2), (2, 0), (1, 1), (0, 0)])
         polygon2 = Polygon([(0, 2), (0, 1), (2, 0), (0, 0), (0, 2)])
         linestring = LineString([(0, 0), (1, 1), (1, 0)])
-        testGeoseries = GeoSeries([polygon1, polygon2, linestring])
+        series = GeoSeries([polygon1, polygon2, linestring])
         out_polygon1 = MultiPolygon(
             [
                 Polygon([(1, 1), (0, 0), (0, 2), (1, 1)]),
@@ -709,10 +709,10 @@ class TestGeomMethods:
         out_polygon2 = GeometryCollection(
             [Polygon([(2, 0), (0, 0), (0, 1), (2, 0)]), LineString([(0, 2), (0, 1)])]
         )
-        output = GeoSeries([out_polygon1, out_polygon2, linestring])
-        assert not testGeoseries.is_valid.all()
-        result = testGeoseries.make_valid()
-        assert_geoseries_equal(result, output)
+        expected = GeoSeries([out_polygon1, out_polygon2, linestring])
+        assert not series.is_valid.all()
+        result = series.make_valid()
+        assert_geoseries_equal(result, expected)
         assert result.is_valid.all()
 
     @pytest.mark.skipif(
