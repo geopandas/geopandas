@@ -5,6 +5,8 @@ from shapely.geometry import LineString
 import numpy as np
 import pandas as pd
 
+from packaging.version import Version
+
 _MAP_KWARGS = [
     "location",
     "prefer_canvas",
@@ -262,13 +264,32 @@ GON (((180.00000 -16.06713, 180.00000...
 
     >>> df.explore("pop_est", cmap="Blues")  # doctest: +SKIP
     """
+
+    def _colormap_helper(_cmap, n_resample=None, idx=None):
+        """Helper for MPL deprecation - GH#2596"""
+        if not n_resample:
+            return cm.get_cmap(_cmap)
+        else:
+            if MPL_36:
+                return cm.get_cmap(_cmap).resampled(n_resample)(idx)
+            else:
+                return cm.get_cmap(_cmap, n_resample)(idx)
+
     try:
         import branca as bc
         import folium
-        import matplotlib.cm as cm
+        import matplotlib
         import matplotlib.colors as colors
         import matplotlib.pyplot as plt
         from mapclassify import classify
+
+        # isolate MPL version - GH#2596
+        MPL_36 = Version(matplotlib.__version__) >= Version("3.6")
+        if MPL_36:
+            from matplotlib import colormaps as cm
+        else:
+            import matplotlib.cm as cm
+
         import warnings
     except (ImportError, ModuleNotFoundError):
         raise ImportError(
@@ -416,10 +437,12 @@ GON (((180.00000 -16.06713, 180.00000...
             if isinstance(cmap, str) and cmap in plt.colormaps():
 
                 color = np.apply_along_axis(
-                    colors.to_hex, 1, cm.get_cmap(cmap, N)(cat.codes)
+                    colors.to_hex,
+                    1,
+                    _colormap_helper(cmap, n_resample=N, idx=cat.codes),
                 )
                 legend_colors = np.apply_along_axis(
-                    colors.to_hex, 1, cm.get_cmap(cmap, N)(range(N))
+                    colors.to_hex, 1, _colormap_helper(cmap, n_resample=N, idx=range(N))
                 )
 
             # cmap is library colormap

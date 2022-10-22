@@ -361,6 +361,17 @@ class TestDataFrame:
         with pytest.raises(AttributeError, match=msg_no_other_geo_cols):
             GeoDataFrame().geometry
 
+    def test_get_geometry_geometry_inactive(self):
+        # https://github.com/geopandas/geopandas/issues/2574
+        df = self.df.assign(geom2=self.df.geometry).set_geometry("geom2")
+        df = df.loc[:, ["BoroName", "geometry"]]
+        assert df._geometry_column_name == "geom2"
+        msg_geo_col_missing = "is not present. "
+        # Check that df.geometry raises if active geometry column is missing,
+        # it should not fall back to column named "geometry"
+        with pytest.raises(AttributeError, match=msg_geo_col_missing):
+            df.geometry
+
     def test_align(self):
         df = self.df2
 

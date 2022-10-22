@@ -514,6 +514,9 @@ class GeometryArray(ExtensionArray):
     def normalize(self):
         return GeometryArray(vectorized.normalize(self.data), crs=self.crs)
 
+    def make_valid(self):
+        return GeometryArray(vectorized.make_valid(self.data), crs=self.crs)
+
     #
     # Binary predicates
     #
@@ -1317,7 +1320,7 @@ class GeometryArray(ExtensionArray):
         ExtensionArray
         """
         data = np.concatenate([ga.data for ga in to_concat])
-        return GeometryArray(data, crs=to_concat[0].crs)
+        return GeometryArray(data, crs=_get_common_crs(to_concat))
 
     def _reduce(self, name, skipna=True, **kwargs):
         # including the base class version here (that raises by default)
@@ -1388,3 +1391,26 @@ class GeometryArray(ExtensionArray):
             else:
                 return False
         return (self == item).any()
+
+
+def _get_common_crs(arr_seq):
+
+    crs_set = {arr.crs for arr in arr_seq}
+    crs_not_none = [crs for crs in crs_set if crs is not None]
+    names = [crs.name for crs in crs_not_none]
+
+    if len(crs_not_none) == 0:
+        return None
+    if len(crs_not_none) == 1:
+        if len(crs_set) != 1:
+            warnings.warn(
+                "CRS not set for some of the concatenation inputs. "
+                f"Setting output's CRS as {names[0]} "
+                "(the single non-null crs provided)."
+            )
+        return crs_not_none[0]
+
+    raise ValueError(
+        f"Cannot determine common CRS for concatenation inputs, got {names}. "
+        "Use `to_crs()` to transform geometries to the same CRS before merging."
+    )
