@@ -154,10 +154,10 @@ def _explore(
     marker_kwds: dict (default {})
         Additional keywords to be passed to the selected ``marker_type``, e.g.:
 
-        radius : float (default 2 for ``circle_marker`` and 50 for ``circle``))
-            Radius of the circle, in meters (for ``circle``) or pixels
+        radius : float, array-like
+            Radius of the circle, in meters (for ``'circle'``) or pixels
             (for ``circle_marker``).
-        fill : bool (default True)
+        fill : bool, array-like (default True)
             Whether to fill the ``circle`` or ``circle_marker`` with color.
         icon : folium.map.Icon
             the :class:`folium.map.Icon` object to use to render the marker.
@@ -167,21 +167,21 @@ def _explore(
     style_kwds : dict (default {})
         Additional style to be passed to folium ``style_function``:
 
-        stroke : bool (default True)
+        stroke : bool, array-like (default True)
             Whether to draw stroke along the path. Set it to ``False`` to
             disable borders on polygons or circles.
-        color : str
+        color : str, array-like
             Stroke color
-        weight : int
+        weight : int, array-like
             Stroke width in pixels
         opacity : float (default 1.0)
             Stroke opacity
-        fill : boolean (default True)
+        fill : boolean, array-like (default True)
             Whether to fill the path with color. Set it to ``False`` to
             disable filling on polygons or circles.
-        fillColor : str
+        fillColor : str, array-like
             Fill color. Defaults to the value of the color option
-        fillOpacity : float (default 0.5)
+        fillOpacity : float, array-like (default 0.5)
             Fill opacity.
         style_function : callable
             Function mapping a GeoJson Feature to a style ``dict``.
@@ -265,6 +265,7 @@ GON (((180.00000 -16.06713, 180.00000...
     try:
         import branca as bc
         import folium
+
         import matplotlib.cm as cm
         import matplotlib.colors as colors
         import matplotlib.pyplot as plt
@@ -454,6 +455,14 @@ GON (((180.00000 -16.06713, 180.00000...
                     colors.to_hex, 1, cm.get_cmap(cmap, 256)(binning.yb)
                 )
 
+    # some marker and style parameters can be list like.
+    # add columns and style function to support this
+    gdf, style_list_params = _list_like_params(
+        gdf,
+        style_kwds=style_kwds,
+        marker_kwds=marker_kwds,
+    )
+
     # set default style
     if "fillOpacity" not in style_kwds:
         style_kwds["fillOpacity"] = 0.5
@@ -467,7 +476,7 @@ GON (((180.00000 -16.06713, 180.00000...
     else:
 
         def _no_style(x):
-            return {}
+            return style_list_params(x)
 
         style_kwds_function = _no_style
 
@@ -513,6 +522,7 @@ GON (((180.00000 -16.06713, 180.00000...
                     }
                     return {
                         **base_style,
+                        **style_list_params(x),
                         **style_kwds_function(x),
                     }
 
@@ -527,6 +537,7 @@ GON (((180.00000 -16.06713, 180.00000...
                     }
                     return {
                         **base_style,
+                        **style_list_params(x),
                         **style_kwds_function(x),
                     }
 
@@ -534,7 +545,7 @@ GON (((180.00000 -16.06713, 180.00000...
     else:  # use folium default
 
         def _style_default(x):
-            return {**style_kwds, **style_kwds_function(x)}
+            return {**style_kwds, **style_list_params(x), **style_kwds_function(x)}
 
         style_function = _style_default
 
@@ -706,7 +717,9 @@ def _tooltip_popup(type, fields, gdf, **kwds):
         elif isinstance(fields, str):
             fields = [fields]
 
-    for field in ["__plottable_column", "__folium_color"]:
+    for field in ["__plottable_column"] + [
+        c for c in gdf.columns if c.startswith("__folium_")
+    ]:
         if field in fields:
             fields.remove(field)
 
@@ -834,6 +847,39 @@ def _categorical_legend(m, title, categories, colors):
     m.get_root().html.add_child(body)
 
 
+def _list_like_params(gdf, style_kwds={}, marker_kwds={}):
+    """
+    add columns if required and create a style function for list like
+    parameters
+    """
+    cols = {}
+
+    def _kwds_extract(gdf, kwds, cols):
+        # copy dict as in some cases deleting from it
+        for k, v in kwds.copy().items():
+            if pd.api.types.is_list_like(v) and len(v) == len(gdf):
+                c = f"__folium_{k}"
+                if isinstance(gdf, geopandas.GeoSeries):
+                    gdf = gdf.to_frame()
+                gdf[c] = v
+                cols[k] = c
+                # a number of list like structures do not serialize into folium/
+                # leaflet.  drop it as it has been consumed
+                del kwds[k]
+            elif isinstance(gdf, geopandas.GeoDataFrame) and v in gdf.columns:
+                cols[k] = v
+
+        return gdf, cols
+
+    gdf, cols = _kwds_extract(gdf, marker_kwds, cols)
+    gdf, cols = _kwds_extract(gdf, style_kwds, cols)
+
+    def _style_list_params(x):
+        return {k: x["properties"][v] for k, v in cols.items()}
+
+    return gdf, _style_list_params
+
+
 def _explore_geoseries(
     s,
     color=None,
@@ -892,7 +938,7 @@ def _explore_geoseries(
     marker_kwds: dict (default {})
         Additional keywords to be passed to the selected ``marker_type``, e.g.:
 
-        radius : float
+        radius : float, array-like
             Radius of the circle, in meters (for ``'circle'``) or pixels
             (for ``circle_marker``).
         icon : folium.map.Icon
@@ -903,21 +949,21 @@ def _explore_geoseries(
     style_kwds : dict (default {})
         Additional style to be passed to folium ``style_function``:
 
-        stroke : bool (default True)
+        stroke : bool, array-like (default True)
             Whether to draw stroke along the path. Set it to ``False`` to
             disable borders on polygons or circles.
-        color : str
+        color : str, array-like
             Stroke color
-        weight : int
+        weight : int, array-like
             Stroke width in pixels
-        opacity : float (default 1.0)
+        opacity : float, array-like (default 1.0)
             Stroke opacity
-        fill : boolean (default True)
+        fill : boolean, array-like (default True)
             Whether to fill the path with color. Set it to ``False`` to
             disable filling on polygons or circles.
-        fillColor : str
+        fillColor : str, array-like
             Fill color. Defaults to the value of the color option
-        fillOpacity : float (default 0.5)
+        fillOpacity : float, array-like (default 0.5)
             Fill opacity.
         style_function : callable
             Function mapping a GeoJson Feature to a style ``dict``.

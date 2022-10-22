@@ -16,6 +16,9 @@ https://geopandas.org/en/latest/getting_started/install.html#using-the-optional-
 for more details.
 
 New features and improvements:
+- Enable array-like parameters to be passed to ``GeoDataFrame.explore()`` 
+  ``style_kwds`` and ``marker_kwds``.  Effectively a simpler interface to
+  ``style_function``
 
 - Added ``normalize()`` method from shapely to GeoSeries/GeoDataframe (#2537)
 - Add ``where`` filter to ``read_file`` (#2552)
