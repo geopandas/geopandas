@@ -270,7 +270,7 @@ GON (((180.00000 -16.06713, 180.00000...
         if not n_resample:
             return cm.get_cmap(_cmap)
         else:
-            if MPL_36:
+            if MPL_361:
                 return cm.get_cmap(_cmap).resampled(n_resample)(idx)
             else:
                 return cm.get_cmap(_cmap, n_resample)(idx)
@@ -284,8 +284,8 @@ GON (((180.00000 -16.06713, 180.00000...
         from mapclassify import classify
 
         # isolate MPL version - GH#2596
-        MPL_36 = Version(matplotlib.__version__) >= Version("3.6")
-        if MPL_36:
+        MPL_361 = Version(matplotlib.__version__) >= Version("3.6.1")
+        if MPL_361:
             from matplotlib import colormaps as cm
         else:
             import matplotlib.cm as cm
