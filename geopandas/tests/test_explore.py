@@ -979,7 +979,7 @@ class RobustHelper:
         cl = ["red", "blue", "pink", "yellow", "white"]
         clrgb = [colors.to_rgb(c) for c in cl]
         cs = gdf[self.catcol].replace({i: c for i, c in enumerate(cl)})
-        csrgb = gdf[self.catcol].replace({i: c for i, c in enumerate(clrgb)})
+        csrgb = gdf[self.catcol].astype(float).map({i: c for i, c in enumerate(clrgb)})
         clb = cl.copy()
         clb[1] = "bluee"
         csb = gdf[self.catcol].replace({i: c for i, c in enumerate(clb)})
@@ -1163,14 +1163,26 @@ class RobustHelper:
             try:
                 with warnings.catch_warnings():
                     warnings.simplefilter("error")
+                    # matplotlib 3.7 and numpy 1.24 generate a warning that is not in
+                    # control of geopandas.  Filter it so number of warnings is
+                    # consistent
+                    warnings.filterwarnings(
+                        "ignore",
+                        category=DeprecationWarning,
+                        module="matplotlib",
+                        message="NumPy will stop allowing conversion of out-of-bound",
+                    )
+
                     try:
                         m = gdf.explore(**{**all_opts, **self.plot_opts})
                     except (
                         UserWarning,
                         RuntimeWarning,
                         PendingDeprecationWarning,
+                        DeprecationWarning,
                     ) as e:
                         df.loc[i, "__warning"] = str(e)
+                        df.loc[i, "__warning_class"] = e.__class__.__name__
                         warnings.simplefilter("ignore")
                         m = gdf.explore(**{**all_opts, **self.plot_opts})
                     maps[i] = {"m": m, "opts": all_opts}
