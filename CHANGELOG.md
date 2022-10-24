@@ -16,6 +16,8 @@ https://geopandas.org/en/latest/getting_started/install.html#using-the-optional-
 for more details.
 
 New features and improvements:
+- ensure that distributed natural earth datasets are consistent version.  Upgraded 
+  **lowres** and **cities** to v5.1 (#2555)
 
 - Added ``normalize()`` method from shapely to GeoSeries/GeoDataframe (#2537)
 - Added ``make_valid()`` method from shapely to GeoSeries/GeoDataframe (#2539)
