@@ -134,11 +134,11 @@ def clip(gdf, mask, keep_geom_type=False):
     >>> capitals = geopandas.read_file(
     ...     geopandas.datasets.get_path('naturalearth_cities'))
     >>> capitals.shape
-    (202, 2)
+    (243, 2)
 
     >>> sa_capitals = geopandas.clip(capitals, south_america)
     >>> sa_capitals.shape
-    (12, 2)
+    (15, 2)
     """
     if not isinstance(gdf, (GeoDataFrame, GeoSeries)):
         raise TypeError(

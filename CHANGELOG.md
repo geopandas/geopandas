@@ -4,11 +4,11 @@ Changelog
 Development version
 -------------------
 
-Version 0.12 (October xx, 2022)
+Version 0.12 (October 24, 2022)
 -------------------------------
 
 The highlight of this release is the support for Shapely 2.0. This makes it possible to
-test Shapely 2.0 (currently 2.0b1) alongside GeoPandas
+test Shapely 2.0 (currently 2.0b1) alongside GeoPandas.
 
 Note that if you also have PyGEOS installed, you need to set an environment variable
 (`USE_PYGEOS=0`) before importing geopandas to actually test Shapely 2.0 features instead of PyGEOS. See
@@ -17,20 +17,28 @@ for more details.
 
 New features and improvements:
 
-- Added ``normalize()`` method from shapely to GeoSeries/GeoDataframe (#2537)
-- Add where filter to ``read_file`` (#2552)
+- Added ``normalize()`` method from shapely to GeoSeries/GeoDataframe (#2537).
+- Added ``make_valid()`` method from shapely to GeoSeries/GeoDataframe (#2539).
+- Added ``where`` filter to ``read_file`` (#2552).
+- Updated the distributed natural earth datasets (*naturalearth_lowres* and
+  *naturalearth_cities*) to version 5.1 (#2555).
 - ``explore()`` enhanced to work with more combinations of 'column', 'cmap', 
   'color', 'legend', 'categorical', 'scheme', 'k', 'vmin' and 'vmax' arguments (#2590)
 
-Deprecations and compatibility notes:
-- Accessing the `crs` of a `GeoDataFrame` without active geometry column was deprecated and this now raises an AttributeError (#2578).
 
-- resolve ``matplotlib.cm`` warning in ``.explore()`` (#2596)
+Deprecations and compatibility notes:
+
+- Accessing the `crs` of a `GeoDataFrame` without active geometry column was deprecated
+  and this now raises an AttributeError (#2578).
+- Resolved colormap-related warning in ``.explore()`` for recent Matplotlib versions
+  (#2596).
 
 Bug fixes:
-- Fix cryptic error message in ``geopandas.clip()`` when clipping with an empty geometry (#2589)
-- Accessing `gdf.geometry` where the active geometry column is missing, and a column named `"geometry"` is present 
-  will now raise an `AttributeError`, rather than returning `gdf["geometry"]` (#2575) 
+
+- Fix cryptic error message in ``geopandas.clip()`` when clipping with an empty geometry (#2589).
+- Accessing `gdf.geometry` where the active geometry column is missing, and a column
+  named `"geometry"` is present will now raise an `AttributeError`, rather than
+  returning `gdf["geometry"]` (#2575).
 - Combining GeoSeries/GeoDataFrames with ``pandas.concat`` will no longer silently
   override CRS information if not all inputs have the same CRS (#2056).
 
