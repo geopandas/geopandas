@@ -54,12 +54,11 @@ Seven Steps for Contributing
 There are seven basic steps to contributing to *GeoPandas*:
 
 1) Fork the *GeoPandas* git repository
-2) Create a development environment
-3) Install *GeoPandas* dependencies
-4) Make a ``development`` build of *GeoPandas*
-5) Make changes to code and add tests
-6) Update the documentation
-7) Submit a Pull Request
+2) Create the development environment with *GeoPandas* dependencies
+3) Make a ``development`` build of *GeoPandas*
+4) Make changes to code and add tests
+5) Update the documentation
+6) Submit a Pull Request
 
 Each of these 7 steps is detailed below.
 
@@ -142,8 +141,8 @@ after updating.
 
 .. _contributing.dev_env:
 
-2) Creating a development environment
----------------------------------------
+2) Create the development environment with *GeoPandas* dependencies
+-------------------------------------------------------------------
 A development environment is a virtual space where you can keep an independent installation of *GeoPandas*.
 This makes it easy to keep both a stable version of python in one place you use for work, and a development
 version (which you may break while playing with code) in another.
@@ -165,27 +164,9 @@ and running::
 
       conda env create -f environment-dev.yml
 
-This will create a new conda environment named ``geopandas_dev``.
+This will create a new conda environment named ``geopandas_dev``. You can activate it as::
 
-Creating the environment manually
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Alternatively, it is possible to create a development environment manually.  To do this,
-tell conda to create a new environment named ``geopandas_dev``, or any other name you would like
-for this environment, by running::
-
-      conda create -n geopandas_dev python
-
-This will create the new environment, and not touch any of your existing environments,
-nor any existing python installation.
-
-Working with the environment
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-To work in this environment, you need to ``activate`` it. The instructions below
-should work for both Windows, Mac and Linux::
-
-      conda activate geopandas_dev
+      conda activate geopandas-dev
 
 Once your environment is activated, you will see a confirmation message to
 indicate you are in the new development environment.
@@ -203,29 +184,16 @@ See the full conda docs `here <http://conda.pydata.org/docs>`__.
 At this point you can easily do a *development* install, as detailed in the next sections.
 
 
-3) Installing Dependencies
---------------------------
-
-To run *GeoPandas* in an development environment, you must first install
-*GeoPandas*'s dependencies. If you used the provided environment in section 2, skip this
-step and continue to section 4. If you created the environment manually, we suggest installing
-dependencies using the following commands (executed after your development environment has been activated)::
-
-    conda install -c conda-forge pandas fiona shapely pyproj rtree pytest
-
-This should install all necessary dependencies.
-
-
-4) Making a development build
+3) Making a development build
 -----------------------------
 
 Once dependencies are in place, make an in-place build by navigating to the git
 clone of the *GeoPandas* repository and running::
 
-    python setup.py develop
+    python -m pip install -e .
 
 
-5) Making changes and writing tests
+4) Making changes and writing tests
 -------------------------------------
 
 *GeoPandas* is serious about testing and strongly encourages contributors to embrace
@@ -265,7 +233,7 @@ install *GeoPandas*) by typing::
 
     pytest
 
-6) Updating the Documentation
+5) Updating the Documentation
 -----------------------------
 
 *GeoPandas* documentation resides in the ``doc`` folder. Changes to the docs are made by
@@ -306,7 +274,7 @@ For minor updates, you can skip the ``make html`` part as reStructuredText and M
 syntax are usually quite straightforward.
 
 
-7) Submitting a Pull Request
+6) Submitting a Pull Request
 ------------------------------
 
 Once you've made changes and pushed them to your forked repository, you then
