@@ -1020,7 +1020,7 @@ def relate(data, other):
 def unary_union(data):
     if compat.USE_SHAPELY_20:
         data = shapely.union_all(data)
-        if data is None or data.is_empty:  # shapely 2.0a1
+        if data is None or data.is_empty:  # shapely 2.0a1 and 2.0
             warnings.warn(
                 "unary_union resulted in an empty geometry and returned None. "
                 "In GeoPandas 1.0, an empty result will be represented as "
