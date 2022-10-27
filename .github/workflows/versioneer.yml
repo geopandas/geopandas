@@ -13,14 +13,14 @@ jobs:
   versioneer:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-    - uses: actions/setup-python@v2
+    - uses: actions/checkout@v3
+    - uses: actions/setup-python@v4
     - run: pip install versioneer
     - run: versioneer install
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v3
       with:
         path: versioneer.py
-    - uses: peter-evans/create-pull-request@v3
+    - uses: peter-evans/create-pull-request@v4
       with:
         title: "Update Versioneer"
         branch: update-versioneer
