@@ -541,6 +541,9 @@ def _to_file(
             stacklevel=3,
         )
 
+    if (df.dtypes == "geometry").sum() > 1:
+        raise ValueError("GeoDataFrame has to have single indices")
+
     if engine == "fiona":
         _to_file_fiona(df, filename, driver, schema, crs, mode, **kwargs)
     elif engine == "pyogrio":
