@@ -24,5 +24,5 @@ jobs:
       with:
         title: "Update Versioneer"
         branch: update-versioneer
-        base: master
+        base: main
         commit-message: "[Bot] Update Versioneer"
