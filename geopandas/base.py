@@ -24,7 +24,7 @@ def is_geometry_type(data):
 
 
 def _delegate_binary_method(op, this, other, align, *args, **kwargs):
-    # type: (str, GeoSeries, GeoSeries) -> GeoSeries/Series
+    # type: (str, GeoSeries, GeoSeries) -> GeoSeries/Seriesrepresentative_point
     this = this.geometry
     if isinstance(other, GeoPandasBase):
         if align and not this.index.equals(other.index):
@@ -691,6 +691,39 @@ GeometryCollection
         GeoSeries.centroid : geometric centroid
         """
         return _delegate_geo_method("representative_point", self)
+
+    def minimum_bounding_circle(self):
+        """Returns a ``GeoSeries`` of geometries representing the minimum bounding
+        circle that encloses each geometry.
+
+        Examples
+        --------
+
+        >>> from shapely.geometry import Polygon, LineString, Point
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0, 0), (1, 1), (0, 1), (0, 0)]),
+        ...         LineString([(0, 0), (1, 1), (1, 0)]),
+        ...         Point(0, 0),
+        ...     ]
+        ... )
+        >>> s
+        0    POLYGON ((0.00000 0.00000, 1.00000 1.00000, 0....
+        1    LINESTRING (0.00000 0.00000, 1.00000 1.00000, ...
+        2                              POINT (0.00000 0.00000)
+        dtype: geometry
+
+        >>> s.minimum_bounding_circle()
+        0    POLYGON ((1.20711 0.50000, 1.19352 0.36205, 1....
+        1    POLYGON ((1.20711 0.50000, 1.19352 0.36205, 1....
+        2                              POINT (0.00000 0.00000)
+        dtype: geometry
+
+        See also
+        --------
+        GeoSeries.convex hull : convex hull geometry
+        """
+        return _delegate_geo_method("minimum_bounding_circle", self)
 
     def normalize(self):
         """Returns a ``GeoSeries`` of normalized geometries to normal form (or canonical form).
