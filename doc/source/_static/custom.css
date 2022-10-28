@@ -1,16 +1,21 @@
 /* colors */
 
-:root {
-    --pst-color-primary: 19, 156, 90;
-    --pst-color-active-navigation: 19, 156, 90;
-    --pst-color-h2: var(--color-text-base);
+html[data-theme="light"] {
+    --pst-color-primary: rgb(19, 156, 90);
+    --pst-color-secondary: rgb(231, 4, 136);
 }
+
+html[data-theme="dark"] {
+    --pst-color-primary: rgb(19, 156, 90);
+    --pst-color-secondary: rgb(231, 4, 136);
+}
+
 
 /* buttons */
 
 .button>p>a {
     box-shadow: 0px 4px 14px -7px #999999;
-    background-color: white;
+    /* background-color: white; */
     border: 1px solid #bbbbbb;
     display: inline-block;
     cursor: pointer;
@@ -24,8 +29,8 @@
 }
 
 .button>p>a:hover {
-    border-color: #139C5A;
-    color: #e32e00;
+    border-color: rgb(19, 156, 90);
+    color: rgb(231, 4, 136);
 }
 
 .button>p>a:active {

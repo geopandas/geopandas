@@ -87,6 +87,7 @@ Constructive Methods and Attributes
    GeoSeries.convex_hull
    GeoSeries.envelope
    GeoSeries.simplify
+   GeoSeries.normalize
 
 Affine transformations
 ----------------------

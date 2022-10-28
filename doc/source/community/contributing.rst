@@ -47,6 +47,9 @@ In particular, when submitting a pull request:
 - GeoPandas supports Python 3.8+ only. The last version of GeoPandas
   supporting Python 2 is 0.6.
 
+- Unless your PR implements minor changes or internal work only, make sure
+  it contains a note describing the changes in the `CHANGELOG.md` file.
+
 
 Seven Steps for Contributing
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -222,7 +225,7 @@ This should install all necessary dependencies.
 Once dependencies are in place, make an in-place build by navigating to the git
 clone of the *GeoPandas* repository and running::
 
-    python setup.py develop
+    python -m pip install -e .
 
 
 5) Making changes and writing tests

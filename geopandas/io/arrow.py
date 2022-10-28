@@ -66,13 +66,13 @@ def _remove_id_from_member_of_ensembles(json_dict):
                 member.pop("id", None)
 
 
-def _create_metadata(df, version=None):
+def _create_metadata(df, schema_version=None):
     """Create and encode geo metadata dict.
 
     Parameters
     ----------
     df : GeoDataFrame
-    version : {'0.1.0', '0.4.0', None}
+    schema_version : {'0.1.0', '0.4.0', None}
         GeoParquet specification version; if not provided will default to
         latest supported version.
 
@@ -81,10 +81,12 @@ def _create_metadata(df, version=None):
     dict
     """
 
-    version = version or METADATA_VERSION
+    schema_version = schema_version or METADATA_VERSION
 
-    if version not in SUPPORTED_VERSIONS:
-        raise ValueError(f"version must be one of: {', '.join(SUPPORTED_VERSIONS)}")
+    if schema_version not in SUPPORTED_VERSIONS:
+        raise ValueError(
+            f"schema_version must be one of: {', '.join(SUPPORTED_VERSIONS)}"
+        )
 
     # Construct metadata for each geometry
     column_metadata = {}
@@ -94,7 +96,7 @@ def _create_metadata(df, version=None):
 
         crs = None
         if series.crs:
-            if version == "0.1.0":
+            if schema_version == "0.1.0":
                 crs = series.crs.to_wkt()
             else:  # version >= 0.4.0
                 crs = series.crs.to_json_dict()
@@ -112,7 +114,7 @@ def _create_metadata(df, version=None):
     return {
         "primary_column": df._geometry_column_name,
         "columns": column_metadata,
-        "version": METADATA_VERSION,
+        "version": schema_version or METADATA_VERSION,
         "creator": {"library": "geopandas", "version": geopandas.__version__},
     }
 
@@ -224,7 +226,7 @@ def _validate_metadata(metadata):
             raise ValueError("Only WKB geometry encoding is supported")
 
 
-def _geopandas_to_arrow(df, index=None, version=None):
+def _geopandas_to_arrow(df, index=None, schema_version=None):
     """
     Helper function with main, shared logic for to_parquet/to_feather.
     """
@@ -233,7 +235,7 @@ def _geopandas_to_arrow(df, index=None, version=None):
     _validate_dataframe(df)
 
     # create geo metadata before altering incoming data frame
-    geo_metadata = _create_metadata(df, version=version)
+    geo_metadata = _create_metadata(df, schema_version=schema_version)
 
     df = df.to_wkb()
 
@@ -243,10 +245,13 @@ def _geopandas_to_arrow(df, index=None, version=None):
     # This must be done AFTER creating the table or it is not persisted
     metadata = table.schema.metadata
     metadata.update({b"geo": _encode_metadata(geo_metadata)})
+
     return table.replace_schema_metadata(metadata)
 
 
-def _to_parquet(df, path, index=None, compression="snappy", version=None, **kwargs):
+def _to_parquet(
+    df, path, index=None, compression="snappy", schema_version=None, **kwargs
+):
     """
     Write a GeoDataFrame to the Parquet format.
 
@@ -270,7 +275,7 @@ def _to_parquet(df, path, index=None, compression="snappy", version=None, **kwar
         output except `RangeIndex` which is stored as metadata only.
     compression : {'snappy', 'gzip', 'brotli', None}, default 'snappy'
         Name of the compression to use. Use ``None`` for no compression.
-    version : {'0.1.0', '0.4.0', None}
+    schema_version : {'0.1.0', '0.4.0', None}
         GeoParquet specification version; if not provided will default to
         latest supported version.
     kwargs
@@ -280,12 +285,23 @@ def _to_parquet(df, path, index=None, compression="snappy", version=None, **kwar
         "pyarrow.parquet", extra="pyarrow is required for Parquet support."
     )
 
+    if kwargs and "version" in kwargs and kwargs["version"] is not None:
+        if schema_version is None and kwargs["version"] in SUPPORTED_VERSIONS:
+            warnings.warn(
+                "the `version` parameter has been replaced with `schema_version`. "
+                "`version` will instead be passed directly to the underlying "
+                "parquet writer unless `version` is 0.1.0 or 0.4.0.",
+                FutureWarning,
+                stacklevel=2,
+            )
+            schema_version = kwargs.pop("version")
+
     path = _expand_user(path)
-    table = _geopandas_to_arrow(df, index=index, version=version)
+    table = _geopandas_to_arrow(df, index=index, schema_version=schema_version)
     parquet.write_table(table, path, compression=compression, **kwargs)
 
 
-def _to_feather(df, path, index=None, compression=None, version=None, **kwargs):
+def _to_feather(df, path, index=None, compression=None, schema_version=None, **kwargs):
     """
     Write a GeoDataFrame to the Feather format.
 
@@ -310,7 +326,7 @@ def _to_feather(df, path, index=None, compression=None, version=None, **kwargs):
     compression : {'zstd', 'lz4', 'uncompressed'}, optional
         Name of the compression to use. Use ``"uncompressed"`` for no
         compression. By default uses LZ4 if available, otherwise uncompressed.
-    version : {'0.1.0', '0.4.0', None}
+    schema_version : {'0.1.0', '0.4.0', None}
         GeoParquet specification version; if not provided will default to
         latest supported version.
     kwargs
@@ -325,8 +341,19 @@ def _to_feather(df, path, index=None, compression=None, version=None, **kwargs):
     if Version(pyarrow.__version__) < Version("0.17.0"):
         raise ImportError("pyarrow >= 0.17 required for Feather support")
 
+    if kwargs and "version" in kwargs and kwargs["version"] is not None:
+        if schema_version is None and kwargs["version"] in SUPPORTED_VERSIONS:
+            warnings.warn(
+                "the `version` parameter has been replaced with `schema_version`. "
+                "`version` will instead be passed directly to the underlying "
+                "feather writer unless `version` is 0.1.0 or 0.4.0.",
+                FutureWarning,
+                stacklevel=2,
+            )
+            schema_version = kwargs.pop("version")
+
     path = _expand_user(path)
-    table = _geopandas_to_arrow(df, index=index, version=version)
+    table = _geopandas_to_arrow(df, index=index, schema_version=schema_version)
     feather.write_feather(table, path, compression=compression, **kwargs)
 
 
@@ -337,6 +364,7 @@ def _arrow_to_geopandas(table, metadata=None):
     df = table.to_pandas()
 
     metadata = metadata or table.schema.metadata
+
     if metadata is None or b"geo" not in metadata:
         raise ValueError(
             """Missing geo metadata in Parquet/Feather file.

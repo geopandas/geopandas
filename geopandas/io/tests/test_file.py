@@ -10,6 +10,7 @@ import numpy as np
 import pandas as pd
 
 import pytz
+from pandas.api.types import is_datetime64_any_dtype
 from pandas.testing import assert_series_equal
 from shapely.geometry import Point, Polygon, box
 
@@ -32,12 +33,16 @@ except ImportError:
 try:
     import fiona
 
-    FIONA_GE_1814 = Version(fiona.__version__) >= Version(
-        "1.8.14"
-    )  # datetime roundtrip
+    # datetime roundtrip
+    FIONA_GE_1814 = Version(fiona.__version__) >= Version("1.8.14")
+    # invalid datetime handling
+    FIONA_GE_1821 = Version(fiona.__version__) >= Version("1.8.21")
+    FIONA_GE_19 = Version(Version(fiona.__version__).base_version) >= Version("1.9.0")
 except ImportError:
     fiona = False
     FIONA_GE_1814 = False
+    FIONA_GE_1821 = False
+    FIONA_GE_19 = False
 
 
 PYOGRIO_MARK = pytest.mark.skipif(not pyogrio, reason="pyogrio not installed")
@@ -229,6 +234,85 @@ def test_to_file_datetime(tmpdir, driver, ext, time, engine):
         )
     else:
         assert_series_equal(df["b"], df_read["b"])
+
+
+dt_exts = ["gpkg", "geojson"]
+
+
+def write_invalid_date_file(date_str, tmpdir, ext, engine):
+    tempfilename = os.path.join(str(tmpdir), f"test_invalid_datetime.{ext}")
+    df = GeoDataFrame(
+        {
+            "date": ["2014-08-26T10:01:23", "2014-08-26T10:01:23", date_str],
+            "geometry": [Point(1, 1), Point(1, 1), Point(1, 1)],
+        }
+    )
+    # Schema not required for GeoJSON since not typed, but needed for GPKG
+    if ext == "geojson":
+        df.to_file(tempfilename)
+    else:
+        schema = {"geometry": "Point", "properties": {"date": "datetime"}}
+        if engine == "pyogrio" and not fiona:
+            # (use schema to write the invalid date without pandas datetimes
+            pytest.skip("test requires fiona kwarg schema")
+        df.to_file(tempfilename, schema=schema, engine="fiona")
+    return tempfilename
+
+
+@pytest.mark.parametrize("ext", dt_exts)
+def test_read_file_datetime_invalid(tmpdir, ext, engine):
+    # https://github.com/geopandas/geopandas/issues/2502
+    if not FIONA_GE_1821 and ext == "gpkg":
+        # https://github.com/Toblerity/Fiona/issues/1035
+        pytest.skip("Invalid datetime throws in Fiona<1.8.21")
+
+    date_str = "9999-99-99T00:00:00"  # invalid date handled by GDAL
+    tempfilename = write_invalid_date_file(date_str, tmpdir, ext, engine)
+    res = read_file(tempfilename)
+    if ext == "gpkg":
+        assert is_datetime64_any_dtype(res["date"])
+        assert pd.isna(res["date"].iloc[-1])
+    else:
+        assert res["date"].dtype == "object"
+        assert isinstance(res["date"].iloc[-1], str)
+
+
+@pytest.mark.parametrize("ext", dt_exts)
+def test_read_file_datetime_out_of_bounds_ns(tmpdir, ext, engine):
+    # https://github.com/geopandas/geopandas/issues/2502
+    if ext == "geojson":
+        skip_pyogrio_not_supported(engine)
+
+    date_str = "9999-12-31T00:00:00"  # valid to GDAL, not to [ns] format
+    tempfilename = write_invalid_date_file(date_str, tmpdir, ext, engine)
+    res = read_file(tempfilename)
+    # Pandas invalid datetimes are read in as object dtype (strings)
+    assert res["date"].dtype == "object"
+    assert isinstance(res["date"].iloc[0], str)
+
+
+def test_read_file_datetime_mixed_offsets(tmpdir):
+    # https://github.com/geopandas/geopandas/issues/2478
+    tempfilename = os.path.join(str(tmpdir), "test_mixed_datetime.geojson")
+    df = GeoDataFrame(
+        {
+            "date": [
+                "2014-08-26 10:01:23.040001+02:00",
+                "2019-03-07 17:31:43.118999+01:00",
+            ],
+            "geometry": [Point(1, 1), Point(1, 1)],
+        }
+    )
+    df.to_file(tempfilename)
+    # check mixed tz don't crash GH2478
+    res = read_file(tempfilename)
+    if FIONA_GE_1814:
+        # Convert mixed timezones to UTC equivalent
+        assert is_datetime64_any_dtype(res["date"])
+        assert res["date"].dt.tz == pytz.utc
+    else:
+        # old fiona and pyogrio ignore timezones and read as datetimes successfully
+        assert is_datetime64_any_dtype(res["date"])
 
 
 @pytest.mark.parametrize("driver,ext", driver_ext_pairs)
@@ -684,6 +768,23 @@ def test_read_file__ignore_all_fields(engine):
     assert gdf.columns.tolist() == ["geometry"]
 
 
+def test_read_file__where_filter(engine):
+    if FIONA_GE_19 or engine == "pyogrio":
+        gdf = geopandas.read_file(
+            geopandas.datasets.get_path("naturalearth_lowres"),
+            where="continent='Africa'",
+            engine=engine,
+        )
+        assert gdf.continent.unique().tolist() == ["Africa"]
+    else:
+        with pytest.raises(NotImplementedError):
+            geopandas.read_file(
+                geopandas.datasets.get_path("naturalearth_lowres"),
+                where="continent='Africa'",
+                engine="fiona",
+            )
+
+
 @PYOGRIO_MARK
 def test_read_file__columns():
     # TODO: this is only support for pyogrio, but we could mimic it for fiona as well
@@ -724,7 +825,7 @@ def test_read_file_filtered_with_gdf_boundary__mask(df_nybb, engine):
         engine=engine,
     )
     filtered_df_shape = gdf.shape
-    assert filtered_df_shape == (50, 2)
+    assert filtered_df_shape == (57, 2)
 
 
 def test_read_file_filtered_with_gdf_boundary__mask__polygon(df_nybb, engine):
