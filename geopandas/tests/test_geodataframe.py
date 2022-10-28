@@ -2,11 +2,12 @@ import json
 import os
 import shutil
 import tempfile
-from packaging.version import Version
 
 import numpy as np
 import pandas as pd
-
+import pytest
+from packaging.version import Version
+from pandas.testing import assert_frame_equal, assert_index_equal, assert_series_equal
 from pyproj import CRS
 from pyproj.exceptions import CRSError
 from shapely.geometry import Point, Polygon
@@ -14,14 +15,10 @@ from shapely.geometry import Point, Polygon
 import geopandas
 import geopandas._compat as compat
 from geopandas import GeoDataFrame, GeoSeries, read_file
-from geopandas.array import GeometryArray, GeometryDtype, from_shapely
 from geopandas._compat import ignore_shapely2_warnings
-
+from geopandas.array import GeometryArray, GeometryDtype, from_shapely, points_from_xy
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 from geopandas.tests.util import PACKAGE_DIR, validate_boro_df
-from pandas.testing import assert_frame_equal, assert_index_equal, assert_series_equal
-import pytest
-
 
 TEST_NEAREST = compat.USE_SHAPELY_20 or (compat.PYGEOS_GE_010 and compat.USE_PYGEOS)
 pandas_133 = Version(pd.__version__) == Version("1.3.3")
@@ -771,6 +768,27 @@ class TestDataFrame:
 
         with pytest.raises(ValueError):
             df.set_geometry("location", inplace=True)
+
+    def test_dataframe_not_manipulated(self):
+        df = pd.DataFrame(
+            {
+                "A": range(len(self.df)),
+                "latitude": self.df.geometry.centroid.y,
+                "longitude": self.df.geometry.centroid.x,
+            },
+            index=self.df.index,
+        )
+        df_copy = df.copy()
+        gf = GeoDataFrame(
+            df,
+            geometry=points_from_xy(df["longitude"], df["latitude"]),
+            crs=self.df.crs,
+        )
+        assert isinstance(df, pd.DataFrame)
+        assert "geometry" not in df
+        pd.testing.assert_frame_equal(df, df_copy)
+        assert isinstance(gf, GeoDataFrame)
+        assert hasattr(gf, "geometry")
 
     def test_geodataframe_geointerface(self):
         assert self.df.__geo_interface__["type"] == "FeatureCollection"
