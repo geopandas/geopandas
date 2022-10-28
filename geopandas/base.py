@@ -24,7 +24,7 @@ def is_geometry_type(data):
 
 
 def _delegate_binary_method(op, this, other, align, *args, **kwargs):
-    # type: (str, GeoSeries, GeoSeries) -> GeoSeries/Seriesrepresentative_point
+    # type: (str, GeoSeries, GeoSeries) -> GeoSeries/Series
     this = this.geometry
     if isinstance(other, GeoPandasBase):
         if align and not this.index.equals(other.index):

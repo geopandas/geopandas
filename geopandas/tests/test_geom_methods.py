@@ -927,6 +927,10 @@ class TestGeomMethods:
         assert isinstance(e, GeoSeries)
         assert self.g3.crs == e.crs
 
+    @pytest.mark.skipif(
+        not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+        reason="minimum_bounding_circle is only implemented for pygeos, not shapely",
+    )
     def test_minimum_bounding_circle(self):
         mbc = self.g1.minimum_bounding_circle()
         centers = GeoSeries([Point(0.5, 0.5)] * 2)

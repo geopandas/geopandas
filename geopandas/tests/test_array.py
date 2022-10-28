@@ -352,7 +352,6 @@ def test_predicates_vector_vector(attr, args):
         "envelope",
         "exterior",
         # 'interiors',
-        "minimum_bounding_circle",
     ],
 )
 def test_unary_geo(attr):
