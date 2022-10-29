@@ -936,7 +936,7 @@ class TestGeomMethods:
             ]
         )
 
-        assert np.all(r.normalize().geom_equals(exp))
+        assert np.all(r.normalize().geom_equals_exact(exp, 0.001))
         assert isinstance(r, GeoSeries)
         assert self.g3.crs == r.crs
 
