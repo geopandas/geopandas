@@ -8,6 +8,7 @@ from shapely.geometry import box
 from shapely.geometry.base import BaseGeometry
 
 from .array import GeometryArray, GeometryDtype
+from . import _compat as compat
 
 
 def is_geometry_type(data):
@@ -3449,6 +3450,136 @@ GeometryCollection
         if not isinstance(other, type(self)):
             return False
         return self._data.equals(other._data)
+
+    def get_coordinates(self, include_z=False, ignore_index=False, index_parts=False):
+        """Gets coordinates from a GeoSeries as an DataFrame of floats.
+
+        The shape of the returned Dataframe is (N, 2), with N being the number of
+        coordinate pairs. With the default of ``include_z=False``, three-dimensional
+        data is ignored. When specifying ``include_z=True``, the shape of the
+        returned DataFrame is (N, 3).
+
+        Parameters
+        ----------
+        include_z : bool, default False
+            _description_, by default False
+        ignore_index : bool, default False
+            If True, the resulting index will be labelled 0, 1, …, n - 1, ignoring
+            ``index_parts``.
+        index_parts : bool, default False
+           If True, the resulting index will be a multi-index (original index with an
+           additional level indicating the coordinate pairs: a new zero-based index
+           for each coordinate pair).
+
+        Returns
+        -------
+        pandas.DataFrame
+
+        Examples
+        --------
+        >>> from shapely.geometry import Point, LineString, Polygon
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Point(1, 1),
+        ...         LineString([(1, -1), (1, 0)]),
+        ...         Polygon([(3, -1), (4, 0), (3, 1)]),
+        ...     ]
+        ... )
+        >>> s
+        0                              POINT (1.00000 1.00000)
+        1       LINESTRING (1.00000 -1.00000, 1.00000 0.00000)
+        2    POLYGON ((3.00000 -1.00000, 4.00000 0.00000, 3...
+        dtype: geometry
+
+        >>> s.get_coordinates()
+             x    y
+        0  1.0  1.0
+        1  1.0 -1.0
+        1  1.0  0.0
+        2  3.0 -1.0
+        2  4.0  0.0
+        2  3.0  1.0
+        2  3.0 -1.0
+
+        >>> s.get_coordinates(ignore_index=True)
+             x    y
+        0  1.0  1.0
+        1  1.0 -1.0
+        2  1.0  0.0
+        3  3.0 -1.0
+        4  4.0  0.0
+        5  3.0  1.0
+        6  3.0 -1.0
+
+        >>> s.get_coordinates(index_parts=True)
+               x    y
+        0 0  1.0  1.0
+        1 0  1.0 -1.0
+          1  1.0  0.0
+        2 0  3.0 -1.0
+          1  4.0  0.0
+          2  3.0  1.0
+          3  3.0 -1.0
+        """
+        if compat.USE_SHAPELY_20:
+            import shapely
+
+            coords, outer_idx = shapely.get_coordinates(
+                self.geometry.values.data, include_z=include_z, return_index=True
+            )
+        elif compat.USE_PYGEOS:
+            import pygeos
+
+            coords, outer_idx = pygeos.get_coordinates(
+                self.geometry.values.data, include_z=include_z, return_index=True
+            )
+
+        else:
+            raise NotImplementedError(
+                f"shapely >= 2.0 or PyGEOS is required, "
+                f"version {shapely.__version__} is installed"
+            )
+
+        column_names = ["x", "y"]
+        if include_z:
+            column_names.append("z")
+
+        # the index handling code is resused from GeoSeries.explode
+        if ignore_index:
+            index = range(len(coords))
+        else:
+            if len(outer_idx):
+                # Generate inner index as a range per value of outer_idx
+                # 1. identify the start of each run of values in outer_idx
+                # 2. count number of values per run
+                # 3. use cumulative sums to create an incremental range
+                #    starting at 0 in each run
+                run_start = np.r_[True, outer_idx[:-1] != outer_idx[1:]]
+                counts = np.diff(np.r_[np.nonzero(run_start)[0], len(outer_idx)])
+                inner_index = (~run_start).cumsum()
+                inner_index -= np.repeat(inner_index[run_start], counts)
+
+            else:
+                inner_index = []
+
+            # extract original index values based on integer index
+            outer_index = self.index.take(outer_idx)
+
+            if index_parts:
+                nlevels = outer_index.nlevels
+                index_arrays = [
+                    outer_index.get_level_values(lvl) for lvl in range(nlevels)
+                ]
+                index_arrays.append(inner_index)
+
+                index = pd.MultiIndex.from_arrays(
+                    index_arrays, names=self.index.names + [None]
+                )
+
+            else:
+                index = outer_index
+
+        return pd.DataFrame(coords, index=index, columns=column_names)
 
 
 class _CoordinateIndexer(object):
