@@ -4,6 +4,10 @@ Changelog
 Development version
 -------------------
 
+New features and improvements:
+
+- Added ``minimum_rotated_rectangle()`` method from shapely to GeoSeries/GeoDataframe (#2541).
+
 Version 0.12.1 (October 29, 2022)
 ---------------------------------
 
