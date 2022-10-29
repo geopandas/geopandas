@@ -268,7 +268,7 @@ You can also create these other plots using the ``GeoDataFrame.plot.<kind>`` acc
     @savefig pandas_bar_plot.png
     gdf.plot.bar()
 
-For more information, see `Chart visualization <https://pandas.pydata.org/pandas-docs/stable/user_guide/visualization.html>`_.
+For more information, see `Chart visualization <https://pandas.pydata.org/pandas-docs/stable/user_guide/visualization.html>`_ in the pandas documentation.
 
 
 Other resources

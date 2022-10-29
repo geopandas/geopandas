@@ -13,12 +13,12 @@ Projections
 Coordinate reference systems
 -----------------------------
 
-The Coordinate Reference System (CRS) is important because the geometric shapes
+The coordinate reference system (CRS) is important because the geometric shapes
 in a GeoSeries or GeoDataFrame object are simply a collection of coordinates in
 an arbitrary space. A CRS tells Python how those coordinates relate to places on
 the Earth.
 
-For reference codes in the most commonly used projections, see `Spatial Reference <https://spatialreference.org/>`_.
+For reference codes of the most commonly used projections, see `spatialreference.org <https://spatialreference.org/>`_.
 
 The same CRS can often be referred to in many ways. For example, one of the most
 commonly used CRS is the WGS84 latitude-longitude projection. This can be
@@ -77,7 +77,7 @@ the :attr:`GeoSeries.crs` attribute):
 Re-projecting
 ----------------
 
-Re-projecting is the process of changing the representation of locations from one coordinate system to another. All projections of locations on the Earth into a two-dimensional plane are distortions. See `Which projection is best <https://en.wikipedia.org/wiki/Map_projection#Which_projection_is_best.3F>`_ for more information. The projection that is best for your application may be different from the projection associated with the data you import. In these cases, data can be re-projected using the :meth:`GeoDataFrame.to_crs` command:
+Re-projecting is the process of changing the representation of locations from one coordinate system to another. All projections of locations on the Earth into a two-dimensional plane have distortions. See `Which projection is best <https://en.wikipedia.org/wiki/Map_projection#Which_projection_is_best.3F>`_ for more information. The projection that is best for your application may be different from the projection associated with the data you import. In these cases, data can be re-projected using the :meth:`GeoDataFrame.to_crs` command:
 
 .. ipython:: python
 
