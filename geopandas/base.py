@@ -582,10 +582,10 @@ GeometryCollection
     def minimum_rotated_rectangle(self):
         """Returns a ``GeoSeries`` of the general minimum bounding rectangle
         that contains the object.
-        Unlike envelope this rectangle is not constrained
-        to be parallel to the coordinate axes.
-        If the convex hull of the object is a degenerate (line or point)
-        this degenerate is returned.
+
+        Unlike envelope this rectangle is not constrained to be parallel
+        to the coordinate axes. If the convex hull of the object is a
+        degenerate (line or point) this degenerate is returned.
 
         Examples
         --------
