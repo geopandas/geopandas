@@ -297,12 +297,14 @@ class TestGeometryArrayCRS:
 
         # geometry column without geometry
         df = GeoDataFrame({"geometry": [0, 1]})
-        with pytest.warns(
-            FutureWarning, match="Accessing CRS of a GeoDataFrame without a geometry"
+        with pytest.raises(
+            ValueError,
+            match="Assigning CRS to a GeoDataFrame without an active geometry",
         ):
             df.crs = 27700
-        with pytest.warns(
-            FutureWarning, match="Accessing CRS of a GeoDataFrame without a geometry"
+        with pytest.raises(
+            AttributeError,
+            match="The CRS attribute of a GeoDataFrame without an active",
         ):
             assert df.crs == self.osgb
 
@@ -310,8 +312,9 @@ class TestGeometryArrayCRS:
         df = GeoDataFrame({"col": range(10)}, geometry=self.arr)
         df["geom2"] = df.geometry.centroid
         subset = df[["col", "geom2"]]
-        with pytest.warns(
-            FutureWarning, match="Accessing CRS of a GeoDataFrame without a geometry"
+        with pytest.raises(
+            AttributeError,
+            match="The CRS attribute of a GeoDataFrame without an active",
         ):
             assert subset.crs == self.osgb
 
@@ -355,17 +358,13 @@ class TestGeometryArrayCRS:
         arr = from_shapely(self.geoms)
         df = GeoDataFrame({"col1": [1, 2], "geometry": arr}, crs=4326)
 
-        # create a dataframe without geometry column, but currently has cached _crs
+        # override geometry with non geometry
         with pytest.warns(UserWarning):
             df["geometry"] = 1
 
-        # assigning a list of geometry object will currently use _crs
-        with pytest.warns(
-            FutureWarning,
-            match="Setting geometries to a GeoDataFrame without a geometry",
-        ):
-            df["geometry"] = self.geoms
-        assert df.crs == self.wgs
+        # assigning a list of geometry object doesn't have cached access to 4326
+        df["geometry"] = self.geoms
+        assert df.crs is None
 
     @pytest.mark.parametrize(
         "scalar", [None, Point(0, 0), LineString([(0, 0), (1, 1)])]

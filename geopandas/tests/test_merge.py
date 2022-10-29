@@ -54,17 +54,54 @@ class TestMerging:
         self._check_metadata(res)
         exp = GeoDataFrame(pd.concat([pd.DataFrame(self.gdf), pd.DataFrame(self.gdf)]))
         assert_geodataframe_equal(exp, res)
-        # check metadata comes from first gdf
-        res4 = pd.concat([self.gdf.set_crs("epsg:4326"), self.gdf], axis=0)
-        # Note: this behaviour potentially does not make sense. If geom cols are
-        # concatenated but have different CRS, then the CRS will be overridden.
-        self._check_metadata(res4, crs="epsg:4326")
 
         # series
         res = pd.concat([self.gdf.geometry, self.gdf.geometry])
         assert res.shape == (6,)
         assert isinstance(res, GeoSeries)
         assert isinstance(res.geometry, GeoSeries)
+
+    def test_concat_axis0_crs(self):
+
+        # CRS not set for both GeoDataFrame
+        res = pd.concat([self.gdf, self.gdf])
+        self._check_metadata(res)
+
+        # CRS set for both GeoDataFrame, same CRS
+        res1 = pd.concat([self.gdf.set_crs("epsg:4326"), self.gdf.set_crs("epsg:4326")])
+        self._check_metadata(res1, crs="epsg:4326")
+
+        # CRS not set for one GeoDataFrame, but set for the other GeoDataFrame
+        with pytest.warns(
+            UserWarning, match=r"CRS not set for some of the concatenation inputs.*"
+        ):
+            res2 = pd.concat([self.gdf, self.gdf.set_crs("epsg:4326")])
+            self._check_metadata(res2, crs="epsg:4326")
+
+        # CRS set for both GeoDataFrame, different CRS
+        with pytest.raises(
+            ValueError, match=r"Cannot determine common CRS for concatenation inputs.*"
+        ):
+            pd.concat([self.gdf.set_crs("epsg:4326"), self.gdf.set_crs("epsg:4327")])
+
+        # CRS not set for one GeoDataFrame, but set for the other GeoDataFrames,
+        # same CRS
+        with pytest.warns(
+            UserWarning, match=r"CRS not set for some of the concatenation inputs.*"
+        ):
+            res3 = pd.concat(
+                [self.gdf, self.gdf.set_crs("epsg:4326"), self.gdf.set_crs("epsg:4326")]
+            )
+            self._check_metadata(res3, crs="epsg:4326")
+
+        # CRS not set for one GeoDataFrame, but set for the other GeoDataFrames,
+        # different CRS
+        with pytest.raises(
+            ValueError, match=r"Cannot determine common CRS for concatenation inputs.*"
+        ):
+            pd.concat(
+                [self.gdf, self.gdf.set_crs("epsg:4326"), self.gdf.set_crs("epsg:4327")]
+            )
 
     def test_concat_axis1(self):
 
@@ -112,11 +149,11 @@ class TestMerging:
         # Note this is not consistent with concat([gdf, gdf], axis=1) where the
         # left metadata is set on the result. This is deliberate for now.
         assert type(result) is GeoDataFrame
-        self._check_metadata(result, geometry_column_name=None, crs=None)
+        assert result._geometry_column_name is None
         assert_index_equal(pd.Index([0, 1]), result.columns)
 
         gseries2.name = "foo"
         result2 = pd.concat([gseries2, self.gseries], axis=1)
         assert type(result2) is GeoDataFrame
-        self._check_metadata(result2, geometry_column_name=None, crs=None)
+        assert result._geometry_column_name is None
         assert_index_equal(pd.Index(["foo", 0]), result2.columns)

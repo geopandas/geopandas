@@ -8,6 +8,7 @@ dependencies:
   - shapely
   # - fiona  # build with only pyogrio
   - libgdal
+  - tiledb=2.11.3
   - pyproj
   - pygeos
   - packaging
@@ -27,6 +28,4 @@ dependencies:
   - SQLalchemy
   - libspatialite
   - pyarrow
-  - pip
-  - pip:
-    - pyogrio
+  - pyogrio

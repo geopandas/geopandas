@@ -424,7 +424,7 @@ GeometryCollection
     @property
     def boundary(self):
         """Returns a ``GeoSeries`` of lower dimensional objects representing
-        each geometries's set-theoretic `boundary`.
+        each geometry's set-theoretic `boundary`.
 
         Examples
         --------
@@ -722,6 +722,78 @@ GeometryCollection
         GeoSeries.centroid : geometric centroid
         """
         return _delegate_geo_method("representative_point", self)
+
+    def normalize(self):
+        """Returns a ``GeoSeries`` of normalized geometries to normal form (or canonical form).
+
+        This method orders the coordinates, rings of a polygon and parts of
+        multi geometries consistently. Typically useful for testing purposes
+        (for example in combination with `equals_exact`).
+
+        Examples
+        --------
+
+        >>> from shapely.geometry import Polygon, LineString, Point
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0, 0), (1, 1), (0, 1)]),
+        ...         LineString([(0, 0), (1, 1), (1, 0)]),
+        ...         Point(0, 0),
+        ...     ],
+        ...     crs='EPSG:3857'
+        ... )
+        >>> s
+        0    POLYGON ((0.000 0.000, 1.000 1.000, 0.000 1.00...
+        1    LINESTRING (0.000 0.000, 1.000 1.000, 1.000 0....
+        2                                  POINT (0.000 0.000)
+        dtype: geometry
+
+        >>> s.normalize()
+        0    POLYGON ((0.000 0.000, 0.000 1.000, 1.000 1.00...
+        1    LINESTRING (0.000 0.000, 1.000 1.000, 1.000 0....
+        2                                  POINT (0.000 0.000)
+        dtype: geometry
+        """
+        return _delegate_geo_method("normalize", self)
+
+    def make_valid(self):
+        """
+        Repairs invalid geometries.
+
+        Returns a ``GeoSeries`` with valid geometries.
+        If the input geometry is already valid, then it will be preserved.
+        In many cases, in order to create a valid geometry, the input
+        geometry must be split into multiple parts or multiple geometries.
+        If the geometry must be split into multiple parts of the same type
+        to be made valid, then a multi-part geometry will be returned
+        (e.g. a MultiPolygon).
+        If the geometry must be split into multiple parts of different types
+        to be made valid, then a GeometryCollection will be returned.
+
+        Examples
+        --------
+        >>> from shapely.geometry import MultiPolygon, Polygon, LineString, Point
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0, 0), (0, 2), (1, 1), (2, 2), (2, 0), (1, 1), (0, 0)]),
+        ...         Polygon([(0, 2), (0, 1), (2, 0), (0, 0), (0, 2)]),
+        ...         LineString([(0, 0), (1, 1), (1, 0)]),
+        ...     ],
+        ...     crs='EPSG:3857',
+        ... )
+        >>> s
+        0    POLYGON ((0.000 0.000, 0.000 2.000, 1.000 1.00...
+        1    POLYGON ((0.000 2.000, 0.000 1.000, 2.000 0.00...
+        2    LINESTRING (0.000 0.000, 1.000 1.000, 1.000 0....
+        dtype: geometry
+
+        >>> s.make_valid()
+        0    MULTIPOLYGON (((1.000 1.000, 0.000 0.000, 0.00...
+        1    GEOMETRYCOLLECTION (POLYGON ((2.000 0.000, 0.0...
+        2    LINESTRING (0.000 0.000, 1.000 1.000, 1.000 0....
+        dtype: geometry
+        """
+        return _delegate_geo_method("make_valid", self)
 
     #
     # Reduction operations that return a Shapely geometry
@@ -2658,6 +2730,16 @@ GeometryCollection
         0   2.0   1.0   2.0   1.0
         1   0.0   0.0   1.0   1.0
         2   0.0   1.0   1.0   2.0
+
+        You can assign the bounds to the ``GeoDataFrame`` as:
+
+        >>> import pandas as pd
+        >>> gdf = pd.concat([gdf, gdf.bounds], axis=1)
+        >>> gdf
+                                                    geometry  minx  miny  maxx  maxy
+        0                            POINT (2.00000 1.00000)   2.0   1.0   2.0   1.0
+        1  POLYGON ((0.00000 0.00000, 1.00000 1.00000, 1....   0.0   0.0   1.0   1.0
+        2      LINESTRING (0.00000 1.00000, 1.00000 2.00000)   0.0   1.0   1.0   2.0
         """
         bounds = GeometryArray(self.geometry.values).bounds
         return DataFrame(
