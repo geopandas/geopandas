@@ -590,18 +590,27 @@ GeometryCollection
         Examples
         --------
 
-        >>> from shapely.geometry import MultiPoint
-        >>> s = geopandas.GeoSeries([
-        ...     MultiPoint([(0,0),(1,1),(2,0.5)])
-        ...     ],
-        ...     crs='EPSG:3857'
+        >>> from shapely.geometry import Polygon, LineString, Point, MultiPoint
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0, 0), (1, 1), (0, 1)]),
+        ...         LineString([(0, 0), (1, 1), (1, 0)]),
+        ...         MultiPoint([(0, 0), (1, 1)]),
+        ...         Point(0, 0),
+        ...     ]
         ... )
         >>> s
-        0    MULTIPOINT (0.000 0.000, 1.000 1.000, 2.000 0....
+        0    POLYGON ((0.00000 0.00000, 1.00000 1.00000, 0....
+        1    LINESTRING (0.00000 0.00000, 1.00000 1.00000, ...
+        2        MULTIPOINT (0.00000 0.00000, 1.00000 1.00000)
+        3                              POINT (0.00000 0.00000)
         dtype: geometry
 
         >>> s.minimum_rotated_rectangle()
-        0    POLYGON ((1.824 1.206, -0.176 0.706, 0.000 0.0...
+        0    POLYGON ((1.00000 1.00000, 0.50000 1.50000, -0...
+        1    POLYGON ((0.00000 0.00000, 0.50000 -0.50000, 1...
+        2        LINESTRING (0.00000 0.00000, 1.00000 1.00000)
+        3                              POINT (0.00000 0.00000)
         dtype: geometry
 
         See also
