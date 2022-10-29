@@ -8,6 +8,11 @@ New features and improvements:
 
 - Added ``minimum_bounding_circle()`` method from shapely to GeoSeries/GeoDataframe (#2621).
 
+Version 0.12.1 (October 29, 2022)
+---------------------------------
+
+Small bug-fix release removing the shapely<2 pin in the installation requirements.
+
 Version 0.12 (October 24, 2022)
 -------------------------------
 
