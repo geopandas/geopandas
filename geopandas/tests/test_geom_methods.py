@@ -928,10 +928,17 @@ class TestGeomMethods:
         assert self.g3.crs == e.crs
 
     def test_minimum_rotated_rectangle(self):
-        e = self.g3.minimum_rotated_rectangle()
-        assert np.all(e.geom_equals(self.sq))
-        assert isinstance(e, GeoSeries)
-        assert self.g3.crs == e.crs
+        r = self.g3.minimum_rotated_rectangle()
+        exp = GeoSeries.from_wkt(
+            [
+                "POLYGON ((0 0, 1 1, 1.5 0.5, 0.5 -0.5, 0 0))",
+                "POLYGON ((-0.5 0.5, 0.5 1.5, 1 1, 0 0, -0.5 0.5))",
+            ]
+        )
+
+        assert np.all(r.normalize().geom_equals(exp))
+        assert isinstance(r, GeoSeries)
+        assert self.g3.crs == r.crs
 
     def test_total_bounds(self):
         bbox = self.sol.x, self.sol.y, self.esb.x, self.esb.y
