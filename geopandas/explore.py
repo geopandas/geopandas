@@ -273,7 +273,7 @@ GON (((180.00000 -16.06713, 180.00000...
             if MPL_361:
                 return cm.get_cmap(_cmap).resampled(n_resample)(idx)
             else:
-                return cm.get_cmap(_cmap, n_resample)(idx)  # pragma: no cover
+                return cm.get_cmap(_cmap, n_resample)(idx)
 
     try:
         import branca as bc
@@ -288,7 +288,7 @@ GON (((180.00000 -16.06713, 180.00000...
         if MPL_361:
             from matplotlib import colormaps as cm
         else:
-            import matplotlib.cm as cm  # pragma: no cover
+            import matplotlib.cm as cm
 
         import warnings
     except (ImportError, ModuleNotFoundError):
@@ -445,10 +445,8 @@ GON (((180.00000 -16.06713, 180.00000...
                     colors.to_hex, 1, _colormap_helper(cmap, n_resample=N, idx=range(N))
                 )
 
-            # cmap is library colormap
-            elif isinstance(cmap, colors.Colormap) or isinstance(
-                cmap, bc.colormap.ColorMap
-            ):
+            # cmap is matplotlib or branca colormap
+            elif isinstance(cmap, (colors.Colormap, bc.colormap.ColorMap)):
                 cmap_ = (
                     cmap
                     if isinstance(cmap, colors.Colormap)
@@ -789,7 +787,7 @@ GON (((180.00000 -16.06713, 180.00000...
 # utility to handle cmap as string or matplotlib Colormap
 # or branca Colormap then
 # resamples to required number of colors
-def _binning_cmap(cmap, k, MPL_361=False):
+def _binning_cmap(cmap, k, MPL_361):
     if MPL_361:
         from matplotlib import colormaps as cm
     else:
