@@ -276,6 +276,7 @@ GON (((180.00000 -16.06713, 180.00000...
                 return cm.get_cmap(_cmap, n_resample)(idx)
 
     import warnings
+
     try:
         import branca as bc
         import folium
