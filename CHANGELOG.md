@@ -4,6 +4,11 @@ Changelog
 Development version
 -------------------
 
+Version 0.12.1 (October 29, 2022)
+---------------------------------
+
+Small bug-fix release removing the shapely<2 pin in the installation requirements.
+
 Version 0.12 (October 24, 2022)
 -------------------------------
 
