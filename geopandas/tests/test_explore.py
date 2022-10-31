@@ -1,9 +1,17 @@
-import geopandas as gpd
-import numpy as np
-import pandas as pd
+import warnings
 import pytest
 from packaging.version import Version
-import warnings
+
+with warnings.catch_warnings():
+    warnings.filterwarnings(
+        "ignore",
+        category=UserWarning,
+        module="geopandas",
+        message=r"^The Shapely GEOS version.*",
+    )
+    import geopandas as gpd
+    import numpy as np
+    import pandas as pd
 
 folium = pytest.importorskip("folium")
 branca = pytest.importorskip("branca")
@@ -24,10 +32,18 @@ class TestExplore:
         self.world = gpd.read_file(gpd.datasets.get_path("naturalearth_lowres"))
         self.cities = gpd.read_file(gpd.datasets.get_path("naturalearth_cities"))
         self.world["range"] = range(len(self.world))
+        # reduce amount of geometry to speed up tests
+        self.world = self.world.groupby("continent", group_keys=False).apply(
+            lambda d: d if len(d) < 5 else d.sample(frac=0.3, random_state=42)
+        )
         self.missing = self.world.copy()
-        np.random.seed(42)
-        self.missing.loc[np.random.choice(self.missing.index, 40), "continent"] = np.nan
-        self.missing.loc[np.random.choice(self.missing.index, 40), "pop_est"] = np.nan
+        r = np.random.RandomState(42)
+        self.missing.loc[
+            r.choice(self.missing.index, len(self.world) // 5), "continent"
+        ] = np.nan
+        self.missing.loc[
+            r.choice(self.missing.index, len(self.world) // 5), "pop_est"
+        ] = np.nan
 
     def _fetch_map_string(self, m):
         out = m._parent.render()
@@ -66,7 +82,7 @@ class TestExplore:
         m = self.world.explore()
         assert m.location == [
             pytest.approx(-3.1774349999999956, rel=1e-6),
-            pytest.approx(2.842170943040401e-14, rel=1e-6),
+            pytest.approx(0, rel=1e-6),
         ]
         assert m.options["zoom"] == 10
         assert m.options["zoomControl"] is True
@@ -288,7 +304,7 @@ class TestExplore:
 
     def test_string(self):
         df = self.nybb.copy()
-        df["string"] = pd.array([1, 2, 3, 4, 5], dtype="string")
+        df["string"] = pd.array([1, 2, 3, 4, 5], dtype=str)
         m = df.explore("string")
         out_str = self._fetch_map_string(m)
         assert '"__folium_color":"#9edae5","string":"5"' in out_str
@@ -531,11 +547,11 @@ class TestExplore:
     def test_vmin_vmax(self):
         df = self.world.copy()
         df["range"] = range(len(df))
-        m = df.explore("range", vmin=-100, vmax=1000)
+        m = df.explore("range", vmin=-100, vmax=200)
         out_str = self._fetch_map_string(m)
-        assert 'case"176":return{"color":"#3b528b","fillColor":"#3b528b"' in out_str
-        assert 'case"119":return{"color":"#414287","fillColor":"#414287"' in out_str
-        assert 'case"3":return{"color":"#482173","fillColor":"#482173"' in out_str
+        assert 'case"163":return{"color":"#31688e","fillColor":"#31688e"' in out_str
+        assert 'case"82":return{"color":"#30698e","fillColor":"#30698e"' in out_str
+        assert 'case"63":return{"color":"#2f6b8e","fillColor":"#2f6b8e"' in out_str
 
         # test 0
         df2 = self.nybb.copy()
@@ -630,11 +646,11 @@ class TestExplore:
             scheme="Headtailbreaks",
         )
         out_str = self._fetch_map_string(m)
-        assert out_str.count("#440154ff") == 16
-        assert out_str.count("#3b528bff") == 50
-        assert out_str.count("#21918cff") == 138
-        assert out_str.count("#5ec962ff") == 290
-        assert out_str.count("#fde725ff") == 6
+        assert out_str.count("#440154ff") == 49
+        assert out_str.count("#3b528bff") == 98
+        assert out_str.count("#21918cff") == 144
+        assert out_str.count("#5ec962ff") == 87
+        assert out_str.count("#fde725ff") == 122
 
         # discrete cmap
         m = self.world.explore("pop_est", legend=True, cmap="Pastel2")
@@ -659,7 +675,7 @@ class TestExplore:
         tick_str = re.search(r"tickValues\(\[[\',\,\.,0-9]*\]\)", out_str).group(0)
         assert (
             tick_str.replace(",''", "")
-            == "tickValues([140.0,471386328.07843137,942772516.1568627])"
+            == "tickValues([140.0,110700480.93333334,221400821.86666667])"
         )
 
         # scheme
@@ -667,7 +683,7 @@ class TestExplore:
             "pop_est", scheme="headtailbreaks", legend_kwds=dict(max_labels=3)
         )
         out_str = self._fetch_map_string(m)
-        assert "tickValues([140.0,'',184117213.1818182,'',1382066377.0,''])" in out_str
+        assert "tickValues([140.0,'',96207131.14285715,'',248589480.0,''])" in out_str
 
         # short cmap
         m = self.world.explore("pop_est", legend_kwds=dict(max_labels=3), cmap="tab10")
@@ -676,7 +692,7 @@ class TestExplore:
         tick_str = re.search(r"tickValues\(\[[\',\,\.,0-9]*\]\)", out_str).group(0)
         assert (
             tick_str
-            == "tickValues([140.0,'','','',559086084.0,'','','',1118172028.0,'','',''])"
+            == "tickValues([140.0,'','','',131295893.2,'','','',262591646.4,'','',''])"
         )
 
     def test_xyzservices_providers(self):
@@ -719,6 +735,12 @@ class TestExplore:
         assert out_str.count("LineString") == len(rings)
 
     def test_mapclassify_categorical_legend(self):
+        def _get_legend(m):
+            out_str = self._fetch_map_string(m)
+            return (
+                out_str.split("legend-labels")[-1].split("</ul>")[0].split("<li>")[1:]
+            )
+
         m = self.missing.explore(
             column="pop_est",
             legend=True,
@@ -726,18 +748,14 @@ class TestExplore:
             missing_kwds=dict(color="red", label="missing"),
             legend_kwds=dict(colorbar=False, interval=True),
         )
-        out_str = self._fetch_map_string(m)
-
-        strings = [
-            "[140.00,21803000.00]",
-            "(21803000.00,66834405.00]",
-            "(66834405.00,163046161.00]",
-            "(163046161.00,328239523.00]",
-            "(328239523.00,1397715000.00]",
-            "missing",
+        assert _get_legend(m) == [
+            "<spanstyle='background:#440154'></span>[140.00,18628747.00]</li>",
+            "<spanstyle='background:#3b528b'></span>(18628747.00,47076781.00]</li>",
+            "<spanstyle='background:#21918c'></span>(47076781.00,108116615.00]</li>",
+            "<spanstyle='background:#5ec962'></span>(108116615.00,216565318.00]</li>",
+            "<spanstyle='background:#fde725'></span>(216565318.00,328239523.00]</li>",
+            "<spanstyle='background:red'></span>missing</li>",
         ]
-        for s in strings:
-            assert s in out_str
 
         # interval=False
         m = self.missing.explore(
@@ -747,18 +765,14 @@ class TestExplore:
             missing_kwds=dict(color="red", label="missing"),
             legend_kwds=dict(colorbar=False, interval=False),
         )
-        out_str = self._fetch_map_string(m)
-
-        strings = [
-            ">140.00,21803000.00",
-            ">21803000.00,66834405.00",
-            ">66834405.00,163046161.00",
-            ">163046161.00,328239523.00",
-            ">328239523.00,1397715000.00",
-            "missing",
+        assert _get_legend(m) == [
+            "<spanstyle='background:#440154'></span>140.00,18628747.00</li>",
+            "<spanstyle='background:#3b528b'></span>18628747.00,47076781.00</li>",
+            "<spanstyle='background:#21918c'></span>47076781.00,108116615.00</li>",
+            "<spanstyle='background:#5ec962'></span>108116615.00,216565318.00</li>",
+            "<spanstyle='background:#fde725'></span>216565318.00,328239523.00</li>",
+            "<spanstyle='background:red'></span>missing</li>",
         ]
-        for s in strings:
-            assert s in out_str
 
         # custom labels
         m = self.world.explore(
@@ -769,7 +783,6 @@ class TestExplore:
             legend_kwds=dict(colorbar=False, labels=["s", "m", "l", "xl", "xxl"]),
         )
         out_str = self._fetch_map_string(m)
-
         strings = [">s<", ">m<", ">l<", ">xl<", ">xxl<"]
         for s in strings:
             assert s in out_str
@@ -782,18 +795,14 @@ class TestExplore:
             missing_kwds=dict(color="red", label="missing"),
             legend_kwds=dict(colorbar=False, fmt="{:.0f}"),
         )
-        out_str = self._fetch_map_string(m)
-
-        strings = [
-            ">140,21803000",
-            ">21803000,66834405",
-            ">66834405,163046161",
-            ">163046161,328239523",
-            ">328239523,1397715000",
-            "missing",
+        assert _get_legend(m) == [
+            "<spanstyle='background:#440154'></span>140,18628747</li>",
+            "<spanstyle='background:#3b528b'></span>18628747,47076781</li>",
+            "<spanstyle='background:#21918c'></span>47076781,108116615</li>",
+            "<spanstyle='background:#5ec962'></span>108116615,216565318</li>",
+            "<spanstyle='background:#fde725'></span>216565318,328239523</li>",
+            "<spanstyle='background:red'></span>missing</li>",
         ]
-        for s in strings:
-            assert s in out_str
 
     def test_given_m(self):
         "Check that geometry is mapped onto a given folium.Map"
@@ -835,9 +844,9 @@ class TestExplore:
         for s in strings:
             assert s in out_str
 
-        assert out_str.count("008000ff") == 304
-        assert out_str.count("ffff00ff") == 188
-        assert out_str.count("ff0000ff") == 191
+        assert out_str.count("008000ff") == 210
+        assert out_str.count("ffff00ff") == 176
+        assert out_str.count("ff0000ff") == 174
 
         # Using custom function colormap
         def my_color_function(field):
@@ -915,7 +924,12 @@ class TestExplore:
             "#3f007d",
         ]
         with pytest.raises(ValueError, match=r".*in this call context$"):
-            gpd.explore._binning_cmap(["red", "green"], 5)
+            gpd.explore._binning_cmap(
+                ["red", "green"], 5, Version(matplotlib.__version__) >= Version("3.6.1")
+            )
+
+        with pytest.raises(ValueError, match="DataFrame is invalid for `cmap`"):
+            self.world.explore(cmap=pd.DataFrame())
 
         # main test, just use 25 geometries to speed up the test
         robust = RobustHelper(self.world.copy().head(25))
@@ -923,6 +937,8 @@ class TestExplore:
         df = robust.generate(max_tests=100, exclude=[])
         df, maps = robust.run(df)
         robust.expected_result(df)
+        with pytest.raises(ValueError, match="Invalid RGBA argument: 'bluee'"):
+            robust.gdf.explore("__alpha", cmap=("red", "bluee"))
         # make sure PEP8 formating hasn't broken util function
         robust.html(df[df["__error"].isna()].head(2), maps)
 
@@ -1045,7 +1061,7 @@ class RobustHelper:
                             "cmap": create_type(t, v),
                             "__expect_error": cat == "bad",
                         }
-                        for t in [list, tuple, pd.Series, pd.DataFrame, np.array]
+                        for t in [list, tuple, pd.Series, np.array]
                         for v, cat in zip(
                             [cl, cs, clrgb, csrgb, clb, csb],
                             np.repeat(["", "rgb", "bad"], 2),
@@ -1201,21 +1217,20 @@ class RobustHelper:
                 c: (~df[c].isna()).sum()
                 for c in ["__column_type", "__error", "__warning"]
             }
-        ).equals(pd.Series({"__column_type": 88, "__error": 13, "__warning": 37}))
+        ).equals(pd.Series({"__column_type": 88, "__error": 12, "__warning": 36}))
 
         expected = {
             "__error": {
-                "Invalid RGBA argument: 'bluee'": 1,
                 "Invalid scheme. Scheme must be": 2,
                 "The GeoDataFrame and given col": 3,
                 "`cmap` is invalid. For categor": 2,
                 "`cmap` is not known matplotlib": 5,
             },
             "__warning": {
-                "`cmap` as callable or list is ": 2,
-                "`cmap` invalid for legend": 2,
-                "`k` is invalid. Defaulted": 3,
-                "`vmax` invalid. Defaulted": 20,
+                "`cmap` as callable or list is ": 1,
+                "`cmap` invalid for legend": 1,
+                "`k` is invalid. Defaulted": 7,
+                "`vmax` invalid. Defaulted": 17,
                 "`vmin` invalid. Defaulted": 10,
             },
         }

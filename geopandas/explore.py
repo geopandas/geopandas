@@ -275,6 +275,7 @@ GON (((180.00000 -16.06713, 180.00000...
             else:
                 return cm.get_cmap(_cmap, n_resample)(idx)
 
+    import warnings
     try:
         import branca as bc
         import folium
@@ -290,7 +291,6 @@ GON (((180.00000 -16.06713, 180.00000...
         else:
             import matplotlib.cm as cm
 
-        import warnings
     except (ImportError, ModuleNotFoundError):
         raise ImportError(
             "The 'folium', 'matplotlib' and 'mapclassify' packages are required for "
@@ -321,7 +321,7 @@ GON (((180.00000 -16.06713, 180.00000...
     if isinstance(cmap, pd.Series):
         cmap = cmap.values
     elif isinstance(cmap, pd.DataFrame):
-        cmap = cmap.values[:, 0]
+        raise ValueError(f"{cmap.__class__.__name__} is invalid for `cmap`")
     elif isinstance(cmap, str) and cmap not in plt.colormaps():
         raise ValueError("`cmap` is not known matplotlib colormap")
     # default invalid arguments
@@ -533,8 +533,6 @@ GON (((180.00000 -16.06713, 180.00000...
                 color = [
                     colors.to_hex(c) for c, exclude in zip(cmap, nan_idx) if not exclude
                 ]
-        else:
-            raise ValueError("should never get here")  # noqa ; pragma: no cover
 
     # set default style
     if "fillOpacity" not in style_kwds:
