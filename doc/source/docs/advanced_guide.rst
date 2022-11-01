@@ -1,7 +1,7 @@
 Advanced guide
 ==============
 
-The Advanced Guide covers advanced usage of GeoPandas. Each page focuses on a single
+The advanced guide covers advanced usage of GeoPandas. Each page focuses on a single
 topic and outlines how it is implemented in GeoPandas, with reproducible examples.
 
 If you don't know anything about GeoPandas, start with the :doc:`Introduction to
