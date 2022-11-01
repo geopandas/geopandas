@@ -96,14 +96,14 @@ jobs:
         env:
           USE_PYGEOS: 0
         run: |
-          pytest -v -r s -n auto --color=yes --cov=geopandas --cov-append --cov-report term-missing --cov-report xml geopandas/
+          pytest -v -r a -n auto --color=yes --cov=geopandas --cov-append --cov-report term-missing --cov-report xml geopandas/
 
       - name: Test with PyGEOS
         if: env.HAS_PYGEOS == 1
         env:
           USE_PYGEOS: 1
         run: |
-          pytest -v -r s -n auto --color=yes --cov=geopandas --cov-append --cov-report term-missing --cov-report xml geopandas/
+          pytest -v -r a -n auto --color=yes --cov=geopandas --cov-append --cov-report term-missing --cov-report xml geopandas/
 
       - name: Test with PostGIS
         if: contains(matrix.env, '39-pd12-conda-forge.yaml') && contains(matrix.os, 'ubuntu')
@@ -115,7 +115,7 @@ jobs:
         run: |
           conda install postgis -c conda-forge
           sh ci/scripts/setup_postgres.sh
-          pytest -v -r s --color=yes --cov=geopandas --cov-append --cov-report term-missing --cov-report xml geopandas/io/tests/test_sql.py | tee /dev/stderr | if grep SKIPPED >/dev/null;then echo "TESTS SKIPPED, FAILING" && exit 1;fi
+          pytest -v -r a --color=yes --cov=geopandas --cov-append --cov-report term-missing --cov-report xml geopandas/io/tests/test_sql.py | tee /dev/stderr | if grep SKIPPED >/dev/null;then echo "TESTS SKIPPED, FAILING" && exit 1;fi
 
       - name: Test docstrings
         if: contains(matrix.env, '39-pd12-conda-forge.yaml') && contains(matrix.os, 'ubuntu')

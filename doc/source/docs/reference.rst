@@ -1,9 +1,9 @@
 .. _reference:
 
-API Reference
+API reference
 =============
 
-The API Reference provides an overview of all public objects, functions and methods implemented in GeoPandas. All classes and function exposed in ``geopandas.*`` namespace plus those listed in the reference are public.
+The API reference provides an overview of all public objects, functions and methods implemented in GeoPandas. All classes and function exposed in ``geopandas.*`` namespace plus those listed in the reference are public.
 
 .. warning::
    The ``geopandas.array`` and ``geopandas.base`` modules are private. Stable functionality in such modules is not guaranteed.

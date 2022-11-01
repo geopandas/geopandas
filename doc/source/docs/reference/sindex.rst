@@ -18,7 +18,7 @@ Constructor
 
     GeoSeries.sindex
 
-Spatial Index object
+Spatial index object
 --------------------
 
 The spatial index object returned from :attr:`GeoSeries.sindex` has the following

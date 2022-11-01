@@ -43,7 +43,7 @@ Unary predicates
    GeoSeries.has_z
 
 
-Binary Predicates
+Binary predicates
 -----------------
 
 .. autosummary::
@@ -63,7 +63,7 @@ Binary Predicates
    GeoSeries.covered_by
 
 
-Set-theoretic Methods
+Set-theoretic methods
 ---------------------
 
 .. autosummary::
@@ -75,7 +75,7 @@ Set-theoretic Methods
    GeoSeries.symmetric_difference
    GeoSeries.union
 
-Constructive Methods and Attributes
+Constructive methods and attributes
 -----------------------------------
 
 .. autosummary::

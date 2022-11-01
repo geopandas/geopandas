@@ -10,7 +10,7 @@ just the points the geometry contains. This is particularly useful for antimerid
 However, this also means the transformation is not as fast.
 
 
-Fiona Example
+Fiona example
 -------------
 
 .. code-block:: python
@@ -58,7 +58,7 @@ Fiona Example
         mercator_world = world.set_geometry(world.geometry.apply(forward_transformer), crs=destination_crs)
 
 
-Rasterio Example
+Rasterio example
 ----------------
 
 This example requires rasterio 1.2+ and GDAL 3+.
