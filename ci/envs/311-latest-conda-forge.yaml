@@ -1,12 +1,11 @@
 name: test
 channels:
   - conda-forge
-  - conda-forge/label/shapely_dev
 dependencies:
   - python=3.11
   # required
   - pandas
-  - shapely=2
+  - shapely
   - pyogrio
   - tiledb=2.11.3
   - pyproj
@@ -17,6 +16,7 @@ dependencies:
   - pytest-xdist
   - fsspec
   # optional
+  - pygeos
   - rtree
   - matplotlib
   - mapclassify
