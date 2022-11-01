@@ -1,0 +1,35 @@
+name: test
+channels:
+  - conda-forge
+  - conda-forge/label/shapely_dev
+dependencies:
+  - python=3.11
+  # required
+  - pandas
+  - shapely=2
+  - pyogrio
+  - tiledb=2.11.3
+  - pyproj
+  - packaging
+  # testing
+  - pytest
+  - pytest-cov
+  - pytest-xdist
+  - fsspec
+  # optional
+  - rtree
+  - matplotlib
+  - mapclassify
+  - folium
+  - xyzservices
+  - scipy
+  - geopy
+  # installed in tests.yaml, because not available on windows
+  # - postgis
+  - SQLalchemy
+  - psycopg2
+  - libspatialite
+  - geoalchemy2
+  - pyarrow
+  # doctest testing
+  - pytest-doctestplus
