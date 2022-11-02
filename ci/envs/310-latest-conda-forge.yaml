@@ -7,7 +7,6 @@ dependencies:
   - pandas
   - shapely
   - fiona
-  - tiledb=2.11.3
   - pyproj
   - pygeos
   - packaging
@@ -36,4 +35,4 @@ dependencies:
   - pytest-doctestplus
   - pip
   - pip:
-    - git+https://github.com/geopandas/pyogrio.git@main
+      - git+https://github.com/geopandas/pyogrio.git@main
