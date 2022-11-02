@@ -6,7 +6,7 @@ dependencies:
   # required
   - pandas
   - shapely
-  - pyogrio
+  - fiona
   - tiledb=2.11.3
   - pyproj
   - packaging
@@ -17,6 +17,7 @@ dependencies:
   - fsspec
   # optional
   - pygeos
+  - pyogrio
   - rtree
   - matplotlib
   - mapclassify
