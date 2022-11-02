@@ -7,7 +7,6 @@ dependencies:
   - pandas=1.2
   - shapely
   - fiona
-  - tiledb=2.11.3
   - pyproj
   - pygeos
   - packaging
