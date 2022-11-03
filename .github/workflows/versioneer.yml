@@ -17,6 +17,7 @@ jobs:
     - uses: actions/setup-python@v4
     - run: pip install versioneer
     - run: versioneer install
+    - uses: psf/black@stable
     - uses: actions/upload-artifact@v3
       with:
         path: versioneer.py
@@ -26,3 +27,7 @@ jobs:
         branch: update-versioneer
         base: main
         commit-message: "[Bot] Update Versioneer"
+        body: |
+          Automatic update of Versioneer by the `versioneer.yml` workflow.
+          
+          Please review changes manually, especially if a duplicate `from . import _version` is added.
