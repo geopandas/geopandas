@@ -566,6 +566,12 @@ class GeometryArray(ExtensionArray):
         return self._binary_method("equals_exact", self, other, tolerance=tolerance)
 
     def geom_almost_equals(self, other, decimal):
+        warnings.warn(
+            "GeometryArray.geom_almost_equals() is now GeometryArray.geom_equals_exact(). "
+            "GeometryArray.geom_almost_equals() will be deprecated in the future.",
+            FutureWarning,
+            stacklevel=2,
+        )
         return self.geom_equals_exact(other, 0.5 * 10 ** (-decimal))
         # return _binary_predicate("almost_equals", self, other, decimal=decimal)
 

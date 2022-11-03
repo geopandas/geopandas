@@ -1,4 +1,4 @@
-from warnings import warn
+import warnings
 
 import numpy as np
 import pandas as pd
@@ -1057,6 +1057,12 @@ GeometryCollection
         GeoSeries.geom_equals_exact
 
         """
+        warnings.warn(
+            "GeometryArray.geom_almost_equals() is now GeometryArray.geom_equals_exact(). "
+            "GeometryArray.geom_almost_equals() will be deprecated in the future.",
+            FutureWarning,
+            stacklevel=2,
+        )
         return _binary_op(
             "geom_almost_equals", self, other, decimal=decimal, align=align
         )
