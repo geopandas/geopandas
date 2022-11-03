@@ -18,6 +18,8 @@ jobs:
     - run: pip install versioneer
     - run: versioneer install
     - uses: psf/black@stable
+      with:
+        options: "--verbose"
     - uses: actions/upload-artifact@v3
       with:
         path: versioneer.py
