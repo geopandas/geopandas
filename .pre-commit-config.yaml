@@ -1,3 +1,7 @@
+ci:
+    autofix_prs: false
+    autoupdate_schedule: weekly
+
 files: 'geopandas\/'
 repos:
     - repo: https://github.com/psf/black
