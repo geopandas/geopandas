@@ -9,7 +9,7 @@
 Merging data
 =========================================
 
-There are two ways to combine datasets in *geopandas* -- attribute joins and spatial joins.
+There are two ways to combine datasets in GeoPandas -- attribute joins and spatial joins.
 
 In an attribute join, a :class:`GeoSeries` or :class:`GeoDataFrame` is
 combined with a regular :class:`pandas.Series` or :class:`pandas.DataFrame` based on a
@@ -113,13 +113,13 @@ Binary predicate joins are available via :meth:`GeoDataFrame.sjoin`.
 
 **predicate**
 
-The ``predicate`` argument specifies how ``geopandas`` decides whether or not to join the attributes of one
+The ``predicate`` argument specifies how GeoPandas decides whether or not to join the attributes of one
 object to another, based on their geometric relationship.
 
 The values for ``predicate`` correspond to the names of geometric binary predicates and depend on the spatial
 index implementation.
 
-The default spatial index in ``geopandas`` currently supports the following values for ``predicate`` which are
+The default spatial index in GeoPandas currently supports the following values for ``predicate`` which are
 defined in the
 `Shapely documentation <http://shapely.readthedocs.io/en/latest/manual.html#binary-predicates>`__:
 

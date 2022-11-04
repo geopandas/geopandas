@@ -12,7 +12,7 @@ Aggregation with dissolve
 
 Spatial data are often more granular than we need. For example, we might have data on sub-national units, but we're actually interested in studying patterns at the level of countries.
 
-In a non-spatial setting, when all we need are summary statistics of the data, we aggregate our data using the :meth:`~pandas.DataFrame.groupby` function. But for spatial data, we sometimes also need to aggregate geometric features. In the *geopandas* library, we can aggregate geometric features using the :meth:`~geopandas.GeoDataFrame.dissolve` function.
+In a non-spatial setting, when all we need are summary statistics of the data, we aggregate our data using the :meth:`~pandas.DataFrame.groupby` function. But for spatial data, we sometimes also need to aggregate geometric features. In the GeoPandas library, we can aggregate geometric features using the :meth:`~geopandas.GeoDataFrame.dissolve` function.
 
 :meth:`~geopandas.GeoDataFrame.dissolve` can be thought of as doing three things:
 
@@ -23,7 +23,7 @@ In a non-spatial setting, when all we need are summary statistics of the data, w
 :meth:`~geopandas.GeoDataFrame.dissolve` Example
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Suppose we are interested in studying continents, but we only have country-level data like the country dataset included in *geopandas*. We can easily convert this to a continent-level dataset.
+Suppose we are interested in studying continents, but we only have country-level data like the country dataset included in GeoPandas. We can easily convert this to a continent-level dataset.
 
 
 First, let's look at the most simple case where we just want continent shapes and names. By default, :meth:`~geopandas.GeoDataFrame.dissolve` will pass ``'first'`` to :ref:`groupby.aggregate <groupby.aggregate>`.

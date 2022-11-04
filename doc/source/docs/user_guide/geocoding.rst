@@ -9,11 +9,11 @@
 Geocoding
 ==========
 
-``geopandas`` supports geocoding (i.e., converting place names to
-location on Earth) through `geopy`_, an optional dependency of ``geopandas``.
+GeoPandas supports geocoding (i.e., converting place names to
+location on Earth) through `geopy`_, an optional dependency of GeoPandas.
 The following example shows how to get the
 locations of boroughs in New York City, and plots those locations along
-with the detailed borough boundary file included within ``geopandas``.
+with the detailed borough boundary file included within GeoPandas.
 
 .. _geopy: http://geopy.readthedocs.io/
 
@@ -54,6 +54,6 @@ a user agent:
 .. attention::
 
     Please consult the Terms of Service for the chosen provider. The example
-    above uses ``'photon'`` (the default), which expects fair usage
+    above uses photon (the default), which expects fair usage
     - extensive usage will be throttled.
     (`Photon's Terms of Use <https://photon.komoot.io>`_).

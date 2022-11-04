@@ -4,9 +4,9 @@ Spatial index
 .. currentmodule:: geopandas
 
 GeoPandas offers built-in support for spatial indexing using an R-Tree algorithm.
-Depending on the ability to import ``pygeos``, GeoPandas will either use
+Depending on the ability to import PyGEOS, GeoPandas will either use
 ``pygeos.STRtree`` or ``rtree.index.Index``. The main interface for both is the
-same and follows the ``pygeos`` model.
+same and follows the PyGEOS model.
 
 ``GeoSeries.sindex`` creates a spatial index, which can use the methods and
 properties documented below.
@@ -39,11 +39,11 @@ methods:
 The concrete implementations currently available are
 ``geopandas.sindex.PyGEOSSTRTreeIndex`` and ``geopandas.sindex.RTreeIndex``.
 
-In addition to the methods listed above, the ``rtree``-based spatial index
+In addition to the methods listed above, the rtree-based spatial index
 (``geopandas.sindex.RTreeIndex``) offers the full capability of
 ``rtree.index.Index`` - see the full API in the `rtree documentation`_.
 
-Similarly, the ``pygeos``-based spatial index
+Similarly, the PyGEOS-based spatial index
 (``geopandas.sindex.PyGEOSSTRTreeIndex``) offers the full capability of
 ``pygeos.STRtree``, including nearest-neighbor queries.
 See the full API in the `PyGEOS STRTree documentation`_.
