@@ -77,6 +77,20 @@ def test_to_crs_geo_column_name():
     assert_geodataframe_equal(df, utm, check_less_precise=True)
 
 
+def test_to_crs_include_z():
+    arr = points_from_xy([1, 2], [2, 3], [3, 4], crs=4326)
+    assert arr.has_z.all()
+
+    # by default infer from geometries
+    res = arr.to_crs(epsg=3857)
+    assert res.has_z.all()
+    # or override manually
+    res = arr.to_crs(epsg=3857, include_z=False)
+    assert (~res.has_z).all()
+    res = arr.to_crs(epsg=3857, include_z=True)
+    assert res.has_z.all()
+
+
 # -----------------------------------------------------------------------------
 # Test different supported formats for CRS specification
 

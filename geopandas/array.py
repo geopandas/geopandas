@@ -689,7 +689,7 @@ class GeometryArray(ExtensionArray):
             crs=self.crs,
         )
 
-    def to_crs(self, crs=None, epsg=None):
+    def to_crs(self, crs=None, epsg=None, include_z=None):
         """Returns a ``GeometryArray`` with all geometries transformed to a new
         coordinate reference system.
 
@@ -776,7 +776,9 @@ class GeometryArray(ExtensionArray):
 
         transformer = Transformer.from_crs(self.crs, crs, always_xy=True)
 
-        new_data = vectorized.transform(self.data, transformer.transform)
+        new_data = vectorized.transform(
+            self.data, transformer.transform, include_z=include_z
+        )
         return GeometryArray(new_data, crs=crs)
 
     def estimate_utm_crs(self, datum_name="WGS 84"):

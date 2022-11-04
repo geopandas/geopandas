@@ -1095,10 +1095,21 @@ def bounds(data):
 #
 
 
-def transform(data, func):
+def transform(data, func, include_z=None):
     if compat.USE_SHAPELY_20:
-        coords = shapely.get_coordinates(data)
-        new_coords = func(coords[:, 0], coords[:, 1])
+        if include_z is None:
+            # if not specified explicitly, try to infer from first geometry
+            include_z = False
+            if len(data):
+                is_geometry = shapely.is_geometry(data)
+                if is_geometry.any():
+                    first_geom = data[np.argmax(is_geometry)]
+                    include_z = first_geom.has_z
+        coords = shapely.get_coordinates(data, include_z=include_z)
+        if include_z:
+            new_coords = func(coords[:, 0], coords[:, 1], coords[:, 2])
+        else:
+            new_coords = func(coords[:, 0], coords[:, 1])
         result = shapely.set_coordinates(data.copy(), np.array(new_coords).T)
         return result
     if compat.USE_PYGEOS:
