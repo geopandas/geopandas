@@ -1346,10 +1346,10 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
         >>> capitals = geopandas.read_file(
         ...     geopandas.datasets.get_path('naturalearth_cities'))
         >>> capitals.shape
-        (202, 2)
+        (243, 2)
 
         >>> sa_capitals = capitals.geometry.clip(south_america)
         >>> sa_capitals.shape
-        (12,)
+        (15,)
         """
         return geopandas.clip(self, mask=mask, keep_geom_type=keep_geom_type)
