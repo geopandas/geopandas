@@ -1,4 +1,5 @@
 import os
+import warnings
 
 import numpy as np
 from numpy.testing import assert_array_equal
@@ -86,6 +87,7 @@ def test_repr_empty():
     assert "geometry" in df._repr_html_()
 
 
+@pytest.mark.filterwarnings("ignore:The behavior of `series\\[i.*:FutureWarning")
 def test_indexing(s, df):
 
     # accessing scalar from the geometry (column)
@@ -308,7 +310,7 @@ def test_to_csv(df):
 def test_numerical_operations(s, df):
     # df methods ignore the geometry column
     exp = pd.Series([3, 4], index=["value1", "value2"])
-    assert_series_equal(df.sum(), exp)
+    assert_series_equal(df.sum(numeric_only=True), exp)
 
     # series methods raise error (not supported for geometry)
     with pytest.raises(TypeError):
@@ -454,7 +456,12 @@ def test_value_counts():
     s = GeoSeries([Point(0, 0), Point(1, 1), Point(0, 0)])
     res = s.value_counts()
     with compat.ignore_shapely2_warnings():
-        exp = pd.Series([2, 1], index=pd14_compat_index([Point(0, 0), Point(1, 1)]))
+        with warnings.catch_warnings():
+            if not compat.PANDAS_GE_13:
+                warnings.filterwarnings(
+                    "ignore", "The input object of type 'Point'", FutureWarning
+                )
+            exp = pd.Series([2, 1], index=pd14_compat_index([Point(0, 0), Point(1, 1)]))
     assert_series_equal(res, exp)
     # Check crs doesn't make a difference - note it is not kept in output index anyway
     s2 = GeoSeries([Point(0, 0), Point(1, 1), Point(0, 0)], crs="EPSG:4326")
@@ -469,17 +476,34 @@ def test_value_counts():
     res3 = s3.value_counts()
     index = pd14_compat_index([Point(0, 0), LineString([[1, 1], [2, 2]])])
     with compat.ignore_shapely2_warnings():
-        exp3 = pd.Series([2, 1], index=index)
+        with warnings.catch_warnings():
+            if not compat.PANDAS_GE_13:
+                warnings.filterwarnings(
+                    "ignore", "The input object of type 'Point'", FutureWarning
+                )
+            exp3 = pd.Series([2, 1], index=index)
     assert_series_equal(res3, exp3)
 
     # check None is handled
     s4 = GeoSeries([Point(0, 0), None, Point(0, 0)])
     res4 = s4.value_counts(dropna=True)
     with compat.ignore_shapely2_warnings():
-        exp4_dropna = pd.Series([2], index=pd14_compat_index([Point(0, 0)]))
+        with warnings.catch_warnings():
+            if not compat.PANDAS_GE_13:
+                warnings.filterwarnings(
+                    "ignore", "The input object of type 'Point'", FutureWarning
+                )
+            exp4_dropna = pd.Series([2], index=pd14_compat_index([Point(0, 0)]))
     assert_series_equal(res4, exp4_dropna)
     with compat.ignore_shapely2_warnings():
-        exp4_keepna = pd.Series([2, 1], index=pd14_compat_index([Point(0, 0), None]))
+        with warnings.catch_warnings():
+            if not compat.PANDAS_GE_13:
+                warnings.filterwarnings(
+                    "ignore", "The input object of type 'Point'", FutureWarning
+                )
+            exp4_keepna = pd.Series(
+                [2, 1], index=pd14_compat_index([Point(0, 0), None])
+            )
     res4_keepna = s4.value_counts(dropna=False)
     assert_series_equal(res4_keepna, exp4_keepna)
 
@@ -518,7 +542,7 @@ def test_groupby(df):
     assert_frame_equal(res, exp)
 
     # reductions ignore geometry column
-    res = df.groupby("value2").sum()
+    res = df.groupby("value2").sum(numeric_only=True)
     exp = pd.DataFrame({"value1": [2, 1], "value2": [1, 2]}, dtype="int64").set_index(
         "value2"
     )

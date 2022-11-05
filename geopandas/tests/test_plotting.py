@@ -1731,6 +1731,12 @@ class TestGeoplotAccessor:
     if MPL_DECORATORS:
 
         @pytest.mark.parametrize("kind", _pandas_kinds)
+        @pytest.mark.filterwarnings(
+            (
+                "ignore:The get_cmap function will be deprecated in a future version:"
+                "PendingDeprecationWarning:pandas.*"
+            )
+        )
         @check_figures_equal(extensions=["png", "pdf"])
         def test_pandas_kind(self, kind, fig_test, fig_ref):
             """Test Pandas kind."""

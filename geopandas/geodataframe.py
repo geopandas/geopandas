@@ -1575,6 +1575,7 @@ individually so that features may have different properties
         sort=True,
         observed=False,
         dropna=True,
+        agg_kwargs={},
     ):
         """
         Dissolve geometries within `groupby` into single observation.
@@ -1627,6 +1628,11 @@ individually so that features may have different properties
             if a non-default value is given for this parameter.
 
             .. versionadded:: 0.9.0
+        agg_kwargs : dict, default {}
+            Keyword arguments to be passed into aggfunc.
+            e.g. ``number_only``
+
+            .. versionadded:: 0.13.0
 
         Returns
         -------
@@ -1673,7 +1679,7 @@ individually so that features may have different properties
 
         # Process non-spatial component
         data = self.drop(labels=self.geometry.name, axis=1)
-        aggregated_data = data.groupby(**groupby_kwargs).agg(aggfunc)
+        aggregated_data = data.groupby(**groupby_kwargs).agg(aggfunc, **agg_kwargs)
         aggregated_data.columns = aggregated_data.columns.to_flat_index()
 
         # Process spatial component

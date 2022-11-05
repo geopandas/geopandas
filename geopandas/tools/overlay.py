@@ -362,7 +362,12 @@ def overlay(df1, df2, how="intersection", keep_geom_type=None, make_valid=True):
             # improve performance (we only need to collect geometries in their
             # respective Multi version)
             dissolved = exploded.dissolve(by="level_0")
-            result.loc[is_collection, geom_col] = dissolved[geom_col].values
+            # https://pandas.pydata.org/docs/whatsnew/v1.5.0.html#inplace-operation-when-setting-values-with-loc-and-iloc
+            if is_collection.sum() == len(result):
+                result[geom_col] = dissolved[geom_col].values
+            else:
+                result.loc[is_collection, geom_col] = dissolved[geom_col].values
+
         else:
             num_dropped_collection = 0
 

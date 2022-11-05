@@ -82,10 +82,14 @@ def test_first_dissolve(nybb_polydf, first):
 
 
 def test_mean_dissolve(nybb_polydf, first, expected_mean):
-    test = nybb_polydf.dissolve("manhattan_bronx", aggfunc="mean")
+    test = nybb_polydf.dissolve(
+        "manhattan_bronx", aggfunc="mean", agg_kwargs={"numeric_only": True}
+    )
     assert_frame_equal(expected_mean, test, check_column_type=False)
 
-    test = nybb_polydf.dissolve("manhattan_bronx", aggfunc=np.mean)
+    test = nybb_polydf.drop(columns=["BoroName"]).dissolve(
+        "manhattan_bronx", aggfunc=np.mean
+    )
     assert_frame_equal(expected_mean, test, check_column_type=False)
 
 
@@ -123,7 +127,7 @@ def test_dissolve_none(nybb_polydf):
 
 
 def test_dissolve_none_mean(nybb_polydf):
-    test = nybb_polydf.dissolve(aggfunc="mean")
+    test = nybb_polydf.dissolve(aggfunc="mean", agg_kwargs={"numeric_only": True})
     expected = GeoDataFrame(
         {
             nybb_polydf.geometry.name: [nybb_polydf.geometry.unary_union],
