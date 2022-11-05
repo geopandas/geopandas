@@ -6,7 +6,7 @@ Development version
 
 - Added ``agg_kwargs`` argument to ``GeoDataFrame.dissolve()``  Enables passing of 
 ``numeric_only`` to manage `FutureWarning` from **pandas 1.5**. Changes to ``overlay()``
-and ``clip()`` to be compatible with **pandas 1.5** (#2642)
+and ``clip()`` to prevent **pandas 1.5** `FutureWarning` (#2642)
 
 Version 0.12.1 (October 29, 2022)
 ---------------------------------
