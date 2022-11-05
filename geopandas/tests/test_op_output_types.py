@@ -341,6 +341,11 @@ def test_constructor_sliced_column_slices(df2):
     assert type(df2.iloc[0, :]) == pd.Series
 
 
+@pytest.mark.filterwarnings(
+    ""
+    if compat.PANDAS_GE_13
+    else "ignore:the `interpolation=`:DeprecationWarning:pandas.*"
+)
 def test_constructor_sliced_in_pandas_methods(df2):
     # constructor sliced is used in many places, checking a sample of non
     # geometry cases are sensible

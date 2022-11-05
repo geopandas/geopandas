@@ -76,3 +76,10 @@ filterwarnings = [
     "ignore:distutils Version classes are deprecated.*:DeprecationWarning:pandas.*",
     "ignore:distutils Version classes are deprecated.*:DeprecationWarning:numpy.*"
 ]
+# optimise collection
+testpaths = [
+    "geopandas/io/tests",
+    "geopandas/tools/tests",
+    "geopandas/tests"
+
+]

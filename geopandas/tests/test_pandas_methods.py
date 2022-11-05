@@ -674,6 +674,9 @@ def test_apply_preserves_geom_col_name(df):
     assert result.geometry.name == "geom"
 
 
+@pytest.mark.filterwarnings(
+    "" if compat.SHAPELY_GE_20 else "ignore:The array interface is deprecated.*"
+)
 def test_df_apply_returning_series(df):
     # https://github.com/geopandas/geopandas/issues/2283
     result = df.apply(lambda row: row.geometry, axis=1)
