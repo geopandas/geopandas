@@ -58,6 +58,13 @@ def test_to_crs_transform__missing_data():
     assert_geodataframe_equal(df, utm, check_less_precise=True)
 
 
+def test_to_crs_transform__empty_data():
+    df = df_epsg26918().iloc[:0]
+    lonlat = df.to_crs(epsg=4326)
+    utm = lonlat.to_crs(epsg=26918)
+    assert_geodataframe_equal(df, utm, check_less_precise=True)
+
+
 def test_to_crs_inplace():
     df = df_epsg26918()
     lonlat = df.to_crs(epsg=4326)
