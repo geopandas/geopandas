@@ -1095,7 +1095,7 @@ def bounds(data):
 #
 
 
-def transform(data, func, include_z=None):
+def transform(data, func):
     if compat.USE_SHAPELY_20 or compat.USE_PYGEOS:
         if compat.USE_SHAPELY_20:
             has_z = shapely.has_z(data)
