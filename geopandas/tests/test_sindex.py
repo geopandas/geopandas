@@ -82,7 +82,7 @@ class TestSeriesSindex:
         sq = Polygon([(0, 0), (1, 0), (1, 1), (0, 1)])
         s = GeoSeries([t1, t2, sq])
         t = GeoSeries([t1, t2, sq], [3, 4, 5])
-        s = pd.concat([s,t]) # pandas 2.0 append is removed, replace with concat()
+        s = pd.concat([s, t])  # pandas 2.0 append is removed, replace with concat()
         assert len(s) == 6
         assert s.sindex.size == 6
 
