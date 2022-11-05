@@ -1097,20 +1097,21 @@ def bounds(data):
 
 def transform(data, func, include_z=None):
     if compat.USE_SHAPELY_20:
-        if include_z is None:
-            # if not specified explicitly, try to infer from first geometry
-            include_z = False
-            if len(data):
-                is_geometry = shapely.is_geometry(data)
-                if is_geometry.any():
-                    first_geom = data[np.argmax(is_geometry)]
-                    include_z = first_geom.has_z
-        coords = shapely.get_coordinates(data, include_z=include_z)
-        if include_z:
-            new_coords = func(coords[:, 0], coords[:, 1], coords[:, 2])
-        else:
-            new_coords = func(coords[:, 0], coords[:, 1])
-        result = shapely.set_coordinates(data.copy(), np.array(new_coords).T)
+        has_z = shapely.has_z(data)
+        result = np.empty_like(data)
+
+        coords = shapely.get_coordinates(data[~has_z], include_z=False)
+        new_coords_z = func(coords[:, 0], coords[:, 1])
+        result[~has_z] = shapely.set_coordinates(
+            data[~has_z].copy(), np.array(new_coords_z).T
+        )
+
+        coords_z = shapely.get_coordinates(data[has_z], include_z=True)
+        new_coords_z = func(coords_z[:, 0], coords_z[:, 1], coords_z[:, 2])
+        result[has_z] = shapely.set_coordinates(
+            data[has_z].copy(), np.array(new_coords_z).T
+        )
+
         return result
     if compat.USE_PYGEOS:
         coords = pygeos.get_coordinates(data)

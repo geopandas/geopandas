@@ -77,18 +77,24 @@ def test_to_crs_geo_column_name():
     assert_geodataframe_equal(df, utm, check_less_precise=True)
 
 
-def test_to_crs_include_z():
+def test_to_crs_dimension_z():
+    # preserve z dimension
     arr = points_from_xy([1, 2], [2, 3], [3, 4], crs=4326)
     assert arr.has_z.all()
+    result = arr.to_crs(epsg=3857)
+    assert result.has_z.all()
 
-    # by default infer from geometries
-    res = arr.to_crs(epsg=3857)
-    assert res.has_z.all()
-    # or override manually
-    res = arr.to_crs(epsg=3857, include_z=False)
-    assert (~res.has_z).all()
-    res = arr.to_crs(epsg=3857, include_z=True)
-    assert res.has_z.all()
+
+def test_to_crs_dimension_mixed():
+    s = GeoSeries([Point(1, 2), LineString([(1, 2, 3), (4, 5, 6)])], crs=2056)
+    result = s.to_crs(epsg=4326)
+    assert not result[0].is_empty
+    assert result.has_z.tolist() == [False, True]
+    roundtrip = result.to_crs(epsg=2056)
+    # TODO replace with assert_geoseries_equal once we expose tolerance keyword
+    # assert_geoseries_equal(roundtrip, s, check_less_precise=True)
+    for a, b in zip(roundtrip, s):
+        np.testing.assert_allclose(a.coords[:], b.coords[:], atol=0.01)
 
 
 # -----------------------------------------------------------------------------
