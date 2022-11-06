@@ -558,9 +558,6 @@ class TestDataFrame:
         assert_frame_equal(self.df2.loc[5:], self.df2.cx[:, 5:])
         assert_frame_equal(self.df2.loc[5:], self.df2.cx[5:, 5:])
 
-    @pytest.mark.filterwarnings(
-        "" if compat.SHAPELY_GE_20 else "ignore:The array interface is deprecated.*"
-    )
     def test_from_dict(self):
         data = {"A": [1], "geometry": [Point(0.0, 0.0)]}
         df = GeoDataFrame.from_dict(data, crs=3857)
