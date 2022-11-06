@@ -86,6 +86,7 @@ def test_repr_empty():
     assert "geometry" in df._repr_html_()
 
 
+@pytest.mark.filterwarnings("ignore:The behavior of `series\\[i.*:FutureWarning")
 def test_indexing(s, df):
 
     # accessing scalar from the geometry (column)
@@ -308,7 +309,7 @@ def test_to_csv(df):
 def test_numerical_operations(s, df):
     # df methods ignore the geometry column
     exp = pd.Series([3, 4], index=["value1", "value2"])
-    assert_series_equal(df.sum(), exp)
+    assert_series_equal(df.sum(numeric_only=True), exp)
 
     # series methods raise error (not supported for geometry)
     with pytest.raises(TypeError):
@@ -449,6 +450,11 @@ def pd14_compat_index(index):
         return index
 
 
+@pytest.mark.filterwarnings(
+    ""
+    if compat.PANDAS_GE_13
+    else "ignore:The input object of type 'Point':FutureWarning"
+)
 def test_value_counts():
     # each object is considered unique
     s = GeoSeries([Point(0, 0), Point(1, 1), Point(0, 0)])
@@ -518,7 +524,7 @@ def test_groupby(df):
     assert_frame_equal(res, exp)
 
     # reductions ignore geometry column
-    res = df.groupby("value2").sum()
+    res = df.groupby("value2").sum(numeric_only=True)
     exp = pd.DataFrame({"value1": [2, 1], "value2": [1, 2]}, dtype="int64").set_index(
         "value2"
     )
@@ -650,6 +656,9 @@ def test_apply_preserves_geom_col_name(df):
     assert result.geometry.name == "geom"
 
 
+@pytest.mark.filterwarnings(
+    "" if compat.SHAPELY_GE_20 else "ignore:The array interface is deprecated.*"
+)
 def test_df_apply_returning_series(df):
     # https://github.com/geopandas/geopandas/issues/2283
     result = df.apply(lambda row: row.geometry, axis=1)
