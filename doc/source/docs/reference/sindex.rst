@@ -39,7 +39,7 @@ methods:
 The concrete implementations currently available are
 ``geopandas.sindex.PyGEOSSTRTreeIndex`` and ``geopandas.sindex.RTreeIndex``.
 
-In addition to the methods listed above, the rtree-based spatial index
+In addition to the methods listed above, the ``rtree``-based spatial index
 (``geopandas.sindex.RTreeIndex``) offers the full capability of
 ``rtree.index.Index`` - see the full API in the `rtree documentation`_.
 

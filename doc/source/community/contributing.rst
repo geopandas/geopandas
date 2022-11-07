@@ -107,7 +107,7 @@ want to clone your fork to your machine::
     cd geopandas-yourname
     git remote add upstream git://github.com/geopandas/geopandas.git
 
-This creates the directory `geopandas-yourname` and connects your repository to
+This creates the directory ``geopandas-yourname`` and connects your repository to
 the upstream (main project) GeoPandas repository.
 
 The testing suite will run automatically on GitHub Actions once your pull request is
@@ -156,14 +156,14 @@ An easy way to create a GeoPandas development environment is as follows:
 - Install either `Anaconda <http://docs.continuum.io/anaconda/>`_ or
   `miniconda <http://conda.pydata.org/miniconda.html>`_
 - Make sure that you have :ref:`cloned the repository <contributing.forking>`
-- ``cd`` to the GeoPandas source directory
+- ``cd`` to the ``geopandas`` source directory
 
 Using the provided environment
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 GeoPandas provides an environment which includes the required dependencies for development.
 The environment file is located in the top level of the repo and is named ``environment-dev.yml``.
-You can create this environment by navigating to the the GeoPandas source directory
+You can create this environment by navigating to the the ``geopandas`` source directory
 and running::
 
       conda env create -f environment-dev.yml

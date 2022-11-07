@@ -54,6 +54,6 @@ a user agent:
 .. attention::
 
     Please consult the Terms of Service for the chosen provider. The example
-    above uses photon (the default), which expects fair usage
+    above uses ``'photon'`` (the default), which expects fair usage
     - extensive usage will be throttled.
     (`Photon's Terms of Use <https://photon.komoot.io>`_).
