@@ -1749,6 +1749,11 @@ class TestGeoplotAccessor:
             if compat.PANDAS_GE_12
             else "ignore::DeprecationWarning:matplotlib.*|fontTools.*"
         )
+        @pytest.mark.filterwarnings(
+            ""
+            if compat.PANDAS_GE_12
+            else "ignore::Warning:pandas.plotting._matplotlib.*:331"
+        )
         @check_figures_equal(extensions=["png", "pdf"])
         def test_pandas_kind(self, kind, fig_test, fig_ref):
             """Test Pandas kind."""
