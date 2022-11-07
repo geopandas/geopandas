@@ -22,7 +22,7 @@ For reference codes of the most commonly used projections, see `spatialreference
 
 The same CRS can often be referred to in many ways. For example, one of the most
 commonly used CRS is the WGS84 latitude-longitude projection. This can be
-referred to using the authority code "EPSG:4326".
+referred to using the authority code ``"EPSG:4326"``.
 
 GeoPandas can accept anything accepted by :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`:
 
