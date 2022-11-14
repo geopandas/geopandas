@@ -61,7 +61,7 @@ def expected_mean(merged_shapes):
 def test_geom_dissolve(nybb_polydf, first):
     test = nybb_polydf.dissolve("manhattan_bronx")
     assert test.geometry.name == "myshapes"
-    assert test.geom_almost_equals(first).all()
+    assert test.geom_equals_exact(first).all()
 
 
 def test_dissolve_retains_existing_crs(nybb_polydf):

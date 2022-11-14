@@ -73,7 +73,7 @@ Basic Methods
 Relationship Tests
 ^^^^^^^^^^^^^^^^^^^
 
-* :meth:`~GeoSeries.geom_almost_equals`: is shape almost the same as ``other`` (good when floating point precision issues make shapes slightly different)
+* :meth:`~GeoSeries.geom_equals_exact`: is shape almost the same as ``other`` (good when floating point precision issues make shapes slightly different)
 * :meth:`~GeoSeries.contains`: is shape contained within ``other``
 * :meth:`~GeoSeries.intersects`: does shape intersect ``other``
 

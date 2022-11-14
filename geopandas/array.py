@@ -567,8 +567,7 @@ class GeometryArray(ExtensionArray):
 
     def geom_almost_equals(self, other, decimal):
         warnings.warn(
-            "geom_almost_equals() is now geom_equals_exact(). "
-            "geom_almost_equals() will be deprecated in the future.",
+            "The 'geom_almost_equals()' method is deprecated because the name is confusing. The 'equals_exact()' method should be used instead.",
             FutureWarning,
             stacklevel=2,
         )

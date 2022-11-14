@@ -148,14 +148,14 @@ class TestSeries:
 
     def test_geom_almost_equals(self):
         # TODO: test decimal parameter
-        assert np.all(self.g1.geom_almost_equals(self.g1))
-        assert_array_equal(self.g1.geom_almost_equals(self.sq), [False, True])
+        assert np.all(self.g1.geom_equals_exact(self.g1))
+        assert_array_equal(self.g1.geom_equals_exact(self.sq), [False, True])
 
         assert_array_equal(
-            self.a1.geom_almost_equals(self.a2, align=True), [False, True, False]
+            self.a1.geom_equals_exact(self.a2, align=True), [False, True, False]
         )
         assert_array_equal(
-            self.a1.geom_almost_equals(self.a2, align=False), [False, False]
+            self.a1.geom_equals_exact(self.a2, align=False), [False, False]
         )
 
     def test_geom_equals_exact(self):
@@ -202,7 +202,7 @@ class TestSeries:
     def test_transform(self):
         utm18n = self.landmarks.to_crs(epsg=26918)
         lonlat = utm18n.to_crs(epsg=4326)
-        assert np.all(self.landmarks.geom_almost_equals(lonlat))
+        assert np.all(self.landmarks.geom_equals_exact(lonlat))
         with pytest.raises(ValueError):
             self.g1.to_crs(epsg=4326)
         with pytest.raises(ValueError):
@@ -270,24 +270,24 @@ class TestSeries:
         # As string
         reprojected = self.g3.to_crs("+proj=utm +zone=30")
         reprojected_back = reprojected.to_crs(epsg=4326)
-        assert np.all(self.g3.geom_almost_equals(reprojected_back))
+        assert np.all(self.g3.geom_equals_exact(reprojected_back))
 
         # As dict
         reprojected = self.g3.to_crs({"proj": "utm", "zone": "30"})
         reprojected_back = reprojected.to_crs(epsg=4326)
-        assert np.all(self.g3.geom_almost_equals(reprojected_back))
+        assert np.all(self.g3.geom_equals_exact(reprojected_back))
 
         # Set to equivalent string, convert, compare to original
         copy = self.g3.copy()
         copy.crs = "epsg:4326"
         reprojected = copy.to_crs({"proj": "utm", "zone": "30"})
         reprojected_back = reprojected.to_crs(epsg=4326)
-        assert np.all(self.g3.geom_almost_equals(reprojected_back))
+        assert np.all(self.g3.geom_equals_exact(reprojected_back))
 
         # Conversions by different format
         reprojected_string = self.g3.to_crs("+proj=utm +zone=30")
         reprojected_dict = self.g3.to_crs({"proj": "utm", "zone": "30"})
-        assert np.all(reprojected_string.geom_almost_equals(reprojected_dict))
+        assert np.all(reprojected_string.geom_equals_exact(reprojected_dict))
 
     def test_from_wkb(self):
         assert_geoseries_equal(self.g1, GeoSeries.from_wkb([self.t1.wkb, self.sq.wkb]))

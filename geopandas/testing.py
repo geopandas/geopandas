@@ -90,7 +90,7 @@ def _geom_almost_equals_mask(this, that):
     """
 
     return (
-        this.geom_almost_equals(that)
+        this.geom_equals_exact(that)
         | (this.is_empty & that.is_empty)
         | (_isna(this) & _isna(that))
     )

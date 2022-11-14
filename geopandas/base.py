@@ -1035,13 +1035,13 @@ GeometryCollection
         dtype: geometry
 
 
-        >>> s.geom_almost_equals(Point(0, 1), decimal=2)
+        >>> s.geom_equals_exact(Point(0, 1), decimal=2)
         0    False
         1    False
         2     True
         dtype: bool
 
-        >>> s.geom_almost_equals(Point(0, 1), decimal=1)
+        >>> s.geom_equals_exact(Point(0, 1), decimal=1)
         0    False
         1     True
         2     True
@@ -1059,8 +1059,7 @@ GeometryCollection
 
         """
         warnings.warn(
-            "geom_almost_equals() is now geom_equals_exact(). "
-            "geom_almost_equals() will be deprecated in the future.",
+            "The 'geom_almost_equals()' method is deprecated because the name is confusing. The 'equals_exact()' method should be used instead.",
             FutureWarning,
             stacklevel=2,
         )
