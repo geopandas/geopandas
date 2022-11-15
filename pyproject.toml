@@ -65,3 +65,14 @@ geopandas = [
     "datasets/naturalearth_lowres/*",
     "tests/data/*",
 ]
+
+[tool.pytest.ini_options]
+markers = [
+    "web: tests that need network connectivity"
+]
+xfail_strict = true
+
+filterwarnings = [
+    "ignore:distutils Version classes are deprecated.*:DeprecationWarning:pandas.*",
+    "ignore:distutils Version classes are deprecated.*:DeprecationWarning:numpy.*"
+]
