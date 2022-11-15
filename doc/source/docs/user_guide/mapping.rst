@@ -26,7 +26,7 @@ Loading some example data:
     world = geopandas.read_file(geopandas.datasets.get_path('naturalearth_lowres'))
     cities = geopandas.read_file(geopandas.datasets.get_path('naturalearth_cities'))
 
-We can now plot those GeoDataFrames:
+You can now plot those GeoDataFrames:
 
 .. ipython:: python
 
@@ -185,7 +185,7 @@ Before combining maps, however, remember to always ensure they share a common CR
     # Check crs
     cities = cities.to_crs(world.crs)
 
-    # Now we can overlay over country outlines
+    # Now you can overlay over country outlines
     # And yes, there are lots of island capitals
     # apparently in the middle of the ocean!
 
@@ -228,7 +228,7 @@ Without specified ``zorder``, cities (Points) gets plotted below world (Polygons
     @savefig zorder_default.png
     world.plot(ax=ax);
 
-We can set the ``zorder`` for cities higher than for world to move it of top.
+You can set the ``zorder`` for cities higher than for world to move it of top.
 
 .. ipython:: python
 
