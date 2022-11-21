@@ -5,7 +5,7 @@ The documentation of GeoPandas consists of four parts - :doc:`User Guide <docs/u
 
 .. container:: button
 
-    :doc:`User Guide <docs/user_guide>` :doc:`Advanced Guide <docs/advanced_guide>`
+    :doc:`User guide <docs/user_guide>` :doc:`Advanced guide <docs/advanced_guide>`
     :doc:`Examples <gallery/index>` :doc:`API reference <docs/reference>`
 
 
@@ -13,7 +13,7 @@ The documentation of GeoPandas consists of four parts - :doc:`User Guide <docs/u
   :maxdepth: 2
   :caption: Documentation
 
-  User Guide <docs/user_guide>
-  Advanced Guide <docs/advanced_guide>
+  User guide <docs/user_guide>
+  Advanced guide <docs/advanced_guide>
   API reference <docs/reference>
   Changelog <docs/changelog>

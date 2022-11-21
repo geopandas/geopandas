@@ -15,6 +15,7 @@ import shapely.geos
 import shapely.ops
 import shapely.wkb
 import shapely.wkt
+import shapely.validation
 
 from shapely.geometry.base import BaseGeometry
 
@@ -971,6 +972,26 @@ def normalize(data):
         with compat.ignore_shapely2_warnings():
             out[:] = [
                 _shapely_normalize(geom) if geom is not None else None for geom in data
+            ]
+    return out
+
+
+def make_valid(data):
+    if compat.USE_SHAPELY_20:
+        return shapely.make_valid(data)
+    elif compat.USE_PYGEOS:
+        return pygeos.make_valid(data)
+    elif not compat.SHAPELY_GE_18:
+        raise NotImplementedError(
+            f"shapely >= 1.8 or PyGEOS is required, "
+            f"version {shapely.__version__} is installed"
+        )
+    else:
+        out = np.empty(len(data), dtype=object)
+        with compat.ignore_shapely2_warnings():
+            out[:] = [
+                shapely.validation.make_valid(geom) if geom is not None else None
+                for geom in data
             ]
     return out
 

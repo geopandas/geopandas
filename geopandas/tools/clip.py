@@ -7,6 +7,7 @@ A module to clip vector data using GeoPandas.
 """
 import warnings
 
+import numpy as np
 import pandas.api.types
 from shapely.geometry import Polygon, MultiPolygon, box
 
@@ -133,11 +134,11 @@ def clip(gdf, mask, keep_geom_type=False):
     >>> capitals = geopandas.read_file(
     ...     geopandas.datasets.get_path('naturalearth_cities'))
     >>> capitals.shape
-    (202, 2)
+    (243, 2)
 
     >>> sa_capitals = geopandas.clip(capitals, south_america)
     >>> sa_capitals.shape
-    (12, 2)
+    (15, 2)
     """
     if not isinstance(gdf, (GeoDataFrame, GeoSeries)):
         raise TypeError(
@@ -168,7 +169,11 @@ def clip(gdf, mask, keep_geom_type=False):
     elif mask_is_list_like:
         box_mask = mask
     else:
-        box_mask = mask.bounds
+        # Avoid empty tuple returned by .bounds when geometry is empty. A tuple of
+        # all nan values is consistent with the behavior of
+        # {GeoSeries, GeoDataFrame}.total_bounds for empty geometries.
+        # TODO(shapely) can simpely use mask.bounds once relying on Shapely 2.0
+        box_mask = mask.bounds if not mask.is_empty else (np.nan,) * 4
     box_gdf = gdf.total_bounds
     if not (
         ((box_mask[0] <= box_gdf[2]) and (box_gdf[0] <= box_mask[2]))
