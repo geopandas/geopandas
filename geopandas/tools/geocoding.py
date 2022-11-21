@@ -117,7 +117,6 @@ def _query(data, forward, provider, throttle_time, **kwargs):
     from geopy.geocoders import get_geocoder_for_service
     from geopy.geocoders.base import GeocoderQueryError
 
-
     # Get the actual 'geocoder' from the provider name
     if provider is None:
         provider = "photon"
