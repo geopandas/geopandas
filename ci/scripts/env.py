@@ -1,10 +1,13 @@
-from pathlib import Path
 import json
+from pathlib import Path
 
-f = list(Path.home().joinpath("geopandas/ci/lock").glob("*.lock"))
-# d = {"env":[str(Path(*fn.parts[-3:])) for fn in f],
-# "env_name":[fn.stem for fn in f]}
+locks = list(Path.home().joinpath("geopandas/ci/lock").glob("*.lock"))
+envs = list(Path.home().joinpath("geopandas/ci/envs").glob("*.yaml"))
 
-d = [{"env":str(Path(*fn.parts[-3:])), "env_name":fn.name} for fn in f]
-
+d = [
+    {"env": str(Path(*fn.parts[-3:])), "env_name": fn.stem}
+    for fn in locks + [e for e in envs if e.stem not in [l.stem for l in locks]]
+    # if fn.suffix == ".yaml"
+]
+# d = d[0:1]
 print(f"::set-output name=env::{json.dumps(d)}")
