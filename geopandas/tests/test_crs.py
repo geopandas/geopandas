@@ -1,24 +1,14 @@
-from packaging.version import Version
-
 import random
 
 import numpy as np
 import pandas as pd
-
-from shapely.geometry import Point, Polygon, LineString
 import pyproj
+import pytest
+from shapely.geometry import Point, Polygon, LineString
 
 from geopandas import GeoSeries, GeoDataFrame, points_from_xy, datasets, read_file
 from geopandas.array import from_shapely, from_wkb, from_wkt, GeometryArray
-
 from geopandas.testing import assert_geodataframe_equal
-import pytest
-
-
-# pyproj 2.3.1 fixed a segfault for the case working in an environment with
-# 'init' dicts (https://github.com/pyproj4/pyproj/issues/415)
-PYPROJ_LT_231 = Version(pyproj.__version__) < Version("2.3.1")
-PYPROJ_GE_3 = Version(pyproj.__version__) >= Version("3.0.0")
 
 
 def _create_df(x, y=None, crs=None):
@@ -87,7 +77,6 @@ def test_to_crs_geo_column_name():
         "epsg:4326",
         pytest.param(
             {"init": "epsg:4326"},
-            marks=pytest.mark.skipif(PYPROJ_LT_231, reason="segfault"),
         ),
         "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs",
         {"proj": "latlong", "ellps": "WGS84", "datum": "WGS84", "no_defs": True},
@@ -106,7 +95,6 @@ def epsg4326(request):
         "epsg:26918",
         pytest.param(
             {"init": "epsg:26918", "no_defs": True},
-            marks=pytest.mark.skipif(PYPROJ_LT_231, reason="segfault"),
         ),
         "+proj=utm +zone=18 +ellps=GRS80 +datum=NAD83 +units=m +no_defs ",
         {"proj": "utm", "zone": 18, "datum": "NAD83", "units": "m", "no_defs": True},
@@ -125,8 +113,7 @@ def test_transform2(epsg4326, epsg26918):
     # with PROJ >= 7, the transformation using EPSG code vs proj4 string is
     # slightly different due to use of grid files or not -> turn off network
     # to not use grid files at all for this test
-    if PYPROJ_GE_3:
-        pyproj.network.set_network_enabled(False)
+    pyproj.network.set_network_enabled(False)
 
     df = df_epsg26918()
     lonlat = df.to_crs(**epsg4326)

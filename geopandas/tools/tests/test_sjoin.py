@@ -365,9 +365,7 @@ class TestSpatialJoin:
             )
             exp.index.names = df2.index.names
 
-        # GH 1364 fix of behaviour was done in pandas 1.1.0
-        if predicate == "within" and Version(pd.__version__) >= Version("1.1.0"):
-            exp = exp.sort_index()
+        exp = exp.sort_index()
 
         assert_frame_equal(res, exp, check_index_type=False)
 

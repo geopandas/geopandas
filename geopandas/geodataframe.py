@@ -1700,8 +1700,6 @@ individually so that features may have different properties
         multiple rows with single geometries, thereby increasing the vertical
         size of the GeoDataFrame.
 
-        .. note:: ignore_index requires pandas 1.1.0 or newer.
-
         Parameters
         ----------
         column : string, default None
