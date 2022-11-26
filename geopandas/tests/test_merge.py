@@ -137,11 +137,6 @@ class TestMerging:
         # check metadata comes from first df
         self._check_metadata(res3, geometry_column_name="geom", crs="epsg:4326")
 
-    @pytest.mark.xfail(
-        not compat.PANDAS_GE_11,
-        reason="pandas <=1.0 hard codes concat([GeoSeries, GeoSeries]) -> "
-        "DataFrame or Union[DataFrame, SparseDataFrame] in 0.25",
-    )
     @pytest.mark.filterwarnings("ignore:Accessing CRS")
     def test_concat_axis1_geoseries(self):
         gseries2 = GeoSeries([Point(i, i) for i in range(3, 6)], crs="epsg:4326")

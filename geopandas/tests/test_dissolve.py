@@ -254,9 +254,6 @@ def test_dissolve_categorical():
     )
 
 
-@pytest.mark.skipif(
-    not compat.PANDAS_GE_11, reason="dropna groupby kwarg added in pandas 1.1.0"
-)
 def test_dissolve_dropna():
     gdf = geopandas.GeoDataFrame(
         {
@@ -286,9 +283,6 @@ def test_dissolve_dropna():
     assert_frame_equal(expected_no_na, gdf.dissolve("a"))
 
 
-@pytest.mark.skipif(
-    compat.PANDAS_GE_11, reason="dropna warning is only emitted if pandas < 1.1.0"
-)
 def test_dissolve_dropna_warn(nybb_polydf):
     # No warning with default params
     with warnings.catch_warnings(record=True) as record:

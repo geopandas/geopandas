@@ -1035,10 +1035,6 @@ class TestGeomMethods:
         exploded_df = gdf.explode(column="col1")
         assert_geodataframe_equal(exploded_df, expected_df)
 
-    @pytest.mark.skipif(
-        not compat.PANDAS_GE_11,
-        reason="ignore_index keyword introduced in pandas 1.1.0",
-    )
     def test_explode_pandas_fallback_ignore_index(self):
         d = {
             "col1": [["name1", "name2"], ["name3", "name4"]],

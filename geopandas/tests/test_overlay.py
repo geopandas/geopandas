@@ -198,10 +198,7 @@ def test_overlay_nybb(how):
 
     # first, check that all bounds and areas are approx equal
     # this is a very rough check for multipolygon equality
-    if not _compat.PANDAS_GE_11:
-        kwargs = dict(check_less_precise=True)
-    else:
-        kwargs = {}
+    kwargs = {}
     pd.testing.assert_series_equal(
         result.geometry.area, expected.geometry.area, **kwargs
     )
