@@ -33,12 +33,7 @@ import matplotlib.pyplot as plt  # noqa
 
 try:  # skipif and importorskip do not work for decorators
     from matplotlib.testing.decorators import check_figures_equal
-
-    if Version(matplotlib.__version__) >= Version("3.3.0"):
-
-        MPL_DECORATORS = True
-    else:
-        MPL_DECORATORS = False
+    MPL_DECORATORS = True
 except ImportError:
     MPL_DECORATORS = False
 
@@ -958,7 +953,7 @@ class TestGeometryCollectionPlotting:
 
 class TestNonuniformGeometryPlotting:
     def setup_method(self):
-        pytest.importorskip("matplotlib", "1.5.0")
+        pytest.importorskip("matplotlib")
 
         poly = Polygon([(1, 0), (2, 0), (2, 1)])
         line = LineString([(0.5, 0.5), (1, 1), (1, 0.5), (1.5, 1)])
