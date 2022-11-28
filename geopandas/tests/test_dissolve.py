@@ -290,12 +290,6 @@ def test_dissolve_dropna_warn(nybb_polydf):
     for r in record:
         assert "dropna kwarg is not supported" not in str(r.message)
 
-    # Warning is emitted with non-default dropna value
-    with pytest.warns(
-        UserWarning, match="dropna kwarg is not supported for pandas < 1.1.0"
-    ):
-        nybb_polydf.dissolve(dropna=False)
-
 
 def test_dissolve_multi_agg(nybb_polydf, merged_shapes):
 
