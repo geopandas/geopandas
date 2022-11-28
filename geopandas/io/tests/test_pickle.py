@@ -3,14 +3,11 @@ See generate_legacy_storage_files.py for the creation of the legacy files.
 
 """
 from contextlib import contextmanager
-from packaging.version import Version
 import glob
 import os
 import pathlib
 
 import pandas as pd
-
-import pyproj
 
 import pytest
 from geopandas.testing import assert_geodataframe_equal
@@ -48,8 +45,7 @@ def with_use_pygeos(option):
 
 
 @pytest.mark.skipif(
-    compat.USE_SHAPELY_20
-    or compat.USE_PYGEOS,
+    compat.USE_SHAPELY_20 or compat.USE_PYGEOS,
     reason=(
         "shapely 2.0/pygeos-based unpickling currently only works for "
         "shapely-2.0/pygeos-written files"

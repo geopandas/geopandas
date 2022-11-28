@@ -6,7 +6,6 @@ from pandas.testing import assert_index_equal
 from shapely.geometry import Point
 
 from geopandas import GeoDataFrame, GeoSeries
-from geopandas import _compat as compat
 
 
 class TestMerging:

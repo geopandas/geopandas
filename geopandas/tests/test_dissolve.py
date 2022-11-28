@@ -5,7 +5,6 @@ import pandas as pd
 
 import geopandas
 from geopandas import GeoDataFrame, read_file
-from geopandas import _compat as compat
 
 from pandas.testing import assert_frame_equal
 import pytest

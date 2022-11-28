@@ -1,4 +1,3 @@
-from packaging.version import Version
 import math
 from typing import Sequence
 from geopandas.testing import assert_geodataframe_equal

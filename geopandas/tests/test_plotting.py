@@ -1,4 +1,3 @@
-from packaging.version import Version
 import itertools
 import warnings
 
@@ -33,6 +32,7 @@ import matplotlib.pyplot as plt  # noqa
 
 try:  # skipif and importorskip do not work for decorators
     from matplotlib.testing.decorators import check_figures_equal
+
     MPL_DECORATORS = True
 except ImportError:
     MPL_DECORATORS = False
