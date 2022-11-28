@@ -753,8 +753,6 @@ class GeoSeries(GeoPandasBase, Series):
     def fillna(self, value=None, method=None, inplace=False, **kwargs):
         """Fill NA values with a geometry (empty polygon by default).
 
-        "method" is currently not implemented for pandas <= 0.12.
-
         Examples
         --------
 
