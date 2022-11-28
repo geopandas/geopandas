@@ -41,11 +41,11 @@ classifiers = [
 ]
 requires-python = ">=3.8"
 dependencies = [
-    "fiona >= 1.8",
+    "fiona >= 1.8.19",
     "packaging",
-    "pandas >= 1.0.0",
-    "pyproj >= 2.6.1.post1",
-    "shapely >= 1.7",
+    "pandas >= 1.1.0",
+    "pyproj >= 3.0.1",
+    "shapely >= 1.7.1",
 ]
 
 [project.urls]
