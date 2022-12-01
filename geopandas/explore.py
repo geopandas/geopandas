@@ -619,12 +619,16 @@ GON (((180.00000 -16.06713, 180.00000...
         popup = None
     # escape the curly braces {{}} for jinja2 templates
     feature_collection = gdf.__geo_interface__
-    for feature in feature_collection['features']:
-            for k in feature['properties']:
-                # escape the curly braces in values
-                if type(feature['properties'][k]) == str:
-                    feature['properties'][k] = re.sub(r'\{{2,}', lambda x: "{% raw %}" + x.group(0) + "{% endraw %}", feature['properties'][k])  
-        
+    for feature in feature_collection["features"]:
+        for k in feature["properties"]:
+            # escape the curly braces in values
+            if type(feature["properties"][k]) == str:
+                feature["properties"][k] = re.sub(
+                    r"\{{2,}",
+                    lambda x: "{% raw %}" + x.group(0) + "{% endraw %}",
+                    feature["properties"][k],
+                )
+
     # add dataframe to map
     folium.GeoJson(
         feature_collection,
