@@ -406,7 +406,7 @@ def test_fillna_series(s):
     res = s2.fillna(GeoSeries([Point(i, i) for i in index], index=index))
     assert_geoseries_equal(res, s)
 
-    # check na filled but the inputting length is different
+    # check na filled but the input length is different
     res = s2.fillna(GeoSeries([Point(1, 1)], index=[1]))
     assert_geoseries_equal(res, s)
 
