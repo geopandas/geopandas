@@ -28,6 +28,7 @@ except ImportError:
 
 try:
     import fiona
+
     # invalid datetime handling
     FIONA_GE_1821 = Version(fiona.__version__) >= Version("1.8.21")
     FIONA_GE_19 = Version(Version(fiona.__version__).base_version) >= Version("1.9.0")
