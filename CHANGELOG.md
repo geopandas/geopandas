@@ -4,6 +4,10 @@ Changelog
 Development version
 -------------------
 
+New features and improvements:
+
+- `GeoSeries.fillna` now support to fill na values via another `GeoSeries` (#2535).
+
 Version 0.12.1 (October 29, 2022)
 ---------------------------------
 
