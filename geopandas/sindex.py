@@ -14,7 +14,7 @@ def _get_sindex_class():
     Required to comply with _compat.USE_PYGEOS.
     The selection order goes PyGEOS > RTree > Error.
     """
-    if compat.USE_PYGEOS:
+    if compat.USE_SHAPELY_20 or compat.USE_PYGEOS:
         return PyGEOSSTRTreeIndex
     if compat.HAS_RTREE:
         return RTreeIndex
@@ -55,8 +55,8 @@ class BaseSpatialIndex:
         ----------
         geometry : shapely geometry
             A single shapely geometry to query against the spatial index.
-        predicate : {None, 'intersects', 'within', 'contains', \
-'overlaps', 'crosses', 'touches'}, optional
+        predicate : {None, "contains", "contains_properly", "covered_by", "covers", \
+"crosses", "intersects", "overlaps", "touches", "within"}, optional
             If predicate is provided, the input geometry is
             tested using the predicate function against each item
             in the tree whose extent intersects the envelope of the
@@ -118,8 +118,8 @@ class BaseSpatialIndex:
         geometry : {GeoSeries, GeometryArray, numpy.array of PyGEOS geometries}
             Accepts GeoPandas geometry iterables (GeoSeries, GeometryArray)
             or a numpy array of PyGEOS geometries.
-        predicate : {None, 'intersects', 'within', 'contains', 'overlaps', \
-'crosses', 'touches'}, optional
+        predicate : {None, "contains", "contains_properly", "covered_by", "covers", \
+"crosses", "intersects", "overlaps", "touches", "within"}, optional
             If predicate is provided, the input geometries are tested using
             the predicate function against each item in the tree whose extent
             intersects the envelope of the each input geometry:
@@ -437,6 +437,7 @@ if compat.HAS_RTREE:
                 "overlaps",
                 "crosses",
                 "touches",
+                "covered_by",
                 "covers",
                 "contains_properly",
             }
@@ -502,6 +503,7 @@ if compat.HAS_RTREE:
                 if predicate in (
                     "contains",
                     "intersects",
+                    "covered_by",
                     "covers",
                     "contains_properly",
                 ):
@@ -625,13 +627,19 @@ if compat.HAS_RTREE:
             return self.size
 
 
-if compat.HAS_PYGEOS:
+if compat.SHAPELY_GE_20 or compat.HAS_PYGEOS:
 
     from . import geoseries  # noqa
     from . import array  # noqa
-    import pygeos  # noqa
 
-    _PYGEOS_PREDICATES = {p.name for p in pygeos.strtree.BinaryPredicate} | set([None])
+    if compat.USE_SHAPELY_20:
+        import shapely as mod  # noqa
+
+        _PYGEOS_PREDICATES = {p.name for p in mod.strtree.BinaryPredicate} | set([None])
+    else:
+        import pygeos as mod  # noqa
+
+        _PYGEOS_PREDICATES = {p.name for p in mod.strtree.BinaryPredicate} | set([None])
 
     class PyGEOSSTRTreeIndex(BaseSpatialIndex):
         """A simple wrapper around pygeos's STRTree.
@@ -649,9 +657,9 @@ if compat.HAS_PYGEOS:
             # https://github.com/pygeos/pygeos/issues/146
             # https://github.com/pygeos/pygeos/issues/147
             non_empty = geometry.copy()
-            non_empty[pygeos.is_empty(non_empty)] = None
+            non_empty[mod.is_empty(non_empty)] = None
             # set empty geometries to None to maintain indexing
-            self._tree = pygeos.STRtree(non_empty)
+            self._tree = mod.STRtree(non_empty)
             # store geometries, including empty geometries for user access
             self.geometries = geometry.copy()
 
@@ -669,8 +677,8 @@ if compat.HAS_PYGEOS:
             >>> from shapely.geometry import Point
             >>> s = geopandas.GeoSeries([Point(0, 0), Point(1, 1)])
             >>> s.sindex.valid_query_predicates  # doctest: +SKIP
-            {'contains', 'crosses', 'covered_by', None, 'intersects', 'within', \
-'touches', 'overlaps', 'contains_properly', 'covers'}
+            {None, "contains", "contains_properly", "covered_by", "covers", \
+"crosses", "intersects", "overlaps", "touches", "within"}
             """
             return _PYGEOS_PREDICATES
 
@@ -717,6 +725,8 @@ if compat.HAS_PYGEOS:
                 return geometry.data
             elif isinstance(geometry, BaseGeometry):
                 return array._shapely_to_geom(geometry)
+            elif geometry is None:
+                return None
             elif isinstance(geometry, list):
                 return np.asarray(
                     [
@@ -740,7 +750,10 @@ if compat.HAS_PYGEOS:
 
             geometry = self._as_geometry_array(geometry)
 
-            res = self._tree.query_bulk(geometry, predicate)
+            if compat.USE_SHAPELY_20:
+                res = self._tree.query(geometry, predicate)
+            else:
+                res = self._tree.query_bulk(geometry, predicate)
 
             if sort:
                 # sort by first array (geometry) and then second (tree)
@@ -754,23 +767,34 @@ if compat.HAS_PYGEOS:
         def nearest(
             self, geometry, return_all=True, max_distance=None, return_distance=False
         ):
-            if not compat.PYGEOS_GE_010:
-                raise NotImplementedError("sindex.nearest requires pygeos >= 0.10")
+            if not (compat.USE_SHAPELY_20 or compat.PYGEOS_GE_010):
+                raise NotImplementedError(
+                    "sindex.nearest requires shapely >= 2.0 or pygeos >= 0.10"
+                )
 
             geometry = self._as_geometry_array(geometry)
+            if isinstance(geometry, BaseGeometry) or geometry is None:
+                geometry = [geometry]
 
-            if not return_all and max_distance is None and not return_distance:
-                return self._tree.nearest(geometry)
-
-            result = self._tree.nearest_all(
-                geometry, max_distance=max_distance, return_distance=return_distance
-            )
+            if compat.USE_SHAPELY_20:
+                result = self._tree.query_nearest(
+                    geometry,
+                    max_distance=max_distance,
+                    return_distance=return_distance,
+                    all_matches=return_all,
+                )
+            else:
+                if not return_all and max_distance is None and not return_distance:
+                    return self._tree.nearest(geometry)
+                result = self._tree.nearest_all(
+                    geometry, max_distance=max_distance, return_distance=return_distance
+                )
             if return_distance:
                 indices, distances = result
             else:
                 indices = result
 
-            if not return_all:
+            if not return_all and not compat.USE_SHAPELY_20:
                 # first subarray of geometry indices is sorted, so we can use this
                 # trick to get the first of each index value
                 mask = np.diff(indices[0, :]).astype("bool")
@@ -804,9 +828,9 @@ if compat.HAS_PYGEOS:
 
             # need to convert tuple of bounds to a geometry object
             if len(coordinates) == 4:
-                indexes = self._tree.query(pygeos.box(*coordinates))
+                indexes = self._tree.query(mod.box(*coordinates))
             elif len(coordinates) == 2:
-                indexes = self._tree.query(pygeos.points(*coordinates))
+                indexes = self._tree.query(mod.points(*coordinates))
             else:
                 raise TypeError(
                     "Invalid coordinates, must be iterable in format "

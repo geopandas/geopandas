@@ -6,7 +6,7 @@
    import geopandas
 
 
-Merging Data
+Merging data
 =========================================
 
 There are two ways to combine datasets in *geopandas* -- attribute joins and spatial joins.
@@ -15,7 +15,7 @@ In an attribute join, a :class:`GeoSeries` or :class:`GeoDataFrame` is
 combined with a regular :class:`pandas.Series` or :class:`pandas.DataFrame` based on a
 common variable. This is analogous to normal merging or joining in *pandas*.
 
-In a Spatial Join, observations from two :class:`GeoSeries` or :class:`GeoDataFrame`
+In a spatial join, observations from two :class:`GeoSeries` or :class:`GeoDataFrame`
 are combined based on their spatial relationship to one another.
 
 In the following examples, we use these datasets:
@@ -51,7 +51,7 @@ Keep in mind, that appended geometry columns needs to have the same CRS.
     eurasia = europe.append(asia)
 
 
-Attribute Joins
+Attribute joins
 ----------------
 
 Attribute joins are accomplished using the :meth:`~pandas.DataFrame.merge` method. In general, it is recommended
@@ -76,10 +76,10 @@ that initially has only ISO codes for each country by merging it with a :class:`
    country_shapes.head()
 
 
-Spatial Joins
+Spatial joins
 ----------------
 
-In a Spatial Join, two geometry objects are merged based on their spatial relationship to one another.
+In a spatial join, two geometry objects are merged based on their spatial relationship to one another.
 
 .. ipython:: python
 
@@ -104,7 +104,7 @@ GeoPandas provides two spatial-join functions:
    For historical reasons, both methods are also available as top-level functions :func:`sjoin` and :func:`sjoin_nearest`.
    It is recommended to use methods as the functions may be deprecated in the future.
 
-Binary Predicate Joins
+Binary predicate joins
 ~~~~~~~~~~~~~~~~~~~~~~
 
 Binary predicate joins are available via :meth:`GeoDataFrame.sjoin`.
@@ -144,7 +144,7 @@ Note more complicated spatial relationships can be studied by combining geometri
 To find all polygons within a given distance of a point, for example, one can first use the :meth:`~geopandas.GeoSeries.buffer` method to expand each
 point into a circle of appropriate radius, then intersect those buffered circles with the polygons in question.
 
-Nearest Joins
+Nearest joins
 ~~~~~~~~~~~~~
 
 Proximity-based joins can be done via :meth:`GeoDataFrame.sjoin_nearest`.
