@@ -1,16 +1,13 @@
-Changelog
-=========
+# Changelog
 
-Development version
--------------------
+## Development version
 
-Version 0.12.1 (October 29, 2022)
----------------------------------
+
+## Version 0.12.1 (October 29, 2022)
 
 Small bug-fix release removing the shapely<2 pin in the installation requirements.
 
-Version 0.12 (October 24, 2022)
--------------------------------
+## Version 0.12 (October 24, 2022)
 
 The highlight of this release is the support for Shapely 2.0. This makes it possible to
 test Shapely 2.0 (currently 2.0b1) alongside GeoPandas.
