@@ -1,5 +1,4 @@
-Changelog
-=========
+# Changelog
 
 ## Version 0.12.2 (December 10, 2022)
 
@@ -13,8 +12,7 @@ Bug fixes:
 
 Small bug-fix release removing the shapely<2 pin in the installation requirements.
 
-Version 0.12 (October 24, 2022)
--------------------------------
+## Version 0.12 (October 24, 2022)
 
 The highlight of this release is the support for Shapely 2.0. This makes it possible to
 test Shapely 2.0 (currently 2.0b1) alongside GeoPandas.
@@ -48,8 +46,7 @@ Bug fixes:
 - Combining GeoSeries/GeoDataFrames with ``pandas.concat`` will no longer silently
   override CRS information if not all inputs have the same CRS (#2056).
 
-Version 0.11.1 (July 24, 2022)
-------------------------------
+## Version 0.11.1 (July 24, 2022)
 
 Small bug-fix release:
 
@@ -71,8 +68,7 @@ Small bug-fix release:
   feather or parquet writer. ``version`` will only be used to set
   ``schema_version`` if ``version`` is one of 0.1.0 or 0.4.0 (#2496).
 
-Version 0.11 (June 20, 2022)
-----------------------------
+## Version 0.11.1 (July 24, 2022)
 
 Highlights of this release:
 
