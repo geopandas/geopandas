@@ -41,8 +41,7 @@ Bug fixes:
 - Combining GeoSeries/GeoDataFrames with ``pandas.concat`` will no longer silently
   override CRS information if not all inputs have the same CRS (#2056).
 
-Version 0.11.1 (July 24, 2022)
-------------------------------
+## Version 0.11.1 (July 24, 2022)
 
 Small bug-fix release:
 
