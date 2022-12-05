@@ -95,5 +95,4 @@ and the ``'pop_est'`` column using ``'min'`` and ``'max'``:
             "pop_est": ["min", "max"],
         },
     )
-
    continents.head()
