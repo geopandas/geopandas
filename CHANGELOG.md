@@ -4,6 +4,11 @@ Changelog
 Development version
 -------------------
 
+Version 0.12.2 (TBD)
+---------------------------------
+
+Uses min and max zooms from arguments, if provided, rather than overridingwith defaults (#2599).
+
 Version 0.12.1 (October 29, 2022)
 ---------------------------------
 
