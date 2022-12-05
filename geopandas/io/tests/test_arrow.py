@@ -73,7 +73,7 @@ def test_create_metadata():
     _remove_id_from_member_of_ensembles(crs_expected)
     assert metadata["columns"]["geometry"]["crs"] == crs_expected
     assert metadata["columns"]["geometry"]["encoding"] == "WKB"
-    assert metadata["columns"]["geometry"]["geometry_type"] == [
+    assert metadata["columns"]["geometry"]["geometry_types"] == [
         "MultiPolygon",
         "Polygon",
     ]

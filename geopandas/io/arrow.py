@@ -10,8 +10,8 @@ from geopandas import GeoDataFrame
 import geopandas
 from .file import _expand_user
 
-METADATA_VERSION = "0.4.0"
-SUPPORTED_VERSIONS = ["0.1.0", "0.4.0"]
+METADATA_VERSION = "1.0.0b1"
+SUPPORTED_VERSIONS = ["0.1.0", "0.4.0", "1.0.0b1"]
 # reference: https://github.com/opengeospatial/geoparquet
 
 # Metadata structure:
@@ -72,7 +72,7 @@ def _create_metadata(df, schema_version=None):
     Parameters
     ----------
     df : GeoDataFrame
-    schema_version : {'0.1.0', '0.4.0', None}
+    schema_version : {'0.1.0', '0.4.0', '1.0.0b1', None}
         GeoParquet specification version; if not provided will default to
         latest supported version.
 
@@ -93,6 +93,12 @@ def _create_metadata(df, schema_version=None):
     for col in df.columns[df.dtypes == "geometry"]:
         series = df[col]
         geometry_types = sorted(Series(series.geom_type.unique()).dropna())
+        if schema_version >= "1":
+            geometry_types_name = "geometry_types"
+        else:
+            geometry_types_name = "geometry_type"
+            if len(geometry_types) == 1:
+                geometry_types = geometry_types[0]
 
         crs = None
         if series.crs:
@@ -105,9 +111,7 @@ def _create_metadata(df, schema_version=None):
         column_metadata[col] = {
             "encoding": "WKB",
             "crs": crs,
-            "geometry_type": geometry_types[0]
-            if len(geometry_types) == 1
-            else geometry_types,
+            geometry_types_name: geometry_types,
             "bbox": series.total_bounds.tolist(),
         }
 
