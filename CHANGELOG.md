@@ -5,8 +5,7 @@ Development version
 -------------------
 
 New features and improvements:
-  - Uses min and max zoom levels from arguments, if provided, rather than 
-    overriding with defaults (#2599).
+  - Support specifying `min_zoom` and `max_zoom` inside the `map_kwds` argument for `.explore()` (#2599).
 
 Deprecations and compatibility notes:
 
