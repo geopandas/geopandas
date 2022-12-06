@@ -2,13 +2,10 @@
 
 ## Development version
 
+
 ## Version 0.12.2 (TBD)
----------------------------------
 
 Uses min and max zoom levels from arguments, if provided, rather than overriding with defaults (#2599).
-
-Version 0.12.1 (October 29, 2022)
----------------------------------
 
 ## Version 0.12.1 (October 29, 2022)
 
