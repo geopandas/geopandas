@@ -1,8 +1,6 @@
-Changelog
-=========
+# Changelog
 
-Development version
--------------------
+## Development version
 
 
 Bug fixes:
@@ -10,13 +8,11 @@ Bug fixes:
 - Correctly handle geometries with Z dimension in ``to_crs()`` when using PyGEOS or
   Shapely >= 2.0 (previously the z coordinates were lost) (#1345).
 
-Version 0.12.1 (October 29, 2022)
----------------------------------
+## Version 0.12.1 (October 29, 2022)
 
 Small bug-fix release removing the shapely<2 pin in the installation requirements.
 
-Version 0.12 (October 24, 2022)
--------------------------------
+## Version 0.12 (October 24, 2022)
 
 The highlight of this release is the support for Shapely 2.0. This makes it possible to
 test Shapely 2.0 (currently 2.0b1) alongside GeoPandas.
@@ -50,8 +46,7 @@ Bug fixes:
 - Combining GeoSeries/GeoDataFrames with ``pandas.concat`` will no longer silently
   override CRS information if not all inputs have the same CRS (#2056).
 
-Version 0.11.1 (July 24, 2022)
-------------------------------
+## Version 0.11.1 (July 24, 2022)
 
 Small bug-fix release:
 
