@@ -1096,15 +1096,24 @@ def bounds(data):
 
 
 def transform(data, func):
-    if compat.USE_SHAPELY_20:
-        coords = shapely.get_coordinates(data)
-        new_coords = func(coords[:, 0], coords[:, 1])
-        result = shapely.set_coordinates(data.copy(), np.array(new_coords).T)
-        return result
-    if compat.USE_PYGEOS:
-        coords = pygeos.get_coordinates(data)
-        new_coords = func(coords[:, 0], coords[:, 1])
-        result = pygeos.set_coordinates(data.copy(), np.array(new_coords).T)
+    if compat.USE_SHAPELY_20 or compat.USE_PYGEOS:
+        if compat.USE_SHAPELY_20:
+            has_z = shapely.has_z(data)
+            from shapely import get_coordinates, set_coordinates
+        else:
+            has_z = pygeos.has_z(data)
+            from pygeos import get_coordinates, set_coordinates
+
+        result = np.empty_like(data)
+
+        coords = get_coordinates(data[~has_z], include_z=False)
+        new_coords_z = func(coords[:, 0], coords[:, 1])
+        result[~has_z] = set_coordinates(data[~has_z].copy(), np.array(new_coords_z).T)
+
+        coords_z = get_coordinates(data[has_z], include_z=True)
+        new_coords_z = func(coords_z[:, 0], coords_z[:, 1], coords_z[:, 2])
+        result[has_z] = set_coordinates(data[has_z].copy(), np.array(new_coords_z).T)
+
         return result
     else:
         from shapely.ops import transform

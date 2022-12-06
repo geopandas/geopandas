@@ -3,9 +3,15 @@
 ## Development version
 
 
-## Version 0.12.2 (TBD)
+Bug fixes:
 
-Uses min and max zoom levels from arguments, if provided, rather than overriding with defaults (#2599).
+- Correctly handle geometries with Z dimension in ``to_crs()`` when using PyGEOS or
+  Shapely >= 2.0 (previously the z coordinates were lost) (#1345).
+
+New features and improvements:
+
+- Uses min and max zoom levels from arguments, if provided, rather than overriding 
+  with defaults (#2599).
 
 ## Version 0.12.1 (October 29, 2022)
 
