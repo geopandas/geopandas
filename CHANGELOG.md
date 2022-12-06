@@ -3,6 +3,11 @@
 ## Development version
 
 
+Bug fixes:
+
+- Correctly handle geometries with Z dimension in ``to_crs()`` when using PyGEOS or
+  Shapely >= 2.0 (previously the z coordinates were lost) (#1345).
+
 ## Version 0.12.1 (October 29, 2022)
 
 Small bug-fix release removing the shapely<2 pin in the installation requirements.
