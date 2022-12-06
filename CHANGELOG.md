@@ -4,8 +4,12 @@ Changelog
 Development version
 -------------------
 
-Version 0.12.1 (October 29, 2022)
----------------------------------
+Bug fixes:
+
+- Correctly handle geometries with Z dimension in ``to_crs()`` when using PyGEOS or
+  Shapely >= 2.0 (previously the z coordinates were lost) (#1345).
+
+## Version 0.12.1 (October 29, 2022)
 
 Small bug-fix release removing the shapely<2 pin in the installation requirements.
 
@@ -17,7 +21,7 @@ test Shapely 2.0 (currently 2.0b1) alongside GeoPandas.
 
 Note that if you also have PyGEOS installed, you need to set an environment variable
 (`USE_PYGEOS=0`) before importing geopandas to actually test Shapely 2.0 features instead of PyGEOS. See
-https://geopandas.org/en/latest/getting_started/install.html#using-the-optional-pygeos-dependency
+<https://geopandas.org/en/latest/getting_started/install.html#using-the-optional-pygeos-dependency>
 for more details.
 
 New features and improvements:
@@ -54,8 +58,8 @@ Small bug-fix release:
   MultiIndex (#2486).
 - Fix regression in ``GeoDataFrame.explode()`` with non-default
   geometry column name.
-- Fix regression in ``apply()`` causing row-wise all nan float columns to be 
-  casted to GeometryDtype (#2482). 
+- Fix regression in ``apply()`` causing row-wise all nan float columns to be
+  casted to GeometryDtype (#2482).
 - Fix a crash in datetime column reading where the file contains mixed timezone
   offsets (#2479). These will be read as UTC localized values.
 - Fix a crash in datetime column reading where the file contains datetimes
@@ -66,7 +70,6 @@ Small bug-fix release:
   ``schema_version``. ``version`` will be passed directly to underlying
   feather or parquet writer. ``version`` will only be used to set
   ``schema_version`` if ``version`` is one of 0.1.0 or 0.4.0 (#2496).
-
 
 Version 0.11 (June 20, 2022)
 ----------------------------
