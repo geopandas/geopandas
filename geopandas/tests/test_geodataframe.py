@@ -772,6 +772,27 @@ class TestDataFrame:
         with pytest.raises(ValueError):
             df.set_geometry("location", inplace=True)
 
+    def test_dataframe_not_manipulated(self):
+        df = pd.DataFrame(
+            {
+                "A": range(len(self.df)),
+                "latitude": self.df.geometry.centroid.y,
+                "longitude": self.df.geometry.centroid.x,
+            },
+            index=self.df.index,
+        )
+        df_copy = df.copy()
+        gf = GeoDataFrame(
+            df,
+            geometry=points_from_xy(df["longitude"], df["latitude"]),
+            crs=self.df.crs,
+        )
+        assert isinstance(df, pd.DataFrame)
+        assert "geometry" not in df
+        pd.testing.assert_frame_equal(df, df_copy)
+        assert isinstance(gf, GeoDataFrame)
+        assert hasattr(gf, "geometry")
+
     def test_geodataframe_geointerface(self):
         assert self.df.__geo_interface__["type"] == "FeatureCollection"
         assert len(self.df.__geo_interface__["features"]) == self.df.shape[0]
