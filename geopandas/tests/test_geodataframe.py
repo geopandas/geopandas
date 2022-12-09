@@ -13,7 +13,7 @@ from shapely.geometry import Point, Polygon
 
 import geopandas
 import geopandas._compat as compat
-from geopandas import GeoDataFrame, GeoSeries, read_file
+from geopandas import GeoDataFrame, GeoSeries, points_from_xy, read_file
 from geopandas.array import GeometryArray, GeometryDtype, from_shapely
 from geopandas._compat import ignore_shapely2_warnings
 
