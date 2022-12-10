@@ -1,7 +1,5 @@
 # Changelog
 
-## Development version
-
 ## Version 0.12.2 (December 10, 2022)
 
 Bug fixes:
