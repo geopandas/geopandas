@@ -7,7 +7,6 @@ dependencies:
   - go
   - nodejs
   - gcc
-  - gh 
   - jupyterlab 
   - nb_conda_kernels 
   - jupyterlab_code_formatter

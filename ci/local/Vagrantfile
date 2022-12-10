@@ -23,9 +23,9 @@ mamba env create -q -f /vagrant/go-dev.yml > /dev/null
 conda activate go-dev
 
 cat /vagrant/git_config.json | jq --raw-output .gh_token | gh auth login --with-token
-gh_user=$( cat /vagrant/git_config.json | jq .user_name )
+gh_user=$( cat /vagrant/git_config.json | jq --raw-output .user_name )
 git config --global user.name $gh_user
-git config --global user.email $( cat /vagrant/git_config.json | jq .user_email )
+git config --global user.email $( cat /vagrant/git_config.json | jq --raw-output .user_email )
 gh repo clone $gh_user/geopandas
 cd geopandas
 git checkout ci_update
