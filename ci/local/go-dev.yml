@@ -1,0 +1,17 @@
+name: go-dev
+channels:
+  - conda-forge
+dependencies:
+  - python
+  - gh
+  - go
+  - nodejs
+  - gcc
+  - gh 
+  - jupyterlab 
+  - nb_conda_kernels 
+  - jupyterlab_code_formatter
+  - black 
+  - isort
+  - pandas
+  - ansi2html

@@ -1,0 +1,57 @@
+$conda = <<-SCRIPT
+wget -q https://github.com/conda-forge/miniforge/releases/latest/download/Mambaforge-Linux-x86_64.sh
+chmod +x *.sh
+./Mambaforge-Linux-x86_64.sh -b -p /home/vagrant/miniconda3 > /dev/null
+source /home/vagrant/miniconda3/etc/profile.d/conda.sh
+conda init bash
+SCRIPT
+
+$linux_init = <<-SCRIPT
+export DEBIAN_FRONTEND=noninteractive
+apt-get -q update
+apt-get -q install --upgrade intel-microcode
+apt-get -q install -y avahi-daemon 
+SCRIPT
+
+$actdev = <<-SCRIPT
+source /home/vagrant/miniconda3/etc/profile.d/conda.sh 
+# install act
+curl -s https://raw.githubusercontent.com/nektos/act/master/install.sh | bash
+
+echo "-P ubuntu-latest=-self-hosted" > $HOME/.actrc
+mamba env create -q -f /vagrant/go-dev.yml > /dev/null
+conda activate go-dev
+
+cat /vagrant/git_config.json | jq --raw-output .gh_token | gh auth login --with-token
+gh_user=$( cat /vagrant/git_config.json | jq .user_name )
+git config --global user.name $gh_user
+git config --global user.email $( cat /vagrant/git_config.json | jq .user_email )
+gh repo clone $gh_user/geopandas
+cd geopandas
+git checkout ci_update
+cd ~
+
+echo PATH=$PATH:$HOME/bin >> $HOME/.bashrc
+
+SCRIPT
+
+Vagrant.configure("2") do |config|
+  config.vm.box = "alvistack/ubuntu-22.10"
+  config.vm.hostname = "gpd"
+  config.vm.network "public_network", bridge: 'en1: Wi-Fi (AirPort)'
+
+  config.vm.provider "virtualbox" do |vb|
+    # Customize the amount of memory on the VM:
+    vb.memory = "4096"
+    vb.name = "gpd"
+  end
+  config.vm.provision :shell do |shell|
+    shell.privileged = true
+    shell.inline = 'echo rebooting'
+    shell.reboot = true
+  end
+  # make vm findable by bonjour
+  config.vm.provision "shell", inline: $linux_init
+  config.vm.provision "shell", inline: $conda, privileged: false
+  config.vm.provision "shell", inline: $actdev, privileged: false
+end
