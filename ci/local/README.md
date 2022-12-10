@@ -41,3 +41,8 @@ nohup act pull_request --json > ../log.log 2> /dev/null &
 - `python serve_html.py -f ~/log.log` converts **act** JSON log file to HTML
 - `python -m http.server --directory html/` make HTML easily 
    available http://gpd.local:8000
+
+### jupyter ###
+- **jupyterlab** is installed into **go-dev** environment
+- utility script `geopandas/ci/local/jupyter.sh` will setup each conda env so that it
+  can be accessed from **jupyterlab** server
