@@ -1,12 +1,12 @@
 # Changelog
 
-## Development version
+## Version 0.12.2 (December 10, 2022)
 
 Bug fixes:
 
 - Correctly handle geometries with Z dimension in ``to_crs()`` when using PyGEOS or
   Shapely >= 2.0 (previously the z coordinates were lost) (#1345).
-- Assign Crimea to Ukraine in naturalearth_lowres (#2670)
+- Assign Crimea to Ukraine in the ``naturalearth_lowres`` built-in dataset (#2670)
 
 ## Version 0.12.1 (October 29, 2022)
 
