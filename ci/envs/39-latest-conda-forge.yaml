@@ -36,5 +36,4 @@ dependencies:
   - pytest-doctestplus
   - pip
   - pip:
-      - --pre
-      - shapely==2.0b1
+      - git+https://github.com/shapely/shapely.git@main
