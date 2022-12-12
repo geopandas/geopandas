@@ -45,7 +45,6 @@ jobs:
         shell: bash -l {0}
     strategy:
       fail-fast: false
-      if: ${{ env.ACT }}
       max-parallel: 1  # mamba and caching in ACT.  still parallel on github?
       matrix: ${{ fromJson(needs.prepenv.outputs.matrix) }}
 
