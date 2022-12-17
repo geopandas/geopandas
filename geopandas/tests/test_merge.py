@@ -1,3 +1,5 @@
+import warnings
+
 import pandas as pd
 import pytest
 from geopandas.testing import assert_geodataframe_equal
@@ -102,6 +104,38 @@ class TestMerging:
             pd.concat(
                 [self.gdf, self.gdf.set_crs("epsg:4326"), self.gdf.set_crs("epsg:4327")]
             )
+
+    def test_concat_axis0_unaligned_cols(self):
+        import sys
+
+        print(sys.executable)
+        gdf = self.gdf.set_crs("epsg:4326").assign(
+            geom=self.gdf.geometry.set_crs("epsg:4327")
+        )
+        import geopandas as gpd
+
+        gdf = gpd.read_file(gpd.datasets.get_path("nybb")).assign(geom=gdf.geometry)
+        both_geom_cols = gdf[["geom", "geometry"]]
+        single_geom_col = gdf[["geometry"]]
+        print(both_geom_cols.geom.crs, both_geom_cols.geometry.crs)
+        print(single_geom_col.geometry.crs)
+        pd.concat([both_geom_cols, single_geom_col])
+        pd.concat([single_geom_col, both_geom_cols])
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            pd.concat([both_geom_cols, single_geom_col])
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            pd.concat([single_geom_col, single_geom_col])
+        # Document side effect of this change, the following will no longer warn
+        # (ideally this would still warn)
+        explicit_all_none_case = gdf[["geometry"]].assign(
+            geom=GeoSeries([None for _ in range(len(gdf))])
+        )
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            pd.concat([both_geom_cols, explicit_all_none_case])
 
     def test_concat_axis1(self):
 
