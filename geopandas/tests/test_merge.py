@@ -117,8 +117,6 @@ class TestMerging:
         gdf = gpd.read_file(gpd.datasets.get_path("nybb")).assign(geom=gdf.geometry)
         both_geom_cols = gdf[["geom", "geometry"]]
         single_geom_col = gdf[["geometry"]]
-        print(both_geom_cols.geom.crs, both_geom_cols.geometry.crs)
-        print(single_geom_col.geometry.crs)
         pd.concat([both_geom_cols, single_geom_col])
         pd.concat([single_geom_col, both_geom_cols])
         with warnings.catch_warnings():
