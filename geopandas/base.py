@@ -693,7 +693,8 @@ GeometryCollection
         return _delegate_geo_method("representative_point", self)
 
     def normalize(self):
-        """Returns a ``GeoSeries`` of normalized geometries to normal form (or canonical form).
+        """Returns a ``GeoSeries`` of normalized
+        geometries to normal form (or canonical form).
 
         This method orders the coordinates, rings of a polygon and parts of
         multi geometries consistently. Typically useful for testing purposes
