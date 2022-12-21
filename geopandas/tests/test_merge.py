@@ -106,22 +106,22 @@ class TestMerging:
             )
 
     def test_concat_axis0_unaligned_cols(self):
+        # https://github.com/geopandas/geopandas/issues/2679
         gdf = self.gdf.set_crs("epsg:4326").assign(
             geom=self.gdf.geometry.set_crs("epsg:4327")
         )
         both_geom_cols = gdf[["geom", "geometry"]]
         single_geom_col = gdf[["geometry"]]
-        pd.concat([both_geom_cols, single_geom_col])
-        pd.concat([single_geom_col, both_geom_cols])
         with warnings.catch_warnings():
             warnings.simplefilter("error")
             pd.concat([both_geom_cols, single_geom_col])
-
+        # Check order of mismatch doesn't matter
         with warnings.catch_warnings():
             warnings.simplefilter("error")
-            pd.concat([single_geom_col, single_geom_col])
-        # Document side effect of this change, the following will no longer warn
-        # (ideally this would still warn)
+            pd.concat([single_geom_col, both_geom_cols])
+
+        # Side effect of this fix, explicitly provided all none geoseries
+        # will not be warned for (ideally this would still warn)
         explicit_all_none_case = gdf[["geometry"]].assign(
             geom=GeoSeries([None for _ in range(len(gdf))])
         )

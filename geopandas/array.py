@@ -1394,7 +1394,7 @@ class GeometryArray(ExtensionArray):
 
 
 def _get_common_crs(arr_seq):
-    # mask out all None arrays (mostly likely from concatting with a missing col
+    # mask out all None arrays (commonly from concat where column is missing)
     arr_seq = [ga for ga in arr_seq if not ga.isna().any()]
 
     crs_set = {arr.crs for arr in arr_seq}
@@ -1405,7 +1405,6 @@ def _get_common_crs(arr_seq):
         return None
     if len(crs_not_none) == 1:
         if len(crs_set) != 1:
-            # x
             warnings.warn(
                 "CRS not set for some of the concatenation inputs. "
                 f"Setting output's CRS as {names[0]} "
