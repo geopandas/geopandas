@@ -86,18 +86,22 @@ def test_first_dissolve(nybb_polydf, first):
 def test_mean_dissolve(nybb_polydf, first, expected_mean):
     if not PANDAS_GE_15:
         test = nybb_polydf.dissolve("manhattan_bronx", aggfunc="mean")
+        test2 = nybb_polydf.dissolve("manhattan_bronx", aggfunc=np.mean)
     elif PANDAS_IS_15X:
         with pytest.warns(UserWarning, match="The default treatment of"):
             test = nybb_polydf.dissolve("manhattan_bronx", aggfunc="mean")
+            test2 = nybb_polydf.dissolve("manhattan_bronx", aggfunc=np.mean)
     else:  # pandas 2.0
         test = nybb_polydf.dissolve(
             "manhattan_bronx", aggfunc="mean", numeric_only=True
         )
+        # for non pandas "mean", numeric only cannot be applied. Drop columns manually
+        test2 = nybb_polydf.drop(columns=["BoroName"]).dissolve(
+            "manhattan_bronx", aggfunc=np.mean
+        )
 
     assert_frame_equal(expected_mean, test, check_column_type=False)
-
-    test = nybb_polydf.dissolve("manhattan_bronx", aggfunc=np.mean)
-    assert_frame_equal(expected_mean, test, check_column_type=False)
+    assert_frame_equal(expected_mean, test2, check_column_type=False)
 
 
 def test_mean_dissolve_warning_capture(nybb_polydf, first, expected_mean):
@@ -147,7 +151,7 @@ def test_dissolve_none(nybb_polydf):
 
 
 def test_dissolve_none_mean(nybb_polydf):
-    test = nybb_polydf.dissolve(aggfunc="mean")
+    test = nybb_polydf.dissolve(aggfunc="mean", numeric_only=True)
     expected = GeoDataFrame(
         {
             nybb_polydf.geometry.name: [nybb_polydf.geometry.unary_union],

@@ -1575,6 +1575,7 @@ individually so that features may have different properties
         sort=True,
         observed=False,
         dropna=True,
+        **kwargs,
     ):
         """
         Dissolve geometries within `groupby` into single observation.
@@ -1627,7 +1628,11 @@ individually so that features may have different properties
             if a non-default value is given for this parameter.
 
             .. versionadded:: 0.9.0
+        **kwargs: Keyword arguments to be passed as arguments to aggfunc.
+            In particular, `numeric_only` may be supplied, which will
+            may be required for pandas 2.0 for certain aggfuncs.
 
+            .. versionadded:: 0.13.0
         Returns
         -------
         GeoDataFrame
@@ -1679,7 +1684,7 @@ individually so that features may have different properties
                 message="The default value of numeric_only",
                 category=FutureWarning,
             )
-            aggregated_data = data.groupby(**groupby_kwargs).agg(aggfunc)
+            aggregated_data = data.groupby(**groupby_kwargs).agg(aggfunc, **kwargs)
         for w in record:
             if str(w.message).startswith("The default value of numeric_only"):
                 msg = (
