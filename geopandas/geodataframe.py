@@ -1673,7 +1673,33 @@ individually so that features may have different properties
 
         # Process non-spatial component
         data = self.drop(labels=self.geometry.name, axis=1)
-        aggregated_data = data.groupby(**groupby_kwargs).agg(aggfunc)
+        with warnings.catch_warnings(record=True) as record:
+            warnings.filterwarnings(
+                "always",
+                message="The default value of numeric_only",
+                category=FutureWarning,
+            )
+            aggregated_data = data.groupby(**groupby_kwargs).agg(aggfunc)
+        for w in record:
+            if str(w.message).startswith("The default value of numeric_only"):
+                msg = (
+                    f"The default treatment of non-numeric cols in "
+                    f"GeoDataFrame.dissolve is deprecated for "
+                    f"aggfunc='{aggfunc}'. "
+                    "Either call dissolve on a dataframe "
+                    "with only numeric columns, or supply `numeric_only=True` to "
+                    "dissolve, which will be forwarded to `DataFrame.groupby().agg`. "
+                    "(The deprecation will be enforced in pandas 2.0)"
+                )
+                warnings.warn(msg, stacklevel=2)
+            else:
+                # Only want to capture specific warning,
+                # other warnings from pandas should be passed through
+                # TODO this is not an ideal approach
+                warnings.showwarning(
+                    w.message, w.category, w.filename, w.lineno, w.file, w.line
+                )
+
         aggregated_data.columns = aggregated_data.columns.to_flat_index()
 
         # Process spatial component

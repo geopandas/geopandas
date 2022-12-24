@@ -10,6 +10,7 @@ from geopandas import _compat as compat
 from pandas.testing import assert_frame_equal
 import pytest
 
+from geopandas._compat import PANDAS_GE_15, PANDAS_IS_15X
 from geopandas.testing import assert_geodataframe_equal
 
 
@@ -81,12 +82,35 @@ def test_first_dissolve(nybb_polydf, first):
     assert_frame_equal(first, test, check_column_type=False)
 
 
+# @pytest.mark.filterwarnings("ignore:The default treatment of non-numeric:UserWarning")
 def test_mean_dissolve(nybb_polydf, first, expected_mean):
-    test = nybb_polydf.dissolve("manhattan_bronx", aggfunc="mean")
+    if not PANDAS_GE_15:
+        test = nybb_polydf.dissolve("manhattan_bronx", aggfunc="mean")
+    elif PANDAS_IS_15X:
+        with pytest.warns(UserWarning, match="The default treatment of"):
+            test = nybb_polydf.dissolve("manhattan_bronx", aggfunc="mean")
+    else:  # pandas 2.0
+        test = nybb_polydf.dissolve(
+            "manhattan_bronx", aggfunc="mean", numeric_only=True
+        )
+
     assert_frame_equal(expected_mean, test, check_column_type=False)
 
     test = nybb_polydf.dissolve("manhattan_bronx", aggfunc=np.mean)
     assert_frame_equal(expected_mean, test, check_column_type=False)
+
+
+def test_mean_dissolve_warning_capture(nybb_polydf, first, expected_mean):
+    with pytest.warns(
+        UserWarning,
+        match="The default treatment of non-numeric cols in GeoDataFrame.dissolve",
+    ):
+        nybb_polydf.dissolve("manhattan_bronx", aggfunc="mean")
+
+    # test no warning for aggfunc first which doesn't have numeric only semantics
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        nybb_polydf.dissolve("manhattan_bronx", aggfunc="first")
 
 
 def test_multicolumn_dissolve(nybb_polydf, first):
