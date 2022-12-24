@@ -308,7 +308,7 @@ GeometryCollection
         >>> gdf = geopandas.GeoDataFrame(d, crs="EPSG:4326")
         >>> gdf
                            geometry
-        0  GEOMETRYCOLLECTION EMPTY
+        0               POINT EMPTY
         1   POINT (2.00000 1.00000)
         2                      None
         >>> gdf.is_empty
@@ -374,7 +374,7 @@ GeometryCollection
         >>> s
         0    LINESTRING (0.00000 0.00000, 1.00000 1.00000, ...
         1    LINESTRING (0.00000 0.00000, 1.00000 1.00000, ...
-        2    LINEARRING (0.00000 0.00000, 1.00000 1.00000, ...
+        2    LINESTRING (0.00000 0.00000, 1.00000 1.00000, ...
         dtype: geometry
 
         >>> s.is_ring
@@ -605,8 +605,8 @@ GeometryCollection
         dtype: geometry
 
         >>> s.exterior
-        0    LINEARRING (0.00000 0.00000, 1.00000 1.00000, ...
-        1    LINEARRING (1.00000 0.00000, 2.00000 1.00000, ...
+        0    LINESTRING (0.00000 0.00000, 1.00000 1.00000, ...
+        1    LINESTRING (1.00000 0.00000, 2.00000 1.00000, ...
         2                                                 None
         dtype: geometry
 
@@ -2760,7 +2760,7 @@ GeometryCollection
         Query the spatial index with a single geometry based on the bounding box:
 
         >>> s.sindex.query(box(1, 1, 3, 3))
-        array([1, 2, 3])
+        array([1, 2, 3], dtype=int64)
 
         Query the spatial index with a single geometry based on the predicate:
 
