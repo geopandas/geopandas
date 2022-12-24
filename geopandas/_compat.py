@@ -21,7 +21,7 @@ PANDAS_GE_12 = Version(pd.__version__) >= Version("1.2.0")
 PANDAS_GE_13 = Version(pd.__version__) >= Version("1.3.0")
 PANDAS_GE_14 = Version(pd.__version__) >= Version("1.4.0rc0")
 PANDAS_GE_15 = Version(pd.__version__) >= Version("1.5.0")
-PANDAS_IS_15X = PANDAS_GE_14 and not PANDAS_GE_15
+PANDAS_GE_20 = Version(pd.__version__) >= Version("2.0.0.dev0")
 
 # -----------------------------------------------------------------------------
 # Shapely / PyGEOS compat

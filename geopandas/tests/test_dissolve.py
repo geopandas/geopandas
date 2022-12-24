@@ -10,7 +10,7 @@ from geopandas import _compat as compat
 from pandas.testing import assert_frame_equal
 import pytest
 
-from geopandas._compat import PANDAS_GE_15, PANDAS_IS_15X
+from geopandas._compat import PANDAS_GE_15, PANDAS_GE_20
 from geopandas.testing import assert_geodataframe_equal
 
 
@@ -87,7 +87,7 @@ def test_mean_dissolve(nybb_polydf, first, expected_mean):
     if not PANDAS_GE_15:
         test = nybb_polydf.dissolve("manhattan_bronx", aggfunc="mean")
         test2 = nybb_polydf.dissolve("manhattan_bronx", aggfunc=np.mean)
-    elif PANDAS_IS_15X:
+    elif PANDAS_GE_15 and not PANDAS_GE_20:
         with pytest.warns(UserWarning, match="The default treatment of"):
             test = nybb_polydf.dissolve("manhattan_bronx", aggfunc="mean")
             test2 = nybb_polydf.dissolve("manhattan_bronx", aggfunc=np.mean)
@@ -104,6 +104,7 @@ def test_mean_dissolve(nybb_polydf, first, expected_mean):
     assert_frame_equal(expected_mean, test2, check_column_type=False)
 
 
+@pytest.mark.skipif()
 def test_mean_dissolve_warning_capture(nybb_polydf, first, expected_mean):
     with pytest.warns(
         UserWarning,
