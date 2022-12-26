@@ -5,7 +5,8 @@ from pandas.core.accessor import _register_accessor
 from ._decorator import doc
 
 
-_doc_register_accessor = dedent(
+@doc(klass="GeoSeries")
+def register_geoseries_accessor(name: str):
     """
     Register a custom accessor on {klass} objects.
 
@@ -34,9 +35,8 @@ _doc_register_accessor = dedent(
         def __init__(self, geopandas_object):  # noqa: E999
             ...
 
-    For consistency with geopandas methods, you should raise an
-    ``AttributeError`` if the data passed to your accessor has an incorrect
-    dtype.
+    For consistency with geopandas methods, you should raise an ``AttributeError``
+    if the data passed to your accessor has an incorrect dtype.
 
     >>> import geopandas as gpd
     >>> gpd.GeoSeries().dt
@@ -96,18 +96,13 @@ _doc_register_accessor = dedent(
         1    0
         Name: geometry, dtype: int64
     """
-)
+    from geopandas import GeoSeries
+
+    return _register_accessor(name, GeoSeries)
 
 
-@doc(_doc_register_accessor, klass="GeoDataFrame")
+@doc(register_geoseries_accessor, klass="GeoSeries")
 def register_geodataframe_accessor(name: str):
     from geopandas import GeoDataFrame
 
     return _register_accessor(name, GeoDataFrame)
-
-
-@doc(_doc_register_accessor, klass="GeoSeries")
-def register_geoseries_accessor(name: str):
-    from geopandas import GeoSeries
-
-    return _register_accessor(name, GeoSeries)
