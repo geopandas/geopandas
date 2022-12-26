@@ -1,5 +1,3 @@
-from textwrap import dedent
-
 from pandas.core.accessor import _register_accessor
 
 from ._decorator import doc
