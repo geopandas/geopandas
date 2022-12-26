@@ -62,7 +62,7 @@ If we are interested in aggregate populations, however, we can pass different fu
 .. toctree::
    :maxdepth: 2
 
-Dissolve Arguments
+Dissolve arguments
 ~~~~~~~~~~~~~~~~~~
 
 The ``aggfunc =`` argument defaults to 'first' which means that the first row of attributes values found in the dissolve routine will be assigned to the resultant dissolved geodataframe.
@@ -95,5 +95,4 @@ and the ``'pop_est'`` column using ``'min'`` and ``'max'``:
             "pop_est": ["min", "max"],
         },
     )
-
    continents.head()
