@@ -4,6 +4,7 @@
    :suppress:
 
    import geopandas
+   import pandas as pd
 
 
 Merging data
@@ -43,12 +44,12 @@ Keep in mind, that appended geometry columns needs to have the same CRS.
 .. ipython:: python
 
     # Appending GeoSeries
-    joined = world.geometry.append(cities.geometry)
+    joined = pd.concat([world.geometry, cities.geometry])
 
     # Appending GeoDataFrames
     europe = world[world.continent == 'Europe']
     asia = world[world.continent == 'Asia']
-    eurasia = europe.append(asia)
+    eurasia = pd.concat([europe, asia])
 
 
 Attribute joins
