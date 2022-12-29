@@ -11,10 +11,10 @@ import pandas as pd
 from pandas.testing import assert_index_equal
 
 from pyproj import CRS
-from shapely import LinearRing
 from shapely.geometry import (
     GeometryCollection,
     LineString,
+    LinearRing,
     MultiLineString,
     MultiPoint,
     MultiPolygon,
