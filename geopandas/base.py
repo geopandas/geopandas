@@ -2760,7 +2760,7 @@ GeometryCollection
         Query the spatial index with a single geometry based on the bounding box:
 
         >>> s.sindex.query(box(1, 1, 3, 3))
-        array([1, 2, 3], dtype=int64)
+        array([1, 2, 3])
 
         Query the spatial index with a single geometry based on the predicate:
 
