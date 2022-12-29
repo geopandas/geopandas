@@ -11,6 +11,7 @@ import pandas as pd
 from pandas.testing import assert_index_equal
 
 from pyproj import CRS
+from shapely import LinearRing
 from shapely.geometry import (
     GeometryCollection,
     LineString,
@@ -327,6 +328,21 @@ class TestSeries:
 
     def test_to_wkt(self):
         assert_series_equal(pd.Series([self.t1.wkt, self.sq.wkt]), self.g1.to_wkt())
+
+    def test_repr_linearring(self):
+        # specifically, checking internal shapely/pygeos/wkt/wkb conversions preserve
+        s = GeoSeries([LinearRing([(0, 0), (1, 1), (1, -1)])])
+        assert "LINEARRING" in str(s.iloc[0])  # shapely scalar repr
+        assert "LINEARRING" in str(s)  # len 1 GeoDataFrame repr
+
+        # check something coercible to linearring is not converted
+        s2 = GeoSeries(
+            [
+                LineString([(0, 0), (1, 1), (1, -1)]),
+                LineString([(0, 0), (1, 1), (1, -1), (0, 0)]),
+            ]
+        )
+        assert "LINEARRING" not in str(s2)
 
     @pytest.mark.skip_no_sindex
     def test_clip(self):

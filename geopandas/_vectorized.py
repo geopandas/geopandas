@@ -83,6 +83,9 @@ def _pygeos_to_shapely(geom):
     if pygeos.is_empty(geom) and pygeos.get_type_id(geom) == 0:
         # empty point does not roundtrip through WKB
         return shapely.wkt.loads("POINT EMPTY")
+    elif pygeos.get_type_id(geom) == 2:
+        # linearring does not roundtrip through WKB
+        return shapely.LinearRing(shapely.wkb.loads(pygeos.to_wkb(geom)))
     else:
         return shapely.wkb.loads(pygeos.to_wkb(geom))
 
