@@ -3,7 +3,6 @@ channels:
   - conda-forge
   # - conda-forge/label/shapely_dev
 dependencies:
-  - numpy
   - python=3.9
   # required
   - pandas=1.3
