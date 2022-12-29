@@ -5,6 +5,7 @@ dependencies:
   - python=3.9
   # required
   - pandas=1.2
+  - numpy=1.20 # released 1 month after pandas 1.2
   - shapely
   - fiona
   - pyproj
