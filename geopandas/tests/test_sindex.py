@@ -75,6 +75,7 @@ class TestSeriesSindex:
         s = GeoSeries([t1, t2, sq])
         assert s.sindex.size == 3
 
+    @pytest.mark.filterwarnings("ignore:The series.append method is deprecated")
     @pytest.mark.skipif(compat.PANDAS_GE_20, reason="append removed in pandas 2.0")
     def test_polygons_append(self):
         t1 = Polygon([(0, 0), (1, 0), (1, 1)])
