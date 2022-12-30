@@ -76,6 +76,7 @@ class TestSeriesSindex:
         assert s.sindex.size == 3
 
     @pytest.mark.filterwarnings("ignore:The series.append method is deprecated")
+    @pytest.mark.skipif(compat.PANDAS_GE_20, reason="append removed in pandas 2.0")
     def test_polygons_append(self):
         t1 = Polygon([(0, 0), (1, 0), (1, 1)])
         t2 = Polygon([(0, 0), (1, 1), (0, 1)])
@@ -861,7 +862,7 @@ class TestPygeosInterface:
     @pytest.mark.parametrize(
         "predicate, expected_shape",
         [
-            (None, (2, 470)),
+            (None, (2, 471)),
             ("intersects", (2, 213)),
             ("within", (2, 213)),
             ("contains", (2, 0)),
