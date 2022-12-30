@@ -1,5 +1,12 @@
 # Changelog
 
+## Development version
+
+New features and improvements:
+
+- Refactored ``GeoDataFrame.dissolve`` to improve performance when single-geometry groups
+  are present.
+
 ## Version 0.12.2 (December 10, 2022)
 
 Bug fixes:
