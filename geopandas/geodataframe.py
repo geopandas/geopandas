@@ -1685,7 +1685,7 @@ individually so that features may have different properties
         aggregated_data.columns = aggregated_data.columns.to_flat_index()
 
         # Process spatial component
-        geoms = GeoSeries()
+        geoms = GeoSeries(crs=self.crs)
         grps_to_agg = grouped[geom_col].count() > 1
         if not grps_to_agg.all():
             # Have to right join on this bool mask instead of doing a .loc for
@@ -1720,7 +1720,7 @@ individually so that features may have different properties
                 self.loc[rows_to_agg]
                 .groupby(**groupby_kwargs)[geom_col]
                 .agg(lambda block: block.unary_union)
-            )
+            ).set_crs(self.crs)
             geoms = pd.concat([geoms, dissolved_geoms])
 
         geoms = geoms.rename(geom_col).reindex(aggregated_data.index)
