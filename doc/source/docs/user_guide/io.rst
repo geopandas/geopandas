@@ -6,12 +6,12 @@ Reading and writing files
 Reading spatial data
 ---------------------
 
-*geopandas* can read almost any vector-based spatial data format including ESRI
+GeoPandas can read almost any vector-based spatial data format including ESRI
 shapefile, GeoJSON files and more using the command::
 
     geopandas.read_file()
 
-which returns a GeoDataFrame object. This is possible because *geopandas* makes
+which returns a GeoDataFrame object. This is possible because GeoPandas makes
 use of the great `Fiona <http://fiona.readthedocs.io/en/latest/manual.html>`_
 library, which in turn makes use of a massive open-source program called
 `GDAL/OGR <http://www.gdal.org/>`_ designed to facilitate spatial data
@@ -40,7 +40,7 @@ these on runtime by updating the `supported_drivers` dictionary like::
 
     fiona.supported_drivers["NAS"] = "raw"
     
-Where supported in :mod:`Fiona`, *geopandas* can also load resources directly from
+Where supported in :mod:`Fiona`, GeoPandas can also load resources directly from
 a web URL, for example for GeoJSON files from `geojson.xyz <http://geojson.xyz/>`_::
 
     url = "http://d2ad6b4ur7yvpq.cloudfront.net/naturalearth-3.3.0/ne_110m_land.geojson"
@@ -182,7 +182,7 @@ SQL WHERE filter
 
 .. versionadded:: 0.12
 
-Load in a subset of data with a SQL `WHERE <https://gdal.org/user/ogr_sql_dialect.html#where> clause`_.
+Load in a subset of data with a `SQL WHERE clause <https://gdal.org/user/ogr_sql_dialect.html#where>`__.
 
 .. note:: Requires Fiona 1.9+ or the pyogrio engine.
 
@@ -227,7 +227,7 @@ by using the :meth:`geopandas.GeoDataFrame.to_postgis` method.
 Spatial databases
 -----------------
 
-*geopandas* can also get data from a PostGIS database using the
+GeoPandas can also get data from a PostGIS database using the
 :func:`geopandas.read_postgis` command.
 
 Writing to PostGIS::
