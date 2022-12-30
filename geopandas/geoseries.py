@@ -673,7 +673,7 @@ class GeoSeries(GeoPandasBase, Series):
         >>> s
         0    POLYGON ((0.00000 0.00000, 1.00000 1.00000, 0....
         1                                                 None
-        2                             GEOMETRYCOLLECTION EMPTY
+        2                                        POLYGON EMPTY
         dtype: geometry
         >>> s.isna()
         0    False
@@ -717,7 +717,7 @@ class GeoSeries(GeoPandasBase, Series):
         >>> s
         0    POLYGON ((0.00000 0.00000, 1.00000 1.00000, 0....
         1                                                 None
-        2                             GEOMETRYCOLLECTION EMPTY
+        2                                        POLYGON EMPTY
         dtype: geometry
         >>> s.notna()
         0     True
@@ -1030,7 +1030,7 @@ class GeoSeries(GeoPandasBase, Series):
         be set.  Either ``crs`` or ``epsg`` may be specified for output.
 
         This method will transform all points in all objects.  It has no notion
-        or projecting entire geometries.  All segments joining points are
+        of projecting entire geometries.  All segments joining points are
         assumed to be lines in the current projection, not geodesics.  Objects
         crossing the dateline (or other projection boundary) will have
         undesirable behavior.
