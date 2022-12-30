@@ -1720,7 +1720,8 @@ individually so that features may have different properties
                 self.loc[rows_to_agg]
                 .groupby(**groupby_kwargs)[geom_col]
                 .agg(lambda block: block.unary_union)
-            ).set_crs(self.crs)
+            )
+            dissolved_geoms.crs = self.crs
             geoms = pd.concat([geoms, dissolved_geoms])
 
         geoms = geoms.rename(geom_col).reindex(aggregated_data.index)
