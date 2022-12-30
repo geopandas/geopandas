@@ -12,7 +12,7 @@ Aggregation with dissolve
 
 Spatial data are often more granular than needed. For example, you might have data on sub-national units, but you're actually interested in studying patterns at the level of countries.
 
-In a non-spatial setting, when all you need are summary statistics of the data, you can aggregate data using the :meth:`~pandas.DataFrame.groupby` function. But for spatial data, you sometimes also need to aggregate geometric features. In the *geopandas* library, you can aggregate geometric features using the :meth:`~geopandas.GeoDataFrame.dissolve` function.
+In a non-spatial setting, when all you need are summary statistics of the data, you can aggregate data using the :meth:`~pandas.DataFrame.groupby` function. But for spatial data, you sometimes also need to aggregate geometric features. In the GeoPandas library, you can aggregate geometric features using the :meth:`~geopandas.GeoDataFrame.dissolve` function.
 
 :meth:`~geopandas.GeoDataFrame.dissolve` can be thought of as doing three things:
 
@@ -23,7 +23,7 @@ In a non-spatial setting, when all you need are summary statistics of the data, 
 :meth:`~geopandas.GeoDataFrame.dissolve` Example
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Suppose you are interested in studying continents, but you only have country-level data like the country dataset included in *geopandas*. You can easily convert this to a continent-level dataset.
+Suppose you are interested in studying continents, but you only have country-level data like the country dataset included in GeoPandas. You can easily convert this to a continent-level dataset.
 
 
 First, let's look at the most simple case where you just want continent shapes and names. By default, :meth:`~geopandas.GeoDataFrame.dissolve` will pass ``'first'`` to :ref:`groupby.aggregate <groupby.aggregate>`.
@@ -80,7 +80,7 @@ However it also accepts other summary statistic options as allowed by :meth:`pan
 * list of functions and/or function names, e.g. [np.sum, 'mean']
 * dict of axis labels -> functions, function names or list of such.
 
-For example, to get the number of countries on each continent, 
+For example, to get the number of countries on each continent,
 as well as the populations of the largest and smallest country of each,
 you can aggregate the ``'name'`` column using ``'count'``,
 and the ``'pop_est'`` column using ``'min'`` and ``'max'``:
@@ -95,5 +95,4 @@ and the ``'pop_est'`` column using ``'min'`` and ``'max'``:
             "pop_est": ["min", "max"],
         },
     )
-
    continents.head()
