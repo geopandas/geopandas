@@ -129,6 +129,15 @@ class TestMerging:
             warnings.simplefilter("error")
             pd.concat([both_geom_cols, explicit_all_none_case])
 
+        # Check concat with partially None col is not affected by the special casing
+        # for all None no CRS handling
+        with pytest.warns(
+            UserWarning, match=r"CRS not set for some of the concatenation inputs.*"
+        ):
+            partial_none_case = self.gdf[["geometry"]]
+            partial_none_case.iloc[0] = None
+            pd.concat([single_geom_col, partial_none_case])
+
     def test_concat_axis1(self):
 
         res = pd.concat([self.gdf, self.df], axis=1)
