@@ -3544,42 +3544,57 @@ GeometryCollection
         if include_z:
             column_names.append("z")
 
-        # the index handling code is resused from GeoSeries.explode
-        if ignore_index:
-            index = range(len(coords))
-        else:
-            if len(outer_idx):
-                # Generate inner index as a range per value of outer_idx
-                # 1. identify the start of each run of values in outer_idx
-                # 2. count number of values per run
-                # 3. use cumulative sums to create an incremental range
-                #    starting at 0 in each run
-                run_start = np.r_[True, outer_idx[:-1] != outer_idx[1:]]
-                counts = np.diff(np.r_[np.nonzero(run_start)[0], len(outer_idx)])
-                inner_index = (~run_start).cumsum()
-                inner_index -= np.repeat(inner_index[run_start], counts)
-
-            else:
-                inner_index = []
-
-            # extract original index values based on integer index
-            outer_index = self.index.take(outer_idx)
-
-            if index_parts:
-                nlevels = outer_index.nlevels
-                index_arrays = [
-                    outer_index.get_level_values(lvl) for lvl in range(nlevels)
-                ]
-                index_arrays.append(inner_index)
-
-                index = pd.MultiIndex.from_arrays(
-                    index_arrays, names=self.index.names + [None]
-                )
-
-            else:
-                index = outer_index
+        index = _get_index_for_parts(
+            coords,
+            self.index,
+            outer_idx,
+            ignore_index=ignore_index,
+            index_parts=index_parts,
+        )
 
         return pd.DataFrame(coords, index=index, columns=column_names)
+
+
+def _get_index_for_parts(values, orig_idx, outer_idx, ignore_index, index_parts):
+    """Helper to handle index when geometries get exploded to parts.
+
+    Used in get_coordinates and explode.
+    """
+
+    # the index handling code is resused from GeoSeries.explode
+    if ignore_index:
+        index = range(len(values))
+    else:
+        if len(outer_idx):
+            # Generate inner index as a range per value of outer_idx
+            # 1. identify the start of each run of values in outer_idx
+            # 2. count number of values per run
+            # 3. use cumulative sums to create an incremental range
+            #    starting at 0 in each run
+            run_start = np.r_[True, outer_idx[:-1] != outer_idx[1:]]
+            counts = np.diff(np.r_[np.nonzero(run_start)[0], len(outer_idx)])
+            inner_index = (~run_start).cumsum()
+            inner_index -= np.repeat(inner_index[run_start], counts)
+
+        else:
+            inner_index = []
+
+        # extract original index values based on integer index
+        outer_index = orig_idx.take(outer_idx)
+
+        if index_parts:
+            nlevels = outer_index.nlevels
+            index_arrays = [outer_index.get_level_values(lvl) for lvl in range(nlevels)]
+            index_arrays.append(inner_index)
+
+            index = pd.MultiIndex.from_arrays(
+                index_arrays, names=orig_idx.names + [None]
+            )
+
+        else:
+            index = outer_index
+
+    return index
 
 
 class _CoordinateIndexer(object):
