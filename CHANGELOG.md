@@ -4,7 +4,7 @@
 
 New features and improvements:
 
-- `GeoSeries.fillna` supported to fill na values via another `GeoSeries` (#2535).
+- Added support to fill missing values in `GeoSeries.fillna` via another `GeoSeries` (#2535).
 
 ## Version 0.12.2 (December 10, 2022)
 
