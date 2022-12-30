@@ -58,6 +58,13 @@ def test_to_crs_transform__missing_data():
     assert_geodataframe_equal(df, utm, check_less_precise=True)
 
 
+def test_to_crs_transform__empty_data():
+    df = df_epsg26918().iloc[:0]
+    lonlat = df.to_crs(epsg=4326)
+    utm = lonlat.to_crs(epsg=26918)
+    assert_geodataframe_equal(df, utm, check_less_precise=True)
+
+
 def test_to_crs_inplace():
     df = df_epsg26918()
     lonlat = df.to_crs(epsg=4326)
@@ -75,6 +82,26 @@ def test_to_crs_geo_column_name():
     assert lonlat.geometry.name == "geom"
     assert utm.geometry.name == "geom"
     assert_geodataframe_equal(df, utm, check_less_precise=True)
+
+
+def test_to_crs_dimension_z():
+    # preserve z dimension
+    arr = points_from_xy([1, 2], [2, 3], [3, 4], crs=4326)
+    assert arr.has_z.all()
+    result = arr.to_crs(epsg=3857)
+    assert result.has_z.all()
+
+
+def test_to_crs_dimension_mixed():
+    s = GeoSeries([Point(1, 2), LineString([(1, 2, 3), (4, 5, 6)])], crs=2056)
+    result = s.to_crs(epsg=4326)
+    assert not result[0].is_empty
+    assert result.has_z.tolist() == [False, True]
+    roundtrip = result.to_crs(epsg=2056)
+    # TODO replace with assert_geoseries_equal once we expose tolerance keyword
+    # assert_geoseries_equal(roundtrip, s, check_less_precise=True)
+    for a, b in zip(roundtrip, s):
+        np.testing.assert_allclose(a.coords[:], b.coords[:], atol=0.01)
 
 
 # -----------------------------------------------------------------------------
@@ -297,12 +324,14 @@ class TestGeometryArrayCRS:
 
         # geometry column without geometry
         df = GeoDataFrame({"geometry": [0, 1]})
-        with pytest.warns(
-            FutureWarning, match="Accessing CRS of a GeoDataFrame without a geometry"
+        with pytest.raises(
+            ValueError,
+            match="Assigning CRS to a GeoDataFrame without an active geometry",
         ):
             df.crs = 27700
-        with pytest.warns(
-            FutureWarning, match="Accessing CRS of a GeoDataFrame without a geometry"
+        with pytest.raises(
+            AttributeError,
+            match="The CRS attribute of a GeoDataFrame without an active",
         ):
             assert df.crs == self.osgb
 
@@ -310,8 +339,9 @@ class TestGeometryArrayCRS:
         df = GeoDataFrame({"col": range(10)}, geometry=self.arr)
         df["geom2"] = df.geometry.centroid
         subset = df[["col", "geom2"]]
-        with pytest.warns(
-            FutureWarning, match="Accessing CRS of a GeoDataFrame without a geometry"
+        with pytest.raises(
+            AttributeError,
+            match="The CRS attribute of a GeoDataFrame without an active",
         ):
             assert subset.crs == self.osgb
 
@@ -355,17 +385,13 @@ class TestGeometryArrayCRS:
         arr = from_shapely(self.geoms)
         df = GeoDataFrame({"col1": [1, 2], "geometry": arr}, crs=4326)
 
-        # create a dataframe without geometry column, but currently has cached _crs
+        # override geometry with non geometry
         with pytest.warns(UserWarning):
             df["geometry"] = 1
 
-        # assigning a list of geometry object will currently use _crs
-        with pytest.warns(
-            FutureWarning,
-            match="Setting geometries to a GeoDataFrame without a geometry",
-        ):
-            df["geometry"] = self.geoms
-        assert df.crs == self.wgs
+        # assigning a list of geometry object doesn't have cached access to 4326
+        df["geometry"] = self.geoms
+        assert df.crs is None
 
     @pytest.mark.parametrize(
         "scalar", [None, Point(0, 0), LineString([(0, 0), (1, 1)])]

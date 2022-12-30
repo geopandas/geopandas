@@ -7,7 +7,9 @@ from pandas import Series, MultiIndex, DataFrame
 from pandas.core.internals import SingleBlockManager
 
 from pyproj import CRS
+import shapely
 from shapely.geometry.base import BaseGeometry
+from shapely.geometry import GeometryCollection
 
 from geopandas.base import GeoPandasBase, _delegate_property
 from geopandas.plotting import plot_series
@@ -671,7 +673,7 @@ class GeoSeries(GeoPandasBase, Series):
         >>> s
         0    POLYGON ((0.00000 0.00000, 1.00000 1.00000, 0....
         1                                                 None
-        2                             GEOMETRYCOLLECTION EMPTY
+        2                                        POLYGON EMPTY
         dtype: geometry
         >>> s.isna()
         0    False
@@ -715,7 +717,7 @@ class GeoSeries(GeoPandasBase, Series):
         >>> s
         0    POLYGON ((0.00000 0.00000, 1.00000 1.00000, 0....
         1                                                 None
-        2                             GEOMETRYCOLLECTION EMPTY
+        2                                        POLYGON EMPTY
         dtype: geometry
         >>> s.notna()
         0     True
@@ -787,7 +789,7 @@ class GeoSeries(GeoPandasBase, Series):
         GeoSeries.isna : detect missing values
         """
         if value is None:
-            value = BaseGeometry()
+            value = GeometryCollection() if compat.SHAPELY_GE_20 else BaseGeometry()
         return super().fillna(value=value, method=method, inplace=inplace, **kwargs)
 
     def __contains__(self, other):
@@ -871,12 +873,17 @@ class GeoSeries(GeoPandasBase, Series):
             )
             index_parts = True
 
-        if compat.USE_PYGEOS and compat.PYGEOS_GE_09:
-            import pygeos  # noqa
+        if compat.USE_SHAPELY_20 or (compat.USE_PYGEOS and compat.PYGEOS_GE_09):
+            if compat.USE_SHAPELY_20:
+                geometries, outer_idx = shapely.get_parts(
+                    self.values.data, return_index=True
+                )
+            else:
+                import pygeos  # noqa
 
-            geometries, outer_idx = pygeos.get_parts(
-                self.values.data, return_index=True
-            )
+                geometries, outer_idx = pygeos.get_parts(
+                    self.values.data, return_index=True
+                )
 
             if len(outer_idx):
                 # Generate inner index as a range per value of outer_idx
@@ -918,7 +925,7 @@ class GeoSeries(GeoPandasBase, Series):
         index = []
         geometries = []
         for idx, s in self.geometry.items():
-            if s.type.startswith("Multi") or s.type == "GeometryCollection":
+            if s.geom_type.startswith("Multi") or s.geom_type == "GeometryCollection":
                 geoms = s.geoms
                 idxs = [(idx, i) for i in range(len(geoms))]
             else:
@@ -1046,7 +1053,7 @@ class GeoSeries(GeoPandasBase, Series):
         be set.  Either ``crs`` or ``epsg`` may be specified for output.
 
         This method will transform all points in all objects.  It has no notion
-        or projecting entire geometries.  All segments joining points are
+        of projecting entire geometries.  All segments joining points are
         assumed to be lines in the current projection, not geodesics.  Objects
         crossing the dateline (or other projection boundary) will have
         undesirable behavior.
@@ -1339,10 +1346,10 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
         >>> capitals = geopandas.read_file(
         ...     geopandas.datasets.get_path('naturalearth_cities'))
         >>> capitals.shape
-        (202, 2)
+        (243, 2)
 
         >>> sa_capitals = capitals.geometry.clip(south_america)
         >>> sa_capitals.shape
-        (12,)
+        (15,)
         """
         return geopandas.clip(self, mask=mask, keep_geom_type=keep_geom_type)

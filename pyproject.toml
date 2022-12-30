@@ -1,3 +1,78 @@
 [build-system]
-requires = ["setuptools", "wheel"]
+requires = [
+    "setuptools>=61.0.0",
+]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "geopandas"
+dynamic = ["version"]
+authors = [
+    {name = "Kelsey Jordahl", email = "kjordahl@alum.mit.edu"},
+]
+maintainers = [
+    {name = "GeoPandas contributors"},
+]
+license = {text = "BSD 3-Clause"}
+description = "Geographic pandas extensions"
+keywords = ["GIS", "cartography", "pandas", "shapely"]
+readme = {text = """\
+GeoPandas is a project to add support for geographic data to
+`pandas`_ objects.
+
+The goal of GeoPandas is to make working with geospatial data in
+python easier. It combines the capabilities of `pandas`_ and `shapely`_,
+providing geospatial operations in pandas and a high-level interface
+to multiple geometries to shapely. GeoPandas enables you to easily do
+operations in python that would otherwise require a spatial database
+such as PostGIS.
+
+.. _pandas: https://pandas.pydata.org
+.. _shapely: https://shapely.readthedocs.io/en/latest/
+""", content-type = "text/x-rst"}
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: BSD License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Topic :: Scientific/Engineering :: GIS",
+]
+requires-python = ">=3.8"
+dependencies = [
+    "fiona >= 1.8",
+    "packaging",
+    "pandas >= 1.0.0",
+    "pyproj >= 2.6.1.post1",
+    "shapely >= 1.7",
+]
+
+[project.urls]
+Home = "https://geopandas.org"
+Repository = "https://github.com/geopandas/geopandas"
+
+[tool.setuptools.packages.find]
+include = [
+    "geopandas",
+    "geopandas.*",
+]
+
+[tool.setuptools.package-data]
+geopandas = [
+    "datasets/nybb_16a.zip",
+    "datasets/naturalearth_cities/*",
+    "datasets/naturalearth_lowres/*",
+    "tests/data/*",
+]
+
+[tool.pytest.ini_options]
+markers = [
+    "web: tests that need network connectivity"
+]
+xfail_strict = true
+
+filterwarnings = [
+    "ignore:distutils Version classes are deprecated.*:DeprecationWarning:pandas.*",
+    "ignore:distutils Version classes are deprecated.*:DeprecationWarning:numpy.*"
+]

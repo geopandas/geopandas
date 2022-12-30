@@ -23,7 +23,7 @@ from pandas.testing import assert_frame_equal, assert_index_equal, assert_series
 import pytest
 
 
-TEST_NEAREST = compat.PYGEOS_GE_010 and compat.USE_PYGEOS
+TEST_NEAREST = compat.USE_SHAPELY_20 or (compat.PYGEOS_GE_010 and compat.USE_PYGEOS)
 pandas_133 = Version(pd.__version__) == Version("1.3.3")
 
 
@@ -360,6 +360,17 @@ class TestDataFrame:
 
         with pytest.raises(AttributeError, match=msg_no_other_geo_cols):
             GeoDataFrame().geometry
+
+    def test_get_geometry_geometry_inactive(self):
+        # https://github.com/geopandas/geopandas/issues/2574
+        df = self.df.assign(geom2=self.df.geometry).set_geometry("geom2")
+        df = df.loc[:, ["BoroName", "geometry"]]
+        assert df._geometry_column_name == "geom2"
+        msg_geo_col_missing = "is not present. "
+        # Check that df.geometry raises if active geometry column is missing,
+        # it should not fall back to column named "geometry"
+        with pytest.raises(AttributeError, match=msg_geo_col_missing):
+            df.geometry
 
     def test_align(self):
         df = self.df2
@@ -895,7 +906,7 @@ class TestDataFrame:
     @pytest.mark.parametrize("how", ["left", "inner", "right"])
     @pytest.mark.parametrize("predicate", ["intersects", "within", "contains"])
     @pytest.mark.skipif(
-        not compat.USE_PYGEOS and not compat.HAS_RTREE,
+        not (compat.USE_PYGEOS and compat.HAS_RTREE and compat.USE_SHAPELY_20),
         reason="sjoin needs `rtree` or `pygeos` dependency",
     )
     def test_sjoin(self, how, predicate):
@@ -1219,6 +1230,25 @@ class TestConstructor:
         df3 = df.rename(columns={"geometry": "geom"})
         with pytest.raises(ValueError):
             GeoDataFrame(df3, geometry="geom")
+
+    @pytest.mark.parametrize("dtype", ["geometry", "object"])
+    def test_multiindex_with_geometry_label(self, dtype):
+        # DataFrame with MultiIndex where "geometry" label corresponds to
+        # multiple columns
+        df = pd.DataFrame([[Point(0, 0), Point(1, 1)], [Point(2, 2), Point(3, 3)]])
+        df = df.astype(dtype)
+        df.columns = pd.MultiIndex.from_product([["geometry"], [0, 1]])
+        # don't error in constructor
+        gdf = GeoDataFrame(df)
+        # Getting the .geometry column gives GeoDataFrame for both columns
+        # (but with first MultiIndex level removed)
+        # TODO should this give an error instead?
+        result = gdf.geometry
+        assert result.shape == gdf.shape
+        assert result.columns.tolist() == [0, 1]
+        assert_frame_equal(result, gdf["geometry"])
+        result = gdf[["geometry"]]
+        assert_frame_equal(result, gdf if dtype == "geometry" else pd.DataFrame(gdf))
 
 
 def test_geodataframe_crs():

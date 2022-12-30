@@ -289,6 +289,11 @@ def test_expanddim_in_unstack():
     else:  # pandas GH37369, unstack doesn't call finalize
         assert unstack._geometry_column_name == "geometry"
 
+    # https://github.com/geopandas/geopandas/issues/2486
+    s.name = "geometry"
+    unstack = s.unstack()
+    assert_object(unstack, GeoDataFrame, None, None)
+
 
 # indexing /  constructor_sliced tests
 
