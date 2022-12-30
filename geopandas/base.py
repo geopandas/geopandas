@@ -308,7 +308,7 @@ GeometryCollection
         >>> gdf = geopandas.GeoDataFrame(d, crs="EPSG:4326")
         >>> gdf
                            geometry
-        0  GEOMETRYCOLLECTION EMPTY
+        0               POINT EMPTY
         1   POINT (2.00000 1.00000)
         2                      None
         >>> gdf.is_empty
@@ -693,7 +693,8 @@ GeometryCollection
         return _delegate_geo_method("representative_point", self)
 
     def normalize(self):
-        """Returns a ``GeoSeries`` of normalized geometries to normal form (or canonical form).
+        """Returns a ``GeoSeries`` of normalized
+        geometries to normal form (or canonical form).
 
         This method orders the coordinates, rings of a polygon and parts of
         multi geometries consistently. Typically useful for testing purposes
@@ -2246,7 +2247,7 @@ GeometryCollection
         0                                                 None
         1    POLYGON ((0.00000 2.00000, 2.00000 2.00000, 1....
         2    MULTILINESTRING ((0.00000 0.00000, 1.00000 1.0...
-        3                                     LINESTRING EMPTY
+        3                                   LINESTRING Z EMPTY
         4                              POINT (0.00000 1.00000)
         5                                                 None
         dtype: geometry
@@ -2361,7 +2362,7 @@ GeometryCollection
         0                                                 None
         1    POLYGON ((0.00000 2.00000, 2.00000 2.00000, 1....
         2    MULTILINESTRING ((0.00000 0.00000, 1.00000 1.0...
-        3                                     LINESTRING EMPTY
+        3                                   LINESTRING Z EMPTY
         4        MULTIPOINT (0.00000 1.00000, 1.00000 1.00000)
         5                                                 None
         dtype: geometry
