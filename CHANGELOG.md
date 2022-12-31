@@ -1,5 +1,12 @@
 # Changelog
 
+## Development version
+
+Deprecations and compatibility notes:
+
+- Added warning that ``unary_union`` will return ``'GEOMETRYCOLLECTION EMPTY'`` instead
+  of None for all-None GeoSeries. (#2618)
+
 ## Version 0.12.2 (December 10, 2022)
 
 Bug fixes:
