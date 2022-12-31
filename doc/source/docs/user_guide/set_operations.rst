@@ -8,14 +8,14 @@
    plt.close('all')
 
 
-Set-Operations with Overlay
+Set operations with overlay
 ============================
 
 When working with multiple spatial datasets -- especially multiple *polygon* or
 *line* datasets -- users often wish to create new shapes based on places where
 those datasets overlap (or don't overlap). These manipulations are often
 referred using the language of sets -- intersections, unions, and differences.
-These types of operations are made available in the *geopandas* library through
+These types of operations are made available in the GeoPandas library through
 the :meth:`~geopandas.GeoDataFrame.overlay` method.
 
 The basic idea is demonstrated by the graphic below but keep in mind that
@@ -26,16 +26,16 @@ properties from both are retained. In effect, for every shape in the left
 
 .. image:: ../../_static/overlay_operations.png
 
-**Source: QGIS Documentation**
+**Source: QGIS documentation**
 
 .. note::
    Note to users familiar with the *shapely* library: :meth:`~geopandas.GeoDataFrame.overlay` can be thought
-   of as offering versions of the standard *shapely* set-operations that deal with
+   of as offering versions of the standard *shapely* set operations that deal with
    the complexities of applying set operations to two *GeoSeries*. The standard
-   *shapely* set-operations are also available as :class:`~geopandas.GeoSeries` methods.
+   *shapely* set operations are also available as :class:`~geopandas.GeoSeries` methods.
 
 
-The different Overlay operations
+The different overlay operations
 --------------------------------
 
 First, we create some example data:
@@ -135,7 +135,7 @@ but with the geometries obtained from overlaying ``df1`` with ``df2``:
     df2.plot(ax=ax, facecolor='none', edgecolor='k');
 
 
-Overlay Countries Example
+Overlay countries example
 -------------------------
 
 First, we load the countries and cities example datasets and select :
@@ -209,10 +209,10 @@ selected set-operation. Different types can result for example from intersection
 where two polygons intersects in a line or a point.
 
 
-More Examples
+More examples
 -------------
 
-A larger set of examples of the use of :meth:`~geopandas.GeoDataFrame.overlay` can be found `here <https://nbviewer.jupyter.org/github/geopandas/geopandas/blob/master/doc/source/gallery/overlays.ipynb>`_
+A larger set of examples of the use of :meth:`~geopandas.GeoDataFrame.overlay` can be found `here <https://nbviewer.jupyter.org/github/geopandas/geopandas/blob/main/doc/source/gallery/overlays.ipynb>`_
 
 
 

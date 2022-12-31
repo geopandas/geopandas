@@ -63,12 +63,12 @@ GON (((-122.84000 49.00000, -122.9742...
     4  326625791  North America  United States of America    USA  18560000.0  MULTIPOLY\
 GON (((-122.84000 49.00000, -120.0000...
     >>> cities.head()
-            name                   geometry
-    0  Vatican City  POINT (12.45339 41.90328)
-    1    San Marino  POINT (12.44177 43.93610)
-    2         Vaduz   POINT (9.51667 47.13372)
-    3    Luxembourg   POINT (6.13000 49.61166)
-    4       Palikir  POINT (158.14997 6.91664)
+            name                    geometry
+    0  Vatican City   POINT (12.45339 41.90328)
+    1    San Marino   POINT (12.44177 43.93610)
+    2         Vaduz    POINT (9.51667 47.13372)
+    3       Lobamba  POINT (31.20000 -26.46667)
+    4    Luxembourg    POINT (6.13000 49.61166)
 
     >>> cities_w_country_data = geopandas.sjoin(cities, countries)
     >>> cities_w_country_data.head()  # doctest: +SKIP
@@ -343,6 +343,7 @@ def _frame_join(join_df, left_df, right_df, how, lsuffix, rsuffix):
             )
             .set_index(index_right)
             .drop(["_key_left", "_key_right"], axis=1)
+            .set_geometry(right_df.geometry.name)
         )
         if isinstance(index_right, list):
             joined.index.names = right_index_name
@@ -359,10 +360,10 @@ def _nearest_query(
     how: str,
     return_distance: bool,
 ):
-    if not (compat.PYGEOS_GE_010 and compat.USE_PYGEOS):
+    if not (compat.USE_SHAPELY_20 or (compat.USE_PYGEOS and compat.PYGEOS_GE_010)):
         raise NotImplementedError(
-            "Currently, only PyGEOS >= 0.10.0 supports `nearest_all`. "
-            + compat.INSTALL_PYGEOS_ERROR
+            "Currently, only PyGEOS >= 0.10.0 or Shapely >= 2.0 supports "
+            "`nearest_all`. " + compat.INSTALL_PYGEOS_ERROR
         )
     # use the opposite of the join direction for the index
     use_left_as_sindex = how == "right"

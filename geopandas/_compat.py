@@ -1,5 +1,5 @@
 import contextlib
-from distutils.version import LooseVersion
+from packaging.version import Version
 import importlib
 import os
 import warnings
@@ -15,10 +15,12 @@ import shapely.geos
 # pandas compat
 # -----------------------------------------------------------------------------
 
-PANDAS_GE_10 = str(pd.__version__) >= LooseVersion("1.0.0")
-PANDAS_GE_11 = str(pd.__version__) >= LooseVersion("1.1.0")
-PANDAS_GE_115 = str(pd.__version__) >= LooseVersion("1.1.5")
-PANDAS_GE_12 = str(pd.__version__) >= LooseVersion("1.2.0")
+PANDAS_GE_11 = Version(pd.__version__) >= Version("1.1.0")
+PANDAS_GE_115 = Version(pd.__version__) >= Version("1.1.5")
+PANDAS_GE_12 = Version(pd.__version__) >= Version("1.2.0")
+PANDAS_GE_13 = Version(pd.__version__) >= Version("1.3.0")
+PANDAS_GE_14 = Version(pd.__version__) >= Version("1.4.0rc0")
+PANDAS_GE_20 = Version(pd.__version__) >= Version("2.0.0.dev0")
 
 
 # -----------------------------------------------------------------------------
@@ -26,15 +28,17 @@ PANDAS_GE_12 = str(pd.__version__) >= LooseVersion("1.2.0")
 # -----------------------------------------------------------------------------
 
 
-SHAPELY_GE_17 = str(shapely.__version__) >= LooseVersion("1.7.0")
-SHAPELY_GE_18 = str(shapely.__version__) >= LooseVersion("1.8")
-SHAPELY_GE_20 = str(shapely.__version__) >= LooseVersion("2.0")
+SHAPELY_GE_18 = Version(shapely.__version__) >= Version("1.8")
+SHAPELY_GE_182 = Version(shapely.__version__) >= Version("1.8.2")
+SHAPELY_GE_20 = Version(shapely.__version__) >= Version("2.0.0.dev0")
+SHAPELY_G_20a1 = Version(shapely.__version__) > Version("2.0a1")
 
 GEOS_GE_390 = shapely.geos.geos_version >= (3, 9, 0)
 
 
 HAS_PYGEOS = None
 USE_PYGEOS = None
+USE_SHAPELY_20 = None
 PYGEOS_SHAPELY_COMPAT = None
 
 PYGEOS_GE_09 = None
@@ -47,10 +51,10 @@ try:
     import pygeos  # noqa
 
     # only automatically use pygeos if version is high enough
-    if str(pygeos.__version__) >= LooseVersion("0.8"):
+    if Version(pygeos.__version__) >= Version("0.8"):
         HAS_PYGEOS = True
-        PYGEOS_GE_09 = str(pygeos.__version__) >= LooseVersion("0.9")
-        PYGEOS_GE_010 = str(pygeos.__version__) >= LooseVersion("0.10")
+        PYGEOS_GE_09 = Version(pygeos.__version__) >= Version("0.9")
+        PYGEOS_GE_010 = Version(pygeos.__version__) >= Version("0.10")
     else:
         warnings.warn(
             "The installed version of PyGEOS is too old ({0} installed, 0.8 required),"
@@ -73,7 +77,10 @@ def set_use_pygeos(val=None):
     Alternatively, pass a value here to force a True/False value.
     """
     global USE_PYGEOS
+    global USE_SHAPELY_20
     global PYGEOS_SHAPELY_COMPAT
+
+    env_use_pygeos = os.getenv("USE_PYGEOS", None)
 
     if val is not None:
         USE_PYGEOS = bool(val)
@@ -82,7 +89,6 @@ def set_use_pygeos(val=None):
 
             USE_PYGEOS = HAS_PYGEOS
 
-            env_use_pygeos = os.getenv("USE_PYGEOS", None)
             if env_use_pygeos is not None:
                 USE_PYGEOS = bool(int(env_use_pygeos))
 
@@ -92,12 +98,19 @@ def set_use_pygeos(val=None):
             import pygeos  # noqa
 
             # validate the pygeos version
-            if not str(pygeos.__version__) >= LooseVersion("0.8"):
-                raise ImportError(
-                    "PyGEOS >= 0.8 is required, version {0} is installed".format(
-                        pygeos.__version__
+            if not Version(pygeos.__version__) >= Version("0.8"):
+                if SHAPELY_GE_20:
+                    USE_PYGEOS = False
+                    warnings.warn(
+                        "The PyGEOS version is too old, and Shapely >= 2 is installed, "
+                        "thus using Shapely by default and not PyGEOS."
                     )
-                )
+                else:
+                    raise ImportError(
+                        "PyGEOS >= 0.8 is required, version {0} is installed".format(
+                            pygeos.__version__
+                        )
+                    )
 
             # Check whether Shapely and PyGEOS use the same GEOS version.
             # Based on PyGEOS from_shapely implementation.
@@ -121,6 +134,24 @@ def set_use_pygeos(val=None):
 
         except ImportError:
             raise ImportError(INSTALL_PYGEOS_ERROR)
+
+    if USE_PYGEOS and env_use_pygeos is None and SHAPELY_GE_20:
+        warnings.warn(
+            "Shapely 2.0 is installed, but because PyGEOS is also installed, "
+            "GeoPandas will still use PyGEOS by default for now. To force to use and "
+            "test Shapely 2.0, you have to set the environment variable USE_PYGEOS=0. "
+            "You can do this before starting the Python process, or in your code "
+            "before importing geopandas:"
+            "\n\nimport os\nos.environ['USE_PYGEOS'] = '0'\nimport geopandas\n\n"
+            "In a future release, GeoPandas will switch to using Shapely by default. "
+            "If you are using PyGEOS directly (calling PyGEOS functions on geometries "
+            "from GeoPandas), this will then stop working and you are encouraged to "
+            "migrate from PyGEOS to Shapely 2.0 "
+            "(https://shapely.readthedocs.io/en/latest/migration_pygeos.html).",
+            stacklevel=6,
+        )
+
+    USE_SHAPELY_20 = (not USE_PYGEOS) and SHAPELY_GE_20
 
 
 set_use_pygeos()
@@ -149,8 +180,7 @@ if shapely_warning is not None and not SHAPELY_GE_20:
             )
             yield
 
-
-elif (str(np.__version__) >= LooseVersion("1.21")) and not SHAPELY_GE_20:
+elif (Version(np.__version__) >= Version("1.21")) and not SHAPELY_GE_20:
 
     @contextlib.contextmanager
     def ignore_shapely2_warnings():
@@ -161,7 +191,6 @@ elif (str(np.__version__) >= LooseVersion("1.21")) and not SHAPELY_GE_20:
                 "ignore", "An exception was ignored while fetching", DeprecationWarning
             )
             yield
-
 
 else:
 
@@ -220,9 +249,11 @@ try:
 except ImportError:
     HAS_RTREE = False
 
+
 # -----------------------------------------------------------------------------
 # pyproj compat
 # -----------------------------------------------------------------------------
 
-PYPROJ_LT_3 = LooseVersion(pyproj.__version__) < LooseVersion("3")
-PYPROJ_GE_31 = LooseVersion(pyproj.__version__) >= LooseVersion("3.1")
+PYPROJ_LT_3 = Version(pyproj.__version__) < Version("3")
+PYPROJ_GE_31 = Version(pyproj.__version__) >= Version("3.1")
+PYPROJ_GE_32 = Version(pyproj.__version__) >= Version("3.2")

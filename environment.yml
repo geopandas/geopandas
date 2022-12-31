@@ -18,3 +18,4 @@ dependencies:
   - rasterio
   - geoplot
   - folium
+  - packaging

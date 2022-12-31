@@ -1,4 +1,4 @@
-from distutils.version import LooseVersion
+from packaging.version import Version
 import itertools
 import warnings
 
@@ -16,6 +16,7 @@ from shapely.geometry import (
     MultiPoint,
     MultiLineString,
     GeometryCollection,
+    box,
 )
 
 
@@ -33,7 +34,7 @@ import matplotlib.pyplot as plt  # noqa
 try:  # skipif and importorskip do not work for decorators
     from matplotlib.testing.decorators import check_figures_equal
 
-    if matplotlib.__version__ >= LooseVersion("3.3.0"):
+    if Version(matplotlib.__version__) >= Version("3.3.0"):
 
         MPL_DECORATORS = True
     else:
@@ -303,7 +304,7 @@ class TestPointPlotting:
         with pytest.warns(UserWarning):
             ax = s.plot()
         assert len(ax.collections) == 0
-        df = GeoDataFrame([])
+        df = GeoDataFrame([], columns=["geometry"])
         with pytest.warns(UserWarning):
             ax = df.plot()
         assert len(ax.collections) == 0
@@ -457,6 +458,9 @@ class TestPointPlotting:
         self.df["cats_ordered"] = pd.Categorical(
             ["cat2", "cat1"] * 5, categories=["cat2", "cat1"]
         )
+        self.df["bool"] = [False, True] * 5
+        self.df["bool_extension"] = pd.array([False, True] * 5)
+        self.df["cats_string"] = pd.array(["cat1", "cat2"] * 5, dtype="string")
 
         ax1 = self.df.plot("cats_object", legend=True)
         ax2 = self.df.plot("cats", legend=True)
@@ -464,14 +468,17 @@ class TestPointPlotting:
         ax4 = self.df.plot("singlecat", legend=True)
         ax5 = self.df.plot("cats_ordered", legend=True)
         ax6 = self.df.plot("nums", categories=[1, 2], legend=True)
+        ax7 = self.df.plot("bool", legend=True)
+        ax8 = self.df.plot("bool_extension", legend=True)
+        ax9 = self.df.plot("cats_string", legend=True)
 
         point_colors1 = ax1.collections[0].get_facecolors()
-        for ax in [ax2, ax3, ax4, ax5, ax6]:
+        for ax in [ax2, ax3, ax4, ax5, ax6, ax7, ax8, ax9]:
             point_colors2 = ax.collections[0].get_facecolors()
             np.testing.assert_array_equal(point_colors1[1], point_colors2[1])
 
         legend1 = [x.get_markerfacecolor() for x in ax1.get_legend().get_lines()]
-        for ax in [ax2, ax3, ax4, ax5, ax6]:
+        for ax in [ax2, ax3, ax4, ax5, ax6, ax7, ax8, ax9]:
             legend2 = [x.get_markerfacecolor() for x in ax.get_legend().get_lines()]
             np.testing.assert_array_equal(legend1, legend2)
 
@@ -488,7 +495,7 @@ class TestPointPlotting:
         ):
             self.df.plot(column="cats", categories=["cat1"])
 
-    def test_misssing(self):
+    def test_missing(self):
         self.df.loc[0, "values"] = np.nan
         ax = self.df.plot("values")
         cmap = plt.get_cmap()
@@ -511,6 +518,12 @@ class TestPointPlotting:
         leg_colors1 = ax.get_legend().axes.collections[1].get_facecolors()
         np.testing.assert_array_equal(point_colors[0], leg_colors[0])
         np.testing.assert_array_equal(nan_color[0], leg_colors1[0])
+
+    def test_no_missing_and_missing_kwds(self):
+        # GH2210
+        df = self.df.copy()
+        df["category"] = df["values"].astype("str")
+        df.plot("category", missing_kwds={"facecolor": "none"}, legend=True)
 
 
 class TestPointZPlotting:
@@ -691,7 +704,7 @@ class TestPolygonPlotting:
 
         t3 = Polygon([(2, 0), (3, 0), (3, 1)])
         df_nan = GeoDataFrame({"geometry": t3, "values": [np.nan]})
-        self.df3 = self.df.append(df_nan)
+        self.df3 = pd.concat([self.df, df_nan])
 
     def test_single_color(self):
 
@@ -949,6 +962,47 @@ class TestPolygonZPlotting:
         self.df.plot()
 
 
+class TestColorParamArray:
+    def setup_method(self):
+        geom = []
+        color = []
+        for a, b in [(0, 2), (4, 6)]:
+            b = box(a, a, b, b)
+            geom += [b, b.buffer(0.8).exterior, b.centroid]
+            color += ["red", "green", "blue"]
+
+        self.gdf = GeoDataFrame({"geometry": geom, "color_rgba": color})
+        self.mgdf = self.gdf.dissolve(self.gdf.geom_type)
+
+    def test_color_single(self):
+        ax = self.gdf.plot(color=self.gdf["color_rgba"])
+
+        _check_colors(
+            4,
+            np.concatenate([c.get_edgecolor() for c in ax.collections]),
+            ["green"] * 2 + ["blue"] * 2,
+        )
+        _check_colors(
+            4,
+            np.concatenate([c.get_facecolor() for c in ax.collections]),
+            ["red"] * 2 + ["blue"] * 2,
+        )
+
+    def test_color_multi(self):
+        ax = self.mgdf.plot(color=self.mgdf["color_rgba"])
+
+        _check_colors(
+            4,
+            np.concatenate([c.get_edgecolor() for c in ax.collections]),
+            ["green"] * 2 + ["blue"] * 2,
+        )
+        _check_colors(
+            4,
+            np.concatenate([c.get_facecolor() for c in ax.collections]),
+            ["red"] * 2 + ["blue"] * 2,
+        )
+
+
 class TestGeometryCollectionPlotting:
     def setup_method(self):
         coll1 = GeometryCollection(
@@ -1148,6 +1202,7 @@ class TestMapclassifyPlotting:
             import mapclassify  # noqa
         except ImportError:
             pytest.importorskip("mapclassify")
+        cls.mc = mapclassify
         cls.classifiers = list(mapclassify.classifiers.CLASSIFIERS)
         cls.classifiers.remove("UserDefined")
         pth = get_path("naturalearth_lowres")
@@ -1168,9 +1223,8 @@ class TestMapclassifyPlotting:
             )
         labels = [t.get_text() for t in ax.get_legend().get_texts()]
         expected = [
-            "       140.00,    5217064.00",
-            "   5217064.00,   19532732.33",
-            "  19532732.33, 1379302771.00",
+            s.split("|")[0][1:-2]
+            for s in str(self.mc.Quantiles(self.df["pop_est"], k=3)).split("\n")[4:]
         ]
         assert labels == expected
 
@@ -1252,7 +1306,13 @@ class TestMapclassifyPlotting:
             legend=True,
         )
         labels = [t.get_text() for t in ax.get_legend().get_texts()]
-        expected = ["       140.00,    9961396.00", "   9961396.00, 1379302771.00"]
+        expected = [
+            s.split("|")[0][1:-2]
+            for s in str(self.mc.Percentiles(self.df["pop_est"], pct=[50, 100])).split(
+                "\n"
+            )[4:]
+        ]
+
         assert labels == expected
 
     def test_invalid_scheme(self):
@@ -1462,9 +1522,6 @@ class TestPlotCollections:
         )
 
     def test_points(self):
-        # failing with matplotlib 1.4.3 (edge stays black even when specified)
-        pytest.importorskip("matplotlib", "1.5.0")
-
         from geopandas.plotting import _plot_point_collection, plot_point_collection
         from matplotlib.collections import PathCollection
 
@@ -1519,8 +1576,8 @@ class TestPlotCollections:
         with pytest.raises((TypeError, ValueError)):
             _plot_point_collection(ax, self.points, color="not color")
 
-        # check DeprecationWarning
-        with pytest.warns(DeprecationWarning):
+        # check FutureWarning
+        with pytest.warns(FutureWarning):
             plot_point_collection(ax, self.points)
 
     def test_points_values(self):
@@ -1592,8 +1649,8 @@ class TestPlotCollections:
         # not a color
         with pytest.raises((TypeError, ValueError)):
             _plot_linestring_collection(ax, self.lines, color="not color")
-        # check DeprecationWarning
-        with pytest.warns(DeprecationWarning):
+        # check FutureWarning
+        with pytest.warns(FutureWarning):
             plot_linestring_collection(ax, self.lines)
 
     def test_linestrings_values(self):
@@ -1684,8 +1741,8 @@ class TestPlotCollections:
         # not a color
         with pytest.raises((TypeError, ValueError)):
             _plot_polygon_collection(ax, self.polygons, color="not color")
-        # check DeprecationWarning
-        with pytest.warns(DeprecationWarning):
+        # check FutureWarning
+        with pytest.warns(FutureWarning):
             plot_polygon_collection(ax, self.polygons)
 
     def test_polygons_values(self):
@@ -1773,6 +1830,7 @@ class TestGeoplotAccessor:
                         ModuleNotFoundError, match="No module named 'scipy'"
                     ):
                         self.gdf.plot(kind=kind)
+                    return
             elif kind in _y_kinds:
                 kwargs = {"y": "y"}
             elif kind in _xy_kinds:
@@ -1921,11 +1979,6 @@ def _get_ax(fig, label):
     Previously, we did `fig.axes[1]`, but in matplotlib 3.4 the order switched
     and the colorbar ax was first and subplot ax second.
     """
-    if matplotlib.__version__ < LooseVersion("3.0.0"):
-        if label == "<colorbar>":
-            return fig.axes[1]
-        elif label == "":
-            return fig.axes[0]
     for ax in fig.axes:
         if ax.get_label() == label:
             return ax

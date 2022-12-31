@@ -1,4 +1,3 @@
-from collections.abc import Iterable
 import numbers
 import operator
 import warnings
@@ -109,7 +108,9 @@ def _geom_to_shapely(geom):
     """
     Convert internal representation (PyGEOS or Shapely) to external Shapely object.
     """
-    if not compat.USE_PYGEOS:
+    if compat.USE_SHAPELY_20:
+        return geom
+    elif not compat.USE_PYGEOS:
         return geom
     else:
         return vectorized._pygeos_to_shapely(geom)
@@ -119,7 +120,9 @@ def _shapely_to_geom(geom):
     """
     Convert external Shapely object to internal representation (PyGEOS or Shapely).
     """
-    if not compat.USE_PYGEOS:
+    if compat.USE_SHAPELY_20:
+        return geom
+    elif not compat.USE_PYGEOS:
         return geom
     else:
         return vectorized._shapely_to_pygeos(geom)
@@ -359,24 +362,19 @@ class GeometryArray(ExtensionArray):
         if isinstance(idx, numbers.Integral):
             return _geom_to_shapely(self.data[idx])
         # array-like, slice
-        if compat.PANDAS_GE_10:
-            # for pandas >= 1.0, validate and convert IntegerArray/BooleanArray
-            # to numpy array, pass-through non-array-like indexers
-            idx = pd.api.indexers.check_array_indexer(self, idx)
-            return GeometryArray(self.data[idx], crs=self.crs)
-        else:
-            if isinstance(idx, (Iterable, slice)):
-                return GeometryArray(self.data[idx], crs=self.crs)
-            else:
-                raise TypeError("Index type not supported", idx)
+        # validate and convert IntegerArray/BooleanArray
+        # to numpy array, pass-through non-array-like indexers
+        idx = pd.api.indexers.check_array_indexer(self, idx)
+        return GeometryArray(self.data[idx], crs=self.crs)
 
     def __setitem__(self, key, value):
-        if compat.PANDAS_GE_10:
-            # for pandas >= 1.0, validate and convert IntegerArray/BooleanArray
-            # keys to numpy array, pass-through non-array-like indexers
-            key = pd.api.indexers.check_array_indexer(self, key)
+        # validate and convert IntegerArray/BooleanArray
+        # keys to numpy array, pass-through non-array-like indexers
+        key = pd.api.indexers.check_array_indexer(self, key)
         if isinstance(value, pd.Series):
             value = value.values
+        if isinstance(value, pd.DataFrame):
+            value = value.values.flatten()
         if isinstance(value, (list, np.ndarray)):
             value = from_shapely(value)
         if isinstance(value, GeometryArray):
@@ -416,19 +414,24 @@ class GeometryArray(ExtensionArray):
         #         )
 
     def __getstate__(self):
-        if compat.USE_PYGEOS:
+        if compat.USE_SHAPELY_20:
+            return (shapely.to_wkb(self.data), self._crs)
+        elif compat.USE_PYGEOS:
             return (pygeos.to_wkb(self.data), self._crs)
         else:
             return self.__dict__
 
     def __setstate__(self, state):
-        if compat.USE_PYGEOS:
-            geoms = pygeos.from_wkb(state[0])
+        if not isinstance(state, dict):
+            # pickle file saved with pygeos
+            geoms = vectorized.from_wkb(state[0])
             self._crs = state[1]
             self._sindex = None  # pygeos.STRtree could not be pickled yet
             self.data = geoms
             self.base = None
         else:
+            if compat.USE_PYGEOS:
+                state["data"] = vectorized.from_shapely(state["data"])
             if "_crs" not in state:
                 state["_crs"] = None
             self.__dict__.update(state)
@@ -508,6 +511,12 @@ class GeometryArray(ExtensionArray):
     def representative_point(self):
         return GeometryArray(vectorized.representative_point(self.data), crs=self.crs)
 
+    def normalize(self):
+        return GeometryArray(vectorized.normalize(self.data), crs=self.crs)
+
+    def make_valid(self):
+        return GeometryArray(vectorized.make_valid(self.data), crs=self.crs)
+
     #
     # Binary predicates
     #
@@ -563,27 +572,14 @@ class GeometryArray(ExtensionArray):
         return self.geom_equals_exact(other, 0.5 * 10 ** (-decimal))
         # return _binary_predicate("almost_equals", self, other, decimal=decimal)
 
-    def equals_exact(self, other, tolerance):
-        warnings.warn(
-            "GeometryArray.equals_exact() is now GeometryArray.geom_equals_exact(). "
-            "GeometryArray.equals_exact() will be deprecated in the future.",
-            FutureWarning,
-            stacklevel=2,
-        )
-        return self._binary_method("equals_exact", self, other, tolerance=tolerance)
-
-    def almost_equals(self, other, decimal):
-        warnings.warn(
-            "GeometryArray.almost_equals() is now GeometryArray.geom_almost_equals(). "
-            "GeometryArray.almost_equals() will be deprecated in the future.",
-            FutureWarning,
-            stacklevel=2,
-        )
-        return self.geom_equals_exact(other, 0.5 * 10 ** (-decimal))
-
     #
     # Binary operations that return new geometries
     #
+
+    def clip_by_rect(self, xmin, ymin, xmax, ymax):
+        return GeometryArray(
+            vectorized.clip_by_rect(self.data, xmin, ymin, xmax, ymax), crs=self.crs
+        )
 
     def difference(self, other):
         return GeometryArray(
@@ -702,7 +698,7 @@ class GeometryArray(ExtensionArray):
         be set.  Either ``crs`` or ``epsg`` may be specified for output.
 
         This method will transform all points in all objects.  It has no notion
-        or projecting entire geometries.  All segments joining points are
+        of projecting entire geometries.  All segments joining points are
         assumed to be lines in the current projection, not geodesics.  Objects
         crossing the dateline (or other projection boundary) will have
         undesirable behavior.
@@ -882,7 +878,14 @@ class GeometryArray(ExtensionArray):
     def x(self):
         """Return the x location of point geometries in a GeoSeries"""
         if (self.geom_type[~self.isna()] == "Point").all():
-            return vectorized.get_x(self.data)
+            empty = self.is_empty
+            if empty.any():
+                nonempty = ~empty
+                coords = np.full_like(nonempty, dtype=float, fill_value=np.nan)
+                coords[nonempty] = vectorized.get_x(self.data[nonempty])
+                return coords
+            else:
+                return vectorized.get_x(self.data)
         else:
             message = "x attribute access only provided for Point geometries"
             raise ValueError(message)
@@ -891,7 +894,14 @@ class GeometryArray(ExtensionArray):
     def y(self):
         """Return the y location of point geometries in a GeoSeries"""
         if (self.geom_type[~self.isna()] == "Point").all():
-            return vectorized.get_y(self.data)
+            empty = self.is_empty
+            if empty.any():
+                nonempty = ~empty
+                coords = np.full_like(nonempty, dtype=float, fill_value=np.nan)
+                coords[nonempty] = vectorized.get_y(self.data[nonempty])
+                return coords
+            else:
+                return vectorized.get_y(self.data)
         else:
             message = "y attribute access only provided for Point geometries"
             raise ValueError(message)
@@ -900,7 +910,14 @@ class GeometryArray(ExtensionArray):
     def z(self):
         """Return the z location of point geometries in a GeoSeries"""
         if (self.geom_type[~self.isna()] == "Point").all():
-            return vectorized.get_z(self.data)
+            empty = self.is_empty
+            if empty.any():
+                nonempty = ~empty
+                coords = np.full_like(nonempty, dtype=float, fill_value=np.nan)
+                coords[nonempty] = vectorized.get_z(self.data[nonempty])
+                return coords
+            else:
+                return vectorized.get_z(self.data)
         else:
             message = "z attribute access only provided for Point geometries"
             raise ValueError(message)
@@ -1048,11 +1065,10 @@ class GeometryArray(ExtensionArray):
             dtype
         ):
             string_values = to_wkt(self)
-            if compat.PANDAS_GE_10:
-                pd_dtype = pd.api.types.pandas_dtype(dtype)
-                if isinstance(pd_dtype, pd.StringDtype):
-                    # ensure to return a pandas string array instead of numpy array
-                    return pd.array(string_values, dtype=pd_dtype)
+            pd_dtype = pd.api.types.pandas_dtype(dtype)
+            if isinstance(pd_dtype, pd.StringDtype):
+                # ensure to return a pandas string array instead of numpy array
+                return pd.array(string_values, dtype=pd_dtype)
             return string_values.astype(dtype, copy=False)
         else:
             return np.array(self, dtype=dtype, copy=copy)
@@ -1061,7 +1077,9 @@ class GeometryArray(ExtensionArray):
         """
         Boolean NumPy array indicating if each value is missing
         """
-        if compat.USE_PYGEOS:
+        if compat.USE_SHAPELY_20:
+            return shapely.is_missing(self.data)
+        elif compat.USE_PYGEOS:
             return pygeos.is_missing(self.data)
         else:
             return np.array([g is None for g in self.data], dtype="bool")
@@ -1302,7 +1320,7 @@ class GeometryArray(ExtensionArray):
         ExtensionArray
         """
         data = np.concatenate([ga.data for ga in to_concat])
-        return GeometryArray(data, crs=to_concat[0].crs)
+        return GeometryArray(data, crs=_get_common_crs(to_concat))
 
     def _reduce(self, name, skipna=True, **kwargs):
         # including the base class version here (that raises by default)
@@ -1373,3 +1391,29 @@ class GeometryArray(ExtensionArray):
             else:
                 return False
         return (self == item).any()
+
+
+def _get_common_crs(arr_seq):
+    # mask out all None arrays with no crs (most likely auto generated by pandas
+    # from concat with missing column)
+    arr_seq = [ga for ga in arr_seq if not (ga.isna().all() and ga.crs is None)]
+
+    crs_set = {arr.crs for arr in arr_seq}
+    crs_not_none = [crs for crs in crs_set if crs is not None]
+    names = [crs.name for crs in crs_not_none]
+
+    if len(crs_not_none) == 0:
+        return None
+    if len(crs_not_none) == 1:
+        if len(crs_set) != 1:
+            warnings.warn(
+                "CRS not set for some of the concatenation inputs. "
+                f"Setting output's CRS as {names[0]} "
+                "(the single non-null crs provided)."
+            )
+        return crs_not_none[0]
+
+    raise ValueError(
+        f"Cannot determine common CRS for concatenation inputs, got {names}. "
+        "Use `to_crs()` to transform geometries to the same CRS before merging."
+    )

@@ -17,8 +17,10 @@ from geopandas import GeoDataFrame, GeoSeries, read_file, datasets
 import pytest
 import numpy as np
 
-if compat.USE_PYGEOS:
-    import pygeos
+if compat.USE_SHAPELY_20:
+    import shapely as mod
+elif compat.USE_PYGEOS:
+    import pygeos as mod
 
 
 @pytest.mark.skip_no_sindex
@@ -73,6 +75,8 @@ class TestSeriesSindex:
         s = GeoSeries([t1, t2, sq])
         assert s.sindex.size == 3
 
+    @pytest.mark.filterwarnings("ignore:The series.append method is deprecated")
+    @pytest.mark.skipif(compat.PANDAS_GE_20, reason="append removed in pandas 2.0")
     def test_polygons_append(self):
         t1 = Polygon([(0, 0), (1, 0), (1, 1)])
         t2 = Polygon([(0, 0), (1, 1), (0, 1)])
@@ -173,6 +177,31 @@ class TestFrameSindex:
         assert subset1.sindex is original_index
         subset2 = self.df[["A", "geom"]]
         assert subset2.sindex is original_index
+
+    def test_rebuild_on_update_inplace(self):
+        gdf = self.df.copy()
+        old_sindex = gdf.sindex
+        # sorting in place
+        gdf.sort_values("A", ascending=False, inplace=True)
+        # spatial index should be invalidated
+        assert not gdf.has_sindex
+        new_sindex = gdf.sindex
+        # and should be different
+        assert new_sindex is not old_sindex
+
+        # sorting should still have happened though
+        assert gdf.index.tolist() == [4, 3, 2, 1, 0]
+
+    @pytest.mark.skipif(not compat.PANDAS_GE_11, reason="fails on pd<1.1.0")
+    def test_update_inplace_no_rebuild(self):
+        gdf = self.df.copy()
+        old_sindex = gdf.sindex
+        gdf.rename(columns={"A": "AA"}, inplace=True)
+        # a rename shouldn't invalidate the index
+        assert gdf.has_sindex
+        # and the "new" should be the same
+        new_sindex = gdf.sindex
+        assert old_sindex is new_sindex
 
 
 # Skip to accommodate Shapely geometries being unhashable
@@ -673,7 +702,7 @@ class TestPygeosInterface:
 
     # ------------------------- `nearest` tests ------------------------- #
     @pytest.mark.skipif(
-        compat.USE_PYGEOS,
+        compat.USE_PYGEOS or compat.USE_SHAPELY_20,
         reason=("RTree supports sindex.nearest with different behaviour"),
     )
     def test_rtree_nearest_warns(self):
@@ -684,7 +713,7 @@ class TestPygeosInterface:
             df.sindex.nearest((0, 0, 1, 1), num_results=2)
 
     @pytest.mark.skipif(
-        not (compat.USE_PYGEOS and not compat.PYGEOS_GE_010),
+        compat.USE_SHAPELY_20 or not (compat.USE_PYGEOS and not compat.PYGEOS_GE_010),
         reason=("PyGEOS < 0.10 does not support sindex.nearest"),
     )
     def test_pygeos_error(self):
@@ -693,7 +722,7 @@ class TestPygeosInterface:
             df.sindex.nearest(None)
 
     @pytest.mark.skipif(
-        not (compat.USE_PYGEOS and compat.PYGEOS_GE_010),
+        not (compat.USE_SHAPELY_20 or (compat.USE_PYGEOS and compat.PYGEOS_GE_010)),
         reason=("PyGEOS >= 0.10 is required to test sindex.nearest"),
     )
     @pytest.mark.parametrize("return_all", [True, False])
@@ -705,19 +734,19 @@ class TestPygeosInterface:
         ],
     )
     def test_nearest_single(self, geometry, expected, return_all):
-        geoms = pygeos.points(np.arange(10), np.arange(10))
+        geoms = mod.points(np.arange(10), np.arange(10))
         df = geopandas.GeoDataFrame({"geometry": geoms})
 
         p = Point(geometry)
         res = df.sindex.nearest(p, return_all=return_all)
         assert_array_equal(res, expected)
 
-        p = pygeos.points(geometry)
+        p = mod.points(geometry)
         res = df.sindex.nearest(p, return_all=return_all)
         assert_array_equal(res, expected)
 
     @pytest.mark.skipif(
-        not compat.USE_PYGEOS or not compat.PYGEOS_GE_010,
+        not (compat.USE_SHAPELY_20 or (compat.USE_PYGEOS and compat.PYGEOS_GE_010)),
         reason=("PyGEOS >= 0.10 is required to test sindex.nearest"),
     )
     @pytest.mark.parametrize("return_all", [True, False])
@@ -729,14 +758,14 @@ class TestPygeosInterface:
         ],
     )
     def test_nearest_multi(self, geometry, expected, return_all):
-        geoms = pygeos.points(np.arange(10), np.arange(10))
+        geoms = mod.points(np.arange(10), np.arange(10))
         df = geopandas.GeoDataFrame({"geometry": geoms})
 
         ps = [Point(p) for p in geometry]
         res = df.sindex.nearest(ps, return_all=return_all)
         assert_array_equal(res, expected)
 
-        ps = pygeos.points(geometry)
+        ps = mod.points(geometry)
         res = df.sindex.nearest(ps, return_all=return_all)
         assert_array_equal(res, expected)
 
@@ -750,7 +779,7 @@ class TestPygeosInterface:
         assert_array_equal(res, expected)
 
     @pytest.mark.skipif(
-        not compat.USE_PYGEOS or not compat.PYGEOS_GE_010,
+        not (compat.USE_SHAPELY_20 or (compat.USE_PYGEOS and compat.PYGEOS_GE_010)),
         reason=("PyGEOS >= 0.10 is required to test sindex.nearest"),
     )
     @pytest.mark.parametrize("return_all", [True, False])
@@ -762,14 +791,14 @@ class TestPygeosInterface:
         ],
     )
     def test_nearest_none(self, geometry, expected, return_all):
-        geoms = pygeos.points(np.arange(10), np.arange(10))
+        geoms = mod.points(np.arange(10), np.arange(10))
         df = geopandas.GeoDataFrame({"geometry": geoms})
 
         res = df.sindex.nearest(geometry, return_all=return_all)
         assert_array_equal(res, expected)
 
     @pytest.mark.skipif(
-        not compat.USE_PYGEOS or not compat.PYGEOS_GE_010,
+        not (compat.USE_SHAPELY_20 or (compat.USE_PYGEOS and compat.PYGEOS_GE_010)),
         reason=("PyGEOS >= 0.10 is required to test sindex.nearest"),
     )
     @pytest.mark.parametrize("return_distance", [True, False])
@@ -785,7 +814,7 @@ class TestPygeosInterface:
     def test_nearest_max_distance(
         self, expected, max_distance, return_all, return_distance
     ):
-        geoms = pygeos.points(np.arange(10), np.arange(10))
+        geoms = mod.points(np.arange(10), np.arange(10))
         df = geopandas.GeoDataFrame({"geometry": geoms})
 
         ps = [Point(0.5, 0.5), Point(0, 10)]
@@ -833,9 +862,9 @@ class TestPygeosInterface:
     @pytest.mark.parametrize(
         "predicate, expected_shape",
         [
-            (None, (2, 396)),
-            ("intersects", (2, 172)),
-            ("within", (2, 172)),
+            (None, (2, 471)),
+            ("intersects", (2, 213)),
+            ("within", (2, 213)),
             ("contains", (2, 0)),
             ("overlaps", (2, 0)),
             ("crosses", (2, 0)),

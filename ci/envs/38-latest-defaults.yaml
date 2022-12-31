@@ -2,14 +2,15 @@ name: test
 channels:
   - defaults
 dependencies:
-  - python=3.7
+  - python=3.8
   # required
-  - pandas=1.0
+  - numpy=1.21  # pin to < 1.23 for compat with older shapely on defaults channel
+  - pandas
   - shapely
   - fiona
-  - numpy=<1.19
-  #- pyproj
+  - pyproj
   - geos
+  - packaging
   # testing
   - pytest
   - pytest-cov
@@ -23,7 +24,8 @@ dependencies:
   - libspatialite
   - pip
   - pip:
-      - pyproj==3.0.1
       - geopy
-      - mapclassify==2.4.0
+      - mapclassify
       - pyarrow
+      - folium
+      - xyzservices

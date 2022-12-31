@@ -35,7 +35,7 @@ def _overlay_intersection(df1, df2):
         right = df2.geometry.take(idx2)
         right.reset_index(drop=True, inplace=True)
         intersections = left.intersection(right)
-        poly_ix = intersections.type.isin(["Polygon", "MultiPolygon"])
+        poly_ix = intersections.geom_type.isin(["Polygon", "MultiPolygon"])
         intersections.loc[poly_ix] = intersections[poly_ix].buffer(0)
 
         # only keep actual intersecting geometries
@@ -92,7 +92,7 @@ def _overlay_difference(df1, df2):
         )
         new_g.append(new)
     differences = GeoSeries(new_g, index=df1.index, crs=df1.crs)
-    poly_ix = differences.type.isin(["Polygon", "MultiPolygon"])
+    poly_ix = differences.geom_type.isin(["Polygon", "MultiPolygon"])
     differences.loc[poly_ix] = differences[poly_ix].buffer(0)
     geom_diff = differences[~differences.is_empty].copy()
     dfdiff = df1[~differences.is_empty].copy()
@@ -139,7 +139,7 @@ def _overlay_union(df1, df2):
     # keep geometry column last
     columns = list(dfunion.columns)
     columns.remove("geometry")
-    columns = columns + ["geometry"]
+    columns.append("geometry")
     return dfunion.reindex(columns=columns)
 
 
