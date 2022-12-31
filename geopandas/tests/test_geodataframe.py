@@ -794,7 +794,7 @@ class TestDataFrame:
         assert hasattr(gf, "geometry")
 
         # ensure mutating columns in gf doesn't update df
-        gf.loc[0, "A" ] = 7
+        gf.loc[0, "A"] = 7
         assert_frame_equal(df, df_copy)
         gf["A"] = 3
         assert_frame_equal(df, df_copy)
