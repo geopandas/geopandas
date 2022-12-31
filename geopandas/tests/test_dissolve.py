@@ -117,6 +117,17 @@ def test_mean_dissolve_warning_capture(nybb_polydf, first, expected_mean):
         nybb_polydf.dissolve("manhattan_bronx", aggfunc="first")
 
 
+def test_dissolve_emits_other_warnings(nybb_polydf):
+    # we only do something special for pandas 1.5.x, but expect this
+    # test to be true on any version
+    def warning_mean(group):
+        warnings.warn("foo")
+        return group.mean()
+
+    with pytest.warns(UserWarning, match="foo"):
+        nybb_polydf.dissolve("manhattan_bronx", aggfunc=warning_mean)
+
+
 def test_multicolumn_dissolve(nybb_polydf, first):
     multi = nybb_polydf.copy()
     multi["dup_col"] = multi.manhattan_bronx
