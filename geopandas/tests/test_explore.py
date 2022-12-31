@@ -256,10 +256,24 @@ class TestExplore:
     def test_bool(self):
         df = self.nybb.copy()
         df["bool"] = [True, False, True, False, True]
-        m = df.explore("bool")
+        df["bool_extension"] = pd.array([True, False, True, False, True])
+        m1 = df.explore("bool")
+        m2 = df.explore("bool_extension")
+
+        out1_str = self._fetch_map_string(m1)
+        assert '"__folium_color":"#9edae5","bool":true' in out1_str
+        assert '"__folium_color":"#1f77b4","bool":false' in out1_str
+
+        out2_str = self._fetch_map_string(m2)
+        assert '"__folium_color":"#9edae5","bool":true' in out2_str
+        assert '"__folium_color":"#1f77b4","bool":false' in out2_str
+
+    def test_string(self):
+        df = self.nybb.copy()
+        df["string"] = pd.array([1, 2, 3, 4, 5], dtype="string")
+        m = df.explore("string")
         out_str = self._fetch_map_string(m)
-        assert '"__folium_color":"#9edae5","bool":true' in out_str
-        assert '"__folium_color":"#1f77b4","bool":false' in out_str
+        assert '"__folium_color":"#9edae5","string":"5"' in out_str
 
     def test_column_values(self):
         """
@@ -551,17 +565,20 @@ class TestExplore:
         assert "red'></span>NaN" in out_str
 
     def test_colorbar(self):
+        def quoted_in(find, s):
+            return find in s or find.replace("'", '"') in s
+
         m = self.world.explore("range", legend=True)
         out_str = self._fetch_map_string(m)
         assert "attr(\"id\",'legend')" in out_str
-        assert "text('range')" in out_str
+        assert quoted_in("text('range')", out_str)
 
         m = self.world.explore(
             "range", legend=True, legend_kwds=dict(caption="my_caption")
         )
         out_str = self._fetch_map_string(m)
         assert "attr(\"id\",'legend')" in out_str
-        assert "text('my_caption')" in out_str
+        assert quoted_in("text('my_caption')", out_str)
 
         m = self.missing.explore("pop_est", legend=True, missing_kwds=dict(color="red"))
         out_str = self._fetch_map_string(m)

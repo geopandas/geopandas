@@ -1,3 +1,5 @@
+import warnings
+
 import numpy as np
 import pandas as pd
 
@@ -289,7 +291,7 @@ def test_dissolve_dropna():
 )
 def test_dissolve_dropna_warn(nybb_polydf):
     # No warning with default params
-    with pytest.warns(None) as record:
+    with warnings.catch_warnings(record=True) as record:
         nybb_polydf.dissolve()
 
     for r in record:
@@ -308,7 +310,7 @@ def test_dissolve_multi_agg(nybb_polydf, merged_shapes):
     merged_shapes[("BoroCode", "max")] = [5, 2]
     merged_shapes[("BoroName", "count")] = [3, 2]
 
-    with pytest.warns(None) as record:
+    with warnings.catch_warnings(record=True) as record:
         test = nybb_polydf.dissolve(
             by="manhattan_bronx",
             aggfunc={
