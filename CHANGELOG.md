@@ -1,5 +1,11 @@
 # Changelog
 
+## Development version
+
+Bug fixes:
+
+- Ensure that GeoDataFrame created from DataFrame is a copy, not a view (#2667)
+
 ## Version 0.12.2 (December 10, 2022)
 
 Bug fixes:
@@ -7,7 +13,6 @@ Bug fixes:
 - Correctly handle geometries with Z dimension in ``to_crs()`` when using PyGEOS or
   Shapely >= 2.0 (previously the z coordinates were lost) (#1345).
 - Assign Crimea to Ukraine in the ``naturalearth_lowres`` built-in dataset (#2670)
-- Set `copy=true` in `GeoDataFrame()` constructor if `copy` is not set and `data` is a DataFrame (#2667)
 
 ## Version 0.12.1 (October 29, 2022)
 
