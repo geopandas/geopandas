@@ -857,7 +857,7 @@ class TestPygeosInterface:
     @pytest.mark.parametrize(
         "predicate, expected_shape",
         [
-            (None, (2, 470)),
+            (None, (2, 471)),
             ("intersects", (2, 213)),
             ("within", (2, 213)),
             ("contains", (2, 0)),
