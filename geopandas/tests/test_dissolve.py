@@ -82,7 +82,6 @@ def test_first_dissolve(nybb_polydf, first):
     assert_frame_equal(first, test, check_column_type=False)
 
 
-# @pytest.mark.filterwarnings("ignore:The default treatment of non-numeric:UserWarning")
 def test_mean_dissolve(nybb_polydf, first, expected_mean):
     if not PANDAS_GE_15:
         test = nybb_polydf.dissolve("manhattan_bronx", aggfunc="mean")
@@ -104,10 +103,10 @@ def test_mean_dissolve(nybb_polydf, first, expected_mean):
     assert_frame_equal(expected_mean, test2, check_column_type=False)
 
 
-@pytest.mark.skipif()
+@pytest.mark.skipif(not PANDAS_GE_15 or PANDAS_GE_20, reason="warning on pandas 1.5.x")
 def test_mean_dissolve_warning_capture(nybb_polydf, first, expected_mean):
     with pytest.warns(
-        UserWarning,
+        FutureWarning,
         match="The default treatment of non-numeric cols in GeoDataFrame.dissolve",
     ):
         nybb_polydf.dissolve("manhattan_bronx", aggfunc="mean")

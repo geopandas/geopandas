@@ -1629,9 +1629,9 @@ individually so that features may have different properties
 
             .. versionadded:: 0.9.0
         **kwargs :
-            Keyword arguments to be passed as arguments to aggfunc.
-            In particular, `numeric_only` may be supplied, which will
-            may be required for pandas 2.0 for certain aggfuncs.
+            Keyword arguments to be passed to the pandas `DataFrameGroupby.agg` method
+            which is used by `dissolve`. In particular, `numeric_only` may be
+            supplied, which will be required in pandas 2.0 for certain aggfuncs.
 
             .. versionadded:: 0.13.0
         Returns
@@ -1680,11 +1680,6 @@ individually so that features may have different properties
         # Process non-spatial component
         data = self.drop(labels=self.geometry.name, axis=1)
         with warnings.catch_warnings(record=True) as record:
-            warnings.filterwarnings(
-                "always",
-                message="The default value of numeric_only",
-                category=FutureWarning,
-            )
             aggregated_data = data.groupby(**groupby_kwargs).agg(aggfunc, **kwargs)
         for w in record:
             if str(w.message).startswith("The default value of numeric_only"):
@@ -1697,7 +1692,7 @@ individually so that features may have different properties
                     "dissolve, which will be forwarded to `DataFrame.groupby().agg`. "
                     "(The deprecation will be enforced in pandas 2.0)"
                 )
-                warnings.warn(msg, stacklevel=2)
+                warnings.warn(msg, FutureWarning, stacklevel=2)
             else:
                 # Only want to capture specific warning,
                 # other warnings from pandas should be passed through
