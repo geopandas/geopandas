@@ -1628,7 +1628,8 @@ individually so that features may have different properties
             if a non-default value is given for this parameter.
 
             .. versionadded:: 0.9.0
-        **kwargs: Keyword arguments to be passed as arguments to aggfunc.
+        **kwargs :
+            Keyword arguments to be passed as arguments to aggfunc.
             In particular, `numeric_only` may be supplied, which will
             may be required for pandas 2.0 for certain aggfuncs.
 
