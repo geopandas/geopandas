@@ -565,17 +565,20 @@ class TestExplore:
         assert "red'></span>NaN" in out_str
 
     def test_colorbar(self):
+        def quoted_in(find, s):
+            return find in s or find.replace("'", '"') in s
+
         m = self.world.explore("range", legend=True)
         out_str = self._fetch_map_string(m)
         assert "attr(\"id\",'legend')" in out_str
-        assert "text('range')" in out_str
+        assert quoted_in("text('range')", out_str)
 
         m = self.world.explore(
             "range", legend=True, legend_kwds=dict(caption="my_caption")
         )
         out_str = self._fetch_map_string(m)
         assert "attr(\"id\",'legend')" in out_str
-        assert "text('my_caption')" in out_str
+        assert quoted_in("text('my_caption')", out_str)
 
         m = self.missing.explore("pop_est", legend=True, missing_kwds=dict(color="red"))
         out_str = self._fetch_map_string(m)
