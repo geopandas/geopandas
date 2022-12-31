@@ -787,9 +787,9 @@ class TestDataFrame:
             geometry=points_from_xy(df["longitude"], df["latitude"]),
             crs=self.df.crs,
         )
-        assert isinstance(df, pd.DataFrame)
+        assert type(df) == pd.DataFrame
         assert "geometry" not in df
-        pd.testing.assert_frame_equal(df, df_copy)
+        assert_frame_equal(df, df_copy)
         assert isinstance(gf, GeoDataFrame)
         assert hasattr(gf, "geometry")
 
