@@ -16,20 +16,6 @@ maintainers = [
 license = {text = "BSD 3-Clause"}
 description = "Geographic pandas extensions"
 keywords = ["GIS", "cartography", "pandas", "shapely"]
-readme = {text = """\
-GeoPandas is a project to add support for geographic data to
-`pandas`_ objects.
-
-The goal of GeoPandas is to make working with geospatial data in
-python easier. It combines the capabilities of `pandas`_ and `shapely`_,
-providing geospatial operations in pandas and a high-level interface
-to multiple geometries to shapely. GeoPandas enables you to easily do
-operations in python that would otherwise require a spatial database
-such as PostGIS.
-
-.. _pandas: https://pandas.pydata.org
-.. _shapely: https://shapely.readthedocs.io/en/latest/
-""", content-type = "text/x-rst"}
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Science/Research",
@@ -47,6 +33,23 @@ dependencies = [
     "pyproj >= 2.6.1.post1",
     "shapely >= 1.7",
 ]
+
+[project.readme]
+text = """\
+GeoPandas is a project to add support for geographic data to
+`pandas`_ objects.
+
+The goal of GeoPandas is to make working with geospatial data in
+python easier. It combines the capabilities of `pandas`_ and `shapely`_,
+providing geospatial operations in pandas and a high-level interface
+to multiple geometries to shapely. GeoPandas enables you to easily do
+operations in python that would otherwise require a spatial database
+such as PostGIS.
+
+.. _pandas: https://pandas.pydata.org
+.. _shapely: https://shapely.readthedocs.io/en/latest/
+"""
+content-type = "text/x-rst"
 
 [project.urls]
 Home = "https://geopandas.org"
