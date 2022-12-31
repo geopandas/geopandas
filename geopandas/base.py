@@ -3453,12 +3453,13 @@ GeometryCollection
         return self._data.equals(other._data)
 
     def get_coordinates(self, include_z=False, ignore_index=False, index_parts=False):
-        """Gets coordinates from a GeoSeries as an DataFrame of floats.
+        """Gets coordinates from a :class:`GeoSeries` as a :class:`~pandas.DataFrame` of
+        floats.
 
-        The shape of the returned Dataframe is (N, 2), with N being the number of
-        coordinate pairs. With the default of ``include_z=False``, three-dimensional
-        data is ignored. When specifying ``include_z=True``, the shape of the
-        returned DataFrame is (N, 3).
+        The shape of the returned :class:`~pandas.DataFrame` is (N, 2), with N being the
+        number of coordinate pairs. With the default of ``include_z=False``,
+        three-dimensional data is ignored. When specifying ``include_z=True``, the shape
+        of the returned :class:`~pandas.DataFrame` is (N, 3).
 
         Parameters
         ----------
@@ -3468,9 +3469,9 @@ GeometryCollection
             If True, the resulting index will be labelled 0, 1, …, n - 1, ignoring
             ``index_parts``.
         index_parts : bool, default False
-           If True, the resulting index will be a multi-index (original index with an
-           additional level indicating the coordinate pairs: a new zero-based index
-           for each coordinate pair).
+           If True, the resulting index will be a :class:`~pandas.MultiIndex` (original
+           index with an additional level indicating the coordinate pairs: a new
+           zero-based index for each coordinate pair).
 
         Returns
         -------

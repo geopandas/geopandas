@@ -1,5 +1,11 @@
 # Changelog
 
+## Development version
+
+New features and improvements:
+
+- Added ``get_coordinates()`` method from shapely to GeoSeries/GeoDataframe (#2624).
+
 ## Version 0.12.2 (December 10, 2022)
 
 Bug fixes:
