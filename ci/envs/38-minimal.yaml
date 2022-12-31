@@ -5,11 +5,11 @@ channels:
 dependencies:
   - python=3.8
   # required
-  - numpy
-  - pandas=1.1
+  - numpy=1.20 #1.18.5
+  - pandas=1.1 # 1.0.5
   - shapely=1.7.1
-  - fiona=1.8.19
-  - pyproj=3.0.1
+  - fiona=1.8.18 # 1.8.13.post1
+  - pyproj=3.0.1 # 2.6.1.post1
   - packaging
   # testing
   - pytest
@@ -17,9 +17,9 @@ dependencies:
   - pytest-xdist
   - fsspec
   # optional
-  - rtree
-  - matplotlib=3.3.4
-  - mapclassify=2.4.0
+  - rtree # 0.9.7
+  - matplotlib=3.3.4 # 3.2.2
+  - mapclassify=2.4.0 # 2.3.0
   - geopy
   - SQLalchemy
   - libspatialite
