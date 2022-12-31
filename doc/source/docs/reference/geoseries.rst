@@ -29,6 +29,7 @@ General methods and attributes
    GeoSeries.x
    GeoSeries.y
    GeoSeries.z
+   GeoSeries.get_coordinates
 
 Unary predicates
 ----------------

@@ -888,7 +888,7 @@ class GeoSeries(GeoPandasBase, Series):
                 )
 
             index = _get_index_for_parts(
-                geometries,
+                len(geometries),
                 self.index,
                 outer_idx,
                 ignore_index=ignore_index,

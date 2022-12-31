@@ -3463,7 +3463,7 @@ GeometryCollection
         Parameters
         ----------
         include_z : bool, default False
-            _description_, by default False
+            Include Z coordinates
         ignore_index : bool, default False
             If True, the resulting index will be labelled 0, 1, …, n - 1, ignoring
             ``index_parts``.
@@ -3526,7 +3526,7 @@ GeometryCollection
             import shapely
 
             coords, outer_idx = shapely.get_coordinates(
-                self.geometry.values.data, include_z=include_z, return_index=True
+                self.geometry.values, include_z=include_z, return_index=True
             )
         elif compat.USE_PYGEOS:
             import pygeos
@@ -3536,9 +3536,11 @@ GeometryCollection
             )
 
         else:
+            import shapely
+
             raise NotImplementedError(
-                f"shapely >= 2.0 or PyGEOS is required, "
-                f"version {shapely.__version__} is installed"
+                f"shapely >= 2.0 or PyGEOS are required, "
+                f"version {shapely.__version__} is installed."
             )
 
         column_names = ["x", "y"]
@@ -3546,7 +3548,7 @@ GeometryCollection
             column_names.append("z")
 
         index = _get_index_for_parts(
-            coords,
+            len(coords),
             self.index,
             outer_idx,
             ignore_index=ignore_index,
@@ -3556,15 +3558,31 @@ GeometryCollection
         return pd.DataFrame(coords, index=index, columns=column_names)
 
 
-def _get_index_for_parts(values, orig_idx, outer_idx, ignore_index, index_parts):
+def _get_index_for_parts(length, orig_idx, outer_idx, ignore_index, index_parts):
     """Helper to handle index when geometries get exploded to parts.
 
     Used in get_coordinates and explode.
+
+    Parameters
+    ----------
+    length : int
+        length of the resulting index
+    orig_idx : pandas.Index
+        original index
+    outer_idx : array
+        the index of each returned geometry as a separate ndarray of integers
+    ignore_index : bool
+    index_parts : bpp;
+
+    Returns
+    -------
+    pandas.Index
+        index or multiindex
     """
 
     # the index handling code is resused from GeoSeries.explode
     if ignore_index:
-        index = range(len(values))
+        index = range(length)
     else:
         if len(outer_idx):
             # Generate inner index as a range per value of outer_idx
