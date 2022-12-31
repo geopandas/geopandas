@@ -125,7 +125,12 @@ def test_dissolve_emits_other_warnings(nybb_polydf):
         return group.mean()
 
     with pytest.warns(UserWarning, match="foo"):
-        nybb_polydf.dissolve("manhattan_bronx", aggfunc=warning_mean)
+        if PANDAS_GE_20:
+            nybb_polydf.dissolve(
+                "manhattan_bronx", aggfunc=warning_mean, numeric_only=True
+            )
+        else:
+            nybb_polydf.dissolve("manhattan_bronx", aggfunc=warning_mean)
 
 
 def test_multicolumn_dissolve(nybb_polydf, first):
