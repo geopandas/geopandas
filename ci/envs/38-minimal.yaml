@@ -25,4 +25,4 @@ dependencies:
   - geopy
   - SQLalchemy
   - libspatialite
-  - pyarrow
+  - pyarrow>=8.0
