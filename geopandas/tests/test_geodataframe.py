@@ -793,6 +793,12 @@ class TestDataFrame:
         assert isinstance(gf, GeoDataFrame)
         assert hasattr(gf, "geometry")
 
+        # ensure mutating columns in gf doesn't update df
+        gf.loc[0, "A" ] = 7
+        assert_frame_equal(df, df_copy)
+        gf["A"] = 3
+        assert_frame_equal(df, df_copy)
+
     def test_geodataframe_geointerface(self):
         assert self.df.__geo_interface__["type"] == "FeatureCollection"
         assert len(self.df.__geo_interface__["features"]) == self.df.shape[0]
