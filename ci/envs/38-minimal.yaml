@@ -23,4 +23,4 @@ dependencies:
   - geopy
   - SQLalchemy
   - libspatialite
-  - pyarrow>3
+  - pyarrow>4
