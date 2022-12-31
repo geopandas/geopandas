@@ -335,89 +335,44 @@ class TestPointPlotting:
         ax = gdf.plot()
         assert len(ax.collections) == 1
 
-    def test_empty_geometry_colors(self):
-
-        from matplotlib.collections import (
-            PatchCollection,
-            LineCollection,
-            PathCollection,
+    def test_empty_geometry_colors_poly(self):
+        s = GeoSeries(
+            [
+                box(0, 0, 1, 1),
+                box(7, 7, 8, 8),
+            ],
+            index=["r", "b"],
         )
-        from shapely.geometry import box
+        s2 = s.intersection(box(5, 0, 10, 10))
+        ax = s2.plot(color=["red", "blue"])
+        blue = np.array([0.0, 0.0, 1.0, 1.0])
+        np.testing.assert_array_equal(ax.get_children()[0].get_facecolor()[1], blue)
 
-        # second shape (x>5) should be blue (colors shouldn't
-        # reassigned if some shapes are cropped to be empty)
-        test_shapes = [
-            GeoSeries(
-                [
-                    box(0, 0, 1, 1),
-                    box(7, 7, 8, 8),
-                ],
-                index=["r", "b"],
-            ),
-            GeoSeries(
-                [
-                    LineString([(1, 1), (1, 2)]),
-                    LineString([(7, 1), (7, 2)]),
-                ],
-                index=["r", "b"],
-            ),
-            GeoSeries(
-                [
-                    Point(1, 1),
-                    Point(7, 7),
-                ],
-                index=["r", "b"],
-            ),
-        ]
+    def test_empty_geometry_colors_line(self):
+        s = GeoSeries(
+            [
+                LineString([(1, 1), (1, 2)]),
+                LineString([(7, 1), (7, 2)]),
+            ],
+            index=["r", "b"],
+        )
+        s2 = s.intersection(box(5, 0, 10, 10))
+        ax = s2.plot(color=["red", "blue"])
+        blue = np.array([0.0, 0.0, 1.0, 1.0])
+        np.testing.assert_array_equal(ax.get_children()[0].get_edgecolor()[1], blue)
 
-        for s in test_shapes:
-            type_name = type(s.iat[0]).__name__
-
-            # only covers blue shape, cropping red shape to be empty
-            s2 = s.intersection(box(5, 0, 10, 10))
-
-            # should show blue (red should not be reassigned just
-            # because first shape is empty)
-            ax = s2.plot(color=["red", "blue"])
-
-            # find the color of anything with x>5, and make sure it is
-            # blue
-            for child in ax.get_children():
-                if isinstance(child, (PatchCollection)):
-                    for path, color in zip(child.get_paths(), child.get_facecolor()):
-                        if len(path.vertices) == 0:
-                            continue
-                        x1 = path.vertices[0][0]
-                        if x1 > 5:
-                            assert color[2] == 1, f"{type_name} should be blue"
-                        break
-                    else:
-                        raise Exception(f"shape not found in {type_name} test")
-                    break
-                if isinstance(child, (LineCollection)):
-                    for path, color in zip(child.get_paths(), child.get_color()):
-                        if len(path.vertices) == 0:
-                            continue
-                        x1 = path.vertices[0][0]
-                        if x1 > 5:
-                            assert color[2] == 1, f"{type_name} should be blue"
-                        break
-                    else:
-                        raise Exception(f"shape not found in {type_name} test")
-                    break
-                if isinstance(child, PathCollection):
-                    for coord, color in zip(
-                        child.get_offsets().data, child.get_facecolor()
-                    ):
-                        x1 = coord[0]
-                        if x1 > 5:
-                            assert color[2] == 1, f"{type_name} should be blue"
-                        break
-                    else:
-                        raise Exception(f"shape not found in {type_name} test")
-                    break
-            else:
-                raise Exception(f"collection not found in {type_name} test")
+    def test_empty_geometry_colors_point(self):
+        s = GeoSeries(
+            [
+                box(0, 0, 1, 1),
+                box(7, 7, 8, 8),
+            ],
+            index=["r", "b"],
+        )
+        s2 = s.intersection(box(5, 0, 10, 10))
+        ax = s2.plot(color=["red", "blue"])
+        blue = np.array([0.0, 0.0, 1.0, 1.0])
+        np.testing.assert_array_equal(ax.get_children()[0].get_facecolor()[1], blue)
 
     def test_multipoints(self):
 
