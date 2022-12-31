@@ -87,7 +87,7 @@ def test_mean_dissolve(nybb_polydf, first, expected_mean):
         test = nybb_polydf.dissolve("manhattan_bronx", aggfunc="mean")
         test2 = nybb_polydf.dissolve("manhattan_bronx", aggfunc=np.mean)
     elif PANDAS_GE_15 and not PANDAS_GE_20:
-        with pytest.warns(UserWarning, match="The default treatment of"):
+        with pytest.warns(FutureWarning, match=".*used in dissolve is deprecated.*"):
             test = nybb_polydf.dissolve("manhattan_bronx", aggfunc="mean")
             test2 = nybb_polydf.dissolve("manhattan_bronx", aggfunc=np.mean)
     else:  # pandas 2.0
@@ -103,11 +103,11 @@ def test_mean_dissolve(nybb_polydf, first, expected_mean):
     assert_frame_equal(expected_mean, test2, check_column_type=False)
 
 
-@pytest.mark.skipif(not PANDAS_GE_15 or PANDAS_GE_20, reason="warning on pandas 1.5.x")
+@pytest.mark.skipif(not PANDAS_GE_15 or PANDAS_GE_20, reason="warning for pandas 1.5.x")
 def test_mean_dissolve_warning_capture(nybb_polydf, first, expected_mean):
     with pytest.warns(
         FutureWarning,
-        match="The default treatment of non-numeric cols in GeoDataFrame.dissolve",
+        match=".*used in dissolve is deprecated.*",
     ):
         nybb_polydf.dissolve("manhattan_bronx", aggfunc="mean")
 

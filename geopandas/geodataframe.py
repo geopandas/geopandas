@@ -1684,13 +1684,11 @@ individually so that features may have different properties
         for w in record:
             if str(w.message).startswith("The default value of numeric_only"):
                 msg = (
-                    f"The default treatment of non-numeric cols in "
-                    f"GeoDataFrame.dissolve is deprecated for "
-                    f"aggfunc='{aggfunc}'. "
-                    "Either call dissolve on a dataframe "
-                    "with only numeric columns, or supply `numeric_only=True` to "
-                    "dissolve, which will be forwarded to `DataFrame.groupby().agg`. "
-                    "(The deprecation will be enforced in pandas 2.0)"
+                    f"The default value of numeric_only in aggfunc='{aggfunc}' "
+                    "within pandas.DataFrameGroupBy.agg used in dissolve is "
+                    "deprecated. In pandas 2.0, numeric_only will default to False. "
+                    "Either specify numeric_only or select only columns which should "
+                    "be valid for the function."
                 )
                 warnings.warn(msg, FutureWarning, stacklevel=2)
             else:
