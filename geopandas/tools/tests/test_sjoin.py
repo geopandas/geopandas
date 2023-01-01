@@ -363,8 +363,8 @@ class TestSpatialJoin:
                 columns={"df1_ix1": "index_left0", "df1_ix2": "index_left1"}
             )
             exp.index.names = df2.index.names
-
-        exp = exp.sort_index()
+        if predicate == "within":
+            exp = exp.sort_index()
 
         assert_frame_equal(res, exp, check_index_type=False)
 
