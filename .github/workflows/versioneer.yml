@@ -15,21 +15,27 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
-      - run: pip install versioneer
-      - run: versioneer install
-      - uses: psf/black@stable
+      - name: Install and run versioneer
+        run: |
+          pip install versioneer
+          versioneer install
+      - name: Blacken code
+        uses: psf/black@stable
         with:
           options: "--verbose"
-      - uses: actions/upload-artifact@v3
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
         with:
           path: versioneer.py
-      - run: |
+      - name: Ignore changes in __init__
+        run: |
           git reset -- setup.py geopandas/__init__.py
           git checkout -- setup.py geopandas/__init__.py
-      - uses: peter-evans/create-pull-request@v4
+      - name: Create PR
+        uses: peter-evans/create-pull-request@v4
         with:
           title: "Update Versioneer"
-          branch: update-versioneer
+          branch: update-versioneer-test
           base: main
           commit-message: "[Bot] Update Versioneer"
 
