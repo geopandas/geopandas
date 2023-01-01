@@ -29,8 +29,8 @@ jobs:
           path: versioneer.py
       - name: Ignore changes in __init__
         run: |
-          git reset -- setup.py geopandas/__init__.py
-          git checkout -- setup.py geopandas/__init__.py
+          git reset -- geopandas/__init__.py
+          git checkout -- geopandas/__init__.py
       - name: Create PR
         uses: peter-evans/create-pull-request@v4
         with:
