@@ -3,33 +3,34 @@ name: "Update Versioneer"
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 6 1 * *' # 1st day of each month at 06:00 UTC
+    - cron: "0 6 1 * *" # 1st day of each month at 06:00 UTC
   push:
     paths:
-    - 'setup.cfg'
-    - '.github/workflows/versioneer.yml'
+      - "setup.cfg"
+      - ".github/workflows/versioneer.yml"
 
 jobs:
   versioneer:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
-    - uses: actions/setup-python@v4
-    - run: pip install versioneer
-    - run: versioneer install
-    - uses: psf/black@stable
-      with:
-        options: "--verbose"
-    - uses: actions/upload-artifact@v3
-      with:
-        path: versioneer.py
-    - uses: peter-evans/create-pull-request@v4
-      with:
-        title: "Update Versioneer"
-        branch: update-versioneer
-        base: main
-        commit-message: "[Bot] Update Versioneer"
-        body: |
-          Automatic update of Versioneer by the `versioneer.yml` workflow.
-          
-          Please review changes manually, especially if a duplicate `from . import _version` is added.
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+      - run: pip install versioneer
+      - run: versioneer install
+      - uses: psf/black@stable
+        with:
+          options: "--verbose"
+      - uses: actions/upload-artifact@v3
+        with:
+          path: versioneer.py
+      - uses: peter-evans/create-pull-request@v4
+        with:
+          title: "Update Versioneer"
+          branch: update-versioneer
+          base: main
+          commit-message: "[Bot] Update Versioneer"
+          add-paths: |
+            versioneer.py
+            geopandas/_version.py
+          body: |
+            Automatic update of Versioneer by the `versioneer.yml` workflow.
