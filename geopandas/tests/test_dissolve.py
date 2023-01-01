@@ -123,7 +123,7 @@ def test_dissolve_emits_other_warnings(nybb_polydf):
     def warning_mean(group):
         warnings.warn("foo")
         if PANDAS_GE_20:
-            return group.mean(numeric_only=True)
+            return group.mean(numeric_only=isinstance(group, pd.DataFrame))
         else:
             return group.mean()
 
