@@ -35,7 +35,7 @@ jobs:
         uses: peter-evans/create-pull-request@v4
         with:
           title: "Update Versioneer"
-          branch: update-versioneer-test
+          branch: update-versioneer
           base: main
           commit-message: "[Bot] Update Versioneer"
 
