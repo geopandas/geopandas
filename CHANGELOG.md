@@ -1,5 +1,13 @@
 # Changelog
 
+
+Notes on (optional) dependencies:
+
+- GeoPandas 0.13 drops support pandas 1.05 (the minimum supported
+  pandas version is now 1.1). Further, the minimum required versions for the listed
+  dependencies have now changed to shapely 1.7.1, fiona 1.8.19, pyproj 3.0.1 and
+  matplotlib 3.3.4 (#2655)
+
 ## Version 0.12.2 (December 10, 2022)
 
 Bug fixes:
