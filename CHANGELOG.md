@@ -6,6 +6,10 @@ New features and improvements:
 
 - Added ``minimum_bounding_circle()`` method from shapely to GeoSeries/GeoDataframe (#2621).
 
+Bug fixes:
+
+- Ensure that GeoDataFrame created from DataFrame is a copy, not a view (#2667)
+
 ## Version 0.12.2 (December 10, 2022)
 
 Bug fixes:
