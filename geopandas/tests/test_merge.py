@@ -1,3 +1,5 @@
+import warnings
+
 import pandas as pd
 import pytest
 from geopandas.testing import assert_geodataframe_equal
@@ -101,6 +103,39 @@ class TestMerging:
             pd.concat(
                 [self.gdf, self.gdf.set_crs("epsg:4326"), self.gdf.set_crs("epsg:4327")]
             )
+
+    def test_concat_axis0_unaligned_cols(self):
+        # https://github.com/geopandas/geopandas/issues/2679
+        gdf = self.gdf.set_crs("epsg:4326").assign(
+            geom=self.gdf.geometry.set_crs("epsg:4327")
+        )
+        both_geom_cols = gdf[["geom", "geometry"]]
+        single_geom_col = gdf[["geometry"]]
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            pd.concat([both_geom_cols, single_geom_col])
+        # Check order of mismatch doesn't matter
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            pd.concat([single_geom_col, both_geom_cols])
+
+        # Side effect of this fix, explicitly provided all none geoseries
+        # will not be warned for (ideally this would still warn)
+        explicit_all_none_case = gdf[["geometry"]].assign(
+            geom=GeoSeries([None for _ in range(len(gdf))])
+        )
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            pd.concat([both_geom_cols, explicit_all_none_case])
+
+        # Check concat with partially None col is not affected by the special casing
+        # for all None no CRS handling
+        with pytest.warns(
+            UserWarning, match=r"CRS not set for some of the concatenation inputs.*"
+        ):
+            partial_none_case = self.gdf[["geometry"]]
+            partial_none_case.iloc[0] = None
+            pd.concat([single_geom_col, partial_none_case])
 
     def test_concat_axis1(self):
 

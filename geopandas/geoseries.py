@@ -673,7 +673,7 @@ class GeoSeries(GeoPandasBase, Series):
         >>> s
         0    POLYGON ((0.00000 0.00000, 1.00000 1.00000, 0....
         1                                                 None
-        2                             GEOMETRYCOLLECTION EMPTY
+        2                                        POLYGON EMPTY
         dtype: geometry
         >>> s.isna()
         0    False
@@ -717,7 +717,7 @@ class GeoSeries(GeoPandasBase, Series):
         >>> s
         0    POLYGON ((0.00000 0.00000, 1.00000 1.00000, 0....
         1                                                 None
-        2                             GEOMETRYCOLLECTION EMPTY
+        2                                        POLYGON EMPTY
         dtype: geometry
         >>> s.notna()
         0     True
