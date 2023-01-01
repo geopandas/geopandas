@@ -23,12 +23,15 @@ jobs:
       - uses: actions/upload-artifact@v3
         with:
           path: versioneer.py
+      - run: |
+          git reset -- setup.py geopandas/__init__.py
+          git checkout -- setup.py geopandas/__init__.py
       - uses: peter-evans/create-pull-request@v4
         with:
           title: "Update Versioneer"
           branch: update-versioneer
           base: main
           commit-message: "[Bot] Update Versioneer"
-          add-paths: versioneer.py, */_version.py
+
           body: |
             Automatic update of Versioneer by the `versioneer.yml` workflow.
