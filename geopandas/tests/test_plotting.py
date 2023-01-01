@@ -346,7 +346,7 @@ class TestPointPlotting:
         s2 = s.intersection(box(5, 0, 10, 10))
         ax = s2.plot(color=["red", "blue"])
         blue = np.array([0.0, 0.0, 1.0, 1.0])
-        np.testing.assert_array_equal(ax.get_children()[0].get_facecolor()[1], blue)
+        np.testing.assert_array_equal(ax.get_children()[0].get_facecolor()[0], blue)
 
     def test_empty_geometry_colors_line(self):
         s = GeoSeries(
@@ -359,20 +359,20 @@ class TestPointPlotting:
         s2 = s.intersection(box(5, 0, 10, 10))
         ax = s2.plot(color=["red", "blue"])
         blue = np.array([0.0, 0.0, 1.0, 1.0])
-        np.testing.assert_array_equal(ax.get_children()[0].get_edgecolor()[1], blue)
+        np.testing.assert_array_equal(ax.get_children()[0].get_edgecolor()[0], blue)
 
     def test_empty_geometry_colors_point(self):
         s = GeoSeries(
             [
-                box(0, 0, 1, 1),
-                box(7, 7, 8, 8),
+                Point(1, 1),
+                Point(7, 7),
             ],
             index=["r", "b"],
         )
         s2 = s.intersection(box(5, 0, 10, 10))
         ax = s2.plot(color=["red", "blue"])
         blue = np.array([0.0, 0.0, 1.0, 1.0])
-        np.testing.assert_array_equal(ax.get_children()[0].get_facecolor()[1], blue)
+        np.testing.assert_array_equal(ax.get_children()[0].get_facecolor()[0], blue)
 
     def test_multipoints(self):
 
