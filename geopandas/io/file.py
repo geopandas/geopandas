@@ -332,6 +332,10 @@ def _read_file_fiona(
             if bbox is not None:
                 filters["bbox"] = bbox
             if mask is not None:
+                if FIONA_GE_19:
+                    from fiona.model import Geometry
+
+                    mask = Geometry.from_dict(mask)
                 filters["mask"] = mask
             if where is not None:
                 filters["where"] = where
