@@ -569,10 +569,17 @@ def _to_file_fiona(df, filename, driver, schema, crs, mode, **kwargs):
             crs_wkt = crs.to_wkt()
         elif crs:
             crs_wkt = crs.to_wkt("WKT1_GDAL")
+        if FIONA_GE_19:
+            from fiona.model import Feature
+
+            features = [Feature.from_dict(feat) for feat in df.iterfeatures()]
+        else:
+            features = df.iterfeatures()
+
         with fiona.open(
             filename, mode=mode, driver=driver, crs_wkt=crs_wkt, schema=schema, **kwargs
         ) as colxn:
-            colxn.writerecords(df.iterfeatures())
+            colxn.writerecords(features)
 
 
 def _to_file_pyogrio(df, filename, driver, schema, crs, mode, **kwargs):
