@@ -1021,21 +1021,41 @@ def relate(data, other):
 
 
 def unary_union(data):
+    warning_msg = (
+        "`unary_union` returned None due to all-None GeoSeries. In future, "
+        "`unary_union` will return 'GEOMETRYCOLLECTION EMPTY' instead."
+    )
+
     if compat.USE_SHAPELY_20:
         data = shapely.union_all(data)
-        if data is None:  # shapely 2.0a1
-            return None
-        if data.is_empty:  # shapely 2.0
+        if data is None or data.is_empty:  # shapely 2.0a1 and 2.0
+            warnings.warn(
+                warning_msg,
+                FutureWarning,
+                stacklevel=4,
+            )
             return None
         else:
             return data
     elif compat.USE_PYGEOS:
-        return _pygeos_to_shapely(pygeos.union_all(data))
+        result = _pygeos_to_shapely(pygeos.union_all(data))
+        if result is None:
+            warnings.warn(
+                warning_msg,
+                FutureWarning,
+                stacklevel=4,
+            )
+        return result
     else:
         data = [g for g in data if g is not None]
         if data:
             return shapely.ops.unary_union(data)
         else:
+            warnings.warn(
+                warning_msg,
+                FutureWarning,
+                stacklevel=4,
+            )
             return None
 
 
