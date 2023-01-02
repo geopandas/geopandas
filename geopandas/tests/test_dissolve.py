@@ -20,7 +20,8 @@ def nybb_polydf():
     nybb_polydf = nybb_polydf[["geometry", "BoroName", "BoroCode"]]
     nybb_polydf = nybb_polydf.rename(columns={"geometry": "myshapes"})
     nybb_polydf = nybb_polydf.set_geometry("myshapes")
-    nybb_polydf["island"] = [0, 2, 2, 1, 3]
+    nybb_polydf["manhattan_bronx"] = 5
+    nybb_polydf.loc[3:4, "manhattan_bronx"] = 6
     nybb_polydf["BoroCode"] = nybb_polydf["BoroCode"].astype("int64")
     return nybb_polydf
 
@@ -28,16 +29,14 @@ def nybb_polydf():
 @pytest.fixture
 def merged_shapes(nybb_polydf):
     # Merged geometry
-    collapsed = [
-        nybb_polydf.geometry.loc[0],
-        nybb_polydf.geometry.loc[3],
-        nybb_polydf.geometry.loc[1:2].unary_union,
-        nybb_polydf.geometry.loc[4],
-    ]
+    manhattan_bronx = nybb_polydf.loc[3:4]
+    others = nybb_polydf.loc[0:2]
+
+    collapsed = [others.geometry.unary_union, manhattan_bronx.geometry.unary_union]
     merged_shapes = GeoDataFrame(
         {"myshapes": collapsed},
         geometry="myshapes",
-        index=pd.Index([0, 1, 2, 3], name="island"),
+        index=pd.Index([5, 6], name="manhattan_bronx"),
         crs=nybb_polydf.crs,
     )
 
@@ -47,53 +46,53 @@ def merged_shapes(nybb_polydf):
 @pytest.fixture
 def first(merged_shapes):
     first = merged_shapes.copy()
-    first["BoroName"] = ["Staten Island", "Manhattan", "Queens", "Bronx"]
-    first["BoroCode"] = [5, 1, 4, 2]
+    first["BoroName"] = ["Staten Island", "Manhattan"]
+    first["BoroCode"] = [5, 1]
     return first
 
 
 @pytest.fixture
 def expected_mean(merged_shapes):
     test_mean = merged_shapes.copy()
-    test_mean["BoroCode"] = [5, 1, 3.5, 2]
+    test_mean["BoroCode"] = [4, 1.5]
     return test_mean
 
 
 def test_geom_dissolve(nybb_polydf, first):
-    test = nybb_polydf.dissolve("island")
+    test = nybb_polydf.dissolve("manhattan_bronx")
     assert test.geometry.name == "myshapes"
     assert test.geom_almost_equals(first).all()
 
 
 def test_dissolve_retains_existing_crs(nybb_polydf):
     assert nybb_polydf.crs is not None
-    test = nybb_polydf.dissolve("island")
+    test = nybb_polydf.dissolve("manhattan_bronx")
     assert test.crs is not None
 
 
 def test_dissolve_retains_nonexisting_crs(nybb_polydf):
     nybb_polydf.crs = None
-    test = nybb_polydf.dissolve("island")
+    test = nybb_polydf.dissolve("manhattan_bronx")
     assert test.crs is None
 
 
 def test_first_dissolve(nybb_polydf, first):
-    test = nybb_polydf.dissolve("island")
+    test = nybb_polydf.dissolve("manhattan_bronx")
     assert_frame_equal(first, test, check_column_type=False)
 
 
 def test_mean_dissolve(nybb_polydf, first, expected_mean):
-    test = nybb_polydf.dissolve("island", aggfunc="mean")
+    test = nybb_polydf.dissolve("manhattan_bronx", aggfunc="mean")
     assert_frame_equal(expected_mean, test, check_column_type=False)
 
-    test = nybb_polydf.dissolve("island", aggfunc=np.mean)
+    test = nybb_polydf.dissolve("manhattan_bronx", aggfunc=np.mean)
     assert_frame_equal(expected_mean, test, check_column_type=False)
 
 
 def test_multicolumn_dissolve(nybb_polydf, first):
     multi = nybb_polydf.copy()
-    multi["dup_col"] = multi.island
-    multi_test = multi.dissolve(["island", "dup_col"], aggfunc="first")
+    multi["dup_col"] = multi.manhattan_bronx
+    multi_test = multi.dissolve(["manhattan_bronx", "dup_col"], aggfunc="first")
 
     first_copy = first.copy()
     first_copy["dup_col"] = first_copy.index
@@ -103,7 +102,7 @@ def test_multicolumn_dissolve(nybb_polydf, first):
 
 
 def test_reset_index(nybb_polydf, first):
-    test = nybb_polydf.dissolve("island", as_index=False)
+    test = nybb_polydf.dissolve("manhattan_bronx", as_index=False)
     comparison = first.reset_index()
     assert_frame_equal(comparison, test, check_column_type=False)
 
@@ -115,7 +114,7 @@ def test_dissolve_none(nybb_polydf):
             nybb_polydf.geometry.name: [nybb_polydf.geometry.unary_union],
             "BoroName": ["Staten Island"],
             "BoroCode": [5],
-            "island": [0],
+            "manhattan_bronx": [5],
         },
         geometry=nybb_polydf.geometry.name,
         crs=nybb_polydf.crs,
@@ -129,7 +128,7 @@ def test_dissolve_none_mean(nybb_polydf):
         {
             nybb_polydf.geometry.name: [nybb_polydf.geometry.unary_union],
             "BoroCode": [3.0],
-            "island": [1.6],
+            "manhattan_bronx": [5.4],
         },
         geometry=nybb_polydf.geometry.name,
         crs=nybb_polydf.crs,
@@ -307,13 +306,13 @@ def test_dissolve_dropna_warn(nybb_polydf):
 
 def test_dissolve_multi_agg(nybb_polydf, merged_shapes):
 
-    merged_shapes[("BoroCode", "min")] = [5, 1, 3, 2]
-    merged_shapes[("BoroCode", "max")] = [5, 1, 4, 2]
-    merged_shapes[("BoroName", "count")] = [1, 1, 2, 1]
+    merged_shapes[("BoroCode", "min")] = [3, 1]
+    merged_shapes[("BoroCode", "max")] = [5, 2]
+    merged_shapes[("BoroName", "count")] = [3, 2]
 
     with warnings.catch_warnings(record=True) as record:
         test = nybb_polydf.dissolve(
-            by="island",
+            by="manhattan_bronx",
             aggfunc={
                 "BoroCode": ["min", "max"],
                 "BoroName": "count",
@@ -321,8 +320,3 @@ def test_dissolve_multi_agg(nybb_polydf, merged_shapes):
         )
     assert_geodataframe_equal(test, merged_shapes)
     assert len(record) == 0
-
-
-def test_dissolve_by_explicit_groups(nybb_polydf, first):
-    test = nybb_polydf.dissolve(by=[0, 2, 2, 1, 3])
-    assert_frame_equal(first, test.drop(columns="island").rename_axis("island"))
