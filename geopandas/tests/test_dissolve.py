@@ -120,15 +120,15 @@ def test_mean_dissolve_warning_capture(nybb_polydf, first, expected_mean):
 def test_dissolve_emits_other_warnings(nybb_polydf):
     # we only do something special for pandas 1.5.x, but expect this
     # test to be true on any version
-    def warning_mean(group):
+    def sum_and_warn(group):
         warnings.warn("foo")
         if PANDAS_GE_20:
-            return group.mean(numeric_only=isinstance(group, pd.DataFrame))
+            return group.sum(numeric_only=False)
         else:
-            return group.mean()
+            return group.sum()
 
     with pytest.warns(UserWarning, match="foo"):
-        nybb_polydf.dissolve("manhattan_bronx", aggfunc=warning_mean)
+        nybb_polydf.dissolve("manhattan_bronx", aggfunc=sum_and_warn)
 
 
 def test_multicolumn_dissolve(nybb_polydf, first):
