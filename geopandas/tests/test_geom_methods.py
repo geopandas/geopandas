@@ -1,10 +1,20 @@
 import string
+import warnings
 
 import numpy as np
 from numpy.testing import assert_array_equal
 from pandas import DataFrame, Index, MultiIndex, Series
 
-from shapely.geometry import LinearRing, LineString, MultiPoint, Point, Polygon
+import shapely
+
+from shapely.geometry import (
+    LinearRing,
+    LineString,
+    MultiPoint,
+    Point,
+    Polygon,
+    MultiPolygon,
+)
 from shapely.geometry.collection import GeometryCollection
 from shapely.ops import unary_union
 from shapely import wkt
@@ -85,8 +95,12 @@ class TestGeomMethods:
         self.g8 = GeoSeries([self.t1, self.t5])
         self.empty = GeoSeries([])
         self.all_none = GeoSeries([None, None])
+        self.all_geometry_collection_empty = GeoSeries(
+            [GeometryCollection([]), GeometryCollection([])]
+        )
         self.empty_poly = Polygon()
         self.g9 = GeoSeries(self.g0, index=range(1, 8))
+        self.g10 = GeoSeries([self.t1, self.t4])
 
         # Crossed lines
         self.l3 = LineString([(0, 0), (1, 1)])
@@ -254,6 +268,15 @@ class TestGeomMethods:
             assert len(self.g0.intersection(self.g9, align=True) == 8)
         assert len(self.g0.intersection(self.g9, align=False) == 7)
 
+    def test_clip_by_rect(self):
+        self._test_binary_topological(
+            "clip_by_rect", self.g1, self.g10, *self.sq.bounds
+        )
+        # self.g1 and self.t3.bounds do not intersect
+        self._test_binary_topological(
+            "clip_by_rect", self.all_geometry_collection_empty, self.g1, *self.t3.bounds
+        )
+
     def test_union_series(self):
         self._test_binary_topological("union", self.sq, self.g1, self.g2)
 
@@ -362,8 +385,9 @@ class TestGeomMethods:
         g2 = GeoSeries([p1, None])
         self._test_unary_topological("unary_union", p1, g2)
 
-        g3 = GeoSeries([None, None])
-        assert g3.unary_union is None
+        with pytest.warns(FutureWarning, match="`unary_union` returned None"):
+            g3 = GeoSeries([None, None])
+            assert g3.unary_union is None
 
     def test_cascaded_union_deprecated(self):
         p1 = self.t1
@@ -477,7 +501,7 @@ class TestGeomMethods:
         )
         assert_array_dtype_equal(expected, self.na_none.distance(self.p0))
 
-        expected = Series(np.array([np.sqrt(4 ** 2 + 4 ** 2), np.nan]), self.g6.index)
+        expected = Series(np.array([np.sqrt(4**2 + 4**2), np.nan]), self.g6.index)
         assert_array_dtype_equal(expected, self.g6.distance(self.na_none))
 
         expected = Series(np.array([np.nan, 0, 0, 0, 0, 0, np.nan, np.nan]), range(8))
@@ -578,7 +602,7 @@ class TestGeomMethods:
         assert_series_equal(res, exp)
 
     @pytest.mark.skipif(
-        not compat.USE_PYGEOS,
+        not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
         reason="covered_by is only implemented for pygeos, not shapely",
     )
     def test_covered_by(self):
@@ -658,6 +682,52 @@ class TestGeomMethods:
     def test_centroid_crs_warn(self):
         with pytest.warns(UserWarning, match="Geometry is in a geographic CRS"):
             self.g4.centroid
+
+    def test_normalize(self):
+        polygon = Polygon([(0, 0), (1, 1), (0, 1)])
+        linestring = LineString([(0, 0), (1, 1), (1, 0)])
+        point = Point(0, 0)
+        series = GeoSeries([polygon, linestring, point])
+        polygon2 = Polygon([(0, 0), (0, 1), (1, 1)])
+        expected = GeoSeries([polygon2, linestring, point])
+        assert_geoseries_equal(series.normalize(), expected)
+
+    @pytest.mark.skipif(
+        not compat.SHAPELY_GE_18,
+        reason="make_valid keyword introduced in shapely 1.8.0",
+    )
+    def test_make_valid(self):
+        polygon1 = Polygon([(0, 0), (0, 2), (1, 1), (2, 2), (2, 0), (1, 1), (0, 0)])
+        polygon2 = Polygon([(0, 2), (0, 1), (2, 0), (0, 0), (0, 2)])
+        linestring = LineString([(0, 0), (1, 1), (1, 0)])
+        series = GeoSeries([polygon1, polygon2, linestring])
+        out_polygon1 = MultiPolygon(
+            [
+                Polygon([(1, 1), (0, 0), (0, 2), (1, 1)]),
+                Polygon([(2, 0), (1, 1), (2, 2), (2, 0)]),
+            ]
+        )
+        out_polygon2 = GeometryCollection(
+            [Polygon([(2, 0), (0, 0), (0, 1), (2, 0)]), LineString([(0, 2), (0, 1)])]
+        )
+        expected = GeoSeries([out_polygon1, out_polygon2, linestring])
+        assert not series.is_valid.all()
+        result = series.make_valid()
+        assert_geoseries_equal(result, expected)
+        assert result.is_valid.all()
+
+    @pytest.mark.skipif(
+        compat.SHAPELY_GE_18,
+        reason="make_valid keyword introduced in shapely 1.8.0",
+    )
+    def test_make_valid_shapely_pre18(self):
+        s = GeoSeries([Point(1, 1)])
+        with pytest.raises(
+            NotImplementedError,
+            match=f"shapely >= 1.8 or PyGEOS is required, "
+            f"version {shapely.__version__} is installed",
+        ):
+            s.make_valid()
 
     def test_convex_hull(self):
         # the convex hull of a square should be the same as the square
@@ -845,7 +915,7 @@ class TestGeomMethods:
         with pytest.warns(UserWarning, match="Geometry is in a geographic CRS"):
             self.g4.buffer(1)
 
-        with pytest.warns(None) as record:
+        with warnings.catch_warnings(record=True) as record:
             # do not warn for 0
             self.g4.buffer(0)
 
@@ -1207,43 +1277,61 @@ class TestGeomMethods:
         )
         assert_geodataframe_equal(test_df, expected_df)
 
+    @pytest.mark.parametrize("geom_col", ["geom", "geometry"])
+    def test_explode_geometry_name(self, geom_col):
+        s = GeoSeries([MultiPoint([Point(1, 2), Point(2, 3)]), Point(5, 5)])
+        df = GeoDataFrame({"col": [1, 2], geom_col: s}, geometry=geom_col)
+        test_df = df.explode(index_parts=True)
+
+        assert test_df.geometry.name == geom_col
+        assert test_df.geometry.name == test_df._geometry_column_name
+
+    def test_explode_geometry_name_two_geoms(self):
+        s = GeoSeries([MultiPoint([Point(1, 2), Point(2, 3)]), Point(5, 5)])
+        df = GeoDataFrame({"col": [1, 2], "geom": s, "geometry": s}, geometry="geom")
+        test_df = df.explode(index_parts=True)
+
+        assert test_df.geometry.name == "geom"
+        assert test_df.geometry.name == test_df._geometry_column_name
+        assert "geometry" in test_df.columns
+
     #
     # Test '&', '|', '^', and '-'
     #
     def test_intersection_operator(self):
-        with pytest.warns(DeprecationWarning):
+        with pytest.warns(FutureWarning):
             self._test_binary_operator("__and__", self.t1, self.g1, self.g2)
-        with pytest.warns(DeprecationWarning):
+        with pytest.warns(FutureWarning):
             self._test_binary_operator("__and__", self.t1, self.gdf1, self.g2)
 
     def test_union_operator(self):
-        with pytest.warns(DeprecationWarning):
+        with pytest.warns(FutureWarning):
             self._test_binary_operator("__or__", self.sq, self.g1, self.g2)
-        with pytest.warns(DeprecationWarning):
+        with pytest.warns(FutureWarning):
             self._test_binary_operator("__or__", self.sq, self.gdf1, self.g2)
 
     def test_union_operator_polygon(self):
-        with pytest.warns(DeprecationWarning):
+        with pytest.warns(FutureWarning):
             self._test_binary_operator("__or__", self.sq, self.g1, self.t2)
-        with pytest.warns(DeprecationWarning):
+        with pytest.warns(FutureWarning):
             self._test_binary_operator("__or__", self.sq, self.gdf1, self.t2)
 
     def test_symmetric_difference_operator(self):
-        with pytest.warns(DeprecationWarning):
+        with pytest.warns(FutureWarning):
             self._test_binary_operator("__xor__", self.sq, self.g3, self.g4)
-        with pytest.warns(DeprecationWarning):
+        with pytest.warns(FutureWarning):
             self._test_binary_operator("__xor__", self.sq, self.gdf3, self.g4)
 
     def test_difference_series2(self):
         expected = GeoSeries([GeometryCollection(), self.t2])
-        with pytest.warns(DeprecationWarning):
+        with pytest.warns(FutureWarning):
             self._test_binary_operator("__sub__", expected, self.g1, self.g2)
-        with pytest.warns(DeprecationWarning):
+        with pytest.warns(FutureWarning):
             self._test_binary_operator("__sub__", expected, self.gdf1, self.g2)
 
     def test_difference_poly2(self):
         expected = GeoSeries([self.t1, self.t1])
-        with pytest.warns(DeprecationWarning):
+        with pytest.warns(FutureWarning):
             self._test_binary_operator("__sub__", expected, self.g1, self.t2)
-        with pytest.warns(DeprecationWarning):
+        with pytest.warns(FutureWarning):
             self._test_binary_operator("__sub__", expected, self.gdf1, self.t2)

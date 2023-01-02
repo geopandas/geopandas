@@ -1,12 +1,16 @@
+ci:
+    autofix_prs: false
+    autoupdate_schedule: weekly
+
 files: 'geopandas\/'
 repos:
--   repo: https://github.com/python/black
-    rev: 20.8b1
-    hooks:
-    -   id: black
-        language_version: python3
--   repo: https://gitlab.com/pycqa/flake8
-    rev: 3.8.3
-    hooks:
-    -   id: flake8
-        language: python_venv
+    - repo: https://github.com/psf/black
+      rev: 22.3.0
+      hooks:
+          - id: black
+            language_version: python3
+    - repo: https://github.com/pycqa/flake8
+      rev: 5.0.4
+      hooks:
+          - id: flake8
+            language: python_venv

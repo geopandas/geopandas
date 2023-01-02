@@ -308,7 +308,7 @@ GeometryCollection
         >>> gdf = geopandas.GeoDataFrame(d, crs="EPSG:4326")
         >>> gdf
                            geometry
-        0  GEOMETRYCOLLECTION EMPTY
+        0               POINT EMPTY
         1   POINT (2.00000 1.00000)
         2                      None
         >>> gdf.is_empty
@@ -424,7 +424,7 @@ GeometryCollection
     @property
     def boundary(self):
         """Returns a ``GeoSeries`` of lower dimensional objects representing
-        each geometries's set-theoretic `boundary`.
+        each geometry's set-theoretic `boundary`.
 
         Examples
         --------
@@ -691,6 +691,79 @@ GeometryCollection
         GeoSeries.centroid : geometric centroid
         """
         return _delegate_geo_method("representative_point", self)
+
+    def normalize(self):
+        """Returns a ``GeoSeries`` of normalized
+        geometries to normal form (or canonical form).
+
+        This method orders the coordinates, rings of a polygon and parts of
+        multi geometries consistently. Typically useful for testing purposes
+        (for example in combination with `equals_exact`).
+
+        Examples
+        --------
+
+        >>> from shapely.geometry import Polygon, LineString, Point
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0, 0), (1, 1), (0, 1)]),
+        ...         LineString([(0, 0), (1, 1), (1, 0)]),
+        ...         Point(0, 0),
+        ...     ],
+        ...     crs='EPSG:3857'
+        ... )
+        >>> s
+        0    POLYGON ((0.000 0.000, 1.000 1.000, 0.000 1.00...
+        1    LINESTRING (0.000 0.000, 1.000 1.000, 1.000 0....
+        2                                  POINT (0.000 0.000)
+        dtype: geometry
+
+        >>> s.normalize()
+        0    POLYGON ((0.000 0.000, 0.000 1.000, 1.000 1.00...
+        1    LINESTRING (0.000 0.000, 1.000 1.000, 1.000 0....
+        2                                  POINT (0.000 0.000)
+        dtype: geometry
+        """
+        return _delegate_geo_method("normalize", self)
+
+    def make_valid(self):
+        """
+        Repairs invalid geometries.
+
+        Returns a ``GeoSeries`` with valid geometries.
+        If the input geometry is already valid, then it will be preserved.
+        In many cases, in order to create a valid geometry, the input
+        geometry must be split into multiple parts or multiple geometries.
+        If the geometry must be split into multiple parts of the same type
+        to be made valid, then a multi-part geometry will be returned
+        (e.g. a MultiPolygon).
+        If the geometry must be split into multiple parts of different types
+        to be made valid, then a GeometryCollection will be returned.
+
+        Examples
+        --------
+        >>> from shapely.geometry import MultiPolygon, Polygon, LineString, Point
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0, 0), (0, 2), (1, 1), (2, 2), (2, 0), (1, 1), (0, 0)]),
+        ...         Polygon([(0, 2), (0, 1), (2, 0), (0, 0), (0, 2)]),
+        ...         LineString([(0, 0), (1, 1), (1, 0)]),
+        ...     ],
+        ...     crs='EPSG:3857',
+        ... )
+        >>> s
+        0    POLYGON ((0.000 0.000, 0.000 2.000, 1.000 1.00...
+        1    POLYGON ((0.000 2.000, 0.000 1.000, 2.000 0.00...
+        2    LINESTRING (0.000 0.000, 1.000 1.000, 1.000 0....
+        dtype: geometry
+
+        >>> s.make_valid()
+        0    MULTIPOLYGON (((1.000 1.000, 0.000 0.000, 0.00...
+        1    GEOMETRYCOLLECTION (POLYGON ((2.000 0.000, 0.0...
+        2    LINESTRING (0.000 0.000, 1.000 1.000, 1.000 0....
+        dtype: geometry
+        """
+        return _delegate_geo_method("make_valid", self)
 
     #
     # Reduction operations that return a Shapely geometry
@@ -2174,7 +2247,7 @@ GeometryCollection
         0                                                 None
         1    POLYGON ((0.00000 2.00000, 2.00000 2.00000, 1....
         2    MULTILINESTRING ((0.00000 0.00000, 1.00000 1.0...
-        3                                     LINESTRING EMPTY
+        3                                   LINESTRING Z EMPTY
         4                              POINT (0.00000 1.00000)
         5                                                 None
         dtype: geometry
@@ -2289,7 +2362,7 @@ GeometryCollection
         0                                                 None
         1    POLYGON ((0.00000 2.00000, 2.00000 2.00000, 1....
         2    MULTILINESTRING ((0.00000 0.00000, 1.00000 1.0...
-        3                                     LINESTRING EMPTY
+        3                                   LINESTRING Z EMPTY
         4        MULTIPOINT (0.00000 1.00000, 1.00000 1.00000)
         5                                                 None
         dtype: geometry
@@ -2536,6 +2609,75 @@ GeometryCollection
         """
         return _binary_geo("intersection", self, other, align)
 
+    def clip_by_rect(self, xmin, ymin, xmax, ymax):
+        """Returns a ``GeoSeries`` of the portions of geometry within the given
+        rectangle.
+
+        Note that the results are not exactly equal to
+        :meth:`~GeoSeries.intersection()`. E.g. in edge cases,
+        :meth:`~GeoSeries.clip_by_rect()` will not return a point just touching the
+        rectangle. Check the examples section below for some of these exceptions.
+
+        The geometry is clipped in a fast but possibly dirty way. The output is not
+        guaranteed to be valid. No exceptions will be raised for topological errors.
+
+        Note: empty geometries or geometries that do not overlap with the specified
+        bounds will result in ``GEOMETRYCOLLECTION EMPTY``.
+
+        Parameters
+        ----------
+        xmin: float
+            Minimum x value of the rectangle
+        ymin: float
+            Minimum y value of the rectangle
+        xmax: float
+            Maximum x value of the rectangle
+        ymax: float
+            Maximum y value of the rectangle
+
+        Returns
+        -------
+        GeoSeries
+
+        Examples
+        --------
+        >>> from shapely.geometry import Polygon, LineString, Point
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0, 0), (2, 2), (0, 2)]),
+        ...         Polygon([(0, 0), (2, 2), (0, 2)]),
+        ...         LineString([(0, 0), (2, 2)]),
+        ...         LineString([(2, 0), (0, 2)]),
+        ...         Point(0, 1),
+        ...     ],
+        ...     crs=3857,
+        ... )
+        >>> bounds = (0, 0, 1, 1)
+        >>> s
+        0    POLYGON ((0.000 0.000, 2.000 2.000, 0.000 2.00...
+        1    POLYGON ((0.000 0.000, 2.000 2.000, 0.000 2.00...
+        2                LINESTRING (0.000 0.000, 2.000 2.000)
+        3                LINESTRING (2.000 0.000, 0.000 2.000)
+        4                                  POINT (0.000 1.000)
+        dtype: geometry
+        >>> s.clip_by_rect(*bounds)
+        0    POLYGON ((0.000 0.000, 0.000 1.000, 1.000 1.00...
+        1    POLYGON ((0.000 0.000, 0.000 1.000, 1.000 1.00...
+        2                LINESTRING (0.000 0.000, 1.000 1.000)
+        3                             GEOMETRYCOLLECTION EMPTY
+        4                             GEOMETRYCOLLECTION EMPTY
+        dtype: geometry
+
+        See also
+        --------
+        GeoSeries.intersection
+        """
+        from .geoseries import GeoSeries
+
+        geometry_array = GeometryArray(self.geometry.values)
+        clipped_geometry = geometry_array.clip_by_rect(xmin, ymin, xmax, ymax)
+        return GeoSeries(clipped_geometry.data, index=self.index, crs=self.crs)
+
     #
     # Other operations
     #
@@ -2558,6 +2700,16 @@ GeometryCollection
         0   2.0   1.0   2.0   1.0
         1   0.0   0.0   1.0   1.0
         2   0.0   1.0   1.0   2.0
+
+        You can assign the bounds to the ``GeoDataFrame`` as:
+
+        >>> import pandas as pd
+        >>> gdf = pd.concat([gdf, gdf.bounds], axis=1)
+        >>> gdf
+                                                    geometry  minx  miny  maxx  maxy
+        0                            POINT (2.00000 1.00000)   2.0   1.0   2.0   1.0
+        1  POLYGON ((0.00000 0.00000, 1.00000 1.00000, 1....   0.0   0.0   1.0   1.0
+        2      LINESTRING (0.00000 1.00000, 1.00000 2.00000)   0.0   1.0   1.0   2.0
         """
         bounds = GeometryArray(self.geometry.values).bounds
         return DataFrame(

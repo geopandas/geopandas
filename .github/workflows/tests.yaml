@@ -17,9 +17,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v2
-      - uses: pre-commit/action@v2.0.3
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+      - uses: pre-commit/action@v3.0.0
 
   Test:
     needs: Linting
@@ -35,28 +35,29 @@ jobs:
         postgis: [false]
         dev: [false]
         env:
-          - ci/envs/37-minimal.yaml
-          - ci/envs/38-no-optional-deps.yaml
-          - ci/envs/37-pd11.yaml
-          - ci/envs/37-latest-defaults.yaml
-          - ci/envs/37-latest-conda-forge.yaml
+          - ci/envs/38-minimal.yaml
+          - ci/envs/39-no-optional-deps.yaml
+          - ci/envs/38-pd11-defaults.yaml
+          - ci/envs/38-latest-defaults.yaml
           - ci/envs/38-latest-conda-forge.yaml
+          - ci/envs/39-pd12-conda-forge.yaml
           - ci/envs/39-latest-conda-forge.yaml
           - ci/envs/310-latest-conda-forge.yaml
+          - ci/envs/311-latest-conda-forge.yaml
         include:
-          - env: ci/envs/37-latest-conda-forge.yaml
-            os: macos-latest
-            postgis: false
-            dev: false
           - env: ci/envs/38-latest-conda-forge.yaml
             os: macos-latest
             postgis: false
             dev: false
-          - env: ci/envs/37-latest-conda-forge.yaml
+          - env: ci/envs/39-latest-conda-forge.yaml
+            os: macos-latest
+            postgis: false
+            dev: false
+          - env: ci/envs/38-latest-conda-forge.yaml
             os: windows-latest
             postgis: false
             dev: false
-          - env: ci/envs/38-latest-conda-forge.yaml
+          - env: ci/envs/39-latest-conda-forge.yaml
             os: windows-latest
             postgis: false
             dev: false
@@ -65,7 +66,7 @@ jobs:
             dev: true
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Setup Conda
         uses: conda-incubator/setup-miniconda@v2
@@ -96,17 +97,17 @@ jobs:
         env:
           USE_PYGEOS: 0
         run: |
-          pytest -v -r s -n auto --color=yes --cov=geopandas --cov-append --cov-report term-missing --cov-report xml geopandas/
+          pytest -v -r a -n auto --color=yes --cov=geopandas --cov-append --cov-report term-missing --cov-report xml geopandas/
 
       - name: Test with PyGEOS
         if: env.HAS_PYGEOS == 1
         env:
           USE_PYGEOS: 1
         run: |
-          pytest -v -r s -n auto --color=yes --cov=geopandas --cov-append --cov-report term-missing --cov-report xml geopandas/
+          pytest -v -r a -n auto --color=yes --cov=geopandas --cov-append --cov-report term-missing --cov-report xml geopandas/
 
       - name: Test with PostGIS
-        if: contains(matrix.env, '38-latest-conda-forge.yaml') && contains(matrix.os, 'ubuntu')
+        if: contains(matrix.env, '39-pd12-conda-forge.yaml') && contains(matrix.os, 'ubuntu')
         env:
           PGUSER: postgres
           PGPASSWORD: postgres
@@ -115,13 +116,13 @@ jobs:
         run: |
           conda install postgis -c conda-forge
           sh ci/scripts/setup_postgres.sh
-          pytest -v -r s --color=yes --cov=geopandas --cov-append --cov-report term-missing --cov-report xml geopandas/io/tests/test_sql.py | tee /dev/stderr | if grep SKIPPED >/dev/null;then echo "TESTS SKIPPED, FAILING" && exit 1;fi
+          pytest -v -r a --color=yes --cov=geopandas --cov-append --cov-report term-missing --cov-report xml geopandas/io/tests/test_sql.py | tee /dev/stderr | if grep SKIPPED >/dev/null;then echo "TESTS SKIPPED, FAILING" && exit 1;fi
 
       - name: Test docstrings
-        if: contains(matrix.env, '38-latest-conda-forge.yaml') && contains(matrix.os, 'ubuntu')
+        if: contains(matrix.env, '39-pd12-conda-forge.yaml') && contains(matrix.os, 'ubuntu')
         env:
           USE_PYGEOS: 1
         run: |
           pytest -v --color=yes --doctest-only geopandas --ignore=geopandas/datasets
 
-      - uses: codecov/codecov-action@v2
+      - uses: codecov/codecov-action@v3

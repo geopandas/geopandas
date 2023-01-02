@@ -2,15 +2,15 @@ Re-projecting using GDAL with Rasterio and Fiona
 ================================================
 
 The simplest method of re-projecting is :meth:`GeoDataFrame.to_crs`.
-It uses ``pyproj`` as the engine and transforms the points within the geometries.
+It uses pyproj as the engine and transforms the points within the geometries.
 
-These examples demonstrate how to use ``Fiona`` or ``rasterio`` as the engine to re-project your data.
+These examples demonstrate how to use Fiona or rasterio as the engine to re-project your data.
 Fiona and rasterio are powered by GDAL and with algorithms that consider the geometry instead of
 just the points the geometry contains. This is particularly useful for antimeridian cutting.
 However, this also means the transformation is not as fast.
 
 
-Fiona Example
+Fiona example
 -------------
 
 .. code-block:: python
@@ -58,7 +58,7 @@ Fiona Example
         mercator_world = world.set_geometry(world.geometry.apply(forward_transformer), crs=destination_crs)
 
 
-Rasterio Example
+Rasterio example
 ----------------
 
 This example requires rasterio 1.2+ and GDAL 3+.

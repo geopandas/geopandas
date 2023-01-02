@@ -2,8 +2,9 @@ name: test
 channels:
   - defaults
 dependencies:
-  - python=3.7
+  - python=3.8
   # required
+  - numpy=1.21  # pin to < 1.23 for compat with older shapely on defaults channel
   - pandas
   - shapely
   - fiona

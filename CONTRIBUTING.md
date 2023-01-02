@@ -13,7 +13,6 @@ In general, GeoPandas follows the conventions of the pandas project
 where applicable. Please read the [contributing
 guidelines](https://geopandas.readthedocs.io/en/latest/community/contributing.html).
 
-
 In particular, when submitting a pull request:
 
 - Install the requirements for the development environment (one can do this
@@ -33,13 +32,16 @@ In particular, when submitting a pull request:
   line of a docstring should be a standalone summary. Parameters and
   return values should be documented explicitly.
 
+- Unless your PR implements minor changes or internal work only, make sure
+  it contains a note describing the changes in the `CHANGELOG.md` file.
+
 Improving the documentation and testing for code already in GeoPandas
 is a great way to get started if you'd like to make a contribution.
 
 Style
 -----
 
-- GeoPandas supports Python 3.7+ only. The last version of GeoPandas
+- GeoPandas supports Python 3.8+ only. The last version of GeoPandas
   supporting Python 2 is 0.6.
 
 - GeoPandas follows [the PEP 8

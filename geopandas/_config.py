@@ -50,7 +50,7 @@ class Options(object):
         cls = self.__class__.__name__
         description = ""
         for key, option in self._options.items():
-            descr = u"{key}: {cur!r} [default: {default!r}]\n".format(
+            descr = "{key}: {cur!r} [default: {default!r}]\n".format(
                 key=key, cur=self._config[key], default=option.default_value
             )
             description += descr
@@ -58,7 +58,7 @@ class Options(object):
             if option.doc:
                 doc_text = "\n".join(textwrap.wrap(option.doc, width=70))
             else:
-                doc_text = u"No description available."
+                doc_text = "No description available."
             doc_text = textwrap.indent(doc_text, prefix="    ")
             description += doc_text + "\n"
         space = "\n  "
