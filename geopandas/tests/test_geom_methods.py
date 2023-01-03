@@ -432,8 +432,9 @@ class TestGeomMethods:
         g2 = GeoSeries([p1, None])
         self._test_unary_topological("unary_union", p1, g2)
 
-        g3 = GeoSeries([None, None])
-        assert g3.unary_union is None
+        with pytest.warns(FutureWarning, match="`unary_union` returned None"):
+            g3 = GeoSeries([None, None])
+            assert g3.unary_union is None
 
     def test_cascaded_union_deprecated(self):
         p1 = self.t1

@@ -6,6 +6,11 @@ New features and improvements:
 
 - Added ``get_coordinates()`` method from shapely to GeoSeries/GeoDataframe (#2624).
 
+Deprecations and compatibility notes:
+
+- Added warning that ``unary_union`` will return ``'GEOMETRYCOLLECTION EMPTY'`` instead
+  of None for all-None GeoSeries. (#2618)
+
 Bug fixes:
 
 - Ensure that GeoDataFrame created from DataFrame is a copy, not a view (#2667)
