@@ -721,7 +721,7 @@ GeometryCollection
 
         See also
         --------
-        GeoSeries.convex hull : convex hull geometry
+        GeoSeries.convex_hull : convex hull geometry
         """
         return _delegate_geo_method("minimum_bounding_circle", self)
 
