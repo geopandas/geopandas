@@ -3470,8 +3470,8 @@ GeometryCollection
             ``index_parts``.
         index_parts : bool, default False
            If True, the resulting index will be a :class:`~pandas.MultiIndex` (original
-           index with an additional level indicating the coordinate pairs: a new
-           zero-based index for each coordinate pair).
+           index with an additional level indicating the ordering of the coordinate pairs: a new
+           zero-based index for each geometry in the original GeoSeries).
 
         Returns
         -------
@@ -3573,7 +3573,7 @@ def _get_index_for_parts(length, orig_idx, outer_idx, ignore_index, index_parts)
     outer_idx : array
         the index of each returned geometry as a separate ndarray of integers
     ignore_index : bool
-    index_parts : bpp;
+    index_parts : bool
 
     Returns
     -------
@@ -3581,7 +3581,6 @@ def _get_index_for_parts(length, orig_idx, outer_idx, ignore_index, index_parts)
         index or multiindex
     """
 
-    # the index handling code is resused from GeoSeries.explode
     if ignore_index:
         index = range(length)
     else:
