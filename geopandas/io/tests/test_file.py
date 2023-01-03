@@ -109,10 +109,12 @@ driver_ext_pairs = [
     ("ESRI Shapefile", ".shp"),
     ("GeoJSON", ".geojson"),
     ("GPKG", ".gpkg"),
+    ("MapInfo File", ".tab"),
     (None, ".shp"),
     (None, ""),
     (None, ".geojson"),
     (None, ".gpkg"),
+    (None, ".tab"),
 ]
 
 
@@ -179,7 +181,10 @@ def test_to_file_bool(tmpdir, driver, ext, engine):
 
     df.to_file(tempfilename, driver=driver, engine=engine)
     result = read_file(tempfilename, engine=engine)
-    if ext in (".shp", ""):
+    # if ext in (".shp", ".tab", ""):
+    #     # Shapefile and MapInfo File does not support boolean, so is read back as int
+    #     df["b"] = df["b"].astype("int64")
+    if ext in (".shp",".tab", ""):
         # Shapefile does not support boolean, so is read back as int
         if engine == "fiona":
             df["col"] = df["col"].astype("int64")
@@ -205,11 +210,14 @@ def test_to_file_datetime(tmpdir, driver, ext, time, engine):
     if engine == "pyogrio" and time.tzinfo is not None:
         # TODO
         pytest.skip("pyogrio doesn't yet support timezones")
-    if ext in (".shp", ""):
+    if ext in (".shp", ".tab", ""):
         pytest.skip(f"Driver corresponding to ext {ext} doesn't support dt fields")
     if time.tzinfo is not None and FIONA_GE_1814 is False:
         # https://github.com/Toblerity/Fiona/pull/915
         pytest.skip("Fiona >= 1.8.14 needed for timezone support")
+    if time.tzinfo is not None and ext == ".tab":
+        # times are converted to UTC on write and read as naive datetimes
+        pytest.skip("MapInfo File does not support time zone aware datetimes")
 
     tempfilename = os.path.join(str(tmpdir), f"test_datetime{ext}")
     point = Point(0, 0)
@@ -350,9 +358,10 @@ def test_to_file_with_poly_z(tmpdir, ext, driver, engine):
     assert_correct_driver(tempfilename, ext, engine)
 
 
-def test_to_file_types(tmpdir, df_points, engine):
+@pytest.mark.parametrize("driver,ext", driver_ext_pairs)
+def test_to_file_types(tmpdir, df_points, driver, ext):
     """Test various integer type columns (GH#93)"""
-    tempfilename = os.path.join(str(tmpdir), "int.shp")
+    tempfilename = os.path.join(str(tmpdir), "int.{0}".format(ext))
     int_types = [
         np.int8,
         np.int16,
@@ -370,7 +379,7 @@ def test_to_file_types(tmpdir, df_points, engine):
         for i, dtype in enumerate(int_types)
     )
     df = GeoDataFrame(data, geometry=geometry)
-    df.to_file(tempfilename, engine=engine)
+    df.to_file(tempfilename, driver=driver)
 
 
 def test_to_file_int64(tmpdir, df_points, engine):
@@ -381,6 +390,22 @@ def test_to_file_int64(tmpdir, df_points, engine):
     df["data"] = pd.array([1, np.nan] * 5, dtype=pd.Int64Dtype())
     df.to_file(tempfilename, engine=engine)
     df_read = GeoDataFrame.from_file(tempfilename, engine=engine)
+    assert_geodataframe_equal(df_read, df, check_dtype=False, check_like=True)
+
+
+def test_overflow_int32_mapinfo(tmpdir, df_points):
+    """int64 cast to int32 in _to_file (GH #967)
+    -- have to convert int64 -> int32 for writing
+    with the mapinfo driver
+    """
+    tempfilename = os.path.join(str(tmpdir), "int32.tab")
+    geometry = df_points.geometry
+    df = GeoDataFrame(geometry=geometry)
+    too_big = 2_147_483_648
+    df["data"] = pd.array([too_big, np.nan] * 5, dtype=pd.Int64Dtype())
+    # import pdb; pdb.set_trace()
+    df.to_file(tempfilename)
+    df_read = GeoDataFrame.from_file(tempfilename)
     assert_geodataframe_equal(df_read, df, check_dtype=False, check_like=True)
 
 
@@ -489,6 +514,10 @@ def test_to_file_with_duplicate_columns(tmpdir, engine):
 def test_append_file(tmpdir, df_nybb, df_null, driver, ext, engine):
     """Test to_file with append mode and from_file"""
     skip_pyogrio_not_supported(engine)
+
+    if ext == ".tab":
+        pytest.xfail("MapInfo File doesn't maintain geometric accuracy.")
+
     from fiona import supported_drivers
 
     tempfilename = os.path.join(str(tmpdir), "boros" + ext)
@@ -522,6 +551,8 @@ def test_empty_crs(tmpdir, driver, ext, engine):
     """Test handling of undefined CRS with GPKG driver (GH #1975)."""
     if ext == ".gpkg":
         pytest.xfail("GPKG is read with Undefined geographic SRS.")
+    if ext == ".tab":
+        pytest.xfail("MapInfo File is read with Undefined geographic ENGCRS.")
 
     tempfilename = os.path.join(str(tmpdir), "boros" + ext)
     df = GeoDataFrame(

@@ -559,6 +559,13 @@ def _to_file_fiona(df, filename, driver, schema, crs, mode, **kwargs):
     else:
         crs = df.crs
 
+    if driver == "MapInfo File":
+        unallowed_dtypes = ["int", "int64"]
+        properties_dict = schema["properties"]
+        for k, v in properties_dict.items():
+            if v in unallowed_dtypes:
+                properties_dict[k] = "int32"
+
     with fiona_env():
         crs_wkt = None
         try:
@@ -602,7 +609,18 @@ def infer_schema(df):
     from collections import OrderedDict
 
     # TODO: test pandas string type and boolean type once released
-    types = {"Int64": "int", "string": "str", "boolean": "bool"}
+    types = {
+        "int64": "int",
+        "int32": "int32",
+        "int16": "int32",
+        "int8": "int32",
+        "uint64": "int",
+        "uint32": "int",
+        "uint16": "int",
+        "uint8": "int",
+        "string": "str",
+        "boolean": "bool",
+    }
 
     def convert_type(column, in_type):
         if in_type == object:
@@ -610,8 +628,8 @@ def infer_schema(df):
         if in_type.name.startswith("datetime64"):
             # numpy datetime type regardless of frequency
             return "datetime"
-        if str(in_type) in types:
-            out_type = types[str(in_type)]
+        if str(in_type).lower() in types:
+            out_type = types[str(in_type).lower()]
         else:
             out_type = type(np.zeros(1, in_type).item()).__name__
         if out_type == "long":
