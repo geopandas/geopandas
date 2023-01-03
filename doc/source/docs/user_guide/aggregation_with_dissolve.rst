@@ -12,7 +12,7 @@ Aggregation with dissolve
 
 Spatial data are often more granular than needed. For example, you might have data on sub-national units, but you're actually interested in studying patterns at the level of countries.
 
-In a non-spatial setting, when all you need are summary statistics of the data, you can aggregate data using the :meth:`~pandas.DataFrame.groupby` function. But for spatial data, you sometimes also need to aggregate geometric features. In the GeoPandas library, you can aggregate geometric features using the :meth:`~geopandas.GeoDataFrame.dissolve` function.
+In a non-spatial setting, when you need summary statistics of the data, you can aggregate data using the :meth:`~pandas.DataFrame.groupby` function. But for spatial data, you sometimes also need to aggregate geometric features. In the GeoPandas library, you can aggregate geometric features using the :meth:`~geopandas.GeoDataFrame.dissolve` function.
 
 :meth:`~geopandas.GeoDataFrame.dissolve` can be thought of as doing three things:
 
