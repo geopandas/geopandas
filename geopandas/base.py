@@ -3470,8 +3470,8 @@ GeometryCollection
             ``index_parts``.
         index_parts : bool, default False
            If True, the resulting index will be a :class:`~pandas.MultiIndex` (original
-           index with an additional level indicating the ordering of the coordinate pairs: a new
-           zero-based index for each geometry in the original GeoSeries).
+           index with an additional level indicating the ordering of the coordinate
+           pairs: a new zero-based index for each geometry in the original GeoSeries).
 
         Returns
         -------
@@ -3549,7 +3549,6 @@ GeometryCollection
             column_names.append("z")
 
         index = _get_index_for_parts(
-            len(coords),
             self.index,
             outer_idx,
             ignore_index=ignore_index,
@@ -3559,15 +3558,13 @@ GeometryCollection
         return pd.DataFrame(coords, index=index, columns=column_names)
 
 
-def _get_index_for_parts(length, orig_idx, outer_idx, ignore_index, index_parts):
+def _get_index_for_parts(orig_idx, outer_idx, ignore_index, index_parts):
     """Helper to handle index when geometries get exploded to parts.
 
     Used in get_coordinates and explode.
 
     Parameters
     ----------
-    length : int
-        length of the resulting index
     orig_idx : pandas.Index
         original index
     outer_idx : array
@@ -3582,7 +3579,7 @@ def _get_index_for_parts(length, orig_idx, outer_idx, ignore_index, index_parts)
     """
 
     if ignore_index:
-        index = range(length)
+        return None
     else:
         if len(outer_idx):
             # Generate inner index as a range per value of outer_idx
