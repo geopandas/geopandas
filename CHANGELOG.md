@@ -5,6 +5,7 @@
 New features and improvements:
 
 - Added ``get_coordinates()`` method from shapely to GeoSeries/GeoDataframe (#2624).
+- Added ``minimum_bounding_circle()`` method from shapely to GeoSeries/GeoDataframe (#2621).
 
 Deprecations and compatibility notes:
 

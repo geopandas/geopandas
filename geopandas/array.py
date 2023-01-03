@@ -511,6 +511,11 @@ class GeometryArray(ExtensionArray):
     def representative_point(self):
         return GeometryArray(vectorized.representative_point(self.data), crs=self.crs)
 
+    def minimum_bounding_circle(self):
+        return GeometryArray(
+            vectorized.minimum_bounding_circle(self.data), crs=self.crs
+        )
+
     def normalize(self):
         return GeometryArray(vectorized.normalize(self.data), crs=self.crs)
 
