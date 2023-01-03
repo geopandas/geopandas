@@ -28,6 +28,7 @@ def validate_boro_df(df, case_sensitive=False):
     # were properly loaded as MultiPolygons
     assert len(df) == 5
     columns = ("BoroCode", "BoroName", "Shape_Leng", "Shape_Area")
+    assert len(df.columns) == len(columns)
     if case_sensitive:
         for col in columns:
             assert col in df.columns

@@ -5,6 +5,8 @@ import pandas as pd
 
 import shapely
 import shapely.wkb
+import sqlalchemy.exc
+import psycopg2.errors
 
 from geopandas import GeoDataFrame
 
@@ -328,9 +330,14 @@ def _psql_insert_copy(tbl, conn, keys, data_iter):
 
     dbapi_conn = conn.connection
     with dbapi_conn.cursor() as cur:
-        sql = 'COPY "{}"."{}" ({}) FROM STDIN WITH CSV'.format(
-            tbl.table.schema, tbl.table.name, columns
-        )
+        if tbl.table.schema is not None:
+            sql = 'COPY "{}"."{}" ({}) FROM STDIN WITH CSV'.format(
+                tbl.table.schema, tbl.table.name, columns
+            )
+        else:
+            sql = 'COPY "{}" ({}) FROM STDIN WITH CSV'.format(
+                tbl.table.name, columns
+            )
         cur.copy_expert(sql=sql, file=s_buf)
 
 
@@ -415,43 +422,82 @@ def _write_postgis(
     # Convert geometries to EWKB
     gdf = _convert_to_ewkb(gdf, geom_name, srid)
 
+    # It is possible that the search path have schemas which do not exist, or the user does not have write access
+    # We must then get the possible schemas as a list and then test them in order.
     if schema is not None:
-        schema_name = schema
+        schema_names = [schema]
     else:
-        schema_name = "public"
-
-    if if_exists == "append":
-        # Check that the geometry srid matches with the current GeoDataFrame
         with _get_conn(con) as connection:
-            # Only check SRID if table exists
-            if connection.dialect.has_table(connection, name, schema):
-                target_srid = connection.execute(
-                    "SELECT Find_SRID('{schema}', '{table}', '{geom_col}');".format(
-                        schema=schema_name, table=name, geom_col=geom_name
-                    )
-                ).fetchone()[0]
+            schema_names = connection.execute("SHOW search_path;").fetchone()[0].split(",")
 
-                if target_srid != srid:
-                    msg = (
-                        "The CRS of the target table (EPSG:{epsg_t}) differs from the "
-                        "CRS of current GeoDataFrame (EPSG:{epsg_src}).".format(
-                            epsg_t=target_srid, epsg_src=srid
+    found_schema = False
+    for schema_name in schema_names:
+
+        if if_exists == "append":
+            # Check that the geometry srid matches with the current GeoDataFrame
+            with _get_conn(con) as connection:
+                # Only check SRID if table exists
+                if connection.dialect.has_table(connection, name, schema):
+
+                    try:
+                        target_srid = connection.execute(
+                            "SELECT Find_SRID('{schema}', '{table}', '{geom_col}');".format(
+                                schema=schema_name, table=name, geom_col=geom_name
+                            )
+                        ).fetchone()[0]
+                    except sqlalchemy.exc.InternalError as e:
+                        if "could not find the corresponding SRID" in e.args[0]:
+                            # Table does not exist in this schema
+                            continue
+                        raise e
+
+                    if target_srid != srid:
+                        msg = (
+                            "The CRS of the target table (EPSG:{epsg_t}) differs from the "
+                            "CRS of current GeoDataFrame (EPSG:{epsg_src}).".format(
+                                epsg_t=target_srid, epsg_src=srid
+                            )
                         )
-                    )
-                    raise ValueError(msg)
+                        raise ValueError(msg)
 
-    with _get_conn(con) as connection:
+        with _get_conn(con) as connection:
 
-        gdf.to_sql(
-            name,
-            connection,
-            schema=schema_name,
-            if_exists=if_exists,
-            index=index,
-            index_label=index_label,
-            chunksize=chunksize,
-            dtype=dtype,
-            method=_psql_insert_copy,
+            try:
+                gdf.to_sql(
+                    name,
+                    connection,
+                    schema=schema_name,
+                    if_exists=if_exists,
+                    index=index,
+                    index_label=index_label,
+                    chunksize=chunksize,
+                    dtype=dtype,
+                    method=_psql_insert_copy,
+                )
+            # This will still throw a ValueError if a table exists in the schema with the same name, and will not try
+            # any further schemas. This is native pandas behaviour.
+            except sqlalchemy.exc.ProgrammingError as e:
+                if "psycopg2.errors.InvalidSchemaName" in e.args[0]:
+                    # Schema does not exist
+                    continue
+                elif "psycopg2.errors.InsufficientPrivilege" in e.args[0]:
+                    # User does not have required privileges for this SCHEMA (happens when creating)
+                    continue
+                raise e
+            except psycopg2.errors.InsufficientPrivilege:
+                # User does not have required privileges for this TABLE (only happens when appending)
+                continue
+
+        found_schema = True
+        break
+
+    if not found_schema:
+        # If we made it here and found_schema is still false, then all attempts to write have failed
+        msg = (
+            "No suitable schema found in the connection role's search_path ('{}')".format(
+                "', ".join(schema_names)
+            )
         )
+        raise RuntimeError(msg)
 
     return
