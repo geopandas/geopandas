@@ -928,6 +928,21 @@ class TestGeomMethods:
         assert isinstance(e, GeoSeries)
         assert self.g3.crs == e.crs
 
+    @pytest.mark.skipif(
+        not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+        reason="minimum_bounding_circle is only implemented for pygeos, not shapely",
+    )
+    def test_minimum_bounding_circle(self):
+        mbc = self.g1.minimum_bounding_circle()
+        centers = GeoSeries([Point(0.5, 0.5)] * 2)
+        assert np.all(mbc.centroid.geom_equals_exact(centers, 0.001))
+        assert_series_equal(
+            mbc.area,
+            Series([1.560723, 1.560723]),
+        )
+        assert isinstance(mbc, GeoSeries)
+        assert self.g1.crs == mbc.crs
+
     def test_total_bounds(self):
         bbox = self.sol.x, self.sol.y, self.esb.x, self.esb.y
         assert isinstance(self.landmarks.total_bounds, np.ndarray)
