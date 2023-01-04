@@ -1687,8 +1687,8 @@ individually so that features may have different properties
                     f"The default value of numeric_only in aggfunc='{aggfunc}' "
                     "within pandas.DataFrameGroupBy.agg used in dissolve is "
                     "deprecated. In pandas 2.0, numeric_only will default to False. "
-                    "Either specify numeric_only or select only columns which should "
-                    "be valid for the function."
+                    "Either specify numeric_only as additional argument in dissolve() "
+                    "or select only columns which should be valid for the function."
                 )
                 warnings.warn(msg, FutureWarning, stacklevel=2)
             else:
