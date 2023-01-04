@@ -14,6 +14,7 @@ import matplotlib.colors as colors  # noqa
 from branca.colormap import StepColormap  # noqa
 
 BRANCA_05 = Version(branca.__version__) > Version("0.4.2")
+FOLIUM_G_014 = Version(folium.__version__) > Version("0.14.0")
 
 
 class TestExplore:
@@ -524,8 +525,14 @@ class TestExplore:
         df2["values"] = df2["BoroCode"] * 10.0
         m = df2[df2["values"] >= 30].explore("values", vmin=0)
         out_str = self._fetch_map_string(m)
-        assert 'case"1":return{"color":"#7ad151","fillColor":"#7ad151"' in out_str
-        assert 'case"2":return{"color":"#22a884","fillColor":"#22a884"' in out_str
+        if FOLIUM_G_014:
+            assert 'case"0":return{"color":"#fde725","fillColor":"#fde725"' in out_str
+            assert 'case"1":return{"color":"#7ad151","fillColor":"#7ad151"' in out_str
+            assert 'default:return{"color":"#22a884","fillColor":"#22a884"' in out_str
+        else:
+            assert 'case"1":return{"color":"#7ad151","fillColor":"#7ad151"' in out_str
+            assert 'case"2":return{"color":"#22a884","fillColor":"#22a884"' in out_str
+            assert 'default:return{"color":"#fde725","fillColor":"#fde725"' in out_str
 
         df2["values_negative"] = df2["BoroCode"] * -10.0
         m = df2[df2["values_negative"] <= 30].explore("values_negative", vmax=0)
