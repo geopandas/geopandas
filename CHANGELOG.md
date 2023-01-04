@@ -5,6 +5,7 @@
 New features and improvements:
 
 - Added ``minimum_bounding_circle()`` method from shapely to GeoSeries/GeoDataframe (#2621).
+- Support specifying ``min_zoom`` and ``max_zoom`` inside the ``map_kwds`` argument for ``.explore()`` (#2599).
 
 Deprecations and compatibility notes:
 
@@ -24,16 +25,6 @@ Bug fixes:
 - Correctly handle geometries with Z dimension in ``to_crs()`` when using PyGEOS or
   Shapely >= 2.0 (previously the z coordinates were lost) (#1345).
 - Assign Crimea to Ukraine in the ``naturalearth_lowres`` built-in dataset (#2670)
-
-New features and improvements:
-
-- Support specifying `min_zoom` and `max_zoom` inside the `map_kwds` argument for `.explore()` (#2599).
-
-Deprecations and compatibility notes:
-
-Bug fixes:
-
-Notes on (optional) dependencies:
 
 ## Version 0.12.1 (October 29, 2022)
 
