@@ -5,6 +5,18 @@
 New features and improvements:
 
 - Added support to fill missing values in `GeoSeries.fillna` via another `GeoSeries` (#2535).
+- Added ``minimum_bounding_circle()`` method from shapely to GeoSeries/GeoDataframe (#2621).
+
+Deprecations and compatibility notes:
+
+- Added warning that ``unary_union`` will return ``'GEOMETRYCOLLECTION EMPTY'`` instead
+  of None for all-None GeoSeries. (#2618)
+
+Bug fixes:
+
+- Ensure that GeoDataFrame created from DataFrame is a copy, not a view (#2667)
+- Fix mismatch between geometries and colors in ``plot()`` if an empty or missing
+  geometry is present (#2224)
 
 ## Version 0.12.2 (December 10, 2022)
 

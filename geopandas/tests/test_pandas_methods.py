@@ -326,7 +326,11 @@ def test_to_csv(df):
 def test_numerical_operations(s, df):
     # df methods ignore the geometry column
     exp = pd.Series([3, 4], index=["value1", "value2"])
-    assert_series_equal(df.sum(), exp)
+    if not compat.PANDAS_GE_20:
+        res = df.sum()
+    else:
+        res = df.sum(numeric_only=True)
+    assert_series_equal(res, exp)
 
     # series methods raise error (not supported for geometry)
     with pytest.raises(TypeError):
@@ -343,8 +347,7 @@ def test_numerical_operations(s, df):
     with pytest.raises(TypeError):
         df + 1
 
-    with pytest.raises((TypeError, AssertionError)):
-        # TODO(pandas 0.23) remove AssertionError -> raised in 0.23
+    with pytest.raises(TypeError):
         s + 1
 
     # boolean comparisons work
@@ -561,7 +564,10 @@ def test_groupby(df):
     assert_frame_equal(res, exp)
 
     # reductions ignore geometry column
-    res = df.groupby("value2").sum()
+    if not compat.PANDAS_GE_20:
+        res = df.groupby("value2").sum()
+    else:
+        res = df.groupby("value2").sum(numeric_only=True)
     exp = pd.DataFrame({"value1": [2, 1], "value2": [1, 2]}, dtype="int64").set_index(
         "value2"
     )
