@@ -1,5 +1,22 @@
 # Changelog
 
+## Development version
+
+New features and improvements:
+
+- Added ``minimum_bounding_circle()`` method from shapely to GeoSeries/GeoDataframe (#2621).
+
+Deprecations and compatibility notes:
+
+- Added warning that ``unary_union`` will return ``'GEOMETRYCOLLECTION EMPTY'`` instead
+  of None for all-None GeoSeries. (#2618)
+
+
+Bug fixes:
+
+- Ensure that GeoDataFrame created from DataFrame is a copy, not a view (#2667)
+- Fix mismatch between geometries and colors in ``plot()`` if an empty or missing
+  geometry is present (#2224)
 
 Notes on (optional) dependencies:
 
@@ -7,6 +24,7 @@ Notes on (optional) dependencies:
   pandas version is now 1.1). Further, the minimum required versions for the listed
   dependencies have now changed to shapely 1.7.1, fiona 1.8.19, pyproj 3.0.1 and
   matplotlib 3.3.4 (#2655)
+
 
 ## Version 0.12.2 (December 10, 2022)
 
