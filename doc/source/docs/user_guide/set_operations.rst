@@ -15,7 +15,7 @@ When working with multiple spatial datasets -- especially multiple *polygon* or
 *line* datasets -- users often wish to create new shapes based on places where
 those datasets overlap (or don't overlap). These manipulations are often
 referred using the language of sets -- intersections, unions, and differences.
-These types of operations are made available in the *geopandas* library through
+These types of operations are made available in the GeoPandas library through
 the :meth:`~geopandas.GeoDataFrame.overlay` method.
 
 The basic idea is demonstrated by the graphic below but keep in mind that
