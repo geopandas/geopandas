@@ -1334,9 +1334,8 @@ class GeometryArray(ExtensionArray):
             # TODO(pygeos)
             return getattr(to_shapely(self), name)()
         raise TypeError(
-            "cannot perform {name} with type {dtype}".format(
-                name=name, dtype=self.dtype
-            )
+            f"'{type(self).__name__}' with dtype {self.dtype} "
+            f"does not support reduction '{name}'"
         )
 
     def __array__(self, dtype=None):
