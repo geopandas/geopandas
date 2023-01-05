@@ -16,6 +16,7 @@ from shapely.geometry import Point, Polygon, box
 
 import geopandas
 from geopandas import GeoDataFrame, read_file
+from geopandas._compat import PANDAS_GE_20
 from geopandas.io.file import _detect_driver, _EXTENSION_TO_DRIVER
 
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
@@ -309,7 +310,11 @@ def test_read_file_datetime_mixed_offsets(tmpdir):
     if FIONA_GE_1814:
         # Convert mixed timezones to UTC equivalent
         assert is_datetime64_any_dtype(res["date"])
-        assert res["date"].dt.tz == pytz.utc
+        if not PANDAS_GE_20:
+            utc = pytz.utc
+        else:
+            utc = datetime.timezone.utc
+        assert res["date"].dt.tz == utc
     else:
         # old fiona and pyogrio ignore timezones and read as datetimes successfully
         assert is_datetime64_any_dtype(res["date"])
@@ -825,7 +830,7 @@ def test_read_file_filtered_with_gdf_boundary__mask(df_nybb, engine):
         engine=engine,
     )
     filtered_df_shape = gdf.shape
-    assert filtered_df_shape == (50, 2)
+    assert filtered_df_shape == (57, 2)
 
 
 def test_read_file_filtered_with_gdf_boundary__mask__polygon(df_nybb, engine):

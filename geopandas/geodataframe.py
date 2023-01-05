@@ -132,6 +132,12 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
     def __init__(self, data=None, *args, geometry=None, crs=None, **kwargs):
         with compat.ignore_shapely2_warnings():
+            if (
+                kwargs.get("copy") is None
+                and isinstance(data, DataFrame)
+                and not isinstance(data, GeoDataFrame)
+            ):
+                kwargs.update(copy=True)
             super().__init__(data, *args, **kwargs)
 
         # set_geometry ensures the geometry data have the proper dtype,
@@ -1293,7 +1299,7 @@ individually so that features may have different properties
         be set.  Either ``crs`` or ``epsg`` may be specified for output.
 
         This method will transform all points in all objects. It has no notion
-        or projecting entire geometries.  All segments joining points are
+        of projecting entire geometries.  All segments joining points are
         assumed to be lines in the current projection, not geodesics. Objects
         crossing the dateline (or other projection boundary) will have
         undesirable behavior.
@@ -1579,6 +1585,7 @@ individually so that features may have different properties
         sort=True,
         observed=False,
         dropna=True,
+        **kwargs,
     ):
         """
         Dissolve geometries within `groupby` into single observation.
@@ -1631,7 +1638,12 @@ individually so that features may have different properties
             if a non-default value is given for this parameter.
 
             .. versionadded:: 0.9.0
+        **kwargs :
+            Keyword arguments to be passed to the pandas `DataFrameGroupby.agg` method
+            which is used by `dissolve`. In particular, `numeric_only` may be
+            supplied, which will be required in pandas 2.0 for certain aggfuncs.
 
+            .. versionadded:: 0.13.0
         Returns
         -------
         GeoDataFrame
@@ -1677,7 +1689,26 @@ individually so that features may have different properties
 
         # Process non-spatial component
         data = self.drop(labels=self.geometry.name, axis=1)
-        aggregated_data = data.groupby(**groupby_kwargs).agg(aggfunc)
+        with warnings.catch_warnings(record=True) as record:
+            aggregated_data = data.groupby(**groupby_kwargs).agg(aggfunc, **kwargs)
+        for w in record:
+            if str(w.message).startswith("The default value of numeric_only"):
+                msg = (
+                    f"The default value of numeric_only in aggfunc='{aggfunc}' "
+                    "within pandas.DataFrameGroupBy.agg used in dissolve is "
+                    "deprecated. In pandas 2.0, numeric_only will default to False. "
+                    "Either specify numeric_only as additional argument in dissolve() "
+                    "or select only columns which should be valid for the function."
+                )
+                warnings.warn(msg, FutureWarning, stacklevel=2)
+            else:
+                # Only want to capture specific warning,
+                # other warnings from pandas should be passed through
+                # TODO this is not an ideal approach
+                warnings.showwarning(
+                    w.message, w.category, w.filename, w.lineno, w.file, w.line
+                )
+
         aggregated_data.columns = aggregated_data.columns.to_flat_index()
 
         # Process spatial component
@@ -2030,12 +2061,12 @@ individually so that features may have different properties
         4  326625791  North America  United States of America    USA  18560000.0 \
     MULTIPOLYGON (((-122.84000 49.00000, -120.0000...
         >>> cities.head()
-                name                   geometry
-        0  Vatican City  POINT (12.45339 41.90328)
-        1    San Marino  POINT (12.44177 43.93610)
-        2         Vaduz   POINT (9.51667 47.13372)
-        3    Luxembourg   POINT (6.13000 49.61166)
-        4       Palikir  POINT (158.14997 6.91664)
+                name                    geometry
+        0  Vatican City   POINT (12.45339 41.90328)
+        1    San Marino   POINT (12.44177 43.93610)
+        2         Vaduz    POINT (9.51667 47.13372)
+        3       Lobamba  POINT (31.20000 -26.46667)
+        4    Luxembourg    POINT (6.13000 49.61166)
 
         >>> cities_w_country_data = cities.sjoin(countries)
         >>> cities_w_country_data.head()  # doctest: +SKIP
@@ -2228,11 +2259,11 @@ countries_w_city_data[countries_w_city_data["name_left"] == "Italy"]
         >>> capitals = geopandas.read_file(
         ...     geopandas.datasets.get_path('naturalearth_cities'))
         >>> capitals.shape
-        (202, 2)
+        (243, 2)
 
         >>> sa_capitals = capitals.clip(south_america)
         >>> sa_capitals.shape
-        (12, 2)
+        (15, 2)
         """
         return geopandas.clip(self, mask=mask, keep_geom_type=keep_geom_type)
 

@@ -5,7 +5,16 @@ import numpy as np
 from numpy.testing import assert_array_equal
 from pandas import DataFrame, Index, MultiIndex, Series
 
-from shapely.geometry import LinearRing, LineString, MultiPoint, Point, Polygon
+import shapely
+
+from shapely.geometry import (
+    LinearRing,
+    LineString,
+    MultiPoint,
+    Point,
+    Polygon,
+    MultiPolygon,
+)
 from shapely.geometry.collection import GeometryCollection
 from shapely.ops import unary_union
 from shapely import wkt
@@ -376,8 +385,9 @@ class TestGeomMethods:
         g2 = GeoSeries([p1, None])
         self._test_unary_topological("unary_union", p1, g2)
 
-        g3 = GeoSeries([None, None])
-        assert g3.unary_union is None
+        with pytest.warns(FutureWarning, match="`unary_union` returned None"):
+            g3 = GeoSeries([None, None])
+            assert g3.unary_union is None
 
     def test_cascaded_union_deprecated(self):
         p1 = self.t1
@@ -682,6 +692,43 @@ class TestGeomMethods:
         expected = GeoSeries([polygon2, linestring, point])
         assert_geoseries_equal(series.normalize(), expected)
 
+    @pytest.mark.skipif(
+        not compat.SHAPELY_GE_18,
+        reason="make_valid keyword introduced in shapely 1.8.0",
+    )
+    def test_make_valid(self):
+        polygon1 = Polygon([(0, 0), (0, 2), (1, 1), (2, 2), (2, 0), (1, 1), (0, 0)])
+        polygon2 = Polygon([(0, 2), (0, 1), (2, 0), (0, 0), (0, 2)])
+        linestring = LineString([(0, 0), (1, 1), (1, 0)])
+        series = GeoSeries([polygon1, polygon2, linestring])
+        out_polygon1 = MultiPolygon(
+            [
+                Polygon([(1, 1), (0, 0), (0, 2), (1, 1)]),
+                Polygon([(2, 0), (1, 1), (2, 2), (2, 0)]),
+            ]
+        )
+        out_polygon2 = GeometryCollection(
+            [Polygon([(2, 0), (0, 0), (0, 1), (2, 0)]), LineString([(0, 2), (0, 1)])]
+        )
+        expected = GeoSeries([out_polygon1, out_polygon2, linestring])
+        assert not series.is_valid.all()
+        result = series.make_valid()
+        assert_geoseries_equal(result, expected)
+        assert result.is_valid.all()
+
+    @pytest.mark.skipif(
+        compat.SHAPELY_GE_18,
+        reason="make_valid keyword introduced in shapely 1.8.0",
+    )
+    def test_make_valid_shapely_pre18(self):
+        s = GeoSeries([Point(1, 1)])
+        with pytest.raises(
+            NotImplementedError,
+            match=f"shapely >= 1.8 or PyGEOS is required, "
+            f"version {shapely.__version__} is installed",
+        ):
+            s.make_valid()
+
     def test_convex_hull(self):
         # the convex hull of a square should be the same as the square
         squares = GeoSeries([self.sq for i in range(3)])
@@ -880,6 +927,21 @@ class TestGeomMethods:
         assert np.all(e.geom_equals(self.sq))
         assert isinstance(e, GeoSeries)
         assert self.g3.crs == e.crs
+
+    @pytest.mark.skipif(
+        not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+        reason="minimum_bounding_circle is only implemented for pygeos, not shapely",
+    )
+    def test_minimum_bounding_circle(self):
+        mbc = self.g1.minimum_bounding_circle()
+        centers = GeoSeries([Point(0.5, 0.5)] * 2)
+        assert np.all(mbc.centroid.geom_equals_exact(centers, 0.001))
+        assert_series_equal(
+            mbc.area,
+            Series([1.560723, 1.560723]),
+        )
+        assert isinstance(mbc, GeoSeries)
+        assert self.g1.crs == mbc.crs
 
     def test_total_bounds(self):
         bbox = self.sol.x, self.sol.y, self.esb.x, self.esb.y
