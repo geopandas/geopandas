@@ -1,22 +1,70 @@
-Changelog
-=========
+# Changelog
 
-Development version
--------------------
+## Development version
 
 New features and improvements:
 
-- Added ``normalize()`` method from shapely to GeoSeries/GeoDataframe (#2537)
-- Add where filter to ``read_file`` (#2552)
+- Added ``minimum_bounding_circle()`` method from shapely to GeoSeries/GeoDataframe (#2621).
+- Support specifying ``min_zoom`` and ``max_zoom`` inside the ``map_kwds`` argument for ``.explore()`` (#2599).
 
 Deprecations and compatibility notes:
 
+- Added warning that ``unary_union`` will return ``'GEOMETRYCOLLECTION EMPTY'`` instead
+  of None for all-None GeoSeries. (#2618)
+
 Bug fixes:
 
-Notes on (optional) dependencies:
+- Ensure that GeoDataFrame created from DataFrame is a copy, not a view (#2667)
+- Fix mismatch between geometries and colors in ``plot()`` if an empty or missing
+  geometry is present (#2224)
 
-Version 0.11.1 (July 24, 2022)
-------------------------------
+## Version 0.12.2 (December 10, 2022)
+
+Bug fixes:
+
+- Correctly handle geometries with Z dimension in ``to_crs()`` when using PyGEOS or
+  Shapely >= 2.0 (previously the z coordinates were lost) (#1345).
+- Assign Crimea to Ukraine in the ``naturalearth_lowres`` built-in dataset (#2670)
+
+## Version 0.12.1 (October 29, 2022)
+
+Small bug-fix release removing the shapely<2 pin in the installation requirements.
+
+## Version 0.12 (October 24, 2022)
+
+The highlight of this release is the support for Shapely 2.0. This makes it possible to
+test Shapely 2.0 (currently 2.0b1) alongside GeoPandas.
+
+Note that if you also have PyGEOS installed, you need to set an environment variable
+(`USE_PYGEOS=0`) before importing geopandas to actually test Shapely 2.0 features instead of PyGEOS. See
+<https://geopandas.org/en/latest/getting_started/install.html#using-the-optional-pygeos-dependency>
+for more details.
+
+New features and improvements:
+
+- Added ``normalize()`` method from shapely to GeoSeries/GeoDataframe (#2537).
+- Added ``make_valid()`` method from shapely to GeoSeries/GeoDataframe (#2539).
+- Added ``where`` filter to ``read_file`` (#2552).
+- Updated the distributed natural earth datasets (*naturalearth_lowres* and
+  *naturalearth_cities*) to version 5.1 (#2555).
+
+Deprecations and compatibility notes:
+
+- Accessing the `crs` of a `GeoDataFrame` without active geometry column was deprecated
+  and this now raises an AttributeError (#2578).
+- Resolved colormap-related warning in ``.explore()`` for recent Matplotlib versions
+  (#2596).
+
+Bug fixes:
+
+- Fix cryptic error message in ``geopandas.clip()`` when clipping with an empty geometry (#2589).
+- Accessing `gdf.geometry` where the active geometry column is missing, and a column
+  named `"geometry"` is present will now raise an `AttributeError`, rather than
+  returning `gdf["geometry"]` (#2575).
+- Combining GeoSeries/GeoDataFrames with ``pandas.concat`` will no longer silently
+  override CRS information if not all inputs have the same CRS (#2056).
+
+## Version 0.11.1 (July 24, 2022)
 
 Small bug-fix release:
 
@@ -25,8 +73,8 @@ Small bug-fix release:
   MultiIndex (#2486).
 - Fix regression in ``GeoDataFrame.explode()`` with non-default
   geometry column name.
-- Fix regression in ``apply()`` causing row-wise all nan float columns to be 
-  casted to GeometryDtype (#2482). 
+- Fix regression in ``apply()`` causing row-wise all nan float columns to be
+  casted to GeometryDtype (#2482).
 - Fix a crash in datetime column reading where the file contains mixed timezone
   offsets (#2479). These will be read as UTC localized values.
 - Fix a crash in datetime column reading where the file contains datetimes
@@ -37,7 +85,6 @@ Small bug-fix release:
   ``schema_version``. ``version`` will be passed directly to underlying
   feather or parquet writer. ``version`` will only be used to set
   ``schema_version`` if ``version`` is one of 0.1.0 or 0.4.0 (#2496).
-
 
 Version 0.11 (June 20, 2022)
 ----------------------------

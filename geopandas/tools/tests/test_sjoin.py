@@ -571,7 +571,7 @@ class TestSpatialJoinNaturalEarth:
         cities_with_country = sjoin(
             self.cities, countries, how="inner", predicate="intersects"
         )
-        assert cities_with_country.shape == (172, 4)
+        assert cities_with_country.shape == (213, 4)
 
 
 @pytest.mark.skipif(

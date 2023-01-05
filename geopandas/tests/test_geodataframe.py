@@ -13,7 +13,7 @@ from shapely.geometry import Point, Polygon
 
 import geopandas
 import geopandas._compat as compat
-from geopandas import GeoDataFrame, GeoSeries, read_file
+from geopandas import GeoDataFrame, GeoSeries, points_from_xy, read_file
 from geopandas.array import GeometryArray, GeometryDtype, from_shapely
 from geopandas._compat import ignore_shapely2_warnings
 
@@ -360,6 +360,17 @@ class TestDataFrame:
 
         with pytest.raises(AttributeError, match=msg_no_other_geo_cols):
             GeoDataFrame().geometry
+
+    def test_get_geometry_geometry_inactive(self):
+        # https://github.com/geopandas/geopandas/issues/2574
+        df = self.df.assign(geom2=self.df.geometry).set_geometry("geom2")
+        df = df.loc[:, ["BoroName", "geometry"]]
+        assert df._geometry_column_name == "geom2"
+        msg_geo_col_missing = "is not present. "
+        # Check that df.geometry raises if active geometry column is missing,
+        # it should not fall back to column named "geometry"
+        with pytest.raises(AttributeError, match=msg_geo_col_missing):
+            df.geometry
 
     def test_align(self):
         df = self.df2
@@ -760,6 +771,33 @@ class TestDataFrame:
 
         with pytest.raises(ValueError):
             df.set_geometry("location", inplace=True)
+
+    def test_dataframe_not_manipulated(self):
+        df = pd.DataFrame(
+            {
+                "A": range(len(self.df)),
+                "latitude": self.df.geometry.centroid.y,
+                "longitude": self.df.geometry.centroid.x,
+            },
+            index=self.df.index,
+        )
+        df_copy = df.copy()
+        gf = GeoDataFrame(
+            df,
+            geometry=points_from_xy(df["longitude"], df["latitude"]),
+            crs=self.df.crs,
+        )
+        assert type(df) == pd.DataFrame
+        assert "geometry" not in df
+        assert_frame_equal(df, df_copy)
+        assert isinstance(gf, GeoDataFrame)
+        assert hasattr(gf, "geometry")
+
+        # ensure mutating columns in gf doesn't update df
+        gf.loc[0, "A"] = 7
+        assert_frame_equal(df, df_copy)
+        gf["A"] = 3
+        assert_frame_equal(df, df_copy)
 
     def test_geodataframe_geointerface(self):
         assert self.df.__geo_interface__["type"] == "FeatureCollection"

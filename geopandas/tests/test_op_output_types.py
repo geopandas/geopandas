@@ -348,5 +348,5 @@ def test_constructor_sliced_in_pandas_methods(df2):
     # drop the secondary geometry columns as not hashable
     hashable_test_df = df2.drop(columns=["geometry2", "geometry3"])
     assert type(hashable_test_df.duplicated()) == pd.Series
-    assert type(df2.quantile()) == pd.Series
+    assert type(df2.quantile(numeric_only=True)) == pd.Series
     assert type(df2.memory_usage()) == pd.Series
