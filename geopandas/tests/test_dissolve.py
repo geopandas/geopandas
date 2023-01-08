@@ -320,3 +320,21 @@ def test_dissolve_multi_agg(nybb_polydf, merged_shapes):
         )
     assert_geodataframe_equal(test, merged_shapes)
     assert len(record) == 0
+
+
+def test_dissolve_by_explicit_groups(nybb_polydf):
+    nybb_polydf["island"] = [0, 2, 2, 1, 3]
+    test = nybb_polydf.dissolve(by=[0, 2, 2, 1, 3])
+    collapsed = [
+        nybb_polydf.geometry.loc[0],
+        nybb_polydf.geometry.loc[3],
+        nybb_polydf.geometry.loc[1:2].unary_union,
+        nybb_polydf.geometry.loc[4],
+    ]
+    expected = GeoDataFrame(
+        {"myshapes": collapsed},
+        geometry="myshapes",
+        index=pd.Index([0, 1, 2, 3], name="island"),
+        crs=nybb_polydf.crs,
+    )
+    assert_frame_equal(expected, test[["myshapes"]].rename_axis("island"))
