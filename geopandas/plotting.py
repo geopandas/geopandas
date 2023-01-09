@@ -26,11 +26,12 @@ def deprecated(new, warning_type=FutureWarning):
     return old
 
 
-def _flatten_multi_geoms(geoms, prefix="Multi"):
+def _sanitize_geoms(geoms, prefix="Multi"):
     """
     Returns Series like geoms and index, except that any Multi geometries
     are split into their components and indices are repeated for all component
-    in the same Multi geometry.  Maintains 1:1 matching of geometry to value.
+    in the same Multi geometry. At the same time, empty or missing geometries are
+    filtered out.  Maintains 1:1 matching of geometry to value.
 
     Prefix specifies type of geometry to be flatten. 'Multi' for MultiPoint and similar,
     "Geom" for GeometryCollection.
@@ -42,9 +43,15 @@ def _flatten_multi_geoms(geoms, prefix="Multi"):
     component_index : index array
         indices are repeated for all components in the same Multi geometry
     """
+    # TODO(shapely) look into simplifying this with
+    # shapely.get_parts(geoms, return_index=True) from shapely 2.0
     components, component_index = [], []
 
-    if not geoms.geom_type.str.startswith(prefix).any():
+    if (
+        not geoms.geom_type.str.startswith(prefix).any()
+        and not geoms.is_empty.any()
+        and not geoms.isna().any()
+    ):
         return geoms, np.arange(len(geoms))
 
     for ix, geom in enumerate(geoms):
@@ -52,6 +59,8 @@ def _flatten_multi_geoms(geoms, prefix="Multi"):
             for poly in geom.geoms:
                 components.append(poly)
                 component_index.append(ix)
+        elif geom is None or geom.is_empty:
+            continue
         else:
             components.append(geom)
             component_index.append(ix)
@@ -154,7 +163,7 @@ def _plot_polygon_collection(
     """
     from matplotlib.collections import PatchCollection
 
-    geoms, multiindex = _flatten_multi_geoms(geoms)
+    geoms, multiindex = _sanitize_geoms(geoms)
     if values is not None:
         values = np.take(values, multiindex, axis=0)
 
@@ -171,9 +180,7 @@ def _plot_polygon_collection(
 
     _expand_kwargs(kwargs, multiindex)
 
-    collection = PatchCollection(
-        [_PolygonPatch(poly) for poly in geoms if not poly.is_empty], **kwargs
-    )
+    collection = PatchCollection([_PolygonPatch(poly) for poly in geoms], **kwargs)
 
     if values is not None:
         collection.set_array(np.asarray(values))
@@ -213,7 +220,7 @@ def _plot_linestring_collection(
     """
     from matplotlib.collections import LineCollection
 
-    geoms, multiindex = _flatten_multi_geoms(geoms)
+    geoms, multiindex = _sanitize_geoms(geoms)
     if values is not None:
         values = np.take(values, multiindex, axis=0)
 
@@ -283,7 +290,7 @@ def _plot_point_collection(
     if values is not None and color is not None:
         raise ValueError("Can only specify one of 'values' and 'color' kwargs")
 
-    geoms, multiindex = _flatten_multi_geoms(geoms)
+    geoms, multiindex = _sanitize_geoms(geoms)
     # values are expanded below as kwargs["c"]
 
     x = [p.x if not p.is_empty else None for p in geoms]
@@ -427,7 +434,7 @@ def plot_series(
         style_kwds["vmax"] = style_kwds.get("vmax", values.max())
 
     # decompose GeometryCollections
-    geoms, multiindex = _flatten_multi_geoms(s.geometry, prefix="Geom")
+    geoms, multiindex = _sanitize_geoms(s.geometry, prefix="Geom")
     values = np.take(values, multiindex, axis=0) if cmap else None
     # ensure indexes are consistent
     if color_given and isinstance(color, pd.Series):
@@ -829,7 +836,7 @@ GON (((-122.84000 49.00000, -120.0000...
     mx = values[~np.isnan(values)].max() if vmax is None else vmax
 
     # decompose GeometryCollections
-    geoms, multiindex = _flatten_multi_geoms(df.geometry, prefix="Geom")
+    geoms, multiindex = _sanitize_geoms(df.geometry, prefix="Geom")
     values = np.take(values, multiindex, axis=0)
     nan_idx = np.take(nan_idx, multiindex, axis=0)
     expl_series = geopandas.GeoSeries(geoms)
