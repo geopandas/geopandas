@@ -816,6 +816,12 @@ def test_no_intersection():
     assert_geodataframe_equal(result, expected, check_index_type=False)
 
 
+def test_overlay_self_intersection():
+    gdf = GeoDataFrame({"geometry": [box(0, 0, 2, 2), box(1, 1, 4, 4), box(3, 3, 5, 5)]})
+    result = overlay(gdf, gdf, how="difference", keep_geom_type=True)
+    assert result.is_valid.all()
+
+
 @pytest.mark.skipif(not _compat.SHAPELY_GE_20, reason="requires shapely 2 or higher")
 @pytest.mark.parametrize("snap_to_int", [True, False])
 def test_overlay_difference_precision(snap_to_int):
