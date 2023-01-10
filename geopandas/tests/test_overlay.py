@@ -817,7 +817,9 @@ def test_no_intersection():
 
 
 def test_overlay_self_intersection():
-    gdf = GeoDataFrame({"geometry": [box(0, 0, 2, 2), box(1, 1, 4, 4), box(3, 3, 5, 5)]})
+    gdf = GeoDataFrame(
+        {"geometry": [box(0, 0, 2, 2), box(1, 1, 4, 4), box(3, 3, 5, 5)]}
+    )
     result = overlay(gdf, gdf, how="difference", keep_geom_type=True)
     assert result.is_valid.all()
 
