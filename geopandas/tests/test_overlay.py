@@ -822,6 +822,8 @@ def test_overlay_difference_precision(snap_to_int):
     old_use_pygeos = _compat.USE_PYGEOS
     if old_use_pygeos:
         _compat.set_use_pygeos(False)
+    assert _compat.USE_SHAPELY_20
+    assert not _compat.USE_PYGEOS
     try:
         gdf = read_file(
             os.path.join(DATA, "overlay_difference_precision", "gdf.geojson.zip")
