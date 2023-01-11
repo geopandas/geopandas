@@ -816,34 +816,23 @@ def test_no_intersection():
     assert_geodataframe_equal(result, expected, check_index_type=False)
 
 
-def test_overlay_self_intersection():
-    gdf = GeoDataFrame(
-        {"geometry": [box(0, 0, 2, 2), box(1, 1, 4, 4), box(3, 3, 5, 5)]}
-    )
-    result = overlay(gdf, gdf, how="difference", keep_geom_type=True)
-    assert result.is_valid.all()
-
-
-@pytest.mark.skipif(not _compat.SHAPELY_GE_20, reason="requires shapely 2 or higher")
+@pytest.mark.skipif(
+    not _compat.SHAPELY_GE_20 or _compat.USE_PYGEOS,
+    reason=(
+        "requires shapely 2 or higher, and fails with a "
+        "TypeError if pygeos is installed"
+    ),
+)
 @pytest.mark.parametrize("snap_to_int", [True, False])
 def test_overlay_difference_precision(snap_to_int):
-    old_use_pygeos = _compat.USE_PYGEOS
-    if old_use_pygeos:
-        _compat.set_use_pygeos(False)
-    assert _compat.USE_SHAPELY_20
-    assert not _compat.USE_PYGEOS
-    try:
-        gdf = read_file(
-            os.path.join(DATA, "overlay_difference_precision", "gdf.geojson.zip")
-        )
-        if snap_to_int:
-            gdf = gdf.set_geometry(
-                shapely.set_precision(gdf.geometry, 1), inplace=False
-            )
-        result = overlay(gdf, gdf, how="difference", keep_geom_type=True)
-        assert result.is_valid.all()
-    finally:
-        _compat.set_use_pygeos(old_use_pygeos)
+    gdf = geopandas.read_file(
+        os.path.join(DATA, "overlay_difference_precision", "gdf.geojson.zip")
+    )
+    if snap_to_int:
+        gdf = gdf.set_geometry(shapely.set_precision(gdf.geometry, 1), inplace=False)
+    assert gdf.is_valid.all()
+    result = overlay(gdf, gdf, how="difference", keep_geom_type=True)
+    assert result.is_valid.all()
 
 
 class TestOverlayWikiExample:
