@@ -11,7 +11,11 @@ import shapely.geometry
 from shapely.geometry.base import CAP_STYLE, JOIN_STYLE
 import shapely.wkb
 import shapely.wkt
-from shapely._buildcfg import geos_version
+
+try:
+    from shapely import geos_version
+except ImportError:
+    from shapely._buildcfg import geos_version
 
 import geopandas
 from geopandas.array import (
@@ -142,7 +146,7 @@ def test_from_wkb():
     # missing values
     # TODO(pygeos) does not support empty strings, np.nan, or pd.NA
     missing_values = [None]
-    if not compat.USE_PYGEOS:
+    if not (compat.USE_SHAPELY_20 or compat.USE_PYGEOS):
         missing_values.extend([b"", np.nan])
         missing_values.append(pd.NA)
 
@@ -216,7 +220,7 @@ def test_from_wkt(string_type):
     # missing values
     # TODO(pygeos) does not support empty strings, np.nan, or pd.NA
     missing_values = [None]
-    if not compat.USE_PYGEOS:
+    if not (compat.USE_SHAPELY_20 or compat.USE_PYGEOS):
         missing_values.extend([f(""), np.nan])
         missing_values.append(pd.NA)
 

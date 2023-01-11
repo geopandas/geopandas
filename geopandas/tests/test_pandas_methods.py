@@ -5,7 +5,7 @@ from numpy.testing import assert_array_equal
 import pandas as pd
 
 import shapely
-from shapely.geometry import Point, GeometryCollection, LineString
+from shapely.geometry import Point, GeometryCollection, LineString, LinearRing
 
 import geopandas
 from geopandas import GeoDataFrame, GeoSeries
@@ -84,6 +84,24 @@ def test_repr_empty():
     assert "Empty GeoDataFrame" in repr(df)
     # https://github.com/geopandas/geopandas/issues/1184
     assert "geometry" in df._repr_html_()
+
+
+def test_repr_linearring():
+    # https://github.com/geopandas/geopandas/pull/2689
+    # specifically, checking internal shapely/pygeos/wkt/wkb conversions
+    # preserve LinearRing
+    s = GeoSeries([LinearRing([(0, 0), (1, 1), (1, -1)])])
+    assert "LINEARRING" in str(s.iloc[0])  # shapely scalar repr
+    assert "LINEARRING" in str(s)  # GeoSeries repr
+
+    # check something coercible to linearring is not converted
+    s2 = GeoSeries(
+        [
+            LineString([(0, 0), (1, 1), (1, -1)]),
+            LineString([(0, 0), (1, 1), (1, -1), (0, 0)]),
+        ]
+    )
+    assert "LINEARRING" not in str(s2)
 
 
 def test_indexing(s, df):
@@ -302,11 +320,17 @@ def test_to_csv(df):
     assert df.to_csv(index=False) == exp
 
 
+@pytest.mark.filterwarnings(
+    "ignore:Dropping of nuisance columns in DataFrame reductions"
+)
 def test_numerical_operations(s, df):
-
     # df methods ignore the geometry column
     exp = pd.Series([3, 4], index=["value1", "value2"])
-    assert_series_equal(df.sum(), exp)
+    if not compat.PANDAS_GE_20:
+        res = df.sum()
+    else:
+        res = df.sum(numeric_only=True)
+    assert_series_equal(res, exp)
 
     # series methods raise error (not supported for geometry)
     with pytest.raises(TypeError):
@@ -323,8 +347,7 @@ def test_numerical_operations(s, df):
     with pytest.raises(TypeError):
         df + 1
 
-    with pytest.raises((TypeError, AssertionError)):
-        # TODO(pandas 0.23) remove AssertionError -> raised in 0.23
+    with pytest.raises(TypeError):
         s + 1
 
     # boolean comparisons work
@@ -516,7 +539,10 @@ def test_groupby(df):
     assert_frame_equal(res, exp)
 
     # reductions ignore geometry column
-    res = df.groupby("value2").sum()
+    if not compat.PANDAS_GE_20:
+        res = df.groupby("value2").sum()
+    else:
+        res = df.groupby("value2").sum(numeric_only=True)
     exp = pd.DataFrame({"value1": [2, 1], "value2": [1, 2]}, dtype="int64").set_index(
         "value2"
     )
@@ -661,6 +687,24 @@ def test_df_apply_returning_series(df):
     # assert list of nones is not promoted to GeometryDtype
     result = df.apply(lambda x: None, axis=1)
     assert result.dtype == "object"
+
+
+def test_df_apply_geometry_dtypes(df):
+    # https://github.com/geopandas/geopandas/issues/1852
+    apply_types = []
+
+    def get_dtypes(srs):
+        apply_types.append((srs.name, type(srs)))
+
+    df["geom2"] = df.geometry
+    df.apply(get_dtypes)
+    expected = [
+        ("geometry", GeoSeries),
+        ("value1", pd.Series),
+        ("value2", pd.Series),
+        ("geom2", GeoSeries),
+    ]
+    assert apply_types == expected
 
 
 def test_pivot(df):

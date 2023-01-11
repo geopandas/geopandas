@@ -123,17 +123,22 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
     GeoSeries : Series object designed to store shapely geometry objects
     """
 
-    # TODO: remove "_crs" in 0.12
-    _metadata = ["_crs", "_geometry_column_name"]
+    _metadata = ["_geometry_column_name"]
+
+    _internal_names = DataFrame._internal_names + ["geometry"]
+    _internal_names_set = set(_internal_names)
 
     _geometry_column_name = DEFAULT_GEO_COLUMN_NAME
 
     def __init__(self, data=None, *args, geometry=None, crs=None, **kwargs):
         with compat.ignore_shapely2_warnings():
+            if (
+                kwargs.get("copy") is None
+                and isinstance(data, DataFrame)
+                and not isinstance(data, GeoDataFrame)
+            ):
+                kwargs.update(copy=True)
             super().__init__(data, *args, **kwargs)
-
-        # TODO: to be removed in 0.12
-        self._crs = None
 
         # set_geometry ensures the geometry data have the proper dtype,
         # but is not called if `geometry=None` ('geometry' column present
@@ -347,9 +352,6 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         level = _ensure_geometry(level, crs=crs)
         frame[geo_column_name] = level
         frame._geometry_column_name = geo_column_name
-
-        # TODO: to be removed in 0.12
-        frame._crs = level.crs
         if not inplace:
             return frame
 
@@ -431,19 +433,14 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         GeoDataFrame.to_crs : re-project to another CRS
 
         """
-        # TODO: remove try/except in 0.12
         try:
             return self.geometry.crs
         except AttributeError:
-            # the active geometry column might not be set
-            warnings.warn(
-                "Accessing CRS of a GeoDataFrame without a geometry column is "
-                "deprecated and will be removed in GeoPandas 0.12. "
-                "Use GeoDataFrame.set_geometry to set the active geometry column.",
-                FutureWarning,
-                stacklevel=2,
+            raise AttributeError(
+                "The CRS attribute of a GeoDataFrame without an active "
+                "geometry column is not defined. Use GeoDataFrame.set_geometry "
+                "to set the active geometry column."
             )
-            return self._crs
 
     @crs.setter
     def crs(self, value):
@@ -459,15 +456,11 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 self.geometry.values.crs = value
             else:
                 # column called 'geometry' without geometry
-                self._crs = None if not value else CRS.from_user_input(value)
-
-                # TODO: raise this error in 0.12. This already raises a FutureWarning
-                # TODO: defined in the crs property above
-                # raise ValueError(
-                #     "Assigning CRS to a GeoDataFrame without an active geometry "
-                #     "column is not supported. Use GeoDataFrame.set_geometry to set "
-                #     "the active geometry column.",
-                # )
+                raise ValueError(
+                    "Assigning CRS to a GeoDataFrame without an active geometry "
+                    "column is not supported. Use GeoDataFrame.set_geometry to set "
+                    "the active geometry column.",
+                )
 
     def __setstate__(self, state):
         # overriding DataFrame method for compat with older pickles (CRS handling)
@@ -1302,7 +1295,7 @@ individually so that features may have different properties
         be set.  Either ``crs`` or ``epsg`` may be specified for output.
 
         This method will transform all points in all objects. It has no notion
-        or projecting entire geometries.  All segments joining points are
+        of projecting entire geometries.  All segments joining points are
         assumed to be lines in the current projection, not geodesics. Objects
         crossing the dateline (or other projection boundary) will have
         undesirable behavior.
@@ -1449,24 +1442,8 @@ individually so that features may have different properties
             if pd.api.types.is_scalar(value) or isinstance(value, BaseGeometry):
                 value = [value] * self.shape[0]
             try:
-                # TODO: remove this use of _crs in 0.12
-                warn = False
-                if not (hasattr(self, "geometry") and hasattr(self.geometry, "crs")):
-                    crs = self._crs
-                    warn = True
-                else:
-                    crs = getattr(self, "crs", None)
+                crs = getattr(self, "crs", None)
                 value = _ensure_geometry(value, crs=crs)
-                if warn and crs is not None:
-                    warnings.warn(
-                        "Setting geometries to a GeoDataFrame without a geometry "
-                        "column will currently preserve the CRS, if present. "
-                        "This is deprecated, and in the future the CRS will be lost "
-                        "in this case. You can use set_crs(..) on the result to "
-                        "set the CRS manually.",
-                        FutureWarning,
-                        stacklevel=2,
-                    )
             except TypeError:
                 warnings.warn("Geometry column does not contain geometry.")
         super().__setitem__(key, value)
@@ -1604,6 +1581,7 @@ individually so that features may have different properties
         sort=True,
         observed=False,
         dropna=True,
+        **kwargs,
     ):
         """
         Dissolve geometries within `groupby` into single observation.
@@ -1656,7 +1634,12 @@ individually so that features may have different properties
             if a non-default value is given for this parameter.
 
             .. versionadded:: 0.9.0
+        **kwargs :
+            Keyword arguments to be passed to the pandas `DataFrameGroupby.agg` method
+            which is used by `dissolve`. In particular, `numeric_only` may be
+            supplied, which will be required in pandas 2.0 for certain aggfuncs.
 
+            .. versionadded:: 0.13.0
         Returns
         -------
         GeoDataFrame
@@ -1702,7 +1685,26 @@ individually so that features may have different properties
 
         # Process non-spatial component
         data = self.drop(labels=self.geometry.name, axis=1)
-        aggregated_data = data.groupby(**groupby_kwargs).agg(aggfunc)
+        with warnings.catch_warnings(record=True) as record:
+            aggregated_data = data.groupby(**groupby_kwargs).agg(aggfunc, **kwargs)
+        for w in record:
+            if str(w.message).startswith("The default value of numeric_only"):
+                msg = (
+                    f"The default value of numeric_only in aggfunc='{aggfunc}' "
+                    "within pandas.DataFrameGroupBy.agg used in dissolve is "
+                    "deprecated. In pandas 2.0, numeric_only will default to False. "
+                    "Either specify numeric_only as additional argument in dissolve() "
+                    "or select only columns which should be valid for the function."
+                )
+                warnings.warn(msg, FutureWarning, stacklevel=2)
+            else:
+                # Only want to capture specific warning,
+                # other warnings from pandas should be passed through
+                # TODO this is not an ideal approach
+                warnings.showwarning(
+                    w.message, w.category, w.filename, w.lineno, w.file, w.line
+                )
+
         aggregated_data.columns = aggregated_data.columns.to_flat_index()
 
         # Process spatial component
@@ -2055,12 +2057,12 @@ individually so that features may have different properties
         4  326625791  North America  United States of America    USA  18560000.0 \
     MULTIPOLYGON (((-122.84000 49.00000, -120.0000...
         >>> cities.head()
-                name                   geometry
-        0  Vatican City  POINT (12.45339 41.90328)
-        1    San Marino  POINT (12.44177 43.93610)
-        2         Vaduz   POINT (9.51667 47.13372)
-        3    Luxembourg   POINT (6.13000 49.61166)
-        4       Palikir  POINT (158.14997 6.91664)
+                name                    geometry
+        0  Vatican City   POINT (12.45339 41.90328)
+        1    San Marino   POINT (12.44177 43.93610)
+        2         Vaduz    POINT (9.51667 47.13372)
+        3       Lobamba  POINT (31.20000 -26.46667)
+        4    Luxembourg    POINT (6.13000 49.61166)
 
         >>> cities_w_country_data = cities.sjoin(countries)
         >>> cities_w_country_data.head()  # doctest: +SKIP
@@ -2253,11 +2255,11 @@ countries_w_city_data[countries_w_city_data["name_left"] == "Italy"]
         >>> capitals = geopandas.read_file(
         ...     geopandas.datasets.get_path('naturalearth_cities'))
         >>> capitals.shape
-        (202, 2)
+        (243, 2)
 
         >>> sa_capitals = capitals.clip(south_america)
         >>> sa_capitals.shape
-        (12, 2)
+        (15, 2)
         """
         return geopandas.clip(self, mask=mask, keep_geom_type=keep_geom_type)
 

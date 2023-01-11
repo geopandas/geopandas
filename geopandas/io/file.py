@@ -26,12 +26,14 @@ _VALID_URLS.discard("")
 fiona = None
 fiona_env = None
 fiona_import_error = None
+FIONA_GE_19 = False
 
 
 def _import_fiona():
     global fiona
     global fiona_env
     global fiona_import_error
+    global FIONA_GE_19
 
     if fiona is None:
         try:
@@ -48,6 +50,9 @@ def _import_fiona():
                 except ImportError:
                     fiona_env = None
 
+            FIONA_GE_19 = Version(Version(fiona.__version__).base_version) >= Version(
+                "1.9.0"
+            )
         except ImportError as err:
             fiona = False
             fiona_import_error = str(err)
@@ -263,8 +268,11 @@ def _read_file(filename, bbox=None, mask=None, rows=None, engine=None, **kwargs)
 
 
 def _read_file_fiona(
-    path_or_bytes, from_bytes, bbox=None, mask=None, rows=None, **kwargs
+    path_or_bytes, from_bytes, bbox=None, mask=None, rows=None, where=None, **kwargs
 ):
+    if where is not None and not FIONA_GE_19:
+        raise NotImplementedError("where requires fiona 1.9+")
+
     if not from_bytes:
         # Opening a file via URL or file-like-object above automatically detects a
         # zipped file. In order to match that behavior, attempt to add a zip scheme
@@ -319,17 +327,24 @@ def _read_file_fiona(
                 mask = mapping(mask.to_crs(crs).unary_union)
             elif isinstance(mask, BaseGeometry):
                 mask = mapping(mask)
+
+            filters = {}
+            if bbox is not None:
+                filters["bbox"] = bbox
+            if mask is not None:
+                filters["mask"] = mask
+            if where is not None:
+                filters["where"] = where
+
             # setup the data loading filter
             if rows is not None:
                 if isinstance(rows, int):
                     rows = slice(rows)
                 elif not isinstance(rows, slice):
                     raise TypeError("'rows' must be an integer or a slice.")
-                f_filt = features.filter(
-                    rows.start, rows.stop, rows.step, bbox=bbox, mask=mask
-                )
-            elif any((bbox, mask)):
-                f_filt = features.filter(bbox=bbox, mask=mask)
+                f_filt = features.filter(rows.start, rows.stop, rows.step, **filters)
+            elif filters:
+                f_filt = features.filter(**filters)
             else:
                 f_filt = features
             # get list of columns

@@ -180,9 +180,9 @@ def assert_geoseries_equal(
     assert left.index.equals(right.index), "index: %s != %s" % (left.index, right.index)
 
     if check_geom_type:
-        assert (left.type == right.type).all(), "type: %s != %s" % (
-            left.type,
-            right.type,
+        assert (left.geom_type == right.geom_type).all(), "type: %s != %s" % (
+            left.geom_type,
+            right.geom_type,
         )
 
     if normalize:
