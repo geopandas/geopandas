@@ -106,6 +106,16 @@ jobs:
         run: |
           pytest -v -r a -n auto --color=yes --cov=geopandas --cov-append --cov-report term-missing --cov-report xml geopandas/
 
+      - name: Overlay Execution Test without PyGEOS
+        if: contains(matrix.env, '311-latest-conda-forge.yaml')
+        env:
+          USE_PYGEOS: 0
+          OVERLAY_EXECUTION_TEST_ENABLED: 1
+          OVERLAY_EXECUTION_TEST_NPROC: 4
+          OVERLAY_EXECUTION_TEST_NTESTS: 4
+        run: |
+          pytest -v -r a -n auto --color=yes --cov=geopandas --cov-append --cov-report term-missing --cov-report xml geopandas/tests/test_overlay_execution.py
+
       - name: Test with PostGIS
         if: contains(matrix.env, '39-pd12-conda-forge.yaml') && contains(matrix.os, 'ubuntu')
         env:
