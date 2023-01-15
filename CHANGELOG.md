@@ -5,6 +5,7 @@
 New features and improvements:
 
 - Added ``minimum_bounding_circle()`` method from shapely to GeoSeries/GeoDataframe (#2621).
+- Support specifying ``min_zoom`` and ``max_zoom`` inside the ``map_kwds`` argument for ``.explore()`` (#2599).
 
 Deprecations and compatibility notes:
 
