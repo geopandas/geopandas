@@ -83,6 +83,9 @@ def _pygeos_to_shapely(geom):
     if pygeos.is_empty(geom) and pygeos.get_type_id(geom) == 0:
         # empty point does not roundtrip through WKB
         return shapely.wkt.loads("POINT EMPTY")
+    elif pygeos.get_type_id(geom) == 2:
+        # linearring does not roundtrip through WKB
+        return shapely.LinearRing(shapely.wkb.loads(pygeos.to_wkb(geom)))
     else:
         return shapely.wkb.loads(pygeos.to_wkb(geom))
 
@@ -674,6 +677,18 @@ def representative_point(data):
         return out
 
 
+def minimum_bounding_circle(data):
+    if compat.USE_SHAPELY_20:
+        return shapely.minimum_bounding_circle(data)
+    elif compat.USE_PYGEOS:
+        return pygeos.minimum_bounding_circle(data)
+    else:
+        raise NotImplementedError(
+            f"shapely >= 2.0 or PyGEOS is required, "
+            f"version {shapely.__version__} is installed"
+        )
+
+
 #
 # Binary predicates
 #
@@ -1018,21 +1033,41 @@ def relate(data, other):
 
 
 def unary_union(data):
+    warning_msg = (
+        "`unary_union` returned None due to all-None GeoSeries. In future, "
+        "`unary_union` will return 'GEOMETRYCOLLECTION EMPTY' instead."
+    )
+
     if compat.USE_SHAPELY_20:
         data = shapely.union_all(data)
-        if data is None:  # shapely 2.0a1
-            return None
-        if data.is_empty:  # shapely 2.0
+        if data is None or data.is_empty:  # shapely 2.0a1 and 2.0
+            warnings.warn(
+                warning_msg,
+                FutureWarning,
+                stacklevel=4,
+            )
             return None
         else:
             return data
     elif compat.USE_PYGEOS:
-        return _pygeos_to_shapely(pygeos.union_all(data))
+        result = _pygeos_to_shapely(pygeos.union_all(data))
+        if result is None:
+            warnings.warn(
+                warning_msg,
+                FutureWarning,
+                stacklevel=4,
+            )
+        return result
     else:
         data = [g for g in data if g is not None]
         if data:
             return shapely.ops.unary_union(data)
         else:
+            warnings.warn(
+                warning_msg,
+                FutureWarning,
+                stacklevel=4,
+            )
             return None
 
 
