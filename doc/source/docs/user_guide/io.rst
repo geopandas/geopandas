@@ -257,13 +257,7 @@ The :func:`geopandas.read_parquet`, :func:`geopandas.read_feather`,
 enable fast roundtrip from GeoPandas to those binary file formats, preserving
 the spatial information.
 
-.. warning::
+.. note::
 
-    This is an initial implementation of Parquet file support and
-    associated metadata. This is tracking version 0.1.0 of the metadata
-    specification at:
-    https://github.com/geopandas/geo-arrow-spec
-
-    This metadata specification does not yet make stability promises. As such,
-    we do not yet recommend using this in a production setting unless you are
-    able to rewrite your Parquet or Feather files.
+    This is tracking version 1.0.0-beta.1 of the GeoParquet specification at:
+    https://github.com/opengeospatial/geoparquet

@@ -314,7 +314,7 @@ def _to_feather(df, path, index=None, compression=None, schema_version=None, **k
     Requires 'pyarrow' >= 0.17.
 
     This is tracking version 1.0.0-beta.1 of the GeoParquet specification for
-    the meatdata at: https://github.com/opengeospatial/geoparquet
+    the metadata at: https://github.com/opengeospatial/geoparquet
 
     .. versionadded:: 0.8
 
@@ -500,8 +500,8 @@ def _read_parquet(path, columns=None, storage_options=None, **kwargs):
       columns, the first available geometry column will be set as the geometry
       column of the returned GeoDataFrame.
 
-    Supports versions 0.1.0, 0.4.0 of the GeoParquet specification at:
-    https://github.com/opengeospatial/geoparquet
+    Supports versions 0.1.0, 0.4.0 and 1.0.0-beta.1 of the GeoParquet
+    specification at: https://github.com/opengeospatial/geoparquet
 
     If 'crs' key is not present in the GeoParquet metadata associated with the
     Parquet object, it will default to "OGC:CRS84" according to the specification.
@@ -597,8 +597,8 @@ def _read_feather(path, columns=None, **kwargs):
       columns, the first available geometry column will be set as the geometry
       column of the returned GeoDataFrame.
 
-    Supports versions 0.1.0, 0.4.0 of the GeoParquet specification at:
-    https://github.com/opengeospatial/geoparquet
+    Supports versions 0.1.0, 0.4.0 and 1.0.0-beta.1 of the GeoParquet
+    specification at: https://github.com/opengeospatial/geoparquet
 
     If 'crs' key is not present in the Feather metadata associated with the
     Parquet object, it will default to "OGC:CRS84" according to the specification.
