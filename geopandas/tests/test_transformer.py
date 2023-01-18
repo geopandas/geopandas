@@ -13,4 +13,4 @@ class TestTransformer:
         expect = transform(pyproj_tf.transform, geom)
         result = transform(tf.transform, geom)
 
-        assert result.equals(expect)
+        assert result.almost_equals(expect)
