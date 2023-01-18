@@ -753,7 +753,7 @@ def test_write_deprecated_version_parameter(tmpdir, format, version):
         assert metadata["version"] == METADATA_VERSION
 
 
-@pytest.mark.parametrize("version", ["0.1.0", "0.4.0"])
+@pytest.mark.parametrize("version", ["0.1.0", "0.4.0", "1.0.0-beta.1"])
 def test_read_versioned_file(version):
     """
     Verify that files for different metadata spec versions can be read

@@ -263,7 +263,7 @@ def _to_parquet(
 
     Requires 'pyarrow'.
 
-    This is tracking version 0.4.0 of the GeoParquet specification at:
+    This is tracking version 1.0.0-beta.1 of the GeoParquet specification at:
     https://github.com/opengeospatial/geoparquet
 
     .. versionadded:: 0.8
@@ -279,10 +279,10 @@ def _to_parquet(
         output except `RangeIndex` which is stored as metadata only.
     compression : {'snappy', 'gzip', 'brotli', None}, default 'snappy'
         Name of the compression to use. Use ``None`` for no compression.
-    schema_version : {'0.1.0', '0.4.0', None}
+    schema_version : {'0.1.0', '0.4.0', '1.0.0-beta.1', None}
         GeoParquet specification version; if not provided will default to
         latest supported version.
-    kwargs
+    **kwargs
         Additional keyword arguments passed to pyarrow.parquet.write_table().
     """
     parquet = import_optional_dependency(
@@ -313,8 +313,8 @@ def _to_feather(df, path, index=None, compression=None, schema_version=None, **k
 
     Requires 'pyarrow' >= 0.17.
 
-    This is tracking version 0.4.0 of the GeoParquet specification at:
-    https://github.com/opengeospatial/geoparquet
+    This is tracking version 1.0.0-beta.1 of the GeoParquet specification for
+    the meatdata at: https://github.com/opengeospatial/geoparquet
 
     .. versionadded:: 0.8
 
@@ -330,9 +330,9 @@ def _to_feather(df, path, index=None, compression=None, schema_version=None, **k
     compression : {'zstd', 'lz4', 'uncompressed'}, optional
         Name of the compression to use. Use ``"uncompressed"`` for no
         compression. By default uses LZ4 if available, otherwise uncompressed.
-    schema_version : {'0.1.0', '0.4.0', None}
-        GeoParquet specification version; if not provided will default to
-        latest supported version.
+    schema_version : {'0.1.0', '0.4.0', '1.0.0-beta.1', None}
+        GeoParquet specification version for the metadata; if not provided
+        will default to latest supported version.
     kwargs
         Additional keyword arguments passed to pyarrow.feather.write_feather().
     """
