@@ -6,8 +6,8 @@ from shapely.ops import transform
 
 class TestTransformer:
     def test_transformer(self):
-        pyproj_tf = Transformer.from_crs("4326", "3857", always_xy=True)
-        tf = TransformerFromCRS("4326", "3857", always_xy=True)
+        pyproj_tf = Transformer.from_crs("EPSG:4326", "EPSG:3857", always_xy=True)
+        tf = TransformerFromCRS("EPSG:4326", "EPSG:3857", always_xy=True)
 
         geom = Point(0, 0)
         expect = transform(pyproj_tf.transform, geom)
