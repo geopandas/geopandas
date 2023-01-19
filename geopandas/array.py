@@ -2,6 +2,7 @@ import numbers
 import operator
 import warnings
 import inspect
+from functools import lru_cache
 
 import numpy as np
 import pandas as pd
@@ -17,7 +18,7 @@ import shapely.geometry
 from shapely.geometry.base import BaseGeometry
 import shapely.ops
 import shapely.wkt
-from pyproj import CRS
+from pyproj import CRS, Transformer
 
 try:
     import pygeos
@@ -26,8 +27,10 @@ except ImportError:
 
 from . import _compat as compat
 from . import _vectorized as vectorized
-from ._transformer import TransformerFromCRS
 from .sindex import _get_sindex_class
+
+
+TransformerFromCRS = lru_cache(Transformer.from_crs)
 
 
 class GeometryDtype(ExtensionDtype):
