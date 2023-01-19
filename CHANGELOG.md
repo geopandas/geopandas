@@ -4,6 +4,11 @@ Changelog
 Development version
 -------------------
 
+Bug fixes:
+
+- Escape special characters to avoid TemplateSyntaxError in ``explore()`` (#2657)
+
+
 Version 0.12.1 (October 29, 2022)
 ---------------------------------
 
