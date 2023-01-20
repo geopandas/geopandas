@@ -360,8 +360,10 @@ GON (((180.00000 -16.06713, 180.00000...
 
             if isinstance(tiles, xyzservices.TileProvider):
                 attr = attr if attr else tiles.html_attribution
-                map_kwds["min_zoom"] = tiles.get("min_zoom", 0)
-                map_kwds["max_zoom"] = tiles.get("max_zoom", 18)
+                if "min_zoom" not in map_kwds:
+                    map_kwds["min_zoom"] = tiles.get("min_zoom", 0)
+                if "max_zoom" not in map_kwds:
+                    map_kwds["max_zoom"] = tiles.get("max_zoom", 18)
                 tiles = tiles.build_url(scale_factor="{r}")
 
         m = folium.Map(

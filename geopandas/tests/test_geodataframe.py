@@ -13,7 +13,7 @@ from shapely.geometry import Point, Polygon
 
 import geopandas
 import geopandas._compat as compat
-from geopandas import GeoDataFrame, GeoSeries, read_file
+from geopandas import GeoDataFrame, GeoSeries, points_from_xy, read_file
 from geopandas.array import GeometryArray, GeometryDtype, from_shapely
 from geopandas._compat import ignore_shapely2_warnings
 
@@ -772,6 +772,33 @@ class TestDataFrame:
         with pytest.raises(ValueError):
             df.set_geometry("location", inplace=True)
 
+    def test_dataframe_not_manipulated(self):
+        df = pd.DataFrame(
+            {
+                "A": range(len(self.df)),
+                "latitude": self.df.geometry.centroid.y,
+                "longitude": self.df.geometry.centroid.x,
+            },
+            index=self.df.index,
+        )
+        df_copy = df.copy()
+        gf = GeoDataFrame(
+            df,
+            geometry=points_from_xy(df["longitude"], df["latitude"]),
+            crs=self.df.crs,
+        )
+        assert type(df) == pd.DataFrame
+        assert "geometry" not in df
+        assert_frame_equal(df, df_copy)
+        assert isinstance(gf, GeoDataFrame)
+        assert hasattr(gf, "geometry")
+
+        # ensure mutating columns in gf doesn't update df
+        gf.loc[0, "A"] = 7
+        assert_frame_equal(df, df_copy)
+        gf["A"] = 3
+        assert_frame_equal(df, df_copy)
+
     def test_geodataframe_geointerface(self):
         assert self.df.__geo_interface__["type"] == "FeatureCollection"
         assert len(self.df.__geo_interface__["features"]) == self.df.shape[0]
@@ -857,13 +884,9 @@ class TestDataFrame:
         assert self.df.crs == unpickled.crs
 
     def test_estimate_utm_crs(self):
-        if compat.PYPROJ_LT_3:
-            with pytest.raises(RuntimeError, match=r"pyproj 3\+ required"):
-                self.df.estimate_utm_crs()
-        else:
-            assert self.df.estimate_utm_crs() == CRS("EPSG:32618")
-            if compat.PYPROJ_GE_32:  # result is unstable in older pyproj
-                assert self.df.estimate_utm_crs("NAD83") == CRS("EPSG:26918")
+        assert self.df.estimate_utm_crs() == CRS("EPSG:32618")
+        if compat.PYPROJ_GE_32:  # result is unstable in older pyproj
+            assert self.df.estimate_utm_crs("NAD83") == CRS("EPSG:26918")
 
     def test_to_wkb(self):
         wkbs0 = [

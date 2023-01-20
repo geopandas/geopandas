@@ -4,7 +4,8 @@ channels:
 dependencies:
   - python=3.9
   # required
-  - pandas=1.2
+  - pandas=1.3
+  - numpy=1.21 # released 1 month before pandas 1.3
   - shapely
   - fiona
   - pyproj
