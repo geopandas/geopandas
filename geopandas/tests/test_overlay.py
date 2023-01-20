@@ -8,7 +8,6 @@ from shapely.geometry import Point, Polygon, LineString, GeometryCollection, box
 
 import geopandas
 from geopandas import GeoDataFrame, GeoSeries, overlay, read_file
-from geopandas import _compat
 from geopandas._compat import PANDAS_GE_20
 
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
@@ -199,10 +198,7 @@ def test_overlay_nybb(how):
 
     # first, check that all bounds and areas are approx equal
     # this is a very rough check for multipolygon equality
-    if not _compat.PANDAS_GE_11:
-        kwargs = dict(check_less_precise=True)
-    else:
-        kwargs = {}
+    kwargs = {}
     pd.testing.assert_series_equal(
         result.geometry.area, expected.geometry.area, **kwargs
     )

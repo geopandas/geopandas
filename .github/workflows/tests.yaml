@@ -37,10 +37,10 @@ jobs:
         env:
           - ci/envs/38-minimal.yaml
           - ci/envs/39-no-optional-deps.yaml
-          - ci/envs/38-pd11-defaults.yaml
+          - ci/envs/38-pd12-defaults.yaml
           - ci/envs/38-latest-defaults.yaml
           - ci/envs/38-latest-conda-forge.yaml
-          - ci/envs/39-pd12-conda-forge.yaml
+          - ci/envs/39-pd13-conda-forge.yaml
           - ci/envs/39-latest-conda-forge.yaml
           - ci/envs/310-latest-conda-forge.yaml
           - ci/envs/311-latest-conda-forge.yaml
@@ -117,7 +117,7 @@ jobs:
           pytest -v -r a -n auto --color=yes --cov=geopandas --cov-append --cov-report term-missing --cov-report xml geopandas/tests/test_overlay_execution.py
 
       - name: Test with PostGIS
-        if: contains(matrix.env, '39-pd12-conda-forge.yaml') && contains(matrix.os, 'ubuntu')
+        if: contains(matrix.env, '39-pd13-conda-forge.yaml') && contains(matrix.os, 'ubuntu')
         env:
           PGUSER: postgres
           PGPASSWORD: postgres
@@ -129,7 +129,7 @@ jobs:
           pytest -v -r a --color=yes --cov=geopandas --cov-append --cov-report term-missing --cov-report xml geopandas/io/tests/test_sql.py | tee /dev/stderr | if grep SKIPPED >/dev/null;then echo "TESTS SKIPPED, FAILING" && exit 1;fi
 
       - name: Test docstrings
-        if: contains(matrix.env, '39-pd12-conda-forge.yaml') && contains(matrix.os, 'ubuntu')
+        if: contains(matrix.env, '39-pd13-conda-forge.yaml') && contains(matrix.os, 'ubuntu')
         env:
           USE_PYGEOS: 1
         run: |
