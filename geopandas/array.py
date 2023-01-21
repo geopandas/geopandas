@@ -2,6 +2,7 @@ import numbers
 import operator
 import warnings
 import inspect
+from functools import lru_cache
 
 import numpy as np
 import pandas as pd
@@ -27,6 +28,9 @@ except ImportError:
 from . import _compat as compat
 from . import _vectorized as vectorized
 from .sindex import _get_sindex_class
+
+
+TransformerFromCRS = lru_cache(Transformer.from_crs)
 
 
 class GeometryDtype(ExtensionDtype):
@@ -779,7 +783,7 @@ class GeometryArray(ExtensionArray):
         if self.crs.is_exact_same(crs):
             return self
 
-        transformer = Transformer.from_crs(self.crs, crs, always_xy=True)
+        transformer = TransformerFromCRS(self.crs, crs, always_xy=True)
 
         new_data = vectorized.transform(self.data, transformer.transform)
         return GeometryArray(new_data, crs=crs)
@@ -837,7 +841,7 @@ class GeometryArray(ExtensionArray):
             y_center = np.mean([miny, maxy])
         # ensure using geographic coordinates
         else:
-            transformer = Transformer.from_crs(self.crs, "EPSG:4326", always_xy=True)
+            transformer = TransformerFromCRS(self.crs, "EPSG:4326", always_xy=True)
             if compat.PYPROJ_GE_31:
                 minx, miny, maxx, maxy = transformer.transform_bounds(
                     minx, miny, maxx, maxy
