@@ -1160,6 +1160,21 @@ class TestMapclassifyPlotting:
         with warnings.catch_warnings(record=True) as _:  # don't print warning
             # warning coming from scipy.stats
             ax = self.df.plot(
+                column="pop_est",
+                scheme="QUANTILES",
+                k=3,
+                cmap="OrRd",
+                legend=True,
+                legend_kwds={"as_cbar": True},
+            )
+        cax = _get_colorbar_ax(ax.get_figure())
+        labels = [t.get_text() for t in cax.get_yticklabels()]
+        expected = ["140.00", "5217064.00", "19532732.33", "1379302771.00"]
+        assert labels == expected
+
+        with warnings.catch_warnings(record=True) as _:  # don't print warning
+            # warning coming from scipy.stats
+            ax = self.df.plot(
                 column="pop_est", scheme="QUANTILES", k=3, cmap="OrRd", legend=True
             )
         labels = [t.get_text() for t in ax.get_legend().get_texts()]
@@ -1170,6 +1185,19 @@ class TestMapclassifyPlotting:
         assert labels == expected
 
     def test_bin_labels(self):
+        ax = self.df.plot(
+            column="pop_est",
+            scheme="QUANTILES",
+            k=2,
+            cmap="OrRd",
+            legend=True,
+            legend_kwds={"labels": ["foo", "bar", "baz"], "as_cbar": True},
+        )
+        cax = _get_colorbar_ax(ax.get_figure())
+        labels = [t.get_text() for t in cax.get_yticklabels()]
+        expected = ["foo", "bar", "baz"]
+        assert labels == expected
+
         ax = self.df.plot(
             column="pop_est",
             scheme="QUANTILES",
@@ -1195,6 +1223,19 @@ class TestMapclassifyPlotting:
 
     def test_negative_legend(self):
         ax = self.df.plot(
+            column="NEGATIVES",
+            scheme="FISHER_JENKS",
+            k=3,
+            cmap="OrRd",
+            legend=True,
+            legend_kwds={"as_cbar": True},
+        )
+        cax = _get_colorbar_ax(ax.get_figure())
+        labels = [t.get_text() for t in cax.get_yticklabels()]
+        expected = ["-10.00", "-3.41", "3.30", "10.00"]
+        assert labels == expected
+
+        ax = self.df.plot(
             column="NEGATIVES", scheme="FISHER_JENKS", k=3, cmap="OrRd", legend=True
         )
         labels = [t.get_text() for t in ax.get_legend().get_texts()]
@@ -1202,6 +1243,19 @@ class TestMapclassifyPlotting:
         assert labels == expected
 
     def test_fmt(self):
+        ax = self.df.plot(
+            column="NEGATIVES",
+            scheme="FISHER_JENKS",
+            k=3,
+            cmap="OrRd",
+            legend=True,
+            legend_kwds={"fmt": "%.0f", "as_cbar": True},
+        )
+        cax = _get_colorbar_ax(ax.get_figure())
+        labels = [t.get_text() for t in cax.get_yticklabels()]
+        expected = ["-10", "-3", "3", "10"]
+        assert labels == expected
+
         ax = self.df.plot(
             column="NEGATIVES",
             scheme="FISHER_JENKS",
@@ -1229,6 +1283,16 @@ class TestMapclassifyPlotting:
 
     @pytest.mark.parametrize("scheme", ["FISHER_JENKS", "FISHERJENKS"])
     def test_scheme_name_compat(self, scheme):
+        ax = self.df.plot(
+            column="NEGATIVES",
+            scheme=scheme,
+            k=3,
+            legend=True,
+            legend_kwds={"as_cbar": True},
+        )
+        cax = _get_colorbar_ax(ax.get_figure())
+        assert len(cax.get_yticklabels()) == 4
+
         ax = self.df.plot(column="NEGATIVES", scheme=scheme, k=3, legend=True)
         assert len(ax.get_legend().get_texts()) == 3
 
@@ -1238,6 +1302,21 @@ class TestMapclassifyPlotting:
             self.df.plot(column="pop_est", scheme=scheme, legend=True)
 
     def test_classification_kwds(self):
+        ax = self.df.plot(
+            column="pop_est",
+            scheme="percentiles",
+            k=3,
+            classification_kwds={"pct": [50, 100]},
+            cmap="OrRd",
+            legend=True,
+            legend_kwds={"as_cbar": True},
+        )
+
+        cax = _get_colorbar_ax(ax.get_figure())
+        labels = [t.get_text() for t in cax.get_yticklabels()]
+        expected = ["140.00", "9961396.00", "1379302771.00"]
+        assert labels == expected
+
         ax = self.df.plot(
             column="pop_est",
             scheme="percentiles",
@@ -1302,6 +1381,91 @@ class TestMapclassifyPlotting:
 
     def test_empty_bins(self):
         bins = np.arange(1, 11) / 10
+        labels = ["0.00"] + ["{:.2f}".format(x) for x in bins]
+        legend_colors_exp = np.array(
+            [
+                (0.267004, 0.004874, 0.329415, 1.0),
+                (0.281412, 0.155834, 0.469201, 1.0),
+                (0.244972, 0.287675, 0.53726, 1.0),
+                (0.190631, 0.407061, 0.556089, 1.0),
+                (0.147607, 0.511733, 0.557049, 1.0),
+                (0.119699, 0.61849, 0.536347, 1.0),
+                (0.20803, 0.718701, 0.472873, 1.0),
+                (0.430983, 0.808473, 0.346476, 1.0),
+                (0.709898, 0.868751, 0.169257, 1.0),
+                (0.993248, 0.906157, 0.143936, 1.0),
+            ]
+        )
+
+        ax = self.df.plot(
+            "low_vals",
+            scheme="UserDefined",
+            classification_kwds={"bins": bins},
+            legend=True,
+            legend_kwds={"as_cbar": True},
+        )
+        cax = _get_colorbar_ax(ax.get_figure())
+        expected = legend_colors_exp[:4, :]
+        assert all(
+            [
+                (z == expected).all(axis=1).any()
+                for z in ax.collections[0].get_facecolors()
+            ]
+        )
+
+        legend = [t.get_text() for t in cax.get_yticklabels()]
+        assert legend == labels[::2]
+
+        np.testing.assert_array_equal(
+            cax.collections[-1].get_facecolors(), legend_colors_exp
+        )
+
+        ax2 = self.df.plot(
+            "mid_vals",
+            scheme="UserDefined",
+            classification_kwds={"bins": bins},
+            legend=True,
+            legend_kwds={"as_cbar": True},
+        )
+        cax2 = _get_colorbar_ax(ax2.get_figure())
+        expected = legend_colors_exp[3:9, :]
+        assert all(
+            [
+                (z == expected).all(axis=1).any()
+                for z in ax2.collections[0].get_facecolors()
+            ]
+        )
+
+        legend = [t.get_text() for t in cax2.get_yticklabels()]
+        assert legend == labels[1:]
+
+        np.testing.assert_array_equal(
+            cax2.collections[-1].get_facecolors(), legend_colors_exp
+        )
+
+        ax3 = self.df.plot(
+            "high_vals",
+            scheme="UserDefined",
+            classification_kwds={"bins": bins},
+            legend=True,
+            legend_kwds={"as_cbar": True},
+        )
+        cax3 = _get_colorbar_ax(ax3.get_figure())
+        expected = legend_colors_exp[7:, :]
+        assert all(
+            [
+                (z == expected).all(axis=1).any()
+                for z in ax3.collections[0].get_facecolors()
+            ]
+        )
+
+        legend = [t.get_text() for t in cax3.get_yticklabels()]
+        assert legend == labels[1:]
+
+        np.testing.assert_array_equal(
+            cax3.collections[-1].get_facecolors(), legend_colors_exp
+        )
+
         ax = self.df.plot(
             "low_vals",
             scheme="UserDefined",
@@ -1421,6 +1585,28 @@ class TestMapclassifyPlotting:
         ] == legend_colors_exp
 
     def test_equally_formatted_bins(self):
+        ax = self.nybb.plot(
+            "vals",
+            scheme="quantiles",
+            legend=True,
+            legend_kwds={"as_cbar": True},
+        )
+        cax = _get_colorbar_ax(ax.get_figure())
+        labels = [t.get_text() for t in cax.get_yticklabels()]
+        expected = ["0.00", "0.00", "0.00", "0.00", "0.00", "0.01"]
+        assert labels == expected
+
+        ax2 = self.nybb.plot(
+            "vals",
+            scheme="quantiles",
+            legend=True,
+            legend_kwds={"fmt": "%.3f", "as_cbar": True},
+        )
+        cax2 = _get_colorbar_ax(ax2.get_figure())
+        labels = [t.get_text() for t in cax2.get_yticklabels()]
+        expected = ["0.001", "0.002", "0.003", "0.003", "0.004", "0.005"]
+        assert labels == expected
+
         ax = self.nybb.plot(
             "vals",
             scheme="quantiles",

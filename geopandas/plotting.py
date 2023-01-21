@@ -586,6 +586,9 @@ def plot_dataframe(
         :func:`matplotlib.pyplot.colorbar`.
         Additional accepted keywords when `scheme` is specified:
 
+        as_cbar : boolean (default False)
+            Draw a discrete colorbar as legend if True, else (historical behavior) add a
+            normal legend expliciting the intervals corresponding to each color.
         fmt : string
             A formatting specification for the bin edges of the classes in the
             legend. For example, to have no decimals: ``{"fmt": "{:.0f}"}``.
@@ -645,6 +648,8 @@ GON (((-122.84000 49.00000, -120.0000...
     See the User Guide page :doc:`../../user_guide/mapping` for details.
 
     """
+    if legend_kwds is None:
+        legend_kwds = {}
     if "colormap" in style_kwds:
         warnings.warn(
             "'colormap' is deprecated, please use 'cmap' instead "
@@ -769,42 +774,68 @@ GON (((-122.84000 49.00000, -120.0000...
         if "k" not in classification_kwds:
             classification_kwds["k"] = k
 
+        if cmap is None:
+            cmap = "viridis"
+
         binning = mapclassify.classify(
             np.asarray(values[~nan_idx]), scheme, **classification_kwds
         )
-        # set categorical to True for creating the legend
-        categorical = True
-        if legend_kwds is not None and "labels" in legend_kwds:
-            if len(legend_kwds["labels"]) != binning.k:
-                raise ValueError(
-                    "Number of labels must match number of bins, "
-                    "received {} labels for {} bins".format(
-                        len(legend_kwds["labels"]), binning.k
-                    )
+
+        # TODO: eventually switch default to True
+        scheme_as_cbar = legend_kwds.pop("as_cbar", False)
+        if scheme_as_cbar:
+            bounds = binning.bins
+            lowest = binning.y.min()
+            if hasattr(binning, "lowest"):
+                if binning.lowest is not None:
+                    lowest = binning.lowest
+            lower_open = lowest > bounds[0]
+            if lower_open:
+                legend_kwds.setdefault("extend", "min")
+            else:
+                bounds = np.insert(binning.bins, 0, lowest)
+
+            from matplotlib import cm
+
+            cmap = cm.get_cmap(cmap, binning.k)
+            if style_kwds.get("norm") is None:
+                from matplotlib.colors import BoundaryNorm
+
+                style_kwds["norm"] = BoundaryNorm(
+                    bounds, binning.k, extend=legend_kwds.get("extend", "neither")
                 )
-            else:
-                labels = list(legend_kwds.pop("labels"))
         else:
-            fmt = "{:.2f}"
-            if legend_kwds is not None and "fmt" in legend_kwds:
-                fmt = legend_kwds.pop("fmt")
-
-            labels = binning.get_legend_classes(fmt)
-            if legend_kwds is not None:
-                show_interval = legend_kwds.pop("interval", False)
+            # set categorical to True for creating the legend
+            categorical = True
+            if "labels" in legend_kwds:
+                if len(legend_kwds["labels"]) != binning.k:
+                    raise ValueError(
+                        "Number of labels must match number of bins, "
+                        "received {} labels for {} bins".format(
+                            len(legend_kwds["labels"]), binning.k
+                        )
+                    )
+                else:
+                    labels = list(legend_kwds.pop("labels"))
             else:
-                show_interval = False
-            if not show_interval:
-                labels = [c[1:-1] for c in labels]
+                fmt = "{:.2f}"
+                if legend_kwds is not None and "fmt" in legend_kwds:
+                    fmt = legend_kwds.pop("fmt")
 
-        values = pd.Categorical(
-            [np.nan] * len(values), categories=binning.bins, ordered=True
-        )
-        values[~nan_idx] = pd.Categorical.from_codes(
-            binning.yb, categories=binning.bins, ordered=True
-        )
-        if cmap is None:
-            cmap = "viridis"
+                labels = binning.get_legend_classes(fmt)
+                if legend_kwds is not None:
+                    show_interval = legend_kwds.pop("interval", False)
+                else:
+                    show_interval = False
+                if not show_interval:
+                    labels = [c[1:-1] for c in labels]
+
+            values = pd.Categorical(
+                [np.nan] * len(values), categories=binning.bins, ordered=True
+            )
+            values[~nan_idx] = pd.Categorical.from_codes(
+                binning.yb, categories=binning.bins, ordered=True
+            )
 
     # Define `values` as a Series
     if categorical:
@@ -897,10 +928,11 @@ GON (((-122.84000 49.00000, -120.0000...
 
     if legend and not color:
 
-        if legend_kwds is None:
-            legend_kwds = {}
+        if scheme is not None:
+            # TODO: desirable?
+            legend_kwds.setdefault("fmt", "%.2f")
         if "fmt" in legend_kwds:
-            legend_kwds.pop("fmt")
+            legend_kwds.setdefault("format", legend_kwds.pop("fmt"))
 
         from matplotlib.lines import Line2D
         from matplotlib.colors import Normalize
@@ -913,6 +945,9 @@ GON (((-122.84000 49.00000, -120.0000...
         if categorical:
             if scheme is not None:
                 categories = labels
+            legend_kwds.pop("format", None)
+            # TODO: if scheme is not None, add legend for missing if 'label' in
+            # missing_kwds
             patches = []
             for value, cat in enumerate(categories):
                 patches.append(
@@ -956,8 +991,17 @@ GON (((-122.84000 49.00000, -120.0000...
             else:
                 legend_kwds.setdefault("ax", ax)
 
+            labels = legend_kwds.pop("labels", None)
             n_cmap.set_array(np.array([]))
-            ax.get_figure().colorbar(n_cmap, **legend_kwds)
+            cbar = ax.get_figure().colorbar(n_cmap, **legend_kwds)
+            if labels is not None:
+                nr_ticks = len(cbar.get_ticks())
+                if len(labels) != nr_ticks:
+                    raise ValueError(
+                        "Number of labels must match number of bins, "
+                        "received {} labels for {} bins".format(len(labels), nr_ticks)
+                    )
+                cbar.set_ticklabels(labels)
 
     plt.draw()
     return ax
