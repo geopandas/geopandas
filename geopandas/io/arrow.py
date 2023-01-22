@@ -2,6 +2,7 @@ from packaging.version import Version
 import json
 import warnings
 
+import numpy as np
 from pandas import DataFrame, Series
 
 import geopandas._compat as compat
@@ -109,8 +110,12 @@ def _create_metadata(df, schema_version=None):
             "geometry_type": geometry_types[0]
             if len(geometry_types) == 1
             else geometry_types,
-            "bbox": series.total_bounds.tolist(),
         }
+
+        bbox = series.total_bounds.tolist()
+        if np.isfinite(bbox).all():
+            # don't add bbox with NaNs for empty / all-NA geometry column
+            column_metadata[col]["bbox"] = bbox
 
     return {
         "primary_column": df._geometry_column_name,

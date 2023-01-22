@@ -550,18 +550,12 @@ def test_groupby(df):
 
     # applying on the geometry column
     res = df.groupby("value2")["geometry"].apply(lambda x: x.unary_union)
-    if compat.PANDAS_GE_11:
-        exp = GeoSeries(
-            [shapely.geometry.MultiPoint([(0, 0), (2, 2)]), Point(1, 1)],
-            index=pd.Index([1, 2], name="value2"),
-            name="geometry",
-        )
-    else:
-        exp = pd.Series(
-            [shapely.geometry.MultiPoint([(0, 0), (2, 2)]), Point(1, 1)],
-            index=pd.Index([1, 2], name="value2"),
-            name="geometry",
-        )
+
+    exp = GeoSeries(
+        [shapely.geometry.MultiPoint([(0, 0), (2, 2)]), Point(1, 1)],
+        index=pd.Index([1, 2], name="value2"),
+        name="geometry",
+    )
     assert_series_equal(res, exp)
 
     # apply on geometry column not resulting in new geometry

@@ -884,13 +884,9 @@ class TestDataFrame:
         assert self.df.crs == unpickled.crs
 
     def test_estimate_utm_crs(self):
-        if compat.PYPROJ_LT_3:
-            with pytest.raises(RuntimeError, match=r"pyproj 3\+ required"):
-                self.df.estimate_utm_crs()
-        else:
-            assert self.df.estimate_utm_crs() == CRS("EPSG:32618")
-            if compat.PYPROJ_GE_32:  # result is unstable in older pyproj
-                assert self.df.estimate_utm_crs("NAD83") == CRS("EPSG:26918")
+        assert self.df.estimate_utm_crs() == CRS("EPSG:32618")
+        if compat.PYPROJ_GE_32:  # result is unstable in older pyproj
+            assert self.df.estimate_utm_crs("NAD83") == CRS("EPSG:26918")
 
     def test_to_wkb(self):
         wkbs0 = [

@@ -5,7 +5,6 @@ import pandas as pd
 
 import geopandas
 from geopandas import GeoDataFrame, read_file
-from geopandas import _compat as compat
 
 from pandas.testing import assert_frame_equal
 import pytest
@@ -296,9 +295,6 @@ def test_dissolve_categorical():
     )
 
 
-@pytest.mark.skipif(
-    not compat.PANDAS_GE_11, reason="dropna groupby kwarg added in pandas 1.1.0"
-)
 def test_dissolve_dropna():
     gdf = geopandas.GeoDataFrame(
         {
@@ -328,9 +324,6 @@ def test_dissolve_dropna():
     assert_frame_equal(expected_no_na, gdf.dissolve("a"))
 
 
-@pytest.mark.skipif(
-    compat.PANDAS_GE_11, reason="dropna warning is only emitted if pandas < 1.1.0"
-)
 def test_dissolve_dropna_warn(nybb_polydf):
     # No warning with default params
     with warnings.catch_warnings(record=True) as record:
@@ -338,12 +331,6 @@ def test_dissolve_dropna_warn(nybb_polydf):
 
     for r in record:
         assert "dropna kwarg is not supported" not in str(r.message)
-
-    # Warning is emitted with non-default dropna value
-    with pytest.warns(
-        UserWarning, match="dropna kwarg is not supported for pandas < 1.1.0"
-    ):
-        nybb_polydf.dissolve(dropna=False)
 
 
 def test_dissolve_multi_agg(nybb_polydf, merged_shapes):

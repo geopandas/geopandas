@@ -1,15 +1,15 @@
-from collections import OrderedDict
 import datetime
-from packaging.version import Version
 import io
 import os
 import pathlib
 import tempfile
+from collections import OrderedDict
 
 import numpy as np
 import pandas as pd
-
+import pytest
 import pytz
+from packaging.version import Version
 from pandas.api.types import is_datetime64_any_dtype
 from pandas.testing import assert_series_equal
 from shapely.geometry import Point, Polygon, box
@@ -18,12 +18,8 @@ import geopandas
 from geopandas import GeoDataFrame, read_file
 from geopandas._compat import PANDAS_GE_20
 from geopandas.io.file import _detect_driver, _EXTENSION_TO_DRIVER
-
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 from geopandas.tests.util import PACKAGE_DIR, validate_boro_df
-
-import pytest
-
 
 try:
     import pyogrio
@@ -34,14 +30,11 @@ except ImportError:
 try:
     import fiona
 
-    # datetime roundtrip
-    FIONA_GE_1814 = Version(fiona.__version__) >= Version("1.8.14")
     # invalid datetime handling
     FIONA_GE_1821 = Version(fiona.__version__) >= Version("1.8.21")
     FIONA_GE_19 = Version(Version(fiona.__version__).base_version) >= Version("1.9.0")
 except ImportError:
     fiona = False
-    FIONA_GE_1814 = False
     FIONA_GE_1821 = False
     FIONA_GE_19 = False
 
@@ -207,9 +200,6 @@ def test_to_file_datetime(tmpdir, driver, ext, time, engine):
         pytest.skip("pyogrio doesn't yet support timezones")
     if ext in (".shp", ""):
         pytest.skip(f"Driver corresponding to ext {ext} doesn't support dt fields")
-    if time.tzinfo is not None and FIONA_GE_1814 is False:
-        # https://github.com/Toblerity/Fiona/pull/915
-        pytest.skip("Fiona >= 1.8.14 needed for timezone support")
 
     tempfilename = os.path.join(str(tmpdir), f"test_datetime{ext}")
     point = Point(0, 0)
@@ -217,10 +207,7 @@ def test_to_file_datetime(tmpdir, driver, ext, time, engine):
     df = GeoDataFrame(
         {"a": [1.0, 2.0], "b": [time, time]}, geometry=[point, point], crs=4326
     )
-    if FIONA_GE_1814:
-        fiona_precision_limit = "ms"
-    else:
-        fiona_precision_limit = "s"
+    fiona_precision_limit = "ms"
     df["b"] = df["b"].dt.round(freq=fiona_precision_limit)
 
     df.to_file(tempfilename, driver=driver, engine=engine)
@@ -307,7 +294,7 @@ def test_read_file_datetime_mixed_offsets(tmpdir):
     df.to_file(tempfilename)
     # check mixed tz don't crash GH2478
     res = read_file(tempfilename)
-    if FIONA_GE_1814:
+    if engine == "fiona":
         # Convert mixed timezones to UTC equivalent
         assert is_datetime64_any_dtype(res["date"])
         if not PANDAS_GE_20:
