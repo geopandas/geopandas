@@ -653,6 +653,20 @@ def test_write_read_feather_expand_user():
     os.remove(os.path.expanduser(test_file))
 
 
+@pytest.mark.parametrize("geometry", [[], [None]])
+def test_write_empty_bbox(tmpdir, geometry):
+    # empty dataframe or all missing geometries -> avoid bbox with NaNs
+    gdf = geopandas.GeoDataFrame({"col": [1] * len(geometry)}, geometry=geometry)
+    gdf.to_parquet(tmpdir / "test.parquet")
+
+    from pyarrow.parquet import read_table
+
+    table = read_table(tmpdir / "test.parquet")
+    metadata = json.loads(table.schema.metadata[b"geo"])
+    assert "encoding" in metadata["columns"]["geometry"]
+    assert "bbox" not in metadata["columns"]["geometry"]
+
+
 @pytest.mark.parametrize("format", ["feather", "parquet"])
 def test_write_read_default_crs(tmpdir, format):
     if format == "feather":
