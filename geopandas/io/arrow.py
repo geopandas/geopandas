@@ -269,7 +269,8 @@ def _to_parquet(
     Requires 'pyarrow'.
 
     This is tracking version 1.0.0-beta.1 of the GeoParquet specification at:
-    https://github.com/opengeospatial/geoparquet
+    https://github.com/opengeospatial/geoparquet. Writing older versions is
+    supported using the `schema_version` keyword.
 
     .. versionadded:: 0.8
 
@@ -319,7 +320,8 @@ def _to_feather(df, path, index=None, compression=None, schema_version=None, **k
     Requires 'pyarrow' >= 0.17.
 
     This is tracking version 1.0.0-beta.1 of the GeoParquet specification for
-    the metadata at: https://github.com/opengeospatial/geoparquet
+    the metadata at: https://github.com/opengeospatial/geoparquet. Writing
+    older versions is supported using the `schema_version` keyword.
 
     .. versionadded:: 0.8
 
