@@ -713,9 +713,11 @@ def test_write_spec_version(tmpdir, format, schema_version):
     df = read(filename)
     assert_geodataframe_equal(df, gdf)
 
+    # verify the correct version is written in the metadata
+    schema_version = schema_version or METADATA_VERSION
     table = read_table(filename)
     metadata = json.loads(table.schema.metadata[b"geo"])
-    assert metadata["version"] == schema_version or METADATA_VERSION
+    assert metadata["version"] == schema_version
 
     # verify that CRS is correctly handled between versions
     if schema_version == "0.1.0":
@@ -725,6 +727,14 @@ def test_write_spec_version(tmpdir, format, schema_version):
         crs_expected = gdf.crs.to_json_dict()
         _remove_id_from_member_of_ensembles(crs_expected)
         assert metadata["columns"]["geometry"]["crs"] == crs_expected
+
+    # verify that geometry_type(s) is correctly handled between versions
+    if Version(schema_version) <= Version("0.4.0"):
+        assert "geometry_type" in metadata["columns"]["geometry"]
+        assert metadata["columns"]["geometry"]["geometry_type"] == "Polygon"
+    else:
+        assert "geometry_types" in metadata["columns"]["geometry"]
+        assert metadata["columns"]["geometry"]["geometry_types"] == ["Polygon"]
 
 
 @pytest.mark.parametrize(
