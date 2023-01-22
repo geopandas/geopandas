@@ -21,7 +21,7 @@ SUPPORTED_VERSIONS = ["0.1.0", "0.4.0", "1.0.0-beta.1"]
 #         "columns": {
 #             "<name>": {
 #                 "encoding": "WKB"
-#                 "geometry_type": <str or list of str: REQUIRED>
+#                 "geometry_types": <list of str: REQUIRED>
 #                 "crs": "<PROJJSON or None: OPTIONAL>",
 #                 "orientation": "<'counterclockwise' or None: OPTIONAL>"
 #                 "edges": "planar"
