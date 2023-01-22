@@ -17,6 +17,7 @@ Bug fixes:
 - Ensure that GeoDataFrame created from DataFrame is a copy, not a view (#2667)
 - Fix mismatch between geometries and colors in ``plot()`` if an empty or missing
   geometry is present (#2224)
+- Escape special characters to avoid TemplateSyntaxError in ``explore()`` (#2657)
 - Fix `to_parquet`/`to_feather` to not write an invalid bbox (with NaNs) in the
   metadata in case of an empty GeoDataFrame (#2653)
 
