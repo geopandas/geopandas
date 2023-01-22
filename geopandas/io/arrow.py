@@ -246,6 +246,19 @@ def _geopandas_to_arrow(df, index=None, schema_version=None):
     kwargs = {}
     if compat.USE_SHAPELY_20:
         kwargs = dict(flavor="iso")
+    else:
+        for col in df.columns[df.dtypes == "geometry"]:
+            series = df[col]
+            if series.has_z.any():
+                warnings.warn(
+                    "The GeoDataFrame contains 3D geometries, and when using "
+                    "shapely < 2.0, such geometries will be written not exactly "
+                    "following to the GeoParquet spec (not using ISO WKB). For "
+                    "most use cases this should not be a problem (GeoPandas can "
+                    "read such files fine).",
+                    stacklevel=2,
+                )
+                break
     df = df.to_wkb(**kwargs)
 
     table = Table.from_pandas(df, preserve_index=index)

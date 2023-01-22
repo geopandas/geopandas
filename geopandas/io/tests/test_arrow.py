@@ -697,7 +697,11 @@ def test_write_iso_wkb(tmpdir):
     gdf = geopandas.GeoDataFrame(
         geometry=geopandas.GeoSeries.from_wkt(["POINT Z (1 2 3)"])
     )
-    gdf.to_parquet(tmpdir / "test.parquet")
+    if compat.USE_SHAPELY_20:
+        gdf.to_parquet(tmpdir / "test.parquet")
+    else:
+        with pytest.warns(UserWarning, match="The GeoDataFrame contains 3D geometries"):
+            gdf.to_parquet(tmpdir / "test.parquet")
 
     from pyarrow.parquet import read_table
 
