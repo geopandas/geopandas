@@ -1,8 +1,17 @@
-import geopandas as gpd
-import numpy as np
-import pandas as pd
+import warnings
 import pytest
 from packaging.version import Version
+
+with warnings.catch_warnings():
+    warnings.filterwarnings(
+        "ignore",
+        category=UserWarning,
+        module="geopandas",
+        message=r"^The Shapely GEOS version.*",
+    )
+    import geopandas as gpd
+    import numpy as np
+    import pandas as pd
 
 folium = pytest.importorskip("folium")
 branca = pytest.importorskip("branca")
@@ -12,6 +21,7 @@ mapclassify = pytest.importorskip("mapclassify")
 import matplotlib.cm as cm  # noqa
 import matplotlib.colors as colors  # noqa
 from branca.colormap import StepColormap  # noqa
+import branca as bc  # noqa
 
 BRANCA_05 = Version(branca.__version__) > Version("0.4.2")
 FOLIUM_G_014 = Version(folium.__version__) > Version("0.14.0")
@@ -23,10 +33,18 @@ class TestExplore:
         self.world = gpd.read_file(gpd.datasets.get_path("naturalearth_lowres"))
         self.cities = gpd.read_file(gpd.datasets.get_path("naturalearth_cities"))
         self.world["range"] = range(len(self.world))
+        # reduce amount of geometry to speed up tests
+        self.world = self.world.groupby("continent", group_keys=False).apply(
+            lambda d: d if len(d) < 5 else d.sample(frac=0.3, random_state=42)
+        )
         self.missing = self.world.copy()
-        np.random.seed(42)
-        self.missing.loc[np.random.choice(self.missing.index, 40), "continent"] = np.nan
-        self.missing.loc[np.random.choice(self.missing.index, 40), "pop_est"] = np.nan
+        r = np.random.RandomState(42)
+        self.missing.loc[
+            r.choice(self.missing.index, len(self.world) // 5), "continent"
+        ] = np.nan
+        self.missing.loc[
+            r.choice(self.missing.index, len(self.world) // 5), "pop_est"
+        ] = np.nan
 
     def _fetch_map_string(self, m):
         out = m._parent.render()
@@ -40,6 +58,22 @@ class TestExplore:
         self.cities.explore()
         self.world.geometry.explore()
 
+    def test_dependencies(self):
+        from unittest import mock
+        import sys
+
+        with mock.patch.dict(sys.modules):
+            sys.modules["folium"] = None
+            with pytest.raises(
+                ImportError,
+                match=r"^The 'folium', 'matplotlib' and 'mapclassify' packages.*",
+            ):
+                self.nybb.explore()
+
+        with mock.patch.dict(sys.modules):
+            sys.modules["xyzservices"] = None
+            self.nybb.explore()
+
     def test_choropleth_pass(self):
         """Make sure default choropleth pass"""
         self.world.explore(column="pop_est")
@@ -49,7 +83,7 @@ class TestExplore:
         m = self.world.explore()
         assert m.location == [
             pytest.approx(-3.1774349999999956, rel=1e-6),
-            pytest.approx(2.842170943040401e-14, rel=1e-6),
+            pytest.approx(0, rel=1e-6),
         ]
         assert m.options["zoom"] == 10
         assert m.options["zoomControl"] is True
@@ -234,7 +268,7 @@ class TestExplore:
         for c in cmap:
             assert f'"fillColor":"{c}"' in out_str
 
-        with pytest.raises(ValueError, match="'cmap' is invalid."):
+        with pytest.raises(ValueError, match="`cmap` is not known matplotlib colormap"):
             self.nybb.explore(column="BoroName", cmap="nonsense")
 
     def test_categories(self):
@@ -271,7 +305,7 @@ class TestExplore:
 
     def test_string(self):
         df = self.nybb.copy()
-        df["string"] = pd.array([1, 2, 3, 4, 5], dtype="string")
+        df["string"] = pd.array([1, 2, 3, 4, 5], dtype=str)
         m = df.explore("string")
         out_str = self._fetch_map_string(m)
         assert '"__folium_color":"#9edae5","string":"5"' in out_str
@@ -523,11 +557,11 @@ class TestExplore:
     def test_vmin_vmax(self):
         df = self.world.copy()
         df["range"] = range(len(df))
-        m = df.explore("range", vmin=-100, vmax=1000)
+        m = df.explore("range", vmin=-100, vmax=200)
         out_str = self._fetch_map_string(m)
-        assert 'case"176":return{"color":"#3b528b","fillColor":"#3b528b"' in out_str
-        assert 'case"119":return{"color":"#414287","fillColor":"#414287"' in out_str
-        assert 'case"3":return{"color":"#482173","fillColor":"#482173"' in out_str
+        assert 'case"163":return{"color":"#31688e","fillColor":"#31688e"' in out_str
+        assert 'case"82":return{"color":"#30698e","fillColor":"#30698e"' in out_str
+        assert 'case"63":return{"color":"#2f6b8e","fillColor":"#2f6b8e"' in out_str
 
         # test 0
         df2 = self.nybb.copy()
@@ -561,6 +595,16 @@ class TestExplore:
 
         m = self.missing.explore("continent", missing_kwds=dict(color="red"))
         assert '"fillColor":"red"' in self._fetch_map_string(m)
+
+        m = self.missing.explore(
+            self.missing["continent"].str[0], cmap=["red", "green"]
+        )
+        assert '"fillColor":null' in self._fetch_map_string(m)
+
+        m = self.missing.explore(
+            "pop_est", cmap=lambda x: "red" if x < 10**7 else "green", legend=False
+        )
+        assert '"fillColor":null' in self._fetch_map_string(m)
 
     def test_categorical_legend(self):
         m = self.world.explore("continent", legend=True)
@@ -621,11 +665,11 @@ class TestExplore:
             scheme="Headtailbreaks",
         )
         out_str = self._fetch_map_string(m)
-        assert out_str.count("#440154ff") == 16
-        assert out_str.count("#3b528bff") == 50
-        assert out_str.count("#21918cff") == 138
-        assert out_str.count("#5ec962ff") == 290
-        assert out_str.count("#fde725ff") == 6
+        assert out_str.count("#440154ff") == 49
+        assert out_str.count("#3b528bff") == 98
+        assert out_str.count("#21918cff") == 144
+        assert out_str.count("#5ec962ff") == 87
+        assert out_str.count("#fde725ff") == 122
 
         # discrete cmap
         m = self.world.explore("pop_est", legend=True, cmap="Pastel2")
@@ -650,7 +694,7 @@ class TestExplore:
         tick_str = re.search(r"tickValues\(\[[\',\,\.,0-9]*\]\)", out_str).group(0)
         assert (
             tick_str.replace(",''", "")
-            == "tickValues([140.0,471386328.07843137,942772516.1568627])"
+            == "tickValues([140.0,110700480.93333334,221400821.86666667])"
         )
 
         # scheme
@@ -658,7 +702,7 @@ class TestExplore:
             "pop_est", scheme="headtailbreaks", legend_kwds=dict(max_labels=3)
         )
         out_str = self._fetch_map_string(m)
-        assert "tickValues([140.0,'',184117213.1818182,'',1382066377.0,''])" in out_str
+        assert "tickValues([140.0,'',96207131.14285715,'',248589480.0,''])" in out_str
 
         # short cmap
         m = self.world.explore("pop_est", legend_kwds=dict(max_labels=3), cmap="tab10")
@@ -667,7 +711,7 @@ class TestExplore:
         tick_str = re.search(r"tickValues\(\[[\',\,\.,0-9]*\]\)", out_str).group(0)
         assert (
             tick_str
-            == "tickValues([140.0,'','','',559086084.0,'','','',1118172028.0,'','',''])"
+            == "tickValues([140.0,'','','',131295893.2,'','','',262591646.4,'','',''])"
         )
 
     def test_xyzservices_providers(self):
@@ -742,6 +786,12 @@ class TestExplore:
         assert out_str.count("LineString") == len(rings)
 
     def test_mapclassify_categorical_legend(self):
+        def _get_legend(m):
+            out_str = self._fetch_map_string(m)
+            return (
+                out_str.split("legend-labels")[-1].split("</ul>")[0].split("<li>")[1:]
+            )
+
         m = self.missing.explore(
             column="pop_est",
             legend=True,
@@ -749,18 +799,14 @@ class TestExplore:
             missing_kwds=dict(color="red", label="missing"),
             legend_kwds=dict(colorbar=False, interval=True),
         )
-        out_str = self._fetch_map_string(m)
-
-        strings = [
-            "[140.00,21803000.00]",
-            "(21803000.00,66834405.00]",
-            "(66834405.00,163046161.00]",
-            "(163046161.00,328239523.00]",
-            "(328239523.00,1397715000.00]",
-            "missing",
+        assert _get_legend(m) == [
+            "<spanstyle='background:#440154'></span>[140.00,18628747.00]</li>",
+            "<spanstyle='background:#3b528b'></span>(18628747.00,47076781.00]</li>",
+            "<spanstyle='background:#21918c'></span>(47076781.00,108116615.00]</li>",
+            "<spanstyle='background:#5ec962'></span>(108116615.00,216565318.00]</li>",
+            "<spanstyle='background:#fde725'></span>(216565318.00,328239523.00]</li>",
+            "<spanstyle='background:red'></span>missing</li>",
         ]
-        for s in strings:
-            assert s in out_str
 
         # interval=False
         m = self.missing.explore(
@@ -770,18 +816,14 @@ class TestExplore:
             missing_kwds=dict(color="red", label="missing"),
             legend_kwds=dict(colorbar=False, interval=False),
         )
-        out_str = self._fetch_map_string(m)
-
-        strings = [
-            ">140.00,21803000.00",
-            ">21803000.00,66834405.00",
-            ">66834405.00,163046161.00",
-            ">163046161.00,328239523.00",
-            ">328239523.00,1397715000.00",
-            "missing",
+        assert _get_legend(m) == [
+            "<spanstyle='background:#440154'></span>140.00,18628747.00</li>",
+            "<spanstyle='background:#3b528b'></span>18628747.00,47076781.00</li>",
+            "<spanstyle='background:#21918c'></span>47076781.00,108116615.00</li>",
+            "<spanstyle='background:#5ec962'></span>108116615.00,216565318.00</li>",
+            "<spanstyle='background:#fde725'></span>216565318.00,328239523.00</li>",
+            "<spanstyle='background:red'></span>missing</li>",
         ]
-        for s in strings:
-            assert s in out_str
 
         # custom labels
         m = self.world.explore(
@@ -792,7 +834,6 @@ class TestExplore:
             legend_kwds=dict(colorbar=False, labels=["s", "m", "l", "xl", "xxl"]),
         )
         out_str = self._fetch_map_string(m)
-
         strings = [">s<", ">m<", ">l<", ">xl<", ">xxl<"]
         for s in strings:
             assert s in out_str
@@ -805,18 +846,14 @@ class TestExplore:
             missing_kwds=dict(color="red", label="missing"),
             legend_kwds=dict(colorbar=False, fmt="{:.0f}"),
         )
-        out_str = self._fetch_map_string(m)
-
-        strings = [
-            ">140,21803000",
-            ">21803000,66834405",
-            ">66834405,163046161",
-            ">163046161,328239523",
-            ">328239523,1397715000",
-            "missing",
+        assert _get_legend(m) == [
+            "<spanstyle='background:#440154'></span>140,18628747</li>",
+            "<spanstyle='background:#3b528b'></span>18628747,47076781</li>",
+            "<spanstyle='background:#21918c'></span>47076781,108116615</li>",
+            "<spanstyle='background:#5ec962'></span>108116615,216565318</li>",
+            "<spanstyle='background:#fde725'></span>216565318,328239523</li>",
+            "<spanstyle='background:red'></span>missing</li>",
         ]
-        for s in strings:
-            assert s in out_str
 
     def test_given_m(self):
         "Check that geometry is mapped onto a given folium.Map"
@@ -858,9 +895,9 @@ class TestExplore:
         for s in strings:
             assert s in out_str
 
-        assert out_str.count("008000ff") == 304
-        assert out_str.count("ffff00ff") == 188
-        assert out_str.count("ff0000ff") == 191
+        assert out_str.count("008000ff") == 210
+        assert out_str.count("ffff00ff") == 176
+        assert out_str.count("ff0000ff") == 174
 
         # Using custom function colormap
         def my_color_function(field):
@@ -924,3 +961,381 @@ class TestExplore:
             self.world.explore(
                 map_kwds=dict(dragging=False, scrollWheelZoom=False, zoom_control=False)
             )
+
+    def test_robust(self):
+        # this is really only for codecov
+        cm = gpd.explore._binning_cmap(
+            "Purples", 5, Version(matplotlib.__version__) >= Version("3.6.1")
+        )
+        assert [colors.to_hex(c) for c in cm(range(cm.N))] == [
+            "#fcfbfd",
+            "#dadaeb",
+            "#9e9ac8",
+            "#6a51a3",
+            "#3f007d",
+        ]
+        with pytest.raises(ValueError, match=r".*in this call context$"):
+            gpd.explore._binning_cmap(
+                ["red", "green"], 5, Version(matplotlib.__version__) >= Version("3.6.1")
+            )
+
+        with pytest.raises(ValueError, match="DataFrame is invalid for `cmap`"):
+            self.world.explore(cmap=pd.DataFrame())
+
+        # main test, just use 25 geometries to speed up the test
+        robust = RobustHelper(self.world.copy().head(25))
+        # 100 still gets 100% codecov
+        df = robust.generate(max_tests=100, exclude=[])
+        df, maps = robust.run(df)
+        robust.expected_result(df)
+        with pytest.raises(ValueError, match="Invalid RGBA argument: 'bluee'"):
+            robust.gdf.explore("__alpha", cmap=("red", "bluee"))
+        # make sure PEP8 formating hasn't broken util function
+        robust.html(df[df["__error"].isna()].head(2), maps)
+
+
+class RobustHelper:
+    """Helper for testing permuations of parameters to `explore()`
+
+    Can be used in a JupyterLab notebook::
+        import geopandas as gpd
+        from geopandas.tests.test_explore import RobustHelper
+        from IPython.display import display, HTML
+
+        gdf = gpd.read_file(gpd.datasets.get_path("naturalearth_lowres"))
+        robust = RobustHelper(gdf)
+        df = robust.generate(max_tests=200, exclude=[])
+        df, maps = robust.run(df)
+        print({c: (~df[c].isna()).sum() for c in
+        ["__column_type", "__error", "__warning"]})
+        display(HTML(robust.html(df, maps)))
+    """
+
+    def __init__(self, gdf, col="pop_est", alpha_col="iso_a3"):
+        self.gdf = gdf.copy()
+        self.col = "__col"
+        self.catcol = "__cat"
+        self.alphacol = "__alpha"
+
+        # create columns that drive testing
+        self.gdf[self.col] = np.log1p(gdf[col])
+        self.gdf[self.catcol] = pd.cut(self.gdf[self.col], bins=5, labels=range(5))
+        self.gdf[self.alphacol] = self.gdf[alpha_col].str[1:2]
+
+        # quite a few bugs with nan handling....
+        self.gdf.loc[
+            self.gdf.sample(int(len(self.gdf) * 0.2), random_state=42).index,
+            [self.col, self.catcol, self.alphacol],
+        ] = np.nan
+
+        self.plot_opts = dict(
+            height=200,
+            width=250,
+        )
+
+    def generate(
+        self,
+        max_tests=100,
+        exclude=[],
+    ):
+        import itertools
+
+        gdf = self.gdf
+
+        # colormap list like building blocks
+        cl = ["red", "blue", "pink", "yellow", "white"]
+        clrgb = [colors.to_rgb(c) for c in cl]
+        cs = gdf[self.catcol].replace({i: c for i, c in enumerate(cl)})
+        csrgb = gdf[self.catcol].astype(float).map({i: c for i, c in enumerate(clrgb)})
+        clb = cl.copy()
+        clb[1] = "bluee"
+        csb = gdf[self.catcol].replace({i: c for i, c in enumerate(clb)})
+
+        def create_type(t, v):
+            if hasattr(v, "tolist"):
+                v = v.tolist()
+            if t.__name__ == "DataFrame":
+                return pd.DataFrame({"c": v})
+            elif t.__name__ == "array":
+                return np.array(v, dtype=object)
+            return t(v)
+
+        cm_c = ["#e1f2f2", "#A8DCDC", "#115F5F"]
+        cm_l = [
+            None,
+            "Purples",
+            "bad",
+            colors.LinearSegmentedColormap.from_list("custom", cm_c),
+            lambda x: "red" if x < 16 else "green",
+            bc.colormap.LinearColormap(
+                cm_c,
+                vmin=5,
+                vmax=20,
+            ),
+            bc.colormap.StepColormap(cl, vmin=13, vmax=20),
+        ]
+
+        # generate invalid length array for column arg
+        def bad(c):
+            return gdf[c].values[1:]
+
+        test_cases = {
+            "batch1": {
+                "filter": lambda d: d.index == d.index,
+                "columns": {
+                    "column": [
+                        {
+                            "__column_type": c + f.__name__,
+                            "column": f(c),
+                            "__expect_error": f is bad,
+                        }
+                        for c, f in itertools.product(
+                            [self.col, self.catcol, self.alphacol], [str, gdf.get, bad]
+                        )
+                    ],
+                    "cmap": [
+                        {
+                            "__cmap_type": cm.__class__.__name__
+                            if not isinstance(cm, str)
+                            else cm,
+                            "cmap": cm,
+                            "__expect_error": cm == "bad",
+                        }
+                        for cm in cm_l
+                    ]
+                    + [
+                        {
+                            "__cmap_type": (
+                                f"{'short' if len(v)<len(self.gdf) else 'full'} "
+                                f"{t.__name__} {cat}"
+                            ).strip(),
+                            "cmap": create_type(t, v),
+                            "__expect_error": cat == "bad",
+                        }
+                        for t in [list, tuple, pd.Series, np.array]
+                        for v, cat in zip(
+                            [cl, cs, clrgb, csrgb, clb, csb],
+                            np.repeat(["", "rgb", "bad"], 2),
+                        )
+                    ],
+                    "color": [None, "red", "bad"],
+                    "legend": [True, False, None],
+                    "categorical": [True, False, None],
+                },
+            },
+            "batch2": {
+                # only used when categorical is False, this also
+                # means column is not categorical
+                "filter": lambda d: ~d["categorical"].fillna(True)
+                & d["__column_type"].str.startswith("__col"),
+                "columns": {
+                    "scheme": list(mapclassify.classifiers.CLASSIFIERS)[11:12]
+                    + [None, "bad"],
+                    "k": [5, "bad"],
+                    "vmin": [None, 3, "bad"],
+                    "vmax": [None, 4, "bad"],
+                },
+            },
+        }
+
+        def expect_cols(df):
+            return df.loc[:, [c for c in df.columns if c.startswith("__expect_error")]]
+
+        df = pd.DataFrame(columns=["xref", "__error", "__warning"])
+        test_n = 0
+        for batch in test_cases.keys():
+            for c, v in {
+                c: v
+                for c, v in test_cases[batch]["columns"].items()
+                if c not in exclude
+            }.items():
+                if isinstance(v, dict) or isinstance(v[0], dict):
+                    df_ = pd.DataFrame(v).assign(xref=1)
+                else:
+                    df_ = pd.DataFrame({c: v}).assign(
+                        **{"xref": 1, f"__expect_error_{c}": lambda d: d[c].eq("bad")}
+                    )
+                # cartesian product of existings tests with new tests. Only if there is
+                # not already a expected fail to reduce perm explosion
+                mask = expect_cols(df).any(axis=1)
+                mask = mask | ~test_cases[batch]["filter"](df)
+                df = pd.concat(
+                    [
+                        df.loc[
+                            ~mask,
+                        ].merge(df_, on="xref", how="right"),
+                        df.loc[
+                            mask,
+                        ],
+                    ]
+                ).reset_index(drop=True)
+                # concat is bashing dtypes
+                for col in expect_cols(df).columns:
+                    df[col] = df[col].convert_dtypes()
+                test_n += 1
+
+        df = df.drop(columns=["xref"])
+        if "k" in df.columns:
+            df["k"] = df["k"].fillna(5)
+        # nan and None do not work in sample way for explore() args
+        # make nan None
+        df.loc[:, [c for c in df.columns if not c.startswith("__")]] = df.loc[
+            :, [c for c in df.columns if not c.startswith("__")]
+        ].replace([np.nan], [None])
+
+        if "cmap" in df.columns:
+            df["__cmap_type_agg"] = np.select(
+                [
+                    df["cmap"].apply(
+                        lambda c: pd.api.types.is_list_like(c) and len(c) == len(gdf)
+                    ),
+                    df["cmap"].apply(pd.api.types.is_list_like),
+                ],
+                ["full list_like", "short list_like"],
+                df["__cmap_type"].fillna("-"),
+            )
+
+        # summarise columns to one
+        df["__expect_error"] = df.loc[
+            :, [c for c in df.columns if c.startswith("__expect_error")]
+        ].any(axis=1)
+        df = df.drop(columns=[c for c in df.columns if c.startswith("__expect_error_")])
+
+        if max_tests is not None:
+            # smart downsample, get a group number which
+            # can be used to define random state of each group
+            df["__group"] = df.groupby(
+                ["__cmap_type_agg", "__expect_error"], group_keys=True
+            ).ngroup()
+            n = int(max_tests / df["__group"].max())
+            df = (
+                df.groupby("__group", group_keys=True)
+                .apply(
+                    lambda d: d
+                    if len(d) <= n
+                    else d.sample(n=n, random_state=30 + d.name)
+                )
+                .reset_index(drop=True)
+            )
+
+        return df.reset_index(drop=True)
+
+    def run(self, df):
+        gdf = self.gdf
+
+        maps = {}
+
+        for i, args in df.iterrows():
+            all_opts = {k: v for k, v in args.items() if not k.startswith("__")}
+            try:
+                with warnings.catch_warnings():
+                    warnings.simplefilter("error")
+                    # matplotlib 3.7 and numpy 1.24 generate a warning that is not in
+                    # control of geopandas.  Filter it so number of warnings is
+                    # consistent
+                    warnings.filterwarnings(
+                        "ignore",
+                        category=DeprecationWarning,
+                        module="matplotlib",
+                        message="NumPy will stop allowing conversion of out-of-bound",
+                    )
+
+                    try:
+                        m = gdf.explore(**{**all_opts, **self.plot_opts})
+                    except (
+                        UserWarning,
+                        RuntimeWarning,
+                        PendingDeprecationWarning,
+                        DeprecationWarning,
+                    ) as e:
+                        df.loc[i, "__warning"] = str(e)
+                        df.loc[i, "__warning_class"] = e.__class__.__name__
+                        warnings.simplefilter("ignore")
+                        m = gdf.explore(**{**all_opts, **self.plot_opts})
+                    maps[i] = {"m": m, "opts": all_opts}
+
+            except (ValueError, TypeError, IndexError, AttributeError, KeyError) as e:
+                maps[i] = {"opts": all_opts}
+                df.loc[i, "__error"] = str(e)
+                df.loc[i, "__error_class"] = e.__class__.__name__
+
+        return df, maps
+
+    def expected_result(self, df):
+        # total number of attempts, errors and warnings as expected
+        assert pd.Series(
+            {
+                c: (~df[c].isna()).sum()
+                for c in ["__column_type", "__error", "__warning"]
+            }
+        ).equals(pd.Series({"__column_type": 88, "__error": 12, "__warning": 36}))
+
+        expected = {
+            "__error": {
+                "Invalid scheme. Scheme must be": 2,
+                "The GeoDataFrame and given col": 3,
+                "`cmap` is invalid. For categor": 2,
+                "`cmap` is not known matplotlib": 5,
+            },
+            "__warning": {
+                "`cmap` as callable or list is ": 1,
+                "`cmap` invalid for legend": 1,
+                "`k` is invalid. Defaulted": 7,
+                "`vmax` invalid. Defaulted": 17,
+                "`vmin` invalid. Defaulted": 10,
+            },
+        }
+
+        for col, result in expected.items():
+            assert df.groupby(df[col].str[0:30]).size().equals(pd.Series(result))
+
+    def html(self, df=None, maps=None):
+        import json
+
+        plot_opts = self.plot_opts
+        fmt = (
+            '<iframe srcdoc="{}" style="width: {}px; height: {}px; '
+            "display:inline-block; width: 24%; margin: 0 auto; border:"
+            ' 2px solid black"></iframe>'
+        )
+
+        rawhtml = ""
+        df["__bc"] = np.where(df["__warning"].isna(), "white", "pink")
+        df["__warning"] = df["__warning"].fillna("")
+        for i, d in (
+            df.sort_values(
+                ["__cmap_type_agg", "__cmap_type"]
+                + [c for c in ["categorical", "scheme", "legend"] if c in df.columns]
+            )
+            .loc[lambda d: d["__error"].isna()]
+            .groupby("__cmap_type_agg")
+        ):
+            rawhtml += f"<h2>cmap {i}</h2>"
+            for i2, d2 in d.groupby(df["__column_type"].str[:-3]):
+                rawhtml += f"<h3>column: {i2}</h3>"
+                for i, r in d2.iterrows():
+                    m = maps[i]["m"]
+                    param_str = json.dumps(
+                        {
+                            k: v
+                            for k, v in r.to_dict().items()
+                            if not k[0:2] == "__"
+                            and not pd.api.types.is_list_like(v)
+                            and not callable(v)
+                        }
+                    )
+                    m.get_root().html.add_child(
+                        folium.Element(
+                            (
+                                f'<h5 style="background-color: {r["__bc"]}">'
+                                f'<b>{i}</b> {param_str} {r["__warning"]}</h5>'
+                            )
+                        )
+                    )
+
+                    rawhtml += fmt.format(
+                        m.get_root().render().replace('"', "&quot;"),
+                        plot_opts["height"],
+                        plot_opts["width"],
+                    )
+        return rawhtml

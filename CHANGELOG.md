@@ -60,6 +60,9 @@ New features and improvements:
 - Added ``where`` filter to ``read_file`` (#2552).
 - Updated the distributed natural earth datasets (*naturalearth_lowres* and
   *naturalearth_cities*) to version 5.1 (#2555).
+- ``explore()`` enhanced to work with more combinations of 'column', 'cmap', 
+  'color', 'legend', 'categorical', 'scheme', 'k', 'vmin' and 'vmax' arguments (#2590)
+
 
 Deprecations and compatibility notes:
 
