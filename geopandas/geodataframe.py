@@ -1581,6 +1581,7 @@ individually so that features may have different properties
         sort=True,
         observed=False,
         dropna=True,
+        **kwargs,
     ):
         """
         Dissolve geometries within `groupby` into single observation.
@@ -1628,12 +1629,13 @@ individually so that features may have different properties
             together with row/column will be dropped. If False, NA
             values will also be treated as the key in groups.
 
-            This parameter is not supported for pandas < 1.1.0.
-            A warning will be emitted for earlier pandas versions
-            if a non-default value is given for this parameter.
-
             .. versionadded:: 0.9.0
+        **kwargs :
+            Keyword arguments to be passed to the pandas `DataFrameGroupby.agg` method
+            which is used by `dissolve`. In particular, `numeric_only` may be
+            supplied, which will be required in pandas 2.0 for certain aggfuncs.
 
+            .. versionadded:: 0.13.0
         Returns
         -------
         GeoDataFrame
@@ -1671,15 +1673,29 @@ individually so that features may have different properties
         groupby_kwargs = dict(
             by=by, level=level, sort=sort, observed=observed, dropna=dropna
         )
-        if not compat.PANDAS_GE_11:
-            groupby_kwargs.pop("dropna")
-
-            if not dropna:  # If they passed a non-default dropna value
-                warnings.warn("dropna kwarg is not supported for pandas < 1.1.0")
 
         # Process non-spatial component
         data = self.drop(labels=self.geometry.name, axis=1)
-        aggregated_data = data.groupby(**groupby_kwargs).agg(aggfunc)
+        with warnings.catch_warnings(record=True) as record:
+            aggregated_data = data.groupby(**groupby_kwargs).agg(aggfunc, **kwargs)
+        for w in record:
+            if str(w.message).startswith("The default value of numeric_only"):
+                msg = (
+                    f"The default value of numeric_only in aggfunc='{aggfunc}' "
+                    "within pandas.DataFrameGroupBy.agg used in dissolve is "
+                    "deprecated. In pandas 2.0, numeric_only will default to False. "
+                    "Either specify numeric_only as additional argument in dissolve() "
+                    "or select only columns which should be valid for the function."
+                )
+                warnings.warn(msg, FutureWarning, stacklevel=2)
+            else:
+                # Only want to capture specific warning,
+                # other warnings from pandas should be passed through
+                # TODO this is not an ideal approach
+                warnings.showwarning(
+                    w.message, w.category, w.filename, w.lineno, w.file, w.line
+                )
+
         aggregated_data.columns = aggregated_data.columns.to_flat_index()
 
         # Process spatial component
@@ -1710,8 +1726,6 @@ individually so that features may have different properties
         Each row containing a multi-part geometry will be split into
         multiple rows with single geometries, thereby increasing the vertical
         size of the GeoDataFrame.
-
-        .. note:: ignore_index requires pandas 1.1.0 or newer.
 
         Parameters
         ----------
@@ -1786,10 +1800,7 @@ individually so that features may have different properties
             column = self.geometry.name
         # If the specified column is not a geometry dtype use pandas explode
         if not isinstance(self[column].dtype, GeometryDtype):
-            if compat.PANDAS_GE_11:
-                return super().explode(column, ignore_index=ignore_index, **kwargs)
-            else:
-                return super().explode(column, **kwargs)
+            return super().explode(column, ignore_index=ignore_index, **kwargs)
 
         if index_parts is None:
             if not ignore_index:
@@ -2342,6 +2353,3 @@ def _dataframe_set_geometry(self, col, drop=False, inplace=False, crs=None):
 
 
 DataFrame.set_geometry = _dataframe_set_geometry
-
-if not compat.PANDAS_GE_11:  # i.e. on pandas 1.0.x
-    _geodataframe_constructor_with_fallback._from_axes = GeoDataFrame._from_axes
