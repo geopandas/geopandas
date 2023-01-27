@@ -5,6 +5,8 @@ from shapely.geometry import LineString
 import numpy as np
 import pandas as pd
 
+from packaging.version import Version
+
 _MAP_KWARGS = [
     "location",
     "prefer_canvas",
@@ -262,13 +264,33 @@ GON (((180.00000 -16.06713, 180.00000...
 
     >>> df.explore("pop_est", cmap="Blues")  # doctest: +SKIP
     """
+
+    def _colormap_helper(_cmap, n_resample=None, idx=None):
+        """Helper for MPL deprecation - GH#2596"""
+        if not n_resample:
+            return cm.get_cmap(_cmap)
+        else:
+            if MPL_361:
+                return cm.get_cmap(_cmap).resampled(n_resample)(idx)
+            else:
+                return cm.get_cmap(_cmap, n_resample)(idx)
+
     try:
         import branca as bc
         import folium
-        import matplotlib.cm as cm
+        import re
+        import matplotlib
         import matplotlib.colors as colors
         import matplotlib.pyplot as plt
         from mapclassify import classify
+
+        # isolate MPL version - GH#2596
+        MPL_361 = Version(matplotlib.__version__) >= Version("3.6.1")
+        if MPL_361:
+            from matplotlib import colormaps as cm
+        else:
+            import matplotlib.cm as cm
+
     except (ImportError, ModuleNotFoundError):
         raise ImportError(
             "The 'folium', 'matplotlib' and 'mapclassify' packages are required for "
@@ -338,8 +360,10 @@ GON (((180.00000 -16.06713, 180.00000...
 
             if isinstance(tiles, xyzservices.TileProvider):
                 attr = attr if attr else tiles.html_attribution
-                map_kwds["min_zoom"] = tiles.get("min_zoom", 0)
-                map_kwds["max_zoom"] = tiles.get("max_zoom", 18)
+                if "min_zoom" not in map_kwds:
+                    map_kwds["min_zoom"] = tiles.get("min_zoom", 0)
+                if "max_zoom" not in map_kwds:
+                    map_kwds["max_zoom"] = tiles.get("max_zoom", 18)
                 tiles = tiles.build_url(scale_factor="{r}")
 
         m = folium.Map(
@@ -396,10 +420,12 @@ GON (((180.00000 -16.06713, 180.00000...
             if cmap in plt.colormaps():
 
                 color = np.apply_along_axis(
-                    colors.to_hex, 1, cm.get_cmap(cmap, N)(cat.codes)
+                    colors.to_hex,
+                    1,
+                    _colormap_helper(cmap, n_resample=N, idx=cat.codes),
                 )
                 legend_colors = np.apply_along_axis(
-                    colors.to_hex, 1, cm.get_cmap(cmap, N)(range(N))
+                    colors.to_hex, 1, _colormap_helper(cmap, n_resample=N, idx=range(N))
                 )
 
             # colormap is matplotlib.Colormap
@@ -440,7 +466,9 @@ GON (((180.00000 -16.06713, 180.00000...
                     np.asarray(gdf[column][~nan_idx]), scheme, **classification_kwds
                 )
                 color = np.apply_along_axis(
-                    colors.to_hex, 1, cm.get_cmap(cmap, k)(binning.yb)
+                    colors.to_hex,
+                    1,
+                    _colormap_helper(cmap, n_resample=k, idx=binning.yb),
                 )
 
             else:
@@ -451,7 +479,9 @@ GON (((180.00000 -16.06713, 180.00000...
                 )
 
                 color = np.apply_along_axis(
-                    colors.to_hex, 1, cm.get_cmap(cmap, 256)(binning.yb)
+                    colors.to_hex,
+                    1,
+                    _colormap_helper(cmap, n_resample=256, idx=binning.yb),
                 )
 
     # set default style
@@ -589,10 +619,21 @@ GON (((180.00000 -16.06713, 180.00000...
     else:
         tooltip = None
         popup = None
+    # escape the curly braces {{}} for jinja2 templates
+    feature_collection = gdf.__geo_interface__
+    for feature in feature_collection["features"]:
+        for k in feature["properties"]:
+            # escape the curly braces in values
+            if type(feature["properties"][k]) == str:
+                feature["properties"][k] = re.sub(
+                    r"\{{2,}",
+                    lambda x: "{% raw %}" + x.group(0) + "{% endraw %}",
+                    feature["properties"][k],
+                )
 
     # add dataframe to map
     folium.GeoJson(
-        gdf.__geo_interface__,
+        feature_collection,
         tooltip=tooltip,
         popup=popup,
         marker=marker,
@@ -622,7 +663,9 @@ GON (((180.00000 -16.06713, 180.00000...
                 colormap_kwds["max_labels"] = legend_kwds.pop("max_labels")
             if scheme:
                 cb_colors = np.apply_along_axis(
-                    colors.to_hex, 1, cm.get_cmap(cmap, binning.k)(range(binning.k))
+                    colors.to_hex,
+                    1,
+                    _colormap_helper(cmap, n_resample=binning.k, idx=range(binning.k)),
                 )
                 if cbar:
                     if legend_kwds.pop("scale", True):
@@ -656,11 +699,11 @@ GON (((180.00000 -16.06713, 180.00000...
                 if isinstance(cmap, bc.colormap.ColorMap):
                     colorbar = cmap
                 else:
-
-                    mp_cmap = cm.get_cmap(cmap)
+                    mp_cmap = _colormap_helper(cmap)
                     cb_colors = np.apply_along_axis(
                         colors.to_hex, 1, mp_cmap(range(mp_cmap.N))
                     )
+
                     # linear legend
                     if mp_cmap.N > 20:
                         colorbar = bc.colormap.LinearColormap(

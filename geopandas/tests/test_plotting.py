@@ -1,4 +1,3 @@
-from packaging.version import Version
 import itertools
 import warnings
 
@@ -34,11 +33,7 @@ import matplotlib.pyplot as plt  # noqa
 try:  # skipif and importorskip do not work for decorators
     from matplotlib.testing.decorators import check_figures_equal
 
-    if Version(matplotlib.__version__) >= Version("3.3.0"):
-
-        MPL_DECORATORS = True
-    else:
-        MPL_DECORATORS = False
+    MPL_DECORATORS = True
 except ImportError:
     MPL_DECORATORS = False
 
@@ -335,6 +330,36 @@ class TestPointPlotting:
         ax = gdf.plot()
         assert len(ax.collections) == 1
 
+    @pytest.mark.parametrize(
+        "geoms",
+        [
+            [
+                box(0, 0, 1, 1),
+                box(7, 7, 8, 8),
+            ],
+            [
+                LineString([(1, 1), (1, 2)]),
+                LineString([(7, 1), (7, 2)]),
+            ],
+            [
+                Point(1, 1),
+                Point(7, 7),
+            ],
+        ],
+    )
+    def test_empty_geometry_colors(self, geoms):
+        s = GeoSeries(
+            geoms,
+            index=["r", "b"],
+        )
+        s2 = s.intersection(box(5, 0, 10, 10))
+        ax = s2.plot(color=["red", "blue"])
+        blue = np.array([0.0, 0.0, 1.0, 1.0])
+        if s.geom_type["r"] == "LineString":
+            np.testing.assert_array_equal(ax.get_children()[0].get_edgecolor()[0], blue)
+        else:
+            np.testing.assert_array_equal(ax.get_children()[0].get_facecolor()[0], blue)
+
     def test_multipoints(self):
 
         # MultiPoints
@@ -620,7 +645,7 @@ class TestPolygonPlotting:
 
         t3 = Polygon([(2, 0), (3, 0), (3, 1)])
         df_nan = GeoDataFrame({"geometry": t3, "values": [np.nan]})
-        self.df3 = self.df.append(df_nan)
+        self.df3 = pd.concat([self.df, df_nan])
 
     def test_single_color(self):
 
@@ -958,7 +983,7 @@ class TestGeometryCollectionPlotting:
 
 class TestNonuniformGeometryPlotting:
     def setup_method(self):
-        pytest.importorskip("matplotlib", "1.5.0")
+        pytest.importorskip("matplotlib")
 
         poly = Polygon([(1, 0), (2, 0), (2, 1)])
         line = LineString([(0.5, 0.5), (1, 1), (1, 0.5), (1.5, 1)])

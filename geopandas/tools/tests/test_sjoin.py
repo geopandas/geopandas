@@ -1,4 +1,3 @@
-from packaging.version import Version
 import math
 from typing import Sequence
 from geopandas.testing import assert_geodataframe_equal
@@ -364,9 +363,7 @@ class TestSpatialJoin:
                 columns={"df1_ix1": "index_left0", "df1_ix2": "index_left1"}
             )
             exp.index.names = df2.index.names
-
-        # GH 1364 fix of behaviour was done in pandas 1.1.0
-        if predicate == "within" and Version(pd.__version__) >= Version("1.1.0"):
+        if predicate == "within":
             exp = exp.sort_index()
 
         assert_frame_equal(res, exp, check_index_type=False)
@@ -531,9 +528,9 @@ class TestSpatialJoinNYBB:
     def test_sjoin_empty_geometries(self):
         # https://github.com/geopandas/geopandas/issues/944
         empty = GeoDataFrame(geometry=[GeometryCollection()] * 3)
-        df = sjoin(self.pointdf.append(empty), self.polydf, how="left")
+        df = sjoin(pd.concat([self.pointdf, empty]), self.polydf, how="left")
         assert df.shape == (24, 8)
-        df2 = sjoin(self.pointdf, self.polydf.append(empty), how="left")
+        df2 = sjoin(self.pointdf, pd.concat([self.polydf, empty]), how="left")
         assert df2.shape == (21, 8)
 
     @pytest.mark.parametrize("predicate", ["intersects", "within", "contains"])
@@ -571,7 +568,7 @@ class TestSpatialJoinNaturalEarth:
         cities_with_country = sjoin(
             self.cities, countries, how="inner", predicate="intersects"
         )
-        assert cities_with_country.shape == (172, 4)
+        assert cities_with_country.shape == (213, 4)
 
 
 @pytest.mark.skipif(

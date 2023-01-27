@@ -75,6 +75,8 @@ class TestSeriesSindex:
         s = GeoSeries([t1, t2, sq])
         assert s.sindex.size == 3
 
+    @pytest.mark.filterwarnings("ignore:The series.append method is deprecated")
+    @pytest.mark.skipif(compat.PANDAS_GE_20, reason="append removed in pandas 2.0")
     def test_polygons_append(self):
         t1 = Polygon([(0, 0), (1, 0), (1, 1)])
         t2 = Polygon([(0, 0), (1, 1), (0, 1)])
@@ -164,9 +166,6 @@ class TestFrameSindex:
         geometry_col = self.df.geometry
         assert geometry_col.sindex is original_index
 
-    @pytest.mark.skipif(
-        not compat.PANDAS_GE_11, reason="Column selection returns a copy on pd<=1.1.0"
-    )
     def test_rebuild_on_multiple_col_selection(self):
         """Selecting a subset of columns preserves the index."""
         original_index = self.df.sindex
@@ -190,7 +189,6 @@ class TestFrameSindex:
         # sorting should still have happened though
         assert gdf.index.tolist() == [4, 3, 2, 1, 0]
 
-    @pytest.mark.skipif(not compat.PANDAS_GE_11, reason="fails on pd<1.1.0")
     def test_update_inplace_no_rebuild(self):
         gdf = self.df.copy()
         old_sindex = gdf.sindex
@@ -860,9 +858,9 @@ class TestPygeosInterface:
     @pytest.mark.parametrize(
         "predicate, expected_shape",
         [
-            (None, (2, 396)),
-            ("intersects", (2, 172)),
-            ("within", (2, 172)),
+            (None, (2, 471)),
+            ("intersects", (2, 213)),
+            ("within", (2, 213)),
             ("contains", (2, 0)),
             ("overlaps", (2, 0)),
             ("crosses", (2, 0)),
