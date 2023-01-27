@@ -4,6 +4,8 @@
 
 New features and improvements:
 
+- The Parquet and Feather IO functions now support the latest 1.0.0-beta.1 version
+  of the GeoParquet specification (geoparquet.org) (#2663).
 - Added ``minimum_bounding_circle()`` method from shapely to GeoSeries/GeoDataframe (#2621).
 - Support specifying ``min_zoom`` and ``max_zoom`` inside the ``map_kwds`` argument for ``.explore()`` (#2599).
 
@@ -17,6 +19,7 @@ Bug fixes:
 - Ensure that GeoDataFrame created from DataFrame is a copy, not a view (#2667)
 - Fix mismatch between geometries and colors in ``plot()`` if an empty or missing
   geometry is present (#2224)
+- Escape special characters to avoid TemplateSyntaxError in ``explore()`` (#2657)
 - Fix `to_parquet`/`to_feather` to not write an invalid bbox (with NaNs) in the
   metadata in case of an empty GeoDataFrame (#2653)
 
