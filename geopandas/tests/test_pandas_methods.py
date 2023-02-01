@@ -105,7 +105,6 @@ def test_repr_linearring():
 
 
 def test_indexing(s, df):
-
     # accessing scalar from the geometry (column)
     exp = Point(1, 1)
     assert s[1] == exp
@@ -243,7 +242,6 @@ def test_assign(df):
 
 
 def test_astype(s, df):
-
     # check geoseries functionality
     with pytest.raises(TypeError):
         s.astype(int)
@@ -313,7 +311,6 @@ def test_convert_dtypes(df):
 
 
 def test_to_csv(df):
-
     exp = (
         "geometry,value1,value2\nPOINT (0 0),0,1\nPOINT (1 1),1,2\nPOINT (2 2),2,1\n"
     ).replace("\n", os.linesep)
@@ -530,7 +527,6 @@ def test_drop_duplicates_frame():
 
 
 def test_groupby(df):
-
     # counts work fine
     res = df.groupby("value2").count()
     exp = pd.DataFrame(
