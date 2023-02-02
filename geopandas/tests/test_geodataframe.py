@@ -542,6 +542,14 @@ class TestDataFrame:
         assert type(df2) is GeoDataFrame
         assert self.df.crs == df2.crs
 
+    def test_empty_copy(self):
+        # https://github.com/geopandas/geopandas/issues/2765
+        df = GeoDataFrame()
+        df2 = df.copy()
+        assert type(df2) is GeoDataFrame
+        df3 = df.copy(deep=True)
+        assert type(df3) is GeoDataFrame
+
     def test_bool_index(self):
         # Find boros with 'B' in their name
         df = self.df[self.df["BoroName"].str.contains("B")]

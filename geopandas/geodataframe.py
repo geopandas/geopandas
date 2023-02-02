@@ -5,20 +5,17 @@ import numpy as np
 import pandas as pd
 from pandas import DataFrame, Series
 from pandas.core.accessor import CachedAccessor
-
+from pyproj import CRS
 from shapely.geometry import mapping, shape
 from shapely.geometry.base import BaseGeometry
 
-from pyproj import CRS
-
+import geopandas.io
 from geopandas.array import GeometryArray, GeometryDtype, from_shapely, to_wkb, to_wkt
 from geopandas.base import GeoPandasBase, is_geometry_type
-from geopandas.geoseries import GeoSeries
-import geopandas.io
 from geopandas.explore import _explore
+from geopandas.geoseries import GeoSeries
 from . import _compat as compat
 from ._decorator import doc
-
 
 DEFAULT_GEO_COLUMN_NAME = "geometry"
 
@@ -1571,6 +1568,10 @@ individually so that features may have different properties
             self._geometry_column_name = None
             self._crs = None
         return self
+
+    @doc(pd.DataFrame)
+    def copy(self, deep=True):
+        return GeoDataFrame(super().copy(deep=deep))
 
     def dissolve(
         self,
