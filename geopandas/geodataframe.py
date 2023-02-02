@@ -27,6 +27,9 @@ def _geodataframe_constructor_with_fallback(*args, **kwargs):
     geometry column)
     """
     df = GeoDataFrame(*args, **kwargs)
+    # Special case constructor with no args from downcasting - GeoDataFrame()
+    if df.shape == (0, 0):
+        return df
     geometry_cols_mask = df.dtypes == "geometry"
     if len(geometry_cols_mask) == 0 or geometry_cols_mask.sum() == 0:
         df = pd.DataFrame(df)
@@ -305,6 +308,9 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             frame = self
         else:
             frame = self.copy()
+            # if there is no previous self.geometry, self.copy() will downcast
+            if type(frame) == DataFrame:
+                frame = GeoDataFrame(frame)
 
         to_remove = None
         geo_column_name = self._geometry_column_name
@@ -1565,10 +1571,6 @@ individually so that features may have different properties
             self._geometry_column_name = None
             self._crs = None
         return self
-
-    @doc(pd.DataFrame)
-    def copy(self, deep=True):
-        return GeoDataFrame(super().copy(deep=deep))
 
     def dissolve(
         self,
