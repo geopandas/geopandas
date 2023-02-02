@@ -278,6 +278,7 @@ GON (((180.00000 -16.06713, 180.00000...
     try:
         import branca as bc
         import folium
+        import re
         import matplotlib
         import matplotlib.colors as colors
         import matplotlib.pyplot as plt
@@ -618,10 +619,21 @@ GON (((180.00000 -16.06713, 180.00000...
     else:
         tooltip = None
         popup = None
+    # escape the curly braces {{}} for jinja2 templates
+    feature_collection = gdf.__geo_interface__
+    for feature in feature_collection["features"]:
+        for k in feature["properties"]:
+            # escape the curly braces in values
+            if type(feature["properties"][k]) == str:
+                feature["properties"][k] = re.sub(
+                    r"\{{2,}",
+                    lambda x: "{% raw %}" + x.group(0) + "{% endraw %}",
+                    feature["properties"][k],
+                )
 
     # add dataframe to map
     folium.GeoJson(
-        gdf.__geo_interface__,
+        feature_collection,
         tooltip=tooltip,
         popup=popup,
         marker=marker,
