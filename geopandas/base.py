@@ -3590,6 +3590,38 @@ GeometryCollection
 
         return pd.DataFrame(coords, index=index, columns=column_names)
 
+    def hilbert_distance(self, total_bounds=None, level=16):
+        """
+        Calculate the distance along a Hilbert curve.
+
+        The distances are calculated for the midpoints of the geometries in the
+        GeoDataFrame, and using the total bounds of the GeoDataFrame.
+
+        The Hilbert distance can be used to spatially sort GeoPandas
+        objects, by mapping two dimensional geometries along the Hilbert curve.
+
+        Parameters
+        ----------
+        total_bounds : 4-element array, optional
+            The spatial extent in which the curve is constructed (used to
+            rescale the geometry midpoints). By default, the total bounds
+            of the full GeoDataFrame or GeoSeries will be computed. If known,
+            you can pass the total bounds to avoid this extra computation.
+        level : int (1 - 16), default 16
+            Determines the precision of the curve (points on the curve will
+            have coordinates in the range [0, 2^level - 1]).
+
+        Returns
+        -------
+        Series
+            Series containing distance along the curve for geometry
+        """
+        from geopandas.tools.hilbert_curve import _hilbert_distance
+
+        distances = _hilbert_distance(self, total_bounds=total_bounds, level=level)
+
+        return distances
+
 
 def _get_index_for_parts(orig_idx, outer_idx, ignore_index, index_parts):
     """Helper to handle index when geometries get exploded to parts.
@@ -3644,38 +3676,6 @@ def _get_index_for_parts(orig_idx, outer_idx, ignore_index, index_parts):
             index = outer_index
 
     return index
-
-    def hilbert_distance(self, total_bounds=None, level=16):
-        """
-        Calculate the distance along a Hilbert curve.
-
-        The distances are calculated for the midpoints of the geometries in the
-        GeoDataFrame, and using the total bounds of the GeoDataFrame.
-
-        The Hilbert distance can be used to spatially sort GeoPandas
-        objects, by mapping two dimensional geometries along the Hilbert curve.
-
-        Parameters
-        ----------
-        total_bounds : 4-element array, optional
-            The spatial extent in which the curve is constructed (used to
-            rescale the geometry midpoints). By default, the total bounds
-            of the full GeoDataFrame or GeoSeries will be computed. If known,
-            you can pass the total bounds to avoid this extra computation.
-        level : int (1 - 16), default 16
-            Determines the precision of the curve (points on the curve will
-            have coordinates in the range [0, 2^level - 1]).
-
-        Returns
-        -------
-        Series
-            Series containing distance along the curve for geometry
-        """
-        from geopandas.tools.hilbert_curve import _hilbert_distance
-
-        distances = _hilbert_distance(self, total_bounds=total_bounds, level=level)
-
-        return distances
 
 
 class _CoordinateIndexer(object):
