@@ -305,9 +305,6 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             frame = self
         else:
             frame = self.copy()
-            # if there is no previous self.geometry, self.copy() will downcast
-            if type(frame) == DataFrame:
-                frame = GeoDataFrame(frame)
 
         to_remove = None
         geo_column_name = self._geometry_column_name
