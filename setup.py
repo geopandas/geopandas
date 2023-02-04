@@ -15,6 +15,7 @@ import versioneer  # noqa: E402
 
 # see pyproject.toml for static project metadata
 setup(
+    name="geopandas",  # need by GitHub dependency graph
     version=versioneer.get_version(),
     cmdclass=versioneer.get_cmdclass(),
 )
