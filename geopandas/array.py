@@ -2,6 +2,7 @@ import numbers
 import operator
 import warnings
 import inspect
+from functools import lru_cache
 
 import numpy as np
 import pandas as pd
@@ -27,6 +28,9 @@ except ImportError:
 from . import _compat as compat
 from . import _vectorized as vectorized
 from .sindex import _get_sindex_class
+
+
+TransformerFromCRS = lru_cache(Transformer.from_crs)
 
 
 class GeometryDtype(ExtensionDtype):
@@ -108,7 +112,9 @@ def _geom_to_shapely(geom):
     """
     Convert internal representation (PyGEOS or Shapely) to external Shapely object.
     """
-    if not compat.USE_PYGEOS:
+    if compat.USE_SHAPELY_20:
+        return geom
+    elif not compat.USE_PYGEOS:
         return geom
     else:
         return vectorized._pygeos_to_shapely(geom)
@@ -118,7 +124,9 @@ def _shapely_to_geom(geom):
     """
     Convert external Shapely object to internal representation (PyGEOS or Shapely).
     """
-    if not compat.USE_PYGEOS:
+    if compat.USE_SHAPELY_20:
+        return geom
+    elif not compat.USE_PYGEOS:
         return geom
     else:
         return vectorized._shapely_to_pygeos(geom)
@@ -410,7 +418,9 @@ class GeometryArray(ExtensionArray):
         #         )
 
     def __getstate__(self):
-        if compat.USE_PYGEOS:
+        if compat.USE_SHAPELY_20:
+            return (shapely.to_wkb(self.data), self._crs)
+        elif compat.USE_PYGEOS:
             return (pygeos.to_wkb(self.data), self._crs)
         else:
             return self.__dict__
@@ -504,6 +514,17 @@ class GeometryArray(ExtensionArray):
 
     def representative_point(self):
         return GeometryArray(vectorized.representative_point(self.data), crs=self.crs)
+
+    def minimum_bounding_circle(self):
+        return GeometryArray(
+            vectorized.minimum_bounding_circle(self.data), crs=self.crs
+        )
+
+    def normalize(self):
+        return GeometryArray(vectorized.normalize(self.data), crs=self.crs)
+
+    def make_valid(self):
+        return GeometryArray(vectorized.make_valid(self.data), crs=self.crs)
 
     #
     # Binary predicates
@@ -686,7 +707,7 @@ class GeometryArray(ExtensionArray):
         be set.  Either ``crs`` or ``epsg`` may be specified for output.
 
         This method will transform all points in all objects.  It has no notion
-        or projecting entire geometries.  All segments joining points are
+        of projecting entire geometries.  All segments joining points are
         assumed to be lines in the current projection, not geodesics.  Objects
         crossing the dateline (or other projection boundary) will have
         undesirable behavior.
@@ -762,7 +783,7 @@ class GeometryArray(ExtensionArray):
         if self.crs.is_exact_same(crs):
             return self
 
-        transformer = Transformer.from_crs(self.crs, crs, always_xy=True)
+        transformer = TransformerFromCRS(self.crs, crs, always_xy=True)
 
         new_data = vectorized.transform(self.data, transformer.transform)
         return GeometryArray(new_data, crs=crs)
@@ -820,7 +841,7 @@ class GeometryArray(ExtensionArray):
             y_center = np.mean([miny, maxy])
         # ensure using geographic coordinates
         else:
-            transformer = Transformer.from_crs(self.crs, "EPSG:4326", always_xy=True)
+            transformer = TransformerFromCRS(self.crs, "EPSG:4326", always_xy=True)
             if compat.PYPROJ_GE_31:
                 minx, miny, maxx, maxy = transformer.transform_bounds(
                     minx, miny, maxx, maxy
@@ -1065,7 +1086,9 @@ class GeometryArray(ExtensionArray):
         """
         Boolean NumPy array indicating if each value is missing
         """
-        if compat.USE_PYGEOS:
+        if compat.USE_SHAPELY_20:
+            return shapely.is_missing(self.data)
+        elif compat.USE_PYGEOS:
             return pygeos.is_missing(self.data)
         else:
             return np.array([g is None for g in self.data], dtype="bool")
@@ -1306,7 +1329,7 @@ class GeometryArray(ExtensionArray):
         ExtensionArray
         """
         data = np.concatenate([ga.data for ga in to_concat])
-        return GeometryArray(data, crs=to_concat[0].crs)
+        return GeometryArray(data, crs=_get_common_crs(to_concat))
 
     def _reduce(self, name, skipna=True, **kwargs):
         # including the base class version here (that raises by default)
@@ -1315,9 +1338,8 @@ class GeometryArray(ExtensionArray):
             # TODO(pygeos)
             return getattr(to_shapely(self), name)()
         raise TypeError(
-            "cannot perform {name} with type {dtype}".format(
-                name=name, dtype=self.dtype
-            )
+            f"'{type(self).__name__}' with dtype {self.dtype} "
+            f"does not support reduction '{name}'"
         )
 
     def __array__(self, dtype=None):
@@ -1377,3 +1399,29 @@ class GeometryArray(ExtensionArray):
             else:
                 return False
         return (self == item).any()
+
+
+def _get_common_crs(arr_seq):
+    # mask out all None arrays with no crs (most likely auto generated by pandas
+    # from concat with missing column)
+    arr_seq = [ga for ga in arr_seq if not (ga.isna().all() and ga.crs is None)]
+
+    crs_set = {arr.crs for arr in arr_seq}
+    crs_not_none = [crs for crs in crs_set if crs is not None]
+    names = [crs.name for crs in crs_not_none]
+
+    if len(crs_not_none) == 0:
+        return None
+    if len(crs_not_none) == 1:
+        if len(crs_set) != 1:
+            warnings.warn(
+                "CRS not set for some of the concatenation inputs. "
+                f"Setting output's CRS as {names[0]} "
+                "(the single non-null crs provided)."
+            )
+        return crs_not_none[0]
+
+    raise ValueError(
+        f"Cannot determine common CRS for concatenation inputs, got {names}. "
+        "Use `to_crs()` to transform geometries to the same CRS before merging."
+    )

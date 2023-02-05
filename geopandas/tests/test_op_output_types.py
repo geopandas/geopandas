@@ -227,9 +227,7 @@ def test_apply(df):
     assert_object(df[["value1"]].apply(identity, axis=1), pd.DataFrame)
 
 
-@pytest.mark.xfail(not compat.PANDAS_GE_11, reason="apply is different in pandas 1.0.5")
 def test_apply_axis1_secondary_geo_cols(df):
-    # note #GH2436 would also fix this
     def identity(x):
         return x
 
@@ -243,10 +241,6 @@ def test_expanddim_in_apply():
     assert_object(result, pd.DataFrame)
 
 
-@pytest.mark.xfail(
-    not compat.PANDAS_GE_11,
-    reason="pandas <1.1 don't preserve subclass through groupby ops",  # Pandas GH33884
-)
 def test_expandim_in_groupby_aggregate_multiple_funcs():
     # https://github.com/geopandas/geopandas/pull/2296#issuecomment-1021966443
     # There are two calls to _constructor_expanddim here
@@ -270,10 +264,6 @@ def test_expandim_in_groupby_aggregate_multiple_funcs():
     assert_object(grouped.agg([total_area]), pd.DataFrame)
 
 
-@pytest.mark.xfail(
-    not compat.PANDAS_GE_11,
-    reason="pandas <1.1 uses concat([Series]) in unstack",  # Pandas GH33356
-)
 def test_expanddim_in_unstack():
     # https://github.com/geopandas/geopandas/pull/2296#issuecomment-1021966443
     s = GeoSeries.from_xy(
@@ -348,5 +338,5 @@ def test_constructor_sliced_in_pandas_methods(df2):
     # drop the secondary geometry columns as not hashable
     hashable_test_df = df2.drop(columns=["geometry2", "geometry3"])
     assert type(hashable_test_df.duplicated()) == pd.Series
-    assert type(df2.quantile()) == pd.Series
+    assert type(df2.quantile(numeric_only=True)) == pd.Series
     assert type(df2.memory_usage()) == pd.Series

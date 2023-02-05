@@ -1,4 +1,3 @@
-from packaging.version import Version
 import itertools
 import warnings
 
@@ -34,11 +33,7 @@ import matplotlib.pyplot as plt  # noqa
 try:  # skipif and importorskip do not work for decorators
     from matplotlib.testing.decorators import check_figures_equal
 
-    if Version(matplotlib.__version__) >= Version("3.3.0"):
-
-        MPL_DECORATORS = True
-    else:
-        MPL_DECORATORS = False
+    MPL_DECORATORS = True
 except ImportError:
     MPL_DECORATORS = False
 
@@ -335,6 +330,36 @@ class TestPointPlotting:
         ax = gdf.plot()
         assert len(ax.collections) == 1
 
+    @pytest.mark.parametrize(
+        "geoms",
+        [
+            [
+                box(0, 0, 1, 1),
+                box(7, 7, 8, 8),
+            ],
+            [
+                LineString([(1, 1), (1, 2)]),
+                LineString([(7, 1), (7, 2)]),
+            ],
+            [
+                Point(1, 1),
+                Point(7, 7),
+            ],
+        ],
+    )
+    def test_empty_geometry_colors(self, geoms):
+        s = GeoSeries(
+            geoms,
+            index=["r", "b"],
+        )
+        s2 = s.intersection(box(5, 0, 10, 10))
+        ax = s2.plot(color=["red", "blue"])
+        blue = np.array([0.0, 0.0, 1.0, 1.0])
+        if s.geom_type["r"] == "LineString":
+            np.testing.assert_array_equal(ax.get_children()[0].get_edgecolor()[0], blue)
+        else:
+            np.testing.assert_array_equal(ax.get_children()[0].get_facecolor()[0], blue)
+
     def test_multipoints(self):
 
         # MultiPoints
@@ -374,6 +399,9 @@ class TestPointPlotting:
         self.df["cats_ordered"] = pd.Categorical(
             ["cat2", "cat1"] * 5, categories=["cat2", "cat1"]
         )
+        self.df["bool"] = [False, True] * 5
+        self.df["bool_extension"] = pd.array([False, True] * 5)
+        self.df["cats_string"] = pd.array(["cat1", "cat2"] * 5, dtype="string")
 
         ax1 = self.df.plot("cats_object", legend=True)
         ax2 = self.df.plot("cats", legend=True)
@@ -381,14 +409,17 @@ class TestPointPlotting:
         ax4 = self.df.plot("singlecat", legend=True)
         ax5 = self.df.plot("cats_ordered", legend=True)
         ax6 = self.df.plot("nums", categories=[1, 2], legend=True)
+        ax7 = self.df.plot("bool", legend=True)
+        ax8 = self.df.plot("bool_extension", legend=True)
+        ax9 = self.df.plot("cats_string", legend=True)
 
         point_colors1 = ax1.collections[0].get_facecolors()
-        for ax in [ax2, ax3, ax4, ax5, ax6]:
+        for ax in [ax2, ax3, ax4, ax5, ax6, ax7, ax8, ax9]:
             point_colors2 = ax.collections[0].get_facecolors()
             np.testing.assert_array_equal(point_colors1[1], point_colors2[1])
 
         legend1 = [x.get_markerfacecolor() for x in ax1.get_legend().get_lines()]
-        for ax in [ax2, ax3, ax4, ax5, ax6]:
+        for ax in [ax2, ax3, ax4, ax5, ax6, ax7, ax8, ax9]:
             legend2 = [x.get_markerfacecolor() for x in ax.get_legend().get_lines()]
             np.testing.assert_array_equal(legend1, legend2)
 
@@ -614,7 +645,7 @@ class TestPolygonPlotting:
 
         t3 = Polygon([(2, 0), (3, 0), (3, 1)])
         df_nan = GeoDataFrame({"geometry": t3, "values": [np.nan]})
-        self.df3 = self.df.append(df_nan)
+        self.df3 = pd.concat([self.df, df_nan])
 
     def test_single_color(self):
 
@@ -882,7 +913,7 @@ class TestColorParamArray:
             color += ["red", "green", "blue"]
 
         self.gdf = GeoDataFrame({"geometry": geom, "color_rgba": color})
-        self.mgdf = self.gdf.dissolve(self.gdf.type)
+        self.mgdf = self.gdf.dissolve(self.gdf.geom_type)
 
     def test_color_single(self):
         ax = self.gdf.plot(color=self.gdf["color_rgba"])
@@ -952,7 +983,7 @@ class TestGeometryCollectionPlotting:
 
 class TestNonuniformGeometryPlotting:
     def setup_method(self):
-        pytest.importorskip("matplotlib", "1.5.0")
+        pytest.importorskip("matplotlib")
 
         poly = Polygon([(1, 0), (2, 0), (2, 1)])
         line = LineString([(0.5, 0.5), (1, 1), (1, 0.5), (1.5, 1)])
@@ -1740,6 +1771,7 @@ class TestGeoplotAccessor:
                         ModuleNotFoundError, match="No module named 'scipy'"
                     ):
                         self.gdf.plot(kind=kind)
+                    return
             elif kind in _y_kinds:
                 kwargs = {"y": "y"}
             elif kind in _xy_kinds:

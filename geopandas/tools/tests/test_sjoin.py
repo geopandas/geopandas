@@ -1,4 +1,3 @@
-from packaging.version import Version
 import math
 from typing import Sequence
 from geopandas.testing import assert_geodataframe_equal
@@ -17,7 +16,7 @@ from pandas.testing import assert_frame_equal
 import pytest
 
 
-TEST_NEAREST = compat.PYGEOS_GE_010 and compat.USE_PYGEOS
+TEST_NEAREST = compat.USE_SHAPELY_20 or (compat.PYGEOS_GE_010 and compat.USE_PYGEOS)
 
 
 pytestmark = pytest.mark.skip_no_sindex
@@ -269,7 +268,19 @@ class TestSpatialJoin:
         empty = sjoin(not_in, polygons, how="inner", predicate="intersects")
         assert empty.empty
 
-    @pytest.mark.parametrize("predicate", ["intersects", "contains", "within"])
+    @pytest.mark.parametrize(
+        "predicate",
+        [
+            "contains",
+            "contains_properly",
+            "covered_by",
+            "covers",
+            "crosses",
+            "intersects",
+            "touches",
+            "within",
+        ],
+    )
     @pytest.mark.parametrize(
         "empty",
         [
@@ -352,9 +363,7 @@ class TestSpatialJoin:
                 columns={"df1_ix1": "index_left0", "df1_ix2": "index_left1"}
             )
             exp.index.names = df2.index.names
-
-        # GH 1364 fix of behaviour was done in pandas 1.1.0
-        if predicate == "within" and Version(pd.__version__) >= Version("1.1.0"):
+        if predicate == "within":
             exp = exp.sort_index()
 
         assert_frame_equal(res, exp, check_index_type=False)
@@ -392,7 +401,7 @@ class TestSpatialJoinNYBB:
         df = sjoin(self.pointdf, self.polydf, how="left")
         assert df.shape == (21, 8)
         for i, row in df.iterrows():
-            assert row.geometry.type == "Point"
+            assert row.geometry.geom_type == "Point"
         assert "pointattr1" in df.columns
         assert "BoroCode" in df.columns
 
@@ -403,9 +412,9 @@ class TestSpatialJoinNYBB:
         assert df.shape == (12, 8)
         assert df.shape == df2.shape
         for i, row in df.iterrows():
-            assert row.geometry.type == "MultiPolygon"
+            assert row.geometry.geom_type == "MultiPolygon"
         for i, row in df2.iterrows():
-            assert row.geometry.type == "MultiPolygon"
+            assert row.geometry.geom_type == "MultiPolygon"
 
     def test_sjoin_inner(self):
         df = sjoin(self.pointdf, self.polydf, how="inner")
@@ -519,9 +528,9 @@ class TestSpatialJoinNYBB:
     def test_sjoin_empty_geometries(self):
         # https://github.com/geopandas/geopandas/issues/944
         empty = GeoDataFrame(geometry=[GeometryCollection()] * 3)
-        df = sjoin(self.pointdf.append(empty), self.polydf, how="left")
+        df = sjoin(pd.concat([self.pointdf, empty]), self.polydf, how="left")
         assert df.shape == (24, 8)
-        df2 = sjoin(self.pointdf, self.polydf.append(empty), how="left")
+        df2 = sjoin(self.pointdf, pd.concat([self.polydf, empty]), how="left")
         assert df2.shape == (21, 8)
 
     @pytest.mark.parametrize("predicate", ["intersects", "within", "contains"])
@@ -559,7 +568,7 @@ class TestSpatialJoinNaturalEarth:
         cities_with_country = sjoin(
             self.cities, countries, how="inner", predicate="intersects"
         )
-        assert cities_with_country.shape == (172, 4)
+        assert cities_with_country.shape == (213, 4)
 
 
 @pytest.mark.skipif(
@@ -571,7 +580,7 @@ def test_no_nearest_all():
     df2 = geopandas.GeoDataFrame({"geometry": []})
     with pytest.raises(
         NotImplementedError,
-        match="Currently, only PyGEOS >= 0.10.0 supports `nearest_all`",
+        match="Currently, only PyGEOS >= 0.10.0 or Shapely >= 2.0 supports",
     ):
         sjoin_nearest(df1, df2)
 
