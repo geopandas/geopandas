@@ -843,7 +843,6 @@ class TestExplore:
         assert '{"color":"red","fillOpacity":1}' in out_str
 
     def test_custom_colormaps(self):
-
         step = StepColormap(["green", "yellow", "red"], vmin=0, vmax=100000000)
 
         m = self.world.explore("pop_est", cmap=step, tooltip=["name"], legend=True)
