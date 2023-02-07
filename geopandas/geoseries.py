@@ -526,7 +526,7 @@ class GeoSeries(GeoPandasBase, Series):
         return cls(from_wkb_or_wkt_function(data, crs=crs), index=index, **kwargs)
 
     @property
-    def __geo_interface__(self) -> dict:
+    def __geo_interface__(self) -> Dict:
         """Returns a ``GeoSeries`` as a python feature collection.
 
         Implements the `geo_interface`. The returned python data structure
