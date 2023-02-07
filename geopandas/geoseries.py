@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from typing import Optional, Any, Callable
+from typing import Optional, Any, Callable, Dict
 import warnings
 
 import numpy as np
