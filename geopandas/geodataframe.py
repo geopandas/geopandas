@@ -1451,6 +1451,11 @@ individually so that features may have different properties
     #
     # Implement pandas methods
     #
+    def copy(self, deep=True):
+        copied = super().copy(deep=deep)
+        if type(copied) is pd.DataFrame:
+            copied = GeoDataFrame(copied)
+        return copied
 
     def merge(self, *args, **kwargs):
         r"""Merge two ``GeoDataFrame`` objects with a database-style join.
