@@ -336,7 +336,8 @@ def test_numerical_operations(s, df):
     with pytest.raises(TypeError):
         s.max()
 
-    with pytest.raises(TypeError):
+    with pytest.raises((TypeError, ValueError)):
+        # TODO: remove ValueError after pandas-dev/pandas#32749
         s.idxmax()
 
     # numerical ops raise an error

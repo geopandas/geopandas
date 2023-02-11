@@ -24,8 +24,7 @@ import shapely.geometry
 from shapely.geometry import Point
 
 from geopandas.array import GeometryArray, GeometryDtype, from_shapely
-from geopandas._compat import ignore_shapely2_warnings
-from geopandas import _compat
+from geopandas._compat import ignore_shapely2_warnings, SHAPELY_GE_20, PANDAS_GE_15
 
 import pytest
 
@@ -35,10 +34,9 @@ import pytest
 
 
 not_yet_implemented = pytest.mark.skip(reason="Not yet implemented")
-no_sorting = pytest.mark.skip(reason="Sorting not supported")
 no_minmax = pytest.mark.skip(reason="Min/max not supported")
 requires_shapely2 = pytest.mark.skipif(
-    not _compat.SHAPELY_GE_20, reason="Requires hashable geometries"
+    not SHAPELY_GE_20, reason="Requires hashable geometries"
 )
 
 
@@ -473,12 +471,25 @@ class TestComparisonOps(extension_tests.BaseComparisonOpsTests):
 
 
 class TestMethods(extension_tests.BaseMethodsTests):
+    @pytest.mark.skipif(
+        not PANDAS_GE_15, reason="sorting index not yet working with older pandas"
+    )
+    @pytest.mark.parametrize("dropna", [True, False])
+    def test_value_counts(self, all_data, dropna):
+        pass
+
+    @pytest.mark.skipif(
+        not PANDAS_GE_15, reason="sorting index not yet working with older pandas"
+    )
+    def test_value_counts_with_normalize(self, data):
+        pass
+
     @requires_shapely2
     @pytest.mark.parametrize("ascending", [True, False])
     def test_sort_values_frame(self, data_for_sorting, ascending):
         super().test_sort_values_frame(data_for_sorting, ascending)
 
-    @no_sorting
+    @pytest.mark.skip(reason="searchsorted not supported")
     def test_searchsorted(self, data_for_sorting, as_series):
         pass
 
