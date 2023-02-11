@@ -6,7 +6,7 @@
    import geopandas
 
 
-Indexing and Selecting Data
+Indexing and selecting data
 ===========================
 
 GeoPandas inherits the standard pandas_ methods for indexing/selecting data. This includes label based indexing with :attr:`~pandas.DataFrame.loc` and integer position based indexing with :attr:`~pandas.DataFrame.iloc`, which apply to both :class:`GeoSeries` and :class:`GeoDataFrame` objects. For more information on indexing/selecting, see the pandas_ documentation.

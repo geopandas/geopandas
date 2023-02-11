@@ -11,11 +11,11 @@
    plt.close('all')
 
 
-Mapping and Plotting Tools
+Mapping and plotting tools
 =========================================
 
 
-*geopandas* provides a high-level interface to the matplotlib_ library for making maps. Mapping shapes is as easy as using the :meth:`~GeoDataFrame.plot()` method on a :class:`GeoSeries` or :class:`GeoDataFrame`.
+GeoPandas provides a high-level interface to the matplotlib_ library for making maps. Mapping shapes is as easy as using the :meth:`~GeoDataFrame.plot()` method on a :class:`GeoSeries` or :class:`GeoDataFrame`.
 
 .. _matplotlib: https://matplotlib.org/stable/
 
@@ -40,10 +40,10 @@ We can now plot those GeoDataFrames:
 Note that in general, any options one can pass to `pyplot <http://matplotlib.org/api/pyplot_api.html>`_ in matplotlib_ (or `style options that work for lines <http://matplotlib.org/api/lines_api.html>`_) can be passed to the :meth:`~GeoDataFrame.plot` method.
 
 
-Choropleth Maps
+Choropleth maps
 -----------------
 
-*geopandas* makes it easy to create Choropleth maps (maps where the color of each shape is based on the value of an associated variable). Simply use the plot command with the ``column`` argument set to the column whose values you want used to assign colors.
+GeoPandas makes it easy to create Choropleth maps (maps where the color of each shape is based on the value of an associated variable). Simply use the plot command with the ``column`` argument set to the column whose values you want used to assign colors.
 
 .. ipython:: python
    :okwarning:
@@ -99,7 +99,7 @@ And the following example plots the color bar below the map and adds its label u
 Choosing colors
 ~~~~~~~~~~~~~~~~
 
-One can also modify the colors used by :meth:`~GeoDataFrame.plot` with the ``cmap`` option (for a full list of colormaps, see the `matplotlib website <http://matplotlib.org/users/colormaps.html>`_):
+You can also modify the colors used by :meth:`~GeoDataFrame.plot` with the ``cmap`` option. For a full list of colormaps, see `Choosing Colormaps in Matplotlib <https://matplotlib.org/stable/tutorials/colors/colormaps.html>`_.
 
 .. ipython:: python
 
@@ -168,7 +168,7 @@ Maps usually do not have to have axis labels. You can turn them off using ``set_
     @savefig set_axis_off.png
     ax.set_axis_off();
 
-Maps with Layers
+Maps with layers
 -----------------
 
 There are two strategies for making a map with multiple layers -- one more succinct, and one that is a little more flexible.
@@ -205,7 +205,7 @@ Before combining maps, however, remember to always ensure they share a common CR
     fig, ax = plt.subplots()
 
     # set aspect to equal. This is done automatically
-    # when using *geopandas* plot on it's own, but not when
+    # when using GeoPandas plot on it's own, but not when
     # working with pyplot directly.
     ax.set_aspect('equal')
 
@@ -237,7 +237,7 @@ We can set the ``zorder`` for cities higher than for world to move it of top.
     world.plot(ax=ax, zorder=1);
 
 
-Pandas Plots
+Pandas plots
 -----------------
 
 Plotting methods also allow for different plot styles from pandas
@@ -268,12 +268,12 @@ You can also create these other plots using the ``GeoDataFrame.plot.<kind>`` acc
     @savefig pandas_bar_plot.png
     gdf.plot.bar()
 
-For more information check out the `pandas documentation <https://pandas.pydata.org/pandas-docs/stable/user_guide/visualization.html>`_.
+For more information, see `Chart visualization <https://pandas.pydata.org/pandas-docs/stable/user_guide/visualization.html>`_ in the pandas documentation.
 
 
-Other Resources
+Other resources
 -----------------
-Links to jupyter Notebooks for different mapping tasks:
+Links to Jupyter Notebooks for different mapping tasks:
 
 `Making Heat Maps <http://nbviewer.jupyter.org/gist/perrygeo/c426355e40037c452434>`_
 

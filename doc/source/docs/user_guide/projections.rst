@@ -6,26 +6,25 @@
    import geopandas
 
 
-Managing Projections
-=========================================
+Projections
+===========
 
 
-Coordinate Reference Systems
+Coordinate reference systems
 -----------------------------
 
-The Coordinate Reference System (CRS) is important because the geometric shapes
+The coordinate reference system (CRS) is important because the geometric shapes
 in a GeoSeries or GeoDataFrame object are simply a collection of coordinates in
 an arbitrary space. A CRS tells Python how those coordinates relate to places on
 the Earth.
 
-You can find the codes for most commonly used projections from
-`www.spatialreference.org <https://spatialreference.org/>`_.
+For reference codes of the most commonly used projections, see `spatialreference.org <https://spatialreference.org/>`_.
 
 The same CRS can often be referred to in many ways. For example, one of the most
 commonly used CRS is the WGS84 latitude-longitude projection. This can be
 referred to using the authority code ``"EPSG:4326"``.
 
-*geopandas* can accept anything accepted by :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`:
+GeoPandas can accept anything accepted by :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`:
 
 - CRS WKT string
 - An authority string (i.e. "epsg:4326")
@@ -39,10 +38,9 @@ referred to using the authority code ``"EPSG:4326"``.
 
 For reference, a few very common projections and their EPSG codes:
 
-* WGS84 Latitude/Longitude: ``"EPSG:4326"``
-* UTM Zones (North): ``"EPSG:32633"``
-* UTM Zones (South): ``"EPSG:32733"``
-
+* WGS84 Latitude/Longitude: EPSG:4326
+* UTM Zones (North): EPSG:32633
+* UTM Zones (South): EPSG:32733
 
 What is the best format to store the CRS information?
 -----------------------------------------------------
@@ -50,19 +48,19 @@ What is the best format to store the CRS information?
 Generally, WKT or SRID's are preferred over PROJ strings as they can contain more information about a given CRS.
 Conversions between WKT and PROJ strings will in most cases cause a loss of information, potentially leading to erroneous transformations. If possible WKT2 should be used.
 
-For more details, see https://proj.org/faq.html#what-is-the-best-format-for-describing-coordinate-reference-systems
+For more details, see `What is the best format for describing coordinate reference systems <https://proj.org/faq.html#what-is-the-best-format-for-describing-coordinate-reference-systems>`_.
 
 
-Setting a Projection
+Setting a projection
 ----------------------
 
 There are two relevant operations for projections: setting a projection and re-projecting.
 
-Setting a projection may be necessary when for some reason *geopandas* has coordinate data (x-y values), but no information about how those coordinates refer to locations in the real world. Setting a projection is how one tells *geopandas* how to interpret coordinates. If no CRS is set, *geopandas* geometry operations will still work, but coordinate transformations will not be possible and exported files may not be interpreted correctly by other software.
+Setting a projection may be necessary when for some reason GeoPandas has coordinate data (x-y values), but no information about how those coordinates refer to locations in the real world. Setting a projection is how one tells GeoPandas how to interpret coordinates. If no CRS is set, GeoPandas geometry operations will still work, but coordinate transformations will not be possible and exported files may not be interpreted correctly by other software.
 
 Be aware that **most of the time** you don't have to set a projection. Data loaded from a reputable source (using the :func:`geopandas.read_file()` command) *should* always include projection information. You can see an objects current CRS through the :attr:`GeoSeries.crs` attribute.
 
-From time to time, however, you may get data that does not include a projection. In this situation, you have to set the CRS so *geopandas* knows how to interpret the coordinates.
+From time to time, however, you may get data that does not include a projection. In this situation, you have to set the CRS so GeoPandas knows how to interpret the coordinates.
 
 For example, if you convert a spreadsheet of latitudes and longitudes into a
 GeoSeries by hand, you would set the projection by passing the WGS84
@@ -75,10 +73,10 @@ the :attr:`GeoSeries.crs` attribute):
     my_geoseries = my_geoseries.set_crs(epsg=4326)
 
 
-Re-Projecting
+Re-projecting
 ----------------
 
-Re-projecting is the process of changing the representation of locations from one coordinate system to another. All projections of locations on the Earth into a two-dimensional plane `are distortions <https://en.wikipedia.org/wiki/Map_projection#Which_projection_is_best.3F>`_, the projection that is best for your application may be different from the projection associated with the data you import. In these cases, data can be re-projected using the :meth:`GeoDataFrame.to_crs` command:
+Re-projecting is the process of changing the representation of locations from one coordinate system to another. All projections of locations on the Earth into a two-dimensional plane have distortions. See `Which projection is best <https://en.wikipedia.org/wiki/Map_projection#Which_projection_is_best.3F>`_ for more information. The projection that is best for your application may be different from the projection associated with the data you import. In these cases, data can be re-projected using the :meth:`GeoDataFrame.to_crs` command:
 
 .. ipython:: python
 
@@ -166,10 +164,10 @@ while now you will see something like this:
 This gives a better user interface and integrates improvements from pyproj and
 PROJ 6, but might also require some changes in your code. See `this blogpost
 <https://jorisvandenbossche.github.io/blog/2020/02/11/geopandas-pyproj-crs/>`__
-for some more background, and the subsections below cover different possible
+for some more information. The subsections below cover different possible
 migration issues.
 
-See the `pyproj docs <https://pyproj4.github.io/pyproj/stable/>`__ for more on
+See the `pyproj documentation <https://pyproj4.github.io/pyproj/stable/>`__ for more on
 the :class:`pyproj.CRS <pyproj.crs.CRS>` object.
 
 Importing data from files
@@ -254,7 +252,7 @@ One possible way to find out the EPSG code is using pyproj for this:
 (you might need to set the ``min_confidence`` keyword of ``to_epsg`` to a lower
 value if the match is not perfect)
 
-Further, on websites such as `spatialreference.org <https://spatialreference.org/>`__
+Further, on websites such as `Spatial Reference <https://spatialreference.org/>`__
 and `epsg.io <https://epsg.io/>`__ the descriptions of many CRS can be found
 including their EPSG codes and proj4 string definitions.
 
@@ -309,9 +307,9 @@ I get a "Bound CRS"?
 Some CRS definitions include a *"towgs84" clause*, which can give problems in
 recognizing the actual CRS.
 
-For example, both the proj4 and WKT representation for EPSG:31370 (the local
-projection used in Belgium) as can be found at `https://spatialreference.org/ref/epsg/31370/ <https://spatialreference.org/ref/epsg/31370/>`__
-include this. When taking one of those definitions from that site, and creating
+For example, both the proj4 and WKT representations for EPSG:31370 (the local
+projection used in Belgium) as can be found at `EPSG:31370 <https://spatialreference.org/ref/epsg/31370/>`__
+include this clause. When taking one of those definitions from that site, and creating
 a CRS object:
 
 .. code-block:: python
@@ -364,9 +362,9 @@ As mentioned above, pyproj now honours the axis order of the EPSG definition.
 However, proj4 strings or older WKT versions don't specify this correctly, which
 can be a reason that the CRS object is not equal to the expected EPSG code.
 
-Consider the following example of a Canadian projected CRS "EPSG:2953". When
+Consider the following example of a Canadian projected CRS EPSG:2953. When
 constructing the CRS object from the WKT string as provided on
-`https://epsg.io/2953 <https://epsg.io/2953>`__:
+`EPSG:2953 <https://epsg.io/2953>`__:
 
 .. code-block:: python
 
