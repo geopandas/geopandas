@@ -126,7 +126,6 @@ def _interleave(x):
 
 
 def _encode(level, x, y):
-
     x = np.asarray(x, dtype="uint32")
     y = np.asarray(y, dtype="uint32")
 

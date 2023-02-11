@@ -255,7 +255,6 @@ def _points_from_xy(x, y, z=None):
 
 
 def points_from_xy(x, y, z=None):
-
     x = np.asarray(x, dtype="float64")
     y = np.asarray(y, dtype="float64")
     if z is not None:

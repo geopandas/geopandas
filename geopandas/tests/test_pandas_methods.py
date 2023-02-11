@@ -105,7 +105,6 @@ def test_repr_linearring():
 
 
 def test_indexing(s, df):
-
     # accessing scalar from the geometry (column)
     exp = Point(1, 1)
     assert s[1] == exp
@@ -243,7 +242,6 @@ def test_assign(df):
 
 
 def test_astype(s, df):
-
     # check geoseries functionality
     with pytest.raises(TypeError):
         s.astype(int)
@@ -313,7 +311,6 @@ def test_convert_dtypes(df):
 
 
 def test_to_csv(df):
-
     exp = (
         "geometry,value1,value2\nPOINT (0 0),0,1\nPOINT (1 1),1,2\nPOINT (2 2),2,1\n"
     ).replace("\n", os.linesep)
@@ -499,8 +496,14 @@ def test_value_counts():
     # each object is considered unique
     s = GeoSeries([Point(0, 0), Point(1, 1), Point(0, 0)])
     res = s.value_counts()
+    if compat.PANDAS_GE_20:
+        name = "count"
+    else:
+        name = None
     with compat.ignore_shapely2_warnings():
-        exp = pd.Series([2, 1], index=pd14_compat_index([Point(0, 0), Point(1, 1)]))
+        exp = pd.Series(
+            [2, 1], index=pd14_compat_index([Point(0, 0), Point(1, 1)]), name=name
+        )
     assert_series_equal(res, exp)
     # Check crs doesn't make a difference - note it is not kept in output index anyway
     s2 = GeoSeries([Point(0, 0), Point(1, 1), Point(0, 0)], crs="EPSG:4326")
@@ -515,17 +518,19 @@ def test_value_counts():
     res3 = s3.value_counts()
     index = pd14_compat_index([Point(0, 0), LineString([[1, 1], [2, 2]])])
     with compat.ignore_shapely2_warnings():
-        exp3 = pd.Series([2, 1], index=index)
+        exp3 = pd.Series([2, 1], index=index, name=name)
     assert_series_equal(res3, exp3)
 
     # check None is handled
     s4 = GeoSeries([Point(0, 0), None, Point(0, 0)])
     res4 = s4.value_counts(dropna=True)
     with compat.ignore_shapely2_warnings():
-        exp4_dropna = pd.Series([2], index=pd14_compat_index([Point(0, 0)]))
+        exp4_dropna = pd.Series([2], index=pd14_compat_index([Point(0, 0)]), name=name)
     assert_series_equal(res4, exp4_dropna)
     with compat.ignore_shapely2_warnings():
-        exp4_keepna = pd.Series([2, 1], index=pd14_compat_index([Point(0, 0), None]))
+        exp4_keepna = pd.Series(
+            [2, 1], index=pd14_compat_index([Point(0, 0), None]), name=name
+        )
     res4_keepna = s4.value_counts(dropna=False)
     assert_series_equal(res4_keepna, exp4_keepna)
 
@@ -555,7 +560,6 @@ def test_drop_duplicates_frame():
 
 
 def test_groupby(df):
-
     # counts work fine
     res = df.groupby("value2").count()
     exp = pd.DataFrame(
