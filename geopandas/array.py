@@ -1282,6 +1282,12 @@ class GeometryArray(ExtensionArray):
 
         return _hilbert_distance(geoms)
 
+    def argmin(self, skipna: bool = True) -> int:
+        raise TypeError("geometries have no minimum or maximum")
+
+    def argmax(self, skipna: bool = True) -> int:
+        raise TypeError("geometries have no minimum or maximum")
+
     def _formatter(self, boxed=False):
         """Formatting function for scalar values.
 
