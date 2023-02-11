@@ -1,9 +1,9 @@
 import numpy
-from ..array import points_from_xy
+from ..array import points_from_xy, from_shapely
 from ..geoseries import GeoSeries
-from ..geodataframe import GeoDataFrame
-from .._compat import import_optional_dependency
+from .._compat import SHAPELY_GE_20
 from .grids import _hexgrid_circle, _squaregrid_circle
+import shapely
 from shapely import geometry
 
 
@@ -53,17 +53,18 @@ def uniform(geom, size=1, batch_size=None):
         raise TypeError(
             "Size must be an integer denoting the number of samples to draw."
         )
-    if hasattr(geom, "type"):
-        if geom.type in ("Polygon", "MultiPolygon"):
+    if geom is None or geom.is_empty:
+        multipoints = geometry.MultiPoint()
+
+    else:
+        if geom.geom_type in ("Polygon", "MultiPolygon"):
             multipoints = _uniform_polygon(geom, size=size, batch_size=batch_size)
 
-        elif geom.type in ("LineString", "MultiLineString"):
+        elif geom.geom_type in ("LineString", "MultiLineString"):
             multipoints = _uniform_line(geom, size=size)
         else:
             # TODO: Should we recurse through geometrycollections?
             multipoints = geometry.MultiPoint()
-    else:
-        multipoints = geometry.MultiPoint()
 
     return multipoints
 
@@ -119,7 +120,7 @@ def grid(
                 "Either size or spacing options can be provided, not both."
             )
         if isinstance(size, int):
-            if geom.type in ("Polygon", "MultiPolygon"):
+            if geom.geom_type in ("Polygon", "MultiPolygon"):
                 size = (size, size)
             else:
                 size = (size, 1)
@@ -138,7 +139,7 @@ def grid(
             f'The tile option must be either "square" or "hex". Recieved {tile}.'
         )
 
-    if geom.type in ("Polygon", "MultiPolygon"):
+    if geom.geom_type in ("Polygon", "MultiPolygon"):
         multipoints = _grid_polygon(
             geom,
             size=size,
@@ -148,7 +149,7 @@ def grid(
             random_rotation=random_rotation,
         )
 
-    elif geom.type in ("LineString", "MultiLineString"):
+    elif geom.geom_type in ("LineString", "MultiLineString"):
         multipoints = _grid_line(
             geom, size=size, spacing=spacing, tile=tile, random_offset=random_offset
         )
@@ -171,24 +172,23 @@ def _grid_polygon(
     """
     Sample points from within a polygon according to a given spacing.
     """
-    pygeos = import_optional_dependency(
-        "pygeos", "pygeos is required to randomly sample spatial grids from polygons"
-    )
-    pg_geom = pygeos.from_shapely(geom)
-    pg_mbc = pygeos.minimum_bounding_circle(pg_geom)
-    target_center = pygeos.get_coordinates(pygeos.centroid(pg_geom))
+
+    # cast to GeoSeries to automatically select the geometry engine
+    geom = GeoSeries([geom])
+    mbc = geom.minimum_bounding_circle()
+    target_center = geom.centroid.get_coordinates().values
+    mbc_bounds = mbc.bounds.iloc[0].values
 
     # get spacing
     if spacing is None:
-        x_min, y_min, x_max, y_max = pygeos.bounds(pg_mbc)
+        x_min, y_min, x_max, y_max = mbc_bounds
         x_res, y_res = size
         x_range, y_range = x_max - x_min, y_max - y_min
         x_step, y_step = x_range / x_res, y_range / y_res
         spacing = (x_step + y_step) / 2
 
-    mbc_bounds = pygeos.bounds(pg_mbc)
-    pg_radius = (mbc_bounds[2] - mbc_bounds[0]) / 2
-    grid_radius = numpy.ceil(pg_radius / spacing).astype(int)
+    radius = (mbc_bounds[2] - mbc_bounds[0]) / 2
+    grid_radius = numpy.ceil(radius / spacing).astype(int)
     if tile == "square":
         raw_grid = _squaregrid_circle(grid_radius)
     elif tile == "hex":
@@ -196,7 +196,7 @@ def _grid_polygon(
     else:
         ValueError(f'tile must be either "square" or "hex". Recieved {tile}.')
 
-    raw_grid *= pg_radius / grid_radius
+    raw_grid *= radius / grid_radius
 
     if tile == "square":
         displacement = (
@@ -218,18 +218,14 @@ def _grid_polygon(
 
     x, y = disp_grid.T
 
-    return GeoSeries(points_from_xy(x=x, y=y)).clip(geom).unary_union
+    return GeoSeries(points_from_xy(x=x, y=y)).clip(geom.iloc[0]).unary_union
 
 
 def _grid_line(geom, size, spacing, random_offset=True, **unused_kws):
     """
     Sample points from along a line according to a given spacing.
     """
-    pygeos = import_optional_dependency(
-        "pygeos", "pygeos is required to randomly sample along LineString geometries"
-    )
-
-    geom = pygeos.from_shapely(geom)
+    geom = GeoSeries([geom])
 
     if size is not None:
         if isinstance(size, tuple):
@@ -241,24 +237,24 @@ def _grid_line(geom, size, spacing, random_offset=True, **unused_kws):
             # size[0] if "horizontal" and size[1] if "vertical." That's a lot
             # of assumption for an unclear benefit, so it's not done here.
             size = size[0] * size[1]
-        spacing = pygeos.length(geom) / size
+        spacing = geom.length.iloc[0] / size
     else:
-        size = spacing * pygeos.length(geom)
+        size = spacing * geom.length.iloc[0]
 
-    parts = pygeos.get_parts(geom)
+    parts = geom.explode(ignore_index=True)
     grid = []
     for part in parts:
         # this does exactly one pass because "part" is always
-        # LineString after pygeos.get_parts
+        # LineString after explode
         segs = _split_line(part)
         remainder = numpy.random.uniform(0, spacing * random_offset)
-        lengths = pygeos.length(segs)
+        lengths = GeoSeries(segs).length.values
         for i, seg in enumerate(segs):
             locs = numpy.arange(remainder, lengths[i], spacing)
 
             if len(locs) > 0:
                 # get points
-                points = pygeos.line_interpolate_point(seg, locs, normalized=False)
+                points = from_shapely([seg]).interpolate(locs)
 
                 grid.extend(points)
 
@@ -266,48 +262,40 @@ def _grid_line(geom, size, spacing, random_offset=True, **unused_kws):
                 remainder = spacing - (lengths[i] - locs[-1])
             else:
                 remainder -= lengths[i]
-    return pygeos.to_shapely(pygeos.union_all(grid))
+
+    return from_shapely(grid).unary_union()
 
 
 def _uniform_line(geom, size=1, **unused_kws):
     """
     Sample points from an input shapely linestring
     """
-    pygeos = import_optional_dependency(
-        "pygeos", "pygeos is required to randomly sample along LineString geometries"
-    )
-    geom = pygeos.from_shapely(geom)
     n_points = size
     splits = _split_line(geom)
-    lengths = pygeos.length(splits)
+    lengths = from_shapely(splits).length
     points_per_split = numpy.random.multinomial(n_points, pvals=lengths / lengths.sum())
     random_fracs = numpy.random.uniform(size=size).T
 
     points_to_assign = points_per_split
     fracs = random_fracs
     split_to_point = numpy.repeat(numpy.arange(len(splits)), points_to_assign)
-    samples = pygeos.line_interpolate_point(
-        splits[split_to_point], fracs, normalized=True
-    )
-    grouped_samples = (
-        GeoDataFrame(geometry=samples, index=split_to_point).dissolve(level=0).geometry
-    )
-    return grouped_samples.unary_union
+    samples = from_shapely(splits[split_to_point]).interpolate(fracs, normalized=True)
+    return samples.unary_union()
 
 
 def _split_line(geom):
     """
     Split an input linestring into component sub-segments.
     """
-    pygeos = import_optional_dependency(
-        "pygeos", "pygeos is required to randomly sample along LineString geometries"
-    )
-    parts = pygeos.get_parts(geom)
     splits = numpy.empty((0,))
-    for part in parts:
-        points = pygeos.get_coordinates(part)
-        substring_splits = pygeos.linestrings(list(zip(points[:-1], points[1:])))
-        splits = numpy.hstack((splits, substring_splits))
+    points = GeoSeries([geom]).get_coordinates().values
+    if SHAPELY_GE_20:
+        substring_splits = shapely.linestrings(list(zip(points[:-1], points[1:])))
+    else:
+        substring_splits = numpy.array(
+            [shapely.LineString(x) for x in list(zip(points[:-1], points[1:]))]
+        )
+    splits = numpy.hstack((splits, substring_splits))
     return splits
 
 

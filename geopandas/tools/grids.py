@@ -107,22 +107,22 @@ def make_grid(
             was_df = False
 
         # if the mask is a polygon, clip if not forbidden
-        if mask.type in ("Polygon", "MultiPolygon"):
+        if mask.geom_type in ("Polygon", "MultiPolygon"):
             result = result.clip(geom, keep_geom_type=True)
         # otherwise, if explicitly requested and the mask is not valid, warn:
         elif clip:
             if was_df:
                 warning_string = (
                     f"GeoSeries/GeoDataFrame with types"
-                    f" ({', '.join(geom.geometry.type.unique())})"
+                    f" ({', '.join(geom.geometry.geom_type.unique())})"
                 )
 
             else:
-                warning_string = f"geometry of type {geom.type}"
+                warning_string = f"geometry of type {geom.geom_type}"
             warn(
                 f"clip only makes sense when gridding (Multi)Polygon geometries."
                 f" Your input was a {warning_string} that resulted in a mask of "
-                f"type {mask.type}. You may need to use the .clip() method with "
+                f"type {mask.geom_type}. You may need to use the .clip() method with "
                 f"a specific mask on this grid to get the result you want."
             )
         # finally, if clip is None or the mask isn't usable, ignore it

@@ -2,7 +2,6 @@ import geopandas
 import numpy
 import pytest
 
-from geopandas import _compat as compat
 from scipy.spatial import distance
 from geopandas.tools._random import uniform, grid
 
@@ -67,9 +66,6 @@ def test_uniform(data, size, batch_size):
         for seed in (112112, 123456)
         if ((not ((spacing is not None) and (size is not None))))
     ],
-)
-@pytest.mark.skipif(
-    not compat.HAS_PYGEOS, reason="Need pygeos to sample random grids from shapes..."
 )
 def test_grid(data, size, spacing, tile, seed):
     numpy.random.seed(seed)
