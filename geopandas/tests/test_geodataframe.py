@@ -998,10 +998,10 @@ class TestDataFrame:
         assert_geodataframe_equal(result, expected)
 
     @pytest.mark.skipif(
-        not (compat.HAS_PYGEOS | compat.HAS_RTREE),
-        reason="Sampling requires a spatial index",
+        not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+        reason="get_coordinates not implemented for shapely<2",
     )
-    def test_sample(self):
+    def test_sample_points(self):
         for frame in (self.df, self.df2):
             output = frame.sample_points(10)
             assert_index_equal(frame.index, output.index)

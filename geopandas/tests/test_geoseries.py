@@ -377,8 +377,8 @@ class TestSeries:
         assert_geoseries_equal(expected, GeoSeries.from_xy(x, y, z))
 
     @pytest.mark.skipif(
-        not (compat.HAS_PYGEOS | compat.HAS_RTREE),
-        reason="Sampling requires a spatial index",
+        not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+        reason="get_coordinates not implemented for shapely<2",
     )
     def test_sample(self):
         for frame in (
@@ -386,13 +386,11 @@ class TestSeries:
             self.na,
             self.a1,
             self.landmarks,
+            self.g5,
             pd.concat((self.g1, self.landmarks)),
         ):
             output = frame.sample_points(10)
             assert_index_equal(frame.index, output.index)
-        if compat.HAS_PYGEOS:
-            output = self.g5.sample_points(10)
-            assert_index_equal(self.g5.index, output.index)
 
 
 @pytest.mark.filterwarnings("ignore::UserWarning")

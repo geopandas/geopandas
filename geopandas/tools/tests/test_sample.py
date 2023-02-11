@@ -4,6 +4,8 @@ import pytest
 
 from scipy.spatial import distance
 from geopandas.tools._random import uniform, grid
+import geopandas._compat as compat
+
 
 multipolygons = geopandas.read_file(geopandas.datasets.get_path("nybb")).geometry
 polygons = multipolygons.explode().geometry
@@ -41,6 +43,10 @@ def find_spacing(input, return_distances=False):
         for batch_size in (None, 2)
     ],
 )
+@pytest.mark.skipif(
+    not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+    reason="get_coordinates not implemented for shapely<2",
+)
 def test_uniform(data, size, batch_size):
     if size is None:
         sample = uniform(data, batch_size=batch_size)
@@ -66,6 +72,10 @@ def test_uniform(data, size, batch_size):
         for seed in (112112, 123456)
         if ((not ((spacing is not None) and (size is not None))))
     ],
+)
+@pytest.mark.skipif(
+    not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+    reason="get_coordinates not implemented for shapely<2",
 )
 def test_grid(data, size, spacing, tile, seed):
     numpy.random.seed(seed)
@@ -97,6 +107,10 @@ def test_grid(data, size, spacing, tile, seed):
     assert len(intersects) == len(points_in_grid)
 
 
+@pytest.mark.skipif(
+    not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+    reason="get_coordinates not implemented for shapely<2",
+)
 def test_size_and_spacing_failures():
     for bad_size in [(10, 10, 2), 0.1, (0.1, 0.2)]:
         with pytest.raises(TypeError):

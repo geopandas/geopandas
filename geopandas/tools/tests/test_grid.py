@@ -39,8 +39,8 @@ def find_spacing(input, return_distances=False):
     ],
 )
 @pytest.mark.skipif(
-    not (compat.HAS_PYGEOS | compat.HAS_RTREE),
-    reason="Sampling requires a spatial index",
+    not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+    reason="get_coordinates not implemented for shapely<2",
 )
 def test_grid(
     geom,
