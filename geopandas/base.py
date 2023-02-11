@@ -3618,9 +3618,11 @@ GeometryCollection
         """
         from geopandas.tools.hilbert_curve import _hilbert_distance
 
-        distances = _hilbert_distance(self, total_bounds=total_bounds, level=level)
+        distances = _hilbert_distance(
+            self.geometry.values, total_bounds=total_bounds, level=level
+        )
 
-        return distances
+        return pd.Series(distances, index=self.index, name="hilbert_distance")
 
 
 def _get_index_for_parts(orig_idx, outer_idx, ignore_index, index_parts):

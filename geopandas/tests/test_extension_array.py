@@ -21,9 +21,11 @@ import pandas as pd
 from pandas.tests.extension import base as extension_tests
 
 import shapely.geometry
+from shapely.geometry import Point
 
 from geopandas.array import GeometryArray, GeometryDtype, from_shapely
 from geopandas._compat import ignore_shapely2_warnings
+from geopandas import _compat
 
 import pytest
 
@@ -34,6 +36,9 @@ import pytest
 
 not_yet_implemented = pytest.mark.skip(reason="Not yet implemented")
 no_sorting = pytest.mark.skip(reason="Sorting not supported")
+requires_shapely2 = pytest.mark.skipif(
+    not _compat.SHAPELY_GE_20, reason="Requires hashable geometries"
+)
 
 
 # -----------------------------------------------------------------------------
@@ -116,7 +121,7 @@ def data_for_sorting():
     This should be three items [B, C, A] with
     A < B < C
     """
-    raise NotImplementedError
+    return from_shapely([Point(0, 1), Point(1, 1), Point(0, 0)])
 
 
 @pytest.fixture
@@ -126,7 +131,7 @@ def data_missing_for_sorting():
     This should be three items [B, NA, A] with
     A < B and NA missing.
     """
-    raise NotImplementedError
+    return from_shapely([Point(0, 1), None, Point(0, 0)])
 
 
 @pytest.fixture
@@ -278,6 +283,15 @@ def all_compare_operators(request):
     * !=
     * <
     * <=
+    """
+    return request.param
+
+
+@pytest.fixture(params=[None, lambda x: x])
+def sort_by_key(request):
+    """
+    Simple fixture for testing keys in sorting methods.
+    Tests None (no key) and the identity key.
     """
     return request.param
 
@@ -458,58 +472,10 @@ class TestComparisonOps(extension_tests.BaseComparisonOpsTests):
 
 
 class TestMethods(extension_tests.BaseMethodsTests):
-    @no_sorting
-    @pytest.mark.parametrize("dropna", [True, False])
-    def test_value_counts(self, all_data, dropna):
-        pass
-
-    @no_sorting
-    def test_value_counts_with_normalize(self, data):
-        pass
-
-    @no_sorting
-    def test_argsort(self, data_for_sorting):
-        result = pd.Series(data_for_sorting).argsort()
-        expected = pd.Series(np.array([2, 0, 1], dtype=np.int64))
-        self.assert_series_equal(result, expected)
-
-    @no_sorting
-    def test_argsort_missing(self, data_missing_for_sorting):
-        result = pd.Series(data_missing_for_sorting).argsort()
-        expected = pd.Series(np.array([1, -1, 0], dtype=np.int64))
-        self.assert_series_equal(result, expected)
-
-    @no_sorting
-    @pytest.mark.parametrize("ascending", [True, False])
-    def test_sort_values(self, data_for_sorting, ascending):
-        ser = pd.Series(data_for_sorting)
-        result = ser.sort_values(ascending=ascending)
-        expected = ser.iloc[[2, 0, 1]]
-        if not ascending:
-            expected = expected[::-1]
-
-        self.assert_series_equal(result, expected)
-
-    @no_sorting
-    @pytest.mark.parametrize("ascending", [True, False])
-    def test_sort_values_missing(self, data_missing_for_sorting, ascending):
-        ser = pd.Series(data_missing_for_sorting)
-        result = ser.sort_values(ascending=ascending)
-        if ascending:
-            expected = ser.iloc[[2, 0, 1]]
-        else:
-            expected = ser.iloc[[0, 2, 1]]
-        self.assert_series_equal(result, expected)
-
-    @no_sorting
+    @requires_shapely2
     @pytest.mark.parametrize("ascending", [True, False])
     def test_sort_values_frame(self, data_for_sorting, ascending):
-        df = pd.DataFrame({"A": [1, 2, 1], "B": data_for_sorting})
-        result = df.sort_values(["A", "B"])
-        expected = pd.DataFrame(
-            {"A": [1, 1, 2], "B": data_for_sorting.take([2, 0, 1])}, index=[2, 0, 1]
-        )
-        self.assert_frame_equal(result, expected)
+        super().test_sort_values_frame(data_for_sorting, ascending)
 
     @no_sorting
     def test_searchsorted(self, data_for_sorting, as_series):
@@ -529,50 +495,22 @@ class TestMethods(extension_tests.BaseMethodsTests):
         with pytest.raises(ValueError, match=msg):
             data_missing.fillna(data_missing.take([1]))
 
-    @no_sorting
-    def test_nargsort(self):
-        pass
-
-    @no_sorting
-    def test_argsort_missing_array(self):
-        pass
-
-    @no_sorting
-    def test_argmin_argmax(self):
-        pass
-
-    @no_sorting
-    def test_argmin_argmax_empty_array(self):
-        pass
-
-    @no_sorting
-    def test_argmin_argmax_all_na(self):
-        pass
-
-    @no_sorting
-    def test_argreduce_series(self):
-        pass
-
-    @no_sorting
-    def test_argmax_argmin_no_skipna_notimplemented(self):
-        pass
-
 
 class TestCasting(extension_tests.BaseCastingTests):
     pass
 
 
 class TestGroupby(extension_tests.BaseGroupbyTests):
-    @no_sorting
+    @requires_shapely2
     @pytest.mark.parametrize("as_index", [True, False])
     def test_groupby_extension_agg(self, as_index, data_for_grouping):
-        pass
+        super().test_groupby_extension_agg(as_index, data_for_grouping)
 
-    @no_sorting
+    @requires_shapely2
     def test_groupby_extension_transform(self, data_for_grouping):
-        pass
+        super().test_groupby_extension_transform(data_for_grouping)
 
-    @no_sorting
+    @requires_shapely2
     @pytest.mark.parametrize(
         "op",
         [
@@ -584,7 +522,7 @@ class TestGroupby(extension_tests.BaseGroupbyTests):
         ids=["scalar", "list", "series", "object"],
     )
     def test_groupby_extension_apply(self, data_for_grouping, op):
-        pass
+        super().test_groupby_extension_apply(data_for_grouping, op)
 
 
 class TestPrinting(extension_tests.BasePrintingTests):

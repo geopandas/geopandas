@@ -1258,7 +1258,29 @@ class GeometryArray(ExtensionArray):
         ExtensionArray.argsort
         """
         # Note: this is used in `ExtensionArray.argsort`.
-        raise TypeError("geometries are not orderable")
+        from geopandas.tools.hilbert_curve import _hilbert_distance
+
+        if self.size == 0:
+            # TODO _hilbert_distance fails for empty array
+            return np.array([], dtype="uint32")
+
+        mask_missing = self.isna()
+        mask_empty = self.is_empty
+        mask = mask_missing | mask_empty
+        if mask.any():
+            geoms = self.copy()
+            indices = np.nonzero(~mask)[0]
+            if indices.size:
+                geom = self[indices[0]]
+            else:
+                # for all-empty/NA, just take random geometry
+                geom = shapely.geometry.Point(0, 0)
+
+            geoms[mask] = geom
+        else:
+            geoms = self
+
+        return _hilbert_distance(geoms)
 
     def _formatter(self, boxed=False):
         """Formatting function for scalar values.
