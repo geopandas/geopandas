@@ -36,6 +36,7 @@ import pytest
 
 not_yet_implemented = pytest.mark.skip(reason="Not yet implemented")
 no_sorting = pytest.mark.skip(reason="Sorting not supported")
+no_minmax = pytest.mark.skip(reason="Min/max not supported")
 requires_shapely2 = pytest.mark.skipif(
     not _compat.SHAPELY_GE_20, reason="Requires hashable geometries"
 )
@@ -494,6 +495,26 @@ class TestMethods(extension_tests.BaseMethodsTests):
         msg = "Length of 'value' does not match."
         with pytest.raises(ValueError, match=msg):
             data_missing.fillna(data_missing.take([1]))
+
+    @no_minmax
+    def test_argmin_argmax(self):
+        pass
+
+    @no_minmax
+    def test_argmin_argmax_empty_array(self):
+        pass
+
+    @no_minmax
+    def test_argmin_argmax_all_na(self):
+        pass
+
+    @no_minmax
+    def test_argreduce_series(self):
+        pass
+
+    @no_minmax
+    def test_argmax_argmin_no_skipna_notimplemented(self):
+        pass
 
 
 class TestCasting(extension_tests.BaseCastingTests):
