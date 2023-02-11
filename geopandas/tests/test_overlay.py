@@ -405,7 +405,6 @@ def test_correct_index(dfs):
 
 
 def test_warn_on_keep_geom_type(dfs):
-
     df1, df2 = dfs
     polys3 = GeoSeries(
         [
@@ -720,7 +719,6 @@ def test_overlap_make_valid(make_valid):
 
 
 def test_empty_overlay_return_non_duplicated_columns():
-
     nybb = geopandas.read_file(geopandas.datasets.get_path("nybb"))
     nybb2 = nybb.copy()
     nybb2.geometry = nybb2.translate(20000000)

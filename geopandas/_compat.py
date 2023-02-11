@@ -86,7 +86,6 @@ def set_use_pygeos(val=None):
         USE_PYGEOS = bool(val)
     else:
         if USE_PYGEOS is None:
-
             USE_PYGEOS = HAS_PYGEOS
 
             if env_use_pygeos is not None:

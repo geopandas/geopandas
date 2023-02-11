@@ -122,6 +122,53 @@ class TestGeomMethods:
             {"geometry": self.gz, "col3": [4, 5, 6], "col4": ["rand", "string", "geo"]}
         )
 
+        self.g11 = GeoSeries(
+            [
+                self.p0,
+                self.p3d,
+                self.pt_empty,
+                self.t1,
+                self.tz,
+                self.empty_poly,
+                self.l1,
+            ]
+        )
+        # expected coordinates from g11
+        self.expected_2d = np.array(
+            [
+                [5.0, 5.0],
+                [5.0, 5.0],
+                [0.0, 0.0],
+                [1.0, 0.0],
+                [1.0, 1.0],
+                [0.0, 0.0],
+                [1.0, 1.0],
+                [2.0, 2.0],
+                [3.0, 3.0],
+                [1.0, 1.0],
+                [0.0, 0.0],
+                [0.0, 1.0],
+                [1.0, 1.0],
+            ]
+        )
+        self.expected_3d = np.array(
+            [
+                [5.0, 5.0, np.nan],
+                [5.0, 5.0, 5.0],
+                [0.0, 0.0, np.nan],
+                [1.0, 0.0, np.nan],
+                [1.0, 1.0, np.nan],
+                [0.0, 0.0, np.nan],
+                [1.0, 1.0, 1.0],
+                [2.0, 2.0, 2.0],
+                [3.0, 3.0, 3.0],
+                [1.0, 1.0, 1.0],
+                [0.0, 0.0, np.nan],
+                [0.0, 1.0, np.nan],
+                [1.0, 1.0, np.nan],
+            ]
+        )
+
     def _test_unary_real(self, op, expected, a):
         """Tests for 'area', 'length', 'is_valid', etc."""
         fcmp = assert_series_equal
@@ -1346,3 +1393,76 @@ class TestGeomMethods:
             self._test_binary_operator("__sub__", expected, self.g1, self.t2)
         with pytest.warns(FutureWarning):
             self._test_binary_operator("__sub__", expected, self.gdf1, self.t2)
+
+    @pytest.mark.skipif(
+        not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+        reason="get_coordinates not implemented for shapely<2",
+    )
+    def test_get_coordinates(self):
+        expected = DataFrame(
+            data=self.expected_2d,
+            columns=["x", "y"],
+            index=[0, 1, 3, 3, 3, 3, 4, 4, 4, 4, 6, 6, 6],
+        )
+        assert_frame_equal(self.g11.get_coordinates(), expected)
+
+    @pytest.mark.skipif(
+        not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+        reason="get_coordinates not implemented for shapely<2",
+    )
+    def test_get_coordinates_z(self):
+        expected = DataFrame(
+            data=self.expected_3d,
+            columns=["x", "y", "z"],
+            index=[0, 1, 3, 3, 3, 3, 4, 4, 4, 4, 6, 6, 6],
+        )
+        assert_frame_equal(self.g11.get_coordinates(include_z=True), expected)
+
+    @pytest.mark.skipif(
+        not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+        reason="get_coordinates not implemented for shapely<2",
+    )
+    def test_get_coordinates_ignore(self):
+        expected = DataFrame(
+            data=self.expected_2d,
+            columns=["x", "y"],
+        )
+        assert_frame_equal(self.g11.get_coordinates(ignore_index=True), expected)
+
+    @pytest.mark.skipif(
+        not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+        reason="get_coordinates not implemented for shapely<2",
+    )
+    def test_get_coordinates_parts(self):
+        expected = DataFrame(
+            data=self.expected_2d,
+            columns=["x", "y"],
+            index=MultiIndex.from_tuples(
+                [
+                    (0, 0),
+                    (1, 0),
+                    (3, 0),
+                    (3, 1),
+                    (3, 2),
+                    (3, 3),
+                    (4, 0),
+                    (4, 1),
+                    (4, 2),
+                    (4, 3),
+                    (6, 0),
+                    (6, 1),
+                    (6, 2),
+                ]
+            ),
+        )
+        assert_frame_equal(self.g11.get_coordinates(index_parts=True), expected)
+
+    @pytest.mark.skipif(
+        (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+        reason="get_coordinates not implemented for shapely<2",
+    )
+    def test_get_coordinates_not(self):
+        with pytest.raises(
+            NotImplementedError, match="shapely >= 2.0 or PyGEOS are required"
+        ):
+            self.g11.get_coordinates()

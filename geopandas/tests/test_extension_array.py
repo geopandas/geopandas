@@ -288,7 +288,6 @@ def all_compare_operators(request):
 
 
 class TestDtype(extension_tests.BaseDtypeTests):
-
     # additional tests
 
     def test_array_type_with_arg(self, data, dtype):

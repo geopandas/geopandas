@@ -441,7 +441,6 @@ def _write_postgis(
                     raise ValueError(msg)
 
     with _get_conn(con) as connection:
-
         gdf.to_sql(
             name,
             connection,

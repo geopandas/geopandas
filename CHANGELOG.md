@@ -4,6 +4,7 @@
 
 New features and improvements:
 
+- Added ``get_coordinates()`` method from shapely to GeoSeries/GeoDataframe (#2624).
 - The Parquet and Feather IO functions now support the latest 1.0.0-beta.1 version
   of the GeoParquet specification (geoparquet.org) (#2663).
 - New ``hilbert_distance()`` method that calculates the distance along a Hilbert curve
@@ -24,6 +25,7 @@ Bug fixes:
 - Escape special characters to avoid TemplateSyntaxError in ``explore()`` (#2657)
 - Fix `to_parquet`/`to_feather` to not write an invalid bbox (with NaNs) in the
   metadata in case of an empty GeoDataFrame (#2653)
+- Fix `to_parquet`/`to_feather` to use correct WKB flavor for 3D geometries (#2654)
 
 Notes on (optional) dependencies:
 
@@ -31,7 +33,6 @@ Notes on (optional) dependencies:
   pandas version is now 1.1). Further, the minimum required versions for the listed
   dependencies have now changed to shapely 1.7.1, fiona 1.8.19, pyproj 3.0.1 and
   matplotlib 3.3.4 (#2655)
-
 
 ## Version 0.12.2 (December 10, 2022)
 
