@@ -48,7 +48,7 @@ def make_grid(
     --------
     >>> from shapely.geometry import box
     >>> square = box(0,0,1,1)
-    >>> uniform(square, size=100, batch_size=2)
+    >>> make_grid(square, size=100) # doctest: +SKIP
     """
     if size is not None:
         if isinstance(size, float):

@@ -43,7 +43,7 @@ def uniform(geom, size=1, batch_size=None):
     --------
     >>> from shapely.geometry import box
     >>> square = box(0,0,1,1)
-    >>> uniform(square, size=100, batch_size=2)
+    >>> uniform(square, size=100, batch_size=2) # doctest: +SKIP
     """
 
     try:
@@ -104,7 +104,7 @@ def grid(
     --------
     >>> from shapely.geometry import box
     >>> square = box(0,0,1,1)
-    >>> grid(square, size=(8,8), tile='hex')
+    >>> grid(square, size=(8,8), tile='hex') # doctest: +SKIP
     """
 
     if geom is None:
