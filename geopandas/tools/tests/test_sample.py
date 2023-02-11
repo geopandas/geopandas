@@ -2,10 +2,10 @@ import geopandas
 import numpy
 import pytest
 
-from scipy.spatial import distance
 from geopandas.tools._random import uniform, grid
 import geopandas._compat as compat
 
+distance = pytest.importorskip("scipy.spatial.distance")
 
 multipolygons = geopandas.read_file(geopandas.datasets.get_path("nybb")).geometry
 polygons = multipolygons.explode().geometry

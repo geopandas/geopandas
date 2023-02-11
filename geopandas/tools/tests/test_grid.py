@@ -1,7 +1,6 @@
 import geopandas
 import pytest
 from shapely import geometry
-from scipy.spatial import distance
 import numpy
 
 from geopandas.tools.grids import make_grid
@@ -14,6 +13,8 @@ box = geometry.box(-1, -1, 1, 1)
 staten = nybb.iloc[0].geometry
 
 rect = geometry.box(0, 0, 0.5, 1)
+
+distance = pytest.importorskip("scipy.spatial.distance")
 
 
 def find_spacing(input, return_distances=False):
