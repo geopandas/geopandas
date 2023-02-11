@@ -3560,13 +3560,13 @@ GeometryCollection
             import shapely
 
             coords, outer_idx = shapely.get_coordinates(
-                self.geometry.values, include_z=include_z, return_index=True
+                self.geometry.values._data, include_z=include_z, return_index=True
             )
         elif compat.USE_PYGEOS:
             import pygeos
 
             coords, outer_idx = pygeos.get_coordinates(
-                self.geometry.values.data, include_z=include_z, return_index=True
+                self.geometry.values._data, include_z=include_z, return_index=True
             )
 
         else:

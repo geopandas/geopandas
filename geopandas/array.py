@@ -438,9 +438,10 @@ class GeometryArray(ExtensionArray):
             self._data = geoms
             self.base = None
         else:
+            if "data" in state:
+                state["_data"] = state.pop("data")
             if compat.USE_PYGEOS:
-                # TODO check
-                state["data"] = vectorized.from_shapely(state["data"])
+                state["_data"] = vectorized.from_shapely(state["_data"])
             if "_crs" not in state:
                 state["_crs"] = None
             self.__dict__.update(state)
