@@ -32,7 +32,6 @@ def generate_test_df():
 
 
 class BenchIntersection:
-
     param_names = ["input_geom_type", "tree_geom_type"]
     params = [
         geom_types,
@@ -54,7 +53,6 @@ class BenchIntersection:
 
 
 class BenchIndexCreation:
-
     param_names = ["tree_geom_type"]
     params = [
         geom_types,
@@ -77,13 +75,10 @@ class BenchIndexCreation:
         tree = self.data[tree_geom_type].sindex
         # also do a single query to ensure the index is actually
         # generated and used
-        tree.query(
-            self.data[tree_geom_type].geometry.values.data[0]
-        )
+        tree.query(self.data[tree_geom_type].geometry.values.data[0])
 
 
 class BenchQuery:
-
     param_names = ["predicate", "input_geom_type", "tree_geom_type"]
     params = [
         predicates,
@@ -103,7 +98,4 @@ class BenchQuery:
     def time_query(self, predicate, input_geom_type, tree_geom_type):
         tree = self.data[tree_geom_type].sindex
         for geom in self.data[input_geom_type].geometry.values.data:
-            tree.query(
-                geom,
-                predicate=predicate
-            )
+            tree.query(geom, predicate=predicate)

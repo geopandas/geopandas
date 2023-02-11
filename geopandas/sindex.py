@@ -357,7 +357,6 @@ geometries}
 
 
 if compat.HAS_RTREE:
-
     import rtree.index  # noqa
     from rtree.core import RTreeError  # noqa
     from shapely.prepared import prep  # noqa
@@ -628,7 +627,6 @@ if compat.HAS_RTREE:
 
 
 if compat.SHAPELY_GE_20 or compat.HAS_PYGEOS:
-
     from . import geoseries  # noqa
     from . import array  # noqa
 

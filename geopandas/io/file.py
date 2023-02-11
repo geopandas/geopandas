@@ -550,7 +550,6 @@ def _to_file(
 
 
 def _to_file_fiona(df, filename, driver, schema, crs, mode, **kwargs):
-
     if schema is None:
         schema = infer_schema(df)
 

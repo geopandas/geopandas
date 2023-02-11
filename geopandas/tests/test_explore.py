@@ -14,6 +14,7 @@ import matplotlib.colors as colors  # noqa
 from branca.colormap import StepColormap  # noqa
 
 BRANCA_05 = Version(branca.__version__) > Version("0.4.2")
+FOLIUM_G_014 = Version(folium.__version__) > Version("0.14.0")
 
 
 class TestExplore:
@@ -465,6 +466,15 @@ class TestExplore:
         out_str = self._fetch_map_string(m)
         assert "BoroName" in out_str
 
+    def test_escape_special_characters(self):
+        # check if special characters are escaped
+        gdf = self.world.copy()
+        gdf["name"] = """{{{what a mess}}} they are so different."""
+        m = gdf.explore()
+        out_str = self._fetch_map_string(m)
+        assert """{{{""" in out_str
+        assert """}}}""" in out_str
+
     def test_default_markers(self):
         # check overridden default for points
         m = self.cities.explore()
@@ -524,8 +534,14 @@ class TestExplore:
         df2["values"] = df2["BoroCode"] * 10.0
         m = df2[df2["values"] >= 30].explore("values", vmin=0)
         out_str = self._fetch_map_string(m)
-        assert 'case"1":return{"color":"#7ad151","fillColor":"#7ad151"' in out_str
-        assert 'case"2":return{"color":"#22a884","fillColor":"#22a884"' in out_str
+        if FOLIUM_G_014:
+            assert 'case"0":return{"color":"#fde725","fillColor":"#fde725"' in out_str
+            assert 'case"1":return{"color":"#7ad151","fillColor":"#7ad151"' in out_str
+            assert 'default:return{"color":"#22a884","fillColor":"#22a884"' in out_str
+        else:
+            assert 'case"1":return{"color":"#7ad151","fillColor":"#7ad151"' in out_str
+            assert 'case"2":return{"color":"#22a884","fillColor":"#22a884"' in out_str
+            assert 'default:return{"color":"#fde725","fillColor":"#fde725"' in out_str
 
         df2["values_negative"] = df2["BoroCode"] * -10.0
         m = df2[df2["values_negative"] <= 30].explore("values_negative", vmax=0)
@@ -565,17 +581,20 @@ class TestExplore:
         assert "red'></span>NaN" in out_str
 
     def test_colorbar(self):
+        def quoted_in(find, s):
+            return find in s or find.replace("'", '"') in s
+
         m = self.world.explore("range", legend=True)
         out_str = self._fetch_map_string(m)
         assert "attr(\"id\",'legend')" in out_str
-        assert "text('range')" in out_str
+        assert quoted_in("text('range')", out_str)
 
         m = self.world.explore(
             "range", legend=True, legend_kwds=dict(caption="my_caption")
         )
         out_str = self._fetch_map_string(m)
         assert "attr(\"id\",'legend')" in out_str
-        assert "text('my_caption')" in out_str
+        assert quoted_in("text('my_caption')", out_str)
 
         m = self.missing.explore("pop_est", legend=True, missing_kwds=dict(color="red"))
         out_str = self._fetch_map_string(m)
@@ -682,6 +701,38 @@ class TestExplore:
             in out_str
         )
         assert '"maxNativeZoom":20,"maxZoom":20,"minZoom":0' in out_str
+
+    def test_xyzservices_providers_min_zoom_override(self):
+        xyzservices = pytest.importorskip("xyzservices")
+
+        m = self.nybb.explore(
+            tiles=xyzservices.providers.CartoDB.PositronNoLabels, min_zoom=3
+        )
+        out_str = self._fetch_map_string(m)
+
+        assert '"maxNativeZoom":20,"maxZoom":20,"minZoom":3' in out_str
+
+    def test_xyzservices_providers_max_zoom_override(self):
+        xyzservices = pytest.importorskip("xyzservices")
+
+        m = self.nybb.explore(
+            tiles=xyzservices.providers.CartoDB.PositronNoLabels, max_zoom=12
+        )
+        out_str = self._fetch_map_string(m)
+
+        assert '"maxNativeZoom":12,"maxZoom":12,"minZoom":0' in out_str
+
+    def test_xyzservices_providers_both_zooms_override(self):
+        xyzservices = pytest.importorskip("xyzservices")
+
+        m = self.nybb.explore(
+            tiles=xyzservices.providers.CartoDB.PositronNoLabels,
+            min_zoom=3,
+            max_zoom=12,
+        )
+        out_str = self._fetch_map_string(m)
+
+        assert '"maxNativeZoom":12,"maxZoom":12,"minZoom":3' in out_str
 
     def test_linearrings(self):
         rings = self.nybb.explode(index_parts=True).exterior
@@ -792,7 +843,6 @@ class TestExplore:
         assert '{"color":"red","fillOpacity":1}' in out_str
 
     def test_custom_colormaps(self):
-
         step = StepColormap(["green", "yellow", "red"], vmin=0, vmax=100000000)
 
         m = self.world.explore("pop_est", cmap=step, tooltip=["name"], legend=True)
