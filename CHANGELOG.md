@@ -6,6 +6,8 @@ New features and improvements:
 
 - The Parquet and Feather IO functions now support the latest 1.0.0-beta.1 version
   of the GeoParquet specification (geoparquet.org) (#2663).
+- New ``hilbert_distance()`` method that calculates the distance along a Hilbert curve
+  for each geometry in a GeoSeries/GeoDataFrame (#2297).
 - Added ``minimum_bounding_circle()`` method from shapely to GeoSeries/GeoDataframe (#2621).
 - Support specifying ``min_zoom`` and ``max_zoom`` inside the ``map_kwds`` argument for ``.explore()`` (#2599).
 
