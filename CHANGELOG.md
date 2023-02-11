@@ -24,6 +24,7 @@ Bug fixes:
 - Escape special characters to avoid TemplateSyntaxError in ``explore()`` (#2657)
 - Fix `to_parquet`/`to_feather` to not write an invalid bbox (with NaNs) in the
   metadata in case of an empty GeoDataFrame (#2653)
+- Fix `to_parquet`/`to_feather` to use correct WKB flavor for 3D geometries (#2654)
 
 Notes on (optional) dependencies:
 
