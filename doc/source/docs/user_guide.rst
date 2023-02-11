@@ -21,4 +21,4 @@ Advanced topics can be found in the :doc:`Advanced Guide <advanced_guide>` and f
   Aggregation with dissolve <user_guide/aggregation_with_dissolve>
   Merging data <user_guide/mergingdata>
   Geocoding <user_guide/geocoding>
-  Sampling Points and Point Grids <sampling_and_grids>
+  Sampling Points and Point Grids <user_guide/sampling_and_grids>
