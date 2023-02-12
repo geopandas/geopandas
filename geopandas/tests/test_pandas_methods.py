@@ -454,12 +454,13 @@ def test_any_all():
 
 
 def test_sort_values():
-    s = GeoSeries([Point(0, 0), Point(2, 2), Point(0, 0)])
+    s = GeoSeries([Point(0, 0), Point(2, 2), Point(0, 2)])
     res = s.sort_values()
     assert res.index.tolist() == [0, 2, 1]
     res2 = s.sort_values(ascending=False)
-    assert res2.index.tolist() == [1, 0, 2]
+    assert res2.index.tolist() == [1, 2, 0]
 
+    # empty geoseries
     assert_geoseries_equal(s.iloc[:0].sort_values(), s.iloc[:0])
 
 
