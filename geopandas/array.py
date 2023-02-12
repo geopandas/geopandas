@@ -1264,10 +1264,16 @@ class GeometryArray(ExtensionArray):
             # TODO _hilbert_distance fails for empty array
             return np.array([], dtype="uint32")
 
-        mask_missing = self.isna()
         mask_empty = self.is_empty
-        mask = mask_missing | mask_empty
+        has_empty = mask_empty.any()
+        mask = self.isna() | mask_empty
         if mask.any():
+            # if there are missing or empty geometries, we fill those with
+            # a dummy geometry so that the _hilbert_distance function can
+            # process those. The missing values are handled separately by
+            # pandas regardless of the values we return here (to sort
+            # first/last depending on 'na_position'), the distances for the
+            # empty geometries are substitued below with an appropriate value
             geoms = self.copy()
             indices = np.nonzero(~mask)[0]
             if indices.size:
@@ -1279,8 +1285,22 @@ class GeometryArray(ExtensionArray):
             geoms[mask] = geom
         else:
             geoms = self
-
-        return _hilbert_distance(geoms)
+        if has_empty:
+            # in case we have empty geometries, we need to expand the total
+            # bounds with a small percentage, so the empties can be
+            # deterministically sorted first
+            total_bounds = geoms.total_bounds
+            xoff = (total_bounds[2] - total_bounds[0]) * 0.01
+            yoff = (total_bounds[3] - total_bounds[1]) * 0.01
+            total_bounds += np.array([-xoff, -yoff, xoff, yoff])
+        else:
+            total_bounds = None
+        distances = _hilbert_distance(geoms, total_bounds=total_bounds)
+        if has_empty:
+            # empty geometries are sorted first ("smallest"), so fill in
+            # smallest possible value for uints
+            distances[mask_empty] = 0
+        return distances
 
     def argmin(self, skipna: bool = True) -> int:
         raise TypeError("geometries have no minimum or maximum")
