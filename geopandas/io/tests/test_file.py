@@ -487,6 +487,15 @@ def test_append_file(tmpdir, df_nybb, df_null, driver, ext, engine):
     expected = pd.concat([df_nybb] * 2, ignore_index=True)
     assert_geodataframe_equal(df, expected, check_less_precise=True)
 
+    if engine == "pyogrio":
+        # for pyogrio also ensure append=True works
+        tempfilename = os.path.join(str(tmpdir), "boros2" + ext)
+        df_nybb.to_file(tempfilename, driver=driver, engine=engine)
+        df_nybb.to_file(tempfilename, append=True, driver=driver, engine=engine)
+        # Read layer back in
+        df = GeoDataFrame.from_file(tempfilename, engine=engine)
+        assert len(df) == (5 * 2)
+
     # Write layer with null geometry out to file
     tempfilename = os.path.join(str(tmpdir), "null_geom" + ext)
     df_null.to_file(tempfilename, driver=driver, engine=engine)
