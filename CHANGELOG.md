@@ -9,6 +9,8 @@ New features and improvements:
   of the GeoParquet specification (geoparquet.org) (#2663).
 - New ``hilbert_distance()`` method that calculates the distance along a Hilbert curve
   for each geometry in a GeoSeries/GeoDataFrame (#2297).
+- Support for sorting geometries (for example, using ``sort_values()``) based on
+  the distance along the Hilbert curve (#2070).
 - Added ``minimum_bounding_circle()`` method from shapely to GeoSeries/GeoDataframe (#2621).
 - Support specifying ``min_zoom`` and ``max_zoom`` inside the ``map_kwds`` argument for ``.explore()`` (#2599).
 
