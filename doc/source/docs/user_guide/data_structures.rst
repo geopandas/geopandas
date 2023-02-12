@@ -4,9 +4,11 @@
    :suppress:
 
    import geopandas
+   import geodatasets
    import matplotlib
    orig = matplotlib.rcParams['figure.figsize']
    matplotlib.rcParams['figure.figsize'] = [orig[0] * 1.5, orig[1]]
+   geodatasets.fetch('geoda.colombia')
 
 
 
@@ -89,41 +91,41 @@ The "geometry" column -- no matter its name -- can be accessed through the :attr
 
 A :class:`GeoDataFrame` may also contain other columns with geometrical (shapely) objects, but only one column can be the active geometry at a time. To change which column is the active geometry column, use the :meth:`GeoDataFrame.set_geometry` method.
 
-An example using the ``worlds`` GeoDataFrame:
+An example using the ``geoda.malaria`` dataset from ``geodatasets`` containing the districts of Colombia:
 
 .. ipython:: python
 
-    world = geopandas.read_file(geopandas.datasets.get_path('naturalearth_lowres'))
+    colombia = geopandas.read_file(geodatasets.get_path('geoda.malaria'))
 
-    world.head()
-    #Plot countries
-    @savefig world_borders.png
-    world.plot();
+    colombia.head()
+    # Plot countries
+    @savefig colombia_borders.png
+    colombia.plot();
 
-Currently, the column named "geometry" with country borders is the active
+Currently, the column named "geometry" with district borders is the active
 geometry column:
 
 .. ipython:: python
 
-    world.geometry.name
+    colombia.geometry.name
 
 We can also rename this column to "borders":
 
 .. ipython:: python
 
-    world = world.rename(columns={'geometry': 'borders'}).set_geometry('borders')
-    world.geometry.name
+    colombia = colombia.rename(columns={'geometry': 'borders'}).set_geometry('borders')
+    colombia.geometry.name
 
 Now, we create centroids and make it the geometry:
 
 .. ipython:: python
    :okwarning:
 
-    world['centroid_column'] = world.centroid
-    world = world.set_geometry('centroid_column')
+    colombia['centroid_column'] = colombia.centroid
+    colombia = colombia.set_geometry('centroid_column')
 
-    @savefig world_centroids.png
-    world.plot();
+    @savefig colombia_centroids.png
+    colombia.plot();
 
 
 **Note:** A :class:`GeoDataFrame` keeps track of the active column by name, so if you rename the active geometry column, you must also reset the geometry::
@@ -159,16 +161,16 @@ option to control:
 
 The ``geopandas.options.display_precision`` option can control the number of
 decimals to show in the display of coordinates in the geometry column.
-In the ``world`` example of above, the default is to show 5 decimals for
+In the ``colombia`` example of above, the default is to show 5 decimals for
 geographic coordinates:
 
 .. ipython:: python
 
-    world['centroid_column'].head()
+    colombia['centroid_column'].head()
 
 If you want to change this, for example to see more decimals, you can do:
 
 .. ipython:: python
 
     geopandas.options.display_precision = 9
-    world['centroid_column'].head()
+    colombia['centroid_column'].head()

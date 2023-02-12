@@ -29,17 +29,17 @@ the ``driver`` keyword, or pick a single layer from a multi-layered file with
 the ``layer`` keyword::
 
     countries_gdf = geopandas.read_file("package.gpkg", layer='countries')
-    
+
 Currently fiona only exposes the default drivers. To display those, type::
 
-    import fiona; fiona.supported_drivers 
+    import fiona; fiona.supported_drivers
 
 There is a `list of available drivers <https://github.com/Toblerity/Fiona/blob/master/fiona/drvsupport.py>`_
-which are unexposed but supported (depending on the GDAL-build). You can activate 
+which are unexposed but supported (depending on the GDAL-build). You can activate
 these on runtime by updating the `supported_drivers` dictionary like::
 
     fiona.supported_drivers["NAS"] = "raw"
-    
+
 Where supported in :mod:`Fiona`, GeoPandas can also load resources directly from
 a web URL, for example for GeoJSON files from `geojson.xyz <http://geojson.xyz/>`_::
 
@@ -98,11 +98,11 @@ The geometry filter only loads data that intersects with the geometry.
 .. code-block:: python
 
     gdf_mask = geopandas.read_file(
-        geopandas.datasets.get_path("naturalearth_lowres")
+        geodatasets.get_path("geoda nyc")
     )
     gdf = geopandas.read_file(
-        geopandas.datasets.get_path("naturalearth_cities"),
-        mask=gdf_mask[gdf_mask.continent=="Africa"],
+        geodatasets.get_path("geoda nyc education"),
+        mask=gdf_mask[gdf_mask.name=="Coney Island"],
     )
 
 Bounding box filter
@@ -118,7 +118,7 @@ The bounding box filter only loads data that intersects with the bounding box.
         1031051.7879884212, 224272.49231459625, 1047224.3104931959, 244317.30894023244
     )
     gdf = geopandas.read_file(
-        geopandas.datasets.get_path("nybb"),
+        geodatasets.get_path("nybb"),
         bbox=bbox,
     )
 
@@ -133,11 +133,11 @@ or a slice object.
 .. code-block:: python
 
     gdf = geopandas.read_file(
-        geopandas.datasets.get_path("naturalearth_lowres"),
+        geodatasets.get_path("geoda nyc"),
         rows=10,
     )
     gdf = geopandas.read_file(
-        geopandas.datasets.get_path("naturalearth_lowres"),
+        geodatasets.get_path("geoda nyc"),
         rows=slice(10, 20),
     )
 
@@ -151,8 +151,8 @@ Load in a subset of fields from the file:
 .. code-block:: python
 
     gdf = geopandas.read_file(
-        geopandas.datasets.get_path("naturalearth_lowres"),
-        include_fields=["pop_est", "continent", "name"],
+        geodatasets.get_path("geoda nyc"),
+        include_fields=["name", "rent2008", "kids2000"],
     )
 
 .. note:: Requires Fiona 1.8+
@@ -160,8 +160,8 @@ Load in a subset of fields from the file:
 .. code-block:: python
 
     gdf = geopandas.read_file(
-        geopandas.datasets.get_path("naturalearth_lowres"),
-        ignore_fields=["iso_a3", "gdp_md_est"],
+        geodatasets.get_path("geoda nyc"),
+        ignore_fields=["rent2008", "kids2000"],
     )
 
 Skip loading geometry from the file:
@@ -172,7 +172,7 @@ Skip loading geometry from the file:
 .. code-block:: python
 
     pdf = geopandas.read_file(
-        geopandas.datasets.get_path("naturalearth_lowres"),
+        geodatasets.get_path("geoda nyc"),
         ignore_geometry=True,
     )
 
@@ -189,8 +189,8 @@ Load in a subset of data with a `SQL WHERE clause <https://gdal.org/user/ogr_sql
 .. code-block:: python
 
     gdf = geopandas.read_file(
-        geopandas.datasets.get_path("naturalearth_lowres"),
-        where="continent='Africa'",
+        geodatasets.get_path("geoda nyc"),
+        where="subborough='Coney Island'",
     )
 
 

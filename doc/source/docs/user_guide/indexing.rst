@@ -4,6 +4,8 @@
    :suppress:
 
    import geopandas
+   import geodatasets
+   geodatasets.fetch('geoda.chile_labor')
 
 
 Indexing and selecting data
@@ -18,12 +20,12 @@ coordinate based indexing with the :attr:`~GeoDataFrame.cx` indexer, which slice
 box. Geometries in the :class:`GeoSeries` or :class:`GeoDataFrame` that intersect the
 bounding box will be returned.
 
-Using the ``world`` dataset, we can use this functionality to quickly select all
-countries whose boundaries extend into the southern hemisphere.
+Using the ``geoda.chile_labor`` dataset, we can use this functionality to quickly select parts
+of Chile whose boundaries extend south of the -40 degrees latitude.
 
 .. ipython:: python
 
-   world = geopandas.read_file(geopandas.datasets.get_path('naturalearth_lowres'))
-   southern_world = world.cx[:, :0]
-   @savefig world_southern.png
-   southern_world.plot(figsize=(10, 3));
+   chile = geopandas.read_file(geodatasets.get_path('geoda.chile_labor'))
+   southern_chile = chile.cx[:, :-40]
+   @savefig chile_southern.png
+   southern_chile.plot(figsize=(10, 3));
