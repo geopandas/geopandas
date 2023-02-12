@@ -1442,6 +1442,27 @@ individually so that features may have different properties
         Overwritten to preserve CRS of GeometryArray in cases like
         df['geometry'] = [geom... for geom in df.geometry]
         """
+        # self.columns check required to avoid this warning in __init__
+        if (
+            self._geometry_column_name is None
+            and key == "geometry"
+            and "geometry" not in self.columns
+        ):
+            msg = (
+                "You are adding a column named 'geometry' to a GeoDataFrame "
+                "constructed without an active geometry column. Currently, "
+                "this automatically sets the active geometry column to 'geometry' "
+                "but in the future that will no longer happen. Instead, either "
+                "provide geometry to the GeoDataFrame constructor "
+                "(GeoDataFrame(... geometry=GeoSeries()) or use `set_geometry` "
+                "to explicitly set the active geometry column."
+            )
+            warnings.warn(
+                msg,
+                category=UserWarning,
+            )
+            self._geometry_column_name = "geometry"
+
         if not pd.api.types.is_list_like(key) and key == self._geometry_column_name:
             if pd.api.types.is_scalar(value) or isinstance(value, BaseGeometry):
                 value = [value] * self.shape[0]
