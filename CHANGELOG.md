@@ -4,6 +4,11 @@
 
 New features and improvements:
 
+- Added ``get_coordinates()`` method from shapely to GeoSeries/GeoDataframe (#2624).
+- The Parquet and Feather IO functions now support the latest 1.0.0-beta.1 version
+  of the GeoParquet specification (geoparquet.org) (#2663).
+- New ``hilbert_distance()`` method that calculates the distance along a Hilbert curve
+  for each geometry in a GeoSeries/GeoDataFrame (#2297).
 - Added ``minimum_bounding_circle()`` method from shapely to GeoSeries/GeoDataframe (#2621).
 - Support specifying ``min_zoom`` and ``max_zoom`` inside the ``map_kwds`` argument for ``.explore()`` (#2599).
 - - Improve error messages when accessing the `geometry` attribute of GeoDataFrame without an active geometry column 
@@ -19,6 +24,17 @@ Bug fixes:
 - Ensure that GeoDataFrame created from DataFrame is a copy, not a view (#2667)
 - Fix mismatch between geometries and colors in ``plot()`` if an empty or missing
   geometry is present (#2224)
+- Escape special characters to avoid TemplateSyntaxError in ``explore()`` (#2657)
+- Fix `to_parquet`/`to_feather` to not write an invalid bbox (with NaNs) in the
+  metadata in case of an empty GeoDataFrame (#2653)
+- Fix `to_parquet`/`to_feather` to use correct WKB flavor for 3D geometries (#2654)
+
+Notes on (optional) dependencies:
+
+- GeoPandas 0.13 drops support pandas 1.0.5 (the minimum supported
+  pandas version is now 1.1). Further, the minimum required versions for the listed
+  dependencies have now changed to shapely 1.7.1, fiona 1.8.19, pyproj 3.0.1 and
+  matplotlib 3.3.4 (#2655)
 
 ## Version 0.12.2 (December 10, 2022)
 

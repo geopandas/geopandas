@@ -466,6 +466,15 @@ class TestExplore:
         out_str = self._fetch_map_string(m)
         assert "BoroName" in out_str
 
+    def test_escape_special_characters(self):
+        # check if special characters are escaped
+        gdf = self.world.copy()
+        gdf["name"] = """{{{what a mess}}} they are so different."""
+        m = gdf.explore()
+        out_str = self._fetch_map_string(m)
+        assert """{{{""" in out_str
+        assert """}}}""" in out_str
+
     def test_default_markers(self):
         # check overridden default for points
         m = self.cities.explore()
@@ -834,7 +843,6 @@ class TestExplore:
         assert '{"color":"red","fillOpacity":1}' in out_str
 
     def test_custom_colormaps(self):
-
         step = StepColormap(["green", "yellow", "red"], vmin=0, vmax=100000000)
 
         m = self.world.explore("pop_est", cmap=step, tooltip=["name"], legend=True)

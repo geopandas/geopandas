@@ -8,6 +8,7 @@ from shapely.geometry import box
 from shapely.geometry.base import BaseGeometry
 
 from .array import GeometryArray, GeometryDtype
+from . import _compat as compat
 
 
 def is_geometry_type(data):
@@ -3483,6 +3484,198 @@ GeometryCollection
         if not isinstance(other, type(self)):
             return False
         return self._data.equals(other._data)
+
+    def get_coordinates(self, include_z=False, ignore_index=False, index_parts=False):
+        """Gets coordinates from a :class:`GeoSeries` as a :class:`~pandas.DataFrame` of
+        floats.
+
+        The shape of the returned :class:`~pandas.DataFrame` is (N, 2), with N being the
+        number of coordinate pairs. With the default of ``include_z=False``,
+        three-dimensional data is ignored. When specifying ``include_z=True``, the shape
+        of the returned :class:`~pandas.DataFrame` is (N, 3).
+
+        Parameters
+        ----------
+        include_z : bool, default False
+            Include Z coordinates
+        ignore_index : bool, default False
+            If True, the resulting index will be labelled 0, 1, …, n - 1, ignoring
+            ``index_parts``.
+        index_parts : bool, default False
+           If True, the resulting index will be a :class:`~pandas.MultiIndex` (original
+           index with an additional level indicating the ordering of the coordinate
+           pairs: a new zero-based index for each geometry in the original GeoSeries).
+
+        Returns
+        -------
+        pandas.DataFrame
+
+        Examples
+        --------
+        >>> from shapely.geometry import Point, LineString, Polygon
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Point(1, 1),
+        ...         LineString([(1, -1), (1, 0)]),
+        ...         Polygon([(3, -1), (4, 0), (3, 1)]),
+        ...     ]
+        ... )
+        >>> s
+        0                              POINT (1.00000 1.00000)
+        1       LINESTRING (1.00000 -1.00000, 1.00000 0.00000)
+        2    POLYGON ((3.00000 -1.00000, 4.00000 0.00000, 3...
+        dtype: geometry
+
+        >>> s.get_coordinates()
+             x    y
+        0  1.0  1.0
+        1  1.0 -1.0
+        1  1.0  0.0
+        2  3.0 -1.0
+        2  4.0  0.0
+        2  3.0  1.0
+        2  3.0 -1.0
+
+        >>> s.get_coordinates(ignore_index=True)
+             x    y
+        0  1.0  1.0
+        1  1.0 -1.0
+        2  1.0  0.0
+        3  3.0 -1.0
+        4  4.0  0.0
+        5  3.0  1.0
+        6  3.0 -1.0
+
+        >>> s.get_coordinates(index_parts=True)
+               x    y
+        0 0  1.0  1.0
+        1 0  1.0 -1.0
+          1  1.0  0.0
+        2 0  3.0 -1.0
+          1  4.0  0.0
+          2  3.0  1.0
+          3  3.0 -1.0
+        """
+        if compat.USE_SHAPELY_20:
+            import shapely
+
+            coords, outer_idx = shapely.get_coordinates(
+                self.geometry.values, include_z=include_z, return_index=True
+            )
+        elif compat.USE_PYGEOS:
+            import pygeos
+
+            coords, outer_idx = pygeos.get_coordinates(
+                self.geometry.values.data, include_z=include_z, return_index=True
+            )
+
+        else:
+            import shapely
+
+            raise NotImplementedError(
+                f"shapely >= 2.0 or PyGEOS are required, "
+                f"version {shapely.__version__} is installed."
+            )
+
+        column_names = ["x", "y"]
+        if include_z:
+            column_names.append("z")
+
+        index = _get_index_for_parts(
+            self.index,
+            outer_idx,
+            ignore_index=ignore_index,
+            index_parts=index_parts,
+        )
+
+        return pd.DataFrame(coords, index=index, columns=column_names)
+
+    def hilbert_distance(self, total_bounds=None, level=16):
+        """
+        Calculate the distance along a Hilbert curve.
+
+        The distances are calculated for the midpoints of the geometries in the
+        GeoDataFrame, and using the total bounds of the GeoDataFrame.
+
+        The Hilbert distance can be used to spatially sort GeoPandas
+        objects, by mapping two dimensional geometries along the Hilbert curve.
+
+        Parameters
+        ----------
+        total_bounds : 4-element array, optional
+            The spatial extent in which the curve is constructed (used to
+            rescale the geometry midpoints). By default, the total bounds
+            of the full GeoDataFrame or GeoSeries will be computed. If known,
+            you can pass the total bounds to avoid this extra computation.
+        level : int (1 - 16), default 16
+            Determines the precision of the curve (points on the curve will
+            have coordinates in the range [0, 2^level - 1]).
+
+        Returns
+        -------
+        Series
+            Series containing distance along the curve for geometry
+        """
+        from geopandas.tools.hilbert_curve import _hilbert_distance
+
+        distances = _hilbert_distance(self, total_bounds=total_bounds, level=level)
+
+        return distances
+
+
+def _get_index_for_parts(orig_idx, outer_idx, ignore_index, index_parts):
+    """Helper to handle index when geometries get exploded to parts.
+
+    Used in get_coordinates and explode.
+
+    Parameters
+    ----------
+    orig_idx : pandas.Index
+        original index
+    outer_idx : array
+        the index of each returned geometry as a separate ndarray of integers
+    ignore_index : bool
+    index_parts : bool
+
+    Returns
+    -------
+    pandas.Index
+        index or multiindex
+    """
+
+    if ignore_index:
+        return None
+    else:
+        if len(outer_idx):
+            # Generate inner index as a range per value of outer_idx
+            # 1. identify the start of each run of values in outer_idx
+            # 2. count number of values per run
+            # 3. use cumulative sums to create an incremental range
+            #    starting at 0 in each run
+            run_start = np.r_[True, outer_idx[:-1] != outer_idx[1:]]
+            counts = np.diff(np.r_[np.nonzero(run_start)[0], len(outer_idx)])
+            inner_index = (~run_start).cumsum()
+            inner_index -= np.repeat(inner_index[run_start], counts)
+
+        else:
+            inner_index = []
+
+        # extract original index values based on integer index
+        outer_index = orig_idx.take(outer_idx)
+
+        if index_parts:
+            nlevels = outer_index.nlevels
+            index_arrays = [outer_index.get_level_values(lvl) for lvl in range(nlevels)]
+            index_arrays.append(inner_index)
+
+            index = pd.MultiIndex.from_arrays(
+                index_arrays, names=orig_idx.names + [None]
+            )
+
+        else:
+            index = outer_index
+
+    return index
 
 
 class _CoordinateIndexer(object):

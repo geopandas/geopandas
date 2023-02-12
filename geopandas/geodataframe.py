@@ -914,7 +914,6 @@ individually so that features may have different properties
 
         else:
             for fid, geom in zip(ids, geometries):
-
                 if drop_id:
                     feature = {}
                 else:
@@ -956,6 +955,7 @@ individually so that features may have different properties
             The default is to return a binary bytes object.
         kwargs
             Additional keyword args will be passed to
+            :func:`shapely.to_wkb` if shapely >= 2 is installed or
             :func:`pygeos.to_wkb` if pygeos is installed.
 
         Returns
@@ -1633,10 +1633,6 @@ individually so that features may have different properties
             together with row/column will be dropped. If False, NA
             values will also be treated as the key in groups.
 
-            This parameter is not supported for pandas < 1.1.0.
-            A warning will be emitted for earlier pandas versions
-            if a non-default value is given for this parameter.
-
             .. versionadded:: 0.9.0
         **kwargs :
             Keyword arguments to be passed to the pandas `DataFrameGroupby.agg` method
@@ -1681,11 +1677,6 @@ individually so that features may have different properties
         groupby_kwargs = dict(
             by=by, level=level, sort=sort, observed=observed, dropna=dropna
         )
-        if not compat.PANDAS_GE_11:
-            groupby_kwargs.pop("dropna")
-
-            if not dropna:  # If they passed a non-default dropna value
-                warnings.warn("dropna kwarg is not supported for pandas < 1.1.0")
 
         # Process non-spatial component
         data = self.drop(labels=self.geometry.name, axis=1)
@@ -1739,8 +1730,6 @@ individually so that features may have different properties
         Each row containing a multi-part geometry will be split into
         multiple rows with single geometries, thereby increasing the vertical
         size of the GeoDataFrame.
-
-        .. note:: ignore_index requires pandas 1.1.0 or newer.
 
         Parameters
         ----------
@@ -1815,10 +1804,7 @@ individually so that features may have different properties
             column = self.geometry.name
         # If the specified column is not a geometry dtype use pandas explode
         if not isinstance(self[column].dtype, GeometryDtype):
-            if compat.PANDAS_GE_11:
-                return super().explode(column, ignore_index=ignore_index, **kwargs)
-            else:
-                return super().explode(column, **kwargs)
+            return super().explode(column, ignore_index=ignore_index, **kwargs)
 
         if index_parts is None:
             if not ignore_index:
@@ -2374,6 +2360,3 @@ def _dataframe_set_geometry(self, col, drop=False, inplace=False, crs=None):
 
 
 DataFrame.set_geometry = _dataframe_set_geometry
-
-if not compat.PANDAS_GE_11:  # i.e. on pandas 1.0.x
-    _geodataframe_constructor_with_fallback._from_axes = GeoDataFrame._from_axes

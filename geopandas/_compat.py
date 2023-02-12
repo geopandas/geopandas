@@ -15,7 +15,6 @@ import shapely.geos
 # pandas compat
 # -----------------------------------------------------------------------------
 
-PANDAS_GE_11 = Version(pd.__version__) >= Version("1.1.0")
 PANDAS_GE_115 = Version(pd.__version__) >= Version("1.1.5")
 PANDAS_GE_12 = Version(pd.__version__) >= Version("1.2.0")
 PANDAS_GE_13 = Version(pd.__version__) >= Version("1.3.0")
@@ -87,7 +86,6 @@ def set_use_pygeos(val=None):
         USE_PYGEOS = bool(val)
     else:
         if USE_PYGEOS is None:
-
             USE_PYGEOS = HAS_PYGEOS
 
             if env_use_pygeos is not None:
@@ -255,6 +253,5 @@ except ImportError:
 # pyproj compat
 # -----------------------------------------------------------------------------
 
-PYPROJ_LT_3 = Version(pyproj.__version__) < Version("3")
 PYPROJ_GE_31 = Version(pyproj.__version__) >= Version("3.1")
 PYPROJ_GE_32 = Version(pyproj.__version__) >= Version("3.2")
