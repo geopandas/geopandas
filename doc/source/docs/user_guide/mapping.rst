@@ -4,7 +4,6 @@
    :suppress:
 
    import geopandas
-   import geodatasets
    import matplotlib
    orig = matplotlib.rcParams['figure.figsize']
    matplotlib.rcParams['figure.figsize'] = [orig[0] * 1.5, orig[1]]
@@ -23,6 +22,8 @@ GeoPandas provides a high-level interface to the matplotlib_ library for making 
 Loading some example data:
 
 .. ipython:: python
+
+    import geodatasets
 
     chicago = geopandas.read_file(geodatasets.get_path("geoda chicago health"))
     groceries = geopandas.read_file(geodatasets.get_path("geoda groceries"))

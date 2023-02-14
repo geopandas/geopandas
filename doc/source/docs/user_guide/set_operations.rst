@@ -142,6 +142,8 @@ First, we load the Chicago boroughs and groceries example datasets and select :
 
 .. ipython:: python
 
+    import geodatasets
+
     chicago = geopandas.read_file(geodatasets.get_path("geoda chicago health"))
     groceries = geopandas.read_file(geodatasets.get_path("geoda groceries"))
 

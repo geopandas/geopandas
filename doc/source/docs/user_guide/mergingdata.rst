@@ -23,6 +23,8 @@ In the following examples, we use these datasets:
 
 .. ipython:: python
 
+   import geodatasets
+
    chicago = geopandas.read_file(geodatasets.get_path("geoda chicago health"))
    groceries = geopandas.read_file(geodatasets.get_path("geoda groceries"))
 

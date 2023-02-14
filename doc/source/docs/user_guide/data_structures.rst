@@ -4,7 +4,6 @@
    :suppress:
 
    import geopandas
-   import geodatasets
    import matplotlib
    orig = matplotlib.rcParams['figure.figsize']
    matplotlib.rcParams['figure.figsize'] = [orig[0] * 1.5, orig[1]]
@@ -92,6 +91,8 @@ A :class:`GeoDataFrame` may also contain other columns with geometrical (shapely
 An example using the ``geoda.malaria`` dataset from ``geodatasets`` containing the districts of Colombia:
 
 .. ipython:: python
+
+    import geodatasets
 
     colombia = geopandas.read_file(geodatasets.get_path('geoda.malaria'))
 

@@ -80,6 +80,8 @@ Re-projecting is the process of changing the representation of locations from on
 
 .. ipython:: python
 
+    import geodatasets
+
     # load example data
     usa = geopandas.read_file(geodatasets.get_path('geoda nat regimes'))
 

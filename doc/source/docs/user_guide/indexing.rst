@@ -4,7 +4,6 @@
    :suppress:
 
    import geopandas
-   import geodatasets
 
 
 Indexing and selecting data
@@ -23,6 +22,8 @@ Using the ``geoda.chile_labor`` dataset, we can use this functionality to quickl
 of Chile whose boundaries extend south of the -50 degrees latitude.
 
 .. ipython:: python
+
+   import geodatasets
 
    chile = geopandas.read_file(geodatasets.get_path('geoda.chile_labor'))
    southern_chile = chile.cx[:, :-50]

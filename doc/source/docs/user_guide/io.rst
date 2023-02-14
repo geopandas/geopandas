@@ -97,6 +97,8 @@ The geometry filter only loads data that intersects with the geometry.
 
 .. code-block:: python
 
+    import geodatasets
+
     gdf_mask = geopandas.read_file(
         geodatasets.get_path("geoda nyc")
     )
