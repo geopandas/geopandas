@@ -30,6 +30,8 @@ First, let's look at the most simple case where we just want zone shapes and nam
 
 .. ipython:: python
 
+    import geodatasets
+
     nepal = geopandas.read_file(geodatasets.get_path('geoda nepal'))
     nepal = nepal[['name_2', 'geometry']]  # name_2 contains zone names
     zones = nepal.dissolve(by='name_2')

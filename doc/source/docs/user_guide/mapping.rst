@@ -31,7 +31,7 @@ We can now plot those GeoDataFrames:
 
 .. ipython:: python
 
-    # Examine country GeoDataFrame
+    # Examine chicago GeoDataFrame
     chicago.head()
 
     # Basic plot, single color

@@ -23,6 +23,7 @@ geodatasets.fetch(
         "geoda.chicago_health",
         "geoda.groceries",
         "geoda.natregimes",
+        "geoda.nepal",
     ]
 )
 

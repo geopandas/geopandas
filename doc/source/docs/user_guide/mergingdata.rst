@@ -31,7 +31,7 @@ In the following examples, we use these datasets:
    chicago_names = chicago[['community', 'ComAreaID']]
 
    # For spatial join
-   chicago = chicago[['geometry', 'community']]
+   chicago = chicago[['geometry', 'community']].to_crs(groceries.crs)
 
 
 Appending
@@ -61,17 +61,17 @@ if a :class:`~pandas.DataFrame` is in the ``left`` argument and a :class:`GeoDat
 is in the ``right`` position, the result will no longer be a :class:`GeoDataFrame`.
 
 For example, consider the following merge that adds full names to a :class:`GeoDataFrame`
-that initially has only ISO codes for each country by merging it with a :class:`~pandas.DataFrame`.
+that initially has only area ID for each geometry by merging it with a :class:`~pandas.DataFrame`.
 
 .. ipython:: python
 
-   # `chicago_shapes` is GeoDataFrame with country shapes and iso codes
+   # `chicago_shapes` is GeoDataFrame with community shapes and area IDs
    chicago_shapes.head()
 
-   # `chicago_names` is DataFrame with country names and iso codes
+   # `chicago_names` is DataFrame with community names and area ID
    chicago_names.head()
 
-   # Merge with `merge` method on shared variable (iso codes):
+   # Merge with `merge` method on shared variable (area ID):
    chicago_shapes = chicago_shapes.merge(chicago_names, on='ComAreaID')
    chicago_shapes.head()
 
@@ -84,8 +84,8 @@ In a spatial join, two geometry objects are merged based on their spatial relati
 .. ipython:: python
 
 
-   # One GeoDataFrame of countries, one of Cities.
-   # Want to merge so we can get each city's country.
+   # One GeoDataFrame of communities, one of grocery stores.
+   # Want to merge so we can get each grocery's community.
    chicago.head()
    groceries.head()
 
