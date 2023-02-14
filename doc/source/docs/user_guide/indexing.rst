@@ -5,7 +5,6 @@
 
    import geopandas
    import geodatasets
-   geodatasets.fetch('geoda.chile_labor')
 
 
 Indexing and selecting data
@@ -21,11 +20,11 @@ box. Geometries in the :class:`GeoSeries` or :class:`GeoDataFrame` that intersec
 bounding box will be returned.
 
 Using the ``geoda.chile_labor`` dataset, we can use this functionality to quickly select parts
-of Chile whose boundaries extend south of the -40 degrees latitude.
+of Chile whose boundaries extend south of the -50 degrees latitude.
 
 .. ipython:: python
 
    chile = geopandas.read_file(geodatasets.get_path('geoda.chile_labor'))
-   southern_chile = chile.cx[:, :-40]
+   southern_chile = chile.cx[:, :-50]
    @savefig chile_southern.png
-   southern_chile.plot(figsize=(10, 3));
+   southern_chile.plot(figsize=(8, 8));

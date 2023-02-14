@@ -13,6 +13,19 @@
 
 import sys, os
 import warnings
+import geodatasets
+
+geodatasets.fetch(
+    [
+        "geoda.chile_labor",
+        "ny.bb",
+        "geoda.malaria",
+        "geoda.chicago_health",
+        "geoda.groceries",
+        "geoda.natregimes",
+    ]
+)
+
 
 sys.path.insert(0, os.path.abspath("../.."))
 

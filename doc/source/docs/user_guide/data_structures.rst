@@ -8,8 +8,6 @@
    import matplotlib
    orig = matplotlib.rcParams['figure.figsize']
    matplotlib.rcParams['figure.figsize'] = [orig[0] * 1.5, orig[1]]
-   geodatasets.fetch('geoda.colombia')
-
 
 
 Data structures
@@ -100,7 +98,7 @@ An example using the ``geoda.malaria`` dataset from ``geodatasets`` containing t
     colombia.head()
     # Plot countries
     @savefig colombia_borders.png
-    colombia.plot();
+    colombia.plot(markersize=.5);
 
 Currently, the column named "geometry" with district borders is the active
 geometry column:

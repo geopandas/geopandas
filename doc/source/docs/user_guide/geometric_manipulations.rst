@@ -124,7 +124,8 @@ GeoPandas also implements alternate constructors that can read any data format r
 
 .. sourcecode:: python
 
-    >>> nybb_path = geopandas.datasets.get_path('nybb')
+    >>> import geodatasets
+    >>> nybb_path = geodatasets.get_path('nybb')
     >>> boros = geopandas.read_file(nybb_path)
     >>> boros.set_index('BoroCode', inplace=True)
     >>> boros.sort_index(inplace=True)
