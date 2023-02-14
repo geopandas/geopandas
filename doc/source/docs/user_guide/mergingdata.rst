@@ -23,16 +23,15 @@ In the following examples, we use these datasets:
 
 .. ipython:: python
 
-   world = geopandas.read_file(geopandas.datasets.get_path('naturalearth_lowres'))
-   cities = geopandas.read_file(geopandas.datasets.get_path('naturalearth_cities'))
+   chicago = geopandas.read_file(geodatasets.get_path("geoda chicago health"))
+   groceries = geopandas.read_file(geodatasets.get_path("geoda groceries"))
 
    # For attribute join
-   country_shapes = world[['geometry', 'iso_a3']]
-   country_names = world[['name', 'iso_a3']]
+   chicago_shapes = chicago[['geometry', 'ComAreaID']]
+   chicago_names = chicago[['community', 'ComAreaID']]
 
    # For spatial join
-   countries = world[['geometry', 'name']]
-   countries = countries.rename(columns={'name':'country'})
+   chicago = chicago[['geometry', 'community']]
 
 
 Appending
@@ -44,12 +43,12 @@ Keep in mind, that appended geometry columns needs to have the same CRS.
 .. ipython:: python
 
     # Appending GeoSeries
-    joined = pd.concat([world.geometry, cities.geometry])
+    joined = pd.concat([chicago.geometry, groceries.geometry])
 
     # Appending GeoDataFrames
-    europe = world[world.continent == 'Europe']
-    asia = world[world.continent == 'Asia']
-    eurasia = pd.concat([europe, asia])
+    douglas = chicago[chicago.community == 'DOUGLAS']
+    oakland = chicago[chicago.community == 'OAKLAND']
+    douglas_oakland = pd.concat([douglas, oakland])
 
 
 Attribute joins
@@ -66,15 +65,15 @@ that initially has only ISO codes for each country by merging it with a :class:`
 
 .. ipython:: python
 
-   # `country_shapes` is GeoDataFrame with country shapes and iso codes
-   country_shapes.head()
+   # `chicago_shapes` is GeoDataFrame with country shapes and iso codes
+   chicago_shapes.head()
 
-   # `country_names` is DataFrame with country names and iso codes
-   country_names.head()
+   # `chicago_names` is DataFrame with country names and iso codes
+   chicago_names.head()
 
    # Merge with `merge` method on shared variable (iso codes):
-   country_shapes = country_shapes.merge(country_names, on='iso_a3')
-   country_shapes.head()
+   chicago_shapes = chicago_shapes.merge(chicago_names, on='ComAreaID')
+   chicago_shapes.head()
 
 
 Spatial joins
@@ -87,13 +86,13 @@ In a spatial join, two geometry objects are merged based on their spatial relati
 
    # One GeoDataFrame of countries, one of Cities.
    # Want to merge so we can get each city's country.
-   countries.head()
-   cities.head()
+   chicago.head()
+   groceries.head()
 
    # Execute spatial join
 
-   cities_with_country = cities.sjoin(countries, how="inner", predicate='intersects')
-   cities_with_country.head()
+   groceries_with_community = groceries.sjoin(chicago, how="inner", predicate='intersects')
+   groceries_with_community.head()
 
 
 GeoPandas provides two spatial-join functions:

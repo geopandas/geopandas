@@ -18,6 +18,7 @@ Fiona example
     from functools import partial
 
     import fiona
+    import geodatasets
     import geopandas
     from fiona.transform import transform_geom
     from packaging import version
@@ -47,15 +48,14 @@ Fiona example
         )
 
     # load example data
-    world = geopandas.read_file(geopandas.datasets.get_path('naturalearth_lowres'))
+    nybb = geopandas.read_file(geodatasets.get_path('nybb'))
 
     destination_crs = "EPSG:3395"
-    forward_transformer = partial(base_transformer, src_crs=world.crs, dst_crs=destination_crs)
+    forward_transformer = partial(base_transformer, src_crs=nybb.crs, dst_crs=destination_crs)
 
-    # Reproject to Mercator (after dropping Antartica)
-    world = world[(world.name != "Antarctica") & (world.name != "Fr. S. Antarctic Lands")]
+    # Reproject to Mercator
     with fiona.Env(OGR_ENABLE_PARTIAL_REPROJECTION="YES"):
-        mercator_world = world.set_geometry(world.geometry.apply(forward_transformer), crs=destination_crs)
+        mercator_nybb = nybb.set_geometry(nybb.geometry.apply(forward_transformer), crs=destination_crs)
 
 
 Rasterio example
@@ -71,17 +71,16 @@ This example requires rasterio 1.2+ and GDAL 3+.
     from shapely.geometry import shape
 
     # load example data
-    world = geopandas.read_file(geopandas.datasets.get_path('naturalearth_lowres'))
-    # Reproject to Mercator (after dropping Antartica)
-    world = world[(world.name != "Antarctica") & (world.name != "Fr. S. Antarctic Lands")]
+    nybb = geopandas.read_file(geodatasets.get_path('nybb'))
 
+    # Reproject to Mercator
     destination_crs = "EPSG:3395"
     geometry = rasterio.warp.transform_geom(
-        src_crs=world.crs,
+        src_crs=nybb.crs,
         dst_crs=destination_crs,
-        geom=world.geometry.values,
+        geom=nybb.geometry.values,
     )
-    mercator_world = world.set_geometry(
+    mercator_nybb = nybb.set_geometry(
         [shape(geom) for geom in geometry],
         crs=destination_crs,
     )
