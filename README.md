@@ -50,6 +50,13 @@ dependency, required for spatial joins. ``rtree`` requires the C library [``libs
 
 Those packages depend on several low-level libraries for geospatial analysis, which can be a challenge to install. Therefore, we recommend to install GeoPandas using the [conda package manager](https://conda.io/en/latest/). See the [installation docs](https://geopandas.readthedocs.io/en/latest/install.html) for more details.
 
+    >>> conda install geopandas
+
+Alternatively, if the required dependencies are available as well, geopandas can be installed using pip.
+
+    >>> pip install geopandas
+
+
 Get in touch
 ------------
 
@@ -94,11 +101,40 @@ Other operations return GeoPandas objects:
 
 ![Example 2](doc/source/gallery/test_buffer.png)
 
+
+Plotting
+--------
+
 GeoPandas objects also know how to plot themselves. GeoPandas uses
 [matplotlib](http://matplotlib.org) for plotting. To generate a plot of our
 GeoSeries, use:
 
     >>> g.plot()
+
+To learn more about plotting with GeoPandas, see the [documentation](https://geopandas.org/en/stable/docs/reference/api/geopandas.GeoDataFrame.plot.html).
+
+GeoPandas is commonly used for constructing chloropleth maps, where the color of a region is based on some value assigned to it, like population. 
+To create a chloropleth using geopandas, assign a variable to the column parameter when plotting. 
+
+Let's look at an example using the GeoPandas example dataset 'naturalearth_lowres'. 
+The dataset contains geographic data for world countries, and it inlcudes the variables population density and gdp.
+
+    >>> world = geopandas.read_file(geopandas.datasets.get_path('naturalearth_lowres'))
+    >>> world.plot(column='pop_est', legend=True)
+
+Additionally, GeoPandas is commonly used to create interactive maps using the 'explore' function. 
+
+    >>> world.explore(column='pop_est', legend=True)
+
+This sample dataset can also be merged with other non-GIS datasets to plot different variables. 
+For example, we can left-join the world dataframe with data displaying some variable like per-capita income by country, and plot the merged dataframe. 
+
+The same logic applies when reading in an outside geographic data file. Using the line of code below, GeoPandas can read in GeoJSON or shp files, among others.
+
+    >>> df = geopandas.read_file(<path>)
+
+Keep in mind that GeoJSON files are just a form of JSON comprised of key-value pairs. You can learn more about the specific formatting [here](https://datascience.aero/geospatial-data-representation-the-geojson-format/).
+
 
 GeoPandas also implements alternate constructors that can read any data format recognized by [fiona](http://fiona.readthedocs.io/en/latest/). To read a zip file containing an ESRI shapefile with the [boroughs boundaries of New York City](https://data.cityofnewyork.us/City-Government/Borough-Boundaries/tqmj-j8zm) (GeoPandas includes this as an example dataset):
 
