@@ -23,34 +23,34 @@ In a non-spatial setting, when all we need are summary statistics of the data, w
 :meth:`~geopandas.GeoDataFrame.dissolve` Example
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Suppose we are interested in studying continents, but we only have country-level data like the country dataset included in GeoPandas. We can easily convert this to a continent-level dataset.
+Suppose we are interested in Nepalese zone, but we only have Nepalese district-level data like the `geoda.nepal` dataset included in `geodatasets`. We can easily convert this to a zone-level dataset.
 
 
-First, let's look at the most simple case where we just want continent shapes and names. By default, :meth:`~geopandas.GeoDataFrame.dissolve` will pass ``'first'`` to :ref:`groupby.aggregate <groupby.aggregate>`.
+First, let's look at the most simple case where we just want zone shapes and names. By default, :meth:`~geopandas.GeoDataFrame.dissolve` will pass ``'first'`` to :ref:`groupby.aggregate <groupby.aggregate>`.
 
 .. ipython:: python
 
-    world = geopandas.read_file(geopandas.datasets.get_path('naturalearth_lowres'))
-    world = world[['continent', 'geometry']]
-    continents = world.dissolve(by='continent')
+    nepal = geopandas.read_file(geodatasets.get_path('geoda nepal'))
+    nepal = nepal[['name_2', 'geometry']]  # name_2 contains zone names
+    zones = nepal.dissolve(by='name_2')
 
-    @savefig continents1.png
-    continents.plot();
+    @savefig zones1.png
+    zones.plot();
 
-    continents.head()
+    zones.head()
 
 If we are interested in aggregate populations, however, we can pass different functions to the :meth:`~geopandas.GeoDataFrame.dissolve` method to aggregate populations using the ``aggfunc =`` argument:
 
 .. ipython:: python
 
-   world = geopandas.read_file(geopandas.datasets.get_path('naturalearth_lowres'))
-   world = world[['continent', 'geometry', 'pop_est']]
-   continents = world.dissolve(by='continent', aggfunc='sum')
+   nepal = geopandas.read_file(geodatasets.get_path('geoda nepal'))
+   nepal = nepal[['name_2', 'geometry', 'population']]  # name_2 contains zone names
+   zones = nepal.dissolve(by='name_2', aggfunc='sum')
 
-   @savefig continents2.png
-   continents.plot(column = 'pop_est', scheme='quantiles', cmap='YlOrRd');
+   @savefig zones2.png
+   zones.plot(column = 'population', scheme='quantiles', cmap='YlOrRd');
 
-   continents.head()
+   zones.head()
 
 
 .. ipython:: python
@@ -80,19 +80,19 @@ However it also accepts other summary statistic options as allowed by :meth:`pan
 * list of functions and/or function names, e.g. [np.sum, 'mean']
 * dict of axis labels -> functions, function names or list of such.
 
-For example, to get the number of countries on each continent, 
+For example, to get the number of countries on each continent,
 as well as the populations of the largest and smallest country of each,
 we can aggregate the ``'name'`` column using ``'count'``,
 and the ``'pop_est'`` column using ``'min'`` and ``'max'``:
 
 .. ipython:: python
 
-    world = geopandas.read_file(geopandas.datasets.get_path("naturalearth_lowres"))
-    continents = world.dissolve(
-        by="continent",
+    nepal = geopandas.read_file(geodatasets.get_path('geoda nepal'))
+    zones = nepal.dissolve(
+        by="name_2",
         aggfunc={
-            "name": "count",
-            "pop_est": ["min", "max"],
+            "district": "count",
+            "population": ["min", "max"],
         },
     )
-   continents.head()
+   zones.head()

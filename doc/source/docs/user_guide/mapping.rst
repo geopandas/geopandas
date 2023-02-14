@@ -50,6 +50,7 @@ GeoPandas makes it easy to create Choropleth maps (maps where the color of each 
    :okwarning:
 
     # Plot by population
+    @savefig chicago_population.png
     chicago.plot(column="Pop2014");
 
 
@@ -86,6 +87,7 @@ However, the default appearance of the legend and plot axes may not be desirable
     fig, ax = plt.subplots(1, 1)
     divider = make_axes_locatable(ax)
     cax = divider.append_axes("bottom", size="5%", pad=0.1)
+    @savefig chicago_cax.png
     chicago.plot(
         column="Pop2014",
         ax=ax,
@@ -248,16 +250,15 @@ the ``kind`` keyword argument in :meth:`~GeoDataFrame.plot`, and include:
 
 .. ipython:: python
 
-    gdf = world.head(10)
     @savefig pandas_line_plot.png
-    gdf.plot(kind='scatter', x="pop_est", y="gdp_md_est")
+    chicago.plot(kind="scatter", x="Pop2012", y="shape_area")
 
 You can also create these other plots using the ``GeoDataFrame.plot.<kind>`` accessor methods instead of providing the ``kind`` keyword argument.
 
 .. ipython:: python
 
-    @savefig pandas_bar_plot.png
-    gdf.plot.bar()
+    @savefig pandas_hist_plot.png
+    chicago[["Pop2012", "Pop2014", "geometry"]].plot.hist(alpha=.4)
 
 For more information, see `Chart visualization <https://pandas.pydata.org/pandas-docs/stable/user_guide/visualization.html>`_ in the pandas documentation.
 
