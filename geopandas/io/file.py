@@ -243,26 +243,26 @@ def _read_file(filename, bbox=None, mask=None, rows=None, engine=None, **kwargs)
 
     filename = _expand_user(filename)
 
-    from_bytes = False
-    if _is_url(filename):
-        req = _urlopen(filename)
-        path_or_bytes = req.read()
-        from_bytes = True
-    elif pd.api.types.is_file_like(filename):
-        data = filename.read()
-        path_or_bytes = data.encode("utf-8") if isinstance(data, str) else data
-        from_bytes = True
-    else:
-        path_or_bytes = filename
+    if engine == "pyogrio":
+        return _read_file_pyogrio(filename, bbox=bbox, mask=mask, rows=rows, **kwargs)
 
-    if engine == "fiona":
+    elif engine == "fiona":
+        from_bytes = False
+        if _is_url(filename):
+            req = _urlopen(filename)
+            path_or_bytes = req.read()
+            from_bytes = True
+        elif pd.api.types.is_file_like(filename):
+            data = filename.read()
+            path_or_bytes = data.encode("utf-8") if isinstance(data, str) else data
+            from_bytes = True
+        else:
+            path_or_bytes = filename
+
         return _read_file_fiona(
             path_or_bytes, from_bytes, bbox=bbox, mask=mask, rows=rows, **kwargs
         )
-    elif engine == "pyogrio":
-        return _read_file_pyogrio(
-            path_or_bytes, bbox=bbox, mask=mask, rows=rows, **kwargs
-        )
+
     else:
         raise ValueError(f"unknown engine '{engine}'")
 
