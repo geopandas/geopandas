@@ -14,8 +14,6 @@ from shapely.geometry.base import BaseGeometry
 from geopandas import GeoDataFrame, GeoSeries
 
 # Adapted from pandas.io.common
-from urllib.request import urlopen as _urlopen
-from urllib.parse import urlparse as parse_url
 from urllib.parse import uses_netloc, uses_params, uses_relative
 
 
@@ -151,14 +149,6 @@ def _expand_user(path):
     return path
 
 
-def _is_url(url):
-    """Check to see if *url* has a valid protocol."""
-    try:
-        return parse_url(url).scheme in _VALID_URLS
-    except Exception:
-        return False
-
-
 def _is_zip(path):
     """Check if a given path is a zipfile"""
     parsed = fiona.path.ParsedPath.from_uri(path)
@@ -248,11 +238,7 @@ def _read_file(filename, bbox=None, mask=None, rows=None, engine=None, **kwargs)
 
     elif engine == "fiona":
         from_bytes = False
-        if _is_url(filename):
-            req = _urlopen(filename)
-            path_or_bytes = req.read()
-            from_bytes = True
-        elif pd.api.types.is_file_like(filename):
+        if pd.api.types.is_file_like(filename):
             data = filename.read()
             path_or_bytes = data.encode("utf-8") if isinstance(data, str) else data
             from_bytes = True
