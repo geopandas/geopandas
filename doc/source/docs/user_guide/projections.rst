@@ -24,7 +24,7 @@ The same CRS can often be referred to in many ways. For example, one of the most
 commonly used CRS is the WGS84 latitude-longitude projection. This can be
 referred to using the authority code ``"EPSG:4326"``.
 
-*geopandas* can accept anything accepted by :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`:
+GeoPandas can accept anything accepted by :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`:
 
 - CRS WKT string
 - An authority string (i.e. "epsg:4326")
@@ -38,10 +38,9 @@ referred to using the authority code ``"EPSG:4326"``.
 
 For reference, a few very common projections and their EPSG codes:
 
-* WGS84 Latitude/Longitude: ``"EPSG:4326"``
-* UTM Zones (North): ``"EPSG:32633"``
-* UTM Zones (South): ``"EPSG:32733"``
-
+* WGS84 Latitude/Longitude: EPSG:4326
+* UTM Zones (North): EPSG:32633
+* UTM Zones (South): EPSG:32733
 
 What is the best format to store the CRS information?
 -----------------------------------------------------
@@ -57,11 +56,11 @@ Setting a projection
 
 There are two relevant operations for projections: setting a projection and re-projecting.
 
-Setting a projection may be necessary when for some reason *geopandas* has coordinate data (x-y values), but no information about how those coordinates refer to locations in the real world. Setting a projection is how one tells *geopandas* how to interpret coordinates. If no CRS is set, *geopandas* geometry operations will still work, but coordinate transformations will not be possible and exported files may not be interpreted correctly by other software.
+Setting a projection may be necessary when for some reason GeoPandas has coordinate data (x-y values), but no information about how those coordinates refer to locations in the real world. Setting a projection is how one tells GeoPandas how to interpret coordinates. If no CRS is set, GeoPandas geometry operations will still work, but coordinate transformations will not be possible and exported files may not be interpreted correctly by other software.
 
 Be aware that **most of the time** you don't have to set a projection. Data loaded from a reputable source (using the :func:`geopandas.read_file()` command) *should* always include projection information. You can see an objects current CRS through the :attr:`GeoSeries.crs` attribute.
 
-From time to time, however, you may get data that does not include a projection. In this situation, you have to set the CRS so *geopandas* knows how to interpret the coordinates.
+From time to time, however, you may get data that does not include a projection. In this situation, you have to set the CRS so GeoPandas knows how to interpret the coordinates.
 
 For example, if you convert a spreadsheet of latitudes and longitudes into a
 GeoSeries by hand, you would set the projection by passing the WGS84

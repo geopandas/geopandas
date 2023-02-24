@@ -26,7 +26,7 @@ of only one shape (like a single polygon) or multiple shapes that are
 meant to be thought of as one observation (like the many polygons that
 make up the State of Hawaii or a country like Indonesia).
 
-*geopandas* has three basic classes of geometric objects (which are actually *shapely* objects):
+GeoPandas has three basic classes of geometric objects (which are actually *shapely* objects):
 
 * Points / Multi-Points
 * Lines / Multi-Lines

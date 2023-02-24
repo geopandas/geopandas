@@ -1,4 +1,3 @@
-from packaging.version import Version
 import math
 from typing import Sequence
 from geopandas.testing import assert_geodataframe_equal
@@ -364,9 +363,7 @@ class TestSpatialJoin:
                 columns={"df1_ix1": "index_left0", "df1_ix2": "index_left1"}
             )
             exp.index.names = df2.index.names
-
-        # GH 1364 fix of behaviour was done in pandas 1.1.0
-        if predicate == "within" and Version(pd.__version__) >= Version("1.1.0"):
+        if predicate == "within":
             exp = exp.sort_index()
 
         assert_frame_equal(res, exp, check_index_type=False)
@@ -546,7 +543,6 @@ class TestSpatialJoinNYBB:
         assert sjoin(empty, self.pointdf, how="left", predicate=predicate).empty
 
     def test_empty_sjoin_return_duplicated_columns(self):
-
         nybb = geopandas.read_file(geopandas.datasets.get_path("nybb"))
         nybb2 = nybb.copy()
         nybb2.geometry = nybb2.translate(200000)  # to get non-overlapping

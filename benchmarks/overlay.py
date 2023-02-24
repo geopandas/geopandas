@@ -4,7 +4,6 @@ from shapely.geometry import Point, Polygon
 
 
 class Countries:
-
     param_names = ["how"]
     params = [
         ("intersection", "union", "identity", "symmetric_difference", "difference")
@@ -26,7 +25,6 @@ class Countries:
 
 
 class Small:
-
     param_names = ["how"]
     params = [
         ("intersection", "union", "identity", "symmetric_difference", "difference")
@@ -56,14 +54,12 @@ class Small:
 
 
 class ManyPoints:
-
     param_names = ["how"]
     params = [
         ("intersection", "union", "identity", "symmetric_difference", "difference")
     ]
 
     def setup(self, *args):
-
         points = GeoDataFrame(geometry=[Point(i, i) for i in range(1000)])
         base = np.array([[0, 0], [0, 100], [100, 100], [100, 0]])
         polys = GeoDataFrame(geometry=[Polygon(base + i * 100) for i in range(10)])

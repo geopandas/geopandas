@@ -1,12 +1,13 @@
 name: test
 channels:
   - conda-forge
-  # - conda-forge/label/shapely_dev
 dependencies:
   - python=3.9
   # required
-  - pandas=1.3
-  # - shapely=2
+  - pandas=1.4
+  - shapely=2
+  - geos
+  - cython
   - fiona
   - pyproj
   # use this build to have one with only shapely 2.0 installed
@@ -27,14 +28,10 @@ dependencies:
   - geopy
   # installed in tests.yaml, because not available on windows
   # - postgis
-  - SQLalchemy
+  - SQLalchemy<2
   - psycopg2
   - libspatialite
   - geoalchemy2
   - pyarrow
   # doctest testing
   - pytest-doctestplus
-  - pip
-  - pip:
-      - --pre
-      - shapely==2.0b1
