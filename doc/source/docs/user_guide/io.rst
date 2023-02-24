@@ -262,10 +262,6 @@ the spatial information.
     This is tracking version 1.0.0-beta.1 of the GeoParquet specification at:
     https://github.com/opengeospatial/geoparquet.
 
-    This metadata specification does not yet make stability promises. As such,
-    it is not recommend to use this in a production setting unless you are
-    able to rewrite your Parquet or Feather files.
-
     Previous versions are still supported as well. By default, the latest
     version is used when writing files (older versions can be specified using
     the ``schema_version`` keyword), and GeoPandas supports reading files
