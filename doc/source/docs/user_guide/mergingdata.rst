@@ -84,7 +84,8 @@ In a spatial join, two geometry objects are merged based on their spatial relati
 .. ipython:: python
 
 
-   # Merge two GeoDataFrames, one of countries, one of cities, in order to get each city's country
+   # Merge two GeoDataFrames in order to get each city's country. 
+   # One of countries, one of cities.
    countries.head()
    cities.head()
 
