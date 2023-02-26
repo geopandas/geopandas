@@ -248,6 +248,19 @@ def test_to_wkt():
     assert res[0] is None
 
 
+def test_data():
+    arr = from_shapely(points_no_missing)
+    assert isinstance(arr.data, np.ndarray)
+
+
+def test_as_array():
+    arr = from_shapely(points_no_missing)
+    np_arr1 = np.asarray(arr)
+    np_arr2 = arr.to_numpy()
+    assert np_arr1[0] == arr[0]
+    np.testing.assert_array_equal(np_arr1, np_arr2)
+
+
 @pytest.mark.parametrize(
     "attr,args",
     [
