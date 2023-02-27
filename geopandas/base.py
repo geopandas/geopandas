@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 from pandas import DataFrame, Series
 
-from shapely.geometry import box
+from shapely.geometry import box, MultiPoint
 from shapely.geometry.base import BaseGeometry
 
 from .array import GeometryArray, GeometryDtype
@@ -3534,7 +3534,9 @@ GeometryCollection
             ``grid`` option samples a grid from within a given  geometry, possibly with
             a random rotation and offset. Other allowed strings
             (e.g. ``"cluster_poisson"``) denote sampling function name from the
-            ``pointpats.random`` module.
+            ``pointpats.random`` module. Pointpats methods are implemented for
+            (Multi)Polygons only and will return an empty MultiPoint for other
+            geometry types.
 
         tile : {None, "square", "hex"}, default None
             A type of the grid to sample. ``"square"`` generates
@@ -3606,10 +3608,10 @@ GeometryCollection
                     assert isinstance(size[1], int)
                 except AssertionError:
                     raise TypeError(
-                        "Size must be an integer denoting the size a sample, "
-                        "an integer denoting the number of sample sites along"
-                        " both axes when method='grid', or a tuple of two "
-                        " integers denoting the grid dimensions when method='grid'."
+                        "Size must be an integer denoting the size of a sample, "
+                        "an integer denoting the number of sample sites along "
+                        "both axes when method='grid', or a tuple of two "
+                        "integers denoting the grid dimensions when method='grid'."
                     )
         if method == "random":
             if tile is None:
@@ -3620,8 +3622,8 @@ GeometryCollection
                 )
             else:
                 raise ValueError(
-                    f"Random sampling only implemented for spatially uniform/poisson"
-                    f" processes and random grids. Recieved {method}"
+                    'The tile option must be either "square" or "hex". '
+                    f'Recieved "{tile}".'
                 )
 
         elif method == "grid":
@@ -3653,10 +3655,16 @@ GeometryCollection
                 assert hasattr(pointpats.random, method)
                 sample_function = getattr(pointpats.random, method)
                 raw_points = self.geometry.apply(
-                    sample_function, size=size, **sample_kwargs
+                    lambda x: sample_function(x, size=size, **sample_kwargs)
+                    if not (x.is_empty or x is None or "Polygon" not in x.geom_type)
+                    else None,
                 )
                 result = GeoSeries(
-                    raw_points.apply(lambda x: points_from_xy(*x.T).unary_union()),
+                    raw_points.apply(
+                        lambda x: points_from_xy(*x.T).unary_union()
+                        if x is not None
+                        else MultiPoint()
+                    ),
                 )
             except ImportError as e:
                 raise e

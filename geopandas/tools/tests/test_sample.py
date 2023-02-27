@@ -113,3 +113,8 @@ def test_grid(data, size, spacing, tile, seed):
             data.buffer(1e-7), predicate="intersects"
         )
         assert len(intersects) == len(points_in_grid)
+
+
+def test_grid_geom_type_warning():
+    with pytest.warns(UserWarning, match="Sampling is not supported for"):
+        grid(point, size=10)

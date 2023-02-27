@@ -380,7 +380,7 @@ class TestSeries:
         not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
         reason="get_coordinates not implemented for shapely<2",
     )
-    def test_sample(self):
+    def test_sample_points(self):
         for frame in (
             self.g1,
             self.na,
@@ -391,6 +391,58 @@ class TestSeries:
         ):
             output = frame.sample_points(10)
             assert_index_equal(frame.index, output.index)
+
+            output = frame.sample_points(10, tile="hex")
+            assert_index_equal(frame.index, output.index)
+
+            output = frame.sample_points(10, method="grid")
+            assert_index_equal(frame.index, output.index)
+
+            output = frame.sample_points(10, method="grid", tile="hex")
+            assert_index_equal(frame.index, output.index)
+
+    @pytest.mark.skipif(
+        not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+        reason="get_coordinates not implemented for shapely<2",
+    )
+    def test_sample_points_errors(self):
+        with pytest.raises(ValueError, match="Either size or spacing"):
+            self.g1.sample_points()
+
+        with pytest.raises(TypeError, match="Size must be an integer"):
+            self.g1.sample_points(1.2)
+
+        with pytest.raises(TypeError, match="Size must be an integer"):
+            self.g1.sample_points((1, 1.2), method="grid")
+
+        with pytest.raises(TypeError, match="Size must be an integer"):
+            self.g1.sample_points((10, 10))
+
+        with pytest.raises(ValueError, match="The tile option must be"):
+            self.g5.sample_points(10, tile="error")
+
+        with pytest.raises(ValueError, match="The tile option must be"):
+            self.g5.sample_points(10, method="grid", tile="error")
+
+    @pytest.mark.skipif(
+        not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+        reason="get_coordinates not implemented for shapely<2",
+    )
+    def test_sample_points_pointpats(self):
+        pytest.importorskip("pointpats")
+        for frame in (
+            self.g1,
+            self.na,
+            self.a1,
+            self.landmarks,
+            self.g5,
+            pd.concat((self.g1, self.landmarks)),
+        ):
+            output = frame.sample_points(10, method="cluster_poisson")
+            assert_index_equal(frame.index, output.index)
+
+        with pytest.raises(AttributeError, match="pointpats.random module has no"):
+            frame.sample_points(10, method="nonexistent")
 
 
 @pytest.mark.filterwarnings("ignore::UserWarning")

@@ -81,8 +81,8 @@ def grid(
 
     Parameters
     ----------
-    geometry : shapely.Geometry, GeoSeries or GeoDataFrame
-        The shape(s) covering the area in which to sample.
+    geometry : shapely.Geometry
+        The shape covering the area in which to sample.
     size : int | tuple, optional
         The number points along each side of the
         grid. If a tuple is provided, then the first value must indicate the number
@@ -158,6 +158,8 @@ def _grid_polygon(
     """
     Sample points from within a polygon according to a given spacing.
     """
+    if geom is None or geom.is_empty:
+        return geometry.MultiPoint()
 
     # cast to GeoSeries to automatically select the geometry engine
     geom = GeoSeries([geom])
@@ -209,6 +211,9 @@ def _grid_line(geom, size, spacing, random_offset=True, **unused_kws):
     """
     Sample points from along a line according to a given spacing.
     """
+    if geom is None or geom.is_empty:
+        return geometry.MultiPoint()
+
     geom = GeoSeries([geom])
 
     if size is not None:
