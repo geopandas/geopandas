@@ -113,36 +113,38 @@ def grid(
     >>> square = box(0,0,1,1)
     >>> grid(square, size=(8,8), tile='hex') # doctest: +SKIP
     """
-
-    # only process size if it's provided; otherwise, allow spacing to lead
-    if size is not None:
-        if isinstance(size, int):
-            if geom.geom_type in ("Polygon", "MultiPolygon"):
-                size = (size, size)
-            else:
-                size = (size, 1)
-
-    if geom.geom_type in ("Polygon", "MultiPolygon"):
-        multipoints = _grid_polygon(
-            geom,
-            size=size,
-            spacing=spacing,
-            tile=tile,
-            random_offset=random_offset,
-            random_rotation=random_rotation,
-        )
-
-    elif geom.geom_type in ("LineString", "MultiLineString"):
-        multipoints = _grid_line(
-            geom, size=size, spacing=spacing, tile=tile, random_offset=random_offset
-        )
-    else:
-        warn(
-            f"Sampling is not supported for {geom.geom_type} geometry type.",
-            UserWarning,
-            stacklevel=8,
-        )
+    if geom is None or geom.is_empty:
         multipoints = geometry.MultiPoint()
+    else:
+        # only process size if it's provided; otherwise, allow spacing to lead
+        if size is not None:
+            if isinstance(size, int):
+                if geom.geom_type in ("Polygon", "MultiPolygon"):
+                    size = (size, size)
+                else:
+                    size = (size, 1)
+
+        if geom.geom_type in ("Polygon", "MultiPolygon"):
+            multipoints = _grid_polygon(
+                geom,
+                size=size,
+                spacing=spacing,
+                tile=tile,
+                random_offset=random_offset,
+                random_rotation=random_rotation,
+            )
+
+        elif geom.geom_type in ("LineString", "MultiLineString"):
+            multipoints = _grid_line(
+                geom, size=size, spacing=spacing, tile=tile, random_offset=random_offset
+            )
+        else:
+            warn(
+                f"Sampling is not supported for {geom.geom_type} geometry type.",
+                UserWarning,
+                stacklevel=8,
+            )
+            multipoints = geometry.MultiPoint()
 
     return multipoints
 
@@ -159,9 +161,6 @@ def _grid_polygon(
     """
     Sample points from within a polygon according to a given spacing.
     """
-    if geom is None or geom.is_empty:
-        return geometry.MultiPoint()
-
     # cast to GeoSeries to automatically select the geometry engine
     geom = GeoSeries([geom])
     mbc = geom.minimum_bounding_circle()
@@ -212,9 +211,6 @@ def _grid_line(geom, size, spacing, random_offset=True, **unused_kws):
     """
     Sample points from along a line according to a given spacing.
     """
-    if geom is None or geom.is_empty:
-        return geometry.MultiPoint()
-
     geom = GeoSeries([geom])
 
     if size is not None:
