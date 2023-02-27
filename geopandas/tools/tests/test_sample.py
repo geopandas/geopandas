@@ -1,9 +1,9 @@
-import geopandas
 import numpy
 import pytest
 
-from geopandas.tools._random import uniform, grid
+import geopandas
 import geopandas._compat as compat
+from geopandas.tools._random import grid, uniform
 
 distance = pytest.importorskip("scipy.spatial.distance")
 

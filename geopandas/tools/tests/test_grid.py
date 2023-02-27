@@ -1,10 +1,10 @@
-import geopandas
+import numpy
 import pytest
 from shapely import geometry
-import numpy
 
-from geopandas.tools.grids import make_grid
+import geopandas
 from geopandas import _compat as compat
+from geopandas.tools.grids import make_grid
 
 nybb = geopandas.read_file(geopandas.datasets.get_path("nybb")).to_crs(epsg=4326)
 

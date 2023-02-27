@@ -1,11 +1,12 @@
+from warnings import warn
+
 import numpy
-from ..array import points_from_xy, from_shapely
-from ..geoseries import GeoSeries
-from .._compat import SHAPELY_GE_20
-from .grids import _hexgrid_circle, _squaregrid_circle
 import shapely
 from shapely import geometry
-from warnings import warn
+
+from ..array import from_shapely, points_from_xy
+from ..geoseries import GeoSeries
+from .grids import _hexgrid_circle, _squaregrid_circle
 
 
 def uniform(geom, size=1, batch_size=None):
@@ -271,12 +272,7 @@ def _split_line(geom):
     """
     splits = numpy.empty((0,))
     points = GeoSeries([geom]).get_coordinates().values
-    if SHAPELY_GE_20:
-        substring_splits = shapely.linestrings(list(zip(points[:-1], points[1:])))
-    else:
-        substring_splits = numpy.array(
-            [shapely.LineString(x) for x in list(zip(points[:-1], points[1:]))]
-        )
+    substring_splits = shapely.linestrings(list(zip(points[:-1], points[1:])))
     splits = numpy.hstack((splits, substring_splits))
     return splits
 

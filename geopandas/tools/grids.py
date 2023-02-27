@@ -1,8 +1,10 @@
-from ..array import points_from_xy
-from ..geoseries import GeoSeries
-from ..geodataframe import GeoDataFrame
-import numpy
 from warnings import warn
+
+import numpy
+
+from ..array import points_from_xy
+from ..geodataframe import GeoDataFrame
+from ..geoseries import GeoSeries
 
 
 def make_grid(
