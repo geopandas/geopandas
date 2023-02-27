@@ -81,20 +81,26 @@ def grid(
 
     Parameters
     ----------
-    geom : any shapely.geometry.BaseGeometry type
-        the shape that describes the area in which to sample. Can sample
-        within polygons, along lines, or within/along their multi-part forms.
-        Any other geometry type will be ignored, and a MultiPoint returned.
-    size : integer, tuple
-        an integer denoting how many points to sample, or a tuple
-        denoting how many points to sample, and how many tines to conduct sampling.
-        If you grid-sample geometries *and* they're  mixed, any tuple size specification
-        will get converted into a flat size when sampling lines.
-    batch_size: integer
-        a number denoting how large each round of simulation and checking
-        should be. Should be approximately on the order of the number of points
-        requested to sample. Some complex shapes may be faster to sample if the
-        batch size increases. Only useful for (Multi)Polygon geometries.
+    geometry : shapely.Geometry, GeoSeries or GeoDataFrame
+        The shape(s) covering the area in which to sample.
+    size : int | tuple, optional
+        The number points along each side of the
+        grid. If a tuple is provided, then the first value must indicate the number
+        of grid points on the x axis, and second value must indicate the number of
+        grid points on the y axis. Either ``size`` or ``spacing`` is required but never
+        both.
+    spacing : int, optional
+        The spacing of points. Indicates the distance between
+        the points in the grid. Either ``size`` or ``spacing`` is required but never
+        both.
+    tile : {"square", "hex"}, default "square"
+        A type of the grid to sample. ``"square"`` generates
+        a square grid, while ``"hex"`` generates a hexagonal grid (also known as
+        triangualar, depending on the perspective).
+    random_offset : bool
+        Move the grid randomly along axes.
+    random_rotation : bool
+        Rotate the grid randomly.
 
     Returns
     -------

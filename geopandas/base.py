@@ -3492,22 +3492,71 @@ GeometryCollection
     ):
         """
         Sample points from each geometry.
-        # TODO: clean the docstring & provide examples
+
+        Generate MultiPoint per each geometry containing points sampled according to the
+        specification. You can either sample randomly, in a square or hexagonal grid or
+        using the advanced sampling algorithm rom the ``pointpats.random`` module.
+
+        For polygons, this samples within the area of the polygon. For lines,
+        this samples along the length of the linestring. For multi-part
+        geometries, the weights of each part are selected according to their relevant
+        attribute (area for Polygons, length for LineStrings), and then points are
+        sampled from each part.
+
+        Any other geometry type (e.g. Point, GeometryCollection) is ignored, and an
+        empty MultiPoint geometry is returned.
 
         Parameters
         ----------
-        size : the size of the sample requested. If method='random', this indicates the
+        size : int | tuple, optional
+
+            The size of the sample requested.
+
+            If ``method='random'``, this indicates the
             number of samples to draw from each geometry. If a tuple is provided,
             then the first value must indicate the number of samples for each geometry,
             and the second value must indicate the number of replications to sample.
-            if method='hexgrid' or method='squaregrid', this gives the number
-            points along each side of the grid. If a tuple is provided, then the first
-            value must indicate the number of grid points on the x axis, and second
-            value must indicate the number of grid points on the y axis.
-        method : the method requested. must be either random, hexgrid, or squaregrid
-        by_parts : whether to split the dataframe and sample from parts
-        sample_kwargs : options for the sampling algorithms, especially useful when
-            picking distributions from the pointpats.random module
+
+            If ``method='grid'`` this gives the number points along each side of the
+            grid. If a tuple is provided, then the first value must indicate the number
+            of grid points on the x axis, and second value must indicate the number of
+            grid points on the y axis.
+
+            Either ``size`` or ``spacing`` is required but never both.
+
+        spacing : int, optional
+            The spacing of points for ``method='grid'``. Indicates the distance between
+            the points in the grid. Either ``size`` or ``spacing`` is required but never
+            both.
+
+        method : {"random", "grid", str}, default "random"
+            The sampling method. ``random`` samples uniformly at random from a geometry.
+            ``grid`` option samples a grid from within a given  geometry, possibly with
+            a random rotation and offset. Other allowed strings
+            (e.g. ``"cluster_poisson"``) denote sampling function name from the
+            ``pointpats.random`` module.
+
+        tile : {None, "square", "hex"}, default None
+            A type of the grid to sample. ``"square"`` generates
+            a square grid, while ``"hex"`` generates a hexagonal grid (also known as
+            triangualar, depending on the perspective). ``None`` samples uniformly at
+            random (no grid). When when ``method="grid"``, ``tile`` defaults to
+            "square".
+
+        sample_kwargs : dict
+            Options for the sampling algorithms, especially useful when
+            picking distributions from the ``pointpats.random`` module.
+
+            When ``method="random"`` and ``tile=None``, additional ``batch_size``
+            keyword is available  denoting how large each round of simulation should be.
+            Should be approximately on the order of the number of points requested to
+            sample. Some complex shapes may be faster to sample if the batch size
+            increases. Only useful for (Multi)Polygon geometries.
+
+            When ``tile`` is not None, you can specify boolean keywords
+            ``random_offset`` and ``random_rotation`` to specify whether the grid
+            should be randomly placed along the axes and whether it shall be rotated,
+            respectively.
 
         Returns
         -------
@@ -3516,9 +3565,24 @@ GeometryCollection
             requested method. Only a GeoDataFrame if there are multiple replications
             requested for the sampling
 
-        Examples
+        See also
         --------
+        make_grid
 
+        Examples
+        -------
+        >>> from shapely.geometry import Point, LineString, Polygon
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(1, -1), (1, 0), (0, 0)]),
+        ...         Polygon([(3, -1), (4, 0), (3, 1)]),
+        ...     ]
+        ... )
+
+        >>> s.sample_points(size=10)  # doctest: +SKIP
+        0    MULTIPOINT (0.04783 -0.04244, 0.24196 -0.09052...
+        1    MULTIPOINT (3.00672 -0.52390, 3.01776 0.30065,...
+        Name: sampled_points, dtype: geometry
         """
         from .geoseries import GeoSeries
         from .array import points_from_xy
@@ -3561,13 +3625,13 @@ GeometryCollection
                 )
 
         elif method == "grid":
-            if tile not in (None, "hex", "square"):
+            if tile is None:
+                tile = "square"
+            if tile not in ("hex", "square"):
                 raise ValueError(
                     'The tile option must be either "square" or "hex". '
                     f'Recieved "{tile}".'
                 )
-            if tile is None:
-                tile = "square"
             sample_kwargs.update({"random_offset": False})
             sample_kwargs.update({"random_rotation": False})
             point_sets = self.geometry.apply(

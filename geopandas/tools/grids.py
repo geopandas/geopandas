@@ -6,15 +6,14 @@ from warnings import warn
 
 
 def make_grid(
-    geom,
+    geometry,
     size=None,
     spacing=None,
     tile="square",
     clip=True,
 ):
     """
-
-    Sample uniformly at random from a geometry.
+    Sample uniformly at random from a geometry or a GeoSeries.
 
     For polygons, this samples uniformly within the area of the polygon. For lines,
     this samples uniformly along the length of the linestring. For multi-part
@@ -22,26 +21,39 @@ def make_grid(
     attribute (area for Polygons, length for LineStrings), and then points are
     sampled from each part uniformly.
 
-    Any other geometry type (e.g. Point, GeometryCollection) are ignored, and an
+    Any other geometry type (e.g. Point, GeometryCollection) is ignored, and an
     empty MultiPoint geometry is returned.
 
     Parameters
     ----------
-    geom : any shapely.geometry.BaseGeometry type or GeoSeries
-        the shape that describes the area in which to sample.
-
-    size : integer, tuple
-        an integer denoting how many points to sample, or a tuple
-        denoting how many points to sample, and how many tines to conduct sampling.
-    batch_size: integer
-        a number denoting how large each round of simulation and checking
-        should be. Should be approximately on the order of the number of points
-        requested to sample. Some complex shapes may be faster to sample if the
-        batch size increases. Only useful for (Multi)Polygon geometries.
+    geometry : shapely.Geometry, GeoSeries or GeoDataFrame
+        The shape(s) covering the area in which to sample.
+    size : int | tuple, optional
+        The number points along each side of the
+        grid. If a tuple is provided, then the first value must indicate the number
+        of grid points on the x axis, and second value must indicate the number of
+        grid points on the y axis. Either ``size`` or ``spacing`` is required but never
+        both.
+    spacing : int, optional
+        The spacing of points. Indicates the distance between
+        the points in the grid. Either ``size`` or ``spacing`` is required but never
+        both.
+    tile : {"square", "hex"}, default "square"
+        A type of the grid to sample. ``"square"`` generates
+        a square grid, while ``"hex"`` generates a hexagonal grid (also known as
+        triangualar, depending on the perspective).
+    clip : bool, default True
+        Clip the sampled grid to fall within the ``geometry``. When ``False``,
+        the resulting grid covers the bounds of the ``geometry``. Otherwise it is
+        clipped to fall only within.
 
     Returns
     -------
     shapely.MultiPoint geometry containing the sampled points
+
+    See also
+    --------
+    GeoSeries.sample_points
 
     Examples
     --------
@@ -65,13 +77,13 @@ def make_grid(
     else:  # size is None but spacing is known, so compute size in grid makers.
         pass
 
-    if isinstance(geom, (GeoSeries, GeoDataFrame)):
-        bounds = geom.total_bounds
+    if isinstance(geometry, (GeoSeries, GeoDataFrame)):
+        bounds = geometry.total_bounds
     else:
-        bounds = geom.bounds
+        bounds = geometry.bounds
     if tile == "square":
         grid = _square_points(size=size, bounds=bounds, spacing=spacing)
-        result = GeoSeries(points_from_xy(*grid.T, crs=getattr(geom, "crs", None)))
+        result = GeoSeries(points_from_xy(*grid.T, crs=getattr(geometry, "crs", None)))
 
     elif tile == "hex":
         grid = _hex_points(
@@ -79,7 +91,7 @@ def make_grid(
             bounds=bounds,
             spacing=spacing,
         )
-        result = GeoSeries(points_from_xy(*grid.T, crs=getattr(geom, "crs", None)))
+        result = GeoSeries(points_from_xy(*grid.T, crs=getattr(geometry, "crs", None)))
     else:
         raise ValueError(
             f'The tile option must be either "square" or "hex". Recieved "{tile}".'
@@ -87,26 +99,26 @@ def make_grid(
 
     # clip if not forbidden.
     if clip:
-        if isinstance(geom, (GeoSeries, GeoDataFrame)):
-            mask = geom.unary_union
+        if isinstance(geometry, (GeoSeries, GeoDataFrame)):
+            mask = geometry.unary_union
             was_df = True
         else:
-            mask = geom
+            mask = geometry
             was_df = False
 
         # if the mask is a polygon, clip if not forbidden
         if mask.geom_type in ("Polygon", "MultiPolygon"):
-            result = result.clip(geom, keep_geom_type=True)
+            result = result.clip(geometry, keep_geom_type=True)
         # otherwise, if explicitly requested and the mask is not valid, warn:
         elif clip:
             if was_df:
                 warning_string = (
                     f"GeoSeries/GeoDataFrame with types"
-                    f" ({', '.join(geom.geometry.geom_type.unique())})"
+                    f" ({', '.join(geometry.geometry.geom_type.unique())})"
                 )
 
             else:
-                warning_string = f"geometry of type {geom.geom_type}"
+                warning_string = f"geometry of type {geometry.geom_type}"
             warn(
                 f"clip only makes sense when gridding (Multi)Polygon geometries."
                 f" Your input was a {warning_string} that resulted in a mask of "
@@ -124,7 +136,6 @@ def _hex_points(size, bounds, spacing, flat=True):
     x_min, y_min, x_max, y_max = bounds
     x_range, y_range = x_max - x_min, y_max - y_min
     center = numpy.array([[x_min + x_range / 2, y_min + y_range / 2]])
-
     if spacing is None:
         x_res, y_res = size
         x_step, y_step = x_range / x_res, y_range / y_res
