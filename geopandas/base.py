@@ -3570,7 +3570,7 @@ GeometryCollection
         make_grid
 
         Examples
-        -------
+        --------
         >>> from shapely.geometry import Point, LineString, Polygon
         >>> s = geopandas.GeoSeries(
         ...     [
