@@ -78,44 +78,38 @@ def test_uniform(data, size, batch_size):
     reason="get_coordinates not implemented for shapely<2",
 )
 def test_grid(data, size, spacing, tile, seed):
-    numpy.random.seed(seed)
-    sample = grid(data, size=size, spacing=spacing, tile=tile)
-    if spacing is not None:
-        implied_spacing = find_spacing(sample)
-        assert implied_spacing <= spacing, (
-            f"spacing is wrong for size={size}, "
-            f"spacing={spacing}, tile={tile} on {data.type}"
+    if size is None and spacing is None:
+        pytest.skip(
+            "Either size or spacing options must be provided. Raises one level above."
         )
     else:
-        if isinstance(size, tuple):
-            n_specified = size[0] * size[1]
-        elif size is None:
-            n_specified = 100
-        elif data.type in ("Polygon", "MultiPolygon"):
-            n_specified = size**2
+        sample = grid(data, size=size, spacing=spacing, tile=tile)
+        numpy.random.seed(seed)
+
+        if spacing is not None:
+            implied_spacing = find_spacing(sample)
+            assert implied_spacing <= spacing, (
+                f"spacing is wrong for size={size}, "
+                f"spacing={spacing}, tile={tile} on {data.type}"
+            )
         else:
-            n_specified = size
-        assert (len(sample.geoms) - n_specified) <= 1, (
-            f"Sampled {len(sample.geoms)} points instead of "
-            f"{n_specified} for size={size}, spacing={spacing}, "
-            f"tile={tile} on {data.type}"
-        )  # This is an artefact of the way lines are sampled;
-        # check numpy.arange docstring for the details.
+            if isinstance(size, tuple):
+                n_specified = size[0] * size[1]
+            elif size is None:
+                n_specified = 100
+            elif data.type in ("Polygon", "MultiPolygon"):
+                n_specified = size**2
+            else:
+                n_specified = size
+            assert (len(sample.geoms) - n_specified) <= 1, (
+                f"Sampled {len(sample.geoms)} points instead of "
+                f"{n_specified} for size={size}, spacing={spacing}, "
+                f"tile={tile} on {data.type}"
+            )  # This is an artefact of the way lines are sampled;
+            # check numpy.arange docstring for the details.
 
-    points_in_grid = geopandas.GeoSeries(sample).explode()
-    intersects = points_in_grid.sindex.query(data.buffer(1e-7), predicate="intersects")
-    assert len(intersects) == len(points_in_grid)
-
-
-@pytest.mark.skipif(
-    not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
-    reason="get_coordinates not implemented for shapely<2",
-)
-def test_size_and_spacing_failures():
-    for bad_size in [(10, 10, 2), 0.1, (0.1, 0.2)]:
-        with pytest.raises(TypeError):
-            grid(size=bad_size)
-        with pytest.raises(TypeError):
-            uniform(size=bad_size)
-    with pytest.raises(ValueError):
-        grid(size=10, spacing=1)
+        points_in_grid = geopandas.GeoSeries(sample).explode()
+        intersects = points_in_grid.sindex.query(
+            data.buffer(1e-7), predicate="intersects"
+        )
+        assert len(intersects) == len(points_in_grid)

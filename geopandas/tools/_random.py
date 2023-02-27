@@ -5,6 +5,7 @@ from .._compat import SHAPELY_GE_20
 from .grids import _hexgrid_circle, _squaregrid_circle
 import shapely
 from shapely import geometry
+from warnings import warn
 
 
 def uniform(geom, size=1, batch_size=None):
@@ -46,13 +47,6 @@ def uniform(geom, size=1, batch_size=None):
     >>> uniform(square, size=100, batch_size=2) # doctest: +SKIP
     """
 
-    try:
-        assert int(size) == size
-        size = int(size)
-    except (AssertionError, TypeError):
-        raise TypeError(
-            "Size must be an integer denoting the number of samples to draw."
-        )
     if geom is None or geom.is_empty:
         multipoints = geometry.MultiPoint()
 
@@ -63,14 +57,18 @@ def uniform(geom, size=1, batch_size=None):
         elif geom.geom_type in ("LineString", "MultiLineString"):
             multipoints = _uniform_line(geom, size=size)
         else:
-            # TODO: Should we recurse through geometrycollections?
+            warn(
+                f"Sampling is not supported for {geom.geom_type} geometry type.",
+                UserWarning,
+                stacklevel=8,
+            )
             multipoints = geometry.MultiPoint()
 
     return multipoints
 
 
 def grid(
-    geom=None,
+    geom,
     size=None,
     spacing=None,
     tile="square",
@@ -90,6 +88,8 @@ def grid(
     size : integer, tuple
         an integer denoting how many points to sample, or a tuple
         denoting how many points to sample, and how many tines to conduct sampling.
+        If you grid-sample geometries *and* they're  mixed, any tuple size specification
+        will get converted into a flat size when sampling lines.
     batch_size: integer
         a number denoting how large each round of simulation and checking
         should be. Should be approximately on the order of the number of points
@@ -107,37 +107,13 @@ def grid(
     >>> grid(square, size=(8,8), tile='hex') # doctest: +SKIP
     """
 
-    if geom is None:
-        geom = geometry.box(0, 0, 1, 1)
-    if size is None:
-        if spacing is None:
-            size = (10, 10)
-        else:
-            ValueError("Either size or spacing options must be provided.")
-    else:  # only process size if it's provided; otherwise, allow spacing to lead
-        if spacing is not None:
-            raise ValueError(
-                "Either size or spacing options can be provided, not both."
-            )
+    # only process size if it's provided; otherwise, allow spacing to lead
+    if size is not None:
         if isinstance(size, int):
             if geom.geom_type in ("Polygon", "MultiPolygon"):
                 size = (size, size)
             else:
                 size = (size, 1)
-        try:
-            assert isinstance(size, (tuple, list))
-            assert int(size[0]) == size[0]
-            assert int(size[1]) == size[1]
-            assert len(size) == 2
-        except AssertionError:
-            raise TypeError(
-                "Size must be an integer denoting the size of one side of the grid, "
-                " or a tuple of two integers denoting the grid dimensions."
-            )
-    if tile not in ("square", "hex"):
-        raise ValueError(
-            f'The tile option must be either "square" or "hex". Recieved {tile}.'
-        )
 
     if geom.geom_type in ("Polygon", "MultiPolygon"):
         multipoints = _grid_polygon(
@@ -154,7 +130,11 @@ def grid(
             geom, size=size, spacing=spacing, tile=tile, random_offset=random_offset
         )
     else:
-        # TODO: Should we recurse through geometrycollections?
+        warn(
+            f"Sampling is not supported for {geom.geom_type} geometry type.",
+            UserWarning,
+            stacklevel=8,
+        )
         multipoints = geometry.MultiPoint()
 
     return multipoints
@@ -193,8 +173,6 @@ def _grid_polygon(
         raw_grid = _squaregrid_circle(grid_radius)
     elif tile == "hex":
         raw_grid = _hexgrid_circle(grid_radius)
-    else:
-        ValueError(f'tile must be either "square" or "hex". Recieved {tile}.')
 
     raw_grid *= radius / grid_radius
 
@@ -218,7 +196,7 @@ def _grid_polygon(
 
     x, y = disp_grid.T
 
-    return GeoSeries(points_from_xy(x=x, y=y)).clip(geom.iloc[0]).unary_union
+    return points_from_xy(x=x, y=y).intersection(geom.iloc[0]).unary_union()
 
 
 def _grid_line(geom, size, spacing, random_offset=True, **unused_kws):
@@ -229,13 +207,6 @@ def _grid_line(geom, size, spacing, random_offset=True, **unused_kws):
 
     if size is not None:
         if isinstance(size, tuple):
-            # TODO: document this behavior: if you grid-sample geoms *and* they're
-            # mixed, any tuple size specification will get converted into a flat size
-            # when sampling lines. The most clear alternative is to divide LineStrings
-            # into "horizontal" and "vertical" segments based on the angle the
-            # segment makes with the bottom of the bounding box, and then sample
-            # size[0] if "horizontal" and size[1] if "vertical." That's a lot
-            # of assumption for an unclear benefit, so it's not done here.
             size = size[0] * size[1]
         spacing = geom.length.iloc[0] / size
     else:

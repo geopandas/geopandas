@@ -6,11 +6,10 @@ from warnings import warn
 
 
 def make_grid(
-    geom=None,
+    geom,
     size=None,
     spacing=None,
     tile="square",
-    as_polygons=False,
     clip=True,
 ):
     """
@@ -28,7 +27,7 @@ def make_grid(
 
     Parameters
     ----------
-    geom : any shapely.geometry.BaseGeometry type
+    geom : any shapely.geometry.BaseGeometry type or GeoSeries
         the shape that describes the area in which to sample.
 
     size : integer, tuple
@@ -62,43 +61,32 @@ def make_grid(
                 "Either size or spacing options can be provided, not both."
             )
     elif size is None and spacing is None:
-        size = (10, 10)
+        raise ValueError("Either size or spacing options must be provided.")
     else:  # size is None but spacing is known, so compute size in grid makers.
         pass
 
-    if geom is None:
-        from shapely.geometry import box
-
-        geom = box(0, 0, 1, 1)
     if isinstance(geom, (GeoSeries, GeoDataFrame)):
         bounds = geom.total_bounds
     else:
         bounds = geom.bounds
     if tile == "square":
-        if as_polygons:
-            grid = _square_mesh(size=size, bounds=bounds, spacing=spacing)
-        else:
-            grid = _square_points(size=size, bounds=bounds, spacing=spacing)
-            result = GeoSeries(points_from_xy(*grid.T, crs=getattr(geom, "crs", None)))
+        grid = _square_points(size=size, bounds=bounds, spacing=spacing)
+        result = GeoSeries(points_from_xy(*grid.T, crs=getattr(geom, "crs", None)))
 
     elif tile == "hex":
-        if as_polygons:
-            grid = _hex_mesh(size=size, bounds=bounds)
-        else:
-            grid = _hex_points(
-                size=size,
-                bounds=bounds,
-                spacing=spacing,
-            )
-            result = GeoSeries(points_from_xy(*grid.T, crs=getattr(geom, "crs", None)))
+        grid = _hex_points(
+            size=size,
+            bounds=bounds,
+            spacing=spacing,
+        )
+        result = GeoSeries(points_from_xy(*grid.T, crs=getattr(geom, "crs", None)))
     else:
-        raise NotImplementedError(
-            f'Cannot build a grid using tile="{tile}". '
-            f'Only "hex" and "square" grid tilings are supported.'
+        raise ValueError(
+            f'The tile option must be either "square" or "hex". Recieved "{tile}".'
         )
 
     # clip if not forbidden.
-    if clip or (clip is None):
+    if clip:
         if isinstance(geom, (GeoSeries, GeoDataFrame)):
             mask = geom.unary_union
             was_df = True
@@ -130,14 +118,6 @@ def make_grid(
             pass
 
     return result.reset_index(drop=True)
-
-
-def _hex_mesh(size, bounds):
-    raise NotImplementedError
-
-
-def _square_mesh(size, bounds):
-    raise NotImplementedError
 
 
 def _hex_points(size, bounds, spacing, flat=True):

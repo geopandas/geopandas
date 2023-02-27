@@ -3527,12 +3527,11 @@ GeometryCollection
 
         user_wants_grid = (method == "grid") or (tile is not None)
 
-        if size is None:
-            if spacing is None:
-                size = 10
-            else:
-                ValueError("Either size or spacing options can be provided, not both.")
-        else:  # only process size if it's provided; otherwise, allow spacing to lead.
+        if size is None and spacing is None:
+            raise ValueError("Either size or spacing options must be provided.")
+
+        # only process size if it's provided; otherwise, allow spacing to lead
+        if size is not None:
             if isinstance(size, int):
                 size = (size, size) if user_wants_grid else size
             else:
@@ -3564,7 +3563,8 @@ GeometryCollection
         elif method == "grid":
             if tile not in (None, "hex", "square"):
                 raise ValueError(
-                    'If sampling grids, tile must be either "hex" or "square".'
+                    'The tile option must be either "square" or "hex". '
+                    f'Recieved "{tile}".'
                 )
             if tile is None:
                 tile = "square"
