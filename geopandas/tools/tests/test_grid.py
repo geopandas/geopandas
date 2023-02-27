@@ -32,7 +32,7 @@ def find_spacing(input, return_distances=False):
     ["geom", "size", "spacing", "tile"],
     [
         (geom, size, spacing, tile)
-        for geom in (None, box, rect, nybb, staten)
+        for geom in (box, rect, nybb, staten)
         for size in ((5, 8), 10, None)
         for spacing in (None, 0.05)
         for tile in ("hex", "square")
@@ -49,12 +49,15 @@ def test_grid(
     spacing,
     tile,
 ):
+    if size is None and spacing is None:
+        pytest.skip(
+            "Either size or spacing options must be provided. Raises one level above."
+        )
     clipped = make_grid(
-        geom=geom,
+        geometry=geom,
         size=size,
         spacing=spacing,
         tile=tile,
-        as_polygons=False,
         clip=True,
     )
 
@@ -80,11 +83,10 @@ def test_grid(
         )
 
     not_clipped = make_grid(
-        geom=geom,
+        geometry=geom,
         size=size,
         spacing=spacing,
         tile=tile,
-        as_polygons=False,
         clip=False,
     )
 
