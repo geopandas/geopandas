@@ -14,5 +14,6 @@ Tools
    tools.reverse_geocode
    tools.collect
    points_from_xy
+   make_grid
    datasets.available
    datasets.get_path
