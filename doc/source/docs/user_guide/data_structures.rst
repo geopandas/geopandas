@@ -108,14 +108,14 @@ geometry column:
 
     colombia.geometry.name
 
-We can also rename this column to "borders":
+You can also rename this column to "borders":
 
 .. ipython:: python
 
     colombia = colombia.rename(columns={'geometry': 'borders'}).set_geometry('borders')
     colombia.geometry.name
 
-Now, we create centroids and make it the geometry:
+Now, you create centroids and make it the geometry:
 
 .. ipython:: python
    :okwarning:

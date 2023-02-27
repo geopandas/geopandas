@@ -38,7 +38,7 @@ properties from both are retained. In effect, for every shape in the left
 The different overlay operations
 --------------------------------
 
-First, we create some example data:
+First, create some example data:
 
 .. ipython:: python
 
@@ -59,7 +59,7 @@ These two GeoDataFrames have some overlapping areas:
     @savefig overlay_example.png width=5in
     df2.plot(ax=ax, color='green', alpha=0.5);
 
-We illustrate the different overlay modes with the above example.
+The above example illustrates the different overlay modes.
 The :meth:`~geopandas.GeoDataFrame.overlay` method will determine the set of all individual geometries
 from overlaying the two input GeoDataFrames. This result covers the area covered
 by the two input GeoDataFrames, and also preserves all unique regions defined by
@@ -138,7 +138,7 @@ but with the geometries obtained from overlaying ``df1`` with ``df2``:
 Overlay groceries example
 -------------------------
 
-First, we load the Chicago boroughs and groceries example datasets and select :
+First, load the Chicago boroughs and groceries example datasets and select :
 
 .. ipython:: python
 
@@ -172,7 +172,7 @@ wishes to identify the "served" portion of each borough -- defined as areas with
     groceries.plot();
 
 
-To select only the portion of boroughs within 1km of a grocery, we specify the ``how`` option to be "intersect", which creates a new set of polygons where these two layers overlap:
+To select only the portion of boroughs within 1km of a grocery, specify the ``how`` option to be "intersect", which creates a new set of polygons where these two layers overlap:
 
 .. ipython:: python
 
@@ -180,7 +180,7 @@ To select only the portion of boroughs within 1km of a grocery, we specify the `
    @savefig chicago_cores.png width=5in
    chicago_cores.plot(alpha=0.5, edgecolor='k', cmap='tab10');
 
-Changing the "how" option allows for different types of overlay operations. For example, if we were interested in the portions of Chicago *far* from groceries (the peripheries), we would compute the difference of the two.
+Changing the ``how`` option allows for different types of overlay operations. For example, if you were interested in the portions of Chicago *far* from groceries (the peripheries), you would compute the difference of the two.
 
 .. ipython:: python
 

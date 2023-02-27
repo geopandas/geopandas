@@ -10,9 +10,9 @@
 Aggregation with dissolve
 =============================
 
-Spatial data are often more granular than we need. For example, we might have data on sub-national units, but we're actually interested in studying patterns at the level of countries.
+Spatial data are often more granular than needed. For example, you might have data on sub-national units, but you're actually interested in studying patterns at the level of countries.
 
-In a non-spatial setting, when all we need are summary statistics of the data, we aggregate our data using the :meth:`~pandas.DataFrame.groupby` function. But for spatial data, we sometimes also need to aggregate geometric features. In the GeoPandas library, we can aggregate geometric features using the :meth:`~geopandas.GeoDataFrame.dissolve` function.
+In a non-spatial setting, when you need summary statistics of the data, you can aggregate data using the :meth:`~pandas.DataFrame.groupby` function. But for spatial data, you sometimes also need to aggregate geometric features. In the GeoPandas library, you can aggregate geometric features using the :meth:`~geopandas.GeoDataFrame.dissolve` function.
 
 :meth:`~geopandas.GeoDataFrame.dissolve` can be thought of as doing three things:
 
@@ -23,10 +23,10 @@ In a non-spatial setting, when all we need are summary statistics of the data, w
 :meth:`~geopandas.GeoDataFrame.dissolve` Example
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Suppose we are interested in Nepalese zone, but we only have Nepalese district-level data like the `geoda.nepal` dataset included in `geodatasets`. We can easily convert this to a zone-level dataset.
+Suppose you are interested in Nepalese zone, but you only have Nepalese district-level data like the `geoda.nepal` dataset included in `geodatasets`. You can easily convert this to a zone-level dataset.
 
 
-First, let's look at the most simple case where we just want zone shapes and names. By default, :meth:`~geopandas.GeoDataFrame.dissolve` will pass ``'first'`` to :ref:`groupby.aggregate <groupby.aggregate>`.
+First, let's look at the most simple case where you just want zone shapes and names. By default, :meth:`~geopandas.GeoDataFrame.dissolve` will pass ``'first'`` to :ref:`groupby.aggregate <groupby.aggregate>`.
 
 .. ipython:: python
 
@@ -41,7 +41,7 @@ First, let's look at the most simple case where we just want zone shapes and nam
 
     zones.head()
 
-If we are interested in aggregate populations, however, we can pass different functions to the :meth:`~geopandas.GeoDataFrame.dissolve` method to aggregate populations using the ``aggfunc =`` argument:
+If you are interested in aggregate populations, however, you can pass different functions to the :meth:`~geopandas.GeoDataFrame.dissolve` method to aggregate populations using the ``aggfunc =`` argument:
 
 .. ipython:: python
 
@@ -84,7 +84,7 @@ However it also accepts other summary statistic options as allowed by :meth:`pan
 
 For example, to get the number of countries on each continent,
 as well as the populations of the largest and smallest country of each,
-we can aggregate the ``'name'`` column using ``'count'``,
+you can aggregate the ``'name'`` column using ``'count'``,
 and the ``'pop_est'`` column using ``'min'`` and ``'max'``:
 
 .. ipython:: python

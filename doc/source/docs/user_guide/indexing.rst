@@ -18,7 +18,7 @@ coordinate based indexing with the :attr:`~GeoDataFrame.cx` indexer, which slice
 box. Geometries in the :class:`GeoSeries` or :class:`GeoDataFrame` that intersect the
 bounding box will be returned.
 
-Using the ``geoda.chile_labor`` dataset, we can use this functionality to quickly select parts
+Using the ``geoda.chile_labor`` dataset, you can use this functionality to quickly select parts
 of Chile whose boundaries extend south of the -50 degrees latitude.
 
 .. ipython:: python

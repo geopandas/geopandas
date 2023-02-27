@@ -28,7 +28,7 @@ Loading some example data:
     chicago = geopandas.read_file(geodatasets.get_path("geoda chicago health"))
     groceries = geopandas.read_file(geodatasets.get_path("geoda groceries"))
 
-We can now plot those GeoDataFrames:
+You can now plot those GeoDataFrames:
 
 .. ipython:: python
 
@@ -187,7 +187,7 @@ Before combining maps, however, remember to always ensure they share a common CR
     # Check crs
     groceries = groceries.to_crs(chicago.crs)
 
-    # Now we can overlay over the outlines
+    # Now you can overlay over the outlines
 
 **Method 1**
 
@@ -222,7 +222,7 @@ Without specified ``zorder``, cities (Points) gets plotted below world (Polygons
     @savefig zorder_default.png
     chicago.plot(ax=ax);
 
-We can set the ``zorder`` for cities higher than for world to move it of top.
+You can set the ``zorder`` for cities higher than for world to move it of top.
 
 .. ipython:: python
 
