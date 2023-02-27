@@ -285,7 +285,9 @@ class TestGeometryArrayCRS:
         arr = from_shapely(self.geoms)
         s = GeoSeries(arr, crs=27700)
         df = GeoDataFrame()
-        df = df.set_geometry(s)
+        df = df.set_geometry(
+            s
+        )  # TODO this sets the geometry column name to None and not geometry.
         assert df.crs == self.osgb
         assert df.geometry.crs == self.osgb
         assert df.geometry.values.crs == self.osgb

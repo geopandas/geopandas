@@ -1437,17 +1437,9 @@ individually so that features may have different properties
                 result.__class__ = DataFrame
         return result
 
-    def __setitem__(self, key, value):
-        """
-        Overwritten to preserve CRS of GeometryArray in cases like
-        df['geometry'] = [geom... for geom in df.geometry]
-        """
+    def _persist_old_default_geometry_colname(self):
         # self.columns check required to avoid this warning in __init__
-        if (
-            self._geometry_column_name is None
-            and key == "geometry"
-            and "geometry" not in self.columns
-        ):
+        if self._geometry_column_name is None and "geometry" not in self.columns:
             msg = (
                 "You are adding a column named 'geometry' to a GeoDataFrame "
                 "constructed without an active geometry column. Currently, "
@@ -1462,6 +1454,14 @@ individually so that features may have different properties
                 category=UserWarning,
             )
             self._geometry_column_name = "geometry"
+
+    def __setitem__(self, key, value):
+        """
+        Overwritten to preserve CRS of GeometryArray in cases like
+        df['geometry'] = [geom... for geom in df.geometry]
+        """
+        if key == "geometry":
+            self._persist_old_default_geometry_colname()
 
         if not pd.api.types.is_list_like(key) and key == self._geometry_column_name:
             if pd.api.types.is_scalar(value) or isinstance(value, BaseGeometry):
