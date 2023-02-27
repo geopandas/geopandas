@@ -40,3 +40,5 @@ dependencies:
     - mapclassify
     # spatial access methods
     - rtree>=0.9
+    # point sampling
+    - pointpats
