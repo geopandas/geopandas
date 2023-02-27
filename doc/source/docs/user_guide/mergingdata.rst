@@ -19,7 +19,7 @@ common variable. This is analogous to normal merging or joining in *pandas*.
 In a spatial join, observations from two :class:`GeoSeries` or :class:`GeoDataFrame`
 are combined based on their spatial relationship to one another.
 
-In the following examples, we use these datasets:
+In the following examples, these datasets are used:
 
 .. ipython:: python
 
@@ -85,8 +85,8 @@ In a spatial join, two geometry objects are merged based on their spatial relati
 .. ipython:: python
 
 
-   # One GeoDataFrame of countries, one of Cities.
-   # Want to merge so we can get each city's country.
+   # Merge two GeoDataFrames in order to get each city's country. 
+   # One of countries, one of cities.
    countries.head()
    cities.head()
 

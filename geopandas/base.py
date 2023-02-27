@@ -51,7 +51,7 @@ def _binary_geo(op, this, other, align):
     from .geoseries import GeoSeries
 
     geoms, index = _delegate_binary_method(op, this, other, align)
-    return GeoSeries(geoms.data, index=index, crs=this.crs)
+    return GeoSeries(geoms, index=index, crs=this.crs)
 
 
 def _binary_op(op, this, other, align, *args, **kwargs):
@@ -68,7 +68,7 @@ def _delegate_property(op, this):
     if isinstance(data, GeometryArray):
         from .geoseries import GeoSeries
 
-        return GeoSeries(data.data, index=this.index, crs=this.crs)
+        return GeoSeries(data, index=this.index, crs=this.crs)
     else:
         return Series(data, index=this.index)
 
@@ -79,7 +79,7 @@ def _delegate_geo_method(op, this, *args, **kwargs):
     from .geoseries import GeoSeries
 
     a_this = GeometryArray(this.geometry.values)
-    data = getattr(a_this, op)(*args, **kwargs).data
+    data = getattr(a_this, op)(*args, **kwargs)
     return GeoSeries(data, index=this.index, crs=this.crs)
 
 
@@ -2710,7 +2710,7 @@ GeometryCollection
 
         geometry_array = GeometryArray(self.geometry.values)
         clipped_geometry = geometry_array.clip_by_rect(xmin, ymin, xmax, ymax)
-        return GeoSeries(clipped_geometry.data, index=self.index, crs=self.crs)
+        return GeoSeries(clipped_geometry, index=self.index, crs=self.crs)
 
     #
     # Other operations
@@ -3560,13 +3560,13 @@ GeometryCollection
             import shapely
 
             coords, outer_idx = shapely.get_coordinates(
-                self.geometry.values, include_z=include_z, return_index=True
+                self.geometry.values._data, include_z=include_z, return_index=True
             )
         elif compat.USE_PYGEOS:
             import pygeos
 
             coords, outer_idx = pygeos.get_coordinates(
-                self.geometry.values.data, include_z=include_z, return_index=True
+                self.geometry.values._data, include_z=include_z, return_index=True
             )
 
         else:
