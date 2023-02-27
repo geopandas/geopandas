@@ -1264,7 +1264,55 @@ class GeometryArray(ExtensionArray):
         ExtensionArray.argsort
         """
         # Note: this is used in `ExtensionArray.argsort`.
-        raise TypeError("geometries are not orderable")
+        from geopandas.tools.hilbert_curve import _hilbert_distance
+
+        if self.size == 0:
+            # TODO _hilbert_distance fails for empty array
+            return np.array([], dtype="uint32")
+
+        mask_empty = self.is_empty
+        has_empty = mask_empty.any()
+        mask = self.isna() | mask_empty
+        if mask.any():
+            # if there are missing or empty geometries, we fill those with
+            # a dummy geometry so that the _hilbert_distance function can
+            # process those. The missing values are handled separately by
+            # pandas regardless of the values we return here (to sort
+            # first/last depending on 'na_position'), the distances for the
+            # empty geometries are substitued below with an appropriate value
+            geoms = self.copy()
+            indices = np.nonzero(~mask)[0]
+            if indices.size:
+                geom = self[indices[0]]
+            else:
+                # for all-empty/NA, just take random geometry
+                geom = shapely.geometry.Point(0, 0)
+
+            geoms[mask] = geom
+        else:
+            geoms = self
+        if has_empty:
+            # in case we have empty geometries, we need to expand the total
+            # bounds with a small percentage, so the empties can be
+            # deterministically sorted first
+            total_bounds = geoms.total_bounds
+            xoff = (total_bounds[2] - total_bounds[0]) * 0.01
+            yoff = (total_bounds[3] - total_bounds[1]) * 0.01
+            total_bounds += np.array([-xoff, -yoff, xoff, yoff])
+        else:
+            total_bounds = None
+        distances = _hilbert_distance(geoms, total_bounds=total_bounds)
+        if has_empty:
+            # empty geometries are sorted first ("smallest"), so fill in
+            # smallest possible value for uints
+            distances[mask_empty] = 0
+        return distances
+
+    def argmin(self, skipna: bool = True) -> int:
+        raise TypeError("geometries have no minimum or maximum")
+
+    def argmax(self, skipna: bool = True) -> int:
+        raise TypeError("geometries have no minimum or maximum")
 
     def _formatter(self, boxed=False):
         """Formatting function for scalar values.
