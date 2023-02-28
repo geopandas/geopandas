@@ -453,6 +453,49 @@ def test_any_all():
 # Groupby / algos
 
 
+def test_sort_values():
+    s = GeoSeries([Point(0, 0), Point(2, 2), Point(0, 2)])
+    res = s.sort_values()
+    assert res.index.tolist() == [0, 2, 1]
+    res2 = s.sort_values(ascending=False)
+    assert res2.index.tolist() == [1, 2, 0]
+
+    # empty geoseries
+    assert_geoseries_equal(s.iloc[:0].sort_values(), s.iloc[:0])
+
+
+def test_sort_values_empty_missing():
+    s = GeoSeries([Point(0, 0), None, Point(), Point(1, 1)])
+    # default: NA sorts last, empty first
+    res = s.sort_values()
+    assert res.index.tolist() == [2, 0, 3, 1]
+
+    # descending: NA sorts last, empty last
+    res = s.sort_values(ascending=False)
+    assert res.index.tolist() == [3, 0, 2, 1]
+
+    # NAs first, empty first after NAs
+    res = s.sort_values(na_position="first")
+    assert res.index.tolist() == [1, 2, 0, 3]
+
+    # NAs first, descending with empyt last
+    res = s.sort_values(ascending=False, na_position="first")
+    assert res.index.tolist() == [1, 3, 0, 2]
+
+    # all missing / empty
+    s = GeoSeries([None, None, None])
+    res = s.sort_values()
+    assert res.index.tolist() == [0, 1, 2]
+
+    s = GeoSeries([Point(), Point(), Point()])
+    res = s.sort_values()
+    assert res.index.tolist() == [0, 1, 2]
+
+    s = GeoSeries([Point(), None, Point()])
+    res = s.sort_values()
+    assert res.index.tolist() == [0, 2, 1]
+
+
 def test_unique():
     s = GeoSeries([Point(0, 0), Point(0, 0), Point(2, 2)])
     exp = from_shapely([Point(0, 0), Point(2, 2)])
