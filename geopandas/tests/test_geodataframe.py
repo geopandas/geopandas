@@ -1309,6 +1309,25 @@ class TestConstructor:
         assert gdf._geometry_column_name == ("geometry", "", "")
         assert gdf.geometry.name == ("geometry", "", "")
 
+    def test_multiindex_geometry_colname_3_level_new_col(self):
+        crs = "EPSG:4326"
+        df = pd.DataFrame(
+            [[1, 0], [0, 1]],
+            columns=[
+                ["foo", "foo"],
+                ["location", "location"],
+                ["x", "y"],
+            ],
+        )
+
+        x_col = df["foo", "location", "x"]
+        y_col = df["foo", "location", "y"]
+        df["geometry"] = GeoSeries.from_xy(x_col, y_col)
+        gdf = df.set_geometry("geometry", crs=crs)
+        assert gdf.crs == crs
+        assert gdf._geometry_column_name == ("geometry", "", "")
+        assert gdf.geometry.name == ("geometry", "", "")
+
 
 def test_geodataframe_crs():
     gdf = GeoDataFrame(columns=["geometry"])

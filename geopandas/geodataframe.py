@@ -314,8 +314,6 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         to_remove = None
         geo_column_name = self._geometry_column_name
-        if isinstance(self.columns, pd.MultiIndex) and isinstance(geo_column_name, str):
-            geo_column_name = (geo_column_name,) + ("",) * (self.columns.nlevels - 1)
         if isinstance(col, (Series, list, np.ndarray, GeometryArray)):
             level = col
         elif hasattr(col, "ndim") and col.ndim > 1:
@@ -352,6 +350,8 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         # Check that we are using a listlike of geometries
         level = _ensure_geometry(level, crs=crs)
+        if isinstance(self.columns, pd.MultiIndex) and isinstance(geo_column_name, str):
+            geo_column_name = (geo_column_name,) + ("",) * (self.columns.nlevels - 1)
         frame[geo_column_name] = level
         frame._geometry_column_name = geo_column_name
         if not inplace:
