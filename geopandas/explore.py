@@ -278,6 +278,7 @@ GON (((180.00000 -16.06713, 180.00000...
     try:
         import branca as bc
         import folium
+        import re
         import matplotlib
         import matplotlib.colors as colors
         import matplotlib.pyplot as plt
@@ -359,8 +360,10 @@ GON (((180.00000 -16.06713, 180.00000...
 
             if isinstance(tiles, xyzservices.TileProvider):
                 attr = attr if attr else tiles.html_attribution
-                map_kwds["min_zoom"] = tiles.get("min_zoom", 0)
-                map_kwds["max_zoom"] = tiles.get("max_zoom", 18)
+                if "min_zoom" not in map_kwds:
+                    map_kwds["min_zoom"] = tiles.get("min_zoom", 0)
+                if "max_zoom" not in map_kwds:
+                    map_kwds["max_zoom"] = tiles.get("max_zoom", 18)
                 tiles = tiles.build_url(scale_factor="{r}")
 
         m = folium.Map(
@@ -415,7 +418,6 @@ GON (((180.00000 -16.06713, 180.00000...
 
             # colormap exists in matplotlib
             if cmap in plt.colormaps():
-
                 color = np.apply_along_axis(
                     colors.to_hex,
                     1,
@@ -453,7 +455,6 @@ GON (((180.00000 -16.06713, 180.00000...
 
             # get bins
             if scheme is not None:
-
                 if classification_kwds is None:
                     classification_kwds = {}
                 if "k" not in classification_kwds:
@@ -469,7 +470,6 @@ GON (((180.00000 -16.06713, 180.00000...
                 )
 
             else:
-
                 bins = np.linspace(vmin, vmax, 257)[1:]
                 binning = classify(
                     np.asarray(gdf[column][~nan_idx]), "UserDefined", bins=bins
@@ -616,10 +616,21 @@ GON (((180.00000 -16.06713, 180.00000...
     else:
         tooltip = None
         popup = None
+    # escape the curly braces {{}} for jinja2 templates
+    feature_collection = gdf.__geo_interface__
+    for feature in feature_collection["features"]:
+        for k in feature["properties"]:
+            # escape the curly braces in values
+            if type(feature["properties"][k]) == str:
+                feature["properties"][k] = re.sub(
+                    r"\{{2,}",
+                    lambda x: "{% raw %}" + x.group(0) + "{% endraw %}",
+                    feature["properties"][k],
+                )
 
     # add dataframe to map
     folium.GeoJson(
-        gdf.__geo_interface__,
+        feature_collection,
         tooltip=tooltip,
         popup=popup,
         marker=marker,
@@ -642,7 +653,6 @@ GON (((180.00000 -16.06713, 180.00000...
 
             _categorical_legend(m, caption, categories, legend_colors)
         elif column is not None:
-
             cbar = legend_kwds.pop("colorbar", True)
             colormap_kwds = {}
             if "max_labels" in legend_kwds:
