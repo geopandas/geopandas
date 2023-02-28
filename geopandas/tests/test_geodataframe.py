@@ -1291,9 +1291,7 @@ class TestConstructor:
         # Note 3-level case uses different code paths in pandas, it is not redundant
         crs = "EPSG:4326"
         df = pd.DataFrame(
-            # np.array required, fixed somewhere between pandas 1.0 and 1.3
-            # https://github.com/pandas-dev/pandas/issues/14467
-            np.array([[1, 0], [0, 1]]),
+            [[1, 0], [0, 1]],
             columns=[
                 ["foo", "foo"],
                 ["location", "location"],
