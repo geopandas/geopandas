@@ -208,6 +208,8 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         # have to special case geometry b/c pandas tries to use as column...
         if attr == "geometry":
             object.__setattr__(self, attr, val)
+            if self._geometry_column_name is None:
+                self._persist_old_default_geometry_colname()
         else:
             super().__setattr__(attr, val)
 
@@ -449,14 +451,19 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
     @crs.setter
     def crs(self, value):
         """Sets the value of the crs"""
-        if self._geometry_column_name not in self:
+        if (
+            self._geometry_column_name is not None
+            and self._geometry_column_name not in self
+        ):
             raise ValueError(
                 "Assigning CRS to a GeoDataFrame without a geometry column is not "
                 "supported. Use GeoDataFrame.set_geometry to set the active "
                 "geometry column.",
             )
         else:
-            if hasattr(self.geometry.values, "crs"):
+            if self._geometry_column_name is not None and hasattr(
+                self.geometry.values, "crs"
+            ):
                 self.geometry.values.crs = value
             else:
                 # column called 'geometry' without geometry
@@ -1438,6 +1445,8 @@ individually so that features may have different properties
         return result
 
     def _persist_old_default_geometry_colname(self):
+        """Internal util to temporarily persist the default geometry column
+        name of 'geometry' for backwards compatibility."""
         # self.columns check required to avoid this warning in __init__
         if self._geometry_column_name is None and "geometry" not in self.columns:
             msg = (
@@ -1460,15 +1469,20 @@ individually so that features may have different properties
         Overwritten to preserve CRS of GeometryArray in cases like
         df['geometry'] = [geom... for geom in df.geometry]
         """
-        if key == "geometry":
-            self._persist_old_default_geometry_colname()
 
-        if not pd.api.types.is_list_like(key) and key == self._geometry_column_name:
+        if (
+            not pd.api.types.is_list_like(key)
+            and key == self._geometry_column_name
+            or key == "geometry"
+            and self._geometry_column_name is None
+        ):
             if pd.api.types.is_scalar(value) or isinstance(value, BaseGeometry):
                 value = [value] * self.shape[0]
             try:
                 crs = getattr(self, "crs", None)
                 value = _ensure_geometry(value, crs=crs)
+                if key == "geometry":
+                    self._persist_old_default_geometry_colname()
             except TypeError:
                 warnings.warn("Geometry column does not contain geometry.")
         super().__setitem__(key, value)

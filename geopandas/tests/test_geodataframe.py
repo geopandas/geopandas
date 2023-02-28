@@ -1262,12 +1262,38 @@ class TestConstructor:
         # Getting the .geometry column gives GeoDataFrame for both columns
         # (but with first MultiIndex level removed)
         # TODO should this give an error instead?
+        # TODO this fails now, #2088 might fix?
         result = gdf.geometry
         assert result.shape == gdf.shape
         assert result.columns.tolist() == [0, 1]
         assert_frame_equal(result, gdf["geometry"])
         result = gdf[["geometry"]]
         assert_frame_equal(result, gdf if dtype == "geometry" else pd.DataFrame(gdf))
+
+    def test_default_geo_colname_none(self):
+        match = "You are adding a column named 'geometry' to a GeoDataFrame"
+
+        def make_gdf():
+            # replace with copies when copy downcast is merged #2775
+            return GeoDataFrame({"a": [1, 2]})
+
+        gdf2 = make_gdf()
+        geo_col = GeoSeries.from_xy([1, 3], [3, 3])
+        with pytest.warns(UserWarning, match=match):
+            gdf2["geometry"] = geo_col
+        assert gdf2._geometry_column_name == "geometry"
+        gdf4 = make_gdf()
+        with pytest.warns(UserWarning, match=match):
+            gdf4.geometry = geo_col
+        assert gdf4._geometry_column_name == "geometry"
+
+        # geo col name should only change if we add geometry
+        gdf5 = make_gdf()
+        gdf5["geometry"] = "foo"
+        assert gdf5._geometry_column_name is None
+        # this failure may be fixed by copy downcasting issue
+        gdf3 = make_gdf().assign(geometry=geo_col)
+        assert gdf3._geometry_column_name == "geometry"
 
 
 def test_geodataframe_crs():
