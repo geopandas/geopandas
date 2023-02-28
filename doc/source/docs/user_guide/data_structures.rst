@@ -107,14 +107,14 @@ geometry column:
 
     world.geometry.name
 
-We can also rename this column to "borders":
+You can also rename this column to "borders":
 
 .. ipython:: python
 
     world = world.rename(columns={'geometry': 'borders'}).set_geometry('borders')
     world.geometry.name
 
-Now, we create centroids and make it the geometry:
+Now, you create centroids and make it the geometry:
 
 .. ipython:: python
    :okwarning:

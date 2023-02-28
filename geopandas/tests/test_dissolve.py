@@ -334,7 +334,6 @@ def test_dissolve_dropna_warn(nybb_polydf):
 
 
 def test_dissolve_multi_agg(nybb_polydf, merged_shapes):
-
     merged_shapes[("BoroCode", "min")] = [3, 1]
     merged_shapes[("BoroCode", "max")] = [5, 2]
     merged_shapes[("BoroName", "count")] = [3, 2]

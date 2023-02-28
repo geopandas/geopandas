@@ -105,7 +105,6 @@ def test_repr_linearring():
 
 
 def test_indexing(s, df):
-
     # accessing scalar from the geometry (column)
     exp = Point(1, 1)
     assert s[1] == exp
@@ -243,7 +242,6 @@ def test_assign(df):
 
 
 def test_astype(s, df):
-
     # check geoseries functionality
     with pytest.raises(TypeError):
         s.astype(int)
@@ -313,7 +311,6 @@ def test_convert_dtypes(df):
 
 
 def test_to_csv(df):
-
     exp = (
         "geometry,value1,value2\nPOINT (0 0),0,1\nPOINT (1 1),1,2\nPOINT (2 2),2,1\n"
     ).replace("\n", os.linesep)
@@ -456,6 +453,49 @@ def test_any_all():
 # Groupby / algos
 
 
+def test_sort_values():
+    s = GeoSeries([Point(0, 0), Point(2, 2), Point(0, 2)])
+    res = s.sort_values()
+    assert res.index.tolist() == [0, 2, 1]
+    res2 = s.sort_values(ascending=False)
+    assert res2.index.tolist() == [1, 2, 0]
+
+    # empty geoseries
+    assert_geoseries_equal(s.iloc[:0].sort_values(), s.iloc[:0])
+
+
+def test_sort_values_empty_missing():
+    s = GeoSeries([Point(0, 0), None, Point(), Point(1, 1)])
+    # default: NA sorts last, empty first
+    res = s.sort_values()
+    assert res.index.tolist() == [2, 0, 3, 1]
+
+    # descending: NA sorts last, empty last
+    res = s.sort_values(ascending=False)
+    assert res.index.tolist() == [3, 0, 2, 1]
+
+    # NAs first, empty first after NAs
+    res = s.sort_values(na_position="first")
+    assert res.index.tolist() == [1, 2, 0, 3]
+
+    # NAs first, descending with empyt last
+    res = s.sort_values(ascending=False, na_position="first")
+    assert res.index.tolist() == [1, 3, 0, 2]
+
+    # all missing / empty
+    s = GeoSeries([None, None, None])
+    res = s.sort_values()
+    assert res.index.tolist() == [0, 1, 2]
+
+    s = GeoSeries([Point(), Point(), Point()])
+    res = s.sort_values()
+    assert res.index.tolist() == [0, 1, 2]
+
+    s = GeoSeries([Point(), None, Point()])
+    res = s.sort_values()
+    assert res.index.tolist() == [0, 2, 1]
+
+
 def test_unique():
     s = GeoSeries([Point(0, 0), Point(0, 0), Point(2, 2)])
     exp = from_shapely([Point(0, 0), Point(2, 2)])
@@ -474,8 +514,14 @@ def test_value_counts():
     # each object is considered unique
     s = GeoSeries([Point(0, 0), Point(1, 1), Point(0, 0)])
     res = s.value_counts()
+    if compat.PANDAS_GE_20:
+        name = "count"
+    else:
+        name = None
     with compat.ignore_shapely2_warnings():
-        exp = pd.Series([2, 1], index=pd14_compat_index([Point(0, 0), Point(1, 1)]))
+        exp = pd.Series(
+            [2, 1], index=pd14_compat_index([Point(0, 0), Point(1, 1)]), name=name
+        )
     assert_series_equal(res, exp)
     # Check crs doesn't make a difference - note it is not kept in output index anyway
     s2 = GeoSeries([Point(0, 0), Point(1, 1), Point(0, 0)], crs="EPSG:4326")
@@ -490,17 +536,19 @@ def test_value_counts():
     res3 = s3.value_counts()
     index = pd14_compat_index([Point(0, 0), LineString([[1, 1], [2, 2]])])
     with compat.ignore_shapely2_warnings():
-        exp3 = pd.Series([2, 1], index=index)
+        exp3 = pd.Series([2, 1], index=index, name=name)
     assert_series_equal(res3, exp3)
 
     # check None is handled
     s4 = GeoSeries([Point(0, 0), None, Point(0, 0)])
     res4 = s4.value_counts(dropna=True)
     with compat.ignore_shapely2_warnings():
-        exp4_dropna = pd.Series([2], index=pd14_compat_index([Point(0, 0)]))
+        exp4_dropna = pd.Series([2], index=pd14_compat_index([Point(0, 0)]), name=name)
     assert_series_equal(res4, exp4_dropna)
     with compat.ignore_shapely2_warnings():
-        exp4_keepna = pd.Series([2, 1], index=pd14_compat_index([Point(0, 0), None]))
+        exp4_keepna = pd.Series(
+            [2, 1], index=pd14_compat_index([Point(0, 0), None]), name=name
+        )
     res4_keepna = s4.value_counts(dropna=False)
     assert_series_equal(res4_keepna, exp4_keepna)
 
@@ -530,7 +578,6 @@ def test_drop_duplicates_frame():
 
 
 def test_groupby(df):
-
     # counts work fine
     res = df.groupby("value2").count()
     exp = pd.DataFrame(

@@ -357,7 +357,6 @@ geometries}
 
 
 if compat.HAS_RTREE:
-
     import rtree.index  # noqa
     from rtree.core import RTreeError  # noqa
     from shapely.prepared import prep  # noqa
@@ -628,7 +627,6 @@ if compat.HAS_RTREE:
 
 
 if compat.SHAPELY_GE_20 or compat.HAS_PYGEOS:
-
     from . import geoseries  # noqa
     from . import array  # noqa
 
@@ -720,9 +718,9 @@ if compat.SHAPELY_GE_20 or compat.HAS_PYGEOS:
             if isinstance(geometry, np.ndarray):
                 return geometry
             elif isinstance(geometry, geoseries.GeoSeries):
-                return geometry.values.data
+                return geometry.values._data
             elif isinstance(geometry, array.GeometryArray):
-                return geometry.data
+                return geometry._data
             elif isinstance(geometry, BaseGeometry):
                 return array._shapely_to_geom(geometry)
             elif geometry is None:

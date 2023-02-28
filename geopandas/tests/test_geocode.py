@@ -111,7 +111,6 @@ def test_prepare_result_none():
 
 @pytest.mark.parametrize("geocode_result", (None, (None, None)))
 def test_prepare_geocode_result_when_result_is(geocode_result):
-
     result = {0: geocode_result}
     expected_output = GeoDataFrame(
         {"geometry": [Point()], "address": [None]},
