@@ -431,7 +431,7 @@ def _write_postgis(
                 target_srid = connection.execute(
                     text(
                         "SELECT Find_SRID('{schema}', '{table}', '{geom_col}');".format(
-                        schema=schema_name, table=name, geom_col=geom_name
+                            schema=schema_name, table=name, geom_col=geom_name
                         )
                     )
                 ).fetchone()[0]
