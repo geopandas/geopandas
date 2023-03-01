@@ -388,10 +388,11 @@ def _write_postgis(
     >>> from sqlalchemy import create_engine  # doctest: +SKIP
     >>> engine = create_engine("postgresql://myusername:mypassword@myhost:5432\
 /mydatabase";)  # doctest: +SKIP
-    >>> gdf.to_postgis("my_table", engine)  # doctest: +SKIP
+    >>> gdf.to_postgis("my_table", engine)  # doctest: +SKIP 
     """
     try:
         from geoalchemy2 import Geometry
+        from sqlalchemy import text
     except ImportError:
         raise ImportError("'to_postgis()' requires geoalchemy2 package.")
 
@@ -428,9 +429,9 @@ def _write_postgis(
             # Only check SRID if table exists
             if connection.dialect.has_table(connection, name, schema):
                 target_srid = connection.execute(
-                    "SELECT Find_SRID('{schema}', '{table}', '{geom_col}');".format(
+                    text("SELECT Find_SRID('{schema}', '{table}', '{geom_col}');".format(
                         schema=schema_name, table=name, geom_col=geom_name
-                    )
+                    ))
                 ).fetchone()[0]
 
                 if target_srid != srid:
