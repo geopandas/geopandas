@@ -391,7 +391,7 @@ def _write_postgis(
     >>> from sqlalchemy import create_engine  # doctest: +SKIP
     >>> engine = create_engine("postgresql://myusername:mypassword@myhost:5432\
 /mydatabase";)  # doctest: +SKIP
-    >>> gdf.to_postgis("my_table", engine)  # doctest: +SKIP 
+    >>> gdf.to_postgis("my_table", engine)  # doctest: +SKIP
     """
     try:
         from geoalchemy2 import Geometry
