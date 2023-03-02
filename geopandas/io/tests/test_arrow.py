@@ -272,7 +272,12 @@ def test_to_parquet_does_not_pass_engine_along(mock_to_parquet):
     # assert that engine keyword is not passed through to _to_parquet (and thus
     # parquet.write_table)
     mock_to_parquet.assert_called_with(
-        df, "", compression="snappy", index=None, schema_version=None
+        df,
+        "",
+        compression="snappy",
+        index=None,
+        schema_version=None,
+        partition_cols=None,
     )
 
 
