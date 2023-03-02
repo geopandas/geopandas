@@ -1103,7 +1103,13 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
         return df
 
     def to_parquet(
-        self, path, index=None, compression="snappy", schema_version=None, partition_cols=None, **kwargs
+        self,
+        path,
+        index=None,
+        compression="snappy",
+        schema_version=None,
+        partition_cols=None,
+        **kwargs,
     ):
         """Write a GeoDataFrame to the Parquet format.
 
