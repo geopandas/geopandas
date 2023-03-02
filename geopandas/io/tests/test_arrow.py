@@ -860,18 +860,19 @@ def test_read_gdal_files():
     assert_geodataframe_equal(df, expected, check_crs=True)
 
 
-def test_parquet_read_partitioned_dataset(tmpdir):
-    # we don't yet explicitly support this (in writing), but for Parquet it
-    # works for reading (by relying on pyarrow.read_table)
+def test_parquet_roundtrip_partitioned_dataset(tmpdir):
     df = read_file(get_path("naturalearth_lowres"))
+    df.continent = df.continent.astype("category")
 
-    # manually create partitioned dataset
+    # write partitioned dataset
     basedir = tmpdir / "partitioned_dataset"
-    basedir.mkdir()
-    df[:100].to_parquet(basedir / "data1.parquet")
-    df[100:].to_parquet(basedir / "data2.parquet")
-
+    df.to_parquet(basedir, partition_cols=["continent"])
     result = read_parquet(basedir)
+
+    # ignore differences in column and row ordering
+    ordered = sorted(df.columns)
+    df = df[ordered].sort_values(by="iso_a3", ignore_index=True)
+    result = result[ordered].sort_values(by="iso_a3", ignore_index=True)
     assert_geodataframe_equal(result, df)
 
 
@@ -879,14 +880,17 @@ def test_parquet_read_partitioned_dataset_fsspec(tmpdir):
     fsspec = pytest.importorskip("fsspec")
 
     df = read_file(get_path("naturalearth_lowres"))
+    df.continent = df.continent.astype("category")
 
-    # manually create partitioned dataset
+    # write partitioned dataset
     memfs = fsspec.filesystem("memory")
     memfs.mkdir("partitioned_dataset")
-    with memfs.open("partitioned_dataset/data1.parquet", "wb") as f:
-        df[:100].to_parquet(f)
-    with memfs.open("partitioned_dataset/data2.parquet", "wb") as f:
-        df[100:].to_parquet(f)
+    basedir = "memory://partitioned_dataset"
+    df.to_parquet(basedir, partition_cols=["continent"], filesystem=memfs)
+    result = read_parquet(basedir)
 
-    result = read_parquet("memory://partitioned_dataset")
+    # ignore differences in column and row ordering
+    ordered = sorted(df.columns)
+    df = df[ordered].sort_values(by="iso_a3", ignore_index=True)
+    result = result[ordered].sort_values(by="iso_a3", ignore_index=True)
     assert_geodataframe_equal(result, df)

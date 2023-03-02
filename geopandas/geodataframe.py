@@ -993,7 +993,7 @@ individually so that features may have different properties
         return df
 
     def to_parquet(
-        self, path, index=None, compression="snappy", schema_version=None, **kwargs
+        self, path, index=None, compression="snappy", schema_version=None, partition_cols=None, **kwargs
     ):
         """Write a GeoDataFrame to the Parquet format.
 
@@ -1026,6 +1026,10 @@ individually so that features may have different properties
         schema_version : {'0.1.0', '0.4.0', None}
             GeoParquet specification version; if not provided will default to
             latest supported version.
+        partition_cols : str or list, optional, default None
+            Column names by which to partition the dataset. Columns are
+            partitioned in the order they are given. Must be None if path is not
+            a string.
         kwargs
             Additional keyword arguments passed to :func:`pyarrow.parquet.write_table`.
 
@@ -1058,6 +1062,7 @@ individually so that features may have different properties
             compression=compression,
             index=index,
             schema_version=schema_version,
+            partition_cols=partition_cols,
             **kwargs,
         )
 
