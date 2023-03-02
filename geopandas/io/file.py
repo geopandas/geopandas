@@ -568,10 +568,8 @@ def _to_file_pyogrio(df, filename, driver, schema, crs, mode, **kwargs):
             "The 'schema' argument is not supported with the 'pyogrio' engine."
         )
 
-    if mode != "w":
-        raise ValueError(
-            "Only mode='w' is supported for now with the 'pyogrio' engine."
-        )
+    if mode == "a":
+        kwargs["append"] = True
 
     if crs is not None:
         raise ValueError("Passing 'crs' it not supported with the 'pyogrio' engine.")

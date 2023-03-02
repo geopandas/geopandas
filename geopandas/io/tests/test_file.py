@@ -475,7 +475,6 @@ def test_to_file_with_duplicate_columns(tmpdir, engine):
 @pytest.mark.parametrize("driver,ext", driver_ext_pairs)
 def test_append_file(tmpdir, df_nybb, df_null, driver, ext, engine):
     """Test to_file with append mode and from_file"""
-    skip_pyogrio_not_supported(engine)
     from fiona import supported_drivers
 
     tempfilename = os.path.join(str(tmpdir), "boros" + ext)
