@@ -13,6 +13,7 @@ New features and improvements:
   the distance along the Hilbert curve (#2070).
 - Added ``minimum_bounding_circle()`` method from shapely to GeoSeries/GeoDataframe (#2621).
 - Support specifying ``min_zoom`` and ``max_zoom`` inside the ``map_kwds`` argument for ``.explore()`` (#2599).
+- Add support for append (``mode="a"``) in ``to_file()`` using ``engine="pyogrio"`` (#2809).
 
 Deprecations and compatibility notes:
 
