@@ -1451,10 +1451,11 @@ individually so that features may have different properties
     #
     # Implement pandas methods
     #
+    @doc(pd.DataFrame)
     def copy(self, deep=True):
         copied = super().copy(deep=deep)
         if type(copied) is pd.DataFrame:
-            copied = GeoDataFrame(copied)
+            copied.__class__ = GeoDataFrame
         return copied
 
     def merge(self, *args, **kwargs):
