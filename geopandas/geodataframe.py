@@ -888,8 +888,9 @@ individually so that features may have different properties
                 geom = geometries[i]
 
                 if na == "drop":
+                    na_mask = pd.isna(row)
                     properties_items = {
-                        k: v for k, v in zip(properties_cols, row) if not pd.isnull(v)
+                        k: v for k, v, na in zip(properties_cols, row, na_mask) if not na
                     }
                 else:
                     properties_items = {k: v for k, v in zip(properties_cols, row)}
