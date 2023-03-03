@@ -277,7 +277,7 @@ mixture of reStructuredText syntax for ``rst`` files, `which is explained here
 <http://www.sphinx-doc.org/en/stable/rest.html#rst-primer>`_ and MyST syntax for ``md``
 files `explained here <https://myst-parser.readthedocs.io/en/latest/index.html>`_.
 The docstrings follow the `Numpy Docstring standard
-<https://github.com/numpy/numpy/blob/main/doc/HOWTO_DOCUMENT.rst.txt>`_. Some pages
+<https://numpydoc.readthedocs.io/en/latest/format.html#docstring-standard>`_. Some pages
 and examples are Jupyter notebooks converted to docs using `nbsphinx
 <https://nbsphinx.readthedocs.io/>`_. Jupyter notebooks should be stored without the output.
 
