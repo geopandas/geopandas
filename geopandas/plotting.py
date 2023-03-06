@@ -124,8 +124,15 @@ def _PolygonPatch(polygon, **kwargs):
 
 
 def _plot_polygon_collection(
-    ax, geoms, values=None, color=None, cmap=None, vmin=None, vmax=None,
-    autolim=True, **kwargs,
+    ax,
+    geoms,
+    values=None,
+    color=None,
+    cmap=None,
+    vmin=None,
+    vmax=None,
+    autolim=True,
+    **kwargs,
 ):
     """
     Plots a collection of Polygon and MultiPolygon geometries to `ax`
@@ -193,8 +200,15 @@ plot_polygon_collection = deprecated(_plot_polygon_collection)
 
 
 def _plot_linestring_collection(
-    ax, geoms, values=None, color=None, cmap=None, vmin=None, vmax=None,
-    autolim=True, **kwargs,
+    ax,
+    geoms,
+    values=None,
+    color=None,
+    cmap=None,
+    vmin=None,
+    vmax=None,
+    autolim=True,
+    **kwargs,
 ):
     """
     Plots a collection of LineString and MultiLineString geometries to `ax`
@@ -320,8 +334,14 @@ plot_point_collection = deprecated(_plot_point_collection)
 
 
 def plot_series(
-    s, cmap=None, color=None, ax=None, figsize=None, aspect="auto",
-    autolim=True, **style_kwds,
+    s,
+    cmap=None,
+    color=None,
+    ax=None,
+    figsize=None,
+    aspect="auto",
+    autolim=True,
+    **style_kwds,
 ):
     """
     Plot a GeoSeries.
@@ -465,8 +485,13 @@ def plot_series(
 
         values_ = values[poly_idx] if cmap else None
         _plot_polygon_collection(
-            ax, polys, values_, facecolor=facecolor, cmap=cmap,
-            autolim=autolim, **style_kwds
+            ax,
+            polys,
+            values_,
+            facecolor=facecolor,
+            cmap=cmap,
+            autolim=autolim,
+            **style_kwds,
         )
 
     # plot all LineStrings and MultiLineString components in same collection
@@ -476,8 +501,7 @@ def plot_series(
         color_ = expl_color[line_idx] if color_given else color
 
         _plot_linestring_collection(
-            ax, lines, values_, color=color_, cmap=cmap, autolim=autolim,
-            **style_kwds
+            ax, lines, values_, color=color_, cmap=cmap, autolim=autolim, **style_kwds
         )
 
     # plot all Points in the same collection
@@ -862,7 +886,13 @@ GON (((-122.84000 49.00000, -120.0000...
     subset = values[poly_idx & np.invert(nan_idx)]
     if not polys.empty:
         _plot_polygon_collection(
-            ax, polys, subset, vmin=mn, vmax=mx, cmap=cmap, autolim=autolim,
+            ax,
+            polys,
+            subset,
+            vmin=mn,
+            vmax=mx,
+            cmap=cmap,
+            autolim=autolim,
             **style_kwds,
         )
 
@@ -871,7 +901,13 @@ GON (((-122.84000 49.00000, -120.0000...
     subset = values[line_idx & np.invert(nan_idx)]
     if not lines.empty:
         _plot_linestring_collection(
-            ax, lines, subset, vmin=mn, vmax=mx, cmap=cmap, autolim=autolim,
+            ax,
+            lines,
+            subset,
+            vmin=mn,
+            vmax=mx,
+            cmap=cmap,
+            autolim=autolim,
             **style_kwds,
         )
 
