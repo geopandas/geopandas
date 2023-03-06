@@ -138,7 +138,7 @@ but with the geometries obtained from overlaying ``df1`` with ``df2``:
 Overlay groceries example
 -------------------------
 
-First, load the Chicago boroughs and groceries example datasets and select :
+First, load the Chicago community areas and groceries example datasets and select :
 
 .. ipython:: python
 
@@ -152,8 +152,8 @@ First, load the Chicago boroughs and groceries example datasets and select :
     groceries = groceries.to_crs("ESRI:102003")
 
 To illustrate the :meth:`~geopandas.GeoDataFrame.overlay` method, consider the following case in which one
-wishes to identify the "served" portion of each borough -- defined as areas within
-1km of a grocery store -- using a ``GeoDataFrame`` of boroughs and a
+wishes to identify the "served" portion of each area -- defined as areas within
+1km of a grocery store -- using a ``GeoDataFrame`` of community areas and a
 ``GeoDataFrame`` of groceries.
 
 .. ipython:: python
@@ -172,7 +172,7 @@ wishes to identify the "served" portion of each borough -- defined as areas with
     groceries.plot();
 
 
-To select only the portion of boroughs within 1km of a grocery, specify the ``how`` option to be "intersect", which creates a new set of polygons where these two layers overlap:
+To select only the portion of community areas within 1km of a grocery, specify the ``how`` option to be "intersect", which creates a new set of polygons where these two layers overlap:
 
 .. ipython:: python
 

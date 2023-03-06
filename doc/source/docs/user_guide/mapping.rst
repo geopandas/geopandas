@@ -6,7 +6,7 @@
    import geopandas
    import matplotlib
    orig = matplotlib.rcParams['figure.figsize']
-   matplotlib.rcParams['figure.figsize'] = [orig[0] * 1.5, orig[1]]
+   matplotlib.rcParams['figure.figsize'] = [orig[0] * 1.5, orig[1] * 1.5]
    import matplotlib.pyplot as plt
    plt.close('all')
 
@@ -25,14 +25,14 @@ Loading some example data:
 
     import geodatasets
 
-    chicago = geopandas.read_file(geodatasets.get_path("geoda chicago health"))
-    groceries = geopandas.read_file(geodatasets.get_path("geoda groceries"))
+    chicago = geopandas.read_file(geodatasets.get_path("geoda.chicago_health"))
+    groceries = geopandas.read_file(geodatasets.get_path("geoda.groceries"))
 
 You can now plot those GeoDataFrames:
 
 .. ipython:: python
 
-    # Examine chicago GeoDataFrame
+    # Examine the chicago GeoDataFrame
     chicago.head()
 
     # Basic plot, single color
@@ -255,6 +255,7 @@ the ``kind`` keyword argument in :meth:`~GeoDataFrame.plot`, and include:
     chicago.plot(kind="scatter", x="Pop2012", y="shape_area")
 
 You can also create these other plots using the ``GeoDataFrame.plot.<kind>`` accessor methods instead of providing the ``kind`` keyword argument.
+For example, ``hist``, can be used to plot histograms of population for two different years from the Chicago dataset.
 
 .. ipython:: python
 

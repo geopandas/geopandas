@@ -23,7 +23,7 @@ In a non-spatial setting, when you need summary statistics of the data, you can 
 :meth:`~geopandas.GeoDataFrame.dissolve` Example
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Suppose you are interested in Nepalese zone, but you only have Nepalese district-level data like the `geoda.nepal` dataset included in `geodatasets`. You can easily convert this to a zone-level dataset.
+Take example of administrative areas in Nepal. You have districts, which are smaller, and zones, which are larger. A group of districts always compose a single zone. Suppose you are interested in Nepalese zone, but you only have Nepalese district-level data like the `geoda.nepal` dataset included in `geodatasets`. You can easily convert this to a zone-level dataset.
 
 
 First, let's look at the most simple case where you just want zone shapes and names. By default, :meth:`~geopandas.GeoDataFrame.dissolve` will pass ``'first'`` to :ref:`groupby.aggregate <groupby.aggregate>`.
@@ -32,9 +32,10 @@ First, let's look at the most simple case where you just want zone shapes and na
 
     import geodatasets
 
-    nepal = geopandas.read_file(geodatasets.get_path('geoda nepal'))
-    nepal = nepal[['name_2', 'geometry']]  # name_2 contains zone names
-    zones = nepal.dissolve(by='name_2')
+    nepal = geopandas.read_file(geodatasets.get_path('geoda.nepal'))
+    nepal = nepal.rename(columns={"name_2": "zone"})  # rename to remember the column
+    nepal_zone = nepal[['zone', 'geometry']]
+    zones = nepal_zone.dissolve(by='zone')
 
     @savefig zones1.png
     zones.plot();
@@ -45,9 +46,8 @@ If you are interested in aggregate populations, however, you can pass different 
 
 .. ipython:: python
 
-   nepal = geopandas.read_file(geodatasets.get_path('geoda nepal'))
-   nepal = nepal[['name_2', 'geometry', 'population']]  # name_2 contains zone names
-   zones = nepal.dissolve(by='name_2', aggfunc='sum')
+   nepal_pop = nepal[['zone', 'geometry', 'population']]
+   zones = nepal_pop.dissolve(by='zone', aggfunc='sum')
 
    @savefig zones2.png
    zones.plot(column = 'population', scheme='quantiles', cmap='YlOrRd');
@@ -89,9 +89,8 @@ and the ``'pop_est'`` column using ``'min'`` and ``'max'``:
 
 .. ipython:: python
 
-    nepal = geopandas.read_file(geodatasets.get_path('geoda nepal'))
     zones = nepal.dissolve(
-        by="name_2",
+        by="zone",
         aggfunc={
             "district": "count",
             "population": ["min", "max"],

@@ -88,7 +88,7 @@ The "geometry" column -- no matter its name -- can be accessed through the :attr
 
 A :class:`GeoDataFrame` may also contain other columns with geometrical (shapely) objects, but only one column can be the active geometry at a time. To change which column is the active geometry column, use the :meth:`GeoDataFrame.set_geometry` method.
 
-An example using the ``geoda.malaria`` dataset from ``geodatasets`` containing the districts of Colombia:
+An example using the ``geoda.malaria`` dataset from ``geodatasets`` containing the counties of Colombia:
 
 .. ipython:: python
 
@@ -101,7 +101,7 @@ An example using the ``geoda.malaria`` dataset from ``geodatasets`` containing t
     @savefig colombia_borders.png
     colombia.plot(markersize=.5);
 
-Currently, the column named "geometry" with district borders is the active
+Currently, the column named "geometry" with county borders is the active
 geometry column:
 
 .. ipython:: python
@@ -112,7 +112,7 @@ You can also rename this column to "borders":
 
 .. ipython:: python
 
-    colombia = colombia.rename(columns={'geometry': 'borders'}).set_geometry('borders')
+    colombia = colombia.rename_geometry('borders')
     colombia.geometry.name
 
 Now, you create centroids and make it the geometry:
