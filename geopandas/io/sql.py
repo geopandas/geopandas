@@ -427,9 +427,11 @@ def _write_postgis(
         with _get_conn(con) as connection:
             # Only check SRID if table exists
             if connection.dialect.has_table(connection, name, schema):
-                sql_query = "SELECT Find_SRID('{schema}', '{table}', '{geom_col}');".format(
+                sql_query = (
+                    "SELECT Find_SRID('{schema}', '{table}', '{geom_col}');".format(
                         schema=schema_name, table=name, geom_col=geom_name
                     )
+                )
                 sql_query = sqlalchemy.text(sql_query)
                 target_srid = connection.execute(sql_query).fetchone()[0]
 
