@@ -3508,7 +3508,7 @@ GeometryCollection
 
         Parameters
         ----------
-        size : int | tuple, optional
+        size : int | tuple | array-like, optional
 
             The size of the sample requested.
 
@@ -3522,6 +3522,8 @@ GeometryCollection
             of grid points on the x axis, and second value must indicate the number of
             grid points on the y axis.
 
+            If an array of the same length as a GeoSeries is passed, it denotes a size
+            of a sample per geometry. Array is allowed only when ``method="random"``.
             Either ``size`` or ``spacing`` is required but never both.
 
         spacing : int, optional
@@ -3600,7 +3602,7 @@ GeometryCollection
         if size is not None:
             if isinstance(size, int):
                 size = (size, size) if user_wants_grid else size
-            else:
+            elif not (pd.api.types.is_list_like(size) and len(size) == len(self)):
                 try:
                     assert user_wants_grid
                     assert isinstance(size, tuple)
@@ -3610,16 +3612,30 @@ GeometryCollection
                     raise TypeError(
                         "Size must be an integer denoting the size of a sample, "
                         "an integer denoting the number of sample sites along "
-                        "both axes when method='grid', or a tuple of two "
-                        "integers denoting the grid dimensions when method='grid'."
+                        "both axes when method='grid', a tuple of two "
+                        "integers denoting the grid dimensions when method='grid', "
+                        "or an array of the same length as a GeoSeries denoting the "
+                        "size of a sample per geometry."
                     )
         if method == "random":
             if tile is None:
-                result = self.geometry.apply(uniform, size=size, **sample_kwargs)
+                if isinstance(size, (float, tuple)):
+                    result = self.geometry.apply(uniform, size=size, **sample_kwargs)
+                else:
+                    result = [
+                        uniform(geom, s, **sample_kwargs)
+                        for geom, s in zip(self.geometry, size)
+                    ]
             elif tile in ("hex", "square"):
-                result = self.geometry.apply(
-                    grid, size=size, spacing=spacing, tile=tile, **sample_kwargs
-                )
+                if isinstance(size, (float, tuple)):
+                    result = self.geometry.apply(
+                        grid, size=size, spacing=spacing, tile=tile, **sample_kwargs
+                    )
+                else:
+                    result = [
+                        grid(geom, size=s, spacing=spacing, tile=tile, **sample_kwargs)
+                        for geom, s in zip(self.geometry, size)
+                    ]
             else:
                 raise ValueError(
                     'The tile option must be either "square" or "hex". '
@@ -3642,7 +3658,6 @@ GeometryCollection
 
             result = point_sets.T.apply(lambda x: GeoSeries(x).dropna().unary_union)
         else:
-            # TODO: validate this works w/ normal or cluster_poisson
             try:
                 pointpats = import_optional_dependency(
                     "pointpats",

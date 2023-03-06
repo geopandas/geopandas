@@ -21,6 +21,7 @@ from shapely.geometry import (
     Polygon,
 )
 from shapely.geometry.base import BaseGeometry
+import shapely
 
 from geopandas import GeoSeries, GeoDataFrame, read_file, datasets, clip
 from geopandas._compat import ignore_shapely2_warnings
@@ -405,6 +406,29 @@ class TestSeries:
         not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
         reason="get_coordinates not implemented for shapely<2",
     )
+    def test_sample_points_array(self):
+        np.random.seed(42)
+        output = pd.concat([self.g1, self.g1]).sample_points([10, 15, 20, 25])
+        expected = pd.Series(
+            [10, 15, 20, 25], index=[0, 1, 0, 1], name="sampled_points", dtype="int32"
+        )
+        assert_series_equal(shapely.get_num_geometries(output), expected)
+
+        output = pd.concat([self.g1, self.g1]).sample_points(
+            [10, 15, 20, 25], tile="square"
+        )
+        expected = pd.Series(
+            [26, 127, 101, 338],
+            index=[0, 1, 0, 1],
+            name="sampled_points",
+            dtype="int32",
+        )
+        assert_series_equal(shapely.get_num_geometries(output), expected)
+
+    @pytest.mark.skipif(
+        not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+        reason="get_coordinates not implemented for shapely<2",
+    )
     def test_sample_points_errors(self):
         with pytest.raises(ValueError, match="Either size or spacing"):
             self.g1.sample_points()
@@ -413,10 +437,10 @@ class TestSeries:
             self.g1.sample_points(1.2)
 
         with pytest.raises(TypeError, match="Size must be an integer"):
-            self.g1.sample_points((1, 1.2), method="grid")
+            pd.concat([self.g1, self.g1]).sample_points((1, 1.2), method="grid")
 
         with pytest.raises(TypeError, match="Size must be an integer"):
-            self.g1.sample_points((10, 10))
+            pd.concat([self.g1, self.g1]).sample_points((10, 10))
 
         with pytest.raises(ValueError, match="The tile option must be"):
             self.g5.sample_points(10, tile="error")
