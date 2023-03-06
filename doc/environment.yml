@@ -43,4 +43,4 @@ dependencies:
   - pip
   - pip:
       - sphinx-toggleprompt
-      - geodatasets
+      - git+https://github.com/geopandas/geodatasets.git@main
