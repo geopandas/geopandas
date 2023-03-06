@@ -3619,7 +3619,7 @@ GeometryCollection
                     )
         if method == "random":
             if tile is None:
-                if isinstance(size, (float, tuple)):
+                if isinstance(size, (float, int, tuple)):
                     result = self.geometry.apply(uniform, size=size, **sample_kwargs)
                 else:
                     result = [
@@ -3627,7 +3627,7 @@ GeometryCollection
                         for geom, s in zip(self.geometry, size)
                     ]
             elif tile in ("hex", "square"):
-                if isinstance(size, (float, tuple)):
+                if isinstance(size, (float, int, tuple)):
                     result = self.geometry.apply(
                         grid, size=size, spacing=spacing, tile=tile, **sample_kwargs
                     )
