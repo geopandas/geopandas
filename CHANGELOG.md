@@ -9,6 +9,8 @@ New features and improvements:
   of the GeoParquet specification (geoparquet.org) (#2663).
 - New ``hilbert_distance()`` method that calculates the distance along a Hilbert curve
   for each geometry in a GeoSeries/GeoDataFrame (#2297).
+- Support for sorting geometries (for example, using ``sort_values()``) based on
+  the distance along the Hilbert curve (#2070).
 - Added ``minimum_bounding_circle()`` method from shapely to GeoSeries/GeoDataframe (#2621).
 - Support specifying ``min_zoom`` and ``max_zoom`` inside the ``map_kwds`` argument for ``.explore()`` (#2599).
 - Added ``minimum_rotated_rectangle()`` method from shapely to GeoSeries/GeoDataframe (#2541).
@@ -27,6 +29,8 @@ Bug fixes:
 - Fix `to_parquet`/`to_feather` to not write an invalid bbox (with NaNs) in the
   metadata in case of an empty GeoDataFrame (#2653)
 - Fix `to_parquet`/`to_feather` to use correct WKB flavor for 3D geometries (#2654)
+- Fix `read_file` to avoid reading all file bytes prior to calling Fiona or
+  Pyogrio if provided a URL as input (#2796)
 
 Notes on (optional) dependencies:
 
