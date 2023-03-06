@@ -6,7 +6,7 @@
    import geopandas
    import matplotlib
    orig = matplotlib.rcParams['figure.figsize']
-   matplotlib.rcParams['figure.figsize'] = [orig[0] * 1.5, orig[1]]
+   matplotlib.rcParams['figure.figsize'] = [orig[0] * 1.5, orig[1] * 1.5]
 
 
 Data structures
