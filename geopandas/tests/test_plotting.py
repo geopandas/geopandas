@@ -478,22 +478,22 @@ class TestLineStringPlotting:
 
     def test_autolim_false(self):
         """Test linestring plot preserving axes limits."""
-        ax = self.lines[:self.N//2].plot()
+        ax = self.lines[: self.N // 2].plot()
         ylim = ax.get_ylim()
         self.lines.plot(ax=ax, autolim=False)
         assert ax.get_ylim() == ylim
-        ax = self.df[:self.N//2].plot()
+        ax = self.df[: self.N // 2].plot()
         ylim = ax.get_ylim()
         self.df.plot(ax=ax, autolim=False)
         assert ax.get_ylim() == ylim
 
     def test_autolim_true(self):
         """Test linestring plot autoscaling axes limits."""
-        ax = self.lines[:self.N//2].plot()
+        ax = self.lines[: self.N // 2].plot()
         ylim = ax.get_ylim()
         self.lines.plot(ax=ax, autolim=True)
         assert ax.get_ylim() != ylim
-        ax = self.df[:self.N//2].plot()
+        ax = self.df[: self.N // 2].plot()
         ylim = ax.get_ylim()
         self.df.plot(ax=ax, autolim=True)
         assert ax.get_ylim() != ylim
