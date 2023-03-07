@@ -2,6 +2,7 @@ import warnings
 from contextlib import contextmanager
 
 import pandas as pd
+import sqlalchemy
 
 import shapely
 import shapely.wkb
