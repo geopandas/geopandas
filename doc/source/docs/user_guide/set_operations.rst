@@ -15,7 +15,7 @@ When working with multiple spatial datasets -- especially multiple *polygon* or
 *line* datasets -- users often wish to create new shapes based on places where
 those datasets overlap (or don't overlap). These manipulations are often
 referred using the language of sets -- intersections, unions, and differences.
-These types of operations are made available in the *geopandas* library through
+These types of operations are made available in the GeoPandas library through
 the :meth:`~geopandas.GeoDataFrame.overlay` method.
 
 The basic idea is demonstrated by the graphic below but keep in mind that
@@ -38,7 +38,7 @@ properties from both are retained. In effect, for every shape in the left
 The different overlay operations
 --------------------------------
 
-First, we create some example data:
+First, create some example data:
 
 .. ipython:: python
 
@@ -59,7 +59,7 @@ These two GeoDataFrames have some overlapping areas:
     @savefig overlay_example.png width=5in
     df2.plot(ax=ax, color='green', alpha=0.5);
 
-We illustrate the different overlay modes with the above example.
+The above example illustrates the different overlay modes.
 The :meth:`~geopandas.GeoDataFrame.overlay` method will determine the set of all individual geometries
 from overlaying the two input GeoDataFrames. This result covers the area covered
 by the two input GeoDataFrames, and also preserves all unique regions defined by
@@ -138,7 +138,7 @@ but with the geometries obtained from overlaying ``df1`` with ``df2``:
 Overlay countries example
 -------------------------
 
-First, we load the countries and cities example datasets and select :
+First, load the countries and cities example datasets and select:
 
 .. ipython:: python
 
@@ -174,7 +174,7 @@ wishes to identify the "core" portion of each country -- defined as areas within
     capitals.plot();
 
 
-To select only the portion of countries within 500km of a capital, we specify the ``how`` option to be "intersect", which creates a new set of polygons where these two layers overlap:
+To select only the portion of countries within 500km of a capital, specify the ``how`` option to be ``'intersection'``, which creates a new set of polygons where these two layers overlap:
 
 .. ipython:: python
 
@@ -182,7 +182,7 @@ To select only the portion of countries within 500km of a capital, we specify th
    @savefig country_cores.png width=5in
    country_cores.plot(alpha=0.5, edgecolor='k', cmap='tab10');
 
-Changing the "how" option allows for different types of overlay operations. For example, if we were interested in the portions of countries *far* from capitals (the peripheries), we would compute the difference of the two.
+Changing the ``how`` option allows for different types of overlay operations. For example, if you were interested in the portions of countries *far* from capitals (the peripheries), you would compute the difference of the two.
 
 .. ipython:: python
 

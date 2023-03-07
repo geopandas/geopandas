@@ -26,7 +26,7 @@ of only one shape (like a single polygon) or multiple shapes that are
 meant to be thought of as one observation (like the many polygons that
 make up the State of Hawaii or a country like Indonesia).
 
-*geopandas* has three basic classes of geometric objects (which are actually *shapely* objects):
+GeoPandas has three basic classes of geometric objects (which are actually *shapely* objects):
 
 * Points / Multi-Points
 * Lines / Multi-Lines
@@ -107,14 +107,14 @@ geometry column:
 
     world.geometry.name
 
-We can also rename this column to "borders":
+You can also rename this column to "borders":
 
 .. ipython:: python
 
     world = world.rename(columns={'geometry': 'borders'}).set_geometry('borders')
     world.geometry.name
 
-Now, we create centroids and make it the geometry:
+Now, you create centroids and make it the geometry:
 
 .. ipython:: python
    :okwarning:

@@ -11,6 +11,7 @@ import requests
 from pathlib import Path
 from zipfile import ZipFile
 import tempfile
+from shapely.geometry import box
 
 version = "latest"
 urlbase = "https://www.naturalearthdata.com/"
@@ -89,6 +90,29 @@ for dl in config:
             gdf = dl["override"](gdf)
         gdf = gdf.loc[:, dl["cols"]]
         gdf = gdf.rename(columns={c: c.lower() for c in gdf.columns})
+
+        # override Crimea #2382
+        if dl["file"] == "ne_110m_admin_0_countries.zip":
+            crimean_bbox = box(32.274, 44.139, 36.65, 46.704)
+            crimea_only = (
+                gdf.loc[gdf.name == "Russia", "geometry"]
+                .iloc[0]
+                .intersection(crimean_bbox)
+            )
+            complete_ukraine = (
+                gdf.loc[gdf.name == "Ukraine", "geometry"].iloc[0].union(crimea_only)
+            )
+            correct_russia = (
+                gdf.loc[gdf.name == "Russia", "geometry"]
+                .iloc[0]
+                .difference(crimean_bbox)
+            )
+            r_ix = gdf.loc[gdf.name == "Russia"].index[0]
+            gdf.at[r_ix, "geometry"] = correct_russia
+
+            u_ix = gdf.loc[gdf.name == "Ukraine"].index[0]
+            gdf.at[u_ix, "geometry"] = complete_ukraine
+
         # get changes between current version and new version
         if not df_same(gdf, gpd.read_file(dl["current"]), dl["file"], log):
             downloads[dl["file"]] = gdf

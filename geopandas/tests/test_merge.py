@@ -1,3 +1,5 @@
+import warnings
+
 import pandas as pd
 import pytest
 from geopandas.testing import assert_geodataframe_equal
@@ -6,24 +8,20 @@ from pandas.testing import assert_index_equal
 from shapely.geometry import Point
 
 from geopandas import GeoDataFrame, GeoSeries
-from geopandas import _compat as compat
 
 
 class TestMerging:
     def setup_method(self):
-
         self.gseries = GeoSeries([Point(i, i) for i in range(3)])
         self.series = pd.Series([1, 2, 3])
         self.gdf = GeoDataFrame({"geometry": self.gseries, "values": range(3)})
         self.df = pd.DataFrame({"col1": [1, 2, 3], "col2": [0.1, 0.2, 0.3]})
 
     def _check_metadata(self, gdf, geometry_column_name="geometry", crs=None):
-
         assert gdf._geometry_column_name == geometry_column_name
         assert gdf.crs == crs
 
     def test_merge(self):
-
         res = self.gdf.merge(self.df, left_on="values", right_on="col1")
 
         # check result is a GeoDataFrame
@@ -62,7 +60,6 @@ class TestMerging:
         assert isinstance(res.geometry, GeoSeries)
 
     def test_concat_axis0_crs(self):
-
         # CRS not set for both GeoDataFrame
         res = pd.concat([self.gdf, self.gdf])
         self._check_metadata(res)
@@ -103,8 +100,40 @@ class TestMerging:
                 [self.gdf, self.gdf.set_crs("epsg:4326"), self.gdf.set_crs("epsg:4327")]
             )
 
-    def test_concat_axis1(self):
+    def test_concat_axis0_unaligned_cols(self):
+        # https://github.com/geopandas/geopandas/issues/2679
+        gdf = self.gdf.set_crs("epsg:4326").assign(
+            geom=self.gdf.geometry.set_crs("epsg:4327")
+        )
+        both_geom_cols = gdf[["geom", "geometry"]]
+        single_geom_col = gdf[["geometry"]]
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            pd.concat([both_geom_cols, single_geom_col])
+        # Check order of mismatch doesn't matter
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            pd.concat([single_geom_col, both_geom_cols])
 
+        # Side effect of this fix, explicitly provided all none geoseries
+        # will not be warned for (ideally this would still warn)
+        explicit_all_none_case = gdf[["geometry"]].assign(
+            geom=GeoSeries([None for _ in range(len(gdf))])
+        )
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            pd.concat([both_geom_cols, explicit_all_none_case])
+
+        # Check concat with partially None col is not affected by the special casing
+        # for all None no CRS handling
+        with pytest.warns(
+            UserWarning, match=r"CRS not set for some of the concatenation inputs.*"
+        ):
+            partial_none_case = self.gdf[["geometry"]]
+            partial_none_case.iloc[0] = None
+            pd.concat([single_geom_col, partial_none_case])
+
+    def test_concat_axis1(self):
         res = pd.concat([self.gdf, self.df], axis=1)
 
         assert res.shape == (3, 4)
@@ -137,11 +166,6 @@ class TestMerging:
         # check metadata comes from first df
         self._check_metadata(res3, geometry_column_name="geom", crs="epsg:4326")
 
-    @pytest.mark.xfail(
-        not compat.PANDAS_GE_11,
-        reason="pandas <=1.0 hard codes concat([GeoSeries, GeoSeries]) -> "
-        "DataFrame or Union[DataFrame, SparseDataFrame] in 0.25",
-    )
     @pytest.mark.filterwarnings("ignore:Accessing CRS")
     def test_concat_axis1_geoseries(self):
         gseries2 = GeoSeries([Point(i, i) for i in range(3, 6)], crs="epsg:4326")

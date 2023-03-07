@@ -29,6 +29,7 @@ General methods and attributes
    GeoSeries.x
    GeoSeries.y
    GeoSeries.z
+   GeoSeries.get_coordinates
 
 Unary predicates
 ----------------
@@ -86,8 +87,10 @@ Constructive methods and attributes
    GeoSeries.centroid
    GeoSeries.convex_hull
    GeoSeries.envelope
-   GeoSeries.simplify
+   GeoSeries.make_valid
+   GeoSeries.minimum_bounding_circle
    GeoSeries.normalize
+   GeoSeries.simplify
 
 Affine transformations
 ----------------------

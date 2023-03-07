@@ -18,7 +18,7 @@ coordinate based indexing with the :attr:`~GeoDataFrame.cx` indexer, which slice
 box. Geometries in the :class:`GeoSeries` or :class:`GeoDataFrame` that intersect the
 bounding box will be returned.
 
-Using the ``world`` dataset, we can use this functionality to quickly select all
+Using the ``world`` dataset, you can use this functionality to quickly select all
 countries whose boundaries extend into the southern hemisphere.
 
 .. ipython:: python

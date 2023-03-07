@@ -15,7 +15,7 @@ Mapping and plotting tools
 =========================================
 
 
-*geopandas* provides a high-level interface to the matplotlib_ library for making maps. Mapping shapes is as easy as using the :meth:`~GeoDataFrame.plot()` method on a :class:`GeoSeries` or :class:`GeoDataFrame`.
+GeoPandas provides a high-level interface to the matplotlib_ library for making maps. Mapping shapes is as easy as using the :meth:`~GeoDataFrame.plot()` method on a :class:`GeoSeries` or :class:`GeoDataFrame`.
 
 .. _matplotlib: https://matplotlib.org/stable/
 
@@ -26,7 +26,7 @@ Loading some example data:
     world = geopandas.read_file(geopandas.datasets.get_path('naturalearth_lowres'))
     cities = geopandas.read_file(geopandas.datasets.get_path('naturalearth_cities'))
 
-We can now plot those GeoDataFrames:
+You can now plot those GeoDataFrames:
 
 .. ipython:: python
 
@@ -43,7 +43,7 @@ Note that in general, any options one can pass to `pyplot <http://matplotlib.org
 Choropleth maps
 -----------------
 
-*geopandas* makes it easy to create Choropleth maps (maps where the color of each shape is based on the value of an associated variable). Simply use the plot command with the ``column`` argument set to the column whose values you want used to assign colors.
+GeoPandas makes it easy to create Choropleth maps (maps where the color of each shape is based on the value of an associated variable). Simply use the plot command with the ``column`` argument set to the column whose values you want used to assign colors.
 
 .. ipython:: python
    :okwarning:
@@ -185,7 +185,7 @@ Before combining maps, however, remember to always ensure they share a common CR
     # Check crs
     cities = cities.to_crs(world.crs)
 
-    # Now we can overlay over country outlines
+    # Now you can overlay over country outlines
     # And yes, there are lots of island capitals
     # apparently in the middle of the ocean!
 
@@ -205,7 +205,7 @@ Before combining maps, however, remember to always ensure they share a common CR
     fig, ax = plt.subplots()
 
     # set aspect to equal. This is done automatically
-    # when using *geopandas* plot on it's own, but not when
+    # when using GeoPandas plot on it's own, but not when
     # working with pyplot directly.
     ax.set_aspect('equal')
 
@@ -228,7 +228,7 @@ Without specified ``zorder``, cities (Points) gets plotted below world (Polygons
     @savefig zorder_default.png
     world.plot(ax=ax);
 
-We can set the ``zorder`` for cities higher than for world to move it of top.
+You can set the ``zorder`` for cities higher than for world to move it of top.
 
 .. ipython:: python
 

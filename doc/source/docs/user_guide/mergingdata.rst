@@ -4,12 +4,13 @@
    :suppress:
 
    import geopandas
+   import pandas as pd
 
 
 Merging data
 =========================================
 
-There are two ways to combine datasets in *geopandas* -- attribute joins and spatial joins.
+There are two ways to combine datasets in GeoPandas -- attribute joins and spatial joins.
 
 In an attribute join, a :class:`GeoSeries` or :class:`GeoDataFrame` is
 combined with a regular :class:`pandas.Series` or :class:`pandas.DataFrame` based on a
@@ -18,7 +19,7 @@ common variable. This is analogous to normal merging or joining in *pandas*.
 In a spatial join, observations from two :class:`GeoSeries` or :class:`GeoDataFrame`
 are combined based on their spatial relationship to one another.
 
-In the following examples, we use these datasets:
+In the following examples, these datasets are used:
 
 .. ipython:: python
 
@@ -43,12 +44,12 @@ Keep in mind, that appended geometry columns needs to have the same CRS.
 .. ipython:: python
 
     # Appending GeoSeries
-    joined = world.geometry.append(cities.geometry)
+    joined = pd.concat([world.geometry, cities.geometry])
 
     # Appending GeoDataFrames
     europe = world[world.continent == 'Europe']
     asia = world[world.continent == 'Asia']
-    eurasia = europe.append(asia)
+    eurasia = pd.concat([europe, asia])
 
 
 Attribute joins
@@ -84,8 +85,8 @@ In a spatial join, two geometry objects are merged based on their spatial relati
 .. ipython:: python
 
 
-   # One GeoDataFrame of countries, one of Cities.
-   # Want to merge so we can get each city's country.
+   # Merge two GeoDataFrames in order to get each city's country. 
+   # One of countries, one of cities.
    countries.head()
    cities.head()
 
@@ -113,13 +114,13 @@ Binary predicate joins are available via :meth:`GeoDataFrame.sjoin`.
 
 **predicate**
 
-The ``predicate`` argument specifies how ``geopandas`` decides whether or not to join the attributes of one
+The ``predicate`` argument specifies how GeoPandas decides whether or not to join the attributes of one
 object to another, based on their geometric relationship.
 
 The values for ``predicate`` correspond to the names of geometric binary predicates and depend on the spatial
 index implementation.
 
-The default spatial index in ``geopandas`` currently supports the following values for ``predicate`` which are
+The default spatial index in GeoPandas currently supports the following values for ``predicate`` which are
 defined in the
 `Shapely documentation <http://shapely.readthedocs.io/en/latest/manual.html#binary-predicates>`__:
 

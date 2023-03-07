@@ -32,7 +32,6 @@ def generate_test_df():
 
 
 class BenchIntersection:
-
     param_names = ["input_geom_type", "tree_geom_type"]
     params = [
         geom_types,
@@ -54,7 +53,6 @@ class BenchIntersection:
 
 
 class BenchIndexCreation:
-
     param_names = ["tree_geom_type"]
     params = [
         geom_types,
@@ -81,7 +79,6 @@ class BenchIndexCreation:
 
 
 class BenchQuery:
-
     param_names = ["predicate", "input_geom_type", "tree_geom_type"]
     params = [
         predicates,

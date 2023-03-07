@@ -3,7 +3,7 @@
 Geometric manipulations
 ========================
 
-*geopandas* makes available all the tools for geometric manipulations in the `Shapely library <http://shapely.readthedocs.io/en/latest/manual.html>`_.
+GeoPandas makes available all the tools for geometric manipulations in the `Shapely library <http://shapely.readthedocs.io/en/latest/manual.html>`_.
 
 Note that documentation for all set-theoretic tools for creating new shapes using the relationship between two different spatial datasets -- like creating intersections, or differences -- can be found at :doc:`Set operations with overlay <set_operations>`.
 
@@ -114,7 +114,7 @@ Other operations return GeoPandas objects:
 
 .. image:: ../../_static/test_buffer.png
 
-GeoPandas objects also know how to plot themselves.  GeoPandas uses `matplotlib`_ for plotting. To generate a plot of our GeoSeries, use:
+GeoPandas objects also know how to plot themselves. GeoPandas uses `matplotlib`_ for plotting. To generate a plot of a GeoSeries, use:
 
 .. sourcecode:: python
 
@@ -160,7 +160,7 @@ GeoPandas also implements alternate constructors that can read any data format r
 
 .. image:: ../../_static/nyc_hull.png
 
-To demonstrate a more complex operation, we'll generate a
+To demonstrate a more complex operation, generate a
 :class:`~geopandas.GeoSeries` containing 2000 random points:
 
 .. sourcecode:: python
@@ -178,14 +178,14 @@ Now draw a circle with fixed radius around each point:
 
     >>> circles = pts.buffer(2000)
 
-We can collapse these circles into a single :class:`MultiPolygon`
+You can collapse these circles into a single :class:`MultiPolygon`
 geometry with
 
 .. sourcecode:: python
 
     >>> mp = circles.unary_union
 
-To extract the part of this geometry contained in each borough, we can
+To extract the part of this geometry contained in each borough, you can
 just use:
 
 .. sourcecode:: python
