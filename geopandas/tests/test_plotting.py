@@ -644,6 +644,28 @@ class TestPolygonPlotting:
         df_nan = GeoDataFrame({"geometry": t3, "values": [np.nan]})
         self.df3 = pd.concat([self.df, df_nan])
 
+    def test_autolim_false(self):
+        """Test polygon plot preserving axes limits."""
+        ax = self.polys[:1].plot()
+        xlim = ax.get_xlim()
+        self.polys.plot(ax=ax, autolim=False)
+        assert ax.get_xlim() == xlim
+        ax = self.df[:1].plot()
+        xlim = ax.get_xlim()
+        self.df.plot(ax=ax, autolim=False)
+        assert ax.get_xlim() == xlim
+
+    def test_autolim_true(self):
+        """Test polygon plot autoscaling axes limits."""
+        ax = self.polys[:1].plot()
+        xlim = ax.get_xlim()
+        self.polys.plot(ax=ax, autolim=True)
+        assert ax.get_xlim() != xlim
+        ax = self.df[:1].plot()
+        xlim = ax.get_xlim()
+        self.df.plot(ax=ax, autolim=True)
+        assert ax.get_xlim() != xlim
+
     def test_single_color(self):
 
         ax = self.polys.plot(color="green")
