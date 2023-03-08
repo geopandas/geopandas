@@ -26,7 +26,7 @@ In a non-spatial setting, when you need summary statistics of the data, you can 
 Take example of administrative areas in Nepal. You have districts, which are smaller, and zones, which are larger. A group of districts always compose a single zone. Suppose you are interested in Nepalese zone, but you only have Nepalese district-level data like the `geoda.nepal` dataset included in `geodatasets`. You can easily convert this to a zone-level dataset.
 
 
-First, let's look at the most simple case where you just want zone shapes and names. By default, :meth:`~geopandas.GeoDataFrame.dissolve` will pass ``'first'`` to :ref:`groupby.aggregate <groupby.aggregate>`.
+First, let's look at the most simple case where you just want zone shapes and names.
 
 .. ipython:: python
 
@@ -34,6 +34,13 @@ First, let's look at the most simple case where you just want zone shapes and na
 
     nepal = geopandas.read_file(geodatasets.get_path('geoda.nepal'))
     nepal = nepal.rename(columns={"name_2": "zone"})  # rename to remember the column
+    nepal[["zone", "geometry"]].head()
+
+
+By default, :meth:`~geopandas.GeoDataFrame.dissolve` will pass ``'first'`` to :ref:`groupby.aggregate <groupby.aggregate>`.
+
+.. ipython:: python
+
     nepal_zone = nepal[['zone', 'geometry']]
     zones = nepal_zone.dissolve(by='zone')
 
