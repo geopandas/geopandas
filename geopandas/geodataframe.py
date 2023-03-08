@@ -1911,7 +1911,7 @@ individually so that features may have different properties
         Python driver (e.g. psycopg2) to be installed.
 
         To write to file databases like GeoPackage or SpatiaLite it is typically easier
-        to use GeoDataFrame.to_file.
+        to use :meth:`~GeoDataFrame.to_file`.
 
         Parameters
         ----------
