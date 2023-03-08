@@ -1204,10 +1204,11 @@ individually so that features may have different properties
 
         >>> gdf.to_file('dataframe.shp', mode="a")  # doctest: +SKIP
 
-        Keyword arguments can be used to create e.g. a spatialite file:
+        Using the engine-specific keyword arguments it is possible to e.g. create a
+        spatialite file with a custom layer name:
 
         >>> gdf.to_file(
-        ...     'dataframe.sqlite', driver='SQLite', layer='test', spatialite=True
+        ...     'dataframe.sqlite', driver='SQLite', spatialite=True, layer='test'
         ... )  # doctest: +SKIP
 
         """
