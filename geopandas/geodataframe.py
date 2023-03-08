@@ -1206,7 +1206,7 @@ individually so that features may have different properties
 
         Keyword arguments can be used to create e.g. a spatialite file:
 
-        >>> gdf.to_file('dataframe.sqlite', driver='SQLite', spatialite=True)  # doctest: +SKIP noqa: E501
+        >>> gdf.to_file('dataframe.sqlite', driver='SQLite', spatialite=True)  # noqa: E501 doctest: +SKIP
 
         """
         from geopandas.io.file import _to_file
