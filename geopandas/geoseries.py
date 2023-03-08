@@ -1324,7 +1324,7 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
         ...     geodatasets.get_path("geoda.groceries")
         ... ).to_crs(chicago.crs)
         >>> groceries.shape
-        (243, 2)
+        (148, 8)
 
         >>> nws_groceries = groceries.geometry.clip(near_west_side)
         >>> nws_groceries.shape

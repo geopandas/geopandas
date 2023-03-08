@@ -137,10 +137,10 @@ def clip(gdf, mask, keep_geom_type=False):
     ...     geodatasets.get_path("geoda.groceries")
     ... ).to_crs(chicago.crs)
     >>> groceries.shape
-    (243, 2)
+    (148, 8)
 
     >>> nws_groceries = geopandas.clip(groceries, near_west_side)
-    >>> sa_capitals.shape
+    >>> nws_groceries.shape
     (7, 8)
     """
     if not isinstance(gdf, (GeoDataFrame, GeoSeries)):

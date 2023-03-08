@@ -2249,7 +2249,7 @@ chicago_w_groceries[chicago_w_groceries["community"] == "UPTOWN"]
         ...     geodatasets.get_path("geoda.groceries")
         ... ).to_crs(chicago.crs)
         >>> groceries.shape
-        (243, 2)
+        (148, 8)
 
         >>> nws_groceries = groceries.clip(near_west_side)
         >>> nws_groceries.shape
