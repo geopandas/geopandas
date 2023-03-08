@@ -843,6 +843,23 @@ class TestDataFrame:
         result = list(df_only_numerical_cols.iterfeatures(na="keep"))[0]
         assert type(result["properties"]["Shape_Leng"]) is float
 
+        # When some features are non-scalar values
+        df_with_non_scalars = GeoDataFrame(
+            {"geometry": [Point(1, 2)], "non-scalar": [[1, 2]], "test_col": None}
+        )
+        # null
+        expected = {"non-scalar": [1, 2], "test_col": None}
+        result = list(df_with_non_scalars.iterfeatures(na="null"))[0].get("properties")
+        assert expected == result
+        # drop
+        expected = {"non-scalar": [1, 2]}
+        result = list(df_with_non_scalars.iterfeatures(na="drop"))[0].get("properties")
+        assert expected == result
+        # keep
+        expected = {"non-scalar": [1, 2], "test_col": None}
+        result = list(df_with_non_scalars.iterfeatures(na="keep"))[0].get("properties")
+        assert expected == result
+
         with pytest.raises(
             ValueError, match="GeoDataFrame cannot contain duplicated column names."
         ):
