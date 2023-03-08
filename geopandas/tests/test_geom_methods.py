@@ -1468,28 +1468,22 @@ class TestGeomMethods:
             self.g11.get_coordinates()
 
     def test_minimum_bounding_radius(self):
-
         mbr_geoms = self.g1.minimum_bounding_radius()
 
         assert_series_equal(
-             mbr_geoms,
-             Series([0.707106, 
-                     0.707106]),
+            mbr_geoms,
+            Series([0.707106, 0.707106]),
         )
 
         mbr_lines = self.g5.minimum_bounding_radius()
 
         assert_series_equal(
-             mbr_lines,
-             Series([0.707106, 
-                     0.707106]),
+            mbr_lines,
+            Series([0.707106, 0.707106]),
         )
-
 
         # more tests: collection of points; collection of linestrings
 
-
-        
 
 # @pytest.mark.skipif(
 #     not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),

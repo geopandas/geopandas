@@ -674,7 +674,8 @@ def representative_point(data):
                 for geom in data
             ]
         return out
-    
+
+
 def minimum_bounding_circle(data):
     if compat.USE_SHAPELY_20:
         return shapely.minimum_bounding_circle(data)
@@ -686,6 +687,7 @@ def minimum_bounding_circle(data):
             f"version {shapely.__version__} is installed"
         )
 
+
 def minimum_bounding_radius(data):
     if compat.USE_SHAPELY_20:
         return shapely.minimum_bounding_radius(data)
@@ -696,6 +698,7 @@ def minimum_bounding_radius(data):
             f"shapely >= 2.0 or PyGEOS is required, "
             f"version {shapely.__version__} is installed"
         )
+
 
 #
 # Binary predicates
