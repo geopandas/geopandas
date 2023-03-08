@@ -144,7 +144,7 @@ First, load the Chicago community areas and groceries example datasets and selec
 
     import geodatasets
 
-    chicago = geopandas.read_file(geodatasets.get_path("geoda.chicago_health"))
+    chicago = geopandas.read_file(geodatasets.get_path("geoda.chicago_commpop"))
     groceries = geopandas.read_file(geodatasets.get_path("geoda.groceries"))
 
     # Project to crs that uses meters as distance measure

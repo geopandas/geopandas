@@ -814,7 +814,7 @@ class GeometryArray(ExtensionArray):
         --------
         >>> import geodatasets
         >>> df = geopandas.read_file(
-        ...     geodatasets.get_path("geoda.chicago_health")
+        ...     geodatasets.get_path("geoda.chicago_commpop")
         ... )
         >>> df.geometry.values.estimate_utm_crs()  # doctest: +SKIP
         <Derived Projected CRS: EPSG:32616>

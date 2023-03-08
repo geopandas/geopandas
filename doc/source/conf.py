@@ -21,6 +21,7 @@ geodatasets.fetch(
         "ny.bb",
         "geoda.malaria",
         "geoda.chicago_health",
+        "geoda.chicago_commpop",
         "geoda.groceries",
         "geoda.natregimes",
         "geoda.nepal",
@@ -175,7 +176,7 @@ html_theme_options = {
             "url": "https://twitter.com/geopandas",
             "icon": "fab fa-twitter-square fa-xl",
         },
-   ]
+    ]
 }
 
 # Add any paths that contain custom themes here, relative to this directory.
