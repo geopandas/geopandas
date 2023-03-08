@@ -130,7 +130,7 @@ def clip(gdf, mask, keep_geom_type=False):
 
     >>> import geodatasets
     >>> chicago = geopandas.read_file(
-    ...     geodatasets.get_path("geoda.chicago-health")
+    ...     geodatasets.get_path("geoda.chicago_health")
     ... )
     >>> near_west_side = chicago[chicago["community"] == "NEAR WEST SIDE"]
     >>> groceries = geopandas.read_file(

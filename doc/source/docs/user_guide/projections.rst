@@ -83,7 +83,7 @@ Re-projecting is the process of changing the representation of locations from on
     import geodatasets
 
     # load example data
-    usa = geopandas.read_file(geodatasets.get_path('geoda.nat-regimes'))
+    usa = geopandas.read_file(geodatasets.get_path('geoda.natregimes'))
 
     # Check original projection
     # (it's Plate Carrée! x-y are long and lat)

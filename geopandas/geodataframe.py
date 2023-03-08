@@ -1392,7 +1392,7 @@ individually so that features may have different properties
         --------
         >>> import geodatasets
         >>> df = geopandas.read_file(
-        ...     geodatasets.get_path("geoda.chicago-health")
+        ...     geodatasets.get_path("geoda.chicago_health")
         ... )
         >>> df.estimate_utm_crs()  # doctest: +SKIP
         <Derived Projected CRS: EPSG:32616>
@@ -2027,7 +2027,7 @@ individually so that features may have different properties
         --------
         >>> import geodatasets
         >>> chicago = geopandas.read_file(
-        ...     geodatasets.get_path("geoda.chicago-health")
+        ...     geodatasets.get_path("geoda.chicago_health")
         ... )
         >>> groceries = geopandas.read_file(
         ...     geodatasets.get_path("geoda.groceries")
@@ -2126,7 +2126,7 @@ individually so that features may have different properties
         ...     geodatasets.get_path("geoda.groceries")
         ... )
         >>> chicago = geopandas.read_file(
-        ...     geodatasets.get_path("geoda.chicago-health")
+        ...     geodatasets.get_path("geoda.chicago_health")
         ... ).to_crs(groceries.crs)
 
         >>> chicago.head()  # doctest: +SKIP
@@ -2242,7 +2242,7 @@ chicago_w_groceries[chicago_w_groceries["community"] == "UPTOWN"]
 
         >>> import geodatasets
         >>> chicago = geopandas.read_file(
-        ...     geodatasets.get_path("geoda.chicago-health")
+        ...     geodatasets.get_path("geoda.chicago_health")
         ... )
         >>> near_west_side = chicago[chicago["community"] == "NEAR WEST SIDE"]
         >>> groceries = geopandas.read_file(

@@ -1118,7 +1118,7 @@ class GeoSeries(GeoPandasBase, Series):
         --------
         >>> import geodatasets
         >>> df = geopandas.read_file(
-        ...     geodatasets.get_path("geoda.chicago-health")
+        ...     geodatasets.get_path("geoda.chicago_health")
         ... )
         >>> df.geometry.estimate_utm_crs()  # doctest: +SKIP
         <Derived Projected CRS: EPSG:32616>
@@ -1317,7 +1317,7 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
 
         >>> import geodatasets
         >>> chicago = geopandas.read_file(
-        ...     geodatasets.get_path("geoda.chicago-health")
+        ...     geodatasets.get_path("geoda.chicago_health")
         ... )
         >>> near_west_side = chicago[chicago["community"] == "NEAR WEST SIDE"]
         >>> groceries = geopandas.read_file(

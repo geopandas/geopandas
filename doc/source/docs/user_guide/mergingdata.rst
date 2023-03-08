@@ -25,8 +25,8 @@ In the following examples, these datasets are used:
 
    import geodatasets
 
-   chicago = geopandas.read_file(geodatasets.get_path("geoda chicago health"))
-   groceries = geopandas.read_file(geodatasets.get_path("geoda groceries"))
+   chicago = geopandas.read_file(geodatasets.get_path("geoda.chicago_health"))
+   groceries = geopandas.read_file(geodatasets.get_path("geoda.groceries"))
 
    # For attribute join
    chicago_shapes = chicago[['geometry', 'ComAreaID']]

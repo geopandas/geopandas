@@ -48,7 +48,7 @@ def sjoin(
     --------
     >>> import geodatasets
     >>> chicago = geopandas.read_file(
-    ...     geodatasets.get_path("geoda.chicago-health")
+    ...     geodatasets.get_path("geoda.chicago_health")
     ... )
     >>> groceries = geopandas.read_file(
     ...     geodatasets.get_path("geoda.groceries")
@@ -454,7 +454,7 @@ def sjoin_nearest(
     ...     geodatasets.get_path("geoda.groceries")
     ... )
     >>> chicago = geopandas.read_file(
-    ...     geodatasets.get_path("geoda.chicago-health")
+    ...     geodatasets.get_path("geoda.chicago_health")
     ... ).to_crs(groceries.crs)
 
     >>> chicago.head()  # doctest: +SKIP

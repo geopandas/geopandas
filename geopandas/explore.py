@@ -255,7 +255,7 @@ def _explore(
     --------
     >>> import geodatasets
     >>> df = geopandas.read_file(
-    ...     geodatasets.get_path("geoda.chicago-health")
+    ...     geodatasets.get_path("geoda.chicago_health")
     ... )
     >>> df.head(2)  # doctest: +SKIP
        ComAreaID  ...                                           geometry
