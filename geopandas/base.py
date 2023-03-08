@@ -726,6 +726,37 @@ GeometryCollection
         """
         return _delegate_geo_method("minimum_bounding_circle", self)
 
+    def minimum_bounding_radius(self):
+        """Returns a `Series` of the radii of the minimum bounding circles that enclose each geometry.
+        
+        Examples
+        --------
+        >>> from shapely.geometry import Point, LineString, Polygon
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0, 0), (1, 1), (0, 1), (0, 0)]),
+        ...         LineString([(0, 0), (1, 1), (1, 0)]),
+        ...         Point(0,0),
+        ...     ]
+        ... )
+        >>> s
+        0    POLYGON ((0.00000 0.00000, 1.00000 1.00000, 0....
+        1    LINESTRING (0.00000 0.00000, 1.00000 1.00000, ...
+        2                              POINT (0.00000 0.00000)
+        dtype: geometry
+        >>> s.minimum_bounding_radius()
+        0    0.707107
+        1    0.707107
+        2    0.000000
+        dtype: float64
+        
+        See also
+        --------
+        GeoSeries.minumum_bounding_circle : minimum bounding circle (geometry)
+
+        """
+        return Series(self.geometry.values.minimum_bounding_radius(), index=self.index)  
+    
     def normalize(self):
         """Returns a ``GeoSeries`` of normalized
         geometries to normal form (or canonical form).
