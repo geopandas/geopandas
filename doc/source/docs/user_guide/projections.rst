@@ -83,7 +83,7 @@ Re-projecting is the process of changing the representation of locations from on
     import geodatasets
 
     # load example data
-    usa = geopandas.read_file(geodatasets.get_path('geoda nat regimes'))
+    usa = geopandas.read_file(geodatasets.get_path('geoda.nat-regimes'))
 
     # Check original projection
     # (it's Plate Carrée! x-y are long and lat)
@@ -180,7 +180,7 @@ yields a proper CRS:
 
 .. ipython:: python
 
-   df = geopandas.read_file(geopandas.datasets.get_path('naturalearth_lowres'))
+   df = geopandas.read_file(geodatasets.get_path('naturalearth.land'))
    df.crs
 
 However, in certain cases (with older CRS formats), the resulting CRS object

@@ -344,8 +344,8 @@ class GeoSeries(GeoPandasBase, Series):
 
         Examples
         --------
-
-        >>> path = geopandas.datasets.get_path('nybb')
+        >>> import geodatasets
+        >>> path = geodatasets.get_path('nybb')
         >>> s = geopandas.GeoSeries.from_file(path)
         >>> s
         0    MULTIPOLYGON (((970217.022 145643.332, 970227....
@@ -1116,23 +1116,23 @@ class GeoSeries(GeoPandasBase, Series):
 
         Examples
         --------
-        >>> world = geopandas.read_file(
-        ...     geopandas.datasets.get_path("naturalearth_lowres")
+        >>> import geodatasets
+        >>> df = geopandas.read_file(
+        ...     geodatasets.get_path("geoda.chicago-health")
         ... )
-        >>> germany = world.loc[world.name == "Germany"]
-        >>> germany.geometry.estimate_utm_crs()  # doctest: +SKIP
-        <Projected CRS: EPSG:32632>
-        Name: WGS 84 / UTM zone 32N
+        >>> df.geometry.estimate_utm_crs()  # doctest: +SKIP
+        <Derived Projected CRS: EPSG:32616>
+        Name: WGS 84 / UTM zone 16N
         Axis Info [cartesian]:
         - E[east]: Easting (metre)
         - N[north]: Northing (metre)
         Area of Use:
-        - name: World - N hemisphere - 6°E to 12°E - by country
-        - bounds: (6.0, 0.0, 12.0, 84.0)
+        - name: Between 90°W and 84°W, northern hemisphere between equator and 84°N, ...
+        - bounds: (-90.0, 0.0, -84.0, 84.0)
         Coordinate Operation:
-        - name: UTM zone 32N
+        - name: UTM zone 16N
         - method: Transverse Mercator
-        Datum: World Geodetic System 1984
+        Datum: World Geodetic System 1984 ensemble
         - Ellipsoid: WGS 84
         - Prime Meridian: Greenwich
         """
@@ -1313,18 +1313,21 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
 
         Examples
         --------
-        Clip points (global cities) with a polygon (the South American continent):
+        Clip points (grocery stores) with polygons (the Near West Side community):
 
-        >>> world = geopandas.read_file(
-        ...     geopandas.datasets.get_path('naturalearth_lowres'))
-        >>> south_america = world[world['continent'] == "South America"]
-        >>> capitals = geopandas.read_file(
-        ...     geopandas.datasets.get_path('naturalearth_cities'))
-        >>> capitals.shape
+        >>> import geodatasets
+        >>> chicago = geopandas.read_file(
+        ...     geodatasets.get_path("geoda.chicago-health")
+        ... )
+        >>> near_west_side = chicago[chicago["community"] == "NEAR WEST SIDE"]
+        >>> groceries = geopandas.read_file(
+        ...     geodatasets.get_path("geoda.groceries")
+        ... ).to_crs(chicago.crs)
+        >>> groceries.shape
         (243, 2)
 
-        >>> sa_capitals = capitals.geometry.clip(south_america)
-        >>> sa_capitals.shape
-        (15,)
+        >>> nws_groceries = groceries.geometry.clip(near_west_side)
+        >>> nws_groceries.shape
+        (7,)
         """
         return geopandas.clip(self, mask=mask, keep_geom_type=keep_geom_type)

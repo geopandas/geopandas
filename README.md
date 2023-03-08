@@ -100,9 +100,10 @@ GeoSeries, use:
 
     >>> g.plot()
 
-GeoPandas also implements alternate constructors that can read any data format recognized by [fiona](http://fiona.readthedocs.io/en/latest/). To read a zip file containing an ESRI shapefile with the [boroughs boundaries of New York City](https://data.cityofnewyork.us/City-Government/Borough-Boundaries/tqmj-j8zm) (GeoPandas includes this as an example dataset):
+GeoPandas also implements alternate constructors that can read any data format recognized by [fiona](http://fiona.readthedocs.io/en/latest/). To read a zip file containing an ESRI shapefile with the [boroughs boundaries of New York City](https://data.cityofnewyork.us/City-Government/Borough-Boundaries/tqmj-j8zm) (the example can be fetched using the `geodatasets` package):
 
-    >>> nybb_path = geopandas.datasets.get_path('nybb')
+    >>> import geodatasets
+    >>> nybb_path = geodatasets.get_path('nybb')
     >>> boros = geopandas.read_file(nybb_path)
     >>> boros.set_index('BoroCode', inplace=True)
     >>> boros.sort_index(inplace=True)
