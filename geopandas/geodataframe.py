@@ -1203,6 +1203,11 @@ individually so that features may have different properties
         With selected drivers you can also append to a file with `mode="a"`:
 
         >>> gdf.to_file('dataframe.shp', mode="a")  # doctest: +SKIP
+
+        Keyword arguments can be used to create e.g. a spatialite file:
+
+        >>> gdf.to_file('dataframe.sqlite', driver='SQLite', spatialite=True)  # doctest: +SKIP
+
         """
         from geopandas.io.file import _to_file
 
@@ -1901,6 +1906,9 @@ individually so that features may have different properties
 
         This method requires SQLAlchemy and GeoAlchemy2, and a PostgreSQL
         Python driver (e.g. psycopg2) to be installed.
+
+        To write to file databases like GeoPackage or SpatiaLite it is typically easier
+        to use GeoDataFrame.to_file.
 
         Parameters
         ----------
