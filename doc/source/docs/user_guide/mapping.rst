@@ -252,7 +252,7 @@ the ``kind`` keyword argument in :meth:`~GeoDataFrame.plot`, and include:
 .. ipython:: python
 
     @savefig pandas_line_plot.png
-    chicago.plot(kind="scatter", x="POP2010", y="shape_area")
+    chicago.plot(kind="scatter", x="POP2010", y="POP2000")
 
 You can also create these other plots using the ``GeoDataFrame.plot.<kind>`` accessor methods instead of providing the ``kind`` keyword argument.
 For example, ``hist``, can be used to plot histograms of population for two different years from the Chicago dataset.
