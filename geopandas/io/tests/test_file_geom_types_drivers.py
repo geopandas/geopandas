@@ -265,7 +265,7 @@ def test_to_file_roundtrip(tmpdir, geodataframe, ogr_driver, engine):
     if ogr_driver == "SQLite":
         write_kwargs["spatialite"] = True
 
-        # This if statment can be removed once minimal fiona version >= 1.8.20
+        # This if statement can be removed once minimal fiona version >= 1.8.20
         if engine == "fiona":
             import fiona
             from packaging.version import Version
