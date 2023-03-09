@@ -281,7 +281,7 @@ def test_to_file_roundtrip(tmpdir, geodataframe, ogr_driver, engine):
             and len(geodataframe == 2)
             and geodataframe.geometry[0] is None
             and geodataframe.geometry[1] is not None
-            and len(geodataframe.geometry[1].coords[0]) > 2
+            and geodataframe.geometry[1].has_z
         ):
             write_kwargs["geometry_type"] = "Point Z"
 
