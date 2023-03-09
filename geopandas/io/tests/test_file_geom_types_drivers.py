@@ -267,6 +267,7 @@ def test_to_file_roundtrip(tmpdir, geodataframe, ogr_driver, engine):
         if engine == "fiona":
             import fiona
             from packaging.version import Version
+
             if Version(fiona.__version__) < Version("1.8.20"):
                 pytest.skip("SQLite driver only available from version 1.8.20")
         write_kwargs["spatialite"] = True
