@@ -264,7 +264,13 @@ def test_to_file_roundtrip(tmpdir, geodataframe, ogr_driver, engine):
     write_kwargs = {}
     if ogr_driver == "SQLite":
         write_kwargs["spatialite"] = True
-        if geodataframe.geometry.type.to_list() == [None, "Point"]:
+        # If only 3D Points, geometry_type needs to be specified for spatialite
+        if (
+            len(geodataframe == 2)
+            and geodataframe.geometry[0] is None
+            and geodataframe.geometry[1] is not None
+            and len(geodataframe.geometry[1].coords[0]) > 2
+        ):
             write_kwargs["geometry_type"] = "Point Z"
 
     expected_error = _expected_error_on(geodataframe, ogr_driver)
