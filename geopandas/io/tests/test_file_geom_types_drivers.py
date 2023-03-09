@@ -263,6 +263,12 @@ def test_to_file_roundtrip(tmpdir, geodataframe, ogr_driver, engine):
     output_file = os.path.join(str(tmpdir), "output_file")
     write_kwargs = {}
     if ogr_driver == "SQLite":
+        # This if statment can be removed once minimal fiona version >= 1.8.20
+        if engine == "fiona":
+            import fiona
+            from packaging.version import Version
+            if Version(fiona.__version__) < Version("1.8.20"):
+                pytest.skip("SQLite driver only available from version 1.8.20")
         write_kwargs["spatialite"] = True
         # If only 3D Points, geometry_type needs to be specified for spatialite
         if (
