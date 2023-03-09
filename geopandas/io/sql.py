@@ -112,6 +112,9 @@ def _read_postgis(
     Returns a GeoDataFrame corresponding to the result of the query
     string, which must contain a geometry column in WKB representation.
 
+    It is also possible to use :meth:`~GeoDataFrame.read_file` to read from a database.
+    Especially for file geodatabases like GeoPackage or SpatiaLite this can be easier.
+
     Parameters
     ----------
     sql : string
@@ -149,7 +152,7 @@ def _read_postgis(
 
     SpatiaLite
 
-    >>> sql = "SELECT ST_Binary(geom) AS geom, highway FROM roads"
+    >>> sql = "SELECT ST_AsBinary(geom) AS geom, highway FROM roads"
     >>> df = geopandas.read_postgis(sql, con)  # doctest: +SKIP
     """
 
