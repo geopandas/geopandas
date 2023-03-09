@@ -1910,8 +1910,9 @@ individually so that features may have different properties
         This method requires SQLAlchemy and GeoAlchemy2, and a PostgreSQL
         Python driver (e.g. psycopg2) to be installed.
 
-        To write to file databases like GeoPackage or SpatiaLite it is typically easier
-        to use :meth:`~GeoDataFrame.to_file`.
+        It is also possible to use :meth:`~GeoDataFrame.to_file` to write to a database.
+        Especially for file geodatabases like GeoPackage or SpatiaLite this can be
+        easier.
 
         Parameters
         ----------
