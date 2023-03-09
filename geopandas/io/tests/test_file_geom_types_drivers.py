@@ -244,7 +244,7 @@ def geodataframe(request):
     return request.param
 
 
-@pytest.fixture(params=["GeoJSON", "ESRI Shapefile", "GPKG"])
+@pytest.fixture(params=["GeoJSON", "ESRI Shapefile", "GPKG", "SQLite"])
 def ogr_driver(request):
     return request.param
 
@@ -261,15 +261,24 @@ def engine(request):
 
 def test_to_file_roundtrip(tmpdir, geodataframe, ogr_driver, engine):
     output_file = os.path.join(str(tmpdir), "output_file")
+    write_kwargs = {}
+    if ogr_driver == "SQLite":
+        write_kwargs["spatialite"] = True
+        if geodataframe.geometry.type.to_list() == [None, "Point"]:
+            write_kwargs["geometry_type"] = "Point Z"
 
     expected_error = _expected_error_on(geodataframe, ogr_driver)
     if expected_error:
         with pytest.raises(
             RuntimeError, match="Failed to write record|Could not add feature to layer"
         ):
-            geodataframe.to_file(output_file, driver=ogr_driver, engine=engine)
+            geodataframe.to_file(
+                output_file, driver=ogr_driver, engine=engine, **write_kwargs
+            )
     else:
-        geodataframe.to_file(output_file, driver=ogr_driver, engine=engine)
+        geodataframe.to_file(
+            output_file, driver=ogr_driver, engine=engine, **write_kwargs
+        )
 
         reloaded = geopandas.read_file(output_file, engine=engine)
 
