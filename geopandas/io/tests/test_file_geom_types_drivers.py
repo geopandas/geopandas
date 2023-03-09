@@ -274,7 +274,7 @@ def test_to_file_roundtrip(tmpdir, geodataframe, ogr_driver, engine):
                 pytest.skip("SQLite driver only available from version 1.8.20")
 
         # If only 3D Points, geometry_type needs to be specified for spatialite at the
-        # monent. This if can be removed once the following PR is released:
+        # moment. This if can be removed once the following PR is released:
         # https://github.com/geopandas/pyogrio/pull/223
         if (
             engine == "pyogrio"
