@@ -2810,13 +2810,13 @@ GeometryCollection
         1    POLYGON ((5.00000 4.00000, 5.00000 5.00000, 4....
         dtype: geometry
 
-        >>> s.sindex.query_bulk(s2)
+        >>> s.sindex.query(s2)
         array([[0, 0, 0, 1],
                [1, 2, 3, 4]])
 
         Query the spatial index with an array of geometries based on the predicate:
 
-        >>> s.sindex.query_bulk(s2, predicate="contains")
+        >>> s.sindex.query(s2, predicate="contains")
         array([[0],
                [2]])
         """

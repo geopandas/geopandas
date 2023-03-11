@@ -90,7 +90,7 @@ class BenchQuery:
         self.data = generate_test_df()
 
     def time_query_bulk(self, predicate, input_geom_type, tree_geom_type):
-        self.data[tree_geom_type].sindex.query_bulk(
+        self.data[tree_geom_type].sindex.query(
             self.data[input_geom_type].geometry.values.data,
             predicate=predicate,
         )

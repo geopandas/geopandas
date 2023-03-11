@@ -451,6 +451,19 @@ if compat.HAS_RTREE:
                     )
                 )
 
+            if hasattr(geometry, "__array__") and not isinstance(
+                geometry, BaseGeometry
+            ):
+                # Iterates over geometry, applying func.
+                tree_index = []
+                input_geometry_index = []
+
+                for i, geo in enumerate(geometry):
+                    res = self.query(geo, predicate=predicate, sort=sort)
+                    tree_index.extend(res)
+                    input_geometry_index.extend([i] * len(res))
+                return np.vstack([input_geometry_index, tree_index])
+
             # handle empty / invalid geometries
             if geometry is None:
                 # return an empty integer array, similar to pygeos.STRtree.query.
@@ -524,15 +537,13 @@ if compat.HAS_RTREE:
 
         @doc(BaseSpatialIndex.query_bulk)
         def query_bulk(self, geometry, predicate=None, sort=False):
-            # Iterates over geometry, applying func.
-            tree_index = []
-            input_geometry_index = []
-
-            for i, geo in enumerate(geometry):
-                res = self.query(geo, predicate=predicate, sort=sort)
-                tree_index.extend(res)
-                input_geometry_index.extend([i] * len(res))
-            return np.vstack([input_geometry_index, tree_index])
+            warnings.warn(
+                "The `query_bulk()` method is deprecated and will be removed in "
+                "GeoPandas 1.0. You can use the `query()` method instead.",
+                FutureWarning,
+                stacklevel=2,
+            )
+            return self.query(geometry, predicate=predicate, sort=sort)
 
         def nearest(self, coordinates, num_results=1, objects=False):
             """
@@ -690,15 +701,26 @@ if compat.SHAPELY_GE_20 or compat.HAS_PYGEOS:
                     )
                 )
 
-            if isinstance(geometry, BaseGeometry):
-                geometry = array._shapely_to_geom(geometry)
+            geometry = self._as_geometry_array(geometry)
 
-            matches = self._tree.query(geometry=geometry, predicate=predicate)
+            if compat.USE_SHAPELY_20:
+                indices = self._tree.query(geometry, predicate=predicate)
+            else:
+                if isinstance(geometry, np.ndarray):
+                    indices = self._tree.query_bulk(geometry, predicate=predicate)
+                else:
+                    indices = self._tree.query(geometry, predicate=predicate)
 
             if sort:
-                return np.sort(matches)
+                if indices.ndim == 1:
+                    return np.sort(indices)
+                else:
+                    # sort by first array (geometry) and then second (tree)
+                    geo_idx, tree_idx = indices
+                    sort_indexer = np.lexsort((tree_idx, geo_idx))
+                    return np.vstack((geo_idx[sort_indexer], tree_idx[sort_indexer]))
 
-            return matches
+            return indices
 
         @staticmethod
         def _as_geometry_array(geometry):
@@ -715,6 +737,11 @@ if compat.SHAPELY_GE_20 or compat.HAS_PYGEOS:
             np.ndarray
                 A numpy array of pygeos geometries.
             """
+            # to ensure pygeos.Geometry as input is treated the same as shapely
+            # geometrie. TODO can be removed when we remove pygeos support
+            if isinstance(geometry, mod.Geometry):
+                geometry = array._geom_to_shapely(geometry)
+
             if isinstance(geometry, np.ndarray):
                 return geometry
             elif isinstance(geometry, geoseries.GeoSeries):
@@ -739,27 +766,13 @@ if compat.SHAPELY_GE_20 or compat.HAS_PYGEOS:
 
         @doc(BaseSpatialIndex.query_bulk)
         def query_bulk(self, geometry, predicate=None, sort=False):
-            if predicate not in self.valid_query_predicates:
-                raise ValueError(
-                    "Got `predicate` = `{}`, `predicate` must be one of {}".format(
-                        predicate, self.valid_query_predicates
-                    )
-                )
-
-            geometry = self._as_geometry_array(geometry)
-
-            if compat.USE_SHAPELY_20:
-                res = self._tree.query(geometry, predicate)
-            else:
-                res = self._tree.query_bulk(geometry, predicate)
-
-            if sort:
-                # sort by first array (geometry) and then second (tree)
-                geo_res, tree_res = res
-                indexing = np.lexsort((tree_res, geo_res))
-                return np.vstack((geo_res[indexing], tree_res[indexing]))
-
-            return res
+            warnings.warn(
+                "The `query_bulk()` method is deprecated and will be removed in "
+                "GeoPandas 1.0. You can use the `query()` method instead.",
+                FutureWarning,
+                stacklevel=2,
+            )
+            return self.query(geometry, predicate=predicate, sort=sort)
 
         @doc(BaseSpatialIndex.nearest)
         def nearest(
