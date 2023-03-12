@@ -13,7 +13,7 @@ New features and improvements:
   the distance along the Hilbert curve (#2070).
 - Added ``minimum_bounding_circle()`` method from shapely to GeoSeries/GeoDataframe (#2621).
 - Support specifying ``min_zoom`` and ``max_zoom`` inside the ``map_kwds`` argument for ``.explore()`` (#2599).
-- - Improve error messages when accessing the `geometry` attribute of GeoDataFrame without an active geometry column 
+- Improve error messages when accessing the `geometry` attribute of GeoDataFrame without an active geometry column 
   related to the default name `"geometry"` being provided in the constructor (#2577)
 
 Deprecations and compatibility notes:

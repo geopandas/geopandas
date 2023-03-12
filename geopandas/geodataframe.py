@@ -20,6 +20,9 @@ from . import _compat as compat
 from ._decorator import doc
 
 
+DEFAULT_GEO_COLUMN_NAME = object()  # TODO this has a bad repr
+
+
 def _geodataframe_constructor_with_fallback(*args, **kwargs):
     """
     A flexible constructor for GeoDataFrame._constructor, which falls back
@@ -66,8 +69,6 @@ crs_mismatch_error = (
     "allow_override=True)' to overwrite CRS or "
     "'GeoDataFrame.to_crs(crs)' to reproject geometries. "
 )
-
-DEFAULT_GEO_COL_NAME = object()  # TODO this has a bad repr
 
 
 class GeoDataFrame(GeoPandasBase, DataFrame):
@@ -127,7 +128,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
     _internal_names = DataFrame._internal_names + ["geometry"]
     _internal_names_set = set(_internal_names)
 
-    _geometry_column_name = DEFAULT_GEO_COL_NAME
+    _geometry_column_name = DEFAULT_GEO_COLUMN_NAME
 
     def __init__(self, data=None, *args, geometry=None, crs=None, **kwargs):
         with compat.ignore_shapely2_warnings():
@@ -189,10 +190,6 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 and not geometry.crs == crs
             ):
                 raise ValueError(crs_mismatch_error)
-            # If geometry kwarg is an array, set the name of the active
-            # geometry column to geometry
-            if not isinstance(geometry, str):
-                self._geometry_column_name = "geometry"
 
             self.set_geometry(geometry, inplace=True, crs=crs)
 
@@ -207,8 +204,6 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         # have to special case geometry b/c pandas tries to use as column...
         if attr == "geometry":
             object.__setattr__(self, attr, val)
-            # if self._geometry_column_name is None:
-            #     self._persist_old_default_geometry_colname()
         else:
             super().__setattr__(attr, val)
 
@@ -216,7 +211,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         if self._geometry_column_name not in self:
             if (
                 self._geometry_column_name is None
-                or self._geometry_column_name == DEFAULT_GEO_COL_NAME
+                or self._geometry_column_name == DEFAULT_GEO_COLUMN_NAME
             ):
                 msg = (
                     "You are calling a geospatial method on the GeoDataFrame, "
@@ -325,7 +320,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         to_remove = None
         geo_column_name = self._geometry_column_name
-        if geo_column_name == DEFAULT_GEO_COL_NAME:
+        if geo_column_name == DEFAULT_GEO_COLUMN_NAME:
             geo_column_name = "geometry"
         if isinstance(col, (Series, list, np.ndarray, GeometryArray)):
             level = col
@@ -460,7 +455,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
     def crs(self, value):
         """Sets the value of the crs"""
         if (
-            self._geometry_column_name != DEFAULT_GEO_COL_NAME
+            self._geometry_column_name != DEFAULT_GEO_COLUMN_NAME
             and self._geometry_column_name not in self
         ):
             raise ValueError(
@@ -469,7 +464,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 "geometry column.",
             )
         else:
-            if self._geometry_column_name != DEFAULT_GEO_COL_NAME and hasattr(
+            if self._geometry_column_name != DEFAULT_GEO_COLUMN_NAME and hasattr(
                 self.geometry.values, "crs"
             ):
                 self.geometry.values.crs = value
@@ -1457,7 +1452,7 @@ individually so that features may have different properties
         name of 'geometry' for backwards compatibility."""
         # self.columns check required to avoid this warning in __init__
         if (
-            self._geometry_column_name == DEFAULT_GEO_COL_NAME
+            self._geometry_column_name == DEFAULT_GEO_COLUMN_NAME
             and "geometry" not in self.columns
         ):
             msg = (
@@ -1485,7 +1480,7 @@ individually so that features may have different properties
             not pd.api.types.is_list_like(key)
             and key == self._geometry_column_name
             or key == "geometry"
-            and self._geometry_column_name == DEFAULT_GEO_COL_NAME
+            and self._geometry_column_name == DEFAULT_GEO_COLUMN_NAME
         ):
             if pd.api.types.is_scalar(value) or isinstance(value, BaseGeometry):
                 value = [value] * self.shape[0]
@@ -2398,13 +2393,6 @@ def _dataframe_set_geometry(self, col, drop=False, inplace=False, crs=None):
             "Can't do inplace setting when converting from DataFrame to GeoDataFrame"
         )
     gf = GeoDataFrame(self)
-    # For drop, treat default geom col name as "geometry"
-    if drop:
-        gf._geometry_column_name = "geometry"
-    else:
-        # avoid the _geometry_column_none = UNSET logic
-        # as df.set_geometry is always an upcast
-        gf._geometry_column_name = None
     # this will copy so that BlockManager gets copied
     return gf.set_geometry(col, drop=drop, inplace=False, crs=crs)
 

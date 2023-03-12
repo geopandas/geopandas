@@ -16,7 +16,7 @@ import geopandas._compat as compat
 from geopandas import GeoDataFrame, GeoSeries, points_from_xy, read_file
 from geopandas.array import GeometryArray, GeometryDtype, from_shapely
 from geopandas._compat import ignore_shapely2_warnings
-from geopandas.geodataframe import DEFAULT_GEO_COL_NAME
+from geopandas.geodataframe import DEFAULT_GEO_COLUMN_NAME
 
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 from geopandas.tests.util import PACKAGE_DIR, validate_boro_df
@@ -1294,7 +1294,7 @@ class TestConstructor:
             UserWarning, match="Geometry column does not contain geometry"
         ):
             gdf5["geometry"] = "foo"
-        assert gdf5._geometry_column_name == DEFAULT_GEO_COL_NAME
+        assert gdf5._geometry_column_name == DEFAULT_GEO_COLUMN_NAME
         # this failure may be fixed by copy downcasting issue
         # TODO uncomment this, but it currently fails
         # gdf3 = make_gdf().assign(geometry=geo_col)
