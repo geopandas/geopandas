@@ -444,7 +444,7 @@ class TestPygeosInterface:
         tree_df = geopandas.GeoDataFrame(geometry=tree_polys)
         test_df = geopandas.GeoDataFrame(geometry=test_polys)
 
-        test_geo = test_df.geometry.values.data[0]
+        test_geo = test_df.geometry.values[0]
         res = tree_df.sindex.query(test_geo, sort=sort)
 
         # asserting the same elements
@@ -649,11 +649,11 @@ class TestPygeosInterface:
 
         # test numpy array
         res = self.df.sindex.query_bulk(
-            test_geom.geometry.values.data, predicate=predicate
+            test_geom.geometry.values.to_numpy(), predicate=predicate
         )
         assert_array_equal(res, expected)
         res = self.df.sindex.query_bulk(
-            test_geom.geometry.values.data, predicate=predicate
+            test_geom.geometry.values.to_numpy(), predicate=predicate
         )
         assert_array_equal(res, expected)
 
