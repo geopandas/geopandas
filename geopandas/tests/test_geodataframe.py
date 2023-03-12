@@ -1290,7 +1290,10 @@ class TestConstructor:
 
         # geo col name should only change if we add geometry
         gdf5 = make_gdf()
-        gdf5["geometry"] = "foo"
+        with pytest.warns(
+            UserWarning, match="Geometry column does not contain geometry"
+        ):
+            gdf5["geometry"] = "foo"
         assert gdf5._geometry_column_name == DEFAULT_GEO_COL_NAME
         # this failure may be fixed by copy downcasting issue
         # TODO uncomment this, but it currently fails

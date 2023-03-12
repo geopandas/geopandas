@@ -207,8 +207,8 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         # have to special case geometry b/c pandas tries to use as column...
         if attr == "geometry":
             object.__setattr__(self, attr, val)
-            if self._geometry_column_name is None:
-                self._persist_old_default_geometry_colname()
+            # if self._geometry_column_name is None:
+            #     self._persist_old_default_geometry_colname()
         else:
             super().__setattr__(attr, val)
 
@@ -319,6 +319,9 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             # if there is no previous self.geometry, self.copy() will downcast
             if type(frame) == DataFrame:
                 frame = GeoDataFrame(frame)
+                # if from dataframe.set_geometry, want to preserve this
+                # TODO remove this when copy works properly.
+                frame._geometry_column_name = self._geometry_column_name
 
         to_remove = None
         geo_column_name = self._geometry_column_name
@@ -2398,6 +2401,10 @@ def _dataframe_set_geometry(self, col, drop=False, inplace=False, crs=None):
     # For drop, treat default geom col name as "geometry"
     if drop:
         gf._geometry_column_name = "geometry"
+    else:
+        # avoid the _geometry_column_none = UNSET logic
+        # as df.set_geometry is always an upcast
+        gf._geometry_column_name = None
     # this will copy so that BlockManager gets copied
     return gf.set_geometry(col, drop=drop, inplace=False, crs=crs)
 
