@@ -1280,11 +1280,11 @@ class TestConstructor:
 
         gdf2 = make_gdf()
         geo_col = GeoSeries.from_xy([1, 3], [3, 3])
-        with pytest.warns(UserWarning, match=match):
+        with pytest.warns(FutureWarning, match=match):
             gdf2["geometry"] = geo_col
         assert gdf2._geometry_column_name == "geometry"
         gdf4 = make_gdf()
-        with pytest.warns(UserWarning, match=match):
+        with pytest.warns(FutureWarning, match=match):
             gdf4.geometry = geo_col
         assert gdf4._geometry_column_name == "geometry"
 

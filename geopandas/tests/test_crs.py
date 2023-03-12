@@ -340,7 +340,7 @@ class TestGeometryArrayCRS:
         s = GeoSeries(arr, crs=27700)
         df = GeoDataFrame()
         with pytest.warns(
-            UserWarning, match="You are adding a column named 'geometry'"
+            FutureWarning, match="You are adding a column named 'geometry'"
         ):
             df["geometry"] = s
         assert df.crs == self.osgb
@@ -350,7 +350,7 @@ class TestGeometryArrayCRS:
         arr = from_shapely(self.geoms, crs=27700)
         df = GeoDataFrame()
         with pytest.warns(
-            UserWarning, match="You are adding a column named 'geometry'"
+            FutureWarning, match="You are adding a column named 'geometry'"
         ):
             df["geometry"] = arr
         assert df.crs == self.osgb
@@ -394,7 +394,7 @@ class TestGeometryArrayCRS:
     def test_scalar(self, scalar):
         df = GeoDataFrame()
         with pytest.warns(
-            UserWarning, match="You are adding a column named 'geometry'"
+            FutureWarning, match="You are adding a column named 'geometry'"
         ):
             df["geometry"] = scalar
         df.crs = 4326

@@ -1470,9 +1470,8 @@ individually so that features may have different properties
             )
             warnings.warn(
                 msg,
-                category=UserWarning,
+                category=FutureWarning,
             )
-            print(msg)
             self._geometry_column_name = "geometry"
 
     def __setitem__(self, key, value):
