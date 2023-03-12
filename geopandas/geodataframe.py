@@ -346,7 +346,6 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
             if drop:
                 to_remove = col
-                geo_column_name = self._geometry_column_name
             else:
                 geo_column_name = col
 
@@ -363,8 +362,10 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         # Check that we are using a listlike of geometries
         level = _ensure_geometry(level, crs=crs)
-        frame[geo_column_name] = level
+        # update _geometry_column_name prior to assignment
+        # to avoid DEFAULT_GEO_COL_NAME warning
         frame._geometry_column_name = geo_column_name
+        frame[geo_column_name] = level
         if not inplace:
             return frame
 
