@@ -67,6 +67,8 @@ crs_mismatch_error = (
     "'GeoDataFrame.to_crs(crs)' to reproject geometries. "
 )
 
+DEFAULT_GEO_COL_NAME = object()  # TODO this has a bad repr
+
 
 class GeoDataFrame(GeoPandasBase, DataFrame):
     """
@@ -125,7 +127,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
     _internal_names = DataFrame._internal_names + ["geometry"]
     _internal_names_set = set(_internal_names)
 
-    _geometry_column_name = None
+    _geometry_column_name = DEFAULT_GEO_COL_NAME
 
     def __init__(self, data=None, *args, geometry=None, crs=None, **kwargs):
         with compat.ignore_shapely2_warnings():
@@ -212,7 +214,10 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
     def _get_geometry(self):
         if self._geometry_column_name not in self:
-            if self._geometry_column_name is None:
+            if (
+                self._geometry_column_name is None
+                or self._geometry_column_name == DEFAULT_GEO_COL_NAME
+            ):
                 msg = (
                     "You are calling a geospatial method on the GeoDataFrame, "
                     "but the active geometry column to use has not been set. "
@@ -317,6 +322,8 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         to_remove = None
         geo_column_name = self._geometry_column_name
+        if geo_column_name == DEFAULT_GEO_COL_NAME:
+            geo_column_name = "geometry"
         if isinstance(col, (Series, list, np.ndarray, GeometryArray)):
             level = col
         elif hasattr(col, "ndim") and col.ndim > 1:
@@ -449,7 +456,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
     def crs(self, value):
         """Sets the value of the crs"""
         if (
-            self._geometry_column_name is not None
+            self._geometry_column_name != DEFAULT_GEO_COL_NAME
             and self._geometry_column_name not in self
         ):
             raise ValueError(
@@ -458,7 +465,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 "geometry column.",
             )
         else:
-            if self._geometry_column_name is not None and hasattr(
+            if self._geometry_column_name != DEFAULT_GEO_COL_NAME and hasattr(
                 self.geometry.values, "crs"
             ):
                 self.geometry.values.crs = value
@@ -1445,7 +1452,10 @@ individually so that features may have different properties
         """Internal util to temporarily persist the default geometry column
         name of 'geometry' for backwards compatibility."""
         # self.columns check required to avoid this warning in __init__
-        if self._geometry_column_name is None and "geometry" not in self.columns:
+        if (
+            self._geometry_column_name == DEFAULT_GEO_COL_NAME
+            and "geometry" not in self.columns
+        ):
             msg = (
                 "You are adding a column named 'geometry' to a GeoDataFrame "
                 "constructed without an active geometry column. Currently, "
@@ -1459,6 +1469,7 @@ individually so that features may have different properties
                 msg,
                 category=UserWarning,
             )
+            print(msg)
             self._geometry_column_name = "geometry"
 
     def __setitem__(self, key, value):
@@ -1471,7 +1482,7 @@ individually so that features may have different properties
             not pd.api.types.is_list_like(key)
             and key == self._geometry_column_name
             or key == "geometry"
-            and self._geometry_column_name is None
+            and self._geometry_column_name == DEFAULT_GEO_COL_NAME
         ):
             if pd.api.types.is_scalar(value) or isinstance(value, BaseGeometry):
                 value = [value] * self.shape[0]

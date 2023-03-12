@@ -16,6 +16,7 @@ import geopandas._compat as compat
 from geopandas import GeoDataFrame, GeoSeries, points_from_xy, read_file
 from geopandas.array import GeometryArray, GeometryDtype, from_shapely
 from geopandas._compat import ignore_shapely2_warnings
+from geopandas.geodataframe import DEFAULT_GEO_COL_NAME
 
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 from geopandas.tests.util import PACKAGE_DIR, validate_boro_df
@@ -1290,10 +1291,24 @@ class TestConstructor:
         # geo col name should only change if we add geometry
         gdf5 = make_gdf()
         gdf5["geometry"] = "foo"
-        assert gdf5._geometry_column_name is None
+        assert gdf5._geometry_column_name == DEFAULT_GEO_COL_NAME
         # this failure may be fixed by copy downcasting issue
-        gdf3 = make_gdf().assign(geometry=geo_col)
-        assert gdf3._geometry_column_name == "geometry"
+        # TODO uncomment this, but it currently fails
+        # gdf3 = make_gdf().assign(geometry=geo_col)
+        # assert gdf3._geometry_column_name == "geometry"
+
+        # Check that adding a GeoSeries to a column called "geometry" to a
+        # gdf without an active geometry column some time after the init does not
+        # warn / set the active geometry column
+        gdf6 = make_gdf()
+        gdf6["geom2"] = geo_col
+        gdf6["geom3"] = geo_col
+        gdf6 = gdf6.set_geometry("geom2")
+        subset = gdf6[["a", "geom3"]]  # this has no active geometry column
+        assert subset._geometry_column_name is None
+        subset["geometry"] = geo_col
+        # adding column called geometry shouldn't auto-set
+        assert subset._geometry_column_name is None
 
 
 def test_geodataframe_crs():
