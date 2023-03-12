@@ -45,32 +45,66 @@ class BaseSpatialIndex:
         raise NotImplementedError
 
     def query(self, geometry, predicate=None, sort=False):
-        """Return the index of all geometries in the tree with extents that
-        intersect the envelope of the input geometry.
+        """
+        Return the integer indices of all combinations of each input geometry
+        and tree geometries where the bounding box of each input geometry
+        intersects the bounding box of a tree geometry.
 
-        When using the ``rtree`` package, this is not a vectorized function.
-        If speed is important, please use PyGEOS.
+        If the input geometry is a scalar, this returns an array of shape (n, ) with
+        the indices of the matching tree geometries.  If the input geometry is an
+        array_like, this returns an array with shape (2,n) where the subarrays
+        correspond to the indices of the input geometries and indices of the
+        tree geometries associated with each.  To generate an array of pairs of
+        input geometry index and tree geometry index, simply transpose the
+        result.
+
+        If a predicate is provided, the tree geometries are first queried based
+        on the bounding box of the input geometry and then are further filtered
+        to those that meet the predicate when comparing the input geometry to
+        the tree geometry: ``predicate(geometry, tree_geometry)``.
+
+        Bounding boxes are limited to two dimensions and are axis-aligned
+        (equivalent to the ``bounds`` property of a geometry); any Z values
+        present in input geometries are ignored when querying the tree.
+
+        Any input geometry that is None or empty will never match geometries in
+        the tree.
 
         Parameters
         ----------
-        geometry : shapely geometry
-            A single shapely geometry to query against the spatial index.
+        geometry : shapely.Geometry or array-like of geometries \
+(numpy.ndarray, GeoSeries, GeometryArray)
+            A single shapely geometry or array of geometries to query against
+            the spatial index. For array-like, accepts both GeoPandas geometry
+            iterables (GeoSeries, GeometryArray) or a numpy array of Shapely
+            or PyGEOS geometries.
         predicate : {None, "contains", "contains_properly", "covered_by", "covers", \
 "crosses", "intersects", "overlaps", "touches", "within"}, optional
-            If predicate is provided, the input geometry is
-            tested using the predicate function against each item
-            in the tree whose extent intersects the envelope of the
-            input geometry: predicate(input_geometry, tree_geometry).
-            If possible, prepared geometries are used to help
-            speed up the predicate operation.
+            If predicate is provided, the input geometries are tested
+            using the predicate function against each item in the tree
+            whose extent intersects the envelope of the input geometry:
+            ``predicate(input_geometry, tree_geometry)``.
+            If possible, prepared geometries are used to help speed up the
+            predicate operation.
         sort : bool, default False
-            If True, the results will be sorted in ascending order.
-            If False, results are often sorted but there is no guarantee.
+            If True, the results will be sorted in ascending order. In case
+            of 2D array, the result is sorted lexicographically using the
+            geometries' indexes as the primary key and the sindex's indexes
+            as the secondary key.
+            If False, no additional sorting is applied (results are often
+            sorted but there is no guarantee).
 
         Returns
         -------
-        matches : ndarray of shape (n_results, )
-            Integer indices for matching geometries from the spatial index.
+        ndarray with shape (n,) if geometry is a scalar
+            Integer indices for matching geometries from the spatial index
+            tree geometries.
+
+        OR
+
+        ndarray with shape (2, n) if geometry is an array_like
+            The first subarray contains input geometry integer indices.
+            The second subarray contains tree geometry integer indices.
 
         Examples
         --------
@@ -89,16 +123,45 @@ class BaseSpatialIndex:
         9    POINT (9.00000 9.00000)
         dtype: geometry
 
+        Querying the tree with a scalar geometry:
+
         >>> s.sindex.query(box(1, 1, 3, 3))
         array([1, 2, 3])
 
         >>> s.sindex.query(box(1, 1, 3, 3), predicate="contains")
         array([2])
+
+        Querying the tree with an array of geometries:
+
+        >>> s2 = geopandas.GeoSeries([box(2, 2, 4, 4), box(5, 5, 6, 6)])
+        >>> s2
+        0    POLYGON ((4.00000 2.00000, 4.00000 4.00000, 2....
+        1    POLYGON ((6.00000 5.00000, 6.00000 6.00000, 5....
+        dtype: geometry
+
+        >>> s.sindex.query_bulk(s2)
+        array([[0, 0, 0, 1, 1],
+               [2, 3, 4, 5, 6]])
+
+        >>> s.sindex.query_bulk(s2, predicate="contains")
+        array([[0],
+               [3]])
+
+        Notes
+        -----
+        In the context of a spatial join, input geometries are the "left"
+        geometries that determine the order of the results, and tree geometries
+        are "right" geometries that are joined against the left geometries. This
+        effectively performs an inner join, where only those combinations of
+        geometries that can be joined based on overlapping bounding boxes or
+        optional predicate are returned.
         """
         raise NotImplementedError
 
     def query_bulk(self, geometry, predicate=None, sort=False):
         """
+        DEPRECATED: use `query` instead.
+
         Returns all combinations of each input geometry and geometries in
         the tree where the envelope of each input geometry intersects with
         the envelope of a tree geometry.
