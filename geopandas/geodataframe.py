@@ -1474,12 +1474,9 @@ individually so that features may have different properties
         -----
         The extra arguments ``*args`` and keyword arguments ``**kwargs`` are
         passed to DataFrame.merge.
-
-        Reference
-        ---------
-        https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas\
-        .DataFrame.merge.html
-
+        See https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas\
+.DataFrame.merge.html
+        for more details.
         """
         result = DataFrame.merge(self, *args, **kwargs)
         geo_col = self._geometry_column_name
