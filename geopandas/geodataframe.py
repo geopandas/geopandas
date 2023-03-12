@@ -2078,7 +2078,7 @@ individually so that features may have different properties
     Europe    Austria    AUT    416600.0
 
         Notes
-        ------
+        -----
         Every operation in GeoPandas is planar, i.e. the potential third
         dimension is not taken into account.
 
@@ -2345,7 +2345,7 @@ countries_w_city_data[countries_w_city_data["name_left"] == "Italy"]
         overlay : equivalent top-level function
 
         Notes
-        ------
+        -----
         Every operation in GeoPandas is planar, i.e. the potential third
         dimension is not taken into account.
         """
