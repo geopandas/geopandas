@@ -137,16 +137,21 @@ def set_use_pygeos(val=None):
     if USE_PYGEOS and env_use_pygeos is None and SHAPELY_GE_20:
         warnings.warn(
             "Shapely 2.0 is installed, but because PyGEOS is also installed, "
-            "GeoPandas will still use PyGEOS by default for now. To force to use and "
-            "test Shapely 2.0, you have to set the environment variable USE_PYGEOS=0. "
+            "GeoPandas still uses PyGEOS by default. However, starting with the next "
+            "release (0.14), the default will switch to Shapely. To already force to "
+            "use Shapely 2.0 now, you can either uninstall PyGEOS or set the "
+            "environment variable USE_PYGEOS=0. "
             "You can do this before starting the Python process, or in your code "
             "before importing geopandas:"
             "\n\nimport os\nos.environ['USE_PYGEOS'] = '0'\nimport geopandas\n\n"
-            "In a future release, GeoPandas will switch to using Shapely by default. "
-            "If you are using PyGEOS directly (calling PyGEOS functions on geometries "
+            "In the next release, GeoPandas will switch to using Shapely by default, "
+            "even if PyGEOS is installed. If you are only having PyGEOS installed to "
+            "get speed-ups, this switch should be smooth. However, if you are "
+            "using PyGEOS directly (calling PyGEOS functions on geometries "
             "from GeoPandas), this will then stop working and you are encouraged to "
             "migrate from PyGEOS to Shapely 2.0 "
             "(https://shapely.readthedocs.io/en/latest/migration_pygeos.html).",
+            DeprecationWarning,
             stacklevel=6,
         )
 
