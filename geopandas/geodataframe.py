@@ -20,9 +20,6 @@ from . import _compat as compat
 from ._decorator import doc
 
 
-DEFAULT_GEO_COLUMN_NAME = None
-
-
 def _geodataframe_constructor_with_fallback(*args, **kwargs):
     """
     A flexible constructor for GeoDataFrame._constructor, which falls back
@@ -128,7 +125,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
     _internal_names = DataFrame._internal_names + ["geometry"]
     _internal_names_set = set(_internal_names)
 
-    _geometry_column_name = DEFAULT_GEO_COLUMN_NAME
+    _geometry_column_name = None
 
     def __init__(self, data=None, *args, geometry=None, crs=None, **kwargs):
         with compat.ignore_shapely2_warnings():
