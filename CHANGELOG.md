@@ -13,6 +13,8 @@ New features and improvements:
   the distance along the Hilbert curve (#2070).
 - Added ``minimum_bounding_circle()`` method from shapely to GeoSeries/GeoDataframe (#2621).
 - Support specifying ``min_zoom`` and ``max_zoom`` inside the ``map_kwds`` argument for ``.explore()`` (#2599).
+- Refactored ``GeoDataFrame.dissolve`` to improve performance when single-geometry groups
+  are present.
 
 Deprecations and compatibility notes:
 
@@ -37,6 +39,7 @@ Notes on (optional) dependencies:
   pandas version is now 1.1). Further, the minimum required versions for the listed
   dependencies have now changed to shapely 1.7.1, fiona 1.8.19, pyproj 3.0.1 and
   matplotlib 3.3.4 (#2655)
+
 
 ## Version 0.12.2 (December 10, 2022)
 

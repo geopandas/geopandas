@@ -16,6 +16,7 @@ from geopandas.base import GeoPandasBase, is_geometry_type
 from geopandas.geoseries import GeoSeries
 import geopandas.io
 from geopandas.explore import _explore
+
 from . import _compat as compat
 from ._decorator import doc
 
@@ -1683,9 +1684,16 @@ individually so that features may have different properties
         )
 
         # Process non-spatial component
-        data = self.drop(labels=self.geometry.name, axis=1)
+        grouped = self.groupby(**groupby_kwargs)
+        explicit_grps_provided = by is not None and len(grouped.exclusions) == 0
+        # If `by` provides the groups explicitly, force the list-like `by` to an array
+        # for the `set_index` and subset selection potentially performed below.
+        if explicit_grps_provided:
+            by = np.asarray(by)
+        geom_col = self.geometry.name
+        data_cols = self.columns.drop(grouped.exclusions.union({geom_col}))
         with warnings.catch_warnings(record=True) as record:
-            aggregated_data = data.groupby(**groupby_kwargs).agg(aggfunc, **kwargs)
+            aggregated_data = grouped[data_cols].agg(aggfunc, **kwargs)
         for w in record:
             if str(w.message).startswith("The default value of numeric_only"):
                 msg = (
@@ -1707,16 +1715,48 @@ individually so that features may have different properties
         aggregated_data.columns = aggregated_data.columns.to_flat_index()
 
         # Process spatial component
-        def merge_geometries(block):
-            merged_geom = block.unary_union
-            return merged_geom
+        geoms = GeoSeries(crs=self.crs)
+        grps_to_agg = grouped[geom_col].count() > 1
+        if not grps_to_agg.all():
+            # Have to right join on this bool mask instead of doing a .loc for
+            # dropna and observed.
+            singletons_loc = grps_to_agg.loc[~grps_to_agg].rename("a")
+            if by is None:
+                level_names = grouped.grouper.names
+                lvls_to_drop = np.setdiff1d(self.index.names, level_names).tolist()
+                single_geoms = self.join(singletons_loc, how="right", rsuffix="a")[
+                    geom_col
+                ].droplevel(lvls_to_drop)
 
-        g = self.groupby(group_keys=False, **groupby_kwargs)[self.geometry.name].agg(
-            merge_geometries
-        )
+            else:
+                single_geoms = self.set_index(by).join(
+                    singletons_loc, how="right", rsuffix="a"
+                )[geom_col]
 
+            # Fixes edge case where a single geometry is grouped with null ones.
+            single_geoms = single_geoms.loc[single_geoms.notnull()]
+            geoms = pd.concat([geoms, single_geoms])
+
+        if grps_to_agg.any():
+            # The non-observed are not aggregated anyway, so in here we should
+            # not introduce unobserved values, hence we set observed to True.
+            groupby_kwargs["observed"] = True
+            # If `by` provides the groups explicitly, we must perform the following
+            # groupby on the subset of `by` corresponding to the rows to dissolve.
+            rows_to_agg = grouped[geom_col].transform("count") > 1
+            if explicit_grps_provided:
+                groupby_kwargs["by"] = by[rows_to_agg.values]
+            dissolved_geoms = (
+                self.loc[rows_to_agg]
+                .groupby(**groupby_kwargs)[geom_col]
+                .agg(lambda block: block.unary_union)
+            )
+            dissolved_geoms.crs = self.crs
+            geoms = pd.concat([geoms, dissolved_geoms])
+
+        geoms = geoms.rename(geom_col).reindex(aggregated_data.index)
         # Aggregate
-        aggregated_geometry = GeoDataFrame(g, geometry=self.geometry.name, crs=self.crs)
+        aggregated_geometry = GeoDataFrame(geoms, geometry=geom_col, crs=self.crs)
         # Recombine
         aggregated = aggregated_geometry.join(aggregated_data)
 
