@@ -1467,6 +1467,10 @@ class TestGeomMethods:
         ):
             self.g11.get_coordinates()
 
+    @pytest.mark.skipif(
+        not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+        reason="minimum_bounding_radius not implemented for shapely<2",
+    )
     def test_minimum_bounding_radius(self):
         mbr_geoms = self.g1.minimum_bounding_radius()
 
@@ -1482,20 +1486,10 @@ class TestGeomMethods:
             Series([0.707106, 0.707106]),
         )
 
-        # more tests: collection of points; collection of linestrings
-
-
-# @pytest.mark.skipif(
-#     not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
-#     reason="minimum_bounding_circle is only implemented for pygeos, not shapely",
-# )
-# def test_minimum_bounding_circle(self):
-#     mbc = self.g1.minimum_bounding_circle()
-#     centers = GeoSeries([Point(0.5, 0.5)] * 2)
-#     assert np.all(mbc.centroid.geom_equals_exact(centers, 0.001))
-#     assert_series_equal(
-#         mbc.area,
-#         Series([1.560723, 1.560723]),
-#     )
-#     assert isinstance(mbc, GeoSeries)
-#     assert self.g1.crs == mbc.crs
+    @pytest.mark.skipif(
+        (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+        reason="minimum_bounding_radius not implemented for shapely<2",
+    )
+    def test_minimium_bounding_radius_not(self):
+        with pytest.raises(NotImplementedError, match="shapely >= 2.0 is required"):
+            self.g1.minimum_bounding_radius()
