@@ -1491,5 +1491,5 @@ class TestGeomMethods:
         reason="minimum_bounding_radius not implemented for shapely<2",
     )
     def test_minimium_bounding_radius_not(self):
-        with pytest.raises(NotImplementedError, match="shapely >= 2.0 is required"):
+        with pytest.raises(NotImplementedError, match="shapely >= 2.0 or PyGEOS is required"):
             self.g1.minimum_bounding_radius()
