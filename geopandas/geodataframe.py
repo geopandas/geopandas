@@ -190,6 +190,10 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 and not geometry.crs == crs
             ):
                 raise ValueError(crs_mismatch_error)
+            # If geometry kwarg is an array, set the name of the active
+            # geometry column to geometry
+            if not isinstance(geometry, str):
+                self._geometry_column_name = "geometry"
 
             self.set_geometry(geometry, inplace=True, crs=crs)
 
@@ -244,6 +248,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
     def _set_geometry(self, col):
         if not pd.api.types.is_list_like(col):
             raise ValueError("Must use a list-like to set the geometry property")
+        self._persist_old_default_geometry_colname()
         self.set_geometry(col, inplace=True)
 
     geometry = property(
@@ -361,6 +366,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         # to avoid DEFAULT_GEO_COL_NAME warning
         frame._geometry_column_name = geo_column_name
         frame[geo_column_name] = level
+
         if not inplace:
             return frame
 
