@@ -1,6 +1,6 @@
 name: test
 channels:
-  - defaults
+  - anaconda
 dependencies:
   - python=3.8
   # required
