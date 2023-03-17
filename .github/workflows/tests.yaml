@@ -77,10 +77,10 @@ jobs:
         run: |
           python -V
           python -c "import geopandas; geopandas.show_versions();"
-          conda info
+          micromamba info
           # save conda list to file and print out
           # so that we can do the HAS_PYGEOS check without calling conda again
-          conda list 2>&1 | tee conda.txt
+          micromamba list 2>&1 | tee conda.txt
           if ( cat conda.txt | grep -q pygeos  )
           then
             echo "Setting HAS_PYGEOS=1"
