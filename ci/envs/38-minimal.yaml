@@ -1,6 +1,5 @@
 name: test
 channels:
-  - anaconda
   - conda-forge
 dependencies:
   - python=3.8
