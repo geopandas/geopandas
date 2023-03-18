@@ -1,16 +1,14 @@
 name: test
 channels:
   - defaults
-  - conda-forge
 dependencies:
-  - python=3.8
+  - python=3.10
   # required
   - numpy
   - pandas
   - shapely
   - fiona
-  - pyproj>=3
-  - geos
+  # - pyproj>=3
   - packaging
   # testing
   - pytest
@@ -25,6 +23,7 @@ dependencies:
   - libspatialite
   - pip
   - pip:
+      - pyproj>=3
       - geopy
       - mapclassify
       - pyarrow
