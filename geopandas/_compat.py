@@ -145,7 +145,7 @@ def set_use_pygeos(val=None):
             "before importing geopandas:"
             "\n\nimport os\nos.environ['USE_PYGEOS'] = '0'\nimport geopandas\n\n"
             "In the next release, GeoPandas will switch to using Shapely by default, "
-            "even if PyGEOS is installed. If you are only having PyGEOS installed to "
+            "even if PyGEOS is installed. If you only have PyGEOS installed to "
             "get speed-ups, this switch should be smooth. However, if you are "
             "using PyGEOS directly (calling PyGEOS functions on geometries "
             "from GeoPandas), this will then stop working and you are encouraged to "
