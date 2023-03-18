@@ -716,7 +716,7 @@ if compat.SHAPELY_GE_20 or compat.HAS_PYGEOS:
                 A numpy array of pygeos geometries.
             """
             if isinstance(geometry, np.ndarray):
-                return geometry
+                return array.from_shapely(geometry)._data
             elif isinstance(geometry, geoseries.GeoSeries):
                 return geometry.values._data
             elif isinstance(geometry, array.GeometryArray):
