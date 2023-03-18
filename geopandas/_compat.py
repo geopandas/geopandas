@@ -137,8 +137,8 @@ def set_use_pygeos(val=None):
     if USE_PYGEOS and env_use_pygeos is None and SHAPELY_GE_20:
         warnings.warn(
             "Shapely 2.0 is installed, but because PyGEOS is also installed, "
-            "GeoPandas still uses PyGEOS by default. However, starting with the next "
-            "release (0.14), the default will switch to Shapely. To force to "
+            "GeoPandas still uses PyGEOS by default. However, starting with "
+            "version 0.14, the default will switch to Shapely. To force to "
             "use Shapely 2.0 now, you can either uninstall PyGEOS or set the "
             "environment variable USE_PYGEOS=0. "
             "You can do this before starting the Python process, or in your code "
