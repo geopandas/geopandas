@@ -393,7 +393,7 @@ GeometryCollection
         features that have a z-component.
 
         Notes
-        ------
+        -----
         Every operation in GeoPandas is planar, i.e. the potential third
         dimension is not taken into account.
 
@@ -627,7 +627,7 @@ GeometryCollection
         Applies to GeoSeries containing only Polygons.
 
         Returns
-        ----------
+        -------
         inner_rings: Series of List
             Inner rings of each polygon in the GeoSeries.
 
@@ -2979,7 +2979,7 @@ GeometryCollection
             If False, the order of elements is preserved.
 
         Returns
-        ----------
+        -------
         spatial_relations: Series of strings
             The DE-9IM intersection matrices which describe
             the spatial relations of the other geometry.
