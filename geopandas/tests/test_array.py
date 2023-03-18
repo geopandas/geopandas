@@ -250,7 +250,7 @@ def test_to_wkt():
 
 def test_data():
     arr = from_shapely(points_no_missing)
-    with pytest.warns(FutureWarning):
+    with pytest.warns(DeprecationWarning):
         np_arr = arr.data
 
     assert isinstance(np_arr, np.ndarray)

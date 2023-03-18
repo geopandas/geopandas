@@ -304,7 +304,7 @@ class GeometryArray(ExtensionArray):
             "array of Shapely geometries. Accessing the underlying PyGEOS geometries "
             "directly is deprecated, and you should migrate to use Shapely >= 2.0 "
             "instead.",
-            FutureWarning,
+            DeprecationWarning,
             stacklevel=2,
         )
         return self._data
