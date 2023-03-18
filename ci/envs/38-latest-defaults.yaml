@@ -23,7 +23,7 @@ dependencies:
   - libspatialite
   - pip
   - pip:
-      - pyproj>=3
+      - pyproj>=3 --no-binary pyproj
       - geopy
       - mapclassify
       - pyarrow
