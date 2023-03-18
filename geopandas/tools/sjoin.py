@@ -91,7 +91,7 @@ stria    AUT    416600.0
     GeoDataFrame.sjoin : equivalent method
 
     Notes
-    ------
+    -----
     Every operation in GeoPandas is planar, i.e. the potential third
     dimension is not taken into account.
     """
