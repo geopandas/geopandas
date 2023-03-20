@@ -538,6 +538,9 @@ class GeometryArray(ExtensionArray):
             vectorized.minimum_bounding_circle(self._data), crs=self.crs
         )
 
+    def minimum_bounding_radius(self):
+        return vectorized.minimum_bounding_radius(self._data)
+
     def normalize(self):
         return GeometryArray(vectorized.normalize(self._data), crs=self.crs)
 
