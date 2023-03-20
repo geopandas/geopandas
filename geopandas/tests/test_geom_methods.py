@@ -1466,3 +1466,32 @@ class TestGeomMethods:
             NotImplementedError, match="shapely >= 2.0 or PyGEOS are required"
         ):
             self.g11.get_coordinates()
+
+    @pytest.mark.skipif(
+        not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+        reason="minimum_bounding_radius not implemented for shapely<2",
+    )
+    def test_minimum_bounding_radius(self):
+        mbr_geoms = self.g1.minimum_bounding_radius()
+
+        assert_series_equal(
+            mbr_geoms,
+            Series([0.707106, 0.707106]),
+        )
+
+        mbr_lines = self.g5.minimum_bounding_radius()
+
+        assert_series_equal(
+            mbr_lines,
+            Series([0.707106, 0.707106]),
+        )
+
+    @pytest.mark.skipif(
+        (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+        reason="minimum_bounding_radius not implemented for shapely<2",
+    )
+    def test_minimium_bounding_radius_not(self):
+        with pytest.raises(
+            NotImplementedError, match="shapely >= 2.0 or PyGEOS is required"
+        ):
+            self.g1.minimum_bounding_radius()
