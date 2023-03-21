@@ -1283,8 +1283,8 @@ class TestConstructor:
         assert gdf.crs == crs
         assert gdf.geometry.crs == crs
         assert gdf.geometry.dtype == "geometry"
-        assert gdf._geometry_column_name == ("geometry", "")
-        assert gdf.geometry.name == ("geometry", "")  # or is "geometry" this expected?
+        assert gdf._geometry_column_name == "geometry"
+        assert gdf.geometry.name == "geometry"
 
     def test_multiindex_geometry_colname_3_level(self):
         # GH1763 https://github.com/geopandas/geopandas/issues/1763
@@ -1306,8 +1306,8 @@ class TestConstructor:
         assert gdf.crs == crs
         assert gdf.geometry.crs == crs
         assert gdf.geometry.dtype == "geometry"
-        assert gdf._geometry_column_name == ("geometry", "", "")
-        assert gdf.geometry.name == ("geometry", "", "")
+        assert gdf._geometry_column_name == "geometry"
+        assert gdf.geometry.name == "geometry"
 
     def test_multiindex_geometry_colname_3_level_new_col(self):
         crs = "EPSG:4326"
@@ -1325,8 +1325,8 @@ class TestConstructor:
         df["geometry"] = GeoSeries.from_xy(x_col, y_col)
         gdf = df.set_geometry("geometry", crs=crs)
         assert gdf.crs == crs
-        assert gdf._geometry_column_name == ("geometry", "", "")
-        assert gdf.geometry.name == ("geometry", "", "")
+        assert gdf._geometry_column_name == "geometry"
+        assert gdf.geometry.name == "geometry"
 
 
 def test_geodataframe_crs():

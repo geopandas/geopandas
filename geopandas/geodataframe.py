@@ -350,8 +350,6 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         # Check that we are using a listlike of geometries
         level = _ensure_geometry(level, crs=crs)
-        if isinstance(self.columns, pd.MultiIndex) and isinstance(geo_column_name, str):
-            geo_column_name = (geo_column_name,) + ("",) * (self.columns.nlevels - 1)
         frame[geo_column_name] = level
         frame._geometry_column_name = geo_column_name
         if not inplace:
@@ -1421,6 +1419,16 @@ individually so that features may have different properties
         return a GeoDataFrame.
         """
         result = super().__getitem__(key)
+        # Custom logic to avoid waiting for pandas GH51895
+        # result is not geometry dtype for multi-indexes
+        if (
+            isinstance(result, Series)
+            and isinstance(self.columns, pd.MultiIndex)
+            and not is_geometry_type(result)
+        ):
+            loc = self.columns.get_loc(key)
+            # squeeze stops multilevel columns from returning a gdf
+            result = self.iloc[:, loc].squeeze()
         geo_col = self._geometry_column_name
         if isinstance(result, Series) and isinstance(result.dtype, GeometryDtype):
             result.__class__ = GeoSeries
