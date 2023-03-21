@@ -21,6 +21,6 @@ dependencies:
   - matplotlib=3.3.4
   - mapclassify=2.4.0
   - geopy
-  - SQLalchemy
+  - SQLalchemy>2
   - libspatialite
   - pyarrow=8.0.0

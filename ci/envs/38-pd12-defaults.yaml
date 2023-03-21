@@ -21,7 +21,7 @@ dependencies:
   - rtree
   - matplotlib
   #- geopy
-  - SQLalchemy
+  - SQLalchemy>2
   - libspatialite
   - pip
   - pip:

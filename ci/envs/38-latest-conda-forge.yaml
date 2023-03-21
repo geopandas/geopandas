@@ -24,7 +24,7 @@ dependencies:
   - xyzservices
   - scipy
   - geopy
-  - SQLalchemy
+  - SQLalchemy>2
   - libspatialite
   - pyarrow
   - pyogrio

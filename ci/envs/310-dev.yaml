@@ -16,7 +16,7 @@ dependencies:
   # optional
   - rtree
   #- geopy
-  - SQLalchemy<2
+  - SQLalchemy>2
   - libspatialite
   - pyarrow
   - pip
