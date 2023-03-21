@@ -1329,10 +1329,10 @@ class TestConstructor:
         assert gdf._geometry_column_name == "geometry"
         assert gdf.geometry.name == "geometry"
         # test again setting with tuple col name
-        gdf = df2.set_geometry(("geometry", ""), crs=crs)
+        gdf = df2.set_geometry(("geometry", "", ""), crs=crs)
         assert gdf.crs == crs
-        assert gdf._geometry_column_name == ("geometry", "")
-        assert gdf.geometry.name == ("geometry", "")
+        assert gdf._geometry_column_name == ("geometry", "", "")
+        assert gdf.geometry.name == ("geometry", "", "")
 
 
 def test_geodataframe_crs():
