@@ -19,22 +19,30 @@ from geopandas.explore import _explore
 from . import _compat as compat
 from ._decorator import doc
 
-
 DEFAULT_GEO_COLUMN_NAME = "geometry"
 
 
-def _geodataframe_constructor_with_fallback(*args, **kwargs):
-    """
-    A flexible constructor for GeoDataFrame._constructor, which falls back
-    to returning a DataFrame (if a certain operation does not preserve the
-    geometry column)
-    """
-    df = GeoDataFrame(*args, **kwargs)
-    geometry_cols_mask = df.dtypes == "geometry"
-    if len(geometry_cols_mask) == 0 or geometry_cols_mask.sum() == 0:
-        df = pd.DataFrame(df)
+class _GeoDataFrameSubTypeDelegator(pd.DataFrame):
+    """GeoDataFrame._constructor is required by pandas to return a class.
 
-    return df
+    Geopandas returns a DataFrame or GeoDataFrame depending on the presence of
+    a geometry column - but only for _constructor, when a user calls the
+    GeoDataFrame constructor, a GeoDataFrame is always returned.
+    Hence we cannot override __new__ directly on GeoDataFrame
+    """
+
+    def __new__(cls, *args, **kwargs):
+        """
+        A flexible constructor for GeoDataFrame._constructor, which falls back
+        to returning a DataFrame (if a certain operation does not preserve the
+        geometry column)
+        """
+        df = GeoDataFrame(*args, **kwargs)
+        geometry_cols_mask = df.dtypes == "geometry"
+        if len(geometry_cols_mask) == 0 or geometry_cols_mask.sum() == 0:
+            df = pd.DataFrame(df)
+
+        return df
 
 
 def _ensure_geometry(data, crs=None):
@@ -1522,7 +1530,7 @@ individually so that features may have different properties
 
     @property
     def _constructor(self):
-        return _geodataframe_constructor_with_fallback
+        return _GeoDataFrameSubTypeDelegator
 
     @property
     def _constructor_sliced(self):
