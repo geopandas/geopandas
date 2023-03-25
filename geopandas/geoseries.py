@@ -43,7 +43,7 @@ class _PandasSeriesConstructorDelegator(Series):
             return Series(data=data, index=index, **kwargs)
 
 
-class _PandasExpanddimDelegator(Series):
+class _PandasExpanddimDelegator(DataFrame):
     def __new__(cls, data, *args, **kwargs):
         from geopandas import GeoDataFrame
 
