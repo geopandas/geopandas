@@ -169,11 +169,19 @@ class TestFrameSindex:
     def test_rebuild_on_multiple_col_selection(self):
         """Selecting a subset of columns preserves the index."""
         original_index = self.df.sindex
-        # Selecting a subset of columns preserves the index
+        # Selecting a subset of columns preserves the index for pandas < 2.0
+        # with pandas 2.0, the column is now copied, losing the index (although
+        # with Copy-on-Write, this will again be preserved)
         subset1 = self.df[["geom", "A"]]
-        assert subset1.sindex is original_index
+        if compat.PANDAS_GE_20:
+            assert subset1.sindex is not original_index
+        else:
+            assert subset1.sindex is original_index
         subset2 = self.df[["A", "geom"]]
-        assert subset2.sindex is original_index
+        if compat.PANDAS_GE_20:
+            assert subset2.sindex is not original_index
+        else:
+            assert subset2.sindex is original_index
 
     def test_rebuild_on_update_inplace(self):
         gdf = self.df.copy()
@@ -436,7 +444,7 @@ class TestPygeosInterface:
         tree_df = geopandas.GeoDataFrame(geometry=tree_polys)
         test_df = geopandas.GeoDataFrame(geometry=test_polys)
 
-        test_geo = test_df.geometry.values.data[0]
+        test_geo = test_df.geometry.values[0]
         res = tree_df.sindex.query(test_geo, sort=sort)
 
         # asserting the same elements
@@ -641,11 +649,11 @@ class TestPygeosInterface:
 
         # test numpy array
         res = self.df.sindex.query_bulk(
-            test_geom.geometry.values.data, predicate=predicate
+            test_geom.geometry.values.to_numpy(), predicate=predicate
         )
         assert_array_equal(res, expected)
         res = self.df.sindex.query_bulk(
-            test_geom.geometry.values.data, predicate=predicate
+            test_geom.geometry.values.to_numpy(), predicate=predicate
         )
         assert_array_equal(res, expected)
 

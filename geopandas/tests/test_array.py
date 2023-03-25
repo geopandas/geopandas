@@ -8,7 +8,7 @@ from pyproj import CRS
 import shapely
 import shapely.affinity
 import shapely.geometry
-from shapely.geometry.base import CAP_STYLE, JOIN_STYLE
+from shapely.geometry.base import CAP_STYLE, JOIN_STYLE, BaseGeometry
 import shapely.wkb
 import shapely.wkt
 
@@ -246,6 +246,30 @@ def test_to_wkt():
     a = from_shapely([None, points_no_missing[0]])
     res = to_wkt(a)
     assert res[0] is None
+
+
+def test_data():
+    arr = from_shapely(points_no_missing)
+    with pytest.warns(DeprecationWarning):
+        np_arr = arr.data
+
+    assert isinstance(np_arr, np.ndarray)
+    if compat.USE_PYGEOS:
+        np_arr2 = arr.to_numpy()
+        assert isinstance(np_arr2[0], BaseGeometry)
+        np_arr3 = np.asarray(arr)
+        assert isinstance(np_arr3[0], BaseGeometry)
+    else:
+        assert arr.to_numpy() is np_arr
+        assert np.asarray(arr) is np_arr
+
+
+def test_as_array():
+    arr = from_shapely(points_no_missing)
+    np_arr1 = np.asarray(arr)
+    np_arr2 = arr.to_numpy()
+    assert np_arr1[0] == arr[0]
+    np.testing.assert_array_equal(np_arr1, np_arr2)
 
 
 @pytest.mark.parametrize(

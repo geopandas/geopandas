@@ -1,8 +1,7 @@
 import numpy as np
-import pandas as pd
 
 
-def _hilbert_distance(gdf, total_bounds=None, level=16):
+def _hilbert_distance(geoms, total_bounds=None, level=16):
     """
     Calculate the distance along a Hilbert curve.
 
@@ -11,7 +10,7 @@ def _hilbert_distance(gdf, total_bounds=None, level=16):
 
     Parameters
     ----------
-    gdf : GeoDataFrame
+    geoms : GeometryArray
     total_bounds : 4-element array
         Total bounds of geometries - array
     level : int (1 - 16), default 16
@@ -19,24 +18,25 @@ def _hilbert_distance(gdf, total_bounds=None, level=16):
         have coordinates in the range [0, 2^level - 1]).
 
     Returns
-    ---------
-    Pandas Series containing distances along the Hilbert curve
+    -------
+    np.ndarray
+        Array containing distances along the Hilbert curve
 
     """
-    if gdf.is_empty.any() | gdf.geometry.isna().any():
+    if geoms.is_empty.any() | geoms.isna().any():
         raise ValueError(
             "Hilbert distance cannot be computed on a GeoSeries with empty or "
             "missing geometries.",
         )
     # Calculate bounds as numpy array
-    bounds = gdf.bounds.to_numpy()
+    bounds = geoms.bounds
 
     # Calculate discrete coords based on total bounds and bounds
     x, y = _continuous_to_discrete_coords(bounds, level, total_bounds)
     # Compute distance along hilbert curve
     distances = _encode(level, x, y)
 
-    return pd.Series(distances, index=gdf.index, name="hilbert_distance")
+    return distances
 
 
 def _continuous_to_discrete_coords(bounds, level, total_bounds):
@@ -54,7 +54,7 @@ def _continuous_to_discrete_coords(bounds, level, total_bounds):
     total_bounds : Total bounds of geometries - array
 
     Returns
-    ---------
+    -------
     Discrete two-dimensional numpy array
     Two-dimensional array Array of hilbert distances for each geom
 
@@ -98,7 +98,7 @@ def _continuous_to_discrete(vals, val_range, n):
     n : Number of discrete values
 
     Returns
-    ---------
+    -------
     One-dimensional array of discrete ints
 
     """
