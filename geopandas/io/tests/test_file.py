@@ -494,7 +494,7 @@ def test_append_file(tmpdir, df_nybb, df_null, driver, ext, engine):
         df_nybb.to_file(tempfilename, append=True, driver=driver, engine=engine)
         # Read layer back in
         df = GeoDataFrame.from_file(tempfilename, engine=engine)
-        assert len(df) == (5 * 2)
+        assert len(df) == (len(df_nybb) * 2)
 
     # Write layer with null geometry out to file
     tempfilename = os.path.join(str(tmpdir), "null_geom" + ext)
