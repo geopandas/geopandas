@@ -806,7 +806,7 @@ if compat.SHAPELY_GE_20 or compat.HAS_PYGEOS:
                 geometry = array._geom_to_shapely(geometry)
 
             if isinstance(geometry, np.ndarray):
-                return geometry
+                return array.from_shapely(geometry)._data
             elif isinstance(geometry, geoseries.GeoSeries):
                 return geometry.values._data
             elif isinstance(geometry, array.GeometryArray):

@@ -227,7 +227,7 @@ def overlay(df1, df2, how="intersection", keep_geom_type=None, make_valid=True):
     GeoDataFrame.overlay : equivalent method
 
     Notes
-    ------
+    -----
     Every operation in GeoPandas is planar, i.e. the potential third
     dimension is not taken into account.
     """
