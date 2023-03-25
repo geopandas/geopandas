@@ -32,7 +32,6 @@ methods:
     is_empty
     nearest
     query
-    query_bulk
     size
     valid_query_predicates
 

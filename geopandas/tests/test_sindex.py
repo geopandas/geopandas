@@ -571,7 +571,7 @@ class TestPygeosInterface:
         test_geom = geopandas.GeoSeries(
             [box(*geom) for geom in test_geom], index=range(len(test_geom))
         )
-        res = self.df.sindex.query_bulk(test_geom, predicate=predicate)
+        res = self.df.sindex.query(test_geom, predicate=predicate)
         assert_array_equal(res, expected)
 
     @pytest.mark.parametrize(
@@ -591,14 +591,14 @@ class TestPygeosInterface:
         # determine if it should use shapely or pygeos geometry objects
         # note: for this test, test_geoms (note plural) is a list already
         test_geoms = geopandas.GeoSeries(test_geoms, index=range(len(test_geoms)))
-        res = self.df.sindex.query_bulk(test_geoms)
+        res = self.df.sindex.query(test_geoms)
         assert_array_equal(res, expected_value)
 
     def test_query_bulk_empty_input_array(self):
         """Tests the `query_bulk` method with an empty input array."""
         test_array = np.array([], dtype=object)
         expected_value = [[], []]
-        res = self.df.sindex.query_bulk(test_array)
+        res = self.df.sindex.query(test_array)
         assert_array_equal(res, expected_value)
 
     def test_query_bulk_invalid_input_geometry(self):
@@ -607,7 +607,7 @@ class TestPygeosInterface:
         """
         test_array = "notanarray"
         with pytest.raises(TypeError):
-            self.df.sindex.query_bulk(test_array)
+            self.df.sindex.query(test_array)
 
     def test_query_bulk_invalid_predicate(self):
         """Tests the `query_bulk` method with invalid predicates."""
@@ -619,7 +619,7 @@ class TestPygeosInterface:
         test_geom = geopandas.GeoSeries([box(*test_geom_bounds)], index=["0"])
 
         with pytest.raises(ValueError):
-            self.df.sindex.query_bulk(test_geom.geometry, predicate=test_predicate)
+            self.df.sindex.query(test_geom.geometry, predicate=test_predicate)
 
     @pytest.mark.parametrize(
         "predicate, test_geom, expected",
@@ -638,21 +638,21 @@ class TestPygeosInterface:
         test_geom = geopandas.GeoSeries([box(*test_geom)], index=["0"])
 
         # test GeoSeries
-        res = self.df.sindex.query_bulk(test_geom, predicate=predicate)
+        res = self.df.sindex.query(test_geom, predicate=predicate)
         assert_array_equal(res, expected)
 
         # test GeometryArray
-        res = self.df.sindex.query_bulk(test_geom.geometry, predicate=predicate)
+        res = self.df.sindex.query(test_geom.geometry, predicate=predicate)
         assert_array_equal(res, expected)
-        res = self.df.sindex.query_bulk(test_geom.geometry.values, predicate=predicate)
+        res = self.df.sindex.query(test_geom.geometry.values, predicate=predicate)
         assert_array_equal(res, expected)
 
         # test numpy array
-        res = self.df.sindex.query_bulk(
+        res = self.df.sindex.query(
             test_geom.geometry.values.to_numpy(), predicate=predicate
         )
         assert_array_equal(res, expected)
-        res = self.df.sindex.query_bulk(
+        res = self.df.sindex.query(
             test_geom.geometry.values.to_numpy(), predicate=predicate
         )
         assert_array_equal(res, expected)
@@ -686,7 +686,7 @@ class TestPygeosInterface:
         tree_df = geopandas.GeoDataFrame(geometry=tree_polys)
         test_df = geopandas.GeoDataFrame(geometry=test_polys)
 
-        res = tree_df.sindex.query_bulk(test_df.geometry, sort=sort)
+        res = tree_df.sindex.query(test_df.geometry, sort=sort)
 
         # asserting the same elements
         assert sorted(res[0]) == sorted(expected[0])
@@ -880,7 +880,7 @@ class TestPygeosInterface:
         world = read_file(datasets.get_path("naturalearth_lowres"))
         capitals = read_file(datasets.get_path("naturalearth_cities"))
 
-        res = world.sindex.query_bulk(capitals.geometry, predicate)
+        res = world.sindex.query(capitals.geometry, predicate)
         assert res.shape == expected_shape
 
 
