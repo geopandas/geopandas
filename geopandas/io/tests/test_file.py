@@ -508,6 +508,12 @@ def test_append_file(tmpdir, df_nybb, df_null, driver, ext, engine):
     assert_geodataframe_equal(df, expected, check_less_precise=True)
 
 
+def test_mode_unsupported(tmpdir, df_nybb, engine):
+    tempfilename = os.path.join(str(tmpdir), "data.shp")
+    with pytest.raises(ValueError, match="'mode' should be one of 'w' or 'a'"):
+        df_nybb.to_file(tempfilename, mode="r", engine=engine)
+
+
 @pytest.mark.parametrize("driver,ext", driver_ext_pairs)
 def test_empty_crs(tmpdir, driver, ext, engine):
     """Test handling of undefined CRS with GPKG driver (GH #1975)."""

@@ -532,6 +532,9 @@ def _to_file(
             stacklevel=3,
         )
 
+    if mode not in ("w", "a"):
+        raise ValueError("'mode' should be one of 'w' or 'a', got '{mode}' instead")
+
     if engine == "fiona":
         _to_file_fiona(df, filename, driver, schema, crs, mode, **kwargs)
     elif engine == "pyogrio":
@@ -572,9 +575,6 @@ def _to_file_pyogrio(df, filename, driver, schema, crs, mode, **kwargs):
         raise ValueError(
             "The 'schema' argument is not supported with the 'pyogrio' engine."
         )
-
-    if mode not in ("w", "a"):
-        raise ValueError("'mode' should be one of 'w' or 'a', got '{mode}' instead")
 
     if mode == "a":
         kwargs["append"] = True
