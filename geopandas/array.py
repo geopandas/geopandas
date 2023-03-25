@@ -295,6 +295,18 @@ class GeometryArray(ExtensionArray):
 
     @property
     def data(self):
+        warnings.warn(
+            "Accessing the underlying geometries through the `.data` attribute is "
+            "deprecated and will be removed in GeoPandas 1.0. You can use "
+            "`np.asarray(..)` or the `to_numpy()` method instead.\n"
+            "Note that if you are using PyGEOS and using this attribute to get an "
+            "array of PyGEOS geometries, those other methods will always return an "
+            "array of Shapely geometries. Accessing the underlying PyGEOS geometries "
+            "directly is deprecated, and you should migrate to use Shapely >= 2.0 "
+            "instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return self._data
 
     @property
@@ -525,6 +537,9 @@ class GeometryArray(ExtensionArray):
         return GeometryArray(
             vectorized.minimum_bounding_circle(self._data), crs=self.crs
         )
+
+    def minimum_bounding_radius(self):
+        return vectorized.minimum_bounding_radius(self._data)
 
     def normalize(self):
         return GeometryArray(vectorized.normalize(self._data), crs=self.crs)
