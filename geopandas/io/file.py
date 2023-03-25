@@ -477,10 +477,15 @@ def _to_file(
         .. versionadded:: 0.7
             Previously the index was not written.
     mode : string, default 'w'
-        The write mode, 'w' to overwrite the existing file and 'a' to append.
-        Not all drivers support appending. The drivers that support appending
-        are listed in fiona.supported_drivers or
-        https://github.com/Toblerity/Fiona/blob/master/fiona/drvsupport.py
+        The write mode, 'w' to overwrite the existing file and 'a' to append;
+        when using the pyogrio engine, you can also pass ``append=True``.
+        Not all drivers support appending. For the fiona engine, the drivers
+        that support appending are listed in fiona.supported_drivers or
+        https://github.com/Toblerity/Fiona/blob/master/fiona/drvsupport.py.
+        For the pyogrio engine, you should be able to use any driver that
+        is available in your installation of GDAL that supports append
+        capability; see the specific driver entry at
+        https://gdal.org/drivers/vector/index.html for more information.
     crs : pyproj.CRS, default None
         If specified, the CRS is passed to Fiona to
         better control how the file is written. If None, GeoPandas
