@@ -576,9 +576,8 @@ def _to_file_pyogrio(df, filename, driver, schema, crs, mode, **kwargs):
     if mode not in ("w", "a"):
         raise ValueError("'mode' should be one of 'w' or 'a', got '{mode}' instead")
 
-    if "append" not in kwargs:
-        append = mode == "a"
-        kwargs["append"] = append
+    if mode == "a":
+        kwargs["append"] = True
 
     if crs is not None:
         raise ValueError("Passing 'crs' it not supported with the 'pyogrio' engine.")
