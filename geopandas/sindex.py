@@ -139,11 +139,11 @@ class BaseSpatialIndex:
         1    POLYGON ((6.00000 5.00000, 6.00000 6.00000, 5....
         dtype: geometry
 
-        >>> s.sindex.query_bulk(s2)
+        >>> s.sindex.query(s2)
         array([[0, 0, 0, 1, 1],
                [2, 3, 4, 5, 6]])
 
-        >>> s.sindex.query_bulk(s2, predicate="contains")
+        >>> s.sindex.query(s2, predicate="contains")
         array([[0],
                [3]])
 
