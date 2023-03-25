@@ -19,6 +19,8 @@ Deprecations and compatibility notes:
 
 - Added warning that ``unary_union`` will return ``'GEOMETRYCOLLECTION EMPTY'`` instead
   of None for all-None GeoSeries. (#2618)
+- The ``query_bulk()`` method of the spatial index `.sindex` property is deprecated
+  in favor of ``query()`` (#2823).
 
 Bug fixes:
 
