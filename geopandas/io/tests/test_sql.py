@@ -8,7 +8,6 @@ import os
 import warnings
 
 import pandas as pd
-from sqlalchemy import text
 
 import geopandas
 from geopandas import GeoDataFrame, read_file, read_postgis
@@ -78,7 +77,7 @@ def engine_postgis():
                 port=port,
             )
         )
-        con.begin()
+        con.connect()
     except Exception:
         pytest.skip("Cannot connect with postgresql database")
 
