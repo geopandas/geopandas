@@ -461,13 +461,13 @@ class TestIO:
         with pytest.warns(UserWarning, match="Could not parse CRS from the GeoDataF"):
             write_postgis(df_nybb, con=engine, name=table, if_exists="replace")
         # Validate that srid is -1
-        target_srid = engine.execute(
-            text(
-                "SELECT Find_SRID('{schema}', '{table}', '{geom_col}');".format(
-                    schema="public", table=table, geom_col="geometry"
-                )
+        sql = text(
+            "SELECT Find_SRID('{schema}', '{table}', '{geom_col}');".format(
+                schema="public", table=table, geom_col="geometry"
             )
-        ).fetchone()[0]
+        )
+        with engine.connect() as conn:
+            target_srid = conn.execute(sql).fetchone()[0]
         assert target_srid == 0, "SRID should be 0, found %s" % target_srid
 
     def test_write_postgis_with_esri_authority(self, engine_postgis, df_nybb):
@@ -483,13 +483,13 @@ class TestIO:
         df_nybb_esri = df_nybb.to_crs("ESRI:102003")
         write_postgis(df_nybb_esri, con=engine, name=table, if_exists="replace")
         # Validate that srid is 102003
-        target_srid = engine.execute(
-            text(
-                "SELECT Find_SRID('{schema}', '{table}', '{geom_col}');".format(
-                    schema="public", table=table, geom_col="geometry"
-                )
+        sql = text(
+            "SELECT Find_SRID('{schema}', '{table}', '{geom_col}');".format(
+                schema="public", table=table, geom_col="geometry"
             )
-        ).fetchone()[0]
+        )
+        with engine.connect() as conn:
+            target_srid = conn.execute(sql).fetchone()[0]
         assert target_srid == 102003, "SRID should be 102003, found %s" % target_srid
 
     def test_write_postgis_geometry_collection(
@@ -510,7 +510,8 @@ class TestIO:
                 table=table
             )
         )
-        geom_type = engine.execute(sql).fetchone()[0]
+        with engine.connect() as conn:
+            geom_type = conn.execute(sql).fetchone()[0]
         sql = text("SELECT * FROM {table};".format(table=table))
         df = read_postgis(sql, engine, geom_col="geometry")
 
@@ -537,7 +538,8 @@ class TestIO:
                 table=table
             )
         )
-        res = engine.execute(sql).fetchall()
+        with engine.connect() as conn:
+            res = conn.execute(sql).fetchall()
         assert res[0][0].upper() == "LINESTRING"
         assert res[1][0].upper() == "MULTILINESTRING"
         assert res[2][0].upper() == "POINT"
@@ -558,7 +560,8 @@ class TestIO:
                 table=table
             )
         )
-        geom_type = engine.execute(sql).fetchone()[0]
+        with engine.connect() as conn:
+            geom_type = conn.execute(sql).fetchone()[0]
 
         assert geom_type.upper() == "LINESTRING"
 
@@ -579,7 +582,8 @@ class TestIO:
         )
         # Validate row count
         sql = text("SELECT COUNT(geometry) FROM {table};".format(table=table))
-        row_cnt = engine.execute(sql).fetchone()[0]
+        with engine.connect() as conn:
+            row_cnt = conn.execute(sql).fetchone()[0]
         assert row_cnt == 3
 
         # Validate geometry type
@@ -588,7 +592,8 @@ class TestIO:
                 table=table
             )
         )
-        res = engine.execute(sql).fetchall()
+        with engine.connect() as conn:
+            res = conn.execute(sql).fetchall()
         assert res[0][0].upper() == "LINESTRING"
         assert res[1][0].upper() == "MULTILINESTRING"
         assert res[2][0].upper() == "POINT"
@@ -602,7 +607,8 @@ class TestIO:
         table = "nybb"
         schema_to_use = "test"
         sql = text("CREATE SCHEMA IF NOT EXISTS {schema};".format(schema=schema_to_use))
-        engine.execute(sql)
+        with engine.begin() as conn:
+            conn.execute(sql)
 
         write_postgis(
             df_nybb, con=engine, name=table, if_exists="replace", schema=schema_to_use
@@ -625,8 +631,9 @@ class TestIO:
 
         table = "nybb"
         schema_to_use = "test"
-        sql = "CREATE SCHEMA IF NOT EXISTS {schema};".format(schema=schema_to_use)
-        engine.execute(sql)
+        sql = text("CREATE SCHEMA IF NOT EXISTS {schema};".format(schema=schema_to_use))
+        with engine.begin() as conn:
+            conn.execute(sql)
 
         try:
             write_postgis(
