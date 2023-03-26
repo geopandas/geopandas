@@ -117,13 +117,13 @@ def drop_table_if_exists(conn_or_engine, table):
     sqlalchemy = pytest.importorskip("sqlalchemy")
 
     if sqlalchemy.inspect(conn_or_engine).has_table(table):
-        metadata = sqlalchemy.MetaData(conn_or_engine)
+        metadata = sqlalchemy.MetaData()
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", message="Did not recognize type 'geometry' of column.*")        
-            metadata.reflect()
+            metadata.reflect(conn_or_engine)
         table = metadata.tables.get(table)
         if table is not None:
-            table.drop(checkfirst=True)
+            table.drop(conn_or_engine, checkfirst=True)
 
 
 @pytest.fixture
