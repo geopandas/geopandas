@@ -5,6 +5,7 @@ configuration. postGIS tests require a test database to have been setup;
 see geopandas.tests.util for more information.
 """
 import os
+import warnings
 
 import pandas as pd
 
@@ -43,8 +44,9 @@ def connection_postgis():
         )
     except OperationalError:
         pytest.skip("Cannot connect with postgresql database")
-
-    yield con
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", message="pandas only supports SQLAlchemy connectable.*")
+        yield con
     con.close()
 
 
@@ -116,7 +118,9 @@ def drop_table_if_exists(conn_or_engine, table):
 
     if sqlalchemy.inspect(conn_or_engine).has_table(table):
         metadata = sqlalchemy.MetaData(conn_or_engine)
-        metadata.reflect()
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", message="Did not recognize type 'geometry' of column.*")        
+            metadata.reflect()
         table = metadata.tables.get(table)
         if table is not None:
             table.drop(checkfirst=True)
@@ -449,7 +453,8 @@ class TestIO:
         # Write to db
         df_nybb = df_nybb
         df_nybb.crs = None
-        write_postgis(df_nybb, con=engine, name=table, if_exists="replace")
+        with pytest.warns(UserWarning, match="Could not parse CRS from the GeoDataF"):
+            write_postgis(df_nybb, con=engine, name=table, if_exists="replace")
         # Validate that srid is -1
         target_srid = engine.execute(
             "SELECT Find_SRID('{schema}', '{table}', '{geom_col}');".format(
