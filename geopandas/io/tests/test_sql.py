@@ -45,7 +45,9 @@ def connection_postgis():
     except OperationalError:
         pytest.skip("Cannot connect with postgresql database")
     with warnings.catch_warnings():
-        warnings.filterwarnings("ignore", message="pandas only supports SQLAlchemy connectable.*")
+        warnings.filterwarnings(
+            "ignore", message="pandas only supports SQLAlchemy connectable.*"
+        )
         yield con
     con.close()
 
@@ -119,7 +121,9 @@ def drop_table_if_exists(conn_or_engine, table):
     if sqlalchemy.inspect(conn_or_engine).has_table(table):
         metadata = sqlalchemy.MetaData()
         with warnings.catch_warnings():
-            warnings.filterwarnings("ignore", message="Did not recognize type 'geometry' of column.*")        
+            warnings.filterwarnings(
+                "ignore", message="Did not recognize type 'geometry' of column.*"
+            )
             metadata.reflect(conn_or_engine)
         table = metadata.tables.get(table)
         if table is not None:
