@@ -16,6 +16,13 @@ from geopandas.io.sql import _get_conn as get_conn, _write_postgis as write_post
 from geopandas.tests.util import create_postgis, create_spatialite, validate_boro_df
 import pytest
 
+try:
+    from sqlalchemy import text
+except ImportError:
+    # Avoid local imports for text in all sqlalchemy tests
+    # all tests using text use engine_postgis, which ensures sqlalchemy is available
+    text = str
+
 
 @pytest.fixture
 def df_nybb():
