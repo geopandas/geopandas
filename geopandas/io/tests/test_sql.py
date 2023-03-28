@@ -697,3 +697,11 @@ class TestIO:
         # Should raise error when appending
         with pytest.raises(ValueError, match="CRS of the target table"):
             write_postgis(df_nybb2, con=engine, name=table, if_exists="append")
+
+    def test_duplicate_geometry_column_fails(self, engine_postgis, df_nybb):
+        """
+        Tests that a ValueError is raised if an SQL query returns two
+        """
+        engine = engine_postgis
+        with pytest.raises(ValueError):
+            read_postgis("select ST_MakePoint(0, 0) as geom, ST_MakePoint(0, 0) as geom", engine, geom_col="geom")
