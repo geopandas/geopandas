@@ -66,8 +66,9 @@ def _df_to_geodf(df, geom_col="geom", crs=None):
         raise ValueError("Query missing geometry column '{}'".format(geom_col))
 
     if df.columns.to_list().count(geom_col) > 1:
-        raise ValueError(f"Duplicate geometry column '{geom_col}' detected in SQL query output. Only one geometry "
-                         "column is allowed.")
+        raise ValueError(
+            f"Duplicate geometry column '{geom_col}' detected in SQL query output. Only one geometry column is allowed."
+        )
 
     geoms = df[geom_col].dropna()
 
