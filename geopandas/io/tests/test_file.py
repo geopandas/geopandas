@@ -1129,7 +1129,8 @@ def test_write_read_file(test_file, engine):
     os.remove(os.path.expanduser(test_file))
 
 
-def test_to_file__metadata(tmpdir, df_points):
+def test_to_file__metadata(tmpdir, df_points, engine):
+    skip_pyogrio_not_supported(engine)
     metadata = {"title": "test"}
     tempfilename = os.path.join(str(tmpdir), "test.gpkg")
     df_points.to_file(tempfilename, driver="GPKG", engine="fiona", metadata=metadata)
@@ -1143,7 +1144,8 @@ def test_to_file__metadata(tmpdir, df_points):
 @pytest.mark.parametrize(
     "driver, ext", [("ESRI Shapefile", ".shp"), ("GeoJSON", ".geojson")]
 )
-def test_to_file__metadata_unsupported(driver, ext, tmpdir, df_points):
+def test_to_file__metadata_unsupported(driver, ext, tmpdir, df_points, engine):
+    skip_pyogrio_not_supported(engine)
     metadata = {"title": "Test"}
     tempfilename = os.path.join(str(tmpdir), "test" + ext)
     with pytest.raises(
