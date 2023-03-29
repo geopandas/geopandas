@@ -5,10 +5,12 @@ dependencies:
   - python=3.8
   # required
   - pandas=1.2
-  - shapely=1.8
-  - fiona=1.8
+  - shapely
+  - fiona
   - numpy=<1.22
-  # - pyproj=3.1.0
+  - pyproj=3.1.0
+  #- pyproj
+  - geos
   - packaging
   # testing
   - pytest
@@ -23,7 +25,6 @@ dependencies:
   - libspatialite
   - pip
   - pip:
-      - pyproj==3.1.0
       - geopy
       - mapclassify==2.4.0
       - pyarrow
