@@ -1127,3 +1127,26 @@ def test_write_read_file(test_file, engine):
     df_json = geopandas.read_file(test_file, engine=engine)
     assert_geodataframe_equal(gdf, df_json, check_crs=True)
     os.remove(os.path.expanduser(test_file))
+
+
+def test_to_file__metadata(tmpdir, df_points):
+    metadata = {"title": "test"}
+    tempfilename = os.path.join(str(tmpdir), "test.gpkg")
+    df_points.to_file(tempfilename, driver="GPKG", engine="fiona", metadata=metadata)
+
+    # Check that metadata is written to the file
+    with fiona.open(tempfilename) as src:
+        tags = src.tags()
+        assert tags == metadata
+
+
+@pytest.mark.parametrize(
+    "driver, ext", [("ESRI Shapefile", ".shp"), ("GeoJSON", ".geojson")]
+)
+def test_to_file__metadata_unsupported(driver, ext, tmpdir, df_points):
+    metadata = {"title": "Test"}
+    tempfilename = os.path.join(str(tmpdir), "test" + ext)
+    with pytest.raises(
+        NotImplementedError, match="'metadata' keyword is only supported for"
+    ):
+        df_points.to_file(tempfilename, driver=driver, metadata=metadata)

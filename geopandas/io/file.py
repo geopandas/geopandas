@@ -16,10 +16,8 @@ from geopandas import GeoDataFrame, GeoSeries
 # Adapted from pandas.io.common
 from urllib.parse import uses_netloc, uses_params, uses_relative
 
-
 _VALID_URLS = set(uses_relative + uses_netloc + uses_params)
 _VALID_URLS.discard("")
-
 
 fiona = None
 fiona_env = None
@@ -444,6 +442,7 @@ def _to_file(
     mode="w",
     crs=None,
     engine=None,
+    metadata=None,
     **kwargs,
 ):
     """
@@ -497,6 +496,10 @@ def _to_file(
         The underlying library that is used to write the file. Currently, the
         supported options are "fiona" and "pyogrio". Defaults to "fiona" if
         installed, otherwise tries "pyogrio".
+    metadata : dict[str, str], default None
+        Optional metadata to be stored in the file. Keys and values must be
+        strings. Supported only for "GPKG" driver and "fiona" engine.
+
     **kwargs :
         Keyword args to be passed to the engine, and can be used to write
         to multi-layer data, store data within archives (zip files), etc.
@@ -536,14 +539,19 @@ def _to_file(
         raise ValueError("'mode' should be one of 'w' or 'a', got '{mode}' instead")
 
     if engine == "fiona":
-        _to_file_fiona(df, filename, driver, schema, crs, mode, **kwargs)
+        _to_file_fiona(df, filename, driver, schema, crs, mode, metadata, **kwargs)
     elif engine == "pyogrio":
-        _to_file_pyogrio(df, filename, driver, schema, crs, mode, **kwargs)
+        _to_file_pyogrio(df, filename, driver, schema, crs, mode, metadata, **kwargs)
     else:
         raise ValueError(f"unknown engine '{engine}'")
 
 
-def _to_file_fiona(df, filename, driver, schema, crs, mode, **kwargs):
+def _to_file_fiona(df, filename, driver, schema, crs, mode, metadata, **kwargs):
+    if metadata is not None and driver != "GPKG":
+        raise NotImplementedError(
+            "The 'metadata' keyword is only supported for the GPKG driver."
+        )
+
     if schema is None:
         schema = infer_schema(df)
 
@@ -565,15 +573,22 @@ def _to_file_fiona(df, filename, driver, schema, crs, mode, **kwargs):
         with fiona.open(
             filename, mode=mode, driver=driver, crs_wkt=crs_wkt, schema=schema, **kwargs
         ) as colxn:
+            if metadata is not None:
+                colxn.update_tags(metadata)
             colxn.writerecords(df.iterfeatures())
 
 
-def _to_file_pyogrio(df, filename, driver, schema, crs, mode, **kwargs):
+def _to_file_pyogrio(df, filename, driver, schema, crs, mode, metadata, **kwargs):
     import pyogrio
 
     if schema is not None:
         raise ValueError(
             "The 'schema' argument is not supported with the 'pyogrio' engine."
+        )
+
+    if metadata is not None:
+        raise NotImplementedError(
+            "The 'metadata' argument is not supported with the 'pyogrio' engine."
         )
 
     if mode == "a":
