@@ -31,7 +31,10 @@ def _get_conn(conn_or_engine):
     from sqlalchemy.engine.base import Engine, Connection
 
     if isinstance(conn_or_engine, Connection):
-        with conn_or_engine.begin():
+        if not conn_or_engine.in_transaction():
+            with conn_or_engine.begin():
+                yield conn_or_engine
+        else:
             yield conn_or_engine
     elif isinstance(conn_or_engine, Engine):
         with conn_or_engine.begin() as conn:
@@ -395,6 +398,7 @@ def _write_postgis(
     """
     try:
         from geoalchemy2 import Geometry
+        from sqlalchemy import text
     except ImportError:
         raise ImportError("'to_postgis()' requires geoalchemy2 package.")
 
@@ -431,8 +435,10 @@ def _write_postgis(
             # Only check SRID if table exists
             if connection.dialect.has_table(connection, name, schema):
                 target_srid = connection.execute(
-                    "SELECT Find_SRID('{schema}', '{table}', '{geom_col}');".format(
-                        schema=schema_name, table=name, geom_col=geom_name
+                    text(
+                        "SELECT Find_SRID('{schema}', '{table}', '{geom_col}');".format(
+                            schema=schema_name, table=name, geom_col=geom_name
+                        )
                     )
                 ).fetchone()[0]
 

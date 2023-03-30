@@ -107,7 +107,7 @@ jobs:
           pytest -v -r a -n auto --color=yes --cov=geopandas --cov-append --cov-report term-missing --cov-report xml geopandas/
 
       - name: Test with PostGIS
-        if: contains(matrix.env, '39-pd13-conda-forge.yaml') && contains(matrix.os, 'ubuntu')
+        if: (contains(matrix.env, '39-pd13-conda-forge.yaml') || contains(matrix.env, '311-latest-conda-forge.yaml')) && contains(matrix.os, 'ubuntu')
         env:
           PGUSER: postgres
           PGPASSWORD: postgres
