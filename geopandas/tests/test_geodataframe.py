@@ -401,16 +401,8 @@ class TestDataFrame:
         coord = data["features"][0]["geometry"]["coordinates"][0][0][0]
         np.testing.assert_allclose(coord, [-74.0505080640324, 40.5664220341941])
 
-    def test_to_json_no_wgs84(self):
-        with pytest.warns(FutureWarning):
-            text = self.df.to_json(to_wgs84=None)
-        data = json.loads(text)
-        # check it doesn't converts to WGS84
-        coord = data["features"][0]["geometry"]["coordinates"][0][0][0]
-        assert coord == [970217.0223999023, 145643.33221435547]
-
-    def test_to_json_false_wgs84(self):
-        text = self.df.to_json(to_wgs84=False)
+    def test_to_json_wgs84_false(self):
+        text = self.df.to_json()
         data = json.loads(text)
         # check it doesn't converts to WGS84
         coord = data["features"][0]["geometry"]["coordinates"][0][0][0]
@@ -418,13 +410,9 @@ class TestDataFrame:
 
     def test_to_json_no_crs(self):
         self.df.crs = None
-        text = self.df.to_json()
-        data = json.loads(text)
-        # check it doesn't converts to WGS84
-        coord = data["features"][0]["geometry"]["coordinates"][0][0][0]
-        assert coord == [970217.0223999023, 145643.33221435547]
+        with pytest.raises(ValueError, match="CRS is not set"):
+            self.df.to_json()
 
-    @pytest.mark.filterwarnings("ignore::FutureWarning")
     @pytest.mark.filterwarnings(
         "ignore:Geometry column does not contain geometry:UserWarning"
     )
@@ -439,14 +427,12 @@ class TestDataFrame:
         assert data["type"] == "FeatureCollection"
         assert len(data["features"]) == 5
 
-    @pytest.mark.filterwarnings("ignore::FutureWarning")
     def test_to_json_only_geom_column(self):
         text = self.df[["geometry"]].to_json()
         data = json.loads(text)
         assert len(data["features"]) == 5
         assert "id" in data["features"][0].keys()
 
-    @pytest.mark.filterwarnings("ignore::FutureWarning")
     def test_to_json_na(self):
         # Set a value as nan and make sure it's written
         self.df.loc[self.df["BoroName"] == "Queens", "Shape_Area"] = np.nan
@@ -460,13 +446,11 @@ class TestDataFrame:
             if props["BoroName"] == "Queens":
                 assert props["Shape_Area"] is None
 
-    @pytest.mark.filterwarnings("ignore::FutureWarning")
     def test_to_json_bad_na(self):
         # Check that a bad na argument raises error
         with pytest.raises(ValueError):
             self.df.to_json(na="garbage")
 
-    @pytest.mark.filterwarnings("ignore::FutureWarning")
     def test_to_json_dropna(self):
         self.df.loc[self.df["BoroName"] == "Queens", "Shape_Area"] = np.nan
         self.df.loc[self.df["BoroName"] == "Bronx", "Shape_Leng"] = np.nan
@@ -489,7 +473,6 @@ class TestDataFrame:
             else:
                 assert len(props) == 4
 
-    @pytest.mark.filterwarnings("ignore::FutureWarning")
     def test_to_json_keepna(self):
         self.df.loc[self.df["BoroName"] == "Queens", "Shape_Area"] = np.nan
         self.df.loc[self.df["BoroName"] == "Bronx", "Shape_Leng"] = np.nan
@@ -945,7 +928,6 @@ class TestConstructor:
         assert_series_equal(df["A"], pd.Series(range(3), name="A"))
 
     def test_dict_of_series(self):
-
         data = {
             "A": pd.Series(range(3)),
             "B": pd.Series(np.arange(3.0)),
@@ -970,7 +952,6 @@ class TestConstructor:
             GeoDataFrame(data, index=[1, 2])
 
     def test_dict_specified_geometry(self):
-
         data = {
             "A": range(3),
             "B": np.arange(3.0),
@@ -1032,7 +1013,6 @@ class TestConstructor:
         assert type(pddf) == pd.DataFrame
 
         for df in [gpdf, pddf]:
-
             res = GeoDataFrame(df)
             check_geodataframe(res)
 

@@ -702,7 +702,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         return df
 
     def to_json(
-        self, na="null", show_bbox=False, drop_id=False, to_wgs84=None, **kwargs
+        self, na="null", show_bbox=False, drop_id=False, to_wgs84=False, **kwargs
     ):
         """
         Returns a GeoJSON representation of the ``GeoDataFrame`` as a string.
@@ -718,13 +718,12 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             Whether to retain the index of the GeoDataFrame as the id property
             in the generated GeoJSON. Default is False, but may want True
             if the index is just arbitrary row numbers.
-        to_wgs84: bool, optional, default: None
+        to_wgs84: bool, optional, default: False
             If the CRS is set on the active geometry column it is exported as
             WGS84 (EPSG:4326) to meet the `2016 GeoJSON specification
-            <https://tools.ietf.org/html/rfc7946>`_. None will automatically
-            detect CRS and re-project geometries to WGS84 in the future.
-            Set to True to force re-projection (and silence the warning), and
-            set to False to ignore CRS. None by default.
+            <https://tools.ietf.org/html/rfc7946>`_.
+            Set to True to force re-projection and set to False to ignore CRS. False by
+            default.
 
         Notes
         -----
@@ -763,27 +762,13 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         GeoDataFrame.to_file : write GeoDataFrame to file
 
         """
-        if to_wgs84 is None:
-            if self.crs and not self.crs.equals(4326, ignore_axis_order=True):
-                srs = self.crs.to_string()
-                srs = srs if len(srs) <= 50 else " ".join([srs[:50], "..."])
-                warnings.warn(
-                    "GeoJSON specification requires WGS84 CRS. Geometry will "
-                    "be automatically re-projected in future versions of GeoPandas. "
-                    "To keep existing behavior use 'to_wgs84=False', to silence the "
-                    "warning and get the future behaviour use 'to_wgs_84=True'. "
-                    "GeoDataFrame's CRS:\n"
-                    "{}".format(srs),
-                    FutureWarning,
-                    stacklevel=2,
-                )  # TODO: use warning below and default to re-projection in 1.0
-                # warnings.warn(
-                #  "GeoJSON specification requires WGS84 CRS. "
-                #  "Active geometry column has been automatically re-projected to WGS84"
-                #   "(EPSG:4326)."
-                # )
-        if self.crs and to_wgs84 and not self.crs.equals(4326, ignore_axis_order=True):
-            df = self.to_crs(epsg=4326)
+        if to_wgs84:
+            if self.crs:
+                df = self.to_crs(epsg=4326)
+            else:
+                raise ValueError(
+                    "CRS is not set. Cannot re-project to WGS84 (EPSG:4326)."
+                )
         else:
             df = self
         return json.dumps(
@@ -911,7 +896,6 @@ individually so that features may have different properties
 
         else:
             for fid, geom in zip(ids, geometries):
-
                 if drop_id:
                     feature = {}
                 else:
