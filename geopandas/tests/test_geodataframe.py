@@ -449,7 +449,7 @@ class TestDataFrame:
     def test_to_json_no_crs(self):
         self.df.crs = None
         with pytest.raises(ValueError, match="CRS is not set"):
-            self.df.to_json()
+            self.df.to_json(to_wgs84=True)
 
     @pytest.mark.filterwarnings(
         "ignore:Geometry column does not contain geometry:UserWarning"
