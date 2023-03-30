@@ -1,24 +1,14 @@
-from packaging.version import Version
-import os
-
 import random
 
 import numpy as np
 import pandas as pd
-
-from shapely.geometry import Point, Polygon, LineString
 import pyproj
+import pytest
+from shapely.geometry import Point, Polygon, LineString
 
 from geopandas import GeoSeries, GeoDataFrame, points_from_xy, datasets, read_file
 from geopandas.array import from_shapely, from_wkb, from_wkt, GeometryArray
-
 from geopandas.testing import assert_geodataframe_equal
-import pytest
-
-
-# pyproj 2.3.1 fixed a segfault for the case working in an environment with
-# 'init' dicts (https://github.com/pyproj4/pyproj/issues/415)
-PYPROJ_LT_231 = Version(pyproj.__version__) < Version("2.3.1")
 
 
 def _create_df(x, y=None, crs=None):
@@ -58,6 +48,13 @@ def test_to_crs_transform__missing_data():
     assert_geodataframe_equal(df, utm, check_less_precise=True)
 
 
+def test_to_crs_transform__empty_data():
+    df = df_epsg26918().iloc[:0]
+    lonlat = df.to_crs(epsg=4326)
+    utm = lonlat.to_crs(epsg=26918)
+    assert_geodataframe_equal(df, utm, check_less_precise=True)
+
+
 def test_to_crs_inplace():
     df = df_epsg26918()
     lonlat = df.to_crs(epsg=4326)
@@ -77,6 +74,26 @@ def test_to_crs_geo_column_name():
     assert_geodataframe_equal(df, utm, check_less_precise=True)
 
 
+def test_to_crs_dimension_z():
+    # preserve z dimension
+    arr = points_from_xy([1, 2], [2, 3], [3, 4], crs=4326)
+    assert arr.has_z.all()
+    result = arr.to_crs(epsg=3857)
+    assert result.has_z.all()
+
+
+def test_to_crs_dimension_mixed():
+    s = GeoSeries([Point(1, 2), LineString([(1, 2, 3), (4, 5, 6)])], crs=2056)
+    result = s.to_crs(epsg=4326)
+    assert not result[0].is_empty
+    assert result.has_z.tolist() == [False, True]
+    roundtrip = result.to_crs(epsg=2056)
+    # TODO replace with assert_geoseries_equal once we expose tolerance keyword
+    # assert_geoseries_equal(roundtrip, s, check_less_precise=True)
+    for a, b in zip(roundtrip, s):
+        np.testing.assert_allclose(a.coords[:], b.coords[:], atol=0.01)
+
+
 # -----------------------------------------------------------------------------
 # Test different supported formats for CRS specification
 
@@ -87,7 +104,6 @@ def test_to_crs_geo_column_name():
         "epsg:4326",
         pytest.param(
             {"init": "epsg:4326"},
-            marks=pytest.mark.skipif(PYPROJ_LT_231, reason="segfault"),
         ),
         "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs",
         {"proj": "latlong", "ellps": "WGS84", "datum": "WGS84", "no_defs": True},
@@ -106,7 +122,6 @@ def epsg4326(request):
         "epsg:26918",
         pytest.param(
             {"init": "epsg:26918", "no_defs": True},
-            marks=pytest.mark.skipif(PYPROJ_LT_231, reason="segfault"),
         ),
         "+proj=utm +zone=18 +ellps=GRS80 +datum=NAD83 +units=m +no_defs ",
         {"proj": "utm", "zone": 18, "datum": "NAD83", "units": "m", "no_defs": True},
@@ -125,7 +140,8 @@ def test_transform2(epsg4326, epsg26918):
     # with PROJ >= 7, the transformation using EPSG code vs proj4 string is
     # slightly different due to use of grid files or not -> turn off network
     # to not use grid files at all for this test
-    os.environ["PROJ_NETWORK"] = "OFF"
+    pyproj.network.set_network_enabled(False)
+
     df = df_epsg26918()
     lonlat = df.to_crs(**epsg4326)
     utm = lonlat.to_crs(**epsg26918)
@@ -207,7 +223,6 @@ class TestGeometryArrayCRS:
             s = GeoSeries(arr, crs=4326)
         assert s.crs == self.osgb
 
-    @pytest.mark.filterwarnings("ignore:Assigning CRS")
     def test_dataframe(self):
         arr = from_shapely(self.geoms, crs=27700)
         df = GeoDataFrame(geometry=arr)
@@ -242,9 +257,13 @@ class TestGeometryArrayCRS:
         assert df.geometry.crs == self.wgs
         assert df.geometry.values.crs == self.wgs
 
-        df = GeoDataFrame(self.geoms, columns=["geom"], crs=27700)
-        assert df.crs == self.osgb
-        df = df.set_geometry("geom")
+        with pytest.raises(ValueError, match="Assigning CRS to a GeoDataFrame without"):
+            GeoDataFrame(self.geoms, columns=["geom"], crs=27700)
+        with pytest.raises(ValueError, match="Assigning CRS to a GeoDataFrame without"):
+            GeoDataFrame(crs=27700)
+
+        df = GeoDataFrame(self.geoms, columns=["geom"])
+        df = df.set_geometry("geom", crs=27700)
         assert df.crs == self.osgb
         assert df.geometry.crs == self.osgb
         assert df.geometry.values.crs == self.osgb
@@ -256,14 +275,8 @@ class TestGeometryArrayCRS:
         assert df.geometry.crs == self.osgb
         assert df.geometry.values.crs == self.osgb
 
-        df = GeoDataFrame(crs=27700)
-        df = df.set_geometry(self.geoms)
-        assert df.crs == self.osgb
-        assert df.geometry.crs == self.osgb
-        assert df.geometry.values.crs == self.osgb
-
         # new geometry with set CRS has priority over GDF CRS
-        df = GeoDataFrame(crs=27700)
+        df = GeoDataFrame(geometry=self.geoms, crs=27700)
         df = df.set_geometry(self.geoms, crs=4326)
         assert df.crs == self.wgs
         assert df.geometry.crs == self.wgs
@@ -298,8 +311,26 @@ class TestGeometryArrayCRS:
 
         # geometry column without geometry
         df = GeoDataFrame({"geometry": [0, 1]})
-        df.crs = 27700
-        assert df.crs == self.osgb
+        with pytest.raises(
+            ValueError,
+            match="Assigning CRS to a GeoDataFrame without an active geometry",
+        ):
+            df.crs = 27700
+        with pytest.raises(
+            AttributeError,
+            match="The CRS attribute of a GeoDataFrame without an active",
+        ):
+            assert df.crs == self.osgb
+
+    def test_dataframe_getitem_without_geometry_column(self):
+        df = GeoDataFrame({"col": range(10)}, geometry=self.arr)
+        df["geom2"] = df.geometry.centroid
+        subset = df[["col", "geom2"]]
+        with pytest.raises(
+            AttributeError,
+            match="The CRS attribute of a GeoDataFrame without an active",
+        ):
+            assert subset.crs == self.osgb
 
     def test_dataframe_setitem(self):
         # new geometry CRS has priority over GDF CRS
@@ -337,17 +368,34 @@ class TestGeometryArrayCRS:
         assert df["geometry"].crs == self.wgs
         assert df["other_geom"].crs == self.osgb
 
+    def test_dataframe_setitem_without_geometry_column(self):
+        arr = from_shapely(self.geoms)
+        df = GeoDataFrame({"col1": [1, 2], "geometry": arr}, crs=4326)
+
+        # override geometry with non geometry
+        with pytest.warns(UserWarning):
+            df["geometry"] = 1
+
+        # assigning a list of geometry object doesn't have cached access to 4326
+        df["geometry"] = self.geoms
+        assert df.crs is None
+
     @pytest.mark.parametrize(
         "scalar", [None, Point(0, 0), LineString([(0, 0), (1, 1)])]
     )
     def test_scalar(self, scalar):
-        with pytest.warns(FutureWarning):
-            df = GeoDataFrame()
-            df.crs = 4326
+        df = GeoDataFrame()
         df["geometry"] = scalar
+        df.crs = 4326
         assert df.crs == self.wgs
         assert df.geometry.crs == self.wgs
         assert df.geometry.values.crs == self.wgs
+
+    @pytest.mark.filterwarnings("ignore:Accessing CRS")
+    def test_crs_with_no_geom_fails(self):
+        with pytest.raises(ValueError, match="Assigning CRS to a GeoDataFrame without"):
+            df = GeoDataFrame()
+            df.crs = 4326
 
     def test_read_file(self):
         nybb_filename = datasets.get_path("nybb")
@@ -578,21 +626,6 @@ class TestGeometryArrayCRS:
         assert merged.col2.values.crs == self.wgs
         assert merged.geom.values.crs == self.osgb
         assert merged.crs == self.osgb
-
-    # CRS should be assigned to geometry
-    def test_deprecation(self):
-        with pytest.warns(FutureWarning):
-            df = GeoDataFrame([], crs=27700)
-
-        # https://github.com/geopandas/geopandas/issues/1548
-        # ensure we still have converted the crs value to a CRS object
-        assert isinstance(df.crs, pyproj.CRS)
-
-        with pytest.warns(FutureWarning):
-            df = GeoDataFrame([])
-            df.crs = 27700
-
-        assert isinstance(df.crs, pyproj.CRS)
 
     # make sure that geometry column from list has CRS (__setitem__)
     def test_setitem_geometry(self):

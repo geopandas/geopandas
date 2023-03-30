@@ -2,14 +2,13 @@ name: test
 channels:
   - defaults
 dependencies:
-  - python=3.7
+  - python=3.8
   # required
-  - pandas=1.1
+  - numpy
+  - pandas
   - shapely
   - fiona
-  - numpy=<1.19
-  - pyproj=3.1.0
-  #- pyproj
+  - pyproj>=3
   - geos
   - packaging
   # testing
@@ -26,5 +25,7 @@ dependencies:
   - pip
   - pip:
       - geopy
-      - mapclassify==2.4.0
+      - mapclassify
       - pyarrow
+      - folium
+      - xyzservices

@@ -13,7 +13,7 @@ from shapely.geometry import Point, Polygon
 
 import geopandas
 import geopandas._compat as compat
-from geopandas import GeoDataFrame, GeoSeries, read_file
+from geopandas import GeoDataFrame, GeoSeries, points_from_xy, read_file
 from geopandas.array import GeometryArray, GeometryDtype, from_shapely
 from geopandas._compat import ignore_shapely2_warnings
 
@@ -23,7 +23,7 @@ from pandas.testing import assert_frame_equal, assert_index_equal, assert_series
 import pytest
 
 
-TEST_NEAREST = compat.PYGEOS_GE_010 and compat.USE_PYGEOS
+TEST_NEAREST = compat.USE_SHAPELY_20 or (compat.PYGEOS_GE_010 and compat.USE_PYGEOS)
 pandas_133 = Version(pd.__version__) == Version("1.3.3")
 
 
@@ -334,6 +334,44 @@ class TestDataFrame:
         assert isinstance(result, GeoDataFrame)
         assert isinstance(result.index, pd.DatetimeIndex)
 
+    def test_set_geometry_np_int(self):
+        self.df.loc[:, 0] = self.df.geometry
+        df = self.df.set_geometry(np.int64(0))
+        assert df.geometry.name == 0
+
+    def test_get_geometry_invalid(self):
+        df = GeoDataFrame()
+        df["geom"] = self.df.geometry
+        msg_geo_col_none = "active geometry column to use has not been set. "
+        msg_geo_col_missing = "is not present. "
+
+        with pytest.raises(AttributeError, match=msg_geo_col_missing):
+            df.geometry
+        df2 = self.df.copy()
+        df2["geom2"] = df2.geometry
+        df2 = df2[["BoroCode", "BoroName", "geom2"]]
+        with pytest.raises(AttributeError, match=msg_geo_col_none):
+            df2.geometry
+
+        msg_other_geo_cols_present = "There are columns with geometry data type"
+        msg_no_other_geo_cols = "There are no existing columns with geometry data type"
+        with pytest.raises(AttributeError, match=msg_other_geo_cols_present):
+            df2.geometry
+
+        with pytest.raises(AttributeError, match=msg_no_other_geo_cols):
+            GeoDataFrame().geometry
+
+    def test_get_geometry_geometry_inactive(self):
+        # https://github.com/geopandas/geopandas/issues/2574
+        df = self.df.assign(geom2=self.df.geometry).set_geometry("geom2")
+        df = df.loc[:, ["BoroName", "geometry"]]
+        assert df._geometry_column_name == "geom2"
+        msg_geo_col_missing = "is not present. "
+        # Check that df.geometry raises if active geometry column is missing,
+        # it should not fall back to column named "geometry"
+        with pytest.raises(AttributeError, match=msg_geo_col_missing):
+            df.geometry
+
     def test_align(self):
         df = self.df2
 
@@ -520,39 +558,6 @@ class TestDataFrame:
         assert type(df2) is GeoDataFrame
         assert self.df.crs == df2.crs
 
-    def test_to_file_crs(self):
-        """
-        Ensure that the file is written according to the crs
-        if it is specified
-
-        """
-        tempfilename = os.path.join(self.tempdir, "crs.shp")
-        # save correct CRS
-        self.df.to_file(tempfilename)
-        df = GeoDataFrame.from_file(tempfilename)
-        assert df.crs == self.df.crs
-        # overwrite CRS
-        self.df.to_file(tempfilename, crs=3857)
-        df = GeoDataFrame.from_file(tempfilename)
-        assert df.crs == "epsg:3857"
-
-        # specify CRS for gdf without one
-        df2 = self.df.copy()
-        df2.crs = None
-        df2.to_file(tempfilename, crs=2263)
-        df = GeoDataFrame.from_file(tempfilename)
-        assert df.crs == "epsg:2263"
-
-    def test_to_file_with_duplicate_columns(self):
-        df = GeoDataFrame(
-            data=[[1, 2, 3]], columns=["a", "b", "a"], geometry=[Point(1, 1)]
-        )
-        with pytest.raises(
-            ValueError, match="GeoDataFrame cannot contain duplicated column names."
-        ):
-            tempfilename = os.path.join(self.tempdir, "crs.shp")
-            df.to_file(tempfilename)
-
     def test_bool_index(self):
         # Find boros with 'B' in their name
         df = self.df[self.df["BoroName"].str.contains("B")]
@@ -608,7 +613,7 @@ class TestDataFrame:
         p3 = Point(3, 3)
         f3 = {
             "type": "Feature",
-            "properties": {"a": 2},
+            "properties": None,
             "geometry": p3.__geo_interface__,
         }
 
@@ -616,9 +621,102 @@ class TestDataFrame:
 
         result = df[["a", "b"]]
         expected = pd.DataFrame.from_dict(
-            [{"a": 0, "b": np.nan}, {"a": np.nan, "b": 1}, {"a": 2, "b": np.nan}]
+            [{"a": 0, "b": np.nan}, {"a": np.nan, "b": 1}, {"a": np.nan, "b": np.nan}]
         )
         assert_frame_equal(expected, result)
+
+    def test_from_features_empty_properties(self):
+        geojson_properties_object = """{
+          "type": "FeatureCollection",
+          "features": [
+            {
+              "type": "Feature",
+              "properties": {},
+              "geometry": {
+                "type": "Polygon",
+                "coordinates": [
+                  [
+                    [
+                      11.3456529378891,
+                      46.49461446367692
+                    ],
+                    [
+                      11.345674395561216,
+                      46.494097442978195
+                    ],
+                    [
+                      11.346918940544128,
+                      46.49385370294394
+                    ],
+                    [
+                      11.347616314888,
+                      46.4938352377453
+                    ],
+                    [
+                      11.347514390945435,
+                      46.49466985846028
+                    ],
+                    [
+                      11.3456529378891,
+                      46.49461446367692
+                    ]
+                  ]
+                ]
+              }
+            }
+          ]
+        }"""
+
+        geojson_properties_null = """{
+          "type": "FeatureCollection",
+          "features": [
+            {
+              "type": "Feature",
+              "properties": null,
+              "geometry": {
+                "type": "Polygon",
+                "coordinates": [
+                  [
+                    [
+                      11.3456529378891,
+                      46.49461446367692
+                    ],
+                    [
+                      11.345674395561216,
+                      46.494097442978195
+                    ],
+                    [
+                      11.346918940544128,
+                      46.49385370294394
+                    ],
+                    [
+                      11.347616314888,
+                      46.4938352377453
+                    ],
+                    [
+                      11.347514390945435,
+                      46.49466985846028
+                    ],
+                    [
+                      11.3456529378891,
+                      46.49461446367692
+                    ]
+                  ]
+                ]
+              }
+            }
+          ]
+        }"""
+
+        # geoJSON with empty properties
+        gjson_po = json.loads(geojson_properties_object)
+        gdf1 = GeoDataFrame.from_features(gjson_po)
+
+        # geoJSON with null properties
+        gjson_null = json.loads(geojson_properties_null)
+        gdf2 = GeoDataFrame.from_features(gjson_null)
+
+        assert_frame_equal(gdf1, gdf2)
 
     def test_from_features_geom_interface_feature(self):
         class Placemark(object):
@@ -648,7 +746,7 @@ class TestDataFrame:
         geometry = [Point(xy) for xy in zip(df["lon"], df["lat"])]
         gdf = GeoDataFrame(df, geometry=geometry)
         # from_features returns sorted columns
-        expected = gdf[["geometry", "lat", "lon", "name"]]
+        expected = gdf[["geometry", "name", "lat", "lon"]]
 
         # test FeatureCollection
         res = GeoDataFrame.from_features(gdf.__geo_interface__)
@@ -689,6 +787,33 @@ class TestDataFrame:
 
         with pytest.raises(ValueError):
             df.set_geometry("location", inplace=True)
+
+    def test_dataframe_not_manipulated(self):
+        df = pd.DataFrame(
+            {
+                "A": range(len(self.df)),
+                "latitude": self.df.geometry.centroid.y,
+                "longitude": self.df.geometry.centroid.x,
+            },
+            index=self.df.index,
+        )
+        df_copy = df.copy()
+        gf = GeoDataFrame(
+            df,
+            geometry=points_from_xy(df["longitude"], df["latitude"]),
+            crs=self.df.crs,
+        )
+        assert type(df) == pd.DataFrame
+        assert "geometry" not in df
+        assert_frame_equal(df, df_copy)
+        assert isinstance(gf, GeoDataFrame)
+        assert hasattr(gf, "geometry")
+
+        # ensure mutating columns in gf doesn't update df
+        gf.loc[0, "A"] = 7
+        assert_frame_equal(df, df_copy)
+        gf["A"] = 3
+        assert_frame_equal(df, df_copy)
 
     def test_geodataframe_geointerface(self):
         assert self.df.__geo_interface__["type"] == "FeatureCollection"
@@ -775,13 +900,9 @@ class TestDataFrame:
         assert self.df.crs == unpickled.crs
 
     def test_estimate_utm_crs(self):
-        if compat.PYPROJ_LT_3:
-            with pytest.raises(RuntimeError, match=r"pyproj 3\+ required"):
-                self.df.estimate_utm_crs()
-        else:
-            assert self.df.estimate_utm_crs() == CRS("EPSG:32618")
-            if compat.PYPROJ_GE_32:  # result is unstable in older pyproj
-                assert self.df.estimate_utm_crs("NAD83") == CRS("EPSG:26918")
+        assert self.df.estimate_utm_crs() == CRS("EPSG:32618")
+        if compat.PYPROJ_GE_32:  # result is unstable in older pyproj
+            assert self.df.estimate_utm_crs("NAD83") == CRS("EPSG:26918")
 
     def test_to_wkb(self):
         wkbs0 = [
@@ -824,7 +945,7 @@ class TestDataFrame:
     @pytest.mark.parametrize("how", ["left", "inner", "right"])
     @pytest.mark.parametrize("predicate", ["intersects", "within", "contains"])
     @pytest.mark.skipif(
-        not compat.USE_PYGEOS and not compat.HAS_RTREE,
+        not (compat.USE_PYGEOS and compat.HAS_RTREE and compat.USE_SHAPELY_20),
         reason="sjoin needs `rtree` or `pygeos` dependency",
     )
     def test_sjoin(self, how, predicate):
@@ -1145,6 +1266,25 @@ class TestConstructor:
         df3 = df.rename(columns={"geometry": "geom"})
         with pytest.raises(ValueError):
             GeoDataFrame(df3, geometry="geom")
+
+    @pytest.mark.parametrize("dtype", ["geometry", "object"])
+    def test_multiindex_with_geometry_label(self, dtype):
+        # DataFrame with MultiIndex where "geometry" label corresponds to
+        # multiple columns
+        df = pd.DataFrame([[Point(0, 0), Point(1, 1)], [Point(2, 2), Point(3, 3)]])
+        df = df.astype(dtype)
+        df.columns = pd.MultiIndex.from_product([["geometry"], [0, 1]])
+        # don't error in constructor
+        gdf = GeoDataFrame(df)
+        # Getting the .geometry column gives GeoDataFrame for both columns
+        # (but with first MultiIndex level removed)
+        # TODO should this give an error instead?
+        result = gdf.geometry
+        assert result.shape == gdf.shape
+        assert result.columns.tolist() == [0, 1]
+        assert_frame_equal(result, gdf["geometry"])
+        result = gdf[["geometry"]]
+        assert_frame_equal(result, gdf if dtype == "geometry" else pd.DataFrame(gdf))
 
 
 def test_geodataframe_crs():

@@ -15,11 +15,12 @@ import shapely.geos
 # pandas compat
 # -----------------------------------------------------------------------------
 
-PANDAS_GE_11 = Version(pd.__version__) >= Version("1.1.0")
 PANDAS_GE_115 = Version(pd.__version__) >= Version("1.1.5")
 PANDAS_GE_12 = Version(pd.__version__) >= Version("1.2.0")
 PANDAS_GE_13 = Version(pd.__version__) >= Version("1.3.0")
 PANDAS_GE_14 = Version(pd.__version__) >= Version("1.4.0rc0")
+PANDAS_GE_15 = Version(pd.__version__) >= Version("1.5.0")
+PANDAS_GE_20 = Version(pd.__version__) >= Version("2.0.0.dev0")
 
 
 # -----------------------------------------------------------------------------
@@ -28,13 +29,16 @@ PANDAS_GE_14 = Version(pd.__version__) >= Version("1.4.0rc0")
 
 
 SHAPELY_GE_18 = Version(shapely.__version__) >= Version("1.8")
-SHAPELY_GE_20 = Version(shapely.__version__) >= Version("2.0")
+SHAPELY_GE_182 = Version(shapely.__version__) >= Version("1.8.2")
+SHAPELY_GE_20 = Version(shapely.__version__) >= Version("2.0.0.dev0")
+SHAPELY_G_20a1 = Version(shapely.__version__) > Version("2.0a1")
 
 GEOS_GE_390 = shapely.geos.geos_version >= (3, 9, 0)
 
 
 HAS_PYGEOS = None
 USE_PYGEOS = None
+USE_SHAPELY_20 = None
 PYGEOS_SHAPELY_COMPAT = None
 
 PYGEOS_GE_09 = None
@@ -73,16 +77,17 @@ def set_use_pygeos(val=None):
     Alternatively, pass a value here to force a True/False value.
     """
     global USE_PYGEOS
+    global USE_SHAPELY_20
     global PYGEOS_SHAPELY_COMPAT
+
+    env_use_pygeos = os.getenv("USE_PYGEOS", None)
 
     if val is not None:
         USE_PYGEOS = bool(val)
     else:
         if USE_PYGEOS is None:
-
             USE_PYGEOS = HAS_PYGEOS
 
-            env_use_pygeos = os.getenv("USE_PYGEOS", None)
             if env_use_pygeos is not None:
                 USE_PYGEOS = bool(int(env_use_pygeos))
 
@@ -93,11 +98,18 @@ def set_use_pygeos(val=None):
 
             # validate the pygeos version
             if not Version(pygeos.__version__) >= Version("0.8"):
-                raise ImportError(
-                    "PyGEOS >= 0.8 is required, version {0} is installed".format(
-                        pygeos.__version__
+                if SHAPELY_GE_20:
+                    USE_PYGEOS = False
+                    warnings.warn(
+                        "The PyGEOS version is too old, and Shapely >= 2 is installed, "
+                        "thus using Shapely by default and not PyGEOS."
                     )
-                )
+                else:
+                    raise ImportError(
+                        "PyGEOS >= 0.8 is required, version {0} is installed".format(
+                            pygeos.__version__
+                        )
+                    )
 
             # Check whether Shapely and PyGEOS use the same GEOS version.
             # Based on PyGEOS from_shapely implementation.
@@ -121,6 +133,29 @@ def set_use_pygeos(val=None):
 
         except ImportError:
             raise ImportError(INSTALL_PYGEOS_ERROR)
+
+    if USE_PYGEOS and env_use_pygeos is None and SHAPELY_GE_20:
+        warnings.warn(
+            "Shapely 2.0 is installed, but because PyGEOS is also installed, "
+            "GeoPandas still uses PyGEOS by default. However, starting with "
+            "version 0.14, the default will switch to Shapely. To force to "
+            "use Shapely 2.0 now, you can either uninstall PyGEOS or set the "
+            "environment variable USE_PYGEOS=0. "
+            "You can do this before starting the Python process, or in your code "
+            "before importing geopandas:"
+            "\n\nimport os\nos.environ['USE_PYGEOS'] = '0'\nimport geopandas\n\n"
+            "In the next release, GeoPandas will switch to using Shapely by default, "
+            "even if PyGEOS is installed. If you only have PyGEOS installed to "
+            "get speed-ups, this switch should be smooth. However, if you are "
+            "using PyGEOS directly (calling PyGEOS functions on geometries "
+            "from GeoPandas), this will then stop working and you are encouraged to "
+            "migrate from PyGEOS to Shapely 2.0 "
+            "(https://shapely.readthedocs.io/en/latest/migration_pygeos.html).",
+            DeprecationWarning,
+            stacklevel=6,
+        )
+
+    USE_SHAPELY_20 = (not USE_PYGEOS) and SHAPELY_GE_20
 
 
 set_use_pygeos()
@@ -149,7 +184,6 @@ if shapely_warning is not None and not SHAPELY_GE_20:
             )
             yield
 
-
 elif (Version(np.__version__) >= Version("1.21")) and not SHAPELY_GE_20:
 
     @contextlib.contextmanager
@@ -161,7 +195,6 @@ elif (Version(np.__version__) >= Version("1.21")) and not SHAPELY_GE_20:
                 "ignore", "An exception was ignored while fetching", DeprecationWarning
             )
             yield
-
 
 else:
 
@@ -225,6 +258,5 @@ except ImportError:
 # pyproj compat
 # -----------------------------------------------------------------------------
 
-PYPROJ_LT_3 = Version(pyproj.__version__) < Version("3")
 PYPROJ_GE_31 = Version(pyproj.__version__) >= Version("3.1")
 PYPROJ_GE_32 = Version(pyproj.__version__) >= Version("3.2")
