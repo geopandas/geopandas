@@ -475,13 +475,8 @@ def test_to_file_with_duplicate_columns(tmpdir, engine):
 @pytest.mark.parametrize("driver,ext", driver_ext_pairs)
 def test_append_file(tmpdir, df_nybb, df_null, driver, ext, engine):
     """Test to_file with append mode and from_file"""
-    skip_pyogrio_not_supported(engine)
-    from fiona import supported_drivers
-
     tempfilename = os.path.join(str(tmpdir), "boros" + ext)
     driver = driver if driver else _detect_driver(tempfilename)
-    if "a" not in supported_drivers[driver]:
-        return None
 
     df_nybb.to_file(tempfilename, driver=driver, engine=engine)
     df_nybb.to_file(tempfilename, mode="a", driver=driver, engine=engine)
@@ -491,6 +486,15 @@ def test_append_file(tmpdir, df_nybb, df_null, driver, ext, engine):
     assert len(df) == (5 * 2)
     expected = pd.concat([df_nybb] * 2, ignore_index=True)
     assert_geodataframe_equal(df, expected, check_less_precise=True)
+
+    if engine == "pyogrio":
+        # for pyogrio also ensure append=True works
+        tempfilename = os.path.join(str(tmpdir), "boros2" + ext)
+        df_nybb.to_file(tempfilename, driver=driver, engine=engine)
+        df_nybb.to_file(tempfilename, append=True, driver=driver, engine=engine)
+        # Read layer back in
+        df = GeoDataFrame.from_file(tempfilename, engine=engine)
+        assert len(df) == (len(df_nybb) * 2)
 
     # Write layer with null geometry out to file
     tempfilename = os.path.join(str(tmpdir), "null_geom" + ext)
@@ -502,6 +506,12 @@ def test_append_file(tmpdir, df_nybb, df_null, driver, ext, engine):
     assert len(df) == (2 * 2)
     expected = pd.concat([df_null] * 2, ignore_index=True)
     assert_geodataframe_equal(df, expected, check_less_precise=True)
+
+
+def test_mode_unsupported(tmpdir, df_nybb, engine):
+    tempfilename = os.path.join(str(tmpdir), "data.shp")
+    with pytest.raises(ValueError, match="'mode' should be one of 'w' or 'a'"):
+        df_nybb.to_file(tempfilename, mode="r", engine=engine)
 
 
 @pytest.mark.parametrize("driver,ext", driver_ext_pairs)

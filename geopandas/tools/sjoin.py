@@ -91,7 +91,7 @@ stria    AUT    416600.0
     GeoDataFrame.sjoin : equivalent method
 
     Notes
-    ------
+    -----
     Every operation in GeoPandas is planar, i.e. the potential third
     dimension is not taken into account.
     """
@@ -217,7 +217,7 @@ def _geom_predicate_query(left_df, right_df, predicate):
             input_geoms = left_df.geometry
 
     if sindex:
-        l_idx, r_idx = sindex.query_bulk(input_geoms, predicate=predicate, sort=False)
+        l_idx, r_idx = sindex.query(input_geoms, predicate=predicate, sort=False)
         indices = pd.DataFrame({"_key_left": l_idx, "_key_right": r_idx})
     else:
         # when sindex is empty / has no valid geometries
