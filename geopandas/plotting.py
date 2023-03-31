@@ -163,10 +163,6 @@ def _plot_polygon_collection(
     """
     from matplotlib.collections import PatchCollection
 
-    geoms, multiindex = _sanitize_geoms(geoms)
-    if values is not None:
-        values = np.take(values, multiindex, axis=0)
-
     # PatchCollection does not accept some kwargs.
     kwargs = {
         att: value
@@ -217,10 +213,6 @@ def _plot_linestring_collection(
     collection : matplotlib.collections.Collection that was plotted
     """
     from matplotlib.collections import LineCollection
-
-    geoms, multiindex = _sanitize_geoms(geoms)
-    if values is not None:
-        values = np.take(values, multiindex, axis=0)
 
     # LineCollection does not accept some kwargs.
     kwargs = {
@@ -286,7 +278,6 @@ def _plot_point_collection(
     if values is not None and color is not None:
         raise ValueError("Can only specify one of 'values' and 'color' kwargs")
 
-    geoms, multiindex = _sanitize_geoms(geoms)
     # values are expanded below as kwargs["c"]
 
     x = [p.x if not p.is_empty else None for p in geoms]
