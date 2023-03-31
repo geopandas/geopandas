@@ -856,7 +856,6 @@ class TestDataFrame:
             list(df.iterfeatures())
 
     def test_geodataframe_iterfeatures_non_scalars(self):
-
         # When some features in geodataframe are non-scalar values
         df = GeoDataFrame(
             {"geometry": [Point(1, 2)], "non-scalar": [[1, 2]], "test_col": None}
