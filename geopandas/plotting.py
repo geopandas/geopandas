@@ -178,8 +178,6 @@ def _plot_polygon_collection(
     if color is not None:
         kwargs["color"] = color
 
-    _expand_kwargs(kwargs, multiindex)
-
     collection = PatchCollection([_PolygonPatch(poly) for poly in geoms], **kwargs)
 
     if values is not None:
@@ -234,8 +232,6 @@ def _plot_linestring_collection(
     # Add to kwargs for easier checking below.
     if color is not None:
         kwargs["color"] = color
-
-    _expand_kwargs(kwargs, multiindex)
 
     segments = [np.array(linestring.coords)[:, :2] for linestring in geoms]
     collection = LineCollection(segments, **kwargs)
@@ -307,7 +303,6 @@ def _plot_point_collection(
         kwargs["color"] = color
     if marker is not None:
         kwargs["marker"] = marker
-    _expand_kwargs(kwargs, multiindex)
 
     if "norm" not in kwargs:
         collection = ax.scatter(x, y, vmin=vmin, vmax=vmax, cmap=cmap, **kwargs)
@@ -435,6 +430,7 @@ def plot_series(
 
     # decompose GeometryCollections
     geoms, multiindex = _sanitize_geoms(s.geometry, prefix="Geom")
+    _expand_kwargs(style_kwds, multiindex)
     values = np.take(values, multiindex, axis=0) if cmap else None
     # ensure indexes are consistent
     if color_given and isinstance(color, pd.Series):
@@ -837,6 +833,7 @@ GON (((-122.84000 49.00000, -120.0000...
 
     # decompose GeometryCollections
     geoms, multiindex = _sanitize_geoms(df.geometry, prefix="Geom")
+    _expand_kwargs(style_kwds, multiindex)
     values = np.take(values, multiindex, axis=0)
     nan_idx = np.take(nan_idx, multiindex, axis=0)
     expl_series = geopandas.GeoSeries(geoms)
