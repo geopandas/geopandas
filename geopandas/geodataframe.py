@@ -881,6 +881,8 @@ individually so that features may have different properties
         if len(properties_cols) > 0:
             # convert to object to get python scalars.
             properties = self[properties_cols].astype(object).values
+            na_mask = pd.isna(properties)
+
             if na == "null":
                 properties[pd.isnull(self[properties_cols]).values] = None
 
@@ -888,10 +890,10 @@ individually so that features may have different properties
                 geom = geometries[i]
 
                 if na == "drop":
-                    na_mask = pd.isna(row)
+                    na_mask_row = na_mask[i]
                     properties_items = {
                         k: v
-                        for k, v, na in zip(properties_cols, row, na_mask)
+                        for k, v, na in zip(properties_cols, row, na_mask_row)
                         if not na
                     }
                 else:
