@@ -842,8 +842,22 @@ class TestDataFrame:
         # keep
         result = list(df_only_numerical_cols.iterfeatures(na="keep"))[0]
         assert type(result["properties"]["Shape_Leng"]) is float
+        with pytest.raises(
+            ValueError, match="GeoDataFrame cannot contain duplicated column names."
+        ):
+            df_with_duplicate_columns = df[
+                ["Shape_Leng", "Shape_Leng", "Shape_Area", "geometry"]
+            ]
+            list(df_with_duplicate_columns.iterfeatures())
 
-        # When some features are non-scalar values
+        # geometry not set
+        df = GeoDataFrame({"values": [0, 1], "geom": [Point(0, 1), Point(1, 0)]})
+        with pytest.raises(AttributeError):
+            list(df.iterfeatures())
+
+    def test_geodataframe_iterfeatures_non_scalars(self):
+
+        # When some features in geodataframe are non-scalar values
         df_with_non_scalars = GeoDataFrame(
             {"geometry": [Point(1, 2)], "non-scalar": [[1, 2]], "test_col": None}
         )
@@ -859,19 +873,6 @@ class TestDataFrame:
         expected = {"non-scalar": [1, 2], "test_col": None}
         result = list(df_with_non_scalars.iterfeatures(na="keep"))[0].get("properties")
         assert expected == result
-
-        with pytest.raises(
-            ValueError, match="GeoDataFrame cannot contain duplicated column names."
-        ):
-            df_with_duplicate_columns = df[
-                ["Shape_Leng", "Shape_Leng", "Shape_Area", "geometry"]
-            ]
-            list(df_with_duplicate_columns.iterfeatures())
-
-        # geometry not set
-        df = GeoDataFrame({"values": [0, 1], "geom": [Point(0, 1), Point(1, 0)]})
-        with pytest.raises(AttributeError):
-            list(df.iterfeatures())
 
     def test_geodataframe_geojson_no_bbox(self):
         geo = self.df._to_geo(na="null", show_bbox=False)
