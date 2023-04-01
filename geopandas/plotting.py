@@ -812,7 +812,7 @@ GON (((-122.84000 49.00000, -120.0000...
                 show_interval = legend_kwds.pop("interval", False)
             else:
                 show_interval = False
-            if not show_interval:
+            if not show_interval and scheme != "greedy":
                 labels = [c[1:-1] for c in labels]
 
         values = pd.Categorical(
