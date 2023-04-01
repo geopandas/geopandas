@@ -1226,6 +1226,11 @@ class TestMapclassifyPlotting:
         for scheme in self.classifiers:
             self.df.plot(column="pop_est", scheme=scheme, legend=True)
 
+    def test_greedy_mapclassifier(self):
+        # test if greedy classifier passes
+        pytest.importorskip("libpysal")
+        self.df.plot(column="pop_est", scheme="greedy", legend=True)
+
     def test_classification_kwds(self):
         ax = self.df.plot(
             column="pop_est",
