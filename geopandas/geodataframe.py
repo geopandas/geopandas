@@ -5,15 +5,16 @@ import numpy as np
 import pandas as pd
 from pandas import DataFrame, Series
 from pandas.core.accessor import CachedAccessor
-from pyproj import CRS
 from shapely.geometry import mapping, shape
 from shapely.geometry.base import BaseGeometry
 
-import geopandas.io
+from pyproj import CRS
+
 from geopandas.array import GeometryArray, GeometryDtype, from_shapely, to_wkb, to_wkt
 from geopandas.base import GeoPandasBase, is_geometry_type
-from geopandas.explore import _explore
+import geopandas.io
 from geopandas.geoseries import GeoSeries
+from geopandas.explore import _explore
 from . import _compat as compat
 from ._decorator import doc
 
