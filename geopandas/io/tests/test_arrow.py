@@ -575,6 +575,15 @@ def test_missing_crs(tmpdir, file_format):
     assert_geodataframe_equal(df, pq_df, check_crs=True)
 
 
+def test_default_geo_col_writes(tmp_path):
+    # edge case DEFAULT_GEO_COLUMN_NAME write successfully
+    df = GeoDataFrame({"a": [1, 2]})
+    df.to_parquet(tmp_path / "test.pq")
+    # cannot be round tripped as gdf due to invalid geom col
+    pq_df = pd_read_parquet(tmp_path / "test.pq")
+    assert_frame_equal(df, pq_df)
+
+
 @pytest.mark.skipif(
     Version(pyarrow.__version__) >= Version("0.17.0"),
     reason="Feather only supported for pyarrow >= 0.17",

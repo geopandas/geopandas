@@ -9,6 +9,7 @@ import geopandas._compat as compat
 from geopandas._compat import import_optional_dependency
 from geopandas.array import from_wkb
 from geopandas import GeoDataFrame
+from geopandas.geodataframe import DEFAULT_GEO_COLUMN_NAME
 import geopandas
 from .file import _expand_user
 
@@ -120,9 +121,13 @@ def _create_metadata(df, schema_version=None):
         if np.isfinite(bbox).all():
             # don't add bbox with NaNs for empty / all-NA geometry column
             column_metadata[col]["bbox"] = bbox
-
+    primary_column = (
+        "geometry"
+        if df._geometry_column_name is DEFAULT_GEO_COLUMN_NAME
+        else df._geometry_column_name
+    )
     return {
-        "primary_column": df._geometry_column_name,
+        "primary_column": primary_column,
         "columns": column_metadata,
         "version": schema_version or METADATA_VERSION,
         "creator": {"library": "geopandas", "version": geopandas.__version__},
