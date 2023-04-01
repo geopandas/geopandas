@@ -27,7 +27,7 @@ def _overlay_intersection(df1, df2):
     Overlay Intersection operation used in overlay function
     """
     # Spatial Index to create intersections
-    idx1, idx2 = df2.sindex.query_bulk(df1.geometry, predicate="intersects", sort=True)
+    idx1, idx2 = df2.sindex.query(df1.geometry, predicate="intersects", sort=True)
     # Create pairs of geometries in both dataframes to be intersected
     if idx1.size > 0 and idx2.size > 0:
         left = df1.geometry.take(idx1)
@@ -77,7 +77,7 @@ def _overlay_difference(df1, df2):
     Overlay Difference operation used in overlay function
     """
     # spatial index query to find intersections
-    idx1, idx2 = df2.sindex.query_bulk(df1.geometry, predicate="intersects", sort=True)
+    idx1, idx2 = df2.sindex.query(df1.geometry, predicate="intersects", sort=True)
     idx1_unique, idx1_unique_indices = np.unique(idx1, return_index=True)
     idx2_split = np.split(idx2, idx1_unique_indices[1:])
     sidx = [
@@ -227,7 +227,7 @@ def overlay(df1, df2, how="intersection", keep_geom_type=None, make_valid=True):
     GeoDataFrame.overlay : equivalent method
 
     Notes
-    ------
+    -----
     Every operation in GeoPandas is planar, i.e. the potential third
     dimension is not taken into account.
     """

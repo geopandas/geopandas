@@ -13,11 +13,16 @@ New features and improvements:
   the distance along the Hilbert curve (#2070).
 - Added ``minimum_bounding_circle()`` method from shapely to GeoSeries/GeoDataframe (#2621).
 - Support specifying ``min_zoom`` and ``max_zoom`` inside the ``map_kwds`` argument for ``.explore()`` (#2599).
+- Added `minimum_bounding_radius()` as GeoSeries method (#2827).
+- Added support for append (``mode="a"`` or ``append=True``) in ``to_file()``
+  using ``engine="pyogrio"`` (#2788).
 
 Deprecations and compatibility notes:
 
 - Added warning that ``unary_union`` will return ``'GEOMETRYCOLLECTION EMPTY'`` instead
   of None for all-None GeoSeries. (#2618)
+- The ``query_bulk()`` method of the spatial index `.sindex` property is deprecated
+  in favor of ``query()`` (#2823).
 
 Bug fixes:
 

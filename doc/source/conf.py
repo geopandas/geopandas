@@ -13,6 +13,20 @@
 
 import sys, os
 import warnings
+import geodatasets
+
+geodatasets.fetch(
+    [
+        "geoda.chile_labor",
+        "ny.bb",
+        "geoda.malaria",
+        "geoda.chicago_health",
+        "geoda.groceries",
+        "geoda.natregimes",
+        "geoda.nepal",
+    ]
+)
+
 
 sys.path.insert(0, os.path.abspath("../.."))
 
@@ -150,9 +164,18 @@ html_theme = "pydata_sphinx_theme"
 # further.  For a list of options available for each theme, see the
 # documentation.
 html_theme_options = {
-    "search_bar_position": "sidebar",
-    "github_url": "https://github.com/geopandas/geopandas",
-    "twitter_url": "https://twitter.com/geopandas",
+    "icon_links": [
+        {
+            "name": "GitHub",
+            "url": "https://github.com/geopandas/geopandas",
+            "icon": "fab fa-github-square fa-xl",
+        },
+        {
+            "name": "Twitter",
+            "url": "https://twitter.com/geopandas",
+            "icon": "fab fa-twitter-square fa-xl",
+        },
+   ]
 }
 
 # Add any paths that contain custom themes here, relative to this directory.
