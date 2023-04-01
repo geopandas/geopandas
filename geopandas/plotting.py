@@ -1,4 +1,5 @@
 import warnings
+from types import SimpleNamespace
 
 import numpy as np
 import pandas as pd
@@ -556,16 +557,19 @@ def plot_dataframe(
     legend : bool (default False)
         Plot a legend. Ignored if no `column` is given, or if `color` is given.
     scheme : str (default None)
-        Name of a choropleth classification scheme (requires mapclassify).
-        A mapclassify.MapClassifier object will be used
-        under the hood. Supported are all schemes provided by mapclassify (e.g.
-        'BoxPlot', 'EqualInterval', 'FisherJenks', 'FisherJenksSampled',
-        'HeadTailBreaks', 'JenksCaspall', 'JenksCaspallForced',
-        'JenksCaspallSampled', 'MaxP', 'MaximumBreaks',
+        Name of a choropleth/topological classification scheme (requires
+        ``mapclassify`` >= 2.4.0). Using ``'greedy'`` means that
+        :func:`mapclassify.greedy` will be used under the hood. Otherwise,
+        a :class:`mapclassify.MapClassifier` object will be used via
+        :func:`mapclassify.classify`. Supported are all schemes provided by
+        mapclassify (e.g. 'BoxPlot', 'EqualInterval', 'FisherJenks',
+        'FisherJenksSampled', 'greedy', 'HeadTailBreaks', 'JenksCaspall',
+        'JenksCaspallForced', 'JenksCaspallSampled', 'MaxP', 'MaximumBreaks',
         'NaturalBreaks', 'Quantiles', 'Percentiles', 'StdMean',
-        'UserDefined'). Arguments can be passed in classification_kwds.
+        'UserDefined'). Arguments can be passed in ``classification_kwds`` for all
+        schemes.
     k : int (default 5)
-        Number of classes (ignored if scheme is None)
+        Number of classes (ignored if scheme is None or ``'greedy'``)
     vmin : None or float (default None)
         Minimum value of cmap. If None, the minimum data value
         in the column to be plotted is used.
@@ -766,12 +770,23 @@ GON (((-122.84000 49.00000, -120.0000...
 
         if classification_kwds is None:
             classification_kwds = {}
-        if "k" not in classification_kwds:
-            classification_kwds["k"] = k
 
-        binning = mapclassify.classify(
-            np.asarray(values[~nan_idx]), scheme, **classification_kwds
-        )
+        if scheme == "greedy":
+            colors = mapclassify.greedy(df, **classification_kwds)
+            num_colors = colors.max() + 1
+            bins = np.arange(num_colors)
+            binning = SimpleNamespace(
+                k=num_colors,
+                counts=list(colors.value_counts().sort_index()),
+                yb=np.asarray(colors),
+                bins=bins,
+            )
+        else:
+            if "k" not in classification_kwds:
+                classification_kwds["k"] = k
+            binning = mapclassify.classify(
+                np.asarray(values[~nan_idx]), scheme, **classification_kwds
+            )
         # set categorical to True for creating the legend
         categorical = True
         if legend_kwds is not None and "labels" in legend_kwds:
@@ -789,7 +804,10 @@ GON (((-122.84000 49.00000, -120.0000...
             if legend_kwds is not None and "fmt" in legend_kwds:
                 fmt = legend_kwds.pop("fmt")
 
-            labels = binning.get_legend_classes(fmt)
+            if scheme != "greedy":
+                labels = binning.get_legend_classes(fmt)
+            else:
+                labels = [str(b) for b in binning.bins]
             if legend_kwds is not None:
                 show_interval = legend_kwds.pop("interval", False)
             else:
