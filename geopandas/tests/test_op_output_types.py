@@ -75,26 +75,9 @@ def assert_object(
     assert type(result) is expected_type
 
     if expected_type == GeoDataFrame:
-        if geo_name is not None:
-            _check_metadata_gdf(result, geo_name=geo_name, crs=crs)
-        else:
-            raise ValueError
-            if check_none_name:  # TODO this is awkward
-                assert result._geometry_column_name is None
+        assert geo_name is not None
+        _check_metadata_gdf(result, geo_name=geo_name, crs=crs)
 
-            if result._geometry_column_name is None:
-                msg = (
-                    "You are calling a geospatial method on the GeoDataFrame, "
-                    "but the active"
-                )
-            else:
-                msg = (
-                    "You are calling a geospatial method on the GeoDataFrame, but "
-                    r"the active geometry column \("
-                    rf"'{result._geometry_column_name}'\) is not present"
-                )
-            with pytest.raises(AttributeError, match=msg):
-                result.geometry.name  # be explicit that geometry is invalid here
     elif expected_type == GeoSeries:
         _check_metadata_gs(result, name=geo_name, crs=crs)
 
@@ -123,7 +106,7 @@ def assert_obj_none(
             with pytest.raises(AttributeError, match=msg):
                 result.geometry.name  # be explicit that geometry is invalid here
     elif expected_type == GeoSeries:
-        _check_metadata_gs(result, name=geo_name, crs=crs)
+        raise NotImplementedError()
 
 
 def test_getitem(df):
