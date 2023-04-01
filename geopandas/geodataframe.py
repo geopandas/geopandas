@@ -190,10 +190,6 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 and not geometry.crs == crs
             ):
                 raise ValueError(crs_mismatch_error)
-            # If geometry kwarg is an array, set the name of the active
-            # geometry column to geometry
-            if not isinstance(geometry, str):
-                self._geometry_column_name = "geometry"
 
             self.set_geometry(geometry, inplace=True, crs=crs)
 
@@ -1467,7 +1463,8 @@ individually so that features may have different properties
                 "this automatically sets the active geometry column to 'geometry' "
                 "but in the future that will no longer happen. Instead, either "
                 "provide geometry to the GeoDataFrame constructor "
-                "(GeoDataFrame(... geometry=GeoSeries()) or use `set_geometry` "
+                "(GeoDataFrame(... geometry=GeoSeries()) or use "
+                "`set_geometry('geometry')` "
                 "to explicitly set the active geometry column."
             )
             warnings.warn(
