@@ -82,7 +82,7 @@ def assert_object(
         _check_metadata_gs(result, name=geo_name, crs=crs)
 
 
-def assert_obj_none(result, expected_type, *, crs=crs_wgs, check_none_name=False):
+def assert_obj_none(result, expected_type, *, check_none_name=False):
     if expected_type == GeoDataFrame:
         if check_none_name:  # TODO this is awkward
             assert result._geometry_column_name is None
@@ -208,9 +208,8 @@ def test_apply(df):
     assert_obj_none(
         df[["geometry2", "value1"]].apply(identity),
         GeoDataFrame,
-        crs=None,
     )
-    assert_obj_none(df[["geometry2"]].apply(identity), GeoDataFrame, crs=None)
+    assert_obj_none(df[["geometry2"]].apply(identity), GeoDataFrame)
     assert_object(df[["value1"]].apply(identity), pd.DataFrame)
 
     # axis = 0, Series
@@ -241,7 +240,7 @@ def test_apply_axis1_secondary_geo_cols(df):
     def identity(x):
         return x
 
-    assert_obj_none(df[["geometry2"]].apply(identity, axis=1), GeoDataFrame, crs=None)
+    assert_obj_none(df[["geometry2"]].apply(identity, axis=1), GeoDataFrame)
 
 
 def test_expanddim_in_apply():
@@ -267,9 +266,9 @@ def test_expandim_in_groupby_aggregate_multiple_funcs():
 
     grouped = s.groupby([0, 1, 0])
     agg = grouped.agg([total_area, union])
-    assert_obj_none(agg, GeoDataFrame, crs=None, check_none_name=True)
+    assert_obj_none(agg, GeoDataFrame, check_none_name=True)
     result = grouped.agg([union, total_area])
-    assert_obj_none(result, GeoDataFrame, crs=None, check_none_name=True)
+    assert_obj_none(result, GeoDataFrame, check_none_name=True)
     assert_object(grouped.agg([total_area, total_area]), pd.DataFrame)
     assert_object(grouped.agg([total_area]), pd.DataFrame)
 
@@ -282,7 +281,7 @@ def test_expanddim_in_unstack():
         index=pd.MultiIndex.from_tuples([("A", "a"), ("A", "b"), ("B", "a")]),
     )
     unstack = s.unstack()
-    assert_obj_none(unstack, GeoDataFrame, crs=None, check_none_name=False)
+    assert_obj_none(unstack, GeoDataFrame, check_none_name=False)
 
     if compat.PANDAS_GE_12:
         assert unstack._geometry_column_name is None
@@ -292,7 +291,7 @@ def test_expanddim_in_unstack():
     # https://github.com/geopandas/geopandas/issues/2486
     s.name = "geometry"
     unstack = s.unstack()
-    assert_obj_none(unstack, GeoDataFrame, crs=None)
+    assert_obj_none(unstack, GeoDataFrame)
 
 
 # indexing /  constructor_sliced tests
