@@ -442,7 +442,7 @@ class TestDataFrame:
     def test_to_json_wgs84_false(self):
         text = self.df.to_json()
         data = json.loads(text)
-        # check it doesn't converts to WGS84
+        # check it doesn't convert to WGS84
         coord = data["features"][0]["geometry"]["coordinates"][0][0][0]
         assert coord == [970217.0223999023, 145643.33221435547]
 
