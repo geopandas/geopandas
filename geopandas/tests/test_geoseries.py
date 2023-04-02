@@ -578,3 +578,12 @@ class TestConstructor:
         # index_parts is ignored if ignore_index=True
         s = s.explode(index_parts=True, ignore_index=True)
         assert_index_equal(s.index, expected_index)
+
+    def test_no_set_crs_on_construction(self):
+        # GH2492
+        gs = GeoSeries([Point(1, 1), Point(2, 2), Point(3, 3)])
+        s = pd.Series(gs)
+        gsa = GeoSeries(s, crs=4326)
+        assert s.values.crs is None
+        assert gs.crs is None
+        assert gsa.crs == "EPSG:4326"
