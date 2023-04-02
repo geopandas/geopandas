@@ -221,6 +221,8 @@ def test_to_file_datetime(tmpdir, driver, ext, time, engine):
             df["b"].dt.tz_convert(pytz.utc), df_read["b"].dt.tz_convert(pytz.utc)
         )
     else:
+        if engine == "pyogrio" and PANDAS_GE_20:
+            df["b"] = df["b"].astype("datetime64[ms]")
         assert_series_equal(df["b"], df_read["b"])
 
 
