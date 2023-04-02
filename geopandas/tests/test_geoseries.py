@@ -523,7 +523,7 @@ class TestConstructor:
 
         assert [a.equals(b) for a, b in zip(s, g)]
         assert s.name == g.name
-        assert s.index is g.index
+        assert (s.index == g.index).all()
 
     # GH 1216
     @pytest.mark.parametrize("name", [None, "geometry", "Points"])
