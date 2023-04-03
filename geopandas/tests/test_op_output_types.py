@@ -232,11 +232,13 @@ def test_apply(df):
     assert_object(df[["value1", "value2"]].apply(identity), pd.DataFrame)
     assert_object(df[[geo_name, "geometry2"]].apply(identity), GeoDataFrame, geo_name)
     assert_object(df[[geo_name]].apply(identity), GeoDataFrame, geo_name)
+    expected_geo_col_name = None if compat.PANDAS_GE_14 else "geometry"
     assert_obj_none(
-        df[["geometry2", "value1"]].apply(identity),
-        GeoDataFrame,
+        df[["geometry2", "value1"]].apply(identity), GeoDataFrame, expected_geo_col_name
     )
-    assert_obj_none(df[["geometry2"]].apply(identity), GeoDataFrame)
+    assert_obj_none(
+        df[["geometry2"]].apply(identity), GeoDataFrame, expected_geo_col_name
+    )
     assert_object(df[["value1"]].apply(identity), pd.DataFrame)
 
     # axis = 0, Series
@@ -267,7 +269,10 @@ def test_apply_axis1_secondary_geo_cols(df):
     def identity(x):
         return x
 
-    assert_obj_none(df[["geometry2"]].apply(identity, axis=1), GeoDataFrame)
+    expected_geo_col_name = None if compat.PANDAS_GE_14 else "geometry"
+    assert_obj_none(
+        df[["geometry2"]].apply(identity, axis=1), GeoDataFrame, expected_geo_col_name
+    )
 
 
 def test_expanddim_in_apply():
