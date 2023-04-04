@@ -319,15 +319,10 @@ def test_expanddim_in_unstack():
         index=pd.MultiIndex.from_tuples([("A", "a"), ("A", "b"), ("B", "a")]),
     )
     unstack = s.unstack()
-    expected_geo_col_name = None if compat.PANDAS_GE_115 else "geometry"
+    expected_geo_col_name = None if compat.PANDAS_GE_12 else "geometry"
     assert_obj_no_active_geo_col(
         unstack, GeoDataFrame, geo_colname=expected_geo_col_name
     )
-
-    if compat.PANDAS_GE_12:
-        assert unstack._geometry_column_name is None
-    else:  # pandas GH37369, unstack doesn't call finalize
-        assert unstack._geometry_column_name == "geometry"
 
     # https://github.com/geopandas/geopandas/issues/2486
     s.name = "geometry"
