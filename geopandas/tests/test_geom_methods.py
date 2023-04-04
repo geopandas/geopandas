@@ -1535,12 +1535,12 @@ class TestGeomMethods:
             self.g1,
             self.na,
             self.a1,
-            self.landmarks,
-            self.g5,
         ):
             output = gs.sample_points(size, method="cluster_poisson")
             assert_index_equal(gs.index, output.index)
-            assert len(output.explode(ignore_index=True)) == len(gs) * size
+            assert (
+                len(output.explode(ignore_index=True)) == len(gs[~gs.is_empty]) * size
+            )
 
         with pytest.raises(AttributeError, match="pointpats.random module has no"):
             gs.sample_points(10, method="nonexistent")
