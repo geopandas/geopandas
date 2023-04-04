@@ -1501,7 +1501,7 @@ class TestGeomMethods:
         reason="uses get_coordinates that is not implemented for shapely<2",
     )
     @pytest.mark.parametrize("size", [10, 20, 50])
-    def test_sample_points(self, geom, size):
+    def test_sample_points(self, size):
         for gs in (
             self.g1,
             self.na,
