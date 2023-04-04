@@ -30,12 +30,20 @@ def test_uniform(geom, size):
     assert len(sample_in_geom) == size
 
 
+@pytest.mark.skipif(
+    not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+    reason="get_coordinates not implemented for shapely<2",
+)
 def test_uniform_unsupported():
     with pytest.warns(UserWarning, match="Sampling is not supported"):
         sample = uniform(points[0], size=10, seed=1)
     assert sample.is_empty
 
 
+@pytest.mark.skipif(
+    not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+    reason="get_coordinates not implemented for shapely<2",
+)
 def test_uniform_generator():
     sample = uniform(polygons[0], size=10, seed=1)
     sample2 = uniform(polygons[0], size=10, seed=1)
