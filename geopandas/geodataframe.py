@@ -1435,8 +1435,6 @@ individually so that features may have different properties
                 result.__class__ = GeoDataFrame
                 if geo_col in result:
                     result._geometry_column_name = geo_col
-                else:
-                    result._geometry_column_name = None
             else:
                 result.__class__ = DataFrame
         return result
