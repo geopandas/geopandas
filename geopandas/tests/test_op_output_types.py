@@ -62,9 +62,7 @@ def _check_metadata_gs(gs, name="geometry", crs=crs_wgs):
     assert gs.crs == crs
 
 
-def assert_object(
-    result, expected_type, geo_name="geometry", crs=crs_wgs, check_none_name=False
-):
+def assert_object(result, expected_type, geo_name="geometry", crs=crs_wgs):
     """
     Helper method to make tests easier to read. Checks result is of the expected
     type. If result is a GeoDataFrame or GeoSeries, checks geo_name
@@ -82,7 +80,7 @@ def assert_object(
         _check_metadata_gs(result, name=geo_name, crs=crs)
 
 
-def assert_obj_none(result, expected_type, int_geo_colname=None):
+def assert_obj_no_active_geo_col(result, expected_type, geo_colname=None):
     """
     Helper method to make tests easier to read. Checks result is of the expected
     type. Asserts that accessing result.geometry.name raises, corresponding to
@@ -95,10 +93,10 @@ def assert_obj_none(result, expected_type, int_geo_colname=None):
 
     """
     if expected_type == GeoDataFrame:
-        if int_geo_colname is None:
+        if geo_colname is None:
             assert result._geometry_column_name is None
         else:
-            assert int_geo_colname == result._geometry_column_name
+            assert geo_colname == result._geometry_column_name
 
         if result._geometry_column_name is None:
             msg = (
@@ -122,8 +120,8 @@ def test_getitem(df):
     assert_object(df[["value1", "value2"]], pd.DataFrame)
     assert_object(df[[geo_name, "geometry2"]], GeoDataFrame, geo_name)
     assert_object(df[[geo_name]], GeoDataFrame, geo_name)
-    assert_obj_none(df[["geometry2", "value1"]], GeoDataFrame)
-    assert_obj_none(df[["geometry2"]], GeoDataFrame)
+    assert_obj_no_active_geo_col(df[["geometry2", "value1"]], GeoDataFrame)
+    assert_obj_no_active_geo_col(df[["geometry2"]], GeoDataFrame)
     assert_object(df[["value1"]], pd.DataFrame)
     # Series
     assert_object(df[geo_name], GeoSeries, geo_name)
@@ -138,8 +136,10 @@ def test_loc(df):
     assert_object(df.loc[:, [geo_name]], GeoDataFrame, geo_name)
     # These two are inconsistent with getitem, active geom col dropped,
     # but other geometry columns present
-    assert_obj_none(df.loc[:, ["geometry2", "value1"]], GeoDataFrame, geo_name)
-    assert_obj_none(df.loc[:, ["geometry2"]], GeoDataFrame, geo_name)
+    assert_obj_no_active_geo_col(
+        df.loc[:, ["geometry2", "value1"]], GeoDataFrame, geo_name
+    )
+    assert_obj_no_active_geo_col(df.loc[:, ["geometry2"]], GeoDataFrame, geo_name)
     # #####
     assert_object(df.loc[:, ["value1"]], pd.DataFrame)
     # Series
@@ -155,8 +155,8 @@ def test_iloc(df):
     assert_object(df.iloc[:, [2]], GeoDataFrame, geo_name)
     # These two are inconsistent with getitem, active geom col dropped,
     # but other geometry columns present
-    assert_obj_none(df.iloc[:, [3, 0]], GeoDataFrame, geo_name)
-    assert_obj_none(df.iloc[:, [3]], GeoDataFrame, geo_name)
+    assert_obj_no_active_geo_col(df.iloc[:, [3, 0]], GeoDataFrame, geo_name)
+    assert_obj_no_active_geo_col(df.iloc[:, [3]], GeoDataFrame, geo_name)
     # #####
     assert_object(df.iloc[:, [0]], pd.DataFrame)
     # Series
@@ -191,8 +191,12 @@ def test_reindex(df):
     assert_object(df.reindex(columns=["new_col", geo_name]), GeoDataFrame, geo_name)
     # These two are inconsistent with getitem, active geom col dropped,
     # but other geometry columns present
-    assert_obj_none(df.reindex(columns=["geometry2", "value1"]), GeoDataFrame, geo_name)
-    assert_obj_none(df.reindex(columns=["geometry2"]), GeoDataFrame, geo_name)
+    assert_obj_no_active_geo_col(
+        df.reindex(columns=["geometry2", "value1"]), GeoDataFrame, geo_name
+    )
+    assert_obj_no_active_geo_col(
+        df.reindex(columns=["geometry2"]), GeoDataFrame, geo_name
+    )
     # #####
     assert_object(df.reindex(columns=["value1"]), pd.DataFrame)
 
@@ -214,8 +218,10 @@ def test_drop(df):
     assert_object(df.drop(columns=cols), GeoDataFrame, geo_name)
     # These two are inconsistent with getitem, active geom col dropped,
     # but other geometry columns present
-    assert_obj_none(df.drop(columns=[geo_name, "value2"]), GeoDataFrame, geo_name)
-    assert_obj_none(
+    assert_obj_no_active_geo_col(
+        df.drop(columns=[geo_name, "value2"]), GeoDataFrame, geo_name
+    )
+    assert_obj_no_active_geo_col(
         df.drop(columns=["value1", "value2", geo_name]), GeoDataFrame, geo_name
     )
     # #####
@@ -233,10 +239,10 @@ def test_apply(df):
     assert_object(df[[geo_name, "geometry2"]].apply(identity), GeoDataFrame, geo_name)
     assert_object(df[[geo_name]].apply(identity), GeoDataFrame, geo_name)
     expected_geo_col_name = None if compat.PANDAS_GE_14 else "geometry"
-    assert_obj_none(
+    assert_obj_no_active_geo_col(
         df[["geometry2", "value1"]].apply(identity), GeoDataFrame, expected_geo_col_name
     )
-    assert_obj_none(
+    assert_obj_no_active_geo_col(
         df[["geometry2"]].apply(identity), GeoDataFrame, expected_geo_col_name
     )
     assert_object(df[["value1"]].apply(identity), pd.DataFrame)
@@ -270,7 +276,7 @@ def test_apply_axis1_secondary_geo_cols(df):
         return x
 
     expected_geo_col_name = None if compat.PANDAS_GE_14 else "geometry"
-    assert_obj_none(
+    assert_obj_no_active_geo_col(
         df[["geometry2"]].apply(identity, axis=1), GeoDataFrame, expected_geo_col_name
     )
 
@@ -298,9 +304,9 @@ def test_expandim_in_groupby_aggregate_multiple_funcs():
 
     grouped = s.groupby([0, 1, 0])
     agg = grouped.agg([total_area, union])
-    assert_obj_none(agg, GeoDataFrame, int_geo_colname=None)
+    assert_obj_no_active_geo_col(agg, GeoDataFrame, geo_colname=None)
     result = grouped.agg([union, total_area])
-    assert_obj_none(result, GeoDataFrame, int_geo_colname=None)
+    assert_obj_no_active_geo_col(result, GeoDataFrame, geo_colname=None)
     assert_object(grouped.agg([total_area, total_area]), pd.DataFrame)
     assert_object(grouped.agg([total_area]), pd.DataFrame)
 
@@ -313,7 +319,10 @@ def test_expanddim_in_unstack():
         index=pd.MultiIndex.from_tuples([("A", "a"), ("A", "b"), ("B", "a")]),
     )
     unstack = s.unstack()
-    assert_obj_none(unstack, GeoDataFrame, int_geo_colname=None)
+    expected_geo_col_name = None if compat.PANDAS_GE_115 else "geometry"
+    assert_obj_no_active_geo_col(
+        unstack, GeoDataFrame, geo_colname=expected_geo_col_name
+    )
 
     if compat.PANDAS_GE_12:
         assert unstack._geometry_column_name is None
@@ -323,7 +332,7 @@ def test_expanddim_in_unstack():
     # https://github.com/geopandas/geopandas/issues/2486
     s.name = "geometry"
     unstack = s.unstack()
-    assert_obj_none(unstack, GeoDataFrame)
+    assert_obj_no_active_geo_col(unstack, GeoDataFrame, expected_geo_col_name)
 
 
 # indexing /  constructor_sliced tests
