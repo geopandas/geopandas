@@ -3677,11 +3677,9 @@ GeometryCollection
         Parameters
         ----------
         size : int | array-like
-
             The size of the sample requested. Indicates the number of samples to draw
             from each geometry.  If an array of the same length as a GeoSeries is
             passed, it denotes a size of a sample per geometry.
-
         method : {"uniform", str}, default "uniform"
             The sampling method. ``uniform`` samples uniformly at random from a
             geometry using ``numpy.random.uniform``. Other allowed strings
@@ -3689,14 +3687,11 @@ GeometryCollection
             ``pointpats.random`` module. Pointpats methods are implemented for
             (Multi)Polygons only and will return an empty MultiPoint for other
             geometry types.
-
         seed : {None, int, array_like[ints], SeedSequence, BitGenerator, Generator}, optional
-            A seed to initialize the BitGenerator. If None, then fresh, unpredictable
-            entropy will be pulled from the OS.
-
+            A seed to initialize the numpy BitGenerator. If None, then fresh,
+            unpredictable entropy will be pulled from the OS.
         generator : {None, Generator}, optional
             A numpy.random.Generator object to use in the sampling process.
-
         **kwargs : dict
             Options for the pointpats sampling algorithms.
 
@@ -3704,7 +3699,6 @@ GeometryCollection
         -------
         GeoSeries
             Points sampled within (or along) each geometry.
-
 
         Examples
         --------
