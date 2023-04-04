@@ -3,7 +3,7 @@ import warnings
 
 import numpy as np
 from numpy.testing import assert_array_equal
-from pandas import DataFrame, Index, MultiIndex, Series
+from pandas import DataFrame, Index, MultiIndex, Series, concat
 
 import shapely
 
@@ -25,7 +25,7 @@ from geopandas.base import GeoPandasBase
 from geopandas.testing import assert_geodataframe_equal
 from geopandas.tests.util import assert_geoseries_equal, geom_almost_equals, geom_equals
 from geopandas import _compat as compat
-from pandas.testing import assert_frame_equal, assert_series_equal
+from pandas.testing import assert_frame_equal, assert_series_equal, assert_index_equal
 import pytest
 
 
@@ -1495,3 +1495,52 @@ class TestGeomMethods:
             NotImplementedError, match="shapely >= 2.0 or PyGEOS is required"
         ):
             self.g1.minimum_bounding_radius()
+
+    @pytest.mark.skipif(
+        (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+        reason="uses get_coordinates that is not implemented for shapely<2",
+    )
+    @pytest.mark.parametrize("size", [10, 20, 50])
+    def test_sample_points(self, geom, size):
+        for gs in (
+            self.g1,
+            self.na,
+            self.a1,
+            self.landmarks,
+            self.g5,
+        ):
+            output = gs.sample_points(size)
+            assert_index_equal(gs.index, output.index)
+            assert len(output.explode(ignore_index=True)) == len(gs) * size
+
+    @pytest.mark.skipif(
+        not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+        reason="uses get_coordinates that is not implemented for shapely<2",
+    )
+    def test_sample_points_array(self):
+        output = concat([self.g1, self.g1]).sample_points([10, 15, 20, 25])
+        expected = Series(
+            [10, 15, 20, 25], index=[0, 1, 0, 1], name="sampled_points", dtype="int32"
+        )
+        assert_series_equal(shapely.get_num_geometries(output), expected)
+
+    @pytest.mark.skipif(
+        not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+        reason="get_coordinates not implemented for shapely<2",
+    )
+    @pytest.mark.parametrize("size", [10, 20, 50])
+    def test_sample_points_pointpats(self, size):
+        pytest.importorskip("pointpats")
+        for gs in (
+            self.g1,
+            self.na,
+            self.a1,
+            self.landmarks,
+            self.g5,
+        ):
+            output = gs.sample_points(size, method="cluster_poisson")
+            assert_index_equal(gs.index, output.index)
+            assert len(output.explode(ignore_index=True)) == len(gs) * size
+
+        with pytest.raises(AttributeError, match="pointpats.random module has no"):
+            gs.sample_points(10, method="nonexistent")
