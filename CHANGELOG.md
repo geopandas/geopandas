@@ -16,6 +16,8 @@ New features and improvements:
 - Added `minimum_bounding_radius()` as GeoSeries method (#2827).
 - Added support for append (``mode="a"`` or ``append=True``) in ``to_file()``
   using ``engine="pyogrio"`` (#2788).
+- Added a ``to_wgs84`` keyword to ``to_json`` allowing automatic re-projecting to follow
+  the 2016 GeoJSON specification (#416).
 
 Deprecations and compatibility notes:
 
