@@ -13,6 +13,9 @@ New features and improvements:
   the distance along the Hilbert curve (#2070).
 - Added ``minimum_bounding_circle()`` method from shapely to GeoSeries/GeoDataframe (#2621).
 - Support specifying ``min_zoom`` and ``max_zoom`` inside the ``map_kwds`` argument for ``.explore()`` (#2599).
+- Added `minimum_bounding_radius()` as GeoSeries method (#2827).
+- Added support for append (``mode="a"`` or ``append=True``) in ``to_file()``
+  using ``engine="pyogrio"`` (#2788).
 - Improve error messages when accessing the `geometry` attribute of GeoDataFrame without an active geometry column 
   related to the default name `"geometry"` being provided in the constructor (#2577)
 
@@ -20,6 +23,8 @@ Deprecations and compatibility notes:
 
 - Added warning that ``unary_union`` will return ``'GEOMETRYCOLLECTION EMPTY'`` instead
   of None for all-None GeoSeries. (#2618)
+- The ``query_bulk()`` method of the spatial index `.sindex` property is deprecated
+  in favor of ``query()`` (#2823).
 
 Bug fixes:
 
@@ -32,6 +37,8 @@ Bug fixes:
 - Fix `to_parquet`/`to_feather` to use correct WKB flavor for 3D geometries (#2654)
 - Fix `read_file` to avoid reading all file bytes prior to calling Fiona or
   Pyogrio if provided a URL as input (#2796)
+- Fix `copy()` downcasting GeoDataFrames without an active geometry column to a 
+  DataFrame (#2775)
 
 Notes on (optional) dependencies:
 
