@@ -14,7 +14,7 @@ points = multipolygons.centroid
 
 @pytest.mark.skipif(
     not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
-    reason="get_coordinates not implemented for shapely<2",
+    reason="array input in interpolate not implemented for shapely<2",
 )
 @pytest.mark.parametrize("size", [10, 100])
 @pytest.mark.parametrize(
@@ -32,7 +32,7 @@ def test_uniform(geom, size):
 
 @pytest.mark.skipif(
     not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
-    reason="get_coordinates not implemented for shapely<2",
+    reason="array input in interpolate not implemented for shapely<2",
 )
 def test_uniform_unsupported():
     with pytest.warns(UserWarning, match="Sampling is not supported"):
@@ -42,7 +42,7 @@ def test_uniform_unsupported():
 
 @pytest.mark.skipif(
     not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
-    reason="get_coordinates not implemented for shapely<2",
+    reason="array input in interpolate not implemented for shapely<2",
 )
 def test_uniform_generator():
     sample = uniform(polygons[0], size=10, seed=1)

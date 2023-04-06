@@ -1498,7 +1498,7 @@ class TestGeomMethods:
 
     @pytest.mark.skipif(
         not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
-        reason="uses get_coordinates that is not implemented for shapely<2",
+        reason="array input in interpolate is not implemented for shapely<2",
     )
     @pytest.mark.parametrize("size", [10, 20, 50])
     def test_sample_points(self, size):
@@ -1517,7 +1517,7 @@ class TestGeomMethods:
 
     @pytest.mark.skipif(
         not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
-        reason="uses get_coordinates that is not implemented for shapely<2",
+        reason="array input in interpolate is not implemented for shapely<2",
     )
     def test_sample_points_array(self):
         output = concat([self.g1, self.g1]).sample_points([10, 15, 20, 25])
