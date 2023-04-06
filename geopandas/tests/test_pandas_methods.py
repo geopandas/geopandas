@@ -384,8 +384,9 @@ def test_equals(s, df):
 # Missing values
 
 
-def test_fillna(s, df):
+def test_fillna_scalar(s, df):
     s2 = GeoSeries([Point(0, 0), None, Point(2, 2)])
+
     res = s2.fillna(Point(1, 1))
     assert_geoseries_equal(res, s)
 
@@ -408,6 +409,28 @@ def test_fillna(s, df):
     df3.loc[0, "value1"] = np.nan
     res = df3.fillna(0)
     assert_geodataframe_equal(res.astype({"value1": "int64"}), df)
+
+
+def test_fillna_series(s):
+    # fill na with another GeoSeries
+    s2 = GeoSeries([Point(0, 0), None, Point(2, 2)])
+
+    # check na filled with the same index
+    res = s2.fillna(GeoSeries([Point(1, 1)] * 3))
+    assert_geoseries_equal(res, s)
+
+    # check na filled based on index, not position
+    index = [3, 2, 1]
+    res = s2.fillna(GeoSeries([Point(i, i) for i in index], index=index))
+    assert_geoseries_equal(res, s)
+
+    # check na filled but the input length is different
+    res = s2.fillna(GeoSeries([Point(1, 1)], index=[1]))
+    assert_geoseries_equal(res, s)
+
+    # check na filled but the inputting index is different
+    res = s2.fillna(GeoSeries([Point(1, 1)], index=[9]))
+    assert_geoseries_equal(res, s2)
 
 
 def test_dropna():

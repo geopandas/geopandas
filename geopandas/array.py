@@ -1009,34 +1009,46 @@ class GeometryArray(ExtensionArray):
         return GeometryArray(result, crs=self.crs)
 
     def _fill(self, idx, value):
-        """Fill index locations with value
-
-        Value should be a BaseGeometry
         """
-        if not (_is_scalar_geometry(value) or value is None):
+        Fill index locations with ``value``.
+
+        ``value`` should be a BaseGeometry or a GeometryArray.
+        """
+        if vectorized.isna(value):
+            value = [None]
+        elif _is_scalar_geometry(value):
+            value = [value]
+        elif isinstance(value, GeometryArray):
+            value = value[idx]
+        else:
             raise TypeError(
-                "Value should be either a BaseGeometry or None, got %s" % str(value)
+                "'value' parameter must be None, a scalar geometry, or a GeoSeries, "
+                f"but you passed a {type(value).__name__!r}"
             )
-        # self._data[idx] = value
-        value_arr = np.empty(1, dtype=object)
+
+        value_arr = np.empty(len(value), dtype=object)
         with compat.ignore_shapely2_warnings():
-            value_arr[:] = [value]
+            value_arr[:] = _shapely_to_geom(value)
+
         self._data[idx] = value_arr
         return self
 
     def fillna(self, value=None, method=None, limit=None):
-        """Fill NA/NaN values using the specified method.
+        """
+        Fill NA values with geometry (or geometries) or using the specified method.
 
         Parameters
         ----------
-        value : scalar, array-like
-            If a scalar value is passed it is used to fill all missing values.
-            Alternatively, an array-like 'value' can be given. It's expected
-            that the array-like have the same length as 'self'.
+        value : shapely geometry object or GeometryArray
+            If a geometry value is passed it is used to fill all missing values.
+            Alternatively, an GeometryArray 'value' can be given. It's expected
+            that the GeometryArray has the same length as 'self'.
+
         method : {'backfill', 'bfill', 'pad', 'ffill', None}, default None
             Method to use for filling holes in reindexed Series
             pad / ffill: propagate last valid observation forward to next valid
             backfill / bfill: use NEXT valid observation to fill gap
+
         limit : int, default None
             If method is specified, this is the maximum number of consecutive
             NaN values to forward/backward fill. In other words, if there is
@@ -1047,26 +1059,14 @@ class GeometryArray(ExtensionArray):
 
         Returns
         -------
-        filled : ExtensionArray with NA/NaN filled
+        GeometryArray
         """
         if method is not None:
             raise NotImplementedError("fillna with a method is not yet supported")
 
         mask = self.isna()
         new_values = self.copy()
-
-        if mask.any():
-            # fill with value
-            if vectorized.isna(value):
-                value = None
-            elif not isinstance(value, BaseGeometry):
-                raise NotImplementedError(
-                    "fillna currently only supports filling with a scalar geometry"
-                )
-            value = _shapely_to_geom(value)
-            new_values = new_values._fill(mask, value)
-
-        return new_values
+        return new_values._fill(mask, value) if mask.any() else new_values
 
     def astype(self, dtype, copy=True):
         """

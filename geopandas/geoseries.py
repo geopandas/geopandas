@@ -751,11 +751,27 @@ class GeoSeries(GeoPandasBase, Series):
         return self.notna()
 
     def fillna(self, value=None, method=None, inplace=False, **kwargs):
-        """Fill NA values with a geometry (empty polygon by default).
+        """
+        Fill NA values with geometry (or geometries).
+
+        ``method`` is currently not implemented.
+
+        Parameters
+        ----------
+        value : shapely geometry or GeoSeries, default None
+            If None is passed, NA values will be filled with GEOMETRYCOLLECTION EMPTY.
+            If a shapely geometry object is passed, it will be
+            used to fill all missing values. If a ``GeoSeries`` or ``GeometryArray``
+            are passed, missing values will be filled based on the corresponding index
+            locations. If pd.NA or np.nan are passed, values will be filled with
+            ``None`` (not GEOMETRYCOLLECTION EMPTY).
+
+        Returns
+        -------
+        GeoSeries
 
         Examples
         --------
-
         >>> from shapely.geometry import Polygon
         >>> s = geopandas.GeoSeries(
         ...     [
@@ -770,15 +786,35 @@ class GeoSeries(GeoPandasBase, Series):
         2    POLYGON ((0.00000 0.00000, -1.00000 1.00000, 0...
         dtype: geometry
 
+        Filled with an empty polygon.
+
         >>> s.fillna()
         0    POLYGON ((0.00000 0.00000, 1.00000 1.00000, 0....
         1                             GEOMETRYCOLLECTION EMPTY
         2    POLYGON ((0.00000 0.00000, -1.00000 1.00000, 0...
         dtype: geometry
 
+        Filled with a specific polygon.
+
         >>> s.fillna(Polygon([(0, 1), (2, 1), (1, 2)]))
         0    POLYGON ((0.00000 0.00000, 1.00000 1.00000, 0....
         1    POLYGON ((0.00000 1.00000, 2.00000 1.00000, 1....
+        2    POLYGON ((0.00000 0.00000, -1.00000 1.00000, 0...
+        dtype: geometry
+
+        Filled with another GeoSeries.
+
+        >>> from shapely.geometry import Point
+        >>> s_fill = geopandas.GeoSeries(
+        ...     [
+        ...         Point(0, 0),
+        ...         Point(1, 1),
+        ...         Point(2, 2),
+        ...     ]
+        ... )
+        >>> s.fillna(s_fill)
+        0    POLYGON ((0.00000 0.00000, 1.00000 1.00000, 0....
+        1                              POINT (1.00000 1.00000)
         2    POLYGON ((0.00000 0.00000, -1.00000 1.00000, 0...
         dtype: geometry
 
