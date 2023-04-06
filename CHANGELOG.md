@@ -18,6 +18,7 @@ New features and improvements:
   using ``engine="pyogrio"`` (#2788).
 - Added a ``to_wgs84`` keyword to ``to_json`` allowing automatic re-projecting to follow
   the 2016 GeoJSON specification (#416).
+- ``to_json`` output now includes a ``"crs"`` field if the CRS is not the default WGS84.
 
 Deprecations and compatibility notes:
 
@@ -37,7 +38,7 @@ Bug fixes:
 - Fix `to_parquet`/`to_feather` to use correct WKB flavor for 3D geometries (#2654)
 - Fix `read_file` to avoid reading all file bytes prior to calling Fiona or
   Pyogrio if provided a URL as input (#2796)
-- Fix `copy()` downcasting GeoDataFrames without an active geometry column to a 
+- Fix `copy()` downcasting GeoDataFrames without an active geometry column to a
   DataFrame (#2775)
 
 Notes on (optional) dependencies:

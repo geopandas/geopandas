@@ -768,14 +768,15 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         - ``keep``: output the missing entries as NaN.
 
         If the GeoDataFrame has a defined CRS, its definition will be included
-        in the output.
+        in the output unless it is equal to WGS84 (default GeoJSON CRS) or not
+        possible to represent in the URN OGC format.
 
         Examples
         --------
 
         >>> from shapely.geometry import Point
         >>> d = {'col1': ['name1', 'name2'], 'geometry': [Point(1, 2), Point(2, 1)]}
-        >>> gdf = geopandas.GeoDataFrame(d, crs="EPSG:4326")
+        >>> gdf = geopandas.GeoDataFrame(d, crs="EPSG:3857")
         >>> gdf
             col1                 geometry
         0  name1  POINT (1.00000 2.00000)
@@ -786,7 +787,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 "properties": {"col1": "name1"}, "geometry": {"type": "Point", "coordinates": [1.0,\
  2.0]}}, {"id": "1", "type": "Feature", "properties": {"col1": "name2"}, "geometry"\
 : {"type": "Point", "coordinates": [2.0, 1.0]}}], "crs": {"type": "name", "properti\
-es": {"name": "urn:ogc:def:crs:EPSG::4326"}}}'
+es": {"name": "urn:ogc:def:crs:EPSG::3857"}}}'
 
         Alternatively, you can write GeoJSON to file:
 
@@ -809,9 +810,12 @@ es": {"name": "urn:ogc:def:crs:EPSG::4326"}}}'
 
         geo = df._to_geo(na=na, show_bbox=show_bbox, drop_id=drop_id)
 
-        if df.crs is not None:
+        # if the geometry is not in WGS84, include CRS in the JSON
+        if df.crs is not None and not df.crs.equals("epsg:4326"):
             auth_crsdef = self.crs.to_authority()
-            if auth_crsdef is None:
+            allowed_authorities = ["EDCS", "EPSG", "OGC", "SI", "UCUM"]
+
+            if auth_crsdef is None or auth_crsdef[0] not in allowed_authorities:
                 warnings.warn(
                     "Geodataframe CRS is not representable in URN OGC "
                     "format. Resulting JSON will contain no CRS information.",

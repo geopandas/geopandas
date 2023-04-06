@@ -1307,7 +1307,13 @@ def test_geodataframe_crs():
 
 
 def test_geodataframe_nocrs_json():
+    # no CRS, no crs field
     gdf = GeoDataFrame(columns=["geometry"])
+    gdf_geojson = json.loads(gdf.to_json())
+    assert "crs" not in gdf_geojson
+
+    # WGS84, no crs field (default as per spec)
+    gdf.crs = 4326
     gdf_geojson = json.loads(gdf.to_json())
     assert "crs" not in gdf_geojson
 
@@ -1325,11 +1331,15 @@ def test_geodataframe_crs_json():
     assert "crs" not in gdf_geointerface
 
 
-def test_geodataframe_crs_nonrepresentable_json():
+@pytest.mark.parametrize(
+    "crs",
+    ["+proj=cea +lon_0=0 +lat_ts=45 +x_0=0 +y_0=0 +ellps=WGS84 +units=m", "IGNF:WGS84"],
+)
+def test_geodataframe_crs_nonrepresentable_json(crs):
     gdf = GeoDataFrame(
         [Point(1000, 1000)],
         columns=["geometry"],
-        crs="+proj=cea +lon_0=0 +lat_ts=45 +x_0=0 +y_0=0 +ellps=WGS84 +units=m",
+        crs=crs,
     )
     with pytest.warns(
         UserWarning, match="Geodataframe CRS is not representable in URN OGC"
