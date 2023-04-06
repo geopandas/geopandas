@@ -413,8 +413,6 @@ def test_fillna_scalar(s, df):
 
 def test_fillna_series(s):
     # fill na with another GeoSeries
-    # https://github.com/geopandas/geopandas/issues/2535
-
     s2 = GeoSeries([Point(0, 0), None, Point(2, 2)])
 
     # check na filled with the same index

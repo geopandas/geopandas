@@ -758,9 +758,9 @@ class GeoSeries(GeoPandasBase, Series):
 
         Parameters
         ----------
-        value : Geometry or GeoSeries, default None
+        value : shapely geometry or GeoSeries, default None
             If None is passed, NA values will be filled with GEOMETRYCOLLECTION EMPTY.
-            If ``pygeos.Geometry`` or a shapely geometry object is passed, it will be
+            If a shapely geometry object is passed, it will be
             used to fill all missing values. If a ``GeoSeries`` or ``GeometryArray``
             are passed, missing values will be filled based on the corresponding index
             locations. If pd.NA or np.nan are passed, values will be filled with
@@ -786,7 +786,7 @@ class GeoSeries(GeoPandasBase, Series):
         2    POLYGON ((0.00000 0.00000, -1.00000 1.00000, 0...
         dtype: geometry
 
-        Filled with a empty polygon.
+        Filled with an empty polygon.
 
         >>> s.fillna()
         0    POLYGON ((0.00000 0.00000, 1.00000 1.00000, 0....

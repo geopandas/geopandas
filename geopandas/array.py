@@ -1039,7 +1039,7 @@ class GeometryArray(ExtensionArray):
 
         Parameters
         ----------
-        value : pygeos.Geometry, shapely geometry object or GeometryArray
+        value : shapely geometry object or GeometryArray
             If a geometry value is passed it is used to fill all missing values.
             Alternatively, an GeometryArray 'value' can be given. It's expected
             that the GeometryArray has the same length as 'self'.
