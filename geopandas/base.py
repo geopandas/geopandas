@@ -3655,9 +3655,7 @@ GeometryCollection
 
         return pd.Series(distances, index=self.index, name="hilbert_distance")
 
-    def sample_points(
-        self, size, method="uniform", seed=None, generator=None, **kwargs
-    ):
+    def sample_points(self, size, method="uniform", seed=None, **kwargs):
         """
         Sample points from each geometry.
 
