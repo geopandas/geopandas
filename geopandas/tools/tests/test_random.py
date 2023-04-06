@@ -50,8 +50,8 @@ def test_uniform_generator():
     assert sample.equals(sample2)
 
     generator = numpy.random.default_rng(seed=1)
-    gen_sample = uniform(polygons[0], size=10, generator=generator)
-    gen_sample2 = uniform(polygons[0], size=10, generator=generator)
+    gen_sample = uniform(polygons[0], size=10, seed=generator)
+    gen_sample2 = uniform(polygons[0], size=10, seed=generator)
 
     assert sample.equals(gen_sample)
     assert not sample.equals(gen_sample2)
