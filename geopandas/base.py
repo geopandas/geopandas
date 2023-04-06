@@ -3684,14 +3684,13 @@ GeometryCollection
             The sampling method. ``uniform`` samples uniformly at random from a
             geometry using ``numpy.random.uniform``. Other allowed strings
             (e.g. ``"cluster_poisson"``) denote sampling function name from the
-            ``pointpats.random`` module. Pointpats methods are implemented for
-            (Multi)Polygons only and will return an empty MultiPoint for other
-            geometry types.
+            ``pointpats.random`` module (see
+            http://pysal.org/pointpats/api.html#random-distributions. Pointpats methods
+            are implemented for (Multi)Polygons only and will return an empty MultiPoint
+            for other geometry types.
         seed : {None, int, array_like[ints], SeedSequence, BitGenerator, Generator}, optional
             A seed to initialize the numpy BitGenerator. If None, then fresh,
             unpredictable entropy will be pulled from the OS.
-        generator : {None, Generator}, optional
-            A numpy.random.Generator object to use in the sampling process.
         **kwargs : dict
             Options for the pointpats sampling algorithms.
 
@@ -3721,13 +3720,10 @@ GeometryCollection
         if method == "uniform":
             if pd.api.types.is_list_like(size):
                 result = [
-                    uniform(geom, s, seed, generator)
-                    for geom, s in zip(self.geometry, size)
+                    uniform(geom, s, seed) for geom, s in zip(self.geometry, size)
                 ]
             else:
-                result = self.geometry.apply(
-                    uniform, size=size, seed=seed, generator=generator
-                )
+                result = self.geometry.apply(uniform, size=size, seed=seed)
 
         else:
             pointpats = compat.import_optional_dependency(
