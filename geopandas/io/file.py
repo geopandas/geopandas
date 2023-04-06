@@ -14,8 +14,6 @@ from shapely.geometry.base import BaseGeometry
 from geopandas import GeoDataFrame, GeoSeries
 
 # Adapted from pandas.io.common
-from urllib.request import urlopen as _urlopen
-from urllib.parse import urlparse as parse_url
 from urllib.parse import uses_netloc, uses_params, uses_relative
 
 
@@ -26,12 +24,14 @@ _VALID_URLS.discard("")
 fiona = None
 fiona_env = None
 fiona_import_error = None
+FIONA_GE_19 = False
 
 
 def _import_fiona():
     global fiona
     global fiona_env
     global fiona_import_error
+    global FIONA_GE_19
 
     if fiona is None:
         try:
@@ -48,6 +48,9 @@ def _import_fiona():
                 except ImportError:
                     fiona_env = None
 
+            FIONA_GE_19 = Version(Version(fiona.__version__).base_version) >= Version(
+                "1.9.0"
+            )
         except ImportError as err:
             fiona = False
             fiona_import_error = str(err)
@@ -146,14 +149,6 @@ def _expand_user(path):
     return path
 
 
-def _is_url(url):
-    """Check to see if *url* has a valid protocol."""
-    try:
-        return parse_url(url).scheme in _VALID_URLS
-    except Exception:
-        return False
-
-
 def _is_zip(path):
     """Check if a given path is a zipfile"""
     parsed = fiona.path.ParsedPath.from_uri(path)
@@ -238,33 +233,32 @@ def _read_file(filename, bbox=None, mask=None, rows=None, engine=None, **kwargs)
 
     filename = _expand_user(filename)
 
-    from_bytes = False
-    if _is_url(filename):
-        req = _urlopen(filename)
-        path_or_bytes = req.read()
-        from_bytes = True
-    elif pd.api.types.is_file_like(filename):
-        data = filename.read()
-        path_or_bytes = data.encode("utf-8") if isinstance(data, str) else data
-        from_bytes = True
-    else:
-        path_or_bytes = filename
+    if engine == "pyogrio":
+        return _read_file_pyogrio(filename, bbox=bbox, mask=mask, rows=rows, **kwargs)
 
-    if engine == "fiona":
+    elif engine == "fiona":
+        from_bytes = False
+        if pd.api.types.is_file_like(filename):
+            data = filename.read()
+            path_or_bytes = data.encode("utf-8") if isinstance(data, str) else data
+            from_bytes = True
+        else:
+            path_or_bytes = filename
+
         return _read_file_fiona(
             path_or_bytes, from_bytes, bbox=bbox, mask=mask, rows=rows, **kwargs
         )
-    elif engine == "pyogrio":
-        return _read_file_pyogrio(
-            path_or_bytes, bbox=bbox, mask=mask, rows=rows, **kwargs
-        )
+
     else:
         raise ValueError(f"unknown engine '{engine}'")
 
 
 def _read_file_fiona(
-    path_or_bytes, from_bytes, bbox=None, mask=None, rows=None, **kwargs
+    path_or_bytes, from_bytes, bbox=None, mask=None, rows=None, where=None, **kwargs
 ):
+    if where is not None and not FIONA_GE_19:
+        raise NotImplementedError("where requires fiona 1.9+")
+
     if not from_bytes:
         # Opening a file via URL or file-like-object above automatically detects a
         # zipped file. In order to match that behavior, attempt to add a zip scheme
@@ -319,17 +313,24 @@ def _read_file_fiona(
                 mask = mapping(mask.to_crs(crs).unary_union)
             elif isinstance(mask, BaseGeometry):
                 mask = mapping(mask)
+
+            filters = {}
+            if bbox is not None:
+                filters["bbox"] = bbox
+            if mask is not None:
+                filters["mask"] = mask
+            if where is not None:
+                filters["where"] = where
+
             # setup the data loading filter
             if rows is not None:
                 if isinstance(rows, int):
                     rows = slice(rows)
                 elif not isinstance(rows, slice):
                     raise TypeError("'rows' must be an integer or a slice.")
-                f_filt = features.filter(
-                    rows.start, rows.stop, rows.step, bbox=bbox, mask=mask
-                )
-            elif any((bbox, mask)):
-                f_filt = features.filter(bbox=bbox, mask=mask)
+                f_filt = features.filter(rows.start, rows.stop, rows.step, **filters)
+            elif filters:
+                f_filt = features.filter(**filters)
             else:
                 f_filt = features
             # get list of columns
@@ -476,10 +477,15 @@ def _to_file(
         .. versionadded:: 0.7
             Previously the index was not written.
     mode : string, default 'w'
-        The write mode, 'w' to overwrite the existing file and 'a' to append.
-        Not all drivers support appending. The drivers that support appending
-        are listed in fiona.supported_drivers or
-        https://github.com/Toblerity/Fiona/blob/master/fiona/drvsupport.py
+        The write mode, 'w' to overwrite the existing file and 'a' to append;
+        when using the pyogrio engine, you can also pass ``append=True``.
+        Not all drivers support appending. For the fiona engine, the drivers
+        that support appending are listed in fiona.supported_drivers or
+        https://github.com/Toblerity/Fiona/blob/master/fiona/drvsupport.py.
+        For the pyogrio engine, you should be able to use any driver that
+        is available in your installation of GDAL that supports append
+        capability; see the specific driver entry at
+        https://gdal.org/drivers/vector/index.html for more information.
     crs : pyproj.CRS, default None
         If specified, the CRS is passed to Fiona to
         better control how the file is written. If None, GeoPandas
@@ -526,6 +532,9 @@ def _to_file(
             stacklevel=3,
         )
 
+    if mode not in ("w", "a"):
+        raise ValueError("'mode' should be one of 'w' or 'a', got '{mode}' instead")
+
     if engine == "fiona":
         _to_file_fiona(df, filename, driver, schema, crs, mode, **kwargs)
     elif engine == "pyogrio":
@@ -535,7 +544,6 @@ def _to_file(
 
 
 def _to_file_fiona(df, filename, driver, schema, crs, mode, **kwargs):
-
     if schema is None:
         schema = infer_schema(df)
 
@@ -568,10 +576,8 @@ def _to_file_pyogrio(df, filename, driver, schema, crs, mode, **kwargs):
             "The 'schema' argument is not supported with the 'pyogrio' engine."
         )
 
-    if mode != "w":
-        raise ValueError(
-            "Only mode='w' is supported for now with the 'pyogrio' engine."
-        )
+    if mode == "a":
+        kwargs["append"] = True
 
     if crs is not None:
         raise ValueError("Passing 'crs' it not supported with the 'pyogrio' engine.")

@@ -5,7 +5,6 @@ dependencies:
   - python=3.10
   - cython
   # required
-  - shapely
   - pyproj
   - geos
   - packaging
@@ -17,7 +16,7 @@ dependencies:
   # optional
   - rtree
   #- geopy
-  - SQLalchemy
+  - SQLalchemy<2
   - libspatialite
   - pyarrow
   - pip
@@ -30,7 +29,7 @@ dependencies:
     - fiona
     - git+https://github.com/pandas-dev/pandas.git@main
     - git+https://github.com/matplotlib/matplotlib.git@main
-    # - git+https://github.com/Toblerity/Shapely.git@main
+    - git+https://github.com/shapely/shapely.git@main
     - git+https://github.com/pygeos/pygeos.git@master
     - git+https://github.com/python-visualization/folium.git@main
     - git+https://github.com/geopandas/xyzservices.git@main

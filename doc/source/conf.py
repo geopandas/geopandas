@@ -13,6 +13,24 @@
 
 import sys, os
 import warnings
+import geodatasets
+
+geodatasets.fetch(
+    [
+        "geoda.chile_labor",
+        "ny.bb",
+        "geoda.malaria",
+        "geoda.chicago_health",
+        "geoda.groceries",
+        "geoda.natregimes",
+        "geoda.nepal",
+    ]
+)
+
+
+sys.path.insert(0, os.path.abspath("../.."))
+
+import geopandas  # noqa
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -33,6 +51,7 @@ extensions = [
     "sphinx.ext.autosummary",
     "sphinx.ext.intersphinx",
     "sphinx.ext.autodoc",
+    "sphinx.ext.linkcode",
     "myst_parser",
     "nbsphinx",
     "numpydoc",
@@ -145,9 +164,18 @@ html_theme = "pydata_sphinx_theme"
 # further.  For a list of options available for each theme, see the
 # documentation.
 html_theme_options = {
-    "search_bar_position": "sidebar",
-    "github_url": "https://github.com/geopandas/geopandas",
-    "twitter_url": "https://twitter.com/geopandas",
+    "icon_links": [
+        {
+            "name": "GitHub",
+            "url": "https://github.com/geopandas/geopandas",
+            "icon": "fab fa-github-square fa-xl",
+        },
+        {
+            "name": "Twitter",
+            "url": "https://twitter.com/geopandas",
+            "icon": "fab fa-twitter-square fa-xl",
+        },
+    ]
 }
 
 # Add any paths that contain custom themes here, relative to this directory.
@@ -422,3 +450,68 @@ intersphinx_mapping = {
         "https://pyogrio.readthedocs.io/en/stable/objects.inv",
     ),
 }
+
+
+# based on pandas implementation with added support of properties
+def linkcode_resolve(domain, info):
+    """
+    Determine the URL corresponding to Python object
+    """
+    import inspect
+
+    if domain != "py":
+        return None
+
+    modname = info["module"]
+    fullname = info["fullname"]
+
+    submod = sys.modules.get(modname)
+    if submod is None:
+        return None
+
+    obj = submod
+    for part in fullname.split("."):
+        try:
+            with warnings.catch_warnings():
+                # Accessing deprecated objects will generate noisy warnings
+                warnings.simplefilter("ignore", FutureWarning)
+                obj = getattr(obj, part)
+        except AttributeError:
+            return None
+
+    try:
+        fn = inspect.getsourcefile(inspect.unwrap(obj))
+    except TypeError:
+        try:  # property
+            fn = inspect.getsourcefile(inspect.unwrap(obj.fget))
+        except AttributeError:
+            fn = None
+    if not fn:
+        return None
+
+    try:
+        source, lineno = inspect.getsourcelines(obj)
+    except TypeError:
+        try:  # property
+            source, lineno = inspect.getsourcelines(obj.fget)
+        except AttributeError:
+            lineno = None
+    except OSError:
+        lineno = None
+
+    if lineno:
+        linespec = f"#L{lineno}-L{lineno + len(source) - 1}"
+    else:
+        linespec = ""
+
+    fn = os.path.relpath(fn, start=os.path.dirname(geopandas.__file__))
+
+    if "+" in geopandas.__version__:
+        return (
+            f"https://github.com/geopandas/geopandas/blob/main/geopandas/{fn}{linespec}"
+        )
+    else:
+        return (
+            f"https://github.com/geopandas/geopandas/blob/"
+            f"v{geopandas.__version__}/geopandas/{fn}{linespec}"
+        )

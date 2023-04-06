@@ -4,34 +4,36 @@
    :suppress:
 
    import geopandas
+   import pandas as pd
 
 
-Merging Data
+Merging data
 =========================================
 
-There are two ways to combine datasets in *geopandas* -- attribute joins and spatial joins.
+There are two ways to combine datasets in GeoPandas -- attribute joins and spatial joins.
 
 In an attribute join, a :class:`GeoSeries` or :class:`GeoDataFrame` is
 combined with a regular :class:`pandas.Series` or :class:`pandas.DataFrame` based on a
 common variable. This is analogous to normal merging or joining in *pandas*.
 
-In a Spatial Join, observations from two :class:`GeoSeries` or :class:`GeoDataFrame`
+In a spatial join, observations from two :class:`GeoSeries` or :class:`GeoDataFrame`
 are combined based on their spatial relationship to one another.
 
-In the following examples, we use these datasets:
+In the following examples, these datasets are used:
 
 .. ipython:: python
 
-   world = geopandas.read_file(geopandas.datasets.get_path('naturalearth_lowres'))
-   cities = geopandas.read_file(geopandas.datasets.get_path('naturalearth_cities'))
+   import geodatasets
+
+   chicago = geopandas.read_file(geodatasets.get_path("geoda chicago health"))
+   groceries = geopandas.read_file(geodatasets.get_path("geoda groceries"))
 
    # For attribute join
-   country_shapes = world[['geometry', 'iso_a3']]
-   country_names = world[['name', 'iso_a3']]
+   chicago_shapes = chicago[['geometry', 'ComAreaID']]
+   chicago_names = chicago[['community', 'ComAreaID']]
 
    # For spatial join
-   countries = world[['geometry', 'name']]
-   countries = countries.rename(columns={'name':'country'})
+   chicago = chicago[['geometry', 'community']].to_crs(groceries.crs)
 
 
 Appending
@@ -43,15 +45,15 @@ Keep in mind, that appended geometry columns needs to have the same CRS.
 .. ipython:: python
 
     # Appending GeoSeries
-    joined = world.geometry.append(cities.geometry)
+    joined = pd.concat([chicago.geometry, groceries.geometry])
 
     # Appending GeoDataFrames
-    europe = world[world.continent == 'Europe']
-    asia = world[world.continent == 'Asia']
-    eurasia = europe.append(asia)
+    douglas = chicago[chicago.community == 'DOUGLAS']
+    oakland = chicago[chicago.community == 'OAKLAND']
+    douglas_oakland = pd.concat([douglas, oakland])
 
 
-Attribute Joins
+Attribute joins
 ----------------
 
 Attribute joins are accomplished using the :meth:`~pandas.DataFrame.merge` method. In general, it is recommended
@@ -61,38 +63,38 @@ if a :class:`~pandas.DataFrame` is in the ``left`` argument and a :class:`GeoDat
 is in the ``right`` position, the result will no longer be a :class:`GeoDataFrame`.
 
 For example, consider the following merge that adds full names to a :class:`GeoDataFrame`
-that initially has only ISO codes for each country by merging it with a :class:`~pandas.DataFrame`.
+that initially has only area ID for each geometry by merging it with a :class:`~pandas.DataFrame`.
 
 .. ipython:: python
 
-   # `country_shapes` is GeoDataFrame with country shapes and iso codes
-   country_shapes.head()
+   # `chicago_shapes` is GeoDataFrame with community shapes and area IDs
+   chicago_shapes.head()
 
-   # `country_names` is DataFrame with country names and iso codes
-   country_names.head()
+   # `chicago_names` is DataFrame with community names and area ID
+   chicago_names.head()
 
-   # Merge with `merge` method on shared variable (iso codes):
-   country_shapes = country_shapes.merge(country_names, on='iso_a3')
-   country_shapes.head()
+   # Merge with `merge` method on shared variable (area ID):
+   chicago_shapes = chicago_shapes.merge(chicago_names, on='ComAreaID')
+   chicago_shapes.head()
 
 
-Spatial Joins
+Spatial joins
 ----------------
 
-In a Spatial Join, two geometry objects are merged based on their spatial relationship to one another.
+In a spatial join, two geometry objects are merged based on their spatial relationship to one another.
 
 .. ipython:: python
 
 
-   # One GeoDataFrame of countries, one of Cities.
-   # Want to merge so we can get each city's country.
-   countries.head()
-   cities.head()
+   # One GeoDataFrame of communities, one of grocery stores.
+   # Want to merge to get each grocery's community.
+   chicago.head()
+   groceries.head()
 
    # Execute spatial join
 
-   cities_with_country = cities.sjoin(countries, how="inner", predicate='intersects')
-   cities_with_country.head()
+   groceries_with_community = groceries.sjoin(chicago, how="inner", predicate='intersects')
+   groceries_with_community.head()
 
 
 GeoPandas provides two spatial-join functions:
@@ -104,7 +106,7 @@ GeoPandas provides two spatial-join functions:
    For historical reasons, both methods are also available as top-level functions :func:`sjoin` and :func:`sjoin_nearest`.
    It is recommended to use methods as the functions may be deprecated in the future.
 
-Binary Predicate Joins
+Binary predicate joins
 ~~~~~~~~~~~~~~~~~~~~~~
 
 Binary predicate joins are available via :meth:`GeoDataFrame.sjoin`.
@@ -113,13 +115,13 @@ Binary predicate joins are available via :meth:`GeoDataFrame.sjoin`.
 
 **predicate**
 
-The ``predicate`` argument specifies how ``geopandas`` decides whether or not to join the attributes of one
+The ``predicate`` argument specifies how GeoPandas decides whether or not to join the attributes of one
 object to another, based on their geometric relationship.
 
 The values for ``predicate`` correspond to the names of geometric binary predicates and depend on the spatial
 index implementation.
 
-The default spatial index in ``geopandas`` currently supports the following values for ``predicate`` which are
+The default spatial index in GeoPandas currently supports the following values for ``predicate`` which are
 defined in the
 `Shapely documentation <http://shapely.readthedocs.io/en/latest/manual.html#binary-predicates>`__:
 
@@ -144,7 +146,7 @@ Note more complicated spatial relationships can be studied by combining geometri
 To find all polygons within a given distance of a point, for example, one can first use the :meth:`~geopandas.GeoSeries.buffer` method to expand each
 point into a circle of appropriate radius, then intersect those buffered circles with the polygons in question.
 
-Nearest Joins
+Nearest joins
 ~~~~~~~~~~~~~
 
 Proximity-based joins can be done via :meth:`GeoDataFrame.sjoin_nearest`.
