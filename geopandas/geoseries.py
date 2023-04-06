@@ -829,6 +829,14 @@ class GeoSeries(GeoPandasBase, Series):
         2    POLYGON ((0.00000 0.00000, -1.00000 1.00000, 0...
         dtype: geometry
 
+        Filled with the forward or backward value.
+
+        >>> s.fillna(method='ffill')
+        0    POLYGON ((0.00000 0.00000, 1.00000 1.00000, 0....
+        1    POLYGON ((0.00000 0.00000, 1.00000 1.00000, 0....
+        2    POLYGON ((0.00000 0.00000, -1.00000 1.00000, 0...
+        dtype: geometry
+
         See Also
         --------
         GeoSeries.isna : detect missing values
