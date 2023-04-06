@@ -32,6 +32,9 @@ In particular, when submitting a pull request:
   line of a docstring should be a standalone summary. Parameters and
   return values should be documented explicitly.
 
+- Unless your PR implements minor changes or internal work only, make sure
+  it contains a note describing the changes in the `CHANGELOG.md` file.
+
 Improving the documentation and testing for code already in GeoPandas
 is a great way to get started if you'd like to make a contribution.
 
@@ -66,4 +69,8 @@ Style
 
   Then `black` and `flake8` will be run automatically each time you
   commit changes. You can skip these checks with `git commit
-  --no-verify`.
+  --no-verify`. You can also configure your local git clone to have
+  `git blame` ignore the commits that introduced large formatting-only
+  changes with:
+
+    $ git config blame.ignoreRevsFile .git-blame-ignore-revs

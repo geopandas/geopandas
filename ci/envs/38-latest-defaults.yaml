@@ -4,10 +4,11 @@ channels:
 dependencies:
   - python=3.8
   # required
+  - numpy
   - pandas
   - shapely
   - fiona
-  - pyproj
+  - pyproj>=3
   - geos
   - packaging
   # testing

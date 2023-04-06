@@ -6,10 +6,10 @@
 :hidden:
 
 Team <about/team>
+Roadmap <about/roadmap>
 Citing <about/citing>
 Logo <about/logo>
 ```
-
 
 GeoPandas is an open source project to add support for geographic data to pandas objects. It
 currently implements `GeoSeries` and `GeoDataFrame` types which are subclasses of
@@ -25,7 +25,7 @@ under the liberal terms of the BSD-3-Clause license.
 
 ```{container} button
 
-{doc}`Team <about/team>`
+{doc}`Team <about/team>` {doc}`Roadmap <about/roadmap>`
 {doc}`Citing <about/citing>` {doc}`Logo <about/logo>`
 ```
 
@@ -49,5 +49,3 @@ development.
 - **2014**: GeoPandas 0.1.0 released
 - **2020**: GeoPandas became [NumFOCUS Affiliated
   Project](https://numfocus.org/sponsored-projects/affiliated-projects)
-
-

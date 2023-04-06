@@ -8,14 +8,14 @@
    plt.close('all')
 
 
-Set-Operations with Overlay
+Set operations with overlay
 ============================
 
 When working with multiple spatial datasets -- especially multiple *polygon* or
 *line* datasets -- users often wish to create new shapes based on places where
 those datasets overlap (or don't overlap). These manipulations are often
 referred using the language of sets -- intersections, unions, and differences.
-These types of operations are made available in the *geopandas* library through
+These types of operations are made available in the GeoPandas library through
 the :meth:`~geopandas.GeoDataFrame.overlay` method.
 
 The basic idea is demonstrated by the graphic below but keep in mind that
@@ -26,19 +26,19 @@ properties from both are retained. In effect, for every shape in the left
 
 .. image:: ../../_static/overlay_operations.png
 
-**Source: QGIS Documentation**
+**Source: QGIS documentation**
 
 .. note::
    Note to users familiar with the *shapely* library: :meth:`~geopandas.GeoDataFrame.overlay` can be thought
-   of as offering versions of the standard *shapely* set-operations that deal with
+   of as offering versions of the standard *shapely* set operations that deal with
    the complexities of applying set operations to two *GeoSeries*. The standard
-   *shapely* set-operations are also available as :class:`~geopandas.GeoSeries` methods.
+   *shapely* set operations are also available as :class:`~geopandas.GeoSeries` methods.
 
 
-The different Overlay operations
+The different overlay operations
 --------------------------------
 
-First, we create some example data:
+First, create some example data:
 
 .. ipython:: python
 
@@ -59,7 +59,7 @@ These two GeoDataFrames have some overlapping areas:
     @savefig overlay_example.png width=5in
     df2.plot(ax=ax, color='green', alpha=0.5);
 
-We illustrate the different overlay modes with the above example.
+The above example illustrates the different overlay modes.
 The :meth:`~geopandas.GeoDataFrame.overlay` method will determine the set of all individual geometries
 from overlaying the two input GeoDataFrames. This result covers the area covered
 by the two input GeoDataFrames, and also preserves all unique regions defined by
@@ -135,60 +135,58 @@ but with the geometries obtained from overlaying ``df1`` with ``df2``:
     df2.plot(ax=ax, facecolor='none', edgecolor='k');
 
 
-Overlay Countries Example
+Overlay groceries example
 -------------------------
 
-First, we load the countries and cities example datasets and select :
+First, load the Chicago community areas and groceries example datasets and select :
 
 .. ipython:: python
 
-    world = geopandas.read_file(geopandas.datasets.get_path('naturalearth_lowres'))
-    capitals = geopandas.read_file(geopandas.datasets.get_path('naturalearth_cities'))
+    import geodatasets
 
-    # Select South America and some columns
-    countries = world[world['continent'] == "South America"]
-    countries = countries[['geometry', 'name']]
+    chicago = geopandas.read_file(geodatasets.get_path("geoda chicago health"))
+    groceries = geopandas.read_file(geodatasets.get_path("geoda groceries"))
 
     # Project to crs that uses meters as distance measure
-    countries = countries.to_crs('epsg:3395')
-    capitals = capitals.to_crs('epsg:3395')
+    chicago = chicago.to_crs("ESRI:102003")
+    groceries = groceries.to_crs("ESRI:102003")
 
 To illustrate the :meth:`~geopandas.GeoDataFrame.overlay` method, consider the following case in which one
-wishes to identify the "core" portion of each country -- defined as areas within
-500km of a capital -- using a ``GeoDataFrame`` of countries and a
-``GeoDataFrame`` of capitals.
+wishes to identify the "served" portion of each area -- defined as areas within
+1km of a grocery store -- using a ``GeoDataFrame`` of community areas and a
+``GeoDataFrame`` of groceries.
 
 .. ipython:: python
 
-    # Look at countries:
-    @savefig world_basic.png width=5in
-    countries.plot();
+    # Look at Chicago:
+    @savefig chicago_basic.png width=5in
+    chicago.plot();
 
-    # Now buffer cities to find area within 500km.
-    # Check CRS -- World Mercator, units of meters.
-    capitals.crs
+    # Now buffer groceries to find area within 1km.
+    # Check CRS -- USA Contiguous Albers Equal Area, units of meters.
+    groceries.crs
 
-    # make 500km buffer
-    capitals['geometry']= capitals.buffer(500000)
-    @savefig capital_buffers.png width=5in
-    capitals.plot();
+    # make 1km buffer
+    groceries['geometry']= groceries.buffer(1000)
+    @savefig groceries_buffers.png width=5in
+    groceries.plot();
 
 
-To select only the portion of countries within 500km of a capital, we specify the ``how`` option to be "intersect", which creates a new set of polygons where these two layers overlap:
-
-.. ipython:: python
-
-   country_cores = countries.overlay(capitals, how='intersection')
-   @savefig country_cores.png width=5in
-   country_cores.plot(alpha=0.5, edgecolor='k', cmap='tab10');
-
-Changing the "how" option allows for different types of overlay operations. For example, if we were interested in the portions of countries *far* from capitals (the peripheries), we would compute the difference of the two.
+To select only the portion of community areas within 1km of a grocery, specify the ``how`` option to be "intersect", which creates a new set of polygons where these two layers overlap:
 
 .. ipython:: python
 
-   country_peripheries = countries.overlay(capitals, how='difference')
-   @savefig country_peripheries.png width=5in
-   country_peripheries.plot(alpha=0.5, edgecolor='k', cmap='tab10');
+   chicago_cores = chicago.overlay(groceries, how='intersection')
+   @savefig chicago_cores.png width=5in
+   chicago_cores.plot(alpha=0.5, edgecolor='k', cmap='tab10');
+
+Changing the ``how`` option allows for different types of overlay operations. For example, if you were interested in the portions of Chicago *far* from groceries (the peripheries), you would compute the difference of the two.
+
+.. ipython:: python
+
+   chicago_peripheries = chicago.overlay(groceries, how='difference')
+   @savefig chicago_peripheries.png width=5in
+   chicago_peripheries.plot(alpha=0.5, edgecolor='k', cmap='tab10');
 
 
 .. ipython:: python
@@ -209,7 +207,7 @@ selected set-operation. Different types can result for example from intersection
 where two polygons intersects in a line or a point.
 
 
-More Examples
+More examples
 -------------
 
 A larger set of examples of the use of :meth:`~geopandas.GeoDataFrame.overlay` can be found `here <https://nbviewer.jupyter.org/github/geopandas/geopandas/blob/main/doc/source/gallery/overlays.ipynb>`_

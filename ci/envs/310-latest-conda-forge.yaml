@@ -25,10 +25,14 @@ dependencies:
   - geopy
   # installed in tests.yaml, because not available on windows
   # - postgis
-  - SQLalchemy
+  - SQLalchemy<2
   - psycopg2
   - libspatialite
   - geoalchemy2
   - pyarrow
+  # - pyogrio
   # doctest testing
   - pytest-doctestplus
+  - pip
+  - pip:
+      - git+https://github.com/geopandas/pyogrio.git@main

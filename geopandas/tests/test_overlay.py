@@ -5,14 +5,20 @@ import numpy as np
 import pandas as pd
 
 from shapely.geometry import Point, Polygon, LineString, GeometryCollection, box
-from fiona.errors import DriverError
 
 import geopandas
 from geopandas import GeoDataFrame, GeoSeries, overlay, read_file
-from geopandas import _compat
+from geopandas._compat import PANDAS_GE_20
 
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 import pytest
+
+try:
+    from fiona.errors import DriverError
+except ImportError:
+
+    class DriverError(Exception):
+        pass
 
 
 DATA = os.path.join(os.path.abspath(os.path.dirname(__file__)), "data", "overlay")
@@ -82,6 +88,8 @@ def test_overlay(dfs_index, how):
             os.path.join(DATA, "polys", "df1_df2-{0}.geojson".format(name))
         )
         expected.crs = None
+        for col in expected.columns[expected.dtypes == "int32"]:
+            expected[col] = expected[col].astype("int64")
         return expected
 
     if how == "identity":
@@ -190,10 +198,7 @@ def test_overlay_nybb(how):
 
     # first, check that all bounds and areas are approx equal
     # this is a very rough check for multipolygon equality
-    if not _compat.PANDAS_GE_11:
-        kwargs = dict(check_less_precise=True)
-    else:
-        kwargs = {}
+    kwargs = {}
     pd.testing.assert_series_equal(
         result.geometry.area, expected.geometry.area, **kwargs
     )
@@ -400,7 +405,6 @@ def test_correct_index(dfs):
 
 
 def test_warn_on_keep_geom_type(dfs):
-
     df1, df2 = dfs
     polys3 = GeoSeries(
         [
@@ -528,6 +532,9 @@ def test_overlay_strict(how, keep_geom_type, geom_types):
         assert result.empty
 
     except OSError:  # fiona < 1.8
+        assert result.empty
+
+    except RuntimeError:  # pyogrio.DataSourceError
         assert result.empty
 
 
@@ -712,7 +719,6 @@ def test_overlap_make_valid(make_valid):
 
 
 def test_empty_overlay_return_non_duplicated_columns():
-
     nybb = geopandas.read_file(geopandas.datasets.get_path("nybb"))
     nybb2 = nybb.copy()
     nybb2.geometry = nybb2.translate(20000000)
@@ -744,13 +750,18 @@ def test_non_overlapping(how):
     result = overlay(df1, df2, how=how)
 
     if how == "intersection":
+        if PANDAS_GE_20:
+            index = None
+        else:
+            index = pd.Index([], dtype="object")
+
         expected = GeoDataFrame(
             {
                 "col1": np.array([], dtype="int64"),
                 "col2": np.array([], dtype="int64"),
                 "geometry": [],
             },
-            index=pd.Index([], dtype="object"),
+            index=index,
         )
     elif how == "union":
         expected = GeoDataFrame(

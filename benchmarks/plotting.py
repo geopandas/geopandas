@@ -6,12 +6,10 @@ import numpy as np
 
 
 class Bench:
-
     param_names = ["geom_type"]
     params = [("Point", "LineString", "Polygon", "MultiPolygon", "mixed")]
 
     def setup(self, geom_type):
-
         if geom_type == "Point":
             geoms = GeoSeries([Point(i, i) for i in range(1000)])
         elif geom_type == "LineString":

@@ -1,11 +1,131 @@
-Changelog
-=========
+# Changelog
+
+## Development version
+
+New features and improvements:
+
+- Added ``get_coordinates()`` method from shapely to GeoSeries/GeoDataframe (#2624).
+- The Parquet and Feather IO functions now support the latest 1.0.0-beta.1 version
+  of the GeoParquet specification (geoparquet.org) (#2663).
+- New ``hilbert_distance()`` method that calculates the distance along a Hilbert curve
+  for each geometry in a GeoSeries/GeoDataFrame (#2297).
+- Support for sorting geometries (for example, using ``sort_values()``) based on
+  the distance along the Hilbert curve (#2070).
+- Added ``minimum_bounding_circle()`` method from shapely to GeoSeries/GeoDataframe (#2621).
+- Support specifying ``min_zoom`` and ``max_zoom`` inside the ``map_kwds`` argument for ``.explore()`` (#2599).
+- Added `minimum_bounding_radius()` as GeoSeries method (#2827).
+- Added support for append (``mode="a"`` or ``append=True``) in ``to_file()``
+  using ``engine="pyogrio"`` (#2788).
+- Added a ``to_wgs84`` keyword to ``to_json`` allowing automatic re-projecting to follow
+  the 2016 GeoJSON specification (#416).
+
+Deprecations and compatibility notes:
+
+- Added warning that ``unary_union`` will return ``'GEOMETRYCOLLECTION EMPTY'`` instead
+  of None for all-None GeoSeries. (#2618)
+- The ``query_bulk()`` method of the spatial index `.sindex` property is deprecated
+  in favor of ``query()`` (#2823).
+
+Bug fixes:
+
+- Ensure that GeoDataFrame created from DataFrame is a copy, not a view (#2667)
+- Fix mismatch between geometries and colors in ``plot()`` if an empty or missing
+  geometry is present (#2224)
+- Escape special characters to avoid TemplateSyntaxError in ``explore()`` (#2657)
+- Fix `to_parquet`/`to_feather` to not write an invalid bbox (with NaNs) in the
+  metadata in case of an empty GeoDataFrame (#2653)
+- Fix `to_parquet`/`to_feather` to use correct WKB flavor for 3D geometries (#2654)
+- Fix `read_file` to avoid reading all file bytes prior to calling Fiona or
+  Pyogrio if provided a URL as input (#2796)
+- Fix `copy()` downcasting GeoDataFrames without an active geometry column to a 
+  DataFrame (#2775)
+
+Notes on (optional) dependencies:
+
+- GeoPandas 0.13 drops support pandas 1.0.5 (the minimum supported
+  pandas version is now 1.1). Further, the minimum required versions for the listed
+  dependencies have now changed to shapely 1.7.1, fiona 1.8.19, pyproj 3.0.1 and
+  matplotlib 3.3.4 (#2655)
+
+## Version 0.12.2 (December 10, 2022)
+
+Bug fixes:
+
+- Correctly handle geometries with Z dimension in ``to_crs()`` when using PyGEOS or
+  Shapely >= 2.0 (previously the z coordinates were lost) (#1345).
+- Assign Crimea to Ukraine in the ``naturalearth_lowres`` built-in dataset (#2670)
+
+## Version 0.12.1 (October 29, 2022)
+
+Small bug-fix release removing the shapely<2 pin in the installation requirements.
+
+## Version 0.12 (October 24, 2022)
+
+The highlight of this release is the support for Shapely 2.0. This makes it possible to
+test Shapely 2.0 (currently 2.0b1) alongside GeoPandas.
+
+Note that if you also have PyGEOS installed, you need to set an environment variable
+(`USE_PYGEOS=0`) before importing geopandas to actually test Shapely 2.0 features instead of PyGEOS. See
+<https://geopandas.org/en/latest/getting_started/install.html#using-the-optional-pygeos-dependency>
+for more details.
+
+New features and improvements:
+
+- Added ``normalize()`` method from shapely to GeoSeries/GeoDataframe (#2537).
+- Added ``make_valid()`` method from shapely to GeoSeries/GeoDataframe (#2539).
+- Added ``where`` filter to ``read_file`` (#2552).
+- Updated the distributed natural earth datasets (*naturalearth_lowres* and
+  *naturalearth_cities*) to version 5.1 (#2555).
+
+Deprecations and compatibility notes:
+
+- Accessing the `crs` of a `GeoDataFrame` without active geometry column was deprecated
+  and this now raises an AttributeError (#2578).
+- Resolved colormap-related warning in ``.explore()`` for recent Matplotlib versions
+  (#2596).
+
+Bug fixes:
+
+- Fix cryptic error message in ``geopandas.clip()`` when clipping with an empty geometry (#2589).
+- Accessing `gdf.geometry` where the active geometry column is missing, and a column
+  named `"geometry"` is present will now raise an `AttributeError`, rather than
+  returning `gdf["geometry"]` (#2575).
+- Combining GeoSeries/GeoDataFrames with ``pandas.concat`` will no longer silently
+  override CRS information if not all inputs have the same CRS (#2056).
+
+## Version 0.11.1 (July 24, 2022)
+
+Small bug-fix release:
+
+- Fix regression (RecursionError) in reshape methods such as ``unstack()``
+  and ``pivot()`` involving MultiIndex, or GeoDataFrame construction with
+  MultiIndex (#2486).
+- Fix regression in ``GeoDataFrame.explode()`` with non-default
+  geometry column name.
+- Fix regression in ``apply()`` causing row-wise all nan float columns to be
+  casted to GeometryDtype (#2482).
+- Fix a crash in datetime column reading where the file contains mixed timezone
+  offsets (#2479). These will be read as UTC localized values.
+- Fix a crash in datetime column reading where the file contains datetimes
+  outside the range supported by [ns] precision (#2505).
+- Fix regression in passing the Parquet or Feather format ``version`` in
+  ``to_parquet`` and ``to_feather``. As a result, the ``version`` parameter
+  for the ``to_parquet`` and ``to_feather`` methods has been replaced with
+  ``schema_version``. ``version`` will be passed directly to underlying
+  feather or parquet writer. ``version`` will only be used to set
+  ``schema_version`` if ``version`` is one of 0.1.0 or 0.4.0 (#2496).
 
 Version 0.11 (June 20, 2022)
 ----------------------------
 
 Highlights of this release:
 
+- The ``geopandas.read_file()`` and `GeoDataFrame.to_file()` methods to read
+  and write GIS file formats can now optionally use the
+  [pyogrio](https://github.com/geopandas/pyogrio/) package under the hood
+  through the ``engine="pyogrio"`` keyword. The pyogrio package implements
+  vectorized IO for GDAL/OGR vector data sources, and is faster compared to
+  the ``fiona``-based engine (#2225).
 - GeoParquet support updated to implement
   [v0.4.0](https://github.com/opengeospatial/geoparquet/releases/tag/v0.4.0) of the
   OpenGeospatial/GeoParquet specification (#2441). Backwards compatibility with v0.1.0 of
@@ -115,7 +235,6 @@ Notes on (optional) dependencies:
   dependencies have now changed to shapely 1.7, fiona 1.8.13.post1, pyproj 2.6.1.post1,
   matplotlib 3.2, mapclassify 2.4.0 (#2358, #2391)
 
-
 Version 0.10.2 (October 16, 2021)
 ---------------------------------
 
@@ -135,7 +254,6 @@ Small bug-fix release:
 - Fix ``unary_union`` to correctly handle a GeoSeries with missing values (#2181).
 - Avoid internal deprecation warning in ``clip()`` (#2179).
 
-
 Version 0.10.1 (October 8, 2021)
 --------------------------------
 
@@ -143,7 +261,6 @@ Small bug-fix release:
 
 - Fix regression in ``overlay()`` with non-overlapping geometries and a
   non-default ``how`` (i.e. not "intersection") (#2157).
-
 
 Version 0.10.0 (October 3, 2021)
 --------------------------------
@@ -181,7 +298,7 @@ New features and improvements:
 - Improved heuristic to decide how many decimals to show in the repr based on
   whether the CRS is projected or geographic (#1895).
 - Switched the default for ``geocode()`` from GeoCode.Farm to the Photon
-  geocoding API (https://photon.komoot.io) (#2007).
+  geocoding API (<https://photon.komoot.io>) (#2007).
 
 Deprecations and compatibility notes:
 
@@ -230,7 +347,6 @@ Notes on (optional) dependencies:
 - Compatibility fixes for the upcoming Shapely 1.8 (#2087).
 - Compatibility fixes for the latest PyGEOS (#1872, #2014) and matplotlib
   (colorbar issue, #2066).
-
 
 Version 0.9.0 (February 28, 2021)
 ---------------------------------
@@ -348,12 +464,10 @@ Notes on (optional) dependencies:
   is still a default requirement) (#1775).
 - Compatibility with the upcoming Shapely 1.8 (#1659, #1662, #1819).
 
-
 Version 0.8.2 (January 25, 2021)
 --------------------------------
 
 Small bug-fix release for compatibility with PyGEOS 0.9.
-
 
 Version 0.8.1 (July 15, 2020)
 -----------------------------
@@ -365,7 +479,6 @@ Small bug-fix release:
 - Fix spurious warning in ``GeoDataFrame.to_postgis`` (#1497).
 - Fix the un-pickling with ``pd.read_pickle`` of files written with older
   GeoPandas versions (#1511).
-
 
 Version 0.8.0 (June 24, 2020)
 -----------------------------
@@ -465,7 +578,6 @@ And we now have a [Code of Conduct](https://github.com/geopandas/geopandas/blob/
 GeoPandas 0.8.0 is the last release to support Python 3.5. The next release
 will require Python 3.6, pandas 0.24, numpy 1.15 and shapely 1.6 or higher.
 
-
 Version 0.7.0 (February 16, 2020)
 ---------------------------------
 
@@ -510,7 +622,6 @@ Bug fixes:
 - Fixed the ``geopandas.sjoin`` function to handle MultiIndex correctly (#1159).
 - Fixed the ``geopandas.sjoin`` function to preserve the index name of the left GeoDataFrame (#1150).
 
-
 Version 0.6.3 (February 6, 2020)
 ---------------------------------
 
@@ -520,7 +631,6 @@ Small bug-fix release:
 - Fix ``GeoDataFrame.fillna`` to accept non-geometry values again when there are
   no missing values in the geometry column. This should make it easier to fill
   the numerical columns of the GeoDataFrame (#1279).
-
 
 Version 0.6.2 (November 18, 2019)
 ---------------------------------
@@ -534,7 +644,6 @@ Small bug-fix release fixing a few regressions:
 - Fix filtering of a GeoDataFrame to preserve the index type when ending up
   with an empty result (#1190).
 
-
 Version 0.6.1 (October 12, 2019)
 --------------------------------
 
@@ -542,7 +651,6 @@ Small bug-fix release fixing a few regressions:
 
 - Fix ``astype`` when converting to string with Multi geometries (#1145) or when converting a dataframe without geometries (#1144).
 - Fix ``GeoSeries.fillna`` to accept ``np.nan`` again (#1149).
-
 
 Version 0.6.0 (September 27, 2019)
 ----------------------------------
@@ -584,9 +692,7 @@ Bug fixes:
 - Fixed ``GeoDataFrame.to_file`` to preserve VFS file paths (e.g. when a "s3://" path is specified) (#1124).
 - Fixed failing case in ``geopandas.sjoin`` with empty geometries (#1138).
 
-
 In addition, the minimum required versions of some dependencies have been increased: GeoPandas now requirs pandas >=0.23.4 and matplotlib >=2.0.1 (#1002).
-
 
 Version 0.5.1 (July 11, 2019)
 -----------------------------
