@@ -1,5 +1,4 @@
 import warnings
-from types import SimpleNamespace
 
 import numpy as np
 import pandas as pd
@@ -772,15 +771,9 @@ GON (((-122.84000 49.00000, -120.0000...
             classification_kwds = {}
 
         if scheme == "greedy":
-            colors = mapclassify.greedy(df, **classification_kwds)
-            num_colors = colors.max() + 1
-            bins = np.arange(num_colors)
-            binning = SimpleNamespace(
-                k=num_colors,
-                counts=list(colors.value_counts().sort_index()),
-                yb=np.asarray(colors),
-                bins=bins,
-            )
+            values = mapclassify.greedy(df, **classification_kwds)
+            labels = np.arange(values.max() + 1)
+            categorical = True
         else:
             if "k" not in classification_kwds:
                 classification_kwds["k"] = k
@@ -806,8 +799,6 @@ GON (((-122.84000 49.00000, -120.0000...
 
             if scheme != "greedy":
                 labels = binning.get_legend_classes(fmt)
-            else:
-                labels = [str(b) for b in binning.bins]
             if legend_kwds is not None:
                 show_interval = legend_kwds.pop("interval", False)
             else:
@@ -815,12 +806,13 @@ GON (((-122.84000 49.00000, -120.0000...
             if not show_interval and scheme != "greedy":
                 labels = [c[1:-1] for c in labels]
 
-        values = pd.Categorical(
-            [np.nan] * len(values), categories=binning.bins, ordered=True
-        )
-        values[~nan_idx] = pd.Categorical.from_codes(
-            binning.yb, categories=binning.bins, ordered=True
-        )
+        if scheme != "greedy":
+            values = pd.Categorical(
+                [np.nan] * len(values), categories=binning.bins, ordered=True
+            )
+            values[~nan_idx] = pd.Categorical.from_codes(
+                binning.yb, categories=binning.bins, ordered=True
+            )
         if cmap is None:
             cmap = "viridis"
 
