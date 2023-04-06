@@ -31,7 +31,10 @@ def _get_conn(conn_or_engine):
     from sqlalchemy.engine.base import Engine, Connection
 
     if isinstance(conn_or_engine, Connection):
-        with conn_or_engine.begin():
+        if not conn_or_engine.in_transaction():
+            with conn_or_engine.begin():
+                yield conn_or_engine
+        else:
             yield conn_or_engine
     elif isinstance(conn_or_engine, Engine):
         with conn_or_engine.begin() as conn:
@@ -112,6 +115,9 @@ def _read_postgis(
     Returns a GeoDataFrame corresponding to the result of the query
     string, which must contain a geometry column in WKB representation.
 
+    It is also possible to use :meth:`~GeoDataFrame.read_file` to read from a database.
+    Especially for file geodatabases like GeoPackage or SpatiaLite this can be easier.
+
     Parameters
     ----------
     sql : string
@@ -149,7 +155,7 @@ def _read_postgis(
 
     SpatiaLite
 
-    >>> sql = "SELECT ST_Binary(geom) AS geom, highway FROM roads"
+    >>> sql = "SELECT ST_AsBinary(geom) AS geom, highway FROM roads"
     >>> df = geopandas.read_postgis(sql, con)  # doctest: +SKIP
     """
 
@@ -392,6 +398,7 @@ def _write_postgis(
     """
     try:
         from geoalchemy2 import Geometry
+        from sqlalchemy import text
     except ImportError:
         raise ImportError("'to_postgis()' requires geoalchemy2 package.")
 
@@ -428,8 +435,10 @@ def _write_postgis(
             # Only check SRID if table exists
             if connection.dialect.has_table(connection, name, schema):
                 target_srid = connection.execute(
-                    "SELECT Find_SRID('{schema}', '{table}', '{geom_col}');".format(
-                        schema=schema_name, table=name, geom_col=geom_name
+                    text(
+                        "SELECT Find_SRID('{schema}', '{table}', '{geom_col}');".format(
+                            schema=schema_name, table=name, geom_col=geom_name
+                        )
                     )
                 ).fetchone()[0]
 

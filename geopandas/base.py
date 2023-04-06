@@ -393,7 +393,7 @@ GeometryCollection
         features that have a z-component.
 
         Notes
-        ------
+        -----
         Every operation in GeoPandas is planar, i.e. the potential third
         dimension is not taken into account.
 
@@ -667,7 +667,7 @@ GeometryCollection
         Applies to GeoSeries containing only Polygons.
 
         Returns
-        ----------
+        -------
         inner_rings: Series of List
             Inner rings of each polygon in the GeoSeries.
 
@@ -765,6 +765,38 @@ GeometryCollection
         GeoSeries.convex_hull : convex hull geometry
         """
         return _delegate_geo_method("minimum_bounding_circle", self)
+
+    def minimum_bounding_radius(self):
+        """Returns a `Series` of the radii of the minimum bounding circles
+        that enclose each geometry.
+
+        Examples
+        --------
+        >>> from shapely.geometry import Point, LineString, Polygon
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0, 0), (1, 1), (0, 1), (0, 0)]),
+        ...         LineString([(0, 0), (1, 1), (1, 0)]),
+        ...         Point(0,0),
+        ...     ]
+        ... )
+        >>> s
+        0    POLYGON ((0.00000 0.00000, 1.00000 1.00000, 0....
+        1    LINESTRING (0.00000 0.00000, 1.00000 1.00000, ...
+        2                              POINT (0.00000 0.00000)
+        dtype: geometry
+        >>> s.minimum_bounding_radius()
+        0    0.707107
+        1    0.707107
+        2    0.000000
+        dtype: float64
+
+        See also
+        --------
+        GeoSeries.minumum_bounding_circle : minimum bounding circle (geometry)
+
+        """
+        return Series(self.geometry.values.minimum_bounding_radius(), index=self.index)
 
     def normalize(self):
         """Returns a ``GeoSeries`` of normalized
@@ -2850,13 +2882,13 @@ GeometryCollection
         1    POLYGON ((5.00000 4.00000, 5.00000 5.00000, 4....
         dtype: geometry
 
-        >>> s.sindex.query_bulk(s2)
+        >>> s.sindex.query(s2)
         array([[0, 0, 0, 1],
                [1, 2, 3, 4]])
 
         Query the spatial index with an array of geometries based on the predicate:
 
-        >>> s.sindex.query_bulk(s2, predicate="contains")
+        >>> s.sindex.query(s2, predicate="contains")
         array([[0],
                [2]])
         """
@@ -3019,7 +3051,7 @@ GeometryCollection
             If False, the order of elements is preserved.
 
         Returns
-        ----------
+        -------
         spatial_relations: Series of strings
             The DE-9IM intersection matrices which describe
             the spatial relations of the other geometry.
