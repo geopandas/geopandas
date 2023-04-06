@@ -799,7 +799,7 @@ es": {"name": "urn:ogc:def:crs:EPSG::4326"}}}'
             if auth_crsdef is None:
                 warnings.warn(
                     "Geodataframe CRS is not representable in URN OGC "
-                    "format. Resulting JSON will bear no CRS information.",
+                    "format. Resulting JSON will contain no CRS information.",
                     stacklevel=2,
                 )
             else:
