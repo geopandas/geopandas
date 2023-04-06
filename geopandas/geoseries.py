@@ -764,10 +764,11 @@ class GeoSeries(GeoPandasBase, Series):
             locations. If pd.NA or np.nan are passed, values will be filled with
             ``None`` (not GEOMETRYCOLLECTION EMPTY).
 
-        method : {'backfill', 'bfill', 'pad', 'ffill', None}, default None
-            Method to use for filling holes in reindexed Series
-            - 'pad' / 'ffill' : propagate last valid observation forward to next valid
-            - 'backfill' / 'bfill' : use NEXT valid observation to fill gap
+        method : {'backfill', 'bfill', 'ffill', None}, default None
+            Method to use for filling holes in reindexed GeoSeries:
+
+            - ffill: propagate last valid observation forward to next valid.
+            - backfill / bfill: use next valid observation to fill gap.
 
         limit : int, default None
             If method is specified, this is the maximum number of consecutive
@@ -775,7 +776,7 @@ class GeoSeries(GeoPandasBase, Series):
             a gap with more than this number of consecutive NaNs, it will only
             be partially filled. If method is not specified, this is the
             maximum number of entries along the entire axis where NaNs will be
-            filled.
+            filled. Must be greater than 0 if not None.
 
         Returns
         -------
