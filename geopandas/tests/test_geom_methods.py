@@ -1506,11 +1506,13 @@ class TestGeomMethods:
             self.g1,
             self.na,
             self.a1,
+            self.na_none,
         ):
             output = gs.sample_points(size)
             assert_index_equal(gs.index, output.index)
             assert (
-                len(output.explode(ignore_index=True)) == len(gs[~gs.is_empty]) * size
+                len(output.explode(ignore_index=True))
+                == len(gs[~(gs.is_empty | gs.isna())]) * size
             )
 
     @pytest.mark.skipif(

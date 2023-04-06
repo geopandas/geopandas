@@ -3685,7 +3685,7 @@ GeometryCollection
             geometry using ``numpy.random.uniform``. Other allowed strings
             (e.g. ``"cluster_poisson"``) denote sampling function name from the
             ``pointpats.random`` module (see
-            http://pysal.org/pointpats/api.html#random-distributions. Pointpats methods
+            http://pysal.org/pointpats/api.html#random-distributions). Pointpats methods
             are implemented for (Multi)Polygons only and will return an empty MultiPoint
             for other geometry types.
         seed : {None, int, array_like[ints], SeedSequence, BitGenerator, Generator}, optional
@@ -3740,17 +3740,12 @@ GeometryCollection
                     f" available random sampling methods."
                 )
             sample_function = getattr(pointpats.random, method)
-            raw_points = self.geometry.apply(
-                lambda x: sample_function(x, size=size, **kwargs)
+            result = self.geometry.apply(
+                lambda x: points_from_xy(
+                    *sample_function(x, size=size, **kwargs).T
+                ).unary_union()
                 if not (x.is_empty or x is None or "Polygon" not in x.geom_type)
-                else None,
-            )
-            result = GeoSeries(
-                raw_points.apply(
-                    lambda x: points_from_xy(*x.T).unary_union()
-                    if x is not None
-                    else MultiPoint()
-                ),
+                else MultiPoint(),
             )
 
         return GeoSeries(result, name="sampled_points", crs=self.crs, index=self.index)
