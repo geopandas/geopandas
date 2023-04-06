@@ -3,7 +3,9 @@ import json
 import warnings
 
 import numpy as np
-from pandas import DataFrame, Series
+from pandas import DataFrame, Series, ArrowDtype
+from pandas.util._validators import check_dtype_backend
+from pandas._libs import lib
 
 import geopandas._compat as compat
 from geopandas._compat import import_optional_dependency
@@ -385,11 +387,23 @@ def _to_feather(df, path, index=None, compression=None, schema_version=None, **k
     feather.write_feather(table, path, compression=compression, **kwargs)
 
 
-def _arrow_to_geopandas(table, metadata=None):
+def _arrow_to_geopandas(table, metadata=None, dtype_backend=lib.no_default):
     """
     Helper function with main, shared logic for read_parquet/read_feather.
     """
-    df = table.to_pandas()
+    check_dtype_backend(dtype_backend)
+    if not compat.PANDAS_GE_20 and dtype_backend is not lib.no_default:
+        raise ValueError(
+            """dtype_backend argument only supported with Pandas > 2.0.0"""
+        )
+    if dtype_backend is lib.no_default:
+        df = table.to_pandas()
+    elif dtype_backend == "numpy_nullable":
+        from pandas.io._util import _arrow_dtype_mapping
+
+        df = table.to_pandas(types_mapper=_arrow_dtype_mapping().get)
+    elif dtype_backend == "pyarrow":
+        df = table.to_pandas(types_mapper=ArrowDtype)
 
     metadata = metadata or table.schema.metadata
 
@@ -510,7 +524,13 @@ def _ensure_arrow_fs(filesystem):
     return filesystem
 
 
-def _read_parquet(path, columns=None, storage_options=None, **kwargs):
+def _read_parquet(
+    path,
+    columns=None,
+    storage_options=None,
+    dtype_backend=lib.no_default,
+    **kwargs,
+):
     """
     Load a Parquet object from the file path, returning a GeoDataFrame.
 
@@ -554,6 +574,14 @@ def _read_parquet(path, columns=None, storage_options=None, **kwargs):
         both ``pyarrow.fs`` and ``fsspec`` (e.g. "s3://") then the ``pyarrow.fs``
         filesystem is preferred. Provide the instantiated fsspec filesystem using
         the ``filesystem`` keyword if you wish to use its implementation.
+    dtype_backend : {{"numpy _nullable","pyarrow"}}. defaults to NumPy backed DataFrames
+        Which dtype_backend to use, e.g. whether a DataFrame should have NumPy
+        arrays, nullable types are used for all types that have a nullable
+        implementation when "numpy_nullable" is set, pyarrow is used for all
+        dtypes if "pyarrow" is set.
+
+        The dtype backends are still experimential.
+
     **kwargs
         Any additional kwargs passed to pyarrow.parquet.read_table().
 
@@ -604,10 +632,10 @@ def _read_parquet(path, columns=None, storage_options=None, **kwargs):
         except Exception:
             pass
 
-    return _arrow_to_geopandas(table, metadata)
+    return _arrow_to_geopandas(table, metadata, dtype_backend)
 
 
-def _read_feather(path, columns=None, **kwargs):
+def _read_feather(path, columns=None, dtype_backend=lib.no_default, **kwargs):
     """
     Load a Feather object from the file path, returning a GeoDataFrame.
 
@@ -640,6 +668,13 @@ def _read_feather(path, columns=None, **kwargs):
         geometry read from the file will be set as the geometry column
         of the returned GeoDataFrame.  If no geometry columns are present,
         a ``ValueError`` will be raised.
+    dtype_backend : {{"numpy _nullable","pyarrow"}}. defaults to NumPy backed DataFrames
+        Which dtype_backend to use, e.g. whether a DataFrame should have NumPy
+        arrays, nullable types are used for all types that have a nullable
+        implementation when "numpy_nullable" is set, pyarrow is used for all
+        dtypes if "pyarrow" is set.
+
+        The dtype backends are still experimential.
     **kwargs
         Any additional kwargs passed to pyarrow.feather.read_table().
 
@@ -670,4 +705,4 @@ def _read_feather(path, columns=None, **kwargs):
 
     path = _expand_user(path)
     table = feather.read_table(path, columns=columns, **kwargs)
-    return _arrow_to_geopandas(table)
+    return _arrow_to_geopandas(table, dtype_backend=dtype_backend)
