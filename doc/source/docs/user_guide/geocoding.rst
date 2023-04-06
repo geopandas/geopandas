@@ -19,7 +19,9 @@ with the detailed borough boundary file included within GeoPandas.
 
 .. ipython:: python
 
-    boros = geopandas.read_file(geopandas.datasets.get_path("nybb"))
+    import geodatasets
+
+    boros = geopandas.read_file(geodatasets.get_path("nybb"))
     boros.BoroName
     boro_locations = geopandas.tools.geocode(boros.BoroName)
     boro_locations

@@ -51,7 +51,7 @@ def _binary_geo(op, this, other, align):
     from .geoseries import GeoSeries
 
     geoms, index = _delegate_binary_method(op, this, other, align)
-    return GeoSeries(geoms.data, index=index, crs=this.crs)
+    return GeoSeries(geoms, index=index, crs=this.crs)
 
 
 def _binary_op(op, this, other, align, *args, **kwargs):
@@ -68,7 +68,7 @@ def _delegate_property(op, this):
     if isinstance(data, GeometryArray):
         from .geoseries import GeoSeries
 
-        return GeoSeries(data.data, index=this.index, crs=this.crs)
+        return GeoSeries(data, index=this.index, crs=this.crs)
     else:
         return Series(data, index=this.index)
 
@@ -79,7 +79,7 @@ def _delegate_geo_method(op, this, *args, **kwargs):
     from .geoseries import GeoSeries
 
     a_this = GeometryArray(this.geometry.values)
-    data = getattr(a_this, op)(*args, **kwargs).data
+    data = getattr(a_this, op)(*args, **kwargs)
     return GeoSeries(data, index=this.index, crs=this.crs)
 
 
@@ -393,7 +393,7 @@ GeometryCollection
         features that have a z-component.
 
         Notes
-        ------
+        -----
         Every operation in GeoPandas is planar, i.e. the potential third
         dimension is not taken into account.
 
@@ -627,7 +627,7 @@ GeometryCollection
         Applies to GeoSeries containing only Polygons.
 
         Returns
-        ----------
+        -------
         inner_rings: Series of List
             Inner rings of each polygon in the GeoSeries.
 
@@ -725,6 +725,38 @@ GeometryCollection
         GeoSeries.convex_hull : convex hull geometry
         """
         return _delegate_geo_method("minimum_bounding_circle", self)
+
+    def minimum_bounding_radius(self):
+        """Returns a `Series` of the radii of the minimum bounding circles
+        that enclose each geometry.
+
+        Examples
+        --------
+        >>> from shapely.geometry import Point, LineString, Polygon
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0, 0), (1, 1), (0, 1), (0, 0)]),
+        ...         LineString([(0, 0), (1, 1), (1, 0)]),
+        ...         Point(0,0),
+        ...     ]
+        ... )
+        >>> s
+        0    POLYGON ((0.00000 0.00000, 1.00000 1.00000, 0....
+        1    LINESTRING (0.00000 0.00000, 1.00000 1.00000, ...
+        2                              POINT (0.00000 0.00000)
+        dtype: geometry
+        >>> s.minimum_bounding_radius()
+        0    0.707107
+        1    0.707107
+        2    0.000000
+        dtype: float64
+
+        See also
+        --------
+        GeoSeries.minumum_bounding_circle : minimum bounding circle (geometry)
+
+        """
+        return Series(self.geometry.values.minimum_bounding_radius(), index=self.index)
 
     def normalize(self):
         """Returns a ``GeoSeries`` of normalized
@@ -2710,7 +2742,7 @@ GeometryCollection
 
         geometry_array = GeometryArray(self.geometry.values)
         clipped_geometry = geometry_array.clip_by_rect(xmin, ymin, xmax, ymax)
-        return GeoSeries(clipped_geometry.data, index=self.index, crs=self.crs)
+        return GeoSeries(clipped_geometry, index=self.index, crs=self.crs)
 
     #
     # Other operations
@@ -2810,13 +2842,13 @@ GeometryCollection
         1    POLYGON ((5.00000 4.00000, 5.00000 5.00000, 4....
         dtype: geometry
 
-        >>> s.sindex.query_bulk(s2)
+        >>> s.sindex.query(s2)
         array([[0, 0, 0, 1],
                [1, 2, 3, 4]])
 
         Query the spatial index with an array of geometries based on the predicate:
 
-        >>> s.sindex.query_bulk(s2, predicate="contains")
+        >>> s.sindex.query(s2, predicate="contains")
         array([[0],
                [2]])
         """
@@ -2979,7 +3011,7 @@ GeometryCollection
             If False, the order of elements is preserved.
 
         Returns
-        ----------
+        -------
         spatial_relations: Series of strings
             The DE-9IM intersection matrices which describe
             the spatial relations of the other geometry.
@@ -3560,13 +3592,13 @@ GeometryCollection
             import shapely
 
             coords, outer_idx = shapely.get_coordinates(
-                self.geometry.values, include_z=include_z, return_index=True
+                self.geometry.values._data, include_z=include_z, return_index=True
             )
         elif compat.USE_PYGEOS:
             import pygeos
 
             coords, outer_idx = pygeos.get_coordinates(
-                self.geometry.values.data, include_z=include_z, return_index=True
+                self.geometry.values._data, include_z=include_z, return_index=True
             )
 
         else:
@@ -3618,9 +3650,11 @@ GeometryCollection
         """
         from geopandas.tools.hilbert_curve import _hilbert_distance
 
-        distances = _hilbert_distance(self, total_bounds=total_bounds, level=level)
+        distances = _hilbert_distance(
+            self.geometry.values, total_bounds=total_bounds, level=level
+        )
 
-        return distances
+        return pd.Series(distances, index=self.index, name="hilbert_distance")
 
 
 def _get_index_for_parts(orig_idx, outer_idx, ignore_index, index_parts):

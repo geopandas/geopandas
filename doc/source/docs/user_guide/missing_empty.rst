@@ -12,7 +12,7 @@ Missing and empty geometries
 ============================
 
 GeoPandas supports, just like in pandas, the concept of missing values (NA
-or null values). But for geometry values, we have an additional concept of
+or null values). But for geometry values, there is an additional concept of
 empty geometries:
 
 - **Empty geometries** are actual geometry objects but that have no coordinates

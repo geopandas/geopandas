@@ -114,7 +114,7 @@ Other operations return GeoPandas objects:
 
 .. image:: ../../_static/test_buffer.png
 
-GeoPandas objects also know how to plot themselves.  GeoPandas uses `matplotlib`_ for plotting. To generate a plot of our GeoSeries, use:
+GeoPandas objects also know how to plot themselves. GeoPandas uses `matplotlib`_ for plotting. To generate a plot of a GeoSeries, use:
 
 .. sourcecode:: python
 
@@ -124,7 +124,8 @@ GeoPandas also implements alternate constructors that can read any data format r
 
 .. sourcecode:: python
 
-    >>> nybb_path = geopandas.datasets.get_path('nybb')
+    >>> import geodatasets
+    >>> nybb_path = geodatasets.get_path('nybb')
     >>> boros = geopandas.read_file(nybb_path)
     >>> boros.set_index('BoroCode', inplace=True)
     >>> boros.sort_index(inplace=True)
@@ -160,7 +161,7 @@ GeoPandas also implements alternate constructors that can read any data format r
 
 .. image:: ../../_static/nyc_hull.png
 
-To demonstrate a more complex operation, we'll generate a
+To demonstrate a more complex operation, generate a
 :class:`~geopandas.GeoSeries` containing 2000 random points:
 
 .. sourcecode:: python
@@ -178,14 +179,14 @@ Now draw a circle with fixed radius around each point:
 
     >>> circles = pts.buffer(2000)
 
-We can collapse these circles into a single :class:`MultiPolygon`
+You can collapse these circles into a single :class:`MultiPolygon`
 geometry with
 
 .. sourcecode:: python
 
     >>> mp = circles.unary_union
 
-To extract the part of this geometry contained in each borough, we can
+To extract the part of this geometry contained in each borough, you can
 just use:
 
 .. sourcecode:: python

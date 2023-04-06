@@ -16,11 +16,12 @@ import matplotlib.pyplot as plt
 from shapely.geometry import Point
 from geopandas import GeoSeries, GeoDataFrame
 import geopandas as gpd
+import geodatasets
 
 np.random.seed(1)
 DPI = 100
 
-path_nybb = gpd.datasets.get_path("nybb")
+path_nybb = geodatasets.get_path("nybb")
 boros = GeoDataFrame.from_file(path_nybb)
 boros = boros.set_index("BoroCode")
 boros

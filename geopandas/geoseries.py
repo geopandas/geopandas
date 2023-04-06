@@ -912,13 +912,13 @@ class GeoSeries(GeoPandasBase, Series):
         if compat.USE_SHAPELY_20 or (compat.USE_PYGEOS and compat.PYGEOS_GE_09):
             if compat.USE_SHAPELY_20:
                 geometries, outer_idx = shapely.get_parts(
-                    self.values.data, return_index=True
+                    self.values._data, return_index=True
                 )
             else:
                 import pygeos  # noqa
 
                 geometries, outer_idx = pygeos.get_parts(
-                    self.values.data, return_index=True
+                    self.values._data, return_index=True
                 )
 
             index = _get_index_for_parts(
