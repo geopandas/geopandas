@@ -898,10 +898,10 @@ individually so that features may have different properties
         if len(properties_cols) > 0:
             # convert to object to get python scalars.
             properties = self[properties_cols].astype(object).values
-            na_mask = pd.isna(properties)
+            na_mask = pd.isna(self[properties_cols]).values
 
             if na == "null":
-                properties[pd.isnull(self[properties_cols]).values] = None
+                properties[na_mask] = None
 
             for i, row in enumerate(properties):
                 geom = geometries[i]
