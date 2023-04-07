@@ -342,15 +342,16 @@ class TestDataFrame:
 
     def test_get_geometry_invalid(self):
         df = GeoDataFrame()
+        # no column "geometry" ever added
         df["geom"] = self.df.geometry
         msg_geo_col_none = "active geometry column to use has not been set. "
 
         with pytest.raises(AttributeError, match=msg_geo_col_none):
             df.geometry
-        df2 = self.df.copy()
-        df2["geom2"] = df2.geometry
-        df2 = df2[["BoroCode", "BoroName", "geom2"]]
-        with pytest.raises(AttributeError, match=msg_geo_col_none):
+        # "geometry" originally present but dropped (but still a gdf)
+        col_subset_drop_geometry = ["BoroCode", "BoroName", "geom2"]
+        df2 = self.df.copy().assign(geom2=self.df.geometry)[col_subset_drop_geometry]
+        with pytest.raises(AttributeError, match="is not present."):
             df2.geometry
 
         msg_other_geo_cols_present = "There are columns with geometry data type"
@@ -1320,11 +1321,11 @@ class TestConstructor:
         gdf6["geom2"] = geo_col
         gdf6["geom3"] = geo_col
         gdf6 = gdf6.set_geometry("geom2")
-        subset = gdf6[["a", "geom3"]]  # this has no active geometry column
-        assert subset._geometry_column_name is None
+        subset = gdf6[["a", "geom3"]]  # this has a missing active geometry col
+        assert subset._geometry_column_name == "geom2"
         subset["geometry"] = geo_col
         # adding column called geometry shouldn't auto-set
-        assert subset._geometry_column_name is None
+        assert subset._geometry_column_name == "geom2"
 
 
 def test_geodataframe_crs():
