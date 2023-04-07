@@ -342,7 +342,6 @@ class TestDataFrame:
     def test_get_geometry_invalid(self):
         df = GeoDataFrame()
         df["geom"] = self.df.geometry
-        msg_geo_col_none = "active geometry column to use has not been set. "
         msg_geo_col_missing = "is not present. "
 
         with pytest.raises(AttributeError, match=msg_geo_col_missing):
@@ -350,7 +349,7 @@ class TestDataFrame:
         df2 = self.df.copy()
         df2["geom2"] = df2.geometry
         df2 = df2[["BoroCode", "BoroName", "geom2"]]
-        with pytest.raises(AttributeError, match=msg_geo_col_none):
+        with pytest.raises(AttributeError, match=msg_geo_col_missing):
             df2.geometry
 
         msg_other_geo_cols_present = "There are columns with geometry data type"
@@ -429,11 +428,27 @@ class TestDataFrame:
         assert_frame_equal(res2, exp2_nogeom)
 
     def test_to_json(self):
-        text = self.df.to_json()
+        text = self.df.to_json(to_wgs84=True)
         data = json.loads(text)
         assert data["type"] == "FeatureCollection"
         assert len(data["features"]) == 5
         assert "id" in data["features"][0].keys()
+
+        # check it converts to WGS84
+        coord = data["features"][0]["geometry"]["coordinates"][0][0][0]
+        np.testing.assert_allclose(coord, [-74.0505080640324, 40.5664220341941])
+
+    def test_to_json_wgs84_false(self):
+        text = self.df.to_json()
+        data = json.loads(text)
+        # check it doesn't convert to WGS84
+        coord = data["features"][0]["geometry"]["coordinates"][0][0][0]
+        assert coord == [970217.0223999023, 145643.33221435547]
+
+    def test_to_json_no_crs(self):
+        self.df.crs = None
+        with pytest.raises(ValueError, match="CRS is not set"):
+            self.df.to_json(to_wgs84=True)
 
     @pytest.mark.filterwarnings(
         "ignore:Geometry column does not contain geometry:UserWarning"
