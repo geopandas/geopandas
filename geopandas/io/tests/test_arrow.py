@@ -576,7 +576,7 @@ def test_missing_crs(tmpdir, file_format):
 
 
 def test_default_geo_col_writes(tmp_path):
-    # edge case DEFAULT_GEO_COLUMN_NAME write successfully
+    # edge case geo col name None writes successfully
     df = GeoDataFrame({"a": [1, 2]})
     df.to_parquet(tmp_path / "test.pq")
     # cannot be round tripped as gdf due to invalid geom col

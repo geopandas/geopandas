@@ -306,12 +306,6 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             frame = self
         else:
             frame = self.copy()
-            # if there is no previous self.geometry, self.copy() will downcast
-            if type(frame) == DataFrame:
-                frame = GeoDataFrame(frame)
-                # if from dataframe.set_geometry, want to preserve this
-                # TODO remove this when copy works properly.
-                frame._geometry_column_name = self._geometry_column_name
 
         to_remove = None
         geo_column_name = self._geometry_column_name
@@ -353,7 +347,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         # Check that we are using a listlike of geometries
         level = _ensure_geometry(level, crs=crs)
         # update _geometry_column_name prior to assignment
-        # to avoid _geometry_column_name is None
+        # to avoid default is None warning
         frame._geometry_column_name = geo_column_name
         frame[geo_column_name] = level
 
@@ -450,6 +444,23 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
     @crs.setter
     def crs(self, value):
         """Sets the value of the crs"""
+        if self._geometry_column_name is None:
+            raise ValueError(
+                "Assigning CRS to a GeoDataFrame without a geometry column is not "
+                "supported. Use GeoDataFrame.set_geometry to set the active "
+                "geometry column.",
+            )
+
+        if hasattr(self.geometry.values, "crs"):
+            self.geometry.values.crs = value
+        else:
+            # column called 'geometry' without geometry
+            raise ValueError(
+                "Assigning CRS to a GeoDataFrame without an active geometry "
+                "column is not supported. Use GeoDataFrame.set_geometry to set "
+                "the active geometry column.",
+            )
+
         if (
             self._geometry_column_name is None
             and self._geometry_column_name not in self

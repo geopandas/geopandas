@@ -1302,37 +1302,32 @@ class TestConstructor:
 
     def test_default_geo_colname_none(self):
         match = "You are adding a column named 'geometry' to a GeoDataFrame"
+        gdf = GeoDataFrame({"a": [1, 2]})
 
-        def make_gdf():
-            # replace with copies when copy downcast is merged #2775
-            return GeoDataFrame({"a": [1, 2]})
-
-        gdf2 = make_gdf()
+        gdf2 = gdf.copy()
         geo_col = GeoSeries.from_xy([1, 3], [3, 3])
         with pytest.warns(FutureWarning, match=match):
             gdf2["geometry"] = geo_col
         assert gdf2._geometry_column_name == "geometry"
-        gdf4 = make_gdf()
+        gdf4 = gdf.copy()
         with pytest.warns(FutureWarning, match=match):
             gdf4.geometry = geo_col
         assert gdf4._geometry_column_name == "geometry"
 
         # geo col name should only change if we add geometry
-        gdf5 = make_gdf()
+        gdf5 = gdf.copy()
         with pytest.warns(
             UserWarning, match="Geometry column does not contain geometry"
         ):
             gdf5["geometry"] = "foo"
         assert gdf5._geometry_column_name is None
-        # this failure may be fixed by copy downcasting issue
-        # TODO uncomment this, but it currently fails
-        # gdf3 = make_gdf().assign(geometry=geo_col)
-        # assert gdf3._geometry_column_name == "geometry"
+        gdf3 = gdf.copy().assign(geometry=geo_col)
+        assert gdf3._geometry_column_name == "geometry"
 
         # Check that adding a GeoSeries to a column called "geometry" to a
         # gdf without an active geometry column some time after the init does not
         # warn / set the active geometry column
-        gdf6 = make_gdf()
+        gdf6 = gdf.copy()
         gdf6["geom2"] = geo_col
         gdf6["geom3"] = geo_col
         gdf6 = gdf6.set_geometry("geom2")

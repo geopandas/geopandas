@@ -120,11 +120,8 @@ def _create_metadata(df, schema_version=None):
         if np.isfinite(bbox).all():
             # don't add bbox with NaNs for empty / all-NA geometry column
             column_metadata[col]["bbox"] = bbox
-    primary_column = (
-        "geometry" if df._geometry_column_name is None else df._geometry_column_name
-    )
     return {
-        "primary_column": primary_column,
+        "primary_column": df._geometry_column_name,
         "columns": column_metadata,
         "version": schema_version or METADATA_VERSION,
         "creator": {"library": "geopandas", "version": geopandas.__version__},
