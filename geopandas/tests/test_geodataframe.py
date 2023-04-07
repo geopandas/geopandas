@@ -1315,6 +1315,70 @@ class TestConstructor:
         result = gdf[["geometry"]]
         assert_frame_equal(result, gdf if dtype == "geometry" else pd.DataFrame(gdf))
 
+    def test_multiindex_geometry_colname_2_level(self):
+        # GH1763 https://github.com/geopandas/geopandas/issues/1763
+        crs = "EPSG:4326"
+        df = pd.DataFrame(
+            [[1, 0], [0, 1]], columns=[["location", "location"], ["x", "y"]]
+        )
+        x_col = df["location", "x"]
+        y_col = df["location", "y"]
+
+        gdf = GeoDataFrame(df, crs=crs, geometry=points_from_xy(x_col, y_col))
+        assert gdf.crs == crs
+        assert gdf.geometry.crs == crs
+        assert gdf.geometry.dtype == "geometry"
+        assert gdf._geometry_column_name == "geometry"
+        assert gdf.geometry.name == "geometry"
+
+    def test_multiindex_geometry_colname_3_level(self):
+        # GH1763 https://github.com/geopandas/geopandas/issues/1763
+        # Note 3-level case uses different code paths in pandas, it is not redundant
+        crs = "EPSG:4326"
+        df = pd.DataFrame(
+            [[1, 0], [0, 1]],
+            columns=[
+                ["foo", "foo"],
+                ["location", "location"],
+                ["x", "y"],
+            ],
+        )
+
+        x_col = df["foo", "location", "x"]
+        y_col = df["foo", "location", "y"]
+
+        gdf = GeoDataFrame(df, crs=crs, geometry=points_from_xy(x_col, y_col))
+        assert gdf.crs == crs
+        assert gdf.geometry.crs == crs
+        assert gdf.geometry.dtype == "geometry"
+        assert gdf._geometry_column_name == "geometry"
+        assert gdf.geometry.name == "geometry"
+
+    def test_multiindex_geometry_colname_3_level_new_col(self):
+        crs = "EPSG:4326"
+        df = pd.DataFrame(
+            [[1, 0], [0, 1]],
+            columns=[
+                ["foo", "foo"],
+                ["location", "location"],
+                ["x", "y"],
+            ],
+        )
+
+        x_col = df["foo", "location", "x"]
+        y_col = df["foo", "location", "y"]
+        df["geometry"] = GeoSeries.from_xy(x_col, y_col)
+        df2 = df.copy()
+        gdf = df.set_geometry("geometry", crs=crs)
+        assert gdf.crs == crs
+        assert gdf._geometry_column_name == "geometry"
+        assert gdf.geometry.name == "geometry"
+        # test again setting with tuple col name
+        gdf = df2.set_geometry(("geometry", "", ""), crs=crs)
+        assert gdf.crs == crs
+        assert gdf._geometry_column_name == ("geometry", "", "")
+        assert gdf.geometry.name == ("geometry", "", "")
+
 
 def test_geodataframe_crs():
     gdf = GeoDataFrame(columns=["geometry"])
