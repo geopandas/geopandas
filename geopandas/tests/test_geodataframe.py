@@ -1289,16 +1289,11 @@ class TestConstructor:
         df.columns = pd.MultiIndex.from_product([["geometry"], [0, 1]])
         # don't error in constructor
         gdf = GeoDataFrame(df)
-        # Getting the .geometry column gives GeoDataFrame for both columns
-        # (but with first MultiIndex level removed)
-        # TODO should this give an error instead?
-        # TODO this fails now, #2088 might fix?
-        result = gdf.geometry
-        assert result.shape == gdf.shape
-        assert result.columns.tolist() == [0, 1]
-        assert_frame_equal(result, gdf["geometry"])
-        result = gdf[["geometry"]]
-        assert_frame_equal(result, gdf if dtype == "geometry" else pd.DataFrame(gdf))
+        with pytest.raises(AttributeError, match=".*geometry .* has not been set.*"):
+            gdf.geometry
+        res_gdf = gdf.set_geometry(("geometry", 0))
+        assert res_gdf.shape == gdf.shape
+        assert isinstance(res_gdf.geometry, GeoSeries)
 
     def test_default_geo_colname_none(self):
         match = "You are adding a column named 'geometry' to a GeoDataFrame"
