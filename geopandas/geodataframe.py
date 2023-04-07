@@ -461,28 +461,6 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 "the active geometry column.",
             )
 
-        if (
-            self._geometry_column_name is None
-            and self._geometry_column_name not in self
-        ):
-            raise ValueError(
-                "Assigning CRS to a GeoDataFrame without a geometry column is not "
-                "supported. Use GeoDataFrame.set_geometry to set the active "
-                "geometry column.",
-            )
-        else:
-            if self._geometry_column_name is not None and hasattr(
-                self.geometry.values, "crs"
-            ):
-                self.geometry.values.crs = value
-            else:
-                # column called 'geometry' without geometry
-                raise ValueError(
-                    "Assigning CRS to a GeoDataFrame without an active geometry "
-                    "column is not supported. Use GeoDataFrame.set_geometry to set "
-                    "the active geometry column.",
-                )
-
     def __setstate__(self, state):
         # overriding DataFrame method for compat with older pickles (CRS handling)
         crs = None
