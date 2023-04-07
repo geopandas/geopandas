@@ -176,7 +176,7 @@ def multi_point(point_gdf):
 @pytest.fixture
 def mixed_gdf():
     """Create a Mixed Polygon and LineString For Testing"""
-    point = Point([(2, 3), (11, 4), (7, 2), (8, 9), (1, 13)])
+    point = Point(2, 3)
     line = LineString([(1, 1), (2, 2), (3, 2), (5, 3), (12, 1)])
     poly = Polygon([(3, 4), (5, 2), (12, 2), (10, 5), (9, 7.5)])
     ring = LinearRing([(1, 1), (2, 2), (3, 2), (5, 3), (12, 1)])
@@ -189,7 +189,7 @@ def mixed_gdf():
 @pytest.fixture
 def geomcol_gdf():
     """Create a Mixed Polygon and LineString For Testing"""
-    point = Point([(2, 3), (11, 4), (7, 2), (8, 9), (1, 13)])
+    point = Point(2, 3)
     poly = Polygon([(3, 4), (5, 2), (12, 2), (10, 5), (9, 7.5)])
     coll = GeometryCollection([point, poly])
     gdf = GeoDataFrame([1], geometry=[coll], crs="EPSG:3857")
@@ -450,3 +450,28 @@ def test_clip_single_multipoly_no_extra_geoms(
     multi = buffered_locations.dissolve(by="type").reset_index()
     clipped = clip(multi, masks)
     assert clipped.geom_type[0] == "Polygon"
+
+
+@pytest.mark.filterwarnings("ignore:All-NaN slice encountered")
+@pytest.mark.parametrize(
+    "mask",
+    [
+        Polygon(),
+        (np.nan,) * 4,
+        (np.nan, 0, np.nan, 1),
+        GeoSeries([Polygon(), Polygon()], crs="EPSG:3857"),
+        GeoSeries([Polygon(), Polygon()], crs="EPSG:3857").to_frame(),
+        GeoSeries([], crs="EPSG:3857"),
+        GeoSeries([], crs="EPSG:3857").to_frame(),
+    ],
+)
+def test_clip_empty_mask(buffered_locations, mask):
+    """Test that clipping with empty mask returns an empty result."""
+    clipped = clip(buffered_locations, mask)
+    assert_geodataframe_equal(
+        clipped,
+        GeoDataFrame([], columns=["geometry", "type"], crs="EPSG:3857"),
+        check_index_type=False,
+    )
+    clipped = clip(buffered_locations.geometry, mask)
+    assert_geoseries_equal(clipped, GeoSeries([], crs="EPSG:3857"))

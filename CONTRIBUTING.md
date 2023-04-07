@@ -69,4 +69,8 @@ Style
 
   Then `black` and `flake8` will be run automatically each time you
   commit changes. You can skip these checks with `git commit
-  --no-verify`.
+  --no-verify`. You can also configure your local git clone to have
+  `git blame` ignore the commits that introduced large formatting-only
+  changes with:
+
+    $ git config blame.ignoreRevsFile .git-blame-ignore-revs

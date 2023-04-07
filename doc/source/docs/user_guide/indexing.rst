@@ -6,7 +6,7 @@
    import geopandas
 
 
-Indexing and Selecting Data
+Indexing and selecting data
 ===========================
 
 GeoPandas inherits the standard pandas_ methods for indexing/selecting data. This includes label based indexing with :attr:`~pandas.DataFrame.loc` and integer position based indexing with :attr:`~pandas.DataFrame.iloc`, which apply to both :class:`GeoSeries` and :class:`GeoDataFrame` objects. For more information on indexing/selecting, see the pandas_ documentation.
@@ -18,12 +18,21 @@ coordinate based indexing with the :attr:`~GeoDataFrame.cx` indexer, which slice
 box. Geometries in the :class:`GeoSeries` or :class:`GeoDataFrame` that intersect the
 bounding box will be returned.
 
-Using the ``world`` dataset, we can use this functionality to quickly select all
-countries whose boundaries extend into the southern hemisphere.
+Using the ``geoda.chile_labor`` dataset, you can use this functionality to quickly select parts
+of Chile whose boundaries extend south of the -50 degrees latitude. You can first check the original GeoDataFrame.
 
 .. ipython:: python
 
-   world = geopandas.read_file(geopandas.datasets.get_path('naturalearth_lowres'))
-   southern_world = world.cx[:, :0]
-   @savefig world_southern.png
-   southern_world.plot(figsize=(10, 3));
+   import geodatasets
+
+   chile = geopandas.read_file(geodatasets.get_path('geoda.chile_labor'))
+   @savefig chile.png
+   chile.plot(figsize=(8, 8));
+
+And then select only the southern part of the country.
+
+.. ipython:: python
+
+   southern_chile = chile.cx[:, :-50]
+   @savefig chile_southern.png
+   southern_chile.plot(figsize=(8, 8));

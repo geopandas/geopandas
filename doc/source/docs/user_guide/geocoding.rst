@@ -9,17 +9,19 @@
 Geocoding
 ==========
 
-``geopandas`` supports geocoding (i.e., converting place names to
-location on Earth) through `geopy`_, an optional dependency of ``geopandas``.
+GeoPandas supports geocoding (i.e., converting place names to
+location on Earth) through `geopy`_, an optional dependency of GeoPandas.
 The following example shows how to get the
 locations of boroughs in New York City, and plots those locations along
-with the detailed borough boundary file included within ``geopandas``.
+with the detailed borough boundary file included within GeoPandas.
 
 .. _geopy: http://geopy.readthedocs.io/
 
 .. ipython:: python
 
-    boros = geopandas.read_file(geopandas.datasets.get_path("nybb"))
+    import geodatasets
+
+    boros = geopandas.read_file(geodatasets.get_path("nybb"))
     boros.BoroName
     boro_locations = geopandas.tools.geocode(boros.BoroName)
     boro_locations
