@@ -429,11 +429,27 @@ class TestDataFrame:
         assert_frame_equal(res2, exp2_nogeom)
 
     def test_to_json(self):
-        text = self.df.to_json()
+        text = self.df.to_json(to_wgs84=True)
         data = json.loads(text)
         assert data["type"] == "FeatureCollection"
         assert len(data["features"]) == 5
         assert "id" in data["features"][0].keys()
+
+        # check it converts to WGS84
+        coord = data["features"][0]["geometry"]["coordinates"][0][0][0]
+        np.testing.assert_allclose(coord, [-74.0505080640324, 40.5664220341941])
+
+    def test_to_json_wgs84_false(self):
+        text = self.df.to_json()
+        data = json.loads(text)
+        # check it doesn't convert to WGS84
+        coord = data["features"][0]["geometry"]["coordinates"][0][0][0]
+        assert coord == [970217.0223999023, 145643.33221435547]
+
+    def test_to_json_no_crs(self):
+        self.df.crs = None
+        with pytest.raises(ValueError, match="CRS is not set"):
+            self.df.to_json(to_wgs84=True)
 
     @pytest.mark.filterwarnings(
         "ignore:Geometry column does not contain geometry:UserWarning"
@@ -541,6 +557,19 @@ class TestDataFrame:
         df2 = self.df.copy()
         assert type(df2) is GeoDataFrame
         assert self.df.crs == df2.crs
+
+    def test_empty_copy(self):
+        # https://github.com/geopandas/geopandas/issues/2765
+        df = GeoDataFrame()
+        df2 = df.copy()
+        assert type(df2) is GeoDataFrame
+        df3 = df.copy(deep=True)
+        assert type(df3) is GeoDataFrame
+
+    def test_no_geom_copy(self):
+        df = GeoDataFrame(pd.DataFrame({"a": [1, 2, 3]}))
+        assert type(df) is GeoDataFrame
+        assert type(df.copy()) is GeoDataFrame
 
     def test_bool_index(self):
         # Find boros with 'B' in their name

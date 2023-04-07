@@ -732,7 +732,9 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         return df
 
-    def to_json(self, na="null", show_bbox=False, drop_id=False, **kwargs):
+    def to_json(
+        self, na="null", show_bbox=False, drop_id=False, to_wgs84=False, **kwargs
+    ):
         """
         Returns a GeoJSON representation of the ``GeoDataFrame`` as a string.
 
@@ -747,6 +749,12 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             Whether to retain the index of the GeoDataFrame as the id property
             in the generated GeoJSON. Default is False, but may want True
             if the index is just arbitrary row numbers.
+        to_wgs84: bool, optional, default: False
+            If the CRS is set on the active geometry column it is exported as
+            WGS84 (EPSG:4326) to meet the `2016 GeoJSON specification
+            <https://tools.ietf.org/html/rfc7946>`_.
+            Set to True to force re-projection and set to False to ignore CRS. False by
+            default.
 
         Notes
         -----
@@ -785,8 +793,17 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         GeoDataFrame.to_file : write GeoDataFrame to file
 
         """
+        if to_wgs84:
+            if self.crs:
+                df = self.to_crs(epsg=4326)
+            else:
+                raise ValueError(
+                    "CRS is not set. Cannot re-project to WGS84 (EPSG:4326)."
+                )
+        else:
+            df = self
         return json.dumps(
-            self._to_geo(na=na, show_bbox=show_bbox, drop_id=drop_id), **kwargs
+            df._to_geo(na=na, show_bbox=show_bbox, drop_id=drop_id), **kwargs
         )
 
     @property
@@ -1203,6 +1220,14 @@ individually so that features may have different properties
         With selected drivers you can also append to a file with `mode="a"`:
 
         >>> gdf.to_file('dataframe.shp', mode="a")  # doctest: +SKIP
+
+        Using the engine-specific keyword arguments it is possible to e.g. create a
+        spatialite file with a custom layer name:
+
+        >>> gdf.to_file(
+        ...     'dataframe.sqlite', driver='SQLite', spatialite=True, layer='test'
+        ... )  # doctest: +SKIP
+
         """
         from geopandas.io.file import _to_file
 
@@ -1461,6 +1486,13 @@ individually so that features may have different properties
     #
     # Implement pandas methods
     #
+    @doc(pd.DataFrame)
+    def copy(self, deep=True):
+        copied = super().copy(deep=deep)
+        if type(copied) is pd.DataFrame:
+            copied.__class__ = GeoDataFrame
+            copied._geometry_column_name = self._geometry_column_name
+        return copied
 
     def merge(self, *args, **kwargs):
         r"""Merge two ``GeoDataFrame`` objects with a database-style join.
@@ -1476,12 +1508,9 @@ individually so that features may have different properties
         -----
         The extra arguments ``*args`` and keyword arguments ``**kwargs`` are
         passed to DataFrame.merge.
-
-        Reference
-        ---------
-        https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas\
-        .DataFrame.merge.html
-
+        See https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas\
+.DataFrame.merge.html
+        for more details.
         """
         result = DataFrame.merge(self, *args, **kwargs)
         geo_col = self._geometry_column_name
@@ -1912,6 +1941,10 @@ individually so that features may have different properties
         This method requires SQLAlchemy and GeoAlchemy2, and a PostgreSQL
         Python driver (e.g. psycopg2) to be installed.
 
+        It is also possible to use :meth:`~GeoDataFrame.to_file` to write to a database.
+        Especially for file geodatabases like GeoPackage or SpatiaLite this can be
+        easier.
+
         Parameters
         ----------
         name : str
@@ -2076,7 +2109,7 @@ individually so that features may have different properties
     Europe    Austria    AUT    416600.0
 
         Notes
-        ------
+        -----
         Every operation in GeoPandas is planar, i.e. the potential third
         dimension is not taken into account.
 
@@ -2343,7 +2376,7 @@ countries_w_city_data[countries_w_city_data["name_left"] == "Italy"]
         overlay : equivalent top-level function
 
         Notes
-        ------
+        -----
         Every operation in GeoPandas is planar, i.e. the potential third
         dimension is not taken into account.
         """
