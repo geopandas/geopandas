@@ -40,6 +40,7 @@ Bug fixes:
   Pyogrio if provided a URL as input (#2796)
 - Fix `copy()` downcasting GeoDataFrames without an active geometry column to a
   DataFrame (#2775)
+- Fix geometry column name propagation when GeoDataFrame columns are a multiindex (#2088)
 
 Notes on (optional) dependencies:
 
