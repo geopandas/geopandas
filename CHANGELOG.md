@@ -35,6 +35,8 @@ Bug fixes:
 - Fix `to_parquet`/`to_feather` to use correct WKB flavor for 3D geometries (#2654)
 - Fix `read_file` to avoid reading all file bytes prior to calling Fiona or
   Pyogrio if provided a URL as input (#2796)
+- Fix `iterfeatures()` method of GeoDataFrame to correctly handle non-scalar values
+  when `na='drop'` is specified (#2811)
 
 Notes on (optional) dependencies:
 
