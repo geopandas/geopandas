@@ -9,6 +9,7 @@ New features and improvements:
   of the GeoParquet specification (geoparquet.org) (#2663).
 - New ``hilbert_distance()`` method that calculates the distance along a Hilbert curve
   for each geometry in a GeoSeries/GeoDataFrame (#2297).
+- Added support to fill missing values in `GeoSeries.fillna` via another `GeoSeries` (#2535).
 - Support for sorting geometries (for example, using ``sort_values()``) based on
   the distance along the Hilbert curve (#2070).
 - Added ``minimum_bounding_circle()`` method from shapely to GeoSeries/GeoDataframe (#2621).
@@ -16,6 +17,8 @@ New features and improvements:
 - Added `minimum_bounding_radius()` as GeoSeries method (#2827).
 - Added support for append (``mode="a"`` or ``append=True``) in ``to_file()``
   using ``engine="pyogrio"`` (#2788).
+- Added a ``to_wgs84`` keyword to ``to_json`` allowing automatic re-projecting to follow
+  the 2016 GeoJSON specification (#416).
 
 Deprecations and compatibility notes:
 
@@ -35,6 +38,9 @@ Bug fixes:
 - Fix `to_parquet`/`to_feather` to use correct WKB flavor for 3D geometries (#2654)
 - Fix `read_file` to avoid reading all file bytes prior to calling Fiona or
   Pyogrio if provided a URL as input (#2796)
+- Fix `copy()` downcasting GeoDataFrames without an active geometry column to a
+  DataFrame (#2775)
+- Fix geometry column name propagation when GeoDataFrame columns are a multiindex (#2088)
 - Fix `iterfeatures()` method of GeoDataFrame to correctly handle non-scalar values
   when `na='drop'` is specified (#2811)
 

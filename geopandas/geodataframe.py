@@ -732,7 +732,9 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         return df
 
-    def to_json(self, na="null", show_bbox=False, drop_id=False, **kwargs):
+    def to_json(
+        self, na="null", show_bbox=False, drop_id=False, to_wgs84=False, **kwargs
+    ):
         """
         Returns a GeoJSON representation of the ``GeoDataFrame`` as a string.
 
@@ -747,6 +749,12 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             Whether to retain the index of the GeoDataFrame as the id property
             in the generated GeoJSON. Default is False, but may want True
             if the index is just arbitrary row numbers.
+        to_wgs84: bool, optional, default: False
+            If the CRS is set on the active geometry column it is exported as
+            WGS84 (EPSG:4326) to meet the `2016 GeoJSON specification
+            <https://tools.ietf.org/html/rfc7946>`_.
+            Set to True to force re-projection and set to False to ignore CRS. False by
+            default.
 
         Notes
         -----
@@ -785,8 +793,17 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         GeoDataFrame.to_file : write GeoDataFrame to file
 
         """
+        if to_wgs84:
+            if self.crs:
+                df = self.to_crs(epsg=4326)
+            else:
+                raise ValueError(
+                    "CRS is not set. Cannot re-project to WGS84 (EPSG:4326)."
+                )
+        else:
+            df = self
         return json.dumps(
-            self._to_geo(na=na, show_bbox=show_bbox, drop_id=drop_id), **kwargs
+            df._to_geo(na=na, show_bbox=show_bbox, drop_id=drop_id), **kwargs
         )
 
     @property
@@ -1432,6 +1449,18 @@ individually so that features may have different properties
         return a GeoDataFrame.
         """
         result = super().__getitem__(key)
+        # Custom logic to avoid waiting for pandas GH51895
+        # result is not geometry dtype for multi-indexes
+        if (
+            pd.api.types.is_scalar(key)
+            and key == ""
+            and isinstance(self.columns, pd.MultiIndex)
+            and isinstance(result, Series)
+            and not is_geometry_type(result)
+        ):
+            loc = self.columns.get_loc(key)
+            # squeeze stops multilevel columns from returning a gdf
+            result = self.iloc[:, loc].squeeze(axis="columns")
         geo_col = self._geometry_column_name
         if isinstance(result, Series) and isinstance(result.dtype, GeometryDtype):
             result.__class__ = GeoSeries
@@ -1440,8 +1469,6 @@ individually so that features may have different properties
                 result.__class__ = GeoDataFrame
                 if geo_col in result:
                     result._geometry_column_name = geo_col
-                else:
-                    result._geometry_column_name = None
             else:
                 result.__class__ = DataFrame
         return result
@@ -1464,6 +1491,13 @@ individually so that features may have different properties
     #
     # Implement pandas methods
     #
+    @doc(pd.DataFrame)
+    def copy(self, deep=True):
+        copied = super().copy(deep=deep)
+        if type(copied) is pd.DataFrame:
+            copied.__class__ = GeoDataFrame
+            copied._geometry_column_name = self._geometry_column_name
+        return copied
 
     def merge(self, *args, **kwargs):
         r"""Merge two ``GeoDataFrame`` objects with a database-style join.
