@@ -120,6 +120,7 @@ def _create_metadata(df, schema_version=None):
         if np.isfinite(bbox).all():
             # don't add bbox with NaNs for empty / all-NA geometry column
             column_metadata[col]["bbox"] = bbox
+
     return {
         "primary_column": df._geometry_column_name,
         "columns": column_metadata,
