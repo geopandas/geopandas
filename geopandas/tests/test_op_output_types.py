@@ -226,12 +226,11 @@ def test_apply(df):
     assert_object(df[["value1", "value2"]].apply(identity), pd.DataFrame)
     assert_object(df[[geo_name, "geometry2"]].apply(identity), GeoDataFrame, geo_name)
     assert_object(df[[geo_name]].apply(identity), GeoDataFrame, geo_name)
-    expected_geo_col_name = geo_name if compat.PANDAS_GE_14 else "geometry"
 
     res = df[["geometry2", "value1"]].apply(identity)
-    assert_obj_no_active_geo_col(res, GeoDataFrame, expected_geo_col_name)
+    assert_obj_no_active_geo_col(res, GeoDataFrame, geo_name)
     assert_obj_no_active_geo_col(
-        df[["geometry2"]].apply(identity), GeoDataFrame, expected_geo_col_name
+        df[["geometry2"]].apply(identity), GeoDataFrame, geo_name
     )
     assert_object(df[["value1"]].apply(identity), pd.DataFrame)
 
@@ -260,7 +259,7 @@ def test_apply(df):
 
 
 def test_apply_axis1_secondary_geo_cols(df):
-    geo_name = df.geometry.name if compat.PANDAS_GE_14 else "geometry"
+    geo_name = df.geometry.name
 
     def identity(x):
         return x

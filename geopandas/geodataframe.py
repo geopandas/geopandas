@@ -1543,6 +1543,10 @@ individually so that features may have different properties
         result = super().apply(
             func, axis=axis, raw=raw, result_type=result_type, args=args, **kwargs
         )
+        # Check if last geometry column name is lost and re-attach
+        # (should only be for pandas 1.3 and earlier)
+        if isinstance(result, GeoDataFrame) and result._geometry_column_name is None:
+            result._geometry_column_name = self._geometry_column_name
         # Reconstruct gdf if it was lost by apply
         if (
             isinstance(result, DataFrame)
