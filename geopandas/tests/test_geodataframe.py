@@ -884,6 +884,24 @@ class TestDataFrame:
         with pytest.raises(AttributeError):
             list(df.iterfeatures())
 
+    def test_geodataframe_iterfeatures_non_scalars(self):
+        # When some features in geodataframe are non-scalar values
+        df = GeoDataFrame(
+            {"geometry": [Point(1, 2)], "non-scalar": [[1, 2]], "test_col": None}
+        )
+        # null
+        expected = {"non-scalar": [1, 2], "test_col": None}
+        result = list(df.iterfeatures(na="null"))[0].get("properties")
+        assert expected == result
+        # drop
+        expected = {"non-scalar": [1, 2]}
+        result = list(df.iterfeatures(na="drop"))[0].get("properties")
+        assert expected == result
+        # keep
+        expected = {"non-scalar": [1, 2], "test_col": None}
+        result = list(df.iterfeatures(na="keep"))[0].get("properties")
+        assert expected == result
+
     def test_geodataframe_geojson_no_bbox(self):
         geo = self.df._to_geo(na="null", show_bbox=False)
         assert "bbox" not in geo.keys()
