@@ -235,6 +235,15 @@ def _validate_metadata(metadata):
         if column_metadata["encoding"] != "WKB":
             raise ValueError("Only WKB geometry encoding is supported")
 
+        if column_metadata.get("edges", "planar") == "spherical":
+            warnings.warn(
+                f"The geo metadata indicate that column '{col}' has spherical edges, "
+                "but GeoPandas ignores this metadata and will interpret the edges of "
+                "the geometries as planar.",
+                UserWarning,
+                stacklevel=4,
+            )
+
 
 def _geopandas_to_arrow(df, index=None, schema_version=None):
     """
