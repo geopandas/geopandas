@@ -1,7 +1,6 @@
 import pandas as pd
 import pyproj
 import pytest
-import geopandas._compat as compat
 
 from shapely.geometry import Point
 import numpy as np
@@ -307,15 +306,13 @@ def test_expanddim_in_unstack():
         index=pd.MultiIndex.from_tuples([("A", "a"), ("A", "b"), ("B", "a")]),
     )
     unstack = s.unstack()
-    expected_geo_col_name = None if compat.PANDAS_GE_12 else "geometry"
-    assert_obj_no_active_geo_col(
-        unstack, GeoDataFrame, geo_colname=expected_geo_col_name
-    )
+    expected_geo_name = None
+    assert_obj_no_active_geo_col(unstack, GeoDataFrame, geo_colname=expected_geo_name)
 
     # https://github.com/geopandas/geopandas/issues/2486
     s.name = "geometry"
     unstack = s.unstack()
-    assert_obj_no_active_geo_col(unstack, GeoDataFrame, expected_geo_col_name)
+    assert_obj_no_active_geo_col(unstack, GeoDataFrame, expected_geo_name)
 
 
 # indexing /  constructor_sliced tests
