@@ -4,17 +4,28 @@
 
 New features and improvements:
 
+- Added ``get_coordinates()`` method from shapely to GeoSeries/GeoDataframe (#2624).
 - The Parquet and Feather IO functions now support the latest 1.0.0-beta.1 version
   of the GeoParquet specification (geoparquet.org) (#2663).
 - New ``hilbert_distance()`` method that calculates the distance along a Hilbert curve
   for each geometry in a GeoSeries/GeoDataFrame (#2297).
+- Added support to fill missing values in `GeoSeries.fillna` via another `GeoSeries` (#2535).
+- Support for sorting geometries (for example, using ``sort_values()``) based on
+  the distance along the Hilbert curve (#2070).
 - Added ``minimum_bounding_circle()`` method from shapely to GeoSeries/GeoDataframe (#2621).
 - Support specifying ``min_zoom`` and ``max_zoom`` inside the ``map_kwds`` argument for ``.explore()`` (#2599).
+- Added `minimum_bounding_radius()` as GeoSeries method (#2827).
+- Added support for append (``mode="a"`` or ``append=True``) in ``to_file()``
+  using ``engine="pyogrio"`` (#2788).
+- Added a ``to_wgs84`` keyword to ``to_json`` allowing automatic re-projecting to follow
+  the 2016 GeoJSON specification (#416).
 
 Deprecations and compatibility notes:
 
 - Added warning that ``unary_union`` will return ``'GEOMETRYCOLLECTION EMPTY'`` instead
   of None for all-None GeoSeries. (#2618)
+- The ``query_bulk()`` method of the spatial index `.sindex` property is deprecated
+  in favor of ``query()`` (#2823).
 
 Bug fixes:
 
@@ -24,6 +35,12 @@ Bug fixes:
 - Escape special characters to avoid TemplateSyntaxError in ``explore()`` (#2657)
 - Fix `to_parquet`/`to_feather` to not write an invalid bbox (with NaNs) in the
   metadata in case of an empty GeoDataFrame (#2653)
+- Fix `to_parquet`/`to_feather` to use correct WKB flavor for 3D geometries (#2654)
+- Fix `read_file` to avoid reading all file bytes prior to calling Fiona or
+  Pyogrio if provided a URL as input (#2796)
+- Fix `copy()` downcasting GeoDataFrames without an active geometry column to a
+  DataFrame (#2775)
+- Fix geometry column name propagation when GeoDataFrame columns are a multiindex (#2088)
 
 Notes on (optional) dependencies:
 
@@ -31,7 +48,6 @@ Notes on (optional) dependencies:
   pandas version is now 1.1). Further, the minimum required versions for the listed
   dependencies have now changed to shapely 1.7.1, fiona 1.8.19, pyproj 3.0.1 and
   matplotlib 3.3.4 (#2655)
-
 
 ## Version 0.12.2 (December 10, 2022)
 

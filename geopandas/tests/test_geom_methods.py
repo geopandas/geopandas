@@ -1,4 +1,5 @@
 import string
+import sys
 import warnings
 
 import numpy as np
@@ -120,6 +121,53 @@ class TestGeomMethods:
         )
         self.gdfz = GeoDataFrame(
             {"geometry": self.gz, "col3": [4, 5, 6], "col4": ["rand", "string", "geo"]}
+        )
+
+        self.g11 = GeoSeries(
+            [
+                self.p0,
+                self.p3d,
+                self.pt_empty,
+                self.t1,
+                self.tz,
+                self.empty_poly,
+                self.l1,
+            ]
+        )
+        # expected coordinates from g11
+        self.expected_2d = np.array(
+            [
+                [5.0, 5.0],
+                [5.0, 5.0],
+                [0.0, 0.0],
+                [1.0, 0.0],
+                [1.0, 1.0],
+                [0.0, 0.0],
+                [1.0, 1.0],
+                [2.0, 2.0],
+                [3.0, 3.0],
+                [1.0, 1.0],
+                [0.0, 0.0],
+                [0.0, 1.0],
+                [1.0, 1.0],
+            ]
+        )
+        self.expected_3d = np.array(
+            [
+                [5.0, 5.0, np.nan],
+                [5.0, 5.0, 5.0],
+                [0.0, 0.0, np.nan],
+                [1.0, 0.0, np.nan],
+                [1.0, 1.0, np.nan],
+                [0.0, 0.0, np.nan],
+                [1.0, 1.0, 1.0],
+                [2.0, 2.0, 2.0],
+                [3.0, 3.0, 3.0],
+                [1.0, 1.0, 1.0],
+                [0.0, 0.0, np.nan],
+                [0.0, 1.0, np.nan],
+                [1.0, 1.0, np.nan],
+            ]
         )
 
     def _test_unary_real(self, op, expected, a):
@@ -969,6 +1017,10 @@ class TestGeomMethods:
         with pytest.warns(FutureWarning, match="Currently, index_parts defaults"):
             assert_geoseries_equal(expected, s.explode())
 
+    @pytest.mark.skipif(
+        sys.platform == "win32" and sys.version_info < (3, 9),
+        reason="Inconsistent int dtype",
+    )
     @pytest.mark.parametrize("index_name", [None, "test"])
     def test_explode_geodataframe(self, index_name):
         s = GeoSeries([MultiPoint([Point(1, 2), Point(2, 3)]), Point(5, 5)])
@@ -988,6 +1040,10 @@ class TestGeomMethods:
         expected_df = expected_df.set_index(expected_index)
         assert_frame_equal(test_df, expected_df)
 
+    @pytest.mark.skipif(
+        sys.platform == "win32" and sys.version_info < (3, 9),
+        reason="Inconsistent int dtype",
+    )
     @pytest.mark.parametrize("index_name", [None, "test"])
     def test_explode_geodataframe_level_1(self, index_name):
         # GH1393
@@ -1078,6 +1134,10 @@ class TestGeomMethods:
         exploded_df = gdf.explode(column="col1", ignore_index=True)
         assert_geodataframe_equal(exploded_df, expected_df)
 
+    @pytest.mark.skipif(
+        sys.platform == "win32" and sys.version_info < (3, 9),
+        reason="Inconsistent int dtype",
+    )
     @pytest.mark.parametrize("outer_index", [1, (1, 2), "1"])
     def test_explode_pandas_multi_index(self, outer_index):
         index = MultiIndex.from_arrays(
@@ -1185,6 +1245,10 @@ class TestGeomMethods:
         test_df = df.explode(ignore_index=True, index_parts=True)
         assert_frame_equal(test_df, expected_df)
 
+    @pytest.mark.skipif(
+        sys.platform == "win32" and sys.version_info < (3, 9),
+        reason="Inconsistent int dtype",
+    )
     def test_explode_order(self):
         df = GeoDataFrame(
             {"vals": [1, 2, 3]},
@@ -1214,6 +1278,10 @@ class TestGeomMethods:
         )
         assert_geodataframe_equal(test_df, expected_df)
 
+    @pytest.mark.skipif(
+        sys.platform == "win32" and sys.version_info < (3, 9),
+        reason="Inconsistent int dtype",
+    )
     def test_explode_order_no_multi(self):
         df = GeoDataFrame(
             {"vals": [1, 2, 3]},
@@ -1232,6 +1300,10 @@ class TestGeomMethods:
         )
         assert_geodataframe_equal(test_df, expected_df)
 
+    @pytest.mark.skipif(
+        sys.platform == "win32" and sys.version_info < (3, 9),
+        reason="Inconsistent int dtype",
+    )
     def test_explode_order_mixed(self):
         df = GeoDataFrame(
             {"vals": [1, 2, 3]},
@@ -1260,6 +1332,10 @@ class TestGeomMethods:
         )
         assert_geodataframe_equal(test_df, expected_df)
 
+    @pytest.mark.skipif(
+        sys.platform == "win32" and sys.version_info < (3, 9),
+        reason="Inconsistent int dtype",
+    )
     def test_explode_duplicated_index(self):
         df = GeoDataFrame(
             {"vals": [1, 2, 3]},
@@ -1346,3 +1422,109 @@ class TestGeomMethods:
             self._test_binary_operator("__sub__", expected, self.g1, self.t2)
         with pytest.warns(FutureWarning):
             self._test_binary_operator("__sub__", expected, self.gdf1, self.t2)
+
+    @pytest.mark.skipif(
+        not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+        reason="get_coordinates not implemented for shapely<2",
+    )
+    def test_get_coordinates(self):
+        expected = DataFrame(
+            data=self.expected_2d,
+            columns=["x", "y"],
+            index=[0, 1, 3, 3, 3, 3, 4, 4, 4, 4, 6, 6, 6],
+        )
+        assert_frame_equal(self.g11.get_coordinates(), expected)
+
+    @pytest.mark.skipif(
+        not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+        reason="get_coordinates not implemented for shapely<2",
+    )
+    def test_get_coordinates_z(self):
+        expected = DataFrame(
+            data=self.expected_3d,
+            columns=["x", "y", "z"],
+            index=[0, 1, 3, 3, 3, 3, 4, 4, 4, 4, 6, 6, 6],
+        )
+        assert_frame_equal(self.g11.get_coordinates(include_z=True), expected)
+
+    @pytest.mark.skipif(
+        not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+        reason="get_coordinates not implemented for shapely<2",
+    )
+    def test_get_coordinates_ignore(self):
+        expected = DataFrame(
+            data=self.expected_2d,
+            columns=["x", "y"],
+        )
+        assert_frame_equal(self.g11.get_coordinates(ignore_index=True), expected)
+
+    @pytest.mark.skipif(
+        sys.platform == "win32" and sys.version_info < (3, 9),
+        reason="Inconsistent int dtype",
+    )
+    @pytest.mark.skipif(
+        not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+        reason="get_coordinates not implemented for shapely<2",
+    )
+    def test_get_coordinates_parts(self):
+        expected = DataFrame(
+            data=self.expected_2d,
+            columns=["x", "y"],
+            index=MultiIndex.from_tuples(
+                [
+                    (0, 0),
+                    (1, 0),
+                    (3, 0),
+                    (3, 1),
+                    (3, 2),
+                    (3, 3),
+                    (4, 0),
+                    (4, 1),
+                    (4, 2),
+                    (4, 3),
+                    (6, 0),
+                    (6, 1),
+                    (6, 2),
+                ]
+            ),
+        )
+        assert_frame_equal(self.g11.get_coordinates(index_parts=True), expected)
+
+    @pytest.mark.skipif(
+        (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+        reason="get_coordinates not implemented for shapely<2",
+    )
+    def test_get_coordinates_not(self):
+        with pytest.raises(
+            NotImplementedError, match="shapely >= 2.0 or PyGEOS are required"
+        ):
+            self.g11.get_coordinates()
+
+    @pytest.mark.skipif(
+        not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+        reason="minimum_bounding_radius not implemented for shapely<2",
+    )
+    def test_minimum_bounding_radius(self):
+        mbr_geoms = self.g1.minimum_bounding_radius()
+
+        assert_series_equal(
+            mbr_geoms,
+            Series([0.707106, 0.707106]),
+        )
+
+        mbr_lines = self.g5.minimum_bounding_radius()
+
+        assert_series_equal(
+            mbr_lines,
+            Series([0.707106, 0.707106]),
+        )
+
+    @pytest.mark.skipif(
+        (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+        reason="minimum_bounding_radius not implemented for shapely<2",
+    )
+    def test_minimium_bounding_radius_not(self):
+        with pytest.raises(
+            NotImplementedError, match="shapely >= 2.0 or PyGEOS is required"
+        ):
+            self.g1.minimum_bounding_radius()

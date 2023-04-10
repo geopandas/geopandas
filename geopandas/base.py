@@ -8,6 +8,7 @@ from shapely.geometry import box
 from shapely.geometry.base import BaseGeometry
 
 from .array import GeometryArray, GeometryDtype
+from . import _compat as compat
 
 
 def is_geometry_type(data):
@@ -50,7 +51,7 @@ def _binary_geo(op, this, other, align):
     from .geoseries import GeoSeries
 
     geoms, index = _delegate_binary_method(op, this, other, align)
-    return GeoSeries(geoms.data, index=index, crs=this.crs)
+    return GeoSeries(geoms, index=index, crs=this.crs)
 
 
 def _binary_op(op, this, other, align, *args, **kwargs):
@@ -67,7 +68,7 @@ def _delegate_property(op, this):
     if isinstance(data, GeometryArray):
         from .geoseries import GeoSeries
 
-        return GeoSeries(data.data, index=this.index, crs=this.crs)
+        return GeoSeries(data, index=this.index, crs=this.crs)
     else:
         return Series(data, index=this.index)
 
@@ -78,7 +79,7 @@ def _delegate_geo_method(op, this, *args, **kwargs):
     from .geoseries import GeoSeries
 
     a_this = GeometryArray(this.geometry.values)
-    data = getattr(a_this, op)(*args, **kwargs).data
+    data = getattr(a_this, op)(*args, **kwargs)
     return GeoSeries(data, index=this.index, crs=this.crs)
 
 
@@ -392,7 +393,7 @@ GeometryCollection
         features that have a z-component.
 
         Notes
-        ------
+        -----
         Every operation in GeoPandas is planar, i.e. the potential third
         dimension is not taken into account.
 
@@ -626,7 +627,7 @@ GeometryCollection
         Applies to GeoSeries containing only Polygons.
 
         Returns
-        ----------
+        -------
         inner_rings: Series of List
             Inner rings of each polygon in the GeoSeries.
 
@@ -724,6 +725,38 @@ GeometryCollection
         GeoSeries.convex_hull : convex hull geometry
         """
         return _delegate_geo_method("minimum_bounding_circle", self)
+
+    def minimum_bounding_radius(self):
+        """Returns a `Series` of the radii of the minimum bounding circles
+        that enclose each geometry.
+
+        Examples
+        --------
+        >>> from shapely.geometry import Point, LineString, Polygon
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0, 0), (1, 1), (0, 1), (0, 0)]),
+        ...         LineString([(0, 0), (1, 1), (1, 0)]),
+        ...         Point(0,0),
+        ...     ]
+        ... )
+        >>> s
+        0    POLYGON ((0.00000 0.00000, 1.00000 1.00000, 0....
+        1    LINESTRING (0.00000 0.00000, 1.00000 1.00000, ...
+        2                              POINT (0.00000 0.00000)
+        dtype: geometry
+        >>> s.minimum_bounding_radius()
+        0    0.707107
+        1    0.707107
+        2    0.000000
+        dtype: float64
+
+        See also
+        --------
+        GeoSeries.minumum_bounding_circle : minimum bounding circle (geometry)
+
+        """
+        return Series(self.geometry.values.minimum_bounding_radius(), index=self.index)
 
     def normalize(self):
         """Returns a ``GeoSeries`` of normalized
@@ -2709,7 +2742,7 @@ GeometryCollection
 
         geometry_array = GeometryArray(self.geometry.values)
         clipped_geometry = geometry_array.clip_by_rect(xmin, ymin, xmax, ymax)
-        return GeoSeries(clipped_geometry.data, index=self.index, crs=self.crs)
+        return GeoSeries(clipped_geometry, index=self.index, crs=self.crs)
 
     #
     # Other operations
@@ -2809,13 +2842,13 @@ GeometryCollection
         1    POLYGON ((5.00000 4.00000, 5.00000 5.00000, 4....
         dtype: geometry
 
-        >>> s.sindex.query_bulk(s2)
+        >>> s.sindex.query(s2)
         array([[0, 0, 0, 1],
                [1, 2, 3, 4]])
 
         Query the spatial index with an array of geometries based on the predicate:
 
-        >>> s.sindex.query_bulk(s2, predicate="contains")
+        >>> s.sindex.query(s2, predicate="contains")
         array([[0],
                [2]])
         """
@@ -2978,7 +3011,7 @@ GeometryCollection
             If False, the order of elements is preserved.
 
         Returns
-        ----------
+        -------
         spatial_relations: Series of strings
             The DE-9IM intersection matrices which describe
             the spatial relations of the other geometry.
@@ -3484,6 +3517,111 @@ GeometryCollection
             return False
         return self._data.equals(other._data)
 
+    def get_coordinates(self, include_z=False, ignore_index=False, index_parts=False):
+        """Gets coordinates from a :class:`GeoSeries` as a :class:`~pandas.DataFrame` of
+        floats.
+
+        The shape of the returned :class:`~pandas.DataFrame` is (N, 2), with N being the
+        number of coordinate pairs. With the default of ``include_z=False``,
+        three-dimensional data is ignored. When specifying ``include_z=True``, the shape
+        of the returned :class:`~pandas.DataFrame` is (N, 3).
+
+        Parameters
+        ----------
+        include_z : bool, default False
+            Include Z coordinates
+        ignore_index : bool, default False
+            If True, the resulting index will be labelled 0, 1, …, n - 1, ignoring
+            ``index_parts``.
+        index_parts : bool, default False
+           If True, the resulting index will be a :class:`~pandas.MultiIndex` (original
+           index with an additional level indicating the ordering of the coordinate
+           pairs: a new zero-based index for each geometry in the original GeoSeries).
+
+        Returns
+        -------
+        pandas.DataFrame
+
+        Examples
+        --------
+        >>> from shapely.geometry import Point, LineString, Polygon
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Point(1, 1),
+        ...         LineString([(1, -1), (1, 0)]),
+        ...         Polygon([(3, -1), (4, 0), (3, 1)]),
+        ...     ]
+        ... )
+        >>> s
+        0                              POINT (1.00000 1.00000)
+        1       LINESTRING (1.00000 -1.00000, 1.00000 0.00000)
+        2    POLYGON ((3.00000 -1.00000, 4.00000 0.00000, 3...
+        dtype: geometry
+
+        >>> s.get_coordinates()
+             x    y
+        0  1.0  1.0
+        1  1.0 -1.0
+        1  1.0  0.0
+        2  3.0 -1.0
+        2  4.0  0.0
+        2  3.0  1.0
+        2  3.0 -1.0
+
+        >>> s.get_coordinates(ignore_index=True)
+             x    y
+        0  1.0  1.0
+        1  1.0 -1.0
+        2  1.0  0.0
+        3  3.0 -1.0
+        4  4.0  0.0
+        5  3.0  1.0
+        6  3.0 -1.0
+
+        >>> s.get_coordinates(index_parts=True)
+               x    y
+        0 0  1.0  1.0
+        1 0  1.0 -1.0
+          1  1.0  0.0
+        2 0  3.0 -1.0
+          1  4.0  0.0
+          2  3.0  1.0
+          3  3.0 -1.0
+        """
+        if compat.USE_SHAPELY_20:
+            import shapely
+
+            coords, outer_idx = shapely.get_coordinates(
+                self.geometry.values._data, include_z=include_z, return_index=True
+            )
+        elif compat.USE_PYGEOS:
+            import pygeos
+
+            coords, outer_idx = pygeos.get_coordinates(
+                self.geometry.values._data, include_z=include_z, return_index=True
+            )
+
+        else:
+            import shapely
+
+            raise NotImplementedError(
+                f"shapely >= 2.0 or PyGEOS are required, "
+                f"version {shapely.__version__} is installed."
+            )
+
+        column_names = ["x", "y"]
+        if include_z:
+            column_names.append("z")
+
+        index = _get_index_for_parts(
+            self.index,
+            outer_idx,
+            ignore_index=ignore_index,
+            index_parts=index_parts,
+        )
+
+        return pd.DataFrame(coords, index=index, columns=column_names)
+
     def hilbert_distance(self, total_bounds=None, level=16):
         """
         Calculate the distance along a Hilbert curve.
@@ -3512,9 +3650,66 @@ GeometryCollection
         """
         from geopandas.tools.hilbert_curve import _hilbert_distance
 
-        distances = _hilbert_distance(self, total_bounds=total_bounds, level=level)
+        distances = _hilbert_distance(
+            self.geometry.values, total_bounds=total_bounds, level=level
+        )
 
-        return distances
+        return pd.Series(distances, index=self.index, name="hilbert_distance")
+
+
+def _get_index_for_parts(orig_idx, outer_idx, ignore_index, index_parts):
+    """Helper to handle index when geometries get exploded to parts.
+
+    Used in get_coordinates and explode.
+
+    Parameters
+    ----------
+    orig_idx : pandas.Index
+        original index
+    outer_idx : array
+        the index of each returned geometry as a separate ndarray of integers
+    ignore_index : bool
+    index_parts : bool
+
+    Returns
+    -------
+    pandas.Index
+        index or multiindex
+    """
+
+    if ignore_index:
+        return None
+    else:
+        if len(outer_idx):
+            # Generate inner index as a range per value of outer_idx
+            # 1. identify the start of each run of values in outer_idx
+            # 2. count number of values per run
+            # 3. use cumulative sums to create an incremental range
+            #    starting at 0 in each run
+            run_start = np.r_[True, outer_idx[:-1] != outer_idx[1:]]
+            counts = np.diff(np.r_[np.nonzero(run_start)[0], len(outer_idx)])
+            inner_index = (~run_start).cumsum()
+            inner_index -= np.repeat(inner_index[run_start], counts)
+
+        else:
+            inner_index = []
+
+        # extract original index values based on integer index
+        outer_index = orig_idx.take(outer_idx)
+
+        if index_parts:
+            nlevels = outer_index.nlevels
+            index_arrays = [outer_index.get_level_values(lvl) for lvl in range(nlevels)]
+            index_arrays.append(inner_index)
+
+            index = pd.MultiIndex.from_arrays(
+                index_arrays, names=orig_idx.names + [None]
+            )
+
+        else:
+            index = outer_index
+
+    return index
 
 
 class _CoordinateIndexer(object):

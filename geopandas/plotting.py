@@ -527,20 +527,20 @@ def plot_dataframe(
         dataframe. Values are used to color the plot. Ignored if `color` is
         also set.
     kind: str
-        The kind of plots to produce:
-         - 'geo': Map (default)
-         Pandas Kinds
-         - 'line' : line plot
-         - 'bar' : vertical bar plot
-         - 'barh' : horizontal bar plot
-         - 'hist' : histogram
-         - 'box' : BoxPlot
-         - 'kde' : Kernel Density Estimation plot
-         - 'density' : same as 'kde'
-         - 'area' : area plot
-         - 'pie' : pie plot
-         - 'scatter' : scatter plot
-         - 'hexbin' : hexbin plot.
+        The kind of plots to produce. The default is to create a map ("geo").
+        Other supported kinds of plots from pandas:
+
+        - 'line' : line plot
+        - 'bar' : vertical bar plot
+        - 'barh' : horizontal bar plot
+        - 'hist' : histogram
+        - 'box' : BoxPlot
+        - 'kde' : Kernel Density Estimation plot
+        - 'density' : same as 'kde'
+        - 'area' : area plot
+        - 'pie' : pie plot
+        - 'scatter' : scatter plot
+        - 'hexbin' : hexbin plot.
     cmap : str (default None)
         The name of a colormap recognized by matplotlib.
     color : str, np.array, pd.Series (default None)
@@ -896,7 +896,6 @@ GON (((-122.84000 49.00000, -120.0000...
         plot_series(expl_series[nan_idx], ax=ax, **merged_kwds)
 
     if legend and not color:
-
         if legend_kwds is None:
             legend_kwds = {}
         if "fmt" in legend_kwds:
@@ -950,7 +949,6 @@ GON (((-122.84000 49.00000, -120.0000...
             legend_kwds.setdefault("loc", "best")
             ax.legend(patches, categories, **legend_kwds)
         else:
-
             if cax is not None:
                 legend_kwds.setdefault("cax", cax)
             else:
@@ -965,7 +963,6 @@ GON (((-122.84000 49.00000, -120.0000...
 
 @doc(plot_dataframe)
 class GeoplotAccessor(PlotAccessor):
-
     _pandas_kinds = PlotAccessor._all_kinds
 
     def __call__(self, *args, **kwargs):

@@ -255,7 +255,6 @@ def _points_from_xy(x, y, z=None):
 
 
 def points_from_xy(x, y, z=None):
-
     x = np.asarray(x, dtype="float64")
     y = np.asarray(y, dtype="float64")
     if z is not None:
@@ -682,6 +681,18 @@ def minimum_bounding_circle(data):
         return shapely.minimum_bounding_circle(data)
     elif compat.USE_PYGEOS:
         return pygeos.minimum_bounding_circle(data)
+    else:
+        raise NotImplementedError(
+            f"shapely >= 2.0 or PyGEOS is required, "
+            f"version {shapely.__version__} is installed"
+        )
+
+
+def minimum_bounding_radius(data):
+    if compat.USE_SHAPELY_20:
+        return shapely.minimum_bounding_radius(data)
+    elif compat.USE_PYGEOS:
+        return pygeos.minimum_bounding_radius(data)
     else:
         raise NotImplementedError(
             f"shapely >= 2.0 or PyGEOS is required, "

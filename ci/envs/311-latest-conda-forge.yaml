@@ -4,7 +4,7 @@ channels:
 dependencies:
   - python=3.11
   # required
-  - pandas
+  # - pandas
   - shapely
   - fiona
   - pyproj
@@ -26,10 +26,13 @@ dependencies:
   - geopy
   # installed in tests.yaml, because not available on windows
   # - postgis
-  - SQLalchemy
+  - SQLalchemy>=2
   - psycopg2
   - libspatialite
   - geoalchemy2
   - pyarrow
   # doctest testing
   - pytest-doctestplus
+  - pip
+  - pip:
+    - pandas==2.0.0rc1
