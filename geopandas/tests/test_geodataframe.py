@@ -341,15 +341,16 @@ class TestDataFrame:
 
     def test_get_geometry_invalid(self):
         df = GeoDataFrame()
+        # no column "geometry" ever added
         df["geom"] = self.df.geometry
-        msg_geo_col_missing = "is not present. "
+        msg_geo_col_none = "active geometry column to use has not been set. "
 
-        with pytest.raises(AttributeError, match=msg_geo_col_missing):
+        with pytest.raises(AttributeError, match=msg_geo_col_none):
             df.geometry
-        df2 = self.df.copy()
-        df2["geom2"] = df2.geometry
-        df2 = df2[["BoroCode", "BoroName", "geom2"]]
-        with pytest.raises(AttributeError, match=msg_geo_col_missing):
+        # "geometry" originally present but dropped (but still a gdf)
+        col_subset_drop_geometry = ["BoroCode", "BoroName", "geom2"]
+        df2 = self.df.copy().assign(geom2=self.df.geometry)[col_subset_drop_geometry]
+        with pytest.raises(AttributeError, match="is not present."):
             df2.geometry
 
         msg_other_geo_cols_present = "There are columns with geometry data type"
@@ -1306,15 +1307,48 @@ class TestConstructor:
         df.columns = pd.MultiIndex.from_product([["geometry"], [0, 1]])
         # don't error in constructor
         gdf = GeoDataFrame(df)
-        # Getting the .geometry column gives GeoDataFrame for both columns
-        # (but with first MultiIndex level removed)
-        # TODO should this give an error instead?
-        result = gdf.geometry
-        assert result.shape == gdf.shape
-        assert result.columns.tolist() == [0, 1]
-        assert_frame_equal(result, gdf["geometry"])
-        result = gdf[["geometry"]]
-        assert_frame_equal(result, gdf if dtype == "geometry" else pd.DataFrame(gdf))
+        with pytest.raises(AttributeError, match=".*geometry .* has not been set.*"):
+            gdf.geometry
+        res_gdf = gdf.set_geometry(("geometry", 0))
+        assert res_gdf.shape == gdf.shape
+        assert isinstance(res_gdf.geometry, GeoSeries)
+
+    def test_default_geo_colname_none(self):
+        match = "You are adding a column named 'geometry' to a GeoDataFrame"
+        gdf = GeoDataFrame({"a": [1, 2]})
+
+        gdf2 = gdf.copy()
+        geo_col = GeoSeries.from_xy([1, 3], [3, 3])
+        with pytest.warns(FutureWarning, match=match):
+            gdf2["geometry"] = geo_col
+        assert gdf2._geometry_column_name == "geometry"
+        gdf4 = gdf.copy()
+        with pytest.warns(FutureWarning, match=match):
+            gdf4.geometry = geo_col
+        assert gdf4._geometry_column_name == "geometry"
+
+        # geo col name should only change if we add geometry
+        gdf5 = gdf.copy()
+        with pytest.warns(
+            UserWarning, match="Geometry column does not contain geometry"
+        ):
+            gdf5["geometry"] = "foo"
+        assert gdf5._geometry_column_name is None
+        gdf3 = gdf.copy().assign(geometry=geo_col)
+        assert gdf3._geometry_column_name == "geometry"
+
+        # Check that adding a GeoSeries to a column called "geometry" to a
+        # gdf without an active geometry column some time after the init does not
+        # warn / set the active geometry column
+        gdf6 = gdf.copy()
+        gdf6["geom2"] = geo_col
+        gdf6["geom3"] = geo_col
+        gdf6 = gdf6.set_geometry("geom2")
+        subset = gdf6[["a", "geom3"]]  # this has a missing active geometry col
+        assert subset._geometry_column_name == "geom2"
+        subset["geometry"] = geo_col
+        # adding column called geometry shouldn't auto-set
+        assert subset._geometry_column_name == "geom2"
 
     def test_multiindex_geometry_colname_2_level(self):
         # GH1763 https://github.com/geopandas/geopandas/issues/1763

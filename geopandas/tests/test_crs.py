@@ -286,6 +286,7 @@ class TestGeometryArrayCRS:
         s = GeoSeries(arr, crs=27700)
         df = GeoDataFrame()
         df = df.set_geometry(s)
+        assert df._geometry_column_name == "geometry"
         assert df.crs == self.osgb
         assert df.geometry.crs == self.osgb
         assert df.geometry.values.crs == self.osgb
@@ -309,8 +310,16 @@ class TestGeometryArrayCRS:
         assert df.geometry.crs == self.wgs
         assert df.geometry.values.crs == self.wgs
 
-        # geometry column without geometry
+        # geometry column name None on init
         df = GeoDataFrame({"geometry": [0, 1]})
+        with pytest.raises(
+            ValueError,
+            match="Assigning CRS to a GeoDataFrame without a geometry",
+        ):
+            df.crs = 27700
+
+        # geometry column without geometry
+        df = GeoDataFrame({"geometry": [Point(0, 1)]}).assign(geometry=[0])
         with pytest.raises(
             ValueError,
             match="Assigning CRS to a GeoDataFrame without an active geometry",
@@ -337,14 +346,20 @@ class TestGeometryArrayCRS:
         arr = from_shapely(self.geoms)
         s = GeoSeries(arr, crs=27700)
         df = GeoDataFrame()
-        df["geometry"] = s
+        with pytest.warns(
+            FutureWarning, match="You are adding a column named 'geometry'"
+        ):
+            df["geometry"] = s
         assert df.crs == self.osgb
         assert df.geometry.crs == self.osgb
         assert df.geometry.values.crs == self.osgb
 
         arr = from_shapely(self.geoms, crs=27700)
         df = GeoDataFrame()
-        df["geometry"] = arr
+        with pytest.warns(
+            FutureWarning, match="You are adding a column named 'geometry'"
+        ):
+            df["geometry"] = arr
         assert df.crs == self.osgb
         assert df.geometry.crs == self.osgb
         assert df.geometry.values.crs == self.osgb
@@ -385,7 +400,10 @@ class TestGeometryArrayCRS:
     )
     def test_scalar(self, scalar):
         df = GeoDataFrame()
-        df["geometry"] = scalar
+        with pytest.warns(
+            FutureWarning, match="You are adding a column named 'geometry'"
+        ):
+            df["geometry"] = scalar
         df.crs = 4326
         assert df.crs == self.wgs
         assert df.geometry.crs == self.wgs

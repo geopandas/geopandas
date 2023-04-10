@@ -1,7 +1,6 @@
 import pandas as pd
 import pyproj
 import pytest
-import geopandas._compat as compat
 
 from shapely.geometry import Point
 import numpy as np
@@ -226,12 +225,11 @@ def test_apply(df):
     assert_object(df[["value1", "value2"]].apply(identity), pd.DataFrame)
     assert_object(df[[geo_name, "geometry2"]].apply(identity), GeoDataFrame, geo_name)
     assert_object(df[[geo_name]].apply(identity), GeoDataFrame, geo_name)
-    expected_geo_col_name = geo_name if compat.PANDAS_GE_14 else "geometry"
 
     res = df[["geometry2", "value1"]].apply(identity)
-    assert_obj_no_active_geo_col(res, GeoDataFrame, expected_geo_col_name)
+    assert_obj_no_active_geo_col(res, GeoDataFrame, geo_name)
     assert_obj_no_active_geo_col(
-        df[["geometry2"]].apply(identity), GeoDataFrame, expected_geo_col_name
+        df[["geometry2"]].apply(identity), GeoDataFrame, geo_name
     )
     assert_object(df[["value1"]].apply(identity), pd.DataFrame)
 
@@ -260,7 +258,7 @@ def test_apply(df):
 
 
 def test_apply_axis1_secondary_geo_cols(df):
-    geo_name = df.geometry.name if compat.PANDAS_GE_14 else "geometry"
+    geo_name = df.geometry.name
 
     def identity(x):
         return x
@@ -308,15 +306,13 @@ def test_expanddim_in_unstack():
         index=pd.MultiIndex.from_tuples([("A", "a"), ("A", "b"), ("B", "a")]),
     )
     unstack = s.unstack()
-    expected_geo_col_name = None if compat.PANDAS_GE_12 else "geometry"
-    assert_obj_no_active_geo_col(
-        unstack, GeoDataFrame, geo_colname=expected_geo_col_name
-    )
+    expected_geo_name = None
+    assert_obj_no_active_geo_col(unstack, GeoDataFrame, geo_colname=expected_geo_name)
 
     # https://github.com/geopandas/geopandas/issues/2486
     s.name = "geometry"
     unstack = s.unstack()
-    assert_obj_no_active_geo_col(unstack, GeoDataFrame, expected_geo_col_name)
+    assert_obj_no_active_geo_col(unstack, GeoDataFrame, expected_geo_name)
 
 
 # indexing /  constructor_sliced tests
