@@ -1470,10 +1470,7 @@ individually so that features may have different properties
                 "`set_geometry('geometry')` "
                 "to explicitly set the active geometry column."
             )
-            warnings.warn(
-                msg,
-                category=FutureWarning,
-            )
+            warnings.warn(msg, category=FutureWarning, stacklevel=3)
             self._geometry_column_name = "geometry"
 
     def __setitem__(self, key, value):
@@ -1543,9 +1540,12 @@ individually so that features may have different properties
         result = super().apply(
             func, axis=axis, raw=raw, result_type=result_type, args=args, **kwargs
         )
-        # Check if last geometry column name is lost and re-attach
-        # (should only be for pandas 1.3 and earlier)
-        if isinstance(result, GeoDataFrame) and result._geometry_column_name is None:
+        # pandas <1.4 re-attach last geometry col if lost
+        if (
+            not compat.PANDAS_GE_14
+            and isinstance(result, GeoDataFrame)
+            and result._geometry_column_name is None
+        ):
             result._geometry_column_name = self._geometry_column_name
         # Reconstruct gdf if it was lost by apply
         if (
