@@ -3,12 +3,11 @@ Migration from PyGEOS geometry backend to Shapely 2.0
 
 Since the 0.8 version, GeoPandas includes an experimental support of PyGEOS as an
 alternative geometry backend to Shapely. Recently, PyGEOS codebase was merged into the
-Shapely project and released as part of the Shapely 2.0. GeoPandas will therefore
+Shapely project and released as part of Shapely 2.0. GeoPandas will therefore
 deprecate support of the PyGEOS backend and will go forward with Shapely 2.0 as the
 only geometry engine exposing GEOS functionality.
 
-Given the PyGEOS engine is automatically used if the package is installed (only until
-GeoPandas 0.14, then the preference will change), some downstream code may depend on
+Given that historically the PyGEOS engine is automatically used if the package is installed (this behaviour will change in GeoPandas 0.14 where Shapely 2.0 will be used by default if installed), some downstream code may depend on
 PyGEOS geometries being available as underlying data of a ``GeometryArray``.
 
 This guide outlines the migration from the PyGEOS-based code to the Shapely-based code.
@@ -17,7 +16,7 @@ Migration period
 ----------------
 
 The migration is planned for three releases spanning approximately one year, starting
-with 0.13 released in the second quartile of 2023.
+with 0.13 released in the second quarter of 2023.
 
 GeoPandas 0.13
 ^^^^^^^^^^^^^^
@@ -51,7 +50,7 @@ The recommended way is using Shapely vectorized operations on the ``GeometryArra
 instead of accessing the NumPy array of geometries and using PyGEOS/Shapely operations
 on the array.
 
-This is a common pattern used with GeoPandas 0.12, that should now be avoided in new code:
+This is a common pattern used with GeoPandas 0.12 (or earlier), that should now be avoided in new code:
 
 .. code-block:: python
 
@@ -59,7 +58,7 @@ This is a common pattern used with GeoPandas 0.12, that should now be avoided in
     >>> geometries = gdf.geometry.values.data
     >>> mrr = pygeos.minimum_rotated_rectangle(geometries)
 
-The recommended way of refactoring this code would look like this:
+The recommended way of refactoring this code would look like this (with Geopandas 0.12 or later):
 
 .. code-block:: python
 
