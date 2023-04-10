@@ -20,9 +20,6 @@ from . import _compat as compat
 from ._decorator import doc
 
 
-DEFAULT_GEO_COLUMN_NAME = "geometry"
-
-
 def _geodataframe_constructor_with_fallback(*args, **kwargs):
     """
     A flexible constructor for GeoDataFrame._constructor, which falls back
@@ -128,7 +125,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
     _internal_names = DataFrame._internal_names + ["geometry"]
     _internal_names_set = set(_internal_names)
 
-    _geometry_column_name = DEFAULT_GEO_COLUMN_NAME
+    _geometry_column_name = None
 
     def __init__(self, data=None, *args, geometry=None, crs=None, **kwargs):
         with compat.ignore_shapely2_warnings():
@@ -241,6 +238,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
     def _set_geometry(self, col):
         if not pd.api.types.is_list_like(col):
             raise ValueError("Must use a list-like to set the geometry property")
+        self._persist_old_default_geometry_colname()
         self.set_geometry(col, inplace=True)
 
     geometry = property(
@@ -308,12 +306,11 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             frame = self
         else:
             frame = self.copy()
-            # if there is no previous self.geometry, self.copy() will downcast
-            if type(frame) == DataFrame:
-                frame = GeoDataFrame(frame)
 
         to_remove = None
         geo_column_name = self._geometry_column_name
+        if geo_column_name is None:
+            geo_column_name = "geometry"
         if isinstance(col, (Series, list, np.ndarray, GeometryArray)):
             level = col
         elif hasattr(col, "ndim") and col.ndim > 1:
@@ -333,7 +330,6 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
             if drop:
                 to_remove = col
-                geo_column_name = self._geometry_column_name
             else:
                 geo_column_name = col
 
@@ -350,8 +346,11 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         # Check that we are using a listlike of geometries
         level = _ensure_geometry(level, crs=crs)
-        frame[geo_column_name] = level
+        # update _geometry_column_name prior to assignment
+        # to avoid default is None warning
         frame._geometry_column_name = geo_column_name
+        frame[geo_column_name] = level
+
         if not inplace:
             return frame
 
@@ -445,22 +444,22 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
     @crs.setter
     def crs(self, value):
         """Sets the value of the crs"""
-        if self._geometry_column_name not in self:
+        if self._geometry_column_name is None:
             raise ValueError(
                 "Assigning CRS to a GeoDataFrame without a geometry column is not "
                 "supported. Use GeoDataFrame.set_geometry to set the active "
                 "geometry column.",
             )
+
+        if hasattr(self.geometry.values, "crs"):
+            self.geometry.values.crs = value
         else:
-            if hasattr(self.geometry.values, "crs"):
-                self.geometry.values.crs = value
-            else:
-                # column called 'geometry' without geometry
-                raise ValueError(
-                    "Assigning CRS to a GeoDataFrame without an active geometry "
-                    "column is not supported. Use GeoDataFrame.set_geometry to set "
-                    "the active geometry column.",
-                )
+            # column called 'geometry' without geometry
+            raise ValueError(
+                "Assigning CRS to a GeoDataFrame without an active geometry "
+                "column is not supported. Use GeoDataFrame.set_geometry to set "
+                "the active geometry column.",
+            )
 
     def __setstate__(self, state):
         # overriding DataFrame method for compat with older pickles (CRS handling)
@@ -1474,17 +1473,43 @@ individually so that features may have different properties
                 result.__class__ = DataFrame
         return result
 
+    def _persist_old_default_geometry_colname(self):
+        """Internal util to temporarily persist the default geometry column
+        name of 'geometry' for backwards compatibility."""
+        # self.columns check required to avoid this warning in __init__
+        if self._geometry_column_name is None and "geometry" not in self.columns:
+            msg = (
+                "You are adding a column named 'geometry' to a GeoDataFrame "
+                "constructed without an active geometry column. Currently, "
+                "this automatically sets the active geometry column to 'geometry' "
+                "but in the future that will no longer happen. Instead, either "
+                "provide geometry to the GeoDataFrame constructor "
+                "(GeoDataFrame(... geometry=GeoSeries()) or use "
+                "`set_geometry('geometry')` "
+                "to explicitly set the active geometry column."
+            )
+            warnings.warn(msg, category=FutureWarning, stacklevel=3)
+            self._geometry_column_name = "geometry"
+
     def __setitem__(self, key, value):
         """
         Overwritten to preserve CRS of GeometryArray in cases like
         df['geometry'] = [geom... for geom in df.geometry]
         """
-        if not pd.api.types.is_list_like(key) and key == self._geometry_column_name:
+
+        if (
+            not pd.api.types.is_list_like(key)
+            and key == self._geometry_column_name
+            or key == "geometry"
+            and self._geometry_column_name is None
+        ):
             if pd.api.types.is_scalar(value) or isinstance(value, BaseGeometry):
                 value = [value] * self.shape[0]
             try:
                 crs = getattr(self, "crs", None)
                 value = _ensure_geometry(value, crs=crs)
+                if key == "geometry":
+                    self._persist_old_default_geometry_colname()
             except TypeError:
                 warnings.warn("Geometry column does not contain geometry.")
         super().__setitem__(key, value)
@@ -1533,6 +1558,13 @@ individually so that features may have different properties
         result = super().apply(
             func, axis=axis, raw=raw, result_type=result_type, args=args, **kwargs
         )
+        # pandas <1.4 re-attach last geometry col if lost
+        if (
+            not compat.PANDAS_GE_14
+            and isinstance(result, GeoDataFrame)
+            and result._geometry_column_name is None
+        ):
+            result._geometry_column_name = self._geometry_column_name
         # Reconstruct gdf if it was lost by apply
         if (
             isinstance(result, DataFrame)
