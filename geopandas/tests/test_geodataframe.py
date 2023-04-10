@@ -870,6 +870,7 @@ class TestDataFrame:
         # keep
         result = list(df_only_numerical_cols.iterfeatures(na="keep"))[0]
         assert type(result["properties"]["Shape_Leng"]) is float
+
         with pytest.raises(
             ValueError, match="GeoDataFrame cannot contain duplicated column names."
         ):
