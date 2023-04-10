@@ -32,7 +32,7 @@ jobs:
           git reset -- geopandas/__init__.py
           git checkout -- geopandas/__init__.py
       - name: Create PR
-        uses: peter-evans/create-pull-request@v4
+        uses: peter-evans/create-pull-request@v5
         with:
           title: "Update Versioneer"
           branch: update-versioneer
