@@ -26,6 +26,7 @@ General methods and attributes
    GeoSeries.representative_point
    GeoSeries.exterior
    GeoSeries.interiors
+   GeoSeries.minimum_bounding_radius
    GeoSeries.x
    GeoSeries.y
    GeoSeries.z
