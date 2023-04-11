@@ -240,6 +240,19 @@ def test_validate_metadata_invalid(metadata, error):
         _validate_metadata(metadata)
 
 
+def test_validate_metadata_edges():
+    metadata = {
+        "primary_column": "geometry",
+        "columns": {"geometry": {"crs": None, "encoding": "WKB", "edges": "spherical"}},
+        "version": "1.0.0-beta.1",
+    }
+    with pytest.warns(
+        UserWarning,
+        match="The geo metadata indicate that column 'geometry' has spherical edges",
+    ):
+        _validate_metadata(metadata)
+
+
 def test_to_parquet_fails_on_invalid_engine(tmpdir):
     df = GeoDataFrame(data=[[1, 2, 3]], columns=["a", "b", "a"], geometry=[Point(1, 1)])
 
