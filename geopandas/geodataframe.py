@@ -1497,9 +1497,8 @@ individually so that features may have different properties
         df['geometry'] = [geom... for geom in df.geometry]
         """
 
-        if (
-            not pd.api.types.is_list_like(key)
-            and key == self._geometry_column_name
+        if not pd.api.types.is_list_like(key) and (
+            key == self._geometry_column_name
             or key == "geometry"
             and self._geometry_column_name is None
         ):
