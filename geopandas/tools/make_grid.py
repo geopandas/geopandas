@@ -10,8 +10,6 @@ from geopandas.array import from_shapely
 
 from .. import _compat as compat
 
-# TODO update shapely and all packages from dev environment
-
 
 def make_grid(
     input_geometry,
@@ -127,7 +125,7 @@ def make_grid(
                 axis=1,
             )
             if compat.SHAPELY_GE_20:
-                sq_polygons = polygons([sq_set for sq_set in sq_coords])
+                sq_polygons = polygons(sq_coords)
             else:
                 sq_polygons = np.array([Polygon(sq_set) for sq_set in sq_coords])
 
@@ -202,17 +200,16 @@ def make_grid(
             hex_coords[:, :, 1] += grid_origin_y
 
             if compat.SHAPELY_GE_20:
-                hex_polygons = polygons([hex_set for hex_set in hex_coords])
+                hex_polygons = polygons(hex_coords)
             else:
                 hex_polygons = np.array([Polygon(hex_set) for hex_set in hex_coords])
 
             output_grid = from_shapely(hex_polygons)
 
-    output_grid = GeoSeries(output_grid)
-
     if isinstance(input_geometry, (GeoDataFrame, GeoSeries)):
-        if input_geometry.crs is not None:
-            output_grid = output_grid.set_crs(input_geometry.crs)
+        output_grid = GeoSeries(output_grid, crs=input_geometry.crs)
+    else:
+        output_grid = GeoSeries(output_grid)
 
     if intersect:
         if isinstance(input_geometry, (GeoDataFrame, GeoSeries)):
