@@ -2,10 +2,15 @@ import warnings
 
 import numpy as np
 
+from shapely import polygons
 from shapely.geometry import MultiPolygon, Polygon
 
 from geopandas import GeoDataFrame, GeoSeries, points_from_xy
 from geopandas.array import from_shapely
+
+from .. import _compat as compat
+
+# TODO update shapely and all packages from dev environment
 
 
 def make_grid(
@@ -121,12 +126,12 @@ def make_grid(
                 ),
                 axis=1,
             )
-            sq_polygons_np = np.array([Polygon(sq_set) for sq_set in sq_coords])
+            if compat.SHAPELY_GE_20:
+                sq_polygons = polygons([sq_set for sq_set in sq_coords])
+            else:
+                sq_polygons = np.array([Polygon(sq_set) for sq_set in sq_coords])
 
-            output_grid = from_shapely(sq_polygons_np)
-
-        else:
-            raise ValueError("Invalid value for parameter `what`")
+            output_grid = from_shapely(sq_polygons)
 
     elif cell_type == "hexagon":
         if not flat_topped:
@@ -196,15 +201,12 @@ def make_grid(
             hex_coords[:, :, 0] += grid_origin_x
             hex_coords[:, :, 1] += grid_origin_y
 
-            hex_polygons = [Polygon(hex_set) for hex_set in hex_coords]
+            if compat.SHAPELY_GE_20:
+                hex_polygons = polygons([hex_set for hex_set in hex_coords])
+            else:
+                hex_polygons = np.array([Polygon(hex_set) for hex_set in hex_coords])
 
-            hex_polygons_np = np.array(hex_polygons)
-            output_grid = from_shapely(hex_polygons_np)
-
-        else:
-            raise ValueError("Invalid value for parameter `what`")
-    else:
-        raise ValueError("Invalid value for parameter `cell_type`")
+            output_grid = from_shapely(hex_polygons)
 
     output_grid = GeoSeries(output_grid)
 
@@ -365,13 +367,14 @@ def _basic_checks(input_geometry, cell_size, offset, what, cell_type, intersect)
 
     allowed_what = ["centers", "corners", "polygons"]
     if what not in allowed_what:
-        raise ValueError(f'`what` was "{what}" but is expected to be in {allowed_what}')
+        raise ValueError(
+            f"Invalid value for parameter `what`. Only {allowed_what} are supported. '{what}' was given."
+        )
 
     allowed_cell_type = ["square", "hexagon"]
     if cell_type not in allowed_cell_type:
         raise ValueError(
-            f'`cell_type` was "{cell_type}" but is expected'
-            f"to be in {allowed_cell_type}"
+            f"Invalid value for parameter `cell_type`. Only {allowed_cell_type} are supported. '{cell_type}' was given."
         )
 
     if not isinstance(intersect, bool):
