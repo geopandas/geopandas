@@ -1414,6 +1414,14 @@ class TestConstructor:
         assert gdf._geometry_column_name == ("geometry", "", "")
         assert gdf.geometry.name == ("geometry", "", "")
 
+    def test_assign_cols_using_index(self):
+        nybb_filename = geopandas.datasets.get_path("nybb")
+        df = read_file(nybb_filename)
+        other_df = pd.DataFrame({"foo": range(5), "bar": range(5)})
+        expected = pd.concat([df, other_df], axis=1)
+        df[other_df.columns] = other_df
+        assert_geodataframe_equal(df, expected)
+
 
 def test_geodataframe_crs():
     gdf = GeoDataFrame(columns=["geometry"])
