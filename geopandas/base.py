@@ -3660,7 +3660,7 @@ GeometryCollection
         Sample points from each geometry.
 
         Generate a MultiPoint per each geometry containing points sampled from the
-        geometry. You can either sample randomly from uniform distribution or use an
+        geometry. You can either sample randomly from a uniform distribution or use an
         advanced sampling algorithm from the ``pointpats`` package.
 
         For polygons, this samples within the area of the polygon. For lines,
@@ -3677,7 +3677,7 @@ GeometryCollection
         size : int | array-like
             The size of the sample requested. Indicates the number of samples to draw
             from each geometry.  If an array of the same length as a GeoSeries is
-            passed, it denotes a size of a sample per geometry.
+            passed, it denotes the size of a sample per geometry.
         method : str, default "uniform"
             The sampling method. ``uniform`` samples uniformly at random from a
             geometry using ``numpy.random.uniform``. Other allowed strings
