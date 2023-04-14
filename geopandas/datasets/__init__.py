@@ -1,5 +1,7 @@
 import os
 
+from warnings import warn
+
 __all__ = ["available", "get_path"]
 
 _module_path = os.path.dirname(__file__)
@@ -25,9 +27,30 @@ def get_path(dataset):
 naturalearth_lowres/naturalearth_lowres.shp'
 
     """
+    ne_message = "https://www.naturalearthdata.com/downloads/110m-cultural-vectors/."
+    nybb_message = (
+        "the geodatasets package.\n\nfrom geodatasets import get_path\n"
+        "path_to_file = get_path('nybb')\n"
+    )
+    depr_warning = (
+        "The geopandas.dataset module is deprecated and will be removed in GeoPandas "
+        f"1.0. You can get the original '{dataset}' data from "
+        f"{ne_message if 'natural' in dataset else nybb_message}"
+    )
+
     if dataset in _available_dir:
+        warn(
+            depr_warning,
+            FutureWarning,
+            stacklevel=2,
+        )
         return os.path.abspath(os.path.join(_module_path, dataset, dataset + ".shp"))
     elif dataset in _available_zip:
+        warn(
+            depr_warning,
+            FutureWarning,
+            stacklevel=2,
+        )
         fpath = os.path.abspath(os.path.join(_module_path, _available_zip[dataset]))
         return "zip://" + fpath
     else:
