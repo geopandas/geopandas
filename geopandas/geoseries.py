@@ -9,6 +9,7 @@ from pandas.core.internals import SingleBlockManager
 from pyproj import CRS
 import shapely
 from shapely.geometry.base import BaseGeometry
+from shapely.geometry import GeometryCollection
 
 from geopandas.base import GeoPandasBase, _delegate_property
 from geopandas.plotting import plot_series
@@ -841,6 +842,9 @@ class GeoSeries(GeoPandasBase, Series):
         --------
         GeoSeries.isna : detect missing values
         """
+
+        if value is None and method is None:
+            value = GeometryCollection() if compat.SHAPELY_GE_20 else BaseGeometry()
 
         return super().fillna(
             value=value,

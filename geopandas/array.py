@@ -16,7 +16,6 @@ import shapely
 import shapely.affinity
 import shapely.geometry
 from shapely.geometry.base import BaseGeometry
-from shapely.geometry import GeometryCollection
 import shapely.ops
 import shapely.wkt
 from pyproj import CRS, Transformer
@@ -1065,9 +1064,7 @@ class GeometryArray(ExtensionArray):
         """
         from pandas.core.missing import clean_fill_method
 
-        if value is None and method is None:
-            value = GeometryCollection() if compat.SHAPELY_GE_20 else BaseGeometry()
-        elif value is None:
+        if value is None:
             return super().fillna(method=clean_fill_method(method), limit=limit)
         elif method is not None:
             raise ValueError("Cannot specify both 'value' and 'method'.")
