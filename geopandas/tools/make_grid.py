@@ -247,22 +247,6 @@ def _hex_polygon_corners(xv, yv, index_0=(0, 0)):
 
     """
 
-    # Input checks
-    if xv.shape != yv.shape:
-        raise ValueError(
-            f"`xv` and `yv` must have same shape, got {xv.shape} and {yv.shape},"
-            "respectively"
-        )
-
-    if len(index_0) != 2:
-        raise ValueError(f"`index_0` must have length 2, got {len(index_0)}")
-
-    if index_0[0] < 0 or index_0[0] >= xv.shape[1]:
-        raise ValueError("`index_0[0]` exceeds dimension of `xv`, `yv`")
-
-    if index_0[1] < 0 or index_0[1] >= xv.shape[0]:
-        raise ValueError("`index_0[1]` exceeds dimension of `xv`, `yv`")
-
     i_x0 = index_0[0]
     i_y0 = index_0[1]
 
