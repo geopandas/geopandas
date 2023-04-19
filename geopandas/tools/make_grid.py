@@ -213,13 +213,15 @@ def make_grid(
 
     if intersect:
         if isinstance(input_geometry, (GeoDataFrame, GeoSeries)):
-            return output_grid[
-                output_grid.intersects(input_geometry.unary_union)
-            ].reset_index(drop=True)
-        else:
-            return output_grid[output_grid.intersects(input_geometry)].reset_index(
-                drop=True
+            unique_indices = np.unique(
+                output_grid.sindex.query(
+                    input_geometry.geometry, predicate="intersects"
+                )[-1]
             )
+        else:
+            unique_indices = np.unique(output_grid.sindex.query(input_geometry)[-1])
+        return output_grid[unique_indices].reset_index(drop=True)
+
     else:
         return output_grid
 
