@@ -455,7 +455,8 @@ def sjoin_nearest(
         column of this name in the joined GeoDataFrame.
     exclusive : bool, optional, default False
         If True, the nearest geometries that are equal to the input geometry
-        will not be returned, default False
+        will not be returned, default False.
+        The functionality is only available when Shapley >= 2.0 is used for the backend
 
     Examples
     --------
