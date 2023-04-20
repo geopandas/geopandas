@@ -353,13 +353,21 @@ def _basic_checks(input_geometry, cell_size, offset, what, cell_type, intersect)
     allowed_what = ["centers", "corners", "polygons"]
     if what not in allowed_what:
         raise ValueError(
-            f"Invalid value for parameter `what`. Only {allowed_what} are supported. '{what}' was given."
+            f"""
+            Invalid value for parameter `what`.
+            Only {allowed_what} are supported.
+            '{what}' was given.
+            """
         )
 
     allowed_cell_type = ["square", "hexagon"]
     if cell_type not in allowed_cell_type:
         raise ValueError(
-            f"Invalid value for parameter `cell_type`. Only {allowed_cell_type} are supported. '{cell_type}' was given."
+            f"""
+            Invalid value for parameter `cell_type`.
+            Only {allowed_cell_type} are supported.
+            '{cell_type}' was given.
+            """
         )
 
     if not isinstance(intersect, bool):
