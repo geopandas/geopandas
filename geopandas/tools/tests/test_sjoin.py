@@ -926,3 +926,37 @@ class TestNearest:
         result5 = result5.dropna()
         result5["index_right"] = result5["index_right"].astype("int64")
         assert_geodataframe_equal(result5, result4, check_like=True)
+
+    @pytest.mark.filterwarnings("ignore:Geometry is in a geographic CRS")
+    def test_sjoin_nearest_exclusive(self):
+        # check equivalency of left and inner join
+
+        cities = read_file(geopandas.datasets.get_path("naturalearth_cities"))
+        crs = cities.estimate_utm_crs()
+        cities = cities.to_crs(crs)
+
+        cities_left = ["Athens", "Bangkok", "Rome"]
+        cities_right = [
+            "Skopje",
+            "Vientiane",
+            "Vatican City",
+        ]
+        df = cities.sjoin_nearest(cities, exclusive=True)
+        df = df[df["name_left"].isin(cities_left)][["name_right"]]
+        result = cities[cities["name"].isin(df["name_right"])]
+
+        mask = cities["name"].isin(cities_right)
+        expected = cities[mask]
+
+        assert_geodataframe_equal(result, expected, check_like=True)
+
+        cities_right = ["Vatican City"]
+        max_distance = 450000
+        df = cities.sjoin_nearest(cities, max_distance=max_distance, exclusive=True)
+        df = df[df["name_left"].isin(cities_left)][["name_right"]]
+        result = cities[cities["name"].isin(df["name_right"])]
+
+        mask = cities["name"].isin(cities_right)
+        expected = cities[mask]
+
+        assert assert_geodataframe_equal(result, expected, check_like=True)

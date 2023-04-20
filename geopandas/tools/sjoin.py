@@ -359,11 +359,16 @@ def _nearest_query(
     max_distance: float,
     how: str,
     return_distance: bool,
+    exclusive: bool,
 ):
     if not (compat.USE_SHAPELY_20 or (compat.USE_PYGEOS and compat.PYGEOS_GE_010)):
         raise NotImplementedError(
             "Currently, only PyGEOS >= 0.10.0 or Shapely >= 2.0 supports "
             "`nearest_all`. " + compat.INSTALL_PYGEOS_ERROR
+        )
+    if not compat.USE_SHAPELY_20:
+        raise NotImplementedError(
+            "Currently, only Shapely >= 2.0 supports the `exclusive` parameter"
         )
     # use the opposite of the join direction for the index
     use_left_as_sindex = how == "right"
@@ -379,6 +384,7 @@ def _nearest_query(
             return_all=True,
             max_distance=max_distance,
             return_distance=return_distance,
+            exclusive=exclusive,
         )
         if return_distance:
             (input_idx, tree_idx), distances = res
@@ -412,6 +418,7 @@ def sjoin_nearest(
     lsuffix: str = "left",
     rsuffix: str = "right",
     distance_col: Optional[str] = None,
+    exclusive: Optional[bool] = False,
 ) -> GeoDataFrame:
     """Spatial join of two GeoDataFrames based on the distance between their geometries.
 
@@ -449,6 +456,9 @@ def sjoin_nearest(
     distance_col : string, default None
         If set, save the distances computed between matching geometries under a
         column of this name in the joined GeoDataFrame.
+    exclusive : bool, optional, default False
+        If True, the nearest geometries that are equal to the input geometry
+        will not be returned, default False
 
     Examples
     --------
@@ -520,7 +530,9 @@ countries_w_city_data[countries_w_city_data["name_left"] == "Italy"]
 
     return_distance = distance_col is not None
 
-    join_df = _nearest_query(left_df, right_df, max_distance, how, return_distance)
+    join_df = _nearest_query(
+        left_df, right_df, max_distance, how, return_distance, exclusive
+    )
 
     if return_distance:
         join_df = join_df.rename(columns={"distances": distance_col})

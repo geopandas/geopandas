@@ -2165,6 +2165,7 @@ individually so that features may have different properties
         lsuffix="left",
         rsuffix="right",
         distance_col=None,
+        exclusive=False,
     ):
         """
         Spatial join of two GeoDataFrames based on the distance between their
@@ -2202,6 +2203,9 @@ individually so that features may have different properties
         distance_col : string, default None
             If set, save the distances computed between matching geometries under a
             column of this name in the joined GeoDataFrame.
+        exclusive : bool, optional, default False
+            If True, the nearest geometries that are equal to the input geometry
+            will not be returned, default False
 
         Examples
         --------
@@ -2275,6 +2279,7 @@ countries_w_city_data[countries_w_city_data["name_left"] == "Italy"]
             lsuffix=lsuffix,
             rsuffix=rsuffix,
             distance_col=distance_col,
+            exclusive=exclusive,
         )
 
     def clip(self, mask, keep_geom_type=False):
