@@ -928,6 +928,12 @@ class TestNearest:
         assert_geodataframe_equal(result5, result4, check_like=True)
 
     @pytest.mark.filterwarnings("ignore:Geometry is in a geographic CRS")
+    @pytest.mark.skipif(
+        not (compat.USE_SHAPELY_20),
+        reason=(
+            "shapely >= 2.0 is required to run sjoin_nearest with parameter `exclusive` set"
+        ),
+    )
     def test_sjoin_nearest_exclusive(self):
         # check equivalency of left and inner join
 
