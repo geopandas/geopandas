@@ -839,7 +839,7 @@ if compat.SHAPELY_GE_20 or compat.HAS_PYGEOS:
 
         @doc(BaseSpatialIndex.nearest)
         def nearest(
-            self, geometry, return_all=True, max_distance=None, return_distance=False
+            self, geometry, return_all=True, max_distance=None, return_distance=False, exclusive=False
         ):
             if not (compat.USE_SHAPELY_20 or compat.PYGEOS_GE_010):
                 raise NotImplementedError(
@@ -856,6 +856,7 @@ if compat.SHAPELY_GE_20 or compat.HAS_PYGEOS:
                     max_distance=max_distance,
                     return_distance=return_distance,
                     all_matches=return_all,
+                    exclusive=exclusive
                 )
             else:
                 if not return_all and max_distance is None and not return_distance:
