@@ -287,8 +287,8 @@ geometries}
         return_distance : bool, optional
             If True, will return distances in addition to indexes. By default False
         exclusive : bool, optional
-            if True, the nearest geometries that are equal to the input geometry will not be returned.
-            By default False 
+            if True, the nearest geometries that are equal to the input geometry
+            will not be returned. By default False
 
         Returns
         -------
