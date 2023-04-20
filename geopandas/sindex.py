@@ -288,7 +288,7 @@ geometries}
             If True, will return distances in addition to indexes. By default False
         exclusive : bool, optional
             if True, the nearest geometries that are equal to the input geometry
-            will not be returned. By default False
+            will not be returned. By default False.  Requires Shapely >= 2.0.
 
         Returns
         -------
