@@ -931,7 +931,8 @@ class TestNearest:
     @pytest.mark.skipif(
         not (compat.USE_SHAPELY_20),
         reason=(
-            "shapely >= 2.0 is required to run sjoin_nearest with parameter `exclusive` set"
+            "shapely >= 2.0 is required to run sjoin_nearest"
+            "with parameter `exclusive` set"
         ),
     )
     def test_sjoin_nearest_exclusive(self):
