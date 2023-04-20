@@ -959,4 +959,4 @@ class TestNearest:
         mask = cities["name"].isin(cities_right)
         expected = cities[mask]
 
-        assert assert_geodataframe_equal(result, expected, check_like=True)
+        assert_geodataframe_equal(result, expected, check_like=True)

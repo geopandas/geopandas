@@ -366,10 +366,7 @@ def _nearest_query(
             "Currently, only PyGEOS >= 0.10.0 or Shapely >= 2.0 supports "
             "`nearest_all`. " + compat.INSTALL_PYGEOS_ERROR
         )
-    if not compat.USE_SHAPELY_20:
-        raise NotImplementedError(
-            "Currently, only Shapely >= 2.0 supports the `exclusive` parameter"
-        )
+
     # use the opposite of the join direction for the index
     use_left_as_sindex = how == "right"
     if use_left_as_sindex:
