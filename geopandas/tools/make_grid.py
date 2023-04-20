@@ -219,7 +219,9 @@ def make_grid(
                 )[-1]
             )
         else:
-            unique_indices = np.unique(output_grid.sindex.query(input_geometry)[-1])
+            unique_indices = np.unique(
+                output_grid.sindex.query(input_geometry, predicate="intersects")
+            )
         return output_grid[unique_indices].reset_index(drop=True)
 
     else:
