@@ -1,18 +1,18 @@
 import math
 from typing import Sequence
-from geopandas.testing import assert_geodataframe_equal
 
 import numpy as np
 import pandas as pd
+import shapely
 
 from shapely.geometry import Point, Polygon, GeometryCollection
 
 import geopandas
 import geopandas._compat as compat
 from geopandas import GeoDataFrame, GeoSeries, read_file, sjoin, sjoin_nearest
-from geopandas.testing import assert_geoseries_equal
+from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 
-from pandas.testing import assert_frame_equal
+from pandas.testing import assert_frame_equal, assert_series_equal
 import pytest
 
 
@@ -935,35 +935,23 @@ class TestNearest:
             "with parameter `exclusive` set"
         ),
     )
-    def test_sjoin_nearest_exclusive(self):
-        # check equivalency of left and inner join
+    @pytest.mark.parametrize(
+        "max_distance,expected", [(None, [1, 1, 3, 3, 2]), (1.1, [3, 3, 1, 2])]
+    )
+    def test_sjoin_nearest_exclusive(self, max_distance, expected):
+        geoms = shapely.points(np.arange(3), np.arange(3))
+        geoms = np.append(geoms, [Point(1, 2)])
 
-        cities = read_file(geopandas.datasets.get_path("naturalearth_cities"))
-        crs = cities.estimate_utm_crs()
-        cities = cities.to_crs(crs)
+        df = geopandas.GeoDataFrame({"geometry": geoms})
+        result = df.sjoin_nearest(
+            df, max_distance=max_distance, distance_col="dist", exclusive=True
+        )
 
-        cities_left = ["Athens", "Bangkok", "Rome"]
-        cities_right = [
-            "Skopje",
-            "Vientiane",
-            "Vatican City",
-        ]
-        df = cities.sjoin_nearest(cities, exclusive=True)
-        df = df[df["name_left"].isin(cities_left)][["name_right"]]
-        result = cities[cities["name"].isin(df["name_right"])]
+        assert_series_equal(
+            result["index_right"].reset_index(drop=True),
+            pd.Series(expected),
+            check_names=False,
+        )
 
-        mask = cities["name"].isin(cities_right)
-        expected = cities[mask]
-
-        assert_geodataframe_equal(result, expected, check_like=True)
-
-        cities_right = ["Vatican City"]
-        max_distance = 450000
-        df = cities.sjoin_nearest(cities, max_distance=max_distance, exclusive=True)
-        df = df[df["name_left"].isin(cities_left)][["name_right"]]
-        result = cities[cities["name"].isin(df["name_right"])]
-
-        mask = cities["name"].isin(cities_right)
-        expected = cities[mask]
-
-        assert_geodataframe_equal(result, expected, check_like=True)
+        if max_distance:
+            assert result["dist"].max() <= max_distance
