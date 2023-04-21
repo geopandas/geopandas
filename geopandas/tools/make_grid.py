@@ -2,7 +2,7 @@ import warnings
 
 import numpy as np
 
-from shapely import polygons
+import shapely
 from shapely.geometry import MultiPolygon, Polygon
 
 from geopandas import GeoDataFrame, GeoSeries, points_from_xy
@@ -200,7 +200,7 @@ def make_grid(
             hex_coords[:, :, 1] += grid_origin_y
 
             if compat.SHAPELY_GE_20:
-                hex_polygons = polygons(hex_coords)
+                hex_polygons = shapely.polygons(hex_coords)
             else:
                 hex_polygons = np.array([Polygon(hex_set) for hex_set in hex_coords])
 
