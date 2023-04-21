@@ -125,7 +125,7 @@ def make_grid(
                 axis=1,
             )
             if compat.SHAPELY_GE_20:
-                sq_polygons = polygons(sq_coords)
+                sq_polygons = shapely.polygons(sq_coords)
             else:
                 sq_polygons = np.array([Polygon(sq_set) for sq_set in sq_coords])
 
