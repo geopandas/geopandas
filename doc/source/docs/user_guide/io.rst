@@ -212,6 +212,12 @@ by using the :meth:`geopandas.GeoDataFrame.to_postgis` method.
     can be easily stored in the GeoDataFrame, but saving them to e.g. GeoPackage or Shapefile will raise a ValueError.
     Before saving to a file, they need to be converted to a format supported by a selected driver.
 
+.. note::
+
+    One GeoDataFrame can contain multiple GeoSeries objects, but most of the file format e.g. GeoPackage or Shapefile, 
+    can't contain multiple geometry fields and raise ValueError. Before saving to a file, they need to be converted to 
+    other types like WKT or WKB.
+
 **Writing to Shapefile**::
 
     countries_gdf.to_file("countries.shp")
