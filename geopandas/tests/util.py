@@ -89,7 +89,7 @@ def create_spatialite(con, df):
         )
 
 
-def create_postgis(con, df, srid=None, geom_col="geom"):
+def create_postgis(con, df, srid=0, geom_col="geom", use_geography=False):
     """
     Create a nybb table in the test_geopandas PostGIS database.
     Returns a boolean indicating whether the database table was successfully
@@ -101,12 +101,12 @@ def create_postgis(con, df, srid=None, geom_col="geom"):
     # 'test_geopandas' and enable postgis in it:
     # > createdb test_geopandas
     # > psql -c "CREATE EXTENSION postgis" -d test_geopandas
-    if srid is not None:
+    if not use_geography:
         geom_schema = "geometry(MULTIPOLYGON, {})".format(srid)
         geom_insert = "ST_SetSRID(ST_GeometryFromText(%s), {})".format(srid)
     else:
-        geom_schema = "geometry"
-        geom_insert = "ST_GeometryFromText(%s)"
+        geom_schema = "geography(MULTIPOLYGON, {})".format(srid)
+        geom_insert = "ST_SetSRID(ST_GeometryFromText(%s)::geography, {})".format(srid)
     try:
         cursor = con.cursor()
         cursor.execute("DROP TABLE IF EXISTS nybb;")

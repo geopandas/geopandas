@@ -1907,6 +1907,7 @@ individually so that features may have different properties
         index_label=None,
         chunksize=None,
         dtype=None,
+        use_geography=False,
     ):
         """
         Upload GeoDataFrame into PostGIS database.
@@ -1946,6 +1947,11 @@ individually so that features may have different properties
             Specifying the datatype for columns.
             The keys should be the column names and the values
             should be the SQLAlchemy types.
+        use_geography : bool, default False
+            Store geometry column with PostGIS Geography type instead of
+            Geometry type (see
+            https://postgis.net/docs/manual-dev/PostGIS_FAQ.html#idm21462
+            for details.)
 
         Examples
         --------
@@ -1962,7 +1968,16 @@ individually so that features may have different properties
 
         """
         geopandas.io.sql._write_postgis(
-            self, name, con, schema, if_exists, index, index_label, chunksize, dtype
+            self,
+            name,
+            con,
+            schema,
+            if_exists,
+            index,
+            index_label,
+            chunksize,
+            dtype,
+            use_geography,
         )
 
         #
