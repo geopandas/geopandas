@@ -186,8 +186,8 @@ def assert_geoseries_equal(
         )
 
     if normalize:
-        left = GeoSeries(_vectorized.normalize(left.array.data))
-        right = GeoSeries(_vectorized.normalize(right.array.data))
+        left = GeoSeries(_vectorized.normalize(left.array._data))
+        right = GeoSeries(_vectorized.normalize(right.array._data))
 
     if not check_crs:
         with warnings.catch_warnings():

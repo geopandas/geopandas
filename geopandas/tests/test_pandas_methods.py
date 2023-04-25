@@ -5,7 +5,7 @@ from numpy.testing import assert_array_equal
 import pandas as pd
 
 import shapely
-from shapely.geometry import Point, GeometryCollection, LineString
+from shapely.geometry import Point, GeometryCollection, LineString, LinearRing
 
 import geopandas
 from geopandas import GeoDataFrame, GeoSeries
@@ -86,8 +86,25 @@ def test_repr_empty():
     assert "geometry" in df._repr_html_()
 
 
-def test_indexing(s, df):
+def test_repr_linearring():
+    # https://github.com/geopandas/geopandas/pull/2689
+    # specifically, checking internal shapely/pygeos/wkt/wkb conversions
+    # preserve LinearRing
+    s = GeoSeries([LinearRing([(0, 0), (1, 1), (1, -1)])])
+    assert "LINEARRING" in str(s.iloc[0])  # shapely scalar repr
+    assert "LINEARRING" in str(s)  # GeoSeries repr
 
+    # check something coercible to linearring is not converted
+    s2 = GeoSeries(
+        [
+            LineString([(0, 0), (1, 1), (1, -1)]),
+            LineString([(0, 0), (1, 1), (1, -1), (0, 0)]),
+        ]
+    )
+    assert "LINEARRING" not in str(s2)
+
+
+def test_indexing(s, df):
     # accessing scalar from the geometry (column)
     exp = Point(1, 1)
     assert s[1] == exp
@@ -225,7 +242,6 @@ def test_assign(df):
 
 
 def test_astype(s, df):
-
     # check geoseries functionality
     with pytest.raises(TypeError):
         s.astype(int)
@@ -295,7 +311,6 @@ def test_convert_dtypes(df):
 
 
 def test_to_csv(df):
-
     exp = (
         "geometry,value1,value2\nPOINT (0 0),0,1\nPOINT (1 1),1,2\nPOINT (2 2),2,1\n"
     ).replace("\n", os.linesep)
@@ -308,7 +323,11 @@ def test_to_csv(df):
 def test_numerical_operations(s, df):
     # df methods ignore the geometry column
     exp = pd.Series([3, 4], index=["value1", "value2"])
-    assert_series_equal(df.sum(), exp)
+    if not compat.PANDAS_GE_20:
+        res = df.sum()
+    else:
+        res = df.sum(numeric_only=True)
+    assert_series_equal(res, exp)
 
     # series methods raise error (not supported for geometry)
     with pytest.raises(TypeError):
@@ -325,8 +344,7 @@ def test_numerical_operations(s, df):
     with pytest.raises(TypeError):
         df + 1
 
-    with pytest.raises((TypeError, AssertionError)):
-        # TODO(pandas 0.23) remove AssertionError -> raised in 0.23
+    with pytest.raises(TypeError):
         s + 1
 
     # boolean comparisons work
@@ -366,8 +384,9 @@ def test_equals(s, df):
 # Missing values
 
 
-def test_fillna(s, df):
+def test_fillna_scalar(s, df):
     s2 = GeoSeries([Point(0, 0), None, Point(2, 2)])
+
     res = s2.fillna(Point(1, 1))
     assert_geoseries_equal(res, s)
 
@@ -390,6 +409,28 @@ def test_fillna(s, df):
     df3.loc[0, "value1"] = np.nan
     res = df3.fillna(0)
     assert_geodataframe_equal(res.astype({"value1": "int64"}), df)
+
+
+def test_fillna_series(s):
+    # fill na with another GeoSeries
+    s2 = GeoSeries([Point(0, 0), None, Point(2, 2)])
+
+    # check na filled with the same index
+    res = s2.fillna(GeoSeries([Point(1, 1)] * 3))
+    assert_geoseries_equal(res, s)
+
+    # check na filled based on index, not position
+    index = [3, 2, 1]
+    res = s2.fillna(GeoSeries([Point(i, i) for i in index], index=index))
+    assert_geoseries_equal(res, s)
+
+    # check na filled but the input length is different
+    res = s2.fillna(GeoSeries([Point(1, 1)], index=[1]))
+    assert_geoseries_equal(res, s)
+
+    # check na filled but the inputting index is different
+    res = s2.fillna(GeoSeries([Point(1, 1)], index=[9]))
+    assert_geoseries_equal(res, s2)
 
 
 def test_dropna():
@@ -435,6 +476,49 @@ def test_any_all():
 # Groupby / algos
 
 
+def test_sort_values():
+    s = GeoSeries([Point(0, 0), Point(2, 2), Point(0, 2)])
+    res = s.sort_values()
+    assert res.index.tolist() == [0, 2, 1]
+    res2 = s.sort_values(ascending=False)
+    assert res2.index.tolist() == [1, 2, 0]
+
+    # empty geoseries
+    assert_geoseries_equal(s.iloc[:0].sort_values(), s.iloc[:0])
+
+
+def test_sort_values_empty_missing():
+    s = GeoSeries([Point(0, 0), None, Point(), Point(1, 1)])
+    # default: NA sorts last, empty first
+    res = s.sort_values()
+    assert res.index.tolist() == [2, 0, 3, 1]
+
+    # descending: NA sorts last, empty last
+    res = s.sort_values(ascending=False)
+    assert res.index.tolist() == [3, 0, 2, 1]
+
+    # NAs first, empty first after NAs
+    res = s.sort_values(na_position="first")
+    assert res.index.tolist() == [1, 2, 0, 3]
+
+    # NAs first, descending with empyt last
+    res = s.sort_values(ascending=False, na_position="first")
+    assert res.index.tolist() == [1, 3, 0, 2]
+
+    # all missing / empty
+    s = GeoSeries([None, None, None])
+    res = s.sort_values()
+    assert res.index.tolist() == [0, 1, 2]
+
+    s = GeoSeries([Point(), Point(), Point()])
+    res = s.sort_values()
+    assert res.index.tolist() == [0, 1, 2]
+
+    s = GeoSeries([Point(), None, Point()])
+    res = s.sort_values()
+    assert res.index.tolist() == [0, 2, 1]
+
+
 def test_unique():
     s = GeoSeries([Point(0, 0), Point(0, 0), Point(2, 2)])
     exp = from_shapely([Point(0, 0), Point(2, 2)])
@@ -453,8 +537,14 @@ def test_value_counts():
     # each object is considered unique
     s = GeoSeries([Point(0, 0), Point(1, 1), Point(0, 0)])
     res = s.value_counts()
+    if compat.PANDAS_GE_20:
+        name = "count"
+    else:
+        name = None
     with compat.ignore_shapely2_warnings():
-        exp = pd.Series([2, 1], index=pd14_compat_index([Point(0, 0), Point(1, 1)]))
+        exp = pd.Series(
+            [2, 1], index=pd14_compat_index([Point(0, 0), Point(1, 1)]), name=name
+        )
     assert_series_equal(res, exp)
     # Check crs doesn't make a difference - note it is not kept in output index anyway
     s2 = GeoSeries([Point(0, 0), Point(1, 1), Point(0, 0)], crs="EPSG:4326")
@@ -469,17 +559,19 @@ def test_value_counts():
     res3 = s3.value_counts()
     index = pd14_compat_index([Point(0, 0), LineString([[1, 1], [2, 2]])])
     with compat.ignore_shapely2_warnings():
-        exp3 = pd.Series([2, 1], index=index)
+        exp3 = pd.Series([2, 1], index=index, name=name)
     assert_series_equal(res3, exp3)
 
     # check None is handled
     s4 = GeoSeries([Point(0, 0), None, Point(0, 0)])
     res4 = s4.value_counts(dropna=True)
     with compat.ignore_shapely2_warnings():
-        exp4_dropna = pd.Series([2], index=pd14_compat_index([Point(0, 0)]))
+        exp4_dropna = pd.Series([2], index=pd14_compat_index([Point(0, 0)]), name=name)
     assert_series_equal(res4, exp4_dropna)
     with compat.ignore_shapely2_warnings():
-        exp4_keepna = pd.Series([2, 1], index=pd14_compat_index([Point(0, 0), None]))
+        exp4_keepna = pd.Series(
+            [2, 1], index=pd14_compat_index([Point(0, 0), None]), name=name
+        )
     res4_keepna = s4.value_counts(dropna=False)
     assert_series_equal(res4_keepna, exp4_keepna)
 
@@ -509,7 +601,6 @@ def test_drop_duplicates_frame():
 
 
 def test_groupby(df):
-
     # counts work fine
     res = df.groupby("value2").count()
     exp = pd.DataFrame(
@@ -518,7 +609,10 @@ def test_groupby(df):
     assert_frame_equal(res, exp)
 
     # reductions ignore geometry column
-    res = df.groupby("value2").sum()
+    if not compat.PANDAS_GE_20:
+        res = df.groupby("value2").sum()
+    else:
+        res = df.groupby("value2").sum(numeric_only=True)
     exp = pd.DataFrame({"value1": [2, 1], "value2": [1, 2]}, dtype="int64").set_index(
         "value2"
     )
@@ -526,18 +620,12 @@ def test_groupby(df):
 
     # applying on the geometry column
     res = df.groupby("value2")["geometry"].apply(lambda x: x.unary_union)
-    if compat.PANDAS_GE_11:
-        exp = GeoSeries(
-            [shapely.geometry.MultiPoint([(0, 0), (2, 2)]), Point(1, 1)],
-            index=pd.Index([1, 2], name="value2"),
-            name="geometry",
-        )
-    else:
-        exp = pd.Series(
-            [shapely.geometry.MultiPoint([(0, 0), (2, 2)]), Point(1, 1)],
-            index=pd.Index([1, 2], name="value2"),
-            name="geometry",
-        )
+
+    exp = GeoSeries(
+        [shapely.geometry.MultiPoint([(0, 0), (2, 2)]), Point(1, 1)],
+        index=pd.Index([1, 2], name="value2"),
+        name="geometry",
+    )
     assert_series_equal(res, exp)
 
     # apply on geometry column not resulting in new geometry

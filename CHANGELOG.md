@@ -1,22 +1,105 @@
-Changelog
-=========
+# Changelog
 
-Development version
--------------------
+## Development version
 
 New features and improvements:
 
-- Added ``normalize()`` method from shapely to GeoSeries/GeoDataframe (#2537)
-- Add where filter to ``read_file`` (#2552)
+- Added ``get_coordinates()`` method from shapely to GeoSeries/GeoDataframe (#2624).
+- The Parquet and Feather IO functions now support the latest 1.0.0-beta.1 version
+  of the GeoParquet specification (geoparquet.org) (#2663).
+- New ``hilbert_distance()`` method that calculates the distance along a Hilbert curve
+  for each geometry in a GeoSeries/GeoDataFrame (#2297).
+- Added support to fill missing values in `GeoSeries.fillna` via another `GeoSeries` (#2535).
+- Support for sorting geometries (for example, using ``sort_values()``) based on
+  the distance along the Hilbert curve (#2070).
+- Added ``minimum_bounding_circle()`` method from shapely to GeoSeries/GeoDataframe (#2621).
+- Support specifying ``min_zoom`` and ``max_zoom`` inside the ``map_kwds`` argument for ``.explore()`` (#2599).
+- Added `minimum_bounding_radius()` as GeoSeries method (#2827).
+- Added support for append (``mode="a"`` or ``append=True``) in ``to_file()``
+  using ``engine="pyogrio"`` (#2788).
+- Added a ``to_wgs84`` keyword to ``to_json`` allowing automatic re-projecting to follow
+  the 2016 GeoJSON specification (#416).
+- Improve error messages when accessing the `geometry` attribute of GeoDataFrame without an active geometry column 
+  related to the default name `"geometry"` being provided in the constructor (#2577)
 
 Deprecations and compatibility notes:
 
+- Added warning that ``unary_union`` will return ``'GEOMETRYCOLLECTION EMPTY'`` instead
+  of None for all-None GeoSeries. (#2618)
+- The ``query_bulk()`` method of the spatial index `.sindex` property is deprecated
+  in favor of ``query()`` (#2823).
+
 Bug fixes:
+
+- Ensure that GeoDataFrame created from DataFrame is a copy, not a view (#2667)
+- Fix mismatch between geometries and colors in ``plot()`` if an empty or missing
+  geometry is present (#2224)
+- Escape special characters to avoid TemplateSyntaxError in ``explore()`` (#2657)
+- Fix `to_parquet`/`to_feather` to not write an invalid bbox (with NaNs) in the
+  metadata in case of an empty GeoDataFrame (#2653)
+- Fix `to_parquet`/`to_feather` to use correct WKB flavor for 3D geometries (#2654)
+- Fix `read_file` to avoid reading all file bytes prior to calling Fiona or
+  Pyogrio if provided a URL as input (#2796)
+- Fix `copy()` downcasting GeoDataFrames without an active geometry column to a
+  DataFrame (#2775)
+- Fix geometry column name propagation when GeoDataFrame columns are a multiindex (#2088)
+- Fix `iterfeatures()` method of GeoDataFrame to correctly handle non-scalar values
+  when `na='drop'` is specified (#2811)
 
 Notes on (optional) dependencies:
 
-Version 0.11.1 (July 24, 2022)
-------------------------------
+- GeoPandas 0.13 drops support pandas 1.0.5 (the minimum supported
+  pandas version is now 1.1). Further, the minimum required versions for the listed
+  dependencies have now changed to shapely 1.7.1, fiona 1.8.19, pyproj 3.0.1 and
+  matplotlib 3.3.4 (#2655)
+
+## Version 0.12.2 (December 10, 2022)
+
+Bug fixes:
+
+- Correctly handle geometries with Z dimension in ``to_crs()`` when using PyGEOS or
+  Shapely >= 2.0 (previously the z coordinates were lost) (#1345).
+- Assign Crimea to Ukraine in the ``naturalearth_lowres`` built-in dataset (#2670)
+
+## Version 0.12.1 (October 29, 2022)
+
+Small bug-fix release removing the shapely<2 pin in the installation requirements.
+
+## Version 0.12 (October 24, 2022)
+
+The highlight of this release is the support for Shapely 2.0. This makes it possible to
+test Shapely 2.0 (currently 2.0b1) alongside GeoPandas.
+
+Note that if you also have PyGEOS installed, you need to set an environment variable
+(`USE_PYGEOS=0`) before importing geopandas to actually test Shapely 2.0 features instead of PyGEOS. See
+<https://geopandas.org/en/latest/getting_started/install.html#using-the-optional-pygeos-dependency>
+for more details.
+
+New features and improvements:
+
+- Added ``normalize()`` method from shapely to GeoSeries/GeoDataframe (#2537).
+- Added ``make_valid()`` method from shapely to GeoSeries/GeoDataframe (#2539).
+- Added ``where`` filter to ``read_file`` (#2552).
+- Updated the distributed natural earth datasets (*naturalearth_lowres* and
+  *naturalearth_cities*) to version 5.1 (#2555).
+
+Deprecations and compatibility notes:
+
+- Accessing the `crs` of a `GeoDataFrame` without active geometry column was deprecated
+  and this now raises an AttributeError (#2578).
+- Resolved colormap-related warning in ``.explore()`` for recent Matplotlib versions
+  (#2596).
+
+Bug fixes:
+
+- Fix cryptic error message in ``geopandas.clip()`` when clipping with an empty geometry (#2589).
+- Accessing `gdf.geometry` where the active geometry column is missing, and a column
+  named `"geometry"` is present will now raise an `AttributeError`, rather than
+  returning `gdf["geometry"]` (#2575).
+- Combining GeoSeries/GeoDataFrames with ``pandas.concat`` will no longer silently
+  override CRS information if not all inputs have the same CRS (#2056).
+
+## Version 0.11.1 (July 24, 2022)
 
 Small bug-fix release:
 
@@ -25,8 +108,8 @@ Small bug-fix release:
   MultiIndex (#2486).
 - Fix regression in ``GeoDataFrame.explode()`` with non-default
   geometry column name.
-- Fix regression in ``apply()`` causing row-wise all nan float columns to be 
-  casted to GeometryDtype (#2482). 
+- Fix regression in ``apply()`` causing row-wise all nan float columns to be
+  casted to GeometryDtype (#2482).
 - Fix a crash in datetime column reading where the file contains mixed timezone
   offsets (#2479). These will be read as UTC localized values.
 - Fix a crash in datetime column reading where the file contains datetimes
@@ -37,7 +120,6 @@ Small bug-fix release:
   ``schema_version``. ``version`` will be passed directly to underlying
   feather or parquet writer. ``version`` will only be used to set
   ``schema_version`` if ``version`` is one of 0.1.0 or 0.4.0 (#2496).
-
 
 Version 0.11 (June 20, 2022)
 ----------------------------

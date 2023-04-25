@@ -8,7 +8,7 @@ from pyproj import CRS
 import shapely
 import shapely.affinity
 import shapely.geometry
-from shapely.geometry.base import CAP_STYLE, JOIN_STYLE
+from shapely.geometry.base import CAP_STYLE, JOIN_STYLE, BaseGeometry
 import shapely.wkb
 import shapely.wkt
 
@@ -246,6 +246,30 @@ def test_to_wkt():
     a = from_shapely([None, points_no_missing[0]])
     res = to_wkt(a)
     assert res[0] is None
+
+
+def test_data():
+    arr = from_shapely(points_no_missing)
+    with pytest.warns(DeprecationWarning):
+        np_arr = arr.data
+
+    assert isinstance(np_arr, np.ndarray)
+    if compat.USE_PYGEOS:
+        np_arr2 = arr.to_numpy()
+        assert isinstance(np_arr2[0], BaseGeometry)
+        np_arr3 = np.asarray(arr)
+        assert isinstance(np_arr3[0], BaseGeometry)
+    else:
+        assert arr.to_numpy() is np_arr
+        assert np.asarray(arr) is np_arr
+
+
+def test_as_array():
+    arr = from_shapely(points_no_missing)
+    np_arr1 = np.asarray(arr)
+    np_arr2 = arr.to_numpy()
+    assert np_arr1[0] == arr[0]
+    np.testing.assert_array_equal(np_arr1, np_arr2)
 
 
 @pytest.mark.parametrize(
@@ -941,15 +965,10 @@ class TestEstimateUtmCrs:
         self.landmarks = from_shapely([self.esb, self.sol], crs="epsg:4326")
 
     def test_estimate_utm_crs__geographic(self):
-        if compat.PYPROJ_LT_3:
-            with pytest.raises(RuntimeError, match=r"pyproj 3\+ required"):
-                self.landmarks.estimate_utm_crs()
-        else:
-            assert self.landmarks.estimate_utm_crs() == CRS("EPSG:32618")
-            if compat.PYPROJ_GE_32:  # result is unstable in older pyproj
-                assert self.landmarks.estimate_utm_crs("NAD83") == CRS("EPSG:26918")
+        assert self.landmarks.estimate_utm_crs() == CRS("EPSG:32618")
+        if compat.PYPROJ_GE_32:  # result is unstable in older pyproj
+            assert self.landmarks.estimate_utm_crs("NAD83") == CRS("EPSG:26918")
 
-    @pytest.mark.skipif(compat.PYPROJ_LT_3, reason="requires pyproj 3 or higher")
     def test_estimate_utm_crs__projected(self):
         assert self.landmarks.to_crs("EPSG:3857").estimate_utm_crs() == CRS(
             "EPSG:32618"
@@ -966,14 +985,12 @@ class TestEstimateUtmCrs:
         )
         assert antimeridian.estimate_utm_crs() == CRS("EPSG:32760")
 
-    @pytest.mark.skipif(compat.PYPROJ_LT_3, reason="requires pyproj 3 or higher")
     def test_estimate_utm_crs__out_of_bounds(self):
         with pytest.raises(RuntimeError, match="Unable to determine UTM CRS"):
             from_shapely(
                 [shapely.geometry.Polygon([(0, 90), (1, 90), (2, 90)])], crs="EPSG:4326"
             ).estimate_utm_crs()
 
-    @pytest.mark.skipif(compat.PYPROJ_LT_3, reason="requires pyproj 3 or higher")
     def test_estimate_utm_crs__missing_crs(self):
         with pytest.raises(RuntimeError, match="crs must be set"):
             from_shapely(

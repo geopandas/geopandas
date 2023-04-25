@@ -15,11 +15,12 @@ import shapely.geos
 # pandas compat
 # -----------------------------------------------------------------------------
 
-PANDAS_GE_11 = Version(pd.__version__) >= Version("1.1.0")
 PANDAS_GE_115 = Version(pd.__version__) >= Version("1.1.5")
 PANDAS_GE_12 = Version(pd.__version__) >= Version("1.2.0")
 PANDAS_GE_13 = Version(pd.__version__) >= Version("1.3.0")
 PANDAS_GE_14 = Version(pd.__version__) >= Version("1.4.0rc0")
+PANDAS_GE_15 = Version(pd.__version__) >= Version("1.5.0")
+PANDAS_GE_20 = Version(pd.__version__) >= Version("2.0.0.dev0")
 
 
 # -----------------------------------------------------------------------------
@@ -79,14 +80,14 @@ def set_use_pygeos(val=None):
     global USE_SHAPELY_20
     global PYGEOS_SHAPELY_COMPAT
 
+    env_use_pygeos = os.getenv("USE_PYGEOS", None)
+
     if val is not None:
         USE_PYGEOS = bool(val)
     else:
         if USE_PYGEOS is None:
-
             USE_PYGEOS = HAS_PYGEOS
 
-            env_use_pygeos = os.getenv("USE_PYGEOS", None)
             if env_use_pygeos is not None:
                 USE_PYGEOS = bool(int(env_use_pygeos))
 
@@ -132,6 +133,27 @@ def set_use_pygeos(val=None):
 
         except ImportError:
             raise ImportError(INSTALL_PYGEOS_ERROR)
+
+    if USE_PYGEOS and env_use_pygeos is None and SHAPELY_GE_20:
+        warnings.warn(
+            "Shapely 2.0 is installed, but because PyGEOS is also installed, "
+            "GeoPandas still uses PyGEOS by default. However, starting with "
+            "version 0.14, the default will switch to Shapely. To force to "
+            "use Shapely 2.0 now, you can either uninstall PyGEOS or set the "
+            "environment variable USE_PYGEOS=0. "
+            "You can do this before starting the Python process, or in your code "
+            "before importing geopandas:"
+            "\n\nimport os\nos.environ['USE_PYGEOS'] = '0'\nimport geopandas\n\n"
+            "In the next release, GeoPandas will switch to using Shapely by default, "
+            "even if PyGEOS is installed. If you only have PyGEOS installed to "
+            "get speed-ups, this switch should be smooth. However, if you are "
+            "using PyGEOS directly (calling PyGEOS functions on geometries "
+            "from GeoPandas), this will then stop working and you are encouraged to "
+            "migrate from PyGEOS to Shapely 2.0 "
+            "(https://shapely.readthedocs.io/en/latest/migration_pygeos.html).",
+            DeprecationWarning,
+            stacklevel=6,
+        )
 
     USE_SHAPELY_20 = (not USE_PYGEOS) and SHAPELY_GE_20
 
@@ -236,6 +258,5 @@ except ImportError:
 # pyproj compat
 # -----------------------------------------------------------------------------
 
-PYPROJ_LT_3 = Version(pyproj.__version__) < Version("3")
 PYPROJ_GE_31 = Version(pyproj.__version__) >= Version("3.1")
 PYPROJ_GE_32 = Version(pyproj.__version__) >= Version("3.2")
