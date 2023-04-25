@@ -533,7 +533,7 @@ def _to_file(
         )
 
     if mode not in ("w", "a"):
-        raise ValueError("'mode' should be one of 'w' or 'a', got '{mode}' instead")
+        raise ValueError(f"'mode' should be one of 'w' or 'a', got '{mode}' instead")
 
     if engine == "fiona":
         _to_file_fiona(df, filename, driver, schema, crs, mode, **kwargs)
