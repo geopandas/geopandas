@@ -881,6 +881,17 @@ class TestPygeosInterface:
         else:
             assert_array_equal(res, expected[0])
 
+    @pytest.mark.skipif(
+        compat.USE_SHAPELY_20,
+        reason="sindex.nearest exclusive parameter requires shapely >= 2.0",
+    )
+    def test_nearest_exclusive_unavailable(self):
+        geoms = mod.points(np.arange(5), np.arange(5))
+        df = geopandas.GeoDataFrame(geometry=geoms)
+
+        with pytest.raises(NotImplementedError, match="requires shapely >= 2.0"):
+            df.sindex.nearest(geoms, exclusive=True)
+
     # --------------------------- misc tests ---------------------------- #
 
     def test_empty_tree_geometries(self):

@@ -2206,6 +2206,7 @@ individually so that features may have different properties
         exclusive : bool, optional, default False
             If True, the nearest geometries that are equal to the input geometry
             will not be returned, default False
+            Requires Shapely >= 2.0
 
         Examples
         --------
