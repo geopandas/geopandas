@@ -859,7 +859,7 @@ if compat.SHAPELY_GE_20 or compat.HAS_PYGEOS:
                     "sindex.nearest requires shapely >= 2.0 or pygeos >= 0.10"
                 )
 
-            if exclusive and not compat.USE_SHAPELY_20:
+            if (exclusive) and (not compat.USE_SHAPELY_20):
                 raise NotImplementedError(
                     "sindex.nearest exclusive parameter requires shapely >= 2.0"
                 )
