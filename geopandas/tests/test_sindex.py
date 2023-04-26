@@ -882,7 +882,7 @@ class TestPygeosInterface:
             assert_array_equal(res, expected[0])
 
     @pytest.mark.skipif(
-        compat.USE_SHAPELY_20,
+        compat.USE_SHAPELY_20 or not (compat.USE_PYGEOS and not compat.PYGEOS_GE_010),
         reason="sindex.nearest exclusive parameter requires shapely >= 2.0",
     )
     def test_nearest_exclusive_unavailable(self):
