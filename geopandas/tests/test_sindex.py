@@ -886,7 +886,7 @@ class TestPygeosInterface:
         reason="sindex.nearest exclusive parameter requires shapely >= 2.0",
     )
     def test_nearest_exclusive_unavailable(self):
-        from shapely import Point
+        from shapely.geometry import Point
 
         geoms = [Point((x, y) for (x, y) in zip(np.arange(5), np.arange(5)))]
         df = geopandas.GeoDataFrame(geometry=geoms)
