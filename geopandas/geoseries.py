@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import os
+import typing
 from typing import Optional, Any, Callable, Dict
 import warnings
 
@@ -236,15 +238,15 @@ class GeoSeries(GeoPandasBase, Series):
         if not self.crs:
             self.crs = crs
 
-    def append(self, *args, **kwargs):
+    def append(self, *args, **kwargs) -> GeoSeries:
         return self._wrapped_pandas_method("append", *args, **kwargs)
 
     @property
-    def geometry(self):
+    def geometry(self) -> GeoSeries:
         return self
 
     @property
-    def x(self):
+    def x(self) -> Series:
         """Return the x location of point geometries in a GeoSeries
 
         Returns
@@ -272,7 +274,7 @@ class GeoSeries(GeoPandasBase, Series):
         return _delegate_property("x", self)
 
     @property
-    def y(self):
+    def y(self) -> Series:
         """Return the y location of point geometries in a GeoSeries
 
         Returns
@@ -300,7 +302,7 @@ class GeoSeries(GeoPandasBase, Series):
         return _delegate_property("y", self)
 
     @property
-    def z(self):
+    def z(self) -> Series:
         """Return the z location of point geometries in a GeoSeries
 
         Returns
@@ -328,7 +330,7 @@ class GeoSeries(GeoPandasBase, Series):
         return _delegate_property("z", self)
 
     @classmethod
-    def from_file(cls, filename, **kwargs):
+    def from_file(cls, filename: os.PathLike | typing.IO, **kwargs) -> GeoSeries:
         """Alternate constructor to create a ``GeoSeries`` from a file.
 
         Can load a ``GeoSeries`` from a file from any format recognized by
@@ -453,7 +455,7 @@ class GeoSeries(GeoPandasBase, Series):
         return cls._from_wkb_or_wkb(from_wkt, data, index=index, crs=crs, **kwargs)
 
     @classmethod
-    def from_xy(cls, x, y, z=None, index=None, crs=None, **kwargs):
+    def from_xy(cls, x, y, z=None, index=None, crs=None, **kwargs) -> GeoSeries:
         """
         Alternate constructor to create a :class:`~geopandas.GeoSeries` of Point
         geometries from lists or arrays of x, y(, z) coordinates
@@ -554,7 +556,7 @@ class GeoSeries(GeoPandasBase, Series):
 
     def to_file(
         self,
-        filename: str,
+        filename: os.PathLike | typing.IO,
         driver: Optional[str] = None,
         index: Optional[bool] = None,
         **kwargs,
@@ -770,7 +772,7 @@ class GeoSeries(GeoPandasBase, Series):
         """Alias for `notna` method. See `notna` for more detail."""
         return self.notna()
 
-    def fillna(self, value=None, method=None, inplace=False, **kwargs):
+    def fillna(self, value=None, method=None, inplace: bool = False, **kwargs):
         """
         Fill NA values with geometry (or geometries).
 
@@ -988,7 +990,7 @@ class GeoSeries(GeoPandasBase, Series):
         epsg: Optional[int] = None,
         inplace: bool = False,
         allow_override: bool = False,
-    ) -> GeoSeries:
+    ):
         """
         Set the Coordinate Reference System (CRS) of a ``GeoSeries``.
 
@@ -1238,7 +1240,7 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
         """
         return json.dumps(self.__geo_interface__, **kwargs)
 
-    def to_wkb(self, hex: bool = False, **kwargs):
+    def to_wkb(self, hex: bool = False, **kwargs) -> Series:
         """
         Convert GeoSeries geometries to WKB
 
@@ -1263,7 +1265,7 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
         """
         return Series(to_wkb(self.array, hex=hex, **kwargs), index=self.index)
 
-    def to_wkt(self, **kwargs):
+    def to_wkt(self, **kwargs) -> Series:
         """
         Convert GeoSeries geometries to WKT
 
@@ -1341,7 +1343,7 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
         )
         return self.difference(other)
 
-    def clip(self, mask, keep_geom_type=False):
+    def clip(self, mask, keep_geom_type: bool = False) -> GeoSeries:
         """Clip points, lines, or polygon geometries to the mask extent.
 
         Both layers must be in the same Coordinate Reference System (CRS).
