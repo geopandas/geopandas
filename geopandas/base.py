@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 from pandas import DataFrame, Series
 
-from shapely.geometry import box
+from shapely.geometry import box, MultiPoint
 from shapely.geometry.base import BaseGeometry
 
 from .array import GeometryArray, GeometryDtype
@@ -3196,7 +3196,9 @@ GeometryCollection
 
     def interpolate(self, distance, normalized=False):
         """
-        Return a point at the specified distance along each geometry
+        Return a point at the specified distance along each geometry.
+        For multi-part geometries,the first geometry is taken and
+        the rest is ignored.
 
         Parameters
         ----------
@@ -3516,6 +3518,211 @@ GeometryCollection
         if not isinstance(other, type(self)):
             return False
         return self._data.equals(other._data)
+
+    def sample_points(
+        self, size=None, spacing=None, method="random", tile=None, **sample_kwargs
+    ):
+        """
+        Sample points from each geometry.
+
+        Generate MultiPoint per each geometry containing points sampled according to the
+        specification. You can either sample randomly, in a square or hexagonal grid or
+        using the advanced sampling algorithm rom the ``pointpats.random`` module.
+
+        For polygons, this samples within the area of the polygon. For lines,
+        this samples along the length of the linestring. For multi-part
+        geometries, the weights of each part are selected according to their relevant
+        attribute (area for Polygons, length for LineStrings), and then points are
+        sampled from each part.
+
+        Any other geometry type (e.g. Point, GeometryCollection) is ignored, and an
+        empty MultiPoint geometry is returned.
+
+        Parameters
+        ----------
+        size : int | tuple | array-like, optional
+
+            The size of the sample requested.
+
+            If ``method='random'``, this indicates the
+            number of samples to draw from each geometry. If a tuple is provided,
+            then the first value must indicate the number of samples for each geometry,
+            and the second value must indicate the number of replications to sample.
+
+            If ``method='grid'`` this gives the number points along each side of the
+            grid. If a tuple is provided, then the first value must indicate the number
+            of grid points on the x axis, and second value must indicate the number of
+            grid points on the y axis.
+
+            If an array of the same length as a GeoSeries is passed, it denotes a size
+            of a sample per geometry. Array is allowed only when ``method="random"``.
+            Either ``size`` or ``spacing`` is required but never both.
+
+        spacing : int, optional
+            The spacing of points for ``method='grid'``. Indicates the distance between
+            the points in the grid. Either ``size`` or ``spacing`` is required but never
+            both.
+
+        method : {"random", "grid", str}, default "random"
+            The sampling method. ``random`` samples uniformly at random from a geometry.
+            ``grid`` option samples a grid from within a given  geometry, possibly with
+            a random rotation and offset. Other allowed strings
+            (e.g. ``"cluster_poisson"``) denote sampling function name from the
+            ``pointpats.random`` module. Pointpats methods are implemented for
+            (Multi)Polygons only and will return an empty MultiPoint for other
+            geometry types.
+
+        tile : {None, "square", "hex"}, default None
+            A type of the grid to sample. ``"square"`` generates
+            a square grid, while ``"hex"`` generates a hexagonal grid (also known as
+            triangualar, depending on the perspective). ``None`` samples uniformly at
+            random (no grid). When when ``method="grid"``, ``tile`` defaults to
+            "square".
+
+        sample_kwargs : dict
+            Options for the sampling algorithms, especially useful when
+            picking distributions from the ``pointpats.random`` module.
+
+            When ``method="random"`` and ``tile=None``, additional ``batch_size``
+            keyword is available  denoting how large each round of simulation should be.
+            Should be approximately on the order of the number of points requested to
+            sample. Some complex shapes may be faster to sample if the batch size
+            increases. Only useful for (Multi)Polygon geometries.
+
+            When ``tile`` is not None, you can specify boolean keywords
+            ``random_offset`` and ``random_rotation`` to specify whether the grid
+            should be randomly placed along the axes and whether it shall be rotated,
+            respectively.
+
+        Returns
+        -------
+        GeoSeries or GeoDataFrame
+            Points sampled within (or along) each geometry, according to the
+            requested method. Only a GeoDataFrame if there are multiple replications
+            requested for the sampling
+
+        See also
+        --------
+        make_grid
+
+        Examples
+        --------
+        >>> from shapely.geometry import Point, LineString, Polygon
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(1, -1), (1, 0), (0, 0)]),
+        ...         Polygon([(3, -1), (4, 0), (3, 1)]),
+        ...     ]
+        ... )
+
+        >>> s.sample_points(size=10)  # doctest: +SKIP
+        0    MULTIPOINT (0.04783 -0.04244, 0.24196 -0.09052...
+        1    MULTIPOINT (3.00672 -0.52390, 3.01776 0.30065,...
+        Name: sampled_points, dtype: geometry
+        """
+        from .geoseries import GeoSeries
+        from .array import points_from_xy
+        from ._compat import import_optional_dependency
+        from .tools._random import uniform, grid
+
+        user_wants_grid = (method == "grid") or (tile is not None)
+
+        if size is None and spacing is None:
+            raise ValueError("Either size or spacing options must be provided.")
+
+        # only process size if it's provided; otherwise, allow spacing to lead
+        if size is not None:
+            if isinstance(size, int):
+                size = (size, size) if user_wants_grid else size
+            elif not (pd.api.types.is_list_like(size) and len(size) == len(self)):
+                try:
+                    assert user_wants_grid
+                    assert isinstance(size, tuple)
+                    assert isinstance(size[0], int)
+                    assert isinstance(size[1], int)
+                except AssertionError:
+                    raise TypeError(
+                        "Size must be an integer denoting the size of a sample, "
+                        "an integer denoting the number of sample sites along "
+                        "both axes when method='grid', a tuple of two "
+                        "integers denoting the grid dimensions when method='grid', "
+                        "or an array of the same length as a GeoSeries denoting the "
+                        "size of a sample per geometry."
+                    )
+        if method == "random":
+            if tile is None:
+                if isinstance(size, (float, int, tuple)):
+                    result = self.geometry.apply(uniform, size=size, **sample_kwargs)
+                else:
+                    result = [
+                        uniform(geom, s, **sample_kwargs)
+                        for geom, s in zip(self.geometry, size)
+                    ]
+            elif tile in ("hex", "square"):
+                if isinstance(size, (float, int, tuple)):
+                    result = self.geometry.apply(
+                        grid, size=size, spacing=spacing, tile=tile, **sample_kwargs
+                    )
+                else:
+                    result = [
+                        grid(geom, size=s, spacing=spacing, tile=tile, **sample_kwargs)
+                        for geom, s in zip(self.geometry, size)
+                    ]
+            else:
+                raise ValueError(
+                    'The tile option must be either "square" or "hex". '
+                    f'Recieved "{tile}".'
+                )
+
+        elif method == "grid":
+            if tile is None:
+                tile = "square"
+            if tile not in ("hex", "square"):
+                raise ValueError(
+                    'The tile option must be either "square" or "hex". '
+                    f'Recieved "{tile}".'
+                )
+            sample_kwargs.update({"random_offset": False})
+            sample_kwargs.update({"random_rotation": False})
+            point_sets = self.geometry.apply(
+                grid, size=size, spacing=spacing, tile=tile, **sample_kwargs
+            )
+
+            result = point_sets.T.apply(lambda x: GeoSeries(x).dropna().unary_union)
+        else:
+            try:
+                pointpats = import_optional_dependency(
+                    "pointpats",
+                    f"For complex sampling methods, the pointpats module is required."
+                    f" Your requested method, '{method}' was not a supported option"
+                    f" (either 'grid' or 'random') and the pointpats package was "
+                    f"not able to be imported.",
+                )
+
+                assert hasattr(pointpats.random, method)
+                sample_function = getattr(pointpats.random, method)
+                raw_points = self.geometry.apply(
+                    lambda x: sample_function(x, size=size, **sample_kwargs)
+                    if not (x.is_empty or x is None or "Polygon" not in x.geom_type)
+                    else None,
+                )
+                result = GeoSeries(
+                    raw_points.apply(
+                        lambda x: points_from_xy(*x.T).unary_union()
+                        if x is not None
+                        else MultiPoint()
+                    ),
+                )
+            except ImportError as e:
+                raise e
+            except AssertionError:
+                raise AttributeError(
+                    f"pointpats.random module has no sampling method {method}."
+                    f"Consult the pointpats.random module documentation for"
+                    f" available random sampling methods."
+                )
+
+        return GeoSeries(result, name="sampled_points", crs=self.crs, index=self.index)
 
     def get_coordinates(self, include_z=False, ignore_index=False, index_parts=False):
         """Gets coordinates from a :class:`GeoSeries` as a :class:`~pandas.DataFrame` of
