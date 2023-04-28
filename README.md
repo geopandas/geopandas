@@ -96,7 +96,7 @@ Other operations return GeoPandas objects:
 
 GeoPandas objects also know how to plot themselves. GeoPandas uses
 [matplotlib](http://matplotlib.org) for plotting. To generate a plot of our
-GeoSeries, use:
+`GeoSeries`, use:
 
     >>> g.plot()
 
