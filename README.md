@@ -76,7 +76,7 @@ Examples
 
 ![Example 1](doc/source/gallery/test.png)
 
-Some geographic operations return normal pandas object.  The `area` property of a `GeoSeries` will return a `pandas.Series` containing the area of each item in the `GeoSeries`:
+Some geographic operations return normal pandas objects.  The `area` property of a `GeoSeries` will return a `pandas.Series` containing the area of each item in the `GeoSeries`:
 
     >>> print(g.area)
     0    0.5
