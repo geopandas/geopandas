@@ -92,7 +92,7 @@ Examples of geometric manipulations
 
 .. image:: ../../_static/test.png
 
-Some geographic operations return normal pandas object.  The :attr:`~geopandas.GeoSeries.area` property of a :class:`~geopandas.GeoSeries` will return a :class:`pandas.Series` containing the area of each item in the :class:`~geopandas.GeoSeries`:
+Some geographic operations return normal pandas objects.  The :attr:`~geopandas.GeoSeries.area` property of a :class:`~geopandas.GeoSeries` will return a :class:`pandas.Series` containing the area of each item in the :class:`~geopandas.GeoSeries`:
 
 .. sourcecode:: python
 
@@ -114,7 +114,7 @@ Other operations return GeoPandas objects:
 
 .. image:: ../../_static/test_buffer.png
 
-GeoPandas objects also know how to plot themselves. GeoPandas uses `matplotlib`_ for plotting. To generate a plot of a GeoSeries, use:
+GeoPandas objects also know how to plot themselves. GeoPandas uses `matplotlib`_ for plotting. To generate a plot of a :class:`~geopandas.GeoSeries`, use:
 
 .. sourcecode:: python
 

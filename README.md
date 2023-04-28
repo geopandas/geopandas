@@ -76,7 +76,7 @@ Examples
 
 ![Example 1](doc/source/gallery/test.png)
 
-Some geographic operations return normal pandas object.  The `area` property of a `GeoSeries` will return a `pandas.Series` containing the area of each item in the `GeoSeries`:
+Some geographic operations return normal pandas objects.  The `area` property of a `GeoSeries` will return a `pandas.Series` containing the area of each item in the `GeoSeries`:
 
     >>> print(g.area)
     0    0.5
@@ -95,8 +95,8 @@ Other operations return GeoPandas objects:
 ![Example 2](doc/source/gallery/test_buffer.png)
 
 GeoPandas objects also know how to plot themselves. GeoPandas uses
-[matplotlib](http://matplotlib.org) for plotting. To generate a plot of our
-GeoSeries, use:
+[matplotlib](http://matplotlib.org) for plotting. To generate a plot of a
+`GeoSeries`, use:
 
     >>> g.plot()
 
