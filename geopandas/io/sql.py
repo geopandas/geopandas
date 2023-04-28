@@ -342,6 +342,17 @@ def _psql_insert_copy(tbl, conn, keys, data_iter):
         cur.copy_expert(sql=sql, file=s_buf)
 
 
+# Tricky class to get the names of the index columns
+# Check pandas.io.sql.SQLTable.__init__ to know how
+# the index names are constructed and what is needed
+class _pdIndex:
+    def __init__(self, frame):
+        self.frame = frame
+
+    def _index_name(self, index, index_label):
+        return pd.io.sql.SQLTable._index_name(self, index, index_label)
+
+
 def _write_postgis(
     gdf,
     name,
@@ -462,6 +473,29 @@ def _write_postgis(
             chunksize=chunksize,
             dtype=dtype,
             method=_psql_insert_copy,
+        )
+
+    # Just fill the SQLTable with enough data to get
+    # the index column names used by pandas
+    index = _pdIndex(gdf)._index_name(index, index_label)
+
+    if index is None:
+        if isinstance(index_label, str):
+            index = [index_label]
+        elif isinstance(index_label, list):
+            index = index_label
+        else:
+            print(
+                "There is no index or primary key,"
+                "the data will be in read-only for QGIS"
+            )
+            return
+
+    with _get_conn(con) as connection:
+        connection.execute(
+            'ALTER TABLE "{name}" ADD PRIMARY KEY ("{key}");'.format(
+                name=name, key=",".join(index)
+            )
         )
 
     return

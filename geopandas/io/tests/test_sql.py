@@ -734,3 +734,80 @@ class TestIO:
         # Should raise error when appending
         with pytest.raises(ValueError, match="CRS of the target table"):
             write_postgis(df_nybb2, con=engine, name=table, if_exists="append")
+
+    def test_primary_columns_behavior(self, engine_postgis, df_nybb):
+        """
+        Tests to check the behavior of index/primary columns creation
+        this behaviors depends a lot on pd, there 2 behaviors to be checked
+            1) The default for the index name column
+            2) The primary column was recorded indeed as a primary column
+        Are run this two in the same place, because they uses the column
+        name to check both behavior
+        """
+        table = "nybb"
+        sql = """
+        SELECT c.column_name, c.data_type
+        FROM information_schema.table_constraints tc
+        JOIN information_schema.constraint_column_usage
+        AS ccu USING (constraint_schema, constraint_name)
+        JOIN information_schema.columns AS c ON c.table_schema = tc.constraint_schema
+        AND tc.table_name = c.table_name AND ccu.column_name = c.column_name
+        WHERE constraint_type = 'PRIMARY KEY' and tc.table_name = '{table}';
+        """.format(
+            table=table
+        )
+        engine = engine_postgis
+        # write table without primery key, table as read-only for QGIS
+        write_postgis(df_nybb, con=engine, name=table, if_exists="replace")
+        ret = pd.read_sql_query(sql, engine)
+        index_class = geopandas.io.sql._pdIndex(df_nybb, None, None)
+        assert index_class.index_name() is None
+        assert len(ret) == 0
+        # write table with primary key, with indefined column name
+        write_postgis(df_nybb, con=engine, name=table, if_exists="replace", index=True)
+        ret = pd.read_sql_query(sql, engine)
+        index_class = geopandas.io.sql._pdIndex(df_nybb, True)
+        assert len(ret) == 1
+        assert ret.iloc[0]["column_name"] == index_class.index_name()
+        # if index==True and there is a index_label,
+        # will made a new column with index_label as a primary key
+        index_label = "id"
+        write_postgis(
+            df_nybb,
+            con=engine,
+            name=table,
+            if_exists="replace",
+            index=True,
+            index_label=index_label,
+        )
+        index_class = geopandas.io.sql._pdIndex(df_nybb, True, index_label)
+        ret = pd.read_sql_query(sql, engine)
+        assert index_class.index_name() == index_label
+        assert len(ret) == 1
+        assert ret.iloc[0]["column_name"] == index_label
+        # if index is string, will made a new primary column with that name
+        index_label = "id"
+        write_postgis(
+            df_nybb, con=engine, name=table, if_exists="replace", index=index_label
+        )
+        ret = pd.read_sql_query(sql, engine)
+        index_class = geopandas.io.sql._pdIndex(df_nybb, index_label)
+        assert index_class.index_name() == index_label
+        assert len(ret) == 1
+        assert ret.iloc[0]["column_name"] == index_label
+        # If index==False will not create anew column,
+        # but will use the column specified in index_label
+        index_label = "BoroCode"
+        write_postgis(
+            df_nybb,
+            con=engine,
+            name=table,
+            if_exists="replace",
+            index=False,
+            index_label=index_label,
+        )
+        ret = pd.read_sql_query(sql, engine)
+        index_class = geopandas.io.sql._pdIndex(df_nybb, False, index_label)
+        assert index_class.index_name() is None
+        assert len(ret) == 1
+        assert ret.iloc[0]["column_name"] == index_label
