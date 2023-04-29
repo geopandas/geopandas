@@ -18,4 +18,5 @@ setup(
     name="geopandas",  # need by GitHub dependency graph
     version=versioneer.get_version(),
     cmdclass=versioneer.get_cmdclass(),
+    a=3,
 )
