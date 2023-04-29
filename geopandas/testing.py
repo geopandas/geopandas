@@ -144,7 +144,7 @@ def assert_geoseries_equal(
         Check that both are same type (*and* are GeoSeries). If False,
         will attempt to convert both into GeoSeries.
     check_less_precise : bool, default False
-        If True, use geom_almost_equals. if False, use geom_equals.
+        If True, use geom_equals_exact. if False, use geom_equals.
     check_geom_type : bool, default False
         If True, check that all the geom types are equal.
     check_crs: bool, default True
@@ -153,7 +153,7 @@ def assert_geoseries_equal(
     normalize: bool, default False
         If True, normalize the geometries before comparing equality.
         Typically useful with ``check_less_precise=True``, which uses
-        ``geom_almost_equals`` and requires exact coordinate order.
+        ``geom_equals_exact`` and requires exact coordinate order.
     """
     assert len(left) == len(right), "%d != %d" % (len(left), len(right))
 
@@ -265,7 +265,7 @@ def assert_geodataframe_equal(
     check_like : bool, default False
         If true, ignore the order of rows & columns
     check_less_precise : bool, default False
-        If True, use geom_almost_equals. if False, use geom_equals.
+        If True, use geom_equals_exact. if False, use geom_equals.
     check_geom_type : bool, default False
         If True, check that all the geom types are equal.
     check_crs: bool, default True
@@ -274,7 +274,7 @@ def assert_geodataframe_equal(
     normalize: bool, default False
         If True, normalize the geometries before comparing equality.
         Typically useful with ``check_less_precise=True``, which uses
-        ``geom_almost_equals`` and requires exact coordinate order.
+        ``geom_equals_exact`` and requires exact coordinate order.
     """
     try:
         # added from pandas 0.20

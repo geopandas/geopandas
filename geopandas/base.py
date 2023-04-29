@@ -1091,7 +1091,6 @@ GeometryCollection
 
         See also
         --------
-        GeoSeries.geom_almost_equals
         GeoSeries.geom_equals_exact
 
         """
@@ -1235,7 +1234,6 @@ GeometryCollection
         See also
         --------
         GeoSeries.geom_equals
-        GeoSeries.geom_almost_equals
         """
         return _binary_op(
             "geom_equals_exact", self, other, tolerance=tolerance, align=align
