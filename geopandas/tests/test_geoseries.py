@@ -148,15 +148,16 @@ class TestSeries:
 
     def test_geom_almost_equals(self):
         # TODO: test decimal parameter
-        assert np.all(self.g1.geom_equals_exact(self.g1))
-        assert_array_equal(self.g1.geom_equals_exact(self.sq), [False, True])
+        with pytest.warns(FutureWarning, match="The 'geom_almost_equals()'"):
+            assert np.all(self.g1.geom_almost_equals(self.g1))
+            assert_array_equal(self.g1.geom_almost_equals(self.sq), [False, True])
 
-        assert_array_equal(
-            self.a1.geom_equals_exact(self.a2, align=True), [False, True, False]
-        )
-        assert_array_equal(
-            self.a1.geom_equals_exact(self.a2, align=False), [False, False]
-        )
+            assert_array_equal(
+                self.a1.geom_almost_equals(self.a2, align=True), [False, True, False]
+            )
+            assert_array_equal(
+                self.a1.geom_almost_equals(self.a2, align=False), [False, False]
+            )
 
     def test_geom_equals_exact(self):
         # TODO: test tolerance parameter
