@@ -768,7 +768,8 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         If the GeoDataFrame has a defined CRS, its definition will be included
         in the output unless it is equal to WGS84 (default GeoJSON CRS) or not
-        possible to represent in the URN OGC format.
+        possible to represent in the URN OGC format, or unless ``to_wgs84=True``
+        is specified.
 
         Examples
         --------
@@ -816,7 +817,7 @@ es": {"name": "urn:ogc:def:crs:EPSG::3857"}}}'
 
             if auth_crsdef is None or auth_crsdef[0] not in allowed_authorities:
                 warnings.warn(
-                    "Geodataframe CRS is not representable in URN OGC "
+                    "GeoDataFrame's CRS is not representable in URN OGC "
                     "format. Resulting JSON will contain no CRS information.",
                     stacklevel=2,
                 )
