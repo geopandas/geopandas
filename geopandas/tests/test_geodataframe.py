@@ -1465,7 +1465,7 @@ def test_geodataframe_crs_nonrepresentable_json(crs):
         crs=crs,
     )
     with pytest.warns(
-        UserWarning, match="Geodataframe CRS is not representable in URN OGC"
+        UserWarning, match="GeoDataFrame's CRS is not representable in URN OGC"
     ):
         gdf_geojson = json.loads(gdf.to_json())
     assert "crs" not in gdf_geojson
