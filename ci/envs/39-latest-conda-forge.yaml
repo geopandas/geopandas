@@ -26,6 +26,7 @@ dependencies:
   - xyzservices
   - scipy
   - geopy
+  - pointpats
   # installed in tests.yaml, because not available on windows
   # - postgis
   - SQLalchemy<2

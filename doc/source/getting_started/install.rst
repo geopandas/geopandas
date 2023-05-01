@@ -150,6 +150,7 @@ Further, optional dependencies are:
 - `psycopg2`_ (optional; for PostGIS connection)
 - `GeoAlchemy2`_ (optional; for writing to PostGIS)
 - `geopy`_ (optional; for geocoding)
+- `pointpats`_ (optional; for advanced point sampling)
 
 
 For plotting, these additional packages may be used:
@@ -268,3 +269,5 @@ More specifically, whether the speedups are used or not is determined by:
 .. _PyGEOS: https://github.com/pygeos/pygeos/
 
 .. _packaging: https://packaging.pypa.io/en/latest/
+
+.. _pointpats: https://pointpats.readthedocs.io/en/latest/
