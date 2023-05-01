@@ -1,13 +1,13 @@
 .. _geometric_manipulations:
 
-Geometric Manipulations
+Geometric manipulations
 ========================
 
-*geopandas* makes available all the tools for geometric manipulations in the `shapely library <http://shapely.readthedocs.io/en/latest/manual.html>`_.
+GeoPandas makes available all the tools for geometric manipulations in the `Shapely library <http://shapely.readthedocs.io/en/latest/manual.html>`_.
 
-Note that documentation for all set-theoretic tools for creating new shapes using the relationship between two different spatial datasets -- like creating intersections, or differences -- can be found on the :doc:`set operations <set_operations>` page.
+Note that documentation for all set-theoretic tools for creating new shapes using the relationship between two different spatial datasets -- like creating intersections, or differences -- can be found at :doc:`Set operations with overlay <set_operations>`.
 
-Constructive Methods
+Constructive methods
 ~~~~~~~~~~~~~~~~~~~~
 
 .. method:: GeoSeries.buffer(distance, resolution=16)
@@ -18,7 +18,7 @@ Constructive Methods
 .. attribute:: GeoSeries.boundary
 
   Returns a :class:`~geopandas.GeoSeries` of lower dimensional objects representing
-  each geometries's set-theoretic `boundary`.
+  each geometry's set-theoretic `boundary`.
 
 .. attribute:: GeoSeries.centroid
 
@@ -72,7 +72,7 @@ Affine transformations
 
 
 
-Examples of Geometric Manipulations
+Examples of geometric manipulations
 ------------------------------------
 
 .. sourcecode:: python
@@ -92,7 +92,7 @@ Examples of Geometric Manipulations
 
 .. image:: ../../_static/test.png
 
-Some geographic operations return normal pandas object.  The :attr:`~geopandas.GeoSeries.area` property of a :class:`~geopandas.GeoSeries` will return a :class:`pandas.Series` containing the area of each item in the :class:`~geopandas.GeoSeries`:
+Some geographic operations return normal pandas objects.  The :attr:`~geopandas.GeoSeries.area` property of a :class:`~geopandas.GeoSeries` will return a :class:`pandas.Series` containing the area of each item in the :class:`~geopandas.GeoSeries`:
 
 .. sourcecode:: python
 
@@ -114,17 +114,18 @@ Other operations return GeoPandas objects:
 
 .. image:: ../../_static/test_buffer.png
 
-GeoPandas objects also know how to plot themselves.  GeoPandas uses `matplotlib`_ for plotting. To generate a plot of our GeoSeries, use:
+GeoPandas objects also know how to plot themselves. GeoPandas uses `matplotlib`_ for plotting. To generate a plot of a :class:`~geopandas.GeoSeries`, use:
 
 .. sourcecode:: python
 
     >>> g.plot()
 
-GeoPandas also implements alternate constructors that can read any data format recognized by `fiona`_.  To read a zip file containing an ESRI shapefile with the `borough boundaries of New York City`_ (GeoPandas includes this as an example dataset):
+GeoPandas also implements alternate constructors that can read any data format recognized by `Fiona`_.  To read a zip file containing an ESRI shapefile with the `borough boundaries of New York City`_ (GeoPandas includes this as an example dataset):
 
 .. sourcecode:: python
 
-    >>> nybb_path = geopandas.datasets.get_path('nybb')
+    >>> import geodatasets
+    >>> nybb_path = geodatasets.get_path('nybb')
     >>> boros = geopandas.read_file(nybb_path)
     >>> boros.set_index('BoroCode', inplace=True)
     >>> boros.sort_index(inplace=True)
@@ -160,7 +161,7 @@ GeoPandas also implements alternate constructors that can read any data format r
 
 .. image:: ../../_static/nyc_hull.png
 
-To demonstrate a more complex operation, we'll generate a
+To demonstrate a more complex operation, generate a
 :class:`~geopandas.GeoSeries` containing 2000 random points:
 
 .. sourcecode:: python
@@ -178,14 +179,14 @@ Now draw a circle with fixed radius around each point:
 
     >>> circles = pts.buffer(2000)
 
-We can collapse these circles into a single :class:`MultiPolygon`
+You can collapse these circles into a single :class:`MultiPolygon`
 geometry with
 
 .. sourcecode:: python
 
     >>> mp = circles.unary_union
 
-To extract the part of this geometry contained in each borough, we can
+To extract the part of this geometry contained in each borough, you can
 just use:
 
 .. sourcecode:: python
