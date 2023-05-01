@@ -766,22 +766,28 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
           feature individually so that features may have different properties.
         - ``keep``: output the missing entries as NaN.
 
+        If the GeoDataFrame has a defined CRS, its definition will be included
+        in the output unless it is equal to WGS84 (default GeoJSON CRS) or not
+        possible to represent in the URN OGC format, or unless ``to_wgs84=True``
+        is specified.
+
         Examples
         --------
 
         >>> from shapely.geometry import Point
         >>> d = {'col1': ['name1', 'name2'], 'geometry': [Point(1, 2), Point(2, 1)]}
-        >>> gdf = geopandas.GeoDataFrame(d, crs="EPSG:4326")
+        >>> gdf = geopandas.GeoDataFrame(d, crs="EPSG:3857")
         >>> gdf
-            col1                 geometry
-        0  name1  POINT (1.00000 2.00000)
-        1  name2  POINT (2.00000 1.00000)
+            col1             geometry
+        0  name1  POINT (1.000 2.000)
+        1  name2  POINT (2.000 1.000)
 
         >>> gdf.to_json()
         '{"type": "FeatureCollection", "features": [{"id": "0", "type": "Feature", \
 "properties": {"col1": "name1"}, "geometry": {"type": "Point", "coordinates": [1.0,\
  2.0]}}, {"id": "1", "type": "Feature", "properties": {"col1": "name2"}, "geometry"\
-: {"type": "Point", "coordinates": [2.0, 1.0]}}]}'
+: {"type": "Point", "coordinates": [2.0, 1.0]}}], "crs": {"type": "name", "properti\
+es": {"name": "urn:ogc:def:crs:EPSG::3857"}}}'
 
         Alternatively, you can write GeoJSON to file:
 
@@ -801,9 +807,26 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 )
         else:
             df = self
-        return json.dumps(
-            df._to_geo(na=na, show_bbox=show_bbox, drop_id=drop_id), **kwargs
-        )
+
+        geo = df._to_geo(na=na, show_bbox=show_bbox, drop_id=drop_id)
+
+        # if the geometry is not in WGS84, include CRS in the JSON
+        if df.crs is not None and not df.crs.equals("epsg:4326"):
+            auth_crsdef = self.crs.to_authority()
+            allowed_authorities = ["EDCS", "EPSG", "OGC", "SI", "UCUM"]
+
+            if auth_crsdef is None or auth_crsdef[0] not in allowed_authorities:
+                warnings.warn(
+                    "GeoDataFrame's CRS is not representable in URN OGC "
+                    "format. Resulting JSON will contain no CRS information.",
+                    stacklevel=2,
+                )
+            else:
+                authority, code = auth_crsdef
+                ogc_crs = f"urn:ogc:def:crs:{authority}::{code}"
+                geo["crs"] = {"type": "name", "properties": {"name": ogc_crs}}
+
+        return json.dumps(geo, **kwargs)
 
     @property
     def __geo_interface__(self):
@@ -814,7 +837,10 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         ``FeatureCollection``.
 
         This differs from `_to_geo()` only in that it is a property with
-        default args instead of a method
+        default args instead of a method.
+
+        CRS of the dataframe is not passed on to the output, unlike
+        :meth:`~GeoDataFrame.to_json()`.
 
         Examples
         --------
@@ -833,8 +859,6 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 , 2.0)}, 'bbox': (1.0, 2.0, 1.0, 2.0)}, {'id': '1', 'type': 'Feature', 'properties\
 ': {'col1': 'name2'}, 'geometry': {'type': 'Point', 'coordinates': (2.0, 1.0)}, 'b\
 box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
-
-
         """
         return self._to_geo(na="null", show_bbox=True, drop_id=False)
 
