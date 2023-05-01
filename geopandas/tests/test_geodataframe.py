@@ -1427,3 +1427,45 @@ def test_geodataframe_crs():
     gdf = GeoDataFrame(columns=["geometry"])
     gdf.crs = "IGNF:ETRS89UTM28"
     assert gdf.crs.to_authority() == ("IGNF", "ETRS89UTM28")
+
+
+def test_geodataframe_nocrs_json():
+    # no CRS, no crs field
+    gdf = GeoDataFrame(columns=["geometry"])
+    gdf_geojson = json.loads(gdf.to_json())
+    assert "crs" not in gdf_geojson
+
+    # WGS84, no crs field (default as per spec)
+    gdf.crs = 4326
+    gdf_geojson = json.loads(gdf.to_json())
+    assert "crs" not in gdf_geojson
+
+
+def test_geodataframe_crs_json():
+    gdf = GeoDataFrame(columns=["geometry"])
+    gdf.crs = 25833
+    gdf_geojson = json.loads(gdf.to_json())
+    assert "crs" in gdf_geojson
+    assert gdf_geojson["crs"] == {
+        "type": "name",
+        "properties": {"name": "urn:ogc:def:crs:EPSG::25833"},
+    }
+    gdf_geointerface = gdf.__geo_interface__
+    assert "crs" not in gdf_geointerface
+
+
+@pytest.mark.parametrize(
+    "crs",
+    ["+proj=cea +lon_0=0 +lat_ts=45 +x_0=0 +y_0=0 +ellps=WGS84 +units=m", "IGNF:WGS84"],
+)
+def test_geodataframe_crs_nonrepresentable_json(crs):
+    gdf = GeoDataFrame(
+        [Point(1000, 1000)],
+        columns=["geometry"],
+        crs=crs,
+    )
+    with pytest.warns(
+        UserWarning, match="GeoDataFrame's CRS is not representable in URN OGC"
+    ):
+        gdf_geojson = json.loads(gdf.to_json())
+    assert "crs" not in gdf_geojson
