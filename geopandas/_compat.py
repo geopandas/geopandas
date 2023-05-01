@@ -204,7 +204,10 @@ else:
         yield
 
 
-if HAS_PYGEOS:
+if USE_SHAPELY_20:
+    _geom = shapely.Point(1, 1)
+    GEOMETRY_OBJECT_SIZE = sys.getsizeof(_geom)
+elif HAS_PYGEOS:
     _geom = pygeos.Geometry("POINT (1 1)")
     GEOMETRY_OBJECT_SIZE = sys.getsizeof(_geom)
 else:
