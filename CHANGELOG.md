@@ -19,6 +19,7 @@ New features and improvements:
   using ``engine="pyogrio"`` (#2788).
 - Added a ``to_wgs84`` keyword to ``to_json`` allowing automatic re-projecting to follow
   the 2016 GeoJSON specification (#416).
+- ``to_json`` output now includes a ``"crs"`` field if the CRS is not the default WGS84 (#1774).
 - Improve error messages when accessing the `geometry` attribute of GeoDataFrame without an active geometry column
   related to the default name `"geometry"` being provided in the constructor (#2577)
 - Added ``sample_points`` method to sample random points from Polygon or LineString
