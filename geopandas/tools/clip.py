@@ -126,19 +126,22 @@ def clip(gdf, mask, keep_geom_type=False):
 
     Examples
     --------
-    Clip points (global cities) with a polygon (the South American continent):
+    Clip points (grocery stores) with polygons (the Near West Side community):
 
-    >>> world = geopandas.read_file(
-    ...     geopandas.datasets.get_path('naturalearth_lowres'))
-    >>> south_america = world[world['continent'] == "South America"]
-    >>> capitals = geopandas.read_file(
-    ...     geopandas.datasets.get_path('naturalearth_cities'))
-    >>> capitals.shape
-    (243, 2)
+    >>> import geodatasets
+    >>> chicago = geopandas.read_file(
+    ...     geodatasets.get_path("geoda.chicago_health")
+    ... )
+    >>> near_west_side = chicago[chicago["community"] == "NEAR WEST SIDE"]
+    >>> groceries = geopandas.read_file(
+    ...     geodatasets.get_path("geoda.groceries")
+    ... ).to_crs(chicago.crs)
+    >>> groceries.shape
+    (148, 8)
 
-    >>> sa_capitals = geopandas.clip(capitals, south_america)
-    >>> sa_capitals.shape
-    (15, 2)
+    >>> nws_groceries = geopandas.clip(groceries, near_west_side)
+    >>> nws_groceries.shape
+    (7, 8)
     """
     if not isinstance(gdf, (GeoDataFrame, GeoSeries)):
         raise TypeError(

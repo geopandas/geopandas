@@ -25,12 +25,12 @@ In the following examples, these datasets are used:
 
    import geodatasets
 
-   chicago = geopandas.read_file(geodatasets.get_path("geoda chicago health"))
-   groceries = geopandas.read_file(geodatasets.get_path("geoda groceries"))
+   chicago = geopandas.read_file(geodatasets.get_path("geoda.chicago_commpop"))
+   groceries = geopandas.read_file(geodatasets.get_path("geoda.groceries"))
 
    # For attribute join
-   chicago_shapes = chicago[['geometry', 'ComAreaID']]
-   chicago_names = chicago[['community', 'ComAreaID']]
+   chicago_shapes = chicago[['geometry', 'NID']]
+   chicago_names = chicago[['community', 'NID']]
 
    # For spatial join
    chicago = chicago[['geometry', 'community']].to_crs(groceries.crs)
@@ -74,7 +74,7 @@ that initially has only area ID for each geometry by merging it with a :class:`~
    chicago_names.head()
 
    # Merge with `merge` method on shared variable (area ID):
-   chicago_shapes = chicago_shapes.merge(chicago_names, on='ComAreaID')
+   chicago_shapes = chicago_shapes.merge(chicago_names, on='NID')
    chicago_shapes.head()
 
 
