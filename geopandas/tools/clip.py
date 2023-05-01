@@ -127,6 +127,7 @@ def clip(gdf, mask, keep_geom_type=False):
     Examples
     --------
     Clip points (grocery stores) with polygons (the Near West Side community):
+
     >>> import geodatasets
     >>> chicago = geopandas.read_file(
     ...     geodatasets.get_path("geoda.chicago_health")
