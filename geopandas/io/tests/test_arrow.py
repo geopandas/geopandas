@@ -240,6 +240,19 @@ def test_validate_metadata_invalid(metadata, error):
         _validate_metadata(metadata)
 
 
+def test_validate_metadata_edges():
+    metadata = {
+        "primary_column": "geometry",
+        "columns": {"geometry": {"crs": None, "encoding": "WKB", "edges": "spherical"}},
+        "version": "1.0.0-beta.1",
+    }
+    with pytest.warns(
+        UserWarning,
+        match="The geo metadata indicate that column 'geometry' has spherical edges",
+    ):
+        _validate_metadata(metadata)
+
+
 def test_to_parquet_fails_on_invalid_engine(tmpdir):
     df = GeoDataFrame(data=[[1, 2, 3]], columns=["a", "b", "a"], geometry=[Point(1, 1)])
 
@@ -573,6 +586,15 @@ def test_missing_crs(tmpdir, file_format):
     assert pq_df.crs is None
 
     assert_geodataframe_equal(df, pq_df, check_crs=True)
+
+
+def test_default_geo_col_writes(tmp_path):
+    # edge case geo col name None writes successfully
+    df = GeoDataFrame({"a": [1, 2]})
+    df.to_parquet(tmp_path / "test.pq")
+    # cannot be round tripped as gdf due to invalid geom col
+    pq_df = pd_read_parquet(tmp_path / "test.pq")
+    assert_frame_equal(df, pq_df)
 
 
 @pytest.mark.skipif(
