@@ -100,10 +100,10 @@ The geometry filter only loads data that intersects with the geometry.
     import geodatasets
 
     gdf_mask = geopandas.read_file(
-        geodatasets.get_path("geoda nyc")
+        geodatasets.get_path("geoda.nyc")
     )
     gdf = geopandas.read_file(
-        geodatasets.get_path("geoda nyc education"),
+        geodatasets.get_path("geoda.nyc education"),
         mask=gdf_mask[gdf_mask.name=="Coney Island"],
     )
 
@@ -135,11 +135,11 @@ or a slice object.
 .. code-block:: python
 
     gdf = geopandas.read_file(
-        geodatasets.get_path("geoda nyc"),
+        geodatasets.get_path("geoda.nyc"),
         rows=10,
     )
     gdf = geopandas.read_file(
-        geodatasets.get_path("geoda nyc"),
+        geodatasets.get_path("geoda.nyc"),
         rows=slice(10, 20),
     )
 
@@ -153,7 +153,7 @@ Load in a subset of fields from the file:
 .. code-block:: python
 
     gdf = geopandas.read_file(
-        geodatasets.get_path("geoda nyc"),
+        geodatasets.get_path("geoda.nyc"),
         include_fields=["name", "rent2008", "kids2000"],
     )
 
@@ -162,7 +162,7 @@ Load in a subset of fields from the file:
 .. code-block:: python
 
     gdf = geopandas.read_file(
-        geodatasets.get_path("geoda nyc"),
+        geodatasets.get_path("geoda.nyc"),
         ignore_fields=["rent2008", "kids2000"],
     )
 
@@ -174,7 +174,7 @@ Skip loading geometry from the file:
 .. code-block:: python
 
     pdf = geopandas.read_file(
-        geodatasets.get_path("geoda nyc"),
+        geodatasets.get_path("geoda.nyc"),
         ignore_geometry=True,
     )
 
@@ -191,7 +191,7 @@ Load in a subset of data with a `SQL WHERE clause <https://gdal.org/user/ogr_sql
 .. code-block:: python
 
     gdf = geopandas.read_file(
-        geodatasets.get_path("geoda nyc"),
+        geodatasets.get_path("geoda.nyc"),
         where="subborough='Coney Island'",
     )
 

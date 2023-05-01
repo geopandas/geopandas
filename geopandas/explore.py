@@ -253,16 +253,18 @@ def _explore(
 
     Examples
     --------
-    >>> df = geopandas.read_file(geopandas.datasets.get_path("naturalearth_lowres"))
+    >>> import geodatasets
+    >>> df = geopandas.read_file(
+    ...     geodatasets.get_path("geoda.chicago_health")
+    ... )
     >>> df.head(2)  # doctest: +SKIP
-        pop_est      continent                      name iso_a3  \
-gdp_md_est                                           geometry
-    0     920938        Oceania                      Fiji    FJI      8374.0  MULTIPOLY\
-GON (((180.00000 -16.06713, 180.00000...
-    1   53950935         Africa                  Tanzania    TZA    150600.0  POLYGON (\
-(33.90371 -0.95000, 34.07262 -1.05982...
+       ComAreaID  ...                                           geometry
+    0         35  ...  POLYGON ((-87.60914 41.84469, -87.60915 41.844...
+    1         36  ...  POLYGON ((-87.59215 41.81693, -87.59231 41.816...
 
-    >>> df.explore("pop_est", cmap="Blues")  # doctest: +SKIP
+    [2 rows x 87 columns]
+
+    >>> df.explore("Pop2012", cmap="Blues")  # doctest: +SKIP
     """
 
     def _colormap_helper(_cmap, n_resample=None, idx=None):
