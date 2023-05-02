@@ -766,7 +766,7 @@ class TestPolygonPlotting:
             legend=True,
             legend_kwds={
                 "labels" : [ prefix + str(c) for c in categories ],
-                "frameon": False
+                "frameon": False,
             }
         )
         assert len(categories) == len(ax.get_legend().get_texts())
