@@ -144,7 +144,8 @@ def assert_geoseries_equal(
         Check that both are same type (*and* are GeoSeries). If False,
         will attempt to convert both into GeoSeries.
     check_less_precise : bool, default False
-        If True, use geom_equals_exact with relative error of 0.5e-6. if False, use geom_equals.
+        If True, use geom_equals_exact with relative error of 0.5e-6.
+        If False, use geom_equals.
     check_geom_type : bool, default False
         If True, check that all the geom types are equal.
     check_crs: bool, default True
