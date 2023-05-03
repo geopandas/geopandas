@@ -48,6 +48,7 @@ Bug fixes:
 - Fix geometry column name propagation when GeoDataFrame columns are a multiindex (#2088)
 - Fix `iterfeatures()` method of GeoDataFrame to correctly handle non-scalar values
   when `na='drop'` is specified (#2811)
+- Fix issue with passing custom legend labels to `plot` (#2886)
 
 Notes on (optional) dependencies:
 
