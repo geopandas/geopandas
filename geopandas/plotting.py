@@ -942,7 +942,9 @@ def plot_dataframe(
                 categories.append(merged_kwds.get("label", "NaN"))
             legend_kwds.setdefault("numpoints", 1)
             legend_kwds.setdefault("loc", "best")
-            ax.legend(patches, categories, **legend_kwds)
+            legend_kwds.setdefault("handles", patches)
+            legend_kwds.setdefault("labels", categories)
+            ax.legend(**legend_kwds)
         else:
             if cax is not None:
                 legend_kwds.setdefault("cax", cax)
