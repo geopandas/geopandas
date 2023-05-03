@@ -31,7 +31,7 @@ under the liberal terms of the BSD-3-Clause license.
 
 GeoPandas is a fiscally sponsored project of NumFOCUS, a nonprofit dedicated to
 supporting the open-source scientific computing community. If you like GeoPandas and
-want to support our mission, please consider making a [donation](https://numfocus.org/donate-to-geopandas) to support our
+want to support our mission, please consider making a [donation](https://numfocus.org/donate-for-geopandas) to support our
 efforts.
 
 NumFOCUS is a 501(c)(3) non-profit charity in the United States; as such, donations to

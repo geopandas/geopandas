@@ -64,7 +64,7 @@ Supported by
 The GeoPandas project uses an
 `open governance model <https://github.com/geopandas/governance/blob/main/Governance.md>`__ and is fiscally
 sponsored by `NumFOCUS <https://numfocus.org/>`__. Consider making a
-`tax-deductible donation <https://numfocus.org/donate-to-geopandas>`__
+`tax-deductible donation <https://numfocus.org/donate-for-geopandas>`__
 to help the project pay for developer time, professional services,
 travel, workshops, and a variety of other needs.
 
