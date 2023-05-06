@@ -54,12 +54,12 @@ In particular, when submitting a pull request:
 Seven Steps for Contributing
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-There are seven basic steps to contributing to *GeoPandas*:
+There are seven basic steps to contributing to GeoPandas:
 
-1) Fork the *GeoPandas* git repository
+1) Fork the GeoPandas git repository
 2) Create a development environment
-3) Install *GeoPandas* dependencies
-4) Make a ``development`` build of *GeoPandas*
+3) Install GeoPandas dependencies
+4) Make a ``development`` build of GeoPandas
 5) Make changes to code and add tests
 6) Update the documentation
 7) Submit a Pull Request
@@ -67,10 +67,10 @@ There are seven basic steps to contributing to *GeoPandas*:
 Each of these 7 steps is detailed below.
 
 
-1) Forking the *GeoPandas* repository using Git
+1) Forking the GeoPandas repository using Git
 ------------------------------------------------
 
-To the new user, working with Git is one of the more daunting aspects of contributing to *GeoPandas**.
+To the new user, working with Git is one of the more daunting aspects of contributing to GeoPandas.
 It can very quickly become overwhelming, but sticking to the guidelines below will help keep the process
 straightforward and mostly trouble free.  As always, if you are having difficulties please
 feel free to ask for help.
@@ -107,8 +107,8 @@ want to clone your fork to your machine::
     cd geopandas-yourname
     git remote add upstream git://github.com/geopandas/geopandas.git
 
-This creates the directory `geopandas-yourname` and connects your repository to
-the upstream (main project) *GeoPandas* repository.
+This creates the directory ``geopandas-yourname`` and connects your repository to
+the upstream (main project) GeoPandas repository.
 
 The testing suite will run automatically on GitHub Actions once your pull request is
 submitted. The test suite will also automatically run on your branch so you can
@@ -129,7 +129,7 @@ The above can be simplified to::
 
 This changes your working directory to the shiny-new-feature branch.  Keep any
 changes in this branch specific to one bug or feature so it is clear
-what the branch brings to *GeoPandas*. You can have many shiny-new-features
+what the branch brings to GeoPandas. You can have many shiny-new-features
 and switch in between them using the git checkout command.
 
 To update this branch, you need to retrieve the changes from the main branch::
@@ -147,23 +147,23 @@ after updating.
 
 2) Creating a development environment
 ---------------------------------------
-A development environment is a virtual space where you can keep an independent installation of *GeoPandas*.
+A development environment is a virtual space where you can keep an independent installation of GeoPandas.
 This makes it easy to keep both a stable version of python in one place you use for work, and a development
 version (which you may break while playing with code) in another.
 
-An easy way to create a *GeoPandas* development environment is as follows:
+An easy way to create a GeoPandas development environment is as follows:
 
 - Install either `Anaconda <http://docs.continuum.io/anaconda/>`_ or
   `miniconda <http://conda.pydata.org/miniconda.html>`_
 - Make sure that you have :ref:`cloned the repository <contributing.forking>`
-- ``cd`` to the *geopandas** source directory
+- ``cd`` to the ``geopandas`` source directory
 
 Using the provided environment
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-*GeoPandas* provides an environment which includes the required dependencies for development.
+GeoPandas provides an environment which includes the required dependencies for development.
 The environment file is located in the top level of the repo and is named ``environment-dev.yml``.
-You can create this environment by navigating to the the *GeoPandas* source directory
+You can create this environment by navigating to the the ``geopandas`` source directory
 and running::
 
       conda env create -f environment-dev.yml
@@ -209,8 +209,8 @@ At this point you can easily do a *development* install, as detailed in the next
 3) Installing Dependencies
 --------------------------
 
-To run *GeoPandas* in an development environment, you must first install
-*GeoPandas*'s dependencies. If you used the provided environment in section 2, skip this
+To run GeoPandas in an development environment, you must first install the dependencies of
+GeoPandas. If you used the provided environment in section 2, skip this
 step and continue to section 4. If you created the environment manually, we suggest installing
 dependencies using the following commands (executed after your development environment has been activated)::
 
@@ -223,15 +223,15 @@ This should install all necessary dependencies.
 -----------------------------
 
 Once dependencies are in place, make an in-place build by navigating to the git
-clone of the *GeoPandas* repository and running::
+clone of the GeoPandas repository and running::
 
-    python setup.py develop
+    python -m pip install -e .
 
 
 5) Making changes and writing tests
 -------------------------------------
 
-*GeoPandas* is serious about testing and strongly encourages contributors to embrace
+GeoPandas is serious about testing and strongly encourages contributors to embrace
 `test-driven development (TDD) <http://en.wikipedia.org/wiki/Test-driven_development>`_.
 This development process "relies on the repetition of a very short development cycle:
 first the developer writes an (initially failing) automated test case that defines a desired
@@ -240,10 +240,10 @@ So, before actually writing any code, you should write your tests.  Often the te
 taken from the original GitHub issue.  However, it is always worth considering additional
 use cases and writing corresponding tests.
 
-Adding tests is one of the most common requests after code is pushed to *GeoPandas*.  Therefore,
+Adding tests is one of the most common requests after code is pushed to GeoPandas.  Therefore,
 it is worth getting in the habit of writing tests ahead of time so this is never an issue.
 
-*GeoPandas* uses the `pytest testing system
+GeoPandas uses the `pytest testing system
 <http://doc.pytest.org/en/latest/>`_ and the convenient
 extensions in `numpy.testing
 <http://docs.scipy.org/doc/numpy/reference/routines.testing.html>`_.
@@ -264,20 +264,20 @@ Running the test suite
 ~~~~~~~~~~~~~~~~~~~~~~
 
 The tests can then be run directly inside your Git clone (without having to
-install *GeoPandas*) by typing::
+install GeoPandas) by typing::
 
     pytest
 
 6) Updating the Documentation
 -----------------------------
 
-*GeoPandas* documentation resides in the ``doc`` folder. Changes to the docs are made by
-modifying the appropriate file in the ``source`` folder within ``doc``. *GeoPandas* docs use
+GeoPandas documentation resides in the ``doc`` folder. Changes to the docs are made by
+modifying the appropriate file in the ``source`` folder within ``doc``. GeoPandas docs use
 mixture of reStructuredText syntax for ``rst`` files, `which is explained here
 <http://www.sphinx-doc.org/en/stable/rest.html#rst-primer>`_ and MyST syntax for ``md``
 files `explained here <https://myst-parser.readthedocs.io/en/latest/index.html>`_.
 The docstrings follow the `Numpy Docstring standard
-<https://github.com/numpy/numpy/blob/main/doc/HOWTO_DOCUMENT.rst.txt>`_. Some pages
+<https://numpydoc.readthedocs.io/en/latest/format.html#docstring-standard>`_. Some pages
 and examples are Jupyter notebooks converted to docs using `nbsphinx
 <https://nbsphinx.readthedocs.io/>`_. Jupyter notebooks should be stored without the output.
 
@@ -313,7 +313,7 @@ syntax are usually quite straightforward.
 ------------------------------
 
 Once you've made changes and pushed them to your forked repository, you then
-submit a pull request to have them integrated into the *GeoPandas* code base.
+submit a pull request to have them integrated into the GeoPandas code base.
 
 You can find a pull request (or PR) tutorial in the `GitHub's Help Docs <https://help.github.com/articles/using-pull-requests/>`_.
 
@@ -344,7 +344,7 @@ use the provided development environment in ``environment-dev.yml``, you must fi
    $ python -m pip install pre-commit
 
 From the root of the geopandas repository, you should then install the
-``pre-commit`` included in *GeoPandas*::
+``pre-commit`` included in GeoPandas::
 
    $ pre-commit install
 

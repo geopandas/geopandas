@@ -237,7 +237,7 @@ spatial data visualization.
 ### Geometry manipulation
 
 #### [TopoJSON](https://github.com/mattijn/topojson)
-`topojson` is a library for creating a TopoJSON encoding of nearly any 
+`topojson` is a library for creating a TopoJSON encoding of nearly any
 geographical object in Python. With topojson it is possible to reduce the size of
 your geographical data, typically by orders of magnitude. It is able to do so through
 eliminating redundancy through computation of a topology, fixed-precision integer
@@ -258,7 +258,7 @@ data, street bearings/orientations, and speed/travel time.
 
 #### [pyrosm](https://github.com/HTenkanen/pyrosm)
 `Pyrosm` is a Python library for reading OpenStreetMap data from Protocolbuffer Binary
-Format -files (`*.osm.pbf`) into Geopandas `GeoDataFrames`. Pyrosm makes it easy to
+Format -files (`*.osm.pbf`) into Geopandas `GeoDataFrames`. `Pyrosm` makes it easy to
 extract various datasets from OpenStreetMap pbf-dumps including e.g. road networks,
 buildings, Points of Interest (POI), landuse and natural elements. Also fully customized
 queries are supported which makes it possible to parse the data from OSM with more
@@ -276,6 +276,12 @@ package is intended for exploratory data analysis and draws inspiration from
 sqlalchemy-like interfaces and `acs.R`. With separate APIs for application developers
 and folks who only want to get their data quickly & painlessly, `cenpy` should meet the
 needs of most who aim to get US Census Data into Python.
+
+#### [pygadm](https://github.com/12rambau/pygadm)
+`pygadm` is a Python package that lets you request spatial data from [GADM](https://gadm.org/)
+without manually downloading any file. This package aims at simplifying the requests
+of the data using few parameters such as the name and the subdivision levels.
+Outputs are served as `GeoDataFrame` in `epsg:4326`.
 
 ```{admonition} Expand this page
 Do know a package which should be here? [Let us

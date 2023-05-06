@@ -1,3 +1,5 @@
+import warnings
+
 import numpy as np
 
 from shapely.geometry import Point, Polygon
@@ -126,7 +128,7 @@ def test_ignore_crs_mismatch():
 
     # assert that with `check_crs=False` the assert passes, and also does not
     # generate any warning from comparing both geometries with different crs
-    with pytest.warns(None) as record:
+    with warnings.catch_warnings(record=True) as record:
         assert_geodataframe_equal(df1, df2, check_crs=False)
 
     assert len(record) == 0

@@ -23,9 +23,10 @@ dependencies:
   - xyzservices
   - scipy
   - geopy
+  - pointpats
   # installed in tests.yaml, because not available on windows
   # - postgis
-  - SQLalchemy
+  - SQLalchemy<2
   - psycopg2
   - libspatialite
   - geoalchemy2
@@ -35,4 +36,4 @@ dependencies:
   - pytest-doctestplus
   - pip
   - pip:
-    - git+https://github.com/geopandas/pyogrio.git@main
+      - git+https://github.com/geopandas/pyogrio.git@main

@@ -1,27 +1,25 @@
-from collections import OrderedDict
 import datetime
-from packaging.version import Version
 import io
 import os
 import pathlib
 import tempfile
+from collections import OrderedDict
 
 import numpy as np
 import pandas as pd
-
+import pytest
 import pytz
+from packaging.version import Version
+from pandas.api.types import is_datetime64_any_dtype
 from pandas.testing import assert_series_equal
 from shapely.geometry import Point, Polygon, box
 
 import geopandas
 from geopandas import GeoDataFrame, read_file
+from geopandas._compat import PANDAS_GE_20
 from geopandas.io.file import _detect_driver, _EXTENSION_TO_DRIVER
-
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 from geopandas.tests.util import PACKAGE_DIR, validate_boro_df
-
-import pytest
-
 
 try:
     import pyogrio
@@ -32,12 +30,13 @@ except ImportError:
 try:
     import fiona
 
-    FIONA_GE_1814 = Version(fiona.__version__) >= Version(
-        "1.8.14"
-    )  # datetime roundtrip
+    # invalid datetime handling
+    FIONA_GE_1821 = Version(fiona.__version__) >= Version("1.8.21")
+    FIONA_GE_19 = Version(Version(fiona.__version__).base_version) >= Version("1.9.0")
 except ImportError:
     fiona = False
-    FIONA_GE_1814 = False
+    FIONA_GE_1821 = False
+    FIONA_GE_19 = False
 
 
 PYOGRIO_MARK = pytest.mark.skipif(not pyogrio, reason="pyogrio not installed")
@@ -201,9 +200,6 @@ def test_to_file_datetime(tmpdir, driver, ext, time, engine):
         pytest.skip("pyogrio doesn't yet support timezones")
     if ext in (".shp", ""):
         pytest.skip(f"Driver corresponding to ext {ext} doesn't support dt fields")
-    if time.tzinfo is not None and FIONA_GE_1814 is False:
-        # https://github.com/Toblerity/Fiona/pull/915
-        pytest.skip("Fiona >= 1.8.14 needed for timezone support")
 
     tempfilename = os.path.join(str(tmpdir), f"test_datetime{ext}")
     point = Point(0, 0)
@@ -211,10 +207,7 @@ def test_to_file_datetime(tmpdir, driver, ext, time, engine):
     df = GeoDataFrame(
         {"a": [1.0, 2.0], "b": [time, time]}, geometry=[point, point], crs=4326
     )
-    if FIONA_GE_1814:
-        fiona_precision_limit = "ms"
-    else:
-        fiona_precision_limit = "s"
+    fiona_precision_limit = "ms"
     df["b"] = df["b"].dt.round(freq=fiona_precision_limit)
 
     df.to_file(tempfilename, driver=driver, engine=engine)
@@ -228,7 +221,92 @@ def test_to_file_datetime(tmpdir, driver, ext, time, engine):
             df["b"].dt.tz_convert(pytz.utc), df_read["b"].dt.tz_convert(pytz.utc)
         )
     else:
+        if engine == "pyogrio" and PANDAS_GE_20:
+            df["b"] = df["b"].astype("datetime64[ms]")
         assert_series_equal(df["b"], df_read["b"])
+
+
+dt_exts = ["gpkg", "geojson"]
+
+
+def write_invalid_date_file(date_str, tmpdir, ext, engine):
+    tempfilename = os.path.join(str(tmpdir), f"test_invalid_datetime.{ext}")
+    df = GeoDataFrame(
+        {
+            "date": ["2014-08-26T10:01:23", "2014-08-26T10:01:23", date_str],
+            "geometry": [Point(1, 1), Point(1, 1), Point(1, 1)],
+        }
+    )
+    # Schema not required for GeoJSON since not typed, but needed for GPKG
+    if ext == "geojson":
+        df.to_file(tempfilename)
+    else:
+        schema = {"geometry": "Point", "properties": {"date": "datetime"}}
+        if engine == "pyogrio" and not fiona:
+            # (use schema to write the invalid date without pandas datetimes
+            pytest.skip("test requires fiona kwarg schema")
+        df.to_file(tempfilename, schema=schema, engine="fiona")
+    return tempfilename
+
+
+@pytest.mark.parametrize("ext", dt_exts)
+def test_read_file_datetime_invalid(tmpdir, ext, engine):
+    # https://github.com/geopandas/geopandas/issues/2502
+    if not FIONA_GE_1821 and ext == "gpkg":
+        # https://github.com/Toblerity/Fiona/issues/1035
+        pytest.skip("Invalid datetime throws in Fiona<1.8.21")
+
+    date_str = "9999-99-99T00:00:00"  # invalid date handled by GDAL
+    tempfilename = write_invalid_date_file(date_str, tmpdir, ext, engine)
+    res = read_file(tempfilename)
+    if ext == "gpkg":
+        assert is_datetime64_any_dtype(res["date"])
+        assert pd.isna(res["date"].iloc[-1])
+    else:
+        assert res["date"].dtype == "object"
+        assert isinstance(res["date"].iloc[-1], str)
+
+
+@pytest.mark.parametrize("ext", dt_exts)
+def test_read_file_datetime_out_of_bounds_ns(tmpdir, ext, engine):
+    # https://github.com/geopandas/geopandas/issues/2502
+    if ext == "geojson":
+        skip_pyogrio_not_supported(engine)
+
+    date_str = "9999-12-31T00:00:00"  # valid to GDAL, not to [ns] format
+    tempfilename = write_invalid_date_file(date_str, tmpdir, ext, engine)
+    res = read_file(tempfilename)
+    # Pandas invalid datetimes are read in as object dtype (strings)
+    assert res["date"].dtype == "object"
+    assert isinstance(res["date"].iloc[0], str)
+
+
+def test_read_file_datetime_mixed_offsets(tmpdir):
+    # https://github.com/geopandas/geopandas/issues/2478
+    tempfilename = os.path.join(str(tmpdir), "test_mixed_datetime.geojson")
+    df = GeoDataFrame(
+        {
+            "date": [
+                "2014-08-26 10:01:23.040001+02:00",
+                "2019-03-07 17:31:43.118999+01:00",
+            ],
+            "geometry": [Point(1, 1), Point(1, 1)],
+        }
+    )
+    df.to_file(tempfilename)
+    # check mixed tz don't crash GH2478
+    res = read_file(tempfilename)
+    if engine == "fiona":
+        # Convert mixed timezones to UTC equivalent
+        assert is_datetime64_any_dtype(res["date"])
+        if not PANDAS_GE_20:
+            utc = pytz.utc
+        else:
+            utc = datetime.timezone.utc
+        assert res["date"].dt.tz == utc
+    else:
+        # old fiona and pyogrio ignore timezones and read as datetimes successfully
+        assert is_datetime64_any_dtype(res["date"])
 
 
 @pytest.mark.parametrize("driver,ext", driver_ext_pairs)
@@ -399,13 +477,8 @@ def test_to_file_with_duplicate_columns(tmpdir, engine):
 @pytest.mark.parametrize("driver,ext", driver_ext_pairs)
 def test_append_file(tmpdir, df_nybb, df_null, driver, ext, engine):
     """Test to_file with append mode and from_file"""
-    skip_pyogrio_not_supported(engine)
-    from fiona import supported_drivers
-
     tempfilename = os.path.join(str(tmpdir), "boros" + ext)
     driver = driver if driver else _detect_driver(tempfilename)
-    if "a" not in supported_drivers[driver]:
-        return None
 
     df_nybb.to_file(tempfilename, driver=driver, engine=engine)
     df_nybb.to_file(tempfilename, mode="a", driver=driver, engine=engine)
@@ -415,6 +488,15 @@ def test_append_file(tmpdir, df_nybb, df_null, driver, ext, engine):
     assert len(df) == (5 * 2)
     expected = pd.concat([df_nybb] * 2, ignore_index=True)
     assert_geodataframe_equal(df, expected, check_less_precise=True)
+
+    if engine == "pyogrio":
+        # for pyogrio also ensure append=True works
+        tempfilename = os.path.join(str(tmpdir), "boros2" + ext)
+        df_nybb.to_file(tempfilename, driver=driver, engine=engine)
+        df_nybb.to_file(tempfilename, append=True, driver=driver, engine=engine)
+        # Read layer back in
+        df = GeoDataFrame.from_file(tempfilename, engine=engine)
+        assert len(df) == (len(df_nybb) * 2)
 
     # Write layer with null geometry out to file
     tempfilename = os.path.join(str(tmpdir), "null_geom" + ext)
@@ -426,6 +508,12 @@ def test_append_file(tmpdir, df_nybb, df_null, driver, ext, engine):
     assert len(df) == (2 * 2)
     expected = pd.concat([df_null] * 2, ignore_index=True)
     assert_geodataframe_equal(df, expected, check_less_precise=True)
+
+
+def test_mode_unsupported(tmpdir, df_nybb, engine):
+    tempfilename = os.path.join(str(tmpdir), "data.shp")
+    with pytest.raises(ValueError, match="'mode' should be one of 'w' or 'a'"):
+        df_nybb.to_file(tempfilename, mode="r", engine=engine)
 
 
 @pytest.mark.parametrize("driver,ext", driver_ext_pairs)
@@ -684,6 +772,23 @@ def test_read_file__ignore_all_fields(engine):
     assert gdf.columns.tolist() == ["geometry"]
 
 
+def test_read_file__where_filter(engine):
+    if FIONA_GE_19 or engine == "pyogrio":
+        gdf = geopandas.read_file(
+            geopandas.datasets.get_path("naturalearth_lowres"),
+            where="continent='Africa'",
+            engine=engine,
+        )
+        assert gdf.continent.unique().tolist() == ["Africa"]
+    else:
+        with pytest.raises(NotImplementedError):
+            geopandas.read_file(
+                geopandas.datasets.get_path("naturalearth_lowres"),
+                where="continent='Africa'",
+                engine="fiona",
+            )
+
+
 @PYOGRIO_MARK
 def test_read_file__columns():
     # TODO: this is only support for pyogrio, but we could mimic it for fiona as well
@@ -724,7 +829,7 @@ def test_read_file_filtered_with_gdf_boundary__mask(df_nybb, engine):
         engine=engine,
     )
     filtered_df_shape = gdf.shape
-    assert filtered_df_shape == (50, 2)
+    assert filtered_df_shape == (57, 2)
 
 
 def test_read_file_filtered_with_gdf_boundary__mask__polygon(df_nybb, engine):

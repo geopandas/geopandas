@@ -180,14 +180,14 @@ def assert_geoseries_equal(
     assert left.index.equals(right.index), "index: %s != %s" % (left.index, right.index)
 
     if check_geom_type:
-        assert (left.type == right.type).all(), "type: %s != %s" % (
-            left.type,
-            right.type,
+        assert (left.geom_type == right.geom_type).all(), "type: %s != %s" % (
+            left.geom_type,
+            right.geom_type,
         )
 
     if normalize:
-        left = GeoSeries(_vectorized.normalize(left.array.data))
-        right = GeoSeries(_vectorized.normalize(right.array.data))
+        left = GeoSeries(_vectorized.normalize(left.array._data))
+        right = GeoSeries(_vectorized.normalize(right.array._data))
 
     if not check_crs:
         with warnings.catch_warnings():

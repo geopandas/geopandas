@@ -4,11 +4,11 @@ channels:
 dependencies:
     - python
     # required
-    - fiona>=1.8
-    - pandas>=1.0.0
+    - fiona>=1.8.19
+    - pandas>=1.1.0
     - pygeos
-    - pyproj>=2.6.1.post1
-    - shapely>=1.7
+    - pyproj>=3.0.1
+    - shapely>=1.7.1
     - packaging
 
     # testing
@@ -40,3 +40,6 @@ dependencies:
     - mapclassify
     # spatial access methods
     - rtree>=0.9
+    # point sampling
+    - pointpats
+

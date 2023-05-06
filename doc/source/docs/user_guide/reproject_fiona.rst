@@ -2,15 +2,15 @@ Re-projecting using GDAL with Rasterio and Fiona
 ================================================
 
 The simplest method of re-projecting is :meth:`GeoDataFrame.to_crs`.
-It uses ``pyproj`` as the engine and transforms the points within the geometries.
+It uses pyproj as the engine and transforms the points within the geometries.
 
-These examples demonstrate how to use ``Fiona`` or ``rasterio`` as the engine to re-project your data.
+These examples demonstrate how to use Fiona or rasterio as the engine to re-project your data.
 Fiona and rasterio are powered by GDAL and with algorithms that consider the geometry instead of
 just the points the geometry contains. This is particularly useful for antimeridian cutting.
 However, this also means the transformation is not as fast.
 
 
-Fiona Example
+Fiona example
 -------------
 
 .. code-block:: python
@@ -46,19 +46,19 @@ Fiona Example
             )
         )
 
-    # load example data
-    world = geopandas.read_file(geopandas.datasets.get_path('naturalearth_lowres'))
+    # load natural earth land data
+    world = geopandas.read_file("https://naciscdn.org/naturalearth/110m/physical/ne_110m_land.zip")
 
     destination_crs = "EPSG:3395"
     forward_transformer = partial(base_transformer, src_crs=world.crs, dst_crs=destination_crs)
 
     # Reproject to Mercator (after dropping Antartica)
-    world = world[(world.name != "Antarctica") & (world.name != "Fr. S. Antarctic Lands")]
+    world = world.drop(7)
     with fiona.Env(OGR_ENABLE_PARTIAL_REPROJECTION="YES"):
         mercator_world = world.set_geometry(world.geometry.apply(forward_transformer), crs=destination_crs)
 
 
-Rasterio Example
+Rasterio example
 ----------------
 
 This example requires rasterio 1.2+ and GDAL 3+.
@@ -71,10 +71,9 @@ This example requires rasterio 1.2+ and GDAL 3+.
     from shapely.geometry import shape
 
     # load example data
-    world = geopandas.read_file(geopandas.datasets.get_path('naturalearth_lowres'))
+    world = geopandas.read_file("https://naciscdn.org/naturalearth/110m/physical/ne_110m_land.zip")
     # Reproject to Mercator (after dropping Antartica)
-    world = world[(world.name != "Antarctica") & (world.name != "Fr. S. Antarctic Lands")]
-
+    world = world.drop(7)
     destination_crs = "EPSG:3395"
     geometry = rasterio.warp.transform_geom(
         src_crs=world.crs,
