@@ -25,7 +25,7 @@ Loading some example data:
 
     import geodatasets
 
-    chicago = geopandas.read_file(geodatasets.get_path("geoda.chicago_health"))
+    chicago = geopandas.read_file(geodatasets.get_path("geoda.chicago_commpop"))
     groceries = geopandas.read_file(geodatasets.get_path("geoda.groceries"))
 
 You can now plot those GeoDataFrames:
@@ -52,7 +52,7 @@ GeoPandas makes it easy to create Choropleth maps (maps where the color of each 
 
     # Plot by population
     @savefig chicago_population.png
-    chicago.plot(column="Pop2014");
+    chicago.plot(column="POP2010");
 
 
 Creating a legend
@@ -64,7 +64,7 @@ When plotting a map, one can enable a legend using the ``legend`` argument:
 
     # Plot population estimates with an accurate legend
     @savefig chicago_choro.png
-    chicago.plot(column='Pop2014', legend=True);
+    chicago.plot(column='POP2010', legend=True);
 
 The following example plots the color bar below the map and adds its label using ``legend_kwds``:
 
@@ -73,9 +73,9 @@ The following example plots the color bar below the map and adds its label using
     # Plot population estimates with an accurate legend
     @savefig chicago_horizontal.png
     chicago.plot(
-        column="Pop2014",
+        column="POP2010",
         legend=True,
-        legend_kwds={"label": "Population in 2014", "orientation": "horizontal"},
+        legend_kwds={"label": "Population in 2010", "orientation": "horizontal"},
     );
 
 However, the default appearance of the legend and plot axes may not be desirable. One can define the plot axes (with ``ax``) and the legend axes (with ``cax``) and then pass those in to the :meth:`~GeoDataFrame.plot` call. The following example uses ``mpl_toolkits`` to horizontally align the plot axes and the legend axes and change the width:
@@ -90,11 +90,11 @@ However, the default appearance of the legend and plot axes may not be desirable
     cax = divider.append_axes("bottom", size="5%", pad=0.1)
     @savefig chicago_cax.png
     chicago.plot(
-        column="Pop2014",
+        column="POP2010",
         ax=ax,
         legend=True,
         cax=cax,
-        legend_kwds={"label": "Population in 2014", "orientation": "horizontal"},
+        legend_kwds={"label": "Population in 2010", "orientation": "horizontal"},
     );
 
 
@@ -106,7 +106,7 @@ You can also modify the colors used by :meth:`~GeoDataFrame.plot` with the ``cma
 .. ipython:: python
 
     @savefig chicago_red.png
-    chicago.plot(column='Pop2014', cmap='OrRd');
+    chicago.plot(column='POP2010', cmap='OrRd');
 
 
 To make the color transparent for when you just want to show the boundary, you have two options. One option is to do ``chicago.plot(facecolor="none", edgecolor="black")``. However, this can cause a lot of confusion because ``"none"``  and ``None`` are different in the context of using ``facecolor`` and they do opposite things. ``None`` does the "default behavior" based on matplotlib, and if you use it for ``facecolor``, it actually adds a color. The second option is to use ``chicago.boundary.plot()``. This option is more explicit and clear.:
@@ -123,7 +123,7 @@ The way color maps are scaled can also be manipulated with the ``scheme`` option
 .. ipython:: python
 
     @savefig chicago_quantiles.png
-    chicago.plot(column='Pop2014', cmap='OrRd', scheme='quantiles');
+    chicago.plot(column='POP2010', cmap='OrRd', scheme='quantiles');
 
 
 Missing data
@@ -134,20 +134,20 @@ In some cases one may want to plot data which contains missing values - for some
 .. ipython:: python
 
     import numpy as np
-    chicago.loc[np.random.choice(chicago.index, 30), 'Pop2014'] = np.nan
+    chicago.loc[np.random.choice(chicago.index, 30), 'POP2010'] = np.nan
     @savefig missing_vals.png
-    chicago.plot(column='Pop2014');
+    chicago.plot(column='POP2010');
 
 However, passing ``missing_kwds`` one can specify the style and label of features containing None or NaN.
 
 .. ipython:: python
 
     @savefig missing_vals_grey.png
-    chicago.plot(column='Pop2014', missing_kwds={'color': 'lightgrey'});
+    chicago.plot(column='POP2010', missing_kwds={'color': 'lightgrey'});
 
     @savefig missing_vals_hatch.png
     chicago.plot(
-        column="Pop2014",
+        column="POP2010",
         legend=True,
         scheme="quantiles",
         figsize=(15, 10),
@@ -252,7 +252,7 @@ the ``kind`` keyword argument in :meth:`~GeoDataFrame.plot`, and include:
 .. ipython:: python
 
     @savefig pandas_line_plot.png
-    chicago.plot(kind="scatter", x="Pop2012", y="shape_area")
+    chicago.plot(kind="scatter", x="POP2010", y="POP2000")
 
 You can also create these other plots using the ``GeoDataFrame.plot.<kind>`` accessor methods instead of providing the ``kind`` keyword argument.
 For example, ``hist``, can be used to plot histograms of population for two different years from the Chicago dataset.
@@ -260,7 +260,7 @@ For example, ``hist``, can be used to plot histograms of population for two diff
 .. ipython:: python
 
     @savefig pandas_hist_plot.png
-    chicago[["Pop2012", "Pop2014", "geometry"]].plot.hist(alpha=.4)
+    chicago[["POP2000", "POP2010", "geometry"]].plot.hist(alpha=.4)
 
 For more information, see `Chart visualization <https://pandas.pydata.org/pandas-docs/stable/user_guide/visualization.html>`_ in the pandas documentation.
 

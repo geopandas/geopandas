@@ -531,8 +531,8 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         Examples
         --------
-
-        >>> path = geopandas.datasets.get_path('nybb')
+        >>> import geodatasets
+        >>> path = geodatasets.get_path('nybb')
         >>> gdf = geopandas.GeoDataFrame.from_file(path)
         >>> gdf  # doctest: +SKIP
            BoroCode       BoroName     Shape_Leng    Shape_Area                 \
@@ -766,22 +766,28 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
           feature individually so that features may have different properties.
         - ``keep``: output the missing entries as NaN.
 
+        If the GeoDataFrame has a defined CRS, its definition will be included
+        in the output unless it is equal to WGS84 (default GeoJSON CRS) or not
+        possible to represent in the URN OGC format, or unless ``to_wgs84=True``
+        is specified.
+
         Examples
         --------
 
         >>> from shapely.geometry import Point
         >>> d = {'col1': ['name1', 'name2'], 'geometry': [Point(1, 2), Point(2, 1)]}
-        >>> gdf = geopandas.GeoDataFrame(d, crs="EPSG:4326")
+        >>> gdf = geopandas.GeoDataFrame(d, crs="EPSG:3857")
         >>> gdf
-            col1                 geometry
-        0  name1  POINT (1.00000 2.00000)
-        1  name2  POINT (2.00000 1.00000)
+            col1             geometry
+        0  name1  POINT (1.000 2.000)
+        1  name2  POINT (2.000 1.000)
 
         >>> gdf.to_json()
         '{"type": "FeatureCollection", "features": [{"id": "0", "type": "Feature", \
 "properties": {"col1": "name1"}, "geometry": {"type": "Point", "coordinates": [1.0,\
  2.0]}}, {"id": "1", "type": "Feature", "properties": {"col1": "name2"}, "geometry"\
-: {"type": "Point", "coordinates": [2.0, 1.0]}}]}'
+: {"type": "Point", "coordinates": [2.0, 1.0]}}], "crs": {"type": "name", "properti\
+es": {"name": "urn:ogc:def:crs:EPSG::3857"}}}'
 
         Alternatively, you can write GeoJSON to file:
 
@@ -801,9 +807,26 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 )
         else:
             df = self
-        return json.dumps(
-            df._to_geo(na=na, show_bbox=show_bbox, drop_id=drop_id), **kwargs
-        )
+
+        geo = df._to_geo(na=na, show_bbox=show_bbox, drop_id=drop_id)
+
+        # if the geometry is not in WGS84, include CRS in the JSON
+        if df.crs is not None and not df.crs.equals("epsg:4326"):
+            auth_crsdef = self.crs.to_authority()
+            allowed_authorities = ["EDCS", "EPSG", "OGC", "SI", "UCUM"]
+
+            if auth_crsdef is None or auth_crsdef[0] not in allowed_authorities:
+                warnings.warn(
+                    "GeoDataFrame's CRS is not representable in URN OGC "
+                    "format. Resulting JSON will contain no CRS information.",
+                    stacklevel=2,
+                )
+            else:
+                authority, code = auth_crsdef
+                ogc_crs = f"urn:ogc:def:crs:{authority}::{code}"
+                geo["crs"] = {"type": "name", "properties": {"name": ogc_crs}}
+
+        return json.dumps(geo, **kwargs)
 
     @property
     def __geo_interface__(self):
@@ -814,7 +837,10 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         ``FeatureCollection``.
 
         This differs from `_to_geo()` only in that it is a property with
-        default args instead of a method
+        default args instead of a method.
+
+        CRS of the dataframe is not passed on to the output, unlike
+        :meth:`~GeoDataFrame.to_json()`.
 
         Examples
         --------
@@ -833,8 +859,6 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 , 2.0)}, 'bbox': (1.0, 2.0, 1.0, 2.0)}, {'id': '1', 'type': 'Feature', 'properties\
 ': {'col1': 'name2'}, 'geometry': {'type': 'Point', 'coordinates': (2.0, 1.0)}, 'b\
 box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
-
-
         """
         return self._to_geo(na="null", show_bbox=True, drop_id=False)
 
@@ -1420,23 +1444,23 @@ individually so that features may have different properties
 
         Examples
         --------
-        >>> world = geopandas.read_file(
-        ...     geopandas.datasets.get_path("naturalearth_lowres")
+        >>> import geodatasets
+        >>> df = geopandas.read_file(
+        ...     geodatasets.get_path("geoda.chicago_health")
         ... )
-        >>> germany = world.loc[world.name == "Germany"]
-        >>> germany.estimate_utm_crs()  # doctest: +SKIP
-        <Projected CRS: EPSG:32632>
-        Name: WGS 84 / UTM zone 32N
+        >>> df.estimate_utm_crs()  # doctest: +SKIP
+        <Derived Projected CRS: EPSG:32616>
+        Name: WGS 84 / UTM zone 16N
         Axis Info [cartesian]:
         - E[east]: Easting (metre)
         - N[north]: Northing (metre)
         Area of Use:
-        - name: World - N hemisphere - 6°E to 12°E - by country
-        - bounds: (6.0, 0.0, 12.0, 84.0)
+        - name: Between 90°W and 84°W, northern hemisphere between equator and 84°N...
+        - bounds: (-90.0, 0.0, -84.0, 84.0)
         Coordinate Operation:
-        - name: UTM zone 32N
+        - name: UTM zone 16N
         - method: Transverse Mercator
-        Datum: World Geodetic System 1984
+        Datum: World Geodetic System 1984 ensemble
         - Ellipsoid: WGS 84
         - Prime Meridian: Greenwich
         """
@@ -1497,9 +1521,8 @@ individually so that features may have different properties
         df['geometry'] = [geom... for geom in df.geometry]
         """
 
-        if (
-            not pd.api.types.is_list_like(key)
-            and key == self._geometry_column_name
+        if not pd.api.types.is_list_like(key) and (
+            key == self._geometry_column_name
             or key == "geometry"
             and self._geometry_column_name is None
         ):
@@ -2106,45 +2129,41 @@ individually so that features may have different properties
 
         Examples
         --------
-        >>> countries = geopandas.read_file( \
-    geopandas.datasets.get_path("naturalearth_lowres"))
-        >>> cities = geopandas.read_file( \
-    geopandas.datasets.get_path("naturalearth_cities"))
-        >>> countries.head()  # doctest: +SKIP
-            pop_est      continent                      name \
-    iso_a3  gdp_md_est                                           geometry
-        0     920938        Oceania                      Fiji    FJI      8374.0 \
-    MULTIPOLYGON (((180.00000 -16.06713, 180.00000...
-        1   53950935         Africa                  Tanzania    TZA    150600.0 \
-    POLYGON ((33.90371 -0.95000, 34.07262 -1.05982...
-        2     603253         Africa                 W. Sahara    ESH       906.5 \
-    POLYGON ((-8.66559 27.65643, -8.66512 27.58948...
-        3   35623680  North America                    Canada    CAN   1674000.0 \
-    MULTIPOLYGON (((-122.84000 49.00000, -122.9742...
-        4  326625791  North America  United States of America    USA  18560000.0 \
-    MULTIPOLYGON (((-122.84000 49.00000, -120.0000...
-        >>> cities.head()
-                name                    geometry
-        0  Vatican City   POINT (12.45339 41.90328)
-        1    San Marino   POINT (12.44177 43.93610)
-        2         Vaduz    POINT (9.51667 47.13372)
-        3       Lobamba  POINT (31.20000 -26.46667)
-        4    Luxembourg    POINT (6.13000 49.61166)
+        >>> import geodatasets
+        >>> chicago = geopandas.read_file(
+        ...     geodatasets.get_path("geoda.chicago_commpop")
+        ... )
+        >>> groceries = geopandas.read_file(
+        ...     geodatasets.get_path("geoda.groceries")
+        ... ).to_crs(chicago.crs)
 
-        >>> cities_w_country_data = cities.sjoin(countries)
-        >>> cities_w_country_data.head()  # doctest: +SKIP
-                name_left                   geometry  index_right   pop_est \
-    continent name_right iso_a3  gdp_md_est
-        0    Vatican City  POINT (12.45339 41.90328)          141  62137802 \
-    Europe    Italy    ITA   2221000.0
-        1    San Marino  POINT (12.44177 43.93610)          141  62137802 \
-    Europe    Italy    ITA   2221000.0
-        192          Rome  POINT (12.48131 41.89790)          141  62137802 \
-    Europe    Italy    ITA   2221000.0
-        2           Vaduz   POINT (9.51667 47.13372)          114   8754413 \
-    Europe    Au    stria    AUT    416600.0
-        184        Vienna  POINT (16.36469 48.20196)          114   8754413 \
-    Europe    Austria    AUT    416600.0
+        >>> chicago.head()  # doctest: +SKIP
+                 community  ...                                           geometry
+        0          DOUGLAS  ...  MULTIPOLYGON (((-87.60914 41.84469, -87.60915 ...
+        1          OAKLAND  ...  MULTIPOLYGON (((-87.59215 41.81693, -87.59231 ...
+        2      FULLER PARK  ...  MULTIPOLYGON (((-87.62880 41.80189, -87.62879 ...
+        3  GRAND BOULEVARD  ...  MULTIPOLYGON (((-87.60671 41.81681, -87.60670 ...
+        4          KENWOOD  ...  MULTIPOLYGON (((-87.59215 41.81693, -87.59215 ...
+
+        [5 rows x 9 columns]
+
+        >>> groceries.head()  # doctest: +SKIP
+           OBJECTID     Ycoord  ...  Category                         geometry
+        0        16  41.973266  ...       NaN  MULTIPOINT (-87.65661 41.97321)
+        1        18  41.696367  ...       NaN  MULTIPOINT (-87.68136 41.69713)
+        2        22  41.868634  ...       NaN  MULTIPOINT (-87.63918 41.86847)
+        3        23  41.877590  ...       new  MULTIPOINT (-87.65495 41.87783)
+        4        27  41.737696  ...       NaN  MULTIPOINT (-87.62715 41.73623)
+        [5 rows x 8 columns]
+
+        >>> groceries_w_communities = groceries.sjoin(chicago)
+        >>> groceries_w_communities[["OBJECTID", "community", "geometry"]].head()
+             OBJECTID    community                         geometry
+        0          16       UPTOWN  MULTIPOINT (-87.65661 41.97321)
+        87        365       UPTOWN  MULTIPOINT (-87.65465 41.96138)
+        90        373       UPTOWN  MULTIPOINT (-87.65598 41.96297)
+        140       582       UPTOWN  MULTIPOINT (-87.67417 41.96977)
+        1          18  MORGAN PARK  MULTIPOINT (-87.68136 41.69713)
 
         Notes
         -----
@@ -2206,54 +2225,63 @@ individually so that features may have different properties
 
         Examples
         --------
-        >>> countries = geopandas.read_file(geopandas.datasets.get_\
-path("naturalearth_lowres"))
-        >>> cities = geopandas.read_file(geopandas.datasets.get_path("naturalearth_citi\
-es"))
-        >>> countries.head(2).name  # doctest: +SKIP
-            pop_est      continent                      name \
-    iso_a3  gdp_md_est                                           geometry
-        0     920938        Oceania                      Fiji    FJI      8374.0  MULTI\
-    POLYGON (((180.00000 -16.06713, 180.00000...
-        1   53950935         Africa                  Tanzania    TZA    150600.0  POLYG\
-    ON ((33.90371 -0.95000, 34.07262 -1.05982...
-        >>> cities.head(2).name  # doctest: +SKIP
-                name                   geometry
-        0  Vatican City  POINT (12.45339 41.90328)
-        1    San Marino  POINT (12.44177 43.93610)
+        >>> import geodatasets
+        >>> groceries = geopandas.read_file(
+        ...     geodatasets.get_path("geoda.groceries")
+        ... )
+        >>> chicago = geopandas.read_file(
+        ...     geodatasets.get_path("geoda.chicago_health")
+        ... ).to_crs(groceries.crs)
 
-        >>> cities_w_country_data = cities.sjoin_nearest(countries)
-        >>> cities_w_country_data[['name_left', 'name_right']].head(2)  # doctest: +SKIP
-                name_left                   geometry  index_right   pop_est continent n\
-    ame_right iso_a3  gdp_md_est
-        0    Vatican City  POINT (12.45339 41.90328)          141  62137802    Europe  \
-        Italy    ITA   2221000.0
-        1      San Marino  POINT (12.44177 43.93610)          141  62137802    Europe  \
-        Italy    ITA   2221000.0
+        >>> chicago.head()  # doctest: +SKIP
+            ComAreaID  ...                                           geometry
+        0         35  ...  POLYGON ((-87.60914 41.84469, -87.60915 41.844...
+        1         36  ...  POLYGON ((-87.59215 41.81693, -87.59231 41.816...
+        2         37  ...  POLYGON ((-87.62880 41.80189, -87.62879 41.801...
+        3         38  ...  POLYGON ((-87.60671 41.81681, -87.60670 41.816...
+        4         39  ...  POLYGON ((-87.59215 41.81693, -87.59215 41.816...
+        [5 rows x 87 columns]
+
+        >>> groceries.head()  # doctest: +SKIP
+            OBJECTID     Ycoord  ...  Category                         geometry
+        0        16  41.973266  ...       NaN  MULTIPOINT (-87.65661 41.97321)
+        1        18  41.696367  ...       NaN  MULTIPOINT (-87.68136 41.69713)
+        2        22  41.868634  ...       NaN  MULTIPOINT (-87.63918 41.86847)
+        3        23  41.877590  ...       new  MULTIPOINT (-87.65495 41.87783)
+        4        27  41.737696  ...       NaN  MULTIPOINT (-87.62715 41.73623)
+        [5 rows x 8 columns]
+
+        >>> groceries_w_communities = groceries.sjoin_nearest(chicago)
+        >>> groceries_w_communities[["Chain", "community", "geometry"]].head(2)
+                     Chain community                              geometry
+        0   VIET HOA PLAZA    UPTOWN  MULTIPOINT (1168268.672 1933554.350)
+        87      JEWEL OSCO    UPTOWN  MULTIPOINT (1168837.980 1929246.962)
+
 
         To include the distances:
 
-        >>> cities_w_country_data = cities.sjoin_nearest(countries, \
+        >>> groceries_w_communities = groceries.sjoin_nearest(chicago, \
 distance_col="distances")
-        >>> cities_w_country_data[["name_left", "name_right", \
+        >>> groceries_w_communities[["Chain", "community", \
 "distances"]].head(2)  # doctest: +SKIP
-                name_left name_right distances
-        0    Vatican City      Italy       0.0
-        1      San Marino      Italy       0.0
+                     Chain community  distances
+        0   VIET HOA PLAZA    UPTOWN        0.0
+        87      JEWEL OSCO    UPTOWN        0.0
 
-        In the following example, we get multiple cities for Italy because all results
-        are equidistant (in this case zero because they intersect).
-        In fact, we get 3 results in total:
+        In the following example, we get multiple groceries for Uptown because all
+        results are equidistant (in this case zero because they intersect).
+        In fact, we get 4 results in total:
 
-        >>> countries_w_city_data = cities.sjoin_nearest(countries, \
+        >>> chicago_w_groceries = groceries.sjoin_nearest(chicago, \
 distance_col="distances", how="right")
-        >>> italy_results = \
-countries_w_city_data[countries_w_city_data["name_left"] == "Italy"]
-        >>> italy_results  # doctest: +SKIP
-            name_x        name_y
-        141  Vatican City  Italy
-        141    San Marino  Italy
-        141          Rome  Italy
+        >>> uptown_results = \
+chicago_w_groceries[chicago_w_groceries["community"] == "UPTOWN"]
+        >>> uptown_results[["Chain", "community"]]  # doctest: +SKIP
+                    Chain community
+        30  VIET HOA PLAZA    UPTOWN
+        30      JEWEL OSCO    UPTOWN
+        30          TARGET    UPTOWN
+        30       Mariano's    UPTOWN
 
         See also
         --------
@@ -2314,19 +2342,22 @@ countries_w_city_data[countries_w_city_data["name_left"] == "Italy"]
 
         Examples
         --------
-        Clip points (global cities) with a polygon (the South American continent):
+        Clip points (grocery stores) with polygons (the Near West Side community):
 
-        >>> world = geopandas.read_file(
-        ...     geopandas.datasets.get_path('naturalearth_lowres'))
-        >>> south_america = world[world['continent'] == "South America"]
-        >>> capitals = geopandas.read_file(
-        ...     geopandas.datasets.get_path('naturalearth_cities'))
-        >>> capitals.shape
-        (243, 2)
+        >>> import geodatasets
+        >>> chicago = geopandas.read_file(
+        ...     geodatasets.get_path("geoda.chicago_health")
+        ... )
+        >>> near_west_side = chicago[chicago["community"] == "NEAR WEST SIDE"]
+        >>> groceries = geopandas.read_file(
+        ...     geodatasets.get_path("geoda.groceries")
+        ... ).to_crs(chicago.crs)
+        >>> groceries.shape
+        (148, 8)
 
-        >>> sa_capitals = capitals.clip(south_america)
-        >>> sa_capitals.shape
-        (15, 2)
+        >>> nws_groceries = groceries.clip(near_west_side)
+        >>> nws_groceries.shape
+        (7, 8)
         """
         return geopandas.clip(self, mask=mask, keep_geom_type=keep_geom_type)
 

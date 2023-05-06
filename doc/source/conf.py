@@ -21,6 +21,7 @@ geodatasets.fetch(
         "ny.bb",
         "geoda.malaria",
         "geoda.chicago_health",
+        "geoda.chicago_commpop",
         "geoda.groceries",
         "geoda.natregimes",
         "geoda.nepal",
