@@ -33,6 +33,8 @@ Documentation is available at [geopandas.org](http://geopandas.org)
 [Read the Docs](http://geopandas.readthedocs.io/en/latest/)
 (release and development versions).
 
+[//]: # (numfocus-fiscal-sponsor-attribution)
+
 The GeoPandas project uses an [open governance model](https://github.com/geopandas/governance/blob/main/Governance.md)
 and is fiscally sponsored by [NumFOCUS](https://numfocus.org/). Consider making
 a [tax-deductible donation](https://numfocus.org/donate-for-geopandas) to help the project
