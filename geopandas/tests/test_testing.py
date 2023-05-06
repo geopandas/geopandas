@@ -149,11 +149,17 @@ def test_geodataframe_no_active_geometry_column():
         return gdf
 
     # no active geometry column (None)
+    df1 = create_dataframe()
+    df1._geometry_column_name = None
+    df2 = create_dataframe()
+    df2._geometry_column_name = None
+    assert_geodataframe_equal(df1, df2)
+
+    # active geometry column ("geometry") not present
     df1 = create_dataframe()[["value", "geom2"]]
     df2 = create_dataframe()[["value", "geom2"]]
     assert_geodataframe_equal(df1, df2)
 
-    # active geometry column ("geometry") not present
     df1 = GeoDataFrame(create_dataframe()[["value"]])
     df2 = GeoDataFrame(create_dataframe()[["value"]])
     assert_geodataframe_equal(df1, df2)
