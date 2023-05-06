@@ -4,7 +4,7 @@ channels:
 dependencies:
   - python=3.11
   # required
-  # - pandas
+  - pandas
   - shapely
   - fiona
   - pyproj
@@ -34,6 +34,3 @@ dependencies:
   - pyarrow
   # doctest testing
   - pytest-doctestplus
-  - pip
-  - pip:
-    - pandas==2.0.0rc1
