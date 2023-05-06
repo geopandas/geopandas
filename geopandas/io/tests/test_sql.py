@@ -736,7 +736,7 @@ class TestIO:
         with pytest.raises(ValueError, match="CRS of the target table"):
             write_postgis(df_nybb2, con=engine, name=table, if_exists="append")
 
-    @pytest.mark.skipif(
+    @pytest.mark.xfail(
         compat.PANDAS_GE_20 and not compat.PANDAS_GE_21,
         reason="Duplicate columns are dropped in read_sql with pandas 2.0.x",
     )
