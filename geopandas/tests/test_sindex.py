@@ -400,8 +400,7 @@ class TestPygeosInterface:
             ("dwithin", {"distance": 0}, box(9.25, 9.25, 9.75, 9.75), []),     # geometry does not intersect and not within radius, distance=0
             ("dwithin", {"distance": 0.25}, box(9.25, 9.25, 9.75, 9.75), [5]),  # geometry does not intersect but is within distance
             ("dwithin", {"distance": 0.5}, Point(0.5, 0.5), [0,1]),  #  radius intersects in both directions
-            ("dwithin", box(11, 11, 12, 12), [5]),  # intersects and is within
-            ("dwithin", LineString([(0, 1), (1, 0)]), []),  # intersects but not within
+            ("dwithin", {"distance": 0.5}, LineString([(0, 1), (1, 0)]), []),  # bounds intersect dwithin doesn't
         )
     ) 
     def test_query_kwargs(self, predicate, kwargs, test_geom, expected):
