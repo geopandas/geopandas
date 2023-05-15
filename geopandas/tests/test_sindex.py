@@ -397,10 +397,10 @@ class TestPygeosInterface:
     @pytest.mark.parametrize(
         "predicate, kwargs, test_geom, expected",
         (
-            ("dwithin", {"distance": 0}, box(9.25, 9.25, 9.75, 9.75), []),     # geometry does not intersect and not within radius, distance=0
-            ("dwithin", {"distance": 0.25}, box(9.25, 9.25, 9.75, 9.75), [5]),  # geometry does not intersect but is within distance
-            ("dwithin", {"distance": 0.5}, Point(0.5, 0.5), [0,1]),  #  radius intersects in both directions
-            ("dwithin", {"distance": 0.5}, LineString([(0, 1), (1, 0)]), []),  # bounds intersect dwithin doesn't
+            ("dwithin", {"distance": 0}, box(9.0, 9.0, 9.9, 9.9), []),     # bounds don't intersect and not within distance=0
+            ("dwithin", {"distance": 1}, box(9.0, 9.0, 9.9, 9.9), [5]),  # bounds don't intersect but is within distance=1
+            ("dwithin", {"distance": 0.5}, Point(0.5, 0.5), []),  #  is within 1-D absolute distance in both axes, but not euclidean distance
+            ("dwithin", {"distance": sqrt(2*0.5**2) + 1e-9}, Point(0.5, 0.5), [0,1]),  # same as before but within euclidean distance
         )
     ) 
     def test_query_kwargs(self, predicate, kwargs, test_geom, expected):

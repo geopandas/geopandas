@@ -502,6 +502,7 @@ if compat.HAS_RTREE:
                 "covered_by",
                 "covers",
                 "contains_properly",
+                "dwithin",
             }
 
         @doc(BaseSpatialIndex.query)
@@ -539,12 +540,15 @@ if compat.HAS_RTREE:
                     )
                     + "a shapely geometry."
                 )
+                
+            if distance and (predicate != "dwithin"):
+                raise TypeError("The `distance` argument in only valid for `predicate`='dwithin'")
 
             if geometry.is_empty:
                 return np.array([], dtype=np.intp)
             
             # special handling for predicate='dwithin'
-            if predicate == 'dwithin':
+            if predicate == "dwithin":
                 tree_idx = np.arange(self.__len__(), dtype=np.intp) # all indices, already sorted
                 tree_idx = tree_idx[geometry.dwithin(self.geometries,distance=distance)] # those indices within distance
                 return tree_idx
