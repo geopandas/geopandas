@@ -505,7 +505,7 @@ if compat.HAS_RTREE:
             }
 
         @doc(BaseSpatialIndex.query)
-        def query(self, geometry, predicate=None, sort=False):
+        def query(self, geometry, predicate=None, sort=False, distance=None):
             # handle invalid predicates
             if predicate not in self.valid_query_predicates:
                 raise ValueError(
@@ -542,6 +542,12 @@ if compat.HAS_RTREE:
 
             if geometry.is_empty:
                 return np.array([], dtype=np.intp)
+            
+            # special handling for predicate='dwithin'
+            if predicate == 'dwithin':
+                tree_idx = np.arange(self.__len__(), dtype=np.intp) # all indices, already sorted
+                tree_idx = tree_idx[geometry.dwithin(self.geometries,distance=distance)] # those indices within distance
+                return tree_idx
 
             # query tree
             bounds = geometry.bounds  # rtree operates on bounds

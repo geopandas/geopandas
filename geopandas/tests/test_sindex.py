@@ -392,6 +392,35 @@ class TestPygeosInterface:
         """Tests the `query` method with invalid geometry."""
         with pytest.raises(TypeError):
             self.df.sindex.query("notavalidgeom")
+            
+    # ---- `query` tests with keyword arguments -----     
+    @pytest.mark.parametrize(
+        "predicate, kwargs, test_geom, expected",
+        (
+            ("dwithin", {"distance": 0}, box(9.25, 9.25, 9.75, 9.75), []),     # geometry does not intersect and not within radius, distance=0
+            ("dwithin", {"distance": 0.25}, box(9.25, 9.25, 9.75, 9.75), [5]),  # geometry does not intersect but is within distance
+            ("dwithin", {"distance": 0.5}, Point(0.5, 0.5), [0,1]),  #  radius intersects in both directions
+            ("dwithin", box(11, 11, 12, 12), [5]),  # intersects and is within
+            ("dwithin", LineString([(0, 1), (1, 0)]), []),  # intersects but not within
+        )
+    ) 
+    def test_query_kwargs(self, predicate, kwargs, test_geom, expected):
+        """Tests the `query` method with predicates that require keyword arguments."""
+        res = self.df.sindex.query(test_geom, predicate=predicate,**kwargs)
+        assert_array_equal(res, expected)
+        
+    @pytest.mark.parametrize(
+        "predicate, kwargs",
+        (
+            ("dwithin", {"distance": None}),     # does not intersect and not within radius, distance=0
+            ("within", {"distance": 0.5}),  # does not intersect but is within radius
+            )
+    )
+    def test_query_kwargs_invalid_args(self,predicate, kwargs):
+        """Tests the `query` method with keyword arguments that are invalid for certain predicates."""
+        with pytest.raises(TypeError):
+            self.df.sindex.query(Point(0, 0), predicate=predicate,**kwargs)
+        
 
     @pytest.mark.parametrize(
         "test_geom, expected_value",
