@@ -411,8 +411,8 @@ class TestPygeosInterface:
     @pytest.mark.parametrize(
         "predicate, kwargs",
         (
-            ("dwithin", {"distance": None}),     # does not intersect and not within radius, distance=0
-            ("within", {"distance": 0.5}),  # does not intersect but is within radius
+            ("dwithin", {"distance": None}), # 'dwithin' predicate requires distance argument
+            ("within", {"distance": 0.5}),  # distance invalid for 'within' predicate
             )
     )
     def test_query_kwargs_invalid_args(self,predicate, kwargs):
