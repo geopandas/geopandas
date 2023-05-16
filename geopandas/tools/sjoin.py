@@ -453,7 +453,7 @@ def sjoin_nearest(
     distance_col : string, default None
         If set, save the distances computed between matching geometries under a
         column of this name in the joined GeoDataFrame.
-    exclusive : bool, optional, default False
+    exclusive : bool, default False
         If True, the nearest geometries that are equal to the input geometry
         will not be returned, default False.
         Requires Shapely >= 2.0.
