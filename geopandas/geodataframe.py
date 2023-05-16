@@ -2205,7 +2205,7 @@ individually so that features may have different properties
             column of this name in the joined GeoDataFrame.
         exclusive : bool, optional, default False
             If True, the nearest geometries that are equal to the input geometry
-            will not be returned, default False
+            will not be returned, default False.
             Requires Shapely >= 2.0
 
         Examples
