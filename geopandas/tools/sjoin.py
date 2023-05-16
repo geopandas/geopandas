@@ -415,7 +415,7 @@ def sjoin_nearest(
     lsuffix: str = "left",
     rsuffix: str = "right",
     distance_col: Optional[str] = None,
-    exclusive: Optional[bool] = False,
+    exclusive: bool = False,
 ) -> GeoDataFrame:
     """Spatial join of two GeoDataFrames based on the distance between their geometries.
 
