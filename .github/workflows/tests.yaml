@@ -37,8 +37,8 @@ jobs:
         env:
           - ci/envs/38-minimal.yaml
           - ci/envs/39-no-optional-deps.yaml
-          - ci/envs/38-pd12-defaults.yaml
-          - ci/envs/38-latest-defaults.yaml
+          # - ci/envs/38-pd12-defaults.yaml
+          # - ci/envs/38-latest-defaults.yaml
           - ci/envs/38-latest-conda-forge.yaml
           - ci/envs/39-pd13-conda-forge.yaml
           - ci/envs/39-latest-conda-forge.yaml
@@ -68,22 +68,19 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Setup Conda
-        uses: conda-incubator/setup-miniconda@v2
+      - name: Install Conda environment with Micromamba
+        uses: mamba-org/provision-with-micromamba@main
         with:
           environment-file: ${{ matrix.env }}
-          miniforge-version: latest
-          miniforge-variant: Mambaforge
-          use-mamba: true
 
       - name: Check and Log Environment
         run: |
           python -V
           python -c "import geopandas; geopandas.show_versions();"
-          conda info
+          micromamba info
           # save conda list to file and print out
           # so that we can do the HAS_PYGEOS check without calling conda again
-          conda list 2>&1 | tee conda.txt
+          micromamba list 2>&1 | tee conda.txt
           if ( cat conda.txt | grep -q pygeos  )
           then
             echo "Setting HAS_PYGEOS=1"

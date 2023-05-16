@@ -625,22 +625,17 @@ def plot_dataframe(
 
     Examples
     --------
-    >>> df = geopandas.read_file(geopandas.datasets.get_path("naturalearth_lowres"))
+    >>> import geodatasets
+    >>> df = geopandas.read_file(geodatasets.get_path("nybb"))
     >>> df.head()  # doctest: +SKIP
-        pop_est      continent                      name iso_a3  \
-gdp_md_est                                           geometry
-    0     920938        Oceania                      Fiji    FJI      8374.0  MULTIPOLY\
-GON (((180.00000 -16.06713, 180.00000...
-    1   53950935         Africa                  Tanzania    TZA    150600.0  POLYGON (\
-(33.90371 -0.95000, 34.07262 -1.05982...
-    2     603253         Africa                 W. Sahara    ESH       906.5  POLYGON (\
-(-8.66559 27.65643, -8.66512 27.58948...
-    3   35623680  North America                    Canada    CAN   1674000.0  MULTIPOLY\
-GON (((-122.84000 49.00000, -122.9742...
-    4  326625791  North America  United States of America    USA  18560000.0  MULTIPOLY\
-GON (((-122.84000 49.00000, -120.0000...
+       BoroCode  ...                                           geometry
+    0         5  ...  MULTIPOLYGON (((970217.022 145643.332, 970227....
+    1         4  ...  MULTIPOLYGON (((1029606.077 156073.814, 102957...
+    2         3  ...  MULTIPOLYGON (((1021176.479 151374.797, 102100...
+    3         1  ...  MULTIPOLYGON (((981219.056 188655.316, 980940....
+    4         2  ...  MULTIPOLYGON (((1012821.806 229228.265, 101278...
 
-    >>> df.plot("pop_est", cmap="Blues")  # doctest: +SKIP
+    >>> df.plot("BoroName", cmap="Set1")  # doctest: +SKIP
 
     See the User Guide page :doc:`../../user_guide/mapping` for details.
 
@@ -947,7 +942,9 @@ GON (((-122.84000 49.00000, -120.0000...
                 categories.append(merged_kwds.get("label", "NaN"))
             legend_kwds.setdefault("numpoints", 1)
             legend_kwds.setdefault("loc", "best")
-            ax.legend(patches, categories, **legend_kwds)
+            legend_kwds.setdefault("handles", patches)
+            legend_kwds.setdefault("labels", categories)
+            ax.legend(**legend_kwds)
         else:
             if cax is not None:
                 legend_kwds.setdefault("cax", cax)

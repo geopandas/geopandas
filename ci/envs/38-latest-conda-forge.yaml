@@ -28,3 +28,4 @@ dependencies:
   - libspatialite
   - pyarrow
   - pyogrio
+  - pointpats
