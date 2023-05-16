@@ -502,11 +502,10 @@ if compat.HAS_RTREE:
                 "covered_by",
                 "covers",
                 "contains_properly",
-                "dwithin",
             }
 
         @doc(BaseSpatialIndex.query)
-        def query(self, geometry, predicate=None, sort=False, distance=None):
+        def query(self, geometry, predicate=None, sort=False):
             # handle invalid predicates
             if predicate not in self.valid_query_predicates:
                 raise ValueError(
@@ -540,18 +539,9 @@ if compat.HAS_RTREE:
                     )
                     + "a shapely geometry."
                 )
-                
-            if distance and (predicate != "dwithin"):
-                raise TypeError("The `distance` argument in only valid for `predicate`='dwithin'")
 
             if geometry.is_empty:
                 return np.array([], dtype=np.intp)
-            
-            # special handling for predicate='dwithin'
-            if predicate == "dwithin":
-                tree_idx = np.arange(self.__len__(), dtype=np.intp) # all indices, already sorted
-                tree_idx = tree_idx[geometry.dwithin(self.geometries,distance=distance)] # those indices within distance
-                return tree_idx
 
             # query tree
             bounds = geometry.bounds  # rtree operates on bounds
@@ -716,12 +706,13 @@ if compat.SHAPELY_GE_20 or compat.HAS_PYGEOS:
 
     if compat.USE_SHAPELY_20:
         import shapely as mod  # noqa
-
-        _PYGEOS_PREDICATES = {p.name for p in mod.strtree.BinaryPredicate} | set([None])
+        _PYGEOS_PREDICATES = {p.name for p in mod.strtree.BinaryPredicate} | set([None, "dwithin"]) 
     else:
         import pygeos as mod  # noqa
-
-        _PYGEOS_PREDICATES = {p.name for p in mod.strtree.BinaryPredicate} | set([None])
+        if (compat.PYGEOS_GE_012 and compat.PYGEOS_GEOS_GE_310):    
+            _PYGEOS_PREDICATES = {p.name for p in mod.strtree.BinaryPredicate} | set([None, "dwithin"])
+        else:
+            _PYGEOS_PREDICATES = {p.name for p in mod.strtree.BinaryPredicate} | set([None])
 
     class PyGEOSSTRTreeIndex(BaseSpatialIndex):
         """A simple wrapper around pygeos's STRTree.
@@ -765,24 +756,29 @@ if compat.SHAPELY_GE_20 or compat.HAS_PYGEOS:
             return _PYGEOS_PREDICATES
 
         @doc(BaseSpatialIndex.query)
-        def query(self, geometry, predicate=None, sort=False):
+        def query(self, geometry, predicate=None, sort=False, distance=None):
+            #handle invalid predicates, with version-check for dwithin
             if predicate not in self.valid_query_predicates:
-                raise ValueError(
-                    "Got `predicate` = `{}`; ".format(predicate)
-                    + "`predicate` must be one of {}".format(
-                        self.valid_query_predicates
+                if predicate == "dwithin":
+                    raise ValueError(
+                    "`predicate` = `dwithin` requires Shapely version >= 2.0 or PyGEOS >= 0.12 and GEOS >= 3.10.0"
                     )
-                )
+                else:   
+                    raise ValueError(
+                        "Got `predicate` = `{}`, `predicate` must be one of {}".format(
+                            predicate, self.valid_query_predicates
+                        )
+                    )
 
             geometry = self._as_geometry_array(geometry)
 
             if compat.USE_SHAPELY_20:
-                indices = self._tree.query(geometry, predicate=predicate)
+                indices = self._tree.query(geometry, predicate=predicate, distance=distance)
             else:
                 if isinstance(geometry, np.ndarray):
-                    indices = self._tree.query_bulk(geometry, predicate=predicate)
+                    indices = self._tree.query_bulk(geometry, predicate=predicate, distance=distance)
                 else:
-                    indices = self._tree.query(geometry, predicate=predicate)
+                    indices = self._tree.query(geometry, predicate=predicate, distance=distance)
 
             if sort:
                 if indices.ndim == 1:
@@ -838,14 +834,14 @@ if compat.SHAPELY_GE_20 or compat.HAS_PYGEOS:
                 return np.asarray(geometry)
 
         @doc(BaseSpatialIndex.query_bulk)
-        def query_bulk(self, geometry, predicate=None, sort=False):
+        def query_bulk(self, geometry, predicate=None, sort=False, distance=None):
             warnings.warn(
                 "The `query_bulk()` method is deprecated and will be removed in "
                 "GeoPandas 1.0. You can use the `query()` method instead.",
                 FutureWarning,
                 stacklevel=2,
             )
-            return self.query(geometry, predicate=predicate, sort=sort)
+            return self.query(geometry, predicate=predicate, sort=sort, distance=distance)
 
         @doc(BaseSpatialIndex.nearest)
         def nearest(
