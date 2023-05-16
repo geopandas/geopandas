@@ -491,7 +491,7 @@ if compat.HAS_RTREE:
         @property
         @doc(BaseSpatialIndex.valid_query_predicates)
         def valid_query_predicates(self):
-            return {
+            valid_prd = {
                 None,
                 "intersects",
                 "within",
@@ -503,16 +503,27 @@ if compat.HAS_RTREE:
                 "covers",
                 "contains_properly",
             }
+            
+            if compat.USE_SHAPELY_20 or (compat.PYGEOS_GE_012 and compat.PYGEOS_GEOS_GE_310):
+                valid_prd = valid_prd | set(['dwithin'])
+        
+            return valid_prd
+            
 
         @doc(BaseSpatialIndex.query)
-        def query(self, geometry, predicate=None, sort=False):
+        def query(self, geometry, predicate=None, sort=False, distance=None):
             # handle invalid predicates
             if predicate not in self.valid_query_predicates:
-                raise ValueError(
-                    "Got `predicate` = `{}`, `predicate` must be one of {}".format(
-                        predicate, self.valid_query_predicates
+                if predicate == "dwithin":
+                    raise ValueError(
+                    "`predicate` = `dwithin` requires Shapely version >= 2.0 or PyGEOS >= 0.12 and GEOS >= 3.10.0"
                     )
-                )
+                else:   
+                    raise ValueError(
+                        "Got `predicate` = `{}`, `predicate` must be one of {}".format(
+                            predicate, self.valid_query_predicates
+                        )
+                    )
 
             if hasattr(geometry, "__array__") and not isinstance(
                 geometry, BaseGeometry
@@ -522,7 +533,7 @@ if compat.HAS_RTREE:
                 input_geometry_index = []
 
                 for i, geo in enumerate(geometry):
-                    res = self.query(geo, predicate=predicate, sort=sort)
+                    res = self.query(geo, predicate=predicate, sort=sort, distance=distance)
                     tree_index.extend(res)
                     input_geometry_index.extend([i] * len(res))
                 return np.vstack([input_geometry_index, tree_index])
@@ -542,6 +553,11 @@ if compat.HAS_RTREE:
 
             if geometry.is_empty:
                 return np.array([], dtype=np.intp)
+            
+            if predicate == "dwithin":
+                tree_idx = np.arange(self.size, dtype=np.intp) # all indices, already sorted
+                tree_idx = tree_idx[geometry.dwithin(self.geometries,distance=distance)] # those indices within distance
+                return tree_idx
 
             # query tree
             bounds = geometry.bounds  # rtree operates on bounds
