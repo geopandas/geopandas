@@ -927,7 +927,6 @@ class TestNearest:
         result5["index_right"] = result5["index_right"].astype("int64")
         assert_geodataframe_equal(result5, result4, check_like=True)
 
-    @pytest.mark.filterwarnings("ignore:Geometry is in a geographic CRS")
     @pytest.mark.skipif(
         not (compat.USE_SHAPELY_20),
         reason=(
