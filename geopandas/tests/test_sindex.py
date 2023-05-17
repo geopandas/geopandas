@@ -914,6 +914,30 @@ class TestPygeosInterface:
         res = world.sindex.query(capitals.geometry, predicate)
         assert res.shape == expected_shape
 
+ # ------------------------- explicit tests with rtree ------------------------- #
+@pytest.mark.skip_no_sindex
+@pytest.mark.skipif(not compat.USE_SHAPELY_20 or (compat.PYGEOS_GE_012 and compat.PYGEOS_GEOS_GE_31),
+                    reason="Requires Shapely v. 2.0 or PyGEOS 0.12 and GEOS 3.10")
+class TestRtreeIndex:
+    def setup_method(self):
+        data = np.array([Point(x, y) for x, y in zip(range(5), range(5))]
+            + [box(10, 10, 20, 20)])  # include a box geometry
+        
+        self.df = geopandas.sindex.RTreeIndex(data)
+        
+    @pytest.mark.parametrize(
+        "predicate, distance, test_geom, expected",
+        (
+            ("dwithin", 0, box(9.0, 9.0, 9.9, 9.9), []),     # bounds don't intersect and not within distance=0
+            ("dwithin", 1, box(9.0, 9.0, 9.9, 9.9), [5]),  # bounds don't intersect but is within distance=1
+            ("dwithin", 0.5, Point(0.5, 0.5), []),  #  is within 1-D absolute distance in both axes, but not euclidean distance
+            ("dwithin", sqrt(2*0.5**2) + 1e-9, Point(0.5, 0.5), [0,1]),  # same as before but within euclidean distance
+        )
+    ) 
+    def test_query_dwithin_Rtree(self, predicate, distance, test_geom, expected):
+        """Tests the `query` method with predicates that require keyword arguments."""
+        res = self.df.query(test_geom, predicate=predicate, distance=distance)
+        assert_array_equal(res, expected)
 
 @pytest.mark.skipif(not compat.HAS_RTREE, reason="no rtree installed")
 def test_old_spatial_index_deprecated():
@@ -926,3 +950,5 @@ def test_old_spatial_index_deprecated():
         idx = geopandas.sindex.SpatialIndex(stream)
 
     assert list(idx.intersection((0, 0, 1, 1))) == [0, 1]
+    
+
