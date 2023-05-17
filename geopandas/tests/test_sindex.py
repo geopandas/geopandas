@@ -393,21 +393,24 @@ class TestPygeosInterface:
         with pytest.raises(TypeError):
             self.df.sindex.query("notavalidgeom")
             
-    # ---- `query` tests with keyword arguments -----     
+    # `dwithin` test
+    @pytest.mark.skipif(not (compat.USE_SHAPELY_20 or (compat.PYGEOS_GE_012 and compat.PYGEOS_GEOS_GE_31)), 
+                   reason="Requires Shapely v. 2.0 or PyGEOS 0.12 and GEOS 3.10")     
     @pytest.mark.parametrize(
-        "predicate, kwargs, test_geom, expected",
+        "predicate, distance, test_geom, expected",
         (
-            ("dwithin", {"distance": 0}, box(9.0, 9.0, 9.9, 9.9), []),     # bounds don't intersect and not within distance=0
-            ("dwithin", {"distance": 1}, box(9.0, 9.0, 9.9, 9.9), [5]),  # bounds don't intersect but is within distance=1
-            ("dwithin", {"distance": 0.5}, Point(0.5, 0.5), []),  #  is within 1-D absolute distance in both axes, but not euclidean distance
-            ("dwithin", {"distance": sqrt(2*0.5**2) + 1e-9}, Point(0.5, 0.5), [0,1]),  # same as before but within euclidean distance
+            ("dwithin", 0, box(9.0, 9.0, 9.9, 9.9), []),     # bounds don't intersect and not within distance=0
+            ("dwithin", 1, box(9.0, 9.0, 9.9, 9.9), [5]),  # bounds don't intersect but is within distance=1
+            ("dwithin", 0.5, Point(0.5, 0.5), []),  #  is within 1-D absolute distance in both axes, but not euclidean distance
+            ("dwithin", sqrt(2*0.5**2) + 1e-9, Point(0.5, 0.5), [0,1]),  # same as before but within euclidean distance
         )
     ) 
-    def test_query_kwargs(self, predicate, kwargs, test_geom, expected):
+    def test_query_dwithin(self, predicate, distance, test_geom, expected):
         """Tests the `query` method with predicates that require keyword arguments."""
-        res = self.df.sindex.query(test_geom, predicate=predicate,**kwargs)
+        res = self.df.sindex.query(test_geom, predicate=predicate, distance=distance)
         assert_array_equal(res, expected)
-        
+    
+    # test for invalid optional keyword arguments
     @pytest.mark.parametrize(
         "predicate, kwargs",
         (

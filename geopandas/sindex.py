@@ -504,7 +504,7 @@ if compat.HAS_RTREE:
                 "contains_properly",
             }
             
-            if compat.USE_SHAPELY_20 or (compat.PYGEOS_GE_012 and compat.PYGEOS_GEOS_GE_310):
+            if compat.USE_SHAPELY_20 or (compat.PYGEOS_GE_012 and compat.PYGEOS_GEOS_GE_31):
                 valid_prd = valid_prd | set(['dwithin'])
         
             return valid_prd
@@ -554,11 +554,25 @@ if compat.HAS_RTREE:
             if geometry.is_empty:
                 return np.array([], dtype=np.intp)
             
+            # special handling of dwithin predicate, which isn't available
+            # in prepared geometries with rtree
             if predicate == "dwithin":
+                if distance == None:
+                     raise TypeError(
+                    "`predicate` = `dwithin` requires missing 1 required positional argument: `distance`"
+                    )
                 tree_idx = np.arange(self.size, dtype=np.intp) # all indices, already sorted
                 tree_idx = tree_idx[geometry.dwithin(self.geometries,distance=distance)] # those indices within distance
                 return tree_idx
-
+            else:
+                ## Predicate is not 'dwithin', therefore distance parameter is invalid
+                if distance != None:
+                    raise TypeError(
+                        "`predicate` = {} got an unexpected keyword argument `distance`".format(
+                            predicate
+                            )
+                        )
+            
             # query tree
             bounds = geometry.bounds  # rtree operates on bounds
             tree_idx = list(self.intersection(bounds))
@@ -725,7 +739,7 @@ if compat.SHAPELY_GE_20 or compat.HAS_PYGEOS:
         _PYGEOS_PREDICATES = {p.name for p in mod.strtree.BinaryPredicate} | set([None, "dwithin"]) 
     else:
         import pygeos as mod  # noqa
-        if (compat.PYGEOS_GE_012 and compat.PYGEOS_GEOS_GE_310):    
+        if (compat.PYGEOS_GE_012 and compat.PYGEOS_GEOS_GE_31):    
             _PYGEOS_PREDICATES = {p.name for p in mod.strtree.BinaryPredicate} | set([None, "dwithin"])
         else:
             _PYGEOS_PREDICATES = {p.name for p in mod.strtree.BinaryPredicate} | set([None])
@@ -773,7 +787,7 @@ if compat.SHAPELY_GE_20 or compat.HAS_PYGEOS:
 
         @doc(BaseSpatialIndex.query)
         def query(self, geometry, predicate=None, sort=False, distance=None):
-            #handle invalid predicates, with version-check for dwithin
+            # handle invalid predicates, with version-check for `dwithin``
             if predicate not in self.valid_query_predicates:
                 if predicate == "dwithin":
                     raise ValueError(
@@ -785,6 +799,20 @@ if compat.SHAPELY_GE_20 or compat.HAS_PYGEOS:
                             predicate, self.valid_query_predicates
                         )
                     )
+            
+            # distance argument requirement `dwithin` and only valid for predicate `dwithin`,         
+            if predicate == "dwithin":
+                if distance == None:
+                     raise TypeError(
+                    "`predicate` = `dwithin` requires missing 1 required positional argument: `distance`"
+                    )
+            else:
+                if distance != None:
+                    raise TypeError(
+                        "`predicate` = {} got an unexpected keyword argument `distance`".format(
+                            predicate
+                            )
+                        )
 
             geometry = self._as_geometry_array(geometry)
 
