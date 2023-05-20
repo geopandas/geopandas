@@ -1063,6 +1063,9 @@ class GeometryArray(ExtensionArray):
         GeometryArray
         """
 
+        if method is not None:
+            return super().fillna(method=method, limit=limit)
+
         mask = self.isna()
         new_values = self.copy()
         return new_values._fill(mask, value) if mask.any() else new_values

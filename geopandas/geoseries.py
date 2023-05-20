@@ -845,8 +845,6 @@ class GeoSeries(GeoPandasBase, Series):
 
         if value is None and method is None:
             value = GeometryCollection() if compat.SHAPELY_GE_20 else BaseGeometry()
-        elif value is None:
-            return super().fillna(method=method, limit=limit)
 
         return super().fillna(
             value=value,
