@@ -403,10 +403,6 @@ class TestMissing(extension_tests.BaseMissingTests):
         # and `geopandas\tests\test_pandas_methods.py::test_fillna_series`.
 
     @pytest.mark.skip("fillna method not supported")
-    def test_fillna_limit_pad(self, data_missing):
-        pass
-
-    @pytest.mark.skip("fillna method not supported")
     def test_fillna_limit_backfill(self, data_missing):
         pass
 
