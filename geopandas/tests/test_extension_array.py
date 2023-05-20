@@ -402,13 +402,28 @@ class TestMissing(extension_tests.BaseMissingTests):
         # `geopandas\tests\test_pandas_methods.py::test_fillna_scalar`
         # and `geopandas\tests\test_pandas_methods.py::test_fillna_series`.
 
-    @pytest.mark.skip("fillna method not supported")
-    def test_fillna_limit_backfill(self, data_missing):
-        pass
+    def test_fillna_limit_ffill(self, data_missing):
+        fill_value = data_missing[1]
+        ser = pd.Series(from_shapely([data_missing[1], None, None]))
+        result = ser.fillna(method="ffill", limit=2)
+        expected =  pd.Series(from_shapely([fill_value, fill_value, fill_value]))
 
-    @pytest.mark.skip("fillna method not supported")
+        self.assert_series_equal(result, expected)
+
+    def test_fillna_limit_backfill(self, data_missing):
+        fill_value = data_missing[1]
+        ser = pd.Series(from_shapely([None, None, data_missing[1]]))
+        result = ser.fillna(method="backfill", limit=2)
+        expected =  pd.Series(from_shapely([fill_value, fill_value, fill_value]))
+
+        self.assert_series_equal(result, expected)
+
     def test_fillna_series_method(self, data_missing, method):
-        pass
+        fill_value = data_missing[1]
+        ser = pd.Series(from_shapely([None, data_missing[1], None]))
+        result = ser.fillna(method=method)
+
+        assert result.isna().sum() == 1
 
     @pytest.mark.skip("fillna method not supported")
     def test_fillna_no_op_returns_copy(self, data):
