@@ -424,6 +424,10 @@ class TestMissing(extension_tests.BaseMissingTests):
 
         assert result.isna().sum() == 1
 
+    def test_fillna_set_value_and_method(self, data_missing):
+        with pytest.raises(ValueError):
+            pd.Series(data_missing).fillna(value=data_missing[1], method="bfill")
+
     @pytest.mark.skip("fillna method not supported")
     def test_fillna_no_op_returns_copy(self, data):
         pass
