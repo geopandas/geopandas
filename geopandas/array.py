@@ -1062,6 +1062,7 @@ class GeometryArray(ExtensionArray):
         -------
         GeometryArray
         """
+
         if value is None:
             return super().fillna(method=method, limit=limit)
         elif method is not None:
