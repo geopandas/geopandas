@@ -1063,11 +1063,6 @@ class GeometryArray(ExtensionArray):
         GeometryArray
         """
 
-        if value is None:
-            return super().fillna(method=method, limit=limit)
-        elif method is not None:
-            raise ValueError("Cannot specify both 'value' and 'method'.")
-
         mask = self.isna()
         new_values = self.copy()
         return new_values._fill(mask, value) if mask.any() else new_values
