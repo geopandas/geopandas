@@ -1062,10 +1062,8 @@ class GeometryArray(ExtensionArray):
         -------
         GeometryArray
         """
-        from pandas.core.missing import clean_fill_method
-
         if value is None:
-            return super().fillna(method=clean_fill_method(method), limit=limit)
+            return super().fillna(method=method, limit=limit)
         elif method is not None:
             raise ValueError("Cannot specify both 'value' and 'method'.")
 
