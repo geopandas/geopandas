@@ -1045,7 +1045,7 @@ class GeometryArray(ExtensionArray):
             that the GeometryArray has the same length as 'self'.
 
         method : {'backfill', 'bfill', 'ffill', None}, default None
-            Method to use for filling holes in reindexed GeoSeries:
+            Method to use for filling holes:
 
             - ffill: propagate last valid observation forward to next valid.
             - backfill / bfill: use next valid observation to fill gap.
