@@ -406,7 +406,7 @@ class TestMissing(extension_tests.BaseMissingTests):
         fill_value = data_missing[1]
         ser = pd.Series(from_shapely([data_missing[1], None, None]))
         result = ser.fillna(method="ffill", limit=2)
-        expected =  pd.Series(from_shapely([fill_value, fill_value, fill_value]))
+        expected = pd.Series(from_shapely([fill_value, fill_value, fill_value]))
 
         self.assert_series_equal(result, expected)
 
@@ -414,7 +414,7 @@ class TestMissing(extension_tests.BaseMissingTests):
         fill_value = data_missing[1]
         ser = pd.Series(from_shapely([None, None, data_missing[1]]))
         result = ser.fillna(method="backfill", limit=2)
-        expected =  pd.Series(from_shapely([fill_value, fill_value, fill_value]))
+        expected = pd.Series(from_shapely([fill_value, fill_value, fill_value]))
 
         self.assert_series_equal(result, expected)
 
