@@ -418,9 +418,9 @@ class TestMissing(extension_tests.BaseMissingTests):
 
         self.assert_series_equal(result, expected)
 
-    def test_fillna_series_method(self, data_missing, method):
+    def test_fillna_series_method(self, data_missing, fillna_method):
         ser = pd.Series(from_shapely([None, data_missing[1], None]))
-        result = ser.fillna(method=method)
+        result = ser.fillna(method=fillna_method)
 
         assert result.isna().sum() == 1
 
