@@ -403,6 +403,12 @@ class TestPygeosInterface:
             ("dwithin", 1, box(9.0, 9.0, 9.9, 9.9), [5]),  # bounds don't intersect but is within distance=1
             ("dwithin", 0.5, Point(0.5, 0.5), []),  #  is within 1-D absolute distance in both axes, but not euclidean distance
             ("dwithin", sqrt(2*0.5**2) + 1e-9, Point(0.5, 0.5), [0,1]),  # same as before but within euclidean distance
+            ("dwithin", sqrt(2) - 1e-9, # less than euclidean distance between points
+             [Polygon([(0, 0), (1, 0), (1, 1)]),Polygon([(1, 1), (2, 1), (2, 2)])], #multi-object test
+             [[0,0,1,1],[0,1,1,2]]),  # as array
+            ("dwithin", sqrt(2) + 1e-9, # more than euclidean distance between points
+             [Polygon([(0, 0), (1, 0), (1, 1)]),Polygon([(1, 1), (2, 1), (2, 2)])], #multi-object test
+             [[0,0,0,1,1,1,1],[0,1,2,0,1,2,3]]),  # as array
         )
     ) 
     def test_query_dwithin(self, predicate, distance, test_geom, expected):
