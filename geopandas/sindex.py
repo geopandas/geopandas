@@ -587,7 +587,7 @@ if compat.HAS_RTREE:
                 return tree_idx
             else:
                 # Predicate is not 'dwithin', therefore distance parameter is invalid
-                if distance is None:
+                if distance is not None:
                     raise TypeError(
                         "`predicate` = {} got an unexpected keyword argument \
                             `distance`".format(
@@ -840,7 +840,7 @@ if compat.SHAPELY_GE_20 or compat.HAS_PYGEOS:
                             positional argument: `distance`"
                     )
             else:
-                if distance is None:
+                if distance is not None:
                     raise TypeError(
                         "`predicate` = {} got an unexpected keyword argument \
                             `distance`".format(
