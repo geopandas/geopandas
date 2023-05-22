@@ -45,7 +45,7 @@ PYGEOS_SHAPELY_COMPAT = None
 PYGEOS_GE_09 = None
 PYGEOS_GE_010 = None
 PYGEOS_GE_012 = None
-PYGEOS_GEOS_GE_31 = None
+PYGEOS_GEOS_GE_310 = None
 
 INSTALL_PYGEOS_ERROR = "To use PyGEOS within GeoPandas, you need to install PyGEOS: \
 'conda install pygeos' or 'pip install pygeos'"
@@ -59,7 +59,7 @@ try:
         PYGEOS_GE_09 = Version(pygeos.__version__) >= Version("0.9")
         PYGEOS_GE_010 = Version(pygeos.__version__) >= Version("0.10")
         PYGEOS_GE_012 = Version(pygeos.__version__) >= Version("0.12")
-        PYGEOS_GEOS_GE_31 = pygeos.geos_version >= (3,10,0)
+        PYGEOS_GEOS_GE_310 = pygeos.geos_version >= (3, 10, 0)
     else:
         warnings.warn(
             "The installed version of PyGEOS is too old ({0} installed, 0.8 required),"

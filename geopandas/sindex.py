@@ -40,11 +40,11 @@ class BaseSpatialIndex:
         >>> s = geopandas.GeoSeries([Point(0, 0), Point(1, 1)])
         >>> s.sindex.valid_query_predicates  # doctest: +SKIP
         {'contains', 'crosses', 'intersects', 'within', 'touches', \
-'overlaps', None, 'covers', 'contains_properly'}
+'overlaps', None, 'covers', 'contains_properly', 'dwithin'}
         """
         raise NotImplementedError
 
-    def query(self, geometry, predicate=None, sort=False):
+    def query(self, geometry, predicate=None, sort=False, distance=None):
         """
         Return the integer indices of all combinations of each input geometry
         and tree geometries where the bounding box of each input geometry
@@ -79,13 +79,14 @@ class BaseSpatialIndex:
             iterables (GeoSeries, GeometryArray) or a numpy array of Shapely
             or PyGEOS geometries.
         predicate : {None, "contains", "contains_properly", "covered_by", "covers", \
-"crosses", "intersects", "overlaps", "touches", "within"}, optional
+"crosses", "intersects", "overlaps", "touches", "within", "dwithin"}, optional
             If predicate is provided, the input geometries are tested
             using the predicate function against each item in the tree
             whose extent intersects the envelope of the input geometry:
             ``predicate(input_geometry, tree_geometry)``.
             If possible, prepared geometries are used to help speed up the
-            predicate operation.
+            predicate operation. For the predicate "dwithin", the ``distance``
+            parameter must be specified.
         sort : bool, default False
             If True, the results will be sorted in ascending order. In case
             of 2D array, the result is sorted lexicographically using the
@@ -93,6 +94,9 @@ class BaseSpatialIndex:
             as the secondary key.
             If False, no additional sorting is applied (results are often
             sorted but there is no guarantee).
+        distance : float, default None
+            Used with predicate 'dwithin', specifies the permissible distance between
+            geometries. Negative distances always return False.
 
         Returns
         -------
@@ -147,6 +151,12 @@ class BaseSpatialIndex:
         array([[0],
                [3]])
 
+        >>> s.sindex.query(box(1, 1, 3, 3), predicate="dwithin", distance=0)
+        array([1, 2, 3])
+
+        >>> s.sindex.query(box(1, 1, 3, 3), predicate="dwithin", distance=2)
+        array([0, 1, 2, 3, 4])
+
         Notes
         -----
         In the context of a spatial join, input geometries are the "left"
@@ -155,6 +165,8 @@ class BaseSpatialIndex:
         effectively performs an inner join, where only those combinations of
         geometries that can be joined based on overlapping bounding boxes or
         optional predicate are returned.
+
+        The predicate "dwithin" requires GEOS version 3.10.
         """
         raise NotImplementedError
 
@@ -503,12 +515,13 @@ if compat.HAS_RTREE:
                 "covers",
                 "contains_properly",
             }
-            
-            if compat.USE_SHAPELY_20 or (compat.PYGEOS_GE_012 and compat.PYGEOS_GEOS_GE_31):
-                valid_prd = valid_prd | set(['dwithin'])
-        
+
+            if compat.USE_SHAPELY_20 or (
+                compat.PYGEOS_GE_012 and compat.PYGEOS_GEOS_GE_310
+            ):
+                valid_prd = valid_prd | set(["dwithin"])
+
             return valid_prd
-            
 
         @doc(BaseSpatialIndex.query)
         def query(self, geometry, predicate=None, sort=False, distance=None):
@@ -516,9 +529,10 @@ if compat.HAS_RTREE:
             if predicate not in self.valid_query_predicates:
                 if predicate == "dwithin":
                     raise ValueError(
-                    "`predicate` = `dwithin` requires Shapely version >= 2.0 or PyGEOS >= 0.12 and GEOS >= 3.10.0"
+                        "`predicate` = `dwithin` requires Shapely version >= 2.0 or \
+                            PyGEOS >= 0.12 and GEOS >= 3.10.0"
                     )
-                else:   
+                else:
                     raise ValueError(
                         "Got `predicate` = `{}`, `predicate` must be one of {}".format(
                             predicate, self.valid_query_predicates
@@ -533,7 +547,9 @@ if compat.HAS_RTREE:
                 input_geometry_index = []
 
                 for i, geo in enumerate(geometry):
-                    res = self.query(geo, predicate=predicate, sort=sort, distance=distance)
+                    res = self.query(
+                        geo, predicate=predicate, sort=sort, distance=distance
+                    )
                     tree_index.extend(res)
                     input_geometry_index.extend([i] * len(res))
                 return np.vstack([input_geometry_index, tree_index])
@@ -553,26 +569,32 @@ if compat.HAS_RTREE:
 
             if geometry.is_empty:
                 return np.array([], dtype=np.intp)
-            
+
             # special handling of dwithin predicate, which isn't available
             # in prepared geometries with rtree
             if predicate == "dwithin":
-                if distance == None:
-                     raise TypeError(
-                    "`predicate` = `dwithin` requires missing 1 required positional argument: `distance`"
+                if distance is None:
+                    raise TypeError(
+                        "`predicate` = `dwithin` requires missing 1 required \
+                            positional argument: `distance`"
                     )
-                tree_idx = np.arange(self.size, dtype=np.intp) # all indices, already sorted
-                tree_idx = tree_idx[geometry.dwithin(self.geometries,distance=distance)] # those indices within distance
+                tree_idx = np.arange(
+                    self.size, dtype=np.intp
+                )  # all indices, already sorted
+                tree_idx = tree_idx[
+                    geometry.dwithin(self.geometries, distance=distance)
+                ]  # those indices within distance
                 return tree_idx
             else:
-                ## Predicate is not 'dwithin', therefore distance parameter is invalid
-                if distance != None:
+                # Predicate is not 'dwithin', therefore distance parameter is invalid
+                if distance is None:
                     raise TypeError(
-                        "`predicate` = {} got an unexpected keyword argument `distance`".format(
+                        "`predicate` = {} got an unexpected keyword argument \
+                            `distance`".format(
                             predicate
-                            )
                         )
-            
+                    )
+
             # query tree
             bounds = geometry.bounds  # rtree operates on bounds
             tree_idx = list(self.intersection(bounds))
@@ -736,13 +758,21 @@ if compat.SHAPELY_GE_20 or compat.HAS_PYGEOS:
 
     if compat.USE_SHAPELY_20:
         import shapely as mod  # noqa
-        _PYGEOS_PREDICATES = {p.name for p in mod.strtree.BinaryPredicate} | set([None, "dwithin"]) 
+
+        _PYGEOS_PREDICATES = {p.name for p in mod.strtree.BinaryPredicate} | set(
+            [None, "dwithin"]
+        )
     else:
         import pygeos as mod  # noqa
-        if (compat.PYGEOS_GE_012 and compat.PYGEOS_GEOS_GE_31):    
-            _PYGEOS_PREDICATES = {p.name for p in mod.strtree.BinaryPredicate} | set([None, "dwithin"])
+
+        if compat.PYGEOS_GE_012 and compat.PYGEOS_GEOS_GE_310:
+            _PYGEOS_PREDICATES = {p.name for p in mod.strtree.BinaryPredicate} | set(
+                [None, "dwithin"]
+            )
         else:
-            _PYGEOS_PREDICATES = {p.name for p in mod.strtree.BinaryPredicate} | set([None])
+            _PYGEOS_PREDICATES = {p.name for p in mod.strtree.BinaryPredicate} | set(
+                [None]
+            )
 
     class PyGEOSSTRTreeIndex(BaseSpatialIndex):
         """A simple wrapper around pygeos's STRTree.
@@ -791,38 +821,48 @@ if compat.SHAPELY_GE_20 or compat.HAS_PYGEOS:
             if predicate not in self.valid_query_predicates:
                 if predicate == "dwithin":
                     raise ValueError(
-                    "`predicate` = `dwithin` requires Shapely version >= 2.0 or PyGEOS >= 0.12 and GEOS >= 3.10.0"
+                        "`predicate` = `dwithin` requires Shapely version >= 2.0 \
+                            or PyGEOS >= 0.12 and GEOS >= 3.10.0"
                     )
-                else:   
+                else:
                     raise ValueError(
                         "Got `predicate` = `{}`, `predicate` must be one of {}".format(
                             predicate, self.valid_query_predicates
                         )
                     )
-            
-            # distance argument requirement `dwithin` and only valid for predicate `dwithin`,         
+
+            # distance argument requirement of predicate `dwithin`
+            # and only valid for predicate `dwithin`
             if predicate == "dwithin":
-                if distance == None:
-                     raise TypeError(
-                    "`predicate` = `dwithin` requires missing 1 required positional argument: `distance`"
+                if distance is None:
+                    raise TypeError(
+                        "`predicate` = `dwithin` requires missing 1 required \
+                            positional argument: `distance`"
                     )
             else:
-                if distance != None:
+                if distance is None:
                     raise TypeError(
-                        "`predicate` = {} got an unexpected keyword argument `distance`".format(
+                        "`predicate` = {} got an unexpected keyword argument \
+                            `distance`".format(
                             predicate
-                            )
                         )
+                    )
 
             geometry = self._as_geometry_array(geometry)
 
             if compat.USE_SHAPELY_20:
-                indices = self._tree.query(geometry, predicate=predicate, distance=distance)
+                indices = self._tree.query(
+                    geometry, predicate=predicate, distance=distance
+                )
             else:
                 if isinstance(geometry, np.ndarray):
-                    indices = self._tree.query_bulk(geometry, predicate=predicate, distance=distance)
+                    indices = self._tree.query_bulk(
+                        geometry, predicate=predicate, distance=distance
+                    )
                 else:
-                    indices = self._tree.query(geometry, predicate=predicate, distance=distance)
+                    indices = self._tree.query(
+                        geometry, predicate=predicate, distance=distance
+                    )
 
             if sort:
                 if indices.ndim == 1:
@@ -885,7 +925,9 @@ if compat.SHAPELY_GE_20 or compat.HAS_PYGEOS:
                 FutureWarning,
                 stacklevel=2,
             )
-            return self.query(geometry, predicate=predicate, sort=sort, distance=distance)
+            return self.query(
+                geometry, predicate=predicate, sort=sort, distance=distance
+            )
 
         @doc(BaseSpatialIndex.nearest)
         def nearest(

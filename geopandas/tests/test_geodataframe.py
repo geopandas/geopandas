@@ -992,6 +992,30 @@ class TestDataFrame:
         assert_geodataframe_equal(result, expected)
 
     @pytest.mark.parametrize("how", ["left", "inner", "right"])
+    @pytest.mark.parametrize("predicate", ["dwithin"])
+    @pytest.mark.parametrize("distance", [0, 10])
+    @pytest.mark.skipif(
+        not (
+            compat.USE_SHAPELY_20
+            or (compat.PYGEOS_GE_012 and compat.PYGEOS_GEOS_GE_310)
+        ),
+        reason="`dwithin` requires Shapely 2.0 or PyGEOS 0.12 and GEOS 3.10",
+    )
+    def test_sjoin_dwithin(self, how, predicate, distance):
+        """
+        Basic test for availability of the GeoDataFrame method. Other
+        sjoin tests are located in /tools/tests/test_sjoin.py
+        """
+        left = read_file(geopandas.datasets.get_path("naturalearth_cities"))
+        right = read_file(geopandas.datasets.get_path("naturalearth_lowres"))
+
+        expected = geopandas.sjoin(
+            left, right, how=how, predicate=predicate, distance=distance
+        )
+        result = left.sjoin(right, how=how, predicate=predicate, distance=distance)
+        assert_geodataframe_equal(result, expected)
+
+    @pytest.mark.parametrize("how", ["left", "inner", "right"])
     @pytest.mark.parametrize("max_distance", [None, 1])
     @pytest.mark.parametrize("distance_col", [None, "distance"])
     @pytest.mark.skipif(

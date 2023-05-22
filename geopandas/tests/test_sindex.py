@@ -392,43 +392,83 @@ class TestPygeosInterface:
         """Tests the `query` method with invalid geometry."""
         with pytest.raises(TypeError):
             self.df.sindex.query("notavalidgeom")
-            
+
     # `dwithin` test
-    @pytest.mark.skipif(not (compat.USE_SHAPELY_20 or (compat.PYGEOS_GE_012 and compat.PYGEOS_GEOS_GE_31)), 
-                   reason="Requires Shapely v. 2.0 or PyGEOS 0.12 and GEOS 3.10")     
+    @pytest.mark.skipif(
+        not (
+            compat.USE_SHAPELY_20
+            or (compat.PYGEOS_GE_012 and compat.PYGEOS_GEOS_GE_310)
+        ),
+        reason="Requires Shapely v. 2.0 or PyGEOS 0.12 and GEOS 3.10",
+    )
     @pytest.mark.parametrize(
         "predicate, distance, test_geom, expected",
         (
-            ("dwithin", 0, box(9.0, 9.0, 9.9, 9.9), []),     # bounds don't intersect and not within distance=0
-            ("dwithin", 1, box(9.0, 9.0, 9.9, 9.9), [5]),  # bounds don't intersect but is within distance=1
-            ("dwithin", 0.5, Point(0.5, 0.5), []),  #  is within 1-D absolute distance in both axes, but not euclidean distance
-            ("dwithin", sqrt(2*0.5**2) + 1e-9, Point(0.5, 0.5), [0,1]),  # same as before but within euclidean distance
-            ("dwithin", sqrt(2) - 1e-9, # less than euclidean distance between points
-             [Polygon([(0, 0), (1, 0), (1, 1)]),Polygon([(1, 1), (2, 1), (2, 2)])], #multi-object test
-             [[0,0,1,1],[0,1,1,2]]),  # as array
-            ("dwithin", sqrt(2) + 1e-9, # more than euclidean distance between points
-             [Polygon([(0, 0), (1, 0), (1, 1)]),Polygon([(1, 1), (2, 1), (2, 2)])], #multi-object test
-             [[0,0,0,1,1,1,1],[0,1,2,0,1,2,3]]),  # as array
-        )
-    ) 
+            (
+                "dwithin",
+                0,
+                box(9.0, 9.0, 9.9, 9.9),
+                [],
+            ),  # bounds don't intersect and not within distance=0
+            (
+                "dwithin",
+                1,
+                box(9.0, 9.0, 9.9, 9.9),
+                [5],
+            ),  # bounds don't intersect but is within distance=1
+            (
+                "dwithin",
+                0.5,
+                Point(0.5, 0.5),
+                [],
+            ),  # within 1-D absolute distance in both axes, but not euclidean distance
+            (
+                "dwithin",
+                sqrt(2 * 0.5**2) + 1e-9,
+                Point(0.5, 0.5),
+                [0, 1],
+            ),  # same as before but within euclidean distance
+            (
+                "dwithin",
+                sqrt(2) - 1e-9,  # less than euclidean distance between points
+                [
+                    Polygon([(0, 0), (1, 0), (1, 1)]),
+                    Polygon([(1, 1), (2, 1), (2, 2)]),
+                ],  # multi-object test
+                [[0, 0, 1, 1], [0, 1, 1, 2]],
+            ),  # as array
+            (
+                "dwithin",
+                sqrt(2) + 1e-9,  # more than euclidean distance between points
+                [
+                    Polygon([(0, 0), (1, 0), (1, 1)]),
+                    Polygon([(1, 1), (2, 1), (2, 2)]),
+                ],  # multi-object test
+                [[0, 0, 0, 1, 1, 1, 1], [0, 1, 2, 0, 1, 2, 3]],
+            ),  # as array
+        ),
+    )
     def test_query_dwithin(self, predicate, distance, test_geom, expected):
         """Tests the `query` method with predicates that require keyword arguments."""
         res = self.df.sindex.query(test_geom, predicate=predicate, distance=distance)
         assert_array_equal(res, expected)
-    
+
     # test for invalid optional keyword arguments
     @pytest.mark.parametrize(
         "predicate, kwargs",
         (
-            ("dwithin", {"distance": None}), # 'dwithin' predicate requires distance argument
+            (
+                "dwithin",
+                {"distance": None},
+            ),  # 'dwithin' predicate requires distance argument
             ("within", {"distance": 0.5}),  # distance invalid for 'within' predicate
-            )
+        ),
     )
-    def test_query_kwargs_invalid_args(self,predicate, kwargs):
-        """Tests the `query` method with keyword arguments that are invalid for certain predicates."""
+    def test_query_kwargs_invalid_args(self, predicate, kwargs):
+        """Tests the `query` method with keyword arguments that are
+        invalid for certain predicates."""
         with pytest.raises(TypeError):
-            self.df.sindex.query(Point(0, 0), predicate=predicate,**kwargs)
-        
+            self.df.sindex.query(Point(0, 0), predicate=predicate, **kwargs)
 
     @pytest.mark.parametrize(
         "test_geom, expected_value",
@@ -920,30 +960,55 @@ class TestPygeosInterface:
         res = world.sindex.query(capitals.geometry, predicate)
         assert res.shape == expected_shape
 
- # ------------------------- explicit tests with rtree ------------------------- #
+
+# ------------------------- explicit tests with rtree ------------------------- #
 @pytest.mark.skip_no_sindex
-@pytest.mark.skipif(not compat.USE_SHAPELY_20 or (compat.PYGEOS_GE_012 and compat.PYGEOS_GEOS_GE_31),
-                    reason="Requires Shapely v. 2.0 or PyGEOS 0.12 and GEOS 3.10")
+@pytest.mark.skipif(
+    not compat.USE_SHAPELY_20 or (compat.PYGEOS_GE_012 and compat.PYGEOS_GEOS_GE_310),
+    reason="Requires Shapely v. 2.0 or PyGEOS 0.12 and GEOS 3.10",
+)
 class TestRtreeIndex:
     def setup_method(self):
-        data = np.array([Point(x, y) for x, y in zip(range(5), range(5))]
-            + [box(10, 10, 20, 20)])  # include a box geometry
-        
+        data = np.array(
+            [Point(x, y) for x, y in zip(range(5), range(5))] + [box(10, 10, 20, 20)]
+        )  # include a box geometry
+
         self.df = geopandas.sindex.RTreeIndex(data)
-        
+
     @pytest.mark.parametrize(
         "predicate, distance, test_geom, expected",
         (
-            ("dwithin", 0, box(9.0, 9.0, 9.9, 9.9), []),     # bounds don't intersect and not within distance=0
-            ("dwithin", 1, box(9.0, 9.0, 9.9, 9.9), [5]),  # bounds don't intersect but is within distance=1
-            ("dwithin", 0.5, Point(0.5, 0.5), []),  #  is within 1-D absolute distance in both axes, but not euclidean distance
-            ("dwithin", sqrt(2*0.5**2) + 1e-9, Point(0.5, 0.5), [0,1]),  # same as before but within euclidean distance
-        )
-    ) 
+            (
+                "dwithin",
+                0,
+                box(9.0, 9.0, 9.9, 9.9),
+                [],
+            ),  # bounds don't intersect and not within distance=0
+            (
+                "dwithin",
+                1,
+                box(9.0, 9.0, 9.9, 9.9),
+                [5],
+            ),  # bounds don't intersect but is within distance=1
+            (
+                "dwithin",
+                0.5,
+                Point(0.5, 0.5),
+                [],
+            ),  # within 1-D absolute distance in both axes, but not euclidean distance
+            (
+                "dwithin",
+                sqrt(2 * 0.5**2) + 1e-9,
+                Point(0.5, 0.5),
+                [0, 1],
+            ),  # same as before but within euclidean distance
+        ),
+    )
     def test_query_dwithin_Rtree(self, predicate, distance, test_geom, expected):
         """Tests the `query` method with predicates that require keyword arguments."""
         res = self.df.query(test_geom, predicate=predicate, distance=distance)
         assert_array_equal(res, expected)
+
 
 @pytest.mark.skipif(not compat.HAS_RTREE, reason="no rtree installed")
 def test_old_spatial_index_deprecated():
@@ -956,5 +1021,3 @@ def test_old_spatial_index_deprecated():
         idx = geopandas.sindex.SpatialIndex(stream)
 
     assert list(idx.intersection((0, 0, 1, 1))) == [0, 1]
-    
-
