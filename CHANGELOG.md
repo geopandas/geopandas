@@ -3,7 +3,8 @@
 ## Development version
 
 New features and improvements:
-- Added "dwithin" predicate and ``distance`` parameter to ``query()``for sindex and sjoin
+- Added ``predicate="dwithin"`` option and ``distance`` arugment to ``query()`` method
+ for sindex and sjoin (#2882)
 
 Bug fixes:
 
