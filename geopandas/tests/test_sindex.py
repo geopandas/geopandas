@@ -454,13 +454,17 @@ class TestPygeosInterface:
         assert_array_equal(res, expected)
 
     # test for invalid optional keyword arguments
+    @pytest.mark.skipif(
+        not (
+            compat.USE_SHAPELY_20
+            or (compat.PYGEOS_GE_012 and compat.PYGEOS_GEOS_GE_310)
+        ),
+        reason="Requires Shapely v. 2.0 or PyGEOS 0.12 and GEOS 3.10",
+    )
     @pytest.mark.parametrize(
         "predicate, kwargs",
         (
-            (
-                "dwithin",
-                {"distance": None},
-            ),  # 'dwithin' predicate requires distance argument
+            ("dwithin", {"distance": None}),  # 'dwithin' requires distance argument
             ("within", {"distance": 0.5}),  # distance invalid for 'within' predicate
         ),
     )
@@ -967,6 +971,7 @@ class TestPygeosInterface:
     not compat.USE_SHAPELY_20 or (compat.PYGEOS_GE_012 and compat.PYGEOS_GEOS_GE_310),
     reason="Requires Shapely v. 2.0 or PyGEOS 0.12 and GEOS 3.10",
 )
+@pytest.mark.skipif(not compat.HAS_RTREE, reason="no rtree installed")
 class TestRtreeIndex:
     def setup_method(self):
         data = np.array(
