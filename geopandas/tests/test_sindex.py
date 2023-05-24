@@ -22,6 +22,10 @@ if compat.USE_SHAPELY_20:
 elif compat.USE_PYGEOS:
     import pygeos as mod
 
+TEST_DWITHIN = compat.USE_SHAPELY_20 or (
+    compat.USE_PYGEOS and compat.PYGEOS_GE_012 and compat.PYGEOS_GEOS_GE_310
+)
+
 
 @pytest.mark.skip_no_sindex
 class TestSeriesSindex:
@@ -395,10 +399,7 @@ class TestPygeosInterface:
 
     # `dwithin` test
     @pytest.mark.skipif(
-        not (
-            compat.USE_SHAPELY_20
-            or (compat.PYGEOS_GE_012 and compat.PYGEOS_GEOS_GE_310)
-        ),
+        not TEST_DWITHIN,
         reason="Requires Shapely v. 2.0 or PyGEOS 0.12 and GEOS 3.10",
     )
     @pytest.mark.parametrize(
@@ -455,10 +456,7 @@ class TestPygeosInterface:
 
     # test for invalid optional keyword arguments
     @pytest.mark.skipif(
-        not (
-            compat.USE_SHAPELY_20
-            or (compat.PYGEOS_GE_012 and compat.PYGEOS_GEOS_GE_310)
-        ),
+        not TEST_DWITHIN,
         reason="Requires Shapely v. 2.0 or PyGEOS 0.12 and GEOS 3.10",
     )
     @pytest.mark.parametrize(
@@ -473,6 +471,17 @@ class TestPygeosInterface:
         invalid for certain predicates."""
         with pytest.raises(TypeError):
             self.df.sindex.query(Point(0, 0), predicate=predicate, **kwargs)
+
+    @pytest.mark.skipif(
+        TEST_DWITHIN,
+        reason="Test for 'dwithin'-incompatible versions of shapely or pyGEOS",
+    )
+    def test_dwithin_requirements(self):
+        """ "Tests whether a ValueError is raised when trying to use dwithin with
+        incompatible versions of shapely or pyGEOS
+        """
+        with pytest.raises(ValueError):
+            self.df.sindex.query(Point(0, 0), predicate="dwithin", distance=0)
 
     @pytest.mark.parametrize(
         "test_geom, expected_value",
@@ -967,19 +976,20 @@ class TestPygeosInterface:
 
 # ------------------------- explicit tests with rtree ------------------------- #
 @pytest.mark.skip_no_sindex
-@pytest.mark.skipif(
-    not compat.USE_SHAPELY_20 or (compat.PYGEOS_GE_012 and compat.PYGEOS_GEOS_GE_310),
-    reason="Requires Shapely v. 2.0 or PyGEOS 0.12 and GEOS 3.10",
-)
 @pytest.mark.skipif(not compat.HAS_RTREE, reason="no rtree installed")
 class TestRtreeIndex:
     def setup_method(self):
         data = np.array(
-            [Point(x, y) for x, y in zip(range(5), range(5))] + [box(10, 10, 20, 20)]
+            [Point(x, y) for x, y in zip(range(5), range(5))] + [box(10, 10, 20, 20)],
+            dtype=object,
         )  # include a box geometry
 
         self.df = geopandas.sindex.RTreeIndex(data)
 
+    @pytest.mark.skipif(
+        not TEST_DWITHIN,
+        reason="Requires Shapely v. 2.0 or PyGEOS 0.12 and GEOS 3.10",
+    )
     @pytest.mark.parametrize(
         "predicate, distance, test_geom, expected",
         (
@@ -1010,9 +1020,21 @@ class TestRtreeIndex:
         ),
     )
     def test_query_dwithin_Rtree(self, predicate, distance, test_geom, expected):
-        """Tests the `query` method with predicates that require keyword arguments."""
+        """Tests the `query` method for dwithin and rtree sindex structure."""
         res = self.df.query(test_geom, predicate=predicate, distance=distance)
         assert_array_equal(res, expected)
+
+    @pytest.mark.skipif(
+        TEST_DWITHIN,
+        reason="Test requires shapely or pyGEOS versions without 'dwithin'",
+    )
+    def test_dwithin_requirements_rtree(self):
+        """ "Tests whether a ValueError is raised when trying to use dwithin with
+        incompatible versions of shapely or pyGEOS
+        """
+
+        with pytest.raises(ValueError):
+            self.df.query(Point(0, 0), predicate="dwithin", distance=0)
 
 
 @pytest.mark.skipif(not compat.HAS_RTREE, reason="no rtree installed")

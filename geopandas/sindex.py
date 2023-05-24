@@ -517,7 +517,7 @@ if compat.HAS_RTREE:
             }
 
             if compat.USE_SHAPELY_20 or (
-                compat.PYGEOS_GE_012 and compat.PYGEOS_GEOS_GE_310
+                compat.USE_PYGEOS and compat.PYGEOS_GE_012 and compat.PYGEOS_GEOS_GE_310
             ):
                 valid_prd = valid_prd | set(["dwithin"])
 
@@ -833,8 +833,15 @@ if compat.SHAPELY_GE_20 or compat.HAS_PYGEOS:
 
             # distance argument requirement of predicate `dwithin`
             # and only valid for predicate `dwithin`
+            # perform query function and return result if
+            # requirements met for dwithin
+
+            kwargs = {}
             if predicate == "dwithin":
-                if distance is None:
+                if distance is not None:
+                    # the distance parameter is needed
+                    kwargs["distance"] = distance
+                else:
                     raise TypeError(
                         "`predicate` = `dwithin` requires missing 1 required \
                             positional argument: `distance`"
@@ -852,16 +859,22 @@ if compat.SHAPELY_GE_20 or compat.HAS_PYGEOS:
 
             if compat.USE_SHAPELY_20:
                 indices = self._tree.query(
-                    geometry, predicate=predicate, distance=distance
+                    geometry,
+                    predicate=predicate,
+                    **kwargs,
                 )
             else:
                 if isinstance(geometry, np.ndarray):
                     indices = self._tree.query_bulk(
-                        geometry, predicate=predicate, distance=distance
+                        geometry,
+                        predicate=predicate,
+                        **kwargs,
                     )
                 else:
                     indices = self._tree.query(
-                        geometry, predicate=predicate, distance=distance
+                        geometry,
+                        predicate=predicate,
+                        **kwargs,
                     )
 
             if sort:
