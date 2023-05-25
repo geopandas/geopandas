@@ -618,6 +618,34 @@ GeometryCollection
         # TODO: return empty geometry for non-polygons
         return _delegate_property("exterior", self)
 
+    def offset_curve(self, distance, **kwargs):
+        """Returns a ``LineString`` or ``MultiLineString`` geometry at a
+        distance from the object on its right or its left side.
+
+        See http://shapely.readthedocs.io/en/latest/manual.html#object.offset_curve
+        for details.
+
+        Examples
+        --------
+
+        >>> from shapely.geometry import LineString
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         LineString([(0, 0), (0, 1), (1, 1)]),
+        ...     ]
+        ... )
+        >>> s
+        0    LINESTRING (0.00000 0.00000, 1.00000 1.00000, ...
+        dtype: geometry
+
+        >>> s.offset_curve(1)
+        0    LINESTRING (-1.00000 0.00000, -1.00000 1.00000...
+        dtype: geometry
+
+        **kwargs accepts further arguments to be passed to shapely.
+        """
+        return _delegate_geo_method("offset_curve", self, distance, **kwargs)
+
     @property
     def interiors(self):
         """Returns a ``Series`` of List representing the

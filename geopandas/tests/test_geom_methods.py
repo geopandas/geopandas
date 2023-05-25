@@ -1579,3 +1579,14 @@ class TestGeomMethods:
 
         with pytest.raises(AttributeError, match="pointpats.random module has no"):
             gs.sample_points(10, method="nonexistent")
+
+    @pytest.mark.skipif(
+        not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+        reason="offset_curve is only implemented for pygeos, not shapely",
+    )
+    def test_offset_curve(self):
+        oc = GeoSeries([self.l1]).offset_curve(1, join_style="mitre")
+        expected = GeoSeries([LineString([[-1, 0], [-1, 2], [1, 2]])])
+        assert_geoseries_equal(expected, oc)
+        assert isinstance(oc, GeoSeries)
+        assert self.g1.crs == oc.crs
