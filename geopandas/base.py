@@ -635,7 +635,7 @@ GeometryCollection
         ...     ]
         ... )
         >>> s
-        0    LINESTRING (0.00000 0.00000, 1.00000 1.00000, ...
+        0    LINESTRING (0.00000 0.00000, 0.00000 1.00000, ...
         dtype: geometry
 
         >>> s.offset_curve(1)
