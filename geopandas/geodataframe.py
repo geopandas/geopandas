@@ -2096,8 +2096,8 @@ individually so that features may have different properties
 
     plot = CachedAccessor("plot", geopandas.plotting.GeoplotAccessor)
     
+    @doc(_explore)
     def explore(self, *args, **kwargs):
-        """Interactive map based on folium/leaflet.js"""
         return _explore(self, *args, **kwargs)
 
     def sjoin(self, df, *args, **kwargs):
