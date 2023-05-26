@@ -2098,7 +2098,6 @@ individually so that features may have different properties
 
     @doc(_explore)
     def explore(self, *args, **kwargs):
-        """Interactive map based on folium/leaflet.js"""
         return _explore(self, *args, **kwargs)
 
     def sjoin(self, df, *args, **kwargs):
