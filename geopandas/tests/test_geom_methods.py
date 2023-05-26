@@ -777,9 +777,33 @@ class TestGeomMethods:
         ):
             s.make_valid()
 
+    @pytest.mark.skipif(
+        not (compat.USE_SHAPELY_20),
+        reason="concave_hull is only implemented for shapely >= 2.0",
+    )
+    def test_concave_hull(self):
+        squares = GeoSeries([self.sq for _ in range(3)])
+        assert_geoseries_equal(squares, squares.concave_hull())
+
+    @pytest.mark.skipif(
+        not (compat.USE_SHAPELY_20),
+        reason="concave_hull is only implemented for shapely >= 2.0",
+    )
+    @pytest.mark.parametrize(
+        "expected_series,ratio",
+        [
+            ([(0, 0), (0, 3), (1, 1), (3, 3), (3, 0), (0, 0)], 0.0),
+            ([(0, 0), (0, 3), (3, 3), (3, 0), (0, 0)], 1.0),
+        ],
+    )
+    def test_concave_hull_accepts_kwargs(self, expected_series, ratio):
+        expected = GeoSeries(Polygon(expected_series))
+        s = GeoSeries(MultiPoint([(0, 0), (0, 3), (1, 1), (3, 0), (3, 3)]))
+        assert_geoseries_equal(expected, s.concave_hull(ratio=ratio))
+
     def test_convex_hull(self):
         # the convex hull of a square should be the same as the square
-        squares = GeoSeries([self.sq for i in range(3)])
+        squares = GeoSeries([self.sq for _ in range(3)])
         assert_geoseries_equal(squares, squares.convex_hull)
 
     def test_exterior(self):

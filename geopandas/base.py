@@ -492,6 +492,51 @@ GeometryCollection
         """
         return _delegate_property("centroid", self)
 
+    def concave_hull(self, **kwargs):
+        """Returns a ``GeoSeries`` of geometries representing the concave hull
+        of each geometry.
+
+        The concave hull of a geometry is the smallest concave `Polygon`
+        containing all the points in each geometry, unless the number of points
+        in the geometric object is less than three. For two points, the concave
+        hull collapses to a `LineString`; for 1, a `Point`.
+
+        Examples
+        --------
+
+        >>> from shapely.geometry import Polygon, LineString, Point, MultiPoint
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0, 0), (1, 1), (0, 1)]),
+        ...         LineString([(0, 0), (1, 1), (1, 0)]),
+        ...         MultiPoint([(0, 0), (1, 1), (0, 1), (1, 0), (0.5, 0.5)]),
+        ...         MultiPoint([(0, 0), (1, 1)]),
+        ...         Point(0, 0),
+        ...     ]
+        ... )
+        >>> s
+        0    POLYGON ((0.00000 0.00000, 1.00000 1.00000, 0....
+        1    LINESTRING (0.00000 0.00000, 1.00000 1.00000, ...
+        2    MULTIPOINT (0.00000 0.00000, 1.00000 1.00000, ...
+        3        MULTIPOINT (0.00000 0.00000, 1.00000 1.00000)
+        4                              POINT (0.00000 0.00000)
+        dtype: geometry
+
+        >>> s.concave_hull()
+        0    POLYGON ((0.00000 1.00000, 1.00000 1.00000, 0....
+        1    POLYGON ((0.00000 0.00000, 1.00000 1.00000, 1....
+        2    POLYGON ((0.50000 0.50000, 0.00000 1.00000, 1....
+        3        LINESTRING (0.00000 0.00000, 1.00000 1.00000)
+        4                              POINT (0.00000 0.00000)
+        dtype: geometry
+
+        See also
+        --------
+        GeoSeries.convex_hull : convex hull geometry
+
+        """
+        return _delegate_geo_method("concave_hull", self, **kwargs)
+
     @property
     def convex_hull(self):
         """Returns a ``GeoSeries`` of geometries representing the convex hull
@@ -533,6 +578,7 @@ GeometryCollection
 
         See also
         --------
+        GeoSeries.concave_hull : concave hull geometry
         GeoSeries.envelope : bounding rectangle geometry
 
         """

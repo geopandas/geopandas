@@ -1,24 +1,23 @@
+import inspect
 import numbers
 import operator
 import warnings
-import inspect
 from functools import lru_cache
 
 import numpy as np
 import pandas as pd
+import shapely
+import shapely.affinity
+import shapely.geometry
+import shapely.ops
+import shapely.wkt
 from pandas.api.extensions import (
     ExtensionArray,
     ExtensionDtype,
     register_extension_dtype,
 )
-
-import shapely
-import shapely.affinity
-import shapely.geometry
-from shapely.geometry.base import BaseGeometry
-import shapely.ops
-import shapely.wkt
 from pyproj import CRS, Transformer
+from shapely.geometry.base import BaseGeometry
 
 try:
     import pygeos
@@ -28,7 +27,6 @@ except ImportError:
 from . import _compat as compat
 from . import _vectorized as vectorized
 from .sindex import _get_sindex_class
-
 
 TransformerFromCRS = lru_cache(Transformer.from_crs)
 
@@ -512,6 +510,9 @@ class GeometryArray(ExtensionArray):
     def centroid(self):
         self.check_geographic_crs(stacklevel=5)
         return GeometryArray(vectorized.centroid(self._data), crs=self.crs)
+
+    def concave_hull(self, **kwargs):
+        return vectorized.concave_hull(self._data, **kwargs)
 
     @property
     def convex_hull(self):
@@ -1134,7 +1135,7 @@ class GeometryArray(ExtensionArray):
         # note ExtensionArray usage of value_counts only specifies dropna,
         # so sort, normalize and bins are not arguments
         values = to_wkb(self)
-        from pandas import Series, Index
+        from pandas import Index, Series
 
         result = Series(values).value_counts(dropna=dropna)
         # value_counts converts None to nan, need to convert back for from_wkb to work

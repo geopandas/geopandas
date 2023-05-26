@@ -2,6 +2,10 @@
 
 ## Development version
 
+New methods:
+
+- Added ``concave_hull`` method from shapely to GeoSeries/GeoDataframe.
+
 New features and improvements:
 
 

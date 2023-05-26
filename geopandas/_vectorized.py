@@ -611,6 +611,22 @@ def centroid(data):
         return _unary_geo("centroid", data)
 
 
+def concave_hull(data, **kwargs):
+    if compat.USE_SHAPELY_20:
+        return shapely.concave_hull(data, **kwargs)
+    if compat.USE_PYGEOS and compat.SHAPELY_GE_20:
+        warnings.warn(
+            "PyGEOS does not support concave_hull, and Shapely >= 2 is installed, "
+            "thus using Shapely and not PyGEOS for calculating the concave_hull."
+        )
+        return shapely.concave_hull(to_shapely(data), **kwargs)
+    else:
+        raise NotImplementedError(
+            f"shapely >= 2.0 is required, "
+            f"version {shapely.__version__} is installed"
+        )
+
+
 def convex_hull(data):
     if compat.USE_SHAPELY_20:
         return shapely.convex_hull(data)
