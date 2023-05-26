@@ -2095,7 +2095,7 @@ individually so that features may have different properties
         return self.geometry.difference(other)
 
     plot = CachedAccessor("plot", geopandas.plotting.GeoplotAccessor)
-    
+
     @doc(_explore)
     def explore(self, *args, **kwargs):
         return _explore(self, *args, **kwargs)
