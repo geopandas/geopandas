@@ -29,7 +29,6 @@ from . import _compat as compat
 from . import _vectorized as vectorized
 from .sindex import _get_sindex_class
 
-
 TransformerFromCRS = lru_cache(Transformer.from_crs)
 
 
@@ -516,6 +515,12 @@ class GeometryArray(ExtensionArray):
     @property
     def convex_hull(self):
         return GeometryArray(vectorized.convex_hull(self._data), crs=self.crs)
+
+    def delaunay_triangles(self, tolerance, only_edges, **kwargs):
+        return GeometryArray(
+            vectorized.delaunay_triangles(self._data, tolerance, only_edges, **kwargs),
+            crs=self.crs,
+        )
 
     @property
     def envelope(self):
@@ -1134,7 +1139,7 @@ class GeometryArray(ExtensionArray):
         # note ExtensionArray usage of value_counts only specifies dropna,
         # so sort, normalize and bins are not arguments
         values = to_wkb(self)
-        from pandas import Series, Index
+        from pandas import Index, Series
 
         result = Series(values).value_counts(dropna=dropna)
         # value_counts converts None to nan, need to convert back for from_wkb to work

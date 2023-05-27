@@ -3,7 +3,7 @@ from warnings import warn
 import numpy as np
 import pandas as pd
 from pandas import DataFrame, Series
-from shapely.geometry import box, MultiPoint
+from shapely.geometry import MultiPoint, box
 from shapely.geometry.base import BaseGeometry
 
 from . import _compat as compat
@@ -537,6 +537,53 @@ GeometryCollection
 
         """
         return _delegate_property("convex_hull", self)
+
+    def delaunay_triangles(self, tolerance=0.0, only_edges=False, **kwargs):
+        """Returns a ``GeoSeries`` of shapely ``GeometryCollection`` objects
+        consisting of polygons (default) or linestrings (only_edges=True),
+        representing the computed Delaunay triangulation around the vertices
+        of an input geometry.
+
+        Parameters
+        ----------
+        tolerance : float | array-like
+            Snap input vertices together if their distance is less than this value.
+        align : bool | array-like (default True)
+            If set to True, the triangulation will return a collection of linestrings
+            instead of polygons.
+
+        Examples
+        --------
+
+        >>> from shapely import LineString, MultiPoint, Polygon
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         MultiPoint([(50, 30), (60, 30), (100, 100)])
+        ...         Polygon([(50, 30), (60, 30), (100, 100), (50, 30)])
+        ...         LineString([(50, 30), (60, 30), (100, 100)]
+        ...     ]
+        ... )
+        >>> s
+        0    POLYGON ((0.00000 0.00000, 1.00000 1.00000, 0....
+        1    LINESTRING (0.00000 0.00000, 1.00000 1.00000, ...
+        2                              POINT (0.00000 0.00000)
+        dtype: geometry
+
+        >>> s.delaunay_triangles()
+        0    GEOMETRYCOLLECTION (POLYGON ((50.000 30.000, 6...
+        1    GEOMETRYCOLLECTION (POLYGON ((50.000 30.000, 6...
+        2    GEOMETRYCOLLECTION (POLYGON ((50.000 30.000, 6...
+        dtype: geometry
+
+        >>> s.delaunay_triangles(only_edges=True)
+        0    MULTILINESTRING ((50.000 30.000, 100.000 100.0...
+        1    MULTILINESTRING ((50.000 30.000, 100.000 100.0...
+        2    MULTILINESTRING ((50.000 30.000, 100.000 100.0...
+        dtype: geometry
+        """
+        return _delegate_geo_method(
+            "delaunay_triangles", self, tolerance, only_edges, **kwargs
+        )
 
     @property
     def envelope(self):

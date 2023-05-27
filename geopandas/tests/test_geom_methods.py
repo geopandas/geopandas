@@ -3,31 +3,28 @@ import sys
 import warnings
 
 import numpy as np
+import pytest
+import shapely
 from numpy.testing import assert_array_equal
 from pandas import DataFrame, Index, MultiIndex, Series, concat
-
-import shapely
-
+from pandas.testing import assert_frame_equal, assert_index_equal, assert_series_equal
+from shapely import MultiLineString, wkt
 from shapely.geometry import (
     LinearRing,
     LineString,
     MultiPoint,
+    MultiPolygon,
     Point,
     Polygon,
-    MultiPolygon,
 )
 from shapely.geometry.collection import GeometryCollection
 from shapely.ops import unary_union
-from shapely import wkt
 
 from geopandas import GeoDataFrame, GeoSeries
+from geopandas import _compat as compat
 from geopandas.base import GeoPandasBase
-
 from geopandas.testing import assert_geodataframe_equal
 from geopandas.tests.util import assert_geoseries_equal, geom_almost_equals, geom_equals
-from geopandas import _compat as compat
-from pandas.testing import assert_frame_equal, assert_series_equal, assert_index_equal
-import pytest
 
 
 def assert_array_dtype_equal(a, b, *args, **kwargs):
@@ -781,6 +778,28 @@ class TestGeomMethods:
         # the convex hull of a square should be the same as the square
         squares = GeoSeries([self.sq for i in range(3)])
         assert_geoseries_equal(squares, squares.convex_hull)
+
+    def test_delaunay_triangles(self):
+        expected = GeoSeries(
+            [
+                GeometryCollection([Polygon([(0, 0), (1, 0), (1, 1), (0, 0)])]),
+                GeometryCollection([Polygon([(0, 1), (0, 0), (1, 1), (0, 1)])]),
+            ]
+        )
+        dlt = self.g3.delaunay_triangles()
+        assert isinstance(dlt, GeoSeries)
+        assert_series_equal(expected, dlt)
+
+    def test_delaunay_triangles_pass_kwargs(self):
+        expected = GeoSeries(
+            [
+                MultiLineString([[(0, 0), (1, 1)], [(0, 0), (1, 0)], [(1, 0), (1, 1)]]),
+                MultiLineString([[(0, 1), (1, 1)], [(0, 0), (0, 1)], [(0, 0), (1, 1)]]),
+            ]
+        )
+        dlt = self.g3.delaunay_triangles(only_edges=True)
+        assert isinstance(dlt, GeoSeries)
+        assert_series_equal(expected, dlt)
 
     def test_exterior(self):
         exp_exterior = GeoSeries([LinearRing(p.boundary) for p in self.g3])

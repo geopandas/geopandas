@@ -620,6 +620,18 @@ def convex_hull(data):
         return _unary_geo("convex_hull", data)
 
 
+def delaunay_triangles(data, tolerance, only_edges, **kwargs):
+    if compat.USE_SHAPELY_20:
+        return shapely.delaunay_triangles(data, tolerance, only_edges, **kwargs)
+    elif compat.USE_PYGEOS:
+        return pygeos.delaunay_triangles(data, tolerance, only_edges, **kwargs)
+    else:
+        raise NotImplementedError(
+            f"shapely >= 2.0 or PyGEOS is required, "
+            f"version {shapely.__version__} is installed"
+        )
+
+
 def envelope(data):
     if compat.USE_SHAPELY_20:
         return shapely.envelope(data)
@@ -972,9 +984,10 @@ def _shapely_normalize(geom):
     """
     Small helper function for now because it is not yet available in Shapely.
     """
-    from shapely.geos import lgeos
+    from ctypes import c_int, c_void_p
+
     from shapely.geometry.base import geom_factory
-    from ctypes import c_void_p, c_int
+    from shapely.geos import lgeos
 
     lgeos._lgeos.GEOSNormalize_r.restype = c_int
     lgeos._lgeos.GEOSNormalize_r.argtypes = [c_void_p, c_void_p]
