@@ -783,6 +783,10 @@ class TestGeomMethods:
         squares = GeoSeries([self.sq for i in range(3)])
         assert_geoseries_equal(squares, squares.convex_hull)
 
+    @pytest.mark.skipif(
+        not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+        reason="delaunay_triangles not implemented for shapely<2",
+    )
     def test_delaunay_triangles(self):
         expected = GeoSeries(
             [
@@ -794,6 +798,10 @@ class TestGeomMethods:
         assert isinstance(dlt, GeoSeries)
         assert_series_equal(expected, dlt)
 
+    @pytest.mark.skipif(
+        not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+        reason="delaunay_triangles not implemented for shapely<2",
+    )
     def test_delaunay_triangles_pass_kwargs(self):
         expected = GeoSeries(
             [
@@ -804,6 +812,19 @@ class TestGeomMethods:
         dlt = self.g3.delaunay_triangles(only_edges=True)
         assert isinstance(dlt, GeoSeries)
         assert_series_equal(expected, dlt)
+
+    @pytest.mark.skipif(
+        compat.USE_PYGEOS or compat.USE_SHAPELY_20,
+        reason="delaunay_triangles implemented for shapely>2",
+    )
+    def test_delaunay_triangles_shapely_pre20(self):
+        s = GeoSeries([Point(1, 1)])
+        with pytest.raises(
+            NotImplementedError,
+            match=f"shapely >= 1.8 or PyGEOS is required, "
+            f"version {shapely.__version__} is installed",
+        ):
+            s.delaunay_triangles()
 
     def test_exterior(self):
         exp_exterior = GeoSeries([LinearRing(p.boundary) for p in self.g3])

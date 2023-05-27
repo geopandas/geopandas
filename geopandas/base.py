@@ -538,7 +538,7 @@ GeometryCollection
         """
         return _delegate_property("convex_hull", self)
 
-    def delaunay_triangles(self, tolerance=0.0, only_edges=False, **kwargs):
+    def delaunay_triangles(self, tolerance=0.0, only_edges=False):
         """Returns a ``GeoSeries`` of shapely ``GeometryCollection`` objects
         consisting of polygons (default) or linestrings (only_edges=True),
         representing the computed Delaunay triangulation around the vertices
@@ -546,7 +546,7 @@ GeometryCollection
 
         Parameters
         ----------
-        tolerance : float | array-like
+        tolerance : float | array-like, default 0.0
             Snap input vertices together if their distance is less than this value.
         only_edges : bool | array_like, (optional, default False)
             If set to True, the triangulation will return a collection of
@@ -581,9 +581,7 @@ GeometryCollection
         2    MULTILINESTRING ((50.000 30.000, 100.000 100.0...
         dtype: geometry
         """
-        return _delegate_geo_method(
-            "delaunay_triangles", self, tolerance, only_edges, **kwargs
-        )
+        return _delegate_geo_method("delaunay_triangles", self, tolerance, only_edges)
 
     @property
     def envelope(self):

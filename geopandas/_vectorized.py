@@ -620,11 +620,11 @@ def convex_hull(data):
         return _unary_geo("convex_hull", data)
 
 
-def delaunay_triangles(data, tolerance, only_edges, **kwargs):
+def delaunay_triangles(data, tolerance, only_edges):
     if compat.USE_SHAPELY_20:
-        return shapely.delaunay_triangles(data, tolerance, only_edges, **kwargs)
+        return shapely.delaunay_triangles(data, tolerance, only_edges)
     elif compat.USE_PYGEOS:
-        return pygeos.delaunay_triangles(data, tolerance, only_edges, **kwargs)
+        return pygeos.delaunay_triangles(data, tolerance, only_edges)
     else:
         raise NotImplementedError(
             f"shapely >= 2.0 or PyGEOS is required, "
