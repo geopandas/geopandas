@@ -7,29 +7,44 @@ from shapely.geometry import Point
 import geopandas
 
 
-def geocode(strings, provider=None, throttle_time=None, **kwargs):
+def geocode(
+    strings,
+    provider="photon",
+    min_delay_seconds=0,
+    max_retries=2,
+    error_wait_seconds=5,
+    **kwargs
+):
     """
     Geocode a set of strings and get a GeoDataFrame of the resulting points.
 
     Parameters
     ----------
-    strings : list or Series of addresses to geocode
-    provider : str or geopy.geocoder
-        Specifies geocoding service to use. If none is provided,
-        will use 'photon' (see the Photon's terms of service at:
-        https://photon.komoot.io).
+    strings : list or Series(string) of addresses to geocode
 
-        Either the string name used by geopy (as specified in
-        geopy.geocoders.SERVICE_TO_GEOCODER) or a geopy Geocoder instance
-        (e.g., geopy.geocoders.Photon) may be used.
+    provider : str or geopy.geocoder, default "photon"
+        Specifies geocoding service to use. Default will use "photon", see the
+        Photon's terms of service at: https://photon.komoot.io. Either the string
+        name used by geopy (as specified in ``geopy.geocoders.SERVICE_TO_GEOCODER``)
+        or a geopy Geocoder instance (e.g., :obj:`~geopy.geocoders.Photon`) may be
+        used. Some providers require additional arguments such as access keys, please
+        see each geocoder's specific parameters in :mod:`geopy.geocoders`.
 
-        Some providers require additional arguments such as access keys
-        See each geocoder's specific parameters in geopy.geocoders
+    min_delay_seconds, max_retries, error_wait_seconds
+        See the documentation for :func:`~geopy.extra.rate_limiter.RateLimiter` for
+        complete details on these arguments.
+
+    **kwargs
+        Additional keyword arguments to pass to the geocoder.
+
+    Returns
+    -------
+    GeoDataFrame
 
     Notes
     -----
-    Ensure proper use of the results by consulting the Terms of Service for
-    your provider.
+    Ensure proper use of the results by consulting the Terms of Service for your
+    provider.
 
     Geocoding requires geopy. Install it using 'pip install geopy'. See also
     https://github.com/geopy/geopy
@@ -40,7 +55,7 @@ def geocode(strings, provider=None, throttle_time=None, **kwargs):
     ...         ["boston, ma", "1600 pennsylvania ave. washington, dc"]
     ...     )
     >>> df  # doctest: +SKIP
-                        geometry                                            address
+                         geometry                                            address
     0  POINT (-71.05863 42.35899)                          Boston, MA, United States
     1  POINT (-77.03651 38.89766)  1600 Pennsylvania Ave NW, Washington, DC 20006...
     """
@@ -48,34 +63,45 @@ def geocode(strings, provider=None, throttle_time=None, **kwargs):
     return _query(strings, True, provider, throttle_time, **kwargs)
 
 
-def reverse_geocode(points, provider=None, throttle_time=None, **kwargs):
+def reverse_geocode(
+    points,
+    provider="photon",
+    min_delay_seconds=0,
+    max_retries=2,
+    error_wait_seconds=5,
+    **kwargs
+):
     """
-    Reverse geocode a set of points and get a GeoDataFrame of the resulting
-    addresses.
-
-    The points
+    Reverse geocode a set of points and get a GeoDataFrame of the resulting addresses.
 
     Parameters
     ----------
     points : list or Series of Shapely Point objects.
-        x coordinate is longitude
-        y coordinate is latitude
-    provider : str or geopy.geocoder (opt)
-        Specifies geocoding service to use. If none is provided,
-        will use 'photon' (see the Photon's terms of service at:
-        https://photon.komoot.io).
+        x coordinate is longitude, y coordinate is latitude
 
-        Either the string name used by geopy (as specified in
-        geopy.geocoders.SERVICE_TO_GEOCODER) or a geopy Geocoder instance
-        (e.g., geopy.geocoders.Photon) may be used.
+    provider : str or geopy.geocoder, default "photon"
+        Specifies geocoding service to use. Default will use "photon", see the
+        Photon's terms of service at: https://photon.komoot.io. Either the string
+        name used by geopy (as specified in ``geopy.geocoders.SERVICE_TO_GEOCODER``)
+        or a geopy Geocoder instance (e.g., :obj:`~geopy.geocoders.Photon`) may be
+        used. Some providers require additional arguments such as access keys, please
+        see each geocoder's specific parameters in :mod:`geopy.geocoders`.
 
-        Some providers require additional arguments such as access keys
-        See each geocoder's specific parameters in geopy.geocoders
+    min_delay_seconds, max_retries, error_wait_seconds
+        See the documentation for :func:`~geopy.extra.rate_limiter.RateLimiter` for
+        complete details on these arguments.
+
+    **kwargs
+        Additional keyword arguments to pass to the geocoder.
+
+    Returns
+    -------
+    GeoDataFrame
 
     Notes
     -----
-    Ensure proper use of the results by consulting the Terms of Service for
-    your provider.
+    Ensure proper use of the results by consulting the Terms of Service for your
+    provider.
 
     Reverse geocoding requires geopy. Install it using 'pip install geopy'.
     See also https://github.com/geopy/geopy
