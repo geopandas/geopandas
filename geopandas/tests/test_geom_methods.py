@@ -778,6 +778,26 @@ class TestGeomMethods:
             s.make_valid()
 
     @pytest.mark.skipif(
+        compat.SHAPELY_GE_20,
+        reason="concave_hull is implemented for shapely >= 2.0",
+    )
+    def test_concave_hull_not_implemented_shapely_pre2(self):
+        with pytest.raises(
+            NotImplementedError,
+            match=f"shapely >= 2.0 is required, "
+            f"version {shapely.__version__} is installed",
+        ):
+            GeoSeries([self.sq for _ in range(3)])
+
+    @pytest.mark.skipif(
+        not (compat.USE_PYGEOS) and not (compat.SHAPELY_GE_20),
+        reason="concave_hull is only implemented for shapely >= 2.0",
+    )
+    def test_concave_hull_pygeos_set_shapely_installed(self):
+        squares = GeoSeries([self.sq for _ in range(3)])
+        assert_geoseries_equal(squares, squares.concave_hull())
+
+    @pytest.mark.skipif(
         not (compat.USE_SHAPELY_20),
         reason="concave_hull is only implemented for shapely >= 2.0",
     )
