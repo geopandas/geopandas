@@ -492,7 +492,7 @@ GeometryCollection
         """
         return _delegate_property("centroid", self)
 
-    def concave_hull(self, **kwargs):
+    def concave_hull(self, ratio=0.0, allow_holes=False):
         """Returns a ``GeoSeries`` of geometries representing the concave hull
         of each geometry.
 
@@ -500,6 +500,14 @@ GeometryCollection
         containing all the points in each geometry, unless the number of points
         in the geometric object is less than three. For two points, the concave
         hull collapses to a `LineString`; for 1, a `Point`.
+
+        Parameters
+        ----------
+        ratio : float, default 0.0
+            Number in the range [0, 1]. Higher numbers will include fewer vertices
+            in the hull.
+        allow_holes : bool, (optional, default False)
+            If set to True, the concave hull may have holes.
 
         Examples
         --------
@@ -535,7 +543,9 @@ GeometryCollection
         GeoSeries.convex_hull : convex hull geometry
 
         """
-        return _delegate_geo_method("concave_hull", self, **kwargs)
+        return _delegate_geo_method(
+            "concave_hull", self, ratio=ratio, allow_holes=allow_holes
+        )
 
     @property
     def convex_hull(self):
