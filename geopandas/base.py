@@ -548,9 +548,9 @@ GeometryCollection
         ----------
         tolerance : float | array-like
             Snap input vertices together if their distance is less than this value.
-        align : bool | array-like (default True)
-            If set to True, the triangulation will return a collection of linestrings
-            instead of polygons.
+        only_edges : bool | array_like, (optional, default False)
+            If set to True, the triangulation will return a collection of
+            linestrings instead of polygons.
 
         Examples
         --------
@@ -558,9 +558,9 @@ GeometryCollection
         >>> from shapely import LineString, MultiPoint, Polygon
         >>> s = geopandas.GeoSeries(
         ...     [
-        ...         MultiPoint([(50, 30), (60, 30), (100, 100)])
-        ...         Polygon([(50, 30), (60, 30), (100, 100), (50, 30)])
-        ...         LineString([(50, 30), (60, 30), (100, 100)]
+        ...         MultiPoint([(50, 30), (60, 30), (100, 100)]),
+        ...         Polygon([(50, 30), (60, 30), (100, 100), (50, 30)]),
+        ...         LineString([(50, 30), (60, 30), (100, 100)]),
         ...     ]
         ... )
         >>> s
