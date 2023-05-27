@@ -64,11 +64,9 @@ def geocode(
     geolocate = geolocator(
         provider, True, min_delay_seconds, max_retries, error_wait_seconds, **kwargs
     )
-    geometry = strings.apply(query_address, geolocate=geolocate)
-    print(geometry)
     return geopandas.GeoDataFrame(
         strings.rename(strings.name or "address"),
-        geometry=geometry,
+        geometry=strings.apply(query_address, geolocate=geolocate),
         crs=4326,
     )
 
