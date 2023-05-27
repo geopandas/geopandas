@@ -787,7 +787,8 @@ class TestGeomMethods:
             match=f"shapely >= 2.0 is required, "
             f"version {shapely.__version__} is installed",
         ):
-            GeoSeries([self.sq for _ in range(3)])
+            squares = GeoSeries([self.sq for _ in range(3)])
+            squares.concave_hull()
 
     @pytest.mark.skipif(
         not (compat.USE_PYGEOS) and not (compat.SHAPELY_GE_20),
