@@ -8,10 +8,10 @@ from pandas import DataFrame, Index, MultiIndex, Series, concat
 
 import shapely
 
-from shapely import MultiLineString
 from shapely.geometry import (
     LinearRing,
     LineString,
+    MultiLineString,
     MultiPoint,
     Point,
     Polygon,
