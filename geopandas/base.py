@@ -3,7 +3,7 @@ from warnings import warn
 import numpy as np
 import pandas as pd
 from pandas import DataFrame, Series
-from shapely.geometry import MultiPoint, box
+from shapely.geometry import box, MultiPoint
 from shapely.geometry.base import BaseGeometry
 
 from . import _compat as compat

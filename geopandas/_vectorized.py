@@ -984,10 +984,9 @@ def _shapely_normalize(geom):
     """
     Small helper function for now because it is not yet available in Shapely.
     """
-    from ctypes import c_int, c_void_p
-
-    from shapely.geometry.base import geom_factory
     from shapely.geos import lgeos
+    from shapely.geometry.base import geom_factory
+    from ctypes import c_void_p, c_int
 
     lgeos._lgeos.GEOSNormalize_r.restype = c_int
     lgeos._lgeos.GEOSNormalize_r.argtypes = [c_void_p, c_void_p]

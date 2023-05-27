@@ -3,28 +3,32 @@ import sys
 import warnings
 
 import numpy as np
-import pytest
-import shapely
 from numpy.testing import assert_array_equal
 from pandas import DataFrame, Index, MultiIndex, Series, concat
-from pandas.testing import assert_frame_equal, assert_index_equal, assert_series_equal
-from shapely import MultiLineString, wkt
+
+import shapely
+
+from shapely import MultiLineString
 from shapely.geometry import (
     LinearRing,
     LineString,
     MultiPoint,
-    MultiPolygon,
     Point,
     Polygon,
+    MultiPolygon,
 )
 from shapely.geometry.collection import GeometryCollection
 from shapely.ops import unary_union
+from shapely import wkt
 
 from geopandas import GeoDataFrame, GeoSeries
-from geopandas import _compat as compat
 from geopandas.base import GeoPandasBase
+
 from geopandas.testing import assert_geodataframe_equal
 from geopandas.tests.util import assert_geoseries_equal, geom_almost_equals, geom_equals
+from geopandas import _compat as compat
+from pandas.testing import assert_frame_equal, assert_index_equal, assert_series_equal
+import pytest
 
 
 def assert_array_dtype_equal(a, b, *args, **kwargs):

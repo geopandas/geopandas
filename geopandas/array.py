@@ -1139,7 +1139,7 @@ class GeometryArray(ExtensionArray):
         # note ExtensionArray usage of value_counts only specifies dropna,
         # so sort, normalize and bins are not arguments
         values = to_wkb(self)
-        from pandas import Index, Series
+        from pandas import Series, Index
 
         result = Series(values).value_counts(dropna=dropna)
         # value_counts converts None to nan, need to convert back for from_wkb to work
