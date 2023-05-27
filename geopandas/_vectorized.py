@@ -638,7 +638,7 @@ def exterior(data):
         return _unary_geo("exterior", data)
 
 
-def offset_curve(data, distance, quad_segs=16, join_style="round", mitre_limit=5.0):
+def offset_curve(data, distance, quad_segs=8, join_style="round", mitre_limit=5.0):
     if compat.USE_SHAPELY_20:
         return shapely.offset_curve(data, distance, quad_segs, join_style, mitre_limit)
     elif compat.USE_PYGEOS:
