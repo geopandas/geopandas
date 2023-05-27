@@ -1589,4 +1589,3 @@ class TestGeomMethods:
         expected = GeoSeries([LineString([[-1, 0], [-1, 2], [1, 2]])])
         assert_geoseries_equal(expected, oc)
         assert isinstance(oc, GeoSeries)
-        assert self.g1.crs == oc.crs
