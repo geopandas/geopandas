@@ -7,17 +7,6 @@ from shapely.geometry import Point
 import geopandas
 
 
-def _get_throttle_time(provider):
-    """
-    Amount of time to wait between requests to a geocoding API, for providers
-    that specify rate limits in their terms of service.
-    """
-    import geopy.geocoders
-
-    # https://operations.osmfoundation.org/policies/nominatim/
-    return 1 if provider == geopy.geocoders.Nominatim else 0
-
-
 def geocode(strings, provider=None, throttle_time=None, **kwargs):
     """
     Geocode a set of strings and get a GeoDataFrame of the resulting points.
