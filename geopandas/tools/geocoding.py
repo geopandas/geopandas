@@ -162,7 +162,6 @@ def _prepare_geocode_result(results):
     index = []
 
     for i, s in results.items():
-
         if s is None:
             p = Point()
             address = None
