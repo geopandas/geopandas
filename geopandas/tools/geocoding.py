@@ -15,10 +15,7 @@ def _get_throttle_time(provider):
     import geopy.geocoders
 
     # https://operations.osmfoundation.org/policies/nominatim/
-    if provider == geopy.geocoders.Nominatim:
-        return 1
-    else:
-        return 0
+    return 1 if provider == geopy.geocoders.Nominatim else 0
 
 
 def geocode(strings, provider=None, throttle_time=None, **kwargs):
