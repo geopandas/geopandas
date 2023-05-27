@@ -503,7 +503,7 @@ GeometryCollection
 
         Parameters
         ----------
-        ratio : float, default 0.0
+        ratio : float, (optional, default 0.0)
             Number in the range [0, 1]. Higher numbers will include fewer vertices
             in the hull.
         allow_holes : bool, (optional, default False)

@@ -1,23 +1,24 @@
-import inspect
 import numbers
 import operator
 import warnings
+import inspect
 from functools import lru_cache
 
 import numpy as np
 import pandas as pd
-import shapely
-import shapely.affinity
-import shapely.geometry
-import shapely.ops
-import shapely.wkt
 from pandas.api.extensions import (
     ExtensionArray,
     ExtensionDtype,
     register_extension_dtype,
 )
-from pyproj import CRS, Transformer
+
+import shapely
+import shapely.affinity
+import shapely.geometry
 from shapely.geometry.base import BaseGeometry
+import shapely.ops
+import shapely.wkt
+from pyproj import CRS, Transformer
 
 try:
     import pygeos
@@ -1135,7 +1136,7 @@ class GeometryArray(ExtensionArray):
         # note ExtensionArray usage of value_counts only specifies dropna,
         # so sort, normalize and bins are not arguments
         values = to_wkb(self)
-        from pandas import Index, Series
+        from pandas import Series, Index
 
         result = Series(values).value_counts(dropna=dropna)
         # value_counts converts None to nan, need to convert back for from_wkb to work
