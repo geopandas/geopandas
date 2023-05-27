@@ -1,5 +1,3 @@
-from collections import defaultdict
-
 import pandas as pd
 
 from shapely.geometry import Point
@@ -13,7 +11,7 @@ def geocode(
     min_delay_seconds=0,
     max_retries=2,
     error_wait_seconds=5,
-    **kwargs
+    **kwargs,
 ):
     """
     Geocode a set of strings and get a GeoDataFrame of the resulting points.
@@ -55,12 +53,24 @@ def geocode(
     ...         ["boston, ma", "1600 pennsylvania ave. washington, dc"]
     ...     )
     >>> df  # doctest: +SKIP
-                         geometry                                            address
-    0  POINT (-71.05863 42.35899)                          Boston, MA, United States
-    1  POINT (-77.03651 38.89766)  1600 Pennsylvania Ave NW, Washington, DC 20006...
+                                                 address                    geometry
+    0                          Boston, MA, United States  POINT (-71.05863 42.35899)
+    1  1600 Pennsylvania Ave NW, Washington, DC 20006...  POINT (-77.03651 38.89766)
     """
 
-    return _query(strings, True, provider, throttle_time, **kwargs)
+    if not isinstance(strings, pd.Series):
+        strings = pd.Series(strings)
+
+    geolocate = geolocator(
+        provider, True, min_delay_seconds, max_retries, error_wait_seconds, **kwargs
+    )
+    geometry = strings.apply(query_address, geolocate=geolocate)
+    print(geometry)
+    return geopandas.GeoDataFrame(
+        strings.rename(strings.name or "address"),
+        geometry=geometry,
+        crs=4326,
+    )
 
 
 def reverse_geocode(
@@ -69,7 +79,7 @@ def reverse_geocode(
     min_delay_seconds=0,
     max_retries=2,
     error_wait_seconds=5,
-    **kwargs
+    **kwargs,
 ):
     """
     Reverse geocode a set of points and get a GeoDataFrame of the resulting addresses.
@@ -113,84 +123,66 @@ def reverse_geocode(
     ...     [Point(-71.0594869, 42.3584697), Point(-77.0365305, 38.8977332)]
     ... )
     >>> df  # doctest: +SKIP
-                         geometry                                            address
-    0  POINT (-71.05941 42.35837)       29 Court Sq, Boston, MA 02108, United States
-    1  POINT (-77.03641 38.89766)  1600 Pennsylvania Ave NW, Washington, DC 20006...
+                                                 address                    geometry
+    0       29 Court Sq, Boston, MA 02108, United States  POINT (-71.05941 42.35837)
+    1  1600 Pennsylvania Ave NW, Washington, DC 20006...  POINT (-77.03641 38.89766)
     """
 
-    return _query(points, False, provider, throttle_time, **kwargs)
+    if not isinstance(data, geopandas.GeoSeries):
+        points = geopandas.GeoSeries(points, crs=4326)
+
+    geolocate = geolocator(
+        provider, False, min_delay_seconds, max_retries, error_wait_seconds, **kwargs
+    )
+    address = (
+        points.get_coordinates()
+        .apply(lambda s: (s.y, s.x), axis=1)
+        .apply(query_address, geolocate=geolocate)
+        .rename("address")
+    )
+
+    return geopandas.GeoDataFrame(address, geometry=points, crs=4326)
 
 
-def _query(data, forward, provider, throttle_time, **kwargs):
-    # generic wrapper for calls over lists to geopy Geocoders
-    from functools import partial
-
+def geolocator(
+    provider,
+    forward,
+    min_delay_seconds,
+    max_retries,
+    error_wait_seconds,
+    **kwargs,
+):
     from geopy.extra.rate_limiter import RateLimiter
     from geopy.geocoders import get_geocoder_for_service
-    from geopy.geocoders.base import GeocoderQueryError
 
     # Get the actual 'geocoder' from the provider name
-    if provider is None:
-        provider = "photon"
     if isinstance(provider, str):
         provider = get_geocoder_for_service(provider)
 
-    # Set default throttle time if not provided
-    if throttle_time is None:
-        throttle_time = _get_throttle_time(provider)
-
-    # Transform data into Series
-    if forward and not isinstance(data, pd.Series):
-        data = pd.Series(data)
-    elif not isinstance(data, geopandas.GeoSeries):
-        data = geopandas.GeoSeries(data)
-
-    # Init geocoder
-    coder = provider(**kwargs)
-    transform = coder.geocode if forward else coder.reverse
-    transform = partial(transform, exactly_one=True)
-    transform = RateLimiter(transform, min_delay_seconds=throttle_time)
-
-    results = {}
-    for i, s in data.items():
-        try:
-            results[i] = transform(s) if forward else transform((s.y, s.x))
-        except (GeocoderQueryError, ValueError):
-            results[i] = (None, None)
-
-    return _prepare_geocode_result(results)
+    return RateLimiter(
+        getattr(provider(**kwargs), "geocode" if forward else "reverse"),
+        min_delay_seconds=min_delay_seconds,
+        max_retries=max_retries,
+        error_wait_seconds=error_wait_seconds,
+    )
 
 
-def _prepare_geocode_result(results):
-    """
-    Helper function for the geocode function
+def query_point(address, geolocate):
+    from geopy.geocoders.base import GeocoderQueryError
 
-    Takes a dict where keys are index entries, values are tuples containing:
-    (address, (lat, lon))
+    try:
+        loc = geolocate(address)
+        return Point(loc.longitude, loc.latitude)
 
-    """
-    # Prepare the data for the DataFrame as a dict of lists
-    d = defaultdict(list)
-    index = []
+    except (GeocoderQueryError, ValueError, AttributeError):
+        return None
 
-    for i, s in results.items():
-        if s is None:
-            p = Point()
-            address = None
 
-        else:
-            address, loc = s
+def query_address(point, geolocate):
+    from geopy.geocoders.base import GeocoderQueryError
 
-            # loc is lat, lon and we want lon, lat
-            if loc is None:
-                p = Point()
-            else:
-                p = Point(loc[1], loc[0])
+    try:
+        return geolocate(point).address
 
-        d["geometry"].append(p)
-        d["address"].append(address)
-        index.append(i)
-
-    df = geopandas.GeoDataFrame(d, index=index, crs="EPSG:4326")
-
-    return df
+    except (GeocoderQueryError, ValueError, AttributeError):
+        return None
