@@ -9,7 +9,7 @@ import pandas as pd
 
 from pyproj import CRS
 from pyproj.exceptions import CRSError
-from shapely.geometry import Point, Polygon
+from shapely.geometry import Point, Polygon, box
 
 import geopandas
 import geopandas._compat as compat
@@ -992,27 +992,23 @@ class TestDataFrame:
         assert_geodataframe_equal(result, expected)
 
     @pytest.mark.parametrize("how", ["left", "inner", "right"])
-    @pytest.mark.parametrize("predicate", ["dwithin"])
-    @pytest.mark.parametrize("distance", [0, 10])
+    @pytest.mark.parametrize("distance", [0, 3])
     @pytest.mark.skipif(
-        not (
-            compat.USE_SHAPELY_20
-            or (compat.PYGEOS_GE_012 and compat.PYGEOS_GEOS_GE_310)
-        ),
-        reason="`dwithin` requires Shapely 2.0 or PyGEOS 0.12 and GEOS 3.10",
+        not ((compat.USE_SHAPELY_20 or compat.PYGEOS_GE_012) and compat.GEOS_GE_310),
+        reason="`dwithin` requires  either Shapely 2.0 or PyGEOS 0.12, and GEOS 3.10",
     )
-    def test_sjoin_dwithin(self, how, predicate, distance):
+    def test_sjoin_dwithin(self, how, distance):
         """
-        Basic test for availability of the GeoDataFrame method. Other
-        sjoin tests are located in /tools/tests/test_sjoin.py
+        Basic test for predicate='dwithin' availability of the GeoDataFrame method.
+        Other sjoin tests are located in /tools/tests/test_sjoin.py
         """
-        left = read_file(geopandas.datasets.get_path("naturalearth_cities"))
-        right = read_file(geopandas.datasets.get_path("naturalearth_lowres"))
+        left = GeoDataFrame(geometry=points_from_xy([0, 1, 2], [0, 1, 1]))
+        right = GeoDataFrame(geometry=[box(0, 0, 1, 1)])
 
         expected = geopandas.sjoin(
-            left, right, how=how, predicate=predicate, distance=distance
+            left, right, how=how, predicate="dwithin", distance=distance
         )
-        result = left.sjoin(right, how=how, predicate=predicate, distance=distance)
+        result = left.sjoin(right, how=how, predicate="dwithin", distance=distance)
         assert_geodataframe_equal(result, expected)
 
     @pytest.mark.parametrize("how", ["left", "inner", "right"])

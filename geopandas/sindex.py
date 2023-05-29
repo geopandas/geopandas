@@ -63,6 +63,8 @@ class BaseSpatialIndex:
         to those that meet the predicate when comparing the input geometry to
         the tree geometry: ``predicate(geometry, tree_geometry)``.
 
+        The 'dwithin' predicate requires GEOS >= 3.10.
+
         Bounding boxes are limited to two dimensions and are axis-aligned
         (equivalent to the ``bounds`` property of a geometry); any Z values
         present in input geometries are ignored when querying the tree.
@@ -85,8 +87,7 @@ class BaseSpatialIndex:
             whose extent intersects the envelope of the input geometry:
             ``predicate(input_geometry, tree_geometry)``.
             If possible, prepared geometries are used to help speed up the
-            predicate operation. For the predicate "dwithin", the ``distance``
-            parameter must be specified.
+            predicate operation.
         sort : bool, default False
             If True, the results will be sorted in ascending order. In case
             of 2D array, the result is sorted lexicographically using the
@@ -94,9 +95,10 @@ class BaseSpatialIndex:
             as the secondary key.
             If False, no additional sorting is applied (results are often
             sorted but there is no guarantee).
-        distance : float, default None
-            Used with predicate 'dwithin', specifies the permissible distance between
-            geometries. Negative distances always return False.
+        distance : number or array_like, optional
+            Distances around each input geometry within which to query the tree for
+            the 'dwithin' predicate. If array_like, shape must be broadcastable to shape
+            of geometry. Required if predicate='dwithin'.
 
         Returns
         -------
@@ -165,8 +167,6 @@ class BaseSpatialIndex:
         effectively performs an inner join, where only those combinations of
         geometries that can be joined based on overlapping bounding boxes or
         optional predicate are returned.
-
-        The predicate "dwithin" requires GEOS version 3.10.
         """
         raise NotImplementedError
 
@@ -516,9 +516,9 @@ if compat.HAS_RTREE:
                 "contains_properly",
             }
 
-            if compat.USE_SHAPELY_20 or (
-                compat.USE_PYGEOS and compat.PYGEOS_GE_012 and compat.PYGEOS_GEOS_GE_310
-            ):
+            if (
+                compat.USE_SHAPELY_20 or (compat.USE_PYGEOS and compat.PYGEOS_GE_012)
+            ) and compat.GEOS_GE_310:
                 valid_prd.add("dwithin")
 
             return valid_prd
@@ -529,15 +529,15 @@ if compat.HAS_RTREE:
             if predicate not in self.valid_query_predicates:
                 if predicate == "dwithin":
                     raise ValueError(
-                        "`predicate` = `dwithin` requires Shapely version >= 2.0 or \
-                            PyGEOS >= 0.12 and GEOS >= 3.10.0"
+                        "predicate = 'dwithin' requires either Shapely version >= 2.0 \
+                            or PyGEOS >= 0.12, and GEOS >= 3.10.0"
                     )
-                else:
-                    raise ValueError(
-                        "Got `predicate` = `{}`, `predicate` must be one of {}".format(
-                            predicate, self.valid_query_predicates
-                        )
+
+                raise ValueError(
+                    "Got predicate = `{}`, predicate must be one of {}".format(
+                        predicate, self.valid_query_predicates
                     )
+                )
 
             if hasattr(geometry, "__array__") and not isinstance(
                 geometry, BaseGeometry
@@ -574,9 +574,8 @@ if compat.HAS_RTREE:
             # in prepared geometries with rtree
             if predicate == "dwithin":
                 if distance is None:
-                    raise TypeError(
-                        "`predicate` = `dwithin` requires missing 1 required \
-                            positional argument: `distance`"
+                    raise ValueError(
+                        "'distance' parameter is required for 'dwithin' predicate"
                     )
                 tree_idx = np.arange(
                     self.size, dtype=np.intp
@@ -588,9 +587,9 @@ if compat.HAS_RTREE:
             else:
                 # Predicate is not 'dwithin', therefore distance parameter is invalid
                 if distance is not None:
-                    raise TypeError(
-                        "`predicate` = {} got an unexpected keyword argument \
-                            `distance`".format(
+                    raise ValueError(
+                        "predicate = {} got an unexpected keyword argument \
+                            'distance'".format(
                             predicate
                         )
                     )
@@ -759,20 +758,17 @@ if compat.SHAPELY_GE_20 or compat.HAS_PYGEOS:
     if compat.USE_SHAPELY_20:
         import shapely as mod  # noqa
 
-        _PYGEOS_PREDICATES = {p.name for p in mod.strtree.BinaryPredicate} | set(
-            [None, "dwithin"]
-        )
+        _PYGEOS_PREDICATES = {p.name for p in mod.strtree.BinaryPredicate} | set([None])
+
+        if compat.GEOS_GE_310:
+            _PYGEOS_PREDICATES.update(["dwithin"])
     else:
         import pygeos as mod  # noqa
 
-        if compat.PYGEOS_GE_012 and compat.PYGEOS_GEOS_GE_310:
-            _PYGEOS_PREDICATES = {p.name for p in mod.strtree.BinaryPredicate} | set(
-                [None, "dwithin"]
-            )
-        else:
-            _PYGEOS_PREDICATES = {p.name for p in mod.strtree.BinaryPredicate} | set(
-                [None]
-            )
+        _PYGEOS_PREDICATES = {p.name for p in mod.strtree.BinaryPredicate} | set([None])
+
+        if compat.PYGEOS_GE_012 and compat.GEOS_GE_310:
+            _PYGEOS_PREDICATES.update(["dwithin"])
 
     class PyGEOSSTRTreeIndex(BaseSpatialIndex):
         """A simple wrapper around pygeos's STRTree.
@@ -821,12 +817,12 @@ if compat.SHAPELY_GE_20 or compat.HAS_PYGEOS:
             if predicate not in self.valid_query_predicates:
                 if predicate == "dwithin":
                     raise ValueError(
-                        "`predicate` = `dwithin` requires Shapely version >= 2.0 \
-                            or PyGEOS >= 0.12 and GEOS >= 3.10.0"
+                        "predicate = 'dwithin' requires either Shapely version >= 2.0 \
+                            or PyGEOS >= 0.12, and GEOS >= 3.10.0"
                     )
                 else:
                     raise ValueError(
-                        "Got `predicate` = `{}`, `predicate` must be one of {}".format(
+                        "Got predicate = '{}', predicate must be one of {}".format(
                             predicate, self.valid_query_predicates
                         )
                     )
@@ -842,15 +838,14 @@ if compat.SHAPELY_GE_20 or compat.HAS_PYGEOS:
                     # the distance parameter is needed
                     kwargs["distance"] = distance
                 else:
-                    raise TypeError(
-                        "`predicate` = `dwithin` requires missing 1 required \
-                            positional argument: `distance`"
+                    raise ValueError(
+                        "'distance' parameter is required for 'dwithin' predicate"
                     )
             else:
                 if distance is not None:
-                    raise TypeError(
-                        "`predicate` = {} got an unexpected keyword argument \
-                            `distance`".format(
+                    raise ValueError(
+                        "predicate = {} got an unexpected keyword argument \
+                            'distance'".format(
                             predicate
                         )
                     )

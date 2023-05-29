@@ -22,9 +22,9 @@ if compat.USE_SHAPELY_20:
 elif compat.USE_PYGEOS:
     import pygeos as mod
 
-TEST_DWITHIN = compat.USE_SHAPELY_20 or (
-    compat.USE_PYGEOS and compat.PYGEOS_GE_012 and compat.PYGEOS_GEOS_GE_310
-)
+TEST_DWITHIN = (
+    compat.USE_SHAPELY_20 or (compat.USE_PYGEOS and compat.PYGEOS_GE_012)
+) and compat.GEOS_GE_310
 
 
 @pytest.mark.skip_no_sindex
@@ -400,77 +400,102 @@ class TestPygeosInterface:
     # `dwithin` test
     @pytest.mark.skipif(
         not TEST_DWITHIN,
-        reason="Requires Shapely v. 2.0 or PyGEOS 0.12 and GEOS 3.10",
+        reason="Requires either Shapely 2.0 or PyGEOS 0.12, and GEOS 3.10",
     )
     @pytest.mark.parametrize(
-        "predicate, distance, test_geom, expected",
+        "distance, test_geom, expected",
         (
             (
-                "dwithin",
                 0,
                 box(9.0, 9.0, 9.9, 9.9),
                 [],
-            ),  # bounds don't intersect and not within distance=0
+            ),
+            # bounds don't intersect and not within distance=0
             (
-                "dwithin",
                 1,
                 box(9.0, 9.0, 9.9, 9.9),
                 [5],
-            ),  # bounds don't intersect but is within distance=1
+            ),
+            # bounds don't intersect but is within distance=1
             (
-                "dwithin",
                 0.5,
                 Point(0.5, 0.5),
                 [],
-            ),  # within 1-D absolute distance in both axes, but not euclidean distance
+            ),
+            # within 1-D absolute distance in both axes, but not euclidean distance
             (
-                "dwithin",
                 sqrt(2 * 0.5**2) + 1e-9,
                 Point(0.5, 0.5),
                 [0, 1],
-            ),  # same as before but within euclidean distance
+            ),
+            # same as before but within euclidean distance
             (
-                "dwithin",
-                sqrt(2) - 1e-9,  # less than euclidean distance between points
+                sqrt(2) - 1e-9,
+                # less than euclidean distance between points
                 [
                     Polygon([(0, 0), (1, 0), (1, 1)]),
                     Polygon([(1, 1), (2, 1), (2, 2)]),
                 ],  # multi-object test
                 [[0, 0, 1, 1], [0, 1, 1, 2]],
-            ),  # as array
+            ),
+            # as array
             (
-                "dwithin",
-                sqrt(2) + 1e-9,  # more than euclidean distance between points
+                sqrt(2) + 1e-9,
+                # more than euclidean distance between points
                 [
                     Polygon([(0, 0), (1, 0), (1, 1)]),
                     Polygon([(1, 1), (2, 1), (2, 2)]),
-                ],  # multi-object test
+                ],
+                # multi-object test
                 [[0, 0, 0, 1, 1, 1, 1], [0, 1, 2, 0, 1, 2, 3]],
-            ),  # as array
+            ),
+            # as array
         ),
     )
-    def test_query_dwithin(self, predicate, distance, test_geom, expected):
+    def test_query_dwithin(self, distance, test_geom, expected):
         """Tests the `query` method with predicates that require keyword arguments."""
-        res = self.df.sindex.query(test_geom, predicate=predicate, distance=distance)
+        res = self.df.sindex.query(test_geom, predicate="dwithin", distance=distance)
         assert_array_equal(res, expected)
 
     # test for invalid optional keyword arguments
     @pytest.mark.skipif(
         not TEST_DWITHIN,
-        reason="Requires Shapely v. 2.0 or PyGEOS 0.12 and GEOS 3.10",
+        reason="Requires either Shapely 2.0 or PyGEOS 0.12, and GEOS 3.10",
     )
-    @pytest.mark.parametrize(
-        "predicate, kwargs",
-        (
-            ("dwithin", {"distance": None}),  # 'dwithin' requires distance argument
-            ("within", {"distance": 0.5}),  # distance invalid for 'within' predicate
-        ),
-    )
-    def test_query_kwargs_invalid_args(self, predicate, kwargs):
+    def test_dwithin_no_distance(self):
         """Tests the `query` method with keyword arguments that are
         invalid for certain predicates."""
-        with pytest.raises(TypeError):
-            self.df.sindex.query(Point(0, 0), predicate=predicate, **kwargs)
+        with pytest.raises(
+            ValueError, match="'distance' parameter is required for 'dwithin' predicate"
+        ):
+            self.df.sindex.query(Point(0, 0), predicate="dwithin")
+
+    @pytest.mark.parametrize(
+        "predicate",
+        [
+            None,
+            "contains",
+            "contains_properly",
+            "covered_by",
+            "covers",
+            "crosses",
+            "intersects",
+            "overlaps",
+            "touches",
+            "within",
+        ],
+    )
+    def test_query_distance_invalid(self, predicate):
+        """Tests the `query` method with keyword arguments that are
+        invalid for certain predicates."""
+        with pytest.raises(
+            ValueError,
+            match="predicate = {} got an unexpected keyword argument \
+                            'distance'".format(
+                predicate
+            ),
+        ):
+            self.df.sindex.query(Point(0, 0), predicate=predicate, distance=0)
 
     @pytest.mark.skipif(
         TEST_DWITHIN,
@@ -988,7 +1013,7 @@ class TestRtreeIndex:
 
     @pytest.mark.skipif(
         not TEST_DWITHIN,
-        reason="Requires Shapely v. 2.0 or PyGEOS 0.12 and GEOS 3.10",
+        reason="Requires either Shapely v. 2.0 or PyGEOS 0.12, and GEOS 3.10",
     )
     @pytest.mark.parametrize(
         "predicate, distance, test_geom, expected",
