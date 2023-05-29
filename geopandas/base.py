@@ -2237,11 +2237,11 @@ GeometryCollection
             If True, automatically aligns GeoSeries based on their indices.
             If False, the order of elements is preserved.
         densify : float (default None)
-            A value between 0 and 1, that splits each subsegment of a line string into equal
-            length segments, making the approximation less coarse.
-            A densify value of 0.5 will add a point halfway between each pair of points.
-            A densify value of 0.25 will add a point a quarter of the way between each pair
-            of points.
+            A value between 0 and 1, that splits each subsegment of a line string
+            into equal length segments, making the approximation less coarse.
+            A densify value of 0.5 will add a point halfway between each pair of
+            points. A densify value of 0.25 will add a point a quarter of the way
+            between each pair of points.
 
 
         Returns
