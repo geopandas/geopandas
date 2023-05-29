@@ -2310,7 +2310,7 @@ GeometryCollection
         4         NaN
         dtype: float64
 
-        >>> s.distance(s2, align=False)
+        >>> s.hausdorff_distance(s2, align=False)
         0    0.707107
         1    4.123106
         2    1.414214
