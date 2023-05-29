@@ -31,6 +31,7 @@ General methods and attributes
    GeoSeries.y
    GeoSeries.z
    GeoSeries.get_coordinates
+   GeoSeries.hausdorff_distance
 
 Unary predicates
 ----------------
