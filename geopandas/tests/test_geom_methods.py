@@ -569,6 +569,10 @@ class TestGeomMethods:
         with pytest.warns(UserWarning, match="Geometry is in a geographic CRS"):
             self.g4.distance(self.p0)
 
+    @pytest.mark.skipif(
+        not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+        reason="requires hausdorff_distance in shapely 2.0+",
+    )
     def test_hausdorff_distance(self):
         # closest point is (0, 0) in self.p1
         expected = Series(
