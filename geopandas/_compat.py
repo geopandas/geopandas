@@ -45,7 +45,7 @@ PYGEOS_SHAPELY_COMPAT = None
 PYGEOS_GE_09 = None
 PYGEOS_GE_010 = None
 PYGEOS_GE_012 = None
-PYGEOS_GEOS_GE_310 = None
+GEOS_GE_310 = shapely.geos.geos_version >= (3, 10, 0)
 
 INSTALL_PYGEOS_ERROR = "To use PyGEOS within GeoPandas, you need to install PyGEOS: \
 'conda install pygeos' or 'pip install pygeos'"
