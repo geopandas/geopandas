@@ -505,7 +505,11 @@ class TestPygeosInterface:
         """ "Tests whether a ValueError is raised when trying to use dwithin with
         incompatible versions of shapely or pyGEOS
         """
-        with pytest.raises(ValueError):
+        with pytest.raises(
+            ValueError,
+            match="predicate = 'dwithin' requires either Shapely version >= 2.0 or \
+                PyGEOS >= 0.12, and GEOS >= 3.10.0",
+        ):
             self.df.sindex.query(Point(0, 0), predicate="dwithin", distance=0)
 
     @pytest.mark.parametrize(
