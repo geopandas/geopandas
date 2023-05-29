@@ -606,6 +606,16 @@ class TestGeomMethods:
             expected, self.g12.hausdorff_distance(self.g13, densify=0.25)
         )
 
+    @pytest.mark.skipif(
+        (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+        reason="hausdorff_distance not implemented for shapely<2",
+    )
+    def test_hausdorff_distance_not(self):
+        with pytest.raises(
+            NotImplementedError, match="shapely >= 2.0 or PyGEOS is required"
+        ):
+            self.g0.hausdorff_distance(self.g9)
+
     def test_intersects(self):
         expected = [True, True, True, True, True, False, False]
         assert_array_dtype_equal(expected, self.g0.intersects(self.t1))

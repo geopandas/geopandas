@@ -891,28 +891,10 @@ def hausdorff_distance(data, other, densify=None, **kwargs):
             "hausdorff_distance", data, other, densify=densify, **kwargs
         )
     else:
-        out = np.empty(len(data), dtype=float)
-        if isinstance(other, BaseGeometry):
-            with compat.ignore_shapely2_warnings():
-                out[:] = [
-                    shapely.hausdorff_distance(geom, other, densify=densify, **kwargs)
-                    if geom is not None
-                    else np.nan
-                    for geom in data
-                ]
-        elif isinstance(other, np.ndarray):
-            if len(data) != len(other):
-                raise ValueError(
-                    "Length of other sequence does not match " "length of the GeoSeries"
-                )
-            with compat.ignore_shapely2_warnings():
-                out[:] = [
-                    shapely.hausdorff_distance(geom, geom2, densify=densify, **kwargs)
-                    if geom is not None and geom2 is not None
-                    else np.nan
-                    for geom, geom2 in zip(data, other)
-                ]
-        return out
+        raise NotImplementedError(
+            f"shapely >= 2.0 or PyGEOS is required, "
+            f"version {shapely.__version__} is installed"
+        )
 
 
 def buffer(data, distance, resolution=16, **kwargs):
