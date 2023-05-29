@@ -502,13 +502,13 @@ class TestPygeosInterface:
         reason="Test for 'dwithin'-incompatible versions of shapely or pyGEOS",
     )
     def test_dwithin_requirements(self):
-        """ "Tests whether a ValueError is raised when trying to use dwithin with
+        """Tests whether a ValueError is raised when trying to use dwithin with
         incompatible versions of shapely or pyGEOS
         """
         with pytest.raises(
             ValueError,
-            match="predicate = 'dwithin' requires either Shapely version >= 2.0 or \
-                PyGEOS >= 0.12, and GEOS >= 3.10.0",
+            match="predicate = 'dwithin' requires either Shapely version "
+            + ">= 2.0 or PyGEOS >= 0.12, and GEOS >= 3.10.0",
         ):
             self.df.sindex.query(Point(0, 0), predicate="dwithin", distance=0)
 
@@ -1017,40 +1017,36 @@ class TestRtreeIndex:
 
     @pytest.mark.skipif(
         not TEST_DWITHIN,
-        reason="Requires either Shapely v. 2.0 or PyGEOS 0.12, and GEOS 3.10",
+        reason="Requires either Shapely 2.0 or PyGEOS 0.12, and GEOS 3.10",
     )
     @pytest.mark.parametrize(
-        "predicate, distance, test_geom, expected",
+        "distance, test_geom, expected",
         (
             (
-                "dwithin",
                 0,
                 box(9.0, 9.0, 9.9, 9.9),
                 [],
             ),  # bounds don't intersect and not within distance=0
             (
-                "dwithin",
                 1,
                 box(9.0, 9.0, 9.9, 9.9),
                 [5],
             ),  # bounds don't intersect but is within distance=1
             (
-                "dwithin",
                 0.5,
                 Point(0.5, 0.5),
                 [],
             ),  # within 1-D absolute distance in both axes, but not euclidean distance
             (
-                "dwithin",
                 sqrt(2 * 0.5**2) + 1e-9,
                 Point(0.5, 0.5),
                 [0, 1],
             ),  # same as before but within euclidean distance
         ),
     )
-    def test_query_dwithin_Rtree(self, predicate, distance, test_geom, expected):
+    def test_query_dwithin_Rtree(self, distance, test_geom, expected):
         """Tests the `query` method for dwithin and rtree sindex structure."""
-        res = self.df.query(test_geom, predicate=predicate, distance=distance)
+        res = self.df.query(test_geom, predicate="dwithin", distance=distance)
         assert_array_equal(res, expected)
 
     @pytest.mark.skipif(

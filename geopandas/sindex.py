@@ -529,8 +529,8 @@ if compat.HAS_RTREE:
             if predicate not in self.valid_query_predicates:
                 if predicate == "dwithin":
                     raise ValueError(
-                        "predicate = 'dwithin' requires either Shapely version >= 2.0 \
-                            or PyGEOS >= 0.12, and GEOS >= 3.10.0"
+                        "predicate = 'dwithin' requires either Shapely version "
+                        + ">= 2.0 or PyGEOS >= 0.12, and GEOS >= 3.10.0"
                     )
 
                 raise ValueError(
@@ -817,15 +817,15 @@ if compat.SHAPELY_GE_20 or compat.HAS_PYGEOS:
             if predicate not in self.valid_query_predicates:
                 if predicate == "dwithin":
                     raise ValueError(
-                        "predicate = 'dwithin' requires either Shapely version >= 2.0 \
-                            or PyGEOS >= 0.12, and GEOS >= 3.10.0"
+                        "predicate = 'dwithin' requires either Shapely version "
+                        + ">= 2.0 or PyGEOS >= 0.12, and GEOS >= 3.10.0"
                     )
-                else:
-                    raise ValueError(
-                        "Got predicate = '{}', predicate must be one of {}".format(
-                            predicate, self.valid_query_predicates
-                        )
+
+                raise ValueError(
+                    "Got predicate = '{}', predicate must be one of {}".format(
+                        predicate, self.valid_query_predicates
                     )
+                )
 
             # distance argument requirement of predicate `dwithin`
             # and only valid for predicate `dwithin`
