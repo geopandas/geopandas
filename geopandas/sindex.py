@@ -519,7 +519,7 @@ if compat.HAS_RTREE:
             if compat.USE_SHAPELY_20 or (
                 compat.USE_PYGEOS and compat.PYGEOS_GE_012 and compat.PYGEOS_GEOS_GE_310
             ):
-                valid_prd = valid_prd | set(["dwithin"])
+                valid_prd.add("dwithin")
 
             return valid_prd
 
