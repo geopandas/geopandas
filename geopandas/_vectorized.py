@@ -700,6 +700,18 @@ def minimum_bounding_radius(data):
         )
 
 
+def segmentize(data, max_segment_length):
+    if compat.USE_SHAPELY_20:
+        return shapely.segmentize(data, max_segment_length)
+    elif compat.USE_PYGEOS:
+        return pygeos.segmentize(data, max_segment_length)
+    else:
+        raise NotImplementedError(
+            f"shapely >= 2.0 or PyGEOS is required, "
+            f"version {shapely.__version__} is installed"
+        )
+
+
 #
 # Binary predicates
 #

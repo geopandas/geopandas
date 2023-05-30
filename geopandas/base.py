@@ -830,6 +830,29 @@ GeometryCollection
         """
         return _delegate_geo_method("make_valid", self)
 
+    def segmentize(self, max_segment_length):
+        """Adds vertices to line segments based on maximum segment
+        length. Returns a ``Geoseries`` .
+        Additional vertices will be added to every line segment
+        in an input geometry so that segments are no longer than
+        the provided maximum segment length.
+        New vertices will evenly subdivide each segment.
+        Only linear components of input geometries are densified;
+        other geometries are returned unmodified.
+
+        Parameters
+        ----------
+        max_segment_length : float | array-like
+            Additional vertices will be added so that all line segments are no longer
+            than this value. Must be greater than 0.
+
+        Returns
+        -------
+        GeoSeries
+
+        """
+        return _delegate_geo_method("segmentize", self, max_segment_length)
+
     #
     # Reduction operations that return a Shapely geometry
     #

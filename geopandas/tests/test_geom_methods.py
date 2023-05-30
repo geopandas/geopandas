@@ -777,6 +777,35 @@ class TestGeomMethods:
         ):
             s.make_valid()
 
+    @pytest.mark.skipif(
+        (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+        reason="segmentize keyword introduced in shapely 2.0",
+    )
+    def test_segmentize_shapely_pre20(self):
+        s = GeoSeries([Point(1, 1)])
+        with pytest.raises(
+            NotImplementedError,
+            match=f"shapely >= 2.0 or PyGEOS is required, "
+            f"version {shapely.__version__} is installed",
+        ):
+            s.segmentize(max_segment_length=1)
+
+    @pytest.mark.skipif(
+        not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+        reason="segmentize keyword introduced in shapely 2.0",
+    )
+    def test_segmentize(self):
+        expected = GeoSeries(
+            [
+                LineString([(0, 0), (0, 0.5), (0, 1), (0.5, 1), (1, 1)]),
+                LineString(
+                    [(0, 0), (0.5, 0), (1, 0), (1, 0.5), (1, 1), (0.5, 1), (0, 1)]
+                ),
+            ]
+        )
+        result = self.g5.segmentize(max_segment_length=0.5)
+        assert_geoseries_equal(expected, result)
+
     def test_convex_hull(self):
         # the convex hull of a square should be the same as the square
         squares = GeoSeries([self.sq for i in range(3)])

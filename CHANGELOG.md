@@ -1,6 +1,9 @@
 # Changelog
 
 ## Development version
+New methods:
+
+- Added ``segmentize`` method from shapely to GeoSeries/GeoDataFrame.
 
 New features and improvements:
 
