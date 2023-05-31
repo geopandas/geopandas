@@ -14,7 +14,9 @@ from shapely.geometry.base import BaseGeometry
 from geopandas import GeoDataFrame, GeoSeries
 
 # Adapted from pandas.io.common
+from urllib.parse import urlparse as parse_url
 from urllib.parse import uses_netloc, uses_params, uses_relative
+import urllib.request
 
 
 _VALID_URLS = set(uses_relative + uses_netloc + uses_params)
@@ -149,6 +151,14 @@ def _expand_user(path):
     return path
 
 
+def _is_url(url):
+    """Check to see if *url* has a valid protocol."""
+    try:
+        return parse_url(url).scheme in _VALID_URLS
+    except Exception:
+        return False
+
+
 def _is_zip(path):
     """Check if a given path is a zipfile"""
     parsed = fiona.path.ParsedPath.from_uri(path)
@@ -232,6 +242,15 @@ def _read_file(filename, bbox=None, mask=None, rows=None, engine=None, **kwargs)
     engine = _check_engine(engine, "'read_file' function")
 
     filename = _expand_user(filename)
+
+    if _is_url(filename):
+        _, ext = os.path.splitext(parse_url(filename).path)
+        if not ext:
+            # might be a zip file, but GDAL fails recognizing that without extension
+            response = urllib.request.urlopen(filename)
+            headers = dict(response.getheaders())
+            if headers.get("Content-Type") == "application/zip":
+                filename = f"/vsizip/{{/vsicurl/{filename}}}"
 
     if engine == "pyogrio":
         return _read_file_pyogrio(filename, bbox=bbox, mask=mask, rows=rows, **kwargs)

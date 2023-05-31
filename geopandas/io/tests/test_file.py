@@ -576,6 +576,13 @@ def test_read_file_remote_zipfile_url(engine):
     assert isinstance(gdf, geopandas.GeoDataFrame)
 
 
+@pytest.mark.web
+def test_read_file_remote_zipfile_url_without_extension(engine):
+    url = "https://geonode.goosocean.org/download/480"
+    gdf = read_file(url, engine=engine)
+    assert isinstance(gdf, geopandas.GeoDataFrame)
+
+
 def test_read_file_textio(file_path, engine):
     file_text_stream = open(file_path)
     file_stringio = io.StringIO(open(file_path).read())
