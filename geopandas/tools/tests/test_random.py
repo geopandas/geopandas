@@ -49,7 +49,7 @@ def test_uniform_generator():
     sample2 = uniform(polygons[0], size=10, rng=1)
     assert sample.equals(sample2)
 
-    generator = numpy.random.default_rng(rng=1)
+    generator = numpy.random.default_rng(seed=1)
     gen_sample = uniform(polygons[0], size=10, rng=generator)
     gen_sample2 = uniform(polygons[0], size=10, rng=generator)
 
