@@ -21,7 +21,7 @@ points = multipolygons.centroid
     "geom", [multipolygons[0], polygons[0], multilinestrings[0], linestrings[0]]
 )
 def test_uniform(geom, size):
-    sample = uniform(geom, size=size, seed=1)
+    sample = uniform(geom, size=size, rng=1)
     sample_series = geopandas.GeoSeries(sample).explode().reset_index(drop=True)
     assert len(sample_series) == size
     sample_in_geom = sample_series.buffer(0.00000001).sindex.query(
@@ -36,7 +36,7 @@ def test_uniform(geom, size):
 )
 def test_uniform_unsupported():
     with pytest.warns(UserWarning, match="Sampling is not supported"):
-        sample = uniform(points[0], size=10, seed=1)
+        sample = uniform(points[0], size=10, rng=1)
     assert sample.is_empty
 
 
@@ -45,13 +45,13 @@ def test_uniform_unsupported():
     reason="array input in interpolate not implemented for shapely<2",
 )
 def test_uniform_generator():
-    sample = uniform(polygons[0], size=10, seed=1)
-    sample2 = uniform(polygons[0], size=10, seed=1)
+    sample = uniform(polygons[0], size=10, rng=1)
+    sample2 = uniform(polygons[0], size=10, rng=1)
     assert sample.equals(sample2)
 
-    generator = numpy.random.default_rng(seed=1)
-    gen_sample = uniform(polygons[0], size=10, seed=generator)
-    gen_sample2 = uniform(polygons[0], size=10, seed=generator)
+    generator = numpy.random.default_rng(rng=1)
+    gen_sample = uniform(polygons[0], size=10, rng=generator)
+    gen_sample2 = uniform(polygons[0], size=10, rng=generator)
 
     assert sample.equals(gen_sample)
     assert not sample.equals(gen_sample2)

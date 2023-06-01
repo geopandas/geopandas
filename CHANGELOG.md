@@ -2,6 +2,10 @@
 
 ## Development version
 
+API changes:
+
+- Renamed ``seed`` keyword to ``rng`` in ``sample_points`` (#2913).
+
 New features and improvements:
 
 
