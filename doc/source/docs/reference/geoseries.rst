@@ -88,6 +88,7 @@ Constructive methods and attributes
    GeoSeries.centroid
    GeoSeries.convex_hull
    GeoSeries.envelope
+   GeoSeries.extract_unique_points
    GeoSeries.make_valid
    GeoSeries.minimum_bounding_circle
    GeoSeries.normalize

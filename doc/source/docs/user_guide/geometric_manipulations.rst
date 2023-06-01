@@ -37,6 +37,11 @@ Constructive methods
   smallest rectangular polygon (with sides parallel to the coordinate
   axes) that contains each object.
 
+.. attribute:: GeoSeries.extract_unique_point
+
+  Returns a :class:`~geopandas.GeoSeries` of geometries containing all distinct
+  vertices of each input geometry as a multipoint.
+
 .. method:: GeoSeries.simplify(tolerance, preserve_topology=True)
 
   Returns a :class:`~geopandas.GeoSeries` containing a simplified representation of

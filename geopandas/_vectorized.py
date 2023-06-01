@@ -638,6 +638,15 @@ def exterior(data):
         return _unary_geo("exterior", data)
 
 
+def extract_unique_points(data):
+    if compat.USE_SHAPELY_20:
+        return shapely.extract_unique_points(data)
+    elif compat.USE_PYGEOS:
+        return pygeos.extract_unique_points(data)
+    else:
+        return _unary_geo("extract_unique_points", data)
+
+
 def interiors(data):
     data = to_shapely(data)
     has_non_poly = False

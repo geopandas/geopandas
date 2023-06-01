@@ -619,6 +619,34 @@ GeometryCollection
         return _delegate_property("exterior", self)
 
     @property
+    def extract_unique_points(self):
+        """Returns a ``GeoSeries`` of MultiPoints representing all
+        distinct vertices of an input geometry.
+
+        Examples
+        --------
+
+        >>> from shapely import LineString, MultiPoint, Point, Polygon
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         LineString([(0, 0), (1, 1), (1, 1)]),
+        ...         Polygon([(0, 0), (1, 0), (1, 1), (0, 1), (0, 0)])
+        ...     ]
+        ... )
+        >>> s
+        0    LINESTRING (0.00000 0.00000, 1.00000 1.00000, ...
+        1    POLYGON ((0.00000 0.00000, 1.00000 0.00000, 1....
+        dtype: geometry
+
+        >>> s.extract_unique_points
+        0        MULTIPOINT (0.00000 0.00000, 1.00000 1.00000)
+        1    MULTIPOINT (0.00000 0.00000, 1.00000 0.00000, ...
+        2                                                 None
+        dtype: geometry
+        """
+        return _delegate_property("extract_unique_points", self)
+
+    @property
     def interiors(self):
         """Returns a ``Series`` of List representing the
         inner rings of each polygon in the GeoSeries.

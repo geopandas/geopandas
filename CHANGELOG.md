@@ -2,6 +2,10 @@
 
 ## Development version
 
+New methods:
+
+- Added ``extract_unique_points`` method from shapely to GeoSeries/GeoDataframe.
+
 New features and improvements:
 
 
