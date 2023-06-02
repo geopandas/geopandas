@@ -14,9 +14,9 @@ from shapely.geometry.base import BaseGeometry
 from geopandas import GeoDataFrame, GeoSeries
 
 # Adapted from pandas.io.common
-from urllib.request import urlopen as _urlopen
 from urllib.parse import urlparse as parse_url
 from urllib.parse import uses_netloc, uses_params, uses_relative
+import urllib.request
 
 
 _VALID_URLS = set(uses_relative + uses_netloc + uses_params)
@@ -245,14 +245,14 @@ def _read_file(filename, bbox=None, mask=None, rows=None, engine=None, **kwargs)
 
     from_bytes = False
     if _is_url(filename):
-        # if it is a url that has an extension -> pass through to pyogrio/fiona
-        # as is (in case it supports random access to download only part of the file)
+        # if it is a url that supports random access -> pass through to
+        # pyogrio/fiona as is (to supports downloading only part of the file)
         # otherwise still download manually because pyogrio/fiona don't support
         # all types of urls (https://github.com/geopandas/geopandas/issues/2908)
-        _, ext = os.path.splitext(parse_url(filename).path)
-        if not ext:
-            req = _urlopen(filename)
-            filename = req.read()
+        request = urllib.request.urlopen(filename)
+        headers = dict(request.getheaders())
+        if not headers.get("Accept-Ranges") == "bytes":
+            filename = request.read()
             from_bytes = True
 
     if engine == "pyogrio":
