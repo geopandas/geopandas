@@ -994,9 +994,9 @@ class TestGeomMethods:
     )
     def test_extract_unique_points_not_implemented(self):
         with pytest.raises(
-            NotImplementedError, match="shapely >= 2.0 or PyGEOS are required"
+            NotImplementedError, match="shapely >= 2.0 or PyGEOS is required"
         ):
-            self.g11.extract_unique_points
+            self.g1.extract_unique_points
 
     @pytest.mark.skipif(
         not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
