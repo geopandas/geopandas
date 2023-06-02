@@ -250,8 +250,7 @@ def _read_file(filename, bbox=None, mask=None, rows=None, engine=None, **kwargs)
         # otherwise still download manually because pyogrio/fiona don't support
         # all types of urls (https://github.com/geopandas/geopandas/issues/2908)
         request = urllib.request.urlopen(filename)
-        headers = dict(request.getheaders())
-        if not headers.get("Accept-Ranges") == "bytes":
+        if not request.getheader("Accept-Ranges") == "bytes":
             filename = request.read()
             from_bytes = True
 
