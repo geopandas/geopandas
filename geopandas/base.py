@@ -629,8 +629,8 @@ GeometryCollection
         >>> from shapely import LineString, MultiPoint, Point, Polygon
         >>> s = geopandas.GeoSeries(
         ...     [
-        ...         LineString([(0, 0), (1, 1), (1, 1)]),
-        ...         Polygon([(0, 0), (1, 0), (1, 1), (0, 1), (0, 0)])
+        ...         LineString([(0, 0), (0, 0), (1, 1), (1, 1)]),
+        ...         Polygon([(0, 0), (0, 0), (1, 1), (1, 1)])
         ...     ]
         ... )
         >>> s
@@ -639,9 +639,8 @@ GeometryCollection
         dtype: geometry
 
         >>> s.extract_unique_points
-        0        MULTIPOINT (0.00000 0.00000, 1.00000 1.00000)
-        1    MULTIPOINT (0.00000 0.00000, 1.00000 0.00000, ...
-        2                                                 None
+        0    MULTIPOINT (0.00000 0.00000, 1.00000 1.00000)
+        1    MULTIPOINT (0.00000 0.00000, 1.00000 1.00000)
         dtype: geometry
         """
         return _delegate_property("extract_unique_points", self)

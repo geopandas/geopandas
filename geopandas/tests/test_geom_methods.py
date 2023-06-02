@@ -980,7 +980,7 @@ class TestGeomMethods:
     @pytest.mark.skipif(
         not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
         reason=(
-            "extract_unique_points is only implemented " "for pygeos and shapely >= 2.0"
+            "extract_unique_points is only implemented for pygeos and shapely >= 2.0"
         ),
     )
     def test_extract_unique_points(self):

@@ -644,7 +644,10 @@ def extract_unique_points(data):
     elif compat.USE_PYGEOS:
         return pygeos.extract_unique_points(data)
     else:
-        return _unary_geo("extract_unique_points", data)
+        raise NotImplementedError(
+            f"shapely >= 2.0 or PyGEOS is required, "
+            f"version {shapely.__version__} is installed"
+        )
 
 
 def interiors(data):
