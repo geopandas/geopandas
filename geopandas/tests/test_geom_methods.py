@@ -48,6 +48,7 @@ class TestGeomMethods:
         self.sqz = Polygon([(1, 1, 1), (2, 2, 2), (3, 3, 3), (4, 4, 4)])
         self.t4 = Polygon([(0, 0), (3, 0), (3, 3), (0, 2)])
         self.t5 = Polygon([(2, 0), (3, 0), (3, 3), (2, 3)])
+        self.t6 = Polygon([(2, 0), (2, 0), (3, 0), (3, 0)])
         self.inner_sq = Polygon(
             [(0.25, 0.25), (0.75, 0.25), (0.75, 0.75), (0.25, 0.75)]
         )
@@ -975,6 +976,27 @@ class TestGeomMethods:
         assert np.all(e.geom_equals(self.sq))
         assert isinstance(e, GeoSeries)
         assert self.g3.crs == e.crs
+
+    @pytest.mark.skipif(
+        not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+        reason=(
+            "extract_unique_points is only implemented " "for pygeos and shapely >= 2.0"
+        ),
+    )
+    def test_extract_unique_points(self):
+        eup = GeoSeries([self.t6]).extract_unique_points
+        expected = GeoSeries([MultiPoint([(2, 0), (3, 0)])])
+        assert_series_equal(eup, expected)
+
+    @pytest.mark.skipif(
+        (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+        reason="extract_unique_points not implemented for shapely<2",
+    )
+    def test_extract_unique_points_not_implemented(self):
+        with pytest.raises(
+            NotImplementedError, match="shapely >= 2.0 or PyGEOS are required"
+        ):
+            self.g11.extract_unique_points
 
     @pytest.mark.skipif(
         not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
