@@ -13,7 +13,7 @@ from geopandas.tools import overlay  # noqa
 from geopandas.tools._show_versions import show_versions  # noqa
 from geopandas.tools import clip  # noqa
 
-
+import geopandas.api  # noqa
 import geopandas.datasets  # noqa
 
 
