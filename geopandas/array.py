@@ -508,6 +508,9 @@ class GeometryArray(ExtensionArray):
     def boundary(self):
         return GeometryArray(vectorized.boundary(self._data), crs=self.crs)
 
+    def build_area(self):
+        return GeometryArray(vectorized.build_area(self._data), crs=self.crs)
+
     @property
     def centroid(self):
         self.check_geographic_crs(stacklevel=5)

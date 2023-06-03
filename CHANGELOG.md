@@ -2,6 +2,11 @@
 
 ## Development version
 
+New methods:
+
+- Added ``build_area`` method from shapely to GeoSeries.
+
+
 New features and improvements:
 
 

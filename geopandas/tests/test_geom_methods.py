@@ -48,6 +48,9 @@ class TestGeomMethods:
         self.sqz = Polygon([(1, 1, 1), (2, 2, 2), (3, 3, 3), (4, 4, 4)])
         self.t4 = Polygon([(0, 0), (3, 0), (3, 3), (0, 2)])
         self.t5 = Polygon([(2, 0), (3, 0), (3, 3), (2, 3)])
+        self.t6 = Polygon([(0, 0), (0, 3), (3, 3), (3, 0), (0, 0)])
+        self.t7 = Polygon([(1, 1), (2, 2), (1, 2), (1, 1)])
+
         self.inner_sq = Polygon(
             [(0.25, 0.25), (0.75, 0.25), (0.75, 0.75), (0.25, 0.75)]
         )
@@ -169,6 +172,7 @@ class TestGeomMethods:
                 [1.0, 1.0, np.nan],
             ]
         )
+        self.g12 = GeoSeries([GeometryCollection([self.t6, self.t7])])
 
     def _test_unary_real(self, op, expected, a):
         """Tests for 'area', 'length', 'is_valid', etc."""
@@ -969,6 +973,39 @@ class TestGeomMethods:
 
         for r in record:
             assert "Geometry is in a geographic CRS." not in str(r.message)
+
+    @pytest.mark.skipif(
+        not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+        reason="build_area is only implemented for shapely >= 2.0",
+    )
+    def test_build_area(self):
+        built_area = self.g12.build_area()
+        expected = GeoSeries(
+            [
+                Polygon(
+                    [(0, 0), (0, 3), (3, 3), (3, 0), (0, 0)],
+                    holes=[
+                        [
+                            (1, 1),
+                            (2, 2),
+                            (1, 2),
+                            (1, 1),
+                        ]
+                    ],
+                )
+            ]
+        )
+        assert_series_equal(built_area, expected)
+
+    @pytest.mark.skipif(
+        (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+        reason="build_area not implemented for shapely < 2",
+    )
+    def test_build_area_not_implemented(self):
+        with pytest.raises(
+            NotImplementedError, match="shapely >= 2.0 or PyGEOS are required"
+        ):
+            self.g12.build_area()
 
     def test_envelope(self):
         e = self.g3.envelope

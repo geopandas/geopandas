@@ -456,6 +456,30 @@ GeometryCollection
         """
         return _delegate_property("boundary", self)
 
+    def build_area(self):
+        """Returns a :class:`~geopandas.GeoSeries` of areal geometries
+        formed by the constituent linework of an input geometry.
+
+        Examples
+        --------
+
+        >>> from shapely.geometry import GeometryCollection, Polygon
+        >>> s = geopandas.GeoSeries([
+        ...     GeometryCollection([
+        ...         Polygon([(0, 0), (3, 0), (3, 3), (0, 3), (0, 0)]),
+        ...         Polygon([(1, 1), (1, 2), (2, 2), (1, 1)])
+        ...     ])
+        ... ])
+        >>> s
+        0    GEOMETRYCOLLECTION (POLYGON ((0.00000 0.00000,...
+        dtype: geometry
+
+        >>> s.build_area()
+        0    POLYGON ((0.00000 0.00000, 0.00000 3.00000, 3....
+        dtype: geometry
+        """
+        return _delegate_geo_method("build_area", self)
+
     @property
     def centroid(self):
         """Returns a ``GeoSeries`` of points representing the centroid of each

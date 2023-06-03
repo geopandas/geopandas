@@ -20,6 +20,11 @@ Constructive methods
   Returns a :class:`~geopandas.GeoSeries` of lower dimensional objects representing
   each geometry's set-theoretic `boundary`.
 
+.. method:: GeoSeries.build_area
+
+  Returns a :class:`~geopandas.GeoSeries` of areal geometries formed by the constituent
+  linework of an input geometry.
+  
 .. attribute:: GeoSeries.centroid
 
   Returns a :class:`~geopandas.GeoSeries` of points for each geometric centroid.
