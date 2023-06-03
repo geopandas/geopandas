@@ -7,6 +7,11 @@ New features and improvements:
 
 Bug fixes:
 
+## Version 0.13.1 (Jun 5, 2023)
+
+Bug fix:
+
+- Restore ability to use ``geopandas.read_file`` with URLs (#2908).
 
 ## Version 0.13 (May 6, 2023)
 

@@ -238,6 +238,17 @@ def _read_file(filename, bbox=None, mask=None, rows=None, engine=None, **kwargs)
     The format drivers will attempt to detect the encoding of your data, but
     may fail. In this case, the proper encoding can be specified explicitly
     by using the encoding keyword parameter, e.g. ``encoding='utf-8'``.
+
+    When specifying a URL, geopandas will check if the server supports reading
+    partial data and in that case pass the URL as is to the underlying engine,
+    which will then use the network file system handler of GDAL to read from
+    the URL. Otherwise geopandas will download the data from the URL and pass
+    all data in-memory to the underlying engine.
+    If you need more control over how the URL is read, you can specify the
+    GDAL virtual filesystem manually (e.g. ``/vsicurl/https://...``). See the
+    GDAL documentation on filesystems for more details
+    (https://gdal.org/user/virtual_file_systems.html#vsicurl-http-https-ftp-files-random-access).
+
     """
     engine = _check_engine(engine, "'read_file' function")
 
@@ -246,7 +257,7 @@ def _read_file(filename, bbox=None, mask=None, rows=None, engine=None, **kwargs)
     from_bytes = False
     if _is_url(filename):
         # if it is a url that supports random access -> pass through to
-        # pyogrio/fiona as is (to supports downloading only part of the file)
+        # pyogrio/fiona as is (to support downloading only part of the file)
         # otherwise still download manually because pyogrio/fiona don't support
         # all types of urls (https://github.com/geopandas/geopandas/issues/2908)
         request = urllib.request.urlopen(filename)
