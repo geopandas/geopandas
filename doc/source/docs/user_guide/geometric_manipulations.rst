@@ -42,6 +42,11 @@ Constructive methods
   Returns a :class:`~geopandas.GeoSeries` containing a simplified representation of
   each object.
 
+.. method:: GeoSeries.segmentize(max_segment_length)
+
+  Returns a :class:`~geopandas.GeoSeries` with additional vertices added to line
+  segments based on max_segment_length.
+
 .. attribute:: GeoSeries.unary_union
 
   Return a geometry containing the union of all geometries in the :class:`~geopandas.GeoSeries`.
