@@ -11,7 +11,10 @@ Bug fixes:
 
 Bug fix:
 
-- Restore ability to use ``geopandas.read_file`` with URLs (#2908).
+- Fix the a regression in reading from URLs using ``geopandas.read_file`` (#2908). This
+  restores the behaviour to download all data up-front before passing it to the
+  underlying engine (fiona or pyogrio), except if the server supports partial requests
+  (to support reading a subset of a large file).
 
 ## Version 0.13 (May 6, 2023)
 
