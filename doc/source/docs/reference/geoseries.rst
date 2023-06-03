@@ -91,6 +91,7 @@ Constructive methods and attributes
    GeoSeries.make_valid
    GeoSeries.minimum_bounding_circle
    GeoSeries.normalize
+   GeoSeries.sample_points
    GeoSeries.simplify
 
 Affine transformations

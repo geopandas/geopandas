@@ -77,5 +77,6 @@ xfail_strict = true
 
 filterwarnings = [
     "ignore:distutils Version classes are deprecated.*:DeprecationWarning:pandas.*",
-    "ignore:distutils Version classes are deprecated.*:DeprecationWarning:numpy.*"
+    "ignore:distutils Version classes are deprecated.*:DeprecationWarning:numpy.*",
+    "ignore:The geopandas.dataset module is deprecated"
 ]

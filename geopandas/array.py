@@ -827,23 +827,23 @@ class GeometryArray(ExtensionArray):
 
         Examples
         --------
-        >>> world = geopandas.read_file(
-        ...     geopandas.datasets.get_path("naturalearth_lowres")
+        >>> import geodatasets
+        >>> df = geopandas.read_file(
+        ...     geodatasets.get_path("geoda.chicago_commpop")
         ... )
-        >>> germany = world.loc[world.name == "Germany"]
-        >>> germany.geometry.values.estimate_utm_crs()  # doctest: +SKIP
-        <Projected CRS: EPSG:32632>
-        Name: WGS 84 / UTM zone 32N
+        >>> df.geometry.values.estimate_utm_crs()  # doctest: +SKIP
+        <Derived Projected CRS: EPSG:32616>
+        Name: WGS 84 / UTM zone 16N
         Axis Info [cartesian]:
         - E[east]: Easting (metre)
         - N[north]: Northing (metre)
         Area of Use:
-        - name: World - N hemisphere - 6°E to 12°E - by country
-        - bounds: (6.0, 0.0, 12.0, 84.0)
+        - name: Between 90°W and 84°W, northern hemisphere between equator and 84°N,...
+        - bounds: (-90.0, 0.0, -84.0, 84.0)
         Coordinate Operation:
-        - name: UTM zone 32N
+        - name: UTM zone 16N
         - method: Transverse Mercator
-        Datum: World Geodetic System 1984
+        Datum: World Geodetic System 1984 ensemble
         - Ellipsoid: WGS 84
         - Prime Meridian: Greenwich
         """

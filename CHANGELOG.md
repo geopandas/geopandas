@@ -4,21 +4,37 @@
 
 New features and improvements:
 
-- Added ``get_coordinates()`` method from shapely to GeoSeries/GeoDataframe (#2624).
-- The Parquet and Feather IO functions now support the latest 1.0.0-beta.1 version
-  of the GeoParquet specification (geoparquet.org) (#2663).
+
+Bug fixes:
+
+
+## Version 0.13 (May 6, 2023)
+
+New methods:
+
+- Added ``sample_points`` method to sample random points from Polygon or LineString
+  geometries (#2860).
 - New ``hilbert_distance()`` method that calculates the distance along a Hilbert curve
   for each geometry in a GeoSeries/GeoDataFrame (#2297).
-- Added support to fill missing values in `GeoSeries.fillna` via another `GeoSeries` (#2535).
 - Support for sorting geometries (for example, using ``sort_values()``) based on
   the distance along the Hilbert curve (#2070).
+- Added ``get_coordinates()`` method from shapely to GeoSeries/GeoDataframe (#2624).
 - Added ``minimum_bounding_circle()`` method from shapely to GeoSeries/GeoDataframe (#2621).
-- Support specifying ``min_zoom`` and ``max_zoom`` inside the ``map_kwds`` argument for ``.explore()`` (#2599).
 - Added `minimum_bounding_radius()` as GeoSeries method (#2827).
+
+Other new features and improvements:
+
+- The Parquet and Feather IO functions now support the latest 1.0.0-beta.1 version
+  of the GeoParquet specification (<geoparquet.org>) (#2663).
+- Added support to fill missing values in `GeoSeries.fillna` via another `GeoSeries` (#2535).
+- Support specifying ``min_zoom`` and ``max_zoom`` inside the ``map_kwds`` argument for ``.explore()`` (#2599).
 - Added support for append (``mode="a"`` or ``append=True``) in ``to_file()``
   using ``engine="pyogrio"`` (#2788).
 - Added a ``to_wgs84`` keyword to ``to_json`` allowing automatic re-projecting to follow
   the 2016 GeoJSON specification (#416).
+- ``to_json`` output now includes a ``"crs"`` field if the CRS is not the default WGS84 (#1774).
+- Improve error messages when accessing the `geometry` attribute of GeoDataFrame without an active geometry column
+  related to the default name `"geometry"` being provided in the constructor (#2577)
 
 Deprecations and compatibility notes:
 
@@ -41,6 +57,9 @@ Bug fixes:
 - Fix `copy()` downcasting GeoDataFrames without an active geometry column to a
   DataFrame (#2775)
 - Fix geometry column name propagation when GeoDataFrame columns are a multiindex (#2088)
+- Fix `iterfeatures()` method of GeoDataFrame to correctly handle non-scalar values
+  when `na='drop'` is specified (#2811)
+- Fix issue with passing custom legend labels to `plot` (#2886)
 
 Notes on (optional) dependencies:
 
