@@ -14,7 +14,9 @@ from shapely.geometry.base import BaseGeometry
 from geopandas import GeoDataFrame, GeoSeries
 
 # Adapted from pandas.io.common
+from urllib.parse import urlparse as parse_url
 from urllib.parse import uses_netloc, uses_params, uses_relative
+import urllib.request
 
 
 _VALID_URLS = set(uses_relative + uses_netloc + uses_params)
@@ -149,6 +151,14 @@ def _expand_user(path):
     return path
 
 
+def _is_url(url):
+    """Check to see if *url* has a valid protocol."""
+    try:
+        return parse_url(url).scheme in _VALID_URLS
+    except Exception:
+        return False
+
+
 def _is_zip(path):
     """Check if a given path is a zipfile"""
     parsed = fiona.path.ParsedPath.from_uri(path)
@@ -228,16 +238,37 @@ def _read_file(filename, bbox=None, mask=None, rows=None, engine=None, **kwargs)
     The format drivers will attempt to detect the encoding of your data, but
     may fail. In this case, the proper encoding can be specified explicitly
     by using the encoding keyword parameter, e.g. ``encoding='utf-8'``.
+
+    When specifying a URL, geopandas will check if the server supports reading
+    partial data and in that case pass the URL as is to the underlying engine,
+    which will then use the network file system handler of GDAL to read from
+    the URL. Otherwise geopandas will download the data from the URL and pass
+    all data in-memory to the underlying engine.
+    If you need more control over how the URL is read, you can specify the
+    GDAL virtual filesystem manually (e.g. ``/vsicurl/https://...``). See the
+    GDAL documentation on filesystems for more details
+    (https://gdal.org/user/virtual_file_systems.html#vsicurl-http-https-ftp-files-random-access).
+
     """
     engine = _check_engine(engine, "'read_file' function")
 
     filename = _expand_user(filename)
 
+    from_bytes = False
+    if _is_url(filename):
+        # if it is a url that supports random access -> pass through to
+        # pyogrio/fiona as is (to support downloading only part of the file)
+        # otherwise still download manually because pyogrio/fiona don't support
+        # all types of urls (https://github.com/geopandas/geopandas/issues/2908)
+        request = urllib.request.urlopen(filename)
+        if not request.getheader("Accept-Ranges") == "bytes":
+            filename = request.read()
+            from_bytes = True
+
     if engine == "pyogrio":
         return _read_file_pyogrio(filename, bbox=bbox, mask=mask, rows=rows, **kwargs)
 
     elif engine == "fiona":
-        from_bytes = False
         if pd.api.types.is_file_like(filename):
             data = filename.read()
             path_or_bytes = data.encode("utf-8") if isinstance(data, str) else data
