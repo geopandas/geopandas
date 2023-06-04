@@ -1003,7 +1003,7 @@ class TestGeomMethods:
     )
     def test_build_area_not_implemented(self):
         with pytest.raises(
-            NotImplementedError, match="shapely >= 2.0 or PyGEOS are required"
+            NotImplementedError, match="shapely >= 2.0 or PyGEOS is required"
         ):
             self.g12.build_area()
 
