@@ -557,21 +557,22 @@ def test_read_file(engine):
 
 
 @pytest.mark.web
-def test_read_file_remote_geojson_url(engine):
-    url = (
+@pytest.mark.parametrize(
+    "url",
+    [
+        # geojson url
         "https://raw.githubusercontent.com/geopandas/geopandas/"
-        "main/geopandas/tests/data/null_geom.geojson"
-    )
-    gdf = read_file(url, engine=engine)
-    assert isinstance(gdf, geopandas.GeoDataFrame)
-
-
-@pytest.mark.web
-def test_read_file_remote_zipfile_url(engine):
-    url = (
+        "main/geopandas/tests/data/null_geom.geojson",
+        # url to zip file
         "https://raw.githubusercontent.com/geopandas/geopandas/"
-        "main/geopandas/datasets/nybb_16a.zip"
-    )
+        "main/geopandas/datasets/nybb_16a.zip",
+        # url to zipfile without extension
+        "https://geonode.goosocean.org/download/480",
+        # url to web service
+        "https://demo.pygeoapi.io/stable/collections/obs/items",
+    ],
+)
+def test_read_file_url(engine, url):
     gdf = read_file(url, engine=engine)
     assert isinstance(gdf, geopandas.GeoDataFrame)
 
