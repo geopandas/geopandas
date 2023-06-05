@@ -90,6 +90,7 @@ Constructive methods and attributes
    GeoSeries.envelope
    GeoSeries.make_valid
    GeoSeries.minimum_bounding_circle
+   GeoSeries.node
    GeoSeries.normalize
    GeoSeries.sample_points
    GeoSeries.simplify

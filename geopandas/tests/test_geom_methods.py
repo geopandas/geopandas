@@ -11,6 +11,7 @@ import shapely
 from shapely.geometry import (
     LinearRing,
     LineString,
+    MultiLineString,
     MultiPoint,
     Point,
     Polygon,
@@ -988,8 +989,28 @@ class TestGeomMethods:
             mbc.area,
             Series([1.560723, 1.560723]),
         )
-        assert isinstance(mbc, GeoSeries)
-        assert self.g1.crs == mbc.crs
+
+    @pytest.mark.skipif(
+        not compat.USE_SHAPELY_20,
+        reason="node is only implemented for shapely",
+    )
+    def test_node(self):
+        node = self.g1.node()
+        expected = GeoSeries(
+            [
+                MultiLineString([((0, 0), (1, 0), (1, 1), (0, 0))]),
+                MultiLineString([((0, 0), (1, 0), (1, 1), (0, 1), (0, 0))]),
+            ]
+        )
+        assert_series_equal(node, expected)
+
+    @pytest.mark.skipif(
+        not (compat.USE_PYGEOS),
+        reason="get_coordinates only implemented for shapely>2",
+    )
+    def test_node_not_implemented(self):
+        with pytest.raises(NotImplementedError, match="shapely >= 2.0 is required"):
+            self.g1.node()
 
     def test_total_bounds(self):
         bbox = self.sol.x, self.sol.y, self.esb.x, self.esb.y

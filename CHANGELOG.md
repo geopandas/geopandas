@@ -2,6 +2,11 @@
 
 ## Development version
 
+New methods:
+
+- Added ``node`` method from shapely to GeoSeries.
+
+
 New features and improvements:
 
 

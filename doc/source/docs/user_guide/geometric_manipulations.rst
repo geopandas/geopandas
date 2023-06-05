@@ -37,6 +37,12 @@ Constructive methods
   smallest rectangular polygon (with sides parallel to the coordinate
   axes) that contains each object.
 
+.. method:: GeoSeries.node
+
+  Returns a :class:`~geopandas.GeoSeries` of MultiLineString geometries where no
+  lines touch each other but only touch at end points. Non-linear input points will
+  result in an empty MultiLineString.
+
 .. method:: GeoSeries.simplify(tolerance, preserve_topology=True)
 
   Returns a :class:`~geopandas.GeoSeries` containing a simplified representation of

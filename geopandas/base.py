@@ -757,6 +757,32 @@ GeometryCollection
         """
         return Series(self.geometry.values.minimum_bounding_radius(), index=self.index)
 
+    def node(self):
+        """Returns a ``GeoSeries`` MultiLineString geometries where no
+        lines touch each other but only touch at end points. Non-linear input points
+        will result in an empty MultiLineString.
+
+        Examples
+        --------
+
+        >>> from shapely.geometry import Polygon, LineString, Point
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         LineString([(0, 0), (1,1), (0, 1), (1, 0)])
+        ...         Point([(0, 0), (1,1)])
+        ...     ],
+        ... )
+        >>> s
+        0    LINESTRING (0.00000 0.00000, 1.00000 1.00000, ...
+        dtype: geometry
+
+        >>> s.node()
+        0    MULTILINESTRING ((0.00000 0.00000, 0.50000 0.5...
+        1                                MULTILINESTRING EMPTY
+        dtype: geometry
+        """
+        return _delegate_geo_method("node", self)
+
     def normalize(self):
         """Returns a ``GeoSeries`` of normalized
         geometries to normal form (or canonical form).
