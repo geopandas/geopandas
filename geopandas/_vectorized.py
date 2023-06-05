@@ -617,7 +617,8 @@ def concave_hull(data, **kwargs):
     if compat.USE_PYGEOS and compat.SHAPELY_GE_20:
         warnings.warn(
             "PyGEOS does not support concave_hull, and Shapely >= 2 is installed, "
-            "thus using Shapely and not PyGEOS for calculating the concave_hull."
+            "thus using Shapely and not PyGEOS for calculating the concave_hull.",
+            stacklevel=4,
         )
         return shapely.concave_hull(to_shapely(data), **kwargs)
     else:
