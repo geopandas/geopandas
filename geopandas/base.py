@@ -539,10 +539,15 @@ GeometryCollection
         return _delegate_property("convex_hull", self)
 
     def delaunay_triangles(self, tolerance=0.0, only_edges=False):
-        """Returns a ``GeoSeries`` of shapely ``GeometryCollection`` objects
-        consisting of polygons (default) or linestrings (only_edges=True),
-        representing the computed Delaunay triangulation around the vertices
-        of an input geometry.
+        """Returns a ``GeoSeries`` consisting of objects representing
+        the computed Delaunay triangulation around the vertices of
+        an input geometry.
+
+        The output is a ``GeometryCollection`` containing polygons
+        (default) or linestrings (see only_edges).
+
+        Returns an empty GeometryCollection if an input geometry
+        contains less than 3 vertices.
 
         Parameters
         ----------
