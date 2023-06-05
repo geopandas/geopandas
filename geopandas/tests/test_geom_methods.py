@@ -169,6 +169,7 @@ class TestGeomMethods:
                 [1.0, 1.0, np.nan],
             ]
         )
+        self.squares = GeoSeries([self.sq for _ in range(3)])
 
     def _test_unary_real(self, op, expected, a):
         """Tests for 'area', 'length', 'is_valid', etc."""
@@ -787,24 +788,27 @@ class TestGeomMethods:
             match=f"shapely >= 2.0 is required, "
             f"version {shapely.__version__} is installed",
         ):
-            squares = GeoSeries([self.sq for _ in range(3)])
-            squares.concave_hull()
+            self.squares.concave_hull()
 
     @pytest.mark.skipif(
         not (compat.USE_PYGEOS) and not (compat.SHAPELY_GE_20),
         reason="concave_hull is only implemented for shapely >= 2.0",
     )
     def test_concave_hull_pygeos_set_shapely_installed(self):
-        squares = GeoSeries([self.sq for _ in range(3)])
-        assert_geoseries_equal(squares, squares.concave_hull())
+        expected = GeoSeries(
+            [
+                Polygon([(0, 1), (1, 1), (0, 0), (0, 1)]),
+                Polygon([(1, 0), (0, 0), (0, 1), (1, 1), (1, 0)]),
+            ]
+        )
+        assert_geoseries_equal(expected, self.g5.concave_hull())
 
     @pytest.mark.skipif(
         not (compat.USE_SHAPELY_20),
         reason="concave_hull is only implemented for shapely >= 2.0",
     )
     def test_concave_hull(self):
-        squares = GeoSeries([self.sq for _ in range(3)])
-        assert_geoseries_equal(squares, squares.concave_hull())
+        assert_geoseries_equal(self.squares, self.squares.concave_hull())
 
     @pytest.mark.skipif(
         not (compat.USE_SHAPELY_20),
@@ -824,8 +828,7 @@ class TestGeomMethods:
 
     def test_convex_hull(self):
         # the convex hull of a square should be the same as the square
-        squares = GeoSeries([self.sq for _ in range(3)])
-        assert_geoseries_equal(squares, squares.convex_hull)
+        assert_geoseries_equal(self.squares, self.squares.convex_hull)
 
     def test_exterior(self):
         exp_exterior = GeoSeries([LinearRing(p.boundary) for p in self.g3])
