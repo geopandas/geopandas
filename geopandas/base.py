@@ -618,7 +618,6 @@ GeometryCollection
         # TODO: return empty geometry for non-polygons
         return _delegate_property("exterior", self)
 
-    @property
     def extract_unique_points(self):
         """Returns a ``GeoSeries`` of MultiPoints representing all
         distinct vertices of an input geometry.
@@ -638,12 +637,12 @@ GeometryCollection
         1    POLYGON ((0.00000 0.00000, 0.00000 0.00000, 1....
         dtype: geometry
 
-        >>> s.extract_unique_points
+        >>> s.extract_unique_points()
         0    MULTIPOINT (0.00000 0.00000, 1.00000 1.00000)
         1    MULTIPOINT (0.00000 0.00000, 1.00000 1.00000)
         dtype: geometry
         """
-        return _delegate_property("extract_unique_points", self)
+        return _delegate_geo_method("extract_unique_points", self)
 
     @property
     def interiors(self):

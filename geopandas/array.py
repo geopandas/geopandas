@@ -525,7 +525,6 @@ class GeometryArray(ExtensionArray):
     def exterior(self):
         return GeometryArray(vectorized.exterior(self._data), crs=self.crs)
 
-    @property
     def extract_unique_points(self):
         return GeometryArray(vectorized.extract_unique_points(self._data), crs=self.crs)
 

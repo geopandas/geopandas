@@ -984,7 +984,7 @@ class TestGeomMethods:
         ),
     )
     def test_extract_unique_points(self):
-        eup = GeoSeries([self.t6]).extract_unique_points
+        eup = GeoSeries([self.t6]).extract_unique_points()
         expected = GeoSeries([MultiPoint([(2, 0), (3, 0)])])
         assert_series_equal(eup, expected)
 
@@ -996,7 +996,7 @@ class TestGeomMethods:
         with pytest.raises(
             NotImplementedError, match="shapely >= 2.0 or PyGEOS is required"
         ):
-            self.g1.extract_unique_points
+            self.g1.extract_unique_points()
 
     @pytest.mark.skipif(
         not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
