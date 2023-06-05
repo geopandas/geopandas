@@ -831,13 +831,13 @@ GeometryCollection
         return _delegate_geo_method("make_valid", self)
 
     def segmentize(self, max_segment_length):
-        """Adds vertices to line segments based on maximum segment length.
+        """Returns a ``GeoSeries`` with vertices added to line segments based on
+        maximum segment length.
 
         Additional vertices will be added to every line segment in an input geometry so
         that segments are no longer than the provided maximum segment length. New
         vertices will evenly subdivide each segment. Only linear components of input
-        geometries are densified; other geometries are returned unmodified. Returns a
-        ``Geoseries`` .
+        geometries are densified; other geometries are returned unmodified.
 
         Parameters
         ----------
@@ -849,6 +849,24 @@ GeometryCollection
         -------
         GeoSeries
 
+        Examples
+        --------
+        >>> from shapely.geometry import Polygon, LineString
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         LineString([(0, 0), (0, 10)]),
+        ...         Polygon([(0, 0), (10, 0), (10, 10), (0, 10), (0, 0)]),
+        ...     ],
+        ... )
+        >>> s
+        0       LINESTRING (0.00000 0.00000, 0.00000 10.00000)
+        1    POLYGON ((0.00000 0.00000, 10.00000 0.00000, 1...
+        dtype: geometry
+
+        >>> s.segmentize(max_segment_length=5)
+        0    LINESTRING (0.00000 0.00000, 0.00000 5.00000, ...
+        1    POLYGON ((0.00000 0.00000, 5.00000 0.00000, 10...
+        dtype: geometry
         """
         return _delegate_geo_method("segmentize", self, max_segment_length)
 
