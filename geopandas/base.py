@@ -501,6 +501,14 @@ GeometryCollection
         in the geometric object is less than three. For two points, the concave
         hull collapses to a `LineString`; for 1, a `Point`.
 
+        The hull is constructed by removing border triangles of the Delaunay
+        Triangulation of the points as long as their "size" is larger than the
+        maximum edge length ratio and optionally allowing holes. The edge length factor
+        is a fraction of the length difference between the longest and shortest edges
+        in the Delaunay Triangulation of the input points. For further information
+        on the algorithm used, see
+        https://libgeos.org/doxygen/classgeos_1_1algorithm_1_1hull_1_1ConcaveHull.html
+
         Parameters
         ----------
         ratio : float, (optional, default 0.0)
