@@ -649,14 +649,15 @@ GeometryCollection
         >>> s = geopandas.GeoSeries(
         ...     [
         ...         LineString([(0, 0), (0, 1), (1, 1)]),
-        ...     ]
+        ...     ],
+        ...     crs=3857
         ... )
         >>> s
-        0    LINESTRING (0.00000 0.00000, 0.00000 1.00000, ...
+        0    LINESTRING (0.000 0.000, 0.000 1.000, 1.000 1....
         dtype: geometry
 
         >>> s.offset_curve(1)
-        0    LINESTRING (-1.00000 0.00000, -1.00000 1.00000...
+        0    LINESTRING (-1.000 0.000, -1.000 1.000, -0.981...
         dtype: geometry
         """
         return _delegate_geo_method(
