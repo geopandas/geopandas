@@ -578,7 +578,6 @@ def test_read_file_url(engine, url):
 
 
 def test_read_file_local_uri(file_path, engine):
-    print(file_path)
     local_uri = "file://" + file_path
     gdf = read_file(local_uri, engine=engine)
     assert isinstance(gdf, geopandas.GeoDataFrame)
