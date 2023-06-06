@@ -1,6 +1,7 @@
 # Changelog
 
 ## Development version
+
 New methods:
 
 - Added ``delaunay_triangles`` method from shapely to GeoSeries/GeoDataframe.
