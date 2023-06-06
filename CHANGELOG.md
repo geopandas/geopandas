@@ -7,11 +7,19 @@ New features and improvements:
 
 Bug fixes:
 
+
+## Version 0.13.2 (Jun 6, 2023)
+
+Bug fix:
+
+- Fix a regression in reading from local file URIs (``file://..``) using
+  ``geopandas.read_file`` (#2948).
+
 ## Version 0.13.1 (Jun 5, 2023)
 
 Bug fix:
 
-- Fix the a regression in reading from URLs using ``geopandas.read_file`` (#2908). This
+- Fix a regression in reading from URLs using ``geopandas.read_file`` (#2908). This
   restores the behaviour to download all data up-front before passing it to the
   underlying engine (fiona or pyogrio), except if the server supports partial requests
   (to support reading a subset of a large file).
