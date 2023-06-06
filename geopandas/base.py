@@ -2220,6 +2220,7 @@ GeometryCollection
 
     def hausdorff_distance(self, other, align=True, densify=None):
         """Returns a ``Series`` containing the Hausdorff distance to aligned `other`.
+        
         The Hausdorff distance is the largest distance consisting of any point in `self`
         with the nearest point in `other`.
 
