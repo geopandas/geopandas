@@ -21,6 +21,8 @@ import urllib.request
 
 _VALID_URLS = set(uses_relative + uses_netloc + uses_params)
 _VALID_URLS.discard("")
+# file:// URIs are supported by fiona/pyogrio -> don't already open + read the file here
+_VALID_URLS.discard("file")
 
 
 fiona = None
@@ -260,10 +262,10 @@ def _read_file(filename, bbox=None, mask=None, rows=None, engine=None, **kwargs)
         # pyogrio/fiona as is (to support downloading only part of the file)
         # otherwise still download manually because pyogrio/fiona don't support
         # all types of urls (https://github.com/geopandas/geopandas/issues/2908)
-        request = urllib.request.urlopen(filename)
-        if not request.getheader("Accept-Ranges") == "bytes":
-            filename = request.read()
-            from_bytes = True
+        with urllib.request.urlopen(filename) as response:
+            if not response.headers.get("Accept-Ranges") == "bytes":
+                filename = response.read()
+                from_bytes = True
 
     if engine == "pyogrio":
         return _read_file_pyogrio(filename, bbox=bbox, mask=mask, rows=rows, **kwargs)
