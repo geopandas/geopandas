@@ -857,15 +857,16 @@ GeometryCollection
         ...         LineString([(0, 0), (0, 10)]),
         ...         Polygon([(0, 0), (10, 0), (10, 10), (0, 10), (0, 0)]),
         ...     ],
+        ...     crs=3857
         ... )
         >>> s
-        0       LINESTRING (0.00000 0.00000, 0.00000 10.00000)
-        1    POLYGON ((0.00000 0.00000, 10.00000 0.00000, 1...
+        0               LINESTRING (0.000 0.000, 0.000 10.000)
+        1    POLYGON ((0.000 0.000, 10.000 0.000, 10.000 10...
         dtype: geometry
 
         >>> s.segmentize(max_segment_length=5)
-        0    LINESTRING (0.00000 0.00000, 0.00000 5.00000, ...
-        1    POLYGON ((0.00000 0.00000, 5.00000 0.00000, 10...
+        0    LINESTRING (0.000 0.000, 0.000 5.000, 0.000 10...
+        1    POLYGON ((0.000 0.000, 5.000 0.000, 10.000 0.0...
         dtype: geometry
         """
         return _delegate_geo_method("segmentize", self, max_segment_length)
