@@ -34,7 +34,7 @@ Constructive methods
 .. method:: GeoSeries.delaunay_triangles(tolerance, preserve_topology=True)
 
   Returns a :class:`~geopandas.GeoSeries` consisting of polygons (default) or linestrings
-  (only_edges=True) representing the computed Delaunay triangulation around the vertices
+  (`only_edges=True`) representing the computed Delaunay triangulation around the vertices
   of an input geometry.
 
 .. attribute:: GeoSeries.envelope
