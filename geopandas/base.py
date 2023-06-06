@@ -630,17 +630,22 @@ GeometryCollection
         ...     [
         ...         LineString([(0, 0), (0, 0), (1, 1), (1, 1)]),
         ...         Polygon([(0, 0), (0, 0), (1, 1), (1, 1)])
-        ...     ]
+        ...     ],
+        ...     crs=3857
         ... )
         >>> s
-        0    LINESTRING (0.00000 0.00000, 0.00000 0.00000, ...
-        1    POLYGON ((0.00000 0.00000, 0.00000 0.00000, 1....
+        0    LINESTRING (0.000 0.000, 0.000 0.000, 1.000 1....
+        1    POLYGON ((0.000 0.000, 0.000 0.000, 1.000 1.00...
         dtype: geometry
 
         >>> s.extract_unique_points()
-        0    MULTIPOINT (0.00000 0.00000, 1.00000 1.00000)
-        1    MULTIPOINT (0.00000 0.00000, 1.00000 1.00000)
+        0    MULTIPOINT (0.000 0.000, 1.000 1.000)
+        1    MULTIPOINT (0.000 0.000, 1.000 1.000)
         dtype: geometry
+
+        See also
+        --------
+        GeoSeries.get_coordinates : extract coordinates as a :class:`~pandas.DataFrame`
         """
         return _delegate_geo_method("extract_unique_points", self)
 
