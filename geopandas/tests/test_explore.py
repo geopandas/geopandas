@@ -3,12 +3,12 @@ import numpy as np
 import pandas as pd
 import pytest
 from packaging.version import Version
-import geodatasets
 
 folium = pytest.importorskip("folium")
 branca = pytest.importorskip("branca")
 matplotlib = pytest.importorskip("matplotlib")
 mapclassify = pytest.importorskip("mapclassify")
+geodatasets = pytest.importorskip("geodatasets")
 
 import matplotlib.cm as cm  # noqa
 import matplotlib.colors as colors  # noqa
