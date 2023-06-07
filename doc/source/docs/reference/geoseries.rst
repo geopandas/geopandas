@@ -23,6 +23,7 @@ General methods and attributes
    GeoSeries.length
    GeoSeries.geom_type
    GeoSeries.distance
+   GeoSeries.hausdorff_distance
    GeoSeries.representative_point
    GeoSeries.exterior
    GeoSeries.interiors
@@ -31,7 +32,6 @@ General methods and attributes
    GeoSeries.y
    GeoSeries.z
    GeoSeries.get_coordinates
-   GeoSeries.hausdorff_distance
 
 Unary predicates
 ----------------
