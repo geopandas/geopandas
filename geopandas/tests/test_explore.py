@@ -174,6 +174,7 @@ class TestExplore:
         assert '"fillColor":"#21918c"' in out_str
         assert '"fillColor":"#5ec962"' in out_str
         assert '"fillColor":"#fde725"' in out_str
+        assert '"fillColor":"#440154"' in out_str
 
         # custom k
         m = self.world.explore(column="pop_est", scheme="naturalbreaks", k=3)
