@@ -9,8 +9,8 @@ branca = pytest.importorskip("branca")
 matplotlib = pytest.importorskip("matplotlib")
 mapclassify = pytest.importorskip("mapclassify")
 
-import matplotlib.cm as cm  # noqa
-import matplotlib.colors as colors  # noqa
+from matplotlib import cm
+from matplotlib import colors
 from branca.colormap import StepColormap
 
 BRANCA_05 = Version(branca.__version__) > Version("0.4.2")

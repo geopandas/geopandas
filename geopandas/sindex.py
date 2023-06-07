@@ -669,6 +669,7 @@ if compat.HAS_RTREE:
                 "PyGEOSSTRTreeIndex.nearest for details). This behavior will be "
                 "updated in a future release.",
                 FutureWarning,
+                stacklevel=2,
             )
             return super().nearest(
                 coordinates, num_results=num_results, objects=objects

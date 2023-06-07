@@ -1534,7 +1534,10 @@ individually so that features may have different properties
                 if key == "geometry":
                     self._persist_old_default_geometry_colname()
             except TypeError:
-                warnings.warn("Geometry column does not contain geometry.")
+                warnings.warn(
+                    "Geometry column does not contain geometry.",
+                    stacklevel=1,
+                )
         super().__setitem__(key, value)
 
     #
@@ -2178,7 +2181,7 @@ individually so that features may have different properties
         GeoDataFrame.sjoin_nearest : nearest neighbor join
         sjoin : equivalent top-level function
         """
-        return geopandas.sjoin(left_df=self, right_df=df, *args, **kwargs)
+        return geopandas.sjoin(left_df=self, right_df=df, *args, **kwargs)  # noqa: B026
 
     def sjoin_nearest(
         self,

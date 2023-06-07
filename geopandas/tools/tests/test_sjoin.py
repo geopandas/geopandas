@@ -136,7 +136,7 @@ class TestSpatialJoin:
         if op != predicate:
             warntype = UserWarning
             match = (
-                "`predicate` will be overridden by the value of `op`"
+                "`predicate` will be overridden by the value of `op`"  # noqa: ISC003
                 + r"(.|\s)*"
                 + match
             )

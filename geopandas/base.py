@@ -28,7 +28,10 @@ def _delegate_binary_method(op, this, other, align, *args, **kwargs):
     this = this.geometry
     if isinstance(other, GeoPandasBase):
         if align and not this.index.equals(other.index):
-            warn("The indices of the two GeoSeries are different.")
+            warn(
+                "The indices of the two GeoSeries are different.",
+                stacklevel=1,
+            )
             this, other = this.align(other.geometry)
         else:
             other = other.geometry
@@ -3820,7 +3823,10 @@ class _CoordinateIndexer(object):
             ys = slice(ys, ys)
         # don't know how to handle step; should this raise?
         if xs.step is not None or ys.step is not None:
-            warn("Ignoring step - full interval is used.")
+            warn(
+                "Ignoring step - full interval is used.",
+                stacklevel=1,
+            )
         if xs.start is None or xs.stop is None or ys.start is None or ys.stop is None:
             xmin, ymin, xmax, ymax = obj.total_bounds
         bbox = box(
