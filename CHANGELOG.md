@@ -7,6 +7,7 @@ New features and improvements:
 
 Bug fixes:
 
+- Fix a color assignment in ``explore`` when using ``UserDefined`` bins (#2923)
 
 ## Version 0.13.2 (Jun 6, 2023)
 
