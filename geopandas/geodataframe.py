@@ -938,7 +938,7 @@ individually so that features may have different properties
                         if not na
                     }
                 else:
-                    properties_items = {k: v for k, v in zip(properties_cols, row)}
+                    properties_items = dict(zip(properties_cols, row))
 
                 if drop_id:
                     feature = {}
@@ -1770,9 +1770,13 @@ individually so that features may have different properties
         if by is None and level is None:
             by = np.zeros(len(self), dtype="int64")
 
-        groupby_kwargs = dict(
-            by=by, level=level, sort=sort, observed=observed, dropna=dropna
-        )
+        groupby_kwargs = {
+            "by": by,
+            "level": level,
+            "sort": sort,
+            "observed": observed,
+            "dropna": dropna,
+        }
 
         # Process non-spatial component
         data = self.drop(labels=self.geometry.name, axis=1)

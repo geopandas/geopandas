@@ -259,7 +259,7 @@ def _geopandas_to_arrow(df, index=None, schema_version=None):
 
     kwargs = {}
     if compat.USE_SHAPELY_20:
-        kwargs = dict(flavor="iso")
+        kwargs = {"flavor": "iso"}
     else:
         for col in df.columns[df.dtypes == "geometry"]:
             series = df[col]

@@ -631,7 +631,7 @@ def test_fsspec_url():
     with memfs.open("data.parquet", "wb") as f:
         df.to_parquet(f)
 
-    result = read_parquet("memory://data.parquet", storage_options=dict(is_set=True))
+    result = read_parquet("memory://data.parquet", storage_options={"is_set": True})
     assert_geodataframe_equal(result, df)
 
     result = read_parquet("memory://data.parquet", filesystem=memfs)

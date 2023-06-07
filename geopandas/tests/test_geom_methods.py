@@ -918,7 +918,7 @@ class TestGeomMethods:
         assert geom_almost_equals(expected, calculated)
 
     def test_buffer_args(self):
-        args = dict(cap_style=3, join_style=2, mitre_limit=2.5)
+        args = {"cap_style": 3, "join_style": 2, "mitre_limit": 2.5}
         calculated_series = self.g0.buffer(10, **args)
         for original, calculated in zip(self.g0, calculated_series):
             if original is None:

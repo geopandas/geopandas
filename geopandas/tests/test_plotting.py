@@ -23,13 +23,12 @@ from shapely.geometry import (
 from geopandas import GeoDataFrame, GeoSeries, read_file
 from geopandas.datasets import get_path
 import geopandas._compat as compat
-from geopandas.plotting import GeoplotAccessor
 
 import pytest
 
 matplotlib = pytest.importorskip("matplotlib")
 matplotlib.use("Agg")
-import matplotlib.pyplot as plt  # noqa
+import matplotlib.pyplot as plt
 
 try:  # skipif and importorskip do not work for decorators
     from matplotlib.testing.decorators import check_figures_equal
@@ -1137,7 +1136,7 @@ class TestMapclassifyPlotting:
     @classmethod
     def setup_class(cls):
         try:
-            import mapclassify  # noqa
+            import mapclassify
         except ImportError:
             pytest.importorskip("mapclassify")
         cls.mc = mapclassify
@@ -1313,10 +1312,8 @@ class TestMapclassifyPlotting:
             ]
         )
         assert all(
-            [
-                (z == expected).all(axis=1).any()
-                for z in ax.collections[0].get_facecolors()
-            ]
+            (z == expected).all(axis=1).any()
+            for z in ax.collections[0].get_facecolors()
         )
         labels = [
             "0.00, 0.10",
@@ -1366,10 +1363,8 @@ class TestMapclassifyPlotting:
             ]
         )
         assert all(
-            [
-                (z == expected).all(axis=1).any()
-                for z in ax2.collections[0].get_facecolors()
-            ]
+            (z == expected).all(axis=1).any()
+            for z in ax2.collections[0].get_facecolors()
         )
 
         labels = [
@@ -1404,10 +1399,8 @@ class TestMapclassifyPlotting:
             ]
         )
         assert all(
-            [
-                (z == expected).all(axis=1).any()
-                for z in ax3.collections[0].get_facecolors()
-            ]
+            (z == expected).all(axis=1).any()
+            for z in ax3.collections[0].get_facecolors()
         )
 
         legend = [t.get_text() for t in ax3.get_legend().get_texts()]
@@ -1434,7 +1427,7 @@ class TestMapclassifyPlotting:
         assert labels == expected
 
         ax2 = self.nybb.plot(
-            "vals", scheme="quantiles", legend=True, legend_kwds=dict(fmt="{:.3f}")
+            "vals", scheme="quantiles", legend=True, legend_kwds={"fmt": "{:.3f}"}
         )
         labels = [t.get_text() for t in ax2.get_legend().get_texts()]
         expected = [
@@ -1748,8 +1741,6 @@ class TestGeoplotAccessor:
 
     _pandas_kinds = []
 
-    _pandas_kinds = GeoplotAccessor._pandas_kinds
-
     if MPL_DECORATORS:
 
         @pytest.mark.parametrize("kind", _pandas_kinds)
@@ -1876,7 +1867,7 @@ def _check_colors(N, actual_colors, expected_colors, alpha=None):
         `expected_colors`. (Any transparency on the `collection` is assumed
         to be set in its own facecolor RGBA tuples.)
     """
-    import matplotlib.colors as colors
+    from matplotlib import colors
 
     conv = colors.colorConverter
 

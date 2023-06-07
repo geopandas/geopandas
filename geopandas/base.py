@@ -3257,7 +3257,7 @@ GeometryCollection
         2    POLYGON ((8.00000 4.00000, 13.00000 10.00000, ...
         dtype: geometry
 
-        """  # noqa (E501 link is longer than max line length)
+        """  # (E501 link is longer than max line length)
         return _delegate_geo_method("affine_transform", self, matrix)
 
     def translate(self, xoff=0.0, yoff=0.0, zoff=0.0):
@@ -3295,7 +3295,7 @@ GeometryCollection
         2    POLYGON ((5.00000 2.00000, 6.00000 3.00000, 5....
         dtype: geometry
 
-        """  # noqa (E501 link is longer than max line length)
+        """  # (E501 link is longer than max line length)
         return _delegate_geo_method("translate", self, xoff, yoff, zoff)
 
     def rotate(self, angle, origin="center", use_radians=False):

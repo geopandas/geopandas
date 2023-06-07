@@ -49,7 +49,7 @@ INSTALL_PYGEOS_ERROR = "To use PyGEOS within GeoPandas, you need to install PyGE
 'conda install pygeos' or 'pip install pygeos'"
 
 try:
-    import pygeos  # noqa
+    import pygeos
 
     # only automatically use pygeos if version is high enough
     if Version(pygeos.__version__) >= Version("0.8"):
@@ -95,7 +95,7 @@ def set_use_pygeos(val=None):
     # validate the pygeos version
     if USE_PYGEOS:
         try:
-            import pygeos  # noqa
+            import pygeos
 
             # validate the pygeos version
             if not Version(pygeos.__version__) >= Version("0.8"):
