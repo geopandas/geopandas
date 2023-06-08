@@ -1061,6 +1061,10 @@ class TestRtreeIndex:
         res = self.df.query(test_geom, predicate="dwithin", distance=distance)
         assert_array_equal(res, expected)
 
+    @pytest.mark.skipif(
+        not TEST_DWITHIN,
+        reason="Requires either Shapely 2.0 or PyGEOS 0.12, and GEOS 3.10",
+    )
     def test_distance_Rtree_shape(self):
         """Tests whether ValueError raised for mismatching geometry and distance"""
         with pytest.raises(
