@@ -548,6 +548,10 @@ if compat.HAS_RTREE:
 
                 for i, geo in enumerate(geometry):
                     if hasattr(distance, "__iter__"):
+                        if len(distance) != len(geometry):
+                            raise ValueError(
+                                "Could not broadcast distance to match geometry"
+                            )
                         dist = distance[i]
                     else:
                         dist = distance

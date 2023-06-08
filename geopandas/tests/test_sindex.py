@@ -1061,6 +1061,17 @@ class TestRtreeIndex:
         res = self.df.query(test_geom, predicate="dwithin", distance=distance)
         assert_array_equal(res, expected)
 
+    def test_distance_Rtree_shape(self):
+        """Tests whether ValueError raised for mismatching geometry and distance"""
+        with pytest.raises(
+            ValueError, match="Could not broadcast distance to match geometry"
+        ):
+            self.df.query(
+                np.array([Point(0, 0), Point(1, 1)]),
+                predicate="dwithin",
+                distance=[1, 2, 3],
+            )
+
     @pytest.mark.skipif(
         TEST_DWITHIN,
         reason="Test requires shapely or pyGEOS versions without 'dwithin'",
