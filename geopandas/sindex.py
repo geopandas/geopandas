@@ -547,9 +547,12 @@ if compat.HAS_RTREE:
                 input_geometry_index = []
 
                 for i, geo in enumerate(geometry):
-                    res = self.query(
-                        geo, predicate=predicate, sort=sort, distance=distance
-                    )
+                    if hasattr(distance, "__iter__"):
+                        dist = distance[i]
+                    else:
+                        dist = distance
+
+                    res = self.query(geo, predicate=predicate, sort=sort, distance=dist)
                     tree_index.extend(res)
                     input_geometry_index.extend([i] * len(res))
                 return np.vstack([input_geometry_index, tree_index])
@@ -577,22 +580,21 @@ if compat.HAS_RTREE:
                     raise ValueError(
                         "'distance' parameter is required for 'dwithin' predicate"
                     )
-                tree_idx = np.arange(
-                    self.size, dtype=np.intp
-                )  # all indices, already sorted
+                # all indices, pre-sorted
+                tree_idx = np.arange(self.size, dtype=np.intp)
+                # select indices within distance
                 tree_idx = tree_idx[
                     geometry.dwithin(self.geometries, distance=distance)
-                ]  # those indices within distance
+                ]
                 return tree_idx
-            else:
-                # Predicate is not 'dwithin', therefore distance parameter is invalid
-                if distance is not None:
-                    raise ValueError(
-                        "predicate = {} got an unexpected keyword argument \
-                            'distance'".format(
-                            predicate
-                        )
+
+            elif distance is not None:
+                # distance parameter is invalid
+                raise ValueError(
+                    "predicate = {} got unexpected keyword argument 'distance'".format(
+                        predicate
                     )
+                )
 
             # query tree
             bounds = geometry.bounds  # rtree operates on bounds
@@ -834,21 +836,21 @@ if compat.SHAPELY_GE_20 or compat.HAS_PYGEOS:
 
             kwargs = {}
             if predicate == "dwithin":
-                if distance is not None:
+                if distance is None:
                     # the distance parameter is needed
-                    kwargs["distance"] = distance
-                else:
                     raise ValueError(
                         "'distance' parameter is required for 'dwithin' predicate"
                     )
-            else:
-                if distance is not None:
-                    raise ValueError(
-                        "predicate = {} got an unexpected keyword argument \
-                            'distance'".format(
-                            predicate
-                        )
+                # add distance to kwargs
+                kwargs["distance"] = distance
+
+            elif distance is not None:
+                # distance parameter is invalid
+                raise ValueError(
+                    "predicate = {} got unexpected keyword argument 'distance'".format(
+                        predicate
                     )
+                )
 
             geometry = self._as_geometry_array(geometry)
 

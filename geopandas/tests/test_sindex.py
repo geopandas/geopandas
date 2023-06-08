@@ -405,51 +405,54 @@ class TestPygeosInterface:
     @pytest.mark.parametrize(
         "distance, test_geom, expected",
         (
+            # bounds don't intersect and not within distance=0
             (
                 0,
                 box(9.0, 9.0, 9.9, 9.9),
                 [],
             ),
-            # bounds don't intersect and not within distance=0
+            # bounds don't intersect but is within distance=1
             (
                 1,
                 box(9.0, 9.0, 9.9, 9.9),
                 [5],
             ),
-            # bounds don't intersect but is within distance=1
+            # within 1-D absolute distance in both axes, but not euclidean distance
             (
                 0.5,
                 Point(0.5, 0.5),
                 [],
             ),
-            # within 1-D absolute distance in both axes, but not euclidean distance
+            # same as before but within euclidean distance
             (
                 sqrt(2 * 0.5**2) + 1e-9,
                 Point(0.5, 0.5),
                 [0, 1],
             ),
-            # same as before but within euclidean distance
+            # less than euclidean distance between points, multi-object
             (
                 sqrt(2) - 1e-9,
-                # less than euclidean distance between points
                 [
                     Polygon([(0, 0), (1, 0), (1, 1)]),
                     Polygon([(1, 1), (2, 1), (2, 2)]),
                 ],  # multi-object test
                 [[0, 0, 1, 1], [0, 1, 1, 2]],
             ),
-            # as array
+            # more than euclidean distance between points, multi-object
             (
                 sqrt(2) + 1e-9,
-                # more than euclidean distance between points
                 [
                     Polygon([(0, 0), (1, 0), (1, 1)]),
                     Polygon([(1, 1), (2, 1), (2, 2)]),
                 ],
-                # multi-object test
                 [[0, 0, 0, 1, 1, 1, 1], [0, 1, 2, 0, 1, 2, 3]],
             ),
-            # as array
+            # distance is array-like, broadcastable to geometry
+            (
+                [2, 10],
+                [Point(0.5, 0.5), Point(1, 1)],
+                [[0, 0, 1, 1, 1, 1, 1], [0, 1, 0, 1, 2, 3, 4]],
+            ),
         ),
     )
     def test_query_dwithin(self, distance, test_geom, expected):
@@ -490,8 +493,7 @@ class TestPygeosInterface:
         invalid for certain predicates."""
         with pytest.raises(
             ValueError,
-            match="predicate = {} got an unexpected keyword argument \
-                            'distance'".format(
+            match="predicate = {} got unexpected keyword argument 'distance'".format(
                 predicate
             ),
         ):
@@ -1022,26 +1024,36 @@ class TestRtreeIndex:
     @pytest.mark.parametrize(
         "distance, test_geom, expected",
         (
+            # bounds don't intersect and not within distance=0
             (
                 0,
                 box(9.0, 9.0, 9.9, 9.9),
                 [],
-            ),  # bounds don't intersect and not within distance=0
+            ),
+            # bounds don't intersect but is within distance=1
             (
                 1,
                 box(9.0, 9.0, 9.9, 9.9),
                 [5],
-            ),  # bounds don't intersect but is within distance=1
+            ),
+            # within 1-D absolute distance in both axes, but not euclidean distance
             (
                 0.5,
                 Point(0.5, 0.5),
                 [],
-            ),  # within 1-D absolute distance in both axes, but not euclidean distance
+            ),
+            # same as before but within euclidean distance
             (
                 sqrt(2 * 0.5**2) + 1e-9,
                 Point(0.5, 0.5),
                 [0, 1],
-            ),  # same as before but within euclidean distance
+            ),
+            # distance is array-like, broadcastable to geometry
+            (
+                [2, 10],
+                np.array([Point(0.5, 0.5), Point(1, 1)]),
+                [[0, 0, 1, 1, 1, 1, 1], [0, 1, 0, 1, 2, 3, 4]],
+            ),
         ),
     )
     def test_query_dwithin_Rtree(self, distance, test_geom, expected):
