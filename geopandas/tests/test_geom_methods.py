@@ -1005,6 +1005,18 @@ class TestGeomMethods:
         assert_series_equal(node, expected)
 
     @pytest.mark.skipif(
+        compat.SHAPELY_GE_20,
+        reason="node is implemented for shapely >= 2.0",
+    )
+    def test_node_not_implemented_shapely_pre2(self):
+        with pytest.raises(
+            NotImplementedError,
+            match=f"shapely >= 2.0 is required, "
+            f"version {shapely.__version__} is installed",
+        ):
+            self.g1.concave_hull()
+
+    @pytest.mark.skipif(
         not (compat.USE_PYGEOS),
         reason="get_coordinates only implemented for shapely>2",
     )

@@ -703,6 +703,12 @@ def minimum_bounding_radius(data):
 def node(data):
     if compat.USE_SHAPELY_20:
         return shapely.node(data)
+    if compat.USE_PYGEOS and compat.SHAPELY_GE_20:
+        warnings.warn(
+            "PyGEOS does not support node, and Shapely >= 2 is installed, "
+            "thus using Shapely and not PyGEOS for calculating the concave_hull.",
+            stacklevel=4,
+        )
     else:
         raise NotImplementedError(
             f"shapely >= 2.0 is required, "
