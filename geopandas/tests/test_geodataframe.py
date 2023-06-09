@@ -976,7 +976,7 @@ class TestDataFrame:
     @pytest.mark.parametrize("how", ["left", "inner", "right"])
     @pytest.mark.parametrize("predicate", ["intersects", "within", "contains"])
     @pytest.mark.skipif(
-        not (compat.USE_PYGEOS and compat.HAS_RTREE and compat.USE_SHAPELY_20),
+        not (compat.USE_PYGEOS or compat.USE_SHAPELY_20 or compat.HAS_RTREE),
         reason="sjoin needs `rtree` or `pygeos` dependency",
     )
     def test_sjoin(self, how, predicate):
