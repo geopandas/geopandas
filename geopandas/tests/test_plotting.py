@@ -23,6 +23,7 @@ from shapely.geometry import (
 from geopandas import GeoDataFrame, GeoSeries, read_file
 from geopandas.datasets import get_path
 import geopandas._compat as compat
+from geopandas.plotting import GeoplotAccessor
 
 import pytest
 
@@ -1739,7 +1740,7 @@ class TestGeoplotAccessor:
         ax_geopandas_2 = fig_ref.subplots()
         getattr(self.gdf.plot, kind)(ax=ax_geopandas_2, **kwargs)
 
-    _pandas_kinds = []
+    _pandas_kinds = GeoplotAccessor._pandas_kinds
 
     if MPL_DECORATORS:
 
