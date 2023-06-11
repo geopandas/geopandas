@@ -2,8 +2,11 @@
 
 ## Development version
 
-New features and improvements:
+New methods:
 
+- Added ``offset_curve`` method from shapely to GeoSeries/GeoDataframe.
+
+New features and improvements:
 
 Bug fixes:
 

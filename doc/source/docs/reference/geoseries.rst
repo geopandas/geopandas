@@ -22,6 +22,7 @@ General methods and attributes
    GeoSeries.total_bounds
    GeoSeries.length
    GeoSeries.geom_type
+   GeoSeries.offset_curve
    GeoSeries.distance
    GeoSeries.representative_point
    GeoSeries.exterior
