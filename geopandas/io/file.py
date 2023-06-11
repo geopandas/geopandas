@@ -547,10 +547,16 @@ def _to_file(
 
 
 def _to_file_fiona(df, filename, driver, schema, crs, mode, metadata, **kwargs):
-    if metadata is not None and driver != "GPKG":
-        raise NotImplementedError(
-            "The 'metadata' keyword is only supported for the GPKG driver."
-        )
+    if metadata is not None:
+        if driver != "GPKG":
+            raise NotImplementedError(
+                "The 'metadata' keyword is only supported for the GPKG driver."
+            )
+
+        if not FIONA_GE_19:
+            raise NotImplementedError(
+                "The 'metadata' keyword is only supported for Fiona >= 1.9."
+            )
 
     if schema is None:
         schema = infer_schema(df)

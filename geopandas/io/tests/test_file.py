@@ -1133,12 +1133,24 @@ def test_to_file__metadata(tmpdir, df_points, engine):
     skip_pyogrio_not_supported(engine)
     metadata = {"title": "test"}
     tempfilename = os.path.join(str(tmpdir), "test.gpkg")
-    df_points.to_file(tempfilename, driver="GPKG", engine="fiona", metadata=metadata)
 
-    # Check that metadata is written to the file
-    with fiona.open(tempfilename) as src:
-        tags = src.tags()
-        assert tags == metadata
+    if FIONA_GE_19:
+        df_points.to_file(
+            tempfilename, driver="GPKG", engine="fiona", metadata=metadata
+        )
+
+        # Check that metadata is written to the file
+        with fiona.open(tempfilename) as src:
+            tags = src.tags()
+            assert tags == metadata
+    else:
+        with pytest.raises(
+            NotImplementedError,
+            match="'metadata' keyword is only supported for Fiona >= 1.9",
+        ):
+            df_points.to_file(
+                tempfilename, driver="GPKG", engine="fiona", metadata=metadata
+            )
 
 
 @pytest.mark.parametrize(
