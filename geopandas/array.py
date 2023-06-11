@@ -530,6 +530,18 @@ class GeometryArray(ExtensionArray):
     def exterior(self):
         return GeometryArray(vectorized.exterior(self._data), crs=self.crs)
 
+    def offset_curve(self, distance, quad_segs=8, join_style="round", mitre_limit=5.0):
+        return GeometryArray(
+            vectorized.offset_curve(
+                self._data,
+                distance,
+                quad_segs=quad_segs,
+                join_style=join_style,
+                mitre_limit=mitre_limit,
+            ),
+            crs=self.crs,
+        )
+
     @property
     def interiors(self):
         # no GeometryArray as result
