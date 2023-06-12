@@ -811,7 +811,7 @@ class TestGeomMethods:
         assert_geoseries_equal(self.squares, self.squares.concave_hull())
 
     @pytest.mark.skipif(
-        not (compat.USE_SHAPELY_20),
+        not compat.USE_SHAPELY_20,
         reason="concave_hull is only implemented for shapely >= 2.0",
     )
     @pytest.mark.parametrize(
