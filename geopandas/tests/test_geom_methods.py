@@ -801,7 +801,11 @@ class TestGeomMethods:
                 Polygon([(1, 0), (0, 0), (0, 1), (1, 1), (1, 0)]),
             ]
         )
-        assert_geoseries_equal(expected, self.g5.concave_hull())
+        with pytest.warns(
+            UserWarning,
+            match="PyGEOS does not support concave_hull, and Shapely >= 2 is installed",
+        ):
+            assert_geoseries_equal(expected, self.g5.concave_hull())
 
     @pytest.mark.skipif(
         not compat.USE_SHAPELY_20,
