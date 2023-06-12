@@ -192,9 +192,10 @@ def test_to_wkb():
 def test_from_wkt(string_type):
     if string_type == "str":
         f = str
+    else:
 
-    def f(x):
-        return bytes(x, "utf8")
+        def f(x):
+            return bytes(x, "utf8")
 
     # list
     L_wkt = [f(p.wkt) for p in points_no_missing]
