@@ -2781,6 +2781,73 @@ GeometryCollection
             bounds, columns=["minx", "miny", "maxx", "maxy"], index=self.index
         )
 
+    def shortest_line(self, other):
+        """
+        Returns the shortest two-point line between two geometries.
+
+        The resulting line consists of two points, representing the nearest points
+        between the geometry pair. The line always starts in the first geometry a
+        and ends in he second geometry b. The endpoints of the line will not
+        necessarily be existing vertices of the input geometries a and b, but
+        can also be a point along a line segment.
+
+
+        Parameters
+        ----------
+        other : Geoseries or geometric object
+            The Geoseries (elementwise) or geometric object to find the
+            shortest line with.
+
+        Returns
+        -------
+        GeoSeries
+
+        Examples
+        --------
+        >>> from shapely.geometry import Polygon, LineString, Point
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0, 0), (2, 2), (0, 2)]),
+        ...         Polygon([(0, 0), (2, 2), (0, 2)]),
+        ...         LineString([(0, 0), (2, 2)]),
+        ...         LineString([(2, 0), (0, 2)]),
+        ...         Point(0, 1),
+        ...     ],
+        ... )
+        >>> s
+        0    POLYGON ((0.000 0.000, 2.000 2.000, 0.000 2.00...
+        1    POLYGON ((0.000 0.000, 2.000 2.000, 0.000 2.00...
+        2                LINESTRING (0.000 0.000, 2.000 2.000)
+        3                LINESTRING (2.000 0.000, 0.000 2.000)
+        4                                  POINT (0.000 1.000)
+        dtype: geometry
+        >>> p = Point(3, 3)
+        >>> s.shortest_line(p)
+        0    LINESTRING (2.00000 2.00000, 3.00000 3.00000)
+        1    LINESTRING (2.00000 2.00000, 3.00000 3.00000)
+        2    LINESTRING (2.00000 2.00000, 3.00000 3.00000)
+        3    LINESTRING (1.00000 1.00000, 3.00000 3.00000)
+        4    LINESTRING (0.00000 1.00000, 3.00000 3.00000)
+        dtype: geometry
+        >>> s2 = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0.5, 0.5), (1.5, 0.5), (1.5, 1.5), (0.5, 1.5)]),
+        ...         Point(3, 1),
+        ...         LineString([(1, 0), (2, 0)]),
+        ...         Point(10, 15),
+        ...         Point(0, 1),
+        ...     ],
+        ... )
+        >>> s.shortest_line(s2)
+        0      LINESTRING (0.50000 0.50000, 0.50000 0.50000)
+        1      LINESTRING (2.00000 2.00000, 3.00000 1.00000)
+        2      LINESTRING (0.50000 0.50000, 1.00000 0.00000)
+        3    LINESTRING (0.00000 2.00000, 10.00000 15.00000)
+        4      LINESTRING (0.00000 1.00000, 0.00000 1.00000)
+        dtype: geometry
+        """
+        return _delegate_geo_method("shortest_line", self, other)
+
     @property
     def total_bounds(self):
         """Returns a tuple containing ``minx``, ``miny``, ``maxx``, ``maxy``
