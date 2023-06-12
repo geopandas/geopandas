@@ -4,8 +4,8 @@
 
 New methods:
 
-- Added ``concave_hull`` method from shapely to GeoSeries/GeoDataframe.
-- Added ``offset_curve`` method from shapely to GeoSeries/GeoDataframe.
+- Added ``concave_hull`` method from shapely to GeoSeries/GeoDataframe. (#2903)
+- Added ``offset_curve`` method from shapely to GeoSeries/GeoDataframe. (#2010)
 
 New features and improvements:
 
