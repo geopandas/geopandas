@@ -360,6 +360,18 @@ class TestGeomMethods:
         expected = GeoSeries([self.t1, self.t1])
         self._test_binary_topological("difference", expected, self.g1, self.t2)
 
+    def test_shortest_line(self):
+        expected = GeoSeries([LineString([(1, 1), (5, 5)]), None])
+        assert_array_dtype_equal(expected, self.na_none.shortest_line(self.p0))
+
+        expected = GeoSeries(
+            [
+                LineString([(5, 5), (1, 1)]),
+                LineString([(2, 0), (2, 0)]),
+            ]
+        )
+        assert_array_dtype_equal(expected, self.g6.shortest_line(self.g7))
+
     def test_geo_op_empty_result(self):
         l1 = LineString([(0, 0), (1, 1)])
         l2 = LineString([(2, 2), (3, 3)])
