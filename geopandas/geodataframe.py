@@ -1536,7 +1536,7 @@ individually so that features may have different properties
             except TypeError:
                 warnings.warn(
                     "Geometry column does not contain geometry.",
-                    stacklevel=1,
+                    stacklevel=2,
                 )
         super().__setitem__(key, value)
 

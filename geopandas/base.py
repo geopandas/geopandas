@@ -30,7 +30,7 @@ def _delegate_binary_method(op, this, other, align, *args, **kwargs):
         if align and not this.index.equals(other.index):
             warn(
                 "The indices of the two GeoSeries are different.",
-                stacklevel=1,
+                stacklevel=4,
             )
             this, other = this.align(other.geometry)
         else:
@@ -3825,7 +3825,7 @@ class _CoordinateIndexer(object):
         if xs.step is not None or ys.step is not None:
             warn(
                 "Ignoring step - full interval is used.",
-                stacklevel=1,
+                stacklevel=2,
             )
         if xs.start is None or xs.stop is None or ys.start is None or ys.stop is None:
             xmin, ymin, xmax, ymax = obj.total_bounds

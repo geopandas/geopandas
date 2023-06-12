@@ -1487,7 +1487,7 @@ def _get_common_crs(arr_seq):
                 "CRS not set for some of the concatenation inputs. "
                 f"Setting output's CRS as {names[0]} "
                 "(the single non-null crs provided).",
-                stacklevel=1,
+                stacklevel=2
             )
         return crs_not_none[0]
 
