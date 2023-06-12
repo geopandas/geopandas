@@ -791,7 +791,7 @@ class TestGeomMethods:
             self.squares.concave_hull()
 
     @pytest.mark.skipif(
-        not (compat.USE_PYGEOS) and not (compat.SHAPELY_GE_20),
+        not (compat.USE_PYGEOS and compat.SHAPELY_GE_20),
         reason="concave_hull is only implemented for shapely >= 2.0",
     )
     def test_concave_hull_pygeos_set_shapely_installed(self):
