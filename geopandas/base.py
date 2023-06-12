@@ -645,10 +645,61 @@ GeometryCollection
 
         See also
         --------
+        
         GeoSeries.get_coordinates : extract coordinates as a :class:`~pandas.DataFrame`
         """
         return _delegate_geo_method("extract_unique_points", self)
-
+      
+    def offset_curve(self, distance, quad_segs=8, join_style="round", mitre_limit=5.0):
+        """Returns a ``LineString`` or ``MultiLineString`` geometry at a
+        distance from the object on its right or its left side.
+        Parameters
+        ----------
+        distance : float | array-like
+            Specifies the offset distance from the input geometry. Negative
+            for right side offset, positive for left side offset.
+        quad_segs : int (optional, default 8)
+            Specifies the number of linear segments in a quarter circle in the
+            approximation of circular arcs.
+        join_style : {'round', 'bevel', 'mitre'}, (optional, default 'round')
+            Specifies the shape of outside corners. 'round' results in
+            rounded shapes. 'bevel' results in a beveled edge that touches the
+            original vertex. 'mitre' results in a single vertex that is beveled
+            depending on the ``mitre_limit`` parameter.
+        mitre_limit : float (optional, default 5.0)
+            Crops of 'mitre'-style joins if the point is displaced from the
+            buffered vertex by more than this limit.
+            
+        See http://shapely.readthedocs.io/en/latest/manual.html#object.offset_curve
+        for details.
+        
+        Examples
+        --------
+        
+        >>> from shapely.geometry import LineString
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         LineString([(0, 0), (0, 1), (1, 1)]),
+        ...     ],
+        ...     crs=3857
+        ... )
+        >>> s
+        0    LINESTRING (0.000 0.000, 0.000 1.000, 1.000 1....
+        dtype: geometry
+        
+        >>> s.offset_curve(1)
+        0    LINESTRING (-1.000 0.000, -1.000 1.000, -0.981...
+        dtype: geometry
+        """
+        return _delegate_geo_method(
+            "offset_curve",
+            self,
+            distance,
+            quad_segs=quad_segs,
+            join_style=join_style,
+            mitre_limit=mitre_limit,
+        )
+    
     @property
     def interiors(self):
         """Returns a ``Series`` of List representing the

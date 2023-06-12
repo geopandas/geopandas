@@ -649,6 +649,24 @@ def extract_unique_points(data):
             f"version {shapely.__version__} is installed"
         )
 
+      
+def offset_curve(data, distance, quad_segs=8, join_style="round", mitre_limit=5.0):
+    if compat.USE_SHAPELY_20:
+        return shapely.offset_curve(
+            data,
+            distance=distance,
+            quad_segs=quad_segs,
+            join_style=join_style,
+            mitre_limit=mitre_limit,
+        )
+    elif compat.USE_PYGEOS:
+        return pygeos.offset_curve(data, distance, quad_segs, join_style, mitre_limit)
+    else:
+        raise NotImplementedError(
+            f"shapely >= 2.0 or PyGEOS is required, "
+            f"version {shapely.__version__} is installed"
+        )
+
 
 def interiors(data):
     data = to_shapely(data)
