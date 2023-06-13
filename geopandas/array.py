@@ -637,6 +637,10 @@ class GeometryArray(ExtensionArray):
         self.check_geographic_crs(stacklevel=6)
         return self._binary_method("distance", self, other)
 
+    def frechet_distance(self, other, **kwargs):
+        self.check_geographic_crs(stacklevel=6)
+        return self._binary_method("frechet_distance", self, other, **kwargs)
+
     def buffer(self, distance, resolution=16, **kwargs):
         if not (isinstance(distance, (int, float)) and distance == 0):
             self.check_geographic_crs(stacklevel=5)

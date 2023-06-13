@@ -170,6 +170,11 @@ class TestGeomMethods:
             ]
         )
 
+        self.l5 = LineString([(100, 0), (0, 0), (0, 100)])
+        self.l6 = LineString([(5, 5), (5, 100), (100, 5)])
+        self.g12 = GeoSeries([self.l5])
+        self.g13 = GeoSeries([self.l6])
+
     def _test_unary_real(self, op, expected, a):
         """Tests for 'area', 'length', 'is_valid', etc."""
         fcmp = assert_series_equal
@@ -563,6 +568,56 @@ class TestGeomMethods:
     def test_distance_crs_warning(self):
         with pytest.warns(UserWarning, match="Geometry is in a geographic CRS"):
             self.g4.distance(self.p0)
+
+    @pytest.mark.skipif(
+        not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+        reason="requires frechet_distance in shapely 2.0+",
+    )
+    def test_frechet_distance(self):
+        # closest point is (0, 0) in self.p1
+        expected = Series(
+            np.array([np.sqrt(5**2 + 5**2), np.nan]), self.na_none.index
+        )
+        assert_array_dtype_equal(expected, self.na_none.frechet_distance(self.p0))
+
+        expected = Series(
+            np.array([np.sqrt(5**2 + 5**2), np.nan]), self.na_none.index
+        )
+        assert_array_dtype_equal(expected, self.na_none.frechet_distance(self.p0))
+
+        expected = Series(np.array([np.nan, 0, 0, 0, 0, 0, np.nan, np.nan]), range(8))
+        with pytest.warns(UserWarning, match="The indices .+ different"):
+            assert_array_dtype_equal(
+                expected, self.g0.frechet_distance(self.g9, align=True)
+            )
+
+        val_1 = shapely.frechet_distance(self.g0.iloc[0], self.g9.iloc[0])
+        val_2 = shapely.frechet_distance(self.g0.iloc[2], self.g9.iloc[2])
+        val_3 = shapely.frechet_distance(self.g0.iloc[3], self.g9.iloc[3])
+        val_4 = shapely.frechet_distance(self.g0.iloc[4], self.g9.iloc[4])
+        expected = Series(
+            np.array([val_1, val_1, val_2, val_3, val_4, np.nan, np.nan]), self.g0.index
+        )
+        assert_array_dtype_equal(
+            expected, self.g0.frechet_distance(self.g9, align=False)
+        )
+
+        expected = Series(
+            np.array([np.sqrt(100**2 + (100 - 5) ** 2)]), self.g12.index
+        )
+        assert_array_dtype_equal(
+            expected, self.g12.frechet_distance(self.g13, densify=0.25)
+        )
+
+    @pytest.mark.skipif(
+        (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+        reason="frechet_distance not implemented for shapely<2",
+    )
+    def test_frechet_distance_not(self):
+        with pytest.raises(
+            NotImplementedError, match="shapely >= 2.0 or PyGEOS is required"
+        ):
+            self.g0.frechet_distance(self.g9)
 
     def test_intersects(self):
         expected = [True, True, True, True, True, False, False]

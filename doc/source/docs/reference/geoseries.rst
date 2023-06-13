@@ -23,6 +23,7 @@ General methods and attributes
    GeoSeries.length
    GeoSeries.geom_type
    GeoSeries.distance
+   GeoSeries.frechet_distance
    GeoSeries.representative_point
    GeoSeries.exterior
    GeoSeries.interiors

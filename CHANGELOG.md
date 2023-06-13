@@ -2,6 +2,10 @@
 
 ## Development version
 
+New methods:
+
+- Added ``frechet_distance()`` method from shapely to GeoSeries/GeoDataframe (#2909).
+
 New features and improvements:
 
 

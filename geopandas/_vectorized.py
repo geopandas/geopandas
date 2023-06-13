@@ -883,6 +883,20 @@ def distance(data, other):
         return _binary_op_float("distance", data, other)
 
 
+def frechet_distance(data, other, densify=None, **kwargs):
+    if compat.USE_SHAPELY_20:
+        return shapely.frechet_distance(data, other, densify=densify, **kwargs)
+    elif compat.USE_PYGEOS:
+        return _binary_method(
+            "frechet_distance", data, other, densify=densify, **kwargs
+        )
+    else:
+        raise NotImplementedError(
+            f"shapely >= 2.0 or PyGEOS is required, "
+            f"version {shapely.__version__} is installed"
+        )
+
+
 def buffer(data, distance, resolution=16, **kwargs):
     if compat.USE_SHAPELY_20:
         if compat.SHAPELY_G_20a1:
