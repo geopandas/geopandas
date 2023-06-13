@@ -4,10 +4,13 @@
 
 New methods:
 
-- Added ``frechet_distance()`` method from shapely to GeoSeries/GeoDataframe (#2909).
+- Added ``frechet_distance()`` method from shapely to GeoSeries/GeoDataframe (#2929).
 
 New features and improvements:
 
+- Added ``offset_curve`` method from shapely to GeoSeries/GeoDataframe.
+
+New features and improvements:
 
 Bug fixes:
 
