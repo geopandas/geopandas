@@ -4,6 +4,7 @@ from packaging.version import Version
 import numpy as np
 import pandas as pd
 
+import shapely
 from shapely.geometry import Point, Polygon, LineString, GeometryCollection, box
 
 import geopandas
@@ -807,6 +808,25 @@ def test_no_intersection():
     expected = GeoDataFrame(columns=["foo", "bar", "geometry"])
     result = overlay(gdf1, gdf2, how="intersection")
     assert_geodataframe_equal(result, expected, check_index_type=False)
+
+
+@pytest.mark.skipif(
+    not _compat.SHAPELY_GE_20 or _compat.USE_PYGEOS,
+    reason=(
+        "requires shapely 2 or higher, and fails with a "
+        "TypeError if pygeos is installed"
+    ),
+)
+@pytest.mark.parametrize("snap_to_int", [True, False])
+def test_overlay_difference_precision(snap_to_int):
+    gdf = geopandas.read_file(
+        os.path.join(DATA, "overlay_difference_precision", "gdf.geojson.zip")
+    )
+    if snap_to_int:
+        gdf = gdf.set_geometry(shapely.set_precision(gdf.geometry, 1), inplace=False)
+    assert gdf.is_valid.all()
+    result = overlay(gdf, gdf, how="difference", keep_geom_type=True)
+    assert result.is_valid.all()
 
 
 class TestOverlayWikiExample:
