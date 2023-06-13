@@ -649,7 +649,7 @@ def extract_unique_points(data):
             f"version {shapely.__version__} is installed"
         )
 
-      
+
 def offset_curve(data, distance, quad_segs=8, join_style="round", mitre_limit=5.0):
     if compat.USE_SHAPELY_20:
         return shapely.offset_curve(

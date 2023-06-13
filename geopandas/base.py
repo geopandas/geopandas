@@ -645,11 +645,11 @@ GeometryCollection
 
         See also
         --------
-        
+
         GeoSeries.get_coordinates : extract coordinates as a :class:`~pandas.DataFrame`
         """
         return _delegate_geo_method("extract_unique_points", self)
-      
+
     def offset_curve(self, distance, quad_segs=8, join_style="round", mitre_limit=5.0):
         """Returns a ``LineString`` or ``MultiLineString`` geometry at a
         distance from the object on its right or its left side.
@@ -669,13 +669,13 @@ GeometryCollection
         mitre_limit : float (optional, default 5.0)
             Crops of 'mitre'-style joins if the point is displaced from the
             buffered vertex by more than this limit.
-            
+
         See http://shapely.readthedocs.io/en/latest/manual.html#object.offset_curve
         for details.
-        
+
         Examples
         --------
-        
+
         >>> from shapely.geometry import LineString
         >>> s = geopandas.GeoSeries(
         ...     [
@@ -686,7 +686,7 @@ GeometryCollection
         >>> s
         0    LINESTRING (0.000 0.000, 0.000 1.000, 1.000 1....
         dtype: geometry
-        
+
         >>> s.offset_curve(1)
         0    LINESTRING (-1.000 0.000, -1.000 1.000, -0.981...
         dtype: geometry
@@ -699,7 +699,7 @@ GeometryCollection
             join_style=join_style,
             mitre_limit=mitre_limit,
         )
-    
+
     @property
     def interiors(self):
         """Returns a ``Series`` of List representing the
