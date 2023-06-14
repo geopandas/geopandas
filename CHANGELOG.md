@@ -4,11 +4,10 @@
 
 New methods:
 
-- Added ``build_area`` method from shapely to GeoSeries.
-
+- Added ``build_area`` method from shapely to GeoSeries. (#2916)
+- Added ``offset_curve`` method from shapely to GeoSeries/GeoDataframe. (#2902)
 
 New features and improvements:
-
 
 Bug fixes:
 
