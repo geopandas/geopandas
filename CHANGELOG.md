@@ -4,14 +4,12 @@
 
 New methods:
 
-- Added ``node`` method from shapely to GeoSeries.
-
+- Added ``node`` method from shapely to GeoSeries. (#2925)
+- Added ``offset_curve`` method from shapely to GeoSeries/GeoDataframe. (#2902)
 
 New features and improvements:
 
-
 Bug fixes:
-
 
 ## Version 0.13.2 (Jun 6, 2023)
 
