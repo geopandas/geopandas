@@ -539,27 +539,52 @@ if compat.HAS_RTREE:
                     )
                 )
 
-            if hasattr(geometry, "__array__") and not isinstance(
-                geometry, BaseGeometry
-            ):
-                # Iterates over geometry, applying func.
+            # convert geometry to array, track if scalar
+            geometry = np.asarray(geometry)
+            is_scalar = False
+            if geometry.ndim == 0:
+                geometry = np.expand_dims(geometry, 0)
+                is_scalar = True
+
+            # broadcast distance if predicate == "dwithin"
+            if predicate == "dwithin":
+                if distance is None:
+                    raise ValueError(
+                        "'distance' parameter is required for 'dwithin' predicate"
+                    )
+
+                distance = np.asarray(distance, dtype="float64")
+                if distance.ndim > 1:
+                    raise ValueError("Distance array should be one dimensional")
+
+                try:
+                    distance = np.broadcast_to(distance, geometry.shape)
+                except ValueError:
+                    raise ValueError("Could not broadcast distance to match geometry")
+
+            elif distance is not None:
+                # distance parameter is invalid
+                raise ValueError(
+                    "predicate = {} got unexpected keyword argument 'distance'".format(
+                        predicate
+                    )
+                )
+
+            if is_scalar is False:
+                # Iterates over geometry, applying query
                 tree_index = []
                 input_geometry_index = []
 
                 for i, geo in enumerate(geometry):
-                    if hasattr(distance, "__iter__"):
-                        if len(distance) != len(geometry):
-                            raise ValueError(
-                                "Could not broadcast distance to match geometry"
-                            )
-                        dist = distance[i]
-                    else:
-                        dist = distance
-
-                    res = self.query(geo, predicate=predicate, sort=sort, distance=dist)
+                    res = self.query(
+                        geo, predicate=predicate, sort=sort, distance=distance[i]
+                    )
                     tree_index.extend(res)
                     input_geometry_index.extend([i] * len(res))
                 return np.vstack([input_geometry_index, tree_index])
+
+            # Retrieve geometry from 1-D array
+            geometry = geometry[0]
 
             # handle empty / invalid geometries
             if geometry is None:
@@ -580,10 +605,6 @@ if compat.HAS_RTREE:
             # special handling of dwithin predicate, which isn't available
             # in prepared geometries with rtree
             if predicate == "dwithin":
-                if distance is None:
-                    raise ValueError(
-                        "'distance' parameter is required for 'dwithin' predicate"
-                    )
                 # all indices, pre-sorted
                 tree_idx = np.arange(self.size, dtype=np.intp)
                 # select indices within distance
@@ -591,14 +612,6 @@ if compat.HAS_RTREE:
                     geometry.dwithin(self.geometries, distance=distance)
                 ]
                 return tree_idx
-
-            elif distance is not None:
-                # distance parameter is invalid
-                raise ValueError(
-                    "predicate = {} got unexpected keyword argument 'distance'".format(
-                        predicate
-                    )
-                )
 
             # query tree
             bounds = geometry.bounds  # rtree operates on bounds

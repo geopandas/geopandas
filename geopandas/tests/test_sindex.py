@@ -1015,7 +1015,7 @@ class TestRtreeIndex:
             dtype=object,
         )  # include a box geometry
 
-        self.df = geopandas.sindex.RTreeIndex(data)
+        self.sindex = geopandas.sindex.RTreeIndex(data)
 
     @pytest.mark.skipif(
         not TEST_DWITHIN,
@@ -1051,14 +1051,20 @@ class TestRtreeIndex:
             # distance is array-like, broadcastable to geometry
             (
                 [2, 10],
-                np.array([Point(0.5, 0.5), Point(1, 1)]),
+                [Point(0.5, 0.5), Point(1, 1)],
                 [[0, 0, 1, 1, 1, 1, 1], [0, 1, 0, 1, 2, 3, 4]],
+            ),
+            # distance is scalar, broadcastable to geometry
+            (
+                [2],
+                [Point(0.5, 0.5), Point(1, 1)],
+                [[0, 0, 1, 1, 1], [0, 1, 0, 1, 2]],
             ),
         ),
     )
     def test_query_dwithin_Rtree(self, distance, test_geom, expected):
         """Tests the `query` method for dwithin and rtree sindex structure."""
-        res = self.df.query(test_geom, predicate="dwithin", distance=distance)
+        res = self.sindex.query(test_geom, predicate="dwithin", distance=distance)
         assert_array_equal(res, expected)
 
     @pytest.mark.skipif(
@@ -1070,10 +1076,30 @@ class TestRtreeIndex:
         with pytest.raises(
             ValueError, match="Could not broadcast distance to match geometry"
         ):
-            self.df.query(
-                np.array([Point(0, 0), Point(1, 1)]),
+            self.sindex.query(
+                [Point(0, 0), Point(1, 1)],
                 predicate="dwithin",
                 distance=[1, 2, 3],
+            )
+
+    @pytest.mark.skipif(
+        not TEST_DWITHIN,
+        reason="Requires either Shapely 2.0 or PyGEOS 0.12, and GEOS 3.10",
+    )
+    def test_distance_baddim(self):
+        """Tests whether ValueError raised for distance with ndim > 1"""
+        with pytest.raises(
+            ValueError, match="Distance array should be one dimensional"
+        ):
+            self.sindex.query(
+                [Point(0, 0), Point(1, 1)],
+                predicate="dwithin",
+                distance=[
+                    [
+                        1,
+                        2,
+                    ]
+                ],
             )
 
     @pytest.mark.skipif(
@@ -1086,7 +1112,45 @@ class TestRtreeIndex:
         """
 
         with pytest.raises(ValueError):
-            self.df.query(Point(0, 0), predicate="dwithin", distance=0)
+            self.sindex.query(Point(0, 0), predicate="dwithin", distance=0)
+
+    @pytest.mark.skipif(
+        not TEST_DWITHIN,
+        reason="Requires either Shapely 2.0 or PyGEOS 0.12, and GEOS 3.10",
+    )
+    def test_dwithin_no_distance_rtree(self):
+        """Tests the `query` method with keyword arguments that are
+        invalid for certain predicates."""
+        with pytest.raises(
+            ValueError, match="'distance' parameter is required for 'dwithin' predicate"
+        ):
+            self.sindex.query(Point(0, 0), predicate="dwithin")
+
+    @pytest.mark.parametrize(
+        "predicate",
+        [
+            None,
+            "intersects",
+            "within",
+            "contains",
+            "overlaps",
+            "crosses",
+            "touches",
+            "covered_by",
+            "covers",
+            "contains_properly",
+        ],
+    )
+    def test_query_distance_invalid_rtree(self, predicate):
+        """Tests the `query` method with keyword arguments that are
+        invalid for certain predicates."""
+        with pytest.raises(
+            ValueError,
+            match="predicate = {} got unexpected keyword argument 'distance'".format(
+                predicate
+            ),
+        ):
+            self.sindex.query(Point(0, 0), predicate=predicate, distance=0)
 
 
 @pytest.mark.skipif(not compat.HAS_RTREE, reason="no rtree installed")
