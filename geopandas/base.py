@@ -516,6 +516,70 @@ GeometryCollection
         """
         return _delegate_property("centroid", self)
 
+    def concave_hull(self, ratio=0.0, allow_holes=False):
+        """Returns a ``GeoSeries`` of geometries representing the concave hull
+        of each geometry.
+
+        The concave hull of a geometry is the smallest concave `Polygon`
+        containing all the points in each geometry, unless the number of points
+        in the geometric object is less than three. For two points, the concave
+        hull collapses to a `LineString`; for 1, a `Point`.
+
+        The hull is constructed by removing border triangles of the Delaunay
+        Triangulation of the points as long as their "size" is larger than the
+        maximum edge length ratio and optionally allowing holes. The edge length factor
+        is a fraction of the length difference between the longest and shortest edges
+        in the Delaunay Triangulation of the input points. For further information
+        on the algorithm used, see
+        https://libgeos.org/doxygen/classgeos_1_1algorithm_1_1hull_1_1ConcaveHull.html
+
+        Parameters
+        ----------
+        ratio : float, (optional, default 0.0)
+            Number in the range [0, 1]. Higher numbers will include fewer vertices
+            in the hull.
+        allow_holes : bool, (optional, default False)
+            If set to True, the concave hull may have holes.
+
+        Examples
+        --------
+
+        >>> from shapely.geometry import Polygon, LineString, Point, MultiPoint
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0, 0), (1, 1), (0, 1)]),
+        ...         LineString([(0, 0), (1, 1), (1, 0)]),
+        ...         MultiPoint([(0, 0), (1, 1), (0, 1), (1, 0), (0.5, 0.5)]),
+        ...         MultiPoint([(0, 0), (1, 1)]),
+        ...         Point(0, 0),
+        ...     ],
+        ...     crs=3857
+        ... )
+        >>> s
+        0    POLYGON ((0.000 0.000, 1.000 1.000, 0.000 1.00...
+        1    LINESTRING (0.000 0.000, 1.000 1.000, 1.000 0....
+        2    MULTIPOINT (0.000 0.000, 1.000 1.000, 0.000 1....
+        3                MULTIPOINT (0.000 0.000, 1.000 1.000)
+        4                                  POINT (0.000 0.000)
+        dtype: geometry
+
+        >>> s.concave_hull()
+        0    POLYGON ((0.000 1.000, 1.000 1.000, 0.000 0.00...
+        1    POLYGON ((0.000 0.000, 1.000 1.000, 1.000 0.00...
+        2    POLYGON ((0.500 0.500, 0.000 1.000, 1.000 1.00...
+        3                LINESTRING (0.000 0.000, 1.000 1.000)
+        4                                  POINT (0.000 0.000)
+        dtype: geometry
+
+        See also
+        --------
+        GeoSeries.convex_hull : convex hull geometry
+
+        """
+        return _delegate_geo_method(
+            "concave_hull", self, ratio=ratio, allow_holes=allow_holes
+        )
+
     @property
     def convex_hull(self):
         """Returns a ``GeoSeries`` of geometries representing the convex hull
@@ -557,6 +621,7 @@ GeometryCollection
 
         See also
         --------
+        GeoSeries.concave_hull : concave hull geometry
         GeoSeries.envelope : bounding rectangle geometry
 
         """

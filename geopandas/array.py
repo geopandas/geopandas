@@ -29,7 +29,6 @@ from . import _compat as compat
 from . import _vectorized as vectorized
 from .sindex import _get_sindex_class
 
-
 TransformerFromCRS = lru_cache(Transformer.from_crs)
 
 
@@ -515,6 +514,9 @@ class GeometryArray(ExtensionArray):
     def centroid(self):
         self.check_geographic_crs(stacklevel=5)
         return GeometryArray(vectorized.centroid(self._data), crs=self.crs)
+
+    def concave_hull(self, ratio, allow_holes):
+        return vectorized.concave_hull(self._data, ratio=ratio, allow_holes=allow_holes)
 
     @property
     def convex_hull(self):
