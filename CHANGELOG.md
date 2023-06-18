@@ -9,6 +9,9 @@ New methods:
 New features and improvements:
 
 Bug fixes:
+- Fix `GeoDataFrame.merge()` incorrectly returning a `DataFrame` instead of a 
+  `GeoDataFrame` when the `suffixes` argument is applied to the active
+  geometry column (#2933).
 
 
 ## Version 0.13.2 (Jun 6, 2023)
