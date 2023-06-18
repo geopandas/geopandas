@@ -4,8 +4,9 @@
 
 New methods:
 
-- Added ``delaunay_triangles`` method from shapely to GeoSeries/GeoDataframe (#2907).
-- Added ``offset_curve`` method from shapely to GeoSeries/GeoDataframe (#2902).
+- Added ``delaunay_triangles`` method from shapely to GeoSeries/GeoDataframe (#2907)
+- Added ``concave_hull`` method from shapely to GeoSeries/GeoDataframe. (#2903)
+- Added ``offset_curve`` method from shapely to GeoSeries/GeoDataframe. (#2902)
 
 New features and improvements:
 
