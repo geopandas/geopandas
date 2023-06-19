@@ -11,6 +11,7 @@ import shapely
 from shapely.geometry import (
     LinearRing,
     LineString,
+    MultiLineString,
     MultiPoint,
     Point,
     Polygon,
@@ -26,7 +27,7 @@ from geopandas.base import GeoPandasBase
 from geopandas.testing import assert_geodataframe_equal
 from geopandas.tests.util import assert_geoseries_equal, geom_almost_equals, geom_equals
 from geopandas import _compat as compat
-from pandas.testing import assert_frame_equal, assert_series_equal, assert_index_equal
+from pandas.testing import assert_frame_equal, assert_index_equal, assert_series_equal
 import pytest
 
 
@@ -833,6 +834,49 @@ class TestGeomMethods:
     def test_convex_hull(self):
         # the convex hull of a square should be the same as the square
         assert_geoseries_equal(self.squares, self.squares.convex_hull)
+
+    @pytest.mark.skipif(
+        not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+        reason="delaunay_triangles not implemented for shapely<2",
+    )
+    def test_delaunay_triangles(self):
+        expected = GeoSeries(
+            [
+                GeometryCollection([Polygon([(0, 0), (1, 0), (1, 1), (0, 0)])]),
+                GeometryCollection([Polygon([(0, 1), (0, 0), (1, 1), (0, 1)])]),
+            ]
+        )
+        dlt = self.g3.delaunay_triangles()
+        assert isinstance(dlt, GeoSeries)
+        assert_series_equal(expected, dlt)
+
+    @pytest.mark.skipif(
+        not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+        reason="delaunay_triangles not implemented for shapely<2",
+    )
+    def test_delaunay_triangles_pass_kwargs(self):
+        expected = GeoSeries(
+            [
+                MultiLineString([[(0, 0), (1, 1)], [(0, 0), (1, 0)], [(1, 0), (1, 1)]]),
+                MultiLineString([[(0, 1), (1, 1)], [(0, 0), (0, 1)], [(0, 0), (1, 1)]]),
+            ]
+        )
+        dlt = self.g3.delaunay_triangles(only_edges=True)
+        assert isinstance(dlt, GeoSeries)
+        assert_series_equal(expected, dlt)
+
+    @pytest.mark.skipif(
+        compat.USE_PYGEOS or compat.USE_SHAPELY_20,
+        reason="delaunay_triangles implemented for shapely>2",
+    )
+    def test_delaunay_triangles_shapely_pre20(self):
+        s = GeoSeries([Point(1, 1)])
+        with pytest.raises(
+            NotImplementedError,
+            match=f"shapely >= 2.0 or PyGEOS is required, "
+            f"version {shapely.__version__} is installed",
+        ):
+            s.delaunay_triangles()
 
     def test_exterior(self):
         exp_exterior = GeoSeries([LinearRing(p.boundary) for p in self.g3])
