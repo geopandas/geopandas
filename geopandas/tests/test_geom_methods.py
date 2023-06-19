@@ -11,6 +11,7 @@ import shapely
 from shapely.geometry import (
     LinearRing,
     LineString,
+    MultiLineString,
     MultiPoint,
     Point,
     Polygon,
@@ -26,7 +27,7 @@ from geopandas.base import GeoPandasBase
 from geopandas.testing import assert_geodataframe_equal
 from geopandas.tests.util import assert_geoseries_equal, geom_almost_equals, geom_equals
 from geopandas import _compat as compat
-from pandas.testing import assert_frame_equal, assert_series_equal, assert_index_equal
+from pandas.testing import assert_frame_equal, assert_index_equal, assert_series_equal
 import pytest
 
 
@@ -169,6 +170,7 @@ class TestGeomMethods:
                 [1.0, 1.0, np.nan],
             ]
         )
+        self.squares = GeoSeries([self.sq for _ in range(3)])
 
         self.l5 = LineString([(100, 0), (0, 0), (0, 100)])
         self.l6 = LineString([(5, 5), (5, 100), (100, 5)])
@@ -829,10 +831,104 @@ class TestGeomMethods:
         ):
             s.make_valid()
 
+    @pytest.mark.skipif(
+        compat.SHAPELY_GE_20,
+        reason="concave_hull is implemented for shapely >= 2.0",
+    )
+    def test_concave_hull_not_implemented_shapely_pre2(self):
+        with pytest.raises(
+            NotImplementedError,
+            match=f"shapely >= 2.0 is required, "
+            f"version {shapely.__version__} is installed",
+        ):
+            self.squares.concave_hull()
+
+    @pytest.mark.skipif(
+        not (compat.USE_PYGEOS and compat.SHAPELY_GE_20),
+        reason="concave_hull is only implemented for shapely >= 2.0",
+    )
+    def test_concave_hull_pygeos_set_shapely_installed(self):
+        expected = GeoSeries(
+            [
+                Polygon([(0, 1), (1, 1), (0, 0), (0, 1)]),
+                Polygon([(1, 0), (0, 0), (0, 1), (1, 1), (1, 0)]),
+            ]
+        )
+        with pytest.warns(
+            UserWarning,
+            match="PyGEOS does not support concave_hull, and Shapely >= 2 is installed",
+        ):
+            assert_geoseries_equal(expected, self.g5.concave_hull())
+
+    @pytest.mark.skipif(
+        not compat.USE_SHAPELY_20,
+        reason="concave_hull is only implemented for shapely >= 2.0",
+    )
+    def test_concave_hull(self):
+        assert_geoseries_equal(self.squares, self.squares.concave_hull())
+
+    @pytest.mark.skipif(
+        not compat.USE_SHAPELY_20,
+        reason="concave_hull is only implemented for shapely >= 2.0",
+    )
+    @pytest.mark.parametrize(
+        "expected_series,ratio",
+        [
+            ([(0, 0), (0, 3), (1, 1), (3, 3), (3, 0), (0, 0)], 0.0),
+            ([(0, 0), (0, 3), (3, 3), (3, 0), (0, 0)], 1.0),
+        ],
+    )
+    def test_concave_hull_accepts_kwargs(self, expected_series, ratio):
+        expected = GeoSeries(Polygon(expected_series))
+        s = GeoSeries(MultiPoint([(0, 0), (0, 3), (1, 1), (3, 0), (3, 3)]))
+        assert_geoseries_equal(expected, s.concave_hull(ratio=ratio))
+
     def test_convex_hull(self):
         # the convex hull of a square should be the same as the square
-        squares = GeoSeries([self.sq for i in range(3)])
-        assert_geoseries_equal(squares, squares.convex_hull)
+        assert_geoseries_equal(self.squares, self.squares.convex_hull)
+
+    @pytest.mark.skipif(
+        not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+        reason="delaunay_triangles not implemented for shapely<2",
+    )
+    def test_delaunay_triangles(self):
+        expected = GeoSeries(
+            [
+                GeometryCollection([Polygon([(0, 0), (1, 0), (1, 1), (0, 0)])]),
+                GeometryCollection([Polygon([(0, 1), (0, 0), (1, 1), (0, 1)])]),
+            ]
+        )
+        dlt = self.g3.delaunay_triangles()
+        assert isinstance(dlt, GeoSeries)
+        assert_series_equal(expected, dlt)
+
+    @pytest.mark.skipif(
+        not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+        reason="delaunay_triangles not implemented for shapely<2",
+    )
+    def test_delaunay_triangles_pass_kwargs(self):
+        expected = GeoSeries(
+            [
+                MultiLineString([[(0, 0), (1, 1)], [(0, 0), (1, 0)], [(1, 0), (1, 1)]]),
+                MultiLineString([[(0, 1), (1, 1)], [(0, 0), (0, 1)], [(0, 0), (1, 1)]]),
+            ]
+        )
+        dlt = self.g3.delaunay_triangles(only_edges=True)
+        assert isinstance(dlt, GeoSeries)
+        assert_series_equal(expected, dlt)
+
+    @pytest.mark.skipif(
+        compat.USE_PYGEOS or compat.USE_SHAPELY_20,
+        reason="delaunay_triangles implemented for shapely>2",
+    )
+    def test_delaunay_triangles_shapely_pre20(self):
+        s = GeoSeries([Point(1, 1)])
+        with pytest.raises(
+            NotImplementedError,
+            match=f"shapely >= 2.0 or PyGEOS is required, "
+            f"version {shapely.__version__} is installed",
+        ):
+            s.delaunay_triangles()
 
     def test_exterior(self):
         exp_exterior = GeoSeries([LinearRing(p.boundary) for p in self.g3])
@@ -1631,3 +1727,13 @@ class TestGeomMethods:
 
         with pytest.raises(AttributeError, match="pointpats.random module has no"):
             gs.sample_points(10, method="nonexistent")
+
+    @pytest.mark.skipif(
+        not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+        reason="offset_curve is only implemented for pygeos, not shapely",
+    )
+    def test_offset_curve(self):
+        oc = GeoSeries([self.l1]).offset_curve(1, join_style="mitre")
+        expected = GeoSeries([LineString([[-1, 0], [-1, 2], [1, 2]])])
+        assert_geoseries_equal(expected, oc)
+        assert isinstance(oc, GeoSeries)
