@@ -1007,13 +1007,13 @@ class TestPygeosInterface:
 
 # ------------------------- explicit tests with rtree ------------------------- #
 @pytest.mark.skip_no_sindex
-@pytest.mark.skipif(not compat.HAS_RTREE, reason="no rtree installed")
+@pytest.mark.skipif(not compat.HAS_RTREE, reason="No rtree installed")
 class TestRtreeIndex:
     def setup_method(self):
         data = np.array(
             [Point(x, y) for x, y in zip(range(5), range(5))] + [box(10, 10, 20, 20)],
             dtype=object,
-        )  # include a box geometry
+        )
 
         self.sindex = geopandas.sindex.RTreeIndex(data)
 
@@ -1048,6 +1048,12 @@ class TestRtreeIndex:
                 Point(0.5, 0.5),
                 [0, 1],
             ),
+            # geometry is scalar, but passed as array
+            (
+                sqrt(2 * 0.5**2) + 1e-9,
+                np.array(Point(0.5, 0.5)),
+                [0, 1],
+            ),
             # distance is array-like, broadcastable to geometry
             (
                 [2, 10],
@@ -1071,16 +1077,16 @@ class TestRtreeIndex:
         not TEST_DWITHIN,
         reason="Requires either Shapely 2.0 or PyGEOS 0.12, and GEOS 3.10",
     )
-    def test_distance_Rtree_shape(self):
+    @pytest.mark.parametrize(
+        "test_geom, distance",
+        (([Point(0, 0), Point(1, 1)], [0, 1, 2]), (Point(0, 0), [0, 1])),
+    )
+    def test_distance_Rtree_shape(self, test_geom, distance):
         """Tests whether ValueError raised for mismatching geometry and distance"""
         with pytest.raises(
             ValueError, match="Could not broadcast distance to match geometry"
         ):
-            self.sindex.query(
-                [Point(0, 0), Point(1, 1)],
-                predicate="dwithin",
-                distance=[1, 2, 3],
-            )
+            self.sindex.query(test_geom, distance=distance, predicate="dwithin")
 
     @pytest.mark.skipif(
         not TEST_DWITHIN,
@@ -1093,13 +1099,8 @@ class TestRtreeIndex:
         ):
             self.sindex.query(
                 [Point(0, 0), Point(1, 1)],
+                distance=[[1]],
                 predicate="dwithin",
-                distance=[
-                    [
-                        1,
-                        2,
-                    ]
-                ],
             )
 
     @pytest.mark.skipif(
@@ -1110,7 +1111,6 @@ class TestRtreeIndex:
         """ "Tests whether a ValueError is raised when trying to use dwithin with
         incompatible versions of shapely or pyGEOS
         """
-
         with pytest.raises(ValueError):
             self.sindex.query(Point(0, 0), predicate="dwithin", distance=0)
 

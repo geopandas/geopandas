@@ -539,21 +539,21 @@ if compat.HAS_RTREE:
                     )
                 )
 
-            # convert geometry to array, track if scalar
-            geometry = np.asarray(geometry)
-            is_scalar = False
-            if geometry.ndim == 0:
-                geometry = np.expand_dims(geometry, 0)
-                is_scalar = True
-
             # broadcast distance if predicate == "dwithin"
             if predicate == "dwithin":
+                geometry = np.asarray(geometry)
+                is_scalar = False
+                if geometry.ndim == 0:
+                    geometry = np.expand_dims(geometry, 0)
+                    is_scalar = True
+
                 if distance is None:
                     raise ValueError(
                         "'distance' parameter is required for 'dwithin' predicate"
                     )
 
                 distance = np.asarray(distance, dtype="float64")
+
                 if distance.ndim > 1:
                     raise ValueError("Distance array should be one dimensional")
 
@@ -562,29 +562,41 @@ if compat.HAS_RTREE:
                 except ValueError:
                     raise ValueError("Could not broadcast distance to match geometry")
 
+                if is_scalar:
+                    # return to scalar to skip iteration
+                    distance = distance[0]
+                    geometry = geometry[0]
+
+            # for other predicates, distance is invalid
             elif distance is not None:
-                # distance parameter is invalid
                 raise ValueError(
                     "predicate = {} got unexpected keyword argument 'distance'".format(
                         predicate
                     )
                 )
 
-            if is_scalar is False:
+            if hasattr(geometry, "__array__") and not isinstance(
+                geometry, BaseGeometry
+            ):
                 # Iterates over geometry, applying query
                 tree_index = []
                 input_geometry_index = []
 
                 for i, geo in enumerate(geometry):
-                    res = self.query(
-                        geo, predicate=predicate, sort=sort, distance=distance[i]
-                    )
+                    if predicate == "dwithin":
+                        res = self.query(
+                            geo, predicate=predicate, sort=sort, distance=distance[i]
+                        )
+                    else:
+                        res = self.query(
+                            geo,
+                            predicate=predicate,
+                            sort=sort,
+                        )
+
                     tree_index.extend(res)
                     input_geometry_index.extend([i] * len(res))
                 return np.vstack([input_geometry_index, tree_index])
-
-            # Retrieve geometry from 1-D array
-            geometry = geometry[0]
 
             # handle empty / invalid geometries
             if geometry is None:
