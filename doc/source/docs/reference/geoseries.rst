@@ -22,6 +22,7 @@ General methods and attributes
    GeoSeries.total_bounds
    GeoSeries.length
    GeoSeries.geom_type
+   GeoSeries.offset_curve
    GeoSeries.distance
    GeoSeries.representative_point
    GeoSeries.exterior
@@ -86,6 +87,7 @@ Constructive methods and attributes
    GeoSeries.buffer
    GeoSeries.boundary
    GeoSeries.centroid
+   GeoSeries.concave_hull
    GeoSeries.convex_hull
    GeoSeries.envelope
    GeoSeries.make_valid

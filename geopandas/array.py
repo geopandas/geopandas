@@ -29,7 +29,6 @@ from . import _compat as compat
 from . import _vectorized as vectorized
 from .sindex import _get_sindex_class
 
-
 TransformerFromCRS = lru_cache(Transformer.from_crs)
 
 
@@ -513,6 +512,9 @@ class GeometryArray(ExtensionArray):
         self.check_geographic_crs(stacklevel=5)
         return GeometryArray(vectorized.centroid(self._data), crs=self.crs)
 
+    def concave_hull(self, ratio, allow_holes):
+        return vectorized.concave_hull(self._data, ratio=ratio, allow_holes=allow_holes)
+
     @property
     def convex_hull(self):
         return GeometryArray(vectorized.convex_hull(self._data), crs=self.crs)
@@ -524,6 +526,18 @@ class GeometryArray(ExtensionArray):
     @property
     def exterior(self):
         return GeometryArray(vectorized.exterior(self._data), crs=self.crs)
+
+    def offset_curve(self, distance, quad_segs=8, join_style="round", mitre_limit=5.0):
+        return GeometryArray(
+            vectorized.offset_curve(
+                self._data,
+                distance,
+                quad_segs=quad_segs,
+                join_style=join_style,
+                mitre_limit=mitre_limit,
+            ),
+            crs=self.crs,
+        )
 
     @property
     def interiors(self):

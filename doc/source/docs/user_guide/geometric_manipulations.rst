@@ -24,6 +24,13 @@ Constructive methods
 
   Returns a :class:`~geopandas.GeoSeries` of points for each geometric centroid.
 
+.. attribute:: GeoSeries.concave_hull
+
+  Returns a :class:`~geopandas.GeoSeries` of geometries representing the smallest
+  concave `Polygon` containing all the points in each object unless the
+  number of points in the object is less than three. For two points,
+  the concave hull collapses to a `LineString`; for 1, a `Point`.
+
 .. attribute:: GeoSeries.convex_hull
 
   Returns a :class:`~geopandas.GeoSeries` of geometries representing the smallest
@@ -36,6 +43,11 @@ Constructive methods
   Returns a :class:`~geopandas.GeoSeries` of geometries representing the point or
   smallest rectangular polygon (with sides parallel to the coordinate
   axes) that contains each object.
+
+.. method:: GeoSeries.offset_curve(distance, quad_segs=8, join_style="round", mitre_limit=5.0)
+
+  Returns a :class:`~geopandas.GeoSeries` containing a `Linestring` or `MultiLineString`
+  geometry at a distance from the object on its right or its left side.
 
 .. method:: GeoSeries.simplify(tolerance, preserve_topology=True)
 
