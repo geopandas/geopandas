@@ -2384,6 +2384,121 @@ GeometryCollection
         """
         return _binary_op("distance", self, other, align)
 
+    def hausdorff_distance(self, other, align=True, densify=None):
+        """Returns a ``Series`` containing the Hausdorff distance to aligned `other`.
+
+        The Hausdorff distance is the largest distance consisting of any point in `self`
+        with the nearest point in `other`.
+
+        The operation works on a 1-to-1 row-wise manner:
+
+        .. image:: ../../../_static/binary_op-01.svg
+           :align: center
+
+        Parameters
+        ----------
+        other : GeoSeries or geometric object
+            The Geoseries (elementwise) or geometric object to find the
+            distance to.
+        align : bool (default True)
+            If True, automatically aligns GeoSeries based on their indices.
+            If False, the order of elements is preserved.
+        densify : float (default None)
+            A value between 0 and 1, that splits each subsegment of a line string
+            into equal length segments, making the approximation less coarse.
+            A densify value of 0.5 will add a point halfway between each pair of
+            points. A densify value of 0.25 will add a point a quarter of the way
+            between each pair of points.
+
+
+        Returns
+        -------
+        Series (float)
+
+        Examples
+        --------
+        >>> from shapely.geometry import Polygon, LineString, Point
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0, 0), (1, 0), (1, 1)]),
+        ...         Polygon([(0, 0), (-1, 0), (-1, 1)]),
+        ...         LineString([(1, 1), (0, 0)]),
+        ...         Point(0, 0),
+        ...     ],
+        ... )
+        >>> s2 = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0.5, 0.5), (1.5, 0.5), (1.5, 1.5), (0.5, 1.5)]),
+        ...         Point(3, 1),
+        ...         LineString([(1, 0), (2, 0)]),
+        ...         Point(0, 1),
+        ...     ],
+        ...     index=range(1, 5),
+        ... )
+
+        >>> s
+        0    POLYGON ((0.00000 0.00000, 1.00000 0.00000, 1....
+        1    POLYGON ((0.00000 0.00000, -1.00000 0.00000, -...
+        2        LINESTRING (1.00000 1.00000, 0.00000 0.00000)
+        3                              POINT (0.00000 0.00000)
+        dtype: geometry
+
+        >>> s2
+        1    POLYGON ((0.50000 0.50000, 1.50000 0.50000, 1....
+        2                              POINT (3.00000 1.00000)
+        3        LINESTRING (1.00000 0.00000, 2.00000 0.00000)
+        4                              POINT (0.00000 1.00000)
+        dtype: geometry
+
+        We can check the hausdorff distance of each geometry of GeoSeries
+        to a single geometry:
+
+        >>> point = Point(-1, 0)
+        >>> s.hausdorff_distance(point)
+        0    2.236068
+        1    1.000000
+        2    2.236068
+        3    1.000000
+        dtype: float64
+
+        We can also check two GeoSeries against each other, row by row.
+        The GeoSeries above have different indices. We can either align both GeoSeries
+        based on index values and use elements with the same index using
+        ``align=True`` or ignore index and use elements based on their matching
+        order using ``align=False``:
+
+        .. image:: ../../../_static/binary_op-02.svg
+
+        >>> s.hausdorff_distance(s2, align=True)
+        0         NaN
+        1    2.121320
+        2    3.162278
+        3    2.000000
+        4         NaN
+        dtype: float64
+
+        >>> s.hausdorff_distance(s2, align=False)
+        0    0.707107
+        1    4.123106
+        2    1.414214
+        3    1.000000
+        dtype: float64
+
+        We can also set a densify value, which is a float between 0 and 1 and
+        signifies the fraction of the distance between each pair of points that will
+        be used as the distance between the points when densifying.
+
+        >>> l1 = geopandas.GeoSeries([LineString([(130, 0), (0, 0), (0, 150)])])
+        >>> l2 = geopandas.GeoSeries([LineString([(10, 10), (10, 150), (130, 10)])])
+        >>> l1.hausdorff_distance(l2)
+        0    14.142136
+        dtype: float64
+        >>> l1.hausdorff_distance(l2, densify=0.25)
+        0    70.0
+        dtype: float64
+        """
+        return _binary_op("hausdorff_distance", self, other, align, densify=densify)
+
     #
     # Binary operations that return a GeoSeries
     #
