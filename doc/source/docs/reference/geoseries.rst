@@ -89,6 +89,7 @@ Constructive methods and attributes
    GeoSeries.centroid
    GeoSeries.concave_hull
    GeoSeries.convex_hull
+   GeoSeries.delaunay_triangles
    GeoSeries.envelope
    GeoSeries.make_valid
    GeoSeries.minimum_bounding_circle
