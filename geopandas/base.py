@@ -2231,7 +2231,7 @@ GeometryCollection
 
         Parameters
         ----------
-        other : Geoseries or geometric object
+        other : GeoSeries or geometric object
             The Geoseries (elementwise) or geometric object to find the
             distance to.
         align : bool (default True)
