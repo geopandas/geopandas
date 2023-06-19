@@ -4,6 +4,7 @@
 
 New methods:
 
+- Added ``hausdorff_distance()`` method from shapely to GeoSeries/GeoDataframe (#2909).
 - Added ``delaunay_triangles`` method from shapely to GeoSeries/GeoDataframe (#2907)
 - Added ``concave_hull`` method from shapely to GeoSeries/GeoDataframe. (#2903)
 - Added ``offset_curve`` method from shapely to GeoSeries/GeoDataframe. (#2902)

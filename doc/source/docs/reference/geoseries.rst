@@ -24,6 +24,7 @@ General methods and attributes
    GeoSeries.geom_type
    GeoSeries.offset_curve
    GeoSeries.distance
+   GeoSeries.hausdorff_distance
    GeoSeries.representative_point
    GeoSeries.exterior
    GeoSeries.interiors
