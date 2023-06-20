@@ -165,7 +165,7 @@ def _read_postgis(
     >>> df = geopandas.read_postgis(sql, con)  # doctest: +SKIP
     """
 
-    if geom_col == 'infer':
+    if geom_col == "infer":
         geom_col = _get_postgis_column(sql, con)
 
     if chunksize is None:
@@ -251,8 +251,8 @@ def _get_postgis_column(sql, con) -> str:
             UserWarning,
             stacklevel=2,
         )
-    
-    return 'geom'
+
+    return "geom"
 
 
 def _get_geometry_type(gdf):
