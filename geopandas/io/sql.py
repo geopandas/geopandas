@@ -165,6 +165,9 @@ def _read_postgis(
     >>> df = geopandas.read_postgis(sql, con)  # doctest: +SKIP
     """
 
+    if geom_col == 'infer':
+        geom_col = _get_postgis_column(sql, con)
+
     if chunksize is None:
         # read all in one chunk and return a single GeoDataFrame
         df = pd.read_sql(
@@ -203,6 +206,53 @@ def read_postgis(*args, **kwargs):
     )
 
     return _read_postgis(*args, **kwargs)
+
+
+def _get_postgis_column(sql, con) -> str:
+    """
+    Infer the geometry column name from a table name.
+
+    Returns
+    -------
+    - Geometry column name if matching table found.
+    - If not, 'geom'.
+
+    Parameters
+    ----------
+    sql : str
+        Table name.
+    con : sqlalchemy.engine.Connection or sqlalchemy.engine.Engine
+        Active connection to the database to query.
+    """
+    with pd.io.sql.pandasSQL_builder(con) as pandas_sql:
+        try:
+            _is_table_name = pandas_sql.has_table(sql)
+        except Exception:
+            # using generic exception to catch errors from sql drivers (GH24988)
+            _is_table_name = False
+    if _is_table_name:
+        try:
+            df = pandas_sql.read_query(
+                f"SELECT f_geometry_column from public.geometry_columns WHERE f_table_name = {sql};"
+            )
+            assert len(df) == 1, f"More than 1 table with name {sql} found!"
+            # other checks?
+            return df.values[0][0]
+        except Exception:
+            # using generic exception to catch errors from sql drivers (GH24988)
+            warnings.warn(
+                "Could not infer column name, using default geometry column, 'geom'.",
+                UserWarning,
+                stacklevel=2,
+            )
+    else:
+        warnings.warn(
+            "Could not infer column name, using default geometry column, 'geom'.",
+            UserWarning,
+            stacklevel=2,
+        )
+    
+    return 'geom'
 
 
 def _get_geometry_type(gdf):

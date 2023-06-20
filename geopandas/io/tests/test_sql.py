@@ -298,6 +298,16 @@ class TestIO:
 
         validate_boro_df(df, case_sensitive=False)
 
+    def test_read_postgis_infer_geom_col(self, connection_postgis, df_nybb):
+        """Tests that a geometry column is inferred when not specified."""
+        con = connection_postgis
+        create_postgis(con, df_nybb)
+
+        sql = "SELECT * FROM nybb;"
+        df = read_postgis(sql, con, geom_col="infer")
+
+        validate_boro_df(df)
+
     def test_read_postgis_null_geom(self, connection_spatialite, df_nybb):
         """Tests that geometry with NULL is accepted."""
         con = connection_spatialite
