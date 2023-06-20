@@ -4,7 +4,10 @@
 
 New methods:
 
-- Added ``offset_curve`` method from shapely to GeoSeries/GeoDataframe.
+- Added ``hausdorff_distance()`` method from shapely to GeoSeries/GeoDataframe (#2909).
+- Added ``delaunay_triangles`` method from shapely to GeoSeries/GeoDataframe (#2907)
+- Added ``concave_hull`` method from shapely to GeoSeries/GeoDataframe. (#2903)
+- Added ``offset_curve`` method from shapely to GeoSeries/GeoDataframe. (#2902)
 
 New features and improvements:
 - Added ``predicate="dwithin"`` option and ``distance`` arugment to ``query()`` method
@@ -12,6 +15,7 @@ New features and improvements:
 
 Bug fixes:
 
+- ``assert_geodataframe_equal`` now handles GeoDataFrames with no active geometry (#2498)
 
 ## Version 0.13.2 (Jun 6, 2023)
 
