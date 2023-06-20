@@ -24,6 +24,7 @@ General methods and attributes
    GeoSeries.geom_type
    GeoSeries.offset_curve
    GeoSeries.distance
+   GeoSeries.hausdorff_distance
    GeoSeries.representative_point
    GeoSeries.exterior
    GeoSeries.interiors
@@ -89,6 +90,7 @@ Constructive methods and attributes
    GeoSeries.centroid
    GeoSeries.concave_hull
    GeoSeries.convex_hull
+   GeoSeries.delaunay_triangles
    GeoSeries.envelope
    GeoSeries.extract_unique_points
    GeoSeries.make_valid
