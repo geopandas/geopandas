@@ -11,6 +11,7 @@ import shapely
 from shapely.geometry import (
     LinearRing,
     LineString,
+    MultiLineString,
     MultiPoint,
     Point,
     Polygon,
@@ -26,7 +27,7 @@ from geopandas.base import GeoPandasBase
 from geopandas.testing import assert_geodataframe_equal
 from geopandas.tests.util import assert_geoseries_equal, geom_almost_equals, geom_equals
 from geopandas import _compat as compat
-from pandas.testing import assert_frame_equal, assert_series_equal, assert_index_equal
+from pandas.testing import assert_frame_equal, assert_index_equal, assert_series_equal
 import pytest
 
 
@@ -170,6 +171,11 @@ class TestGeomMethods:
             ]
         )
         self.squares = GeoSeries([self.sq for _ in range(3)])
+
+        self.l5 = LineString([(100, 0), (0, 0), (0, 100)])
+        self.l6 = LineString([(5, 5), (5, 100), (100, 5)])
+        self.g12 = GeoSeries([self.l5])
+        self.g13 = GeoSeries([self.l6])
 
     def _test_unary_real(self, op, expected, a):
         """Tests for 'area', 'length', 'is_valid', etc."""
@@ -565,6 +571,53 @@ class TestGeomMethods:
         with pytest.warns(UserWarning, match="Geometry is in a geographic CRS"):
             self.g4.distance(self.p0)
 
+    @pytest.mark.skipif(
+        not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+        reason="requires hausdorff_distance in shapely 2.0+",
+    )
+    def test_hausdorff_distance(self):
+        # closest point is (0, 0) in self.p1
+        expected = Series(
+            np.array([np.sqrt(5**2 + 5**2), np.nan]), self.na_none.index
+        )
+        assert_array_dtype_equal(expected, self.na_none.hausdorff_distance(self.p0))
+
+        expected = Series(
+            np.array([np.sqrt(5**2 + 5**2), np.nan]), self.na_none.index
+        )
+        assert_array_dtype_equal(expected, self.na_none.hausdorff_distance(self.p0))
+
+        expected = Series(np.array([np.nan, 0, 0, 0, 0, 0, np.nan, np.nan]), range(8))
+        with pytest.warns(UserWarning, match="The indices .+ different"):
+            assert_array_dtype_equal(
+                expected, self.g0.hausdorff_distance(self.g9, align=True)
+            )
+
+        val_1 = self.g0.iloc[0].hausdorff_distance(self.g9.iloc[0])
+        val_2 = self.g0.iloc[2].hausdorff_distance(self.g9.iloc[2])
+        val_3 = self.g0.iloc[4].hausdorff_distance(self.g9.iloc[4])
+        expected = Series(
+            np.array([val_1, val_1, val_2, val_2, val_3, np.nan, np.nan]), self.g0.index
+        )
+        assert_array_dtype_equal(
+            expected, self.g0.hausdorff_distance(self.g9, align=False)
+        )
+
+        expected = Series(np.array([52.5]), self.g12.index)
+        assert_array_dtype_equal(
+            expected, self.g12.hausdorff_distance(self.g13, densify=0.25)
+        )
+
+    @pytest.mark.skipif(
+        (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+        reason="hausdorff_distance not implemented for shapely<2",
+    )
+    def test_hausdorff_distance_not(self):
+        with pytest.raises(
+            NotImplementedError, match="shapely >= 2.0 or PyGEOS is required"
+        ):
+            self.g0.hausdorff_distance(self.g9)
+
     def test_intersects(self):
         expected = [True, True, True, True, True, False, False]
         assert_array_dtype_equal(expected, self.g0.intersects(self.t1))
@@ -897,6 +950,49 @@ class TestGeomMethods:
     def test_convex_hull(self):
         # the convex hull of a square should be the same as the square
         assert_geoseries_equal(self.squares, self.squares.convex_hull)
+
+    @pytest.mark.skipif(
+        not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+        reason="delaunay_triangles not implemented for shapely<2",
+    )
+    def test_delaunay_triangles(self):
+        expected = GeoSeries(
+            [
+                GeometryCollection([Polygon([(0, 0), (1, 0), (1, 1), (0, 0)])]),
+                GeometryCollection([Polygon([(0, 1), (0, 0), (1, 1), (0, 1)])]),
+            ]
+        )
+        dlt = self.g3.delaunay_triangles()
+        assert isinstance(dlt, GeoSeries)
+        assert_series_equal(expected, dlt)
+
+    @pytest.mark.skipif(
+        not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+        reason="delaunay_triangles not implemented for shapely<2",
+    )
+    def test_delaunay_triangles_pass_kwargs(self):
+        expected = GeoSeries(
+            [
+                MultiLineString([[(0, 0), (1, 1)], [(0, 0), (1, 0)], [(1, 0), (1, 1)]]),
+                MultiLineString([[(0, 1), (1, 1)], [(0, 0), (0, 1)], [(0, 0), (1, 1)]]),
+            ]
+        )
+        dlt = self.g3.delaunay_triangles(only_edges=True)
+        assert isinstance(dlt, GeoSeries)
+        assert_series_equal(expected, dlt)
+
+    @pytest.mark.skipif(
+        compat.USE_PYGEOS or compat.USE_SHAPELY_20,
+        reason="delaunay_triangles implemented for shapely>2",
+    )
+    def test_delaunay_triangles_shapely_pre20(self):
+        s = GeoSeries([Point(1, 1)])
+        with pytest.raises(
+            NotImplementedError,
+            match=f"shapely >= 2.0 or PyGEOS is required, "
+            f"version {shapely.__version__} is installed",
+        ):
+            s.delaunay_triangles()
 
     def test_exterior(self):
         exp_exterior = GeoSeries([LinearRing(p.boundary) for p in self.g3])

@@ -519,6 +519,12 @@ class GeometryArray(ExtensionArray):
     def convex_hull(self):
         return GeometryArray(vectorized.convex_hull(self._data), crs=self.crs)
 
+    def delaunay_triangles(self, tolerance, only_edges):
+        return GeometryArray(
+            vectorized.delaunay_triangles(self._data, tolerance, only_edges),
+            crs=self.crs,
+        )
+
     @property
     def envelope(self):
         return GeometryArray(vectorized.envelope(self._data), crs=self.crs)
@@ -656,6 +662,10 @@ class GeometryArray(ExtensionArray):
     def distance(self, other):
         self.check_geographic_crs(stacklevel=6)
         return self._binary_method("distance", self, other)
+
+    def hausdorff_distance(self, other, **kwargs):
+        self.check_geographic_crs(stacklevel=6)
+        return self._binary_method("hausdorff_distance", self, other, **kwargs)
 
     def buffer(self, distance, resolution=16, **kwargs):
         if not (isinstance(distance, (int, float)) and distance == 0):
