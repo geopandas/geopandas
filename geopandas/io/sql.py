@@ -133,6 +133,7 @@ def _read_postgis(
         Active connection to the database to query.
     geom_col : string, default 'geom'
         column name to convert to shapely geometries
+        if 'infer', will attempt to infer the geometry column name.
     crs : dict or str, optional
         CRS to use for the returned GeoDataFrame; if not set, tries to
         determine CRS from the SRID associated with the first geometry in
@@ -233,7 +234,11 @@ def _get_postgis_column(sql, con) -> str:
     if _is_table_name:
         try:
             df = pandas_sql.read_query(
-                f"SELECT f_geometry_column from public.geometry_columns WHERE f_table_name = {sql};"
+                f"""
+                SELECT f_geometry_column
+                FROM public.geometry_columns
+                WHERE f_table_name = {sql};
+                """
             )
             assert len(df) == 1, f"More than 1 table with name {sql} found!"
             # other checks?
