@@ -8,9 +8,10 @@ New methods:
 - Added ``delaunay_triangles`` method from shapely to GeoSeries/GeoDataframe (#2907)
 - Added ``concave_hull`` method from shapely to GeoSeries/GeoDataframe. (#2903)
 - Added ``offset_curve`` method from shapely to GeoSeries/GeoDataframe. (#2902)
-- Added ``exclusive`` parameter to ``sjoin_nearest`` method for Shapely >= 2.0 (#2877)
 
 New features and improvements:
+
+- Added ``exclusive`` parameter to ``sjoin_nearest`` method for Shapely >= 2.0 (#2877)
 
 Bug fixes:
 
