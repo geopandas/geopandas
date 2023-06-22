@@ -11,6 +11,8 @@ New methods:
 
 New features and improvements:
 
+- Added ``exclusive`` parameter to ``sjoin_nearest`` method for Shapely >= 2.0 (#2877)
+
 Bug fixes:
 
 - ``assert_geodataframe_equal`` now handles GeoDataFrames with no active geometry (#2498)
