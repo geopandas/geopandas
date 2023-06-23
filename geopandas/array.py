@@ -533,6 +533,9 @@ class GeometryArray(ExtensionArray):
     def exterior(self):
         return GeometryArray(vectorized.exterior(self._data), crs=self.crs)
 
+    def extract_unique_points(self):
+        return GeometryArray(vectorized.extract_unique_points(self._data), crs=self.crs)
+
     def offset_curve(self, distance, quad_segs=8, join_style="round", mitre_limit=5.0):
         return GeometryArray(
             vectorized.offset_curve(

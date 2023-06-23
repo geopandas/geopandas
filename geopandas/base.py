@@ -733,10 +733,41 @@ GeometryCollection
         # TODO: return empty geometry for non-polygons
         return _delegate_property("exterior", self)
 
+    def extract_unique_points(self):
+        """Returns a ``GeoSeries`` of MultiPoints representing all
+        distinct vertices of an input geometry.
+
+        Examples
+        --------
+
+        >>> from shapely import LineString, Polygon
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         LineString([(0, 0), (0, 0), (1, 1), (1, 1)]),
+        ...         Polygon([(0, 0), (0, 0), (1, 1), (1, 1)])
+        ...     ],
+        ...     crs=3857
+        ... )
+        >>> s
+        0    LINESTRING (0.000 0.000, 0.000 0.000, 1.000 1....
+        1    POLYGON ((0.000 0.000, 0.000 0.000, 1.000 1.00...
+        dtype: geometry
+
+        >>> s.extract_unique_points()
+        0    MULTIPOINT (0.000 0.000, 1.000 1.000)
+        1    MULTIPOINT (0.000 0.000, 1.000 1.000)
+        dtype: geometry
+
+        See also
+        --------
+
+        GeoSeries.get_coordinates : extract coordinates as a :class:`~pandas.DataFrame`
+        """
+        return _delegate_geo_method("extract_unique_points", self)
+
     def offset_curve(self, distance, quad_segs=8, join_style="round", mitre_limit=5.0):
         """Returns a ``LineString`` or ``MultiLineString`` geometry at a
         distance from the object on its right or its left side.
-
         Parameters
         ----------
         distance : float | array-like

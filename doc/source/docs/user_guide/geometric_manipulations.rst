@@ -50,6 +50,11 @@ Constructive methods
   smallest rectangular polygon (with sides parallel to the coordinate
   axes) that contains each object.
 
+.. method:: GeoSeries.extract_unique_points
+
+  Returns a :class:`~geopandas.GeoSeries` of geometries containing all distinct
+  vertices of each input geometry as a multipoint.
+  
 .. method:: GeoSeries.offset_curve(distance, quad_segs=8, join_style="round", mitre_limit=5.0)
 
   Returns a :class:`~geopandas.GeoSeries` containing a `Linestring` or `MultiLineString`

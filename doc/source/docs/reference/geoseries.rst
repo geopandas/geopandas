@@ -92,6 +92,7 @@ Constructive methods and attributes
    GeoSeries.convex_hull
    GeoSeries.delaunay_triangles
    GeoSeries.envelope
+   GeoSeries.extract_unique_points
    GeoSeries.make_valid
    GeoSeries.minimum_bounding_circle
    GeoSeries.normalize
