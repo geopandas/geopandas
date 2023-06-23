@@ -4,19 +4,18 @@
 
 New methods:
 
-- Added ``hausdorff_distance()`` method from shapely to GeoSeries/GeoDataframe (#2909).
-- Added ``delaunay_triangles`` method from shapely to GeoSeries/GeoDataframe (#2907)
-- Added ``concave_hull`` method from shapely to GeoSeries/GeoDataframe. (#2903)
-- Added ``offset_curve`` method from shapely to GeoSeries/GeoDataframe. (#2902)
+- Added ``extract_unique_points`` method from shapely to GeoSeries/GeoDataframe (#2915).
+- Added ``hausdorff_distance`` method from shapely to GeoSeries/GeoDataframe (#2909).
+- Added ``delaunay_triangles`` method from shapely to GeoSeries/GeoDataframe (#2907).
+- Added ``concave_hull`` method from shapely to GeoSeries/GeoDataframe (#2903).
+- Added ``offset_curve`` method from shapely to GeoSeries/GeoDataframe (#2902).
 
 New features and improvements:
 
 - Added ``exclusive`` parameter to ``sjoin_nearest`` method for Shapely >= 2.0 (#2877)
 
 Bug fixes:
-
 - ``assert_geodataframe_equal`` now handles GeoDataFrames with no active geometry (#2498)
-
 ## Version 0.13.2 (Jun 6, 2023)
 
 Bug fix:
