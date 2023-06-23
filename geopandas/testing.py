@@ -288,8 +288,19 @@ def assert_geodataframe_equal(
         assert isinstance(left, type(right))
 
         if check_crs:
+            # allow if neither left and right has an active geometry column
+            if (
+                left._geometry_column_name is None
+                and right._geometry_column_name is None
+            ):
+                pass
+            elif (
+                left._geometry_column_name not in left.columns
+                and right._geometry_column_name not in right.columns
+            ):
+                pass
             # no crs can be either None or {}
-            if not left.crs and not right.crs:
+            elif not left.crs and not right.crs:
                 pass
             else:
                 assert left.crs == right.crs
@@ -328,9 +339,12 @@ def assert_geodataframe_equal(
                 check_crs=check_crs,
             )
 
+    # ensure the active geometry column is the same
+    assert left._geometry_column_name == right._geometry_column_name
+
     # drop geometries and check remaining columns
-    left2 = left.drop([left._geometry_column_name], axis=1)
-    right2 = right.drop([right._geometry_column_name], axis=1)
+    left2 = left.select_dtypes(exclude="geometry")
+    right2 = right.select_dtypes(exclude="geometry")
     assert_frame_equal(
         left2,
         right2,
