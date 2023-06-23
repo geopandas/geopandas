@@ -1,12 +1,12 @@
 import pandas as pd
 import pyproj
 import pytest
-from pandas.testing import assert_frame_equal
 
 from shapely.geometry import Point
 import numpy as np
 
 from geopandas import GeoDataFrame, GeoSeries
+from geopandas.testing import assert_geodataframe_equal
 
 crs_osgb = pyproj.CRS(27700)
 crs_wgs = pyproj.CRS(4326)
@@ -379,4 +379,4 @@ def test_merge_preserve_geodataframe():
     res = df.merge(df, left_index=True, right_index=True)
     assert_obj_no_active_geo_col(res, GeoDataFrame, geo_colname=None)
     expected = GeoDataFrame({"geo_x": ser, "geo_y": ser})
-    assert_frame_equal(expected, res)
+    assert_geodataframe_equal(expected, res)
