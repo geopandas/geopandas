@@ -15,7 +15,10 @@ New features and improvements:
 - Added ``exclusive`` parameter to ``sjoin_nearest`` method for Shapely >= 2.0 (#2877)
 
 Bug fixes:
+
+- Fix a color assignment in ``explore`` when using ``UserDefined`` bins (#2923)
 - ``assert_geodataframe_equal`` now handles GeoDataFrames with no active geometry (#2498)
+
 ## Version 0.13.2 (Jun 6, 2023)
 
 Bug fix:

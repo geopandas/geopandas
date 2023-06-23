@@ -29,3 +29,4 @@ dependencies:
       - pyarrow
       - folium
       - xyzservices
+      - geodatasets

@@ -33,3 +33,4 @@ dependencies:
     - git+https://github.com/pygeos/pygeos.git@master
     - git+https://github.com/python-visualization/folium.git@main
     - git+https://github.com/geopandas/xyzservices.git@main
+    - git+https://github.com/geopandas/geodatasets.git@main
