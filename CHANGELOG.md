@@ -13,7 +13,7 @@ New methods:
 New features and improvements:
 
 Bug fixes:
-
+- ``assert_geodataframe_equal`` now handles GeoDataFrames with no active geometry (#2498)
 ## Version 0.13.2 (Jun 6, 2023)
 
 Bug fix:

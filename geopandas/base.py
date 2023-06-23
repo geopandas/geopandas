@@ -740,7 +740,7 @@ GeometryCollection
         Examples
         --------
 
-        >>> from shapely import LineString, MultiPoint, Point, Polygon
+        >>> from shapely import LineString, Polygon
         >>> s = geopandas.GeoSeries(
         ...     [
         ...         LineString([(0, 0), (0, 0), (1, 1), (1, 1)]),
