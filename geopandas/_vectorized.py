@@ -667,6 +667,18 @@ def exterior(data):
         return _unary_geo("exterior", data)
 
 
+def extract_unique_points(data):
+    if compat.USE_SHAPELY_20:
+        return shapely.extract_unique_points(data)
+    elif compat.USE_PYGEOS:
+        return pygeos.extract_unique_points(data)
+    else:
+        raise NotImplementedError(
+            f"shapely >= 2.0 or PyGEOS is required, "
+            f"version {shapely.__version__} is installed"
+        )
+
+
 def offset_curve(data, distance, quad_segs=8, join_style="round", mitre_limit=5.0):
     if compat.USE_SHAPELY_20:
         return shapely.offset_curve(

@@ -468,7 +468,7 @@ def _explore(
                 color = np.apply_along_axis(
                     colors.to_hex,
                     1,
-                    _colormap_helper(cmap, n_resample=k, idx=binning.yb),
+                    _colormap_helper(cmap, n_resample=binning.k, idx=binning.yb),
                 )
 
             else:

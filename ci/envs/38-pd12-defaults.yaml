@@ -28,3 +28,4 @@ dependencies:
       - geopy
       - mapclassify==2.4.0
       - pyarrow
+      - geodatasets
