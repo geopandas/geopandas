@@ -856,6 +856,44 @@ GeometryCollection
         """
         return _delegate_property("interiors", self)
 
+    def remove_repeated_points(self, tolerance=0.0):
+        """Returns a ``GeoSeries`` containing a copy of the input geometry
+        with repeated points removed.
+
+        From the start of the coordinate sequence, each next point within the
+        tolerance is removed.
+
+        Removing repeated points with a non-zero tolerance may result in an invalid
+        geometry being returned.
+
+        Examples
+        --------
+
+        >>> from shapely import LineString, Polygon
+        ... s = geopandas.GeoSeries(
+        ...     [
+        ...        LineString([(0,0), (0,0), (1,0)]),
+        ...        Polygon([(0, 0), (0, .5), (0, 1), (.5, 1), (0,0)]),
+        ...     ],
+        ...     crs=3857
+        ... )
+        >>> s
+        0    LINESTRING (0.000 0.000, 0.000 0.000, 1.000 0....
+        1    POLYGON ((0.000 0.000, 0.000 0.500, 0.000 1.00...
+        dtype: geometry
+
+        >>> s.remove_repeated_points(tolerance=0.0)
+        0                LINESTRING (0.000 0.000, 1.000 0.000)
+        1    POLYGON ((0.000 0.000, 0.000 0.500, 0.000 1.00...
+        dtype: geometry
+
+        >>> s.remove_repeated_points(tolerance=0.5)
+        0                LINESTRING (0.000 0.000, 1.000 0.000)
+        1    POLYGON ((0.000 0.000, 0.000 1.000, 0.000 0.00...
+        dtype: geometry
+        """
+        return _delegate_geo_method("remove_repeated_points", self, tolerance=tolerance)
+
     def representative_point(self):
         """Returns a ``GeoSeries`` of (cheaply computed) points that are
         guaranteed to be within each geometry.
