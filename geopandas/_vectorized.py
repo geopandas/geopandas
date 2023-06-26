@@ -726,11 +726,11 @@ def remove_repeated_points(data, tolerance=0.0):
         return shapely.remove_repeated_points(data, tolerance=tolerance)
     if compat.USE_PYGEOS and compat.SHAPELY_GE_20:
         warnings.warn(
-            "PyGEOS does not support concave_hull, and Shapely >= 2 is installed, "
-            "thus using Shapely and not PyGEOS to remove repeated points.",
+            "PyGEOS does not support remove_repeated_points, and Shapely >= 2 is "
+            "installed, thus using Shapely and not PyGEOS to remove repeated points.",
             stacklevel=4,
         )
-        return shapely.remove_repeated_points(data, tolerance=tolerance)
+        return shapely.remove_repeated_points(to_shapely(data), tolerance=tolerance)
     else:
         raise NotImplementedError(
             f"shapely >= 2.0 is required, "

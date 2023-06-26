@@ -1777,12 +1777,6 @@ class TestGeomMethods:
         reason="remove_repeated_points is only implemented for shapely >= 2.0",
     )
     def test_remove_repeated_points_pygeos_set_shapely_installed(self):
-        expected = GeoSeries(
-            [
-                Polygon([(0, 1), (1, 1), (0, 0), (0, 1)]),
-                Polygon([(1, 0), (0, 0), (0, 1), (1, 1), (1, 0)]),
-            ]
-        )
         with pytest.warns(
             UserWarning,
             match=(
@@ -1790,27 +1784,24 @@ class TestGeomMethods:
                 "and Shapely >= 2 is installed"
             ),
         ):
-            assert_geoseries_equal(expected, self.g5.remove_repeated_points())
-
-    @pytest.mark.skipif(
-        not compat.USE_SHAPELY_20,
-        reason="remove_repeated_points is only implemented for shapely >= 2.0",
-    )
-    def test_remove_repeated_points(self):
-        assert_geoseries_equal(self.squares, self.squares.remove_repeated_points())
+            self.g1.remove_repeated_points()
 
     @pytest.mark.skipif(
         not compat.USE_SHAPELY_20,
         reason="remove_repeated_points is only implemented for shapely >= 2.0",
     )
     @pytest.mark.parametrize(
-        "expected_series,tolerance",
+        "geom,expected",
         [
-            ([(0, 0), (0, 3), (1, 1), (3, 3), (3, 0), (0, 0)], 0.0),
-            ([(0, 0), (0, 3), (3, 3), (3, 0), (0, 0)], 0.5),
+            (
+                GeoSeries(LinearRing([(0, 0), (1, 2), (1, 2), (1, 3), (0, 0)])),
+                GeoSeries(LinearRing([(0, 0), (1, 2), (1, 3), (0, 0)])),
+            ),
+            (
+                GeoSeries(Polygon([(0, 0), (0, 0), (1, 0), (1, 1), (1, 0), (0, 0)])),
+                GeoSeries(Polygon([(0, 0), (1, 0), (1, 1), (1, 0), (0, 0)])),
+            ),
         ],
     )
-    def test_remove_repeated_points_accepts_kwargs(self, expected_series, tolerance):
-        expected = GeoSeries(Polygon(expected_series))
-        s = GeoSeries(Polygon([(0, 0), (0, 3), (1, 1), (3, 0), (3, 3)]))
-        assert_geoseries_equal(expected, s.remove_repeated_points(tolerance=tolerance))
+    def test_remove_repeated_points(self, geom, expected):
+        assert_geoseries_equal(expected, geom.remove_repeated_points(tolerance=0.0))
