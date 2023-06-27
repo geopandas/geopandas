@@ -372,20 +372,20 @@ class TestDataFrame:
         with pytest.raises(AttributeError, match=msg_geo_col_missing):
             df.geometry
 
-    def test_has_active_geometry(self):
+    def test_active_geometry_name(self):
         # default single active called "geometry"
-        assert self.df.has_active_geometry
+        assert self.df.active_geometry_name == "geometry"
 
         # one GeoSeries, not active
         no_active = GeoDataFrame({"foo": self.df.BoroName, "bar": self.df.geometry})
-        assert not no_active.has_active_geometry
-        assert no_active.set_geometry("bar").has_active_geometry
+        assert no_active.active_geometry_name is None
+        assert no_active.set_geometry("bar").active_geometry_name == "bar"
 
         # multiple, none active
         multiple = GeoDataFrame({"foo": self.df.geometry, "bar": self.df.geometry})
-        assert not multiple.has_active_geometry
-        assert multiple.set_geometry("foo").has_active_geometry
-        assert multiple.set_geometry("bar").has_active_geometry
+        assert multiple.active_geometry_name is None
+        assert multiple.set_geometry("foo").active_geometry_name == "foo"
+        assert multiple.set_geometry("bar").active_geometry_name == "bar"
 
     def test_align(self):
         df = self.df2

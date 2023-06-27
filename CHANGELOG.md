@@ -13,7 +13,7 @@ New methods:
 New features and improvements:
 
 - Added ``exclusive`` parameter to ``sjoin_nearest`` method for Shapely >= 2.0 (#2877)
-- Added ``GeoDataFrame.has_active_geometry`` property checking whether a GeoDataFrame has an active geometry set.
+- Added ``GeoDataFrame.active_geometry_name`` property returning an active geometry column's name or None.
 
 Bug fixes:
 
