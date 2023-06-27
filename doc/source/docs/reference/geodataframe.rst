@@ -49,6 +49,7 @@ Active geometry handling
 
    GeoDataFrame.rename_geometry
    GeoDataFrame.set_geometry
+   GeoDataFrame.has_active_geometry
 
 Aggregating and exploding
 -------------------------

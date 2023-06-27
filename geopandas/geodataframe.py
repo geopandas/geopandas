@@ -399,6 +399,28 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             self.set_geometry(col, inplace=inplace)
 
     @property
+    def has_active_geometry(self):
+        """Check if a GeoDataFrame has an active geometry
+
+        Returns True if a GeoDataFrame has an active geometry column set. Otherwise
+        returns False. You can access an active geometry column using the
+        ``.geometry`` property. You can set a GeoSeries to be an active geometry
+        using the :meth:`~GeoDataFrame.set_geometry` method.
+
+        Returns
+        -------
+        bool
+            True if an active geometry is set
+
+        See also
+        --------
+        GeoDataFrame.set_geometry : set the active geometry
+        """
+        if self._geometry_column_name is not None:
+            return True
+        return False
+
+    @property
     def crs(self):
         """
         The Coordinate Reference System (CRS) represented as a ``pyproj.CRS``
