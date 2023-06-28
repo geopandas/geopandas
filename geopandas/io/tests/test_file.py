@@ -354,10 +354,10 @@ def test_to_file_types(tmpdir, df_points, engine):
         np.uint64,
     ]
     geometry = df_points.geometry
-    data = dict(
-        (str(i), np.arange(len(geometry), dtype=dtype))
+    data = {
+        str(i): np.arange(len(geometry), dtype=dtype)
         for i, dtype in enumerate(int_types)
-    )
+    }
     df = GeoDataFrame(data, geometry=geometry)
     df.to_file(tempfilename, engine=engine)
 
@@ -918,7 +918,7 @@ def test_read_file_empty_shapefile(tmpdir, engine):
     fname = str(tmpdir.join("test_empty.shp"))
 
     with fiona_env():
-        with fiona.open(fname, "w", **meta) as _:  # noqa
+        with fiona.open(fname, "w", **meta) as _:
             pass
 
     empty = read_file(fname, engine=engine)
@@ -1027,8 +1027,6 @@ def test_write_index_to_file(tmpdir, df_points, driver, ext, engine):
         df.geometry.to_file(tempfilename, driver=driver, index=False, engine=engine)
         df_check = read_file(tempfilename, engine=engine)
         assert list(df_check.columns) == driver_col + ["geometry"]
-
-        return
 
     #
     # Checks where index is not used/saved

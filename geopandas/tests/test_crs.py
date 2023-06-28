@@ -112,8 +112,8 @@ def test_to_crs_dimension_mixed():
 )
 def epsg4326(request):
     if isinstance(request.param, int):
-        return dict(epsg=request.param)
-    return dict(crs=request.param)
+        return {"epsg": request.param}
+    return {"crs": request.param}
 
 
 @pytest.fixture(
@@ -130,8 +130,8 @@ def epsg4326(request):
 )
 def epsg26918(request):
     if isinstance(request.param, int):
-        return dict(epsg=request.param)
-    return dict(crs=request.param)
+        return {"epsg": request.param}
+    return {"crs": request.param}
 
 
 @pytest.mark.filterwarnings("ignore:'\\+init:DeprecationWarning")
@@ -650,7 +650,7 @@ class TestGeometryArrayCRS:
         arr = from_shapely(self.geoms, crs=27700)
         df = GeoDataFrame({"col1": [0, 1]}, geometry=arr)
 
-        df["geometry"] = [g for g in df.geometry]
+        df["geometry"] = list(df.geometry)
         assert df.geometry.values.crs == self.osgb
 
         df2 = GeoDataFrame({"col1": [0, 1]}, geometry=arr)

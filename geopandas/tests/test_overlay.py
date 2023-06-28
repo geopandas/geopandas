@@ -514,7 +514,7 @@ def test_overlay_strict(how, keep_geom_type, geom_types):
         # so we sort the resultant dataframes to get a consistent order
         # independently of the spatial index implementation
         assert all(expected.columns == result.columns), "Column name mismatch"
-        cols = list(set(result.columns) - set(["geometry"]))
+        cols = list(set(result.columns) - {"geometry"})
         expected = expected.sort_values(cols, axis=0).reset_index(drop=True)
         result = result.sort_values(cols, axis=0).reset_index(drop=True)
 

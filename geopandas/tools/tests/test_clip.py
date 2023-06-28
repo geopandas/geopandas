@@ -1,6 +1,5 @@
 """Tests for the clip module."""
 
-import warnings
 from packaging.version import Version
 
 import numpy as np
@@ -352,15 +351,6 @@ class TestClipWithSingleRectangleGdf:
             and clipped.geom_type[1] == "Polygon"
             and clipped.geom_type[2] == "LineString"
         )
-
-    def test_clip_warning_no_extra_geoms(self, buffered_locations, mask):
-        """Test a user warning is provided if no new geometry types are found."""
-        with pytest.warns(UserWarning):
-            clip(buffered_locations, mask, True)
-            warnings.warn(
-                "keep_geom_type was called when no extra geometry types existed.",
-                UserWarning,
-            )
 
     def test_clip_with_line_extra_geom(self, sliver_line, mask):
         """When the output of a clipped line returns a geom collection,

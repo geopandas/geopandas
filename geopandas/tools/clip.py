@@ -200,7 +200,8 @@ def clip(gdf, mask, keep_geom_type=False):
         if geomcoll_orig:
             warnings.warn(
                 "keep_geom_type can not be called on a "
-                "GeoDataFrame with GeometryCollection."
+                "GeoDataFrame with GeometryCollection.",
+                stacklevel=2,
             )
         else:
             polys = ["Polygon", "MultiPolygon"]
@@ -230,7 +231,8 @@ def clip(gdf, mask, keep_geom_type=False):
 
             if orig_types_total > 1:
                 warnings.warn(
-                    "keep_geom_type can not be called on a mixed type GeoDataFrame."
+                    "keep_geom_type can not be called on a mixed type GeoDataFrame.",
+                    stacklevel=2,
                 )
             elif new_collection or more_types:
                 orig_type = gdf.geom_type.iloc[0]

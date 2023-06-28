@@ -713,7 +713,8 @@ def interiors(data):
     if has_non_poly:
         warnings.warn(
             "Only Polygon objects have interior rings. For other "
-            "geometry types, None is returned."
+            "geometry types, None is returned.",
+            stacklevel=2,
         )
     data = np.empty(len(data), dtype=object)
     with compat.ignore_shapely2_warnings():

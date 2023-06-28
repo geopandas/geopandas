@@ -3,8 +3,8 @@ from warnings import warn
 import numpy
 from shapely.geometry import MultiPoint
 
-from ..array import from_shapely, points_from_xy
-from ..geoseries import GeoSeries
+from geopandas.array import from_shapely, points_from_xy
+from geopandas.geoseries import GeoSeries
 
 
 def uniform(geom, size, seed=None):

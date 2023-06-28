@@ -915,7 +915,7 @@ class GeoSeries(GeoPandasBase, Series):
                     self.values._data, return_index=True
                 )
             else:
-                import pygeos  # noqa
+                import pygeos
 
                 geometries, outer_idx = pygeos.get_parts(
                     self.values._data, return_index=True

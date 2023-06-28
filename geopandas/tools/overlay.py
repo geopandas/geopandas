@@ -247,7 +247,7 @@ def overlay(df1, df2, how="intersection", keep_geom_type=None, make_valid=True):
 
     if isinstance(df1, GeoSeries) or isinstance(df2, GeoSeries):
         raise NotImplementedError(
-            "overlay currently only implemented for " "GeoDataFrames"
+            "overlay currently only implemented for GeoDataFrames"
         )
 
     if not _check_crs(df1, df2):

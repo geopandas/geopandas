@@ -4,7 +4,7 @@ and 'naturalearth_cities.shp'.
 
 Raw data: https://www.naturalearthdata.com/http//www.naturalearthdata.com/download/110m/cultural/ne_110m_admin_0_countries.zip
 Current version used: see code
-"""  # noqa (E501 link is longer than max line length)
+"""
 
 import geopandas as gpd
 import requests

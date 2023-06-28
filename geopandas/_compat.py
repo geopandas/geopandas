@@ -49,7 +49,7 @@ INSTALL_PYGEOS_ERROR = "To use PyGEOS within GeoPandas, you need to install PyGE
 'conda install pygeos' or 'pip install pygeos'"
 
 try:
-    import pygeos  # noqa
+    import pygeos
 
     # only automatically use pygeos if version is high enough
     if Version(pygeos.__version__) >= Version("0.8"):
@@ -61,6 +61,7 @@ try:
             "The installed version of PyGEOS is too old ({0} installed, 0.8 required),"
             " and thus GeoPandas will not use PyGEOS.".format(pygeos.__version__),
             UserWarning,
+            stacklevel=2,
         )
         HAS_PYGEOS = False
 except ImportError:
@@ -95,7 +96,7 @@ def set_use_pygeos(val=None):
     # validate the pygeos version
     if USE_PYGEOS:
         try:
-            import pygeos  # noqa
+            import pygeos
 
             # validate the pygeos version
             if not Version(pygeos.__version__) >= Version("0.8"):
@@ -103,7 +104,8 @@ def set_use_pygeos(val=None):
                     USE_PYGEOS = False
                     warnings.warn(
                         "The PyGEOS version is too old, and Shapely >= 2 is installed, "
-                        "thus using Shapely by default and not PyGEOS."
+                        "thus using Shapely by default and not PyGEOS.",
+                        stacklevel=2,
                     )
                 else:
                     raise ImportError(
@@ -126,7 +128,8 @@ def set_use_pygeos(val=None):
                     "version PyGEOS was compiled with ({}). Conversions between both "
                     "will be slow.".format(
                         shapely_geos_version, geos_capi_version_string
-                    )
+                    ),
+                    stacklevel=2,
                 )
                 PYGEOS_SHAPELY_COMPAT = False
             else:
@@ -248,7 +251,7 @@ def import_optional_dependency(name: str, extra: str = ""):
 HAS_RTREE = None
 RTREE_GE_094 = False
 try:
-    import rtree  # noqa
+    import rtree  # noqa: F401
 
     HAS_RTREE = True
 except ImportError:
