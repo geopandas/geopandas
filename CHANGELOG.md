@@ -4,6 +4,7 @@
 
 New methods:
 
+- Added ``segmentize`` method from shapely to GeoSeries/GeoDataFrame (#2910).
 - Added ``extract_unique_points`` method from shapely to GeoSeries/GeoDataframe (#2915).
 - Added ``hausdorff_distance`` method from shapely to GeoSeries/GeoDataframe (#2909).
 - Added ``delaunay_triangles`` method from shapely to GeoSeries/GeoDataframe (#2907).
