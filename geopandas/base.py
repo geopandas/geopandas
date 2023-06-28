@@ -1027,6 +1027,47 @@ GeometryCollection
         """
         return _delegate_geo_method("make_valid", self)
 
+    def segmentize(self, max_segment_length):
+        """Returns a ``GeoSeries`` with vertices added to line segments based on
+        maximum segment length.
+
+        Additional vertices will be added to every line segment in an input geometry so
+        that segments are no longer than the provided maximum segment length. New
+        vertices will evenly subdivide each segment. Only linear components of input
+        geometries are densified; other geometries are returned unmodified.
+
+        Parameters
+        ----------
+        max_segment_length : float | array-like
+            Additional vertices will be added so that all line segments are no longer
+            than this value. Must be greater than 0.
+
+        Returns
+        -------
+        GeoSeries
+
+        Examples
+        --------
+        >>> from shapely.geometry import Polygon, LineString
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         LineString([(0, 0), (0, 10)]),
+        ...         Polygon([(0, 0), (10, 0), (10, 10), (0, 10), (0, 0)]),
+        ...     ],
+        ...     crs=3857
+        ... )
+        >>> s
+        0               LINESTRING (0.000 0.000, 0.000 10.000)
+        1    POLYGON ((0.000 0.000, 10.000 0.000, 10.000 10...
+        dtype: geometry
+
+        >>> s.segmentize(max_segment_length=5)
+        0    LINESTRING (0.000 0.000, 0.000 5.000, 0.000 10...
+        1    POLYGON ((0.000 0.000, 5.000 0.000, 10.000 0.0...
+        dtype: geometry
+        """
+        return _delegate_geo_method("segmentize", self, max_segment_length)
+
     #
     # Reduction operations that return a Shapely geometry
     #
