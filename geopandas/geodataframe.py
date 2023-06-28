@@ -1531,7 +1531,7 @@ individually so that features may have different properties
             try:
                 if self._geometry_column_name is not None:
                     crs = getattr(self, "crs", None)
-                else:  # don't use getattr, because a col 'crs' might exist
+                else:  # don't use getattr, because a col "crs" might exist
                     crs = None
                 value = _ensure_geometry(value, crs=crs)
                 if key == "geometry":
