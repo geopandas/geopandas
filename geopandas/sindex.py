@@ -428,9 +428,9 @@ geometries}
 
 
 if compat.HAS_RTREE:
-    import rtree.index  # noqa
-    from rtree.core import RTreeError  # noqa
-    from shapely.prepared import prep  # noqa
+    import rtree.index
+    from rtree.core import RTreeError
+    from shapely.prepared import prep
 
     class SpatialIndex(rtree.index.Index, BaseSpatialIndex):
         """Original rtree wrapper, kept for backwards compatibility."""
@@ -677,6 +677,7 @@ if compat.HAS_RTREE:
                 "PyGEOSSTRTreeIndex.nearest for details). This behavior will be "
                 "updated in a future release.",
                 FutureWarning,
+                stacklevel=2,
             )
             return super().nearest(
                 coordinates, num_results=num_results, objects=objects
@@ -709,17 +710,17 @@ if compat.HAS_RTREE:
 
 
 if compat.SHAPELY_GE_20 or compat.HAS_PYGEOS:
-    from . import geoseries  # noqa
-    from . import array  # noqa
+    from . import geoseries
+    from . import array
 
     if compat.USE_SHAPELY_20:
-        import shapely as mod  # noqa
+        import shapely as mod
 
-        _PYGEOS_PREDICATES = {p.name for p in mod.strtree.BinaryPredicate} | set([None])
+        _PYGEOS_PREDICATES = {p.name for p in mod.strtree.BinaryPredicate} | {None}
     else:
-        import pygeos as mod  # noqa
+        import pygeos as mod
 
-        _PYGEOS_PREDICATES = {p.name for p in mod.strtree.BinaryPredicate} | set([None])
+        _PYGEOS_PREDICATES = {p.name for p in mod.strtree.BinaryPredicate} | {None}
 
     class PyGEOSSTRTreeIndex(BaseSpatialIndex):
         """A simple wrapper around pygeos's STRTree.

@@ -479,12 +479,12 @@ class TestComparisonOps(extension_tests.BaseComparisonOpsTests):
         expected = s.combine(other, op)
         self.assert_series_equal(result, expected)
 
-    def test_compare_scalar(self, data, all_compare_operators):  # noqa
+    def test_compare_scalar(self, data, all_compare_operators):
         op_name = all_compare_operators
         s = pd.Series(data)
         self._compare_other(s, data, op_name, data[0])
 
-    def test_compare_array(self, data, all_compare_operators):  # noqa
+    def test_compare_array(self, data, all_compare_operators):
         op_name = all_compare_operators
         s = pd.Series(data)
         other = pd.Series([data[0]] * len(data))

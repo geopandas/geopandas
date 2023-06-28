@@ -10,9 +10,9 @@ matplotlib = pytest.importorskip("matplotlib")
 mapclassify = pytest.importorskip("mapclassify")
 geodatasets = pytest.importorskip("geodatasets")
 
-import matplotlib.cm as cm  # noqa
-import matplotlib.colors as colors  # noqa
-from branca.colormap import StepColormap  # noqa
+from matplotlib import cm
+from matplotlib import colors
+from branca.colormap import StepColormap
 
 BRANCA_05 = Version(branca.__version__) > Version("0.4.2")
 FOLIUM_G_014 = Version(folium.__version__) > Version("0.14.0")
@@ -340,11 +340,11 @@ class TestExplore:
     def test_style_kwds(self):
         """Style keywords"""
         m = self.world.explore(
-            style_kwds=dict(fillOpacity=0.1, weight=0.5, fillColor="orange")
+            style_kwds={"fillOpacity": 0.1, "weight": 0.5, "fillColor": "orange"}
         )
         out_str = self._fetch_map_string(m)
         assert '"fillColor":"orange","fillOpacity":0.1,"weight":0.5' in out_str
-        m = self.world.explore(column="pop_est", style_kwds=dict(color="black"))
+        m = self.world.explore(column="pop_est", style_kwds={"color": "black"})
         assert '"color":"black"' in self._fetch_map_string(m)
 
         # custom style_function - geopandas/issues/2350
@@ -363,14 +363,12 @@ class TestExplore:
         # two lines with formatting instructions from style_function.
         # make sure each passes test
         assert all(
-            [
-                ('"fillColor":"green"' in t and '"color":"white"' in t)
-                or ('"fillColor":"red"' in t and '"color":"black"' in t)
-                for t in [
-                    "".join(line.split())
-                    for line in m._parent.render().split("\n")
-                    if "return" in line and "color" in line
-                ]
+            ('"fillColor":"green"' in t and '"color":"white"' in t)
+            or ('"fillColor":"red"' in t and '"color":"black"' in t)
+            for t in [
+                "".join(line.split())
+                for line in m._parent.render().split("\n")
+                if "return" in line and "color" in line
             ]
         )
 
@@ -441,7 +439,7 @@ class TestExplore:
         m = self.world.explore(
             tooltip=True,
             popup=False,
-            tooltip_kwds=dict(aliases=[0, 1, 2, 3, 4, 5], sticky=False),
+            tooltip_kwds={"aliases": [0, 1, 2, 3, 4, 5], "sticky": False},
         )
         out_str = self._fetch_map_string(m)
         assert (
@@ -455,7 +453,7 @@ class TestExplore:
         m = self.world.explore(
             tooltip=False,
             popup=True,
-            popup_kwds=dict(aliases=[0, 1, 2, 3, 4, 5]),
+            popup_kwds={"aliases": [0, 1, 2, 3, 4, 5]},
         )
         out_str = self._fetch_map_string(m)
         assert (
@@ -469,8 +467,8 @@ class TestExplore:
         m = self.world.explore(
             tooltip=True,
             popup=True,
-            tooltip_kwds=dict(labels=False),
-            popup_kwds=dict(labels=False),
+            tooltip_kwds={"labels": False},
+            popup_kwds={"labels": False},
         )
         out_str = self._fetch_map_string(m)
         assert "<th>${aliases[i]" not in out_str
@@ -498,7 +496,7 @@ class TestExplore:
         for s in strings:
             assert s in out_str
 
-        m = self.cities.explore(marker_kwds=dict(radius=5, fill=False))
+        m = self.cities.explore(marker_kwds={"radius": 5, "fill": False})
         strings = ['"radius":5', '"fill":false', "CircleMarker(latlng,opts)"]
         out_str = self._fetch_map_string(m)
         for s in strings:
@@ -571,10 +569,10 @@ class TestExplore:
         m = self.missing.explore("pop_est")
         assert '"fillColor":null' in self._fetch_map_string(m)
 
-        m = self.missing.explore("pop_est", missing_kwds=dict(color="red"))
+        m = self.missing.explore("pop_est", missing_kwds={"color": "red"})
         assert '"fillColor":"red"' in self._fetch_map_string(m)
 
-        m = self.missing.explore("continent", missing_kwds=dict(color="red"))
+        m = self.missing.explore("continent", missing_kwds={"color": "red"})
         assert '"fillColor":"red"' in self._fetch_map_string(m)
 
     def test_categorical_legend(self):
@@ -605,13 +603,13 @@ class TestExplore:
         assert quoted_in("text('range')", out_str)
 
         m = self.world.explore(
-            "range", legend=True, legend_kwds=dict(caption="my_caption")
+            "range", legend=True, legend_kwds={"caption": "my_caption"}
         )
         out_str = self._fetch_map_string(m)
         assert "attr(\"id\",'legend')" in out_str
         assert quoted_in("text('my_caption')", out_str)
 
-        m = self.missing.explore("pop_est", legend=True, missing_kwds=dict(color="red"))
+        m = self.missing.explore("pop_est", legend=True, missing_kwds={"color": "red"})
         out_str = self._fetch_map_string(m)
         assert "red'></span>NaN" in out_str
 
@@ -619,7 +617,7 @@ class TestExplore:
         m = self.world.explore(
             "pop_est",
             legend=True,
-            legend_kwds=dict(scale=False),
+            legend_kwds={"scale": False},
             scheme="Headtailbreaks",
         )
         out_str = self._fetch_map_string(m)
@@ -660,7 +658,7 @@ class TestExplore:
         import re
 
         # linear
-        m = self.world.explore("pop_est", legend_kwds=dict(max_labels=3))
+        m = self.world.explore("pop_est", legend_kwds={"max_labels": 3})
         out_str = self._fetch_map_string(m)
         tick_str = re.search(r"tickValues\(\[[\',\,\.,0-9]*\]\)", out_str).group(0)
         assert (
@@ -670,13 +668,13 @@ class TestExplore:
 
         # scheme
         m = self.world.explore(
-            "pop_est", scheme="headtailbreaks", legend_kwds=dict(max_labels=3)
+            "pop_est", scheme="headtailbreaks", legend_kwds={"max_labels": 3}
         )
         out_str = self._fetch_map_string(m)
         assert "tickValues([140.0,'',184117213.1818182,'',1382066377.0,''])" in out_str
 
         # short cmap
-        m = self.world.explore("pop_est", legend_kwds=dict(max_labels=3), cmap="tab10")
+        m = self.world.explore("pop_est", legend_kwds={"max_labels": 3}, cmap="tab10")
         out_str = self._fetch_map_string(m)
 
         tick_str = re.search(r"tickValues\(\[[\',\,\.,0-9]*\]\)", out_str).group(0)
@@ -761,8 +759,8 @@ class TestExplore:
             column="pop_est",
             legend=True,
             scheme="naturalbreaks",
-            missing_kwds=dict(color="red", label="missing"),
-            legend_kwds=dict(colorbar=False, interval=True),
+            missing_kwds={"color": "red", "label": "missing"},
+            legend_kwds={"colorbar": False, "interval": True},
         )
         out_str = self._fetch_map_string(m)
 
@@ -782,8 +780,8 @@ class TestExplore:
             column="pop_est",
             legend=True,
             scheme="naturalbreaks",
-            missing_kwds=dict(color="red", label="missing"),
-            legend_kwds=dict(colorbar=False, interval=False),
+            missing_kwds={"color": "red", "label": "missing"},
+            legend_kwds={"colorbar": False, "interval": False},
         )
         out_str = self._fetch_map_string(m)
 
@@ -804,7 +802,7 @@ class TestExplore:
             legend=True,
             scheme="naturalbreaks",
             k=5,
-            legend_kwds=dict(colorbar=False, labels=["s", "m", "l", "xl", "xxl"]),
+            legend_kwds={"colorbar": False, "labels": ["s", "m", "l", "xl", "xxl"]},
         )
         out_str = self._fetch_map_string(m)
 
@@ -817,8 +815,8 @@ class TestExplore:
             column="pop_est",
             legend=True,
             scheme="naturalbreaks",
-            missing_kwds=dict(color="red", label="missing"),
-            legend_kwds=dict(colorbar=False, fmt="{:.0f}"),
+            missing_kwds={"color": "red", "label": "missing"},
+            legend_kwds={"colorbar": False, "fmt": "{:.0f}"},
         )
         out_str = self._fetch_map_string(m)
 
@@ -851,7 +849,7 @@ class TestExplore:
         assert '"fillOpacity":0.75' in out_str
 
         m = self.nybb.explore(
-            highlight=True, highlight_kwds=dict(fillOpacity=1, color="red")
+            highlight=True, highlight_kwds={"fillOpacity": 1, "color": "red"}
         )
         out_str = self._fetch_map_string(m)
 
@@ -929,12 +927,16 @@ class TestExplore:
 
         # check that folium and leaflet Map() parameters can be passed
         m = self.world.explore(
-            zoom_control=False, map_kwds=dict(dragging=False, scrollWheelZoom=False)
+            zoom_control=False, map_kwds={"dragging": False, "scrollWheelZoom": False}
         )
         check()
         with pytest.raises(
             ValueError, match="'zoom_control' cannot be specified in 'map_kwds'"
         ):
             self.world.explore(
-                map_kwds=dict(dragging=False, scrollWheelZoom=False, zoom_control=False)
+                map_kwds={
+                    "dragging": False,
+                    "scrollWheelZoom": False,
+                    "zoom_control": False,
+                }
             )
