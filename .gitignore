@@ -72,3 +72,4 @@ geopandas/datasets/ne_110m_admin_0_countries.zip
 doc/source/getting_started/my_file.geojson
 
 .ruff_cache
+.env

@@ -232,7 +232,12 @@ class BaseSpatialIndex:
         raise NotImplementedError
 
     def nearest(
-        self, geometry, return_all=True, max_distance=None, return_distance=False
+        self,
+        geometry,
+        return_all=True,
+        max_distance=None,
+        return_distance=False,
+        exclusive=False,
     ):
         """
         Return the nearest geometry in the tree for each input geometry in
@@ -281,6 +286,9 @@ geometries}
             Must be greater than 0. By default None, indicating no distance limit.
         return_distance : bool, optional
             If True, will return distances in addition to indexes. By default False
+        exclusive : bool, optional
+            if True, the nearest geometries that are equal to the input geometry
+            will not be returned. By default False.  Requires Shapely >= 2.0.
 
         Returns
         -------
@@ -840,11 +848,21 @@ if compat.SHAPELY_GE_20 or compat.HAS_PYGEOS:
 
         @doc(BaseSpatialIndex.nearest)
         def nearest(
-            self, geometry, return_all=True, max_distance=None, return_distance=False
+            self,
+            geometry,
+            return_all=True,
+            max_distance=None,
+            return_distance=False,
+            exclusive=False,
         ):
             if not (compat.USE_SHAPELY_20 or compat.PYGEOS_GE_010):
                 raise NotImplementedError(
                     "sindex.nearest requires shapely >= 2.0 or pygeos >= 0.10"
+                )
+
+            if exclusive and not compat.USE_SHAPELY_20:
+                raise NotImplementedError(
+                    "sindex.nearest exclusive parameter requires shapely >= 2.0"
                 )
 
             geometry = self._as_geometry_array(geometry)
@@ -857,6 +875,7 @@ if compat.SHAPELY_GE_20 or compat.HAS_PYGEOS:
                     max_distance=max_distance,
                     return_distance=return_distance,
                     all_matches=return_all,
+                    exclusive=exclusive,
                 )
             else:
                 if not return_all and max_distance is None and not return_distance:

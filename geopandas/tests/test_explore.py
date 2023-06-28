@@ -8,6 +8,7 @@ folium = pytest.importorskip("folium")
 branca = pytest.importorskip("branca")
 matplotlib = pytest.importorskip("matplotlib")
 mapclassify = pytest.importorskip("mapclassify")
+geodatasets = pytest.importorskip("geodatasets")
 
 from matplotlib import cm
 from matplotlib import colors
@@ -22,6 +23,7 @@ class TestExplore:
         self.nybb = gpd.read_file(gpd.datasets.get_path("nybb"))
         self.world = gpd.read_file(gpd.datasets.get_path("naturalearth_lowres"))
         self.cities = gpd.read_file(gpd.datasets.get_path("naturalearth_cities"))
+        self.chicago = gpd.read_file(geodatasets.get_path("geoda.chicago_commpop"))
         self.world["range"] = range(len(self.world))
         self.missing = self.world.copy()
         np.random.seed(42)
@@ -173,11 +175,24 @@ class TestExplore:
         assert '"fillColor":"#5ec962"' in out_str
         assert '"fillColor":"#fde725"' in out_str
         assert '"fillColor":"#440154"' in out_str
+
         # custom k
         m = self.world.explore(column="pop_est", scheme="naturalbreaks", k=3)
         out_str = self._fetch_map_string(m)
         assert '"fillColor":"#21918c"' in out_str
         assert '"fillColor":"#fde725"' in out_str
+        assert '"fillColor":"#440154"' in out_str
+
+        # UserDefined overriding default k
+        m = self.chicago.explore(
+            column="POP2010",
+            scheme="UserDefined",
+            classification_kwds={"bins": [25000, 50000, 75000, 100000]},
+        )
+        out_str = self._fetch_map_string(m)
+        assert '"fillColor":"#fde725"' in out_str
+        assert '"fillColor":"#35b779"' in out_str
+        assert '"fillColor":"#31688e"' in out_str
         assert '"fillColor":"#440154"' in out_str
 
     def test_categorical(self):
