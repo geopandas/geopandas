@@ -1077,10 +1077,11 @@ class GeometryArray(ExtensionArray):
             Alternatively, an GeometryArray 'value' can be given. It's expected
             that the GeometryArray has the same length as 'self'.
 
-        method : {'backfill', 'bfill', 'pad', 'ffill', None}, default None
-            Method to use for filling holes in reindexed Series
-            pad / ffill: propagate last valid observation forward to next valid
-            backfill / bfill: use NEXT valid observation to fill gap
+        method : {'backfill', 'bfill', 'ffill', None}, default None
+            Method to use for filling holes:
+
+            - ffill: propagate last valid observation forward to next valid.
+            - backfill / bfill: use next valid observation to fill gap.
 
         limit : int, default None
             If method is specified, this is the maximum number of consecutive
@@ -1088,14 +1089,15 @@ class GeometryArray(ExtensionArray):
             a gap with more than this number of consecutive NaNs, it will only
             be partially filled. If method is not specified, this is the
             maximum number of entries along the entire axis where NaNs will be
-            filled.
+            filled. Must be greater than 0 if not None.
 
         Returns
         -------
         GeometryArray
         """
+
         if method is not None:
-            raise NotImplementedError("fillna with a method is not yet supported")
+            return super().fillna(method=method, limit=limit)
 
         mask = self.isna()
         new_values = self.copy()

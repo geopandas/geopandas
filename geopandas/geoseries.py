@@ -750,11 +750,9 @@ class GeoSeries(GeoPandasBase, Series):
         """Alias for `notna` method. See `notna` for more detail."""
         return self.notna()
 
-    def fillna(self, value=None, method=None, inplace=False, **kwargs):
+    def fillna(self, value=None, method=None, limit=None, inplace=False, **kwargs):
         """
         Fill NA values with geometry (or geometries).
-
-        ``method`` is currently not implemented.
 
         Parameters
         ----------
@@ -765,6 +763,20 @@ class GeoSeries(GeoPandasBase, Series):
             are passed, missing values will be filled based on the corresponding index
             locations. If pd.NA or np.nan are passed, values will be filled with
             ``None`` (not GEOMETRYCOLLECTION EMPTY).
+
+        method : {'backfill', 'bfill', 'ffill', None}, default None
+            Method to use for filling holes in reindexed GeoSeries:
+
+            - ffill: propagate last valid observation forward to next valid.
+            - backfill / bfill: use next valid observation to fill gap.
+
+        limit : int, default None
+            If method is specified, this is the maximum number of consecutive
+            NaN values to forward/backward fill. In other words, if there is
+            a gap with more than this number of consecutive NaNs, it will only
+            be partially filled. If method is not specified, this is the
+            maximum number of entries along the entire axis where NaNs will be
+            filled. Must be greater than 0 if not None.
 
         Returns
         -------
@@ -818,13 +830,29 @@ class GeoSeries(GeoPandasBase, Series):
         2    POLYGON ((0.00000 0.00000, -1.00000 1.00000, 0...
         dtype: geometry
 
+        Filled with the forward or backward value.
+
+        >>> s.fillna(method='ffill')
+        0    POLYGON ((0.00000 0.00000, 1.00000 1.00000, 0....
+        1    POLYGON ((0.00000 0.00000, 1.00000 1.00000, 0....
+        2    POLYGON ((0.00000 0.00000, -1.00000 1.00000, 0...
+        dtype: geometry
+
         See Also
         --------
         GeoSeries.isna : detect missing values
         """
-        if value is None:
+
+        if value is None and method is None:
             value = GeometryCollection() if compat.SHAPELY_GE_20 else BaseGeometry()
-        return super().fillna(value=value, method=method, inplace=inplace, **kwargs)
+
+        return super().fillna(
+            value=value,
+            method=method,
+            limit=limit,
+            inplace=inplace,
+            **kwargs,
+        )
 
     def __contains__(self, other):
         """Allow tests of the form "geom in s"
