@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import os
 import typing
 from typing import Optional, Any, Callable, Dict
 import warnings
@@ -33,6 +32,9 @@ from .array import (
     to_wkt,
 )
 from .base import is_geometry_type
+
+if typing.TYPE_CHECKING:
+    import os
 
 
 def _geoseries_constructor_with_fallback(
