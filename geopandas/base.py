@@ -28,7 +28,10 @@ def _delegate_binary_method(op, this, other, align, *args, **kwargs):
     this = this.geometry
     if isinstance(other, GeoPandasBase):
         if align and not this.index.equals(other.index):
-            warn("The indices of the two GeoSeries are different.")
+            warn(
+                "The indices of the two GeoSeries are different.",
+                stacklevel=4,
+            )
             this, other = this.align(other.geometry)
         else:
             other = other.geometry
@@ -1026,6 +1029,47 @@ GeometryCollection
         dtype: geometry
         """
         return _delegate_geo_method("make_valid", self)
+
+    def segmentize(self, max_segment_length):
+        """Returns a ``GeoSeries`` with vertices added to line segments based on
+        maximum segment length.
+
+        Additional vertices will be added to every line segment in an input geometry so
+        that segments are no longer than the provided maximum segment length. New
+        vertices will evenly subdivide each segment. Only linear components of input
+        geometries are densified; other geometries are returned unmodified.
+
+        Parameters
+        ----------
+        max_segment_length : float | array-like
+            Additional vertices will be added so that all line segments are no longer
+            than this value. Must be greater than 0.
+
+        Returns
+        -------
+        GeoSeries
+
+        Examples
+        --------
+        >>> from shapely.geometry import Polygon, LineString
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         LineString([(0, 0), (0, 10)]),
+        ...         Polygon([(0, 0), (10, 0), (10, 10), (0, 10), (0, 0)]),
+        ...     ],
+        ...     crs=3857
+        ... )
+        >>> s
+        0               LINESTRING (0.000 0.000, 0.000 10.000)
+        1    POLYGON ((0.000 0.000, 10.000 0.000, 10.000 10...
+        dtype: geometry
+
+        >>> s.segmentize(max_segment_length=5)
+        0    LINESTRING (0.000 0.000, 0.000 5.000, 0.000 10...
+        1    POLYGON ((0.000 0.000, 5.000 0.000, 10.000 0.0...
+        dtype: geometry
+        """
+        return _delegate_geo_method("segmentize", self, max_segment_length)
 
     #
     # Reduction operations that return a Shapely geometry
@@ -3569,7 +3613,7 @@ GeometryCollection
         2    POLYGON ((8.00000 4.00000, 13.00000 10.00000, ...
         dtype: geometry
 
-        """  # noqa (E501 link is longer than max line length)
+        """  # (E501 link is longer than max line length)
         return _delegate_geo_method("affine_transform", self, matrix)
 
     def translate(self, xoff=0.0, yoff=0.0, zoff=0.0):
@@ -3607,7 +3651,7 @@ GeometryCollection
         2    POLYGON ((5.00000 2.00000, 6.00000 3.00000, 5....
         dtype: geometry
 
-        """  # noqa (E501 link is longer than max line length)
+        """  # (E501 link is longer than max line length)
         return _delegate_geo_method("translate", self, xoff, yoff, zoff)
 
     def rotate(self, angle, origin="center", use_radians=False):
@@ -4132,7 +4176,10 @@ class _CoordinateIndexer(object):
             ys = slice(ys, ys)
         # don't know how to handle step; should this raise?
         if xs.step is not None or ys.step is not None:
-            warn("Ignoring step - full interval is used.")
+            warn(
+                "Ignoring step - full interval is used.",
+                stacklevel=2,
+            )
         if xs.start is None or xs.stop is None or ys.start is None or ys.stop is None:
             xmin, ymin, xmax, ymax = obj.total_bounds
         bbox = box(
