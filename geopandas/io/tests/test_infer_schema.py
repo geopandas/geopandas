@@ -278,12 +278,23 @@ def test_infer_schema_null_geometry_all():
     assert infer_schema(df) == {"geometry": "Unknown", "properties": OrderedDict()}
 
 
-def test_infer_schema_int64():
-    int64col = pd.array([1, np.nan], dtype=pd.Int64Dtype())
+def test_infer_schema_int32():
+    int32col = pd.array([1, np.nan], dtype=pd.Int32Dtype())
     df = GeoDataFrame(geometry=[city_hall_entrance, city_hall_balcony])
-    df["int64"] = int64col
+    df["int32_column"] = int32col
 
     assert infer_schema(df) == {
         "geometry": "Point",
-        "properties": OrderedDict([("int64", "int")]),
+        "properties": OrderedDict([("int32_column", "int32")]),
+    }
+
+
+def test_infer_schema_int64():
+    int64col = pd.array([1, np.nan], dtype=pd.Int64Dtype())
+    df = GeoDataFrame(geometry=[city_hall_entrance, city_hall_balcony])
+    df["int64_column"] = int64col
+
+    assert infer_schema(df) == {
+        "geometry": "Point",
+        "properties": OrderedDict([("int64_column", "int")]),
     }
