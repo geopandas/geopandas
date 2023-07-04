@@ -626,7 +626,13 @@ def infer_schema(df):
     from collections import OrderedDict
 
     # TODO: test pandas string type and boolean type once released
-    types = {"Int32": "int32", "Int64": "int", "string": "str", "boolean": "bool"}
+    types = {
+        "Int32": "int32",
+        "int32": "int32",
+        "Int64": "int",
+        "string": "str",
+        "boolean": "bool",
+    }
 
     def convert_type(column, in_type):
         if in_type == object:
