@@ -873,7 +873,7 @@ GeometryCollection
         --------
 
         >>> from shapely import LineString, Polygon
-        ... s = geopandas.GeoSeries(
+        >>> s = geopandas.GeoSeries(
         ...     [
         ...        LineString([(0,0), (0,0), (1,0)]),
         ...        Polygon([(0, 0), (0, .5), (0, 1), (.5, 1), (0,0)]),
