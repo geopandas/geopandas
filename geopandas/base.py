@@ -889,11 +889,6 @@ GeometryCollection
         0                LINESTRING (0.000 0.000, 1.000 0.000)
         1    POLYGON ((0.000 0.000, 0.000 0.500, 0.000 1.00...
         dtype: geometry
-
-        >>> s.remove_repeated_points(tolerance=0.5)
-        0                LINESTRING (0.000 0.000, 1.000 0.000)
-        1    POLYGON ((0.000 0.000, 0.000 1.000, 0.000 0.00...
-        dtype: geometry
         """
         return _delegate_geo_method("remove_repeated_points", self, tolerance=tolerance)
 
