@@ -713,7 +713,8 @@ def interiors(data):
     if has_non_poly:
         warnings.warn(
             "Only Polygon objects have interior rings. For other "
-            "geometry types, None is returned."
+            "geometry types, None is returned.",
+            stacklevel=2,
         )
     data = np.empty(len(data), dtype=object)
     with compat.ignore_shapely2_warnings():
@@ -772,6 +773,18 @@ def minimum_bounding_radius(data):
     else:
         raise NotImplementedError(
             f"shapely >= 2.0 or PyGEOS is required, "
+            f"version {shapely.__version__} is installed"
+        )
+
+
+def segmentize(data, max_segment_length):
+    if compat.USE_SHAPELY_20:
+        return shapely.segmentize(data, max_segment_length)
+    elif compat.USE_PYGEOS:
+        return pygeos.segmentize(data, max_segment_length)
+    else:
+        raise NotImplementedError(
+            "shapely >= 2.0 or PyGEOS is required, "
             f"version {shapely.__version__} is installed"
         )
 

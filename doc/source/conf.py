@@ -71,6 +71,7 @@ ipython_exec_lines = [
 
 # Fix issue with warnings from numpydoc (see discussion in PR #534)
 numpydoc_show_class_members = False
+autodoc_typehints = "none"
 
 
 def setup(app):

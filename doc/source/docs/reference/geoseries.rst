@@ -98,6 +98,7 @@ Constructive methods and attributes
    GeoSeries.normalize
    GeoSeries.remove_repeated_points
    GeoSeries.sample_points
+   GeoSeries.segmentize
    GeoSeries.simplify
 
 Affine transformations

@@ -576,6 +576,12 @@ class GeometryArray(ExtensionArray):
     def make_valid(self):
         return GeometryArray(vectorized.make_valid(self._data), crs=self.crs)
 
+    def segmentize(self, max_segment_length):
+        return GeometryArray(
+            vectorized.segmentize(self._data, max_segment_length),
+            crs=self.crs,
+        )
+
     #
     # Binary predicates
     #
@@ -1519,7 +1525,8 @@ def _get_common_crs(arr_seq):
             warnings.warn(
                 "CRS not set for some of the concatenation inputs. "
                 f"Setting output's CRS as {names[0]} "
-                "(the single non-null crs provided)."
+                "(the single non-null crs provided).",
+                stacklevel=2,
             )
         return crs_not_none[0]
 

@@ -938,7 +938,7 @@ individually so that features may have different properties
                         if not na
                     }
                 else:
-                    properties_items = {k: v for k, v in zip(properties_cols, row)}
+                    properties_items = dict(zip(properties_cols, row))
 
                 if drop_id:
                     feature = {}
@@ -1534,7 +1534,10 @@ individually so that features may have different properties
                 if key == "geometry":
                     self._persist_old_default_geometry_colname()
             except TypeError:
-                warnings.warn("Geometry column does not contain geometry.")
+                warnings.warn(
+                    "Geometry column does not contain geometry.",
+                    stacklevel=2,
+                )
         super().__setitem__(key, value)
 
     #
@@ -1770,9 +1773,13 @@ individually so that features may have different properties
         if by is None and level is None:
             by = np.zeros(len(self), dtype="int64")
 
-        groupby_kwargs = dict(
-            by=by, level=level, sort=sort, observed=observed, dropna=dropna
-        )
+        groupby_kwargs = {
+            "by": by,
+            "level": level,
+            "sort": sort,
+            "observed": observed,
+            "dropna": dropna,
+        }
 
         # Process non-spatial component
         data = self.drop(labels=self.geometry.name, axis=1)
@@ -2174,7 +2181,7 @@ individually so that features may have different properties
         GeoDataFrame.sjoin_nearest : nearest neighbor join
         sjoin : equivalent top-level function
         """
-        return geopandas.sjoin(left_df=self, right_df=df, *args, **kwargs)
+        return geopandas.sjoin(left_df=self, right_df=df, *args, **kwargs)  # noqa: B026
 
     def sjoin_nearest(
         self,
@@ -2414,8 +2421,8 @@ chicago_w_groceries[chicago_w_groceries["community"] == "UPTOWN"]
         1       2.0       1.0  POLYGON ((2.00000 2.00000, 2.00000 3.00000, 3....
         2       2.0       2.0  POLYGON ((4.00000 4.00000, 4.00000 3.00000, 3....
         3       1.0       NaN  POLYGON ((2.00000 0.00000, 0.00000 0.00000, 0....
-        4       2.0       NaN  MULTIPOLYGON (((3.00000 3.00000, 4.00000 3.000...
-        5       NaN       1.0  MULTIPOLYGON (((2.00000 2.00000, 3.00000 2.000...
+        4       2.0       NaN  MULTIPOLYGON (((3.00000 4.00000, 3.00000 3.000...
+        5       NaN       1.0  MULTIPOLYGON (((2.00000 3.00000, 2.00000 2.000...
         6       NaN       2.0  POLYGON ((3.00000 5.00000, 5.00000 5.00000, 5....
 
         >>> df1.overlay(df2, how='intersection')
@@ -2427,14 +2434,14 @@ chicago_w_groceries[chicago_w_groceries["community"] == "UPTOWN"]
         >>> df1.overlay(df2, how='symmetric_difference')
         df1_data  df2_data                                           geometry
         0       1.0       NaN  POLYGON ((2.00000 0.00000, 0.00000 0.00000, 0....
-        1       2.0       NaN  MULTIPOLYGON (((3.00000 3.00000, 4.00000 3.000...
-        2       NaN       1.0  MULTIPOLYGON (((2.00000 2.00000, 3.00000 2.000...
+        1       2.0       NaN  MULTIPOLYGON (((3.00000 4.00000, 3.00000 3.000...
+        2       NaN       1.0  MULTIPOLYGON (((2.00000 3.00000, 2.00000 2.000...
         3       NaN       2.0  POLYGON ((3.00000 5.00000, 5.00000 5.00000, 5....
 
         >>> df1.overlay(df2, how='difference')
                                                 geometry  df1_data
         0  POLYGON ((2.00000 0.00000, 0.00000 0.00000, 0....         1
-        1  MULTIPOLYGON (((3.00000 3.00000, 4.00000 3.000...         2
+        1  MULTIPOLYGON (((3.00000 4.00000, 3.00000 3.000...         2
 
         >>> df1.overlay(df2, how='identity')
         df1_data  df2_data                                           geometry
@@ -2442,7 +2449,7 @@ chicago_w_groceries[chicago_w_groceries["community"] == "UPTOWN"]
         1       2.0       1.0  POLYGON ((2.00000 2.00000, 2.00000 3.00000, 3....
         2       2.0       2.0  POLYGON ((4.00000 4.00000, 4.00000 3.00000, 3....
         3       1.0       NaN  POLYGON ((2.00000 0.00000, 0.00000 0.00000, 0....
-        4       2.0       NaN  MULTIPOLYGON (((3.00000 3.00000, 4.00000 3.000...
+        4       2.0       NaN  MULTIPOLYGON (((3.00000 4.00000, 3.00000 3.000...
 
         See also
         --------
