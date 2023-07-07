@@ -399,7 +399,7 @@ def _arrow_to_geopandas(table, metadata=None):
     """
     Helper function with main, shared logic for read_parquet/read_feather.
     """
-    df = table.to_pandas()
+    df = table.to_pandas(integer_object_nulls=True)
 
     metadata = metadata or table.schema.metadata
 
