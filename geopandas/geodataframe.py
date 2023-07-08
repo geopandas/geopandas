@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import json
-from typing import Union, Any, Callable, Optional
+import typing
+from typing import Union, Any, Callable, Optional, Literal
 import warnings
 
 import numpy as np
@@ -22,8 +23,13 @@ from geopandas.explore import _explore
 from . import _compat as compat
 from ._decorator import doc
 
+if typing.TYPE_CHECKING:
+    import os
 
-def _geodataframe_constructor_with_fallback(*args, **kwargs):
+
+def _geodataframe_constructor_with_fallback(
+    *args, **kwargs
+) -> Union[pd.DataFrame, GeoDataFrame]:
     """
     A flexible constructor for GeoDataFrame._constructor, which falls back
     to returning a DataFrame (if a certain operation does not preserve the
@@ -37,7 +43,9 @@ def _geodataframe_constructor_with_fallback(*args, **kwargs):
     return df
 
 
-def _ensure_geometry(data, crs: Optional[Any] = None):
+def _ensure_geometry(
+    data, crs: Optional[Any] = None
+) -> Union[GeoSeries, GeometryArray]:
     """
     Ensure the data is of geometry dtype or converted to it.
 
@@ -132,7 +140,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
     def __init__(
         self, data=None, *args, geometry=None, crs: Optional[Any] = None, **kwargs
-    ):
+    ) -> None:
         with compat.ignore_shapely2_warnings():
             if (
                 kwargs.get("copy") is None
@@ -250,9 +258,29 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         fget=_get_geometry, fset=_set_geometry, doc="Geometry data for GeoDataFrame"
     )
 
+    @typing.overload
+    def set_geometry(
+        self,
+        col,
+        drop: bool = ...,
+        inplace: Literal[True] = ...,
+        crs: Optional[Any] = ...,
+    ) -> None:
+        ...
+
+    @typing.overload
+    def set_geometry(
+        self,
+        col,
+        drop: bool = ...,
+        inplace: Literal[False] = ...,
+        crs: Optional[Any] = ...,
+    ) -> GeoDataFrame:
+        ...
+
     def set_geometry(
         self, col, drop: bool = False, inplace: bool = False, crs: Optional[Any] = None
-    ) -> GeoDataFrame:
+    ) -> Union[GeoDataFrame, None]:
         """
         Set the GeoDataFrame geometry using either an existing column or
         the specified input. By default yields a new object.
@@ -361,7 +389,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         if not inplace:
             return frame
 
-    def rename_geometry(self, col, inplace: bool = False):
+    def rename_geometry(self, col: Any, inplace: bool = False) -> None:
         """
         Renames the GeoDataFrame geometry column to
         the specified name. By default yields a new object.
@@ -386,9 +414,6 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         >>> df.geometry.name
         'geom1'
 
-        Returns
-        -------
-        geodataframe : GeoDataFrame
 
         See also
         --------
@@ -523,7 +548,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         return cls(dataframe, geometry=geometry, crs=crs)
 
     @classmethod
-    def from_file(cls, filename: str, **kwargs):
+    def from_file(cls, filename: str, **kwargs) -> GeoDataFrame:
         """Alternate constructor to create a ``GeoDataFrame`` from a file.
 
         It is recommended to use :func:`geopandas.read_file` instead.
@@ -674,7 +699,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         parse_dates: Optional[Union[list, dict]] = None,
         params: Optional[Union[list, tuple, dict]] = None,
         chunksize: Optional[int] = None,
-    ):
+    ) -> GeoDataFrame:
         """
         Alternate constructor to create a ``GeoDataFrame`` from a sql query
         containing a geometry column in WKB representation.
@@ -849,7 +874,7 @@ es": {"name": "urn:ogc:def:crs:EPSG::3857"}}}'
         return json.dumps(geo, **kwargs)
 
     @property
-    def __geo_interface__(self) -> GeoDataFrame:
+    def __geo_interface__(self) -> dict:
         """Returns a ``GeoDataFrame`` as a python feature collection.
 
         Implements the `geo_interface`. The returned python data structure
@@ -884,7 +909,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
 
     def iterfeatures(
         self, na: str = "null", show_bbox: bool = False, drop_id: bool = False
-    ):
+    ):  # TODO missing
         """
         Returns an iterator that yields feature dictionaries that comply with
         __geo_interface__
@@ -1036,7 +1061,7 @@ individually so that features may have different properties
 
         return df
 
-    def to_wkt(self, **kwargs):
+    def to_wkt(self, **kwargs) -> pd.DataFrame:
         """
         Encode all geometry columns in the GeoDataFrame to WKT.
 
@@ -1062,7 +1087,7 @@ individually so that features may have different properties
 
     def to_parquet(
         self,
-        path,
+        path: os.PathLike,
         index: Optional[bool] = None,
         compression: str = "snappy",
         schema_version=None,
@@ -1136,7 +1161,7 @@ individually so that features may have different properties
 
     def to_feather(
         self,
-        path,
+        path: os.PathLike,
         index: Optional[bool] = None,
         compression: Optional[str] = None,
         schema_version=None,
@@ -1201,7 +1226,7 @@ individually so that features may have different properties
 
     def to_file(
         self,
-        filename,
+        filename: os.PathLike | typing.IO,
         driver: Optional[str] = None,
         schema: Optional[dict] = None,
         index: Optional[bool] = None,
