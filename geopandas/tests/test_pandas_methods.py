@@ -846,6 +846,6 @@ def test_read_parquet_int():
     _ = buffer.seek(0)
     #Read parquet file from buffer, as written by to_parquet()
     new_df = geopandas.read_parquet(buffer)
-    assert combined.val.iloc[0] == new_df.val.iloc[0], \
-        "Integer dtype not read correctly from parquet file"
+    assert combined.val.iloc[0] == new_df.val.iloc[0], "Integer"\
+         " dtype not read correctly from parquet file"
     
