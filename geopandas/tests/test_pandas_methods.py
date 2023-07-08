@@ -1,4 +1,5 @@
 import os
+from io import BytesIO
 
 import numpy as np
 from numpy.testing import assert_array_equal
@@ -821,3 +822,30 @@ def test_preserve_flags(df):
 
     with pytest.raises(ValueError):
         pd.concat([df, df])
+
+
+def test_read_parquet_int():
+    # https://github.com/geopandas/geopandas/issues/2951
+    """Test to see if a parquet file with combination of null and 
+    integer values can be read correctly.
+    """
+    #Use dataframe with integer series and dtype
+    df1 = GeoDataFrame({
+        'val': pd.Series([10000000000000003], dtype='int64'),
+        'geometry': pd.Series([Point(0, 0)], dtype='O'),
+    })
+    #Create second dataframe with null value of object type in same series
+    df2 = GeoDataFrame({
+        'val': pd.Series([None], dtype='O'),
+        'geometry': pd.Series([Point(0, 0)], dtype='O'),
+    })
+    combined = pd.concat((df1, df2))
+    #Use buffer object to write parquet file
+    buffer = BytesIO()
+    combined.to_parquet(buffer)
+    _ = buffer.seek(0)
+    #Read parquet file from buffer, as written by to_parquet()
+    new_df = geopandas.read_parquet(buffer)
+    assert combined.val.iloc[0] == new_df.val.iloc[0], \
+        "Integer dtype not read correctly from parquet file"
+    
