@@ -825,20 +825,24 @@ def test_preserve_flags(df):
 
 
 def test_read_parquet_int():
-    # https://github.com/geopandas/geopandas/issues/2951
-    """Test to see if a parquet file with combination of null and 
+    """Test to see if a parquet file with combination of null and
     integer values can be read correctly.
     """
-    #Use dataframe with integer series and dtype
-    df1 = GeoDataFrame({
-        'val': pd.Series([10000000000000003], dtype='int64'),
-        'geometry': pd.Series([Point(0, 0)], dtype='O'),
-    })
-    #Create second dataframe with null value of object type in same series
-    df2 = GeoDataFrame({
-        'val': pd.Series([None], dtype='O'),
-        'geometry': pd.Series([Point(0, 0)], dtype='O'),
-    })
+    # https://github.com/geopandas/geopandas/issues/2951
+    # Use dataframe with integer series and dtype
+    df1 = GeoDataFrame(
+        {
+            "val": pd.Series([10000000000000003], dtype="int64"),
+            "geometry": pd.Series([Point(0, 0)], dtype="O"),
+        }
+    )
+    # Create second dataframe with null value of object type in same series
+    df2 = GeoDataFrame(
+        {
+            "val": pd.Series([None], dtype="O"),
+            "geometry": pd.Series([Point(0, 0)], dtype="O"),
+        }
+    )
     combined = pd.concat((df1, df2))
     #Use buffer object to write parquet file
     buffer = BytesIO()
