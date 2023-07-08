@@ -1,12 +1,25 @@
 import string
+import sys
+import warnings
 
 import numpy as np
 from numpy.testing import assert_array_equal
-from pandas import DataFrame, MultiIndex, Series
+from pandas import DataFrame, Index, MultiIndex, Series, concat
 
-from shapely.geometry import LinearRing, LineString, MultiPoint, Point, Polygon
+import shapely
+
+from shapely.geometry import (
+    LinearRing,
+    LineString,
+    MultiLineString,
+    MultiPoint,
+    Point,
+    Polygon,
+    MultiPolygon,
+)
 from shapely.geometry.collection import GeometryCollection
 from shapely.ops import unary_union
+from shapely import wkt
 
 from geopandas import GeoDataFrame, GeoSeries
 from geopandas.base import GeoPandasBase
@@ -14,7 +27,7 @@ from geopandas.base import GeoPandasBase
 from geopandas.testing import assert_geodataframe_equal
 from geopandas.tests.util import assert_geoseries_equal, geom_almost_equals, geom_equals
 from geopandas import _compat as compat
-from pandas.testing import assert_frame_equal, assert_series_equal
+from pandas.testing import assert_frame_equal, assert_index_equal, assert_series_equal
 import pytest
 
 
@@ -36,6 +49,7 @@ class TestGeomMethods:
         self.sqz = Polygon([(1, 1, 1), (2, 2, 2), (3, 3, 3), (4, 4, 4)])
         self.t4 = Polygon([(0, 0), (3, 0), (3, 3), (0, 2)])
         self.t5 = Polygon([(2, 0), (3, 0), (3, 3), (2, 3)])
+        self.t6 = Polygon([(2, 0), (2, 0), (3, 0), (3, 0)])
         self.inner_sq = Polygon(
             [(0.25, 0.25), (0.75, 0.25), (0.75, 0.75), (0.25, 0.75)]
         )
@@ -72,6 +86,10 @@ class TestGeomMethods:
         self.landmarks = GeoSeries([self.esb, self.sol], crs="epsg:4326")
         self.pt2d = Point(-73.9847, 40.7484)
         self.landmarks_mixed = GeoSeries([self.esb, self.sol, self.pt2d], crs=4326)
+        self.pt_empty = wkt.loads("POINT EMPTY")
+        self.landmarks_mixed_empty = GeoSeries(
+            [self.esb, self.sol, self.pt2d, self.pt_empty], crs=4326
+        )
         self.l1 = LineString([(0, 0), (0, 1), (1, 1)])
         self.l2 = LineString([(0, 0), (1, 0), (1, 1), (0, 1)])
         self.g5 = GeoSeries([self.l1, self.l2])
@@ -80,8 +98,12 @@ class TestGeomMethods:
         self.g8 = GeoSeries([self.t1, self.t5])
         self.empty = GeoSeries([])
         self.all_none = GeoSeries([None, None])
+        self.all_geometry_collection_empty = GeoSeries(
+            [GeometryCollection([]), GeometryCollection([])]
+        )
         self.empty_poly = Polygon()
         self.g9 = GeoSeries(self.g0, index=range(1, 8))
+        self.g10 = GeoSeries([self.t1, self.t4])
 
         # Crossed lines
         self.l3 = LineString([(0, 0), (1, 1)])
@@ -103,8 +125,61 @@ class TestGeomMethods:
             {"geometry": self.gz, "col3": [4, 5, 6], "col4": ["rand", "string", "geo"]}
         )
 
+        self.g11 = GeoSeries(
+            [
+                self.p0,
+                self.p3d,
+                self.pt_empty,
+                self.t1,
+                self.tz,
+                self.empty_poly,
+                self.l1,
+            ]
+        )
+        # expected coordinates from g11
+        self.expected_2d = np.array(
+            [
+                [5.0, 5.0],
+                [5.0, 5.0],
+                [0.0, 0.0],
+                [1.0, 0.0],
+                [1.0, 1.0],
+                [0.0, 0.0],
+                [1.0, 1.0],
+                [2.0, 2.0],
+                [3.0, 3.0],
+                [1.0, 1.0],
+                [0.0, 0.0],
+                [0.0, 1.0],
+                [1.0, 1.0],
+            ]
+        )
+        self.expected_3d = np.array(
+            [
+                [5.0, 5.0, np.nan],
+                [5.0, 5.0, 5.0],
+                [0.0, 0.0, np.nan],
+                [1.0, 0.0, np.nan],
+                [1.0, 1.0, np.nan],
+                [0.0, 0.0, np.nan],
+                [1.0, 1.0, 1.0],
+                [2.0, 2.0, 2.0],
+                [3.0, 3.0, 3.0],
+                [1.0, 1.0, 1.0],
+                [0.0, 0.0, np.nan],
+                [0.0, 1.0, np.nan],
+                [1.0, 1.0, np.nan],
+            ]
+        )
+        self.squares = GeoSeries([self.sq for _ in range(3)])
+
+        self.l5 = LineString([(100, 0), (0, 0), (0, 100)])
+        self.l6 = LineString([(5, 5), (5, 100), (100, 5)])
+        self.g12 = GeoSeries([self.l5])
+        self.g13 = GeoSeries([self.l6])
+
     def _test_unary_real(self, op, expected, a):
-        """ Tests for 'area', 'length', 'is_valid', etc. """
+        """Tests for 'area', 'length', 'is_valid', etc."""
         fcmp = assert_series_equal
         self._test_unary(op, expected, a, fcmp)
 
@@ -119,7 +194,7 @@ class TestGeomMethods:
         self._test_unary(op, expected, a, fcmp)
 
     def _test_binary_topological(self, op, expected, a, b, *args, **kwargs):
-        """ Tests for 'intersection', 'union', 'symmetric_difference', etc. """
+        """Tests for 'intersection', 'union', 'symmetric_difference', etc."""
         if isinstance(expected, GeoPandasBase):
             fcmp = assert_geoseries_equal
         else:
@@ -245,13 +320,24 @@ class TestGeomMethods:
                 "intersection", self.all_none, self.g1, self.empty
             )
 
-        assert len(self.g0.intersection(self.g9, align=True) == 8)
+        with pytest.warns(UserWarning, match="The indices .+ different"):
+            assert len(self.g0.intersection(self.g9, align=True) == 8)
         assert len(self.g0.intersection(self.g9, align=False) == 7)
+
+    def test_clip_by_rect(self):
+        self._test_binary_topological(
+            "clip_by_rect", self.g1, self.g10, *self.sq.bounds
+        )
+        # self.g1 and self.t3.bounds do not intersect
+        self._test_binary_topological(
+            "clip_by_rect", self.all_geometry_collection_empty, self.g1, *self.t3.bounds
+        )
 
     def test_union_series(self):
         self._test_binary_topological("union", self.sq, self.g1, self.g2)
 
-        assert len(self.g0.union(self.g9, align=True) == 8)
+        with pytest.warns(UserWarning, match="The indices .+ different"):
+            assert len(self.g0.union(self.g9, align=True) == 8)
         assert len(self.g0.union(self.g9, align=False) == 7)
 
     def test_union_polygon(self):
@@ -260,7 +346,8 @@ class TestGeomMethods:
     def test_symmetric_difference_series(self):
         self._test_binary_topological("symmetric_difference", self.sq, self.g3, self.g4)
 
-        assert len(self.g0.symmetric_difference(self.g9, align=True) == 8)
+        with pytest.warns(UserWarning, match="The indices .+ different"):
+            assert len(self.g0.symmetric_difference(self.g9, align=True) == 8)
         assert len(self.g0.symmetric_difference(self.g9, align=False) == 7)
 
     def test_symmetric_difference_poly(self):
@@ -273,7 +360,8 @@ class TestGeomMethods:
         expected = GeoSeries([GeometryCollection(), self.t2])
         self._test_binary_topological("difference", expected, self.g1, self.g2)
 
-        assert len(self.g0.difference(self.g9, align=True) == 8)
+        with pytest.warns(UserWarning, match="The indices .+ different"):
+            assert len(self.g0.difference(self.g9, align=True) == 8)
         assert len(self.g0.difference(self.g9, align=False) == 7)
 
     def test_difference_poly(self):
@@ -350,12 +438,30 @@ class TestGeomMethods:
 
         self._test_unary_topological("unary_union", expected, g)
 
+        g2 = GeoSeries([p1, None])
+        self._test_unary_topological("unary_union", p1, g2)
+
+        with pytest.warns(FutureWarning, match="`unary_union` returned None"):
+            g3 = GeoSeries([None, None])
+            assert g3.unary_union is None
+
+    def test_cascaded_union_deprecated(self):
+        p1 = self.t1
+        p2 = Polygon([(2, 0), (3, 0), (3, 1)])
+        g = GeoSeries([p1, p2])
+        with pytest.warns(
+            FutureWarning, match="The 'cascaded_union' attribute is deprecated"
+        ):
+            result = g.cascaded_union
+        assert result == g.unary_union
+
     def test_contains(self):
         expected = [True, False, True, False, False, False, False]
         assert_array_dtype_equal(expected, self.g0.contains(self.t1))
 
         expected = [False, True, True, True, True, True, False, False]
-        assert_array_dtype_equal(expected, self.g0.contains(self.g9, align=True))
+        with pytest.warns(UserWarning, match="The indices .+ different"):
+            assert_array_dtype_equal(expected, self.g0.contains(self.g9, align=True))
 
         expected = [False, False, True, False, False, False, False]
         assert_array_dtype_equal(expected, self.g0.contains(self.g9, align=False))
@@ -379,7 +485,8 @@ class TestGeomMethods:
         assert_array_dtype_equal(expected, self.crossed_lines.crosses(self.l3))
 
         expected = [False] * 8
-        assert_array_dtype_equal(expected, self.g0.crosses(self.g9, align=True))
+        with pytest.warns(UserWarning, match="The indices .+ different"):
+            assert_array_dtype_equal(expected, self.g0.crosses(self.g9, align=True))
 
         expected = [False] * 7
         assert_array_dtype_equal(expected, self.g0.crosses(self.g9, align=False))
@@ -389,7 +496,8 @@ class TestGeomMethods:
         assert_array_dtype_equal(expected, self.g0.disjoint(self.t1))
 
         expected = [False] * 8
-        assert_array_dtype_equal(expected, self.g0.disjoint(self.g9, align=True))
+        with pytest.warns(UserWarning, match="The indices .+ different"):
+            assert_array_dtype_equal(expected, self.g0.disjoint(self.g9, align=True))
 
         expected = [False, False, False, False, True, False, False]
         assert_array_dtype_equal(expected, self.g0.disjoint(self.g9, align=False))
@@ -426,7 +534,8 @@ class TestGeomMethods:
             index=range(8),
         )
 
-        assert_array_dtype_equal(expected, self.g0.relate(self.g9, align=True))
+        with pytest.warns(UserWarning, match="The indices .+ different"):
+            assert_array_dtype_equal(expected, self.g0.relate(self.g9, align=True))
 
         expected = Series(
             [
@@ -448,11 +557,12 @@ class TestGeomMethods:
         )
         assert_array_dtype_equal(expected, self.na_none.distance(self.p0))
 
-        expected = Series(np.array([np.sqrt(4 ** 2 + 4 ** 2), np.nan]), self.g6.index)
+        expected = Series(np.array([np.sqrt(4**2 + 4**2), np.nan]), self.g6.index)
         assert_array_dtype_equal(expected, self.g6.distance(self.na_none))
 
         expected = Series(np.array([np.nan, 0, 0, 0, 0, 0, np.nan, np.nan]), range(8))
-        assert_array_dtype_equal(expected, self.g0.distance(self.g9, align=True))
+        with pytest.warns(UserWarning, match="The indices .+ different"):
+            assert_array_dtype_equal(expected, self.g0.distance(self.g9, align=True))
 
         val = self.g0.iloc[4].distance(self.g9.iloc[4])
         expected = Series(np.array([0, 0, 0, 0, val, np.nan, np.nan]), self.g0.index)
@@ -461,6 +571,53 @@ class TestGeomMethods:
     def test_distance_crs_warning(self):
         with pytest.warns(UserWarning, match="Geometry is in a geographic CRS"):
             self.g4.distance(self.p0)
+
+    @pytest.mark.skipif(
+        not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+        reason="requires hausdorff_distance in shapely 2.0+",
+    )
+    def test_hausdorff_distance(self):
+        # closest point is (0, 0) in self.p1
+        expected = Series(
+            np.array([np.sqrt(5**2 + 5**2), np.nan]), self.na_none.index
+        )
+        assert_array_dtype_equal(expected, self.na_none.hausdorff_distance(self.p0))
+
+        expected = Series(
+            np.array([np.sqrt(5**2 + 5**2), np.nan]), self.na_none.index
+        )
+        assert_array_dtype_equal(expected, self.na_none.hausdorff_distance(self.p0))
+
+        expected = Series(np.array([np.nan, 0, 0, 0, 0, 0, np.nan, np.nan]), range(8))
+        with pytest.warns(UserWarning, match="The indices .+ different"):
+            assert_array_dtype_equal(
+                expected, self.g0.hausdorff_distance(self.g9, align=True)
+            )
+
+        val_1 = self.g0.iloc[0].hausdorff_distance(self.g9.iloc[0])
+        val_2 = self.g0.iloc[2].hausdorff_distance(self.g9.iloc[2])
+        val_3 = self.g0.iloc[4].hausdorff_distance(self.g9.iloc[4])
+        expected = Series(
+            np.array([val_1, val_1, val_2, val_2, val_3, np.nan, np.nan]), self.g0.index
+        )
+        assert_array_dtype_equal(
+            expected, self.g0.hausdorff_distance(self.g9, align=False)
+        )
+
+        expected = Series(np.array([52.5]), self.g12.index)
+        assert_array_dtype_equal(
+            expected, self.g12.hausdorff_distance(self.g13, densify=0.25)
+        )
+
+    @pytest.mark.skipif(
+        (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+        reason="hausdorff_distance not implemented for shapely<2",
+    )
+    def test_hausdorff_distance_not(self):
+        with pytest.raises(
+            NotImplementedError, match="shapely >= 2.0 or PyGEOS is required"
+        ):
+            self.g0.hausdorff_distance(self.g9)
 
     def test_intersects(self):
         expected = [True, True, True, True, True, False, False]
@@ -479,7 +636,8 @@ class TestGeomMethods:
         assert_array_dtype_equal(expected, self.g0.intersects(self.empty_poly))
 
         expected = [False, True, True, True, True, True, False, False]
-        assert_array_dtype_equal(expected, self.g0.intersects(self.g9, align=True))
+        with pytest.warns(UserWarning, match="The indices .+ different"):
+            assert_array_dtype_equal(expected, self.g0.intersects(self.g9, align=True))
 
         expected = [True, True, True, True, False, False, False]
         assert_array_dtype_equal(expected, self.g0.intersects(self.g9, align=False))
@@ -492,7 +650,8 @@ class TestGeomMethods:
         assert_array_dtype_equal(expected, self.g4.overlaps(self.t1))
 
         expected = [False] * 8
-        assert_array_dtype_equal(expected, self.g0.overlaps(self.g9, align=True))
+        with pytest.warns(UserWarning, match="The indices .+ different"):
+            assert_array_dtype_equal(expected, self.g0.overlaps(self.g9, align=True))
 
         expected = [False] * 7
         assert_array_dtype_equal(expected, self.g0.overlaps(self.g9, align=False))
@@ -502,7 +661,8 @@ class TestGeomMethods:
         assert_array_dtype_equal(expected, self.g0.touches(self.t1))
 
         expected = [False] * 8
-        assert_array_dtype_equal(expected, self.g0.touches(self.g9, align=True))
+        with pytest.warns(UserWarning, match="The indices .+ different"):
+            assert_array_dtype_equal(expected, self.g0.touches(self.g9, align=True))
 
         expected = [True, False, False, True, False, False, False]
         assert_array_dtype_equal(expected, self.g0.touches(self.g9, align=False))
@@ -515,7 +675,8 @@ class TestGeomMethods:
         assert_array_dtype_equal(expected, self.g0.within(self.sq))
 
         expected = [False, True, True, True, True, True, False, False]
-        assert_array_dtype_equal(expected, self.g0.within(self.g9, align=True))
+        with pytest.warns(UserWarning, match="The indices .+ different"):
+            assert_array_dtype_equal(expected, self.g0.within(self.g9, align=True))
 
         expected = [False, True, False, False, False, False, False]
         assert_array_dtype_equal(expected, self.g0.within(self.g9, align=False))
@@ -532,7 +693,8 @@ class TestGeomMethods:
         assert_series_equal(res, exp)
 
         expected = [False, True, True, True, True, True, False, False]
-        assert_array_dtype_equal(expected, self.g0.covers(self.g9, align=True))
+        with pytest.warns(UserWarning, match="The indices .+ different"):
+            assert_array_dtype_equal(expected, self.g0.covers(self.g9, align=True))
 
         expected = [False, False, True, False, False, False, False]
         assert_array_dtype_equal(expected, self.g0.covers(self.g9, align=False))
@@ -543,7 +705,7 @@ class TestGeomMethods:
         assert_series_equal(res, exp)
 
     @pytest.mark.skipif(
-        not compat.USE_PYGEOS,
+        not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
         reason="covered_by is only implemented for pygeos, not shapely",
     )
     def test_covered_by(self):
@@ -552,7 +714,8 @@ class TestGeomMethods:
         assert_series_equal(res, exp)
 
         expected = [False, True, True, True, True, True, False, False]
-        assert_array_dtype_equal(expected, self.g0.covered_by(self.g9, align=True))
+        with pytest.warns(UserWarning, match="The indices .+ different"):
+            assert_array_dtype_equal(expected, self.g0.covered_by(self.g9, align=True))
 
         expected = [False, True, False, False, False, False, False]
         assert_array_dtype_equal(expected, self.g0.covered_by(self.g9, align=False))
@@ -565,6 +728,8 @@ class TestGeomMethods:
         expected = Series(np.array([False] * len(self.g1)), self.g1.index)
         self._test_unary_real("is_empty", expected, self.g1)
 
+    # for is_ring we raise a warning about the value for Polygon changing
+    @pytest.mark.filterwarnings("ignore:is_ring:FutureWarning")
     def test_is_ring(self):
         expected = Series(np.array([True] * len(self.g1)), self.g1.index)
         self._test_unary_real("is_ring", expected, self.g1)
@@ -590,6 +755,15 @@ class TestGeomMethods:
         expected_z = [30.3244, 31.2344, np.nan]
         assert_array_dtype_equal(expected_z, self.landmarks_mixed.geometry.z)
 
+    def test_xyz_points_empty(self):
+        expected_x = [-73.9847, -74.0446, -73.9847, np.nan]
+        expected_y = [40.7484, 40.6893, 40.7484, np.nan]
+        expected_z = [30.3244, 31.2344, np.nan, np.nan]
+
+        assert_array_dtype_equal(expected_x, self.landmarks_mixed_empty.geometry.x)
+        assert_array_dtype_equal(expected_y, self.landmarks_mixed_empty.geometry.y)
+        assert_array_dtype_equal(expected_z, self.landmarks_mixed_empty.geometry.z)
+
     def test_xyz_polygons(self):
         # accessing x attribute in polygon geoseries should raise an error
         with pytest.raises(ValueError):
@@ -612,10 +786,214 @@ class TestGeomMethods:
         with pytest.warns(UserWarning, match="Geometry is in a geographic CRS"):
             self.g4.centroid
 
+    def test_normalize(self):
+        polygon = Polygon([(0, 0), (1, 1), (0, 1)])
+        linestring = LineString([(0, 0), (1, 1), (1, 0)])
+        point = Point(0, 0)
+        series = GeoSeries([polygon, linestring, point])
+        polygon2 = Polygon([(0, 0), (0, 1), (1, 1)])
+        expected = GeoSeries([polygon2, linestring, point])
+        assert_geoseries_equal(series.normalize(), expected)
+
+    @pytest.mark.skipif(
+        not compat.SHAPELY_GE_18,
+        reason="make_valid keyword introduced in shapely 1.8.0",
+    )
+    def test_make_valid(self):
+        polygon1 = Polygon([(0, 0), (0, 2), (1, 1), (2, 2), (2, 0), (1, 1), (0, 0)])
+        polygon2 = Polygon([(0, 2), (0, 1), (2, 0), (0, 0), (0, 2)])
+        linestring = LineString([(0, 0), (1, 1), (1, 0)])
+        series = GeoSeries([polygon1, polygon2, linestring])
+        out_polygon1 = MultiPolygon(
+            [
+                Polygon([(1, 1), (0, 0), (0, 2), (1, 1)]),
+                Polygon([(2, 0), (1, 1), (2, 2), (2, 0)]),
+            ]
+        )
+        out_polygon2 = GeometryCollection(
+            [Polygon([(2, 0), (0, 0), (0, 1), (2, 0)]), LineString([(0, 2), (0, 1)])]
+        )
+        expected = GeoSeries([out_polygon1, out_polygon2, linestring])
+        assert not series.is_valid.all()
+        result = series.make_valid()
+        assert_geoseries_equal(result, expected)
+        assert result.is_valid.all()
+
+    @pytest.mark.skipif(
+        compat.SHAPELY_GE_18,
+        reason="make_valid keyword introduced in shapely 1.8.0",
+    )
+    def test_make_valid_shapely_pre18(self):
+        s = GeoSeries([Point(1, 1)])
+        with pytest.raises(
+            NotImplementedError,
+            match=f"shapely >= 1.8 or PyGEOS is required, "
+            f"version {shapely.__version__} is installed",
+        ):
+            s.make_valid()
+
+    @pytest.mark.skipif(
+        (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+        reason="segmentize keyword introduced in shapely 2.0",
+    )
+    def test_segmentize_shapely_pre20(self):
+        s = GeoSeries([Point(1, 1)])
+        with pytest.raises(
+            NotImplementedError,
+            match=f"shapely >= 2.0 or PyGEOS is required, "
+            f"version {shapely.__version__} is installed",
+        ):
+            s.segmentize(max_segment_length=1)
+
+    @pytest.mark.skipif(
+        not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+        reason="segmentize keyword introduced in shapely 2.0",
+    )
+    def test_segmentize_linestrings(self):
+        expected_g1 = GeoSeries(
+            [
+                Polygon(
+                    (
+                        (
+                            (0, 0),
+                            (0.5, 0),
+                            (1, 0),
+                            (1, 0.5),
+                            (1, 1),
+                            (0.6666666666666666, 0.6666666666666666),
+                            (0.3333333333333333, 0.3333333333333333),
+                            (0, 0),
+                        )
+                    )
+                ),
+                Polygon(
+                    (
+                        (
+                            (0, 0),
+                            (0.5, 0),
+                            (1, 0),
+                            (1, 0.5),
+                            (1, 1),
+                            (0.5, 1),
+                            (0, 1),
+                            (0, 0.5),
+                            (0, 0),
+                        )
+                    )
+                ),
+            ]
+        )
+        expected_g5 = GeoSeries(
+            [
+                LineString([(0, 0), (0, 0.5), (0, 1), (0.5, 1), (1, 1)]),
+                LineString(
+                    [(0, 0), (0.5, 0), (1, 0), (1, 0.5), (1, 1), (0.5, 1), (0, 1)]
+                ),
+            ]
+        )
+        result_g1 = self.g1.segmentize(max_segment_length=0.5)
+        result_g5 = self.g5.segmentize(max_segment_length=0.5)
+        assert_geoseries_equal(expected_g1, result_g1)
+        assert_geoseries_equal(expected_g5, result_g5)
+
+    @pytest.mark.skipif(
+        compat.SHAPELY_GE_20,
+        reason="concave_hull is implemented for shapely >= 2.0",
+    )
+    def test_concave_hull_not_implemented_shapely_pre2(self):
+        with pytest.raises(
+            NotImplementedError,
+            match=f"shapely >= 2.0 is required, "
+            f"version {shapely.__version__} is installed",
+        ):
+            self.squares.concave_hull()
+
+    @pytest.mark.skipif(
+        not (compat.USE_PYGEOS and compat.SHAPELY_GE_20),
+        reason="concave_hull is only implemented for shapely >= 2.0",
+    )
+    def test_concave_hull_pygeos_set_shapely_installed(self):
+        expected = GeoSeries(
+            [
+                Polygon([(0, 1), (1, 1), (0, 0), (0, 1)]),
+                Polygon([(1, 0), (0, 0), (0, 1), (1, 1), (1, 0)]),
+            ]
+        )
+        with pytest.warns(
+            UserWarning,
+            match="PyGEOS does not support concave_hull, and Shapely >= 2 is installed",
+        ):
+            assert_geoseries_equal(expected, self.g5.concave_hull())
+
+    @pytest.mark.skipif(
+        not compat.USE_SHAPELY_20,
+        reason="concave_hull is only implemented for shapely >= 2.0",
+    )
+    def test_concave_hull(self):
+        assert_geoseries_equal(self.squares, self.squares.concave_hull())
+
+    @pytest.mark.skipif(
+        not compat.USE_SHAPELY_20,
+        reason="concave_hull is only implemented for shapely >= 2.0",
+    )
+    @pytest.mark.parametrize(
+        "expected_series,ratio",
+        [
+            ([(0, 0), (0, 3), (1, 1), (3, 3), (3, 0), (0, 0)], 0.0),
+            ([(0, 0), (0, 3), (3, 3), (3, 0), (0, 0)], 1.0),
+        ],
+    )
+    def test_concave_hull_accepts_kwargs(self, expected_series, ratio):
+        expected = GeoSeries(Polygon(expected_series))
+        s = GeoSeries(MultiPoint([(0, 0), (0, 3), (1, 1), (3, 0), (3, 3)]))
+        assert_geoseries_equal(expected, s.concave_hull(ratio=ratio))
+
     def test_convex_hull(self):
         # the convex hull of a square should be the same as the square
-        squares = GeoSeries([self.sq for i in range(3)])
-        assert_geoseries_equal(squares, squares.convex_hull)
+        assert_geoseries_equal(self.squares, self.squares.convex_hull)
+
+    @pytest.mark.skipif(
+        not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+        reason="delaunay_triangles not implemented for shapely<2",
+    )
+    def test_delaunay_triangles(self):
+        expected = GeoSeries(
+            [
+                GeometryCollection([Polygon([(0, 0), (1, 0), (1, 1), (0, 0)])]),
+                GeometryCollection([Polygon([(0, 1), (0, 0), (1, 1), (0, 1)])]),
+            ]
+        )
+        dlt = self.g3.delaunay_triangles()
+        assert isinstance(dlt, GeoSeries)
+        assert_series_equal(expected, dlt)
+
+    @pytest.mark.skipif(
+        not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+        reason="delaunay_triangles not implemented for shapely<2",
+    )
+    def test_delaunay_triangles_pass_kwargs(self):
+        expected = GeoSeries(
+            [
+                MultiLineString([[(0, 0), (1, 1)], [(0, 0), (1, 0)], [(1, 0), (1, 1)]]),
+                MultiLineString([[(0, 1), (1, 1)], [(0, 0), (0, 1)], [(0, 0), (1, 1)]]),
+            ]
+        )
+        dlt = self.g3.delaunay_triangles(only_edges=True)
+        assert isinstance(dlt, GeoSeries)
+        assert_series_equal(expected, dlt)
+
+    @pytest.mark.skipif(
+        compat.USE_PYGEOS or compat.USE_SHAPELY_20,
+        reason="delaunay_triangles implemented for shapely>2",
+    )
+    def test_delaunay_triangles_shapely_pre20(self):
+        s = GeoSeries([Point(1, 1)])
+        with pytest.raises(
+            NotImplementedError,
+            match=f"shapely >= 2.0 or PyGEOS is required, "
+            f"version {shapely.__version__} is installed",
+        ):
+            s.delaunay_triangles()
 
     def test_exterior(self):
         exp_exterior = GeoSeries([LinearRing(p.boundary) for p in self.g3])
@@ -678,7 +1056,8 @@ class TestGeomMethods:
 
         s = GeoSeries([Point(2, 2), Point(0.5, 0.5)], index=[1, 2])
         expected = Series([np.nan, 2.0, np.nan])
-        assert_series_equal(self.g5.project(s), expected)
+        with pytest.warns(UserWarning, match="The indices .+ different"):
+            assert_series_equal(self.g5.project(s), expected)
 
         expected = Series([2.0, 0.5], index=self.g5.index)
         assert_series_equal(self.g5.project(s, align=False), expected)
@@ -752,7 +1131,7 @@ class TestGeomMethods:
         assert geom_almost_equals(expected, calculated)
 
     def test_buffer_args(self):
-        args = dict(cap_style=3, join_style=2, mitre_limit=2.5)
+        args = {"cap_style": 3, "join_style": 2, "mitre_limit": 2.5}
         calculated_series = self.g0.buffer(10, **args)
         for original, calculated in zip(self.g0, calculated_series):
             if original is None:
@@ -797,7 +1176,7 @@ class TestGeomMethods:
         with pytest.warns(UserWarning, match="Geometry is in a geographic CRS"):
             self.g4.buffer(1)
 
-        with pytest.warns(None) as record:
+        with warnings.catch_warnings(record=True) as record:
             # do not warn for 0
             self.g4.buffer(0)
 
@@ -809,6 +1188,42 @@ class TestGeomMethods:
         assert np.all(e.geom_equals(self.sq))
         assert isinstance(e, GeoSeries)
         assert self.g3.crs == e.crs
+
+    @pytest.mark.skipif(
+        not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+        reason=(
+            "extract_unique_points is only implemented for pygeos and shapely >= 2.0"
+        ),
+    )
+    def test_extract_unique_points(self):
+        eup = GeoSeries([self.t6]).extract_unique_points()
+        expected = GeoSeries([MultiPoint([(2, 0), (3, 0)])])
+        assert_series_equal(eup, expected)
+
+    @pytest.mark.skipif(
+        (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+        reason="extract_unique_points not implemented for shapely<2",
+    )
+    def test_extract_unique_points_not_implemented(self):
+        with pytest.raises(
+            NotImplementedError, match="shapely >= 2.0 or PyGEOS is required"
+        ):
+            self.g1.extract_unique_points()
+
+    @pytest.mark.skipif(
+        not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+        reason="minimum_bounding_circle is only implemented for pygeos, not shapely",
+    )
+    def test_minimum_bounding_circle(self):
+        mbc = self.g1.minimum_bounding_circle()
+        centers = GeoSeries([Point(0.5, 0.5)] * 2)
+        assert np.all(mbc.centroid.geom_equals_exact(centers, 0.001))
+        assert_series_equal(
+            mbc.area,
+            Series([1.560723, 1.560723]),
+        )
+        assert isinstance(mbc, GeoSeries)
+        assert self.g1.crs == mbc.crs
 
     def test_total_bounds(self):
         bbox = self.sol.x, self.sol.y, self.esb.x, self.esb.y
@@ -833,15 +1248,21 @@ class TestGeomMethods:
             index=MultiIndex.from_tuples(index, names=expected_index_name),
             crs=4326,
         )
-        assert_geoseries_equal(expected, s.explode())
+        with pytest.warns(FutureWarning, match="Currently, index_parts defaults"):
+            assert_geoseries_equal(expected, s.explode())
 
+    @pytest.mark.skipif(
+        sys.platform == "win32" and sys.version_info < (3, 9),
+        reason="Inconsistent int dtype",
+    )
     @pytest.mark.parametrize("index_name", [None, "test"])
     def test_explode_geodataframe(self, index_name):
         s = GeoSeries([MultiPoint([Point(1, 2), Point(2, 3)]), Point(5, 5)])
         df = GeoDataFrame({"col": [1, 2], "geometry": s})
         df.index.name = index_name
 
-        test_df = df.explode()
+        with pytest.warns(FutureWarning, match="Currently, index_parts defaults"):
+            test_df = df.explode()
 
         expected_s = GeoSeries([Point(1, 2), Point(2, 3), Point(5, 5)])
         expected_df = GeoDataFrame({"col": [1, 1, 2], "geometry": expected_s})
@@ -853,6 +1274,10 @@ class TestGeomMethods:
         expected_df = expected_df.set_index(expected_index)
         assert_frame_equal(test_df, expected_df)
 
+    @pytest.mark.skipif(
+        sys.platform == "win32" and sys.version_info < (3, 9),
+        reason="Inconsistent int dtype",
+    )
     @pytest.mark.parametrize("index_name", [None, "test"])
     def test_explode_geodataframe_level_1(self, index_name):
         # GH1393
@@ -860,7 +1285,7 @@ class TestGeomMethods:
         df = GeoDataFrame({"level_1": [1, 2], "geometry": s})
         df.index.name = index_name
 
-        test_df = df.explode()
+        test_df = df.explode(index_parts=True)
 
         expected_s = GeoSeries([Point(1, 2), Point(2, 3), Point(5, 5)])
         expected_df = GeoDataFrame({"level_1": [1, 1, 2], "geometry": expected_s})
@@ -872,13 +1297,26 @@ class TestGeomMethods:
         expected_df = expected_df.set_index(expected_index)
         assert_frame_equal(test_df, expected_df)
 
+    @pytest.mark.parametrize("index_name", [None, "test"])
+    def test_explode_geodataframe_no_multiindex(self, index_name):
+        # GH1393
+        s = GeoSeries([MultiPoint([Point(1, 2), Point(2, 3)]), Point(5, 5)])
+        df = GeoDataFrame({"level_1": [1, 2], "geometry": s})
+        df.index.name = index_name
+
+        test_df = df.explode(index_parts=False)
+
+        expected_s = GeoSeries([Point(1, 2), Point(2, 3), Point(5, 5)])
+        expected_df = GeoDataFrame({"level_1": [1, 1, 2], "geometry": expected_s})
+
+        expected_index = Index([0, 0, 1], name=index_name)
+        expected_df = expected_df.set_index(expected_index)
+        assert_frame_equal(test_df, expected_df)
+
     def test_explode_pandas_fallback(self):
         d = {
             "col1": [["name1", "name2"], ["name3", "name4"]],
-            "geometry": [
-                MultiPoint([(1, 2), (3, 4)]),
-                MultiPoint([(2, 1), (0, 0)]),
-            ],
+            "geometry": [MultiPoint([(1, 2), (3, 4)]), MultiPoint([(2, 1), (0, 0)])],
         }
         gdf = GeoDataFrame(d, crs=4326)
         expected_df = GeoDataFrame(
@@ -903,17 +1341,10 @@ class TestGeomMethods:
         exploded_df = gdf.explode(column="col1")
         assert_geodataframe_equal(exploded_df, expected_df)
 
-    @pytest.mark.skipif(
-        not compat.PANDAS_GE_11,
-        reason="ignore_index keyword introduced in pandas 1.1.0",
-    )
     def test_explode_pandas_fallback_ignore_index(self):
         d = {
             "col1": [["name1", "name2"], ["name3", "name4"]],
-            "geometry": [
-                MultiPoint([(1, 2), (3, 4)]),
-                MultiPoint([(2, 1), (0, 0)]),
-            ],
+            "geometry": [MultiPoint([(1, 2), (3, 4)]), MultiPoint([(2, 1), (0, 0)])],
         }
         gdf = GeoDataFrame(d, crs=4326)
         expected_df = GeoDataFrame(
@@ -937,6 +1368,10 @@ class TestGeomMethods:
         exploded_df = gdf.explode(column="col1", ignore_index=True)
         assert_geodataframe_equal(exploded_df, expected_df)
 
+    @pytest.mark.skipif(
+        sys.platform == "win32" and sys.version_info < (3, 9),
+        reason="Inconsistent int dtype",
+    )
     @pytest.mark.parametrize("outer_index", [1, (1, 2), "1"])
     def test_explode_pandas_multi_index(self, outer_index):
         index = MultiIndex.from_arrays(
@@ -949,7 +1384,7 @@ class TestGeomMethods:
             index=index,
         )
 
-        test_df = df.explode()
+        test_df = df.explode(index_parts=True)
 
         expected_s = GeoSeries(
             [
@@ -972,43 +1407,419 @@ class TestGeomMethods:
         expected_df = expected_df.set_index(expected_index)
         assert_frame_equal(test_df, expected_df)
 
+    @pytest.mark.parametrize("outer_index", [1, (1, 2), "1"])
+    def test_explode_pandas_multi_index_false(self, outer_index):
+        index = MultiIndex.from_arrays(
+            [[outer_index, outer_index, outer_index], [1, 2, 3]],
+            names=("first", "second"),
+        )
+        df = GeoDataFrame(
+            {"vals": [1, 2, 3]},
+            geometry=[MultiPoint([(x, x), (x, 0)]) for x in range(3)],
+            index=index,
+        )
+
+        test_df = df.explode(index_parts=False)
+
+        expected_s = GeoSeries(
+            [
+                Point(0, 0),
+                Point(0, 0),
+                Point(1, 1),
+                Point(1, 0),
+                Point(2, 2),
+                Point(2, 0),
+            ]
+        )
+        expected_df = GeoDataFrame({"vals": [1, 1, 2, 2, 3, 3], "geometry": expected_s})
+        expected_index = MultiIndex.from_tuples(
+            [
+                (outer_index, 1),
+                (outer_index, 1),
+                (outer_index, 2),
+                (outer_index, 2),
+                (outer_index, 3),
+                (outer_index, 3),
+            ],
+            names=["first", "second"],
+        )
+        expected_df = expected_df.set_index(expected_index)
+        assert_frame_equal(test_df, expected_df)
+
+    @pytest.mark.parametrize("outer_index", [1, (1, 2), "1"])
+    def test_explode_pandas_multi_index_ignore_index(self, outer_index):
+        index = MultiIndex.from_arrays(
+            [[outer_index, outer_index, outer_index], [1, 2, 3]],
+            names=("first", "second"),
+        )
+        df = GeoDataFrame(
+            {"vals": [1, 2, 3]},
+            geometry=[MultiPoint([(x, x), (x, 0)]) for x in range(3)],
+            index=index,
+        )
+
+        test_df = df.explode(ignore_index=True)
+
+        expected_s = GeoSeries(
+            [
+                Point(0, 0),
+                Point(0, 0),
+                Point(1, 1),
+                Point(1, 0),
+                Point(2, 2),
+                Point(2, 0),
+            ]
+        )
+        expected_df = GeoDataFrame({"vals": [1, 1, 2, 2, 3, 3], "geometry": expected_s})
+        expected_index = Index(range(len(expected_df)))
+        expected_df = expected_df.set_index(expected_index)
+        assert_frame_equal(test_df, expected_df)
+
+        # index_parts is ignored if ignore_index=True
+        test_df = df.explode(ignore_index=True, index_parts=True)
+        assert_frame_equal(test_df, expected_df)
+
+    @pytest.mark.skipif(
+        sys.platform == "win32" and sys.version_info < (3, 9),
+        reason="Inconsistent int dtype",
+    )
+    def test_explode_order(self):
+        df = GeoDataFrame(
+            {"vals": [1, 2, 3]},
+            geometry=[MultiPoint([(x, x), (x, 0)]) for x in range(3)],
+            index=[2, 9, 7],
+        )
+        test_df = df.explode(index_parts=True)
+
+        expected_index = MultiIndex.from_arrays(
+            [[2, 2, 9, 9, 7, 7], [0, 1, 0, 1, 0, 1]],
+        )
+        expected_geometry = GeoSeries(
+            [
+                Point(0, 0),
+                Point(0, 0),
+                Point(1, 1),
+                Point(1, 0),
+                Point(2, 2),
+                Point(2, 0),
+            ],
+            index=expected_index,
+        )
+        expected_df = GeoDataFrame(
+            {"vals": [1, 1, 2, 2, 3, 3]},
+            geometry=expected_geometry,
+            index=expected_index,
+        )
+        assert_geodataframe_equal(test_df, expected_df)
+
+    @pytest.mark.skipif(
+        sys.platform == "win32" and sys.version_info < (3, 9),
+        reason="Inconsistent int dtype",
+    )
+    def test_explode_order_no_multi(self):
+        df = GeoDataFrame(
+            {"vals": [1, 2, 3]},
+            geometry=[Point(0, x) for x in range(3)],
+            index=[2, 9, 7],
+        )
+        test_df = df.explode(index_parts=True)
+
+        expected_index = MultiIndex.from_arrays(
+            [[2, 9, 7], [0, 0, 0]],
+        )
+        expected_df = GeoDataFrame(
+            {"vals": [1, 2, 3]},
+            geometry=[Point(0, x) for x in range(3)],
+            index=expected_index,
+        )
+        assert_geodataframe_equal(test_df, expected_df)
+
+    @pytest.mark.skipif(
+        sys.platform == "win32" and sys.version_info < (3, 9),
+        reason="Inconsistent int dtype",
+    )
+    def test_explode_order_mixed(self):
+        df = GeoDataFrame(
+            {"vals": [1, 2, 3]},
+            geometry=[MultiPoint([(x, x), (x, 0)]) for x in range(2)] + [Point(0, 10)],
+            index=[2, 9, 7],
+        )
+        test_df = df.explode(index_parts=True)
+
+        expected_index = MultiIndex.from_arrays(
+            [[2, 2, 9, 9, 7], [0, 1, 0, 1, 0]],
+        )
+        expected_geometry = GeoSeries(
+            [
+                Point(0, 0),
+                Point(0, 0),
+                Point(1, 1),
+                Point(1, 0),
+                Point(0, 10),
+            ],
+            index=expected_index,
+        )
+        expected_df = GeoDataFrame(
+            {"vals": [1, 1, 2, 2, 3]},
+            geometry=expected_geometry,
+            index=expected_index,
+        )
+        assert_geodataframe_equal(test_df, expected_df)
+
+    @pytest.mark.skipif(
+        sys.platform == "win32" and sys.version_info < (3, 9),
+        reason="Inconsistent int dtype",
+    )
+    def test_explode_duplicated_index(self):
+        df = GeoDataFrame(
+            {"vals": [1, 2, 3]},
+            geometry=[MultiPoint([(x, x), (x, 0)]) for x in range(3)],
+            index=[1, 1, 2],
+        )
+        test_df = df.explode(index_parts=True)
+        expected_index = MultiIndex.from_arrays(
+            [[1, 1, 1, 1, 2, 2], [0, 1, 0, 1, 0, 1]],
+        )
+        expected_geometry = GeoSeries(
+            [
+                Point(0, 0),
+                Point(0, 0),
+                Point(1, 1),
+                Point(1, 0),
+                Point(2, 2),
+                Point(2, 0),
+            ],
+            index=expected_index,
+        )
+        expected_df = GeoDataFrame(
+            {"vals": [1, 1, 2, 2, 3, 3]},
+            geometry=expected_geometry,
+            index=expected_index,
+        )
+        assert_geodataframe_equal(test_df, expected_df)
+
+    @pytest.mark.parametrize("geom_col", ["geom", "geometry"])
+    def test_explode_geometry_name(self, geom_col):
+        s = GeoSeries([MultiPoint([Point(1, 2), Point(2, 3)]), Point(5, 5)])
+        df = GeoDataFrame({"col": [1, 2], geom_col: s}, geometry=geom_col)
+        test_df = df.explode(index_parts=True)
+
+        assert test_df.geometry.name == geom_col
+        assert test_df.geometry.name == test_df._geometry_column_name
+
+    def test_explode_geometry_name_two_geoms(self):
+        s = GeoSeries([MultiPoint([Point(1, 2), Point(2, 3)]), Point(5, 5)])
+        df = GeoDataFrame({"col": [1, 2], "geom": s, "geometry": s}, geometry="geom")
+        test_df = df.explode(index_parts=True)
+
+        assert test_df.geometry.name == "geom"
+        assert test_df.geometry.name == test_df._geometry_column_name
+        assert "geometry" in test_df.columns
+
     #
     # Test '&', '|', '^', and '-'
     #
     def test_intersection_operator(self):
-        with pytest.warns(DeprecationWarning):
+        with pytest.warns(FutureWarning):
             self._test_binary_operator("__and__", self.t1, self.g1, self.g2)
-        with pytest.warns(DeprecationWarning):
+        with pytest.warns(FutureWarning):
             self._test_binary_operator("__and__", self.t1, self.gdf1, self.g2)
 
     def test_union_operator(self):
-        with pytest.warns(DeprecationWarning):
+        with pytest.warns(FutureWarning):
             self._test_binary_operator("__or__", self.sq, self.g1, self.g2)
-        with pytest.warns(DeprecationWarning):
+        with pytest.warns(FutureWarning):
             self._test_binary_operator("__or__", self.sq, self.gdf1, self.g2)
 
     def test_union_operator_polygon(self):
-        with pytest.warns(DeprecationWarning):
+        with pytest.warns(FutureWarning):
             self._test_binary_operator("__or__", self.sq, self.g1, self.t2)
-        with pytest.warns(DeprecationWarning):
+        with pytest.warns(FutureWarning):
             self._test_binary_operator("__or__", self.sq, self.gdf1, self.t2)
 
     def test_symmetric_difference_operator(self):
-        with pytest.warns(DeprecationWarning):
+        with pytest.warns(FutureWarning):
             self._test_binary_operator("__xor__", self.sq, self.g3, self.g4)
-        with pytest.warns(DeprecationWarning):
+        with pytest.warns(FutureWarning):
             self._test_binary_operator("__xor__", self.sq, self.gdf3, self.g4)
 
     def test_difference_series2(self):
         expected = GeoSeries([GeometryCollection(), self.t2])
-        with pytest.warns(DeprecationWarning):
+        with pytest.warns(FutureWarning):
             self._test_binary_operator("__sub__", expected, self.g1, self.g2)
-        with pytest.warns(DeprecationWarning):
+        with pytest.warns(FutureWarning):
             self._test_binary_operator("__sub__", expected, self.gdf1, self.g2)
 
     def test_difference_poly2(self):
         expected = GeoSeries([self.t1, self.t1])
-        with pytest.warns(DeprecationWarning):
+        with pytest.warns(FutureWarning):
             self._test_binary_operator("__sub__", expected, self.g1, self.t2)
-        with pytest.warns(DeprecationWarning):
+        with pytest.warns(FutureWarning):
             self._test_binary_operator("__sub__", expected, self.gdf1, self.t2)
+
+    @pytest.mark.skipif(
+        not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+        reason="get_coordinates not implemented for shapely<2",
+    )
+    def test_get_coordinates(self):
+        expected = DataFrame(
+            data=self.expected_2d,
+            columns=["x", "y"],
+            index=[0, 1, 3, 3, 3, 3, 4, 4, 4, 4, 6, 6, 6],
+        )
+        assert_frame_equal(self.g11.get_coordinates(), expected)
+
+    @pytest.mark.skipif(
+        not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+        reason="get_coordinates not implemented for shapely<2",
+    )
+    def test_get_coordinates_z(self):
+        expected = DataFrame(
+            data=self.expected_3d,
+            columns=["x", "y", "z"],
+            index=[0, 1, 3, 3, 3, 3, 4, 4, 4, 4, 6, 6, 6],
+        )
+        assert_frame_equal(self.g11.get_coordinates(include_z=True), expected)
+
+    @pytest.mark.skipif(
+        not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+        reason="get_coordinates not implemented for shapely<2",
+    )
+    def test_get_coordinates_ignore(self):
+        expected = DataFrame(
+            data=self.expected_2d,
+            columns=["x", "y"],
+        )
+        assert_frame_equal(self.g11.get_coordinates(ignore_index=True), expected)
+
+    @pytest.mark.skipif(
+        sys.platform == "win32" and sys.version_info < (3, 9),
+        reason="Inconsistent int dtype",
+    )
+    @pytest.mark.skipif(
+        not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+        reason="get_coordinates not implemented for shapely<2",
+    )
+    def test_get_coordinates_parts(self):
+        expected = DataFrame(
+            data=self.expected_2d,
+            columns=["x", "y"],
+            index=MultiIndex.from_tuples(
+                [
+                    (0, 0),
+                    (1, 0),
+                    (3, 0),
+                    (3, 1),
+                    (3, 2),
+                    (3, 3),
+                    (4, 0),
+                    (4, 1),
+                    (4, 2),
+                    (4, 3),
+                    (6, 0),
+                    (6, 1),
+                    (6, 2),
+                ]
+            ),
+        )
+        assert_frame_equal(self.g11.get_coordinates(index_parts=True), expected)
+
+    @pytest.mark.skipif(
+        (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+        reason="get_coordinates not implemented for shapely<2",
+    )
+    def test_get_coordinates_not(self):
+        with pytest.raises(
+            NotImplementedError, match="shapely >= 2.0 or PyGEOS are required"
+        ):
+            self.g11.get_coordinates()
+
+    @pytest.mark.skipif(
+        not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+        reason="minimum_bounding_radius not implemented for shapely<2",
+    )
+    def test_minimum_bounding_radius(self):
+        mbr_geoms = self.g1.minimum_bounding_radius()
+
+        assert_series_equal(
+            mbr_geoms,
+            Series([0.707106, 0.707106]),
+        )
+
+        mbr_lines = self.g5.minimum_bounding_radius()
+
+        assert_series_equal(
+            mbr_lines,
+            Series([0.707106, 0.707106]),
+        )
+
+    @pytest.mark.skipif(
+        (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+        reason="minimum_bounding_radius not implemented for shapely<2",
+    )
+    def test_minimium_bounding_radius_not(self):
+        with pytest.raises(
+            NotImplementedError, match="shapely >= 2.0 or PyGEOS is required"
+        ):
+            self.g1.minimum_bounding_radius()
+
+    @pytest.mark.skipif(
+        not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+        reason="array input in interpolate is not implemented for shapely<2",
+    )
+    @pytest.mark.parametrize("size", [10, 20, 50])
+    def test_sample_points(self, size):
+        for gs in (
+            self.g1,
+            self.na,
+            self.a1,
+            self.na_none,
+        ):
+            output = gs.sample_points(size)
+            assert_index_equal(gs.index, output.index)
+            assert (
+                len(output.explode(ignore_index=True))
+                == len(gs[~(gs.is_empty | gs.isna())]) * size
+            )
+
+    @pytest.mark.skipif(
+        not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+        reason="array input in interpolate is not implemented for shapely<2",
+    )
+    def test_sample_points_array(self):
+        output = concat([self.g1, self.g1]).sample_points([10, 15, 20, 25])
+        expected = Series(
+            [10, 15, 20, 25], index=[0, 1, 0, 1], name="sampled_points", dtype="int32"
+        )
+        assert_series_equal(shapely.get_num_geometries(output), expected)
+
+    @pytest.mark.skipif(
+        not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+        reason="get_coordinates not implemented for shapely<2",
+    )
+    @pytest.mark.parametrize("size", [10, 20, 50])
+    def test_sample_points_pointpats(self, size):
+        pytest.importorskip("pointpats")
+        for gs in (
+            self.g1,
+            self.na,
+            self.a1,
+        ):
+            output = gs.sample_points(size, method="cluster_poisson")
+            assert_index_equal(gs.index, output.index)
+            assert (
+                len(output.explode(ignore_index=True)) == len(gs[~gs.is_empty]) * size
+            )
+
+        with pytest.raises(AttributeError, match="pointpats.random module has no"):
+            gs.sample_points(10, method="nonexistent")
+
+    @pytest.mark.skipif(
+        not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+        reason="offset_curve is only implemented for pygeos, not shapely",
+    )
+    def test_offset_curve(self):
+        oc = GeoSeries([self.l1]).offset_curve(1, join_style="mitre")
+        expected = GeoSeries([LineString([[-1, 0], [-1, 2], [1, 2]])])
+        assert_geoseries_equal(expected, oc)
+        assert isinstance(oc, GeoSeries)

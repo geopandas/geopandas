@@ -2,15 +2,19 @@ import random
 
 import numpy as np
 import pandas as pd
-import six
 
 from pyproj import CRS
 import shapely
 import shapely.affinity
 import shapely.geometry
-from shapely.geometry.base import CAP_STYLE, JOIN_STYLE
+from shapely.geometry.base import CAP_STYLE, JOIN_STYLE, BaseGeometry
 import shapely.wkb
-from shapely._buildcfg import geos_version
+import shapely.wkt
+
+try:
+    from shapely import geos_version
+except ImportError:
+    from shapely._buildcfg import geos_version
 
 import geopandas
 from geopandas.array import (
@@ -32,7 +36,7 @@ triangle_no_missing = [
     shapely.geometry.Polygon([(random.random(), random.random()) for i in range(3)])
     for _ in range(10)
 ]
-triangles = triangle_no_missing + [shapely.geometry.Polygon(), None]
+triangles = triangle_no_missing + [shapely.wkt.loads("POLYGON EMPTY"), None]
 T = from_shapely(triangles)
 
 points_no_missing = [
@@ -141,11 +145,9 @@ def test_from_wkb():
     # missing values
     # TODO(pygeos) does not support empty strings, np.nan, or pd.NA
     missing_values = [None]
-    if not compat.USE_PYGEOS:
+    if not (compat.USE_SHAPELY_20 or compat.USE_PYGEOS):
         missing_values.extend([b"", np.nan])
-
-        if compat.PANDAS_GE_10:
-            missing_values.append(pd.NA)
+        missing_values.append(pd.NA)
 
     res = from_wkb(missing_values)
     np.testing.assert_array_equal(res, np.full(len(missing_values), None))
@@ -156,6 +158,16 @@ def test_from_wkb():
     )
     res = from_wkb([multi_poly.wkb])
     assert res[0] == multi_poly
+
+
+def test_from_wkb_hex():
+    geometry_hex = ["0101000000CDCCCCCCCCCC1440CDCCCCCCCC0C4A40"]
+    res = from_wkb(geometry_hex)
+    assert isinstance(res, GeometryArray)
+
+    # array
+    res = from_wkb(np.array(geometry_hex, dtype=object))
+    assert isinstance(res, GeometryArray)
 
 
 def test_to_wkb():
@@ -179,37 +191,31 @@ def test_to_wkb():
 @pytest.mark.parametrize("string_type", ["str", "bytes"])
 def test_from_wkt(string_type):
     if string_type == "str":
-        f = six.text_type
+        f = str
     else:
-        if six.PY3:
 
-            def f(x):
-                return bytes(x, "utf8")
-
-        else:
-
-            def f(x):
-                return x
+        def f(x):
+            return bytes(x, "utf8")
 
     # list
     L_wkt = [f(p.wkt) for p in points_no_missing]
     res = from_wkt(L_wkt)
     assert isinstance(res, GeometryArray)
-    assert all(v.almost_equals(t) for v, t in zip(res, points_no_missing))
+    tol = 0.5 * 10 ** (-6)
+    assert all(v.equals_exact(t, tolerance=tol) for v, t in zip(res, points_no_missing))
+    assert all(v.equals_exact(t, tolerance=tol) for v, t in zip(res, points_no_missing))
 
     # array
     res = from_wkt(np.array(L_wkt, dtype=object))
     assert isinstance(res, GeometryArray)
-    assert all(v.almost_equals(t) for v, t in zip(res, points_no_missing))
+    assert all(v.equals_exact(t, tolerance=tol) for v, t in zip(res, points_no_missing))
 
     # missing values
     # TODO(pygeos) does not support empty strings, np.nan, or pd.NA
     missing_values = [None]
-    if not compat.USE_PYGEOS:
+    if not (compat.USE_SHAPELY_20 or compat.USE_PYGEOS):
         missing_values.extend([f(""), np.nan])
-
-        if compat.PANDAS_GE_10:
-            missing_values.append(pd.NA)
+        missing_values.append(pd.NA)
 
     res = from_wkb(missing_values)
     np.testing.assert_array_equal(res, np.full(len(missing_values), None))
@@ -233,6 +239,30 @@ def test_to_wkt():
     a = from_shapely([None, points_no_missing[0]])
     res = to_wkt(a)
     assert res[0] is None
+
+
+def test_data():
+    arr = from_shapely(points_no_missing)
+    with pytest.warns(DeprecationWarning):
+        np_arr = arr.data
+
+    assert isinstance(np_arr, np.ndarray)
+    if compat.USE_PYGEOS:
+        np_arr2 = arr.to_numpy()
+        assert isinstance(np_arr2[0], BaseGeometry)
+        np_arr3 = np.asarray(arr)
+        assert isinstance(np_arr3[0], BaseGeometry)
+    else:
+        assert arr.to_numpy() is np_arr
+        assert np.asarray(arr) is np_arr
+
+
+def test_as_array():
+    arr = from_shapely(points_no_missing)
+    np_arr1 = np.asarray(arr)
+    np_arr2 = arr.to_numpy()
+    assert np_arr1[0] == arr[0]
+    np.testing.assert_array_equal(np_arr1, np_arr2)
 
 
 @pytest.mark.parametrize(
@@ -331,19 +361,6 @@ def test_predicates_vector_vector(attr, args):
 
 
 @pytest.mark.parametrize(
-    "attr,args", [("equals_exact", (0.1,)), ("almost_equals", (3,))]
-)
-def test_equals_deprecation(attr, args):
-    point = points[0]
-    tri = triangles[0]
-
-    for other in [point, tri, shapely.geometry.Polygon()]:
-        with pytest.warns(FutureWarning):
-            result = getattr(T, attr)(other, *args)
-        assert result.tolist() == getattr(T, "geom_" + attr)(other, *args).tolist()
-
-
-@pytest.mark.parametrize(
     "attr",
     [
         "boundary",
@@ -357,31 +374,8 @@ def test_equals_deprecation(attr, args):
 def test_unary_geo(attr):
     na_value = None
 
-    if attr == "boundary":
-        # pygeos returns None for empty geometries
-        if not compat.USE_PYGEOS:
-            # boundary raises for empty geometry
-            with pytest.raises(Exception):
-                T.boundary
-
-        values = triangle_no_missing + [None]
-        A = from_shapely(values)
-    else:
-        values = triangles
-        A = T
-
-    result = getattr(A, attr)
-    if attr == "exterior" and compat.USE_PYGEOS:
-        # TODO(pygeos)
-        # empty Polygon() has an exterior with shapely > 1.7, which gives
-        # empty LinearRing instead of None,
-        # but conversion to pygeos still results in empty GeometryCollection
-        expected = [
-            getattr(t, attr) if t is not None and not t.is_empty else na_value
-            for t in values
-        ]
-    else:
-        expected = [getattr(t, attr) if t is not None else na_value for t in values]
+    result = getattr(T, attr)
+    expected = [getattr(t, attr) if t is not None else na_value for t in triangles]
 
     assert equal_geometries(result, expected)
 
@@ -447,13 +441,27 @@ def test_binary_geo_scalar(attr):
 
 
 @pytest.mark.parametrize(
-    "attr", ["is_closed", "is_valid", "is_empty", "is_simple", "has_z", "is_ring"]
+    "attr",
+    [
+        "is_closed",
+        "is_valid",
+        "is_empty",
+        "is_simple",
+        "has_z",
+        # for is_ring we raise a warning about the value for Polygon changing
+        pytest.param(
+            "is_ring",
+            marks=[
+                pytest.mark.filterwarnings("ignore:is_ring:FutureWarning"),
+            ],
+        ),
+    ],
 )
 def test_unary_predicates(attr):
     na_value = False
     if attr == "is_simple" and geos_version < (3, 8) and not compat.USE_PYGEOS:
         # poly.is_simple raises an error for empty polygon for GEOS < 3.8
-        with pytest.raises(Exception):
+        with pytest.raises(Exception):  # noqa: B017
             T.is_simple
         vals = triangle_no_missing
         V = from_shapely(vals)
@@ -463,11 +471,9 @@ def test_unary_predicates(attr):
 
     result = getattr(V, attr)
 
-    if attr == "is_simple" and (geos_version < (3, 8) or compat.USE_PYGEOS):
+    if attr == "is_simple" and geos_version < (3, 8):
         # poly.is_simple raises an error for empty polygon for GEOS < 3.8
         # with shapely, pygeos always returns False for all GEOS versions
-        # But even for Shapely with GEOS >= 3.8, empty GeometryCollection
-        # returns True instead of False
         expected = [
             getattr(t, attr) if t is not None and not t.is_empty else na_value
             for t in vals
@@ -479,21 +485,39 @@ def test_unary_predicates(attr):
             else na_value
             for t in vals
         ]
+        # empty Linearring.is_ring gives False with Shapely < 2.0
+        if compat.USE_PYGEOS and not compat.SHAPELY_GE_20:
+            expected[-2] = True
+    elif (
+        attr == "is_closed"
+        and compat.USE_PYGEOS
+        and compat.SHAPELY_GE_182
+        and not compat.SHAPELY_GE_20
+    ):
+        # In shapely 1.8.2, is_closed was changed to return always True for
+        # Polygon/MultiPolygon, while PyGEOS returns always False
+        expected = [False] * len(vals)
     else:
         expected = [getattr(t, attr) if t is not None else na_value for t in vals]
+
     assert result.tolist() == expected
 
 
+# for is_ring we raise a warning about the value for Polygon changing
+@pytest.mark.filterwarnings("ignore:is_ring:FutureWarning")
 def test_is_ring():
     g = [
         shapely.geometry.LinearRing([(0, 0), (1, 1), (1, -1)]),
         shapely.geometry.LineString([(0, 0), (1, 1), (1, -1)]),
         shapely.geometry.LineString([(0, 0), (1, 1), (1, -1), (0, 0)]),
         shapely.geometry.Polygon([(0, 0), (1, 1), (1, -1)]),
-        shapely.geometry.Polygon(),
+        shapely.wkt.loads("POLYGON EMPTY"),
         None,
     ]
-    expected = [True, False, True, True, False, False]
+    expected = [True, False, True, True, True, False]
+    if not compat.USE_PYGEOS and not compat.SHAPELY_GE_20:
+        # empty polygon is_ring gives False with Shapely < 2.0
+        expected[-2] = False
 
     result = from_shapely(g).is_ring
 
@@ -513,7 +537,7 @@ def test_unary_float(attr):
 def test_geom_types():
     cat = T.geom_type
     # empty polygon has GeometryCollection type
-    assert list(cat) == ["Polygon"] * (len(T) - 2) + ["GeometryCollection", None]
+    assert list(cat) == ["Polygon"] * (len(T) - 1) + [None]
 
 
 def test_geom_types_null_mixed():
@@ -596,10 +620,10 @@ def test_binary_project(normalized):
 
     result = L.project(P, normalized=normalized)
     expected = [
-        l.project(p, normalized=normalized)
-        if l is not None and p is not None
+        line.project(p, normalized=normalized)
+        if line is not None and p is not None
         else na_value
-        for p, l in zip(points, lines)
+        for p, line in zip(points, lines)
     ]
     np.testing.assert_allclose(result, expected)
 
@@ -761,6 +785,29 @@ def test_getitem():
     assert P5.equals(points[1])
 
 
+@pytest.mark.parametrize(
+    "item",
+    [
+        geopandas.GeoDataFrame(
+            geometry=[shapely.geometry.Polygon([(0, 0), (2, 0), (2, 2), (0, 2)])]
+        ),
+        geopandas.GeoSeries(
+            [shapely.geometry.Polygon([(0, 0), (2, 0), (2, 2), (0, 2)])]
+        ),
+        np.array([shapely.geometry.Polygon([(0, 0), (2, 0), (2, 2), (0, 2)])]),
+        [shapely.geometry.Polygon([(0, 0), (2, 0), (2, 2), (0, 2)])],
+        shapely.geometry.Polygon([(0, 0), (2, 0), (2, 2), (0, 2)]),
+    ],
+)
+def test_setitem(item):
+    points = [shapely.geometry.Point(i, i) for i in range(10)]
+    P = from_shapely(points)
+
+    P[[0]] = item
+
+    assert isinstance(P[0], shapely.geometry.Polygon)
+
+
 def test_equality_ops():
     with pytest.raises(ValueError):
         P[:5] == P[:7]
@@ -881,7 +928,6 @@ def test_isna(NA):
     assert t1[0] is None
 
 
-@pytest.mark.skipif(not compat.PANDAS_GE_10, reason="pd.NA introduced in pandas 1.0")
 def test_isna_pdNA():
     t1 = T.copy()
     t1[0] = pd.NA
@@ -912,27 +958,32 @@ class TestEstimateUtmCrs:
         self.landmarks = from_shapely([self.esb, self.sol], crs="epsg:4326")
 
     def test_estimate_utm_crs__geographic(self):
-        if compat.PYPROJ_LT_3:
-            with pytest.raises(RuntimeError, match=r"pyproj 3\+ required"):
-                self.landmarks.estimate_utm_crs()
-        else:
-            assert self.landmarks.estimate_utm_crs() == CRS("EPSG:32618")
+        assert self.landmarks.estimate_utm_crs() == CRS("EPSG:32618")
+        if compat.PYPROJ_GE_32:  # result is unstable in older pyproj
             assert self.landmarks.estimate_utm_crs("NAD83") == CRS("EPSG:26918")
 
-    @pytest.mark.skipif(compat.PYPROJ_LT_3, reason="requires pyproj 3 or higher")
     def test_estimate_utm_crs__projected(self):
         assert self.landmarks.to_crs("EPSG:3857").estimate_utm_crs() == CRS(
             "EPSG:32618"
         )
 
-    @pytest.mark.skipif(compat.PYPROJ_LT_3, reason="requires pyproj 3 or higher")
+    @pytest.mark.skipif(not compat.PYPROJ_GE_31, reason="requires pyproj 3.1 or higher")
+    def test_estimate_utm_crs__antimeridian(self):
+        antimeridian = from_shapely(
+            [
+                shapely.geometry.Point(1722483.900174921, 5228058.6143420935),
+                shapely.geometry.Point(4624385.494808555, 8692574.544944234),
+            ],
+            crs="EPSG:3851",
+        )
+        assert antimeridian.estimate_utm_crs() == CRS("EPSG:32760")
+
     def test_estimate_utm_crs__out_of_bounds(self):
         with pytest.raises(RuntimeError, match="Unable to determine UTM CRS"):
             from_shapely(
                 [shapely.geometry.Polygon([(0, 90), (1, 90), (2, 90)])], crs="EPSG:4326"
             ).estimate_utm_crs()
 
-    @pytest.mark.skipif(compat.PYPROJ_LT_3, reason="requires pyproj 3 or higher")
     def test_estimate_utm_crs__missing_crs(self):
         with pytest.raises(RuntimeError, match="crs must be set"):
             from_shapely(

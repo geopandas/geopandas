@@ -22,13 +22,17 @@ General methods and attributes
    GeoSeries.total_bounds
    GeoSeries.length
    GeoSeries.geom_type
+   GeoSeries.offset_curve
    GeoSeries.distance
+   GeoSeries.hausdorff_distance
    GeoSeries.representative_point
    GeoSeries.exterior
    GeoSeries.interiors
+   GeoSeries.minimum_bounding_radius
    GeoSeries.x
    GeoSeries.y
    GeoSeries.z
+   GeoSeries.get_coordinates
 
 Unary predicates
 ----------------
@@ -43,7 +47,7 @@ Unary predicates
    GeoSeries.has_z
 
 
-Binary Predicates
+Binary predicates
 -----------------
 
 .. autosummary::
@@ -63,18 +67,19 @@ Binary Predicates
    GeoSeries.covered_by
 
 
-Set-theoretic Methods
+Set-theoretic methods
 ---------------------
 
 .. autosummary::
    :toctree: api/
 
+   GeoSeries.clip_by_rect
    GeoSeries.difference
    GeoSeries.intersection
    GeoSeries.symmetric_difference
    GeoSeries.union
 
-Constructive Methods and Attributes
+Constructive methods and attributes
 -----------------------------------
 
 .. autosummary::
@@ -83,8 +88,16 @@ Constructive Methods and Attributes
    GeoSeries.buffer
    GeoSeries.boundary
    GeoSeries.centroid
+   GeoSeries.concave_hull
    GeoSeries.convex_hull
+   GeoSeries.delaunay_triangles
    GeoSeries.envelope
+   GeoSeries.extract_unique_points
+   GeoSeries.make_valid
+   GeoSeries.minimum_bounding_circle
+   GeoSeries.normalize
+   GeoSeries.sample_points
+   GeoSeries.segmentize
    GeoSeries.simplify
 
 Affine transformations
@@ -117,6 +130,7 @@ Serialization / IO / conversion
    GeoSeries.from_file
    GeoSeries.from_wkb
    GeoSeries.from_wkt
+   GeoSeries.from_xy
    GeoSeries.to_file
    GeoSeries.to_json
    GeoSeries.to_wkb
@@ -143,6 +157,14 @@ Missing values
    GeoSeries.isna
    GeoSeries.notna
 
+Overlay operations
+------------------
+
+.. autosummary::
+   :toctree: api/
+
+   GeoSeries.clip
+
 Plotting
 --------
 
@@ -150,6 +172,7 @@ Plotting
    :toctree: api/
 
    GeoSeries.plot
+   GeoSeries.explore
 
 
 Spatial index

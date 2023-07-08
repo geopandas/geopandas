@@ -6,26 +6,27 @@ dependencies:
   # required
   - pandas
   - shapely
-  - fiona
+  # - fiona  # build with only pyogrio
+  - libgdal
   - pyproj
   - pygeos
+  - packaging
   # testing
   - pytest
   - pytest-cov
   - pytest-xdist
-  - fsspec
+  # - fsspec  # to have one non-minimal build without fsspec
   # optional
   - rtree
   - matplotlib
   - mapclassify
+  - folium
+  - xyzservices
   - scipy
   - geopy
-  # installed in tests.yaml, because not available on windows
-  # - postgis
   - SQLalchemy
-  - psycopg2
   - libspatialite
-  - geoalchemy2
   - pyarrow
-  # doctest testing
-  - pytest-doctestplus
+  - pyogrio
+  - pointpats
+  - geodatasets

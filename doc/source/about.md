@@ -6,10 +6,10 @@
 :hidden:
 
 Team <about/team>
+Roadmap <about/roadmap>
 Citing <about/citing>
 Logo <about/logo>
 ```
-
 
 GeoPandas is an open source project to add support for geographic data to pandas objects. It
 currently implements `GeoSeries` and `GeoDataFrame` types which are subclasses of
@@ -25,8 +25,24 @@ under the liberal terms of the BSD-3-Clause license.
 
 ```{container} button
 
-{doc}`Team <about/team>`
+{doc}`Team <about/team>` {doc}`Roadmap <about/roadmap>`
 {doc}`Citing <about/citing>` {doc}`Logo <about/logo>`
+```
+
+GeoPandas is a fiscally sponsored project of NumFOCUS, a nonprofit dedicated to
+supporting the open-source scientific computing community. If you like GeoPandas and
+want to support our mission, please consider making a [donation](https://numfocus.org/donate-for-geopandas) to support our
+efforts.
+
+NumFOCUS is a 501(c)(3) non-profit charity in the United States; as such, donations to
+NumFOCUS are tax-deductible as allowed by law. As with any donation, you should consult
+with your personal tax adviser or the IRS about your particular tax situation.
+
+```{image} _static/SponsoredProject.svg
+:alt: numfocus
+:width: 400px
+:align: center
+:target: <https://numfocus.org/project/geopandas>
 ```
 
 ## Project history
@@ -41,7 +57,8 @@ the world and is now maintained by a [team](about/team) of core developers.
 In 2020 GeoPandas became [NumFOCUS Affiliated
 Project](https://numfocus.org/sponsored-projects/affiliated-projects) and received two
 [Small Development Grants](https://numfocus.org/programs/sustainability) to support its
-development.
+development. In 2023, GeoPandas became [NumFOCUS Sponsored
+  Project](https://numfocus.org/project/geopandas).
 
 ## Timeline
 
@@ -49,5 +66,5 @@ development.
 - **2014**: GeoPandas 0.1.0 released
 - **2020**: GeoPandas became [NumFOCUS Affiliated
   Project](https://numfocus.org/sponsored-projects/affiliated-projects)
-
-
+- **2023**: GeoPandas became [NumFOCUS Sponsored
+  Project](https://numfocus.org/project/geopandas)

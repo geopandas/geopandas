@@ -1,7 +1,10 @@
+import warnings
+
 import numpy as np
 
 from shapely.geometry import Point, Polygon
-from pandas import Series
+import pandas as pd
+from pandas import DataFrame, Series
 
 from geopandas import GeoDataFrame, GeoSeries
 from geopandas.array import from_shapely
@@ -125,7 +128,7 @@ def test_ignore_crs_mismatch():
 
     # assert that with `check_crs=False` the assert passes, and also does not
     # generate any warning from comparing both geometries with different crs
-    with pytest.warns(None) as record:
+    with warnings.catch_warnings(record=True) as record:
         assert_geodataframe_equal(df1, df2, check_crs=False)
 
     assert len(record) == 0
@@ -137,3 +140,44 @@ def test_almost_equal_but_not_equal():
     assert_geoseries_equal(s_origin, s_almost_origin, check_less_precise=True)
     with pytest.raises(AssertionError):
         assert_geoseries_equal(s_origin, s_almost_origin)
+
+
+def test_geodataframe_no_active_geometry_column():
+    def create_dataframe():
+        gdf = GeoDataFrame({"value": [1, 2], "geometry": [Point(1, 1), Point(2, 2)]})
+        gdf["geom2"] = GeoSeries([Point(3, 3), Point(4, 4)])
+        return gdf
+
+    # no active geometry column (None)
+    df1 = create_dataframe()
+    df1._geometry_column_name = None
+    df2 = create_dataframe()
+    df2._geometry_column_name = None
+    assert_geodataframe_equal(df1, df2)
+
+    # active geometry column ("geometry") not present
+    df1 = create_dataframe()[["value", "geom2"]]
+    df2 = create_dataframe()[["value", "geom2"]]
+    assert_geodataframe_equal(df1, df2)
+
+    df1 = GeoDataFrame(create_dataframe()[["value"]])
+    df2 = GeoDataFrame(create_dataframe()[["value"]])
+    assert_geodataframe_equal(df1, df2)
+
+
+def test_geodataframe_multiindex():
+    def create_dataframe():
+        gdf = DataFrame([[Point(0, 0), Point(1, 1)], [Point(2, 2), Point(3, 3)]])
+        gdf = GeoDataFrame(gdf.astype("geometry"))
+        gdf.columns = pd.MultiIndex.from_product([["geometry"], [0, 1]])
+        return gdf
+
+    df1 = create_dataframe()
+    df2 = create_dataframe()
+    assert_geodataframe_equal(df1, df2)
+
+    df1 = create_dataframe()
+    df1._geometry_column_name = None
+    df2 = create_dataframe()
+    df2._geometry_column_name = None
+    assert_geodataframe_equal(df1, df2)

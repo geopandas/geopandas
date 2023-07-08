@@ -44,41 +44,44 @@ Although it is possible to use icon independently, we would prefer using the com
 
 ## Download
 
-You can download all version in SVG and PNG from [GitHub repository](https://github.com/geopandas/geopandas/tree/master/doc/source/_static/logo).
-
+You can download all version in SVG and PNG from [GitHub repository](https://github.com/geopandas/geopandas/tree/main/doc/source/_static/logo).
 
 ## Colors
 
 Pink and yellow accent colors are shared with `pandas`.
 
 ### Green
+
 ```{raw} html
 <svg xmlns="http://www.w3.org/2000/svg" width="75" height="75" style="float: left">
     <circle cx="33" cy="33" r="33" fill="#139C5A"></circle>
 </svg>
 ```
+
 **HEX:** #139C5A
 
 **RGB:** (19, 156, 90)
 
 ### Yellow
+
 ```{raw} html
 <svg xmlns="http://www.w3.org/2000/svg" width="75" height="75" style="float: left">
     <circle cx="33" cy="33" r="33" fill="#FFCA00"></circle>
 </svg>
 ```
+
 **HEX:** #FFCA00
 
 **RGB:** (255, 202, 0)
 
 ### Pink
+
 ```{raw} html
 <svg xmlns="http://www.w3.org/2000/svg" width="75" height="75" style="float: left">
     <circle cx="33" cy="33" r="33" fill="#E70488"></circle>
 </svg>
 ```
+
 **HEX:** #E70488
 
-**RGB:** ((31, 4, 136)
-
-
+**RGB:** (231, 4, 136)

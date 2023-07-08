@@ -1,63 +1,130 @@
-from distutils.version import LooseVersion
+from packaging.version import Version
 import json
 import warnings
 
-from pandas import DataFrame
+import numpy as np
+from pandas import DataFrame, Series
 
+import geopandas._compat as compat
 from geopandas._compat import import_optional_dependency
 from geopandas.array import from_wkb
 from geopandas import GeoDataFrame
 import geopandas
+from .file import _expand_user
 
-
-METADATA_VERSION = "0.1.0"
-# reference: https://github.com/geopandas/geo-arrow-spec
+METADATA_VERSION = "1.0.0-beta.1"
+SUPPORTED_VERSIONS = ["0.1.0", "0.4.0", "1.0.0-beta.1"]
+# reference: https://github.com/opengeospatial/geoparquet
 
 # Metadata structure:
 # {
 #     "geo": {
 #         "columns": {
 #             "<name>": {
-#                 "crs": "<WKT or None: REQUIRED>",
 #                 "encoding": "WKB"
+#                 "geometry_types": <list of str: REQUIRED>
+#                 "crs": "<PROJJSON or None: OPTIONAL>",
+#                 "orientation": "<'counterclockwise' or None: OPTIONAL>"
+#                 "edges": "planar"
+#                 "bbox": <list of [xmin, ymin, xmax, ymax]: OPTIONAL>
+#                 "epoch": <float: OPTIONAL>
 #             }
 #         },
+#         "primary_column": "<str: REQUIRED>",
+#         "version": "<METADATA_VERSION>",
+#
+#         # Additional GeoPandas specific metadata (not in metadata spec)
 #         "creator": {
 #             "library": "geopandas",
 #             "version": "<geopandas.__version__>"
 #         }
-#         "primary_column": "<str: REQUIRED>",
-#         "schema_version": "<METADATA_VERSION>"
 #     }
 # }
 
 
-def _create_metadata(df):
+def _is_fsspec_url(url):
+    return (
+        isinstance(url, str)
+        and "://" in url
+        and not url.startswith(("http://", "https://"))
+    )
+
+
+def _remove_id_from_member_of_ensembles(json_dict):
+    """
+    Older PROJ versions will not recognize IDs of datum ensemble members that
+    were added in more recent PROJ database versions.
+
+    Cf https://github.com/opengeospatial/geoparquet/discussions/110
+    and https://github.com/OSGeo/PROJ/pull/3221
+
+    Mimicking the patch to GDAL from https://github.com/OSGeo/gdal/pull/5872
+    """
+    for key, value in json_dict.items():
+        if isinstance(value, dict):
+            _remove_id_from_member_of_ensembles(value)
+        elif key == "members" and isinstance(value, list):
+            for member in value:
+                member.pop("id", None)
+
+
+def _create_metadata(df, schema_version=None):
     """Create and encode geo metadata dict.
 
     Parameters
     ----------
     df : GeoDataFrame
+    schema_version : {'0.1.0', '0.4.0', '1.0.0-beta.1', None}
+        GeoParquet specification version; if not provided will default to
+        latest supported version.
 
     Returns
     -------
     dict
     """
 
+    schema_version = schema_version or METADATA_VERSION
+
+    if schema_version not in SUPPORTED_VERSIONS:
+        raise ValueError(
+            f"schema_version must be one of: {', '.join(SUPPORTED_VERSIONS)}"
+        )
+
     # Construct metadata for each geometry
     column_metadata = {}
     for col in df.columns[df.dtypes == "geometry"]:
         series = df[col]
+        geometry_types = sorted(Series(series.geom_type.unique()).dropna())
+        if schema_version[0] == "0":
+            geometry_types_name = "geometry_type"
+            if len(geometry_types) == 1:
+                geometry_types = geometry_types[0]
+        else:
+            geometry_types_name = "geometry_types"
+
+        crs = None
+        if series.crs:
+            if schema_version == "0.1.0":
+                crs = series.crs.to_wkt()
+            else:  # version >= 0.4.0
+                crs = series.crs.to_json_dict()
+                _remove_id_from_member_of_ensembles(crs)
+
         column_metadata[col] = {
-            "crs": series.crs.to_wkt() if series.crs else None,
             "encoding": "WKB",
-            "bbox": series.total_bounds.tolist(),
+            "crs": crs,
+            geometry_types_name: geometry_types,
         }
+
+        bbox = series.total_bounds.tolist()
+        if np.isfinite(bbox).all():
+            # don't add bbox with NaNs for empty / all-NA geometry column
+            column_metadata[col]["bbox"] = bbox
 
     return {
         "primary_column": df._geometry_column_name,
         "columns": column_metadata,
-        "schema_version": METADATA_VERSION,
+        "version": schema_version or METADATA_VERSION,
         "creator": {"library": "geopandas", "version": geopandas.__version__},
     }
 
@@ -135,6 +202,14 @@ def _validate_metadata(metadata):
     if not metadata:
         raise ValueError("Missing or malformed geo metadata in Parquet/Feather file")
 
+    # version was schema_version in 0.1.0
+    version = metadata.get("version", metadata.get("schema_version"))
+    if not version:
+        raise ValueError(
+            "'geo' metadata in Parquet/Feather file is missing required key: "
+            "'version'"
+        )
+
     required_keys = ("primary_column", "columns")
     for key in required_keys:
         if metadata.get(key, None) is None:
@@ -147,7 +222,8 @@ def _validate_metadata(metadata):
         raise ValueError("'columns' in 'geo' metadata must be a dict")
 
     # Validate that geometry columns have required metadata and values
-    required_col_keys = ("crs", "encoding")
+    # leaving out "geometry_type" for compatibility with 0.1
+    required_col_keys = ("encoding",)
     for col, column_metadata in metadata["columns"].items():
         for key in required_col_keys:
             if key not in column_metadata:
@@ -159,34 +235,45 @@ def _validate_metadata(metadata):
         if column_metadata["encoding"] != "WKB":
             raise ValueError("Only WKB geometry encoding is supported")
 
+        if column_metadata.get("edges", "planar") == "spherical":
+            warnings.warn(
+                f"The geo metadata indicate that column '{col}' has spherical edges, "
+                "but because GeoPandas currently does not support spherical "
+                "geometry, it ignores this metadata and will interpret the edges of "
+                "the geometries as planar.",
+                UserWarning,
+                stacklevel=4,
+            )
 
-def _geopandas_to_arrow(df, index=None):
+
+def _geopandas_to_arrow(df, index=None, schema_version=None):
     """
     Helper function with main, shared logic for to_parquet/to_feather.
     """
     from pyarrow import Table
 
-    warnings.warn(
-        "this is an initial implementation of Parquet/Feather file support and "
-        "associated metadata.  This is tracking version 0.1.0 of the metadata "
-        "specification at "
-        "https://github.com/geopandas/geo-arrow-spec\n\n"
-        "This metadata specification does not yet make stability promises.  "
-        "We do not yet recommend using this in a production setting unless you "
-        "are able to rewrite your Parquet/Feather files.\n\n"
-        "To further ignore this warning, you can do: \n"
-        "import warnings; warnings.filterwarnings('ignore', "
-        "message='.*initial implementation of Parquet.*')",
-        UserWarning,
-        stacklevel=4,
-    )
-
     _validate_dataframe(df)
 
     # create geo metadata before altering incoming data frame
-    geo_metadata = _create_metadata(df)
+    geo_metadata = _create_metadata(df, schema_version=schema_version)
 
-    df = df.to_wkb()
+    kwargs = {}
+    if compat.USE_SHAPELY_20:
+        kwargs = {"flavor": "iso"}
+    else:
+        for col in df.columns[df.dtypes == "geometry"]:
+            series = df[col]
+            if series.has_z.any():
+                warnings.warn(
+                    "The GeoDataFrame contains 3D geometries, and when using "
+                    "shapely < 2.0, such geometries will be written not exactly "
+                    "following to the GeoParquet spec (not using ISO WKB). For "
+                    "most use cases this should not be a problem (GeoPandas can "
+                    "read such files fine).",
+                    stacklevel=2,
+                )
+                break
+    df = df.to_wkb(**kwargs)
 
     table = Table.from_pandas(df, preserve_index=index)
 
@@ -194,10 +281,13 @@ def _geopandas_to_arrow(df, index=None):
     # This must be done AFTER creating the table or it is not persisted
     metadata = table.schema.metadata
     metadata.update({b"geo": _encode_metadata(geo_metadata)})
+
     return table.replace_schema_metadata(metadata)
 
 
-def _to_parquet(df, path, index=None, compression="snappy", **kwargs):
+def _to_parquet(
+    df, path, index=None, compression="snappy", schema_version=None, **kwargs
+):
     """
     Write a GeoDataFrame to the Parquet format.
 
@@ -205,15 +295,9 @@ def _to_parquet(df, path, index=None, compression="snappy", **kwargs):
 
     Requires 'pyarrow'.
 
-    WARNING: this is an initial implementation of Parquet file support and
-    associated metadata.  This is tracking version 0.1.0 of the metadata
-    specification at:
-    https://github.com/geopandas/geo-arrow-spec
-
-    This metadata specification does not yet make stability promises.  As such,
-    we do not yet recommend using this in a production setting unless you are
-    able to rewrite your Parquet files.
-
+    This is tracking version 1.0.0-beta.1 of the GeoParquet specification at:
+    https://github.com/opengeospatial/geoparquet. Writing older versions is
+    supported using the `schema_version` keyword.
 
     .. versionadded:: 0.8
 
@@ -228,18 +312,33 @@ def _to_parquet(df, path, index=None, compression="snappy", **kwargs):
         output except `RangeIndex` which is stored as metadata only.
     compression : {'snappy', 'gzip', 'brotli', None}, default 'snappy'
         Name of the compression to use. Use ``None`` for no compression.
-    kwargs
+    schema_version : {'0.1.0', '0.4.0', '1.0.0-beta.1', None}
+        GeoParquet specification version; if not provided will default to
+        latest supported version.
+    **kwargs
         Additional keyword arguments passed to pyarrow.parquet.write_table().
     """
     parquet = import_optional_dependency(
         "pyarrow.parquet", extra="pyarrow is required for Parquet support."
     )
 
-    table = _geopandas_to_arrow(df, index=index)
+    if kwargs and "version" in kwargs and kwargs["version"] is not None:
+        if schema_version is None and kwargs["version"] in SUPPORTED_VERSIONS:
+            warnings.warn(
+                "the `version` parameter has been replaced with `schema_version`. "
+                "`version` will instead be passed directly to the underlying "
+                "parquet writer unless `version` is 0.1.0 or 0.4.0.",
+                FutureWarning,
+                stacklevel=2,
+            )
+            schema_version = kwargs.pop("version")
+
+    path = _expand_user(path)
+    table = _geopandas_to_arrow(df, index=index, schema_version=schema_version)
     parquet.write_table(table, path, compression=compression, **kwargs)
 
 
-def _to_feather(df, path, index=None, compression=None, **kwargs):
+def _to_feather(df, path, index=None, compression=None, schema_version=None, **kwargs):
     """
     Write a GeoDataFrame to the Feather format.
 
@@ -247,14 +346,9 @@ def _to_feather(df, path, index=None, compression=None, **kwargs):
 
     Requires 'pyarrow' >= 0.17.
 
-    WARNING: this is an initial implementation of Feather file support and
-    associated metadata.  This is tracking version 0.1.0 of the metadata
-    specification at:
-    https://github.com/geopandas/geo-arrow-spec
-
-    This metadata specification does not yet make stability promises.  As such,
-    we do not yet recommend using this in a production setting unless you are
-    able to rewrite your Feather files.
+    This is tracking version 1.0.0-beta.1 of the GeoParquet specification for
+    the metadata at: https://github.com/opengeospatial/geoparquet. Writing
+    older versions is supported using the `schema_version` keyword.
 
     .. versionadded:: 0.8
 
@@ -270,6 +364,9 @@ def _to_feather(df, path, index=None, compression=None, **kwargs):
     compression : {'zstd', 'lz4', 'uncompressed'}, optional
         Name of the compression to use. Use ``"uncompressed"`` for no
         compression. By default uses LZ4 if available, otherwise uncompressed.
+    schema_version : {'0.1.0', '0.4.0', '1.0.0-beta.1', None}
+        GeoParquet specification version for the metadata; if not provided
+        will default to latest supported version.
     kwargs
         Additional keyword arguments passed to pyarrow.feather.write_feather().
     """
@@ -279,21 +376,34 @@ def _to_feather(df, path, index=None, compression=None, **kwargs):
     # TODO move this into `import_optional_dependency`
     import pyarrow
 
-    if pyarrow.__version__ < LooseVersion("0.17.0"):
+    if Version(pyarrow.__version__) < Version("0.17.0"):
         raise ImportError("pyarrow >= 0.17 required for Feather support")
 
-    table = _geopandas_to_arrow(df, index=index)
+    if kwargs and "version" in kwargs and kwargs["version"] is not None:
+        if schema_version is None and kwargs["version"] in SUPPORTED_VERSIONS:
+            warnings.warn(
+                "the `version` parameter has been replaced with `schema_version`. "
+                "`version` will instead be passed directly to the underlying "
+                "feather writer unless `version` is 0.1.0 or 0.4.0.",
+                FutureWarning,
+                stacklevel=2,
+            )
+            schema_version = kwargs.pop("version")
+
+    path = _expand_user(path)
+    table = _geopandas_to_arrow(df, index=index, schema_version=schema_version)
     feather.write_feather(table, path, compression=compression, **kwargs)
 
 
-def _arrow_to_geopandas(table):
+def _arrow_to_geopandas(table, metadata=None):
     """
     Helper function with main, shared logic for read_parquet/read_feather.
     """
     df = table.to_pandas()
 
-    metadata = table.schema.metadata
-    if b"geo" not in metadata:
+    metadata = metadata or table.schema.metadata
+
+    if metadata is None or b"geo" not in metadata:
         raise ValueError(
             """Missing geo metadata in Parquet/Feather file.
             Use pandas.read_parquet/read_feather() instead."""
@@ -329,17 +439,89 @@ def _arrow_to_geopandas(table):
         if len(geometry_columns) > 1:
             warnings.warn(
                 "Multiple non-primary geometry columns read from Parquet/Feather "
-                "file. The first column read was promoted to the primary geometry."
+                "file. The first column read was promoted to the primary geometry.",
+                stacklevel=3,
             )
 
     # Convert the WKB columns that are present back to geometry.
     for col in geometry_columns:
-        df[col] = from_wkb(df[col].values, crs=metadata["columns"][col]["crs"])
+        col_metadata = metadata["columns"][col]
+        if "crs" in col_metadata:
+            crs = col_metadata["crs"]
+            if isinstance(crs, dict):
+                _remove_id_from_member_of_ensembles(crs)
+        else:
+            # per the GeoParquet spec, missing CRS is to be interpreted as
+            # OGC:CRS84
+            crs = "OGC:CRS84"
+
+        df[col] = from_wkb(df[col].values, crs=crs)
 
     return GeoDataFrame(df, geometry=geometry)
 
 
-def _read_parquet(path, columns=None, **kwargs):
+def _get_filesystem_path(path, filesystem=None, storage_options=None):
+    """
+    Get the filesystem and path for a given filesystem and path.
+
+    If the filesystem is not None then it's just returned as is.
+    """
+    import pyarrow
+
+    if (
+        isinstance(path, str)
+        and storage_options is None
+        and filesystem is None
+        and Version(pyarrow.__version__) >= Version("5.0.0")
+    ):
+        # Use the native pyarrow filesystem if possible.
+        try:
+            from pyarrow.fs import FileSystem
+
+            filesystem, path = FileSystem.from_uri(path)
+        except Exception:
+            # fallback to use get_handle / fsspec for filesystems
+            # that pyarrow doesn't support
+            pass
+
+    if _is_fsspec_url(path) and filesystem is None:
+        fsspec = import_optional_dependency(
+            "fsspec", extra="fsspec is requred for 'storage_options'."
+        )
+        filesystem, path = fsspec.core.url_to_fs(path, **(storage_options or {}))
+
+    if filesystem is None and storage_options:
+        raise ValueError(
+            "Cannot provide 'storage_options' with non-fsspec path '{}'".format(path)
+        )
+
+    return filesystem, path
+
+
+def _ensure_arrow_fs(filesystem):
+    """
+    Simplified version of pyarrow.fs._ensure_filesystem. This is only needed
+    below because `pyarrow.parquet.read_metadata` does not yet accept a
+    filesystem keyword (https://issues.apache.org/jira/browse/ARROW-16719)
+    """
+    from pyarrow import fs
+
+    if isinstance(filesystem, fs.FileSystem):
+        return filesystem
+
+    # handle fsspec-compatible filesystems
+    try:
+        import fsspec
+    except ImportError:
+        pass
+    else:
+        if isinstance(filesystem, fsspec.AbstractFileSystem):
+            return fs.PyFileSystem(fs.FSSpecHandler(filesystem))
+
+    return filesystem
+
+
+def _read_parquet(path, columns=None, storage_options=None, **kwargs):
     """
     Load a Parquet object from the file path, returning a GeoDataFrame.
 
@@ -352,6 +534,12 @@ def _read_parquet(path, columns=None, **kwargs):
     * if the primary geometry column saved to this file is not included in
       columns, the first available geometry column will be set as the geometry
       column of the returned GeoDataFrame.
+
+    Supports versions 0.1.0, 0.4.0 and 1.0.0-beta.1 of the GeoParquet
+    specification at: https://github.com/opengeospatial/geoparquet
+
+    If 'crs' key is not present in the GeoParquet metadata associated with the
+    Parquet object, it will default to "OGC:CRS84" according to the specification.
 
     Requires 'pyarrow'.
 
@@ -366,6 +554,17 @@ def _read_parquet(path, columns=None, **kwargs):
         geometry read from the file will be set as the geometry column
         of the returned GeoDataFrame.  If no geometry columns are present,
         a ``ValueError`` will be raised.
+    storage_options : dict, optional
+        Extra options that make sense for a particular storage connection, e.g. host,
+        port, username, password, etc. For HTTP(S) URLs the key-value pairs are
+        forwarded to urllib as header options. For other URLs (e.g. starting with
+        "s3://", and "gcs://") the key-value pairs are forwarded to fsspec. Please
+        see fsspec and urllib for more details.
+
+        When no storage options are provided and a filesystem is implemented by
+        both ``pyarrow.fs`` and ``fsspec`` (e.g. "s3://") then the ``pyarrow.fs``
+        filesystem is preferred. Provide the instantiated fsspec filesystem using
+        the ``filesystem`` keyword if you wish to use its implementation.
     **kwargs
         Any additional kwargs passed to pyarrow.parquet.read_table().
 
@@ -388,11 +587,35 @@ def _read_parquet(path, columns=None, **kwargs):
     parquet = import_optional_dependency(
         "pyarrow.parquet", extra="pyarrow is required for Parquet support."
     )
+    # TODO(https://github.com/pandas-dev/pandas/pull/41194): see if pandas
+    # adds filesystem as a keyword and match that.
+    filesystem = kwargs.pop("filesystem", None)
+    filesystem, path = _get_filesystem_path(
+        path, filesystem=filesystem, storage_options=storage_options
+    )
 
+    path = _expand_user(path)
     kwargs["use_pandas_metadata"] = True
-    table = parquet.read_table(path, columns=columns, **kwargs)
+    table = parquet.read_table(path, columns=columns, filesystem=filesystem, **kwargs)
 
-    return _arrow_to_geopandas(table)
+    # read metadata separately to get the raw Parquet FileMetaData metadata
+    # (pyarrow doesn't properly exposes those in schema.metadata for files
+    # created by GDAL - https://issues.apache.org/jira/browse/ARROW-16688)
+    metadata = None
+    if table.schema.metadata is None or b"geo" not in table.schema.metadata:
+        try:
+            # read_metadata does not accept a filesystem keyword, so need to
+            # handle this manually (https://issues.apache.org/jira/browse/ARROW-16719)
+            if filesystem is not None:
+                pa_filesystem = _ensure_arrow_fs(filesystem)
+                with pa_filesystem.open_input_file(path) as source:
+                    metadata = parquet.read_metadata(source).metadata
+            else:
+                metadata = parquet.read_metadata(path).metadata
+        except Exception:
+            pass
+
+    return _arrow_to_geopandas(table, metadata)
 
 
 def _read_feather(path, columns=None, **kwargs):
@@ -408,6 +631,12 @@ def _read_feather(path, columns=None, **kwargs):
     * if the primary geometry column saved to this file is not included in
       columns, the first available geometry column will be set as the geometry
       column of the returned GeoDataFrame.
+
+    Supports versions 0.1.0, 0.4.0 and 1.0.0-beta.1 of the GeoParquet
+    specification at: https://github.com/opengeospatial/geoparquet
+
+    If 'crs' key is not present in the Feather metadata associated with the
+    Parquet object, it will default to "OGC:CRS84" according to the specification.
 
     Requires 'pyarrow' >= 0.17.
 
@@ -447,8 +676,9 @@ def _read_feather(path, columns=None, **kwargs):
     # TODO move this into `import_optional_dependency`
     import pyarrow
 
-    if pyarrow.__version__ < LooseVersion("0.17.0"):
+    if Version(pyarrow.__version__) < Version("0.17.0"):
         raise ImportError("pyarrow >= 0.17 required for Feather support")
 
+    path = _expand_user(path)
     table = feather.read_table(path, columns=columns, **kwargs)
     return _arrow_to_geopandas(table)

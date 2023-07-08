@@ -2,13 +2,15 @@ name: test
 channels:
   - defaults
 dependencies:
-  - python=3.7
+  - python=3.8
   # required
+  - numpy
   - pandas
   - shapely
   - fiona
-  - pyproj
+  - pyproj>=3
   - geos
+  - packaging
   # testing
   - pytest
   - pytest-cov
@@ -20,7 +22,11 @@ dependencies:
   #- geopy
   - SQLalchemy
   - libspatialite
+  - pip
   - pip:
       - geopy
       - mapclassify
       - pyarrow
+      - folium
+      - xyzservices
+      - geodatasets

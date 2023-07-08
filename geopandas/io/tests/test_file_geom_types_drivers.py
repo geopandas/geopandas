@@ -15,6 +15,9 @@ from geopandas import GeoDataFrame
 from geopandas.testing import assert_geodataframe_equal
 import pytest
 
+from .test_file import FIONA_MARK, PYOGRIO_MARK
+
+
 # Credit: Polygons below come from Montreal city Open Data portal
 # http://donnees.ville.montreal.qc.ca/dataset/unites-evaluation-fonciere
 city_hall_boundaries = Polygon(
@@ -241,21 +244,64 @@ def geodataframe(request):
     return request.param
 
 
-@pytest.fixture(params=["GeoJSON", "ESRI Shapefile", "GPKG"])
+@pytest.fixture(params=["GeoJSON", "ESRI Shapefile", "GPKG", "SQLite"])
 def ogr_driver(request):
     return request.param
 
 
-def test_to_file_roundtrip(tmpdir, geodataframe, ogr_driver):
+@pytest.fixture(
+    params=[
+        pytest.param("fiona", marks=FIONA_MARK),
+        pytest.param("pyogrio", marks=PYOGRIO_MARK),
+    ]
+)
+def engine(request):
+    return request.param
+
+
+def test_to_file_roundtrip(tmpdir, geodataframe, ogr_driver, engine):
     output_file = os.path.join(str(tmpdir), "output_file")
+    write_kwargs = {}
+    if ogr_driver == "SQLite":
+        write_kwargs["spatialite"] = True
+
+        # This if statement can be removed once minimal fiona version >= 1.8.20
+        if engine == "fiona":
+            import fiona
+            from packaging.version import Version
+
+            if Version(fiona.__version__) < Version("1.8.20"):
+                pytest.skip("SQLite driver only available from version 1.8.20")
+
+        # If only 3D Points, geometry_type needs to be specified for spatialite at the
+        # moment. This if can be removed once the following PR is released:
+        # https://github.com/geopandas/pyogrio/pull/223
+        if (
+            engine == "pyogrio"
+            and len(geodataframe == 2)
+            and geodataframe.geometry[0] is None
+            and geodataframe.geometry[1] is not None
+            and geodataframe.geometry[1].has_z
+        ):
+            write_kwargs["geometry_type"] = "Point Z"
 
     expected_error = _expected_error_on(geodataframe, ogr_driver)
     if expected_error:
-        with pytest.raises(RuntimeError, match="Failed to write record"):
-            geodataframe.to_file(output_file, driver=ogr_driver)
+        with pytest.raises(
+            RuntimeError, match="Failed to write record|Could not add feature to layer"
+        ):
+            geodataframe.to_file(
+                output_file, driver=ogr_driver, engine=engine, **write_kwargs
+            )
     else:
-        geodataframe.to_file(output_file, driver=ogr_driver)
+        geodataframe.to_file(
+            output_file, driver=ogr_driver, engine=engine, **write_kwargs
+        )
 
-        reloaded = geopandas.read_file(output_file)
+        reloaded = geopandas.read_file(output_file, engine=engine)
+
+        if ogr_driver == "GeoJSON" and engine == "pyogrio":
+            # For GeoJSON files, the int64 column comes back as int32
+            reloaded["a"] = reloaded["a"].astype("int64")
 
         assert_geodataframe_equal(geodataframe, reloaded, check_column_type="equiv")

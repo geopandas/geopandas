@@ -111,7 +111,6 @@ def test_prepare_result_none():
 
 @pytest.mark.parametrize("geocode_result", (None, (None, None)))
 def test_prepare_geocode_result_when_result_is(geocode_result):
-
     result = {0: geocode_result}
     expected_output = GeoDataFrame(
         {"geometry": [Point()], "address": [None]},
@@ -134,7 +133,7 @@ def test_bad_provider_reverse():
     from geopy.exc import GeocoderNotFound
 
     with pytest.raises(GeocoderNotFound):
-        reverse_geocode(["cambridge, ma"], "badprovider")
+        reverse_geocode([Point(0, 0)], "badprovider")
 
 
 def test_forward(locations, points):

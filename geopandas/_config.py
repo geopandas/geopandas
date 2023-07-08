@@ -50,7 +50,7 @@ class Options(object):
         cls = self.__class__.__name__
         description = ""
         for key, option in self._options.items():
-            descr = u"{key}: {cur!r} [default: {default!r}]\n".format(
+            descr = "{key}: {cur!r} [default: {default!r}]\n".format(
                 key=key, cur=self._config[key], default=option.default_value
             )
             description += descr
@@ -58,29 +58,12 @@ class Options(object):
             if option.doc:
                 doc_text = "\n".join(textwrap.wrap(option.doc, width=70))
             else:
-                doc_text = u"No description available."
-            doc_text = indent(doc_text, prefix="    ")
+                doc_text = "No description available."
+            doc_text = textwrap.indent(doc_text, prefix="    ")
             description += doc_text + "\n"
         space = "\n  "
         description = description.replace("\n", space)
         return "{}({}{})".format(cls, space, description)
-
-
-def indent(text, prefix, predicate=None):
-    """
-    This is the python 3 textwrap.indent function, which is not available in
-    python 2.
-    """
-    if predicate is None:
-
-        def predicate(line):
-            return line.strip()
-
-    def prefixed_lines():
-        for line in text.splitlines(True):
-            yield (prefix + line if predicate(line) else line)
-
-    return "".join(prefixed_lines())
 
 
 def _validate_display_precision(value):

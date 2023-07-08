@@ -12,12 +12,20 @@ from geopandas import _vectorized
 
 def _isna(this):
     """isna version that works for both scalars and (Geo)Series"""
-    if hasattr(this, "isna"):
-        return this.isna()
-    elif hasattr(this, "isnull"):
-        return this.isnull()
-    else:
-        return pd.isnull(this)
+    with warnings.catch_warnings():
+        # GeoSeries.isna will raise a warning about no longer returning True
+        # for empty geometries. This helper is used below always in combination
+        # with an is_empty check to preserve behaviour, and thus we ignore the
+        # warning here to avoid it bubbling up to the user
+        warnings.filterwarnings(
+            "ignore", r"GeoSeries.isna\(\) previously returned", UserWarning
+        )
+        if hasattr(this, "isna"):
+            return this.isna()
+        elif hasattr(this, "isnull"):
+            return this.isnull()
+        else:
+            return pd.isnull(this)
 
 
 def _geom_equals_mask(this, that):
@@ -172,14 +180,14 @@ def assert_geoseries_equal(
     assert left.index.equals(right.index), "index: %s != %s" % (left.index, right.index)
 
     if check_geom_type:
-        assert (left.type == right.type).all(), "type: %s != %s" % (
-            left.type,
-            right.type,
+        assert (left.geom_type == right.geom_type).all(), "type: %s != %s" % (
+            left.geom_type,
+            right.geom_type,
         )
 
     if normalize:
-        left = GeoSeries(_vectorized.normalize(left.array.data))
-        right = GeoSeries(_vectorized.normalize(right.array.data))
+        left = GeoSeries(_vectorized.normalize(left.array._data))
+        right = GeoSeries(_vectorized.normalize(right.array._data))
 
     if not check_crs:
         with warnings.catch_warnings():
@@ -280,8 +288,19 @@ def assert_geodataframe_equal(
         assert isinstance(left, type(right))
 
         if check_crs:
+            # allow if neither left and right has an active geometry column
+            if (
+                left._geometry_column_name is None
+                and right._geometry_column_name is None
+            ):
+                pass
+            elif (
+                left._geometry_column_name not in left.columns
+                and right._geometry_column_name not in right.columns
+            ):
+                pass
             # no crs can be either None or {}
-            if not left.crs and not right.crs:
+            elif not left.crs and not right.crs:
                 pass
             else:
                 assert left.crs == right.crs
@@ -308,7 +327,7 @@ def assert_geodataframe_equal(
     )
 
     # geometry comparison
-    for col, dtype in left.dtypes.iteritems():
+    for col, dtype in left.dtypes.items():
         if isinstance(dtype, GeometryDtype):
             assert_geoseries_equal(
                 left[col],
@@ -320,9 +339,12 @@ def assert_geodataframe_equal(
                 check_crs=check_crs,
             )
 
+    # ensure the active geometry column is the same
+    assert left._geometry_column_name == right._geometry_column_name
+
     # drop geometries and check remaining columns
-    left2 = left.drop([left._geometry_column_name], axis=1)
-    right2 = right.drop([right._geometry_column_name], axis=1)
+    left2 = left.select_dtypes(exclude="geometry")
+    right2 = right.select_dtypes(exclude="geometry")
     assert_frame_equal(
         left2,
         right2,
