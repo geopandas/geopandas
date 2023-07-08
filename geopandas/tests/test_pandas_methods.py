@@ -844,11 +844,11 @@ def test_read_parquet_int():
         }
     )
     combined = pd.concat((df1, df2))
-    #Use buffer object to write parquet file
+    # Use buffer object to write parquet file
     buffer = BytesIO()
     combined.to_parquet(buffer)
     _ = buffer.seek(0)
-    #Read parquet file from buffer, as written by to_parquet()
+    # Read parquet file from buffer, as written by to_parquet()
     new_df = geopandas.read_parquet(buffer)
     assert (
         combined.val.iloc[0] == new_df.val.iloc[0]
