@@ -232,7 +232,12 @@ class BaseSpatialIndex:
         raise NotImplementedError
 
     def nearest(
-        self, geometry, return_all=True, max_distance=None, return_distance=False
+        self,
+        geometry,
+        return_all=True,
+        max_distance=None,
+        return_distance=False,
+        exclusive=False,
     ):
         """
         Return the nearest geometry in the tree for each input geometry in
@@ -281,6 +286,9 @@ geometries}
             Must be greater than 0. By default None, indicating no distance limit.
         return_distance : bool, optional
             If True, will return distances in addition to indexes. By default False
+        exclusive : bool, optional
+            if True, the nearest geometries that are equal to the input geometry
+            will not be returned. By default False.  Requires Shapely >= 2.0.
 
         Returns
         -------
@@ -420,9 +428,9 @@ geometries}
 
 
 if compat.HAS_RTREE:
-    import rtree.index  # noqa
-    from rtree.core import RTreeError  # noqa
-    from shapely.prepared import prep  # noqa
+    import rtree.index
+    from rtree.core import RTreeError
+    from shapely.prepared import prep
 
     class SpatialIndex(rtree.index.Index, BaseSpatialIndex):
         """Original rtree wrapper, kept for backwards compatibility."""
@@ -669,6 +677,7 @@ if compat.HAS_RTREE:
                 "PyGEOSSTRTreeIndex.nearest for details). This behavior will be "
                 "updated in a future release.",
                 FutureWarning,
+                stacklevel=2,
             )
             return super().nearest(
                 coordinates, num_results=num_results, objects=objects
@@ -701,17 +710,17 @@ if compat.HAS_RTREE:
 
 
 if compat.SHAPELY_GE_20 or compat.HAS_PYGEOS:
-    from . import geoseries  # noqa
-    from . import array  # noqa
+    from . import geoseries
+    from . import array
 
     if compat.USE_SHAPELY_20:
-        import shapely as mod  # noqa
+        import shapely as mod
 
-        _PYGEOS_PREDICATES = {p.name for p in mod.strtree.BinaryPredicate} | set([None])
+        _PYGEOS_PREDICATES = {p.name for p in mod.strtree.BinaryPredicate} | {None}
     else:
-        import pygeos as mod  # noqa
+        import pygeos as mod
 
-        _PYGEOS_PREDICATES = {p.name for p in mod.strtree.BinaryPredicate} | set([None])
+        _PYGEOS_PREDICATES = {p.name for p in mod.strtree.BinaryPredicate} | {None}
 
     class PyGEOSSTRTreeIndex(BaseSpatialIndex):
         """A simple wrapper around pygeos's STRTree.
@@ -839,11 +848,21 @@ if compat.SHAPELY_GE_20 or compat.HAS_PYGEOS:
 
         @doc(BaseSpatialIndex.nearest)
         def nearest(
-            self, geometry, return_all=True, max_distance=None, return_distance=False
+            self,
+            geometry,
+            return_all=True,
+            max_distance=None,
+            return_distance=False,
+            exclusive=False,
         ):
             if not (compat.USE_SHAPELY_20 or compat.PYGEOS_GE_010):
                 raise NotImplementedError(
                     "sindex.nearest requires shapely >= 2.0 or pygeos >= 0.10"
+                )
+
+            if exclusive and not compat.USE_SHAPELY_20:
+                raise NotImplementedError(
+                    "sindex.nearest exclusive parameter requires shapely >= 2.0"
                 )
 
             geometry = self._as_geometry_array(geometry)
@@ -856,6 +875,7 @@ if compat.SHAPELY_GE_20 or compat.HAS_PYGEOS:
                     max_distance=max_distance,
                     return_distance=return_distance,
                     all_matches=return_all,
+                    exclusive=exclusive,
                 )
             else:
                 if not return_all and max_distance is None and not return_distance:

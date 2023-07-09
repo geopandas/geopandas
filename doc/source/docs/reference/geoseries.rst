@@ -24,6 +24,7 @@ General methods and attributes
    GeoSeries.geom_type
    GeoSeries.offset_curve
    GeoSeries.distance
+   GeoSeries.hausdorff_distance
    GeoSeries.frechet_distance
    GeoSeries.representative_point
    GeoSeries.exterior
@@ -88,12 +89,16 @@ Constructive methods and attributes
    GeoSeries.buffer
    GeoSeries.boundary
    GeoSeries.centroid
+   GeoSeries.concave_hull
    GeoSeries.convex_hull
+   GeoSeries.delaunay_triangles
    GeoSeries.envelope
+   GeoSeries.extract_unique_points
    GeoSeries.make_valid
    GeoSeries.minimum_bounding_circle
    GeoSeries.normalize
    GeoSeries.sample_points
+   GeoSeries.segmentize
    GeoSeries.simplify
 
 Affine transformations

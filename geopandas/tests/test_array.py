@@ -2,7 +2,6 @@ import random
 
 import numpy as np
 import pandas as pd
-import six
 
 from pyproj import CRS
 import shapely
@@ -192,17 +191,11 @@ def test_to_wkb():
 @pytest.mark.parametrize("string_type", ["str", "bytes"])
 def test_from_wkt(string_type):
     if string_type == "str":
-        f = six.text_type
+        f = str
     else:
-        if six.PY3:
 
-            def f(x):
-                return bytes(x, "utf8")
-
-        else:
-
-            def f(x):
-                return x
+        def f(x):
+            return bytes(x, "utf8")
 
     # list
     L_wkt = [f(p.wkt) for p in points_no_missing]
@@ -468,7 +461,7 @@ def test_unary_predicates(attr):
     na_value = False
     if attr == "is_simple" and geos_version < (3, 8) and not compat.USE_PYGEOS:
         # poly.is_simple raises an error for empty polygon for GEOS < 3.8
-        with pytest.raises(Exception):
+        with pytest.raises(Exception):  # noqa: B017
             T.is_simple
         vals = triangle_no_missing
         V = from_shapely(vals)
@@ -627,10 +620,10 @@ def test_binary_project(normalized):
 
     result = L.project(P, normalized=normalized)
     expected = [
-        l.project(p, normalized=normalized)
-        if l is not None and p is not None
+        line.project(p, normalized=normalized)
+        if line is not None and p is not None
         else na_value
-        for p, l in zip(points, lines)
+        for p, line in zip(points, lines)
     ]
     np.testing.assert_allclose(result, expected)
 

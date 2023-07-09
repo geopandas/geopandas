@@ -282,7 +282,7 @@ def _explore(
         import folium
         import re
         import matplotlib
-        import matplotlib.colors as colors
+        from matplotlib import colors
         import matplotlib.pyplot as plt
         from mapclassify import classify
 
@@ -291,7 +291,7 @@ def _explore(
         if MPL_361:
             from matplotlib import colormaps as cm
         else:
-            import matplotlib.cm as cm
+            from matplotlib import cm
 
     except (ImportError, ModuleNotFoundError):
         raise ImportError(
@@ -449,7 +449,7 @@ def _explore(
 
         elif callable(cmap):
             # List of colors based on Branca colormaps or self-defined functions
-            color = list(map(lambda x: cmap(x), df[column]))
+            color = [cmap(x) for x in df[column]]
 
         else:
             vmin = gdf[column].min() if vmin is None else vmin
@@ -468,7 +468,7 @@ def _explore(
                 color = np.apply_along_axis(
                     colors.to_hex,
                     1,
-                    _colormap_helper(cmap, n_resample=k, idx=binning.yb),
+                    _colormap_helper(cmap, n_resample=binning.k, idx=binning.yb),
                 )
 
             else:

@@ -4,7 +4,7 @@ from pandas import Series
 
 from geopandas import GeoDataFrame
 
-from geopandas.testing import (  # noqa
+from geopandas.testing import (  # noqa: F401
     assert_geoseries_equal,
     geom_almost_equals,
     geom_equals,
@@ -16,9 +16,9 @@ PACKAGE_DIR = os.path.dirname(os.path.dirname(HERE))
 
 # mock not used here, but the import from here is used in other modules
 try:
-    import unittest.mock as mock  # noqa
+    from unittest import mock
 except ImportError:
-    import mock  # noqa
+    import mock  # noqa: F401
 
 
 def validate_boro_df(df, case_sensitive=False):
