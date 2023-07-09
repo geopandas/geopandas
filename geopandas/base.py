@@ -2637,8 +2637,10 @@ GeometryCollection
         3        LINESTRING (1.00000 0.00000, 2.00000 0.00000)
         4                              POINT (0.00000 1.00000)
         dtype: geometry
+
         We can check the frechet distance of each geometry of GeoSeries
         to a single geometry:
+
         >>> point = Point(-1, 0)
         >>> s.frechet_distance(point)
         0    2.236068
