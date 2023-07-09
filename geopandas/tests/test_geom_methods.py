@@ -641,10 +641,11 @@ class TestGeomMethods:
                 expected, self.g0.frechet_distance(self.g9, align=True)
             )
 
-        val_1 = shapely.frechet_distance(self.g0.iloc[0], self.g9.iloc[0])
-        val_2 = shapely.frechet_distance(self.g0.iloc[2], self.g9.iloc[2])
-        val_3 = shapely.frechet_distance(self.g0.iloc[3], self.g9.iloc[3])
-        val_4 = shapely.frechet_distance(self.g0.iloc[4], self.g9.iloc[4])
+        # expected returns
+        val_1 = 1.0
+        val_2 = np.sqrt(2) / 4
+        val_3 = np.sqrt(2) / 2
+        val_4 = (np.sqrt(2) / 2) * 10
         expected = Series(
             np.array([val_1, val_1, val_2, val_3, val_4, np.nan, np.nan]), self.g0.index
         )
