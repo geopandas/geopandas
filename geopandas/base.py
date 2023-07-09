@@ -2646,12 +2646,15 @@ GeometryCollection
         2    2.236068
         3    1.000000
         dtype: float64
+
         We can also check two GeoSeries against each other, row by row.
         The GeoSeries above have different indices. We can either align both GeoSeries
         based on index values and use elements with the same index using
         ``align=True`` or ignore index and use elements based on their matching
         order using ``align=False``:
+
         .. image:: ../../../_static/binary_op-02.svg
+
         >>> s.frechet_distance(s2, align=True)
         0         NaN
         1    2.121320
