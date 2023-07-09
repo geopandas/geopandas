@@ -669,7 +669,6 @@ class TestGeomMethods:
         ):
             self.g0.frechet_distance(self.g9)
 
-
     def test_intersects(self):
         expected = [True, True, True, True, True, False, False]
         assert_array_dtype_equal(expected, self.g0.intersects(self.t1))

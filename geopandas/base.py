@@ -2604,7 +2604,7 @@ GeometryCollection
         Returns
         -------
         Series (float)
-        
+
         Examples
         --------
         >>> from shapely.geometry import Polygon, LineString, Point
@@ -2665,7 +2665,7 @@ GeometryCollection
         2    2.000000
         3    1.000000
         dtype: float64
-        
+
         We can also set a ``densify`` value, which is a float between 0 and 1 and
         signifies the fraction of the distance between each pair of points that will
         be used as the distance between the points when densifying.
