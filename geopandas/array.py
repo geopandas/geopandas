@@ -18,7 +18,6 @@ import shapely.geometry
 from shapely.geometry.base import BaseGeometry
 import shapely.ops
 import shapely.wkt
-from pygeos.geometry import get_srid
 from pyproj import CRS, Transformer
 
 try:
@@ -192,8 +191,12 @@ def _get_common_crs_from_geometries(data, param_crs):
         )
     if len(data) == 0:
         return None
-    first_srid = get_srid(data[0])
-    if all(first_srid == get_srid(obj) for obj in data):
+    if compat.USE_PYGEOS:
+        srid_getter = pygeos.get_srid
+    else:
+        srid_getter = shapely.get_srid
+    first_srid = srid_getter(data[0])
+    if all(first_srid == srid_getter(obj) for obj in data):
         if first_srid > 0:
             shared_crs = first_srid
     else:
