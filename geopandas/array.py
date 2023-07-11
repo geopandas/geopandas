@@ -18,6 +18,7 @@ import shapely.geometry
 from shapely.geometry.base import BaseGeometry
 import shapely.ops
 import shapely.wkt
+from pygeos.geometry import get_srid
 from pyproj import CRS, Transformer
 
 try:
@@ -166,7 +167,7 @@ def to_shapely(geoms):
     return vectorized.to_shapely(geoms._data)
 
 
-def _get_crs_from_srid_attribute(data, param_crs):
+def _get_common_crs_from_geometries(data, param_crs):
     """
     Get the CRS from the 'srid' attribute of data if possible.
 
@@ -176,6 +177,10 @@ def _get_crs_from_srid_attribute(data, param_crs):
     ----------
     data : array-like or Series
         Series, list, or array of WKT objects
+    param_crs : value
+        Coordinate Reference System of the geometry objects. Can be anything accepted by
+        :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
+        such as an authority string (eg "EPSG:4326") or a WKT string.
     """
     shared_crs = None
     try:
@@ -185,65 +190,33 @@ def _get_crs_from_srid_attribute(data, param_crs):
             "Input must be iterable (e.g. Series, list, array)"
             f"found {type(data)} instead."
         )
-    if not (len(data) > 0 and all(hasattr(obj, "srid") for obj in data)):
-        return param_crs
-    if all(data[0].srid == obj.srid for obj in data):
-        shared_crs = data[0].srid
+    if len(data) == 0:
+        return None
+    first_srid = get_srid(data[0])
+    if all(first_srid == get_srid(obj) for obj in data):
+        if first_srid > 0:
+            shared_crs = first_srid
     else:
         warnings.warn(
-            "The elements passed have the 'srid' attribute, but they do"
-            "not agree on it. This may cause problems. CRS from parameter"
-            "(not from data) will be used for GeometryArray.\n",
+            "Geometry elements do not agree on CRS. This may cause problems. "
+            "CRS could not be inferred from data.\n",
             UserWarning,
             stacklevel=4,
         )
-        return param_crs
-    if param_crs is not None and param_crs != shared_crs:
+        return None
+    if param_crs is not None and shared_crs is not None and param_crs != shared_crs:
         warnings.warn(
-            f"The elements passed share a CRS, but it does not match the"
+            f"The elements passed share a CRS, but it does not match the "
             "CRS passed as parameter.\n\n"
             f"CRS passed as parameter: {param_crs}.\n"
             f"CRS from data:           {shared_crs}.\n"
-            "CRS passed as parameter will be used for GeometryArray.\n",
+            "CRS could not be inferred from data.\n",
             UserWarning,
             stacklevel=4,
         )
-    return shared_crs
-
-
-def try_convert_elements_to_type(data, type_, dont_convert_types=()):
-    """
-    Try to coerce elements of data to a certain type.
-    If this is not possible, the element is left as is.
-
-    Parameters
-    ----------
-    data : array-like
-        Series, list, or array of objects
-    type_ : type
-    """
-    dont_convert_types += (type_,)
-    try:
-        len(data)
-    except TypeError:
-        raise TypeError(
-            "Input must be iterable (e.g. Series, list, array)"
-            f"found {type(data)} instead."
-        )
-    if not len(data) > 0 or isinstance(data[0], type_):
-        return data
-    new_data = []
-    for obj in data:
-        if isinstance(obj, dont_convert_types) or obj is None:
-            new_data.append(obj)
-            continue
-        try:
-            new_element = type_(obj)
-        except TypeError:
-            new_data.append(obj)
-        else:
-            new_data.append(new_element)
-    return new_data
+        return None
+    else:
+        return shared_crs
 
 
 def from_wkb(data, crs=None):
@@ -261,9 +234,11 @@ def from_wkb(data, crs=None):
         such as an authority string (eg "EPSG:4326") or a WKT string.
 
     """
-    crs = _get_crs_from_srid_attribute(data, crs)
-    data = try_convert_elements_to_type(data, str, dont_convert_types=(bytes,))
-    return GeometryArray(vectorized.from_wkb(data), crs=crs)
+    converted_data = vectorized.from_wkb(data)
+    shared_crs = _get_common_crs_from_geometries(converted_data, crs)
+    if shared_crs is not None:
+        crs = shared_crs
+    return GeometryArray(converted_data, crs=crs)
 
 
 def to_wkb(geoms, hex=False, **kwargs):
@@ -290,8 +265,10 @@ def from_wkt(data, crs=None):
         such as an authority string (eg "EPSG:4326") or a WKT string.
 
     """
-    crs = _get_crs_from_srid_attribute(data, crs)
-    data = try_convert_elements_to_type(data, str, dont_convert_types=(bytes,))
+    converted_data = vectorized.from_wkt(data)
+    shared_crs = _get_common_crs_from_geometries(converted_data, crs)
+    if shared_crs is not None:
+        crs = shared_crs
     return GeometryArray(vectorized.from_wkt(data), crs=crs)
 
 

@@ -298,19 +298,25 @@ class TestSeries:
         expected = self.g1.reindex(index)
         assert_geoseries_equal(expected, GeoSeries.from_wkb(s, index=index))
 
-    def test_from_wkb_srid_attribute(self):
+    @pytest.mark.parametrize("input_type", ["str", "bytes"])
+    def test_from_ewkb(self, input_type):
         srid = 4326
         expected = self.g1.copy().set_crs(srid)
-        t1_wkb_elem = WKBElement(self.t1.wkb, srid=srid)
-        sq_wkb_elem = WKBElement(self.sq.wkb, srid=srid)
-        assert_geoseries_equal(expected, GeoSeries.from_wkb([t1_wkb_elem, sq_wkb_elem]))
+        t1_wkb_elem = WKBElement(self.t1.wkb, srid=srid).as_ewkb()
+        sq_wkb_elem = WKBElement(self.sq.wkb, srid=srid).as_ewkb()
+        if input_type == "str":
+            inputs = [str(e) for e in [t1_wkb_elem, sq_wkb_elem]]
+        else:
+            inputs = [bytes(e.data) for e in [t1_wkb_elem, sq_wkb_elem]]
+        assert_geoseries_equal(expected, GeoSeries.from_wkb(inputs))
 
-    def test_from_wkb_series_srid_attribute(self):
+    def test_from_ewkb_series(self):
         srid = 4326
         index = [1, 2]
-        t1_wkb_elem = WKBElement(self.t1.wkb, srid=srid)
-        sq_wkb_elem = WKBElement(self.sq.wkb, srid=srid)
-        s = pd.Series([t1_wkb_elem, sq_wkb_elem], index=index)
+        t1_wkb_elem = WKBElement(self.t1.wkb, srid=srid).as_ewkb()
+        sq_wkb_elem = WKBElement(self.sq.wkb, srid=srid).as_ewkb()
+        inputs = [str(e) for e in [t1_wkb_elem, sq_wkb_elem]]
+        s = pd.Series(inputs, index=index)
         expected = self.g1.copy().set_crs(srid)
         expected.index = pd.Index(index)
         assert_geoseries_equal(expected, GeoSeries.from_wkb(s))
@@ -330,19 +336,21 @@ class TestSeries:
         expected = self.g1.reindex(index)
         assert_geoseries_equal(expected, GeoSeries.from_wkt(s, index=index))
 
-    def test_from_wkt_srid_attribute(self):
+    def test_from_ewkt(self):
         srid = 4326
         expected = self.g1.copy().set_crs(srid)
-        t1_wkt_elem = WKTElement(self.t1.wkt, srid=srid)
-        sq_wkt_elem = WKTElement(self.sq.wkt, srid=srid)
-        assert_geoseries_equal(expected, GeoSeries.from_wkt([t1_wkt_elem, sq_wkt_elem]))
+        t1_wkt_elem = WKTElement(self.t1.wkt, srid=srid).as_ewkt()
+        sq_wkt_elem = WKTElement(self.sq.wkt, srid=srid).as_ewkt()
+        inputs = [str(e) for e in [t1_wkt_elem, sq_wkt_elem]]
+        assert_geoseries_equal(expected, GeoSeries.from_wkt(inputs))
 
-    def test_from_wkt_series_srid_attribute(self):
+    def test_from_ewkt_series(self):
         srid = 4326
         index = [1, 2]
-        t1_wkt_elem = WKTElement(self.t1.wkt, srid=srid)
-        sq_wkt_elem = WKTElement(self.sq.wkt, srid=srid)
-        s = pd.Series([t1_wkt_elem, sq_wkt_elem], index=index)
+        t1_wkt_elem = WKTElement(self.t1.wkt, srid=srid).as_ewkt()
+        sq_wkt_elem = WKTElement(self.sq.wkt, srid=srid).as_ewkt()
+        inputs = [str(e) for e in [t1_wkt_elem, sq_wkt_elem]]
+        s = pd.Series(inputs, index=index)
         expected = self.g1.copy().set_crs(srid)
         expected.index = pd.Index(index)
         assert_geoseries_equal(expected, GeoSeries.from_wkt(s))
