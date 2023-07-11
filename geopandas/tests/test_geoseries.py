@@ -10,6 +10,7 @@ from numpy.testing import assert_array_equal
 import pandas as pd
 from pandas.testing import assert_index_equal
 
+from geoalchemy2 import WKBElement, WKTElement
 from pyproj import CRS
 from shapely.geometry import (
     GeometryCollection,
@@ -297,6 +298,23 @@ class TestSeries:
         expected = self.g1.reindex(index)
         assert_geoseries_equal(expected, GeoSeries.from_wkb(s, index=index))
 
+    def test_from_wkb_srid_attribute(self):
+        srid = 4326
+        expected = self.g1.copy().set_crs(srid)
+        t1_wkb_elem = WKBElement(self.t1.wkb, srid=srid)
+        sq_wkb_elem = WKBElement(self.sq.wkb, srid=srid)
+        assert_geoseries_equal(expected, GeoSeries.from_wkb([t1_wkb_elem, sq_wkb_elem]))
+
+    def test_from_wkb_series_srid_attribute(self):
+        srid = 4326
+        index = [1, 2]
+        t1_wkb_elem = WKBElement(self.t1.wkb, srid=srid)
+        sq_wkb_elem = WKBElement(self.sq.wkb, srid=srid)
+        s = pd.Series([t1_wkb_elem, sq_wkb_elem], index=index)
+        expected = self.g1.copy().set_crs(srid)
+        expected.index = pd.Index(index)
+        assert_geoseries_equal(expected, GeoSeries.from_wkb(s))
+
     def test_from_wkt(self):
         assert_geoseries_equal(self.g1, GeoSeries.from_wkt([self.t1.wkt, self.sq.wkt]))
 
@@ -311,6 +329,23 @@ class TestSeries:
         s = pd.Series([self.t1.wkt, self.sq.wkt], index=[0, 2])
         expected = self.g1.reindex(index)
         assert_geoseries_equal(expected, GeoSeries.from_wkt(s, index=index))
+
+    def test_from_wkt_srid_attribute(self):
+        srid = 4326
+        expected = self.g1.copy().set_crs(srid)
+        t1_wkt_elem = WKTElement(self.t1.wkt, srid=srid)
+        sq_wkt_elem = WKTElement(self.sq.wkt, srid=srid)
+        assert_geoseries_equal(expected, GeoSeries.from_wkt([t1_wkt_elem, sq_wkt_elem]))
+
+    def test_from_wkt_series_srid_attribute(self):
+        srid = 4326
+        index = [1, 2]
+        t1_wkt_elem = WKTElement(self.t1.wkt, srid=srid)
+        sq_wkt_elem = WKTElement(self.sq.wkt, srid=srid)
+        s = pd.Series([t1_wkt_elem, sq_wkt_elem], index=index)
+        expected = self.g1.copy().set_crs(srid)
+        expected.index = pd.Index(index)
+        assert_geoseries_equal(expected, GeoSeries.from_wkt(s))
 
     def test_to_wkb(self):
         assert_series_equal(pd.Series([self.t1.wkb, self.sq.wkb]), self.g1.to_wkb())
