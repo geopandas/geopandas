@@ -8,7 +8,7 @@ import shapely.wkb
 
 from geopandas import GeoDataFrame
 
-from .. import _compat as compat
+from geopandas import _compat as compat
 
 
 @contextmanager
@@ -469,5 +469,3 @@ def _write_postgis(
             dtype=dtype,
             method=_psql_insert_copy,
         )
-
-    return

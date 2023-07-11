@@ -611,6 +611,23 @@ def centroid(data):
         return _unary_geo("centroid", data)
 
 
+def concave_hull(data, **kwargs):
+    if compat.USE_SHAPELY_20:
+        return shapely.concave_hull(data, **kwargs)
+    if compat.USE_PYGEOS and compat.SHAPELY_GE_20:
+        warnings.warn(
+            "PyGEOS does not support concave_hull, and Shapely >= 2 is installed, "
+            "thus using Shapely and not PyGEOS for calculating the concave_hull.",
+            stacklevel=4,
+        )
+        return shapely.concave_hull(to_shapely(data), **kwargs)
+    else:
+        raise NotImplementedError(
+            f"shapely >= 2.0 is required, "
+            f"version {shapely.__version__} is installed"
+        )
+
+
 def convex_hull(data):
     if compat.USE_SHAPELY_20:
         return shapely.convex_hull(data)
@@ -618,6 +635,18 @@ def convex_hull(data):
         return pygeos.convex_hull(data)
     else:
         return _unary_geo("convex_hull", data)
+
+
+def delaunay_triangles(data, tolerance, only_edges):
+    if compat.USE_SHAPELY_20:
+        return shapely.delaunay_triangles(data, tolerance, only_edges)
+    elif compat.USE_PYGEOS:
+        return pygeos.delaunay_triangles(data, tolerance, only_edges)
+    else:
+        raise NotImplementedError(
+            f"shapely >= 2.0 or PyGEOS is required, "
+            f"version {shapely.__version__} is installed"
+        )
 
 
 def envelope(data):
@@ -636,6 +665,18 @@ def exterior(data):
         return pygeos.get_exterior_ring(data)
     else:
         return _unary_geo("exterior", data)
+
+
+def extract_unique_points(data):
+    if compat.USE_SHAPELY_20:
+        return shapely.extract_unique_points(data)
+    elif compat.USE_PYGEOS:
+        return pygeos.extract_unique_points(data)
+    else:
+        raise NotImplementedError(
+            f"shapely >= 2.0 or PyGEOS is required, "
+            f"version {shapely.__version__} is installed"
+        )
 
 
 def offset_curve(data, distance, quad_segs=8, join_style="round", mitre_limit=5.0):
@@ -672,7 +713,8 @@ def interiors(data):
     if has_non_poly:
         warnings.warn(
             "Only Polygon objects have interior rings. For other "
-            "geometry types, None is returned."
+            "geometry types, None is returned.",
+            stacklevel=2,
         )
     data = np.empty(len(data), dtype=object)
     with compat.ignore_shapely2_warnings():
@@ -714,6 +756,18 @@ def minimum_bounding_radius(data):
     else:
         raise NotImplementedError(
             f"shapely >= 2.0 or PyGEOS is required, "
+            f"version {shapely.__version__} is installed"
+        )
+
+
+def segmentize(data, max_segment_length):
+    if compat.USE_SHAPELY_20:
+        return shapely.segmentize(data, max_segment_length)
+    elif compat.USE_PYGEOS:
+        return pygeos.segmentize(data, max_segment_length)
+    else:
+        raise NotImplementedError(
+            "shapely >= 2.0 or PyGEOS is required, "
             f"version {shapely.__version__} is installed"
         )
 
@@ -899,6 +953,20 @@ def distance(data, other):
         return _binary_method("distance", data, other)
     else:
         return _binary_op_float("distance", data, other)
+
+
+def hausdorff_distance(data, other, densify=None, **kwargs):
+    if compat.USE_SHAPELY_20:
+        return shapely.hausdorff_distance(data, other, densify=densify, **kwargs)
+    elif compat.USE_PYGEOS:
+        return _binary_method(
+            "hausdorff_distance", data, other, densify=densify, **kwargs
+        )
+    else:
+        raise NotImplementedError(
+            f"shapely >= 2.0 or PyGEOS is required, "
+            f"version {shapely.__version__} is installed"
+        )
 
 
 def buffer(data, distance, resolution=16, **kwargs):
