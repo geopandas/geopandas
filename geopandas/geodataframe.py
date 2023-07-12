@@ -20,6 +20,11 @@ from geopandas.explore import _explore
 from . import _compat as compat
 from ._decorator import doc
 
+if compat.SHAPELY_GE_18:
+    geometry_type_error = shapely.errors.GeometryTypeError
+else:
+    geometry_type_error = ValueError
+
 
 def _geodataframe_constructor_with_fallback(*args, **kwargs):
     """
@@ -1614,7 +1619,7 @@ individually so that features may have different properties
                     # not enough info about func to preserve CRS
                     result = _ensure_geometry(result)
 
-                except (TypeError, shapely.errors.GeometryTypeError):
+                except (TypeError, geometry_type_error):
                     pass
 
         return result
