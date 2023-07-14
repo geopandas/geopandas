@@ -372,6 +372,24 @@ class TestGeomMethods:
         )
         assert_array_dtype_equal(expected, self.g6.shortest_line(self.g7))
 
+        expected = GeoSeries(
+            [LineString([(0.5, 0.5), (0.5, 0.5)]), LineString([(0.5, 0.5), (0.5, 0.5)])]
+        )
+        crossed_lines_inv = self.crossed_lines[::-1]
+        assert_array_dtype_equal(
+            expected, self.crossed_lines.shortest_line(crossed_lines_inv)
+        )
+
+    @pytest.mark.skipif(
+        (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+        reason="get_coordinates not implemented for shapely<2",
+    )
+    def test_shortest_line_not(self):
+        with pytest.raises(
+            NotImplementedError, match="shapely >= 2.0 or PyGEOS are required"
+        ):
+            self.na_none.shortest_line(self.p0)
+
     def test_geo_op_empty_result(self):
         l1 = LineString([(0, 0), (1, 1)])
         l2 = LineString([(2, 2), (3, 3)])
