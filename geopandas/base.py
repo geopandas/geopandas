@@ -618,7 +618,7 @@ GeometryCollection
         --------
         GeoSeries.envelope : bounding rectangle.
         """
-        return _delegate_property("minimum_rotated_rectangle", self)
+        return _delegate_geo_method("minimum_rotated_rectangle", self)
 
     @property
     def exterior(self):
