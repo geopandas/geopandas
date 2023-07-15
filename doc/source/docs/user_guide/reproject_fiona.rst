@@ -46,7 +46,7 @@ Fiona example
             )
         )
 
-    # load natuural earth land data
+    # load natural earth land data
     world = geopandas.read_file("https://naciscdn.org/naturalearth/110m/physical/ne_110m_land.zip")
 
     destination_crs = "EPSG:3395"

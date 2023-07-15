@@ -9,8 +9,7 @@ repos:
       hooks:
           - id: black
             language_version: python3
-    - repo: https://github.com/pycqa/flake8
-      rev: 5.0.4
+    - repo: https://github.com/astral-sh/ruff-pre-commit
+      rev: "v0.0.271"
       hooks:
-          - id: flake8
-            language: python_venv
+        - id: ruff

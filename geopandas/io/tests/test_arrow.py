@@ -240,6 +240,19 @@ def test_validate_metadata_invalid(metadata, error):
         _validate_metadata(metadata)
 
 
+def test_validate_metadata_edges():
+    metadata = {
+        "primary_column": "geometry",
+        "columns": {"geometry": {"crs": None, "encoding": "WKB", "edges": "spherical"}},
+        "version": "1.0.0-beta.1",
+    }
+    with pytest.warns(
+        UserWarning,
+        match="The geo metadata indicate that column 'geometry' has spherical edges",
+    ):
+        _validate_metadata(metadata)
+
+
 def test_to_parquet_fails_on_invalid_engine(tmpdir):
     df = GeoDataFrame(data=[[1, 2, 3]], columns=["a", "b", "a"], geometry=[Point(1, 1)])
 
@@ -575,6 +588,15 @@ def test_missing_crs(tmpdir, file_format):
     assert_geodataframe_equal(df, pq_df, check_crs=True)
 
 
+def test_default_geo_col_writes(tmp_path):
+    # edge case geo col name None writes successfully
+    df = GeoDataFrame({"a": [1, 2]})
+    df.to_parquet(tmp_path / "test.pq")
+    # cannot be round tripped as gdf due to invalid geom col
+    pq_df = pd_read_parquet(tmp_path / "test.pq")
+    assert_frame_equal(df, pq_df)
+
+
 @pytest.mark.skipif(
     Version(pyarrow.__version__) >= Version("0.17.0"),
     reason="Feather only supported for pyarrow >= 0.17",
@@ -609,7 +631,7 @@ def test_fsspec_url():
     with memfs.open("data.parquet", "wb") as f:
         df.to_parquet(f)
 
-    result = read_parquet("memory://data.parquet", storage_options=dict(is_set=True))
+    result = read_parquet("memory://data.parquet", storage_options={"is_set": True})
     assert_geodataframe_equal(result, df)
 
     result = read_parquet("memory://data.parquet", filesystem=memfs)
@@ -812,8 +834,8 @@ def test_read_versioned_file(version):
         geometry=[MultiPolygon([box(0, 0, 1, 1), box(2, 2, 3, 3)]), box(4, 4, 5,5)],
         crs="EPSG:4326",
     )
-    df.to_feather(DATA_PATH / 'arrow' / f'test_data_v{METADATA_VERSION}.feather')  # noqa: E501
-    df.to_parquet(DATA_PATH / 'arrow' / f'test_data_v{METADATA_VERSION}.parquet')  # noqa: E501
+    df.to_feather(DATA_PATH / 'arrow' / f'test_data_v{METADATA_VERSION}.feather')
+    df.to_parquet(DATA_PATH / 'arrow' / f'test_data_v{METADATA_VERSION}.parquet')
     """
     expected = geopandas.GeoDataFrame(
         {"col_str": ["a", "b"], "col_int": [1, 2], "col_float": [0.1, 0.2]},
@@ -845,8 +867,8 @@ def test_read_gdal_files():
     df.to_file("test_data.gpkg", GEOMETRY_NAME="geometry")
     and then the gpkg file is converted to Parquet/Arrow with:
     $ ogr2ogr -f Parquet -lco FID= test_data_gdal350.parquet test_data.gpkg
-    $ ogr2ogr -f Arrow -lco FID= -lco GEOMETRY_ENCODING=WKB test_data_gdal350.arrow test_data.gpkg  # noqa: E501
-    """
+    $ ogr2ogr -f Arrow -lco FID= -lco GEOMETRY_ENCODING=WKB test_data_gdal350.arrow test_data.gpkg
+    """  # noqa: E501
     expected = geopandas.GeoDataFrame(
         {"col_str": ["a", "b"], "col_int": [1, 2], "col_float": [0.1, 0.2]},
         geometry=[MultiPolygon([box(0, 0, 1, 1), box(2, 2, 3, 3)]), box(4, 4, 5, 5)],

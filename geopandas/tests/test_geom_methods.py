@@ -4,13 +4,14 @@ import warnings
 
 import numpy as np
 from numpy.testing import assert_array_equal
-from pandas import DataFrame, Index, MultiIndex, Series
+from pandas import DataFrame, Index, MultiIndex, Series, concat
 
 import shapely
 
 from shapely.geometry import (
     LinearRing,
     LineString,
+    MultiLineString,
     MultiPoint,
     Point,
     Polygon,
@@ -26,7 +27,7 @@ from geopandas.base import GeoPandasBase
 from geopandas.testing import assert_geodataframe_equal
 from geopandas.tests.util import assert_geoseries_equal, geom_almost_equals, geom_equals
 from geopandas import _compat as compat
-from pandas.testing import assert_frame_equal, assert_series_equal
+from pandas.testing import assert_frame_equal, assert_index_equal, assert_series_equal
 import pytest
 
 
@@ -48,6 +49,7 @@ class TestGeomMethods:
         self.sqz = Polygon([(1, 1, 1), (2, 2, 2), (3, 3, 3), (4, 4, 4)])
         self.t4 = Polygon([(0, 0), (3, 0), (3, 3), (0, 2)])
         self.t5 = Polygon([(2, 0), (3, 0), (3, 3), (2, 3)])
+        self.t6 = Polygon([(2, 0), (2, 0), (3, 0), (3, 0)])
         self.inner_sq = Polygon(
             [(0.25, 0.25), (0.75, 0.25), (0.75, 0.75), (0.25, 0.75)]
         )
@@ -169,6 +171,12 @@ class TestGeomMethods:
                 [1.0, 1.0, np.nan],
             ]
         )
+        self.squares = GeoSeries([self.sq for _ in range(3)])
+
+        self.l5 = LineString([(100, 0), (0, 0), (0, 100)])
+        self.l6 = LineString([(5, 5), (5, 100), (100, 5)])
+        self.g12 = GeoSeries([self.l5])
+        self.g13 = GeoSeries([self.l6])
 
     def _test_unary_real(self, op, expected, a):
         """Tests for 'area', 'length', 'is_valid', etc."""
@@ -564,6 +572,53 @@ class TestGeomMethods:
         with pytest.warns(UserWarning, match="Geometry is in a geographic CRS"):
             self.g4.distance(self.p0)
 
+    @pytest.mark.skipif(
+        not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+        reason="requires hausdorff_distance in shapely 2.0+",
+    )
+    def test_hausdorff_distance(self):
+        # closest point is (0, 0) in self.p1
+        expected = Series(
+            np.array([np.sqrt(5**2 + 5**2), np.nan]), self.na_none.index
+        )
+        assert_array_dtype_equal(expected, self.na_none.hausdorff_distance(self.p0))
+
+        expected = Series(
+            np.array([np.sqrt(5**2 + 5**2), np.nan]), self.na_none.index
+        )
+        assert_array_dtype_equal(expected, self.na_none.hausdorff_distance(self.p0))
+
+        expected = Series(np.array([np.nan, 0, 0, 0, 0, 0, np.nan, np.nan]), range(8))
+        with pytest.warns(UserWarning, match="The indices .+ different"):
+            assert_array_dtype_equal(
+                expected, self.g0.hausdorff_distance(self.g9, align=True)
+            )
+
+        val_1 = self.g0.iloc[0].hausdorff_distance(self.g9.iloc[0])
+        val_2 = self.g0.iloc[2].hausdorff_distance(self.g9.iloc[2])
+        val_3 = self.g0.iloc[4].hausdorff_distance(self.g9.iloc[4])
+        expected = Series(
+            np.array([val_1, val_1, val_2, val_2, val_3, np.nan, np.nan]), self.g0.index
+        )
+        assert_array_dtype_equal(
+            expected, self.g0.hausdorff_distance(self.g9, align=False)
+        )
+
+        expected = Series(np.array([52.5]), self.g12.index)
+        assert_array_dtype_equal(
+            expected, self.g12.hausdorff_distance(self.g13, densify=0.25)
+        )
+
+    @pytest.mark.skipif(
+        (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+        reason="hausdorff_distance not implemented for shapely<2",
+    )
+    def test_hausdorff_distance_not(self):
+        with pytest.raises(
+            NotImplementedError, match="shapely >= 2.0 or PyGEOS is required"
+        ):
+            self.g0.hausdorff_distance(self.g9)
+
     def test_intersects(self):
         expected = [True, True, True, True, True, False, False]
         assert_array_dtype_equal(expected, self.g0.intersects(self.t1))
@@ -777,10 +832,168 @@ class TestGeomMethods:
         ):
             s.make_valid()
 
+    @pytest.mark.skipif(
+        (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+        reason="segmentize keyword introduced in shapely 2.0",
+    )
+    def test_segmentize_shapely_pre20(self):
+        s = GeoSeries([Point(1, 1)])
+        with pytest.raises(
+            NotImplementedError,
+            match=f"shapely >= 2.0 or PyGEOS is required, "
+            f"version {shapely.__version__} is installed",
+        ):
+            s.segmentize(max_segment_length=1)
+
+    @pytest.mark.skipif(
+        not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+        reason="segmentize keyword introduced in shapely 2.0",
+    )
+    def test_segmentize_linestrings(self):
+        expected_g1 = GeoSeries(
+            [
+                Polygon(
+                    (
+                        (
+                            (0, 0),
+                            (0.5, 0),
+                            (1, 0),
+                            (1, 0.5),
+                            (1, 1),
+                            (0.6666666666666666, 0.6666666666666666),
+                            (0.3333333333333333, 0.3333333333333333),
+                            (0, 0),
+                        )
+                    )
+                ),
+                Polygon(
+                    (
+                        (
+                            (0, 0),
+                            (0.5, 0),
+                            (1, 0),
+                            (1, 0.5),
+                            (1, 1),
+                            (0.5, 1),
+                            (0, 1),
+                            (0, 0.5),
+                            (0, 0),
+                        )
+                    )
+                ),
+            ]
+        )
+        expected_g5 = GeoSeries(
+            [
+                LineString([(0, 0), (0, 0.5), (0, 1), (0.5, 1), (1, 1)]),
+                LineString(
+                    [(0, 0), (0.5, 0), (1, 0), (1, 0.5), (1, 1), (0.5, 1), (0, 1)]
+                ),
+            ]
+        )
+        result_g1 = self.g1.segmentize(max_segment_length=0.5)
+        result_g5 = self.g5.segmentize(max_segment_length=0.5)
+        assert_geoseries_equal(expected_g1, result_g1)
+        assert_geoseries_equal(expected_g5, result_g5)
+
+    @pytest.mark.skipif(
+        compat.SHAPELY_GE_20,
+        reason="concave_hull is implemented for shapely >= 2.0",
+    )
+    def test_concave_hull_not_implemented_shapely_pre2(self):
+        with pytest.raises(
+            NotImplementedError,
+            match=f"shapely >= 2.0 is required, "
+            f"version {shapely.__version__} is installed",
+        ):
+            self.squares.concave_hull()
+
+    @pytest.mark.skipif(
+        not (compat.USE_PYGEOS and compat.SHAPELY_GE_20),
+        reason="concave_hull is only implemented for shapely >= 2.0",
+    )
+    def test_concave_hull_pygeos_set_shapely_installed(self):
+        expected = GeoSeries(
+            [
+                Polygon([(0, 1), (1, 1), (0, 0), (0, 1)]),
+                Polygon([(1, 0), (0, 0), (0, 1), (1, 1), (1, 0)]),
+            ]
+        )
+        with pytest.warns(
+            UserWarning,
+            match="PyGEOS does not support concave_hull, and Shapely >= 2 is installed",
+        ):
+            assert_geoseries_equal(expected, self.g5.concave_hull())
+
+    @pytest.mark.skipif(
+        not compat.USE_SHAPELY_20,
+        reason="concave_hull is only implemented for shapely >= 2.0",
+    )
+    def test_concave_hull(self):
+        assert_geoseries_equal(self.squares, self.squares.concave_hull())
+
+    @pytest.mark.skipif(
+        not compat.USE_SHAPELY_20,
+        reason="concave_hull is only implemented for shapely >= 2.0",
+    )
+    @pytest.mark.parametrize(
+        "expected_series,ratio",
+        [
+            ([(0, 0), (0, 3), (1, 1), (3, 3), (3, 0), (0, 0)], 0.0),
+            ([(0, 0), (0, 3), (3, 3), (3, 0), (0, 0)], 1.0),
+        ],
+    )
+    def test_concave_hull_accepts_kwargs(self, expected_series, ratio):
+        expected = GeoSeries(Polygon(expected_series))
+        s = GeoSeries(MultiPoint([(0, 0), (0, 3), (1, 1), (3, 0), (3, 3)]))
+        assert_geoseries_equal(expected, s.concave_hull(ratio=ratio))
+
     def test_convex_hull(self):
         # the convex hull of a square should be the same as the square
-        squares = GeoSeries([self.sq for i in range(3)])
-        assert_geoseries_equal(squares, squares.convex_hull)
+        assert_geoseries_equal(self.squares, self.squares.convex_hull)
+
+    @pytest.mark.skipif(
+        not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+        reason="delaunay_triangles not implemented for shapely<2",
+    )
+    def test_delaunay_triangles(self):
+        expected = GeoSeries(
+            [
+                GeometryCollection([Polygon([(0, 0), (1, 0), (1, 1), (0, 0)])]),
+                GeometryCollection([Polygon([(0, 1), (0, 0), (1, 1), (0, 1)])]),
+            ]
+        )
+        dlt = self.g3.delaunay_triangles()
+        assert isinstance(dlt, GeoSeries)
+        assert_series_equal(expected, dlt)
+
+    @pytest.mark.skipif(
+        not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+        reason="delaunay_triangles not implemented for shapely<2",
+    )
+    def test_delaunay_triangles_pass_kwargs(self):
+        expected = GeoSeries(
+            [
+                MultiLineString([[(0, 0), (1, 1)], [(0, 0), (1, 0)], [(1, 0), (1, 1)]]),
+                MultiLineString([[(0, 1), (1, 1)], [(0, 0), (0, 1)], [(0, 0), (1, 1)]]),
+            ]
+        )
+        dlt = self.g3.delaunay_triangles(only_edges=True)
+        assert isinstance(dlt, GeoSeries)
+        assert_series_equal(expected, dlt)
+
+    @pytest.mark.skipif(
+        compat.USE_PYGEOS or compat.USE_SHAPELY_20,
+        reason="delaunay_triangles implemented for shapely>2",
+    )
+    def test_delaunay_triangles_shapely_pre20(self):
+        s = GeoSeries([Point(1, 1)])
+        with pytest.raises(
+            NotImplementedError,
+            match=f"shapely >= 2.0 or PyGEOS is required, "
+            f"version {shapely.__version__} is installed",
+        ):
+            s.delaunay_triangles()
 
     def test_exterior(self):
         exp_exterior = GeoSeries([LinearRing(p.boundary) for p in self.g3])
@@ -918,7 +1131,7 @@ class TestGeomMethods:
         assert geom_almost_equals(expected, calculated)
 
     def test_buffer_args(self):
-        args = dict(cap_style=3, join_style=2, mitre_limit=2.5)
+        args = {"cap_style": 3, "join_style": 2, "mitre_limit": 2.5}
         calculated_series = self.g0.buffer(10, **args)
         for original, calculated in zip(self.g0, calculated_series):
             if original is None:
@@ -988,6 +1201,27 @@ class TestGeomMethods:
         assert np.all(r.normalize().geom_equals_exact(exp, 0.001))
         assert isinstance(r, GeoSeries)
         assert self.g3.crs == r.crs
+
+    @pytest.mark.skipif(
+        not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+        reason=(
+            "extract_unique_points is only implemented for pygeos and shapely >= 2.0"
+        ),
+    )
+    def test_extract_unique_points(self):
+        eup = GeoSeries([self.t6]).extract_unique_points()
+        expected = GeoSeries([MultiPoint([(2, 0), (3, 0)])])
+        assert_series_equal(eup, expected)
+
+    @pytest.mark.skipif(
+        (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+        reason="extract_unique_points not implemented for shapely<2",
+    )
+    def test_extract_unique_points_not_implemented(self):
+        with pytest.raises(
+            NotImplementedError, match="shapely >= 2.0 or PyGEOS is required"
+        ):
+            self.g1.extract_unique_points()
 
     @pytest.mark.skipif(
         not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
@@ -1541,3 +1775,64 @@ class TestGeomMethods:
             NotImplementedError, match="shapely >= 2.0 or PyGEOS is required"
         ):
             self.g1.minimum_bounding_radius()
+
+    @pytest.mark.skipif(
+        not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+        reason="array input in interpolate is not implemented for shapely<2",
+    )
+    @pytest.mark.parametrize("size", [10, 20, 50])
+    def test_sample_points(self, size):
+        for gs in (
+            self.g1,
+            self.na,
+            self.a1,
+            self.na_none,
+        ):
+            output = gs.sample_points(size)
+            assert_index_equal(gs.index, output.index)
+            assert (
+                len(output.explode(ignore_index=True))
+                == len(gs[~(gs.is_empty | gs.isna())]) * size
+            )
+
+    @pytest.mark.skipif(
+        not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+        reason="array input in interpolate is not implemented for shapely<2",
+    )
+    def test_sample_points_array(self):
+        output = concat([self.g1, self.g1]).sample_points([10, 15, 20, 25])
+        expected = Series(
+            [10, 15, 20, 25], index=[0, 1, 0, 1], name="sampled_points", dtype="int32"
+        )
+        assert_series_equal(shapely.get_num_geometries(output), expected)
+
+    @pytest.mark.skipif(
+        not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+        reason="get_coordinates not implemented for shapely<2",
+    )
+    @pytest.mark.parametrize("size", [10, 20, 50])
+    def test_sample_points_pointpats(self, size):
+        pytest.importorskip("pointpats")
+        for gs in (
+            self.g1,
+            self.na,
+            self.a1,
+        ):
+            output = gs.sample_points(size, method="cluster_poisson")
+            assert_index_equal(gs.index, output.index)
+            assert (
+                len(output.explode(ignore_index=True)) == len(gs[~gs.is_empty]) * size
+            )
+
+        with pytest.raises(AttributeError, match="pointpats.random module has no"):
+            gs.sample_points(10, method="nonexistent")
+
+    @pytest.mark.skipif(
+        not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+        reason="offset_curve is only implemented for pygeos, not shapely",
+    )
+    def test_offset_curve(self):
+        oc = GeoSeries([self.l1]).offset_curve(1, join_style="mitre")
+        expected = GeoSeries([LineString([[-1, 0], [-1, 2], [1, 2]])])
+        assert_geoseries_equal(expected, oc)
+        assert isinstance(oc, GeoSeries)

@@ -8,4 +8,5 @@ import pytest
     "test_dataset", ["naturalearth_lowres", "naturalearth_cities", "nybb"]
 )
 def test_read_paths(test_dataset):
-    assert isinstance(read_file(get_path(test_dataset)), GeoDataFrame)
+    with pytest.warns(FutureWarning, match="The geopandas.dataset module is"):
+        assert isinstance(read_file(get_path(test_dataset)), GeoDataFrame)
