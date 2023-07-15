@@ -1136,43 +1136,43 @@ def test_to_file__metadata(tmpdir, df_points, engine):
     metadata = {"title": "test"}
     tempfilename = os.path.join(str(tmpdir), "test.gpkg")
 
-    if engine == "fiona" and not FIONA_GE_19:
-        with pytest.raises(
-            NotImplementedError,
-            match="'metadata' keyword is only supported for Fiona >= 1.9",
-        ):
+    if engine == "fiona":
+        if not FIONA_GE_19:
+            with pytest.raises(
+                NotImplementedError,
+                match="'metadata' keyword is only supported for Fiona >= 1.9",
+            ):
+                df_points.to_file(
+                    tempfilename, driver="GPKG", engine="fiona", metadata=metadata
+                )
+        else:
             df_points.to_file(
                 tempfilename, driver="GPKG", engine="fiona", metadata=metadata
             )
 
-    if engine == "pyogrio" and not PYOGRIO_GE_06:
-        with pytest.raises(
-            NotImplementedError,
-            match="'metadata' keyword is only supported for Pyogrio >= 0.6",
-        ):
+            # Check that metadata is written to the file
+            with fiona.open(tempfilename) as src:
+                tags = src.tags()
+                assert tags == metadata
+
+    if engine == "pyogrio":
+        if not PYOGRIO_GE_06:
+            with pytest.raises(
+                NotImplementedError,
+                match="'metadata' keyword is only supported for Pyogrio >= 0.6",
+            ):
+                df_points.to_file(
+                    tempfilename, driver="GPKG", engine="pyogrio", metadata=metadata
+                )
+        else:
             df_points.to_file(
                 tempfilename, driver="GPKG", engine="pyogrio", metadata=metadata
             )
 
-    if engine == "fiona":
-        df_points.to_file(
-            tempfilename, driver="GPKG", engine="fiona", metadata=metadata
-        )
-
-        # Check that metadata is written to the file
-        with fiona.open(tempfilename) as src:
-            tags = src.tags()
-            assert tags == metadata
-
-    if engine == "pyogrio":
-        df_points.to_file(
-            tempfilename, driver="GPKG", engine="pyogrio", metadata=metadata
-        )
-
-        # Check that metadata is written to the file
-        info = pyogrio.read_info(tempfilename)
-        layer_metadata = info["layer_metadata"]
-        assert layer_metadata == metadata
+            # Check that metadata is written to the file
+            info = pyogrio.read_info(tempfilename)
+            layer_metadata = info["layer_metadata"]
+            assert layer_metadata == metadata
 
 
 @pytest.mark.parametrize(
