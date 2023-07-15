@@ -61,10 +61,15 @@ pyogrio_import_error = None
 def _import_pyogrio():
     global pyogrio
     global pyogrio_import_error
+    global PYOGRIO_GE_06
 
     if pyogrio is None:
         try:
             import pyogrio
+
+            PYOGRIO_GE_06 = Version(
+                Version(pyogrio.__version__).base_version
+            ) >= Version("0.6.0")
         except ImportError as err:
             pyogrio = False
             pyogrio_import_error = str(err)
@@ -587,14 +592,20 @@ def _to_file_fiona(df, filename, driver, schema, crs, mode, metadata, **kwargs):
 def _to_file_pyogrio(df, filename, driver, schema, crs, mode, metadata, **kwargs):
     import pyogrio
 
+    if metadata is not None:
+        if driver != "GPKG":
+            raise NotImplementedError(
+                "The 'metadata' keyword is only supported for the GPKG driver."
+            )
+
+        if not PYOGRIO_GE_06:
+            raise NotImplementedError(
+                "The 'metadata' keyword is only supported for Pyogrio >= 0.6.0"
+            )
+
     if schema is not None:
         raise ValueError(
             "The 'schema' argument is not supported with the 'pyogrio' engine."
-        )
-
-    if metadata is not None:
-        raise NotImplementedError(
-            "The 'metadata' argument is not supported with the 'pyogrio' engine."
         )
 
     if mode == "a":
@@ -607,7 +618,7 @@ def _to_file_pyogrio(df, filename, driver, schema, crs, mode, metadata, **kwargs
     if not df.columns.is_unique:
         raise ValueError("GeoDataFrame cannot contain duplicated column names.")
 
-    pyogrio.write_dataframe(df, filename, driver=driver, **kwargs)
+    pyogrio.write_dataframe(df, filename, driver=driver, metadata=metadata, **kwargs)
 
 
 def infer_schema(df):
