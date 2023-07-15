@@ -40,7 +40,8 @@ dependencies:
   - pygeos
   - xyzservices
   - packaging
+  - pointpats
   - pip
   - pip:
       - sphinx-toggleprompt
-      - git+https://github.com/geopandas/geodatasets.git@main
+      - geodatasets

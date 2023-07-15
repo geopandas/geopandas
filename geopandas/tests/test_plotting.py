@@ -29,7 +29,7 @@ import pytest
 
 matplotlib = pytest.importorskip("matplotlib")
 matplotlib.use("Agg")
-import matplotlib.pyplot as plt  # noqa
+import matplotlib.pyplot as plt
 
 try:  # skipif and importorskip do not work for decorators
     from matplotlib.testing.decorators import check_figures_equal
@@ -757,12 +757,20 @@ class TestPolygonPlotting:
             np.testing.assert_array_equal([0.7, 0.2], ax.collections[0].get_alpha())
 
     def test_legend_kwargs(self):
+        categories = list(self.df["values"].unique())
+        prefix = "LABEL_FOR_"
         ax = self.df.plot(
             column="values",
             categorical=True,
+            categories=categories,
             legend=True,
-            legend_kwds={"frameon": False},
+            legend_kwds={
+                "labels": [prefix + str(c) for c in categories],
+                "frameon": False,
+            },
         )
+        assert len(categories) == len(ax.get_legend().get_texts())
+        assert ax.get_legend().get_texts()[0].get_text().startswith(prefix)
         assert ax.get_legend().get_frame_on() is False
 
     def test_colorbar_kwargs(self):
@@ -1129,7 +1137,7 @@ class TestMapclassifyPlotting:
     @classmethod
     def setup_class(cls):
         try:
-            import mapclassify  # noqa
+            import mapclassify
         except ImportError:
             pytest.importorskip("mapclassify")
         cls.mc = mapclassify
@@ -1305,10 +1313,8 @@ class TestMapclassifyPlotting:
             ]
         )
         assert all(
-            [
-                (z == expected).all(axis=1).any()
-                for z in ax.collections[0].get_facecolors()
-            ]
+            (z == expected).all(axis=1).any()
+            for z in ax.collections[0].get_facecolors()
         )
         labels = [
             "0.00, 0.10",
@@ -1358,10 +1364,8 @@ class TestMapclassifyPlotting:
             ]
         )
         assert all(
-            [
-                (z == expected).all(axis=1).any()
-                for z in ax2.collections[0].get_facecolors()
-            ]
+            (z == expected).all(axis=1).any()
+            for z in ax2.collections[0].get_facecolors()
         )
 
         labels = [
@@ -1396,10 +1400,8 @@ class TestMapclassifyPlotting:
             ]
         )
         assert all(
-            [
-                (z == expected).all(axis=1).any()
-                for z in ax3.collections[0].get_facecolors()
-            ]
+            (z == expected).all(axis=1).any()
+            for z in ax3.collections[0].get_facecolors()
         )
 
         legend = [t.get_text() for t in ax3.get_legend().get_texts()]
@@ -1426,7 +1428,7 @@ class TestMapclassifyPlotting:
         assert labels == expected
 
         ax2 = self.nybb.plot(
-            "vals", scheme="quantiles", legend=True, legend_kwds=dict(fmt="{:.3f}")
+            "vals", scheme="quantiles", legend=True, legend_kwds={"fmt": "{:.3f}"}
         )
         labels = [t.get_text() for t in ax2.get_legend().get_texts()]
         expected = [
@@ -1738,8 +1740,6 @@ class TestGeoplotAccessor:
         ax_geopandas_2 = fig_ref.subplots()
         getattr(self.gdf.plot, kind)(ax=ax_geopandas_2, **kwargs)
 
-    _pandas_kinds = []
-
     _pandas_kinds = GeoplotAccessor._pandas_kinds
 
     if MPL_DECORATORS:
@@ -1868,7 +1868,7 @@ def _check_colors(N, actual_colors, expected_colors, alpha=None):
         `expected_colors`. (Any transparency on the `collection` is assumed
         to be set in its own facecolor RGBA tuples.)
     """
-    import matplotlib.colors as colors
+    from matplotlib import colors
 
     conv = colors.colorConverter
 
@@ -1876,9 +1876,9 @@ def _check_colors(N, actual_colors, expected_colors, alpha=None):
     actual_colors = map(tuple, actual_colors)
     all_actual_colors = list(itertools.islice(itertools.cycle(actual_colors), N))
 
-    assert len(all_actual_colors) == len(expected_colors), (
-        "Different " "lengths of actual and expected colors!"
-    )
+    assert len(all_actual_colors) == len(
+        expected_colors
+    ), "Different lengths of actual and expected colors!"
 
     for actual, expected in zip(all_actual_colors, expected_colors):
         assert actual == conv.to_rgba(expected, alpha=alpha), "{} != {}".format(
@@ -1912,8 +1912,7 @@ def _get_ax(fig, label):
     for ax in fig.axes:
         if ax.get_label() == label:
             return ax
-    else:
-        raise ValueError("no ax found with label {0}".format(label))
+    raise ValueError("no ax found with label {0}".format(label))
 
 
 def _get_colorbar_ax(fig):

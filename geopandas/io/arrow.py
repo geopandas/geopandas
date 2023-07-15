@@ -235,6 +235,16 @@ def _validate_metadata(metadata):
         if column_metadata["encoding"] != "WKB":
             raise ValueError("Only WKB geometry encoding is supported")
 
+        if column_metadata.get("edges", "planar") == "spherical":
+            warnings.warn(
+                f"The geo metadata indicate that column '{col}' has spherical edges, "
+                "but because GeoPandas currently does not support spherical "
+                "geometry, it ignores this metadata and will interpret the edges of "
+                "the geometries as planar.",
+                UserWarning,
+                stacklevel=4,
+            )
+
 
 def _geopandas_to_arrow(df, index=None, schema_version=None):
     """
@@ -249,7 +259,7 @@ def _geopandas_to_arrow(df, index=None, schema_version=None):
 
     kwargs = {}
     if compat.USE_SHAPELY_20:
-        kwargs = dict(flavor="iso")
+        kwargs = {"flavor": "iso"}
     else:
         for col in df.columns[df.dtypes == "geometry"]:
             series = df[col]
@@ -429,7 +439,8 @@ def _arrow_to_geopandas(table, metadata=None):
         if len(geometry_columns) > 1:
             warnings.warn(
                 "Multiple non-primary geometry columns read from Parquet/Feather "
-                "file. The first column read was promoted to the primary geometry."
+                "file. The first column read was promoted to the primary geometry.",
+                stacklevel=3,
             )
 
     # Convert the WKB columns that are present back to geometry.

@@ -29,7 +29,6 @@ from . import _compat as compat
 from . import _vectorized as vectorized
 from .sindex import _get_sindex_class
 
-
 TransformerFromCRS = lru_cache(Transformer.from_crs)
 
 
@@ -513,9 +512,18 @@ class GeometryArray(ExtensionArray):
         self.check_geographic_crs(stacklevel=5)
         return GeometryArray(vectorized.centroid(self._data), crs=self.crs)
 
+    def concave_hull(self, ratio, allow_holes):
+        return vectorized.concave_hull(self._data, ratio=ratio, allow_holes=allow_holes)
+
     @property
     def convex_hull(self):
         return GeometryArray(vectorized.convex_hull(self._data), crs=self.crs)
+
+    def delaunay_triangles(self, tolerance, only_edges):
+        return GeometryArray(
+            vectorized.delaunay_triangles(self._data, tolerance, only_edges),
+            crs=self.crs,
+        )
 
     @property
     def envelope(self):
@@ -524,6 +532,21 @@ class GeometryArray(ExtensionArray):
     @property
     def exterior(self):
         return GeometryArray(vectorized.exterior(self._data), crs=self.crs)
+
+    def extract_unique_points(self):
+        return GeometryArray(vectorized.extract_unique_points(self._data), crs=self.crs)
+
+    def offset_curve(self, distance, quad_segs=8, join_style="round", mitre_limit=5.0):
+        return GeometryArray(
+            vectorized.offset_curve(
+                self._data,
+                distance,
+                quad_segs=quad_segs,
+                join_style=join_style,
+                mitre_limit=mitre_limit,
+            ),
+            crs=self.crs,
+        )
 
     @property
     def interiors(self):
@@ -546,6 +569,12 @@ class GeometryArray(ExtensionArray):
 
     def make_valid(self):
         return GeometryArray(vectorized.make_valid(self._data), crs=self.crs)
+
+    def segmentize(self, max_segment_length):
+        return GeometryArray(
+            vectorized.segmentize(self._data, max_segment_length),
+            crs=self.crs,
+        )
 
     #
     # Binary predicates
@@ -636,6 +665,10 @@ class GeometryArray(ExtensionArray):
     def distance(self, other):
         self.check_geographic_crs(stacklevel=6)
         return self._binary_method("distance", self, other)
+
+    def hausdorff_distance(self, other, **kwargs):
+        self.check_geographic_crs(stacklevel=6)
+        return self._binary_method("hausdorff_distance", self, other, **kwargs)
 
     def buffer(self, distance, resolution=16, **kwargs):
         if not (isinstance(distance, (int, float)) and distance == 0):
@@ -827,23 +860,23 @@ class GeometryArray(ExtensionArray):
 
         Examples
         --------
-        >>> world = geopandas.read_file(
-        ...     geopandas.datasets.get_path("naturalearth_lowres")
+        >>> import geodatasets
+        >>> df = geopandas.read_file(
+        ...     geodatasets.get_path("geoda.chicago_commpop")
         ... )
-        >>> germany = world.loc[world.name == "Germany"]
-        >>> germany.geometry.values.estimate_utm_crs()  # doctest: +SKIP
-        <Projected CRS: EPSG:32632>
-        Name: WGS 84 / UTM zone 32N
+        >>> df.geometry.values.estimate_utm_crs()  # doctest: +SKIP
+        <Derived Projected CRS: EPSG:32616>
+        Name: WGS 84 / UTM zone 16N
         Axis Info [cartesian]:
         - E[east]: Easting (metre)
         - N[north]: Northing (metre)
         Area of Use:
-        - name: World - N hemisphere - 6°E to 12°E - by country
-        - bounds: (6.0, 0.0, 12.0, 84.0)
+        - name: Between 90°W and 84°W, northern hemisphere between equator and 84°N,...
+        - bounds: (-90.0, 0.0, -84.0, 84.0)
         Coordinate Operation:
-        - name: UTM zone 32N
+        - name: UTM zone 16N
         - method: Transverse Mercator
-        Datum: World Geodetic System 1984
+        Datum: World Geodetic System 1984 ensemble
         - Ellipsoid: WGS 84
         - Prime Meridian: Greenwich
         """
@@ -1009,34 +1042,46 @@ class GeometryArray(ExtensionArray):
         return GeometryArray(result, crs=self.crs)
 
     def _fill(self, idx, value):
-        """Fill index locations with value
-
-        Value should be a BaseGeometry
         """
-        if not (_is_scalar_geometry(value) or value is None):
+        Fill index locations with ``value``.
+
+        ``value`` should be a BaseGeometry or a GeometryArray.
+        """
+        if vectorized.isna(value):
+            value = [None]
+        elif _is_scalar_geometry(value):
+            value = [value]
+        elif isinstance(value, GeometryArray):
+            value = value[idx]
+        else:
             raise TypeError(
-                "Value should be either a BaseGeometry or None, got %s" % str(value)
+                "'value' parameter must be None, a scalar geometry, or a GeoSeries, "
+                f"but you passed a {type(value).__name__!r}"
             )
-        # self._data[idx] = value
-        value_arr = np.empty(1, dtype=object)
+
+        value_arr = np.empty(len(value), dtype=object)
         with compat.ignore_shapely2_warnings():
-            value_arr[:] = [value]
+            value_arr[:] = _shapely_to_geom(value)
+
         self._data[idx] = value_arr
         return self
 
     def fillna(self, value=None, method=None, limit=None):
-        """Fill NA/NaN values using the specified method.
+        """
+        Fill NA values with geometry (or geometries) or using the specified method.
 
         Parameters
         ----------
-        value : scalar, array-like
-            If a scalar value is passed it is used to fill all missing values.
-            Alternatively, an array-like 'value' can be given. It's expected
-            that the array-like have the same length as 'self'.
+        value : shapely geometry object or GeometryArray
+            If a geometry value is passed it is used to fill all missing values.
+            Alternatively, an GeometryArray 'value' can be given. It's expected
+            that the GeometryArray has the same length as 'self'.
+
         method : {'backfill', 'bfill', 'pad', 'ffill', None}, default None
             Method to use for filling holes in reindexed Series
             pad / ffill: propagate last valid observation forward to next valid
             backfill / bfill: use NEXT valid observation to fill gap
+
         limit : int, default None
             If method is specified, this is the maximum number of consecutive
             NaN values to forward/backward fill. In other words, if there is
@@ -1047,26 +1092,14 @@ class GeometryArray(ExtensionArray):
 
         Returns
         -------
-        filled : ExtensionArray with NA/NaN filled
+        GeometryArray
         """
         if method is not None:
             raise NotImplementedError("fillna with a method is not yet supported")
 
         mask = self.isna()
         new_values = self.copy()
-
-        if mask.any():
-            # fill with value
-            if vectorized.isna(value):
-                value = None
-            elif not isinstance(value, BaseGeometry):
-                raise NotImplementedError(
-                    "fillna currently only supports filling with a scalar geometry"
-                )
-            value = _shapely_to_geom(value)
-            new_values = new_values._fill(mask, value)
-
-        return new_values
+        return new_values._fill(mask, value) if mask.any() else new_values
 
     def astype(self, dtype, copy=True):
         """
@@ -1486,7 +1519,8 @@ def _get_common_crs(arr_seq):
             warnings.warn(
                 "CRS not set for some of the concatenation inputs. "
                 f"Setting output's CRS as {names[0]} "
-                "(the single non-null crs provided)."
+                "(the single non-null crs provided).",
+                stacklevel=2,
             )
         return crs_not_none[0]
 

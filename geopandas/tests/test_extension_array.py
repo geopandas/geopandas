@@ -367,19 +367,40 @@ class TestMissing(extension_tests.BaseMissingTests):
         fill_value = data_missing[1]
         ser = pd.Series(data_missing)
 
+        # Fill with a scalar
         result = ser.fillna(fill_value)
         expected = pd.Series(data_missing._from_sequence([fill_value, fill_value]))
         self.assert_series_equal(result, expected)
 
-        # filling with array-like not yet supported
+        # Fill with a series
+        filler = pd.Series(
+            from_shapely(
+                [
+                    shapely.geometry.Point(1, 1),
+                    shapely.geometry.Point(2, 2),
+                ],
+            )
+        )
+        result = ser.fillna(filler)
+        expected = pd.Series(data_missing._from_sequence([fill_value, fill_value]))
+        self.assert_series_equal(result, expected)
 
-        # # Fill with a series
-        # result = ser.fillna(expected)
-        # self.assert_series_equal(result, expected)
+        # Fill with a series not affecting the missing values
+        filler = pd.Series(
+            from_shapely(
+                [
+                    shapely.geometry.Point(2, 2),
+                    shapely.geometry.Point(1, 1),
+                ]
+            ),
+            index=[10, 11],
+        )
+        result = ser.fillna(filler)
+        self.assert_series_equal(result, ser)
 
-        # # Fill with a series not affecting the missing values
-        # result = ser.fillna(ser)
-        # self.assert_series_equal(result, ser)
+        # More `GeoSeries.fillna` testcases are in
+        # `geopandas\tests\test_pandas_methods.py::test_fillna_scalar`
+        # and `geopandas\tests\test_pandas_methods.py::test_fillna_series`.
 
     @pytest.mark.skip("fillna method not supported")
     def test_fillna_limit_pad(self, data_missing):
@@ -458,12 +479,12 @@ class TestComparisonOps(extension_tests.BaseComparisonOpsTests):
         expected = s.combine(other, op)
         self.assert_series_equal(result, expected)
 
-    def test_compare_scalar(self, data, all_compare_operators):  # noqa
+    def test_compare_scalar(self, data, all_compare_operators):
         op_name = all_compare_operators
         s = pd.Series(data)
         self._compare_other(s, data, op_name, data[0])
 
-    def test_compare_array(self, data, all_compare_operators):  # noqa
+    def test_compare_array(self, data, all_compare_operators):
         op_name = all_compare_operators
         s = pd.Series(data)
         other = pd.Series([data[0]] * len(data))

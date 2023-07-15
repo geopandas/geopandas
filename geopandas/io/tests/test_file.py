@@ -224,6 +224,8 @@ def test_to_file_datetime(tmpdir, driver, ext, time, engine):
             df["b"].dt.tz_convert(pytz.utc), df_read["b"].dt.tz_convert(pytz.utc)
         )
     else:
+        if engine == "pyogrio" and PANDAS_GE_20:
+            df["b"] = df["b"].astype("datetime64[ms]")
         assert_series_equal(df["b"], df_read["b"])
 
 
@@ -355,10 +357,10 @@ def test_to_file_types(tmpdir, df_points, engine):
         np.uint64,
     ]
     geometry = df_points.geometry
-    data = dict(
-        (str(i), np.arange(len(geometry), dtype=dtype))
+    data = {
+        str(i): np.arange(len(geometry), dtype=dtype)
         for i, dtype in enumerate(int_types)
-    )
+    }
     df = GeoDataFrame(data, geometry=geometry)
     df.to_file(tempfilename, engine=engine)
 
@@ -558,22 +560,29 @@ def test_read_file(engine):
 
 
 @pytest.mark.web
-def test_read_file_remote_geojson_url(engine):
-    url = (
+@pytest.mark.parametrize(
+    "url",
+    [
+        # geojson url
         "https://raw.githubusercontent.com/geopandas/geopandas/"
-        "main/geopandas/tests/data/null_geom.geojson"
-    )
+        "main/geopandas/tests/data/null_geom.geojson",
+        # url to zip file
+        "https://raw.githubusercontent.com/geopandas/geopandas/"
+        "main/geopandas/datasets/nybb_16a.zip",
+        # url to zipfile without extension
+        "https://geonode.goosocean.org/download/480",
+        # url to web service
+        "https://demo.pygeoapi.io/stable/collections/obs/items",
+    ],
+)
+def test_read_file_url(engine, url):
     gdf = read_file(url, engine=engine)
     assert isinstance(gdf, geopandas.GeoDataFrame)
 
 
-@pytest.mark.web
-def test_read_file_remote_zipfile_url(engine):
-    url = (
-        "https://raw.githubusercontent.com/geopandas/geopandas/"
-        "main/geopandas/datasets/nybb_16a.zip"
-    )
-    gdf = read_file(url, engine=engine)
+def test_read_file_local_uri(file_path, engine):
+    local_uri = "file://" + file_path
+    gdf = read_file(local_uri, engine=engine)
     assert isinstance(gdf, geopandas.GeoDataFrame)
 
 
@@ -912,7 +921,7 @@ def test_read_file_empty_shapefile(tmpdir, engine):
     fname = str(tmpdir.join("test_empty.shp"))
 
     with fiona_env():
-        with fiona.open(fname, "w", **meta) as _:  # noqa
+        with fiona.open(fname, "w", **meta) as _:
             pass
 
     empty = read_file(fname, engine=engine)
@@ -1021,8 +1030,6 @@ def test_write_index_to_file(tmpdir, df_points, driver, ext, engine):
         df.geometry.to_file(tempfilename, driver=driver, index=False, engine=engine)
         df_check = read_file(tempfilename, engine=engine)
         assert list(df_check.columns) == driver_col + ["geometry"]
-
-        return
 
     #
     # Checks where index is not used/saved
