@@ -1,12 +1,15 @@
+ci:
+    autofix_prs: false
+    autoupdate_schedule: weekly
+
 files: 'geopandas\/'
 repos:
     - repo: https://github.com/psf/black
-      rev: 22.3.0
+      rev: 23.1.0
       hooks:
           - id: black
             language_version: python3
-    - repo: https://gitlab.com/pycqa/flake8
-      rev: 3.8.3
+    - repo: https://github.com/astral-sh/ruff-pre-commit
+      rev: "v0.0.271"
       hooks:
-          - id: flake8
-            language: python_venv
+        - id: ruff

@@ -27,6 +27,6 @@ dependencies:
   - SQLalchemy
   - libspatialite
   - pyarrow
-  - pip
-  - pip:
-    - pyogrio
+  - pyogrio
+  - pointpats
+  - geodatasets

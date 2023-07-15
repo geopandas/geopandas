@@ -14,13 +14,15 @@ from shapely.geometry.base import BaseGeometry
 from geopandas import GeoDataFrame, GeoSeries
 
 # Adapted from pandas.io.common
-from urllib.request import urlopen as _urlopen
 from urllib.parse import urlparse as parse_url
 from urllib.parse import uses_netloc, uses_params, uses_relative
+import urllib.request
 
 
 _VALID_URLS = set(uses_relative + uses_netloc + uses_params)
 _VALID_URLS.discard("")
+# file:// URIs are supported by fiona/pyogrio -> don't already open + read the file here
+_VALID_URLS.discard("file")
 
 
 fiona = None
@@ -238,6 +240,17 @@ def _read_file(filename, bbox=None, mask=None, rows=None, engine=None, **kwargs)
     The format drivers will attempt to detect the encoding of your data, but
     may fail. In this case, the proper encoding can be specified explicitly
     by using the encoding keyword parameter, e.g. ``encoding='utf-8'``.
+
+    When specifying a URL, geopandas will check if the server supports reading
+    partial data and in that case pass the URL as is to the underlying engine,
+    which will then use the network file system handler of GDAL to read from
+    the URL. Otherwise geopandas will download the data from the URL and pass
+    all data in-memory to the underlying engine.
+    If you need more control over how the URL is read, you can specify the
+    GDAL virtual filesystem manually (e.g. ``/vsicurl/https://...``). See the
+    GDAL documentation on filesystems for more details
+    (https://gdal.org/user/virtual_file_systems.html#vsicurl-http-https-ftp-files-random-access).
+
     """
     engine = _check_engine(engine, "'read_file' function")
 
@@ -245,24 +258,30 @@ def _read_file(filename, bbox=None, mask=None, rows=None, engine=None, **kwargs)
 
     from_bytes = False
     if _is_url(filename):
-        req = _urlopen(filename)
-        path_or_bytes = req.read()
-        from_bytes = True
-    elif pd.api.types.is_file_like(filename):
-        data = filename.read()
-        path_or_bytes = data.encode("utf-8") if isinstance(data, str) else data
-        from_bytes = True
-    else:
-        path_or_bytes = filename
+        # if it is a url that supports random access -> pass through to
+        # pyogrio/fiona as is (to support downloading only part of the file)
+        # otherwise still download manually because pyogrio/fiona don't support
+        # all types of urls (https://github.com/geopandas/geopandas/issues/2908)
+        with urllib.request.urlopen(filename) as response:
+            if not response.headers.get("Accept-Ranges") == "bytes":
+                filename = response.read()
+                from_bytes = True
 
-    if engine == "fiona":
+    if engine == "pyogrio":
+        return _read_file_pyogrio(filename, bbox=bbox, mask=mask, rows=rows, **kwargs)
+
+    elif engine == "fiona":
+        if pd.api.types.is_file_like(filename):
+            data = filename.read()
+            path_or_bytes = data.encode("utf-8") if isinstance(data, str) else data
+            from_bytes = True
+        else:
+            path_or_bytes = filename
+
         return _read_file_fiona(
             path_or_bytes, from_bytes, bbox=bbox, mask=mask, rows=rows, **kwargs
         )
-    elif engine == "pyogrio":
-        return _read_file_pyogrio(
-            path_or_bytes, bbox=bbox, mask=mask, rows=rows, **kwargs
-        )
+
     else:
         raise ValueError(f"unknown engine '{engine}'")
 
@@ -491,10 +510,15 @@ def _to_file(
         .. versionadded:: 0.7
             Previously the index was not written.
     mode : string, default 'w'
-        The write mode, 'w' to overwrite the existing file and 'a' to append.
-        Not all drivers support appending. The drivers that support appending
-        are listed in fiona.supported_drivers or
-        https://github.com/Toblerity/Fiona/blob/master/fiona/drvsupport.py
+        The write mode, 'w' to overwrite the existing file and 'a' to append;
+        when using the pyogrio engine, you can also pass ``append=True``.
+        Not all drivers support appending. For the fiona engine, the drivers
+        that support appending are listed in fiona.supported_drivers or
+        https://github.com/Toblerity/Fiona/blob/master/fiona/drvsupport.py.
+        For the pyogrio engine, you should be able to use any driver that
+        is available in your installation of GDAL that supports append
+        capability; see the specific driver entry at
+        https://gdal.org/drivers/vector/index.html for more information.
     crs : pyproj.CRS, default None
         If specified, the CRS is passed to Fiona to
         better control how the file is written. If None, GeoPandas
@@ -534,7 +558,7 @@ def _to_file(
     if driver is None:
         driver = _detect_driver(filename)
 
-    if driver == "ESRI Shapefile" and any([len(c) > 10 for c in df.columns.tolist()]):
+    if driver == "ESRI Shapefile" and any(len(c) > 10 for c in df.columns.tolist()):
         warnings.warn(
             "Column names longer than 10 characters will be truncated when saved to "
             "ESRI Shapefile.",
@@ -543,6 +567,9 @@ def _to_file(
 
     if (df.dtypes == "geometry").sum() > 1:
         raise ValueError("GeoDataFrame has to have single indices")
+
+    if mode not in ("w", "a"):
+        raise ValueError(f"'mode' should be one of 'w' or 'a', got '{mode}' instead")
 
     if engine == "fiona":
         _to_file_fiona(df, filename, driver, schema, crs, mode, **kwargs)
@@ -553,7 +580,6 @@ def _to_file(
 
 
 def _to_file_fiona(df, filename, driver, schema, crs, mode, **kwargs):
-
     if schema is None:
         schema = infer_schema(df)
 
@@ -586,10 +612,8 @@ def _to_file_pyogrio(df, filename, driver, schema, crs, mode, **kwargs):
             "The 'schema' argument is not supported with the 'pyogrio' engine."
         )
 
-    if mode != "w":
-        raise ValueError(
-            "Only mode='w' is supported for now with the 'pyogrio' engine."
-        )
+    if mode == "a":
+        kwargs["append"] = True
 
     if crs is not None:
         raise ValueError("Passing 'crs' it not supported with the 'pyogrio' engine.")

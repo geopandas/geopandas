@@ -12,7 +12,7 @@ dependencies:
   - matplotlib
   - mapclassify
   - sphinx
-  - pydata-sphinx-theme=0.9
+  - pydata-sphinx-theme
   - numpydoc
   - ipython
   - pillow
@@ -40,6 +40,8 @@ dependencies:
   - pygeos
   - xyzservices
   - packaging
+  - pointpats
   - pip
   - pip:
       - sphinx-toggleprompt
+      - geodatasets

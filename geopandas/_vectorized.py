@@ -15,6 +15,7 @@ import shapely.geos
 import shapely.ops
 import shapely.wkb
 import shapely.wkt
+import shapely.validation
 
 from shapely.geometry.base import BaseGeometry
 
@@ -82,6 +83,9 @@ def _pygeos_to_shapely(geom):
     if pygeos.is_empty(geom) and pygeos.get_type_id(geom) == 0:
         # empty point does not roundtrip through WKB
         return shapely.wkt.loads("POINT EMPTY")
+    elif pygeos.get_type_id(geom) == 2:
+        # linearring does not roundtrip through WKB
+        return shapely.LinearRing(shapely.wkb.loads(pygeos.to_wkb(geom)))
     else:
         return shapely.wkb.loads(pygeos.to_wkb(geom))
 
@@ -251,7 +255,6 @@ def _points_from_xy(x, y, z=None):
 
 
 def points_from_xy(x, y, z=None):
-
     x = np.asarray(x, dtype="float64")
     y = np.asarray(y, dtype="float64")
     if z is not None:
@@ -608,6 +611,23 @@ def centroid(data):
         return _unary_geo("centroid", data)
 
 
+def concave_hull(data, **kwargs):
+    if compat.USE_SHAPELY_20:
+        return shapely.concave_hull(data, **kwargs)
+    if compat.USE_PYGEOS and compat.SHAPELY_GE_20:
+        warnings.warn(
+            "PyGEOS does not support concave_hull, and Shapely >= 2 is installed, "
+            "thus using Shapely and not PyGEOS for calculating the concave_hull.",
+            stacklevel=4,
+        )
+        return shapely.concave_hull(to_shapely(data), **kwargs)
+    else:
+        raise NotImplementedError(
+            f"shapely >= 2.0 is required, "
+            f"version {shapely.__version__} is installed"
+        )
+
+
 def convex_hull(data):
     if compat.USE_SHAPELY_20:
         return shapely.convex_hull(data)
@@ -615,6 +635,18 @@ def convex_hull(data):
         return pygeos.convex_hull(data)
     else:
         return _unary_geo("convex_hull", data)
+
+
+def delaunay_triangles(data, tolerance, only_edges):
+    if compat.USE_SHAPELY_20:
+        return shapely.delaunay_triangles(data, tolerance, only_edges)
+    elif compat.USE_PYGEOS:
+        return pygeos.delaunay_triangles(data, tolerance, only_edges)
+    else:
+        raise NotImplementedError(
+            f"shapely >= 2.0 or PyGEOS is required, "
+            f"version {shapely.__version__} is installed"
+        )
 
 
 def envelope(data):
@@ -635,6 +667,36 @@ def exterior(data):
         return _unary_geo("exterior", data)
 
 
+def extract_unique_points(data):
+    if compat.USE_SHAPELY_20:
+        return shapely.extract_unique_points(data)
+    elif compat.USE_PYGEOS:
+        return pygeos.extract_unique_points(data)
+    else:
+        raise NotImplementedError(
+            f"shapely >= 2.0 or PyGEOS is required, "
+            f"version {shapely.__version__} is installed"
+        )
+
+
+def offset_curve(data, distance, quad_segs=8, join_style="round", mitre_limit=5.0):
+    if compat.USE_SHAPELY_20:
+        return shapely.offset_curve(
+            data,
+            distance=distance,
+            quad_segs=quad_segs,
+            join_style=join_style,
+            mitre_limit=mitre_limit,
+        )
+    elif compat.USE_PYGEOS:
+        return pygeos.offset_curve(data, distance, quad_segs, join_style, mitre_limit)
+    else:
+        raise NotImplementedError(
+            f"shapely >= 2.0 or PyGEOS is required, "
+            f"version {shapely.__version__} is installed"
+        )
+
+
 def interiors(data):
     data = to_shapely(data)
     has_non_poly = False
@@ -651,7 +713,8 @@ def interiors(data):
     if has_non_poly:
         warnings.warn(
             "Only Polygon objects have interior rings. For other "
-            "geometry types, None is returned."
+            "geometry types, None is returned.",
+            stacklevel=2,
         )
     data = np.empty(len(data), dtype=object)
     with compat.ignore_shapely2_warnings():
@@ -671,6 +734,42 @@ def representative_point(data):
                 for geom in data
             ]
         return out
+
+
+def minimum_bounding_circle(data):
+    if compat.USE_SHAPELY_20:
+        return shapely.minimum_bounding_circle(data)
+    elif compat.USE_PYGEOS:
+        return pygeos.minimum_bounding_circle(data)
+    else:
+        raise NotImplementedError(
+            f"shapely >= 2.0 or PyGEOS is required, "
+            f"version {shapely.__version__} is installed"
+        )
+
+
+def minimum_bounding_radius(data):
+    if compat.USE_SHAPELY_20:
+        return shapely.minimum_bounding_radius(data)
+    elif compat.USE_PYGEOS:
+        return pygeos.minimum_bounding_radius(data)
+    else:
+        raise NotImplementedError(
+            f"shapely >= 2.0 or PyGEOS is required, "
+            f"version {shapely.__version__} is installed"
+        )
+
+
+def segmentize(data, max_segment_length):
+    if compat.USE_SHAPELY_20:
+        return shapely.segmentize(data, max_segment_length)
+    elif compat.USE_PYGEOS:
+        return pygeos.segmentize(data, max_segment_length)
+    else:
+        raise NotImplementedError(
+            "shapely >= 2.0 or PyGEOS is required, "
+            f"version {shapely.__version__} is installed"
+        )
 
 
 #
@@ -856,6 +955,20 @@ def distance(data, other):
         return _binary_op_float("distance", data, other)
 
 
+def hausdorff_distance(data, other, densify=None, **kwargs):
+    if compat.USE_SHAPELY_20:
+        return shapely.hausdorff_distance(data, other, densify=densify, **kwargs)
+    elif compat.USE_PYGEOS:
+        return _binary_method(
+            "hausdorff_distance", data, other, densify=densify, **kwargs
+        )
+    else:
+        raise NotImplementedError(
+            f"shapely >= 2.0 or PyGEOS is required, "
+            f"version {shapely.__version__} is installed"
+        )
+
+
 def buffer(data, distance, resolution=16, **kwargs):
     if compat.USE_SHAPELY_20:
         if compat.SHAPELY_G_20a1:
@@ -975,6 +1088,26 @@ def normalize(data):
     return out
 
 
+def make_valid(data):
+    if compat.USE_SHAPELY_20:
+        return shapely.make_valid(data)
+    elif compat.USE_PYGEOS:
+        return pygeos.make_valid(data)
+    elif not compat.SHAPELY_GE_18:
+        raise NotImplementedError(
+            f"shapely >= 1.8 or PyGEOS is required, "
+            f"version {shapely.__version__} is installed"
+        )
+    else:
+        out = np.empty(len(data), dtype=object)
+        with compat.ignore_shapely2_warnings():
+            out[:] = [
+                shapely.validation.make_valid(geom) if geom is not None else None
+                for geom in data
+            ]
+    return out
+
+
 def project(data, other, normalized=False):
     if compat.USE_SHAPELY_20:
         return shapely.line_locate_point(data, other, normalized=normalized)
@@ -997,15 +1130,41 @@ def relate(data, other):
 
 
 def unary_union(data):
+    warning_msg = (
+        "`unary_union` returned None due to all-None GeoSeries. In future, "
+        "`unary_union` will return 'GEOMETRYCOLLECTION EMPTY' instead."
+    )
+
     if compat.USE_SHAPELY_20:
-        return shapely.union_all(data)
+        data = shapely.union_all(data)
+        if data is None or data.is_empty:  # shapely 2.0a1 and 2.0
+            warnings.warn(
+                warning_msg,
+                FutureWarning,
+                stacklevel=4,
+            )
+            return None
+        else:
+            return data
     elif compat.USE_PYGEOS:
-        return _pygeos_to_shapely(pygeos.union_all(data))
+        result = _pygeos_to_shapely(pygeos.union_all(data))
+        if result is None:
+            warnings.warn(
+                warning_msg,
+                FutureWarning,
+                stacklevel=4,
+            )
+        return result
     else:
         data = [g for g in data if g is not None]
         if data:
             return shapely.ops.unary_union(data)
         else:
+            warnings.warn(
+                warning_msg,
+                FutureWarning,
+                stacklevel=4,
+            )
             return None
 
 
@@ -1069,15 +1228,24 @@ def bounds(data):
 
 
 def transform(data, func):
-    if compat.USE_SHAPELY_20:
-        coords = shapely.get_coordinates(data)
-        new_coords = func(coords[:, 0], coords[:, 1])
-        result = shapely.set_coordinates(data.copy(), np.array(new_coords).T)
-        return result
-    if compat.USE_PYGEOS:
-        coords = pygeos.get_coordinates(data)
-        new_coords = func(coords[:, 0], coords[:, 1])
-        result = pygeos.set_coordinates(data.copy(), np.array(new_coords).T)
+    if compat.USE_SHAPELY_20 or compat.USE_PYGEOS:
+        if compat.USE_SHAPELY_20:
+            has_z = shapely.has_z(data)
+            from shapely import get_coordinates, set_coordinates
+        else:
+            has_z = pygeos.has_z(data)
+            from pygeos import get_coordinates, set_coordinates
+
+        result = np.empty_like(data)
+
+        coords = get_coordinates(data[~has_z], include_z=False)
+        new_coords_z = func(coords[:, 0], coords[:, 1])
+        result[~has_z] = set_coordinates(data[~has_z].copy(), np.array(new_coords_z).T)
+
+        coords_z = get_coordinates(data[has_z], include_z=True)
+        new_coords_z = func(coords_z[:, 0], coords_z[:, 1], coords_z[:, 2])
+        result[has_z] = set_coordinates(data[has_z].copy(), np.array(new_coords_z).T)
+
         return result
     else:
         from shapely.ops import transform

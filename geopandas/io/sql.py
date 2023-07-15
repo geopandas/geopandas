@@ -8,7 +8,7 @@ import shapely.wkb
 
 from geopandas import GeoDataFrame
 
-from .. import _compat as compat
+from geopandas import _compat as compat
 
 
 @contextmanager
@@ -31,7 +31,10 @@ def _get_conn(conn_or_engine):
     from sqlalchemy.engine.base import Engine, Connection
 
     if isinstance(conn_or_engine, Connection):
-        with conn_or_engine.begin():
+        if not conn_or_engine.in_transaction():
+            with conn_or_engine.begin():
+                yield conn_or_engine
+        else:
             yield conn_or_engine
     elif isinstance(conn_or_engine, Engine):
         with conn_or_engine.begin() as conn:
@@ -64,6 +67,12 @@ def _df_to_geodf(df, geom_col="geom", crs=None):
 
     if geom_col not in df:
         raise ValueError("Query missing geometry column '{}'".format(geom_col))
+
+    if df.columns.to_list().count(geom_col) > 1:
+        raise ValueError(
+            f"Duplicate geometry column '{geom_col}' detected in SQL query output. Only"
+            "one geometry column is allowed."
+        )
 
     geoms = df[geom_col].dropna()
 
@@ -112,6 +121,9 @@ def _read_postgis(
     Returns a GeoDataFrame corresponding to the result of the query
     string, which must contain a geometry column in WKB representation.
 
+    It is also possible to use :meth:`~GeoDataFrame.read_file` to read from a database.
+    Especially for file geodatabases like GeoPackage or SpatiaLite this can be easier.
+
     Parameters
     ----------
     sql : string
@@ -149,7 +161,7 @@ def _read_postgis(
 
     SpatiaLite
 
-    >>> sql = "SELECT ST_Binary(geom) AS geom, highway FROM roads"
+    >>> sql = "SELECT ST_AsBinary(geom) AS geom, highway FROM roads"
     >>> df = geopandas.read_postgis(sql, con)  # doctest: +SKIP
     """
 
@@ -290,7 +302,7 @@ def _convert_to_ewkb(gdf, geom_name, srid):
     """Convert geometries to ewkb."""
     if compat.USE_SHAPELY_20:
         geoms = shapely.to_wkb(
-            shapely.set_srid(gdf[geom_name].values.data, srid=srid),
+            shapely.set_srid(gdf[geom_name].values._data, srid=srid),
             hex=True,
             include_srid=True,
         )
@@ -299,7 +311,9 @@ def _convert_to_ewkb(gdf, geom_name, srid):
         from pygeos import set_srid, to_wkb
 
         geoms = to_wkb(
-            set_srid(gdf[geom_name].values.data, srid=srid), hex=True, include_srid=True
+            set_srid(gdf[geom_name].values._data, srid=srid),
+            hex=True,
+            include_srid=True,
         )
 
     else:
@@ -390,6 +404,7 @@ def _write_postgis(
     """
     try:
         from geoalchemy2 import Geometry
+        from sqlalchemy import text
     except ImportError:
         raise ImportError("'to_postgis()' requires geoalchemy2 package.")
 
@@ -426,8 +441,10 @@ def _write_postgis(
             # Only check SRID if table exists
             if connection.dialect.has_table(connection, name, schema):
                 target_srid = connection.execute(
-                    "SELECT Find_SRID('{schema}', '{table}', '{geom_col}');".format(
-                        schema=schema_name, table=name, geom_col=geom_name
+                    text(
+                        "SELECT Find_SRID('{schema}', '{table}', '{geom_col}');".format(
+                            schema=schema_name, table=name, geom_col=geom_name
+                        )
                     )
                 ).fetchone()[0]
 
@@ -441,7 +458,6 @@ def _write_postgis(
                     raise ValueError(msg)
 
     with _get_conn(con) as connection:
-
         gdf.to_sql(
             name,
             connection,
@@ -453,5 +469,3 @@ def _write_postgis(
             dtype=dtype,
             method=_psql_insert_copy,
         )
-
-    return

@@ -4,11 +4,11 @@ channels:
 dependencies:
   - python=3.8
   # required
-  - numpy=1.21  # pin to < 1.23 for compat with older shapely on defaults channel
+  - numpy
   - pandas
   - shapely
   - fiona
-  - pyproj
+  - pyproj>=3
   - geos
   - packaging
   # testing
@@ -29,3 +29,4 @@ dependencies:
       - pyarrow
       - folium
       - xyzservices
+      - geodatasets

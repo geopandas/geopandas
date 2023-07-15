@@ -15,6 +15,7 @@ from shapely.geometry import box, Point, MultiPolygon
 
 
 import geopandas
+import geopandas._compat as compat
 from geopandas import GeoDataFrame, read_file, read_parquet, read_feather
 from geopandas.array import to_wkb
 from geopandas.datasets import get_path
@@ -73,7 +74,7 @@ def test_create_metadata():
     _remove_id_from_member_of_ensembles(crs_expected)
     assert metadata["columns"]["geometry"]["crs"] == crs_expected
     assert metadata["columns"]["geometry"]["encoding"] == "WKB"
-    assert metadata["columns"]["geometry"]["geometry_type"] == [
+    assert metadata["columns"]["geometry"]["geometry_types"] == [
         "MultiPolygon",
         "Polygon",
     ]
@@ -236,6 +237,19 @@ def test_validate_metadata_valid():
 )
 def test_validate_metadata_invalid(metadata, error):
     with pytest.raises(ValueError, match=error):
+        _validate_metadata(metadata)
+
+
+def test_validate_metadata_edges():
+    metadata = {
+        "primary_column": "geometry",
+        "columns": {"geometry": {"crs": None, "encoding": "WKB", "edges": "spherical"}},
+        "version": "1.0.0-beta.1",
+    }
+    with pytest.warns(
+        UserWarning,
+        match="The geo metadata indicate that column 'geometry' has spherical edges",
+    ):
         _validate_metadata(metadata)
 
 
@@ -574,6 +588,15 @@ def test_missing_crs(tmpdir, file_format):
     assert_geodataframe_equal(df, pq_df, check_crs=True)
 
 
+def test_default_geo_col_writes(tmp_path):
+    # edge case geo col name None writes successfully
+    df = GeoDataFrame({"a": [1, 2]})
+    df.to_parquet(tmp_path / "test.pq")
+    # cannot be round tripped as gdf due to invalid geom col
+    pq_df = pd_read_parquet(tmp_path / "test.pq")
+    assert_frame_equal(df, pq_df)
+
+
 @pytest.mark.skipif(
     Version(pyarrow.__version__) >= Version("0.17.0"),
     reason="Feather only supported for pyarrow >= 0.17",
@@ -608,7 +631,7 @@ def test_fsspec_url():
     with memfs.open("data.parquet", "wb") as f:
         df.to_parquet(f)
 
-    result = read_parquet("memory://data.parquet", storage_options=dict(is_set=True))
+    result = read_parquet("memory://data.parquet", storage_options={"is_set": True})
     assert_geodataframe_equal(result, df)
 
     result = read_parquet("memory://data.parquet", filesystem=memfs)
@@ -653,6 +676,20 @@ def test_write_read_feather_expand_user():
     os.remove(os.path.expanduser(test_file))
 
 
+@pytest.mark.parametrize("geometry", [[], [None]])
+def test_write_empty_bbox(tmpdir, geometry):
+    # empty dataframe or all missing geometries -> avoid bbox with NaNs
+    gdf = geopandas.GeoDataFrame({"col": [1] * len(geometry)}, geometry=geometry)
+    gdf.to_parquet(tmpdir / "test.parquet")
+
+    from pyarrow.parquet import read_table
+
+    table = read_table(tmpdir / "test.parquet")
+    metadata = json.loads(table.schema.metadata[b"geo"])
+    assert "encoding" in metadata["columns"]["geometry"]
+    assert "bbox" not in metadata["columns"]["geometry"]
+
+
 @pytest.mark.parametrize("format", ["feather", "parquet"])
 def test_write_read_default_crs(tmpdir, format):
     if format == "feather":
@@ -678,6 +715,28 @@ def test_write_read_default_crs(tmpdir, format):
     assert df.crs.equals(pyproj.CRS("OGC:CRS84"))
 
 
+def test_write_iso_wkb(tmpdir):
+    gdf = geopandas.GeoDataFrame(
+        geometry=geopandas.GeoSeries.from_wkt(["POINT Z (1 2 3)"])
+    )
+    if compat.USE_SHAPELY_20:
+        gdf.to_parquet(tmpdir / "test.parquet")
+    else:
+        with pytest.warns(UserWarning, match="The GeoDataFrame contains 3D geometries"):
+            gdf.to_parquet(tmpdir / "test.parquet")
+
+    from pyarrow.parquet import read_table
+
+    table = read_table(tmpdir / "test.parquet")
+    wkb = table["geometry"][0].as_py().hex()
+
+    if compat.USE_SHAPELY_20:
+        # correct ISO flavor
+        assert wkb == "01e9030000000000000000f03f00000000000000400000000000000840"
+    else:
+        assert wkb == "0101000080000000000000f03f00000000000000400000000000000840"
+
+
 @pytest.mark.parametrize(
     "format,schema_version",
     product(["feather", "parquet"], [None] + SUPPORTED_VERSIONS),
@@ -685,7 +744,6 @@ def test_write_read_default_crs(tmpdir, format):
 def test_write_spec_version(tmpdir, format, schema_version):
     if format == "feather":
         from pyarrow.feather import read_table
-
     else:
         from pyarrow.parquet import read_table
 
@@ -699,9 +757,11 @@ def test_write_spec_version(tmpdir, format, schema_version):
     df = read(filename)
     assert_geodataframe_equal(df, gdf)
 
+    # verify the correct version is written in the metadata
+    schema_version = schema_version or METADATA_VERSION
     table = read_table(filename)
     metadata = json.loads(table.schema.metadata[b"geo"])
-    assert metadata["version"] == schema_version or METADATA_VERSION
+    assert metadata["version"] == schema_version
 
     # verify that CRS is correctly handled between versions
     if schema_version == "0.1.0":
@@ -711,6 +771,14 @@ def test_write_spec_version(tmpdir, format, schema_version):
         crs_expected = gdf.crs.to_json_dict()
         _remove_id_from_member_of_ensembles(crs_expected)
         assert metadata["columns"]["geometry"]["crs"] == crs_expected
+
+    # verify that geometry_type(s) is correctly handled between versions
+    if Version(schema_version) <= Version("0.4.0"):
+        assert "geometry_type" in metadata["columns"]["geometry"]
+        assert metadata["columns"]["geometry"]["geometry_type"] == "Polygon"
+    else:
+        assert "geometry_types" in metadata["columns"]["geometry"]
+        assert metadata["columns"]["geometry"]["geometry_types"] == ["Polygon"]
 
 
 @pytest.mark.parametrize(
@@ -753,7 +821,7 @@ def test_write_deprecated_version_parameter(tmpdir, format, version):
         assert metadata["version"] == METADATA_VERSION
 
 
-@pytest.mark.parametrize("version", ["0.1.0", "0.4.0"])
+@pytest.mark.parametrize("version", ["0.1.0", "0.4.0", "1.0.0-beta.1"])
 def test_read_versioned_file(version):
     """
     Verify that files for different metadata spec versions can be read
@@ -766,11 +834,9 @@ def test_read_versioned_file(version):
         geometry=[MultiPolygon([box(0, 0, 1, 1), box(2, 2, 3, 3)]), box(4, 4, 5,5)],
         crs="EPSG:4326",
     )
-    df.to_feather(DATA_PATH / 'arrow' / f'test_data_v{METADATA_VERSION}.feather')  # noqa: E501
-    df.to_parquet(DATA_PATH / 'arrow' / f'test_data_v{METADATA_VERSION}.parquet')  # noqa: E501
+    df.to_feather(DATA_PATH / 'arrow' / f'test_data_v{METADATA_VERSION}.feather')
+    df.to_parquet(DATA_PATH / 'arrow' / f'test_data_v{METADATA_VERSION}.parquet')
     """
-    check_crs = Version(pyproj.__version__) >= Version("3.0.0")
-
     expected = geopandas.GeoDataFrame(
         {"col_str": ["a", "b"], "col_int": [1, 2], "col_float": [0.1, 0.2]},
         geometry=[MultiPolygon([box(0, 0, 1, 1), box(2, 2, 3, 3)]), box(4, 4, 5, 5)],
@@ -778,10 +844,10 @@ def test_read_versioned_file(version):
     )
 
     df = geopandas.read_feather(DATA_PATH / "arrow" / f"test_data_v{version}.feather")
-    assert_geodataframe_equal(df, expected, check_crs=check_crs)
+    assert_geodataframe_equal(df, expected, check_crs=True)
 
     df = geopandas.read_parquet(DATA_PATH / "arrow" / f"test_data_v{version}.parquet")
-    assert_geodataframe_equal(df, expected, check_crs=check_crs)
+    assert_geodataframe_equal(df, expected, check_crs=True)
 
 
 def test_read_gdal_files():
@@ -801,10 +867,8 @@ def test_read_gdal_files():
     df.to_file("test_data.gpkg", GEOMETRY_NAME="geometry")
     and then the gpkg file is converted to Parquet/Arrow with:
     $ ogr2ogr -f Parquet -lco FID= test_data_gdal350.parquet test_data.gpkg
-    $ ogr2ogr -f Arrow -lco FID= -lco GEOMETRY_ENCODING=WKB test_data_gdal350.arrow test_data.gpkg  # noqa: E501
-    """
-    check_crs = Version(pyproj.__version__) >= Version("3.0.0")
-
+    $ ogr2ogr -f Arrow -lco FID= -lco GEOMETRY_ENCODING=WKB test_data_gdal350.arrow test_data.gpkg
+    """  # noqa: E501
     expected = geopandas.GeoDataFrame(
         {"col_str": ["a", "b"], "col_int": [1, 2], "col_float": [0.1, 0.2]},
         geometry=[MultiPolygon([box(0, 0, 1, 1), box(2, 2, 3, 3)]), box(4, 4, 5, 5)],
@@ -812,10 +876,10 @@ def test_read_gdal_files():
     )
 
     df = geopandas.read_parquet(DATA_PATH / "arrow" / "test_data_gdal350.parquet")
-    assert_geodataframe_equal(df, expected, check_crs=check_crs)
+    assert_geodataframe_equal(df, expected, check_crs=True)
 
     df = geopandas.read_feather(DATA_PATH / "arrow" / "test_data_gdal350.arrow")
-    assert_geodataframe_equal(df, expected, check_crs=check_crs)
+    assert_geodataframe_equal(df, expected, check_crs=True)
 
 
 def test_parquet_read_partitioned_dataset(tmpdir):

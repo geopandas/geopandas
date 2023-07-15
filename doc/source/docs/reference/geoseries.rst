@@ -22,13 +22,17 @@ General methods and attributes
    GeoSeries.total_bounds
    GeoSeries.length
    GeoSeries.geom_type
+   GeoSeries.offset_curve
    GeoSeries.distance
+   GeoSeries.hausdorff_distance
    GeoSeries.representative_point
    GeoSeries.exterior
    GeoSeries.interiors
+   GeoSeries.minimum_bounding_radius
    GeoSeries.x
    GeoSeries.y
    GeoSeries.z
+   GeoSeries.get_coordinates
 
 Unary predicates
 ----------------
@@ -43,7 +47,7 @@ Unary predicates
    GeoSeries.has_z
 
 
-Binary Predicates
+Binary predicates
 -----------------
 
 .. autosummary::
@@ -63,7 +67,7 @@ Binary Predicates
    GeoSeries.covered_by
 
 
-Set-theoretic Methods
+Set-theoretic methods
 ---------------------
 
 .. autosummary::
@@ -75,7 +79,7 @@ Set-theoretic Methods
    GeoSeries.symmetric_difference
    GeoSeries.union
 
-Constructive Methods and Attributes
+Constructive methods and attributes
 -----------------------------------
 
 .. autosummary::
@@ -84,10 +88,17 @@ Constructive Methods and Attributes
    GeoSeries.buffer
    GeoSeries.boundary
    GeoSeries.centroid
+   GeoSeries.concave_hull
    GeoSeries.convex_hull
+   GeoSeries.delaunay_triangles
    GeoSeries.envelope
-   GeoSeries.simplify
+   GeoSeries.extract_unique_points
+   GeoSeries.make_valid
+   GeoSeries.minimum_bounding_circle
    GeoSeries.normalize
+   GeoSeries.sample_points
+   GeoSeries.segmentize
+   GeoSeries.simplify
 
 Affine transformations
 ----------------------

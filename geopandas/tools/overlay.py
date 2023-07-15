@@ -4,6 +4,7 @@ from functools import reduce
 import numpy as np
 import pandas as pd
 
+from geopandas import _compat as compat
 from geopandas import GeoDataFrame, GeoSeries
 from geopandas.array import _check_crs, _crs_mismatch_warn
 
@@ -27,7 +28,7 @@ def _overlay_intersection(df1, df2):
     Overlay Intersection operation used in overlay function
     """
     # Spatial Index to create intersections
-    idx1, idx2 = df2.sindex.query_bulk(df1.geometry, predicate="intersects", sort=True)
+    idx1, idx2 = df2.sindex.query(df1.geometry, predicate="intersects", sort=True)
     # Create pairs of geometries in both dataframes to be intersected
     if idx1.size > 0 and idx2.size > 0:
         left = df1.geometry.take(idx1)
@@ -77,7 +78,7 @@ def _overlay_difference(df1, df2):
     Overlay Difference operation used in overlay function
     """
     # spatial index query to find intersections
-    idx1, idx2 = df2.sindex.query_bulk(df1.geometry, predicate="intersects", sort=True)
+    idx1, idx2 = df2.sindex.query(df1.geometry, predicate="intersects", sort=True)
     idx1_unique, idx1_unique_indices = np.unique(idx1, return_index=True)
     idx2_split = np.split(idx2, idx1_unique_indices[1:])
     sidx = [
@@ -93,7 +94,10 @@ def _overlay_difference(df1, df2):
         new_g.append(new)
     differences = GeoSeries(new_g, index=df1.index, crs=df1.crs)
     poly_ix = differences.geom_type.isin(["Polygon", "MultiPolygon"])
-    differences.loc[poly_ix] = differences[poly_ix].buffer(0)
+    if compat.USE_PYGEOS or compat.SHAPELY_GE_18:
+        differences.loc[poly_ix] = differences[poly_ix].make_valid()
+    else:
+        differences.loc[poly_ix] = differences[poly_ix].buffer(0)
     geom_diff = differences[~differences.is_empty].copy()
     dfdiff = df1[~differences.is_empty].copy()
     dfdiff[dfdiff._geometry_column_name] = geom_diff
@@ -191,8 +195,8 @@ def overlay(df1, df2, how="intersection", keep_geom_type=None, make_valid=True):
     1       2.0       1.0  POLYGON ((2.00000 2.00000, 2.00000 3.00000, 3....
     2       2.0       2.0  POLYGON ((4.00000 4.00000, 4.00000 3.00000, 3....
     3       1.0       NaN  POLYGON ((2.00000 0.00000, 0.00000 0.00000, 0....
-    4       2.0       NaN  MULTIPOLYGON (((3.00000 3.00000, 4.00000 3.000...
-    5       NaN       1.0  MULTIPOLYGON (((2.00000 2.00000, 3.00000 2.000...
+    4       2.0       NaN  MULTIPOLYGON (((3.00000 4.00000, 3.00000 3.000...
+    5       NaN       1.0  MULTIPOLYGON (((2.00000 3.00000, 2.00000 2.000...
     6       NaN       2.0  POLYGON ((3.00000 5.00000, 5.00000 5.00000, 5....
 
     >>> geopandas.overlay(df1, df2, how='intersection')
@@ -204,14 +208,14 @@ def overlay(df1, df2, how="intersection", keep_geom_type=None, make_valid=True):
     >>> geopandas.overlay(df1, df2, how='symmetric_difference')
        df1_data  df2_data                                           geometry
     0       1.0       NaN  POLYGON ((2.00000 0.00000, 0.00000 0.00000, 0....
-    1       2.0       NaN  MULTIPOLYGON (((3.00000 3.00000, 4.00000 3.000...
-    2       NaN       1.0  MULTIPOLYGON (((2.00000 2.00000, 3.00000 2.000...
+    1       2.0       NaN  MULTIPOLYGON (((3.00000 4.00000, 3.00000 3.000...
+    2       NaN       1.0  MULTIPOLYGON (((2.00000 3.00000, 2.00000 2.000...
     3       NaN       2.0  POLYGON ((3.00000 5.00000, 5.00000 5.00000, 5....
 
     >>> geopandas.overlay(df1, df2, how='difference')
                                             geometry  df1_data
     0  POLYGON ((2.00000 0.00000, 0.00000 0.00000, 0....         1
-    1  MULTIPOLYGON (((3.00000 3.00000, 4.00000 3.000...         2
+    1  MULTIPOLYGON (((3.00000 4.00000, 3.00000 3.000...         2
 
     >>> geopandas.overlay(df1, df2, how='identity')
        df1_data  df2_data                                           geometry
@@ -219,7 +223,7 @@ def overlay(df1, df2, how="intersection", keep_geom_type=None, make_valid=True):
     1       2.0       1.0  POLYGON ((2.00000 2.00000, 2.00000 3.00000, 3....
     2       2.0       2.0  POLYGON ((4.00000 4.00000, 4.00000 3.00000, 3....
     3       1.0       NaN  POLYGON ((2.00000 0.00000, 0.00000 0.00000, 0....
-    4       2.0       NaN  MULTIPOLYGON (((3.00000 3.00000, 4.00000 3.000...
+    4       2.0       NaN  MULTIPOLYGON (((3.00000 4.00000, 3.00000 3.000...
 
     See also
     --------
@@ -227,7 +231,7 @@ def overlay(df1, df2, how="intersection", keep_geom_type=None, make_valid=True):
     GeoDataFrame.overlay : equivalent method
 
     Notes
-    ------
+    -----
     Every operation in GeoPandas is planar, i.e. the potential third
     dimension is not taken into account.
     """
@@ -247,7 +251,7 @@ def overlay(df1, df2, how="intersection", keep_geom_type=None, make_valid=True):
 
     if isinstance(df1, GeoSeries) or isinstance(df2, GeoSeries):
         raise NotImplementedError(
-            "overlay currently only implemented for " "GeoDataFrames"
+            "overlay currently only implemented for GeoDataFrames"
         )
 
     if not _check_crs(df1, df2):
