@@ -752,6 +752,11 @@ def test_df_apply_returning_series(df):
     result = df.apply(lambda x: None, axis=1)
     assert result.dtype == "object"
 
+    # https://github.com/geopandas/geopandas/issues/2889
+    # contrived case such that `from_shapely` receives an array of geodataframes
+    res = df.apply(lambda row: df.geometry.to_frame(), axis=1)
+    assert res.dtype == "object"
+
 
 def test_df_apply_geometry_dtypes(df):
     # https://github.com/geopandas/geopandas/issues/1852
