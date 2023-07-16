@@ -9,6 +9,7 @@ New methods:
 New features and improvements:
 
 Bug fixes:
+- Fix ambiguous error when GeoDataFrame is initialised with a column called "crs" (#2944)
 
 
 ## Version 0.13.2 (Jun 6, 2023)
