@@ -534,7 +534,7 @@ def _to_file(
         installed, otherwise tries "pyogrio".
     metadata : dict[str, str], default None
         Optional metadata to be stored in the file. Keys and values must be
-        strings. Supported only for "GPKG" driver and "fiona" engine.
+        strings. Only supported for the "GPKG" driver (requires Fiona >= 1.9 or pyogrio >= 0.6).
 
     **kwargs :
         Keyword args to be passed to the engine, and can be used to write
