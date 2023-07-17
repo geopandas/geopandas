@@ -14,6 +14,7 @@ New methods:
 New features and improvements:
 
 - Added ``exclusive`` parameter to ``sjoin_nearest`` method for Shapely >= 2.0 (#2877)
+- Added ``metadata`` parameter to ``GeoDataFrame.to_file`` (#2850)
 
 Bug fixes:
 
