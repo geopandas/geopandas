@@ -573,6 +573,15 @@ def _to_file(
             stacklevel=3,
         )
 
+    if (df.dtypes == "geometry").sum() > 1:
+        raise ValueError(
+            "GeoDataFrame contains multiple geometry columns but GeoDataFrame.to_file "
+            "supports only a single geometry column. Use a GeoDataFrame.to_parquet or "
+            "GeoDataFrame.to_feather, drop additional geometry columns or convert them "
+            "to a supported format like a well-known text (WKT) using "
+            "`GeoSeries.to_wkt()`.",
+        )
+
     if mode not in ("w", "a"):
         raise ValueError(f"'mode' should be one of 'w' or 'a', got '{mode}' instead")
 

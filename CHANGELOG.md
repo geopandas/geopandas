@@ -17,9 +17,12 @@ New features and improvements:
 - Added ``metadata`` parameter to ``GeoDataFrame.to_file`` (#2850)
 
 Bug fixes:
+- Fix ambiguous error when GeoDataFrame is initialised with a column called "crs" (#2944)
 
 - Fix a color assignment in ``explore`` when using ``UserDefined`` bins (#2923)
 - ``assert_geodataframe_equal`` now handles GeoDataFrames with no active geometry (#2498)
+- Fix bug in `apply` with `axis=1` where the given user defined function returns nested 
+  data in the geometry column (#2959)
 
 ## Version 0.13.2 (Jun 6, 2023)
 

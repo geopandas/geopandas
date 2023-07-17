@@ -1193,3 +1193,9 @@ def test_to_file__metadata_unsupported(driver, ext, tmpdir, df_points, engine):
         NotImplementedError, match="'metadata' keyword is only supported for"
     ):
         df_points.to_file(tempfilename, driver=driver, metadata=metadata)
+
+
+def test_multiple_geom_cols_error(tmpdir, df_nybb):
+    df_nybb["geom2"] = df_nybb.geometry
+    with pytest.raises(ValueError, match="GeoDataFrame contains multiple geometry"):
+        df_nybb.to_file(os.path.join(str(tmpdir), "boros.gpkg"))
