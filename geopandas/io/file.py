@@ -71,9 +71,7 @@ def _import_pyogrio():
         try:
             import pyogrio
 
-            PYOGRIO_GE_06 = Version(
-                Version(pyogrio.__version__).base_version
-            ) >= Version("0.6.0")
+            PYOGRIO_GE_06 = Version(pyogrio.__version__) >= Version("0.6.0")
         except ImportError as err:
             pyogrio = False
             pyogrio_import_error = str(err)
