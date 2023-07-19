@@ -64,6 +64,7 @@ class TestGeomMethods:
                 self.inner_sq,
                 self.nested_squares,
                 self.p0,
+                None,
             ]
         )
         self.g1 = GeoSeries([self.t1, self.sq])
@@ -186,7 +187,6 @@ class TestGeomMethods:
                 LineString([(5, 5), (6, 6)]),
                 LineString([(0.5, -1), (0.5, 2)]),
                 Point(0, 0),
-                None,
             ],
             crs=4326,
         )
