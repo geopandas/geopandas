@@ -64,7 +64,6 @@ class TestGeomMethods:
                 self.inner_sq,
                 self.nested_squares,
                 self.p0,
-                None,
             ]
         )
         self.g1 = GeoSeries([self.t1, self.sq])
