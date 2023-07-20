@@ -2600,7 +2600,6 @@ GeometryCollection
             points. A densify value of 0.25 will add a point a quarter of the way
             between each pair of points.
 
-
         Returns
         -------
         Series (float)
