@@ -1147,3 +1147,9 @@ def test_write_read_file(test_file, engine):
     df_json = geopandas.read_file(test_file, engine=engine)
     assert_geodataframe_equal(gdf, df_json, check_crs=True)
     os.remove(os.path.expanduser(test_file))
+
+
+def test_multiple_geom_cols_error(tmpdir, df_nybb):
+    df_nybb["geom2"] = df_nybb.geometry
+    with pytest.raises(ValueError, match="GeoDataFrame contains multiple geometry"):
+        df_nybb.to_file(os.path.join(str(tmpdir), "boros.gpkg"))
