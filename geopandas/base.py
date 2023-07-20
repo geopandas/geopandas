@@ -4143,6 +4143,20 @@ GeometryCollection
         GeoSeries | tuple(GeoSeries, GeoSeries, GeoSeries, GeoSeries)
             GeoSeries with the polygons or a tuple of four GeoSeries as
             ``(polygons, cuts, dangles, invalid)``
+
+        Examples
+        --------
+        >>> from shapely.geometry import LineString
+        >>> s = geopandas.GeoSeries([
+        ...     LineString([(0, 0), (1, 1)]),
+        ...     LineString([(0, 0), (0, 1), (1, 1), (1, 0), (0, 0)]),
+        ... ])
+        >>> s.polygonize()
+        0    POLYGON ((0.00000 0.00000, 1.00000 1.00000, 1....
+        1    POLYGON ((1.00000 1.00000, 0.00000 0.00000, 0....
+        Name: polygons, dtype: geometry
+
+        >>> polygons, cuts, dangles, invalid = s.polygonize(full=True)
         """
         from .geoseries import GeoSeries
         from .array import from_shapely
