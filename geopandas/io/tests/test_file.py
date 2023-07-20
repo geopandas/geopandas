@@ -362,14 +362,27 @@ def test_to_file_types(tmpdir, df_points, engine):
     df.to_file(tempfilename, engine=engine)
 
 
-def test_to_file_int64(tmpdir, df_points, engine):
+@pytest.mark.parametrize("driver,ext", driver_ext_pairs + [("OGR_GMT", ".gmt")])
+def test_to_file_int32(tmpdir, df_points, engine, driver, ext):
     skip_pyogrio_not_supported(engine)  # TODO
-    tempfilename = os.path.join(str(tmpdir), "int64.shp")
+    tempfilename = os.path.join(str(tmpdir), f"int32.{ext}")
+    geometry = df_points.geometry
+    df = GeoDataFrame(geometry=geometry)
+    df["data"] = pd.array([1, np.nan] * 5, dtype=pd.Int32Dtype())
+    df.to_file(tempfilename, driver=driver, engine=engine)
+    df_read = GeoDataFrame.from_file(tempfilename, driver=driver, engine=engine)
+    assert_geodataframe_equal(df_read, df, check_dtype=False, check_like=True)
+
+
+@pytest.mark.parametrize("driver,ext", driver_ext_pairs)
+def test_to_file_int64(tmpdir, df_points, engine, driver, ext):
+    skip_pyogrio_not_supported(engine)  # TODO
+    tempfilename = os.path.join(str(tmpdir), f"int32.{ext}")
     geometry = df_points.geometry
     df = GeoDataFrame(geometry=geometry)
     df["data"] = pd.array([1, np.nan] * 5, dtype=pd.Int64Dtype())
-    df.to_file(tempfilename, engine=engine)
-    df_read = GeoDataFrame.from_file(tempfilename, engine=engine)
+    df.to_file(tempfilename, driver=driver, engine=engine)
+    df_read = GeoDataFrame.from_file(tempfilename, driver=driver, engine=engine)
     assert_geodataframe_equal(df_read, df, check_dtype=False, check_like=True)
 
 
