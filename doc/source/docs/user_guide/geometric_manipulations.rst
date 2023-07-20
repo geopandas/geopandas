@@ -43,12 +43,23 @@ Constructive methods
   number of points in the object is less than three. For two points,
   the convex hull collapses to a `LineString`; for 1, a `Point`.
 
+.. method:: GeoSeries.delaunay_triangles(tolerance, preserve_topology=True)
+
+  Returns a :class:`~geopandas.GeoSeries` consisting of polygons (default) or linestrings
+  (`only_edges=True`) representing the computed Delaunay triangulation around the vertices
+  of an input geometry.
+
 .. attribute:: GeoSeries.envelope
 
   Returns a :class:`~geopandas.GeoSeries` of geometries representing the point or
   smallest rectangular polygon (with sides parallel to the coordinate
   axes) that contains each object.
 
+.. method:: GeoSeries.extract_unique_points
+
+  Returns a :class:`~geopandas.GeoSeries` of geometries containing all distinct
+  vertices of each input geometry as a multipoint.
+  
 .. method:: GeoSeries.offset_curve(distance, quad_segs=8, join_style="round", mitre_limit=5.0)
 
   Returns a :class:`~geopandas.GeoSeries` containing a `Linestring` or `MultiLineString`
@@ -58,6 +69,11 @@ Constructive methods
 
   Returns a :class:`~geopandas.GeoSeries` containing a simplified representation of
   each object.
+
+.. method:: GeoSeries.segmentize(max_segment_length)
+
+  Returns a :class:`~geopandas.GeoSeries` with additional vertices added to line
+  segments based on max_segment_length.
 
 .. attribute:: GeoSeries.unary_union
 
