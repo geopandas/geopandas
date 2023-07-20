@@ -2577,8 +2577,8 @@ GeometryCollection
     def frechet_distance(self, other, align=True, densify=None):
         """Returns a ``Series`` containing the Frechet distance to aligned `other`.
 
-        The Frechet distance is the largest distance consisting of any point in `self`
-        with the nearest point in `other`.
+        The Frechet distance is the largest distance consisting of any vertex in `self`
+        with the nearest vertex in `other`.
 
         The operation works on a 1-to-1 row-wise manner:
 
@@ -2597,7 +2597,7 @@ GeometryCollection
             A value between 0 and 1, that splits each subsegment of a line string
             into equal length segments, making the approximation less coarse.
             A densify value of 0.5 will add a point halfway between each pair of
-            points. A densify value of 0.25 will add a point a quarter of the way
+            points. A densify value of 0.25 will add a point every quarter of the way
             between each pair of points.
 
         Returns
