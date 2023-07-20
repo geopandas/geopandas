@@ -377,7 +377,7 @@ def test_to_file_int32(tmpdir, df_points, engine, driver, ext):
 @pytest.mark.parametrize("driver,ext", driver_ext_pairs)
 def test_to_file_int64(tmpdir, df_points, engine, driver, ext):
     skip_pyogrio_not_supported(engine)  # TODO
-    tempfilename = os.path.join(str(tmpdir), f"int32.{ext}")
+    tempfilename = os.path.join(str(tmpdir), f"int64.{ext}")
     geometry = df_points.geometry
     df = GeoDataFrame(geometry=geometry)
     df["data"] = pd.array([1, np.nan] * 5, dtype=pd.Int64Dtype())
