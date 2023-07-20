@@ -1699,8 +1699,8 @@ individually so that features may have different properties
         by : str or list-like, default None
             Column(s) whose values define the groups to be dissolved. If None,
             the entire GeoDataFrame is considered as a single group. If a list-like
-            object is provided, all attributes in the list need to be equal for polygons
-            to be combined.
+            object is provided, the values in the list are treated as categorical labels,
+            and polygons will be combined based on the equality of these categorical labels.
         aggfunc : function or string, default "first"
             Aggregation function for manipulation of data associated
             with each group. Passed to pandas `groupby.agg` method.
