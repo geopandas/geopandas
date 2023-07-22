@@ -635,7 +635,6 @@ class GeometryArray(ExtensionArray):
             stacklevel=2,
         )
         return self.geom_equals_exact(other, 0.5 * 10 ** (-decimal))
-        # return _binary_predicate("almost_equals", self, other, decimal=decimal)
 
     #
     # Binary operations that return new geometries
