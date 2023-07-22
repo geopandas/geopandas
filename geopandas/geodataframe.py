@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import json
 import typing
-from typing import Union, Any, Callable, Optional, Literal
+from typing import Union, Any, Optional, Literal
 import warnings
+
 
 import numpy as np
 import pandas as pd
@@ -23,8 +24,12 @@ from geopandas.explore import _explore
 from . import _compat as compat
 from ._decorator import doc
 
+
 if typing.TYPE_CHECKING:
     import os
+    import sqlalchemy.text
+    import folium
+    from .io.arrow import SUPPORTED_VERSIONS_LITERAL
 
 
 def _geodataframe_constructor_with_fallback(
@@ -139,7 +144,12 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
     _geometry_column_name = None
 
     def __init__(
-        self, data=None, *args, geometry=None, crs: Optional[Any] = None, **kwargs
+        self,
+        data=None,
+        *args,
+        geometry: Any = None,
+        crs: Optional[Any] = None,
+        **kwargs,
     ) -> None:
         with compat.ignore_shapely2_warnings():
             if (
@@ -389,7 +399,23 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         if not inplace:
             return frame
 
-    def rename_geometry(self, col: Any, inplace: bool = False) -> None:
+    @typing.overload
+    def rename_geometry(
+        self,
+        col: Any,
+        inplace: Literal[True] = ...,
+    ) -> None:
+        ...
+
+    @typing.overload
+    def rename_geometry(
+        self,
+        col: Any,
+        inplace: Literal[False] = ...,
+    ) -> GeoDataFrame:
+        ...
+
+    def rename_geometry(self, col: Any, inplace: bool = False) -> GeoDataFrame | None:
         """
         Renames the GeoDataFrame geometry column to
         the specified name. By default yields a new object.
@@ -474,7 +500,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             )
 
     @crs.setter
-    def crs(self, value) -> None:
+    def crs(self, value: Any) -> None:
         """Sets the value of the crs"""
         if self._geometry_column_name is None:
             raise ValueError(
@@ -519,8 +545,8 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
     def from_dict(
         cls,
         data: dict,
-        geometry=None,
-        crs: Optional[Union[str, dict]] = None,
+        geometry: Any = None,
+        crs: Optional[Any] = None,
         **kwargs,
     ) -> GeoDataFrame:
         """
@@ -548,7 +574,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         return cls(dataframe, geometry=geometry, crs=crs)
 
     @classmethod
-    def from_file(cls, filename: str, **kwargs) -> GeoDataFrame:
+    def from_file(cls, filename: os.PathLike, **kwargs) -> GeoDataFrame:
         """Alternate constructor to create a ``GeoDataFrame`` from a file.
 
         It is recommended to use :func:`geopandas.read_file` instead.
@@ -600,7 +626,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
     @classmethod
     def from_features(
-        cls, features, crs: Optional[Union[str, dict]] = None, columns=None
+        cls, features, crs: Optional[Any] = None, columns=None
     ) -> GeoDataFrame:
         """
         Alternate constructor to create GeoDataFrame from an iterable of
@@ -690,15 +716,15 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
     @classmethod
     def from_postgis(
         cls,
-        sql: str,
+        sql: str | sqlalchemy.text,
         con,
         geom_col: str = "geom",
         crs: Optional[Any] = None,
-        index_col: Optional[Union[str, list]] = None,
+        index_col: str | list[str] | None = None,
         coerce_float: bool = True,
         parse_dates: Optional[Union[list, dict]] = None,
         params: Optional[Union[list, tuple, dict]] = None,
-        chunksize: Optional[int] = None,
+        chunksize: int | None = None,
     ) -> GeoDataFrame:
         """
         Alternate constructor to create a ``GeoDataFrame`` from a sql query
@@ -773,7 +799,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
     def to_json(
         self,
-        na: str = "null",
+        na: Literal["null", "drop", "keep"] = "null",
         show_bbox: bool = False,
         drop_id: bool = False,
         to_wgs84: bool = False,
@@ -909,7 +935,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
 
     def iterfeatures(
         self, na: str = "null", show_bbox: bool = False, drop_id: bool = False
-    ):  # TODO missing
+    ) -> typing.Generator[dict]:
         """
         Returns an iterator that yields feature dictionaries that comply with
         __geo_interface__
@@ -1090,7 +1116,7 @@ individually so that features may have different properties
         path: os.PathLike,
         index: Optional[bool] = None,
         compression: str = "snappy",
-        schema_version=None,
+        schema_version: SUPPORTED_VERSIONS_LITERAL | None = None,
         **kwargs,
     ) -> None:
         """Write a GeoDataFrame to the Parquet format.
@@ -1164,7 +1190,7 @@ individually so that features may have different properties
         path: os.PathLike,
         index: Optional[bool] = None,
         compression: Optional[str] = None,
-        schema_version=None,
+        schema_version: SUPPORTED_VERSIONS_LITERAL | None = None,
         **kwargs,
     ):
         """Write a GeoDataFrame to the Feather format.
@@ -1325,13 +1351,33 @@ individually so that features may have different properties
 
         _to_file(self, filename, driver, schema, index, **kwargs)
 
+    @typing.overload
     def set_crs(
         self,
-        crs: Optional[Any] = None,
+        crs: Any | None = ...,
+        epsg: Optional[int] = ...,
+        inplace: Literal[True] = ...,
+        allow_override: bool = ...,
+    ) -> None:
+        ...
+
+    @typing.overload
+    def set_crs(
+        self,
+        crs: Any | None = ...,
+        epsg: Optional[int] = ...,
+        inplace: Literal[False] = ...,
+        allow_override: bool = ...,
+    ) -> GeoDataFrame:
+        ...
+
+    def set_crs(
+        self,
+        crs: Any | None = None,
         epsg: Optional[int] = None,
         inplace: bool = False,
         allow_override: bool = False,
-    ):
+    ) -> GeoDataFrame | None:
         """
         Set the Coordinate Reference System (CRS) of the ``GeoDataFrame``.
 
@@ -1410,12 +1456,30 @@ individually so that features may have different properties
         )
         return df
 
+    @typing.overload
+    def to_crs(
+        self,
+        crs: Any | None = ...,
+        epsg: Optional[int] = ...,
+        inplace: Literal[False] = ...,
+    ) -> GeoDataFrame:
+        ...
+
+    @typing.overload
+    def to_crs(
+        self,
+        crs: Any | None = ...,
+        epsg: Optional[int] = ...,
+        inplace: Literal[True] = ...,
+    ) -> None:
+        ...
+
     def to_crs(
         self,
         crs: Optional[Any] = None,
         epsg: Optional[int] = None,
         inplace: bool = False,
-    ) -> GeoDataFrame:
+    ) -> GeoDataFrame | None:
         """Transform geometries to a new coordinate reference system.
 
         Transform all geometries in an active geometry column to a different coordinate
@@ -1618,7 +1682,7 @@ individually so that features may have different properties
     # Implement pandas methods
     #
     @doc(pd.DataFrame)
-    def copy(self, deep=True):
+    def copy(self, deep: bool = True) -> GeoDataFrame:
         copied = super().copy(deep=deep)
         if type(copied) is pd.DataFrame:
             copied.__class__ = GeoDataFrame
@@ -1657,7 +1721,7 @@ individually so that features may have different properties
     def apply(
         self,
         func,
-        axis: int = 0,
+        axis=0,
         raw: bool = False,
         result_type=None,
         args=(),
@@ -1701,11 +1765,11 @@ individually so that features may have different properties
         return result
 
     @property
-    def _constructor(self):
+    def _constructor(self) -> DataFrame | GeoDataFrame:
         return _geodataframe_constructor_with_fallback
 
     @property
-    def _constructor_sliced(self):
+    def _constructor_sliced(self) -> Series | GeoSeries:
         def _geodataframe_constructor_sliced(*args, **kwargs):
             """
             A specialized (Geo)Series constructor which can fall back to a
@@ -1730,7 +1794,9 @@ individually so that features may have different properties
 
         return _geodataframe_constructor_sliced
 
-    def __finalize__(self, other, method: Optional[str] = None, **kwargs):
+    def __finalize__(
+        self, other, method: Optional[str] = None, **kwargs
+    ) -> GeoDataFrame:
         """propagate metadata from other to self"""
         self = super().__finalize__(other, method=method, **kwargs)
 
@@ -1760,7 +1826,7 @@ individually so that features may have different properties
     def dissolve(
         self,
         by: Optional[str] = None,
-        aggfunc: Union[Callable, str] = "first",
+        aggfunc="first",
         as_index: bool = True,
         level=None,
         sort: bool = True,
@@ -1909,8 +1975,12 @@ individually so that features may have different properties
 
     # overrides the pandas native explode method to break up features geometrically
     def explode(
-        self, column=None, ignore_index=False, index_parts=None, **kwargs
-    ) -> GeoDataFrame:
+        self,
+        column=None,
+        ignore_index: bool = False,
+        index_parts: bool = None,
+        **kwargs,
+    ) -> GeoDataFrame | DataFrame:
         """
         Explode multi-part geometries into multiple single geometries.
 
@@ -2055,7 +2125,7 @@ individually so that features may have different properties
         # do not return a GeoDataFrame
         return pd.DataFrame(df)
 
-    def convert_dtypes(self, *args, **kwargs):
+    def convert_dtypes(self, *args, **kwargs) -> GeoDataFrame:
         """
         Convert columns to best possible dtypes using dtypes supporting ``pd.NA``.
 
@@ -2083,7 +2153,7 @@ individually so that features may have different properties
         name: str,
         con,
         schema: Optional[str] = None,
-        if_exists: str = "fail",
+        if_exists: Literal["fail", "replace", "append"] = "fail",
         index: bool = False,
         index_label=None,
         chunksize: Optional[int] = None,
@@ -2190,10 +2260,18 @@ individually so that features may have different properties
     plot = CachedAccessor("plot", geopandas.plotting.GeoplotAccessor)
 
     @doc(_explore)
-    def explore(self, *args, **kwargs):
+    def explore(self, *args, **kwargs) -> folium.Map:
         return _explore(self, *args, **kwargs)
 
-    def sjoin(self, df, *args, **kwargs):
+    def sjoin(
+        self,
+        df: GeoDataFrame,
+        how: Literal["left", "right", "inner"] = "inner",
+        predicate="intersects",
+        lsuffix: str = "left",
+        rsuffix: str = "right",
+        **kwargs,
+    ) -> GeoDataFrame:
         """Spatial join of two GeoDataFrames.
 
         See the User Guide page :doc:`../../user_guide/mergingdata` for details.
@@ -2267,18 +2345,26 @@ individually so that features may have different properties
         GeoDataFrame.sjoin_nearest : nearest neighbor join
         sjoin : equivalent top-level function
         """
-        return geopandas.sjoin(left_df=self, right_df=df, *args, **kwargs)  # noqa: B026
+        return geopandas.sjoin(
+            left_df=self,
+            right_df=df,
+            how=how,
+            predicate=predicate,
+            lsuffix=lsuffix,
+            rsuffix=rsuffix,
+            **kwargs,
+        )
 
     def sjoin_nearest(
         self,
-        right,
-        how="inner",
+        right: GeoDataFrame,
+        how: Literal["left", "right", "inner"] = "inner",
         max_distance=None,
         lsuffix="left",
         rsuffix="right",
         distance_col=None,
         exclusive=False,
-    ):
+    ) -> GeoDataFrame:
         """
         Spatial join of two GeoDataFrames based on the distance between their
         geometries.
@@ -2404,7 +2490,7 @@ chicago_w_groceries[chicago_w_groceries["community"] == "UPTOWN"]
             exclusive=exclusive,
         )
 
-    def clip(self, mask, keep_geom_type=False):
+    def clip(self, mask, keep_geom_type: bool = False) -> GeoDataFrame:
         """Clip points, lines, or polygon geometries to the mask extent.
 
         Both layers must be in the same Coordinate Reference System (CRS).
@@ -2459,7 +2545,15 @@ chicago_w_groceries[chicago_w_groceries["community"] == "UPTOWN"]
         """
         return geopandas.clip(self, mask=mask, keep_geom_type=keep_geom_type)
 
-    def overlay(self, right, how="intersection", keep_geom_type=None, make_valid=True):
+    def overlay(
+        self,
+        right: GeoDataFrame,
+        how: Literal[
+            "intersection", "union", "identity", "symmetric_difference", "difference"
+        ] = "intersection",
+        keep_geom_type: bool | None = None,
+        make_valid: bool = True,
+    ):
         """Perform spatial overlay between GeoDataFrames.
 
         Currently only supports data GeoDataFrames with uniform geometry types,
@@ -2553,8 +2647,12 @@ chicago_w_groceries[chicago_w_groceries["community"] == "UPTOWN"]
 
 
 def _dataframe_set_geometry(
-    self, col, drop=False, inplace=False, crs: Optional[Any] = None
-):
+    self,
+    col,
+    drop: bool = False,
+    inplace: Literal[False] = False,
+    crs: Optional[Any] = None,
+) -> GeoDataFrame:
     if inplace:
         raise ValueError(
             "Can't do inplace setting when converting from DataFrame to GeoDataFrame"
