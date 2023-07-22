@@ -8,7 +8,7 @@ import shapely.wkb
 
 from geopandas import GeoDataFrame
 
-from .. import _compat as compat
+from geopandas import _compat as compat
 
 
 @contextmanager
@@ -67,6 +67,12 @@ def _df_to_geodf(df, geom_col="geom", crs=None):
 
     if geom_col not in df:
         raise ValueError("Query missing geometry column '{}'".format(geom_col))
+
+    if df.columns.to_list().count(geom_col) > 1:
+        raise ValueError(
+            f"Duplicate geometry column '{geom_col}' detected in SQL query output. Only"
+            "one geometry column is allowed."
+        )
 
     geoms = df[geom_col].dropna()
 
@@ -463,5 +469,3 @@ def _write_postgis(
             dtype=dtype,
             method=_psql_insert_copy,
         )
-
-    return

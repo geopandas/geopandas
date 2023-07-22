@@ -120,7 +120,7 @@ def test_dissolve_emits_other_warnings(nybb_polydf):
     # we only do something special for pandas 1.5.x, but expect this
     # test to be true on any version
     def sum_and_warn(group):
-        warnings.warn("foo")
+        warnings.warn("foo")  # noqa: B028
         if PANDAS_GE_20:
             return group.sum(numeric_only=False)
         else:
