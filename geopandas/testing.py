@@ -80,8 +80,7 @@ def _geom_almost_equals_mask(this, that):
 
     Parameters
     ----------
-    this, that : arrays of Geo objects (or anything that has an `is_empty`
-                 property)
+    this, that : arrays of Geo objects
 
     Returns
     -------
@@ -114,6 +113,9 @@ def geom_almost_equals(this, that):
     bool
         True if all geometries in left almost equal geometries in right
     """
+    if isinstance(this, GeoDataFrame) and isinstance(that, GeoDataFrame):
+        this = this.geometry
+        that = that.geometry
 
     return _geom_almost_equals_mask(this, that).all()
 

@@ -23,7 +23,7 @@ from shapely import wkt
 from geopandas import GeoDataFrame, GeoSeries
 from geopandas.base import GeoPandasBase
 
-from geopandas.testing import assert_geodataframe_equal
+from geopandas.testing import assert_geodataframe_equal, geom_almost_equals
 from geopandas.tests.util import assert_geoseries_equal, geom_equals
 from geopandas import _compat as compat
 from pandas.testing import assert_frame_equal, assert_series_equal
@@ -870,10 +870,10 @@ class TestGeomMethods:
 
         o = Point(0, 0)
         res = self.g4.rotate(angle, origin=o).rotate(-angle, origin=o)
-        assert geom_equals_exact(self.g4, res)
+        assert geom_almost_equals(self.g4, res)
 
         res = self.gdf1.set_geometry(self.g4).rotate(angle, origin=Point(0, 0))
-        assert geom_equals_exact(expected, res.rotate(-angle, origin=o))
+        assert geom_almost_equals(expected, res.rotate(-angle, origin=o))
 
     def test_scale(self):
         expected = self.g4
@@ -883,11 +883,11 @@ class TestGeomMethods:
 
         o = Point(0, 0)
         res = self.g4.scale(*scale, origin=o).scale(*inv, origin=o)
-        assert geom_equals_exact(expected, res)
+        assert geom_almost_equals(expected, res)
 
         res = self.gdf1.set_geometry(self.g4).scale(*scale, origin=o)
         res = res.scale(*inv, origin=o)
-        assert geom_equals_exact(expected, res)
+        assert geom_almost_equals(expected, res)
 
     def test_skew(self):
         expected = self.g4
@@ -897,25 +897,25 @@ class TestGeomMethods:
 
         # Test xs
         res = self.g4.skew(xs=skew, origin=o).skew(xs=-skew, origin=o)
-        assert geom_equals_exact(expected, res)
+        assert geom_almost_equals(expected, res)
 
         res = self.gdf1.set_geometry(self.g4).skew(xs=skew, origin=o)
         res = res.skew(xs=-skew, origin=o)
-        assert geom_equals_exact(expected, res)
+        assert geom_almost_equals(expected, res)
 
         # Test ys
         res = self.g4.skew(ys=skew, origin=o).skew(ys=-skew, origin=o)
-        assert geom_equals_exact(expected, res)
+        assert geom_almost_equals(expected, res)
 
         res = self.gdf1.set_geometry(self.g4).skew(ys=skew, origin=o)
         res = res.skew(ys=-skew, origin=o)
-        assert geom_equals_exact(expected, res)
+        assert geom_almost_equals(expected, res)
 
     def test_buffer(self):
         original = GeoSeries([Point(0, 0)])
         expected = GeoSeries([Polygon(((5, 0), (0, -5), (-5, 0), (0, 5), (5, 0)))])
         calculated = original.buffer(5, resolution=1)
-        assert geom_equals_exact(expected, calculated)
+        assert geom_almost_equals(expected, calculated)
 
     def test_buffer_args(self):
         args = dict(cap_style=3, join_style=2, mitre_limit=2.5)
@@ -983,7 +983,7 @@ class TestGeomMethods:
     def test_minimum_bounding_circle(self):
         mbc = self.g1.minimum_bounding_circle()
         centers = GeoSeries([Point(0.5, 0.5)] * 2)
-        assert np.all(mbc.centroid.geom_equals_exact(centers, 0.001))
+        assert np.all(mbc.centroid.geom_almost_equals(centers, 0.001))
         assert_series_equal(
             mbc.area,
             Series([1.560723, 1.560723]),
