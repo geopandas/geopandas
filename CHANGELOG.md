@@ -23,6 +23,10 @@ Bug fixes:
 - Fix bug in `apply` with `axis=1` where the given user defined function returns nested 
   data in the geometry column (#2959)
 
+Deprecations and compatibility notes:
+ - ``GeometryArray.geom_almost_equals()`` has been deprecated and  
+   `geom_equals_exact()` should be used instead (#2604).
+
 ## Version 0.13.2 (Jun 6, 2023)
 
 Bug fix:
