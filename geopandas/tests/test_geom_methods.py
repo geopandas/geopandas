@@ -1,5 +1,4 @@
 import string
-import sys
 import warnings
 
 import numpy as np
@@ -1251,10 +1250,6 @@ class TestGeomMethods:
         with pytest.warns(FutureWarning, match="Currently, index_parts defaults"):
             assert_geoseries_equal(expected, s.explode())
 
-    @pytest.mark.skipif(
-        sys.platform == "win32" and sys.version_info < (3, 9),
-        reason="Inconsistent int dtype",
-    )
     @pytest.mark.parametrize("index_name", [None, "test"])
     def test_explode_geodataframe(self, index_name):
         s = GeoSeries([MultiPoint([Point(1, 2), Point(2, 3)]), Point(5, 5)])
@@ -1274,10 +1269,6 @@ class TestGeomMethods:
         expected_df = expected_df.set_index(expected_index)
         assert_frame_equal(test_df, expected_df)
 
-    @pytest.mark.skipif(
-        sys.platform == "win32" and sys.version_info < (3, 9),
-        reason="Inconsistent int dtype",
-    )
     @pytest.mark.parametrize("index_name", [None, "test"])
     def test_explode_geodataframe_level_1(self, index_name):
         # GH1393
@@ -1368,10 +1359,6 @@ class TestGeomMethods:
         exploded_df = gdf.explode(column="col1", ignore_index=True)
         assert_geodataframe_equal(exploded_df, expected_df)
 
-    @pytest.mark.skipif(
-        sys.platform == "win32" and sys.version_info < (3, 9),
-        reason="Inconsistent int dtype",
-    )
     @pytest.mark.parametrize("outer_index", [1, (1, 2), "1"])
     def test_explode_pandas_multi_index(self, outer_index):
         index = MultiIndex.from_arrays(
@@ -1479,10 +1466,6 @@ class TestGeomMethods:
         test_df = df.explode(ignore_index=True, index_parts=True)
         assert_frame_equal(test_df, expected_df)
 
-    @pytest.mark.skipif(
-        sys.platform == "win32" and sys.version_info < (3, 9),
-        reason="Inconsistent int dtype",
-    )
     def test_explode_order(self):
         df = GeoDataFrame(
             {"vals": [1, 2, 3]},
@@ -1494,6 +1477,7 @@ class TestGeomMethods:
         expected_index = MultiIndex.from_arrays(
             [[2, 2, 9, 9, 7, 7], [0, 1, 0, 1, 0, 1]],
         )
+        assert (expected_index.dtypes == "int64").all()
         expected_geometry = GeoSeries(
             [
                 Point(0, 0),
@@ -1510,12 +1494,9 @@ class TestGeomMethods:
             geometry=expected_geometry,
             index=expected_index,
         )
+        assert_index_equal(test_df.index, expected_df.index)
         assert_geodataframe_equal(test_df, expected_df)
 
-    @pytest.mark.skipif(
-        sys.platform == "win32" and sys.version_info < (3, 9),
-        reason="Inconsistent int dtype",
-    )
     def test_explode_order_no_multi(self):
         df = GeoDataFrame(
             {"vals": [1, 2, 3]},
@@ -1534,10 +1515,6 @@ class TestGeomMethods:
         )
         assert_geodataframe_equal(test_df, expected_df)
 
-    @pytest.mark.skipif(
-        sys.platform == "win32" and sys.version_info < (3, 9),
-        reason="Inconsistent int dtype",
-    )
     def test_explode_order_mixed(self):
         df = GeoDataFrame(
             {"vals": [1, 2, 3]},
@@ -1566,10 +1543,6 @@ class TestGeomMethods:
         )
         assert_geodataframe_equal(test_df, expected_df)
 
-    @pytest.mark.skipif(
-        sys.platform == "win32" and sys.version_info < (3, 9),
-        reason="Inconsistent int dtype",
-    )
     def test_explode_duplicated_index(self):
         df = GeoDataFrame(
             {"vals": [1, 2, 3]},
@@ -1692,10 +1665,6 @@ class TestGeomMethods:
         )
         assert_frame_equal(self.g11.get_coordinates(ignore_index=True), expected)
 
-    @pytest.mark.skipif(
-        sys.platform == "win32" and sys.version_info < (3, 9),
-        reason="Inconsistent int dtype",
-    )
     @pytest.mark.skipif(
         not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
         reason="get_coordinates not implemented for shapely<2",
