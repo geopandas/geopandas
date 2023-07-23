@@ -875,15 +875,18 @@ GeometryCollection
         >>> from shapely import LineString, Polygon
         >>> s = geopandas.GeoSeries(
         ...     [
+        ...        LineString([(0, 0), (0, 0), (1, 0)]),
         ...        Polygon([(0, 0), (0, 0.5), (0, 1), (0.5, 1), (0,0)]),
         ...     ],
         ...     crs=3857
         ... )
         >>> s
+        0    LINESTRING (0.000 0.000, 0.000 0.000, 1.000 0....
         1    POLYGON ((0.000 0.000, 0.000 0.500, 0.000 1.00...
         dtype: geometry
 
         >>> s.remove_repeated_points(tolerance=0.0)
+        0                LINESTRING (0.000 0.000, 1.000 0.000)
         1    POLYGON ((0.000 0.000, 0.000 0.500, 0.000 1.00...
         dtype: geometry
         """
