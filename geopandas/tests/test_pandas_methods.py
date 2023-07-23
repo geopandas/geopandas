@@ -1,5 +1,9 @@
 import os
+<<<<<<< HEAD
 from packaging.version import Version
+=======
+import warnings
+>>>>>>> 5be79c17... resolve apply pandas 2.1 deprecation warning from default val
 
 import numpy as np
 from numpy.testing import assert_array_equal
@@ -709,6 +713,14 @@ def test_apply(s):
     result = s.apply(numeric_func)
     assert not isinstance(result, GeoSeries)
     assert_series_equal(result, pd.Series([0.0, 1.0, 2.0]))
+
+    with warnings.catch_warnings(record=True) as record:
+        s.apply(lambda x: x.centroid, convert_dtype=False)
+    if compat.PANDAS_GE_21:
+        assert len(record) == 1
+        assert "the convert_dtype parameter" in str(record[0].message)
+    else:
+        assert len(record) == 0
 
 
 def test_apply_loc_len1(df):
