@@ -1,4 +1,5 @@
 import os
+import warnings
 
 import numpy as np
 from numpy.testing import assert_array_equal
@@ -714,10 +715,15 @@ def test_apply_loc_len1(df):
 
 def test_apply_convert_dtypes_keyword(s):
     # ensure the convert_dtypes keyword is accepted
+    if not compat.PANDAS_GE_21:
+        recorder = warnings.catch_warnings(record=True)
+    else:
+        recorder = pytest.warns()
 
-    with pytest.warns() as record:
+    with recorder as record:
         res = s.apply(lambda x: x, convert_dtype=True, args=())
     assert_geoseries_equal(res, s)
+
     if compat.PANDAS_GE_21:
         assert len(record) == 1
         assert "the convert_dtype parameter" in str(record[0].message)
