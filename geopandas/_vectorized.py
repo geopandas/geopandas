@@ -731,7 +731,7 @@ def remove_repeated_points(data, tolerance=0.0):
             "installed, thus using Shapely and not PyGEOS to remove repeated points.",
             stacklevel=4,
         )
-        return shapely.remove_repeated_points(data, tolerance=tolerance)
+        return shapely.remove_repeated_points(to_shapely(data), tolerance=tolerance)
     else:
         raise NotImplementedError(
             f"shapely >= 2.0 is required, "
