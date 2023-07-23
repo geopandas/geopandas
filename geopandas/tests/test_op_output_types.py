@@ -1,3 +1,5 @@
+import warnings
+
 import pandas as pd
 import pyproj
 import pytest
@@ -271,7 +273,12 @@ def test_apply_axis1_secondary_geo_cols(df):
 def test_expanddim_in_apply():
     # https://github.com/geopandas/geopandas/pull/2296#issuecomment-1021966443
     s = GeoSeries.from_xy([0, 1], [0, 1])
-    result = s.apply(lambda x: pd.Series([x.x, x.y]))
+    with warnings.catch_warnings():
+        # deprecated pandas behaviour
+        warnings.filterwarnings(
+            "ignore", "Returning a DataFrame from Series.apply", FutureWarning
+        )
+        result = s.apply(lambda x: pd.Series([x.x, x.y]))
     assert_object(result, pd.DataFrame)
 
 
