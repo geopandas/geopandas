@@ -1477,7 +1477,6 @@ class TestGeomMethods:
         expected_index = MultiIndex.from_arrays(
             [[2, 2, 9, 9, 7, 7], [0, 1, 0, 1, 0, 1]],
         )
-        assert (expected_index.dtypes == "int64").all()
         expected_geometry = GeoSeries(
             [
                 Point(0, 0),
@@ -1494,7 +1493,6 @@ class TestGeomMethods:
             geometry=expected_geometry,
             index=expected_index,
         )
-        assert_index_equal(test_df.index, expected_df.index)
         assert_geodataframe_equal(test_df, expected_df)
 
     def test_explode_order_no_multi(self):
