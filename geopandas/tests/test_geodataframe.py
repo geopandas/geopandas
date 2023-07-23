@@ -1334,7 +1334,8 @@ class TestConstructor:
         ):
             gdf5["geometry"] = "foo"
         assert gdf5._geometry_column_name is None
-        gdf3 = gdf.copy().assign(geometry=geo_col)
+        with pytest.warns(FutureWarning, match=match):
+            gdf3 = gdf.copy().assign(geometry=geo_col)
         assert gdf3._geometry_column_name == "geometry"
 
         # Check that adding a GeoSeries to a column called "geometry" to a
