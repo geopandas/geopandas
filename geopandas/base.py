@@ -1380,13 +1380,13 @@ GeometryCollection
         dtype: geometry
 
 
-        >>> s.geom_equals_exact(Point(0, 1), decimal=2)
+        >>> s.geom_almost_equals(Point(0, 1), decimal=2)
         0    False
         1    False
         2     True
         dtype: bool
 
-        >>> s.geom_equals_exact(Point(0, 1), decimal=1)
+        >>> s.geom_almost_equals(Point(0, 1), decimal=1)
         0    False
         1     True
         2     True
