@@ -1,4 +1,6 @@
 import os
+import warnings
+
 from packaging.version import Version
 
 import numpy as np
@@ -644,7 +646,11 @@ def test_keep_geom_type_geomcoll_different_types():
     ]
     df1 = GeoDataFrame({"left": [0, 1], "geometry": polys1})
     df2 = GeoDataFrame({"right": [0, 1], "geometry": polys2})
-    result1 = overlay(df1, df2, keep_geom_type=True)
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore", "`unary_union` returned None due to all-None", FutureWarning
+        )
+        result1 = overlay(df1, df2, keep_geom_type=True)
     expected1 = GeoDataFrame(
         {
             "left": [1],
