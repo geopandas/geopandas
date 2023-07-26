@@ -270,4 +270,4 @@ More specifically, whether the speedups are used or not is determined by:
 
 .. _packaging: https://packaging.pypa.io/en/latest/
 
-.. _pointpats: https://pointpats.readthedocs.io/en/latest/
+.. _pointpats: https://pysal.org/pointpats/
