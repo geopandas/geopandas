@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import typing
-from typing import Union, Any, Optional, Literal
+from typing import Any, Literal
 import warnings
 
 
@@ -34,7 +34,7 @@ if typing.TYPE_CHECKING:
 
 def _geodataframe_constructor_with_fallback(
     *args, **kwargs
-) -> Union[pd.DataFrame, GeoDataFrame]:
+) -> pd.DataFrame | GeoDataFrame:
     """
     A flexible constructor for GeoDataFrame._constructor, which falls back
     to returning a DataFrame (if a certain operation does not preserve the
@@ -48,9 +48,7 @@ def _geodataframe_constructor_with_fallback(
     return df
 
 
-def _ensure_geometry(
-    data, crs: Optional[Any] = None
-) -> Union[GeoSeries, GeometryArray]:
+def _ensure_geometry(data, crs: Any | None = None) -> GeoSeries | GeometryArray:
     """
     Ensure the data is of geometry dtype or converted to it.
 
@@ -148,7 +146,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         data=None,
         *args,
         geometry: Any = None,
-        crs: Optional[Any] = None,
+        crs: Any | None = None,
         **kwargs,
     ) -> None:
         with compat.ignore_shapely2_warnings():
@@ -274,7 +272,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         col,
         drop: bool = ...,
         inplace: Literal[True] = ...,
-        crs: Optional[Any] = ...,
+        crs: Any | None = ...,
     ) -> None:
         ...
 
@@ -284,13 +282,13 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         col,
         drop: bool = ...,
         inplace: Literal[False] = ...,
-        crs: Optional[Any] = ...,
+        crs: Any | None = ...,
     ) -> GeoDataFrame:
         ...
 
     def set_geometry(
-        self, col, drop: bool = False, inplace: bool = False, crs: Optional[Any] = None
-    ) -> Union[GeoDataFrame, None]:
+        self, col, drop: bool = False, inplace: bool = False, crs: Any | None = None
+    ) -> GeoDataFrame | None:
         """
         Set the GeoDataFrame geometry using either an existing column or
         the specified input. By default yields a new object.
@@ -546,7 +544,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         cls,
         data: dict,
         geometry=None,
-        crs: Optional[Any] = None,
+        crs: Any | None = None,
         **kwargs,
     ) -> GeoDataFrame:
         """
@@ -626,7 +624,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
     @classmethod
     def from_features(
-        cls, features, crs: Optional[Any] = None, columns=None
+        cls, features, crs: Any | None = None, columns=None
     ) -> GeoDataFrame:
         """
         Alternate constructor to create GeoDataFrame from an iterable of
@@ -719,11 +717,11 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         sql: str | sqlalchemy.text,
         con,
         geom_col: str = "geom",
-        crs: Optional[Any] = None,
+        crs: Any | None = None,
         index_col: str | list[str] | None = None,
         coerce_float: bool = True,
-        parse_dates: Optional[Union[list, dict]] = None,
-        params: Optional[Union[list, tuple, dict]] = None,
+        parse_dates: list | dict | None = None,
+        params: list | tuple | dict | None = None,
         chunksize: int | None = None,
     ) -> GeoDataFrame:
         """
@@ -1114,7 +1112,7 @@ individually so that features may have different properties
     def to_parquet(
         self,
         path: os.PathLike | typing.IO,
-        index: Optional[bool] = None,
+        index: bool | None = None,
         compression: str = "snappy",
         schema_version: SUPPORTED_VERSIONS_LITERAL | None = None,
         **kwargs,
@@ -1188,8 +1186,8 @@ individually so that features may have different properties
     def to_feather(
         self,
         path: os.PathLike,
-        index: Optional[bool] = None,
-        compression: Optional[str] = None,
+        index: bool | None = None,
+        compression: str | None = None,
         schema_version: SUPPORTED_VERSIONS_LITERAL | None = None,
         **kwargs,
     ):
@@ -1253,9 +1251,9 @@ individually so that features may have different properties
     def to_file(
         self,
         filename: os.PathLike | typing.IO,
-        driver: Optional[str] = None,
-        schema: Optional[dict] = None,
-        index: Optional[bool] = None,
+        driver: str | None = None,
+        schema: dict | None = None,
+        index: bool | None = None,
         **kwargs,
     ):
         """Write the ``GeoDataFrame`` to a file.
@@ -1355,7 +1353,7 @@ individually so that features may have different properties
     def set_crs(
         self,
         crs: Any | None = ...,
-        epsg: Optional[int] = ...,
+        epsg: int | None = ...,
         inplace: Literal[True] = ...,
         allow_override: bool = ...,
     ) -> None:
@@ -1365,7 +1363,7 @@ individually so that features may have different properties
     def set_crs(
         self,
         crs: Any | None = ...,
-        epsg: Optional[int] = ...,
+        epsg: int | None = ...,
         inplace: Literal[False] = ...,
         allow_override: bool = ...,
     ) -> GeoDataFrame:
@@ -1374,7 +1372,7 @@ individually so that features may have different properties
     def set_crs(
         self,
         crs: Any | None = None,
-        epsg: Optional[int] = None,
+        epsg: int | None = None,
         inplace: bool = False,
         allow_override: bool = False,
     ) -> GeoDataFrame | None:
@@ -1460,7 +1458,7 @@ individually so that features may have different properties
     def to_crs(
         self,
         crs: Any | None = ...,
-        epsg: Optional[int] = ...,
+        epsg: int | None = ...,
         inplace: Literal[False] = ...,
     ) -> GeoDataFrame:
         ...
@@ -1469,15 +1467,15 @@ individually so that features may have different properties
     def to_crs(
         self,
         crs: Any | None = ...,
-        epsg: Optional[int] = ...,
+        epsg: int | None = ...,
         inplace: Literal[True] = ...,
     ) -> None:
         ...
 
     def to_crs(
         self,
-        crs: Optional[Any] = None,
-        epsg: Optional[int] = None,
+        crs: Any | None = None,
+        epsg: int | None = None,
         inplace: bool = False,
     ) -> GeoDataFrame | None:
         """Transform geometries to a new coordinate reference system.
@@ -1689,7 +1687,7 @@ individually so that features may have different properties
             copied._geometry_column_name = self._geometry_column_name
         return copied
 
-    def merge(self, *args, **kwargs) -> Union[pd.DataFrame, GeoDataFrame]:
+    def merge(self, *args, **kwargs) -> pd.DataFrame | GeoDataFrame:
         r"""Merge two ``GeoDataFrame`` objects with a database-style join.
 
         Returns a ``GeoDataFrame`` if a geometry column is present; otherwise,
@@ -1794,9 +1792,7 @@ individually so that features may have different properties
 
         return _geodataframe_constructor_sliced
 
-    def __finalize__(
-        self, other, method: Optional[str] = None, **kwargs
-    ) -> GeoDataFrame:
+    def __finalize__(self, other, method: str | None = None, **kwargs) -> GeoDataFrame:
         """propagate metadata from other to self"""
         self = super().__finalize__(other, method=method, **kwargs)
 
@@ -1825,7 +1821,7 @@ individually so that features may have different properties
 
     def dissolve(
         self,
-        by: Optional[str] = None,
+        by: str | None = None,
         aggfunc="first",
         as_index: bool = True,
         level=None,
@@ -2100,7 +2096,7 @@ individually so that features may have different properties
     # overrides the pandas astype method to ensure the correct return type
     def astype(
         self, dtype, copy: bool = True, errors="raise", **kwargs
-    ) -> Union[pd.DataFrame, GeoDataFrame]:
+    ) -> pd.DataFrame | GeoDataFrame:
         """
         Cast a pandas object to a specified dtype ``dtype``.
 
@@ -2152,11 +2148,11 @@ individually so that features may have different properties
         self,
         name: str,
         con,
-        schema: Optional[str] = None,
+        schema: str | None = None,
         if_exists: Literal["fail", "replace", "append"] = "fail",
         index: bool = False,
         index_label=None,
-        chunksize: Optional[int] = None,
+        chunksize: int | None = None,
         dtype=None,
     ) -> None:
         """
@@ -2651,7 +2647,7 @@ def _dataframe_set_geometry(
     col,
     drop: bool = False,
     inplace: Literal[False] = False,
-    crs: Optional[Any] = None,
+    crs: Any | None = None,
 ) -> GeoDataFrame:
     if inplace:
         raise ValueError(
