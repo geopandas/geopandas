@@ -402,7 +402,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
     @typing.overload
     def rename_geometry(
         self,
-        col: Any,
+        col,
         inplace: Literal[True] = ...,
     ) -> None:
         ...
@@ -410,12 +410,12 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
     @typing.overload
     def rename_geometry(
         self,
-        col: Any,
+        col,
         inplace: Literal[False] = ...,
     ) -> GeoDataFrame:
         ...
 
-    def rename_geometry(self, col: Any, inplace: bool = False) -> GeoDataFrame | None:
+    def rename_geometry(self, col, inplace: bool = False) -> GeoDataFrame | None:
         """
         Renames the GeoDataFrame geometry column to
         the specified name. By default yields a new object.
@@ -500,7 +500,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             )
 
     @crs.setter
-    def crs(self, value: Any) -> None:
+    def crs(self, value) -> None:
         """Sets the value of the crs"""
         if self._geometry_column_name is None:
             raise ValueError(
@@ -545,7 +545,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
     def from_dict(
         cls,
         data: dict,
-        geometry: Any = None,
+        geometry=None,
         crs: Optional[Any] = None,
         **kwargs,
     ) -> GeoDataFrame:
@@ -574,7 +574,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         return cls(dataframe, geometry=geometry, crs=crs)
 
     @classmethod
-    def from_file(cls, filename: os.PathLike, **kwargs) -> GeoDataFrame:
+    def from_file(cls, filename: os.PathLike | typing.IO, **kwargs) -> GeoDataFrame:
         """Alternate constructor to create a ``GeoDataFrame`` from a file.
 
         It is recommended to use :func:`geopandas.read_file` instead.
@@ -1113,7 +1113,7 @@ individually so that features may have different properties
 
     def to_parquet(
         self,
-        path: os.PathLike,
+        path: os.PathLike | typing.IO,
         index: Optional[bool] = None,
         compression: str = "snappy",
         schema_version: SUPPORTED_VERSIONS_LITERAL | None = None,
@@ -1978,7 +1978,7 @@ individually so that features may have different properties
         self,
         column=None,
         ignore_index: bool = False,
-        index_parts: bool = None,
+        index_parts: bool | None = None,
         **kwargs,
     ) -> GeoDataFrame | DataFrame:
         """
@@ -2158,7 +2158,7 @@ individually so that features may have different properties
         index_label=None,
         chunksize: Optional[int] = None,
         dtype=None,
-    ):
+    ) -> None:
         """
         Upload GeoDataFrame into PostGIS database.
 
