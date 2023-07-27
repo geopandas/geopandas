@@ -400,10 +400,10 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
     @property
     def active_geometry_name(self):
-        """Return a name of an active geometry column
+        """Return the name of the active geometry column
 
         Returns a string name if a GeoDataFrame has an active geometry column set.
-        Otherwise returns None. You can also access an active geometry column using the
+        Otherwise returns None. You can also access the active geometry column using the
         ``.geometry`` property. You can set a GeoSeries to be an active geometry
         using the :meth:`~GeoDataFrame.set_geometry` method.
 
