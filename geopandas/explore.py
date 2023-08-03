@@ -311,6 +311,10 @@ def _explore(
 
     gdf = df.copy()
 
+    # convert Datetime to JSON suitable string
+    dt_columns = gdf.select_dtypes(["datetime64", "timedelta64"]).columns
+    gdf[dt_columns] = gdf[dt_columns].astype(str)
+
     # convert LinearRing to LineString
     rings_mask = df.geom_type == "LinearRing"
     if rings_mask.any():
