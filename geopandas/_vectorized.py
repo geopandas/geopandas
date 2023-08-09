@@ -8,15 +8,13 @@ import warnings
 
 import numpy as np
 import pandas as pd
-
 import shapely
 import shapely.geometry
 import shapely.geos
 import shapely.ops
+import shapely.validation
 import shapely.wkb
 import shapely.wkt
-import shapely.validation
-
 from shapely.geometry.base import BaseGeometry
 
 from . import _compat as compat
@@ -731,7 +729,9 @@ def remove_repeated_points(data, tolerance=0.0):
             "installed, thus using Shapely and not PyGEOS to remove repeated points.",
             stacklevel=4,
         )
-        return shapely.remove_repeated_points(to_shapely(data), tolerance=tolerance)
+        return pygeos.from_shapely(
+            shapely.remove_repeated_points(to_shapely(data), tolerance=tolerance)
+        )
     else:
         raise NotImplementedError(
             f"shapely >= 2.0 is required, "
@@ -1075,9 +1075,10 @@ def _shapely_normalize(geom):
     """
     Small helper function for now because it is not yet available in Shapely.
     """
-    from shapely.geos import lgeos
+    from ctypes import c_int, c_void_p
+
     from shapely.geometry.base import geom_factory
-    from ctypes import c_void_p, c_int
+    from shapely.geos import lgeos
 
     lgeos._lgeos.GEOSNormalize_r.restype = c_int
     lgeos._lgeos.GEOSNormalize_r.argtypes = [c_void_p, c_void_p]
