@@ -109,12 +109,10 @@ def _create_metadata(df, schema_version=None):
         # https://github.com/opengeospatial/geoparquet/blob/main/format-specs/geoparquet.md#geometry_types
         # Instead of going through the `_vectorized.geometry_type_values`
         # that do not include the "Z" varieties.
-        geometry_types = set(
-            [
-                f"{geom} Z" if has_z else geom
-                for geom, has_z in zip(series.geom_type, series.has_z)
-            ]
-        )
+        geometry_types = {
+            f"{geom} Z" if has_z else geom
+            for geom, has_z in zip(series.geom_type, series.has_z)
+        }
         geometry_types = sorted(Series(list(geometry_types)).dropna())
         # geometry_types = sorted(Series(series.geom_type.unique()).dropna())
 
