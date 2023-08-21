@@ -184,7 +184,7 @@ def test_to_file_bool(tmpdir, driver, ext, engine):
 
 
 TEST_DATE = datetime.datetime(2021, 11, 21, 1, 7, 43, 17500)
-eastern = pytz.timezone("US/Eastern")
+eastern = pytz.timezone("America/New_York")
 
 datetime_type_tests = (TEST_DATE, eastern.localize(TEST_DATE))
 
