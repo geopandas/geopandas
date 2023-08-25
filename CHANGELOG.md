@@ -21,7 +21,7 @@ Bug fixes:
 
 - Fix a color assignment in ``explore`` when using ``UserDefined`` bins (#2923)
 - ``assert_geodataframe_equal`` now handles GeoDataFrames with no active geometry (#2498)
-- Fix bug in `apply` with `axis=1` where the given user defined function returns nested
+- Fix bug in `apply` with `axis=1` where the given user defined function returns nested 
   data in the geometry column (#2959)
 - Properly infer schema for np.int32 and pd.Int32Dtype columns (#2950)
 
@@ -53,8 +53,6 @@ New methods:
   the distance along the Hilbert curve (#2070).
 - Added ``get_coordinates()`` method from shapely to GeoSeries/GeoDataframe (#2624).
 - Added ``minimum_bounding_circle()`` method from shapely to GeoSeries/GeoDataframe (#2621).
-- Support specifying ``min_zoom`` and ``max_zoom`` inside the ``map_kwds`` argument for ``.explore()`` (#2599).
-- Added ``minimum_rotated_rectangle()`` method from shapely to GeoSeries/GeoDataframe (#2541).
 - Added `minimum_bounding_radius()` as GeoSeries method (#2827).
 
 Other new features and improvements:
