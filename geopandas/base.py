@@ -733,7 +733,7 @@ GeometryCollection
 
         See also
         --------
-        GeoSeries.envelope : bounding rectangle.
+        GeoSeries.envelope : bounding rectangle
         """
         return _delegate_geo_method("minimum_rotated_rectangle", self)
 

@@ -1190,17 +1190,18 @@ class TestGeomMethods:
         assert self.g3.crs == e.crs
 
     def test_minimum_rotated_rectangle(self):
-        r = self.g3.minimum_rotated_rectangle()
+        s = GeoSeries([self.sq, self.t5], crs=3857)
+        r = s.minimum_rotated_rectangle()
         exp = GeoSeries.from_wkt(
             [
-                "POLYGON ((0 0, 1 1, 1.5 0.5, 0.5 -0.5, 0 0))",
-                "POLYGON ((-0.5 0.5, 0.5 1.5, 1 1, 0 0, -0.5 0.5))",
+                "POLYGON ((0 0, 0 1, 1 1, 1 0, 0 0))",
+                "POLYGON ((2 0, 2 3, 3 3, 3 0, 2 0))",
             ]
         )
 
         assert np.all(r.normalize().geom_equals_exact(exp, 0.001))
         assert isinstance(r, GeoSeries)
-        assert self.g3.crs == r.crs
+        assert s.crs == r.crs
 
     @pytest.mark.skipif(
         not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
