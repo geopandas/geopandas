@@ -94,8 +94,8 @@ Constructive methods and attributes
    GeoSeries.envelope
    GeoSeries.extract_unique_points
    GeoSeries.make_valid
-   GeoSeries.minimum_rotated_rectangle
    GeoSeries.minimum_bounding_circle
+   GeoSeries.minimum_rotated_rectangle
    GeoSeries.normalize
    GeoSeries.sample_points
    GeoSeries.segmentize
