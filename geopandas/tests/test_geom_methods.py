@@ -360,6 +360,10 @@ class TestGeomMethods:
         expected = GeoSeries([self.t1, self.t1])
         self._test_binary_topological("difference", expected, self.g1, self.t2)
 
+    @pytest.mark.skipif(
+        not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+        reason="get_coordinates not implemented for shapely<2",
+    )
     def test_shortest_line(self):
         expected = GeoSeries([LineString([(1, 1), (5, 5)]), None])
         assert_array_dtype_equal(expected, self.na_none.shortest_line(self.p0))
@@ -386,7 +390,7 @@ class TestGeomMethods:
     )
     def test_shortest_line_not(self):
         with pytest.raises(
-            NotImplementedError, match="shapely >= 2.0 or PyGEOS are required"
+            NotImplementedError, match="shapely >= 2.0 or PyGEOS is required"
         ):
             self.na_none.shortest_line(self.p0)
 
