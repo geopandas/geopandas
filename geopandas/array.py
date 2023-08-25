@@ -29,7 +29,6 @@ from . import _compat as compat
 from . import _vectorized as vectorized
 from .sindex import _get_sindex_class
 
-
 TransformerFromCRS = lru_cache(Transformer.from_crs)
 
 
@@ -513,9 +512,18 @@ class GeometryArray(ExtensionArray):
         self.check_geographic_crs(stacklevel=5)
         return GeometryArray(vectorized.centroid(self._data), crs=self.crs)
 
+    def concave_hull(self, ratio, allow_holes):
+        return vectorized.concave_hull(self._data, ratio=ratio, allow_holes=allow_holes)
+
     @property
     def convex_hull(self):
         return GeometryArray(vectorized.convex_hull(self._data), crs=self.crs)
+
+    def delaunay_triangles(self, tolerance, only_edges):
+        return GeometryArray(
+            vectorized.delaunay_triangles(self._data, tolerance, only_edges),
+            crs=self.crs,
+        )
 
     @property
     def envelope(self):
@@ -524,6 +532,21 @@ class GeometryArray(ExtensionArray):
     @property
     def exterior(self):
         return GeometryArray(vectorized.exterior(self._data), crs=self.crs)
+
+    def extract_unique_points(self):
+        return GeometryArray(vectorized.extract_unique_points(self._data), crs=self.crs)
+
+    def offset_curve(self, distance, quad_segs=8, join_style="round", mitre_limit=5.0):
+        return GeometryArray(
+            vectorized.offset_curve(
+                self._data,
+                distance,
+                quad_segs=quad_segs,
+                join_style=join_style,
+                mitre_limit=mitre_limit,
+            ),
+            crs=self.crs,
+        )
 
     @property
     def interiors(self):
@@ -546,6 +569,12 @@ class GeometryArray(ExtensionArray):
 
     def make_valid(self):
         return GeometryArray(vectorized.make_valid(self._data), crs=self.crs)
+
+    def segmentize(self, max_segment_length):
+        return GeometryArray(
+            vectorized.segmentize(self._data, max_segment_length),
+            crs=self.crs,
+        )
 
     #
     # Binary predicates
@@ -639,6 +668,10 @@ class GeometryArray(ExtensionArray):
     def distance(self, other):
         self.check_geographic_crs(stacklevel=6)
         return self._binary_method("distance", self, other)
+
+    def hausdorff_distance(self, other, **kwargs):
+        self.check_geographic_crs(stacklevel=6)
+        return self._binary_method("hausdorff_distance", self, other, **kwargs)
 
     def buffer(self, distance, resolution=16, **kwargs):
         if not (isinstance(distance, (int, float)) and distance == 0):
@@ -1489,7 +1522,8 @@ def _get_common_crs(arr_seq):
             warnings.warn(
                 "CRS not set for some of the concatenation inputs. "
                 f"Setting output's CRS as {names[0]} "
-                "(the single non-null crs provided)."
+                "(the single non-null crs provided).",
+                stacklevel=2,
             )
         return crs_not_none[0]
 

@@ -2,11 +2,27 @@
 
 ## Development version
 
+New methods:
+
+- Added ``segmentize`` method from shapely to GeoSeries/GeoDataFrame (#2910).
+- Added ``extract_unique_points`` method from shapely to GeoSeries/GeoDataframe (#2915).
+- Added ``hausdorff_distance`` method from shapely to GeoSeries/GeoDataframe (#2909).
+- Added ``delaunay_triangles`` method from shapely to GeoSeries/GeoDataframe (#2907).
+- Added ``concave_hull`` method from shapely to GeoSeries/GeoDataframe (#2903).
+- Added ``offset_curve`` method from shapely to GeoSeries/GeoDataframe (#2902).
+
 New features and improvements:
 
+- Added ``exclusive`` parameter to ``sjoin_nearest`` method for Shapely >= 2.0 (#2877)
 
 Bug fixes:
+- Fix ambiguous error when GeoDataFrame is initialised with a column called "crs" (#2944)
 
+- Fix a color assignment in ``explore`` when using ``UserDefined`` bins (#2923)
+- ``assert_geodataframe_equal`` now handles GeoDataFrames with no active geometry (#2498)
+- Fix bug in `apply` with `axis=1` where the given user defined function returns nested 
+  data in the geometry column (#2959)
+- Properly infer schema for np.int32 and pd.Int32Dtype columns (#2950)
 
 ## Version 0.13.2 (Jun 6, 2023)
 

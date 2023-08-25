@@ -752,6 +752,11 @@ def test_df_apply_returning_series(df):
     result = df.apply(lambda x: None, axis=1)
     assert result.dtype == "object"
 
+    # https://github.com/geopandas/geopandas/issues/2889
+    # contrived case such that `from_shapely` receives an array of geodataframes
+    res = df.apply(lambda row: df.geometry.to_frame(), axis=1)
+    assert res.dtype == "object"
+
 
 def test_df_apply_geometry_dtypes(df):
     # https://github.com/geopandas/geopandas/issues/1852
@@ -776,9 +781,7 @@ def test_pivot(df):
     # pivot failing due to creating a MultiIndex
     result = df.pivot(columns="value1")
     expected = GeoDataFrame(pd.DataFrame(df).pivot(columns="value1"))
-    # TODO assert_geodataframe_equal crashes
-    assert isinstance(result, GeoDataFrame)
-    assert_frame_equal(result, expected)
+    assert_geodataframe_equal(result, expected)
 
 
 def test_preserve_attrs(df):
