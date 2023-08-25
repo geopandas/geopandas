@@ -2577,8 +2577,15 @@ GeometryCollection
     def frechet_distance(self, other, align=True, densify=None):
         """Returns a ``Series`` containing the Frechet distance to aligned `other`.
 
-        The Frechet distance is the largest distance consisting of any vertex in `self`
-        with the nearest vertex in `other`.
+        The Fréchet distance is a measure of similarity: it is the greatest distance
+        between any point in A and the closest point in B. The discrete distance is an
+        approximation of this metric: only vertices are considered. The parameter
+        ``densify`` makes this approximation less coarse by splitting the line segments
+        between vertices before computing the distance.
+
+        Fréchet distance sweep continuously along their respective curves and the
+        direction of curves is significant. This makes it a better measure of similarity
+        than Hausdorff distance for curve or surface matching.
 
         The operation works on a 1-to-1 row-wise manner:
 
