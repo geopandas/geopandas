@@ -786,6 +786,10 @@ if compat.SHAPELY_GE_20 or compat.HAS_PYGEOS:
                         self.valid_query_predicates
                     )
                 )
+            if predicate == "dwithin" and not isinstance(distance, (int, float)):
+                raise ValueError(
+                    "Got `predicate` = `dwithin` but no `distance` was provided."
+                )
 
             geometry = self._as_geometry_array(geometry)
 
@@ -793,9 +797,9 @@ if compat.SHAPELY_GE_20 or compat.HAS_PYGEOS:
                 indices = self._tree.query(geometry, predicate=predicate, distance=distance)
             else:
                 if isinstance(geometry, np.ndarray):
-                    indices = self._tree.query_bulk(geometry, predicate=predicate)
+                    indices = self._tree.query_bulk(geometry, predicate=predicate, distance=distance)
                 else:
-                    indices = self._tree.query(geometry, predicate=predicate)
+                    indices = self._tree.query(geometry, predicate=predicate, distance=distance)
 
             if sort:
                 if indices.ndim == 1:

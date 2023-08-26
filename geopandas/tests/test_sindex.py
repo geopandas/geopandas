@@ -413,6 +413,14 @@ class TestPygeosInterface:
         test_geom = box(-1, -1, -0.5, -0.5)
         with pytest.raises(ValueError):
             self.df.sindex.query(test_geom, predicate="test")
+    
+    def test_dwithin_predicate(self):
+        """Testing basic function for dwithin predicate on sindex query"""
+        test_geom = GeoSeries(box(1, 2, 2, 3))
+        ind_box, ind_df = self.df.sindex.query(test_geom, predicate="dwithin", distance=3.)
+        assert_array_equal(ind_df, [0, 1, 2, 3, 4])
+        assert_array_equal(ind_box, np.zeros(5))
+
 
     @pytest.mark.parametrize(
         "sort, expected",

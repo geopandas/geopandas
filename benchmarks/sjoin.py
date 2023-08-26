@@ -7,7 +7,7 @@ import numpy as np
 
 class Bench:
     param_names = ["op"]
-    params = [("intersects", "contains", "within")]
+    params = [("intersects", "contains", "within", "dwithin")]
 
     def setup(self, *args):
         triangles = GeoSeries(
@@ -31,5 +31,5 @@ class Bench:
 
         self.df1, self.df2 = df1, df2
 
-    def time_sjoin(self, predicate):
-        sjoin(self.df1, self.df2, predicate=predicate)
+    def time_sjoin(self, predicate, distance=None):
+        sjoin(self.df1, self.df2, predicate=predicate, distance=distance)

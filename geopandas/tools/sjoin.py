@@ -46,6 +46,7 @@ def sjoin(
         Suffix to apply to overlapping column names (right GeoDataFrame).
     distance : float, default None
         Proximity distance to use to match geometry features.
+        For use with `dwithin` predicate only.
 
     Examples
     --------
@@ -95,7 +96,7 @@ def sjoin(
     Every operation in GeoPandas is planar, i.e. the potential third
     dimension is not taken into account.
 
-    The "distance" parameter and search option requires GEOS >= 3.10.
+    The "dwithin" predicate and distance search option requires GEOS >= 3.10.
     """
     if "op" in kwargs:
         op = kwargs.pop("op")
@@ -121,16 +122,16 @@ def sjoin(
         first = next(iter(kwargs.keys()))
         raise TypeError(f"sjoin() got an unexpected keyword argument '{first}'")
 
-    _basic_checks(left_df, right_df, how, lsuffix, rsuffix)
+    _basic_checks(left_df, right_df, how, lsuffix, rsuffix, distance)
 
-    indices = _geom_predicate_query(left_df, right_df, predicate)
+    indices = _geom_predicate_query(left_df, right_df, predicate, distance)
 
     joined = _frame_join(indices, left_df, right_df, how, lsuffix, rsuffix)
 
     return joined
 
 
-def _basic_checks(left_df, right_df, how, lsuffix, rsuffix):
+def _basic_checks(left_df, right_df, how, lsuffix, rsuffix, distance):
     """Checks the validity of join input parameters.
 
     `how` must be one of the valid options.
@@ -157,6 +158,10 @@ def _basic_checks(left_df, right_df, how, lsuffix, rsuffix):
         raise ValueError(
             "'right_df' should be GeoDataFrame, got {}".format(type(right_df))
         )
+    if not distance is None and not isinstance(distance, float):
+        raise ValueError(
+            "'distance' should be float, got {}".format(type(distance))
+        )
 
     allowed_hows = ["left", "right", "inner"]
     if how not in allowed_hows:
@@ -180,7 +185,7 @@ def _basic_checks(left_df, right_df, how, lsuffix, rsuffix):
         )
 
 
-def _geom_predicate_query(left_df, right_df, predicate):
+def _geom_predicate_query(left_df, right_df, predicate, distance=None):
     """Compute geometric comparisons and get matching indices.
 
     Parameters
@@ -189,6 +194,9 @@ def _geom_predicate_query(left_df, right_df, predicate):
     right_df : GeoDataFrame
     predicate : string
         Binary predicate to query.
+    distance : float
+        Proximity distance to use to match geometry features.
+        For use with "dwithin" predicate only.
 
     Returns
     -------
@@ -217,9 +225,9 @@ def _geom_predicate_query(left_df, right_df, predicate):
             # keep them the same
             sindex = right_df.sindex
             input_geoms = left_df.geometry
-
     if sindex:
-        l_idx, r_idx = sindex.query(input_geoms, predicate=predicate, sort=False)
+        l_idx, r_idx = sindex.query(input_geoms, predicate=predicate, 
+                                    distance=distance, sort=False)
         indices = pd.DataFrame({"_key_left": l_idx, "_key_right": r_idx})
     else:
         # when sindex is empty / has no valid geometries
