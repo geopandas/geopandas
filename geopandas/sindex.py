@@ -67,9 +67,9 @@ class BaseSpatialIndex:
         (equivalent to the ``bounds`` property of a geometry); any Z values
         present in input geometries are ignored when querying the tree.
 
-        If a distance is provided, all tree geometries within the specified 
-        distance of the input geometry will be returned. The distance value 
-        is set to the same units as the GeoSeries CRS. 
+        If a distance is provided, all tree geometries within the specified
+        distance of the input geometry will be returned. The distance value
+        is set to the same units as the GeoSeries CRS.
 
         Any input geometry that is None or empty will never match geometries in
         the tree.
@@ -98,8 +98,8 @@ class BaseSpatialIndex:
             If False, no additional sorting is applied (results are often
             sorted but there is no guarantee).
         distance : float, optional
-            If a distance is provided, all tree geometries are queried 
-            within the specified distance of the input geometry.  
+            If a distance is provided, all tree geometries are queried
+            within the specified distance of the input geometry.
 
         Returns
         -------
@@ -529,7 +529,10 @@ if compat.HAS_RTREE:
         @doc(BaseSpatialIndex.query)
         def query(self, geometry, predicate=None, sort=False, distance=None):
             # handle invalid predicates
-            if predicate not in self.valid_query_predicates and not predicate=="dwithin":
+            if (
+                predicate not in self.valid_query_predicates
+                and not predicate == "dwithin"
+            ):
                 raise ValueError(
                     "Got `predicate` = `{}`, `predicate` must be one of {}".format(
                         predicate, self.valid_query_predicates
@@ -603,7 +606,7 @@ if compat.HAS_RTREE:
                     "covered_by",
                     "covers",
                     "contains_properly",
-                    "dwithin"
+                    "dwithin",
                 ):
                     # prepare this input geometry
                     geometry = prep(geometry)
@@ -779,7 +782,10 @@ if compat.SHAPELY_GE_20 or compat.HAS_PYGEOS:
 
         @doc(BaseSpatialIndex.query)
         def query(self, geometry, predicate=None, sort=False, distance=None):
-            if predicate not in self.valid_query_predicates and not predicate == 'dwithin':
+            if (
+                predicate not in self.valid_query_predicates
+                and not predicate == "dwithin"
+            ):
                 raise ValueError(
                     "Got `predicate` = `{}`; ".format(predicate)
                     + "`predicate` must be one of {}".format(
@@ -794,12 +800,18 @@ if compat.SHAPELY_GE_20 or compat.HAS_PYGEOS:
             geometry = self._as_geometry_array(geometry)
 
             if compat.USE_SHAPELY_20:
-                indices = self._tree.query(geometry, predicate=predicate, distance=distance)
+                indices = self._tree.query(
+                    geometry, predicate=predicate, distance=distance
+                )
             else:
                 if isinstance(geometry, np.ndarray):
-                    indices = self._tree.query_bulk(geometry, predicate=predicate, distance=distance)
+                    indices = self._tree.query_bulk(
+                        geometry, predicate=predicate, distance=distance
+                    )
                 else:
-                    indices = self._tree.query(geometry, predicate=predicate, distance=distance)
+                    indices = self._tree.query(
+                        geometry, predicate=predicate, distance=distance
+                    )
 
             if sort:
                 if indices.ndim == 1:

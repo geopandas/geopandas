@@ -158,10 +158,8 @@ def _basic_checks(left_df, right_df, how, lsuffix, rsuffix, distance):
         raise ValueError(
             "'right_df' should be GeoDataFrame, got {}".format(type(right_df))
         )
-    if not distance is None and not isinstance(distance, float):
-        raise ValueError(
-            "'distance' should be float, got {}".format(type(distance))
-        )
+    if distance is not None and not isinstance(distance, float):
+        raise ValueError("'distance' should be float, got {}".format(type(distance)))
 
     allowed_hows = ["left", "right", "inner"]
     if how not in allowed_hows:
@@ -226,8 +224,9 @@ def _geom_predicate_query(left_df, right_df, predicate, distance=None):
             sindex = right_df.sindex
             input_geoms = left_df.geometry
     if sindex:
-        l_idx, r_idx = sindex.query(input_geoms, predicate=predicate, 
-                                    distance=distance, sort=False)
+        l_idx, r_idx = sindex.query(
+            input_geoms, predicate=predicate, distance=distance, sort=False
+        )
         indices = pd.DataFrame({"_key_left": l_idx, "_key_right": r_idx})
     else:
         # when sindex is empty / has no valid geometries
