@@ -40,11 +40,11 @@ class BaseSpatialIndex:
         >>> s = geopandas.GeoSeries([Point(0, 0), Point(1, 1)])
         >>> s.sindex.valid_query_predicates  # doctest: +SKIP
         {'contains', 'crosses', 'intersects', 'within', 'touches', \
-'overlaps', None, 'covers', 'contains_properly'}
+'overlaps', None, 'covers', 'contains_properly', 'dwithin'}
         """
         raise NotImplementedError
 
-    def query(self, geometry, predicate=None, sort=False):
+    def query(self, geometry, predicate=None, sort=False, distance=None):
         """
         Return the integer indices of all combinations of each input geometry
         and tree geometries where the bounding box of each input geometry
@@ -66,6 +66,10 @@ class BaseSpatialIndex:
         Bounding boxes are limited to two dimensions and are axis-aligned
         (equivalent to the ``bounds`` property of a geometry); any Z values
         present in input geometries are ignored when querying the tree.
+
+        If a distance is provided, all tree geometries within the specified 
+        distance of the input geometry will be returned. The distance value 
+        is set to the same units as the GeoSeries CRS. 
 
         Any input geometry that is None or empty will never match geometries in
         the tree.
@@ -93,6 +97,9 @@ class BaseSpatialIndex:
             as the secondary key.
             If False, no additional sorting is applied (results are often
             sorted but there is no guarantee).
+        distance : float, optional
+            If a distance is provided, all tree geometries are queried 
+            within the specified distance of the input geometry.  
 
         Returns
         -------
@@ -147,6 +154,10 @@ class BaseSpatialIndex:
         array([[0],
                [3]])
 
+        >>> s.sindex.query(box(10, 9, 11, 10), distance=1.0)
+        array([[0],
+               [9]])
+
         Notes
         -----
         In the context of a spatial join, input geometries are the "left"
@@ -155,6 +166,8 @@ class BaseSpatialIndex:
         effectively performs an inner join, where only those combinations of
         geometries that can be joined based on overlapping bounding boxes or
         optional predicate are returned.
+
+        The "dwithin" predicate requires GEOS >= 3.10.
         """
         raise NotImplementedError
 
@@ -510,12 +523,13 @@ if compat.HAS_RTREE:
                 "covered_by",
                 "covers",
                 "contains_properly",
+                "dwithin",
             }
 
         @doc(BaseSpatialIndex.query)
-        def query(self, geometry, predicate=None, sort=False):
+        def query(self, geometry, predicate=None, sort=False, distance=None):
             # handle invalid predicates
-            if predicate not in self.valid_query_predicates:
+            if predicate not in self.valid_query_predicates and not predicate=="dwithin":
                 raise ValueError(
                     "Got `predicate` = `{}`, `predicate` must be one of {}".format(
                         predicate, self.valid_query_predicates
@@ -589,6 +603,7 @@ if compat.HAS_RTREE:
                     "covered_by",
                     "covers",
                     "contains_properly",
+                    "dwithin"
                 ):
                     # prepare this input geometry
                     geometry = prep(geometry)
@@ -597,7 +612,6 @@ if compat.HAS_RTREE:
                     for index_in_tree in tree_idx
                     if getattr(geometry, predicate)(self.geometries[index_in_tree])
                 ]
-
             # sort if requested
             if sort:
                 # sorted
@@ -759,13 +773,13 @@ if compat.SHAPELY_GE_20 or compat.HAS_PYGEOS:
             >>> s = geopandas.GeoSeries([Point(0, 0), Point(1, 1)])
             >>> s.sindex.valid_query_predicates  # doctest: +SKIP
             {None, "contains", "contains_properly", "covered_by", "covers", \
-"crosses", "intersects", "overlaps", "touches", "within"}
+"crosses", "intersects", "overlaps", "touches", "within", "dwithin"}
             """
             return _PYGEOS_PREDICATES
 
         @doc(BaseSpatialIndex.query)
-        def query(self, geometry, predicate=None, sort=False):
-            if predicate not in self.valid_query_predicates:
+        def query(self, geometry, predicate=None, sort=False, distance=None):
+            if predicate not in self.valid_query_predicates and not predicate == 'dwithin':
                 raise ValueError(
                     "Got `predicate` = `{}`; ".format(predicate)
                     + "`predicate` must be one of {}".format(
@@ -776,7 +790,7 @@ if compat.SHAPELY_GE_20 or compat.HAS_PYGEOS:
             geometry = self._as_geometry_array(geometry)
 
             if compat.USE_SHAPELY_20:
-                indices = self._tree.query(geometry, predicate=predicate)
+                indices = self._tree.query(geometry, predicate=predicate, distance=distance)
             else:
                 if isinstance(geometry, np.ndarray):
                     indices = self._tree.query_bulk(geometry, predicate=predicate)

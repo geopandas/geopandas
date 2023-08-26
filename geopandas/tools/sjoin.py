@@ -16,6 +16,7 @@ def sjoin(
     predicate="intersects",
     lsuffix="left",
     rsuffix="right",
+    distance=None,
     **kwargs,
 ):
     """Spatial join of two GeoDataFrames.
@@ -43,6 +44,8 @@ def sjoin(
         Suffix to apply to overlapping column names (left GeoDataFrame).
     rsuffix : string, default 'right'
         Suffix to apply to overlapping column names (right GeoDataFrame).
+    distance : float, default None
+        Proximity distance to use to match geometry features.
 
     Examples
     --------
@@ -91,6 +94,8 @@ def sjoin(
     -----
     Every operation in GeoPandas is planar, i.e. the potential third
     dimension is not taken into account.
+
+    The "distance" parameter and search option requires GEOS >= 3.10.
     """
     if "op" in kwargs:
         op = kwargs.pop("op")
