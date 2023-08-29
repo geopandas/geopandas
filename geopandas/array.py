@@ -659,7 +659,9 @@ class GeometryArray(ExtensionArray):
         return GeometryArray(self._binary_method("union", self, other), crs=self.crs)
 
     def shortest_line(self, other):
-        return self._binary_method("shortest_line", self, other)
+        return GeometryArray(
+            self._binary_method("shortest_line", self, other), crs=self.crs
+        )
 
     #
     # Other operations

@@ -389,7 +389,7 @@ class TestGeomMethods:
         )
         crossed_lines_inv = self.crossed_lines[::-1]
         assert_array_dtype_equal(
-            expected, self.crossed_lines.shortest_line(crossed_lines_inv)
+            expected, self.crossed_lines.shortest_line(crossed_lines_inv, align=False)
         )
 
     @pytest.mark.skipif(
