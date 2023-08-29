@@ -1050,15 +1050,15 @@ GeometryCollection
         2                              POINT (0.00000 0.00000)
         dtype: geometry
 
-        >>> s.representative_point()
-        0    POINT (0.25000 0.50000)
-        1    POINT (1.00000 1.00000)
+        >>> s.reverse()
+        0    POLYGON ((0.00000 0.00000, 0.00000 1.00000, 1....
+        1    LINESTRING (1.00000 0.00000, 1.00000 1.00000, ...
         2    POINT (0.00000 0.00000)
         dtype: geometry
 
         See also
         --------
-        GeoSeries.centroid : geometric centroid
+        GeoSeries.normalize : normalize order of coordinates
         """
         return _delegate_geo_method("reverse", self)
 
