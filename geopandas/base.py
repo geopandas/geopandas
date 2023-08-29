@@ -1030,6 +1030,38 @@ GeometryCollection
         """
         return _delegate_geo_method("make_valid", self)
 
+    def reverse(self):
+        """Returns a ``GeoSeries`` with the order of coordinates reversed.
+
+        Examples
+        --------
+
+        >>> from shapely.geometry import Polygon, LineString, Point
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0, 0), (1, 1), (0, 1)]),
+        ...         LineString([(0, 0), (1, 1), (1, 0)]),
+        ...         Point(0, 0),
+        ...     ]
+        ... )
+        >>> s
+        0    POLYGON ((0.00000 0.00000, 1.00000 1.00000, 0....
+        1    LINESTRING (0.00000 0.00000, 1.00000 1.00000, ...
+        2                              POINT (0.00000 0.00000)
+        dtype: geometry
+
+        >>> s.representative_point()
+        0    POINT (0.25000 0.50000)
+        1    POINT (1.00000 1.00000)
+        2    POINT (0.00000 0.00000)
+        dtype: geometry
+
+        See also
+        --------
+        GeoSeries.centroid : geometric centroid
+        """
+        return _delegate_geo_method("reverse", self)
+
     def segmentize(self, max_segment_length):
         """Returns a ``GeoSeries`` with vertices added to line segments based on
         maximum segment length.

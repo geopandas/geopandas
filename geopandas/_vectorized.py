@@ -1108,6 +1108,18 @@ def make_valid(data):
     return out
 
 
+def reverse(data):
+    if compat.USE_SHAPELY_20:
+        return shapely.reverse(data)
+    elif compat.USE_PYGEOS:
+        return pygeos.reverse(data)
+    else:
+        raise NotImplementedError(
+            f"shapely >= 2.0 or PyGEOS is required, "
+            f"version {shapely.__version__} is installed"
+        )
+
+
 def project(data, other, normalized=False):
     if compat.USE_SHAPELY_20:
         return shapely.line_locate_point(data, other, normalized=normalized)
