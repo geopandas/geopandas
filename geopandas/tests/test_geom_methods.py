@@ -1790,7 +1790,7 @@ class TestGeomMethods:
         with pytest.raises(
             NotImplementedError, match="shapely >= 2.0 or PyGEOS is required"
         ):
-            self.g1.test_minimum_clearance()
+            self.g1.minimum_clearance()
 
     @pytest.mark.skipif(
         not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
