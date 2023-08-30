@@ -847,7 +847,7 @@ class TestGeomMethods:
 
     @pytest.mark.skipif(
         (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
-        reason="extract_unique_points not implemented for shapely<2",
+        reason="reverse not implemented for shapely<2",
     )
     def test_reverse_not_implemented(self):
         with pytest.raises(
