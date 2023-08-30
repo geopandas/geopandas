@@ -95,6 +95,7 @@ Constructive methods and attributes
    GeoSeries.extract_unique_points
    GeoSeries.make_valid
    GeoSeries.minimum_bounding_circle
+   GeoSeries.minimum_clearance
    GeoSeries.normalize
    GeoSeries.sample_points
    GeoSeries.segmentize

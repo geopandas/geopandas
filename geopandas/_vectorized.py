@@ -760,6 +760,18 @@ def minimum_bounding_radius(data):
         )
 
 
+def minimum_clearance(data):
+    if compat.USE_SHAPELY_20:
+        return shapely.minimum_clearance(data)
+    elif compat.USE_PYGEOS:
+        return pygeos.minimum_clearance(data)
+    else:
+        raise NotImplementedError(
+            f"shapely >= 2.0 or PyGEOS is required, "
+            f"version {shapely.__version__} is installed"
+        )
+
+
 def segmentize(data, max_segment_length):
     if compat.USE_SHAPELY_20:
         return shapely.segmentize(data, max_segment_length)

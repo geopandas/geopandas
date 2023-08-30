@@ -1765,6 +1765,35 @@ class TestGeomMethods:
 
     @pytest.mark.skipif(
         not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+        reason="minimum_clearance not implemented for shapely<2",
+    )
+    def test_minimum_clearance(self):
+        mc_geoms = self.g1.minimum_clearance()
+
+        assert_series_equal(
+            mc_geoms,
+            Series([0.707107, 1.000000]),
+        )
+
+        mc_lines = self.g5.minimum_clearance()
+
+        assert_series_equal(
+            mc_lines,
+            Series([1.0, 1.0]),
+        )
+
+    @pytest.mark.skipif(
+        (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+        reason="minimum_clearance not implemented for shapely<2",
+    )
+    def test_minimum_clearance_not(self):
+        with pytest.raises(
+            NotImplementedError, match="shapely >= 2.0 or PyGEOS is required"
+        ):
+            self.g1.test_minimum_clearance()
+
+    @pytest.mark.skipif(
+        not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
         reason="array input in interpolate is not implemented for shapely<2",
     )
     @pytest.mark.parametrize("size", [10, 20, 50])
