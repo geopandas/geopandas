@@ -566,6 +566,15 @@ def _to_file(
             stacklevel=3,
         )
 
+    if (df.dtypes == "geometry").sum() > 1:
+        raise ValueError(
+            "GeoDataFrame contains multiple geometry columns but GeoDataFrame.to_file "
+            "supports only a single geometry column. Use a GeoDataFrame.to_parquet or "
+            "GeoDataFrame.to_feather, drop additional geometry columns or convert them "
+            "to a supported format like a well-known text (WKT) using "
+            "`GeoSeries.to_wkt()`.",
+        )
+
     if mode not in ("w", "a"):
         raise ValueError(f"'mode' should be one of 'w' or 'a', got '{mode}' instead")
 
@@ -627,7 +636,13 @@ def infer_schema(df):
     from collections import OrderedDict
 
     # TODO: test pandas string type and boolean type once released
-    types = {"Int64": "int", "string": "str", "boolean": "bool"}
+    types = {
+        "Int32": "int32",
+        "int32": "int32",
+        "Int64": "int",
+        "string": "str",
+        "boolean": "bool",
+    }
 
     def convert_type(column, in_type):
         if in_type == object:
