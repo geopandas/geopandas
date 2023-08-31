@@ -98,6 +98,7 @@ Constructive methods and attributes
    GeoSeries.normalize
    GeoSeries.sample_points
    GeoSeries.segmentize
+   GeoSeries.shortest_line
    GeoSeries.simplify
 
 Affine transformations
