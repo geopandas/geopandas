@@ -529,6 +529,11 @@ class GeometryArray(ExtensionArray):
     def envelope(self):
         return GeometryArray(vectorized.envelope(self._data), crs=self.crs)
 
+    def minimum_rotated_rectangle(self):
+        return GeometryArray(
+            vectorized.minimum_rotated_rectangle(self.data), crs=self.crs
+        )
+
     @property
     def exterior(self):
         return GeometryArray(vectorized.exterior(self._data), crs=self.crs)

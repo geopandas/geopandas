@@ -658,6 +658,15 @@ def envelope(data):
         return _unary_geo("envelope", data)
 
 
+def minimum_rotated_rectangle(data):
+    if compat.USE_SHAPELY_20:
+        return shapely.oriented_envelope(data)
+    elif compat.USE_PYGEOS:
+        return pygeos.oriented_envelope(data)
+    else:
+        return _unary_geo("minimum_rotated_rectangle", data)
+
+
 def exterior(data):
     if compat.USE_SHAPELY_20:
         return shapely.get_exterior_ring(data)
