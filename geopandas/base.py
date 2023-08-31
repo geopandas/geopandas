@@ -697,6 +697,46 @@ GeometryCollection
         """
         return _delegate_property("envelope", self)
 
+    def minimum_rotated_rectangle(self):
+        """Returns a ``GeoSeries`` of the general minimum bounding rectangle
+        that contains the object.
+
+        Unlike envelope this rectangle is not constrained to be parallel
+        to the coordinate axes. If the convex hull of the object is a
+        degenerate (line or point) this degenerate is returned.
+
+        Examples
+        --------
+
+        >>> from shapely.geometry import Polygon, LineString, Point, MultiPoint
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0, 0), (1, 1), (0, 1)]),
+        ...         LineString([(0, 0), (1, 1), (1, 0)]),
+        ...         MultiPoint([(0, 0), (1, 1)]),
+        ...         Point(0, 0),
+        ...     ]
+        ... )
+        >>> s
+        0    POLYGON ((0.00000 0.00000, 1.00000 1.00000, 0....
+        1    LINESTRING (0.00000 0.00000, 1.00000 1.00000, ...
+        2        MULTIPOINT (0.00000 0.00000, 1.00000 1.00000)
+        3                              POINT (0.00000 0.00000)
+        dtype: geometry
+
+        >>> s.minimum_rotated_rectangle()
+        0    POLYGON ((1.00000 1.00000, 0.50000 1.50000, -0...
+        1    POLYGON ((0.00000 0.00000, 0.50000 -0.50000, 1...
+        2        LINESTRING (0.00000 0.00000, 1.00000 1.00000)
+        3                              POINT (0.00000 0.00000)
+        dtype: geometry
+
+        See also
+        --------
+        GeoSeries.envelope : bounding rectangle
+        """
+        return _delegate_geo_method("minimum_rotated_rectangle", self)
+
     @property
     def exterior(self):
         """Returns a ``GeoSeries`` of LinearRings representing the outer

@@ -1223,6 +1223,20 @@ class TestGeomMethods:
         assert isinstance(e, GeoSeries)
         assert self.g3.crs == e.crs
 
+    def test_minimum_rotated_rectangle(self):
+        s = GeoSeries([self.sq, self.t5], crs=3857)
+        r = s.minimum_rotated_rectangle()
+        exp = GeoSeries.from_wkt(
+            [
+                "POLYGON ((0 0, 0 1, 1 1, 1 0, 0 0))",
+                "POLYGON ((2 0, 2 3, 3 3, 3 0, 2 0))",
+            ]
+        )
+
+        assert np.all(r.normalize().geom_equals_exact(exp, 0.001))
+        assert isinstance(r, GeoSeries)
+        assert s.crs == r.crs
+
     @pytest.mark.skipif(
         not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
         reason=(

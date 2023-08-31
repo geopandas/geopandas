@@ -11,6 +11,7 @@ New methods:
 - Added ``concave_hull`` method from shapely to GeoSeries/GeoDataframe (#2903).
 - Added ``offset_curve`` method from shapely to GeoSeries/GeoDataframe (#2902).
 - Added ``shortest_line`` method from shapely to GeoSeries/GeoDataframe (#2960).
+- Added ``minimum_rotated_rectangle`` method from shapely to GeoSeries/GeoDataframe (#2541).
 
 New features and improvements:
 
