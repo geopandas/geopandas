@@ -950,6 +950,18 @@ def union(data, other):
         return _binary_geo("union", data, other)
 
 
+def shortest_line(data, other):
+    if compat.USE_SHAPELY_20:
+        return shapely.shortest_line(data, other)
+    elif compat.USE_PYGEOS:
+        return _binary_method("shortest_line", data, other)
+    else:
+        raise NotImplementedError(
+            f"shapely >= 2.0 or PyGEOS is required, "
+            f"version {shapely.__version__} is installed"
+        )
+
+
 #
 # Other operations
 #

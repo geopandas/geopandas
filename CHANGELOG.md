@@ -10,6 +10,7 @@ New methods:
 - Added ``delaunay_triangles`` method from shapely to GeoSeries/GeoDataframe (#2907).
 - Added ``concave_hull`` method from shapely to GeoSeries/GeoDataframe (#2903).
 - Added ``offset_curve`` method from shapely to GeoSeries/GeoDataframe (#2902).
+- Added ``shortest_line`` method from shapely to GeoSeries/GeoDataframe (#2960).
 - Added ``minimum_rotated_rectangle`` method from shapely to GeoSeries/GeoDataframe (#2541).
 
 New features and improvements:
@@ -21,7 +22,7 @@ Bug fixes:
 
 - Fix a color assignment in ``explore`` when using ``UserDefined`` bins (#2923)
 - ``assert_geodataframe_equal`` now handles GeoDataFrames with no active geometry (#2498)
-- Fix bug in `apply` with `axis=1` where the given user defined function returns nested 
+- Fix bug in `apply` with `axis=1` where the given user defined function returns nested
   data in the geometry column (#2959)
 - Properly infer schema for np.int32 and pd.Int32Dtype columns (#2950)
 
