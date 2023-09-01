@@ -24,11 +24,11 @@ dependencies:
     - geopy
     - mapclassify>=2.4.0
     # dev versions of packages
-    - --pre --extra-index https://pypi.anaconda.org/scipy-wheels-nightly/simple
+    - --pre --index-url https://pypi.anaconda.org/scientific-python-nightly-wheels/simple --extra-index-url https://pypi.org/simple
     - numpy
     - fiona
-    - git+https://github.com/pandas-dev/pandas.git@main
-    - git+https://github.com/matplotlib/matplotlib.git@main
+    - pandas
+    - matplotlib
     - git+https://github.com/shapely/shapely.git@main
     - git+https://github.com/pygeos/pygeos.git@master
     - git+https://github.com/python-visualization/folium.git@main
