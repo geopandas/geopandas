@@ -1090,6 +1090,10 @@ class GeometryArray(ExtensionArray):
             maximum number of entries along the entire axis where NaNs will be
             filled.
 
+        copy : bool, default True
+            Whether to make a copy of the data before filling. If False, then
+            the original should be modified and no new memory should be allocated.
+
         Returns
         -------
         GeometryArray

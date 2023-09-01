@@ -433,6 +433,14 @@ def test_fillna_series(s):
     assert_geoseries_equal(res, s2)
 
 
+def test_fillna_inplace(s):
+    s2 = GeoSeries([Point(0, 0), None, Point(2, 2)])
+    arr = s2.array
+    s2.fillna(Point(1, 1), inplace=True)
+    assert_geoseries_equal(s2, s)
+    assert s2.array is arr
+
+
 def test_dropna():
     s2 = GeoSeries([Point(0, 0), None, Point(2, 2)])
     res = s2.dropna()
