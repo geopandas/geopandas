@@ -64,6 +64,7 @@ jobs:
           - env: ci/envs/310-dev.yaml
             os: ubuntu-latest
             dev: true
+            pandas_copy_on_write: "1"
 
     steps:
       - uses: actions/checkout@v3
@@ -93,6 +94,8 @@ jobs:
       - name: Test without PyGEOS
         env:
           USE_PYGEOS: 0
+          PANDAS_COPY_ON_WRITE: ${{ matrix.pandas_copy_on_write || '0' }}
+          GEOPANDAS_TEST_DEV: ${{ matrix.dev }}
         run: |
           pytest -v -r a -n auto --color=yes --cov=geopandas --cov-append --cov-report term-missing --cov-report xml geopandas/
 

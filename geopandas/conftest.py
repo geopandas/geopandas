@@ -1,3 +1,5 @@
+import os
+
 import pytest
 import geopandas
 
@@ -25,3 +27,10 @@ def pytest_runtest_setup(item):
     skip_no_sindex = any(mark for mark in item.iter_markers(name="skip_no_sindex"))
     if skip_no_sindex and not has_sindex_backend:
         pytest.skip("Skipped because there is no spatial index backend available")
+
+
+if os.environ.get("GEOPANDAS_TEST_DEV", "false") == "true":
+    print("enabling future strings")
+    import pandas
+
+    pandas.options.future.infer_string = True
