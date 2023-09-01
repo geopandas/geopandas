@@ -18,12 +18,10 @@ from urllib.parse import urlparse as parse_url
 from urllib.parse import uses_netloc, uses_params, uses_relative
 import urllib.request
 
-
 _VALID_URLS = set(uses_relative + uses_netloc + uses_params)
 _VALID_URLS.discard("")
 # file:// URIs are supported by fiona/pyogrio -> don't already open + read the file here
 _VALID_URLS.discard("file")
-
 
 fiona = None
 fiona_env = None
@@ -67,10 +65,13 @@ pyogrio_import_error = None
 def _import_pyogrio():
     global pyogrio
     global pyogrio_import_error
+    global PYOGRIO_GE_06
 
     if pyogrio is None:
         try:
             import pyogrio
+
+            PYOGRIO_GE_06 = Version(pyogrio.__version__) >= Version("0.6.0")
         except ImportError as err:
             pyogrio = False
             pyogrio_import_error = str(err)
@@ -477,6 +478,7 @@ def _to_file(
     mode="w",
     crs=None,
     engine=None,
+    metadata=None,
     **kwargs,
 ):
     """
@@ -530,6 +532,10 @@ def _to_file(
         The underlying library that is used to write the file. Currently, the
         supported options are "fiona" and "pyogrio". Defaults to "fiona" if
         installed, otherwise tries "pyogrio".
+    metadata : dict[str, str], default None
+        Optional metadata to be stored in the file. Keys and values must be
+        strings. Only supported for the "GPKG" driver (requires Fiona >= 1.9 or pyogrio >= 0.6).
+
     **kwargs :
         Keyword args to be passed to the engine, and can be used to write
         to multi-layer data, store data within archives (zip files), etc.
@@ -578,14 +584,25 @@ def _to_file(
         raise ValueError(f"'mode' should be one of 'w' or 'a', got '{mode}' instead")
 
     if engine == "fiona":
-        _to_file_fiona(df, filename, driver, schema, crs, mode, **kwargs)
+        _to_file_fiona(df, filename, driver, schema, crs, mode, metadata, **kwargs)
     elif engine == "pyogrio":
-        _to_file_pyogrio(df, filename, driver, schema, crs, mode, **kwargs)
+        _to_file_pyogrio(df, filename, driver, schema, crs, mode, metadata, **kwargs)
     else:
         raise ValueError(f"unknown engine '{engine}'")
 
 
-def _to_file_fiona(df, filename, driver, schema, crs, mode, **kwargs):
+def _to_file_fiona(df, filename, driver, schema, crs, mode, metadata, **kwargs):
+    if metadata is not None:
+        if driver != "GPKG":
+            raise NotImplementedError(
+                "The 'metadata' keyword is only supported for the GPKG driver."
+            )
+
+        if not FIONA_GE_19:
+            raise NotImplementedError(
+                "The 'metadata' keyword is only supported for Fiona >= 1.9."
+            )
+
     if schema is None:
         schema = infer_schema(df)
 
@@ -607,11 +624,24 @@ def _to_file_fiona(df, filename, driver, schema, crs, mode, **kwargs):
         with fiona.open(
             filename, mode=mode, driver=driver, crs_wkt=crs_wkt, schema=schema, **kwargs
         ) as colxn:
+            if metadata is not None:
+                colxn.update_tags(metadata)
             colxn.writerecords(df.iterfeatures())
 
 
-def _to_file_pyogrio(df, filename, driver, schema, crs, mode, **kwargs):
+def _to_file_pyogrio(df, filename, driver, schema, crs, mode, metadata, **kwargs):
     import pyogrio
+
+    if metadata is not None:
+        if driver != "GPKG":
+            raise NotImplementedError(
+                "The 'metadata' keyword is only supported for the GPKG driver."
+            )
+
+        if not PYOGRIO_GE_06:
+            raise NotImplementedError(
+                "The 'metadata' keyword is only supported for Pyogrio >= 0.6.0"
+            )
 
     if schema is not None:
         raise ValueError(
@@ -628,7 +658,7 @@ def _to_file_pyogrio(df, filename, driver, schema, crs, mode, **kwargs):
     if not df.columns.is_unique:
         raise ValueError("GeoDataFrame cannot contain duplicated column names.")
 
-    pyogrio.write_dataframe(df, filename, driver=driver, **kwargs)
+    pyogrio.write_dataframe(df, filename, driver=driver, metadata=metadata, **kwargs)
 
 
 def infer_schema(df):

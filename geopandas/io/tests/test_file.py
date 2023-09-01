@@ -23,8 +23,11 @@ from geopandas.tests.util import PACKAGE_DIR, validate_boro_df
 
 try:
     import pyogrio
+
+    PYOGRIO_GE_06 = Version(pyogrio.__version__) >= Version("0.6.0")
 except ImportError:
     pyogrio = False
+    PYOGRIO_GE_06 = False
 
 
 try:
@@ -1151,6 +1154,62 @@ def test_write_read_file(test_file, engine):
     df_json = geopandas.read_file(test_file, engine=engine)
     assert_geodataframe_equal(gdf, df_json, check_crs=True)
     os.remove(os.path.expanduser(test_file))
+
+
+def test_to_file__metadata(tmpdir, df_points, engine):
+    metadata = {"title": "test"}
+    tempfilename = os.path.join(str(tmpdir), "test.gpkg")
+
+    if engine == "fiona":
+        if not FIONA_GE_19:
+            with pytest.raises(
+                NotImplementedError,
+                match="'metadata' keyword is only supported for Fiona >= 1.9",
+            ):
+                df_points.to_file(
+                    tempfilename, driver="GPKG", engine="fiona", metadata=metadata
+                )
+        else:
+            df_points.to_file(
+                tempfilename, driver="GPKG", engine="fiona", metadata=metadata
+            )
+
+            # Check that metadata is written to the file
+            with fiona.open(tempfilename) as src:
+                tags = src.tags()
+                assert tags == metadata
+
+    if engine == "pyogrio":
+        if not PYOGRIO_GE_06:
+            with pytest.raises(
+                NotImplementedError,
+                match="'metadata' keyword is only supported for Pyogrio >= 0.6",
+            ):
+                df_points.to_file(
+                    tempfilename, driver="GPKG", engine="pyogrio", metadata=metadata
+                )
+        else:
+            df_points.to_file(
+                tempfilename, driver="GPKG", engine="pyogrio", metadata=metadata
+            )
+
+            # Check that metadata is written to the file
+            info = pyogrio.read_info(tempfilename)
+            layer_metadata = info["layer_metadata"]
+            assert layer_metadata == metadata
+
+
+@pytest.mark.parametrize(
+    "driver, ext", [("ESRI Shapefile", ".shp"), ("GeoJSON", ".geojson")]
+)
+def test_to_file__metadata_unsupported(driver, ext, tmpdir, df_points, engine):
+    skip_pyogrio_not_supported(engine)
+    metadata = {"title": "Test"}
+    tempfilename = os.path.join(str(tmpdir), "test" + ext)
+    with pytest.raises(
+        NotImplementedError, match="'metadata' keyword is only supported for"
+    ):
+        df_points.to_file(tempfilename, driver=driver, metadata=metadata)
 
 
 def test_multiple_geom_cols_error(tmpdir, df_nybb):

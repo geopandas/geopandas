@@ -1222,6 +1222,9 @@ individually so that features may have different properties
             The underlying library that is used to write the file. Currently, the
             supported options are "fiona" and "pyogrio". Defaults to "fiona" if
             installed, otherwise tries "pyogrio".
+        metadata : dict[str, str], default None
+            Optional metadata to be stored in the file. Keys and values must be
+            strings. Supported only for "GPKG" driver.
         **kwargs :
             Keyword args to be passed to the engine, and can be used to write
             to multi-layer data, store data within archives (zip files), etc.
