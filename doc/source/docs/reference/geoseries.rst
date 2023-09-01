@@ -87,6 +87,7 @@ Constructive methods and attributes
 
    GeoSeries.buffer
    GeoSeries.boundary
+   GeoSeries.build_area
    GeoSeries.centroid
    GeoSeries.concave_hull
    GeoSeries.convex_hull
