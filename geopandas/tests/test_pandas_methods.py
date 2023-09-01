@@ -438,7 +438,9 @@ def test_fillna_inplace(s):
     arr = s2.array
     s2.fillna(Point(1, 1), inplace=True)
     assert_geoseries_equal(s2, s)
-    assert s2.array is arr
+    if compat.PANDAS_GE_21:
+        # starting from pandas 2.1, there is support to do this actually inplace
+        assert s2.array is arr
 
 
 def test_dropna():
