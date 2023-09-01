@@ -95,7 +95,6 @@ jobs:
         env:
           USE_PYGEOS: 0
           PANDAS_COPY_ON_WRITE: ${{ matrix.pandas_copy_on_write || '0' }}
-          GEOPANDAS_TEST_DEV: ${{ matrix.dev }}
         run: |
           pytest -v -r a -n auto --color=yes --cov=geopandas --cov-append --cov-report term-missing --cov-report xml geopandas/
 
