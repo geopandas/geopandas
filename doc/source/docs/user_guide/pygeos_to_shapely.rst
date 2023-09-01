@@ -27,7 +27,7 @@ GeoPandas 0.13
 GeoPandas 0.14
 ^^^^^^^^^^^^^^
 
-- The default backend is Shapely 2.0 and the PyGEOS is be used only
+- The default backend is Shapely 2.0 and the PyGEOS is used only
   if Shapely 1.8 is installed instead of 2.0 or newer. The PyGEOS backend is still
   supported, but a user needs to opt in using the environment variable
   ``USE_PYGEOS`` as explained in the
