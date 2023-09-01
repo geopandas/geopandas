@@ -131,7 +131,7 @@ def data_missing_for_sorting():
     This should be three items [B, NA, A] with
     A < B and NA missing.
     """
-    return from_shapely([Point(0, 1), None, Point(0, 0)])
+    return from_shapely([Point(1, 2), None, Point(0, 0)])
 
 
 @pytest.fixture
