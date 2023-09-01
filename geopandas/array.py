@@ -1076,7 +1076,7 @@ class GeometryArray(ExtensionArray):
         self._data[idx] = value_arr
         return self
 
-    def fillna(self, value=None, method=None, limit=None):
+    def fillna(self, value=None, method=None, limit=None, copy=True):
         """
         Fill NA values with geometry (or geometries) or using the specified method.
 
@@ -1100,6 +1100,10 @@ class GeometryArray(ExtensionArray):
             maximum number of entries along the entire axis where NaNs will be
             filled.
 
+        copy : bool, default True
+            Whether to make a copy of the data before filling. If False, then
+            the original should be modified and no new memory should be allocated.
+
         Returns
         -------
         GeometryArray
@@ -1108,7 +1112,10 @@ class GeometryArray(ExtensionArray):
             raise NotImplementedError("fillna with a method is not yet supported")
 
         mask = self.isna()
-        new_values = self.copy()
+        if copy:
+            new_values = self.copy()
+        else:
+            new_values = self
         return new_values._fill(mask, value) if mask.any() else new_values
 
     def astype(self, dtype, copy=True):
