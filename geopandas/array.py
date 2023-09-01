@@ -35,7 +35,7 @@ TransformerFromCRS = lru_cache(Transformer.from_crs)
 class GeometryDtype(ExtensionDtype):
     type = BaseGeometry
     name = "geometry"
-    na_value = np.nan
+    na_value = None
 
     @classmethod
     def construct_from_string(cls, string):
