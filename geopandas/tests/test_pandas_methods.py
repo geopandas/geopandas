@@ -1,4 +1,5 @@
 import os
+from packaging.version import Version
 
 import numpy as np
 from numpy.testing import assert_array_equal
@@ -249,8 +250,10 @@ def test_astype(s, df):
     assert s.astype(str)[0] == "POINT (0 0)"
 
     res = s.astype(object)
-    assert isinstance(res, pd.Series) and not isinstance(res, GeoSeries)
-    assert res.dtype == object
+    if not Version(pd.__version__) == Version("2.1.0"):
+        # https://github.com/geopandas/geopandas/issues/2948 - bug in pandas 2.1.0
+        assert isinstance(res, pd.Series) and not isinstance(res, GeoSeries)
+        assert res.dtype == object
 
     df = df.rename_geometry("geom_list")
 
