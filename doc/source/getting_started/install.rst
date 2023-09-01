@@ -212,8 +212,9 @@ More specifically, whether the PyGEOS is used or not is determined by:
 
 .. warning::
 
-    The use of PyGEOS is deprecated! If you depend on PyGEOS, see the :doc:`migration guide <../docs/user_guide/pygeos_to_shapely>`
-     to Shapely 2.0. Otherwise, use Shapely 2 directly.
+    The use of PyGEOS is deprecated! If you depend on PyGEOS, see
+    the :doc:`migration guide <../docs/user_guide/pygeos_to_shapely>`
+    to Shapely 2.0. Otherwise, use Shapely 2 directly.
 
 
 .. _PyPI: https://pypi.python.org/pypi/geopandas
