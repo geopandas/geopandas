@@ -2,6 +2,10 @@
 
 ## Development version
 
+GeoPandas no longer defaults to the PyGEOS engine and will use Shapely 2.0 by default, if
+both are installed alongside. If PyGEOS is detected alongside Shapely < 2, it will still be
+used but support of both PyGEOS and Shapely < 2 will be removed in GeoPandas 1.0.
+
 New methods:
 
 - Added ``segmentize`` method from shapely to GeoSeries/GeoDataFrame (#2910).
