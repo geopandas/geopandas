@@ -658,6 +658,15 @@ def envelope(data):
         return _unary_geo("envelope", data)
 
 
+def minimum_rotated_rectangle(data):
+    if compat.USE_SHAPELY_20:
+        return shapely.oriented_envelope(data)
+    elif compat.USE_PYGEOS:
+        return pygeos.oriented_envelope(data)
+    else:
+        return _unary_geo("minimum_rotated_rectangle", data)
+
+
 def exterior(data):
     if compat.USE_SHAPELY_20:
         return shapely.get_exterior_ring(data)
@@ -939,6 +948,18 @@ def union(data, other):
         return _binary_method("union", data, other)
     else:
         return _binary_geo("union", data, other)
+
+
+def shortest_line(data, other):
+    if compat.USE_SHAPELY_20:
+        return shapely.shortest_line(data, other)
+    elif compat.USE_PYGEOS:
+        return _binary_method("shortest_line", data, other)
+    else:
+        raise NotImplementedError(
+            f"shapely >= 2.0 or PyGEOS is required, "
+            f"version {shapely.__version__} is installed"
+        )
 
 
 #

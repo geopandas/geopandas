@@ -697,6 +697,46 @@ GeometryCollection
         """
         return _delegate_property("envelope", self)
 
+    def minimum_rotated_rectangle(self):
+        """Returns a ``GeoSeries`` of the general minimum bounding rectangle
+        that contains the object.
+
+        Unlike envelope this rectangle is not constrained to be parallel
+        to the coordinate axes. If the convex hull of the object is a
+        degenerate (line or point) this degenerate is returned.
+
+        Examples
+        --------
+
+        >>> from shapely.geometry import Polygon, LineString, Point, MultiPoint
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0, 0), (1, 1), (0, 1)]),
+        ...         LineString([(0, 0), (1, 1), (1, 0)]),
+        ...         MultiPoint([(0, 0), (1, 1)]),
+        ...         Point(0, 0),
+        ...     ]
+        ... )
+        >>> s
+        0    POLYGON ((0.00000 0.00000, 1.00000 1.00000, 0....
+        1    LINESTRING (0.00000 0.00000, 1.00000 1.00000, ...
+        2        MULTIPOINT (0.00000 0.00000, 1.00000 1.00000)
+        3                              POINT (0.00000 0.00000)
+        dtype: geometry
+
+        >>> s.minimum_rotated_rectangle()
+        0    POLYGON ((1.00000 1.00000, 0.50000 1.50000, -0...
+        1    POLYGON ((0.00000 0.00000, 0.50000 -0.50000, 1...
+        2        LINESTRING (0.00000 0.00000, 1.00000 1.00000)
+        3                              POINT (0.00000 0.00000)
+        dtype: geometry
+
+        See also
+        --------
+        GeoSeries.envelope : bounding rectangle
+        """
+        return _delegate_geo_method("minimum_rotated_rectangle", self)
+
     @property
     def exterior(self):
         """Returns a ``GeoSeries`` of LinearRings representing the outer
@@ -3098,6 +3138,109 @@ GeometryCollection
         geometry_array = GeometryArray(self.geometry.values)
         clipped_geometry = geometry_array.clip_by_rect(xmin, ymin, xmax, ymax)
         return GeoSeries(clipped_geometry, index=self.index, crs=self.crs)
+
+    def shortest_line(self, other, align=True):
+        """
+        Returns the shortest two-point line between two geometries.
+
+        The resulting line consists of two points, representing the nearest points
+        between the geometry pair. The line always starts in the first geometry a
+        and ends in he second geometry b. The endpoints of the line will not
+        necessarily be existing vertices of the input geometries a and b, but
+        can also be a point along a line segment.
+
+
+        The operation works on a 1-to-1 row-wise manner:
+
+        .. image:: ../../../_static/binary_op-01.svg
+        :align: center
+
+        Parameters
+        ----------
+        other : Geoseries or geometric object
+            The Geoseries (elementwise) or geometric object to find the
+            shortest line with.
+        align : bool (default True)
+            If True, automatically aligns GeoSeries based on their indices.
+            If False, the order of elements is preserved.
+
+        Returns
+        -------
+        GeoSeries
+
+        Examples
+        --------
+        >>> from shapely.geometry import Polygon, LineString, Point
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0, 0), (2, 2), (0, 2)]),
+        ...         Polygon([(0, 0), (2, 2), (0, 2)]),
+        ...         LineString([(0, 0), (2, 2)]),
+        ...         LineString([(2, 0), (0, 2)]),
+        ...         Point(0, 1),
+        ...     ],
+        ...     crs=5514
+        ... )
+        >>> s
+        0    POLYGON ((0.000 0.000, 2.000 2.000, 0.000 2.00...
+        1    POLYGON ((0.000 0.000, 2.000 2.000, 0.000 2.00...
+        2                LINESTRING (0.000 0.000, 2.000 2.000)
+        3                LINESTRING (2.000 0.000, 0.000 2.000)
+        4                                  POINT (0.000 1.000)
+        dtype: geometry
+
+        We can also do intersection of each geometry and a single
+        shapely geometry:
+
+        .. image:: ../../../_static/binary_op-03.svg
+           :align: center
+
+        >>> p = Point(3, 3)
+        >>> s.shortest_line(p)
+        0    LINESTRING (2.000 2.000, 3.000 3.000)
+        1    LINESTRING (2.000 2.000, 3.000 3.000)
+        2    LINESTRING (2.000 2.000, 3.000 3.000)
+        3    LINESTRING (1.000 1.000, 3.000 3.000)
+        4    LINESTRING (0.000 1.000, 3.000 3.000)
+        dtype: geometry
+
+        We can also check two GeoSeries against each other, row by row.
+        The GeoSeries above have different indices than the one below. We can either
+        align both GeoSeries based on index values and compare elements with the same
+        index using ``align=True`` or ignore index and compare elements based on their
+        matching order using ``align=False``:
+
+        .. image:: ../../../_static/binary_op-02.svg
+
+        >>> s2 = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0.5, 0.5), (1.5, 0.5), (1.5, 1.5), (0.5, 1.5)]),
+        ...         Point(3, 1),
+        ...         LineString([(1, 0), (2, 0)]),
+        ...         Point(10, 15),
+        ...         Point(0, 1),
+        ...     ],
+        ...     index=range(1, 6),
+        ...     crs=5514,
+        ... )
+        >>> s.shortest_line(s2, align=True)
+        0                                       None
+        1      LINESTRING (0.500 0.500, 0.500 0.500)
+        2      LINESTRING (2.000 2.000, 3.000 1.000)
+        3      LINESTRING (2.000 0.000, 2.000 0.000)
+        4    LINESTRING (0.000 1.000, 10.000 15.000)
+        5                                       None
+        dtype: geometry
+
+        >>> s.shortest_line(s2, align=False)
+        0      LINESTRING (0.500 0.500, 0.500 0.500)
+        1      LINESTRING (2.000 2.000, 3.000 1.000)
+        2      LINESTRING (0.500 0.500, 1.000 0.000)
+        3    LINESTRING (0.000 2.000, 10.000 15.000)
+        4      LINESTRING (0.000 1.000, 0.000 1.000)
+        dtype: geometry
+        """
+        return _binary_geo("shortest_line", self, other, align)
 
     #
     # Other operations
