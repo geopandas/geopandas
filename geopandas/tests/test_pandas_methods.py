@@ -658,6 +658,8 @@ def test_groupby_groups(df):
 
 @pytest.mark.skip_no_sindex
 @pytest.mark.skipif(
+    # good e8b9749ff9582574fb08b2d2108b83e6371681aa
+    # bad f9f164339c487995b197bac7ea34ff4dfa66cce1
     compat.PANDAS_GE_13 and not compat.PANDAS_GE_14,
     reason="this was broken in pandas 1.3.5 (GH-2294)",
 )
@@ -685,12 +687,20 @@ def test_groupby_metadata(crs):
         lambda x: geopandas.sjoin(x, x[["geometry", "value1"]], how="inner")
     )
 
+    if compat.PANDAS_GE_21:
+        # merge sort behaviour changed in pandas #54611
+        take_indices = [0, 0, 2, 2, 1]
+        value_right = [0, 2, 0, 2, 1]
+    else:
+        take_indices = [0, 2, 0, 2, 1]
+        value_right = [0, 0, 2, 2, 1]
+
     expected = (
-        df.take([0, 2, 0, 2, 1])
+        df.take(take_indices)
         .set_index("value2", drop=False, append=True)
         .swaplevel()
         .rename(columns={"value1": "value1_left"})
-        .assign(value1_right=[0, 0, 2, 2, 1])
+        .assign(value1_right=value_right)
     )
     assert_geodataframe_equal(res.drop(columns=["index_right"]), expected)
 
