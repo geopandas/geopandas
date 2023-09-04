@@ -4279,7 +4279,7 @@ def _get_index_for_parts(orig_idx, outer_idx, ignore_index, index_parts):
             #    starting at 0 in each run
             run_start = np.r_[True, outer_idx[:-1] != outer_idx[1:]]
             counts = np.diff(np.r_[np.nonzero(run_start)[0], len(outer_idx)])
-            inner_index = (~run_start).cumsum()
+            inner_index = (~run_start).cumsum(dtype=outer_idx.dtype)
             inner_index -= np.repeat(inner_index[run_start], counts)
 
         else:
