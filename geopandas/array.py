@@ -920,11 +920,7 @@ class GeometryArray(ExtensionArray):
                 # shift back to [-180,180]
                 x_center = ((x_center + 180) % 360) - 180
             else:
-                lon, lat = transformer.transform(
-                    (minx, maxx, minx, maxx), (miny, miny, maxy, maxy)
-                )
-                x_center = np.mean(lon)
-                y_center = np.mean(lat)
+                x_center = np.mean([minx, maxx])
 
         utm_crs_list = query_utm_crs_info(
             datum_name=datum_name,
