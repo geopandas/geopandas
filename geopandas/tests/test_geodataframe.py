@@ -2,7 +2,6 @@ import json
 import os
 import shutil
 import tempfile
-from packaging.version import Version
 
 import numpy as np
 import pandas as pd
@@ -24,7 +23,6 @@ import pytest
 
 
 TEST_NEAREST = compat.USE_SHAPELY_20 or (compat.PYGEOS_GE_010 and compat.USE_PYGEOS)
-pandas_133 = Version(pd.__version__) == Version("1.3.3")
 
 
 @pytest.fixture
@@ -50,8 +48,6 @@ def dfs(request):
     params=["union", "intersection", "difference", "symmetric_difference", "identity"]
 )
 def how(request):
-    if pandas_133 and request.param in ["symmetric_difference", "identity", "union"]:
-        pytest.xfail("Regression in pandas 1.3.3 (GH #2101)")
     return request.param
 
 

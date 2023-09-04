@@ -7,7 +7,7 @@ import warnings
 
 import numpy as np
 import pandas as pd
-from pandas import Series, MultiIndex, DataFrame
+from pandas import Series, MultiIndex
 from pandas.core.internals import SingleBlockManager
 
 from pyproj import CRS
@@ -74,10 +74,10 @@ def _geoseries_expanddim(data=None, *args, **kwargs):
     return df
 
 
-# pd.concat (pandas/core/reshape/concat.py) requires this for the
-# concatenation of series since pandas 1.1
-# (https://github.com/pandas-dev/pandas/commit/f9e4c8c84bcef987973f2624cc2932394c171c8c)
-_geoseries_expanddim._get_axis_number = DataFrame._get_axis_number
+# # pd.concat (pandas/core/reshape/concat.py) requires this for the
+# # concatenation of series since pandas 1.1
+# # (https://github.com/pandas-dev/pandas/commit/f9e4c8c84bcef987973f2624cc2932394c171c8c)
+# _geoseries_expanddim._get_axis_number = DataFrame._get_axis_number
 
 
 class GeoSeries(GeoPandasBase, Series):
