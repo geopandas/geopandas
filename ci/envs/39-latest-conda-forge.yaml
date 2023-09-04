@@ -6,7 +6,6 @@ dependencies:
   # required
   - pandas=1.5
   - shapely=2
-  # - fiona  # build with only pyogrio
   - geos
   - cython
   - fiona
