@@ -828,10 +828,6 @@ class TestGeomMethods:
         expected = GeoSeries([polygon2, linestring, point])
         assert_geoseries_equal(series.normalize(), expected)
 
-    @pytest.mark.skipif(
-        not compat.SHAPELY_GE_18,
-        reason="make_valid keyword introduced in shapely 1.8.0",
-    )
     def test_make_valid(self):
         polygon1 = Polygon([(0, 0), (0, 2), (1, 1), (2, 2), (2, 0), (1, 1), (0, 0)])
         polygon2 = Polygon([(0, 2), (0, 1), (2, 0), (0, 0), (0, 2)])
@@ -851,19 +847,6 @@ class TestGeomMethods:
         result = series.make_valid()
         assert_geoseries_equal(result, expected)
         assert result.is_valid.all()
-
-    @pytest.mark.skipif(
-        compat.SHAPELY_GE_18,
-        reason="make_valid keyword introduced in shapely 1.8.0",
-    )
-    def test_make_valid_shapely_pre18(self):
-        s = GeoSeries([Point(1, 1)])
-        with pytest.raises(
-            NotImplementedError,
-            match=f"shapely >= 1.8 or PyGEOS is required, "
-            f"version {shapely.__version__} is installed",
-        ):
-            s.make_valid()
 
     @pytest.mark.skipif(
         (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
