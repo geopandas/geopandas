@@ -1153,8 +1153,6 @@ class GeoSeries(GeoPandasBase, Series):
 
         .. versionadded:: 0.9
 
-        .. note:: Requires pyproj 3+
-
         Parameters
         ----------
         datum_name : str, optional

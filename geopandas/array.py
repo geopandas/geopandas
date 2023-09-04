@@ -19,6 +19,8 @@ from shapely.geometry.base import BaseGeometry
 import shapely.ops
 import shapely.wkt
 from pyproj import CRS, Transformer
+from pyproj.aoi import AreaOfInterest
+from pyproj.database import query_utm_crs_info
 
 try:
     import pygeos
@@ -890,11 +892,6 @@ class GeometryArray(ExtensionArray):
         - Ellipsoid: WGS 84
         - Prime Meridian: Greenwich
         """
-        try:
-            from pyproj.aoi import AreaOfInterest
-            from pyproj.database import query_utm_crs_info
-        except ImportError:
-            raise RuntimeError("pyproj 3+ required for estimate_utm_crs.")
 
         if not self.crs:
             raise RuntimeError("crs must be set to estimate UTM CRS.")

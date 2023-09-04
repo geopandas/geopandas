@@ -1432,8 +1432,6 @@ individually so that features may have different properties
 
         .. versionadded:: 0.9
 
-        .. note:: Requires pyproj 3+
-
         Parameters
         ----------
         datum_name : str, optional
