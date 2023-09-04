@@ -18,7 +18,6 @@ dependencies:
   #- geopy
   - SQLalchemy<2
   - libspatialite
-  - pyarrow
   - pip
   - pip:
     - geopy
@@ -29,6 +28,7 @@ dependencies:
     - fiona
     - pandas
     - matplotlib
+    - pyarrow
     - git+https://github.com/shapely/shapely.git@main
     - git+https://github.com/pygeos/pygeos.git@master
     - git+https://github.com/python-visualization/folium.git@main
