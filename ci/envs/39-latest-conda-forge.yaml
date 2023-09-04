@@ -4,8 +4,9 @@ channels:
 dependencies:
   - python=3.9
   # required
-  - pandas=1.4
+  - pandas=1.5
   - shapely=2
+  # - fiona  # build with only pyogrio
   - geos
   - cython
   - fiona
