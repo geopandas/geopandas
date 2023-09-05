@@ -8,7 +8,7 @@ dependencies:
   - pandas
   - shapely
   - fiona
-  - pyproj
+  - pyproj>=3.3.0
   - geos
   - packaging
   # testing
