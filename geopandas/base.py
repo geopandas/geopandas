@@ -4111,15 +4111,18 @@ GeometryCollection
         edges of a planar graph. Any geometry type may be provided as input; only the
         constituent lines and rings will be used to create the output polygons.
 
-        Lines or rings that when combined do not completely close a polygon will be ignored. Duplicate segments are ignored.
+        Lines or rings that when combined do not completely close a polygon will be
+        ignored. Duplicate segments are ignored.
 
-        Unless you know that the input GeoSeries represents clean topological of a planar
-        graph (e.g. there is a node on both lines where they intersect), it is
+        Unless you know that the input GeoSeries represents clean topological of a
+        planar graph (e.g. there is a node on both lines where they intersect), it is
         recommended to use ``node=True`` which performs noding prior polygonization.
         Using ``node=False`` will provide performance benefits but may result in
         incorrect polygons if the input is not of the proper topology.
 
-        When ``full=True``, the return value is a 4-tuple containing output polygons, along with lines which could not be converted to polygons. The return value consists of 4 elements:
+        When ``full=True``, the return value is a 4-tuple containing output polygons,
+        along with lines which could not be converted to polygons. The return value
+        consists of 4 elements:
 
             - GeoSeries of the valid polygons (same as with ``full=False``)
             - GeoSeries of cut edges: edges connected on both ends but not part of
@@ -4148,6 +4151,7 @@ GeometryCollection
         >>> s = geopandas.GeoSeries([
         ...     LineString([(0, 0), (1, 1)]),
         ...     LineString([(0, 0), (0, 1), (1, 1), (1, 0), (0, 0)]),
+        ...     LineString([(0.5, 0.2), (0.5, 0.8)]),
         ... ])
         >>> s.polygonize()
         0    POLYGON ((0.00000 0.00000, 1.00000 1.00000, 1....
@@ -4155,6 +4159,7 @@ GeometryCollection
         Name: polygons, dtype: geometry
 
         >>> polygons, cuts, dangles, invalid = s.polygonize(full=True)
+
         """
         from .geoseries import GeoSeries
         from .array import from_shapely
