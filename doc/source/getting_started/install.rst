@@ -182,9 +182,7 @@ experimental speedups by installing PyGEOS. This can be done with conda
 More specifically, whether the PyGEOS is used or not is determined by:
 
 - If Shapely >= 2 is installed, it will be used by default.
-- If PyGEOS >= 0.8 and Shapely < 2 are installed, PyGEOS will be used by default (but installing
-  GeoPandas will not yet automatically install PyGEOS as dependency, you need
-  to do this manually).
+- If PyGEOS >= 0.8 and Shapely < 2 are installed, PyGEOS will be used by default
 
 - You can still toggle the use of PyGEOS when it is available, by:
 
@@ -207,7 +205,7 @@ More specifically, whether the PyGEOS is used or not is determined by:
 .. attention::
 
     Changing this option no longer works in all cases when
-    having Shapely >=2.0 installed. In that case, use the environment variable
+    Shapely >=2.0 is installed. In that case, use the environment variable
     (see option above) or simply use Shapely.
 
 .. warning::

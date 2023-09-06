@@ -2,9 +2,10 @@
 
 ## Development version
 
-GeoPandas no longer defaults to the PyGEOS engine and will use Shapely 2.0 by default, if
-both are installed alongside. If PyGEOS is detected alongside Shapely < 2, it will still be
-used but support of both PyGEOS and Shapely < 2 will be removed in GeoPandas 1.0.
+GeoPandas will use Shapely 2.0 by default instead of PyGEOS when both Shapely >= 2.0 and
+PyGEOS are installed.  PyGEOS will continue to be used by default when PyGEOS is
+installed alongside Shapely < 2.0.  Support for PyGEOS and Shapely < 2.0 will be removed
+in GeoPandas 1.0.
 
 New methods:
 
@@ -22,6 +23,7 @@ New features and improvements:
 - Added ``exclusive`` parameter to ``sjoin_nearest`` method for Shapely >= 2.0 (#2877)
 
 Bug fixes:
+
 - Fix ambiguous error when GeoDataFrame is initialised with a column called "crs" (#2944)
 
 - Fix a color assignment in ``explore`` when using ``UserDefined`` bins (#2923)

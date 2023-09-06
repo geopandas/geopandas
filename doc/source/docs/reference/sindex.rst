@@ -3,10 +3,11 @@ Spatial index
 =============
 .. currentmodule:: geopandas
 
-GeoPandas offers built-in support for spatial indexing using an R-Tree algorithm.
-Depending on the ability to import PyGEOS, GeoPandas will either use ``shapely.STRtree``,
-``pygeos.STRtree`` or ``rtree.index.Index``. The main interface for both is the
-same and follows the Shapely 2.0 model.
+GeoPandas will use the STRtree implementation provided by the default spatial engine
+(``shapely.STRtree`` for Shapely > 2.0, ``pygeos.STRtree`` for Shapely < 2.0 if PyGEOS
+is installed) if compatible, or ``rtree.index.Index`` for Shapely < 2.0 when PyGEOS is
+unavailable.
+
 
 ``GeoSeries.sindex`` creates a spatial index, which can use the methods and
 properties documented below.

@@ -7,7 +7,7 @@ Shapely project and released as part of Shapely 2.0. GeoPandas will therefore
 deprecate support of the PyGEOS backend and will go forward with Shapely 2.0 as the
 only geometry engine exposing GEOS functionality.
 
-Given that historically the PyGEOS engine was automatically used if the package is installed (this behaviour will changed in GeoPandas 0.14 where Shapely 2.0 is be used by default if installed), some downstream code may depend on
+Given that historically the PyGEOS engine was automatically used if the package is installed (this behaviour will changed in GeoPandas 0.14 where Shapely 2.0 is used by default if installed), some downstream code may depend on
 PyGEOS geometries being available as underlying data of a ``GeometryArray``.
 
 This guide outlines the migration from the PyGEOS-based code to the Shapely-based code.
