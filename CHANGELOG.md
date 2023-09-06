@@ -2,6 +2,11 @@
 
 ## Development version
 
+GeoPandas will use Shapely 2.0 by default instead of PyGEOS when both Shapely >= 2.0 and
+PyGEOS are installed.  PyGEOS will continue to be used by default when PyGEOS is
+installed alongside Shapely < 2.0.  Support for PyGEOS and Shapely < 2.0 will be removed
+in GeoPandas 1.0.
+
 New methods:
 
 - Added ``segmentize`` method from shapely to GeoSeries/GeoDataFrame (#2910).
@@ -12,18 +17,22 @@ New methods:
 - Added ``offset_curve`` method from shapely to GeoSeries/GeoDataframe (#2902).
 - Added ``polygonize`` method exposing both ``polygonize`` and ``polygonize_full`` from
   shapely to GeoSeries/GeoDataframe (#2963).
+- Added ``shortest_line`` method from shapely to GeoSeries/GeoDataframe (#2960).
+- Added ``minimum_rotated_rectangle`` method from shapely to GeoSeries/GeoDataframe (#2541).
 
 New features and improvements:
 
 - Added ``exclusive`` parameter to ``sjoin_nearest`` method for Shapely >= 2.0 (#2877)
 
 Bug fixes:
+
 - Fix ambiguous error when GeoDataFrame is initialised with a column called "crs" (#2944)
 
 - Fix a color assignment in ``explore`` when using ``UserDefined`` bins (#2923)
 - ``assert_geodataframe_equal`` now handles GeoDataFrames with no active geometry (#2498)
 - Fix bug in `apply` with `axis=1` where the given user defined function returns nested
   data in the geometry column (#2959)
+- Properly infer schema for np.int32 and pd.Int32Dtype columns (#2950)
 
 ## Version 0.13.2 (Jun 6, 2023)
 
