@@ -4111,17 +4111,15 @@ GeometryCollection
         edges of a planar graph. Any geometry type may be provided as input; only the
         constituent lines and rings will be used to create the output polygons.
 
-        Lines or rings that when combined do not completely close a polygon will result
-        in an empty GeoSeries. Duplicate segments are ignored.
+        Lines or rings that when combined do not completely close a polygon will be ignored. Duplicate segments are ignored.
 
-        Unless you know that the input GeoSeries represent clean topological of a planar
+        Unless you know that the input GeoSeries represents clean topological of a planar
         graph (e.g. there is a node on both lines where they intersect), it is
         recommended to use ``node=True`` which performs noding prior polygonization.
         Using ``node=False`` will provide performance benefits but may result in
         incorrect polygons if the input is not of the proper topology.
 
-        When ``full=True``, return not only the polyoginal result all extra outputs as
-        well. The return value consists of 4 elements:
+        When ``full=True``, the return value is a 4-tuple containing output polygons, along with lines which could not be converted to polygons. The return value consists of 4 elements:
 
             - GeoSeries of the valid polygons (same as with ``full=False``)
             - GeoSeries of cut edges: edges connected on both ends but not part of
@@ -4176,7 +4174,7 @@ GeometryCollection
             geometry_input = self.geometry.values
 
         if compat.USE_PYGEOS:
-            geometry_input = geometry_input.data
+            geometry_input = geometry_input._data
 
         if full:
             polygons, cuts, dangles, invalid = polygonize_full(geometry_input)
