@@ -141,6 +141,7 @@ _EXTENSION_TO_DRIVER = {
     ".mif": "MapInfo File",
     ".mid": "MapInfo File",
     ".dgn": "DGN",
+    ".fgb": "FlatGeobuf",
 }
 
 
