@@ -9,6 +9,7 @@ in GeoPandas 1.0.
 
 New methods:
 
+- Added ``frechet_distance()`` method from shapely to GeoSeries/GeoDataframe (#2929).
 - Added ``segmentize`` method from shapely to GeoSeries/GeoDataFrame (#2910).
 - Added ``extract_unique_points`` method from shapely to GeoSeries/GeoDataframe (#2915).
 - Added ``hausdorff_distance`` method from shapely to GeoSeries/GeoDataframe (#2909).
