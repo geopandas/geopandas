@@ -22,6 +22,8 @@ New methods:
 New features and improvements:
 
 - Added ``exclusive`` parameter to ``sjoin_nearest`` method for Shapely >= 2.0 (#2877)
+- The ``to_file()`` method will now automatically detect the FlatGeoBuf driver 
+  for files with the `.fgb` extension (#2958)
 
 Bug fixes:
 
