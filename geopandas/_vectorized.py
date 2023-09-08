@@ -620,7 +620,7 @@ def concave_hull(data, **kwargs):
             "thus using Shapely and not PyGEOS for calculating the concave_hull.",
             stacklevel=4,
         )
-        return shapely.concave_hull(to_shapely(data), **kwargs)
+        return pygeos.from_shapely(shapely.concave_hull(to_shapely(data), **kwargs))
     else:
         raise NotImplementedError(
             f"shapely >= 2.0 is required, "
