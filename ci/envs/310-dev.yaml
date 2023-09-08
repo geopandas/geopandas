@@ -5,6 +5,7 @@ dependencies:
   - python=3.10
   - cython
   # required
+  - numpy
   - pyproj
   - geos
   - packaging
@@ -24,7 +25,6 @@ dependencies:
     - mapclassify>=2.4.0
     # dev versions of packages
     - --pre --index-url https://pypi.anaconda.org/scientific-python-nightly-wheels/simple --extra-index-url https://pypi.fury.io/arrow-nightlies/ --extra-index-url https://pypi.org/simple
-    - numpy
     - fiona
     - pandas
     - matplotlib
