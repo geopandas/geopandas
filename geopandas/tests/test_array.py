@@ -283,7 +283,7 @@ def test_as_array():
 )
 @pytest.mark.filterwarnings(
     r"ignore:The \'almost_equals\(\)\' method is deprecated"
-)  # for geom_almost_equals_only
+)  # filter required for attr=geom_almost_equals only
 def test_predicates_vector_scalar(attr, args):
     na_value = False
 
@@ -325,7 +325,7 @@ def test_predicates_vector_scalar(attr, args):
 )
 @pytest.mark.filterwarnings(
     r"ignore:The \'almost_equals\(\)\' method is deprecated"
-)  # for geom_almost_equals_only
+)  # filter required for attr=geom_almost_equals only
 def test_predicates_vector_vector(attr, args):
     na_value = False
     empty_value = True if attr == "disjoint" else False
