@@ -177,6 +177,11 @@ class TestGeomMethods:
         self.g12 = GeoSeries([self.l5])
         self.g13 = GeoSeries([self.l6])
 
+        self.l5 = LineString([(100, 0), (0, 0), (0, 100)])
+        self.l6 = LineString([(5, 5), (5, 100), (100, 5)])
+        self.g12 = GeoSeries([self.l5])
+        self.g13 = GeoSeries([self.l6])
+
     def _test_unary_real(self, op, expected, a):
         """Tests for 'area', 'length', 'is_valid', etc."""
         fcmp = assert_series_equal
@@ -366,6 +371,40 @@ class TestGeomMethods:
     def test_difference_poly(self):
         expected = GeoSeries([self.t1, self.t1])
         self._test_binary_topological("difference", expected, self.g1, self.t2)
+
+    @pytest.mark.skipif(
+        not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+        reason="get_coordinates not implemented for shapely<2",
+    )
+    def test_shortest_line(self):
+        expected = GeoSeries([LineString([(1, 1), (5, 5)]), None])
+        assert_array_dtype_equal(expected, self.na_none.shortest_line(self.p0))
+
+        expected = GeoSeries(
+            [
+                LineString([(5, 5), (1, 1)]),
+                LineString([(2, 0), (2, 0)]),
+            ]
+        )
+        assert_array_dtype_equal(expected, self.g6.shortest_line(self.g7))
+
+        expected = GeoSeries(
+            [LineString([(0.5, 0.5), (0.5, 0.5)]), LineString([(0.5, 0.5), (0.5, 0.5)])]
+        )
+        crossed_lines_inv = self.crossed_lines[::-1]
+        assert_array_dtype_equal(
+            expected, self.crossed_lines.shortest_line(crossed_lines_inv, align=False)
+        )
+
+    @pytest.mark.skipif(
+        (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+        reason="get_coordinates not implemented for shapely<2",
+    )
+    def test_shortest_line_not(self):
+        with pytest.raises(
+            NotImplementedError, match="shapely >= 2.0 or PyGEOS is required"
+        ):
+            self.na_none.shortest_line(self.p0)
 
     def test_geo_op_empty_result(self):
         l1 = LineString([(0, 0), (1, 1)])
@@ -617,6 +656,52 @@ class TestGeomMethods:
             NotImplementedError, match="shapely >= 2.0 or PyGEOS is required"
         ):
             self.g0.hausdorff_distance(self.g9)
+
+    @pytest.mark.skipif(
+        not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+        reason="requires frechet_distance in shapely 2.0+",
+    )
+    def test_frechet_distance(self):
+        # closest point is (0, 0) in self.p1
+        expected = Series(
+            np.array([np.sqrt(5**2 + 5**2), np.nan]), self.na_none.index
+        )
+        assert_array_dtype_equal(expected, self.na_none.frechet_distance(self.p0))
+
+        expected = Series(np.array([np.nan, 0, 0, 0, 0, 0, np.nan, np.nan]), range(8))
+        with pytest.warns(UserWarning, match="The indices .+ different"):
+            assert_array_dtype_equal(
+                expected, self.g0.frechet_distance(self.g9, align=True)
+            )
+
+        # expected returns
+        val_1 = 1.0
+        val_2 = np.sqrt(2) / 4
+        val_3 = np.sqrt(2) / 2
+        val_4 = (np.sqrt(2) / 2) * 10
+        expected = Series(
+            np.array([val_1, val_1, val_2, val_3, val_4, np.nan, np.nan]), self.g0.index
+        )
+        assert_array_dtype_equal(
+            expected, self.g0.frechet_distance(self.g9, align=False)
+        )
+
+        expected = Series(
+            np.array([np.sqrt(100**2 + (100 - 5) ** 2)]), self.g12.index
+        )
+        assert_array_dtype_equal(
+            expected, self.g12.frechet_distance(self.g13, densify=0.25)
+        )
+
+    @pytest.mark.skipif(
+        (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+        reason="frechet_distance not implemented for shapely<2",
+    )
+    def test_frechet_distance_not(self):
+        with pytest.raises(
+            NotImplementedError, match="shapely >= 2.0 or PyGEOS is required"
+        ):
+            self.g0.frechet_distance(self.g9)
 
     def test_intersects(self):
         expected = [True, True, True, True, True, False, False]
@@ -1187,6 +1272,20 @@ class TestGeomMethods:
         assert np.all(e.geom_equals(self.sq))
         assert isinstance(e, GeoSeries)
         assert self.g3.crs == e.crs
+
+    def test_minimum_rotated_rectangle(self):
+        s = GeoSeries([self.sq, self.t5], crs=3857)
+        r = s.minimum_rotated_rectangle()
+        exp = GeoSeries.from_wkt(
+            [
+                "POLYGON ((0 0, 0 1, 1 1, 1 0, 0 0))",
+                "POLYGON ((2 0, 2 3, 3 3, 3 0, 2 0))",
+            ]
+        )
+
+        assert np.all(r.normalize().geom_equals_exact(exp, 0.001))
+        assert isinstance(r, GeoSeries)
+        assert s.crs == r.crs
 
     @pytest.mark.skipif(
         not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),

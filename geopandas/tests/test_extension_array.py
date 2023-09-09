@@ -18,6 +18,7 @@ import operator
 import numpy as np
 from numpy.testing import assert_array_equal
 import pandas as pd
+from pandas.testing import assert_series_equal
 from pandas.tests.extension import base as extension_tests
 
 import shapely.geometry
@@ -130,7 +131,7 @@ def data_missing_for_sorting():
     This should be three items [B, NA, A] with
     A < B and NA missing.
     """
-    return from_shapely([Point(0, 1), None, Point(0, 0)])
+    return from_shapely([Point(1, 2), None, Point(0, 0)])
 
 
 @pytest.fixture
@@ -311,7 +312,7 @@ class TestDtype(extension_tests.BaseDtypeTests):
         result = s.astype("geometry")
         assert isinstance(result.array, GeometryArray)
         expected = pd.Series(data)
-        self.assert_series_equal(result, expected)
+        assert_series_equal(result, expected)
 
 
 class TestInterface(extension_tests.BaseInterfaceTests):
@@ -370,7 +371,7 @@ class TestMissing(extension_tests.BaseMissingTests):
         # Fill with a scalar
         result = ser.fillna(fill_value)
         expected = pd.Series(data_missing._from_sequence([fill_value, fill_value]))
-        self.assert_series_equal(result, expected)
+        assert_series_equal(result, expected)
 
         # Fill with a series
         filler = pd.Series(
@@ -383,7 +384,7 @@ class TestMissing(extension_tests.BaseMissingTests):
         )
         result = ser.fillna(filler)
         expected = pd.Series(data_missing._from_sequence([fill_value, fill_value]))
-        self.assert_series_equal(result, expected)
+        assert_series_equal(result, expected)
 
         # Fill with a series not affecting the missing values
         filler = pd.Series(
@@ -396,7 +397,7 @@ class TestMissing(extension_tests.BaseMissingTests):
             index=[10, 11],
         )
         result = ser.fillna(filler)
-        self.assert_series_equal(result, ser)
+        assert_series_equal(result, ser)
 
         # More `GeoSeries.fillna` testcases are in
         # `geopandas\tests\test_pandas_methods.py::test_fillna_scalar`
@@ -421,7 +422,7 @@ class TestMissing(extension_tests.BaseMissingTests):
 
 class TestReduce(extension_tests.BaseNoReduceTests):
     @pytest.mark.skip("boolean reduce (any/all) tested in test_pandas_methods")
-    def test_reduce_series_boolean():
+    def test_reduce_series_boolean(self):
         pass
 
 
@@ -477,7 +478,7 @@ class TestComparisonOps(extension_tests.BaseComparisonOpsTests):
         op = getattr(operator, op_name.strip("_"))
         result = op(s, other)
         expected = s.combine(other, op)
-        self.assert_series_equal(result, expected)
+        assert_series_equal(result, expected)
 
     def test_compare_scalar(self, data, all_compare_operators):
         op_name = all_compare_operators
