@@ -150,10 +150,13 @@ class TestSeries:
         # TODO: test decimal parameter
         assert np.all(self.g1.geom_almost_equals(self.g1))
         assert_array_equal(self.g1.geom_almost_equals(self.sq), [False, True])
-
-        assert_array_equal(
-            self.a1.geom_almost_equals(self.a2, align=True), [False, True, False]
-        )
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", "The indices of the two GeoSeries are different", UserWarning
+            )
+            assert_array_equal(
+                self.a1.geom_almost_equals(self.a2, align=True), [False, True, False]
+            )
         assert_array_equal(
             self.a1.geom_almost_equals(self.a2, align=False), [False, False]
         )
@@ -162,10 +165,14 @@ class TestSeries:
         # TODO: test tolerance parameter
         assert np.all(self.g1.geom_equals_exact(self.g1, 0.001))
         assert_array_equal(self.g1.geom_equals_exact(self.sq, 0.001), [False, True])
-
-        assert_array_equal(
-            self.a1.geom_equals_exact(self.a2, 0.001, align=True), [False, True, False]
-        )
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", "The indices of the two GeoSeries are different", UserWarning
+            )
+            assert_array_equal(
+                self.a1.geom_equals_exact(self.a2, 0.001, align=True),
+                [False, True, False],
+            )
         assert_array_equal(
             self.a1.geom_equals_exact(self.a2, 0.001, align=False), [False, False]
         )
