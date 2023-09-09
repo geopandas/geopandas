@@ -527,7 +527,7 @@ class TestSpatialJoinNYBB:
 
     def test_sjoin_empty_geometries(self):
         # https://github.com/geopandas/geopandas/issues/944
-        empty = GeoDataFrame(geometry=[GeometryCollection()] * 3)
+        empty = GeoDataFrame(geometry=[GeometryCollection()] * 3, crs=self.crs)
         df = sjoin(pd.concat([self.pointdf, empty]), self.polydf, how="left")
         assert df.shape == (24, 8)
         df2 = sjoin(self.pointdf, pd.concat([self.polydf, empty]), how="left")
