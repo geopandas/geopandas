@@ -679,10 +679,10 @@ def test_groupby_metadata(crs):
         assert isinstance(group, GeoDataFrame)
         assert group.crs == crs
 
-    df.groupby("value2").apply(func)
+    df.groupby("value2")[df.columns].apply(func)
 
     # actual test with functionality
-    res = df.groupby("value2").apply(
+    res = df.groupby("value2")[df.columns].apply(
         lambda x: geopandas.sjoin(x, x[["geometry", "value1"]], how="inner")
     )
 
