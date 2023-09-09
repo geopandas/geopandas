@@ -2,6 +2,8 @@ import json
 import os
 import shutil
 import tempfile
+import warnings
+
 from packaging.version import Version
 
 import numpy as np
@@ -1009,13 +1011,20 @@ class TestDataFrame:
         """
         left = read_file(geopandas.datasets.get_path("naturalearth_cities"))
         right = read_file(geopandas.datasets.get_path("naturalearth_lowres"))
-
-        expected = geopandas.sjoin_nearest(
-            left, right, how=how, max_distance=max_distance, distance_col=distance_col
-        )
-        result = left.sjoin_nearest(
-            right, how=how, max_distance=max_distance, distance_col=distance_col
-        )
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", "Geometry is in a geographic CRS", UserWarning
+            )
+            expected = geopandas.sjoin_nearest(
+                left,
+                right,
+                how=how,
+                max_distance=max_distance,
+                distance_col=distance_col,
+            )
+            result = left.sjoin_nearest(
+                right, how=how, max_distance=max_distance, distance_col=distance_col
+            )
         assert_geodataframe_equal(result, expected)
 
     @pytest.mark.skip_no_sindex
