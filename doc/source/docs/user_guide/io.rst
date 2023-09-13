@@ -15,7 +15,7 @@ which returns a GeoDataFrame object. This is possible because GeoPandas makes
 use of the massive open-source program called
 `GDAL/OGR <http://www.gdal.org/>`_ designed to facilitate spatial data
 transformations, through the Python packages `Fiona <http://fiona.readthedocs.io/en/latest/manual.html>`_
-or `pyogrio <>`_, which both provide bindings to GDAL.
+or `pyogrio <https://pyogrio.readthedocs.io/en/stable/>`_, which both provide bindings to GDAL.
 
 .. note:
 
