@@ -89,7 +89,7 @@ def test_repr_empty():
 
 def test_repr_linearring():
     # https://github.com/geopandas/geopandas/pull/2689
-    # specifically, checking internal shapely/pygeos/wkt/wkb conversions
+    # specifically, checking internal shapely/wkt/wkb conversions
     # preserve LinearRing
     s = GeoSeries([LinearRing([(0, 0), (1, 1), (1, -1)])])
     assert "LINEARRING" in str(s.iloc[0])  # shapely scalar repr

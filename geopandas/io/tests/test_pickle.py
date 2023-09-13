@@ -2,7 +2,6 @@
 See generate_legacy_storage_files.py for the creation of the legacy files.
 
 """
-from contextlib import contextmanager
 import glob
 import os
 import pathlib
@@ -11,7 +10,6 @@ import pandas as pd
 
 import pytest
 from geopandas.testing import assert_geodataframe_equal
-import geopandas
 
 DATA_PATH = pathlib.Path(os.path.dirname(__file__)) / "data"
 
@@ -30,16 +28,6 @@ files = glob.glob(str(DATA_PATH / "pickle" / "*.pickle"))
 @pytest.fixture(params=files, ids=[p.split("/")[-1] for p in files])
 def legacy_pickle(request):
     return request.param
-
-
-@contextmanager
-def with_use_pygeos(option):
-    orig = geopandas.options.use_pygeos
-    geopandas.options.use_pygeos = option
-    try:
-        yield
-    finally:
-        geopandas.options.use_pygeos = orig
 
 
 @pytest.mark.skip(

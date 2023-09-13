@@ -446,7 +446,6 @@ def sjoin_nearest(
     exclusive : bool, default False
         If True, the nearest geometries that are equal to the input geometry
         will not be returned, default False.
-        Requires Shapely >= 2.0.
 
     Examples
     --------

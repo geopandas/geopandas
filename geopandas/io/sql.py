@@ -283,8 +283,8 @@ def _get_srid_from_crs(gdf):
 def _convert_linearring_to_linestring(gdf, geom_name):
     from shapely.geometry import LineString
 
-    # Todo: Use Pygeos function once it's implemented:
-    #  https://github.com/pygeos/pygeos/issues/76
+    # Todo: Use shapely function once it's implemented:
+    # https://github.com/shapely/shapely/issues/1617
 
     mask = gdf.geom_type == "LinearRing"
     gdf.loc[mask, geom_name] = gdf.loc[mask, geom_name].apply(

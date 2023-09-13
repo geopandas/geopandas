@@ -61,7 +61,7 @@ class BaseSpatialIndex:
             A single shapely geometry or array of geometries to query against
             the spatial index. For array-like, accepts both GeoPandas geometry
             iterables (GeoSeries, GeometryArray) or a numpy array of Shapely
-            or PyGEOS geometries.
+            geometries.
         predicate : {None, "contains", "contains_properly", "covered_by", "covers", \
 "crosses", "intersects", "overlaps", "touches", "within"}, optional
             If predicate is provided, the input geometries are tested
@@ -157,14 +157,11 @@ class BaseSpatialIndex:
         of geometries that can be joined based on envelope overlap or optional
         predicate are returned.
 
-        When using the ``rtree`` package, this is not a vectorized function
-        and may be slow. If speed is important, please use PyGEOS.
-
         Parameters
         ----------
-        geometry : {GeoSeries, GeometryArray, numpy.array of PyGEOS geometries}
+        geometry : {GeoSeries, GeometryArray, numpy.array of Shapely geometries}
             Accepts GeoPandas geometry iterables (GeoSeries, GeometryArray)
-            or a numpy array of PyGEOS geometries.
+            or a numpy array of Shapely geometries.
         predicate : {None, "contains", "contains_properly", "covered_by", "covers", \
 "crosses", "intersects", "overlaps", "touches", "within"}, optional
             If predicate is provided, the input geometries are tested using
@@ -227,16 +224,6 @@ class BaseSpatialIndex:
         Return the nearest geometry in the tree for each input geometry in
         ``geometry``.
 
-        .. note::
-            ``nearest`` currently only works with PyGEOS >= 0.10.
-
-            Note that if PyGEOS is not available, geopandas will use rtree
-            for the spatial index, where nearest has a different
-            function signature to temporarily preserve existing
-            functionality. See the documentation of
-            :meth:`rtree.index.Index.nearest` for the details on the
-            ``rtree``-based implementation.
-
         If multiple tree geometries have the same distance from an input geometry,
         multiple results will be returned for that input geometry by default.
         Specify ``return_all=False`` to only get a single nearest geometry
@@ -256,10 +243,10 @@ class BaseSpatialIndex:
 
         Parameters
         ----------
-        geometry : {shapely.geometry, GeoSeries, GeometryArray, numpy.array of PyGEOS \
+        geometry : {shapely.geometry, GeoSeries, GeometryArray, numpy.array of Shapely \
 geometries}
             A single shapely geometry, one of the GeoPandas geometry iterables
-            (GeoSeries, GeometryArray), or a numpy array of PyGEOS geometries to query
+            (GeoSeries, GeometryArray), or a numpy array of Shapely geometries to query
             against the spatial index.
         return_all : bool, default True
             If there are multiple equidistant or intersecting nearest
@@ -411,16 +398,16 @@ geometries}
         raise NotImplementedError
 
 
-_PYGEOS_PREDICATES = {p.name for p in shapely.strtree.BinaryPredicate} | {None}
+_PREDICATES = {p.name for p in shapely.strtree.BinaryPredicate} | {None}
 
 
 class PyGEOSSTRTreeIndex(BaseSpatialIndex):
-    """A simple wrapper around pygeos's STRTree.
+    """A simple wrapper around Shapely's STRTree.
 
 
     Parameters
     ----------
-    geometry : np.array of PyGEOS geometries
+    geometry : np.array of Shapely geometries
         Geometries from which to build the spatial index.
     """
 
@@ -453,7 +440,7 @@ class PyGEOSSTRTreeIndex(BaseSpatialIndex):
         {None, "contains", "contains_properly", "covered_by", "covers", \
 "crosses", "intersects", "overlaps", "touches", "within"}
         """
-        return _PYGEOS_PREDICATES
+        return _PREDICATES
 
     @doc(BaseSpatialIndex.query)
     def query(self, geometry, predicate=None, sort=False):
@@ -480,18 +467,18 @@ class PyGEOSSTRTreeIndex(BaseSpatialIndex):
 
     @staticmethod
     def _as_geometry_array(geometry):
-        """Convert geometry into a numpy array of PyGEOS geometries.
+        """Convert geometry into a numpy array of Shapely geometries.
 
         Parameters
         ----------
         geometry
-            An array-like of PyGEOS geometries, a GeoPandas GeoSeries/GeometryArray,
+            An array-like of Shapely geometries, a GeoPandas GeoSeries/GeometryArray,
             shapely.geometry or list of shapely geometries.
 
         Returns
         -------
         np.ndarray
-            A numpy array of pygeos geometries.
+            A numpy array of Shapely geometries.
         """
         if isinstance(geometry, np.ndarray):
             return array.from_shapely(geometry)._data
@@ -553,7 +540,7 @@ class PyGEOSSTRTreeIndex(BaseSpatialIndex):
     @doc(BaseSpatialIndex.intersection)
     def intersection(self, coordinates):
         # convert bounds to geometry
-        # the old API uses tuples of bound, but pygeos uses geometries
+        # the old API uses tuples of bound, but Shapely uses geometries
         try:
             iter(coordinates)
         except TypeError:

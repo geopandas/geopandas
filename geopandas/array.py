@@ -318,12 +318,7 @@ class GeometryArray(ExtensionArray):
         warnings.warn(
             "Accessing the underlying geometries through the `.data` attribute is "
             "deprecated and will be removed in GeoPandas 1.0. You can use "
-            "`np.asarray(..)` or the `to_numpy()` method instead.\n"
-            "Note that if you are using PyGEOS and using this attribute to get an "
-            "array of PyGEOS geometries, those other methods will always return an "
-            "array of Shapely geometries. Accessing the underlying PyGEOS geometries "
-            "directly is deprecated, and you should migrate to use Shapely >= 2.0 "
-            "instead.",
+            "`np.asarray(..)` or the `to_numpy()` method instead.",
             DeprecationWarning,
             stacklevel=2,
         )
@@ -765,7 +760,7 @@ class GeometryArray(ExtensionArray):
             "`unary_union` will return 'GEOMETRYCOLLECTION EMPTY' instead."
         )
         data = shapely.union_all(self._data)
-        if data is None or data.is_empty:  # shapely 2.0a1 and 2.0
+        if data is None or data.is_empty:
             warnings.warn(
                 warning_msg,
                 FutureWarning,
@@ -1504,7 +1499,6 @@ class GeometryArray(ExtensionArray):
         # including the base class version here (that raises by default)
         # because this was not yet defined in pandas 0.23
         if name == "any" or name == "all":
-            # TODO(pygeos)
             return getattr(to_shapely(self), name)()
         raise TypeError(
             f"'{type(self).__name__}' with dtype {self.dtype} "

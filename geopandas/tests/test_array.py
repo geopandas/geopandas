@@ -449,14 +449,7 @@ def test_unary_predicates(attr):
 
     result = getattr(V, attr)
 
-    if attr == "is_simple" and geos_version < (3, 8):
-        # poly.is_simple raises an error for empty polygon for GEOS < 3.8
-        # with shapely, pygeos always returns False for all GEOS versions
-        expected = [
-            getattr(t, attr) if t is not None and not t.is_empty else na_value
-            for t in vals
-        ]
-    elif attr == "is_ring":
+    if attr == "is_ring":
         expected = [
             getattr(t, attr) if t is not None and t.exterior is not None else na_value
             for t in vals
