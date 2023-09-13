@@ -4,7 +4,7 @@
 
 New methods:
 
-- Added ``remove_repeated_points`` method from shapely to GeoSeries/GeoDataframe.
+- Added ``remove_repeated_points`` method from shapely to GeoSeries/GeoDataframe (#2940).
 - Added ``segmentize`` method from shapely to GeoSeries/GeoDataFrame (#2910).
 - Added ``extract_unique_points`` method from shapely to GeoSeries/GeoDataframe (#2915).
 - Added ``hausdorff_distance`` method from shapely to GeoSeries/GeoDataframe (#2909).
