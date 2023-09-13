@@ -22,12 +22,6 @@ from pyproj import CRS, Transformer
 from pyproj.aoi import AreaOfInterest
 from pyproj.database import query_utm_crs_info
 
-try:
-    import pygeos
-except ImportError:
-    geos = None
-
-from . import _compat as compat
 from . import _vectorized as vectorized
 from .sindex import _get_sindex_class
 
@@ -113,31 +107,18 @@ def _geom_to_shapely(geom):
     """
     Convert internal representation (PyGEOS or Shapely) to external Shapely object.
     """
-    if compat.USE_SHAPELY_20:
-        return geom
-    elif not compat.USE_PYGEOS:
-        return geom
-    else:
-        return vectorized._pygeos_to_shapely(geom)
+    return geom
 
 
 def _shapely_to_geom(geom):
     """
     Convert external Shapely object to internal representation (PyGEOS or Shapely).
     """
-    if compat.USE_SHAPELY_20:
-        return geom
-    elif not compat.USE_PYGEOS:
-        return geom
-    else:
-        return vectorized._shapely_to_pygeos(geom)
+    return geom
 
 
 def _is_scalar_geometry(geom):
-    if compat.USE_PYGEOS:
-        return isinstance(geom, (pygeos.Geometry, BaseGeometry))
-    else:
-        return isinstance(geom, BaseGeometry)
+    return isinstance(geom, BaseGeometry)
 
 
 def from_shapely(data, crs=None):
@@ -413,8 +394,7 @@ class GeometryArray(ExtensionArray):
                 raise TypeError("should be valid geometry")
             if isinstance(key, (slice, list, np.ndarray)):
                 value_array = np.empty(1, dtype=object)
-                with compat.ignore_shapely2_warnings():
-                    value_array[:] = [value]
+                value_array[:] = [value]
                 self._data[key] = value_array
             else:
                 self._data[key] = value
@@ -435,12 +415,7 @@ class GeometryArray(ExtensionArray):
         #         )
 
     def __getstate__(self):
-        if compat.USE_SHAPELY_20:
-            return (shapely.to_wkb(self._data), self._crs)
-        elif compat.USE_PYGEOS:
-            return (pygeos.to_wkb(self._data), self._crs)
-        else:
-            return self.__dict__
+        return (shapely.to_wkb(self._data), self._crs)
 
     def __setstate__(self, state):
         if not isinstance(state, dict):
@@ -453,8 +428,6 @@ class GeometryArray(ExtensionArray):
         else:
             if "data" in state:
                 state["_data"] = state.pop("data")
-            if compat.USE_PYGEOS:
-                state["_data"] = vectorized.from_shapely(state["_data"])
             if "_crs" not in state:
                 state["_crs"] = None
             self.__dict__.update(state)
@@ -1073,8 +1046,7 @@ class GeometryArray(ExtensionArray):
             )
 
         value_arr = np.empty(len(value), dtype=object)
-        with compat.ignore_shapely2_warnings():
-            value_arr[:] = _shapely_to_geom(value)
+        value_arr[:] = _shapely_to_geom(value)
 
         self._data[idx] = value_arr
         return self
@@ -1160,12 +1132,7 @@ class GeometryArray(ExtensionArray):
         """
         Boolean NumPy array indicating if each value is missing
         """
-        if compat.USE_SHAPELY_20:
-            return shapely.is_missing(self._data)
-        elif compat.USE_PYGEOS:
-            return pygeos.is_missing(self._data)
-        else:
-            return np.array([g is None for g in self._data], dtype="bool")
+        return shapely.is_missing(self._data)
 
     def value_counts(
         self,
