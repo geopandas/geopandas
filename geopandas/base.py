@@ -88,8 +88,8 @@ def _delegate_geo_method(op, this, *args, **kwargs):
 class GeoPandasBase(object):
     @property
     def area(self):
-        """Returns a Series containing the area of each geometry in the
-        GeoSeries expressed in the units of the CRS.
+        """Returns a ``Series`` containing the area of each geometry in the
+        ``GeoSeries`` expressed in the units of the CRS.
 
         Examples
         --------
@@ -138,11 +138,11 @@ class GeoPandasBase(object):
     @property
     def crs(self):
         """
-        The Coordinate Reference System (CRS) represented as a pyproj.CRS
+        The Coordinate Reference System (CRS) represented as a ``pyproj.CRS``
         object.
 
         Returns None if the CRS is not set, and to set the value it
-        :getter: Returns a pyproj.CRS or None. When setting, the value
+        :getter: Returns a ``pyproj.CRS`` or None. When setting, the value
         can be anything accepted by
         :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
         such as an authority string (eg "EPSG:4326") or a WKT string.
@@ -178,7 +178,7 @@ class GeoPandasBase(object):
     @property
     def geom_type(self):
         """
-        Returns a Series of strings specifying the `Geometry Type` of each
+        Returns a ``Series`` of strings specifying the `Geometry Type` of each
         object.
 
         Examples
@@ -202,7 +202,7 @@ class GeoPandasBase(object):
 
     @property
     def length(self):
-        """Returns a Series containing the length of each geometry
+        """Returns a ``Series`` containing the length of each geometry
         expressed in the units of the CRS.
 
         In the case of a (Multi)Polygon it measures the length
@@ -260,7 +260,7 @@ GeometryCollection
 
     @property
     def is_valid(self):
-        """Returns a Series of dtype('bool') with value True for
+        """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
         geometries that are valid.
 
         Examples
@@ -298,7 +298,7 @@ GeometryCollection
     @property
     def is_empty(self):
         """
-        Returns a Series of dtype('bool') with value True for
+        Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
         empty geometries.
 
         Examples
@@ -328,7 +328,7 @@ GeometryCollection
 
     @property
     def is_simple(self):
-        """Returns a Series of dtype('bool') with value True for
+        """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
         geometries that do not cross themselves.
 
         This is meaningful only for `LineStrings` and `LinearRings`.
@@ -356,7 +356,7 @@ GeometryCollection
 
     @property
     def is_ring(self):
-        """Returns a Series of dtype('bool') with value True for
+        """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
         features that are closed.
 
         When constructing a LinearRing, the sequence of coordinates may be
@@ -391,7 +391,7 @@ GeometryCollection
 
     @property
     def has_z(self):
-        """Returns a Series of dtype('bool') with value True for
+        """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
         features that have a z-component.
 
         Notes
@@ -426,7 +426,7 @@ GeometryCollection
 
     @property
     def boundary(self):
-        """Returns a GeoSeries of lower dimensional objects representing
+        """Returns a ``GeoSeries`` of lower dimensional objects representing
         each geometry's set-theoretic `boundary`.
 
         Examples
@@ -461,7 +461,7 @@ GeometryCollection
 
     @property
     def centroid(self):
-        """Returns a GeoSeries of points representing the centroid of each
+        """Returns a ``GeoSeries`` of points representing the centroid of each
         geometry.
 
         Note that centroid does not have to be on or within original geometry.
@@ -496,7 +496,7 @@ GeometryCollection
         return _delegate_property("centroid", self)
 
     def concave_hull(self, ratio=0.0, allow_holes=False):
-        """Returns a GeoSeries of geometries representing the concave hull
+        """Returns a ``GeoSeries`` of geometries representing the concave hull
         of each geometry.
 
         The concave hull of a geometry is the smallest concave `Polygon`
@@ -561,7 +561,7 @@ GeometryCollection
 
     @property
     def convex_hull(self):
-        """Returns a GeoSeries of geometries representing the convex hull
+        """Returns a ``GeoSeries`` of geometries representing the convex hull
         of each geometry.
 
         The convex hull of a geometry is the smallest convex `Polygon`
@@ -607,11 +607,11 @@ GeometryCollection
         return _delegate_property("convex_hull", self)
 
     def delaunay_triangles(self, tolerance=0.0, only_edges=False):
-        """Returns a GeoSeries consisting of objects representing
+        """Returns a ``GeoSeries`` consisting of objects representing
         the computed Delaunay triangulation around the vertices of
         an input geometry.
 
-        The output is a GeometryCollection containing polygons
+        The output is a ``GeometryCollection`` containing polygons
         (default) or linestrings (see only_edges).
 
         Returns an empty GeometryCollection if an input geometry
@@ -658,7 +658,7 @@ GeometryCollection
 
     @property
     def envelope(self):
-        """Returns a GeoSeries of geometries representing the envelope of
+        """Returns a ``GeoSeries`` of geometries representing the envelope of
         each geometry.
 
         The envelope of a geometry is the bounding rectangle. That is, the
@@ -698,7 +698,7 @@ GeometryCollection
         return _delegate_property("envelope", self)
 
     def minimum_rotated_rectangle(self):
-        """Returns a GeoSeries of the general minimum bounding rectangle
+        """Returns a ``GeoSeries`` of the general minimum bounding rectangle
         that contains the object.
 
         Unlike envelope this rectangle is not constrained to be parallel
@@ -739,10 +739,10 @@ GeometryCollection
 
     @property
     def exterior(self):
-        """Returns a GeoSeries of LinearRings representing the outer
+        """Returns a ``GeoSeries`` of LinearRings representing the outer
         boundary of each polygon in the GeoSeries.
 
-        Applies to GeoSeries containing only Polygons. Returns None` for
+        Applies to GeoSeries containing only Polygons. Returns ``None``` for
         other geometry types.
 
         Examples
@@ -777,7 +777,7 @@ GeometryCollection
         return _delegate_property("exterior", self)
 
     def extract_unique_points(self):
-        """Returns a GeoSeries of MultiPoints representing all
+        """Returns a ``GeoSeries`` of MultiPoints representing all
         distinct vertices of an input geometry.
 
         Examples
@@ -809,7 +809,7 @@ GeometryCollection
         return _delegate_geo_method("extract_unique_points", self)
 
     def offset_curve(self, distance, quad_segs=8, join_style="round", mitre_limit=5.0):
-        """Returns a LineString or MultiLineString geometry at a
+        """Returns a ``LineString`` or ``MultiLineString`` geometry at a
         distance from the object on its right or its left side.
         Parameters
         ----------
@@ -823,7 +823,7 @@ GeometryCollection
             Specifies the shape of outside corners. 'round' results in
             rounded shapes. 'bevel' results in a beveled edge that touches the
             original vertex. 'mitre' results in a single vertex that is beveled
-            depending on the mitre_limit parameter.
+            depending on the ``mitre_limit`` parameter.
         mitre_limit : float (optional, default 5.0)
             Crops of 'mitre'-style joins if the point is displaced from the
             buffered vertex by more than this limit.
@@ -860,7 +860,7 @@ GeometryCollection
 
     @property
     def interiors(self):
-        """Returns a Series of List representing the
+        """Returns a ``Series`` of List representing the
         inner rings of each polygon in the GeoSeries.
 
         Applies to GeoSeries containing only Polygons.
@@ -900,7 +900,7 @@ GeometryCollection
         return _delegate_property("interiors", self)
 
     def representative_point(self):
-        """Returns a GeoSeries of (cheaply computed) points that are
+        """Returns a ``GeoSeries`` of (cheaply computed) points that are
         guaranteed to be within each geometry.
 
         Examples
@@ -933,7 +933,7 @@ GeometryCollection
         return _delegate_geo_method("representative_point", self)
 
     def minimum_bounding_circle(self):
-        """Returns a GeoSeries of geometries representing the minimum bounding
+        """Returns a ``GeoSeries`` of geometries representing the minimum bounding
         circle that encloses each geometry.
 
         Examples
@@ -998,7 +998,7 @@ GeometryCollection
         return Series(self.geometry.values.minimum_bounding_radius(), index=self.index)
 
     def normalize(self):
-        """Returns a GeoSeries of normalized
+        """Returns a ``GeoSeries`` of normalized
         geometries to normal form (or canonical form).
 
         This method orders the coordinates, rings of a polygon and parts of
@@ -1035,7 +1035,7 @@ GeometryCollection
         """
         Repairs invalid geometries.
 
-        Returns a GeoSeries with valid geometries.
+        Returns a ``GeoSeries`` with valid geometries.
         If the input geometry is already valid, then it will be preserved.
         In many cases, in order to create a valid geometry, the input
         geometry must be split into multiple parts or multiple geometries.
@@ -1071,7 +1071,7 @@ GeometryCollection
         return _delegate_geo_method("make_valid", self)
 
     def segmentize(self, max_segment_length):
-        """Returns a GeoSeries with vertices added to line segments based on
+        """Returns a ``GeoSeries`` with vertices added to line segments based on
         maximum segment length.
 
         Additional vertices will be added to every line segment in an input geometry so
@@ -1128,7 +1128,7 @@ GeometryCollection
     @property
     def unary_union(self):
         """Returns a geometry containing the union of all geometries in the
-        GeoSeries.
+        ``GeoSeries``.
 
         Examples
         --------
@@ -1151,17 +1151,17 @@ GeometryCollection
     #
 
     def contains(self, other, align=True):
-        """Returns a Series of dtype('bool') with value True for
+        """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
         each aligned geometry that contains `other`.
 
         An object is said to contain `other` if at least one point of `other` lies in
         the interior and no points of `other` lie in the exterior of the object.
         (Therefore, any given polygon does not contain its own boundary – there is not
         any point that lies in the interior.)
-        If either object is empty, this operation returns False.
+        If either object is empty, this operation returns ``False``.
 
         This is the inverse of :meth:`within` in the sense that the expression
-        a.contains(b) == b.within(a) always evaluates to True.
+        ``a.contains(b) == b.within(a)`` always evaluates to ``True``.
 
         The operation works on a 1-to-1 row-wise manner:
 
@@ -1234,8 +1234,8 @@ GeometryCollection
         We can also check two GeoSeries against each other, row by row.
         The GeoSeries above have different indices. We can either align both GeoSeries
         based on index values and compare elements with the same index using
-        align=True or ignore index and compare elements based on their matching
-        order using align=False:
+        ``align=True`` or ignore index and compare elements based on their matching
+        order using ``align=False``:
 
         .. image:: ../../../_static/binary_op-02.svg
 
@@ -1257,7 +1257,7 @@ GeometryCollection
         Notes
         -----
         This method works in a row-wise manner. It does not check if an element
-        of one GeoSeries contains *any* element of the other one.
+        of one GeoSeries ``contains`` *any* element of the other one.
 
         See also
         --------
@@ -1266,7 +1266,7 @@ GeometryCollection
         return _binary_op("contains", self, other, align)
 
     def geom_equals(self, other, align=True):
-        """Returns a Series of dtype('bool') with value True for
+        """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
         each aligned geometry equal to `other`.
 
         An object is said to be equal to `other` if its set-theoretic
@@ -1343,8 +1343,8 @@ GeometryCollection
         We can also check two GeoSeries against each other, row by row.
         The GeoSeries above have different indices. We can either align both GeoSeries
         based on index values and compare elements with the same index using
-        align=True or ignore index and compare elements based on their matching
-        order using align=False:
+        ``align=True`` or ignore index and compare elements based on their matching
+        order using ``align=False``:
 
         .. image:: ../../../_static/binary_op-02.svg
 
@@ -1377,7 +1377,7 @@ GeometryCollection
         return _binary_op("geom_equals", self, other, align)
 
     def geom_almost_equals(self, other, decimal=6, align=True):
-        """Returns a Series of dtype('bool') with value True if
+        """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` if
         each aligned geometry is approximately equal to `other`.
 
         Approximate equality is tested at all points to the specified `decimal`
@@ -1515,7 +1515,7 @@ GeometryCollection
         )
 
     def crosses(self, other, align=True):
-        """Returns a Series of dtype('bool') with value True for
+        """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
         each aligned geometry that cross `other`.
 
         An object is said to cross `other` if its `interior` intersects the
@@ -1592,8 +1592,8 @@ GeometryCollection
         We can also check two GeoSeries against each other, row by row.
         The GeoSeries above have different indices. We can either align both GeoSeries
         based on index values and compare elements with the same index using
-        align=True or ignore index and compare elements based on their matching
-        order using align=False:
+        ``align=True`` or ignore index and compare elements based on their matching
+        order using ``align=False``:
 
         .. image:: ../../../_static/binary_op-02.svg
 
@@ -1617,7 +1617,7 @@ GeometryCollection
         Notes
         -----
         This method works in a row-wise manner. It does not check if an element
-        of one GeoSeries crosses *any* element of the other one.
+        of one GeoSeries ``crosses`` *any* element of the other one.
 
         See also
         --------
@@ -1628,7 +1628,7 @@ GeometryCollection
         return _binary_op("crosses", self, other, align)
 
     def disjoint(self, other, align=True):
-        """Returns a Series of dtype('bool') with value True for
+        """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
         each aligned geometry disjoint to `other`.
 
         An object is said to be disjoint to `other` if its `boundary` and
@@ -1703,8 +1703,8 @@ GeometryCollection
         We can also check two GeoSeries against each other, row by row.
         We can either align both GeoSeries
         based on index values and compare elements with the same index using
-        align=True or ignore index and compare elements based on their matching
-        order using align=False:
+        ``align=True`` or ignore index and compare elements based on their matching
+        order using ``align=False``:
 
         .. image:: ../../../_static/binary_op-02.svg
 
@@ -1729,7 +1729,7 @@ GeometryCollection
         return _binary_op("disjoint", self, other, align)
 
     def intersects(self, other, align=True):
-        """Returns a Series of dtype('bool') with value True for
+        """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
         each aligned geometry that intersects `other`.
 
         An object is said to intersect `other` if its `boundary` and `interior`
@@ -1805,8 +1805,8 @@ GeometryCollection
         We can also check two GeoSeries against each other, row by row.
         The GeoSeries above have different indices. We can either align both GeoSeries
         based on index values and compare elements with the same index using
-        align=True or ignore index and compare elements based on their matching
-        order using align=False:
+        ``align=True`` or ignore index and compare elements based on their matching
+        order using ``align=False``:
 
         .. image:: ../../../_static/binary_op-02.svg
 
@@ -1828,7 +1828,7 @@ GeometryCollection
         Notes
         -----
         This method works in a row-wise manner. It does not check if an element
-        of one GeoSeries crosses *any* element of the other one.
+        of one GeoSeries ``crosses`` *any* element of the other one.
 
         See also
         --------
@@ -1917,8 +1917,8 @@ GeometryCollection
         We can also check two GeoSeries against each other, row by row.
         The GeoSeries above have different indices. We can either align both GeoSeries
         based on index values and compare elements with the same index using
-        align=True or ignore index and compare elements based on their matching
-        order using align=False:
+        ``align=True`` or ignore index and compare elements based on their matching
+        order using ``align=False``:
 
         .. image:: ../../../_static/binary_op-02.svg
 
@@ -1940,7 +1940,7 @@ GeometryCollection
         Notes
         -----
         This method works in a row-wise manner. It does not check if an element
-        of one GeoSeries overlaps *any* element of the other one.
+        of one GeoSeries ``overlaps`` *any* element of the other one.
 
         See also
         --------
@@ -1951,7 +1951,7 @@ GeometryCollection
         return _binary_op("overlaps", self, other, align)
 
     def touches(self, other, align=True):
-        """Returns a Series of dtype('bool') with value True for
+        """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
         each aligned geometry that touches `other`.
 
         An object is said to touch `other` if it has at least one point in
@@ -2029,8 +2029,8 @@ GeometryCollection
         We can also check two GeoSeries against each other, row by row.
         The GeoSeries above have different indices. We can either align both GeoSeries
         based on index values and compare elements with the same index using
-        align=True or ignore index and compare elements based on their matching
-        order using align=False:
+        ``align=True`` or ignore index and compare elements based on their matching
+        order using ``align=False``:
 
         .. image:: ../../../_static/binary_op-02.svg
 
@@ -2052,7 +2052,7 @@ GeometryCollection
         Notes
         -----
         This method works in a row-wise manner. It does not check if an element
-        of one GeoSeries touches *any* element of the other one.
+        of one GeoSeries ``touches`` *any* element of the other one.
 
         See also
         --------
@@ -2063,16 +2063,16 @@ GeometryCollection
         return _binary_op("touches", self, other, align)
 
     def within(self, other, align=True):
-        """Returns a Series of dtype('bool') with value True for
+        """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
         each aligned geometry that is within `other`.
 
         An object is said to be within `other` if at least one of its points is located
         in the `interior` and no points are located in the `exterior` of the other.
-        If either object is empty, this operation returns False.
+        If either object is empty, this operation returns ``False``.
 
         This is the inverse of :meth:`contains` in the sense that the
-        expression a.within(b) == b.contains(a) always evaluates to
-        True.
+        expression ``a.within(b) == b.contains(a)`` always evaluates to
+        ``True``.
 
         The operation works on a 1-to-1 row-wise manner:
 
@@ -2145,8 +2145,8 @@ GeometryCollection
         We can also check two GeoSeries against each other, row by row.
         The GeoSeries above have different indices. We can either align both GeoSeries
         based on index values and compare elements with the same index using
-        align=True or ignore index and compare elements based on their matching
-        order using align=False:
+        ``align=True`` or ignore index and compare elements based on their matching
+        order using ``align=False``:
 
         .. image:: ../../../_static/binary_op-02.svg
 
@@ -2168,7 +2168,7 @@ GeometryCollection
         Notes
         -----
         This method works in a row-wise manner. It does not check if an element
-        of one GeoSeries is within *any* element of the other one.
+        of one GeoSeries is ``within`` *any* element of the other one.
 
         See also
         --------
@@ -2178,12 +2178,12 @@ GeometryCollection
 
     def covers(self, other, align=True):
         """
-        Returns a Series of dtype('bool') with value True for
+        Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
         each aligned geometry that is entirely covering `other`.
 
         An object A is said to cover another object B if no points of B lie
         in the exterior of A.
-        If either object is empty, this operation returns False.
+        If either object is empty, this operation returns ``False``.
 
         The operation works on a 1-to-1 row-wise manner:
 
@@ -2258,8 +2258,8 @@ GeometryCollection
         We can also check two GeoSeries against each other, row by row.
         The GeoSeries above have different indices. We can either align both GeoSeries
         based on index values and compare elements with the same index using
-        align=True or ignore index and compare elements based on their matching
-        order using align=False:
+        ``align=True`` or ignore index and compare elements based on their matching
+        order using ``align=False``:
 
         .. image:: ../../../_static/binary_op-02.svg
 
@@ -2281,7 +2281,7 @@ GeometryCollection
         Notes
         -----
         This method works in a row-wise manner. It does not check if an element
-        of one GeoSeries covers *any* element of the other one.
+        of one GeoSeries ``covers`` *any* element of the other one.
 
         See also
         --------
@@ -2292,7 +2292,7 @@ GeometryCollection
 
     def covered_by(self, other, align=True):
         """
-        Returns a Series of dtype('bool') with value True for
+        Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
         each aligned geometry that is entirely covered by `other`.
 
         An object A is said to cover another object B if no points of B lie
@@ -2371,8 +2371,8 @@ GeometryCollection
         We can also check two GeoSeries against each other, row by row.
         The GeoSeries above have different indices. We can either align both GeoSeries
         based on index values and compare elements with the same index using
-        align=True or ignore index and compare elements based on their matching
-        order using align=False:
+        ``align=True`` or ignore index and compare elements based on their matching
+        order using ``align=False``:
 
         .. image:: ../../../_static/binary_op-02.svg
 
@@ -2394,7 +2394,7 @@ GeometryCollection
         Notes
         -----
         This method works in a row-wise manner. It does not check if an element
-        of one GeoSeries is covered_by *any* element of the other one.
+        of one GeoSeries is ``covered_by`` *any* element of the other one.
 
         See also
         --------
@@ -2404,7 +2404,7 @@ GeometryCollection
         return _binary_op("covered_by", self, other, align)
 
     def distance(self, other, align=True):
-        """Returns a Series containing the distance to aligned `other`.
+        """Returns a ``Series`` containing the distance to aligned `other`.
 
         The operation works on a 1-to-1 row-wise manner:
 
@@ -2477,8 +2477,8 @@ GeometryCollection
         We can also check two GeoSeries against each other, row by row.
         The GeoSeries above have different indices. We can either align both GeoSeries
         based on index values and use elements with the same index using
-        align=True or ignore index and use elements based on their matching
-        order using align=False:
+        ``align=True`` or ignore index and use elements based on their matching
+        order using ``align=False``:
 
         .. image:: ../../../_static/binary_op-02.svg
 
@@ -2500,7 +2500,7 @@ GeometryCollection
         return _binary_op("distance", self, other, align)
 
     def hausdorff_distance(self, other, align=True, densify=None):
-        """Returns a Series containing the Hausdorff distance to aligned `other`.
+        """Returns a ``Series`` containing the Hausdorff distance to aligned `other`.
 
         The Hausdorff distance is the largest distance consisting of any point in `self`
         with the nearest point in `other`.
@@ -2579,8 +2579,8 @@ GeometryCollection
         We can also check two GeoSeries against each other, row by row.
         The GeoSeries above have different indices. We can either align both GeoSeries
         based on index values and use elements with the same index using
-        align=True or ignore index and use elements based on their matching
-        order using align=False:
+        ``align=True`` or ignore index and use elements based on their matching
+        order using ``align=False``:
 
         .. image:: ../../../_static/binary_op-02.svg
 
@@ -2615,12 +2615,12 @@ GeometryCollection
         return _binary_op("hausdorff_distance", self, other, align, densify=densify)
 
     def frechet_distance(self, other, align=True, densify=None):
-        """Returns a Series containing the Frechet distance to aligned `other`.
+        """Returns a ``Series`` containing the Frechet distance to aligned `other`.
 
         The Fréchet distance is a measure of similarity: it is the greatest distance
         between any point in A and the closest point in B. The discrete distance is an
         approximation of this metric: only vertices are considered. The parameter
-        densify makes this approximation less coarse by splitting the line segments
+        ``densify`` makes this approximation less coarse by splitting the line segments
         between vertices before computing the distance.
 
         Fréchet distance sweep continuously along their respective curves and the
@@ -2698,8 +2698,8 @@ GeometryCollection
         We can also check two GeoSeries against each other, row by row.
         The GeoSeries above have different indices. We can either align both GeoSeries
         based on index values and use elements with the same index using
-        align=True or ignore index and use elements based on their matching
-        order using align=False:
+        ``align=True`` or ignore index and use elements based on their matching
+        order using ``align=False``:
 
         .. image:: ../../../_static/binary_op-02.svg
 
@@ -2717,7 +2717,7 @@ GeometryCollection
         3    1.000000
         dtype: float64
 
-        We can also set a densify value, which is a float between 0 and 1 and
+        We can also set a ``densify`` value, which is a float between 0 and 1 and
         signifies the fraction of the distance between each pair of points that will
         be used as the distance between the points when densifying.
 
@@ -2737,7 +2737,7 @@ GeometryCollection
     #
 
     def difference(self, other, align=True):
-        """Returns a GeoSeries of the points in each aligned geometry that
+        """Returns a ``GeoSeries`` of the points in each aligned geometry that
         are not in `other`.
 
         .. image:: ../../../_static/binary_geo-difference.svg
@@ -2817,8 +2817,8 @@ GeometryCollection
         We can also check two GeoSeries against each other, row by row.
         The GeoSeries above have different indices. We can either align both GeoSeries
         based on index values and compare elements with the same index using
-        align=True or ignore index and compare elements based on their matching
-        order using align=False:
+        ``align=True`` or ignore index and compare elements based on their matching
+        order using ``align=False``:
 
         .. image:: ../../../_static/binary_op-02.svg
 
@@ -2848,7 +2848,7 @@ GeometryCollection
         return _binary_geo("difference", self, other, align)
 
     def symmetric_difference(self, other, align=True):
-        """Returns a GeoSeries of the symmetric difference of points in
+        """Returns a ``GeoSeries`` of the symmetric difference of points in
         each aligned geometry with `other`.
 
         For each geometry, the symmetric difference consists of points in the
@@ -2932,8 +2932,8 @@ GeometryCollection
         We can also check two GeoSeries against each other, row by row.
         The GeoSeries above have different indices. We can either align both GeoSeries
         based on index values and compare elements with the same index using
-        align=True or ignore index and compare elements based on their matching
-        order using align=False:
+        ``align=True`` or ignore index and compare elements based on their matching
+        order using ``align=False``:
 
         .. image:: ../../../_static/binary_op-02.svg
 
@@ -2963,7 +2963,7 @@ GeometryCollection
         return _binary_geo("symmetric_difference", self, other, align)
 
     def union(self, other, align=True):
-        """Returns a GeoSeries of the union of points in each aligned geometry with
+        """Returns a ``GeoSeries`` of the union of points in each aligned geometry with
         `other`.
 
         .. image:: ../../../_static/binary_geo-union.svg
@@ -3044,8 +3044,8 @@ GeometryCollection
         We can also check two GeoSeries against each other, row by row.
         The GeoSeries above have different indices. We can either align both GeoSeries
         based on index values and compare elements with the same index using
-        align=True or ignore index and compare elements based on their matching
-        order using align=False:
+        ``align=True`` or ignore index and compare elements based on their matching
+        order using ``align=False``:
 
         .. image:: ../../../_static/binary_op-02.svg
 
@@ -3076,7 +3076,7 @@ GeometryCollection
         return _binary_geo("union", self, other, align)
 
     def intersection(self, other, align=True):
-        """Returns a GeoSeries of the intersection of points in each
+        """Returns a ``GeoSeries`` of the intersection of points in each
         aligned geometry with `other`.
 
         .. image:: ../../../_static/binary_geo-intersection.svg
@@ -3157,8 +3157,8 @@ GeometryCollection
         We can also check two GeoSeries against each other, row by row.
         The GeoSeries above have different indices. We can either align both GeoSeries
         based on index values and compare elements with the same index using
-        align=True or ignore index and compare elements based on their matching
-        order using align=False:
+        ``align=True`` or ignore index and compare elements based on their matching
+        order using ``align=False``:
 
         .. image:: ../../../_static/binary_op-02.svg
 
@@ -3189,7 +3189,7 @@ GeometryCollection
         return _binary_geo("intersection", self, other, align)
 
     def clip_by_rect(self, xmin, ymin, xmax, ymax):
-        """Returns a GeoSeries of the portions of geometry within the given
+        """Returns a ``GeoSeries`` of the portions of geometry within the given
         rectangle.
 
         Note that the results are not exactly equal to
@@ -3201,7 +3201,7 @@ GeometryCollection
         guaranteed to be valid. No exceptions will be raised for topological errors.
 
         Note: empty geometries or geometries that do not overlap with the specified
-        bounds will result in GEOMETRYCOLLECTION EMPTY.
+        bounds will result in ``GEOMETRYCOLLECTION EMPTY``.
 
         Parameters
         ----------
@@ -3325,8 +3325,8 @@ GeometryCollection
         We can also check two GeoSeries against each other, row by row.
         The GeoSeries above have different indices than the one below. We can either
         align both GeoSeries based on index values and compare elements with the same
-        index using align=True or ignore index and compare elements based on their
-        matching order using align=False:
+        index using ``align=True`` or ignore index and compare elements based on their
+        matching order using ``align=False``:
 
         .. image:: ../../../_static/binary_op-02.svg
 
@@ -3366,10 +3366,10 @@ GeometryCollection
 
     @property
     def bounds(self):
-        """Returns a DataFrame with columns minx, miny, maxx,
-        maxy values containing the bounds for each geometry.
+        """Returns a ``DataFrame`` with columns ``minx``, ``miny``, ``maxx``,
+        ``maxy`` values containing the bounds for each geometry.
 
-        See GeoSeries.total_bounds for the limits of the entire series.
+        See ``GeoSeries.total_bounds`` for the limits of the entire series.
 
         Examples
         --------
@@ -3383,7 +3383,7 @@ GeometryCollection
         1   0.0   0.0   1.0   1.0
         2   0.0   1.0   1.0   2.0
 
-        You can assign the bounds to the GeoDataFrame as:
+        You can assign the bounds to the ``GeoDataFrame`` as:
 
         >>> import pandas as pd
         >>> gdf = pd.concat([gdf, gdf.bounds], axis=1)
@@ -3400,10 +3400,10 @@ GeometryCollection
 
     @property
     def total_bounds(self):
-        """Returns a tuple containing minx, miny, maxx, maxy
+        """Returns a tuple containing ``minx``, ``miny``, ``maxx``, ``maxy``
         values for the bounds of the series as a whole.
 
-        See GeoSeries.bounds for the bounds of the geometries contained in
+        See ``GeoSeries.bounds`` for the bounds of the geometries contained in
         the series.
 
         Examples
@@ -3421,8 +3421,8 @@ GeometryCollection
     def sindex(self):
         """Generate the spatial index
 
-        Creates R-tree spatial index based on pygeos.STRtree or
-        rtree.index.Index.
+        Creates R-tree spatial index based on ``pygeos.STRtree`` or
+        ``rtree.index.Index``.
 
         Note that the  spatial index may not be fully
         initialized until the first use.
@@ -3503,8 +3503,8 @@ GeometryCollection
         return self.geometry.values.has_sindex
 
     def buffer(self, distance, resolution=16, **kwargs):
-        """Returns a GeoSeries of geometries representing all points within
-        a given distance of each geometric object.
+        """Returns a ``GeoSeries`` of geometries representing all points within
+        a given ``distance`` of each geometric object.
 
         See http://shapely.readthedocs.io/en/latest/manual.html#object.buffer
         for details.
@@ -3539,7 +3539,7 @@ GeometryCollection
         2    POLYGON ((2.80000 -1.00000, 2.80000 1.00000, 2...
         dtype: geometry
 
-        **kwargs accept further specification as join_style and cap_style.
+        ``**kwargs`` accept further specification as ``join_style`` and ``cap_style``.
         See the following illustration of different options.
 
         .. plot:: _static/code/buffer.py
@@ -3559,7 +3559,7 @@ GeometryCollection
         )
 
     def simplify(self, *args, **kwargs):
-        """Returns a GeoSeries containing a simplified representation of
+        """Returns a ``GeoSeries`` containing a simplified representation of
         each geometry.
 
         The algorithm (Douglas-Peucker) recursively splits the original line
@@ -3688,8 +3688,8 @@ GeometryCollection
         We can also check two GeoSeries against each other, row by row.
         The GeoSeries above have different indices. We can either align both GeoSeries
         based on index values and compare elements with the same index using
-        align=True or ignore index and compare elements based on their matching
-        order using align=False:
+        ``align=True`` or ignore index and compare elements based on their matching
+        order using ``align=False``:
 
         .. image:: ../../../_static/binary_op-02.svg
 
@@ -3786,8 +3786,8 @@ GeometryCollection
         We can also check two GeoSeries against each other, row by row.
         The GeoSeries above have different indices. We can either align both GeoSeries
         based on index values and project elements with the same index using
-        align=True or ignore index and project elements based on their matching
-        order using align=False:
+        ``align=True`` or ignore index and project elements based on their matching
+        order using ``align=False``:
 
         .. image:: ../../../_static/binary_op-02.svg
 
@@ -3836,7 +3836,7 @@ GeometryCollection
         )
 
     def affine_transform(self, matrix):
-        """Return a GeoSeries with translated geometries.
+        """Return a ``GeoSeries`` with translated geometries.
 
         See http://shapely.readthedocs.io/en/stable/manual.html#shapely.affinity.affine_transform
         for details.
@@ -3847,10 +3847,10 @@ GeometryCollection
             6 or 12 items for 2D or 3D transformations respectively.
 
             For 2D affine transformations,
-            the 6 parameter matrix is [a, b, d, e, xoff, yoff]
+            the 6 parameter matrix is ``[a, b, d, e, xoff, yoff]``
 
             For 3D affine transformations,
-            the 12 parameter matrix is [a, b, c, d, e, f, g, h, i, xoff, yoff, zoff]
+            the 12 parameter matrix is ``[a, b, c, d, e, f, g, h, i, xoff, yoff, zoff]``
 
         Examples
         --------
@@ -3878,7 +3878,7 @@ GeometryCollection
         return _delegate_geo_method("affine_transform", self, matrix)
 
     def translate(self, xoff=0.0, yoff=0.0, zoff=0.0):
-        """Returns a GeoSeries with translated geometries.
+        """Returns a ``GeoSeries`` with translated geometries.
 
         See http://shapely.readthedocs.io/en/latest/manual.html#shapely.affinity.translate
         for details.
@@ -3916,7 +3916,7 @@ GeometryCollection
         return _delegate_geo_method("translate", self, xoff, yoff, zoff)
 
     def rotate(self, angle, origin="center", use_radians=False):
-        """Returns a GeoSeries with rotated geometries.
+        """Returns a ``GeoSeries`` with rotated geometries.
 
         See http://shapely.readthedocs.io/en/latest/manual.html#shapely.affinity.rotate
         for details.
@@ -3968,7 +3968,7 @@ GeometryCollection
         )
 
     def scale(self, xfact=1.0, yfact=1.0, zfact=1.0, origin="center"):
-        """Returns a GeoSeries with scaled geometries.
+        """Returns a ``GeoSeries`` with scaled geometries.
 
         The geometries can be scaled by different factors along each
         dimension. Negative scale factors will mirror or reflect coordinates.
@@ -4016,7 +4016,7 @@ GeometryCollection
         return _delegate_geo_method("scale", self, xfact, yfact, zfact, origin=origin)
 
     def skew(self, xs=0.0, ys=0.0, origin="center", use_radians=False):
-        """Returns a GeoSeries with skewed geometries.
+        """Returns a ``GeoSeries`` with skewed geometries.
 
         The geometries are sheared by angles along the x and y dimensions.
 
@@ -4073,10 +4073,10 @@ GeometryCollection
         """
         Coordinate based indexer to select by intersection with bounding box.
 
-        Format of input should be .cx[xmin:xmax, ymin:ymax]. Any of
-        xmin, xmax, ymin, and ymax can be provided, but input
-        must include a comma separating x and y slices. That is, .cx[:, :]
-        will return the full series/frame, but .cx[:] is not implemented.
+        Format of input should be ``.cx[xmin:xmax, ymin:ymax]``. Any of
+        ``xmin``, ``xmax``, ``ymin``, and ``ymax`` can be provided, but input
+        must include a comma separating x and y slices. That is, ``.cx[:, :]``
+        will return the full series/frame, but ``.cx[:]`` is not implemented.
 
         Examples
         --------
@@ -4110,8 +4110,8 @@ GeometryCollection
         floats.
 
         The shape of the returned :class:`~pandas.DataFrame` is (N, 2), with N being the
-        number of coordinate pairs. With the default of include_z=False,
-        three-dimensional data is ignored. When specifying include_z=True, the shape
+        number of coordinate pairs. With the default of ``include_z=False``,
+        three-dimensional data is ignored. When specifying ``include_z=True``, the shape
         of the returned :class:`~pandas.DataFrame` is (N, 3).
 
         Parameters
@@ -4120,7 +4120,7 @@ GeometryCollection
             Include Z coordinates
         ignore_index : bool, default False
             If True, the resulting index will be labelled 0, 1, …, n - 1, ignoring
-            index_parts.
+            ``index_parts``.
         index_parts : bool, default False
            If True, the resulting index will be a :class:`~pandas.MultiIndex` (original
            index with an additional level indicating the ordering of the coordinate
@@ -4250,7 +4250,7 @@ GeometryCollection
 
         Generate a MultiPoint per each geometry containing points sampled from the
         geometry. You can either sample randomly from a uniform distribution or use an
-        advanced sampling algorithm from the pointpats package.
+        advanced sampling algorithm from the ``pointpats`` package.
 
         For polygons, this samples within the area of the polygon. For lines,
         this samples along the length of the linestring. For multi-part
@@ -4268,10 +4268,10 @@ GeometryCollection
             from each geometry.  If an array of the same length as a GeoSeries is
             passed, it denotes the size of a sample per geometry.
         method : str, default "uniform"
-            The sampling method. uniform samples uniformly at random from a
-            geometry using numpy.random.uniform. Other allowed strings
-            (e.g. "cluster_poisson") denote sampling function name from the
-            pointpats.random module (see
+            The sampling method. ``uniform`` samples uniformly at random from a
+            geometry using ``numpy.random.uniform``. Other allowed strings
+            (e.g. ``"cluster_poisson"``) denote sampling function name from the
+            ``pointpats.random`` module (see
             http://pysal.org/pointpats/api.html#random-distributions). Pointpats methods
             are implemented for (Multi)Polygons only and will return an empty MultiPoint
             for other geometry types.
@@ -4310,8 +4310,7 @@ GeometryCollection
                 FutureWarning,
                 stacklevel=2,
             )
-            if rng is None:
-                rng = seed
+            rng = seed
 
         if method == "uniform":
             if pd.api.types.is_list_like(size):
