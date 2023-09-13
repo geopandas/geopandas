@@ -136,15 +136,15 @@ Dependencies
 Required dependencies:
 
 - `numpy`_
-- `pandas`_ (version 1.1 or later)
-- `shapely`_ (interface to `GEOS`_; version 1.7.1 or later)
-- `fiona`_ (interface to `GDAL`_; version 1.8.19 or later)
-- `pyproj`_ (interface to `PROJ`_; version 3.0.1 or later)
+- `pandas`_ (version 1.4 or later)
+- `shapely`_ (interface to `GEOS`_; version 1.8.0 or later)
+- `fiona`_ (interface to `GDAL`_; version 1.8.21 or later)
+- `pyproj`_ (interface to `PROJ`_; version 3.3.0 or later)
 - `packaging`_
 
 Further, optional dependencies are:
 
-- `pyogrio`_ (optional; experimental alternative for fiona)
+- `pyogrio`_ (optional; faster alternative for fiona, will become the default in GeoPandas 1.0)
 - `rtree`_ (optional; spatial index to improve performance and required for
   overlay operations; interface to `libspatialindex`_)
 - `psycopg2`_ (optional; for PostGIS connection)
@@ -155,7 +155,7 @@ Further, optional dependencies are:
 
 For plotting, these additional packages may be used:
 
-- `matplotlib`_ (>= 3.3.4)
+- `matplotlib`_ (>= 3.5.0)
 - `mapclassify`_ (>= 2.4.0)
 
 
@@ -164,17 +164,12 @@ Using the optional PyGEOS dependency
 
 .. attention::
 
-  The upcoming Shapely 2.0 release will absorb all improvements from PyGEOS.
-  If you are considering trying out those improvements, you can also test
-  the prerelease of Shapely instead.
-  See https://shapely.readthedocs.io/en/latest/release/2.x.html#version-2-0-0
-  for the release notes of Shapely 2.0, and https://github.com/shapely/shapely/discussions/1464
-  on how to install this and give feedback.
+  The Shapely 2.0 release absorbed all improvements from PyGEOS and the support of
+  PyGEOS in GeoPandas is deprecated. Please use Shapely 2 instead.
 
-Work is ongoing to improve the performance of GeoPandas. Currently, the
-fast implementations of basic spatial operations live in the `PyGEOS`_
-package (but work is under way to contribute those improvements to Shapely,
-coming to Shapely 2.0).
+Historically, the
+fast implementations of basic spatial operations used to live in the `PyGEOS`_
+package.
 Starting with GeoPandas 0.8, it is possible to optionally use those
 experimental speedups by installing PyGEOS. This can be done with conda
 (using the conda-forge channel) or pip::
@@ -184,11 +179,10 @@ experimental speedups by installing PyGEOS. This can be done with conda
     # pip
     pip install pygeos
 
-More specifically, whether the speedups are used or not is determined by:
+More specifically, whether the PyGEOS is used or not is determined by:
 
-- If PyGEOS >= 0.8 is installed, it will be used by default (but installing
-  GeoPandas will not yet automatically install PyGEOS as dependency, you need
-  to do this manually).
+- If Shapely >= 2 is installed, it will be used by default.
+- If PyGEOS >= 0.8 and Shapely < 2 are installed, PyGEOS will be used by default
 
 - You can still toggle the use of PyGEOS when it is available, by:
 
@@ -207,19 +201,18 @@ More specifically, whether the speedups are used or not is determined by:
     although this variable can be set during an interactive session, it will
     only work if the GeoDataFrames you use are created (e.g. reading a file
     with ``read_file``) after changing this value.
-    Attention: changing this option will no longer work in all cases when
-    having Shapely >=2.0 installed. In that case, use the environment variable
-    (see option above).
+
+.. attention::
+
+    Changing this option no longer works in all cases when
+    Shapely >=2.0 is installed. In that case, use the environment variable
+    (see option above) or simply use Shapely.
 
 .. warning::
 
-    The use of PyGEOS is experimental! Although it is passing all tests,
-    there might still be issues and not all functions of GeoPandas will
-    already benefit from speedups (one known issue: the `to_crs` coordinate
-    transformations lose the z coordinate). But trying this out is very welcome!
-    Any issues you encounter (but also reports of successful usage are
-    interesting!) can be reported at https://gitter.im/geopandas/geopandas
-    or https://github.com/geopandas/geopandas/issues
+    The use of PyGEOS is deprecated! If you depend on PyGEOS, see
+    the :doc:`migration guide <../docs/user_guide/pygeos_to_shapely>`
+    to Shapely 2.0. Otherwise, use Shapely 2 directly.
 
 
 .. _PyPI: https://pypi.python.org/pypi/geopandas
@@ -270,4 +263,4 @@ More specifically, whether the speedups are used or not is determined by:
 
 .. _packaging: https://packaging.pypa.io/en/latest/
 
-.. _pointpats: https://pointpats.readthedocs.io/en/latest/
+.. _pointpats: https://pysal.org/pointpats/

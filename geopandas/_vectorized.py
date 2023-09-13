@@ -8,15 +8,13 @@ import warnings
 
 import numpy as np
 import pandas as pd
-
 import shapely
 import shapely.geometry
 import shapely.geos
 import shapely.ops
+import shapely.validation
 import shapely.wkb
 import shapely.wkt
-import shapely.validation
-
 from shapely.geometry.base import BaseGeometry
 
 from . import _compat as compat
@@ -620,7 +618,7 @@ def concave_hull(data, **kwargs):
             "thus using Shapely and not PyGEOS for calculating the concave_hull.",
             stacklevel=4,
         )
-        return shapely.concave_hull(to_shapely(data), **kwargs)
+        return pygeos.from_shapely(shapely.concave_hull(to_shapely(data), **kwargs))
     else:
         raise NotImplementedError(
             f"shapely >= 2.0 is required, "
@@ -656,6 +654,15 @@ def envelope(data):
         return pygeos.envelope(data)
     else:
         return _unary_geo("envelope", data)
+
+
+def minimum_rotated_rectangle(data):
+    if compat.USE_SHAPELY_20:
+        return shapely.oriented_envelope(data)
+    elif compat.USE_PYGEOS:
+        return pygeos.oriented_envelope(data)
+    else:
+        return _unary_geo("minimum_rotated_rectangle", data)
 
 
 def exterior(data):
@@ -720,6 +727,25 @@ def interiors(data):
     with compat.ignore_shapely2_warnings():
         data[:] = inner_rings
     return data
+
+
+def remove_repeated_points(data, tolerance=0.0):
+    if compat.USE_SHAPELY_20:
+        return shapely.remove_repeated_points(data, tolerance=tolerance)
+    if compat.USE_PYGEOS and compat.SHAPELY_GE_20:
+        warnings.warn(
+            "PyGEOS does not support remove_repeated_points, and Shapely >= 2 is "
+            "installed, thus using Shapely and not PyGEOS to remove repeated points.",
+            stacklevel=4,
+        )
+        return pygeos.from_shapely(
+            shapely.remove_repeated_points(to_shapely(data), tolerance=tolerance)
+        )
+    else:
+        raise NotImplementedError(
+            f"shapely >= 2.0 is required, "
+            f"version {shapely.__version__} is installed"
+        )
 
 
 def representative_point(data):
@@ -934,6 +960,18 @@ def union(data, other):
         return _binary_geo("union", data, other)
 
 
+def shortest_line(data, other):
+    if compat.USE_SHAPELY_20:
+        return shapely.shortest_line(data, other)
+    elif compat.USE_PYGEOS:
+        return _binary_method("shortest_line", data, other)
+    else:
+        raise NotImplementedError(
+            f"shapely >= 2.0 or PyGEOS is required, "
+            f"version {shapely.__version__} is installed"
+        )
+
+
 #
 # Other operations
 #
@@ -954,6 +992,20 @@ def hausdorff_distance(data, other, densify=None, **kwargs):
     elif compat.USE_PYGEOS:
         return _binary_method(
             "hausdorff_distance", data, other, densify=densify, **kwargs
+        )
+    else:
+        raise NotImplementedError(
+            f"shapely >= 2.0 or PyGEOS is required, "
+            f"version {shapely.__version__} is installed"
+        )
+
+
+def frechet_distance(data, other, densify=None, **kwargs):
+    if compat.USE_SHAPELY_20:
+        return shapely.frechet_distance(data, other, densify=densify, **kwargs)
+    elif compat.USE_PYGEOS:
+        return _binary_method(
+            "frechet_distance", data, other, densify=densify, **kwargs
         )
     else:
         raise NotImplementedError(
@@ -1051,9 +1103,10 @@ def _shapely_normalize(geom):
     """
     Small helper function for now because it is not yet available in Shapely.
     """
-    from shapely.geos import lgeos
+    from ctypes import c_int, c_void_p
+
     from shapely.geometry.base import geom_factory
-    from ctypes import c_void_p, c_int
+    from shapely.geos import lgeos
 
     lgeos._lgeos.GEOSNormalize_r.restype = c_int
     lgeos._lgeos.GEOSNormalize_r.argtypes = [c_void_p, c_void_p]
@@ -1068,16 +1121,10 @@ def normalize(data):
         return shapely.normalize(data)
     elif compat.USE_PYGEOS:
         return pygeos.normalize(data)
-    elif compat.SHAPELY_GE_18:
-        out = np.empty(len(data), dtype=object)
-        with compat.ignore_shapely2_warnings():
-            out[:] = [geom.normalize() if geom is not None else None for geom in data]
     else:
         out = np.empty(len(data), dtype=object)
         with compat.ignore_shapely2_warnings():
-            out[:] = [
-                _shapely_normalize(geom) if geom is not None else None for geom in data
-            ]
+            out[:] = [geom.normalize() if geom is not None else None for geom in data]
     return out
 
 
@@ -1086,11 +1133,6 @@ def make_valid(data):
         return shapely.make_valid(data)
     elif compat.USE_PYGEOS:
         return pygeos.make_valid(data)
-    elif not compat.SHAPELY_GE_18:
-        raise NotImplementedError(
-            f"shapely >= 1.8 or PyGEOS is required, "
-            f"version {shapely.__version__} is installed"
-        )
     else:
         out = np.empty(len(data), dtype=object)
         with compat.ignore_shapely2_warnings():
@@ -1099,6 +1141,18 @@ def make_valid(data):
                 for geom in data
             ]
     return out
+
+
+def reverse(data):
+    if compat.USE_SHAPELY_20:
+        return shapely.reverse(data)
+    elif compat.USE_PYGEOS:
+        return pygeos.reverse(data)
+    else:
+        raise NotImplementedError(
+            f"shapely >= 2.0 or PyGEOS is required, "
+            f"version {shapely.__version__} is installed"
+        )
 
 
 def project(data, other, normalized=False):

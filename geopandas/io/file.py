@@ -94,7 +94,13 @@ def _check_pyogrio(func):
 
 
 def _check_engine(engine, func):
-    # default to "fiona" if installed, otherwise try pyogrio
+    # if not specified through keyword or option, then default to "fiona" if
+    # installed, otherwise try pyogrio
+    if engine is None:
+        import geopandas
+
+        engine = geopandas.options.io_engine
+
     if engine is None:
         _import_fiona()
         if fiona:
@@ -141,6 +147,7 @@ _EXTENSION_TO_DRIVER = {
     ".mif": "MapInfo File",
     ".mid": "MapInfo File",
     ".dgn": "DGN",
+    ".fgb": "FlatGeobuf",
 }
 
 
@@ -175,7 +182,16 @@ def _read_file(filename, bbox=None, mask=None, rows=None, engine=None, **kwargs)
     """
     Returns a GeoDataFrame from a file or URL.
 
-    .. versionadded:: 0.7.0 mask, rows
+    .. note::
+
+        GeoPandas currently defaults to use Fiona as the engine in ``read_file``.
+        However, GeoPandas 1.0 will switch to use pyogrio as the default engine, since
+        pyogrio can provide a significant speedup compared to Fiona. We recommend to
+        already install pyogrio and specify the engine by using the ``engine`` keyword
+        (``geopandas.read_file(..., engine="pyogrio")``), or by setting the default for
+        the ``engine`` keyword globally with::
+
+            geopandas.options.io_engine = "pyogrio"
 
     Parameters
     ----------
@@ -486,6 +502,17 @@ def _to_file(
     >>> import fiona
     >>> fiona.supported_drivers  # doctest: +SKIP
 
+    .. note::
+
+        GeoPandas currently defaults to use Fiona as the engine in ``to_file``.
+        However, GeoPandas 1.0 will switch to use pyogrio as the default engine, since
+        pyogrio can provide a significant speedup compared to Fiona. We recommend to
+        already install pyogrio and specify the engine by using the ``engine`` keyword
+        (``df.to_file(..., engine="pyogrio")``), or by setting the default for
+        the ``engine`` keyword globally with::
+
+            geopandas.options.io_engine = "pyogrio"
+
     Parameters
     ----------
     df : GeoDataFrame to be written
@@ -635,7 +662,13 @@ def infer_schema(df):
     from collections import OrderedDict
 
     # TODO: test pandas string type and boolean type once released
-    types = {"Int64": "int", "string": "str", "boolean": "bool"}
+    types = {
+        "Int32": "int32",
+        "int32": "int32",
+        "Int64": "int",
+        "string": "str",
+        "boolean": "bool",
+    }
 
     def convert_type(column, in_type):
         if in_type == object:

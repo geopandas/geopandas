@@ -32,8 +32,6 @@ from geopandas.tests.util import geom_equals
 from pandas.testing import assert_series_equal
 import pytest
 
-import geopandas._compat as compat
-
 
 class TestSeries:
     def setup_method(self):
@@ -212,8 +210,7 @@ class TestSeries:
 
     def test_estimate_utm_crs__geographic(self):
         assert self.landmarks.estimate_utm_crs() == CRS("EPSG:32618")
-        if compat.PYPROJ_GE_32:  # result is unstable in older pyproj
-            assert self.landmarks.estimate_utm_crs("NAD83") == CRS("EPSG:26918")
+        assert self.landmarks.estimate_utm_crs("NAD83") == CRS("EPSG:26918")
 
     def test_estimate_utm_crs__projected(self):
         assert self.landmarks.to_crs("EPSG:3857").estimate_utm_crs() == CRS(
