@@ -533,7 +533,7 @@ class GeometryArray(ExtensionArray):
 
     def minimum_rotated_rectangle(self):
         return GeometryArray(
-            vectorized.minimum_rotated_rectangle(self.data), crs=self.crs
+            vectorized.minimum_rotated_rectangle(self._data), crs=self.crs
         )
 
     @property
