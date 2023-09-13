@@ -25,6 +25,7 @@ General methods and attributes
    GeoSeries.offset_curve
    GeoSeries.distance
    GeoSeries.hausdorff_distance
+   GeoSeries.frechet_distance
    GeoSeries.representative_point
    GeoSeries.exterior
    GeoSeries.interiors
@@ -98,6 +99,8 @@ Constructive methods and attributes
    GeoSeries.minimum_clearance
    GeoSeries.minimum_rotated_rectangle
    GeoSeries.normalize
+   GeoSeries.remove_repeated_points
+   GeoSeries.reverse
    GeoSeries.sample_points
    GeoSeries.segmentize
    GeoSeries.shortest_line
