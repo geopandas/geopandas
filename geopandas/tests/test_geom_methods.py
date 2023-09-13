@@ -900,6 +900,29 @@ class TestGeomMethods:
         assert result.is_valid.all()
 
     @pytest.mark.skipif(
+        not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+        reason=("reverse is only implemented for pygeos and shapely >= 2.0"),
+    )
+    def test_reverse(self):
+        expected = GeoSeries(
+            [
+                LineString([(0, 0), (0, 1), (1, 1)]),
+                LineString([(0, 0), (1, 0), (1, 1), (0, 1)]),
+            ]
+        )
+        assert_geoseries_equal(expected, self.g5.reverse())
+
+    @pytest.mark.skipif(
+        (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+        reason="reverse not implemented for shapely<2",
+    )
+    def test_reverse_not_implemented(self):
+        with pytest.raises(
+            NotImplementedError, match="shapely >= 2.0 or PyGEOS is required"
+        ):
+            self.g5.reverse()
+
+    @pytest.mark.skipif(
         (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
         reason="segmentize keyword introduced in shapely 2.0",
     )
@@ -1830,6 +1853,8 @@ class TestGeomMethods:
                 len(output.explode(ignore_index=True))
                 == len(gs[~(gs.is_empty | gs.isna())]) * size
             )
+        with pytest.warns(FutureWarning, match="The 'seed' keyword is deprecated"):
+            _ = gs.sample_points(size, seed=1)
 
     @pytest.mark.skipif(
         not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
