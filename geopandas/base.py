@@ -903,17 +903,17 @@ GeometryCollection
         """Returns a ``GeoSeries`` containing a copy of the input geometry
         with repeated points removed.
 
-        Parameters
-        ----------
-        tolerance : float
-            radius within which a point is considered to be a repeat of another
-
-
         From the start of the coordinate sequence, each next point within the
         tolerance is removed.
 
         Removing repeated points with a non-zero tolerance may result in an invalid
         geometry being returned.
+
+        Parameters
+        ----------
+        tolerance : float, default 0.0
+            Remove all points within this distance of each other. Use 0.0
+            to remove only exactly repeated points (the default).
 
         Examples
         --------
