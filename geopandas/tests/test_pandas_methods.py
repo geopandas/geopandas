@@ -1,9 +1,6 @@
 import os
-<<<<<<< HEAD
 from packaging.version import Version
-=======
 import warnings
->>>>>>> 5be79c17... resolve apply pandas 2.1 deprecation warning from default val
 
 import numpy as np
 from numpy.testing import assert_array_equal
