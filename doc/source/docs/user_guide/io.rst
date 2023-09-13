@@ -17,10 +17,10 @@ use of the massive open-source program called
 transformations, through the Python packages `Fiona <http://fiona.readthedocs.io/en/latest/manual.html>`_
 or `pyogrio <https://pyogrio.readthedocs.io/en/stable/>`_, which both provide bindings to GDAL.
 
-.. note:
+.. note::
 
     GeoPandas currently defaults to use Fiona as the engine in ``read_file``. However,
-    GeoPandas 1.0 will switch to use pyogrio as the default engine, and pyogrio can
+    GeoPandas 1.0 will switch to use pyogrio as the default engine, since pyogrio can
     provide a significant speedup compared to Fiona. We recommend to already install
     pyogrio and specify the engine by using the ``engine`` keyword
     (``geopandas.read_file(..., engine="pyogrio")``), or by setting the default for the
