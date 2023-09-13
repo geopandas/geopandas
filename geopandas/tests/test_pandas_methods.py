@@ -1,4 +1,5 @@
 import os
+from packaging.version import Version
 
 import numpy as np
 from numpy.testing import assert_array_equal
@@ -249,8 +250,10 @@ def test_astype(s, df):
     assert s.astype(str)[0] == "POINT (0 0)"
 
     res = s.astype(object)
-    assert isinstance(res, pd.Series) and not isinstance(res, GeoSeries)
-    assert res.dtype == object
+    if not Version(pd.__version__) == Version("2.1.0"):
+        # https://github.com/geopandas/geopandas/issues/2948 - bug in pandas 2.1.0
+        assert isinstance(res, pd.Series) and not isinstance(res, GeoSeries)
+        assert res.dtype == object
 
     df = df.rename_geometry("geom_list")
 
@@ -431,6 +434,16 @@ def test_fillna_series(s):
     # check na filled but the inputting index is different
     res = s2.fillna(GeoSeries([Point(1, 1)], index=[9]))
     assert_geoseries_equal(res, s2)
+
+
+def test_fillna_inplace(s):
+    s2 = GeoSeries([Point(0, 0), None, Point(2, 2)])
+    arr = s2.array
+    s2.fillna(Point(1, 1), inplace=True)
+    assert_geoseries_equal(s2, s)
+    if compat.PANDAS_GE_21:
+        # starting from pandas 2.1, there is support to do this actually inplace
+        assert s2.array is arr
 
 
 def test_dropna():
@@ -644,10 +657,6 @@ def test_groupby_groups(df):
 
 
 @pytest.mark.skip_no_sindex
-@pytest.mark.skipif(
-    compat.PANDAS_GE_13 and not compat.PANDAS_GE_14,
-    reason="this was broken in pandas 1.3.5 (GH-2294)",
-)
 @pytest.mark.parametrize("crs", [None, "EPSG:4326"])
 def test_groupby_metadata(crs):
     # https://github.com/geopandas/geopandas/issues/2294
@@ -752,6 +761,11 @@ def test_df_apply_returning_series(df):
     result = df.apply(lambda x: None, axis=1)
     assert result.dtype == "object"
 
+    # https://github.com/geopandas/geopandas/issues/2889
+    # contrived case such that `from_shapely` receives an array of geodataframes
+    res = df.apply(lambda row: df.geometry.to_frame(), axis=1)
+    assert res.dtype == "object"
+
 
 def test_df_apply_geometry_dtypes(df):
     # https://github.com/geopandas/geopandas/issues/1852
@@ -798,7 +812,6 @@ def test_preserve_attrs(df):
     assert df3.attrs == attrs
 
 
-@pytest.mark.skipif(not compat.PANDAS_GE_12, reason="attrs introduced in pandas 1.0")
 def test_preserve_flags(df):
     # https://github.com/geopandas/geopandas/issues/1654
     df = df.set_flags(allows_duplicate_labels=False)

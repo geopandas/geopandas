@@ -3,6 +3,7 @@ import warnings
 
 import numpy as np
 import pandas as pd
+import shapely.errors
 from pandas import DataFrame, Series
 from pandas.core.accessor import CachedAccessor
 
@@ -1431,8 +1432,6 @@ individually so that features may have different properties
 
         .. versionadded:: 0.9
 
-        .. note:: Requires pyproj 3+
-
         Parameters
         ----------
         datum_name : str, optional
@@ -1529,7 +1528,10 @@ individually so that features may have different properties
             if pd.api.types.is_scalar(value) or isinstance(value, BaseGeometry):
                 value = [value] * self.shape[0]
             try:
-                crs = getattr(self, "crs", None)
+                if self._geometry_column_name is not None:
+                    crs = getattr(self, "crs", None)
+                else:  # don't use getattr, because a col "crs" might exist
+                    crs = None
                 value = _ensure_geometry(value, crs=crs)
                 if key == "geometry":
                     self._persist_old_default_geometry_colname()
@@ -1613,7 +1615,7 @@ individually so that features may have different properties
                     # not enough info about func to preserve CRS
                     result = _ensure_geometry(result)
 
-                except TypeError:
+                except (TypeError, shapely.errors.GeometryTypeError):
                     pass
 
         return result
@@ -1696,9 +1698,12 @@ individually so that features may have different properties
 
         Parameters
         ----------
-        by : string, default None
-            Column whose values define groups to be dissolved. If None,
-            whole GeoDataFrame is considered a single group.
+        by : str or list-like, default None
+            Column(s) whose values define the groups to be dissolved. If None,
+            the entire GeoDataFrame is considered as a single group. If a list-like
+            object is provided, the values in the list are treated as categorical
+            labels, and polygons will be combined based on the equality of
+            these categorical labels.
         aggfunc : function or string, default "first"
             Aggregation function for manipulation of data associated
             with each group. Passed to pandas `groupby.agg` method.
