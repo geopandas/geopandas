@@ -1150,3 +1150,23 @@ def test_multiple_geom_cols_error(tmpdir, df_nybb):
     df_nybb["geom2"] = df_nybb.geometry
     with pytest.raises(ValueError, match="GeoDataFrame contains multiple geometry"):
         df_nybb.to_file(os.path.join(str(tmpdir), "boros.gpkg"))
+
+
+@PYOGRIO_MARK
+@FIONA_MARK
+def test_option_io_engine():
+    try:
+        geopandas.options.io_engine = "pyogrio"
+
+        # disallowing to read a Shapefile with fiona should ensure we are
+        # actually reading with pyogrio
+        import fiona
+
+        orig = fiona.supported_drivers["ESRI Shapefile"]
+        fiona.supported_drivers["ESRI Shapefile"] = "w"
+
+        nybb_filename = geopandas.datasets.get_path("nybb")
+        _ = geopandas.read_file(nybb_filename)
+    finally:
+        fiona.supported_drivers["ESRI Shapefile"] = orig
+        geopandas.options.io_engine = None

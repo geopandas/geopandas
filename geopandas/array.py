@@ -560,6 +560,12 @@ class GeometryArray(ExtensionArray):
         # no GeometryArray as result
         return vectorized.interiors(self._data)
 
+    def remove_repeated_points(self, tolerance=0.0):
+        return GeometryArray(
+            vectorized.remove_repeated_points(self._data, tolerance=tolerance),
+            crs=self.crs,
+        )
+
     def representative_point(self):
         return GeometryArray(vectorized.representative_point(self._data), crs=self.crs)
 
@@ -576,6 +582,9 @@ class GeometryArray(ExtensionArray):
 
     def make_valid(self):
         return GeometryArray(vectorized.make_valid(self._data), crs=self.crs)
+
+    def reverse(self):
+        return GeometryArray(vectorized.reverse(self._data), crs=self.crs)
 
     def segmentize(self, max_segment_length):
         return GeometryArray(
@@ -1178,7 +1187,7 @@ class GeometryArray(ExtensionArray):
         # note ExtensionArray usage of value_counts only specifies dropna,
         # so sort, normalize and bins are not arguments
         values = to_wkb(self)
-        from pandas import Series, Index
+        from pandas import Index, Series
 
         result = Series(values).value_counts(dropna=dropna)
         # value_counts converts None to nan, need to convert back for from_wkb to work
