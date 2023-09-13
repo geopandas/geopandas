@@ -4,7 +4,6 @@ import numpy as np
 import shapely
 from shapely.geometry.base import BaseGeometry
 
-from . import _compat as compat
 from . import array, geoseries
 from ._decorator import doc
 
@@ -475,13 +474,7 @@ class PyGEOSSTRTreeIndex(BaseSpatialIndex):
 
         geometry = self._as_geometry_array(geometry)
 
-        if compat.USE_SHAPELY_20:
-            indices = self._tree.query(geometry, predicate=predicate)
-        else:
-            if isinstance(geometry, np.ndarray):
-                indices = self._tree.query_bulk(geometry, predicate=predicate)
-            else:
-                indices = self._tree.query(geometry, predicate=predicate)
+        indices = self._tree.query(geometry, predicate=predicate)
 
         if sort:
             if indices.ndim == 1:
@@ -545,49 +538,21 @@ class PyGEOSSTRTreeIndex(BaseSpatialIndex):
         return_distance=False,
         exclusive=False,
     ):
-        if not (compat.USE_SHAPELY_20 or compat.PYGEOS_GE_010):
-            raise NotImplementedError(
-                "sindex.nearest requires shapely >= 2.0 or pygeos >= 0.10"
-            )
-
-        if exclusive and not compat.USE_SHAPELY_20:
-            raise NotImplementedError(
-                "sindex.nearest exclusive parameter requires shapely >= 2.0"
-            )
-
         geometry = self._as_geometry_array(geometry)
         if isinstance(geometry, BaseGeometry) or geometry is None:
             geometry = [geometry]
 
-        if compat.USE_SHAPELY_20:
-            result = self._tree.query_nearest(
-                geometry,
-                max_distance=max_distance,
-                return_distance=return_distance,
-                all_matches=return_all,
-                exclusive=exclusive,
-            )
-        else:
-            if not return_all and max_distance is None and not return_distance:
-                return self._tree.nearest(geometry)
-            result = self._tree.nearest_all(
-                geometry, max_distance=max_distance, return_distance=return_distance
-            )
+        result = self._tree.query_nearest(
+            geometry,
+            max_distance=max_distance,
+            return_distance=return_distance,
+            all_matches=return_all,
+            exclusive=exclusive,
+        )
         if return_distance:
             indices, distances = result
         else:
             indices = result
-
-        if not return_all and not compat.USE_SHAPELY_20:
-            # first subarray of geometry indices is sorted, so we can use this
-            # trick to get the first of each index value
-            mask = np.diff(indices[0, :]).astype("bool")
-            # always select the first element
-            mask = np.insert(mask, 0, True)
-
-            indices = indices[:, mask]
-            if return_distance:
-                distances = distances[mask]
 
         if return_distance:
             return indices, distances
