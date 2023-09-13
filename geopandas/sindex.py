@@ -8,15 +8,6 @@ from . import array, geoseries
 from ._decorator import doc
 
 
-def _get_sindex_class():
-    """Dynamically chooses a spatial indexing backend.
-
-    Required to comply with _compat.USE_PYGEOS.
-    The selection order goes PyGEOS > RTree > Error.
-    """
-    return PyGEOSSTRTreeIndex
-
-
 class BaseSpatialIndex:
     @property
     def valid_query_predicates(self):

@@ -3493,10 +3493,9 @@ GeometryCollection
     def sindex(self):
         """Generate the spatial index
 
-        Creates R-tree spatial index based on ``pygeos.STRtree`` or
-        ``rtree.index.Index``.
+        Creates R-tree spatial index based on ``shapely.STRtree``.
 
-        Note that the  spatial index may not be fully
+        Note that the spatial index may not be fully
         initialized until the first use.
 
         Examples
