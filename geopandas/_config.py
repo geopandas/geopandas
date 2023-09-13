@@ -91,32 +91,6 @@ def _validate_bool(value):
         raise TypeError("Expected bool value, got {0}".format(type(value)))
 
 
-def _default_use_pygeos():
-    import geopandas._compat as compat
-
-    return compat.USE_PYGEOS
-
-
-def _callback_use_pygeos(key, value):
-    assert key == "use_pygeos"
-    import geopandas._compat as compat
-
-    compat.set_use_pygeos(value)
-
-
-use_pygeos = Option(
-    key="use_pygeos",
-    default_value=_default_use_pygeos(),
-    doc=(
-        "Whether to use PyGEOS to speed up spatial operations. The default is True "
-        "if PyGEOS is installed, and follows the USE_PYGEOS environment variable "
-        "if set."
-    ),
-    validator=_validate_bool,
-    callback=_callback_use_pygeos,
-)
-
-
 def _validate_io_engine(value):
     if value is not None:
         if value not in ("pyogrio", "fiona"):
@@ -138,7 +112,6 @@ io_engine = Option(
 options = Options(
     {
         "display_precision": display_precision,
-        "use_pygeos": use_pygeos,
         "io_engine": io_engine,
     }
 )
