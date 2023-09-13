@@ -35,6 +35,13 @@ Bug fixes:
   data in the geometry column (#2959)
 - Properly infer schema for np.int32 and pd.Int32Dtype columns (#2950)
 
+Notes on (optional) dependencies:
+
+- GeoPandas 0.14 drops support for Python 3.8 and pandas 1.3 and below (the minimum
+  supported pandas version is now 1.4). Further, the minimum required versions for the
+  listed dependencies have now changed to shapely 1.8.0, fiona 1.8.21, pyproj 3.3.0 and
+  matplotlib 3.5.0 (#3001)
+
 ## Version 0.13.2 (Jun 6, 2023)
 
 Bug fix:

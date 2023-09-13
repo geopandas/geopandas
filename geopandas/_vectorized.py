@@ -1110,16 +1110,10 @@ def normalize(data):
         return shapely.normalize(data)
     elif compat.USE_PYGEOS:
         return pygeos.normalize(data)
-    elif compat.SHAPELY_GE_18:
-        out = np.empty(len(data), dtype=object)
-        with compat.ignore_shapely2_warnings():
-            out[:] = [geom.normalize() if geom is not None else None for geom in data]
     else:
         out = np.empty(len(data), dtype=object)
         with compat.ignore_shapely2_warnings():
-            out[:] = [
-                _shapely_normalize(geom) if geom is not None else None for geom in data
-            ]
+            out[:] = [geom.normalize() if geom is not None else None for geom in data]
     return out
 
 
@@ -1128,11 +1122,6 @@ def make_valid(data):
         return shapely.make_valid(data)
     elif compat.USE_PYGEOS:
         return pygeos.make_valid(data)
-    elif not compat.SHAPELY_GE_18:
-        raise NotImplementedError(
-            f"shapely >= 1.8 or PyGEOS is required, "
-            f"version {shapely.__version__} is installed"
-        )
     else:
         out = np.empty(len(data), dtype=object)
         with compat.ignore_shapely2_warnings():
