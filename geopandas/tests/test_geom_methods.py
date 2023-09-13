@@ -900,19 +900,6 @@ class TestGeomMethods:
         assert result.is_valid.all()
 
     @pytest.mark.skipif(
-        compat.SHAPELY_GE_18,
-        reason="make_valid keyword introduced in shapely 1.8.0",
-    )
-    def test_make_valid_shapely_pre18(self):
-        s = GeoSeries([Point(1, 1)])
-        with pytest.raises(
-            NotImplementedError,
-            match=f"shapely >= 1.8 or PyGEOS is required, "
-            f"version {shapely.__version__} is installed",
-        ):
-            s.make_valid()
-
-    @pytest.mark.skipif(
         not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
         reason=("reverse is only implemented for pygeos and shapely >= 2.0"),
     )
