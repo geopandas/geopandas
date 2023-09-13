@@ -176,7 +176,13 @@ def _read_file(filename, bbox=None, mask=None, rows=None, engine=None, **kwargs)
     """
     Returns a GeoDataFrame from a file or URL.
 
-    .. versionadded:: 0.7.0 mask, rows
+    .. note:
+
+        GeoPandas currently defaults to use Fiona as the engine in ``read_file``.
+        However, GeoPandas 1.0 will switch to use pyogrio as the default engine, and
+        pyogrio can provide a significant speedup compared to Fiona. We recommend to
+        already install pyogrio and specify the engine with
+        ``geopandas.read_file(..., engine="pyogrio")``.
 
     Parameters
     ----------
