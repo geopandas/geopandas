@@ -179,7 +179,7 @@ class TestFrameSindex:
         else:
             assert subset1.sindex is original_index
         subset2 = self.df[["A", "geom"]]
-        if compat.PANDAS_GE_20:
+        if compat.PANDAS_GE_20 and not pd.options.mode.copy_on_write:
             assert subset2.sindex is not original_index
         else:
             assert subset2.sindex is original_index
