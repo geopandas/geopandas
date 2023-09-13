@@ -539,7 +539,7 @@ class GeometryArray(ExtensionArray):
         return GeometryArray(shapely.envelope(self._data), crs=self.crs)
 
     def minimum_rotated_rectangle(self):
-        return GeometryArray(shapely.oriented_envelope(self.data), crs=self.crs)
+        return GeometryArray(shapely.oriented_envelope(self._data), crs=self.crs)
 
     @property
     def exterior(self):
