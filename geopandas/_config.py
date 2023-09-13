@@ -117,4 +117,28 @@ use_pygeos = Option(
 )
 
 
-options = Options({"display_precision": display_precision, "use_pygeos": use_pygeos})
+def _validate_io_engine(value):
+    if value is not None:
+        if value not in ("pyogrio", "fiona"):
+            raise ValueError(f"Expected 'pyogrio' or 'fiona', got '{value}'")
+
+
+io_engine = Option(
+    key="io_engine",
+    default_value=None,
+    doc=(
+        "The default engine for ``read_file`` and ``to_file``. "
+        "Options are 'pyogrio' and 'fiona'."
+    ),
+    validator=_validate_io_engine,
+    callback=None,
+)
+
+
+options = Options(
+    {
+        "display_precision": display_precision,
+        "use_pygeos": use_pygeos,
+        "io_engine": io_engine,
+    }
+)

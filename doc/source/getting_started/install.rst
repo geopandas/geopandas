@@ -144,7 +144,7 @@ Required dependencies:
 
 Further, optional dependencies are:
 
-- `pyogrio`_ (optional; experimental alternative for fiona)
+- `pyogrio`_ (optional; faster alternative for fiona, will become the default in GeoPandas 1.0)
 - `rtree`_ (optional; spatial index to improve performance and required for
   overlay operations; interface to `libspatialindex`_)
 - `psycopg2`_ (optional; for PostGIS connection)
