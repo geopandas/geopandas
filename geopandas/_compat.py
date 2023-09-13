@@ -83,7 +83,10 @@ def set_use_pygeos(val=None):
         USE_PYGEOS = bool(val)
     else:
         if USE_PYGEOS is None:
-            USE_PYGEOS = HAS_PYGEOS
+            if SHAPELY_GE_20:
+                USE_PYGEOS = False
+            else:
+                USE_PYGEOS = HAS_PYGEOS
 
             if env_use_pygeos is not None:
                 USE_PYGEOS = bool(int(env_use_pygeos))
@@ -133,23 +136,12 @@ def set_use_pygeos(val=None):
         except ImportError:
             raise ImportError(INSTALL_PYGEOS_ERROR)
 
-    if USE_PYGEOS and env_use_pygeos is None and SHAPELY_GE_20:
+    if USE_PYGEOS:
         warnings.warn(
-            "Shapely 2.0 is installed, but because PyGEOS is also installed, "
-            "GeoPandas still uses PyGEOS by default. However, starting with "
-            "version 0.14, the default will switch to Shapely. To force to "
-            "use Shapely 2.0 now, you can either uninstall PyGEOS or set the "
-            "environment variable USE_PYGEOS=0. "
-            "You can do this before starting the Python process, or in your code "
-            "before importing geopandas:"
-            "\n\nimport os\nos.environ['USE_PYGEOS'] = '0'\nimport geopandas\n\n"
-            "In the next release, GeoPandas will switch to using Shapely by default, "
-            "even if PyGEOS is installed. If you only have PyGEOS installed to "
-            "get speed-ups, this switch should be smooth. However, if you are "
-            "using PyGEOS directly (calling PyGEOS functions on geometries "
-            "from GeoPandas), this will then stop working and you are encouraged to "
-            "migrate from PyGEOS to Shapely 2.0 "
-            "(https://shapely.readthedocs.io/en/latest/migration_pygeos.html).",
+            "GeoPandas is set to use PyGEOS over Shapely. PyGEOS support is deprecated"
+            "and will be removed in GeoPandas 1.0, released in the Q1 of 2024. "
+            "Please migrate to Shapely 2.0 "
+            "(https://geopandas.org/en/stable/docs/user_guide/pygeos_to_shapely.html).",
             DeprecationWarning,
             stacklevel=6,
         )

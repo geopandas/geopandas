@@ -620,7 +620,7 @@ def concave_hull(data, **kwargs):
             "thus using Shapely and not PyGEOS for calculating the concave_hull.",
             stacklevel=4,
         )
-        return shapely.concave_hull(to_shapely(data), **kwargs)
+        return pygeos.from_shapely(shapely.concave_hull(to_shapely(data), **kwargs))
     else:
         raise NotImplementedError(
             f"shapely >= 2.0 is required, "
@@ -982,6 +982,20 @@ def hausdorff_distance(data, other, densify=None, **kwargs):
     elif compat.USE_PYGEOS:
         return _binary_method(
             "hausdorff_distance", data, other, densify=densify, **kwargs
+        )
+    else:
+        raise NotImplementedError(
+            f"shapely >= 2.0 or PyGEOS is required, "
+            f"version {shapely.__version__} is installed"
+        )
+
+
+def frechet_distance(data, other, densify=None, **kwargs):
+    if compat.USE_SHAPELY_20:
+        return shapely.frechet_distance(data, other, densify=densify, **kwargs)
+    elif compat.USE_PYGEOS:
+        return _binary_method(
+            "frechet_distance", data, other, densify=densify, **kwargs
         )
     else:
         raise NotImplementedError(
