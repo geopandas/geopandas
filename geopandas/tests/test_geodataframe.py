@@ -4,7 +4,6 @@ import shutil
 import tempfile
 import warnings
 
-from packaging.version import Version
 
 import numpy as np
 import pandas as pd
