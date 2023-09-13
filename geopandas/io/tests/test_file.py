@@ -1160,6 +1160,7 @@ def test_multiple_geom_cols_error(tmpdir, df_nybb):
 
 
 @PYOGRIO_MARK
+@FIONA_MARK
 def test_option_io_engine():
     try:
         geopandas.options.io_engine = "pyogrio"
