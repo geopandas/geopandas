@@ -2,12 +2,12 @@ name: test
 channels:
   - conda-forge
 dependencies:
-  - python=3.8
+  - python=3.10
   # required
-  - pandas
+  - pandas=2.0
+  - numpy=1.24 # released 4 months before pandas 2.0
   - shapely
-  # - fiona  # build with only pyogrio
-  - libgdal
+  - fiona
   - pyproj
   - pygeos
   - packaging
@@ -15,7 +15,7 @@ dependencies:
   - pytest
   - pytest-cov
   - pytest-xdist
-  # - fsspec  # to have one non-minimal build without fsspec
+  - fsspec
   # optional
   - rtree
   - matplotlib
@@ -24,8 +24,13 @@ dependencies:
   - xyzservices
   - scipy
   - geopy
-  - SQLalchemy
+  - geodatasets
+  # installed in tests.yaml, because not available on windows
+  # - postgis
+  - SQLalchemy<2
+  - psycopg2
   - libspatialite
+  - geoalchemy2
   - pyarrow
-  - pyogrio
-  - pointpats
+  # doctest testing
+  - pytest-doctestplus

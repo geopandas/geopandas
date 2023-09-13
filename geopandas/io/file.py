@@ -14,11 +14,15 @@ from shapely.geometry.base import BaseGeometry
 from geopandas import GeoDataFrame, GeoSeries
 
 # Adapted from pandas.io.common
+from urllib.parse import urlparse as parse_url
 from urllib.parse import uses_netloc, uses_params, uses_relative
+import urllib.request
 
 
 _VALID_URLS = set(uses_relative + uses_netloc + uses_params)
 _VALID_URLS.discard("")
+# file:// URIs are supported by fiona/pyogrio -> don't already open + read the file here
+_VALID_URLS.discard("file")
 
 
 fiona = None
@@ -137,6 +141,7 @@ _EXTENSION_TO_DRIVER = {
     ".mif": "MapInfo File",
     ".mid": "MapInfo File",
     ".dgn": "DGN",
+    ".fgb": "FlatGeobuf",
 }
 
 
@@ -147,6 +152,14 @@ def _expand_user(path):
     elif isinstance(path, Path):
         path = path.expanduser()
     return path
+
+
+def _is_url(url):
+    """Check to see if *url* has a valid protocol."""
+    try:
+        return parse_url(url).scheme in _VALID_URLS
+    except Exception:
+        return False
 
 
 def _is_zip(path):
@@ -228,16 +241,37 @@ def _read_file(filename, bbox=None, mask=None, rows=None, engine=None, **kwargs)
     The format drivers will attempt to detect the encoding of your data, but
     may fail. In this case, the proper encoding can be specified explicitly
     by using the encoding keyword parameter, e.g. ``encoding='utf-8'``.
+
+    When specifying a URL, geopandas will check if the server supports reading
+    partial data and in that case pass the URL as is to the underlying engine,
+    which will then use the network file system handler of GDAL to read from
+    the URL. Otherwise geopandas will download the data from the URL and pass
+    all data in-memory to the underlying engine.
+    If you need more control over how the URL is read, you can specify the
+    GDAL virtual filesystem manually (e.g. ``/vsicurl/https://...``). See the
+    GDAL documentation on filesystems for more details
+    (https://gdal.org/user/virtual_file_systems.html#vsicurl-http-https-ftp-files-random-access).
+
     """
     engine = _check_engine(engine, "'read_file' function")
 
     filename = _expand_user(filename)
 
+    from_bytes = False
+    if _is_url(filename):
+        # if it is a url that supports random access -> pass through to
+        # pyogrio/fiona as is (to support downloading only part of the file)
+        # otherwise still download manually because pyogrio/fiona don't support
+        # all types of urls (https://github.com/geopandas/geopandas/issues/2908)
+        with urllib.request.urlopen(filename) as response:
+            if not response.headers.get("Accept-Ranges") == "bytes":
+                filename = response.read()
+                from_bytes = True
+
     if engine == "pyogrio":
         return _read_file_pyogrio(filename, bbox=bbox, mask=mask, rows=rows, **kwargs)
 
     elif engine == "fiona":
-        from_bytes = False
         if pd.api.types.is_file_like(filename):
             data = filename.read()
             path_or_bytes = data.encode("utf-8") if isinstance(data, str) else data
@@ -525,11 +559,20 @@ def _to_file(
     if driver is None:
         driver = _detect_driver(filename)
 
-    if driver == "ESRI Shapefile" and any([len(c) > 10 for c in df.columns.tolist()]):
+    if driver == "ESRI Shapefile" and any(len(c) > 10 for c in df.columns.tolist()):
         warnings.warn(
             "Column names longer than 10 characters will be truncated when saved to "
             "ESRI Shapefile.",
             stacklevel=3,
+        )
+
+    if (df.dtypes == "geometry").sum() > 1:
+        raise ValueError(
+            "GeoDataFrame contains multiple geometry columns but GeoDataFrame.to_file "
+            "supports only a single geometry column. Use a GeoDataFrame.to_parquet or "
+            "GeoDataFrame.to_feather, drop additional geometry columns or convert them "
+            "to a supported format like a well-known text (WKT) using "
+            "`GeoSeries.to_wkt()`.",
         )
 
     if mode not in ("w", "a"):
@@ -593,7 +636,13 @@ def infer_schema(df):
     from collections import OrderedDict
 
     # TODO: test pandas string type and boolean type once released
-    types = {"Int64": "int", "string": "str", "boolean": "bool"}
+    types = {
+        "Int32": "int32",
+        "int32": "int32",
+        "Int64": "int",
+        "string": "str",
+        "boolean": "bool",
+    }
 
     def convert_type(column, in_type):
         if in_type == object:

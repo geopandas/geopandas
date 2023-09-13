@@ -4,7 +4,7 @@ channels:
 dependencies:
   - python=3.9
   # required
-  - pandas=1.4
+  - pandas=1.5
   - shapely=2
   - geos
   - cython
@@ -27,6 +27,7 @@ dependencies:
   - scipy
   - geopy
   - pointpats
+  - geodatasets
   # installed in tests.yaml, because not available on windows
   # - postgis
   - SQLalchemy<2
