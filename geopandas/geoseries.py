@@ -7,7 +7,7 @@ import warnings
 
 import numpy as np
 import pandas as pd
-from pandas import Series, MultiIndex
+from pandas import Series
 from pandas.core.internals import SingleBlockManager
 
 from pyproj import CRS
@@ -20,7 +20,6 @@ from geopandas.plotting import plot_series
 from geopandas.explore import _explore_geoseries
 import geopandas
 
-from . import _compat as compat
 from ._decorator import doc
 from .array import (
     GeometryDtype,
@@ -189,14 +188,13 @@ class GeoSeries(GeoPandasBase, Series):
             # https://github.com/pandas-dev/pandas/issues/26469
             kwargs.pop("dtype", None)
             # Use Series constructor to handle input data
-            with compat.ignore_shapely2_warnings():
-                # suppress additional warning from pandas for empty data
-                # (will always give object dtype instead of float dtype in the future,
-                # making the `if s.empty: s = s.astype(object)` below unnecessary)
-                empty_msg = "The default dtype for empty Series"
-                warnings.filterwarnings("ignore", empty_msg, DeprecationWarning)
-                warnings.filterwarnings("ignore", empty_msg, FutureWarning)
-                s = pd.Series(data, index=index, name=name, **kwargs)
+            # suppress additional warning from pandas for empty data
+            # (will always give object dtype instead of float dtype in the future,
+            # making the `if s.empty: s = s.astype(object)` below unnecessary)
+            empty_msg = "The default dtype for empty Series"
+            warnings.filterwarnings("ignore", empty_msg, DeprecationWarning)
+            warnings.filterwarnings("ignore", empty_msg, FutureWarning)
+            s = pd.Series(data, index=index, name=name, **kwargs)
             # prevent trying to convert non-geometry objects
             if s.dtype != object:
                 if (s.empty and s.dtype == "float64") or data is None:
@@ -829,7 +827,7 @@ class GeoSeries(GeoPandasBase, Series):
         GeoSeries.isna : detect missing values
         """
         if value is None:
-            value = GeometryCollection() if compat.SHAPELY_GE_20 else BaseGeometry()
+            value = GeometryCollection()
         return super().fillna(value=value, method=method, inplace=inplace, **kwargs)
 
     def __contains__(self, other) -> bool:
@@ -915,52 +913,14 @@ class GeoSeries(GeoPandasBase, Series):
             )
             index_parts = True
 
-        if compat.USE_SHAPELY_20 or (compat.USE_PYGEOS and compat.PYGEOS_GE_09):
-            if compat.USE_SHAPELY_20:
-                geometries, outer_idx = shapely.get_parts(
-                    self.values._data, return_index=True
-                )
-            else:
-                import pygeos
+        geometries, outer_idx = shapely.get_parts(self.values._data, return_index=True)
 
-                geometries, outer_idx = pygeos.get_parts(
-                    self.values._data, return_index=True
-                )
-
-            index = _get_index_for_parts(
-                self.index,
-                outer_idx,
-                ignore_index=ignore_index,
-                index_parts=index_parts,
-            )
-
-            return GeoSeries(geometries, index=index, crs=self.crs).__finalize__(self)
-
-        # else PyGEOS is not available or version <= 0.8
-
-        index = []
-        geometries = []
-        for idx, s in self.geometry.items():
-            if s.geom_type.startswith("Multi") or s.geom_type == "GeometryCollection":
-                geoms = s.geoms
-                idxs = [(idx, i) for i in range(len(geoms))]
-            else:
-                geoms = [s]
-                idxs = [(idx, 0)]
-            index.extend(idxs)
-            geometries.extend(geoms)
-
-        if ignore_index:
-            index = range(len(geometries))
-
-        elif index_parts:
-            # if self.index is a MultiIndex then index is a list of nested tuples
-            if isinstance(self.index, MultiIndex):
-                index = [tuple(outer) + (inner,) for outer, inner in index]
-            index = MultiIndex.from_tuples(index, names=self.index.names + [None])
-
-        else:
-            index = [idx for idx, _ in index]
+        index = _get_index_for_parts(
+            self.index,
+            outer_idx,
+            ignore_index=ignore_index,
+            index_parts=index_parts,
+        )
 
         return GeoSeries(geometries, index=index, crs=self.crs).__finalize__(self)
 
