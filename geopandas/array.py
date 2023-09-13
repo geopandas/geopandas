@@ -19,6 +19,8 @@ from shapely.geometry.base import BaseGeometry
 import shapely.ops
 import shapely.wkt
 from pyproj import CRS, Transformer
+from pyproj.aoi import AreaOfInterest
+from pyproj.database import query_utm_crs_info
 
 try:
     import pygeos
@@ -529,6 +531,11 @@ class GeometryArray(ExtensionArray):
     def envelope(self):
         return GeometryArray(vectorized.envelope(self._data), crs=self.crs)
 
+    def minimum_rotated_rectangle(self):
+        return GeometryArray(
+            vectorized.minimum_rotated_rectangle(self.data), crs=self.crs
+        )
+
     @property
     def exterior(self):
         return GeometryArray(vectorized.exterior(self._data), crs=self.crs)
@@ -569,6 +576,12 @@ class GeometryArray(ExtensionArray):
 
     def make_valid(self):
         return GeometryArray(vectorized.make_valid(self._data), crs=self.crs)
+
+    def segmentize(self, max_segment_length):
+        return GeometryArray(
+            vectorized.segmentize(self._data, max_segment_length),
+            crs=self.crs,
+        )
 
     #
     # Binary predicates
@@ -652,6 +665,11 @@ class GeometryArray(ExtensionArray):
     def union(self, other):
         return GeometryArray(self._binary_method("union", self, other), crs=self.crs)
 
+    def shortest_line(self, other):
+        return GeometryArray(
+            self._binary_method("shortest_line", self, other), crs=self.crs
+        )
+
     #
     # Other operations
     #
@@ -663,6 +681,10 @@ class GeometryArray(ExtensionArray):
     def hausdorff_distance(self, other, **kwargs):
         self.check_geographic_crs(stacklevel=6)
         return self._binary_method("hausdorff_distance", self, other, **kwargs)
+
+    def frechet_distance(self, other, **kwargs):
+        self.check_geographic_crs(stacklevel=6)
+        return self._binary_method("frechet_distance", self, other, **kwargs)
 
     def buffer(self, distance, resolution=16, **kwargs):
         if not (isinstance(distance, (int, float)) and distance == 0):
@@ -874,11 +896,6 @@ class GeometryArray(ExtensionArray):
         - Ellipsoid: WGS 84
         - Prime Meridian: Greenwich
         """
-        try:
-            from pyproj.aoi import AreaOfInterest
-            from pyproj.database import query_utm_crs_info
-        except ImportError:
-            raise RuntimeError("pyproj 3+ required for estimate_utm_crs.")
 
         if not self.crs:
             raise RuntimeError("crs must be set to estimate UTM CRS.")
@@ -890,28 +907,21 @@ class GeometryArray(ExtensionArray):
         # ensure using geographic coordinates
         else:
             transformer = TransformerFromCRS(self.crs, "EPSG:4326", always_xy=True)
-            if compat.PYPROJ_GE_31:
-                minx, miny, maxx, maxy = transformer.transform_bounds(
-                    minx, miny, maxx, maxy
-                )
-                y_center = np.mean([miny, maxy])
-                # crossed the antimeridian
-                if minx > maxx:
-                    # shift maxx from [-180,180] to [0,360]
-                    # so both numbers are positive for center calculation
-                    # Example: -175 to 185
-                    maxx += 360
-                    x_center = np.mean([minx, maxx])
-                    # shift back to [-180,180]
-                    x_center = ((x_center + 180) % 360) - 180
-                else:
-                    x_center = np.mean([minx, maxx])
+            minx, miny, maxx, maxy = transformer.transform_bounds(
+                minx, miny, maxx, maxy
+            )
+            y_center = np.mean([miny, maxy])
+            # crossed the antimeridian
+            if minx > maxx:
+                # shift maxx from [-180,180] to [0,360]
+                # so both numbers are positive for center calculation
+                # Example: -175 to 185
+                maxx += 360
+                x_center = np.mean([minx, maxx])
+                # shift back to [-180,180]
+                x_center = ((x_center + 180) % 360) - 180
             else:
-                lon, lat = transformer.transform(
-                    (minx, maxx, minx, maxx), (miny, miny, maxy, maxy)
-                )
-                x_center = np.mean(lon)
-                y_center = np.mean(lat)
+                x_center = np.mean([minx, maxx])
 
         utm_crs_list = query_utm_crs_info(
             datum_name=datum_name,
@@ -1060,7 +1070,7 @@ class GeometryArray(ExtensionArray):
         self._data[idx] = value_arr
         return self
 
-    def fillna(self, value=None, method=None, limit=None):
+    def fillna(self, value=None, method=None, limit=None, copy=True):
         """
         Fill NA values with geometry (or geometries) or using the specified method.
 
@@ -1084,6 +1094,10 @@ class GeometryArray(ExtensionArray):
             maximum number of entries along the entire axis where NaNs will be
             filled.
 
+        copy : bool, default True
+            Whether to make a copy of the data before filling. If False, then
+            the original should be modified and no new memory should be allocated.
+
         Returns
         -------
         GeometryArray
@@ -1092,7 +1106,10 @@ class GeometryArray(ExtensionArray):
             raise NotImplementedError("fillna with a method is not yet supported")
 
         mask = self.isna()
-        new_values = self.copy()
+        if copy:
+            new_values = self.copy()
+        else:
+            new_values = self
         return new_values._fill(mask, value) if mask.any() else new_values
 
     def astype(self, dtype, copy=True):
@@ -1513,7 +1530,8 @@ def _get_common_crs(arr_seq):
             warnings.warn(
                 "CRS not set for some of the concatenation inputs. "
                 f"Setting output's CRS as {names[0]} "
-                "(the single non-null crs provided)."
+                "(the single non-null crs provided).",
+                stacklevel=2,
             )
         return crs_not_none[0]
 

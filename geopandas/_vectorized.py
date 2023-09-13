@@ -620,7 +620,7 @@ def concave_hull(data, **kwargs):
             "thus using Shapely and not PyGEOS for calculating the concave_hull.",
             stacklevel=4,
         )
-        return shapely.concave_hull(to_shapely(data), **kwargs)
+        return pygeos.from_shapely(shapely.concave_hull(to_shapely(data), **kwargs))
     else:
         raise NotImplementedError(
             f"shapely >= 2.0 is required, "
@@ -656,6 +656,15 @@ def envelope(data):
         return pygeos.envelope(data)
     else:
         return _unary_geo("envelope", data)
+
+
+def minimum_rotated_rectangle(data):
+    if compat.USE_SHAPELY_20:
+        return shapely.oriented_envelope(data)
+    elif compat.USE_PYGEOS:
+        return pygeos.oriented_envelope(data)
+    else:
+        return _unary_geo("minimum_rotated_rectangle", data)
 
 
 def exterior(data):
@@ -713,7 +722,8 @@ def interiors(data):
     if has_non_poly:
         warnings.warn(
             "Only Polygon objects have interior rings. For other "
-            "geometry types, None is returned."
+            "geometry types, None is returned.",
+            stacklevel=2,
         )
     data = np.empty(len(data), dtype=object)
     with compat.ignore_shapely2_warnings():
@@ -755,6 +765,18 @@ def minimum_bounding_radius(data):
     else:
         raise NotImplementedError(
             f"shapely >= 2.0 or PyGEOS is required, "
+            f"version {shapely.__version__} is installed"
+        )
+
+
+def segmentize(data, max_segment_length):
+    if compat.USE_SHAPELY_20:
+        return shapely.segmentize(data, max_segment_length)
+    elif compat.USE_PYGEOS:
+        return pygeos.segmentize(data, max_segment_length)
+    else:
+        raise NotImplementedError(
+            "shapely >= 2.0 or PyGEOS is required, "
             f"version {shapely.__version__} is installed"
         )
 
@@ -928,6 +950,18 @@ def union(data, other):
         return _binary_geo("union", data, other)
 
 
+def shortest_line(data, other):
+    if compat.USE_SHAPELY_20:
+        return shapely.shortest_line(data, other)
+    elif compat.USE_PYGEOS:
+        return _binary_method("shortest_line", data, other)
+    else:
+        raise NotImplementedError(
+            f"shapely >= 2.0 or PyGEOS is required, "
+            f"version {shapely.__version__} is installed"
+        )
+
+
 #
 # Other operations
 #
@@ -948,6 +982,20 @@ def hausdorff_distance(data, other, densify=None, **kwargs):
     elif compat.USE_PYGEOS:
         return _binary_method(
             "hausdorff_distance", data, other, densify=densify, **kwargs
+        )
+    else:
+        raise NotImplementedError(
+            f"shapely >= 2.0 or PyGEOS is required, "
+            f"version {shapely.__version__} is installed"
+        )
+
+
+def frechet_distance(data, other, densify=None, **kwargs):
+    if compat.USE_SHAPELY_20:
+        return shapely.frechet_distance(data, other, densify=densify, **kwargs)
+    elif compat.USE_PYGEOS:
+        return _binary_method(
+            "frechet_distance", data, other, densify=densify, **kwargs
         )
     else:
         raise NotImplementedError(
@@ -1062,16 +1110,10 @@ def normalize(data):
         return shapely.normalize(data)
     elif compat.USE_PYGEOS:
         return pygeos.normalize(data)
-    elif compat.SHAPELY_GE_18:
-        out = np.empty(len(data), dtype=object)
-        with compat.ignore_shapely2_warnings():
-            out[:] = [geom.normalize() if geom is not None else None for geom in data]
     else:
         out = np.empty(len(data), dtype=object)
         with compat.ignore_shapely2_warnings():
-            out[:] = [
-                _shapely_normalize(geom) if geom is not None else None for geom in data
-            ]
+            out[:] = [geom.normalize() if geom is not None else None for geom in data]
     return out
 
 
@@ -1080,11 +1122,6 @@ def make_valid(data):
         return shapely.make_valid(data)
     elif compat.USE_PYGEOS:
         return pygeos.make_valid(data)
-    elif not compat.SHAPELY_GE_18:
-        raise NotImplementedError(
-            f"shapely >= 1.8 or PyGEOS is required, "
-            f"version {shapely.__version__} is installed"
-        )
     else:
         out = np.empty(len(data), dtype=object)
         with compat.ignore_shapely2_warnings():

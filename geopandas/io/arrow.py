@@ -259,7 +259,7 @@ def _geopandas_to_arrow(df, index=None, schema_version=None):
 
     kwargs = {}
     if compat.USE_SHAPELY_20:
-        kwargs = dict(flavor="iso")
+        kwargs = {"flavor": "iso"}
     else:
         for col in df.columns[df.dtypes == "geometry"]:
             series = df[col]
@@ -439,7 +439,8 @@ def _arrow_to_geopandas(table, metadata=None):
         if len(geometry_columns) > 1:
             warnings.warn(
                 "Multiple non-primary geometry columns read from Parquet/Feather "
-                "file. The first column read was promoted to the primary geometry."
+                "file. The first column read was promoted to the primary geometry.",
+                stacklevel=3,
             )
 
     # Convert the WKB columns that are present back to geometry.
