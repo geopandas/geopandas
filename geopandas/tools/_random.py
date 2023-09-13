@@ -64,7 +64,7 @@ def _uniform_line(geom, size, generator):
     """
 
     fracs = generator.uniform(size=size)
-    return from_shapely(geom.interpolate(fracs, normalized=True)).unary_union()
+    return from_shapely(geom.interpolate(fracs, normalized=True)).union_all()
 
 
 def _uniform_polygon(geom, size, generator):
@@ -80,4 +80,4 @@ def _uniform_polygon(geom, size, generator):
         )
         valid_samples = batch[batch.sindex.query(geom, predicate="contains")]
         candidates.extend(valid_samples)
-    return GeoSeries(candidates[:size]).unary_union
+    return GeoSeries(candidates[:size]).union_all()

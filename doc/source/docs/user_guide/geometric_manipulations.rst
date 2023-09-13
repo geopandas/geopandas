@@ -54,7 +54,7 @@ Constructive methods
 
   Returns a :class:`~geopandas.GeoSeries` of geometries containing all distinct
   vertices of each input geometry as a multipoint.
-  
+
 .. method:: GeoSeries.offset_curve(distance, quad_segs=8, join_style="round", mitre_limit=5.0)
 
   Returns a :class:`~geopandas.GeoSeries` containing a `Linestring` or `MultiLineString`
@@ -70,7 +70,7 @@ Constructive methods
   Returns a :class:`~geopandas.GeoSeries` with additional vertices added to line
   segments based on max_segment_length.
 
-.. attribute:: GeoSeries.unary_union
+.. method:: GeoSeries.union_all()
 
   Return a geometry containing the union of all geometries in the :class:`~geopandas.GeoSeries`.
 
@@ -212,7 +212,7 @@ geometry with
 
 .. sourcecode:: python
 
-    >>> mp = circles.unary_union
+    >>> mp = circles.union_all()
 
 To extract the part of this geometry contained in each borough, you can
 just use:

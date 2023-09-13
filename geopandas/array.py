@@ -724,7 +724,16 @@ class GeometryArray(ExtensionArray):
     #
 
     def unary_union(self):
-        return vectorized.unary_union(self._data)
+        warnings.warn(
+            "The 'unary_union' method is deprecated, "
+            "use the 'union_all' method instead.",
+            FutureWarning,
+            stacklevel=2,
+        )
+        return vectorized.union_all(self._data)
+
+    def union_all(self):
+        return vectorized.union_all(self._data)
 
     #
     # Affinity operations

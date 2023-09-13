@@ -1116,16 +1116,6 @@ GeometryCollection
     #
 
     @property
-    def cascaded_union(self):
-        """Deprecated: use `unary_union` instead"""
-        warn(
-            "The 'cascaded_union' attribute is deprecated, use 'unary_union' instead",
-            FutureWarning,
-            stacklevel=2,
-        )
-        return self.geometry.values.unary_union()
-
-    @property
     def unary_union(self):
         """Returns a geometry containing the union of all geometries in the
         ``GeoSeries``.
@@ -1143,8 +1133,40 @@ GeometryCollection
         >>> union = s.unary_union
         >>> print(union)
         POLYGON ((0 1, 0 2, 2 2, 2 0, 1 0, 0 0, 0 1))
+
+        See also
+        --------
+        GeoSeries.union_all
         """
-        return self.geometry.values.unary_union()
+
+        warn(
+            "The 'unary_union' attribute is deprecated, "
+            "use the 'union_all' method instead.",
+            FutureWarning,
+            stacklevel=2,
+        )
+
+        return self.geometry.values.union_all()
+
+    def union_all(self):
+        """Returns a geometry containing the union of all geometries in the
+        ``GeoSeries``.
+
+        Examples
+        --------
+
+        >>> from shapely.geometry import box
+        >>> s = geopandas.GeoSeries([box(0,0,1,1), box(0,0,2,2)])
+        >>> s
+        0    POLYGON ((1.00000 0.00000, 1.00000 1.00000, 0....
+        1    POLYGON ((2.00000 0.00000, 2.00000 2.00000, 0....
+        dtype: geometry
+
+        >>> union = s.union_all()
+        >>> print(union)
+        POLYGON ((0 1, 0 2, 2 2, 2 0, 1 0, 0 0, 0 1))
+        """
+        return self.geometry.values.union_all()
 
     #
     # Binary operations that return a pandas Series
@@ -4358,7 +4380,7 @@ GeometryCollection
             result = self.geometry.apply(
                 lambda x: points_from_xy(
                     *sample_function(x, size=size, **kwargs).T
-                ).unary_union()
+                ).union_all()
                 if not (x.is_empty or x is None or "Polygon" not in x.geom_type)
                 else MultiPoint(),
             )

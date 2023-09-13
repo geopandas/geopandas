@@ -1697,7 +1697,7 @@ individually so that features may have different properties
     ):
         """
         Dissolve geometries within `groupby` into single observation.
-        This is accomplished by applying the `unary_union` method
+        This is accomplished by applying the `union_all` method
         to all geometries within a groupself.
 
         Observations associated with each `groupby` group will be aggregated
@@ -1819,7 +1819,7 @@ individually so that features may have different properties
 
         # Process spatial component
         def merge_geometries(block):
-            merged_geom = block.unary_union
+            merged_geom = block.union_all()
             return merged_geom
 
         g = self.groupby(group_keys=False, **groupby_kwargs)[self.geometry.name].agg(

@@ -140,7 +140,7 @@ def two_line_gdf():
 @pytest.fixture
 def multi_poly_gdf(donut_geometry):
     """Create a multi-polygon GeoDataFrame."""
-    multi_poly = donut_geometry.unary_union
+    multi_poly = donut_geometry.union_all()
     out_df = GeoDataFrame(geometry=GeoSeries(multi_poly), crs="EPSG:3857")
     out_df["attr"] = ["pool"]
     return out_df
@@ -151,7 +151,7 @@ def multi_line(two_line_gdf):
     """Create a multi-line GeoDataFrame.
     This GDF has one multiline and one regular line."""
     # Create a single and multi line object
-    multiline_feat = two_line_gdf.unary_union
+    multiline_feat = two_line_gdf.union_all()
     linec = LineString([(2, 1), (3, 1), (4, 1), (5, 2)])
     out_df = GeoDataFrame(geometry=GeoSeries([multiline_feat, linec]), crs="EPSG:3857")
     out_df["attr"] = ["road", "stream"]
@@ -161,7 +161,7 @@ def multi_line(two_line_gdf):
 @pytest.fixture
 def multi_point(point_gdf):
     """Create a multi-point GeoDataFrame."""
-    multi_point = point_gdf.unary_union
+    multi_point = point_gdf.union_all()
     out_df = GeoDataFrame(
         geometry=GeoSeries(
             [multi_point, Point(2, 5), Point(-11, -14), Point(-10, -12)]
@@ -325,7 +325,7 @@ class TestClipWithSingleRectangleGdf:
         )
         assert clipped.iloc[0].geometry.wkt == clipped_mutltipoint.wkt
         shape_for_points = (
-            box(*mask) if _mask_is_list_like_rectangle(mask) else mask.unary_union
+            box(*mask) if _mask_is_list_like_rectangle(mask) else mask.union_all()
         )
         assert all(clipped.intersects(shape_for_points))
 

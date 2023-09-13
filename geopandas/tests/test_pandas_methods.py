@@ -632,7 +632,7 @@ def test_groupby(df):
     assert_frame_equal(res, exp)
 
     # applying on the geometry column
-    res = df.groupby("value2")["geometry"].apply(lambda x: x.unary_union)
+    res = df.groupby("value2")["geometry"].apply(lambda x: x.union_all())
 
     exp = GeoSeries(
         [shapely.geometry.MultiPoint([(0, 0), (2, 2)]), Point(1, 1)],
@@ -642,7 +642,7 @@ def test_groupby(df):
     assert_series_equal(res, exp)
 
     # apply on geometry column not resulting in new geometry
-    res = df.groupby("value2")["geometry"].apply(lambda x: x.unary_union.area)
+    res = df.groupby("value2")["geometry"].apply(lambda x: x.union_all().area)
     exp = pd.Series([0.0, 0.0], index=pd.Index([1, 2], name="value2"), name="geometry")
 
     assert_series_equal(res, exp)

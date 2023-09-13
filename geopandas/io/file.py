@@ -344,7 +344,7 @@ def _read_file_fiona(
                 assert len(bbox) == 4
             # handle loading the mask
             elif isinstance(mask, (GeoDataFrame, GeoSeries)):
-                mask = mapping(mask.to_crs(crs).unary_union)
+                mask = mapping(mask.to_crs(crs).union_all())
             elif isinstance(mask, BaseGeometry):
                 mask = mapping(mask)
 

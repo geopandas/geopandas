@@ -670,13 +670,13 @@ def test_simplify():
     assert all(a.equals(b) for a, b in zip(expected, result))
 
 
-def test_unary_union():
+def test_union_all():
     geoms = [
         shapely.geometry.Polygon([(0, 0), (0, 1), (1, 1)]),
         shapely.geometry.Polygon([(0, 0), (1, 0), (1, 1)]),
     ]
     G = from_shapely(geoms)
-    u = G.unary_union()
+    u = G.union_all()
 
     expected = shapely.geometry.Polygon([(0, 0), (1, 0), (1, 1), (0, 1)])
     assert u.equals(expected)

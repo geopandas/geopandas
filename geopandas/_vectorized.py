@@ -1164,10 +1164,10 @@ def relate(data, other):
     return _binary_op("relate", data, other)
 
 
-def unary_union(data):
+def union_all(data):
     warning_msg = (
-        "`unary_union` returned None due to all-None GeoSeries. In future, "
-        "`unary_union` will return 'GEOMETRYCOLLECTION EMPTY' instead."
+        "`union_all` returned None due to all-None GeoSeries. In future, "
+        "`union_all` will return 'GEOMETRYCOLLECTION EMPTY' instead."
     )
 
     if compat.USE_SHAPELY_20:
