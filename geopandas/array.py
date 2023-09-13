@@ -577,6 +577,9 @@ class GeometryArray(ExtensionArray):
     def make_valid(self):
         return GeometryArray(vectorized.make_valid(self._data), crs=self.crs)
 
+    def reverse(self):
+        return GeometryArray(vectorized.reverse(self._data), crs=self.crs)
+
     def segmentize(self, max_segment_length):
         return GeometryArray(
             vectorized.segmentize(self._data, max_segment_length),
