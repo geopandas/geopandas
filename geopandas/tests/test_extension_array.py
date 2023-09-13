@@ -25,7 +25,7 @@ import shapely.geometry
 from shapely.geometry import Point
 
 from geopandas.array import GeometryArray, GeometryDtype, from_shapely
-from geopandas._compat import ignore_shapely2_warnings, SHAPELY_GE_20, PANDAS_GE_15
+from geopandas._compat import PANDAS_GE_15
 
 import pytest
 
@@ -36,9 +36,6 @@ import pytest
 
 not_yet_implemented = pytest.mark.skip(reason="Not yet implemented")
 no_minmax = pytest.mark.skip(reason="Min/max not supported")
-requires_shapely2 = pytest.mark.skipif(
-    not SHAPELY_GE_20, reason="Requires hashable geometries"
-)
 
 
 # -----------------------------------------------------------------------------
@@ -54,8 +51,7 @@ def dtype():
 
 def make_data():
     a = np.empty(100, dtype=object)
-    with ignore_shapely2_warnings():
-        a[:] = [shapely.geometry.Point(i, i) for i in range(100)]
+    a[:] = [shapely.geometry.Point(i, i) for i in range(100)]
     ga = from_shapely(a)
     return ga
 
@@ -317,17 +313,10 @@ class TestDtype(extension_tests.BaseDtypeTests):
 
 class TestInterface(extension_tests.BaseInterfaceTests):
     def test_array_interface(self, data):
-        # we are overriding this base test because the creation of `expected`
-        # potentially doesn't work for shapely geometries
-        # TODO can be removed with Shapely 2.0
-        result = np.array(data)
-        assert result[0] == data[0]
-
         result = np.array(data, dtype=object)
         # expected = np.array(list(data), dtype=object)
         expected = np.empty(len(data), dtype=object)
-        with ignore_shapely2_warnings():
-            expected[:] = list(data)
+        expected[:] = list(data)
         assert_array_equal(result, expected)
 
     def test_contains(self, data, data_missing):
@@ -506,7 +495,6 @@ class TestMethods(extension_tests.BaseMethodsTests):
     def test_value_counts_with_normalize(self, data):
         pass
 
-    @requires_shapely2
     @pytest.mark.parametrize("ascending", [True, False])
     def test_sort_values_frame(self, data_for_sorting, ascending):
         super().test_sort_values_frame(data_for_sorting, ascending)
@@ -555,16 +543,13 @@ class TestCasting(extension_tests.BaseCastingTests):
 
 
 class TestGroupby(extension_tests.BaseGroupbyTests):
-    @requires_shapely2
     @pytest.mark.parametrize("as_index", [True, False])
     def test_groupby_extension_agg(self, as_index, data_for_grouping):
         super().test_groupby_extension_agg(as_index, data_for_grouping)
 
-    @requires_shapely2
     def test_groupby_extension_transform(self, data_for_grouping):
         super().test_groupby_extension_transform(data_for_grouping)
 
-    @requires_shapely2
     @pytest.mark.parametrize(
         "op",
         [
