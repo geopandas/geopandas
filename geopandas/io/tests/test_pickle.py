@@ -13,7 +13,6 @@ import pytest
 from geopandas.testing import assert_geodataframe_equal
 from geopandas import _compat as compat
 import geopandas
-from shapely.geometry import Point
 
 DATA_PATH = pathlib.Path(os.path.dirname(__file__)) / "data"
 
@@ -68,43 +67,3 @@ def test_round_trip_current(tmpdir, current_pickle_data):
         result = pd.read_pickle(path)
         assert_geodataframe_equal(result, value)
         assert isinstance(result.has_sindex, bool)
-
-
-def _create_gdf():
-    return geopandas.GeoDataFrame(
-        {"a": [0.1, 0.2, 0.3], "geometry": [Point(1, 1), Point(2, 2), Point(3, 3)]},
-        crs="EPSG:4326",
-    )
-
-
-@pytest.mark.skipif(not compat.HAS_PYGEOS, reason="requires pygeos to test #1745")
-def test_pygeos_switch(tmpdir):
-    # writing and reading with pygeos disabled
-    with with_use_pygeos(False):
-        gdf = _create_gdf()
-        path = str(tmpdir / "gdf_crs1.pickle")
-        gdf.to_pickle(path)
-        result = pd.read_pickle(path)
-        assert_geodataframe_equal(result, gdf)
-
-    # writing without pygeos, reading with pygeos
-    with with_use_pygeos(False):
-        gdf = _create_gdf()
-        path = str(tmpdir / "gdf_crs1.pickle")
-        gdf.to_pickle(path)
-
-    with with_use_pygeos(True):
-        result = pd.read_pickle(path)
-        gdf = _create_gdf()
-        assert_geodataframe_equal(result, gdf)
-
-    # writing with pygeos, reading without pygeos
-    with with_use_pygeos(True):
-        gdf = _create_gdf()
-        path = str(tmpdir / "gdf_crs1.pickle")
-        gdf.to_pickle(path)
-
-    with with_use_pygeos(False):
-        result = pd.read_pickle(path)
-        gdf = _create_gdf()
-        assert_geodataframe_equal(result, gdf)

@@ -813,10 +813,11 @@ class TestGeomMethods:
         self._test_unary_real("is_empty", expected, self.g1)
 
     # for is_ring we raise a warning about the value for Polygon changing
-    @pytest.mark.filterwarnings("ignore:is_ring:FutureWarning")
     def test_is_ring(self):
-        expected = Series(np.array([True] * len(self.g1)), self.g1.index)
+        expected = Series(np.array([False] * len(self.g1)), self.g1.index)
         self._test_unary_real("is_ring", expected, self.g1)
+        expected = Series(np.array([True] * len(self.g1)), self.g1.index)
+        self._test_unary_real("is_ring", expected, self.g1.exterior)
 
     def test_is_simple(self):
         expected = Series(np.array([True] * len(self.g1)), self.g1.index)

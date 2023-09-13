@@ -448,13 +448,7 @@ def test_binary_geo_scalar(attr):
         "is_empty",
         "is_simple",
         "has_z",
-        # for is_ring we raise a warning about the value for Polygon changing
-        pytest.param(
-            "is_ring",
-            marks=[
-                pytest.mark.filterwarnings("ignore:is_ring:FutureWarning"),
-            ],
-        ),
+        "is_ring",
     ],
 )
 def test_unary_predicates(attr):
@@ -480,9 +474,7 @@ def test_unary_predicates(attr):
         ]
     elif attr == "is_ring":
         expected = [
-            getattr(t.exterior, attr)
-            if t is not None and t.exterior is not None
-            else na_value
+            getattr(t, attr) if t is not None and t.exterior is not None else na_value
             for t in vals
         ]
         # empty Linearring.is_ring gives False with Shapely < 2.0
@@ -503,8 +495,6 @@ def test_unary_predicates(attr):
     assert result.tolist() == expected
 
 
-# for is_ring we raise a warning about the value for Polygon changing
-@pytest.mark.filterwarnings("ignore:is_ring:FutureWarning")
 def test_is_ring():
     g = [
         shapely.geometry.LinearRing([(0, 0), (1, 1), (1, -1)]),
@@ -514,7 +504,7 @@ def test_is_ring():
         shapely.wkt.loads("POLYGON EMPTY"),
         None,
     ]
-    expected = [True, False, True, True, True, False]
+    expected = [True, False, True, False, False, False]
     if not compat.USE_PYGEOS and not compat.SHAPELY_GE_20:
         # empty polygon is_ring gives False with Shapely < 2.0
         expected[-2] = False
