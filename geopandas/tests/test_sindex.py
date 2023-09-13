@@ -16,6 +16,7 @@ from geopandas import GeoDataFrame, GeoSeries, read_file, datasets
 
 import pytest
 import numpy as np
+import pandas as pd
 
 if compat.USE_SHAPELY_20:
     import shapely as mod
@@ -173,12 +174,12 @@ class TestFrameSindex:
         # with pandas 2.0, the column is now copied, losing the index (although
         # with Copy-on-Write, this will again be preserved)
         subset1 = self.df[["geom", "A"]]
-        if compat.PANDAS_GE_20:
+        if compat.PANDAS_GE_20 and not pd.options.mode.copy_on_write:
             assert subset1.sindex is not original_index
         else:
             assert subset1.sindex is original_index
         subset2 = self.df[["A", "geom"]]
-        if compat.PANDAS_GE_20:
+        if compat.PANDAS_GE_20 and not pd.options.mode.copy_on_write:
             assert subset2.sindex is not original_index
         else:
             assert subset2.sindex is original_index
