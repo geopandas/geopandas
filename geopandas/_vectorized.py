@@ -77,10 +77,6 @@ def from_shapely(data):
     return np.array(out, dtype=object)
 
 
-def to_shapely(data):
-    return data
-
-
 def from_wkb(data):
     """
     Convert a list or array of WKB objects to a np.ndarray[geoms].

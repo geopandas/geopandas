@@ -509,11 +509,6 @@ class PyGEOSSTRTreeIndex(BaseSpatialIndex):
         np.ndarray
             A numpy array of pygeos geometries.
         """
-        # to ensure pygeos.Geometry as input is treated the same as shapely
-        # geometrie. TODO can be removed when we remove pygeos support
-        if isinstance(geometry, shapely.Geometry):
-            geometry = array._geom_to_shapely(geometry)
-
         if isinstance(geometry, np.ndarray):
             return array.from_shapely(geometry)._data
         elif isinstance(geometry, geoseries.GeoSeries):
@@ -521,15 +516,12 @@ class PyGEOSSTRTreeIndex(BaseSpatialIndex):
         elif isinstance(geometry, array.GeometryArray):
             return geometry._data
         elif isinstance(geometry, BaseGeometry):
-            return array._shapely_to_geom(geometry)
+            return geometry
         elif geometry is None:
             return None
         elif isinstance(geometry, list):
             return np.asarray(
-                [
-                    array._shapely_to_geom(el) if isinstance(el, BaseGeometry) else el
-                    for el in geometry
-                ]
+                [el if isinstance(el, BaseGeometry) else el for el in geometry]
             )
         else:
             return np.asarray(geometry)

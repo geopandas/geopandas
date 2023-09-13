@@ -103,20 +103,6 @@ def _crs_mismatch_warn(left, right, stacklevel=3):
 # -----------------------------------------------------------------------------
 
 
-def _geom_to_shapely(geom):
-    """
-    Convert internal representation (PyGEOS or Shapely) to external Shapely object.
-    """
-    return geom
-
-
-def _shapely_to_geom(geom):
-    """
-    Convert external Shapely object to internal representation (PyGEOS or Shapely).
-    """
-    return geom
-
-
 def _is_scalar_geometry(geom):
     return isinstance(geom, BaseGeometry)
 
@@ -146,7 +132,7 @@ def to_shapely(geoms):
     """
     if not isinstance(geoms, GeometryArray):
         raise ValueError("'geoms' must be a GeometryArray")
-    return vectorized.to_shapely(geoms._data)
+    return geoms._data
 
 
 def from_wkb(data, crs=None):
@@ -362,7 +348,7 @@ class GeometryArray(ExtensionArray):
 
     def __getitem__(self, idx):
         if isinstance(idx, numbers.Integral):
-            return _geom_to_shapely(self._data[idx])
+            return self._data[idx]
         # array-like, slice
         # validate and convert IntegerArray/BooleanArray
         # to numpy array, pass-through non-array-like indexers
@@ -692,9 +678,7 @@ class GeometryArray(ExtensionArray):
         )
 
     def project(self, other, normalized=False):
-        if isinstance(other, BaseGeometry):
-            other = _shapely_to_geom(other)
-        elif isinstance(other, GeometryArray):
+        if isinstance(other, GeometryArray):
             other = other._data
         return vectorized.project(self._data, other, normalized=normalized)
 
@@ -1017,8 +1001,6 @@ class GeometryArray(ExtensionArray):
         if allow_fill:
             if fill_value is None or pd.isna(fill_value):
                 fill_value = None
-            elif isinstance(fill_value, BaseGeometry):
-                fill_value = _shapely_to_geom(fill_value)
             elif not _is_scalar_geometry(fill_value):
                 raise TypeError("provide geometry or None as fill value")
 
@@ -1046,7 +1028,7 @@ class GeometryArray(ExtensionArray):
             )
 
         value_arr = np.empty(len(value), dtype=object)
-        value_arr[:] = _shapely_to_geom(value)
+        value_arr[:] = value
 
         self._data[idx] = value_arr
         return self
