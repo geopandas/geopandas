@@ -98,6 +98,7 @@ Constructive methods and attributes
    GeoSeries.minimum_bounding_circle
    GeoSeries.minimum_rotated_rectangle
    GeoSeries.normalize
+   GeoSeries.remove_repeated_points
    GeoSeries.reverse
    GeoSeries.sample_points
    GeoSeries.segmentize

@@ -1897,3 +1897,49 @@ class TestGeomMethods:
         expected = GeoSeries([LineString([[-1, 0], [-1, 2], [1, 2]])])
         assert_geoseries_equal(expected, oc)
         assert isinstance(oc, GeoSeries)
+
+    @pytest.mark.skipif(
+        compat.SHAPELY_GE_20,
+        reason="remove_repeated_points is implemented for shapely >= 2.0",
+    )
+    def test_remove_repeated_points_not_implemented_shapely_pre2(self):
+        with pytest.raises(
+            NotImplementedError,
+            match=f"shapely >= 2.0 is required, "
+            f"version {shapely.__version__} is installed",
+        ):
+            self.squares.remove_repeated_points()
+
+    @pytest.mark.skipif(
+        not (compat.USE_PYGEOS and compat.SHAPELY_GE_20),
+        reason="remove_repeated_points is only implemented for shapely >= 2.0",
+    )
+    def test_remove_repeated_points_pygeos_set_shapely_installed(self):
+        with pytest.warns(
+            UserWarning,
+            match=(
+                "PyGEOS does not support remove_repeated_points, "
+                "and Shapely >= 2 is installed"
+            ),
+        ):
+            self.g1.remove_repeated_points()
+
+    @pytest.mark.skipif(
+        not compat.USE_SHAPELY_20,
+        reason="remove_repeated_points is only implemented for shapely >= 2.0",
+    )
+    @pytest.mark.parametrize(
+        "geom,expected",
+        [
+            (
+                GeoSeries(LinearRing([(0, 0), (1, 2), (1, 2), (1, 3), (0, 0)])),
+                GeoSeries(LinearRing([(0, 0), (1, 2), (1, 3), (0, 0)])),
+            ),
+            (
+                GeoSeries(Polygon([(0, 0), (0, 0), (1, 0), (1, 1), (1, 0), (0, 0)])),
+                GeoSeries(Polygon([(0, 0), (1, 0), (1, 1), (1, 0), (0, 0)])),
+            ),
+        ],
+    )
+    def test_remove_repeated_points(self, geom, expected):
+        assert_geoseries_equal(expected, geom.remove_repeated_points(tolerance=0.0))

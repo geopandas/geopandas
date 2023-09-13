@@ -13,6 +13,7 @@ API changes:
 
 New methods:
 
+- Added ``remove_repeated_points`` method from shapely to GeoSeries/GeoDataframe (#2940).
 - Added ``frechet_distance()`` method from shapely to GeoSeries/GeoDataframe (#2929).
 - Added ``segmentize`` method from shapely to GeoSeries/GeoDataFrame (#2910).
 - Added ``extract_unique_points`` method from shapely to GeoSeries/GeoDataframe (#2915).
