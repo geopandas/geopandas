@@ -7,7 +7,7 @@ import warnings
 
 import numpy as np
 import pandas as pd
-from pandas import Series, MultiIndex, DataFrame
+from pandas import Series, MultiIndex
 from pandas.core.internals import SingleBlockManager
 
 from pyproj import CRS
@@ -72,12 +72,6 @@ def _geoseries_expanddim(data=None, *args, **kwargs):
             df = df.set_geometry(geo_col_name)
 
     return df
-
-
-# pd.concat (pandas/core/reshape/concat.py) requires this for the
-# concatenation of series since pandas 1.1
-# (https://github.com/pandas-dev/pandas/commit/f9e4c8c84bcef987973f2624cc2932394c171c8c)
-_geoseries_expanddim._get_axis_number = DataFrame._get_axis_number
 
 
 class GeoSeries(GeoPandasBase, Series):
@@ -175,19 +169,7 @@ class GeoSeries(GeoPandasBase, Series):
                     )
 
         if isinstance(data, SingleBlockManager):
-            if isinstance(data.blocks[0].dtype, GeometryDtype):
-                if data.blocks[0].ndim == 2:
-                    # bug in pandas 0.23 where in certain indexing operations
-                    # (such as .loc) a 2D ExtensionBlock (still with 1D values
-                    # is created) which results in other failures
-                    # bug in pandas <= 0.25.0 when len(values) == 1
-                    #   (https://github.com/pandas-dev/pandas/issues/27785)
-                    from pandas.core.internals import ExtensionBlock
-
-                    values = data.blocks[0].values
-                    block = ExtensionBlock(values, slice(0, len(values), 1), ndim=1)
-                    data = SingleBlockManager([block], data.axes[0], fastpath=True)
-            else:
+            if not isinstance(data.blocks[0].dtype, GeometryDtype):
                 raise TypeError(
                     "Non geometry data passed to GeoSeries constructor, "
                     f"received data of dtype '{data.blocks[0].dtype}'"
@@ -1179,8 +1161,6 @@ class GeoSeries(GeoPandasBase, Series):
         """Returns the estimated UTM CRS based on the bounds of the dataset.
 
         .. versionadded:: 0.9
-
-        .. note:: Requires pyproj 3+
 
         Parameters
         ----------
