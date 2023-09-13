@@ -11,7 +11,6 @@ import pandas as pd
 
 import pytest
 from geopandas.testing import assert_geodataframe_equal
-from geopandas import _compat as compat
 import geopandas
 
 DATA_PATH = pathlib.Path(os.path.dirname(__file__)) / "data"
@@ -43,8 +42,7 @@ def with_use_pygeos(option):
         geopandas.options.use_pygeos = orig
 
 
-@pytest.mark.skipif(
-    compat.USE_SHAPELY_20 or compat.USE_PYGEOS,
+@pytest.mark.skip(
     reason=(
         "shapely 2.0/pygeos-based unpickling currently only works for "
         "shapely-2.0/pygeos-written files"
