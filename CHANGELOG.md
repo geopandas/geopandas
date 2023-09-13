@@ -7,6 +7,10 @@ PyGEOS are installed.  PyGEOS will continue to be used by default when PyGEOS is
 installed alongside Shapely < 2.0.  Support for PyGEOS and Shapely < 2.0 will be removed
 in GeoPandas 1.0.
 
+API changes:
+
+- ``seed`` keyword in ``sample_points`` is deprecated. Use ``rng`` instead. (#2913).
+
 New methods:
 
 - Added ``frechet_distance()`` method from shapely to GeoSeries/GeoDataframe (#2929).
@@ -22,7 +26,7 @@ New methods:
 New features and improvements:
 
 - Added ``exclusive`` parameter to ``sjoin_nearest`` method for Shapely >= 2.0 (#2877)
-- The ``to_file()`` method will now automatically detect the FlatGeoBuf driver 
+- The ``to_file()`` method will now automatically detect the FlatGeoBuf driver
   for files with the `.fgb` extension (#2958)
 
 Bug fixes:

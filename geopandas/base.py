@@ -4244,7 +4244,7 @@ GeometryCollection
 
         return pd.Series(distances, index=self.index, name="hilbert_distance")
 
-    def sample_points(self, size, method="uniform", seed=None, **kwargs):
+    def sample_points(self, size, method="uniform", seed=None, rng=None, **kwargs):
         """
         Sample points from each geometry.
 
@@ -4275,8 +4275,8 @@ GeometryCollection
             http://pysal.org/pointpats/api.html#random-distributions). Pointpats methods
             are implemented for (Multi)Polygons only and will return an empty MultiPoint
             for other geometry types.
-        seed : {None, int, array_like[ints], SeedSequence, BitGenerator, Generator}, optional
-            A seed to initialize the numpy BitGenerator. If None, then fresh,
+        rng : {None, int, array_like[ints], SeedSequence, BitGenerator, Generator}, optional
+            A random generator or seed to initialize the numpy BitGenerator. If None, then fresh,
             unpredictable entropy will be pulled from the OS.
         **kwargs : dict
             Options for the pointpats sampling algorithms.
@@ -4304,13 +4304,19 @@ GeometryCollection
         from .geoseries import GeoSeries
         from .tools._random import uniform
 
+        if seed is not None:
+            warn(
+                "The 'seed' keyword is deprecated. Use 'rng' instead.",
+                FutureWarning,
+                stacklevel=2,
+            )
+            rng = seed
+
         if method == "uniform":
             if pd.api.types.is_list_like(size):
-                result = [
-                    uniform(geom, s, seed) for geom, s in zip(self.geometry, size)
-                ]
+                result = [uniform(geom, s, rng) for geom, s in zip(self.geometry, size)]
             else:
-                result = self.geometry.apply(uniform, size=size, seed=seed)
+                result = self.geometry.apply(uniform, size=size, rng=rng)
 
         else:
             pointpats = compat.import_optional_dependency(

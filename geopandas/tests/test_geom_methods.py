@@ -1830,6 +1830,8 @@ class TestGeomMethods:
                 len(output.explode(ignore_index=True))
                 == len(gs[~(gs.is_empty | gs.isna())]) * size
             )
+        with pytest.warns(FutureWarning, match="The 'seed' keyword is deprecated"):
+            _ = gs.sample_points(size, seed=1)
 
     @pytest.mark.skipif(
         not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
