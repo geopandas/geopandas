@@ -724,7 +724,6 @@ def test_apply_loc_len1(df):
 
 def test_apply_convert_dtypes_keyword(s):
     # ensure the convert_dtypes keyword is accepted
-    res = s.apply(lambda x: x, convert_dtype=True, args=())
     if not compat.PANDAS_GE_21:
         recorder = warnings.catch_warnings(record=True)
     else:
