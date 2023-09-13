@@ -3,6 +3,7 @@ import warnings
 import numpy as np
 import pandas as pd
 from pandas.plotting import PlotAccessor
+from pandas import CategoricalDtype
 
 import geopandas
 
@@ -738,7 +739,7 @@ def plot_dataframe(
     else:
         values = df[column]
 
-    if pd.api.types.is_categorical_dtype(values.dtype):
+    if isinstance(values.dtype, CategoricalDtype):
         if categories is not None:
             raise ValueError(
                 "Cannot specify 'categories' when column has categorical dtype"
