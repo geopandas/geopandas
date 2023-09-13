@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: actions/setup-python@v4
       - uses: pre-commit/action@v3.0.0
 
@@ -35,17 +35,17 @@ jobs:
         postgis: [false]
         dev: [false]
         env:
-          - ci/envs/38-minimal.yaml
+          - ci/envs/39-minimal.yaml
           - ci/envs/39-no-optional-deps.yaml
-          # - ci/envs/38-pd12-defaults.yaml
-          # - ci/envs/38-latest-defaults.yaml
-          - ci/envs/38-latest-conda-forge.yaml
-          - ci/envs/39-pd13-conda-forge.yaml
+          - ci/envs/39-pd15-defaults.yaml
+          - ci/envs/39-latest-defaults.yaml
           - ci/envs/39-latest-conda-forge.yaml
+          - ci/envs/39-latest-conda-forge_no_fiona.yaml
+          - ci/envs/310-pd20-conda-forge.yaml
           - ci/envs/310-latest-conda-forge.yaml
           - ci/envs/311-latest-conda-forge.yaml
         include:
-          - env: ci/envs/38-latest-conda-forge.yaml
+          - env: ci/envs/39-latest-conda-forge_no_fiona.yaml
             os: macos-latest
             postgis: false
             dev: false
@@ -53,7 +53,7 @@ jobs:
             os: macos-latest
             postgis: false
             dev: false
-          - env: ci/envs/38-latest-conda-forge.yaml
+          - env: ci/envs/39-latest-conda-forge_no_fiona.yaml
             os: windows-latest
             postgis: false
             dev: false
@@ -61,13 +61,13 @@ jobs:
             os: windows-latest
             postgis: false
             dev: false
-          - env: ci/envs/310-dev.yaml
+          - env: ci/envs/311-dev.yaml
             os: ubuntu-latest
             dev: true
             pandas_copy_on_write: "1"
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Install Conda environment with Micromamba
         uses: mamba-org/setup-micromamba@v1
@@ -106,7 +106,8 @@ jobs:
           pytest -v -r a -n auto --color=yes --cov=geopandas --cov-append --cov-report term-missing --cov-report xml geopandas/
 
       - name: Test with PostGIS
-        if: (contains(matrix.env, '39-pd13-conda-forge.yaml') || contains(matrix.env, '311-latest-conda-forge.yaml')) && contains(matrix.os, 'ubuntu')
+        if: (contains(matrix.env, '310-pd20-conda-forge.yaml') || contains(matrix.env, '311-latest-conda-forge.yaml'))
+          && contains(matrix.os, 'ubuntu')
         env:
           PGUSER: postgres
           PGPASSWORD: postgres

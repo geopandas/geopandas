@@ -1,5 +1,4 @@
 import string
-import sys
 import warnings
 
 import numpy as np
@@ -172,6 +171,11 @@ class TestGeomMethods:
             ]
         )
         self.squares = GeoSeries([self.sq for _ in range(3)])
+
+        self.l5 = LineString([(100, 0), (0, 0), (0, 100)])
+        self.l6 = LineString([(5, 5), (5, 100), (100, 5)])
+        self.g12 = GeoSeries([self.l5])
+        self.g13 = GeoSeries([self.l6])
 
         self.l5 = LineString([(100, 0), (0, 0), (0, 100)])
         self.l6 = LineString([(5, 5), (5, 100), (100, 5)])
@@ -653,6 +657,52 @@ class TestGeomMethods:
         ):
             self.g0.hausdorff_distance(self.g9)
 
+    @pytest.mark.skipif(
+        not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+        reason="requires frechet_distance in shapely 2.0+",
+    )
+    def test_frechet_distance(self):
+        # closest point is (0, 0) in self.p1
+        expected = Series(
+            np.array([np.sqrt(5**2 + 5**2), np.nan]), self.na_none.index
+        )
+        assert_array_dtype_equal(expected, self.na_none.frechet_distance(self.p0))
+
+        expected = Series(np.array([np.nan, 0, 0, 0, 0, 0, np.nan, np.nan]), range(8))
+        with pytest.warns(UserWarning, match="The indices .+ different"):
+            assert_array_dtype_equal(
+                expected, self.g0.frechet_distance(self.g9, align=True)
+            )
+
+        # expected returns
+        val_1 = 1.0
+        val_2 = np.sqrt(2) / 4
+        val_3 = np.sqrt(2) / 2
+        val_4 = (np.sqrt(2) / 2) * 10
+        expected = Series(
+            np.array([val_1, val_1, val_2, val_3, val_4, np.nan, np.nan]), self.g0.index
+        )
+        assert_array_dtype_equal(
+            expected, self.g0.frechet_distance(self.g9, align=False)
+        )
+
+        expected = Series(
+            np.array([np.sqrt(100**2 + (100 - 5) ** 2)]), self.g12.index
+        )
+        assert_array_dtype_equal(
+            expected, self.g12.frechet_distance(self.g13, densify=0.25)
+        )
+
+    @pytest.mark.skipif(
+        (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
+        reason="frechet_distance not implemented for shapely<2",
+    )
+    def test_frechet_distance_not(self):
+        with pytest.raises(
+            NotImplementedError, match="shapely >= 2.0 or PyGEOS is required"
+        ):
+            self.g0.frechet_distance(self.g9)
+
     def test_intersects(self):
         expected = [True, True, True, True, True, False, False]
         assert_array_dtype_equal(expected, self.g0.intersects(self.t1))
@@ -829,10 +879,6 @@ class TestGeomMethods:
         expected = GeoSeries([polygon2, linestring, point])
         assert_geoseries_equal(series.normalize(), expected)
 
-    @pytest.mark.skipif(
-        not compat.SHAPELY_GE_18,
-        reason="make_valid keyword introduced in shapely 1.8.0",
-    )
     def test_make_valid(self):
         polygon1 = Polygon([(0, 0), (0, 2), (1, 1), (2, 2), (2, 0), (1, 1), (0, 0)])
         polygon2 = Polygon([(0, 2), (0, 1), (2, 0), (0, 0), (0, 2)])
@@ -852,19 +898,6 @@ class TestGeomMethods:
         result = series.make_valid()
         assert_geoseries_equal(result, expected)
         assert result.is_valid.all()
-
-    @pytest.mark.skipif(
-        compat.SHAPELY_GE_18,
-        reason="make_valid keyword introduced in shapely 1.8.0",
-    )
-    def test_make_valid_shapely_pre18(self):
-        s = GeoSeries([Point(1, 1)])
-        with pytest.raises(
-            NotImplementedError,
-            match=f"shapely >= 1.8 or PyGEOS is required, "
-            f"version {shapely.__version__} is installed",
-        ):
-            s.make_valid()
 
     @pytest.mark.skipif(
         (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
@@ -1299,10 +1332,6 @@ class TestGeomMethods:
         with pytest.warns(FutureWarning, match="Currently, index_parts defaults"):
             assert_geoseries_equal(expected, s.explode())
 
-    @pytest.mark.skipif(
-        sys.platform == "win32" and sys.version_info < (3, 9),
-        reason="Inconsistent int dtype",
-    )
     @pytest.mark.parametrize("index_name", [None, "test"])
     def test_explode_geodataframe(self, index_name):
         s = GeoSeries([MultiPoint([Point(1, 2), Point(2, 3)]), Point(5, 5)])
@@ -1322,10 +1351,6 @@ class TestGeomMethods:
         expected_df = expected_df.set_index(expected_index)
         assert_frame_equal(test_df, expected_df)
 
-    @pytest.mark.skipif(
-        sys.platform == "win32" and sys.version_info < (3, 9),
-        reason="Inconsistent int dtype",
-    )
     @pytest.mark.parametrize("index_name", [None, "test"])
     def test_explode_geodataframe_level_1(self, index_name):
         # GH1393
@@ -1416,10 +1441,6 @@ class TestGeomMethods:
         exploded_df = gdf.explode(column="col1", ignore_index=True)
         assert_geodataframe_equal(exploded_df, expected_df)
 
-    @pytest.mark.skipif(
-        sys.platform == "win32" and sys.version_info < (3, 9),
-        reason="Inconsistent int dtype",
-    )
     @pytest.mark.parametrize("outer_index", [1, (1, 2), "1"])
     def test_explode_pandas_multi_index(self, outer_index):
         index = MultiIndex.from_arrays(
@@ -1527,10 +1548,6 @@ class TestGeomMethods:
         test_df = df.explode(ignore_index=True, index_parts=True)
         assert_frame_equal(test_df, expected_df)
 
-    @pytest.mark.skipif(
-        sys.platform == "win32" and sys.version_info < (3, 9),
-        reason="Inconsistent int dtype",
-    )
     def test_explode_order(self):
         df = GeoDataFrame(
             {"vals": [1, 2, 3]},
@@ -1560,10 +1577,6 @@ class TestGeomMethods:
         )
         assert_geodataframe_equal(test_df, expected_df)
 
-    @pytest.mark.skipif(
-        sys.platform == "win32" and sys.version_info < (3, 9),
-        reason="Inconsistent int dtype",
-    )
     def test_explode_order_no_multi(self):
         df = GeoDataFrame(
             {"vals": [1, 2, 3]},
@@ -1582,10 +1595,6 @@ class TestGeomMethods:
         )
         assert_geodataframe_equal(test_df, expected_df)
 
-    @pytest.mark.skipif(
-        sys.platform == "win32" and sys.version_info < (3, 9),
-        reason="Inconsistent int dtype",
-    )
     def test_explode_order_mixed(self):
         df = GeoDataFrame(
             {"vals": [1, 2, 3]},
@@ -1614,10 +1623,6 @@ class TestGeomMethods:
         )
         assert_geodataframe_equal(test_df, expected_df)
 
-    @pytest.mark.skipif(
-        sys.platform == "win32" and sys.version_info < (3, 9),
-        reason="Inconsistent int dtype",
-    )
     def test_explode_duplicated_index(self):
         df = GeoDataFrame(
             {"vals": [1, 2, 3]},
@@ -1741,10 +1746,6 @@ class TestGeomMethods:
         assert_frame_equal(self.g11.get_coordinates(ignore_index=True), expected)
 
     @pytest.mark.skipif(
-        sys.platform == "win32" and sys.version_info < (3, 9),
-        reason="Inconsistent int dtype",
-    )
-    @pytest.mark.skipif(
         not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
         reason="get_coordinates not implemented for shapely<2",
     )
@@ -1829,6 +1830,8 @@ class TestGeomMethods:
                 len(output.explode(ignore_index=True))
                 == len(gs[~(gs.is_empty | gs.isna())]) * size
             )
+        with pytest.warns(FutureWarning, match="The 'seed' keyword is deprecated"):
+            _ = gs.sample_points(size, seed=1)
 
     @pytest.mark.skipif(
         not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
