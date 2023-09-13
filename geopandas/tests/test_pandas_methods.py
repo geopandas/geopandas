@@ -711,14 +711,6 @@ def test_apply(s):
     assert not isinstance(result, GeoSeries)
     assert_series_equal(result, pd.Series([0.0, 1.0, 2.0]))
 
-    with warnings.catch_warnings(record=True) as record:
-        s.apply(lambda x: x.centroid, convert_dtype=False)
-    if compat.PANDAS_GE_21:
-        assert len(record) == 1
-        assert "the convert_dtype parameter" in str(record[0].message)
-    else:
-        assert len(record) == 0
-
 
 def test_apply_loc_len1(df):
     # subset of len 1 with loc -> bug in pandas with inconsistent Block ndim
@@ -733,7 +725,20 @@ def test_apply_loc_len1(df):
 def test_apply_convert_dtypes_keyword(s):
     # ensure the convert_dtypes keyword is accepted
     res = s.apply(lambda x: x, convert_dtype=True, args=())
+    if not compat.PANDAS_GE_21:
+        recorder = warnings.catch_warnings(record=True)
+    else:
+        recorder = pytest.warns()
+
+    with recorder as record:
+        res = s.apply(lambda x: x, convert_dtype=True, args=())
     assert_geoseries_equal(res, s)
+
+    if compat.PANDAS_GE_21:
+        assert len(record) == 1
+        assert "the convert_dtype parameter" in str(record[0].message)
+    else:
+        assert len(record) == 0
 
 
 @pytest.mark.parametrize("crs", [None, "EPSG:4326"])
