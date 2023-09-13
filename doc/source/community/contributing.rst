@@ -44,7 +44,7 @@ In particular, when submitting a pull request:
   imports when possible, and explicit relative imports for local
   imports when necessary in tests.
 
-- GeoPandas supports Python 3.8+ only. The last version of GeoPandas
+- GeoPandas supports Python 3.9+ only. The last version of GeoPandas
   supporting Python 2 is 0.6.
 
 - Unless your PR implements minor changes or internal work only, make sure

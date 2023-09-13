@@ -4,10 +4,10 @@ channels:
 dependencies:
   - python=3.9
   # required
-  - pandas=1.3
-  - numpy=1.21 # released 1 month before pandas 1.3
+  - pandas
   - shapely
-  - fiona
+  # - fiona  # build with only pyogrio
+  - libgdal
   - pyproj
   - pygeos
   - packaging
@@ -15,7 +15,7 @@ dependencies:
   - pytest
   - pytest-cov
   - pytest-xdist
-  - fsspec
+  # - fsspec  # to have one non-minimal build without fsspec
   # optional
   - rtree
   - matplotlib
@@ -24,13 +24,9 @@ dependencies:
   - xyzservices
   - scipy
   - geopy
-  - geodatasets
-  # installed in tests.yaml, because not available on windows
-  # - postgis
-  - SQLalchemy<2
-  - psycopg2
+  - SQLalchemy
   - libspatialite
-  - geoalchemy2
   - pyarrow
-  # doctest testing
-  - pytest-doctestplus
+  - pyogrio
+  - pointpats
+  - geodatasets

@@ -19,6 +19,8 @@ from shapely.geometry.base import BaseGeometry
 import shapely.ops
 import shapely.wkt
 from pyproj import CRS, Transformer
+from pyproj.aoi import AreaOfInterest
+from pyproj.database import query_utm_crs_info
 
 try:
     import pygeos
@@ -894,11 +896,6 @@ class GeometryArray(ExtensionArray):
         - Ellipsoid: WGS 84
         - Prime Meridian: Greenwich
         """
-        try:
-            from pyproj.aoi import AreaOfInterest
-            from pyproj.database import query_utm_crs_info
-        except ImportError:
-            raise RuntimeError("pyproj 3+ required for estimate_utm_crs.")
 
         if not self.crs:
             raise RuntimeError("crs must be set to estimate UTM CRS.")
@@ -910,28 +907,21 @@ class GeometryArray(ExtensionArray):
         # ensure using geographic coordinates
         else:
             transformer = TransformerFromCRS(self.crs, "EPSG:4326", always_xy=True)
-            if compat.PYPROJ_GE_31:
-                minx, miny, maxx, maxy = transformer.transform_bounds(
-                    minx, miny, maxx, maxy
-                )
-                y_center = np.mean([miny, maxy])
-                # crossed the antimeridian
-                if minx > maxx:
-                    # shift maxx from [-180,180] to [0,360]
-                    # so both numbers are positive for center calculation
-                    # Example: -175 to 185
-                    maxx += 360
-                    x_center = np.mean([minx, maxx])
-                    # shift back to [-180,180]
-                    x_center = ((x_center + 180) % 360) - 180
-                else:
-                    x_center = np.mean([minx, maxx])
+            minx, miny, maxx, maxy = transformer.transform_bounds(
+                minx, miny, maxx, maxy
+            )
+            y_center = np.mean([miny, maxy])
+            # crossed the antimeridian
+            if minx > maxx:
+                # shift maxx from [-180,180] to [0,360]
+                # so both numbers are positive for center calculation
+                # Example: -175 to 185
+                maxx += 360
+                x_center = np.mean([minx, maxx])
+                # shift back to [-180,180]
+                x_center = ((x_center + 180) % 360) - 180
             else:
-                lon, lat = transformer.transform(
-                    (minx, maxx, minx, maxx), (miny, miny, maxy, maxy)
-                )
-                x_center = np.mean(lon)
-                y_center = np.mean(lat)
+                x_center = np.mean([minx, maxx])
 
         utm_crs_list = query_utm_crs_info(
             datum_name=datum_name,
