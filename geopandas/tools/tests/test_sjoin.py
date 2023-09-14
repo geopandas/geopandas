@@ -935,7 +935,7 @@ class TestNearest:
         ),
     )
     @pytest.mark.parametrize(
-        "max_distance,expected", [(None, [1, 1, 3, 3, 2]), (1.1, [3, 3, 1, 2])]
+        "max_distance,expected", [(None, [1, 3, 3, 1, 2]), (1.1, [3, 3, 1, 2])]
     )
     def test_sjoin_nearest_exclusive(self, max_distance, expected):
         geoms = shapely.points(np.arange(3), np.arange(3))
