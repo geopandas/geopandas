@@ -48,6 +48,10 @@ Notes on (optional) dependencies:
   listed dependencies have now changed to shapely 1.8.0, fiona 1.8.21, pyproj 3.3.0 and
   matplotlib 3.5.0 (#3001)
 
+Deprecations and compatibility notes:
+ - `geom_almost_equals()` methods have been deprecated and  
+   `geom_equals_exact()` should be used instead (#2604).
+
 ## Version 0.13.2 (Jun 6, 2023)
 
 Bug fix:
