@@ -1,6 +1,6 @@
 # Changelog
 
-## Version 0.14 (Sep 14, 2023)
+## Version 0.14 (Sep 15, 2023)
 
 GeoPandas will use Shapely 2.0 by default instead of PyGEOS when both Shapely >= 2.0 and
 PyGEOS are installed.  PyGEOS will continue to be used by default when PyGEOS is
@@ -48,7 +48,8 @@ Notes on (optional) dependencies:
   matplotlib 3.5.0 (#3001)
 
 Deprecations and compatibility notes:
- - `geom_almost_equals()` methods have been deprecated and  
+
+- `geom_almost_equals()` methods have been deprecated and
    `geom_equals_exact()` should be used instead (#2604).
 
 ## Version 0.13.2 (Jun 6, 2023)
