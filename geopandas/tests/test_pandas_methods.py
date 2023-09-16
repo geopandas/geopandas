@@ -1,5 +1,6 @@
 import os
 from packaging.version import Version
+import warnings
 
 import numpy as np
 from numpy.testing import assert_array_equal
@@ -657,10 +658,6 @@ def test_groupby_groups(df):
 
 
 @pytest.mark.skip_no_sindex
-@pytest.mark.skipif(
-    compat.PANDAS_GE_13 and not compat.PANDAS_GE_14,
-    reason="this was broken in pandas 1.3.5 (GH-2294)",
-)
 @pytest.mark.parametrize("crs", [None, "EPSG:4326"])
 def test_groupby_metadata(crs):
     # https://github.com/geopandas/geopandas/issues/2294
@@ -727,8 +724,20 @@ def test_apply_loc_len1(df):
 
 def test_apply_convert_dtypes_keyword(s):
     # ensure the convert_dtypes keyword is accepted
-    res = s.apply(lambda x: x, convert_dtype=True, args=())
+    if not compat.PANDAS_GE_21:
+        recorder = warnings.catch_warnings(record=True)
+    else:
+        recorder = pytest.warns()
+
+    with recorder as record:
+        res = s.apply(lambda x: x, convert_dtype=True, args=())
     assert_geoseries_equal(res, s)
+
+    if compat.PANDAS_GE_21:
+        assert len(record) == 1
+        assert "the convert_dtype parameter" in str(record[0].message)
+    else:
+        assert len(record) == 0
 
 
 @pytest.mark.parametrize("crs", [None, "EPSG:4326"])
@@ -816,7 +825,6 @@ def test_preserve_attrs(df):
     assert df3.attrs == attrs
 
 
-@pytest.mark.skipif(not compat.PANDAS_GE_12, reason="attrs introduced in pandas 1.0")
 def test_preserve_flags(df):
     # https://github.com/geopandas/geopandas/issues/1654
     df = df.set_flags(allows_duplicate_labels=False)

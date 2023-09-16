@@ -6,7 +6,6 @@ import warnings
 
 import numpy as np
 import pandas as pd
-import pyproj
 import shapely
 import shapely.geos
 
@@ -15,9 +14,6 @@ import shapely.geos
 # pandas compat
 # -----------------------------------------------------------------------------
 
-PANDAS_GE_115 = Version(pd.__version__) >= Version("1.1.5")
-PANDAS_GE_12 = Version(pd.__version__) >= Version("1.2.0")
-PANDAS_GE_13 = Version(pd.__version__) >= Version("1.3.0")
 PANDAS_GE_14 = Version(pd.__version__) >= Version("1.4.0rc0")
 PANDAS_GE_15 = Version(pd.__version__) >= Version("1.5.0")
 PANDAS_GE_20 = Version(pd.__version__) >= Version("2.0.0")
@@ -29,7 +25,6 @@ PANDAS_GE_21 = Version(pd.__version__) >= Version("2.1.0")
 # -----------------------------------------------------------------------------
 
 
-SHAPELY_GE_18 = Version(shapely.__version__) >= Version("1.8")
 SHAPELY_GE_182 = Version(shapely.__version__) >= Version("1.8.2")
 SHAPELY_GE_20 = Version(shapely.__version__) >= Version("2.0.0.dev0")
 SHAPELY_G_20a1 = Version(shapely.__version__) > Version("2.0a1")
@@ -253,6 +248,3 @@ except ImportError:
 # -----------------------------------------------------------------------------
 # pyproj compat
 # -----------------------------------------------------------------------------
-
-PYPROJ_GE_31 = Version(pyproj.__version__) >= Version("3.1")
-PYPROJ_GE_32 = Version(pyproj.__version__) >= Version("3.2")
