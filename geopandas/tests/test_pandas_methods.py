@@ -658,10 +658,6 @@ def test_groupby_groups(df):
 
 
 @pytest.mark.skip_no_sindex
-@pytest.mark.skipif(
-    compat.PANDAS_GE_13 and not compat.PANDAS_GE_14,
-    reason="this was broken in pandas 1.3.5 (GH-2294)",
-)
 @pytest.mark.parametrize("crs", [None, "EPSG:4326"])
 def test_groupby_metadata(crs):
     # https://github.com/geopandas/geopandas/issues/2294
@@ -829,7 +825,6 @@ def test_preserve_attrs(df):
     assert df3.attrs == attrs
 
 
-@pytest.mark.skipif(not compat.PANDAS_GE_12, reason="attrs introduced in pandas 1.0")
 def test_preserve_flags(df):
     # https://github.com/geopandas/geopandas/issues/1654
     df = df.set_flags(allows_duplicate_labels=False)

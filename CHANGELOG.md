@@ -7,8 +7,13 @@ PyGEOS are installed.  PyGEOS will continue to be used by default when PyGEOS is
 installed alongside Shapely < 2.0.  Support for PyGEOS and Shapely < 2.0 will be removed
 in GeoPandas 1.0.
 
+API changes:
+
+- ``seed`` keyword in ``sample_points`` is deprecated. Use ``rng`` instead. (#2913).
+
 New methods:
 
+- Added ``remove_repeated_points`` method from shapely to GeoSeries/GeoDataframe (#2940).
 - Added ``frechet_distance()`` method from shapely to GeoSeries/GeoDataframe (#2929).
 - Added ``segmentize`` method from shapely to GeoSeries/GeoDataFrame (#2910).
 - Added ``extract_unique_points`` method from shapely to GeoSeries/GeoDataframe (#2915).
@@ -18,11 +23,12 @@ New methods:
 - Added ``offset_curve`` method from shapely to GeoSeries/GeoDataframe (#2902).
 - Added ``shortest_line`` method from shapely to GeoSeries/GeoDataframe (#2960).
 - Added ``minimum_rotated_rectangle`` method from shapely to GeoSeries/GeoDataframe (#2541).
+- Added ``reverse`` method from shapely to GeoSeries/GeoDataframe (#2988).
 
 New features and improvements:
 
 - Added ``exclusive`` parameter to ``sjoin_nearest`` method for Shapely >= 2.0 (#2877)
-- The ``to_file()`` method will now automatically detect the FlatGeoBuf driver 
+- The ``to_file()`` method will now automatically detect the FlatGeoBuf driver
   for files with the `.fgb` extension (#2958)
 
 Bug fixes:
@@ -34,6 +40,13 @@ Bug fixes:
 - Fix bug in `apply` with `axis=1` where the given user defined function returns nested
   data in the geometry column (#2959)
 - Properly infer schema for np.int32 and pd.Int32Dtype columns (#2950)
+
+Notes on (optional) dependencies:
+
+- GeoPandas 0.14 drops support for Python 3.8 and pandas 1.3 and below (the minimum
+  supported pandas version is now 1.4). Further, the minimum required versions for the
+  listed dependencies have now changed to shapely 1.8.0, fiona 1.8.21, pyproj 3.3.0 and
+  matplotlib 3.5.0 (#3001)
 
 ## Version 0.13.2 (Jun 6, 2023)
 

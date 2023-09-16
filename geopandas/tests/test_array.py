@@ -948,9 +948,6 @@ def test_shift_has_crs():
     assert t.shift(-1).crs == t.crs
 
 
-@pytest.mark.skipif(
-    not compat.PANDAS_GE_115, reason="crs only preserved in unique after pandas 1.1.5"
-)
 def test_unique_has_crs():
     t = T.copy()
     t.crs = 4326
@@ -965,15 +962,13 @@ class TestEstimateUtmCrs:
 
     def test_estimate_utm_crs__geographic(self):
         assert self.landmarks.estimate_utm_crs() == CRS("EPSG:32618")
-        if compat.PYPROJ_GE_32:  # result is unstable in older pyproj
-            assert self.landmarks.estimate_utm_crs("NAD83") == CRS("EPSG:26918")
+        assert self.landmarks.estimate_utm_crs("NAD83") == CRS("EPSG:26918")
 
     def test_estimate_utm_crs__projected(self):
         assert self.landmarks.to_crs("EPSG:3857").estimate_utm_crs() == CRS(
             "EPSG:32618"
         )
 
-    @pytest.mark.skipif(not compat.PYPROJ_GE_31, reason="requires pyproj 3.1 or higher")
     def test_estimate_utm_crs__antimeridian(self):
         antimeridian = from_shapely(
             [
