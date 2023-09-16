@@ -1006,12 +1006,9 @@ class TestDataFrame:
         """
         left = read_file(geopandas.datasets.get_path("naturalearth_cities"))
         right = read_file(geopandas.datasets.get_path("naturalearth_lowres"))
+
         expected = geopandas.sjoin_nearest(
-            left,
-            right,
-            how=how,
-            max_distance=max_distance,
-            distance_col=distance_col,
+            left, right, how=how, max_distance=max_distance, distance_col=distance_col
         )
         result = left.sjoin_nearest(
             right, how=how, max_distance=max_distance, distance_col=distance_col
