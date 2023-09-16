@@ -23,8 +23,8 @@ from shapely import wkt
 from geopandas import GeoDataFrame, GeoSeries
 from geopandas.base import GeoPandasBase
 
-from geopandas.testing import assert_geodataframe_equal
-from geopandas.tests.util import assert_geoseries_equal, geom_almost_equals, geom_equals
+from geopandas.testing import assert_geodataframe_equal, geom_almost_equals
+from geopandas.tests.util import assert_geoseries_equal, geom_equals
 from geopandas import _compat as compat
 from pandas.testing import assert_frame_equal, assert_index_equal, assert_series_equal
 import pytest
@@ -1322,7 +1322,7 @@ class TestGeomMethods:
     def test_minimum_bounding_circle(self):
         mbc = self.g1.minimum_bounding_circle()
         centers = GeoSeries([Point(0.5, 0.5)] * 2)
-        assert np.all(mbc.centroid.geom_equals_exact(centers, 0.001))
+        assert np.all(mbc.centroid.geom_almost_equals(centers, 0.001))
         assert_series_equal(
             mbc.area,
             Series([1.560723, 1.560723]),
