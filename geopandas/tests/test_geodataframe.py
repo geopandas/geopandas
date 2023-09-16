@@ -2,7 +2,6 @@ import json
 import os
 import shutil
 import tempfile
-import warnings
 
 
 import numpy as np
@@ -999,6 +998,7 @@ class TestDataFrame:
             " test sjoin_nearest"
         ),
     )
+    @pytest.mark.filterwarnings("ignore:Geometry is in a geographic CRS:UserWarning")
     def test_sjoin_nearest(self, how, max_distance, distance_col):
         """
         Basic test for availability of the GeoDataFrame method. Other
@@ -1006,20 +1006,16 @@ class TestDataFrame:
         """
         left = read_file(geopandas.datasets.get_path("naturalearth_cities"))
         right = read_file(geopandas.datasets.get_path("naturalearth_lowres"))
-        with warnings.catch_warnings():
-            warnings.filterwarnings(
-                "ignore", "Geometry is in a geographic CRS", UserWarning
-            )
-            expected = geopandas.sjoin_nearest(
-                left,
-                right,
-                how=how,
-                max_distance=max_distance,
-                distance_col=distance_col,
-            )
-            result = left.sjoin_nearest(
-                right, how=how, max_distance=max_distance, distance_col=distance_col
-            )
+        expected = geopandas.sjoin_nearest(
+            left,
+            right,
+            how=how,
+            max_distance=max_distance,
+            distance_col=distance_col,
+        )
+        result = left.sjoin_nearest(
+            right, how=how, max_distance=max_distance, distance_col=distance_col
+        )
         assert_geodataframe_equal(result, expected)
 
     @pytest.mark.skip_no_sindex
