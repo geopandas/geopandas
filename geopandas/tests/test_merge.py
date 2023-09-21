@@ -1,6 +1,7 @@
 import warnings
 
 import pandas as pd
+import pyproj
 import pytest
 from geopandas.testing import assert_geodataframe_equal
 from pandas.testing import assert_index_equal
@@ -132,6 +133,54 @@ class TestMerging:
             partial_none_case = self.gdf[["geometry"]]
             partial_none_case.iloc[0] = None
             pd.concat([single_geom_col, partial_none_case])
+
+    def test_concat_axis0_crs_wkt_mismatch(self):
+        # https://github.com/geopandas/geopandas/issues/326#issuecomment-1727958475
+        wkt_v1 = """GEOGCRS["NAD83",DATUM["North American Datum 1983",ELLIPSOID["GRS
+        1980",6378137,298.257222101,LENGTHUNIT["metre",1]]],PRIMEM["Greenwich",0,
+        ANGLEUNIT["degree",0.0174532925199433]],CS[ellipsoidal,2],AXIS["geodetic
+        latitude (Lat)",north,ORDER[1],ANGLEUNIT["degree",0.0174532925199433]],
+        AXIS["geodetic longitude (Lon)",east,ORDER[2],ANGLEUNIT["degree",
+        0.0174532925199433]],USAGE[SCOPE["Geodesy."],AREA["North America - onshore
+        and offshore: Canada - Alberta; British Columbia; Manitoba; New Brunswick;
+        Newfoundland and Labrador; Northwest Territories; Nova Scotia; Nunavut;
+        Ontario; Prince Edward Island; Quebec; Saskatchewan; Yukon. Puerto Rico.
+        United States (USA) - Alabama; Alaska; Arizona; Arkansas; California;
+        Colorado; Connecticut; Delaware; Florida; Georgia; Hawaii; Idaho; Illinois;
+        Indiana; Iowa; Kansas; Kentucky; Louisiana; Maine; Maryland; Massachusetts;
+        Michigan; Minnesota; Mississippi; Missouri; Montana; Nebraska; Nevada; New
+        Hampshire; New Jersey; New Mexico; New York; North Carolina; North Dakota;
+        Ohio; Oklahoma; Oregon; Pennsylvania; Rhode Island; South Carolina; South
+        Dakota; Tennessee; Texas; Utah; Vermont; Virginia; Washington; West Virginia;
+        Wisconsin; Wyoming. US Virgin Islands.  British Virgin Islands."],BBOX[14.92,
+        167.65,86.46,-47.74]],ID["EPSG",4269]]"""
+        wkt_v2 = """GEOGCRS["NAD83",DATUM["North American Datum 1983",ELLIPSOID["GRS
+        1980",6378137,298.257222101,LENGTHUNIT["metre",1]]],PRIMEM["Greenwich",0,
+        ANGLEUNIT["degree",0.0174532925199433]],CS[ellipsoidal,2],AXIS["geodetic
+        latitude (Lat)",north,ORDER[1],ANGLEUNIT["degree",0.0174532925199433]],
+        AXIS["geodetic longitude (Lon)",east,ORDER[2],ANGLEUNIT["degree",
+        0.0174532925199433]],USAGE[SCOPE["Geodesy."],AREA["North America - onshore
+        and offshore: Canada - Alberta; British Columbia; Manitoba; New Brunswick;
+        Newfoundland and Labrador; Northwest Territories; Nova Scotia; Nunavut;
+        Ontario; Prince Edward Island; Quebec; Saskatchewan; Yukon. Puerto Rico.
+        United States (USA) - Alabama; Alaska; Arizona; Arkansas; California;
+        Colorado; Connecticut; Delaware; Florida; Georgia; Hawaii; Idaho; Illinois;
+        Indiana; Iowa; Kansas; Kentucky; Louisiana; Maine; Maryland; Massachusetts;
+        Michigan; Minnesota; Mississippi; Missouri; Montana; Nebraska; Nevada; New
+        Hampshire; New Jersey; New Mexico; New York; North Carolina; North Dakota;
+        Ohio; Oklahoma; Oregon; Pennsylvania; Rhode Island; South Carolina; South
+        Dakota; Tennessee; Texas; Utah; Vermont; Virginia; Washington; West Virginia;
+        Wisconsin; Wyoming. US Virgin Islands. British Virgin Islands."],BBOX[14.92,
+        167.65,86.46,-47.74]],ID["EPSG",4269]]"""
+        crs1 = pyproj.CRS.from_wkt(wkt_v1)
+        crs2 = pyproj.CRS.from_wkt(wkt_v2)
+        # pyproj crs __hash__ based on WKT strings means these are distinct in a
+        # set are but equal by equality
+        assert len({crs1, crs2}) == 2
+        assert crs1 == crs2
+        expected = pd.concat([self.gdf, self.gdf]).set_crs(crs1)
+        res = pd.concat([self.gdf.set_crs(crs1), self.gdf.set_crs(crs2)])
+        assert_geodataframe_equal(expected, res)
 
     def test_concat_axis1(self):
         res = pd.concat([self.gdf, self.df], axis=1)
