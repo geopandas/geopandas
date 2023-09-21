@@ -31,7 +31,7 @@ GeoPandas has three basic classes of geometric objects (which are actually *shap
 * Lines / Multi-Lines
 * Polygons / Multi-Polygons
 
-Note that all entries in  a :class:`GeoSeries` need not be of the same geometric type, although certain export operations will fail if this is not the case.
+Note that all entries in a :class:`GeoSeries` do not need to be of the same geometric type, although certain export operations will fail if this is not the case.
 
 Overview of attributes and methods
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
