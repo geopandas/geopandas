@@ -168,6 +168,62 @@ def to_shapely(geoms):
     return vectorized.to_shapely(geoms._data)
 
 
+def _get_common_crs_from_geometries(data, param_crs):
+    """
+    Get the CRS from the 'srid' attribute of data if possible.
+
+    Can read geoalchemy2's WKTElement and WKBElement.
+
+    Parameters
+    ----------
+    data : array-like or Series
+        Series, list, or array of WKT objects
+    param_crs : value
+        Coordinate Reference System of the geometry objects. Can be anything accepted by
+        :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
+        such as an authority string (eg "EPSG:4326") or a WKT string.
+    """
+    shared_crs = None
+    try:
+        len(data)
+    except TypeError:
+        raise TypeError(
+            "Input must be iterable (e.g. Series, list, array)"
+            f"found {type(data)} instead."
+        )
+    if len(data) == 0:
+        return None
+    if compat.USE_PYGEOS:
+        srid_getter = pygeos.get_srid
+    else:
+        srid_getter = shapely.get_srid
+    first_srid = srid_getter(data[0])
+    if all(first_srid == srid_getter(obj) for obj in data):
+        if first_srid > 0:
+            shared_crs = first_srid
+    else:
+        warnings.warn(
+            "Geometry elements do not agree on CRS. This may cause problems. "
+            "CRS could not be inferred from data.\n",
+            UserWarning,
+            stacklevel=4,
+        )
+        return None
+    if param_crs is not None and shared_crs is not None and param_crs != shared_crs:
+        warnings.warn(
+            f"The elements passed share a CRS, but it does not match the "
+            "CRS passed as parameter.\n\n"
+            f"CRS passed as parameter: {param_crs}.\n"
+            f"CRS from data:           {shared_crs}.\n"
+            "CRS could not be inferred from data.\n",
+            UserWarning,
+            stacklevel=4,
+        )
+        return None
+    else:
+        return shared_crs
+
+
 def from_wkb(data, crs=None):
     """
     Convert a list or array of WKB objects to a GeometryArray.
@@ -176,13 +232,18 @@ def from_wkb(data, crs=None):
     ----------
     data : array-like
         list or array of WKB objects
+        The 'srid' can be read from geoalchemy2's WKBElement.
     crs : value, optional
         Coordinate Reference System of the geometry objects. Can be anything accepted by
         :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
         such as an authority string (eg "EPSG:4326") or a WKT string.
 
     """
-    return GeometryArray(vectorized.from_wkb(data), crs=crs)
+    converted_data = vectorized.from_wkb(data)
+    shared_crs = _get_common_crs_from_geometries(converted_data, crs)
+    if shared_crs is not None:
+        crs = shared_crs
+    return GeometryArray(converted_data, crs=crs)
 
 
 def to_wkb(geoms, hex=False, **kwargs):
@@ -202,12 +263,17 @@ def from_wkt(data, crs=None):
     ----------
     data : array-like
         list or array of WKT objects
+        The 'srid' can be read from geoalchemy2's WKTElement.
     crs : value, optional
         Coordinate Reference System of the geometry objects. Can be anything accepted by
         :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
         such as an authority string (eg "EPSG:4326") or a WKT string.
 
     """
+    converted_data = vectorized.from_wkt(data)
+    shared_crs = _get_common_crs_from_geometries(converted_data, crs)
+    if shared_crs is not None:
+        crs = shared_crs
     return GeometryArray(vectorized.from_wkt(data), crs=crs)
 
 
