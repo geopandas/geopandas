@@ -774,9 +774,12 @@ def plot_dataframe(
         if "k" not in classification_kwds:
             classification_kwds["k"] = k
 
-        binning = mapclassify.classify(
-            np.asarray(values[~nan_idx]), scheme, **classification_kwds
-        )
+        if scheme == 'greedy':
+            binning = mapclassify.classify(
+                np.asarray(values[~nan_idx]), scheme, **classification_kwds
+            )
+        else:
+            raise ValueError("Scheme is not greedy")
         # set categorical to True for creating the legend
         categorical = True
         if legend_kwds is not None and "labels" in legend_kwds:
