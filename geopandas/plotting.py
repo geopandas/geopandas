@@ -774,7 +774,7 @@ def plot_dataframe(
         if "k" not in classification_kwds:
             classification_kwds["k"] = k
 
-        if scheme == 'greedy':
+        if scheme == "greedy":
             binning = mapclassify.classify(
                 np.asarray(values[~nan_idx]), scheme, **classification_kwds
             )
