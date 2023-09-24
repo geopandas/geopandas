@@ -578,6 +578,23 @@ def length(data):
         return _unary_op("length", data, null_value=np.nan)
 
 
+def count_coordinates(data):
+    if compat.USE_SHAPELY_20:
+        out = np.empty(len(data), dtype="int64")
+        with compat.ignore_shapely2_warnings():
+            out[:] = [shapely.count_coordinates(s) for s in data]
+        return out
+    elif compat.USE_PYGEOS:
+        out = np.empty(len(data), dtype="int64")
+        out[:] = [pygeos.count_coordinates(s) for s in data]
+        return out
+    else:
+        raise NotImplementedError(
+            f"shapely >= 2.0 or PyGEOS is required, "
+            f"version {shapely.__version__} is installed"
+        )
+
+
 #
 # Unary operations that return new geometries
 #

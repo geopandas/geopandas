@@ -499,6 +499,10 @@ class GeometryArray(ExtensionArray):
         self.check_geographic_crs(stacklevel=5)
         return vectorized.length(self._data)
 
+    @property
+    def count_coordinates(self):
+        return vectorized.count_coordinates(self._data)
+
     #
     # Unary operations that return new geometries
     #
