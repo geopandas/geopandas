@@ -1,5 +1,12 @@
 # Changelog
 
+## Development
+
+New methods:
+
+- Added ``is_ccw`` method from shapely to GeoSeries/GeoDataframe (#3027).
+
+
 ## Version 0.14 (Sep 15, 2023)
 
 GeoPandas will use Shapely 2.0 by default instead of PyGEOS when both Shapely >= 2.0 and
