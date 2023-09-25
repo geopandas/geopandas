@@ -391,6 +391,46 @@ GeometryCollection
         return _delegate_property("is_ring", self)
 
     @property
+    def is_ccw(self):
+        """Returns a ``Series`` of ``dtype('bool')`` with value ``True``
+        if a linestring or linearring is counterclockwise.
+
+        Note that there are no checks on whether lines are actually
+        closed and not self-intersecting, while this is a requirement
+        for ``is_ccw``. The recommended usage of this function for
+        linestrings is ``is_ccw(g) & is_simple(g)`` and for
+        linearrings ``is_ccw(g) & is_valid(g)``.
+
+        This function will return False for non-linear goemetries and for
+        lines with fewer than 4 points (including the closing point).
+
+        Examples
+        --------
+        >>> from shapely.geometry import LineString, LinearRing, Point
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         LinearRing([(0, 0), (0, 1), (1, 1), (0, 0)]),
+        ...         LinearRing([(0, 0), (1, 1), (0, 1), (0, 0)]),
+        ...         LineString([(0, 0), (1, 1), (0, 1)]),
+        ...         Point(3, 3)
+        ...     ]
+        ... )
+        >>> s
+        0    LINEARRING (0.00000 0.00000, 0.00000 1.00000, ...
+        1    LINEARRING (0.00000 0.00000, 1.00000 1.00000, ...
+        2    LINESTRING (0.00000 0.00000, 1.00000 1.00000, ...
+        3                              POINT (3.00000 3.00000)
+        dtype: geometry
+        >>> s.is_ccw
+        0    False
+        1     True
+        2    False
+        3    False
+        dtype: bool
+        """
+        return _delegate_property("is_ccw", self)
+
+    @property
     def has_z(self):
         """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
         features that have a z-component.

@@ -538,6 +538,15 @@ def is_closed(data):
         return _unary_op("is_closed", data, null_value=False)
 
 
+def is_ccw(data):
+    if compat.USE_SHAPELY_20:
+        return shapely.is_ccw(data)
+    elif compat.USE_PYGEOS:
+        return pygeos.is_ccw(data)
+    else:
+        return _unary_op("is_ccw", data, null_value=False)
+
+
 def has_z(data):
     if compat.USE_SHAPELY_20:
         return shapely.has_z(data)

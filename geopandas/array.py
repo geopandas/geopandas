@@ -484,6 +484,10 @@ class GeometryArray(ExtensionArray):
         return vectorized.is_closed(self._data)
 
     @property
+    def is_ccw(self):
+        return vectorized.is_ccw(self._data)
+
+    @property
     def has_z(self):
         return vectorized.has_z(self._data)
 
