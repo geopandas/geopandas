@@ -587,10 +587,7 @@ def count_coordinates(data):
         out[:] = [pygeos.count_coordinates(s) for s in data]
         return out
     else:
-        raise NotImplementedError(
-            f"shapely >= 2.0 or PyGEOS is required, "
-            f"version {shapely.__version__} is installed"
-        )
+        return _unary_op("count_coordinates", data, null_value=0)
 
 
 #
