@@ -1,23 +1,22 @@
-from packaging.version import Version
 import math
 from typing import Sequence
-from geopandas.testing import assert_geodataframe_equal
 
 import numpy as np
 import pandas as pd
+import shapely
 
 from shapely.geometry import Point, Polygon, GeometryCollection
 
 import geopandas
 import geopandas._compat as compat
 from geopandas import GeoDataFrame, GeoSeries, read_file, sjoin, sjoin_nearest
-from geopandas.testing import assert_geoseries_equal
+from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 
-from pandas.testing import assert_frame_equal
+from pandas.testing import assert_frame_equal, assert_series_equal
 import pytest
 
 
-TEST_NEAREST = compat.PYGEOS_GE_010 and compat.USE_PYGEOS
+TEST_NEAREST = compat.USE_SHAPELY_20 or (compat.PYGEOS_GE_010 and compat.USE_PYGEOS)
 
 
 pytestmark = pytest.mark.skip_no_sindex
@@ -112,7 +111,7 @@ class TestSpatialJoin:
         left = GeoDataFrame({"col": [1], "geometry": [Point(0, 0)]})
         right = GeoDataFrame({"col": [1], "geometry": [Point(0, 0)]})
         joined = sjoin(left, right, how=how, lsuffix=lsuffix, rsuffix=rsuffix)
-        assert set(joined.columns) == expected_cols | set(("geometry",))
+        assert set(joined.columns) == expected_cols | {"geometry"}
 
     @pytest.mark.parametrize("dfs", ["default-index", "string-index"], indirect=True)
     def test_crs_mismatch(self, dfs):
@@ -137,7 +136,7 @@ class TestSpatialJoin:
         if op != predicate:
             warntype = UserWarning
             match = (
-                "`predicate` will be overridden by the value of `op`"
+                "`predicate` will be overridden by the value of `op`"  # noqa: ISC003
                 + r"(.|\s)*"
                 + match
             )
@@ -263,7 +262,19 @@ class TestSpatialJoin:
         empty = sjoin(not_in, polygons, how="inner", predicate="intersects")
         assert empty.empty
 
-    @pytest.mark.parametrize("predicate", ["intersects", "contains", "within"])
+    @pytest.mark.parametrize(
+        "predicate",
+        [
+            "contains",
+            "contains_properly",
+            "covered_by",
+            "covers",
+            "crosses",
+            "intersects",
+            "touches",
+            "within",
+        ],
+    )
     @pytest.mark.parametrize(
         "empty",
         [
@@ -345,7 +356,7 @@ class TestSpatialJoin:
             exp = exp.set_index(["df2_ix1", "df2_ix2"])
 
         # GH 1364 fix of behaviour was done in pandas 1.1.0
-        if predicate == "within" and Version(pd.__version__) >= Version("1.1.0"):
+        if predicate == "within":
             exp = exp.sort_index()
 
         assert_frame_equal(res, exp, check_index_type=False)
@@ -550,7 +561,7 @@ class TestSpatialJoinNYBB:
         df = sjoin(self.pointdf, self.polydf, how="left")
         assert df.shape == (21, 8)
         for i, row in df.iterrows():
-            assert row.geometry.type == "Point"
+            assert row.geometry.geom_type == "Point"
         assert "pointattr1" in df.columns
         assert "BoroCode" in df.columns
 
@@ -561,9 +572,9 @@ class TestSpatialJoinNYBB:
         assert df.shape == (12, 8)
         assert df.shape == df2.shape
         for i, row in df.iterrows():
-            assert row.geometry.type == "MultiPolygon"
+            assert row.geometry.geom_type == "MultiPolygon"
         for i, row in df2.iterrows():
-            assert row.geometry.type == "MultiPolygon"
+            assert row.geometry.geom_type == "MultiPolygon"
 
     def test_sjoin_inner(self):
         df = sjoin(self.pointdf, self.polydf, how="inner")
@@ -677,9 +688,9 @@ class TestSpatialJoinNYBB:
     def test_sjoin_empty_geometries(self):
         # https://github.com/geopandas/geopandas/issues/944
         empty = GeoDataFrame(geometry=[GeometryCollection()] * 3)
-        df = sjoin(self.pointdf.append(empty), self.polydf, how="left")
+        df = sjoin(pd.concat([self.pointdf, empty]), self.polydf, how="left")
         assert df.shape == (24, 8)
-        df2 = sjoin(self.pointdf, self.polydf.append(empty), how="left")
+        df2 = sjoin(self.pointdf, pd.concat([self.polydf, empty]), how="left")
         assert df2.shape == (21, 8)
 
     @pytest.mark.parametrize("predicate", ["intersects", "within", "contains"])
@@ -692,7 +703,6 @@ class TestSpatialJoinNYBB:
         assert sjoin(empty, self.pointdf, how="left", predicate=predicate).empty
 
     def test_empty_sjoin_return_duplicated_columns(self):
-
         nybb = geopandas.read_file(geopandas.datasets.get_path("nybb"))
         nybb2 = nybb.copy()
         nybb2.geometry = nybb2.translate(200000)  # to get non-overlapping
@@ -717,7 +727,7 @@ class TestSpatialJoinNaturalEarth:
         cities_with_country = sjoin(
             self.cities, countries, how="inner", predicate="intersects"
         )
-        assert cities_with_country.shape == (172, 4)
+        assert cities_with_country.shape == (213, 4)
 
 
 @pytest.mark.skipif(
@@ -729,7 +739,7 @@ def test_no_nearest_all():
     df2 = geopandas.GeoDataFrame({"geometry": []})
     with pytest.raises(
         NotImplementedError,
-        match="Currently, only PyGEOS >= 0.10.0 supports `nearest_all`",
+        match="Currently, only PyGEOS >= 0.10.0 or Shapely >= 2.0 supports",
     ):
         sjoin_nearest(df1, df2)
 
@@ -925,14 +935,14 @@ class TestNearest:
                 [Point(1, 1), Point(0.25, 1)],
                 [0, 1],
                 [1, 0],
-                [math.sqrt(0.25 ** 2 + 1), 0],
+                [math.sqrt(0.25**2 + 1), 0],
             ),
             (
                 [Point(0, 0), Point(1, 1)],
                 [Point(-10, -10), Point(100, 100)],
                 [0, 1],
                 [0, 0],
-                [math.sqrt(10 ** 2 + 10 ** 2), math.sqrt(11 ** 2 + 11 ** 2)],
+                [math.sqrt(10**2 + 10**2), math.sqrt(11**2 + 11**2)],
             ),
             (
                 [Point(0, 0), Point(1, 1)],
@@ -946,7 +956,7 @@ class TestNearest:
                 [Point(1.1, 1.1), Point(0, 0)],
                 [0, 1, 2],
                 [1, 0, 1],
-                [0, np.sqrt(0.1 ** 2 + 0.1 ** 2), 0],
+                [0, np.sqrt(0.1**2 + 0.1**2), 0],
             ),
         ],
     )
@@ -1010,21 +1020,21 @@ class TestNearest:
                 [Point(-10, -10), Point(100, 100)],
                 [0, 1],
                 [0, 1],
-                [math.sqrt(10 ** 2 + 10 ** 2), math.sqrt(99 ** 2 + 99 ** 2)],
+                [math.sqrt(10**2 + 10**2), math.sqrt(99**2 + 99**2)],
             ),
             (
                 [Point(0, 0), Point(1, 1)],
                 [Point(x, y) for x, y in zip(np.arange(10), np.arange(10))],
                 [0, 1] + [1] * 8,
                 list(range(10)),
-                [0, 0] + [np.sqrt(x ** 2 + x ** 2) for x in np.arange(1, 9)],
+                [0, 0] + [np.sqrt(x**2 + x**2) for x in np.arange(1, 9)],
             ),
             (
                 [Point(0, 0), Point(1, 1), Point(0, 0)],
                 [Point(1.1, 1.1), Point(0, 0)],
                 [1, 0, 2],
                 [0, 1, 1],
-                [np.sqrt(0.1 ** 2 + 0.1 ** 2), 0, 0],
+                [np.sqrt(0.1**2 + 0.1**2), 0, 0],
             ),
         ],
     )
@@ -1076,3 +1086,31 @@ class TestNearest:
         result5 = result5.dropna()
         result5["index_right"] = result5["index_right"].astype("int64")
         assert_geodataframe_equal(result5, result4, check_like=True)
+
+    @pytest.mark.skipif(
+        not (compat.USE_SHAPELY_20),
+        reason=(
+            "shapely >= 2.0 is required to run sjoin_nearest"
+            "with parameter `exclusive` set"
+        ),
+    )
+    @pytest.mark.parametrize(
+        "max_distance,expected", [(None, [1, 1, 3, 3, 2]), (1.1, [3, 3, 1, 2])]
+    )
+    def test_sjoin_nearest_exclusive(self, max_distance, expected):
+        geoms = shapely.points(np.arange(3), np.arange(3))
+        geoms = np.append(geoms, [Point(1, 2)])
+
+        df = geopandas.GeoDataFrame({"geometry": geoms})
+        result = df.sjoin_nearest(
+            df, max_distance=max_distance, distance_col="dist", exclusive=True
+        )
+
+        assert_series_equal(
+            result["index_right"].reset_index(drop=True),
+            pd.Series(expected),
+            check_names=False,
+        )
+
+        if max_distance:
+            assert result["dist"].max() <= max_distance

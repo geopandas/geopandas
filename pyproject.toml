@@ -1,0 +1,201 @@
+[build-system]
+requires = ["setuptools>=61.0.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "geopandas"
+dynamic = ["version"]
+authors = [{ name = "Kelsey Jordahl", email = "kjordahl@alum.mit.edu" }]
+maintainers = [{ name = "GeoPandas contributors" }]
+license = { text = "BSD 3-Clause" }
+description = "Geographic pandas extensions"
+keywords = ["GIS", "cartography", "pandas", "shapely"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: BSD License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Topic :: Scientific/Engineering :: GIS",
+]
+requires-python = ">=3.9"
+dependencies = [
+    "fiona >= 1.8.21",
+    "packaging",
+    "pandas >= 1.4.0",
+    "pyproj >= 3.3.0",
+    "shapely >= 1.8.0",
+]
+
+[project.readme]
+text = """\
+GeoPandas is a project to add support for geographic data to
+`pandas`_ objects.
+
+The goal of GeoPandas is to make working with geospatial data in
+python easier. It combines the capabilities of `pandas`_ and `shapely`_,
+providing geospatial operations in pandas and a high-level interface
+to multiple geometries to shapely. GeoPandas enables you to easily do
+operations in python that would otherwise require a spatial database
+such as PostGIS.
+
+.. _pandas: https://pandas.pydata.org
+.. _shapely: https://shapely.readthedocs.io/en/latest/
+"""
+content-type = "text/x-rst"
+
+[project.urls]
+Home = "https://geopandas.org"
+Repository = "https://github.com/geopandas/geopandas"
+
+[tool.setuptools.packages.find]
+include = ["geopandas", "geopandas.*"]
+
+[tool.setuptools.package-data]
+geopandas = [
+    "datasets/nybb_16a.zip",
+    "datasets/naturalearth_cities/*",
+    "datasets/naturalearth_lowres/*",
+    "tests/data/*",
+]
+
+[tool.pytest.ini_options]
+markers = ["web: tests that need network connectivity"]
+xfail_strict = true
+
+filterwarnings = [
+    "ignore:distutils Version classes are deprecated.*:DeprecationWarning:pandas.*",
+    "ignore:distutils Version classes are deprecated.*:DeprecationWarning:numpy.*",
+    "ignore:The geopandas.dataset module is deprecated",
+]
+
+[tool.black]
+line-length = 88
+
+[tool.ruff]
+line-length = 88
+select = [
+    # pyflakes
+    "F",
+    # pycodestyle
+    "E",
+    "W",
+    # flake8-2020
+    "YTT",
+    # flake8-bugbear
+    "B",
+    # flake8-quotes
+    "Q",
+    # flake8-debugger
+    "T10",
+    # flake8-gettext
+    "INT",
+    # pylint
+    "PLC",
+    "PLE",
+    "PLR",
+    "PLW",
+    # misc lints
+    "PIE",
+    # flake8-pyi
+    "PYI",
+    # tidy imports
+    "TID",
+    # implicit string concatenation
+    "ISC",
+    # type-checking imports
+    "TCH",
+    # comprehensions
+    "C4",
+    # pygrep-hooks
+    "PGH",
+    # Ruff-specific rules
+    "RUF",
+]
+target-version = "py39"
+ignore = [ # space before : (needed for how black formats slicing)
+    # "E203",  # not yet implemented
+    # module level import not at top of file
+    "E402",
+    # do not assign a lambda expression, use a def
+    "E731",
+    # line break before binary operator
+    # "W503",  # not yet implemented
+    # line break after binary operator
+    # "W504",  # not yet implemented
+    # controversial
+    "B006",
+    # controversial
+    "B007",
+    # controversial
+    "B008",
+    # setattr is used to side-step mypy
+    "B009",
+    # getattr is used to side-step mypy
+    "B010",
+    # tests use assert False
+    "B011",
+    # tests use comparisons but not their returned value
+    "B015",
+    # false positives
+    "B019",
+    # Loop control variable overrides iterable it iterates
+    "B020",
+    # Function definition does not bind loop variable
+    "B023",
+    # Functions defined inside a loop must not use variables redefined in the loop
+    # "B301",  # not yet implemented
+    # Only works with python >=3.10
+    "B905",
+    # Too many arguments to function call
+    "PLR0913",
+    # Too many returns
+    "PLR0911",
+    # Too many branches
+    "PLR0912",
+    # Too many statements
+    "PLR0915",
+    # Redefined loop name
+    "PLW2901",
+    # Global statements are discouraged
+    "PLW0603",
+    # Docstrings should not be included in stubs
+    "PYI021",
+    # No builtin `eval()` allowed
+    "PGH001",
+    # compare-to-empty-string
+    "PLC1901",
+    # Use typing_extensions.TypeAlias for type aliases
+    # "PYI026",  # not yet implemented
+    # Use "collections.abc.*" instead of "typing.*" (PEP 585 syntax)
+    # "PYI027",  # not yet implemented
+    # while int | float can be shortened to float, the former is more explicit
+    # "PYI041",  # not yet implemented
+
+    # Additional checks that don't pass yet
+    # Useless statement
+    "B018",
+    # Within an except clause, raise exceptions with ...
+    "B904",
+    # Magic number
+    "PLR2004",
+    # Consider `elif` instead of `else` then `if` to remove indentation level
+    "PLR5501",
+    # ambiguous-unicode-character-string
+    "RUF001",
+    # ambiguous-unicode-character-docstring
+    "RUF002",
+    # ambiguous-unicode-character-comment
+    "RUF003",
+    # collection-literal-concatenation
+    "RUF005",
+    # pairwise-over-zipped (>=PY310 only)
+    "RUF007",
+    # explicit-f-string-type-conversion
+    "RUF010",
+]
+exclude = ["doc/*", "benchmarks/*", "versioneer.py", "geopandas/_version.py"]
+
+[tool.ruff.per-file-ignores]
+"geopandas/__init__.py" = ["F401"]

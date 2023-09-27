@@ -2,13 +2,13 @@ name: test
 channels:
   - conda-forge
 dependencies:
-  - python=3.7
+  - python=3.9
   # required
-  - pandas
-  - shapely
-  - fiona
-  - pyproj
-  - pygeos
+  - numpy=1.22
+  - pandas=1.4
+  - shapely=1.8.0
+  - fiona=1.8.21
+  - pyproj=3.3.0
   - packaging
   # testing
   - pytest
@@ -17,12 +17,10 @@ dependencies:
   - fsspec
   # optional
   - rtree
-  - matplotlib
-  - mapclassify
-  - folium
-  - xyzservices
-  - scipy
+  - matplotlib=3.5.0
+  - mapclassify=2.4.0
   - geopy
   - SQLalchemy
   - libspatialite
-  - pyarrow
+  - pyarrow=8.0.0
+  - geodatasets

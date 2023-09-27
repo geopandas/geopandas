@@ -3,6 +3,7 @@ import warnings
 import numpy as np
 import pandas as pd
 from pandas.plotting import PlotAccessor
+from pandas import CategoricalDtype
 
 import geopandas
 
@@ -11,14 +12,14 @@ from packaging.version import Version
 from ._decorator import doc
 
 
-def deprecated(new):
+def deprecated(new, warning_type=FutureWarning):
     """Helper to provide deprecation warning."""
 
     def old(*args, **kwargs):
         warnings.warn(
             "{} is intended for internal ".format(new.__name__[1:])
             + "use only, and will be deprecated.",
-            DeprecationWarning,
+            warning_type,
             stacklevel=2,
         )
         new(*args, **kwargs)
@@ -26,11 +27,12 @@ def deprecated(new):
     return old
 
 
-def _flatten_multi_geoms(geoms, prefix="Multi"):
+def _sanitize_geoms(geoms, prefix="Multi"):
     """
     Returns Series like geoms and index, except that any Multi geometries
     are split into their components and indices are repeated for all component
-    in the same Multi geometry.  Maintains 1:1 matching of geometry to value.
+    in the same Multi geometry. At the same time, empty or missing geometries are
+    filtered out.  Maintains 1:1 matching of geometry to value.
 
     Prefix specifies type of geometry to be flatten. 'Multi' for MultiPoint and similar,
     "Geom" for GeometryCollection.
@@ -42,16 +44,24 @@ def _flatten_multi_geoms(geoms, prefix="Multi"):
     component_index : index array
         indices are repeated for all components in the same Multi geometry
     """
+    # TODO(shapely) look into simplifying this with
+    # shapely.get_parts(geoms, return_index=True) from shapely 2.0
     components, component_index = [], []
 
-    if not geoms.geom_type.str.startswith(prefix).any():
+    if (
+        not geoms.geom_type.str.startswith(prefix).any()
+        and not geoms.is_empty.any()
+        and not geoms.isna().any()
+    ):
         return geoms, np.arange(len(geoms))
 
     for ix, geom in enumerate(geoms):
-        if geom is not None and geom.type.startswith(prefix) and not geom.is_empty:
+        if geom is not None and geom.geom_type.startswith(prefix) and not geom.is_empty:
             for poly in geom.geoms:
                 components.append(poly)
                 component_index.append(ix)
+        elif geom is None or geom.is_empty:
+            continue
         else:
             components.append(geom)
             component_index.append(ix)
@@ -71,7 +81,7 @@ def _expand_kwargs(kwargs, multiindex):
     from typing import Iterable
 
     mpl = Version(matplotlib.__version__)
-    if mpl >= Version("3.4") or (mpl > Version("3.3.2") and "+" in mpl):
+    if mpl >= Version("3.4"):
         # alpha is supported as array argument with matplotlib 3.4+
         scalar_kwargs = ["marker", "path_effects"]
     else:
@@ -154,7 +164,7 @@ def _plot_polygon_collection(
     """
     from matplotlib.collections import PatchCollection
 
-    geoms, multiindex = _flatten_multi_geoms(geoms)
+    geoms, multiindex = _sanitize_geoms(geoms)
     if values is not None:
         values = np.take(values, multiindex, axis=0)
 
@@ -171,9 +181,7 @@ def _plot_polygon_collection(
 
     _expand_kwargs(kwargs, multiindex)
 
-    collection = PatchCollection(
-        [_PolygonPatch(poly) for poly in geoms if not poly.is_empty], **kwargs
-    )
+    collection = PatchCollection([_PolygonPatch(poly) for poly in geoms], **kwargs)
 
     if values is not None:
         collection.set_array(np.asarray(values))
@@ -213,7 +221,7 @@ def _plot_linestring_collection(
     """
     from matplotlib.collections import LineCollection
 
-    geoms, multiindex = _flatten_multi_geoms(geoms)
+    geoms, multiindex = _sanitize_geoms(geoms)
     if values is not None:
         values = np.take(values, multiindex, axis=0)
 
@@ -283,7 +291,7 @@ def _plot_point_collection(
     if values is not None and color is not None:
         raise ValueError("Can only specify one of 'values' and 'color' kwargs")
 
-    geoms, multiindex = _flatten_multi_geoms(geoms)
+    geoms, multiindex = _sanitize_geoms(geoms)
     # values are expanded below as kwargs["c"]
 
     x = [p.x if not p.is_empty else None for p in geoms]
@@ -325,7 +333,7 @@ def plot_series(
     ----------
     s : Series
         The GeoSeries to be plotted. Currently Polygon,
-        MultiPolygon, LineString, MultiLineString and Point
+        MultiPolygon, LineString, MultiLineString, Point and MultiPoint
         geometries can be plotted.
     cmap : str (default None)
         The name of a colormap recognized by matplotlib. Any
@@ -335,7 +343,7 @@ def plot_series(
 
             tab10, tab20, Accent, Dark2, Paired, Pastel1, Set1, Set2
 
-    color : str (default None)
+    color : str, np.array, pd.Series, List (default None)
         If specified, all objects will be colored uniformly.
     ax : matplotlib.pyplot.Artist (default None)
         axes on which to draw the plot
@@ -364,6 +372,7 @@ def plot_series(
             "'colormap' is deprecated, please use 'cmap' instead "
             "(for consistency with matplotlib)",
             FutureWarning,
+            stacklevel=3,
         )
         cmap = style_kwds.pop("colormap")
     if "axes" in style_kwds:
@@ -371,6 +380,7 @@ def plot_series(
             "'axes' is deprecated, please use 'ax' instead "
             "(for consistency with pandas)",
             FutureWarning,
+            stacklevel=3,
         )
         ax = style_kwds.pop("axes")
 
@@ -403,6 +413,7 @@ def plot_series(
             "The GeoSeries you are attempting to plot is "
             "empty. Nothing has been displayed.",
             UserWarning,
+            stacklevel=3,
         )
         return ax
 
@@ -411,8 +422,12 @@ def plot_series(
             "The GeoSeries you are attempting to plot is "
             "composed of empty geometries. Nothing has been displayed.",
             UserWarning,
+            stacklevel=3,
         )
         return ax
+
+    # have colors been given for all geometries?
+    color_given = pd.api.types.is_list_like(color) and len(color) == len(s)
 
     # if cmap is specified, create range of colors based on cmap
     values = None
@@ -424,11 +439,15 @@ def plot_series(
         style_kwds["vmax"] = style_kwds.get("vmax", values.max())
 
     # decompose GeometryCollections
-    geoms, multiindex = _flatten_multi_geoms(s.geometry, prefix="Geom")
+    geoms, multiindex = _sanitize_geoms(s.geometry, prefix="Geom")
     values = np.take(values, multiindex, axis=0) if cmap else None
+    # ensure indexes are consistent
+    if color_given and isinstance(color, pd.Series):
+        color = color.reindex(s.index)
+    expl_color = np.take(color, multiindex, axis=0) if color_given else color
     expl_series = geopandas.GeoSeries(geoms)
 
-    geom_types = expl_series.type
+    geom_types = expl_series.geom_type
     poly_idx = np.asarray((geom_types == "Polygon") | (geom_types == "MultiPolygon"))
     line_idx = np.asarray(
         (geom_types == "LineString")
@@ -443,8 +462,9 @@ def plot_series(
         # color overrides both face and edgecolor. As we want people to be
         # able to use edgecolor as well, pass color to facecolor
         facecolor = style_kwds.pop("facecolor", None)
+        color_ = expl_color[poly_idx] if color_given else color
         if color is not None:
-            facecolor = color
+            facecolor = color_
 
         values_ = values[poly_idx] if cmap else None
         _plot_polygon_collection(
@@ -455,16 +475,20 @@ def plot_series(
     lines = expl_series[line_idx]
     if not lines.empty:
         values_ = values[line_idx] if cmap else None
+        color_ = expl_color[line_idx] if color_given else color
+
         _plot_linestring_collection(
-            ax, lines, values_, color=color, cmap=cmap, **style_kwds
+            ax, lines, values_, color=color_, cmap=cmap, **style_kwds
         )
 
     # plot all Points in the same collection
     points = expl_series[point_idx]
     if not points.empty:
         values_ = values[point_idx] if cmap else None
+        color_ = expl_color[point_idx] if color_given else color
+
         _plot_point_collection(
-            ax, points, values_, color=color, cmap=cmap, **style_kwds
+            ax, points, values_, color=color_, cmap=cmap, **style_kwds
         )
 
     plt.draw()
@@ -508,23 +532,23 @@ def plot_dataframe(
         dataframe. Values are used to color the plot. Ignored if `color` is
         also set.
     kind: str
-        The kind of plots to produce:
-         - 'geo': Map (default)
-         Pandas Kinds
-         - 'line' : line plot
-         - 'bar' : vertical bar plot
-         - 'barh' : horizontal bar plot
-         - 'hist' : histogram
-         - 'box' : BoxPlot
-         - 'kde' : Kernel Density Estimation plot
-         - 'density' : same as 'kde'
-         - 'area' : area plot
-         - 'pie' : pie plot
-         - 'scatter' : scatter plot
-         - 'hexbin' : hexbin plot.
+        The kind of plots to produce. The default is to create a map ("geo").
+        Other supported kinds of plots from pandas:
+
+        - 'line' : line plot
+        - 'bar' : vertical bar plot
+        - 'barh' : horizontal bar plot
+        - 'hist' : histogram
+        - 'box' : BoxPlot
+        - 'kde' : Kernel Density Estimation plot
+        - 'density' : same as 'kde'
+        - 'area' : area plot
+        - 'pie' : pie plot
+        - 'scatter' : scatter plot
+        - 'hexbin' : hexbin plot.
     cmap : str (default None)
         The name of a colormap recognized by matplotlib.
-    color : str (default None)
+    color : str, np.array, pd.Series (default None)
         If specified, all objects will be colored uniformly.
     ax : matplotlib.pyplot.Artist (default None)
         axes on which to draw the plot
@@ -606,22 +630,17 @@ def plot_dataframe(
 
     Examples
     --------
-    >>> df = geopandas.read_file(geopandas.datasets.get_path("naturalearth_lowres"))
+    >>> import geodatasets
+    >>> df = geopandas.read_file(geodatasets.get_path("nybb"))
     >>> df.head()  # doctest: +SKIP
-        pop_est      continent                      name iso_a3  \
-gdp_md_est                                           geometry
-    0     920938        Oceania                      Fiji    FJI      8374.0  MULTIPOLY\
-GON (((180.00000 -16.06713, 180.00000...
-    1   53950935         Africa                  Tanzania    TZA    150600.0  POLYGON (\
-(33.90371 -0.95000, 34.07262 -1.05982...
-    2     603253         Africa                 W. Sahara    ESH       906.5  POLYGON (\
-(-8.66559 27.65643, -8.66512 27.58948...
-    3   35623680  North America                    Canada    CAN   1674000.0  MULTIPOLY\
-GON (((-122.84000 49.00000, -122.9742...
-    4  326625791  North America  United States of America    USA  18560000.0  MULTIPOLY\
-GON (((-122.84000 49.00000, -120.0000...
+       BoroCode  ...                                           geometry
+    0         5  ...  MULTIPOLYGON (((970217.022 145643.332, 970227....
+    1         4  ...  MULTIPOLYGON (((1029606.077 156073.814, 102957...
+    2         3  ...  MULTIPOLYGON (((1021176.479 151374.797, 102100...
+    3         1  ...  MULTIPOLYGON (((981219.056 188655.316, 980940....
+    4         2  ...  MULTIPOLYGON (((1012821.806 229228.265, 101278...
 
-    >>> df.plot("pop_est", cmap="Blues")  # doctest: +SKIP
+    >>> df.plot("BoroName", cmap="Set1")  # doctest: +SKIP
 
     See the User Guide page :doc:`../../user_guide/mapping` for details.
 
@@ -631,6 +650,7 @@ GON (((-122.84000 49.00000, -120.0000...
             "'colormap' is deprecated, please use 'cmap' instead "
             "(for consistency with matplotlib)",
             FutureWarning,
+            stacklevel=3,
         )
         cmap = style_kwds.pop("colormap")
     if "axes" in style_kwds:
@@ -638,11 +658,14 @@ GON (((-122.84000 49.00000, -120.0000...
             "'axes' is deprecated, please use 'ax' instead "
             "(for consistency with pandas)",
             FutureWarning,
+            stacklevel=3,
         )
         ax = style_kwds.pop("axes")
     if column is not None and color is not None:
         warnings.warn(
-            "Only specify one of 'column' or 'color'. Using 'color'.", UserWarning
+            "Only specify one of 'column' or 'color'. Using 'color'.",
+            UserWarning,
+            stacklevel=3,
         )
         column = None
 
@@ -682,6 +705,7 @@ GON (((-122.84000 49.00000, -120.0000...
             "The GeoDataFrame you are attempting to plot is "
             "empty. Nothing has been displayed.",
             UserWarning,
+            stacklevel=3,
         )
         return ax
 
@@ -715,13 +739,18 @@ GON (((-122.84000 49.00000, -120.0000...
     else:
         values = df[column]
 
-    if pd.api.types.is_categorical_dtype(values.dtype):
+    if isinstance(values.dtype, CategoricalDtype):
         if categories is not None:
             raise ValueError(
                 "Cannot specify 'categories' when column has categorical dtype"
             )
         categorical = True
-    elif values.dtype is np.dtype("O") or categories:
+    elif (
+        pd.api.types.is_object_dtype(values.dtype)
+        or pd.api.types.is_bool_dtype(values.dtype)
+        or pd.api.types.is_string_dtype(values.dtype)
+        or categories
+    ):
         categorical = True
 
     nan_idx = np.asarray(pd.isna(values), dtype="bool")
@@ -812,12 +841,12 @@ GON (((-122.84000 49.00000, -120.0000...
     mx = values[~np.isnan(values)].max() if vmax is None else vmax
 
     # decompose GeometryCollections
-    geoms, multiindex = _flatten_multi_geoms(df.geometry, prefix="Geom")
+    geoms, multiindex = _sanitize_geoms(df.geometry, prefix="Geom")
     values = np.take(values, multiindex, axis=0)
     nan_idx = np.take(nan_idx, multiindex, axis=0)
     expl_series = geopandas.GeoSeries(geoms)
 
-    geom_types = expl_series.type
+    geom_types = expl_series.geom_type
     poly_idx = np.asarray((geom_types == "Polygon") | (geom_types == "MultiPolygon"))
     line_idx = np.asarray(
         (geom_types == "LineString")
@@ -872,7 +901,6 @@ GON (((-122.84000 49.00000, -120.0000...
         plot_series(expl_series[nan_idx], ax=ax, **merged_kwds)
 
     if legend and not color:
-
         if legend_kwds is None:
             legend_kwds = {}
         if "fmt" in legend_kwds:
@@ -924,9 +952,10 @@ GON (((-122.84000 49.00000, -120.0000...
                 categories.append(merged_kwds.get("label", "NaN"))
             legend_kwds.setdefault("numpoints", 1)
             legend_kwds.setdefault("loc", "best")
-            ax.legend(patches, categories, **legend_kwds)
+            legend_kwds.setdefault("handles", patches)
+            legend_kwds.setdefault("labels", categories)
+            ax.legend(**legend_kwds)
         else:
-
             if cax is not None:
                 legend_kwds.setdefault("cax", cax)
             else:
@@ -941,7 +970,6 @@ GON (((-122.84000 49.00000, -120.0000...
 
 @doc(plot_dataframe)
 class GeoplotAccessor(PlotAccessor):
-
     _pandas_kinds = PlotAccessor._all_kinds
 
     def __call__(self, *args, **kwargs):
@@ -957,4 +985,4 @@ class GeoplotAccessor(PlotAccessor):
             raise ValueError(f"{kind} is not a valid plot kind")
 
     def geo(self, *args, **kwargs):
-        return self(kind="geo", *args, **kwargs)
+        return self(kind="geo", *args, **kwargs)  # noqa: B026

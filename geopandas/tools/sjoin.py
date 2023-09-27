@@ -47,44 +47,41 @@ def sjoin(
 
     Examples
     --------
-    >>> countries = geopandas.read_file(geopandas.datasets.get_\
-path("naturalearth_lowres"))
-    >>> cities = geopandas.read_file(geopandas.datasets.get_path("naturalearth_cities"))
-    >>> countries.head()  # doctest: +SKIP
-        pop_est      continent                      name \
-iso_a3  gdp_md_est                                           geometry
-    0     920938        Oceania                      Fiji    FJI      8374.0  MULTIPOLY\
-GON (((180.00000 -16.06713, 180.00000...
-    1   53950935         Africa                  Tanzania    TZA    150600.0  POLYGON (\
-(33.90371 -0.95000, 34.07262 -1.05982...
-    2     603253         Africa                 W. Sahara    ESH       906.5  POLYGON (\
-(-8.66559 27.65643, -8.66512 27.58948...
-    3   35623680  North America                    Canada    CAN   1674000.0  MULTIPOLY\
-GON (((-122.84000 49.00000, -122.9742...
-    4  326625791  North America  United States of America    USA  18560000.0  MULTIPOLY\
-GON (((-122.84000 49.00000, -120.0000...
-    >>> cities.head()
-            name                   geometry
-    0  Vatican City  POINT (12.45339 41.90328)
-    1    San Marino  POINT (12.44177 43.93610)
-    2         Vaduz   POINT (9.51667 47.13372)
-    3    Luxembourg   POINT (6.13000 49.61166)
-    4       Palikir  POINT (158.14997 6.91664)
+    >>> import geodatasets
+    >>> chicago = geopandas.read_file(
+    ...     geodatasets.get_path("geoda.chicago_health")
+    ... )
+    >>> groceries = geopandas.read_file(
+    ...     geodatasets.get_path("geoda.groceries")
+    ... ).to_crs(chicago.crs)
 
-    >>> cities_w_country_data = geopandas.sjoin(cities, countries)
-    >>> cities_w_country_data.head()  # doctest: +SKIP
-            name_left                   geometry  index_right   pop_est continent name_\
-right iso_a3  gdp_md_est
-    0    Vatican City  POINT (12.45339 41.90328)          141  62137802    Europe      \
-Italy    ITA   2221000.0
-    1      San Marino  POINT (12.44177 43.93610)          141  62137802    Europe      \
-Italy    ITA   2221000.0
-    192          Rome  POINT (12.48131 41.89790)          141  62137802    Europe      \
-Italy    ITA   2221000.0
-    2           Vaduz   POINT (9.51667 47.13372)          114   8754413    Europe    Au\
-stria    AUT    416600.0
-    184        Vienna  POINT (16.36469 48.20196)          114   8754413    Europe    Au\
-stria    AUT    416600.0
+    >>> chicago.head()  # doctest: +SKIP
+        ComAreaID  ...                                           geometry
+    0         35  ...  POLYGON ((-87.60914 41.84469, -87.60915 41.844...
+    1         36  ...  POLYGON ((-87.59215 41.81693, -87.59231 41.816...
+    2         37  ...  POLYGON ((-87.62880 41.80189, -87.62879 41.801...
+    3         38  ...  POLYGON ((-87.60671 41.81681, -87.60670 41.816...
+    4         39  ...  POLYGON ((-87.59215 41.81693, -87.59215 41.816...
+    [5 rows x 87 columns]
+
+    >>> groceries.head()  # doctest: +SKIP
+        OBJECTID     Ycoord  ...  Category                         geometry
+    0        16  41.973266  ...       NaN  MULTIPOINT (-87.65661 41.97321)
+    1        18  41.696367  ...       NaN  MULTIPOINT (-87.68136 41.69713)
+    2        22  41.868634  ...       NaN  MULTIPOINT (-87.63918 41.86847)
+    3        23  41.877590  ...       new  MULTIPOINT (-87.65495 41.87783)
+    4        27  41.737696  ...       NaN  MULTIPOINT (-87.62715 41.73623)
+    [5 rows x 8 columns]
+
+    >>> groceries_w_communities = geopandas.sjoin(groceries, chicago)
+    >>> groceries_w_communities.head()  # doctest: +SKIP
+            OBJECTID     Ycoord     Xcoord  ... GonorrF GonorrM Tuberc
+    0          16  41.973266 -87.657073  ...   170.8   468.7   13.6
+    87        365  41.961707 -87.654058  ...   170.8   468.7   13.6
+    90        373  41.963131 -87.656352  ...   170.8   468.7   13.6
+    140       582  41.969131 -87.674882  ...   170.8   468.7   13.6
+    1          18  41.696367 -87.681315  ...   800.5   741.1    2.6
+    [5 rows x 95 columns]
 
     See also
     --------
@@ -92,7 +89,7 @@ stria    AUT    416600.0
     GeoDataFrame.sjoin : equivalent method
 
     Notes
-    ------
+    -----
     Every operation in GeoPandas is planar, i.e. the potential third
     dimension is not taken into account.
     """
@@ -206,7 +203,7 @@ def _geom_predicate_query(left_df, right_df, predicate):
             input_geoms = left_df.geometry
 
     if sindex:
-        l_idx, r_idx = sindex.query_bulk(input_geoms, predicate=predicate, sort=False)
+        l_idx, r_idx = sindex.query(input_geoms, predicate=predicate, sort=False)
         indices = pd.DataFrame({"_key_left": l_idx, "_key_right": r_idx})
     else:
         # when sindex is empty / has no valid geometries
@@ -425,12 +422,14 @@ def _nearest_query(
     max_distance: float,
     how: str,
     return_distance: bool,
+    exclusive: bool,
 ):
-    if not (compat.PYGEOS_GE_010 and compat.USE_PYGEOS):
+    if not (compat.USE_SHAPELY_20 or (compat.USE_PYGEOS and compat.PYGEOS_GE_010)):
         raise NotImplementedError(
-            "Currently, only PyGEOS >= 0.10.0 supports `nearest_all`. "
-            + compat.INSTALL_PYGEOS_ERROR
+            "Currently, only PyGEOS >= 0.10.0 or Shapely >= 2.0 supports "
+            "`nearest_all`. " + compat.INSTALL_PYGEOS_ERROR
         )
+
     # use the opposite of the join direction for the index
     use_left_as_sindex = how == "right"
     if use_left_as_sindex:
@@ -445,6 +444,7 @@ def _nearest_query(
             return_all=True,
             max_distance=max_distance,
             return_distance=return_distance,
+            exclusive=exclusive,
         )
         if return_distance:
             (input_idx, tree_idx), distances = res
@@ -478,6 +478,7 @@ def sjoin_nearest(
     lsuffix: str = "left",
     rsuffix: str = "right",
     distance_col: Optional[str] = None,
+    exclusive: bool = False,
 ) -> GeoDataFrame:
     """Spatial join of two GeoDataFrames based on the distance between their geometries.
 
@@ -515,56 +516,70 @@ def sjoin_nearest(
     distance_col : string, default None
         If set, save the distances computed between matching geometries under a
         column of this name in the joined GeoDataFrame.
+    exclusive : bool, default False
+        If True, the nearest geometries that are equal to the input geometry
+        will not be returned, default False.
+        Requires Shapely >= 2.0.
 
     Examples
     --------
-    >>> countries = geopandas.read_file(geopandas.datasets.get_\
-path("naturalearth_lowres"))
-    >>> cities = geopandas.read_file(geopandas.datasets.get_path("naturalearth_cities"))
-    >>> countries.head(2).name  # doctest: +SKIP
-        pop_est      continent                      name \
-iso_a3  gdp_md_est                                           geometry
-    0     920938        Oceania                      Fiji    FJI      8374.0  MULTIPOLY\
-GON (((180.00000 -16.06713, 180.00000...
-    1   53950935         Africa                  Tanzania    TZA    150600.0  POLYGON (\
-(33.90371 -0.95000, 34.07262 -1.05982...
-    >>> cities.head(2).name  # doctest: +SKIP
-            name                   geometry
-    0  Vatican City  POINT (12.45339 41.90328)
-    1    San Marino  POINT (12.44177 43.93610)
+    >>> import geodatasets
+    >>> groceries = geopandas.read_file(
+    ...     geodatasets.get_path("geoda.groceries")
+    ... )
+    >>> chicago = geopandas.read_file(
+    ...     geodatasets.get_path("geoda.chicago_health")
+    ... ).to_crs(groceries.crs)
 
-    >>> cities_w_country_data = geopandas.sjoin_nearest(cities, countries)
-    >>> cities_w_country_data[['name_left', 'name_right']].head(2)  # doctest: +SKIP
-            name_left                   geometry  index_right   pop_est continent name_\
-right iso_a3  gdp_md_est
-    0    Vatican City  POINT (12.45339 41.90328)          141  62137802    Europe      \
-Italy    ITA   2221000.0
-    1      San Marino  POINT (12.44177 43.93610)          141  62137802    Europe      \
-Italy    ITA   2221000.0
+    >>> chicago.head()  # doctest: +SKIP
+        ComAreaID  ...                                           geometry
+    0         35  ...  POLYGON ((-87.60914 41.84469, -87.60915 41.844...
+    1         36  ...  POLYGON ((-87.59215 41.81693, -87.59231 41.816...
+    2         37  ...  POLYGON ((-87.62880 41.80189, -87.62879 41.801...
+    3         38  ...  POLYGON ((-87.60671 41.81681, -87.60670 41.816...
+    4         39  ...  POLYGON ((-87.59215 41.81693, -87.59215 41.816...
+    [5 rows x 87 columns]
+
+    >>> groceries.head()  # doctest: +SKIP
+        OBJECTID     Ycoord  ...  Category                         geometry
+    0        16  41.973266  ...       NaN  MULTIPOINT (-87.65661 41.97321)
+    1        18  41.696367  ...       NaN  MULTIPOINT (-87.68136 41.69713)
+    2        22  41.868634  ...       NaN  MULTIPOINT (-87.63918 41.86847)
+    3        23  41.877590  ...       new  MULTIPOINT (-87.65495 41.87783)
+    4        27  41.737696  ...       NaN  MULTIPOINT (-87.62715 41.73623)
+    [5 rows x 8 columns]
+
+    >>> groceries_w_communities = geopandas.sjoin_nearest(groceries, chicago)
+    >>> groceries_w_communities[["Chain", "community", "geometry"]].head(2)
+                    Chain community                              geometry
+    0   VIET HOA PLAZA    UPTOWN  MULTIPOINT (1168268.672 1933554.350)
+    87      JEWEL OSCO    UPTOWN  MULTIPOINT (1168837.980 1929246.962)
+
 
     To include the distances:
 
-    >>> cities_w_country_data = geopandas.sjoin_nearest\
-(cities, countries, distance_col="distances")
-    >>> cities_w_country_data[["name_left", "name_right", \
+    >>> groceries_w_communities = geopandas.sjoin_nearest(groceries, chicago, \
+distance_col="distances")
+    >>> groceries_w_communities[["Chain", "community", \
 "distances"]].head(2)  # doctest: +SKIP
-            name_left name_right distances
-    0    Vatican City      Italy       0.0
-    1      San Marino      Italy       0.0
+                    Chain community  distances
+    0   VIET HOA PLAZA    UPTOWN        0.0
+    87      JEWEL OSCO    UPTOWN        0.0
 
-    In the following example, we get multiple cities for Italy because all results are
-    equidistant (in this case zero because they intersect).
-    In fact, we get 3 results in total:
+    In the following example, we get multiple groceries for Uptown because all
+    results are equidistant (in this case zero because they intersect).
+    In fact, we get 4 results in total:
 
-    >>> countries_w_city_data = geopandas.sjoin_nearest\
-(cities, countries, distance_col="distances", how="right")
-    >>> italy_results = \
-countries_w_city_data[countries_w_city_data["name_left"] == "Italy"]
-    >>> italy_results  # doctest: +SKIP
-         name_x        name_y
-    141  Vatican City  Italy
-    141    San Marino  Italy
-    141          Rome  Italy
+    >>> chicago_w_groceries = geopandas.sjoin_nearest(groceries, chicago, \
+distance_col="distances", how="right")
+    >>> uptown_results = \
+chicago_w_groceries[chicago_w_groceries["community"] == "UPTOWN"]
+    >>> uptown_results[["Chain", "community"]]  # doctest: +SKIP
+                Chain community
+    30  VIET HOA PLAZA    UPTOWN
+    30      JEWEL OSCO    UPTOWN
+    30          TARGET    UPTOWN
+    30       Mariano's    UPTOWN
 
     See also
     --------
@@ -586,7 +601,9 @@ countries_w_city_data[countries_w_city_data["name_left"] == "Italy"]
 
     return_distance = distance_col is not None
 
-    join_df = _nearest_query(left_df, right_df, max_distance, how, return_distance)
+    join_df = _nearest_query(
+        left_df, right_df, max_distance, how, return_distance, exclusive
+    )
 
     if return_distance:
         join_df = join_df.rename(columns={"distances": distance_col})

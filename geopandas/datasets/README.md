@@ -1,7 +1,7 @@
 # Datasets included with geopandas
 
 - `'nybb'`: Borough boundaries of New York City, data provided Department of City Planning (DCP), https://data.cityofnewyork.us/City-Government/Borough-Boundaries/tqmj-j8zm
-- `'naturalearth_cities'`: capital cities, based on http://www.naturalearthdata.com/downloads/10m-cultural-vectors/10m-populated-places/
+- `'naturalearth_cities'`: capital cities, based on http://www.naturalearthdata.com/downloads/10m-cultural-vectors/110m-populated-places/
 - `'naturalearth_lowres'`: country boundaries, based on http://www.naturalearthdata.com/downloads/110m-cultural-vectors/110m-admin-0-countries/
 
 
@@ -25,4 +25,9 @@ Department of City Planning.
 
 This dataset is being provided by the Department of City Planning (DCP) on DCP’s website for informational purposes only. DCP does not warranty the completeness, accuracy, content, or fitness for any particular purpose or use of the dataset, nor are any such warranties to be implied or inferred with respect to the dataset as furnished on the website. DCP and the City are not liable for any deficiencies in the completeness, accuracy, content, or fitness for any particular purpose or use the dataset, or applications utilizing the dataset, provided by any third party.
 
+### `naturalearth_lowres`
 
+#### Notes
+
+- `gdp_md_est` is `GDP_MD` in source data set
+- `iso_a3` have been overridden with `ADM0_A3` if source value was **-99** and row corresponds to **Sovereign country**,  or **Country** 
