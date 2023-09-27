@@ -1,3 +1,5 @@
+from typing import Literal, get_args
+
 from packaging.version import Version
 import json
 import warnings
@@ -13,7 +15,8 @@ import geopandas
 from .file import _expand_user
 
 METADATA_VERSION = "1.0.0-beta.1"
-SUPPORTED_VERSIONS = ["0.1.0", "0.4.0", "1.0.0-beta.1"]
+SUPPORTED_VERSIONS_LITERAL = Literal["0.1.0", "0.4.0", "1.0.0-beta.1"]
+SUPPORTED_VERSIONS = list(get_args(SUPPORTED_VERSIONS_LITERAL))
 # reference: https://github.com/opengeospatial/geoparquet
 
 # Metadata structure:
