@@ -490,10 +490,6 @@ class PyGEOSSTRTreeIndex(BaseSpatialIndex):
             return geometry
         elif geometry is None:
             return None
-        elif isinstance(geometry, list):
-            return np.asarray(
-                [el if isinstance(el, BaseGeometry) else el for el in geometry]
-            )
         else:
             return np.asarray(geometry)
 
