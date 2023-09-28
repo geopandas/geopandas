@@ -79,8 +79,7 @@ def _geom_almost_equals_mask(this, that):
 
     Parameters
     ----------
-    this, that : arrays of Geo objects (or anything that has an `is_empty`
-                 property)
+    this, that : arrays of Geo objects
 
     Returns
     -------
@@ -89,7 +88,7 @@ def _geom_almost_equals_mask(this, that):
     """
 
     return (
-        this.geom_almost_equals(that)
+        this.geom_equals_exact(that, tolerance=0.5 * 10 ** (-6))
         | (this.is_empty & that.is_empty)
         | (_isna(this) & _isna(that))
     )
@@ -113,6 +112,9 @@ def geom_almost_equals(this, that):
     bool
         True if all geometries in left almost equal geometries in right
     """
+    if isinstance(this, GeoDataFrame) and isinstance(that, GeoDataFrame):
+        this = this.geometry
+        that = that.geometry
 
     return _geom_almost_equals_mask(this, that).all()
 
@@ -143,7 +145,8 @@ def assert_geoseries_equal(
         Check that both are same type (*and* are GeoSeries). If False,
         will attempt to convert both into GeoSeries.
     check_less_precise : bool, default False
-        If True, use geom_almost_equals. if False, use geom_equals.
+        If True, use geom_equals_exact with relative error of 0.5e-6.
+        If False, use geom_equals.
     check_geom_type : bool, default False
         If True, check that all the geom types are equal.
     check_crs: bool, default True
@@ -152,7 +155,7 @@ def assert_geoseries_equal(
     normalize: bool, default False
         If True, normalize the geometries before comparing equality.
         Typically useful with ``check_less_precise=True``, which uses
-        ``geom_almost_equals`` and requires exact coordinate order.
+        ``geom_equals_exact`` and requires exact coordinate order.
     """
     assert len(left) == len(right), "%d != %d" % (len(left), len(right))
 
@@ -264,7 +267,7 @@ def assert_geodataframe_equal(
     check_like : bool, default False
         If true, ignore the order of rows & columns
     check_less_precise : bool, default False
-        If True, use geom_almost_equals. if False, use geom_equals.
+        If True, use geom_equals_exact. if False, use geom_equals.
     check_geom_type : bool, default False
         If True, check that all the geom types are equal.
     check_crs: bool, default True
@@ -273,7 +276,7 @@ def assert_geodataframe_equal(
     normalize: bool, default False
         If True, normalize the geometries before comparing equality.
         Typically useful with ``check_less_precise=True``, which uses
-        ``geom_almost_equals`` and requires exact coordinate order.
+        ``geom_equals_exact`` and requires exact coordinate order.
     """
     try:
         # added from pandas 0.20

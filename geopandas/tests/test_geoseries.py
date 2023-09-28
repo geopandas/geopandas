@@ -1,6 +1,7 @@
 import json
 import os
 import random
+import re
 import shutil
 import tempfile
 import warnings
@@ -24,7 +25,7 @@ from shapely.geometry.base import BaseGeometry
 
 from geopandas import GeoSeries, GeoDataFrame, read_file, datasets, clip
 from geopandas.array import GeometryArray, GeometryDtype
-from geopandas.testing import assert_geoseries_equal
+from geopandas.testing import assert_geoseries_equal, geom_almost_equals
 
 from geopandas.tests.util import geom_equals
 from pandas.testing import assert_series_equal
@@ -145,15 +146,16 @@ class TestSeries:
 
     def test_geom_almost_equals(self):
         # TODO: test decimal parameter
-        assert np.all(self.g1.geom_almost_equals(self.g1))
-        assert_array_equal(self.g1.geom_almost_equals(self.sq), [False, True])
+        with pytest.warns(FutureWarning, match=re.escape("The 'geom_almost_equals()'")):
+            assert np.all(self.g1.geom_almost_equals(self.g1))
+            assert_array_equal(self.g1.geom_almost_equals(self.sq), [False, True])
 
-        assert_array_equal(
-            self.a1.geom_almost_equals(self.a2, align=True), [False, True, False]
-        )
-        assert_array_equal(
-            self.a1.geom_almost_equals(self.a2, align=False), [False, False]
-        )
+            assert_array_equal(
+                self.a1.geom_almost_equals(self.a2, align=True), [False, True, False]
+            )
+            assert_array_equal(
+                self.a1.geom_almost_equals(self.a2, align=False), [False, False]
+            )
 
     def test_geom_equals_exact(self):
         # TODO: test tolerance parameter
@@ -199,7 +201,7 @@ class TestSeries:
     def test_transform(self):
         utm18n = self.landmarks.to_crs(epsg=26918)
         lonlat = utm18n.to_crs(epsg=4326)
-        assert np.all(self.landmarks.geom_almost_equals(lonlat))
+        assert geom_almost_equals(self.landmarks, lonlat)
         with pytest.raises(ValueError):
             self.g1.to_crs(epsg=4326)
         with pytest.raises(ValueError):
@@ -259,24 +261,24 @@ class TestSeries:
         # As string
         reprojected = self.g3.to_crs("+proj=utm +zone=30")
         reprojected_back = reprojected.to_crs(epsg=4326)
-        assert np.all(self.g3.geom_almost_equals(reprojected_back))
+        assert geom_almost_equals(self.g3, reprojected_back)
 
         # As dict
         reprojected = self.g3.to_crs({"proj": "utm", "zone": "30"})
         reprojected_back = reprojected.to_crs(epsg=4326)
-        assert np.all(self.g3.geom_almost_equals(reprojected_back))
+        assert geom_almost_equals(self.g3, reprojected_back)
 
         # Set to equivalent string, convert, compare to original
         copy = self.g3.copy()
         copy.crs = "epsg:4326"
         reprojected = copy.to_crs({"proj": "utm", "zone": "30"})
         reprojected_back = reprojected.to_crs(epsg=4326)
-        assert np.all(self.g3.geom_almost_equals(reprojected_back))
+        assert geom_almost_equals(self.g3, reprojected_back)
 
         # Conversions by different format
         reprojected_string = self.g3.to_crs("+proj=utm +zone=30")
         reprojected_dict = self.g3.to_crs({"proj": "utm", "zone": "30"})
-        assert np.all(reprojected_string.geom_almost_equals(reprojected_dict))
+        assert geom_almost_equals(reprojected_string, reprojected_dict)
 
     def test_from_wkb(self):
         assert_geoseries_equal(self.g1, GeoSeries.from_wkb([self.t1.wkb, self.sq.wkb]))
