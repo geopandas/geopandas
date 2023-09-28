@@ -157,20 +157,31 @@ def from_shapely(data, crs=None):
         such as an authority string (eg "EPSG:4326") or a WKT string.
 
     """
-    out = []
+    if not isinstance(data, np.ndarray):
+        arr = np.empty(len(data), dtype=object)
+        arr[:] = data
+    else:
+        arr = data
 
-    for geom in data:
-        if isinstance(geom, BaseGeometry):
-            out.append(geom)
-        elif hasattr(geom, "__geo_interface__"):
-            geom = shapely.geometry.shape(geom)
-            out.append(geom)
-        elif isna(geom):
-            out.append(None)
-        else:
-            raise TypeError("Input must be valid geometry objects: {0}".format(geom))
+    if not shapely.is_valid_input(arr).all():
+        out = []
 
-    return GeometryArray(np.array(out, dtype=object), crs=crs)
+        for geom in data:
+            if isinstance(geom, BaseGeometry):
+                out.append(geom)
+            elif hasattr(geom, "__geo_interface__"):
+                geom = shapely.geometry.shape(geom)
+                out.append(geom)
+            elif isna(geom):
+                out.append(None)
+            else:
+                raise TypeError(
+                    "Input must be valid geometry objects: {0}".format(geom)
+                )
+        arr = np.empty(len(out), dtype=object)
+        arr[:] = out
+
+    return GeometryArray(arr, crs=crs)
 
 
 def to_shapely(geoms):
