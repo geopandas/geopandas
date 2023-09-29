@@ -25,7 +25,7 @@ dependencies = [
     "packaging",
     "pandas >= 1.4.0",
     "pyproj >= 3.3.0",
-    "shapely >= 1.8.0",
+    "shapely >= 2.0.0",
 ]
 
 [project.readme]

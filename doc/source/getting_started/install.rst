@@ -137,7 +137,7 @@ Required dependencies:
 
 - `numpy`_
 - `pandas`_ (version 1.4 or later)
-- `shapely`_ (interface to `GEOS`_; version 1.8.0 or later)
+- `shapely`_ (interface to `GEOS`_; version 2.0.0 or later)
 - `fiona`_ (interface to `GDAL`_; version 1.8.21 or later)
 - `pyproj`_ (interface to `PROJ`_; version 3.3.0 or later)
 - `packaging`_
@@ -145,8 +145,6 @@ Required dependencies:
 Further, optional dependencies are:
 
 - `pyogrio`_ (optional; faster alternative for fiona, will become the default in GeoPandas 1.0)
-- `rtree`_ (optional; spatial index to improve performance and required for
-  overlay operations; interface to `libspatialindex`_)
 - `psycopg2`_ (optional; for PostGIS connection)
 - `GeoAlchemy2`_ (optional; for writing to PostGIS)
 - `geopy`_ (optional; for geocoding)

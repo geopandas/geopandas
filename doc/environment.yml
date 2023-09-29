@@ -37,7 +37,6 @@ dependencies:
   - myst-parser
   - folium
   - libpysal
-  - pygeos
   - xyzservices
   - packaging
   - pointpats

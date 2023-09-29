@@ -6,7 +6,7 @@ dependencies:
   # required
   - numpy=1.22
   - pandas=1.4
-  - shapely=1.8.0
+  - shapely=2.0.0
   - fiona=1.8.21
   - pyproj=3.3.0
   - packaging
@@ -16,7 +16,6 @@ dependencies:
   - pytest-xdist
   - fsspec
   # optional
-  - rtree
   - matplotlib=3.5.0
   - mapclassify=2.4.0
   - geopy
