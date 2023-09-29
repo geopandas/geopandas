@@ -108,10 +108,23 @@ io_engine = Option(
     callback=None,
 )
 
+# TODO: deprecate this
+use_pygeos = Option(
+    key="use_pygeos",
+    default_value=False,
+    doc=(
+        "Whether to use PyGEOS to speed up spatial operations. The default is True "
+        "if PyGEOS is installed, and follows the USE_PYGEOS environment variable "
+        "if set."
+    ),
+    validator=_validate_bool,
+    callback=None,
+)
 
 options = Options(
     {
         "display_precision": display_precision,
+        "use_pygeos": use_pygeos,
         "io_engine": io_engine,
     }
 )

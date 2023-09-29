@@ -178,8 +178,7 @@ def from_shapely(data, crs=None):
                 raise TypeError(
                     "Input must be valid geometry objects: {0}".format(geom)
                 )
-        arr = np.empty(len(out), dtype=object)
-        arr[:] = out
+        arr = np.array(out, dtype=object)
 
     return GeometryArray(arr, crs=crs)
 
@@ -591,8 +590,7 @@ class GeometryArray(ExtensionArray):
                 "geometry types, None is returned.",
                 stacklevel=2,
             )
-        data = np.empty(len(self._data), dtype=object)
-        data[:] = inner_rings
+        data = np.array(inner_rings, dtype=object)
         return data
 
     def remove_repeated_points(self, tolerance=0.0):
