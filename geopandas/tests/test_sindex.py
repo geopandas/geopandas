@@ -426,13 +426,8 @@ class TestShapelyInterface:
         )
         expected = [0, 1, 2]
 
-        # pass through GeoSeries to have GeoPandas
-        # determine if it should use shapely or pygeos geometry objects
-        tree_df = geopandas.GeoDataFrame(geometry=tree_polys)
-        test_df = geopandas.GeoDataFrame(geometry=test_polys)
-
-        test_geo = test_df.geometry.values[0]
-        res = tree_df.sindex.query(test_geo, sort=sort)
+        test_geo = test_polys.values[0]
+        res = tree_polys.sindex.query(test_geo, sort=sort)
 
         # asserting the same elements
         assert sorted(res) == sorted(expected)
@@ -553,12 +548,9 @@ class TestShapelyInterface:
         """Tests the `query_bulk` method with valid
         inputs and valid predicates.
         """
-        # pass through GeoSeries to have GeoPandas
-        # determine if it should use shapely or pygeos geometry objects
-        test_geom = geopandas.GeoSeries(
-            [box(*geom) for geom in test_geom], index=range(len(test_geom))
+        res = self.df.sindex.query(
+            [box(*geom) for geom in test_geom], predicate=predicate
         )
-        res = self.df.sindex.query(test_geom, predicate=predicate)
         assert_array_equal(res, expected)
 
     @pytest.mark.parametrize(
@@ -574,10 +566,6 @@ class TestShapelyInterface:
     )
     def test_query_bulk_empty_geometry(self, test_geoms, expected_value):
         """Tests the `query_bulk` method with an empty geometry."""
-        # pass through GeoSeries to have GeoPandas
-        # determine if it should use shapely or pygeos geometry objects
-        # note: for this test, test_geoms (note plural) is a list already
-        test_geoms = geopandas.GeoSeries(test_geoms, index=range(len(test_geoms)))
         res = self.df.sindex.query(test_geoms)
         assert_array_equal(res, expected_value)
 
@@ -601,12 +589,8 @@ class TestShapelyInterface:
         test_geom_bounds = (-1, -1, -0.5, -0.5)
         test_predicate = "test"
 
-        # pass through GeoSeries to have GeoPandas
-        # determine if it should use shapely or pygeos geometry objects
-        test_geom = geopandas.GeoSeries([box(*test_geom_bounds)], index=["0"])
-
         with pytest.raises(ValueError):
-            self.df.sindex.query(test_geom.geometry, predicate=test_predicate)
+            self.df.sindex.query([box(*test_geom_bounds)], predicate=test_predicate)
 
     @pytest.mark.parametrize(
         "predicate, test_geom, expected",
@@ -620,8 +604,7 @@ class TestShapelyInterface:
         """Tests that query_bulk can accept a GeoSeries, GeometryArray or
         numpy array.
         """
-        # pass through GeoSeries to have GeoPandas
-        # determine if it should use shapely or pygeos geometry objects
+        # pass through GeoSeries to test input type
         test_geom = geopandas.GeoSeries([box(*test_geom)], index=["0"])
 
         # test GeoSeries
@@ -668,12 +651,7 @@ class TestShapelyInterface:
             ]
         )
 
-        # pass through GeoSeries to have GeoPandas
-        # determine if it should use shapely or pygeos geometry objects
-        tree_df = geopandas.GeoDataFrame(geometry=tree_polys)
-        test_df = geopandas.GeoDataFrame(geometry=test_polys)
-
-        res = tree_df.sindex.query(test_df.geometry, sort=sort)
+        res = tree_polys.sindex.query(test_polys, sort=sort)
 
         # asserting the same elements
         assert sorted(res[0]) == sorted(expected[0])

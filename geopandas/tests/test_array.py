@@ -138,7 +138,7 @@ def test_from_wkb():
     assert all(v.equals(t) for v, t in zip(res, points_no_missing))
 
     # missing values
-    # TODO(pygeos) does not support empty strings, np.nan, or pd.NA
+    # TODO(shapely) does not support empty strings, np.nan, or pd.NA
     missing_values = [None]
 
     res = from_wkb(missing_values)
@@ -203,10 +203,10 @@ def test_from_wkt(string_type):
     assert all(v.equals_exact(t, tolerance=tol) for v, t in zip(res, points_no_missing))
 
     # missing values
-    # TODO(pygeos) does not support empty strings, np.nan, or pd.NA
+    # TODO(shapely) does not support empty strings, np.nan, or pd.NA
     missing_values = [None]
 
-    res = from_wkb(missing_values)
+    res = from_wkt(missing_values)
     np.testing.assert_array_equal(res, np.full(len(missing_values), None))
 
     # single MultiPolygon
