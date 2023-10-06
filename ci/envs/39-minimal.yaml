@@ -7,8 +7,7 @@ dependencies:
   - numpy=1.22
   - pandas=1.4
   - shapely=2.0.0
-  - fiona=1.9
-  - pyproj=3.3.0
+  - fiona=1.8.21
   - packaging
   # testing
   - pytest
@@ -23,3 +22,6 @@ dependencies:
   - libspatialite
   - pyarrow=8.0.0
   - geodatasets
+  - pip
+  - pip:
+    - pyproj==3.3.0
