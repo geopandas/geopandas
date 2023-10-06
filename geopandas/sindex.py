@@ -5,13 +5,33 @@ import shapely
 from shapely.geometry.base import BaseGeometry
 
 from . import array, geoseries
-from ._decorator import doc
 
 
-class BaseSpatialIndex:
+class SpatialIndex:
+    """A simple wrapper around Shapely's STRTree.
+
+
+    Parameters
+    ----------
+    geometry : np.array of Shapely geometries
+        Geometries from which to build the spatial index.
+    """
+
+    def __init__(self, geometry):
+        # set empty geometries to None to avoid segfault on GEOS <= 3.6
+        # see:
+        # https://github.com/pygeos/pygeos/issues/146
+        # https://github.com/pygeos/pygeos/issues/147
+        non_empty = geometry.copy()
+        non_empty[shapely.is_empty(non_empty)] = None
+        # set empty geometries to None to maintain indexing
+        self._tree = shapely.STRtree(non_empty)
+        # store geometries, including empty geometries for user access
+        self.geometries = geometry.copy()
+
     @property
     def valid_query_predicates(self):
-        """Returns valid predicates for this spatial index.
+        """Returns valid predicates for the spatial index.
 
         Returns
         -------
@@ -23,10 +43,10 @@ class BaseSpatialIndex:
         >>> from shapely.geometry import Point
         >>> s = geopandas.GeoSeries([Point(0, 0), Point(1, 1)])
         >>> s.sindex.valid_query_predicates  # doctest: +SKIP
-        {'contains', 'crosses', 'intersects', 'within', 'touches', \
-'overlaps', None, 'covers', 'contains_properly'}
+        {None, "contains", "contains_properly", "covered_by", "covers", \
+"crosses", "intersects", "overlaps", "touches", "within"}
         """
-        raise NotImplementedError
+        return {p.name for p in shapely.strtree.BinaryPredicate} | {None}
 
     def query(self, geometry, predicate=None, sort=False):
         """
@@ -140,7 +160,54 @@ class BaseSpatialIndex:
         geometries that can be joined based on overlapping bounding boxes or
         optional predicate are returned.
         """
-        raise NotImplementedError
+        if predicate not in self.valid_query_predicates:
+            raise ValueError(
+                "Got `predicate` = `{}`; ".format(predicate)
+                + "`predicate` must be one of {}".format(self.valid_query_predicates)
+            )
+
+        geometry = self._as_geometry_array(geometry)
+
+        indices = self._tree.query(geometry, predicate=predicate)
+
+        if sort:
+            if indices.ndim == 1:
+                return np.sort(indices)
+            else:
+                # sort by first array (geometry) and then second (tree)
+                geo_idx, tree_idx = indices
+                sort_indexer = np.lexsort((tree_idx, geo_idx))
+                return np.vstack((geo_idx[sort_indexer], tree_idx[sort_indexer]))
+
+        return indices
+
+    @staticmethod
+    def _as_geometry_array(geometry):
+        """Convert geometry into a numpy array of Shapely geometries.
+
+        Parameters
+        ----------
+        geometry
+            An array-like of Shapely geometries, a GeoPandas GeoSeries/GeometryArray,
+            shapely.geometry or list of shapely geometries.
+
+        Returns
+        -------
+        np.ndarray
+            A numpy array of Shapely geometries.
+        """
+        if isinstance(geometry, np.ndarray):
+            return array.from_shapely(geometry)._data
+        elif isinstance(geometry, geoseries.GeoSeries):
+            return geometry.values._data
+        elif isinstance(geometry, array.GeometryArray):
+            return geometry._data
+        elif isinstance(geometry, BaseGeometry):
+            return geometry
+        elif geometry is None:
+            return None
+        else:
+            return np.asarray(geometry)
 
     def query_bulk(self, geometry, predicate=None, sort=False):
         """
@@ -210,7 +277,13 @@ class BaseSpatialIndex:
         array([[0],
                 [3]])
         """
-        raise NotImplementedError
+        warnings.warn(
+            "The `query_bulk()` method is deprecated and will be removed in "
+            "GeoPandas 1.0. You can use the `query()` method instead.",
+            FutureWarning,
+            stacklevel=2,
+        )
+        return self.query(geometry, predicate=predicate, sort=sort)
 
     def nearest(
         self,
@@ -299,7 +372,26 @@ geometries}
         array([[0, 1],
                [8, 9]])
         """
-        raise NotImplementedError
+        geometry = self._as_geometry_array(geometry)
+        if isinstance(geometry, BaseGeometry) or geometry is None:
+            geometry = [geometry]
+
+        result = self._tree.query_nearest(
+            geometry,
+            max_distance=max_distance,
+            return_distance=return_distance,
+            all_matches=return_all,
+            exclusive=exclusive,
+        )
+        if return_distance:
+            indices, distances = result
+        else:
+            indices = result
+
+        if return_distance:
+            return indices, distances
+        else:
+            return indices
 
     def intersection(self, coordinates):
         """Compatibility wrapper for rtree.index.Index.intersection,
@@ -337,204 +429,6 @@ geometries}
         array([1, 2, 3])
 
         """
-        raise NotImplementedError
-
-    @property
-    def size(self):
-        """Size of the spatial index
-
-        Number of leaves (input geometries) in the index.
-
-        Examples
-        --------
-        >>> from shapely.geometry import Point
-        >>> s = geopandas.GeoSeries(geopandas.points_from_xy(range(10), range(10)))
-        >>> s
-        0    POINT (0.00000 0.00000)
-        1    POINT (1.00000 1.00000)
-        2    POINT (2.00000 2.00000)
-        3    POINT (3.00000 3.00000)
-        4    POINT (4.00000 4.00000)
-        5    POINT (5.00000 5.00000)
-        6    POINT (6.00000 6.00000)
-        7    POINT (7.00000 7.00000)
-        8    POINT (8.00000 8.00000)
-        9    POINT (9.00000 9.00000)
-        dtype: geometry
-
-        >>> s.sindex.size
-        10
-        """
-        raise NotImplementedError
-
-    @property
-    def is_empty(self):
-        """Check if the spatial index is empty
-
-        Examples
-        --------
-        >>> from shapely.geometry import Point
-        >>> s = geopandas.GeoSeries(geopandas.points_from_xy(range(10), range(10)))
-        >>> s
-        0    POINT (0.00000 0.00000)
-        1    POINT (1.00000 1.00000)
-        2    POINT (2.00000 2.00000)
-        3    POINT (3.00000 3.00000)
-        4    POINT (4.00000 4.00000)
-        5    POINT (5.00000 5.00000)
-        6    POINT (6.00000 6.00000)
-        7    POINT (7.00000 7.00000)
-        8    POINT (8.00000 8.00000)
-        9    POINT (9.00000 9.00000)
-        dtype: geometry
-
-        >>> s.sindex.is_empty
-        False
-
-        >>> s2 = geopandas.GeoSeries()
-        >>> s2.sindex.is_empty
-        True
-        """
-        raise NotImplementedError
-
-
-_PREDICATES = {p.name for p in shapely.strtree.BinaryPredicate} | {None}
-
-
-class PyGEOSSTRTreeIndex(BaseSpatialIndex):
-    """A simple wrapper around Shapely's STRTree.
-
-
-    Parameters
-    ----------
-    geometry : np.array of Shapely geometries
-        Geometries from which to build the spatial index.
-    """
-
-    def __init__(self, geometry):
-        # set empty geometries to None to avoid segfault on GEOS <= 3.6
-        # see:
-        # https://github.com/pygeos/pygeos/issues/146
-        # https://github.com/pygeos/pygeos/issues/147
-        non_empty = geometry.copy()
-        non_empty[shapely.is_empty(non_empty)] = None
-        # set empty geometries to None to maintain indexing
-        self._tree = shapely.STRtree(non_empty)
-        # store geometries, including empty geometries for user access
-        self.geometries = geometry.copy()
-
-    @property
-    def valid_query_predicates(self):
-        """Returns valid predicates for the used spatial index.
-
-        Returns
-        -------
-        set
-            Set of valid predicates for this spatial index.
-
-        Examples
-        --------
-        >>> from shapely.geometry import Point
-        >>> s = geopandas.GeoSeries([Point(0, 0), Point(1, 1)])
-        >>> s.sindex.valid_query_predicates  # doctest: +SKIP
-        {None, "contains", "contains_properly", "covered_by", "covers", \
-"crosses", "intersects", "overlaps", "touches", "within"}
-        """
-        return _PREDICATES
-
-    @doc(BaseSpatialIndex.query)
-    def query(self, geometry, predicate=None, sort=False):
-        if predicate not in self.valid_query_predicates:
-            raise ValueError(
-                "Got `predicate` = `{}`; ".format(predicate)
-                + "`predicate` must be one of {}".format(self.valid_query_predicates)
-            )
-
-        geometry = self._as_geometry_array(geometry)
-
-        indices = self._tree.query(geometry, predicate=predicate)
-
-        if sort:
-            if indices.ndim == 1:
-                return np.sort(indices)
-            else:
-                # sort by first array (geometry) and then second (tree)
-                geo_idx, tree_idx = indices
-                sort_indexer = np.lexsort((tree_idx, geo_idx))
-                return np.vstack((geo_idx[sort_indexer], tree_idx[sort_indexer]))
-
-        return indices
-
-    @staticmethod
-    def _as_geometry_array(geometry):
-        """Convert geometry into a numpy array of Shapely geometries.
-
-        Parameters
-        ----------
-        geometry
-            An array-like of Shapely geometries, a GeoPandas GeoSeries/GeometryArray,
-            shapely.geometry or list of shapely geometries.
-
-        Returns
-        -------
-        np.ndarray
-            A numpy array of Shapely geometries.
-        """
-        if isinstance(geometry, np.ndarray):
-            return array.from_shapely(geometry)._data
-        elif isinstance(geometry, geoseries.GeoSeries):
-            return geometry.values._data
-        elif isinstance(geometry, array.GeometryArray):
-            return geometry._data
-        elif isinstance(geometry, BaseGeometry):
-            return geometry
-        elif geometry is None:
-            return None
-        else:
-            return np.asarray(geometry)
-
-    @doc(BaseSpatialIndex.query_bulk)
-    def query_bulk(self, geometry, predicate=None, sort=False):
-        warnings.warn(
-            "The `query_bulk()` method is deprecated and will be removed in "
-            "GeoPandas 1.0. You can use the `query()` method instead.",
-            FutureWarning,
-            stacklevel=2,
-        )
-        return self.query(geometry, predicate=predicate, sort=sort)
-
-    @doc(BaseSpatialIndex.nearest)
-    def nearest(
-        self,
-        geometry,
-        return_all=True,
-        max_distance=None,
-        return_distance=False,
-        exclusive=False,
-    ):
-        geometry = self._as_geometry_array(geometry)
-        if isinstance(geometry, BaseGeometry) or geometry is None:
-            geometry = [geometry]
-
-        result = self._tree.query_nearest(
-            geometry,
-            max_distance=max_distance,
-            return_distance=return_distance,
-            all_matches=return_all,
-            exclusive=exclusive,
-        )
-        if return_distance:
-            indices, distances = result
-        else:
-            indices = result
-
-        if return_distance:
-            return indices, distances
-        else:
-            return indices
-
-    @doc(BaseSpatialIndex.intersection)
-    def intersection(self, coordinates):
         # convert bounds to geometry
         # the old API uses tuples of bound, but Shapely uses geometries
         try:
@@ -564,13 +458,61 @@ class PyGEOSSTRTreeIndex(BaseSpatialIndex):
         return indexes
 
     @property
-    @doc(BaseSpatialIndex.size)
     def size(self):
+        """Size of the spatial index
+
+        Number of leaves (input geometries) in the index.
+
+        Examples
+        --------
+        >>> from shapely.geometry import Point
+        >>> s = geopandas.GeoSeries(geopandas.points_from_xy(range(10), range(10)))
+        >>> s
+        0    POINT (0.00000 0.00000)
+        1    POINT (1.00000 1.00000)
+        2    POINT (2.00000 2.00000)
+        3    POINT (3.00000 3.00000)
+        4    POINT (4.00000 4.00000)
+        5    POINT (5.00000 5.00000)
+        6    POINT (6.00000 6.00000)
+        7    POINT (7.00000 7.00000)
+        8    POINT (8.00000 8.00000)
+        9    POINT (9.00000 9.00000)
+        dtype: geometry
+
+        >>> s.sindex.size
+        10
+        """
         return len(self._tree)
 
     @property
-    @doc(BaseSpatialIndex.is_empty)
     def is_empty(self):
+        """Check if the spatial index is empty
+
+        Examples
+        --------
+        >>> from shapely.geometry import Point
+        >>> s = geopandas.GeoSeries(geopandas.points_from_xy(range(10), range(10)))
+        >>> s
+        0    POINT (0.00000 0.00000)
+        1    POINT (1.00000 1.00000)
+        2    POINT (2.00000 2.00000)
+        3    POINT (3.00000 3.00000)
+        4    POINT (4.00000 4.00000)
+        5    POINT (5.00000 5.00000)
+        6    POINT (6.00000 6.00000)
+        7    POINT (7.00000 7.00000)
+        8    POINT (8.00000 8.00000)
+        9    POINT (9.00000 9.00000)
+        dtype: geometry
+
+        >>> s.sindex.is_empty
+        False
+
+        >>> s2 = geopandas.GeoSeries()
+        >>> s2.sindex.is_empty
+        True
+        """
         return len(self._tree) == 0
 
     def __len__(self):

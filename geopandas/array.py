@@ -22,7 +22,7 @@ from pyproj import CRS, Transformer
 from pyproj.aoi import AreaOfInterest
 from pyproj.database import query_utm_crs_info
 
-from .sindex import PyGEOSSTRTreeIndex
+from .sindex import SpatialIndex
 
 TransformerFromCRS = lru_cache(Transformer.from_crs)
 
@@ -337,7 +337,7 @@ class GeometryArray(ExtensionArray):
     @property
     def sindex(self):
         if self._sindex is None:
-            self._sindex = PyGEOSSTRTreeIndex(self._data)
+            self._sindex = SpatialIndex(self._data)
         return self._sindex
 
     @property
