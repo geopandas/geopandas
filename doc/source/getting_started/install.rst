@@ -95,7 +95,7 @@ as well::
     - `fiona`_ provides binary wheels with the dependencies included for Mac and Linux,
       but not for Windows. Alternatively, you can install `pyogrio`_ which does
       have wheels for Windows.
-    - `pyproj`_, and `shapely`_ provide binary wheels with dependencies included
+    - `pyproj`_ and `shapely`_ provide binary wheels with dependencies included
       for Mac, Linux, and Windows.
 
     Depending on your platform, you might need to compile and install their
