@@ -996,7 +996,6 @@ class TestDataFrame:
         )
         assert_geodataframe_equal(result, expected)
 
-    @pytest.mark.skip_no_sindex
     def test_clip(self):
         """
         Basic test for availability of the GeoDataFrame method. Other
@@ -1010,7 +1009,6 @@ class TestDataFrame:
         result = left.clip(south_america)
         assert_geodataframe_equal(result, expected)
 
-    @pytest.mark.skip_no_sindex
     def test_overlay(self, dfs, how):
         """
         Basic test for availability of the GeoDataFrame method. Other

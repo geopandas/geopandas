@@ -653,7 +653,6 @@ def test_groupby_groups(df):
     assert_frame_equal(res, exp)
 
 
-@pytest.mark.skip_no_sindex
 @pytest.mark.parametrize("crs", [None, "EPSG:4326"])
 def test_groupby_metadata(crs):
     # https://github.com/geopandas/geopandas/issues/2294

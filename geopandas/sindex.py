@@ -429,6 +429,7 @@ geometries}
         array([1, 2, 3])
 
         """
+        # TODO: we should deprecate this
         # convert bounds to geometry
         # the old API uses tuples of bound, but Shapely uses geometries
         try:

@@ -19,7 +19,6 @@ from geopandas import GeoDataFrame, GeoSeries, datasets, read_file
 from geopandas import _compat as compat
 
 
-@pytest.mark.skip_no_sindex
 class TestSeriesSindex:
     def test_has_sindex(self):
         """Test the has_sindex method."""
@@ -109,7 +108,6 @@ class TestSeriesSindex:
         assert sliced.sindex is not original_index
 
 
-@pytest.mark.skip_no_sindex
 class TestFrameSindex:
     def setup_method(self):
         data = {
@@ -242,8 +240,7 @@ class TestJoinSindex:
         assert res == ["Bronx", "Queens"]
 
 
-@pytest.mark.skip_no_sindex
-class TestPygeosInterface:
+class TestShapelyInterface:
     def setup_method(self):
         data = {
             "geom": [Point(x, y) for x, y in zip(range(5), range(5))]

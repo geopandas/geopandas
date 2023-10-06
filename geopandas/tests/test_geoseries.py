@@ -319,7 +319,6 @@ class TestSeries:
     def test_to_wkt(self):
         assert_series_equal(pd.Series([self.t1.wkt, self.sq.wkt]), self.g1.to_wkt())
 
-    @pytest.mark.skip_no_sindex
     def test_clip(self):
         left = read_file(datasets.get_path("naturalearth_cities"))
         world = read_file(datasets.get_path("naturalearth_lowres"))
