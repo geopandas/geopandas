@@ -95,7 +95,7 @@ as well::
     - `fiona`_ provides binary wheels with the dependencies included for Mac and Linux,
       but not for Windows. Alternatively, you can install `pyogrio`_ which does
       have wheels for Windows.
-    - `pyproj`_, `rtree`_, and `shapely`_ provide binary wheels with dependencies included
+    - `pyproj`_, and `shapely`_ provide binary wheels with dependencies included
       for Mac, Linux, and Windows.
 
     Depending on your platform, you might need to compile and install their
@@ -123,7 +123,7 @@ the need to have all dependencies correctly installed applies. But, those
 dependencies can also be installed independently with conda before installing
 GeoPandas from source::
 
-    conda install pandas fiona shapely pyproj rtree
+    conda install pandas fiona shapely pyproj
 
 See the :ref:`section on conda <install-conda>` above for more details on
 getting running with Anaconda.
@@ -157,62 +157,6 @@ For plotting, these additional packages may be used:
 - `mapclassify`_ (>= 2.4.0)
 
 
-Using the optional PyGEOS dependency
-------------------------------------
-
-.. attention::
-
-  The Shapely 2.0 release absorbed all improvements from PyGEOS and the support of
-  PyGEOS in GeoPandas is deprecated. Please use Shapely 2 instead.
-
-Historically, the
-fast implementations of basic spatial operations used to live in the `PyGEOS`_
-package.
-Starting with GeoPandas 0.8, it is possible to optionally use those
-experimental speedups by installing PyGEOS. This can be done with conda
-(using the conda-forge channel) or pip::
-
-    # conda
-    conda install pygeos --channel conda-forge
-    # pip
-    pip install pygeos
-
-More specifically, whether the PyGEOS is used or not is determined by:
-
-- If Shapely >= 2 is installed, it will be used by default.
-- If PyGEOS >= 0.8 and Shapely < 2 are installed, PyGEOS will be used by default
-
-- You can still toggle the use of PyGEOS when it is available, by:
-
-  - Setting an environment variable (``USE_PYGEOS=0/1``). Note this variable
-    is only checked at first import of GeoPandas. You can set this environment
-    variable before starting the python process, or in your code right before
-    importing geopandas:
-
-    .. code-block:: python
-
-      import os
-      os.environ["USE_PYGEOS"] = "0"
-      import geopandas
-
-  - Setting an option: ``geopandas.options.use_pygeos = True/False``. Note,
-    although this variable can be set during an interactive session, it will
-    only work if the GeoDataFrames you use are created (e.g. reading a file
-    with ``read_file``) after changing this value.
-
-.. attention::
-
-    Changing this option no longer works in all cases when
-    Shapely >=2.0 is installed. In that case, use the environment variable
-    (see option above) or simply use Shapely.
-
-.. warning::
-
-    The use of PyGEOS is deprecated! If you depend on PyGEOS, see
-    the :doc:`migration guide <../docs/user_guide/pygeos_to_shapely>`
-    to Shapely 2.0. Otherwise, use Shapely 2 directly.
-
-
 .. _PyPI: https://pypi.python.org/pypi/geopandas
 
 .. _GitHub: https://github.com/geopandas/geopandas
@@ -239,10 +183,6 @@ More specifically, whether the PyGEOS is used or not is determined by:
 
 .. _pyproj: https://github.com/pyproj4/pyproj
 
-.. _rtree: https://github.com/Toblerity/rtree
-
-.. _libspatialindex: https://github.com/libspatialindex/libspatialindex
-
 .. _conda: https://conda.io/en/latest/
 
 .. _Anaconda distribution: https://www.anaconda.com/distribution/
@@ -256,8 +196,6 @@ More specifically, whether the PyGEOS is used or not is determined by:
 .. _GEOS: https://geos.osgeo.org
 
 .. _PROJ: https://proj.org/
-
-.. _PyGEOS: https://github.com/pygeos/pygeos/
 
 .. _packaging: https://packaging.pypa.io/en/latest/
 
