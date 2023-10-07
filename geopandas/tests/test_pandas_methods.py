@@ -90,7 +90,7 @@ def test_repr_empty():
 
 def test_repr_linearring():
     # https://github.com/geopandas/geopandas/pull/2689
-    # specifically, checking internal shapely/pygeos/wkt/wkb conversions
+    # specifically, checking internal shapely/wkt/wkb conversions
     # preserve LinearRing
     s = GeoSeries([LinearRing([(0, 0), (1, 1), (1, -1)])])
     assert "LINEARRING" in str(s.iloc[0])  # shapely scalar repr
@@ -555,10 +555,9 @@ def test_value_counts():
         name = "count"
     else:
         name = None
-    with compat.ignore_shapely2_warnings():
-        exp = pd.Series(
-            [2, 1], index=pd14_compat_index([Point(0, 0), Point(1, 1)]), name=name
-        )
+    exp = pd.Series(
+        [2, 1], index=pd14_compat_index([Point(0, 0), Point(1, 1)]), name=name
+    )
     assert_series_equal(res, exp)
     # Check crs doesn't make a difference - note it is not kept in output index anyway
     s2 = GeoSeries([Point(0, 0), Point(1, 1), Point(0, 0)], crs="EPSG:4326")
@@ -572,20 +571,17 @@ def test_value_counts():
     s3 = GeoSeries([Point(0, 0), LineString([[1, 1], [2, 2]]), Point(0, 0)])
     res3 = s3.value_counts()
     index = pd14_compat_index([Point(0, 0), LineString([[1, 1], [2, 2]])])
-    with compat.ignore_shapely2_warnings():
-        exp3 = pd.Series([2, 1], index=index, name=name)
+    exp3 = pd.Series([2, 1], index=index, name=name)
     assert_series_equal(res3, exp3)
 
     # check None is handled
     s4 = GeoSeries([Point(0, 0), None, Point(0, 0)])
     res4 = s4.value_counts(dropna=True)
-    with compat.ignore_shapely2_warnings():
-        exp4_dropna = pd.Series([2], index=pd14_compat_index([Point(0, 0)]), name=name)
+    exp4_dropna = pd.Series([2], index=pd14_compat_index([Point(0, 0)]), name=name)
     assert_series_equal(res4, exp4_dropna)
-    with compat.ignore_shapely2_warnings():
-        exp4_keepna = pd.Series(
-            [2, 1], index=pd14_compat_index([Point(0, 0), None]), name=name
-        )
+    exp4_keepna = pd.Series(
+        [2, 1], index=pd14_compat_index([Point(0, 0), None]), name=name
+    )
     res4_keepna = s4.value_counts(dropna=False)
     assert_series_equal(res4_keepna, exp4_keepna)
 
@@ -657,7 +653,6 @@ def test_groupby_groups(df):
     assert_frame_equal(res, exp)
 
 
-@pytest.mark.skip_no_sindex
 @pytest.mark.parametrize("crs", [None, "EPSG:4326"])
 def test_groupby_metadata(crs):
     # https://github.com/geopandas/geopandas/issues/2294

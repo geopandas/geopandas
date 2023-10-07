@@ -6,8 +6,6 @@ dependencies:
   - shapely
   - fiona
   - pyproj
-  - pygeos
-  - rtree
   - mapclassify
   - libpysal
   - matplotlib

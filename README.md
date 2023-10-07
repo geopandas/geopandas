@@ -61,10 +61,7 @@ for all details. GeoPandas depends on the following packages:
 - ``pyproj``
 - ``packaging``
 
-Further, ``matplotlib`` is an optional dependency, required
-for plotting, and [``rtree``](https://github.com/Toblerity/rtree) is an optional
-dependency, required for spatial joins. ``rtree`` requires the C library [``libspatialindex``](https://github.com/libspatialindex/libspatialindex).
-
+Further, ``matplotlib`` is an optional dependency, required for plotting.
 Those packages depend on several low-level libraries for geospatial analysis, which can be a challenge to install. Therefore, we recommend to install GeoPandas using the [conda package manager](https://conda.io/en/latest/). See the [installation docs](https://geopandas.readthedocs.io/en/latest/install.html) for more details.
 
 Get in touch

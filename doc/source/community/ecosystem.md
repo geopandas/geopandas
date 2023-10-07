@@ -9,7 +9,7 @@ geographic data files using [`GDAL`](https://gdal.org), and `pyproj`, a library 
 cartographic projections and coordinate transformations, which is a Python interface to
 [`PROJ`](https://proj.org).
 
-Furthermore, GeoPandas has several optional dependencies as `rtree`, `pygeos`,
+Furthermore, GeoPandas has several optional dependencies as
 `mapclassify`, or `geopy`.
 
 ### Required dependencies
@@ -44,16 +44,6 @@ transformations library). GeoPandas uses a `pyproj.crs.CRS` object to keep track
 projection of each `GeoSeries` and its `Transformer` object to manage re-projections.
 
 ### Optional dependencies
-
-#### [rtree](https://github.com/Toblerity/rtree)
-`Rtree` is a ctypes Python wrapper of `libspatialindex` that provides a number of
-advanced spatial indexing features for the spatially curious Python user.
-
-#### [PyGEOS](https://github.com/pygeos/pygeos)
-`PyGEOS` is a C/Python library with vectorized geometry functions. The geometry
-operations are done in the open-source geometry library `GEOS`. PyGEOS wraps these
-operations in `NumPy` ufuncs providing a performance improvement when operating on
-arrays of geometries.
 
 #### [mapclassify](https://github.com/pysal/mapclassify)
 `mapclassify` provides functionality for Choropleth map classification. Currently,

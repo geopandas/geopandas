@@ -13,7 +13,6 @@ def test_no_additional_imports():
         # "fiona",
         # "matplotlib",  # matplotlib gets imported by pandas, see below
         "mapclassify",
-        # 'rtree',  # rtree actually gets imported if installed
         "sqlalchemy",
         "psycopg2",
         "geopy",

@@ -119,11 +119,9 @@ def _get_deps_info():
         "geopy",
         "matplotlib",
         "mapclassify",
-        "pygeos",
         "pyogrio",
         "psycopg2",
         "pyarrow",
-        "rtree",
     ]
 
     def get_version(module):

@@ -17,7 +17,6 @@ dependencies:
   - pytest-xdist
   - fsspec
   # optional
-  - rtree
   - matplotlib
   #- geopy
   - SQLalchemy

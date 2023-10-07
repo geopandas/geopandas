@@ -129,14 +129,13 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
     _geometry_column_name = None
 
     def __init__(self, data=None, *args, geometry=None, crs=None, **kwargs):
-        with compat.ignore_shapely2_warnings():
-            if (
-                kwargs.get("copy") is None
-                and isinstance(data, DataFrame)
-                and not isinstance(data, GeoDataFrame)
-            ):
-                kwargs.update(copy=True)
-            super().__init__(data, *args, **kwargs)
+        if (
+            kwargs.get("copy") is None
+            and isinstance(data, DataFrame)
+            and not isinstance(data, GeoDataFrame)
+        ):
+            kwargs.update(copy=True)
+        super().__init__(data, *args, **kwargs)
 
         # set_geometry ensures the geometry data have the proper dtype,
         # but is not called if `geometry=None` ('geometry' column present
@@ -998,8 +997,7 @@ individually so that features may have different properties
             The default is to return a binary bytes object.
         kwargs
             Additional keyword args will be passed to
-            :func:`shapely.to_wkb` if shapely >= 2 is installed or
-            :func:`pygeos.to_wkb` if pygeos is installed.
+            :func:`shapely.to_wkb`.
 
         Returns
         -------
@@ -1022,8 +1020,7 @@ individually so that features may have different properties
         Parameters
         ----------
         kwargs
-            Keyword args will be passed to :func:`pygeos.to_wkt`
-            if pygeos is installed.
+            Keyword args will be passed to :func:`shapely.to_wkt`.
 
         Returns
         -------

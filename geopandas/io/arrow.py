@@ -6,7 +6,6 @@ from packaging.version import Version
 from pandas import DataFrame, Series
 
 import geopandas
-import geopandas._compat as compat
 from geopandas import GeoDataFrame
 from geopandas._compat import import_optional_dependency
 from geopandas.array import from_wkb
@@ -44,11 +43,7 @@ SUPPORTED_VERSIONS = ["0.1.0", "0.4.0", "1.0.0-beta.1"]
 
 
 def _is_fsspec_url(url):
-    return (
-        isinstance(url, str)
-        and "://" in url
-        and not url.startswith(("http://", "https://"))
-    )
+    return isinstance(url, str) and "://" in url and not url.startswith(("http://", "https://"))
 
 
 def _remove_id_from_member_of_ensembles(json_dict):
@@ -87,9 +82,7 @@ def _create_metadata(df, schema_version=None):
     schema_version = schema_version or METADATA_VERSION
 
     if schema_version not in SUPPORTED_VERSIONS:
-        raise ValueError(
-            f"schema_version must be one of: {', '.join(SUPPORTED_VERSIONS)}"
-        )
+        raise ValueError(f"schema_version must be one of: {', '.join(SUPPORTED_VERSIONS)}")
 
     # Construct metadata for each geometry
     column_metadata = {}
@@ -100,10 +93,7 @@ def _create_metadata(df, schema_version=None):
         # https://github.com/opengeospatial/geoparquet/blob/main/format-specs/geoparquet.md#geometry_types
         # Instead of going through the `_vectorized.geometry_type_values`
         # that do not include the "Z" varieties.
-        geometry_types = {
-            f"{geom} Z" if has_z else geom
-            for geom, has_z in zip(series.geom_type, series.has_z)
-        }
+        geometry_types = {f"{geom} Z" if has_z else geom for geom, has_z in zip(series.geom_type, series.has_z)}
         geometry_types = sorted(Series(list(geometry_types)).dropna())
         # geometry_types = sorted(Series(series.geom_type.unique()).dropna())
 
@@ -193,9 +183,7 @@ def _validate_dataframe(df):
         raise ValueError("Writing to Parquet/Feather requires string column names")
 
     # index level names must be strings
-    valid_names = all(
-        isinstance(name, str) for name in df.index.names if name is not None
-    )
+    valid_names = all(isinstance(name, str) for name in df.index.names if name is not None)
     if not valid_names:
         raise ValueError("Index level names must be strings")
 
@@ -217,17 +205,13 @@ def _validate_metadata(metadata):
     # version was schema_version in 0.1.0
     version = metadata.get("version", metadata.get("schema_version"))
     if not version:
-        raise ValueError(
-            "'geo' metadata in Parquet/Feather file is missing required key: "
-            "'version'"
-        )
+        raise ValueError("'geo' metadata in Parquet/Feather file is missing required key: " "'version'")
 
     required_keys = ("primary_column", "columns")
     for key in required_keys:
         if metadata.get(key, None) is None:
             raise ValueError(
-                "'geo' metadata in Parquet/Feather file is missing required key: "
-                "'{key}'".format(key=key)
+                "'geo' metadata in Parquet/Feather file is missing required key: " "'{key}'".format(key=key)
             )
 
     if not isinstance(metadata["columns"], dict):
@@ -269,22 +253,7 @@ def _geopandas_to_arrow(df, index=None, schema_version=None):
     # create geo metadata before altering incoming data frame
     geo_metadata = _create_metadata(df, schema_version=schema_version)
 
-    kwargs = {}
-    if compat.USE_SHAPELY_20:
-        kwargs = {"flavor": "iso"}
-    else:
-        for col in df.columns[df.dtypes == "geometry"]:
-            series = df[col]
-            if series.has_z.any():
-                warnings.warn(
-                    "The GeoDataFrame contains 3D geometries, and when using "
-                    "shapely < 2.0, such geometries will be written not exactly "
-                    "following to the GeoParquet spec (not using ISO WKB). For "
-                    "most use cases this should not be a problem (GeoPandas can "
-                    "read such files fine).",
-                    stacklevel=2,
-                )
-                break
+    kwargs = {"flavor": "iso"}
     df = df.to_wkb(**kwargs)
 
     table = Table.from_pandas(df, preserve_index=index)
@@ -297,9 +266,7 @@ def _geopandas_to_arrow(df, index=None, schema_version=None):
     return table.replace_schema_metadata(metadata)
 
 
-def _to_parquet(
-    df, path, index=None, compression="snappy", schema_version=None, **kwargs
-):
+def _to_parquet(df, path, index=None, compression="snappy", schema_version=None, **kwargs):
     """
     Write a GeoDataFrame to the Parquet format.
 
@@ -330,9 +297,7 @@ def _to_parquet(
     **kwargs
         Additional keyword arguments passed to pyarrow.parquet.write_table().
     """
-    parquet = import_optional_dependency(
-        "pyarrow.parquet", extra="pyarrow is required for Parquet support."
-    )
+    parquet = import_optional_dependency("pyarrow.parquet", extra="pyarrow is required for Parquet support.")
 
     if kwargs and "version" in kwargs and kwargs["version"] is not None:
         if schema_version is None and kwargs["version"] in SUPPORTED_VERSIONS:
@@ -382,9 +347,7 @@ def _to_feather(df, path, index=None, compression=None, schema_version=None, **k
     kwargs
         Additional keyword arguments passed to pyarrow.feather.write_feather().
     """
-    feather = import_optional_dependency(
-        "pyarrow.feather", extra="pyarrow is required for Feather support."
-    )
+    feather = import_optional_dependency("pyarrow.feather", extra="pyarrow is required for Feather support.")
     # TODO move this into `import_optional_dependency`
     import pyarrow
 
@@ -497,15 +460,11 @@ def _get_filesystem_path(path, filesystem=None, storage_options=None):
             pass
 
     if _is_fsspec_url(path) and filesystem is None:
-        fsspec = import_optional_dependency(
-            "fsspec", extra="fsspec is requred for 'storage_options'."
-        )
+        fsspec = import_optional_dependency("fsspec", extra="fsspec is requred for 'storage_options'.")
         filesystem, path = fsspec.core.url_to_fs(path, **(storage_options or {}))
 
     if filesystem is None and storage_options:
-        raise ValueError(
-            "Cannot provide 'storage_options' with non-fsspec path '{}'".format(path)
-        )
+        raise ValueError("Cannot provide 'storage_options' with non-fsspec path '{}'".format(path))
 
     return filesystem, path
 
@@ -596,15 +555,11 @@ def _read_parquet(path, columns=None, storage_options=None, **kwargs):
     ... )  # doctest: +SKIP
     """
 
-    parquet = import_optional_dependency(
-        "pyarrow.parquet", extra="pyarrow is required for Parquet support."
-    )
+    parquet = import_optional_dependency("pyarrow.parquet", extra="pyarrow is required for Parquet support.")
     # TODO(https://github.com/pandas-dev/pandas/pull/41194): see if pandas
     # adds filesystem as a keyword and match that.
     filesystem = kwargs.pop("filesystem", None)
-    filesystem, path = _get_filesystem_path(
-        path, filesystem=filesystem, storage_options=storage_options
-    )
+    filesystem, path = _get_filesystem_path(path, filesystem=filesystem, storage_options=storage_options)
 
     path = _expand_user(path)
     kwargs["use_pandas_metadata"] = True
@@ -682,9 +637,7 @@ def _read_feather(path, columns=None, **kwargs):
     ... )  # doctest: +SKIP
     """
 
-    feather = import_optional_dependency(
-        "pyarrow.feather", extra="pyarrow is required for Feather support."
-    )
+    feather = import_optional_dependency("pyarrow.feather", extra="pyarrow is required for Feather support.")
     # TODO move this into `import_optional_dependency`
     import pyarrow
 
