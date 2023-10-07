@@ -18,7 +18,7 @@ dependencies:
   # - fsspec  # to have one non-minimal build without fsspec
   # optional
   - rtree
-  - matplotlib
+  - matplotlib>=3.6
   - mapclassify
   - folium
   - xyzservices
