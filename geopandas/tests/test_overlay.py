@@ -1,5 +1,4 @@
 import os
-from packaging.version import Version
 
 import numpy as np
 import pandas as pd
@@ -22,10 +21,6 @@ except ImportError:
 
 
 DATA = os.path.join(os.path.abspath(os.path.dirname(__file__)), "data", "overlay")
-
-
-pytestmark = pytest.mark.skip_no_sindex
-pandas_133 = Version(pd.__version__) == Version("1.3.3")
 
 
 @pytest.fixture
@@ -62,8 +57,6 @@ def dfs_index(request, dfs):
     params=["union", "intersection", "difference", "symmetric_difference", "identity"]
 )
 def how(request):
-    if pandas_133 and request.param in ["symmetric_difference", "identity", "union"]:
-        pytest.xfail("Regression in pandas 1.3.3 (GH #2101)")
     return request.param
 
 

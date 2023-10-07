@@ -2,14 +2,13 @@ name: test
 channels:
   - conda-forge
 dependencies:
-  - python=3.8
+  - python=3.9
   # required
   - pandas
   - shapely
   # - fiona  # build with only pyogrio
   - libgdal
   - pyproj
-  - pygeos
   - packaging
   # testing
   - pytest
@@ -17,7 +16,6 @@ dependencies:
   - pytest-xdist
   # - fsspec  # to have one non-minimal build without fsspec
   # optional
-  - rtree
   - matplotlib
   - mapclassify
   - folium

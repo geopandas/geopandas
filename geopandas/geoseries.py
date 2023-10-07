@@ -7,7 +7,7 @@ import warnings
 
 import numpy as np
 import pandas as pd
-from pandas import Series, MultiIndex, DataFrame
+from pandas import Series
 from pandas.core.internals import SingleBlockManager
 
 from pyproj import CRS
@@ -72,12 +72,6 @@ def _geoseries_expanddim(data=None, *args, **kwargs):
             df = df.set_geometry(geo_col_name)
 
     return df
-
-
-# pd.concat (pandas/core/reshape/concat.py) requires this for the
-# concatenation of series since pandas 1.1
-# (https://github.com/pandas-dev/pandas/commit/f9e4c8c84bcef987973f2624cc2932394c171c8c)
-_geoseries_expanddim._get_axis_number = DataFrame._get_axis_number
 
 
 class GeoSeries(GeoPandasBase, Series):
@@ -175,19 +169,7 @@ class GeoSeries(GeoPandasBase, Series):
                     )
 
         if isinstance(data, SingleBlockManager):
-            if isinstance(data.blocks[0].dtype, GeometryDtype):
-                if data.blocks[0].ndim == 2:
-                    # bug in pandas 0.23 where in certain indexing operations
-                    # (such as .loc) a 2D ExtensionBlock (still with 1D values
-                    # is created) which results in other failures
-                    # bug in pandas <= 0.25.0 when len(values) == 1
-                    #   (https://github.com/pandas-dev/pandas/issues/27785)
-                    from pandas.core.internals import ExtensionBlock
-
-                    values = data.blocks[0].values
-                    block = ExtensionBlock(values, slice(0, len(values), 1), ndim=1)
-                    data = SingleBlockManager([block], data.axes[0], fastpath=True)
-            else:
+            if not isinstance(data.blocks[0].dtype, GeometryDtype):
                 raise TypeError(
                     "Non geometry data passed to GeoSeries constructor, "
                     f"received data of dtype '{data.blocks[0].dtype}'"
@@ -207,7 +189,7 @@ class GeoSeries(GeoPandasBase, Series):
             # https://github.com/pandas-dev/pandas/issues/26469
             kwargs.pop("dtype", None)
             # Use Series constructor to handle input data
-            with compat.ignore_shapely2_warnings():
+            with warnings.catch_warnings():
                 # suppress additional warning from pandas for empty data
                 # (will always give object dtype instead of float dtype in the future,
                 # making the `if s.empty: s = s.astype(object)` below unnecessary)
@@ -665,8 +647,17 @@ class GeoSeries(GeoPandasBase, Series):
         return self._wrapped_pandas_method("select", *args, **kwargs)
 
     @doc(pd.Series)
-    def apply(self, func, convert_dtype: bool = True, args=(), **kwargs):
-        result = super().apply(func, convert_dtype=convert_dtype, args=args, **kwargs)
+    def apply(self, func, convert_dtype: bool = None, args=(), **kwargs):
+        if convert_dtype is not None:
+            kwargs["convert_dtype"] = convert_dtype
+        else:
+            # if compat.PANDAS_GE_21 don't pass through, use pandas default
+            # of true to avoid internally triggering the pandas warning
+            if not compat.PANDAS_GE_21:
+                kwargs["convert_dtype"] = True
+
+        # to avoid warning
+        result = super().apply(func, args=args, **kwargs)
         if isinstance(result, GeoSeries):
             if self.crs is not None:
                 result.set_crs(self.crs, inplace=True)
@@ -847,7 +838,7 @@ class GeoSeries(GeoPandasBase, Series):
         GeoSeries.isna : detect missing values
         """
         if value is None:
-            value = GeometryCollection() if compat.SHAPELY_GE_20 else BaseGeometry()
+            value = GeometryCollection()
         return super().fillna(value=value, method=method, inplace=inplace, **kwargs)
 
     def __contains__(self, other) -> bool:
@@ -933,52 +924,14 @@ class GeoSeries(GeoPandasBase, Series):
             )
             index_parts = True
 
-        if compat.USE_SHAPELY_20 or (compat.USE_PYGEOS and compat.PYGEOS_GE_09):
-            if compat.USE_SHAPELY_20:
-                geometries, outer_idx = shapely.get_parts(
-                    self.values._data, return_index=True
-                )
-            else:
-                import pygeos
+        geometries, outer_idx = shapely.get_parts(self.values._data, return_index=True)
 
-                geometries, outer_idx = pygeos.get_parts(
-                    self.values._data, return_index=True
-                )
-
-            index = _get_index_for_parts(
-                self.index,
-                outer_idx,
-                ignore_index=ignore_index,
-                index_parts=index_parts,
-            )
-
-            return GeoSeries(geometries, index=index, crs=self.crs).__finalize__(self)
-
-        # else PyGEOS is not available or version <= 0.8
-
-        index = []
-        geometries = []
-        for idx, s in self.geometry.items():
-            if s.geom_type.startswith("Multi") or s.geom_type == "GeometryCollection":
-                geoms = s.geoms
-                idxs = [(idx, i) for i in range(len(geoms))]
-            else:
-                geoms = [s]
-                idxs = [(idx, 0)]
-            index.extend(idxs)
-            geometries.extend(geoms)
-
-        if ignore_index:
-            index = range(len(geometries))
-
-        elif index_parts:
-            # if self.index is a MultiIndex then index is a list of nested tuples
-            if isinstance(self.index, MultiIndex):
-                index = [tuple(outer) + (inner,) for outer, inner in index]
-            index = MultiIndex.from_tuples(index, names=self.index.names + [None])
-
-        else:
-            index = [idx for idx, _ in index]
+        index = _get_index_for_parts(
+            self.index,
+            outer_idx,
+            ignore_index=ignore_index,
+            index_parts=index_parts,
+        )
 
         return GeoSeries(geometries, index=index, crs=self.crs).__finalize__(self)
 
@@ -1171,8 +1124,6 @@ class GeoSeries(GeoPandasBase, Series):
 
         .. versionadded:: 0.9
 
-        .. note:: Requires pyproj 3+
-
         Parameters
         ----------
         datum_name : str, optional
@@ -1253,8 +1204,7 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
             The default is to return a binary bytes object.
         kwargs
             Additional keyword args will be passed to
-            :func:`shapely.to_wkb` if shapely >= 2 is installed or
-            :func:`pygeos.to_wkb` if pygeos is installed.
+            :func:`shapely.to_wkb`.
 
         Returns
         -------
@@ -1274,8 +1224,7 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
         Parameters
         ----------
         kwargs
-            Keyword args will be passed to :func:`pygeos.to_wkt`
-            if pygeos is installed.
+            Keyword args will be passed to :func:`shapely.to_wkt`.
 
         Returns
         -------

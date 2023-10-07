@@ -20,11 +20,6 @@ from geopandas.explore import _explore
 from . import _compat as compat
 from ._decorator import doc
 
-if compat.SHAPELY_GE_18:
-    geometry_type_error = shapely.errors.GeometryTypeError
-else:
-    geometry_type_error = ValueError
-
 
 def _geodataframe_constructor_with_fallback(*args, **kwargs):
     """
@@ -134,14 +129,13 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
     _geometry_column_name = None
 
     def __init__(self, data=None, *args, geometry=None, crs=None, **kwargs):
-        with compat.ignore_shapely2_warnings():
-            if (
-                kwargs.get("copy") is None
-                and isinstance(data, DataFrame)
-                and not isinstance(data, GeoDataFrame)
-            ):
-                kwargs.update(copy=True)
-            super().__init__(data, *args, **kwargs)
+        if (
+            kwargs.get("copy") is None
+            and isinstance(data, DataFrame)
+            and not isinstance(data, GeoDataFrame)
+        ):
+            kwargs.update(copy=True)
+        super().__init__(data, *args, **kwargs)
 
         # set_geometry ensures the geometry data have the proper dtype,
         # but is not called if `geometry=None` ('geometry' column present
@@ -927,13 +921,13 @@ individually so that features may have different properties
         if len(properties_cols) > 0:
             # convert to object to get python scalars.
             properties_cols = self[properties_cols]
-            properties = properties_cols.astype(object).values
+            properties = properties_cols.astype(object)
             na_mask = pd.isna(properties_cols).values
 
             if na == "null":
                 properties[na_mask] = None
 
-            for i, row in enumerate(properties):
+            for i, row in enumerate(properties.values):
                 geom = geometries[i]
 
                 if na == "drop":
@@ -1003,8 +997,7 @@ individually so that features may have different properties
             The default is to return a binary bytes object.
         kwargs
             Additional keyword args will be passed to
-            :func:`shapely.to_wkb` if shapely >= 2 is installed or
-            :func:`pygeos.to_wkb` if pygeos is installed.
+            :func:`shapely.to_wkb`.
 
         Returns
         -------
@@ -1027,8 +1020,7 @@ individually so that features may have different properties
         Parameters
         ----------
         kwargs
-            Keyword args will be passed to :func:`pygeos.to_wkt`
-            if pygeos is installed.
+            Keyword args will be passed to :func:`shapely.to_wkt`.
 
         Returns
         -------
@@ -1437,8 +1429,6 @@ individually so that features may have different properties
 
         .. versionadded:: 0.9
 
-        .. note:: Requires pyproj 3+
-
         Parameters
         ----------
         datum_name : str, optional
@@ -1622,7 +1612,7 @@ individually so that features may have different properties
                     # not enough info about func to preserve CRS
                     result = _ensure_geometry(result)
 
-                except (TypeError, geometry_type_error):
+                except (TypeError, shapely.errors.GeometryTypeError):
                     pass
 
         return result
