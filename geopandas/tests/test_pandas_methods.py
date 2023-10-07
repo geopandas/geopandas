@@ -251,7 +251,10 @@ def test_astype(s, df):
     assert s.astype(str)[0] == "POINT (0 0)"
 
     res = s.astype(object)
-    if not Version(pd.__version__) == Version("2.1.0"):
+    if not (
+        (Version(pd.__version__) == Version("2.1.0"))
+        or (Version(pd.__version__) == Version("2.1.1"))
+    ):
         # https://github.com/geopandas/geopandas/issues/2948 - bug in pandas 2.1.0
         assert isinstance(res, pd.Series) and not isinstance(res, GeoSeries)
         assert res.dtype == object
