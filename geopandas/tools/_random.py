@@ -7,7 +7,7 @@ from geopandas.array import from_shapely, points_from_xy
 from geopandas.geoseries import GeoSeries
 
 
-def uniform(geom, size, seed=None):
+def uniform(geom, size, rng=None):
     """
 
     Sample uniformly at random from a geometry.
@@ -39,7 +39,7 @@ def uniform(geom, size, seed=None):
     >>> square = box(0,0,1,1)
     >>> uniform(square, size=102) # doctest: +SKIP
     """
-    generator = numpy.random.default_rng(seed=seed)
+    generator = numpy.random.default_rng(seed=rng)
 
     if geom is None or geom.is_empty:
         return MultiPoint()

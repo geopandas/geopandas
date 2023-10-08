@@ -30,12 +30,9 @@ except ImportError:
 try:
     import fiona
 
-    # invalid datetime handling
-    FIONA_GE_1821 = Version(fiona.__version__) >= Version("1.8.21")
     FIONA_GE_19 = Version(Version(fiona.__version__).base_version) >= Version("1.9.0")
 except ImportError:
     fiona = False
-    FIONA_GE_1821 = False
     FIONA_GE_19 = False
 
 
@@ -252,10 +249,6 @@ def write_invalid_date_file(date_str, tmpdir, ext, engine):
 @pytest.mark.parametrize("ext", dt_exts)
 def test_read_file_datetime_invalid(tmpdir, ext, engine):
     # https://github.com/geopandas/geopandas/issues/2502
-    if not FIONA_GE_1821 and ext == "gpkg":
-        # https://github.com/Toblerity/Fiona/issues/1035
-        pytest.skip("Invalid datetime throws in Fiona<1.8.21")
-
     date_str = "9999-99-99T00:00:00"  # invalid date handled by GDAL
     tempfilename = write_invalid_date_file(date_str, tmpdir, ext, engine)
     res = read_file(tempfilename)
@@ -1157,3 +1150,23 @@ def test_multiple_geom_cols_error(tmpdir, df_nybb):
     df_nybb["geom2"] = df_nybb.geometry
     with pytest.raises(ValueError, match="GeoDataFrame contains multiple geometry"):
         df_nybb.to_file(os.path.join(str(tmpdir), "boros.gpkg"))
+
+
+@PYOGRIO_MARK
+@FIONA_MARK
+def test_option_io_engine():
+    try:
+        geopandas.options.io_engine = "pyogrio"
+
+        # disallowing to read a Shapefile with fiona should ensure we are
+        # actually reading with pyogrio
+        import fiona
+
+        orig = fiona.supported_drivers["ESRI Shapefile"]
+        fiona.supported_drivers["ESRI Shapefile"] = "w"
+
+        nybb_filename = geopandas.datasets.get_path("nybb")
+        _ = geopandas.read_file(nybb_filename)
+    finally:
+        fiona.supported_drivers["ESRI Shapefile"] = orig
+        geopandas.options.io_engine = None

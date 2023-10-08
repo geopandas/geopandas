@@ -60,6 +60,11 @@ Constructive methods
   Returns a :class:`~geopandas.GeoSeries` containing a `Linestring` or `MultiLineString`
   geometry at a distance from the object on its right or its left side.
 
+.. method:: GeoSeries.remove_repeated_points
+
+   Returns a :class:`~geopandas.GeoSeries` containing a copy of the input geometry 
+   with repeated points removed.
+
 .. method:: GeoSeries.simplify(tolerance, preserve_topology=True)
 
   Returns a :class:`~geopandas.GeoSeries` containing a simplified representation of

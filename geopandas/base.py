@@ -1,8 +1,10 @@
 from warnings import warn
+import warnings
 
 import numpy as np
 import pandas as pd
 from pandas import DataFrame, Series
+import shapely
 from shapely.geometry import box, MultiPoint
 from shapely.geometry.base import BaseGeometry
 
@@ -899,6 +901,45 @@ GeometryCollection
         """
         return _delegate_property("interiors", self)
 
+    def remove_repeated_points(self, tolerance=0.0):
+        """Returns a ``GeoSeries`` containing a copy of the input geometry
+        with repeated points removed.
+
+        From the start of the coordinate sequence, each next point within the
+        tolerance is removed.
+
+        Removing repeated points with a non-zero tolerance may result in an invalid
+        geometry being returned.
+
+        Parameters
+        ----------
+        tolerance : float, default 0.0
+            Remove all points within this distance of each other. Use 0.0
+            to remove only exactly repeated points (the default).
+
+        Examples
+        --------
+
+        >>> from shapely import LineString, Polygon
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...        LineString([(0, 0), (0, 0), (1, 0)]),
+        ...        Polygon([(0, 0), (0, 0.5), (0, 1), (0.5, 1), (0,0)]),
+        ...     ],
+        ...     crs=3857
+        ... )
+        >>> s
+        0    LINESTRING (0.000 0.000, 0.000 0.000, 1.000 0....
+        1    POLYGON ((0.000 0.000, 0.000 0.500, 0.000 1.00...
+        dtype: geometry
+
+        >>> s.remove_repeated_points(tolerance=0.0)
+        0                LINESTRING (0.000 0.000, 1.000 0.000)
+        1    POLYGON ((0.000 0.000, 0.000 0.500, 0.000 1.00...
+        dtype: geometry
+        """
+        return _delegate_geo_method("remove_repeated_points", self, tolerance=tolerance)
+
     def representative_point(self):
         """Returns a ``GeoSeries`` of (cheaply computed) points that are
         guaranteed to be within each geometry.
@@ -1069,6 +1110,38 @@ GeometryCollection
         dtype: geometry
         """
         return _delegate_geo_method("make_valid", self)
+
+    def reverse(self):
+        """Returns a ``GeoSeries`` with the order of coordinates reversed.
+
+        Examples
+        --------
+
+        >>> from shapely.geometry import Polygon, LineString, Point
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0, 0), (1, 1), (0, 1)]),
+        ...         LineString([(0, 0), (1, 1), (1, 0)]),
+        ...         Point(0, 0),
+        ...     ]
+        ... )
+        >>> s
+        0    POLYGON ((0.00000 0.00000, 1.00000 1.00000, 0....
+        1    LINESTRING (0.00000 0.00000, 1.00000 1.00000, ...
+        2                              POINT (0.00000 0.00000)
+        dtype: geometry
+
+        >>> s.reverse()
+        0    POLYGON ((0.00000 0.00000, 0.00000 1.00000, 1....
+        1    LINESTRING (1.00000 0.00000, 1.00000 1.00000, ...
+        2    POINT (0.00000 0.00000)
+        dtype: geometry
+
+        See also
+        --------
+        GeoSeries.normalize : normalize order of coordinates
+        """
+        return _delegate_geo_method("reverse", self)
 
     def segmentize(self, max_segment_length):
         """Returns a ``GeoSeries`` with vertices added to line segments based on
@@ -1392,7 +1465,6 @@ GeometryCollection
 
         See also
         --------
-        GeoSeries.geom_almost_equals
         GeoSeries.geom_equals_exact
 
         """
@@ -1465,8 +1537,15 @@ GeometryCollection
         GeoSeries.geom_equals_exact
 
         """
+        warnings.warn(
+            "The 'geom_almost_equals()' method is deprecated because the name is "
+            "confusing. The 'geom_equals_exact()' method should be used instead.",
+            FutureWarning,
+            stacklevel=2,
+        )
+        tolerance = 0.5 * 10 ** (-decimal)
         return _binary_op(
-            "geom_almost_equals", self, other, decimal=decimal, align=align
+            "geom_equals_exact", self, other, tolerance=tolerance, align=align
         )
 
     def geom_equals_exact(self, other, tolerance, align=True):
@@ -1530,7 +1609,6 @@ GeometryCollection
         See also
         --------
         GeoSeries.geom_equals
-        GeoSeries.geom_almost_equals
         """
         return _binary_op(
             "geom_equals_exact", self, other, tolerance=tolerance, align=align
@@ -3443,10 +3521,9 @@ GeometryCollection
     def sindex(self):
         """Generate the spatial index
 
-        Creates R-tree spatial index based on ``pygeos.STRtree`` or
-        ``rtree.index.Index``.
+        Creates R-tree spatial index based on ``shapely.STRtree``.
 
-        Note that the  spatial index may not be fully
+        Note that the spatial index may not be fully
         initialized until the first use.
 
         Examples
@@ -4127,34 +4204,6 @@ GeometryCollection
         """
         return _CoordinateIndexer(self)
 
-    def equals(self, other):
-        """
-        Test whether two objects contain the same elements.
-
-        This function allows two GeoSeries or GeoDataFrames to be compared
-        against each other to see if they have the same shape and elements.
-        Missing values in the same location are considered equal. The
-        row/column index do not need to have the same type (as long as the
-        values are still considered equal), but the dtypes of the respective
-        columns must be the same.
-
-        Parameters
-        ----------
-        other : GeoSeries or GeoDataFrame
-            The other GeoSeries or GeoDataFrame to be compared with the first.
-
-        Returns
-        -------
-        bool
-            True if all elements are the same in both objects, False
-            otherwise.
-        """
-        # we override this because pandas is using `self._constructor` in the
-        # isinstance check (https://github.com/geopandas/geopandas/issues/1420)
-        if not isinstance(other, type(self)):
-            return False
-        return self._data.equals(other._data)
-
     def get_coordinates(self, include_z=False, ignore_index=False, index_parts=False):
         """Gets coordinates from a :class:`GeoSeries` as a :class:`~pandas.DataFrame` of
         floats.
@@ -4226,26 +4275,9 @@ GeometryCollection
           2  3.0  1.0
           3  3.0 -1.0
         """
-        if compat.USE_SHAPELY_20:
-            import shapely
-
-            coords, outer_idx = shapely.get_coordinates(
-                self.geometry.values._data, include_z=include_z, return_index=True
-            )
-        elif compat.USE_PYGEOS:
-            import pygeos
-
-            coords, outer_idx = pygeos.get_coordinates(
-                self.geometry.values._data, include_z=include_z, return_index=True
-            )
-
-        else:
-            import shapely
-
-            raise NotImplementedError(
-                f"shapely >= 2.0 or PyGEOS are required, "
-                f"version {shapely.__version__} is installed."
-            )
+        coords, outer_idx = shapely.get_coordinates(
+            self.geometry.values._data, include_z=include_z, return_index=True
+        )
 
         column_names = ["x", "y"]
         if include_z:
@@ -4294,7 +4326,7 @@ GeometryCollection
 
         return pd.Series(distances, index=self.index, name="hilbert_distance")
 
-    def sample_points(self, size, method="uniform", seed=None, **kwargs):
+    def sample_points(self, size, method="uniform", seed=None, rng=None, **kwargs):
         """
         Sample points from each geometry.
 
@@ -4325,8 +4357,8 @@ GeometryCollection
             http://pysal.org/pointpats/api.html#random-distributions). Pointpats methods
             are implemented for (Multi)Polygons only and will return an empty MultiPoint
             for other geometry types.
-        seed : {None, int, array_like[ints], SeedSequence, BitGenerator, Generator}, optional
-            A seed to initialize the numpy BitGenerator. If None, then fresh,
+        rng : {None, int, array_like[ints], SeedSequence, BitGenerator, Generator}, optional
+            A random generator or seed to initialize the numpy BitGenerator. If None, then fresh,
             unpredictable entropy will be pulled from the OS.
         **kwargs : dict
             Options for the pointpats sampling algorithms.
@@ -4354,13 +4386,19 @@ GeometryCollection
         from .geoseries import GeoSeries
         from .tools._random import uniform
 
+        if seed is not None:
+            warn(
+                "The 'seed' keyword is deprecated. Use 'rng' instead.",
+                FutureWarning,
+                stacklevel=2,
+            )
+            rng = seed
+
         if method == "uniform":
             if pd.api.types.is_list_like(size):
-                result = [
-                    uniform(geom, s, seed) for geom, s in zip(self.geometry, size)
-                ]
+                result = [uniform(geom, s, rng) for geom, s in zip(self.geometry, size)]
             else:
-                result = self.geometry.apply(uniform, size=size, seed=seed)
+                result = self.geometry.apply(uniform, size=size, rng=rng)
 
         else:
             pointpats = compat.import_optional_dependency(
