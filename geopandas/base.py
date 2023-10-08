@@ -4463,25 +4463,13 @@ GeometryCollection
         from .geoseries import GeoSeries
         from .array import from_shapely
 
-        if compat.USE_SHAPELY_20:
-            from shapely import polygonize, polygonize_full
-
-        elif compat.USE_PYGEOS:
-            from pygeos import polygonize, polygonize_full
-
-        else:
-            from shapely.ops import polygonize, polygonize_full
-
         if node:
             geometry_input = from_shapely([self.geometry.unary_union])
         else:
             geometry_input = self.geometry.values
 
-        if compat.USE_PYGEOS:
-            geometry_input = geometry_input._data
-
         if full:
-            polygons, cuts, dangles, invalid = polygonize_full(geometry_input)
+            polygons, cuts, dangles, invalid = shapely.polygonize_full(geometry_input)
 
             cuts = GeoSeries(cuts, crs=self.crs, name="cut edges").explode(
                 ignore_index=True
@@ -4498,7 +4486,7 @@ GeometryCollection
 
             return (polygons, cuts, dangles, invalid)
 
-        polygons = polygonize(geometry_input)
+        polygons = shapely.polygonize(geometry_input)
         return GeoSeries(polygons, crs=self.crs, name="polygons").explode(
             ignore_index=True
         )
