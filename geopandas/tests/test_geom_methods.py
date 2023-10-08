@@ -23,9 +23,8 @@ from shapely import wkt
 from geopandas import GeoDataFrame, GeoSeries
 from geopandas.base import GeoPandasBase
 
-from geopandas.testing import assert_geodataframe_equal, geom_almost_equals
-from geopandas.tests.util import assert_geoseries_equal, geom_equals
-from geopandas import _compat as compat
+from geopandas.testing import assert_geodataframe_equal
+from geopandas.tests.util import assert_geoseries_equal, geom_almost_equals, geom_equals
 from pandas.testing import assert_frame_equal, assert_index_equal, assert_series_equal
 import pytest
 
@@ -372,10 +371,6 @@ class TestGeomMethods:
         expected = GeoSeries([self.t1, self.t1])
         self._test_binary_topological("difference", expected, self.g1, self.t2)
 
-    @pytest.mark.skipif(
-        not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
-        reason="get_coordinates not implemented for shapely<2",
-    )
     def test_shortest_line(self):
         expected = GeoSeries([LineString([(1, 1), (5, 5)]), None])
         assert_array_dtype_equal(expected, self.na_none.shortest_line(self.p0))
@@ -395,16 +390,6 @@ class TestGeomMethods:
         assert_array_dtype_equal(
             expected, self.crossed_lines.shortest_line(crossed_lines_inv, align=False)
         )
-
-    @pytest.mark.skipif(
-        (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
-        reason="get_coordinates not implemented for shapely<2",
-    )
-    def test_shortest_line_not(self):
-        with pytest.raises(
-            NotImplementedError, match="shapely >= 2.0 or PyGEOS is required"
-        ):
-            self.na_none.shortest_line(self.p0)
 
     def test_geo_op_empty_result(self):
         l1 = LineString([(0, 0), (1, 1)])
@@ -617,10 +602,6 @@ class TestGeomMethods:
         with pytest.warns(UserWarning, match="Geometry is in a geographic CRS"):
             self.g4.distance(self.p0)
 
-    @pytest.mark.skipif(
-        not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
-        reason="requires hausdorff_distance in shapely 2.0+",
-    )
     def test_hausdorff_distance(self):
         # closest point is (0, 0) in self.p1
         expected = Series(
@@ -654,20 +635,6 @@ class TestGeomMethods:
             expected, self.g12.hausdorff_distance(self.g13, densify=0.25)
         )
 
-    @pytest.mark.skipif(
-        (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
-        reason="hausdorff_distance not implemented for shapely<2",
-    )
-    def test_hausdorff_distance_not(self):
-        with pytest.raises(
-            NotImplementedError, match="shapely >= 2.0 or PyGEOS is required"
-        ):
-            self.g0.hausdorff_distance(self.g9)
-
-    @pytest.mark.skipif(
-        not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
-        reason="requires frechet_distance in shapely 2.0+",
-    )
     def test_frechet_distance(self):
         # closest point is (0, 0) in self.p1
         expected = Series(
@@ -699,16 +666,6 @@ class TestGeomMethods:
         assert_array_dtype_equal(
             expected, self.g12.frechet_distance(self.g13, densify=0.25)
         )
-
-    @pytest.mark.skipif(
-        (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
-        reason="frechet_distance not implemented for shapely<2",
-    )
-    def test_frechet_distance_not(self):
-        with pytest.raises(
-            NotImplementedError, match="shapely >= 2.0 or PyGEOS is required"
-        ):
-            self.g0.frechet_distance(self.g9)
 
     def test_intersects(self):
         expected = [True, True, True, True, True, False, False]
@@ -795,10 +752,6 @@ class TestGeomMethods:
         exp = Series([False, False])
         assert_series_equal(res, exp)
 
-    @pytest.mark.skipif(
-        not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
-        reason="covered_by is only implemented for pygeos, not shapely",
-    )
     def test_covered_by(self):
         res = self.g1.covered_by(self.g1)
         exp = Series([True, True])
@@ -819,11 +772,11 @@ class TestGeomMethods:
         expected = Series(np.array([False] * len(self.g1)), self.g1.index)
         self._test_unary_real("is_empty", expected, self.g1)
 
-    # for is_ring we raise a warning about the value for Polygon changing
-    @pytest.mark.filterwarnings("ignore:is_ring:FutureWarning")
     def test_is_ring(self):
-        expected = Series(np.array([True] * len(self.g1)), self.g1.index)
+        expected = Series(np.array([False] * len(self.g1)), self.g1.index)
         self._test_unary_real("is_ring", expected, self.g1)
+        expected = Series(np.array([True] * len(self.g1)), self.g1.index)
+        self._test_unary_real("is_ring", expected, self.g1.exterior)
 
     def test_is_simple(self):
         expected = Series(np.array([True] * len(self.g1)), self.g1.index)
@@ -906,10 +859,6 @@ class TestGeomMethods:
         assert_geoseries_equal(result, expected)
         assert result.is_valid.all()
 
-    @pytest.mark.skipif(
-        not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
-        reason=("reverse is only implemented for pygeos and shapely >= 2.0"),
-    )
     def test_reverse(self):
         expected = GeoSeries(
             [
@@ -919,33 +868,6 @@ class TestGeomMethods:
         )
         assert_geoseries_equal(expected, self.g5.reverse())
 
-    @pytest.mark.skipif(
-        (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
-        reason="reverse not implemented for shapely<2",
-    )
-    def test_reverse_not_implemented(self):
-        with pytest.raises(
-            NotImplementedError, match="shapely >= 2.0 or PyGEOS is required"
-        ):
-            self.g5.reverse()
-
-    @pytest.mark.skipif(
-        (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
-        reason="segmentize keyword introduced in shapely 2.0",
-    )
-    def test_segmentize_shapely_pre20(self):
-        s = GeoSeries([Point(1, 1)])
-        with pytest.raises(
-            NotImplementedError,
-            match=f"shapely >= 2.0 or PyGEOS is required, "
-            f"version {shapely.__version__} is installed",
-        ):
-            s.segmentize(max_segment_length=1)
-
-    @pytest.mark.skipif(
-        not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
-        reason="segmentize keyword introduced in shapely 2.0",
-    )
     def test_segmentize_linestrings(self):
         expected_g1 = GeoSeries(
             [
@@ -993,46 +915,9 @@ class TestGeomMethods:
         assert_geoseries_equal(expected_g1, result_g1)
         assert_geoseries_equal(expected_g5, result_g5)
 
-    @pytest.mark.skipif(
-        compat.SHAPELY_GE_20,
-        reason="concave_hull is implemented for shapely >= 2.0",
-    )
-    def test_concave_hull_not_implemented_shapely_pre2(self):
-        with pytest.raises(
-            NotImplementedError,
-            match=f"shapely >= 2.0 is required, "
-            f"version {shapely.__version__} is installed",
-        ):
-            self.squares.concave_hull()
-
-    @pytest.mark.skipif(
-        not (compat.USE_PYGEOS and compat.SHAPELY_GE_20),
-        reason="concave_hull is only implemented for shapely >= 2.0",
-    )
-    def test_concave_hull_pygeos_set_shapely_installed(self):
-        expected = GeoSeries(
-            [
-                Polygon([(0, 1), (1, 1), (0, 0), (0, 1)]),
-                Polygon([(1, 0), (0, 0), (0, 1), (1, 1), (1, 0)]),
-            ]
-        )
-        with pytest.warns(
-            UserWarning,
-            match="PyGEOS does not support concave_hull, and Shapely >= 2 is installed",
-        ):
-            assert_geoseries_equal(expected, self.g5.concave_hull())
-
-    @pytest.mark.skipif(
-        not compat.USE_SHAPELY_20,
-        reason="concave_hull is only implemented for shapely >= 2.0",
-    )
     def test_concave_hull(self):
         assert_geoseries_equal(self.squares, self.squares.concave_hull())
 
-    @pytest.mark.skipif(
-        not compat.USE_SHAPELY_20,
-        reason="concave_hull is only implemented for shapely >= 2.0",
-    )
     @pytest.mark.parametrize(
         "expected_series,ratio",
         [
@@ -1049,10 +934,6 @@ class TestGeomMethods:
         # the convex hull of a square should be the same as the square
         assert_geoseries_equal(self.squares, self.squares.convex_hull)
 
-    @pytest.mark.skipif(
-        not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
-        reason="delaunay_triangles not implemented for shapely<2",
-    )
     def test_delaunay_triangles(self):
         expected = GeoSeries(
             [
@@ -1064,10 +945,6 @@ class TestGeomMethods:
         assert isinstance(dlt, GeoSeries)
         assert_series_equal(expected, dlt)
 
-    @pytest.mark.skipif(
-        not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
-        reason="delaunay_triangles not implemented for shapely<2",
-    )
     def test_delaunay_triangles_pass_kwargs(self):
         expected = GeoSeries(
             [
@@ -1078,19 +955,6 @@ class TestGeomMethods:
         dlt = self.g3.delaunay_triangles(only_edges=True)
         assert isinstance(dlt, GeoSeries)
         assert_series_equal(expected, dlt)
-
-    @pytest.mark.skipif(
-        compat.USE_PYGEOS or compat.USE_SHAPELY_20,
-        reason="delaunay_triangles implemented for shapely>2",
-    )
-    def test_delaunay_triangles_shapely_pre20(self):
-        s = GeoSeries([Point(1, 1)])
-        with pytest.raises(
-            NotImplementedError,
-            match=f"shapely >= 2.0 or PyGEOS is required, "
-            f"version {shapely.__version__} is installed",
-        ):
-            s.delaunay_triangles()
 
     def test_exterior(self):
         exp_exterior = GeoSeries([LinearRing(p.boundary) for p in self.g3])
@@ -1300,31 +1164,11 @@ class TestGeomMethods:
         assert isinstance(r, GeoSeries)
         assert s.crs == r.crs
 
-    @pytest.mark.skipif(
-        not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
-        reason=(
-            "extract_unique_points is only implemented for pygeos and shapely >= 2.0"
-        ),
-    )
     def test_extract_unique_points(self):
         eup = GeoSeries([self.t6]).extract_unique_points()
         expected = GeoSeries([MultiPoint([(2, 0), (3, 0)])])
         assert_series_equal(eup, expected)
 
-    @pytest.mark.skipif(
-        (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
-        reason="extract_unique_points not implemented for shapely<2",
-    )
-    def test_extract_unique_points_not_implemented(self):
-        with pytest.raises(
-            NotImplementedError, match="shapely >= 2.0 or PyGEOS is required"
-        ):
-            self.g1.extract_unique_points()
-
-    @pytest.mark.skipif(
-        not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
-        reason="minimum_bounding_circle is only implemented for pygeos, not shapely",
-    )
     def test_minimum_bounding_circle(self):
         mbc = self.g1.minimum_bounding_circle()
         centers = GeoSeries([Point(0.5, 0.5)] * 2)
@@ -1740,10 +1584,6 @@ class TestGeomMethods:
         with pytest.warns(FutureWarning):
             self._test_binary_operator("__sub__", expected, self.gdf1, self.t2)
 
-    @pytest.mark.skipif(
-        not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
-        reason="get_coordinates not implemented for shapely<2",
-    )
     def test_get_coordinates(self):
         expected = DataFrame(
             data=self.expected_2d,
@@ -1752,10 +1592,6 @@ class TestGeomMethods:
         )
         assert_frame_equal(self.g11.get_coordinates(), expected)
 
-    @pytest.mark.skipif(
-        not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
-        reason="get_coordinates not implemented for shapely<2",
-    )
     def test_get_coordinates_z(self):
         expected = DataFrame(
             data=self.expected_3d,
@@ -1764,10 +1600,6 @@ class TestGeomMethods:
         )
         assert_frame_equal(self.g11.get_coordinates(include_z=True), expected)
 
-    @pytest.mark.skipif(
-        not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
-        reason="get_coordinates not implemented for shapely<2",
-    )
     def test_get_coordinates_ignore(self):
         expected = DataFrame(
             data=self.expected_2d,
@@ -1775,10 +1607,6 @@ class TestGeomMethods:
         )
         assert_frame_equal(self.g11.get_coordinates(ignore_index=True), expected)
 
-    @pytest.mark.skipif(
-        not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
-        reason="get_coordinates not implemented for shapely<2",
-    )
     def test_get_coordinates_parts(self):
         expected = DataFrame(
             data=self.expected_2d,
@@ -1803,20 +1631,6 @@ class TestGeomMethods:
         )
         assert_frame_equal(self.g11.get_coordinates(index_parts=True), expected)
 
-    @pytest.mark.skipif(
-        (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
-        reason="get_coordinates not implemented for shapely<2",
-    )
-    def test_get_coordinates_not(self):
-        with pytest.raises(
-            NotImplementedError, match="shapely >= 2.0 or PyGEOS are required"
-        ):
-            self.g11.get_coordinates()
-
-    @pytest.mark.skipif(
-        not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
-        reason="minimum_bounding_radius not implemented for shapely<2",
-    )
     def test_minimum_bounding_radius(self):
         mbr_geoms = self.g1.minimum_bounding_radius()
 
@@ -1832,20 +1646,6 @@ class TestGeomMethods:
             Series([0.707106, 0.707106]),
         )
 
-    @pytest.mark.skipif(
-        (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
-        reason="minimum_bounding_radius not implemented for shapely<2",
-    )
-    def test_minimium_bounding_radius_not(self):
-        with pytest.raises(
-            NotImplementedError, match="shapely >= 2.0 or PyGEOS is required"
-        ):
-            self.g1.minimum_bounding_radius()
-
-    @pytest.mark.skipif(
-        not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
-        reason="array input in interpolate is not implemented for shapely<2",
-    )
     @pytest.mark.parametrize("size", [10, 20, 50])
     def test_sample_points(self, size):
         for gs in (
@@ -1863,10 +1663,6 @@ class TestGeomMethods:
         with pytest.warns(FutureWarning, match="The 'seed' keyword is deprecated"):
             _ = gs.sample_points(size, seed=1)
 
-    @pytest.mark.skipif(
-        not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
-        reason="array input in interpolate is not implemented for shapely<2",
-    )
     def test_sample_points_array(self):
         output = concat([self.g1, self.g1]).sample_points([10, 15, 20, 25])
         expected = Series(
@@ -1874,10 +1670,6 @@ class TestGeomMethods:
         )
         assert_series_equal(shapely.get_num_geometries(output), expected)
 
-    @pytest.mark.skipif(
-        not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
-        reason="get_coordinates not implemented for shapely<2",
-    )
     @pytest.mark.parametrize("size", [10, 20, 50])
     def test_sample_points_pointpats(self, size):
         pytest.importorskip("pointpats")
@@ -1895,46 +1687,12 @@ class TestGeomMethods:
         with pytest.raises(AttributeError, match="pointpats.random module has no"):
             gs.sample_points(10, method="nonexistent")
 
-    @pytest.mark.skipif(
-        not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
-        reason="offset_curve is only implemented for pygeos, not shapely",
-    )
     def test_offset_curve(self):
         oc = GeoSeries([self.l1]).offset_curve(1, join_style="mitre")
         expected = GeoSeries([LineString([[-1, 0], [-1, 2], [1, 2]])])
         assert_geoseries_equal(expected, oc)
         assert isinstance(oc, GeoSeries)
 
-    @pytest.mark.skipif(
-        compat.SHAPELY_GE_20,
-        reason="remove_repeated_points is implemented for shapely >= 2.0",
-    )
-    def test_remove_repeated_points_not_implemented_shapely_pre2(self):
-        with pytest.raises(
-            NotImplementedError,
-            match=f"shapely >= 2.0 is required, "
-            f"version {shapely.__version__} is installed",
-        ):
-            self.squares.remove_repeated_points()
-
-    @pytest.mark.skipif(
-        not (compat.USE_PYGEOS and compat.SHAPELY_GE_20),
-        reason="remove_repeated_points is only implemented for shapely >= 2.0",
-    )
-    def test_remove_repeated_points_pygeos_set_shapely_installed(self):
-        with pytest.warns(
-            UserWarning,
-            match=(
-                "PyGEOS does not support remove_repeated_points, "
-                "and Shapely >= 2 is installed"
-            ),
-        ):
-            self.g1.remove_repeated_points()
-
-    @pytest.mark.skipif(
-        not compat.USE_SHAPELY_20,
-        reason="remove_repeated_points is only implemented for shapely >= 2.0",
-    )
     @pytest.mark.parametrize(
         "geom,expected",
         [
