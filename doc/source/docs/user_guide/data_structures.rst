@@ -31,7 +31,7 @@ GeoPandas has three basic classes of geometric objects (which are actually *shap
 * Lines / Multi-Lines
 * Polygons / Multi-Polygons
 
-Note that all entries in  a :class:`GeoSeries` need not be of the same geometric type, although certain export operations will fail if this is not the case.
+Note that all entries in a :class:`GeoSeries` do not need to be of the same geometric type, although certain export operations will fail if this is not the case.
 
 Overview of attributes and methods
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -72,7 +72,7 @@ Basic methods
 Relationship tests
 ^^^^^^^^^^^^^^^^^^^
 
-* :meth:`~GeoSeries.geom_almost_equals`: is shape almost the same as ``other`` (good when floating point precision issues make shapes slightly different)
+* :meth:`~GeoSeries.geom_equals_exact`: is shape the same as ``other`` (up to a specified decimal place tolerance)
 * :meth:`~GeoSeries.contains`: is shape contained within ``other``
 * :meth:`~GeoSeries.intersects`: does shape intersect ``other``
 
