@@ -1,11 +1,16 @@
 # Changelog
 
-## Development
+## Development version
+
+Notes on dependencies:
+
+- GeoPandas 1.0 drops support for shapely<2 and PyGEOS. The only geometry engine that is
+  currently supported is shapely >= 2. As a consequence, spatial indexing based on the
+  rtree package has also been removed. (#3035)
 
 New methods:
 
 - Added ``is_ccw`` method from shapely to GeoSeries/GeoDataframe (#3027).
-
 
 ## Version 0.14 (Sep 15, 2023)
 

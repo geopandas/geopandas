@@ -15,9 +15,7 @@ dependencies:
   - pytest-xdist
   - fsspec
   # optional
-  - pygeos
   - pyogrio
-  - rtree
   - matplotlib
   - mapclassify
   - folium
