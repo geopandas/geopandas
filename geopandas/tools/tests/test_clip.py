@@ -22,7 +22,6 @@ import pytest
 
 from geopandas.tools.clip import _mask_is_list_like_rectangle
 
-pytestmark = pytest.mark.skip_no_sindex
 mask_variants_single_rectangle = [
     "single_rectangle_gdf",
     "single_rectangle_gdf_list_bounds",

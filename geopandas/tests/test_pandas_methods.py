@@ -90,7 +90,7 @@ def test_repr_empty():
 
 def test_repr_linearring():
     # https://github.com/geopandas/geopandas/pull/2689
-    # specifically, checking internal shapely/pygeos/wkt/wkb conversions
+    # specifically, checking internal shapely/wkt/wkb conversions
     # preserve LinearRing
     s = GeoSeries([LinearRing([(0, 0), (1, 1), (1, -1)])])
     assert "LINEARRING" in str(s.iloc[0])  # shapely scalar repr
@@ -251,7 +251,10 @@ def test_astype(s, df):
     assert s.astype(str)[0] == "POINT (0 0)"
 
     res = s.astype(object)
-    if not Version(pd.__version__) == Version("2.1.0"):
+    if not (
+        (Version(pd.__version__) == Version("2.1.0"))
+        or (Version(pd.__version__) == Version("2.1.1"))
+    ):
         # https://github.com/geopandas/geopandas/issues/2948 - bug in pandas 2.1.0
         assert isinstance(res, pd.Series) and not isinstance(res, GeoSeries)
         assert res.dtype == object
@@ -555,10 +558,9 @@ def test_value_counts():
         name = "count"
     else:
         name = None
-    with compat.ignore_shapely2_warnings():
-        exp = pd.Series(
-            [2, 1], index=pd14_compat_index([Point(0, 0), Point(1, 1)]), name=name
-        )
+    exp = pd.Series(
+        [2, 1], index=pd14_compat_index([Point(0, 0), Point(1, 1)]), name=name
+    )
     assert_series_equal(res, exp)
     # Check crs doesn't make a difference - note it is not kept in output index anyway
     s2 = GeoSeries([Point(0, 0), Point(1, 1), Point(0, 0)], crs="EPSG:4326")
@@ -572,20 +574,17 @@ def test_value_counts():
     s3 = GeoSeries([Point(0, 0), LineString([[1, 1], [2, 2]]), Point(0, 0)])
     res3 = s3.value_counts()
     index = pd14_compat_index([Point(0, 0), LineString([[1, 1], [2, 2]])])
-    with compat.ignore_shapely2_warnings():
-        exp3 = pd.Series([2, 1], index=index, name=name)
+    exp3 = pd.Series([2, 1], index=index, name=name)
     assert_series_equal(res3, exp3)
 
     # check None is handled
     s4 = GeoSeries([Point(0, 0), None, Point(0, 0)])
     res4 = s4.value_counts(dropna=True)
-    with compat.ignore_shapely2_warnings():
-        exp4_dropna = pd.Series([2], index=pd14_compat_index([Point(0, 0)]), name=name)
+    exp4_dropna = pd.Series([2], index=pd14_compat_index([Point(0, 0)]), name=name)
     assert_series_equal(res4, exp4_dropna)
-    with compat.ignore_shapely2_warnings():
-        exp4_keepna = pd.Series(
-            [2, 1], index=pd14_compat_index([Point(0, 0), None]), name=name
-        )
+    exp4_keepna = pd.Series(
+        [2, 1], index=pd14_compat_index([Point(0, 0), None]), name=name
+    )
     res4_keepna = s4.value_counts(dropna=False)
     assert_series_equal(res4_keepna, exp4_keepna)
 
@@ -657,7 +656,6 @@ def test_groupby_groups(df):
     assert_frame_equal(res, exp)
 
 
-@pytest.mark.skip_no_sindex
 @pytest.mark.parametrize("crs", [None, "EPSG:4326"])
 def test_groupby_metadata(crs):
     # https://github.com/geopandas/geopandas/issues/2294
@@ -682,12 +680,20 @@ def test_groupby_metadata(crs):
         lambda x: geopandas.sjoin(x, x[["geometry", "value1"]], how="inner")
     )
 
+    if compat.PANDAS_GE_22:
+        # merge sort behaviour changed in pandas #54611
+        take_indices = [0, 0, 2, 2, 1]
+        value_right = [0, 2, 0, 2, 1]
+    else:
+        take_indices = [0, 2, 0, 2, 1]
+        value_right = [0, 0, 2, 2, 1]
+
     expected = (
-        df.take([0, 2, 0, 2, 1])
+        df.take(take_indices)
         .set_index("value2", drop=False, append=True)
         .swaplevel()
         .rename(columns={"value1": "value1_left"})
-        .assign(value1_right=[0, 0, 2, 2, 1])
+        .assign(value1_right=value_right)
     )
     assert_geodataframe_equal(res.drop(columns=["index_right"]), expected)
 
