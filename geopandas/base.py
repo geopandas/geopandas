@@ -1,8 +1,10 @@
 from warnings import warn
+import warnings
 
 import numpy as np
 import pandas as pd
 from pandas import DataFrame, Series
+import shapely
 from shapely.geometry import box, MultiPoint
 from shapely.geometry.base import BaseGeometry
 
@@ -1474,7 +1476,6 @@ GeometryCollection
 
         See also
         --------
-        GeoSeries.geom_almost_equals
         GeoSeries.geom_equals_exact
 
         """
@@ -1547,8 +1548,15 @@ GeometryCollection
         GeoSeries.geom_equals_exact
 
         """
+        warnings.warn(
+            "The 'geom_almost_equals()' method is deprecated because the name is "
+            "confusing. The 'geom_equals_exact()' method should be used instead.",
+            FutureWarning,
+            stacklevel=2,
+        )
+        tolerance = 0.5 * 10 ** (-decimal)
         return _binary_op(
-            "geom_almost_equals", self, other, decimal=decimal, align=align
+            "geom_equals_exact", self, other, tolerance=tolerance, align=align
         )
 
     def geom_equals_exact(self, other, tolerance, align=True):
@@ -1612,7 +1620,6 @@ GeometryCollection
         See also
         --------
         GeoSeries.geom_equals
-        GeoSeries.geom_almost_equals
         """
         return _binary_op(
             "geom_equals_exact", self, other, tolerance=tolerance, align=align
@@ -3525,10 +3532,9 @@ GeometryCollection
     def sindex(self):
         """Generate the spatial index
 
-        Creates R-tree spatial index based on ``pygeos.STRtree`` or
-        ``rtree.index.Index``.
+        Creates R-tree spatial index based on ``shapely.STRtree``.
 
-        Note that the  spatial index may not be fully
+        Note that the spatial index may not be fully
         initialized until the first use.
 
         Examples
@@ -4280,26 +4286,9 @@ GeometryCollection
           2  3.0  1.0
           3  3.0 -1.0
         """
-        if compat.USE_SHAPELY_20:
-            import shapely
-
-            coords, outer_idx = shapely.get_coordinates(
-                self.geometry.values._data, include_z=include_z, return_index=True
-            )
-        elif compat.USE_PYGEOS:
-            import pygeos
-
-            coords, outer_idx = pygeos.get_coordinates(
-                self.geometry.values._data, include_z=include_z, return_index=True
-            )
-
-        else:
-            import shapely
-
-            raise NotImplementedError(
-                f"shapely >= 2.0 or PyGEOS are required, "
-                f"version {shapely.__version__} is installed."
-            )
+        coords, outer_idx = shapely.get_coordinates(
+            self.geometry.values._data, include_z=include_z, return_index=True
+        )
 
         column_names = ["x", "y"]
         if include_z:
