@@ -16,7 +16,7 @@ dependencies:
   - fsspec
   # optional
   - pyogrio
-  - matplotlib
+  # - matplotlib
   - mapclassify
   - folium
   - xyzservices
@@ -33,3 +33,6 @@ dependencies:
   - pyarrow
   # doctest testing
   - pytest-doctestplus
+  - pip
+  - pip:
+    - matplotlib
