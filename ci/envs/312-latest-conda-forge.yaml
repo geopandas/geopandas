@@ -26,10 +26,10 @@ dependencies:
   - geodatasets
   # installed in tests.yaml, because not available on windows
   # - postgis
-  - SQLalchemy>=2
-  - psycopg2
-  - libspatialite
-  - geoalchemy2
+  # - SQLalchemy>=2
+  # - psycopg2
+  # - libspatialite
+  # - geoalchemy2
   - pyarrow
   # doctest testing
   - pytest-doctestplus
