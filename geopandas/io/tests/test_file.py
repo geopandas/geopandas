@@ -43,6 +43,9 @@ FIONA_MARK = pytest.mark.skipif(not fiona, reason="fiona not installed")
 _CRS = "epsg:4326"
 
 
+pytestmark = pytest.mark.filterwarnings("ignore:Value:RuntimeWarning:pyogrio")
+
+
 @pytest.fixture(
     params=[
         pytest.param("fiona", marks=FIONA_MARK),
@@ -362,13 +365,13 @@ def test_to_file_int32(tmpdir, df_points, engine, driver, ext):
     df = GeoDataFrame(geometry=geometry)
     df["data"] = pd.array([1, np.nan] * 5, dtype=pd.Int32Dtype())
     df.to_file(tempfilename, driver=driver, engine=engine)
-    df_read = GeoDataFrame.from_file(tempfilename, driver=driver, engine=engine)
+    df_read = GeoDataFrame.from_file(tempfilename, engine=engine)
     assert_geodataframe_equal(df_read, df, check_dtype=False, check_like=True)
     if engine == "pyogrio":
         tempfilename2 = os.path.join(str(tmpdir), f"int32_2.{ext}")
         df2 = df.dropna()
         df2.to_file(tempfilename2, driver=driver, engine=engine)
-        df2_read = GeoDataFrame.from_file(tempfilename2, driver=driver, engine=engine)
+        df2_read = GeoDataFrame.from_file(tempfilename2, engine=engine)
         assert df2_read["data"].dtype == "int32"
 
 
@@ -379,7 +382,7 @@ def test_to_file_int64(tmpdir, df_points, engine, driver, ext):
     df = GeoDataFrame(geometry=geometry)
     df["data"] = pd.array([1, np.nan] * 5, dtype=pd.Int64Dtype())
     df.to_file(tempfilename, driver=driver, engine=engine)
-    df_read = GeoDataFrame.from_file(tempfilename, driver=driver, engine=engine)
+    df_read = GeoDataFrame.from_file(tempfilename, engine=engine)
     assert_geodataframe_equal(df_read, df, check_dtype=False, check_like=True)
 
 
@@ -526,6 +529,7 @@ def test_mode_unsupported(tmpdir, df_nybb, engine):
         df_nybb.to_file(tempfilename, mode="r", engine=engine)
 
 
+@pytest.mark.filterwarnings("ignore:'crs' was not provided:UserWarning:pyogrio")
 @pytest.mark.parametrize("driver,ext", driver_ext_pairs)
 def test_empty_crs(tmpdir, driver, ext, engine):
     """Test handling of undefined CRS with GPKG driver (GH #1975)."""
