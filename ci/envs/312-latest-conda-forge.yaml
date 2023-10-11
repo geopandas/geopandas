@@ -22,7 +22,7 @@ dependencies:
   - xyzservices
   - scipy
   - geopy
-  - pointpats
+  # - pointpats
   - geodatasets
   # installed in tests.yaml, because not available on windows
   # - postgis
@@ -36,3 +36,4 @@ dependencies:
   - pip
   - pip:
     - matplotlib
+    - pointpats
