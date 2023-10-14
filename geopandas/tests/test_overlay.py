@@ -1,5 +1,4 @@
 import os
-from packaging.version import Version
 
 import numpy as np
 import pandas as pd
@@ -22,10 +21,6 @@ except ImportError:
 
 
 DATA = os.path.join(os.path.abspath(os.path.dirname(__file__)), "data", "overlay")
-
-
-pytestmark = pytest.mark.skip_no_sindex
-pandas_133 = Version(pd.__version__) == Version("1.3.3")
 
 
 @pytest.fixture
@@ -62,8 +57,6 @@ def dfs_index(request, dfs):
     params=["union", "intersection", "difference", "symmetric_difference", "identity"]
 )
 def how(request):
-    if pandas_133 and request.param in ["symmetric_difference", "identity", "union"]:
-        pytest.xfail("Regression in pandas 1.3.3 (GH #2101)")
     return request.param
 
 
@@ -514,7 +507,7 @@ def test_overlay_strict(how, keep_geom_type, geom_types):
         # so we sort the resultant dataframes to get a consistent order
         # independently of the spatial index implementation
         assert all(expected.columns == result.columns), "Column name mismatch"
-        cols = list(set(result.columns) - set(["geometry"]))
+        cols = list(set(result.columns) - {"geometry"})
         expected = expected.sort_values(cols, axis=0).reset_index(drop=True)
         result = result.sort_values(cols, axis=0).reset_index(drop=True)
 

@@ -8,8 +8,6 @@ import shapely.wkb
 
 from geopandas import GeoDataFrame
 
-from .. import _compat as compat
-
 
 @contextmanager
 def _get_conn(conn_or_engine):
@@ -95,10 +93,7 @@ def _df_to_geodf(df, geom_col="geom", crs=None):
 
         df[geom_col] = geoms = geoms.apply(load_geom)
         if crs is None:
-            if compat.SHAPELY_GE_20:
-                srid = shapely.get_srid(geoms.iat[0])
-            else:
-                srid = shapely.geos.lgeos.GEOSGetSRID(geoms.iat[0]._geom)
+            srid = shapely.get_srid(geoms.iat[0])
             # if no defined SRID in geodatabase, returns SRID of 0
             if srid != 0:
                 crs = "epsg:{}".format(srid)
@@ -288,8 +283,8 @@ def _get_srid_from_crs(gdf):
 def _convert_linearring_to_linestring(gdf, geom_name):
     from shapely.geometry import LineString
 
-    # Todo: Use Pygeos function once it's implemented:
-    #  https://github.com/pygeos/pygeos/issues/76
+    # Todo: Use shapely function once it's implemented:
+    # https://github.com/shapely/shapely/issues/1617
 
     mask = gdf.geom_type == "LinearRing"
     gdf.loc[mask, geom_name] = gdf.loc[mask, geom_name].apply(
@@ -300,26 +295,11 @@ def _convert_linearring_to_linestring(gdf, geom_name):
 
 def _convert_to_ewkb(gdf, geom_name, srid):
     """Convert geometries to ewkb."""
-    if compat.USE_SHAPELY_20:
-        geoms = shapely.to_wkb(
-            shapely.set_srid(gdf[geom_name].values._data, srid=srid),
-            hex=True,
-            include_srid=True,
-        )
-
-    elif compat.USE_PYGEOS:
-        from pygeos import set_srid, to_wkb
-
-        geoms = to_wkb(
-            set_srid(gdf[geom_name].values._data, srid=srid),
-            hex=True,
-            include_srid=True,
-        )
-
-    else:
-        from shapely.wkb import dumps
-
-        geoms = [dumps(geom, srid=srid, hex=True) for geom in gdf[geom_name]]
+    geoms = shapely.to_wkb(
+        shapely.set_srid(gdf[geom_name].values._data, srid=srid),
+        hex=True,
+        include_srid=True,
+    )
 
     # The gdf will warn that the geometry column doesn't hold in-memory geometries
     # now that they are EWKB, so convert back to a regular dataframe to avoid warning
@@ -469,5 +449,3 @@ def _write_postgis(
             dtype=dtype,
             method=_psql_insert_copy,
         )
-
-    return

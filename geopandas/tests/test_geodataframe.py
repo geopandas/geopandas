@@ -2,7 +2,6 @@ import json
 import os
 import shutil
 import tempfile
-from packaging.version import Version
 
 import numpy as np
 import pandas as pd
@@ -12,19 +11,13 @@ from pyproj.exceptions import CRSError
 from shapely.geometry import Point, Polygon
 
 import geopandas
-import geopandas._compat as compat
 from geopandas import GeoDataFrame, GeoSeries, points_from_xy, read_file
 from geopandas.array import GeometryArray, GeometryDtype, from_shapely
-from geopandas._compat import ignore_shapely2_warnings
 
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 from geopandas.tests.util import PACKAGE_DIR, validate_boro_df
 from pandas.testing import assert_frame_equal, assert_index_equal, assert_series_equal
 import pytest
-
-
-TEST_NEAREST = compat.USE_SHAPELY_20 or (compat.PYGEOS_GE_010 and compat.USE_PYGEOS)
-pandas_133 = Version(pd.__version__) == Version("1.3.3")
 
 
 @pytest.fixture
@@ -50,8 +43,6 @@ def dfs(request):
     params=["union", "intersection", "difference", "symmetric_difference", "identity"]
 )
 def how(request):
-    if pandas_133 and request.param in ["symmetric_difference", "identity", "union"]:
-        pytest.xfail("Regression in pandas 1.3.3 (GH #2101)")
     return request.param
 
 
@@ -932,8 +923,7 @@ class TestDataFrame:
 
     def test_estimate_utm_crs(self):
         assert self.df.estimate_utm_crs() == CRS("EPSG:32618")
-        if compat.PYPROJ_GE_32:  # result is unstable in older pyproj
-            assert self.df.estimate_utm_crs("NAD83") == CRS("EPSG:26918")
+        assert self.df.estimate_utm_crs("NAD83") == CRS("EPSG:26918")
 
     def test_to_wkb(self):
         wkbs0 = [
@@ -975,10 +965,6 @@ class TestDataFrame:
 
     @pytest.mark.parametrize("how", ["left", "inner", "right"])
     @pytest.mark.parametrize("predicate", ["intersects", "within", "contains"])
-    @pytest.mark.skipif(
-        not (compat.USE_PYGEOS or compat.USE_SHAPELY_20 or compat.HAS_RTREE),
-        reason="sjoin needs `rtree` or `pygeos` dependency",
-    )
     def test_sjoin(self, how, predicate):
         """
         Basic test for availability of the GeoDataFrame method. Other
@@ -994,14 +980,6 @@ class TestDataFrame:
     @pytest.mark.parametrize("how", ["left", "inner", "right"])
     @pytest.mark.parametrize("max_distance", [None, 1])
     @pytest.mark.parametrize("distance_col", [None, "distance"])
-    @pytest.mark.skipif(
-        not TEST_NEAREST,
-        reason=(
-            "PyGEOS >= 0.10.0"
-            " must be installed and activated via the geopandas.compat module to"
-            " test sjoin_nearest"
-        ),
-    )
     def test_sjoin_nearest(self, how, max_distance, distance_col):
         """
         Basic test for availability of the GeoDataFrame method. Other
@@ -1018,7 +996,6 @@ class TestDataFrame:
         )
         assert_geodataframe_equal(result, expected)
 
-    @pytest.mark.skip_no_sindex
     def test_clip(self):
         """
         Basic test for availability of the GeoDataFrame method. Other
@@ -1032,7 +1009,6 @@ class TestDataFrame:
         result = left.clip(south_america)
         assert_geodataframe_equal(result, expected)
 
-    @pytest.mark.skip_no_sindex
     def test_overlay(self, dfs, how):
         """
         Basic test for availability of the GeoDataFrame method. Other
@@ -1143,8 +1119,7 @@ class TestConstructor:
             "B": np.arange(3.0),
             "geometry": [Point(x, x) for x in range(3)],
         }
-        with ignore_shapely2_warnings():
-            a = np.array([data["A"], data["B"], data["geometry"]], dtype=object).T
+        a = np.array([data["A"], data["B"], data["geometry"]], dtype=object).T
 
         df = GeoDataFrame(a, columns=["A", "B", "geometry"])
         check_geodataframe(df)
@@ -1159,8 +1134,7 @@ class TestConstructor:
             "geometry": [Point(x, x) for x in range(3)],
         }
         gpdf = GeoDataFrame(data)
-        with ignore_shapely2_warnings():
-            pddf = pd.DataFrame(data)
+        pddf = pd.DataFrame(data)
         check_geodataframe(gpdf)
         assert type(pddf) == pd.DataFrame
 
@@ -1189,8 +1163,7 @@ class TestConstructor:
 
         gpdf = GeoDataFrame(data, geometry="other_geom")
         check_geodataframe(gpdf, "other_geom")
-        with ignore_shapely2_warnings():
-            pddf = pd.DataFrame(data)
+        pddf = pd.DataFrame(data)
 
         for df in [gpdf, pddf]:
             res = GeoDataFrame(df, geometry="other_geom")
@@ -1274,8 +1247,7 @@ class TestConstructor:
     def test_overwrite_geometry(self):
         # GH602
         data = pd.DataFrame({"geometry": [1, 2, 3], "col1": [4, 5, 6]})
-        with ignore_shapely2_warnings():
-            geoms = pd.Series([Point(i, i) for i in range(3)])
+        geoms = pd.Series([Point(i, i) for i in range(3)])
         # passed geometry kwarg should overwrite geometry column in data
         res = GeoDataFrame(data, geometry=geoms)
         assert_geoseries_equal(res.geometry, GeoSeries(geoms))
@@ -1469,3 +1441,11 @@ def test_geodataframe_crs_nonrepresentable_json(crs):
     ):
         gdf_geojson = json.loads(gdf.to_json())
     assert "crs" not in gdf_geojson
+
+
+def test_geodataframe_crs_colname():
+    # https://github.com/geopandas/geopandas/issues/2942
+    gdf = GeoDataFrame({"crs": [1], "geometry": [Point(1, 1)]})
+    assert gdf.crs is None
+    assert gdf["crs"].iloc[0] == 1
+    assert getattr(gdf, "crs") is None

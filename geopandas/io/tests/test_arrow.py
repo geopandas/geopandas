@@ -15,7 +15,6 @@ from shapely.geometry import box, Point, MultiPolygon
 
 
 import geopandas
-import geopandas._compat as compat
 from geopandas import GeoDataFrame, read_file, read_parquet, read_feather
 from geopandas.array import to_wkb
 from geopandas.datasets import get_path
@@ -631,7 +630,7 @@ def test_fsspec_url():
     with memfs.open("data.parquet", "wb") as f:
         df.to_parquet(f)
 
-    result = read_parquet("memory://data.parquet", storage_options=dict(is_set=True))
+    result = read_parquet("memory://data.parquet", storage_options={"is_set": True})
     assert_geodataframe_equal(result, df)
 
     result = read_parquet("memory://data.parquet", filesystem=memfs)
@@ -719,22 +718,15 @@ def test_write_iso_wkb(tmpdir):
     gdf = geopandas.GeoDataFrame(
         geometry=geopandas.GeoSeries.from_wkt(["POINT Z (1 2 3)"])
     )
-    if compat.USE_SHAPELY_20:
-        gdf.to_parquet(tmpdir / "test.parquet")
-    else:
-        with pytest.warns(UserWarning, match="The GeoDataFrame contains 3D geometries"):
-            gdf.to_parquet(tmpdir / "test.parquet")
+    gdf.to_parquet(tmpdir / "test.parquet")
 
     from pyarrow.parquet import read_table
 
     table = read_table(tmpdir / "test.parquet")
     wkb = table["geometry"][0].as_py().hex()
 
-    if compat.USE_SHAPELY_20:
-        # correct ISO flavor
-        assert wkb == "01e9030000000000000000f03f00000000000000400000000000000840"
-    else:
-        assert wkb == "0101000080000000000000f03f00000000000000400000000000000840"
+    # correct ISO flavor
+    assert wkb == "01e9030000000000000000f03f00000000000000400000000000000840"
 
 
 @pytest.mark.parametrize(
@@ -834,8 +826,8 @@ def test_read_versioned_file(version):
         geometry=[MultiPolygon([box(0, 0, 1, 1), box(2, 2, 3, 3)]), box(4, 4, 5,5)],
         crs="EPSG:4326",
     )
-    df.to_feather(DATA_PATH / 'arrow' / f'test_data_v{METADATA_VERSION}.feather')  # noqa: E501
-    df.to_parquet(DATA_PATH / 'arrow' / f'test_data_v{METADATA_VERSION}.parquet')  # noqa: E501
+    df.to_feather(DATA_PATH / 'arrow' / f'test_data_v{METADATA_VERSION}.feather')
+    df.to_parquet(DATA_PATH / 'arrow' / f'test_data_v{METADATA_VERSION}.parquet')
     """
     expected = geopandas.GeoDataFrame(
         {"col_str": ["a", "b"], "col_int": [1, 2], "col_float": [0.1, 0.2]},
@@ -867,8 +859,8 @@ def test_read_gdal_files():
     df.to_file("test_data.gpkg", GEOMETRY_NAME="geometry")
     and then the gpkg file is converted to Parquet/Arrow with:
     $ ogr2ogr -f Parquet -lco FID= test_data_gdal350.parquet test_data.gpkg
-    $ ogr2ogr -f Arrow -lco FID= -lco GEOMETRY_ENCODING=WKB test_data_gdal350.arrow test_data.gpkg  # noqa: E501
-    """
+    $ ogr2ogr -f Arrow -lco FID= -lco GEOMETRY_ENCODING=WKB test_data_gdal350.arrow test_data.gpkg
+    """  # noqa: E501
     expected = geopandas.GeoDataFrame(
         {"col_str": ["a", "b"], "col_int": [1, 2], "col_float": [0.1, 0.2]},
         geometry=[MultiPolygon([box(0, 0, 1, 1), box(2, 2, 3, 3)]), box(4, 4, 5, 5)],

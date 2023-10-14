@@ -282,7 +282,7 @@ def _explore(
         import folium
         import re
         import matplotlib
-        import matplotlib.colors as colors
+        from matplotlib import colors
         import matplotlib.pyplot as plt
         from mapclassify import classify
 
@@ -291,7 +291,7 @@ def _explore(
         if MPL_361:
             from matplotlib import colormaps as cm
         else:
-            import matplotlib.cm as cm
+            from matplotlib import cm
 
     except (ImportError, ModuleNotFoundError):
         raise ImportError(
@@ -397,7 +397,7 @@ def _explore(
                 column_name = "__plottable_column"
                 gdf[column_name] = column
                 column = column_name
-        elif pd.api.types.is_categorical_dtype(gdf[column]):
+        elif isinstance(gdf[column].dtype, pd.CategoricalDtype):
             if categories is not None:
                 raise ValueError(
                     "Cannot specify 'categories' when column has categorical dtype"
@@ -449,7 +449,7 @@ def _explore(
 
         elif callable(cmap):
             # List of colors based on Branca colormaps or self-defined functions
-            color = list(map(lambda x: cmap(x), df[column]))
+            color = [cmap(x) for x in df[column]]
 
         else:
             vmin = gdf[column].min() if vmin is None else vmin
@@ -468,7 +468,7 @@ def _explore(
                 color = np.apply_along_axis(
                     colors.to_hex,
                     1,
-                    _colormap_helper(cmap, n_resample=k, idx=binning.yb),
+                    _colormap_helper(cmap, n_resample=binning.k, idx=binning.yb),
                 )
 
             else:
