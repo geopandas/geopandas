@@ -5,7 +5,6 @@ import warnings
 import numpy as np
 import pandas as pd
 
-from shapely import wkt
 from shapely.affinity import rotate
 from shapely.geometry import (
     MultiPolygon,
@@ -304,17 +303,9 @@ class TestPointPlotting:
         assert len(ax.collections) == 0
 
     def test_empty_geometry(self):
-        if compat.USE_PYGEOS:
-            s = GeoSeries([wkt.loads("POLYGON EMPTY")])
-            s = GeoSeries(
-                [Polygon([(0, 0), (1, 0), (1, 1)]), wkt.loads("POLYGON EMPTY")]
-            )
-            ax = s.plot()
-            assert len(ax.collections) == 1
-        if not compat.USE_PYGEOS:
-            s = GeoSeries([Polygon([(0, 0), (1, 0), (1, 1)]), Polygon()])
-            ax = s.plot()
-            assert len(ax.collections) == 1
+        s = GeoSeries([Polygon([(0, 0), (1, 0), (1, 1)]), Polygon()])
+        ax = s.plot()
+        assert len(ax.collections) == 1
 
         # more complex case with GEOMETRYCOLLECTION EMPTY, POINT EMPTY and NONE
         poly = Polygon([(-1, -1), (-1, 2), (2, 2), (2, -1), (-1, -1)])
