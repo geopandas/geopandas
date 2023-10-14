@@ -23,7 +23,6 @@ from shapely.geometry import (
 from shapely.geometry.base import BaseGeometry
 
 from geopandas import GeoSeries, GeoDataFrame, read_file, datasets, clip
-from geopandas._compat import ignore_shapely2_warnings
 from geopandas.array import GeometryArray, GeometryDtype
 from geopandas.testing import assert_geoseries_equal, geom_almost_equals
 
@@ -329,7 +328,6 @@ class TestSeries:
     def test_to_wkt(self):
         assert_series_equal(pd.Series([self.t1.wkt, self.sq.wkt]), self.g1.to_wkt())
 
-    @pytest.mark.skip_no_sindex
     def test_clip(self):
         left = read_file(datasets.get_path("naturalearth_cities"))
         world = read_file(datasets.get_path("naturalearth_lowres"))
@@ -522,10 +520,8 @@ class TestConstructor:
             Polygon([(random.random(), random.random()) for _ in range(3)])
             for _ in range(10)
         ]
-        with ignore_shapely2_warnings():
-            # the warning here is not suppressed by GeoPandas, as this is a pure
-            # pandas construction call
-            s = pd.Series(shapes, index=list("abcdefghij"), name="foo")
+
+        s = pd.Series(shapes, index=list("abcdefghij"), name="foo")
         g = GeoSeries(s)
         check_geoseries(g)
 

@@ -1,5 +1,14 @@
 # Changelog
 
+## Development version
+
+Notes on dependencies:
+
+- GeoPandas 1.0 drops support for shapely<2 and PyGEOS. The only geometry engine that is
+  currently supported is shapely >= 2. As a consequence, spatial indexing based on the
+  rtree package has also been removed. (#3035)
+
+
 ## Version 0.14 (Sep 15, 2023)
 
 GeoPandas will use Shapely 2.0 by default instead of PyGEOS when both Shapely >= 2.0 and

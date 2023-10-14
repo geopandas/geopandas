@@ -22,16 +22,27 @@ from pyproj import CRS, Transformer
 from pyproj.aoi import AreaOfInterest
 from pyproj.database import query_utm_crs_info
 
-try:
-    import pygeos
-except ImportError:
-    geos = None
-
-from . import _compat as compat
-from . import _vectorized as vectorized
-from .sindex import _get_sindex_class
+from .sindex import SpatialIndex
 
 TransformerFromCRS = lru_cache(Transformer.from_crs)
+
+_names = {
+    "MISSING": None,
+    "NAG": None,
+    "POINT": "Point",
+    "LINESTRING": "LineString",
+    "LINEARRING": "LinearRing",
+    "POLYGON": "Polygon",
+    "MULTIPOINT": "MultiPoint",
+    "MULTILINESTRING": "MultiLineString",
+    "MULTIPOLYGON": "MultiPolygon",
+    "GEOMETRYCOLLECTION": "GeometryCollection",
+}
+
+
+type_mapping = {p.value: _names[p.name] for p in shapely.GeometryType}
+geometry_type_ids = list(type_mapping.keys())
+geometry_type_values = np.array(list(type_mapping.values()), dtype=object)
 
 
 class GeometryDtype(ExtensionDtype):
@@ -104,40 +115,30 @@ def _crs_mismatch_warn(left, right, stacklevel=3):
     )
 
 
+def isna(value):
+    """
+    Check if scalar value is NA-like (None, np.nan or pd.NA).
+
+    Custom version that only works for scalars (returning True or False),
+    as `pd.isna` also works for array-like input returning a boolean array.
+    """
+    if value is None:
+        return True
+    elif isinstance(value, float) and np.isnan(value):
+        return True
+    elif value is pd.NA:
+        return True
+    else:
+        return False
+
+
 # -----------------------------------------------------------------------------
 # Constructors / converters to other formats
 # -----------------------------------------------------------------------------
 
 
-def _geom_to_shapely(geom):
-    """
-    Convert internal representation (PyGEOS or Shapely) to external Shapely object.
-    """
-    if compat.USE_SHAPELY_20:
-        return geom
-    elif not compat.USE_PYGEOS:
-        return geom
-    else:
-        return vectorized._pygeos_to_shapely(geom)
-
-
-def _shapely_to_geom(geom):
-    """
-    Convert external Shapely object to internal representation (PyGEOS or Shapely).
-    """
-    if compat.USE_SHAPELY_20:
-        return geom
-    elif not compat.USE_PYGEOS:
-        return geom
-    else:
-        return vectorized._shapely_to_pygeos(geom)
-
-
 def _is_scalar_geometry(geom):
-    if compat.USE_PYGEOS:
-        return isinstance(geom, (pygeos.Geometry, BaseGeometry))
-    else:
-        return isinstance(geom, BaseGeometry)
+    return isinstance(geom, BaseGeometry)
 
 
 def from_shapely(data, crs=None):
@@ -156,7 +157,30 @@ def from_shapely(data, crs=None):
         such as an authority string (eg "EPSG:4326") or a WKT string.
 
     """
-    return GeometryArray(vectorized.from_shapely(data), crs=crs)
+    if not isinstance(data, np.ndarray):
+        arr = np.empty(len(data), dtype=object)
+        arr[:] = data
+    else:
+        arr = data
+
+    if not shapely.is_valid_input(arr).all():
+        out = []
+
+        for geom in data:
+            if isinstance(geom, BaseGeometry):
+                out.append(geom)
+            elif hasattr(geom, "__geo_interface__"):
+                geom = shapely.geometry.shape(geom)
+                out.append(geom)
+            elif isna(geom):
+                out.append(None)
+            else:
+                raise TypeError(
+                    "Input must be valid geometry objects: {0}".format(geom)
+                )
+        arr = np.array(out, dtype=object)
+
+    return GeometryArray(arr, crs=crs)
 
 
 def to_shapely(geoms):
@@ -165,7 +189,7 @@ def to_shapely(geoms):
     """
     if not isinstance(geoms, GeometryArray):
         raise ValueError("'geoms' must be a GeometryArray")
-    return vectorized.to_shapely(geoms._data)
+    return geoms._data
 
 
 def from_wkb(data, crs=None):
@@ -182,7 +206,7 @@ def from_wkb(data, crs=None):
         such as an authority string (eg "EPSG:4326") or a WKT string.
 
     """
-    return GeometryArray(vectorized.from_wkb(data), crs=crs)
+    return GeometryArray(shapely.from_wkb(data), crs=crs)
 
 
 def to_wkb(geoms, hex=False, **kwargs):
@@ -191,7 +215,7 @@ def to_wkb(geoms, hex=False, **kwargs):
     """
     if not isinstance(geoms, GeometryArray):
         raise ValueError("'geoms' must be a GeometryArray")
-    return vectorized.to_wkb(geoms._data, hex=hex, **kwargs)
+    return shapely.to_wkb(geoms, hex=hex, **kwargs)
 
 
 def from_wkt(data, crs=None):
@@ -208,7 +232,7 @@ def from_wkt(data, crs=None):
         such as an authority string (eg "EPSG:4326") or a WKT string.
 
     """
-    return GeometryArray(vectorized.from_wkt(data), crs=crs)
+    return GeometryArray(shapely.from_wkt(data), crs=crs)
 
 
 def to_wkt(geoms, **kwargs):
@@ -217,7 +241,7 @@ def to_wkt(geoms, **kwargs):
     """
     if not isinstance(geoms, GeometryArray):
         raise ValueError("'geoms' must be a GeometryArray")
-    return vectorized.to_wkt(geoms._data, **kwargs)
+    return shapely.to_wkt(geoms, **kwargs)
 
 
 def points_from_xy(x, y, z=None, crs=None):
@@ -263,7 +287,12 @@ def points_from_xy(x, y, z=None, crs=None):
     -------
     output : GeometryArray
     """
-    return GeometryArray(vectorized.points_from_xy(x, y, z), crs=crs)
+    x = np.asarray(x, dtype="float64")
+    y = np.asarray(y, dtype="float64")
+    if z is not None:
+        z = np.asarray(z, dtype="float64")
+
+    return GeometryArray(shapely.points(x, y, z), crs=crs)
 
 
 class GeometryArray(ExtensionArray):
@@ -299,12 +328,7 @@ class GeometryArray(ExtensionArray):
         warnings.warn(
             "Accessing the underlying geometries through the `.data` attribute is "
             "deprecated and will be removed in GeoPandas 1.0. You can use "
-            "`np.asarray(..)` or the `to_numpy()` method instead.\n"
-            "Note that if you are using PyGEOS and using this attribute to get an "
-            "array of PyGEOS geometries, those other methods will always return an "
-            "array of Shapely geometries. Accessing the underlying PyGEOS geometries "
-            "directly is deprecated, and you should migrate to use Shapely >= 2.0 "
-            "instead.",
+            "`np.asarray(..)` or the `to_numpy()` method instead.",
             DeprecationWarning,
             stacklevel=2,
         )
@@ -313,7 +337,7 @@ class GeometryArray(ExtensionArray):
     @property
     def sindex(self):
         if self._sindex is None:
-            self._sindex = _get_sindex_class()(self._data)
+            self._sindex = SpatialIndex(self._data)
         return self._sindex
 
     @property
@@ -381,7 +405,7 @@ class GeometryArray(ExtensionArray):
 
     def __getitem__(self, idx):
         if isinstance(idx, numbers.Integral):
-            return _geom_to_shapely(self._data[idx])
+            return self._data[idx]
         # array-like, slice
         # validate and convert IntegerArray/BooleanArray
         # to numpy array, pass-through non-array-like indexers
@@ -402,8 +426,8 @@ class GeometryArray(ExtensionArray):
             if isinstance(key, numbers.Integral):
                 raise ValueError("cannot set a single element with an array")
             self._data[key] = value._data
-        elif isinstance(value, BaseGeometry) or vectorized.isna(value):
-            if vectorized.isna(value):
+        elif isinstance(value, BaseGeometry) or isna(value):
+            if isna(value):
                 # internally only use None as missing value indicator
                 # but accept others
                 value = None
@@ -413,8 +437,7 @@ class GeometryArray(ExtensionArray):
                 raise TypeError("should be valid geometry")
             if isinstance(key, (slice, list, np.ndarray)):
                 value_array = np.empty(1, dtype=object)
-                with compat.ignore_shapely2_warnings():
-                    value_array[:] = [value]
+                value_array[:] = [value]
                 self._data[key] = value_array
             else:
                 self._data[key] = value
@@ -435,17 +458,12 @@ class GeometryArray(ExtensionArray):
         #         )
 
     def __getstate__(self):
-        if compat.USE_SHAPELY_20:
-            return (shapely.to_wkb(self._data), self._crs)
-        elif compat.USE_PYGEOS:
-            return (pygeos.to_wkb(self._data), self._crs)
-        else:
-            return self.__dict__
+        return (shapely.to_wkb(self._data), self._crs)
 
     def __setstate__(self, state):
         if not isinstance(state, dict):
             # pickle file saved with pygeos
-            geoms = vectorized.from_wkb(state[0])
+            geoms = shapely.from_wkb(state[0])
             self._crs = state[1]
             self._sindex = None  # pygeos.STRtree could not be pickled yet
             self._data = geoms
@@ -453,8 +471,6 @@ class GeometryArray(ExtensionArray):
         else:
             if "data" in state:
                 state["_data"] = state.pop("data")
-            if compat.USE_PYGEOS:
-                state["_data"] = vectorized.from_shapely(state["_data"])
             if "_crs" not in state:
                 state["_crs"] = None
             self.__dict__.update(state)
@@ -465,41 +481,42 @@ class GeometryArray(ExtensionArray):
 
     @property
     def is_valid(self):
-        return vectorized.is_valid(self._data)
+        return shapely.is_valid(self._data)
 
     @property
     def is_empty(self):
-        return vectorized.is_empty(self._data)
+        return shapely.is_empty(self._data)
 
     @property
     def is_simple(self):
-        return vectorized.is_simple(self._data)
+        return shapely.is_simple(self._data)
 
     @property
     def is_ring(self):
-        return vectorized.is_ring(self._data)
+        return shapely.is_ring(self._data)
 
     @property
     def is_closed(self):
-        return vectorized.is_closed(self._data)
+        return shapely.is_closed(self._data)
 
     @property
     def has_z(self):
-        return vectorized.has_z(self._data)
+        return shapely.has_z(self._data)
 
     @property
     def geom_type(self):
-        return vectorized.geom_type(self._data)
+        res = shapely.get_type_id(self._data)
+        return geometry_type_values[np.searchsorted(geometry_type_ids, res)]
 
     @property
     def area(self):
         self.check_geographic_crs(stacklevel=5)
-        return vectorized.area(self._data)
+        return shapely.area(self._data)
 
     @property
     def length(self):
         self.check_geographic_crs(stacklevel=5)
-        return vectorized.length(self._data)
+        return shapely.length(self._data)
 
     #
     # Unary operations that return new geometries
@@ -507,45 +524,43 @@ class GeometryArray(ExtensionArray):
 
     @property
     def boundary(self):
-        return GeometryArray(vectorized.boundary(self._data), crs=self.crs)
+        return GeometryArray(shapely.boundary(self._data), crs=self.crs)
 
     @property
     def centroid(self):
         self.check_geographic_crs(stacklevel=5)
-        return GeometryArray(vectorized.centroid(self._data), crs=self.crs)
+        return GeometryArray(shapely.centroid(self._data), crs=self.crs)
 
     def concave_hull(self, ratio, allow_holes):
-        return vectorized.concave_hull(self._data, ratio=ratio, allow_holes=allow_holes)
+        return shapely.concave_hull(self._data, ratio=ratio, allow_holes=allow_holes)
 
     @property
     def convex_hull(self):
-        return GeometryArray(vectorized.convex_hull(self._data), crs=self.crs)
+        return GeometryArray(shapely.convex_hull(self._data), crs=self.crs)
 
     def delaunay_triangles(self, tolerance, only_edges):
         return GeometryArray(
-            vectorized.delaunay_triangles(self._data, tolerance, only_edges),
+            shapely.delaunay_triangles(self._data, tolerance, only_edges),
             crs=self.crs,
         )
 
     @property
     def envelope(self):
-        return GeometryArray(vectorized.envelope(self._data), crs=self.crs)
+        return GeometryArray(shapely.envelope(self._data), crs=self.crs)
 
     def minimum_rotated_rectangle(self):
-        return GeometryArray(
-            vectorized.minimum_rotated_rectangle(self._data), crs=self.crs
-        )
+        return GeometryArray(shapely.oriented_envelope(self._data), crs=self.crs)
 
     @property
     def exterior(self):
-        return GeometryArray(vectorized.exterior(self._data), crs=self.crs)
+        return GeometryArray(shapely.get_exterior_ring(self._data), crs=self.crs)
 
     def extract_unique_points(self):
-        return GeometryArray(vectorized.extract_unique_points(self._data), crs=self.crs)
+        return GeometryArray(shapely.extract_unique_points(self._data), crs=self.crs)
 
     def offset_curve(self, distance, quad_segs=8, join_style="round", mitre_limit=5.0):
         return GeometryArray(
-            vectorized.offset_curve(
+            shapely.offset_curve(
                 self._data,
                 distance,
                 quad_segs=quad_segs,
@@ -558,37 +573,53 @@ class GeometryArray(ExtensionArray):
     @property
     def interiors(self):
         # no GeometryArray as result
-        return vectorized.interiors(self._data)
+        has_non_poly = False
+        inner_rings = []
+        for geom in self._data:
+            interior_ring_seq = getattr(geom, "interiors", None)
+            # polygon case
+            if interior_ring_seq is not None:
+                inner_rings.append(list(interior_ring_seq))
+            # non-polygon case
+            else:
+                has_non_poly = True
+                inner_rings.append(None)
+        if has_non_poly:
+            warnings.warn(
+                "Only Polygon objects have interior rings. For other "
+                "geometry types, None is returned.",
+                stacklevel=2,
+            )
+        data = np.array(inner_rings, dtype=object)
+        return data
 
     def remove_repeated_points(self, tolerance=0.0):
         return GeometryArray(
-            vectorized.remove_repeated_points(self._data, tolerance=tolerance),
+            shapely.remove_repeated_points(self._data, tolerance=tolerance),
             crs=self.crs,
         )
 
     def representative_point(self):
-        return GeometryArray(vectorized.representative_point(self._data), crs=self.crs)
+        return GeometryArray(shapely.point_on_surface(self._data), crs=self.crs)
 
     def minimum_bounding_circle(self):
-        return GeometryArray(
-            vectorized.minimum_bounding_circle(self._data), crs=self.crs
-        )
+        return GeometryArray(shapely.minimum_bounding_circle(self._data), crs=self.crs)
 
     def minimum_bounding_radius(self):
-        return vectorized.minimum_bounding_radius(self._data)
+        return shapely.minimum_bounding_radius(self._data)
 
     def normalize(self):
-        return GeometryArray(vectorized.normalize(self._data), crs=self.crs)
+        return GeometryArray(shapely.normalize(self._data), crs=self.crs)
 
     def make_valid(self):
-        return GeometryArray(vectorized.make_valid(self._data), crs=self.crs)
+        return GeometryArray(shapely.make_valid(self._data), crs=self.crs)
 
     def reverse(self):
-        return GeometryArray(vectorized.reverse(self._data), crs=self.crs)
+        return GeometryArray(shapely.reverse(self._data), crs=self.crs)
 
     def segmentize(self, max_segment_length):
         return GeometryArray(
-            vectorized.segmentize(self._data, max_segment_length),
+            shapely.segmentize(self._data, max_segment_length),
             crs=self.crs,
         )
 
@@ -608,7 +639,7 @@ class GeometryArray(ExtensionArray):
                 _crs_mismatch_warn(left, right, stacklevel=7)
             right = right._data
 
-        return getattr(vectorized, op)(left._data, right, **kwargs)
+        return getattr(shapely, op)(left._data, right, **kwargs)
 
     def covers(self, other):
         return self._binary_method("covers", self, other)
@@ -658,7 +689,7 @@ class GeometryArray(ExtensionArray):
 
     def clip_by_rect(self, xmin, ymin, xmax, ymax):
         return GeometryArray(
-            vectorized.clip_by_rect(self._data, xmin, ymin, xmax, ymax), crs=self.crs
+            shapely.clip_by_rect(self._data, xmin, ymin, xmax, ymax), crs=self.crs
         )
 
     def difference(self, other):
@@ -704,63 +735,91 @@ class GeometryArray(ExtensionArray):
         if not (isinstance(distance, (int, float)) and distance == 0):
             self.check_geographic_crs(stacklevel=5)
         return GeometryArray(
-            vectorized.buffer(self._data, distance, resolution=resolution, **kwargs),
+            shapely.buffer(self._data, distance, quad_segs=resolution, **kwargs),
             crs=self.crs,
         )
 
     def interpolate(self, distance, normalized=False):
         self.check_geographic_crs(stacklevel=5)
         return GeometryArray(
-            vectorized.interpolate(self._data, distance, normalized=normalized),
+            shapely.line_interpolate_point(self._data, distance, normalized=normalized),
             crs=self.crs,
         )
 
     def simplify(self, tolerance, preserve_topology=True):
         return GeometryArray(
-            vectorized.simplify(
+            shapely.simplify(
                 self._data, tolerance, preserve_topology=preserve_topology
             ),
             crs=self.crs,
         )
 
     def project(self, other, normalized=False):
-        if isinstance(other, BaseGeometry):
-            other = _shapely_to_geom(other)
-        elif isinstance(other, GeometryArray):
+        if isinstance(other, GeometryArray):
             other = other._data
-        return vectorized.project(self._data, other, normalized=normalized)
+        return shapely.line_locate_point(self._data, other, normalized=normalized)
 
     def relate(self, other):
         if isinstance(other, GeometryArray):
             other = other._data
-        return vectorized.relate(self._data, other)
+        return shapely.relate(self._data, other)
 
     #
     # Reduction operations that return a Shapely geometry
     #
 
     def unary_union(self):
-        return vectorized.unary_union(self._data)
+        warning_msg = (
+            "`unary_union` returned None due to all-None GeoSeries. In future, "
+            "`unary_union` will return 'GEOMETRYCOLLECTION EMPTY' instead."
+        )
+        data = shapely.union_all(self._data)
+        if data is None or data.is_empty:
+            warnings.warn(
+                warning_msg,
+                FutureWarning,
+                stacklevel=4,
+            )
+            return None
+        else:
+            return data
 
     #
     # Affinity operations
     #
 
+    @staticmethod
+    def _affinity_method(op, left, *args, **kwargs):
+        # not all shapely.affinity methods can handle empty geometries:
+        # affine_transform itself works (as well as translate), but rotate, scale
+        # and skew fail (they try to unpack the bounds).
+        # Here: consistently returning empty geom for input empty geom
+        out = []
+        for geom in left:
+            if geom is None or geom.is_empty:
+                res = geom
+            else:
+                res = getattr(shapely.affinity, op)(geom, *args, **kwargs)
+            out.append(res)
+        data = np.empty(len(left), dtype=object)
+        data[:] = out
+        return data
+
     def affine_transform(self, matrix):
         return GeometryArray(
-            vectorized._affinity_method("affine_transform", self._data, matrix),
+            self._affinity_method("affine_transform", self._data, matrix),
             crs=self.crs,
         )
 
     def translate(self, xoff=0.0, yoff=0.0, zoff=0.0):
         return GeometryArray(
-            vectorized._affinity_method("translate", self._data, xoff, yoff, zoff),
+            self._affinity_method("translate", self._data, xoff, yoff, zoff),
             crs=self.crs,
         )
 
     def rotate(self, angle, origin="center", use_radians=False):
         return GeometryArray(
-            vectorized._affinity_method(
+            self._affinity_method(
                 "rotate", self._data, angle, origin=origin, use_radians=use_radians
             ),
             crs=self.crs,
@@ -768,7 +827,7 @@ class GeometryArray(ExtensionArray):
 
     def scale(self, xfact=1.0, yfact=1.0, zfact=1.0, origin="center"):
         return GeometryArray(
-            vectorized._affinity_method(
+            self._affinity_method(
                 "scale", self._data, xfact, yfact, zfact, origin=origin
             ),
             crs=self.crs,
@@ -776,7 +835,7 @@ class GeometryArray(ExtensionArray):
 
     def skew(self, xs=0.0, ys=0.0, origin="center", use_radians=False):
         return GeometryArray(
-            vectorized._affinity_method(
+            self._affinity_method(
                 "skew", self._data, xs, ys, origin=origin, use_radians=use_radians
             ),
             crs=self.crs,
@@ -869,7 +928,7 @@ class GeometryArray(ExtensionArray):
 
         transformer = TransformerFromCRS(self.crs, crs, always_xy=True)
 
-        new_data = vectorized.transform(self._data, transformer.transform)
+        new_data = transform(self._data, transformer.transform)
         return GeometryArray(new_data, crs=crs)
 
     def estimate_utm_crs(self, datum_name="WGS 84"):
@@ -963,10 +1022,10 @@ class GeometryArray(ExtensionArray):
             if empty.any():
                 nonempty = ~empty
                 coords = np.full_like(nonempty, dtype=float, fill_value=np.nan)
-                coords[nonempty] = vectorized.get_x(self._data[nonempty])
+                coords[nonempty] = shapely.get_x(self._data[nonempty])
                 return coords
             else:
-                return vectorized.get_x(self._data)
+                return shapely.get_x(self._data)
         else:
             message = "x attribute access only provided for Point geometries"
             raise ValueError(message)
@@ -979,10 +1038,10 @@ class GeometryArray(ExtensionArray):
             if empty.any():
                 nonempty = ~empty
                 coords = np.full_like(nonempty, dtype=float, fill_value=np.nan)
-                coords[nonempty] = vectorized.get_y(self._data[nonempty])
+                coords[nonempty] = shapely.get_y(self._data[nonempty])
                 return coords
             else:
-                return vectorized.get_y(self._data)
+                return shapely.get_y(self._data)
         else:
             message = "y attribute access only provided for Point geometries"
             raise ValueError(message)
@@ -995,17 +1054,17 @@ class GeometryArray(ExtensionArray):
             if empty.any():
                 nonempty = ~empty
                 coords = np.full_like(nonempty, dtype=float, fill_value=np.nan)
-                coords[nonempty] = vectorized.get_z(self._data[nonempty])
+                coords[nonempty] = shapely.get_z(self._data[nonempty])
                 return coords
             else:
-                return vectorized.get_z(self._data)
+                return shapely.get_z(self._data)
         else:
             message = "z attribute access only provided for Point geometries"
             raise ValueError(message)
 
     @property
     def bounds(self):
-        return vectorized.bounds(self._data)
+        return shapely.bounds(self._data)
 
     @property
     def total_bounds(self):
@@ -1054,8 +1113,6 @@ class GeometryArray(ExtensionArray):
         if allow_fill:
             if fill_value is None or pd.isna(fill_value):
                 fill_value = None
-            elif isinstance(fill_value, BaseGeometry):
-                fill_value = _shapely_to_geom(fill_value)
             elif not _is_scalar_geometry(fill_value):
                 raise TypeError("provide geometry or None as fill value")
 
@@ -1070,7 +1127,7 @@ class GeometryArray(ExtensionArray):
 
         ``value`` should be a BaseGeometry or a GeometryArray.
         """
-        if vectorized.isna(value):
+        if isna(value):
             value = [None]
         elif _is_scalar_geometry(value):
             value = [value]
@@ -1083,8 +1140,7 @@ class GeometryArray(ExtensionArray):
             )
 
         value_arr = np.empty(len(value), dtype=object)
-        with compat.ignore_shapely2_warnings():
-            value_arr[:] = _shapely_to_geom(value)
+        value_arr[:] = value
 
         self._data[idx] = value_arr
         return self
@@ -1170,12 +1226,7 @@ class GeometryArray(ExtensionArray):
         """
         Boolean NumPy array indicating if each value is missing
         """
-        if compat.USE_SHAPELY_20:
-            return shapely.is_missing(self._data)
-        elif compat.USE_PYGEOS:
-            return pygeos.is_missing(self._data)
-        else:
-            return np.array([g is None for g in self._data], dtype="bool")
+        return shapely.is_missing(self._data)
 
     def value_counts(
         self,
@@ -1467,7 +1518,6 @@ class GeometryArray(ExtensionArray):
         # including the base class version here (that raises by default)
         # because this was not yet defined in pandas 0.23
         if name == "any" or name == "all":
-            # TODO(pygeos)
             return getattr(to_shapely(self), name)()
         raise TypeError(
             f"'{type(self).__name__}' with dtype {self.dtype} "
@@ -1521,7 +1571,7 @@ class GeometryArray(ExtensionArray):
         """
         Return for `item in self`.
         """
-        if vectorized.isna(item):
+        if isna(item):
             if (
                 item is self.dtype.na_value
                 or isinstance(item, self.dtype.type)
@@ -1558,3 +1608,23 @@ def _get_common_crs(arr_seq):
         f"Cannot determine common CRS for concatenation inputs, got {names}. "
         "Use `to_crs()` to transform geometries to the same CRS before merging."
     )
+
+
+def transform(data, func):
+    has_z = shapely.has_z(data)
+
+    result = np.empty_like(data)
+
+    coords = shapely.get_coordinates(data[~has_z], include_z=False)
+    new_coords_z = func(coords[:, 0], coords[:, 1])
+    result[~has_z] = shapely.set_coordinates(
+        data[~has_z].copy(), np.array(new_coords_z).T
+    )
+
+    coords_z = shapely.get_coordinates(data[has_z], include_z=True)
+    new_coords_z = func(coords_z[:, 0], coords_z[:, 1], coords_z[:, 2])
+    result[has_z] = shapely.set_coordinates(
+        data[has_z].copy(), np.array(new_coords_z).T
+    )
+
+    return result

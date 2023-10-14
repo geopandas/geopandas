@@ -44,6 +44,7 @@ jobs:
           - ci/envs/310-pd20-conda-forge.yaml
           - ci/envs/310-latest-conda-forge.yaml
           - ci/envs/311-latest-conda-forge.yaml
+          - ci/envs/312-latest-conda-forge.yaml
         include:
           - env: ci/envs/39-latest-conda-forge_no_fiona.yaml
             os: macos-latest
@@ -79,29 +80,11 @@ jobs:
           python -V
           python -c "import geopandas; geopandas.show_versions();"
           micromamba info
-          # save conda list to file and print out
-          # so that we can do the HAS_PYGEOS check without calling conda again
-          micromamba list 2>&1 | tee conda.txt
-          if ( cat conda.txt | grep -q pygeos  )
-          then
-            echo "Setting HAS_PYGEOS=1"
-            echo "HAS_PYGEOS=1" >> $GITHUB_ENV
-          else
-            echo "Setting HAS_PYGEOS=0"
-            echo "HAS_PYGEOS=0" >> $GITHUB_ENV
-          fi
+          micromamba list
 
-      - name: Test without PyGEOS
+      - name: Test
         env:
-          USE_PYGEOS: 0
           PANDAS_COPY_ON_WRITE: ${{ matrix.pandas_copy_on_write || '0' }}
-        run: |
-          pytest -v -r a -n auto --color=yes --cov=geopandas --cov-append --cov-report term-missing --cov-report xml geopandas/
-
-      - name: Test with PyGEOS
-        if: env.HAS_PYGEOS == 1
-        env:
-          USE_PYGEOS: 1
         run: |
           pytest -v -r a -n auto --color=yes --cov=geopandas --cov-append --cov-report term-missing --cov-report xml geopandas/
 
@@ -120,8 +103,6 @@ jobs:
 
       - name: Test docstrings
         if: contains(matrix.env, '39-pd13-conda-forge.yaml') && contains(matrix.os, 'ubuntu')
-        env:
-          USE_PYGEOS: 1
         run: |
           pytest -v --color=yes --doctest-only geopandas --ignore=geopandas/datasets
 
