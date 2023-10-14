@@ -9,7 +9,6 @@ dependencies:
   - shapely
   - fiona
   - pyproj
-  - pygeos
   - packaging
   # testing
   - pytest
@@ -17,7 +16,6 @@ dependencies:
   - pytest-xdist
   - fsspec
   # optional
-  - rtree
   - matplotlib
   - mapclassify
   - folium

@@ -23,9 +23,6 @@ except ImportError:
 DATA = os.path.join(os.path.abspath(os.path.dirname(__file__)), "data", "overlay")
 
 
-pytestmark = pytest.mark.skip_no_sindex
-
-
 @pytest.fixture
 def dfs(request):
     s1 = GeoSeries(
