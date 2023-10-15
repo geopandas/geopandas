@@ -1946,15 +1946,13 @@ individually so that features may have different properties
         return df
 
     # overrides the pandas astype method to ensure the correct return type
+    # should be removable when pandas 1.4 is dropped
     def astype(self, dtype, copy=True, errors="raise", **kwargs):
         """
         Cast a pandas object to a specified dtype ``dtype``.
-
         Returns a GeoDataFrame when the geometry column is kept as geometries,
         otherwise returns a pandas DataFrame.
-
         See the pandas.DataFrame.astype docstring for more details.
-
         Returns
         -------
         GeoDataFrame or DataFrame
@@ -1970,29 +1968,6 @@ individually so that features may have different properties
         # if the geometry column is converted to non-geometries or did not exist
         # do not return a GeoDataFrame
         return pd.DataFrame(df)
-
-    def convert_dtypes(self, *args, **kwargs):
-        """
-        Convert columns to best possible dtypes using dtypes supporting ``pd.NA``.
-
-        Always returns a GeoDataFrame as no conversions are applied to the
-        geometry column.
-
-        See the pandas.DataFrame.convert_dtypes docstring for more details.
-
-        Returns
-        -------
-        GeoDataFrame
-
-        """
-        # Overridden to fix GH1870, that return type is not preserved always
-        # (and where it was, geometry col was not)
-
-        return GeoDataFrame(
-            super().convert_dtypes(*args, **kwargs),
-            geometry=self.geometry.name,
-            crs=self.crs,
-        )
 
     def to_postgis(
         self,
