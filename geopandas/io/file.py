@@ -447,9 +447,7 @@ def _read_file_pyogrio(path_or_bytes, bbox=None, mask=None, rows=None, **kwargs)
         if len(bbox) != 4:
             raise ValueError("'bbox' should be a length-4 tuple.")
     elif isinstance(mask, (GeoDataFrame, GeoSeries)):
-        mask = mapping(mask.to_crs(crs).unary_union)
-    elif isinstance(mask, BaseGeometry):
-        mask = mapping(mask)
+        mask = mask.to_crs(crs).unary_union
     if kwargs.pop("ignore_geometry", False):
         kwargs["read_geometry"] = False
 

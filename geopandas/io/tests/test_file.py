@@ -17,7 +17,7 @@ from shapely.geometry import Point, Polygon, box
 import geopandas
 from geopandas import GeoDataFrame, read_file
 from geopandas._compat import PANDAS_GE_20
-from geopandas.io.file import _detect_driver, _EXTENSION_TO_DRIVER
+from geopandas.io.file import _EXTENSION_TO_DRIVER, _detect_driver
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 from geopandas.tests.util import PACKAGE_DIR, validate_boro_df
 
@@ -737,22 +737,15 @@ def test_read_file_filtered__rows_bbox(df_nybb, engine):
         1047224.3104931959,
         244317.30894023244,
     )
-    if engine == "pyogrio":
-        with pytest.raises(ValueError, match="'skip_features' must be between 0 and 1"):
-            # combination bbox and rows (rows slice applied after bbox filtering!)
-            filtered_df = read_file(
-                nybb_filename, bbox=bbox, rows=slice(4, None), engine=engine
-            )
-    else:  # fiona
-        # combination bbox and rows (rows slice applied after bbox filtering!)
-        filtered_df = read_file(
-            nybb_filename, bbox=bbox, rows=slice(4, None), engine=engine
-        )
-        assert filtered_df.empty
+    # combination bbox and rows (rows slice applied after bbox filtering!)
+    filtered_df = read_file(
+        nybb_filename, bbox=bbox, rows=slice(4, None), engine=engine
+    )
+    assert filtered_df.empty
 
     if engine == "pyogrio":
         # TODO: support negative rows in pyogrio
-        with pytest.raises(ValueError, match="'skip_features' must be between 0 and 1"):
+        with pytest.raises(ValueError, match="'skip_features' must be >= 0"):
             filtered_df = read_file(
                 nybb_filename, bbox=bbox, rows=slice(-1, None), engine=engine
             )
@@ -842,7 +835,6 @@ def test_read_file_filtered_with_gdf_boundary(df_nybb, engine):
 
 
 def test_read_file_filtered_with_gdf_boundary__mask(df_nybb, engine):
-    skip_pyogrio_not_supported(engine)
     gdf_mask = geopandas.read_file(geopandas.datasets.get_path("naturalearth_lowres"))
     gdf = geopandas.read_file(
         geopandas.datasets.get_path("naturalearth_cities"),
@@ -854,7 +846,6 @@ def test_read_file_filtered_with_gdf_boundary__mask(df_nybb, engine):
 
 
 def test_read_file_filtered_with_gdf_boundary__mask__polygon(df_nybb, engine):
-    skip_pyogrio_not_supported(engine)
     full_df_shape = df_nybb.shape
     nybb_filename = geopandas.datasets.get_path("nybb")
     mask = box(
@@ -867,7 +858,6 @@ def test_read_file_filtered_with_gdf_boundary__mask__polygon(df_nybb, engine):
 
 
 def test_read_file_filtered_with_gdf_boundary_mismatched_crs(df_nybb, engine):
-    skip_pyogrio_not_supported(engine)
     full_df_shape = df_nybb.shape
     nybb_filename = geopandas.datasets.get_path("nybb")
     bbox = geopandas.GeoDataFrame(
