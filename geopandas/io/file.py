@@ -1,23 +1,22 @@
 import os
-from packaging.version import Version
-from pathlib import Path
+import urllib.request
 import warnings
-
-import numpy as np
-import pandas as pd
-from pandas.api.types import is_integer_dtype
-
-import pyproj
-from shapely.geometry import mapping
-from shapely.geometry.base import BaseGeometry
-
-from geopandas import GeoDataFrame, GeoSeries
+from io import IOBase
+from pathlib import Path
 
 # Adapted from pandas.io.common
 from urllib.parse import urlparse as parse_url
 from urllib.parse import uses_netloc, uses_params, uses_relative
-import urllib.request
 
+import numpy as np
+import pandas as pd
+import pyproj
+from packaging.version import Version
+from pandas.api.types import is_integer_dtype
+from shapely.geometry import mapping
+from shapely.geometry.base import BaseGeometry
+
+from geopandas import GeoDataFrame, GeoSeries
 
 _VALID_URLS = set(uses_relative + uses_netloc + uses_params)
 _VALID_URLS.discard("")
@@ -176,6 +175,20 @@ def _is_zip(path):
         if parsed.archive
         else parsed.path.endswith(".zip")
     )
+
+
+def _is_filelike(path_or_bytes):
+    """Check if pathlike is a file-like object"""
+    return isinstance(path_or_bytes, IOBase)
+
+
+def _get_crs_pyogrio(path_or_bytes, pyogrio_mod):
+    """Read CRS from file using pyogrio"""
+    crs_text = pyogrio_mod.read_info(path_or_bytes).get("crs")
+    if _is_filelike(path_or_bytes):
+        path_or_bytes.seek(0)
+    if crs_text:
+        return pyproj.CRS(crs_text)
 
 
 def _read_file(filename, bbox=None, mask=None, rows=None, engine=None, **kwargs):
@@ -412,6 +425,8 @@ def _read_file_fiona(
 def _read_file_pyogrio(path_or_bytes, bbox=None, mask=None, rows=None, **kwargs):
     import pyogrio
 
+    crs = _get_crs_pyogrio(path_or_bytes, pyogrio)
+
     if rows is not None:
         if isinstance(rows, int):
             kwargs["max_features"] = rows
@@ -426,21 +441,19 @@ def _read_file_pyogrio(path_or_bytes, bbox=None, mask=None, rows=None, **kwargs)
             raise TypeError("'rows' must be an integer or a slice.")
     if bbox is not None:
         if isinstance(bbox, (GeoDataFrame, GeoSeries)):
-            bbox = tuple(bbox.total_bounds)
+            bbox = tuple(bbox.to_crs(crs).total_bounds)
         elif isinstance(bbox, BaseGeometry):
             bbox = bbox.bounds
         if len(bbox) != 4:
             raise ValueError("'bbox' should be a length-4 tuple.")
-    if mask is not None:
-        raise ValueError(
-            "The 'mask' keyword is not supported with the 'pyogrio' engine. "
-            "You can use 'bbox' instead."
-        )
+    elif isinstance(mask, (GeoDataFrame, GeoSeries)):
+        mask = mapping(mask.to_crs(crs).unary_union)
+    elif isinstance(mask, BaseGeometry):
+        mask = mapping(mask)
     if kwargs.pop("ignore_geometry", False):
         kwargs["read_geometry"] = False
 
-    # TODO: if bbox is not None, check its CRS vs the CRS of the file
-    return pyogrio.read_dataframe(path_or_bytes, bbox=bbox, **kwargs)
+    return pyogrio.read_dataframe(path_or_bytes, bbox=bbox, mask=mask, **kwargs)
 
 
 def read_file(*args, **kwargs):
