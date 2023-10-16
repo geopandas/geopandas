@@ -402,7 +402,7 @@ GeometryCollection
         linestrings is ``GeoSeries.is_ccw & GeoSeries.is_simple`` and for
         linearrings ``GeoSeries.is_ccw & GeoSeries.is_valid``.
 
-        This function will return False for non-linear goemetries and for
+        This property will return False for non-linear goemetries and for
         lines with fewer than 4 points (including the closing point).
 
         Examples
