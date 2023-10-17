@@ -23,8 +23,11 @@ from geopandas.tests.util import PACKAGE_DIR, validate_boro_df
 
 try:
     import pyogrio
+
+    PYOGRIO_GE_07 = Version(pyogrio.__version__) > Version("0.6.0")
 except ImportError:
     pyogrio = False
+    PYOGRIO_GE_07 = False
 
 
 try:
@@ -733,7 +736,7 @@ def test_read_file_filtered__rows_bbox(df_nybb, engine):
         1047224.3104931959,
         244317.30894023244,
     )
-    if engine == "pyogrio":
+    if engine == "pyogrio" and not PYOGRIO_GE_07:
         with pytest.raises(ValueError, match="'skip_features' must be between 0 and 1"):
             # combination bbox and rows (rows slice applied after bbox filtering!)
             filtered_df = read_file(
@@ -748,7 +751,10 @@ def test_read_file_filtered__rows_bbox(df_nybb, engine):
 
     if engine == "pyogrio":
         # TODO: support negative rows in pyogrio
-        with pytest.raises(ValueError, match="'skip_features' must be between 0 and 1"):
+        with pytest.raises(
+            ValueError,
+            match="'skip_features' must be between 0 and 1|Negative slice start",
+        ):
             filtered_df = read_file(
                 nybb_filename, bbox=bbox, rows=slice(-1, None), engine=engine
             )
