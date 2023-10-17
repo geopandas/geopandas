@@ -417,6 +417,10 @@ def _read_file_pyogrio(path_or_bytes, bbox=None, mask=None, rows=None, **kwargs)
             kwargs["max_features"] = rows
         elif isinstance(rows, slice):
             if rows.start is not None:
+                if rows.start < 0:
+                    raise ValueError(
+                        "Negative slice start not supported with the 'pyogrio' engine."
+                    )
                 kwargs["skip_features"] = rows.start
             if rows.stop is not None:
                 kwargs["max_features"] = rows.stop - (rows.start or 0)
