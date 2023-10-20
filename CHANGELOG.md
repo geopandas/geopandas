@@ -9,6 +9,12 @@ Notes on dependencies:
   rtree package has also been removed. (#3035)
 
 
+Bug fixes:
+- Fix `GeoDataFrame.merge()` incorrectly returning a `DataFrame` instead of a 
+  `GeoDataFrame` when the `suffixes` argument is applied to the active
+  geometry column (#2933).
+
+
 ## Version 0.14 (Sep 15, 2023)
 
 GeoPandas will use Shapely 2.0 by default instead of PyGEOS when both Shapely >= 2.0 and
@@ -41,7 +47,6 @@ New features and improvements:
   for files with the `.fgb` extension (#2958)
 
 Bug fixes:
-
 - Fix ambiguous error when GeoDataFrame is initialized with a column called ``"crs"`` (#2944)
 - Fix a color assignment in ``explore`` when using ``UserDefined`` bins (#2923)
 - Fix bug in `apply` with `axis=1` where the given user defined function returns nested
