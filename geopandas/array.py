@@ -608,6 +608,9 @@ class GeometryArray(ExtensionArray):
     def minimum_bounding_radius(self):
         return shapely.minimum_bounding_radius(self._data)
 
+    def minimum_clearance(self):
+        return shapely.minimum_clearance(self._data)
+
     def normalize(self):
         return GeometryArray(shapely.normalize(self._data), crs=self.crs)
 

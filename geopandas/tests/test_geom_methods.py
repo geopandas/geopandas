@@ -1639,6 +1639,21 @@ class TestGeomMethods:
             Series([0.707106, 0.707106]),
         )
 
+    def test_minimum_clearance(self):
+        mc_geoms = self.g1.minimum_clearance()
+
+        assert_series_equal(
+            mc_geoms,
+            Series([0.707107, 1.000000]),
+        )
+
+        mc_lines = self.g5.minimum_clearance()
+
+        assert_series_equal(
+            mc_lines,
+            Series([1.0, 1.0]),
+        )
+
     @pytest.mark.parametrize("size", [10, 20, 50])
     def test_sample_points(self, size):
         for gs in (
