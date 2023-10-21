@@ -964,6 +964,10 @@ class TestGeomMethods:
         expected = LinearRing(self.inner_sq.boundary)
         assert original.interiors[1][0].equals(expected)
 
+        no_interiors = GeoSeries([self.t1, self.sq])
+        assert no_interiors.interiors[0] == []
+        assert no_interiors.interiors[1] == []
+
     def test_interpolate(self):
         expected = GeoSeries([Point(0.5, 1.0), Point(0.75, 1.0)])
         self._test_binary_topological(
