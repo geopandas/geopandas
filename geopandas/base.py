@@ -1038,6 +1038,39 @@ GeometryCollection
         """
         return Series(self.geometry.values.minimum_bounding_radius(), index=self.index)
 
+    def minimum_clearance(self):
+        """Returns a ``Series`` containing the minimum clearance distance,
+        which is the smallest distance by which a vertex of the geometry
+        could be moved to produce an invalid geometry.
+
+        If no minimum clearance exists for a geometry (for example,
+        a single point, or an empty geometry), infinity is returned.
+
+        Examples
+        --------
+
+        >>> from shapely.geometry import Polygon, LineString, Point
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0, 0), (1, 1), (0, 1), (0, 0)]),
+        ...         LineString([(0, 0), (1, 1), (3, 2)]),
+        ...         Point(0, 0),
+        ...     ]
+        ... )
+        >>> s
+        0    POLYGON ((0.00000 0.00000, 1.00000 1.00000, 0....
+        1    LINESTRING (0.00000 0.00000, 1.00000 1.00000, ...
+        2                              POINT (0.00000 0.00000)
+        dtype: geometry
+
+        >>> s.minimum_clearance()
+        0    0.707107
+        1    1.414214
+        2         inf
+        dtype: float64
+        """
+        return Series(self.geometry.values.minimum_clearance(), index=self.index)
+
     def normalize(self):
         """Returns a ``GeoSeries`` of normalized
         geometries to normal form (or canonical form).
