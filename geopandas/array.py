@@ -520,7 +520,7 @@ class GeometryArray(ExtensionArray):
 
     @property
     def count_coordinates(self):
-        out = np.empty(len(self._data), dtype="int64")
+        out = np.empty(len(self._data), dtype=np.int_)
         out[:] = [shapely.count_coordinates(s) for s in self._data]
         return out
 
