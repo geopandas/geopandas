@@ -590,7 +590,9 @@ class GeometryArray(ExtensionArray):
                 "geometry types, None is returned.",
                 stacklevel=2,
             )
-        data = np.array(inner_rings, dtype=object)
+        # need to allocate empty first in case of all empty lists in inner_rings
+        data = np.empty(len(inner_rings), dtype=object)
+        data[:] = inner_rings
         return data
 
     def remove_repeated_points(self, tolerance=0.0):
