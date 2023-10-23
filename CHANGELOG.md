@@ -2,6 +2,10 @@
 
 ## Development version
 
+New methods:
+
+- Added ``count_coordinates`` method from shapely to GeoSeries/GeoDataframe (#3026).
+
 Notes on dependencies:
 
 - GeoPandas 1.0 drops support for shapely<2 and PyGEOS. The only geometry engine that is
@@ -33,7 +37,6 @@ New methods:
 - Added ``reverse`` method from shapely to GeoSeries/GeoDataframe (#2988).
 - Added ``segmentize`` method from shapely to GeoSeries/GeoDataFrame (#2910).
 - Added ``shortest_line`` method from shapely to GeoSeries/GeoDataframe (#2960).
-- Added ``count_coordinates`` method from shapely to GeoSeries/GeoDataframe (#3026).
 
 New features and improvements:
 
