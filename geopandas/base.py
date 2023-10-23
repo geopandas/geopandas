@@ -356,6 +356,7 @@ GeometryCollection
         3    POLYGON ((10.00000 10.00000, 10.00000 20.00000...
         4                                                 None
         dtype: geometry
+
         >>> s.count_coordinates
         0    4
         1    3
