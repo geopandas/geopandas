@@ -338,6 +338,7 @@ GeometryCollection
         --------
         An example of a GeoDataFrame with two line strings, one point and one None
         value:
+
         >>> from shapely.geometry import LineString, Point
         >>> s = geopandas.GeoSeries(
         ...     [
