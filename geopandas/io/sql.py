@@ -411,9 +411,7 @@ def _write_postgis(
 
     # Replace SRID from -1 (geopandas pattern) to 0 (PostGIS pattern)
     if srid == -1:
-        gdf[geom_name] = gdf[geom_name].apply(
-            lambda x: x.replace('SRID=-1', 'SRID=0')
-        )
+        gdf[geom_name] = gdf[geom_name].apply(lambda x: x.replace("SRID=-1", "SRID=0"))
 
     if schema is not None:
         schema_name = schema

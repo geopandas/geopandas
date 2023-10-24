@@ -15,8 +15,7 @@ import geopandas._compat as compat
 from geopandas import GeoDataFrame, read_file, read_postgis
 from geopandas.io.sql import _get_conn as get_conn
 from geopandas.io.sql import _write_postgis as write_postgis
-from geopandas.tests.util import (create_postgis, create_spatialite,
-                                  validate_boro_df)
+from geopandas.tests.util import create_postgis, create_spatialite, validate_boro_df
 
 try:
     from sqlalchemy import text
