@@ -500,6 +500,13 @@ class TestGeomMethods:
         with pytest.warns(UserWarning, match="Geometry is in a geographic CRS"):
             self.g4.length
 
+    def test_count_coordinates(self):
+        expected = Series(np.array([4, 5]), index=self.g1.index)
+        self._test_unary_real("count_coordinates", expected, self.g1)
+
+        expected = Series(np.array([4, 0]), index=self.na_none.index)
+        self._test_unary_real("count_coordinates", expected, self.na_none)
+
     def test_crosses(self):
         expected = [False, False, False, False, False, False, False]
         assert_array_dtype_equal(expected, self.g0.crosses(self.t1))

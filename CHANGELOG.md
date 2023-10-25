@@ -2,6 +2,10 @@
 
 ## Development version
 
+New methods:
+
+- Added ``count_coordinates`` method from shapely to GeoSeries/GeoDataframe (#3026).
+
 Notes on dependencies:
 
 - GeoPandas 1.0 drops support for shapely<2 and PyGEOS. The only geometry engine that is
