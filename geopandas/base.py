@@ -329,6 +329,49 @@ GeometryCollection
         return _delegate_property("is_empty", self)
 
     @property
+    def count_coordinates(self):
+        """
+        Returns a ``Series`` containing the count of the number of coordinate pairs
+        in a geometry array.
+
+        Examples
+        --------
+        An example of a GeoDataFrame with two line strings, one point and one None
+        value:
+
+        >>> from shapely.geometry import LineString, Point
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         LineString([(0, 0), (1, 1), (1, -1), (0, 1)]),
+        ...         LineString([(0, 0), (1, 1), (1, -1)]),
+        ...         Point(0, 0),
+        ...         Polygon([(10, 10), (10, 20), (20, 20), (20, 10), (10, 10)]),
+        ...         None
+        ...     ]
+        ... )
+        >>> s
+        0    LINESTRING (0.00000 0.00000, 1.00000 1.00000, ...
+        1    LINESTRING (0.00000 0.00000, 1.00000 1.00000, ...
+        2                              POINT (0.00000 0.00000)
+        3    POLYGON ((10.00000 10.00000, 10.00000 20.00000...
+        4                                                 None
+        dtype: geometry
+
+        >>> s.count_coordinates
+        0    4
+        1    3
+        2    1
+        3    5
+        4    0
+        dtype: object
+
+        See also
+        --------
+        GeoSeries.get_coordinates : extract coordinates as a :class:`~pandas.DataFrame`
+        """
+        return _delegate_property("count_coordinates", self)
+
+    @property
     def is_simple(self):
         """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
         geometries that do not cross themselves.

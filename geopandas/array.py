@@ -518,6 +518,12 @@ class GeometryArray(ExtensionArray):
         self.check_geographic_crs(stacklevel=5)
         return shapely.length(self._data)
 
+    @property
+    def count_coordinates(self):
+        out = np.empty(len(self._data), dtype=np.int_)
+        out[:] = [shapely.count_coordinates(s) for s in self._data]
+        return out
+
     #
     # Unary operations that return new geometries
     #
