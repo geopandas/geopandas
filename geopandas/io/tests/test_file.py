@@ -24,7 +24,7 @@ from geopandas.tests.util import PACKAGE_DIR, validate_boro_df
 try:
     import pyogrio
 
-    PYOGRIO_GE_07 = Version(pyogrio.__version__) > Version("0.6.0")
+    PYOGRIO_GE_07 = Version(pyogrio.__version__) >= Version("0.7.0")
 except ImportError:
     pyogrio = False
     PYOGRIO_GE_07 = False
@@ -198,9 +198,8 @@ datetime_type_tests = (TEST_DATE, eastern.localize(TEST_DATE))
 @pytest.mark.parametrize("driver,ext", driver_ext_pairs)
 def test_to_file_datetime(tmpdir, driver, ext, time, engine):
     """Test writing a data file with the datetime column type"""
-    if engine == "pyogrio" and time.tzinfo is not None:
-        # TODO
-        pytest.skip("pyogrio doesn't yet support timezones")
+    if engine == "pyogrio" and time.tzinfo is not None and not PYOGRIO_GE_07:
+        pytest.skip("pyogrio < 0.7.0 doesn't support timezones")
     if ext in (".shp", ""):
         pytest.skip(f"Driver corresponding to ext {ext} doesn't support dt fields")
 
@@ -295,17 +294,14 @@ def test_read_file_datetime_mixed_offsets(tmpdir):
     df.to_file(tempfilename)
     # check mixed tz don't crash GH2478
     res = read_file(tempfilename)
-    if engine == "fiona":
-        # Convert mixed timezones to UTC equivalent
-        assert is_datetime64_any_dtype(res["date"])
+    # Convert mixed timezones to UTC equivalent
+    assert is_datetime64_any_dtype(res["date"])
+    if engine == "fiona" or (engine == "pyogrio" and PYOGRIO_GE_07):
         if not PANDAS_GE_20:
             utc = pytz.utc
         else:
             utc = datetime.timezone.utc
         assert res["date"].dt.tz == utc
-    else:
-        # old fiona and pyogrio ignore timezones and read as datetimes successfully
-        assert is_datetime64_any_dtype(res["date"])
 
 
 @pytest.mark.parametrize("driver,ext", driver_ext_pairs)
@@ -578,11 +574,15 @@ def test_read_file(engine):
     "url",
     [
         # geojson url
-        "https://raw.githubusercontent.com/geopandas/geopandas/"
-        "main/geopandas/tests/data/null_geom.geojson",
+        (
+            "https://raw.githubusercontent.com/geopandas/geopandas/"
+            "main/geopandas/tests/data/null_geom.geojson"
+        ),
         # url to zip file
-        "https://raw.githubusercontent.com/geopandas/geopandas/"
-        "main/geopandas/datasets/nybb_16a.zip",
+        (
+            "https://raw.githubusercontent.com/geopandas/geopandas/"
+            "main/geopandas/datasets/nybb_16a.zip"
+        ),
         # url to zipfile without extension
         "https://geonode.goosocean.org/download/480",
         # url to web service
