@@ -328,7 +328,6 @@ GeometryCollection
         """
         return _delegate_property("is_empty", self)
 
-    @property
     def count_coordinates(self):
         """
         Returns a ``Series`` containing the count of the number of coordinate pairs
@@ -357,7 +356,7 @@ GeometryCollection
         4                                                 None
         dtype: geometry
 
-        >>> s.count_coordinates
+        >>> s.count_coordinates()
         0    4
         1    3
         2    1
@@ -369,7 +368,7 @@ GeometryCollection
         --------
         GeoSeries.get_coordinates : extract coordinates as a :class:`~pandas.DataFrame`
         """
-        return _delegate_property("count_coordinates", self)
+        return Series(self.geometry.values.count_coordinates(), index=self.index)
 
     @property
     def is_simple(self):
