@@ -465,16 +465,17 @@ class TestIO:
         # Write to db
         df_nybb = df_nybb
         df_nybb.crs = None
+
+        # Testing when replacing table
         with pytest.warns(UserWarning, match="Could not parse CRS from the GeoDataF"):
             write_postgis(df_nybb, con=engine, name=table, if_exists="replace")
-        # Validate that srid is -1
+
         sql = text(
             "SELECT Find_SRID('{schema}', '{table}', '{geom_col}');".format(
                 schema="public", table=table, geom_col="geometry"
             )
         )
 
-        # Testing when replacing table
         with engine.connect() as conn:
             target_srid = conn.execute(sql).fetchone()[0]
         assert target_srid == 0, "SRID should be 0, found %s" % target_srid
@@ -482,6 +483,17 @@ class TestIO:
         # Testing when append table
         with pytest.warns(UserWarning, match="Could not parse CRS from the GeoDataF"):
             write_postgis(df_nybb, con=engine, name=table, if_exists="append")
+
+        sql = text(
+            "SELECT Find_SRID('{schema}', '{table}', '{geom_col}')"
+            " ORDER BY '{geom_col}' DESC;".format(
+                schema="public", table=table, geom_col="geometry"
+            )
+        )
+
+        with engine.connect() as conn:
+            target_srid = conn.execute(sql).fetchone()[0]
+        assert target_srid == 0, "SRID should be 0, found %s" % target_srid
 
     def test_write_postgis_with_esri_authority(self, engine_postgis, df_nybb):
         """
