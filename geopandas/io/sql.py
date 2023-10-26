@@ -393,6 +393,10 @@ def _write_postgis(
     # Get srid
     srid = _get_srid_from_crs(gdf)
 
+    # Replace SRID from -1 (geoalchemy pattern) to 0 (PostGIS pattern)
+    if srid == -1:
+        srid = 0
+
     # Get geometry type and info whether data contains LinearRing.
     geometry_type, has_curve = _get_geometry_type(gdf)
 
@@ -408,10 +412,6 @@ def _write_postgis(
 
     # Convert geometries to EWKB
     gdf = _convert_to_ewkb(gdf, geom_name, srid)
-
-    # Replace SRID from -1 (geopandas pattern) to 0 (PostGIS pattern)
-    if srid == -1:
-        gdf[geom_name] = gdf[geom_name].apply(lambda x: x.replace("SRID=-1", "SRID=0"))
 
     if schema is not None:
         schema_name = schema
