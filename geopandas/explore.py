@@ -93,8 +93,7 @@ def _explore(
         pass :class:`xyzservices.TileProvider` object or pass custom XYZ URL.
         The current list of built-in providers (when ``xyzservices`` is not available):
 
-        ``["OpenStreetMap", "Stamen Terrain", “Stamen Toner", “Stamen Watercolor"
-        "CartoDB positron", “CartoDB dark_matter"]``
+        ``["OpenStreetMap", "CartoDB positron", “CartoDB dark_matter"]``
 
         You can pass a custom tileset to Folium by passing a Leaflet-style URL
         to the tiles parameter: ``http://{s}.yourtiles.com/{z}/{x}/{y}.png``.
@@ -908,8 +907,7 @@ def _explore_geoseries(
         pass :class:`xyzservices.TileProvider` object or pass custom XYZ URL.
         The current list of built-in providers (when ``xyzservices`` is not available):
 
-        ``["OpenStreetMap", "Stamen Terrain", “Stamen Toner", “Stamen Watercolor"
-        "CartoDB positron", “CartoDB dark_matter"]``
+        ``["OpenStreetMap", "CartoDB positron", “CartoDB dark_matter"]``
 
         You can pass a custom tileset to Folium by passing a Leaflet-style URL
         to the tiles parameter: ``http://{s}.yourtiles.com/{z}/{x}/{y}.png``.
