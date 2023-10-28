@@ -209,8 +209,7 @@ def test_to_file_datetime(tmpdir, driver, ext, time, engine):
     df = GeoDataFrame(
         {"a": [1.0, 2.0], "b": [time, time]}, geometry=[point, point], crs=4326
     )
-    fiona_precision_limit = "ms"
-    df["b"] = df["b"].dt.round(freq=fiona_precision_limit)
+    df["b"] = df["b"].dt.round(freq="ms")
 
     df.to_file(tempfilename, driver=driver, engine=engine)
     df_read = read_file(tempfilename, engine=engine)
@@ -218,12 +217,12 @@ def test_to_file_datetime(tmpdir, driver, ext, time, engine):
     assert_geodataframe_equal(df.drop(columns=["b"]), df_read.drop(columns=["b"]))
     if df["b"].dt.tz is not None:
         # US/Eastern becomes pytz.FixedOffset(-300) when read from file
-        # so compare fairly in terms of UTC
-        assert_series_equal(
-            df["b"].dt.tz_convert(pytz.utc), df_read["b"].dt.tz_convert(pytz.utc)
-        )
+        # as GDAL only models offsets, not timezones.
+        # Compare fair result in terms of UTC instead
+        expected = df["b"].dt.tz_convert(pytz.utc).dt.as_unit("ms")
+        assert_series_equal(expected, df_read["b"].dt.tz_convert(pytz.utc))
     else:
-        if engine == "pyogrio" and PANDAS_GE_20:
+        if PANDAS_GE_20:
             df["b"] = df["b"].astype("datetime64[ms]")
         assert_series_equal(df["b"], df_read["b"])
 
