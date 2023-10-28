@@ -215,16 +215,19 @@ def test_to_file_datetime(tmpdir, driver, ext, time, engine):
     df_read = read_file(tempfilename, engine=engine)
 
     assert_geodataframe_equal(df.drop(columns=["b"]), df_read.drop(columns=["b"]))
+    # Check datetime column
+    expected = df["b"]
+    if PANDAS_GE_20:
+        expected = df["b"].dt.as_unit("ms")
+    actual = df_read["b"]
     if df["b"].dt.tz is not None:
         # US/Eastern becomes pytz.FixedOffset(-300) when read from file
         # as GDAL only models offsets, not timezones.
         # Compare fair result in terms of UTC instead
-        expected = df["b"].dt.tz_convert(pytz.utc).dt.as_unit("ms")
-        assert_series_equal(expected, df_read["b"].dt.tz_convert(pytz.utc))
-    else:
-        if PANDAS_GE_20:
-            df["b"] = df["b"].astype("datetime64[ms]")
-        assert_series_equal(df["b"], df_read["b"])
+        expected = expected.dt.tz_convert(pytz.utc)
+        actual = actual.dt.tz_convert(pytz.utc)
+
+    assert_series_equal(expected, actual)
 
 
 dt_exts = ["gpkg", "geojson"]
