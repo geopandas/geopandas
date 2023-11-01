@@ -24,7 +24,7 @@ from geopandas.tests.util import PACKAGE_DIR, validate_boro_df
 try:
     import pyogrio
 
-    PYOGRIO_GE_07 = Version(pyogrio.__version__) > Version("0.6.0")
+    PYOGRIO_GE_07 = Version(pyogrio.__version__) >= Version("0.7.0")
 except ImportError:
     pyogrio = False
     PYOGRIO_GE_07 = False
@@ -62,6 +62,11 @@ def engine(request):
 def skip_pyogrio_not_supported(engine):
     if engine == "pyogrio":
         pytest.skip("not supported for the pyogrio engine")
+
+
+def skip_pyogrio_lt_07(engine):
+    if engine == "pyogrio" and not PYOGRIO_GE_07:
+        pytest.skip("requires pyogrio >= 0.7.0")
 
 
 @pytest.fixture
@@ -848,7 +853,7 @@ def test_read_file_filtered_with_gdf_boundary(df_nybb, engine):
 
 
 def test_read_file_filtered_with_gdf_boundary__mask(df_nybb, engine):
-    skip_pyogrio_not_supported(engine)
+    skip_pyogrio_lt_07(engine)
     gdf_mask = geopandas.read_file(geopandas.datasets.get_path("naturalearth_lowres"))
     gdf = geopandas.read_file(
         geopandas.datasets.get_path("naturalearth_cities"),
@@ -860,7 +865,7 @@ def test_read_file_filtered_with_gdf_boundary__mask(df_nybb, engine):
 
 
 def test_read_file_filtered_with_gdf_boundary__mask__polygon(df_nybb, engine):
-    skip_pyogrio_not_supported(engine)
+    skip_pyogrio_lt_07(engine)
     full_df_shape = df_nybb.shape
     nybb_filename = geopandas.datasets.get_path("nybb")
     mask = box(
@@ -873,7 +878,7 @@ def test_read_file_filtered_with_gdf_boundary__mask__polygon(df_nybb, engine):
 
 
 def test_read_file_filtered_with_gdf_boundary_mismatched_crs(df_nybb, engine):
-    skip_pyogrio_not_supported(engine)
+    skip_pyogrio_lt_07(engine)
     full_df_shape = df_nybb.shape
     nybb_filename = geopandas.datasets.get_path("nybb")
     bbox = geopandas.GeoDataFrame(
@@ -895,7 +900,7 @@ def test_read_file_filtered_with_gdf_boundary_mismatched_crs(df_nybb, engine):
 
 
 def test_read_file_filtered_with_gdf_boundary_mismatched_crs__mask(df_nybb, engine):
-    skip_pyogrio_not_supported(engine)
+    skip_pyogrio_lt_07(engine)
     full_df_shape = df_nybb.shape
     nybb_filename = geopandas.datasets.get_path("nybb")
     mask = geopandas.GeoDataFrame(

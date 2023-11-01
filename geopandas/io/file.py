@@ -1,3 +1,4 @@
+from io import IOBase
 import os
 from packaging.version import Version
 from pathlib import Path
@@ -8,6 +9,7 @@ import pandas as pd
 from pandas.api.types import is_integer_dtype
 
 import pyproj
+import shapely
 from shapely.geometry import mapping
 from shapely.geometry.base import BaseGeometry
 
@@ -62,15 +64,20 @@ def _import_fiona():
 
 pyogrio = None
 pyogrio_import_error = None
+PYOGRIO_GE_07 = False
 
 
 def _import_pyogrio():
     global pyogrio
     global pyogrio_import_error
+    global PYOGRIO_GE_07
 
     if pyogrio is None:
         try:
             import pyogrio
+
+            PYOGRIO_GE_07 = Version(pyogrio.__version__) > Version("0.7.0")
+
         except ImportError as err:
             pyogrio = False
             pyogrio_import_error = str(err)
@@ -430,20 +437,37 @@ def _read_file_pyogrio(path_or_bytes, bbox=None, mask=None, rows=None, **kwargs)
             raise TypeError("'rows' must be an integer or a slice.")
     if bbox is not None:
         if isinstance(bbox, (GeoDataFrame, GeoSeries)):
-            bbox = tuple(bbox.total_bounds)
+            crs = pyogrio.read_info(path_or_bytes).get("crs")
+            if isinstance(path_or_bytes, IOBase):
+                path_or_bytes.seek(0)
+
+            bbox = tuple(bbox.to_crs(crs).total_bounds)
         elif isinstance(bbox, BaseGeometry):
             bbox = bbox.bounds
         if len(bbox) != 4:
             raise ValueError("'bbox' should be a length-4 tuple.")
-    if mask is not None:
-        raise ValueError(
-            "The 'mask' keyword is not supported with the 'pyogrio' engine. "
-            "You can use 'bbox' instead."
-        )
+    elif mask is not None:
+        # NOTE: mask cannot be used at same time as bbox keyword
+        if not PYOGRIO_GE_07:
+            raise ValueError(
+                "The 'mask' keyword requires pyogrio >= 0.7.0.  "
+                "You can use 'bbox' instead."
+            )
+        if isinstance(mask, (GeoDataFrame, GeoSeries)):
+            crs = pyogrio.read_info(path_or_bytes).get("crs")
+            if isinstance(path_or_bytes, IOBase):
+                path_or_bytes.seek(0)
+
+            crs = pyogrio.read_info(path_or_bytes)["crs"]
+            mask = shapely.unary_union(mask.to_crs(crs).geometry.values)
+        elif isinstance(mask, BaseGeometry):
+            mask = shapely.unary_union(mask)
+
+        kwargs["mask"] = mask
+
     if kwargs.pop("ignore_geometry", False):
         kwargs["read_geometry"] = False
 
-    # TODO: if bbox is not None, check its CRS vs the CRS of the file
     return pyogrio.read_dataframe(path_or_bytes, bbox=bbox, **kwargs)
 
 
