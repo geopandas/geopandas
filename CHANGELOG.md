@@ -16,7 +16,7 @@ New methods:
 
 - Added ``minimum_clearance`` method from shapely to GeoSeries/GeoDataframe (#2989).
 
-API changes:
+Potentially breaking changes:
 - reading a data source that does not have a geometry field using ``read_file``
   now returns a Pandas DataFrame instead of a GeoDataFrame with an empty
   ``geometry`` column.
