@@ -11,7 +11,7 @@ import pytest
 import pytz
 from packaging.version import Version
 from pandas.api.types import is_datetime64_any_dtype
-from pandas.testing import assert_series_equal
+from pandas.testing import assert_series_equal, assert_frame_equal
 from shapely.geometry import Point, Polygon, box
 
 import geopandas
@@ -797,6 +797,25 @@ def test_read_file__ignore_all_fields(engine):
         engine="fiona",
     )
     assert gdf.columns.tolist() == ["geometry"]
+
+
+def test_read_file_missing_geometry(tmpdir, engine):
+    filename = str(tmpdir / "test.csv")
+
+    expected = pd.DataFrame(
+        {"col1": np.array([1, 2, 3], dtype="int64"), "col2": ["a", "b", "c"]}
+    )
+    print(expected.dtypes)
+    expected.to_csv(filename, index=False)
+
+    df = geopandas.read_file(filename, engine=engine)
+    # both engines read integers as strings; force back to original type
+    df["col1"] = df["col1"].astype("int64")
+
+    assert isinstance(df, pd.DataFrame)
+    assert not isinstance(df, geopandas.GeoDataFrame)
+
+    assert_frame_equal(df, expected)
 
 
 def test_read_file__where_filter(engine):
