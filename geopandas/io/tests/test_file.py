@@ -12,7 +12,7 @@ import pytz
 from packaging.version import Version
 from pandas.api.types import is_datetime64_any_dtype
 from pandas.testing import assert_series_equal
-from shapely.geometry import Point, Polygon, box
+from shapely.geometry import Point, Polygon, box, mapping
 
 import geopandas
 from geopandas import GeoDataFrame, read_file
@@ -870,6 +870,24 @@ def test_read_file_filtered_with_gdf_boundary__mask__polygon(df_nybb, engine):
     nybb_filename = geopandas.datasets.get_path("nybb")
     mask = box(
         1031051.7879884212, 224272.49231459625, 1047224.3104931959, 244317.30894023244
+    )
+    filtered_df = read_file(nybb_filename, mask=mask, engine=engine)
+    filtered_df_shape = filtered_df.shape
+    assert full_df_shape != filtered_df_shape
+    assert filtered_df_shape == (2, 5)
+
+
+def test_read_file_filtered_with_gdf_boundary__mask__geojson(df_nybb, engine):
+    skip_pyogrio_lt_07(engine)
+    full_df_shape = df_nybb.shape
+    nybb_filename = geopandas.datasets.get_path("nybb")
+    mask = mapping(
+        box(
+            1031051.7879884212,
+            224272.49231459625,
+            1047224.3104931959,
+            244317.30894023244,
+        )
     )
     filtered_df = read_file(nybb_filename, mask=mask, engine=engine)
     filtered_df_shape = filtered_df.shape

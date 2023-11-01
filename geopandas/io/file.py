@@ -462,6 +462,9 @@ def _read_file_pyogrio(path_or_bytes, bbox=None, mask=None, rows=None, **kwargs)
             mask = shapely.unary_union(mask.to_crs(crs).geometry.values)
         elif isinstance(mask, BaseGeometry):
             mask = shapely.unary_union(mask)
+        elif isinstance(mask, dict) or hasattr(mask, "__geo_interface__"):
+            # convert GeoJSON to shapely geometry
+            mask = shapely.geometry.shape(mask)
 
         kwargs["mask"] = mask
 

@@ -17,7 +17,7 @@ New methods:
 - Added ``minimum_clearance`` method from shapely to GeoSeries/GeoDataframe (#2989).
 
 API changes:
-- Added support for ``mask`` keyword for pyogrio engine for pyogrio >= 0.7.0
+- Added support for ``mask`` keyword for pyogrio engine for pyogrio >= 0.7.0 (#3062).
 
 Bug fixes:
 - Fix `GeoDataFrame.merge()` incorrectly returning a `DataFrame` instead of a
