@@ -939,6 +939,23 @@ def test_read_file_filtered_with_gdf_boundary_mismatched_crs__mask(df_nybb, engi
     assert filtered_df_shape == (2, 5)
 
 
+def test_read_file_bbox_mask(engine):
+    skip_pyogrio_lt_07(engine)
+    nybb_filename = geopandas.datasets.get_path("nybb")
+
+    bbox = (
+        1031051.7879884212,
+        224272.49231459625,
+        1047224.3104931959,
+        244317.30894023244,
+    )
+
+    mask = box(*bbox)
+
+    with pytest.raises(ValueError, match="mask and bbox can not be set together"):
+        read_file(nybb_filename, bbox=bbox, mask=mask)
+
+
 @pytest.mark.filterwarnings(
     "ignore:Layer 'b'test_empty'' does not have any features:UserWarning"
 )

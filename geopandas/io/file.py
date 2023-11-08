@@ -76,7 +76,7 @@ def _import_pyogrio():
         try:
             import pyogrio
 
-            PYOGRIO_GE_07 = Version(pyogrio.__version__) > Version("0.7.0")
+            PYOGRIO_GE_07 = Version(pyogrio.__version__) >= Version("0.7.0")
 
         except ImportError as err:
             pyogrio = False
@@ -435,6 +435,11 @@ def _read_file_pyogrio(path_or_bytes, bbox=None, mask=None, rows=None, **kwargs)
                 raise ValueError("slice with step is not supported")
         else:
             raise TypeError("'rows' must be an integer or a slice.")
+
+    if bbox is not None and mask is not None:
+        # match error message from Fiona
+        raise ValueError("mask and bbox can not be set together")
+
     if bbox is not None:
         if isinstance(bbox, (GeoDataFrame, GeoSeries)):
             crs = pyogrio.read_info(path_or_bytes).get("crs")
@@ -446,7 +451,8 @@ def _read_file_pyogrio(path_or_bytes, bbox=None, mask=None, rows=None, **kwargs)
             bbox = bbox.bounds
         if len(bbox) != 4:
             raise ValueError("'bbox' should be a length-4 tuple.")
-    elif mask is not None:
+
+    if mask is not None:
         # NOTE: mask cannot be used at same time as bbox keyword
         if not PYOGRIO_GE_07:
             raise ValueError(
@@ -458,7 +464,6 @@ def _read_file_pyogrio(path_or_bytes, bbox=None, mask=None, rows=None, **kwargs)
             if isinstance(path_or_bytes, IOBase):
                 path_or_bytes.seek(0)
 
-            crs = pyogrio.read_info(path_or_bytes)["crs"]
             mask = shapely.unary_union(mask.to_crs(crs).geometry.values)
         elif isinstance(mask, BaseGeometry):
             mask = shapely.unary_union(mask)
