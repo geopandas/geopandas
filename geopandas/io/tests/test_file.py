@@ -805,7 +805,6 @@ def test_read_file_missing_geometry(tmpdir, engine):
     expected = pd.DataFrame(
         {"col1": np.array([1, 2, 3], dtype="int64"), "col2": ["a", "b", "c"]}
     )
-    print(expected.dtypes)
     expected.to_csv(filename, index=False)
 
     df = geopandas.read_file(filename, engine=engine)
