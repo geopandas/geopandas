@@ -19,6 +19,8 @@ If you trust this file, you can enable reading the extension type by one of:
 
 We strongly recommend updating your Parquet/Feather files to use extension types
 derived from `pyarrow.ExtensionType` instead, and register this type explicitly.
+See https://arrow.apache.org/docs/dev/python/extending_types.html#defining-extension-types-user-defined-types
+for more details.
 """
 
 
