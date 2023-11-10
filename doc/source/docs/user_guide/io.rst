@@ -276,7 +276,7 @@ the spatial information.
 
 .. note::
 
-    This is tracking version 1.0.0-beta.1 of the GeoParquet specification at:
+    This is tracking version 1.0.0 of the GeoParquet specification at:
     https://github.com/opengeospatial/geoparquet.
 
     Previous versions are still supported as well. By default, the latest
