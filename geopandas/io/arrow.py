@@ -556,6 +556,8 @@ def _read_parquet(path, columns=None, storage_options=None, **kwargs):
     """
 
     parquet = import_optional_dependency("pyarrow.parquet", extra="pyarrow is required for Parquet support.")
+    import geopandas.io._pyarrow_hotfix  # noqa: F401
+
     # TODO(https://github.com/pandas-dev/pandas/pull/41194): see if pandas
     # adds filesystem as a keyword and match that.
     filesystem = kwargs.pop("filesystem", None)
@@ -640,6 +642,8 @@ def _read_feather(path, columns=None, **kwargs):
     feather = import_optional_dependency("pyarrow.feather", extra="pyarrow is required for Feather support.")
     # TODO move this into `import_optional_dependency`
     import pyarrow
+
+    import geopandas.io._pyarrow_hotfix  # noqa: F401
 
     if Version(pyarrow.__version__) < Version("0.17.0"):
         raise ImportError("pyarrow >= 0.17 required for Feather support")
