@@ -4,7 +4,7 @@
 
 - The Parquet and Feather IO functions now support the latest 1.0.0 version
   of the GeoParquet specification (geoparquet.org) (#2663).
-
+- Fix `read_parquet` and `read_feather` for [CVE-2023-47248](https://www.cve.org/CVERecord?id=CVE-2023-47248>) (#3070).
 
 ## Version 0.14 (Sep 15, 2023)
 
