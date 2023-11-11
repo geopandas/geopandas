@@ -21,7 +21,7 @@ Bug fixes:
   `GeoDataFrame` when the `suffixes` argument is applied to the active
   geometry column (#2933).
 
-## Version 0.14.1
+## Version 0.14.1 (Nov 11, 2023)
 
 - The Parquet and Feather IO functions now support the latest 1.0.0 version
   of the GeoParquet specification (geoparquet.org) (#2663).
