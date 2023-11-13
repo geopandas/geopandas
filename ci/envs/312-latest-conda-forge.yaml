@@ -16,20 +16,16 @@ dependencies:
   - fsspec
   # optional
   - pyogrio
-  # - matplotlib
+  - matplotlib
   - mapclassify
   - folium
   - xyzservices
   - scipy
   - geopy
-  # - pointpats
+  - pointpats
   - geodatasets
   # - SQLalchemy>=2
   # - psycopg2
   # - libspatialite
   # - geoalchemy2
   - pyarrow
-  - pip
-  - pip:
-    - matplotlib
-    - pointpats
