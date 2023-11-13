@@ -1,5 +1,9 @@
 # Changelog
 
+## Version 0.14.2 (Nov xx, 2023)
+ - Fix regression in `overlay` where using `buffer(0)` instead of `make_valid` internally
+   produced invalid results (#3074).
+
 ## Version 0.14.1 (Nov 11, 2023)
 
 - The Parquet and Feather IO functions now support the latest 1.0.0 version
