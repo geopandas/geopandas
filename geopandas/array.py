@@ -522,6 +522,12 @@ class GeometryArray(ExtensionArray):
         self.check_geographic_crs(stacklevel=5)
         return shapely.length(self._data)
 
+    @property
+    def count_coordinates(self):
+        out = np.empty(len(self._data), dtype=np.int_)
+        out[:] = [shapely.count_coordinates(s) for s in self._data]
+        return out
+
     #
     # Unary operations that return new geometries
     #
@@ -594,7 +600,9 @@ class GeometryArray(ExtensionArray):
                 "geometry types, None is returned.",
                 stacklevel=2,
             )
-        data = np.array(inner_rings, dtype=object)
+        # need to allocate empty first in case of all empty lists in inner_rings
+        data = np.empty(len(inner_rings), dtype=object)
+        data[:] = inner_rings
         return data
 
     def remove_repeated_points(self, tolerance=0.0):
@@ -611,6 +619,9 @@ class GeometryArray(ExtensionArray):
 
     def minimum_bounding_radius(self):
         return shapely.minimum_bounding_radius(self._data)
+
+    def minimum_clearance(self):
+        return shapely.minimum_clearance(self._data)
 
     def normalize(self):
         return GeometryArray(shapely.normalize(self._data), crs=self.crs)

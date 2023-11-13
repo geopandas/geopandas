@@ -500,6 +500,13 @@ class TestGeomMethods:
         with pytest.warns(UserWarning, match="Geometry is in a geographic CRS"):
             self.g4.length
 
+    def test_count_coordinates(self):
+        expected = Series(np.array([4, 5]), index=self.g1.index)
+        self._test_unary_real("count_coordinates", expected, self.g1)
+
+        expected = Series(np.array([4, 0]), index=self.na_none.index)
+        self._test_unary_real("count_coordinates", expected, self.na_none)
+
     def test_crosses(self):
         expected = [False, False, False, False, False, False, False]
         assert_array_dtype_equal(expected, self.g0.crosses(self.t1))
@@ -967,6 +974,10 @@ class TestGeomMethods:
         # This is a polygon with an interior.
         expected = LinearRing(self.inner_sq.boundary)
         assert original.interiors[1][0].equals(expected)
+
+        no_interiors = GeoSeries([self.t1, self.sq])
+        assert no_interiors.interiors[0] == []
+        assert no_interiors.interiors[1] == []
 
     def test_interpolate(self):
         expected = GeoSeries([Point(0.5, 1.0), Point(0.75, 1.0)])
@@ -1641,6 +1652,21 @@ class TestGeomMethods:
         assert_series_equal(
             mbr_lines,
             Series([0.707106, 0.707106]),
+        )
+
+    def test_minimum_clearance(self):
+        mc_geoms = self.g1.minimum_clearance()
+
+        assert_series_equal(
+            mc_geoms,
+            Series([0.707107, 1.000000]),
+        )
+
+        mc_lines = self.g5.minimum_clearance()
+
+        assert_series_equal(
+            mc_lines,
+            Series([1.0, 1.0]),
         )
 
     @pytest.mark.parametrize("size", [10, 20, 50])

@@ -34,6 +34,7 @@ General methods and attributes
    GeoSeries.y
    GeoSeries.z
    GeoSeries.get_coordinates
+   GeoSeries.count_coordinates
 
 Unary predicates
 ----------------
@@ -97,6 +98,7 @@ Constructive methods and attributes
    GeoSeries.extract_unique_points
    GeoSeries.make_valid
    GeoSeries.minimum_bounding_circle
+   GeoSeries.minimum_clearance
    GeoSeries.minimum_rotated_rectangle
    GeoSeries.normalize
    GeoSeries.remove_repeated_points
