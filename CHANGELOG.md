@@ -16,8 +16,13 @@ New methods:
 
 - Added ``minimum_clearance`` method from shapely to GeoSeries/GeoDataframe (#2989).
 
+Potentially breaking changes:
+- reading a data source that does not have a geometry field using ``read_file``
+  now returns a Pandas DataFrame instead of a GeoDataFrame with an empty
+  ``geometry`` column.
+
 Bug fixes:
-- Fix `GeoDataFrame.merge()` incorrectly returning a `DataFrame` instead of a 
+- Fix `GeoDataFrame.merge()` incorrectly returning a `DataFrame` instead of a
   `GeoDataFrame` when the `suffixes` argument is applied to the active
   geometry column (#2933).
 
