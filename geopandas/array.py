@@ -1,26 +1,25 @@
+import inspect
 import numbers
 import operator
 import warnings
-import inspect
 from functools import lru_cache
 
 import numpy as np
 import pandas as pd
+import shapely
+import shapely.affinity
+import shapely.geometry
+import shapely.ops
+import shapely.wkt
 from pandas.api.extensions import (
     ExtensionArray,
     ExtensionDtype,
     register_extension_dtype,
 )
-
-import shapely
-import shapely.affinity
-import shapely.geometry
-from shapely.geometry.base import BaseGeometry
-import shapely.ops
-import shapely.wkt
 from pyproj import CRS, Transformer
 from pyproj.aoi import AreaOfInterest
 from pyproj.database import query_utm_crs_info
+from shapely.geometry.base import BaseGeometry
 
 from .sindex import SpatialIndex
 
@@ -632,6 +631,11 @@ class GeometryArray(ExtensionArray):
         return GeometryArray(
             shapely.segmentize(self._data, max_segment_length),
             crs=self.crs,
+        )
+
+    def transform(self, transformation, include_z=False):
+        return GeometryArray(
+            shapely.transform(self._data, transformation, include_z), crs=self.crs
         )
 
     #
