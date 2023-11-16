@@ -77,7 +77,9 @@ def test_create_metadata():
         "Polygon",
     ]
 
-    assert np.array_equal(metadata["columns"]["geometry"]["bbox"], df.geometry.total_bounds)
+    assert np.array_equal(
+        metadata["columns"]["geometry"]["bbox"], df.geometry.total_bounds
+    )
 
     assert metadata["creator"]["library"] == "geopandas"
     assert metadata["creator"]["version"] == geopandas.__version__
@@ -132,9 +134,13 @@ def test_create_metadata_with_z_geometries():
     assert metadata["primary_column"] == "geometry"
     assert "geometry" in metadata["columns"]
 
-    assert sorted(metadata["columns"]["geometry"]["geometry_types"]) == sorted(geometry_types)
+    assert sorted(metadata["columns"]["geometry"]["geometry_types"]) == sorted(
+        geometry_types
+    )
 
-    assert np.array_equal(metadata["columns"]["geometry"]["bbox"], df.geometry.total_bounds)
+    assert np.array_equal(
+        metadata["columns"]["geometry"]["bbox"], df.geometry.total_bounds
+    )
     assert metadata["creator"]["library"] == "geopandas"
     assert metadata["creator"]["version"] == geopandas.__version__
 
@@ -263,7 +269,10 @@ def test_validate_metadata_valid():
         # missing "encoding" for column
         (
             {"primary_column": "foo", "columns": {"foo": {}}, "version": "<version>"},
-            ("'geo' metadata in Parquet/Feather file is missing required key " "'encoding' for column 'foo'"),
+            (
+                "'geo' metadata in Parquet/Feather file is missing required key "
+                "'encoding' for column 'foo'"
+            ),
         ),
         # invalid column encoding
         (
@@ -307,7 +316,10 @@ def test_to_parquet_fails_on_invalid_engine(tmpdir):
 
     with pytest.raises(
         ValueError,
-        match=("GeoPandas only supports using pyarrow as the engine for " "to_parquet: 'fastparquet' passed instead."),
+        match=(
+            "GeoPandas only supports using pyarrow as the engine for "
+            "to_parquet: 'fastparquet' passed instead."
+        ),
     ):
         df.to_parquet(tmpdir / "test.parquet", engine="fastparquet")
 
@@ -318,7 +330,9 @@ def test_to_parquet_does_not_pass_engine_along(mock_to_parquet):
     df.to_parquet("", engine="pyarrow")
     # assert that engine keyword is not passed through to _to_parquet (and thus
     # parquet.write_table)
-    mock_to_parquet.assert_called_with(df, "", compression="snappy", index=None, schema_version=None)
+    mock_to_parquet.assert_called_with(
+        df, "", compression="snappy", index=None, schema_version=None
+    )
 
 
 # TEMPORARY: used to determine if pyarrow fails for roundtripping pandas data
@@ -334,7 +348,9 @@ def test_pandas_parquet_roundtrip1(tmpdir):
     assert_frame_equal(df, pq_df)
 
 
-@pytest.mark.parametrize("test_dataset", ["naturalearth_lowres", "naturalearth_cities", "nybb"])
+@pytest.mark.parametrize(
+    "test_dataset", ["naturalearth_lowres", "naturalearth_cities", "nybb"]
+)
 def test_pandas_parquet_roundtrip2(test_dataset, tmpdir):
     test_dataset = "naturalearth_lowres"
     df = DataFrame(read_file(get_path(test_dataset)).drop(columns=["geometry"]))
@@ -347,7 +363,9 @@ def test_pandas_parquet_roundtrip2(test_dataset, tmpdir):
     assert_frame_equal(df, pq_df)
 
 
-@pytest.mark.parametrize("test_dataset", ["naturalearth_lowres", "naturalearth_cities", "nybb"])
+@pytest.mark.parametrize(
+    "test_dataset", ["naturalearth_lowres", "naturalearth_cities", "nybb"]
+)
 def test_roundtrip(tmpdir, file_format, test_dataset):
     """Writing to parquet should not raise errors, and should not alter original
     GeoDataFrame
@@ -474,7 +492,9 @@ def test_parquet_missing_metadata(tmpdir):
     df.to_parquet(filename)
 
     # missing metadata will raise ValueError
-    with pytest.raises(ValueError, match="Missing geo metadata in Parquet/Feather file."):
+    with pytest.raises(
+        ValueError, match="Missing geo metadata in Parquet/Feather file."
+    ):
         read_parquet(filename)
 
 
@@ -492,7 +512,9 @@ def test_parquet_missing_metadata2(tmpdir):
     pq.write_table(table, filename)
 
     # missing metadata will raise ValueError
-    with pytest.raises(ValueError, match="Missing geo metadata in Parquet/Feather file."):
+    with pytest.raises(
+        ValueError, match="Missing geo metadata in Parquet/Feather file."
+    ):
         read_parquet(filename)
 
 
@@ -553,7 +575,9 @@ def test_subset_columns(tmpdir, file_format):
 
     assert_geodataframe_equal(df[["name", "geometry"]], pq_df)
 
-    with pytest.raises(ValueError, match="No geometry columns are included in the columns read"):
+    with pytest.raises(
+        ValueError, match="No geometry columns are included in the columns read"
+    ):
         reader(filename, columns=["name"])
 
 
@@ -582,7 +606,9 @@ def test_promote_secondary_geometry(tmpdir, file_format):
     ):
         pq_df = reader(filename, columns=["name", "geom2", "geom3"])
 
-    assert_geodataframe_equal(df.set_geometry("geom2")[["name", "geom2", "geom3"]], pq_df)
+    assert_geodataframe_equal(
+        df.set_geometry("geom2")[["name", "geom2", "geom3"]], pq_df
+    )
 
 
 def test_columns_no_geometry(tmpdir, file_format):
@@ -637,7 +663,9 @@ def test_feather_arrow_version(tmpdir):
     df = read_file(get_path("naturalearth_lowres"))
     filename = os.path.join(str(tmpdir), "test.feather")
 
-    with pytest.raises(ImportError, match="pyarrow >= 0.17 required for Feather support"):
+    with pytest.raises(
+        ImportError, match="pyarrow >= 0.17 required for Feather support"
+    ):
         df.to_feather(filename)
 
 
@@ -668,7 +696,9 @@ def test_fsspec_url():
     assert_geodataframe_equal(result, df)
 
     # reset fsspec registry
-    fsspec.register_implementation("memory", fsspec.implementations.memory.MemoryFileSystem, clobber=True)
+    fsspec.register_implementation(
+        "memory", fsspec.implementations.memory.MemoryFileSystem, clobber=True
+    )
 
 
 def test_non_fsspec_url_with_storage_options_raises():
@@ -802,7 +832,9 @@ def test_write_spec_version(tmpdir, format, schema_version):
         assert metadata["columns"]["geometry"]["geometry_types"] == ["Polygon"]
 
 
-@pytest.mark.parametrize("format,version", product(["feather", "parquet"], [None] + SUPPORTED_VERSIONS))
+@pytest.mark.parametrize(
+    "format,version", product(["feather", "parquet"], [None] + SUPPORTED_VERSIONS)
+)
 def test_write_deprecated_version_parameter(tmpdir, format, version):
     if format == "feather":
         from pyarrow.feather import read_table
