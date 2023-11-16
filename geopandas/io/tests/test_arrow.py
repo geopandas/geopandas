@@ -15,7 +15,7 @@ from pandas.testing import assert_frame_equal
 from shapely.geometry import LineString, MultiPolygon, Point, Polygon, box
 
 import geopandas
-from geopandas import GeoDataFrame, read_feather, read_file, read_parquet
+from geopandas import GeoDataFrame, read_file, read_parquet, read_feather
 from geopandas.array import to_wkb
 from geopandas.datasets import get_path
 from geopandas.io.arrow import (
@@ -744,7 +744,9 @@ def test_write_read_default_crs(tmpdir, format):
 
 
 def test_write_iso_wkb(tmpdir):
-    gdf = geopandas.GeoDataFrame(geometry=geopandas.GeoSeries.from_wkt(["POINT Z (1 2 3)"]))
+    gdf = geopandas.GeoDataFrame(
+        geometry=geopandas.GeoSeries.from_wkt(["POINT Z (1 2 3)"])
+    )
     gdf.to_parquet(tmpdir / "test.parquet")
 
     from pyarrow.parquet import read_table
