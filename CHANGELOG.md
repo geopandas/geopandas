@@ -2,6 +2,11 @@
 
 ## Development version
 
+New features and improvements:
+
+- Added ``predicate="dwithin"`` option and ``distance`` arugment to ``query()`` method
+ for sindex and sjoin (#2882)
+
 New methods:
 
 - Added ``count_coordinates`` method from shapely to GeoSeries/GeoDataframe (#3026).
@@ -58,8 +63,6 @@ New methods:
 - Added ``shortest_line`` method from shapely to GeoSeries/GeoDataframe (#2960).
 
 New features and improvements:
-- Added ``predicate="dwithin"`` option and ``distance`` arugment to ``query()`` method
- for sindex and sjoin (#2882)
 
 - Added ``exclusive`` parameter to ``sjoin_nearest`` method for Shapely >= 2.0 (#2877)
 - The ``to_file()`` method will now automatically detect the FlatGeoBuf driver
