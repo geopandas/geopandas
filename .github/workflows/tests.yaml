@@ -83,6 +83,7 @@ jobs:
           micromamba list
 
       - name: Test
+        continue-on-error: matrix.dev
         env:
           PANDAS_COPY_ON_WRITE: ${{ matrix.pandas_copy_on_write || '0' }}
         run: |
