@@ -4,18 +4,86 @@
 
 New methods:
 
-- Added ``hausdorff_distance()`` method from shapely to GeoSeries/GeoDataframe (#2909).
-- Added ``delaunay_triangles`` method from shapely to GeoSeries/GeoDataframe (#2907)
-- Added ``concave_hull`` method from shapely to GeoSeries/GeoDataframe. (#2903)
-- Added ``offset_curve`` method from shapely to GeoSeries/GeoDataframe. (#2902)
+- Added ``count_coordinates`` method from shapely to GeoSeries/GeoDataframe (#3026).
+
+Notes on dependencies:
+
+- GeoPandas 1.0 drops support for shapely<2 and PyGEOS. The only geometry engine that is
+  currently supported is shapely >= 2. As a consequence, spatial indexing based on the
+  rtree package has also been removed. (#3035)
+
+New methods:
+
+- Added ``minimum_clearance`` method from shapely to GeoSeries/GeoDataframe (#2989).
+
+Potentially breaking changes:
+- reading a data source that does not have a geometry field using ``read_file``
+  now returns a Pandas DataFrame instead of a GeoDataFrame with an empty
+  ``geometry`` column.
+
+Bug fixes:
+- Fix `GeoDataFrame.merge()` incorrectly returning a `DataFrame` instead of a
+  `GeoDataFrame` when the `suffixes` argument is applied to the active
+  geometry column (#2933).
+
+## Version 0.14.1 (Nov 11, 2023)
+
+- The Parquet and Feather IO functions now support the latest 1.0.0 version
+  of the GeoParquet specification (geoparquet.org) (#2663).
+- Fix `read_parquet` and `read_feather` for [CVE-2023-47248](https://www.cve.org/CVERecord?id=CVE-2023-47248>) (#3070).
+
+## Version 0.14 (Sep 15, 2023)
+
+GeoPandas will use Shapely 2.0 by default instead of PyGEOS when both Shapely >= 2.0 and
+PyGEOS are installed.  PyGEOS will continue to be used by default when PyGEOS is
+installed alongside Shapely < 2.0.  Support for PyGEOS and Shapely < 2.0 will be removed
+in GeoPandas 1.0. (#2999)
+
+API changes:
+
+- ``seed`` keyword in ``sample_points`` is deprecated. Use ``rng`` instead. (#2913).
+
+New methods:
+
+- Added ``concave_hull`` method from shapely to GeoSeries/GeoDataframe (#2903).
+- Added ``delaunay_triangles`` method from shapely to GeoSeries/GeoDataframe (#2907).
+- Added ``extract_unique_points`` method from shapely to GeoSeries/GeoDataframe (#2915).
+- Added ``frechet_distance()`` method from shapely to GeoSeries/GeoDataframe (#2929).
+- Added ``hausdorff_distance`` method from shapely to GeoSeries/GeoDataframe (#2909).
+- Added ``minimum_rotated_rectangle`` method from shapely to GeoSeries/GeoDataframe (#2541).
+- Added ``offset_curve`` method from shapely to GeoSeries/GeoDataframe (#2902).
+- Added ``remove_repeated_points`` method from shapely to GeoSeries/GeoDataframe (#2940).
+- Added ``reverse`` method from shapely to GeoSeries/GeoDataframe (#2988).
+- Added ``segmentize`` method from shapely to GeoSeries/GeoDataFrame (#2910).
+- Added ``shortest_line`` method from shapely to GeoSeries/GeoDataframe (#2960).
 
 New features and improvements:
 - Added ``predicate="dwithin"`` option and ``distance`` arugment to ``query()`` method
  for sindex and sjoin (#2882)
 
-Bug fixes:
+- Added ``exclusive`` parameter to ``sjoin_nearest`` method for Shapely >= 2.0 (#2877)
+- The ``to_file()`` method will now automatically detect the FlatGeoBuf driver
+  for files with the `.fgb` extension (#2958)
 
+Bug fixes:
+- Fix ambiguous error when GeoDataFrame is initialized with a column called ``"crs"`` (#2944)
+- Fix a color assignment in ``explore`` when using ``UserDefined`` bins (#2923)
+- Fix bug in `apply` with `axis=1` where the given user defined function returns nested
+  data in the geometry column (#2959)
+- Properly infer schema for ``np.int32`` and ``pd.Int32Dtype`` columns (#2950)
 - ``assert_geodataframe_equal`` now handles GeoDataFrames with no active geometry (#2498)
+
+Notes on (optional) dependencies:
+
+- GeoPandas 0.14 drops support for Python 3.8 and pandas 1.3 and below (the minimum
+  supported pandas version is now 1.4). Further, the minimum required versions for the
+  listed dependencies have now changed to shapely 1.8.0, fiona 1.8.21, pyproj 3.3.0 and
+  matplotlib 3.5.0 (#3001)
+
+Deprecations and compatibility notes:
+
+- `geom_almost_equals()` methods have been deprecated and
+   `geom_equals_exact()` should be used instead (#2604).
 
 ## Version 0.13.2 (Jun 6, 2023)
 

@@ -3,6 +3,7 @@ import warnings
 
 import numpy as np
 import pandas as pd
+import shapely.errors
 from pandas import DataFrame, Series
 from pandas.core.accessor import CachedAccessor
 
@@ -128,14 +129,13 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
     _geometry_column_name = None
 
     def __init__(self, data=None, *args, geometry=None, crs=None, **kwargs):
-        with compat.ignore_shapely2_warnings():
-            if (
-                kwargs.get("copy") is None
-                and isinstance(data, DataFrame)
-                and not isinstance(data, GeoDataFrame)
-            ):
-                kwargs.update(copy=True)
-            super().__init__(data, *args, **kwargs)
+        if (
+            kwargs.get("copy") is None
+            and isinstance(data, DataFrame)
+            and not isinstance(data, GeoDataFrame)
+        ):
+            kwargs.update(copy=True)
+        super().__init__(data, *args, **kwargs)
 
         # set_geometry ensures the geometry data have the proper dtype,
         # but is not called if `geometry=None` ('geometry' column present
@@ -921,13 +921,13 @@ individually so that features may have different properties
         if len(properties_cols) > 0:
             # convert to object to get python scalars.
             properties_cols = self[properties_cols]
-            properties = properties_cols.astype(object).values
+            properties = properties_cols.astype(object)
             na_mask = pd.isna(properties_cols).values
 
             if na == "null":
                 properties[na_mask] = None
 
-            for i, row in enumerate(properties):
+            for i, row in enumerate(properties.values):
                 geom = geometries[i]
 
                 if na == "drop":
@@ -938,7 +938,7 @@ individually so that features may have different properties
                         if not na
                     }
                 else:
-                    properties_items = {k: v for k, v in zip(properties_cols, row)}
+                    properties_items = dict(zip(properties_cols, row))
 
                 if drop_id:
                     feature = {}
@@ -997,8 +997,7 @@ individually so that features may have different properties
             The default is to return a binary bytes object.
         kwargs
             Additional keyword args will be passed to
-            :func:`shapely.to_wkb` if shapely >= 2 is installed or
-            :func:`pygeos.to_wkb` if pygeos is installed.
+            :func:`shapely.to_wkb`.
 
         Returns
         -------
@@ -1021,8 +1020,7 @@ individually so that features may have different properties
         Parameters
         ----------
         kwargs
-            Keyword args will be passed to :func:`pygeos.to_wkt`
-            if pygeos is installed.
+            Keyword args will be passed to :func:`shapely.to_wkt`.
 
         Returns
         -------
@@ -1431,8 +1429,6 @@ individually so that features may have different properties
 
         .. versionadded:: 0.9
 
-        .. note:: Requires pyproj 3+
-
         Parameters
         ----------
         datum_name : str, optional
@@ -1529,12 +1525,18 @@ individually so that features may have different properties
             if pd.api.types.is_scalar(value) or isinstance(value, BaseGeometry):
                 value = [value] * self.shape[0]
             try:
-                crs = getattr(self, "crs", None)
+                if self._geometry_column_name is not None:
+                    crs = getattr(self, "crs", None)
+                else:  # don't use getattr, because a col "crs" might exist
+                    crs = None
                 value = _ensure_geometry(value, crs=crs)
                 if key == "geometry":
                     self._persist_old_default_geometry_colname()
             except TypeError:
-                warnings.warn("Geometry column does not contain geometry.")
+                warnings.warn(
+                    "Geometry column does not contain geometry.",
+                    stacklevel=2,
+                )
         super().__setitem__(key, value)
 
     #
@@ -1547,34 +1549,6 @@ individually so that features may have different properties
             copied.__class__ = GeoDataFrame
             copied._geometry_column_name = self._geometry_column_name
         return copied
-
-    def merge(self, *args, **kwargs):
-        r"""Merge two ``GeoDataFrame`` objects with a database-style join.
-
-        Returns a ``GeoDataFrame`` if a geometry column is present; otherwise,
-        returns a pandas ``DataFrame``.
-
-        Returns
-        -------
-        GeoDataFrame or DataFrame
-
-        Notes
-        -----
-        The extra arguments ``*args`` and keyword arguments ``**kwargs`` are
-        passed to DataFrame.merge.
-        See https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas\
-.DataFrame.merge.html
-        for more details.
-        """
-        result = DataFrame.merge(self, *args, **kwargs)
-        geo_col = self._geometry_column_name
-        if isinstance(result, DataFrame) and geo_col in result:
-            result.__class__ = GeoDataFrame
-            result.crs = self.crs
-            result._geometry_column_name = geo_col
-        elif isinstance(result, DataFrame) and geo_col not in result:
-            result.__class__ = DataFrame
-        return result
 
     @doc(pd.DataFrame)
     def apply(self, func, axis=0, raw=False, result_type=None, args=(), **kwargs):
@@ -1610,7 +1584,7 @@ individually so that features may have different properties
                     # not enough info about func to preserve CRS
                     result = _ensure_geometry(result)
 
-                except TypeError:
+                except (TypeError, shapely.errors.GeometryTypeError):
                     pass
 
         return result
@@ -1693,9 +1667,12 @@ individually so that features may have different properties
 
         Parameters
         ----------
-        by : string, default None
-            Column whose values define groups to be dissolved. If None,
-            whole GeoDataFrame is considered a single group.
+        by : str or list-like, default None
+            Column(s) whose values define the groups to be dissolved. If None,
+            the entire GeoDataFrame is considered as a single group. If a list-like
+            object is provided, the values in the list are treated as categorical
+            labels, and polygons will be combined based on the equality of
+            these categorical labels.
         aggfunc : function or string, default "first"
             Aggregation function for manipulation of data associated
             with each group. Passed to pandas `groupby.agg` method.
@@ -1770,9 +1747,13 @@ individually so that features may have different properties
         if by is None and level is None:
             by = np.zeros(len(self), dtype="int64")
 
-        groupby_kwargs = dict(
-            by=by, level=level, sort=sort, observed=observed, dropna=dropna
-        )
+        groupby_kwargs = {
+            "by": by,
+            "level": level,
+            "sort": sort,
+            "observed": observed,
+            "dropna": dropna,
+        }
 
         # Process non-spatial component
         data = self.drop(labels=self.geometry.name, axis=1)
@@ -1937,15 +1918,13 @@ individually so that features may have different properties
         return df
 
     # overrides the pandas astype method to ensure the correct return type
+    # should be removable when pandas 1.4 is dropped
     def astype(self, dtype, copy=True, errors="raise", **kwargs):
         """
         Cast a pandas object to a specified dtype ``dtype``.
-
         Returns a GeoDataFrame when the geometry column is kept as geometries,
         otherwise returns a pandas DataFrame.
-
         See the pandas.DataFrame.astype docstring for more details.
-
         Returns
         -------
         GeoDataFrame or DataFrame
@@ -1961,29 +1940,6 @@ individually so that features may have different properties
         # if the geometry column is converted to non-geometries or did not exist
         # do not return a GeoDataFrame
         return pd.DataFrame(df)
-
-    def convert_dtypes(self, *args, **kwargs):
-        """
-        Convert columns to best possible dtypes using dtypes supporting ``pd.NA``.
-
-        Always returns a GeoDataFrame as no conversions are applied to the
-        geometry column.
-
-        See the pandas.DataFrame.convert_dtypes docstring for more details.
-
-        Returns
-        -------
-        GeoDataFrame
-
-        """
-        # Overridden to fix GH1870, that return type is not preserved always
-        # (and where it was, geometry col was not)
-
-        return GeoDataFrame(
-            super().convert_dtypes(*args, **kwargs),
-            geometry=self.geometry.name,
-            crs=self.crs,
-        )
 
     def to_postgis(
         self,
@@ -2174,7 +2130,7 @@ individually so that features may have different properties
         GeoDataFrame.sjoin_nearest : nearest neighbor join
         sjoin : equivalent top-level function
         """
-        return geopandas.sjoin(left_df=self, right_df=df, *args, **kwargs)
+        return geopandas.sjoin(left_df=self, right_df=df, *args, **kwargs)  # noqa: B026
 
     def sjoin_nearest(
         self,
@@ -2184,6 +2140,7 @@ individually so that features may have different properties
         lsuffix="left",
         rsuffix="right",
         distance_col=None,
+        exclusive=False,
     ):
         """
         Spatial join of two GeoDataFrames based on the distance between their
@@ -2221,6 +2178,10 @@ individually so that features may have different properties
         distance_col : string, default None
             If set, save the distances computed between matching geometries under a
             column of this name in the joined GeoDataFrame.
+        exclusive : bool, optional, default False
+            If True, the nearest geometries that are equal to the input geometry
+            will not be returned, default False.
+            Requires Shapely >= 2.0
 
         Examples
         --------
@@ -2303,6 +2264,7 @@ chicago_w_groceries[chicago_w_groceries["community"] == "UPTOWN"]
             lsuffix=lsuffix,
             rsuffix=rsuffix,
             distance_col=distance_col,
+            exclusive=exclusive,
         )
 
     def clip(self, mask, keep_geom_type=False):
@@ -2408,8 +2370,8 @@ chicago_w_groceries[chicago_w_groceries["community"] == "UPTOWN"]
         1       2.0       1.0  POLYGON ((2.00000 2.00000, 2.00000 3.00000, 3....
         2       2.0       2.0  POLYGON ((4.00000 4.00000, 4.00000 3.00000, 3....
         3       1.0       NaN  POLYGON ((2.00000 0.00000, 0.00000 0.00000, 0....
-        4       2.0       NaN  MULTIPOLYGON (((3.00000 3.00000, 4.00000 3.000...
-        5       NaN       1.0  MULTIPOLYGON (((2.00000 2.00000, 3.00000 2.000...
+        4       2.0       NaN  MULTIPOLYGON (((3.00000 4.00000, 3.00000 3.000...
+        5       NaN       1.0  MULTIPOLYGON (((2.00000 3.00000, 2.00000 2.000...
         6       NaN       2.0  POLYGON ((3.00000 5.00000, 5.00000 5.00000, 5....
 
         >>> df1.overlay(df2, how='intersection')
@@ -2421,14 +2383,14 @@ chicago_w_groceries[chicago_w_groceries["community"] == "UPTOWN"]
         >>> df1.overlay(df2, how='symmetric_difference')
         df1_data  df2_data                                           geometry
         0       1.0       NaN  POLYGON ((2.00000 0.00000, 0.00000 0.00000, 0....
-        1       2.0       NaN  MULTIPOLYGON (((3.00000 3.00000, 4.00000 3.000...
-        2       NaN       1.0  MULTIPOLYGON (((2.00000 2.00000, 3.00000 2.000...
+        1       2.0       NaN  MULTIPOLYGON (((3.00000 4.00000, 3.00000 3.000...
+        2       NaN       1.0  MULTIPOLYGON (((2.00000 3.00000, 2.00000 2.000...
         3       NaN       2.0  POLYGON ((3.00000 5.00000, 5.00000 5.00000, 5....
 
         >>> df1.overlay(df2, how='difference')
                                                 geometry  df1_data
         0  POLYGON ((2.00000 0.00000, 0.00000 0.00000, 0....         1
-        1  MULTIPOLYGON (((3.00000 3.00000, 4.00000 3.000...         2
+        1  MULTIPOLYGON (((3.00000 4.00000, 3.00000 3.000...         2
 
         >>> df1.overlay(df2, how='identity')
         df1_data  df2_data                                           geometry
@@ -2436,7 +2398,7 @@ chicago_w_groceries[chicago_w_groceries["community"] == "UPTOWN"]
         1       2.0       1.0  POLYGON ((2.00000 2.00000, 2.00000 3.00000, 3....
         2       2.0       2.0  POLYGON ((4.00000 4.00000, 4.00000 3.00000, 3....
         3       1.0       NaN  POLYGON ((2.00000 0.00000, 0.00000 0.00000, 0....
-        4       2.0       NaN  MULTIPOLYGON (((3.00000 3.00000, 4.00000 3.000...
+        4       2.0       NaN  MULTIPOLYGON (((3.00000 4.00000, 3.00000 3.000...
 
         See also
         --------

@@ -25,6 +25,7 @@ General methods and attributes
    GeoSeries.offset_curve
    GeoSeries.distance
    GeoSeries.hausdorff_distance
+   GeoSeries.frechet_distance
    GeoSeries.representative_point
    GeoSeries.exterior
    GeoSeries.interiors
@@ -33,6 +34,7 @@ General methods and attributes
    GeoSeries.y
    GeoSeries.z
    GeoSeries.get_coordinates
+   GeoSeries.count_coordinates
 
 Unary predicates
 ----------------
@@ -92,10 +94,17 @@ Constructive methods and attributes
    GeoSeries.convex_hull
    GeoSeries.delaunay_triangles
    GeoSeries.envelope
+   GeoSeries.extract_unique_points
    GeoSeries.make_valid
    GeoSeries.minimum_bounding_circle
+   GeoSeries.minimum_clearance
+   GeoSeries.minimum_rotated_rectangle
    GeoSeries.normalize
+   GeoSeries.remove_repeated_points
+   GeoSeries.reverse
    GeoSeries.sample_points
+   GeoSeries.segmentize
+   GeoSeries.shortest_line
    GeoSeries.simplify
 
 Affine transformations

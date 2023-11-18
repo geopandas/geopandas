@@ -3,6 +3,7 @@ import warnings
 import numpy as np
 import pandas as pd
 from pandas.plotting import PlotAccessor
+from pandas import CategoricalDtype
 
 import geopandas
 
@@ -371,6 +372,7 @@ def plot_series(
             "'colormap' is deprecated, please use 'cmap' instead "
             "(for consistency with matplotlib)",
             FutureWarning,
+            stacklevel=3,
         )
         cmap = style_kwds.pop("colormap")
     if "axes" in style_kwds:
@@ -378,6 +380,7 @@ def plot_series(
             "'axes' is deprecated, please use 'ax' instead "
             "(for consistency with pandas)",
             FutureWarning,
+            stacklevel=3,
         )
         ax = style_kwds.pop("axes")
 
@@ -410,6 +413,7 @@ def plot_series(
             "The GeoSeries you are attempting to plot is "
             "empty. Nothing has been displayed.",
             UserWarning,
+            stacklevel=3,
         )
         return ax
 
@@ -418,6 +422,7 @@ def plot_series(
             "The GeoSeries you are attempting to plot is "
             "composed of empty geometries. Nothing has been displayed.",
             UserWarning,
+            stacklevel=3,
         )
         return ax
 
@@ -645,6 +650,7 @@ def plot_dataframe(
             "'colormap' is deprecated, please use 'cmap' instead "
             "(for consistency with matplotlib)",
             FutureWarning,
+            stacklevel=3,
         )
         cmap = style_kwds.pop("colormap")
     if "axes" in style_kwds:
@@ -652,11 +658,14 @@ def plot_dataframe(
             "'axes' is deprecated, please use 'ax' instead "
             "(for consistency with pandas)",
             FutureWarning,
+            stacklevel=3,
         )
         ax = style_kwds.pop("axes")
     if column is not None and color is not None:
         warnings.warn(
-            "Only specify one of 'column' or 'color'. Using 'color'.", UserWarning
+            "Only specify one of 'column' or 'color'. Using 'color'.",
+            UserWarning,
+            stacklevel=3,
         )
         column = None
 
@@ -696,6 +705,7 @@ def plot_dataframe(
             "The GeoDataFrame you are attempting to plot is "
             "empty. Nothing has been displayed.",
             UserWarning,
+            stacklevel=3,
         )
         return ax
 
@@ -729,7 +739,7 @@ def plot_dataframe(
     else:
         values = df[column]
 
-    if pd.api.types.is_categorical_dtype(values.dtype):
+    if isinstance(values.dtype, CategoricalDtype):
         if categories is not None:
             raise ValueError(
                 "Cannot specify 'categories' when column has categorical dtype"
@@ -975,4 +985,4 @@ class GeoplotAccessor(PlotAccessor):
             raise ValueError(f"{kind} is not a valid plot kind")
 
     def geo(self, *args, **kwargs):
-        return self(kind="geo", *args, **kwargs)
+        return self(kind="geo", *args, **kwargs)  # noqa: B026

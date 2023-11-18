@@ -1,25 +1,19 @@
 import math
 from typing import Sequence
-from geopandas.testing import assert_geodataframe_equal
 
 import numpy as np
 import pandas as pd
+import shapely
 
 from shapely.geometry import Point, Polygon, GeometryCollection
 
 import geopandas
 import geopandas._compat as compat
 from geopandas import GeoDataFrame, GeoSeries, read_file, sjoin, sjoin_nearest
-from geopandas.testing import assert_geoseries_equal
+from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 
-from pandas.testing import assert_frame_equal
+from pandas.testing import assert_frame_equal, assert_series_equal
 import pytest
-
-
-TEST_NEAREST = compat.USE_SHAPELY_20 or (compat.PYGEOS_GE_010 and compat.USE_PYGEOS)
-
-
-pytestmark = pytest.mark.skip_no_sindex
 
 
 @pytest.fixture()
@@ -111,7 +105,7 @@ class TestSpatialJoin:
         left = GeoDataFrame({"col": [1], "geometry": [Point(0, 0)]})
         right = GeoDataFrame({"col": [1], "geometry": [Point(0, 0)]})
         joined = sjoin(left, right, how=how, lsuffix=lsuffix, rsuffix=rsuffix)
-        assert set(joined.columns) == expected_cols | set(("geometry",))
+        assert set(joined.columns) == expected_cols | {"geometry"}
 
     @pytest.mark.parametrize("dfs", ["default-index", "string-index"], indirect=True)
     def test_crs_mismatch(self, dfs):
@@ -136,7 +130,7 @@ class TestSpatialJoin:
         if op != predicate:
             warntype = UserWarning
             match = (
-                "`predicate` will be overridden by the value of `op`"
+                "`predicate` will be overridden by the value of `op`"  # noqa: ISC003
                 + r"(.|\s)*"
                 + match
             )
@@ -570,28 +564,6 @@ class TestSpatialJoinNaturalEarth:
         assert cities_with_country.shape == (213, 4)
 
 
-@pytest.mark.skipif(
-    TEST_NEAREST,
-    reason=("This test can only be run _without_ PyGEOS >= 0.10 installed"),
-)
-def test_no_nearest_all():
-    df1 = geopandas.GeoDataFrame({"geometry": []})
-    df2 = geopandas.GeoDataFrame({"geometry": []})
-    with pytest.raises(
-        NotImplementedError,
-        match="Currently, only PyGEOS >= 0.10.0 or Shapely >= 2.0 supports",
-    ):
-        sjoin_nearest(df1, df2)
-
-
-@pytest.mark.skipif(
-    not TEST_NEAREST,
-    reason=(
-        "PyGEOS >= 0.10.0"
-        " must be installed and activated via the geopandas.compat module to"
-        " test sjoin_nearest"
-    ),
-)
 class TestNearest:
     @pytest.mark.parametrize(
         "how_kwargs", ({}, {"how": "inner"}, {"how": "left"}, {"how": "right"})
@@ -926,3 +898,28 @@ class TestNearest:
         result5 = result5.dropna()
         result5["index_right"] = result5["index_right"].astype("int64")
         assert_geodataframe_equal(result5, result4, check_like=True)
+
+    expected_index_uncapped = (
+        [1, 3, 3, 1, 2] if compat.PANDAS_GE_22 else [1, 1, 3, 3, 2]
+    )
+
+    @pytest.mark.parametrize(
+        "max_distance,expected", [(None, expected_index_uncapped), (1.1, [3, 3, 1, 2])]
+    )
+    def test_sjoin_nearest_exclusive(self, max_distance, expected):
+        geoms = shapely.points(np.arange(3), np.arange(3))
+        geoms = np.append(geoms, [Point(1, 2)])
+
+        df = geopandas.GeoDataFrame({"geometry": geoms})
+        result = df.sjoin_nearest(
+            df, max_distance=max_distance, distance_col="dist", exclusive=True
+        )
+
+        assert_series_equal(
+            result["index_right"].reset_index(drop=True),
+            pd.Series(expected),
+            check_names=False,
+        )
+
+        if max_distance:
+            assert result["dist"].max() <= max_distance

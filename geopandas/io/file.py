@@ -94,7 +94,13 @@ def _check_pyogrio(func):
 
 
 def _check_engine(engine, func):
-    # default to "fiona" if installed, otherwise try pyogrio
+    # if not specified through keyword or option, then default to "fiona" if
+    # installed, otherwise try pyogrio
+    if engine is None:
+        import geopandas
+
+        engine = geopandas.options.io_engine
+
     if engine is None:
         _import_fiona()
         if fiona:
@@ -141,6 +147,7 @@ _EXTENSION_TO_DRIVER = {
     ".mif": "MapInfo File",
     ".mid": "MapInfo File",
     ".dgn": "DGN",
+    ".fgb": "FlatGeobuf",
 }
 
 
@@ -175,7 +182,16 @@ def _read_file(filename, bbox=None, mask=None, rows=None, engine=None, **kwargs)
     """
     Returns a GeoDataFrame from a file or URL.
 
-    .. versionadded:: 0.7.0 mask, rows
+    .. note::
+
+        GeoPandas currently defaults to use Fiona as the engine in ``read_file``.
+        However, GeoPandas 1.0 will switch to use pyogrio as the default engine, since
+        pyogrio can provide a significant speedup compared to Fiona. We recommend to
+        already install pyogrio and specify the engine by using the ``engine`` keyword
+        (``geopandas.read_file(..., engine="pyogrio")``), or by setting the default for
+        the ``engine`` keyword globally with::
+
+            geopandas.options.io_engine = "pyogrio"
 
     Parameters
     ----------
@@ -371,7 +387,10 @@ def _read_file_fiona(
             datetime_fields = [
                 k for (k, v) in features.schema["properties"].items() if v == "datetime"
             ]
-            if kwargs.get("ignore_geometry", False):
+            if (
+                kwargs.get("ignore_geometry", False)
+                or features.schema["geometry"] == "None"
+            ):
                 df = pd.DataFrame(
                     [record["properties"] for record in f_filt], columns=columns
                 )
@@ -401,6 +420,10 @@ def _read_file_pyogrio(path_or_bytes, bbox=None, mask=None, rows=None, **kwargs)
             kwargs["max_features"] = rows
         elif isinstance(rows, slice):
             if rows.start is not None:
+                if rows.start < 0:
+                    raise ValueError(
+                        "Negative slice start not supported with the 'pyogrio' engine."
+                    )
                 kwargs["skip_features"] = rows.start
             if rows.stop is not None:
                 kwargs["max_features"] = rows.stop - (rows.start or 0)
@@ -486,6 +509,17 @@ def _to_file(
     >>> import fiona
     >>> fiona.supported_drivers  # doctest: +SKIP
 
+    .. note::
+
+        GeoPandas currently defaults to use Fiona as the engine in ``to_file``.
+        However, GeoPandas 1.0 will switch to use pyogrio as the default engine, since
+        pyogrio can provide a significant speedup compared to Fiona. We recommend to
+        already install pyogrio and specify the engine by using the ``engine`` keyword
+        (``df.to_file(..., engine="pyogrio")``), or by setting the default for
+        the ``engine`` keyword globally with::
+
+            geopandas.options.io_engine = "pyogrio"
+
     Parameters
     ----------
     df : GeoDataFrame to be written
@@ -558,11 +592,20 @@ def _to_file(
     if driver is None:
         driver = _detect_driver(filename)
 
-    if driver == "ESRI Shapefile" and any([len(c) > 10 for c in df.columns.tolist()]):
+    if driver == "ESRI Shapefile" and any(len(c) > 10 for c in df.columns.tolist()):
         warnings.warn(
             "Column names longer than 10 characters will be truncated when saved to "
             "ESRI Shapefile.",
             stacklevel=3,
+        )
+
+    if (df.dtypes == "geometry").sum() > 1:
+        raise ValueError(
+            "GeoDataFrame contains multiple geometry columns but GeoDataFrame.to_file "
+            "supports only a single geometry column. Use a GeoDataFrame.to_parquet or "
+            "GeoDataFrame.to_feather, drop additional geometry columns or convert them "
+            "to a supported format like a well-known text (WKT) using "
+            "`GeoSeries.to_wkt()`.",
         )
 
     if mode not in ("w", "a"):
@@ -626,7 +669,13 @@ def infer_schema(df):
     from collections import OrderedDict
 
     # TODO: test pandas string type and boolean type once released
-    types = {"Int64": "int", "string": "str", "boolean": "bool"}
+    types = {
+        "Int32": "int32",
+        "int32": "int32",
+        "Int64": "int",
+        "string": "str",
+        "boolean": "bool",
+    }
 
     def convert_type(column, in_type):
         if in_type == object:

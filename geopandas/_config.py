@@ -91,30 +91,40 @@ def _validate_bool(value):
         raise TypeError("Expected bool value, got {0}".format(type(value)))
 
 
-def _default_use_pygeos():
-    import geopandas._compat as compat
-
-    return compat.USE_PYGEOS
-
-
-def _callback_use_pygeos(key, value):
-    assert key == "use_pygeos"
-    import geopandas._compat as compat
-
-    compat.set_use_pygeos(value)
+def _validate_io_engine(value):
+    if value is not None:
+        if value not in ("pyogrio", "fiona"):
+            raise ValueError(f"Expected 'pyogrio' or 'fiona', got '{value}'")
 
 
+io_engine = Option(
+    key="io_engine",
+    default_value=None,
+    doc=(
+        "The default engine for ``read_file`` and ``to_file``. "
+        "Options are 'pyogrio' and 'fiona'."
+    ),
+    validator=_validate_io_engine,
+    callback=None,
+)
+
+# TODO: deprecate this
 use_pygeos = Option(
     key="use_pygeos",
-    default_value=_default_use_pygeos(),
+    default_value=False,
     doc=(
         "Whether to use PyGEOS to speed up spatial operations. The default is True "
         "if PyGEOS is installed, and follows the USE_PYGEOS environment variable "
         "if set."
     ),
     validator=_validate_bool,
-    callback=_callback_use_pygeos,
+    callback=None,
 )
 
-
-options = Options({"display_precision": display_precision, "use_pygeos": use_pygeos})
+options = Options(
+    {
+        "display_precision": display_precision,
+        "use_pygeos": use_pygeos,
+        "io_engine": io_engine,
+    }
+)
