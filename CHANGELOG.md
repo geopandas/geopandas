@@ -1,5 +1,8 @@
 # Changelog
 
+- Fix bug in `pandas.concat` CRS consistency checking where CRS differing by WKT 
+  whitespace only were treated as incompatible (#3023)
+
 ## Version 0.14.2 (Jan 4, 2024)
 
 - Fix regression in `overlay` where using `buffer(0)` instead of `make_valid` internally
