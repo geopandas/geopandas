@@ -152,8 +152,6 @@ class GeoSeries(GeoPandasBase, Series):
 
     """
 
-    _metadata = ["name"]
-
     def __init__(self, data=None, index=None, crs: Optional[Any] = None, **kwargs):
         if hasattr(data, "crs") and crs:
             if not data.crs:
@@ -618,6 +616,14 @@ class GeoSeries(GeoPandasBase, Series):
     @property
     def _constructor(self):
         return _geoseries_constructor_with_fallback
+
+    def _constructor_from_mgr(self, mgr, axes):
+        assert isinstance(mgr, SingleBlockManager)
+
+        if not isinstance(mgr.blocks[0].dtype, GeometryDtype):
+            return Series._from_mgr(mgr, axes)
+
+        return GeoSeries._from_mgr(mgr, axes)
 
     @property
     def _constructor_expanddim(self):
