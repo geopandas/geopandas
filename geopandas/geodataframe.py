@@ -1595,7 +1595,6 @@ individually so that features may have different properties
         return _geodataframe_constructor_with_fallback
 
     def _constructor_from_mgr(self, mgr, axes):
-        # this is unused for pandas <2.2
         if not any(isinstance(block.dtype, GeometryDtype) for block in mgr.blocks):
             return pd.DataFrame._from_mgr(mgr, axes)
         return GeoDataFrame._from_mgr(mgr, axes)
@@ -1631,10 +1630,8 @@ individually so that features may have different properties
 
         assert isinstance(mgr, SingleBlockManager)
         if isinstance(mgr.blocks[0].dtype, GeometryDtype) and not is_row_proxy:
-            klass = GeoSeries
-        else:
-            klass = Series
-        return klass._from_mgr(mgr, axes)
+            return GeoSeries._from_mgr(mgr, axes)
+        return Series.from_mgr(mgr, axes)
 
     def __finalize__(self, other, method=None, **kwargs):
         """propagate metadata from other to self"""
