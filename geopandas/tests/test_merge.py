@@ -4,7 +4,7 @@ import pandas as pd
 import pyproj
 import pytest
 
-from geopandas._compat import PANDAS_GE_22
+from geopandas._compat import PANDAS_GE_21
 from geopandas.testing import assert_geodataframe_equal
 from pandas.testing import assert_index_equal
 
@@ -180,7 +180,7 @@ class TestMerging:
         # https://github.com/geopandas/geopandas/issues/1230
         # Expect that concat should fail gracefully if duplicate column names belonging
         # to geometry columns are introduced.
-        if PANDAS_GE_22:
+        if PANDAS_GE_21:
             # _constructor_from_mgr changes mean we now get the concat specific error
             # message in this case too
             expected_err = (
