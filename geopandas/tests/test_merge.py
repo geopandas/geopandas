@@ -3,6 +3,8 @@ import warnings
 import pandas as pd
 import pyproj
 import pytest
+
+from geopandas._compat import PANDAS_GE_22
 from geopandas.testing import assert_geodataframe_equal
 from pandas.testing import assert_index_equal
 
@@ -178,10 +180,18 @@ class TestMerging:
         # https://github.com/geopandas/geopandas/issues/1230
         # Expect that concat should fail gracefully if duplicate column names belonging
         # to geometry columns are introduced.
-        expected_err = (
-            "Concat operation has resulted in multiple columns using the geometry "
-            "column name 'geometry'."
-        )
+        if PANDAS_GE_22:
+            # _constructor_from_mgr changes mean we now get the concat specific error
+            # message in this case too
+            expected_err = (
+                "Concat operation has resulted in multiple columns using the geometry "
+                "column name 'geometry'."
+            )
+        else:
+            expected_err = (
+                "GeoDataFrame does not support multiple columns using the geometry"
+                " column name 'geometry'"
+            )
         with pytest.raises(ValueError, match=expected_err):
             pd.concat([self.gdf, self.gdf], axis=1)
 

@@ -1594,7 +1594,7 @@ individually so that features may have different properties
         return _geodataframe_constructor_with_fallback
 
     def _constructor_from_mgr(self, mgr, axes):
-        # TODO maybe need conditional logic for dev pandas only
+        # this is unused for pandas <2.2
         if not any(isinstance(block.dtype, GeometryDtype) for block in mgr.blocks):
             return pd.DataFrame._from_mgr(mgr, axes)
         return GeoDataFrame._from_mgr(mgr, axes)
