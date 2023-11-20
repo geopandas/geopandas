@@ -1631,7 +1631,7 @@ individually so that features may have different properties
         assert isinstance(mgr, SingleBlockManager)
         if isinstance(mgr.blocks[0].dtype, GeometryDtype) and not is_row_proxy:
             return GeoSeries._from_mgr(mgr, axes)
-        return Series.from_mgr(mgr, axes)
+        return Series._from_mgr(mgr, axes)
 
     def __finalize__(self, other, method=None, **kwargs):
         """propagate metadata from other to self"""
