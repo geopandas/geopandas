@@ -1593,6 +1593,12 @@ individually so that features may have different properties
     def _constructor(self):
         return _geodataframe_constructor_with_fallback
 
+    def _constructor_from_mgr(self, mgr, axes):
+        # TODO maybe need conditional logic for dev pandas only
+        if not any(isinstance(block.dtype, GeometryDtype) for block in mgr.blocks):
+            return pd.DataFrame._from_mgr(mgr, axes)
+        return GeoDataFrame._from_mgr(mgr, axes)
+
     @property
     def _constructor_sliced(self):
         def _geodataframe_constructor_sliced(*args, **kwargs):

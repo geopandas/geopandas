@@ -179,8 +179,8 @@ class TestMerging:
         # Expect that concat should fail gracefully if duplicate column names belonging
         # to geometry columns are introduced.
         expected_err = (
-            "GeoDataFrame does not support multiple columns using the geometry"
-            " column name 'geometry'"
+            "Concat operation has resulted in multiple columns using the geometry "
+            "column name 'geometry'."
         )
         with pytest.raises(ValueError, match=expected_err):
             pd.concat([self.gdf, self.gdf], axis=1)
