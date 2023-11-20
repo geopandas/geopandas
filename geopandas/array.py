@@ -500,6 +500,10 @@ class GeometryArray(ExtensionArray):
         return shapely.is_closed(self._data)
 
     @property
+    def is_ccw(self):
+        return shapely.is_ccw(self._data)
+
+    @property
     def has_z(self):
         return shapely.has_z(self._data)
 

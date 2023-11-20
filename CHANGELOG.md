@@ -2,10 +2,6 @@
 
 ## Development version
 
-New methods:
-
-- Added ``count_coordinates`` method from shapely to GeoSeries/GeoDataframe (#3026).
-
 Notes on dependencies:
 
 - GeoPandas 1.0 drops support for shapely<2 and PyGEOS. The only geometry engine that is
@@ -13,8 +9,9 @@ Notes on dependencies:
   rtree package has also been removed. (#3035)
 
 New methods:
-
-- Added ``minimum_clearance`` method from shapely to GeoSeries/GeoDataframe (#2989).
+- Added `count_coordinates` method from shapely to GeoSeries/GeoDataframe (#3026).
+- Added `minimum_clearance` method from shapely to GeoSeries/GeoDataframe (#2989).
+- Added `is_ccw` method from shapely to GeoSeries/GeoDataframe (#3027).
 
 Potentially breaking changes:
 - reading a data source that does not have a geometry field using ``read_file``

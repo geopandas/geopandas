@@ -782,6 +782,10 @@ class TestGeomMethods:
         expected = Series(np.array([True] * len(self.g1)), self.g1.index)
         self._test_unary_real("is_simple", expected, self.g1)
 
+    def test_is_ccw(self):
+        expected = Series(np.array([False] * len(self.g1)), self.g1.index)
+        self._test_unary_real("is_ccw", expected, self.g1)
+
     def test_has_z(self):
         expected = Series([False, True], self.g_3d.index)
         self._test_unary_real("has_z", expected, self.g_3d)
