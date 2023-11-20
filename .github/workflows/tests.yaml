@@ -88,6 +88,13 @@ jobs:
         run: |
           pytest -v -r a -n auto --color=yes --cov=geopandas --cov-append --cov-report term-missing --cov-report xml geopandas/
 
+      - name: Test with Copy-on-Write
+        if: ${{ always() && matrix.dev }}
+        env:
+          PANDAS_COPY_ON_WRITE: '1'
+        run: |
+          pytest -v -r a -n auto --color=yes --cov=geopandas --cov-append --cov-report term-missing --cov-report xml geopandas/
+
       - name: Test with PostGIS
         if: (contains(matrix.env, '310-pd20-conda-forge.yaml') || contains(matrix.env, '311-latest-conda-forge.yaml'))
           && contains(matrix.os, 'ubuntu')
