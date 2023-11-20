@@ -1612,7 +1612,7 @@ individually so that features may have different properties
               checking the identity of the index)
             """
             srs = pd.Series(*args, **kwargs)
-            is_row_proxy = srs.index is self.columns
+            is_row_proxy = srs.index.is_(self.columns)
             if is_geometry_type(srs) and not is_row_proxy:
                 srs = GeoSeries(srs)
             return srs
