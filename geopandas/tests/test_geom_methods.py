@@ -913,6 +913,7 @@ class TestGeomMethods:
         assert_geoseries_equal(expected_g5, result_g5)
 
     def test_transform(self):
+        # Test 2D
         test_2d = GeoSeries(
             [LineString([(2, 2), (4, 4)]), Polygon([(0, 0), (1, 1), (0, 1)])]
         )
@@ -921,7 +922,7 @@ class TestGeomMethods:
         )
         result_2d = test_2d.transform(lambda x: x * [2, 3])
         assert_geoseries_equal(expected_2d, result_2d)
-
+        # Test 3D
         test_3d = GeoSeries(
             [
                 Point(0, 0, 0),
@@ -938,6 +939,16 @@ class TestGeomMethods:
         )
         result_3d = test_3d.transform(lambda x: x + 1, include_z=True)
         assert_geoseries_equal(expected_3d, result_3d)
+        # Test 3D as 2D transformation
+        expected_3d_to_2d = GeoSeries(
+            [
+                Point(1, 1),
+                LineString([(3, 3), (5, 5)]),
+                Polygon([(1, 1), (2, 2), (1, 2)]),
+            ]
+        )
+        result_3d_to_2d = test_3d.transform(lambda x: x + 1, include_z=False)
+        assert_geoseries_equal(expected_3d_to_2d, result_3d_to_2d)
 
     def test_concave_hull(self):
         assert_geoseries_equal(self.squares, self.squares.concave_hull())

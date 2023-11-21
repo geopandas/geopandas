@@ -1262,7 +1262,7 @@ GeometryCollection
 
     def transform(self, transformation, include_z=False):
         """Returns a ``GeoSeries`` with the transformation function
-        applied to the geom column coordinates.
+        applied to the geometry coordinates.
 
         Parameters
         ----------
@@ -1271,7 +1271,7 @@ GeometryCollection
             to another (N,2) or (N, 3) ndarray of float64
         include_z : bool, default False
             If True include the third dimension in the coordinates array that
-            is passed to the transformation function. If a geometry has no third
+            is passed to the ``transformation`` function. If a geometry has no third
             dimension, the z-coordinates passed to the function will be NaN.
 
         Returns
@@ -1291,7 +1291,7 @@ GeometryCollection
         0    POLYGON ((0.00000 0.00000, 2.00000 3.00000, 0.00000 3.00000...
         dtype: geometry
 
-        By default the third dimension is ignored
+        By default the third dimension is ignored and you need explicitly include it:
         >>> s = geopandas.GeoSeries([Point(0, 0, 0)])
         >>> s.transform(lambda x: x + 1, include_z=True)
         0    POINT Z (1.00000 1.00000 1.00000)

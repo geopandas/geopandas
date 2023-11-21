@@ -5,6 +5,7 @@
 New methods:
 
 - Added ``count_coordinates`` method from shapely to GeoSeries/GeoDataframe (#3026).
+- Added ``transform`` method from shapely to GeoSeries/GeoDataFrame (#3075).
 
 Notes on dependencies:
 
