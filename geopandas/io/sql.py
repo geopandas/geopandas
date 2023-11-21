@@ -78,10 +78,6 @@ def _df_to_geodf(df, geom_col="geom", crs=None):
         load_geom_bytes = shapely.wkb.loads
         """Load from Python 3 binary."""
 
-        def load_geom_buffer(x):
-            """Load from Python 2 binary."""
-            return shapely.wkb.loads(str(x))
-
         def load_geom_text(x):
             """Load from binary encoded as text."""
             return shapely.wkb.loads(str(x), hex=True)

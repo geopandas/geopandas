@@ -319,8 +319,6 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 level = frame[col]
             except KeyError:
                 raise ValueError("Unknown column %s" % col)
-            except Exception:
-                raise
             if isinstance(level, DataFrame):
                 raise ValueError(
                     "GeoDataFrame does not support setting the geometry column where "
