@@ -17,7 +17,6 @@ from geopandas.base import GeoPandasBase, is_geometry_type
 from geopandas.geoseries import GeoSeries
 import geopandas.io
 from geopandas.explore import _explore
-from . import _compat as compat
 from ._decorator import doc
 
 
@@ -1555,13 +1554,6 @@ individually so that features may have different properties
         result = super().apply(
             func, axis=axis, raw=raw, result_type=result_type, args=args, **kwargs
         )
-        # pandas <1.4 re-attach last geometry col if lost
-        if (
-            not compat.PANDAS_GE_14
-            and isinstance(result, GeoDataFrame)
-            and result._geometry_column_name is None
-        ):
-            result._geometry_column_name = self._geometry_column_name
         # Reconstruct gdf if it was lost by apply
         if (
             isinstance(result, DataFrame)
