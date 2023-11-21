@@ -394,7 +394,10 @@ def _read_file_fiona(
             datetime_fields = [
                 k for (k, v) in features.schema["properties"].items() if v == "datetime"
             ]
-            if kwargs.get("ignore_geometry", False):
+            if (
+                kwargs.get("ignore_geometry", False)
+                or features.schema["geometry"] == "None"
+            ):
                 df = pd.DataFrame(
                     [record["properties"] for record in f_filt], columns=columns
                 )
