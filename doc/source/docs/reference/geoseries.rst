@@ -47,6 +47,7 @@ Unary predicates
    GeoSeries.is_simple
    GeoSeries.is_valid
    GeoSeries.has_z
+   GeoSeries.is_ccw
 
 
 Binary predicates

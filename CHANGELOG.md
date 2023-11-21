@@ -2,11 +2,6 @@
 
 ## Development version
 
-New methods:
-
-- Added ``count_coordinates`` method from shapely to GeoSeries/GeoDataframe (#3026).
-- Added ``transform`` method from shapely to GeoSeries/GeoDataFrame (#3075).
-
 Notes on dependencies:
 
 - GeoPandas 1.0 drops support for shapely<2 and PyGEOS. The only geometry engine that is
@@ -14,8 +9,10 @@ Notes on dependencies:
   rtree package has also been removed. (#3035)
 
 New methods:
-
-- Added ``minimum_clearance`` method from shapely to GeoSeries/GeoDataframe (#2989).
+- Added `count_coordinates` method from shapely to GeoSeries/GeoDataframe (#3026).
+- Added `minimum_clearance` method from shapely to GeoSeries/GeoDataframe (#2989).
+- Added `is_ccw` method from shapely to GeoSeries/GeoDataframe (#3027).
+- Added ``transform`` method from shapely to GeoSeries/GeoDataFrame (#3075).
 
 Potentially breaking changes:
 - reading a data source that does not have a geometry field using ``read_file``
@@ -26,6 +23,8 @@ Bug fixes:
 - Fix `GeoDataFrame.merge()` incorrectly returning a `DataFrame` instead of a
   `GeoDataFrame` when the `suffixes` argument is applied to the active
   geometry column (#2933).
+- Fix bug in `pandas.concat` CRS consistency checking where CRS differing by WKT 
+  whitespace only were treated as incompatible (#3023)
 
 ## Version 0.14.1 (Nov 11, 2023)
 
