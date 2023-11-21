@@ -6,7 +6,6 @@ import pandas as pd
 import shapely.errors
 from pandas import DataFrame, Series
 from pandas.core.accessor import CachedAccessor
-from pandas.core.internals import SingleBlockManager
 
 from shapely.geometry import mapping, shape
 from shapely.geometry.base import BaseGeometry
@@ -1595,6 +1594,7 @@ individually so that features may have different properties
         return _geodataframe_constructor_with_fallback
 
     def _constructor_from_mgr(self, mgr, axes):
+        # analogous logic to _geodataframe_constructor_with_fallback
         if not any(isinstance(block.dtype, GeometryDtype) for block in mgr.blocks):
             return pd.DataFrame._from_mgr(mgr, axes)
         return GeoDataFrame._from_mgr(mgr, axes)
@@ -1628,10 +1628,9 @@ individually so that features may have different properties
     def _constructor_sliced_from_mgr(self, mgr, axes):
         is_row_proxy = mgr.index.is_(self.columns)
 
-        assert isinstance(mgr, SingleBlockManager)
         if isinstance(mgr.blocks[0].dtype, GeometryDtype) and not is_row_proxy:
             return GeoSeries._from_mgr(mgr, axes)
-        return Series.from_mgr(mgr, axes)
+        return Series._from_mgr(mgr, axes)
 
     def __finalize__(self, other, method=None, **kwargs):
         """propagate metadata from other to self"""
