@@ -13,7 +13,7 @@ New methods:
 - Added ``count_coordinates`` method from shapely to GeoSeries/GeoDataframe (#3026).
 - Added ``minimum_clearance`` method from shapely to GeoSeries/GeoDataframe (#2989).
 - Added ``is_ccw`` method from shapely to GeoSeries/GeoDataframe (#3027).
-- Added ``shortest_line`` method from shapely to GeoSeries/GeoDataframe (#).
+- Added ``shortest_line`` method from shapely to GeoSeries/GeoDataframe (#3086).
 
 Potentially breaking changes:
 
