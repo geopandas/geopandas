@@ -302,7 +302,7 @@ def test_pandas_parquet_roundtrip2(test_dataset, tmpdir, request):
 
 
 @pytest.mark.parametrize(
-    "test_dataset", ["naturalearth_lowres", "naturalearth_cities", "nybb"]
+    "test_dataset", ["naturalearth_lowres", "naturalearth_cities", "nybb_filename"]
 )
 def test_roundtrip(tmpdir, file_format, test_dataset, request):
     """Writing to parquet should not raise errors, and should not alter original
