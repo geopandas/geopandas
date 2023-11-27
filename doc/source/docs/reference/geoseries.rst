@@ -88,8 +88,8 @@ Constructive methods and attributes
 .. autosummary::
    :toctree: api/
 
-   GeoSeries.buffer
    GeoSeries.boundary
+   GeoSeries.buffer
    GeoSeries.centroid
    GeoSeries.concave_hull
    GeoSeries.convex_hull
@@ -107,6 +107,7 @@ Constructive methods and attributes
    GeoSeries.segmentize
    GeoSeries.shortest_line
    GeoSeries.simplify
+   GeoSeries.snap
 
 Affine transformations
 ----------------------
