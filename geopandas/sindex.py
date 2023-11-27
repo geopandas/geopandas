@@ -205,7 +205,7 @@ class SpatialIndex:
         elif distance is not None:
             # distance parameter is invalid
             raise ValueError(
-                f"predicate = {predicate!r} got unexpected keyword argument 'distance'"
+                f"'distance' parameter is only supported in combination with 'dwithin' predicate"
             )
 
         geometry = self._as_geometry_array(geometry)
