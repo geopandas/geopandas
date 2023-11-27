@@ -730,6 +730,11 @@ class GeometryArray(ExtensionArray):
             self._binary_method("shortest_line", self, other), crs=self.crs
         )
 
+    def snap(self, other, tolerance):
+        return GeometryArray(
+            self._binary_method("snap", self, other, tolerance=tolerance), crs=self.crs
+        )
+
     #
     # Other operations
     #

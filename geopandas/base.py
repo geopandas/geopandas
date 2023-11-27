@@ -49,12 +49,12 @@ def _delegate_binary_method(op, this, other, align, *args, **kwargs):
     return data, this.index
 
 
-def _binary_geo(op, this, other, align):
+def _binary_geo(op, this, other, align, *args, **kwargs):
     # type: (str, GeoSeries, GeoSeries) -> GeoSeries
     """Binary operation on GeoSeries objects that returns a GeoSeries"""
     from .geoseries import GeoSeries
 
-    geoms, index = _delegate_binary_method(op, this, other, align)
+    geoms, index = _delegate_binary_method(op, this, other, align, *args, **kwargs)
     return GeoSeries(geoms, index=index, crs=this.crs)
 
 
@@ -3554,6 +3554,109 @@ GeometryCollection
         dtype: geometry
         """
         return _binary_geo("shortest_line", self, other, align)
+
+    def snap(self, other, tolerance, align=True):
+        """Snaps an input geometry to reference geometry’s vertices.
+
+        Vertices of the first geometry are snapped to vertices of the second. geometry,
+        returning a new geometry; the input geometries are not modified. The result
+        geometry is the input geometry with the vertices snapped. If no snapping occurs
+        then the input geometry is returned unchanged. The tolerance is used to control
+        where snapping is performed.
+
+        Where possible, this operation tries to avoid creating invalid geometries;
+        however, it does not guarantee that output geometries will be valid. It is the
+        responsibility of the caller to check for and handle invalid geometries.
+
+        Because too much snapping can result in invalid geometries being created,
+        heuristics are used to determine the number and location of snapped vertices
+        that are likely safe to snap. These heuristics may omit some potential snaps
+        that are otherwise within the tolerance.
+
+        The operation works on a 1-to-1 row-wise manner:
+
+        .. image:: ../../../_static/binary_op-01.svg
+        :align: center
+
+        Parameters
+        ----------
+        other : Geoseries or geometric object
+            The Geoseries (elementwise) or geometric object to snap to.
+        tolerance : float or array like
+            Maximum distance between vertices that shall be snapped
+        align : bool (default True)
+            If True, automatically aligns GeoSeries based on their indices.
+            If False, the order of elements is preserved.
+
+        Returns
+        -------
+        GeoSeries
+
+        Examples
+        --------
+        >>> from shapely import Polygon, LineString, Point
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Point(0.5, 2.5),
+        ...         LineString([(0.1, 0.1), (0.49, 0.51), (1.01, 0.89)]),
+        ...         Polygon([(0, 0), (0, 10), (10, 10), (10, 0), (0, 0)]),
+        ...     ],
+        ...     crs=3857,
+        ... )
+        >>> s
+        0                                  POINT (0.500 2.500)
+        1    LINESTRING (0.100 0.100, 0.490 0.510, 1.010 0....
+        2    POLYGON ((0.000 0.000, 0.000 10.000, 10.000 10...
+        dtype: geometry
+
+        >>> s2 = geopandas.GeoSeries(
+        ...     [
+        ...         Point(0, 2),
+        ...         LineString([(0, 0), (0.5, 0.5), (1.0, 1.0)]),
+        ...         Point(8, 10),
+        ...     ],
+        ...     crs=3857,
+        ...     index=range(1, 4),
+        ... )
+        >>> s2
+        1                                  POINT (0.000 2.000)
+        2    LINESTRING (0.000 0.000, 0.500 0.500, 1.000 1....
+        3                                 POINT (8.000 10.000)
+        dtype: geometry
+
+        We can snap each geometry to a single shapely geometry:
+
+        .. image:: ../../../_static/binary_op-03.svg
+           :align: center
+
+        >>> s.snap(Point(0, 2), tolerance=1)
+        0                                  POINT (0.000 2.000)
+        1    LINESTRING (0.100 0.100, 0.490 0.510, 1.010 0....
+        2    POLYGON ((0.000 0.000, 0.000 2.000, 0.000 10.0...
+        dtype: geometry
+
+        We can also snap two GeoSeries to each other, row by row.
+        The GeoSeries above have different indices. We can either align both GeoSeries
+        based on index values and snap elements with the same index using
+        ``align=True`` or ignore index and snap elements based on their matching
+        order using ``align=False``:
+
+        .. image:: ../../../_static/binary_op-02.svg
+
+        >>> s.snap(s2, tolerance=1, align=True)
+        0                                                 None
+        1    LINESTRING (0.100 0.100, 0.490 0.510, 1.010 0....
+        2    POLYGON ((0.500 0.500, 1.000 1.000, 0.000 10.0...
+        3                                                 None
+        dtype: geometry
+
+        >>> s.snap(s2, tolerance=1, align=False)
+        0                                  POINT (0.000 2.000)
+        1    LINESTRING (0.000 0.000, 0.500 0.500, 1.000 1....
+        2    POLYGON ((0.000 0.000, 0.000 10.000, 8.000 10....
+        dtype: geometry
+        """
+        return _binary_geo("snap", self, other, align, tolerance=tolerance)
 
     #
     # Other operations
