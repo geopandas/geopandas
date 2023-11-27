@@ -30,9 +30,3 @@ def nybb_filename() -> str:
 def _setup_class_nybb_filename(nybb_filename, request):
     """Attach nybb_filename class attribute for unittest style setup_method"""
     request.cls.nybb_filename = nybb_filename
-
-
-@pytest.fixture(scope="class")
-def _setup_class_naturalearth_lowres(naturalearth_lowres, request):
-    """Attach naturalearth_lowres class attribute for unittest style setup_method"""
-    request.cls.naturalearth_lowres = naturalearth_lowres

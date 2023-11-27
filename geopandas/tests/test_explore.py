@@ -37,6 +37,7 @@ def _setup_class_test_explore(
     ] = np.nan
 
 
+@pytest.mark.usefixtures("_setup_class_test_explore")
 class TestExplore:
     def _fetch_map_string(self, m):
         out = m._parent.render()
