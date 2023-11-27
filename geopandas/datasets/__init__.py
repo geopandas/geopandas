@@ -1,5 +1,6 @@
 __all__ = []
 available = []  # previously part of __all__
+_prev_available = ["naturalearth_cities", "naturalearth_lowres", "nybb"]
 
 
 def get_path(dataset):
@@ -13,12 +14,12 @@ def get_path(dataset):
         f"1.0. You can get the original '{dataset}' data from "
         f"{ne_message if 'natural' in dataset else nybb_message}"
     )
-    if dataset in available:
+    if dataset in _prev_available:
         raise AttributeError(error_msg)
     else:
         error_msg = (
             "The geopandas.dataset has been deprecated and "
-            "was removed in GeoPandas 1.0. Sample datasets are available "
+            "was removed in GeoPandas 1.0. Sample datasets are now available "
             "in the geodatasets package (https://geodatasets.readthedocs.io/en/latest/)"
         )
         raise AttributeError(error_msg)
