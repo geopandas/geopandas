@@ -391,6 +391,20 @@ class TestGeomMethods:
             expected, self.crossed_lines.shortest_line(crossed_lines_inv, align=False)
         )
 
+    def test_snap(self):
+        expected = GeoSeries([Polygon([(0, 0.5), (1, 0), (1, 1), (0, 0.5)]), None])
+        assert_array_dtype_equal(
+            expected, self.na_none.snap(Point(0, 0.5), tolerance=1)
+        )
+
+        expected = GeoSeries(
+            [
+                Point((5, 5)),
+                Polygon([(0, 2), (0, 0), (3, 0), (3, 3), (0, 2)]),
+            ]
+        )
+        assert_array_dtype_equal(expected, self.g6.snap(self.g7, tolerance=3))
+
     def test_geo_op_empty_result(self):
         l1 = LineString([(0, 0), (1, 1)])
         l2 = LineString([(2, 2), (3, 3)])
