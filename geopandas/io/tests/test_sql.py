@@ -26,9 +26,8 @@ except ImportError:
 
 
 @pytest.fixture
-def df_nybb():
-    nybb_path = geopandas.datasets.get_path("nybb")
-    df = read_file(nybb_path)
+def df_nybb(nybb_filename):
+    df = read_file(nybb_filename)
     return df
 
 

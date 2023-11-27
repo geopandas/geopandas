@@ -19,10 +19,10 @@ FOLIUM_G_014 = Version(folium.__version__) > Version("0.14.0")
 
 
 class TestExplore:
-    def setup_method(self):
-        self.nybb = gpd.read_file(gpd.datasets.get_path("nybb"))
-        self.world = gpd.read_file(gpd.datasets.get_path("naturalearth_lowres"))
-        self.cities = gpd.read_file(gpd.datasets.get_path("naturalearth_cities"))
+    def setup_method(self, nybb_filename, naturalearth_lowres, naturalearth_cities):
+        self.nybb = gpd.read_file(nybb_filename)
+        self.world = gpd.read_file(naturalearth_lowres)
+        self.cities = gpd.read_file(naturalearth_cities)
         self.chicago = gpd.read_file(geodatasets.get_path("geoda.chicago_commpop"))
         self.world["range"] = range(len(self.world))
         self.missing = self.world.copy()

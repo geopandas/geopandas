@@ -20,7 +20,6 @@ from shapely.geometry import (
 
 
 from geopandas import GeoDataFrame, GeoSeries, read_file
-from geopandas.datasets import get_path
 import geopandas._compat as compat
 from geopandas.plotting import GeoplotAccessor
 
@@ -1061,10 +1060,10 @@ class TestNonuniformGeometryPlotting:
         #     )
 
 
+@pytest.mark.usefixtures("_setup_class_naturalearth_lowres")
 class TestGeographicAspect:
     def setup_class(self):
-        pth = get_path("naturalearth_lowres")
-        df = read_file(pth)
+        df = read_file(self.naturalearth_lowres)
         self.north = df.loc[df.continent == "North America"]
         self.north_proj = self.north.to_crs("ESRI:102008")
         bounds = self.north.total_bounds
@@ -1124,6 +1123,8 @@ class TestGeographicAspect:
         assert ax3.get_aspect() == 0.5
 
 
+@pytest.mark.usefixtures("_setup_class_nybb_filename")
+@pytest.mark.usefixtures("_setup_class_naturalearth_lowres")
 class TestMapclassifyPlotting:
     @classmethod
     def setup_class(cls):
@@ -1134,14 +1135,13 @@ class TestMapclassifyPlotting:
         cls.mc = mapclassify
         cls.classifiers = list(mapclassify.classifiers.CLASSIFIERS)
         cls.classifiers.remove("UserDefined")
-        pth = get_path("naturalearth_lowres")
-        cls.df = read_file(pth)
+        cls.df = read_file(cls.naturalearth_lowres)
         cls.df["NEGATIVES"] = np.linspace(-10, 10, len(cls.df.index))
         cls.df["low_vals"] = np.linspace(0, 0.3, cls.df.shape[0])
         cls.df["mid_vals"] = np.linspace(0.3, 0.7, cls.df.shape[0])
         cls.df["high_vals"] = np.linspace(0.7, 1.0, cls.df.shape[0])
         cls.df.loc[cls.df.index[:20:2], "high_vals"] = np.nan
-        cls.nybb = read_file(get_path("nybb"))
+        cls.nybb = read_file(cls.nybb_filename)
         cls.nybb["vals"] = [0.001, 0.002, 0.003, 0.004, 0.005]
 
     def test_legend(self):

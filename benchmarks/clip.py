@@ -1,11 +1,13 @@
-from geopandas import read_file, datasets, clip
+from geopandas import read_file, clip
 from shapely.geometry import box
+from geopandas.tests.util import _NATURALEARTH_LOWRES
+from geopandas.tests.util import _NATURALEARTH_CITIES
 
 
 class Bench:
     def setup(self, *args):
-        world = read_file(datasets.get_path("naturalearth_lowres"))
-        capitals = read_file(datasets.get_path("naturalearth_cities"))
+        world = read_file(_NATURALEARTH_LOWRES)
+        capitals = read_file(_NATURALEARTH_CITIES)
         self.bounds = [box(*geom.bounds) for geom in world.geometry]
         self.points = capitals
 

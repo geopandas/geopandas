@@ -20,8 +20,6 @@ import geopandas.datasets
 # make the interactive namespace easier to use
 # for `from geopandas import *` demos.
 import geopandas as gpd
-import pandas as pd
-import numpy as np
 
 from . import _version
 

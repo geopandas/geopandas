@@ -14,8 +14,7 @@ from geopandas.testing import assert_geodataframe_equal, geom_almost_equals
 
 
 @pytest.fixture
-def nybb_polydf():
-    nybb_filename = geopandas.datasets.get_path("nybb")
+def nybb_polydf(nybb_filename):
     nybb_polydf = read_file(nybb_filename)
     nybb_polydf = nybb_polydf[["geometry", "BoroName", "BoroCode"]]
     nybb_polydf = nybb_polydf.rename(columns={"geometry": "myshapes"})
