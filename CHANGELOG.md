@@ -9,27 +9,31 @@ Notes on dependencies:
   rtree package has also been removed. (#3035)
 
 New methods:
-- Added `count_coordinates` method from shapely to GeoSeries/GeoDataframe (#3026).
-- Added `minimum_clearance` method from shapely to GeoSeries/GeoDataframe (#2989).
-- Added `is_ccw` method from shapely to GeoSeries/GeoDataframe (#3027).
+
+- Added ``count_coordinates`` method from shapely to GeoSeries/GeoDataframe (#3026).
+- Added ``minimum_clearance`` method from shapely to GeoSeries/GeoDataframe (#2989).
+- Added ``is_ccw`` method from shapely to GeoSeries/GeoDataframe (#3027).
+- Added ``shortest_line`` method from shapely to GeoSeries/GeoDataframe (#).
 
 Potentially breaking changes:
+
 - reading a data source that does not have a geometry field using ``read_file``
   now returns a Pandas DataFrame instead of a GeoDataFrame with an empty
   ``geometry`` column.
 
 Bug fixes:
-- Fix `GeoDataFrame.merge()` incorrectly returning a `DataFrame` instead of a
-  `GeoDataFrame` when the `suffixes` argument is applied to the active
+
+- Fix ``GeoDataFrame.merge()`` incorrectly returning a ``DataFrame`` instead of a
+  ``GeoDataFrame`` when the ``suffixes`` argument is applied to the active
   geometry column (#2933).
-- Fix bug in `pandas.concat` CRS consistency checking where CRS differing by WKT 
+- Fix bug in ``pandas.concat`` CRS consistency checking where CRS differing by WKT
   whitespace only were treated as incompatible (#3023)
 
 ## Version 0.14.1 (Nov 11, 2023)
 
 - The Parquet and Feather IO functions now support the latest 1.0.0 version
   of the GeoParquet specification (geoparquet.org) (#2663).
-- Fix `read_parquet` and `read_feather` for [CVE-2023-47248](https://www.cve.org/CVERecord?id=CVE-2023-47248>) (#3070).
+- Fix ``read_parquet`` and ``read_feather`` for [CVE-2023-47248](https://www.cve.org/CVERecord?id=CVE-2023-47248>) (#3070).
 
 ## Version 0.14 (Sep 15, 2023)
 
@@ -63,9 +67,10 @@ New features and improvements:
   for files with the `.fgb` extension (#2958)
 
 Bug fixes:
+
 - Fix ambiguous error when GeoDataFrame is initialized with a column called ``"crs"`` (#2944)
 - Fix a color assignment in ``explore`` when using ``UserDefined`` bins (#2923)
-- Fix bug in `apply` with `axis=1` where the given user defined function returns nested
+- Fix bug in ``apply`` with ``axis=1`` where the given user defined function returns nested
   data in the geometry column (#2959)
 - Properly infer schema for ``np.int32`` and ``pd.Int32Dtype`` columns (#2950)
 - ``assert_geodataframe_equal`` now handles GeoDataFrames with no active geometry (#2498)
@@ -79,8 +84,8 @@ Notes on (optional) dependencies:
 
 Deprecations and compatibility notes:
 
-- `geom_almost_equals()` methods have been deprecated and
-   `geom_equals_exact()` should be used instead (#2604).
+- ``geom_almost_equals()`` methods have been deprecated and
+   ``geom_equals_exact()`` should be used instead (#2604).
 
 ## Version 0.13.2 (Jun 6, 2023)
 
