@@ -7,10 +7,10 @@ import tempfile
 import warnings
 
 import numpy as np
-from numpy.testing import assert_array_equal
 import pandas as pd
-from pandas.testing import assert_index_equal
-
+import pytest
+from numpy.testing import assert_array_equal
+from pandas.testing import assert_index_equal, assert_series_equal
 from pyproj import CRS
 from shapely.geometry import (
     GeometryCollection,
@@ -23,13 +23,10 @@ from shapely.geometry import (
 )
 from shapely.geometry.base import BaseGeometry
 
-from geopandas import GeoSeries, GeoDataFrame, read_file, datasets, clip
+from geopandas import GeoDataFrame, GeoSeries, clip, datasets, read_file
 from geopandas.array import GeometryArray, GeometryDtype
 from geopandas.testing import assert_geoseries_equal, geom_almost_equals
-
 from geopandas.tests.util import geom_equals
-from pandas.testing import assert_series_equal
-import pytest
 
 
 class TestSeries:
@@ -408,6 +405,14 @@ def test_geoseries_crs():
     gs = GeoSeries()
     gs.crs = "IGNF:ETRS89UTM28"
     assert gs.crs.to_authority() == ("IGNF", "ETRS89UTM28")
+
+
+def test_geoseries_override_existing_crs_warning():
+    gs = GeoSeries(crs="epsg:4326")
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        gs.crs = "epsg:2100"
+        assert issubclass(w[-1].category, DeprecationWarning)
 
 
 # -----------------------------------------------------------------------------

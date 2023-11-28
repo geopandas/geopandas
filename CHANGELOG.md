@@ -25,6 +25,9 @@ Bug fixes:
 - Fix bug in `pandas.concat` CRS consistency checking where CRS differing by WKT 
   whitespace only were treated as incompatible (#3023)
 
+Deprecations and compatibility notes:
+-  Added warning about manually overriding an existing CRS of a GeoSeries from the `crs.setter` and point to `set_crs` method instead. THis is to be deprecated in an upcoming version. (#3085)
+
 ## Version 0.14.1 (Nov 11, 2023)
 
 - The Parquet and Feather IO functions now support the latest 1.0.0 version

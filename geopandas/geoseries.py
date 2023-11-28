@@ -2,23 +2,22 @@ from __future__ import annotations
 
 import json
 import typing
-from typing import Optional, Any, Callable, Dict
 import warnings
+from typing import Any, Callable, Dict, Optional
 
 import numpy as np
 import pandas as pd
+import shapely
 from pandas import Series
 from pandas.core.internals import SingleBlockManager
-
 from pyproj import CRS
-import shapely
-from shapely.geometry.base import BaseGeometry
 from shapely.geometry import GeometryCollection
+from shapely.geometry.base import BaseGeometry
 
-from geopandas.base import GeoPandasBase, _delegate_property
-from geopandas.plotting import plot_series
-from geopandas.explore import _explore_geoseries
 import geopandas
+from geopandas.base import GeoPandasBase, _delegate_property
+from geopandas.explore import _explore_geoseries
+from geopandas.plotting import plot_series
 
 from . import _compat as compat
 from ._decorator import doc
@@ -222,6 +221,18 @@ class GeoSeries(GeoPandasBase, Series):
 
     def append(self, *args, **kwargs) -> GeoSeries:
         return self._wrapped_pandas_method("append", *args, **kwargs)
+
+    @GeoPandasBase.crs.setter
+    def crs(self, value):
+        if self.crs is not None:
+            warnings.warn(
+                f"Overriding the CRS of a GeoSeries that already has CRS: {self.crs}."
+                f"This unsafe behavior will be deprecated in future versions."
+                f"Use GeoSeries.set_crs method instead!",
+                stacklevel=1,
+                category=DeprecationWarning,
+            )
+        self.geometry.values.crs = value
 
     @property
     def geometry(self) -> GeoSeries:
