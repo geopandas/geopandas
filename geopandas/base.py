@@ -3573,14 +3573,14 @@ GeometryCollection
         that are likely safe to snap. These heuristics may omit some potential snaps
         that are otherwise within the tolerance.
 
-        The operation works on a 1-to-1 row-wise manner:
+        The operation works in a 1-to-1 row-wise manner:
 
         .. image:: ../../../_static/binary_op-01.svg
         :align: center
 
         Parameters
         ----------
-        other : Geoseries or geometric object
+        other : GeoSeries or geometric object
             The Geoseries (elementwise) or geometric object to snap to.
         tolerance : float or array like
             Maximum distance between vertices that shall be snapped
