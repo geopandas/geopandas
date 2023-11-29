@@ -1301,6 +1301,104 @@ GeometryCollection
         """
         return _delegate_geo_method("segmentize", self, max_segment_length)
 
+    def force_2d(self):
+        """Forces the dimensionality of a geometry to 2D.
+
+        Removes the additional Z coordinate dimension from all geometries.
+
+        Returns
+        -------
+        GeoSeries
+
+        Examples
+        --------
+        >>> from shapely import Polygon, LineString, Point
+        >>> s = gpd.GeoSeries(
+        ...     [
+        ...         Point(0.5, 2.5, 0),
+        ...         LineString([(1, 1, 1), (0, 1, 3), (1, 0, 2)]),
+        ...         Polygon([(0, 0, 0), (0, 10, 0), (10, 10, 0)]),
+        ...     ],
+        ...     crs=3857,
+        ... )
+        >>> s
+        0                          POINT Z (0.500 2.500 0.000)
+        1    LINESTRING Z (1.000 1.000 1.000, 0.000 1.000 3...
+        2    POLYGON Z ((0.000 0.000 0.000, 0.000 10.000 0....
+        dtype: geometry
+
+        >>> s.force_2d()
+        0                                  POINT (0.500 2.500)
+        1    LINESTRING (1.000 1.000, 0.000 1.000, 1.000 0....
+        2    POLYGON ((0.000 0.000, 0.000 10.000, 10.000 10...
+        dtype: geometry
+        """
+        return _delegate_geo_method("force_2d", self)
+
+    def force_3d(self, z=0):
+        """Forces the dimensionality of a geometry to 3D.
+
+        2D geometries will get the provided Z coordinate; Z coordinates of 3D geometries
+        are unchanged (unless they are ``np.nan``).
+
+        Note that for empty geometries, 3D is only supported since GEOS 3.9 and then
+        still only for simple geometries (non-collections).
+
+        Parameters
+        ----------
+        z : float | array_like (default 0)
+            Z coordinate to be assigned
+
+        Returns
+        -------
+        GeoSeries
+
+        Examples
+        --------
+        >>> from shapely import Polygon, LineString, Point
+        >>> s = gpd.GeoSeries(
+        ...     [
+        ...         Point(1, 2),
+        ...         Point(0.5, 2.5, 2),
+        ...         LineString([(1, 1), (0, 1), (1, 0)]),
+        ...         Polygon([(0, 0), (0, 10), (10, 10)]),
+        ...     ],
+        ...     crs=3857,
+        ... )
+        >>> s
+        0                                  POINT (1.000 2.000)
+        1                          POINT Z (0.500 2.500 2.000)
+        2    LINESTRING (1.000 1.000, 0.000 1.000, 1.000 0....
+        3    POLYGON ((0.000 0.000, 0.000 10.000, 10.000 10...
+        dtype: geometry
+
+        >>> s.force_3d()
+        0                          POINT Z (1.000 2.000 0.000)
+        1                          POINT Z (0.500 2.500 2.000)
+        2    LINESTRING Z (1.000 1.000 0.000, 0.000 1.000 0...
+        3    POLYGON Z ((0.000 0.000 0.000, 0.000 10.000 0....
+        dtype: geometry
+
+        Z coordinate can be specified as scalar:
+
+        >>> s.force_3d(4)
+        0                          POINT Z (1.000 2.000 4.000)
+        1                          POINT Z (0.500 2.500 2.000)
+        2    LINESTRING Z (1.000 1.000 4.000, 0.000 1.000 4...
+        3    POLYGON Z ((0.000 0.000 4.000, 0.000 10.000 4....
+        dtype: geometry
+
+        Or as an array-like (one value per geometry):
+
+        >>> s.force_3d(range(4))
+        0                          POINT Z (1.000 2.000 0.000)
+        1                          POINT Z (0.500 2.500 2.000)
+        2    LINESTRING Z (1.000 1.000 2.000, 0.000 1.000 2...
+        3    POLYGON Z ((0.000 0.000 3.000, 0.000 10.000 3....
+        dtype: geometry
+        """
+        return _delegate_geo_method("force_3d", self, z=z)
+
     #
     # Reduction operations that return a Shapely geometry
     #

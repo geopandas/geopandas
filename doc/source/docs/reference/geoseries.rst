@@ -96,6 +96,8 @@ Constructive methods and attributes
    GeoSeries.delaunay_triangles
    GeoSeries.envelope
    GeoSeries.extract_unique_points
+   GeoSeries.force_2d
+   GeoSeries.force_3d
    GeoSeries.make_valid
    GeoSeries.minimum_bounding_circle
    GeoSeries.minimum_clearance

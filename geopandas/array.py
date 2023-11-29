@@ -638,6 +638,12 @@ class GeometryArray(ExtensionArray):
             crs=self.crs,
         )
 
+    def force_2d(self):
+        return GeometryArray(shapely.force_2d(self._data), crs=self.crs)
+
+    def force_3d(self, z=0):
+        return GeometryArray(shapely.force_3d(self._data, z=z), crs=self.crs)
+
     #
     # Binary predicates
     #
