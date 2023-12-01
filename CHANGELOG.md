@@ -12,7 +12,7 @@ New methods:
 - Added `count_coordinates` method from shapely to GeoSeries/GeoDataframe (#3026).
 - Added `minimum_clearance` method from shapely to GeoSeries/GeoDataframe (#2989).
 - Added `is_ccw` method from shapely to GeoSeries/GeoDataframe (#3027).
-- Added `force_2d` and `force_3d` methods from shapely to GeoSeries/GeoDataframe ().
+- Added `force_2d` and `force_3d` methods from shapely to GeoSeries/GeoDataframe (#3090).
 
 Potentially breaking changes:
 - reading a data source that does not have a geometry field using ``read_file``
