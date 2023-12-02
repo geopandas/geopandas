@@ -476,6 +476,40 @@ GeometryCollection
         return _delegate_property("is_ccw", self)
 
     @property
+    def is_closed(self):
+        """Returns a ``Series`` of ``dtype('bool')`` with value ``True``
+        if a LineString's or LinearRing's first and last points are equal.
+
+        Returns False for any other geometry type.
+
+        Examples
+        --------
+        >>> from shapely.geometry import LineString, Point, Polygon
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         LineString([(0, 0), (1, 1), (0, 1), (0, 0)]),
+        ...         LineString([(0, 0), (1, 1), (0, 1)]),
+        ...         Polygon([(0, 0), (0, 1), (1, 1), (0, 0)]),
+        ...         Point(3, 3)
+        ...     ]
+        ... )
+        >>> s
+        0    LINESTRING (0.00000 0.00000, 1.00000 1.00000, ...
+        1    LINESTRING (0.00000 0.00000, 1.00000 1.00000, ...
+        2    POLYGON ((0.00000 0.00000, 0.00000 1.00000, 1....
+        3                              POINT (3.00000 3.00000)
+        dtype: geometry
+
+        >>> s.is_closed
+        0     True
+        1    False
+        2    False
+        3    False
+        dtype: bool
+        """
+        return _delegate_property("is_closed", self)
+
+    @property
     def has_z(self):
         """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
         features that have a z-component.
