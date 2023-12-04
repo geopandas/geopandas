@@ -1354,10 +1354,9 @@ class GeometryArray(ExtensionArray):
         return from_shapely(scalars)
 
     @classmethod
-    def _from_sequence_of_strings(
-        cls, strings, *, dtype: Dtype | None = None, copy: bool = False
-    ):
-        """Construct a new ExtensionArray from a sequence of strings.
+    def _from_sequence_of_strings(cls, strings, *, dtype=None, copy=False):
+        """
+        Construct a new ExtensionArray from a sequence of strings.
 
         Parameters
         ----------
