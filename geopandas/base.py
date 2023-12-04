@@ -718,27 +718,27 @@ GeometryCollection
         >>> from shapely import LineString, MultiPoint, Polygon
         >>> s = geopandas.GeoSeries(
         ...     [
-        ...         MultiPoint([(50, 30), (60, 30), (100, 100)]),
-        ...         Polygon([(50, 30), (60, 30), (100, 100), (50, 30)]),
-        ...         LineString([(50, 30), (60, 30), (100, 100)]),
+        ...         MultiPoint([(5, 3), (6, 3), (10, 10)]),
+        ...         Polygon([(5, 3), (6, 3), (10, 10), (5, 3)]),
+        ...         LineString([(5, 3), (6, 3), (10, 10)]),
         ...     ]
         ... )
         >>> s
-        0    MULTIPOINT ((50 30), (60 30), (100 100))
-        1    POLYGON ((50 30, 60 30, 100 100, 50 30))
-        2          LINESTRING (50 30, 60 30, 100 100)
+        0    MULTIPOINT ((5 3), (6 3), (10 10))
+        1      POLYGON ((5 3, 6 3, 10 10, 5 3))
+        2          LINESTRING (5 3, 6 3, 10 10)
         dtype: geometry
 
         >>> s.delaunay_triangles()
-        0    GEOMETRYCOLLECTION (POLYGON ((50 30, 60 30, 10...
-        1    GEOMETRYCOLLECTION (POLYGON ((50 30, 60 30, 10...
-        2    GEOMETRYCOLLECTION (POLYGON ((50 30, 60 30, 10...
+        0    GEOMETRYCOLLECTION (POLYGON ((10 10, 5 3, 6 3,...
+        1    GEOMETRYCOLLECTION (POLYGON ((10 10, 5 3, 6 3,...
+        2    GEOMETRYCOLLECTION (POLYGON ((10 10, 5 3, 6 3,...
         dtype: geometry
 
         >>> s.delaunay_triangles(only_edges=True)
-        0    MULTILINESTRING ((50 30, 100 100), (50 30, 60 ...
-        1    MULTILINESTRING ((50 30, 100 100), (50 30, 60 ...
-        2    MULTILINESTRING ((50 30, 100 100), (50 30, 60 ...
+        0    MULTILINESTRING ((5 3, 10 10), (5 3, 6 3), (6 ...
+        1    MULTILINESTRING ((5 3, 10 10), (5 3, 6 3), (6 ...
+        2    MULTILINESTRING ((5 3, 10 10), (5 3, 6 3), (6 ...
         dtype: geometry
         """
         return _delegate_geo_method("delaunay_triangles", self, tolerance, only_edges)
