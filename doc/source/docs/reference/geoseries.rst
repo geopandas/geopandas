@@ -68,6 +68,7 @@ Binary predicates
    GeoSeries.within
    GeoSeries.covers
    GeoSeries.covered_by
+   GeoSeries.relate
 
 
 Set-theoretic methods
@@ -119,6 +120,15 @@ Affine transformations
    GeoSeries.scale
    GeoSeries.skew
    GeoSeries.translate
+
+Linestring operations
+---------------------
+
+.. autosummary::
+   :toctree: api/
+
+   GeoSeries.interpolate
+   GeoSeries.project
 
 Aggregating and exploding
 -------------------------
