@@ -22,3 +22,4 @@ Advanced topics can be found in the :doc:`Advanced Guide <advanced_guide>` and f
   Merging data <user_guide/mergingdata>
   Geocoding <user_guide/geocoding>
   Sampling points <user_guide/sampling>
+  How to... <user_guide/how_to>
