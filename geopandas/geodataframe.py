@@ -1045,15 +1045,6 @@ individually so that features may have different properties
 
         Requires 'pyarrow'.
 
-        WARNING: this is an early implementation of Parquet file support and
-        associated metadata, the specification for which continues to evolve.
-        This is tracking version 0.4.0 of the GeoParquet specification at:
-        https://github.com/opengeospatial/geoparquet
-
-        This metadata specification does not yet make stability promises.  As such,
-        we do not yet recommend using this in a production setting unless you are
-        able to rewrite your Parquet files.
-
         .. versionadded:: 0.8
 
         Parameters
@@ -1067,7 +1058,7 @@ individually so that features may have different properties
             output except `RangeIndex` which is stored as metadata only.
         compression : {'snappy', 'gzip', 'brotli', None}, default 'snappy'
             Name of the compression to use. Use ``None`` for no compression.
-        schema_version : {'0.1.0', '0.4.0', None}
+        schema_version : {'0.1.0', '0.4.0', '1.0.0', None}
             GeoParquet specification version; if not provided will default to
             latest supported version.
         kwargs
@@ -1114,15 +1105,6 @@ individually so that features may have different properties
 
         Requires 'pyarrow' >= 0.17.
 
-        WARNING: this is an early implementation of Parquet file support and
-        associated metadata, the specification for which continues to evolve.
-        This is tracking version 0.4.0 of the GeoParquet specification at:
-        https://github.com/opengeospatial/geoparquet
-
-        This metadata specification does not yet make stability promises.  As such,
-        we do not yet recommend using this in a production setting unless you are
-        able to rewrite your Feather files.
-
         .. versionadded:: 0.8
 
         Parameters
@@ -1137,7 +1119,7 @@ individually so that features may have different properties
         compression : {'zstd', 'lz4', 'uncompressed'}, optional
             Name of the compression to use. Use ``"uncompressed"`` for no
             compression. By default uses LZ4 if available, otherwise uncompressed.
-        schema_version : {'0.1.0', '0.4.0', None}
+        schema_version : {'0.1.0', '0.4.0', '1.0.0', None}
             GeoParquet specification version; if not provided will default to
             latest supported version.
         kwargs
