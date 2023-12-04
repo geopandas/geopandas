@@ -1353,6 +1353,30 @@ class GeometryArray(ExtensionArray):
             scalars = [scalars]
         return from_shapely(scalars)
 
+    @classmethod
+    def _from_sequence_of_strings(
+        cls, strings, *, dtype: Dtype | None = None, copy: bool = False
+    ):
+        """Construct a new ExtensionArray from a sequence of strings.
+
+        Parameters
+        ----------
+        strings : Sequence
+            Each element will be an instance of the scalar type for this
+            array, ``cls.dtype.type``.
+        dtype : dtype, optional
+            Construct for this particular dtype. This should be a Dtype
+            compatible with the ExtensionArray.
+        copy : bool, default False
+            If True, copy the underlying data.
+
+        Returns
+        -------
+        ExtensionArray
+        """
+        # GH 3099
+        return from_wkt(strings)
+
     def _values_for_factorize(self):
         # type: () -> Tuple[np.ndarray, Any]
         """Return an array and missing value suitable for factorization.
