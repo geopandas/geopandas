@@ -14,6 +14,11 @@ New methods:
 - Added `is_ccw` method from shapely to GeoSeries/GeoDataframe (#3027).
 - Added `is_closed` method from shapely to GeoSeries/GeoDataframe (#3092).
 
+New features and improvements:
+
+- GeoSeries and GeoDataFrame `__repr__` now trims trailing zeros for a more readable
+  output (#3087).
+
 Potentially breaking changes:
 - reading a data source that does not have a geometry field using ``read_file``
   now returns a Pandas DataFrame instead of a GeoDataFrame with an empty
