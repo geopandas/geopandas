@@ -11,8 +11,8 @@ from geopandas import GeoDataFrame
 import geopandas
 from .file import _expand_user
 
-METADATA_VERSION = "1.0.0-beta.1"
-SUPPORTED_VERSIONS = ["0.1.0", "0.4.0", "1.0.0-beta.1"]
+METADATA_VERSION = "1.0.0"
+SUPPORTED_VERSIONS = ["0.1.0", "0.4.0", "1.0.0-beta.1", "1.0.0"]
 # reference: https://github.com/opengeospatial/geoparquet
 
 # Metadata structure:
@@ -73,7 +73,7 @@ def _create_metadata(df, schema_version=None):
     Parameters
     ----------
     df : GeoDataFrame
-    schema_version : {'0.1.0', '0.4.0', '1.0.0-beta.1', None}
+    schema_version : {'0.1.0', '0.4.0', '1.0.0-beta.1', '1.0.0', None}
         GeoParquet specification version; if not provided will default to
         latest supported version.
 
@@ -279,7 +279,7 @@ def _to_parquet(
 
     Requires 'pyarrow'.
 
-    This is tracking version 1.0.0-beta.1 of the GeoParquet specification at:
+    This is tracking version 1.0.0 of the GeoParquet specification at:
     https://github.com/opengeospatial/geoparquet. Writing older versions is
     supported using the `schema_version` keyword.
 
@@ -296,7 +296,7 @@ def _to_parquet(
         output except `RangeIndex` which is stored as metadata only.
     compression : {'snappy', 'gzip', 'brotli', None}, default 'snappy'
         Name of the compression to use. Use ``None`` for no compression.
-    schema_version : {'0.1.0', '0.4.0', '1.0.0-beta.1', None}
+    schema_version : {'0.1.0', '0.4.0', '1.0.0', None}
         GeoParquet specification version; if not provided will default to
         latest supported version.
     **kwargs
@@ -330,7 +330,7 @@ def _to_feather(df, path, index=None, compression=None, schema_version=None, **k
 
     Requires 'pyarrow' >= 0.17.
 
-    This is tracking version 1.0.0-beta.1 of the GeoParquet specification for
+    This is tracking version 1.0.0 of the GeoParquet specification for
     the metadata at: https://github.com/opengeospatial/geoparquet. Writing
     older versions is supported using the `schema_version` keyword.
 
@@ -348,7 +348,7 @@ def _to_feather(df, path, index=None, compression=None, schema_version=None, **k
     compression : {'zstd', 'lz4', 'uncompressed'}, optional
         Name of the compression to use. Use ``"uncompressed"`` for no
         compression. By default uses LZ4 if available, otherwise uncompressed.
-    schema_version : {'0.1.0', '0.4.0', '1.0.0-beta.1', None}
+    schema_version : {'0.1.0', '0.4.0', '1.0.0', None}
         GeoParquet specification version for the metadata; if not provided
         will default to latest supported version.
     kwargs
@@ -519,7 +519,7 @@ def _read_parquet(path, columns=None, storage_options=None, **kwargs):
       columns, the first available geometry column will be set as the geometry
       column of the returned GeoDataFrame.
 
-    Supports versions 0.1.0, 0.4.0 and 1.0.0-beta.1 of the GeoParquet
+    Supports versions 0.1.0, 0.4.0 and 1.0.0 of the GeoParquet
     specification at: https://github.com/opengeospatial/geoparquet
 
     If 'crs' key is not present in the GeoParquet metadata associated with the
@@ -571,6 +571,8 @@ def _read_parquet(path, columns=None, storage_options=None, **kwargs):
     parquet = import_optional_dependency(
         "pyarrow.parquet", extra="pyarrow is required for Parquet support."
     )
+    import geopandas.io._pyarrow_hotfix  # noqa: F401
+
     # TODO(https://github.com/pandas-dev/pandas/pull/41194): see if pandas
     # adds filesystem as a keyword and match that.
     filesystem = kwargs.pop("filesystem", None)
@@ -616,7 +618,7 @@ def _read_feather(path, columns=None, **kwargs):
       columns, the first available geometry column will be set as the geometry
       column of the returned GeoDataFrame.
 
-    Supports versions 0.1.0, 0.4.0 and 1.0.0-beta.1 of the GeoParquet
+    Supports versions 0.1.0, 0.4.0 and 1.0.0 of the GeoParquet
     specification at: https://github.com/opengeospatial/geoparquet
 
     If 'crs' key is not present in the Feather metadata associated with the
@@ -659,6 +661,7 @@ def _read_feather(path, columns=None, **kwargs):
     )
     # TODO move this into `import_optional_dependency`
     import pyarrow
+    import geopandas.io._pyarrow_hotfix  # noqa: F401
 
     if Version(pyarrow.__version__) < Version("0.17.0"):
         raise ImportError("pyarrow >= 0.17 required for Feather support")

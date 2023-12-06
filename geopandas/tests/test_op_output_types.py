@@ -6,7 +6,7 @@ from shapely.geometry import Point
 import numpy as np
 
 from geopandas import GeoDataFrame, GeoSeries
-
+from geopandas.testing import assert_geodataframe_equal
 
 crs_osgb = pyproj.CRS(27700)
 crs_wgs = pyproj.CRS(4326)
@@ -370,3 +370,13 @@ def test_constructor_sliced_in_pandas_methods(df2):
     assert type(hashable_test_df.duplicated()) == pd.Series
     assert type(df2.quantile(numeric_only=True)) == pd.Series
     assert type(df2.memory_usage()) == pd.Series
+
+
+def test_merge_preserve_geodataframe():
+    # https://github.com/geopandas/geopandas/issues/2932
+    ser = GeoSeries.from_xy([1], [1])
+    df = GeoDataFrame({"geo": ser})
+    res = df.merge(df, left_index=True, right_index=True)
+    assert_obj_no_active_geo_col(res, GeoDataFrame, geo_colname=None)
+    expected = GeoDataFrame({"geo_x": ser, "geo_y": ser})
+    assert_geodataframe_equal(expected, res)
