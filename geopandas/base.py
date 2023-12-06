@@ -4598,8 +4598,8 @@ GeometryCollection
         ...     LineString([(0.5, 0.2), (0.5, 0.8)]),
         ... ])
         >>> s.polygonize()
-        0    POLYGON ((0.00000 0.00000, 0.50000 0.50000, 1....
-        1    POLYGON ((0.50000 0.50000, 0.00000 0.00000, 0....
+        0        POLYGON ((0 0, 0.5 0.5, 1 1, 1 0, 0 0))
+        1    POLYGON ((0.5 0.5, 0 0, 0 1, 1 1, 0.5 0.5))
         Name: polygons, dtype: geometry
 
         >>> polygons, cuts, dangles, invalid = s.polygonize(full=True)
