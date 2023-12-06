@@ -1448,9 +1448,131 @@ GeometryCollection
 
         See also
         --------
+        GeoSeries.contains_properly
         GeoSeries.within
         """
         return _binary_op("contains", self, other, align)
+
+    def contains_properly(self, other, align=True):
+        """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
+        each aligned geometry that is completely inside ``other``, with no common
+        boundary points.
+
+        Geometry A contains geometry B properly if B intersects the interior of A but
+        not the boundary (or exterior). This means that a geometry A does not “contain
+        properly” itself, which contrasts with the :meth:`~GeoSeries.contains` method,
+        where common points on the boundary are allowed.
+
+        The operation works on a 1-to-1 row-wise manner:
+
+        .. image:: ../../../_static/binary_op-01.svg
+           :align: center
+
+        Parameters
+        ----------
+        other : GeoSeries or geometric object
+            The GeoSeries (elementwise) or geometric object to test if it
+            is contained.
+        align : bool (default True)
+            If True, automatically aligns GeoSeries based on their indices.
+            If False, the order of elements is preserved.
+
+        Returns
+        -------
+        Series (bool)
+
+        Examples
+        --------
+        >>> from shapely.geometry import Polygon, LineString, Point
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0, 0), (1, 1), (0, 1)]),
+        ...         LineString([(0, 0), (0, 2)]),
+        ...         LineString([(0, 0), (0, 1)]),
+        ...         Point(0, 1),
+        ...     ],
+        ...     index=range(0, 4),
+        ... )
+        >>> s2 = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0, 0), (2, 2), (0, 2)]),
+        ...         Polygon([(0, 0), (1, 2), (0, 2)]),
+        ...         LineString([(0, 0), (0, 2)]),
+        ...         Point(0, 1),
+        ...     ],
+        ...     index=range(1, 5),
+        ... )
+
+        >>> s
+        0    POLYGON ((0 0, 1 1, 0 1, 0 0))
+        1             LINESTRING (0 0, 0 2)
+        2             LINESTRING (0 0, 0 1)
+        3                       POINT (0 1)
+        dtype: geometry
+
+        >>> s2
+        1    POLYGON ((0 0, 2 2, 0 2, 0 0))
+        2    POLYGON ((0 0, 1 2, 0 2, 0 0))
+        3             LINESTRING (0 0, 0 2)
+        4                       POINT (0 1)
+        dtype: geometry
+
+        We can check if each geometry of GeoSeries contains a single
+        geometry:
+
+        .. image:: ../../../_static/binary_op-03.svg
+           :align: center
+
+        >>> point = Point(0, 1)
+        >>> s.contains_properly(point)
+        0    False
+        1     True
+        2    False
+        3     True
+        dtype: bool
+
+        We can also check two GeoSeries against each other, row by row.
+        The GeoSeries above have different indices. We can either align both GeoSeries
+        based on index values and compare elements with the same index using
+        ``align=True`` or ignore index and compare elements based on their matching
+        order using ``align=False``:
+
+        .. image:: ../../../_static/binary_op-02.svg
+
+        >>> s2.contains_properly(s, align=True)
+        0    False
+        1    False
+        2    False
+        3     True
+        4    False
+        dtype: bool
+
+        >>> s2.contains_properly(s, align=False)
+        1    False
+        2    False
+        3    False
+        4     True
+        dtype: bool
+
+        Compare it to the result of :meth:`~GeoSeries.contains`:
+
+        >>> s2.contains(s, align=False)
+        1     True
+        2    False
+        3     True
+        4     True
+        dtype: bool
+
+        Notes
+        -----
+        This method works in a row-wise manner. It does not check if an element
+        of one GeoSeries ``contains_properly`` *any* element of the other one.
+
+        See also
+        --------
+        GeoSeries.contains
+        """
+        return _binary_op("contains_properly", self, other, align)
 
     def geom_equals(self, other, align=True):
         """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
