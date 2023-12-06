@@ -1510,7 +1510,7 @@ class GeometryArray(ExtensionArray):
                         # typically projected coordinates
                         # (in case of unit meter: mm precision)
                         precision = 3
-            return lambda geom: shapely.wkt.dumps(geom, rounding_precision=precision)
+            return lambda geom: shapely.to_wkt(geom, rounding_precision=precision)
         return repr
 
     @classmethod
