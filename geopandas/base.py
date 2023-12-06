@@ -495,10 +495,10 @@ GeometryCollection
         ...     ]
         ... )
         >>> s
-        0    LINESTRING (0.00000 0.00000, 1.00000 1.00000, ...
-        1    LINESTRING (0.00000 0.00000, 1.00000 1.00000, ...
-        2    POLYGON ((0.00000 0.00000, 0.00000 1.00000, 1....
-        3                              POINT (3.00000 3.00000)
+        0    LINESTRING (0 0, 1 1, 0 1, 0 0)
+        1         LINESTRING (0 0, 1 1, 0 1)
+        2     POLYGON ((0 0, 0 1, 1 1, 0 0))
+        3                        POINT (3 3)
         dtype: geometry
 
         >>> s.is_closed
