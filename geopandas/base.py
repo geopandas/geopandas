@@ -1321,18 +1321,19 @@ GeometryCollection
         >>> from shapely import Point, Polygon
         >>> s = geopandas.GeoSeries([Point(0, 0)])
         >>> s.transform(lambda x: x + 1)
-        0    POINT (1.00000 1.00000)
+        0    POINT (1 1)
         dtype: geometry
 
         >>> s = geopandas.GeoSeries([Polygon([(0, 0), (1, 1), (0, 1)])])
         >>> s.transform(lambda x: x * [2, 3])
-        0    POLYGON ((0.00000 0.00000, 2.00000 3.00000, 0.00000 3.00000...
+        0    POLYGON ((0 0, 2 3, 0 3, 0 0))
         dtype: geometry
 
         By default the third dimension is ignored and you need explicitly include it:
+
         >>> s = geopandas.GeoSeries([Point(0, 0, 0)])
         >>> s.transform(lambda x: x + 1, include_z=True)
-        0    POINT Z (1.00000 1.00000 1.00000)
+        0    POINT Z (1 1 1)
         dtype: geometry
         """
         return _delegate_geo_method("transform", self, transformation, include_z)
