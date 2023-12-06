@@ -3599,12 +3599,11 @@ GeometryCollection
         ...         LineString([(0.1, 0.1), (0.49, 0.51), (1.01, 0.89)]),
         ...         Polygon([(0, 0), (0, 10), (10, 10), (10, 0), (0, 0)]),
         ...     ],
-        ...     crs=3857,
         ... )
         >>> s
-        0                                  POINT (0.500 2.500)
-        1    LINESTRING (0.100 0.100, 0.490 0.510, 1.010 0....
-        2    POLYGON ((0.000 0.000, 0.000 10.000, 10.000 10...
+        0                               POINT (0.5 2.5)
+        1    LINESTRING (0.1 0.1, 0.49 0.51, 1.01 0.89)
+        2       POLYGON ((0 0, 0 10, 10 10, 10 0, 0 0))
         dtype: geometry
 
         >>> s2 = geopandas.GeoSeries(
@@ -3613,13 +3612,12 @@ GeometryCollection
         ...         LineString([(0, 0), (0.5, 0.5), (1.0, 1.0)]),
         ...         Point(8, 10),
         ...     ],
-        ...     crs=3857,
         ...     index=range(1, 4),
         ... )
         >>> s2
-        1                                  POINT (0.000 2.000)
-        2    LINESTRING (0.000 0.000, 0.500 0.500, 1.000 1....
-        3                                 POINT (8.000 10.000)
+        1                       POINT (0 2)
+        2    LINESTRING (0 0, 0.5 0.5, 1 1)
+        3                      POINT (8 10)
         dtype: geometry
 
         We can snap each geometry to a single shapely geometry:
@@ -3628,9 +3626,9 @@ GeometryCollection
            :align: center
 
         >>> s.snap(Point(0, 2), tolerance=1)
-        0                                  POINT (0.000 2.000)
-        1    LINESTRING (0.100 0.100, 0.490 0.510, 1.010 0....
-        2    POLYGON ((0.000 0.000, 0.000 2.000, 0.000 10.0...
+        0                                     POINT (0 2)
+        1      LINESTRING (0.1 0.1, 0.49 0.51, 1.01 0.89)
+        2    POLYGON ((0 0, 0 2, 0 10, 10 10, 10 0, 0 0))
         dtype: geometry
 
         We can also snap two GeoSeries to each other, row by row.
@@ -3643,15 +3641,15 @@ GeometryCollection
 
         >>> s.snap(s2, tolerance=1, align=True)
         0                                                 None
-        1    LINESTRING (0.100 0.100, 0.490 0.510, 1.010 0....
-        2    POLYGON ((0.500 0.500, 1.000 1.000, 0.000 10.0...
+        1           LINESTRING (0.1 0.1, 0.49 0.51, 1.01 0.89)
+        2    POLYGON ((0.5 0.5, 1 1, 0 10, 10 10, 10 0, 0.5...
         3                                                 None
         dtype: geometry
 
         >>> s.snap(s2, tolerance=1, align=False)
-        0                                  POINT (0.000 2.000)
-        1    LINESTRING (0.000 0.000, 0.500 0.500, 1.000 1....
-        2    POLYGON ((0.000 0.000, 0.000 10.000, 8.000 10....
+        0                                      POINT (0 2)
+        1                   LINESTRING (0 0, 0.5 0.5, 1 1)
+        2    POLYGON ((0 0, 0 10, 8 10, 10 10, 10 0, 0 0))
         dtype: geometry
         """
         return _binary_geo("snap", self, other, align, tolerance=tolerance)
