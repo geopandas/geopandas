@@ -65,6 +65,27 @@ def _binary_op(op, this, other, align, *args, **kwargs):
     return Series(data, index=index)
 
 
+def _binary_xy(op, this, x, y, align):
+    this = this.geometry
+    if hasattr(x, "index"):
+        if hasattr(y, "index") and not x.index.equals(y.index):
+            raise ValueError("Index of `x` and `y` must be equal.")
+        if align and not this.index.equals(x.index):
+            warn(
+                "The indices of the GeoSeries and of `x` are different.",
+                stacklevel=4,
+            )
+            this, x = this.align(x)
+            if y is not None:
+                _, y = this.align(y)
+
+    x = np.asarray(x)
+    if y is not None:
+        y = np.asarray(y)
+
+    return Series(getattr(this.array, op)(x, y=y), index=this.index)
+
+
 def _delegate_property(op, this):
     # type: (str, GeoSeries) -> GeoSeries/Series
     a_this = GeometryArray(this.geometry.values)
@@ -2592,6 +2613,12 @@ GeometryCollection
         GeoSeries.overlaps
         """
         return _binary_op("covered_by", self, other, align)
+
+    def contains_xy(self, x, y=None, align=True):
+        return _binary_xy("contains_xy", self, x, y, align)
+
+    def intersects_xy(self, x, y=None, align=True):
+        return _binary_xy("intersects_xy", self, x, y, align)
 
     def distance(self, other, align=True):
         """Returns a ``Series`` containing the distance to aligned `other`.

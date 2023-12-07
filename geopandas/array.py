@@ -686,6 +686,12 @@ class GeometryArray(ExtensionArray):
     def within(self, other):
         return self._binary_method("within", self, other)
 
+    def contains_xy(self, x, y=None):
+        return shapely.contains_xy(self, x, y=y)
+
+    def intersects_xy(self, x, y=None):
+        return shapely.intersects_xy(self, x, y=y)
+
     def geom_equals_exact(self, other, tolerance):
         return self._binary_method("equals_exact", self, other, tolerance=tolerance)
 
