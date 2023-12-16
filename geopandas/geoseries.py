@@ -416,10 +416,10 @@ class GeoSeries(GeoPandasBase, Series):
             :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
             such as an authority string (eg "EPSG:4326") or a WKT string.
         on_invalid : {"raise", "warn", "ignore"}, default "raise"
-            - raise: an exception will be raised if a WKB input geometry is invalid.
-            - warn: a warning will be raised and invalid WKB geometries will be
+            - raise: an exception will be raised if a WKT input geometry is invalid.
+            - warn: a warning will be raised and invalid WKT geometries will be
               returned as ``None``.
-            - ignore: invalid WKB geometries will be returned as ``None`` without a
+            - ignore: invalid WKT geometries will be returned as ``None`` without a
               warning.
 
         kwargs
