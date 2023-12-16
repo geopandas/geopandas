@@ -17,7 +17,7 @@ New features and improvements:
 
 - GeoSeries and GeoDataFrame `__repr__` now trims trailing zeros for a more readable
   output (#3087).
-- Add `on_invalid` parameter to `from_wkt` and `from_wkb` (#3110)
+- Add `on_invalid` parameter to `from_wkt` and `from_wkb` (#3110).
 
 Potentially breaking changes:
 - reading a data source that does not have a geometry field using ``read_file``
@@ -29,7 +29,7 @@ Bug fixes:
   `GeoDataFrame` when the `suffixes` argument is applied to the active
   geometry column (#2933).
 - Fix bug in `pandas.concat` CRS consistency checking where CRS differing by WKT
-  whitespace only were treated as incompatible (#3023)
+  whitespace only were treated as incompatible (#3023).
 
 ## Version 0.14.1 (Nov 11, 2023)
 
