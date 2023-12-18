@@ -1338,8 +1338,8 @@ GeometryCollection
     def force_3d(self, z=0):
         """Forces the dimensionality of a geometry to 3D.
 
-        2D geometries will get the provided Z coordinate; Z coordinates of 3D geometries
-        are unchanged (unless they are ``np.nan``).
+        2D geometries will get the provided Z coordinate; 3D geometries
+        are unchanged (unless their Z coordinate is ``np.nan``).
 
         Note that for empty geometries, 3D is only supported since GEOS 3.9 and then
         still only for simple geometries (non-collections).
