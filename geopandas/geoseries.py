@@ -392,7 +392,7 @@ class GeoSeries(GeoPandasBase, Series):
         GeoSeries.from_wkt
 
         """
-        return cls._from_wkb_or_wkb(
+        return cls._from_wkb_or_wkt(
             from_wkb, data, index=index, crs=crs, on_invalid=on_invalid, **kwargs
         )
 
@@ -449,7 +449,7 @@ class GeoSeries(GeoPandasBase, Series):
         2    POINT (3 3)
         dtype: geometry
         """
-        return cls._from_wkb_or_wkb(
+        return cls._from_wkb_or_wkt(
             from_wkt, data, index=index, crs=crs, on_invalid=on_invalid, **kwargs
         )
 
@@ -509,7 +509,7 @@ class GeoSeries(GeoPandasBase, Series):
         return cls(points_from_xy(x, y, z, crs=crs), index=index, crs=crs, **kwargs)
 
     @classmethod
-    def _from_wkb_or_wkb(
+    def _from_wkb_or_wkt(
         cls,
         from_wkb_or_wkt_function: Callable,
         data,
