@@ -216,7 +216,7 @@ by using the :meth:`geopandas.GeoDataFrame.to_postgis` method.
 
     One GeoDataFrame can contain multiple geometry (GeoSeries) columns, but most standard GIS file formats, e.g. GeoPackage or ESRI Shapefile, 
     support only a single geometry column. To store multiple geometry columns, non-active GeoSeries need to be converted to 
-    other an alternate representation like WKT or WKB before saving to file. Alternatively, they can be saved as an Apache (Geo)Parquet / Feather file which support multiple geometry columns directly.
+   an alternative representation like well-known text (WKT) or well-known binary (WKB) before saving to file. Alternatively, they can be saved as an Apache (Geo)Parquet or Feather file, both of which support multiple geometry columns natively.
 
 **Writing to Shapefile**::
 
