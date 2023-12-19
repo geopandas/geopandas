@@ -238,7 +238,7 @@ by using the :meth:`geopandas.GeoDataFrame.to_postgis` method.
     countries_gdf["country_center"] = countries_gdf["country_center"].to_wkt()
     countries_gdf.to_file("countries.geojson", driver='GeoJSON')
 
-For multi-layer formats such as geopackage it is also possible to write additional geometry columns to separate layers, instead of saving as WKT or WKB within a single layer.
+For multi-layer formats such as GeoPackage, it is possible to write additional geometry columns to separate layers instead of saving them as WKT or WKB within a single layer.
 
 Spatial databases
 -----------------
