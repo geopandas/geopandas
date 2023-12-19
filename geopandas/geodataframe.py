@@ -2327,7 +2327,7 @@ chicago_w_groceries[chicago_w_groceries["community"] == "UPTOWN"]
             geometries.
         make_valid : bool, default True
             If True, any invalid input geometries are corrected with a call to
-            `buffer(0)`, if False, a `ValueError` is raised if any input geometries
+            make_valid(), if False, a `ValueError` is raised if any input geometries
             are invalid.
 
         Returns
