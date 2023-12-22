@@ -529,6 +529,45 @@ class TestGeomMethods:
         expected = [False, False, False, False, True, False, False]
         assert_array_dtype_equal(expected, self.g0.disjoint(self.g9, align=False))
 
+    def test_contains_xy(self):
+        expected = [False, False, True, False, True, False, False]
+        assert_array_dtype_equal(expected, self.g0.contains_xy(np.zeros((7, 2)) + 0.1))
+
+        assert_array_dtype_equal(
+            expected, self.g0.contains_xy(x=np.zeros((7)) + 0.1, y=np.zeros((7)) + 0.1)
+        )
+
+        xy = DataFrame(np.zeros((7, 2)) + 0.1, index=range(1, 8), columns=["x", "y"])
+        expected2 = [False, False, True, False, True, False, False, False]
+        assert_array_dtype_equal(expected2, self.g0.contains_xy(xy))
+        assert_array_dtype_equal(expected, self.g0.contains_xy(xy, align=False))
+
+        assert_array_dtype_equal(expected2, self.g0.contains_xy(xy["x"], xy["y"]))
+        assert_array_dtype_equal(
+            expected, self.g0.contains_xy(xy["x"], xy["y"], align=False)
+        )
+
+    def test_intersects_xy(self):
+        expected = [True, True, True, False, True, False, False]
+        assert_array_dtype_equal(
+            expected, self.g0.intersects_xy(np.zeros((7, 2)) + 0.1)
+        )
+
+        assert_array_dtype_equal(
+            expected,
+            self.g0.intersects_xy(x=np.zeros((7)) + 0.1, y=np.zeros((7)) + 0.1),
+        )
+
+        xy = DataFrame(np.zeros((7, 2)) + 0.1, index=range(1, 8), columns=["x", "y"])
+        expected2 = [False, True, True, False, True, False, False, False]
+        assert_array_dtype_equal(expected2, self.g0.intersects_xy(xy))
+        assert_array_dtype_equal(expected, self.g0.intersects_xy(xy, align=False))
+
+        assert_array_dtype_equal(expected2, self.g0.intersects_xy(xy["x"], xy["y"]))
+        assert_array_dtype_equal(
+            expected, self.g0.intersects_xy(xy["x"], xy["y"], align=False)
+        )
+
     def test_relate(self):
         expected = Series(
             [
