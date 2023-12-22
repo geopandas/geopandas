@@ -2655,9 +2655,213 @@ GeometryCollection
         return _binary_op("covered_by", self, other, align)
 
     def contains_xy(self, x, y=None, align=True):
+        """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
+        each aligned geometry that contains a point represented by coordinates.
+
+        This is a special-case (and faster) variant of the :meth:`contains` function
+        which avoids having to create a Point object if you start from x/y coordinates.
+
+        Note that in the case of points, the :meth:`contains_properly` predicate is
+        equivalent to :meth:`contains`.
+
+        See the docstring of :meth:`contains` for more details about the predicate.
+
+        The operation works on a 1-to-1 row-wise manner:
+
+        .. image:: ../../../_static/binary_op-01.svg
+           :align: center
+
+        Parameters
+        ----------
+        x, y : float or array_like
+            Coordinates as separate x and y arrays, or a single array of coordinate x, y
+            tuples.
+        align : bool (default True)
+            If True, automatically aligns GeoSeries based on their indices.
+            If False, the order of elements is preserved.
+
+        Returns
+        -------
+        Series (bool)
+
+        See also
+        --------
+        contains
+        contains_properly
+        intersects_xy
+
+        Examples
+        --------
+        >>> from shapely.geometry import Polygon, Point, LineString
+        >>> import numpy as np
+        >>> import pandas as pd
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0, 0), (1, 1), (0, 1)]),
+        ...         Polygon([(0, 0), (1, 1), (0, 1)]),
+        ...         LineString([(0, 0), (0, 2)]),
+        ...         Point(0, 1),
+        ...     ],
+        ... )
+
+        You can pass coordinates as a single numpy array:
+
+        >>> xy = np.array([[0.1, 0.4], [0, 0], [0, 1], [3, 4]])
+        >>> s.contains_xy(xy)
+        0     True
+        1    False
+        2     True
+        3    False
+        dtype: bool
+
+        Or as individual arrays:
+
+        >>> s.contains_xy(x=xy[:, 0], y=xy[:, 1])
+        0     True
+        1    False
+        2     True
+        3    False
+        dtype: bool
+
+        When using pandas objects, GeoPandas automatically aligns them.
+
+        .. image:: ../../../_static/binary_op-02.svg
+
+        >>> xy_df = pd.DataFrame(xy, index=range(1, 5))
+        >>> s.contains_xy(xy_df)
+        0    False
+        1     True
+        2    False
+        3     True
+        4    False
+        dtype: bool
+
+        You can manually disable it and ignore the indices of both objects.
+
+        >>> s.contains_xy(xy_df, align=False)
+        0     True
+        1    False
+        2     True
+        3    False
+        dtype: bool
+
+        You can also check if each geometry of GeoSeries contains a single coordinate
+        pair:
+
+        .. image:: ../../../_static/binary_op-03.svg
+           :align: center
+
+        >>> s.contains_xy(0, 1)
+        0    False
+        1    False
+        2     True
+        3     True
+        dtype: bool
+
+        """
         return _binary_xy("contains_xy", self, x, y, align)
 
     def intersects_xy(self, x, y=None, align=True):
+        """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
+        each aligned geometry that intersects a point represented by coordinates.
+
+        This is a special-case (and faster) variant of the :meth:`intersects` function
+        which avoids having to create a Point object if you start from x/y coordinates.
+
+        See the docstring of :meth:`intersects` for more details about the predicate.
+
+        The operation works on a 1-to-1 row-wise manner:
+
+        .. image:: ../../../_static/binary_op-01.svg
+           :align: center
+
+        Parameters
+        ----------
+        x, y : float or array_like
+            Coordinates as separate x and y arrays, or a single array of coordinate x, y
+            tuples.
+        align : bool (default True)
+            If True, automatically aligns GeoSeries based on their indices.
+            If False, the order of elements is preserved.
+
+        Returns
+        -------
+        Series (bool)
+
+        See also
+        --------
+        intersects
+        contains_xy
+
+        Examples
+        --------
+        >>> from shapely.geometry import Polygon, Point, LineString
+        >>> import numpy as np
+        >>> import pandas as pd
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0, 0), (1, 1), (0, 1)]),
+        ...         Polygon([(0, 0), (1, 1), (0, 1)]),
+        ...         LineString([(0, 0), (0, 2)]),
+        ...         Point(0, 1),
+        ...     ],
+        ... )
+
+        You can pass coordinates as a single numpy array:
+
+        >>> xy = np.array([[0.1, 0.4], [0, 0], [0, 1], [3, 4]])
+        >>> s.intersects_xy(xy)
+        0     True
+        1     True
+        2     True
+        3    False
+        dtype: bool
+
+        Or as individual arrays:
+
+        >>> s.intersects_xy(x=xy[:, 0], y=xy[:, 1])
+        0     True
+        1     True
+        2     True
+        3    False
+        dtype: bool
+
+        When using pandas objects, GeoPandas automatically aligns them.
+
+        .. image:: ../../../_static/binary_op-02.svg
+
+        >>> xy_df = pd.DataFrame(xy, index=range(1, 5))
+        >>> s.intersects_xy(xy_df)
+        0    False
+        1     True
+        2     True
+        3     True
+        4    False
+        dtype: bool
+
+        You can manually disable it and ignore the indices of both objects.
+
+        >>> s.intersects_xy(xy_df, align=False)
+        0     True
+        1     True
+        2     True
+        3    False
+        dtype: bool
+
+        You can also check if each geometry of GeoSeries contains a single coordinate
+        pair:
+
+        .. image:: ../../../_static/binary_op-03.svg
+           :align: center
+
+        >>> s.intersects_xy(0, 1)
+        0    True
+        1    True
+        2    True
+        3    True
+        dtype: bool
+
+        """
         return _binary_xy("intersects_xy", self, x, y, align)
 
     def distance(self, other, align=True):
