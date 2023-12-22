@@ -9,6 +9,8 @@ Notes on dependencies:
   rtree package has also been removed. (#3035)
 
 New methods:
+
+- Added `contains_xy` and `intersects_xy` methods from shapely to GeoSeries/GeoDataframe (#3114).
 - Added `count_coordinates` method from shapely to GeoSeries/GeoDataframe (#3026).
 - Added `minimum_clearance` method from shapely to GeoSeries/GeoDataframe (#2989).
 - Added `is_ccw` method from shapely to GeoSeries/GeoDataframe (#3027).
