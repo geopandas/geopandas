@@ -13,6 +13,7 @@ New methods:
 - Added `minimum_clearance` method from shapely to GeoSeries/GeoDataframe (#2989).
 - Added `is_ccw` method from shapely to GeoSeries/GeoDataframe (#3027).
 - Added `contains_properly` method from shapely to GeoSeries/GeoDataframe (#3105).
+- Added `transform` method from shapely to GeoSeries/GeoDataFrame (#3075).
 
 New features and improvements:
 
