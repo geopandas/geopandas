@@ -368,13 +368,20 @@ def test_to_file_int32(tmpdir, df_points, engine, driver, ext):
     df["data"] = pd.array([1, np.nan] * 5, dtype=pd.Int32Dtype())
     df.to_file(tempfilename, driver=driver, engine=engine)
     df_read = GeoDataFrame.from_file(tempfilename, engine=engine)
-    assert_geodataframe_equal(df_read, df, check_dtype=False, check_like=True)
+    # the int column with missing values comes back as float
+    expected = df.copy()
+    expected["data"] = expected["data"].astype("float64")
+    assert_geodataframe_equal(df_read, expected, check_like=True)
+
+    tempfilename2 = os.path.join(str(tmpdir), f"int32_2.{ext}")
+    df2 = df.dropna()
+    df2.to_file(tempfilename2, driver=driver, engine=engine)
+    df2_read = GeoDataFrame.from_file(tempfilename2, engine=engine)
     if engine == "pyogrio":
-        tempfilename2 = os.path.join(str(tmpdir), f"int32_2.{ext}")
-        df2 = df.dropna()
-        df2.to_file(tempfilename2, driver=driver, engine=engine)
-        df2_read = GeoDataFrame.from_file(tempfilename2, engine=engine)
         assert df2_read["data"].dtype == "int32"
+    else:
+        # with the fiona engine the 32 bitwidth is not preserved
+        assert df2_read["data"].dtype == "int64"
 
 
 @pytest.mark.parametrize("driver,ext", driver_ext_pairs)
@@ -385,7 +392,10 @@ def test_to_file_int64(tmpdir, df_points, engine, driver, ext):
     df["data"] = pd.array([1, np.nan] * 5, dtype=pd.Int64Dtype())
     df.to_file(tempfilename, driver=driver, engine=engine)
     df_read = GeoDataFrame.from_file(tempfilename, engine=engine)
-    assert_geodataframe_equal(df_read, df, check_dtype=False, check_like=True)
+    # the int column with missing values comes back as float
+    expected = df.copy()
+    expected["data"] = expected["data"].astype("float64")
+    assert_geodataframe_equal(df_read, expected, check_like=True)
 
 
 def test_to_file_empty(tmpdir, engine):
