@@ -54,10 +54,7 @@ include = ["geopandas", "geopandas.*"]
 
 [tool.setuptools.package-data]
 geopandas = [
-    "datasets/nybb_16a.zip",
-    "datasets/naturalearth_cities/*",
-    "datasets/naturalearth_lowres/*",
-    "tests/data/*",
+    "tests/data/null_geom.geojson"
 ]
 
 [tool.pytest.ini_options]
