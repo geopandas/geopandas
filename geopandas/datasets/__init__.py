@@ -19,7 +19,7 @@ def get_path(dataset):
     else:
         error_msg = (
             "The geopandas.dataset has been deprecated and "
-            "was removed in GeoPandas 1.0. Sample datasets are now available "
+            "was removed in GeoPandas 1.0. New sample datasets are now available "
             "in the geodatasets package (https://geodatasets.readthedocs.io/en/latest/)"
         )
         raise AttributeError(error_msg)
