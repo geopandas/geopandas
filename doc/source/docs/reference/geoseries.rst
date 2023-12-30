@@ -109,6 +109,7 @@ Constructive methods and attributes
    GeoSeries.shortest_line
    GeoSeries.simplify
    GeoSeries.snap
+   GeoSeries.transform
 
 Affine transformations
 ----------------------

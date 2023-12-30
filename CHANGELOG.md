@@ -14,11 +14,14 @@ New methods:
 - Added `minimum_clearance` method from shapely to GeoSeries/GeoDataframe (#2989).
 - Added `is_ccw` method from shapely to GeoSeries/GeoDataframe (#3027).
 - Added `snap` method from shapely to GeoSeries/GeoDataframe (#3086).
+- Added ``transform`` method from shapely to GeoSeries/GeoDataFrame (#3075).
 
 New features and improvements:
 
 - GeoSeries and GeoDataFrame `__repr__` now trims trailing zeros for a more readable
   output (#3087).
+- `make_valid` option in `overlay` now uses the `make_valid` method instead of
+  `buffer(0)` (#3113).
 
 Potentially breaking changes:
 
