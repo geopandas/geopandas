@@ -1782,8 +1782,8 @@ class TestGeomMethods:
     def test_force_3d(self):
         expected = GeoSeries(
             [
-                Point(-73.9847, 40.7484, 30.3244),
-                Point(-74.0446, 40.6893, 31.2344),
+                self.esb,
+                self.sol,
                 Point(-73.9847, 40.7484, 0),
                 self.pt_empty,
             ],
@@ -1793,8 +1793,8 @@ class TestGeomMethods:
 
         expected = GeoSeries(
             [
-                Point(-73.9847, 40.7484, 30.3244),
-                Point(-74.0446, 40.6893, 31.2344),
+                self.esb,
+                self.sol,
                 Point(-73.9847, 40.7484, 2),
                 self.pt_empty,
             ],
