@@ -547,6 +547,9 @@ class TestGeomMethods:
             expected, self.g0.contains_xy(xy["x"], xy["y"], align=False)
         )
 
+        with pytest.raises(ValueError, match="Index of `x` and `y` must be equal"):
+            self.g0.contains_xy(xy["x"], xy["y"].reset_index(drop=True))
+
     def test_intersects_xy(self):
         expected = [True, True, True, False, True, False, False]
         assert_array_dtype_equal(
@@ -567,6 +570,9 @@ class TestGeomMethods:
         assert_array_dtype_equal(
             expected, self.g0.intersects_xy(xy["x"], xy["y"], align=False)
         )
+
+        with pytest.raises(ValueError, match="Index of `x` and `y` must be equal"):
+            self.g0.intersects_xy(xy["x"], xy["y"].reset_index(drop=True))
 
     def test_relate(self):
         expected = Series(
