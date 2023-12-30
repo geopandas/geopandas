@@ -2,10 +2,6 @@
 
 ## Development version
 
-New methods:
-
-- Added ``count_coordinates`` method from shapely to GeoSeries/GeoDataframe (#3026).
-
 Notes on dependencies:
 
 - GeoPandas 1.0 drops support for shapely<2 and PyGEOS. The only geometry engine that is
@@ -13,14 +9,35 @@ Notes on dependencies:
   rtree package has also been removed. (#3035)
 
 New methods:
+- Added `count_coordinates` method from shapely to GeoSeries/GeoDataframe (#3026).
+- Added `minimum_clearance` method from shapely to GeoSeries/GeoDataframe (#2989).
+- Added `is_ccw` method from shapely to GeoSeries/GeoDataframe (#3027).
+- Added ``transform`` method from shapely to GeoSeries/GeoDataFrame (#3075).
 
-- Added ``minimum_clearance`` method from shapely to GeoSeries/GeoDataframe (#2989).
+New features and improvements:
+
+- GeoSeries and GeoDataFrame `__repr__` now trims trailing zeros for a more readable
+  output (#3087).
+- `make_valid` option in `overlay` now uses the `make_valid` method instead of
+  `buffer(0)` (#3113).
+
+Potentially breaking changes:
+- reading a data source that does not have a geometry field using ``read_file``
+  now returns a Pandas DataFrame instead of a GeoDataFrame with an empty
+  ``geometry`` column.
 
 Bug fixes:
-- Fix `GeoDataFrame.merge()` incorrectly returning a `DataFrame` instead of a 
+- Fix `GeoDataFrame.merge()` incorrectly returning a `DataFrame` instead of a
   `GeoDataFrame` when the `suffixes` argument is applied to the active
   geometry column (#2933).
+- Fix bug in `pandas.concat` CRS consistency checking where CRS differing by WKT
+  whitespace only were treated as incompatible (#3023)
 
+## Version 0.14.1 (Nov 11, 2023)
+
+- The Parquet and Feather IO functions now support the latest 1.0.0 version
+  of the GeoParquet specification (geoparquet.org) (#2663).
+- Fix `read_parquet` and `read_feather` for [CVE-2023-47248](https://www.cve.org/CVERecord?id=CVE-2023-47248>) (#3070).
 
 ## Version 0.14 (Sep 15, 2023)
 

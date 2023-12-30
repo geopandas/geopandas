@@ -11,7 +11,7 @@ import pytest
 import pytz
 from packaging.version import Version
 from pandas.api.types import is_datetime64_any_dtype
-from pandas.testing import assert_series_equal
+from pandas.testing import assert_series_equal, assert_frame_equal
 from shapely.geometry import Point, Polygon, box
 
 import geopandas
@@ -369,13 +369,20 @@ def test_to_file_int32(tmpdir, df_points, engine, driver, ext):
     df["data"] = pd.array([1, np.nan] * 5, dtype=pd.Int32Dtype())
     df.to_file(tempfilename, driver=driver, engine=engine)
     df_read = GeoDataFrame.from_file(tempfilename, engine=engine)
-    assert_geodataframe_equal(df_read, df, check_dtype=False, check_like=True)
+    # the int column with missing values comes back as float
+    expected = df.copy()
+    expected["data"] = expected["data"].astype("float64")
+    assert_geodataframe_equal(df_read, expected, check_like=True)
+
+    tempfilename2 = os.path.join(str(tmpdir), f"int32_2.{ext}")
+    df2 = df.dropna()
+    df2.to_file(tempfilename2, driver=driver, engine=engine)
+    df2_read = GeoDataFrame.from_file(tempfilename2, engine=engine)
     if engine == "pyogrio":
-        tempfilename2 = os.path.join(str(tmpdir), f"int32_2.{ext}")
-        df2 = df.dropna()
-        df2.to_file(tempfilename2, driver=driver, engine=engine)
-        df2_read = GeoDataFrame.from_file(tempfilename2, engine=engine)
         assert df2_read["data"].dtype == "int32"
+    else:
+        # with the fiona engine the 32 bitwidth is not preserved
+        assert df2_read["data"].dtype == "int64"
 
 
 @pytest.mark.parametrize("driver,ext", driver_ext_pairs)
@@ -386,7 +393,10 @@ def test_to_file_int64(tmpdir, df_points, engine, driver, ext):
     df["data"] = pd.array([1, np.nan] * 5, dtype=pd.Int64Dtype())
     df.to_file(tempfilename, driver=driver, engine=engine)
     df_read = GeoDataFrame.from_file(tempfilename, engine=engine)
-    assert_geodataframe_equal(df_read, df, check_dtype=False, check_like=True)
+    # the int column with missing values comes back as float
+    expected = df.copy()
+    expected["data"] = expected["data"].astype("float64")
+    assert_geodataframe_equal(df_read, expected, check_like=True)
 
 
 def test_to_file_empty(tmpdir, engine):
@@ -797,6 +807,24 @@ def test_read_file__ignore_all_fields(engine):
         engine="fiona",
     )
     assert gdf.columns.tolist() == ["geometry"]
+
+
+def test_read_file_missing_geometry(tmpdir, engine):
+    filename = str(tmpdir / "test.csv")
+
+    expected = pd.DataFrame(
+        {"col1": np.array([1, 2, 3], dtype="int64"), "col2": ["a", "b", "c"]}
+    )
+    expected.to_csv(filename, index=False)
+
+    df = geopandas.read_file(filename, engine=engine)
+    # both engines read integers as strings; force back to original type
+    df["col1"] = df["col1"].astype("int64")
+
+    assert isinstance(df, pd.DataFrame)
+    assert not isinstance(df, geopandas.GeoDataFrame)
+
+    assert_frame_equal(df, expected)
 
 
 def test_read_file__where_filter(engine):
