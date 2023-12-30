@@ -227,6 +227,12 @@ by using the :meth:`geopandas.GeoDataFrame.to_postgis` method.
     can be easily stored in the GeoDataFrame, but saving them to e.g. GeoPackage or Shapefile will raise a ValueError.
     Before saving to a file, they need to be converted to a format supported by a selected driver.
 
+.. note::
+
+    One GeoDataFrame can contain multiple geometry (GeoSeries) columns, but most standard GIS file formats, e.g. GeoPackage or ESRI Shapefile, 
+    support only a single geometry column. To store multiple geometry columns, non-active GeoSeries need to be converted to 
+    an alternative representation like well-known text (WKT) or well-known binary (WKB) before saving to file. Alternatively, they can be saved as an Apache (Geo)Parquet or Feather file, both of which support multiple geometry columns natively.
+
 **Writing to Shapefile**::
 
     countries_gdf.to_file("countries.shp")
@@ -240,6 +246,15 @@ by using the :meth:`geopandas.GeoDataFrame.to_postgis` method.
     countries_gdf.to_file("package.gpkg", layer='countries', driver="GPKG")
     cities_gdf.to_file("package.gpkg", layer='cities', driver="GPKG")
 
+**Writing with multiple geometry columns**::
+
+    countries_gdf["country_center"] = countries_gdf["geometry"].centroid
+    # Line below fails because GeoJSON can't contain multiple geometry columns
+    # countries_gdf.to_file("countries.geojson", driver='GeoJSON')
+    countries_gdf["country_center"] = countries_gdf["country_center"].to_wkt()
+    countries_gdf.to_file("countries.geojson", driver='GeoJSON')
+
+For multi-layer formats such as GeoPackage, it is possible to write additional geometry columns to separate layers instead of saving them as WKT or WKB within a single layer.
 
 Spatial databases
 -----------------
