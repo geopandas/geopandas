@@ -92,16 +92,14 @@ as well::
     When using pip to install GeoPandas, you need to make sure that all dependencies are
     installed correctly.
 
-    - `fiona`_ provides binary wheels with the dependencies included for Mac and Linux,
-      but not for Windows. Alternatively, you can install `pyogrio`_ which does
-      have wheels for Windows.
-    - `pyproj`_ and `shapely`_ provide binary wheels with dependencies included
-      for Mac, Linux, and Windows.
+    Our main dependencies (`shapely`_, `pyproj`_, `fiona`_, `pyogrio`_) provide binary
+    wheels with dependencies included for Mac, Linux, and Windows.
 
-    Depending on your platform, you might need to compile and install their
-    C dependencies manually. We refer to the individual packages for more
-    details on installing those.
-    Using conda (see above) avoids the need to compile the dependencies yourself.
+    However, depending on your platform or Python version, there might be no
+    pre-compiled wheels available, and then you need to compile and install their C
+    dependencies manually. We refer to the individual packages for more details on
+    installing those. Using conda (see above) avoids the need to compile the
+    dependencies yourself.
 
 Installing from source
 ----------------------

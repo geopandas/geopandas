@@ -34,6 +34,7 @@ General methods and attributes
    GeoSeries.y
    GeoSeries.z
    GeoSeries.get_coordinates
+   GeoSeries.count_coordinates
 
 Unary predicates
 ----------------
@@ -46,6 +47,7 @@ Unary predicates
    GeoSeries.is_simple
    GeoSeries.is_valid
    GeoSeries.has_z
+   GeoSeries.is_ccw
 
 
 Binary predicates
@@ -66,6 +68,7 @@ Binary predicates
    GeoSeries.within
    GeoSeries.covers
    GeoSeries.covered_by
+   GeoSeries.relate
 
 
 Set-theoretic methods
@@ -96,6 +99,7 @@ Constructive methods and attributes
    GeoSeries.extract_unique_points
    GeoSeries.make_valid
    GeoSeries.minimum_bounding_circle
+   GeoSeries.minimum_clearance
    GeoSeries.minimum_rotated_rectangle
    GeoSeries.normalize
    GeoSeries.remove_repeated_points
@@ -104,6 +108,7 @@ Constructive methods and attributes
    GeoSeries.segmentize
    GeoSeries.shortest_line
    GeoSeries.simplify
+   GeoSeries.transform
 
 Affine transformations
 ----------------------
@@ -116,6 +121,15 @@ Affine transformations
    GeoSeries.scale
    GeoSeries.skew
    GeoSeries.translate
+
+Linestring operations
+---------------------
+
+.. autosummary::
+   :toctree: api/
+
+   GeoSeries.interpolate
+   GeoSeries.project
 
 Aggregating and exploding
 -------------------------
