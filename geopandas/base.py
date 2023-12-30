@@ -1350,24 +1350,23 @@ GeometryCollection
         Examples
         --------
         >>> from shapely import Polygon, LineString, Point
-        >>> s = gpd.GeoSeries(
+        >>> s = geopandas.GeoSeries(
         ...     [
         ...         Point(0.5, 2.5, 0),
         ...         LineString([(1, 1, 1), (0, 1, 3), (1, 0, 2)]),
         ...         Polygon([(0, 0, 0), (0, 10, 0), (10, 10, 0)]),
         ...     ],
-        ...     crs=3857,
         ... )
         >>> s
-        0                          POINT Z (0.500 2.500 0.000)
-        1    LINESTRING Z (1.000 1.000 1.000, 0.000 1.000 3...
-        2    POLYGON Z ((0.000 0.000 0.000, 0.000 10.000 0....
+        0                            POINT Z (0.5 2.5 0)
+        1             LINESTRING Z (1 1 1, 0 1 3, 1 0 2)
+        2    POLYGON Z ((0 0 0, 0 10 0, 10 10 0, 0 0 0))
         dtype: geometry
 
         >>> s.force_2d()
-        0                                  POINT (0.500 2.500)
-        1    LINESTRING (1.000 1.000, 0.000 1.000, 1.000 0....
-        2    POLYGON ((0.000 0.000, 0.000 10.000, 10.000 10...
+        0                      POINT (0.5 2.5)
+        1           LINESTRING (1 1, 0 1, 1 0)
+        2    POLYGON ((0 0, 0 10, 10 10, 0 0))
         dtype: geometry
         """
         return _delegate_geo_method("force_2d", self)
@@ -1393,45 +1392,44 @@ GeometryCollection
         Examples
         --------
         >>> from shapely import Polygon, LineString, Point
-        >>> s = gpd.GeoSeries(
+        >>> s = geopandas.GeoSeries(
         ...     [
         ...         Point(1, 2),
         ...         Point(0.5, 2.5, 2),
         ...         LineString([(1, 1), (0, 1), (1, 0)]),
         ...         Polygon([(0, 0), (0, 10), (10, 10)]),
         ...     ],
-        ...     crs=3857,
         ... )
         >>> s
-        0                                  POINT (1.000 2.000)
-        1                          POINT Z (0.500 2.500 2.000)
-        2    LINESTRING (1.000 1.000, 0.000 1.000, 1.000 0....
-        3    POLYGON ((0.000 0.000, 0.000 10.000, 10.000 10...
+        0                          POINT (1 2)
+        1                  POINT Z (0.5 2.5 2)
+        2           LINESTRING (1 1, 0 1, 1 0)
+        3    POLYGON ((0 0, 0 10, 10 10, 0 0))
         dtype: geometry
 
         >>> s.force_3d()
-        0                          POINT Z (1.000 2.000 0.000)
-        1                          POINT Z (0.500 2.500 2.000)
-        2    LINESTRING Z (1.000 1.000 0.000, 0.000 1.000 0...
-        3    POLYGON Z ((0.000 0.000 0.000, 0.000 10.000 0....
+        0                                POINT Z (1 2 0)
+        1                            POINT Z (0.5 2.5 2)
+        2             LINESTRING Z (1 1 0, 0 1 0, 1 0 0)
+        3    POLYGON Z ((0 0 0, 0 10 0, 10 10 0, 0 0 0))
         dtype: geometry
 
         Z coordinate can be specified as scalar:
 
         >>> s.force_3d(4)
-        0                          POINT Z (1.000 2.000 4.000)
-        1                          POINT Z (0.500 2.500 2.000)
-        2    LINESTRING Z (1.000 1.000 4.000, 0.000 1.000 4...
-        3    POLYGON Z ((0.000 0.000 4.000, 0.000 10.000 4....
+        0                                POINT Z (1 2 4)
+        1                            POINT Z (0.5 2.5 2)
+        2             LINESTRING Z (1 1 4, 0 1 4, 1 0 4)
+        3    POLYGON Z ((0 0 4, 0 10 4, 10 10 4, 0 0 4))
         dtype: geometry
 
         Or as an array-like (one value per geometry):
 
         >>> s.force_3d(range(4))
-        0                          POINT Z (1.000 2.000 0.000)
-        1                          POINT Z (0.500 2.500 2.000)
-        2    LINESTRING Z (1.000 1.000 2.000, 0.000 1.000 2...
-        3    POLYGON Z ((0.000 0.000 3.000, 0.000 10.000 3....
+        0                                POINT Z (1 2 0)
+        1                            POINT Z (0.5 2.5 2)
+        2             LINESTRING Z (1 1 2, 0 1 2, 1 0 2)
+        3    POLYGON Z ((0 0 3, 0 10 3, 10 10 3, 0 0 3))
         dtype: geometry
         """
         return _delegate_geo_method("force_3d", self, z=z)
