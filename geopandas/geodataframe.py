@@ -1624,6 +1624,12 @@ individually so that features may have different properties
     def _constructor(self):
         return _geodataframe_constructor_with_fallback
 
+    def _constructor_from_mgr(self, mgr, axes):
+        # analogous logic to _geodataframe_constructor_with_fallback
+        if not any(isinstance(block.dtype, GeometryDtype) for block in mgr.blocks):
+            return pd.DataFrame._from_mgr(mgr, axes)
+        return GeoDataFrame._from_mgr(mgr, axes)
+
     @property
     def _constructor_sliced(self):
         def _geodataframe_constructor_sliced(*args, **kwargs):
@@ -1649,6 +1655,13 @@ individually so that features may have different properties
             return srs
 
         return _geodataframe_constructor_sliced
+
+    def _constructor_sliced_from_mgr(self, mgr, axes):
+        is_row_proxy = mgr.index.is_(self.columns)
+
+        if isinstance(mgr.blocks[0].dtype, GeometryDtype) and not is_row_proxy:
+            return GeoSeries._from_mgr(mgr, axes)
+        return Series._from_mgr(mgr, axes)
 
     def __finalize__(self, other, method=None, **kwargs):
         """propagate metadata from other to self"""
