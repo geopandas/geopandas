@@ -1385,8 +1385,8 @@ GeometryCollection
         >>> from shapely.geometry import box
         >>> s = geopandas.GeoSeries([box(0,0,1,1), box(0,0,2,2)])
         >>> s
-        0    POLYGON ((1.00000 0.00000, 1.00000 1.00000, 0....
-        1    POLYGON ((2.00000 0.00000, 2.00000 2.00000, 0....
+        0    POLYGON ((1 0, 1 1, 0 1, 0 0, 1 0))
+        1    POLYGON ((2 0, 2 2, 0 2, 0 0, 2 0))
         dtype: geometry
 
         >>> union = s.union_all()
