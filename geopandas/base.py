@@ -1,11 +1,11 @@
-from warnings import warn
 import warnings
+from warnings import warn
 
 import numpy as np
 import pandas as pd
-from pandas import DataFrame, Series
 import shapely
-from shapely.geometry import box, MultiPoint
+from pandas import DataFrame, Series
+from shapely.geometry import MultiPoint, box
 from shapely.geometry.base import BaseGeometry
 
 from . import _compat as compat
@@ -1331,6 +1331,46 @@ GeometryCollection
         dtype: geometry
         """
         return _delegate_geo_method("segmentize", self, max_segment_length)
+
+    def transform(self, transformation, include_z=False):
+        """Returns a ``GeoSeries`` with the transformation function
+        applied to the geometry coordinates.
+
+        Parameters
+        ----------
+        transformation : Callable
+            A function that transforms a (N, 2) or (N, 3) ndarray of float64
+            to another (N,2) or (N, 3) ndarray of float64
+        include_z : bool, default False
+            If True include the third dimension in the coordinates array that
+            is passed to the ``transformation`` function. If a geometry has no third
+            dimension, the z-coordinates passed to the function will be NaN.
+
+        Returns
+        -------
+        GeoSeries
+
+        Examples
+        --------
+        >>> from shapely import Point, Polygon
+        >>> s = geopandas.GeoSeries([Point(0, 0)])
+        >>> s.transform(lambda x: x + 1)
+        0    POINT (1 1)
+        dtype: geometry
+
+        >>> s = geopandas.GeoSeries([Polygon([(0, 0), (1, 1), (0, 1)])])
+        >>> s.transform(lambda x: x * [2, 3])
+        0    POLYGON ((0 0, 2 3, 0 3, 0 0))
+        dtype: geometry
+
+        By default the third dimension is ignored and you need explicitly include it:
+
+        >>> s = geopandas.GeoSeries([Point(0, 0, 0)])
+        >>> s.transform(lambda x: x + 1, include_z=True)
+        0    POINT Z (1 1 1)
+        dtype: geometry
+        """
+        return _delegate_geo_method("transform", self, transformation, include_z)
 
     #
     # Reduction operations that return a Shapely geometry
