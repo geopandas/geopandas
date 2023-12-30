@@ -32,6 +32,7 @@ Bug fixes:
   geometry column (#2933).
 - Fix bug in `pandas.concat` CRS consistency checking where CRS differing by WKT
   whitespace only were treated as incompatible (#3023)
+- Fix `explore()` method when the active geometry contains missing and empty geometries (#3094)
 
 ## Version 0.14.1 (Nov 11, 2023)
 
