@@ -19,6 +19,8 @@ New features and improvements:
 
 - GeoSeries and GeoDataFrame `__repr__` now trims trailing zeros for a more readable
   output (#3087).
+- `make_valid` option in `overlay` now uses the `make_valid` method instead of
+  `buffer(0)` (#3113).
 
 Potentially breaking changes:
 - reading a data source that does not have a geometry field using ``read_file``
