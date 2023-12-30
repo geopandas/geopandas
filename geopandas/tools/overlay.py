@@ -36,7 +36,7 @@ def _overlay_intersection(df1, df2):
         right.reset_index(drop=True, inplace=True)
         intersections = left.intersection(right)
         poly_ix = intersections.geom_type.isin(["Polygon", "MultiPolygon"])
-        intersections.loc[poly_ix] = intersections[poly_ix].buffer(0)
+        intersections.loc[poly_ix] = intersections[poly_ix].make_valid()
 
         # only keep actual intersecting geometries
         pairs_intersect = pd.DataFrame({"__idx1": idx1, "__idx2": idx2})
@@ -166,7 +166,7 @@ def overlay(df1, df2, how="intersection", keep_geom_type=None, make_valid=True):
         which will set keep_geom_type to True but warn upon dropping
         geometries.
     make_valid : bool, default True
-        If True, any invalid input geometries are corrected with a call to `buffer(0)`,
+        If True, any invalid input geometries are corrected with a call to make_valid(),
         if False, a `ValueError` is raised if any input geometries are invalid.
 
     Returns
@@ -296,7 +296,7 @@ def overlay(df1, df2, how="intersection", keep_geom_type=None, make_valid=True):
             mask = ~df.geometry.is_valid
             col = df._geometry_column_name
             if make_valid:
-                df.loc[mask, col] = df.loc[mask, col].buffer(0)
+                df.loc[mask, col] = df.loc[mask, col].make_valid()
             elif mask.any():
                 raise ValueError(
                     "You have passed make_valid=False along with "
