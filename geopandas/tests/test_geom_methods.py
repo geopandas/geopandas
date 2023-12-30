@@ -499,10 +499,10 @@ class TestGeomMethods:
 
     def test_count_coordinates(self):
         expected = Series(np.array([4, 5]), index=self.g1.index)
-        self._test_unary_real("count_coordinates", expected, self.g1)
+        assert_series_equal(self.g1.count_coordinates(), expected)
 
         expected = Series(np.array([4, 0]), index=self.na_none.index)
-        self._test_unary_real("count_coordinates", expected, self.na_none)
+        assert_series_equal(self.na_none.count_coordinates(), expected)
 
     def test_crosses(self):
         expected = [False, False, False, False, False, False, False]
