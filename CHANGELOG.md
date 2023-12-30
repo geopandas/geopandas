@@ -8,6 +8,10 @@ Notes on dependencies:
   currently supported is shapely >= 2. As a consequence, spatial indexing based on the
   rtree package has also been removed. (#3035)
 
+API changes:
+
+- `unary_union` is now deprecated and replaced by the `union_all` method (#3007).
+
 New methods:
 - Added `count_coordinates` method from shapely to GeoSeries/GeoDataframe (#3026).
 - Added `minimum_clearance` method from shapely to GeoSeries/GeoDataframe (#2989).
