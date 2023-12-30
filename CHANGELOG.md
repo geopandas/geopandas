@@ -1,8 +1,10 @@
 # Changelog
 
 ## Version 0.14.2 (Nov xx, 2023)
- - Fix regression in `overlay` where using `buffer(0)` instead of `make_valid` internally
-   produced invalid results (#3074).
+
+- Fix regression in `overlay` where using `buffer(0)` instead of `make_valid` internally
+  produced invalid results (#3074).
+- Fix `explore()` method when the active geometry contains missing and empty geometries (#3094).
 
 ## Version 0.14.1 (Nov 11, 2023)
 
