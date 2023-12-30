@@ -47,6 +47,7 @@ Unary predicates
    GeoSeries.is_simple
    GeoSeries.is_valid
    GeoSeries.has_z
+   GeoSeries.is_ccw
 
 
 Binary predicates
@@ -67,6 +68,7 @@ Binary predicates
    GeoSeries.within
    GeoSeries.covers
    GeoSeries.covered_by
+   GeoSeries.relate
 
 
 Set-theoretic methods
@@ -106,6 +108,7 @@ Constructive methods and attributes
    GeoSeries.segmentize
    GeoSeries.shortest_line
    GeoSeries.simplify
+   GeoSeries.transform
 
 Affine transformations
 ----------------------
@@ -118,6 +121,15 @@ Affine transformations
    GeoSeries.scale
    GeoSeries.skew
    GeoSeries.translate
+
+Linestring operations
+---------------------
+
+.. autosummary::
+   :toctree: api/
+
+   GeoSeries.interpolate
+   GeoSeries.project
 
 Aggregating and exploding
 -------------------------
