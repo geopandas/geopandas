@@ -3733,20 +3733,51 @@ GeometryCollection
         """
         return self.geometry.values.has_sindex
 
-    def buffer(self, distance, resolution=16, **kwargs):
+    def buffer(
+        self,
+        distance,
+        resolution=16,
+        cap_style="round",
+        join_style="round",
+        mitre_limit=5.0,
+        single_sided=False,
+        **kwargs,
+    ):
         """Returns a ``GeoSeries`` of geometries representing all points within
         a given ``distance`` of each geometric object.
 
-        See http://shapely.readthedocs.io/en/latest/manual.html#object.buffer
-        for details.
+        Computes the buffer of a geometry for positive and negative buffer distance.
+
+        The buffer of a geometry is defined as the Minkowski sum (or difference, for
+        negative distance) of the geometry with a circle with radius equal to the
+        absolute value of the buffer distance.
+
+        The buffer operation always returns a polygonal result. The negative or
+        zero-distance buffer of lines and points is always empty.
 
         Parameters
         ----------
         distance : float, np.array, pd.Series
-            The radius of the buffer. If np.array or pd.Series are used
-            then it must have same length as the GeoSeries.
+            The radius of the buffer in the Minkowski sum (or difference). If np.array
+            or pd.Series are used then it must have same length as the GeoSeries.
         resolution : int (optional, default 16)
-            The resolution of the buffer around each vertex.
+            The resolution of the buffer around each vertex. Specifies the number of
+            linear segments in a quarter circle in the approximation of circular arcs.
+        cap_style : {'round', 'square', 'flat'}, default 'round'
+            Specifies the shape of buffered line endings. ``'round'`` results in
+            circular line endings (see ``resolution``). Both ``'square'`` and ``'flat'``
+            result in rectangular line endings, ``'flat'`` will end at the original
+            vertex, while ``'square'`` involves adding the buffer width.
+        join_style : {'round', 'mitre', 'bevel'}, default 'round'
+            Specifies the shape of buffered line midpoints. ``'round'`` results in
+            rounded shapes. ``'bevel'`` results in a beveled edge that touches the
+            original vertex. ``'mitre'`` results in a single vertex that is beveled
+            depending on the ``mitre_limit`` parameter.
+        mitre_limit : float, default 5.0
+            Crops of ``'mitre'``-style joins if the point is displaced from the
+            buffered vertex by more than this limit.
+        single_sided : bool, default False
+            Only buffer at one side of the geometry.
 
         Examples
         --------
@@ -3770,13 +3801,12 @@ GeometryCollection
         2    POLYGON ((2.8 -1, 2.8 1, 2.80096 1.0196, 2.803...
         dtype: geometry
 
-        ``**kwargs`` accept further specification as ``join_style`` and ``cap_style``.
-        See the following illustration of different options.
+        ``Further specification as ``join_style`` and ``cap_style`` are shown in the
+        following illustration:
 
         .. plot:: _static/code/buffer.py
 
         """
-        # TODO: update docstring based on pygeos after shapely 2.0
         if isinstance(distance, pd.Series):
             if not self.index.equals(distance.index):
                 raise ValueError(
@@ -3786,7 +3816,15 @@ GeometryCollection
             distance = np.asarray(distance)
 
         return _delegate_geo_method(
-            "buffer", self, distance, resolution=resolution, **kwargs
+            "buffer",
+            self,
+            distance,
+            resolution=resolution,
+            cap_style=cap_style,
+            join_style=join_style,
+            mitre_limit=mitre_limit,
+            single_sided=single_sided,
+            **kwargs,
         )
 
     def simplify(self, *args, **kwargs):
