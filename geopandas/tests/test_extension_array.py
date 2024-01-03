@@ -17,6 +17,7 @@ import operator
 
 import numpy as np
 import pandas as pd
+import pandas._testing as tm
 from pandas.testing import assert_series_equal
 from pandas.tests.extension import base as extension_tests
 
@@ -290,6 +291,46 @@ def sort_by_key(request):
     """
     return request.param
 
+
+@pytest.fixture(params=[tm.loc, tm.iloc])
+def indexer_li(request):
+    """
+    Parametrize over loc.__getitem__, iloc.__getitem__
+    """
+    return request.param
+
+
+@pytest.fixture(params=[None, "ignore"])
+def na_action(request):
+    """
+    Fixture for 'na_action' argument in map.
+    """
+    return request.param
+
+
+@pytest.fixture(params=[True, False])
+def ascending(request):
+    """
+    Fixture for 'na_action' argument in sort_values/sort_index/rank.
+    """
+    return request.param
+
+
+@pytest.fixture(params=[True, False])
+def skipna(request):
+    """
+    Boolean 'skipna' parameter.
+    """
+    return request.param
+
+
+@pytest.fixture(params=["first", "last", False])
+def keep(request):
+    """
+    Valid values for the 'keep' parameter used in
+    .duplicated or .drop_duplicates
+    """
+    return request.param
 
 # -----------------------------------------------------------------------------
 # Inherited tests
