@@ -191,7 +191,7 @@ def to_shapely(geoms):
     return geoms._data
 
 
-def from_wkb(data, crs=None):
+def from_wkb(data, crs=None, on_invalid="raise"):
     """
     Convert a list or array of WKB objects to a GeometryArray.
 
@@ -203,9 +203,14 @@ def from_wkb(data, crs=None):
         Coordinate Reference System of the geometry objects. Can be anything accepted by
         :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
         such as an authority string (eg "EPSG:4326") or a WKT string.
+    on_invalid: {"raise", "warn", "ignore"}, default "raise"
+        - raise: an exception will be raised if a WKB input geometry is invalid.
+        - warn: a warning will be raised and invalid WKB geometries will be returned as
+          None.
+        - ignore: invalid WKB geometries will be returned as None without a warning.
 
     """
-    return GeometryArray(shapely.from_wkb(data), crs=crs)
+    return GeometryArray(shapely.from_wkb(data, on_invalid=on_invalid), crs=crs)
 
 
 def to_wkb(geoms, hex=False, **kwargs):
@@ -217,7 +222,7 @@ def to_wkb(geoms, hex=False, **kwargs):
     return shapely.to_wkb(geoms, hex=hex, **kwargs)
 
 
-def from_wkt(data, crs=None):
+def from_wkt(data, crs=None, on_invalid="raise"):
     """
     Convert a list or array of WKT objects to a GeometryArray.
 
@@ -229,9 +234,14 @@ def from_wkt(data, crs=None):
         Coordinate Reference System of the geometry objects. Can be anything accepted by
         :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
         such as an authority string (eg "EPSG:4326") or a WKT string.
+    on_invalid : {"raise", "warn", "ignore"}, default "raise"
+        - raise: an exception will be raised if a WKT input geometry is invalid.
+        - warn: a warning will be raised and invalid WKT geometries will be
+          returned as ``None``.
+        - ignore: invalid WKT geometries will be returned as ``None`` without a warning.
 
     """
-    return GeometryArray(shapely.from_wkt(data), crs=crs)
+    return GeometryArray(shapely.from_wkt(data, on_invalid=on_invalid), crs=crs)
 
 
 def to_wkt(geoms, **kwargs):
