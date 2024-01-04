@@ -481,9 +481,8 @@ class TestGeomMethods:
         g2 = GeoSeries([p1, None])
         self._test_unary_topological("union_all", p1, g2, method=True)
 
-        with pytest.warns(FutureWarning, match="`union_all` returned None"):
-            g3 = GeoSeries([None, None])
-            assert g3.union_all() is None
+        g3 = GeoSeries([None, None])
+        assert g3.union_all().equals(shapely.GeometryCollection())
 
     def test_unary_union_deprecated(self):
         p1 = self.t1
