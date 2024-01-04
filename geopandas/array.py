@@ -521,7 +521,6 @@ class GeometryArray(ExtensionArray):
         self.check_geographic_crs(stacklevel=5)
         return shapely.length(self._data)
 
-    @property
     def count_coordinates(self):
         out = np.empty(len(self._data), dtype=np.int_)
         out[:] = [shapely.count_coordinates(s) for s in self._data]
@@ -636,6 +635,12 @@ class GeometryArray(ExtensionArray):
             shapely.segmentize(self._data, max_segment_length),
             crs=self.crs,
         )
+
+    def force_2d(self):
+        return GeometryArray(shapely.force_2d(self._data), crs=self.crs)
+
+    def force_3d(self, z=0):
+        return GeometryArray(shapely.force_3d(self._data, z=z), crs=self.crs)
 
     def transform(self, transformation, include_z=False):
         return GeometryArray(
@@ -1353,6 +1358,29 @@ class GeometryArray(ExtensionArray):
         if isinstance(scalars, BaseGeometry):
             scalars = [scalars]
         return from_shapely(scalars)
+
+    @classmethod
+    def _from_sequence_of_strings(cls, strings, *, dtype=None, copy=False):
+        """
+        Construct a new ExtensionArray from a sequence of strings.
+
+        Parameters
+        ----------
+        strings : Sequence
+            Each element will be an instance of the scalar type for this
+            array, ``cls.dtype.type``.
+        dtype : dtype, optional
+            Construct for this particular dtype. This should be a Dtype
+            compatible with the ExtensionArray.
+        copy : bool, default False
+            If True, copy the underlying data.
+
+        Returns
+        -------
+        ExtensionArray
+        """
+        # GH 3099
+        return from_wkt(strings)
 
     def _values_for_factorize(self):
         # type: () -> Tuple[np.ndarray, Any]
