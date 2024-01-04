@@ -329,7 +329,6 @@ GeometryCollection
         """
         return _delegate_property("is_empty", self)
 
-    @property
     def count_coordinates(self):
         """
         Returns a ``Series`` containing the count of the number of coordinate pairs
@@ -358,7 +357,7 @@ GeometryCollection
         4                                             None
         dtype: geometry
 
-        >>> s.count_coordinates
+        >>> s.count_coordinates()
         0    4
         1    3
         2    1
@@ -370,7 +369,7 @@ GeometryCollection
         --------
         GeoSeries.get_coordinates : extract coordinates as a :class:`~pandas.DataFrame`
         """
-        return _delegate_property("count_coordinates", self)
+        return Series(self.geometry.values.count_coordinates(), index=self.index)
 
     @property
     def is_simple(self):
@@ -1337,6 +1336,102 @@ GeometryCollection
         dtype: geometry
         """
         return _delegate_geo_method("transform", self, transformation, include_z)
+
+    def force_2d(self):
+        """Forces the dimensionality of a geometry to 2D.
+
+        Removes the additional Z coordinate dimension from all geometries.
+
+        Returns
+        -------
+        GeoSeries
+
+        Examples
+        --------
+        >>> from shapely import Polygon, LineString, Point
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Point(0.5, 2.5, 0),
+        ...         LineString([(1, 1, 1), (0, 1, 3), (1, 0, 2)]),
+        ...         Polygon([(0, 0, 0), (0, 10, 0), (10, 10, 0)]),
+        ...     ],
+        ... )
+        >>> s
+        0                            POINT Z (0.5 2.5 0)
+        1             LINESTRING Z (1 1 1, 0 1 3, 1 0 2)
+        2    POLYGON Z ((0 0 0, 0 10 0, 10 10 0, 0 0 0))
+        dtype: geometry
+
+        >>> s.force_2d()
+        0                      POINT (0.5 2.5)
+        1           LINESTRING (1 1, 0 1, 1 0)
+        2    POLYGON ((0 0, 0 10, 10 10, 0 0))
+        dtype: geometry
+        """
+        return _delegate_geo_method("force_2d", self)
+
+    def force_3d(self, z=0):
+        """Forces the dimensionality of a geometry to 3D.
+
+        2D geometries will get the provided Z coordinate; 3D geometries
+        are unchanged (unless their Z coordinate is ``np.nan``).
+
+        Note that for empty geometries, 3D is only supported since GEOS 3.9 and then
+        still only for simple geometries (non-collections).
+
+        Parameters
+        ----------
+        z : float | array_like (default 0)
+            Z coordinate to be assigned
+
+        Returns
+        -------
+        GeoSeries
+
+        Examples
+        --------
+        >>> from shapely import Polygon, LineString, Point
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Point(1, 2),
+        ...         Point(0.5, 2.5, 2),
+        ...         LineString([(1, 1), (0, 1), (1, 0)]),
+        ...         Polygon([(0, 0), (0, 10), (10, 10)]),
+        ...     ],
+        ... )
+        >>> s
+        0                          POINT (1 2)
+        1                  POINT Z (0.5 2.5 2)
+        2           LINESTRING (1 1, 0 1, 1 0)
+        3    POLYGON ((0 0, 0 10, 10 10, 0 0))
+        dtype: geometry
+
+        >>> s.force_3d()
+        0                                POINT Z (1 2 0)
+        1                            POINT Z (0.5 2.5 2)
+        2             LINESTRING Z (1 1 0, 0 1 0, 1 0 0)
+        3    POLYGON Z ((0 0 0, 0 10 0, 10 10 0, 0 0 0))
+        dtype: geometry
+
+        Z coordinate can be specified as scalar:
+
+        >>> s.force_3d(4)
+        0                                POINT Z (1 2 4)
+        1                            POINT Z (0.5 2.5 2)
+        2             LINESTRING Z (1 1 4, 0 1 4, 1 0 4)
+        3    POLYGON Z ((0 0 4, 0 10 4, 10 10 4, 0 0 4))
+        dtype: geometry
+
+        Or as an array-like (one value per geometry):
+
+        >>> s.force_3d(range(4))
+        0                                POINT Z (1 2 0)
+        1                            POINT Z (0.5 2.5 2)
+        2             LINESTRING Z (1 1 2, 0 1 2, 1 0 2)
+        3    POLYGON Z ((0 0 3, 0 10 3, 10 10 3, 0 0 3))
+        dtype: geometry
+        """
+        return _delegate_geo_method("force_3d", self, z=z)
 
     #
     # Reduction operations that return a Shapely geometry
@@ -3856,20 +3951,51 @@ GeometryCollection
         """
         return self.geometry.values.has_sindex
 
-    def buffer(self, distance, resolution=16, **kwargs):
+    def buffer(
+        self,
+        distance,
+        resolution=16,
+        cap_style="round",
+        join_style="round",
+        mitre_limit=5.0,
+        single_sided=False,
+        **kwargs,
+    ):
         """Returns a ``GeoSeries`` of geometries representing all points within
         a given ``distance`` of each geometric object.
 
-        See http://shapely.readthedocs.io/en/latest/manual.html#object.buffer
-        for details.
+        Computes the buffer of a geometry for positive and negative buffer distance.
+
+        The buffer of a geometry is defined as the Minkowski sum (or difference, for
+        negative distance) of the geometry with a circle with radius equal to the
+        absolute value of the buffer distance.
+
+        The buffer operation always returns a polygonal result. The negative or
+        zero-distance buffer of lines and points is always empty.
 
         Parameters
         ----------
         distance : float, np.array, pd.Series
-            The radius of the buffer. If np.array or pd.Series are used
-            then it must have same length as the GeoSeries.
+            The radius of the buffer in the Minkowski sum (or difference). If np.array
+            or pd.Series are used then it must have same length as the GeoSeries.
         resolution : int (optional, default 16)
-            The resolution of the buffer around each vertex.
+            The resolution of the buffer around each vertex. Specifies the number of
+            linear segments in a quarter circle in the approximation of circular arcs.
+        cap_style : {'round', 'square', 'flat'}, default 'round'
+            Specifies the shape of buffered line endings. ``'round'`` results in
+            circular line endings (see ``resolution``). Both ``'square'`` and ``'flat'``
+            result in rectangular line endings, ``'flat'`` will end at the original
+            vertex, while ``'square'`` involves adding the buffer width.
+        join_style : {'round', 'mitre', 'bevel'}, default 'round'
+            Specifies the shape of buffered line midpoints. ``'round'`` results in
+            rounded shapes. ``'bevel'`` results in a beveled edge that touches the
+            original vertex. ``'mitre'`` results in a single vertex that is beveled
+            depending on the ``mitre_limit`` parameter.
+        mitre_limit : float, default 5.0
+            Crops of ``'mitre'``-style joins if the point is displaced from the
+            buffered vertex by more than this limit.
+        single_sided : bool, default False
+            Only buffer at one side of the geometry.
 
         Examples
         --------
@@ -3893,13 +4019,12 @@ GeometryCollection
         2    POLYGON ((2.8 -1, 2.8 1, 2.80096 1.0196, 2.803...
         dtype: geometry
 
-        ``**kwargs`` accept further specification as ``join_style`` and ``cap_style``.
-        See the following illustration of different options.
+        ``Further specification as ``join_style`` and ``cap_style`` are shown in the
+        following illustration:
 
         .. plot:: _static/code/buffer.py
 
         """
-        # TODO: update docstring based on pygeos after shapely 2.0
         if isinstance(distance, pd.Series):
             if not self.index.equals(distance.index):
                 raise ValueError(
@@ -3909,7 +4034,15 @@ GeometryCollection
             distance = np.asarray(distance)
 
         return _delegate_geo_method(
-            "buffer", self, distance, resolution=resolution, **kwargs
+            "buffer",
+            self,
+            distance,
+            resolution=resolution,
+            cap_style=cap_style,
+            join_style=join_style,
+            mitre_limit=mitre_limit,
+            single_sided=single_sided,
+            **kwargs,
         )
 
     def simplify(self, *args, **kwargs):

@@ -514,10 +514,10 @@ class TestGeomMethods:
 
     def test_count_coordinates(self):
         expected = Series(np.array([4, 5]), index=self.g1.index)
-        self._test_unary_real("count_coordinates", expected, self.g1)
+        assert_series_equal(self.g1.count_coordinates(), expected)
 
         expected = Series(np.array([4, 0]), index=self.na_none.index)
-        self._test_unary_real("count_coordinates", expected, self.na_none)
+        assert_series_equal(self.na_none.count_coordinates(), expected)
 
     def test_crosses(self):
         expected = [False, False, False, False, False, False, False]
@@ -1781,3 +1781,46 @@ class TestGeomMethods:
     )
     def test_remove_repeated_points(self, geom, expected):
         assert_geoseries_equal(expected, geom.remove_repeated_points(tolerance=0.0))
+
+    def test_force_2d(self):
+        expected = GeoSeries(
+            [
+                Point(-73.9847, 40.7484),
+                Point(-74.0446, 40.6893),
+                self.pt2d,
+                self.pt_empty,
+            ],
+            crs=4326,
+        )
+        assert_geoseries_equal(expected, self.landmarks_mixed_empty.force_2d())
+
+    def test_force_3d(self):
+        expected = GeoSeries(
+            [
+                self.esb,
+                self.sol,
+                Point(-73.9847, 40.7484, 0),
+                self.pt_empty,
+            ],
+            crs=4326,
+        )
+        assert_geoseries_equal(expected, self.landmarks_mixed_empty.force_3d())
+
+        expected = GeoSeries(
+            [
+                self.esb,
+                self.sol,
+                Point(-73.9847, 40.7484, 2),
+                self.pt_empty,
+            ],
+            crs=4326,
+        )
+        assert_geoseries_equal(expected, self.landmarks_mixed_empty.force_3d(2))
+
+        expected = GeoSeries(
+            [
+                Polygon([(0, 0, 1), (1, 0, 1), (1, 1, 1), (0, 0, 1)]),
+                Polygon([(0, 0, 2), (1, 0, 2), (1, 1, 2), (0, 1, 2), (0, 0, 2)]),
+            ],
+        )
+        assert_geoseries_equal(expected, self.g1.force_3d([1, 2]))
