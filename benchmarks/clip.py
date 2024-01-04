@@ -1,7 +1,15 @@
 from geopandas import read_file, clip
 from shapely.geometry import box
-from geopandas.tests.util import _NATURALEARTH_LOWRES
-from geopandas.tests.util import _NATURALEARTH_CITIES
+
+try:
+    from geopandas.tests.util import _NATURALEARTH_LOWRES
+    from geopandas.tests.util import _NATURALEARTH_CITIES
+except:
+    # geopandas <=0.14 compat
+    from geopandas.datasets import get_path
+
+    _NATURALEARTH_LOWRES = get_path("naturalearth_lowres")
+    _NATURALEARTH_CITIES = get_path("naturalearth_cities")
 
 
 class Bench:
