@@ -14,7 +14,8 @@ New methods:
 - Added `is_ccw` method from shapely to GeoSeries/GeoDataframe (#3027).
 - Added `is_closed` attribute from shapely to GeoSeries/GeoDataframe (#3092).
 - Added `force_2d` and `force_3d` methods from shapely to GeoSeries/GeoDataframe (#3090).
-- Added ``transform`` method from shapely to GeoSeries/GeoDataFrame (#3075).
+- Added `contains_properly` method from shapely to GeoSeries/GeoDataframe (#3105).
+- Added `transform` method from shapely to GeoSeries/GeoDataFrame (#3075).
 
 New features and improvements:
 

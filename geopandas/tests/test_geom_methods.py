@@ -486,6 +486,21 @@ class TestGeomMethods:
         expected = [False, False, True, False, False, False, False]
         assert_array_dtype_equal(expected, self.g0.contains(self.g9, align=False))
 
+    def test_contains_properly(self):
+        expected = [False, False, True, False, False, False, False]
+        assert_array_dtype_equal(expected, self.g0.contains_properly(Point(0.25, 0.25)))
+
+        expected = [False, False, False, False, False, True, False, False]
+        with pytest.warns(UserWarning, match="The indices .+ different"):
+            assert_array_dtype_equal(
+                expected, self.g0.contains_properly(self.g9, align=True)
+            )
+
+        expected = [False, False, True, False, False, False, False]
+        assert_array_dtype_equal(
+            expected, self.g0.contains_properly(self.g9, align=False)
+        )
+
     def test_length(self):
         expected = Series(np.array([2 + np.sqrt(2), 4]), index=self.g1.index)
         self._test_unary_real("length", expected, self.g1)

@@ -58,6 +58,7 @@ Binary predicates
    :toctree: api/
 
    GeoSeries.contains
+   GeoSeries.contains_properly
    GeoSeries.crosses
    GeoSeries.disjoint
    GeoSeries.geom_equals

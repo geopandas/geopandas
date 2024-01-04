@@ -674,6 +674,9 @@ class GeometryArray(ExtensionArray):
     def contains(self, other):
         return self._binary_method("contains", self, other)
 
+    def contains_properly(self, other):
+        return self._binary_method("contains_properly", self, other)
+
     def crosses(self, other):
         return self._binary_method("crosses", self, other)
 
