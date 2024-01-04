@@ -12,6 +12,7 @@ New methods:
 - Added `count_coordinates` method from shapely to GeoSeries/GeoDataframe (#3026).
 - Added `minimum_clearance` method from shapely to GeoSeries/GeoDataframe (#2989).
 - Added `is_ccw` method from shapely to GeoSeries/GeoDataframe (#3027).
+- Added `is_closed` attribute from shapely to GeoSeries/GeoDataframe (#3092).
 - Added `force_2d` and `force_3d` methods from shapely to GeoSeries/GeoDataframe (#3090).
 - Added ``transform`` method from shapely to GeoSeries/GeoDataFrame (#3075).
 

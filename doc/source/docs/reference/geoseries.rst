@@ -42,6 +42,7 @@ Unary predicates
 .. autosummary::
    :toctree: api/
 
+   GeoSeries.is_closed
    GeoSeries.is_empty
    GeoSeries.is_ring
    GeoSeries.is_simple
