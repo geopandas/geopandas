@@ -1347,6 +1347,8 @@ GeometryCollection
         """Returns a geometry containing the union of all geometries in the
         ``GeoSeries``.
 
+        The ``unary_union`` is deprecated. Use :meth:`union_all` instead.
+
         Examples
         --------
 

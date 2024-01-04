@@ -797,20 +797,7 @@ class GeometryArray(ExtensionArray):
         return self.union_all()
 
     def union_all(self):
-        warning_msg = (
-            "`union_all` returned None due to all-None GeoSeries. In future, "
-            "`union_all` will return 'GEOMETRYCOLLECTION EMPTY' instead."
-        )
-        data = shapely.union_all(self._data)
-        if data is None or data.is_empty:
-            warnings.warn(
-                warning_msg,
-                FutureWarning,
-                stacklevel=4,
-            )
-            return None
-        else:
-            return data
+        return shapely.union_all(self._data)
 
     #
     # Affinity operations
