@@ -4608,19 +4608,19 @@ GeometryCollection
         along with lines which could not be converted to polygons. The return value
         consists of 4 elements:
 
-            - GeoSeries of the valid polygons (same as with ``full=False``)
-            - GeoSeries of cut edges: edges connected on both ends but not part of
-              polygonal output
-            - GeoSeries of dangles: edges connected on one end but not part of polygonal
-              output
-            - GeoSeries of invalid rings: polygons that are formed but are not valid
-              (bowties, etc)
+        - GeoSeries of the valid polygons (same as with ``full=False``)
+        - GeoSeries of cut edges: edges connected on both ends but not part of
+          polygonal output
+        - GeoSeries of dangles: edges connected on one end but not part of polygonal
+          output
+        - GeoSeries of invalid rings: polygons that are formed but are not valid
+          (bowties, etc)
 
         Parameters
         ----------
-        node : bool, optional
+        node : bool, default True
             perform noding prior polygonization, by default True
-        full : bool, optional
+        full : bool, default False
             return the full output composed of a tuple of GeoSeries, by default False
 
         Returns
@@ -4656,7 +4656,7 @@ GeometryCollection
         if full:
             polygons, cuts, dangles, invalid = shapely.polygonize_full(geometry_input)
 
-            cuts = GeoSeries(cuts, crs=self.crs, name="cut edges").explode(
+            cuts = GeoSeries(cuts, crs=self.crs, name="cut_edges").explode(
                 ignore_index=True
             )
             dangles = GeoSeries(dangles, crs=self.crs, name="dangles").explode(
