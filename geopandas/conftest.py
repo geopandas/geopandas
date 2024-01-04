@@ -1,3 +1,5 @@
+import os.path
+
 import pytest
 import geopandas
 from geopandas.tests.util import _NYBB, _NATURALEARTH_LOWRES, _NATURALEARTH_CITIES
@@ -13,17 +15,29 @@ def add_geopandas(doctest_namespace):
 
 @pytest.fixture(scope="session")
 def naturalearth_lowres() -> str:
-    return _NATURALEARTH_LOWRES
+    # skip if data missing, unless on github actions
+    if os.path.isfile(_NATURALEARTH_LOWRES) or os.getenv("GITHUB_ACTIONS"):
+        return _NATURALEARTH_LOWRES
+    else:
+        pytest.skip("Naturalearth lowres dataset not found")
 
 
 @pytest.fixture(scope="session")
 def naturalearth_cities() -> str:
-    return _NATURALEARTH_CITIES
+    # skip if data missing, unless on github actions
+    if os.path.isfile(_NATURALEARTH_CITIES) or os.getenv("GITHUB_ACTIONS"):
+        return _NATURALEARTH_CITIES
+    else:
+        pytest.skip("Naturalearth cities dataset not found")
 
 
 @pytest.fixture(scope="session")
 def nybb_filename() -> str:
-    return _NYBB
+    # skip if data missing, unless on github actions
+    if os.path.isfile(_NYBB) or os.getenv("GITHUB_ACTIONS"):
+        return _NYBB
+    else:
+        pytest.skip("NYBB dataset not found")
 
 
 @pytest.fixture(scope="class")
