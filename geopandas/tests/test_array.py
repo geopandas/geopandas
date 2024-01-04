@@ -1,4 +1,5 @@
 import random
+import warnings
 
 import numpy as np
 import pandas as pd
@@ -162,6 +163,24 @@ def test_from_wkb_hex():
     assert isinstance(res, GeometryArray)
 
 
+def test_from_wkb_on_invalid():
+    # Single point LineString hex WKB: invalid
+    invalid_wkb_hex = "01020000000100000000000000000008400000000000000840"
+    message = "point array must contain 0 or >1 elements"
+
+    with pytest.raises(Exception, match=message):
+        from_wkb([invalid_wkb_hex], on_invalid="raise")
+
+    with pytest.warns(Warning, match=message):
+        res = from_wkb([invalid_wkb_hex], on_invalid="warn")
+    assert res == [None]
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        res = from_wkb([invalid_wkb_hex], on_invalid="ignore")
+    assert res == [None]
+
+
 def test_to_wkb():
     P = from_shapely(points_no_missing)
     res = to_wkb(P)
@@ -215,6 +234,24 @@ def test_from_wkt(string_type):
     )
     res = from_wkt([f(multi_poly.wkt)])
     assert res[0] == multi_poly
+
+
+def test_from_wkt_on_invalid():
+    # Single point LineString WKT: invalid
+    invalid_wkt = "LINESTRING(0 0)"
+    message = "point array must contain 0 or >1 elements"
+
+    with pytest.raises(Exception, match=message):
+        from_wkt([invalid_wkt], on_invalid="raise")
+
+    with pytest.warns(Warning, match=message):
+        res = from_wkt([invalid_wkt], on_invalid="warn")
+    assert res == [None]
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        res = from_wkt([invalid_wkt], on_invalid="ignore")
+    assert res == [None]
 
 
 def test_to_wkt():

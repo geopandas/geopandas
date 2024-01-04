@@ -827,6 +827,15 @@ def test_read_file_missing_geometry(tmpdir, engine):
     assert_frame_equal(df, expected)
 
 
+def test_read_csv_dtype(tmpdir, df_nybb):
+    filename = str(tmpdir / "test.csv")
+
+    df_nybb.to_csv(filename, index=False)
+    pdf = pd.read_csv(filename, dtype={"geometry": "geometry"})
+
+    assert pdf.geometry.dtype == "geometry"
+
+
 def test_read_file__where_filter(engine):
     if FIONA_GE_19 or engine == "pyogrio":
         gdf = geopandas.read_file(

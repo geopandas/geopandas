@@ -618,7 +618,9 @@ def _explore(
         tooltip = None
         popup = None
     # escape the curly braces {{}} for jinja2 templates
-    feature_collection = gdf.__geo_interface__
+    feature_collection = gdf[
+        ~(gdf.geometry.isna() | gdf.geometry.is_empty)  # drop missing or empty geoms
+    ].__geo_interface__
     for feature in feature_collection["features"]:
         for k in feature["properties"]:
             # escape the curly braces in values
