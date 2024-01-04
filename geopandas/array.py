@@ -794,7 +794,7 @@ class GeometryArray(ExtensionArray):
             FutureWarning,
             stacklevel=2,
         )
-        return self.union_all(self._data)
+        return self.union_all()
 
     def union_all(self):
         warning_msg = (
