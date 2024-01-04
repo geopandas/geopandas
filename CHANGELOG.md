@@ -13,15 +13,21 @@ New methods:
 - Added `count_coordinates` method from shapely to GeoSeries/GeoDataframe (#3026).
 - Added `minimum_clearance` method from shapely to GeoSeries/GeoDataframe (#2989).
 - Added `is_ccw` method from shapely to GeoSeries/GeoDataframe (#3027).
+- Added `is_closed` attribute from shapely to GeoSeries/GeoDataframe (#3092).
+- Added `force_2d` and `force_3d` methods from shapely to GeoSeries/GeoDataframe (#3090).
+- Added `contains_properly` method from shapely to GeoSeries/GeoDataframe (#3105).
 - Added `snap` method from shapely to GeoSeries/GeoDataframe (#3086).
-- Added ``transform`` method from shapely to GeoSeries/GeoDataFrame (#3075).
+- Added `transform` method from shapely to GeoSeries/GeoDataFrame (#3075).
 
 New features and improvements:
 
 - GeoSeries and GeoDataFrame `__repr__` now trims trailing zeros for a more readable
   output (#3087).
+- Add `on_invalid` parameter to `from_wkt` and `from_wkb` (#3110).
 - `make_valid` option in `overlay` now uses the `make_valid` method instead of
   `buffer(0)` (#3113).
+- Passing `"geometry"` as `dtype` to `pd.read_csv` will now return a GeoSeries for
+  the specified columns (#3101).
 
 Potentially breaking changes:
 
@@ -35,7 +41,8 @@ Bug fixes:
   `GeoDataFrame` when the `suffixes` argument is applied to the active
   geometry column (#2933).
 - Fix bug in `pandas.concat` CRS consistency checking where CRS differing by WKT
-  whitespace only were treated as incompatible (#3023)
+  whitespace only were treated as incompatible (#3023).
+- Fix `explore()` method when the active geometry contains missing and empty geometries (#3094)
 
 ## Version 0.14.1 (Nov 11, 2023)
 

@@ -42,6 +42,7 @@ Unary predicates
 .. autosummary::
    :toctree: api/
 
+   GeoSeries.is_closed
    GeoSeries.is_empty
    GeoSeries.is_ring
    GeoSeries.is_simple
@@ -57,6 +58,7 @@ Binary predicates
    :toctree: api/
 
    GeoSeries.contains
+   GeoSeries.contains_properly
    GeoSeries.crosses
    GeoSeries.disjoint
    GeoSeries.geom_equals
@@ -97,6 +99,8 @@ Constructive methods and attributes
    GeoSeries.delaunay_triangles
    GeoSeries.envelope
    GeoSeries.extract_unique_points
+   GeoSeries.force_2d
+   GeoSeries.force_3d
    GeoSeries.make_valid
    GeoSeries.minimum_bounding_circle
    GeoSeries.minimum_clearance

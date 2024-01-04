@@ -359,7 +359,7 @@ class GeoSeries(GeoPandasBase, Series):
 
     @classmethod
     def from_wkb(
-        cls, data, index=None, crs: Optional[Any] = None, **kwargs
+        cls, data, index=None, crs: Optional[Any] = None, on_invalid="raise", **kwargs
     ) -> GeoSeries:
         """
         Alternate constructor to create a ``GeoSeries``
@@ -376,6 +376,12 @@ class GeoSeries(GeoPandasBase, Series):
             accepted by
             :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
             such as an authority string (eg "EPSG:4326") or a WKT string.
+        on_invalid: {"raise", "warn", "ignore"}, default "raise"
+            - raise: an exception will be raised if a WKB input geometry is invalid.
+            - warn: a warning will be raised and invalid WKB geometries will be returned
+              as None.
+            - ignore: invalid WKB geometries will be returned as None without a warning.
+
         kwargs
             Additional arguments passed to the Series constructor,
             e.g. ``name``.
@@ -389,11 +395,13 @@ class GeoSeries(GeoPandasBase, Series):
         GeoSeries.from_wkt
 
         """
-        return cls._from_wkb_or_wkb(from_wkb, data, index=index, crs=crs, **kwargs)
+        return cls._from_wkb_or_wkt(
+            from_wkb, data, index=index, crs=crs, on_invalid=on_invalid, **kwargs
+        )
 
     @classmethod
     def from_wkt(
-        cls, data, index=None, crs: Optional[Any] = None, **kwargs
+        cls, data, index=None, crs: Optional[Any] = None, on_invalid="raise", **kwargs
     ) -> GeoSeries:
         """
         Alternate constructor to create a ``GeoSeries``
@@ -410,6 +418,13 @@ class GeoSeries(GeoPandasBase, Series):
             accepted by
             :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
             such as an authority string (eg "EPSG:4326") or a WKT string.
+        on_invalid : {"raise", "warn", "ignore"}, default "raise"
+            - raise: an exception will be raised if a WKT input geometry is invalid.
+            - warn: a warning will be raised and invalid WKT geometries will be
+              returned as ``None``.
+            - ignore: invalid WKT geometries will be returned as ``None`` without a
+              warning.
+
         kwargs
             Additional arguments passed to the Series constructor,
             e.g. ``name``.
@@ -437,7 +452,9 @@ class GeoSeries(GeoPandasBase, Series):
         2    POINT (3 3)
         dtype: geometry
         """
-        return cls._from_wkb_or_wkb(from_wkt, data, index=index, crs=crs, **kwargs)
+        return cls._from_wkb_or_wkt(
+            from_wkt, data, index=index, crs=crs, on_invalid=on_invalid, **kwargs
+        )
 
     @classmethod
     def from_xy(cls, x, y, z=None, index=None, crs=None, **kwargs) -> GeoSeries:
@@ -495,12 +512,13 @@ class GeoSeries(GeoPandasBase, Series):
         return cls(points_from_xy(x, y, z, crs=crs), index=index, crs=crs, **kwargs)
 
     @classmethod
-    def _from_wkb_or_wkb(
+    def _from_wkb_or_wkt(
         cls,
         from_wkb_or_wkt_function: Callable,
         data,
         index=None,
         crs: Optional[Any] = None,
+        on_invalid: str = "raise",
         **kwargs,
     ) -> GeoSeries:
         """Create a GeoSeries from either WKT or WKB values"""
@@ -510,7 +528,11 @@ class GeoSeries(GeoPandasBase, Series):
             else:
                 index = data.index
             data = data.values
-        return cls(from_wkb_or_wkt_function(data, crs=crs), index=index, **kwargs)
+        return cls(
+            from_wkb_or_wkt_function(data, crs=crs, on_invalid=on_invalid),
+            index=index,
+            **kwargs,
+        )
 
     @property
     def __geo_interface__(self) -> Dict:
