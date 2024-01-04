@@ -4598,15 +4598,15 @@ GeometryCollection
         Lines or rings that when combined do not completely close a polygon will be
         ignored. Duplicate segments are ignored.
 
-        Unless you know that the input GeoSeries represents clean topological of a
-        planar graph (e.g. there is a node on both lines where they intersect), it is
+        Unless you know that the input GeoSeries represents a planar graph with a clean
+        topology (e.g. there is a node on both lines where they intersect), it is
         recommended to use ``node=True`` which performs noding prior polygonization.
         Using ``node=False`` will provide performance benefits but may result in
         incorrect polygons if the input is not of the proper topology.
 
         When ``full=True``, the return value is a 4-tuple containing output polygons,
         along with lines which could not be converted to polygons. The return value
-        consists of 4 elements:
+        consists of 4 elements or varying lenghts:
 
         - GeoSeries of the valid polygons (same as with ``full=False``)
         - GeoSeries of cut edges: edges connected on both ends but not part of

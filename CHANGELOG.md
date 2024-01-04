@@ -7,13 +7,11 @@ Notes on dependencies:
 - GeoPandas 1.0 drops support for shapely<2 and PyGEOS. The only geometry engine that is
   currently supported is shapely >= 2. As a consequence, spatial indexing based on the
   rtree package has also been removed. (#3035)
-  
+
 New methods:
 
-- Added ``polygonize`` method exposing both ``polygonize`` and ``polygonize_full`` from
+- Added `polygonize` method exposing both `polygonize` and `polygonize_full` from
   shapely to GeoSeries/GeoDataframe (#2963).
-
-New methods:
 - Added `count_coordinates` method from shapely to GeoSeries/GeoDataframe (#3026).
 - Added `minimum_clearance` method from shapely to GeoSeries/GeoDataframe (#2989).
 - Added `is_ccw` method from shapely to GeoSeries/GeoDataframe (#3027).

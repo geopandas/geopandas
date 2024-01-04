@@ -184,6 +184,7 @@ class TestGeomMethods:
                 Point(0, 0),
             ],
             crs=4326,
+            index=range(2, 10),
         )
 
         self.l5 = LineString([(100, 0), (0, 0), (0, 100)])
@@ -1778,6 +1779,7 @@ class TestGeomMethods:
 
         result = self.lines.polygonize()
         assert_geoseries_equal(expected, result)
+        assert_index_equal(self.lines.index, Index(range(2, 10)))
 
     def test_polygonize_no_node(self):
         expected = GeoSeries.from_wkt(
@@ -1787,6 +1789,7 @@ class TestGeomMethods:
         )
         result = self.lines.polygonize(node=False)
         assert_geoseries_equal(expected, result)
+        assert_index_equal(self.lines.index, Index(range(2, 10)))
 
     def test_polygonize_full(self):
         expected_poly = GeoSeries.from_wkt(
@@ -1815,6 +1818,7 @@ class TestGeomMethods:
         assert_geoseries_equal(expected_cuts, result[1])
         assert_geoseries_equal(expected_dangles, result[2])
         assert_geoseries_equal(expected_invalid, result[3])
+        assert_index_equal(self.lines.index, Index(range(2, 10)))
 
     @pytest.mark.parametrize(
         "geom,expected",
