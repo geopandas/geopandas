@@ -9,12 +9,14 @@ Notes on dependencies:
   rtree package has also been removed. (#3035)
 
 New methods:
+
 - Added `count_coordinates` method from shapely to GeoSeries/GeoDataframe (#3026).
 - Added `minimum_clearance` method from shapely to GeoSeries/GeoDataframe (#2989).
 - Added `is_ccw` method from shapely to GeoSeries/GeoDataframe (#3027).
 - Added `is_closed` attribute from shapely to GeoSeries/GeoDataframe (#3092).
 - Added `force_2d` and `force_3d` methods from shapely to GeoSeries/GeoDataframe (#3090).
 - Added `contains_properly` method from shapely to GeoSeries/GeoDataframe (#3105).
+- Added `snap` method from shapely to GeoSeries/GeoDataframe (#3086).
 - Added `transform` method from shapely to GeoSeries/GeoDataFrame (#3075).
 
 New features and improvements:
@@ -28,11 +30,13 @@ New features and improvements:
   the specified columns (#3101).
 
 Potentially breaking changes:
+
 - reading a data source that does not have a geometry field using ``read_file``
   now returns a Pandas DataFrame instead of a GeoDataFrame with an empty
   ``geometry`` column.
 
 Bug fixes:
+
 - Fix `GeoDataFrame.merge()` incorrectly returning a `DataFrame` instead of a
   `GeoDataFrame` when the `suffixes` argument is applied to the active
   geometry column (#2933).
@@ -78,6 +82,7 @@ New features and improvements:
   for files with the `.fgb` extension (#2958)
 
 Bug fixes:
+
 - Fix ambiguous error when GeoDataFrame is initialized with a column called ``"crs"`` (#2944)
 - Fix a color assignment in ``explore`` when using ``UserDefined`` bins (#2923)
 - Fix bug in `apply` with `axis=1` where the given user defined function returns nested
