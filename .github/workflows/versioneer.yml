@@ -24,7 +24,7 @@ jobs:
         with:
           options: "--verbose"
       - name: Upload artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           path: versioneer.py
       - name: Ignore changes in __init__
