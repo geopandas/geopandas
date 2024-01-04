@@ -1,6 +1,6 @@
 # Changelog
 
-## Version 0.14.2 (Nov xx, 2023)
+## Version 0.14.2 (Jan 4, 2024)
 
 - Fix regression in `overlay` where using `buffer(0)` instead of `make_valid` internally
   produced invalid results (#3074).
