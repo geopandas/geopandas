@@ -283,24 +283,22 @@ class TestSeries:
     def test_from_wkb(self):
         assert_geoseries_equal(self.g1, GeoSeries.from_wkb([self.t1.wkb, self.sq.wkb]))
 
-    @pytest.mark.parametrize("on_invalid", ["raise", "warn", "ignore"])
-    def test_from_wkb_on_invalid(self, on_invalid):
+    def test_from_wkb_on_invalid(self):
         # Single point LineString hex WKB: invalid
         invalid_wkb_hex = "01020000000100000000000000000008400000000000000840"
         message = "point array must contain 0 or >1 elements"
 
-        if on_invalid == "raise":
-            with pytest.raises(Exception, match=message):
-                GeoSeries.from_wkb([invalid_wkb_hex], on_invalid=on_invalid)
-        elif on_invalid == "warn":
-            with pytest.warns(Warning, match=message):
-                res = GeoSeries.from_wkb([invalid_wkb_hex], on_invalid=on_invalid)
-                assert res[0] is None
-        elif on_invalid == "ignore":
-            with warnings.catch_warnings():
-                warnings.simplefilter("error")
-                res = GeoSeries.from_wkb([invalid_wkb_hex], on_invalid=on_invalid)
-                assert res[0] is None
+        with pytest.raises(Exception, match=message):
+            GeoSeries.from_wkb([invalid_wkb_hex], on_invalid="raise")
+
+        with pytest.warns(Warning, match=message):
+            res = GeoSeries.from_wkb([invalid_wkb_hex], on_invalid="warn")
+        assert res[0] is None
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            res = GeoSeries.from_wkb([invalid_wkb_hex], on_invalid="ignore")
+        assert res[0] is None
 
     def test_from_wkb_series(self):
         s = pd.Series([self.t1.wkb, self.sq.wkb], index=[1, 2])
@@ -317,24 +315,22 @@ class TestSeries:
     def test_from_wkt(self):
         assert_geoseries_equal(self.g1, GeoSeries.from_wkt([self.t1.wkt, self.sq.wkt]))
 
-    @pytest.mark.parametrize("on_invalid", ["raise", "warn", "ignore"])
-    def test_from_wkt_on_invalid(self, on_invalid):
+    def test_from_wkt_on_invalid(self):
         # Single point LineString WKT: invalid
         invalid_wkt = "LINESTRING(0 0)"
         message = "point array must contain 0 or >1 elements"
 
-        if on_invalid == "raise":
-            with pytest.raises(Exception, match=message):
-                GeoSeries.from_wkt([invalid_wkt], on_invalid=on_invalid)
-        elif on_invalid == "warn":
-            with pytest.warns(Warning, match=message):
-                res = GeoSeries.from_wkt([invalid_wkt], on_invalid=on_invalid)
-                assert res[0] is None
-        elif on_invalid == "ignore":
-            with warnings.catch_warnings():
-                warnings.simplefilter("error")
-                res = GeoSeries.from_wkt([invalid_wkt], on_invalid=on_invalid)
-                assert res[0] is None
+        with pytest.raises(Exception, match=message):
+            GeoSeries.from_wkt([invalid_wkt], on_invalid="raise")
+
+        with pytest.warns(Warning, match=message):
+            res = GeoSeries.from_wkt([invalid_wkt], on_invalid="warn")
+        assert res[0] is None
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            res = GeoSeries.from_wkt([invalid_wkt], on_invalid="ignore")
+        assert res[0] is None
 
     def test_from_wkt_series(self):
         s = pd.Series([self.t1.wkt, self.sq.wkt], index=[1, 2])
