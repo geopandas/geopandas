@@ -130,7 +130,7 @@ def test_to_file(tmpdir, df_nybb, df_null, driver, ext, engine):
     df = GeoDataFrame.from_file(tempfilename, engine=engine)
     assert "geometry" in df
     assert len(df) == 5
-    assert np.alltrue(df["BoroName"].values == df_nybb["BoroName"])
+    assert np.all(df["BoroName"].values == df_nybb["BoroName"])
 
     # Write layer with null geometry out to file
     tempfilename = os.path.join(str(tmpdir), "null_geom" + ext)
@@ -139,7 +139,7 @@ def test_to_file(tmpdir, df_nybb, df_null, driver, ext, engine):
     df = GeoDataFrame.from_file(tempfilename, engine=engine)
     assert "geometry" in df
     assert len(df) == 2
-    assert np.alltrue(df["Name"].values == df_null["Name"])
+    assert np.all(df["Name"].values == df_null["Name"])
     # check the expected driver
     assert_correct_driver(tempfilename, ext, engine)
 
@@ -153,7 +153,7 @@ def test_to_file_pathlib(tmpdir, df_nybb, driver, ext, engine):
     df = GeoDataFrame.from_file(temppath, engine=engine)
     assert "geometry" in df
     assert len(df) == 5
-    assert np.alltrue(df["BoroName"].values == df_nybb["BoroName"])
+    assert np.all(df["BoroName"].values == df_nybb["BoroName"])
     # check the expected driver
     assert_correct_driver(temppath, ext, engine)
 
