@@ -1,6 +1,6 @@
 import os
-import warnings
 from packaging.version import Version
+import warnings
 
 import numpy as np
 from numpy.testing import assert_array_equal
@@ -673,10 +673,10 @@ def test_groupby_metadata(crs):
         assert isinstance(group, GeoDataFrame)
         assert group.crs == crs
 
-    df.groupby("value2")[df.columns].apply(func)
+    df.groupby("value2").apply(func)
 
     # actual test with functionality
-    res = df.groupby("value2")[df.columns].apply(
+    res = df.groupby("value2").apply(
         lambda x: geopandas.sjoin(x, x[["geometry", "value1"]], how="inner")
     )
 
