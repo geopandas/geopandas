@@ -8,6 +8,10 @@ Notes on dependencies:
   currently supported is shapely >= 2. As a consequence, spatial indexing based on the
   rtree package has also been removed. (#3035)
 
+API changes:
+
+- `unary_union` is now deprecated and replaced by the `union_all` method (#3007).
+
 New methods:
 
 - Added `polygonize` method exposing both `polygonize` and `polygonize_full` from
@@ -44,7 +48,12 @@ Bug fixes:
   geometry column (#2933).
 - Fix bug in `pandas.concat` CRS consistency checking where CRS differing by WKT
   whitespace only were treated as incompatible (#3023).
-- Fix `explore()` method when the active geometry contains missing and empty geometries (#3094)
+
+## Version 0.14.2 (Jan 4, 2024)
+
+- Fix regression in `overlay` where using `buffer(0)` instead of `make_valid` internally
+  produced invalid results (#3074).
+- Fix `explore()` method when the active geometry contains missing and empty geometries (#3094).
 
 ## Version 0.14.1 (Nov 11, 2023)
 

@@ -143,7 +143,7 @@ Aggregating and exploding
 .. autosummary::
    :toctree: api/
 
-   GeoSeries.unary_union
+   GeoSeries.union_all
    GeoSeries.explode
 
 Serialization / IO / conversion
