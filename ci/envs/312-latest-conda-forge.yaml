@@ -12,7 +12,6 @@ dependencies:
   # testing
   - pytest
   - pytest-cov
-  - pytest-xdist
   - fsspec
   # optional
   - pyogrio
