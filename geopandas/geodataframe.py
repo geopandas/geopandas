@@ -1581,6 +1581,25 @@ individually so that features may have different properties
             return pd.DataFrame._from_mgr(mgr, axes)
         return GeoDataFrame._from_mgr(mgr, axes)
 
+    # def _constructor_from_mgr(self, mgr, axes):
+    #     # analogous logic to _geodataframe_constructor_with_fallback
+    #     if not any(isinstance(block.dtype, GeometryDtype) for block in mgr.blocks):
+    #         df= pd.DataFrame._from_mgr(mgr, axes)
+    #         # stuff like concat to append an object row will
+    #         # upcast GeometryDtype blocks
+    #         for c in self.columns[self.dtypes == "geometry"]:
+    #             try:
+    #                 df[c] = _ensure_geometry(df[c], crs=self[c].crs)
+    #             except TypeError:
+    #                 pass
+    #         try:
+    #             df = df.set_geometry(self._geometry_column_name, crs=self.crs)
+    #         except TypeError:
+    #             pass
+    #         return df
+    #
+    #     return GeoDataFrame._from_mgr(mgr, axes)
+
     @property
     def _constructor_sliced(self):
         def _geodataframe_constructor_sliced(*args, **kwargs):
