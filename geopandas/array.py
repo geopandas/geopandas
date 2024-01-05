@@ -811,20 +811,16 @@ class GeometryArray(ExtensionArray):
     #
 
     def unary_union(self):
-        warning_msg = (
-            "`unary_union` returned None due to all-None GeoSeries. In future, "
-            "`unary_union` will return 'GEOMETRYCOLLECTION EMPTY' instead."
+        warnings.warn(
+            "The 'unary_union' attribute is deprecated, "
+            "use the 'union_all' method instead.",
+            FutureWarning,
+            stacklevel=2,
         )
-        data = shapely.union_all(self._data)
-        if data is None or data.is_empty:
-            warnings.warn(
-                warning_msg,
-                FutureWarning,
-                stacklevel=4,
-            )
-            return None
-        else:
-            return data
+        return self.union_all()
+
+    def union_all(self):
+        return shapely.union_all(self._data)
 
     #
     # Affinity operations
