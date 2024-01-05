@@ -657,27 +657,40 @@ def test_groupby_groups(df):
 
 
 @pytest.mark.parametrize("crs", [None, "EPSG:4326"])
-def test_groupby_metadata(crs):
+@pytest.mark.parametrize("geometry_name", ["geometry", "geom"])
+def test_groupby_metadata(crs, geometry_name):
     # https://github.com/geopandas/geopandas/issues/2294
     df = GeoDataFrame(
         {
-            "geometry": [Point(0, 0), Point(1, 1), Point(0, 0)],
+            geometry_name: [Point(0, 0), Point(1, 1), Point(0, 0)],
             "value1": np.arange(3, dtype="int64"),
             "value2": np.array([1, 2, 1], dtype="int64"),
         },
         crs=crs,
+        geometry=geometry_name,
     )
+
+    kwargs = {}
+    if compat.PANDAS_GE_22:
+        # pandas is deprecating that the group key is present as column in the
+        # dataframe passed to `func`. To suppress this warning, it introduced
+        # a new include_groups keyword
+        kwargs = dict(include_groups=False)
 
     # dummy test asserting we can access the crs
     def func(group):
         assert isinstance(group, GeoDataFrame)
         assert group.crs == crs
 
-    df.groupby("value2").apply(func)
+    df.groupby("value2").apply(func, **kwargs)
+    # https://github.com/geopandas/geopandas/pull/2966#issuecomment-1878816712
+    # selecting the non-group columns -> no need to pass the keyword
+    df.groupby("value2")[[geometry_name, "value1"]].apply(func)
 
     # actual test with functionality
     res = df.groupby("value2").apply(
-        lambda x: geopandas.sjoin(x, x[["geometry", "value1"]], how="inner")
+        lambda x: geopandas.sjoin(x, x[[geometry_name, "value1"]], how="inner"),
+        **kwargs,
     )
 
     if compat.PANDAS_GE_22:
