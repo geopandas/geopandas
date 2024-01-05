@@ -1131,6 +1131,9 @@ class TestGeographicAspect:
         assert ax3.get_aspect() == 0.5
 
 
+@pytest.mark.filterwarnings(
+    "ignore:Numba not installed. Using slow pure python version.:UserWarning"
+)
 class TestMapclassifyPlotting:
     @classmethod
     def setup_class(cls):
