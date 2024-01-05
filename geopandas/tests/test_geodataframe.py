@@ -895,13 +895,13 @@ class TestDataFrame:
         assert expected == result
 
     def test_geodataframe_geojson_no_bbox(self):
-        geo = self.df._to_geo(na="null", show_bbox=False)
+        geo = self.df.to_geo_dict(na="null", show_bbox=False)
         assert "bbox" not in geo.keys()
         for feature in geo["features"]:
             assert "bbox" not in feature.keys()
 
     def test_geodataframe_geojson_bbox(self):
-        geo = self.df._to_geo(na="null", show_bbox=True)
+        geo = self.df.to_geo_dict(na="null", show_bbox=True)
         assert "bbox" in geo.keys()
         assert len(geo["bbox"]) == 4
         assert isinstance(geo["bbox"], tuple)
