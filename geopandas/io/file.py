@@ -423,7 +423,7 @@ def _read_file_fiona(
                 # if to_datetime succeeded, round datetimes as
                 # fiona only supports up to ms precision (any microseconds are
                 # floating point rounding error)
-                if as_dt is not None:
+                if as_dt is not None and not (as_dt.dtype == "object"):
                     df[k] = as_dt.dt.round(freq="ms")
             return df
 
