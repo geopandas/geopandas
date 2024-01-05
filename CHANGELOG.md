@@ -53,6 +53,9 @@ Bug fixes:
   produced invalid results (#3074).
 - Fix `explore()` method when the active geometry contains missing and empty geometries (#3094).
 
+Deprecations and compatibility notes:
+-  Added warning about manually overriding an existing CRS of a GeoSeries from the `crs.setter` and point to `set_crs` method instead. THis is to be deprecated in an upcoming version. (#3085)
+
 ## Version 0.14.1 (Nov 11, 2023)
 
 - The Parquet and Feather IO functions now support the latest 1.0.0 version
