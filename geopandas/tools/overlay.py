@@ -135,7 +135,14 @@ def _overlay_union(df1, df2):
     """
     dfinter = _overlay_intersection(df1, df2)
     dfsym = _overlay_symmetric_diff(df1, df2)
-    dfunion = pd.concat([dfinter, dfsym], ignore_index=True, sort=False)
+    with warnings.catch_warnings():
+        # pandas GH52532 FutureWarning, fix new behaviour if needed when it is added
+        warnings.filterwarnings(
+            "ignore",
+            "The behavior of DataFrame concatenation with empty",
+            FutureWarning,
+        )
+        dfunion = pd.concat([dfinter, dfsym], ignore_index=True, sort=False)
     # keep geometry column last
     columns = list(dfunion.columns)
     columns.remove("geometry")
