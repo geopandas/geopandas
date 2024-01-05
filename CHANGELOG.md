@@ -87,6 +87,7 @@ New methods:
 New features and improvements:
 
 - Added ``exclusive`` parameter to ``sjoin_nearest`` method for Shapely >= 2.0 (#2877)
+- Added ``GeoDataFrame.active_geometry_name`` property returning the active geometry column's name or None if no active geometry column is set.
 - The ``to_file()`` method will now automatically detect the FlatGeoBuf driver
   for files with the `.fgb` extension (#2958)
 
