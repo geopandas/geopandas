@@ -1298,7 +1298,8 @@ class TestGeomMethods:
             [
                 "POLYGON ((0 0, 0 1, 1 1, 1 0, 0 0))",
                 "POLYGON ((2 0, 2 3, 3 3, 3 0, 2 0))",
-            ]
+            ],
+            crs=3857,
         )
 
         assert np.all(r.normalize().geom_equals_exact(exp, 0.001))

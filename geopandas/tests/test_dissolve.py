@@ -95,7 +95,7 @@ def test_mean_dissolve(nybb_polydf, first, expected_mean):
         )
         # for non pandas "mean", numeric only cannot be applied. Drop columns manually
         test2 = nybb_polydf.drop(columns=["BoroName"]).dissolve(
-            "manhattan_bronx", aggfunc=np.mean
+            "manhattan_bronx", aggfunc="mean"
         )
 
     assert_frame_equal(expected_mean, test, check_column_type=False)

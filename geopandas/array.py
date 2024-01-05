@@ -1014,14 +1014,19 @@ class GeometryArray(ExtensionArray):
             # TODO with numpy >= 1.15, the 'initial' argument can be used
             return np.array([np.nan, np.nan, np.nan, np.nan])
         b = self.bounds
-        return np.array(
-            (
-                np.nanmin(b[:, 0]),  # minx
-                np.nanmin(b[:, 1]),  # miny
-                np.nanmax(b[:, 2]),  # maxx
-                np.nanmax(b[:, 3]),  # maxy
+        with warnings.catch_warnings():
+            # if all rows are empty geometry / none, nan is expected
+            warnings.filterwarnings(
+                "ignore", r"All-NaN slice encountered", RuntimeWarning
             )
-        )
+            return np.array(
+                (
+                    np.nanmin(b[:, 0]),  # minx
+                    np.nanmin(b[:, 1]),  # miny
+                    np.nanmax(b[:, 2]),  # maxx
+                    np.nanmax(b[:, 3]),  # maxy
+                )
+            )
 
     # -------------------------------------------------------------------------
     # general array like compat
