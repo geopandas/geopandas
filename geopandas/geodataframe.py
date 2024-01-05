@@ -970,14 +970,28 @@ individually so that features may have different properties
 
                 yield feature
 
-    def to_geo_dict(self, **kwargs):
+    def to_geo_dict(self, na="null", show_bbox=False, drop_id=False):
         """
         Returns a python feature collection representation of the GeoDataFrame
-        as a dictionary with a list of features.
+        as a dictionary with a list of features using the GeoJSON specification.
 
-        Notes
-        -----
-        The *kwargs* are passed to GeoDataFrame.iterfeatures().
+        Parameters
+        ----------
+        na : str, optional
+            Options are {'null', 'drop', 'keep'}, default 'null'.
+            Indicates how to output missing (NaN) values in the GeoDataFrame
+
+            - null: output the missing entries as JSON null
+            - drop: remove the property from the feature. This applies to each feature \
+individually so that features may have different properties
+            - keep: output the missing entries as NaN
+
+        show_bbox : bool, optional
+            Include bbox (bounds) in the geojson. Default False.
+        drop_id : bool, default: False
+            Whether to retain the index of the GeoDataFrame as the id property
+            in the generated GeoJSON. Default is False, but may want True
+            if the index is just arbitrary row numbers.
 
         Examples
         --------
@@ -1003,10 +1017,12 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
         """
         geo = {
             "type": "FeatureCollection",
-            "features": list(self.iterfeatures(**kwargs)),
+            "features": list(
+                self.iterfeatures(na=na, show_bbox=show_bbox, drop_id=drop_id)
+            ),
         }
 
-        if kwargs.get("show_bbox", False):
+        if show_bbox:
             geo["bbox"] = tuple(self.total_bounds)
 
         return geo
