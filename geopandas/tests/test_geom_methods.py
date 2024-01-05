@@ -1249,7 +1249,7 @@ class TestGeomMethods:
     def test_minimum_bounding_circle(self):
         mbc = self.g1.minimum_bounding_circle()
         centers = GeoSeries([Point(0.5, 0.5)] * 2)
-        assert np.all(mbc.centroid.geom_almost_equals(centers, 0.001))
+        assert np.all(mbc.centroid.geom_equals_exact(centers, 0.001))
         assert_series_equal(
             mbc.area,
             Series([1.560723, 1.560723]),
