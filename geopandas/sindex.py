@@ -49,8 +49,8 @@ class SpatialIndex:
         >>> from shapely.geometry import Point
         >>> s = geopandas.GeoSeries([Point(0, 0), Point(1, 1)])
         >>> s.sindex.valid_query_predicates  # doctest: +SKIP
-        {"contains", "crosses", "intersects", "within", "touches", \
-"overlaps", None, "covers", "contains_properly", "dwithin"}
+        {None, "contains", "contains_properly", "covered_by", "covers", \
+"crosses", "dwithin", "intersects", "overlaps", "touches", "within"}
         """
         return PREDICATES
 
@@ -108,7 +108,7 @@ class SpatialIndex:
         distance : number or array_like, optional
             Distances around each input geometry within which to query the tree for
             the 'dwithin' predicate. If array_like, shape must be broadcastable to shape
-            of geometry. Required if predicate='dwithin'.
+            of geometry. Required if ``predicate='dwithin'``.
 
         Returns
         -------
@@ -183,15 +183,12 @@ class SpatialIndex:
                 raise ValueError("predicate = 'dwithin' requires GEOS >= 3.10.0")
 
             raise ValueError(
-                "Got predicate = `{}`; ".format(predicate)
+                "Got predicate='{}'; ".format(predicate)
                 + "`predicate` must be one of {}".format(self.valid_query_predicates)
             )
 
         # distance argument requirement of predicate `dwithin`
         # and only valid for predicate `dwithin`
-        # perform query function and return result if
-        # requirements met for dwithin
-
         kwargs = {}
         if predicate == "dwithin":
             if distance is None:
@@ -211,11 +208,7 @@ class SpatialIndex:
 
         geometry = self._as_geometry_array(geometry)
 
-        indices = self._tree.query(
-            geometry,
-            predicate=predicate,
-            **kwargs,
-        )
+        indices = self._tree.query(geometry, predicate=predicate, **kwargs)
 
         if sort:
             if indices.ndim == 1:

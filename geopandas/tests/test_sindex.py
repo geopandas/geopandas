@@ -19,10 +19,6 @@ from geopandas import GeoDataFrame, GeoSeries, datasets, read_file
 from geopandas import _compat as compat
 
 
-TEST_DWITHIN = compat.GEOS_GE_310
-
-
-@pytest.mark.skip_no_sindex
 class TestSeriesSindex:
     def test_has_sindex(self):
         """Test the has_sindex method."""
@@ -384,11 +380,7 @@ class TestShapelyInterface:
         with pytest.raises(TypeError):
             self.df.sindex.query("notavalidgeom")
 
-    # `dwithin` test
-    @pytest.mark.skipif(
-        not TEST_DWITHIN,
-        reason="Requires GEOS 3.10",
-    )
+    @pytest.mark.skipif(not compat.GEOS_GE_310, reason="Requires GEOS 3.10")
     @pytest.mark.parametrize(
         "distance, test_geom, expected",
         (
@@ -447,11 +439,7 @@ class TestShapelyInterface:
         res = self.df.sindex.query(test_geom, predicate="dwithin", distance=distance)
         assert_array_equal(res, expected)
 
-    # test for invalid optional keyword arguments
-    @pytest.mark.skipif(
-        not TEST_DWITHIN,
-        reason="Requires either Shapely 2.0 or PyGEOS 0.12, and GEOS 3.10",
-    )
+    @pytest.mark.skipif(not compat.GEOS_GE_310, reason="Requires GEOS 3.10")
     def test_dwithin_no_distance(self):
         """Tests the `query` method with keyword arguments that are
         invalid for certain predicates."""
@@ -478,25 +466,19 @@ class TestShapelyInterface:
     def test_query_distance_invalid(self, predicate):
         """Tests the `query` method with keyword arguments that are
         invalid for certain predicates."""
-        with pytest.raises(
-            ValueError,
-            match=(
-                f"predicate = {predicate!r} got unexpected keyword argument 'distance'"
-            ),
-        ):
+        msg = "'distance' parameter is only supported in combination with 'dwithin'"
+        with pytest.raises(ValueError, match=msg):
             self.df.sindex.query(Point(0, 0), predicate=predicate, distance=0)
 
     @pytest.mark.skipif(
-        TEST_DWITHIN,
-        reason="Test for 'dwithin'-incompatible versions of shapely or pyGEOS",
+        compat.GEOS_GE_310, reason="Test for 'dwithin'-incompatible versions of GEOS"
     )
     def test_dwithin_requirements(self):
         """Tests whether a ValueError is raised when trying to use dwithin with
         incompatible versions of shapely or pyGEOS
         """
         with pytest.raises(
-            ValueError,
-            match="predicate = 'dwithin' requires GEOS >= 3.10.0",
+            ValueError, match="predicate = 'dwithin' requires GEOS >= 3.10.0"
         ):
             self.df.sindex.query(Point(0, 0), predicate="dwithin", distance=0)
 
