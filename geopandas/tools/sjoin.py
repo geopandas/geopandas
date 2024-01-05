@@ -461,7 +461,7 @@ def sjoin_nearest(
     ... ).to_crs(groceries.crs)
 
     >>> chicago.head()  # doctest: +SKIP
-        ComAreaID  ...                                           geometry
+       ComAreaID  ...                                           geometry
     0         35  ...  POLYGON ((-87.60914 41.84469, -87.60915 41.844...
     1         36  ...  POLYGON ((-87.59215 41.81693, -87.59231 41.816...
     2         37  ...  POLYGON ((-87.62880 41.80189, -87.62879 41.801...
@@ -470,19 +470,19 @@ def sjoin_nearest(
     [5 rows x 87 columns]
 
     >>> groceries.head()  # doctest: +SKIP
-        OBJECTID     Ycoord  ...  Category                         geometry
-    0        16  41.973266  ...       NaN  MULTIPOINT (-87.65661 41.97321)
-    1        18  41.696367  ...       NaN  MULTIPOINT (-87.68136 41.69713)
-    2        22  41.868634  ...       NaN  MULTIPOINT (-87.63918 41.86847)
-    3        23  41.877590  ...       new  MULTIPOINT (-87.65495 41.87783)
-    4        27  41.737696  ...       NaN  MULTIPOINT (-87.62715 41.73623)
+       OBJECTID     Ycoord  ...  Category                           geometry
+    0        16  41.973266  ...       NaN  MULTIPOINT ((-87.65661 41.97321))
+    1        18  41.696367  ...       NaN  MULTIPOINT ((-87.68136 41.69713))
+    2        22  41.868634  ...       NaN  MULTIPOINT ((-87.63918 41.86847))
+    3        23  41.877590  ...       new  MULTIPOINT ((-87.65495 41.87783))
+    4        27  41.737696  ...       NaN  MULTIPOINT ((-87.62715 41.73623))
     [5 rows x 8 columns]
 
     >>> groceries_w_communities = geopandas.sjoin_nearest(groceries, chicago)
     >>> groceries_w_communities[["Chain", "community", "geometry"]].head(2)
-                    Chain community                              geometry
-    0   VIET HOA PLAZA    UPTOWN  MULTIPOINT (1168268.672 1933554.350)
-    87      JEWEL OSCO    UPTOWN  MULTIPOINT (1168837.980 1929246.962)
+                 Chain community                               geometry
+    0   VIET HOA PLAZA    UPTOWN  MULTIPOINT ((1168268.672 1933554.35))
+    87      JEWEL OSCO    UPTOWN  MULTIPOINT ((1168837.98 1929246.962))
 
 
     To include the distances:

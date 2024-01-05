@@ -185,7 +185,7 @@ def clip(gdf, mask, keep_geom_type=False):
         return gdf.iloc[:0]
 
     if isinstance(mask, (GeoDataFrame, GeoSeries)):
-        combined_mask = mask.geometry.unary_union
+        combined_mask = mask.geometry.union_all()
     else:
         combined_mask = mask
 

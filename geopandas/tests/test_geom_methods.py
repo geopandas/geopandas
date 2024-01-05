@@ -2,31 +2,28 @@ import string
 import warnings
 
 import numpy as np
+import pytest
+import shapely
 from numpy.testing import assert_array_equal
 from pandas import DataFrame, Index, MultiIndex, Series, concat
-
-import shapely
-
+from pandas.testing import assert_frame_equal, assert_index_equal, assert_series_equal
+from shapely import wkt
 from shapely.geometry import (
     LinearRing,
     LineString,
     MultiLineString,
     MultiPoint,
+    MultiPolygon,
     Point,
     Polygon,
-    MultiPolygon,
 )
 from shapely.geometry.collection import GeometryCollection
 from shapely.ops import unary_union
-from shapely import wkt
 
 from geopandas import GeoDataFrame, GeoSeries
 from geopandas.base import GeoPandasBase
-
 from geopandas.testing import assert_geodataframe_equal
 from geopandas.tests.util import assert_geoseries_equal, geom_almost_equals, geom_equals
-from pandas.testing import assert_frame_equal, assert_index_equal, assert_series_equal
-import pytest
 
 
 def assert_array_dtype_equal(a, b, *args, **kwargs):
@@ -186,7 +183,7 @@ class TestGeomMethods:
         fcmp = assert_series_equal
         self._test_unary(op, expected, a, fcmp)
 
-    def _test_unary_topological(self, op, expected, a):
+    def _test_unary_topological(self, op, expected, a, method=False):
         if isinstance(expected, GeoPandasBase):
             fcmp = assert_geoseries_equal
         else:
@@ -194,7 +191,7 @@ class TestGeomMethods:
             def fcmp(a, b):
                 assert a.equals(b)
 
-        self._test_unary(op, expected, a, fcmp)
+        self._test_unary(op, expected, a, fcmp, method=method)
 
     def _test_binary_topological(self, op, expected, a, b, *args, **kwargs):
         """Tests for 'intersection', 'union', 'symmetric_difference', etc."""
@@ -297,14 +294,20 @@ class TestGeomMethods:
                 result = getattr(gdf_left, op)(gdf_right, *args, **kwargs)
                 fcmp(result, expected)
 
-    def _test_unary(self, op, expected, a, fcmp):
+    def _test_unary(self, op, expected, a, fcmp, method=False):
         # GeoSeries, (GeoSeries or geometry)
-        result = getattr(a, op)
+        if method:
+            result = getattr(a, op)()
+        else:
+            result = getattr(a, op)
         fcmp(result, expected)
 
         # GeoDataFrame, (GeoSeries or geometry)
         gdf = self.gdf1.set_geometry(a)
-        result = getattr(gdf, op)
+        if method:
+            result = getattr(gdf, op)()
+        else:
+            result = getattr(gdf, op)
         fcmp(result, expected)
 
     # TODO re-enable for all operations once we use pyproj > 2
@@ -391,6 +394,20 @@ class TestGeomMethods:
             expected, self.crossed_lines.shortest_line(crossed_lines_inv, align=False)
         )
 
+    def test_snap(self):
+        expected = GeoSeries([Polygon([(0, 0.5), (1, 0), (1, 1), (0, 0.5)]), None])
+        assert_array_dtype_equal(
+            expected, self.na_none.snap(Point(0, 0.5), tolerance=1)
+        )
+
+        expected = GeoSeries(
+            [
+                Point((5, 5)),
+                Polygon([(0, 2), (0, 0), (3, 0), (3, 3), (0, 2)]),
+            ]
+        )
+        assert_array_dtype_equal(expected, self.g6.snap(self.g7, tolerance=3))
+
     def test_geo_op_empty_result(self):
         l1 = LineString([(0, 0), (1, 1)])
         l2 = LineString([(2, 2), (3, 3)])
@@ -453,30 +470,29 @@ class TestGeomMethods:
         )
         assert_frame_equal(result, expected)
 
-    def test_unary_union(self):
+    def test_union_all(self):
         p1 = self.t1
         p2 = Polygon([(2, 0), (3, 0), (3, 1)])
         expected = unary_union([p1, p2])
         g = GeoSeries([p1, p2])
 
-        self._test_unary_topological("unary_union", expected, g)
+        self._test_unary_topological("union_all", expected, g, method=True)
 
         g2 = GeoSeries([p1, None])
-        self._test_unary_topological("unary_union", p1, g2)
+        self._test_unary_topological("union_all", p1, g2, method=True)
 
-        with pytest.warns(FutureWarning, match="`unary_union` returned None"):
-            g3 = GeoSeries([None, None])
-            assert g3.unary_union is None
+        g3 = GeoSeries([None, None])
+        assert g3.union_all().equals(shapely.GeometryCollection())
 
-    def test_cascaded_union_deprecated(self):
+    def test_unary_union_deprecated(self):
         p1 = self.t1
         p2 = Polygon([(2, 0), (3, 0), (3, 1)])
         g = GeoSeries([p1, p2])
         with pytest.warns(
-            FutureWarning, match="The 'cascaded_union' attribute is deprecated"
+            FutureWarning, match="The 'unary_union' attribute is deprecated"
         ):
-            result = g.cascaded_union
-        assert result == g.unary_union
+            result = g.unary_union
+        assert result == g.union_all()
 
     def test_contains(self):
         expected = [True, False, True, False, False, False, False]
@@ -488,6 +504,21 @@ class TestGeomMethods:
 
         expected = [False, False, True, False, False, False, False]
         assert_array_dtype_equal(expected, self.g0.contains(self.g9, align=False))
+
+    def test_contains_properly(self):
+        expected = [False, False, True, False, False, False, False]
+        assert_array_dtype_equal(expected, self.g0.contains_properly(Point(0.25, 0.25)))
+
+        expected = [False, False, False, False, False, True, False, False]
+        with pytest.warns(UserWarning, match="The indices .+ different"):
+            assert_array_dtype_equal(
+                expected, self.g0.contains_properly(self.g9, align=True)
+            )
+
+        expected = [False, False, True, False, False, False, False]
+        assert_array_dtype_equal(
+            expected, self.g0.contains_properly(self.g9, align=False)
+        )
 
     def test_length(self):
         expected = Series(np.array([2 + np.sqrt(2), 4]), index=self.g1.index)
@@ -502,10 +533,10 @@ class TestGeomMethods:
 
     def test_count_coordinates(self):
         expected = Series(np.array([4, 5]), index=self.g1.index)
-        self._test_unary_real("count_coordinates", expected, self.g1)
+        assert_series_equal(self.g1.count_coordinates(), expected)
 
         expected = Series(np.array([4, 0]), index=self.na_none.index)
-        self._test_unary_real("count_coordinates", expected, self.na_none)
+        assert_series_equal(self.na_none.count_coordinates(), expected)
 
     def test_crosses(self):
         expected = [False, False, False, False, False, False, False]
@@ -782,6 +813,14 @@ class TestGeomMethods:
         expected = Series(np.array([True] * len(self.g1)), self.g1.index)
         self._test_unary_real("is_simple", expected, self.g1)
 
+    def test_is_ccw(self):
+        expected = Series(np.array([False] * len(self.g1)), self.g1.index)
+        self._test_unary_real("is_ccw", expected, self.g1)
+
+    def test_is_closed(self):
+        expected = Series(np.array([False, False]), self.g5.index)
+        self._test_unary_real("is_closed", expected, self.g5)
+
     def test_has_z(self):
         expected = Series([False, True], self.g_3d.index)
         self._test_unary_real("has_z", expected, self.g_3d)
@@ -914,6 +953,44 @@ class TestGeomMethods:
         result_g5 = self.g5.segmentize(max_segment_length=0.5)
         assert_geoseries_equal(expected_g1, result_g1)
         assert_geoseries_equal(expected_g5, result_g5)
+
+    def test_transform(self):
+        # Test 2D
+        test_2d = GeoSeries(
+            [LineString([(2, 2), (4, 4)]), Polygon([(0, 0), (1, 1), (0, 1)])]
+        )
+        expected_2d = GeoSeries(
+            [LineString([(4, 6), (8, 12)]), Polygon([(0, 0), (2, 3), (0, 3)])]
+        )
+        result_2d = test_2d.transform(lambda x: x * [2, 3])
+        assert_geoseries_equal(expected_2d, result_2d)
+        # Test 3D
+        test_3d = GeoSeries(
+            [
+                Point(0, 0, 0),
+                LineString([(2, 2, 2), (4, 4, 4)]),
+                Polygon([(0, 0, 0), (1, 1, 1), (0, 1, 0.5)]),
+            ]
+        )
+        expected_3d = GeoSeries(
+            [
+                Point(1, 1, 1),
+                LineString([(3, 3, 3), (5, 5, 5)]),
+                Polygon([(1, 1, 1), (2, 2, 2), (1, 2, 1.5)]),
+            ]
+        )
+        result_3d = test_3d.transform(lambda x: x + 1, include_z=True)
+        assert_geoseries_equal(expected_3d, result_3d)
+        # Test 3D as 2D transformation
+        expected_3d_to_2d = GeoSeries(
+            [
+                Point(1, 1),
+                LineString([(3, 3), (5, 5)]),
+                Polygon([(1, 1), (2, 2), (1, 2)]),
+            ]
+        )
+        result_3d_to_2d = test_3d.transform(lambda x: x + 1, include_z=False)
+        assert_geoseries_equal(expected_3d_to_2d, result_3d_to_2d)
 
     def test_concave_hull(self):
         assert_geoseries_equal(self.squares, self.squares.concave_hull())
@@ -1161,7 +1238,8 @@ class TestGeomMethods:
             [
                 "POLYGON ((0 0, 0 1, 1 1, 1 0, 0 0))",
                 "POLYGON ((2 0, 2 3, 3 3, 3 0, 2 0))",
-            ]
+            ],
+            crs=3857,
         )
 
         assert np.all(r.normalize().geom_equals_exact(exp, 0.001))
@@ -1727,3 +1805,46 @@ class TestGeomMethods:
     )
     def test_remove_repeated_points(self, geom, expected):
         assert_geoseries_equal(expected, geom.remove_repeated_points(tolerance=0.0))
+
+    def test_force_2d(self):
+        expected = GeoSeries(
+            [
+                Point(-73.9847, 40.7484),
+                Point(-74.0446, 40.6893),
+                self.pt2d,
+                self.pt_empty,
+            ],
+            crs=4326,
+        )
+        assert_geoseries_equal(expected, self.landmarks_mixed_empty.force_2d())
+
+    def test_force_3d(self):
+        expected = GeoSeries(
+            [
+                self.esb,
+                self.sol,
+                Point(-73.9847, 40.7484, 0),
+                self.pt_empty,
+            ],
+            crs=4326,
+        )
+        assert_geoseries_equal(expected, self.landmarks_mixed_empty.force_3d())
+
+        expected = GeoSeries(
+            [
+                self.esb,
+                self.sol,
+                Point(-73.9847, 40.7484, 2),
+                self.pt_empty,
+            ],
+            crs=4326,
+        )
+        assert_geoseries_equal(expected, self.landmarks_mixed_empty.force_3d(2))
+
+        expected = GeoSeries(
+            [
+                Polygon([(0, 0, 1), (1, 0, 1), (1, 1, 1), (0, 0, 1)]),
+                Polygon([(0, 0, 2), (1, 0, 2), (1, 1, 2), (0, 1, 2), (0, 0, 2)]),
+            ],
+        )
+        assert_geoseries_equal(expected, self.g1.force_3d([1, 2]))

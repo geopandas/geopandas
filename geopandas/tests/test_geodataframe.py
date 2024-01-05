@@ -1001,6 +1001,7 @@ class TestDataFrame:
     @pytest.mark.parametrize("how", ["left", "inner", "right"])
     @pytest.mark.parametrize("max_distance", [None, 1])
     @pytest.mark.parametrize("distance_col", [None, "distance"])
+    @pytest.mark.filterwarnings("ignore:Geometry is in a geographic CRS:UserWarning")
     def test_sjoin_nearest(self, how, max_distance, distance_col):
         """
         Basic test for availability of the GeoDataFrame method. Other
@@ -1327,7 +1328,8 @@ class TestConstructor:
         ):
             gdf5["geometry"] = "foo"
         assert gdf5._geometry_column_name is None
-        gdf3 = gdf.copy().assign(geometry=geo_col)
+        with pytest.warns(FutureWarning, match=match):
+            gdf3 = gdf.copy().assign(geometry=geo_col)
         assert gdf3._geometry_column_name == "geometry"
 
         # Check that adding a GeoSeries to a column called "geometry" to a

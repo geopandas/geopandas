@@ -127,16 +127,16 @@ class SpatialIndex:
         >>> from shapely.geometry import Point, box
         >>> s = geopandas.GeoSeries(geopandas.points_from_xy(range(10), range(10)))
         >>> s
-        0    POINT (0.00000 0.00000)
-        1    POINT (1.00000 1.00000)
-        2    POINT (2.00000 2.00000)
-        3    POINT (3.00000 3.00000)
-        4    POINT (4.00000 4.00000)
-        5    POINT (5.00000 5.00000)
-        6    POINT (6.00000 6.00000)
-        7    POINT (7.00000 7.00000)
-        8    POINT (8.00000 8.00000)
-        9    POINT (9.00000 9.00000)
+        0    POINT (0 0)
+        1    POINT (1 1)
+        2    POINT (2 2)
+        3    POINT (3 3)
+        4    POINT (4 4)
+        5    POINT (5 5)
+        6    POINT (6 6)
+        7    POINT (7 7)
+        8    POINT (8 8)
+        9    POINT (9 9)
         dtype: geometry
 
         Querying the tree with a scalar geometry:
@@ -151,8 +151,8 @@ class SpatialIndex:
 
         >>> s2 = geopandas.GeoSeries([box(2, 2, 4, 4), box(5, 5, 6, 6)])
         >>> s2
-        0    POLYGON ((4.00000 2.00000, 4.00000 4.00000, 2....
-        1    POLYGON ((6.00000 5.00000, 6.00000 6.00000, 5....
+        0    POLYGON ((4 2, 4 4, 2 4, 2 2, 4 2))
+        1    POLYGON ((6 5, 6 6, 5 6, 5 5, 6 5))
         dtype: geometry
 
         >>> s.sindex.query(s2)
@@ -205,7 +205,8 @@ class SpatialIndex:
         elif distance is not None:
             # distance parameter is invalid
             raise ValueError(
-                f"'distance' parameter is only supported in combination with 'dwithin' predicate"
+                "'distance' parameter is only supported in combination with "
+                "'dwithin' predicate"
             )
 
         geometry = self._as_geometry_array(geometry)
@@ -298,21 +299,21 @@ class SpatialIndex:
         >>> from shapely.geometry import Point, box
         >>> s = geopandas.GeoSeries(geopandas.points_from_xy(range(10), range(10)))
         >>> s
-        0    POINT (0.00000 0.00000)
-        1    POINT (1.00000 1.00000)
-        2    POINT (2.00000 2.00000)
-        3    POINT (3.00000 3.00000)
-        4    POINT (4.00000 4.00000)
-        5    POINT (5.00000 5.00000)
-        6    POINT (6.00000 6.00000)
-        7    POINT (7.00000 7.00000)
-        8    POINT (8.00000 8.00000)
-        9    POINT (9.00000 9.00000)
+        0    POINT (0 0)
+        1    POINT (1 1)
+        2    POINT (2 2)
+        3    POINT (3 3)
+        4    POINT (4 4)
+        5    POINT (5 5)
+        6    POINT (6 6)
+        7    POINT (7 7)
+        8    POINT (8 8)
+        9    POINT (9 9)
         dtype: geometry
         >>> s2 = geopandas.GeoSeries([box(2, 2, 4, 4), box(5, 5, 6, 6)])
         >>> s2
-        0    POLYGON ((4.00000 2.00000, 4.00000 4.00000, 2....
-        1    POLYGON ((6.00000 5.00000, 6.00000 6.00000, 5....
+        0    POLYGON ((4 2, 4 4, 2 4, 2 2, 4 2))
+        1    POLYGON ((6 5, 6 6, 5 6, 5 5, 6 5))
         dtype: geometry
 
         >>> s.sindex.query_bulk(s2)
@@ -393,11 +394,11 @@ geometries}
         >>> from shapely.geometry import Point, box
         >>> s = geopandas.GeoSeries(geopandas.points_from_xy(range(10), range(10)))
         >>> s.head()
-        0    POINT (0.00000 0.00000)
-        1    POINT (1.00000 1.00000)
-        2    POINT (2.00000 2.00000)
-        3    POINT (3.00000 3.00000)
-        4    POINT (4.00000 4.00000)
+        0    POINT (0 0)
+        1    POINT (1 1)
+        2    POINT (2 2)
+        3    POINT (3 3)
+        4    POINT (4 4)
         dtype: geometry
 
         >>> s.sindex.nearest(Point(1, 1))
@@ -410,8 +411,8 @@ geometries}
 
         >>> s2 = geopandas.GeoSeries(geopandas.points_from_xy([7.6, 10], [7.6, 10]))
         >>> s2
-        0    POINT (7.60000 7.60000)
-        1    POINT (10.00000 10.00000)
+        0    POINT (7.6 7.6)
+        1    POINT (10 10)
         dtype: geometry
 
         >>> s.sindex.nearest(s2)
@@ -454,16 +455,16 @@ geometries}
         >>> from shapely.geometry import Point, box
         >>> s = geopandas.GeoSeries(geopandas.points_from_xy(range(10), range(10)))
         >>> s
-        0    POINT (0.00000 0.00000)
-        1    POINT (1.00000 1.00000)
-        2    POINT (2.00000 2.00000)
-        3    POINT (3.00000 3.00000)
-        4    POINT (4.00000 4.00000)
-        5    POINT (5.00000 5.00000)
-        6    POINT (6.00000 6.00000)
-        7    POINT (7.00000 7.00000)
-        8    POINT (8.00000 8.00000)
-        9    POINT (9.00000 9.00000)
+        0    POINT (0 0)
+        1    POINT (1 1)
+        2    POINT (2 2)
+        3    POINT (3 3)
+        4    POINT (4 4)
+        5    POINT (5 5)
+        6    POINT (6 6)
+        7    POINT (7 7)
+        8    POINT (8 8)
+        9    POINT (9 9)
         dtype: geometry
 
         >>> s.sindex.intersection(box(1, 1, 3, 3).bounds)
@@ -515,16 +516,16 @@ geometries}
         >>> from shapely.geometry import Point
         >>> s = geopandas.GeoSeries(geopandas.points_from_xy(range(10), range(10)))
         >>> s
-        0    POINT (0.00000 0.00000)
-        1    POINT (1.00000 1.00000)
-        2    POINT (2.00000 2.00000)
-        3    POINT (3.00000 3.00000)
-        4    POINT (4.00000 4.00000)
-        5    POINT (5.00000 5.00000)
-        6    POINT (6.00000 6.00000)
-        7    POINT (7.00000 7.00000)
-        8    POINT (8.00000 8.00000)
-        9    POINT (9.00000 9.00000)
+        0    POINT (0 0)
+        1    POINT (1 1)
+        2    POINT (2 2)
+        3    POINT (3 3)
+        4    POINT (4 4)
+        5    POINT (5 5)
+        6    POINT (6 6)
+        7    POINT (7 7)
+        8    POINT (8 8)
+        9    POINT (9 9)
         dtype: geometry
 
         >>> s.sindex.size
@@ -541,16 +542,16 @@ geometries}
         >>> from shapely.geometry import Point
         >>> s = geopandas.GeoSeries(geopandas.points_from_xy(range(10), range(10)))
         >>> s
-        0    POINT (0.00000 0.00000)
-        1    POINT (1.00000 1.00000)
-        2    POINT (2.00000 2.00000)
-        3    POINT (3.00000 3.00000)
-        4    POINT (4.00000 4.00000)
-        5    POINT (5.00000 5.00000)
-        6    POINT (6.00000 6.00000)
-        7    POINT (7.00000 7.00000)
-        8    POINT (8.00000 8.00000)
-        9    POINT (9.00000 9.00000)
+        0    POINT (0 0)
+        1    POINT (1 1)
+        2    POINT (2 2)
+        3    POINT (3 3)
+        4    POINT (4 4)
+        5    POINT (5 5)
+        6    POINT (6 6)
+        7    POINT (7 7)
+        8    POINT (8 8)
+        9    POINT (9 9)
         dtype: geometry
 
         >>> s.sindex.is_empty

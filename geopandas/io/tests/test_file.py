@@ -133,7 +133,7 @@ def test_to_file(tmpdir, df_nybb, df_null, driver, ext, engine):
     df = GeoDataFrame.from_file(tempfilename, engine=engine)
     assert "geometry" in df
     assert len(df) == 5
-    assert np.alltrue(df["BoroName"].values == df_nybb["BoroName"])
+    assert np.all(df["BoroName"].values == df_nybb["BoroName"])
 
     # Write layer with null geometry out to file
     tempfilename = os.path.join(str(tmpdir), "null_geom" + ext)
@@ -142,7 +142,7 @@ def test_to_file(tmpdir, df_nybb, df_null, driver, ext, engine):
     df = GeoDataFrame.from_file(tempfilename, engine=engine)
     assert "geometry" in df
     assert len(df) == 2
-    assert np.alltrue(df["Name"].values == df_null["Name"])
+    assert np.all(df["Name"].values == df_null["Name"])
     # check the expected driver
     assert_correct_driver(tempfilename, ext, engine)
 
@@ -156,7 +156,7 @@ def test_to_file_pathlib(tmpdir, df_nybb, driver, ext, engine):
     df = GeoDataFrame.from_file(temppath, engine=engine)
     assert "geometry" in df
     assert len(df) == 5
-    assert np.alltrue(df["BoroName"].values == df_nybb["BoroName"])
+    assert np.all(df["BoroName"].values == df_nybb["BoroName"])
     # check the expected driver
     assert_correct_driver(temppath, ext, engine)
 
@@ -369,13 +369,20 @@ def test_to_file_int32(tmpdir, df_points, engine, driver, ext):
     df["data"] = pd.array([1, np.nan] * 5, dtype=pd.Int32Dtype())
     df.to_file(tempfilename, driver=driver, engine=engine)
     df_read = GeoDataFrame.from_file(tempfilename, engine=engine)
-    assert_geodataframe_equal(df_read, df, check_dtype=False, check_like=True)
+    # the int column with missing values comes back as float
+    expected = df.copy()
+    expected["data"] = expected["data"].astype("float64")
+    assert_geodataframe_equal(df_read, expected, check_like=True)
+
+    tempfilename2 = os.path.join(str(tmpdir), f"int32_2.{ext}")
+    df2 = df.dropna()
+    df2.to_file(tempfilename2, driver=driver, engine=engine)
+    df2_read = GeoDataFrame.from_file(tempfilename2, engine=engine)
     if engine == "pyogrio":
-        tempfilename2 = os.path.join(str(tmpdir), f"int32_2.{ext}")
-        df2 = df.dropna()
-        df2.to_file(tempfilename2, driver=driver, engine=engine)
-        df2_read = GeoDataFrame.from_file(tempfilename2, engine=engine)
         assert df2_read["data"].dtype == "int32"
+    else:
+        # with the fiona engine the 32 bitwidth is not preserved
+        assert df2_read["data"].dtype == "int64"
 
 
 @pytest.mark.parametrize("driver,ext", driver_ext_pairs)
@@ -386,7 +393,10 @@ def test_to_file_int64(tmpdir, df_points, engine, driver, ext):
     df["data"] = pd.array([1, np.nan] * 5, dtype=pd.Int64Dtype())
     df.to_file(tempfilename, driver=driver, engine=engine)
     df_read = GeoDataFrame.from_file(tempfilename, engine=engine)
-    assert_geodataframe_equal(df_read, df, check_dtype=False, check_like=True)
+    # the int column with missing values comes back as float
+    expected = df.copy()
+    expected["data"] = expected["data"].astype("float64")
+    assert_geodataframe_equal(df_read, expected, check_like=True)
 
 
 def test_to_file_empty(tmpdir, engine):
@@ -815,6 +825,15 @@ def test_read_file_missing_geometry(tmpdir, engine):
     assert not isinstance(df, geopandas.GeoDataFrame)
 
     assert_frame_equal(df, expected)
+
+
+def test_read_csv_dtype(tmpdir, df_nybb):
+    filename = str(tmpdir / "test.csv")
+
+    df_nybb.to_csv(filename, index=False)
+    pdf = pd.read_csv(filename, dtype={"geometry": "geometry"})
+
+    assert pdf.geometry.dtype == "geometry"
 
 
 def test_read_file__where_filter(engine):
