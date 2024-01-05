@@ -659,7 +659,8 @@ def test_unary_union():
         shapely.geometry.Polygon([(0, 0), (1, 0), (1, 1)]),
     ]
     G = from_shapely(geoms)
-    u = G.unary_union()
+    with pytest.warns(FutureWarning, match="The 'unary_union' attribute is deprecated"):
+        u = G.unary_union()
 
     expected = shapely.geometry.Polygon([(0, 0), (1, 0), (1, 1), (0, 1)])
     assert u.equals(expected)

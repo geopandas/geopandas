@@ -1476,7 +1476,8 @@ GeometryCollection
         """Returns a geometry containing the union of all geometries in the
         ``GeoSeries``.
 
-        The ``unary_union`` is deprecated. Use :meth:`union_all` instead.
+        The ``unary_union`` attribute is deprecated. Use :meth:`union_all`
+        instead.
 
         Examples
         --------
@@ -1499,7 +1500,7 @@ GeometryCollection
 
         warn(
             "The 'unary_union' attribute is deprecated, "
-            "use the 'union_all' method instead.",
+            "use the 'union_all()' method instead.",
             FutureWarning,
             stacklevel=2,
         )
