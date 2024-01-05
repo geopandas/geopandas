@@ -1154,7 +1154,7 @@ def test_write_index_to_file(tmpdir, df_points, driver, ext, engine):
     # index as string
     df_p = df_points.copy()
     df = GeoDataFrame(df_p["value1"], geometry=df_p.geometry)
-    df.index = pd.TimedeltaIndex(range(len(df)), "days")
+    df.index = pd.to_timedelta(range(len(df)), unit="days")
     # TODO: TimedeltaIndex is an invalid field type
     df.index = df.index.astype(str)
     do_checks(df, index_is_used=True)
@@ -1162,7 +1162,7 @@ def test_write_index_to_file(tmpdir, df_points, driver, ext, engine):
     # unnamed DatetimeIndex
     df_p = df_points.copy()
     df = GeoDataFrame(df_p["value1"], geometry=df_p.geometry)
-    df.index = pd.TimedeltaIndex(range(len(df)), "days") + pd.DatetimeIndex(
+    df.index = pd.to_timedelta(range(len(df)), unit="days") + pd.to_datetime(
         ["1999-12-27"] * len(df)
     )
     if driver == "ESRI Shapefile":
