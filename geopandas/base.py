@@ -5039,7 +5039,7 @@ GeometryCollection
         from .array import from_shapely
 
         if node:
-            geometry_input = from_shapely([self.geometry.unary_union])
+            geometry_input = from_shapely([self.geometry.union_all()])
         else:
             geometry_input = self.geometry.values
 
