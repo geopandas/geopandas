@@ -1,3 +1,4 @@
+from __future__ import annotations
 import inspect
 import numbers
 import operator
@@ -12,7 +13,6 @@ import shapely.geometry
 import shapely.ops
 import shapely.wkt
 
-from pandas._typing import DtypeObj
 from pandas.api.extensions import (
     ExtensionArray,
     ExtensionDtype,
@@ -24,6 +24,10 @@ from pyproj.database import query_utm_crs_info
 from shapely.geometry.base import BaseGeometry
 
 from .sindex import SpatialIndex
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from pandas._typing import DtypeObj
 
 TransformerFromCRS = lru_cache(Transformer.from_crs)
 
