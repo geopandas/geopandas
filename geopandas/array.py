@@ -1,26 +1,25 @@
+import inspect
 import numbers
 import operator
 import warnings
-import inspect
 from functools import lru_cache
 
 import numpy as np
 import pandas as pd
+import shapely
+import shapely.affinity
+import shapely.geometry
+import shapely.ops
+import shapely.wkt
 from pandas.api.extensions import (
     ExtensionArray,
     ExtensionDtype,
     register_extension_dtype,
 )
-
-import shapely
-import shapely.affinity
-import shapely.geometry
-from shapely.geometry.base import BaseGeometry
-import shapely.ops
-import shapely.wkt
 from pyproj import CRS, Transformer
 from pyproj.aoi import AreaOfInterest
 from pyproj.database import query_utm_crs_info
+from shapely.geometry.base import BaseGeometry
 
 from .sindex import SpatialIndex
 
@@ -192,7 +191,7 @@ def to_shapely(geoms):
     return geoms._data
 
 
-def from_wkb(data, crs=None):
+def from_wkb(data, crs=None, on_invalid="raise"):
     """
     Convert a list or array of WKB objects to a GeometryArray.
 
@@ -204,9 +203,14 @@ def from_wkb(data, crs=None):
         Coordinate Reference System of the geometry objects. Can be anything accepted by
         :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
         such as an authority string (eg "EPSG:4326") or a WKT string.
+    on_invalid: {"raise", "warn", "ignore"}, default "raise"
+        - raise: an exception will be raised if a WKB input geometry is invalid.
+        - warn: a warning will be raised and invalid WKB geometries will be returned as
+          None.
+        - ignore: invalid WKB geometries will be returned as None without a warning.
 
     """
-    return GeometryArray(shapely.from_wkb(data), crs=crs)
+    return GeometryArray(shapely.from_wkb(data, on_invalid=on_invalid), crs=crs)
 
 
 def to_wkb(geoms, hex=False, **kwargs):
@@ -218,7 +222,7 @@ def to_wkb(geoms, hex=False, **kwargs):
     return shapely.to_wkb(geoms, hex=hex, **kwargs)
 
 
-def from_wkt(data, crs=None):
+def from_wkt(data, crs=None, on_invalid="raise"):
     """
     Convert a list or array of WKT objects to a GeometryArray.
 
@@ -230,9 +234,14 @@ def from_wkt(data, crs=None):
         Coordinate Reference System of the geometry objects. Can be anything accepted by
         :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
         such as an authority string (eg "EPSG:4326") or a WKT string.
+    on_invalid : {"raise", "warn", "ignore"}, default "raise"
+        - raise: an exception will be raised if a WKT input geometry is invalid.
+        - warn: a warning will be raised and invalid WKT geometries will be
+          returned as ``None``.
+        - ignore: invalid WKT geometries will be returned as ``None`` without a warning.
 
     """
-    return GeometryArray(shapely.from_wkt(data), crs=crs)
+    return GeometryArray(shapely.from_wkt(data, on_invalid=on_invalid), crs=crs)
 
 
 def to_wkt(geoms, **kwargs):
@@ -500,6 +509,10 @@ class GeometryArray(ExtensionArray):
         return shapely.is_closed(self._data)
 
     @property
+    def is_ccw(self):
+        return shapely.is_ccw(self._data)
+
+    @property
     def has_z(self):
         return shapely.has_z(self._data)
 
@@ -517,6 +530,11 @@ class GeometryArray(ExtensionArray):
     def length(self):
         self.check_geographic_crs(stacklevel=5)
         return shapely.length(self._data)
+
+    def count_coordinates(self):
+        out = np.empty(len(self._data), dtype=np.int_)
+        out[:] = [shapely.count_coordinates(s) for s in self._data]
+        return out
 
     #
     # Unary operations that return new geometries
@@ -590,7 +608,9 @@ class GeometryArray(ExtensionArray):
                 "geometry types, None is returned.",
                 stacklevel=2,
             )
-        data = np.array(inner_rings, dtype=object)
+        # need to allocate empty first in case of all empty lists in inner_rings
+        data = np.empty(len(inner_rings), dtype=object)
+        data[:] = inner_rings
         return data
 
     def remove_repeated_points(self, tolerance=0.0):
@@ -608,6 +628,9 @@ class GeometryArray(ExtensionArray):
     def minimum_bounding_radius(self):
         return shapely.minimum_bounding_radius(self._data)
 
+    def minimum_clearance(self):
+        return shapely.minimum_clearance(self._data)
+
     def normalize(self):
         return GeometryArray(shapely.normalize(self._data), crs=self.crs)
 
@@ -621,6 +644,17 @@ class GeometryArray(ExtensionArray):
         return GeometryArray(
             shapely.segmentize(self._data, max_segment_length),
             crs=self.crs,
+        )
+
+    def force_2d(self):
+        return GeometryArray(shapely.force_2d(self._data), crs=self.crs)
+
+    def force_3d(self, z=0):
+        return GeometryArray(shapely.force_3d(self._data, z=z), crs=self.crs)
+
+    def transform(self, transformation, include_z=False):
+        return GeometryArray(
+            shapely.transform(self._data, transformation, include_z), crs=self.crs
         )
 
     #
@@ -649,6 +683,9 @@ class GeometryArray(ExtensionArray):
 
     def contains(self, other):
         return self._binary_method("contains", self, other)
+
+    def contains_properly(self, other):
+        return self._binary_method("contains_properly", self, other)
 
     def crosses(self, other):
         return self._binary_method("crosses", self, other)
@@ -713,6 +750,11 @@ class GeometryArray(ExtensionArray):
     def shortest_line(self, other):
         return GeometryArray(
             self._binary_method("shortest_line", self, other), crs=self.crs
+        )
+
+    def snap(self, other, tolerance):
+        return GeometryArray(
+            self._binary_method("snap", self, other, tolerance=tolerance), crs=self.crs
         )
 
     #
@@ -1340,6 +1382,29 @@ class GeometryArray(ExtensionArray):
             scalars = [scalars]
         return from_shapely(scalars)
 
+    @classmethod
+    def _from_sequence_of_strings(cls, strings, *, dtype=None, copy=False):
+        """
+        Construct a new ExtensionArray from a sequence of strings.
+
+        Parameters
+        ----------
+        strings : Sequence
+            Each element will be an instance of the scalar type for this
+            array, ``cls.dtype.type``.
+        dtype : dtype, optional
+            Construct for this particular dtype. This should be a Dtype
+            compatible with the ExtensionArray.
+        copy : bool, default False
+            If True, copy the underlying data.
+
+        Returns
+        -------
+        ExtensionArray
+        """
+        # GH 3099
+        return from_wkt(strings)
+
     def _values_for_factorize(self):
         # type: () -> Tuple[np.ndarray, Any]
         """Return an array and missing value suitable for factorization.
@@ -1495,7 +1560,7 @@ class GeometryArray(ExtensionArray):
                         # typically projected coordinates
                         # (in case of unit meter: mm precision)
                         precision = 3
-            return lambda geom: shapely.wkt.dumps(geom, rounding_precision=precision)
+            return lambda geom: shapely.to_wkt(geom, rounding_precision=precision)
         return repr
 
     @classmethod
@@ -1587,15 +1652,20 @@ def _get_common_crs(arr_seq):
     # mask out all None arrays with no crs (most likely auto generated by pandas
     # from concat with missing column)
     arr_seq = [ga for ga in arr_seq if not (ga.isna().all() and ga.crs is None)]
+    # determine unique crs without using a set, because CRS hash can be different
+    # for objects with the same CRS
+    unique_crs = []
+    for arr in arr_seq:
+        if arr.crs not in unique_crs:
+            unique_crs.append(arr.crs)
 
-    crs_set = {arr.crs for arr in arr_seq}
-    crs_not_none = [crs for crs in crs_set if crs is not None]
+    crs_not_none = [crs for crs in unique_crs if crs is not None]
     names = [crs.name for crs in crs_not_none]
 
     if len(crs_not_none) == 0:
         return None
     if len(crs_not_none) == 1:
-        if len(crs_set) != 1:
+        if len(unique_crs) != 1:
             warnings.warn(
                 "CRS not set for some of the concatenation inputs. "
                 f"Setting output's CRS as {names[0]} "

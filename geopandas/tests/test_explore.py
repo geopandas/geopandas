@@ -2,6 +2,7 @@ import geopandas as gpd
 import numpy as np
 import pandas as pd
 import pytest
+import shapely
 from packaging.version import Version
 
 folium = pytest.importorskip("folium")
@@ -940,3 +941,17 @@ class TestExplore:
                     "zoom_control": False,
                 }
             )
+
+    def test_none_geometry(self):
+        # None and empty geoms are dropped prior plotting
+        df = self.nybb.copy()
+        df.loc[0, df.geometry.name] = None
+        m = df.explore()
+        self._fetch_map_string(m)
+
+    def test_empty_geometry(self):
+        # None and empty geoms are dropped prior plotting
+        df = self.nybb.copy()
+        df.loc[0, df.geometry.name] = shapely.Point()
+        m = df.explore()
+        self._fetch_map_string(m)
