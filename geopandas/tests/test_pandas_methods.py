@@ -683,9 +683,14 @@ def test_groupby_metadata(crs, geometry_name):
         assert group.crs == crs
 
     df.groupby("value2").apply(func, **kwargs)
-    # https://github.com/geopandas/geopandas/pull/2966#issuecomment-1878816712
     # selecting the non-group columns -> no need to pass the keyword
-    df.groupby("value2")[[geometry_name, "value1"]].apply(func)
+    if compat.PANDAS_GE_20 and not compat.PANDAS_GE_22:
+        # https://github.com/geopandas/geopandas/pull/2966#issuecomment-1878816712
+        # with pandas 2.0 and 2.1 this is failing
+        with pytest.raises(AttributeError):
+            df.groupby("value2")[[geometry_name, "value1"]].apply(func)
+    else:
+        df.groupby("value2")[[geometry_name, "value1"]].apply(func)
 
     # actual test with functionality
     res = df.groupby("value2").apply(
