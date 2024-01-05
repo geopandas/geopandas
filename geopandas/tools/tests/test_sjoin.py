@@ -349,14 +349,13 @@ class TestSpatialJoin:
         if index == "named-multi-index":
             exp = exp.set_index(["df2_ix1", "df2_ix2"])
 
-        # GH 1364 fix of behaviour was done in pandas 1.1.0
         if predicate == "within":
             exp = exp.sort_index()
 
         assert_frame_equal(res, exp, check_index_type=False)
 
     @pytest.mark.parametrize("how", ["inner", "left", "right"])
-    def test_index_names(self, how):
+    def test_preserve_index_names(self, how):
         # preserve names of both left and right index
         geoms = [Point(1, 1), Point(2, 2)]
         df1 = GeoDataFrame({"geometry": geoms}, index=pd.Index([1, 2], name="myidx1"))
@@ -388,6 +387,63 @@ class TestSpatialJoin:
             expected = GeoDataFrame(
                 {"myidx_right": ["a", "b"], "myidx_left": [1, 2], "geometry": geoms},
             ).set_index("myidx_right")
+        assert_geodataframe_equal(result, expected)
+
+    @pytest.mark.parametrize("how", ["inner", "left", "right"])
+    def test_preserve_index_names_multiindex(self, how):
+        # preserve names of both left and right index
+        geoms = [Point(1, 1), Point(2, 2)]
+        df1 = GeoDataFrame(
+            {"geometry": geoms},
+            index=pd.MultiIndex.from_tuples(
+                [("a", 1), ("b", 2)], names=["myidx1", "level2"]
+            ),
+        )
+        df2 = GeoDataFrame(
+            {"geometry": geoms},
+            index=pd.MultiIndex.from_tuples(
+                [("c", 3), ("d", 4)], names=["myidx2", None]
+            ),
+        )
+        result = sjoin(df1, df2, how=how)
+        expected_base = GeoDataFrame(
+            {
+                "myidx1": ["a", "b"],
+                "level2": [1, 2],
+                "geometry": geoms,
+                "myidx2": ["c", "d"],
+                "index_right1": [3, 4],
+            }
+        )
+        if how in ("inner", "left"):
+            expected = expected_base.set_index(["myidx1", "level2"])
+        else:
+            # right join
+            expected = expected_base.set_index(["myidx2", "index_right1"])
+            # if it was originally None, that is preserved
+            expected.index.names = ["myidx2", None]
+        assert_geodataframe_equal(result, expected)
+
+        # but also add suffixes if both left and right have the same index
+        df1.index.names = ["myidx", "level2"]
+        df2.index.names = ["myidx", None]
+        result = sjoin(df1, df2, how=how)
+        expected_base = GeoDataFrame(
+            {
+                "myidx_left": ["a", "b"],
+                "level2": [1, 2],
+                "geometry": geoms,
+                "myidx_right": ["c", "d"],
+                "index_right1": [3, 4],
+            }
+        )
+        if how in ("inner", "left"):
+            expected = expected_base.set_index(["myidx_left", "level2"])
+        else:
+            # right join
+            expected = expected_base.set_index(["myidx_right", "index_right1"])
+            # if it was originally None, that is preserved
+            expected.index.names = ["myidx_right", None]
         assert_geodataframe_equal(result, expected)
 
     @pytest.mark.parametrize("how", ["inner", "left", "right"])

@@ -272,6 +272,7 @@ def _process_column_names_with_suffix(
     lrenamer = partial(renamer, suffix=lsuffix, geometry=left_df._geometry_column_name)
     rrenamer = partial(renamer, suffix=rsuffix, geometry=right_df._geometry_column_name)
 
+    # TODO retain index name?
     left_renamed = pd.Index([lrenamer(lab) for lab in left])
     right_renamed = pd.Index([rrenamer(lab) for lab in right])
 
@@ -284,6 +285,7 @@ def _process_column_names_with_suffix(
         dups.extend(
             right_renamed[(right_renamed.duplicated()) & (~right.duplicated())].tolist()
         )
+    # TODO turn this into an error (pandas has done so as well)
     if dups:
         warnings.warn(
             f"Passing 'suffixes' which cause duplicate columns {set(dups)} in the "
