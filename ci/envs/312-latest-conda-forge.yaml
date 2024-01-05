@@ -2,7 +2,7 @@ name: test
 channels:
   - conda-forge
 dependencies:
-  - python=3.11
+  - python=3.12
   # required
   - pandas
   - shapely
@@ -24,12 +24,8 @@ dependencies:
   - geopy
   - pointpats
   - geodatasets
-  # installed in tests.yaml, because not available on windows
-  # - postgis
-  - SQLalchemy>=2
-  - psycopg2
-  - libspatialite
-  - geoalchemy2
+  # - SQLalchemy>=2
+  # - psycopg2
+  # - libspatialite
+  # - geoalchemy2
   - pyarrow
-  # doctest testing
-  - pytest-doctestplus
