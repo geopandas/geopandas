@@ -24,7 +24,7 @@ from geopandas.tests.util import PACKAGE_DIR, validate_boro_df
 try:
     import pyogrio
 
-    PYOGRIO_GE_07 = Version(pyogrio.__version__) > Version("0.6.0")
+    PYOGRIO_GE_07 = Version(pyogrio.__version__) >= Version("0.7.0")
 except ImportError:
     pyogrio = False
     PYOGRIO_GE_07 = False
@@ -132,7 +132,7 @@ def test_to_file(tmpdir, df_nybb, df_null, driver, ext, engine):
     df = GeoDataFrame.from_file(tempfilename, engine=engine)
     assert "geometry" in df
     assert len(df) == 5
-    assert np.alltrue(df["BoroName"].values == df_nybb["BoroName"])
+    assert np.all(df["BoroName"].values == df_nybb["BoroName"])
 
     # Write layer with null geometry out to file
     tempfilename = os.path.join(str(tmpdir), "null_geom" + ext)
@@ -141,7 +141,7 @@ def test_to_file(tmpdir, df_nybb, df_null, driver, ext, engine):
     df = GeoDataFrame.from_file(tempfilename, engine=engine)
     assert "geometry" in df
     assert len(df) == 2
-    assert np.alltrue(df["Name"].values == df_null["Name"])
+    assert np.all(df["Name"].values == df_null["Name"])
     # check the expected driver
     assert_correct_driver(tempfilename, ext, engine)
 
@@ -155,7 +155,7 @@ def test_to_file_pathlib(tmpdir, df_nybb, driver, ext, engine):
     df = GeoDataFrame.from_file(temppath, engine=engine)
     assert "geometry" in df
     assert len(df) == 5
-    assert np.alltrue(df["BoroName"].values == df_nybb["BoroName"])
+    assert np.all(df["BoroName"].values == df_nybb["BoroName"])
     # check the expected driver
     assert_correct_driver(temppath, ext, engine)
 
@@ -197,9 +197,8 @@ datetime_type_tests = (TEST_DATE, eastern.localize(TEST_DATE))
 @pytest.mark.parametrize("driver,ext", driver_ext_pairs)
 def test_to_file_datetime(tmpdir, driver, ext, time, engine):
     """Test writing a data file with the datetime column type"""
-    if engine == "pyogrio" and time.tzinfo is not None:
-        # TODO
-        pytest.skip("pyogrio doesn't yet support timezones")
+    if engine == "pyogrio" and time.tzinfo is not None and not PYOGRIO_GE_07:
+        pytest.skip("pyogrio < 0.7.0 doesn't support timezones")
     if ext in (".shp", ""):
         pytest.skip(f"Driver corresponding to ext {ext} doesn't support dt fields")
 
@@ -209,23 +208,25 @@ def test_to_file_datetime(tmpdir, driver, ext, time, engine):
     df = GeoDataFrame(
         {"a": [1.0, 2.0], "b": [time, time]}, geometry=[point, point], crs=4326
     )
-    fiona_precision_limit = "ms"
-    df["b"] = df["b"].dt.round(freq=fiona_precision_limit)
+    df["b"] = df["b"].dt.round(freq="ms")
 
     df.to_file(tempfilename, driver=driver, engine=engine)
     df_read = read_file(tempfilename, engine=engine)
 
     assert_geodataframe_equal(df.drop(columns=["b"]), df_read.drop(columns=["b"]))
+    # Check datetime column
+    expected = df["b"]
+    if PANDAS_GE_20:
+        expected = df["b"].dt.as_unit("ms")
+    actual = df_read["b"]
     if df["b"].dt.tz is not None:
         # US/Eastern becomes pytz.FixedOffset(-300) when read from file
-        # so compare fairly in terms of UTC
-        assert_series_equal(
-            df["b"].dt.tz_convert(pytz.utc), df_read["b"].dt.tz_convert(pytz.utc)
-        )
-    else:
-        if engine == "pyogrio" and PANDAS_GE_20:
-            df["b"] = df["b"].astype("datetime64[ms]")
-        assert_series_equal(df["b"], df_read["b"])
+        # as GDAL only models offsets, not timezones.
+        # Compare fair result in terms of UTC instead
+        expected = expected.dt.tz_convert(pytz.utc)
+        actual = actual.dt.tz_convert(pytz.utc)
+
+    assert_series_equal(expected, actual)
 
 
 dt_exts = ["gpkg", "geojson"]
@@ -268,9 +269,6 @@ def test_read_file_datetime_invalid(tmpdir, ext, engine):
 @pytest.mark.parametrize("ext", dt_exts)
 def test_read_file_datetime_out_of_bounds_ns(tmpdir, ext, engine):
     # https://github.com/geopandas/geopandas/issues/2502
-    if ext == "geojson":
-        skip_pyogrio_not_supported(engine)
-
     date_str = "9999-12-31T00:00:00"  # valid to GDAL, not to [ns] format
     tempfilename = write_invalid_date_file(date_str, tmpdir, ext, engine)
     res = read_file(tempfilename)
@@ -294,17 +292,14 @@ def test_read_file_datetime_mixed_offsets(tmpdir):
     df.to_file(tempfilename)
     # check mixed tz don't crash GH2478
     res = read_file(tempfilename)
-    if engine == "fiona":
-        # Convert mixed timezones to UTC equivalent
-        assert is_datetime64_any_dtype(res["date"])
+    # Convert mixed timezones to UTC equivalent
+    assert is_datetime64_any_dtype(res["date"])
+    if engine == "fiona" or (engine == "pyogrio" and PYOGRIO_GE_07):
         if not PANDAS_GE_20:
             utc = pytz.utc
         else:
             utc = datetime.timezone.utc
         assert res["date"].dt.tz == utc
-    else:
-        # old fiona and pyogrio ignore timezones and read as datetimes successfully
-        assert is_datetime64_any_dtype(res["date"])
 
 
 @pytest.mark.parametrize("driver,ext", driver_ext_pairs)

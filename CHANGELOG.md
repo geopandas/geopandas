@@ -8,6 +8,10 @@ Notes on dependencies:
   currently supported is shapely >= 2. As a consequence, spatial indexing based on the
   rtree package has also been removed. (#3035)
 
+API changes:
+
+- `unary_union` is now deprecated and replaced by the `union_all` method (#3007).
+
 New methods:
 
 - Added `count_coordinates` method from shapely to GeoSeries/GeoDataframe (#3026).
@@ -89,6 +93,7 @@ New methods:
 New features and improvements:
 
 - Added ``exclusive`` parameter to ``sjoin_nearest`` method for Shapely >= 2.0 (#2877)
+- Added ``GeoDataFrame.active_geometry_name`` property returning the active geometry column's name or None if no active geometry column is set.
 - The ``to_file()`` method will now automatically detect the FlatGeoBuf driver
   for files with the `.fgb` extension (#2958)
 

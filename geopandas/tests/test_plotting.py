@@ -314,7 +314,14 @@ class TestPointPlotting:
 
         gdf = GeoDataFrame(geometry=[point, empty_point, point_])
         gdf["geometry"] = gdf.intersection(poly)
-        gdf.loc[3] = [None]
+        with warnings.catch_warnings():
+            # loc to add row calls concat internally, warning for pandas >=2.1
+            warnings.filterwarnings(
+                "ignore",
+                "The behavior of DataFrame concatenation with empty",
+                FutureWarning,
+            )
+            gdf.loc[3] = [None]
         ax = gdf.plot()
         assert len(ax.collections) == 1
 

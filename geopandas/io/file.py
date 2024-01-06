@@ -18,6 +18,7 @@ from urllib.parse import urlparse as parse_url
 from urllib.parse import uses_netloc, uses_params, uses_relative
 import urllib.request
 
+from geopandas._compat import PANDAS_GE_20
 
 _VALID_URLS = set(uses_relative + uses_netloc + uses_params)
 _VALID_URLS.discard("")
@@ -359,7 +360,7 @@ def _read_file_fiona(
                 assert len(bbox) == 4
             # handle loading the mask
             elif isinstance(mask, (GeoDataFrame, GeoSeries)):
-                mask = mapping(mask.to_crs(crs).unary_union)
+                mask = mapping(mask.to_crs(crs).union_all())
             elif isinstance(mask, BaseGeometry):
                 mask = mapping(mask)
 
@@ -408,7 +409,10 @@ def _read_file_fiona(
                 # fiona only supports up to ms precision (any microseconds are
                 # floating point rounding error)
                 if not (as_dt.dtype == "object"):
-                    df[k] = as_dt.dt.round(freq="ms")
+                    if PANDAS_GE_20:
+                        df[k] = as_dt.dt.as_unit("ms")
+                    else:
+                        df[k] = as_dt.dt.round(freq="ms")
             return df
 
 
