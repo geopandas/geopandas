@@ -840,15 +840,17 @@ def test_read_file__where_filter(engine, naturalearth_lowres):
             )
 
 
-@PYOGRIO_MARK
-def test_read_file__columns(naturalearth_lowres):
-    # TODO: this is only support for pyogrio, but we could mimic it for fiona as well
-    gdf = geopandas.read_file(
-        naturalearth_lowres,
-        columns=["name", "pop_est"],
-        engine="pyogrio",
-    )
-    assert gdf.columns.tolist() == ["name", "pop_est", "geometry"]
+def test_read_file__columns(engine, naturalearth_lowres):
+    if engine == "fiona" and not FIONA_GE_19:
+        with pytest.raises(NotImplementedError):
+            geopandas.read_file(
+                naturalearth_lowres, columns=["name", "pop_est"], engine=engine
+            )
+    else:
+        gdf = geopandas.read_file(
+            naturalearth_lowres, columns=["name", "pop_est"], engine=engine
+        )
+        assert gdf.columns.tolist() == ["name", "pop_est", "geometry"]
 
 
 def test_read_file_filtered_with_gdf_boundary(df_nybb, engine, nybb_filename):

@@ -179,7 +179,9 @@ def _is_zip(path):
     )
 
 
-def _read_file(filename, bbox=None, mask=None, rows=None, engine=None, **kwargs):
+def _read_file(
+    filename, bbox=None, mask=None, columns=None, rows=None, engine=None, **kwargs
+):
     """
     Returns a GeoDataFrame from a file or URL.
 
@@ -211,6 +213,7 @@ def _read_file(filename, bbox=None, mask=None, rows=None, engine=None, **kwargs)
         geometry, GeoSeries, GeoDataFrame or shapely geometry.
         CRS mis-matches are resolved if given a GeoSeries or GeoDataFrame.
         Cannot be used with bbox.
+    columns : list, default None
     rows : int or slice, default None
         Load in specific rows by passing an integer (first `n` rows) or a
         slice() object.
@@ -285,7 +288,9 @@ def _read_file(filename, bbox=None, mask=None, rows=None, engine=None, **kwargs)
                 from_bytes = True
 
     if engine == "pyogrio":
-        return _read_file_pyogrio(filename, bbox=bbox, mask=mask, rows=rows, **kwargs)
+        return _read_file_pyogrio(
+            filename, bbox=bbox, mask=mask, columns=columns, rows=rows, **kwargs
+        )
 
     elif engine == "fiona":
         if pd.api.types.is_file_like(filename):
@@ -296,7 +301,13 @@ def _read_file(filename, bbox=None, mask=None, rows=None, engine=None, **kwargs)
             path_or_bytes = filename
 
         return _read_file_fiona(
-            path_or_bytes, from_bytes, bbox=bbox, mask=mask, rows=rows, **kwargs
+            path_or_bytes,
+            from_bytes,
+            bbox=bbox,
+            mask=mask,
+            columns=columns,
+            rows=rows,
+            **kwargs,
         )
 
     else:
@@ -304,10 +315,26 @@ def _read_file(filename, bbox=None, mask=None, rows=None, engine=None, **kwargs)
 
 
 def _read_file_fiona(
-    path_or_bytes, from_bytes, bbox=None, mask=None, rows=None, where=None, **kwargs
+    path_or_bytes,
+    from_bytes,
+    bbox=None,
+    mask=None,
+    columns=None,
+    rows=None,
+    where=None,
+    **kwargs,
 ):
     if where is not None and not FIONA_GE_19:
         raise NotImplementedError("where requires fiona 1.9+")
+
+    if columns is not None:
+        if "include_fields" in kwargs:
+            raise ValueError(
+                "Cannot specify both 'include_fields' and 'columns' keywords"
+            )
+        if not FIONA_GE_19:
+            raise NotImplementedError("'columns' keyword requires fiona 1.9+")
+        kwargs["include_fields"] = columns
 
     if not from_bytes:
         # Opening a file via URL or file-like-object above automatically detects a
@@ -384,7 +411,7 @@ def _read_file_fiona(
             else:
                 f_filt = features
             # get list of columns
-            columns = list(features.schema["properties"])
+            columns = columns or list(features.schema["properties"])
             datetime_fields = [
                 k for (k, v) in features.schema["properties"].items() if v == "datetime"
             ]
@@ -449,6 +476,8 @@ def _read_file_pyogrio(path_or_bytes, bbox=None, mask=None, rows=None, **kwargs)
         )
     if kwargs.pop("ignore_geometry", False):
         kwargs["read_geometry"] = False
+
+    # if "ignore_fields" in kwargs:
 
     # TODO: if bbox is not None, check its CRS vs the CRS of the file
     return pyogrio.read_dataframe(path_or_bytes, bbox=bbox, **kwargs)
