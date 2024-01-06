@@ -897,17 +897,21 @@ def test_read_file__columns_conflicting_keywords(engine, naturalearth_lowres):
 
     with pytest.raises(ValueError, match="Cannot specify both"):
         geopandas.read_file(
+            path, include_fields=["name"], ignore_fields=["pop_est"], engine=engine
+        )
+
+    with pytest.raises(ValueError, match="Cannot specify both"):
+        geopandas.read_file(
             path, columns=["name"], include_fields=["pop_est"], engine=engine
         )
+
+    if engine == "fiona" and not FIONA_GE_19:
+        # remaining test raises NotImplementedError for fiona
+        return
 
     with pytest.raises(ValueError, match="Cannot specify both"):
         geopandas.read_file(
             path, columns=["name"], ignore_fields=["pop_est"], engine=engine
-        )
-
-    with pytest.raises(ValueError, match="Cannot specify both"):
-        geopandas.read_file(
-            path, include_fields=["name"], ignore_fields=["pop_est"], engine=engine
         )
 
 
