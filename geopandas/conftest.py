@@ -34,7 +34,7 @@ def naturalearth_cities() -> str:
 @pytest.fixture(scope="session")
 def nybb_filename() -> str:
     # skip if data missing, unless on github actions
-    if os.path.isfile(_NYBB) or os.getenv("GITHUB_ACTIONS"):
+    if os.path.isfile(_NYBB[len("zip://") :]) or os.getenv("GITHUB_ACTIONS"):
         return _NYBB
     else:
         pytest.skip("NYBB dataset not found")
