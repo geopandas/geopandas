@@ -354,6 +354,8 @@ class TestSpatialJoin:
 
         assert_frame_equal(res, exp, check_index_type=False)
 
+
+class TestIndexNames:
     @pytest.mark.parametrize("how", ["inner", "left", "right"])
     def test_preserve_index_names(self, how):
         # preserve names of both left and right index
