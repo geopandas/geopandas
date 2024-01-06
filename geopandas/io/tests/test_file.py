@@ -867,6 +867,15 @@ def test_read_file__columns(engine, naturalearth_lowres):
         assert gdf.columns.tolist() == ["name", "pop_est", "geometry"]
 
 
+def test_read_file__columns_empty(engine, naturalearth_lowres):
+    if engine == "fiona" and not FIONA_GE_19:
+        with pytest.raises(NotImplementedError):
+            geopandas.read_file(naturalearth_lowres, columns=[], engine=engine)
+    else:
+        gdf = geopandas.read_file(naturalearth_lowres, columns=[], engine=engine)
+        assert gdf.columns.tolist() == ["geometry"]
+
+
 @pytest.mark.filterwarnings(
     "ignore:It is recommended to use the 'columns' keyword:UserWarning"
 )

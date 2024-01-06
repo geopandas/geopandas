@@ -213,7 +213,11 @@ def _read_file(
         geometry, GeoSeries, GeoDataFrame or shapely geometry.
         CRS mis-matches are resolved if given a GeoSeries or GeoDataFrame.
         Cannot be used with bbox.
-    columns : list, default None
+    columns : list, optional
+        List of column names to import from the data source. Column names
+        must exactly match the names in the data source. To avoid reading
+        any columns, pass an empty list-like.
+        By default reads all columns.
     rows : int or slice, default None
         Load in specific rows by passing an integer (first `n` rows) or a
         slice() object.
