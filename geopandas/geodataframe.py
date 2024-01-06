@@ -973,7 +973,8 @@ individually so that features may have different properties
     def to_geo_dict(self, na="null", show_bbox=False, drop_id=False):
         """
         Returns a python feature collection representation of the GeoDataFrame
-        as a dictionary with a list of features using the GeoJSON specification.
+        as a dictionary with a list of features based on the ``__geo_interface__``
+        GeoJSON-like specification.
 
         Parameters
         ----------
