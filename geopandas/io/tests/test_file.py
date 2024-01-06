@@ -786,12 +786,26 @@ def test_read_file__ignore_geometry(engine, naturalearth_lowres):
     assert isinstance(pdf, pd.DataFrame) and not isinstance(pdf, geopandas.GeoDataFrame)
 
 
+@pytest.mark.filterwarnings(
+    "ignore:It is recommended to use the 'columns' keyword:UserWarning"
+)
+def test_read_file__ignore_fields(engine, naturalearth_lowres):
+    gdf = geopandas.read_file(
+        naturalearth_lowres,
+        ignore_fields=["pop_est", "continent", "iso_a3", "gdp_md_est"],
+        engine=engine,
+    )
+    assert gdf.columns.tolist() == ["name", "geometry"]
+
+
+@pytest.mark.filterwarnings(
+    "ignore:It is recommended to use the 'columns' keyword:UserWarning"
+)
 def test_read_file__ignore_all_fields(engine, naturalearth_lowres):
-    skip_pyogrio_not_supported(engine)  # pyogrio has "columns" keyword instead
     gdf = geopandas.read_file(
         naturalearth_lowres,
         ignore_fields=["pop_est", "continent", "name", "iso_a3", "gdp_md_est"],
-        engine="fiona",
+        engine=engine,
     )
     assert gdf.columns.tolist() == ["geometry"]
 
