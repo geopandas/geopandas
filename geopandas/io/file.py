@@ -485,8 +485,10 @@ def _read_file_pyogrio(path_or_bytes, bbox=None, mask=None, rows=None, **kwargs)
     if kwargs.pop("ignore_geometry", False):
         kwargs["read_geometry"] = False
 
-    if "ignore_fields" in kwargs:
-        # translate `ignore_fields` keyword for back compat with fiona engine
+    # translate `ignore_fields`/`include_fields` keyword for back compat with fiona
+    if "ignore_fields" in kwargs and "include_fields" in kwargs:
+        raise ValueError("Cannot specify both 'ignore_fields' and 'include_fields'")
+    elif "ignore_fields" in kwargs:
         if kwargs.get("columns", None) is not None:
             raise ValueError(
                 "Cannot specify both 'columns' and 'ignore_fields' keywords"
@@ -501,8 +503,7 @@ def _read_file_pyogrio(path_or_bytes, bbox=None, mask=None, rows=None, **kwargs)
         fields = pyogrio.read_info(path_or_bytes)["fields"]
         include_fields = [col for col in fields if col not in ignore_fields]
         kwargs["columns"] = include_fields
-
-    if "include_fields" in kwargs:
+    elif "include_fields" in kwargs:
         # translate `include_fields` keyword for back compat with fiona engine
         if kwargs.get("columns", None) is not None:
             raise ValueError(

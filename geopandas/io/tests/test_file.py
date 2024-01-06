@@ -892,6 +892,25 @@ def test_read_file__include_fields(engine, naturalearth_lowres):
         assert gdf.columns.tolist() == ["name", "pop_est", "geometry"]
 
 
+def test_read_file__columns_conflicting_keywords(engine, naturalearth_lowres):
+    path = naturalearth_lowres
+
+    with pytest.raises(ValueError, match="Cannot specify both"):
+        geopandas.read_file(
+            path, columns=["name"], include_fields=["pop_est"], engine=engine
+        )
+
+    with pytest.raises(ValueError, match="Cannot specify both"):
+        geopandas.read_file(
+            path, columns=["name"], ignore_fields=["pop_est"], engine=engine
+        )
+
+    with pytest.raises(ValueError, match="Cannot specify both"):
+        geopandas.read_file(
+            path, include_fields=["name"], ignore_fields=["pop_est"], engine=engine
+        )
+
+
 def test_read_file_filtered_with_gdf_boundary(df_nybb, engine, nybb_filename):
     full_df_shape = df_nybb.shape
     bbox = geopandas.GeoDataFrame(
