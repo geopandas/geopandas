@@ -991,7 +991,7 @@ individually so that features may have different properties
             Include bbox (bounds) in the geojson. Default False.
         drop_id : bool, default: False
             Whether to retain the index of the GeoDataFrame as the id property
-            in the generated GeoJSON. Default is False, but may want True
+            in the generated dictionary. Default is False, but may want True
             if the index is just arbitrary row numbers.
 
         Examples
