@@ -811,20 +811,16 @@ class GeometryArray(ExtensionArray):
     #
 
     def unary_union(self):
-        warning_msg = (
-            "`unary_union` returned None due to all-None GeoSeries. In future, "
-            "`unary_union` will return 'GEOMETRYCOLLECTION EMPTY' instead."
+        warnings.warn(
+            "The 'unary_union' attribute is deprecated, "
+            "use the 'union_all' method instead.",
+            FutureWarning,
+            stacklevel=2,
         )
-        data = shapely.union_all(self._data)
-        if data is None or data.is_empty:
-            warnings.warn(
-                warning_msg,
-                FutureWarning,
-                stacklevel=4,
-            )
-            return None
-        else:
-            return data
+        return self.union_all()
+
+    def union_all(self):
+        return shapely.union_all(self._data)
 
     #
     # Affinity operations
@@ -1115,14 +1111,19 @@ class GeometryArray(ExtensionArray):
             # TODO with numpy >= 1.15, the 'initial' argument can be used
             return np.array([np.nan, np.nan, np.nan, np.nan])
         b = self.bounds
-        return np.array(
-            (
-                np.nanmin(b[:, 0]),  # minx
-                np.nanmin(b[:, 1]),  # miny
-                np.nanmax(b[:, 2]),  # maxx
-                np.nanmax(b[:, 3]),  # maxy
+        with warnings.catch_warnings():
+            # if all rows are empty geometry / none, nan is expected
+            warnings.filterwarnings(
+                "ignore", r"All-NaN slice encountered", RuntimeWarning
             )
-        )
+            return np.array(
+                (
+                    np.nanmin(b[:, 0]),  # minx
+                    np.nanmin(b[:, 1]),  # miny
+                    np.nanmax(b[:, 2]),  # maxx
+                    np.nanmax(b[:, 3]),  # maxy
+                )
+            )
 
     # -------------------------------------------------------------------------
     # general array like compat

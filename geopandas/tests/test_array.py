@@ -301,6 +301,9 @@ def test_as_array():
         ("geom_almost_equals", (3,)),
     ],
 )
+@pytest.mark.filterwarnings(
+    r"ignore:The \'almost_equals\(\)\' method is deprecated"
+)  # filter required for attr=geom_almost_equals only
 def test_predicates_vector_scalar(attr, args):
     na_value = False
 
@@ -340,6 +343,9 @@ def test_predicates_vector_scalar(attr, args):
         ("geom_almost_equals", (3,)),
     ],
 )
+@pytest.mark.filterwarnings(
+    r"ignore:The \'almost_equals\(\)\' method is deprecated"
+)  # filter required for attr=geom_almost_equals only
 def test_predicates_vector_vector(attr, args):
     na_value = False
     empty_value = True if attr == "disjoint" else False
@@ -659,7 +665,21 @@ def test_unary_union():
         shapely.geometry.Polygon([(0, 0), (1, 0), (1, 1)]),
     ]
     G = from_shapely(geoms)
-    u = G.unary_union()
+    with pytest.warns(FutureWarning, match="The 'unary_union' attribute is deprecated"):
+        u = G.unary_union()
+
+    expected = shapely.geometry.Polygon([(0, 0), (1, 0), (1, 1), (0, 1)])
+    assert u.equals(expected)
+    assert u.equals(G.union_all())
+
+
+def test_union_all():
+    geoms = [
+        shapely.geometry.Polygon([(0, 0), (0, 1), (1, 1)]),
+        shapely.geometry.Polygon([(0, 0), (1, 0), (1, 1)]),
+    ]
+    G = from_shapely(geoms)
+    u = G.union_all()
 
     expected = shapely.geometry.Polygon([(0, 0), (1, 0), (1, 1), (0, 1)])
     assert u.equals(expected)

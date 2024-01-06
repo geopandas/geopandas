@@ -364,6 +364,21 @@ class TestDataFrame:
         with pytest.raises(AttributeError, match=msg_geo_col_missing):
             df.geometry
 
+    def test_active_geometry_name(self):
+        # default single active called "geometry"
+        assert self.df.active_geometry_name == "geometry"
+
+        # one GeoSeries, not active
+        no_active = GeoDataFrame({"foo": self.df.BoroName, "bar": self.df.geometry})
+        assert no_active.active_geometry_name is None
+        assert no_active.set_geometry("bar").active_geometry_name == "bar"
+
+        # multiple, none active
+        multiple = GeoDataFrame({"foo": self.df.geometry, "bar": self.df.geometry})
+        assert multiple.active_geometry_name is None
+        assert multiple.set_geometry("foo").active_geometry_name == "foo"
+        assert multiple.set_geometry("bar").active_geometry_name == "bar"
+
     def test_align(self):
         df = self.df2
 
@@ -980,6 +995,7 @@ class TestDataFrame:
     @pytest.mark.parametrize("how", ["left", "inner", "right"])
     @pytest.mark.parametrize("max_distance", [None, 1])
     @pytest.mark.parametrize("distance_col", [None, "distance"])
+    @pytest.mark.filterwarnings("ignore:Geometry is in a geographic CRS:UserWarning")
     def test_sjoin_nearest(
         self, how, max_distance, distance_col, naturalearth_cities, naturalearth_lowres
     ):
@@ -1308,7 +1324,8 @@ class TestConstructor:
         ):
             gdf5["geometry"] = "foo"
         assert gdf5._geometry_column_name is None
-        gdf3 = gdf.copy().assign(geometry=geo_col)
+        with pytest.warns(FutureWarning, match=match):
+            gdf3 = gdf.copy().assign(geometry=geo_col)
         assert gdf3._geometry_column_name == "geometry"
 
         # Check that adding a GeoSeries to a column called "geometry" to a

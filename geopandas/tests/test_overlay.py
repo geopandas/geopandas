@@ -852,7 +852,7 @@ class TestOverlayWikiExample:
 
     def test_intersection(self):
         df_result = overlay(self.layer_a, self.layer_b, how="intersection")
-        assert df_result.geom_equals(self.intersection).bool()
+        assert df_result.geom_equals(self.intersection).all()
 
     def test_union(self):
         df_result = overlay(self.layer_a, self.layer_b, how="union")

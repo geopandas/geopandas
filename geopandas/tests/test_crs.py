@@ -1,4 +1,5 @@
 import random
+import warnings
 
 import numpy as np
 import pandas as pd
@@ -319,7 +320,11 @@ class TestGeometryArrayCRS:
             df.crs = 27700
 
         # geometry column without geometry
-        df = GeoDataFrame({"geometry": [Point(0, 1)]}).assign(geometry=[0])
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", "Geometry column does not contain geometry", UserWarning
+            )
+            df = GeoDataFrame({"geometry": [Point(0, 1)]}).assign(geometry=[0])
         with pytest.raises(
             ValueError,
             match="Assigning CRS to a GeoDataFrame without an active geometry",

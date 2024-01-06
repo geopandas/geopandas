@@ -31,7 +31,7 @@ def merged_shapes(nybb_polydf):
     manhattan_bronx = nybb_polydf.loc[3:4]
     others = nybb_polydf.loc[0:2]
 
-    collapsed = [others.geometry.unary_union, manhattan_bronx.geometry.unary_union]
+    collapsed = [others.geometry.union_all(), manhattan_bronx.geometry.union_all()]
     merged_shapes = GeoDataFrame(
         {"myshapes": collapsed},
         geometry="myshapes",
@@ -94,7 +94,7 @@ def test_mean_dissolve(nybb_polydf, first, expected_mean):
         )
         # for non pandas "mean", numeric only cannot be applied. Drop columns manually
         test2 = nybb_polydf.drop(columns=["BoroName"]).dissolve(
-            "manhattan_bronx", aggfunc=np.mean
+            "manhattan_bronx", aggfunc="mean"
         )
 
     assert_frame_equal(expected_mean, test, check_column_type=False)
@@ -151,7 +151,7 @@ def test_dissolve_none(nybb_polydf):
     test = nybb_polydf.dissolve(by=None)
     expected = GeoDataFrame(
         {
-            nybb_polydf.geometry.name: [nybb_polydf.geometry.unary_union],
+            nybb_polydf.geometry.name: [nybb_polydf.geometry.union_all()],
             "BoroName": ["Staten Island"],
             "BoroCode": [5],
             "manhattan_bronx": [5],
@@ -166,7 +166,7 @@ def test_dissolve_none_mean(nybb_polydf):
     test = nybb_polydf.dissolve(aggfunc="mean", numeric_only=True)
     expected = GeoDataFrame(
         {
-            nybb_polydf.geometry.name: [nybb_polydf.geometry.unary_union],
+            nybb_polydf.geometry.name: [nybb_polydf.geometry.union_all()],
             "BoroCode": [3.0],
             "manhattan_bronx": [5.4],
         },

@@ -37,7 +37,9 @@ def points(multipolygons):
 def test_uniform(geom_fixture, size, request):
     geom = request.getfixturevalue(geom_fixture)[0]
     sample = uniform(geom, size=size, rng=1)
-    sample_series = geopandas.GeoSeries(sample).explode().reset_index(drop=True)
+    sample_series = (
+        geopandas.GeoSeries(sample).explode(index_parts=True).reset_index(drop=True)
+    )
     assert len(sample_series) == size
     sample_in_geom = sample_series.buffer(0.00000001).sindex.query(
         geom, predicate="intersects"
