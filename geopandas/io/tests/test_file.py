@@ -578,7 +578,7 @@ def test_read_file(engine):
         "main/geopandas/tests/data/null_geom.geojson",
         # url to zip file
         "https://raw.githubusercontent.com/geopandas/geopandas/"
-        "main/geopandas/datasets/nybb_16a.zip",
+        "main/geopandas/tests/data/nybb_16a.zip",
         # url to zipfile without extension
         "https://geonode.goosocean.org/download/480",
         # url to web service
