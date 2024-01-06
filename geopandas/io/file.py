@@ -335,6 +335,10 @@ def _read_file_fiona(
         if not FIONA_GE_19:
             raise NotImplementedError("'columns' keyword requires fiona 1.9+")
         kwargs["include_fields"] = columns
+    elif "include_fields" in kwargs:
+        # alias to columns, as this variable is used below to specify column order
+        # in the dataframe creation
+        columns = kwargs["include_fields"]
 
     if not from_bytes:
         # Opening a file via URL or file-like-object above automatically detects a
@@ -493,6 +497,19 @@ def _read_file_pyogrio(path_or_bytes, bbox=None, mask=None, rows=None, **kwargs)
         fields = pyogrio.read_info(path_or_bytes)["fields"]
         include_fields = [col for col in fields if col not in ignore_fields]
         kwargs["columns"] = include_fields
+
+    if "include_fields" in kwargs:
+        # translate `include_fields` keyword for back compat with fiona engine
+        if kwargs.get("columns", None) is not None:
+            raise ValueError(
+                "Cannot specify both 'columns' and 'include_fields' keywords"
+            )
+        warnings.warn(
+            "It is recommended to use the 'columns' keyword instead of the "
+            "'include_fields' keyword to select the columns to read.",
+            stacklevel=2,
+        )
+        kwargs["columns"] = kwargs.pop("include_fields")
 
     # TODO: if bbox is not None, check its CRS vs the CRS of the file
     return pyogrio.read_dataframe(path_or_bytes, bbox=bbox, **kwargs)
