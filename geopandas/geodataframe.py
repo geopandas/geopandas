@@ -836,7 +836,7 @@ es": {"name": "urn:ogc:def:crs:EPSG::3857"}}}'
         represents the ``GeoDataFrame`` as a GeoJSON-like
         ``FeatureCollection``.
 
-        This differs from `to_geo_dict()` only in that it is a property with
+        This differs from :meth:`to_geo_dict` only in that it is a property with
         default args instead of a method.
 
         CRS of the dataframe is not passed on to the output, unlike
