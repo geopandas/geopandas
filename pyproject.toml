@@ -148,6 +148,8 @@ ignore = [ # space before : (needed for how black formats slicing)
     # "B301",  # not yet implemented
     # Only works with python >=3.10
     "B905",
+    # dict literals
+    "C408",
     # Too many arguments to function call
     "PLR0913",
     # Too many returns
