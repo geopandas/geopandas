@@ -113,8 +113,8 @@ def test_overlay(dfs_index, how):
 
 
 @pytest.mark.filterwarnings("ignore:GeoSeries crs mismatch:UserWarning")
-def test_overlay_nybb(how):
-    polydf = read_file(geopandas.datasets.get_path("nybb"))
+def test_overlay_nybb(how, nybb_filename):
+    polydf = read_file(nybb_filename)
 
     # The circles have been constructed and saved at the time the expected
     # results were created (exact output of buffer algorithm can slightly
@@ -712,8 +712,8 @@ def test_overlap_make_valid(should_make_valid):
             overlay(df1, df_bowtie, make_valid=should_make_valid)
 
 
-def test_empty_overlay_return_non_duplicated_columns():
-    nybb = geopandas.read_file(geopandas.datasets.get_path("nybb"))
+def test_empty_overlay_return_non_duplicated_columns(nybb_filename):
+    nybb = geopandas.read_file(nybb_filename)
     nybb2 = nybb.copy()
     nybb2.geometry = nybb2.translate(20000000)
 
@@ -852,7 +852,7 @@ class TestOverlayWikiExample:
 
     def test_intersection(self):
         df_result = overlay(self.layer_a, self.layer_b, how="intersection")
-        assert df_result.geom_equals(self.intersection).bool()
+        assert df_result.geom_equals(self.intersection).all()
 
     def test_union(self):
         df_result = overlay(self.layer_a, self.layer_b, how="union")

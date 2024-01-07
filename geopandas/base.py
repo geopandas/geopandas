@@ -49,12 +49,12 @@ def _delegate_binary_method(op, this, other, align, *args, **kwargs):
     return data, this.index
 
 
-def _binary_geo(op, this, other, align):
+def _binary_geo(op, this, other, align, *args, **kwargs):
     # type: (str, GeoSeries, GeoSeries) -> GeoSeries
     """Binary operation on GeoSeries objects that returns a GeoSeries"""
     from .geoseries import GeoSeries
 
-    geoms, index = _delegate_binary_method(op, this, other, align)
+    geoms, index = _delegate_binary_method(op, this, other, align, *args, **kwargs)
     return GeoSeries(geoms, index=index, crs=this.crs)
 
 
@@ -474,6 +474,40 @@ GeometryCollection
         dtype: bool
         """
         return _delegate_property("is_ccw", self)
+
+    @property
+    def is_closed(self):
+        """Returns a ``Series`` of ``dtype('bool')`` with value ``True``
+        if a LineString's or LinearRing's first and last points are equal.
+
+        Returns False for any other geometry type.
+
+        Examples
+        --------
+        >>> from shapely.geometry import LineString, Point, Polygon
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         LineString([(0, 0), (1, 1), (0, 1), (0, 0)]),
+        ...         LineString([(0, 0), (1, 1), (0, 1)]),
+        ...         Polygon([(0, 0), (0, 1), (1, 1), (0, 0)]),
+        ...         Point(3, 3)
+        ...     ]
+        ... )
+        >>> s
+        0    LINESTRING (0 0, 1 1, 0 1, 0 0)
+        1         LINESTRING (0 0, 1 1, 0 1)
+        2     POLYGON ((0 0, 0 1, 1 1, 0 0))
+        3                        POINT (3 3)
+        dtype: geometry
+
+        >>> s.is_closed
+        0     True
+        1    False
+        2    False
+        3    False
+        dtype: bool
+        """
+        return _delegate_property("is_closed", self)
 
     @property
     def has_z(self):
@@ -1337,24 +1371,113 @@ GeometryCollection
         """
         return _delegate_geo_method("transform", self, transformation, include_z)
 
+    def force_2d(self):
+        """Forces the dimensionality of a geometry to 2D.
+
+        Removes the additional Z coordinate dimension from all geometries.
+
+        Returns
+        -------
+        GeoSeries
+
+        Examples
+        --------
+        >>> from shapely import Polygon, LineString, Point
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Point(0.5, 2.5, 0),
+        ...         LineString([(1, 1, 1), (0, 1, 3), (1, 0, 2)]),
+        ...         Polygon([(0, 0, 0), (0, 10, 0), (10, 10, 0)]),
+        ...     ],
+        ... )
+        >>> s
+        0                            POINT Z (0.5 2.5 0)
+        1             LINESTRING Z (1 1 1, 0 1 3, 1 0 2)
+        2    POLYGON Z ((0 0 0, 0 10 0, 10 10 0, 0 0 0))
+        dtype: geometry
+
+        >>> s.force_2d()
+        0                      POINT (0.5 2.5)
+        1           LINESTRING (1 1, 0 1, 1 0)
+        2    POLYGON ((0 0, 0 10, 10 10, 0 0))
+        dtype: geometry
+        """
+        return _delegate_geo_method("force_2d", self)
+
+    def force_3d(self, z=0):
+        """Forces the dimensionality of a geometry to 3D.
+
+        2D geometries will get the provided Z coordinate; 3D geometries
+        are unchanged (unless their Z coordinate is ``np.nan``).
+
+        Note that for empty geometries, 3D is only supported since GEOS 3.9 and then
+        still only for simple geometries (non-collections).
+
+        Parameters
+        ----------
+        z : float | array_like (default 0)
+            Z coordinate to be assigned
+
+        Returns
+        -------
+        GeoSeries
+
+        Examples
+        --------
+        >>> from shapely import Polygon, LineString, Point
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Point(1, 2),
+        ...         Point(0.5, 2.5, 2),
+        ...         LineString([(1, 1), (0, 1), (1, 0)]),
+        ...         Polygon([(0, 0), (0, 10), (10, 10)]),
+        ...     ],
+        ... )
+        >>> s
+        0                          POINT (1 2)
+        1                  POINT Z (0.5 2.5 2)
+        2           LINESTRING (1 1, 0 1, 1 0)
+        3    POLYGON ((0 0, 0 10, 10 10, 0 0))
+        dtype: geometry
+
+        >>> s.force_3d()
+        0                                POINT Z (1 2 0)
+        1                            POINT Z (0.5 2.5 2)
+        2             LINESTRING Z (1 1 0, 0 1 0, 1 0 0)
+        3    POLYGON Z ((0 0 0, 0 10 0, 10 10 0, 0 0 0))
+        dtype: geometry
+
+        Z coordinate can be specified as scalar:
+
+        >>> s.force_3d(4)
+        0                                POINT Z (1 2 4)
+        1                            POINT Z (0.5 2.5 2)
+        2             LINESTRING Z (1 1 4, 0 1 4, 1 0 4)
+        3    POLYGON Z ((0 0 4, 0 10 4, 10 10 4, 0 0 4))
+        dtype: geometry
+
+        Or as an array-like (one value per geometry):
+
+        >>> s.force_3d(range(4))
+        0                                POINT Z (1 2 0)
+        1                            POINT Z (0.5 2.5 2)
+        2             LINESTRING Z (1 1 2, 0 1 2, 1 0 2)
+        3    POLYGON Z ((0 0 3, 0 10 3, 10 10 3, 0 0 3))
+        dtype: geometry
+        """
+        return _delegate_geo_method("force_3d", self, z=z)
+
     #
     # Reduction operations that return a Shapely geometry
     #
 
     @property
-    def cascaded_union(self):
-        """Deprecated: use `unary_union` instead"""
-        warn(
-            "The 'cascaded_union' attribute is deprecated, use 'unary_union' instead",
-            FutureWarning,
-            stacklevel=2,
-        )
-        return self.geometry.values.unary_union()
-
-    @property
     def unary_union(self):
         """Returns a geometry containing the union of all geometries in the
         ``GeoSeries``.
+
+        The ``unary_union`` attribute is deprecated. Use :meth:`union_all`
+        instead.
 
         Examples
         --------
@@ -1369,8 +1492,40 @@ GeometryCollection
         >>> union = s.unary_union
         >>> print(union)
         POLYGON ((0 1, 0 2, 2 2, 2 0, 1 0, 0 0, 0 1))
+
+        See also
+        --------
+        GeoSeries.union_all
         """
-        return self.geometry.values.unary_union()
+
+        warn(
+            "The 'unary_union' attribute is deprecated, "
+            "use the 'union_all()' method instead.",
+            FutureWarning,
+            stacklevel=2,
+        )
+
+        return self.geometry.values.union_all()
+
+    def union_all(self):
+        """Returns a geometry containing the union of all geometries in the
+        ``GeoSeries``.
+
+        Examples
+        --------
+
+        >>> from shapely.geometry import box
+        >>> s = geopandas.GeoSeries([box(0,0,1,1), box(0,0,2,2)])
+        >>> s
+        0    POLYGON ((1 0, 1 1, 0 1, 0 0, 1 0))
+        1    POLYGON ((2 0, 2 2, 0 2, 0 0, 2 0))
+        dtype: geometry
+
+        >>> union = s.union_all()
+        >>> print(union)
+        POLYGON ((0 1, 0 2, 2 2, 2 0, 1 0, 0 0, 0 1))
+        """
+        return self.geometry.values.union_all()
 
     #
     # Binary operations that return a pandas Series
@@ -1487,9 +1642,131 @@ GeometryCollection
 
         See also
         --------
+        GeoSeries.contains_properly
         GeoSeries.within
         """
         return _binary_op("contains", self, other, align)
+
+    def contains_properly(self, other, align=True):
+        """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
+        each aligned geometry that is completely inside ``other``, with no common
+        boundary points.
+
+        Geometry A contains geometry B properly if B intersects the interior of A but
+        not the boundary (or exterior). This means that a geometry A does not “contain
+        properly” itself, which contrasts with the :meth:`~GeoSeries.contains` method,
+        where common points on the boundary are allowed.
+
+        The operation works on a 1-to-1 row-wise manner:
+
+        .. image:: ../../../_static/binary_op-01.svg
+           :align: center
+
+        Parameters
+        ----------
+        other : GeoSeries or geometric object
+            The GeoSeries (elementwise) or geometric object to test if it
+            is contained.
+        align : bool (default True)
+            If True, automatically aligns GeoSeries based on their indices.
+            If False, the order of elements is preserved.
+
+        Returns
+        -------
+        Series (bool)
+
+        Examples
+        --------
+        >>> from shapely.geometry import Polygon, LineString, Point
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0, 0), (1, 1), (0, 1)]),
+        ...         LineString([(0, 0), (0, 2)]),
+        ...         LineString([(0, 0), (0, 1)]),
+        ...         Point(0, 1),
+        ...     ],
+        ...     index=range(0, 4),
+        ... )
+        >>> s2 = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0, 0), (2, 2), (0, 2)]),
+        ...         Polygon([(0, 0), (1, 2), (0, 2)]),
+        ...         LineString([(0, 0), (0, 2)]),
+        ...         Point(0, 1),
+        ...     ],
+        ...     index=range(1, 5),
+        ... )
+
+        >>> s
+        0    POLYGON ((0 0, 1 1, 0 1, 0 0))
+        1             LINESTRING (0 0, 0 2)
+        2             LINESTRING (0 0, 0 1)
+        3                       POINT (0 1)
+        dtype: geometry
+
+        >>> s2
+        1    POLYGON ((0 0, 2 2, 0 2, 0 0))
+        2    POLYGON ((0 0, 1 2, 0 2, 0 0))
+        3             LINESTRING (0 0, 0 2)
+        4                       POINT (0 1)
+        dtype: geometry
+
+        We can check if each geometry of GeoSeries contains a single
+        geometry:
+
+        .. image:: ../../../_static/binary_op-03.svg
+           :align: center
+
+        >>> point = Point(0, 1)
+        >>> s.contains_properly(point)
+        0    False
+        1     True
+        2    False
+        3     True
+        dtype: bool
+
+        We can also check two GeoSeries against each other, row by row.
+        The GeoSeries above have different indices. We can either align both GeoSeries
+        based on index values and compare elements with the same index using
+        ``align=True`` or ignore index and compare elements based on their matching
+        order using ``align=False``:
+
+        .. image:: ../../../_static/binary_op-02.svg
+
+        >>> s2.contains_properly(s, align=True)
+        0    False
+        1    False
+        2    False
+        3     True
+        4    False
+        dtype: bool
+
+        >>> s2.contains_properly(s, align=False)
+        1    False
+        2    False
+        3    False
+        4     True
+        dtype: bool
+
+        Compare it to the result of :meth:`~GeoSeries.contains`:
+
+        >>> s2.contains(s, align=False)
+        1     True
+        2    False
+        3     True
+        4     True
+        dtype: bool
+
+        Notes
+        -----
+        This method works in a row-wise manner. It does not check if an element
+        of one GeoSeries ``contains_properly`` *any* element of the other one.
+
+        See also
+        --------
+        GeoSeries.contains
+        """
+        return _binary_op("contains_properly", self, other, align)
 
     def geom_equals(self, other, align=True):
         """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
@@ -3592,6 +3869,107 @@ GeometryCollection
         """
         return _binary_geo("shortest_line", self, other, align)
 
+    def snap(self, other, tolerance, align=True):
+        """Snaps an input geometry to reference geometry’s vertices.
+
+        Vertices of the first geometry are snapped to vertices of the second. geometry,
+        returning a new geometry; the input geometries are not modified. The result
+        geometry is the input geometry with the vertices snapped. If no snapping occurs
+        then the input geometry is returned unchanged. The tolerance is used to control
+        where snapping is performed.
+
+        Where possible, this operation tries to avoid creating invalid geometries;
+        however, it does not guarantee that output geometries will be valid. It is the
+        responsibility of the caller to check for and handle invalid geometries.
+
+        Because too much snapping can result in invalid geometries being created,
+        heuristics are used to determine the number and location of snapped vertices
+        that are likely safe to snap. These heuristics may omit some potential snaps
+        that are otherwise within the tolerance.
+
+        The operation works in a 1-to-1 row-wise manner:
+
+        .. image:: ../../../_static/binary_op-01.svg
+        :align: center
+
+        Parameters
+        ----------
+        other : GeoSeries or geometric object
+            The Geoseries (elementwise) or geometric object to snap to.
+        tolerance : float or array like
+            Maximum distance between vertices that shall be snapped
+        align : bool (default True)
+            If True, automatically aligns GeoSeries based on their indices.
+            If False, the order of elements is preserved.
+
+        Returns
+        -------
+        GeoSeries
+
+        Examples
+        --------
+        >>> from shapely import Polygon, LineString, Point
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Point(0.5, 2.5),
+        ...         LineString([(0.1, 0.1), (0.49, 0.51), (1.01, 0.89)]),
+        ...         Polygon([(0, 0), (0, 10), (10, 10), (10, 0), (0, 0)]),
+        ...     ],
+        ... )
+        >>> s
+        0                               POINT (0.5 2.5)
+        1    LINESTRING (0.1 0.1, 0.49 0.51, 1.01 0.89)
+        2       POLYGON ((0 0, 0 10, 10 10, 10 0, 0 0))
+        dtype: geometry
+
+        >>> s2 = geopandas.GeoSeries(
+        ...     [
+        ...         Point(0, 2),
+        ...         LineString([(0, 0), (0.5, 0.5), (1.0, 1.0)]),
+        ...         Point(8, 10),
+        ...     ],
+        ...     index=range(1, 4),
+        ... )
+        >>> s2
+        1                       POINT (0 2)
+        2    LINESTRING (0 0, 0.5 0.5, 1 1)
+        3                      POINT (8 10)
+        dtype: geometry
+
+        We can snap each geometry to a single shapely geometry:
+
+        .. image:: ../../../_static/binary_op-03.svg
+           :align: center
+
+        >>> s.snap(Point(0, 2), tolerance=1)
+        0                                     POINT (0 2)
+        1      LINESTRING (0.1 0.1, 0.49 0.51, 1.01 0.89)
+        2    POLYGON ((0 0, 0 2, 0 10, 10 10, 10 0, 0 0))
+        dtype: geometry
+
+        We can also snap two GeoSeries to each other, row by row.
+        The GeoSeries above have different indices. We can either align both GeoSeries
+        based on index values and snap elements with the same index using
+        ``align=True`` or ignore index and snap elements based on their matching
+        order using ``align=False``:
+
+        .. image:: ../../../_static/binary_op-02.svg
+
+        >>> s.snap(s2, tolerance=1, align=True)
+        0                                                 None
+        1           LINESTRING (0.1 0.1, 0.49 0.51, 1.01 0.89)
+        2    POLYGON ((0.5 0.5, 1 1, 0 10, 10 10, 10 0, 0.5...
+        3                                                 None
+        dtype: geometry
+
+        >>> s.snap(s2, tolerance=1, align=False)
+        0                                      POINT (0 2)
+        1                   LINESTRING (0 0, 0.5 0.5, 1 1)
+        2    POLYGON ((0 0, 0 10, 8 10, 10 10, 10 0, 0 0))
+        dtype: geometry
+        """
+        return _binary_geo("snap", self, other, align, tolerance=tolerance)
+
     #
     # Other operations
     #
@@ -4618,7 +4996,7 @@ GeometryCollection
             result = self.geometry.apply(
                 lambda x: points_from_xy(
                     *sample_function(x, size=size, **kwargs).T
-                ).unary_union()
+                ).union_all()
                 if not (x.is_empty or x is None or "Polygon" not in x.geom_type)
                 else MultiPoint(),
             )

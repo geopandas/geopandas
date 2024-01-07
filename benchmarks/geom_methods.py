@@ -134,8 +134,8 @@ class Bench:
     def time_bounds(self, *args):
         self.triangles.bounds
 
-    def time_unary_union(self, *args):
-        self.triangles.unary_union
+    def time_union_all(self, *args):
+        self.triangles.union_all()
 
     def time_buffer(self, *args):
         self.points.buffer(2)
