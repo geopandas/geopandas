@@ -65,8 +65,8 @@ def _overlay_intersection(df1, df2):
             right_index=True,
             suffixes=("_1", "_2"),
         )
-        result["__idx1"] = None
-        result["__idx2"] = None
+        result["__idx1"] = np.nan
+        result["__idx2"] = np.nan
         return result[
             result.columns.drop(df1.geometry.name).tolist() + [df1.geometry.name]
         ]
@@ -135,14 +135,7 @@ def _overlay_union(df1, df2):
     """
     dfinter = _overlay_intersection(df1, df2)
     dfsym = _overlay_symmetric_diff(df1, df2)
-    with warnings.catch_warnings():
-        # pandas GH52532 FutureWarning, fix new behaviour if needed when it is added
-        warnings.filterwarnings(
-            "ignore",
-            "The behavior of DataFrame concatenation with empty",
-            FutureWarning,
-        )
-        dfunion = pd.concat([dfinter, dfsym], ignore_index=True, sort=False)
+    dfunion = pd.concat([dfinter, dfsym], ignore_index=True, sort=False)
     # keep geometry column last
     columns = list(dfunion.columns)
     columns.remove("geometry")
@@ -365,7 +358,7 @@ def overlay(df1, df2, how="intersection", keep_geom_type=None, make_valid=True):
 
             # level_0 created with above reset_index operation
             # and represents the original geometry collections
-            # TODO avoiding dissolve to call unary_union in this case could further
+            # TODO avoiding dissolve to call union_all in this case could further
             # improve performance (we only need to collect geometries in their
             # respective Multi version)
             dissolved = exploded.dissolve(by="level_0")

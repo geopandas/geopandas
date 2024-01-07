@@ -284,7 +284,7 @@ def test_expandim_in_groupby_aggregate_multiple_funcs():
     s = GeoSeries.from_xy([0, 1, 2], [0, 1, 3])
 
     def union(s):
-        return s.unary_union
+        return s.union_all()
 
     def total_area(s):
         return s.area.sum()

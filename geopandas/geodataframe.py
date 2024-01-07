@@ -17,7 +17,6 @@ from geopandas.base import GeoPandasBase, is_geometry_type
 from geopandas.geoseries import GeoSeries
 import geopandas.io
 from geopandas.explore import _explore
-from . import _compat as compat
 from ._decorator import doc
 
 
@@ -320,8 +319,6 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 level = frame[col]
             except KeyError:
                 raise ValueError("Unknown column %s" % col)
-            except Exception:
-                raise
             if isinstance(level, DataFrame):
                 raise ValueError(
                     "GeoDataFrame does not support setting the geometry column where "
@@ -397,6 +394,26 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 )
             self.rename(columns={geometry_col: col}, inplace=inplace)
             self.set_geometry(col, inplace=inplace)
+
+    @property
+    def active_geometry_name(self):
+        """Return the name of the active geometry column
+
+        Returns a string name if a GeoDataFrame has an active geometry column set.
+        Otherwise returns None. You can also access the active geometry column using the
+        ``.geometry`` property. You can set a GeoSeries to be an active geometry
+        using the :meth:`~GeoDataFrame.set_geometry` method.
+
+        Returns
+        -------
+        str
+            name of an active geometry column or None
+
+        See also
+        --------
+        GeoDataFrame.set_geometry : set the active geometry
+        """
+        return self._geometry_column_name
 
     @property
     def crs(self):
@@ -1537,13 +1554,6 @@ individually so that features may have different properties
         result = super().apply(
             func, axis=axis, raw=raw, result_type=result_type, args=args, **kwargs
         )
-        # pandas <1.4 re-attach last geometry col if lost
-        if (
-            not compat.PANDAS_GE_14
-            and isinstance(result, GeoDataFrame)
-            and result._geometry_column_name is None
-        ):
-            result._geometry_column_name = self._geometry_column_name
         # Reconstruct gdf if it was lost by apply
         if (
             isinstance(result, DataFrame)
@@ -1654,7 +1664,7 @@ individually so that features may have different properties
     ):
         """
         Dissolve geometries within `groupby` into single observation.
-        This is accomplished by applying the `unary_union` method
+        This is accomplished by applying the `union_all` method
         to all geometries within a groupself.
 
         Observations associated with each `groupby` group will be aggregated
@@ -1776,7 +1786,7 @@ individually so that features may have different properties
 
         # Process spatial component
         def merge_geometries(block):
-            merged_geom = block.unary_union
+            merged_geom = block.union_all()
             return merged_geom
 
         g = self.groupby(group_keys=False, **groupby_kwargs)[self.geometry.name].agg(

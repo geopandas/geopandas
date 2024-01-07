@@ -76,17 +76,10 @@ def _expand_kwargs(kwargs, multiindex):
     it (in place) to the correct length/formats with help of 'multiindex', unless
     the value appears to already be a valid (single) value for the key.
     """
-    import matplotlib
     from matplotlib.colors import is_color_like
     from typing import Iterable
 
-    mpl = Version(matplotlib.__version__)
-    if mpl >= Version("3.4"):
-        # alpha is supported as array argument with matplotlib 3.4+
-        scalar_kwargs = ["marker", "path_effects"]
-    else:
-        scalar_kwargs = ["marker", "alpha", "path_effects"]
-
+    scalar_kwargs = ["marker", "path_effects"]
     for att, value in kwargs.items():
         if "color" in att:  # color(s), edgecolor(s), facecolor(s)
             if is_color_like(value):
@@ -491,7 +484,7 @@ def plot_series(
             ax, points, values_, color=color_, cmap=cmap, **style_kwds
         )
 
-    plt.draw()
+    ax.figure.canvas.draw_idle()
     return ax
 
 
@@ -964,7 +957,7 @@ def plot_dataframe(
             n_cmap.set_array(np.array([]))
             ax.get_figure().colorbar(n_cmap, **legend_kwds)
 
-    plt.draw()
+    ax.figure.canvas.draw_idle()
     return ax
 
 

@@ -183,7 +183,7 @@ class TestGeomMethods:
         fcmp = assert_series_equal
         self._test_unary(op, expected, a, fcmp)
 
-    def _test_unary_topological(self, op, expected, a):
+    def _test_unary_topological(self, op, expected, a, method=False):
         if isinstance(expected, GeoPandasBase):
             fcmp = assert_geoseries_equal
         else:
@@ -191,7 +191,7 @@ class TestGeomMethods:
             def fcmp(a, b):
                 assert a.equals(b)
 
-        self._test_unary(op, expected, a, fcmp)
+        self._test_unary(op, expected, a, fcmp, method=method)
 
     def _test_binary_topological(self, op, expected, a, b, *args, **kwargs):
         """Tests for 'intersection', 'union', 'symmetric_difference', etc."""
@@ -294,14 +294,20 @@ class TestGeomMethods:
                 result = getattr(gdf_left, op)(gdf_right, *args, **kwargs)
                 fcmp(result, expected)
 
-    def _test_unary(self, op, expected, a, fcmp):
+    def _test_unary(self, op, expected, a, fcmp, method=False):
         # GeoSeries, (GeoSeries or geometry)
-        result = getattr(a, op)
+        if method:
+            result = getattr(a, op)()
+        else:
+            result = getattr(a, op)
         fcmp(result, expected)
 
         # GeoDataFrame, (GeoSeries or geometry)
         gdf = self.gdf1.set_geometry(a)
-        result = getattr(gdf, op)
+        if method:
+            result = getattr(gdf, op)()
+        else:
+            result = getattr(gdf, op)
         fcmp(result, expected)
 
     # TODO re-enable for all operations once we use pyproj > 2
@@ -464,30 +470,29 @@ class TestGeomMethods:
         )
         assert_frame_equal(result, expected)
 
-    def test_unary_union(self):
+    def test_union_all(self):
         p1 = self.t1
         p2 = Polygon([(2, 0), (3, 0), (3, 1)])
         expected = unary_union([p1, p2])
         g = GeoSeries([p1, p2])
 
-        self._test_unary_topological("unary_union", expected, g)
+        self._test_unary_topological("union_all", expected, g, method=True)
 
         g2 = GeoSeries([p1, None])
-        self._test_unary_topological("unary_union", p1, g2)
+        self._test_unary_topological("union_all", p1, g2, method=True)
 
-        with pytest.warns(FutureWarning, match="`unary_union` returned None"):
-            g3 = GeoSeries([None, None])
-            assert g3.unary_union is None
+        g3 = GeoSeries([None, None])
+        assert g3.union_all().equals(shapely.GeometryCollection())
 
-    def test_cascaded_union_deprecated(self):
+    def test_unary_union_deprecated(self):
         p1 = self.t1
         p2 = Polygon([(2, 0), (3, 0), (3, 1)])
         g = GeoSeries([p1, p2])
         with pytest.warns(
-            FutureWarning, match="The 'cascaded_union' attribute is deprecated"
+            FutureWarning, match="The 'unary_union' attribute is deprecated"
         ):
-            result = g.cascaded_union
-        assert result == g.unary_union
+            result = g.unary_union
+        assert result == g.union_all()
 
     def test_contains(self):
         expected = [True, False, True, False, False, False, False]
@@ -1249,7 +1254,7 @@ class TestGeomMethods:
     def test_minimum_bounding_circle(self):
         mbc = self.g1.minimum_bounding_circle()
         centers = GeoSeries([Point(0.5, 0.5)] * 2)
-        assert np.all(mbc.centroid.geom_almost_equals(centers, 0.001))
+        assert np.all(mbc.centroid.geom_equals_exact(centers, 0.001))
         assert_series_equal(
             mbc.area,
             Series([1.560723, 1.560723]),
