@@ -415,6 +415,8 @@ def _read_file_fiona(
                         )
                         as_dt = pd.to_datetime(df[k])
                 except Exception:
+                    pass
+                if as_dt is None or as_dt.dtype == "object":
                     # if to_datetime failed, try again for mixed timezone offsets
                     # This can still fail if there are invalid datetimes
                     try:
