@@ -362,6 +362,64 @@ class TestSpatialJoin:
 
         assert_frame_equal(res, exp, check_index_type=False)
 
+    @pytest.mark.parametrize("how", ["inner"])
+    @pytest.mark.parametrize(
+        "geo_left, geo_right, expected_left, expected_right, distance",
+        [
+            (
+                # Distance is number, 2x1
+                [Point(0, 0), Point(1, 1)],
+                [Point(1, 1)],
+                [0, 1],
+                [0, 0],
+                math.sqrt(2),
+            ),
+            # Distance is number, 2x2
+            (
+                [Point(0, 0), Point(1, 1)],
+                [Point(0, 0), Point(1, 1)],
+                [0, 1, 0, 1],
+                [0, 0, 1, 1],
+                math.sqrt(2),
+            ),
+            # Distance is array, matches len(left)
+            (
+                [Point(0, 0), Point(0, 0), Point(-1, -1)],
+                [Point(1, 1)],
+                [1, 2],
+                [0, 0],
+                [0, math.sqrt(2), math.sqrt(8)],
+            ),
+            # Distance is np.array, matches len(left),
+            # inner join sorts the right GeoDataFrame
+            (
+                [Point(0, 0), Point(0, 0), Point(-1, -1)],
+                [Point(1, 1), Point(0.5, 0.5)],
+                [1, 2, 1, 2],
+                [1, 1, 0, 0],
+                np.array([0, math.sqrt(2), math.sqrt(8)]),
+            ),
+        ],
+    )
+    def test_sjoin_dwithin(
+        self,
+        geo_left,
+        geo_right,
+        expected_left: Sequence[int],
+        expected_right: Sequence[int],
+        distance,
+        how,
+    ):
+        left = geopandas.GeoDataFrame({"geometry": geo_left})
+        right = geopandas.GeoDataFrame({"geometry": geo_right})
+        expected_gdf = left.iloc[expected_left].copy()
+        expected_gdf["index_right"] = expected_right
+        # without distance col
+        joined = sjoin(left, right, how=how, predicate="dwithin", distance=distance)
+        # inner / left join give a different row order
+        # check_like = how == "left"
+        assert_frame_equal(expected_gdf, joined)
+
 
 class TestSpatialJoinNYBB:
     def setup_method(self):
