@@ -19,18 +19,27 @@ BRANCA_05 = Version(branca.__version__) > Version("0.4.2")
 FOLIUM_G_014 = Version(folium.__version__) > Version("0.14.0")
 
 
-class TestExplore:
-    def setup_method(self):
-        self.nybb = gpd.read_file(gpd.datasets.get_path("nybb"))
-        self.world = gpd.read_file(gpd.datasets.get_path("naturalearth_lowres"))
-        self.cities = gpd.read_file(gpd.datasets.get_path("naturalearth_cities"))
-        self.chicago = gpd.read_file(geodatasets.get_path("geoda.chicago_commpop"))
-        self.world["range"] = range(len(self.world))
-        self.missing = self.world.copy()
-        np.random.seed(42)
-        self.missing.loc[np.random.choice(self.missing.index, 40), "continent"] = np.nan
-        self.missing.loc[np.random.choice(self.missing.index, 40), "pop_est"] = np.nan
+@pytest.fixture(scope="class")
+def _setup_class_test_explore(
+    nybb_filename, naturalearth_lowres, naturalearth_cities, request
+):
+    request.cls.nybb = gpd.read_file(nybb_filename)
+    request.cls.world = gpd.read_file(naturalearth_lowres)
+    request.cls.cities = gpd.read_file(naturalearth_cities)
+    request.cls.chicago = gpd.read_file(geodatasets.get_path("geoda.chicago_commpop"))
+    request.cls.world["range"] = range(len(request.cls.world))
+    request.cls.missing = request.cls.world.copy()
+    np.random.seed(42)
+    request.cls.missing.loc[
+        np.random.choice(request.cls.missing.index, 40), "continent"
+    ] = np.nan
+    request.cls.missing.loc[
+        np.random.choice(request.cls.missing.index, 40), "pop_est"
+    ] = np.nan
 
+
+@pytest.mark.usefixtures("_setup_class_test_explore")
+class TestExplore:
     def _fetch_map_string(self, m):
         out = m._parent.render()
         out_str = "".join(out.split())

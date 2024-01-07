@@ -1,7 +1,8 @@
-from geopandas import GeoDataFrame, GeoSeries, read_file, datasets, overlay
+from geopandas import GeoDataFrame, GeoSeries, read_file, overlay
 import numpy as np
 from shapely.geometry import Point, Polygon
-
+from geopandas.tests.util import _NATURALEARTH_LOWRES
+from geopandas.tests.util import _NATURALEARTH_CITIES
 
 class Countries:
     param_names = ["how"]
@@ -10,8 +11,8 @@ class Countries:
     ]
 
     def setup(self, *args):
-        world = read_file(datasets.get_path("naturalearth_lowres"))
-        capitals = read_file(datasets.get_path("naturalearth_cities"))
+        world = read_file(_NATURALEARTH_LOWRES)
+        capitals = read_file(_NATURALEARTH_CITIES)
         countries = world[["geometry", "name"]]
         countries = countries.to_crs("+init=epsg:3395")[countries.name != "Antarctica"]
         capitals = capitals.to_crs("+init=epsg:3395")
