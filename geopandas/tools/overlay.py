@@ -65,8 +65,8 @@ def _overlay_intersection(df1, df2):
             right_index=True,
             suffixes=("_1", "_2"),
         )
-        result["__idx1"] = None
-        result["__idx2"] = None
+        result["__idx1"] = np.nan
+        result["__idx2"] = np.nan
         return result[
             result.columns.drop(df1.geometry.name).tolist() + [df1.geometry.name]
         ]
