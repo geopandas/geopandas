@@ -1666,7 +1666,8 @@ class GeometryArray(ExtensionArray):
         return (self == item).any()
 
 
-class MaybeGeometryArray:  # TODO should this inherit?
+class MaybeGeometryArray(GeometryArray):  # TODO should this inherit?
+    # getting _empty from parent
     @classmethod
     def _from_sequence(cls, scalars, dtype=None, copy=False):
         """
