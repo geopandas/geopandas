@@ -418,7 +418,7 @@ class TestSpatialJoin:
         joined = sjoin(left, right, how=how, predicate="dwithin", distance=distance)
         # inner / left join give a different row order
         # check_like = how == "left"
-        assert_frame_equal(expected_gdf, joined)
+        assert_frame_equal(expected_gdf, joined, check_like=True)
 
 
 class TestSpatialJoinNYBB:
