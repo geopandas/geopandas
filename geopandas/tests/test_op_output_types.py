@@ -152,7 +152,7 @@ def test_loc_add_row(geom_name):
     import geopandas
     from geodatasets import get_path
 
-    nybb = geopandas.read_file(get_path("nybb"), columns=["BoroCode", "geometry"])
+    nybb = geopandas.read_file(get_path("nybb"))[["BoroCode", "geometry"]]
     if geom_name != "geometry":
         nybb = nybb.rename_geometry(geom_name)
     crs_orig = nybb.crs
