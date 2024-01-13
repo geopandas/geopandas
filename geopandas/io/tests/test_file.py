@@ -191,6 +191,9 @@ eastern = pytz.timezone("America/New_York")
 datetime_type_tests = (TEST_DATE, eastern.localize(TEST_DATE))
 
 
+@pytest.mark.filterwarnings(
+    "ignore:Non-conformant content for record 1 in column b:RuntimeWarning"
+)  # for GPKG, GDAL writes the tz data but warns on reading (see DATETIME_FORMAT option)
 @pytest.mark.parametrize(
     "time", datetime_type_tests, ids=("naive_datetime", "datetime_with_timezone")
 )
