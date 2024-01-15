@@ -8,7 +8,7 @@ import pandas as pd
 
 from pyproj import CRS
 from pyproj.exceptions import CRSError
-from shapely.geometry import Point, Polygon
+from shapely.geometry import Point, Polygon, box
 
 import geopandas
 from geopandas import GeoDataFrame, GeoSeries, points_from_xy, read_file
@@ -17,6 +17,7 @@ from geopandas.array import GeometryArray, GeometryDtype, from_shapely
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 from geopandas.tests.util import PACKAGE_DIR, validate_boro_df
 from pandas.testing import assert_frame_equal, assert_index_equal, assert_series_equal
+import geopandas._compat as compat
 import pytest
 
 
@@ -990,6 +991,26 @@ class TestDataFrame:
 
         expected = geopandas.sjoin(left, right, how=how, predicate=predicate)
         result = left.sjoin(right, how=how, predicate=predicate)
+        assert_geodataframe_equal(result, expected)
+
+    @pytest.mark.parametrize("how", ["left", "inner", "right"])
+    @pytest.mark.parametrize("distance", [0, 3])
+    @pytest.mark.skipif(
+        not compat.GEOS_GE_310,
+        reason="`dwithin` requires GEOS 3.10",
+    )
+    def test_sjoin_dwithin(self, how, distance):
+        """
+        Basic test for predicate='dwithin' availability of the GeoDataFrame method.
+        Other sjoin tests are located in /tools/tests/test_sjoin.py
+        """
+        left = GeoDataFrame(geometry=points_from_xy([0, 1, 2], [0, 1, 1]))
+        right = GeoDataFrame(geometry=[box(0, 0, 1, 1)])
+
+        expected = geopandas.sjoin(
+            left, right, how=how, predicate="dwithin", distance=distance
+        )
+        result = left.sjoin(right, how=how, predicate="dwithin", distance=distance)
         assert_geodataframe_equal(result, expected)
 
     @pytest.mark.parametrize("how", ["left", "inner", "right"])

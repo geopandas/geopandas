@@ -15,6 +15,7 @@ def sjoin(
     predicate="intersects",
     lsuffix="left",
     rsuffix="right",
+    distance=None,
     **kwargs,
 ):
     """Spatial join of two GeoDataFrames.
@@ -42,6 +43,11 @@ def sjoin(
         Suffix to apply to overlapping column names (left GeoDataFrame).
     rsuffix : string, default 'right'
         Suffix to apply to overlapping column names (right GeoDataFrame).
+    distance : number or array_like, optional
+        Distance(s) around each input geometry within which to query the tree
+        for the 'dwithin' predicate. If array_like, must be
+        one-dimesional with length equal to length of left GeoDataFrame.
+        Required if ``predicate='dwithin'``.
 
     Examples
     --------
@@ -117,7 +123,7 @@ def sjoin(
 
     _basic_checks(left_df, right_df, how, lsuffix, rsuffix)
 
-    indices = _geom_predicate_query(left_df, right_df, predicate)
+    indices = _geom_predicate_query(left_df, right_df, predicate, distance)
 
     joined = _frame_join(indices, left_df, right_df, how, lsuffix, rsuffix)
 
@@ -174,7 +180,7 @@ def _basic_checks(left_df, right_df, how, lsuffix, rsuffix):
         )
 
 
-def _geom_predicate_query(left_df, right_df, predicate):
+def _geom_predicate_query(left_df, right_df, predicate, distance):
     """Compute geometric comparisons and get matching indices.
 
     Parameters
@@ -213,7 +219,9 @@ def _geom_predicate_query(left_df, right_df, predicate):
             input_geoms = left_df.geometry
 
     if sindex:
-        l_idx, r_idx = sindex.query(input_geoms, predicate=predicate, sort=False)
+        l_idx, r_idx = sindex.query(
+            input_geoms, predicate=predicate, sort=False, distance=distance
+        )
         indices = pd.DataFrame({"_key_left": l_idx, "_key_right": r_idx})
     else:
         # when sindex is empty / has no valid geometries
