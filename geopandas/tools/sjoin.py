@@ -44,10 +44,10 @@ def sjoin(
     rsuffix : string, default 'right'
         Suffix to apply to overlapping column names (right GeoDataFrame).
     distance : number or array_like, optional
-            Distance(s) around each input geometry within which to query the tree
-            for the 'dwithin' predicate. If array_like, must be
-            one-dimesional with length equal to length of left GeoDataFrame.
-            Required if ``predicate='dwithin'``.
+        Distance(s) around each input geometry within which to query the tree
+        for the 'dwithin' predicate. If array_like, must be
+        one-dimesional with length equal to length of left GeoDataFrame.
+        Required if ``predicate='dwithin'``.
 
     Examples
     --------

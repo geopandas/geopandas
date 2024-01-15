@@ -414,10 +414,7 @@ class TestSpatialJoin:
         right = geopandas.GeoDataFrame({"geometry": geo_right})
         expected_gdf = left.iloc[expected_left].copy()
         expected_gdf["index_right"] = expected_right
-        # without distance col
         joined = sjoin(left, right, how=how, predicate="dwithin", distance=distance)
-        # inner / left join give a different row order
-        # check_like = how == "left"
         assert_frame_equal(expected_gdf, joined, check_like=True)
 
 
