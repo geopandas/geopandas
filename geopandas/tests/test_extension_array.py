@@ -400,6 +400,12 @@ class TestMissing(extension_tests.BaseMissingTests):
     def test_fillna_no_op_returns_copy(self, data):
         pass
 
+    @pytest.mark.skip("fillna method not supported")
+    def test_ffill_limit_area(
+        self, data_missing, limit_area, input_ilocs, expected_ilocs
+    ):
+        pass
+
 
 if PANDAS_GE_22:
     from pandas.tests.extension.base import BaseReduceTests
