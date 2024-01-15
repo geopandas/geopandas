@@ -77,7 +77,6 @@ jobs:
 
       - name: Check and Log Environment
         run: |
-          micromamba install azure-core-cpp=1.10
           python -V
           python -c "import geopandas; geopandas.show_versions();"
           micromamba info
