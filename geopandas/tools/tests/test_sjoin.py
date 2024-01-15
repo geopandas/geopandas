@@ -415,7 +415,7 @@ class TestSpatialJoin:
         expected_gdf = left.iloc[expected_left].copy()
         expected_gdf["index_right"] = expected_right
         joined = sjoin(left, right, how=how, predicate="dwithin", distance=distance)
-        assert_frame_equal(expected_gdf, joined, check_like=True)
+        assert_frame_equal(expected_gdf.sort_index(), joined.sort_index())
 
 
 class TestSpatialJoinNYBB:
