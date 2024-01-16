@@ -258,9 +258,14 @@ def _geopandas_to_arrow(df, index=None, schema_version=None):
     # create geo metadata before altering incoming data frame
     geo_metadata = _create_metadata(df, schema_version=schema_version)
 
-    kwargs = {}
     if shapely.geos_version > (3, 10, 0):
         kwargs = {"flavor": "iso"}
+    else:
+        if any(
+            df[col].array.has_z.any() for col in df.columns[df.dtypes == "geometry"]
+        ):
+            raise ValueError("Cannot write 3D geometries with GEOS<3.10")
+        kwargs = {}
     df = df.to_wkb(**kwargs)
 
     table = Table.from_pandas(df, preserve_index=index)
