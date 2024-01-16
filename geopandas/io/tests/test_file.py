@@ -817,6 +817,18 @@ def test_read_file_missing_geometry(tmpdir, engine):
     assert_frame_equal(df, expected)
 
 
+def test_read_file_None_attribute(tmp_path, engine):
+    # Test added in context of https://github.com/geopandas/geopandas/issues/2901
+    test_path = tmp_path / "test.gpkg"
+    gdf = GeoDataFrame(
+        {"a": [None, None]}, geometry=[Point(1, 2), Point(3, 4)], crs=4326
+    )
+
+    gdf.to_file(test_path, engine=engine)
+    read_gdf = read_file(test_path, engine=engine)
+    assert_geodataframe_equal(gdf, read_gdf)
+
+
 def test_read_csv_dtype(tmpdir, df_nybb):
     filename = str(tmpdir / "test.csv")
 
