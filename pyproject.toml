@@ -65,6 +65,10 @@ filterwarnings = [
     "ignore:distutils Version classes are deprecated.*:DeprecationWarning:pandas.*",
     "ignore:distutils Version classes are deprecated.*:DeprecationWarning:numpy.*",
     "ignore:The geopandas.dataset module is deprecated",
+    # pytest-xdist incompatibility with pytest-cov
+    "ignore:The --rsyncdir command line argument:DeprecationWarning",
+    # dateutil incompatibility with python 3.12 (https://github.com/dateutil/dateutil/issues/1284)
+    "ignore:datetime.datetime.utcfromtimestamp:DeprecationWarning:dateutil",
 ]
 
 [tool.black]
