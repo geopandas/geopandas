@@ -666,6 +666,9 @@ class TestGeomMethods:
             expected, self.g12.hausdorff_distance(self.g13, densify=0.25)
         )
 
+    @pytest.mark.skipif(
+        shapely.geos_version < (3, 10, 0), reason="buggy with GEOS<3.10"
+    )
     def test_frechet_distance(self):
         # closest point is (0, 0) in self.p1
         expected = Series(
