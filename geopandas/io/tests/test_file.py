@@ -821,7 +821,7 @@ def test_read_file_None_attribute(tmp_path, engine):
         {"a": [None, None]}, geometry=[Point(1, 2), Point(3, 4)], crs=4326
     )
 
-    gdf.to_file(file_path, engine=engine)
+    gdf.to_file(test_path, engine=engine)
     read_gdf = read_file(test_path, engine=engine)
     assert_geodataframe_equal(gdf, read_gdf)
 
