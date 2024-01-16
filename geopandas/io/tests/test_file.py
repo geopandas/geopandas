@@ -816,13 +816,13 @@ def test_read_file_missing_geometry(tmpdir, engine):
 
 def test_read_file_None_attribute(tmp_path, engine):
     # Test added in context of https://github.com/geopandas/geopandas/issues/2901
-    file_path = tmp_path / "test.gpkg"
+    test_path = tmp_path / "test.gpkg"
     gdf = GeoDataFrame(
         {"a": [None, None]}, geometry=[Point(1, 2), Point(3, 4)], crs=4326
     )
 
     gdf.to_file(file_path, engine=engine)
-    read_gdf = read_file(file_path, engine=engine)
+    read_gdf = read_file(test_path, engine=engine)
     assert_geodataframe_equal(gdf, read_gdf)
 
 
