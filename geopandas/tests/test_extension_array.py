@@ -25,7 +25,12 @@ import shapely.geometry
 from shapely.geometry import Point
 
 from geopandas.array import GeometryArray, GeometryDtype, from_shapely
-from geopandas._compat import ignore_shapely2_warnings, SHAPELY_GE_20, PANDAS_GE_15
+from geopandas._compat import (
+    ignore_shapely2_warnings,
+    SHAPELY_GE_20,
+    PANDAS_GE_15,
+    PANDAS_GE_22,
+)
 
 import pytest
 
@@ -419,8 +424,20 @@ class TestMissing(extension_tests.BaseMissingTests):
     def test_fillna_no_op_returns_copy(self, data):
         pass
 
+    @pytest.mark.skip("fillna method not supported")
+    def test_ffill_limit_area(
+        self, data_missing, limit_area, input_ilocs, expected_ilocs
+    ):
+        pass
 
-class TestReduce(extension_tests.BaseNoReduceTests):
+
+if PANDAS_GE_22:
+    from pandas.tests.extension.base import BaseReduceTests
+else:
+    from pandas.tests.extension.base import BaseNoReduceTests as BaseReduceTests
+
+
+class TestReduce(BaseReduceTests):
     @pytest.mark.skip("boolean reduce (any/all) tested in test_pandas_methods")
     def test_reduce_series_boolean(self):
         pass

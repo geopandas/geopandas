@@ -715,7 +715,7 @@ def test_groupby_metadata(crs, geometry_name):
 
     expected = (
         df.take(take_indices)
-        .set_index("value2", drop=False, append=True)
+        .set_index("value2", drop=compat.PANDAS_GE_22, append=True)
         .swaplevel()
         .rename(columns={"value1": "value1_left"})
         .assign(value1_right=value_right)
