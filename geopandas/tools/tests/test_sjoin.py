@@ -362,6 +362,7 @@ class TestSpatialJoin:
 
         assert_frame_equal(res, exp, check_index_type=False)
 
+    @pytest.mark.skipif(not compat.GEOS_GE_310, reason="`dwithin` requires GEOS 3.10")
     @pytest.mark.parametrize("how", ["inner"])
     @pytest.mark.parametrize(
         "geo_left, geo_right, expected_left, expected_right, distance",
