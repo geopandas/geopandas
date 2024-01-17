@@ -1588,7 +1588,21 @@ individually so that features may have different properties
     def _constructor_from_mgr(self, mgr, axes):
         # analogous logic to _geodataframe_constructor_with_fallback
         if not any(isinstance(block.dtype, GeometryDtype) for block in mgr.blocks):
-            return pd.DataFrame._from_mgr(mgr, axes)
+            df = pd.DataFrame._from_mgr(mgr, axes)
+            # operations like loc to append an object row will cast GeometryDtype
+            # blocks to object dtype. Try and cast back
+            # TODO relying on self here is not ideal pandas#56681
+            for c in self.columns[self.dtypes == "geometry"]:
+                try:
+                    df[c] = _ensure_geometry(df[c], crs=self[c].crs)
+                except TypeError:
+                    pass
+            try:
+                df = df.set_geometry(self._geometry_column_name, crs=self.crs)
+            except TypeError:
+                pass
+            return df
+
         return GeoDataFrame._from_mgr(mgr, axes)
 
     @property
