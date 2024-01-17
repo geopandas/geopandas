@@ -41,6 +41,7 @@ def test_repr(s, df):
     assert "POINT" in df._repr_html_()
 
 
+@pytest.mark.skipif(shapely.geos_version < (3, 9, 0), reason="requires GEOS>=3.9")
 def test_repr_boxed_display_precision():
     # geographic coordinates
     p1 = Point(10.123456789, 50.123456789)
@@ -710,7 +711,7 @@ def test_groupby_metadata(crs, geometry_name):
 
     expected = (
         df.take(take_indices)
-        .set_index("value2", drop=False, append=True)
+        .set_index("value2", drop=compat.PANDAS_GE_22, append=True)
         .swaplevel()
         .rename(columns={"value1": "value1_left"})
         .assign(value1_right=value_right)
