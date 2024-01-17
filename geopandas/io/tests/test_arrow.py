@@ -11,6 +11,7 @@ from pandas import DataFrame, read_parquet as pd_read_parquet
 from pandas.testing import assert_frame_equal
 import numpy as np
 import pyproj
+import shapely
 from shapely.geometry import box, Point, MultiPolygon
 
 
@@ -719,7 +720,7 @@ def test_write_iso_wkb(tmpdir):
     gdf = geopandas.GeoDataFrame(
         geometry=geopandas.GeoSeries.from_wkt(["POINT Z (1 2 3)"])
     )
-    if compat.USE_SHAPELY_20:
+    if compat.USE_SHAPELY_20 and shapely.geos.geos_version > (3, 10, 0):
         gdf.to_parquet(tmpdir / "test.parquet")
     else:
         with pytest.warns(UserWarning, match="The GeoDataFrame contains 3D geometries"):
@@ -730,7 +731,7 @@ def test_write_iso_wkb(tmpdir):
     table = read_table(tmpdir / "test.parquet")
     wkb = table["geometry"][0].as_py().hex()
 
-    if compat.USE_SHAPELY_20:
+    if compat.USE_SHAPELY_20 and shapely.geos.geos_version > (3, 10, 0):
         # correct ISO flavor
         assert wkb == "01e9030000000000000000f03f00000000000000400000000000000840"
     else:

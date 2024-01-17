@@ -6,6 +6,8 @@ import numpy as np
 from pandas import DataFrame, Series
 
 import geopandas._compat as compat
+import shapely
+
 from geopandas._compat import import_optional_dependency
 from geopandas.array import from_wkb
 from geopandas import GeoDataFrame
@@ -258,7 +260,7 @@ def _geopandas_to_arrow(df, index=None, schema_version=None):
     geo_metadata = _create_metadata(df, schema_version=schema_version)
 
     kwargs = {}
-    if compat.USE_SHAPELY_20:
+    if compat.USE_SHAPELY_20 and shapely.geos.geos_version > (3, 10, 0):
         kwargs = {"flavor": "iso"}
     else:
         for col in df.columns[df.dtypes == "geometry"]:
@@ -266,7 +268,8 @@ def _geopandas_to_arrow(df, index=None, schema_version=None):
             if series.has_z.any():
                 warnings.warn(
                     "The GeoDataFrame contains 3D geometries, and when using "
-                    "shapely < 2.0, such geometries will be written not exactly "
+                    "shapely < 2.0 or GEOS < 3.10, such geometries will be written "
+                    "not exactly "
                     "following to the GeoParquet spec (not using ISO WKB). For "
                     "most use cases this should not be a problem (GeoPandas can "
                     "read such files fine).",
