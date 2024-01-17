@@ -11,6 +11,7 @@ from pandas import DataFrame, read_parquet as pd_read_parquet
 from pandas.testing import assert_frame_equal
 import numpy as np
 import pyproj
+import shapely
 from shapely.geometry import box, Point, MultiPolygon
 
 
@@ -699,6 +700,7 @@ def test_write_read_default_crs(tmpdir, format):
     assert df.crs.equals(pyproj.CRS("OGC:CRS84"))
 
 
+@pytest.mark.skipif(shapely.geos_version < (3, 10, 0), reason="requires GEOS>=3.10")
 def test_write_iso_wkb(tmpdir):
     gdf = geopandas.GeoDataFrame(
         geometry=geopandas.GeoSeries.from_wkt(["POINT Z (1 2 3)"])
@@ -712,6 +714,15 @@ def test_write_iso_wkb(tmpdir):
 
     # correct ISO flavor
     assert wkb == "01e9030000000000000000f03f00000000000000400000000000000840"
+
+
+@pytest.mark.skipif(shapely.geos_version >= (3, 10, 0), reason="tests GEOS<3.10")
+def test_write_iso_wkb_old_geos(tmpdir):
+    gdf = geopandas.GeoDataFrame(
+        geometry=geopandas.GeoSeries.from_wkt(["POINT Z (1 2 3)"])
+    )
+    with pytest.raises(ValueError, match="Cannot write 3D"):
+        gdf.to_parquet(tmpdir / "test.parquet")
 
 
 @pytest.mark.parametrize(
