@@ -26,6 +26,8 @@ New methods:
 
 New features and improvements:
 
+- Added ``predicate="dwithin"`` option and ``distance`` argument to the ``sindex.query()`` method
+ and ``sjoin`` (#2882).
 - GeoSeries and GeoDataFrame `__repr__` now trims trailing zeros for a more readable
   output (#3087).
 - Add `on_invalid` parameter to `from_wkt` and `from_wkb` (#3110).
