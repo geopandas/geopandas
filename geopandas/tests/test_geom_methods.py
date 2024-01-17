@@ -666,6 +666,9 @@ class TestGeomMethods:
             expected, self.g12.hausdorff_distance(self.g13, densify=0.25)
         )
 
+    @pytest.mark.skipif(
+        shapely.geos_version < (3, 10, 0), reason="buggy with GEOS<3.10"
+    )
     def test_frechet_distance(self):
         # closest point is (0, 0) in self.p1
         expected = Series(
@@ -907,6 +910,7 @@ class TestGeomMethods:
         )
         assert_geoseries_equal(expected, self.g5.reverse())
 
+    @pytest.mark.skipif(shapely.geos_version < (3, 10, 0), reason="requires GEOS>=3.10")
     def test_segmentize_linestrings(self):
         expected_g1 = GeoSeries(
             [
@@ -992,9 +996,11 @@ class TestGeomMethods:
         result_3d_to_2d = test_3d.transform(lambda x: x + 1, include_z=False)
         assert_geoseries_equal(expected_3d_to_2d, result_3d_to_2d)
 
+    @pytest.mark.skipif(shapely.geos_version < (3, 11, 0), reason="requires GEOS>=3.11")
     def test_concave_hull(self):
         assert_geoseries_equal(self.squares, self.squares.concave_hull())
 
+    @pytest.mark.skipif(shapely.geos_version < (3, 11, 0), reason="requires GEOS>=3.11")
     @pytest.mark.parametrize(
         "expected_series,ratio",
         [
@@ -1790,6 +1796,7 @@ class TestGeomMethods:
         assert_geoseries_equal(expected, oc)
         assert isinstance(oc, GeoSeries)
 
+    @pytest.mark.skipif(shapely.geos_version < (3, 11, 0), reason="requires GEOS>=3.11")
     @pytest.mark.parametrize(
         "geom,expected",
         [
