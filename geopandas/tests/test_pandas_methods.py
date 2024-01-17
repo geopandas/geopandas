@@ -41,6 +41,7 @@ def test_repr(s, df):
     assert "POINT" in df._repr_html_()
 
 
+@pytest.mark.skipif(shapely.geos.geos_version < (3, 9, 0), reason="requires GEOS>=3.9")
 def test_repr_boxed_display_precision():
     # geographic coordinates
     p1 = Point(10.123456789, 50.123456789)
