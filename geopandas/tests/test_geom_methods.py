@@ -658,6 +658,9 @@ class TestGeomMethods:
             self.g0.hausdorff_distance(self.g9)
 
     @pytest.mark.skipif(
+        shapely.geos.geos_version < (3, 10, 0), reason="buggy with GEOS<3.10"
+    )
+    @pytest.mark.skipif(
         not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
         reason="requires frechet_distance in shapely 2.0+",
     )
@@ -936,6 +939,9 @@ class TestGeomMethods:
             s.segmentize(max_segment_length=1)
 
     @pytest.mark.skipif(
+        shapely.geos.geos_version < (3, 10, 0), reason="requires GEOS>=3.10"
+    )
+    @pytest.mark.skipif(
         not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
         reason="segmentize keyword introduced in shapely 2.0",
     )
@@ -1016,12 +1022,18 @@ class TestGeomMethods:
             assert_geoseries_equal(expected, self.g5.concave_hull())
 
     @pytest.mark.skipif(
+        shapely.geos.geos_version < (3, 11, 0), reason="requires GEOS>=3.11"
+    )
+    @pytest.mark.skipif(
         not compat.USE_SHAPELY_20,
         reason="concave_hull is only implemented for shapely >= 2.0",
     )
     def test_concave_hull(self):
         assert_geoseries_equal(self.squares, self.squares.concave_hull())
 
+    @pytest.mark.skipif(
+        shapely.geos.geos_version < (3, 11, 0), reason="requires GEOS>=3.11"
+    )
     @pytest.mark.skipif(
         not compat.USE_SHAPELY_20,
         reason="concave_hull is only implemented for shapely >= 2.0",
@@ -1899,6 +1911,9 @@ class TestGeomMethods:
         assert isinstance(oc, GeoSeries)
 
     @pytest.mark.skipif(
+        shapely.geos.geos_version < (3, 11, 0), reason="requires GEOS>=3.11"
+    )
+    @pytest.mark.skipif(
         compat.SHAPELY_GE_20,
         reason="remove_repeated_points is implemented for shapely >= 2.0",
     )
@@ -1910,6 +1925,9 @@ class TestGeomMethods:
         ):
             self.squares.remove_repeated_points()
 
+    @pytest.mark.skipif(
+        shapely.geos.geos_version < (3, 11, 0), reason="requires GEOS>=3.11"
+    )
     @pytest.mark.skipif(
         not (compat.USE_PYGEOS and compat.SHAPELY_GE_20),
         reason="remove_repeated_points is only implemented for shapely >= 2.0",
@@ -1924,6 +1942,9 @@ class TestGeomMethods:
         ):
             self.g1.remove_repeated_points()
 
+    @pytest.mark.skipif(
+        shapely.geos.geos_version < (3, 11, 0), reason="requires GEOS>=3.11"
+    )
     @pytest.mark.skipif(
         not compat.USE_SHAPELY_20,
         reason="remove_repeated_points is only implemented for shapely >= 2.0",
