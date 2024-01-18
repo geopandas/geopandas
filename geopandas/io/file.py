@@ -635,7 +635,7 @@ def _to_file_fiona(df, filename, driver, schema, crs, mode, **kwargs):
     with fiona_env():
         crs_wkt = None
         try:
-            gdal_version = fiona.env.get_gdal_release_name()
+            gdal_version = fiona.env.get_gdal_release_name().strip("e")  # 3147
         except AttributeError:
             gdal_version = "2.0.0"  # just assume it is not the latest
         if Version(gdal_version) >= Version("3.0.0") and crs:
