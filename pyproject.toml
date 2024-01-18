@@ -165,6 +165,8 @@ ignore = [ # space before : (needed for how black formats slicing)
     "PLW0603",
     # Docstrings should not be included in stubs
     "PYI021",
+    # Use `typing.NamedTuple` instead of `collections.namedtuple`
+    "PYI024",
     # No builtin `eval()` allowed
     "PGH001",
     # compare-to-empty-string
@@ -197,6 +199,8 @@ ignore = [ # space before : (needed for how black formats slicing)
     "RUF007",
     # explicit-f-string-type-conversion
     "RUF010",
+    # Mutable class attributes should be annotated with `typing.ClassVar`,
+    "RUF012"
 ]
 extend-exclude = ["doc/*", "benchmarks/*", "versioneer.py", "geopandas/_version.py"]
 

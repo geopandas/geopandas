@@ -1578,7 +1578,7 @@ class GeometryArray(ExtensionArray):
     def _reduce(self, name, skipna=True, **kwargs):
         # including the base class version here (that raises by default)
         # because this was not yet defined in pandas 0.23
-        if name == "any" or name == "all":
+        if name in ("any", "all"):
             return getattr(to_shapely(self), name)()
         raise TypeError(
             f"'{type(self).__name__}' with dtype {self.dtype} "
