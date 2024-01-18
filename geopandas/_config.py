@@ -5,11 +5,11 @@ Based on https://github.com/topper-123/optioneer, but simplified (don't deal
 with nested options, deprecated options, ..), just the attribute-style dict
 like holding the options and giving a nice repr.
 """
-from typing import NamedTuple
+from collections import namedtuple
 import textwrap
 
 
-Option = NamedTuple("Option", "key default_value doc validator callback")
+Option = namedtuple("Option", "key default_value doc validator callback")
 
 
 class Options(object):
