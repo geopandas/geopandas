@@ -51,13 +51,12 @@ def _ensure_geometry(data, crs=None):
             data = data.copy()
             data.crs = crs
         return data
+    elif isinstance(data, Series):
+        out = from_shapely(np.asarray(data), crs=crs)
+        return GeoSeries(out, index=data.index, name=data.name)
     else:
-        if isinstance(data, Series):
-            out = from_shapely(np.asarray(data), crs=crs)
-            return GeoSeries(out, index=data.index, name=data.name)
-        else:
-            out = from_shapely(data, crs=crs)
-            return out
+        out = from_shapely(data, crs=crs)
+        return out
 
 
 crs_mismatch_error = (

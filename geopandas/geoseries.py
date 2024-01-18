@@ -160,14 +160,13 @@ class GeoSeries(GeoPandasBase, Series):
             if not data.crs:
                 # make a copy to avoid setting CRS to passed GeometryArray
                 data = data.copy()
-            else:
-                if not data.crs == crs:
-                    raise ValueError(
-                        "CRS mismatch between CRS of the passed geometries "
-                        "and 'crs'. Use 'GeoSeries.set_crs(crs, "
-                        "allow_override=True)' to overwrite CRS or "
-                        "'GeoSeries.to_crs(crs)' to reproject geometries. "
-                    )
+            elif not data.crs == crs:
+                raise ValueError(
+                    "CRS mismatch between CRS of the passed geometries "
+                    "and 'crs'. Use 'GeoSeries.set_crs(crs, "
+                    "allow_override=True)' to overwrite CRS or "
+                    "'GeoSeries.to_crs(crs)' to reproject geometries. "
+                )
 
         if isinstance(data, SingleBlockManager):
             if not isinstance(data.blocks[0].dtype, GeometryDtype):
@@ -685,11 +684,10 @@ class GeoSeries(GeoPandasBase, Series):
     def apply(self, func, convert_dtype: Optional[bool] = None, args=(), **kwargs):
         if convert_dtype is not None:
             kwargs["convert_dtype"] = convert_dtype
-        else:
-            # if compat.PANDAS_GE_21 don't pass through, use pandas default
-            # of true to avoid internally triggering the pandas warning
-            if not compat.PANDAS_GE_21:
-                kwargs["convert_dtype"] = True
+        # if compat.PANDAS_GE_21 don't pass through, use pandas default
+        # of true to avoid internally triggering the pandas warning
+        elif not compat.PANDAS_GE_21:
+            kwargs["convert_dtype"] = True
 
         # to avoid warning
         result = super().apply(func, args=args, **kwargs)

@@ -227,11 +227,10 @@ def _get_geometry_type(gdf):
     if len(geom_types) == 1:
         if has_curve:
             target_geom_type = "LINESTRING"
+        elif geom_types[0] is None:
+            raise ValueError("No valid geometries in the data.")
         else:
-            if geom_types[0] is None:
-                raise ValueError("No valid geometries in the data.")
-            else:
-                target_geom_type = geom_types[0].upper()
+            target_geom_type = geom_types[0].upper()
     else:
         target_geom_type = "GEOMETRY"
 

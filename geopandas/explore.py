@@ -270,11 +270,10 @@ def _explore(
         """Helper for MPL deprecation - GH#2596"""
         if not n_resample:
             return cm.get_cmap(_cmap)
+        elif MPL_361:
+            return cm.get_cmap(_cmap).resampled(n_resample)(idx)
         else:
-            if MPL_361:
-                return cm.get_cmap(_cmap).resampled(n_resample)(idx)
-            else:
-                return cm.get_cmap(_cmap, n_resample)(idx)
+            return cm.get_cmap(_cmap, n_resample)(idx)
 
     try:
         import branca as bc
@@ -694,34 +693,33 @@ def _explore(
                         cb_colors = np.append(cb_colors, nan_color)
                     _categorical_legend(m, caption, categories, cb_colors)
 
+            elif isinstance(cmap, bc.colormap.ColorMap):
+                colorbar = cmap
             else:
-                if isinstance(cmap, bc.colormap.ColorMap):
-                    colorbar = cmap
-                else:
-                    mp_cmap = _colormap_helper(cmap)
-                    cb_colors = np.apply_along_axis(
-                        colors.to_hex, 1, mp_cmap(range(mp_cmap.N))
+                mp_cmap = _colormap_helper(cmap)
+                cb_colors = np.apply_along_axis(
+                    colors.to_hex, 1, mp_cmap(range(mp_cmap.N))
+                )
+
+                # linear legend
+                if mp_cmap.N > 20:
+                    colorbar = bc.colormap.LinearColormap(
+                        cb_colors,
+                        vmin=vmin,
+                        vmax=vmax,
+                        caption=caption,
+                        **colormap_kwds,
                     )
 
-                    # linear legend
-                    if mp_cmap.N > 20:
-                        colorbar = bc.colormap.LinearColormap(
-                            cb_colors,
-                            vmin=vmin,
-                            vmax=vmax,
-                            caption=caption,
-                            **colormap_kwds,
-                        )
-
-                    # steps
-                    else:
-                        colorbar = bc.colormap.StepColormap(
-                            cb_colors,
-                            vmin=vmin,
-                            vmax=vmax,
-                            caption=caption,
-                            **colormap_kwds,
-                        )
+                # steps
+                else:
+                    colorbar = bc.colormap.StepColormap(
+                        cb_colors,
+                        vmin=vmin,
+                        vmax=vmax,
+                        caption=caption,
+                        **colormap_kwds,
+                    )
 
             if cbar:
                 if nan_idx.any() and nan_color:
@@ -740,13 +738,12 @@ def _tooltip_popup(type, fields, gdf, **kwds):
     # specify fields to show in the tooltip
     if fields is False or fields is None or fields == 0:
         return None
-    else:
-        if fields is True:
-            fields = gdf.columns.drop(gdf.geometry.name).to_list()
-        elif isinstance(fields, int):
-            fields = gdf.columns.drop(gdf.geometry.name).to_list()[:fields]
-        elif isinstance(fields, str):
-            fields = [fields]
+    elif fields is True:
+        fields = gdf.columns.drop(gdf.geometry.name).to_list()
+    elif isinstance(fields, int):
+        fields = gdf.columns.drop(gdf.geometry.name).to_list()[:fields]
+    elif isinstance(fields, str):
+        fields = [fields]
 
     for field in ["__plottable_column", "__folium_color"]:
         if field in fields:
