@@ -684,6 +684,9 @@ def test_union_all():
     expected = shapely.geometry.Polygon([(0, 0), (1, 0), (1, 1), (0, 1)])
     assert u.equals(expected)
 
+    u_cov = G.union_all(coverage=True)
+    assert u_cov.equals(expected)
+
 
 @pytest.mark.parametrize(
     "attr, arg",

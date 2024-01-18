@@ -819,7 +819,9 @@ class GeometryArray(ExtensionArray):
         )
         return self.union_all()
 
-    def union_all(self):
+    def union_all(self, coverage=False):
+        if coverage:
+            return shapely.coverage_union_all(self._data)
         return shapely.union_all(self._data)
 
     #

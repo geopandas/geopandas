@@ -1507,9 +1507,21 @@ GeometryCollection
 
         return self.geometry.values.union_all()
 
-    def union_all(self):
+    def union_all(self, coverage=False):
         """Returns a geometry containing the union of all geometries in the
         ``GeoSeries``.
+
+        If the geometries are non-overlapping (forming a coverage), GeoPandas can
+        use the significantly faster algorithm to perform the union. The assumption of
+        a coverage needs to be explicitly provided using ``coverage=True``. Using the
+        coverage union on overlapping polygons will likely result in invalid
+        geometries with unresolved topology within overlaps.
+
+        Parameters
+        ----------
+        coverage : bool (default False)
+            Whether to assume non-overlapping coverage and opt-in for the faster
+            implementation or use the slower but robust one.
 
         Examples
         --------
@@ -1525,7 +1537,7 @@ GeometryCollection
         >>> print(union)
         POLYGON ((0 1, 0 2, 2 2, 2 0, 1 0, 0 0, 0 1))
         """
-        return self.geometry.values.union_all()
+        return self.geometry.values.union_all(coverage=coverage)
 
     #
     # Binary operations that return a pandas Series

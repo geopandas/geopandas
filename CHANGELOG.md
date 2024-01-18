@@ -10,7 +10,8 @@ Notes on dependencies:
 
 API changes:
 
-- `unary_union` is now deprecated and replaced by the `union_all` method (#3007).
+- `unary_union` is now deprecated and replaced by the `union_all` method (#3007) allowing
+  opting for a faster union algorithm for coverages (#3151).
 
 New methods:
 
@@ -51,9 +52,9 @@ Bug fixes:
 
 Deprecations and compatibility notes:
 
-- The deprecation of `geopandas.datasets` has been enforced and the module has been 
-  removed. New sample datasets are now available in the 
-  [geodatasets](https://geodatasets.readthedocs.io/en/latest/) package (#3084). 
+- The deprecation of `geopandas.datasets` has been enforced and the module has been
+  removed. New sample datasets are now available in the
+  [geodatasets](https://geodatasets.readthedocs.io/en/latest/) package (#3084).
 
 ## Version 0.14.2 (Jan 4, 2024)
 
