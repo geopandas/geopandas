@@ -187,8 +187,6 @@ ignore = [ # space before : (needed for how black formats slicing)
     "PLR2004",
     # Consider `elif` instead of `else` then `if` to remove indentation level
     "PLR5501",
-    # ambiguous-unicode-character-string
-    "RUF001",
     # collection-literal-concatenation
     "RUF005",
     # pairwise-over-zipped (>=PY310 only)
