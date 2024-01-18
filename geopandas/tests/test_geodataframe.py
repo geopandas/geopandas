@@ -844,40 +844,40 @@ class TestDataFrame:
         df.loc[0, "BoroName"] = np.nan
         # when containing missing values
         # null: output the missing entries as JSON null
-        result = list(df.iterfeatures(na="null"))[0]["properties"]
+        result = next(iter(df.iterfeatures(na="null")))["properties"]
         assert result["BoroName"] is None
         # drop: remove the property from the feature.
-        result = list(df.iterfeatures(na="drop"))[0]["properties"]
+        result = next(iter(df.iterfeatures(na="drop")))["properties"]
         assert "BoroName" not in result.keys()
         # keep: output the missing entries as NaN
-        result = list(df.iterfeatures(na="keep"))[0]["properties"]
+        result = next(iter(df.iterfeatures(na="keep")))["properties"]
         assert np.isnan(result["BoroName"])
 
         # test for checking that the (non-null) features are python scalars and
         # not numpy scalars
         assert type(df.loc[0, "Shape_Leng"]) is np.float64
         # null
-        result = list(df.iterfeatures(na="null"))[0]
-        assert type(result["properties"]["Shape_Leng"]) is float
+        result = next(iter(df.iterfeatures(na="null")))
+        assert isinstance(result["properties"]["Shape_Leng"], float)
         # drop
-        result = list(df.iterfeatures(na="drop"))[0]
-        assert type(result["properties"]["Shape_Leng"]) is float
+        result = next(iter(df.iterfeatures(na="drop")))
+        assert isinstance(result["properties"]["Shape_Leng"], float)
         # keep
-        result = list(df.iterfeatures(na="keep"))[0]
-        assert type(result["properties"]["Shape_Leng"]) is float
+        result = next(iter(df.iterfeatures(na="keep")))
+        assert isinstance(result["properties"]["Shape_Leng"], float)
 
         # when only having numerical columns
         df_only_numerical_cols = df[["Shape_Leng", "Shape_Area", "geometry"]]
         assert type(df_only_numerical_cols.loc[0, "Shape_Leng"]) is np.float64
         # null
-        result = list(df_only_numerical_cols.iterfeatures(na="null"))[0]
-        assert type(result["properties"]["Shape_Leng"]) is float
+        result = next(iter(df_only_numerical_cols.iterfeatures(na="null")))
+        assert isinstance(result["properties"]["Shape_Leng"], float)
         # drop
-        result = list(df_only_numerical_cols.iterfeatures(na="drop"))[0]
-        assert type(result["properties"]["Shape_Leng"]) is float
+        result = next(iter(df_only_numerical_cols.iterfeatures(na="drop")))
+        assert isinstance(result["properties"]["Shape_Leng"], float)
         # keep
-        result = list(df_only_numerical_cols.iterfeatures(na="keep"))[0]
-        assert type(result["properties"]["Shape_Leng"]) is float
+        result = next(iter(df_only_numerical_cols.iterfeatures(na="keep")))
+        assert isinstance(result["properties"]["Shape_Leng"], float)
 
         with pytest.raises(
             ValueError, match="GeoDataFrame cannot contain duplicated column names."
@@ -899,15 +899,15 @@ class TestDataFrame:
         )
         # null
         expected = {"non-scalar": [1, 2], "test_col": None}
-        result = list(df.iterfeatures(na="null"))[0].get("properties")
+        result = next(iter(df.iterfeatures(na="null"))).get("properties")
         assert expected == result
         # drop
         expected = {"non-scalar": [1, 2]}
-        result = list(df.iterfeatures(na="drop"))[0].get("properties")
+        result = next(iter(df.iterfeatures(na="drop"))).get("properties")
         assert expected == result
         # keep
         expected = {"non-scalar": [1, 2], "test_col": None}
-        result = list(df.iterfeatures(na="keep"))[0].get("properties")
+        result = next(iter(df.iterfeatures(na="keep"))).get("properties")
         assert expected == result
 
     def test_geodataframe_geojson_no_bbox(self):

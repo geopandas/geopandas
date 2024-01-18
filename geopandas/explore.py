@@ -624,7 +624,7 @@ def _explore(
     for feature in feature_collection["features"]:
         for k in feature["properties"]:
             # escape the curly braces in values
-            if type(feature["properties"][k]) == str:
+            if isinstance(feature["properties"][k], str):
                 feature["properties"][k] = re.sub(
                     r"\{{2,}",
                     lambda x: "{% raw %}" + x.group(0) + "{% endraw %}",

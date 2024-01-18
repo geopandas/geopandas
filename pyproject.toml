@@ -197,6 +197,8 @@ ignore = [ # space before : (needed for how black formats slicing)
     "RUF007",
     # explicit-f-string-type-conversion
     "RUF010",
+    # Mutable class attributes should be annotated with `typing.ClassVar`,
+    "RUF012"
 ]
 extend-exclude = ["doc/*", "benchmarks/*", "versioneer.py", "geopandas/_version.py"]
 

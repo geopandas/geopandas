@@ -10,6 +10,6 @@ repos:
           - id: black
             language_version: python3
     - repo: https://github.com/astral-sh/ruff-pre-commit
-      rev: "v0.0.271"
+      rev: "v0.1.13"
       hooks:
         - id: ruff

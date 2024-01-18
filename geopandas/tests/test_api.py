@@ -33,5 +33,5 @@ if mods:
         blacklist
     )
     call = [sys.executable, "-c", code]
-    returncode = subprocess.run(call).returncode
+    returncode = subprocess.run(call, check=False).returncode
     assert returncode == 0
