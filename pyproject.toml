@@ -189,8 +189,6 @@ ignore = [ # space before : (needed for how black formats slicing)
     "PLR5501",
     # ambiguous-unicode-character-string
     "RUF001",
-    # ambiguous-unicode-character-comment
-    "RUF003",
     # collection-literal-concatenation
     "RUF005",
     # pairwise-over-zipped (>=PY310 only)
