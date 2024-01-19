@@ -347,3 +347,25 @@ def test_dissolve_multi_agg(nybb_polydf, merged_shapes):
         )
     assert_geodataframe_equal(test, merged_shapes)
     assert len(record) == 0
+
+
+def test_coverage_dissolve(nybb_polydf):
+    manhattan_bronx = nybb_polydf.loc[3:4]
+    others = nybb_polydf.loc[0:2]
+
+    collapsed = [
+        others.geometry.union_all(coverage=True),
+        manhattan_bronx.geometry.union_all(coverage=True),
+    ]
+    merged_shapes = GeoDataFrame(
+        {"myshapes": collapsed},
+        geometry="myshapes",
+        index=pd.Index([5, 6], name="manhattan_bronx"),
+        crs=nybb_polydf.crs,
+    )
+
+    merged_shapes["BoroName"] = ["Staten Island", "Manhattan"]
+    merged_shapes["BoroCode"] = [5, 1]
+
+    test = nybb_polydf.dissolve("manhattan_bronx", coverage=True)
+    assert_frame_equal(merged_shapes, test, check_column_type=False)

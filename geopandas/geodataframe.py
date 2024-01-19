@@ -1660,6 +1660,7 @@ individually so that features may have different properties
         sort=True,
         observed=False,
         dropna=True,
+        coverage=False,
         **kwargs,
     ):
         """
@@ -1692,26 +1693,22 @@ individually so that features may have different properties
         level : int or str or sequence of int or sequence of str, default None
             If the axis is a MultiIndex (hierarchical), group by a
             particular level or levels.
-
-            .. versionadded:: 0.9.0
         sort : bool, default True
             Sort group keys. Get better performance by turning this off.
             Note this does not influence the order of observations within
             each group. Groupby preserves the order of rows within each group.
-
-            .. versionadded:: 0.9.0
         observed : bool, default False
             This only applies if any of the groupers are Categoricals.
             If True: only show observed values for categorical groupers.
             If False: show all values for categorical groupers.
-
-            .. versionadded:: 0.9.0
         dropna : bool, default True
             If True, and if group keys contain NA values, NA values
             together with row/column will be dropped. If False, NA
             values will also be treated as the key in groups.
-
-            .. versionadded:: 0.9.0
+        coverage : bool, default False
+            If True, dissolve will use the faster coverage union to merge geometries.
+            If False, the default slower but robust union will be used. See the
+            docstring of :meth:`union_all` for details.
         **kwargs :
             Keyword arguments to be passed to the pandas `DataFrameGroupby.agg` method
             which is used by `dissolve`. In particular, `numeric_only` may be
@@ -1786,7 +1783,7 @@ individually so that features may have different properties
 
         # Process spatial component
         def merge_geometries(block):
-            merged_geom = block.union_all()
+            merged_geom = block.union_all(coverage=coverage)
             return merged_geom
 
         g = self.groupby(group_keys=False, **groupby_kwargs)[self.geometry.name].agg(
