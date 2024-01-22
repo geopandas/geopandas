@@ -520,6 +520,16 @@ class TestGeomMethods:
             expected, self.g0.contains_properly(self.g9, align=False)
         )
 
+    def test_dwithin(self):
+        expected = [True, True, True, False, True, True, False]
+        assert_array_dtype_equal(expected, self.g0.dwithin(self.p0, 6))
+
+        expected = [False, True, True, True, True, True, False, False]
+        with pytest.warns(UserWarning, match="The indices .+ different"):
+            assert_array_dtype_equal(expected, self.g0.dwithin(self.g9, 1, align=True))
+        expected = [True, True, True, True, False, False, False]
+        assert_array_dtype_equal(expected, self.g0.dwithin(self.g9, 1, align=False))
+
     def test_length(self):
         expected = Series(np.array([2 + np.sqrt(2), 4]), index=self.g1.index)
         self._test_unary_real("length", expected, self.g1)

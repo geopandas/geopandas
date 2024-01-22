@@ -22,6 +22,8 @@ New methods:
 - Added `contains_properly` method from shapely to GeoSeries/GeoDataframe (#3105).
 - Added `snap` method from shapely to GeoSeries/GeoDataframe (#3086).
 - Added `transform` method from shapely to GeoSeries/GeoDataFrame (#3075).
+- Added `dwithin` method to check for a "distance within" predicate on
+  GeoSeries/GeoDataFrame (#3153).
 
 New features and improvements:
 
@@ -51,9 +53,9 @@ Bug fixes:
 
 Deprecations and compatibility notes:
 
-- The deprecation of `geopandas.datasets` has been enforced and the module has been 
-  removed. New sample datasets are now available in the 
-  [geodatasets](https://geodatasets.readthedocs.io/en/latest/) package (#3084). 
+- The deprecation of `geopandas.datasets` has been enforced and the module has been
+  removed. New sample datasets are now available in the
+  [geodatasets](https://geodatasets.readthedocs.io/en/latest/) package (#3084).
 
 ## Version 0.14.2 (Jan 4, 2024)
 
