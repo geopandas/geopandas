@@ -520,6 +520,7 @@ class TestGeomMethods:
             expected, self.g0.contains_properly(self.g9, align=False)
         )
 
+    @pytest.mark.skipif(shapely.geos_version < (3, 10, 0), reason="requires GEOS>=3.10")
     def test_dwithin(self):
         expected = [True, True, True, False, True, True, False]
         assert_array_dtype_equal(expected, self.g0.dwithin(self.p0, 6))
