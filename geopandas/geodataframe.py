@@ -60,6 +60,19 @@ def _ensure_geometry(data, crs=None):
             return out
 
 
+def _attempt_ensure_geometry(data, crs=None):
+    """Attempt to convert data to a geometry dtype, falling back if not possible.
+
+    If input is a (Geo)Series, output is a GeoSeries,
+    if input is other geo data, output is GeometryArray,
+    otherwise the original input data is returned.
+    """
+    try:
+        return _ensure_geometry(data, crs=crs)
+    except (TypeError, shapely.errors.GeometryTypeError):
+        return data
+
+
 crs_mismatch_error = (
     "CRS mismatch between CRS of the passed geometries "
     "and 'crs'. Use 'GeoDataFrame.set_crs(crs, "
@@ -1572,12 +1585,8 @@ individually so that features may have different properties
             # If all none and object dtype assert list of nones is more likely
             # intended than list of null geometry.
             if not result.isna().all():
-                try:
-                    # not enough info about func to preserve CRS
-                    result = _ensure_geometry(result)
-
-                except (TypeError, shapely.errors.GeometryTypeError):
-                    pass
+                # not enough info about func to preserve CRS here
+                result = _attempt_ensure_geometry(result)
 
         return result
 
@@ -1592,15 +1601,13 @@ individually so that features may have different properties
             # operations like loc to append an object row will cast GeometryDtype
             # blocks to object dtype. Try and cast back
             # TODO relying on self here is not ideal pandas#56681
-            for c in self.columns[self.dtypes == "geometry"]:
+            for c in self.columns[self.dtypes == "geometry"].intersection(df.columns):
+                df[c] = _attempt_ensure_geometry(df[c], crs=self[c].crs)
+            if self._geometry_column_name in df.columns:
                 try:
-                    df[c] = _ensure_geometry(df[c], crs=self[c].crs)
+                    df = df.set_geometry(self._geometry_column_name, crs=self.crs)
                 except TypeError:
                     pass
-            try:
-                df = df.set_geometry(self._geometry_column_name, crs=self.crs)
-            except TypeError:
-                pass
             return df
 
         return GeoDataFrame._from_mgr(mgr, axes)
