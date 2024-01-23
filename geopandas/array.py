@@ -532,9 +532,13 @@ class GeometryArray(ExtensionArray):
         return shapely.length(self._data)
 
     def count_coordinates(self):
-        out = np.empty(len(self._data), dtype=np.int_)
-        out[:] = [shapely.count_coordinates(s) for s in self._data]
-        return out
+        return shapely.get_num_coordinates(self._data)
+
+    def count_geometries(self):
+        return shapely.get_num_geometries(self._data)
+
+    def count_interior_rings(self):
+        return shapely.get_num_interior_rings(self._data)
 
     #
     # Unary operations that return new geometries

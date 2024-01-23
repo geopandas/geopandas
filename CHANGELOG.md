@@ -14,6 +14,8 @@ API changes:
 
 New methods:
 
+- Added `count_geometries` method from shapely to GeoSeries/GeoDataframe (#3154).
+- Added `count_interior_rings` method from shapely to GeoSeries/GeoDataframe (#3154)
 - Added `count_coordinates` method from shapely to GeoSeries/GeoDataframe (#3026).
 - Added `minimum_clearance` method from shapely to GeoSeries/GeoDataframe (#2989).
 - Added `is_ccw` method from shapely to GeoSeries/GeoDataframe (#3027).

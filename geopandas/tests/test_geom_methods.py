@@ -533,10 +533,46 @@ class TestGeomMethods:
 
     def test_count_coordinates(self):
         expected = Series(np.array([4, 5]), index=self.g1.index)
-        assert_series_equal(self.g1.count_coordinates(), expected)
+        assert_series_equal(self.g1.count_coordinates(), expected, check_dtype=False)
 
         expected = Series(np.array([4, 0]), index=self.na_none.index)
-        assert_series_equal(self.na_none.count_coordinates(), expected)
+        assert_series_equal(
+            self.na_none.count_coordinates(), expected, check_dtype=False
+        )
+
+    def test_count_geometries(self):
+        expected = Series(np.array([4, 2, 1, 1, 0]))
+        s = GeoSeries(
+            [
+                MultiPoint([(0, 0), (1, 1), (1, -1), (0, 1)]),
+                MultiLineString([((0, 0), (1, 1)), ((-1, 0), (1, 0))]),
+                LineString([(0, 0), (1, 1), (1, -1)]),
+                Point(0, 0),
+                None,
+            ]
+        )
+        assert_series_equal(s.count_geometries(), expected, check_dtype=False)
+
+    def test_count_interior_rings(self):
+        expected = Series(np.array([1, 2, 0, 0]))
+        s = GeoSeries(
+            [
+                Polygon(
+                    [(0, 0), (0, 5), (5, 5), (5, 0)],
+                    [[(1, 1), (1, 4), (4, 4), (4, 1)]],
+                ),
+                Polygon(
+                    [(0, 0), (0, 5), (5, 5), (5, 0)],
+                    [
+                        [(1, 1), (1, 2), (2, 2), (2, 1)],
+                        [(3, 2), (3, 3), (4, 3), (4, 2)],
+                    ],
+                ),
+                Point(0, 1),
+                None,
+            ]
+        )
+        assert_series_equal(s.count_interior_rings(), expected, check_dtype=False)
 
     def test_crosses(self):
         expected = [False, False, False, False, False, False, False]
