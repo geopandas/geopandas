@@ -217,7 +217,7 @@ def _read_file(filename, bbox=None, mask=None, rows=None, engine=None, **kwargs)
         Filter for features that intersect with the given dict-like geojson
         geometry, GeoSeries, GeoDataFrame or shapely geometry.
         CRS mis-matches are resolved if given a GeoSeries or GeoDataFrame.
-        Cannot be used with bbox.  If multiple geometries are passed, this will
+        Cannot be used with bbox. If multiple geometries are passed, this will
         first union all geometries, which may be computationally expensive.
     rows : int or slice, default None
         Load in specific rows by passing an integer (first `n` rows) or a
