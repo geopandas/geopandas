@@ -706,19 +706,24 @@ def test_allow_legacy_gdal_path(engine, nybb_filename):
     assert isinstance(gdf, geopandas.GeoDataFrame)
 
 
-def test_read_file_filtered__bbox(df_nybb, engine, nybb_filename):
+@pytest.mark.parametrize("file_like", [False, True])
+def test_read_file_bbox_tuple(df_nybb, engine, nybb_filename, file_like):
     bbox = (
         1031051.7879884212,
         224272.49231459625,
         1047224.3104931959,
         244317.30894023244,
     )
-    filtered_df = read_file(nybb_filename, bbox=bbox, engine=engine)
+
+    infile = (
+        open(nybb_filename.replace("zip://", ""), "rb") if file_like else nybb_filename
+    )
+    filtered_df = read_file(infile, bbox=bbox, engine=engine)
     expected = df_nybb[df_nybb["BoroName"].isin(["Bronx", "Queens"])]
     assert_geodataframe_equal(filtered_df, expected.reset_index(drop=True))
 
 
-def test_read_file_filtered__bbox__polygon(df_nybb, engine, nybb_filename):
+def test_read_file_bbox_polygon(df_nybb, engine, nybb_filename):
     bbox = box(
         1031051.7879884212, 224272.49231459625, 1047224.3104931959, 244317.30894023244
     )
@@ -871,7 +876,7 @@ def test_read_file__columns(naturalearth_lowres):
     assert gdf.columns.tolist() == ["name", "pop_est", "geometry"]
 
 
-def test_read_file_filtered_with_gdf_boundary(df_nybb, engine, nybb_filename):
+def test_read_file_bbox_gdf(df_nybb, engine, nybb_filename):
     full_df_shape = df_nybb.shape
     bbox = geopandas.GeoDataFrame(
         geometry=[
@@ -890,9 +895,7 @@ def test_read_file_filtered_with_gdf_boundary(df_nybb, engine, nybb_filename):
     assert filtered_df_shape == (2, 5)
 
 
-def test_read_file_filtered_with_gdf_boundary__mask(
-    df_nybb, engine, naturalearth_lowres, naturalearth_cities
-):
+def test_read_file_mask_gdf(engine, naturalearth_lowres, naturalearth_cities):
     skip_pyogrio_lt_07(engine)
     gdf_mask = geopandas.read_file(naturalearth_lowres)
     gdf = geopandas.read_file(
@@ -904,23 +907,24 @@ def test_read_file_filtered_with_gdf_boundary__mask(
     assert filtered_df_shape == (57, 2)
 
 
-def test_read_file_filtered_with_gdf_boundary__mask__polygon(
-    df_nybb, engine, nybb_filename
-):
+@pytest.mark.parametrize("file_like", [False, True])
+def test_read_file_mask_polygon(df_nybb, engine, nybb_filename, file_like):
     skip_pyogrio_lt_07(engine)
     full_df_shape = df_nybb.shape
     mask = box(
         1031051.7879884212, 224272.49231459625, 1047224.3104931959, 244317.30894023244
     )
-    filtered_df = read_file(nybb_filename, mask=mask, engine=engine)
+
+    infile = (
+        open(nybb_filename.replace("zip://", ""), "rb") if file_like else nybb_filename
+    )
+    filtered_df = read_file(infile, mask=mask, engine=engine)
     filtered_df_shape = filtered_df.shape
     assert full_df_shape != filtered_df_shape
     assert filtered_df_shape == (2, 5)
 
 
-def test_read_file_filtered_with_gdf_boundary__mask__geojson(
-    df_nybb, nybb_filename, engine
-):
+def test_read_file_mask_geojson(df_nybb, nybb_filename, engine):
     skip_pyogrio_lt_07(engine)
     full_df_shape = df_nybb.shape
     mask = mapping(
@@ -937,9 +941,7 @@ def test_read_file_filtered_with_gdf_boundary__mask__geojson(
     assert filtered_df_shape == (2, 5)
 
 
-def test_read_file_filtered_with_gdf_boundary_mismatched_crs(
-    df_nybb, engine, nybb_filename
-):
+def test_read_file_bbox_gdf_mismatched_crs(df_nybb, engine, nybb_filename):
     skip_pyogrio_lt_07(engine)
     full_df_shape = df_nybb.shape
     bbox = geopandas.GeoDataFrame(
@@ -960,9 +962,7 @@ def test_read_file_filtered_with_gdf_boundary_mismatched_crs(
     assert filtered_df_shape == (2, 5)
 
 
-def test_read_file_filtered_with_gdf_boundary_mismatched_crs__mask(
-    df_nybb, engine, nybb_filename
-):
+def test_read_file_mask_gdf_mismatched_crs(df_nybb, engine, nybb_filename):
     skip_pyogrio_lt_07(engine)
     full_df_shape = df_nybb.shape
     mask = geopandas.GeoDataFrame(
@@ -983,7 +983,7 @@ def test_read_file_filtered_with_gdf_boundary_mismatched_crs__mask(
     assert filtered_df_shape == (2, 5)
 
 
-def test_read_file_bbox_mask(engine, nybb_filename):
+def test_read_file_bbox_mask_not_allowed(engine, nybb_filename):
     skip_pyogrio_lt_07(engine)
 
     bbox = (
