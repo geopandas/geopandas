@@ -5,12 +5,11 @@ ci:
 files: 'geopandas\/'
 repos:
     - repo: https://github.com/psf/black
-      rev: 22.3.0
+      rev: 23.1.0
       hooks:
           - id: black
             language_version: python3
-    - repo: https://github.com/pycqa/flake8
-      rev: 5.0.4
+    - repo: https://github.com/astral-sh/ruff-pre-commit
+      rev: "v0.1.13"
       hooks:
-          - id: flake8
-            language: python_venv
+        - id: ruff

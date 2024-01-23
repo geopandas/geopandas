@@ -22,13 +22,19 @@ General methods and attributes
    GeoSeries.total_bounds
    GeoSeries.length
    GeoSeries.geom_type
+   GeoSeries.offset_curve
    GeoSeries.distance
+   GeoSeries.hausdorff_distance
+   GeoSeries.frechet_distance
    GeoSeries.representative_point
    GeoSeries.exterior
    GeoSeries.interiors
+   GeoSeries.minimum_bounding_radius
    GeoSeries.x
    GeoSeries.y
    GeoSeries.z
+   GeoSeries.get_coordinates
+   GeoSeries.count_coordinates
 
 Unary predicates
 ----------------
@@ -36,11 +42,13 @@ Unary predicates
 .. autosummary::
    :toctree: api/
 
+   GeoSeries.is_closed
    GeoSeries.is_empty
    GeoSeries.is_ring
    GeoSeries.is_simple
    GeoSeries.is_valid
    GeoSeries.has_z
+   GeoSeries.is_ccw
 
 
 Binary predicates
@@ -50,6 +58,7 @@ Binary predicates
    :toctree: api/
 
    GeoSeries.contains
+   GeoSeries.contains_properly
    GeoSeries.crosses
    GeoSeries.disjoint
    GeoSeries.geom_equals
@@ -61,6 +70,7 @@ Binary predicates
    GeoSeries.within
    GeoSeries.covers
    GeoSeries.covered_by
+   GeoSeries.relate
 
 
 Set-theoretic methods
@@ -81,14 +91,29 @@ Constructive methods and attributes
 .. autosummary::
    :toctree: api/
 
-   GeoSeries.buffer
    GeoSeries.boundary
+   GeoSeries.buffer
    GeoSeries.centroid
+   GeoSeries.concave_hull
    GeoSeries.convex_hull
+   GeoSeries.delaunay_triangles
    GeoSeries.envelope
+   GeoSeries.extract_unique_points
+   GeoSeries.force_2d
+   GeoSeries.force_3d
+   GeoSeries.make_valid
    GeoSeries.minimum_bounding_circle
-   GeoSeries.simplify
+   GeoSeries.minimum_clearance
+   GeoSeries.minimum_rotated_rectangle
    GeoSeries.normalize
+   GeoSeries.remove_repeated_points
+   GeoSeries.reverse
+   GeoSeries.sample_points
+   GeoSeries.segmentize
+   GeoSeries.shortest_line
+   GeoSeries.simplify
+   GeoSeries.snap
+   GeoSeries.transform
 
 Affine transformations
 ----------------------
@@ -102,13 +127,22 @@ Affine transformations
    GeoSeries.skew
    GeoSeries.translate
 
+Linestring operations
+---------------------
+
+.. autosummary::
+   :toctree: api/
+
+   GeoSeries.interpolate
+   GeoSeries.project
+
 Aggregating and exploding
 -------------------------
 
 .. autosummary::
    :toctree: api/
 
-   GeoSeries.unary_union
+   GeoSeries.union_all
    GeoSeries.explode
 
 Serialization / IO / conversion

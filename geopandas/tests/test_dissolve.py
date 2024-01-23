@@ -10,12 +10,11 @@ from pandas.testing import assert_frame_equal
 import pytest
 
 from geopandas._compat import PANDAS_GE_15, PANDAS_GE_20
-from geopandas.testing import assert_geodataframe_equal
+from geopandas.testing import assert_geodataframe_equal, geom_almost_equals
 
 
 @pytest.fixture
-def nybb_polydf():
-    nybb_filename = geopandas.datasets.get_path("nybb")
+def nybb_polydf(nybb_filename):
     nybb_polydf = read_file(nybb_filename)
     nybb_polydf = nybb_polydf[["geometry", "BoroName", "BoroCode"]]
     nybb_polydf = nybb_polydf.rename(columns={"geometry": "myshapes"})
@@ -32,7 +31,7 @@ def merged_shapes(nybb_polydf):
     manhattan_bronx = nybb_polydf.loc[3:4]
     others = nybb_polydf.loc[0:2]
 
-    collapsed = [others.geometry.unary_union, manhattan_bronx.geometry.unary_union]
+    collapsed = [others.geometry.union_all(), manhattan_bronx.geometry.union_all()]
     merged_shapes = GeoDataFrame(
         {"myshapes": collapsed},
         geometry="myshapes",
@@ -61,7 +60,7 @@ def expected_mean(merged_shapes):
 def test_geom_dissolve(nybb_polydf, first):
     test = nybb_polydf.dissolve("manhattan_bronx")
     assert test.geometry.name == "myshapes"
-    assert test.geom_almost_equals(first).all()
+    assert geom_almost_equals(test, first)
 
 
 def test_dissolve_retains_existing_crs(nybb_polydf):
@@ -95,7 +94,7 @@ def test_mean_dissolve(nybb_polydf, first, expected_mean):
         )
         # for non pandas "mean", numeric only cannot be applied. Drop columns manually
         test2 = nybb_polydf.drop(columns=["BoroName"]).dissolve(
-            "manhattan_bronx", aggfunc=np.mean
+            "manhattan_bronx", aggfunc="mean"
         )
 
     assert_frame_equal(expected_mean, test, check_column_type=False)
@@ -120,7 +119,7 @@ def test_dissolve_emits_other_warnings(nybb_polydf):
     # we only do something special for pandas 1.5.x, but expect this
     # test to be true on any version
     def sum_and_warn(group):
-        warnings.warn("foo")
+        warnings.warn("foo")  # noqa: B028
         if PANDAS_GE_20:
             return group.sum(numeric_only=False)
         else:
@@ -152,7 +151,7 @@ def test_dissolve_none(nybb_polydf):
     test = nybb_polydf.dissolve(by=None)
     expected = GeoDataFrame(
         {
-            nybb_polydf.geometry.name: [nybb_polydf.geometry.unary_union],
+            nybb_polydf.geometry.name: [nybb_polydf.geometry.union_all()],
             "BoroName": ["Staten Island"],
             "BoroCode": [5],
             "manhattan_bronx": [5],
@@ -167,7 +166,7 @@ def test_dissolve_none_mean(nybb_polydf):
     test = nybb_polydf.dissolve(aggfunc="mean", numeric_only=True)
     expected = GeoDataFrame(
         {
-            nybb_polydf.geometry.name: [nybb_polydf.geometry.unary_union],
+            nybb_polydf.geometry.name: [nybb_polydf.geometry.union_all()],
             "BoroCode": [3.0],
             "manhattan_bronx": [5.4],
         },
@@ -334,7 +333,6 @@ def test_dissolve_dropna_warn(nybb_polydf):
 
 
 def test_dissolve_multi_agg(nybb_polydf, merged_shapes):
-
     merged_shapes[("BoroCode", "min")] = [3, 1]
     merged_shapes[("BoroCode", "max")] = [5, 2]
     merged_shapes[("BoroName", "count")] = [3, 2]

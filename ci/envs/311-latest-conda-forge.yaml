@@ -15,18 +15,18 @@ dependencies:
   - pytest-xdist
   - fsspec
   # optional
-  - pygeos
   - pyogrio
-  - rtree
   - matplotlib
   - mapclassify
   - folium
   - xyzservices
   - scipy
   - geopy
+  - pointpats
+  - geodatasets
   # installed in tests.yaml, because not available on windows
   # - postgis
-  - SQLalchemy
+  - SQLalchemy>=2
   - psycopg2
   - libspatialite
   - geoalchemy2

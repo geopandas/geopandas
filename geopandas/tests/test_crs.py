@@ -1,4 +1,5 @@
 import random
+import warnings
 
 import numpy as np
 import pandas as pd
@@ -6,7 +7,7 @@ import pyproj
 import pytest
 from shapely.geometry import Point, Polygon, LineString
 
-from geopandas import GeoSeries, GeoDataFrame, points_from_xy, datasets, read_file
+from geopandas import GeoSeries, GeoDataFrame, points_from_xy, read_file
 from geopandas.array import from_shapely, from_wkb, from_wkt, GeometryArray
 from geopandas.testing import assert_geodataframe_equal
 
@@ -82,6 +83,9 @@ def test_to_crs_dimension_z():
     assert result.has_z.all()
 
 
+# pyproj + numpy 1.25 trigger warning for single-element array -> recommdation is to
+# ignore the warning for now (https://github.com/pyproj4/pyproj/issues/1307)
+@pytest.mark.filterwarnings("ignore:Conversion of an array with:DeprecationWarning")
 def test_to_crs_dimension_mixed():
     s = GeoSeries([Point(1, 2), LineString([(1, 2, 3), (4, 5, 6)])], crs=2056)
     result = s.to_crs(epsg=4326)
@@ -112,8 +116,8 @@ def test_to_crs_dimension_mixed():
 )
 def epsg4326(request):
     if isinstance(request.param, int):
-        return dict(epsg=request.param)
-    return dict(crs=request.param)
+        return {"epsg": request.param}
+    return {"crs": request.param}
 
 
 @pytest.fixture(
@@ -130,8 +134,8 @@ def epsg4326(request):
 )
 def epsg26918(request):
     if isinstance(request.param, int):
-        return dict(epsg=request.param)
-    return dict(crs=request.param)
+        return {"epsg": request.param}
+    return {"crs": request.param}
 
 
 @pytest.mark.filterwarnings("ignore:'\\+init:DeprecationWarning")
@@ -150,6 +154,9 @@ def test_transform2(epsg4326, epsg26918):
     assert_geodataframe_equal(df, utm, check_less_precise=True, check_crs=False)
 
 
+# pyproj + numpy 1.25 trigger warning for single-element array -> recommdation is to
+# ignore the warning for now (https://github.com/pyproj4/pyproj/issues/1307)
+@pytest.mark.filterwarnings("ignore:Conversion of an array with:DeprecationWarning")
 def test_crs_axis_order__always_xy():
     df = GeoDataFrame(geometry=[Point(-1683723, 6689139)], crs="epsg:26918")
     lonlat = df.to_crs("epsg:4326")
@@ -286,6 +293,7 @@ class TestGeometryArrayCRS:
         s = GeoSeries(arr, crs=27700)
         df = GeoDataFrame()
         df = df.set_geometry(s)
+        assert df._geometry_column_name == "geometry"
         assert df.crs == self.osgb
         assert df.geometry.crs == self.osgb
         assert df.geometry.values.crs == self.osgb
@@ -309,8 +317,20 @@ class TestGeometryArrayCRS:
         assert df.geometry.crs == self.wgs
         assert df.geometry.values.crs == self.wgs
 
-        # geometry column without geometry
+        # geometry column name None on init
         df = GeoDataFrame({"geometry": [0, 1]})
+        with pytest.raises(
+            ValueError,
+            match="Assigning CRS to a GeoDataFrame without a geometry",
+        ):
+            df.crs = 27700
+
+        # geometry column without geometry
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", "Geometry column does not contain geometry", UserWarning
+            )
+            df = GeoDataFrame({"geometry": [Point(0, 1)]}).assign(geometry=[0])
         with pytest.raises(
             ValueError,
             match="Assigning CRS to a GeoDataFrame without an active geometry",
@@ -337,14 +357,20 @@ class TestGeometryArrayCRS:
         arr = from_shapely(self.geoms)
         s = GeoSeries(arr, crs=27700)
         df = GeoDataFrame()
-        df["geometry"] = s
+        with pytest.warns(
+            FutureWarning, match="You are adding a column named 'geometry'"
+        ):
+            df["geometry"] = s
         assert df.crs == self.osgb
         assert df.geometry.crs == self.osgb
         assert df.geometry.values.crs == self.osgb
 
         arr = from_shapely(self.geoms, crs=27700)
         df = GeoDataFrame()
-        df["geometry"] = arr
+        with pytest.warns(
+            FutureWarning, match="You are adding a column named 'geometry'"
+        ):
+            df["geometry"] = arr
         assert df.crs == self.osgb
         assert df.geometry.crs == self.osgb
         assert df.geometry.values.crs == self.osgb
@@ -385,7 +411,10 @@ class TestGeometryArrayCRS:
     )
     def test_scalar(self, scalar):
         df = GeoDataFrame()
-        df["geometry"] = scalar
+        with pytest.warns(
+            FutureWarning, match="You are adding a column named 'geometry'"
+        ):
+            df["geometry"] = scalar
         df.crs = 4326
         assert df.crs == self.wgs
         assert df.geometry.crs == self.wgs
@@ -397,8 +426,7 @@ class TestGeometryArrayCRS:
             df = GeoDataFrame()
             df.crs = 4326
 
-    def test_read_file(self):
-        nybb_filename = datasets.get_path("nybb")
+    def test_read_file(self, nybb_filename):
         df = read_file(nybb_filename)
         assert df.crs == pyproj.CRS(2263)
         assert df.geometry.crs == pyproj.CRS(2263)
@@ -632,7 +660,7 @@ class TestGeometryArrayCRS:
         arr = from_shapely(self.geoms, crs=27700)
         df = GeoDataFrame({"col1": [0, 1]}, geometry=arr)
 
-        df["geometry"] = [g for g in df.geometry]
+        df["geometry"] = list(df.geometry)
         assert df.geometry.values.crs == self.osgb
 
         df2 = GeoDataFrame({"col1": [0, 1]}, geometry=arr)

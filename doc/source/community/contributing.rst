@@ -33,8 +33,8 @@ In particular, when submitting a pull request:
   return values should be documented explicitly.
 
 - Follow PEP 8 when possible. We use `Black
-  <https://black.readthedocs.io/en/stable/>`_ and `Flake8
-  <http://flake8.pycqa.org/en/latest/>`_ to ensure a consistent code
+  <https://black.readthedocs.io/en/stable/>`_ and `ruff
+  <https://beta.ruff.rs/docs/>`_ to ensure a consistent code
   format throughout the project. For more details see
   :ref:`below <contributing_style>`.
 
@@ -44,7 +44,7 @@ In particular, when submitting a pull request:
   imports when possible, and explicit relative imports for local
   imports when necessary in tests.
 
-- GeoPandas supports Python 3.8+ only. The last version of GeoPandas
+- GeoPandas supports Python 3.9+ only. The last version of GeoPandas
   supporting Python 2 is 0.6.
 
 - Unless your PR implements minor changes or internal work only, make sure
@@ -214,7 +214,7 @@ GeoPandas. If you used the provided environment in section 2, skip this
 step and continue to section 4. If you created the environment manually, we suggest installing
 dependencies using the following commands (executed after your development environment has been activated)::
 
-    conda install -c conda-forge pandas fiona shapely pyproj rtree pytest
+    conda install -c conda-forge pandas fiona shapely pyproj pytest
 
 This should install all necessary dependencies.
 
@@ -277,7 +277,7 @@ mixture of reStructuredText syntax for ``rst`` files, `which is explained here
 <http://www.sphinx-doc.org/en/stable/rest.html#rst-primer>`_ and MyST syntax for ``md``
 files `explained here <https://myst-parser.readthedocs.io/en/latest/index.html>`_.
 The docstrings follow the `Numpy Docstring standard
-<https://github.com/numpy/numpy/blob/main/doc/HOWTO_DOCUMENT.rst.txt>`_. Some pages
+<https://numpydoc.readthedocs.io/en/latest/format.html#docstring-standard>`_. Some pages
 and examples are Jupyter notebooks converted to docs using `nbsphinx
 <https://nbsphinx.readthedocs.io/>`_. Jupyter notebooks should be stored without the output.
 
@@ -324,7 +324,7 @@ Style Guide & Linting
 
 GeoPandas follows the `PEP8 <http://www.python.org/dev/peps/pep-0008/>`_ standard
 and uses `Black <https://black.readthedocs.io/en/stable/>`_ and
-`Flake8 <http://flake8.pycqa.org/en/latest/>`_ to ensure a consistent code
+`ruff <https://beta.ruff.rs/docs/>`_ to ensure a consistent code
 format throughout the project.
 
 Continuous Integration (GitHub Actions) will run those tools and
@@ -332,13 +332,13 @@ report any stylistic errors in your code. Therefore, it is helpful before
 submitting code to run the check yourself::
 
    black geopandas
-   git diff upstream/main -u -- "*.py" | flake8 --diff
+   git diff upstream/main -u -- "*.py" | ruff .
 
 to auto-format your code. Additionally, many editors have plugins that will
 apply ``black`` as you edit files.
 
 Optionally (but recommended), you can setup `pre-commit hooks <https://pre-commit.com/>`_
-to automatically run ``black`` and ``flake8`` when you make a git commit. If you did not
+to automatically run ``black`` and ``ruff`` when you make a git commit. If you did not
 use the provided development environment in ``environment-dev.yml``, you must first install ``pre-commit``::
 
    $ python -m pip install pre-commit
@@ -348,7 +348,7 @@ From the root of the geopandas repository, you should then install the
 
    $ pre-commit install
 
-Then ``black`` and ``flake8`` will be run automatically
+Then ``black`` and ``ruff`` will be run automatically
 each time you commit changes. You can skip these checks with
 ``git commit --no-verify``.
 

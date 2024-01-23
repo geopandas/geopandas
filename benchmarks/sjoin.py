@@ -6,7 +6,6 @@ import numpy as np
 
 
 class Bench:
-
     param_names = ["op"]
     params = [("intersects", "contains", "within")]
 

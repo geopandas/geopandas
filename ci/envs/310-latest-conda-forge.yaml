@@ -8,7 +8,6 @@ dependencies:
   - shapely
   - fiona
   - pyproj
-  - pygeos
   - packaging
   # testing
   - pytest
@@ -16,16 +15,17 @@ dependencies:
   - pytest-xdist
   - fsspec
   # optional
-  - rtree
   - matplotlib-base
   - mapclassify
   - folium
   - xyzservices
   - scipy
   - geopy
+  - pointpats
+  - geodatasets
   # installed in tests.yaml, because not available on windows
   # - postgis
-  - SQLalchemy
+  - SQLalchemy<2
   - psycopg2
   - libspatialite
   - geoalchemy2

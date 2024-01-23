@@ -80,24 +80,25 @@ Re-projecting is the process of changing the representation of locations from on
 
 .. ipython:: python
 
+    import geodatasets
+
     # load example data
-    world = geopandas.read_file(geopandas.datasets.get_path('naturalearth_lowres'))
+    usa = geopandas.read_file(geodatasets.get_path('geoda.natregimes'))
 
     # Check original projection
     # (it's Plate Carrée! x-y are long and lat)
-    world.crs
+    usa.crs
 
     # Visualize
-    ax = world.plot()
-    @savefig world_starting.png
+    ax = usa.plot()
+    @savefig usa_starting.png
     ax.set_title("WGS84 (lat/lon)");
 
-    # Reproject to Mercator (after dropping Antartica)
-    world = world[(world.name != "Antarctica") & (world.name != "Fr. S. Antarctic Lands")]
-    world = world.to_crs("EPSG:3395") # world.to_crs(epsg=3395) would also work
-    ax = world.plot()
-    @savefig world_reproj.png
-    ax.set_title("Mercator");
+    # Reproject to Albers contiguous USA
+    usa = usa.to_crs("ESRI:102003")
+    ax = usa.plot()
+    @savefig usa_reproj.png
+    ax.set_title("NAD 1983 Albers contiguous USA");
 
 
 Projection for multiple geometry columns
@@ -179,7 +180,7 @@ yields a proper CRS:
 
 .. ipython:: python
 
-   df = geopandas.read_file(geopandas.datasets.get_path('naturalearth_lowres'))
+   df = geopandas.read_file(geodatasets.get_path('naturalearth.land'))
    df.crs
 
 However, in certain cases (with older CRS formats), the resulting CRS object
@@ -226,19 +227,17 @@ The above will now raise a deprecation warning from pyproj, and instead of the
 Although a full proj4 string is not deprecated (as opposed to the "init" string
 above), it is still recommended to change it with an EPSG code if possible.
 
-For example, instead of:
+For example, *if* you know the EPSG code for the projection you are using, instead of:
 
 .. code-block:: python
 
    gdf.crs = "+proj=laea +lat_0=45 +lon_0=-100 +x_0=0 +y_0=0 +a=6370997 +b=6370997 +units=m +no_defs"
 
-we recommend to do:
+this is recommended:
 
 .. code-block:: python
 
    gdf.crs = "EPSG:2163"
-
-*if* you know the EPSG code for the projection you are using.
 
 One possible way to find out the EPSG code is using pyproj for this:
 
@@ -299,7 +298,7 @@ There are many file sources and CRS definitions out there "in the wild" that
 might have a CRS description that does not fully conform to the new standards of
 PROJ > 6 (proj4 strings, older WKT formats, ...). In such cases, you will get a
 :class:`pyproj.CRS <pyproj.crs.CRS>` object that might not be fully what you expected (e.g. not equal
-to the expected EPSG code). Below we list a few possible cases.
+to the expected EPSG code). Below is a list of a few possible cases.
 
 I get a "Bound CRS"?
 ~~~~~~~~~~~~~~~~~~~~
@@ -345,7 +344,7 @@ To get the actual underlying projected CRS, you can use the ``.source_crs`` attr
    Name: unknown
    ...
 
-Now we have a "Projected CRS", and now it will also recognize the correct EPSG
+Now you have a "Projected CRS", and now it will also recognize the correct EPSG
 number:
 
 .. code-block:: python
@@ -405,7 +404,7 @@ does not evaluate equal to this EPSG code:
    >>> crs == "EPSG:2953"
    False
 
-If we construct the CRS object from the EPSG code (truncated output):
+If you construct the CRS object from the EPSG code (truncated output):
 
 .. code-block:: python
 

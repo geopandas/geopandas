@@ -46,14 +46,14 @@ Fiona example
             )
         )
 
-    # load example data
-    world = geopandas.read_file(geopandas.datasets.get_path('naturalearth_lowres'))
+    # load natural earth land data
+    world = geopandas.read_file("https://naciscdn.org/naturalearth/110m/physical/ne_110m_land.zip")
 
     destination_crs = "EPSG:3395"
     forward_transformer = partial(base_transformer, src_crs=world.crs, dst_crs=destination_crs)
 
     # Reproject to Mercator (after dropping Antartica)
-    world = world[(world.name != "Antarctica") & (world.name != "Fr. S. Antarctic Lands")]
+    world = world.drop(7)
     with fiona.Env(OGR_ENABLE_PARTIAL_REPROJECTION="YES"):
         mercator_world = world.set_geometry(world.geometry.apply(forward_transformer), crs=destination_crs)
 
@@ -71,10 +71,9 @@ This example requires rasterio 1.2+ and GDAL 3+.
     from shapely.geometry import shape
 
     # load example data
-    world = geopandas.read_file(geopandas.datasets.get_path('naturalearth_lowres'))
+    world = geopandas.read_file("https://naciscdn.org/naturalearth/110m/physical/ne_110m_land.zip")
     # Reproject to Mercator (after dropping Antartica)
-    world = world[(world.name != "Antarctica") & (world.name != "Fr. S. Antarctic Lands")]
-
+    world = world.drop(7)
     destination_crs = "EPSG:3395"
     geometry = rasterio.warp.transform_geom(
         src_crs=world.crs,

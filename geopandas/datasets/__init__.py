@@ -1,36 +1,25 @@
-import os
-
-__all__ = ["available", "get_path"]
-
-_module_path = os.path.dirname(__file__)
-_available_dir = [p for p in next(os.walk(_module_path))[1] if not p.startswith("__")]
-_available_zip = {"nybb": "nybb_16a.zip"}
-available = _available_dir + list(_available_zip.keys())
+__all__ = []
+available = []  # previously part of __all__
+_prev_available = ["naturalearth_cities", "naturalearth_lowres", "nybb"]
 
 
 def get_path(dataset):
-    """
-    Get the path to the data file.
-
-    Parameters
-    ----------
-    dataset : str
-        The name of the dataset. See ``geopandas.datasets.available`` for
-        all options.
-
-    Examples
-    --------
-    >>> geopandas.datasets.get_path("naturalearth_lowres")  # doctest: +SKIP
-    '.../python3.8/site-packages/geopandas/datasets/\
-naturalearth_lowres/naturalearth_lowres.shp'
-
-    """
-    if dataset in _available_dir:
-        return os.path.abspath(os.path.join(_module_path, dataset, dataset + ".shp"))
-    elif dataset in _available_zip:
-        fpath = os.path.abspath(os.path.join(_module_path, _available_zip[dataset]))
-        return "zip://" + fpath
+    ne_message = "https://www.naturalearthdata.com/downloads/110m-cultural-vectors/."
+    nybb_message = (
+        "the geodatasets package.\n\nfrom geodatasets import get_path\n"
+        "path_to_file = get_path('nybb')\n"
+    )
+    error_msg = (
+        "The geopandas.dataset has been deprecated and was removed in GeoPandas "
+        f"1.0. You can get the original '{dataset}' data from "
+        f"{ne_message if 'natural' in dataset else nybb_message}"
+    )
+    if dataset in _prev_available:
+        raise AttributeError(error_msg)
     else:
-        msg = "The dataset '{data}' is not available. ".format(data=dataset)
-        msg += "Available datasets are {}".format(", ".join(available))
-        raise ValueError(msg)
+        error_msg = (
+            "The geopandas.dataset has been deprecated and "
+            "was removed in GeoPandas 1.0. New sample datasets are now available "
+            "in the geodatasets package (https://geodatasets.readthedocs.io/en/latest/)"
+        )
+        raise AttributeError(error_msg)
