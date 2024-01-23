@@ -26,9 +26,8 @@ except ImportError:
 
 
 @pytest.fixture
-def df_nybb():
-    nybb_path = geopandas.datasets.get_path("nybb")
-    df = read_file(nybb_path)
+def df_nybb(nybb_filename):
+    df = read_file(nybb_filename)
     return df
 
 
@@ -445,13 +444,15 @@ class TestIO:
 
         # There should be twice as many rows in the new table
         assert new_rows == orig_rows * 2, (
-            "There should be {target} rows,"
-            "found: {current}".format(target=orig_rows * 2, current=new_rows),
+            "There should be {target} rows,found: {current}".format(
+                target=orig_rows * 2, current=new_rows
+            ),
         )
         # Number of columns should stay the same
         assert new_cols == orig_cols, (
-            "There should be {target} columns,"
-            "found: {current}".format(target=orig_cols, current=new_cols),
+            "There should be {target} columns,found: {current}".format(
+                target=orig_cols, current=new_cols
+            ),
         )
 
     def test_write_postgis_without_crs(self, engine_postgis, df_nybb):
@@ -463,7 +464,6 @@ class TestIO:
         table = "nybb"
 
         # Write to db
-        df_nybb = df_nybb
         df_nybb.crs = None
         with pytest.warns(UserWarning, match="Could not parse CRS from the GeoDataF"):
             write_postgis(df_nybb, con=engine, name=table, if_exists="replace")

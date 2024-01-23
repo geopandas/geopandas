@@ -1,4 +1,5 @@
 import random
+import warnings
 
 import numpy as np
 import pandas as pd
@@ -162,6 +163,24 @@ def test_from_wkb_hex():
     assert isinstance(res, GeometryArray)
 
 
+def test_from_wkb_on_invalid():
+    # Single point LineString hex WKB: invalid
+    invalid_wkb_hex = "01020000000100000000000000000008400000000000000840"
+    message = "point array must contain 0 or >1 elements"
+
+    with pytest.raises(Exception, match=message):
+        from_wkb([invalid_wkb_hex], on_invalid="raise")
+
+    with pytest.warns(Warning, match=message):
+        res = from_wkb([invalid_wkb_hex], on_invalid="warn")
+    assert res == [None]
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        res = from_wkb([invalid_wkb_hex], on_invalid="ignore")
+    assert res == [None]
+
+
 def test_to_wkb():
     P = from_shapely(points_no_missing)
     res = to_wkb(P)
@@ -217,6 +236,24 @@ def test_from_wkt(string_type):
     assert res[0] == multi_poly
 
 
+def test_from_wkt_on_invalid():
+    # Single point LineString WKT: invalid
+    invalid_wkt = "LINESTRING(0 0)"
+    message = "point array must contain 0 or >1 elements"
+
+    with pytest.raises(Exception, match=message):
+        from_wkt([invalid_wkt], on_invalid="raise")
+
+    with pytest.warns(Warning, match=message):
+        res = from_wkt([invalid_wkt], on_invalid="warn")
+    assert res == [None]
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        res = from_wkt([invalid_wkt], on_invalid="ignore")
+    assert res == [None]
+
+
 def test_to_wkt():
     P = from_shapely(points_no_missing)
     res = to_wkt(P, rounding_precision=-1)
@@ -264,6 +301,9 @@ def test_as_array():
         ("geom_almost_equals", (3,)),
     ],
 )
+# filters required for attr=geom_almost_equals only
+@pytest.mark.filterwarnings(r"ignore:The \'geom_almost_equals\(\)\' method is deprecat")
+@pytest.mark.filterwarnings(r"ignore:The \'almost_equals\(\)\' method is deprecated")
 def test_predicates_vector_scalar(attr, args):
     na_value = False
 
@@ -303,6 +343,9 @@ def test_predicates_vector_scalar(attr, args):
         ("geom_almost_equals", (3,)),
     ],
 )
+# filters required for attr=geom_almost_equals only
+@pytest.mark.filterwarnings(r"ignore:The \'geom_almost_equals\(\)\' method is deprecat")
+@pytest.mark.filterwarnings(r"ignore:The \'almost_equals\(\)\' method is deprecated")
 def test_predicates_vector_vector(attr, args):
     na_value = False
     empty_value = True if attr == "disjoint" else False
@@ -622,7 +665,21 @@ def test_unary_union():
         shapely.geometry.Polygon([(0, 0), (1, 0), (1, 1)]),
     ]
     G = from_shapely(geoms)
-    u = G.unary_union()
+    with pytest.warns(FutureWarning, match="The 'unary_union' attribute is deprecated"):
+        u = G.unary_union()
+
+    expected = shapely.geometry.Polygon([(0, 0), (1, 0), (1, 1), (0, 1)])
+    assert u.equals(expected)
+    assert u.equals(G.union_all())
+
+
+def test_union_all():
+    geoms = [
+        shapely.geometry.Polygon([(0, 0), (0, 1), (1, 1)]),
+        shapely.geometry.Polygon([(0, 0), (1, 0), (1, 1)]),
+    ]
+    G = from_shapely(geoms)
+    u = G.union_all()
 
     expected = shapely.geometry.Polygon([(0, 0), (1, 0), (1, 1), (0, 1)])
     assert u.equals(expected)
