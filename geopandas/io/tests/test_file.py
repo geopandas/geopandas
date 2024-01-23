@@ -706,19 +706,14 @@ def test_allow_legacy_gdal_path(engine, nybb_filename):
     assert isinstance(gdf, geopandas.GeoDataFrame)
 
 
-@pytest.mark.parametrize("file_like", [False, True])
-def test_read_file_bbox_tuple(df_nybb, engine, nybb_filename, file_like):
+def test_read_file_bbox_tuple(df_nybb, engine, nybb_filename):
     bbox = (
         1031051.7879884212,
         224272.49231459625,
         1047224.3104931959,
         244317.30894023244,
     )
-
-    infile = (
-        open(nybb_filename.replace("zip://", ""), "rb") if file_like else nybb_filename
-    )
-    filtered_df = read_file(infile, bbox=bbox, engine=engine)
+    filtered_df = read_file(nybb_filename, bbox=bbox, engine=engine)
     expected = df_nybb[df_nybb["BoroName"].isin(["Bronx", "Queens"])]
     assert_geodataframe_equal(filtered_df, expected.reset_index(drop=True))
 
@@ -876,7 +871,8 @@ def test_read_file__columns(naturalearth_lowres):
     assert gdf.columns.tolist() == ["name", "pop_est", "geometry"]
 
 
-def test_read_file_bbox_gdf(df_nybb, engine, nybb_filename):
+@pytest.mark.parametrize("file_like", [False, True])
+def test_read_file_bbox_gdf(df_nybb, engine, nybb_filename, file_like):
     full_df_shape = df_nybb.shape
     bbox = geopandas.GeoDataFrame(
         geometry=[
@@ -889,36 +885,46 @@ def test_read_file_bbox_gdf(df_nybb, engine, nybb_filename):
         ],
         crs=NYBB_CRS,
     )
-    filtered_df = read_file(nybb_filename, bbox=bbox, engine=engine)
+    infile = (
+        open(nybb_filename.replace("zip://", ""), "rb") if file_like else nybb_filename
+    )
+    filtered_df = read_file(infile, bbox=bbox, engine=engine)
     filtered_df_shape = filtered_df.shape
     assert full_df_shape != filtered_df_shape
     assert filtered_df_shape == (2, 5)
 
 
-def test_read_file_mask_gdf(engine, naturalearth_lowres, naturalearth_cities):
-    skip_pyogrio_lt_07(engine)
-    gdf_mask = geopandas.read_file(naturalearth_lowres)
-    gdf = geopandas.read_file(
-        naturalearth_cities,
-        mask=gdf_mask[gdf_mask.continent == "Africa"],
-        engine=engine,
-    )
-    filtered_df_shape = gdf.shape
-    assert filtered_df_shape == (57, 2)
-
-
 @pytest.mark.parametrize("file_like", [False, True])
-def test_read_file_mask_polygon(df_nybb, engine, nybb_filename, file_like):
+def test_read_file_mask_gdf(df_nybb, engine, nybb_filename, file_like):
+    skip_pyogrio_lt_07(engine)
+    full_df_shape = df_nybb.shape
+    mask = geopandas.GeoDataFrame(
+        geometry=[
+            box(
+                1031051.7879884212,
+                224272.49231459625,
+                1047224.3104931959,
+                244317.30894023244,
+            )
+        ],
+        crs=NYBB_CRS,
+    )
+    infile = (
+        open(nybb_filename.replace("zip://", ""), "rb") if file_like else nybb_filename
+    )
+    filtered_df = read_file(infile, mask=mask, engine=engine)
+    filtered_df_shape = filtered_df.shape
+    assert full_df_shape != filtered_df_shape
+    assert filtered_df_shape == (2, 5)
+
+
+def test_read_file_mask_polygon(df_nybb, engine, nybb_filename):
     skip_pyogrio_lt_07(engine)
     full_df_shape = df_nybb.shape
     mask = box(
         1031051.7879884212, 224272.49231459625, 1047224.3104931959, 244317.30894023244
     )
-
-    infile = (
-        open(nybb_filename.replace("zip://", ""), "rb") if file_like else nybb_filename
-    )
-    filtered_df = read_file(infile, mask=mask, engine=engine)
+    filtered_df = read_file(nybb_filename, mask=mask, engine=engine)
     filtered_df_shape = filtered_df.shape
     assert full_df_shape != filtered_df_shape
     assert filtered_df_shape == (2, 5)
