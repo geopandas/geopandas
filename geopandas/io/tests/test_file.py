@@ -918,10 +918,11 @@ def test_read_file_filtered_with_gdf_boundary__mask__polygon(
     assert filtered_df_shape == (2, 5)
 
 
-def test_read_file_filtered_with_gdf_boundary__mask__geojson(df_nybb, engine):
+def test_read_file_filtered_with_gdf_boundary__mask__geojson(
+    df_nybb, nybb_filename, engine
+):
     skip_pyogrio_lt_07(engine)
     full_df_shape = df_nybb.shape
-    nybb_filename = geopandas.datasets.get_path("nybb")
     mask = mapping(
         box(
             1031051.7879884212,
@@ -982,9 +983,8 @@ def test_read_file_filtered_with_gdf_boundary_mismatched_crs__mask(
     assert filtered_df_shape == (2, 5)
 
 
-def test_read_file_bbox_mask(engine):
+def test_read_file_bbox_mask(engine, nybb_filename):
     skip_pyogrio_lt_07(engine)
-    nybb_filename = geopandas.datasets.get_path("nybb")
 
     bbox = (
         1031051.7879884212,
