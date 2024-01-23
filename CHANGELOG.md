@@ -24,6 +24,7 @@ New methods:
 - Added `transform` method from shapely to GeoSeries/GeoDataFrame (#3075).
 - Added `dwithin` method to check for a "distance within" predicate on
   GeoSeries/GeoDataFrame (#3153).
+- Added `to_geo_dict` method to generate GeoJSON-like dictionary from a GeoDataFrame (#3132).
 
 New features and improvements:
 
