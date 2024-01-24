@@ -98,7 +98,6 @@ jobs:
       - name: Overlay Execution Test without PyGEOS
         if: contains(matrix.env, '311-latest-conda-forge.yaml')
         env:
-          USE_PYGEOS: 0
           OVERLAY_EXECUTION_TEST_ENABLED: 1
           OVERLAY_EXECUTION_TEST_NPROC: 4
           OVERLAY_EXECUTION_TEST_NTESTS: 4

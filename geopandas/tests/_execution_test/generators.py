@@ -3,11 +3,10 @@ import dataclasses
 import gzip
 import io
 import json
+import uuid
 from pathlib import Path
 from typing import List, Optional, Tuple, Union
-import uuid
 
-import geopandas as gpd
 import numpy as np
 import shapely
 import shapely.affinity
@@ -15,6 +14,7 @@ import shapely.geometry
 import shapely.ops
 from shapely.validation import explain_validity
 
+import geopandas as gpd
 
 GenericPoly = Union[shapely.geometry.Polygon, shapely.geometry.MultiPolygon]
 
@@ -27,47 +27,37 @@ def strings_to_uuid_v5(*args: str) -> str:
     return str(uuid.uuid5(_NAMESPACE_UUID, "_".join(args)))
 
 
-def clip_to_unit_square(gdf: gpd.GeoDataFrame, inplace=True) -> gpd.GeoDataFrame:
+def clip_to_unit_square(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     bbox = shapely.geometry.box(0, 0, 1, 1)
-    new_geoms = shapely.intersection(gdf.geometry, bbox)
-    return gdf.set_geometry(new_geoms, inplace=inplace)
+    gdf.geometry = shapely.intersection(gdf.geometry, bbox)
 
 
-def scale(
-    gdf: gpd.GeoDataFrame, xfact: float, yfact: float, inplace=True
-) -> gpd.GeoDataFrame:
-    new_geoms = shapely.transform(gdf.geometry, lambda pts: pts * [xfact, yfact])
-    return gdf.set_geometry(new_geoms, inplace=inplace)
+def scale(gdf: gpd.GeoDataFrame, xfact: float, yfact: float) -> gpd.GeoDataFrame:
+    scaler = np.array([xfact, yfact])
+    gdf.geometry = shapely.transform(gdf.geometry, lambda pts, s=scaler: pts * s)
 
 
-def translate(
-    gdf: gpd.GeoDataFrame, xoff: float, yoff: float, inplace=True
-) -> gpd.GeoDataFrame:
-    new_geoms = shapely.transform(gdf.geometry, lambda pts: pts + [xoff, yoff])
-    return gdf.set_geometry(new_geoms, inplace=inplace)
+def translate(gdf: gpd.GeoDataFrame, xoff: float, yoff: float) -> gpd.GeoDataFrame:
+    offset = np.array([xoff, yoff])
+    gdf.geometry = shapely.transform(gdf.geometry, lambda pts, o=offset: pts + o)
 
 
-def gdf_set_precision(
-    gdf: gpd.GeoDataFrame, precision: float, inplace=True
-) -> gpd.GeoDataFrame:
+def gdf_set_precision(gdf: gpd.GeoDataFrame, precision: float) -> gpd.GeoDataFrame:
     """Returns dataframe with its geometry precision set to a precision grid size"""
-    new_geoms = geom_set_precision(gdf.geometry, precision)
-    return gdf.set_geometry(new_geoms, inplace=inplace)
+    gdf.geometry = geom_set_precision(gdf.geometry, precision)
 
 
 def geom_set_precision(geometry, precision):
     """Returns geometry with the precision set to a precision grid size"""
-    if precision is None:
-        return geometry
-    return shapely.set_precision(geometry, precision)
+    return geometry if precision is None else shapely.set_precision(geometry, precision)
 
 
 @dataclasses.dataclass(frozen=True)
 class RandomPolyGenerator(abc.ABC):
-    # chosen only so that it can be loaded into QGIS easily (@z=16)
-    top_left_tile: Tuple[int, int] = (18807, 23776)
-    # This gives the number of z21 pixels in a single z16 tile
-    px_per_tile: int = 256 * 2 ** (21 - 16)
+    # chosen only so that it can be loaded into QGIS easily (@z=18)
+    top_left_tile: Tuple[int, int] = (75228, 95104)
+    # This gives the number of z21 pixels in a single z18 tile
+    px_per_tile: int = 256 * 2 ** (21 - 18)
     use_cached_data_if_it_exists: bool = False
     precision: Optional[float] = None
 

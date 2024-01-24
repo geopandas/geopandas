@@ -3,10 +3,11 @@ import dataclasses
 import os
 import time
 
-import geopandas as gpd
 import pandas as pd
 import shapely
 import shapely.geometry
+
+import geopandas as gpd
 
 from .generators import RandomPolyGenerator
 
@@ -145,12 +146,7 @@ class TestCase:
 
     def time_all(self) -> pd.DataFrame:
         functions = [
-            f
-            for f in dir(self)
-            if f.startswith("gdf1_")
-            or f.startswith("gdf2_")
-            or f.startswith("poly1_")
-            or f.startswith("poly2_")
+            f for f in dir(self) if f.startswith(("gdf1_", "gdf2_", "poly1_", "poly2_"))
         ]
         results = []
         for func in functions:
