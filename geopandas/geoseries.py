@@ -682,7 +682,7 @@ class GeoSeries(GeoPandasBase, Series):
         return self._wrapped_pandas_method("select", *args, **kwargs)
 
     @doc(pd.Series)
-    def apply(self, func, convert_dtype: bool = None, args=(), **kwargs):
+    def apply(self, func, convert_dtype: Optional[bool] = None, args=(), **kwargs):
         if convert_dtype is not None:
             kwargs["convert_dtype"] = convert_dtype
         else:

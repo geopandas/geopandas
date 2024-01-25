@@ -104,7 +104,7 @@ def sjoin(
             " in a future release. Please use the `predicate` parameter"
             " instead."
         )
-        if predicate != "intersects" and op != predicate:
+        if predicate not in ("intersects", op):
             override_message = (
                 "A non-default value for `predicate` was passed"
                 f' (got `predicate="{predicate}"`'

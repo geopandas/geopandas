@@ -825,7 +825,7 @@ es": {"name": "urn:ogc:def:crs:EPSG::3857"}}}'
         else:
             df = self
 
-        geo = df._to_geo(na=na, show_bbox=show_bbox, drop_id=drop_id)
+        geo = df.to_geo_dict(na=na, show_bbox=show_bbox, drop_id=drop_id)
 
         # if the geometry is not in WGS84, include CRS in the JSON
         if df.crs is not None and not df.crs.equals("epsg:4326"):
@@ -853,7 +853,7 @@ es": {"name": "urn:ogc:def:crs:EPSG::3857"}}}'
         represents the ``GeoDataFrame`` as a GeoJSON-like
         ``FeatureCollection``.
 
-        This differs from `_to_geo()` only in that it is a property with
+        This differs from :meth:`to_geo_dict` only in that it is a property with
         default args instead of a method.
 
         CRS of the dataframe is not passed on to the output, unlike
@@ -877,7 +877,7 @@ es": {"name": "urn:ogc:def:crs:EPSG::3857"}}}'
 ': {'col1': 'name2'}, 'geometry': {'type': 'Point', 'coordinates': (2.0, 1.0)}, 'b\
 box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         """
-        return self._to_geo(na="null", show_bbox=True, drop_id=False)
+        return self.to_geo_dict(na="null", show_bbox=True, drop_id=False)
 
     def iterfeatures(self, na="null", show_bbox=False, drop_id=False):
         """
@@ -923,8 +923,8 @@ individually so that features may have different properties
 
         if self._geometry_column_name not in self:
             raise AttributeError(
-                "No geometry data set (expected in"
-                " column '%s')." % self._geometry_column_name
+                "No geometry data set (expected in column '%s')."
+                % self._geometry_column_name
             )
 
         ids = np.array(self.index, copy=False)
@@ -987,18 +987,60 @@ individually so that features may have different properties
 
                 yield feature
 
-    def _to_geo(self, **kwargs):
+    def to_geo_dict(self, na="null", show_bbox=False, drop_id=False):
         """
-        Returns a python feature collection (i.e. the geointerface)
-        representation of the GeoDataFrame.
+        Returns a python feature collection representation of the GeoDataFrame
+        as a dictionary with a list of features based on the ``__geo_interface__``
+        GeoJSON-like specification.
+
+        Parameters
+        ----------
+        na : str, optional
+            Options are {'null', 'drop', 'keep'}, default 'null'.
+            Indicates how to output missing (NaN) values in the GeoDataFrame
+
+            - null: output the missing entries as JSON null
+            - drop: remove the property from the feature. This applies to each feature \
+individually so that features may have different properties
+            - keep: output the missing entries as NaN
+
+        show_bbox : bool, optional
+            Include bbox (bounds) in the geojson. Default False.
+        drop_id : bool, default: False
+            Whether to retain the index of the GeoDataFrame as the id property
+            in the generated dictionary. Default is False, but may want True
+            if the index is just arbitrary row numbers.
+
+        Examples
+        --------
+
+        >>> from shapely.geometry import Point
+        >>> d = {'col1': ['name1', 'name2'], 'geometry': [Point(1, 2), Point(2, 1)]}
+        >>> gdf = geopandas.GeoDataFrame(d)
+        >>> gdf
+            col1     geometry
+        0  name1  POINT (1 2)
+        1  name2  POINT (2 1)
+
+        >>> gdf.to_geo_dict()
+        {'type': 'FeatureCollection', 'features': [{'id': '0', 'type': 'Feature', '\
+properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.0, \
+2.0)}}, {'id': '1', 'type': 'Feature', 'properties': {'col1': 'name2'}, 'geometry':\
+ {'type': 'Point', 'coordinates': (2.0, 1.0)}}]}
+
+        See also
+        --------
+        GeoDataFrame.to_json : return a GeoDataFrame as a GeoJSON string
 
         """
         geo = {
             "type": "FeatureCollection",
-            "features": list(self.iterfeatures(**kwargs)),
+            "features": list(
+                self.iterfeatures(na=na, show_bbox=show_bbox, drop_id=drop_id)
+            ),
         }
 
-        if kwargs.get("show_bbox", False):
+        if show_bbox:
             geo["bbox"] = tuple(self.total_bounds)
 
         return geo
@@ -1098,7 +1140,7 @@ individually so that features may have different properties
         engine = kwargs.pop("engine", "auto")
         if engine not in ("auto", "pyarrow"):
             raise ValueError(
-                f"GeoPandas only supports using pyarrow as the engine for "
+                "GeoPandas only supports using pyarrow as the engine for "
                 f"to_parquet: {engine!r} passed instead."
             )
 
@@ -1641,8 +1683,8 @@ individually so that features may have different properties
                 raise ValueError(
                     "Concat operation has resulted in multiple columns using "
                     f"the geometry column name '{self._geometry_column_name}'.\n"
-                    f"Please ensure this column from the first DataFrame is not "
-                    f"repeated."
+                    "Please ensure this column from the first DataFrame is not "
+                    "repeated."
                 )
         elif method == "unstack":
             # unstack adds multiindex columns and reshapes data.

@@ -22,6 +22,7 @@ New methods:
 - Added `contains_properly` method from shapely to GeoSeries/GeoDataframe (#3105).
 - Added `snap` method from shapely to GeoSeries/GeoDataframe (#3086).
 - Added `transform` method from shapely to GeoSeries/GeoDataFrame (#3075).
+- Added `to_geo_dict` method to generate GeoJSON-like dictionary from a GeoDataFrame (#3132).
 
 New features and improvements:
 
@@ -41,6 +42,9 @@ Potentially breaking changes:
   now returns a Pandas DataFrame instead of a GeoDataFrame with an empty
   ``geometry`` column.
 
+API changes:
+- Added support for ``mask`` keyword for pyogrio engine for pyogrio >= 0.7.0 (#3062).
+
 Bug fixes:
 
 - Fix `GeoDataFrame.merge()` incorrectly returning a `DataFrame` instead of a
@@ -51,9 +55,9 @@ Bug fixes:
 
 Deprecations and compatibility notes:
 
-- The deprecation of `geopandas.datasets` has been enforced and the module has been 
-  removed. New sample datasets are now available in the 
-  [geodatasets](https://geodatasets.readthedocs.io/en/latest/) package (#3084). 
+- The deprecation of `geopandas.datasets` has been enforced and the module has been
+  removed. New sample datasets are now available in the
+  [geodatasets](https://geodatasets.readthedocs.io/en/latest/) package (#3084).
 
 ## Version 0.14.2 (Jan 4, 2024)
 
