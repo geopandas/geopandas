@@ -396,16 +396,37 @@ def _read_file_fiona(
                     f_filt, crs=crs, columns=columns + ["geometry"]
                 )
             for k in datetime_fields:
-                as_dt = pd.to_datetime(df[k], errors="ignore")
-                # if to_datetime failed, try again for mixed timezone offsets
-                if as_dt.dtype == "object":
+                as_dt = None
+                # plain try catch for when pandas will raise in the future
+                # TODO we can tighten the exception type in future when it does
+                try:
+                    with warnings.catch_warnings():
+                        # pandas 2.x does not yet enforce this behaviour but raises a
+                        # warning  -> we want to to suppress this warning for our users,
+                        # and do this by turning it into an error so we take the
+                        # `except` code path to try again with utc=True
+                        warnings.filterwarnings(
+                            "error",
+                            "In a future version of pandas, parsing datetimes with "
+                            "mixed time zones will raise an error",
+                            FutureWarning,
+                        )
+                        as_dt = pd.to_datetime(df[k])
+                except Exception:
+                    pass
+                if as_dt is None or as_dt.dtype == "object":
+                    # if to_datetime failed, try again for mixed timezone offsets
                     # This can still fail if there are invalid datetimes
-                    as_dt = pd.to_datetime(df[k], errors="ignore", utc=True)
+                    try:
+                        as_dt = pd.to_datetime(df[k], utc=True)
+                    except Exception:
+                        pass
                 # if to_datetime succeeded, round datetimes as
                 # fiona only supports up to ms precision (any microseconds are
                 # floating point rounding error)
-                if not (as_dt.dtype == "object"):
+                if as_dt is not None and not (as_dt.dtype == "object"):
                     df[k] = as_dt.dt.round(freq="ms")
+
             return df
 
 
