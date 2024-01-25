@@ -409,6 +409,8 @@ def _read_file_fiona(
                 )
             for k in datetime_fields:
                 as_dt = None
+                # plain try catch for when pandas will raise in the future
+                # TODO we can tighten the exception type in future when it does
                 try:
                     with warnings.catch_warnings():
                         # pandas 2.x does not yet enforce this behaviour but raises a
