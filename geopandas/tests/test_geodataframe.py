@@ -1269,15 +1269,12 @@ class TestConstructor:
         check_geodataframe(gdf)
         gdf.columns == ["geometry", "a"]
 
-    @pytest.mark.xfail
     def test_preserve_series_name(self):
         geoms = [Point(1, 1), Point(2, 2), Point(3, 3)]
         gs = GeoSeries(geoms)
         gdf = GeoDataFrame({"a": [1, 2, 3]}, geometry=gs)
 
-        check_geodataframe(gdf, geometry_column="geometry")
-
-        geoms = [Point(1, 1), Point(2, 2), Point(3, 3)]
+        # GH2770
         gs = GeoSeries(geoms, name="my_geom")
         gdf = GeoDataFrame({"a": [1, 2, 3]}, geometry=gs)
 

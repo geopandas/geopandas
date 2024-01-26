@@ -186,7 +186,11 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 and not geometry.crs == crs
             ):
                 raise ValueError(crs_mismatch_error)
-
+            # if geometry is a named GeoSeries then, use that name for geometry column
+            if (
+                name := getattr(geometry, "name", None)
+            ) is not None and name != "geometry":
+                self._geometry_column_name = name
             self.set_geometry(geometry, inplace=True, crs=crs)
 
         if geometry is None and crs:
@@ -306,7 +310,6 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         else:
             frame = self.copy()
 
-        to_remove = None
         geo_column_name = self._geometry_column_name
         if geo_column_name is None:
             geo_column_name = "geometry"
@@ -326,23 +329,17 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 )
 
             if drop:
-                to_remove = col
+                # remove new column col, keep existing geo_column_name
+                del frame[col]
             else:
                 geo_column_name = col
-
-        if to_remove:
-            del frame[to_remove]
 
         if not crs:
             crs = getattr(level, "crs", None)
 
-        if isinstance(level, (GeoSeries, GeometryArray)) and level.crs != crs:
-            # Avoids caching issues/crs sharing issues
-            level = level.copy()
-            level.crs = crs
-
-        # Check that we are using a listlike of geometries
         level = _ensure_geometry(level, crs=crs)
+        level.crs = crs  # ensure_geometry only sets crs if crs None on level
+
         # update _geometry_column_name prior to assignment
         # to avoid default is None warning
         frame._geometry_column_name = geo_column_name
