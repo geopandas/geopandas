@@ -333,13 +333,9 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         if not crs:
             crs = getattr(level, "crs", None)
 
-        if isinstance(level, (GeoSeries, GeometryArray)) and level.crs != crs:
-            # Avoids caching issues/crs sharing issues
-            level = level.copy()
-            level.crs = crs
-
-        # Check that we are using a listlike of geometries
         level = _ensure_geometry(level, crs=crs)
+        level.crs = crs  # ensure_geometry only sets crs if crs None on level
+
         # update _geometry_column_name prior to assignment
         # to avoid default is None warning
         frame._geometry_column_name = geo_column_name
