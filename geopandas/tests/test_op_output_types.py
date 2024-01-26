@@ -144,6 +144,24 @@ def test_loc(df):
     assert_object(df.loc[:, "value1"], pd.Series)
 
 
+@pytest.mark.parametrize("geom_name", ["geometry", "geom"])
+def test_loc_add_row(geom_name):
+    # https://github.com/geopandas/geopandas/issues/3119
+    import geopandas
+    from geodatasets import get_path
+
+    nybb = geopandas.read_file(get_path("nybb"))[["BoroCode", "geometry"]]
+    if geom_name != "geometry":
+        pytest.xfail("pre-regression behaviour only works for geometry col geometry")
+        nybb = nybb.rename_geometry(geom_name)
+    # crs_orig = nybb.crs
+
+    # add a new row
+    nybb.loc[5] = [6, nybb.geometry.iloc[0]]
+    assert nybb.geometry.dtype == "geometry"
+    assert nybb.crs is None  # TODO this should be crs_orig, regressed in #2373
+
+
 def test_iloc(df):
     geo_name = df.geometry.name
     assert_object(df.iloc[:, 0:2], pd.DataFrame)
