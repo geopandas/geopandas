@@ -1,7 +1,10 @@
 # Changelog
 
-- Fix bug in `pandas.concat` CRS consistency checking where CRS differing by WKT 
-  whitespace only were treated as incompatible (#3023)
+## Version 0.14.3 (Jan ??, 2024)
+
+- Several fixes for compatibility with the latest pandas 2.2 release.
+- Fix bug in `pandas.concat` CRS consistency checking where CRS differing by WKT
+  whitespace only were treated as incompatible (#3023).
 
 ## Version 0.14.2 (Jan 4, 2024)
 
