@@ -306,7 +306,6 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         else:
             frame = self.copy()
 
-        to_remove = None
         geo_column_name = self._geometry_column_name
         if geo_column_name is None:
             geo_column_name = "geometry"
@@ -326,12 +325,10 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 )
 
             if drop:
-                to_remove = col
+                # remove new column col, keep existing geo_column_name
+                del frame[col]
             else:
                 geo_column_name = col
-
-        if to_remove:
-            del frame[to_remove]
 
         if not crs:
             crs = getattr(level, "crs", None)
