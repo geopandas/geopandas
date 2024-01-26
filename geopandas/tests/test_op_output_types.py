@@ -1,3 +1,5 @@
+from shapely import Polygon
+
 import pandas as pd
 import pyproj
 import pytest
@@ -142,6 +144,43 @@ def test_loc(df):
     assert_object(df.loc[:, geo_name], GeoSeries, geo_name)
     assert_object(df.loc[:, "geometry2"], GeoSeries, "geometry2", crs=crs_osgb)
     assert_object(df.loc[:, "value1"], pd.Series)
+
+
+@pytest.mark.parametrize("geom_name", ["geometry", "geom"])
+def test_loc_add_row(geom_name):
+    # https://github.com/geopandas/geopandas/issues/3119
+    import geopandas
+    from geodatasets import get_path
+
+    nybb = geopandas.read_file(get_path("nybb"))[["BoroCode", "geometry"]]
+    if geom_name != "geometry":
+        nybb = nybb.rename_geometry(geom_name)
+    crs_orig = nybb.crs
+
+    # add a new row
+    nybb.loc[5] = [6, nybb.geometry.iloc[0]]
+    assert nybb.geometry.dtype == "geometry"
+    assert nybb.crs == crs_orig
+
+
+@pytest.mark.parametrize(
+    "geom_name",
+    [
+        pytest.param(
+            "geometry", marks=pytest.mark.xfail(reason="reported but not fixed")
+        ),
+        pytest.param("geom", marks=pytest.mark.xfail(reason="reported but not fixed")),
+    ],
+)
+def test_loc_add_row_empty_start(geom_name):
+    # adding row to empty geodataframe
+    # https://github.com/geopandas/geopandas/issues/3109
+    gdf = GeoDataFrame([], geometry=[], crs=crs_wgs)
+    if geom_name != "geometry":
+        gdf = gdf.rename_geometry(geom_name)
+    gdf.loc[len(gdf)] = [Polygon([(0, 0), (1, 0), (1, 1), (0, 1)])]
+    assert gdf.geometry.dtype == "geometry"
+    assert gdf.crs == crs_wgs
 
 
 def test_iloc(df):

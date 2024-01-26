@@ -1,3 +1,4 @@
+from __future__ import annotations
 import inspect
 import numbers
 import operator
@@ -11,6 +12,7 @@ import shapely.affinity
 import shapely.geometry
 import shapely.ops
 import shapely.wkt
+
 from pandas.api.extensions import (
     ExtensionArray,
     ExtensionDtype,
@@ -22,6 +24,10 @@ from pyproj.database import query_utm_crs_info
 from shapely.geometry.base import BaseGeometry
 
 from .sindex import SpatialIndex
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from pandas._typing import DtypeObj
 
 TransformerFromCRS = lru_cache(Transformer.from_crs)
 
@@ -66,8 +72,49 @@ class GeometryDtype(ExtensionDtype):
     def construct_array_type(cls):
         return GeometryArray
 
+    def _get_common_dtype(self, dtypes: list[DtypeObj]) -> DtypeObj | None:
+        """
+        Return the common dtype, if one exists.
+
+        Used in `find_common_type` implementation. This is for example used
+        to determine the resulting dtype in a concat operation.
+
+        If no common dtype exists, return None (which gives the other dtypes
+        the chance to determine a common dtype). If all dtypes in the list
+        return None, then the common dtype will be "object" dtype (this means
+        it is never needed to return "object" dtype from this method itself).
+
+        Parameters
+        ----------
+        dtypes : list of dtypes
+            The dtypes for which to determine a common dtype. This is a list
+            of np.dtype or ExtensionDtype instances.
+
+        Returns
+        -------
+        Common dtype (np.dtype or ExtensionDtype) or None
+        """
+        if len(set(dtypes)) == 1:
+            # only itself
+            return self
+        elif set(dtypes) == {self, np.dtype("O")}:
+            return MaybeGeometryDtype()
+        else:
+            return None
+
+
+class MaybeGeometryDtype(GeometryDtype):
+    type = BaseGeometry
+    name = "maybe_geometry"
+    na_value = np.nan
+
+    @classmethod
+    def construct_array_type(cls):
+        return MaybeGeometryArray
+
 
 register_extension_dtype(GeometryDtype)
+register_extension_dtype(MaybeGeometryDtype)
 
 
 def _check_crs(left, right, allow_none=False):
@@ -1642,6 +1689,38 @@ class GeometryArray(ExtensionArray):
             else:
                 return False
         return (self == item).any()
+
+
+class MaybeGeometryArray(GeometryArray):  # TODO should this inherit?
+    # getting _empty from parent
+    @classmethod
+    def _from_sequence(cls, scalars, dtype=None, copy=False):
+        """
+        Construct a new ExtensionArray from a sequence of scalars.
+
+        Parameters
+        ----------
+        scalars : Sequence
+            Each element will be an instance of the scalar type for this
+            array, ``cls.dtype.type``.
+        dtype : dtype, optional
+            Construct for this particular dtype. This should be a Dtype
+            compatible with the ExtensionArray.
+        copy : boolean, default False
+            If True, copy the underlying data.
+
+        Returns
+        -------
+        ExtensionArray
+        """
+        try:
+            return GeometryArray._from_sequence(scalars, dtype=dtype, copy=copy)
+        except TypeError:
+            # if fails, return ndarray of objects, pretend this never happened
+            # (coupled to logic at pandas.core.internals.managers
+            # https://github.com/pandas-dev/pandas/blob/b2bca5e96545c8b9fb50dbc45ffd71eb71bd2306/pandas/core/internals/managers.py#L1007C2-L1009
+            # )
+            return scalars  # ndarray of objects, pretend this never happened
 
 
 def _get_common_crs(arr_seq):
