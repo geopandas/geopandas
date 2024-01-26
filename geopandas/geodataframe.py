@@ -186,7 +186,11 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 and not geometry.crs == crs
             ):
                 raise ValueError(crs_mismatch_error)
-
+            # if geometry is a named GeoSeries then, use that name for geometry column
+            if (
+                name := getattr(geometry, "name", None)
+            ) is not None and name != "geometry":
+                self._geometry_column_name = name
             self.set_geometry(geometry, inplace=True, crs=crs)
 
         if geometry is None and crs:
