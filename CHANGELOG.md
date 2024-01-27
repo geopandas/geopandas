@@ -52,6 +52,8 @@ Bug fixes:
   geometry column (#2933).
 - Fix bug in `pandas.concat` CRS consistency checking where CRS differing by WKT
   whitespace only were treated as incompatible (#3023).
+- Fix bug in `GeoDataFrame` constructor where if `geometry` is given a named 
+  `GeoSeries` the name was not used as the active geometry column name (#3160).
 
 Deprecations and compatibility notes:
 

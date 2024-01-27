@@ -1273,6 +1273,7 @@ class TestConstructor:
         geoms = [Point(1, 1), Point(2, 2), Point(3, 3)]
         gs = GeoSeries(geoms)
         gdf = GeoDataFrame({"a": [1, 2, 3]}, geometry=gs)
+        check_geodataframe(gdf, geometry_column="geometry")
 
         # GH2770
         gs = GeoSeries(geoms, name="my_geom")
