@@ -28,6 +28,28 @@ dependencies = [
     "shapely >= 2.0.0",
 ]
 
+[project.optional-dependencies]
+geodatabase = [
+    "psycopg2-binary>=2.8.0",
+    "SQLAlchemy>=1.3",
+]
+geocoding = [
+    "geopy",
+]
+plotting = [
+    "matplotlib>=3.5.0",
+    "mapclassify",
+    "cartopy",
+    "geoplot",
+    "folium",
+]
+postgis = [
+    "GeoAlchemy2",
+]
+parquet = [
+    "pyarrow>=8.0.0",
+]
+
 [project.readme]
 text = """\
 GeoPandas is a project to add support for geographic data to
