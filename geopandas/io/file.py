@@ -1,3 +1,4 @@
+from io import IOBase
 import os
 from packaging.version import Version
 from pathlib import Path
@@ -8,6 +9,7 @@ import pandas as pd
 from pandas.api.types import is_integer_dtype
 
 import pyproj
+import shapely
 from shapely.geometry import mapping
 from shapely.geometry.base import BaseGeometry
 
@@ -18,6 +20,7 @@ from urllib.parse import urlparse as parse_url
 from urllib.parse import uses_netloc, uses_params, uses_relative
 import urllib.request
 
+from geopandas._compat import PANDAS_GE_20
 
 _VALID_URLS = set(uses_relative + uses_netloc + uses_params)
 _VALID_URLS.discard("")
@@ -62,15 +65,20 @@ def _import_fiona():
 
 pyogrio = None
 pyogrio_import_error = None
+PYOGRIO_GE_07 = False
 
 
 def _import_pyogrio():
     global pyogrio
     global pyogrio_import_error
+    global PYOGRIO_GE_07
 
     if pyogrio is None:
         try:
             import pyogrio
+
+            PYOGRIO_GE_07 = Version(pyogrio.__version__) >= Version("0.7.0")
+
         except ImportError as err:
             pyogrio = False
             pyogrio_import_error = str(err)
@@ -209,7 +217,8 @@ def _read_file(filename, bbox=None, mask=None, rows=None, engine=None, **kwargs)
         Filter for features that intersect with the given dict-like geojson
         geometry, GeoSeries, GeoDataFrame or shapely geometry.
         CRS mis-matches are resolved if given a GeoSeries or GeoDataFrame.
-        Cannot be used with bbox.
+        Cannot be used with bbox. If multiple geometries are passed, this will
+        first union all geometries, which may be computationally expensive.
     rows : int or slice, default None
         Load in specific rows by passing an integer (first `n` rows) or a
         slice() object.
@@ -359,7 +368,7 @@ def _read_file_fiona(
                 assert len(bbox) == 4
             # handle loading the mask
             elif isinstance(mask, (GeoDataFrame, GeoSeries)):
-                mask = mapping(mask.to_crs(crs).unary_union)
+                mask = mapping(mask.to_crs(crs).union_all())
             elif isinstance(mask, BaseGeometry):
                 mask = mapping(mask)
 
@@ -387,7 +396,10 @@ def _read_file_fiona(
             datetime_fields = [
                 k for (k, v) in features.schema["properties"].items() if v == "datetime"
             ]
-            if kwargs.get("ignore_geometry", False):
+            if (
+                kwargs.get("ignore_geometry", False)
+                or features.schema["geometry"] == "None"
+            ):
                 df = pd.DataFrame(
                     [record["properties"] for record in f_filt], columns=columns
                 )
@@ -396,16 +408,39 @@ def _read_file_fiona(
                     f_filt, crs=crs, columns=columns + ["geometry"]
                 )
             for k in datetime_fields:
-                as_dt = pd.to_datetime(df[k], errors="ignore")
-                # if to_datetime failed, try again for mixed timezone offsets
-                if as_dt.dtype == "object":
+                as_dt = None
+                # plain try catch for when pandas will raise in the future
+                # TODO we can tighten the exception type in future when it does
+                try:
+                    with warnings.catch_warnings():
+                        # pandas 2.x does not yet enforce this behaviour but raises a
+                        # warning  -> we want to to suppress this warning for our users,
+                        # and do this by turning it into an error so we take the
+                        # `except` code path to try again with utc=True
+                        warnings.filterwarnings(
+                            "error",
+                            "In a future version of pandas, parsing datetimes with "
+                            "mixed time zones will raise an error",
+                            FutureWarning,
+                        )
+                        as_dt = pd.to_datetime(df[k])
+                except Exception:
+                    pass
+                if as_dt is None or as_dt.dtype == "object":
+                    # if to_datetime failed, try again for mixed timezone offsets
                     # This can still fail if there are invalid datetimes
-                    as_dt = pd.to_datetime(df[k], errors="ignore", utc=True)
+                    try:
+                        as_dt = pd.to_datetime(df[k], utc=True)
+                    except Exception:
+                        pass
                 # if to_datetime succeeded, round datetimes as
                 # fiona only supports up to ms precision (any microseconds are
                 # floating point rounding error)
-                if not (as_dt.dtype == "object"):
-                    df[k] = as_dt.dt.round(freq="ms")
+                if as_dt is not None and not (as_dt.dtype == "object"):
+                    if PANDAS_GE_20:
+                        df[k] = as_dt.dt.as_unit("ms")
+                    else:
+                        df[k] = as_dt.dt.round(freq="ms")
             return df
 
 
@@ -428,22 +463,47 @@ def _read_file_pyogrio(path_or_bytes, bbox=None, mask=None, rows=None, **kwargs)
                 raise ValueError("slice with step is not supported")
         else:
             raise TypeError("'rows' must be an integer or a slice.")
+
+    if bbox is not None and mask is not None:
+        # match error message from Fiona
+        raise ValueError("mask and bbox can not be set together")
+
     if bbox is not None:
         if isinstance(bbox, (GeoDataFrame, GeoSeries)):
-            bbox = tuple(bbox.total_bounds)
+            crs = pyogrio.read_info(path_or_bytes).get("crs")
+            if isinstance(path_or_bytes, IOBase):
+                path_or_bytes.seek(0)
+
+            bbox = tuple(bbox.to_crs(crs).total_bounds)
         elif isinstance(bbox, BaseGeometry):
             bbox = bbox.bounds
         if len(bbox) != 4:
             raise ValueError("'bbox' should be a length-4 tuple.")
+
     if mask is not None:
-        raise ValueError(
-            "The 'mask' keyword is not supported with the 'pyogrio' engine. "
-            "You can use 'bbox' instead."
-        )
+        # NOTE: mask cannot be used at same time as bbox keyword
+        if not PYOGRIO_GE_07:
+            raise ValueError(
+                "The 'mask' keyword requires pyogrio >= 0.7.0.  "
+                "You can use 'bbox' instead."
+            )
+        if isinstance(mask, (GeoDataFrame, GeoSeries)):
+            crs = pyogrio.read_info(path_or_bytes).get("crs")
+            if isinstance(path_or_bytes, IOBase):
+                path_or_bytes.seek(0)
+
+            mask = shapely.unary_union(mask.to_crs(crs).geometry.values)
+        elif isinstance(mask, BaseGeometry):
+            mask = shapely.unary_union(mask)
+        elif isinstance(mask, dict) or hasattr(mask, "__geo_interface__"):
+            # convert GeoJSON to shapely geometry
+            mask = shapely.geometry.shape(mask)
+
+        kwargs["mask"] = mask
+
     if kwargs.pop("ignore_geometry", False):
         kwargs["read_geometry"] = False
 
-    # TODO: if bbox is not None, check its CRS vs the CRS of the file
     return pyogrio.read_dataframe(path_or_bytes, bbox=bbox, **kwargs)
 
 
@@ -628,10 +688,12 @@ def _to_file_fiona(df, filename, driver, schema, crs, mode, **kwargs):
     with fiona_env():
         crs_wkt = None
         try:
-            gdal_version = fiona.env.get_gdal_release_name()
-        except AttributeError:
-            gdal_version = "2.0.0"  # just assume it is not the latest
-        if Version(gdal_version) >= Version("3.0.0") and crs:
+            gdal_version = Version(
+                fiona.env.get_gdal_release_name().strip("e")
+            )  # GH3147
+        except (AttributeError, ValueError):
+            gdal_version = Version("2.0.0")  # just assume it is not the latest
+        if gdal_version >= Version("3.0.0") and crs:
             crs_wkt = crs.to_wkt()
         elif crs:
             crs_wkt = crs.to_wkt("WKT1_GDAL")

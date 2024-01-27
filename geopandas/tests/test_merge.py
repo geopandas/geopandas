@@ -1,6 +1,7 @@
 import warnings
 
 import pandas as pd
+import pyproj
 import pytest
 
 from geopandas._compat import PANDAS_GE_21
@@ -134,6 +135,38 @@ class TestMerging:
             partial_none_case = self.gdf[["geometry"]]
             partial_none_case.iloc[0] = None
             pd.concat([single_geom_col, partial_none_case])
+
+    def test_concat_axis0_crs_wkt_mismatch(self):
+        # https://github.com/geopandas/geopandas/issues/326#issuecomment-1727958475
+        wkt_template = """GEOGCRS["WGS 84",
+        ENSEMBLE["World Geodetic System 1984 ensemble",
+        MEMBER["World Geodetic System 1984 (Transit)"],
+        MEMBER["World Geodetic System 1984 (G730)"],
+        MEMBER["World Geodetic System 1984 (G873)"],
+        MEMBER["World Geodetic System 1984 (G1150)"],
+        MEMBER["World Geodetic System 1984 (G1674)"],
+        MEMBER["World Geodetic System 1984 (G1762)"],
+        MEMBER["World Geodetic System 1984 (G2139)"],
+        ELLIPSOID["WGS 84",6378137,298.257223563,LENGTHUNIT["metre",1]],
+        ENSEMBLEACCURACY[2.0]],PRIMEM["Greenwich",0,
+        ANGLEUNIT["degree",0.0174532925199433]],CS[ellipsoidal,2],
+        AXIS["geodetic latitude (Lat)",north,ORDER[1],
+        ANGLEUNIT["degree",0.0174532925199433]],
+        AXIS["geodetic longitude (Lon)",east,ORDER[2],
+        ANGLEUNIT["degree",0.0174532925199433]],
+        USAGE[SCOPE["Horizontal component of 3D system."],
+        AREA["World.{}"],BBOX[-90,-180,90,180]],ID["EPSG",4326]]"""
+        wkt_v1 = wkt_template.format("")
+        wkt_v2 = wkt_template.format(" ")  # add additional whitespace
+        crs1 = pyproj.CRS.from_wkt(wkt_v1)
+        crs2 = pyproj.CRS.from_wkt(wkt_v2)
+        # pyproj crs __hash__ based on WKT strings means these are distinct in a
+        # set are but equal by equality
+        assert len({crs1, crs2}) == 2
+        assert crs1 == crs2
+        expected = pd.concat([self.gdf, self.gdf]).set_crs(crs1)
+        res = pd.concat([self.gdf.set_crs(crs1), self.gdf.set_crs(crs2)])
+        assert_geodataframe_equal(expected, res)
 
     def test_concat_axis1(self):
         res = pd.concat([self.gdf, self.df], axis=1)

@@ -18,7 +18,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
       - uses: pre-commit/action@v3.0.0
 
   Test:
@@ -80,29 +80,18 @@ jobs:
           python -V
           python -c "import geopandas; geopandas.show_versions();"
           micromamba info
-          # save conda list to file and print out
-          # so that we can do the HAS_PYGEOS check without calling conda again
-          micromamba list 2>&1 | tee conda.txt
-          if ( cat conda.txt | grep -q pygeos  )
-          then
-            echo "Setting HAS_PYGEOS=1"
-            echo "HAS_PYGEOS=1" >> $GITHUB_ENV
-          else
-            echo "Setting HAS_PYGEOS=0"
-            echo "HAS_PYGEOS=0" >> $GITHUB_ENV
-          fi
+          micromamba list
 
-      - name: Test without PyGEOS
+      - name: Test
         env:
-          USE_PYGEOS: 0
           PANDAS_COPY_ON_WRITE: ${{ matrix.pandas_copy_on_write || '0' }}
         run: |
           pytest -v -r a -n auto --color=yes --cov=geopandas --cov-append --cov-report term-missing --cov-report xml geopandas/
 
-      - name: Test with PyGEOS
-        if: env.HAS_PYGEOS == 1
+      - name: Test with Copy-on-Write
+        if: ${{ always() && matrix.dev }}
         env:
-          USE_PYGEOS: 1
+          PANDAS_COPY_ON_WRITE: '1'
         run: |
           pytest -v -r a -n auto --color=yes --cov=geopandas --cov-append --cov-report term-missing --cov-report xml geopandas/
 
@@ -120,9 +109,7 @@ jobs:
           pytest -v -r a --color=yes --cov=geopandas --cov-append --cov-report term-missing --cov-report xml geopandas/io/tests/test_sql.py | tee /dev/stderr | if grep SKIPPED >/dev/null;then echo "TESTS SKIPPED, FAILING" && exit 1;fi
 
       - name: Test docstrings
-        if: contains(matrix.env, '39-pd13-conda-forge.yaml') && contains(matrix.os, 'ubuntu')
-        env:
-          USE_PYGEOS: 1
+        if: contains(matrix.env, '310-pd20-conda-forge.yaml') && contains(matrix.os, 'ubuntu')
         run: |
           pytest -v --color=yes --doctest-only geopandas --ignore=geopandas/datasets
 

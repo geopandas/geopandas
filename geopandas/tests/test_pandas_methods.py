@@ -41,6 +41,7 @@ def test_repr(s, df):
     assert "POINT" in df._repr_html_()
 
 
+@pytest.mark.skipif(shapely.geos_version < (3, 9, 0), reason="requires GEOS>=3.9")
 def test_repr_boxed_display_precision():
     # geographic coordinates
     p1 = Point(10.123456789, 50.123456789)
@@ -90,7 +91,7 @@ def test_repr_empty():
 
 def test_repr_linearring():
     # https://github.com/geopandas/geopandas/pull/2689
-    # specifically, checking internal shapely/pygeos/wkt/wkb conversions
+    # specifically, checking internal shapely/wkt/wkb conversions
     # preserve LinearRing
     s = GeoSeries([LinearRing([(0, 0), (1, 1), (1, -1)])])
     assert "LINEARRING" in str(s.iloc[0])  # shapely scalar repr
@@ -558,10 +559,9 @@ def test_value_counts():
         name = "count"
     else:
         name = None
-    with compat.ignore_shapely2_warnings():
-        exp = pd.Series(
-            [2, 1], index=pd14_compat_index([Point(0, 0), Point(1, 1)]), name=name
-        )
+    exp = pd.Series(
+        [2, 1], index=pd14_compat_index([Point(0, 0), Point(1, 1)]), name=name
+    )
     assert_series_equal(res, exp)
     # Check crs doesn't make a difference - note it is not kept in output index anyway
     s2 = GeoSeries([Point(0, 0), Point(1, 1), Point(0, 0)], crs="EPSG:4326")
@@ -575,20 +575,17 @@ def test_value_counts():
     s3 = GeoSeries([Point(0, 0), LineString([[1, 1], [2, 2]]), Point(0, 0)])
     res3 = s3.value_counts()
     index = pd14_compat_index([Point(0, 0), LineString([[1, 1], [2, 2]])])
-    with compat.ignore_shapely2_warnings():
-        exp3 = pd.Series([2, 1], index=index, name=name)
+    exp3 = pd.Series([2, 1], index=index, name=name)
     assert_series_equal(res3, exp3)
 
     # check None is handled
     s4 = GeoSeries([Point(0, 0), None, Point(0, 0)])
     res4 = s4.value_counts(dropna=True)
-    with compat.ignore_shapely2_warnings():
-        exp4_dropna = pd.Series([2], index=pd14_compat_index([Point(0, 0)]), name=name)
+    exp4_dropna = pd.Series([2], index=pd14_compat_index([Point(0, 0)]), name=name)
     assert_series_equal(res4, exp4_dropna)
-    with compat.ignore_shapely2_warnings():
-        exp4_keepna = pd.Series(
-            [2, 1], index=pd14_compat_index([Point(0, 0), None]), name=name
-        )
+    exp4_keepna = pd.Series(
+        [2, 1], index=pd14_compat_index([Point(0, 0), None]), name=name
+    )
     res4_keepna = s4.value_counts(dropna=False)
     assert_series_equal(res4_keepna, exp4_keepna)
 
@@ -636,7 +633,7 @@ def test_groupby(df):
     assert_frame_equal(res, exp)
 
     # applying on the geometry column
-    res = df.groupby("value2")["geometry"].apply(lambda x: x.unary_union)
+    res = df.groupby("value2")["geometry"].apply(lambda x: x.union_all())
 
     exp = GeoSeries(
         [shapely.geometry.MultiPoint([(0, 0), (2, 2)]), Point(1, 1)],
@@ -646,7 +643,7 @@ def test_groupby(df):
     assert_series_equal(res, exp)
 
     # apply on geometry column not resulting in new geometry
-    res = df.groupby("value2")["geometry"].apply(lambda x: x.unary_union.area)
+    res = df.groupby("value2")["geometry"].apply(lambda x: x.union_all().area)
     exp = pd.Series([0.0, 0.0], index=pd.Index([1, 2], name="value2"), name="geometry")
 
     assert_series_equal(res, exp)
@@ -660,29 +657,48 @@ def test_groupby_groups(df):
     assert_frame_equal(res, exp)
 
 
-@pytest.mark.skip_no_sindex
 @pytest.mark.parametrize("crs", [None, "EPSG:4326"])
-def test_groupby_metadata(crs):
+@pytest.mark.parametrize("geometry_name", ["geometry", "geom"])
+def test_groupby_metadata(crs, geometry_name):
     # https://github.com/geopandas/geopandas/issues/2294
     df = GeoDataFrame(
         {
-            "geometry": [Point(0, 0), Point(1, 1), Point(0, 0)],
+            geometry_name: [Point(0, 0), Point(1, 1), Point(0, 0)],
             "value1": np.arange(3, dtype="int64"),
             "value2": np.array([1, 2, 1], dtype="int64"),
         },
         crs=crs,
+        geometry=geometry_name,
     )
+
+    kwargs = {}
+    if compat.PANDAS_GE_22:
+        # pandas is deprecating that the group key is present as column in the
+        # dataframe passed to `func`. To suppress this warning, it introduced
+        # a new include_groups keyword
+        kwargs = dict(include_groups=False)
 
     # dummy test asserting we can access the crs
     def func(group):
         assert isinstance(group, GeoDataFrame)
         assert group.crs == crs
 
-    df.groupby("value2").apply(func)
+    df.groupby("value2").apply(func, **kwargs)
+    # selecting the non-group columns -> no need to pass the keyword
+    if (
+        compat.PANDAS_GE_21 if geometry_name == "geometry" else compat.PANDAS_GE_20
+    ) and not compat.PANDAS_GE_22:
+        # https://github.com/geopandas/geopandas/pull/2966#issuecomment-1878816712
+        # with pandas 2.0 and 2.1 this is failing
+        with pytest.raises(AttributeError):
+            df.groupby("value2")[[geometry_name, "value1"]].apply(func)
+    else:
+        df.groupby("value2")[[geometry_name, "value1"]].apply(func)
 
     # actual test with functionality
     res = df.groupby("value2").apply(
-        lambda x: geopandas.sjoin(x, x[["geometry", "value1"]], how="inner")
+        lambda x: geopandas.sjoin(x, x[[geometry_name, "value1"]], how="inner"),
+        **kwargs,
     )
 
     if compat.PANDAS_GE_22:
@@ -695,7 +711,7 @@ def test_groupby_metadata(crs):
 
     expected = (
         df.take(take_indices)
-        .set_index("value2", drop=False, append=True)
+        .set_index("value2", drop=compat.PANDAS_GE_22, append=True)
         .swaplevel()
         .rename(columns={"value1": "value1_left"})
         .assign(value1_right=value_right)

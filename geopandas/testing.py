@@ -7,7 +7,6 @@ import pandas as pd
 
 from geopandas import GeoDataFrame, GeoSeries
 from geopandas.array import GeometryDtype
-from geopandas import _vectorized
 
 
 def _isna(this):
@@ -189,8 +188,8 @@ def assert_geoseries_equal(
         )
 
     if normalize:
-        left = GeoSeries(_vectorized.normalize(left.array._data))
-        right = GeoSeries(_vectorized.normalize(right.array._data))
+        left = GeoSeries(left.array.normalize())
+        right = GeoSeries(right.array.normalize())
 
     if not check_crs:
         with warnings.catch_warnings():
@@ -322,7 +321,7 @@ def assert_geodataframe_equal(
     )
 
     if check_like:
-        left, right = left.reindex_like(right), right
+        left = left.reindex_like(right)
 
     # column comparison
     assert_index_equal(

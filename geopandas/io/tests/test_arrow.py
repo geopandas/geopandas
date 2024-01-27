@@ -11,14 +11,13 @@ from pandas import DataFrame, read_parquet as pd_read_parquet
 from pandas.testing import assert_frame_equal
 import numpy as np
 import pyproj
+import shapely
 from shapely.geometry import box, Point, MultiPolygon
 
 
 import geopandas
-import geopandas._compat as compat
 from geopandas import GeoDataFrame, read_file, read_parquet, read_feather
 from geopandas.array import to_wkb
-from geopandas.datasets import get_path
 from geopandas.io.arrow import (
     SUPPORTED_VERSIONS,
     _create_metadata,
@@ -61,9 +60,8 @@ def file_format(request):
         return read_feather, GeoDataFrame.to_feather
 
 
-def test_create_metadata():
-    test_dataset = "naturalearth_lowres"
-    df = read_file(get_path(test_dataset))
+def test_create_metadata(naturalearth_lowres):
+    df = read_file(naturalearth_lowres)
     metadata = _create_metadata(df)
 
     assert isinstance(metadata, dict)
@@ -126,9 +124,8 @@ def test_decode_metadata():
     assert _decode_metadata(None) is None
 
 
-def test_validate_dataframe():
-    test_dataset = "naturalearth_lowres"
-    df = read_file(get_path(test_dataset))
+def test_validate_dataframe(naturalearth_lowres):
+    df = read_file(naturalearth_lowres)
 
     # valid: should not raise ValueError
     _validate_dataframe(df)
@@ -291,11 +288,11 @@ def test_pandas_parquet_roundtrip1(tmpdir):
 
 
 @pytest.mark.parametrize(
-    "test_dataset", ["naturalearth_lowres", "naturalearth_cities", "nybb"]
+    "test_dataset", ["naturalearth_lowres", "naturalearth_cities", "nybb_filename"]
 )
-def test_pandas_parquet_roundtrip2(test_dataset, tmpdir):
-    test_dataset = "naturalearth_lowres"
-    df = DataFrame(read_file(get_path(test_dataset)).drop(columns=["geometry"]))
+def test_pandas_parquet_roundtrip2(test_dataset, tmpdir, request):
+    path = request.getfixturevalue(test_dataset)
+    df = DataFrame(read_file(path).drop(columns=["geometry"]))
 
     filename = os.path.join(str(tmpdir), "test.pq")
     df.to_parquet(filename)
@@ -306,15 +303,16 @@ def test_pandas_parquet_roundtrip2(test_dataset, tmpdir):
 
 
 @pytest.mark.parametrize(
-    "test_dataset", ["naturalearth_lowres", "naturalearth_cities", "nybb"]
+    "test_dataset", ["naturalearth_lowres", "naturalearth_cities", "nybb_filename"]
 )
-def test_roundtrip(tmpdir, file_format, test_dataset):
+def test_roundtrip(tmpdir, file_format, test_dataset, request):
     """Writing to parquet should not raise errors, and should not alter original
     GeoDataFrame
     """
+    path = request.getfixturevalue(test_dataset)
     reader, writer = file_format
 
-    df = read_file(get_path(test_dataset))
+    df = read_file(path)
     orig = df.copy()
 
     filename = os.path.join(str(tmpdir), "test.pq")
@@ -333,14 +331,13 @@ def test_roundtrip(tmpdir, file_format, test_dataset):
     assert_geodataframe_equal(df, pq_df)
 
 
-def test_index(tmpdir, file_format):
+def test_index(tmpdir, file_format, naturalearth_lowres):
     """Setting index=`True` should preserve index in output, and
     setting index=`False` should drop index from output.
     """
     reader, writer = file_format
 
-    test_dataset = "naturalearth_lowres"
-    df = read_file(get_path(test_dataset)).set_index("iso_a3")
+    df = read_file(naturalearth_lowres).set_index("iso_a3")
 
     filename = os.path.join(str(tmpdir), "test_with_index.pq")
     writer(df, filename, index=True)
@@ -354,13 +351,12 @@ def test_index(tmpdir, file_format):
 
 
 @pytest.mark.parametrize("compression", ["snappy", "gzip", "brotli", None])
-def test_parquet_compression(compression, tmpdir):
+def test_parquet_compression(compression, tmpdir, naturalearth_lowres):
     """Using compression options should not raise errors, and should
     return identical GeoDataFrame.
     """
 
-    test_dataset = "naturalearth_lowres"
-    df = read_file(get_path(test_dataset))
+    df = read_file(naturalearth_lowres)
 
     filename = os.path.join(str(tmpdir), "test.pq")
     df.to_parquet(filename, compression=compression)
@@ -375,13 +371,12 @@ def test_parquet_compression(compression, tmpdir):
     reason="Feather only supported for pyarrow >= 0.17",
 )
 @pytest.mark.parametrize("compression", ["uncompressed", "lz4", "zstd"])
-def test_feather_compression(compression, tmpdir):
+def test_feather_compression(compression, tmpdir, naturalearth_lowres):
     """Using compression options should not raise errors, and should
     return identical GeoDataFrame.
     """
 
-    test_dataset = "naturalearth_lowres"
-    df = read_file(get_path(test_dataset))
+    df = read_file(naturalearth_lowres)
 
     filename = os.path.join(str(tmpdir), "test.feather")
     df.to_feather(filename, compression=compression)
@@ -391,14 +386,13 @@ def test_feather_compression(compression, tmpdir):
     assert_geodataframe_equal(df, pq_df)
 
 
-def test_parquet_multiple_geom_cols(tmpdir, file_format):
+def test_parquet_multiple_geom_cols(tmpdir, file_format, naturalearth_lowres):
     """If multiple geometry columns are present when written to parquet,
     they should all be returned as such when read from parquet.
     """
     reader, writer = file_format
 
-    test_dataset = "naturalearth_lowres"
-    df = read_file(get_path(test_dataset))
+    df = read_file(naturalearth_lowres)
     df["geom2"] = df.geometry.copy()
 
     filename = os.path.join(str(tmpdir), "test.pq")
@@ -414,13 +408,12 @@ def test_parquet_multiple_geom_cols(tmpdir, file_format):
     assert_geoseries_equal(df.geom2, pq_df.geom2, check_geom_type=True)
 
 
-def test_parquet_missing_metadata(tmpdir):
+def test_parquet_missing_metadata(tmpdir, naturalearth_lowres):
     """Missing geo metadata, such as from a parquet file created
     from a pandas DataFrame, will raise a ValueError.
     """
 
-    test_dataset = "naturalearth_lowres"
-    df = read_file(get_path(test_dataset))
+    df = read_file(naturalearth_lowres)
 
     # convert to DataFrame
     df = DataFrame(df)
@@ -474,7 +467,7 @@ def test_parquet_missing_metadata2(tmpdir):
         ),
     ],
 )
-def test_parquet_invalid_metadata(tmpdir, geo_meta, error):
+def test_parquet_invalid_metadata(tmpdir, geo_meta, error, naturalearth_lowres):
     """Has geo metadata with missing required fields will raise a ValueError.
 
     This requires writing the parquet file directly below, so that we can
@@ -483,8 +476,7 @@ def test_parquet_invalid_metadata(tmpdir, geo_meta, error):
 
     from pyarrow import parquet, Table
 
-    test_dataset = "naturalearth_lowres"
-    df = read_file(get_path(test_dataset))
+    df = read_file(naturalearth_lowres)
 
     # convert to DataFrame and encode geometry to WKB
     df = DataFrame(df)
@@ -502,14 +494,13 @@ def test_parquet_invalid_metadata(tmpdir, geo_meta, error):
         read_parquet(filename)
 
 
-def test_subset_columns(tmpdir, file_format):
+def test_subset_columns(tmpdir, file_format, naturalearth_lowres):
     """Reading a subset of columns should correctly decode selected geometry
     columns.
     """
     reader, writer = file_format
 
-    test_dataset = "naturalearth_lowres"
-    df = read_file(get_path(test_dataset))
+    df = read_file(naturalearth_lowres)
 
     filename = os.path.join(str(tmpdir), "test.pq")
     writer(df, filename)
@@ -523,14 +514,13 @@ def test_subset_columns(tmpdir, file_format):
         reader(filename, columns=["name"])
 
 
-def test_promote_secondary_geometry(tmpdir, file_format):
+def test_promote_secondary_geometry(tmpdir, file_format, naturalearth_lowres):
     """Reading a subset of columns that does not include the primary geometry
     column should promote the first geometry column present.
     """
     reader, writer = file_format
 
-    test_dataset = "naturalearth_lowres"
-    df = read_file(get_path(test_dataset))
+    df = read_file(naturalearth_lowres)
     df["geom2"] = df.geometry.copy()
 
     filename = os.path.join(str(tmpdir), "test.pq")
@@ -553,13 +543,12 @@ def test_promote_secondary_geometry(tmpdir, file_format):
     )
 
 
-def test_columns_no_geometry(tmpdir, file_format):
+def test_columns_no_geometry(tmpdir, file_format, naturalearth_lowres):
     """Reading a parquet file that is missing all of the geometry columns
     should raise a ValueError"""
     reader, writer = file_format
 
-    test_dataset = "naturalearth_lowres"
-    df = read_file(get_path(test_dataset))
+    df = read_file(naturalearth_lowres)
 
     filename = os.path.join(str(tmpdir), "test.pq")
     writer(df, filename)
@@ -568,15 +557,13 @@ def test_columns_no_geometry(tmpdir, file_format):
         reader(filename, columns=["name"])
 
 
-def test_missing_crs(tmpdir, file_format):
+def test_missing_crs(tmpdir, file_format, naturalearth_lowres):
     """If CRS is `None`, it should be properly handled
     and remain `None` when read from parquet`.
     """
     reader, writer = file_format
 
-    test_dataset = "naturalearth_lowres"
-
-    df = read_file(get_path(test_dataset))
+    df = read_file(naturalearth_lowres)
     df.crs = None
 
     filename = os.path.join(str(tmpdir), "test.pq")
@@ -601,8 +588,8 @@ def test_default_geo_col_writes(tmp_path):
     Version(pyarrow.__version__) >= Version("0.17.0"),
     reason="Feather only supported for pyarrow >= 0.17",
 )
-def test_feather_arrow_version(tmpdir):
-    df = read_file(get_path("naturalearth_lowres"))
+def test_feather_arrow_version(tmpdir, naturalearth_lowres):
+    df = read_file(naturalearth_lowres)
     filename = os.path.join(str(tmpdir), "test.feather")
 
     with pytest.raises(
@@ -611,7 +598,7 @@ def test_feather_arrow_version(tmpdir):
         df.to_feather(filename)
 
 
-def test_fsspec_url():
+def test_fsspec_url(naturalearth_lowres):
     fsspec = pytest.importorskip("fsspec")
     import fsspec.implementations.memory
 
@@ -625,8 +612,7 @@ def test_fsspec_url():
     fsspec.register_implementation("memory", MyMemoryFileSystem, clobber=True)
     memfs = MyMemoryFileSystem(is_set=True)
 
-    test_dataset = "naturalearth_lowres"
-    df = read_file(get_path(test_dataset))
+    df = read_file(naturalearth_lowres)
 
     with memfs.open("data.parquet", "wb") as f:
         df.to_parquet(f)
@@ -643,10 +629,9 @@ def test_fsspec_url():
     )
 
 
-def test_non_fsspec_url_with_storage_options_raises():
+def test_non_fsspec_url_with_storage_options_raises(naturalearth_lowres):
     with pytest.raises(ValueError, match="storage_options"):
-        test_dataset = "naturalearth_lowres"
-        read_parquet(get_path(test_dataset), storage_options={"foo": "bar"})
+        read_parquet(naturalearth_lowres, storage_options={"foo": "bar"})
 
 
 @pytest.mark.skipif(
@@ -715,26 +700,29 @@ def test_write_read_default_crs(tmpdir, format):
     assert df.crs.equals(pyproj.CRS("OGC:CRS84"))
 
 
+@pytest.mark.skipif(shapely.geos_version < (3, 10, 0), reason="requires GEOS>=3.10")
 def test_write_iso_wkb(tmpdir):
     gdf = geopandas.GeoDataFrame(
         geometry=geopandas.GeoSeries.from_wkt(["POINT Z (1 2 3)"])
     )
-    if compat.USE_SHAPELY_20:
-        gdf.to_parquet(tmpdir / "test.parquet")
-    else:
-        with pytest.warns(UserWarning, match="The GeoDataFrame contains 3D geometries"):
-            gdf.to_parquet(tmpdir / "test.parquet")
+    gdf.to_parquet(tmpdir / "test.parquet")
 
     from pyarrow.parquet import read_table
 
     table = read_table(tmpdir / "test.parquet")
     wkb = table["geometry"][0].as_py().hex()
 
-    if compat.USE_SHAPELY_20:
-        # correct ISO flavor
-        assert wkb == "01e9030000000000000000f03f00000000000000400000000000000840"
-    else:
-        assert wkb == "0101000080000000000000f03f00000000000000400000000000000840"
+    # correct ISO flavor
+    assert wkb == "01e9030000000000000000f03f00000000000000400000000000000840"
+
+
+@pytest.mark.skipif(shapely.geos_version >= (3, 10, 0), reason="tests GEOS<3.10")
+def test_write_iso_wkb_old_geos(tmpdir):
+    gdf = geopandas.GeoDataFrame(
+        geometry=geopandas.GeoSeries.from_wkt(["POINT Z (1 2 3)"])
+    )
+    with pytest.raises(ValueError, match="Cannot write 3D"):
+        gdf.to_parquet(tmpdir / "test.parquet")
 
 
 @pytest.mark.parametrize(
@@ -882,10 +870,10 @@ def test_read_gdal_files():
     assert_geodataframe_equal(df, expected, check_crs=True)
 
 
-def test_parquet_read_partitioned_dataset(tmpdir):
+def test_parquet_read_partitioned_dataset(tmpdir, naturalearth_lowres):
     # we don't yet explicitly support this (in writing), but for Parquet it
     # works for reading (by relying on pyarrow.read_table)
-    df = read_file(get_path("naturalearth_lowres"))
+    df = read_file(naturalearth_lowres)
 
     # manually create partitioned dataset
     basedir = tmpdir / "partitioned_dataset"
@@ -897,10 +885,10 @@ def test_parquet_read_partitioned_dataset(tmpdir):
     assert_geodataframe_equal(result, df)
 
 
-def test_parquet_read_partitioned_dataset_fsspec(tmpdir):
+def test_parquet_read_partitioned_dataset_fsspec(tmpdir, naturalearth_lowres):
     fsspec = pytest.importorskip("fsspec")
 
-    df = read_file(get_path("naturalearth_lowres"))
+    df = read_file(naturalearth_lowres)
 
     # manually create partitioned dataset
     memfs = fsspec.filesystem("memory")

@@ -1,4 +1,5 @@
 import random
+import warnings
 
 import numpy as np
 import pandas as pd
@@ -7,14 +8,10 @@ from pyproj import CRS
 import shapely
 import shapely.affinity
 import shapely.geometry
-from shapely.geometry.base import CAP_STYLE, JOIN_STYLE, BaseGeometry
+from shapely.geometry.base import CAP_STYLE, JOIN_STYLE
 import shapely.wkb
 import shapely.wkt
-
-try:
-    from shapely import geos_version
-except ImportError:
-    from shapely._buildcfg import geos_version
+from shapely import geos_version
 
 import geopandas
 from geopandas.array import (
@@ -28,7 +25,6 @@ from geopandas.array import (
     _check_crs,
     _crs_mismatch_warn,
 )
-import geopandas._compat as compat
 
 import pytest
 
@@ -143,11 +139,8 @@ def test_from_wkb():
     assert all(v.equals(t) for v, t in zip(res, points_no_missing))
 
     # missing values
-    # TODO(pygeos) does not support empty strings, np.nan, or pd.NA
+    # TODO(shapely) does not support empty strings, np.nan, or pd.NA
     missing_values = [None]
-    if not (compat.USE_SHAPELY_20 or compat.USE_PYGEOS):
-        missing_values.extend([b"", np.nan])
-        missing_values.append(pd.NA)
 
     res = from_wkb(missing_values)
     np.testing.assert_array_equal(res, np.full(len(missing_values), None))
@@ -168,6 +161,24 @@ def test_from_wkb_hex():
     # array
     res = from_wkb(np.array(geometry_hex, dtype=object))
     assert isinstance(res, GeometryArray)
+
+
+def test_from_wkb_on_invalid():
+    # Single point LineString hex WKB: invalid
+    invalid_wkb_hex = "01020000000100000000000000000008400000000000000840"
+    message = "point array must contain 0 or >1 elements"
+
+    with pytest.raises(Exception, match=message):
+        from_wkb([invalid_wkb_hex], on_invalid="raise")
+
+    with pytest.warns(Warning, match=message):
+        res = from_wkb([invalid_wkb_hex], on_invalid="warn")
+    assert res == [None]
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        res = from_wkb([invalid_wkb_hex], on_invalid="ignore")
+    assert res == [None]
 
 
 def test_to_wkb():
@@ -211,13 +222,10 @@ def test_from_wkt(string_type):
     assert all(v.equals_exact(t, tolerance=tol) for v, t in zip(res, points_no_missing))
 
     # missing values
-    # TODO(pygeos) does not support empty strings, np.nan, or pd.NA
+    # TODO(shapely) does not support empty strings, np.nan, or pd.NA
     missing_values = [None]
-    if not (compat.USE_SHAPELY_20 or compat.USE_PYGEOS):
-        missing_values.extend([f(""), np.nan])
-        missing_values.append(pd.NA)
 
-    res = from_wkb(missing_values)
+    res = from_wkt(missing_values)
     np.testing.assert_array_equal(res, np.full(len(missing_values), None))
 
     # single MultiPolygon
@@ -226,6 +234,24 @@ def test_from_wkt(string_type):
     )
     res = from_wkt([f(multi_poly.wkt)])
     assert res[0] == multi_poly
+
+
+def test_from_wkt_on_invalid():
+    # Single point LineString WKT: invalid
+    invalid_wkt = "LINESTRING(0 0)"
+    message = "point array must contain 0 or >1 elements"
+
+    with pytest.raises(Exception, match=message):
+        from_wkt([invalid_wkt], on_invalid="raise")
+
+    with pytest.warns(Warning, match=message):
+        res = from_wkt([invalid_wkt], on_invalid="warn")
+    assert res == [None]
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        res = from_wkt([invalid_wkt], on_invalid="ignore")
+    assert res == [None]
 
 
 def test_to_wkt():
@@ -247,14 +273,8 @@ def test_data():
         np_arr = arr.data
 
     assert isinstance(np_arr, np.ndarray)
-    if compat.USE_PYGEOS:
-        np_arr2 = arr.to_numpy()
-        assert isinstance(np_arr2[0], BaseGeometry)
-        np_arr3 = np.asarray(arr)
-        assert isinstance(np_arr3[0], BaseGeometry)
-    else:
-        assert arr.to_numpy() is np_arr
-        assert np.asarray(arr) is np_arr
+    assert arr.to_numpy() is np_arr
+    assert np.asarray(arr) is np_arr
 
 
 def test_as_array():
@@ -281,6 +301,9 @@ def test_as_array():
         ("geom_almost_equals", (3,)),
     ],
 )
+# filters required for attr=geom_almost_equals only
+@pytest.mark.filterwarnings(r"ignore:The \'geom_almost_equals\(\)\' method is deprecat")
+@pytest.mark.filterwarnings(r"ignore:The \'almost_equals\(\)\' method is deprecated")
 def test_predicates_vector_scalar(attr, args):
     na_value = False
 
@@ -320,6 +343,9 @@ def test_predicates_vector_scalar(attr, args):
         ("geom_almost_equals", (3,)),
     ],
 )
+# filters required for attr=geom_almost_equals only
+@pytest.mark.filterwarnings(r"ignore:The \'geom_almost_equals\(\)\' method is deprecat")
+@pytest.mark.filterwarnings(r"ignore:The \'almost_equals\(\)\' method is deprecated")
 def test_predicates_vector_vector(attr, args):
     na_value = False
     empty_value = True if attr == "disjoint" else False
@@ -449,17 +475,12 @@ def test_binary_geo_scalar(attr):
         "is_simple",
         "has_z",
         # for is_ring we raise a warning about the value for Polygon changing
-        pytest.param(
-            "is_ring",
-            marks=[
-                pytest.mark.filterwarnings("ignore:is_ring:FutureWarning"),
-            ],
-        ),
+        "is_ring",
     ],
 )
 def test_unary_predicates(attr):
     na_value = False
-    if attr == "is_simple" and geos_version < (3, 8) and not compat.USE_PYGEOS:
+    if attr == "is_simple" and geos_version < (3, 8):
         # poly.is_simple raises an error for empty polygon for GEOS < 3.8
         with pytest.raises(Exception):  # noqa: B017
             T.is_simple
@@ -471,40 +492,17 @@ def test_unary_predicates(attr):
 
     result = getattr(V, attr)
 
-    if attr == "is_simple" and geos_version < (3, 8):
-        # poly.is_simple raises an error for empty polygon for GEOS < 3.8
-        # with shapely, pygeos always returns False for all GEOS versions
+    if attr == "is_ring":
         expected = [
-            getattr(t, attr) if t is not None and not t.is_empty else na_value
+            getattr(t, attr) if t is not None and t.exterior is not None else na_value
             for t in vals
         ]
-    elif attr == "is_ring":
-        expected = [
-            getattr(t.exterior, attr)
-            if t is not None and t.exterior is not None
-            else na_value
-            for t in vals
-        ]
-        # empty Linearring.is_ring gives False with Shapely < 2.0
-        if compat.USE_PYGEOS and not compat.SHAPELY_GE_20:
-            expected[-2] = True
-    elif (
-        attr == "is_closed"
-        and compat.USE_PYGEOS
-        and compat.SHAPELY_GE_182
-        and not compat.SHAPELY_GE_20
-    ):
-        # In shapely 1.8.2, is_closed was changed to return always True for
-        # Polygon/MultiPolygon, while PyGEOS returns always False
-        expected = [False] * len(vals)
     else:
         expected = [getattr(t, attr) if t is not None else na_value for t in vals]
 
     assert result.tolist() == expected
 
 
-# for is_ring we raise a warning about the value for Polygon changing
-@pytest.mark.filterwarnings("ignore:is_ring:FutureWarning")
 def test_is_ring():
     g = [
         shapely.geometry.LinearRing([(0, 0), (1, 1), (1, -1)]),
@@ -514,11 +512,7 @@ def test_is_ring():
         shapely.wkt.loads("POLYGON EMPTY"),
         None,
     ]
-    expected = [True, False, True, True, True, False]
-    if not compat.USE_PYGEOS and not compat.SHAPELY_GE_20:
-        # empty polygon is_ring gives False with Shapely < 2.0
-        expected[-2] = False
-
+    expected = [True, False, True, False, False, False]
     result = from_shapely(g).is_ring
 
     assert result.tolist() == expected
@@ -632,11 +626,6 @@ def test_binary_project(normalized):
 @pytest.mark.parametrize("join_style", [JOIN_STYLE.round, JOIN_STYLE.bevel])
 @pytest.mark.parametrize("resolution", [16, 25])
 def test_buffer(resolution, cap_style, join_style):
-    if compat.USE_PYGEOS:
-        # TODO(pygeos) need to further investigate why this test fails
-        if cap_style == 1 and join_style == 3:
-            pytest.skip("failing TODO")
-
     na_value = None
     expected = [
         p.buffer(0.1, resolution=resolution, cap_style=cap_style, join_style=join_style)
@@ -676,7 +665,21 @@ def test_unary_union():
         shapely.geometry.Polygon([(0, 0), (1, 0), (1, 1)]),
     ]
     G = from_shapely(geoms)
-    u = G.unary_union()
+    with pytest.warns(FutureWarning, match="The 'unary_union' attribute is deprecated"):
+        u = G.unary_union()
+
+    expected = shapely.geometry.Polygon([(0, 0), (1, 0), (1, 1), (0, 1)])
+    assert u.equals(expected)
+    assert u.equals(G.union_all())
+
+
+def test_union_all():
+    geoms = [
+        shapely.geometry.Polygon([(0, 0), (0, 1), (1, 1)]),
+        shapely.geometry.Polygon([(0, 0), (1, 0), (1, 1)]),
+    ]
+    G = from_shapely(geoms)
+    u = G.union_all()
 
     expected = shapely.geometry.Polygon([(0, 0), (1, 0), (1, 1), (0, 1)])
     assert u.equals(expected)

@@ -1,7 +1,6 @@
 import json
 import os
 import random
-import re
 import shutil
 import tempfile
 import warnings
@@ -23,8 +22,7 @@ from shapely.geometry import (
 )
 from shapely.geometry.base import BaseGeometry
 
-from geopandas import GeoSeries, GeoDataFrame, read_file, datasets, clip
-from geopandas._compat import ignore_shapely2_warnings
+from geopandas import GeoSeries, GeoDataFrame, read_file, clip
 from geopandas.array import GeometryArray, GeometryDtype
 from geopandas.testing import assert_geoseries_equal, geom_almost_equals
 
@@ -145,27 +143,37 @@ class TestSeries:
         exp = pd.Series([False, False], index=["A", "B"])
         assert_series_equal(a, exp)
 
+    @pytest.mark.filterwarnings(r"ignore:The 'geom_almost_equals\(\)':FutureWarning")
     def test_geom_almost_equals(self):
         # TODO: test decimal parameter
-        with pytest.warns(FutureWarning, match=re.escape("The 'geom_almost_equals()'")):
-            assert np.all(self.g1.geom_almost_equals(self.g1))
-            assert_array_equal(self.g1.geom_almost_equals(self.sq), [False, True])
-
-            assert_array_equal(
-                self.a1.geom_almost_equals(self.a2, align=True), [False, True, False]
+        assert np.all(self.g1.geom_almost_equals(self.g1))
+        assert_array_equal(self.g1.geom_almost_equals(self.sq), [False, True])
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                "The indices of the two GeoSeries are different",
+                UserWarning,
             )
             assert_array_equal(
-                self.a1.geom_almost_equals(self.a2, align=False), [False, False]
+                self.a1.geom_almost_equals(self.a2, align=True),
+                [False, True, False],
             )
+        assert_array_equal(
+            self.a1.geom_almost_equals(self.a2, align=False), [False, False]
+        )
 
     def test_geom_equals_exact(self):
         # TODO: test tolerance parameter
         assert np.all(self.g1.geom_equals_exact(self.g1, 0.001))
         assert_array_equal(self.g1.geom_equals_exact(self.sq, 0.001), [False, True])
-
-        assert_array_equal(
-            self.a1.geom_equals_exact(self.a2, 0.001, align=True), [False, True, False]
-        )
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", "The indices of the two GeoSeries are different", UserWarning
+            )
+            assert_array_equal(
+                self.a1.geom_equals_exact(self.a2, 0.001, align=True),
+                [False, True, False],
+            )
         assert_array_equal(
             self.a1.geom_equals_exact(self.a2, 0.001, align=False), [False, False]
         )
@@ -284,6 +292,23 @@ class TestSeries:
     def test_from_wkb(self):
         assert_geoseries_equal(self.g1, GeoSeries.from_wkb([self.t1.wkb, self.sq.wkb]))
 
+    def test_from_wkb_on_invalid(self):
+        # Single point LineString hex WKB: invalid
+        invalid_wkb_hex = "01020000000100000000000000000008400000000000000840"
+        message = "point array must contain 0 or >1 elements"
+
+        with pytest.raises(Exception, match=message):
+            GeoSeries.from_wkb([invalid_wkb_hex], on_invalid="raise")
+
+        with pytest.warns(Warning, match=message):
+            res = GeoSeries.from_wkb([invalid_wkb_hex], on_invalid="warn")
+        assert res[0] is None
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            res = GeoSeries.from_wkb([invalid_wkb_hex], on_invalid="ignore")
+        assert res[0] is None
+
     def test_from_wkb_series(self):
         s = pd.Series([self.t1.wkb, self.sq.wkb], index=[1, 2])
         expected = self.g1.copy()
@@ -298,6 +323,23 @@ class TestSeries:
 
     def test_from_wkt(self):
         assert_geoseries_equal(self.g1, GeoSeries.from_wkt([self.t1.wkt, self.sq.wkt]))
+
+    def test_from_wkt_on_invalid(self):
+        # Single point LineString WKT: invalid
+        invalid_wkt = "LINESTRING(0 0)"
+        message = "point array must contain 0 or >1 elements"
+
+        with pytest.raises(Exception, match=message):
+            GeoSeries.from_wkt([invalid_wkt], on_invalid="raise")
+
+        with pytest.warns(Warning, match=message):
+            res = GeoSeries.from_wkt([invalid_wkt], on_invalid="warn")
+        assert res[0] is None
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            res = GeoSeries.from_wkt([invalid_wkt], on_invalid="ignore")
+        assert res[0] is None
 
     def test_from_wkt_series(self):
         s = pd.Series([self.t1.wkt, self.sq.wkt], index=[1, 2])
@@ -320,10 +362,9 @@ class TestSeries:
     def test_to_wkt(self):
         assert_series_equal(pd.Series([self.t1.wkt, self.sq.wkt]), self.g1.to_wkt())
 
-    @pytest.mark.skip_no_sindex
-    def test_clip(self):
-        left = read_file(datasets.get_path("naturalearth_cities"))
-        world = read_file(datasets.get_path("naturalearth_lowres"))
+    def test_clip(self, naturalearth_lowres, naturalearth_cities):
+        left = read_file(naturalearth_cities)
+        world = read_file(naturalearth_lowres)
         south_america = world[world["continent"] == "South America"]
 
         expected = clip(left.geometry, south_america)
@@ -513,10 +554,8 @@ class TestConstructor:
             Polygon([(random.random(), random.random()) for _ in range(3)])
             for _ in range(10)
         ]
-        with ignore_shapely2_warnings():
-            # the warning here is not suppressed by GeoPandas, as this is a pure
-            # pandas construction call
-            s = pd.Series(shapes, index=list("abcdefghij"), name="foo")
+
+        s = pd.Series(shapes, index=list("abcdefghij"), name="foo")
         g = GeoSeries(s)
         check_geoseries(g)
 

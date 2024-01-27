@@ -1,28 +1,45 @@
 import pytest
 import numpy
 import geopandas
-import geopandas._compat as compat
 
 from geopandas.tools._random import uniform
 
-multipolygons = geopandas.read_file(geopandas.datasets.get_path("nybb")).geometry
-polygons = multipolygons.explode(ignore_index=True).geometry
-multilinestrings = multipolygons.boundary
-linestrings = polygons.boundary
-points = multipolygons.centroid
+
+@pytest.fixture
+def multipolygons(nybb_filename):
+    return geopandas.read_file(nybb_filename).geometry
 
 
-@pytest.mark.skipif(
-    not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
-    reason="array input in interpolate not implemented for shapely<2",
-)
+@pytest.fixture
+def polygons(multipolygons):
+    return multipolygons.explode(ignore_index=True).geometry
+
+
+@pytest.fixture
+def multilinestrings(multipolygons):
+    return multipolygons.boundary
+
+
+@pytest.fixture
+def linestrings(polygons):
+    return polygons.boundary
+
+
+@pytest.fixture
+def points(multipolygons):
+    return multipolygons.centroid
+
+
 @pytest.mark.parametrize("size", [10, 100])
 @pytest.mark.parametrize(
-    "geom", [multipolygons[0], polygons[0], multilinestrings[0], linestrings[0]]
+    "geom_fixture", ["multipolygons", "polygons", "multilinestrings", "linestrings"]
 )
-def test_uniform(geom, size):
+def test_uniform(geom_fixture, size, request):
+    geom = request.getfixturevalue(geom_fixture)[0]
     sample = uniform(geom, size=size, rng=1)
-    sample_series = geopandas.GeoSeries(sample).explode().reset_index(drop=True)
+    sample_series = (
+        geopandas.GeoSeries(sample).explode(index_parts=True).reset_index(drop=True)
+    )
     assert len(sample_series) == size
     sample_in_geom = sample_series.buffer(0.00000001).sindex.query(
         geom, predicate="intersects"
@@ -30,21 +47,13 @@ def test_uniform(geom, size):
     assert len(sample_in_geom) == size
 
 
-@pytest.mark.skipif(
-    not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
-    reason="array input in interpolate not implemented for shapely<2",
-)
-def test_uniform_unsupported():
+def test_uniform_unsupported(points):
     with pytest.warns(UserWarning, match="Sampling is not supported"):
         sample = uniform(points[0], size=10, rng=1)
     assert sample.is_empty
 
 
-@pytest.mark.skipif(
-    not (compat.USE_PYGEOS or compat.USE_SHAPELY_20),
-    reason="array input in interpolate not implemented for shapely<2",
-)
-def test_uniform_generator():
+def test_uniform_generator(polygons):
     sample = uniform(polygons[0], size=10, rng=1)
     sample2 = uniform(polygons[0], size=10, rng=1)
     assert sample.equals(sample2)
