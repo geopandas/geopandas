@@ -145,13 +145,23 @@ def test_loc(df):
     assert_object(df.loc[:, "value1"], pd.Series)
 
 
-@pytest.mark.parametrize("geom_name", ["geometry", "geom"])
+@pytest.mark.parametrize(
+    "geom_name",
+    [
+        "geometry",
+        pytest.param(
+            "geom",
+            marks=pytest.mark.xfail(
+                reason="pre-regression behaviour only works for geometry col geometry"
+            ),
+        ),
+    ],
+)
 def test_loc_add_row(geom_name, nybb_filename):
     # https://github.com/geopandas/geopandas/issues/3119
 
     nybb = geopandas.read_file(nybb_filename)[["BoroCode", "geometry"]]
     if geom_name != "geometry":
-        pytest.xfail("pre-regression behaviour only works for geometry col geometry")
         nybb = nybb.rename_geometry(geom_name)
     # crs_orig = nybb.crs
 
