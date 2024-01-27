@@ -7,6 +7,7 @@ import numpy as np
 
 from geopandas import GeoDataFrame, GeoSeries
 from geopandas.testing import assert_geodataframe_equal
+import geopandas
 
 crs_osgb = pyproj.CRS(27700)
 crs_wgs = pyproj.CRS(4326)
@@ -145,12 +146,10 @@ def test_loc(df):
 
 
 @pytest.mark.parametrize("geom_name", ["geometry", "geom"])
-def test_loc_add_row(geom_name):
+def test_loc_add_row(geom_name, nybb_filename):
     # https://github.com/geopandas/geopandas/issues/3119
-    import geopandas
-    from geodatasets import get_path
 
-    nybb = geopandas.read_file(get_path("nybb"))[["BoroCode", "geometry"]]
+    nybb = geopandas.read_file(nybb_filename)[["BoroCode", "geometry"]]
     if geom_name != "geometry":
         pytest.xfail("pre-regression behaviour only works for geometry col geometry")
         nybb = nybb.rename_geometry(geom_name)
