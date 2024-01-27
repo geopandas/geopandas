@@ -1628,9 +1628,12 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
         return _geodataframe_constructor_with_fallback
 
     def _constructor_from_mgr(self, mgr, axes):
-        # analogous logic to _geodataframe_constructor_with_fallback
+        # replicate _geodataframe_constructor_with_fallback behaviour
+        # unless safe to skip
         if not any(isinstance(block.dtype, GeometryDtype) for block in mgr.blocks):
-            return pd.DataFrame._from_mgr(mgr, axes)
+            return _geodataframe_constructor_with_fallback(
+                pd.DataFrame._from_mgr(mgr, axes)
+            )
         return GeoDataFrame._from_mgr(mgr, axes)
 
     @property
