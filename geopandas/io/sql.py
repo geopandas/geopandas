@@ -317,11 +317,16 @@ def _psql_insert_copy(tbl, conn, keys, data_iter):
     columns = ", ".join('"{}"'.format(k) for k in keys)
 
     dbapi_conn = conn.connection
+    sql = 'COPY "{}"."{}" ({}) FROM STDIN WITH CSV'.format(
+        tbl.table.schema, tbl.table.name, columns
+    )
     with dbapi_conn.cursor() as cur:
-        sql = 'COPY "{}"."{}" ({}) FROM STDIN WITH CSV'.format(
-            tbl.table.schema, tbl.table.name, columns
-        )
-        cur.copy_expert(sql=sql, file=s_buf)
+        # Use psycopg2 method if it's available
+        if hasattr(cur, "copy_expert") and callable(cur.copy_expert):
+            cur.copy_expert(sql, s_buf)
+        else:  # otherwise use psycopg method
+            with cur.copy(sql) as copy:
+                copy.write(s_buf.read())
 
 
 def _write_postgis(
