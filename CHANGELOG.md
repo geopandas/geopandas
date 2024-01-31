@@ -1,6 +1,6 @@
 # Changelog
 
-## Version 0.14.3 (Jan ??, 2024)
+## Version 0.14.3 (Jan 31, 2024)
 
 - Several fixes for compatibility with the latest pandas 2.2 release.
 - Fix bug in `pandas.concat` CRS consistency checking where CRS differing by WKT
