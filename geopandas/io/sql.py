@@ -321,12 +321,12 @@ def _psql_insert_copy(tbl, conn, keys, data_iter):
         tbl.table.schema, tbl.table.name, columns
     )
     with dbapi_conn.cursor() as cur:
-        # Use psycopg2 method if it's available
-        if hasattr(cur, "copy_expert") and callable(cur.copy_expert):
-            cur.copy_expert(sql, s_buf)
-        else:  # otherwise use psycopg method
+        # Use psycopg method if it's available
+        if hasattr(cur, "copy") and callable(cur.copy):
             with cur.copy(sql) as copy:
                 copy.write(s_buf.read())
+        else:  # otherwise use psycopg2 method
+            cur.copy_expert(sql, s_buf)
 
 
 def _write_postgis(
