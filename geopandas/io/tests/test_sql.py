@@ -53,14 +53,11 @@ def prepare_database_credentials():
 def connection_psycopg_any(psycopg_package_name: str):
     """Create a postgres connection using either psycopg2 or psycopg."""
     psycopg = pytest.importorskip(psycopg_package_name)
-    from psycopg import OperationalError
 
     try:
         con = psycopg.connect(**prepare_database_credentials())
-    except OperationalError:
-        pytest.skip(
-            "Cannot connect to postgresql database with %s", psycopg_package_name
-        )
+    except psycopg.OperationalError:
+        pytest.skip("Cannot connect to with postgresql database")
     with warnings.catch_warnings():
         warnings.filterwarnings(
             "ignore", message="pandas only supports SQLAlchemy connectable.*"
