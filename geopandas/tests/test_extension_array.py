@@ -13,6 +13,7 @@ A set of fixtures are defined to provide data for the tests (the fixtures
 expected to be available to pytest by the inherited pandas tests).
 
 """
+
 import operator
 
 import numpy as np

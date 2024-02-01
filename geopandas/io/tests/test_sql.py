@@ -4,6 +4,7 @@ The spatial database tests may not work without additional system
 configuration. postGIS tests require a test database to have been setup;
 see geopandas.tests.util for more information.
 """
+
 import os
 import warnings
 
