@@ -31,32 +31,62 @@ def df_nybb(nybb_filename):
     return df
 
 
-@pytest.fixture()
-def connection_postgis():
-    """
-    Initiates a connection to a postGIS database that must already exist.
-    See create_postgis for more information.
-    """
-    psycopg2 = pytest.importorskip("psycopg2")
-    from psycopg2 import OperationalError
+def prepare_credentials():
+    """Gather postgres connection credentials from environment variables."""
+    return {
+        "dbname": "test_geopandas",
+        "user": os.environ.get("PGUSER"),
+        "password": os.environ.get("PGPASSWORD"),
+        "host": os.environ.get("PGHOST"),
+        "port": os.environ.get("PGPORT"),
+    }
 
-    dbname = "test_geopandas"
-    user = os.environ.get("PGUSER")
-    password = os.environ.get("PGPASSWORD")
-    host = os.environ.get("PGHOST")
-    port = os.environ.get("PGPORT")
+
+def connect_psycopg(package_name: str):
+    """Create a postgres connection using either psycopg2 or psycopg."""
+    psycopg = pytest.importorskip(package_name)
+    from psycopg import OperationalError
+
     try:
-        con = psycopg2.connect(
-            dbname=dbname, user=user, password=password, host=host, port=port
-        )
+        con = psycopg.connect(**prepare_credentials())
     except OperationalError:
-        pytest.skip("Cannot connect with postgresql database")
+        pytest.skip("Cannot connect to postgresql database with %s", package_name)
     with warnings.catch_warnings():
         warnings.filterwarnings(
             "ignore", message="pandas only supports SQLAlchemy connectable.*"
         )
         yield con
-    con.close()
+
+
+@pytest.fixture()
+def connection_psycopg2():
+    """
+    Use psycopg2 to initiate a connection to a postGIS database that must already exist.
+    See create_postgis for more information.
+    """
+    yield from connect_psycopg("psycopg2")
+
+
+@pytest.fixture()
+def connection_psycopg3():
+    """
+    Use psycopg3 to initiate a connection to a postGIS database that must already exist.
+    See create_postgis for more information.
+    """
+    yield from connect_psycopg("psycopg")  # package name is psycopg, not psycopg3
+
+
+@pytest.fixture()
+def connection_postgis(request):
+    print(request)
+    return request.getfixturevalue(request.param)
+
+
+psycopg_params = (
+    "connection_postgis",
+    ["connection_psycopg2", "connection_psycopg3"],
+    True,
+)
 
 
 @pytest.fixture()
@@ -67,21 +97,16 @@ def engine_postgis():
     sqlalchemy = pytest.importorskip("sqlalchemy")
     from sqlalchemy.engine.url import URL
 
-    user = os.environ.get("PGUSER")
-    password = os.environ.get("PGPASSWORD")
-    host = os.environ.get("PGHOST")
-    port = os.environ.get("PGPORT")
-    dbname = "test_geopandas"
-
+    credentials = prepare_credentials()
     try:
         con = sqlalchemy.create_engine(
             URL.create(
                 drivername="postgresql+psycopg2",
-                username=user,
-                database=dbname,
-                password=password,
-                host=host,
-                port=port,
+                username=credentials["user"],
+                database=credentials["dbname"],
+                password=credentials["password"],
+                host=credentials["host"],
+                port=credentials["port"],
             )
         )
         con.connect()
@@ -216,6 +241,7 @@ class TestIO:
             with get_conn(object()):
                 pass
 
+    @pytest.mark.parametrize(*psycopg_params)
     def test_read_postgis_default(self, connection_postgis, df_nybb):
         con = connection_postgis
         create_postgis(con, df_nybb)
@@ -228,6 +254,7 @@ class TestIO:
         # by user; should not be set to 0, as from get_srid failure
         assert df.crs is None
 
+    @pytest.mark.parametrize(*psycopg_params)
     def test_read_postgis_custom_geom_col(self, connection_postgis, df_nybb):
         con = connection_postgis
         geom_col = "the_geom"
@@ -238,6 +265,7 @@ class TestIO:
 
         validate_boro_df(df)
 
+    @pytest.mark.parametrize(*psycopg_params)
     def test_read_postgis_select_geom_as(self, connection_postgis, df_nybb):
         """Tests that a SELECT {geom} AS {some_other_geom} works."""
         con = connection_postgis
@@ -253,6 +281,7 @@ class TestIO:
 
         validate_boro_df(df)
 
+    @pytest.mark.parametrize(*psycopg_params)
     def test_read_postgis_get_srid(self, connection_postgis, df_nybb):
         """Tests that an SRID can be read from a geodatabase (GH #451)."""
         con = connection_postgis
@@ -266,6 +295,7 @@ class TestIO:
         validate_boro_df(df)
         assert df.crs == crs
 
+    @pytest.mark.parametrize(*psycopg_params)
     def test_read_postgis_override_srid(self, connection_postgis, df_nybb):
         """Tests that a user specified CRS overrides the geodatabase SRID."""
         con = connection_postgis
@@ -278,6 +308,7 @@ class TestIO:
         validate_boro_df(df)
         assert df.crs == orig_crs
 
+    @pytest.mark.parametrize(*psycopg_params)
     def test_from_postgis_default(self, connection_postgis, df_nybb):
         con = connection_postgis
         create_postgis(con, df_nybb)
@@ -287,6 +318,7 @@ class TestIO:
 
         validate_boro_df(df, case_sensitive=False)
 
+    @pytest.mark.parametrize(*psycopg_params)
     def test_from_postgis_custom_geom_col(self, connection_postgis, df_nybb):
         con = connection_postgis
         geom_col = "the_geom"
@@ -322,6 +354,7 @@ class TestIO:
         df = read_postgis(sql, con, geom_col=geom_col)
         validate_boro_df(df)
 
+    @pytest.mark.parametrize(*psycopg_params)
     def test_read_postgis_chunksize(self, connection_postgis, df_nybb):
         """Test chunksize argument"""
         chunksize = 2
@@ -336,6 +369,7 @@ class TestIO:
         # by user; should not be set to 0, as from get_srid failure
         assert df.crs is None
 
+    @pytest.mark.parametrize(*psycopg_params)
     def test_read_postgis_privacy(self, connection_postgis, df_nybb):
         con = connection_postgis
         create_postgis(con, df_nybb)
