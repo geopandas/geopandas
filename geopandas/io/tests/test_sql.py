@@ -126,13 +126,13 @@ def engine_psycopg_any(psycopg_package_name: str):
 
 @pytest.fixture()
 def engine_psycopg2():
-    """Initiates a sqlalchemy connection engine to a postGIS database that must already exist."""
+    """Uses psycopg2 to connect a sqlalchemy engine to an existing postGIS database."""
     yield from engine_psycopg_any("psycopg2")
 
 
 @pytest.fixture()
 def engine_psycopg3():
-    """Initiates a sqlalchemy connection engine to a postGIS database that must already exist."""
+    """Uses psycopg to connect a sqlalchemy engine to an existing postGIS database."""
     yield from engine_psycopg_any("psycopg")
 
 
