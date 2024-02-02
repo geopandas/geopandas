@@ -85,6 +85,10 @@ as well::
 
     pip install geopandas
 
+Optional runtime dependencies can also be installed at once::
+
+    pip install geopandas[all]
+
 .. _install-deps:
 
 .. warning::
@@ -110,6 +114,11 @@ You may install the latest development version by cloning the
     git clone https://github.com/geopandas/geopandas.git
     cd geopandas
     pip install .
+
+Development dependencies can be installed using the dev optional
+dependency group::
+
+    pip install .[dev]
 
 It is also possible to install the latest development version
 directly from the GitHub repository with::
