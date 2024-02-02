@@ -5,25 +5,31 @@ pyproj>=3.3.0
 shapely>=2.0.0
 packaging
 
-# geodatabase access
-psycopg2>=2.8.0
+# postgis
+psycopg2-binary>=2.8.0
 SQLAlchemy>=1.3
 
 # geocoding
 geopy
 
-# plotting
+# plot
 matplotlib>=3.5.0
 mapclassify
+xyzservices
+folium
 
-# testing
+# test
 pytest>=3.1.0
 pytest-cov
+pytest-xdist
 codecov
 
 # styling
 black
 pre-commit
 
-# PostGIS writing
+# postgis-write
 GeoAlchemy2
+
+# parquet
+pyarrow>=8.0.0
