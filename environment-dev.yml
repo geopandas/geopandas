@@ -9,7 +9,7 @@ dependencies:
     - pyproj>=3.3.0
     - shapely>=2.0.0
     - packaging
-  
+
     # testing
     - pytest>=3.1.0
     - pytest-cov
@@ -19,7 +19,7 @@ dependencies:
     # styling
     - black
     - pre-commit
-  
+
     # optional
     - folium
     - xyzservices
