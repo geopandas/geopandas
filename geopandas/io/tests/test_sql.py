@@ -4,6 +4,7 @@ The spatial database tests may not work without additional system
 configuration. postGIS tests require a test database to have been setup;
 see geopandas.tests.util for more information.
 """
+
 import os
 import warnings
 
@@ -819,11 +820,11 @@ class TestIO:
         with pytest.raises(ValueError, match="CRS of the target table"):
             write_postgis(df_nybb2, con=engine, name=table, if_exists="append")
 
+    @pytest.mark.parametrize(*engine_params)
     @pytest.mark.xfail(
         compat.PANDAS_GE_20 and not compat.PANDAS_GE_21,
         reason="Duplicate columns are dropped in read_sql with pandas 2.0.x",
     )
-    @pytest.mark.parametrize(*engine_params)
     def test_duplicate_geometry_column_fails(self, parameterised_fixture):
         """
         Tests that a ValueError is raised if an SQL query returns two geometry columns.
