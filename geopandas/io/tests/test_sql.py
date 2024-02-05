@@ -228,6 +228,16 @@ class TestIO:
         # by user; should not be set to 0, as from get_srid failure
         assert df.crs is None
 
+    def test_read_postgis_geography(self, connection_postgis, df_nybb):
+        con = connection_postgis
+        df_reproj = df_nybb.to_crs("epsg:4326")
+        create_postgis(con, df_reproj, use_geography=True)
+
+        sql = "SELECT * FROM nybb;"
+        df = read_postgis(sql, con)
+
+        validate_boro_df(df)
+
     def test_read_postgis_custom_geom_col(self, connection_postgis, df_nybb):
         con = connection_postgis
         geom_col = "the_geom"
@@ -354,6 +364,27 @@ class TestIO:
 
         # Write to db
         write_postgis(df_nybb, con=engine, name=table, if_exists="fail")
+        # Validate
+        sql = text("SELECT * FROM {table};".format(table=table))
+        df = read_postgis(sql, engine, geom_col="geometry")
+        validate_boro_df(df)
+
+    def test_write_postgis_geography(self, engine_postgis, df_nybb):
+        """Tests that GeoDataFrame can be written to PostGIS with geography type."""
+        engine = engine_postgis
+        table = "nybb"
+
+        # If table exists, delete it before trying to write with defaults
+        drop_table_if_exists(engine, table)
+
+        # Write to db
+        write_postgis(
+            df_nybb.to_crs("epsg:4326"),
+            con=engine,
+            name=table,
+            if_exists="fail",
+            use_geography=True,
+        )
         # Validate
         sql = text("SELECT * FROM {table};".format(table=table))
         df = read_postgis(sql, engine, geom_col="geometry")

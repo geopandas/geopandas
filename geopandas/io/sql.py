@@ -334,6 +334,7 @@ def _write_postgis(
     index_label=None,
     chunksize=None,
     dtype=None,
+    use_geography=False,
 ):
     """
     Upload GeoDataFrame into PostGIS database.
@@ -369,6 +370,11 @@ def _write_postgis(
         Specifying the datatype for columns.
         The keys should be the column names and the values
         should be the SQLAlchemy types.
+    use_geography : bool, default False
+        Store geometry column with PostGIS Geography type instead of
+        Geometry type (see
+        https://postgis.net/docs/manual-dev/PostGIS_FAQ.html#idm21462
+        for details.)
 
     Examples
     --------
@@ -379,7 +385,7 @@ def _write_postgis(
     >>> gdf.to_postgis("my_table", engine)  # doctest: +SKIP
     """
     try:
-        from geoalchemy2 import Geometry
+        from geoalchemy2 import Geometry, Geography
         from sqlalchemy import text
     except ImportError:
         raise ImportError("'to_postgis()' requires geoalchemy2 package.")
@@ -393,11 +399,12 @@ def _write_postgis(
     # Get geometry type and info whether data contains LinearRing.
     geometry_type, has_curve = _get_geometry_type(gdf)
 
-    # Build dtype with Geometry
+    # Build dtype with Geometry or Geography
+    db_geometry_type = Geography if use_geography else Geometry
     if dtype is not None:
-        dtype[geom_name] = Geometry(geometry_type=geometry_type, srid=srid)
+        dtype[geom_name] = db_geometry_type(geometry_type=geometry_type, srid=srid)
     else:
-        dtype = {geom_name: Geometry(geometry_type=geometry_type, srid=srid)}
+        dtype = {geom_name: db_geometry_type(geometry_type=geometry_type, srid=srid)}
 
     # Convert LinearRing geometries to LineString
     if has_curve:
