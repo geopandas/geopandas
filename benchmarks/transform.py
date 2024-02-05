@@ -4,6 +4,7 @@ import pandas as pd
 from shapely.geometry import Point
 from geopandas.tests.util import _NYBB
 
+
 class CRS:
     def setup(self):
         nybb = read_file(_NYBB)

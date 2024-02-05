@@ -1,6 +1,5 @@
 """Tests for the clip module."""
 
-
 import numpy as np
 
 import shapely
