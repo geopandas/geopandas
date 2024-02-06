@@ -196,27 +196,21 @@ def _geom_predicate_query(left_df, right_df, predicate, distance):
         DataFrame with matching indices in
         columns named `_key_left` and `_key_right`.
     """
-    with warnings.catch_warnings():
-        # We don't need to show our own warning here
-        # TODO remove this once the deprecation has been enforced
-        warnings.filterwarnings(
-            "ignore", "Generated spatial index is empty", FutureWarning
-        )
 
-        original_predicate = predicate
+    original_predicate = predicate
 
-        if predicate == "within":
-            # within is implemented as the inverse of contains
-            # contains is a faster predicate
-            # see discussion at https://github.com/geopandas/geopandas/pull/1421
-            predicate = "contains"
-            sindex = left_df.sindex
-            input_geoms = right_df.geometry
-        else:
-            # all other predicates are symmetric
-            # keep them the same
-            sindex = right_df.sindex
-            input_geoms = left_df.geometry
+    if predicate == "within":
+        # within is implemented as the inverse of contains
+        # contains is a faster predicate
+        # see discussion at https://github.com/geopandas/geopandas/pull/1421
+        predicate = "contains"
+        sindex = left_df.sindex
+        input_geoms = right_df.geometry
+    else:
+        # all other predicates are symmetric
+        # keep them the same
+        sindex = right_df.sindex
+        input_geoms = left_df.geometry
 
     if sindex:
         l_idx, r_idx = sindex.query(
