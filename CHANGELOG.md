@@ -23,6 +23,7 @@ New methods:
 - Added `snap` method from shapely to GeoSeries/GeoDataframe (#3086).
 - Added `transform` method from shapely to GeoSeries/GeoDataFrame (#3075).
 - Added `to_geo_dict` method to generate GeoJSON-like dictionary from a GeoDataFrame (#3132).
+- Added `is_valid_reason` method from shapely to GeoSeries/GeoDataframe (#3176).
 
 New features and improvements:
 

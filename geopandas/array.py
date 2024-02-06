@@ -492,6 +492,9 @@ class GeometryArray(ExtensionArray):
     def is_valid(self):
         return shapely.is_valid(self._data)
 
+    def is_valid_reason(self):
+        return shapely.is_valid_reason(self._data)
+
     @property
     def is_empty(self):
         return shapely.is_empty(self._data)
