@@ -1637,7 +1637,7 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
         gdf = GeoDataFrame._from_mgr(mgr, axes)
         # _from_mgr doesn't preserve metadata (expect __finalize__ to be called)
         # still need to mimic __init__ behaviour with geometry=None
-        if "geometry" in gdf:
+        if (gdf.columns == "geometry").sum() == 1:  # only if "geometry" is single col
             try:
                 gdf["geometry"] = _ensure_geometry(gdf["geometry"].values)
             except TypeError:
