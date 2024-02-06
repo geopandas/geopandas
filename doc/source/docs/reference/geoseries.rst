@@ -114,6 +114,7 @@ Constructive methods and attributes
    GeoSeries.simplify
    GeoSeries.snap
    GeoSeries.transform
+   GeoSeries.voronoi_polygons
 
 Affine transformations
 ----------------------

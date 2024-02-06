@@ -562,6 +562,12 @@ class GeometryArray(ExtensionArray):
             crs=self.crs,
         )
 
+    def voronoi_polygons(self, tolerance=0.0, extend_to=None, only_edges=False):
+        return GeometryArray(
+            shapely.voronoi_polygons(self._data, tolerance, extend_to, only_edges),
+            crs=self.crs,
+        )
+
     @property
     def envelope(self):
         return GeometryArray(shapely.envelope(self._data), crs=self.crs)

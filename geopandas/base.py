@@ -773,8 +773,95 @@ GeometryCollection
         1    MULTILINESTRING ((5 3, 10 10), (5 3, 6 3), (6 ...
         2    MULTILINESTRING ((5 3, 10 10), (5 3, 6 3), (6 ...
         dtype: geometry
+
+        See also
+        --------
+        GeoSeries.voronoi_polygons : Voronoi diagram around vertices
         """
         return _delegate_geo_method("delaunay_triangles", self, tolerance, only_edges)
+
+    def voronoi_polygons(self, tolerance=0.0, extend_to=None, only_edges=False):
+        """Returns a ``GeoSeries`` consisting of objects representing
+        the computed Voronoi diagram around the vertices of an input geometry.
+
+        The output is a ``GeometryCollection`` containing polygons (default) or
+        ``MultiLineStrings`` (see only_edges).
+
+        Returns an empty GeometryCollection if an input geometry contains less than 2
+        vertices.
+
+        Parameters
+        ----------
+        tolerance : float | array-like, default 0.0
+            Snap input vertices together if their distance is less than this value.
+        extend_to : array-like, default None
+            If set, the Voronoi diagram will be extended to cover the
+            envelope of this geometry (unless this envelope is smaller than the input
+            geometry).
+        only_edges : bool | array_like, (optional, default False)
+            If set to True, the diagram will return MultiLineStrings instead
+            of polygons.
+
+        Examples
+        --------
+
+        >>> from shapely import LineString, MultiPoint, Polygon
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         MultiPoint([(5, 3), (6, 3), (10, 10)]),
+        ...         Polygon([(5, 3), (6, 3), (10, 10), (5, 3)]),
+        ...         LineString([(5, 3), (6, 3), (10, 10)]),
+        ...     ]
+        ... )
+        >>> s
+        0    MULTIPOINT ((5 3), (6 3), (10 10))
+        1      POLYGON ((5 3, 6 3, 10 10, 5 3))
+        2          LINESTRING (5 3, 6 3, 10 10)
+        dtype: geometry
+
+        By default, you get back a collection of polygons:
+
+        >>> s.voronoi_polygons()
+        0    GEOMETRYCOLLECTION (POLYGON ((-2 -4, -2 13.285...
+        1    GEOMETRYCOLLECTION (POLYGON ((-2 -4, -2 13.285...
+        2    GEOMETRYCOLLECTION (POLYGON ((-2 -4, -2 13.285...
+        dtype: geometry
+
+        If you set only_edges to True, you get back MultiLineStrings representing the
+        edges of the Voronoi diagram:
+
+        >>> s.voronoi_polygons(only_edges=True)
+        0    MULTILINESTRING ((-2 13.28571, 5.5 7.92857), (...
+        1    MULTILINESTRING ((-2 13.28571, 5.5 7.92857), (...
+        2    MULTILINESTRING ((-2 13.28571, 5.5 7.92857), (...
+        dtype: geometry
+
+        You can also extend each diagram to a given geometry:
+
+        >>> limit = Polygon([(-10, -10), (0, 15), (15, 15), (15, 0)])
+        >>> s.voronoi_polygons(extend_to=limit)
+        0    GEOMETRYCOLLECTION (POLYGON ((-10 -10, -10 17,...
+        1    GEOMETRYCOLLECTION (POLYGON ((-10 -10, -10 17,...
+        2    GEOMETRYCOLLECTION (POLYGON ((-10 -10, -10 17,...
+        dtype: geometry
+
+        Or pass the extent to each geometry separately as an array-like:
+
+        >>> s.voronoi_polygons(extend_to=s.buffer(20))
+        0    GEOMETRYCOLLECTION (POLYGON ((-15 -17, -15 22....
+        1    GEOMETRYCOLLECTION (POLYGON ((-14.99485 -17, -...
+        2    GEOMETRYCOLLECTION (POLYGON ((-15 -17, -15 22....
+        dtype: geometry
+
+        See also
+        --------
+        GeoSeries.delaunay_triangles : Delaunay triangulation around vertices
+        """
+        if isinstance(extend_to, GeoPandasBase):
+            extend_to = extend_to.align(self)[0]
+        return _delegate_geo_method(
+            "voronoi_polygons", self, tolerance, extend_to, only_edges
+        )
 
     @property
     def envelope(self):
