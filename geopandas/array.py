@@ -563,6 +563,8 @@ class GeometryArray(ExtensionArray):
         )
 
     def voronoi_polygons(self, tolerance=0.0, extend_to=None, only_edges=False):
+        if pd.api.types.is_list_like(extend_to):
+            extend_to = np.asarray(extend_to)
         return GeometryArray(
             shapely.voronoi_polygons(self._data, tolerance, extend_to, only_edges),
             crs=self.crs,

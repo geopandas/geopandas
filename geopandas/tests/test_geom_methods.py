@@ -1085,6 +1085,25 @@ class TestGeomMethods:
         vp = self.g1.voronoi_polygons(extend_to=box(-2, 0, 3, 3))
         assert_geoseries_equal(expected, vp)
 
+    def test_voronoi_polygons_extend_to_series(self):
+        expected = GeoSeries.from_wkt(
+            [
+                "GEOMETRYCOLLECTION ("
+                "POLYGON ((-10 -10, -10 11, 0.5 0.5, 0.5 -10, -10 -10)), "
+                "POLYGON ((11 11, 11 0.5, 0.5 0.5, -10 11, 11 11)), "
+                "POLYGON ((11 -10, 0.5 -10, 0.5 0.5, 11 0.5, 11 -10)))",
+                "GEOMETRYCOLLECTION ("
+                "POLYGON ((11 11, 11 0.5, 0.5 0.5, 0.5 11, 11 11)), "
+                "POLYGON ((-10 11, 0.5 11, 0.5 0.5, -10 0.5, -10 11)), "
+                "POLYGON ((-10 -10, -10 0.5, 0.5 0.5, 0.5 -10, -10 -10)), "
+                "POLYGON ((11 -10, 0.5 -10, 0.5 0.5, 11 0.5, 11 -10)))",
+            ],
+            crs=self.g1.crs,
+        )
+
+        vp = self.g1.voronoi_polygons(extend_to=self.g1.buffer(10))
+        assert_geoseries_equal(expected, vp)
+
     def test_exterior(self):
         exp_exterior = GeoSeries([LinearRing(p.boundary) for p in self.g3])
         for expected, computed in zip(exp_exterior, self.g3.exterior):
