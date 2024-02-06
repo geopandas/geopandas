@@ -47,7 +47,7 @@ Unary predicates
    GeoSeries.is_ring
    GeoSeries.is_simple
    GeoSeries.is_valid
-   GoeSeries.is_valid_reason
+   GeoSeries.is_valid_reason
    GeoSeries.has_z
    GeoSeries.is_ccw
 
