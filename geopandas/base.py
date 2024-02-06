@@ -1512,10 +1512,10 @@ GeometryCollection
         ``GeoSeries``.
 
         If the geometries are non-overlapping (forming a coverage), GeoPandas can
-        use the significantly faster algorithm to perform the union. The assumption of
-        a coverage needs to be explicitly provided using ``coverage=True``. Using the
-        coverage union on overlapping polygons will likely result in invalid
-        geometries with unresolved topology within overlaps.
+        use the significantly faster algorithm to perform the union. 
+        Using the
+        ``coverage`` option on overlapping polygons will likely result in invalid
+        geometries.
 
         Parameters
         ----------
