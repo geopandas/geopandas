@@ -540,6 +540,55 @@ GeometryCollection
         """
         return _delegate_property("has_z", self)
 
+    def get_precision(self):
+        """Returns a ``Series`` of the precision of each geometry.
+
+        If a precision has not been previously set, it will be 0 (double precision).
+        Otherwise, it will return the precision grid size that was set on a geometry.
+
+        Returns NaN for not-a-geometry values.
+
+        Examples
+        --------
+        >>> from shapely.geometry import Point
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Point(0, 1),
+        ...         Point(0, 1, 2),
+        ...         Point(0, 1.5, 2),
+        ...     ]
+        ... )
+        >>> s
+        0          POINT (0 1)
+        1      POINT Z (0 1 2)
+        2    POINT Z (0 1.5 2)
+        dtype: geometry
+
+        >>> s.get_precision()
+        0    0.0
+        1    0.0
+        2    0.0
+        dtype: float64
+
+        >>> s1 = s.set_precision(1)
+        >>> s1
+        0        POINT (0 1)
+        1    POINT Z (0 1 2)
+        2    POINT Z (0 2 2)
+        dtype: geometry
+
+        >>> s1.get_precision()
+        0    1.0
+        1    1.0
+        2    1.0
+        dtype: float64
+
+        See also
+        --------
+        GeoSeries.set_precision : set precision grid size
+        """
+        return Series(self.geometry.values.get_precision(), index=self.index)
+
     #
     # Unary operations that return a GeoSeries
     #

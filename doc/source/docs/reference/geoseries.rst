@@ -36,6 +36,7 @@ General methods and attributes
    GeoSeries.get_coordinates
    GeoSeries.count_coordinates
    GeoSeries.set_precision
+   GeoSeries.get_precision
 
 Unary predicates
 ----------------

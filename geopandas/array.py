@@ -536,6 +536,9 @@ class GeometryArray(ExtensionArray):
         out[:] = [shapely.count_coordinates(s) for s in self._data]
         return out
 
+    def get_precision(self):
+        return shapely.get_precision(self._data)
+
     #
     # Unary operations that return new geometries
     #

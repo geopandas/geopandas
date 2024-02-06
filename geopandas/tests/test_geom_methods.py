@@ -1901,3 +1901,13 @@ class TestGeomMethods:
         assert_series_equal(
             expected.to_wkt(), s.set_precision(1, mode="keep_collapsed").to_wkt()
         )
+
+    def test_get_precision(self):
+        expected = Series([0.0, 0.0, 0.0, 0.0], index=self.landmarks_mixed_empty.index)
+        assert_series_equal(expected, self.landmarks_mixed_empty.get_precision())
+        with_precision = self.landmarks_mixed_empty.set_precision(1)
+        expected = Series([1.0, 1.0, 1.0, 1.0], index=with_precision.index)
+        assert_series_equal(expected, with_precision.get_precision())
+        mixed = concat([self.landmarks_mixed_empty, with_precision])
+        expected = Series([0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0], index=mixed.index)
+        assert_series_equal(expected, mixed.get_precision())
