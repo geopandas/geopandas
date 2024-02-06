@@ -657,6 +657,12 @@ class GeometryArray(ExtensionArray):
             shapely.transform(self._data, transformation, include_z), crs=self.crs
         )
 
+    def set_precision(self, grid_size, mode="valid_output"):
+        return GeometryArray(
+            shapely.set_precision(self._data, grid_size=grid_size, mode=mode),
+            crs=self.crs,
+        )
+
     #
     # Binary predicates
     #

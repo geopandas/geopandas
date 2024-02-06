@@ -1855,3 +1855,49 @@ class TestGeomMethods:
             ],
         )
         assert_geoseries_equal(expected, self.g1.force_3d([1, 2]))
+
+    def test_set_precision(self):
+        expected = GeoSeries(
+            [
+                Point(-74, 41, 30.3244),
+                Point(-74, 41, 31.2344),
+                Point(-74, 41),
+                self.pt_empty,
+            ],
+            crs=4326,
+        )
+        assert_geoseries_equal(expected, self.landmarks_mixed_empty.set_precision(1))
+
+        s = GeoSeries(
+            [
+                LineString([(0, 0), (0, 0.1), (0, 1), (1, 1)]),
+                LineString([(0, 0), (0, 0.1), (0.1, 0.1)]),
+            ],
+        )
+        expected = GeoSeries(
+            [
+                LineString([(0, 0), (0, 1), (1, 1)]),
+                LineString(),
+            ],
+        )
+        assert_geoseries_equal(expected, s.set_precision(1))
+
+        expected = GeoSeries(
+            [
+                LineString([(0, 0), (0, 0), (0, 1), (1, 1)]),
+                LineString([(0, 0), (0, 0), (0, 0)]),
+            ]
+        )
+        assert_series_equal(
+            expected.to_wkt(), s.set_precision(1, mode="pointwise").to_wkt()
+        )
+
+        expected = GeoSeries(
+            [
+                LineString([(0, 0), (0, 1), (1, 1)]),
+                LineString([(0, 0), (0, 0)]),
+            ]
+        )
+        assert_series_equal(
+            expected.to_wkt(), s.set_precision(1, mode="keep_collapsed").to_wkt()
+        )
