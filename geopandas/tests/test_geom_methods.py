@@ -1856,6 +1856,9 @@ class TestGeomMethods:
         )
         assert_geoseries_equal(expected, self.g1.force_3d([1, 2]))
 
+    @pytest.mark.skipif(
+        shapely.geos_version < (3, 9, 5), reason="Empty geom bug in GEOS<3.9.5"
+    )
     def test_set_precision(self):
         expected = GeoSeries(
             [
