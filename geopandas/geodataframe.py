@@ -1660,7 +1660,7 @@ individually so that features may have different properties
         sort=True,
         observed=False,
         dropna=True,
-        coverage=False,
+        method="unary",
         **kwargs,
     ):
         """
@@ -1705,10 +1705,16 @@ individually so that features may have different properties
             If True, and if group keys contain NA values, NA values
             together with row/column will be dropped. If False, NA
             values will also be treated as the key in groups.
-        coverage : bool, default False
-            If True, dissolve will use the faster coverage union to merge geometries.
-            If False, the default slower but robust union will be used. See the
-            docstring of :meth:`union_all` for details.
+        method : str (default ``"unary"``)
+            The method to use for the union. Options are:
+
+            * ``"unary"``: use the unary union algorithm. This option is the most robust
+                but can be slow for large numbers of geometries (default).
+            * ``"coverage"``: use the coverage union algorithm. This option is optimized
+                for non-overlapping polygons and can be significantly faster than the
+                unary union algorithm. However, it can produce invalid geometries if the
+                polygons overlap.
+
         **kwargs :
             Keyword arguments to be passed to the pandas `DataFrameGroupby.agg` method
             which is used by `dissolve`. In particular, `numeric_only` may be
@@ -1783,7 +1789,7 @@ individually so that features may have different properties
 
         # Process spatial component
         def merge_geometries(block):
-            merged_geom = block.union_all(coverage=coverage)
+            merged_geom = block.union_all(method=method)
             return merged_geom
 
         g = self.groupby(group_keys=False, **groupby_kwargs)[self.geometry.name].agg(

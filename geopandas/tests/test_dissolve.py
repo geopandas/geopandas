@@ -354,8 +354,8 @@ def test_coverage_dissolve(nybb_polydf):
     others = nybb_polydf.loc[0:2]
 
     collapsed = [
-        others.geometry.union_all(coverage=True),
-        manhattan_bronx.geometry.union_all(coverage=True),
+        others.geometry.union_all(method="coverage"),
+        manhattan_bronx.geometry.union_all(method="coverage"),
     ]
     merged_shapes = GeoDataFrame(
         {"myshapes": collapsed},
@@ -367,5 +367,5 @@ def test_coverage_dissolve(nybb_polydf):
     merged_shapes["BoroName"] = ["Staten Island", "Manhattan"]
     merged_shapes["BoroCode"] = [5, 1]
 
-    test = nybb_polydf.dissolve("manhattan_bronx", coverage=True)
+    test = nybb_polydf.dissolve("manhattan_bronx", method="coverage")
     assert_frame_equal(merged_shapes, test, check_column_type=False)
