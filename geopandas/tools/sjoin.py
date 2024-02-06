@@ -1,5 +1,4 @@
 from typing import Optional
-import warnings
 
 import numpy as np
 import pandas as pd
@@ -97,26 +96,6 @@ def sjoin(
     Every operation in GeoPandas is planar, i.e. the potential third
     dimension is not taken into account.
     """
-    if "op" in kwargs:
-        op = kwargs.pop("op")
-        deprecation_message = (
-            "The `op` parameter is deprecated and will be removed"
-            " in a future release. Please use the `predicate` parameter"
-            " instead."
-        )
-        if predicate not in ("intersects", op):
-            override_message = (
-                "A non-default value for `predicate` was passed"
-                f' (got `predicate="{predicate}"`'
-                f' in combination with `op="{op}"`).'
-                " The value of `predicate` will be overridden by the value of `op`,"
-                " , which may result in unexpected behavior."
-                f"\n{deprecation_message}"
-            )
-            warnings.warn(override_message, UserWarning, stacklevel=4)
-        else:
-            warnings.warn(deprecation_message, FutureWarning, stacklevel=4)
-        predicate = op
     if kwargs:
         first = next(iter(kwargs.keys()))
         raise TypeError(f"sjoin() got an unexpected keyword argument '{first}'")
