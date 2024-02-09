@@ -899,7 +899,7 @@ class GeoSeries(GeoPandasBase, Series):
         """Interactive map based on folium/leaflet.js"""
         return _explore_geoseries(self, *args, **kwargs)
 
-    def explode(self, ignore_index=False, index_parts=None) -> GeoSeries:
+    def explode(self, ignore_index=False, index_parts=False) -> GeoSeries:
         """
         Explode multi-part geometries into multiple single geometries.
 
@@ -912,7 +912,7 @@ class GeoSeries(GeoPandasBase, Series):
         ignore_index : bool, default False
             If True, the resulting index will be labelled 0, 1, …, n - 1,
             ignoring `index_parts`.
-        index_parts : boolean, default True
+        index_parts : boolean, default False
             If True, the resulting index will be a multi-index (original
             index with an additional level indicating the multiple
             geometries: a new zero-based index for each single part geometry
@@ -949,17 +949,6 @@ class GeoSeries(GeoPandasBase, Series):
 
         """
         from .base import _get_index_for_parts
-
-        if index_parts is None and not ignore_index:
-            warnings.warn(
-                "Currently, index_parts defaults to True, but in the future, "
-                "it will default to False to be consistent with Pandas. "
-                "Use `index_parts=True` to keep the current behavior and True/False "
-                "to silence the warning.",
-                FutureWarning,
-                stacklevel=2,
-            )
-            index_parts = True
 
         geometries, outer_idx = shapely.get_parts(self.values._data, return_index=True)
 
