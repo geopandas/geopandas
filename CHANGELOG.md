@@ -56,8 +56,20 @@ Deprecations and compatibility notes:
 - The deprecation of `geopandas.datasets` has been enforced and the module has been
   removed. New sample datasets are now available in the
   [geodatasets](https://geodatasets.readthedocs.io/en/latest/) package (#3084).
+- Many longstanding deprecated functions, methods and properties have been removed (#3174)
+  - Removed deprecated functions  
+    `geopandas.io.read_file`, `geopandas.io.to_file` and `geopandas.io.sql.read_postgis`. 
+    `geopandas.read_file`, `geopandas.read_postgis` and the GeoDataFrame/GeoSeries `to_file(..)` 
+    method should be used instead.
+  - Removed deprecated `GeometryArray.data` property, `np.asarray(..)` or the `to_numpy()`
+    method should be used instead.
+  - Removed deprecated `sindex.query_bulk` method, using `sindex.query` instead.
+  - Removed deprecated `sjoin` parameter `op`, `predicate` should be supplied instead.
+  - Removed deprecated GeoSeries/ GeoDataFrame methods `__xor__`, `__or__`, `__and__` and 
+    `__sub__`. Instead use methods `symmetric_difference`, `union`, `intersection` and 
+    `difference` respectively.
 
-## Version 0.14.3 (Jan ??, 2024)
+## Version 0.14.3 (Jan 31, 2024)
 
 - Several fixes for compatibility with the latest pandas 2.2 release.
 - Fix bug in `pandas.concat` CRS consistency checking where CRS differing by WKT
