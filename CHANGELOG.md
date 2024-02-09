@@ -35,15 +35,19 @@ New features and improvements:
   `buffer(0)` (#3113).
 - Passing `"geometry"` as `dtype` to `pd.read_csv` will now return a GeoSeries for
   the specified columns (#3101).
+- 
+API changes:
+- Added support for ``mask`` keyword for pyogrio engine for pyogrio >= 0.7.0 (#3062).
+
+Backwards incompatible API changes:
+- The deprecated default value of GeoDataFrame/ GeoSeries `explode(.., index_parts=True)` is now
+  set to false for consistency with pandas (#3174)
 
 Potentially breaking changes:
 
 - reading a data source that does not have a geometry field using ``read_file``
   now returns a Pandas DataFrame instead of a GeoDataFrame with an empty
   ``geometry`` column.
-
-API changes:
-- Added support for ``mask`` keyword for pyogrio engine for pyogrio >= 0.7.0 (#3062).
 
 Bug fixes:
 
