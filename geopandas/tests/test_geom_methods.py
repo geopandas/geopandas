@@ -213,27 +213,6 @@ class TestGeomMethods:
         fcmp = assert_series_equal
         self._binary_op_test(op, expected, a, b, fcmp, True, False, *args, **kwargs)
 
-    def _test_binary_operator(self, op, expected, a, b):
-        """
-        The operators only have GeoSeries on the left, but can have
-        GeoSeries or GeoDataFrame on the right.
-        If GeoDataFrame is on the left, geometry column is used.
-
-        """
-        if isinstance(expected, GeoPandasBase):
-            fcmp = assert_geoseries_equal
-        else:
-
-            def fcmp(a, b):
-                assert geom_equals(a, b)
-
-        if isinstance(b, GeoPandasBase):
-            right_df = True
-        else:
-            right_df = False
-
-        self._binary_op_test(op, expected, a, b, fcmp, False, right_df)
-
     def _binary_op_test(
         self, op, expected, left, right, fcmp, left_df, right_df, *args, **kwargs
     ):
@@ -1628,47 +1607,6 @@ class TestGeomMethods:
         assert test_df.geometry.name == "geom"
         assert test_df.geometry.name == test_df._geometry_column_name
         assert "geometry" in test_df.columns
-
-    #
-    # Test '&', '|', '^', and '-'
-    #
-    def test_intersection_operator(self):
-        with pytest.warns(FutureWarning):
-            self._test_binary_operator("__and__", self.t1, self.g1, self.g2)
-        with pytest.warns(FutureWarning):
-            self._test_binary_operator("__and__", self.t1, self.gdf1, self.g2)
-
-    def test_union_operator(self):
-        with pytest.warns(FutureWarning):
-            self._test_binary_operator("__or__", self.sq, self.g1, self.g2)
-        with pytest.warns(FutureWarning):
-            self._test_binary_operator("__or__", self.sq, self.gdf1, self.g2)
-
-    def test_union_operator_polygon(self):
-        with pytest.warns(FutureWarning):
-            self._test_binary_operator("__or__", self.sq, self.g1, self.t2)
-        with pytest.warns(FutureWarning):
-            self._test_binary_operator("__or__", self.sq, self.gdf1, self.t2)
-
-    def test_symmetric_difference_operator(self):
-        with pytest.warns(FutureWarning):
-            self._test_binary_operator("__xor__", self.sq, self.g3, self.g4)
-        with pytest.warns(FutureWarning):
-            self._test_binary_operator("__xor__", self.sq, self.gdf3, self.g4)
-
-    def test_difference_series2(self):
-        expected = GeoSeries([GeometryCollection(), self.t2])
-        with pytest.warns(FutureWarning):
-            self._test_binary_operator("__sub__", expected, self.g1, self.g2)
-        with pytest.warns(FutureWarning):
-            self._test_binary_operator("__sub__", expected, self.gdf1, self.g2)
-
-    def test_difference_poly2(self):
-        expected = GeoSeries([self.t1, self.t1])
-        with pytest.warns(FutureWarning):
-            self._test_binary_operator("__sub__", expected, self.g1, self.t2)
-        with pytest.warns(FutureWarning):
-            self._test_binary_operator("__sub__", expected, self.gdf1, self.t2)
 
     def test_get_coordinates(self):
         expected = DataFrame(
