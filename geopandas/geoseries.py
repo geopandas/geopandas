@@ -208,9 +208,16 @@ class GeoSeries(GeoPandasBase, Series):
                         "Non geometry data passed to GeoSeries constructor, "
                         f"received data of dtype '{s.dtype}'"
                     )
-            # try to convert to GeometryArray, if fails return plain Series
+            # extract object-dtype numpy array from pandas Series; with CoW this
+            # gives a read-only array, so we try to set the flag back to writeable
+            data = s.to_numpy()
             try:
-                data = from_shapely(s.values, crs)
+                data.flags.writeable = True
+            except ValueError:
+                pass
+            # try to convert to GeometryArray
+            try:
+                data = from_shapely(data, crs)
             except TypeError:
                 raise TypeError(
                     "Non geometry data passed to GeoSeries constructor, "
