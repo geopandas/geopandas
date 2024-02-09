@@ -1933,9 +1933,7 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
         if not isinstance(self[column].dtype, GeometryDtype):
             return super().explode(column, ignore_index=ignore_index, **kwargs)
 
-        exploded_geom = self.geometry.reset_index(drop=True).explode(
-            index_parts=index_parts
-        )
+        exploded_geom = self.geometry.reset_index(drop=True).explode(index_parts=True)
 
         df = self.drop(self._geometry_column_name, axis=1).take(
             exploded_geom.index.droplevel(-1)
