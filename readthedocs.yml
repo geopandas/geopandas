@@ -1,12 +1,8 @@
 version: 2
 build:
-  os: ubuntu-20.04
+  os: ubuntu-22.04
   tools:
-    python: mambaforge-4.10
-python:
-  install:
-  - method: pip
-    path: .
+    python: mambaforge-latest
 conda:
   environment: doc/environment.yml
 formats: []
