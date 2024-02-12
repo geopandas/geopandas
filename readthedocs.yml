@@ -4,8 +4,10 @@ build:
   tools:
     python: mambaforge-latest
   jobs:
-    pre_install:
-      - git fetch origin --force --prune --prune-tags --depth 150
+    post_checkout:
+      # we need the tags for versioneer to work
+      - git fetch origin --depth 150
+      - git fetch --tags
 python:
   install:
   - method: pip
