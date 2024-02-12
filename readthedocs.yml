@@ -3,6 +3,13 @@ build:
   os: ubuntu-22.04
   tools:
     python: mambaforge-latest
+  jobs:
+    pre_install:
+      - git fetch --tags
+python:
+  install:
+  - method: pip
+    path: .
 conda:
   environment: doc/environment.yml
 formats: []
