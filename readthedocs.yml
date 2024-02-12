@@ -5,7 +5,7 @@ build:
     python: mambaforge-latest
   jobs:
     pre_install:
-      - git fetch --tags
+      - git fetch origin --force --prune --prune-tags --depth 150
 python:
   install:
   - method: pip
