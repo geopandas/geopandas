@@ -183,19 +183,6 @@ def _read_postgis(
         return (_df_to_geodf(df, geom_col=geom_col, crs=crs) for df in df_generator)
 
 
-def read_postgis(*args, **kwargs):
-    import warnings
-
-    warnings.warn(
-        "geopandas.io.sql.read_postgis() is intended for internal "
-        "use only, and will be deprecated. Use geopandas.read_postgis() instead.",
-        FutureWarning,
-        stacklevel=2,
-    )
-
-    return _read_postgis(*args, **kwargs)
-
-
 def _get_geometry_type(gdf):
     """
     Get basic geometry type of a GeoDataFrame. See more info from:

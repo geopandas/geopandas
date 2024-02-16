@@ -408,12 +408,6 @@ def test_to_file_empty(tmpdir, engine):
         input_empty_df.to_file(tempfilename, engine=engine)
 
 
-def test_to_file_privacy(tmpdir, df_nybb):
-    tempfilename = os.path.join(str(tmpdir), "test.shp")
-    with pytest.warns(FutureWarning):
-        geopandas.io.file.to_file(df_nybb, tempfilename)
-
-
 def test_to_file_schema(tmpdir, df_nybb, engine):
     """
     Ensure that the file is written according to the schema
@@ -1033,11 +1027,6 @@ def test_read_file_empty_shapefile(tmpdir, engine):
     empty = read_file(fname, engine=engine)
     assert isinstance(empty, geopandas.GeoDataFrame)
     assert all(empty.columns == ["A", "Z", "geometry"])
-
-
-def test_read_file_privacy(tmpdir, df_nybb, nybb_filename):
-    with pytest.warns(FutureWarning):
-        geopandas.io.file.read_file(nybb_filename)
 
 
 class FileNumber(object):

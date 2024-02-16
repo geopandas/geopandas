@@ -507,29 +507,6 @@ def _read_file_pyogrio(path_or_bytes, bbox=None, mask=None, rows=None, **kwargs)
     return pyogrio.read_dataframe(path_or_bytes, bbox=bbox, **kwargs)
 
 
-def read_file(*args, **kwargs):
-    warnings.warn(
-        "geopandas.io.file.read_file() is intended for internal "
-        "use only, and will be deprecated. Use geopandas.read_file() instead.",
-        FutureWarning,
-        stacklevel=2,
-    )
-
-    return _read_file(*args, **kwargs)
-
-
-def to_file(*args, **kwargs):
-    warnings.warn(
-        "geopandas.io.file.to_file() is intended for internal "
-        "use only, and will be deprecated. Use GeoDataFrame.to_file() "
-        "or GeoSeries.to_file() instead.",
-        FutureWarning,
-        stacklevel=2,
-    )
-
-    return _to_file(*args, **kwargs)
-
-
 def _detect_driver(path):
     """
     Attempt to auto-detect driver based on the extension

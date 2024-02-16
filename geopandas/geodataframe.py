@@ -1850,7 +1850,7 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
         return aggregated
 
     # overrides the pandas native explode method to break up features geometrically
-    def explode(self, column=None, ignore_index=False, index_parts=None, **kwargs):
+    def explode(self, column=None, ignore_index=False, index_parts=False, **kwargs):
         """
         Explode multi-part geometries into multiple single geometries.
 
@@ -1867,7 +1867,7 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
         ignore_index : bool, default False
             If True, the resulting index will be labelled 0, 1, …, n - 1,
             ignoring `index_parts`.
-        index_parts : boolean, default True
+        index_parts : boolean, default False
             If True, the resulting index will be a multi-index (original
             index with an additional level indicating the multiple
             geometries: a new zero-based index for each single part geometry
@@ -1932,18 +1932,6 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
         # If the specified column is not a geometry dtype use pandas explode
         if not isinstance(self[column].dtype, GeometryDtype):
             return super().explode(column, ignore_index=ignore_index, **kwargs)
-
-        if index_parts is None:
-            if not ignore_index:
-                warnings.warn(
-                    "Currently, index_parts defaults to True, but in the future, "
-                    "it will default to False to be consistent with Pandas. "
-                    "Use `index_parts=True` to keep the current behavior and "
-                    "True/False to silence the warning.",
-                    FutureWarning,
-                    stacklevel=2,
-                )
-            index_parts = True
 
         exploded_geom = self.geometry.reset_index(drop=True).explode(index_parts=True)
 
@@ -2058,47 +2046,6 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
         geopandas.io.sql._write_postgis(
             self, name, con, schema, if_exists, index, index_label, chunksize, dtype
         )
-
-        #
-        # Implement standard operators for GeoSeries
-        #
-
-    def __xor__(self, other):
-        """Implement ^ operator as for builtin set type"""
-        warnings.warn(
-            "'^' operator will be deprecated. Use the 'symmetric_difference' "
-            "method instead.",
-            FutureWarning,
-            stacklevel=2,
-        )
-        return self.geometry.symmetric_difference(other)
-
-    def __or__(self, other):
-        """Implement | operator as for builtin set type"""
-        warnings.warn(
-            "'|' operator will be deprecated. Use the 'union' method instead.",
-            FutureWarning,
-            stacklevel=2,
-        )
-        return self.geometry.union(other)
-
-    def __and__(self, other):
-        """Implement & operator as for builtin set type"""
-        warnings.warn(
-            "'&' operator will be deprecated. Use the 'intersection' method instead.",
-            FutureWarning,
-            stacklevel=2,
-        )
-        return self.geometry.intersection(other)
-
-    def __sub__(self, other):
-        """Implement - operator as for builtin set type"""
-        warnings.warn(
-            "'-' operator will be deprecated. Use the 'difference' method instead.",
-            FutureWarning,
-            stacklevel=2,
-        )
-        return self.geometry.difference(other)
 
     plot = CachedAccessor("plot", geopandas.plotting.GeoplotAccessor)
 

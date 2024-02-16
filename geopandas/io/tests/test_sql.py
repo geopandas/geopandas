@@ -395,15 +395,6 @@ class TestIO:
         # by user; should not be set to 0, as from get_srid failure
         assert df.crs is None
 
-    @pytest.mark.parametrize(*psycopg_params)
-    def test_read_postgis_privacy(self, parameterised_fixture, df_nybb):
-        con = parameterised_fixture
-        create_postgis(con, df_nybb)
-
-        sql = "SELECT * FROM nybb;"
-        with pytest.warns(FutureWarning):
-            geopandas.io.sql.read_postgis(sql, con)
-
     @pytest.mark.parametrize(*engine_params)
     def test_write_postgis_default(self, parameterised_fixture, df_nybb):
         """Tests that GeoDataFrame can be written to PostGIS with defaults."""
