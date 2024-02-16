@@ -85,10 +85,6 @@ as well::
 
     pip install geopandas
 
-Optional runtime dependencies can also be installed at once::
-
-    pip install geopandas[all]
-
 .. _install-deps:
 
 .. warning::
@@ -104,6 +100,10 @@ Optional runtime dependencies can also be installed at once::
     dependencies manually. We refer to the individual packages for more details on
     installing those. Using conda (see above) avoids the need to compile the
     dependencies yourself.
+
+Optional runtime dependencies can also be installed all at once::
+
+    pip install geopandas[all]
 
 Installing from source
 ----------------------
