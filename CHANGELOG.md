@@ -54,6 +54,8 @@ Bug fixes:
 - Fix `GeoDataFrame.merge()` incorrectly returning a `DataFrame` instead of a
   `GeoDataFrame` when the `suffixes` argument is applied to the active
   geometry column (#2933).
+- Fix `to_postgis()` method to make it compatible with psycopg3 as well as psycopg2 (#3167).
+
 
 Deprecations and compatibility notes:
 
@@ -78,7 +80,6 @@ Deprecations and compatibility notes:
 - Several fixes for compatibility with the latest pandas 2.2 release.
 - Fix bug in `pandas.concat` CRS consistency checking where CRS differing by WKT
   whitespace only were treated as incompatible (#3023).
-- Fix `to_sql()` method to make it compatible with psycopg3 as well as psycopg2 (#3167).
 
 ## Version 0.14.2 (Jan 4, 2024)
 
