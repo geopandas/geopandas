@@ -833,19 +833,20 @@ def plot_dataframe(
             values = np.insert(values, n, values[0])
 
     vals = None
+    robust = style_kwds.pop('robust', False)
 
     if vmin is not None:
         mn = vmin
     else:
         vals = values[~np.isnan(values)]
-        mn = np.percentile(vals, ROBUST_PERCENTILE) if style_kwds.get('robust', False) else vals.min()
+        mn = np.percentile(vals, ROBUST_PERCENTILE) if robust else vals.min()
 
     if vmax is not None:
         mx = vmax
     else:
         if vals is None: # Dont recompute if not necessary
             vals = values[~np.isnan(values)]
-        mx = np.percentile(vals, 100.0 - ROBUST_PERCENTILE) if style_kwds.get('robust', False) else vals.max()
+        mx = np.percentile(vals, 100.0 - ROBUST_PERCENTILE) if robust else vals.max()
 
 
     # decompose GeometryCollections
@@ -923,7 +924,7 @@ def plot_dataframe(
             norm = Normalize(vmin=mn, vmax=mx)
         n_cmap = cm.ScalarMappable(norm=norm, cmap=cmap)
 
-        if style_kwds.get('robust', False):
+        if robust:
             legend_kwds['extend'] = 'both'
 
         if categorical:
