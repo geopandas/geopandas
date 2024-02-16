@@ -11,6 +11,8 @@ from packaging.version import Version
 
 from ._decorator import doc
 
+ROBUST_PERCENTILE = 2.0
+
 
 def deprecated(new, warning_type=FutureWarning):
     """Helper to provide deprecation warning."""
@@ -830,8 +832,21 @@ def plot_dataframe(
         for n in np.where(nan_idx)[0]:
             values = np.insert(values, n, values[0])
 
-    mn = values[~np.isnan(values)].min() if vmin is None else vmin
-    mx = values[~np.isnan(values)].max() if vmax is None else vmax
+    vals = None
+
+    if vmin is not None:
+        mn = vmin
+    else:
+        vals = values[~np.isnan(values)]
+        mn = np.percentile(vals, ROBUST_PERCENTILE) if style_kwds.get('robust', False) else vals.min()
+
+    if vmax is not None:
+        mx = vmax
+    else:
+        if vals is None: # Dont recompute if not necessary
+            vals = values[~np.isnan(values)]
+        mx = np.percentile(vals, 100.0 - ROBUST_PERCENTILE) if style_kwds.get('robust', False) else vals.max()
+
 
     # decompose GeometryCollections
     geoms, multiindex = _sanitize_geoms(df.geometry, prefix="Geom")
@@ -907,6 +922,10 @@ def plot_dataframe(
         if not norm:
             norm = Normalize(vmin=mn, vmax=mx)
         n_cmap = cm.ScalarMappable(norm=norm, cmap=cmap)
+
+        if style_kwds.get('robust', False):
+            legend_kwds['extend'] = 'both'
+
         if categorical:
             if scheme is not None:
                 categories = labels
