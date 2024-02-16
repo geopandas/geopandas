@@ -13,6 +13,7 @@ import shapely.geos
 PANDAS_GE_14 = Version(pd.__version__) >= Version("1.4.0rc0")
 PANDAS_GE_15 = Version(pd.__version__) >= Version("1.5.0")
 PANDAS_GE_20 = Version(pd.__version__) >= Version("2.0.0")
+PANDAS_GE_202 = Version(pd.__version__) >= Version("2.0.2")
 PANDAS_GE_21 = Version(pd.__version__) >= Version("2.1.0")
 PANDAS_GE_22 = Version(pd.__version__) >= Version("2.2.0.dev0")
 
