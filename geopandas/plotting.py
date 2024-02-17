@@ -832,7 +832,7 @@ def plot_dataframe(
             values = np.insert(values, n, values[0])
 
 
-    robust = style_kwds.pop('robust', False)
+    robust = style_kwds.pop("robust", False)
 
     if robust:
         vals = values[~np.isnan(values)]
@@ -913,7 +913,7 @@ def plot_dataframe(
         from matplotlib import cm
 
         if robust:
-            legend_kwds['extend'] = 'both'
+            legend_kwds["extend"] = "both"
 
         norm = style_kwds.get("norm", None)
         if not norm:
