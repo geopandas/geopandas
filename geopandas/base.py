@@ -543,7 +543,7 @@ GeometryCollection
     def get_precision(self):
         """Returns a ``Series`` of the precision of each geometry.
 
-        If a precision has not been previously set, it will be 0 (double precision).
+        If a precision has not been previously set, it will be 0, indicating regular double precision coordinates are in use.
         Otherwise, it will return the precision grid size that was set on a geometry.
 
         Returns NaN for not-a-geometry values.
