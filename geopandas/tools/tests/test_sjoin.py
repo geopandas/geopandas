@@ -115,31 +115,6 @@ class TestSpatialJoin:
             sjoin(df1, df2)
 
     @pytest.mark.parametrize("dfs", ["default-index"], indirect=True)
-    @pytest.mark.parametrize("op", ["intersects", "contains", "within"])
-    def test_deprecated_op_param(self, dfs, op):
-        _, df1, df2, _ = dfs
-        with pytest.warns(FutureWarning, match="`op` parameter is deprecated"):
-            sjoin(df1, df2, op=op)
-
-    @pytest.mark.parametrize("dfs", ["default-index"], indirect=True)
-    @pytest.mark.parametrize("op", ["intersects", "contains", "within"])
-    @pytest.mark.parametrize("predicate", ["contains", "within"])
-    def test_deprecated_op_param_nondefault_predicate(self, dfs, op, predicate):
-        _, df1, df2, _ = dfs
-        match = "use the `predicate` parameter instead"
-        if op != predicate:
-            warntype = UserWarning
-            match = (
-                "`predicate` will be overridden by the value of `op`"  # noqa: ISC003
-                + r"(.|\s)*"
-                + match
-            )
-        else:
-            warntype = FutureWarning
-        with pytest.warns(warntype, match=match):
-            sjoin(df1, df2, predicate=predicate, op=op)
-
-    @pytest.mark.parametrize("dfs", ["default-index"], indirect=True)
     def test_unknown_kwargs(self, dfs):
         _, df1, df2, _ = dfs
         with pytest.raises(
@@ -148,7 +123,6 @@ class TestSpatialJoin:
         ):
             sjoin(df1, df2, extra_param="test")
 
-    @pytest.mark.filterwarnings("ignore:The `op` parameter:FutureWarning")
     @pytest.mark.parametrize(
         "dfs",
         [
@@ -161,11 +135,10 @@ class TestSpatialJoin:
         indirect=True,
     )
     @pytest.mark.parametrize("predicate", ["intersects", "contains", "within"])
-    @pytest.mark.parametrize("predicate_kw", ["predicate", "op"])
-    def test_inner(self, predicate, predicate_kw, dfs):
+    def test_inner(self, predicate, dfs):
         index, df1, df2, expected = dfs
 
-        res = sjoin(df1, df2, how="inner", **{predicate_kw: predicate})
+        res = sjoin(df1, df2, how="inner", predicate=predicate)
 
         exp = expected[predicate].dropna().copy()
         exp = exp.drop("geometry_y", axis=1).rename(columns={"geometry_x": "geometry"})

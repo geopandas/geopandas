@@ -19,7 +19,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
-      - uses: pre-commit/action@v3.0.0
+      - uses: pre-commit/action@v3.0.1
 
   Test:
     needs: Linting
@@ -113,4 +113,4 @@ jobs:
         run: |
           pytest -v --color=yes --doctest-only geopandas --ignore=geopandas/datasets
 
-      - uses: codecov/codecov-action@v3
+      - uses: codecov/codecov-action@v4

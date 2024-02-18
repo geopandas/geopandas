@@ -267,16 +267,6 @@ def test_to_wkt():
     assert res[0] is None
 
 
-def test_data():
-    arr = from_shapely(points_no_missing)
-    with pytest.warns(DeprecationWarning):
-        np_arr = arr.data
-
-    assert isinstance(np_arr, np.ndarray)
-    assert arr.to_numpy() is np_arr
-    assert np.asarray(arr) is np_arr
-
-
 def test_as_array():
     arr = from_shapely(points_no_missing)
     np_arr1 = np.asarray(arr)
@@ -842,7 +832,7 @@ def test_equality_ops():
 
 def test_dir():
     assert "contains" in dir(P)
-    assert "data" in dir(P)
+    assert "to_numpy" in dir(P)
 
 
 def test_chaining():
