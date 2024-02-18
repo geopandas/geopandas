@@ -1512,7 +1512,7 @@ GeometryCollection
         ``GeoSeries``.
 
         By default, the unary union algorithm is used. If the geometries are
-        non-overlapping (forming a coverage), GeoPandas can use the significantly faster
+        non-overlapping (forming a coverage), GeoPandas can use a significantly faster
         algorithm to perform the union using the ``method="coverage"`` option.
 
         Parameters
