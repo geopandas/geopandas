@@ -39,7 +39,7 @@ In the following examples, these datasets are used:
 Appending
 ---------
 
-Appending :class:`GeoDataFrame` and :class:`GeoSeries` uses pandas :meth:`~pandas.DataFrame.append` methods.
+Appending :class:`GeoDataFrame` and :class:`GeoSeries` uses pandas :meth:`~pandas.concat` method.
 Keep in mind, that appended geometry columns needs to have the same CRS.
 
 .. ipython:: python
