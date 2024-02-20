@@ -7,6 +7,8 @@ see geopandas.tests.util for more information.
 
 import os
 import warnings
+from importlib.util import find_spec
+from typing import Literal
 
 import pandas as pd
 
@@ -26,21 +28,7 @@ except ImportError:
     text = str
 
 
-@pytest.fixture()
-def parameterised_fixture(request):
-    """A fixture that can accept other fixtures as a parameter.
-
-    Pass in the string name of the fixture needed."""
-    return request.getfixturevalue(request.param)
-
-
-@pytest.fixture
-def df_nybb(nybb_filename):
-    df = read_file(nybb_filename)
-    return df
-
-
-def prepare_database_credentials():
+def prepare_database_credentials() -> dict:
     """Gather postgres connection credentials from environment variables."""
     return {
         "dbname": "test_geopandas",
@@ -58,41 +46,13 @@ def connection_psycopg_any(psycopg_package_name: str):
     try:
         con = psycopg.connect(**prepare_database_credentials())
     except psycopg.OperationalError:
-        pytest.skip("Cannot connect to with postgresql database")
+        pytest.skip("Cannot connect with postgresql database")
     with warnings.catch_warnings():
         warnings.filterwarnings(
             "ignore", message="pandas only supports SQLAlchemy connectable.*"
         )
         yield con
         con.close()
-
-
-@pytest.fixture()
-def connection_psycopg2():
-    """
-    Use psycopg2 to initiate a connection to a postGIS database that must already exist.
-    See create_postgis for more information.
-    """
-    yield from connection_psycopg_any("psycopg2")
-
-
-@pytest.fixture()
-def connection_psycopg3():
-    """
-    Use psycopg3 to initiate a connection to a postGIS database that must already exist.
-    See create_postgis for more information.
-    """
-    yield from connection_psycopg_any(
-        "psycopg"
-    )  # package name is psycopg, not psycopg3
-
-
-# Use this in pytest.mark.parametrize() to make a test run on both psycopg2 and psycopg3
-psycopg_params = (
-    "parameterised_fixture",
-    ["connection_psycopg2", "connection_psycopg3"],
-    True,
-)
 
 
 def engine_psycopg_any(psycopg_package_name: str):
@@ -122,6 +82,67 @@ def engine_psycopg_any(psycopg_package_name: str):
     con.dispose()
 
 
+def prepare_psycopg_fixtures(fixture_prefix: Literal["connection", "engine"]):
+    """Work out which of psycopg2 and psycopg are available and create a parameter to
+    pass to pytest.mark.parametrize(), so tests run on none, one or both of the packages
+
+    This stops tests running if the relevant package isn't installed
+    (rather than being skipped, as skips are treated as failures during postgis CI)
+
+    Arguments:
+        fixture_prefix: "connection" or "engine", to match either name of either
+        connection_psycopg or engine_psycopg fixtures
+    """
+    connections_available = []
+    if find_spec("psycopg2"):
+        connections_available.append(f"{fixture_prefix}_psycopg2")
+    if find_spec("psycopg"):
+        connections_available.append(f"{fixture_prefix}_psycopg3")
+    return (
+        "parameterised_fixture",
+        connections_available,
+        True,
+    )
+
+
+CONNECTION_PARAMS = prepare_psycopg_fixtures("connection")
+ENGINE_PARAMS = prepare_psycopg_fixtures("engine")
+
+
+@pytest.fixture()
+def parameterised_fixture(request):
+    """A fixture that can accept other fixtures as a parameter.
+
+    Pass in the string name of the fixture needed."""
+    return request.getfixturevalue(request.param)
+
+
+@pytest.fixture
+def df_nybb(nybb_filename):
+    df = read_file(nybb_filename)
+    return df
+
+
+@pytest.fixture()
+def connection_psycopg2():
+    """
+    Use psycopg2 to initiate a connection to a postGIS database that must already exist.
+    See create_postgis for more information.
+    """
+    yield from connection_psycopg_any("psycopg2")
+
+
+@pytest.fixture()
+def connection_psycopg3():
+    """
+    Use psycopg3 to initiate a connection to a postGIS database that must already exist.
+    See create_postgis for more information.
+    """
+    yield from connection_psycopg_any(
+        "psycopg"
+    )  # package name is psycopg, not psycopg3
+
+
 @pytest.fixture()
 def engine_psycopg2():
     """Uses psycopg2 to connect a sqlalchemy engine to an existing postGIS database."""
@@ -132,14 +153,6 @@ def engine_psycopg2():
 def engine_psycopg3():
     """Uses psycopg to connect a sqlalchemy engine to an existing postGIS database."""
     yield from engine_psycopg_any("psycopg")
-
-
-# Use this in pytest.mark.parametrize() to make a test run on both psycopg2 and psycopg3
-engine_params = (
-    "parameterised_fixture",
-    ["engine_psycopg2", "engine_psycopg3"],
-    True,
-)
 
 
 @pytest.fixture()
@@ -253,7 +266,7 @@ def df_3D_geoms():
 
 
 class TestIO:
-    @pytest.mark.parametrize(*engine_params)
+    @pytest.mark.parametrize(*ENGINE_PARAMS)
     def test_get_conn(self, parameterised_fixture):
         Connection = pytest.importorskip("sqlalchemy.engine.base").Connection
 
@@ -267,7 +280,7 @@ class TestIO:
             with get_conn(object()):
                 pass
 
-    @pytest.mark.parametrize(*psycopg_params)
+    @pytest.mark.parametrize(*CONNECTION_PARAMS)
     def test_read_postgis_default(self, parameterised_fixture, df_nybb):
         con = parameterised_fixture
         create_postgis(con, df_nybb)
@@ -280,7 +293,7 @@ class TestIO:
         # by user; should not be set to 0, as from get_srid failure
         assert df.crs is None
 
-    @pytest.mark.parametrize(*psycopg_params)
+    @pytest.mark.parametrize(*CONNECTION_PARAMS)
     def test_read_postgis_custom_geom_col(self, parameterised_fixture, df_nybb):
         con = parameterised_fixture
         geom_col = "the_geom"
@@ -291,7 +304,7 @@ class TestIO:
 
         validate_boro_df(df)
 
-    @pytest.mark.parametrize(*psycopg_params)
+    @pytest.mark.parametrize(*CONNECTION_PARAMS)
     def test_read_postgis_select_geom_as(self, parameterised_fixture, df_nybb):
         """Tests that a SELECT {geom} AS {some_other_geom} works."""
         con = parameterised_fixture
@@ -307,7 +320,7 @@ class TestIO:
 
         validate_boro_df(df)
 
-    @pytest.mark.parametrize(*psycopg_params)
+    @pytest.mark.parametrize(*CONNECTION_PARAMS)
     def test_read_postgis_get_srid(self, parameterised_fixture, df_nybb):
         """Tests that an SRID can be read from a geodatabase (GH #451)."""
         con = parameterised_fixture
@@ -321,7 +334,7 @@ class TestIO:
         validate_boro_df(df)
         assert df.crs == crs
 
-    @pytest.mark.parametrize(*psycopg_params)
+    @pytest.mark.parametrize(*CONNECTION_PARAMS)
     def test_read_postgis_override_srid(self, parameterised_fixture, df_nybb):
         """Tests that a user specified CRS overrides the geodatabase SRID."""
         con = parameterised_fixture
@@ -334,7 +347,7 @@ class TestIO:
         validate_boro_df(df)
         assert df.crs == orig_crs
 
-    @pytest.mark.parametrize(*psycopg_params)
+    @pytest.mark.parametrize(*CONNECTION_PARAMS)
     def test_from_postgis_default(self, parameterised_fixture, df_nybb):
         con = parameterised_fixture
         create_postgis(con, df_nybb)
@@ -344,7 +357,7 @@ class TestIO:
 
         validate_boro_df(df, case_sensitive=False)
 
-    @pytest.mark.parametrize(*psycopg_params)
+    @pytest.mark.parametrize(*CONNECTION_PARAMS)
     def test_from_postgis_custom_geom_col(self, parameterised_fixture, df_nybb):
         con = parameterised_fixture
         geom_col = "the_geom"
@@ -380,7 +393,7 @@ class TestIO:
         df = read_postgis(sql, con, geom_col=geom_col)
         validate_boro_df(df)
 
-    @pytest.mark.parametrize(*psycopg_params)
+    @pytest.mark.parametrize(*CONNECTION_PARAMS)
     def test_read_postgis_chunksize(self, parameterised_fixture, df_nybb):
         """Test chunksize argument"""
         chunksize = 2
@@ -395,7 +408,7 @@ class TestIO:
         # by user; should not be set to 0, as from get_srid failure
         assert df.crs is None
 
-    @pytest.mark.parametrize(*engine_params)
+    @pytest.mark.parametrize(*ENGINE_PARAMS)
     def test_write_postgis_default(self, parameterised_fixture, df_nybb):
         """Tests that GeoDataFrame can be written to PostGIS with defaults."""
         engine = parameterised_fixture
@@ -411,7 +424,7 @@ class TestIO:
         df = read_postgis(sql, engine, geom_col="geometry")
         validate_boro_df(df)
 
-    @pytest.mark.parametrize(*engine_params)
+    @pytest.mark.parametrize(*ENGINE_PARAMS)
     def test_write_postgis_uppercase_tablename(self, parameterised_fixture, df_nybb):
         """Tests writing GeoDataFrame to PostGIS with uppercase tablename."""
         engine = parameterised_fixture
@@ -427,7 +440,7 @@ class TestIO:
         df = read_postgis(sql, engine, geom_col="geometry")
         validate_boro_df(df)
 
-    @pytest.mark.parametrize(*engine_params)
+    @pytest.mark.parametrize(*ENGINE_PARAMS)
     def test_write_postgis_sqlalchemy_connection(self, parameterised_fixture, df_nybb):
         """Tests that GeoDataFrame can be written to PostGIS with defaults."""
         with parameterised_fixture.begin() as con:
@@ -443,7 +456,7 @@ class TestIO:
             df = read_postgis(sql, con, geom_col="geometry")
             validate_boro_df(df)
 
-    @pytest.mark.parametrize(*engine_params)
+    @pytest.mark.parametrize(*ENGINE_PARAMS)
     def test_write_postgis_fail_when_table_exists(self, parameterised_fixture, df_nybb):
         """
         Tests that uploading the same table raises error when: if_replace='fail'.
@@ -463,7 +476,7 @@ class TestIO:
             else:
                 raise e
 
-    @pytest.mark.parametrize(*engine_params)
+    @pytest.mark.parametrize(*ENGINE_PARAMS)
     def test_write_postgis_replace_when_table_exists(
         self, parameterised_fixture, df_nybb
     ):
@@ -483,7 +496,7 @@ class TestIO:
         df = read_postgis(sql, engine, geom_col="geometry")
         validate_boro_df(df)
 
-    @pytest.mark.parametrize(*engine_params)
+    @pytest.mark.parametrize(*ENGINE_PARAMS)
     def test_write_postgis_append_when_table_exists(
         self, parameterised_fixture, df_nybb
     ):
@@ -516,7 +529,7 @@ class TestIO:
             ),
         )
 
-    @pytest.mark.parametrize(*engine_params)
+    @pytest.mark.parametrize(*ENGINE_PARAMS)
     def test_write_postgis_without_crs(self, parameterised_fixture, df_nybb):
         """
         Tests that GeoDataFrame can be written to PostGIS without CRS information.
@@ -539,7 +552,7 @@ class TestIO:
             target_srid = conn.execute(sql).fetchone()[0]
         assert target_srid == 0, "SRID should be 0, found %s" % target_srid
 
-    @pytest.mark.parametrize(*engine_params)
+    @pytest.mark.parametrize(*ENGINE_PARAMS)
     def test_write_postgis_with_esri_authority(self, parameterised_fixture, df_nybb):
         """
         Tests that GeoDataFrame can be written to PostGIS with ESRI Authority
@@ -562,7 +575,7 @@ class TestIO:
             target_srid = conn.execute(sql).fetchone()[0]
         assert target_srid == 102003, "SRID should be 102003, found %s" % target_srid
 
-    @pytest.mark.parametrize(*engine_params)
+    @pytest.mark.parametrize(*ENGINE_PARAMS)
     def test_write_postgis_geometry_collection(
         self, parameterised_fixture, df_geom_collection
     ):
@@ -589,7 +602,7 @@ class TestIO:
         assert geom_type.upper() == "GEOMETRYCOLLECTION"
         assert df.geom_type.unique()[0] == "GeometryCollection"
 
-    @pytest.mark.parametrize(*engine_params)
+    @pytest.mark.parametrize(*ENGINE_PARAMS)
     def test_write_postgis_mixed_geometry_types(
         self, parameterised_fixture, df_mixed_single_and_multi
     ):
@@ -616,7 +629,7 @@ class TestIO:
         assert res[1][0].upper() == "MULTILINESTRING"
         assert res[2][0].upper() == "POINT"
 
-    @pytest.mark.parametrize(*engine_params)
+    @pytest.mark.parametrize(*ENGINE_PARAMS)
     def test_write_postgis_linear_ring(self, parameterised_fixture, df_linear_ring):
         """
         Tests that writing a LinearRing.
@@ -638,7 +651,7 @@ class TestIO:
 
         assert geom_type.upper() == "LINESTRING"
 
-    @pytest.mark.parametrize(*engine_params)
+    @pytest.mark.parametrize(*ENGINE_PARAMS)
     def test_write_postgis_in_chunks(
         self, parameterised_fixture, df_mixed_single_and_multi
     ):
@@ -674,7 +687,7 @@ class TestIO:
         assert res[1][0].upper() == "MULTILINESTRING"
         assert res[2][0].upper() == "POINT"
 
-    @pytest.mark.parametrize(*engine_params)
+    @pytest.mark.parametrize(*ENGINE_PARAMS)
     def test_write_postgis_to_different_schema(self, parameterised_fixture, df_nybb):
         """
         Tests writing data to alternative schema.
@@ -698,7 +711,7 @@ class TestIO:
         df = read_postgis(sql, engine, geom_col="geometry")
         validate_boro_df(df)
 
-    @pytest.mark.parametrize(*engine_params)
+    @pytest.mark.parametrize(*ENGINE_PARAMS)
     def test_write_postgis_to_different_schema_when_table_exists(
         self, parameterised_fixture, df_nybb
     ):
@@ -743,7 +756,7 @@ class TestIO:
         df = read_postgis(sql, engine, geom_col="geometry")
         validate_boro_df(df)
 
-    @pytest.mark.parametrize(*engine_params)
+    @pytest.mark.parametrize(*ENGINE_PARAMS)
     def test_write_postgis_3D_geometries(self, parameterised_fixture, df_3D_geoms):
         """
         Tests writing a geometries with 3 dimensions works.
@@ -759,7 +772,7 @@ class TestIO:
         df = read_postgis(sql, engine, geom_col="geometry")
         assert list(df.geometry.has_z) == [True, True, True]
 
-    @pytest.mark.parametrize(*engine_params)
+    @pytest.mark.parametrize(*ENGINE_PARAMS)
     def test_row_order(self, parameterised_fixture, df_nybb):
         """
         Tests that the row order in db table follows the order of the original frame.
@@ -776,7 +789,7 @@ class TestIO:
         df = read_postgis(sql, engine, geom_col="geometry")
         assert df["BoroCode"].tolist() == correct_order
 
-    @pytest.mark.parametrize(*engine_params)
+    @pytest.mark.parametrize(*ENGINE_PARAMS)
     def test_append_before_table_exists(self, parameterised_fixture, df_nybb):
         """
         Tests that insert works with if_exists='append' when table does not exist yet.
@@ -794,7 +807,7 @@ class TestIO:
         df = read_postgis(sql, engine, geom_col="geometry")
         validate_boro_df(df)
 
-    @pytest.mark.parametrize(*engine_params)
+    @pytest.mark.parametrize(*ENGINE_PARAMS)
     def test_append_with_different_crs(self, parameterised_fixture, df_nybb):
         """
         Tests that the warning is raised if table CRS differs from frame.
@@ -811,7 +824,7 @@ class TestIO:
         with pytest.raises(ValueError, match="CRS of the target table"):
             write_postgis(df_nybb2, con=engine, name=table, if_exists="append")
 
-    @pytest.mark.parametrize(*engine_params)
+    @pytest.mark.parametrize(*ENGINE_PARAMS)
     @pytest.mark.xfail(
         compat.PANDAS_GE_20 and not compat.PANDAS_GE_202,
         reason="Duplicate columns are dropped in read_sql with pandas 2.0.0 and 2.0.1",
