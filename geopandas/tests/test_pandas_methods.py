@@ -754,6 +754,7 @@ def test_apply_loc_len1(df):
     np.testing.assert_allclose(result, expected)
 
 
+@pytest.mark.skipif(compat.PANDAS_GE_30, reason="convert_dtype is removed in pandas 3")
 def test_apply_convert_dtypes_keyword(s):
     # ensure the convert_dtypes keyword is accepted
     if not compat.PANDAS_GE_21:
