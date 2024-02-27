@@ -4994,11 +4994,13 @@ GeometryCollection
                 )
             sample_function = getattr(pointpats.random, method)
             result = self.geometry.apply(
-                lambda x: points_from_xy(
-                    *sample_function(x, size=size, **kwargs).T
-                ).union_all()
-                if not (x.is_empty or x is None or "Polygon" not in x.geom_type)
-                else MultiPoint(),
+                lambda x: (
+                    points_from_xy(
+                        *sample_function(x, size=size, **kwargs).T
+                    ).union_all()
+                    if not (x.is_empty or x is None or "Polygon" not in x.geom_type)
+                    else MultiPoint()
+                ),
             )
 
         return GeoSeries(result, name="sampled_points", crs=self.crs, index=self.index)

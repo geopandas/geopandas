@@ -27,18 +27,15 @@ def cumsum(whatever):
     method="cumavg",
     operation="average",
 )
-def cumavg(whatever):
-    ...
+def cumavg(whatever): ...
 
 
 @doc(cumsum, method="cummax", operation="maximum")
-def cummax(whatever):
-    ...
+def cummax(whatever): ...
 
 
 @doc(cummax, method="cummin", operation="minimum")
-def cummin(whatever):
-    ...
+def cummin(whatever): ...
 
 
 def test_docstring_formatting():
