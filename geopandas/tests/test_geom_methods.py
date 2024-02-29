@@ -1791,3 +1791,41 @@ class TestGeomMethods:
             ],
         )
         assert_geoseries_equal(expected, self.g1.force_3d([1, 2]))
+
+    def test_build_area(self):
+        s = GeoSeries.from_wkt(
+            [
+                "LINESTRING (18 4, 4 2, 2 9)",
+                "LINESTRING (18 4, 16 16)",
+                "LINESTRING (16 16, 8 19, 8 12, 2 9)",
+                "LINESTRING (8 6, 12 13, 15 8)",
+                "LINESTRING (8 6, 15 8)",
+                "LINESTRING (0 0, 0 3, 3 3, 3 0, 0 0)",
+                "POLYGON ((1 1, 2 2, 1 2, 1 1))",
+                "LINESTRING (10 7, 13 8, 12 10, 10 7)",
+            ],
+            crs=4326,
+        )
+
+        expected = GeoSeries.from_wkt(
+            [
+                "POLYGON ((0 3, 3 3, 3 0, 0 0, 0 3), (2 2, 1 2, 1 1, 2 2))",
+                "POLYGON ((13 8, 10 7, 12 10, 13 8))",
+                "POLYGON ((2 9, 8 12, 8 19, 16 16, 18 4, 4 2, 2 9), "
+                "(8 6, 15 8, 12 13, 8 6))",
+            ],
+            crs=4326,
+            name="polygons",
+        )
+        assert_geoseries_equal(expected, s.build_area(node=True))
+
+        expected = GeoSeries.from_wkt(
+            [
+                "POLYGON ((0 0, 0 3, 3 3, 3 0, 0 0))",
+                "POLYGON ((1 1, 1 2, 2 2, 1 1))",
+                "POLYGON ((10 7, 12 10, 13 8, 10 7))",
+            ],
+            crs=4326,
+            name="polygons",
+        )
+        assert_geoseries_equal(expected, s.build_area(node=False))
