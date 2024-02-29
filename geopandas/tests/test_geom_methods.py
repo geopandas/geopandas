@@ -1792,6 +1792,9 @@ class TestGeomMethods:
         )
         assert_geoseries_equal(expected, self.g1.force_3d([1, 2]))
 
+    @pytest.mark.skipif(
+        shapely.geos_version < (3, 11, 0), reason="different order in GEOS<3.11"
+    )
     def test_build_area(self):
         s = GeoSeries.from_wkt(
             [
