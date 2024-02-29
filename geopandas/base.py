@@ -5035,7 +5035,7 @@ GeometryCollection
 
         Examples
         --------
-        >>> from shapely.geometry import LineString
+        >>> from shapely.geometry import LineString, Polygon
         >>> s = geopandas.GeoSeries([
         ...     LineString([(18, 4), (4, 2), (2, 9)]),
         ...     LineString([(18, 4), (16, 16)]),
