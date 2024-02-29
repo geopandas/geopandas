@@ -5138,7 +5138,7 @@ def _get_index_for_parts(orig_idx, outer_idx, ignore_index, index_parts):
             index_arrays.append(inner_index)
 
             index = pd.MultiIndex.from_arrays(
-                index_arrays, names=orig_idx.names + [None]
+                index_arrays, names=list(orig_idx.names) + [None]
             )
 
         else:

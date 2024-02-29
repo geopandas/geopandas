@@ -19,7 +19,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
-      - uses: pre-commit/action@v3.0.0
+      - uses: pre-commit/action@v3.0.1
 
   Test:
     needs: Linting
@@ -86,14 +86,14 @@ jobs:
         env:
           PANDAS_COPY_ON_WRITE: ${{ matrix.pandas_copy_on_write || '0' }}
         run: |
-          pytest -v -r a -n auto --color=yes --cov=geopandas --cov-append --cov-report term-missing --cov-report xml geopandas/
+          pytest -v -r fEs -n auto --color=yes --cov=geopandas --cov-append --cov-report term-missing --cov-report xml geopandas/
 
       - name: Test with Copy-on-Write
         if: ${{ always() && matrix.dev }}
         env:
           PANDAS_COPY_ON_WRITE: '1'
         run: |
-          pytest -v -r a -n auto --color=yes --cov=geopandas --cov-append --cov-report term-missing --cov-report xml geopandas/
+          pytest -v -r fEs -n auto --color=yes --cov=geopandas --cov-append --cov-report term-missing --cov-report xml geopandas/
 
       - name: Test with PostGIS
         if: (contains(matrix.env, '310-pd20-conda-forge.yaml') || contains(matrix.env, '311-latest-conda-forge.yaml'))
@@ -106,11 +106,11 @@ jobs:
         run: |
           conda install postgis -c conda-forge
           sh ci/scripts/setup_postgres.sh
-          pytest -v -r a --color=yes --cov=geopandas --cov-append --cov-report term-missing --cov-report xml geopandas/io/tests/test_sql.py | tee /dev/stderr | if grep SKIPPED >/dev/null;then echo "TESTS SKIPPED, FAILING" && exit 1;fi
+          pytest -v -r fEs --color=yes --cov=geopandas --cov-append --cov-report term-missing --cov-report xml geopandas/io/tests/test_sql.py | tee /dev/stderr | if grep SKIPPED >/dev/null;then echo "TESTS SKIPPED, FAILING" && exit 1;fi
 
       - name: Test docstrings
         if: contains(matrix.env, '310-pd20-conda-forge.yaml') && contains(matrix.os, 'ubuntu')
         run: |
           pytest -v --color=yes --doctest-only geopandas --ignore=geopandas/datasets
 
-      - uses: codecov/codecov-action@v3
+      - uses: codecov/codecov-action@v4

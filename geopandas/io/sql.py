@@ -78,10 +78,6 @@ def _df_to_geodf(df, geom_col="geom", crs=None):
         load_geom_bytes = shapely.wkb.loads
         """Load from Python 3 binary."""
 
-        def load_geom_buffer(x):
-            """Load from Python 2 binary."""
-            return shapely.wkb.loads(str(x))
-
         def load_geom_text(x):
             """Load from binary encoded as text."""
             return shapely.wkb.loads(str(x), hex=True)
@@ -185,19 +181,6 @@ def _read_postgis(
             chunksize=chunksize,
         )
         return (_df_to_geodf(df, geom_col=geom_col, crs=crs) for df in df_generator)
-
-
-def read_postgis(*args, **kwargs):
-    import warnings
-
-    warnings.warn(
-        "geopandas.io.sql.read_postgis() is intended for internal "
-        "use only, and will be deprecated. Use geopandas.read_postgis() instead.",
-        FutureWarning,
-        stacklevel=2,
-    )
-
-    return _read_postgis(*args, **kwargs)
 
 
 def _get_geometry_type(gdf):

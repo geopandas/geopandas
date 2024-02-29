@@ -1,5 +1,4 @@
 from typing import Optional
-import warnings
 
 import numpy as np
 import pandas as pd
@@ -15,6 +14,7 @@ def sjoin(
     predicate="intersects",
     lsuffix="left",
     rsuffix="right",
+    distance=None,
     **kwargs,
 ):
     """Spatial join of two GeoDataFrames.
@@ -42,6 +42,11 @@ def sjoin(
         Suffix to apply to overlapping column names (left GeoDataFrame).
     rsuffix : string, default 'right'
         Suffix to apply to overlapping column names (right GeoDataFrame).
+    distance : number or array_like, optional
+        Distance(s) around each input geometry within which to query the tree
+        for the 'dwithin' predicate. If array_like, must be
+        one-dimesional with length equal to length of left GeoDataFrame.
+        Required if ``predicate='dwithin'``.
 
     Examples
     --------
@@ -91,33 +96,13 @@ def sjoin(
     Every operation in GeoPandas is planar, i.e. the potential third
     dimension is not taken into account.
     """
-    if "op" in kwargs:
-        op = kwargs.pop("op")
-        deprecation_message = (
-            "The `op` parameter is deprecated and will be removed"
-            " in a future release. Please use the `predicate` parameter"
-            " instead."
-        )
-        if predicate != "intersects" and op != predicate:
-            override_message = (
-                "A non-default value for `predicate` was passed"
-                f' (got `predicate="{predicate}"`'
-                f' in combination with `op="{op}"`).'
-                " The value of `predicate` will be overridden by the value of `op`,"
-                " , which may result in unexpected behavior."
-                f"\n{deprecation_message}"
-            )
-            warnings.warn(override_message, UserWarning, stacklevel=4)
-        else:
-            warnings.warn(deprecation_message, FutureWarning, stacklevel=4)
-        predicate = op
     if kwargs:
         first = next(iter(kwargs.keys()))
         raise TypeError(f"sjoin() got an unexpected keyword argument '{first}'")
 
     _basic_checks(left_df, right_df, how, lsuffix, rsuffix)
 
-    indices = _geom_predicate_query(left_df, right_df, predicate)
+    indices = _geom_predicate_query(left_df, right_df, predicate, distance)
 
     joined = _frame_join(indices, left_df, right_df, how, lsuffix, rsuffix)
 
@@ -174,7 +159,7 @@ def _basic_checks(left_df, right_df, how, lsuffix, rsuffix):
         )
 
 
-def _geom_predicate_query(left_df, right_df, predicate):
+def _geom_predicate_query(left_df, right_df, predicate, distance):
     """Compute geometric comparisons and get matching indices.
 
     Parameters
@@ -190,30 +175,26 @@ def _geom_predicate_query(left_df, right_df, predicate):
         DataFrame with matching indices in
         columns named `_key_left` and `_key_right`.
     """
-    with warnings.catch_warnings():
-        # We don't need to show our own warning here
-        # TODO remove this once the deprecation has been enforced
-        warnings.filterwarnings(
-            "ignore", "Generated spatial index is empty", FutureWarning
-        )
 
-        original_predicate = predicate
+    original_predicate = predicate
 
-        if predicate == "within":
-            # within is implemented as the inverse of contains
-            # contains is a faster predicate
-            # see discussion at https://github.com/geopandas/geopandas/pull/1421
-            predicate = "contains"
-            sindex = left_df.sindex
-            input_geoms = right_df.geometry
-        else:
-            # all other predicates are symmetric
-            # keep them the same
-            sindex = right_df.sindex
-            input_geoms = left_df.geometry
+    if predicate == "within":
+        # within is implemented as the inverse of contains
+        # contains is a faster predicate
+        # see discussion at https://github.com/geopandas/geopandas/pull/1421
+        predicate = "contains"
+        sindex = left_df.sindex
+        input_geoms = right_df.geometry
+    else:
+        # all other predicates are symmetric
+        # keep them the same
+        sindex = right_df.sindex
+        input_geoms = left_df.geometry
 
     if sindex:
-        l_idx, r_idx = sindex.query(input_geoms, predicate=predicate, sort=False)
+        l_idx, r_idx = sindex.query(
+            input_geoms, predicate=predicate, sort=False, distance=distance
+        )
         indices = pd.DataFrame({"_key_left": l_idx, "_key_right": r_idx})
     else:
         # when sindex is empty / has no valid geometries

@@ -1,10 +1,14 @@
-import warnings
-
 import numpy as np
 import shapely
 from shapely.geometry.base import BaseGeometry
 
 from . import array, geoseries
+from . import _compat as compat
+
+PREDICATES = {p.name for p in shapely.strtree.BinaryPredicate} | {None}
+
+if compat.GEOS_GE_310:
+    PREDICATES.update(["dwithin"])
 
 
 class SpatialIndex:
@@ -44,11 +48,11 @@ class SpatialIndex:
         >>> s = geopandas.GeoSeries([Point(0, 0), Point(1, 1)])
         >>> s.sindex.valid_query_predicates  # doctest: +SKIP
         {None, "contains", "contains_properly", "covered_by", "covers", \
-"crosses", "intersects", "overlaps", "touches", "within"}
+"crosses", "dwithin", "intersects", "overlaps", "touches", "within"}
         """
-        return {p.name for p in shapely.strtree.BinaryPredicate} | {None}
+        return PREDICATES
 
-    def query(self, geometry, predicate=None, sort=False):
+    def query(self, geometry, predicate=None, sort=False, distance=None):
         """
         Return the integer indices of all combinations of each input geometry
         and tree geometries where the bounding box of each input geometry
@@ -67,6 +71,8 @@ class SpatialIndex:
         to those that meet the predicate when comparing the input geometry to
         the tree geometry: ``predicate(geometry, tree_geometry)``.
 
+        The 'dwithin' predicate requires GEOS >= 3.10.
+
         Bounding boxes are limited to two dimensions and are axis-aligned
         (equivalent to the ``bounds`` property of a geometry); any Z values
         present in input geometries are ignored when querying the tree.
@@ -83,7 +89,7 @@ class SpatialIndex:
             iterables (GeoSeries, GeometryArray) or a numpy array of Shapely
             geometries.
         predicate : {None, "contains", "contains_properly", "covered_by", "covers", \
-"crosses", "intersects", "overlaps", "touches", "within"}, optional
+"crosses", "intersects", "overlaps", "touches", "within", "dwithin"}, optional
             If predicate is provided, the input geometries are tested
             using the predicate function against each item in the tree
             whose extent intersects the envelope of the input geometry:
@@ -97,6 +103,10 @@ class SpatialIndex:
             as the secondary key.
             If False, no additional sorting is applied (results are often
             sorted but there is no guarantee).
+        distance : number or array_like, optional
+            Distances around each input geometry within which to query the tree for
+            the 'dwithin' predicate. If array_like, shape must be broadcastable to shape
+            of geometry. Required if ``predicate='dwithin'``.
 
         Returns
         -------
@@ -151,6 +161,12 @@ class SpatialIndex:
         array([[0],
                [3]])
 
+        >>> s.sindex.query(box(1, 1, 3, 3), predicate="dwithin", distance=0)
+        array([1, 2, 3])
+
+        >>> s.sindex.query(box(1, 1, 3, 3), predicate="dwithin", distance=2)
+        array([0, 1, 2, 3, 4])
+
         Notes
         -----
         In the context of a spatial join, input geometries are the "left"
@@ -161,14 +177,36 @@ class SpatialIndex:
         optional predicate are returned.
         """
         if predicate not in self.valid_query_predicates:
+            if predicate == "dwithin":
+                raise ValueError("predicate = 'dwithin' requires GEOS >= 3.10.0")
+
             raise ValueError(
-                "Got `predicate` = `{}`; ".format(predicate)
+                "Got predicate='{}'; ".format(predicate)
                 + "`predicate` must be one of {}".format(self.valid_query_predicates)
+            )
+
+        # distance argument requirement of predicate `dwithin`
+        # and only valid for predicate `dwithin`
+        kwargs = {}
+        if predicate == "dwithin":
+            if distance is None:
+                # the distance parameter is needed
+                raise ValueError(
+                    "'distance' parameter is required for 'dwithin' predicate"
+                )
+            # add distance to kwargs
+            kwargs["distance"] = distance
+
+        elif distance is not None:
+            # distance parameter is invalid
+            raise ValueError(
+                "'distance' parameter is only supported in combination with "
+                "'dwithin' predicate"
             )
 
         geometry = self._as_geometry_array(geometry)
 
-        indices = self._tree.query(geometry, predicate=predicate)
+        indices = self._tree.query(geometry, predicate=predicate, **kwargs)
 
         if sort:
             if indices.ndim == 1:
@@ -208,82 +246,6 @@ class SpatialIndex:
             return None
         else:
             return np.asarray(geometry)
-
-    def query_bulk(self, geometry, predicate=None, sort=False):
-        """
-        DEPRECATED: use `query` instead.
-
-        Returns all combinations of each input geometry and geometries in
-        the tree where the envelope of each input geometry intersects with
-        the envelope of a tree geometry.
-
-        In the context of a spatial join, input geometries are the “left”
-        geometries that determine the order of the results, and tree geometries
-        are “right” geometries that are joined against the left geometries.
-        This effectively performs an inner join, where only those combinations
-        of geometries that can be joined based on envelope overlap or optional
-        predicate are returned.
-
-        Parameters
-        ----------
-        geometry : {GeoSeries, GeometryArray, numpy.array of Shapely geometries}
-            Accepts GeoPandas geometry iterables (GeoSeries, GeometryArray)
-            or a numpy array of Shapely geometries.
-        predicate : {None, "contains", "contains_properly", "covered_by", "covers", \
-"crosses", "intersects", "overlaps", "touches", "within"}, optional
-            If predicate is provided, the input geometries are tested using
-            the predicate function against each item in the tree whose extent
-            intersects the envelope of the each input geometry:
-            predicate(input_geometry, tree_geometry).  If possible, prepared
-            geometries are used to help speed up the predicate operation.
-        sort : bool, default False
-            If True, results sorted lexicographically using
-            geometry's indexes as the primary key and the sindex's indexes as the
-            secondary key. If False, no additional sorting is applied.
-
-        Returns
-        -------
-        ndarray with shape (2, n)
-            The first subarray contains input geometry integer indexes.
-            The second subarray contains tree geometry integer indexes.
-
-        Examples
-        --------
-        >>> from shapely.geometry import Point, box
-        >>> s = geopandas.GeoSeries(geopandas.points_from_xy(range(10), range(10)))
-        >>> s
-        0    POINT (0 0)
-        1    POINT (1 1)
-        2    POINT (2 2)
-        3    POINT (3 3)
-        4    POINT (4 4)
-        5    POINT (5 5)
-        6    POINT (6 6)
-        7    POINT (7 7)
-        8    POINT (8 8)
-        9    POINT (9 9)
-        dtype: geometry
-        >>> s2 = geopandas.GeoSeries([box(2, 2, 4, 4), box(5, 5, 6, 6)])
-        >>> s2
-        0    POLYGON ((4 2, 4 4, 2 4, 2 2, 4 2))
-        1    POLYGON ((6 5, 6 6, 5 6, 5 5, 6 5))
-        dtype: geometry
-
-        >>> s.sindex.query_bulk(s2)
-        array([[0, 0, 0, 1, 1],
-                [2, 3, 4, 5, 6]])
-
-        >>> s.sindex.query_bulk(s2, predicate="contains")
-        array([[0],
-                [3]])
-        """
-        warnings.warn(
-            "The `query_bulk()` method is deprecated and will be removed in "
-            "GeoPandas 1.0. You can use the `query()` method instead.",
-            FutureWarning,
-            stacklevel=2,
-        )
-        return self.query(geometry, predicate=predicate, sort=sort)
 
     def nearest(
         self,

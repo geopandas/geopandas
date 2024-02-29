@@ -8,7 +8,7 @@ import pandas as pd
 
 from pyproj import CRS
 from pyproj.exceptions import CRSError
-from shapely.geometry import Point, Polygon
+from shapely.geometry import Point, Polygon, box
 
 import geopandas
 from geopandas import GeoDataFrame, GeoSeries, points_from_xy, read_file
@@ -17,6 +17,7 @@ from geopandas.array import GeometryArray, GeometryDtype, from_shapely
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 from geopandas.tests.util import PACKAGE_DIR, validate_boro_df
 from pandas.testing import assert_frame_equal, assert_index_equal, assert_series_equal
+import geopandas._compat as compat
 import pytest
 
 
@@ -46,12 +47,13 @@ def how(request):
     return request.param
 
 
+@pytest.mark.usefixtures("_setup_class_nybb_filename")
 class TestDataFrame:
     def setup_method(self):
         N = 10
-
-        nybb_filename = geopandas.datasets.get_path("nybb")
-        self.df = read_file(nybb_filename)
+        # self.nybb_filename attached via _setup_class_nybb_filename
+        self.df = read_file(self.nybb_filename)
+        # TODO re-write instance variables to be fixtures
         self.tempdir = tempfile.mkdtemp()
         self.crs = "epsg:4326"
         self.df2 = GeoDataFrame(
@@ -363,6 +365,21 @@ class TestDataFrame:
         with pytest.raises(AttributeError, match=msg_geo_col_missing):
             df.geometry
 
+    def test_active_geometry_name(self):
+        # default single active called "geometry"
+        assert self.df.active_geometry_name == "geometry"
+
+        # one GeoSeries, not active
+        no_active = GeoDataFrame({"foo": self.df.BoroName, "bar": self.df.geometry})
+        assert no_active.active_geometry_name is None
+        assert no_active.set_geometry("bar").active_geometry_name == "bar"
+
+        # multiple, none active
+        multiple = GeoDataFrame({"foo": self.df.geometry, "bar": self.df.geometry})
+        assert multiple.active_geometry_name is None
+        assert multiple.set_geometry("foo").active_geometry_name == "foo"
+        assert multiple.set_geometry("bar").active_geometry_name == "bar"
+
     def test_align(self):
         df = self.df2
 
@@ -588,9 +605,8 @@ class TestDataFrame:
         df = GeoDataFrame.from_dict(data, geometry="location")
         assert df._geometry_column_name == "location"
 
-    def test_from_features(self):
+    def test_from_features(self, nybb_filename):
         fiona = pytest.importorskip("fiona")
-        nybb_filename = geopandas.datasets.get_path("nybb")
         with fiona.open(nybb_filename) as f:
             features = list(f)
             crs = f.crs_wkt
@@ -828,40 +844,40 @@ class TestDataFrame:
         df.loc[0, "BoroName"] = np.nan
         # when containing missing values
         # null: output the missing entries as JSON null
-        result = list(df.iterfeatures(na="null"))[0]["properties"]
+        result = next(iter(df.iterfeatures(na="null")))["properties"]
         assert result["BoroName"] is None
         # drop: remove the property from the feature.
-        result = list(df.iterfeatures(na="drop"))[0]["properties"]
+        result = next(iter(df.iterfeatures(na="drop")))["properties"]
         assert "BoroName" not in result.keys()
         # keep: output the missing entries as NaN
-        result = list(df.iterfeatures(na="keep"))[0]["properties"]
+        result = next(iter(df.iterfeatures(na="keep")))["properties"]
         assert np.isnan(result["BoroName"])
 
         # test for checking that the (non-null) features are python scalars and
         # not numpy scalars
         assert type(df.loc[0, "Shape_Leng"]) is np.float64
         # null
-        result = list(df.iterfeatures(na="null"))[0]
-        assert type(result["properties"]["Shape_Leng"]) is float
+        result = next(iter(df.iterfeatures(na="null")))
+        assert isinstance(result["properties"]["Shape_Leng"], float)
         # drop
-        result = list(df.iterfeatures(na="drop"))[0]
-        assert type(result["properties"]["Shape_Leng"]) is float
+        result = next(iter(df.iterfeatures(na="drop")))
+        assert isinstance(result["properties"]["Shape_Leng"], float)
         # keep
-        result = list(df.iterfeatures(na="keep"))[0]
-        assert type(result["properties"]["Shape_Leng"]) is float
+        result = next(iter(df.iterfeatures(na="keep")))
+        assert isinstance(result["properties"]["Shape_Leng"], float)
 
         # when only having numerical columns
         df_only_numerical_cols = df[["Shape_Leng", "Shape_Area", "geometry"]]
         assert type(df_only_numerical_cols.loc[0, "Shape_Leng"]) is np.float64
         # null
-        result = list(df_only_numerical_cols.iterfeatures(na="null"))[0]
-        assert type(result["properties"]["Shape_Leng"]) is float
+        result = next(iter(df_only_numerical_cols.iterfeatures(na="null")))
+        assert isinstance(result["properties"]["Shape_Leng"], float)
         # drop
-        result = list(df_only_numerical_cols.iterfeatures(na="drop"))[0]
-        assert type(result["properties"]["Shape_Leng"]) is float
+        result = next(iter(df_only_numerical_cols.iterfeatures(na="drop")))
+        assert isinstance(result["properties"]["Shape_Leng"], float)
         # keep
-        result = list(df_only_numerical_cols.iterfeatures(na="keep"))[0]
-        assert type(result["properties"]["Shape_Leng"]) is float
+        result = next(iter(df_only_numerical_cols.iterfeatures(na="keep")))
+        assert isinstance(result["properties"]["Shape_Leng"], float)
 
         with pytest.raises(
             ValueError, match="GeoDataFrame cannot contain duplicated column names."
@@ -883,25 +899,25 @@ class TestDataFrame:
         )
         # null
         expected = {"non-scalar": [1, 2], "test_col": None}
-        result = list(df.iterfeatures(na="null"))[0].get("properties")
+        result = next(iter(df.iterfeatures(na="null"))).get("properties")
         assert expected == result
         # drop
         expected = {"non-scalar": [1, 2]}
-        result = list(df.iterfeatures(na="drop"))[0].get("properties")
+        result = next(iter(df.iterfeatures(na="drop"))).get("properties")
         assert expected == result
         # keep
         expected = {"non-scalar": [1, 2], "test_col": None}
-        result = list(df.iterfeatures(na="keep"))[0].get("properties")
+        result = next(iter(df.iterfeatures(na="keep"))).get("properties")
         assert expected == result
 
     def test_geodataframe_geojson_no_bbox(self):
-        geo = self.df._to_geo(na="null", show_bbox=False)
+        geo = self.df.to_geo_dict(na="null", show_bbox=False)
         assert "bbox" not in geo.keys()
         for feature in geo["features"]:
             assert "bbox" not in feature.keys()
 
     def test_geodataframe_geojson_bbox(self):
-        geo = self.df._to_geo(na="null", show_bbox=True)
+        geo = self.df.to_geo_dict(na="null", show_bbox=True)
         assert "bbox" in geo.keys()
         assert len(geo["bbox"]) == 4
         assert isinstance(geo["bbox"], tuple)
@@ -965,29 +981,51 @@ class TestDataFrame:
 
     @pytest.mark.parametrize("how", ["left", "inner", "right"])
     @pytest.mark.parametrize("predicate", ["intersects", "within", "contains"])
-    def test_sjoin(self, how, predicate):
+    def test_sjoin(self, how, predicate, naturalearth_cities, naturalearth_lowres):
         """
         Basic test for availability of the GeoDataFrame method. Other
         sjoin tests are located in /tools/tests/test_sjoin.py
         """
-        left = read_file(geopandas.datasets.get_path("naturalearth_cities"))
-        right = read_file(geopandas.datasets.get_path("naturalearth_lowres"))
+        left = read_file(naturalearth_cities)
+        right = read_file(naturalearth_lowres)
 
         expected = geopandas.sjoin(left, right, how=how, predicate=predicate)
         result = left.sjoin(right, how=how, predicate=predicate)
         assert_geodataframe_equal(result, expected)
 
     @pytest.mark.parametrize("how", ["left", "inner", "right"])
+    @pytest.mark.parametrize("distance", [0, 3])
+    @pytest.mark.skipif(
+        not compat.GEOS_GE_310,
+        reason="`dwithin` requires GEOS 3.10",
+    )
+    def test_sjoin_dwithin(self, how, distance):
+        """
+        Basic test for predicate='dwithin' availability of the GeoDataFrame method.
+        Other sjoin tests are located in /tools/tests/test_sjoin.py
+        """
+        left = GeoDataFrame(geometry=points_from_xy([0, 1, 2], [0, 1, 1]))
+        right = GeoDataFrame(geometry=[box(0, 0, 1, 1)])
+
+        expected = geopandas.sjoin(
+            left, right, how=how, predicate="dwithin", distance=distance
+        )
+        result = left.sjoin(right, how=how, predicate="dwithin", distance=distance)
+        assert_geodataframe_equal(result, expected)
+
+    @pytest.mark.parametrize("how", ["left", "inner", "right"])
     @pytest.mark.parametrize("max_distance", [None, 1])
     @pytest.mark.parametrize("distance_col", [None, "distance"])
     @pytest.mark.filterwarnings("ignore:Geometry is in a geographic CRS:UserWarning")
-    def test_sjoin_nearest(self, how, max_distance, distance_col):
+    def test_sjoin_nearest(
+        self, how, max_distance, distance_col, naturalearth_cities, naturalearth_lowres
+    ):
         """
         Basic test for availability of the GeoDataFrame method. Other
         sjoin tests are located in /tools/tests/test_sjoin.py
         """
-        left = read_file(geopandas.datasets.get_path("naturalearth_cities"))
-        right = read_file(geopandas.datasets.get_path("naturalearth_lowres"))
+        left = read_file(naturalearth_cities)
+        right = read_file(naturalearth_lowres)
 
         expected = geopandas.sjoin_nearest(
             left, right, how=how, max_distance=max_distance, distance_col=distance_col
@@ -997,13 +1035,13 @@ class TestDataFrame:
         )
         assert_geodataframe_equal(result, expected)
 
-    def test_clip(self):
+    def test_clip(self, naturalearth_cities, naturalearth_lowres):
         """
         Basic test for availability of the GeoDataFrame method. Other
         clip tests are located in /tools/tests/test_clip.py
         """
-        left = read_file(geopandas.datasets.get_path("naturalearth_cities"))
-        world = read_file(geopandas.datasets.get_path("naturalearth_lowres"))
+        left = read_file(naturalearth_cities)
+        world = read_file(naturalearth_lowres)
         south_america = world[world["continent"] == "South America"]
 
         expected = geopandas.clip(left, south_america)
@@ -1388,8 +1426,7 @@ class TestConstructor:
         assert gdf._geometry_column_name == ("geometry", "", "")
         assert gdf.geometry.name == ("geometry", "", "")
 
-    def test_assign_cols_using_index(self):
-        nybb_filename = geopandas.datasets.get_path("nybb")
+    def test_assign_cols_using_index(self, nybb_filename):
         df = read_file(nybb_filename)
         other_df = pd.DataFrame({"foo": range(5), "bar": range(5)})
         expected = pd.concat([df, other_df], axis=1)
