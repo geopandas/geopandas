@@ -14,7 +14,8 @@ PANDAS_GE_14 = Version(pd.__version__) >= Version("1.4.0rc0")
 PANDAS_GE_15 = Version(pd.__version__) >= Version("1.5.0")
 PANDAS_GE_20 = Version(pd.__version__) >= Version("2.0.0")
 PANDAS_GE_21 = Version(pd.__version__) >= Version("2.1.0")
-PANDAS_GE_22 = Version(pd.__version__) >= Version("2.2.0.dev0")
+PANDAS_GE_22 = Version(pd.__version__) >= Version("2.2.0")
+PANDAS_GE_30 = Version(pd.__version__) >= Version("3.0.0.dev0")
 
 
 # -----------------------------------------------------------------------------
@@ -23,6 +24,7 @@ PANDAS_GE_22 = Version(pd.__version__) >= Version("2.2.0.dev0")
 
 
 GEOS_GE_390 = shapely.geos.geos_version >= (3, 9, 0)
+GEOS_GE_310 = shapely.geos.geos_version >= (3, 10, 0)
 
 
 def import_optional_dependency(name: str, extra: str = ""):

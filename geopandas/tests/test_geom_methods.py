@@ -213,27 +213,6 @@ class TestGeomMethods:
         fcmp = assert_series_equal
         self._binary_op_test(op, expected, a, b, fcmp, True, False, *args, **kwargs)
 
-    def _test_binary_operator(self, op, expected, a, b):
-        """
-        The operators only have GeoSeries on the left, but can have
-        GeoSeries or GeoDataFrame on the right.
-        If GeoDataFrame is on the left, geometry column is used.
-
-        """
-        if isinstance(expected, GeoPandasBase):
-            fcmp = assert_geoseries_equal
-        else:
-
-            def fcmp(a, b):
-                assert geom_equals(a, b)
-
-        if isinstance(b, GeoPandasBase):
-            right_df = True
-        else:
-            right_df = False
-
-        self._binary_op_test(op, expected, a, b, fcmp, False, right_df)
-
     def _binary_op_test(
         self, op, expected, left, right, fcmp, left_df, right_df, *args, **kwargs
     ):
@@ -666,6 +645,9 @@ class TestGeomMethods:
             expected, self.g12.hausdorff_distance(self.g13, densify=0.25)
         )
 
+    @pytest.mark.skipif(
+        shapely.geos_version < (3, 10, 0), reason="buggy with GEOS<3.10"
+    )
     def test_frechet_distance(self):
         # closest point is (0, 0) in self.p1
         expected = Series(
@@ -907,6 +889,7 @@ class TestGeomMethods:
         )
         assert_geoseries_equal(expected, self.g5.reverse())
 
+    @pytest.mark.skipif(shapely.geos_version < (3, 10, 0), reason="requires GEOS>=3.10")
     def test_segmentize_linestrings(self):
         expected_g1 = GeoSeries(
             [
@@ -992,9 +975,11 @@ class TestGeomMethods:
         result_3d_to_2d = test_3d.transform(lambda x: x + 1, include_z=False)
         assert_geoseries_equal(expected_3d_to_2d, result_3d_to_2d)
 
+    @pytest.mark.skipif(shapely.geos_version < (3, 11, 0), reason="requires GEOS>=3.11")
     def test_concave_hull(self):
         assert_geoseries_equal(self.squares, self.squares.concave_hull())
 
+    @pytest.mark.skipif(shapely.geos_version < (3, 11, 0), reason="requires GEOS>=3.11")
     @pytest.mark.parametrize(
         "expected_series,ratio",
         [
@@ -1254,7 +1239,7 @@ class TestGeomMethods:
     def test_minimum_bounding_circle(self):
         mbc = self.g1.minimum_bounding_circle()
         centers = GeoSeries([Point(0.5, 0.5)] * 2)
-        assert np.all(mbc.centroid.geom_almost_equals(centers, 0.001))
+        assert np.all(mbc.centroid.geom_equals_exact(centers, 0.001))
         assert_series_equal(
             mbc.area,
             Series([1.560723, 1.560723]),
@@ -1285,8 +1270,7 @@ class TestGeomMethods:
             index=MultiIndex.from_tuples(index, names=expected_index_name),
             crs=4326,
         )
-        with pytest.warns(FutureWarning, match="Currently, index_parts defaults"):
-            assert_geoseries_equal(expected, s.explode())
+        assert_geoseries_equal(expected, s.explode(index_parts=True))
 
     @pytest.mark.parametrize("index_name", [None, "test"])
     def test_explode_geodataframe(self, index_name):
@@ -1294,8 +1278,7 @@ class TestGeomMethods:
         df = GeoDataFrame({"col": [1, 2], "geometry": s})
         df.index.name = index_name
 
-        with pytest.warns(FutureWarning, match="Currently, index_parts defaults"):
-            test_df = df.explode()
+        test_df = df.explode(index_parts=True)
 
         expected_s = GeoSeries([Point(1, 2), Point(2, 3), Point(5, 5)])
         expected_df = GeoDataFrame({"col": [1, 1, 2], "geometry": expected_s})
@@ -1625,47 +1608,6 @@ class TestGeomMethods:
         assert test_df.geometry.name == test_df._geometry_column_name
         assert "geometry" in test_df.columns
 
-    #
-    # Test '&', '|', '^', and '-'
-    #
-    def test_intersection_operator(self):
-        with pytest.warns(FutureWarning):
-            self._test_binary_operator("__and__", self.t1, self.g1, self.g2)
-        with pytest.warns(FutureWarning):
-            self._test_binary_operator("__and__", self.t1, self.gdf1, self.g2)
-
-    def test_union_operator(self):
-        with pytest.warns(FutureWarning):
-            self._test_binary_operator("__or__", self.sq, self.g1, self.g2)
-        with pytest.warns(FutureWarning):
-            self._test_binary_operator("__or__", self.sq, self.gdf1, self.g2)
-
-    def test_union_operator_polygon(self):
-        with pytest.warns(FutureWarning):
-            self._test_binary_operator("__or__", self.sq, self.g1, self.t2)
-        with pytest.warns(FutureWarning):
-            self._test_binary_operator("__or__", self.sq, self.gdf1, self.t2)
-
-    def test_symmetric_difference_operator(self):
-        with pytest.warns(FutureWarning):
-            self._test_binary_operator("__xor__", self.sq, self.g3, self.g4)
-        with pytest.warns(FutureWarning):
-            self._test_binary_operator("__xor__", self.sq, self.gdf3, self.g4)
-
-    def test_difference_series2(self):
-        expected = GeoSeries([GeometryCollection(), self.t2])
-        with pytest.warns(FutureWarning):
-            self._test_binary_operator("__sub__", expected, self.g1, self.g2)
-        with pytest.warns(FutureWarning):
-            self._test_binary_operator("__sub__", expected, self.gdf1, self.g2)
-
-    def test_difference_poly2(self):
-        expected = GeoSeries([self.t1, self.t1])
-        with pytest.warns(FutureWarning):
-            self._test_binary_operator("__sub__", expected, self.g1, self.t2)
-        with pytest.warns(FutureWarning):
-            self._test_binary_operator("__sub__", expected, self.gdf1, self.t2)
-
     def test_get_coordinates(self):
         expected = DataFrame(
             data=self.expected_2d,
@@ -1790,6 +1732,7 @@ class TestGeomMethods:
         assert_geoseries_equal(expected, oc)
         assert isinstance(oc, GeoSeries)
 
+    @pytest.mark.skipif(shapely.geos_version < (3, 11, 0), reason="requires GEOS>=3.11")
     @pytest.mark.parametrize(
         "geom,expected",
         [

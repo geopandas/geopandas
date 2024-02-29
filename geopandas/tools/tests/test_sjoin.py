@@ -115,31 +115,6 @@ class TestSpatialJoin:
             sjoin(df1, df2)
 
     @pytest.mark.parametrize("dfs", ["default-index"], indirect=True)
-    @pytest.mark.parametrize("op", ["intersects", "contains", "within"])
-    def test_deprecated_op_param(self, dfs, op):
-        _, df1, df2, _ = dfs
-        with pytest.warns(FutureWarning, match="`op` parameter is deprecated"):
-            sjoin(df1, df2, op=op)
-
-    @pytest.mark.parametrize("dfs", ["default-index"], indirect=True)
-    @pytest.mark.parametrize("op", ["intersects", "contains", "within"])
-    @pytest.mark.parametrize("predicate", ["contains", "within"])
-    def test_deprecated_op_param_nondefault_predicate(self, dfs, op, predicate):
-        _, df1, df2, _ = dfs
-        match = "use the `predicate` parameter instead"
-        if op != predicate:
-            warntype = UserWarning
-            match = (
-                "`predicate` will be overridden by the value of `op`"  # noqa: ISC003
-                + r"(.|\s)*"
-                + match
-            )
-        else:
-            warntype = FutureWarning
-        with pytest.warns(warntype, match=match):
-            sjoin(df1, df2, predicate=predicate, op=op)
-
-    @pytest.mark.parametrize("dfs", ["default-index"], indirect=True)
     def test_unknown_kwargs(self, dfs):
         _, df1, df2, _ = dfs
         with pytest.raises(
@@ -148,7 +123,6 @@ class TestSpatialJoin:
         ):
             sjoin(df1, df2, extra_param="test")
 
-    @pytest.mark.filterwarnings("ignore:The `op` parameter:FutureWarning")
     @pytest.mark.parametrize(
         "dfs",
         [
@@ -161,11 +135,10 @@ class TestSpatialJoin:
         indirect=True,
     )
     @pytest.mark.parametrize("predicate", ["intersects", "contains", "within"])
-    @pytest.mark.parametrize("predicate_kw", ["predicate", "op"])
-    def test_inner(self, predicate, predicate_kw, dfs):
+    def test_inner(self, predicate, dfs):
         index, df1, df2, expected = dfs
 
-        res = sjoin(df1, df2, how="inner", **{predicate_kw: predicate})
+        res = sjoin(df1, df2, how="inner", predicate=predicate)
 
         exp = expected[predicate].dropna().copy()
         exp = exp.drop("geometry_y", axis=1).rename(columns={"geometry_x": "geometry"})
@@ -353,6 +326,62 @@ class TestSpatialJoin:
             exp = exp.sort_index()
 
         assert_frame_equal(res, exp, check_index_type=False)
+
+    @pytest.mark.skipif(not compat.GEOS_GE_310, reason="`dwithin` requires GEOS 3.10")
+    @pytest.mark.parametrize("how", ["inner"])
+    @pytest.mark.parametrize(
+        "geo_left, geo_right, expected_left, expected_right, distance",
+        [
+            (
+                # Distance is number, 2x1
+                [Point(0, 0), Point(1, 1)],
+                [Point(1, 1)],
+                [0, 1],
+                [0, 0],
+                math.sqrt(2),
+            ),
+            # Distance is number, 2x2
+            (
+                [Point(0, 0), Point(1, 1)],
+                [Point(0, 0), Point(1, 1)],
+                [0, 1, 0, 1],
+                [0, 0, 1, 1],
+                math.sqrt(2),
+            ),
+            # Distance is array, matches len(left)
+            (
+                [Point(0, 0), Point(0, 0), Point(-1, -1)],
+                [Point(1, 1)],
+                [1, 2],
+                [0, 0],
+                [0, math.sqrt(2), math.sqrt(8)],
+            ),
+            # Distance is np.array, matches len(left),
+            # inner join sorts the right GeoDataFrame
+            (
+                [Point(0, 0), Point(0, 0), Point(-1, -1)],
+                [Point(1, 1), Point(0.5, 0.5)],
+                [1, 2, 1, 2],
+                [1, 1, 0, 0],
+                np.array([0, math.sqrt(2), math.sqrt(8)]),
+            ),
+        ],
+    )
+    def test_sjoin_dwithin(
+        self,
+        geo_left,
+        geo_right,
+        expected_left: Sequence[int],
+        expected_right: Sequence[int],
+        distance,
+        how,
+    ):
+        left = geopandas.GeoDataFrame({"geometry": geo_left})
+        right = geopandas.GeoDataFrame({"geometry": geo_right})
+        expected_gdf = left.iloc[expected_left].copy()
+        expected_gdf["index_right"] = expected_right
+        joined = sjoin(left, right, how=how, predicate="dwithin", distance=distance)
+        assert_frame_equal(expected_gdf.sort_index(), joined.sort_index())
 
 
 class TestIndexNames:
@@ -581,10 +610,10 @@ class TestIndexNames:
         assert_geodataframe_equal(result, expected)
 
 
+@pytest.mark.usefixtures("_setup_class_nybb_filename")
 class TestSpatialJoinNYBB:
     def setup_method(self):
-        nybb_filename = geopandas.datasets.get_path("nybb")
-        self.polydf = read_file(nybb_filename)
+        self.polydf = read_file(self.nybb_filename)
         self.crs = self.polydf.crs
         N = 20
         b = [int(x) for x in self.polydf.total_bounds]
@@ -754,8 +783,8 @@ class TestSpatialJoinNYBB:
         assert sjoin(empty, self.pointdf, how="inner", predicate=predicate).empty
         assert sjoin(empty, self.pointdf, how="left", predicate=predicate).empty
 
-    def test_empty_sjoin_return_duplicated_columns(self):
-        nybb = geopandas.read_file(geopandas.datasets.get_path("nybb"))
+    def test_empty_sjoin_return_duplicated_columns(self, nybb_filename):
+        nybb = geopandas.read_file(nybb_filename)
         nybb2 = nybb.copy()
         nybb2.geometry = nybb2.translate(200000)  # to get non-overlapping
 
@@ -765,21 +794,22 @@ class TestSpatialJoinNYBB:
         assert "BoroCode_left" in result.columns
 
 
-class TestSpatialJoinNaturalEarth:
-    def setup_method(self):
-        world_path = geopandas.datasets.get_path("naturalearth_lowres")
-        cities_path = geopandas.datasets.get_path("naturalearth_cities")
-        self.world = read_file(world_path)
-        self.cities = read_file(cities_path)
+@pytest.fixture
+def world(naturalearth_lowres):
+    return read_file(naturalearth_lowres)
 
-    def test_sjoin_inner(self):
-        # GH637
-        countries = self.world[["geometry", "name"]]
-        countries = countries.rename(columns={"name": "country"})
-        cities_with_country = sjoin(
-            self.cities, countries, how="inner", predicate="intersects"
-        )
-        assert cities_with_country.shape == (213, 4)
+
+@pytest.fixture
+def cities(naturalearth_cities):
+    return read_file(naturalearth_cities)
+
+
+def test_sjoin_inner(world, cities):
+    # GH637
+    countries = world[["geometry", "name"]]
+    countries = countries.rename(columns={"name": "country"})
+    cities_with_country = sjoin(cities, countries, how="inner", predicate="intersects")
+    assert cities_with_country.shape == (213, 4)
 
 
 class TestNearest:
@@ -1090,10 +1120,10 @@ class TestNearest:
         assert_geodataframe_equal(expected_gdf, joined)
 
     @pytest.mark.filterwarnings("ignore:Geometry is in a geographic CRS")
-    def test_sjoin_nearest_inner(self):
+    def test_sjoin_nearest_inner(self, naturalearth_lowres, naturalearth_cities):
         # check equivalency of left and inner join
-        countries = read_file(geopandas.datasets.get_path("naturalearth_lowres"))
-        cities = read_file(geopandas.datasets.get_path("naturalearth_cities"))
+        countries = read_file(naturalearth_lowres)
+        cities = read_file(naturalearth_cities)
         countries = countries[["geometry", "name"]].rename(columns={"name": "country"})
 
         # default: inner and left give the same result

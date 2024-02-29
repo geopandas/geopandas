@@ -267,16 +267,6 @@ def test_to_wkt():
     assert res[0] is None
 
 
-def test_data():
-    arr = from_shapely(points_no_missing)
-    with pytest.warns(DeprecationWarning):
-        np_arr = arr.data
-
-    assert isinstance(np_arr, np.ndarray)
-    assert arr.to_numpy() is np_arr
-    assert np.asarray(arr) is np_arr
-
-
 def test_as_array():
     arr = from_shapely(points_no_missing)
     np_arr1 = np.asarray(arr)
@@ -301,9 +291,9 @@ def test_as_array():
         ("geom_almost_equals", (3,)),
     ],
 )
-@pytest.mark.filterwarnings(
-    r"ignore:The \'almost_equals\(\)\' method is deprecated"
-)  # filter required for attr=geom_almost_equals only
+# filters required for attr=geom_almost_equals only
+@pytest.mark.filterwarnings(r"ignore:The \'geom_almost_equals\(\)\' method is deprecat")
+@pytest.mark.filterwarnings(r"ignore:The \'almost_equals\(\)\' method is deprecated")
 def test_predicates_vector_scalar(attr, args):
     na_value = False
 
@@ -343,9 +333,9 @@ def test_predicates_vector_scalar(attr, args):
         ("geom_almost_equals", (3,)),
     ],
 )
-@pytest.mark.filterwarnings(
-    r"ignore:The \'almost_equals\(\)\' method is deprecated"
-)  # filter required for attr=geom_almost_equals only
+# filters required for attr=geom_almost_equals only
+@pytest.mark.filterwarnings(r"ignore:The \'geom_almost_equals\(\)\' method is deprecat")
+@pytest.mark.filterwarnings(r"ignore:The \'almost_equals\(\)\' method is deprecated")
 def test_predicates_vector_vector(attr, args):
     na_value = False
     empty_value = True if attr == "disjoint" else False
@@ -836,7 +826,7 @@ def test_equality_ops():
 
 def test_dir():
     assert "contains" in dir(P)
-    assert "data" in dir(P)
+    assert "to_numpy" in dir(P)
 
 
 def test_chaining():

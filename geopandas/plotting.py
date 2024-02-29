@@ -484,7 +484,7 @@ def plot_series(
             ax, points, values_, color=color_, cmap=cmap, **style_kwds
         )
 
-    plt.draw()
+    ax.figure.canvas.draw_idle()
     return ax
 
 
@@ -957,7 +957,7 @@ def plot_dataframe(
             n_cmap.set_array(np.array([]))
             ax.get_figure().colorbar(n_cmap, **legend_kwds)
 
-    plt.draw()
+    ax.figure.canvas.draw_idle()
     return ax
 
 

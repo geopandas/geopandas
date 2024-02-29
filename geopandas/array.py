@@ -333,17 +333,6 @@ class GeometryArray(ExtensionArray):
         self._sindex = None
 
     @property
-    def data(self):
-        warnings.warn(
-            "Accessing the underlying geometries through the `.data` attribute is "
-            "deprecated and will be removed in GeoPandas 1.0. You can use "
-            "`np.asarray(..)` or the `to_numpy()` method instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return self._data
-
-    @property
     def sindex(self):
         if self._sindex is None:
             self._sindex = SpatialIndex(self._data)
@@ -1578,7 +1567,7 @@ class GeometryArray(ExtensionArray):
     def _reduce(self, name, skipna=True, **kwargs):
         # including the base class version here (that raises by default)
         # because this was not yet defined in pandas 0.23
-        if name == "any" or name == "all":
+        if name in ("any", "all"):
             return getattr(to_shapely(self), name)()
         raise TypeError(
             f"'{type(self).__name__}' with dtype {self.dtype} "
