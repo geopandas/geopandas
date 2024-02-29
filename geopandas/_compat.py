@@ -67,3 +67,11 @@ def import_optional_dependency(name: str, extra: str = ""):
 # -----------------------------------------------------------------------------
 # pyproj compat
 # -----------------------------------------------------------------------------
+
+try:
+    import pyproj  # noqa: F401
+
+    HAS_PYPROJ = True
+
+except ImportError:
+    HAS_PYPROJ = False

@@ -16,6 +16,7 @@ from shapely.geometry import (
 
 import geopandas
 from geopandas import GeoDataFrame, GeoSeries, clip
+from geopandas._compat import HAS_PYPROJ
 
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 import pytest
@@ -397,6 +398,7 @@ def test_clip_multipoly_keep_slivers(multi_poly_gdf, single_rectangle_gdf):
     assert "GeometryCollection" in clipped.geom_type[0]
 
 
+@pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not available")
 def test_warning_crs_mismatch(point_gdf, single_rectangle_gdf):
     with pytest.warns(UserWarning, match="CRS mismatch between the CRS"):
         clip(point_gdf, single_rectangle_gdf.to_crs(4326))

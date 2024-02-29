@@ -10,7 +10,6 @@ import pytest
 from pandas import DataFrame, read_parquet as pd_read_parquet
 from pandas.testing import assert_frame_equal
 import numpy as np
-import pyproj
 import shapely
 from shapely.geometry import box, Point, MultiPolygon
 
@@ -39,6 +38,7 @@ DATA_PATH = pathlib.Path(os.path.dirname(__file__)) / "data"
 
 # Skip all tests in this module if pyarrow is not available
 pyarrow = pytest.importorskip("pyarrow")
+pyproj = pytest.importorskip("pyproj")
 
 
 @pytest.fixture(

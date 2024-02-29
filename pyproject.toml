@@ -69,6 +69,7 @@ filterwarnings = [
     "ignore:The --rsyncdir command line argument:DeprecationWarning",
     # dateutil incompatibility with python 3.12 (https://github.com/dateutil/dateutil/issues/1284)
     "ignore:datetime.datetime.utcfromtimestamp:DeprecationWarning:dateutil",
+    "ignore:pyproj not available:UserWarning:geopandas",
 ]
 
 [tool.black]

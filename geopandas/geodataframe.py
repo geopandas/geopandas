@@ -10,14 +10,13 @@ from pandas.core.accessor import CachedAccessor
 from shapely.geometry import mapping, shape
 from shapely.geometry.base import BaseGeometry
 
-from pyproj import CRS
-
 from geopandas.array import GeometryArray, GeometryDtype, from_shapely, to_wkb, to_wkt
 from geopandas.base import GeoPandasBase, is_geometry_type
 from geopandas.geoseries import GeoSeries
 import geopandas.io
 from geopandas.explore import _explore
 from ._decorator import doc
+from ._compat import HAS_PYPROJ
 
 
 def _geodataframe_constructor_with_fallback(*args, **kwargs):
@@ -486,7 +485,12 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 crs = state.pop("crs", None)
             else:
                 crs = state.pop("_crs", None)
-            crs = CRS.from_user_input(crs) if crs is not None else crs
+            if HAS_PYPROJ:
+                from pyproj import CRS
+
+                crs = CRS.from_user_input(crs) if crs is not None else crs
+            else:
+                crs = None
 
         super().__setstate__(state)
 

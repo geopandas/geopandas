@@ -4,7 +4,6 @@ import warnings
 import numpy as np
 import pandas as pd
 
-from pyproj import CRS
 import shapely
 import shapely.affinity
 import shapely.geometry
@@ -25,6 +24,8 @@ from geopandas.array import (
     _check_crs,
     _crs_mismatch_warn,
 )
+
+from geopandas._compat import HAS_PYPROJ
 
 import pytest
 
@@ -887,6 +888,7 @@ def test_astype_multipolygon():
     assert result[0] == multi_poly.wkt[:10]
 
 
+@pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not installed")
 def test_check_crs():
     t1 = T.copy()
     t1.crs = 4326
@@ -948,15 +950,21 @@ class TestEstimateUtmCrs:
         self.landmarks = from_shapely([self.esb, self.sol], crs="epsg:4326")
 
     def test_estimate_utm_crs__geographic(self):
-        assert self.landmarks.estimate_utm_crs() == CRS("EPSG:32618")
-        assert self.landmarks.estimate_utm_crs("NAD83") == CRS("EPSG:26918")
+        pyproj = pytest.importorskip("pyproj")
+
+        assert self.landmarks.estimate_utm_crs() == pyproj.CRS("EPSG:32618")
+        assert self.landmarks.estimate_utm_crs("NAD83") == pyproj.CRS("EPSG:26918")
 
     def test_estimate_utm_crs__projected(self):
-        assert self.landmarks.to_crs("EPSG:3857").estimate_utm_crs() == CRS(
+        pyproj = pytest.importorskip("pyproj")
+
+        assert self.landmarks.to_crs("EPSG:3857").estimate_utm_crs() == pyproj.CRS(
             "EPSG:32618"
         )
 
     def test_estimate_utm_crs__antimeridian(self):
+        pyproj = pytest.importorskip("pyproj")
+
         antimeridian = from_shapely(
             [
                 shapely.geometry.Point(1722483.900174921, 5228058.6143420935),
@@ -964,15 +972,19 @@ class TestEstimateUtmCrs:
             ],
             crs="EPSG:3851",
         )
-        assert antimeridian.estimate_utm_crs() == CRS("EPSG:32760")
+        assert antimeridian.estimate_utm_crs() == pyproj.CRS("EPSG:32760")
 
     def test_estimate_utm_crs__out_of_bounds(self):
+        pytest.importorskip("pyproj")
+
         with pytest.raises(RuntimeError, match="Unable to determine UTM CRS"):
             from_shapely(
                 [shapely.geometry.Polygon([(0, 90), (1, 90), (2, 90)])], crs="EPSG:4326"
             ).estimate_utm_crs()
 
     def test_estimate_utm_crs__missing_crs(self):
+        pytest.importorskip("pyproj")
+
         with pytest.raises(RuntimeError, match="crs must be set"):
             from_shapely(
                 [shapely.geometry.Polygon([(0, 90), (1, 90), (2, 90)])]

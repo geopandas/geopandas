@@ -16,14 +16,16 @@ from pandas.api.extensions import (
     ExtensionDtype,
     register_extension_dtype,
 )
-from pyproj import CRS, Transformer
-from pyproj.aoi import AreaOfInterest
-from pyproj.database import query_utm_crs_info
+
 from shapely.geometry.base import BaseGeometry
 
 from .sindex import SpatialIndex
+from ._compat import HAS_PYPROJ
 
-TransformerFromCRS = lru_cache(Transformer.from_crs)
+if HAS_PYPROJ:
+    from pyproj import Transformer
+
+    TransformerFromCRS = lru_cache(Transformer.from_crs)
 
 _names = {
     "MISSING": None,
@@ -379,7 +381,18 @@ class GeometryArray(ExtensionArray):
     @crs.setter
     def crs(self, value):
         """Sets the value of the crs"""
-        self._crs = None if not value else CRS.from_user_input(value)
+        if HAS_PYPROJ:
+            from pyproj import CRS
+
+            self._crs = None if not value else CRS.from_user_input(value)
+        else:
+            if value is not None:
+                warnings.warn(
+                    "pyproj not available. Cannot set CRS, falling back to None.",
+                    UserWarning,
+                    stacklevel=2,
+                )
+            self._crs = None
 
     def check_geographic_crs(self, stacklevel):
         """Check CRS and warn if the planar operation is done in a geographic CRS"""
@@ -937,6 +950,14 @@ class GeometryArray(ExtensionArray):
         - Prime Meridian: Greenwich
 
         """
+        if not HAS_PYPROJ:
+            raise ImportError(
+                "The pyproj package is required for this operation. "
+                "Install it before using the to_crs() method."
+            )
+
+        from pyproj import CRS
+
         if self.crs is None:
             raise ValueError(
                 "Cannot transform naive geometries.  "
@@ -996,6 +1017,15 @@ class GeometryArray(ExtensionArray):
         - Ellipsoid: WGS 84
         - Prime Meridian: Greenwich
         """
+        if not HAS_PYPROJ:
+            raise ImportError(
+                "The pyproj package is required for this operation. "
+                "Install it before using the to_crs() method."
+            )
+
+        from pyproj import CRS
+        from pyproj.aoi import AreaOfInterest
+        from pyproj.database import query_utm_crs_info
 
         if not self.crs:
             raise RuntimeError("crs must be set to estimate UTM CRS.")

@@ -10,7 +10,6 @@ import pandas as pd
 from pandas import Series
 from pandas.core.internals import SingleBlockManager
 
-from pyproj import CRS
 import shapely
 from shapely.geometry.base import BaseGeometry
 from shapely.geometry import GeometryCollection
@@ -1042,6 +1041,14 @@ class GeoSeries(GeoPandasBase, Series):
         GeoSeries.to_crs : re-project to another CRS
 
         """
+        if not compat.HAS_PYPROJ:
+            raise ImportError(
+                "The pyproj library is required to set a CRS on a GeoSeries. "
+                "Please install pyproj and try again."
+            )
+
+        from pyproj import CRS
+
         if crs is not None:
             crs = CRS.from_user_input(crs)
         elif epsg is not None:
@@ -1145,7 +1152,7 @@ class GeoSeries(GeoPandasBase, Series):
             self.values.to_crs(crs=crs, epsg=epsg), index=self.index, name=self.name
         )
 
-    def estimate_utm_crs(self, datum_name: str = "WGS 84") -> CRS:
+    def estimate_utm_crs(self, datum_name: str = "WGS 84"):
         """Returns the estimated UTM CRS based on the bounds of the dataset.
 
         .. versionadded:: 0.9

@@ -1,10 +1,9 @@
 import warnings
 
 import pandas as pd
-import pyproj
 import pytest
 
-from geopandas._compat import PANDAS_GE_21
+from geopandas._compat import PANDAS_GE_21, HAS_PYPROJ
 from geopandas.testing import assert_geodataframe_equal
 from pandas.testing import assert_index_equal
 
@@ -62,6 +61,7 @@ class TestMerging:
         assert isinstance(res, GeoSeries)
         assert isinstance(res.geometry, GeoSeries)
 
+    @pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not available")
     def test_concat_axis0_crs(self):
         # CRS not set for both GeoDataFrame
         res = pd.concat([self.gdf, self.gdf])
@@ -103,6 +103,7 @@ class TestMerging:
                 [self.gdf, self.gdf.set_crs("epsg:4326"), self.gdf.set_crs("epsg:4327")]
             )
 
+    @pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not available")
     def test_concat_axis0_unaligned_cols(self):
         # https://github.com/geopandas/geopandas/issues/2679
         gdf = self.gdf.set_crs("epsg:4326").assign(
@@ -137,6 +138,8 @@ class TestMerging:
             pd.concat([single_geom_col, partial_none_case])
 
     def test_concat_axis0_crs_wkt_mismatch(self):
+        pyproj = pytest.importorskip("pyproj")
+
         # https://github.com/geopandas/geopandas/issues/326#issuecomment-1727958475
         wkt_template = """GEOGCRS["WGS 84",
         ENSEMBLE["World Geodetic System 1984 ensemble",
@@ -176,6 +179,7 @@ class TestMerging:
         assert isinstance(res.geometry, GeoSeries)
         self._check_metadata(res)
 
+    @pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not available")
     def test_concat_axis1_multiple_geodataframes(self):
         # https://github.com/geopandas/geopandas/issues/1230
         # Expect that concat should fail gracefully if duplicate column names belonging

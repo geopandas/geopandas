@@ -24,6 +24,7 @@ from geopandas import GeoDataFrame, GeoSeries
 from geopandas.base import GeoPandasBase
 from geopandas.testing import assert_geodataframe_equal
 from geopandas.tests.util import assert_geoseries_equal, geom_almost_equals, geom_equals
+from geopandas._compat import HAS_PYPROJ
 
 
 def assert_array_dtype_equal(a, b, *args, **kwargs):
@@ -415,6 +416,7 @@ class TestGeomMethods:
         expected = Series(np.array([0.5, np.nan]), index=self.na_none.index)
         self._test_unary_real("area", expected, self.na_none)
 
+    @pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not available")
     def test_area_crs_warn(self):
         with pytest.warns(UserWarning, match="Geometry is in a geographic CRS"):
             self.g4.area
@@ -506,6 +508,7 @@ class TestGeomMethods:
         expected = Series(np.array([2 + np.sqrt(2), np.nan]), index=self.na_none.index)
         self._test_unary_real("length", expected, self.na_none)
 
+    @pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not available")
     def test_length_crs_warn(self):
         with pytest.warns(UserWarning, match="Geometry is in a geographic CRS"):
             self.g4.length
@@ -608,6 +611,7 @@ class TestGeomMethods:
         expected = Series(np.array([0, 0, 0, 0, val, np.nan, np.nan]), self.g0.index)
         assert_array_dtype_equal(expected, self.g0.distance(self.g9, align=False))
 
+    @pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not available")
     def test_distance_crs_warning(self):
         with pytest.warns(UserWarning, match="Geometry is in a geographic CRS"):
             self.g4.distance(self.p0)
@@ -847,6 +851,7 @@ class TestGeomMethods:
         points = GeoSeries([point for i in range(3)])
         assert_geoseries_equal(polygons.centroid, points)
 
+    @pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not available")
     def test_centroid_crs_warn(self):
         with pytest.warns(UserWarning, match="Geometry is in a geographic CRS"):
             self.g4.centroid
@@ -1067,6 +1072,7 @@ class TestGeomMethods:
         with pytest.raises(ValueError):
             self.g5.interpolate(distances)
 
+    @pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not available")
     def test_interpolate_crs_warning(self):
         g5_crs = self.g5.copy()
         g5_crs.crs = 4326
@@ -1199,6 +1205,7 @@ class TestGeomMethods:
         result = s.buffer(np.array([0, 0, 0]))
         assert_geoseries_equal(result, s)
 
+    @pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not available")
     def test_buffer_crs_warn(self):
         with pytest.warns(UserWarning, match="Geometry is in a geographic CRS"):
             self.g4.buffer(1)

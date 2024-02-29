@@ -287,6 +287,7 @@ def test_astype_invalid_geodataframe():
     assert res["a"].dtype == object
 
 
+@pytest.mark.skipif(not compat.HAS_PYPROJ, reason="pyproj not available")
 def test_convert_dtypes(df):
     # https://github.com/geopandas/geopandas/issues/1870
 
@@ -657,6 +658,7 @@ def test_groupby_groups(df):
     assert_frame_equal(res, exp)
 
 
+@pytest.mark.skipif(not compat.HAS_PYPROJ, reason="pyproj not available")
 @pytest.mark.parametrize("crs", [None, "EPSG:4326"])
 @pytest.mark.parametrize("geometry_name", ["geometry", "geom"])
 def test_groupby_metadata(crs, geometry_name):
@@ -768,6 +770,7 @@ def test_apply_convert_dtypes_keyword(s):
         assert len(record) == 0
 
 
+@pytest.mark.skipif(not compat.HAS_PYPROJ, reason="pyproj not available")
 @pytest.mark.parametrize("crs", [None, "EPSG:4326"])
 def test_apply_no_geometry_result(df, crs):
     if crs:

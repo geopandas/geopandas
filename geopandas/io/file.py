@@ -8,7 +8,6 @@ import numpy as np
 import pandas as pd
 from pandas.api.types import is_integer_dtype
 
-import pyproj
 import shapely
 from shapely.geometry import mapping
 from shapely.geometry.base import BaseGeometry
@@ -20,7 +19,7 @@ from urllib.parse import urlparse as parse_url
 from urllib.parse import uses_netloc, uses_params, uses_relative
 import urllib.request
 
-from geopandas._compat import PANDAS_GE_20
+from geopandas._compat import PANDAS_GE_20, HAS_PYPROJ
 
 _VALID_URLS = set(uses_relative + uses_netloc + uses_params)
 _VALID_URLS.discard("")
@@ -654,11 +653,19 @@ def _to_file(
 
 
 def _to_file_fiona(df, filename, driver, schema, crs, mode, **kwargs):
+    if not HAS_PYPROJ and crs:
+        raise ImportError(
+            "The 'pyproj' package is required to write a file with a CRS. "
+            "Install 'pyproj' to write a file with a CRS."
+        )
+
     if schema is None:
         schema = infer_schema(df)
 
     if crs:
-        crs = pyproj.CRS.from_user_input(crs)
+        from pyproj import CRS
+
+        crs = CRS.from_user_input(crs)
     else:
         crs = df.crs
 
