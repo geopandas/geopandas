@@ -655,8 +655,8 @@ def _to_file(
 def _to_file_fiona(df, filename, driver, schema, crs, mode, **kwargs):
     if not HAS_PYPROJ and crs:
         raise ImportError(
-            "The 'pyproj' package is required to write a file with a CRS. "
-            "Install 'pyproj' to write a file with a CRS."
+            "The 'pyproj' package is required to write a file with a CRS, but it is not"
+            " installed or does not import correctly."
         )
 
     if schema is None:

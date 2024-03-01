@@ -897,6 +897,7 @@ def test_check_crs():
     assert _check_crs(t1, T, allow_none=True) is True
 
 
+@pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not installed")
 def test_crs_mismatch_warn():
     t1 = T.copy()
     t2 = T.copy()
@@ -914,6 +915,13 @@ def test_crs_mismatch_warn():
     # right None
     with pytest.warns(UserWarning, match="CRS mismatch between the CRS"):
         _crs_mismatch_warn(t1, T)
+
+
+@pytest.mark.skipif(HAS_PYPROJ, reason="pyproj installed")
+def test_missing_pyproj():
+    with pytest.warns(UserWarning, match="Cannot set the CRS, falling back to None"):
+        t = T.copy()
+        t.crs = 4326
 
 
 @pytest.mark.parametrize("NA", [None, np.nan])
@@ -941,6 +949,24 @@ def test_unique_has_crs():
     t = T.copy()
     t.crs = 4326
     assert t.unique().crs == t.crs
+
+
+@pytest.mark.skipif(HAS_PYPROJ, reason="pyproj installed")
+def test_to_crs_pyproj_error():
+    t = T.copy()
+    t.crs = 4326
+    with pytest.raises(
+        ImportError, match="The 'pyproj' package is required for to_crs"
+    ):
+        t.to_crs(3857)
+
+
+@pytest.mark.skipif(HAS_PYPROJ, reason="pyproj installed")
+def test_estimate_utm_crs_pyproj_error():
+    with pytest.raises(
+        ImportError, match="The 'pyproj' package is required for estimate_utm_crs"
+    ):
+        T.estimate_utm_crs()
 
 
 class TestEstimateUtmCrs:

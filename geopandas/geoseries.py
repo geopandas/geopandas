@@ -963,7 +963,7 @@ class GeoSeries(GeoPandasBase, Series):
     #
     # Additional methods
     #
-
+    @compat.requires_pyproj
     def set_crs(
         self,
         crs: Optional[Any] = None,
@@ -1041,12 +1041,6 @@ class GeoSeries(GeoPandasBase, Series):
         GeoSeries.to_crs : re-project to another CRS
 
         """
-        if not compat.HAS_PYPROJ:
-            raise ImportError(
-                "The pyproj library is required to set a CRS on a GeoSeries. "
-                "Please install pyproj and try again."
-            )
-
         from pyproj import CRS
 
         if crs is not None:

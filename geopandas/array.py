@@ -20,7 +20,7 @@ from pandas.api.extensions import (
 from shapely.geometry.base import BaseGeometry
 
 from .sindex import SpatialIndex
-from ._compat import HAS_PYPROJ
+from ._compat import HAS_PYPROJ, requires_pyproj
 
 if HAS_PYPROJ:
     from pyproj import Transformer
@@ -388,7 +388,10 @@ class GeometryArray(ExtensionArray):
         else:
             if value is not None:
                 warnings.warn(
-                    "pyproj not available. Cannot set CRS, falling back to None.",
+                    "Cannot set the CRS, falling back to None. The CRS support requires"
+                    " the 'pyproj' package, but it is not installed or does not import"
+                    " correctly. The functions depending on CRS will raise an error or"
+                    " may produce unexpected results.",
                     UserWarning,
                     stacklevel=2,
                 )
@@ -881,6 +884,7 @@ class GeometryArray(ExtensionArray):
             crs=self.crs,
         )
 
+    @requires_pyproj
     def to_crs(self, crs=None, epsg=None):
         """Returns a ``GeometryArray`` with all geometries transformed to a new
         coordinate reference system.
@@ -950,12 +954,6 @@ class GeometryArray(ExtensionArray):
         - Prime Meridian: Greenwich
 
         """
-        if not HAS_PYPROJ:
-            raise ImportError(
-                "The pyproj package is required for this operation. "
-                "Install it before using the to_crs() method."
-            )
-
         from pyproj import CRS
 
         if self.crs is None:
@@ -979,6 +977,7 @@ class GeometryArray(ExtensionArray):
         new_data = transform(self._data, transformer.transform)
         return GeometryArray(new_data, crs=crs)
 
+    @requires_pyproj
     def estimate_utm_crs(self, datum_name="WGS 84"):
         """Returns the estimated UTM CRS based on the bounds of the dataset.
 
@@ -1017,12 +1016,6 @@ class GeometryArray(ExtensionArray):
         - Ellipsoid: WGS 84
         - Prime Meridian: Greenwich
         """
-        if not HAS_PYPROJ:
-            raise ImportError(
-                "The pyproj package is required for this operation. "
-                "Install it before using the to_crs() method."
-            )
-
         from pyproj import CRS
         from pyproj.aoi import AreaOfInterest
         from pyproj.database import query_utm_crs_info

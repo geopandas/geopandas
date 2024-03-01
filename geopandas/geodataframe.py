@@ -485,12 +485,17 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 crs = state.pop("crs", None)
             else:
                 crs = state.pop("_crs", None)
-            if HAS_PYPROJ:
+            if crs is not None and not HAS_PYPROJ:
+                raise ImportError(
+                    "Unpickling a GeoDataFrame with CRS requires the 'pyproj' package, "
+                    "but it is not installed or does not import correctly. "
+                )
+            elif crs is None:
+                crs = None
+            else:
                 from pyproj import CRS
 
                 crs = CRS.from_user_input(crs) if crs is not None else crs
-            else:
-                crs = None
 
         super().__setstate__(state)
 

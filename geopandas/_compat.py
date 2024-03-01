@@ -67,7 +67,6 @@ def import_optional_dependency(name: str, extra: str = ""):
 # -----------------------------------------------------------------------------
 # pyproj compat
 # -----------------------------------------------------------------------------
-
 try:
     import pyproj  # noqa: F401
 
@@ -75,3 +74,15 @@ try:
 
 except ImportError:
     HAS_PYPROJ = False
+
+
+def requires_pyproj(func):
+    def wrapper(*args, **kwargs):
+        if not HAS_PYPROJ:
+            raise ImportError(
+                f"The 'pyproj' package is required for {func.__name__} to work. "
+                "Install it and initialize the object with a CRS before using it."
+            )
+        return func(*args, **kwargs)
+
+    return wrapper

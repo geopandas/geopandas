@@ -423,6 +423,13 @@ class TestSeries:
         expected = GeoSeries([Point(0, 2, -1), Point(3, 5, 4)])
         assert_geoseries_equal(expected, GeoSeries.from_xy(x, y, z))
 
+    @pytest.mark.skipif(HAS_PYPROJ, reason="pyproj installed")
+    def test_set_crs_pyproj_error(self):
+        with pytest.raises(
+            ImportError, match="The 'pyproj' package is required for set_crs"
+        ):
+            self.g1.set_crs(3857)
+
 
 @pytest.mark.filterwarnings("ignore::UserWarning")
 def test_missing_values():
