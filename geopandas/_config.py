@@ -5,6 +5,7 @@ Based on https://github.com/topper-123/optioneer, but simplified (don't deal
 with nested options, deprecated options, ..), just the attribute-style dict
 like holding the options and giving a nice repr.
 """
+
 from collections import namedtuple
 import textwrap
 
