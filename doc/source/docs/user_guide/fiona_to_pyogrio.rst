@@ -34,7 +34,7 @@ on GeoDataFrame without geometry column:
 
 .. code-block:: python
 
-    >>> import geopandas as gpd`
+    >>> import geopandas as gpd
     >>> 
     >>> gdf = gpd.GeoDataFrame({"data_column": [1, 2, 3]})
     >>> gdf.to_file("test_attribute_table.gpkg", engine="pyogrio")
@@ -53,14 +53,18 @@ Pyogrio writes EMPTY geometries to e.g. GPKG files, Fiona writes None.
 
 .. code-block:: python
 
-    >>> import geopandas as gpd`
-    >>> import shapely`
+    >>> import geopandas as gpd
+    >>> import shapely
     >>> 
-    >>> gdf = gpd.GeoDataFrame(geometry=[shapely.Polygon()], crs=31370)`
-    >>> gdf.to_file("test_fiona.gpkg", engine="fiona")`
-    >>> gdf.to_file("test_pyogrio.gpkg", engine="pyogrio")`
-    >>> print(f'{gpd.read_file("test_fiona.gpkg", engine="pyogrio").geometry.item()=}')`
-    >>> print(f'{gpd.read_file("test_pyogrio.gpkg", engine="pyogrio").geometry.item()=}')`
+    >>> gdf = gpd.GeoDataFrame(geometry=[shapely.Polygon()], crs=31370)
+    >>> gdf.to_file("test_fiona.gpkg", engine="fiona")
+    >>> gdf.to_file("test_pyogrio.gpkg", engine="pyogrio")
+    >>> print(f'{gpd.read_file("test_fiona.gpkg", engine="pyogrio").geometry.item()=}')
+    gpd.read_file("test_fiona.gpkg", engine="pyogrio").geometry.item()=None
+    >>> print(f'{gpd.read_file("test_pyogrio.gpkg", engine="pyogrio").geometry.item()=}')
+    gpd.read_file("test_pyogrio.gpkg", engine="pyogrio").geometry.item()=<POLYGON EMPTY>
 
-    >>> print(f'{gpd.read_file("test_fiona.gpkg", engine="fiona").geometry.item()=}')`
-    >>> print(f'{gpd.read_file("test_pyogrio.gpkg", engine="fiona").geometry.item()=}')`
+    >>> print(f'{gpd.read_file("test_fiona.gpkg", engine="fiona").geometry.item()=}')
+    gpd.read_file("test_fiona.gpkg", engine="fiona").geometry.item()=None
+    >>> print(f'{gpd.read_file("test_pyogrio.gpkg", engine="fiona").geometry.item()=}')
+    gpd.read_file("test_pyogrio.gpkg", engine="fiona").geometry.item()=<POLYGON EMPTY>
