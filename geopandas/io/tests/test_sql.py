@@ -40,7 +40,7 @@ def check_available_postgis_drivers():
         drivers.append("psycopg2")
 
     if len(drivers) == 0:
-        pytest.skip(reason="No psycopg variant found")
+        pytest.skip(reason="No psycopg variant found", allow_module_level=True)
     return drivers
 
 
