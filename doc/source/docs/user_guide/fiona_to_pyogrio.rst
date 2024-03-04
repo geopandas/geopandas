@@ -55,13 +55,14 @@ Pyogrio does not support overriding the schema/types of the data being read/writ
 Writing EMPTY geometries
 ------------------------
 
-Pyogrio writes EMPTY geometries to e.g. GPKG files, Fiona writes None.
+Pyogrio writes EMPTY and None geometries as such to e.g. GPKG files, Fiona writes both
+as None.
 
 .. ipython:: python
 
     import shapely
     
-    gdf = geopandas.GeoDataFrame(geometry=[shapely.Polygon()], crs=31370)
+    gdf = geopandas.GeoDataFrame(geometry=[shapely.Polygon(), None], crs=31370)
     gdf.to_file("test_fiona.gpkg", engine="fiona")
     gdf.to_file("test_pyogrio.gpkg", engine="pyogrio")
     geopandas.read_file("test_fiona.gpkg").head()
