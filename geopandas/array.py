@@ -697,6 +697,10 @@ class GeometryArray(ExtensionArray):
     def within(self, other):
         return self._binary_method("within", self, other)
 
+    def dwithin(self, other, distance):
+        self.check_geographic_crs(stacklevel=6)
+        return self._binary_method("dwithin", self, other, distance=distance)
+
     def geom_equals_exact(self, other, tolerance):
         return self._binary_method("equals_exact", self, other, tolerance=tolerance)
 

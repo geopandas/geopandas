@@ -24,6 +24,7 @@ from shapely.geometry.base import BaseGeometry
 
 from geopandas import GeoSeries, GeoDataFrame, read_file, clip
 from geopandas.array import GeometryArray, GeometryDtype
+import geopandas._compat as compat
 from geopandas.testing import assert_geoseries_equal, geom_almost_equals
 
 from geopandas.tests.util import geom_equals
@@ -562,6 +563,25 @@ class TestConstructor:
         assert [a.equals(b) for a, b in zip(s, g)]
         assert s.name == g.name
         assert s.index is g.index
+
+    def test_copy(self):
+        # default is to copy with CoW / pandas 3+
+        arr = np.array([Point(x, x) for x in range(3)], dtype=object)
+        result = GeoSeries(arr)
+        # modifying result doesn't change original array
+        result.loc[0] = Point(10, 10)
+        if compat.PANDAS_GE_30 or getattr(pd.options.mode, "copy_on_write", False):
+            assert arr[0] == Point(0, 0)
+        else:
+            assert arr[0] == Point(10, 10)
+
+        # avoid copy with copy=False
+        arr = np.array([Point(x, x) for x in range(3)], dtype=object)
+        result = GeoSeries(arr, copy=False)
+        assert result.array._data.flags.writeable
+        # now modifying result also updates original array
+        result.loc[0] = Point(10, 10)
+        assert arr[0] == Point(10, 10)
 
     # GH 1216
     @pytest.mark.parametrize("name", [None, "geometry", "Points"])

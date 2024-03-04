@@ -306,9 +306,11 @@ def test_predicates_vector_scalar(attr, args):
         assert result.dtype == bool
 
         expected = [
-            getattr(tri, attr if "geom" not in attr else attr[5:])(other, *args)
-            if tri is not None
-            else na_value
+            (
+                getattr(tri, attr if "geom" not in attr else attr[5:])(other, *args)
+                if tri is not None
+                else na_value
+            )
             for tri in triangles
         ]
 
@@ -545,9 +547,11 @@ def test_binary_distance():
     # vector - vector
     result = P[: len(T)].distance(T[::-1])
     expected = [
-        getattr(p, attr)(t)
-        if not ((t is None or t.is_empty) or (p is None or p.is_empty))
-        else na_value
+        (
+            getattr(p, attr)(t)
+            if not ((t is None or t.is_empty) or (p is None or p.is_empty))
+            else na_value
+        )
         for t, p in zip(triangles[::-1], points)
     ]
     np.testing.assert_allclose(result, expected)
@@ -604,9 +608,11 @@ def test_binary_project(normalized):
 
     result = L.project(P, normalized=normalized)
     expected = [
-        line.project(p, normalized=normalized)
-        if line is not None and p is not None
-        else na_value
+        (
+            line.project(p, normalized=normalized)
+            if line is not None and p is not None
+            else na_value
+        )
         for p, line in zip(points, lines)
     ]
     np.testing.assert_allclose(result, expected)
@@ -618,9 +624,13 @@ def test_binary_project(normalized):
 def test_buffer(resolution, cap_style, join_style):
     na_value = None
     expected = [
-        p.buffer(0.1, resolution=resolution, cap_style=cap_style, join_style=join_style)
-        if p is not None
-        else na_value
+        (
+            p.buffer(
+                0.1, resolution=resolution, cap_style=cap_style, join_style=join_style
+            )
+            if p is not None
+            else na_value
+        )
         for p in points
     ]
     result = P.buffer(
