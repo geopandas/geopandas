@@ -14,6 +14,7 @@ API changes:
 
 New methods:
 
+- Added `voronoi_polygons` method from shapely to GeoSeries/GeoDataframe (#3177).
 - Added `count_coordinates` method from shapely to GeoSeries/GeoDataframe (#3026).
 - Added `minimum_clearance` method from shapely to GeoSeries/GeoDataframe (#2989).
 - Added `is_ccw` method from shapely to GeoSeries/GeoDataframe (#3027).
