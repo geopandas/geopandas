@@ -326,6 +326,7 @@ def _read_file_fiona(
             # Meanwhile parse_path is imported here to avoid adding more conditional
             # statements at the top of the module.
             from fiona.path import parse_path
+
             parsed = parse_path(str(path_or_bytes))
             if isinstance(parsed, fiona.path.ParsedPath):
                 # If fiona is able to parse the path, we can safely look at the scheme
