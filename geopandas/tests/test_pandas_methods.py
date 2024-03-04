@@ -880,3 +880,17 @@ def test_preserve_flags(df):
 
     with pytest.raises(ValueError):
         pd.concat([df, df])
+
+
+def test_ufunc():
+    # this is calling a shapely ufunc, but we currently rely on pandas' implementation
+    # of `__array_ufunc__` to wrap the result back into a GeoSeries
+    ser = GeoSeries([Point(1, 1), Point(2, 2), Point(3, 3)])
+    result = shapely.buffer(ser, 2)
+    assert isinstance(result, GeoSeries)
+
+    # ensure the result is still writeable
+    # (https://github.com/geopandas/geopandas/issues/3178)
+    assert result.array._data.flags.writeable
+    result.loc[0] = Point(10, 10)
+    assert result.iloc[0] == Point(10, 10)
