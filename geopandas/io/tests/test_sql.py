@@ -4,6 +4,7 @@ The spatial database tests may not work without additional system
 configuration. postGIS tests require a test database to have been setup;
 see geopandas.tests.util for more information.
 """
+
 import os
 import warnings
 
@@ -335,14 +336,6 @@ class TestIO:
         # no crs defined on the created geodatabase, and none specified
         # by user; should not be set to 0, as from get_srid failure
         assert df.crs is None
-
-    def test_read_postgis_privacy(self, connection_postgis, df_nybb):
-        con = connection_postgis
-        create_postgis(con, df_nybb)
-
-        sql = "SELECT * FROM nybb;"
-        with pytest.warns(FutureWarning):
-            geopandas.io.sql.read_postgis(sql, con)
 
     def test_write_postgis_default(self, engine_postgis, df_nybb):
         """Tests that GeoDataFrame can be written to PostGIS with defaults."""

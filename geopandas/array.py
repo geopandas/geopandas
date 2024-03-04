@@ -333,17 +333,6 @@ class GeometryArray(ExtensionArray):
         self._sindex = None
 
     @property
-    def data(self):
-        warnings.warn(
-            "Accessing the underlying geometries through the `.data` attribute is "
-            "deprecated and will be removed in GeoPandas 1.0. You can use "
-            "`np.asarray(..)` or the `to_numpy()` method instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return self._data
-
-    @property
     def sindex(self):
         if self._sindex is None:
             self._sindex = SpatialIndex(self._data)
@@ -707,6 +696,10 @@ class GeometryArray(ExtensionArray):
 
     def within(self, other):
         return self._binary_method("within", self, other)
+
+    def dwithin(self, other, distance):
+        self.check_geographic_crs(stacklevel=6)
+        return self._binary_method("dwithin", self, other, distance=distance)
 
     def geom_equals_exact(self, other, tolerance):
         return self._binary_method("equals_exact", self, other, tolerance=tolerance)

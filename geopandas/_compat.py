@@ -17,6 +17,7 @@ PANDAS_GE_21 = Version(pd.__version__) >= Version("2.1.0")
 PANDAS_GE_22 = Version(pd.__version__) >= Version("2.2.0")
 PANDAS_GE_30 = Version(pd.__version__) >= Version("3.0.0.dev0")
 
+
 # -----------------------------------------------------------------------------
 # Shapely / GEOS compat
 # -----------------------------------------------------------------------------

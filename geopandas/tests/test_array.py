@@ -267,16 +267,6 @@ def test_to_wkt():
     assert res[0] is None
 
 
-def test_data():
-    arr = from_shapely(points_no_missing)
-    with pytest.warns(DeprecationWarning):
-        np_arr = arr.data
-
-    assert isinstance(np_arr, np.ndarray)
-    assert arr.to_numpy() is np_arr
-    assert np.asarray(arr) is np_arr
-
-
 def test_as_array():
     arr = from_shapely(points_no_missing)
     np_arr1 = np.asarray(arr)
@@ -316,9 +306,11 @@ def test_predicates_vector_scalar(attr, args):
         assert result.dtype == bool
 
         expected = [
-            getattr(tri, attr if "geom" not in attr else attr[5:])(other, *args)
-            if tri is not None
-            else na_value
+            (
+                getattr(tri, attr if "geom" not in attr else attr[5:])(other, *args)
+                if tri is not None
+                else na_value
+            )
             for tri in triangles
         ]
 
@@ -555,9 +547,11 @@ def test_binary_distance():
     # vector - vector
     result = P[: len(T)].distance(T[::-1])
     expected = [
-        getattr(p, attr)(t)
-        if not ((t is None or t.is_empty) or (p is None or p.is_empty))
-        else na_value
+        (
+            getattr(p, attr)(t)
+            if not ((t is None or t.is_empty) or (p is None or p.is_empty))
+            else na_value
+        )
         for t, p in zip(triangles[::-1], points)
     ]
     np.testing.assert_allclose(result, expected)
@@ -614,9 +608,11 @@ def test_binary_project(normalized):
 
     result = L.project(P, normalized=normalized)
     expected = [
-        line.project(p, normalized=normalized)
-        if line is not None and p is not None
-        else na_value
+        (
+            line.project(p, normalized=normalized)
+            if line is not None and p is not None
+            else na_value
+        )
         for p, line in zip(points, lines)
     ]
     np.testing.assert_allclose(result, expected)
@@ -628,9 +624,13 @@ def test_binary_project(normalized):
 def test_buffer(resolution, cap_style, join_style):
     na_value = None
     expected = [
-        p.buffer(0.1, resolution=resolution, cap_style=cap_style, join_style=join_style)
-        if p is not None
-        else na_value
+        (
+            p.buffer(
+                0.1, resolution=resolution, cap_style=cap_style, join_style=join_style
+            )
+            if p is not None
+            else na_value
+        )
         for p in points
     ]
     result = P.buffer(
@@ -836,7 +836,7 @@ def test_equality_ops():
 
 def test_dir():
     assert "contains" in dir(P)
-    assert "data" in dir(P)
+    assert "to_numpy" in dir(P)
 
 
 def test_chaining():

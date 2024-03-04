@@ -1768,6 +1768,117 @@ GeometryCollection
         """
         return _binary_op("contains_properly", self, other, align)
 
+    def dwithin(self, other, distance, align=True):
+        """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
+        each aligned geometry that is within a set distance from ``other``.
+
+        The operation works on a 1-to-1 row-wise manner:
+
+        .. image:: ../../../_static/binary_op-01.svg
+           :align: center
+
+        Parameters
+        ----------
+        other : GeoSeries or geometric object
+            The GeoSeries (elementwise) or geometric object to test for
+            equality.
+        distance : float, np.array, pd.Series
+            Distance(s) to test if each geometry is within. A scalar distance will be
+            applied to all geometries. An array or Series will be applied elementwise.
+            If np.array or pd.Series are used then it must have same length as the
+            GeoSeries.
+        align : bool (default True)
+            If True, automatically aligns GeoSeries based on their indices.
+            If False, the order of elements is preserved.
+
+        Returns
+        -------
+        Series (bool)
+
+        Examples
+        --------
+        >>> from shapely.geometry import Polygon, LineString, Point
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0, 0), (1, 1), (0, 1)]),
+        ...         LineString([(0, 0), (0, 2)]),
+        ...         LineString([(0, 0), (0, 1)]),
+        ...         Point(0, 1),
+        ...     ],
+        ...     index=range(0, 4),
+        ... )
+        >>> s2 = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(1, 0), (4, 2), (2, 2)]),
+        ...         Polygon([(2, 0), (3, 2), (2, 2)]),
+        ...         LineString([(2, 0), (2, 2)]),
+        ...         Point(1, 1),
+        ...     ],
+        ...     index=range(1, 5),
+        ... )
+
+        >>> s
+        0    POLYGON ((0 0, 1 1, 0 1, 0 0))
+        1             LINESTRING (0 0, 0 2)
+        2             LINESTRING (0 0, 0 1)
+        3                       POINT (0 1)
+        dtype: geometry
+
+        >>> s2
+        1    POLYGON ((1 0, 4 2, 2 2, 1 0))
+        2    POLYGON ((2 0, 3 2, 2 2, 2 0))
+        3             LINESTRING (2 0, 2 2)
+        4                       POINT (1 1)
+        dtype: geometry
+
+        We can check if each geometry of GeoSeries contains a single
+        geometry:
+
+        .. image:: ../../../_static/binary_op-03.svg
+           :align: center
+
+        >>> point = Point(0, 1)
+        >>> s2.dwithin(point, 1.8)
+        1     True
+        2    False
+        3    False
+        4     True
+        dtype: bool
+
+        We can also check two GeoSeries against each other, row by row.
+        The GeoSeries above have different indices. We can either align both GeoSeries
+        based on index values and compare elements with the same index using
+        ``align=True`` or ignore index and compare elements based on their matching
+        order using ``align=False``:
+
+        .. image:: ../../../_static/binary_op-02.svg
+
+        >>> s.dwithin(s2, distance=1, align=True)
+        0    False
+        1     True
+        2    False
+        3    False
+        4    False
+        dtype: bool
+
+        >>> s.dwithin(s2, distance=1, align=False)
+        0     True
+        1    False
+        2    False
+        3     True
+        dtype: bool
+
+        Notes
+        -----
+        This method works in a row-wise manner. It does not check if an element
+        of one GeoSeries is within the set distance of *any* element of the other one.
+
+        See also
+        --------
+        GeoSeries.within
+        """
+        return _binary_op("dwithin", self, other, distance=distance, align=align)
+
     def geom_equals(self, other, align=True):
         """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
         each aligned geometry equal to `other`.
@@ -4994,11 +5105,13 @@ GeometryCollection
                 )
             sample_function = getattr(pointpats.random, method)
             result = self.geometry.apply(
-                lambda x: points_from_xy(
-                    *sample_function(x, size=size, **kwargs).T
-                ).union_all()
-                if not (x.is_empty or x is None or "Polygon" not in x.geom_type)
-                else MultiPoint(),
+                lambda x: (
+                    points_from_xy(
+                        *sample_function(x, size=size, **kwargs).T
+                    ).union_all()
+                    if not (x.is_empty or x is None or "Polygon" not in x.geom_type)
+                    else MultiPoint()
+                ),
             )
 
         return GeoSeries(result, name="sampled_points", crs=self.crs, index=self.index)
@@ -5050,7 +5163,7 @@ def _get_index_for_parts(orig_idx, outer_idx, ignore_index, index_parts):
             index_arrays.append(inner_index)
 
             index = pd.MultiIndex.from_arrays(
-                index_arrays, names=orig_idx.names + [None]
+                index_arrays, names=list(orig_idx.names) + [None]
             )
 
         else:
