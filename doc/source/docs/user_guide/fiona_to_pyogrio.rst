@@ -1,3 +1,10 @@
+.. currentmodule:: geopandas
+
+.. ipython:: python
+   :suppress:
+
+   import geopandas
+
 Migration from the Fiona to the Pyogrio IO engine
 =================================================
 
@@ -35,8 +42,6 @@ With Pyogrio you can write an attribute table by calling
 
 .. code-block:: python
 
-    >>> import geopandas as gpd
-    >>> 
     >>> gdf = gpd.GeoDataFrame({"data_column": [1, 2, 3]})
     >>> gdf.to_file("test_attribute_table.gpkg", engine="pyogrio")
 
@@ -52,20 +57,19 @@ Writing EMPTY geometries
 
 Pyogrio writes EMPTY geometries to e.g. GPKG files, Fiona writes None.
 
-.. code-block:: python
+.. ipython:: python
 
-    >>> import geopandas as gpd
-    >>> import shapely
-    >>> 
-    >>> gdf = gpd.GeoDataFrame(geometry=[shapely.Polygon()], crs=31370)
-    >>> gdf.to_file("test_fiona.gpkg", engine="fiona")
-    >>> gdf.to_file("test_pyogrio.gpkg", engine="pyogrio")
-    >>> print(f'{gpd.read_file("test_fiona.gpkg", engine="pyogrio").geometry.item()=}')
-    gpd.read_file("test_fiona.gpkg", engine="pyogrio").geometry.item()=None
-    >>> print(f'{gpd.read_file("test_pyogrio.gpkg", engine="pyogrio").geometry.item()=}')
-    gpd.read_file("test_pyogrio.gpkg", engine="pyogrio").geometry.item()=<POLYGON EMPTY>
-
-    >>> print(f'{gpd.read_file("test_fiona.gpkg", engine="fiona").geometry.item()=}')
-    gpd.read_file("test_fiona.gpkg", engine="fiona").geometry.item()=None
-    >>> print(f'{gpd.read_file("test_pyogrio.gpkg", engine="fiona").geometry.item()=}')
-    gpd.read_file("test_pyogrio.gpkg", engine="fiona").geometry.item()=<POLYGON EMPTY>
+    import shapely
+    
+    gdf = geopandas.GeoDataFrame(geometry=[shapely.Polygon()], crs=31370)
+    gdf.to_file("test_fiona.gpkg", engine="fiona")
+    gdf.to_file("test_pyogrio.gpkg", engine="pyogrio")
+    w_fiona_r_pyogrio = gpd.read_file("test_fiona.gpkg", engine="pyogrio")
+    w_fiona_r_pyogrio.head()
+    w_pyogrio_r_pyogrio = gpd.read_file("test_pyogrio.gpkg", engine="pyogrio")
+    w_pyogrio_r_pyogrio.head()
+    
+    w_fiona_r_fiona = gpd.read_file("test_fiona.gpkg", engine="fiona")
+    w_fiona_r_fiona.head()
+    w_pyogrio_r_fiona = gpd.read_file("test_pyogrio.gpkg", engine="fiona")
+    w_pyogrio_r_fiona(head)
