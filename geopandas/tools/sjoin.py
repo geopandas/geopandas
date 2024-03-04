@@ -207,7 +207,7 @@ def _reset_index_with_suffix(df, suffix, other):
     """
     index_original = df.index.names
     df_reset = df.reset_index()
-    column_names = df_reset.columns.values
+    column_names = df_reset.columns.to_numpy(copy=True)
     for i, label in enumerate(index_original):
         # if the original label was None, add suffix to auto-generated name
         if label is None:
