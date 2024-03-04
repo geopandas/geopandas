@@ -72,4 +72,4 @@ Pyogrio writes EMPTY geometries to e.g. GPKG files, Fiona writes None.
     w_fiona_r_fiona = geopandas.read_file("test_fiona.gpkg", engine="fiona")
     w_fiona_r_fiona.head()
     w_pyogrio_r_fiona = geopandas.read_file("test_pyogrio.gpkg", engine="fiona")
-    w_pyogrio_r_fiona(head)
+    w_pyogrio_r_fiona.head()
