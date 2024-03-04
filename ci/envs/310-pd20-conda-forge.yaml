@@ -11,7 +11,8 @@ dependencies:
   - pyproj
   - packaging
   # testing
-  - pytest
+  # TEMP pin, 8.1 breaks doctestplus, see https://github.com/scientific-python/pytest-doctestplus/issues/239
+  - pytest==8.0.*
   - pytest-cov
   - pytest-xdist
   - fsspec
