@@ -52,7 +52,7 @@ def connection_psycopg_any(psycopg_package_name: str):
             "ignore", message="pandas only supports SQLAlchemy connectable.*"
         )
         yield con
-        con.close()
+    con.close()
 
 
 def engine_psycopg_any(psycopg_package_name: str):
