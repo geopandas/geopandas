@@ -304,6 +304,12 @@ class TestGeomMethods:
         ):
             self.g0.intersection(self.g9, align=None)
 
+        with warnings.catch_warnings(record=True) as record:
+            self.g0.intersection(self.g9, align=True)
+            self.g0.intersection(self.g9, align=False)
+
+            assert len(record) == 0
+
     def test_intersection(self):
         self._test_binary_topological("intersection", self.t1, self.g1, self.g2)
         self._test_binary_topological(
