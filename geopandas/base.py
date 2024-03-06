@@ -27,13 +27,20 @@ def is_geometry_type(data):
 
 def _delegate_binary_method(op, this, other, align, *args, **kwargs):
     # type: (str, GeoSeries, GeoSeries) -> GeoSeries/Series
+    if align is None:
+        align = True
+        maybe_warn = True
+    else:
+        maybe_warn = False
     this = this.geometry
     if isinstance(other, GeoPandasBase):
         if align and not this.index.equals(other.index):
-            warn(
-                "The indices of the two GeoSeries are different.",
-                stacklevel=4,
-            )
+            if maybe_warn:
+                warn(
+                    "The indices of the two GeoSeries are different and will be "
+                    "aligned. Use the `align` keyword to control this behavior.",
+                    stacklevel=4,
+                )
             this, other = this.align(other.geometry)
         else:
             other = other.geometry
@@ -1531,7 +1538,7 @@ GeometryCollection
     # Binary operations that return a pandas Series
     #
 
-    def contains(self, other, align=True):
+    def contains(self, other, align=None):
         """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
         each aligned geometry that contains `other`.
 
@@ -1554,9 +1561,9 @@ GeometryCollection
         other : GeoSeries or geometric object
             The GeoSeries (elementwise) or geometric object to test if it
             is contained.
-        align : bool (default True)
+        align : bool | None (default None)
             If True, automatically aligns GeoSeries based on their indices.
-            If False, the order of elements is preserved.
+            If False, the order of elements is preserved. None defaults to True.
 
         Returns
         -------
@@ -1647,7 +1654,7 @@ GeometryCollection
         """
         return _binary_op("contains", self, other, align)
 
-    def contains_properly(self, other, align=True):
+    def contains_properly(self, other, align=None):
         """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
         each aligned geometry that is completely inside ``other``, with no common
         boundary points.
@@ -1667,9 +1674,9 @@ GeometryCollection
         other : GeoSeries or geometric object
             The GeoSeries (elementwise) or geometric object to test if it
             is contained.
-        align : bool (default True)
+        align : bool | None (default None)
             If True, automatically aligns GeoSeries based on their indices.
-            If False, the order of elements is preserved.
+            If False, the order of elements is preserved. None defaults to True.
 
         Returns
         -------
@@ -1768,7 +1775,7 @@ GeometryCollection
         """
         return _binary_op("contains_properly", self, other, align)
 
-    def dwithin(self, other, distance, align=True):
+    def dwithin(self, other, distance, align=None):
         """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
         each aligned geometry that is within a set distance from ``other``.
 
@@ -1787,9 +1794,9 @@ GeometryCollection
             applied to all geometries. An array or Series will be applied elementwise.
             If np.array or pd.Series are used then it must have same length as the
             GeoSeries.
-        align : bool (default True)
+        align : bool | None (default None)
             If True, automatically aligns GeoSeries based on their indices.
-            If False, the order of elements is preserved.
+            If False, the order of elements is preserved. None defaults to True.
 
         Returns
         -------
@@ -1879,7 +1886,7 @@ GeometryCollection
         """
         return _binary_op("dwithin", self, other, distance=distance, align=align)
 
-    def geom_equals(self, other, align=True):
+    def geom_equals(self, other, align=None):
         """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
         each aligned geometry equal to `other`.
 
@@ -1897,9 +1904,9 @@ GeometryCollection
         other : GeoSeries or geometric object
             The GeoSeries (elementwise) or geometric object to test for
             equality.
-        align : bool (default True)
+        align : bool | None (default None)
             If True, automatically aligns GeoSeries based on their indices.
-            If False, the order of elements is preserved.
+            If False, the order of elements is preserved. None defaults to True.
 
         Returns
         -------
@@ -1989,7 +1996,7 @@ GeometryCollection
         """
         return _binary_op("geom_equals", self, other, align)
 
-    def geom_almost_equals(self, other, decimal=6, align=True):
+    def geom_almost_equals(self, other, decimal=6, align=None):
         """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` if
         each aligned geometry is approximately equal to `other`.
 
@@ -2007,9 +2014,9 @@ GeometryCollection
             The GeoSeries (elementwise) or geometric object to compare to.
         decimal : int
             Decimal place precision used when testing for approximate equality.
-        align : bool (default True)
+        align : bool | None (default None)
             If True, automatically aligns GeoSeries based on their indices.
-            If False, the order of elements is preserved.
+            If False, the order of elements is preserved. None defaults to True.
 
         Returns
         -------
@@ -2066,7 +2073,7 @@ GeometryCollection
             "geom_equals_exact", self, other, tolerance=tolerance, align=align
         )
 
-    def geom_equals_exact(self, other, tolerance, align=True):
+    def geom_equals_exact(self, other, tolerance, align=None):
         """Return True for all geometries that equal aligned *other* to a given
         tolerance, else False.
 
@@ -2081,9 +2088,9 @@ GeometryCollection
             The GeoSeries (elementwise) or geometric object to compare to.
         tolerance : float
             Decimal place precision used when testing for approximate equality.
-        align : bool (default True)
+        align : bool | None (default None)
             If True, automatically aligns GeoSeries based on their indices.
-            If False, the order of elements is preserved.
+            If False, the order of elements is preserved. None defaults to True.
 
         Returns
         -------
@@ -2131,7 +2138,7 @@ GeometryCollection
             "geom_equals_exact", self, other, tolerance=tolerance, align=align
         )
 
-    def crosses(self, other, align=True):
+    def crosses(self, other, align=None):
         """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
         each aligned geometry that cross `other`.
 
@@ -2149,9 +2156,9 @@ GeometryCollection
         other : GeoSeries or geometric object
             The GeoSeries (elementwise) or geometric object to test if is
             crossed.
-        align : bool (default True)
+        align : bool | None (default None)
             If True, automatically aligns GeoSeries based on their indices.
-            If False, the order of elements is preserved.
+            If False, the order of elements is preserved. None defaults to True.
 
         Returns
         -------
@@ -2243,7 +2250,7 @@ GeometryCollection
         """
         return _binary_op("crosses", self, other, align)
 
-    def disjoint(self, other, align=True):
+    def disjoint(self, other, align=None):
         """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
         each aligned geometry disjoint to `other`.
 
@@ -2260,9 +2267,9 @@ GeometryCollection
         other : GeoSeries or geometric object
             The GeoSeries (elementwise) or geometric object to test if is
             disjoint.
-        align : bool (default True)
+        align : bool | None (default None)
             If True, automatically aligns GeoSeries based on their indices.
-            If False, the order of elements is preserved.
+            If False, the order of elements is preserved. None defaults to True.
 
         Returns
         -------
@@ -2344,7 +2351,7 @@ GeometryCollection
         """
         return _binary_op("disjoint", self, other, align)
 
-    def intersects(self, other, align=True):
+    def intersects(self, other, align=None):
         """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
         each aligned geometry that intersects `other`.
 
@@ -2361,9 +2368,9 @@ GeometryCollection
         other : GeoSeries or geometric object
             The GeoSeries (elementwise) or geometric object to test if is
             intersected.
-        align : bool (default True)
+        align : bool | None (default None)
             If True, automatically aligns GeoSeries based on their indices.
-            If False, the order of elements is preserved.
+            If False, the order of elements is preserved. None defaults to True.
 
         Returns
         -------
@@ -2455,7 +2462,7 @@ GeometryCollection
         """
         return _binary_op("intersects", self, other, align)
 
-    def overlaps(self, other, align=True):
+    def overlaps(self, other, align=None):
         """Returns True for all aligned geometries that overlap *other*, else False.
 
         Geometries overlaps if they have more than one but not all
@@ -2473,9 +2480,9 @@ GeometryCollection
         other : GeoSeries or geometric object
             The GeoSeries (elementwise) or geometric object to test if
             overlaps.
-        align : bool (default True)
+        align : bool | None (default None)
             If True, automatically aligns GeoSeries based on their indices.
-            If False, the order of elements is preserved.
+            If False, the order of elements is preserved. None defaults to True.
 
         Returns
         -------
@@ -2566,7 +2573,7 @@ GeometryCollection
         """
         return _binary_op("overlaps", self, other, align)
 
-    def touches(self, other, align=True):
+    def touches(self, other, align=None):
         """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
         each aligned geometry that touches `other`.
 
@@ -2584,9 +2591,9 @@ GeometryCollection
         other : GeoSeries or geometric object
             The GeoSeries (elementwise) or geometric object to test if is
             touched.
-        align : bool (default True)
+        align : bool | None (default None)
             If True, automatically aligns GeoSeries based on their indices.
-            If False, the order of elements is preserved.
+            If False, the order of elements is preserved. None defaults to True.
 
         Returns
         -------
@@ -2678,7 +2685,7 @@ GeometryCollection
         """
         return _binary_op("touches", self, other, align)
 
-    def within(self, other, align=True):
+    def within(self, other, align=None):
         """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
         each aligned geometry that is within `other`.
 
@@ -2700,9 +2707,9 @@ GeometryCollection
         other : GeoSeries or geometric object
             The GeoSeries (elementwise) or geometric object to test if each
             geometry is within.
-        align : bool (default True)
+        align : bool | None (default None)
             If True, automatically aligns GeoSeries based on their indices.
-            If False, the order of elements is preserved.
+            If False, the order of elements is preserved. None defaults to True.
 
         Returns
         -------
@@ -2792,7 +2799,7 @@ GeometryCollection
         """
         return _binary_op("within", self, other, align)
 
-    def covers(self, other, align=True):
+    def covers(self, other, align=None):
         """
         Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
         each aligned geometry that is entirely covering `other`.
@@ -2814,9 +2821,9 @@ GeometryCollection
         ----------
         other : Geoseries or geometric object
             The Geoseries (elementwise) or geometric object to check is being covered.
-        align : bool (default True)
+        align : bool | None (default None)
             If True, automatically aligns GeoSeries based on their indices.
-            If False, the order of elements is preserved.
+            If False, the order of elements is preserved. None defaults to True.
 
         Returns
         -------
@@ -2906,7 +2913,7 @@ GeometryCollection
         """
         return _binary_op("covers", self, other, align)
 
-    def covered_by(self, other, align=True):
+    def covered_by(self, other, align=None):
         """
         Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
         each aligned geometry that is entirely covered by `other`.
@@ -2927,9 +2934,9 @@ GeometryCollection
         ----------
         other : Geoseries or geometric object
             The Geoseries (elementwise) or geometric object to check is being covered.
-        align : bool (default True)
+        align : bool | None (default None)
             If True, automatically aligns GeoSeries based on their indices.
-            If False, the order of elements is preserved.
+            If False, the order of elements is preserved. None defaults to True.
 
         Returns
         -------
@@ -3020,7 +3027,7 @@ GeometryCollection
         """
         return _binary_op("covered_by", self, other, align)
 
-    def distance(self, other, align=True):
+    def distance(self, other, align=None):
         """Returns a ``Series`` containing the distance to aligned `other`.
 
         The operation works on a 1-to-1 row-wise manner:
@@ -3033,9 +3040,9 @@ GeometryCollection
         other : Geoseries or geometric object
             The Geoseries (elementwise) or geometric object to find the
             distance to.
-        align : bool (default True)
+        align : bool | None (default None)
             If True, automatically aligns GeoSeries based on their indices.
-            If False, the order of elements is preserved.
+            If False, the order of elements is preserved. None defaults to True.
 
 
         Returns
@@ -3132,9 +3139,9 @@ GeometryCollection
         other : GeoSeries or geometric object
             The Geoseries (elementwise) or geometric object to find the
             distance to.
-        align : bool (default True)
+        align : bool | None (default None)
             If True, automatically aligns GeoSeries based on their indices.
-            If False, the order of elements is preserved.
+            If False, the order of elements is preserved. None defaults to True.
         densify : float (default None)
             A value between 0 and 1, that splits each subsegment of a line string
             into equal length segments, making the approximation less coarse.
@@ -3254,9 +3261,9 @@ GeometryCollection
         other : GeoSeries or geometric object
             The Geoseries (elementwise) or geometric object to find the
             distance to.
-        align : bool (default True)
+        align : bool | None (default None)
             If True, automatically aligns GeoSeries based on their indices.
-            If False, the order of elements is preserved.
+            If False, the order of elements is preserved. None defaults to True.
         densify : float (default None)
             A value between 0 and 1, that splits each subsegment of a line string
             into equal length segments, making the approximation less coarse.
@@ -3355,7 +3362,7 @@ GeometryCollection
     # Binary operations that return a GeoSeries
     #
 
-    def difference(self, other, align=True):
+    def difference(self, other, align=None):
         """Returns a ``GeoSeries`` of the points in each aligned geometry that
         are not in `other`.
 
@@ -3372,9 +3379,9 @@ GeometryCollection
         other : Geoseries or geometric object
             The Geoseries (elementwise) or geometric object to find the
             difference to.
-        align : bool (default True)
+        align : bool | None (default None)
             If True, automatically aligns GeoSeries based on their indices.
-            If False, the order of elements is preserved.
+            If False, the order of elements is preserved. None defaults to True.
 
         Returns
         -------
@@ -3466,7 +3473,7 @@ GeometryCollection
         """
         return _binary_geo("difference", self, other, align)
 
-    def symmetric_difference(self, other, align=True):
+    def symmetric_difference(self, other, align=None):
         """Returns a ``GeoSeries`` of the symmetric difference of points in
         each aligned geometry with `other`.
 
@@ -3487,9 +3494,9 @@ GeometryCollection
         other : Geoseries or geometric object
             The Geoseries (elementwise) or geometric object to find the
             symmetric difference to.
-        align : bool (default True)
+        align : bool | None (default None)
             If True, automatically aligns GeoSeries based on their indices.
-            If False, the order of elements is preserved.
+            If False, the order of elements is preserved. None defaults to True.
 
         Returns
         -------
@@ -3581,7 +3588,7 @@ GeometryCollection
         """
         return _binary_geo("symmetric_difference", self, other, align)
 
-    def union(self, other, align=True):
+    def union(self, other, align=None):
         """Returns a ``GeoSeries`` of the union of points in each aligned geometry with
         `other`.
 
@@ -3599,9 +3606,9 @@ GeometryCollection
         other : Geoseries or geometric object
             The Geoseries (elementwise) or geometric object to find the union
             with.
-        align : bool (default True)
+        align : bool | None (default None)
             If True, automatically aligns GeoSeries based on their indices.
-            If False, the order of elements is preserved.
+            If False, the order of elements is preserved. None defaults to True.
 
         Returns
         -------
@@ -3695,7 +3702,7 @@ GeometryCollection
         """
         return _binary_geo("union", self, other, align)
 
-    def intersection(self, other, align=True):
+    def intersection(self, other, align=None):
         """Returns a ``GeoSeries`` of the intersection of points in each
         aligned geometry with `other`.
 
@@ -3713,9 +3720,9 @@ GeometryCollection
         other : Geoseries or geometric object
             The Geoseries (elementwise) or geometric object to find the
             intersection with.
-        align : bool (default True)
+        align : bool | None (default None)
             If True, automatically aligns GeoSeries based on their indices.
-            If False, the order of elements is preserved.
+            If False, the order of elements is preserved. None defaults to True.
 
         Returns
         -------
@@ -3877,7 +3884,7 @@ GeometryCollection
         clipped_geometry = geometry_array.clip_by_rect(xmin, ymin, xmax, ymax)
         return GeoSeries(clipped_geometry, index=self.index, crs=self.crs)
 
-    def shortest_line(self, other, align=True):
+    def shortest_line(self, other, align=None):
         """
         Returns the shortest two-point line between two geometries.
 
@@ -3898,9 +3905,9 @@ GeometryCollection
         other : Geoseries or geometric object
             The Geoseries (elementwise) or geometric object to find the
             shortest line with.
-        align : bool (default True)
+        align : bool | None (default None)
             If True, automatically aligns GeoSeries based on their indices.
-            If False, the order of elements is preserved.
+            If False, the order of elements is preserved. None defaults to True.
 
         Returns
         -------
@@ -3980,7 +3987,7 @@ GeometryCollection
         """
         return _binary_geo("shortest_line", self, other, align)
 
-    def snap(self, other, tolerance, align=True):
+    def snap(self, other, tolerance, align=None):
         """Snaps an input geometry to reference geometry’s vertices.
 
         Vertices of the first geometry are snapped to vertices of the second. geometry,
@@ -4009,9 +4016,9 @@ GeometryCollection
             The Geoseries (elementwise) or geometric object to snap to.
         tolerance : float or array like
             Maximum distance between vertices that shall be snapped
-        align : bool (default True)
+        align : bool | None (default None)
             If True, automatically aligns GeoSeries based on their indices.
-            If False, the order of elements is preserved.
+            If False, the order of elements is preserved. None defaults to True.
 
         Returns
         -------
@@ -4366,7 +4373,7 @@ GeometryCollection
         """
         return _delegate_geo_method("simplify", self, *args, **kwargs)
 
-    def relate(self, other, align=True):
+    def relate(self, other, align=None):
         """
         Returns the DE-9IM intersection matrices for the geometries
 
@@ -4380,9 +4387,9 @@ GeometryCollection
         other : BaseGeometry or GeoSeries
             The other geometry to computed
             the DE-9IM intersection matrices from.
-        align : bool (default True)
+        align : bool | None (default None)
             If True, automatically aligns GeoSeries based on their indices.
-            If False, the order of elements is preserved.
+            If False, the order of elements is preserved. None defaults to True.
 
         Returns
         -------
@@ -4471,7 +4478,7 @@ GeometryCollection
         """
         return _binary_op("relate", self, other, align)
 
-    def project(self, other, normalized=False, align=True):
+    def project(self, other, normalized=False, align=None):
         """
         Return the distance along each geometry nearest to *other*
 
@@ -4492,9 +4499,9 @@ GeometryCollection
         normalized : boolean
             If normalized is True, return the distance normalized to
             the length of the object.
-        align : bool (default True)
+        align : bool | None (default None)
             If True, automatically aligns GeoSeries based on their indices.
-            If False, the order of elements is preserved.
+            If False, the order of elements is preserved. None defaults to True.
 
         Returns
         -------
