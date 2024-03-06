@@ -287,7 +287,6 @@ def test_astype_invalid_geodataframe():
     assert res["a"].dtype == object
 
 
-@pytest.mark.skipif(not compat.HAS_PYPROJ, reason="pyproj not available")
 def test_convert_dtypes(df):
     # https://github.com/geopandas/geopandas/issues/1870
 
@@ -306,17 +305,18 @@ def test_convert_dtypes(df):
     res2 = df[["value1", "value2", "geometry"]].convert_dtypes()
     assert_geodataframe_equal(expected1[["value1", "value2", "geometry"]], res2)
 
-    # Test again with crs set and custom geom col name
-    df2 = df.set_crs(epsg=4326).rename_geometry("points")
-    expected2 = GeoDataFrame(
-        pd.DataFrame(df2).convert_dtypes(), crs=df2.crs, geometry=df2.geometry.name
-    )
-    res3 = df2.convert_dtypes()
-    assert_geodataframe_equal(expected2, res3)
+    if compat.HAS_PYPROJ:
+        # Test again with crs set and custom geom col name
+        df2 = df.set_crs(epsg=4326).rename_geometry("points")
+        expected2 = GeoDataFrame(
+            pd.DataFrame(df2).convert_dtypes(), crs=df2.crs, geometry=df2.geometry.name
+        )
+        res3 = df2.convert_dtypes()
+        assert_geodataframe_equal(expected2, res3)
 
-    # Test geom last, geom_col=geometry
-    res4 = df2[["value1", "value2", "points"]].convert_dtypes()
-    assert_geodataframe_equal(expected2[["value1", "value2", "points"]], res4)
+        # Test geom last, geom_col=geometry
+        res4 = df2[["value1", "value2", "points"]].convert_dtypes()
+        assert_geodataframe_equal(expected2[["value1", "value2", "points"]], res4)
 
 
 def test_to_csv(df):
@@ -658,10 +658,11 @@ def test_groupby_groups(df):
     assert_frame_equal(res, exp)
 
 
-@pytest.mark.skipif(not compat.HAS_PYPROJ, reason="pyproj not available")
 @pytest.mark.parametrize("crs", [None, "EPSG:4326"])
 @pytest.mark.parametrize("geometry_name", ["geometry", "geom"])
 def test_groupby_metadata(crs, geometry_name):
+    if crs and not compat.HAS_PYPROJ:
+        pytest.skip("requires pyproj")
     # https://github.com/geopandas/geopandas/issues/2294
     df = GeoDataFrame(
         {
@@ -770,10 +771,11 @@ def test_apply_convert_dtypes_keyword(s):
         assert len(record) == 0
 
 
-@pytest.mark.skipif(not compat.HAS_PYPROJ, reason="pyproj not available")
 @pytest.mark.parametrize("crs", [None, "EPSG:4326"])
 def test_apply_no_geometry_result(df, crs):
     if crs:
+        if not compat.HAS_PYPROJ:
+            pytest.skip("requires pyproj")
         df = df.set_crs(crs)
     result = df.apply(lambda col: col.astype(str), axis=0)
     assert type(result) is pd.DataFrame

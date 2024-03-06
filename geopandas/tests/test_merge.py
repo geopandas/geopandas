@@ -179,7 +179,6 @@ class TestMerging:
         assert isinstance(res.geometry, GeoSeries)
         self._check_metadata(res)
 
-    @pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not available")
     def test_concat_axis1_multiple_geodataframes(self):
         # https://github.com/geopandas/geopandas/issues/1230
         # Expect that concat should fail gracefully if duplicate column names belonging
@@ -208,10 +207,11 @@ class TestMerging:
         with pytest.raises(ValueError, match=expected_err2):
             pd.concat([df2, df2], axis=1)
 
-        # Check that two geometry columns is fine, if they have different names
-        res3 = pd.concat([df2.set_crs("epsg:4326"), self.gdf], axis=1)
-        # check metadata comes from first df
-        self._check_metadata(res3, geometry_column_name="geom", crs="epsg:4326")
+        if HAS_PYPROJ:
+            # Check that two geometry columns is fine, if they have different names
+            res3 = pd.concat([df2.set_crs("epsg:4326"), self.gdf], axis=1)
+            # check metadata comes from first df
+            self._check_metadata(res3, geometry_column_name="geom", crs="epsg:4326")
 
     @pytest.mark.filterwarnings("ignore:Accessing CRS")
     def test_concat_axis1_geoseries(self):
