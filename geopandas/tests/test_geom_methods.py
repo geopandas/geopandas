@@ -499,6 +499,17 @@ class TestGeomMethods:
             expected, self.g0.contains_properly(self.g9, align=False)
         )
 
+    @pytest.mark.skipif(shapely.geos_version < (3, 10, 0), reason="requires GEOS>=3.10")
+    def test_dwithin(self):
+        expected = [True, True, True, False, True, True, False]
+        assert_array_dtype_equal(expected, self.g0.dwithin(self.p0, 6))
+
+        expected = [False, True, True, True, True, True, False, False]
+        with pytest.warns(UserWarning, match="The indices .+ different"):
+            assert_array_dtype_equal(expected, self.g0.dwithin(self.g9, 1, align=True))
+        expected = [True, True, True, True, False, False, False]
+        assert_array_dtype_equal(expected, self.g0.dwithin(self.g9, 1, align=False))
+
     def test_length(self):
         expected = Series(np.array([2 + np.sqrt(2), 4]), index=self.g1.index)
         self._test_unary_real("length", expected, self.g1)
@@ -614,14 +625,10 @@ class TestGeomMethods:
 
     def test_hausdorff_distance(self):
         # closest point is (0, 0) in self.p1
-        expected = Series(
-            np.array([np.sqrt(5**2 + 5**2), np.nan]), self.na_none.index
-        )
+        expected = Series(np.array([np.sqrt(5**2 + 5**2), np.nan]), self.na_none.index)
         assert_array_dtype_equal(expected, self.na_none.hausdorff_distance(self.p0))
 
-        expected = Series(
-            np.array([np.sqrt(5**2 + 5**2), np.nan]), self.na_none.index
-        )
+        expected = Series(np.array([np.sqrt(5**2 + 5**2), np.nan]), self.na_none.index)
         assert_array_dtype_equal(expected, self.na_none.hausdorff_distance(self.p0))
 
         expected = Series(np.array([np.nan, 0, 0, 0, 0, 0, np.nan, np.nan]), range(8))
@@ -650,9 +657,7 @@ class TestGeomMethods:
     )
     def test_frechet_distance(self):
         # closest point is (0, 0) in self.p1
-        expected = Series(
-            np.array([np.sqrt(5**2 + 5**2), np.nan]), self.na_none.index
-        )
+        expected = Series(np.array([np.sqrt(5**2 + 5**2), np.nan]), self.na_none.index)
         assert_array_dtype_equal(expected, self.na_none.frechet_distance(self.p0))
 
         expected = Series(np.array([np.nan, 0, 0, 0, 0, 0, np.nan, np.nan]), range(8))
@@ -673,9 +678,7 @@ class TestGeomMethods:
             expected, self.g0.frechet_distance(self.g9, align=False)
         )
 
-        expected = Series(
-            np.array([np.sqrt(100**2 + (100 - 5) ** 2)]), self.g12.index
-        )
+        expected = Series(np.array([np.sqrt(100**2 + (100 - 5) ** 2)]), self.g12.index)
         assert_array_dtype_equal(
             expected, self.g12.frechet_distance(self.g13, densify=0.25)
         )

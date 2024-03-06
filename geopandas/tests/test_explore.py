@@ -361,12 +361,12 @@ class TestExplore:
         m = self.world.explore(
             style_kwds={
                 "style_function": lambda x: {
-                    "fillColor": "red"
-                    if x["properties"]["gdp_md_est"] < 10**6
-                    else "green",
-                    "color": "black"
-                    if x["properties"]["gdp_md_est"] < 10**6
-                    else "white",
+                    "fillColor": (
+                        "red" if x["properties"]["gdp_md_est"] < 10**6 else "green"
+                    ),
+                    "color": (
+                        "black" if x["properties"]["gdp_md_est"] < 10**6 else "white"
+                    ),
                 }
             }
         )
