@@ -795,6 +795,11 @@ class GeometryArray(ExtensionArray):
             other = other._data
         return shapely.relate(self._data, other)
 
+    def relate_pattern(self, other, pattern):
+        if isinstance(other, GeometryArray):
+            other = other._data
+        return shapely.relate_pattern(self._data, other, pattern)
+
     #
     # Reduction operations that return a Shapely geometry
     #

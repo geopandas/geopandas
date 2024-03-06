@@ -4360,6 +4360,118 @@ GeometryCollection
         """
         return _binary_op("relate", self, other, align)
 
+    def relate_pattern(self, other, pattern, align=True):
+        """
+        Returns True if the DE-9IM string code for the relationship between
+        the geometries satisfies the pattern, else False.
+
+        This function compares the DE-9IM code string for two geometries
+        against a specified pattern. If the string matches the pattern then
+        ``True`` is returned, otherwise ``False``. The pattern specified can
+        be an exact match (``0``, ``1`` or ``2``), a boolean match
+        (uppercase ``T`` or ``F``), or a wildcard (``*``). For example,
+        the pattern for the ``within`` predicate is ``'T*F**F***'``
+
+        The operation works on a 1-to-1 row-wise manner:
+
+        .. image:: ../../../_static/binary_op-01.svg
+           :align: center
+
+        Parameters
+        ----------
+        other : BaseGeometry or GeoSeries
+            The other geometry to be tested agains the pattern.
+        pattern : str
+            The DE-9IM pattern to test against.
+        align : bool (default True)
+            If True, automatically aligns GeoSeries based on their indices.
+            If False, the order of elements is preserved.
+
+        Returns
+        -------
+        Series
+
+        Examples
+        --------
+        >>> from shapely.geometry import Polygon, LineString, Point
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0, 0), (2, 2), (0, 2)]),
+        ...         Polygon([(0, 0), (2, 2), (0, 2)]),
+        ...         LineString([(0, 0), (2, 2)]),
+        ...         LineString([(2, 0), (0, 2)]),
+        ...         Point(0, 1),
+        ...     ],
+        ... )
+        >>> s2 = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0, 0), (1, 1), (0, 1)]),
+        ...         LineString([(1, 0), (1, 3)]),
+        ...         LineString([(2, 0), (0, 2)]),
+        ...         Point(1, 1),
+        ...         Point(0, 1),
+        ...     ],
+        ...     index=range(1, 6),
+        ... )
+
+        >>> s
+        0    POLYGON ((0 0, 2 2, 0 2, 0 0))
+        1    POLYGON ((0 0, 2 2, 0 2, 0 0))
+        2             LINESTRING (0 0, 2 2)
+        3             LINESTRING (2 0, 0 2)
+        4                       POINT (0 1)
+        dtype: geometry
+
+        >>> s2
+        1    POLYGON ((0 0, 1 1, 0 1, 0 0))
+        2             LINESTRING (1 0, 1 3)
+        3             LINESTRING (2 0, 0 2)
+        4                       POINT (1 1)
+        5                       POINT (0 1)
+        dtype: geometry
+
+        We can check the relate pattern of each geometry and a single
+        shapely geometry:
+
+        .. image:: ../../../_static/binary_op-03.svg
+           :align: center
+
+        >>> s.relate_pattern(Polygon([(0, 0), (1, 1), (0, 1)]), "2*T***F**")
+        0     True
+        1     True
+        2    False
+        3    False
+        4    False
+        dtype: bool
+
+        We can also check two GeoSeries against each other, row by row.
+        The GeoSeries above have different indices. We can either align both GeoSeries
+        based on index values and compare elements with the same index using
+        ``align=True`` or ignore index and compare elements based on their matching
+        order using ``align=False``:
+
+        .. image:: ../../../_static/binary_op-02.svg
+
+        >>> s.relate_pattern(s2, "TF******T", align=True)
+        0    False
+        1    False
+        2     True
+        3     True
+        4    False
+        5    False
+        dtype: bool
+
+        >>> s.relate_pattern(s2, "TF******T", align=False)
+        0    False
+        1     True
+        2     True
+        3     True
+        4     True
+        dtype: bool
+
+        """
+        return _binary_op("relate_pattern", self, other, pattern=pattern, align=align)
+
     def project(self, other, normalized=False, align=True):
         """
         Return the distance along each geometry nearest to *other*
