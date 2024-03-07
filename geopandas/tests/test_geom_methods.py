@@ -1794,3 +1794,31 @@ class TestGeomMethods:
             ],
         )
         assert_geoseries_equal(expected, self.g1.force_3d([1, 2]))
+
+    def test_line_merge(self):
+        s = GeoSeries(
+            [
+                MultiLineString([[(0, 2), (0, 10)], [(0, 10), (5, 10)]]),
+                MultiLineString([[(0, 2), (0, 10)], [(0, 11), (5, 10)]]),
+                MultiLineString(),
+                MultiLineString([[(0, 0), (1, 0)], [(0, 0), (3, 0)]]),
+                Point(0, 0),
+            ],
+            crs=4326,
+            index=range(2, 7),
+        )
+        expected = GeoSeries(
+            [
+                LineString([(0, 2), (0, 10), (5, 10)]),
+                MultiLineString([[(0, 2), (0, 10)], [(0, 11), (5, 10)]]),
+                GeometryCollection(),
+                LineString([(0, 0), (1, 0), (3, 0)]),
+                GeometryCollection(),
+            ],
+            crs=4326,
+            index=range(2, 7),
+        )
+        assert_geoseries_equal(expected, s.line_merge())
+
+        expected.loc[5] = MultiLineString([[(0, 0), (1, 0)], [(0, 0), (3, 0)]])
+        assert_geoseries_equal(expected, s.line_merge(directed=True))

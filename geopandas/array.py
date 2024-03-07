@@ -646,6 +646,11 @@ class GeometryArray(ExtensionArray):
             shapely.transform(self._data, transformation, include_z), crs=self.crs
         )
 
+    def line_merge(self, directed=False):
+        return GeometryArray(
+            shapely.line_merge(self._data, directed=directed), crs=self.crs
+        )
+
     #
     # Binary predicates
     #
