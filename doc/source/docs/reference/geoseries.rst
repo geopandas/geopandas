@@ -135,6 +135,7 @@ Linestring operations
    :toctree: api/
 
    GeoSeries.interpolate
+   GeoSeries.line_merge
    GeoSeries.project
 
 Aggregating and exploding
