@@ -102,7 +102,6 @@ Constructive methods and attributes
    GeoSeries.extract_unique_points
    GeoSeries.force_2d
    GeoSeries.force_3d
-   GeoSeries.line_merge
    GeoSeries.make_valid
    GeoSeries.minimum_bounding_circle
    GeoSeries.minimum_clearance
@@ -136,6 +135,7 @@ Linestring operations
    :toctree: api/
 
    GeoSeries.interpolate
+   GeoSeries.line_merge
    GeoSeries.project
 
 Aggregating and exploding

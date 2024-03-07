@@ -1495,6 +1495,7 @@ GeometryCollection
 
         Examples
         --------
+        >>> from shapely.geometry import MultiLineString, Point
         >>> s = geopandas.GeoSeries(
         ...     [
         ...         MultiLineString([[(0, 2), (0, 10)], [(0, 10), (5, 10)]]),
