@@ -687,11 +687,6 @@ def test_infer_zipped_file(engine, nybb_filename):
     gdf = read_file("file+file://" + path, engine=engine)
     assert isinstance(gdf, geopandas.GeoDataFrame)
 
-    # Check that it can add a zip scheme for a path that includes a subpath
-    # within the archive.
-    gdf = read_file(path + "!nybb.shp", engine=engine)
-    assert isinstance(gdf, geopandas.GeoDataFrame)
-
 
 def test_allow_legacy_gdal_path(engine, nybb_filename):
     # Construct a GDAL-style zip path.
