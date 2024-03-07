@@ -750,6 +750,11 @@ class GeometryArray(ExtensionArray):
             self._binary_method("snap", self, other, tolerance=tolerance), crs=self.crs
         )
 
+    def shared_paths(self, other):
+        return GeometryArray(
+            self._binary_method("shared_paths", self, other), crs=self.crs
+        )
+
     #
     # Other operations
     #
