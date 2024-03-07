@@ -178,6 +178,8 @@ def _is_url(url):
 
 def _is_zip(path):
     """Check if a given path is a zipfile"""
+    import fiona.path
+
     parsed = fiona.path.ParsedPath.from_uri(path)
     return (
         parsed.archive.endswith(".zip")
