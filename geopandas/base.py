@@ -1119,13 +1119,6 @@ GeometryCollection
         will be removed, which can lead to MultiPolygons or empty geometries. Z values,
         if present, will not be modified.
 
-        Notes
-        -----
-        Input geometries should be geometrically valid; unexpected results may occur if
-        input geometries are not. You can check the validity with
-        :meth:`~GeoSeries.is_valid` and fix invalid geometries with
-        :meth:`~GeoSeries.make_valid` methods.
-
         Parameters
         ----------
         grid_size : float
@@ -1193,7 +1186,9 @@ GeometryCollection
         attached to the operation outputs.
 
         Input geometries should be geometrically valid; unexpected results may occur if
-        input geometries are not.
+        input geometries are not. You can check the validity with
+        :meth:`~GeoSeries.is_valid` and fix invalid geometries with
+        :meth:`~GeoSeries.make_valid` methods.
 
         """
         return _delegate_geo_method(
