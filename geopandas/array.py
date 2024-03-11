@@ -525,6 +525,9 @@ class GeometryArray(ExtensionArray):
         out[:] = [shapely.count_coordinates(s) for s in self._data]
         return out
 
+    def get_precision(self):
+        return shapely.get_precision(self._data)
+
     #
     # Unary operations that return new geometries
     #
@@ -644,6 +647,12 @@ class GeometryArray(ExtensionArray):
     def transform(self, transformation, include_z=False):
         return GeometryArray(
             shapely.transform(self._data, transformation, include_z), crs=self.crs
+        )
+
+    def set_precision(self, grid_size, mode="valid_output"):
+        return GeometryArray(
+            shapely.set_precision(self._data, grid_size=grid_size, mode=mode),
+            crs=self.crs,
         )
 
     #

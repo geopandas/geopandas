@@ -1794,3 +1794,62 @@ class TestGeomMethods:
             ],
         )
         assert_geoseries_equal(expected, self.g1.force_3d([1, 2]))
+
+    @pytest.mark.skipif(
+        shapely.geos_version < (3, 9, 5), reason="Empty geom bug in GEOS<3.9.5"
+    )
+    def test_set_precision(self):
+        expected = GeoSeries(
+            [
+                Point(-74, 41, 30.3244),
+                Point(-74, 41, 31.2344),
+                Point(-74, 41),
+                self.pt_empty,
+            ],
+            crs=4326,
+        )
+        assert_geoseries_equal(expected, self.landmarks_mixed_empty.set_precision(1))
+
+        s = GeoSeries(
+            [
+                LineString([(0, 0), (0, 0.1), (0, 1), (1, 1)]),
+                LineString([(0, 0), (0, 0.1), (0.1, 0.1)]),
+            ],
+        )
+        expected = GeoSeries(
+            [
+                LineString([(0, 0), (0, 1), (1, 1)]),
+                LineString(),
+            ],
+        )
+        assert_geoseries_equal(expected, s.set_precision(1))
+
+        expected = GeoSeries(
+            [
+                LineString([(0, 0), (0, 0), (0, 1), (1, 1)]),
+                LineString([(0, 0), (0, 0), (0, 0)]),
+            ]
+        )
+        assert_series_equal(
+            expected.to_wkt(), s.set_precision(1, mode="pointwise").to_wkt()
+        )
+
+        expected = GeoSeries(
+            [
+                LineString([(0, 0), (0, 1), (1, 1)]),
+                LineString([(0, 0), (0, 0)]),
+            ]
+        )
+        assert_series_equal(
+            expected.to_wkt(), s.set_precision(1, mode="keep_collapsed").to_wkt()
+        )
+
+    def test_get_precision(self):
+        expected = Series([0.0, 0.0, 0.0, 0.0], index=self.landmarks_mixed_empty.index)
+        assert_series_equal(expected, self.landmarks_mixed_empty.get_precision())
+        with_precision = self.landmarks_mixed_empty.set_precision(1)
+        expected = Series([1.0, 1.0, 1.0, 1.0], index=with_precision.index)
+        assert_series_equal(expected, with_precision.get_precision())
+        mixed = concat([self.landmarks_mixed_empty, with_precision])
+        expected = Series([0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0], index=mixed.index)
+        assert_series_equal(expected, mixed.get_precision())
