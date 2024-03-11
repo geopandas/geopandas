@@ -14,6 +14,8 @@ API changes:
 
 New methods:
 
+- Added `polygonize` method exposing both `polygonize` and `polygonize_full` from
+  shapely to GeoSeries/GeoDataframe (#2963).
 - Added `count_coordinates` method from shapely to GeoSeries/GeoDataframe (#3026).
 - Added `minimum_clearance` method from shapely to GeoSeries/GeoDataframe (#2989).
 - Added `is_ccw` method from shapely to GeoSeries/GeoDataframe (#3027).
