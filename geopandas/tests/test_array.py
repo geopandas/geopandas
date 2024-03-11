@@ -932,6 +932,7 @@ def test_missing_pyproj():
     with pytest.warns(UserWarning, match="Cannot set the CRS, falling back to None"):
         t = T.copy()
         t.crs = 4326
+    assert t.crs is None
 
 
 @pytest.mark.parametrize("NA", [None, np.nan])
