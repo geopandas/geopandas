@@ -1114,8 +1114,17 @@ GeometryCollection
         Coordinates will be rounded if a precision grid is less precise than the input
         geometry. Duplicated vertices will be dropped from lines and polygons for grid
         sizes greater than 0. Line and polygon geometries may collapse to empty
-        geometries if all vertices are closer together than ``grid_size``. Z values, if
-        present, will not be modified.
+        geometries if all vertices are closer together than ``grid_size``. Spikes or
+        sections in Polygons narrower than ``grid_size`` after rounding the vertices
+        will be removed, which can lead to MultiPolygons or empty geometries. Z values,
+        if present, will not be modified.
+
+        Notes
+        -----
+        Input geometries should be geometrically valid; unexpected results may occur if
+        input geometries are not. You can check the validity with
+        :meth:`~GeoSeries.is_valid` and fix invalid geometries with
+        :meth:`~GeoSeries.make_valid` methods.
 
         Parameters
         ----------
@@ -1124,8 +1133,8 @@ GeometryCollection
             geometry if precision grid size was not previously set). If this value is
             more precise than input geometry, the input geometry will not be modified.
         mode : {'valid_output', 'pointwise', 'keep_collapsed'}, default 'valid_output'
-            This parameter determines how to handle invalid output geometries. There are
-            three modes:
+            This parameter determines the way a precision reduction is applied on the
+            geometry. There are three modes:
 
             * ``'valid_output'`` (default): The output is always valid. Collapsed
               geometry elements (including both polygons and lines) are removed.
