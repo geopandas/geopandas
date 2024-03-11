@@ -5034,7 +5034,7 @@ GeometryCollection
         Parameters
         ----------
         node : bool, default True
-            perform noding prior polygonization, by default True
+            perform noding prior to polygonization, by default True
         full : bool, default False
             return the full output composed of a tuple of GeoSeries, by default False
 
