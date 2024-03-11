@@ -1182,7 +1182,7 @@ GeometryCollection
         Notes
         -----
         Subsequent operations will always be performed in the precision of the geometry
-        with higher precision (smaller “grid_size”). That same precision will be
+        with higher precision (smaller ``grid_size``). That same precision will be
         attached to the operation outputs.
 
         Input geometries should be geometrically valid; unexpected results may occur if
