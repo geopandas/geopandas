@@ -5015,9 +5015,9 @@ GeometryCollection
 
         Unless you know that the input GeoSeries represents a planar graph with a clean
         topology (e.g. there is a node on both lines where they intersect), it is
-        recommended to use ``node=True`` which performs noding prior polygonization.
-        Using ``node=False`` will provide performance benefits but may result in
-        incorrect polygons if the input is not of the proper topology.
+        recommended to use ``node=True`` which performs noding prior to building areal
+        geometry. Using ``node=False`` will provide performance benefits but may result
+        in incorrect polygons if the input is not of the proper topology.
 
         If the input linework crosses, this function will produce invalid polygons. Use
         :meth:`GeoSeries.make_valid` to ensure valid geometries.
@@ -5026,7 +5026,7 @@ GeometryCollection
         Parameters
         ----------
         node : bool, default True
-            perform noding prior building the areas, by default True
+            perform noding prior to building the areas, by default True
 
         Returns
         -------
@@ -5052,10 +5052,9 @@ GeometryCollection
 
         """
         from .geoseries import GeoSeries
-        from .array import from_shapely
 
         if node:
-            geometry_input = from_shapely([self.geometry.union_all()])
+            geometry_input = self.geometry.union_all()
         else:
             geometry_input = self.geometry.values
 
