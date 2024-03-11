@@ -490,12 +490,10 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                     "Unpickling a GeoDataFrame with CRS requires the 'pyproj' package, "
                     "but it is not installed or does not import correctly. "
                 )
-            elif crs is None:
-                crs = None
-            else:
+            elif crs is not None:
                 from pyproj import CRS
 
-                crs = CRS.from_user_input(crs) if crs is not None else crs
+                crs = CRS.from_user_input(crs)
 
         super().__setstate__(state)
 
