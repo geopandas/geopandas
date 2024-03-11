@@ -300,7 +300,8 @@ class TestGeomMethods:
 
     def test_alignment_warning(self):
         with pytest.warns(
-            UserWarning, match="The indices of the two GeoSeries are different"
+            UserWarning,
+            match="The indices of the left and right GeoSeries' are not equal",
         ):
             self.g0.intersection(self.g9, align=None)
 

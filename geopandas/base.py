@@ -37,8 +37,12 @@ def _delegate_binary_method(op, this, other, align, *args, **kwargs):
         if align and not this.index.equals(other.index):
             if maybe_warn:
                 warn(
-                    "The indices of the two GeoSeries are different and will be "
-                    "aligned. Use the `align` keyword to control this behavior.",
+                    "The indices of the left and right GeoSeries' are not equal, and "
+                    "therefore they will be aligned (reordering and/or introducing "
+                    "missing values) before executing the operation. If this alignment "
+                    "is the desired behaviour, you can silence this warning by passing "
+                    "'align=True'. If you don't want alignment and protect yourself of "
+                    "accidentally aligning, you can pass 'align=False'.",
                     stacklevel=4,
                 )
             this, other = this.align(other.geometry)
