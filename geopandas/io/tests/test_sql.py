@@ -23,7 +23,7 @@ try:
     from sqlalchemy import text
 except ImportError:
     # Avoid local imports for text in all sqlalchemy tests
-    # all tests using text use engine_psycopg, which ensures sqlalchemy is available
+    # all tests using text use engine_postgis, which ensures sqlalchemy is available
     text = str
 
 
