@@ -27,6 +27,12 @@ except ImportError:
     text = str
 
 
+@pytest.fixture
+def df_nybb(nybb_filename):
+    df = read_file(nybb_filename)
+    return df
+
+
 def check_available_postgis_drivers() -> list[str]:
     """Work out which of psycopg2 and psycopg are available.
     This prevents tests running if the relevant package isn't installed
@@ -34,7 +40,7 @@ def check_available_postgis_drivers() -> list[str]:
     """
     drivers = []
     if find_spec("psycopg"):
-        drivers.append("psycopg3")
+        drivers.append("psycopg")
     if find_spec("psycopg2"):
         drivers.append("psycopg2")
     return drivers
@@ -54,9 +60,12 @@ def prepare_database_credentials() -> dict:
     }
 
 
-def connection_psycopg(psycopg_package_name: str):
-    """Create a postgres connection using either psycopg2 or psycopg."""
-    psycopg = pytest.importorskip(psycopg_package_name)
+@pytest.fixture()
+def connection_postgis(request):
+    """Create a postgres connection using either psycopg2 or psycopg.
+
+    Use this as an indirect fixture, where the request parameter is POSTGIS_DRIVERS."""
+    psycopg = pytest.importorskip(request.param)
 
     try:
         con = psycopg.connect(**prepare_database_credentials())
@@ -70,9 +79,12 @@ def connection_psycopg(psycopg_package_name: str):
     con.close()
 
 
-def engine_psycopg(psycopg_package_name: str):
+@pytest.fixture()
+def engine_postgis(request):
     """
-    Initiates a sqlalchemy connection engine using either psycopg2 or psycopg3.
+    Initiate a sqlalchemy connection engine using either psycopg2 or psycopg.
+
+    Use this as an indirect fixture, where the request parameter is POSTGIS_DRIVERS.
     """
     sqlalchemy = pytest.importorskip("sqlalchemy")
     from sqlalchemy.engine.url import URL
@@ -81,7 +93,7 @@ def engine_psycopg(psycopg_package_name: str):
     try:
         con = sqlalchemy.create_engine(
             URL.create(
-                drivername=f"postgresql+{psycopg_package_name}",
+                drivername=f"postgresql+{request.param}",
                 username=credentials["user"],
                 database=credentials["dbname"],
                 password=credentials["password"],
@@ -95,56 +107,6 @@ def engine_psycopg(psycopg_package_name: str):
 
     yield con
     con.dispose()
-
-
-@pytest.fixture()
-def connection_postgis(request):
-    """A connection fixture, where the version of psycopg is given as a string
-    by the received input fixture."""
-    return request.getfixturevalue(f"connection_{request.param}")
-
-
-@pytest.fixture()
-def engine_postgis(request):
-    """An engine fixture, where the version of psycopg is given as a string
-    by the received input fixture."""
-    return request.getfixturevalue(f"engine_{request.param}")
-
-
-@pytest.fixture
-def df_nybb(nybb_filename):
-    df = read_file(nybb_filename)
-    return df
-
-
-@pytest.fixture()
-def connection_psycopg2():
-    """
-    Use psycopg2 to initiate a connection to a postGIS database that must already exist.
-    See create_postgis for more information.
-    """
-    yield from connection_psycopg("psycopg2")
-
-
-@pytest.fixture()
-def connection_psycopg3():
-    """
-    Use psycopg3 to initiate a connection to a postGIS database that must already exist.
-    See create_postgis for more information.
-    """
-    yield from connection_psycopg("psycopg")  # package name is psycopg, not psycopg3
-
-
-@pytest.fixture()
-def engine_psycopg2():
-    """Uses psycopg2 to connect a sqlalchemy engine to an existing postGIS database."""
-    yield from engine_psycopg("psycopg2")
-
-
-@pytest.fixture()
-def engine_psycopg3():
-    """Uses psycopg to connect a sqlalchemy engine to an existing postGIS database."""
-    yield from engine_psycopg("psycopg")
 
 
 @pytest.fixture()
