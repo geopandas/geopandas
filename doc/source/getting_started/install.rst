@@ -103,7 +103,7 @@ as well::
 
 Optional runtime dependencies can also be installed all at once::
 
-    pip install geopandas[all]
+    pip install 'geopandas[all]'
 
 Installing from source
 ----------------------
@@ -118,7 +118,7 @@ You may install the latest development version by cloning the
 Development dependencies can be installed using the dev optional
 dependency group::
 
-    pip install .[dev]
+    pip install '.[dev]'
 
 It is also possible to install the latest development version
 directly from the GitHub repository with::
