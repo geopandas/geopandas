@@ -1079,6 +1079,7 @@ def _setup_class_geographic_aspect(naturalearth_lowres, request):
 
 
 @pytest.mark.usefixtures("_setup_class_geographic_aspect")
+@pytest.mark.skipif(not compat.HAS_PYPROJ, reason="pyproj not available")
 class TestGeographicAspect:
     def test_auto(self):
         ax = self.north.geometry.plot()

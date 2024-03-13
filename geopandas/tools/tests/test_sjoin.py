@@ -107,6 +107,7 @@ class TestSpatialJoin:
         joined = sjoin(left, right, how=how, lsuffix=lsuffix, rsuffix=rsuffix)
         assert set(joined.columns) == expected_cols | {"geometry"}
 
+    @pytest.mark.skipif(not compat.HAS_PYPROJ, reason="pyproj not available")
     @pytest.mark.parametrize("dfs", ["default-index", "string-index"], indirect=True)
     def test_crs_mismatch(self, dfs):
         index, df1, df2, expected = dfs

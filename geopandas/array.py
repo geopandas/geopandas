@@ -16,14 +16,16 @@ from pandas.api.extensions import (
     ExtensionDtype,
     register_extension_dtype,
 )
-from pyproj import CRS, Transformer
-from pyproj.aoi import AreaOfInterest
-from pyproj.database import query_utm_crs_info
+
 from shapely.geometry.base import BaseGeometry
 
 from .sindex import SpatialIndex
+from ._compat import HAS_PYPROJ, requires_pyproj
 
-TransformerFromCRS = lru_cache(Transformer.from_crs)
+if HAS_PYPROJ:
+    from pyproj import Transformer
+
+    TransformerFromCRS = lru_cache(Transformer.from_crs)
 
 _names = {
     "MISSING": None,
@@ -379,7 +381,21 @@ class GeometryArray(ExtensionArray):
     @crs.setter
     def crs(self, value):
         """Sets the value of the crs"""
-        self._crs = None if not value else CRS.from_user_input(value)
+        if HAS_PYPROJ:
+            from pyproj import CRS
+
+            self._crs = None if not value else CRS.from_user_input(value)
+        else:
+            if value is not None:
+                warnings.warn(
+                    "Cannot set the CRS, falling back to None. The CRS support requires"
+                    " the 'pyproj' package, but it is not installed or does not import"
+                    " correctly. The functions depending on CRS will raise an error or"
+                    " may produce unexpected results.",
+                    UserWarning,
+                    stacklevel=2,
+                )
+            self._crs = None
 
     def check_geographic_crs(self, stacklevel):
         """Check CRS and warn if the planar operation is done in a geographic CRS"""
@@ -881,6 +897,7 @@ class GeometryArray(ExtensionArray):
             crs=self.crs,
         )
 
+    @requires_pyproj
     def to_crs(self, crs=None, epsg=None):
         """Returns a ``GeometryArray`` with all geometries transformed to a new
         coordinate reference system.
@@ -950,6 +967,8 @@ class GeometryArray(ExtensionArray):
         - Prime Meridian: Greenwich
 
         """
+        from pyproj import CRS
+
         if self.crs is None:
             raise ValueError(
                 "Cannot transform naive geometries.  "
@@ -971,6 +990,7 @@ class GeometryArray(ExtensionArray):
         new_data = transform(self._data, transformer.transform)
         return GeometryArray(new_data, crs=crs)
 
+    @requires_pyproj
     def estimate_utm_crs(self, datum_name="WGS 84"):
         """Returns the estimated UTM CRS based on the bounds of the dataset.
 
@@ -1009,6 +1029,9 @@ class GeometryArray(ExtensionArray):
         - Ellipsoid: WGS 84
         - Prime Meridian: Greenwich
         """
+        from pyproj import CRS
+        from pyproj.aoi import AreaOfInterest
+        from pyproj.database import query_utm_crs_info
 
         if not self.crs:
             raise RuntimeError("crs must be set to estimate UTM CRS.")
