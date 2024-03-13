@@ -1102,6 +1102,33 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
 
         return df
 
+    def to_arrow(self, index=None, geometry_encoding="WKB"):
+        """Encode a GeoDataFrame to GeoArrow format.
+
+        Parameters
+        ----------
+        index : bool, default None
+            If ``True``, always include the dataframe's index(es) as columns
+            in the file output.
+            If ``False``, the index(es) will not be written to the file.
+            If ``None``, the index(ex) will be included as columns in the file
+            output except `RangeIndex` which is stored as metadata only.
+        geometry_encoding : {'WKB', 'geoarrow' }, default 'WKB'
+            The GeoArrow encoding to use for the data conversion.
+
+        Returns
+        -------
+        pyarrow.Table
+            a Table with geometry columns encoded to GeoArrow
+        """
+        from geopandas.io.arrow import _geopandas_to_arrow
+
+        return _geopandas_to_arrow(
+            self,
+            index=index,
+            geometry_encoding=geometry_encoding,
+        )
+
     def to_parquet(
         self, path, index=None, compression="snappy", schema_version=None, **kwargs
     ):
