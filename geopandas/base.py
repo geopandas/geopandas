@@ -5008,7 +5008,9 @@ GeometryCollection
 
         Builds areas from the GeoSeries that contain linework which represents the edges
         of a planar graph. Any geometry type may be provided as input; only the
-        constituent lines and rings will be used to create the output polygons.
+        constituent lines and rings will be used to create the output polygons. All
+        geometries within the GeoSeries are considered together and the resulting
+        polygons therefore do not map 1:1 to input geometries.
 
         This function converts inner rings into holes. To turn inner rings into polygons
         as well, use polygonize.
@@ -5019,9 +5021,8 @@ GeometryCollection
         geometry. Using ``node=False`` will provide performance benefits but may result
         in incorrect polygons if the input is not of the proper topology.
 
-        If the input linework crosses, this function will produce invalid polygons. Use
+        If the input linework crosses, this function may produce invalid polygons. Use
         :meth:`GeoSeries.make_valid` to ensure valid geometries.
-
 
         Parameters
         ----------
