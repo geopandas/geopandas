@@ -1796,6 +1796,7 @@ class TestGeomMethods:
         shapely.geos_version < (3, 11, 0), reason="different order in GEOS<3.11"
     )
     def test_build_area(self):
+        # test with polgon in it
         s = GeoSeries.from_wkt(
             [
                 "LINESTRING (18 4, 4 2, 2 9)",
@@ -1820,15 +1821,34 @@ class TestGeomMethods:
             crs=4326,
             name="polygons",
         )
-        assert_geoseries_equal(expected, s.build_area(node=True))
+        assert_geoseries_equal(expected, s.build_area())
 
-        expected = GeoSeries.from_wkt(
+        # test difference caused by nodign
+        s2 = GeoSeries.from_wkt(
             [
-                "POLYGON ((0 0, 0 3, 3 3, 3 0, 0 0))",
-                "POLYGON ((1 1, 1 2, 2 2, 1 1))",
-                "POLYGON ((10 7, 12 10, 13 8, 10 7))",
+                "LINESTRING (8 6, 12 13, 15 8)",
+                "LINESTRING (8 6, 15 8)",
+                "LINESTRING (0 0, 0 15, 12 15, 12 0, 0 0)",
+                "LINESTRING (10 7, 13 8, 12 10, 10 7)",
+            ],
+            crs=4326,
+        )
+
+        noded = GeoSeries.from_wkt(
+            ["POLYGON ((12 0, 0 0, 0 15, 12 15, 12 13, 15 8, 12 7.142857, 12 0))"],
+            crs=4326,
+            name="polygons",
+        )
+        assert_geoseries_equal(noded, s2.build_area(node=True), check_less_precise=True)
+
+        non_noded = GeoSeries.from_wkt(
+            [
+                "POLYGON ((0 15, 12 15, 12 13, 15 8, 12 7.142857, 12 0, 0 0, 0 15), "
+                "(12 7.666667, 13 8, 12 10, 12 7.666667))"
             ],
             crs=4326,
             name="polygons",
         )
-        assert_geoseries_equal(expected, s.build_area(node=False))
+        assert_geoseries_equal(
+            non_noded, s2.build_area(node=False), check_less_precise=True
+        )

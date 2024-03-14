@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 import shapely
 from pandas import DataFrame, Series
-from shapely.geometry import MultiPoint, box
+from shapely.geometry import MultiPoint, box, GeometryCollection
 from shapely.geometry.base import BaseGeometry
 
 from . import _compat as compat
@@ -5056,7 +5056,7 @@ GeometryCollection
         if node:
             geometry_input = self.geometry.union_all()
         else:
-            geometry_input = self.geometry.values
+            geometry_input = GeometryCollection(list(self.geometry.values))
 
         polygons = shapely.build_area(geometry_input)
         return GeoSeries(polygons, crs=self.crs, name="polygons").explode(
