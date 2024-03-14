@@ -5,6 +5,7 @@ geopandas.clip
 A module to clip vector data using GeoPandas.
 
 """
+
 import warnings
 
 import numpy as np
@@ -60,13 +61,13 @@ def _clip_gdf_with_mask(gdf, mask):
     if isinstance(gdf_sub, GeoDataFrame):
         clipped = gdf_sub.copy()
         if clipping_by_rectangle:
-            clipped.loc[
-                non_point_mask, clipped._geometry_column_name
-            ] = gdf_sub.geometry.values[non_point_mask].clip_by_rect(*mask)
+            clipped.loc[non_point_mask, clipped._geometry_column_name] = (
+                gdf_sub.geometry.values[non_point_mask].clip_by_rect(*mask)
+            )
         else:
-            clipped.loc[
-                non_point_mask, clipped._geometry_column_name
-            ] = gdf_sub.geometry.values[non_point_mask].intersection(mask)
+            clipped.loc[non_point_mask, clipped._geometry_column_name] = (
+                gdf_sub.geometry.values[non_point_mask].intersection(mask)
+            )
     else:
         # GeoSeries
         clipped = gdf_sub.copy()

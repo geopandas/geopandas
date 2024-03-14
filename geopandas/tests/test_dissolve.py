@@ -9,7 +9,7 @@ from geopandas import GeoDataFrame, read_file
 from pandas.testing import assert_frame_equal
 import pytest
 
-from geopandas._compat import PANDAS_GE_15, PANDAS_GE_20, PANDAS_GE_30
+from geopandas._compat import PANDAS_GE_15, PANDAS_GE_20, PANDAS_GE_30, HAS_PYPROJ
 from geopandas.testing import assert_geodataframe_equal, geom_almost_equals
 
 
@@ -63,6 +63,7 @@ def test_geom_dissolve(nybb_polydf, first):
     assert geom_almost_equals(test, first)
 
 
+@pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not installed")
 def test_dissolve_retains_existing_crs(nybb_polydf):
     assert nybb_polydf.crs is not None
     test = nybb_polydf.dissolve("manhattan_bronx")
