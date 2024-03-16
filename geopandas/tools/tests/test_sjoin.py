@@ -607,6 +607,7 @@ class TestIndexNames:
                 "column_right",
                 "geometry",
             ]
+        expected = expected.set_geometry("geometry")
         assert_geodataframe_equal(result, expected)
 
 
