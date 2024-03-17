@@ -25,9 +25,11 @@ try:
     import pyogrio
 
     PYOGRIO_GE_07 = Version(pyogrio.__version__) >= Version("0.7.0")
+    PYOGRIO_GE_06 = Version(pyogrio.__version__) >= Version("0.6.0")
 except ImportError:
     pyogrio = False
     PYOGRIO_GE_07 = False
+    PYOGRIO_GE_06 = False
 
 
 try:
@@ -363,6 +365,7 @@ def test_to_file_types(tmpdir, df_points, engine):
     df.to_file(tempfilename, engine=engine)
 
 
+@pytest.mark.skipif(not PYOGRIO_GE_06, reason="pyogrio < 0.6.0 doesn't support Int32")
 @pytest.mark.parametrize("driver,ext", driver_ext_pairs + [("OGR_GMT", ".gmt")])
 def test_to_file_int32(tmpdir, df_points, engine, driver, ext):
     tempfilename = os.path.join(str(tmpdir), f"int32.{ext}")
@@ -387,6 +390,7 @@ def test_to_file_int32(tmpdir, df_points, engine, driver, ext):
         assert df2_read["data"].dtype == "int64"
 
 
+@pytest.mark.skipif(not PYOGRIO_GE_06, reason="pyogrio < 0.6.0 doesn't support Int64")
 @pytest.mark.parametrize("driver,ext", driver_ext_pairs)
 def test_to_file_int64(tmpdir, df_points, engine, driver, ext):
     tempfilename = os.path.join(str(tmpdir), f"int64.{ext}")
