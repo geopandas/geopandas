@@ -8,7 +8,7 @@ Notes on dependencies:
   currently supported is shapely >= 2. As a consequence, spatial indexing based on the
   rtree package has also been removed. (#3035)
 - The I/O engine now defaults to Pyogrio which is now installed with GeoPandas instead
-  of Fiona.
+  of Fiona. (#3223)
 
 API changes:
 
