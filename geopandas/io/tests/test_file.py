@@ -267,7 +267,7 @@ def test_read_file_datetime_invalid(tmpdir, ext, engine):
     # https://github.com/geopandas/geopandas/issues/2502
     date_str = "9999-99-99T00:00:00"  # invalid date handled by GDAL
     tempfilename = write_invalid_date_file(date_str, tmpdir, ext, engine)
-    res = read_file(tempfilename)
+    res = read_file(tempfilename, engine=engine)
     if ext == "gpkg":
         assert is_datetime64_any_dtype(res["date"])
         assert pd.isna(res["date"].iloc[-1])
@@ -281,7 +281,7 @@ def test_read_file_datetime_out_of_bounds_ns(tmpdir, ext, engine):
     # https://github.com/geopandas/geopandas/issues/2502
     date_str = "9999-12-31T00:00:00"  # valid to GDAL, not to [ns] format
     tempfilename = write_invalid_date_file(date_str, tmpdir, ext, engine)
-    res = read_file(tempfilename)
+    res = read_file(tempfilename, engine=engine)
     # Pandas invalid datetimes are read in as object dtype (strings)
     assert res["date"].dtype == "object"
     assert isinstance(res["date"].iloc[0], str)
