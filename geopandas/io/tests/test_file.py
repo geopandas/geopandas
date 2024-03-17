@@ -250,7 +250,7 @@ def write_invalid_date_file(date_str, tmpdir, ext, engine):
     )
     # Schema not required for GeoJSON since not typed, but needed for GPKG
     if ext == "geojson":
-        df.to_file(tempfilename)
+        df.to_file(tempfilename, engine=engine)
     else:
         schema = {"geometry": "Point", "properties": {"date": "datetime"}}
         if engine == "pyogrio" and not fiona:
