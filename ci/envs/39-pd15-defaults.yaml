@@ -6,7 +6,7 @@ dependencies:
   # required
   - pandas=1.5
   - shapely
-  - fiona
+  - pyogrio
   - numpy=1.23
   - pyproj>=3.3.0
   - geos

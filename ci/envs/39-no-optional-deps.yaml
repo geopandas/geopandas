@@ -6,7 +6,7 @@ dependencies:
   # required
   - pandas
   - shapely
-  - fiona
+  - pyogrio
   - pyproj
   - packaging
   # testing

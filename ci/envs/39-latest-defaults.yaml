@@ -7,7 +7,7 @@ dependencies:
   - numpy
   - pandas
   - shapely
-  - fiona
+  - pyogrio
   - pyproj>=3.3.0
   - geos
   - packaging

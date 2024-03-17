@@ -101,34 +101,34 @@ def _check_pyogrio(func):
 
 
 def _check_engine(engine, func):
-    # if not specified through keyword or option, then default to "fiona" if
-    # installed, otherwise try pyogrio
+    # if not specified through keyword or option, then default to "pyogrio" if
+    # installed, otherwise try fiona
     if engine is None:
         import geopandas
 
         engine = geopandas.options.io_engine
 
     if engine is None:
-        _import_fiona()
-        if fiona:
-            engine = "fiona"
+        _import_pyogrio()
+        if pyogrio:
+            engine = "pyogrio"
         else:
-            _import_pyogrio()
-            if pyogrio:
-                engine = "pyogrio"
+            _import_fiona()
+            if fiona:
+                engine = "fiona"
 
-    if engine == "fiona":
-        _import_fiona()
-        _check_fiona(func)
-    elif engine == "pyogrio":
+    if engine == "pyogrio":
         _import_pyogrio()
         _check_pyogrio(func)
+    elif engine == "fiona":
+        _import_fiona()
+        _check_fiona(func)
     elif engine is None:
         raise ImportError(
             f"The {func} requires the 'pyogrio' or 'fiona' package, "
             "but neither is installed or imports correctly."
-            f"\nImporting fiona resulted in: {fiona_import_error}"
             f"\nImporting pyogrio resulted in: {pyogrio_import_error}"
+            f"\nImporting fiona resulted in: {fiona_import_error}"
         )
 
     return engine
@@ -189,17 +189,6 @@ def _read_file(filename, bbox=None, mask=None, rows=None, engine=None, **kwargs)
     """
     Returns a GeoDataFrame from a file or URL.
 
-    .. note::
-
-        GeoPandas currently defaults to use Fiona as the engine in ``read_file``.
-        However, GeoPandas 1.0 will switch to use pyogrio as the default engine, since
-        pyogrio can provide a significant speedup compared to Fiona. We recommend to
-        already install pyogrio and specify the engine by using the ``engine`` keyword
-        (``geopandas.read_file(..., engine="pyogrio")``), or by setting the default for
-        the ``engine`` keyword globally with::
-
-            geopandas.options.io_engine = "pyogrio"
-
     Parameters
     ----------
     filename : str, path object or file-like object
@@ -224,14 +213,15 @@ def _read_file(filename, bbox=None, mask=None, rows=None, engine=None, **kwargs)
     engine : str, "fiona" or "pyogrio"
         The underlying library that is used to read the file. Currently, the
         supported options are "fiona" and "pyogrio". Defaults to "fiona" if
-        installed, otherwise tries "pyogrio".
+        installed, otherwise tries "pyogrio". Engine can also be set globally
+        with the ``geopandas.options.io_engine`` option.
     **kwargs :
-        Keyword args to be passed to the engine. In case of the "fiona" engine,
-        the keyword arguments are passed to :func:`fiona.open` or
-        :class:`fiona.collection.BytesCollection` when opening the file.
-        For more information on possible keywords, type:
-        ``import fiona; help(fiona.open)``. In case of the "pyogrio" engine,
-        the keyword arguments are passed to :func:`pyogrio.read_dataframe`.
+        Keyword args to be passed to the engine, and can be used to write
+        to multi-layer data, store data within archives (zip files), etc.
+        In case of the "pyogrio" engine, the keyword arguments are passed to
+        `pyogrio.write_dataframe`. In case of the "fiona" engine, the keyword
+        arguments are passed to fiona.open`. For more information on possible
+        keywords, type: ``import pyogrio; help(pyogrio.write_dataframe)``.
 
 
     Examples
@@ -539,19 +529,9 @@ def _to_file(
     Write this GeoDataFrame to an OGR data source
 
     A dictionary of supported OGR providers is available via:
-    >>> import fiona
-    >>> fiona.supported_drivers  # doctest: +SKIP
 
-    .. note::
-
-        GeoPandas currently defaults to use Fiona as the engine in ``to_file``.
-        However, GeoPandas 1.0 will switch to use pyogrio as the default engine, since
-        pyogrio can provide a significant speedup compared to Fiona. We recommend to
-        already install pyogrio and specify the engine by using the ``engine`` keyword
-        (``df.to_file(..., engine="pyogrio")``), or by setting the default for
-        the ``engine`` keyword globally with::
-
-            geopandas.options.io_engine = "pyogrio"
+    >>> import pyogrio
+    >>> pyogrio.list_drivers()  # doctest: +SKIP
 
     Parameters
     ----------
@@ -596,7 +576,8 @@ def _to_file(
     engine : str, "fiona" or "pyogrio"
         The underlying library that is used to write the file. Currently, the
         supported options are "fiona" and "pyogrio". Defaults to "fiona" if
-        installed, otherwise tries "pyogrio".
+        installed, otherwise tries "pyogrio". Engine can also be set globally
+        with the ``geopandas.options.io_engine`` option.
     **kwargs :
         Keyword args to be passed to the engine, and can be used to write
         to multi-layer data, store data within archives (zip files), etc.
@@ -644,10 +625,10 @@ def _to_file(
     if mode not in ("w", "a"):
         raise ValueError(f"'mode' should be one of 'w' or 'a', got '{mode}' instead")
 
-    if engine == "fiona":
-        _to_file_fiona(df, filename, driver, schema, crs, mode, **kwargs)
-    elif engine == "pyogrio":
+    if engine == "pyogrio":
         _to_file_pyogrio(df, filename, driver, schema, crs, mode, **kwargs)
+    elif engine == "fiona":
+        _to_file_fiona(df, filename, driver, schema, crs, mode, **kwargs)
     else:
         raise ValueError(f"unknown engine '{engine}'")
 
