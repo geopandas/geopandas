@@ -63,7 +63,7 @@ def _get_C_info():
         gdal_version = pyogrio.__gdal_version_string__
         gdal_dir = None
     except Exception:
-        pass
+        gdal_version = None
     try:
         # get_gdal_data_path is only available in pyogrio >= 0.4.2
         from pyogrio import get_gdal_data_path
