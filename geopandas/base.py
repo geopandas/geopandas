@@ -540,6 +540,56 @@ GeometryCollection
         """
         return _delegate_property("has_z", self)
 
+    def get_precision(self):
+        """Returns a ``Series`` of the precision of each geometry.
+
+        If a precision has not been previously set, it will be 0, indicating regular
+        double precision coordinates are in use. Otherwise, it will return the precision
+        grid size that was set on a geometry.
+
+        Returns NaN for not-a-geometry values.
+
+        Examples
+        --------
+        >>> from shapely.geometry import Point
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Point(0, 1),
+        ...         Point(0, 1, 2),
+        ...         Point(0, 1.5, 2),
+        ...     ]
+        ... )
+        >>> s
+        0          POINT (0 1)
+        1      POINT Z (0 1 2)
+        2    POINT Z (0 1.5 2)
+        dtype: geometry
+
+        >>> s.get_precision()
+        0    0.0
+        1    0.0
+        2    0.0
+        dtype: float64
+
+        >>> s1 = s.set_precision(1)
+        >>> s1
+        0        POINT (0 1)
+        1    POINT Z (0 1 2)
+        2    POINT Z (0 2 2)
+        dtype: geometry
+
+        >>> s1.get_precision()
+        0    1.0
+        1    1.0
+        2    1.0
+        dtype: float64
+
+        See also
+        --------
+        GeoSeries.set_precision : set precision grid size
+        """
+        return Series(self.geometry.values.get_precision(), index=self.index)
+
     #
     # Unary operations that return a GeoSeries
     #
@@ -1055,6 +1105,95 @@ GeometryCollection
         dtype: geometry
         """
         return _delegate_geo_method("remove_repeated_points", self, tolerance=tolerance)
+
+    def set_precision(self, grid_size, mode="valid_output"):
+        """Returns a ``GeoSeries`` with the precision set to a precision grid size.
+
+        By default, geometries use double precision coordinates (``grid_size=0``).
+
+        Coordinates will be rounded if a precision grid is less precise than the input
+        geometry. Duplicated vertices will be dropped from lines and polygons for grid
+        sizes greater than 0. Line and polygon geometries may collapse to empty
+        geometries if all vertices are closer together than ``grid_size``. Spikes or
+        sections in Polygons narrower than ``grid_size`` after rounding the vertices
+        will be removed, which can lead to MultiPolygons or empty geometries. Z values,
+        if present, will not be modified.
+
+        Parameters
+        ----------
+        grid_size : float
+            Precision grid size. If 0, will use double precision (will not modify
+            geometry if precision grid size was not previously set). If this value is
+            more precise than input geometry, the input geometry will not be modified.
+        mode : {'valid_output', 'pointwise', 'keep_collapsed'}, default 'valid_output'
+            This parameter determines the way a precision reduction is applied on the
+            geometry. There are three modes:
+
+            * ``'valid_output'`` (default): The output is always valid. Collapsed
+              geometry elements (including both polygons and lines) are removed.
+              Duplicate vertices are removed.
+            * ``'pointwise'``: Precision reduction is performed pointwise. Output
+              geometry may be invalid due to collapse or self-intersection. Duplicate
+              vertices are not removed.
+            * ``'keep_collapsed'``: Like the default mode, except that collapsed linear
+              geometry elements are preserved. Collapsed polygonal input elements are
+              removed. Duplicate vertices are removed.
+
+        Examples
+        --------
+
+        >>> from shapely import LineString, Point
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...        Point(0.9, 0.9),
+        ...        Point(0.9, 0.9, 0.9),
+        ...        LineString([(0, 0), (0, 0.1), (0, 1), (1, 1)]),
+        ...        LineString([(0, 0), (0, 0.1), (0.1, 0.1)])
+        ...     ],
+        ... )
+        >>> s
+        0                      POINT (0.9 0.9)
+        1                POINT Z (0.9 0.9 0.9)
+        2    LINESTRING (0 0, 0 0.1, 0 1, 1 1)
+        3     LINESTRING (0 0, 0 0.1, 0.1 0.1)
+        dtype: geometry
+
+        >>> s.set_precision(1)
+        0                   POINT (1 1)
+        1             POINT Z (1 1 0.9)
+        2    LINESTRING (0 0, 0 1, 1 1)
+        3            LINESTRING Z EMPTY
+        dtype: geometry
+
+        >>> s.set_precision(1, mode="pointwise")
+        0                        POINT (1 1)
+        1                  POINT Z (1 1 0.9)
+        2    LINESTRING (0 0, 0 0, 0 1, 1 1)
+        3         LINESTRING (0 0, 0 0, 0 0)
+        dtype: geometry
+
+        >>> s.set_precision(1, mode="keep_collapsed")
+        0                   POINT (1 1)
+        1             POINT Z (1 1 0.9)
+        2    LINESTRING (0 0, 0 1, 1 1)
+        3         LINESTRING (0 0, 0 0)
+        dtype: geometry
+
+        Notes
+        -----
+        Subsequent operations will always be performed in the precision of the geometry
+        with higher precision (smaller ``grid_size``). That same precision will be
+        attached to the operation outputs.
+
+        Input geometries should be geometrically valid; unexpected results may occur if
+        input geometries are not. You can check the validity with
+        :meth:`~GeoSeries.is_valid` and fix invalid geometries with
+        :meth:`~GeoSeries.make_valid` methods.
+
+        """
+        return _delegate_geo_method(
+            "set_precision", self, grid_size=grid_size, mode=mode
+        )
 
     def representative_point(self):
         """Returns a ``GeoSeries`` of (cheaply computed) points that are

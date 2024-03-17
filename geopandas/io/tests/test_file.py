@@ -16,7 +16,7 @@ from shapely.geometry import Point, Polygon, box, mapping
 
 import geopandas
 from geopandas import GeoDataFrame, read_file
-from geopandas._compat import PANDAS_GE_20
+from geopandas._compat import PANDAS_GE_20, HAS_PYPROJ
 from geopandas.io.file import _detect_driver, _EXTENSION_TO_DRIVER
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 from geopandas.tests.util import PACKAGE_DIR, validate_boro_df
@@ -440,6 +440,7 @@ def test_to_file_schema(tmpdir, df_nybb, engine):
         assert result_schema == schema
 
 
+@pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not installed")
 def test_to_file_crs(tmpdir, engine, nybb_filename):
     """
     Ensure that the file is written according to the crs
@@ -574,7 +575,8 @@ NYBB_CRS = "epsg:2263"
 def test_read_file(engine, nybb_filename):
     df = read_file(nybb_filename, engine=engine)
     validate_boro_df(df)
-    assert df.crs == NYBB_CRS
+    if HAS_PYPROJ:
+        assert df.crs == NYBB_CRS
     expected_columns = ["BoroCode", "BoroName", "Shape_Leng", "Shape_Area"]
     assert (df.columns[:-1] == expected_columns).all()
 
@@ -865,6 +867,7 @@ def test_read_file__columns(naturalearth_lowres):
     assert gdf.columns.tolist() == ["name", "pop_est", "geometry"]
 
 
+@pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not installed")
 @pytest.mark.parametrize("file_like", [False, True])
 def test_read_file_bbox_gdf(df_nybb, engine, nybb_filename, file_like):
     full_df_shape = df_nybb.shape
@@ -888,6 +891,7 @@ def test_read_file_bbox_gdf(df_nybb, engine, nybb_filename, file_like):
     assert filtered_df_shape == (2, 5)
 
 
+@pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not installed")
 @pytest.mark.parametrize("file_like", [False, True])
 def test_read_file_mask_gdf(df_nybb, engine, nybb_filename, file_like):
     skip_pyogrio_lt_07(engine)
@@ -941,6 +945,7 @@ def test_read_file_mask_geojson(df_nybb, nybb_filename, engine):
     assert filtered_df_shape == (2, 5)
 
 
+@pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not installed")
 def test_read_file_bbox_gdf_mismatched_crs(df_nybb, engine, nybb_filename):
     skip_pyogrio_lt_07(engine)
     full_df_shape = df_nybb.shape
@@ -962,6 +967,7 @@ def test_read_file_bbox_gdf_mismatched_crs(df_nybb, engine, nybb_filename):
     assert filtered_df_shape == (2, 5)
 
 
+@pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not installed")
 def test_read_file_mask_gdf_mismatched_crs(df_nybb, engine, nybb_filename):
     skip_pyogrio_lt_07(engine)
     full_df_shape = df_nybb.shape

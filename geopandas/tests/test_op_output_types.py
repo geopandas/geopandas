@@ -1,5 +1,4 @@
 import pandas as pd
-import pyproj
 import pytest
 
 from shapely.geometry import Point
@@ -8,6 +7,8 @@ import numpy as np
 from geopandas import GeoDataFrame, GeoSeries
 from geopandas.testing import assert_geodataframe_equal
 import geopandas
+
+pyproj = pytest.importorskip("pyproj")
 
 crs_osgb = pyproj.CRS(27700)
 crs_wgs = pyproj.CRS(4326)
