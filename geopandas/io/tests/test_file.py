@@ -278,6 +278,8 @@ def test_read_file_datetime_invalid(tmpdir, ext, engine):
 
 @pytest.mark.parametrize("ext", dt_exts)
 def test_read_file_datetime_out_of_bounds_ns(tmpdir, ext, engine):
+    if engine == "pyogrio" and not (PANDAS_GE_20 and PYOGRIO_GE_07):
+        pytest.skip("requires pyogrio >= 0.7.0 and pandas >= 2.0 to pass")
     # https://github.com/geopandas/geopandas/issues/2502
     date_str = "9999-12-31T00:00:00"  # valid to GDAL, not to [ns] format
     tempfilename = write_invalid_date_file(date_str, tmpdir, ext, engine)
