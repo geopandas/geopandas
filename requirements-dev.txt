@@ -1,5 +1,5 @@
 # required
-pyogrio>=0.4.0
+pyogrio>=0.5.0
 pandas>=1.4.0
 pyproj>=3.3.0
 shapely>=2.0.0
