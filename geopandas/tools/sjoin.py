@@ -7,6 +7,7 @@ import pandas as pd
 
 from geopandas import GeoDataFrame
 from geopandas.array import _check_crs, _crs_mismatch_warn
+from geopandas._compat import PANDAS_GE_30
 
 
 def sjoin(
@@ -203,7 +204,12 @@ def _reset_index_with_suffix(df, suffix, other):
     column names.
     """
     index_original = df.index.names
-    df_reset = df.reset_index()
+    if PANDAS_GE_30:
+        df_reset = df.reset_index()
+    else:
+        # we already made a copy of the dataframe in _frame_join before getting here
+        df_reset = df
+        df_reset.reset_index(inplace=True)
     column_names = df_reset.columns.to_numpy(copy=True)
     for i, label in enumerate(index_original):
         # if the original label was None, add suffix to auto-generated name
@@ -377,12 +383,12 @@ def _frame_join(left_df, right_df, indices, distances, how, lsuffix, rsuffix):
     else:  # how == 'right':
         left_df = left_df.drop(left_df.geometry.name, axis=1)
 
-    left_df = left_df.copy(deep=True)
+    left_df = left_df.copy(deep=False)
     left_nlevels = left_df.index.nlevels
     left_index_original = left_df.index.names
     left_df, left_column_names = _reset_index_with_suffix(left_df, lsuffix, right_df)
 
-    right_df = right_df.copy(deep=True)
+    right_df = right_df.copy(deep=False)
     right_nlevels = right_df.index.nlevels
     right_index_original = right_df.index.names
     right_df, right_column_names = _reset_index_with_suffix(right_df, rsuffix, left_df)
