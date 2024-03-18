@@ -1,3 +1,4 @@
+from functools import partial
 from typing import Optional
 import warnings
 
@@ -15,6 +16,7 @@ def sjoin(
     predicate="intersects",
     lsuffix="left",
     rsuffix="right",
+    distance=None,
     **kwargs,
 ):
     """Spatial join of two GeoDataFrames.
@@ -42,6 +44,11 @@ def sjoin(
         Suffix to apply to overlapping column names (left GeoDataFrame).
     rsuffix : string, default 'right'
         Suffix to apply to overlapping column names (right GeoDataFrame).
+    distance : number or array_like, optional
+        Distance(s) around each input geometry within which to query the tree
+        for the 'dwithin' predicate. If array_like, must be
+        one-dimesional with length equal to length of left GeoDataFrame.
+        Required if ``predicate='dwithin'``.
 
     Examples
     --------
@@ -91,33 +98,13 @@ def sjoin(
     Every operation in GeoPandas is planar, i.e. the potential third
     dimension is not taken into account.
     """
-    if "op" in kwargs:
-        op = kwargs.pop("op")
-        deprecation_message = (
-            "The `op` parameter is deprecated and will be removed"
-            " in a future release. Please use the `predicate` parameter"
-            " instead."
-        )
-        if predicate != "intersects" and op != predicate:
-            override_message = (
-                "A non-default value for `predicate` was passed"
-                f' (got `predicate="{predicate}"`'
-                f' in combination with `op="{op}"`).'
-                " The value of `predicate` will be overridden by the value of `op`,"
-                " , which may result in unexpected behavior."
-                f"\n{deprecation_message}"
-            )
-            warnings.warn(override_message, UserWarning, stacklevel=4)
-        else:
-            warnings.warn(deprecation_message, FutureWarning, stacklevel=4)
-        predicate = op
     if kwargs:
         first = next(iter(kwargs.keys()))
         raise TypeError(f"sjoin() got an unexpected keyword argument '{first}'")
 
     _basic_checks(left_df, right_df, how, lsuffix, rsuffix)
 
-    indices = _geom_predicate_query(left_df, right_df, predicate)
+    indices = _geom_predicate_query(left_df, right_df, predicate, distance)
 
     joined = _frame_join(indices, left_df, right_df, how, lsuffix, rsuffix)
 
@@ -161,20 +148,8 @@ def _basic_checks(left_df, right_df, how, lsuffix, rsuffix):
     if not _check_crs(left_df, right_df):
         _crs_mismatch_warn(left_df, right_df, stacklevel=4)
 
-    index_left = "index_{}".format(lsuffix)
-    index_right = "index_{}".format(rsuffix)
 
-    # due to GH 352
-    if any(left_df.columns.isin([index_left, index_right])) or any(
-        right_df.columns.isin([index_left, index_right])
-    ):
-        raise ValueError(
-            "'{0}' and '{1}' cannot be names in the frames being"
-            " joined".format(index_left, index_right)
-        )
-
-
-def _geom_predicate_query(left_df, right_df, predicate):
+def _geom_predicate_query(left_df, right_df, predicate, distance):
     """Compute geometric comparisons and get matching indices.
 
     Parameters
@@ -190,30 +165,26 @@ def _geom_predicate_query(left_df, right_df, predicate):
         DataFrame with matching indices in
         columns named `_key_left` and `_key_right`.
     """
-    with warnings.catch_warnings():
-        # We don't need to show our own warning here
-        # TODO remove this once the deprecation has been enforced
-        warnings.filterwarnings(
-            "ignore", "Generated spatial index is empty", FutureWarning
-        )
 
-        original_predicate = predicate
+    original_predicate = predicate
 
-        if predicate == "within":
-            # within is implemented as the inverse of contains
-            # contains is a faster predicate
-            # see discussion at https://github.com/geopandas/geopandas/pull/1421
-            predicate = "contains"
-            sindex = left_df.sindex
-            input_geoms = right_df.geometry
-        else:
-            # all other predicates are symmetric
-            # keep them the same
-            sindex = right_df.sindex
-            input_geoms = left_df.geometry
+    if predicate == "within":
+        # within is implemented as the inverse of contains
+        # contains is a faster predicate
+        # see discussion at https://github.com/geopandas/geopandas/pull/1421
+        predicate = "contains"
+        sindex = left_df.sindex
+        input_geoms = right_df.geometry
+    else:
+        # all other predicates are symmetric
+        # keep them the same
+        sindex = right_df.sindex
+        input_geoms = left_df.geometry
 
     if sindex:
-        l_idx, r_idx = sindex.query(input_geoms, predicate=predicate, sort=False)
+        l_idx, r_idx = sindex.query(
+            input_geoms, predicate=predicate, sort=False, distance=distance
+        )
         indices = pd.DataFrame({"_key_left": l_idx, "_key_right": r_idx})
     else:
         # when sindex is empty / has no valid geometries
@@ -227,6 +198,101 @@ def _geom_predicate_query(left_df, right_df, predicate):
         )
 
     return indices
+
+
+def _reset_index_with_suffix(df, suffix, other):
+    """
+    Equivalent of df.reset_index(), but with adding 'suffix' to auto-generated
+    column names.
+    """
+    index_original = df.index.names
+    df_reset = df.reset_index()
+    column_names = df_reset.columns.to_numpy(copy=True)
+    for i, label in enumerate(index_original):
+        # if the original label was None, add suffix to auto-generated name
+        if label is None:
+            new_label = column_names[i]
+            if "level" in new_label:
+                # reset_index of MultiIndex gives "level_i" names, preserve the "i"
+                lev = new_label.split("_")[1]
+                new_label = f"index_{suffix}{lev}"
+            else:
+                new_label = f"index_{suffix}"
+            # check new label will not be in other dataframe
+            if new_label in df.columns or new_label in other.columns:
+                raise ValueError(
+                    "'{0}' cannot be a column name in the frames being"
+                    " joined".format(new_label)
+                )
+            column_names[i] = new_label
+    return df_reset, pd.Index(column_names)
+
+
+def _process_column_names_with_suffix(
+    left: pd.Index, right: pd.Index, suffixes, left_df, right_df
+):
+    """
+    Add suffixes to overlapping labels (ignoring the geometry column).
+
+    This is based on pandas' merge logic at https://github.com/pandas-dev/pandas/blob/
+    a0779adb183345a8eb4be58b3ad00c223da58768/pandas/core/reshape/merge.py#L2300-L2370
+    """
+    to_rename = left.intersection(right)
+    if len(to_rename) == 0:
+        return left, right
+
+    lsuffix, rsuffix = suffixes
+
+    if not lsuffix and not rsuffix:
+        raise ValueError(f"columns overlap but no suffix specified: {to_rename}")
+
+    def renamer(x, suffix, geometry):
+        if x in to_rename and x != geometry and suffix is not None:
+            return f"{x}_{suffix}"
+        return x
+
+    lrenamer = partial(renamer, suffix=lsuffix, geometry=left_df._geometry_column_name)
+    rrenamer = partial(renamer, suffix=rsuffix, geometry=right_df._geometry_column_name)
+
+    # TODO retain index name?
+    left_renamed = pd.Index([lrenamer(lab) for lab in left])
+    right_renamed = pd.Index([rrenamer(lab) for lab in right])
+
+    dups = []
+    if not left_renamed.is_unique:
+        # Only warn when duplicates are caused because of suffixes, already duplicated
+        # columns in origin should not warn
+        dups = left_renamed[(left_renamed.duplicated()) & (~left.duplicated())].tolist()
+    if not right_renamed.is_unique:
+        dups.extend(
+            right_renamed[(right_renamed.duplicated()) & (~right.duplicated())].tolist()
+        )
+    # TODO turn this into an error (pandas has done so as well)
+    if dups:
+        warnings.warn(
+            f"Passing 'suffixes' which cause duplicate columns {set(dups)} in the "
+            f"result is deprecated and will raise a MergeError in a future version.",
+            FutureWarning,
+            stacklevel=4,
+        )
+
+    return left_renamed, right_renamed
+
+
+def _restore_index(joined, index_names, index_names_original):
+    """
+    Set back the the original index columns, and restoring their name as `None`
+    if they didn't have a name originally.
+    """
+    joined = joined.set_index(list(index_names))
+
+    # restore the fact that the index didn't have a name
+    joined_index_names = list(joined.index.names)
+    for i, label in enumerate(index_names_original):
+        if label is None:
+            joined_index_names[i] = None
+    joined.index.names = joined_index_names
+    return joined
 
 
 def _frame_join(join_df, left_df, right_df, how, lsuffix, rsuffix):
@@ -259,33 +325,29 @@ def _frame_join(join_df, left_df, right_df, how, lsuffix, rsuffix):
     # index in geopandas may be any arbitrary dtype. so reset both indices now
     # and store references to the original indices, to be reaffixed later.
     # GH 352
-    index_left = "index_{}".format(lsuffix)
     left_df = left_df.copy(deep=True)
-    try:
-        left_index_name = left_df.index.name
-        left_df.index = left_df.index.rename(index_left)
-    except TypeError:
-        index_left = [
-            "index_{}".format(lsuffix + str(pos))
-            for pos, ix in enumerate(left_df.index.names)
-        ]
-        left_index_name = left_df.index.names
-        left_df.index = left_df.index.rename(index_left)
-    left_df = left_df.reset_index()
+    left_nlevels = left_df.index.nlevels
+    left_index_original = left_df.index.names
+    left_df, left_column_names = _reset_index_with_suffix(left_df, lsuffix, right_df)
 
-    index_right = "index_{}".format(rsuffix)
     right_df = right_df.copy(deep=True)
-    try:
-        right_index_name = right_df.index.name
-        right_df.index = right_df.index.rename(index_right)
-    except TypeError:
-        index_right = [
-            "index_{}".format(rsuffix + str(pos))
-            for pos, ix in enumerate(right_df.index.names)
-        ]
-        right_index_name = right_df.index.names
-        right_df.index = right_df.index.rename(index_right)
-    right_df = right_df.reset_index()
+    right_nlevels = right_df.index.nlevels
+    right_index_original = right_df.index.names
+    right_df, right_column_names = _reset_index_with_suffix(right_df, rsuffix, left_df)
+
+    # if conflicting names in left and right, add suffix
+    left_column_names, right_column_names = _process_column_names_with_suffix(
+        left_column_names,
+        right_column_names,
+        (lsuffix, rsuffix),
+        left_df,
+        right_df,
+    )
+    left_df.columns = left_column_names
+    right_df.columns = right_column_names
+
+    left_index = left_df.columns[:left_nlevels]
+    right_index = right_df.columns[:right_nlevels]
 
     # perform join on the dataframes
     if how == "inner":
@@ -296,15 +358,11 @@ def _frame_join(join_df, left_df, right_df, how, lsuffix, rsuffix):
                 right_df.drop(right_df.geometry.name, axis=1),
                 left_on="_key_right",
                 right_index=True,
-                suffixes=("_{}".format(lsuffix), "_{}".format(rsuffix)),
+                suffixes=(None, None),
             )
-            .set_index(index_left)
             .drop(["_key_right"], axis=1)
         )
-        if isinstance(index_left, list):
-            joined.index.names = left_index_name
-        else:
-            joined.index.name = left_index_name
+        joined = _restore_index(joined, left_index, left_index_original)
 
     elif how == "left":
         join_df = join_df.set_index("_key_left")
@@ -315,15 +373,11 @@ def _frame_join(join_df, left_df, right_df, how, lsuffix, rsuffix):
                 how="left",
                 left_on="_key_right",
                 right_index=True,
-                suffixes=("_{}".format(lsuffix), "_{}".format(rsuffix)),
+                suffixes=(None, None),
             )
-            .set_index(index_left)
             .drop(["_key_right"], axis=1)
         )
-        if isinstance(index_left, list):
-            joined.index.names = left_index_name
-        else:
-            joined.index.name = left_index_name
+        joined = _restore_index(joined, left_index, left_index_original)
 
     else:  # how == 'right':
         joined = (
@@ -335,16 +389,12 @@ def _frame_join(join_df, left_df, right_df, how, lsuffix, rsuffix):
                 left_index=True,
                 right_on="_key_left",
                 how="right",
-                suffixes=("_{}".format(lsuffix), "_{}".format(rsuffix)),
+                suffixes=(None, None),
             )
-            .set_index(index_right)
             .drop(["_key_left", "_key_right"], axis=1)
             .set_geometry(right_df.geometry.name)
         )
-        if isinstance(index_right, list):
-            joined.index.names = right_index_name
-        else:
-            joined.index.name = right_index_name
+        joined = _restore_index(joined, right_index, right_index_original)
 
     return joined
 
@@ -458,7 +508,7 @@ def sjoin_nearest(
     ... ).to_crs(groceries.crs)
 
     >>> chicago.head()  # doctest: +SKIP
-        ComAreaID  ...                                           geometry
+       ComAreaID  ...                                           geometry
     0         35  ...  POLYGON ((-87.60914 41.84469, -87.60915 41.844...
     1         36  ...  POLYGON ((-87.59215 41.81693, -87.59231 41.816...
     2         37  ...  POLYGON ((-87.62880 41.80189, -87.62879 41.801...
@@ -467,19 +517,19 @@ def sjoin_nearest(
     [5 rows x 87 columns]
 
     >>> groceries.head()  # doctest: +SKIP
-        OBJECTID     Ycoord  ...  Category                         geometry
-    0        16  41.973266  ...       NaN  MULTIPOINT (-87.65661 41.97321)
-    1        18  41.696367  ...       NaN  MULTIPOINT (-87.68136 41.69713)
-    2        22  41.868634  ...       NaN  MULTIPOINT (-87.63918 41.86847)
-    3        23  41.877590  ...       new  MULTIPOINT (-87.65495 41.87783)
-    4        27  41.737696  ...       NaN  MULTIPOINT (-87.62715 41.73623)
+       OBJECTID     Ycoord  ...  Category                           geometry
+    0        16  41.973266  ...       NaN  MULTIPOINT ((-87.65661 41.97321))
+    1        18  41.696367  ...       NaN  MULTIPOINT ((-87.68136 41.69713))
+    2        22  41.868634  ...       NaN  MULTIPOINT ((-87.63918 41.86847))
+    3        23  41.877590  ...       new  MULTIPOINT ((-87.65495 41.87783))
+    4        27  41.737696  ...       NaN  MULTIPOINT ((-87.62715 41.73623))
     [5 rows x 8 columns]
 
     >>> groceries_w_communities = geopandas.sjoin_nearest(groceries, chicago)
     >>> groceries_w_communities[["Chain", "community", "geometry"]].head(2)
-                    Chain community                              geometry
-    0   VIET HOA PLAZA    UPTOWN  MULTIPOINT (1168268.672 1933554.350)
-    87      JEWEL OSCO    UPTOWN  MULTIPOINT (1168837.980 1929246.962)
+                 Chain community                               geometry
+    0   VIET HOA PLAZA    UPTOWN  MULTIPOINT ((1168268.672 1933554.35))
+    87      JEWEL OSCO    UPTOWN  MULTIPOINT ((1168837.98 1929246.962))
 
 
     To include the distances:

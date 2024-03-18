@@ -23,8 +23,9 @@ dependencies:
     - mapclassify>=2.4.0
     # dev versions of packages
     - --pre --index-url https://pypi.anaconda.org/scientific-python-nightly-wheels/simple --extra-index-url https://pypi.fury.io/arrow-nightlies/ --extra-index-url https://pypi.org/simple
-    - fiona
     - numpy>=2.0.0.dev
+    # TEMP pin, see https://github.com/geopandas/geopandas/issues/3207
+    - fiona==1.9.*
     - pandas
     - matplotlib
     - pyarrow

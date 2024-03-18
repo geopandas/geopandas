@@ -1,7 +1,6 @@
 import json
 import os
 import random
-import re
 import shutil
 import tempfile
 import warnings
@@ -11,7 +10,6 @@ from numpy.testing import assert_array_equal
 import pandas as pd
 from pandas.testing import assert_index_equal
 
-from pyproj import CRS
 from shapely.geometry import (
     GeometryCollection,
     LineString,
@@ -23,11 +21,13 @@ from shapely.geometry import (
 )
 from shapely.geometry.base import BaseGeometry
 
-from geopandas import GeoSeries, GeoDataFrame, read_file, datasets, clip
+from geopandas import GeoSeries, GeoDataFrame, read_file, clip
 from geopandas.array import GeometryArray, GeometryDtype
+import geopandas._compat as compat
 from geopandas.testing import assert_geoseries_equal, geom_almost_equals
 
 from geopandas.tests.util import geom_equals
+from geopandas._compat import HAS_PYPROJ
 from pandas.testing import assert_series_equal
 import pytest
 
@@ -81,6 +81,7 @@ class TestSeries:
         assert a1["B"].equals(a2["B"])
         assert a1["C"] is None
 
+    @pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not available")
     def test_align_crs(self):
         a1 = self.a1
         a1.crs = "epsg:4326"
@@ -144,27 +145,37 @@ class TestSeries:
         exp = pd.Series([False, False], index=["A", "B"])
         assert_series_equal(a, exp)
 
+    @pytest.mark.filterwarnings(r"ignore:The 'geom_almost_equals\(\)':FutureWarning")
     def test_geom_almost_equals(self):
         # TODO: test decimal parameter
-        with pytest.warns(FutureWarning, match=re.escape("The 'geom_almost_equals()'")):
-            assert np.all(self.g1.geom_almost_equals(self.g1))
-            assert_array_equal(self.g1.geom_almost_equals(self.sq), [False, True])
-
-            assert_array_equal(
-                self.a1.geom_almost_equals(self.a2, align=True), [False, True, False]
+        assert np.all(self.g1.geom_almost_equals(self.g1))
+        assert_array_equal(self.g1.geom_almost_equals(self.sq), [False, True])
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                "The indices of the two GeoSeries are different",
+                UserWarning,
             )
             assert_array_equal(
-                self.a1.geom_almost_equals(self.a2, align=False), [False, False]
+                self.a1.geom_almost_equals(self.a2, align=True),
+                [False, True, False],
             )
+        assert_array_equal(
+            self.a1.geom_almost_equals(self.a2, align=False), [False, False]
+        )
 
     def test_geom_equals_exact(self):
         # TODO: test tolerance parameter
         assert np.all(self.g1.geom_equals_exact(self.g1, 0.001))
         assert_array_equal(self.g1.geom_equals_exact(self.sq, 0.001), [False, True])
-
-        assert_array_equal(
-            self.a1.geom_equals_exact(self.a2, 0.001, align=True), [False, True, False]
-        )
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", "The indices of the two GeoSeries are different", UserWarning
+            )
+            assert_array_equal(
+                self.a1.geom_equals_exact(self.a2, 0.001, align=True),
+                [False, True, False],
+            )
         assert_array_equal(
             self.a1.geom_equals_exact(self.a2, 0.001, align=False), [False, False]
         )
@@ -198,6 +209,7 @@ class TestSeries:
         assert np.all(self.g3.contains(self.g3.representative_point()))
         assert np.all(self.g4.contains(self.g4.representative_point()))
 
+    @pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not available")
     def test_transform(self):
         utm18n = self.landmarks.to_crs(epsg=26918)
         lonlat = utm18n.to_crs(epsg=4326)
@@ -208,20 +220,24 @@ class TestSeries:
             self.landmarks.to_crs(crs=None, epsg=None)
 
     def test_estimate_utm_crs__geographic(self):
-        assert self.landmarks.estimate_utm_crs() == CRS("EPSG:32618")
-        assert self.landmarks.estimate_utm_crs("NAD83") == CRS("EPSG:26918")
+        pyproj = pytest.importorskip("pyproj")
+        assert self.landmarks.estimate_utm_crs() == pyproj.CRS("EPSG:32618")
+        assert self.landmarks.estimate_utm_crs("NAD83") == pyproj.CRS("EPSG:26918")
 
     def test_estimate_utm_crs__projected(self):
-        assert self.landmarks.to_crs("EPSG:3857").estimate_utm_crs() == CRS(
+        pyproj = pytest.importorskip("pyproj")
+        assert self.landmarks.to_crs("EPSG:3857").estimate_utm_crs() == pyproj.CRS(
             "EPSG:32618"
         )
 
+    @pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not available")
     def test_estimate_utm_crs__out_of_bounds(self):
         with pytest.raises(RuntimeError, match="Unable to determine UTM CRS"):
             GeoSeries(
                 [Polygon([(0, 90), (1, 90), (2, 90)])], crs="EPSG:4326"
             ).estimate_utm_crs()
 
+    @pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not available")
     def test_estimate_utm_crs__missing_crs(self):
         with pytest.raises(RuntimeError, match="crs must be set"):
             GeoSeries([Polygon([(0, 90), (1, 90), (2, 90)])]).estimate_utm_crs()
@@ -257,6 +273,7 @@ class TestSeries:
         assert self.g1.__geo_interface__["type"] == "FeatureCollection"
         assert len(self.g1.__geo_interface__["features"]) == self.g1.shape[0]
 
+    @pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not available")
     def test_proj4strings(self):
         # As string
         reprojected = self.g3.to_crs("+proj=utm +zone=30")
@@ -283,6 +300,23 @@ class TestSeries:
     def test_from_wkb(self):
         assert_geoseries_equal(self.g1, GeoSeries.from_wkb([self.t1.wkb, self.sq.wkb]))
 
+    def test_from_wkb_on_invalid(self):
+        # Single point LineString hex WKB: invalid
+        invalid_wkb_hex = "01020000000100000000000000000008400000000000000840"
+        message = "point array must contain 0 or >1 elements"
+
+        with pytest.raises(Exception, match=message):
+            GeoSeries.from_wkb([invalid_wkb_hex], on_invalid="raise")
+
+        with pytest.warns(Warning, match=message):
+            res = GeoSeries.from_wkb([invalid_wkb_hex], on_invalid="warn")
+        assert res[0] is None
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            res = GeoSeries.from_wkb([invalid_wkb_hex], on_invalid="ignore")
+        assert res[0] is None
+
     def test_from_wkb_series(self):
         s = pd.Series([self.t1.wkb, self.sq.wkb], index=[1, 2])
         expected = self.g1.copy()
@@ -297,6 +331,23 @@ class TestSeries:
 
     def test_from_wkt(self):
         assert_geoseries_equal(self.g1, GeoSeries.from_wkt([self.t1.wkt, self.sq.wkt]))
+
+    def test_from_wkt_on_invalid(self):
+        # Single point LineString WKT: invalid
+        invalid_wkt = "LINESTRING(0 0)"
+        message = "point array must contain 0 or >1 elements"
+
+        with pytest.raises(Exception, match=message):
+            GeoSeries.from_wkt([invalid_wkt], on_invalid="raise")
+
+        with pytest.warns(Warning, match=message):
+            res = GeoSeries.from_wkt([invalid_wkt], on_invalid="warn")
+        assert res[0] is None
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            res = GeoSeries.from_wkt([invalid_wkt], on_invalid="ignore")
+        assert res[0] is None
 
     def test_from_wkt_series(self):
         s = pd.Series([self.t1.wkt, self.sq.wkt], index=[1, 2])
@@ -319,9 +370,9 @@ class TestSeries:
     def test_to_wkt(self):
         assert_series_equal(pd.Series([self.t1.wkt, self.sq.wkt]), self.g1.to_wkt())
 
-    def test_clip(self):
-        left = read_file(datasets.get_path("naturalearth_cities"))
-        world = read_file(datasets.get_path("naturalearth_lowres"))
+    def test_clip(self, naturalearth_lowres, naturalearth_cities):
+        left = read_file(naturalearth_cities)
+        world = read_file(naturalearth_lowres)
         south_america = world[world["continent"] == "South America"]
 
         expected = clip(left.geometry, south_america)
@@ -373,6 +424,13 @@ class TestSeries:
         expected = GeoSeries([Point(0, 2, -1), Point(3, 5, 4)])
         assert_geoseries_equal(expected, GeoSeries.from_xy(x, y, z))
 
+    @pytest.mark.skipif(HAS_PYPROJ, reason="pyproj installed")
+    def test_set_crs_pyproj_error(self):
+        with pytest.raises(
+            ImportError, match="The 'pyproj' package is required for set_crs"
+        ):
+            self.g1.set_crs(3857)
+
 
 @pytest.mark.filterwarnings("ignore::UserWarning")
 def test_missing_values():
@@ -404,6 +462,7 @@ def test_isna_empty_geoseries():
     assert_series_equal(result, pd.Series([], dtype="bool"))
 
 
+@pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not available")
 def test_geoseries_crs():
     gs = GeoSeries()
     gs.crs = "IGNF:ETRS89UTM28"
@@ -519,6 +578,25 @@ class TestConstructor:
         assert [a.equals(b) for a, b in zip(s, g)]
         assert s.name == g.name
         assert s.index is g.index
+
+    def test_copy(self):
+        # default is to copy with CoW / pandas 3+
+        arr = np.array([Point(x, x) for x in range(3)], dtype=object)
+        result = GeoSeries(arr)
+        # modifying result doesn't change original array
+        result.loc[0] = Point(10, 10)
+        if compat.PANDAS_GE_30 or getattr(pd.options.mode, "copy_on_write", False):
+            assert arr[0] == Point(0, 0)
+        else:
+            assert arr[0] == Point(10, 10)
+
+        # avoid copy with copy=False
+        arr = np.array([Point(x, x) for x in range(3)], dtype=object)
+        result = GeoSeries(arr, copy=False)
+        assert result.array._data.flags.writeable
+        # now modifying result also updates original array
+        result.loc[0] = Point(10, 10)
+        assert arr[0] == Point(10, 10)
 
     # GH 1216
     @pytest.mark.parametrize("name", [None, "geometry", "Points"])

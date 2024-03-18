@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
       - name: Install and run versioneer
         run: |
           pip install versioneer
@@ -24,7 +24,7 @@ jobs:
         with:
           options: "--verbose"
       - name: Upload artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           path: versioneer.py
       - name: Ignore changes in __init__
@@ -32,7 +32,7 @@ jobs:
           git reset -- geopandas/__init__.py
           git checkout -- geopandas/__init__.py
       - name: Create PR
-        uses: peter-evans/create-pull-request@v5
+        uses: peter-evans/create-pull-request@v6
         with:
           title: "Update Versioneer"
           branch: update-versioneer

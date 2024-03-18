@@ -7,7 +7,7 @@ dependencies:
   - pandas
   - shapely
   - fiona
-  - pyproj
+  # - pyproj
   - packaging
   # testing
   - pytest
@@ -15,14 +15,14 @@ dependencies:
   - pytest-xdist
   - fsspec
   # optional
-  - pyogrio
+  # - pyogrio
   - matplotlib
   - mapclassify
   - folium
   - xyzservices
   - scipy
   - geopy
-  - pointpats
+  # - pointpats
   - geodatasets
   # - SQLalchemy>=2
   # - psycopg2

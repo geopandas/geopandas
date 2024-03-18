@@ -4,6 +4,7 @@ The spatial database tests may not work without additional system
 configuration. postGIS tests require a test database to have been setup;
 see geopandas.tests.util for more information.
 """
+
 import os
 import warnings
 
@@ -26,9 +27,8 @@ except ImportError:
 
 
 @pytest.fixture
-def df_nybb():
-    nybb_path = geopandas.datasets.get_path("nybb")
-    df = read_file(nybb_path)
+def df_nybb(nybb_filename):
+    df = read_file(nybb_filename)
     return df
 
 
@@ -337,14 +337,6 @@ class TestIO:
         # by user; should not be set to 0, as from get_srid failure
         assert df.crs is None
 
-    def test_read_postgis_privacy(self, connection_postgis, df_nybb):
-        con = connection_postgis
-        create_postgis(con, df_nybb)
-
-        sql = "SELECT * FROM nybb;"
-        with pytest.warns(FutureWarning):
-            geopandas.io.sql.read_postgis(sql, con)
-
     def test_write_postgis_default(self, engine_postgis, df_nybb):
         """Tests that GeoDataFrame can be written to PostGIS with defaults."""
         engine = engine_postgis
@@ -445,13 +437,15 @@ class TestIO:
 
         # There should be twice as many rows in the new table
         assert new_rows == orig_rows * 2, (
-            "There should be {target} rows,"
-            "found: {current}".format(target=orig_rows * 2, current=new_rows),
+            "There should be {target} rows,found: {current}".format(
+                target=orig_rows * 2, current=new_rows
+            ),
         )
         # Number of columns should stay the same
         assert new_cols == orig_cols, (
-            "There should be {target} columns,"
-            "found: {current}".format(target=orig_cols, current=new_cols),
+            "There should be {target} columns,found: {current}".format(
+                target=orig_cols, current=new_cols
+            ),
         )
 
     def test_write_postgis_without_crs(self, engine_postgis, df_nybb):
@@ -463,7 +457,6 @@ class TestIO:
         table = "nybb"
 
         # Write to db
-        df_nybb = df_nybb
         df_nybb.crs = None
         with pytest.warns(UserWarning, match="Could not parse CRS from the GeoDataF"):
             write_postgis(df_nybb, con=engine, name=table, if_exists="replace")

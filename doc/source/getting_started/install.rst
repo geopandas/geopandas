@@ -101,6 +101,10 @@ as well::
     installing those. Using conda (see above) avoids the need to compile the
     dependencies yourself.
 
+Optional runtime dependencies can also be installed all at once::
+
+    pip install 'geopandas[all]'
+
 Installing from source
 ----------------------
 
@@ -110,6 +114,11 @@ You may install the latest development version by cloning the
     git clone https://github.com/geopandas/geopandas.git
     cd geopandas
     pip install .
+
+Development dependencies can be installed using the dev optional
+dependency group::
+
+    pip install '.[dev]'
 
 It is also possible to install the latest development version
 directly from the GitHub repository with::

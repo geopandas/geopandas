@@ -3,11 +3,12 @@ import os
 import numpy as np
 import pandas as pd
 
+from shapely import make_valid
 from shapely.geometry import Point, Polygon, LineString, GeometryCollection, box
 
 import geopandas
 from geopandas import GeoDataFrame, GeoSeries, overlay, read_file
-from geopandas._compat import PANDAS_GE_20
+from geopandas._compat import PANDAS_GE_20, HAS_PYPROJ
 
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 import pytest
@@ -112,8 +113,8 @@ def test_overlay(dfs_index, how):
 
 
 @pytest.mark.filterwarnings("ignore:GeoSeries crs mismatch:UserWarning")
-def test_overlay_nybb(how):
-    polydf = read_file(geopandas.datasets.get_path("nybb"))
+def test_overlay_nybb(how, nybb_filename):
+    polydf = read_file(nybb_filename)
 
     # The circles have been constructed and saved at the time the expected
     # results were created (exact output of buffer algorithm can slightly
@@ -344,6 +345,7 @@ def test_geoseries_warning(dfs):
         overlay(df1, df2.geometry, how="union")
 
 
+@pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not available")
 def test_preserve_crs(dfs, how):
     df1, df2 = dfs
     result = overlay(df1, df2, how=how)
@@ -355,6 +357,7 @@ def test_preserve_crs(dfs, how):
     assert result.crs == crs
 
 
+@pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not available")
 def test_crs_mismatch(dfs, how):
     df1, df2 = dfs
     df1.crs = 4326
@@ -690,11 +693,11 @@ def test_keep_geom_type_geometry_collection_difference():
     assert_geodataframe_equal(result1, expected1)
 
 
-@pytest.mark.parametrize("make_valid", [True, False])
-def test_overlap_make_valid(make_valid):
+@pytest.mark.parametrize("should_make_valid", [True, False])
+def test_overlap_make_valid(should_make_valid):
     bowtie = Polygon([(1, 1), (9, 9), (9, 1), (1, 9), (1, 1)])
     assert not bowtie.is_valid
-    fixed_bowtie = bowtie.buffer(0)
+    fixed_bowtie = make_valid(bowtie)
     assert fixed_bowtie.is_valid
 
     df1 = GeoDataFrame({"col1": ["region"], "geometry": GeoSeries([box(0, 0, 10, 10)])})
@@ -702,17 +705,17 @@ def test_overlap_make_valid(make_valid):
         {"col1": ["invalid", "valid"], "geometry": GeoSeries([bowtie, fixed_bowtie])}
     )
 
-    if make_valid:
-        df_overlay_bowtie = overlay(df1, df_bowtie, make_valid=make_valid)
+    if should_make_valid:
+        df_overlay_bowtie = overlay(df1, df_bowtie, make_valid=should_make_valid)
         assert df_overlay_bowtie.at[0, "geometry"].equals(fixed_bowtie)
         assert df_overlay_bowtie.at[1, "geometry"].equals(fixed_bowtie)
     else:
         with pytest.raises(ValueError, match="1 invalid input geometries"):
-            overlay(df1, df_bowtie, make_valid=make_valid)
+            overlay(df1, df_bowtie, make_valid=should_make_valid)
 
 
-def test_empty_overlay_return_non_duplicated_columns():
-    nybb = geopandas.read_file(geopandas.datasets.get_path("nybb"))
+def test_empty_overlay_return_non_duplicated_columns(nybb_filename):
+    nybb = geopandas.read_file(nybb_filename)
     nybb2 = nybb.copy()
     nybb2.geometry = nybb2.translate(20000000)
 
@@ -851,7 +854,7 @@ class TestOverlayWikiExample:
 
     def test_intersection(self):
         df_result = overlay(self.layer_a, self.layer_b, how="intersection")
-        assert df_result.geom_equals(self.intersection).bool()
+        assert df_result.geom_equals(self.intersection).all()
 
     def test_union(self):
         df_result = overlay(self.layer_a, self.layer_b, how="union")
