@@ -372,7 +372,7 @@ def _frame_join(left_df, right_df, indices, distances, how, lsuffix, rsuffix):
     # and store references to the original indices, to be reaffixed later.
     # GH 352
 
-    if how == "inner" or how == "left":
+    if how in ("inner", "left"):
         right_df = right_df.drop(right_df.geometry.name, axis=1)
     else:  # how == 'right':
         left_df = left_df.drop(left_df.geometry.name, axis=1)
@@ -411,7 +411,7 @@ def _frame_join(left_df, right_df, indices, distances, how, lsuffix, rsuffix):
     right = right_df._reindex_with_indexers({0: (new_index, r_idx)})
     joined = pd.concat([left, right], axis=1, copy=False)
 
-    if how == "inner" or how == "left":
+    if how in ("inner", "left"):
         joined = _restore_index(joined, left_index, left_index_original)
     else:  # how == 'right':
         joined = joined.set_geometry(right_df.geometry.name)
