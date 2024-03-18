@@ -1148,12 +1148,8 @@ class TestNearest:
         result5["index_right"] = result5["index_right"].astype("int64")
         assert_geodataframe_equal(result5, result4, check_like=True)
 
-    expected_index_uncapped = (
-        [1, 3, 3, 1, 2] if compat.PANDAS_GE_22 else [1, 1, 3, 3, 2]
-    )
-
     @pytest.mark.parametrize(
-        "max_distance,expected", [(None, expected_index_uncapped), (1.1, [3, 3, 1, 2])]
+        "max_distance,expected", [(None, [1, 3, 3, 1, 2]), (1.1, [3, 3, 1, 2])]
     )
     def test_sjoin_nearest_exclusive(self, max_distance, expected):
         geoms = shapely.points(np.arange(3), np.arange(3))
