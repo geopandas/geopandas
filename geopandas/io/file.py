@@ -780,7 +780,7 @@ def _geometry_types(df):
     return geom_types
 
 
-def _list_layers(path_or_bytes) -> pd.DataFrame:
+def _list_layers(filename) -> pd.DataFrame:
     """List layers available in a file.
 
     Provides an overview of layers available in a file or URL toghether with their
@@ -807,5 +807,5 @@ def _list_layers(path_or_bytes) -> pd.DataFrame:
     import pyogrio
 
     return pd.DataFrame(
-        pyogrio.list_layers(path_or_bytes), columns=["name", "geometry_type"]
+        pyogrio.list_layers(filename), columns=["name", "geometry_type"]
     )
