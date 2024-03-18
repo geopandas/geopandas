@@ -298,7 +298,7 @@ def _restore_index(joined, index_names, index_names_original):
     if they didn't have a name originally.
     """
     if PANDAS_GE_30:
-        joined = joined.set_index(list(index_names), inplace=True)
+        joined = joined.set_index(list(index_names))
     else:
         joined.set_index(list(index_names), inplace=True)
 
@@ -367,32 +367,26 @@ def _frame_join(
 
     Parameters
     ----------
-    join_df : DataFrame
-        Indices and join data returned by the geometric join.
-        Must have columns `_key_left` and `_key_right`
-        with integer indices representing the matches
-        from `left_df` and `right_df` respectively.
-        Additional columns may be included and will be copied to
-        the resultant GeoDataFrame.
     left_df : GeoDataFrame
     right_df : GeoDataFrame
+    indices : tuple of ndarray
+        Indices returned by the geometric join. Tuple with with integer
+        indices representing the matches from `left_df` and `right_df`
+        respectively.
+    distances : ndarray, optional
+        Passed trough and adapted based on the indices, if needed.
+    how : string
+        The type of join to use on the DataFrame level.
     lsuffix : string
         Suffix to apply to overlapping column names (left GeoDataFrame).
     rsuffix : string
         Suffix to apply to overlapping column names (right GeoDataFrame).
-    how : string
-        The type of join to use on the DataFrame level.
 
     Returns
     -------
     GeoDataFrame
         Joined GeoDataFrame.
     """
-    # the spatial index only allows limited (numeric) index types, but an
-    # index in geopandas may be any arbitrary dtype. so reset both indices now
-    # and store references to the original indices, to be reaffixed later.
-    # GH 352
-
     if how in ("inner", "left"):
         right_df = right_df.drop(right_df.geometry.name, axis=1)
     else:  # how == 'right':
