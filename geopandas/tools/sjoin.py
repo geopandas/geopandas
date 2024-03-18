@@ -295,7 +295,10 @@ def _restore_index(joined, index_names, index_names_original):
     Set back the the original index columns, and restoring their name as `None`
     if they didn't have a name originally.
     """
-    joined.set_index(list(index_names), inplace=True)
+    if PANDAS_GE_30:
+        joined = joined.set_index(list(index_names), inplace=True)
+    else:
+        joined.set_index(list(index_names), inplace=True)
 
     # restore the fact that the index didn't have a name
     joined_index_names = list(joined.index.names)
