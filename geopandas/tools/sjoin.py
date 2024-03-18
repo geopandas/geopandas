@@ -81,12 +81,12 @@ def sjoin(
 
     >>> groceries_w_communities = geopandas.sjoin(groceries, chicago)
     >>> groceries_w_communities.head()  # doctest: +SKIP
-            OBJECTID     Ycoord     Xcoord  ... GonorrF GonorrM Tuberc
-    0          16  41.973266 -87.657073  ...   170.8   468.7   13.6
-    87        365  41.961707 -87.654058  ...   170.8   468.7   13.6
-    90        373  41.963131 -87.656352  ...   170.8   468.7   13.6
-    140       582  41.969131 -87.674882  ...   170.8   468.7   13.6
-    1          18  41.696367 -87.681315  ...   800.5   741.1    2.6
+       OBJECTID       community                           geometry
+    0        16          UPTOWN  MULTIPOINT ((-87.65661 41.97321))
+    1        18     MORGAN PARK  MULTIPOINT ((-87.68136 41.69713))
+    2        22  NEAR WEST SIDE  MULTIPOINT ((-87.63918 41.86847))
+    3        23  NEAR WEST SIDE  MULTIPOINT ((-87.65495 41.87783))
+    4        27         CHATHAM  MULTIPOINT ((-87.62715 41.73623))
     [5 rows x 95 columns]
 
     See also
@@ -565,9 +565,9 @@ def sjoin_nearest(
 
     >>> groceries_w_communities = geopandas.sjoin_nearest(groceries, chicago)
     >>> groceries_w_communities[["Chain", "community", "geometry"]].head(2)
-                 Chain community                               geometry
-    0   VIET HOA PLAZA    UPTOWN  MULTIPOINT ((1168268.672 1933554.35))
-    87      JEWEL OSCO    UPTOWN  MULTIPOINT ((1168837.98 1929246.962))
+                   Chain    community                                geometry
+    0     VIET HOA PLAZA       UPTOWN   MULTIPOINT ((1168268.672 1933554.35))
+    1  COUNTY FAIR FOODS  MORGAN PARK  MULTIPOINT ((1162302.618 1832900.224))
 
 
     To include the distances:
@@ -575,10 +575,10 @@ def sjoin_nearest(
     >>> groceries_w_communities = geopandas.sjoin_nearest(groceries, chicago, \
 distance_col="distances")
     >>> groceries_w_communities[["Chain", "community", \
-"distances"]].head(2)  # doctest: +SKIP
-                    Chain community  distances
-    0   VIET HOA PLAZA    UPTOWN        0.0
-    87      JEWEL OSCO    UPTOWN        0.0
+"distances"]].head(2)
+                   Chain    community  distances
+    0     VIET HOA PLAZA       UPTOWN        0.0
+    1  COUNTY FAIR FOODS  MORGAN PARK        0.0
 
     In the following example, we get multiple groceries for Uptown because all
     results are equidistant (in this case zero because they intersect).
@@ -588,7 +588,7 @@ distance_col="distances")
 distance_col="distances", how="right")
     >>> uptown_results = \
 chicago_w_groceries[chicago_w_groceries["community"] == "UPTOWN"]
-    >>> uptown_results[["Chain", "community"]]  # doctest: +SKIP
+    >>> uptown_results[["Chain", "community"]]
                 Chain community
     30  VIET HOA PLAZA    UPTOWN
     30      JEWEL OSCO    UPTOWN
