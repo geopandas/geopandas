@@ -1,6 +1,7 @@
 """
 Testing functionality for geopandas objects.
 """
+
 import warnings
 
 import pandas as pd
@@ -321,7 +322,7 @@ def assert_geodataframe_equal(
     )
 
     if check_like:
-        left, right = left.reindex_like(right), right
+        left = left.reindex_like(right)
 
     # column comparison
     assert_index_equal(

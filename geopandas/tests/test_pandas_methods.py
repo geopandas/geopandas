@@ -41,6 +41,7 @@ def test_repr(s, df):
     assert "POINT" in df._repr_html_()
 
 
+@pytest.mark.skipif(shapely.geos_version < (3, 9, 0), reason="requires GEOS>=3.9")
 def test_repr_boxed_display_precision():
     # geographic coordinates
     p1 = Point(10.123456789, 50.123456789)
@@ -304,17 +305,18 @@ def test_convert_dtypes(df):
     res2 = df[["value1", "value2", "geometry"]].convert_dtypes()
     assert_geodataframe_equal(expected1[["value1", "value2", "geometry"]], res2)
 
-    # Test again with crs set and custom geom col name
-    df2 = df.set_crs(epsg=4326).rename_geometry("points")
-    expected2 = GeoDataFrame(
-        pd.DataFrame(df2).convert_dtypes(), crs=df2.crs, geometry=df2.geometry.name
-    )
-    res3 = df2.convert_dtypes()
-    assert_geodataframe_equal(expected2, res3)
+    if compat.HAS_PYPROJ:
+        # Test again with crs set and custom geom col name
+        df2 = df.set_crs(epsg=4326).rename_geometry("points")
+        expected2 = GeoDataFrame(
+            pd.DataFrame(df2).convert_dtypes(), crs=df2.crs, geometry=df2.geometry.name
+        )
+        res3 = df2.convert_dtypes()
+        assert_geodataframe_equal(expected2, res3)
 
-    # Test geom last, geom_col=geometry
-    res4 = df2[["value1", "value2", "points"]].convert_dtypes()
-    assert_geodataframe_equal(expected2[["value1", "value2", "points"]], res4)
+        # Test geom last, geom_col=geometry
+        res4 = df2[["value1", "value2", "points"]].convert_dtypes()
+        assert_geodataframe_equal(expected2[["value1", "value2", "points"]], res4)
 
 
 def test_to_csv(df):
@@ -657,27 +659,49 @@ def test_groupby_groups(df):
 
 
 @pytest.mark.parametrize("crs", [None, "EPSG:4326"])
-def test_groupby_metadata(crs):
+@pytest.mark.parametrize("geometry_name", ["geometry", "geom"])
+def test_groupby_metadata(crs, geometry_name):
+    if crs and not compat.HAS_PYPROJ:
+        pytest.skip("requires pyproj")
     # https://github.com/geopandas/geopandas/issues/2294
     df = GeoDataFrame(
         {
-            "geometry": [Point(0, 0), Point(1, 1), Point(0, 0)],
+            geometry_name: [Point(0, 0), Point(1, 1), Point(0, 0)],
             "value1": np.arange(3, dtype="int64"),
             "value2": np.array([1, 2, 1], dtype="int64"),
         },
         crs=crs,
+        geometry=geometry_name,
     )
+
+    kwargs = {}
+    if compat.PANDAS_GE_22:
+        # pandas is deprecating that the group key is present as column in the
+        # dataframe passed to `func`. To suppress this warning, it introduced
+        # a new include_groups keyword
+        kwargs = dict(include_groups=False)
 
     # dummy test asserting we can access the crs
     def func(group):
         assert isinstance(group, GeoDataFrame)
         assert group.crs == crs
 
-    df.groupby("value2").apply(func)
+    df.groupby("value2").apply(func, **kwargs)
+    # selecting the non-group columns -> no need to pass the keyword
+    if (
+        compat.PANDAS_GE_21 if geometry_name == "geometry" else compat.PANDAS_GE_20
+    ) and not compat.PANDAS_GE_22:
+        # https://github.com/geopandas/geopandas/pull/2966#issuecomment-1878816712
+        # with pandas 2.0 and 2.1 this is failing
+        with pytest.raises(AttributeError):
+            df.groupby("value2")[[geometry_name, "value1"]].apply(func)
+    else:
+        df.groupby("value2")[[geometry_name, "value1"]].apply(func)
 
     # actual test with functionality
     res = df.groupby("value2").apply(
-        lambda x: geopandas.sjoin(x, x[["geometry", "value1"]], how="inner")
+        lambda x: geopandas.sjoin(x, x[[geometry_name, "value1"]], how="inner"),
+        **kwargs,
     )
 
     if compat.PANDAS_GE_22:
@@ -690,7 +714,7 @@ def test_groupby_metadata(crs):
 
     expected = (
         df.take(take_indices)
-        .set_index("value2", drop=False, append=True)
+        .set_index("value2", drop=compat.PANDAS_GE_22, append=True)
         .swaplevel()
         .rename(columns={"value1": "value1_left"})
         .assign(value1_right=value_right)
@@ -728,6 +752,7 @@ def test_apply_loc_len1(df):
     np.testing.assert_allclose(result, expected)
 
 
+@pytest.mark.skipif(compat.PANDAS_GE_30, reason="convert_dtype is removed in pandas 3")
 def test_apply_convert_dtypes_keyword(s):
     # ensure the convert_dtypes keyword is accepted
     if not compat.PANDAS_GE_21:
@@ -749,6 +774,8 @@ def test_apply_convert_dtypes_keyword(s):
 @pytest.mark.parametrize("crs", [None, "EPSG:4326"])
 def test_apply_no_geometry_result(df, crs):
     if crs:
+        if not compat.HAS_PYPROJ:
+            pytest.skip("requires pyproj")
         df = df.set_crs(crs)
     result = df.apply(lambda col: col.astype(str), axis=0)
     assert type(result) is pd.DataFrame
@@ -853,3 +880,17 @@ def test_preserve_flags(df):
 
     with pytest.raises(ValueError):
         pd.concat([df, df])
+
+
+def test_ufunc():
+    # this is calling a shapely ufunc, but we currently rely on pandas' implementation
+    # of `__array_ufunc__` to wrap the result back into a GeoSeries
+    ser = GeoSeries([Point(1, 1), Point(2, 2), Point(3, 3)])
+    result = shapely.buffer(ser, 2)
+    assert isinstance(result, GeoSeries)
+
+    # ensure the result is still writeable
+    # (https://github.com/geopandas/geopandas/issues/3178)
+    assert result.array._data.flags.writeable
+    result.loc[0] = Point(10, 10)
+    assert result.iloc[0] == Point(10, 10)

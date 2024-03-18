@@ -10,7 +10,7 @@ import pytest
 from pandas import DataFrame, read_parquet as pd_read_parquet
 from pandas.testing import assert_frame_equal
 import numpy as np
-import pyproj
+import shapely
 from shapely.geometry import box, Point, MultiPolygon
 
 
@@ -31,6 +31,7 @@ from geopandas.io.arrow import (
 )
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 from geopandas.tests.util import mock
+from geopandas._compat import HAS_PYPROJ
 
 
 DATA_PATH = pathlib.Path(os.path.dirname(__file__)) / "data"
@@ -67,9 +68,10 @@ def test_create_metadata(naturalearth_lowres):
     assert metadata["version"] == METADATA_VERSION
     assert metadata["primary_column"] == "geometry"
     assert "geometry" in metadata["columns"]
-    crs_expected = df.crs.to_json_dict()
-    _remove_id_from_member_of_ensembles(crs_expected)
-    assert metadata["columns"]["geometry"]["crs"] == crs_expected
+    if HAS_PYPROJ:
+        crs_expected = df.crs.to_json_dict()
+        _remove_id_from_member_of_ensembles(crs_expected)
+        assert metadata["columns"]["geometry"]["crs"] == crs_expected
     assert metadata["columns"]["geometry"]["encoding"] == "WKB"
     assert metadata["columns"]["geometry"]["geometry_types"] == [
         "MultiPolygon",
@@ -85,6 +87,7 @@ def test_create_metadata(naturalearth_lowres):
 
 
 def test_crs_metadata_datum_ensemble():
+    pyproj = pytest.importorskip("pyproj")
     # compatibility for older PROJ versions using PROJJSON with datum ensembles
     # https://github.com/geopandas/geopandas/pull/2453
     crs = pyproj.CRS("EPSG:4326")
@@ -676,6 +679,7 @@ def test_write_empty_bbox(tmpdir, geometry):
 
 @pytest.mark.parametrize("format", ["feather", "parquet"])
 def test_write_read_default_crs(tmpdir, format):
+    pyproj = pytest.importorskip("pyproj")
     if format == "feather":
         from pyarrow.feather import write_feather as write
     else:
@@ -699,6 +703,7 @@ def test_write_read_default_crs(tmpdir, format):
     assert df.crs.equals(pyproj.CRS("OGC:CRS84"))
 
 
+@pytest.mark.skipif(shapely.geos_version < (3, 10, 0), reason="requires GEOS>=3.10")
 def test_write_iso_wkb(tmpdir):
     gdf = geopandas.GeoDataFrame(
         geometry=geopandas.GeoSeries.from_wkt(["POINT Z (1 2 3)"])
@@ -712,6 +717,15 @@ def test_write_iso_wkb(tmpdir):
 
     # correct ISO flavor
     assert wkb == "01e9030000000000000000f03f00000000000000400000000000000840"
+
+
+@pytest.mark.skipif(shapely.geos_version >= (3, 10, 0), reason="tests GEOS<3.10")
+def test_write_iso_wkb_old_geos(tmpdir):
+    gdf = geopandas.GeoDataFrame(
+        geometry=geopandas.GeoSeries.from_wkt(["POINT Z (1 2 3)"])
+    )
+    with pytest.raises(ValueError, match="Cannot write 3D"):
+        gdf.to_parquet(tmpdir / "test.parquet")
 
 
 @pytest.mark.parametrize(
@@ -741,13 +755,14 @@ def test_write_spec_version(tmpdir, format, schema_version):
     assert metadata["version"] == schema_version
 
     # verify that CRS is correctly handled between versions
-    if schema_version == "0.1.0":
-        assert metadata["columns"]["geometry"]["crs"] == gdf.crs.to_wkt()
+    if HAS_PYPROJ:
+        if schema_version == "0.1.0":
+            assert metadata["columns"]["geometry"]["crs"] == gdf.crs.to_wkt()
 
-    else:
-        crs_expected = gdf.crs.to_json_dict()
-        _remove_id_from_member_of_ensembles(crs_expected)
-        assert metadata["columns"]["geometry"]["crs"] == crs_expected
+        else:
+            crs_expected = gdf.crs.to_json_dict()
+            _remove_id_from_member_of_ensembles(crs_expected)
+            assert metadata["columns"]["geometry"]["crs"] == crs_expected
 
     # verify that geometry_type(s) is correctly handled between versions
     if Version(schema_version) <= Version("0.4.0"):

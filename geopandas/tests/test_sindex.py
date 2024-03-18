@@ -380,6 +380,108 @@ class TestShapelyInterface:
         with pytest.raises(TypeError):
             self.df.sindex.query("notavalidgeom")
 
+    @pytest.mark.skipif(not compat.GEOS_GE_310, reason="Requires GEOS 3.10")
+    @pytest.mark.parametrize(
+        "distance, test_geom, expected",
+        (
+            # bounds don't intersect and not within distance=0
+            (
+                0,
+                box(9.0, 9.0, 9.9, 9.9),
+                [],
+            ),
+            # bounds don't intersect but is within distance=1
+            (
+                1,
+                box(9.0, 9.0, 9.9, 9.9),
+                [5],
+            ),
+            # within 1-D absolute distance in both axes, but not euclidean distance
+            (
+                0.5,
+                Point(0.5, 0.5),
+                [],
+            ),
+            # same as before but within euclidean distance
+            (
+                sqrt(2 * 0.5**2) + 1e-9,
+                Point(0.5, 0.5),
+                [0, 1],
+            ),
+            # less than euclidean distance between points, multi-object
+            (
+                sqrt(2) - 1e-9,
+                [
+                    Polygon([(0, 0), (1, 0), (1, 1)]),
+                    Polygon([(1, 1), (2, 1), (2, 2)]),
+                ],  # multi-object test
+                [[0, 0, 1, 1], [0, 1, 1, 2]],
+            ),
+            # more than euclidean distance between points, multi-object
+            (
+                sqrt(2) + 1e-9,
+                [
+                    Polygon([(0, 0), (1, 0), (1, 1)]),
+                    Polygon([(1, 1), (2, 1), (2, 2)]),
+                ],
+                [[0, 0, 0, 1, 1, 1, 1], [0, 1, 2, 0, 1, 2, 3]],
+            ),
+            # distance is array-like, broadcastable to geometry
+            (
+                [2, 10],
+                [Point(0.5, 0.5), Point(1, 1)],
+                [[0, 0, 1, 1, 1, 1, 1], [0, 1, 0, 1, 2, 3, 4]],
+            ),
+        ),
+    )
+    def test_query_dwithin(self, distance, test_geom, expected):
+        """Tests the `query` method with predicates that require keyword arguments."""
+        res = self.df.sindex.query(test_geom, predicate="dwithin", distance=distance)
+        assert_array_equal(res, expected)
+
+    @pytest.mark.skipif(not compat.GEOS_GE_310, reason="Requires GEOS 3.10")
+    def test_dwithin_no_distance(self):
+        """Tests the `query` method with keyword arguments that are
+        invalid for certain predicates."""
+        with pytest.raises(
+            ValueError, match="'distance' parameter is required for 'dwithin' predicate"
+        ):
+            self.df.sindex.query(Point(0, 0), predicate="dwithin")
+
+    @pytest.mark.parametrize(
+        "predicate",
+        [
+            None,
+            "contains",
+            "contains_properly",
+            "covered_by",
+            "covers",
+            "crosses",
+            "intersects",
+            "overlaps",
+            "touches",
+            "within",
+        ],
+    )
+    def test_query_distance_invalid(self, predicate):
+        """Tests the `query` method with keyword arguments that are
+        invalid for certain predicates."""
+        msg = "'distance' parameter is only supported in combination with 'dwithin'"
+        with pytest.raises(ValueError, match=msg):
+            self.df.sindex.query(Point(0, 0), predicate=predicate, distance=0)
+
+    @pytest.mark.skipif(
+        compat.GEOS_GE_310, reason="Test for 'dwithin'-incompatible versions of GEOS"
+    )
+    def test_dwithin_requirements(self):
+        """Tests whether a ValueError is raised when trying to use dwithin with
+        incompatible versions of shapely or pyGEOS
+        """
+        with pytest.raises(
+            ValueError, match="predicate = 'dwithin' requires GEOS >= 3.10.0"
+        ):
+            self.df.sindex.query(Point(0, 0), predicate="dwithin", distance=0)
+
     @pytest.mark.parametrize(
         "test_geom, expected_value",
         [
@@ -545,7 +647,7 @@ class TestShapelyInterface:
         ),
     )
     def test_query_bulk(self, predicate, test_geom, expected):
-        """Tests the `query_bulk` method with valid
+        """Tests the `query` method with valid
         inputs and valid predicates.
         """
         res = self.df.sindex.query(
@@ -565,12 +667,12 @@ class TestShapelyInterface:
         ],
     )
     def test_query_bulk_empty_geometry(self, test_geoms, expected_value):
-        """Tests the `query_bulk` method with an empty geometry."""
+        """Tests the `query` method with an empty geometries."""
         res = self.df.sindex.query(test_geoms)
         assert_array_equal(res, expected_value)
 
     def test_query_bulk_empty_input_array(self):
-        """Tests the `query_bulk` method with an empty input array."""
+        """Tests the `query` method with an empty input array."""
         test_array = np.array([], dtype=object)
         expected_value = [[], []]
         res = self.df.sindex.query(test_array)
@@ -578,14 +680,14 @@ class TestShapelyInterface:
 
     def test_query_bulk_invalid_input_geometry(self):
         """
-        Tests the `query_bulk` method with invalid input for the `geometry` parameter.
+        Tests the `query` method with invalid input for the `geometry` parameter.
         """
         test_array = "notanarray"
         with pytest.raises(TypeError):
             self.df.sindex.query(test_array)
 
     def test_query_bulk_invalid_predicate(self):
-        """Tests the `query_bulk` method with invalid predicates."""
+        """Tests the `query` method with invalid predicates."""
         test_geom_bounds = (-1, -1, -0.5, -0.5)
         test_predicate = "test"
 
@@ -601,7 +703,7 @@ class TestShapelyInterface:
         ),
     )
     def test_query_bulk_input_type(self, predicate, test_geom, expected):
-        """Tests that query_bulk can accept a GeoSeries, GeometryArray or
+        """Tests that query can accept a GeoSeries, GeometryArray or
         numpy array.
         """
         # pass through GeoSeries to test input type
@@ -636,7 +738,7 @@ class TestShapelyInterface:
         ),
     )
     def test_query_bulk_sorting(self, sort, expected):
-        """Check that results from `query_bulk` don't depend
+        """Check that results from `query` don't depend
         on the order of geometries.
         """
         # these geometries come from a reported issue:

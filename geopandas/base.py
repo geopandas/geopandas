@@ -540,6 +540,56 @@ GeometryCollection
         """
         return _delegate_property("has_z", self)
 
+    def get_precision(self):
+        """Returns a ``Series`` of the precision of each geometry.
+
+        If a precision has not been previously set, it will be 0, indicating regular
+        double precision coordinates are in use. Otherwise, it will return the precision
+        grid size that was set on a geometry.
+
+        Returns NaN for not-a-geometry values.
+
+        Examples
+        --------
+        >>> from shapely.geometry import Point
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Point(0, 1),
+        ...         Point(0, 1, 2),
+        ...         Point(0, 1.5, 2),
+        ...     ]
+        ... )
+        >>> s
+        0          POINT (0 1)
+        1      POINT Z (0 1 2)
+        2    POINT Z (0 1.5 2)
+        dtype: geometry
+
+        >>> s.get_precision()
+        0    0.0
+        1    0.0
+        2    0.0
+        dtype: float64
+
+        >>> s1 = s.set_precision(1)
+        >>> s1
+        0        POINT (0 1)
+        1    POINT Z (0 1 2)
+        2    POINT Z (0 2 2)
+        dtype: geometry
+
+        >>> s1.get_precision()
+        0    1.0
+        1    1.0
+        2    1.0
+        dtype: float64
+
+        See also
+        --------
+        GeoSeries.set_precision : set precision grid size
+        """
+        return Series(self.geometry.values.get_precision(), index=self.index)
+
     #
     # Unary operations that return a GeoSeries
     #
@@ -1055,6 +1105,95 @@ GeometryCollection
         dtype: geometry
         """
         return _delegate_geo_method("remove_repeated_points", self, tolerance=tolerance)
+
+    def set_precision(self, grid_size, mode="valid_output"):
+        """Returns a ``GeoSeries`` with the precision set to a precision grid size.
+
+        By default, geometries use double precision coordinates (``grid_size=0``).
+
+        Coordinates will be rounded if a precision grid is less precise than the input
+        geometry. Duplicated vertices will be dropped from lines and polygons for grid
+        sizes greater than 0. Line and polygon geometries may collapse to empty
+        geometries if all vertices are closer together than ``grid_size``. Spikes or
+        sections in Polygons narrower than ``grid_size`` after rounding the vertices
+        will be removed, which can lead to MultiPolygons or empty geometries. Z values,
+        if present, will not be modified.
+
+        Parameters
+        ----------
+        grid_size : float
+            Precision grid size. If 0, will use double precision (will not modify
+            geometry if precision grid size was not previously set). If this value is
+            more precise than input geometry, the input geometry will not be modified.
+        mode : {'valid_output', 'pointwise', 'keep_collapsed'}, default 'valid_output'
+            This parameter determines the way a precision reduction is applied on the
+            geometry. There are three modes:
+
+            * ``'valid_output'`` (default): The output is always valid. Collapsed
+              geometry elements (including both polygons and lines) are removed.
+              Duplicate vertices are removed.
+            * ``'pointwise'``: Precision reduction is performed pointwise. Output
+              geometry may be invalid due to collapse or self-intersection. Duplicate
+              vertices are not removed.
+            * ``'keep_collapsed'``: Like the default mode, except that collapsed linear
+              geometry elements are preserved. Collapsed polygonal input elements are
+              removed. Duplicate vertices are removed.
+
+        Examples
+        --------
+
+        >>> from shapely import LineString, Point
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...        Point(0.9, 0.9),
+        ...        Point(0.9, 0.9, 0.9),
+        ...        LineString([(0, 0), (0, 0.1), (0, 1), (1, 1)]),
+        ...        LineString([(0, 0), (0, 0.1), (0.1, 0.1)])
+        ...     ],
+        ... )
+        >>> s
+        0                      POINT (0.9 0.9)
+        1                POINT Z (0.9 0.9 0.9)
+        2    LINESTRING (0 0, 0 0.1, 0 1, 1 1)
+        3     LINESTRING (0 0, 0 0.1, 0.1 0.1)
+        dtype: geometry
+
+        >>> s.set_precision(1)
+        0                   POINT (1 1)
+        1             POINT Z (1 1 0.9)
+        2    LINESTRING (0 0, 0 1, 1 1)
+        3            LINESTRING Z EMPTY
+        dtype: geometry
+
+        >>> s.set_precision(1, mode="pointwise")
+        0                        POINT (1 1)
+        1                  POINT Z (1 1 0.9)
+        2    LINESTRING (0 0, 0 0, 0 1, 1 1)
+        3         LINESTRING (0 0, 0 0, 0 0)
+        dtype: geometry
+
+        >>> s.set_precision(1, mode="keep_collapsed")
+        0                   POINT (1 1)
+        1             POINT Z (1 1 0.9)
+        2    LINESTRING (0 0, 0 1, 1 1)
+        3         LINESTRING (0 0, 0 0)
+        dtype: geometry
+
+        Notes
+        -----
+        Subsequent operations will always be performed in the precision of the geometry
+        with higher precision (smaller ``grid_size``). That same precision will be
+        attached to the operation outputs.
+
+        Input geometries should be geometrically valid; unexpected results may occur if
+        input geometries are not. You can check the validity with
+        :meth:`~GeoSeries.is_valid` and fix invalid geometries with
+        :meth:`~GeoSeries.make_valid` methods.
+
+        """
+        return _delegate_geo_method(
+            "set_precision", self, grid_size=grid_size, mode=mode
+        )
 
     def representative_point(self):
         """Returns a ``GeoSeries`` of (cheaply computed) points that are
@@ -1767,6 +1906,117 @@ GeometryCollection
         GeoSeries.contains
         """
         return _binary_op("contains_properly", self, other, align)
+
+    def dwithin(self, other, distance, align=True):
+        """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
+        each aligned geometry that is within a set distance from ``other``.
+
+        The operation works on a 1-to-1 row-wise manner:
+
+        .. image:: ../../../_static/binary_op-01.svg
+           :align: center
+
+        Parameters
+        ----------
+        other : GeoSeries or geometric object
+            The GeoSeries (elementwise) or geometric object to test for
+            equality.
+        distance : float, np.array, pd.Series
+            Distance(s) to test if each geometry is within. A scalar distance will be
+            applied to all geometries. An array or Series will be applied elementwise.
+            If np.array or pd.Series are used then it must have same length as the
+            GeoSeries.
+        align : bool (default True)
+            If True, automatically aligns GeoSeries based on their indices.
+            If False, the order of elements is preserved.
+
+        Returns
+        -------
+        Series (bool)
+
+        Examples
+        --------
+        >>> from shapely.geometry import Polygon, LineString, Point
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0, 0), (1, 1), (0, 1)]),
+        ...         LineString([(0, 0), (0, 2)]),
+        ...         LineString([(0, 0), (0, 1)]),
+        ...         Point(0, 1),
+        ...     ],
+        ...     index=range(0, 4),
+        ... )
+        >>> s2 = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(1, 0), (4, 2), (2, 2)]),
+        ...         Polygon([(2, 0), (3, 2), (2, 2)]),
+        ...         LineString([(2, 0), (2, 2)]),
+        ...         Point(1, 1),
+        ...     ],
+        ...     index=range(1, 5),
+        ... )
+
+        >>> s
+        0    POLYGON ((0 0, 1 1, 0 1, 0 0))
+        1             LINESTRING (0 0, 0 2)
+        2             LINESTRING (0 0, 0 1)
+        3                       POINT (0 1)
+        dtype: geometry
+
+        >>> s2
+        1    POLYGON ((1 0, 4 2, 2 2, 1 0))
+        2    POLYGON ((2 0, 3 2, 2 2, 2 0))
+        3             LINESTRING (2 0, 2 2)
+        4                       POINT (1 1)
+        dtype: geometry
+
+        We can check if each geometry of GeoSeries contains a single
+        geometry:
+
+        .. image:: ../../../_static/binary_op-03.svg
+           :align: center
+
+        >>> point = Point(0, 1)
+        >>> s2.dwithin(point, 1.8)
+        1     True
+        2    False
+        3    False
+        4     True
+        dtype: bool
+
+        We can also check two GeoSeries against each other, row by row.
+        The GeoSeries above have different indices. We can either align both GeoSeries
+        based on index values and compare elements with the same index using
+        ``align=True`` or ignore index and compare elements based on their matching
+        order using ``align=False``:
+
+        .. image:: ../../../_static/binary_op-02.svg
+
+        >>> s.dwithin(s2, distance=1, align=True)
+        0    False
+        1     True
+        2    False
+        3    False
+        4    False
+        dtype: bool
+
+        >>> s.dwithin(s2, distance=1, align=False)
+        0     True
+        1    False
+        2    False
+        3     True
+        dtype: bool
+
+        Notes
+        -----
+        This method works in a row-wise manner. It does not check if an element
+        of one GeoSeries is within the set distance of *any* element of the other one.
+
+        See also
+        --------
+        GeoSeries.within
+        """
+        return _binary_op("dwithin", self, other, distance=distance, align=align)
 
     def geom_equals(self, other, align=True):
         """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
@@ -4994,11 +5244,13 @@ GeometryCollection
                 )
             sample_function = getattr(pointpats.random, method)
             result = self.geometry.apply(
-                lambda x: points_from_xy(
-                    *sample_function(x, size=size, **kwargs).T
-                ).union_all()
-                if not (x.is_empty or x is None or "Polygon" not in x.geom_type)
-                else MultiPoint(),
+                lambda x: (
+                    points_from_xy(
+                        *sample_function(x, size=size, **kwargs).T
+                    ).union_all()
+                    if not (x.is_empty or x is None or "Polygon" not in x.geom_type)
+                    else MultiPoint()
+                ),
             )
 
         return GeoSeries(result, name="sampled_points", crs=self.crs, index=self.index)
@@ -5050,7 +5302,7 @@ def _get_index_for_parts(orig_idx, outer_idx, ignore_index, index_parts):
             index_arrays.append(inner_index)
 
             index = pd.MultiIndex.from_arrays(
-                index_arrays, names=orig_idx.names + [None]
+                index_arrays, names=list(orig_idx.names) + [None]
             )
 
         else:

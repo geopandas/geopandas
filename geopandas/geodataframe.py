@@ -10,14 +10,13 @@ from pandas.core.accessor import CachedAccessor
 from shapely.geometry import mapping, shape
 from shapely.geometry.base import BaseGeometry
 
-from pyproj import CRS
-
 from geopandas.array import GeometryArray, GeometryDtype, from_shapely, to_wkb, to_wkt
 from geopandas.base import GeoPandasBase, is_geometry_type
 from geopandas.geoseries import GeoSeries
 import geopandas.io
 from geopandas.explore import _explore
 from ._decorator import doc
+from ._compat import HAS_PYPROJ
 
 
 def _geodataframe_constructor_with_fallback(*args, **kwargs):
@@ -486,7 +485,15 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 crs = state.pop("crs", None)
             else:
                 crs = state.pop("_crs", None)
-            crs = CRS.from_user_input(crs) if crs is not None else crs
+            if crs is not None and not HAS_PYPROJ:
+                raise ImportError(
+                    "Unpickling a GeoDataFrame with CRS requires the 'pyproj' package, "
+                    "but it is not installed or does not import correctly. "
+                )
+            elif crs is not None:
+                from pyproj import CRS
+
+                crs = CRS.from_user_input(crs)
 
         super().__setstate__(state)
 
@@ -825,7 +832,7 @@ es": {"name": "urn:ogc:def:crs:EPSG::3857"}}}'
         else:
             df = self
 
-        geo = df._to_geo(na=na, show_bbox=show_bbox, drop_id=drop_id)
+        geo = df.to_geo_dict(na=na, show_bbox=show_bbox, drop_id=drop_id)
 
         # if the geometry is not in WGS84, include CRS in the JSON
         if df.crs is not None and not df.crs.equals("epsg:4326"):
@@ -853,7 +860,7 @@ es": {"name": "urn:ogc:def:crs:EPSG::3857"}}}'
         represents the ``GeoDataFrame`` as a GeoJSON-like
         ``FeatureCollection``.
 
-        This differs from `_to_geo()` only in that it is a property with
+        This differs from :meth:`to_geo_dict` only in that it is a property with
         default args instead of a method.
 
         CRS of the dataframe is not passed on to the output, unlike
@@ -877,7 +884,7 @@ es": {"name": "urn:ogc:def:crs:EPSG::3857"}}}'
 ': {'col1': 'name2'}, 'geometry': {'type': 'Point', 'coordinates': (2.0, 1.0)}, 'b\
 box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         """
-        return self._to_geo(na="null", show_bbox=True, drop_id=False)
+        return self.to_geo_dict(na="null", show_bbox=True, drop_id=False)
 
     def iterfeatures(self, na="null", show_bbox=False, drop_id=False):
         """
@@ -923,8 +930,8 @@ individually so that features may have different properties
 
         if self._geometry_column_name not in self:
             raise AttributeError(
-                "No geometry data set (expected in"
-                " column '%s')." % self._geometry_column_name
+                "No geometry data set (expected in column '%s')."
+                % self._geometry_column_name
             )
 
         ids = np.array(self.index, copy=False)
@@ -987,18 +994,60 @@ individually so that features may have different properties
 
                 yield feature
 
-    def _to_geo(self, **kwargs):
+    def to_geo_dict(self, na="null", show_bbox=False, drop_id=False):
         """
-        Returns a python feature collection (i.e. the geointerface)
-        representation of the GeoDataFrame.
+        Returns a python feature collection representation of the GeoDataFrame
+        as a dictionary with a list of features based on the ``__geo_interface__``
+        GeoJSON-like specification.
+
+        Parameters
+        ----------
+        na : str, optional
+            Options are {'null', 'drop', 'keep'}, default 'null'.
+            Indicates how to output missing (NaN) values in the GeoDataFrame
+
+            - null: output the missing entries as JSON null
+            - drop: remove the property from the feature. This applies to each feature \
+individually so that features may have different properties
+            - keep: output the missing entries as NaN
+
+        show_bbox : bool, optional
+            Include bbox (bounds) in the geojson. Default False.
+        drop_id : bool, default: False
+            Whether to retain the index of the GeoDataFrame as the id property
+            in the generated dictionary. Default is False, but may want True
+            if the index is just arbitrary row numbers.
+
+        Examples
+        --------
+
+        >>> from shapely.geometry import Point
+        >>> d = {'col1': ['name1', 'name2'], 'geometry': [Point(1, 2), Point(2, 1)]}
+        >>> gdf = geopandas.GeoDataFrame(d)
+        >>> gdf
+            col1     geometry
+        0  name1  POINT (1 2)
+        1  name2  POINT (2 1)
+
+        >>> gdf.to_geo_dict()
+        {'type': 'FeatureCollection', 'features': [{'id': '0', 'type': 'Feature', '\
+properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.0, \
+2.0)}}, {'id': '1', 'type': 'Feature', 'properties': {'col1': 'name2'}, 'geometry':\
+ {'type': 'Point', 'coordinates': (2.0, 1.0)}}]}
+
+        See also
+        --------
+        GeoDataFrame.to_json : return a GeoDataFrame as a GeoJSON string
 
         """
         geo = {
             "type": "FeatureCollection",
-            "features": list(self.iterfeatures(**kwargs)),
+            "features": list(
+                self.iterfeatures(na=na, show_bbox=show_bbox, drop_id=drop_id)
+            ),
         }
 
-        if kwargs.get("show_bbox", False):
+        if show_bbox:
             geo["bbox"] = tuple(self.total_bounds)
 
         return geo
@@ -1098,7 +1147,7 @@ individually so that features may have different properties
         engine = kwargs.pop("engine", "auto")
         if engine not in ("auto", "pyarrow"):
             raise ValueError(
-                f"GeoPandas only supports using pyarrow as the engine for "
+                "GeoPandas only supports using pyarrow as the engine for "
                 f"to_parquet: {engine!r} passed instead."
             )
 
@@ -1586,9 +1635,12 @@ individually so that features may have different properties
         return _geodataframe_constructor_with_fallback
 
     def _constructor_from_mgr(self, mgr, axes):
-        # analogous logic to _geodataframe_constructor_with_fallback
+        # replicate _geodataframe_constructor_with_fallback behaviour
+        # unless safe to skip
         if not any(isinstance(block.dtype, GeometryDtype) for block in mgr.blocks):
-            return pd.DataFrame._from_mgr(mgr, axes)
+            return _geodataframe_constructor_with_fallback(
+                pd.DataFrame._from_mgr(mgr, axes)
+            )
         return GeoDataFrame._from_mgr(mgr, axes)
 
     @property
@@ -1641,8 +1693,8 @@ individually so that features may have different properties
                 raise ValueError(
                     "Concat operation has resulted in multiple columns using "
                     f"the geometry column name '{self._geometry_column_name}'.\n"
-                    f"Please ensure this column from the first DataFrame is not "
-                    f"repeated."
+                    "Please ensure this column from the first DataFrame is not "
+                    "repeated."
                 )
         elif method == "unstack":
             # unstack adds multiindex columns and reshapes data.
@@ -1805,7 +1857,7 @@ individually so that features may have different properties
         return aggregated
 
     # overrides the pandas native explode method to break up features geometrically
-    def explode(self, column=None, ignore_index=False, index_parts=None, **kwargs):
+    def explode(self, column=None, ignore_index=False, index_parts=False, **kwargs):
         """
         Explode multi-part geometries into multiple single geometries.
 
@@ -1822,7 +1874,7 @@ individually so that features may have different properties
         ignore_index : bool, default False
             If True, the resulting index will be labelled 0, 1, …, n - 1,
             ignoring `index_parts`.
-        index_parts : boolean, default True
+        index_parts : boolean, default False
             If True, the resulting index will be a multi-index (original
             index with an additional level indicating the multiple
             geometries: a new zero-based index for each single part geometry
@@ -1887,18 +1939,6 @@ individually so that features may have different properties
         # If the specified column is not a geometry dtype use pandas explode
         if not isinstance(self[column].dtype, GeometryDtype):
             return super().explode(column, ignore_index=ignore_index, **kwargs)
-
-        if index_parts is None:
-            if not ignore_index:
-                warnings.warn(
-                    "Currently, index_parts defaults to True, but in the future, "
-                    "it will default to False to be consistent with Pandas. "
-                    "Use `index_parts=True` to keep the current behavior and "
-                    "True/False to silence the warning.",
-                    FutureWarning,
-                    stacklevel=2,
-                )
-            index_parts = True
 
         exploded_geom = self.geometry.reset_index(drop=True).explode(index_parts=True)
 
@@ -2013,47 +2053,6 @@ individually so that features may have different properties
         geopandas.io.sql._write_postgis(
             self, name, con, schema, if_exists, index, index_label, chunksize, dtype
         )
-
-        #
-        # Implement standard operators for GeoSeries
-        #
-
-    def __xor__(self, other):
-        """Implement ^ operator as for builtin set type"""
-        warnings.warn(
-            "'^' operator will be deprecated. Use the 'symmetric_difference' "
-            "method instead.",
-            FutureWarning,
-            stacklevel=2,
-        )
-        return self.geometry.symmetric_difference(other)
-
-    def __or__(self, other):
-        """Implement | operator as for builtin set type"""
-        warnings.warn(
-            "'|' operator will be deprecated. Use the 'union' method instead.",
-            FutureWarning,
-            stacklevel=2,
-        )
-        return self.geometry.union(other)
-
-    def __and__(self, other):
-        """Implement & operator as for builtin set type"""
-        warnings.warn(
-            "'&' operator will be deprecated. Use the 'intersection' method instead.",
-            FutureWarning,
-            stacklevel=2,
-        )
-        return self.geometry.intersection(other)
-
-    def __sub__(self, other):
-        """Implement - operator as for builtin set type"""
-        warnings.warn(
-            "'-' operator will be deprecated. Use the 'difference' method instead.",
-            FutureWarning,
-            stacklevel=2,
-        )
-        return self.geometry.difference(other)
 
     plot = CachedAccessor("plot", geopandas.plotting.GeoplotAccessor)
 

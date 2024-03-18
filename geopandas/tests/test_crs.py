@@ -3,13 +3,14 @@ import warnings
 
 import numpy as np
 import pandas as pd
-import pyproj
 import pytest
 from shapely.geometry import Point, Polygon, LineString
 
 from geopandas import GeoSeries, GeoDataFrame, points_from_xy, read_file
 from geopandas.array import from_shapely, from_wkb, from_wkt, GeometryArray
 from geopandas.testing import assert_geodataframe_equal
+
+pyproj = pytest.importorskip("pyproj")
 
 
 def _create_df(x, y=None, crs=None):
@@ -83,6 +84,9 @@ def test_to_crs_dimension_z():
     assert result.has_z.all()
 
 
+# pyproj + numpy 1.25 trigger warning for single-element array -> recommdation is to
+# ignore the warning for now (https://github.com/pyproj4/pyproj/issues/1307)
+@pytest.mark.filterwarnings("ignore:Conversion of an array with:DeprecationWarning")
 def test_to_crs_dimension_mixed():
     s = GeoSeries([Point(1, 2), LineString([(1, 2, 3), (4, 5, 6)])], crs=2056)
     result = s.to_crs(epsg=4326)
@@ -151,6 +155,9 @@ def test_transform2(epsg4326, epsg26918):
     assert_geodataframe_equal(df, utm, check_less_precise=True, check_crs=False)
 
 
+# pyproj + numpy 1.25 trigger warning for single-element array -> recommdation is to
+# ignore the warning for now (https://github.com/pyproj4/pyproj/issues/1307)
+@pytest.mark.filterwarnings("ignore:Conversion of an array with:DeprecationWarning")
 def test_crs_axis_order__always_xy():
     df = GeoDataFrame(geometry=[Point(-1683723, 6689139)], crs="epsg:26918")
     lonlat = df.to_crs("epsg:4326")
