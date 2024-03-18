@@ -1273,11 +1273,14 @@ def test_list_layers(df_points, tmpdir):
     df_points.set_geometry(df_points.buffer(2).boundary).to_file(
         tempfilename, layer="boundary"
     )
+    pyogrio.write_dataframe(
+        df_points[["value1", "value2"]], tempfilename, layer="non-spatial"
+    )
     layers = geopandas.list_layers(tempfilename)
     expected = pd.DataFrame(
         {
-            "name": ["original", "buffered", "boundary"],
-            "geometry_type": ["Point", "Polygon", "LineString"],
+            "name": ["original", "buffered", "boundary", "non-spatial"],
+            "geometry_type": ["Point", "Polygon", "LineString", None],
         }
     )
     assert_frame_equal(layers, expected)
