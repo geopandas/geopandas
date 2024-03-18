@@ -791,7 +791,7 @@ def test_read_file__ignore_geometry(engine, naturalearth_lowres):
 
 
 @pytest.mark.filterwarnings(
-    "ignore:It is recommended to use the 'columns' keyword:UserWarning"
+    "ignore:It is recommended to use the 'columns' keyword:DeprecationWarning"
 )
 def test_read_file__ignore_fields(engine, naturalearth_lowres):
     gdf = geopandas.read_file(
@@ -803,7 +803,7 @@ def test_read_file__ignore_fields(engine, naturalearth_lowres):
 
 
 @pytest.mark.filterwarnings(
-    "ignore:It is recommended to use the 'columns' keyword:UserWarning"
+    "ignore:It is recommended to use the 'columns' keyword:DeprecationWarning"
 )
 def test_read_file__ignore_all_fields(engine, naturalearth_lowres):
     gdf = geopandas.read_file(
@@ -872,42 +872,44 @@ def test_read_file__where_filter(engine, naturalearth_lowres):
 
 def test_read_file__columns(engine, naturalearth_lowres):
     if engine == "fiona" and not FIONA_GE_19:
-        with pytest.raises(NotImplementedError):
-            geopandas.read_file(
-                naturalearth_lowres, columns=["name", "pop_est"], engine=engine
-            )
-    else:
-        gdf = geopandas.read_file(
-            naturalearth_lowres, columns=["name", "pop_est"], engine=engine
-        )
-        assert gdf.columns.tolist() == ["name", "pop_est", "geometry"]
+        pytest.skip("columns requires fiona 1.9+")
+
+    gdf = geopandas.read_file(
+        naturalearth_lowres, columns=["name", "pop_est"], engine=engine
+    )
+    assert gdf.columns.tolist() == ["name", "pop_est", "geometry"]
 
 
 def test_read_file__columns_empty(engine, naturalearth_lowres):
     if engine == "fiona" and not FIONA_GE_19:
-        with pytest.raises(NotImplementedError):
-            geopandas.read_file(naturalearth_lowres, columns=[], engine=engine)
-    else:
-        gdf = geopandas.read_file(naturalearth_lowres, columns=[], engine=engine)
-        assert gdf.columns.tolist() == ["geometry"]
+        pytest.skip("columns requires fiona 1.9+")
+
+    gdf = geopandas.read_file(naturalearth_lowres, columns=[], engine=engine)
+    assert gdf.columns.tolist() == ["geometry"]
+
+
+@pytest.mark.skipif(FIONA_GE_19, reason="test for fiona < 1.9")
+def test_read_file__columns_old_fiona(naturalearth_lowres):
+    with pytest.raises(NotImplementedError):
+        geopandas.read_file(
+            naturalearth_lowres, columns=["name", "pop_est"], engine="fiona"
+        )
 
 
 @pytest.mark.filterwarnings(
-    "ignore:It is recommended to use the 'columns' keyword:UserWarning"
+    "ignore:It is recommended to use the 'columns' keyword:DeprecationWarning"
 )
 def test_read_file__include_fields(engine, naturalearth_lowres):
     if engine == "fiona" and not FIONA_GE_19:
-        with pytest.raises(NotImplementedError):
-            geopandas.read_file(
-                naturalearth_lowres, columns=["name", "pop_est"], engine=engine
-            )
-    else:
-        gdf = geopandas.read_file(
-            naturalearth_lowres, include_fields=["name", "pop_est"], engine=engine
-        )
-        assert gdf.columns.tolist() == ["name", "pop_est", "geometry"]
+        pytest.skip("columns requires fiona 1.9+")
+
+    gdf = geopandas.read_file(
+        naturalearth_lowres, include_fields=["name", "pop_est"], engine=engine
+    )
+    assert gdf.columns.tolist() == ["name", "pop_est", "geometry"]
 
 
+@pytest.mark.skipif(not FIONA_GE_19, reason="columns requires fiona 1.9+")
 def test_read_file__columns_conflicting_keywords(engine, naturalearth_lowres):
     path = naturalearth_lowres
 
@@ -920,10 +922,6 @@ def test_read_file__columns_conflicting_keywords(engine, naturalearth_lowres):
         geopandas.read_file(
             path, columns=["name"], include_fields=["pop_est"], engine=engine
         )
-
-    if engine == "fiona" and not FIONA_GE_19:
-        # remaining test raises NotImplementedError for fiona
-        return
 
     with pytest.raises(ValueError, match="Cannot specify both"):
         geopandas.read_file(
