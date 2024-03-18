@@ -427,7 +427,9 @@ def _frame_join(
     (l_idx, r_idx), distances = _adjust_indexers(
         indices, distances, original_length, how, predicate
     )
+    # the `take` method doesn't allow introducing NaNs with -1 indices
     # left = left_df.take(l_idx)
+    # therefore we are using the private _reindex_with_indexers as workaround
     new_index = pd.RangeIndex(len(l_idx))
     left = left_df._reindex_with_indexers({0: (new_index, l_idx)})
     right = right_df._reindex_with_indexers({0: (new_index, r_idx)})
