@@ -107,7 +107,9 @@ def sjoin(
 
     indices = _geom_predicate_query(left_df, right_df, predicate, distance)
 
-    joined, _ = _frame_join(left_df, right_df, indices, None, how, lsuffix, rsuffix)
+    joined, _ = _frame_join(
+        left_df, right_df, indices, None, how, lsuffix, rsuffix, predicate
+    )
 
     return joined
 
@@ -309,7 +311,7 @@ def _restore_index(joined, index_names, index_names_original):
     return joined
 
 
-def _adjust_indexers(indices, distances, original_length, how):
+def _adjust_indexers(indices, distances, original_length, how, predicate):
     """
     The left/right indexers from the query represents an inner join.
     For a left or right join, we need to adjust them to include the rows
@@ -317,6 +319,14 @@ def _adjust_indexers(indices, distances, original_length, how):
     """
     # the indices represent an inner join, no adjustment needed
     if how == "inner":
+        if predicate == "within":
+            # except for the within predicate, where we switched to contains
+            # with swapped left/right -> need to re-sort to have consistent result
+            l_idx, r_idx = indices
+            indexer = np.lexsort((r_idx, l_idx))
+            indices = l_idx[indexer], r_idx[indexer]
+            if distances is not None:
+                distances = distances[indexer]
         return indices, distances
 
     l_idx, r_idx = indices
@@ -350,7 +360,9 @@ def _adjust_indexers(indices, distances, original_length, how):
     return (l_idx, r_idx), distances
 
 
-def _frame_join(left_df, right_df, indices, distances, how, lsuffix, rsuffix):
+def _frame_join(
+    left_df, right_df, indices, distances, how, lsuffix, rsuffix, predicate
+):
     """Join the GeoDataFrames at the DataFrame level.
 
     Parameters
@@ -411,8 +423,9 @@ def _frame_join(left_df, right_df, indices, distances, how, lsuffix, rsuffix):
     right_index = right_df.columns[:right_nlevels]
 
     # perform join on the dataframes
+    original_length = len(right_df) if how == "right" else len(left_df)
     (l_idx, r_idx), distances = _adjust_indexers(
-        indices, distances, len(right_df) if how == "right" else len(left_df), how
+        indices, distances, original_length, how, predicate
     )
     # left = left_df.take(l_idx)
     new_index = pd.RangeIndex(len(l_idx))
@@ -610,7 +623,7 @@ chicago_w_groceries[chicago_w_groceries["community"] == "UPTOWN"]
         left_df, right_df, max_distance, how, return_distance, exclusive
     )
     joined, distances = _frame_join(
-        left_df, right_df, indices, distances, how, lsuffix, rsuffix
+        left_df, right_df, indices, distances, how, lsuffix, rsuffix, None
     )
 
     if return_distance:
