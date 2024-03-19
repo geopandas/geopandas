@@ -153,7 +153,7 @@ Further, optional dependencies are:
 
 - `pyogrio`_ (optional; faster alternative for fiona, will become the default in GeoPandas 1.0)
 - `psycopg`_ (optional; for PostGIS connection)
-- `psycopg2`_ (optional alternative to psycopg; for PostGIS connection)
+- `psycopg2`_ (optional; for PostGIS connection - older version of `psycopg` library)
 - `GeoAlchemy2`_ (optional; for writing to PostGIS)
 - `geopy`_ (optional; for geocoding)
 - `pointpats`_ (optional; for advanced point sampling)
