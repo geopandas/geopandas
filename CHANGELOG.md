@@ -78,7 +78,7 @@ Deprecations and compatibility notes:
   - Removed deprecated GeoSeries/ GeoDataFrame methods `__xor__`, `__or__`, `__and__` and 
     `__sub__`. Instead use methods `symmetric_difference`, `union`, `intersection` and 
     `difference` respectively.
-  - Fixes for compatibility with psycopg (#3167).
+- Fixes for compatibility with psycopg (#3167).
 
 
 ## Version 0.14.3 (Jan 31, 2024)
