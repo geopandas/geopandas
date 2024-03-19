@@ -60,8 +60,6 @@ Bug fixes:
 - Fix `GeoDataFrame.merge()` incorrectly returning a `DataFrame` instead of a
   `GeoDataFrame` when the `suffixes` argument is applied to the active
   geometry column (#2933).
-- Fix `to_postgis()` method to make it compatible with psycopg3 as well as psycopg2 (#3167).
-
 
 Deprecations and compatibility notes:
 
@@ -80,6 +78,8 @@ Deprecations and compatibility notes:
   - Removed deprecated GeoSeries/ GeoDataFrame methods `__xor__`, `__or__`, `__and__` and 
     `__sub__`. Instead use methods `symmetric_difference`, `union`, `intersection` and 
     `difference` respectively.
+  - Fixes for compatibility with psycopg (#3167).
+
 
 ## Version 0.14.3 (Jan 31, 2024)
 
