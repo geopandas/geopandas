@@ -201,8 +201,36 @@ class TestSeries:
         Test whether GeoSeries.to_json works and returns an actual json file.
         """
         json_str = self.g3.to_json()
-        json.loads(json_str)
+        data = json.loads(json_str)
+        assert "id" in data["features"][0].keys()
+        assert "bbox" in data["features"][0].keys()
         # TODO : verify the output is a valid GeoJSON.
+
+    def test_to_json_drop_id(self):
+        """
+        Test whether GeoSeries.to_json works when drop_id is True.
+        """
+        json_str = self.g3.to_json(drop_id=True)
+        data = json.loads(json_str)
+        assert "id" not in data["features"][0].keys()
+
+    def test_to_json_no_bbox(self):
+        """
+        Test whether GeoSeries.to_json works when show_bbox is False.
+        """
+        json_str = self.g3.to_json(show_bbox=False)
+        data = json.loads(json_str)
+        assert "bbox" not in data["features"][0].keys()
+
+    def test_to_json_no_bbox_drop_id(self):
+        """
+        Test whether GeoSeries.to_json works when show_bbox is False
+        and drop_id is True.
+        """
+        json_str = self.g3.to_json(show_bbox=False, drop_id=True)
+        data = json.loads(json_str)
+        assert "id" not in data["features"][0].keys()
+        assert "bbox" not in data["features"][0].keys()
 
     def test_representative_point(self):
         assert np.all(self.g1.contains(self.g1.representative_point()))
