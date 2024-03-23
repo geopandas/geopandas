@@ -15,7 +15,7 @@ from shapely.geometry.base import BaseGeometry
 from geopandas import GeoDataFrame, GeoSeries
 
 # Adapted from pandas.io.common
-from urllib.parse import urlparse as parse_url
+from urllib.parse import urlparse as parse_url, urlparse
 from urllib.parse import uses_netloc, uses_params, uses_relative
 import urllib.request
 
@@ -31,6 +31,7 @@ fiona = None
 fiona_env = None
 fiona_import_error = None
 FIONA_GE_19 = False
+FIONA_GE_110 = False
 
 
 def _import_fiona():
@@ -38,6 +39,7 @@ def _import_fiona():
     global fiona_env
     global fiona_import_error
     global FIONA_GE_19
+    global FIONA_GE_110
 
     if fiona is None:
         try:
@@ -56,6 +58,9 @@ def _import_fiona():
 
             FIONA_GE_19 = Version(Version(fiona.__version__).base_version) >= Version(
                 "1.9.0"
+            )
+            FIONA_GE_110 = Version(Version(fiona.__version__).base_version) >= Version(
+                "1.10a1"
             )
         except ImportError as err:
             fiona = False
@@ -174,10 +179,40 @@ def _is_url(url):
     except Exception:
         return False
 
+if FIONA_GE_110:
+    from fiona._path import _ParsedPath as ParsedPath
+    from fiona._path import _UnparsedPath as UnparsedPath
+    from fiona._path import _parse_path as parse_path
+else:
+    from fiona.path import ParsedPath, UnparsedPath, parse_path
+
+def _fio_19_from_uri(uri):
+    # Note this logic will fail for bangs in urls, we need ot merge with to zip
+    # check if this yields something ending in zip, and if it doesn't, then we might have treated bangs
+    # incorrectly and should re-parse with fiona logic
+    parts = urlparse(uri)
+    path = parts.path
+    scheme = parts.scheme or None
+
+    if parts.query:
+        path += "?" + parts.query
+
+    if parts.scheme and parts.netloc:
+        path = parts.netloc + path
+
+    parts = path.split('!')
+    path = parts.pop() if parts else None
+    archive = parts.pop() if parts else None
+    return ParsedPath(path, archive, scheme)
+
 
 def _is_zip(path):
     """Check if a given path is a zipfile"""
-    parsed = fiona.path.ParsedPath.from_uri(path)
+    # xref https://github.com/rasterio/rasterio/commit/dce1c75880d09d7da83b8d7d966c7da2f4faa448
+    # test "https://xxx:yyy!@actinia.mundialis.de/api/v3/resources/demouser/resource_id-1e904ec8-ad55-4eda-8f0d-440eb61d891a/baum.tif"
+    # is not treated as a zip
+
+    parsed = _fio_19_from_uri(path)
     return (
         parsed.archive.endswith(".zip")
         if parsed.archive
@@ -309,6 +344,65 @@ def _read_file(filename, bbox=None, mask=None, rows=None, engine=None, **kwargs)
     else:
         raise ValueError(f"unknown engine '{engine}'")
 
+def _parse_path_fio19(path):
+    """Parse a dataset's identifier or path into its parts
+
+    Parameters
+    ----------
+    path : str or path-like object
+        The path to be parsed.
+
+    Returns
+    -------
+    ParsedPath or UnparsedPath
+
+    Notes
+    -----
+    When legacy GDAL filenames are encountered, they will be returned
+    in a UnparsedPath.
+    """
+    import sys, re
+    # Supported URI schemes and their mapping to GDAL's VSI suffix.
+    # TODO: extend for other cloud plaforms.
+    SCHEMES = {
+        "ftp": "curl",
+        "gzip": "gzip",
+        "http": "curl",
+        "https": "curl",
+        "s3": "s3",
+        "tar": "tar",
+        "zip": "zip",
+        "file": "file",
+        "gs": "gs",
+        "oss": "oss",
+        "az": "az",
+    }
+
+    if isinstance(path, Path):
+        return path
+
+    # Windows drive letters (e.g. "C:\") confuse `urlparse` as they look like
+    # URL schemes
+    elif sys.platform == "win32" and re.match("^[a-zA-Z]\\:", path):
+        return UnparsedPath(path)
+
+    elif path.startswith('/vsi'):
+        return UnparsedPath(path)
+
+    elif re.match("^[a-z0-9\\+]*://", path):
+        parts = urlparse(path)
+
+        # if the scheme is not one of Rasterio's supported schemes, we
+        # return an UnparsedPath.
+        if parts.scheme and not all(p in SCHEMES for p in parts.scheme.split('+')):
+            return UnparsedPath(path)
+
+        else:
+            return ParsedPath.from_uri(path)
+
+    else:
+        return UnparsedPath(path)
+
 
 def _read_file_fiona(
     path_or_bytes, from_bytes, bbox=None, mask=None, rows=None, where=None, **kwargs
@@ -320,16 +414,39 @@ def _read_file_fiona(
         # Opening a file via URL or file-like-object above automatically detects a
         # zipped file. In order to match that behavior, attempt to add a zip scheme
         # if missing.
+        # if isinstance(path_or_bytes,(str, Path)):
+        #     path_str = str(path_or_bytes)
+        #     if path_str.endswith(".zip"):
+        #         split_path = path_str.split("://", maxsplit=1)
+        #         if len(split_path)==1:
+        #             path_or_bytes ="zip://"+path_str
+        #         else:
+        #             scheme, rest = split_path
+        #             path_or_bytes = f"zip+{scheme}://{rest}"
+
         if _is_zip(str(path_or_bytes)):
-            parsed = fiona.parse_path(str(path_or_bytes))
-            if isinstance(parsed, fiona.path.ParsedPath):
+            # parts = urlparse(str(path_or_bytes))
+            # schemes = (parts.scheme or "").split("+")
+            # if "zip" not in schemes:
+            #     path_or_bytes = f'zip+{path_or_bytes}'
+            #
+            parsed = parse_path(str(path_or_bytes))
+            # parsed = _parse_path_fio19(str(path_or_bytes))
+            print(parsed)
+            if isinstance(parsed, ParsedPath):
                 # If fiona is able to parse the path, we can safely look at the scheme
                 # and update it to have a zip scheme if necessary.
                 schemes = (parsed.scheme or "").split("+")
                 if "zip" not in schemes:
-                    parsed.scheme = "+".join(["zip"] + schemes)
+                    # In fiona 1.10, Windows drive schema paths become ParsedPaths instead of UnparsedPaths,
+                    # but with no scheme set, so need to rstrip "+" in this case.
+                    parsed.scheme = "+".join(["zip"] + schemes).rstrip("+")
+                    # # actually need to re-parse the path, since if this is a zip, then bangs indicate
+                    # # files inside an archive
+                    # TODO check if this is true
+                    # parsed = parse_path(parsed.name)
                 path_or_bytes = parsed.name
-            elif isinstance(parsed, fiona.path.UnparsedPath) and not str(
+            elif isinstance(parsed, UnparsedPath) and not str(
                 path_or_bytes
             ).startswith("/vsi"):
                 # If fiona is unable to parse the path, it might have a Windows drive
