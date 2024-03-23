@@ -11,9 +11,13 @@ Notes on dependencies:
 API changes:
 
 - `unary_union` is now deprecated and replaced by the `union_all` method (#3007).
+- The `sjoin` method will now preserve the name of the index of the right
+  GeoDataFrame, if it has one, instead of always using `"index_right"` as the
+  name for the resulting column in the return value (#846, #2144).
 
 New methods:
 
+- Added `set_precision` and `get_precision` methods from shapely to GeoSeries/GeoDataframe (#3175).
 - Added `count_coordinates` method from shapely to GeoSeries/GeoDataframe (#3026).
 - Added `minimum_clearance` method from shapely to GeoSeries/GeoDataframe (#2989).
 - Added `is_ccw` method from shapely to GeoSeries/GeoDataframe (#3027).
@@ -22,6 +26,8 @@ New methods:
 - Added `contains_properly` method from shapely to GeoSeries/GeoDataframe (#3105).
 - Added `snap` method from shapely to GeoSeries/GeoDataframe (#3086).
 - Added `transform` method from shapely to GeoSeries/GeoDataFrame (#3075).
+- Added `dwithin` method to check for a "distance within" predicate on
+  GeoSeries/GeoDataFrame (#3153).
 - Added `to_geo_dict` method to generate GeoJSON-like dictionary from a GeoDataFrame (#3132).
 
 New features and improvements:
@@ -77,6 +83,8 @@ Deprecations and compatibility notes:
     method directly instead.
   - Removed deprecated GeoSeries/GeoDataFrame `.plot` parameters `axes` and `colormap`, instead use 
     `ax` and `cmap` respectively.
+- Fixes for compatibility with psycopg (#3167).
+
 
 ## Version 0.14.3 (Jan 31, 2024)
 

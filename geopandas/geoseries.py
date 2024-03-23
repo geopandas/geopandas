@@ -10,7 +10,6 @@ import pandas as pd
 from pandas import Series
 from pandas.core.internals import SingleBlockManager
 
-from pyproj import CRS
 import shapely
 from shapely.geometry.base import BaseGeometry
 from shapely.geometry import GeometryCollection
@@ -208,9 +207,16 @@ class GeoSeries(GeoPandasBase, Series):
                         "Non geometry data passed to GeoSeries constructor, "
                         f"received data of dtype '{s.dtype}'"
                     )
-            # try to convert to GeometryArray, if fails return plain Series
+            # extract object-dtype numpy array from pandas Series; with CoW this
+            # gives a read-only array, so we try to set the flag back to writeable
+            data = s.to_numpy()
             try:
-                data = from_shapely(s.values, crs)
+                data.flags.writeable = True
+            except ValueError:
+                pass
+            # try to convert to GeometryArray
+            try:
+                data = from_shapely(data, crs)
             except TypeError:
                 raise TypeError(
                     "Non geometry data passed to GeoSeries constructor, "
@@ -802,11 +808,9 @@ class GeoSeries(GeoPandasBase, Series):
         """Alias for `notna` method. See `notna` for more detail."""
         return self.notna()
 
-    def fillna(self, value=None, method=None, inplace: bool = False, **kwargs):
+    def fillna(self, value=None, inplace: bool = False, **kwargs):
         """
         Fill NA values with geometry (or geometries).
-
-        ``method`` is currently not implemented.
 
         Parameters
         ----------
@@ -876,7 +880,7 @@ class GeoSeries(GeoPandasBase, Series):
         """
         if value is None:
             value = GeometryCollection()
-        return super().fillna(value=value, method=method, inplace=inplace, **kwargs)
+        return super().fillna(value=value, inplace=inplace, **kwargs)
 
     def __contains__(self, other) -> bool:
         """Allow tests of the form "geom in s"
@@ -964,7 +968,7 @@ class GeoSeries(GeoPandasBase, Series):
     #
     # Additional methods
     #
-
+    @compat.requires_pyproj
     def set_crs(
         self,
         crs: Optional[Any] = None,
@@ -1042,6 +1046,8 @@ class GeoSeries(GeoPandasBase, Series):
         GeoSeries.to_crs : re-project to another CRS
 
         """
+        from pyproj import CRS
+
         if crs is not None:
             crs = CRS.from_user_input(crs)
         elif epsg is not None:
@@ -1145,7 +1151,7 @@ class GeoSeries(GeoPandasBase, Series):
             self.values.to_crs(crs=crs, epsg=epsg), index=self.index, name=self.name
         )
 
-    def estimate_utm_crs(self, datum_name: str = "WGS 84") -> CRS:
+    def estimate_utm_crs(self, datum_name: str = "WGS 84"):
         """Returns the estimated UTM CRS based on the bounds of the dataset.
 
         .. versionadded:: 0.9
