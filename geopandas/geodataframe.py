@@ -550,7 +550,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             :func:`pyogrio.read_dataframe` for usage details.
         kwargs : key-word arguments
             These arguments are passed to :func:`pyogrio.read_dataframe`, and can be
-            used to ccess multi-layer data, data stored within archives (zip files),
+            used to access multi-layer data, data stored within archives (zip files),
             etc.
 
         Examples
