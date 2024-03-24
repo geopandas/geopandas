@@ -188,27 +188,6 @@ else:
     from fiona.path import ParsedPath, UnparsedPath, parse_path
 
 
-def _fio_19_from_uri(uri):
-    # Note this logic will fail for bangs in urls, we need ot merge with to zip
-    # check if this yields something ending in zip, and if it doesn't, then we
-    # might have treated bangs
-    # incorrectly and should re-parse with fiona logic
-    parts = urlparse(uri)
-    path = parts.path
-    scheme = parts.scheme or None
-
-    if parts.query:
-        path += "?" + parts.query
-
-    if parts.scheme and parts.netloc:
-        path = parts.netloc + path
-
-    parts = path.split("!")
-    path = parts.pop() if parts else None
-    archive = parts.pop() if parts else None
-    return ParsedPath(path, archive, scheme)
-
-
 def _is_zip(uri):
     """Check if a given path is a zipfile"""
     # This logic is drawn from fiona <=1.9.4 ParsedPath.from_uri
