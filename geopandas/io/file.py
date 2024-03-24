@@ -337,6 +337,9 @@ def _read_file_fiona(
         raise NotImplementedError("where requires fiona 1.9+")
 
     if not from_bytes:
+        # Opening a file via URL or file-like-object above automatically detects a
+        # zipped file. In order to match that behavior, attempt to add a zip scheme
+        # if missing.
         if _is_zip(str(path_or_bytes)):
             parsed = parse_path(str(path_or_bytes))
             if isinstance(parsed, ParsedPath):
