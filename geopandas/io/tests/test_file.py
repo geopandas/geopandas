@@ -699,6 +699,28 @@ def test_is_zip():
     )
     assert _is_zip(url)
 
+    assert _is_zip("nybb.zip")
+    assert _is_zip("./nybb.zip")
+    assert _is_zip("~/nybb.zip")
+    assert _is_zip("c:/users/jane.doe/nybb.zip")
+    assert _is_zip(r"c:\users\jane.doe\nybb.zip")
+    assert _is_zip(r"c:\users\jane.doe\nybb.zip!nybb.shp")
+    assert _is_zip(r"zip://c:\users\jane.doe\nybb.zip!nybb.shp")
+    assert _is_zip("/home/jane.doe/nybb.zip")
+    assert _is_zip("/mnt/data/nybb.zip")
+    assert _is_zip("/mnt/data/nybb.zip!nybb.shp")
+    assert _is_zip(
+        "https://raw.githubusercontent.com/geopandas/geopandas/"
+        "main/geopandas/tests/data/nybb_16a.zip"
+    )
+    assert not _is_zip("nybb.txt")
+    assert not _is_zip("./nybb.txt")
+    assert not _is_zip("~/nybb.txt")
+    assert not _is_zip("c:/users/jane.doe/nybb.txt")
+    assert not _is_zip(r"c:\users\jane.doe\nybb.txt")
+    assert not _is_zip("/home/jane.doe/nybb.txt")
+    assert not _is_zip("/mnt/data/nybb.txt")
+
 
 def test_infer_zipped_file(engine, nybb_filename):
     # Remove the zip scheme so that the test for a zipped file can
