@@ -11,7 +11,7 @@ operations are performed by `shapely`_.  Geopandas further depends on
 
 .. _pandas: http://pandas.pydata.org
 .. _shapely: https://shapely.readthedocs.io
-.. pyogrio: https://pyogrio.readthedocs.io
+.. _pyogrio: https://pyogrio.readthedocs.io
 .. _matplotlib: http://matplotlib.org
 
 Description
