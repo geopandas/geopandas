@@ -678,12 +678,27 @@ def test_read_text_file_fsspec(file_path, engine):
 
 
 def test_is_zip():
+    # from https://github.com/rasterio/rasterio/commit/dce1c75880d09d7da83b8d7d966c7da2f4faa448
     url = "https://xxx:yyy!@actinia.mundialis.de/api/v3/resources/demouser/resource_id-1e904ec8-ad55-4eda-8f0d-440eb61d891a/baum.tif"
     assert not _is_zip(url)
 
-    url = ("https://xxx:yyy.zip!@actinia.mundialis.de/api/v3/resources/demouser/resource_id-1e904ec8-ad55-4eda-8f0d"
-           "-440eb61d891a/baum.tif")
+    url = (
+        "https://xxx:yyy.zip!@actinia.mundialis.de/api/v3/resources/demouser/resource_id-1e904ec8-ad55-4eda-8f0d"
+        "-440eb61d891a/baum.tif"
+    )
     assert _is_zip(url)
+    # Degenerate cases which may not actually come up
+    url = (
+        "https://xxx:yyy.zip!foo!@actinia.mundialis.de/api/v3/resources/demouser/resource_id-1e904ec8-ad55-4eda-8f0d"
+        "-440eb61d891a/baum.tif"
+    )
+    assert not _is_zip(url)
+    url = (
+        "https://xxx!yyy.zip!@actinia.mundialis.de/api/v3/resources/demouser/resource_id-1e904ec8-ad55-4eda-8f0d"
+        "-440eb61d891a/baum.tif"
+    )
+    assert _is_zip(url)
+
 
 def test_infer_zipped_file(engine, nybb_filename):
     # Remove the zip scheme so that the test for a zipped file can
