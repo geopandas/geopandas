@@ -809,11 +809,9 @@ class GeoSeries(GeoPandasBase, Series):
         """Alias for `notna` method. See `notna` for more detail."""
         return self.notna()
 
-    def fillna(self, value=None, method=None, inplace: bool = False, **kwargs):
+    def fillna(self, value=None, inplace: bool = False, **kwargs):
         """
         Fill NA values with geometry (or geometries).
-
-        ``method`` is currently not implemented.
 
         Parameters
         ----------
@@ -883,7 +881,7 @@ class GeoSeries(GeoPandasBase, Series):
         """
         if value is None:
             value = GeometryCollection()
-        return super().fillna(value=value, method=method, inplace=inplace, **kwargs)
+        return super().fillna(value=value, inplace=inplace, **kwargs)
 
     def __contains__(self, other) -> bool:
         """Allow tests of the form "geom in s"

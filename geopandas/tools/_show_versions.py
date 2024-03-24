@@ -120,6 +120,7 @@ def _get_deps_info():
         "matplotlib",
         "mapclassify",
         "fiona",
+        "psycopg",
         "psycopg2",
         "pyarrow",
     ]

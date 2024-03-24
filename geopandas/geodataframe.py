@@ -2002,7 +2002,7 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
         Upload GeoDataFrame into PostGIS database.
 
         This method requires SQLAlchemy and GeoAlchemy2, and a PostgreSQL
-        Python driver (e.g. psycopg2) to be installed.
+        Python driver (psycopg or psycopg2) to be installed.
 
         It is also possible to use :meth:`~GeoDataFrame.to_file` to write to a database.
         Especially for file geodatabases like GeoPackage or SpatiaLite this can be
