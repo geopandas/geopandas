@@ -110,11 +110,11 @@ class TestSeries:
         # Test that warning is issued when operating on non-aligned series
 
         # _series_op
-        with pytest.warns(UserWarning, match="The indices .+ different"):
+        with pytest.warns(UserWarning, match="The indices .+ not equal"):
             self.a1.contains(self.a2)
 
         # _geo_op
-        with pytest.warns(UserWarning, match="The indices .+ different"):
+        with pytest.warns(UserWarning, match="The indices .+ not equal"):
             self.a1.union(self.a2)
 
     def test_no_warning_if_aligned(self):
@@ -136,8 +136,7 @@ class TestSeries:
         assert_array_equal(self.g1.geom_equals(self.sq), [False, True])
 
     def test_geom_equals_align(self):
-        with pytest.warns(UserWarning, match="The indices .+ different"):
-            a = self.a1.geom_equals(self.a2, align=True)
+        a = self.a1.geom_equals(self.a2, align=True)
         exp = pd.Series([False, True, False], index=["A", "B", "C"])
         assert_series_equal(a, exp)
 
@@ -153,7 +152,7 @@ class TestSeries:
         with warnings.catch_warnings():
             warnings.filterwarnings(
                 "ignore",
-                "The indices of the two GeoSeries are different",
+                "The indices of the left and right GeoSeries' are not equal",
                 UserWarning,
             )
             assert_array_equal(
@@ -170,7 +169,9 @@ class TestSeries:
         assert_array_equal(self.g1.geom_equals_exact(self.sq, 0.001), [False, True])
         with warnings.catch_warnings():
             warnings.filterwarnings(
-                "ignore", "The indices of the two GeoSeries are different", UserWarning
+                "ignore",
+                "The indices of the left and right GeoSeries' are not equal",
+                UserWarning,
             )
             assert_array_equal(
                 self.a1.geom_equals_exact(self.a2, 0.001, align=True),
