@@ -5,6 +5,8 @@ import pytest
 import shapely
 from packaging.version import Version
 
+from geopandas._compat import HAS_PYPROJ
+
 folium = pytest.importorskip("folium")
 branca = pytest.importorskip("branca")
 matplotlib = pytest.importorskip("matplotlib")
@@ -56,6 +58,7 @@ class TestExplore:
         """Make sure default choropleth pass"""
         self.world.explore(column="pop_est")
 
+    @pytest.mark.skipif(not HAS_PYPROJ, reason="requires pyproj")
     def test_map_settings_default(self):
         """Check default map settings"""
         m = self.world.explore()
@@ -74,6 +77,7 @@ class TestExplore:
         assert m.global_switches.disable_3d is False
         assert "openstreetmap" in m.to_dict()["children"].keys()
 
+    @pytest.mark.skipif(not HAS_PYPROJ, reason="requires pyproj")
     def test_map_settings_custom(self):
         """Check custom map settings"""
         m = self.nybb.explore(
@@ -693,6 +697,7 @@ class TestExplore:
             == "tickValues([140.0,'','','',559086084.0,'','','',1118172028.0,'','',''])"
         )
 
+    @pytest.mark.skipif(not HAS_PYPROJ, reason="requires pyproj")
     def test_xyzservices_providers(self):
         xyzservices = pytest.importorskip("xyzservices")
 
@@ -709,6 +714,7 @@ class TestExplore:
         )
         assert '"maxNativeZoom":20,"maxZoom":20,"minZoom":0' in out_str
 
+    @pytest.mark.skipif(not HAS_PYPROJ, reason="requires pyproj")
     def test_xyzservices_query_name(self):
         pytest.importorskip("xyzservices")
 
@@ -725,6 +731,7 @@ class TestExplore:
         )
         assert '"maxNativeZoom":20,"maxZoom":20,"minZoom":0' in out_str
 
+    @pytest.mark.skipif(not HAS_PYPROJ, reason="requires pyproj")
     def test_xyzservices_providers_min_zoom_override(self):
         xyzservices = pytest.importorskip("xyzservices")
 
@@ -735,6 +742,7 @@ class TestExplore:
 
         assert '"maxNativeZoom":20,"maxZoom":20,"minZoom":3' in out_str
 
+    @pytest.mark.skipif(not HAS_PYPROJ, reason="requires pyproj")
     def test_xyzservices_providers_max_zoom_override(self):
         xyzservices = pytest.importorskip("xyzservices")
 
@@ -745,6 +753,7 @@ class TestExplore:
 
         assert '"maxNativeZoom":12,"maxZoom":12,"minZoom":0' in out_str
 
+    @pytest.mark.skipif(not HAS_PYPROJ, reason="requires pyproj")
     def test_xyzservices_providers_both_zooms_override(self):
         xyzservices = pytest.importorskip("xyzservices")
 
