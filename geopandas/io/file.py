@@ -211,14 +211,7 @@ def _fio_19_from_uri(uri):
 
 def _is_zip(uri):
     """Check if a given path is a zipfile"""
-    # xref https://github.com/rasterio/rasterio/commit/dce1c75880d09d7da83b8d7d966c7da2f4faa448
-    # test "https://xxx:yyy!@actinia.mundialis.de/api/v3/resources/demouser/resource_id-1e904ec8-ad55-4eda-8f0d-440eb61d891a/baum.tif"
-    # is not treated as a zip
     # This logic is drawn from fiona <=1.9.4 ParsedPath.from_uri
-    # Note this logic will fail for bangs in urls, we need ot merge with to zip
-    # check if this yields something ending in zip, and if it doesn't,
-    # then we might have treated bangs
-    # incorrectly and should re-parse with fiona logic
     parts = urlparse(uri)
     path = parts.path
     if parts.query:
@@ -227,14 +220,10 @@ def _is_zip(uri):
     if parts.scheme and parts.netloc:
         path = parts.netloc + path
 
-    parts = path.split("!")
-    path = parts.pop() if parts else None
-    if parts:  # if parts nonempty then path is inside a zipfile, path.pop()
-        # points to the zip location
-        archive = parts.pop()
-        return archive.endswith(".zip")
-    else:
-        return path.endswith(".zip")
+    first, *rest = path.rsplit("!", maxsplit=1)
+    # Either 1 or 2 components, first element is either the whole path,
+    # or the part before the (potential) archive path
+    return first.endswith(".zip")
 
 
 def _read_file(filename, bbox=None, mask=None, rows=None, engine=None, **kwargs):
@@ -362,68 +351,6 @@ def _read_file(filename, bbox=None, mask=None, rows=None, engine=None, **kwargs)
         raise ValueError(f"unknown engine '{engine}'")
 
 
-def _parse_path_fio19(path):
-    """Parse a dataset's identifier or path into its parts
-
-    Parameters
-    ----------
-    path : str or path-like object
-        The path to be parsed.
-
-    Returns
-    -------
-    ParsedPath or UnparsedPath
-
-    Notes
-    -----
-    When legacy GDAL filenames are encountered, they will be returned
-    in a UnparsedPath.
-    """
-    import sys
-    import re
-
-    # Supported URI schemes and their mapping to GDAL's VSI suffix.
-    # TODO: extend for other cloud plaforms.
-    SCHEMES = {
-        "ftp": "curl",
-        "gzip": "gzip",
-        "http": "curl",
-        "https": "curl",
-        "s3": "s3",
-        "tar": "tar",
-        "zip": "zip",
-        "file": "file",
-        "gs": "gs",
-        "oss": "oss",
-        "az": "az",
-    }
-
-    if isinstance(path, Path):
-        return path
-
-    # Windows drive letters (e.g. "C:\") confuse `urlparse` as they look like
-    # URL schemes
-    elif sys.platform == "win32" and re.match("^[a-zA-Z]\\:", path):
-        return UnparsedPath(path)
-
-    elif path.startswith("/vsi"):
-        return UnparsedPath(path)
-
-    elif re.match("^[a-z0-9\\+]*://", path):
-        parts = urlparse(path)
-
-        # if the scheme is not one of Rasterio's supported schemes, we
-        # return an UnparsedPath.
-        if parts.scheme and not all(p in SCHEMES for p in parts.scheme.split("+")):
-            return UnparsedPath(path)
-
-        else:
-            return ParsedPath.from_uri(path)
-
-    else:
-        return UnparsedPath(path)
-
-
 def _read_file_fiona(
     path_or_bytes, from_bytes, bbox=None, mask=None, rows=None, where=None, **kwargs
 ):
@@ -431,28 +358,8 @@ def _read_file_fiona(
         raise NotImplementedError("where requires fiona 1.9+")
 
     if not from_bytes:
-        # Opening a file via URL or file-like-object above automatically detects a
-        # zipped file. In order to match that behavior, attempt to add a zip scheme
-        # if missing.
-        # if isinstance(path_or_bytes,(str, Path)):
-        #     path_str = str(path_or_bytes)
-        #     if path_str.endswith(".zip"):
-        #         split_path = path_str.split("://", maxsplit=1)
-        #         if len(split_path)==1:
-        #             path_or_bytes ="zip://"+path_str
-        #         else:
-        #             scheme, rest = split_path
-        #             path_or_bytes = f"zip+{scheme}://{rest}"
-
         if _is_zip(str(path_or_bytes)):
-            # parts = urlparse(str(path_or_bytes))
-            # schemes = (parts.scheme or "").split("+")
-            # if "zip" not in schemes:
-            #     path_or_bytes = f'zip+{path_or_bytes}'
-            #
             parsed = parse_path(str(path_or_bytes))
-            # parsed = _parse_path_fio19(str(path_or_bytes))
-            print(parsed)
             if isinstance(parsed, ParsedPath):
                 # If fiona is able to parse the path, we can safely look at the scheme
                 # and update it to have a zip scheme if necessary.
@@ -462,11 +369,6 @@ def _read_file_fiona(
                     # ParsedPaths instead of UnparsedPaths,
                     # but with no scheme set, so need to rstrip "+" in this case.
                     parsed.scheme = "+".join(["zip"] + schemes).rstrip("+")
-                    # # actually need to re-parse the path,
-                    # since if this is a zip, then bangs indicate
-                    # # files inside an archive
-                    # TODO check if this is true
-                    # parsed = parse_path(parsed.name)
                 path_or_bytes = parsed.name
             elif isinstance(parsed, UnparsedPath) and not str(path_or_bytes).startswith(
                 "/vsi"
