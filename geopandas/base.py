@@ -1661,7 +1661,7 @@ GeometryCollection
         dtype: geometry
 
         >>> s.union_all()
-        POLYGON ((0 1, 0 2, 2 2, 2 0, 1 0, 0 0, 0 1))
+        <POLYGON ((0 1, 0 2, 2 2, 2 0, 1 0, 0 0, 0 1))>
         """
         return self.geometry.values.union_all()
 
@@ -1687,7 +1687,7 @@ GeometryCollection
         dtype: geometry
 
         >>> s.intersection_all()
-        POLYGON ((1 1, 1 1.5, 1.5 1.5, 1.5 1, 1 1))
+        <POLYGON ((1 1, 1 1.5, 1.5 1.5, 1.5 1, 1 1))>
         """
         return self.geometry.values.intersection_all()
 
