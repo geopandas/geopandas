@@ -1801,6 +1801,22 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
         GeoDataFrame.explode : explode multi-part geometries into single geometries
 
         """
+        def multiplyNumericColumnsByArea(df, geom):
+            for col in df:
+                if is_numeric_dtype(df[col]):
+                    df[col] *= geom.area
+            return df
+        
+        def divideNumericColumnsByArea(df, geom):
+            for col in df:
+                if is_numeric_dtype(df[col]):
+                    df[col] /= geom.area
+            return df
+
+        def merge_geometries(block):
+            merged_geom = block.union_all()
+            return merged_geom
+
         if by is None and level is None:
             by = np.zeros(len(self), dtype="int64")
 
@@ -1811,16 +1827,25 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
             "observed": observed,
             "dropna": dropna,
         }
+
+        # Process spatial component
+        g = self.groupby(group_keys=False, **groupby_kwargs)[self.geometry.name].agg(
+            merge_geometries
+        )
+
+        # Aggregate
+        aggregated_geometry = GeoDataFrame(g, geometry=self.geometry.name, crs=self.crs)
+
         # Process non-spatial component
+        data = self.drop(labels=self.geometry.name, axis=1)
+
         if aggfunc == 'spatial_average_mean':
-            for col in self:
-              if is_numeric_dtype(self[col]):
-                  self[col] = self[col] * self.geometry.area
-            data = self.drop(labels=self.geometry.name, axis=1)
+            # special additional aggfunc in geopandas
+            data = multiplyNumericColumnsByArea(data, self.geometry)
             with warnings.catch_warnings(record=True) as record:
                 aggregated_data = data.groupby(**groupby_kwargs).agg('sum', **kwargs)
+            aggregated_data = divideNumericColumnsByArea(aggregated_data, aggregated_geometry)
         else:
-            data = self.drop(labels=self.geometry.name, axis=1)
             with warnings.catch_warnings(record=True) as record:
                 aggregated_data = data.groupby(**groupby_kwargs).agg(aggfunc, **kwargs)
 
@@ -1844,25 +1869,9 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
 
         aggregated_data.columns = aggregated_data.columns.to_flat_index()
 
-        # Process spatial component
-        def merge_geometries(block):
-            merged_geom = block.union_all()
-            return merged_geom
 
-        g = self.groupby(group_keys=False, **groupby_kwargs)[self.geometry.name].agg(
-            merge_geometries
-        )
-
-        # Aggregate
-        aggregated_geometry = GeoDataFrame(g, geometry=self.geometry.name, crs=self.crs)
         # Recombine
         aggregated = aggregated_geometry.join(aggregated_data)
-
-
-        if aggfunc == 'spatial_average_mean':
-            for col in aggregated:
-                if is_numeric_dtype(self[col]):
-                    aggregated[col] = aggregated[col] / aggregated.geometry.area
 
         # Reset if requested
         if not as_index:
