@@ -6,6 +6,7 @@ import pandas as pd
 import shapely.errors
 from pandas import DataFrame, Series
 from pandas.core.accessor import CachedAccessor
+from pandas.api.types import is_numeric_dtype
 
 from shapely.geometry import mapping, shape
 from shapely.geometry.base import BaseGeometry
@@ -1800,7 +1801,6 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
         GeoDataFrame.explode : explode multi-part geometries into single geometries
 
         """
-
         if by is None and level is None:
             by = np.zeros(len(self), dtype="int64")
 
@@ -1811,11 +1811,19 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
             "observed": observed,
             "dropna": dropna,
         }
-
         # Process non-spatial component
-        data = self.drop(labels=self.geometry.name, axis=1)
-        with warnings.catch_warnings(record=True) as record:
-            aggregated_data = data.groupby(**groupby_kwargs).agg(aggfunc, **kwargs)
+        if aggfunc == 'spatial_average_mean':
+            for col in self:
+              if is_numeric_dtype(self[col]):
+                  self[col] = self[col] * self.geometry.area
+            data = self.drop(labels=self.geometry.name, axis=1)
+            with warnings.catch_warnings(record=True) as record:
+                aggregated_data = data.groupby(**groupby_kwargs).agg('sum', **kwargs)
+        else:
+            data = self.drop(labels=self.geometry.name, axis=1)
+            with warnings.catch_warnings(record=True) as record:
+                aggregated_data = data.groupby(**groupby_kwargs).agg(aggfunc, **kwargs)
+
         for w in record:
             if str(w.message).startswith("The default value of numeric_only"):
                 msg = (
@@ -1849,6 +1857,12 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
         aggregated_geometry = GeoDataFrame(g, geometry=self.geometry.name, crs=self.crs)
         # Recombine
         aggregated = aggregated_geometry.join(aggregated_data)
+
+
+        if aggfunc == 'spatial_average_mean':
+            for col in aggregated:
+                if is_numeric_dtype(self[col]):
+                    aggregated[col] = aggregated[col] / aggregated.geometry.area
 
         # Reset if requested
         if not as_index:
