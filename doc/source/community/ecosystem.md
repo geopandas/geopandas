@@ -4,7 +4,7 @@
 
 GeoPandas brings together the full capability of `pandas` and the open-source geospatial
 tools `Shapely`, which brings manipulation and analysis of geometric objects backed by
-[`GEOS`](https://trac.osgeo.org/geos) library, `Pyogrio`, allowing us to read and write
+[`GEOS`](https://trac.osgeo.org/geos) library, `pyogrio`, allowing us to read and write
 geographic data files using [`GDAL`](https://gdal.org), and `pyproj`, a library for
 cartographic projections and coordinate transformations, which is a Python interface to
 [`PROJ`](https://proj.org).
