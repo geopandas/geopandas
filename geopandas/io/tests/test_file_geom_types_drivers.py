@@ -302,7 +302,20 @@ def test_to_file_roundtrip(tmpdir, geodataframe, ogr_driver, engine):
                 output_file, driver=driver, engine=engine, **write_kwargs
             )
     else:
-        geodataframe.to_file(output_file, driver=driver, engine=engine, **write_kwargs)
+        if driver == "SQLite" and engine == "pyogrio":
+            try:
+                geodataframe.to_file(
+                    output_file, driver=driver, engine=engine, **write_kwargs
+                )
+            except ValueError as e:
+                pytest.xfail(
+                    "pyogrio wheels from PyPI do not come with SpatiaLite support. "
+                    f"Error: {e}"
+                )
+        else:
+            geodataframe.to_file(
+                output_file, driver=driver, engine=engine, **write_kwargs
+            )
 
         reloaded = geopandas.read_file(output_file, engine=engine)
 
