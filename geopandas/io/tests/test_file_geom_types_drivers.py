@@ -308,10 +308,12 @@ def test_to_file_roundtrip(tmpdir, geodataframe, ogr_driver, engine):
                     output_file, driver=driver, engine=engine, **write_kwargs
                 )
             except ValueError as e:
-                pytest.xfail(
-                    "pyogrio wheels from PyPI do not come with SpatiaLite support. "
-                    f"Error: {e}"
-                )
+                if "unrecognized option 'SPATIALITE'" in str(e):
+                    pytest.xfail(
+                        "pyogrio wheels from PyPI do not come with SpatiaLite support. "
+                        f"Error: {e}"
+                    )
+                raise
         else:
             geodataframe.to_file(
                 output_file, driver=driver, engine=engine, **write_kwargs
