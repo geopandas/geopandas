@@ -1126,7 +1126,6 @@ class TestNearest:
         countries = read_file(naturalearth_lowres)
         cities = read_file(naturalearth_cities)
         countries = countries[["geometry", "name"]].rename(columns={"name": "country"})
-
         # default: inner and left give the same result
         result1 = sjoin_nearest(cities, countries, distance_col="dist")
         assert result1.shape[0] == cities.shape[0]
@@ -1172,3 +1171,37 @@ class TestNearest:
 
         if max_distance:
             assert result["dist"].max() <= max_distance
+
+
+@pytest.mark.filterwarnings("ignore:Geometry is in a geographic CRS")
+def test_sjoin_nearest_sharedAttribute(naturalearth_lowres, naturalearth_cities):
+    # test to find only cities within countries that start with the same letter.
+    countries = read_file(naturalearth_lowres)
+    cities = read_file(naturalearth_cities)
+    countries = countries[["geometry", "name"]].rename(columns={"name": "country"})
+
+    # Add first letter of country/city as an attribute column to be compared
+    countries["firstLetter"] = countries["country"].astype(str).str[0]
+    cities["firstLetter"] = cities["name"].astype(str).str[0]
+
+    result = sjoin_nearest(
+        cities, countries, distance_col="dist", sharedAttribute="firstLetter"
+    )
+    assert (
+        result["country"].astype(str).str[0] == result["name"].astype(str).str[0]
+    ).all()
+
+
+def test_sjoin_sharedAttribute(naturalearth_lowres, naturalearth_cities):
+    countries = read_file(naturalearth_lowres)
+    cities = read_file(naturalearth_cities)
+    countries = countries[["geometry", "name"]].rename(columns={"name": "country"})
+
+    # Add first letter of country/city as an attribute column to be compared
+    countries["firstLetter"] = countries["country"].astype(str).str[0]
+    cities["firstLetter"] = cities["name"].astype(str).str[0]
+
+    result = sjoin(cities, countries, sharedAttribute="firstLetter")
+    assert (
+        result["country"].astype(str).str[0] == result["name"].astype(str).str[0]
+    ).all()

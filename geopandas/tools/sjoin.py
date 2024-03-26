@@ -214,8 +214,8 @@ def _geom_predicate_query(left_df, right_df, predicate, distance, sharedAttribut
 
     if sharedAttribute:
         sharedAttributeRows = (
-            left_df[l_idx][sharedAttribute].values
-            == right_df[r_idx][sharedAttribute].values
+            left_df.loc[l_idx][sharedAttribute].values
+            == right_df.loc[r_idx][sharedAttribute].values
         )
         indices = indices[sharedAttributeRows]
 
@@ -428,6 +428,7 @@ def _nearest_query(
     how: str,
     return_distance: bool,
     exclusive: bool,
+    sharedAttribute: Optional[str] = None,
 ):
     # use the opposite of the join direction for the index
     use_left_as_sindex = how == "right"
@@ -466,6 +467,13 @@ def _nearest_query(
         join_df = pd.DataFrame(
             columns=["_key_left", "_key_right", "distances"], dtype=float
         )
+    if sharedAttribute:
+        sharedAttributeRows = (
+            left_df.loc[l_idx][sharedAttribute].values
+            == right_df.loc[r_idx][sharedAttribute].values
+        )
+        join_df = join_df[sharedAttributeRows]
+
     return join_df
 
 
@@ -478,6 +486,7 @@ def sjoin_nearest(
     rsuffix: str = "right",
     distance_col: Optional[str] = None,
     exclusive: bool = False,
+    sharedAttribute: Optional[str] = None,
 ) -> GeoDataFrame:
     """Spatial join of two GeoDataFrames based on the distance between their geometries.
 
@@ -592,15 +601,22 @@ chicago_w_groceries[chicago_w_groceries["community"] == "UPTOWN"]
     Every operation in GeoPandas is planar, i.e. the potential third
     dimension is not taken into account.
     """
-    _basic_checks(left_df, right_df, how, lsuffix, rsuffix)
+    _basic_checks(
+        left_df, right_df, how, lsuffix, rsuffix, sharedAttribute=sharedAttribute
+    )
 
     left_df.geometry.values.check_geographic_crs(stacklevel=1)
     right_df.geometry.values.check_geographic_crs(stacklevel=1)
 
     return_distance = distance_col is not None
-
     join_df = _nearest_query(
-        left_df, right_df, max_distance, how, return_distance, exclusive
+        left_df,
+        right_df,
+        max_distance,
+        how,
+        return_distance,
+        exclusive,
+        sharedAttribute=sharedAttribute,
     )
 
     if return_distance:
