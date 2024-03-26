@@ -210,10 +210,10 @@ def _read_file(filename, bbox=None, mask=None, rows=None, engine=None, **kwargs)
     rows : int or slice, default None
         Load in specific rows by passing an integer (first `n` rows) or a
         slice() object.
-    engine : str, "fiona" or "pyogrio"
+    engine : str,  "pyogrio" or "fiona"
         The underlying library that is used to read the file. Currently, the
-        supported options are "fiona" and "pyogrio". Defaults to "fiona" if
-        installed, otherwise tries "pyogrio". Engine can also be set globally
+        supported options are "pyogrio" and "fiona". Defaults to "pyogrio" if
+        installed, otherwise tries "fiona". Engine can also be set globally
         with the ``geopandas.options.io_engine`` option.
     **kwargs :
         Keyword args to be passed to the engine, and can be used to write
@@ -573,10 +573,10 @@ def _to_file(
         The value can be anything accepted
         by :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
         such as an authority string (eg "EPSG:4326") or a WKT string.
-    engine : str, "fiona" or "pyogrio"
-        The underlying library that is used to write the file. Currently, the
-        supported options are "fiona" and "pyogrio". Defaults to "fiona" if
-        installed, otherwise tries "pyogrio". Engine can also be set globally
+    engine : str,  "pyogrio" or "fiona"
+        The underlying library that is used to read the file. Currently, the
+        supported options are "pyogrio" and "fiona". Defaults to "pyogrio" if
+        installed, otherwise tries "fiona". Engine can also be set globally
         with the ``geopandas.options.io_engine`` option.
     **kwargs :
         Keyword args to be passed to the engine, and can be used to write
