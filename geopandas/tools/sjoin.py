@@ -527,6 +527,8 @@ def sjoin_nearest(
     exclusive : bool, default False
         If True, the nearest geometries that are equal to the input geometry
         will not be returned, default False.
+    sharedAttribute : column name in both dataframes where a join will occur
+        only if the entry in the sharedAttribute is the same.
 
     Examples
     --------
