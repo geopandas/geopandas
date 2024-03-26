@@ -64,19 +64,15 @@ def _import_fiona():
 
 pyogrio = None
 pyogrio_import_error = None
-PYOGRIO_GE_07 = False
 
 
 def _import_pyogrio():
     global pyogrio
     global pyogrio_import_error
-    global PYOGRIO_GE_07
 
     if pyogrio is None:
         try:
             import pyogrio
-
-            PYOGRIO_GE_07 = Version(pyogrio.__version__) >= Version("0.7.0")
 
         except ImportError as err:
             pyogrio = False
@@ -471,11 +467,6 @@ def _read_file_pyogrio(path_or_bytes, bbox=None, mask=None, rows=None, **kwargs)
 
     if mask is not None:
         # NOTE: mask cannot be used at same time as bbox keyword
-        if not PYOGRIO_GE_07:
-            raise ValueError(
-                "The 'mask' keyword requires pyogrio >= 0.7.0.  "
-                "You can use 'bbox' instead."
-            )
         if isinstance(mask, (GeoDataFrame, GeoSeries)):
             crs = pyogrio.read_info(path_or_bytes).get("crs")
             if isinstance(path_or_bytes, IOBase):

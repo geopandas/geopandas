@@ -145,7 +145,7 @@ Required dependencies:
 - `numpy`_
 - `pandas`_ (version 1.4 or later)
 - `shapely`_ (interface to `GEOS`_; version 2.0.0 or later)
-- `pyogrio`_ (interface to `GDAL`_; version 0.7.0 or later)
+- `pyogrio`_ (interface to `GDAL`_; version 0.7.2 or later)
 - `pyproj`_ (interface to `PROJ`_; version 3.3.0 or later)
 - `packaging`_
 
