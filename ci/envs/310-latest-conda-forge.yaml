@@ -6,7 +6,7 @@ dependencies:
   # required
   - pandas
   - shapely
-  - fiona
+  - pyogrio
   - pyproj
   - packaging
   # testing
@@ -30,7 +30,7 @@ dependencies:
   - libspatialite
   - geoalchemy2
   - pyarrow
-  # - pyogrio
+  - fiona
   # doctest testing
   - pytest-doctestplus
   - pip
