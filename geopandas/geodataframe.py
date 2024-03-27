@@ -6,6 +6,7 @@ import pandas as pd
 import shapely.errors
 from pandas import DataFrame, Series
 from pandas.core.accessor import CachedAccessor
+from pandas.api.types import is_numeric_dtype
 
 from shapely.geometry import mapping, shape
 from shapely.geometry.base import BaseGeometry
@@ -1801,6 +1802,22 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
 
         """
 
+        def multiplyNumericColumnsByArea(df, geom):
+            for col in df:
+                if is_numeric_dtype(df[col]):
+                    df[col] *= geom.area
+            return df
+
+        def divideNumericColumnsByArea(df, geom):
+            for col in df:
+                if is_numeric_dtype(df[col]):
+                    df[col] /= geom.area
+            return df
+
+        def merge_geometries(block):
+            merged_geom = block.union_all()
+            return merged_geom
+
         if by is None and level is None:
             by = np.zeros(len(self), dtype="int64")
 
@@ -1812,10 +1829,29 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
             "dropna": dropna,
         }
 
+        # Process spatial component
+        g = self.groupby(group_keys=False, **groupby_kwargs)[self.geometry.name].agg(
+            merge_geometries
+        )
+
+        # Aggregate
+        aggregated_geometry = GeoDataFrame(g, geometry=self.geometry.name, crs=self.crs)
+
         # Process non-spatial component
         data = self.drop(labels=self.geometry.name, axis=1)
-        with warnings.catch_warnings(record=True) as record:
-            aggregated_data = data.groupby(**groupby_kwargs).agg(aggfunc, **kwargs)
+
+        if aggfunc == "spatial_average_mean":
+            # special additional aggfunc in geopandas
+            data = multiplyNumericColumnsByArea(data, self.geometry)
+            with warnings.catch_warnings(record=True) as record:
+                aggregated_data = data.groupby(**groupby_kwargs).agg("sum", **kwargs)
+            aggregated_data = divideNumericColumnsByArea(
+                aggregated_data, aggregated_geometry
+            )
+        else:
+            with warnings.catch_warnings(record=True) as record:
+                aggregated_data = data.groupby(**groupby_kwargs).agg(aggfunc, **kwargs)
+
         for w in record:
             if str(w.message).startswith("The default value of numeric_only"):
                 msg = (
@@ -1836,17 +1872,6 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
 
         aggregated_data.columns = aggregated_data.columns.to_flat_index()
 
-        # Process spatial component
-        def merge_geometries(block):
-            merged_geom = block.union_all()
-            return merged_geom
-
-        g = self.groupby(group_keys=False, **groupby_kwargs)[self.geometry.name].agg(
-            merge_geometries
-        )
-
-        # Aggregate
-        aggregated_geometry = GeoDataFrame(g, geometry=self.geometry.name, crs=self.crs)
         # Recombine
         aggregated = aggregated_geometry.join(aggregated_data)
 
