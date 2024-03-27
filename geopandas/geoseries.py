@@ -167,6 +167,9 @@ class GeoSeries(GeoPandasBase, Series):
                         "allow_override=True)' to overwrite CRS or "
                         "'GeoSeries.to_crs(crs)' to reproject geometries. "
                     )
+        elif not hasattr(data, "crs") and isinstance(data, pd.Series):
+            # GH2492; avoid CRS being set as attribute on Series
+            data = data.copy()
 
         if isinstance(data, SingleBlockManager):
             if not isinstance(data.blocks[0].dtype, GeometryDtype):
