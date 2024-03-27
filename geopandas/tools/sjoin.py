@@ -17,6 +17,7 @@ def sjoin(
     lsuffix="left",
     rsuffix="right",
     distance=None,
+    sharedAttribute=None,
     **kwargs,
 ):
     """Spatial join of two GeoDataFrames.
@@ -49,6 +50,8 @@ def sjoin(
         for the 'dwithin' predicate. If array_like, must be
         one-dimesional with length equal to length of left GeoDataFrame.
         Required if ``predicate='dwithin'``.
+    sharedAttribute : column name in both dataframes where a join will occur
+        only if the entry in the sharedAttribute is the same.
 
     Examples
     --------
@@ -102,16 +105,20 @@ def sjoin(
         first = next(iter(kwargs.keys()))
         raise TypeError(f"sjoin() got an unexpected keyword argument '{first}'")
 
-    _basic_checks(left_df, right_df, how, lsuffix, rsuffix)
+    _basic_checks(
+        left_df, right_df, how, lsuffix, rsuffix, sharedAttribute=sharedAttribute
+    ),
 
-    indices = _geom_predicate_query(left_df, right_df, predicate, distance)
+    indices = _geom_predicate_query(
+        left_df, right_df, predicate, distance, sharedAttribute=sharedAttribute
+    )
 
     joined = _frame_join(indices, left_df, right_df, how, lsuffix, rsuffix)
 
     return joined
 
 
-def _basic_checks(left_df, right_df, how, lsuffix, rsuffix):
+def _basic_checks(left_df, right_df, how, lsuffix, rsuffix, sharedAttribute=None):
     """Checks the validity of join input parameters.
 
     `how` must be one of the valid options.
@@ -148,8 +155,16 @@ def _basic_checks(left_df, right_df, how, lsuffix, rsuffix):
     if not _check_crs(left_df, right_df):
         _crs_mismatch_warn(left_df, right_df, stacklevel=4)
 
+    if sharedAttribute:
+        if not ((sharedAttribute in left_df) and (sharedAttribute in right_df)):
+            raise ValueError(
+                "Expected column {} is missing from one of the dataframes".format(
+                    sharedAttribute
+                )
+            )
 
-def _geom_predicate_query(left_df, right_df, predicate, distance):
+
+def _geom_predicate_query(left_df, right_df, predicate, distance, sharedAttribute=None):
     """Compute geometric comparisons and get matching indices.
 
     Parameters
@@ -196,6 +211,13 @@ def _geom_predicate_query(left_df, right_df, predicate, distance):
         indices = indices.rename(
             columns={"_key_left": "_key_right", "_key_right": "_key_left"}
         )
+
+    if sharedAttribute:
+        sharedAttributeRows = (
+            left_df.loc[l_idx][sharedAttribute].values
+            == right_df.loc[r_idx][sharedAttribute].values
+        )
+        indices = indices[sharedAttributeRows]
 
     return indices
 
@@ -406,6 +428,7 @@ def _nearest_query(
     how: str,
     return_distance: bool,
     exclusive: bool,
+    sharedAttribute: Optional[str] = None,
 ):
     # use the opposite of the join direction for the index
     use_left_as_sindex = how == "right"
@@ -444,6 +467,13 @@ def _nearest_query(
         join_df = pd.DataFrame(
             columns=["_key_left", "_key_right", "distances"], dtype=float
         )
+    if sharedAttribute:
+        sharedAttributeRows = (
+            left_df.loc[l_idx][sharedAttribute].values
+            == right_df.loc[r_idx][sharedAttribute].values
+        )
+        join_df = join_df[sharedAttributeRows]
+
     return join_df
 
 
@@ -456,6 +486,7 @@ def sjoin_nearest(
     rsuffix: str = "right",
     distance_col: Optional[str] = None,
     exclusive: bool = False,
+    sharedAttribute: Optional[str] = None,
 ) -> GeoDataFrame:
     """Spatial join of two GeoDataFrames based on the distance between their geometries.
 
@@ -496,6 +527,8 @@ def sjoin_nearest(
     exclusive : bool, default False
         If True, the nearest geometries that are equal to the input geometry
         will not be returned, default False.
+    sharedAttribute : column name in both dataframes where a join will occur
+        only if the entry in the sharedAttribute is the same.
 
     Examples
     --------
@@ -570,15 +603,22 @@ chicago_w_groceries[chicago_w_groceries["community"] == "UPTOWN"]
     Every operation in GeoPandas is planar, i.e. the potential third
     dimension is not taken into account.
     """
-    _basic_checks(left_df, right_df, how, lsuffix, rsuffix)
+    _basic_checks(
+        left_df, right_df, how, lsuffix, rsuffix, sharedAttribute=sharedAttribute
+    )
 
     left_df.geometry.values.check_geographic_crs(stacklevel=1)
     right_df.geometry.values.check_geographic_crs(stacklevel=1)
 
     return_distance = distance_col is not None
-
     join_df = _nearest_query(
-        left_df, right_df, max_distance, how, return_distance, exclusive
+        left_df,
+        right_df,
+        max_distance,
+        how,
+        return_distance,
+        exclusive,
+        sharedAttribute=sharedAttribute,
     )
 
     if return_distance:
