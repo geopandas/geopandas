@@ -11,6 +11,7 @@ from packaging.version import Version
 
 from ._decorator import doc
 
+ROBUST_PERCENTILE = 2.0
 
 def deprecated(new, warning_type=FutureWarning):
     """Helper to provide deprecation warning."""
@@ -830,6 +831,14 @@ def plot_dataframe(
         for n in np.where(nan_idx)[0]:
             values = np.insert(values, n, values[0])
 
+
+    robust = style_kwds.pop("robust", False)
+
+    if robust:
+        vals = values[~np.isnan(values)]
+        vmin = np.percentile(vals, ROBUST_PERCENTILE)
+        vmax = np.percentile(vals, 100.0 - ROBUST_PERCENTILE)
+
     mn = values[~np.isnan(values)].min() if vmin is None else vmin
     mx = values[~np.isnan(values)].max() if vmax is None else vmax
 
@@ -902,6 +911,9 @@ def plot_dataframe(
         from matplotlib.lines import Line2D
         from matplotlib.colors import Normalize
         from matplotlib import cm
+
+        if robust:
+            legend_kwds["extend"] = "both"
 
         norm = style_kwds.get("norm", None)
         if not norm:
