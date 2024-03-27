@@ -180,11 +180,14 @@ def _is_url(url):
         return False
 
 
+# TODO: disconnect GeoPandas from Fiona's URI/path parsing internals.
 if FIONA_GE_110:
+    # private imports avoid warnings bubbling to users
+    # but persist the underlying problem
     from fiona._path import _ParsedPath as ParsedPath
     from fiona._path import _UnparsedPath as UnparsedPath
     from fiona._path import _parse_path as parse_path
-else:
+elif fiona is not None:
     from fiona.path import ParsedPath, UnparsedPath, parse_path
 
 
@@ -341,6 +344,7 @@ def _read_file_fiona(
         # zipped file. In order to match that behavior, attempt to add a zip scheme
         # if missing.
         if _is_zip(str(path_or_bytes)):
+            # TODO: disconnect GeoPandas from Fiona's URI/path parsing internals.
             parsed = parse_path(str(path_or_bytes))
             if isinstance(parsed, ParsedPath):
                 # If fiona is able to parse the path, we can safely look at the scheme
