@@ -17,7 +17,7 @@ from shapely.geometry import Point, Polygon, box, mapping
 import geopandas
 from geopandas import GeoDataFrame, read_file
 from geopandas._compat import PANDAS_GE_20, HAS_PYPROJ
-from geopandas.io.file import _detect_driver, _EXTENSION_TO_DRIVER, _is_zip
+from geopandas.io.file import _detect_driver, _EXTENSION_TO_DRIVER
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 from geopandas.tests.util import PACKAGE_DIR, validate_boro_df
 
@@ -675,51 +675,6 @@ def test_read_text_file_fsspec(file_path, engine):
     with fsspec.open(file_path, "r") as f:
         gdf = read_file(f, engine=engine)
         assert isinstance(gdf, geopandas.GeoDataFrame)
-
-
-def test_is_zip():
-    # from https://github.com/rasterio/rasterio/commit/dce1c75880d09d7da83b8d7d966c7da2f4faa448
-    url = "https://xxx:yyy!@actinia.mundialis.de/api/v3/resources/demouser/resource_id-1e904ec8-ad55-4eda-8f0d-440eb61d891a/baum.tif"
-    assert not _is_zip(url)
-
-    url = (
-        "https://xxx:yyy.zip!@actinia.mundialis.de/api/v3/resources/demouser/resource_id-1e904ec8-ad55-4eda-8f0d"
-        "-440eb61d891a/baum.tif"
-    )
-    assert _is_zip(url)
-    # Degenerate cases which may not actually come up
-    url = (
-        "https://xxx:yyy.zip!foo!@actinia.mundialis.de/api/v3/resources/demouser/resource_id-1e904ec8-ad55-4eda-8f0d"
-        "-440eb61d891a/baum.tif"
-    )
-    assert not _is_zip(url)
-    url = (
-        "https://xxx!yyy.zip!@actinia.mundialis.de/api/v3/resources/demouser/resource_id-1e904ec8-ad55-4eda-8f0d"
-        "-440eb61d891a/baum.tif"
-    )
-    assert _is_zip(url)
-
-    assert _is_zip("nybb.zip")
-    assert _is_zip("./nybb.zip")
-    assert _is_zip("~/nybb.zip")
-    assert _is_zip("c:/users/jane.doe/nybb.zip")
-    assert _is_zip(r"c:\users\jane.doe\nybb.zip")
-    assert _is_zip(r"c:\users\jane.doe\nybb.zip!nybb.shp")
-    assert _is_zip(r"zip://c:\users\jane.doe\nybb.zip!nybb.shp")
-    assert _is_zip("/home/jane.doe/nybb.zip")
-    assert _is_zip("/mnt/data/nybb.zip")
-    assert _is_zip("/mnt/data/nybb.zip!nybb.shp")
-    assert _is_zip(
-        "https://raw.githubusercontent.com/geopandas/geopandas/"
-        "main/geopandas/tests/data/nybb_16a.zip"
-    )
-    assert not _is_zip("nybb.txt")
-    assert not _is_zip("./nybb.txt")
-    assert not _is_zip("~/nybb.txt")
-    assert not _is_zip("c:/users/jane.doe/nybb.txt")
-    assert not _is_zip(r"c:\users\jane.doe\nybb.txt")
-    assert not _is_zip("/home/jane.doe/nybb.txt")
-    assert not _is_zip("/mnt/data/nybb.txt")
 
 
 def test_infer_zipped_file(engine, nybb_filename):
