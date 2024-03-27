@@ -163,6 +163,22 @@ _EXTENSION_TO_DRIVER = {
 }
 
 
+def _fiona_path_internals():
+    # assume _check_fiona() has already happened
+    assert fiona is not None
+
+    # TODO: disconnect GeoPandas from Fiona's URI/path parsing internals.
+    if FIONA_GE_110:
+        # private imports avoid warnings bubbling to users
+        # but persist the underlying problem
+        from fiona._path import _ParsedPath as ParsedPath
+        from fiona._path import _UnparsedPath as UnparsedPath
+        from fiona._path import _parse_path as parse_path
+    else:
+        from fiona.path import ParsedPath, UnparsedPath, parse_path
+    return parse_path, ParsedPath, UnparsedPath
+
+
 def _expand_user(path):
     """Expand paths that use ~."""
     if isinstance(path, str):
@@ -178,17 +194,6 @@ def _is_url(url):
         return parse_url(url).scheme in _VALID_URLS
     except Exception:
         return False
-
-
-# TODO: disconnect GeoPandas from Fiona's URI/path parsing internals.
-if FIONA_GE_110:
-    # private imports avoid warnings bubbling to users
-    # but persist the underlying problem
-    from fiona._path import _ParsedPath as ParsedPath
-    from fiona._path import _UnparsedPath as UnparsedPath
-    from fiona._path import _parse_path as parse_path
-elif fiona is not None:
-    from fiona.path import ParsedPath, UnparsedPath, parse_path
 
 
 def _is_zip(uri):
@@ -343,6 +348,7 @@ def _read_file_fiona(
         # Opening a file via URL or file-like-object above automatically detects a
         # zipped file. In order to match that behavior, attempt to add a zip scheme
         # if missing.
+        parse_path, ParsedPath, UnparsedPath = _fiona_path_internals()
         if _is_zip(str(path_or_bytes)):
             # TODO: disconnect GeoPandas from Fiona's URI/path parsing internals.
             parsed = parse_path(str(path_or_bytes))
