@@ -524,9 +524,9 @@ def _read_file_pyogrio(path_or_bytes, bbox=None, mask=None, rows=None, **kwargs)
                 "Cannot specify both 'columns' and 'ignore_fields' keywords"
             )
         warnings.warn(
-            "It is recommended to use the 'columns' keyword to select the columns "
-            "you want instead of using 'ignore_fields' to deselect the columns you "
-            "do not want to read.",
+            "The 'include_fields' and 'ignore_fields' keywords are deprecated, and "
+            "will be removed in a future release. You can use the 'columns' keyword "
+            "instead to select which columns to read.",
             DeprecationWarning,
             stacklevel=3,
         )
@@ -541,8 +541,9 @@ def _read_file_pyogrio(path_or_bytes, bbox=None, mask=None, rows=None, **kwargs)
                 "Cannot specify both 'columns' and 'include_fields' keywords"
             )
         warnings.warn(
-            "It is recommended to use the 'columns' keyword instead of the "
-            "'include_fields' keyword to select the columns to read.",
+            "The 'include_fields' and 'ignore_fields' keywords are deprecated, and "
+            "will be removed in a future release. You can use the 'columns' keyword "
+            "instead to select which columns to read.",
             DeprecationWarning,
             stacklevel=3,
         )

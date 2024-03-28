@@ -791,7 +791,7 @@ def test_read_file__ignore_geometry(engine, naturalearth_lowres):
 
 
 @pytest.mark.filterwarnings(
-    "ignore:It is recommended to use the 'columns' keyword:DeprecationWarning"
+    "ignore:The 'include_fields' and 'ignore_fields' keywords:DeprecationWarning"
 )
 def test_read_file__ignore_fields(engine, naturalearth_lowres):
     gdf = geopandas.read_file(
@@ -803,7 +803,7 @@ def test_read_file__ignore_fields(engine, naturalearth_lowres):
 
 
 @pytest.mark.filterwarnings(
-    "ignore:It is recommended to use the 'columns' keyword:DeprecationWarning"
+    "ignore:The 'include_fields' and 'ignore_fields' keywords:DeprecationWarning"
 )
 def test_read_file__ignore_all_fields(engine, naturalearth_lowres):
     gdf = geopandas.read_file(
@@ -897,7 +897,7 @@ def test_read_file__columns_old_fiona(naturalearth_lowres):
 
 
 @pytest.mark.filterwarnings(
-    "ignore:It is recommended to use the 'columns' keyword:DeprecationWarning"
+    "ignore:The 'include_fields' and 'ignore_fields' keywords:DeprecationWarning"
 )
 def test_read_file__include_fields(engine, naturalearth_lowres):
     if engine == "fiona" and not FIONA_GE_19:
