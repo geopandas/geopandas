@@ -178,6 +178,17 @@ class TestGeomMethods:
         self.l6 = LineString([(5, 5), (5, 100), (100, 5)])
         self.g12 = GeoSeries([self.l5])
         self.g13 = GeoSeries([self.l6])
+        self.g14 = GeoSeries(
+            [
+                MultiLineString([[(0, 2), (0, 10)], [(0, 10), (5, 10)]]),
+                MultiLineString([[(0, 2), (0, 10)], [(0, 11), (5, 10)]]),
+                MultiLineString(),
+                MultiLineString([[(0, 0), (1, 0)], [(0, 0), (3, 0)]]),
+                Point(0, 0),
+            ],
+            crs=4326,
+            index=range(2, 7),
+        )
 
     def _test_unary_real(self, op, expected, a):
         """Tests for 'area', 'length', 'is_valid', etc."""
@@ -1801,6 +1812,35 @@ class TestGeomMethods:
             ],
         )
         assert_geoseries_equal(expected, self.g1.force_3d([1, 2]))
+
+    def test_line_merge(self):
+        expected = GeoSeries(
+            [
+                LineString([(0, 2), (0, 10), (5, 10)]),
+                MultiLineString([[(0, 2), (0, 10)], [(0, 11), (5, 10)]]),
+                GeometryCollection(),
+                LineString([(0, 0), (1, 0), (3, 0)]),
+                GeometryCollection(),
+            ],
+            crs=4326,
+            index=range(2, 7),
+        )
+        assert_geoseries_equal(expected, self.g14.line_merge())
+
+    @pytest.mark.skipif(shapely.geos_version < (3, 11, 0), reason="requires GEOS>=3.11")
+    def test_line_merge_directed(self):
+        expected = GeoSeries(
+            [
+                LineString([(0, 2), (0, 10), (5, 10)]),
+                MultiLineString([[(0, 2), (0, 10)], [(0, 11), (5, 10)]]),
+                GeometryCollection(),
+                MultiLineString([[(0, 0), (1, 0)], [(0, 0), (3, 0)]]),
+                GeometryCollection(),
+            ],
+            crs=4326,
+            index=range(2, 7),
+        )
+        assert_geoseries_equal(expected, self.g14.line_merge(directed=True))
 
     @pytest.mark.skipif(
         shapely.geos_version < (3, 9, 5), reason="Empty geom bug in GEOS<3.9.5"

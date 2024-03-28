@@ -665,6 +665,11 @@ class GeometryArray(ExtensionArray):
             shapely.transform(self._data, transformation, include_z), crs=self.crs
         )
 
+    def line_merge(self, directed=False):
+        return GeometryArray(
+            shapely.line_merge(self._data, directed=directed), crs=self.crs
+        )
+
     def set_precision(self, grid_size, mode="valid_output"):
         return GeometryArray(
             shapely.set_precision(self._data, grid_size=grid_size, mode=mode),
@@ -1181,7 +1186,7 @@ class GeometryArray(ExtensionArray):
 
         result = take(self._data, indices, allow_fill=allow_fill, fill_value=fill_value)
         if allow_fill and fill_value is None:
-            result[pd.isna(result)] = None
+            result[~shapely.is_valid_input(result)] = None
         return GeometryArray(result, crs=self.crs)
 
     def _fill(self, idx, value):
