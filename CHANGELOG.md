@@ -42,9 +42,8 @@ New features and improvements:
   `buffer(0)` (#3113).
 - Passing `"geometry"` as `dtype` to `pd.read_csv` will now return a GeoSeries for
   the specified columns (#3101).
--
-API changes:
-- Added support for ``mask`` keyword for pyogrio engine for pyogrio >= 0.7.0 (#3062).
+- Added support to ``read_file`` for the ``mask`` keyword for the pyogrio engine (#3062).
+- Added support to ``read_file`` for the ``columns`` keyword for the fiona engine (#3133).
 
 Backwards incompatible API changes:
 - The deprecated default value of GeoDataFrame/ GeoSeries `explode(.., index_parts=True)` is now
@@ -80,7 +79,10 @@ Deprecations and compatibility notes:
     `__sub__`. Instead use methods `symmetric_difference`, `union`, `intersection` and
     `difference` respectively.
 - Fixes for compatibility with psycopg (#3167).
-
+- The ``include_fields`` and ``ignore_fields`` keywords in ``read_file()`` are deprecated
+  for the default pyogrio engine. Currently those are translated to the ``columns`` keyword
+  for backwards compatibility, but you should directly use the ``columns`` keyword instead
+  to select which columns to read (#3133).
 
 ## Version 0.14.3 (Jan 31, 2024)
 
