@@ -1,5 +1,4 @@
 import pandas as pd
-import pyproj
 import pytest
 
 from shapely.geometry import Point
@@ -7,6 +6,9 @@ import numpy as np
 
 from geopandas import GeoDataFrame, GeoSeries
 from geopandas.testing import assert_geodataframe_equal
+import geopandas
+
+pyproj = pytest.importorskip("pyproj")
 
 crs_osgb = pyproj.CRS(27700)
 crs_wgs = pyproj.CRS(4326)
@@ -142,6 +144,32 @@ def test_loc(df):
     assert_object(df.loc[:, geo_name], GeoSeries, geo_name)
     assert_object(df.loc[:, "geometry2"], GeoSeries, "geometry2", crs=crs_osgb)
     assert_object(df.loc[:, "value1"], pd.Series)
+
+
+@pytest.mark.parametrize(
+    "geom_name",
+    [
+        "geometry",
+        pytest.param(
+            "geom",
+            marks=pytest.mark.xfail(
+                reason="pre-regression behaviour only works for geometry col geometry"
+            ),
+        ),
+    ],
+)
+def test_loc_add_row(geom_name, nybb_filename):
+    # https://github.com/geopandas/geopandas/issues/3119
+
+    nybb = geopandas.read_file(nybb_filename)[["BoroCode", "geometry"]]
+    if geom_name != "geometry":
+        nybb = nybb.rename_geometry(geom_name)
+    # crs_orig = nybb.crs
+
+    # add a new row
+    nybb.loc[5] = [6, nybb.geometry.iloc[0]]
+    assert nybb.geometry.dtype == "geometry"
+    assert nybb.crs is None  # TODO this should be crs_orig, regressed in #2373
 
 
 def test_iloc(df):

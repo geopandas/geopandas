@@ -1,3 +1,5 @@
+:html_theme.sidebar_secondary.remove:
+
 GeoPandas |version|
 ===================
 
@@ -72,10 +74,3 @@ travel, workshops, and a variety of other needs.
     :alt: numfocus
     :width: 400
     :target: https://numfocus.org/project/geopandas
-
-Indices and tables
-------------------
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`

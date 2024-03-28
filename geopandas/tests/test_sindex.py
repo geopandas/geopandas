@@ -647,7 +647,7 @@ class TestShapelyInterface:
         ),
     )
     def test_query_bulk(self, predicate, test_geom, expected):
-        """Tests the `query_bulk` method with valid
+        """Tests the `query` method with valid
         inputs and valid predicates.
         """
         res = self.df.sindex.query(
@@ -667,12 +667,12 @@ class TestShapelyInterface:
         ],
     )
     def test_query_bulk_empty_geometry(self, test_geoms, expected_value):
-        """Tests the `query_bulk` method with an empty geometry."""
+        """Tests the `query` method with an empty geometries."""
         res = self.df.sindex.query(test_geoms)
         assert_array_equal(res, expected_value)
 
     def test_query_bulk_empty_input_array(self):
-        """Tests the `query_bulk` method with an empty input array."""
+        """Tests the `query` method with an empty input array."""
         test_array = np.array([], dtype=object)
         expected_value = [[], []]
         res = self.df.sindex.query(test_array)
@@ -680,14 +680,14 @@ class TestShapelyInterface:
 
     def test_query_bulk_invalid_input_geometry(self):
         """
-        Tests the `query_bulk` method with invalid input for the `geometry` parameter.
+        Tests the `query` method with invalid input for the `geometry` parameter.
         """
         test_array = "notanarray"
         with pytest.raises(TypeError):
             self.df.sindex.query(test_array)
 
     def test_query_bulk_invalid_predicate(self):
-        """Tests the `query_bulk` method with invalid predicates."""
+        """Tests the `query` method with invalid predicates."""
         test_geom_bounds = (-1, -1, -0.5, -0.5)
         test_predicate = "test"
 
@@ -703,7 +703,7 @@ class TestShapelyInterface:
         ),
     )
     def test_query_bulk_input_type(self, predicate, test_geom, expected):
-        """Tests that query_bulk can accept a GeoSeries, GeometryArray or
+        """Tests that query can accept a GeoSeries, GeometryArray or
         numpy array.
         """
         # pass through GeoSeries to test input type
@@ -738,7 +738,7 @@ class TestShapelyInterface:
         ),
     )
     def test_query_bulk_sorting(self, sort, expected):
-        """Check that results from `query_bulk` don't depend
+        """Check that results from `query` don't depend
         on the order of geometries.
         """
         # these geometries come from a reported issue:

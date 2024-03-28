@@ -24,6 +24,7 @@ from geopandas import GeoDataFrame, GeoSeries
 from geopandas.base import GeoPandasBase
 from geopandas.testing import assert_geodataframe_equal
 from geopandas.tests.util import assert_geoseries_equal, geom_almost_equals, geom_equals
+from geopandas._compat import HAS_PYPROJ
 
 
 def assert_array_dtype_equal(a, b, *args, **kwargs):
@@ -212,27 +213,6 @@ class TestGeomMethods:
     def _test_binary_real(self, op, expected, a, b, *args, **kwargs):
         fcmp = assert_series_equal
         self._binary_op_test(op, expected, a, b, fcmp, True, False, *args, **kwargs)
-
-    def _test_binary_operator(self, op, expected, a, b):
-        """
-        The operators only have GeoSeries on the left, but can have
-        GeoSeries or GeoDataFrame on the right.
-        If GeoDataFrame is on the left, geometry column is used.
-
-        """
-        if isinstance(expected, GeoPandasBase):
-            fcmp = assert_geoseries_equal
-        else:
-
-            def fcmp(a, b):
-                assert geom_equals(a, b)
-
-        if isinstance(b, GeoPandasBase):
-            right_df = True
-        else:
-            right_df = False
-
-        self._binary_op_test(op, expected, a, b, fcmp, False, right_df)
 
     def _binary_op_test(
         self, op, expected, left, right, fcmp, left_df, right_df, *args, **kwargs
@@ -436,6 +416,7 @@ class TestGeomMethods:
         expected = Series(np.array([0.5, np.nan]), index=self.na_none.index)
         self._test_unary_real("area", expected, self.na_none)
 
+    @pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not available")
     def test_area_crs_warn(self):
         with pytest.warns(UserWarning, match="Geometry is in a geographic CRS"):
             self.g4.area
@@ -520,6 +501,17 @@ class TestGeomMethods:
             expected, self.g0.contains_properly(self.g9, align=False)
         )
 
+    @pytest.mark.skipif(shapely.geos_version < (3, 10, 0), reason="requires GEOS>=3.10")
+    def test_dwithin(self):
+        expected = [True, True, True, False, True, True, False]
+        assert_array_dtype_equal(expected, self.g0.dwithin(self.p0, 6))
+
+        expected = [False, True, True, True, True, True, False, False]
+        with pytest.warns(UserWarning, match="The indices .+ different"):
+            assert_array_dtype_equal(expected, self.g0.dwithin(self.g9, 1, align=True))
+        expected = [True, True, True, True, False, False, False]
+        assert_array_dtype_equal(expected, self.g0.dwithin(self.g9, 1, align=False))
+
     def test_length(self):
         expected = Series(np.array([2 + np.sqrt(2), 4]), index=self.g1.index)
         self._test_unary_real("length", expected, self.g1)
@@ -527,6 +519,7 @@ class TestGeomMethods:
         expected = Series(np.array([2 + np.sqrt(2), np.nan]), index=self.na_none.index)
         self._test_unary_real("length", expected, self.na_none)
 
+    @pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not available")
     def test_length_crs_warn(self):
         with pytest.warns(UserWarning, match="Geometry is in a geographic CRS"):
             self.g4.length
@@ -665,20 +658,17 @@ class TestGeomMethods:
         expected = Series(np.array([0, 0, 0, 0, val, np.nan, np.nan]), self.g0.index)
         assert_array_dtype_equal(expected, self.g0.distance(self.g9, align=False))
 
+    @pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not available")
     def test_distance_crs_warning(self):
         with pytest.warns(UserWarning, match="Geometry is in a geographic CRS"):
             self.g4.distance(self.p0)
 
     def test_hausdorff_distance(self):
         # closest point is (0, 0) in self.p1
-        expected = Series(
-            np.array([np.sqrt(5**2 + 5**2), np.nan]), self.na_none.index
-        )
+        expected = Series(np.array([np.sqrt(5**2 + 5**2), np.nan]), self.na_none.index)
         assert_array_dtype_equal(expected, self.na_none.hausdorff_distance(self.p0))
 
-        expected = Series(
-            np.array([np.sqrt(5**2 + 5**2), np.nan]), self.na_none.index
-        )
+        expected = Series(np.array([np.sqrt(5**2 + 5**2), np.nan]), self.na_none.index)
         assert_array_dtype_equal(expected, self.na_none.hausdorff_distance(self.p0))
 
         expected = Series(np.array([np.nan, 0, 0, 0, 0, 0, np.nan, np.nan]), range(8))
@@ -707,9 +697,7 @@ class TestGeomMethods:
     )
     def test_frechet_distance(self):
         # closest point is (0, 0) in self.p1
-        expected = Series(
-            np.array([np.sqrt(5**2 + 5**2), np.nan]), self.na_none.index
-        )
+        expected = Series(np.array([np.sqrt(5**2 + 5**2), np.nan]), self.na_none.index)
         assert_array_dtype_equal(expected, self.na_none.frechet_distance(self.p0))
 
         expected = Series(np.array([np.nan, 0, 0, 0, 0, 0, np.nan, np.nan]), range(8))
@@ -730,9 +718,7 @@ class TestGeomMethods:
             expected, self.g0.frechet_distance(self.g9, align=False)
         )
 
-        expected = Series(
-            np.array([np.sqrt(100**2 + (100 - 5) ** 2)]), self.g12.index
-        )
+        expected = Series(np.array([np.sqrt(100**2 + (100 - 5) ** 2)]), self.g12.index)
         assert_array_dtype_equal(
             expected, self.g12.frechet_distance(self.g13, densify=0.25)
         )
@@ -904,6 +890,7 @@ class TestGeomMethods:
         points = GeoSeries([point for i in range(3)])
         assert_geoseries_equal(polygons.centroid, points)
 
+    @pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not available")
     def test_centroid_crs_warn(self):
         with pytest.warns(UserWarning, match="Geometry is in a geographic CRS"):
             self.g4.centroid
@@ -1124,6 +1111,7 @@ class TestGeomMethods:
         with pytest.raises(ValueError):
             self.g5.interpolate(distances)
 
+    @pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not available")
     def test_interpolate_crs_warning(self):
         g5_crs = self.g5.copy()
         g5_crs.crs = 4326
@@ -1256,6 +1244,7 @@ class TestGeomMethods:
         result = s.buffer(np.array([0, 0, 0]))
         assert_geoseries_equal(result, s)
 
+    @pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not available")
     def test_buffer_crs_warn(self):
         with pytest.warns(UserWarning, match="Geometry is in a geographic CRS"):
             self.g4.buffer(1)
@@ -1327,8 +1316,7 @@ class TestGeomMethods:
             index=MultiIndex.from_tuples(index, names=expected_index_name),
             crs=4326,
         )
-        with pytest.warns(FutureWarning, match="Currently, index_parts defaults"):
-            assert_geoseries_equal(expected, s.explode())
+        assert_geoseries_equal(expected, s.explode(index_parts=True))
 
     @pytest.mark.parametrize("index_name", [None, "test"])
     def test_explode_geodataframe(self, index_name):
@@ -1336,8 +1324,7 @@ class TestGeomMethods:
         df = GeoDataFrame({"col": [1, 2], "geometry": s})
         df.index.name = index_name
 
-        with pytest.warns(FutureWarning, match="Currently, index_parts defaults"):
-            test_df = df.explode()
+        test_df = df.explode(index_parts=True)
 
         expected_s = GeoSeries([Point(1, 2), Point(2, 3), Point(5, 5)])
         expected_df = GeoDataFrame({"col": [1, 1, 2], "geometry": expected_s})
@@ -1667,47 +1654,6 @@ class TestGeomMethods:
         assert test_df.geometry.name == test_df._geometry_column_name
         assert "geometry" in test_df.columns
 
-    #
-    # Test '&', '|', '^', and '-'
-    #
-    def test_intersection_operator(self):
-        with pytest.warns(FutureWarning):
-            self._test_binary_operator("__and__", self.t1, self.g1, self.g2)
-        with pytest.warns(FutureWarning):
-            self._test_binary_operator("__and__", self.t1, self.gdf1, self.g2)
-
-    def test_union_operator(self):
-        with pytest.warns(FutureWarning):
-            self._test_binary_operator("__or__", self.sq, self.g1, self.g2)
-        with pytest.warns(FutureWarning):
-            self._test_binary_operator("__or__", self.sq, self.gdf1, self.g2)
-
-    def test_union_operator_polygon(self):
-        with pytest.warns(FutureWarning):
-            self._test_binary_operator("__or__", self.sq, self.g1, self.t2)
-        with pytest.warns(FutureWarning):
-            self._test_binary_operator("__or__", self.sq, self.gdf1, self.t2)
-
-    def test_symmetric_difference_operator(self):
-        with pytest.warns(FutureWarning):
-            self._test_binary_operator("__xor__", self.sq, self.g3, self.g4)
-        with pytest.warns(FutureWarning):
-            self._test_binary_operator("__xor__", self.sq, self.gdf3, self.g4)
-
-    def test_difference_series2(self):
-        expected = GeoSeries([GeometryCollection(), self.t2])
-        with pytest.warns(FutureWarning):
-            self._test_binary_operator("__sub__", expected, self.g1, self.g2)
-        with pytest.warns(FutureWarning):
-            self._test_binary_operator("__sub__", expected, self.gdf1, self.g2)
-
-    def test_difference_poly2(self):
-        expected = GeoSeries([self.t1, self.t1])
-        with pytest.warns(FutureWarning):
-            self._test_binary_operator("__sub__", expected, self.g1, self.t2)
-        with pytest.warns(FutureWarning):
-            self._test_binary_operator("__sub__", expected, self.gdf1, self.t2)
-
     def test_get_coordinates(self):
         expected = DataFrame(
             data=self.expected_2d,
@@ -1891,3 +1837,62 @@ class TestGeomMethods:
             ],
         )
         assert_geoseries_equal(expected, self.g1.force_3d([1, 2]))
+
+    @pytest.mark.skipif(
+        shapely.geos_version < (3, 9, 5), reason="Empty geom bug in GEOS<3.9.5"
+    )
+    def test_set_precision(self):
+        expected = GeoSeries(
+            [
+                Point(-74, 41, 30.3244),
+                Point(-74, 41, 31.2344),
+                Point(-74, 41),
+                self.pt_empty,
+            ],
+            crs=4326,
+        )
+        assert_geoseries_equal(expected, self.landmarks_mixed_empty.set_precision(1))
+
+        s = GeoSeries(
+            [
+                LineString([(0, 0), (0, 0.1), (0, 1), (1, 1)]),
+                LineString([(0, 0), (0, 0.1), (0.1, 0.1)]),
+            ],
+        )
+        expected = GeoSeries(
+            [
+                LineString([(0, 0), (0, 1), (1, 1)]),
+                LineString(),
+            ],
+        )
+        assert_geoseries_equal(expected, s.set_precision(1))
+
+        expected = GeoSeries(
+            [
+                LineString([(0, 0), (0, 0), (0, 1), (1, 1)]),
+                LineString([(0, 0), (0, 0), (0, 0)]),
+            ]
+        )
+        assert_series_equal(
+            expected.to_wkt(), s.set_precision(1, mode="pointwise").to_wkt()
+        )
+
+        expected = GeoSeries(
+            [
+                LineString([(0, 0), (0, 1), (1, 1)]),
+                LineString([(0, 0), (0, 0)]),
+            ]
+        )
+        assert_series_equal(
+            expected.to_wkt(), s.set_precision(1, mode="keep_collapsed").to_wkt()
+        )
+
+    def test_get_precision(self):
+        expected = Series([0.0, 0.0, 0.0, 0.0], index=self.landmarks_mixed_empty.index)
+        assert_series_equal(expected, self.landmarks_mixed_empty.get_precision())
+        with_precision = self.landmarks_mixed_empty.set_precision(1)
+        expected = Series([1.0, 1.0, 1.0, 1.0], index=with_precision.index)
+        assert_series_equal(expected, with_precision.get_precision())
+        mixed = concat([self.landmarks_mixed_empty, with_precision])
+        expected = Series([0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0], index=mixed.index)
+        assert_series_equal(expected, mixed.get_precision())

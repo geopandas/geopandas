@@ -10,14 +10,13 @@ from pandas.core.accessor import CachedAccessor
 from shapely.geometry import mapping, shape
 from shapely.geometry.base import BaseGeometry
 
-from pyproj import CRS
-
 from geopandas.array import GeometryArray, GeometryDtype, from_shapely, to_wkb, to_wkt
 from geopandas.base import GeoPandasBase, is_geometry_type
 from geopandas.geoseries import GeoSeries
 import geopandas.io
 from geopandas.explore import _explore
 from ._decorator import doc
+from ._compat import HAS_PYPROJ
 
 
 def _geodataframe_constructor_with_fallback(*args, **kwargs):
@@ -486,7 +485,15 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 crs = state.pop("crs", None)
             else:
                 crs = state.pop("_crs", None)
-            crs = CRS.from_user_input(crs) if crs is not None else crs
+            if crs is not None and not HAS_PYPROJ:
+                raise ImportError(
+                    "Unpickling a GeoDataFrame with CRS requires the 'pyproj' package, "
+                    "but it is not installed or does not import correctly. "
+                )
+            elif crs is not None:
+                from pyproj import CRS
+
+                crs = CRS.from_user_input(crs)
 
         super().__setstate__(state)
 
@@ -1628,9 +1635,12 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
         return _geodataframe_constructor_with_fallback
 
     def _constructor_from_mgr(self, mgr, axes):
-        # analogous logic to _geodataframe_constructor_with_fallback
+        # replicate _geodataframe_constructor_with_fallback behaviour
+        # unless safe to skip
         if not any(isinstance(block.dtype, GeometryDtype) for block in mgr.blocks):
-            return pd.DataFrame._from_mgr(mgr, axes)
+            return _geodataframe_constructor_with_fallback(
+                pd.DataFrame._from_mgr(mgr, axes)
+            )
         return GeoDataFrame._from_mgr(mgr, axes)
 
     @property
@@ -1847,7 +1857,7 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
         return aggregated
 
     # overrides the pandas native explode method to break up features geometrically
-    def explode(self, column=None, ignore_index=False, index_parts=None, **kwargs):
+    def explode(self, column=None, ignore_index=False, index_parts=False, **kwargs):
         """
         Explode multi-part geometries into multiple single geometries.
 
@@ -1864,7 +1874,7 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
         ignore_index : bool, default False
             If True, the resulting index will be labelled 0, 1, …, n - 1,
             ignoring `index_parts`.
-        index_parts : boolean, default True
+        index_parts : boolean, default False
             If True, the resulting index will be a multi-index (original
             index with an additional level indicating the multiple
             geometries: a new zero-based index for each single part geometry
@@ -1930,18 +1940,6 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
         if not isinstance(self[column].dtype, GeometryDtype):
             return super().explode(column, ignore_index=ignore_index, **kwargs)
 
-        if index_parts is None:
-            if not ignore_index:
-                warnings.warn(
-                    "Currently, index_parts defaults to True, but in the future, "
-                    "it will default to False to be consistent with Pandas. "
-                    "Use `index_parts=True` to keep the current behavior and "
-                    "True/False to silence the warning.",
-                    FutureWarning,
-                    stacklevel=2,
-                )
-            index_parts = True
-
         exploded_geom = self.geometry.reset_index(drop=True).explode(index_parts=True)
 
         df = self.drop(self._geometry_column_name, axis=1).take(
@@ -2003,7 +2001,7 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
         Upload GeoDataFrame into PostGIS database.
 
         This method requires SQLAlchemy and GeoAlchemy2, and a PostgreSQL
-        Python driver (e.g. psycopg2) to be installed.
+        Python driver (psycopg or psycopg2) to be installed.
 
         It is also possible to use :meth:`~GeoDataFrame.to_file` to write to a database.
         Especially for file geodatabases like GeoPackage or SpatiaLite this can be
@@ -2055,47 +2053,6 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
         geopandas.io.sql._write_postgis(
             self, name, con, schema, if_exists, index, index_label, chunksize, dtype
         )
-
-        #
-        # Implement standard operators for GeoSeries
-        #
-
-    def __xor__(self, other):
-        """Implement ^ operator as for builtin set type"""
-        warnings.warn(
-            "'^' operator will be deprecated. Use the 'symmetric_difference' "
-            "method instead.",
-            FutureWarning,
-            stacklevel=2,
-        )
-        return self.geometry.symmetric_difference(other)
-
-    def __or__(self, other):
-        """Implement | operator as for builtin set type"""
-        warnings.warn(
-            "'|' operator will be deprecated. Use the 'union' method instead.",
-            FutureWarning,
-            stacklevel=2,
-        )
-        return self.geometry.union(other)
-
-    def __and__(self, other):
-        """Implement & operator as for builtin set type"""
-        warnings.warn(
-            "'&' operator will be deprecated. Use the 'intersection' method instead.",
-            FutureWarning,
-            stacklevel=2,
-        )
-        return self.geometry.intersection(other)
-
-    def __sub__(self, other):
-        """Implement - operator as for builtin set type"""
-        warnings.warn(
-            "'-' operator will be deprecated. Use the 'difference' method instead.",
-            FutureWarning,
-            stacklevel=2,
-        )
-        return self.geometry.difference(other)
 
     plot = CachedAccessor("plot", geopandas.plotting.GeoplotAccessor)
 

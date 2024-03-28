@@ -8,7 +8,7 @@ from shapely.geometry import Point, Polygon, LineString, GeometryCollection, box
 
 import geopandas
 from geopandas import GeoDataFrame, GeoSeries, overlay, read_file
-from geopandas._compat import PANDAS_GE_20
+from geopandas._compat import PANDAS_GE_20, HAS_PYPROJ
 
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 import pytest
@@ -345,6 +345,7 @@ def test_geoseries_warning(dfs):
         overlay(df1, df2.geometry, how="union")
 
 
+@pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not available")
 def test_preserve_crs(dfs, how):
     df1, df2 = dfs
     result = overlay(df1, df2, how=how)
@@ -356,6 +357,7 @@ def test_preserve_crs(dfs, how):
     assert result.crs == crs
 
 
+@pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not available")
 def test_crs_mismatch(dfs, how):
     df1, df2 = dfs
     df1.crs = 4326

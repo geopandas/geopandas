@@ -12,11 +12,11 @@ import pytz
 from packaging.version import Version
 from pandas.api.types import is_datetime64_any_dtype
 from pandas.testing import assert_series_equal, assert_frame_equal
-from shapely.geometry import Point, Polygon, box
+from shapely.geometry import Point, Polygon, box, mapping
 
 import geopandas
 from geopandas import GeoDataFrame, read_file
-from geopandas._compat import PANDAS_GE_20
+from geopandas._compat import PANDAS_GE_20, HAS_PYPROJ
 from geopandas.io.file import _detect_driver, _EXTENSION_TO_DRIVER
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 from geopandas.tests.util import PACKAGE_DIR, validate_boro_df
@@ -62,6 +62,11 @@ def engine(request):
 def skip_pyogrio_not_supported(engine):
     if engine == "pyogrio":
         pytest.skip("not supported for the pyogrio engine")
+
+
+def skip_pyogrio_lt_07(engine):
+    if engine == "pyogrio" and not PYOGRIO_GE_07:
+        pytest.skip("requires pyogrio >= 0.7.0")
 
 
 @pytest.fixture
@@ -403,12 +408,6 @@ def test_to_file_empty(tmpdir, engine):
         input_empty_df.to_file(tempfilename, engine=engine)
 
 
-def test_to_file_privacy(tmpdir, df_nybb):
-    tempfilename = os.path.join(str(tmpdir), "test.shp")
-    with pytest.warns(FutureWarning):
-        geopandas.io.file.to_file(df_nybb, tempfilename)
-
-
 def test_to_file_schema(tmpdir, df_nybb, engine):
     """
     Ensure that the file is written according to the schema
@@ -441,6 +440,7 @@ def test_to_file_schema(tmpdir, df_nybb, engine):
         assert result_schema == schema
 
 
+@pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not installed")
 def test_to_file_crs(tmpdir, engine, nybb_filename):
     """
     Ensure that the file is written according to the crs
@@ -575,7 +575,8 @@ NYBB_CRS = "epsg:2263"
 def test_read_file(engine, nybb_filename):
     df = read_file(nybb_filename, engine=engine)
     validate_boro_df(df)
-    assert df.crs == NYBB_CRS
+    if HAS_PYPROJ:
+        assert df.crs == NYBB_CRS
     expected_columns = ["BoroCode", "BoroName", "Shape_Leng", "Shape_Area"]
     assert (df.columns[:-1] == expected_columns).all()
 
@@ -701,7 +702,7 @@ def test_allow_legacy_gdal_path(engine, nybb_filename):
     assert isinstance(gdf, geopandas.GeoDataFrame)
 
 
-def test_read_file_filtered__bbox(df_nybb, engine, nybb_filename):
+def test_read_file_bbox_tuple(df_nybb, engine, nybb_filename):
     bbox = (
         1031051.7879884212,
         224272.49231459625,
@@ -713,7 +714,7 @@ def test_read_file_filtered__bbox(df_nybb, engine, nybb_filename):
     assert_geodataframe_equal(filtered_df, expected.reset_index(drop=True))
 
 
-def test_read_file_filtered__bbox__polygon(df_nybb, engine, nybb_filename):
+def test_read_file_bbox_polygon(df_nybb, engine, nybb_filename):
     bbox = box(
         1031051.7879884212, 224272.49231459625, 1047224.3104931959, 244317.30894023244
     )
@@ -866,7 +867,9 @@ def test_read_file__columns(naturalearth_lowres):
     assert gdf.columns.tolist() == ["name", "pop_est", "geometry"]
 
 
-def test_read_file_filtered_with_gdf_boundary(df_nybb, engine, nybb_filename):
+@pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not installed")
+@pytest.mark.parametrize("file_like", [False, True])
+def test_read_file_bbox_gdf(df_nybb, engine, nybb_filename, file_like):
     full_df_shape = df_nybb.shape
     bbox = geopandas.GeoDataFrame(
         geometry=[
@@ -879,30 +882,42 @@ def test_read_file_filtered_with_gdf_boundary(df_nybb, engine, nybb_filename):
         ],
         crs=NYBB_CRS,
     )
-    filtered_df = read_file(nybb_filename, bbox=bbox, engine=engine)
+    infile = (
+        open(nybb_filename.replace("zip://", ""), "rb") if file_like else nybb_filename
+    )
+    filtered_df = read_file(infile, bbox=bbox, engine=engine)
     filtered_df_shape = filtered_df.shape
     assert full_df_shape != filtered_df_shape
     assert filtered_df_shape == (2, 5)
 
 
-def test_read_file_filtered_with_gdf_boundary__mask(
-    df_nybb, engine, naturalearth_lowres, naturalearth_cities
-):
-    skip_pyogrio_not_supported(engine)
-    gdf_mask = geopandas.read_file(naturalearth_lowres)
-    gdf = geopandas.read_file(
-        naturalearth_cities,
-        mask=gdf_mask[gdf_mask.continent == "Africa"],
-        engine=engine,
+@pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not installed")
+@pytest.mark.parametrize("file_like", [False, True])
+def test_read_file_mask_gdf(df_nybb, engine, nybb_filename, file_like):
+    skip_pyogrio_lt_07(engine)
+    full_df_shape = df_nybb.shape
+    mask = geopandas.GeoDataFrame(
+        geometry=[
+            box(
+                1031051.7879884212,
+                224272.49231459625,
+                1047224.3104931959,
+                244317.30894023244,
+            )
+        ],
+        crs=NYBB_CRS,
     )
-    filtered_df_shape = gdf.shape
-    assert filtered_df_shape == (57, 2)
+    infile = (
+        open(nybb_filename.replace("zip://", ""), "rb") if file_like else nybb_filename
+    )
+    filtered_df = read_file(infile, mask=mask, engine=engine)
+    filtered_df_shape = filtered_df.shape
+    assert full_df_shape != filtered_df_shape
+    assert filtered_df_shape == (2, 5)
 
 
-def test_read_file_filtered_with_gdf_boundary__mask__polygon(
-    df_nybb, engine, nybb_filename
-):
-    skip_pyogrio_not_supported(engine)
+def test_read_file_mask_polygon(df_nybb, engine, nybb_filename):
+    skip_pyogrio_lt_07(engine)
     full_df_shape = df_nybb.shape
     mask = box(
         1031051.7879884212, 224272.49231459625, 1047224.3104931959, 244317.30894023244
@@ -913,10 +928,26 @@ def test_read_file_filtered_with_gdf_boundary__mask__polygon(
     assert filtered_df_shape == (2, 5)
 
 
-def test_read_file_filtered_with_gdf_boundary_mismatched_crs(
-    df_nybb, engine, nybb_filename
-):
-    skip_pyogrio_not_supported(engine)
+def test_read_file_mask_geojson(df_nybb, nybb_filename, engine):
+    skip_pyogrio_lt_07(engine)
+    full_df_shape = df_nybb.shape
+    mask = mapping(
+        box(
+            1031051.7879884212,
+            224272.49231459625,
+            1047224.3104931959,
+            244317.30894023244,
+        )
+    )
+    filtered_df = read_file(nybb_filename, mask=mask, engine=engine)
+    filtered_df_shape = filtered_df.shape
+    assert full_df_shape != filtered_df_shape
+    assert filtered_df_shape == (2, 5)
+
+
+@pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not installed")
+def test_read_file_bbox_gdf_mismatched_crs(df_nybb, engine, nybb_filename):
+    skip_pyogrio_lt_07(engine)
     full_df_shape = df_nybb.shape
     bbox = geopandas.GeoDataFrame(
         geometry=[
@@ -936,10 +967,9 @@ def test_read_file_filtered_with_gdf_boundary_mismatched_crs(
     assert filtered_df_shape == (2, 5)
 
 
-def test_read_file_filtered_with_gdf_boundary_mismatched_crs__mask(
-    df_nybb, engine, nybb_filename
-):
-    skip_pyogrio_not_supported(engine)
+@pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not installed")
+def test_read_file_mask_gdf_mismatched_crs(df_nybb, engine, nybb_filename):
+    skip_pyogrio_lt_07(engine)
     full_df_shape = df_nybb.shape
     mask = geopandas.GeoDataFrame(
         geometry=[
@@ -957,6 +987,22 @@ def test_read_file_filtered_with_gdf_boundary_mismatched_crs__mask(
     filtered_df_shape = filtered_df.shape
     assert full_df_shape != filtered_df_shape
     assert filtered_df_shape == (2, 5)
+
+
+def test_read_file_bbox_mask_not_allowed(engine, nybb_filename):
+    skip_pyogrio_lt_07(engine)
+
+    bbox = (
+        1031051.7879884212,
+        224272.49231459625,
+        1047224.3104931959,
+        244317.30894023244,
+    )
+
+    mask = box(*bbox)
+
+    with pytest.raises(ValueError, match="mask and bbox can not be set together"):
+        read_file(nybb_filename, bbox=bbox, mask=mask)
 
 
 @pytest.mark.filterwarnings(
@@ -987,11 +1033,6 @@ def test_read_file_empty_shapefile(tmpdir, engine):
     empty = read_file(fname, engine=engine)
     assert isinstance(empty, geopandas.GeoDataFrame)
     assert all(empty.columns == ["A", "Z", "geometry"])
-
-
-def test_read_file_privacy(tmpdir, df_nybb, nybb_filename):
-    with pytest.warns(FutureWarning):
-        geopandas.io.file.read_file(nybb_filename)
 
 
 class FileNumber(object):

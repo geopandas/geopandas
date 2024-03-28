@@ -305,17 +305,18 @@ def test_convert_dtypes(df):
     res2 = df[["value1", "value2", "geometry"]].convert_dtypes()
     assert_geodataframe_equal(expected1[["value1", "value2", "geometry"]], res2)
 
-    # Test again with crs set and custom geom col name
-    df2 = df.set_crs(epsg=4326).rename_geometry("points")
-    expected2 = GeoDataFrame(
-        pd.DataFrame(df2).convert_dtypes(), crs=df2.crs, geometry=df2.geometry.name
-    )
-    res3 = df2.convert_dtypes()
-    assert_geodataframe_equal(expected2, res3)
+    if compat.HAS_PYPROJ:
+        # Test again with crs set and custom geom col name
+        df2 = df.set_crs(epsg=4326).rename_geometry("points")
+        expected2 = GeoDataFrame(
+            pd.DataFrame(df2).convert_dtypes(), crs=df2.crs, geometry=df2.geometry.name
+        )
+        res3 = df2.convert_dtypes()
+        assert_geodataframe_equal(expected2, res3)
 
-    # Test geom last, geom_col=geometry
-    res4 = df2[["value1", "value2", "points"]].convert_dtypes()
-    assert_geodataframe_equal(expected2[["value1", "value2", "points"]], res4)
+        # Test geom last, geom_col=geometry
+        res4 = df2[["value1", "value2", "points"]].convert_dtypes()
+        assert_geodataframe_equal(expected2[["value1", "value2", "points"]], res4)
 
 
 def test_to_csv(df):
@@ -660,6 +661,8 @@ def test_groupby_groups(df):
 @pytest.mark.parametrize("crs", [None, "EPSG:4326"])
 @pytest.mark.parametrize("geometry_name", ["geometry", "geom"])
 def test_groupby_metadata(crs, geometry_name):
+    if crs and not compat.HAS_PYPROJ:
+        pytest.skip("requires pyproj")
     # https://github.com/geopandas/geopandas/issues/2294
     df = GeoDataFrame(
         {
@@ -749,6 +752,7 @@ def test_apply_loc_len1(df):
     np.testing.assert_allclose(result, expected)
 
 
+@pytest.mark.skipif(compat.PANDAS_GE_30, reason="convert_dtype is removed in pandas 3")
 def test_apply_convert_dtypes_keyword(s):
     # ensure the convert_dtypes keyword is accepted
     if not compat.PANDAS_GE_21:
@@ -770,6 +774,8 @@ def test_apply_convert_dtypes_keyword(s):
 @pytest.mark.parametrize("crs", [None, "EPSG:4326"])
 def test_apply_no_geometry_result(df, crs):
     if crs:
+        if not compat.HAS_PYPROJ:
+            pytest.skip("requires pyproj")
         df = df.set_crs(crs)
     result = df.apply(lambda col: col.astype(str), axis=0)
     assert type(result) is pd.DataFrame
@@ -874,3 +880,17 @@ def test_preserve_flags(df):
 
     with pytest.raises(ValueError):
         pd.concat([df, df])
+
+
+def test_ufunc():
+    # this is calling a shapely ufunc, but we currently rely on pandas' implementation
+    # of `__array_ufunc__` to wrap the result back into a GeoSeries
+    ser = GeoSeries([Point(1, 1), Point(2, 2), Point(3, 3)])
+    result = shapely.buffer(ser, 2)
+    assert isinstance(result, GeoSeries)
+
+    # ensure the result is still writeable
+    # (https://github.com/geopandas/geopandas/issues/3178)
+    assert result.array._data.flags.writeable
+    result.loc[0] = Point(10, 10)
+    assert result.iloc[0] == Point(10, 10)
