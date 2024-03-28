@@ -11,10 +11,14 @@ Notes on dependencies:
 API changes:
 
 - `unary_union` is now deprecated and replaced by the `union_all` method (#3007).
+- The `sjoin` method will now preserve the name of the index of the right
+  GeoDataFrame, if it has one, instead of always using `"index_right"` as the
+  name for the resulting column in the return value (#846, #2144).
 
 New methods:
 
 - Added `line_merge` method from shapely to GeoSeries/GeoDataframe (#3214).
+- Added `set_precision` and `get_precision` methods from shapely to GeoSeries/GeoDataframe (#3175).
 - Added `count_coordinates` method from shapely to GeoSeries/GeoDataframe (#3026).
 - Added `minimum_clearance` method from shapely to GeoSeries/GeoDataframe (#2989).
 - Added `is_ccw` method from shapely to GeoSeries/GeoDataframe (#3027).
@@ -75,6 +79,8 @@ Deprecations and compatibility notes:
   - Removed deprecated GeoSeries/ GeoDataFrame methods `__xor__`, `__or__`, `__and__` and
     `__sub__`. Instead use methods `symmetric_difference`, `union`, `intersection` and
     `difference` respectively.
+- Fixes for compatibility with psycopg (#3167).
+
 
 ## Version 0.14.3 (Jan 31, 2024)
 
