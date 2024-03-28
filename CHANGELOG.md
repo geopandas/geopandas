@@ -11,6 +11,8 @@ Notes on dependencies:
 API changes:
 
 - `unary_union` is now deprecated and replaced by the `union_all` method (#3007).
+- `align` keyword in binary methods now defaults to `None`, treated as True. Explicit True
+  will silence the warning about mismachted indices. (#3212)
 - The `sjoin` method will now preserve the name of the index of the right
   GeoDataFrame, if it has one, instead of always using `"index_right"` as the
   name for the resulting column in the return value (#846, #2144).
