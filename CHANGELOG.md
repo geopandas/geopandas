@@ -41,7 +41,9 @@ New features and improvements:
   `buffer(0)` (#3113).
 - Passing `"geometry"` as `dtype` to `pd.read_csv` will now return a GeoSeries for
   the specified columns (#3101).
-- 
+- Added `show_bbox` and `drop_id` arguments to allow removal of unwanted parameters from 
+  `GeoSeries.to_json` (#3226)
+
 API changes:
 - Added support for ``mask`` keyword for pyogrio engine for pyogrio >= 0.7.0 (#3062).
 

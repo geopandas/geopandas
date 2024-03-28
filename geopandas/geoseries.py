@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 import typing
 from typing import Optional, Any, Callable, Dict
 import warnings
@@ -1189,12 +1188,18 @@ class GeoSeries(GeoPandasBase, Series):
         """
         return self.values.estimate_utm_crs(datum_name)
 
-    def to_json(self, **kwargs) -> str:
+    def to_json(self, show_bbox=True, drop_id=False, to_wgs84=False, **kwargs) -> str:
         """
         Returns a GeoJSON string representation of the GeoSeries.
 
         Parameters
         ----------
+        show_bbox : bool, optional, default: True
+            Include bbox (bounds) in the geojson
+        drop_id : bool, default: False
+            Whether to retain the index of the GeoSeries as the id property
+            in the generated GeoJSON. Default is False, but may want True
+            if the index is just arbitrary row numbers.
         *kwargs* that will be passed to json.dumps().
 
         Returns
@@ -1223,7 +1228,11 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
         --------
         GeoSeries.to_file : write GeoSeries to file
         """
-        return json.dumps(self.__geo_interface__, **kwargs)
+        from geopandas import GeoDataFrame
+
+        return GeoDataFrame({"geometry": self}).to_json(
+            na="null", show_bbox=show_bbox, drop_id=drop_id, to_wgs84=to_wgs84, **kwargs
+        )
 
     def to_wkb(self, hex: bool = False, **kwargs) -> Series:
         """
