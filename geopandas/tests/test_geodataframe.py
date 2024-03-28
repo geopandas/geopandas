@@ -6,8 +6,6 @@ import tempfile
 import numpy as np
 import pandas as pd
 
-from pyproj import CRS
-from pyproj.exceptions import CRSError
 from shapely.geometry import Point, Polygon, box
 
 import geopandas
@@ -72,9 +70,13 @@ class TestDataFrame:
 
     def test_df_init(self):
         assert type(self.df2) is GeoDataFrame
-        assert self.df2.crs == self.crs
+        if compat.HAS_PYPROJ:
+            assert self.df2.crs == self.crs
 
+    @pytest.mark.skipif(not compat.HAS_PYPROJ, reason="Requires pyproj")
     def test_different_geo_colname(self):
+        from pyproj.exceptions import CRSError
+
         data = {
             "A": range(5),
             "B": range(-5, 0),
@@ -195,10 +197,11 @@ class TestDataFrame:
         assert_geoseries_equal(df.geometry, new_geom)
         assert_geoseries_equal(df["geometry"], new_geom)
 
-        # new crs
-        gs = new_geom.to_crs(crs="epsg:3857")
-        df.geometry = gs
-        assert df.crs == "epsg:3857"
+        if compat.HAS_PYPROJ:
+            # new crs
+            gs = new_geom.to_crs(crs="epsg:3857")
+            df.geometry = gs
+            assert df.crs == "epsg:3857"
 
     def test_geometry_property_errors(self):
         with pytest.raises(AttributeError):
@@ -246,6 +249,7 @@ class TestDataFrame:
         with pytest.raises(ValueError, match=msg):
             self.df.rename_geometry("Shape_Area", inplace=True)
 
+    @pytest.mark.skipif(not compat.HAS_PYPROJ, reason="Requires pyproj")
     def test_set_geometry(self):
         geom = GeoSeries([Point(x, y) for x, y in zip(range(5), range(5))])
         original_geom = self.df.geometry
@@ -391,14 +395,15 @@ class TestDataFrame:
         assert_geodataframe_equal(res1, df)
         assert_geodataframe_equal(res2, df)
 
-        # assert crs is / is not preserved on mixed dataframes
-        df_nocrs = df.copy()
-        df_nocrs.crs = None
-        res1, res2 = df.align(df_nocrs)
-        assert_geodataframe_equal(res1, df)
-        assert res1.crs is not None
-        assert_geodataframe_equal(res2, df_nocrs)
-        assert res2.crs is None
+        if compat.HAS_PYPROJ:
+            # assert crs is / is not preserved on mixed dataframes
+            df_nocrs = df.copy()
+            df_nocrs.crs = None
+            res1, res2 = df.align(df_nocrs)
+            assert_geodataframe_equal(res1, df)
+            assert res1.crs is not None
+            assert_geodataframe_equal(res2, df_nocrs)
+            assert res2.crs is None
 
         # mixed GeoDataFrame / DataFrame
         df_nogeom = pd.DataFrame(df.drop("geometry", axis=1))
@@ -419,15 +424,16 @@ class TestDataFrame:
         assert_geodataframe_equal(res1, exp1)
         assert_geodataframe_equal(res2, exp2)
 
-        df2_nocrs = df2.copy()
-        df2_nocrs.crs = None
-        exp2_nocrs = exp2.copy()
-        exp2_nocrs.crs = None
-        res1, res2 = df1.align(df2_nocrs)
-        assert_geodataframe_equal(res1, exp1)
-        assert res1.crs is not None
-        assert_geodataframe_equal(res2, exp2_nocrs)
-        assert res2.crs is None
+        if compat.HAS_PYPROJ:
+            df2_nocrs = df2.copy()
+            df2_nocrs.crs = None
+            exp2_nocrs = exp2.copy()
+            exp2_nocrs.crs = None
+            res1, res2 = df1.align(df2_nocrs)
+            assert_geodataframe_equal(res1, exp1)
+            assert res1.crs is not None
+            assert_geodataframe_equal(res2, exp2_nocrs)
+            assert res2.crs is None
 
         df2_nogeom = pd.DataFrame(df2.drop("geometry", axis=1))
         exp2_nogeom = pd.DataFrame(exp2.drop("geometry", axis=1))
@@ -436,6 +442,7 @@ class TestDataFrame:
         assert type(res2) == pd.DataFrame
         assert_frame_equal(res2, exp2_nogeom)
 
+    @pytest.mark.skipif(not compat.HAS_PYPROJ, reason="Requires pyproj")
     def test_to_json(self):
         text = self.df.to_json(to_wgs84=True)
         data = json.loads(text)
@@ -598,7 +605,10 @@ class TestDataFrame:
     def test_from_dict(self):
         data = {"A": [1], "geometry": [Point(0.0, 0.0)]}
         df = GeoDataFrame.from_dict(data, crs=3857)
-        assert df.crs == "epsg:3857"
+        if compat.HAS_PYPROJ:
+            assert df.crs == "epsg:3857"
+        else:
+            assert df.crs is None
         assert df._geometry_column_name == "geometry"
 
         data = {"B": [1], "location": [Point(0.0, 0.0)]}
@@ -613,7 +623,10 @@ class TestDataFrame:
 
         df = GeoDataFrame.from_features(features, crs=crs)
         validate_boro_df(df, case_sensitive=True)
-        assert df.crs == crs
+        if compat.HAS_PYPROJ:
+            assert df.crs == crs
+        else:
+            assert df.crs is None
 
     def test_from_features_unaligned_properties(self):
         p1 = Point(1, 1)
@@ -938,8 +951,10 @@ class TestDataFrame:
         assert self.df.crs == unpickled.crs
 
     def test_estimate_utm_crs(self):
-        assert self.df.estimate_utm_crs() == CRS("EPSG:32618")
-        assert self.df.estimate_utm_crs("NAD83") == CRS("EPSG:26918")
+        pyproj = pytest.importorskip("pyproj")
+
+        assert self.df.estimate_utm_crs() == pyproj.CRS("EPSG:32618")
+        assert self.df.estimate_utm_crs("NAD83") == pyproj.CRS("EPSG:26918")
 
     def test_to_wkb(self):
         wkbs0 = [
@@ -1372,8 +1387,9 @@ class TestConstructor:
         y_col = df["location", "y"]
 
         gdf = GeoDataFrame(df, crs=crs, geometry=points_from_xy(x_col, y_col))
-        assert gdf.crs == crs
-        assert gdf.geometry.crs == crs
+        if compat.HAS_PYPROJ:
+            assert gdf.crs == crs
+            assert gdf.geometry.crs == crs
         assert gdf.geometry.dtype == "geometry"
         assert gdf._geometry_column_name == "geometry"
         assert gdf.geometry.name == "geometry"
@@ -1395,8 +1411,9 @@ class TestConstructor:
         y_col = df["foo", "location", "y"]
 
         gdf = GeoDataFrame(df, crs=crs, geometry=points_from_xy(x_col, y_col))
-        assert gdf.crs == crs
-        assert gdf.geometry.crs == crs
+        if compat.HAS_PYPROJ:
+            assert gdf.crs == crs
+            assert gdf.geometry.crs == crs
         assert gdf.geometry.dtype == "geometry"
         assert gdf._geometry_column_name == "geometry"
         assert gdf.geometry.name == "geometry"
@@ -1417,12 +1434,14 @@ class TestConstructor:
         df["geometry"] = GeoSeries.from_xy(x_col, y_col)
         df2 = df.copy()
         gdf = df.set_geometry("geometry", crs=crs)
-        assert gdf.crs == crs
+        if compat.HAS_PYPROJ:
+            assert gdf.crs == crs
         assert gdf._geometry_column_name == "geometry"
         assert gdf.geometry.name == "geometry"
         # test again setting with tuple col name
         gdf = df2.set_geometry(("geometry", "", ""), crs=crs)
-        assert gdf.crs == crs
+        if compat.HAS_PYPROJ:
+            assert gdf.crs == crs
         assert gdf._geometry_column_name == ("geometry", "", "")
         assert gdf.geometry.name == ("geometry", "", "")
 
@@ -1434,6 +1453,7 @@ class TestConstructor:
         assert_geodataframe_equal(df, expected)
 
 
+@pytest.mark.skipif(not compat.HAS_PYPROJ, reason="pyproj not available")
 def test_geodataframe_crs():
     gdf = GeoDataFrame(columns=["geometry"])
     gdf.crs = "IGNF:ETRS89UTM28"
@@ -1452,6 +1472,7 @@ def test_geodataframe_nocrs_json():
     assert "crs" not in gdf_geojson
 
 
+@pytest.mark.skipif(not compat.HAS_PYPROJ, reason="pyproj not available")
 def test_geodataframe_crs_json():
     gdf = GeoDataFrame(columns=["geometry"])
     gdf.crs = 25833
@@ -1465,6 +1486,7 @@ def test_geodataframe_crs_json():
     assert "crs" not in gdf_geointerface
 
 
+@pytest.mark.skipif(not compat.HAS_PYPROJ, reason="pyproj not available")
 @pytest.mark.parametrize(
     "crs",
     ["+proj=cea +lon_0=0 +lat_ts=45 +x_0=0 +y_0=0 +ellps=WGS84 +units=m", "IGNF:WGS84"],
