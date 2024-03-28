@@ -2272,7 +2272,7 @@ chicago_w_groceries[chicago_w_groceries["community"] == "UPTOWN"]
             exclusive=exclusive,
         )
 
-    def clip(self, mask, keep_geom_type=False):
+    def clip(self, mask, keep_geom_type=False, sort=False):
         """Clip points, lines, or polygon geometries to the mask extent.
 
         Both layers must be in the same Coordinate Reference System (CRS).
@@ -2295,6 +2295,9 @@ chicago_w_groceries[chicago_w_groceries["community"] == "UPTOWN"]
             If True, return only geometries of original type in case of intersection
             resulting in multiple geometry types or GeometryCollections.
             If False, return all resulting geometries (potentially mixed types).
+        sort : boolean, default False
+            If True, the results will be sorted in ascending order using the
+            geometries' indexes as the primary key.
 
         Returns
         -------
@@ -2325,7 +2328,7 @@ chicago_w_groceries[chicago_w_groceries["community"] == "UPTOWN"]
         >>> nws_groceries.shape
         (7, 8)
         """
-        return geopandas.clip(self, mask=mask, keep_geom_type=keep_geom_type)
+        return geopandas.clip(self, mask=mask, keep_geom_type=keep_geom_type, sort=sort)
 
     def overlay(self, right, how="intersection", keep_geom_type=None, make_valid=True):
         """Perform spatial overlay between GeoDataFrames.

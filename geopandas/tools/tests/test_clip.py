@@ -43,6 +43,14 @@ def point_gdf():
 
 
 @pytest.fixture
+def disordered_point_gdf():
+    """Create a disordered point GeoDataFrame."""
+    pts = np.array([[5, 5], [2, 2], [4, 4], [0, 0], [3, 3], [1, 1]])
+    gdf = GeoDataFrame([Point(xy) for xy in pts], columns=["geometry"], crs="EPSG:3857")
+    return gdf
+
+
+@pytest.fixture
 def pointsoutside_nooverlap_gdf():
     """Create a point GeoDataFrame. Its points are all outside the single
     rectangle, and its bounds are outside the single rectangle's."""
@@ -460,3 +468,13 @@ def test_clip_empty_mask(buffered_locations, mask):
     )
     clipped = clip(buffered_locations.geometry, mask)
     assert_geoseries_equal(clipped, GeoSeries([], crs="EPSG:3857"))
+
+
+def test_clip_sorting(disordered_point_gdf):
+    """Test the sorting kwarg in clip"""
+    bbox = shapely.geometry.box(0, 0, 2, 2)
+    unsorted_clipped_gdf = disordered_point_gdf.clip(bbox)
+    sorted_clipped_gdf = disordered_point_gdf.clip(bbox, sort=True)
+
+    assert not (sorted(unsorted_clipped_gdf.index) == unsorted_clipped_gdf.index).all()
+    assert (sorted(sorted_clipped_gdf.index) == sorted_clipped_gdf.index).all()
