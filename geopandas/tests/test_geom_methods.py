@@ -16,6 +16,7 @@ from shapely.geometry import (
     MultiPolygon,
     Point,
     Polygon,
+    box,
 )
 from shapely.geometry.collection import GeometryCollection
 from shapely.ops import unary_union
@@ -474,6 +475,18 @@ class TestGeomMethods:
         ):
             result = g.unary_union
         assert result == g.union_all()
+
+    def test_intersection_all(self):
+        expected = Polygon([(1, 1), (1, 1.5), (1.5, 1.5), (1.5, 1), (1, 1)])
+        g = GeoSeries([box(0, 0, 2, 2), box(1, 1, 3, 3), box(0, 0, 1.5, 1.5)])
+
+        assert g.intersection_all().equals(expected)
+
+        g2 = GeoSeries([box(0, 0, 2, 2), None])
+        assert g2.intersection_all().equals(g2[0])
+
+        g3 = GeoSeries([None, None])
+        assert g3.intersection_all().equals(shapely.GeometryCollection())
 
     def test_contains(self):
         expected = [True, False, True, False, False, False, False]
