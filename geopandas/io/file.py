@@ -5,6 +5,7 @@ import warnings
 
 import numpy as np
 import pandas as pd
+from geopandas.io.util import vsi_path
 from pandas.api.types import is_integer_dtype
 
 import pyproj
@@ -55,6 +56,7 @@ def _import_fiona():
             FIONA_GE_19 = Version(Version(fiona.__version__).base_version) >= Version(
                 "1.9.0"
             )
+
         except ImportError as err:
             fiona = False
             fiona_import_error = str(err)
@@ -166,18 +168,6 @@ def _is_url(url):
         return parse_url(url).scheme in _VALID_URLS
     except Exception:
         return False
-
-
-def _is_zip(path):
-    """Check if a given path is a zipfile"""
-    import fiona.path
-
-    parsed = fiona.path.ParsedPath.from_uri(path)
-    return (
-        parsed.archive.endswith(".zip")
-        if parsed.archive
-        else parsed.path.endswith(".zip")
-    )
 
 
 def _read_file(filename, bbox=None, mask=None, rows=None, engine=None, **kwargs):
@@ -314,27 +304,7 @@ def _read_file_fiona(
         # Opening a file via URL or file-like-object above automatically detects a
         # zipped file. In order to match that behavior, attempt to add a zip scheme
         # if missing.
-        if _is_zip(str(path_or_bytes)):
-            # TODO: disconnect GeoPandas from Fiona's URI/path parsing internals.
-            # Meanwhile parse_path is imported here to avoid adding more conditional
-            # statements at the top of the module.
-            from fiona.path import parse_path
-
-            parsed = parse_path(str(path_or_bytes))
-            if isinstance(parsed, fiona.path.ParsedPath):
-                # If fiona is able to parse the path, we can safely look at the scheme
-                # and update it to have a zip scheme if necessary.
-                schemes = (parsed.scheme or "").split("+")
-                if "zip" not in schemes:
-                    parsed.scheme = "+".join(["zip"] + schemes)
-                path_or_bytes = parsed.name
-            elif isinstance(parsed, fiona.path.UnparsedPath) and not str(
-                path_or_bytes
-            ).startswith("/vsi"):
-                # If fiona is unable to parse the path, it might have a Windows drive
-                # scheme. Try adding zip:// to the front. If the path starts with "/vsi"
-                # it is a legacy GDAL path type, so let it pass unmodified.
-                path_or_bytes = "zip://" + parsed.name
+        path_or_bytes = vsi_path(str(path_or_bytes))
 
     if from_bytes:
         reader = fiona.BytesCollection
