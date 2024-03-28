@@ -1606,6 +1606,73 @@ GeometryCollection
         """
         return _delegate_geo_method("force_3d", self, z=z)
 
+    def line_merge(self, directed=False):
+        """Returns (Multi)LineStrings formed by combining the lines in a
+        MultiLineString.
+
+        Lines are joined together at their endpoints in case two lines are intersecting.
+        Lines are not joined when 3 or more lines are intersecting at the endpoints.
+        Line elements that cannot be joined are kept as is in the resulting
+        MultiLineString.
+
+        The direction of each merged LineString will be that of the majority of the
+        LineStrings from which it was derived. Except if ``directed=True`` is specified,
+        then the operation will not change the order of points within lines and so only
+        lines which can be joined with no change in direction are merged.
+
+        Non-linear geometeries result in an empty GeometryCollection.
+
+        Parameters
+        ----------
+        directed : bool, default False
+            Only combine lines if possible without changing point order.
+            Requires GEOS >= 3.11.0
+
+        Returns
+        -------
+        GeoSeries
+
+        Examples
+        --------
+        >>> from shapely.geometry import MultiLineString, Point
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         MultiLineString([[(0, 2), (0, 10)], [(0, 10), (5, 10)]]),
+        ...         MultiLineString([[(0, 2), (0, 10)], [(0, 11), (5, 10)]]),
+        ...         MultiLineString(),
+        ...         MultiLineString([[(0, 0), (1, 0)], [(0, 0), (3, 0)]]),
+        ...         Point(0, 0),
+        ...     ]
+        ... )
+        >>> s
+        0    MULTILINESTRING ((0 2, 0 10), (0 10, 5 10))
+        1    MULTILINESTRING ((0 2, 0 10), (0 11, 5 10))
+        2                          MULTILINESTRING EMPTY
+        3       MULTILINESTRING ((0 0, 1 0), (0 0, 3 0))
+        4                                    POINT (0 0)
+        dtype: geometry
+
+        >>> s.line_merge()
+        0                   LINESTRING (0 2, 0 10, 5 10)
+        1    MULTILINESTRING ((0 2, 0 10), (0 11, 5 10))
+        2                       GEOMETRYCOLLECTION EMPTY
+        3                     LINESTRING (1 0, 0 0, 3 0)
+        4                       GEOMETRYCOLLECTION EMPTY
+        dtype: geometry
+
+        With ``directed=True``, you can avoid changing the order of points within lines
+        and merge only lines where no change of direction is required:
+
+        >>> s.line_merge(directed=True)
+        0                   LINESTRING (0 2, 0 10, 5 10)
+        1    MULTILINESTRING ((0 2, 0 10), (0 11, 5 10))
+        2                       GEOMETRYCOLLECTION EMPTY
+        3       MULTILINESTRING ((0 0, 1 0), (0 0, 3 0))
+        4                       GEOMETRYCOLLECTION EMPTY
+        dtype: geometry
+        """
+        return _delegate_geo_method("line_merge", self, directed=directed)
+
     #
     # Reduction operations that return a Shapely geometry
     #
