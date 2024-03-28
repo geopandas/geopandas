@@ -235,6 +235,7 @@ class TestSeries:
         assert "id" not in data["features"][0].keys()
         assert "bbox" not in data["features"][0].keys()
 
+    @pytest.mark.skipif(not compat.HAS_PYPROJ, reason="Requires pyproj")
     def test_to_json_wgs84(self):
         """
         Test whether the wgs84 conversion works as intended.
@@ -256,8 +257,8 @@ class TestSeries:
         data = json.loads(text)
         coord1 = data["features"][0]["geometry"]["coordinates"]
         coord2 = data["features"][1]["geometry"]["coordinates"]
-        np.testing.assert_allclose(coord1, [-8235939.130493107, 4975301.253789809])
-        np.testing.assert_allclose(coord2, [-8242607.167991625, 4966620.938285081])
+        assert coord1 == [-8235939.130493107, 4975301.253789809]
+        assert coord2 == [-8242607.167991625, 4966620.938285081]
 
     def test_representative_point(self):
         assert np.all(self.g1.contains(self.g1.representative_point()))
