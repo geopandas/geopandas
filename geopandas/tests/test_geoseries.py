@@ -55,6 +55,9 @@ class TestSeries:
         self.l1 = LineString([(0, 0), (0, 1), (1, 1)])
         self.l2 = LineString([(0, 0), (1, 0), (1, 1), (0, 1)])
         self.g5 = GeoSeries([self.l1, self.l2])
+        self.esb3857 = Point(-8235939.130493107, 4975301.253789809)
+        self.sol3857 = Point(-8242607.167991625, 4966620.938285081)
+        self.landmarks3857 = GeoSeries([self.esb3857, self.sol3857], crs="epsg:3857")
 
     def teardown_method(self):
         shutil.rmtree(self.tempdir)
@@ -231,6 +234,30 @@ class TestSeries:
         data = json.loads(json_str)
         assert "id" not in data["features"][0].keys()
         assert "bbox" not in data["features"][0].keys()
+
+    def test_to_json_wgs84(self):
+        """
+        Test whether the wgs84 conversion works as intended.
+        """
+        text = self.landmarks3857.to_json(to_wgs84=True)
+        data = json.loads(text)
+        assert data["type"] == "FeatureCollection"
+        assert "id" in data["features"][0].keys()
+        coord1 = data["features"][0]["geometry"]["coordinates"]
+        coord2 = data["features"][1]["geometry"]["coordinates"]
+        np.testing.assert_allclose(coord1, self.esb.coords[0])
+        np.testing.assert_allclose(coord2, self.sol.coords[0])
+
+    def test_to_json_wgs84_false(self):
+        """
+        Ensure no conversion to wgs84
+        """
+        text = self.landmarks3857.to_json()
+        data = json.loads(text)
+        coord1 = data["features"][0]["geometry"]["coordinates"]
+        coord2 = data["features"][1]["geometry"]["coordinates"]
+        np.testing.assert_allclose(coord1, [-8235939.130493107, 4975301.253789809])
+        np.testing.assert_allclose(coord2, [-8242607.167991625, 4966620.938285081])
 
     def test_representative_point(self):
         assert np.all(self.g1.contains(self.g1.representative_point()))
