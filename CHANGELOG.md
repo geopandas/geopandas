@@ -50,6 +50,8 @@ New features and improvements:
 - Added support to ``read_file`` for the ``columns`` keyword for the fiona engine (#3133).
 - Added `show_bbox`, `drop_id` and `to_wgs84` arguments to allow further customization of
   `GeoSeries.to_json` (#3226)
+- Added ``shared_attribute`` option arguement to the ``sjoin.sjoin()`` and 
+  ``sjoin.sjoin_nearest()`` methods. (#3231)
 
 Backwards incompatible API changes:
 
