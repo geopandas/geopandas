@@ -1,5 +1,5 @@
 from functools import partial
-from typing import Optional
+from typing import Optional, Union
 import warnings
 
 import numpy as np
@@ -575,7 +575,7 @@ def sjoin_nearest(
     rsuffix: str = "right",
     distance_col: Optional[str] = None,
     exclusive: bool = False,
-    on_attribute: Optional[str | list | tuple] = None,
+    on_attribute: Optional[Union[str, list, tuple]] = None,
 ) -> GeoDataFrame:
     """Spatial join of two GeoDataFrames based on the distance between their geometries.
 
