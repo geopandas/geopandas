@@ -96,6 +96,52 @@ def dfs(request):
     return [request.param, df1, df2, expected]
 
 
+@pytest.fixture()
+def dfs_shared_attribute():
+    geo_left = [
+        Point(0, 0),
+        Point(1, 1),
+        Point(2, 2),
+        Point(3, 3),
+        Point(4, 4),
+        Point(5, 5),
+        Point(6, 6),
+        Point(7, 7),
+    ]
+    geo_right = [
+        Point(0, 0),
+        Point(1, 1),
+        Point(2, 2),
+        Point(3, 3),
+        Point(4, 4),
+        Point(5, 5),
+        Point(6, 6),
+        Point(7, 7),
+    ]
+    attr_tracker = ["A", "B", "C", "D", "E", "F", "G", "H"]
+
+    left_gdf = geopandas.GeoDataFrame(
+        {
+            "geometry": geo_left,
+            "attr_tracker": attr_tracker,
+            "duplicate_column": [0, 1, 2, 3, 4, 5, 6, 7],
+            "attr1": [True, True, True, True, True, True, True, True],
+            "attr2": [True, True, True, True, True, True, True, True],
+        }
+    )
+
+    right_gdf = geopandas.GeoDataFrame(
+        {
+            "geometry": geo_right,
+            "duplicate_column": [0, 1, 2, 3, 4, 5, 6, 7],
+            "attr1": [True, True, False, False, True, True, False, False],
+            "attr2": [True, True, False, False, False, False, False, False],
+        }
+    )
+
+    return left_gdf, right_gdf
+
+
 class TestSpatialJoin:
     @pytest.mark.parametrize(
         "how, lsuffix, rsuffix, expected_cols",
@@ -147,7 +193,6 @@ class TestSpatialJoin:
         index, df1, df2, expected = dfs
 
         res = sjoin(df1, df2, how="inner", predicate=predicate)
-
         exp = expected[predicate].dropna().copy()
         exp = exp.drop("geometry_y", axis=1).rename(columns={"geometry_x": "geometry"})
         exp[["df1", "df2"]] = exp[["df1", "df2"]].astype("int64")
@@ -168,7 +213,6 @@ class TestSpatialJoin:
             exp.index.names = df1.index.names
         if index == "named-multi-index":
             exp = exp.set_index(["df1_ix1", "df1_ix2"])
-
         assert_frame_equal(res, exp)
 
     @pytest.mark.parametrize(
@@ -423,6 +467,155 @@ class TestSpatialJoin:
 
         joined = sjoin(pts, polys, predicate=predicate, how="left")
         assert_index_equal(joined.index, pts.index)
+
+    def test_sjoin_shared_attribute(self, naturalearth_lowres, naturalearth_cities):
+        countries = read_file(naturalearth_lowres)
+        cities = read_file(naturalearth_cities)
+        countries = countries[["geometry", "name"]].rename(columns={"name": "country"})
+
+        # Add first letter of country/city as an attribute column to be compared
+        countries["firstLetter"] = countries["country"].astype(str).str[0]
+        cities["firstLetter"] = cities["name"].astype(str).str[0]
+
+        result = sjoin(cities, countries, on_attribute="firstLetter")
+        assert (
+            result["country"].astype(str).str[0] == result["name"].astype(str).str[0]
+        ).all()
+
+    @pytest.mark.parametrize(
+        "attr_left1, attr_right1, attr_left2, attr_right2",
+        [
+            pytest.param(
+                [
+                    "merge",
+                    "merge",
+                    "merge",
+                    "merge",
+                    "merge",
+                    "merge",
+                    "merge",
+                    "merge",
+                ],
+                [
+                    "merge",
+                    "merge",
+                    "no_merge",
+                    "no_merge",
+                    "merge",
+                    "merge",
+                    "no_merge",
+                    "no_merge",
+                ],
+                [
+                    "merge",
+                    "merge",
+                    "merge",
+                    "merge",
+                    "merge",
+                    "merge",
+                    "merge",
+                    "merge",
+                ],
+                [
+                    "merge",
+                    "merge",
+                    "no_merge",
+                    "no_merge",
+                    "no_merge",
+                    "no_merge",
+                    "no_merge",
+                    "no_merge",
+                ],
+                id="merge on string attributes",
+            ),
+            pytest.param(
+                [2, 2, 2, 2, 2, 2, 2, 2],
+                [2, 2, 1, 1, 2, 2, 1, 1],
+                [2, 2, 2, 2, 2, 2, 2, 2],
+                [2, 2, 1, 1, 1, 1, 1, 1],
+                id="merge on integer attributes",
+            ),
+            pytest.param(
+                [True, True, True, True, True, True, True, True],
+                [True, True, False, False, True, True, False, False],
+                [True, True, True, True, True, True, True, True],
+                [True, True, False, False, False, False, False, False],
+                id="merge on boolean attributes",
+            ),
+            pytest.param(
+                [True, True, True, True, True, True, True, True],
+                [True, True, False, False, True, True, False, False],
+                [
+                    "merge",
+                    "merge",
+                    "merge",
+                    "merge",
+                    "merge",
+                    "merge",
+                    "merge",
+                    "merge",
+                ],
+                [
+                    "merge",
+                    "merge",
+                    "no_merge",
+                    "no_merge",
+                    "no_merge",
+                    "no_merge",
+                    "no_merge",
+                    "no_merge",
+                ],
+                id="merge on mixed attributes",
+            ),
+        ],
+    )
+    def test_sjoin_multiple_attributes_datatypes(
+        self, dfs_shared_attribute, attr_left1, attr_right1, attr_left2, attr_right2
+    ):
+        left_gdf, right_gdf = dfs_shared_attribute
+        left_gdf["attr1"] = attr_left1
+        left_gdf["attr2"] = attr_left2
+        right_gdf["attr1"] = attr_right1
+        right_gdf["attr2"] = attr_right2
+
+        joined = sjoin(left_gdf, right_gdf, on_attribute=("attr1", "attr2"))
+        assert (["A", "B"] == joined["attr_tracker"].values).all()
+
+    def test_sjoin_multiple_attributes_check_header(self, dfs_shared_attribute):
+
+        left_gdf, right_gdf = dfs_shared_attribute
+        joined = sjoin(left_gdf, right_gdf, on_attribute=["attr1"])
+
+        assert (["A", "B", "E", "F"] == joined["attr_tracker"].values).all()
+        assert {"attr2_left", "attr2_right", "attr1"}.issubset(joined.columns)
+        assert "attr1_left" not in joined
+
+    def test_sjoin_error_column_does_not_exist(self, dfs_shared_attribute):
+        left_gdf, right_gdf = dfs_shared_attribute
+        right_gdf = right_gdf.drop("attr1", axis=1)
+
+        with pytest.raises(
+            ValueError,
+            match="Expected column {} is missing from one of the dataframes".format(
+                "attr1"
+            ),
+        ):
+            sjoin(left_gdf, right_gdf, on_attribute="attr1")
+
+    def test_sjoin_error_use_geometry_column(self, dfs_shared_attribute):
+        left_gdf, right_gdf = dfs_shared_attribute
+        with pytest.raises(
+            ValueError,
+            match="sjoin already merges on the geometry column and "
+            "should not be included in the on_attribute arguement.",
+        ):
+            sjoin(left_gdf, right_gdf, on_attribute="geometry")
+        with pytest.raises(
+            ValueError,
+            match="sjoin already merges on the geometry column and "
+            "should not be included in the on_attribute arguement.",
+        ):
+            sjoin(left_gdf, right_gdf, on_attribute=["attr1", "geometry"])
 
 
 class TestIndexNames:
@@ -1209,39 +1402,170 @@ class TestNearest:
         if max_distance:
             assert result["dist"].max() <= max_distance
 
+    @pytest.mark.filterwarnings("ignore:Geometry is in a geographic CRS")
+    def test_sjoin_nearest_shared_attribute(
+        self, naturalearth_lowres, naturalearth_cities
+    ):
+        """
+        Test to find only cities within countries that start with the same letter
+        using shared_attribute arguement.
+        """
+        countries = read_file(naturalearth_lowres)
+        cities = read_file(naturalearth_cities)
+        countries = countries[["geometry", "name"]].rename(columns={"name": "country"})
 
-@pytest.mark.filterwarnings("ignore:Geometry is in a geographic CRS")
-def test_sjoin_nearest_shared_attribute(naturalearth_lowres, naturalearth_cities):
-    """
-    Test to find only cities within countries that start with the same letter
-    using shared_attribute arguement.
-    """
-    countries = read_file(naturalearth_lowres)
-    cities = read_file(naturalearth_cities)
-    countries = countries[["geometry", "name"]].rename(columns={"name": "country"})
+        # Add first letter of country/city as an attribute column to be compared
+        countries["firstLetter"] = countries["country"].astype(str).str[0]
+        cities["firstLetter"] = cities["name"].astype(str).str[0]
+        result = sjoin_nearest(
+            cities, countries, distance_col="dist", on_attribute="firstLetter"
+        )
+        assert (
+            result["country"].astype(str).str[0] == result["name"].astype(str).str[0]
+        ).all()
 
-    # Add first letter of country/city as an attribute column to be compared
-    countries["firstLetter"] = countries["country"].astype(str).str[0]
-    cities["firstLetter"] = cities["name"].astype(str).str[0]
-
-    result = sjoin_nearest(
-        cities, countries, distance_col="dist", shared_attribute="firstLetter"
+    @pytest.mark.parametrize(
+        "attr_left1, attr_right1, attr_left2, attr_right2",
+        [
+            pytest.param(
+                [
+                    "merge",
+                    "merge",
+                    "merge",
+                    "merge",
+                    "merge",
+                    "merge",
+                    "merge",
+                    "merge",
+                ],
+                [
+                    "merge",
+                    "merge",
+                    "no_merge",
+                    "no_merge",
+                    "merge",
+                    "merge",
+                    "no_merge",
+                    "no_merge",
+                ],
+                [
+                    "merge",
+                    "merge",
+                    "merge",
+                    "merge",
+                    "merge",
+                    "merge",
+                    "merge",
+                    "merge",
+                ],
+                [
+                    "merge",
+                    "merge",
+                    "no_merge",
+                    "no_merge",
+                    "no_merge",
+                    "no_merge",
+                    "no_merge",
+                    "no_merge",
+                ],
+                id="merge on string attributes",
+            ),
+            pytest.param(
+                [2, 2, 2, 2, 2, 2, 2, 2],
+                [2, 2, 1, 1, 2, 2, 1, 1],
+                [2, 2, 2, 2, 2, 2, 2, 2],
+                [2, 2, 1, 1, 1, 1, 1, 1],
+                id="merge on integer attributes",
+            ),
+            pytest.param(
+                [True, True, True, True, True, True, True, True],
+                [True, True, False, False, True, True, False, False],
+                [True, True, True, True, True, True, True, True],
+                [True, True, False, False, False, False, False, False],
+                id="merge on boolean attributes",
+            ),
+            pytest.param(
+                [True, True, True, True, True, True, True, True],
+                [True, True, False, False, True, True, False, False],
+                [
+                    "merge",
+                    "merge",
+                    "merge",
+                    "merge",
+                    "merge",
+                    "merge",
+                    "merge",
+                    "merge",
+                ],
+                [
+                    "merge",
+                    "merge",
+                    "no_merge",
+                    "no_merge",
+                    "no_merge",
+                    "no_merge",
+                    "no_merge",
+                    "no_merge",
+                ],
+                id="merge on mixed attributes",
+            ),
+        ],
     )
-    assert (
-        result["country"].astype(str).str[0] == result["name"].astype(str).str[0]
-    ).all()
+    def test_sjoin_nearest_multiple_attributes_datatypes(
+        self, dfs_shared_attribute, attr_left1, attr_right1, attr_left2, attr_right2
+    ):
+        left_gdf, right_gdf = dfs_shared_attribute
+        left_gdf["attr1"] = attr_left1
+        left_gdf["attr2"] = attr_left2
+        right_gdf["attr1"] = attr_right1
+        right_gdf["attr2"] = attr_right2
 
+        joined = sjoin_nearest(
+            left_gdf, right_gdf, distance_col="dist", on_attribute=("attr1", "attr2")
+        )
+        assert (["A", "B"] == joined["attr_tracker"].values).all()
 
-def test_sjoin_shared_attribute(naturalearth_lowres, naturalearth_cities):
-    countries = read_file(naturalearth_lowres)
-    cities = read_file(naturalearth_cities)
-    countries = countries[["geometry", "name"]].rename(columns={"name": "country"})
+    def test_sjoin_nearest_multiple_attributes_check_header(self, dfs_shared_attribute):
 
-    # Add first letter of country/city as an attribute column to be compared
-    countries["firstLetter"] = countries["country"].astype(str).str[0]
-    cities["firstLetter"] = cities["name"].astype(str).str[0]
+        left_gdf, right_gdf = dfs_shared_attribute
+        joined = sjoin_nearest(
+            left_gdf, right_gdf, distance_col="dist", on_attribute=["attr1"]
+        )
 
-    result = sjoin(cities, countries, shared_attribute="firstLetter")
-    assert (
-        result["country"].astype(str).str[0] == result["name"].astype(str).str[0]
-    ).all()
+        assert (["A", "B", "E", "F"] == joined["attr_tracker"].values).all()
+        assert {"attr2_left", "attr2_right", "attr1"}.issubset(joined.columns)
+        assert "attr1_left" not in joined
+
+    def test_sjoin_nearest_error_column_does_not_exist(self, dfs_shared_attribute):
+        left_gdf, right_gdf = dfs_shared_attribute
+        right_gdf = right_gdf.drop("attr1", axis=1)
+
+        with pytest.raises(
+            ValueError,
+            match="Expected column {} is missing from one of the dataframes".format(
+                "attr1"
+            ),
+        ):
+            sjoin_nearest(
+                left_gdf, right_gdf, distance_col="dist", on_attribute="attr1"
+            )
+
+    def test_sjoin_nearest_error_use_geometry_column(self, dfs_shared_attribute):
+        left_gdf, right_gdf = dfs_shared_attribute
+        with pytest.raises(
+            ValueError,
+            match="sjoin already merges on the geometry column and should "
+            "not be included in the on_attribute arguement.",
+        ):
+            sjoin_nearest(left_gdf, right_gdf, on_attribute="geometry")
+        with pytest.raises(
+            ValueError,
+            match="sjoin already merges on the geometry column and should "
+            "not be included in the on_attribute arguement.",
+        ):
+            sjoin_nearest(
+                left_gdf,
+                right_gdf,
+                distance_col="dist",
+                on_attribute=["attr1", "geometry"],
+            )
