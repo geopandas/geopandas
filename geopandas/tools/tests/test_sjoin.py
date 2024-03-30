@@ -483,100 +483,38 @@ class TestSpatialJoin:
         ).all()
 
     @pytest.mark.parametrize(
-        "attr_left1, attr_right1, attr_left2, attr_right2",
+        "attr1_key_change_dict, attr2_key_change_dict",
         [
             pytest.param(
-                [
-                    "merge",
-                    "merge",
-                    "merge",
-                    "merge",
-                    "merge",
-                    "merge",
-                    "merge",
-                    "merge",
-                ],
-                [
-                    "merge",
-                    "merge",
-                    "no_merge",
-                    "no_merge",
-                    "merge",
-                    "merge",
-                    "no_merge",
-                    "no_merge",
-                ],
-                [
-                    "merge",
-                    "merge",
-                    "merge",
-                    "merge",
-                    "merge",
-                    "merge",
-                    "merge",
-                    "merge",
-                ],
-                [
-                    "merge",
-                    "merge",
-                    "no_merge",
-                    "no_merge",
-                    "no_merge",
-                    "no_merge",
-                    "no_merge",
-                    "no_merge",
-                ],
+                {True: "merge", False: "no_merge"},
+                {True: "merge", False: "no_merge"},
                 id="merge on string attributes",
             ),
             pytest.param(
-                [2, 2, 2, 2, 2, 2, 2, 2],
-                [2, 2, 1, 1, 2, 2, 1, 1],
-                [2, 2, 2, 2, 2, 2, 2, 2],
-                [2, 2, 1, 1, 1, 1, 1, 1],
+                {True: 2, False: 1},
+                {True: 2, False: 1},
                 id="merge on integer attributes",
             ),
             pytest.param(
-                [True, True, True, True, True, True, True, True],
-                [True, True, False, False, True, True, False, False],
-                [True, True, True, True, True, True, True, True],
-                [True, True, False, False, False, False, False, False],
+                {True: True, False: False},
+                {True: True, False: False},
                 id="merge on boolean attributes",
             ),
             pytest.param(
-                [True, True, True, True, True, True, True, True],
-                [True, True, False, False, True, True, False, False],
-                [
-                    "merge",
-                    "merge",
-                    "merge",
-                    "merge",
-                    "merge",
-                    "merge",
-                    "merge",
-                    "merge",
-                ],
-                [
-                    "merge",
-                    "merge",
-                    "no_merge",
-                    "no_merge",
-                    "no_merge",
-                    "no_merge",
-                    "no_merge",
-                    "no_merge",
-                ],
+                {True: True, False: False},
+                {True: "merge", False: "no_merge"},
                 id="merge on mixed attributes",
             ),
         ],
     )
     def test_sjoin_multiple_attributes_datatypes(
-        self, dfs_shared_attribute, attr_left1, attr_right1, attr_left2, attr_right2
+        self, dfs_shared_attribute, attr1_key_change_dict, attr2_key_change_dict
     ):
         left_gdf, right_gdf = dfs_shared_attribute
-        left_gdf["attr1"] = attr_left1
-        left_gdf["attr2"] = attr_left2
-        right_gdf["attr1"] = attr_right1
-        right_gdf["attr2"] = attr_right2
+        left_gdf["attr1"] = left_gdf["attr1"].map(attr1_key_change_dict)
+        left_gdf["attr2"] = left_gdf["attr2"].map(attr2_key_change_dict)
+        right_gdf["attr1"] = right_gdf["attr1"].map(attr1_key_change_dict)
+        right_gdf["attr2"] = right_gdf["attr2"].map(attr2_key_change_dict)
 
         joined = sjoin(left_gdf, right_gdf, on_attribute=("attr1", "attr2"))
         assert (["A", "B"] == joined["attr_tracker"].values).all()
@@ -1425,100 +1363,39 @@ class TestNearest:
         ).all()
 
     @pytest.mark.parametrize(
-        "attr_left1, attr_right1, attr_left2, attr_right2",
+        "attr1_key_change_dict, attr2_key_change_dict",
         [
             pytest.param(
-                [
-                    "merge",
-                    "merge",
-                    "merge",
-                    "merge",
-                    "merge",
-                    "merge",
-                    "merge",
-                    "merge",
-                ],
-                [
-                    "merge",
-                    "merge",
-                    "no_merge",
-                    "no_merge",
-                    "merge",
-                    "merge",
-                    "no_merge",
-                    "no_merge",
-                ],
-                [
-                    "merge",
-                    "merge",
-                    "merge",
-                    "merge",
-                    "merge",
-                    "merge",
-                    "merge",
-                    "merge",
-                ],
-                [
-                    "merge",
-                    "merge",
-                    "no_merge",
-                    "no_merge",
-                    "no_merge",
-                    "no_merge",
-                    "no_merge",
-                    "no_merge",
-                ],
+                {True: "merge", False: "no_merge"},
+                {True: "merge", False: "no_merge"},
                 id="merge on string attributes",
             ),
             pytest.param(
-                [2, 2, 2, 2, 2, 2, 2, 2],
-                [2, 2, 1, 1, 2, 2, 1, 1],
-                [2, 2, 2, 2, 2, 2, 2, 2],
-                [2, 2, 1, 1, 1, 1, 1, 1],
+                {True: 2, False: 1},
+                {True: 2, False: 1},
                 id="merge on integer attributes",
             ),
             pytest.param(
-                [True, True, True, True, True, True, True, True],
-                [True, True, False, False, True, True, False, False],
-                [True, True, True, True, True, True, True, True],
-                [True, True, False, False, False, False, False, False],
+                {True: True, False: False},
+                {True: True, False: False},
                 id="merge on boolean attributes",
             ),
             pytest.param(
-                [True, True, True, True, True, True, True, True],
-                [True, True, False, False, True, True, False, False],
-                [
-                    "merge",
-                    "merge",
-                    "merge",
-                    "merge",
-                    "merge",
-                    "merge",
-                    "merge",
-                    "merge",
-                ],
-                [
-                    "merge",
-                    "merge",
-                    "no_merge",
-                    "no_merge",
-                    "no_merge",
-                    "no_merge",
-                    "no_merge",
-                    "no_merge",
-                ],
+                {True: True, False: False},
+                {True: "merge", False: "no_merge"},
                 id="merge on mixed attributes",
             ),
         ],
     )
     def test_sjoin_nearest_multiple_attributes_datatypes(
-        self, dfs_shared_attribute, attr_left1, attr_right1, attr_left2, attr_right2
+        self, dfs_shared_attribute, attr1_key_change_dict, attr2_key_change_dict
     ):
+
         left_gdf, right_gdf = dfs_shared_attribute
-        left_gdf["attr1"] = attr_left1
-        left_gdf["attr2"] = attr_left2
-        right_gdf["attr1"] = attr_right1
-        right_gdf["attr2"] = attr_right2
+        left_gdf["attr1"] = left_gdf["attr1"].map(attr1_key_change_dict)
+        left_gdf["attr2"] = left_gdf["attr2"].map(attr2_key_change_dict)
+        right_gdf["attr1"] = right_gdf["attr1"].map(attr1_key_change_dict)
+        right_gdf["attr2"] = right_gdf["attr2"].map(attr2_key_change_dict)
 
         joined = sjoin_nearest(
             left_gdf, right_gdf, distance_col="dist", on_attribute=("attr1", "attr2")
