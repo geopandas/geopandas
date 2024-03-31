@@ -7,6 +7,8 @@ Notes on dependencies:
 - GeoPandas 1.0 drops support for shapely<2 and PyGEOS. The only geometry engine that is
   currently supported is shapely >= 2. As a consequence, spatial indexing based on the
   rtree package has also been removed. (#3035)
+- The I/O engine now defaults to Pyogrio which is now installed with GeoPandas instead
+  of Fiona. (#3223)
 
 API changes:
 

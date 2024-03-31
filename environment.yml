@@ -4,7 +4,7 @@ channels:
 dependencies:
   - geopandas
   - shapely
-  - fiona
+  - pyogrio
   - pyproj
   - mapclassify
   - libpysal
