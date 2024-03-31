@@ -24,10 +24,8 @@ from geopandas.tests.util import PACKAGE_DIR, validate_boro_df
 try:
     import pyogrio
 
-    PYOGRIO_GE_07 = Version(pyogrio.__version__) >= Version("0.7.0")
 except ImportError:
     pyogrio = False
-    PYOGRIO_GE_07 = False
 
 
 try:
@@ -62,11 +60,6 @@ def engine(request):
 def skip_pyogrio_not_supported(engine):
     if engine == "pyogrio":
         pytest.skip("not supported for the pyogrio engine")
-
-
-def skip_pyogrio_lt_07(engine):
-    if engine == "pyogrio" and not PYOGRIO_GE_07:
-        pytest.skip("requires pyogrio >= 0.7.0")
 
 
 @pytest.fixture
@@ -205,8 +198,6 @@ datetime_type_tests = (TEST_DATE, eastern.localize(TEST_DATE))
 @pytest.mark.parametrize("driver,ext", driver_ext_pairs)
 def test_to_file_datetime(tmpdir, driver, ext, time, engine):
     """Test writing a data file with the datetime column type"""
-    if engine == "pyogrio" and time.tzinfo is not None and not PYOGRIO_GE_07:
-        pytest.skip("pyogrio < 0.7.0 doesn't support timezones")
     if ext in (".shp", ""):
         pytest.skip(f"Driver corresponding to ext {ext} doesn't support dt fields")
 
@@ -250,7 +241,7 @@ def write_invalid_date_file(date_str, tmpdir, ext, engine):
     )
     # Schema not required for GeoJSON since not typed, but needed for GPKG
     if ext == "geojson":
-        df.to_file(tempfilename)
+        df.to_file(tempfilename, engine=engine)
     else:
         schema = {"geometry": "Point", "properties": {"date": "datetime"}}
         if engine == "pyogrio" and not fiona:
@@ -265,7 +256,7 @@ def test_read_file_datetime_invalid(tmpdir, ext, engine):
     # https://github.com/geopandas/geopandas/issues/2502
     date_str = "9999-99-99T00:00:00"  # invalid date handled by GDAL
     tempfilename = write_invalid_date_file(date_str, tmpdir, ext, engine)
-    res = read_file(tempfilename)
+    res = read_file(tempfilename, engine=engine)
     if ext == "gpkg":
         assert is_datetime64_any_dtype(res["date"])
         assert pd.isna(res["date"].iloc[-1])
@@ -276,10 +267,12 @@ def test_read_file_datetime_invalid(tmpdir, ext, engine):
 
 @pytest.mark.parametrize("ext", dt_exts)
 def test_read_file_datetime_out_of_bounds_ns(tmpdir, ext, engine):
+    if engine == "pyogrio" and not PANDAS_GE_20:
+        pytest.skip("with pyogrio requires pandas >= 2.0 to pass")
     # https://github.com/geopandas/geopandas/issues/2502
     date_str = "9999-12-31T00:00:00"  # valid to GDAL, not to [ns] format
     tempfilename = write_invalid_date_file(date_str, tmpdir, ext, engine)
-    res = read_file(tempfilename)
+    res = read_file(tempfilename, engine=engine)
     # Pandas invalid datetimes are read in as object dtype (strings)
     assert res["date"].dtype == "object"
     assert isinstance(res["date"].iloc[0], str)
@@ -302,12 +295,11 @@ def test_read_file_datetime_mixed_offsets(tmpdir):
     res = read_file(tempfilename)
     # Convert mixed timezones to UTC equivalent
     assert is_datetime64_any_dtype(res["date"])
-    if engine == "fiona" or (engine == "pyogrio" and PYOGRIO_GE_07):
-        if not PANDAS_GE_20:
-            utc = pytz.utc
-        else:
-            utc = datetime.timezone.utc
-        assert res["date"].dt.tz == utc
+    if not PANDAS_GE_20:
+        utc = pytz.utc
+    else:
+        utc = datetime.timezone.utc
+    assert res["date"].dt.tz == utc
 
 
 @pytest.mark.parametrize("driver,ext", driver_ext_pairs)
@@ -743,13 +735,7 @@ def test_read_file_filtered__rows_bbox(df_nybb, engine, nybb_filename):
         1047224.3104931959,
         244317.30894023244,
     )
-    if engine == "pyogrio" and not PYOGRIO_GE_07:
-        with pytest.raises(ValueError, match="'skip_features' must be between 0 and 1"):
-            # combination bbox and rows (rows slice applied after bbox filtering!)
-            filtered_df = read_file(
-                nybb_filename, bbox=bbox, rows=slice(4, None), engine=engine
-            )
-    else:  # fiona
+    if engine == "fiona":
         # combination bbox and rows (rows slice applied after bbox filtering!)
         filtered_df = read_file(
             nybb_filename, bbox=bbox, rows=slice(4, None), engine=engine
@@ -956,7 +942,6 @@ def test_read_file_bbox_gdf(df_nybb, engine, nybb_filename, file_like):
 @pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not installed")
 @pytest.mark.parametrize("file_like", [False, True])
 def test_read_file_mask_gdf(df_nybb, engine, nybb_filename, file_like):
-    skip_pyogrio_lt_07(engine)
     full_df_shape = df_nybb.shape
     mask = geopandas.GeoDataFrame(
         geometry=[
@@ -979,7 +964,6 @@ def test_read_file_mask_gdf(df_nybb, engine, nybb_filename, file_like):
 
 
 def test_read_file_mask_polygon(df_nybb, engine, nybb_filename):
-    skip_pyogrio_lt_07(engine)
     full_df_shape = df_nybb.shape
     mask = box(
         1031051.7879884212, 224272.49231459625, 1047224.3104931959, 244317.30894023244
@@ -991,7 +975,6 @@ def test_read_file_mask_polygon(df_nybb, engine, nybb_filename):
 
 
 def test_read_file_mask_geojson(df_nybb, nybb_filename, engine):
-    skip_pyogrio_lt_07(engine)
     full_df_shape = df_nybb.shape
     mask = mapping(
         box(
@@ -1009,7 +992,6 @@ def test_read_file_mask_geojson(df_nybb, nybb_filename, engine):
 
 @pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not installed")
 def test_read_file_bbox_gdf_mismatched_crs(df_nybb, engine, nybb_filename):
-    skip_pyogrio_lt_07(engine)
     full_df_shape = df_nybb.shape
     bbox = geopandas.GeoDataFrame(
         geometry=[
@@ -1031,7 +1013,6 @@ def test_read_file_bbox_gdf_mismatched_crs(df_nybb, engine, nybb_filename):
 
 @pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not installed")
 def test_read_file_mask_gdf_mismatched_crs(df_nybb, engine, nybb_filename):
-    skip_pyogrio_lt_07(engine)
     full_df_shape = df_nybb.shape
     mask = geopandas.GeoDataFrame(
         geometry=[
@@ -1052,8 +1033,6 @@ def test_read_file_mask_gdf_mismatched_crs(df_nybb, engine, nybb_filename):
 
 
 def test_read_file_bbox_mask_not_allowed(engine, nybb_filename):
-    skip_pyogrio_lt_07(engine)
-
     bbox = (
         1031051.7879884212,
         224272.49231459625,

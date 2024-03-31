@@ -6,6 +6,7 @@ dependencies:
   - cython
   # required
   - pyproj
+  - gdal
   - geos
   - packaging
   # testing
@@ -32,3 +33,4 @@ dependencies:
     - git+https://github.com/python-visualization/folium.git@main
     - git+https://github.com/geopandas/xyzservices.git@main
     - git+https://github.com/geopandas/geodatasets.git@main
+    - git+https://github.com/geopandas/pyogrio.git@main

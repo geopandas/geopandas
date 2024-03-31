@@ -21,7 +21,7 @@ classifiers = [
 ]
 requires-python = ">=3.9"
 dependencies = [
-    "fiona >= 1.8.21",
+    "pyogrio >= 0.7.2",
     "packaging",
     "pandas >= 1.4.0",
     "pyproj >= 3.3.0",
