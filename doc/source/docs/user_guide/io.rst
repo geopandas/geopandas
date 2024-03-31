@@ -132,29 +132,18 @@ or a slice object.
 Field/column filters
 ^^^^^^^^^^^^^^^^^^^^
 
-Load in a subset of fields from the file:
-
-.. note:: Requires Fiona 1.9+
-
-.. code-block:: python
-
-    gdf = geopandas.read_file(
-        geodatasets.get_path("geoda.nyc"),
-        include_fields=["name", "rent2008", "kids2000"],
-    )
-
-.. note:: Requires Fiona 1.8+
+Load in a subset of fields from the file using the ``columns`` keyword
+(this requires pyogrio or Fiona 1.9+):
 
 .. code-block:: python
 
     gdf = geopandas.read_file(
         geodatasets.get_path("geoda.nyc"),
-        ignore_fields=["rent2008", "kids2000"],
+        columns=["name", "rent2008", "kids2000"],
     )
 
 Skip loading geometry from the file:
 
-.. note:: Requires Fiona 1.8+
 .. note:: Returns :obj:`pandas.DataFrame`
 
 .. code-block:: python

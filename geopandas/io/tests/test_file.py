@@ -776,12 +776,26 @@ def test_read_file__ignore_geometry(engine, naturalearth_lowres):
     assert isinstance(pdf, pd.DataFrame) and not isinstance(pdf, geopandas.GeoDataFrame)
 
 
+@pytest.mark.filterwarnings(
+    "ignore:The 'include_fields' and 'ignore_fields' keywords:DeprecationWarning"
+)
+def test_read_file__ignore_fields(engine, naturalearth_lowres):
+    gdf = geopandas.read_file(
+        naturalearth_lowres,
+        ignore_fields=["pop_est", "continent", "iso_a3", "gdp_md_est"],
+        engine=engine,
+    )
+    assert gdf.columns.tolist() == ["name", "geometry"]
+
+
+@pytest.mark.filterwarnings(
+    "ignore:The 'include_fields' and 'ignore_fields' keywords:DeprecationWarning"
+)
 def test_read_file__ignore_all_fields(engine, naturalearth_lowres):
-    skip_pyogrio_not_supported(engine)  # pyogrio has "columns" keyword instead
     gdf = geopandas.read_file(
         naturalearth_lowres,
         ignore_fields=["pop_est", "continent", "name", "iso_a3", "gdp_md_est"],
-        engine="fiona",
+        engine=engine,
     )
     assert gdf.columns.tolist() == ["geometry"]
 
@@ -842,15 +856,63 @@ def test_read_file__where_filter(engine, naturalearth_lowres):
             )
 
 
-@PYOGRIO_MARK
-def test_read_file__columns(naturalearth_lowres):
-    # TODO: this is only support for pyogrio, but we could mimic it for fiona as well
+def test_read_file__columns(engine, naturalearth_lowres):
+    if engine == "fiona" and not FIONA_GE_19:
+        pytest.skip("columns requires fiona 1.9+")
+
     gdf = geopandas.read_file(
-        naturalearth_lowres,
-        columns=["name", "pop_est"],
-        engine="pyogrio",
+        naturalearth_lowres, columns=["name", "pop_est"], engine=engine
     )
     assert gdf.columns.tolist() == ["name", "pop_est", "geometry"]
+
+
+def test_read_file__columns_empty(engine, naturalearth_lowres):
+    if engine == "fiona" and not FIONA_GE_19:
+        pytest.skip("columns requires fiona 1.9+")
+
+    gdf = geopandas.read_file(naturalearth_lowres, columns=[], engine=engine)
+    assert gdf.columns.tolist() == ["geometry"]
+
+
+@pytest.mark.skipif(FIONA_GE_19, reason="test for fiona < 1.9")
+def test_read_file__columns_old_fiona(naturalearth_lowres):
+    with pytest.raises(NotImplementedError):
+        geopandas.read_file(
+            naturalearth_lowres, columns=["name", "pop_est"], engine="fiona"
+        )
+
+
+@pytest.mark.filterwarnings(
+    "ignore:The 'include_fields' and 'ignore_fields' keywords:DeprecationWarning"
+)
+def test_read_file__include_fields(engine, naturalearth_lowres):
+    if engine == "fiona" and not FIONA_GE_19:
+        pytest.skip("columns requires fiona 1.9+")
+
+    gdf = geopandas.read_file(
+        naturalearth_lowres, include_fields=["name", "pop_est"], engine=engine
+    )
+    assert gdf.columns.tolist() == ["name", "pop_est", "geometry"]
+
+
+@pytest.mark.skipif(not FIONA_GE_19, reason="columns requires fiona 1.9+")
+def test_read_file__columns_conflicting_keywords(engine, naturalearth_lowres):
+    path = naturalearth_lowres
+
+    with pytest.raises(ValueError, match="Cannot specify both"):
+        geopandas.read_file(
+            path, include_fields=["name"], ignore_fields=["pop_est"], engine=engine
+        )
+
+    with pytest.raises(ValueError, match="Cannot specify both"):
+        geopandas.read_file(
+            path, columns=["name"], include_fields=["pop_est"], engine=engine
+        )
+
+    with pytest.raises(ValueError, match="Cannot specify both"):
+        geopandas.read_file(
+            path, columns=["name"], ignore_fields=["pop_est"], engine=engine
+        )
 
 
 @pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not installed")

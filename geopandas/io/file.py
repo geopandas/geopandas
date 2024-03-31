@@ -6,6 +6,7 @@ import warnings
 
 import numpy as np
 import pandas as pd
+from geopandas.io.util import vsi_path
 from pandas.api.types import is_integer_dtype
 
 import shapely
@@ -57,6 +58,7 @@ def _import_fiona():
             FIONA_GE_19 = Version(Version(fiona.__version__).base_version) >= Version(
                 "1.9.0"
             )
+
         except ImportError as err:
             fiona = False
             fiona_import_error = str(err)
@@ -171,17 +173,9 @@ def _is_url(url):
         return False
 
 
-def _is_zip(path):
-    """Check if a given path is a zipfile"""
-    parsed = fiona.path.ParsedPath.from_uri(path)
-    return (
-        parsed.archive.endswith(".zip")
-        if parsed.archive
-        else parsed.path.endswith(".zip")
-    )
-
-
-def _read_file(filename, bbox=None, mask=None, rows=None, engine=None, **kwargs):
+def _read_file(
+    filename, bbox=None, mask=None, columns=None, rows=None, engine=None, **kwargs
+):
     """
     Returns a GeoDataFrame from a file or URL.
 
@@ -203,6 +197,11 @@ def _read_file(filename, bbox=None, mask=None, rows=None, engine=None, **kwargs)
         CRS mis-matches are resolved if given a GeoSeries or GeoDataFrame.
         Cannot be used with bbox. If multiple geometries are passed, this will
         first union all geometries, which may be computationally expensive.
+    columns : list, optional
+        List of column names to import from the data source. Column names
+        must exactly match the names in the data source. To avoid reading
+        any columns (besides the geometry column), pass an empty list-like.
+        By default reads all columns.
     rows : int or slice, default None
         Load in specific rows by passing an integer (first `n` rows) or a
         slice() object.
@@ -278,7 +277,9 @@ def _read_file(filename, bbox=None, mask=None, rows=None, engine=None, **kwargs)
                 from_bytes = True
 
     if engine == "pyogrio":
-        return _read_file_pyogrio(filename, bbox=bbox, mask=mask, rows=rows, **kwargs)
+        return _read_file_pyogrio(
+            filename, bbox=bbox, mask=mask, columns=columns, rows=rows, **kwargs
+        )
 
     elif engine == "fiona":
         if pd.api.types.is_file_like(filename):
@@ -289,7 +290,13 @@ def _read_file(filename, bbox=None, mask=None, rows=None, engine=None, **kwargs)
             path_or_bytes = filename
 
         return _read_file_fiona(
-            path_or_bytes, from_bytes, bbox=bbox, mask=mask, rows=rows, **kwargs
+            path_or_bytes,
+            from_bytes,
+            bbox=bbox,
+            mask=mask,
+            columns=columns,
+            rows=rows,
+            **kwargs,
         )
 
     else:
@@ -297,31 +304,36 @@ def _read_file(filename, bbox=None, mask=None, rows=None, engine=None, **kwargs)
 
 
 def _read_file_fiona(
-    path_or_bytes, from_bytes, bbox=None, mask=None, rows=None, where=None, **kwargs
+    path_or_bytes,
+    from_bytes,
+    bbox=None,
+    mask=None,
+    columns=None,
+    rows=None,
+    where=None,
+    **kwargs,
 ):
     if where is not None and not FIONA_GE_19:
         raise NotImplementedError("where requires fiona 1.9+")
+
+    if columns is not None:
+        if "include_fields" in kwargs:
+            raise ValueError(
+                "Cannot specify both 'include_fields' and 'columns' keywords"
+            )
+        if not FIONA_GE_19:
+            raise NotImplementedError("'columns' keyword requires fiona 1.9+")
+        kwargs["include_fields"] = columns
+    elif "include_fields" in kwargs:
+        # alias to columns, as this variable is used below to specify column order
+        # in the dataframe creation
+        columns = kwargs["include_fields"]
 
     if not from_bytes:
         # Opening a file via URL or file-like-object above automatically detects a
         # zipped file. In order to match that behavior, attempt to add a zip scheme
         # if missing.
-        if _is_zip(str(path_or_bytes)):
-            parsed = fiona.parse_path(str(path_or_bytes))
-            if isinstance(parsed, fiona.path.ParsedPath):
-                # If fiona is able to parse the path, we can safely look at the scheme
-                # and update it to have a zip scheme if necessary.
-                schemes = (parsed.scheme or "").split("+")
-                if "zip" not in schemes:
-                    parsed.scheme = "+".join(["zip"] + schemes)
-                path_or_bytes = parsed.name
-            elif isinstance(parsed, fiona.path.UnparsedPath) and not str(
-                path_or_bytes
-            ).startswith("/vsi"):
-                # If fiona is unable to parse the path, it might have a Windows drive
-                # scheme. Try adding zip:// to the front. If the path starts with "/vsi"
-                # it is a legacy GDAL path type, so let it pass unmodified.
-                path_or_bytes = "zip://" + parsed.name
+        path_or_bytes = vsi_path(str(path_or_bytes))
 
     if from_bytes:
         reader = fiona.BytesCollection
@@ -377,7 +389,7 @@ def _read_file_fiona(
             else:
                 f_filt = features
             # get list of columns
-            columns = list(features.schema["properties"])
+            columns = columns or list(features.schema["properties"])
             datetime_fields = [
                 k for (k, v) in features.schema["properties"].items() if v == "datetime"
             ]
@@ -483,6 +495,40 @@ def _read_file_pyogrio(path_or_bytes, bbox=None, mask=None, rows=None, **kwargs)
 
     if kwargs.pop("ignore_geometry", False):
         kwargs["read_geometry"] = False
+
+    # translate `ignore_fields`/`include_fields` keyword for back compat with fiona
+    if "ignore_fields" in kwargs and "include_fields" in kwargs:
+        raise ValueError("Cannot specify both 'ignore_fields' and 'include_fields'")
+    elif "ignore_fields" in kwargs:
+        if kwargs.get("columns", None) is not None:
+            raise ValueError(
+                "Cannot specify both 'columns' and 'ignore_fields' keywords"
+            )
+        warnings.warn(
+            "The 'include_fields' and 'ignore_fields' keywords are deprecated, and "
+            "will be removed in a future release. You can use the 'columns' keyword "
+            "instead to select which columns to read.",
+            DeprecationWarning,
+            stacklevel=3,
+        )
+        ignore_fields = kwargs.pop("ignore_fields")
+        fields = pyogrio.read_info(path_or_bytes)["fields"]
+        include_fields = [col for col in fields if col not in ignore_fields]
+        kwargs["columns"] = include_fields
+    elif "include_fields" in kwargs:
+        # translate `include_fields` keyword for back compat with fiona engine
+        if kwargs.get("columns", None) is not None:
+            raise ValueError(
+                "Cannot specify both 'columns' and 'include_fields' keywords"
+            )
+        warnings.warn(
+            "The 'include_fields' and 'ignore_fields' keywords are deprecated, and "
+            "will be removed in a future release. You can use the 'columns' keyword "
+            "instead to select which columns to read.",
+            DeprecationWarning,
+            stacklevel=3,
+        )
+        kwargs["columns"] = kwargs.pop("include_fields")
 
     return pyogrio.read_dataframe(path_or_bytes, bbox=bbox, **kwargs)
 
