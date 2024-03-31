@@ -5,8 +5,8 @@ dependencies:
   - python=3.11
   - cython
   # required
-  - numpy
   - pyproj
+  - gdal
   - geos
   - packaging
   # testing
@@ -24,8 +24,8 @@ dependencies:
     - mapclassify>=2.4.0
     # dev versions of packages
     - --pre --index-url https://pypi.anaconda.org/scientific-python-nightly-wheels/simple --extra-index-url https://pypi.fury.io/arrow-nightlies/ --extra-index-url https://pypi.org/simple
-    # TEMP pin, see https://github.com/geopandas/geopandas/issues/3207
-    - fiona==1.9.*
+    - numpy>=2.0.0.dev
+    - fiona
     - pandas
     - matplotlib
     - pyarrow
@@ -33,3 +33,4 @@ dependencies:
     - git+https://github.com/python-visualization/folium.git@main
     - git+https://github.com/geopandas/xyzservices.git@main
     - git+https://github.com/geopandas/geodatasets.git@main
+    - git+https://github.com/geopandas/pyogrio.git@main
