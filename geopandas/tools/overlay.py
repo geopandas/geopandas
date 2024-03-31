@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 
 from geopandas import GeoDataFrame, GeoSeries
+from geopandas._compat import PANDAS_GE_30
 from geopandas.array import _check_crs, _crs_mismatch_warn
 
 
@@ -16,9 +17,12 @@ def _ensure_geometry_column(df):
     if not df._geometry_column_name == "geometry":
         if "geometry" in df.columns:
             df.drop("geometry", axis=1, inplace=True)
-        df.rename(
-            columns={df._geometry_column_name: "geometry"}, copy=False, inplace=True
-        )
+        if PANDAS_GE_30:
+            df.rename(columns={df._geometry_column_name: "geometry"}, inplace=True)
+        else:
+            df.rename(
+                columns={df._geometry_column_name: "geometry"}, copy=False, inplace=True
+            )
         df.set_geometry("geometry", inplace=True)
 
 
