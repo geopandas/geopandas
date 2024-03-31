@@ -1159,7 +1159,13 @@ class GeometryArray(ExtensionArray):
                 return pd.array(string_values, dtype=pd_dtype)
             return string_values.astype(dtype, copy=False)
         else:
-            return np.array(self, dtype=dtype, copy=copy)
+            # numpy 2.0 makes copy=False case strict (errors if cannot avoid the copy)
+            # -> in that case use `np.asarray` as backwards compatible alternative
+            # for `copy=None` (when requiring numpy 2+, this can be cleaned up)
+            if not copy:
+                return np.asarray(self, dtype=dtype)
+            else:
+                return np.array(self, dtype=dtype, copy=copy)
 
     def isna(self):
         """
@@ -1469,7 +1475,7 @@ class GeometryArray(ExtensionArray):
             f"does not support reduction '{name}'"
         )
 
-    def __array__(self, dtype=None):
+    def __array__(self, dtype=None, copy=None):
         """
         The numpy array interface.
 
@@ -1477,7 +1483,9 @@ class GeometryArray(ExtensionArray):
         -------
         values : numpy array
         """
-        return to_shapely(self)
+        if copy and (dtype is None or dtype == np.dtype("object")):
+            return self._data.copy()
+        return self._data
 
     def _binop(self, other, op):
         def convert_values(param):
