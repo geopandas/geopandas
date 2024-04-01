@@ -70,7 +70,7 @@ Deprecations and compatibility notes:
 - The deprecation of `geopandas.datasets` has been enforced and the module has been
   removed. New sample datasets are now available in the
   [geodatasets](https://geodatasets.readthedocs.io/en/latest/) package (#3084).
-- Many longstanding deprecated functions, methods and properties have been removed (#3174)
+- Many longstanding deprecated functions, methods and properties have been removed (#3174), (#3189)
   - Removed deprecated functions
     `geopandas.io.read_file`, `geopandas.io.to_file` and `geopandas.io.sql.read_postgis`.
     `geopandas.read_file`, `geopandas.read_postgis` and the GeoDataFrame/GeoSeries `to_file(..)`
@@ -82,6 +82,11 @@ Deprecations and compatibility notes:
   - Removed deprecated GeoSeries/ GeoDataFrame methods `__xor__`, `__or__`, `__and__` and
     `__sub__`. Instead use methods `symmetric_difference`, `union`, `intersection` and
     `difference` respectively.
+  - Removed deprecated plotting functions `plot_polygon_collection`,
+    `plot_linestring_collection` and `plot_point_collection`, use the GeoSeries/GeoDataFrame `.plot`
+    method directly instead.
+  - Removed deprecated GeoSeries/GeoDataFrame `.plot` parameters `axes` and `colormap`, instead use
+    `ax` and `cmap` respectively.
 - Fixes for compatibility with psycopg (#3167).
 - The ``include_fields`` and ``ignore_fields`` keywords in ``read_file()`` are deprecated
   for the default pyogrio engine. Currently those are translated to the ``columns`` keyword
