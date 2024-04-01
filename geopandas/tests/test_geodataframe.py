@@ -1517,32 +1517,38 @@ def nybb2(nybb_filename):
     yield read_file(nybb_filename).head(2)
 
 
-def test_set_geometry_supply_colname(nybb2):
+@pytest.mark.parametrize("geo_col_name", ["geometry", "polygons"])
+def test_set_geometry_supply_colname(nybb2, geo_col_name):
+    if geo_col_name != "geometry":
+        nybb2 = nybb2.rename_geometry(geo_col_name)
     nybb2["centroid"] = nybb2.geometry.centroid
     res = nybb2.set_geometry("centroid")
     assert res.active_geometry_name == "centroid"
-    assert "geometry" in res.columns
+    assert geo_col_name in res.columns
 
     res2 = nybb2.set_geometry("centroid", drop=True)
     # current behaviour, drop=True will preserve the existing geometry colname
-    assert res2.active_geometry_name == "geometry"
+    assert res2.active_geometry_name == geo_col_name
     assert "centroid" not in res2.columns
 
 
-def test_set_geometry_supply_arraylike(nybb2):
+@pytest.mark.parametrize("geo_col_name", ["geometry", "polygons"])
+def test_set_geometry_supply_arraylike(nybb2, geo_col_name):
+    if geo_col_name != "geometry":
+        nybb2 = nybb2.rename_geometry(geo_col_name)
     centroids = nybb2.geometry.centroid
     res = nybb2.set_geometry(centroids)
-    assert res.active_geometry_name == "geometry"
+    assert res.active_geometry_name == geo_col_name
     # drop should do nothing if the column already exists
     res2 = nybb2.set_geometry(centroids, drop=True)
-    assert res2.active_geometry_name == "geometry"
+    assert res2.active_geometry_name == geo_col_name
 
     centroids = centroids.rename("centroids")
     res2 = nybb2.set_geometry(centroids)
     # Current behaviour is that geoseries name is ignored,
     #   active geometry name is persisted
-    assert res2.active_geometry_name == "geometry"
+    assert res2.active_geometry_name == geo_col_name
 
     # Drop does nothing because name is ignored
     res2 = nybb2.set_geometry(centroids, drop=True)
-    assert res2.active_geometry_name == "geometry"
+    assert res2.active_geometry_name == geo_col_name
