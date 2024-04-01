@@ -1510,3 +1510,39 @@ def test_geodataframe_crs_colname():
     assert gdf.crs is None
     assert gdf["crs"].iloc[0] == 1
     assert getattr(gdf, "crs") is None
+
+
+@pytest.fixture
+def nybb2(nybb_filename):
+    yield read_file(nybb_filename).head(2)
+
+
+def test_set_geometry_supply_colname(nybb2):
+    nybb2["centroid"] = nybb2.geometry.centroid
+    res = nybb2.set_geometry("centroid")
+    assert res.active_geometry_name == "centroid"
+    assert "geometry" in res.columns
+
+    res2 = nybb2.set_geometry("centroid", drop=True)
+    # current behaviour, drop=True will preserve the existing geometry colname
+    assert res2.active_geometry_name == "geometry"
+    assert "centroid" not in res2.columns
+
+
+def test_set_geometry_supply_arraylike(nybb2):
+    centroids = nybb2.geometry.centroid
+    res = nybb2.set_geometry(centroids)
+    assert res.active_geometry_name == "geometry"
+    # drop should do nothing if the column already exists
+    res2 = nybb2.set_geometry(centroids, drop=True)
+    assert res2.active_geometry_name == "geometry"
+
+    centroids = centroids.rename("centroids")
+    res2 = nybb2.set_geometry(centroids)
+    # Current behaviour is that geoseries name is ignored,
+    #   active geometry name is persisted
+    assert res2.active_geometry_name == "geometry"
+
+    # Drop does nothing because name is ignored
+    res2 = nybb2.set_geometry(centroids, drop=True)
+    assert res2.active_geometry_name == "geometry"
