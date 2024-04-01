@@ -1527,9 +1527,9 @@ def test_set_geometry_supply_colname(nybb2, geo_col_name):
     assert geo_col_name in res.columns
 
     res2 = nybb2.set_geometry("centroid", drop=True)
-    # current behaviour, drop=True will preserve the existing geometry colname
-    assert res2.active_geometry_name == geo_col_name
-    assert "centroid" not in res2.columns
+    # drop=True should preserve column name centroid
+    assert res2.active_geometry_name == "centroid"
+    assert geo_col_name not in res2.columns
 
 
 @pytest.mark.parametrize("geo_col_name", ["geometry", "polygons"])
@@ -1544,11 +1544,13 @@ def test_set_geometry_supply_arraylike(nybb2, geo_col_name):
     assert res2.active_geometry_name == geo_col_name
 
     centroids = centroids.rename("centroids")
-    res2 = nybb2.set_geometry(centroids)
-    # Current behaviour is that geoseries name is ignored,
-    #   active geometry name is persisted
-    assert res2.active_geometry_name == geo_col_name
+    res3 = nybb2.set_geometry(centroids)
+    # Should preserve the geoseries name
+    # (and old geometry column should be kept)
+    assert res3.active_geometry_name == "centroids"
+    assert geo_col_name in res3.columns
 
-    # Drop does nothing because name is ignored
-    res2 = nybb2.set_geometry(centroids, drop=True)
-    assert res2.active_geometry_name == geo_col_name
+    # Drop should remove previous active geometry colname
+    res4 = nybb2.set_geometry(centroids, drop=True)
+    assert res4.active_geometry_name == "centroids"
+    assert geo_col_name not in res4.columns
