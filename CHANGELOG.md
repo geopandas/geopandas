@@ -52,6 +52,13 @@ New features and improvements:
 Backwards incompatible API changes:
 - The deprecated default value of GeoDataFrame/ GeoSeries `explode(.., index_parts=True)` is now
   set to false for consistency with pandas (#3174)
+- The behaviour of `set_geometry` has been updated (#3237):
+   - When `col` is a str and `drop=True`, the new active geometry column name will be `col`,
+     rather than the previous active geometry column name
+   - When `col` is a (Geo)Series with `ser.name` not None, the new active geometry column name
+     will be `ser.name`, rather than the previous active geometry column name. This means that
+     `drop` now also functions when `col` is a (Geo)Series, and can be used to remove the 
+     previous active geometry column name when it differs from `ser.name`.
 
 Potentially breaking changes:
 
@@ -64,6 +71,8 @@ Bug fixes:
 - Fix `GeoDataFrame.merge()` incorrectly returning a `DataFrame` instead of a
   `GeoDataFrame` when the `suffixes` argument is applied to the active
   geometry column (#2933).
+- Fix bug in `GeoDataFrame` constructor where if `geometry` is given a named 
+  `GeoSeries` the name was not used as the active geometry column name (#3160).
 
 Deprecations and compatibility notes:
 
