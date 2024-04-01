@@ -294,7 +294,7 @@ class TestDataFrame:
 
         # If True, drops column and renames to geometry
         df3 = self.df.set_geometry("simplified_geometry", drop=True)
-        assert "simplified_geometry" not in df3
+        assert g.name not in df3
         assert_geoseries_equal(df3.geometry, g_simplified)
 
     def test_set_geometry_inplace(self):
@@ -808,9 +808,9 @@ class TestDataFrame:
         gf2 = df.set_geometry("location", crs=self.df.crs, drop=True)
         assert isinstance(df, pd.DataFrame)
         assert isinstance(gf2, GeoDataFrame)
-        assert gf2.geometry.name == "geometry"
-        assert "geometry" in gf2
-        assert "location" not in gf2
+        assert gf2.geometry.name == "location"
+        assert "geometry" not in gf2
+        assert "location" in gf2
         assert "location" in df
 
         # should be a copy
@@ -1284,7 +1284,6 @@ class TestConstructor:
         check_geodataframe(gdf)
         gdf.columns == ["geometry", "a"]
 
-    @pytest.mark.xfail
     def test_preserve_series_name(self):
         geoms = [Point(1, 1), Point(2, 2), Point(3, 3)]
         gs = GeoSeries(geoms)

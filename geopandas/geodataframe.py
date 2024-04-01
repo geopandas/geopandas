@@ -307,9 +307,16 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         to_remove = None
         geo_column_name = self._geometry_column_name
+
         if geo_column_name is None:
             geo_column_name = "geometry"
         if isinstance(col, (Series, list, np.ndarray, GeometryArray)):
+            if isinstance(col, Series) and col.name is not None:
+                if drop:
+                    # drop old geo col name
+                    to_remove = geo_column_name
+                geo_column_name = col.name
+
             level = col
         elif hasattr(col, "ndim") and col.ndim > 1:
             raise ValueError("Must pass array with one dimension only.")
@@ -325,11 +332,12 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 )
 
             if drop:
-                to_remove = col
-            else:
-                geo_column_name = col
+                to_remove = geo_column_name
 
-        if to_remove:
+            geo_column_name = col
+        # if geo_col_name is None and drop=True, to_remove
+        # may not exist already
+        if to_remove and to_remove in frame.columns:
             del frame[to_remove]
 
         if not crs:
