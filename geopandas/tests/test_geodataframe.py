@@ -267,6 +267,9 @@ class TestDataFrame:
         with pytest.raises(ValueError):
             self.df.set_geometry(self.df)
 
+    def test_set_geometry_crs(self):
+        geom = GeoSeries([Point(x, y) for x, y in zip(range(5), range(5))])
+
         # new crs - setting should default to GeoSeries' crs
         gs = GeoSeries(geom, crs="epsg:3857")
         new_df = self.df.set_geometry(gs)
