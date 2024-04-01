@@ -3,7 +3,6 @@ Create an illustrative figure for different kwargs
 in buffer method.
 """
 
-
 import geopandas
 import matplotlib.pyplot as plt
 
