@@ -322,14 +322,7 @@ def _adjust_indexers(indices, distances, original_length, how, predicate):
     """
     # the indices represent an inner join, no adjustment needed
     if how == "inner":
-        # if predicate == "within":
-        #     # except for the within predicate, where we switched to contains
-        #     # with swapped left/right -> need to re-sort to have consistent result
-        #     l_idx, r_idx = indices
-        #     indexer = np.lexsort((r_idx, l_idx))
-        #     indices = l_idx[indexer], r_idx[indexer]
-        #     if distances is not None:
-        #         distances = distances[indexer]
+
         return indices, distances
 
     l_idx, r_idx = indices
