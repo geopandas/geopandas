@@ -802,10 +802,10 @@ def _list_layers(filename) -> pd.DataFrame:
     """List layers available in a file.
 
     Provides an overview of layers available in a file or URL together with their
-    geometry types. When supported by the data source, this includes both spatial and non-spatial layers.
-    Non-spatial layers are indicated by the ``"geometry_type"`` column being ``None``.
-    GeoPandas will not read such layers but they can be read into a pd.DataFrame using
-    :func:`pyogrio.read_dataframe`.
+    geometry types. When supported by the data source, this includes both spatial and
+    non-spatial layers. Non-spatial layers are indicated by the ``"geometry_type"``
+    column being ``None``. GeoPandas will not read such layers but they can be read into
+    a pd.DataFrame using :func:`pyogrio.read_dataframe`.
 
     Parameters
     ----------
