@@ -72,7 +72,7 @@ Bug fixes:
   `GeoDataFrame` when the `suffixes` argument is applied to the active
   geometry column (#2933).
 - Fix bug in `GeoDataFrame` constructor where if `geometry` is given a named 
-  `GeoSeries` the name was not used as the active geometry column name (#3160).
+  `GeoSeries` the name was not used as the active geometry column name (#3237).
 
 Deprecations and compatibility notes:
 

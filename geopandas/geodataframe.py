@@ -319,8 +319,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             geo_column_name = "geometry"
         if isinstance(col, (Series, list, np.ndarray, GeometryArray)):
             if isinstance(col, Series) and col.name is not None:
-                if drop:
-                    # drop old geo col name
+                if drop:  # drop old geo col name
                     del frame[geo_column_name]
                 geo_column_name = col.name
 
@@ -339,8 +338,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 )
 
             if drop and geo_column_name in frame.columns:
-                # if _geometry_column_name is None, geo_column_name
-                # may not exist
+                # if _geometry_column_name is None, geo_column_name may not exist
                 del frame[geo_column_name]
 
             geo_column_name = col
