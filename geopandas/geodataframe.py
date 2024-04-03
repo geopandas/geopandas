@@ -321,8 +321,8 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             if drop:
                 msg = (
                     "The `drop` keyword argument is deprecated and has no effect when "
-                    "an array-like is passed. You "
-                    "should stop passing `drop` to `set_geometry`."
+                    "`col` is an array-like value. You should stop passing `drop` to "
+                    "`set_geometry` when this is the case."
                 )
                 warnings.warn(msg, category=FutureWarning, stacklevel=2)
             if isinstance(col, Series) and col.name is not None:
@@ -331,7 +331,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             level = col
         elif hasattr(col, "ndim") and col.ndim > 1:
             raise ValueError("Must pass array with one dimension only.")
-        else:
+        else:  # should be a colname
             try:
                 level = frame[col]
             except KeyError:
@@ -341,20 +341,29 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                     "GeoDataFrame does not support setting the geometry column where "
                     "the column name is shared by multiple columns."
                 )
+
+            given_colname_drop_msg = (
+                "The `drop` keyword argument is deprecated and in future the only "
+                "supported behaviour will match drop=False. To silence this "
+                "warning and adopt the future behaviour, stop providing "
+                "`drop` as a keyword to `set_geometry`. To replicate the "
+                "`drop=True` behaviour you should update "
+                "your code to\n`geo_col_name = gdf.active_geometry_name;"
+                " gdf.set_geometry(new_geo_col).drop("
+                "columns=geo_col_name).rename_geometry(geo_col_name)`."
+            )
+
+            if drop is False:  # specifically False, not falsy i.e. None
+                # User supplied False explicitly, but arg is deprecated
+                warnings.warn(
+                    given_colname_drop_msg,
+                    category=FutureWarning,
+                    stacklevel=2,
+                )
             if drop:
                 del frame[col]
-                msg = (
-                    "The drop keyword argument is deprecated and in future the only "
-                    "supported behaviour will match drop=False. To silence this "
-                    "warning and adopt the future behaviour, stop providing "
-                    "`drop` as a keyword to `set_geometry`. To replicate the "
-                    "`drop=True` behaviour you should update "
-                    "your code to\n`geo_col_name = gdf.active_geometry_name;"
-                    " gdf.set_geometry(new_geo_col).drop("
-                    "columns=geo_col_name).rename_geometry(geo_col_name)`."
-                )
                 warnings.warn(
-                    msg,
+                    given_colname_drop_msg,
                     category=FutureWarning,
                     stacklevel=2,
                 )

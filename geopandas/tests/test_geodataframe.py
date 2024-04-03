@@ -1529,11 +1529,12 @@ def test_set_geometry_supply_colname(nybb2, geo_col_name):
     assert geo_col_name in res.columns
 
     # Test that drop=False explicitly warns
-    with pytest.warns(FutureWarning, match="The drop keyword argument is deprecated"):
+    deprecated = "The `drop` keyword argument is deprecated"
+    with pytest.warns(FutureWarning, match=deprecated):
         res2 = nybb2.set_geometry("centroid", drop=False)
     assert_geodataframe_equal(res, res2)
 
-    with pytest.warns(FutureWarning, match="The drop keyword argument is deprecated"):
+    with pytest.warns(FutureWarning, match=deprecated):
         res3 = nybb2.set_geometry("centroid", drop=True)
     # drop=True should preserve previous geometry col name (keep old behaviour)
     assert res3.active_geometry_name == geo_col_name
@@ -1541,7 +1542,7 @@ def test_set_geometry_supply_colname(nybb2, geo_col_name):
 
     # Test that alternative suggested without using drop=True is equivalent
     assert_geodataframe_equal(
-        res2,
+        res3,
         nybb2.set_geometry("centroid")
         .drop(columns=geo_col_name)
         .rename_geometry(geo_col_name),
@@ -1558,7 +1559,7 @@ def test_set_geometry_supply_arraylike(nybb2, geo_col_name):
     # drop should do nothing if the column already exists
     match_str = (
         "The `drop` keyword argument is deprecated and has no effect when "
-        "`col` is an array-like is passed"
+        "`col` is an array-like value"
     )
     with pytest.warns(
         FutureWarning,
