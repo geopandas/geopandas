@@ -53,7 +53,7 @@ Backwards incompatible API changes:
 - The deprecated default value of GeoDataFrame/ GeoSeries `explode(.., index_parts=True)` is now
   set to false for consistency with pandas (#3174)
 - The behaviour of `set_geometry` has been updated (#3237):
-   - When `col` is a str and `drop=True`, the new active geometry column name will be `col`,
+   - When `col` is an existing column name and `drop=True`, the new active geometry column name will be `col`,
      rather than the previous active geometry column name
    - When `col` is a (Geo)Series with `ser.name` not None, the new active geometry column name
      will be `ser.name`, rather than the previous active geometry column name. This means that
