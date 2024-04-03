@@ -297,7 +297,7 @@ class TestDataFrame:
 
         # If True, drops column and renames to geometry
         df3 = self.df.set_geometry("simplified_geometry", drop=True)
-        assert g.name not in df3
+        assert "simplified_geometry" not in df3
         assert_geoseries_equal(df3.geometry, g_simplified)
 
     def test_set_geometry_inplace(self):
@@ -811,9 +811,9 @@ class TestDataFrame:
         gf2 = df.set_geometry("location", crs=self.df.crs, drop=True)
         assert isinstance(df, pd.DataFrame)
         assert isinstance(gf2, GeoDataFrame)
-        assert gf2.geometry.name == "location"
-        assert "geometry" not in gf2
-        assert "location" in gf2
+        assert gf2.geometry.name == "geometry"
+        assert "geometry" in gf2
+        assert "location" not in gf2
         assert "location" in df
 
         # should be a copy
@@ -1527,11 +1527,25 @@ def test_set_geometry_supply_colname(nybb2, geo_col_name):
     res = nybb2.set_geometry("centroid")
     assert res.active_geometry_name == "centroid"
     assert geo_col_name in res.columns
+
+    # Test that drop=False explicitly warns
     with pytest.warns(FutureWarning, match="The drop keyword argument is deprecated"):
-        res2 = nybb2.set_geometry("centroid", drop=True)
+        res2 = nybb2.set_geometry("centroid", drop=False)
+    assert_geodataframe_equal(res, res2)
+
+    with pytest.warns(FutureWarning, match="The drop keyword argument is deprecated"):
+        res3 = nybb2.set_geometry("centroid", drop=True)
     # drop=True should preserve previous geometry col name (keep old behaviour)
-    assert res2.active_geometry_name == geo_col_name
-    assert "centroid" not in res2.columns
+    assert res3.active_geometry_name == geo_col_name
+    assert "centroid" not in res3.columns
+
+    # Test that alternative suggested without using drop=True is equivalent
+    assert_geodataframe_equal(
+        res2,
+        nybb2.set_geometry("centroid")
+        .drop(columns=geo_col_name)
+        .rename_geometry(geo_col_name),
+    )
 
 
 @pytest.mark.parametrize("geo_col_name", ["geometry", "polygons"])
@@ -1543,8 +1557,8 @@ def test_set_geometry_supply_arraylike(nybb2, geo_col_name):
     assert res.active_geometry_name == geo_col_name
     # drop should do nothing if the column already exists
     match_str = (
-        "The drop keyword argument is deprecated and has no effect when an array-like"
-        " is passed"
+        "The `drop` keyword argument is deprecated and has no effect when "
+        "`col` is an array-like is passed"
     )
     with pytest.warns(
         FutureWarning,

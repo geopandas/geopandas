@@ -243,7 +243,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         fget=_get_geometry, fset=_set_geometry, doc="Geometry data for GeoDataFrame"
     )
 
-    def set_geometry(self, col, drop=False, inplace=False, crs=None):
+    def set_geometry(self, col, drop=None, inplace=False, crs=None):
         """
         Set the GeoDataFrame geometry using either an existing column or
         the specified input. By default yields a new object.
@@ -318,9 +318,14 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         if geo_column_name is None:
             geo_column_name = "geometry"
         if isinstance(col, (Series, list, np.ndarray, GeometryArray)):
+            if drop:
+                msg = (
+                    "The `drop` keyword argument is deprecated and has no effect when "
+                    "an array-like is passed. You "
+                    "should stop passing `drop` to `set_geometry`."
+                )
+                warnings.warn(msg, category=FutureWarning, stacklevel=2)
             if isinstance(col, Series) and col.name is not None:
-                if drop:  # drop old geo col name
-                    del frame[geo_column_name]
                 geo_column_name = col.name
 
             level = col
@@ -336,12 +341,26 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                     "GeoDataFrame does not support setting the geometry column where "
                     "the column name is shared by multiple columns."
                 )
-
-            if drop and geo_column_name in frame.columns:
-                # if _geometry_column_name is None, geo_column_name may not exist
-                del frame[geo_column_name]
-
-            geo_column_name = col
+            if drop:
+                del frame[col]
+                msg = (
+                    "The drop keyword argument is deprecated and in future the only "
+                    "supported behaviour will match drop=False. To silence this "
+                    "warning and adopt the future behaviour, stop providing "
+                    "`drop` as a keyword to `set_geometry`. To replicate the "
+                    "`drop=True` behaviour you should update "
+                    "your code to\n`geo_col_name = gdf.active_geometry_name;"
+                    " gdf.set_geometry(new_geo_col).drop("
+                    "columns=geo_col_name).rename_geometry(geo_col_name)`."
+                )
+                warnings.warn(
+                    msg,
+                    category=FutureWarning,
+                    stacklevel=2,
+                )
+            else:
+                # if not dropping, set the active geometry name to the given col name
+                geo_column_name = col
 
         if not crs:
             crs = getattr(level, "crs", None)
