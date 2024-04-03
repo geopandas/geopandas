@@ -96,6 +96,8 @@ Deprecations and compatibility notes:
   for the default pyogrio engine. Currently those are translated to the ``columns`` keyword
   for backwards compatibility, but you should directly use the ``columns`` keyword instead
   to select which columns to read (#3133).
+- The `drop` keyword in `set_geometry` has been deprecated, and in future the `drop=True` behaviour will be removed.
+  To preserve this behaviour in existing code
 
 ## Version 0.14.3 (Jan 31, 2024)
 
