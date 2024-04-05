@@ -31,6 +31,7 @@ dependencies:
     - pyarrow
     - git+https://github.com/shapely/shapely.git@main
     - git+https://github.com/python-visualization/folium.git@main
+    - git+https://github.com/python-visualization/branca.git@main
     - git+https://github.com/geopandas/xyzservices.git@main
     - git+https://github.com/geopandas/geodatasets.git@main
     - git+https://github.com/geopandas/pyogrio.git@main

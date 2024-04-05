@@ -229,6 +229,14 @@ distribution of observations by color in a given map. These distributional
 visualizations for map classification schemes assist in analytical cartography and
 spatial data visualization.
 
+#### [buckaroo](https://github.com/paddymul/buckaroo)
+`buckaroo` is a modern data table for Jupyter that expedites the most
+common exploratory data analysis tasks. It provides scrollable tables,
+histograms, and summary stats. Buckaroo supports many DataFrame
+libraries including `geopandas`. It can display `GeoDataFrame`s as
+tables, it also supports rendering the Geometry as an SVG in the
+table.
+
 ### Geometry manipulation
 
 #### [TopoJSON](https://github.com/mattijn/topojson)
