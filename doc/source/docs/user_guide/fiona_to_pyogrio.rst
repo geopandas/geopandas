@@ -12,7 +12,7 @@ Since version 0.11, GeoPandas started supporting two engines to read and write f
 `Fiona <https://fiona.readthedocs.io>`__ and
 `Pyogrio <https://pyogrio.readthedocs.io>`__.
 
-It became is possible to choose the engine using the ``engine=`` parameter in
+It became possible to choose the engine using the ``engine=`` parameter in
 :func:`geopandas.read_file` and :func:`geopandas.GeoDataFrame.to_file`. It became also
 possible to change the default engine globally with:
 
@@ -21,10 +21,11 @@ possible to change the default engine globally with:
     geopandas.options.io_engine = "pyogrio"
 
 For Geopandas versions <1.0, GeoPandas defaulted to use Fiona. Starting from GeoPandas
-version 1.0, the global default has changed from Fiona to Pyogrio. The main reason for
-this change is performance. Pyogrio is optimized for the use case relevant for
-GeoPandas: reading and writing in bulk. Because of this, in many cases speedups >5-20x
-can be observed.
+version 1.0, the global default has changed from Fiona to Pyogrio.
+
+The main reason for this change is performance. Pyogrio is optimized for the use case
+relevant for GeoPandas: reading and writing in bulk. Because of this, in many cases
+speedups >5-20x can be observed.
 
 This guide outlines the (known) functional differences between both, so you can account
 for them when switching to Pyogrio.
@@ -37,12 +38,13 @@ Using the Fiona engine, it was possible to write an attribute table (a table wit
 geometry column) to a file using the ``schema`` parameter to specify that the "geometry"
 column of a GeoDataFrame should be ignored.
 
-With Pyogrio you can write an attribute table by using [pyogrio.write_dataframe]
-(https://pyogrio.readthedocs.io/en/latest/api.html#pyogrio.write_dataframe) and passing
-a pandas DataFrame to it:
+With Pyogrio you can write an attribute table by using
+[pyogrio.write_dataframe] (https://pyogrio.readthedocs.io/en/latest/api.html#pyogrio.write_dataframe)
+and passing a pandas DataFrame to it:
 
 .. code-block:: python
 
+    >>> import pyogrio
     >>> df = pd.GeoDataFrame({"data_column": [1, 2, 3]})
     >>> pyogrio.write_dataframe(df, "test_attribute_table.gpkg")
 
