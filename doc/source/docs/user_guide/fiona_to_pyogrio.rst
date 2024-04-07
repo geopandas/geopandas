@@ -5,26 +5,26 @@
 
    import geopandas
 
-Migration from the Fiona to the Pyogrio IO engine
-=================================================
+Migration from the Fiona to the Pyogrio read/write engine
+=========================================================
 
-Since version 0.11, GeoPandas supports two IO engines to read and write files:
+Since version 0.11, GeoPandas started supporting two engines to read and write files:
 `Fiona <https://fiona.readthedocs.io>`__ and
 `Pyogrio <https://pyogrio.readthedocs.io>`__.
 
-For Geopandas versions <1.0, GeoPandas defaults to use Fiona. It is possible to use
-Pyogrio using the ``engine="pyogrio"`` parameter in :func:`geopandas.read_file` and
-:func:`geopandas.GeoDataFrame.to_file`. You can also change the default engine globally
-with:
+It became is possible to choose the engine using the ``engine=`` parameter in
+:func:`geopandas.read_file` and :func:`geopandas.GeoDataFrame.to_file`. It became also
+possible to change the default engine globally with:
 
 .. code-block:: python
 
     geopandas.options.io_engine = "pyogrio"
 
-Starting from GeoPandas 1.0, the global default will change from Fiona to Pyogrio. The
-main reason for this change is performance. Pyogrio is optimized for the use case
-relevant for GeoPandas: reading and writing in bulk. Because of this, in many cases
-speedups >5-20x can be observed.
+For Geopandas versions <1.0, GeoPandas defaulted to use Fiona. Starting from GeoPandas
+version 1.0, the global default has changed from Fiona to Pyogrio. The main reason for
+this change is performance. Pyogrio is optimized for the use case relevant for
+GeoPandas: reading and writing in bulk. Because of this, in many cases speedups >5-20x
+can be observed.
 
 This guide outlines the (known) functional differences between both, so you can account
 for them when switching to Pyogrio.
@@ -33,23 +33,25 @@ for them when switching to Pyogrio.
 Write an attribute table to a file
 ----------------------------------
 
-Using the Fiona IO engine, it was possible to write an attribute table (a table without
+Using the Fiona engine, it was possible to write an attribute table (a table without
 geometry column) to a file using the ``schema`` parameter to specify that the "geometry"
-column should be ignored.
+column of a GeoDataFrame should be ignored.
 
-With Pyogrio you can write an attribute table by calling
-:func:`geopandas.GeoDataFrame.to_file` on a GeoDataFrame without geometry column:
+With Pyogrio you can write an attribute table by using [pyogrio.write_dataframe]
+(https://pyogrio.readthedocs.io/en/latest/api.html#pyogrio.write_dataframe) and passing
+a pandas DataFrame to it:
 
 .. code-block:: python
 
-    >>> gdf = gpd.GeoDataFrame({"data_column": [1, 2, 3]})
-    >>> gdf.to_file("test_attribute_table.gpkg", engine="pyogrio")
+    >>> df = pd.GeoDataFrame({"data_column": [1, 2, 3]})
+    >>> pyogrio.write_dataframe(df, "test_attribute_table.gpkg")
 
 
-No support for ``schema`` parameter
------------------------------------
+No support for ``schema`` parameter to write files
+--------------------------------------------------
 
-Pyogrio does not support overriding the schema/types of the data being read/written.
+Pyogrio does not support specifying the `schema` parameter to write files. This means
+it is not possible to specify the types of attributes being written explicitly.
 
 
 Writing EMPTY geometries
