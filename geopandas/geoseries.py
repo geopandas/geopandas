@@ -10,7 +10,6 @@ import pandas as pd
 from pandas import Series
 from pandas.core.internals import SingleBlockManager
 
-from pyproj import CRS
 import shapely
 from shapely.geometry.base import BaseGeometry
 from shapely.geometry import GeometryCollection
@@ -326,7 +325,7 @@ class GeoSeries(GeoPandasBase, Series):
         """Alternate constructor to create a ``GeoSeries`` from a file.
 
         Can load a ``GeoSeries`` from a file from any format recognized by
-        `fiona`. See http://fiona.readthedocs.io/en/latest/manual.html for details.
+        `pyogrio`. See http://pyogrio.readthedocs.io/ for details.
         From a file with attributes loads only geometry column. Note that to do
         that, GeoPandas first loads the whole GeoDataFrame.
 
@@ -335,10 +334,10 @@ class GeoSeries(GeoPandasBase, Series):
         filename : str
             File path or file handle to read from. Depending on which kwargs
             are included, the content of filename may vary. See
-            http://fiona.readthedocs.io/en/latest/README.html#usage for usage details.
+            :func:`pyogrio.read_dataframe` for usage details.
         kwargs : key-word arguments
-            These arguments are passed to fiona.open, and can be used to
-            access multi-layer data, data stored within archives (zip files),
+            These arguments are passed to :func:`pyogrio.read_dataframe`, and can be
+            used to access multi-layer data, data stored within archives (zip files),
             etc.
 
         Examples
@@ -578,7 +577,7 @@ class GeoSeries(GeoPandasBase, Series):
         """Write the ``GeoSeries`` to a file.
 
         By default, an ESRI shapefile is written, but any OGR data source
-        supported by Fiona can be written.
+        supported by Pyogrio or Fiona can be written.
 
         Parameters
         ----------
@@ -608,18 +607,19 @@ class GeoSeries(GeoPandasBase, Series):
             will determine the crs based on crs df attribute.
             The value can be anything accepted
             by :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
-            such as an authority string (eg "EPSG:4326") or a WKT string.
-        engine : str, "fiona" or "pyogrio"
+            such as an authority string (eg "EPSG:4326") or a WKT string. The keyword
+            is not supported for the "pyogrio" engine.
+        engine : str, "pyogrio" or "fiona"
             The underlying library that is used to write the file. Currently, the
-            supported options are "fiona" and "pyogrio". Defaults to "fiona" if
-            installed, otherwise tries "pyogrio".
+            supported options are "pyogrio" and "fiona". Defaults to "pyogrio" if
+            installed, otherwise tries "fiona".
         **kwargs :
             Keyword args to be passed to the engine, and can be used to write
             to multi-layer data, store data within archives (zip files), etc.
-            In case of the "fiona" engine, the keyword arguments are passed to
-            fiona.open`. For more information on possible keywords, type:
-            ``import fiona; help(fiona.open)``. In case of the "pyogrio" engine,
-            the keyword arguments are passed to `pyogrio.write_dataframe`.
+            In case of the "pyogrio" engine, the keyword arguments are passed to
+            `pyogrio.write_dataframe`. In case of the "fiona" engine, the keyword
+            arguments are passed to fiona.open`. For more information on possible
+            keywords, type: ``import pyogrio; help(pyogrio.write_dataframe)``.
 
         See Also
         --------
@@ -809,11 +809,9 @@ class GeoSeries(GeoPandasBase, Series):
         """Alias for `notna` method. See `notna` for more detail."""
         return self.notna()
 
-    def fillna(self, value=None, method=None, inplace: bool = False, **kwargs):
+    def fillna(self, value=None, inplace: bool = False, **kwargs):
         """
         Fill NA values with geometry (or geometries).
-
-        ``method`` is currently not implemented.
 
         Parameters
         ----------
@@ -883,7 +881,7 @@ class GeoSeries(GeoPandasBase, Series):
         """
         if value is None:
             value = GeometryCollection()
-        return super().fillna(value=value, method=method, inplace=inplace, **kwargs)
+        return super().fillna(value=value, inplace=inplace, **kwargs)
 
     def __contains__(self, other) -> bool:
         """Allow tests of the form "geom in s"
@@ -971,7 +969,7 @@ class GeoSeries(GeoPandasBase, Series):
     #
     # Additional methods
     #
-
+    @compat.requires_pyproj
     def set_crs(
         self,
         crs: Optional[Any] = None,
@@ -1049,6 +1047,8 @@ class GeoSeries(GeoPandasBase, Series):
         GeoSeries.to_crs : re-project to another CRS
 
         """
+        from pyproj import CRS
+
         if crs is not None:
             crs = CRS.from_user_input(crs)
         elif epsg is not None:
@@ -1152,7 +1152,7 @@ class GeoSeries(GeoPandasBase, Series):
             self.values.to_crs(crs=crs, epsg=epsg), index=self.index, name=self.name
         )
 
-    def estimate_utm_crs(self, datum_name: str = "WGS 84") -> CRS:
+    def estimate_utm_crs(self, datum_name: str = "WGS 84"):
         """Returns the estimated UTM CRS based on the bounds of the dataset.
 
         .. versionadded:: 0.9
