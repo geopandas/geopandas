@@ -38,14 +38,13 @@ Using the Fiona engine, it was possible to write an attribute table (a table wit
 geometry column) to a file using the ``schema`` parameter to specify that the "geometry"
 column of a GeoDataFrame should be ignored.
 
-With Pyogrio you can write an attribute table by using
-[pyogrio.write_dataframe] (https://pyogrio.readthedocs.io/en/latest/api.html#pyogrio.write_dataframe)
+With Pyogrio you can write an attribute table by using :func:`pyogrio.write_dataframe`
 and passing a pandas DataFrame to it:
 
 .. code-block:: python
 
     >>> import pyogrio
-    >>> df = pd.GeoDataFrame({"data_column": [1, 2, 3]})
+    >>> df = pd.DataFrame({"data_column": [1, 2, 3]})
     >>> pyogrio.write_dataframe(df, "test_attribute_table.gpkg")
 
 
