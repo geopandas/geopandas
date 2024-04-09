@@ -48,7 +48,7 @@ New features and improvements:
   the specified columns (#3101).
 - Added support to ``read_file`` for the ``mask`` keyword for the pyogrio engine (#3062).
 - Added support to ``read_file`` for the ``columns`` keyword for the fiona engine (#3133).
-- Added `show_bbox` and `drop_id` arguments to allow removal of unwanted parameters from 
+- Added `show_bbox`, `drop_id` and `to_wgs84` arguments to allow further customization of 
   `GeoSeries.to_json` (#3226)
 
 API changes:
