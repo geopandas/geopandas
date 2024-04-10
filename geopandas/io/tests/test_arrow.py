@@ -883,6 +883,8 @@ def test_parquet_read_partitioned_dataset(tmpdir, naturalearth_lowres):
     # we don't yet explicitly support this (in writing), but for Parquet it
     # works for reading (by relying on pyarrow.read_table)
     df = read_file(naturalearth_lowres)
+    # partition_cols will be read back as categorical
+    df.continent = df.continent.astype("category")
 
     # write partitioned dataset
     basedir = tmpdir / "partitioned_dataset"
@@ -900,6 +902,8 @@ def test_parquet_read_partitioned_dataset_fsspec(tmpdir, naturalearth_lowres):
     fsspec = pytest.importorskip("fsspec")
 
     df = read_file(naturalearth_lowres)
+    # partition_cols will be read back as categorical
+    df.continent = df.continent.astype("category")
 
     # write partitioned dataset
     memfs = fsspec.filesystem("memory")
