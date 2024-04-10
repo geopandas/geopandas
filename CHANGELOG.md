@@ -48,11 +48,8 @@ New features and improvements:
   the specified columns (#3101).
 - Added support to ``read_file`` for the ``mask`` keyword for the pyogrio engine (#3062).
 - Added support to ``read_file`` for the ``columns`` keyword for the fiona engine (#3133).
-- Added `show_bbox`, `drop_id` and `to_wgs84` arguments to allow further customization of 
+- Added `show_bbox`, `drop_id` and `to_wgs84` arguments to allow further customization of
   `GeoSeries.to_json` (#3226)
-
-API changes:
-- Added support for ``mask`` keyword for pyogrio engine for pyogrio >= 0.7.0 (#3062).
 
 Backwards incompatible API changes:
 - The deprecated default value of GeoDataFrame/ GeoSeries `explode(.., index_parts=True)` is now
