@@ -51,7 +51,8 @@ New features and improvements:
 - Added `show_bbox`, `drop_id` and `to_wgs84` arguments to allow further customization of
   `GeoSeries.to_json` (#3226)
 - Added ``on_attribute`` option arguement to the ``sjoin.sjoin()`` and 
-  ``sjoin.sjoin_nearest()`` methods allowing to restrict joins to the observations with matching attributes. (#3231)
+  ``sjoin.sjoin_nearest()`` methods allowing to restrict joins to the observations with 
+  matching attributes. (#3231)
 
 Backwards incompatible API changes:
 
