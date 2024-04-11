@@ -52,8 +52,7 @@ def sjoin(
         one-dimesional with length equal to length of left GeoDataFrame.
         Required if ``predicate='dwithin'``.
     on_attribute : string, list or tuple
-        column name in both dataframes where a join will occur
-        only if the entry in the on_attribute is the same.
+        Column or names to join on as an additional join restriction on top of the spatial predicate. These must be found in both DataFrames. If set, observations are joined only if the predicate applies and values in specified columns match.
 
     Examples
     --------
