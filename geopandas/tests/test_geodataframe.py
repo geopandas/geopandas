@@ -1074,12 +1074,17 @@ class TestDataFrame:
         unsorted_clipped_cities = geopandas.clip(cities, south_america, sort=False)
         sorted_clipped_cities = geopandas.clip(cities, south_america, sort=True)
 
+        expected_sorted_index = pd.Index(
+            [55, 59, 62, 88, 101, 114, 122, 169, 181, 189, 210, 230, 236, 238, 239]
+        )
+
         assert not (
             sorted(unsorted_clipped_cities.index) == unsorted_clipped_cities.index
         ).all()
         assert (
             sorted(sorted_clipped_cities.index) == sorted_clipped_cities.index
         ).all()
+        assert_index_equal(expected_sorted_index, sorted_clipped_cities.index)
 
     def test_overlay(self, dfs, how):
         """

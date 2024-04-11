@@ -1310,8 +1310,9 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
             resulting in multiple geometry types or GeometryCollections.
             If False, return all resulting geometries (potentially mixed-types).
         sort : boolean, default False
-            If True, the results will be sorted in ascending order using the
-            geometries' indexes as the primary key.
+            If True, the order of rows in the clipped GeoSeries will be preserved
+            at small performance cost.
+            If False the order of rows in the clipped GeoSeries will be random.
 
         Returns
         -------
