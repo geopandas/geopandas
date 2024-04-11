@@ -544,14 +544,14 @@ class TestSpatialJoin:
         left_gdf, right_gdf = dfs_shared_attribute
         with pytest.raises(
             ValueError,
-            match="sjoin already merges on the geometry column and "
-            "should not be included in the on_attribute arguement.",
+            match="Active geometry column cannot be used as an input for "
+            "on_attribute parameter.",
         ):
             sjoin(left_gdf, right_gdf, on_attribute="geometry")
         with pytest.raises(
             ValueError,
-            match="sjoin already merges on the geometry column and "
-            "should not be included in the on_attribute arguement.",
+            match="Active geometry column cannot be used as an input for "
+            "on_attribute parameter.",
         ):
             sjoin(left_gdf, right_gdf, on_attribute=["attr1", "geometry"])
 
@@ -1431,14 +1431,14 @@ class TestNearest:
         left_gdf, right_gdf = dfs_shared_attribute
         with pytest.raises(
             ValueError,
-            match="sjoin already merges on the geometry column and should "
-            "not be included in the on_attribute arguement.",
+            match="Active geometry column cannot be used as an input for "
+            "on_attribute parameter.",
         ):
             sjoin_nearest(left_gdf, right_gdf, on_attribute="geometry")
         with pytest.raises(
             ValueError,
-            match="sjoin already merges on the geometry column and should "
-            "not be included in the on_attribute arguement.",
+            match="Active geometry column cannot be used as an input "
+            "for on_attribute parameter.",
         ):
             sjoin_nearest(
                 left_gdf,
