@@ -1236,9 +1236,7 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
         --------
         GeoSeries.to_file : write GeoSeries to file
         """
-        from geopandas import GeoDataFrame
-
-        return GeoDataFrame({"geometry": self}).to_json(
+        return self.to_frame("geometry").to_json(
             na="null", show_bbox=show_bbox, drop_id=drop_id, to_wgs84=to_wgs84, **kwargs
         )
 
