@@ -187,8 +187,7 @@ def _basic_checks(left_df, right_df, how, lsuffix, rsuffix, on_attribute=None):
                 )
             if attr in (left_df.geometry.name, right_df.geometry.name):
                 raise ValueError(
-                    "sjoin already merges on the geometry column and should "
-                    "not be included in the on_attribute arguement."
+                    "Active geometry column cannot be used as an input for on_attribute parameter."
                 )
 
 
