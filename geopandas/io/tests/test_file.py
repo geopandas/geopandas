@@ -1304,3 +1304,24 @@ def test_option_io_engine(nybb_filename):
     finally:
         fiona.supported_drivers["ESRI Shapefile"] = orig
         geopandas.options.io_engine = None
+
+
+@PYOGRIO_MARK
+def test_list_layers(df_points, tmpdir):
+    tempfilename = os.path.join(str(tmpdir), "dataset.gpkg")
+    df_points.to_file(tempfilename, layer="original")
+    df_points.set_geometry(df_points.buffer(1)).to_file(tempfilename, layer="buffered")
+    df_points.set_geometry(df_points.buffer(2).boundary).to_file(
+        tempfilename, layer="boundary"
+    )
+    pyogrio.write_dataframe(
+        df_points[["value1", "value2"]], tempfilename, layer="non-spatial"
+    )
+    layers = geopandas.list_layers(tempfilename)
+    expected = pd.DataFrame(
+        {
+            "name": ["original", "buffered", "boundary", "non-spatial"],
+            "geometry_type": ["Point", "Polygon", "LineString", None],
+        }
+    )
+    assert_frame_equal(layers, expected)
