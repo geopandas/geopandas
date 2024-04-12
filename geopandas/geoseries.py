@@ -1189,7 +1189,13 @@ class GeoSeries(GeoPandasBase, Series):
         """
         return self.values.estimate_utm_crs(datum_name)
 
-    def to_json(self, show_bbox:bool=True, drop_id:bool=False, to_wgs84:bool=False, **kwargs) -> str:
+    def to_json(
+        self,
+        show_bbox: bool = True,
+        drop_id: bool = False,
+        to_wgs84: bool = False,
+        **kwargs,
+    ) -> str:
         """
         Returns a GeoJSON string representation of the GeoSeries.
 
