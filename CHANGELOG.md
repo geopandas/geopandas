@@ -95,7 +95,7 @@ Deprecations and compatibility notes:
   for backwards compatibility, but you should directly use the ``columns`` keyword instead
   to select which columns to read (#3133).
 - The `drop` keyword in `set_geometry` has been deprecated, and in future the `drop=True` 
-  behaviour will be removed. To prepare for this change, you should remove any explict 
+  behaviour will be removed. To prepare for this change, you should remove any explicit 
   `drop=False` calls in your code (the default behaviour already is the same as `drop=False`).
   To replicate the previous `drop=True` behaviour you should replace 
   `gdf.set_geometry(new_geo_col, drop=True)` with
