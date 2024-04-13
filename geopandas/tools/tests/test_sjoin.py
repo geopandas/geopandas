@@ -407,7 +407,7 @@ class TestSpatialJoin:
     )
     def test_sjoin_left_order(self, predicate):
         pts = GeoDataFrame(
-            geometry=points_from_xy(np.linspace(0, 1, 10), np.linspace(0, 1, 10))
+            geometry=points_from_xy([0.1, 0.4, 0.3, 0.7], [0.8, 0.6, 0.9, 0.1])
         )
         polys = GeoDataFrame(
             {"id": [1, 2, 3, 4]},
