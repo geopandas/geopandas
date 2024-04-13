@@ -392,8 +392,23 @@ class TestSpatialJoin:
         assert_frame_equal(expected_gdf.sort_index(), joined.sort_index())
 
     # GH3239
-    def test_sjoin_left_within_order(self):
-        pts = GeoDataFrame(geometry=points_from_xy(*np.random.rand(2, 10)))
+    @pytest.mark.parametrize(
+        "predicate",
+        [
+            "contains",
+            "contains_properly",
+            "covered_by",
+            "covers",
+            "crosses",
+            "intersects",
+            "touches",
+            "within",
+        ],
+    )
+    def test_sjoin_left_order(self, predicate):
+        pts = GeoDataFrame(
+            geometry=points_from_xy(np.linspace(0, 1, 10), np.linspace(0, 1, 10))
+        )
         polys = GeoDataFrame(
             {"id": [1, 2, 3, 4]},
             geometry=[
@@ -404,7 +419,7 @@ class TestSpatialJoin:
             ],
         )
 
-        joined = sjoin(pts, polys, predicate="within", how="left")
+        joined = sjoin(pts, polys, predicate=predicate, how="left")
         assert_index_equal(joined.index, pts.index)
 
 
