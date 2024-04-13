@@ -267,6 +267,9 @@ class TestDataFrame:
         with pytest.raises(ValueError):
             self.df.set_geometry(self.df)
 
+    def test_set_geometry_crs(self):
+        geom = GeoSeries([Point(x, y) for x, y in zip(range(5), range(5))])
+
         # new crs - setting should default to GeoSeries' crs
         gs = GeoSeries(geom, crs="epsg:3857")
         new_df = self.df.set_geometry(gs)
@@ -958,24 +961,24 @@ class TestDataFrame:
 
     def test_to_wkb(self):
         wkbs0 = [
-            (
+            (  # POINT (0 0)
                 b"\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00"
                 b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
-            ),  # POINT (0 0)
-            (
+            ),
+            (  # POINT (1 1)
                 b"\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00"
                 b"\x00\xf0?\x00\x00\x00\x00\x00\x00\xf0?"
-            ),  # POINT (1 1)
+            ),
         ]
         wkbs1 = [
-            (
+            (  # POINT (2 2)
                 b"\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00"
                 b"\x00\x00@\x00\x00\x00\x00\x00\x00\x00@"
-            ),  # POINT (2 2)
-            (
+            ),
+            (  # POINT (3 3)
                 b"\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00"
                 b"\x00\x08@\x00\x00\x00\x00\x00\x00\x08@"
-            ),  # POINT (3 3)
+            ),
         ]
         gs0 = GeoSeries.from_wkb(wkbs0)
         gs1 = GeoSeries.from_wkb(wkbs1)
@@ -1284,7 +1287,6 @@ class TestConstructor:
         check_geodataframe(gdf)
         gdf.columns == ["geometry", "a"]
 
-    @pytest.mark.xfail
     def test_preserve_series_name(self):
         geoms = [Point(1, 1), Point(2, 2), Point(3, 3)]
         gs = GeoSeries(geoms)
@@ -1510,3 +1512,74 @@ def test_geodataframe_crs_colname():
     assert gdf.crs is None
     assert gdf["crs"].iloc[0] == 1
     assert getattr(gdf, "crs") is None
+
+
+@pytest.fixture
+def nybb2(nybb_filename):
+    yield read_file(nybb_filename).head(2)
+
+
+@pytest.mark.parametrize("geo_col_name", ["geometry", "polygons"])
+def test_set_geometry_supply_colname(nybb2, geo_col_name):
+    if geo_col_name != "geometry":
+        nybb2 = nybb2.rename_geometry(geo_col_name)
+    nybb2["centroid"] = nybb2.geometry.centroid
+    res = nybb2.set_geometry("centroid")
+    assert res.active_geometry_name == "centroid"
+    assert geo_col_name in res.columns
+
+    # Test that drop=False explicitly warns
+    deprecated = "The `drop` keyword argument is deprecated"
+    with pytest.warns(FutureWarning, match=deprecated):
+        res2 = nybb2.set_geometry("centroid", drop=False)
+    assert_geodataframe_equal(res, res2)
+
+    with pytest.warns(FutureWarning, match=deprecated):
+        res3 = nybb2.set_geometry("centroid", drop=True)
+    # drop=True should preserve previous geometry col name (keep old behaviour)
+    assert res3.active_geometry_name == geo_col_name
+    assert "centroid" not in res3.columns
+
+    # Test that alternative suggested without using drop=True is equivalent
+    assert_geodataframe_equal(
+        res3,
+        nybb2.set_geometry("centroid")
+        .drop(columns=geo_col_name)
+        .rename_geometry(geo_col_name),
+    )
+
+
+@pytest.mark.parametrize("geo_col_name", ["geometry", "polygons"])
+def test_set_geometry_supply_arraylike(nybb2, geo_col_name):
+    if geo_col_name != "geometry":
+        nybb2 = nybb2.rename_geometry(geo_col_name)
+    centroids = nybb2.geometry.centroid
+    res = nybb2.set_geometry(centroids)
+    assert res.active_geometry_name == geo_col_name
+    # drop should do nothing if the column already exists
+    match_str = (
+        "The `drop` keyword argument is deprecated and has no effect when "
+        "`col` is an array-like value"
+    )
+    with pytest.warns(
+        FutureWarning,
+        match=match_str,
+    ):
+        res2 = nybb2.set_geometry(centroids, drop=True)
+    assert res2.active_geometry_name == geo_col_name
+
+    centroids = centroids.rename("centroids")
+    res3 = nybb2.set_geometry(centroids)
+    # Should preserve the geoseries name
+    # (and old geometry column should be kept)
+    assert res3.active_geometry_name == "centroids"
+    assert geo_col_name in res3.columns
+
+    # Drop should not remove previous active geometry colname for arraylike inputs
+    with pytest.warns(
+        FutureWarning,
+        match=match_str,
+    ):
+        res4 = nybb2.set_geometry(centroids, drop=True)
+    assert res4.active_geometry_name == "centroids"
+    assert geo_col_name in res4.columns
