@@ -51,12 +51,12 @@ New features and improvements:
 
 Backwards incompatible API changes:
 - The deprecated default value of GeoDataFrame/ GeoSeries `explode(.., index_parts=True)` is now
-  set to false for consistency with pandas (#3174)
+  set to false for consistency with pandas (#3174).
 - The behaviour of `set_geometry` has been updated when `col` is a (Geo)Series with `ser.name` 
   not None. The new active geometry column name in this case will be `ser.name`, rather than
   the previous active geometry column name. This means that if the new and old names are
   different, then both columns will be preserved in the GeoDataFrame. To replicate the previous
-  behaviour, you can instead call `gdf.set_geometry(ser.rename(gdf.active_geometry_name))`.
+  behaviour, you can instead call `gdf.set_geometry(ser.rename(gdf.active_geometry_name))` (#3237).
 
 Potentially breaking changes:
 
@@ -99,10 +99,11 @@ Deprecations and compatibility notes:
   `drop=False` calls in your code (the default behaviour already is the same as `drop=False`).
   To replicate the previous `drop=True` behaviour you should replace 
   `gdf.set_geometry(new_geo_col, drop=True)` with
-```python
-geo_col_name = gdf.active_geometry_name
-gdf.set_geometry(new_geo_col).drop(columns=geo_col_name).rename_geometry(geo_col_name)
-```
+  ```python
+  geo_col_name = gdf.active_geometry_name
+  gdf.set_geometry(new_geo_col).drop(columns=geo_col_name).rename_geometry(geo_col_name)
+  ```
+  (#3237).
 
 ## Version 0.14.3 (Jan 31, 2024)
 
