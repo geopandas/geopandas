@@ -249,7 +249,6 @@ class TestDataFrame:
         with pytest.raises(ValueError, match=msg):
             self.df.rename_geometry("Shape_Area", inplace=True)
 
-    @pytest.mark.skipif(not compat.HAS_PYPROJ, reason="Requires pyproj")
     def test_set_geometry(self):
         geom = GeoSeries([Point(x, y) for x, y in zip(range(5), range(5))])
         original_geom = self.df.geometry
@@ -267,6 +266,7 @@ class TestDataFrame:
         with pytest.raises(ValueError):
             self.df.set_geometry(self.df)
 
+    @pytest.mark.skipif(not compat.HAS_PYPROJ, reason="Requires pyproj")
     def test_set_geometry_crs(self):
         geom = GeoSeries([Point(x, y) for x, y in zip(range(5), range(5))])
 
