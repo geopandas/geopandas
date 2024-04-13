@@ -4,6 +4,7 @@ from shapely.geometry import Point, Polygon
 from geopandas.tests.util import _NATURALEARTH_LOWRES
 from geopandas.tests.util import _NATURALEARTH_CITIES
 
+
 class Countries:
     param_names = ["how"]
     params = [

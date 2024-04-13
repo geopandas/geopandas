@@ -11,6 +11,7 @@ details.
 First we'll import a dataset containing each borough in New York City. We'll
 use the ``datasets`` module to handle this quickly.
 """
+
 import numpy as np
 import matplotlib.pyplot as plt
 from shapely.geometry import Point
