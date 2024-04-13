@@ -255,10 +255,10 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         col : column label or array-like
             An existing column name or values to set as the new geometry column.
             If values (array-like, (Geo)Series) are passed, then if they are named
-              (Series) the new geometry column will have the corresponding name,
-              otherwise the existing geometry column will be replaced. If there is
-              no existing geometry column, the new geometry column will use the
-              default name "geometry".
+            (Series) the new geometry column will have the corresponding name,
+            otherwise the existing geometry column will be replaced. If there is
+            no existing geometry column, the new geometry column will use the
+            default name "geometry".
         drop : boolean, default False
             When specifying a named Series or an existing column name for `col`,
             controls if the previous geometry column should be dropped from the
