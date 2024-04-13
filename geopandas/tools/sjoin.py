@@ -322,7 +322,6 @@ def _adjust_indexers(indices, distances, original_length, how, predicate):
     """
     # the indices represent an inner join, no adjustment needed
     if how == "inner":
-
         return indices, distances
 
     l_idx, r_idx = indices

@@ -406,6 +406,8 @@ class TestSpatialJoin:
         ],
     )
     def test_sjoin_left_order(self, predicate):
+        # a set of points in random order -> that order should be preserved
+        # with a left join
         pts = GeoDataFrame(
             geometry=points_from_xy([0.1, 0.4, 0.3, 0.7], [0.8, 0.6, 0.9, 0.1])
         )
