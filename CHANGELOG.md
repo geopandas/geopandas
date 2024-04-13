@@ -48,10 +48,17 @@ New features and improvements:
   the specified columns (#3101).
 - Added support to ``read_file`` for the ``mask`` keyword for the pyogrio engine (#3062).
 - Added support to ``read_file`` for the ``columns`` keyword for the fiona engine (#3133).
+- Added `show_bbox`, `drop_id` and `to_wgs84` arguments to allow further customization of
+  `GeoSeries.to_json` (#3226)
 
 Backwards incompatible API changes:
 - The deprecated default value of GeoDataFrame/ GeoSeries `explode(.., index_parts=True)` is now
-  set to false for consistency with pandas (#3174)
+  set to false for consistency with pandas (#3174).
+- The behaviour of `set_geometry` has been changed when passed a (Geo)Series `ser` with a name. 
+  The new active geometry column name in this case will be `ser.name`, if not None, rather than
+  the previous active geometry column name. This means that if the new and old names are
+  different, then both columns will be preserved in the GeoDataFrame. To replicate the previous
+  behaviour, you can instead call `gdf.set_geometry(ser.rename(gdf.active_geometry_name))` (#3237).
 
 Potentially breaking changes:
 
@@ -64,6 +71,8 @@ Bug fixes:
 - Fix `GeoDataFrame.merge()` incorrectly returning a `DataFrame` instead of a
   `GeoDataFrame` when the `suffixes` argument is applied to the active
   geometry column (#2933).
+- Fix bug in `GeoDataFrame` constructor where if `geometry` is given a named 
+  `GeoSeries` the name was not used as the active geometry column name (#3237).
 
 Deprecations and compatibility notes:
 
@@ -92,6 +101,16 @@ Deprecations and compatibility notes:
   for the default pyogrio engine. Currently those are translated to the ``columns`` keyword
   for backwards compatibility, but you should directly use the ``columns`` keyword instead
   to select which columns to read (#3133).
+- The `drop` keyword in `set_geometry` has been deprecated, and in future the `drop=True` 
+  behaviour will be removed. To prepare for this change, you should remove any explicit 
+  `drop=False` calls in your code (the default behaviour already is the same as `drop=False`).
+  To replicate the previous `drop=True` behaviour you should replace 
+  `gdf.set_geometry(new_geo_col, drop=True)` with
+  ```python
+  geo_col_name = gdf.active_geometry_name
+  gdf.set_geometry(new_geo_col).drop(columns=geo_col_name).rename_geometry(geo_col_name)
+  ```
+  (#3237).
 
 ## Version 0.14.3 (Jan 31, 2024)
 
