@@ -1514,20 +1514,9 @@ def test_geodataframe_crs_colname():
     assert getattr(gdf, "crs") is None
 
 
-@pytest.fixture
-def df1(nybb_filename):
-    yield GeoDataFrame(
-        {
-            "A": range(3),
-            "B": np.arange(3.0),
-            "geometry": [Point(x, x) for x in range(3)],
-        },
-        crs="EPSG:4326",
-    )
-
-
 @pytest.mark.parametrize("geo_col_name", ["geometry", "polygons"])
-def test_set_geometry_supply_colname(df1, geo_col_name):
+def test_set_geometry_supply_colname(dfs, geo_col_name):
+    df1, _ = dfs
     if geo_col_name != "geometry":
         df1 = df1.rename_geometry(geo_col_name)
     df1["centroid"] = df1.geometry.centroid
@@ -1557,7 +1546,8 @@ def test_set_geometry_supply_colname(df1, geo_col_name):
 
 
 @pytest.mark.parametrize("geo_col_name", ["geometry", "polygons"])
-def test_set_geometry_supply_arraylike(df1, geo_col_name):
+def test_set_geometry_supply_arraylike(dfs, geo_col_name):
+    df1, _ = dfs
     if geo_col_name != "geometry":
         df1 = df1.rename_geometry(geo_col_name)
     centroids = df1.geometry.centroid
