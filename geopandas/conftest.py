@@ -2,7 +2,13 @@ import os.path
 
 import pytest
 import geopandas
-from geopandas.tests.util import _NYBB, _NATURALEARTH_LOWRES, _NATURALEARTH_CITIES
+from geopandas.tests.util import (
+    _NYBB,
+    _NATURALEARTH_LOWRES,
+    _NATURALEARTH_CITIES,
+    _GEOJSON_CONVERTED_DATA_DIR,
+    get_test_df_from_geojson,
+)
 
 
 @pytest.fixture(autouse=True)
@@ -38,6 +44,36 @@ def nybb_filename() -> str:
         return _NYBB
     else:
         pytest.skip("NYBB dataset not found")
+
+
+@pytest.fixture()
+def nybb_df():
+    """Get nybb df avoiding pyogrio/ fiona dependency."""
+    # skip if data missing, unless on github actions
+    if len(list(_GEOJSON_CONVERTED_DATA_DIR.glob("nybb_16a*"))) >= 2 or os.getenv(
+        "GITHUB_ACTIONS"
+    ):
+        return get_test_df_from_geojson("nybb_16a")
+
+
+@pytest.fixture()
+def naturalearth_cities_df():
+    """Get nybb df avoiding pyogrio/ fiona dependency."""
+    # skip if data missing, unless on github actions
+    if len(
+        list(_GEOJSON_CONVERTED_DATA_DIR.glob("naturalearth_cities*"))
+    ) >= 2 or os.getenv("GITHUB_ACTIONS"):
+        return get_test_df_from_geojson("naturalearth_cities")
+
+
+@pytest.fixture()
+def naturalearth_lowres_df():
+    """Get nybb df avoiding pyogrio/ fiona dependency."""
+    # skip if data missing, unless on github actions
+    if len(
+        list(_GEOJSON_CONVERTED_DATA_DIR.glob("naturalearth_lowres*"))
+    ) >= 2 or os.getenv("GITHUB_ACTIONS"):
+        return get_test_df_from_geojson("naturalearth_lowres")
 
 
 @pytest.fixture(scope="class")
