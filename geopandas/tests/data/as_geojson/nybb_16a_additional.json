@@ -1,0 +1,1 @@
+{"crs": "EPSG:2263", "dtypes": {"BoroCode": "int32", "BoroName": "object", "Shape_Leng": "float64", "Shape_Area": "float64", "geometry": "geometry"}}
