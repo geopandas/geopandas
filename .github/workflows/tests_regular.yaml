@@ -1,0 +1,10 @@
+name: Tests
+
+on:
+  schedule:
+    - cron: "0 0 * * *"
+
+
+jobs:
+  call-tests:
+    uses: ./.github/workflows/tests_common.yaml
