@@ -1,7 +1,4 @@
 import json
-import os
-import shutil
-import tempfile
 
 import numpy as np
 import pandas as pd
@@ -13,7 +10,7 @@ from geopandas import GeoDataFrame, GeoSeries, points_from_xy, read_file
 from geopandas.array import GeometryArray, GeometryDtype, from_shapely
 
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
-from geopandas.tests.util import PACKAGE_DIR, validate_boro_df
+from geopandas.tests.util import validate_boro_df
 from pandas.testing import assert_frame_equal, assert_index_equal, assert_series_equal
 import geopandas._compat as compat
 import pytest
@@ -49,7 +46,6 @@ class TestDataFrame:
     def setup_method(self):
         N = 10
         # TODO re-write instance variables to be fixtures
-        self.tempdir = tempfile.mkdtemp()
         self.crs = "epsg:4326"
         self.df2 = GeoDataFrame(
             [
@@ -58,12 +54,6 @@ class TestDataFrame:
             ],
             crs=self.crs,
         )
-        self.df3 = read_file(
-            os.path.join(PACKAGE_DIR, "geopandas", "tests", "data", "null_geom.geojson")
-        )
-
-    def teardown_method(self):
-        shutil.rmtree(self.tempdir)
 
     def test_df_init(self):
         assert type(self.df2) is GeoDataFrame
@@ -943,8 +933,8 @@ class TestDataFrame:
         df2 = pickle.loads(pickle.dumps(nybb_df))
         assert_geodataframe_equal(nybb_df, df2)
 
-    def test_pickle_method(self, nybb_df):
-        filename = os.path.join(self.tempdir, "df.pkl")
+    def test_pickle_method(self, nybb_df, tmp_path):
+        filename = tmp_path / "df.pkl"
         nybb_df.to_pickle(filename)
         unpickled = pd.read_pickle(filename)
         assert_frame_equal(nybb_df, unpickled)
