@@ -45,12 +45,9 @@ def how(request):
     return request.param
 
 
-@pytest.mark.usefixtures("_setup_class_nybb_filename")
 class TestDataFrame:
     def setup_method(self):
         N = 10
-        # self.nybb_filename attached via _setup_class_nybb_filename
-        self.df = read_file(self.nybb_filename)
         # TODO re-write instance variables to be fixtures
         self.tempdir = tempfile.mkdtemp()
         self.crs = "epsg:4326"
@@ -179,17 +176,17 @@ class TestDataFrame:
             df["other_geom"] = vals
             assert isinstance(df["other_geom"].values, GeometryArray)
 
-    def test_geometry_property(self):
+    def test_geometry_property(self, nybb_df):
         assert_geoseries_equal(
-            self.df.geometry,
-            self.df["geometry"],
+            nybb_df.geometry,
+            nybb_df["geometry"],
             check_dtype=True,
             check_index_type=True,
         )
 
-        df = self.df.copy()
+        df = nybb_df.copy()
         new_geom = [
-            Point(x, y) for x, y in zip(range(len(self.df)), range(len(self.df)))
+            Point(x, y) for x, y in zip(range(len(nybb_df)), range(len(nybb_df)))
         ]
         df.geometry = new_geom
 
@@ -203,9 +200,9 @@ class TestDataFrame:
             df.geometry = gs
             assert df.crs == "epsg:3857"
 
-    def test_geometry_property_errors(self):
+    def test_geometry_property_errors(self, nybb_df):
         with pytest.raises(AttributeError):
-            df = self.df.copy()
+            df = nybb_df.copy()
             del df["geometry"]
             df.geometry
 
@@ -216,113 +213,113 @@ class TestDataFrame:
 
         # list-like error
         with pytest.raises(ValueError):
-            df = self.df.copy()
+            df = nybb_df.copy()
             df.geometry = "apple"
 
         # non-geometry error
         with pytest.raises(TypeError):
-            df = self.df.copy()
+            df = nybb_df.copy()
             df.geometry = list(range(df.shape[0]))
 
         with pytest.raises(KeyError):
-            df = self.df.copy()
+            df = nybb_df.copy()
             del df["geometry"]
             df["geometry"]
 
         # ndim error
         with pytest.raises(ValueError):
-            df = self.df.copy()
+            df = nybb_df.copy()
             df.geometry = df
 
-    def test_rename_geometry(self):
-        assert self.df.geometry.name == "geometry"
-        df2 = self.df.rename_geometry("new_name")
+    def test_rename_geometry(self, nybb_df):
+        assert nybb_df.geometry.name == "geometry"
+        df2 = nybb_df.rename_geometry("new_name")
         assert df2.geometry.name == "new_name"
-        df2 = self.df.rename_geometry("new_name", inplace=True)
+        df2 = nybb_df.rename_geometry("new_name", inplace=True)
         assert df2 is None
-        assert self.df.geometry.name == "new_name"
+        assert nybb_df.geometry.name == "new_name"
 
         # existing column error
         msg = "Column named Shape_Area already exists"
         with pytest.raises(ValueError, match=msg):
-            df2 = self.df.rename_geometry("Shape_Area")
+            df2 = nybb_df.rename_geometry("Shape_Area")
         with pytest.raises(ValueError, match=msg):
-            self.df.rename_geometry("Shape_Area", inplace=True)
+            nybb_df.rename_geometry("Shape_Area", inplace=True)
 
-    def test_set_geometry(self):
+    def test_set_geometry(self, nybb_df):
         geom = GeoSeries([Point(x, y) for x, y in zip(range(5), range(5))])
-        original_geom = self.df.geometry
+        original_geom = nybb_df.geometry
 
-        df2 = self.df.set_geometry(geom)
-        assert self.df is not df2
+        df2 = nybb_df.set_geometry(geom)
+        assert nybb_df is not df2
         assert_geoseries_equal(df2.geometry, geom, check_crs=False)
-        assert_geoseries_equal(self.df.geometry, original_geom)
-        assert_geoseries_equal(self.df["geometry"], self.df.geometry)
+        assert_geoseries_equal(nybb_df.geometry, original_geom)
+        assert_geoseries_equal(nybb_df["geometry"], nybb_df.geometry)
         # unknown column
         with pytest.raises(ValueError):
-            self.df.set_geometry("nonexistent-column")
+            nybb_df.set_geometry("nonexistent-column")
 
         # ndim error
         with pytest.raises(ValueError):
-            self.df.set_geometry(self.df)
+            nybb_df.set_geometry(nybb_df)
 
     @pytest.mark.skipif(not compat.HAS_PYPROJ, reason="Requires pyproj")
-    def test_set_geometry_crs(self):
+    def test_set_geometry_crs(self, nybb_df):
         geom = GeoSeries([Point(x, y) for x, y in zip(range(5), range(5))])
 
         # new crs - setting should default to GeoSeries' crs
         gs = GeoSeries(geom, crs="epsg:3857")
-        new_df = self.df.set_geometry(gs)
+        new_df = nybb_df.set_geometry(gs)
         assert new_df.crs == "epsg:3857"
 
         # explicit crs overrides self and dataframe
-        new_df = self.df.set_geometry(gs, crs="epsg:26909")
+        new_df = nybb_df.set_geometry(gs, crs="epsg:26909")
         assert new_df.crs == "epsg:26909"
         assert new_df.geometry.crs == "epsg:26909"
 
         # Series should use dataframe's
-        new_df = self.df.set_geometry(geom.values)
-        assert new_df.crs == self.df.crs
-        assert new_df.geometry.crs == self.df.crs
+        new_df = nybb_df.set_geometry(geom.values)
+        assert new_df.crs == nybb_df.crs
+        assert new_df.geometry.crs == nybb_df.crs
 
-    def test_set_geometry_col(self):
-        g = self.df.geometry
+    def test_set_geometry_col(self, nybb_df):
+        g = nybb_df.geometry
         g_simplified = g.simplify(100)
-        self.df["simplified_geometry"] = g_simplified
-        df2 = self.df.set_geometry("simplified_geometry")
+        nybb_df["simplified_geometry"] = g_simplified
+        df2 = nybb_df.set_geometry("simplified_geometry")
 
         # Drop is false by default
         assert "simplified_geometry" in df2
         assert_geoseries_equal(df2.geometry, g_simplified)
 
         # If True, drops column and renames to geometry
-        df3 = self.df.set_geometry("simplified_geometry", drop=True)
+        df3 = nybb_df.set_geometry("simplified_geometry", drop=True)
         assert "simplified_geometry" not in df3
         assert_geoseries_equal(df3.geometry, g_simplified)
 
-    def test_set_geometry_inplace(self):
+    def test_set_geometry_inplace(self, nybb_df):
         geom = [Point(x, y) for x, y in zip(range(5), range(5))]
-        ret = self.df.set_geometry(geom, inplace=True)
+        ret = nybb_df.set_geometry(geom, inplace=True)
         assert ret is None
-        geom = GeoSeries(geom, index=self.df.index, crs=self.df.crs)
-        assert_geoseries_equal(self.df.geometry, geom)
+        geom = GeoSeries(geom, index=nybb_df.index, crs=nybb_df.crs)
+        assert_geoseries_equal(nybb_df.geometry, geom)
 
-    def test_set_geometry_series(self):
+    def test_set_geometry_series(self, nybb_df):
         # Test when setting geometry with a Series that
         # alignment will occur
         #
         # Reverse the index order
         # Set the Series to be Point(i,i) where i is the index
-        self.df.index = range(len(self.df) - 1, -1, -1)
+        nybb_df.index = range(len(nybb_df) - 1, -1, -1)
 
         d = {}
-        for i in range(len(self.df)):
+        for i in range(len(nybb_df)):
             d[i] = Point(i, i)
         g = GeoSeries(d)
         # At this point, the DataFrame index is [4,3,2,1,0] and the
         # GeoSeries index is [0,1,2,3,4]. Make sure set_geometry aligns
         # them to match indexes
-        df = self.df.set_geometry(g)
+        df = nybb_df.set_geometry(g)
 
         for i, r in df.iterrows():
             assert i == r["geometry"].x
@@ -334,22 +331,22 @@ class TestDataFrame:
         assert isinstance(result, GeoDataFrame)
         assert isinstance(result.index, pd.DatetimeIndex)
 
-    def test_set_geometry_np_int(self):
-        self.df.loc[:, 0] = self.df.geometry
-        df = self.df.set_geometry(np.int64(0))
+    def test_set_geometry_np_int(self, nybb_df):
+        nybb_df.loc[:, 0] = nybb_df.geometry
+        df = nybb_df.set_geometry(np.int64(0))
         assert df.geometry.name == 0
 
-    def test_get_geometry_invalid(self):
+    def test_get_geometry_invalid(self, nybb_df):
         df = GeoDataFrame()
         # no column "geometry" ever added
-        df["geom"] = self.df.geometry
+        df["geom"] = nybb_df.geometry
         msg_geo_col_none = "active geometry column to use has not been set. "
 
         with pytest.raises(AttributeError, match=msg_geo_col_none):
             df.geometry
         # "geometry" originally present but dropped (but still a gdf)
         col_subset_drop_geometry = ["BoroCode", "BoroName", "geom2"]
-        df2 = self.df.copy().assign(geom2=self.df.geometry)[col_subset_drop_geometry]
+        df2 = nybb_df.copy().assign(geom2=nybb_df.geometry)[col_subset_drop_geometry]
         with pytest.raises(AttributeError, match="is not present."):
             df2.geometry
 
@@ -361,9 +358,9 @@ class TestDataFrame:
         with pytest.raises(AttributeError, match=msg_no_other_geo_cols):
             GeoDataFrame().geometry
 
-    def test_get_geometry_geometry_inactive(self):
+    def test_get_geometry_geometry_inactive(self, nybb_df):
         # https://github.com/geopandas/geopandas/issues/2574
-        df = self.df.assign(geom2=self.df.geometry).set_geometry("geom2")
+        df = nybb_df.assign(geom2=nybb_df.geometry).set_geometry("geom2")
         df = df.loc[:, ["BoroName", "geometry"]]
         assert df._geometry_column_name == "geom2"
         msg_geo_col_missing = "is not present. "
@@ -372,17 +369,17 @@ class TestDataFrame:
         with pytest.raises(AttributeError, match=msg_geo_col_missing):
             df.geometry
 
-    def test_active_geometry_name(self):
+    def test_active_geometry_name(self, nybb_df):
         # default single active called "geometry"
-        assert self.df.active_geometry_name == "geometry"
+        assert nybb_df.active_geometry_name == "geometry"
 
         # one GeoSeries, not active
-        no_active = GeoDataFrame({"foo": self.df.BoroName, "bar": self.df.geometry})
+        no_active = GeoDataFrame({"foo": nybb_df.BoroName, "bar": nybb_df.geometry})
         assert no_active.active_geometry_name is None
         assert no_active.set_geometry("bar").active_geometry_name == "bar"
 
         # multiple, none active
-        multiple = GeoDataFrame({"foo": self.df.geometry, "bar": self.df.geometry})
+        multiple = GeoDataFrame({"foo": nybb_df.geometry, "bar": nybb_df.geometry})
         assert multiple.active_geometry_name is None
         assert multiple.set_geometry("foo").active_geometry_name == "foo"
         assert multiple.set_geometry("bar").active_geometry_name == "bar"
@@ -446,8 +443,8 @@ class TestDataFrame:
         assert_frame_equal(res2, exp2_nogeom)
 
     @pytest.mark.skipif(not compat.HAS_PYPROJ, reason="Requires pyproj")
-    def test_to_json(self):
-        text = self.df.to_json(to_wgs84=True)
+    def test_to_json(self, nybb_df):
+        text = nybb_df.to_json(to_wgs84=True)
         data = json.loads(text)
         assert data["type"] == "FeatureCollection"
         assert len(data["features"]) == 5
@@ -457,23 +454,23 @@ class TestDataFrame:
         coord = data["features"][0]["geometry"]["coordinates"][0][0][0]
         np.testing.assert_allclose(coord, [-74.0505080640324, 40.5664220341941])
 
-    def test_to_json_wgs84_false(self):
-        text = self.df.to_json()
+    def test_to_json_wgs84_false(self, nybb_df):
+        text = nybb_df.to_json()
         data = json.loads(text)
         # check it doesn't convert to WGS84
         coord = data["features"][0]["geometry"]["coordinates"][0][0][0]
         assert coord == [970217.0223999023, 145643.33221435547]
 
-    def test_to_json_no_crs(self):
-        self.df.crs = None
+    def test_to_json_no_crs(self, nybb_df):
+        nybb_df.crs = None
         with pytest.raises(ValueError, match="CRS is not set"):
-            self.df.to_json(to_wgs84=True)
+            nybb_df.to_json(to_wgs84=True)
 
     @pytest.mark.filterwarnings(
         "ignore:Geometry column does not contain geometry:UserWarning"
     )
-    def test_to_json_geom_col(self):
-        df = self.df.copy()
+    def test_to_json_geom_col(self, nybb_df):
+        df = nybb_df.copy()
         df["geom"] = df["geometry"]
         df["geometry"] = np.arange(len(df))
         df.set_geometry("geom", inplace=True)
@@ -483,17 +480,17 @@ class TestDataFrame:
         assert data["type"] == "FeatureCollection"
         assert len(data["features"]) == 5
 
-    def test_to_json_only_geom_column(self):
-        text = self.df[["geometry"]].to_json()
+    def test_to_json_only_geom_column(self, nybb_df):
+        text = nybb_df[["geometry"]].to_json()
         data = json.loads(text)
         assert len(data["features"]) == 5
         assert "id" in data["features"][0].keys()
 
-    def test_to_json_na(self):
+    def test_to_json_na(self, nybb_df):
         # Set a value as nan and make sure it's written
-        self.df.loc[self.df["BoroName"] == "Queens", "Shape_Area"] = np.nan
+        nybb_df.loc[nybb_df["BoroName"] == "Queens", "Shape_Area"] = np.nan
 
-        text = self.df.to_json()
+        text = nybb_df.to_json()
         data = json.loads(text)
         assert len(data["features"]) == 5
         for f in data["features"]:
@@ -502,16 +499,16 @@ class TestDataFrame:
             if props["BoroName"] == "Queens":
                 assert props["Shape_Area"] is None
 
-    def test_to_json_bad_na(self):
+    def test_to_json_bad_na(self, nybb_df):
         # Check that a bad na argument raises error
         with pytest.raises(ValueError):
-            self.df.to_json(na="garbage")
+            nybb_df.to_json(na="garbage")
 
-    def test_to_json_dropna(self):
-        self.df.loc[self.df["BoroName"] == "Queens", "Shape_Area"] = np.nan
-        self.df.loc[self.df["BoroName"] == "Bronx", "Shape_Leng"] = np.nan
+    def test_to_json_dropna(self, nybb_df):
+        nybb_df.loc[nybb_df["BoroName"] == "Queens", "Shape_Area"] = np.nan
+        nybb_df.loc[nybb_df["BoroName"] == "Bronx", "Shape_Leng"] = np.nan
 
-        text = self.df.to_json(na="drop")
+        text = nybb_df.to_json(na="drop")
         data = json.loads(text)
         assert len(data["features"]) == 5
         for f in data["features"]:
@@ -529,11 +526,11 @@ class TestDataFrame:
             else:
                 assert len(props) == 4
 
-    def test_to_json_keepna(self):
-        self.df.loc[self.df["BoroName"] == "Queens", "Shape_Area"] = np.nan
-        self.df.loc[self.df["BoroName"] == "Bronx", "Shape_Leng"] = np.nan
+    def test_to_json_keepna(self, nybb_df):
+        nybb_df.loc[nybb_df["BoroName"] == "Queens", "Shape_Area"] = np.nan
+        nybb_df.loc[nybb_df["BoroName"] == "Bronx", "Shape_Leng"] = np.nan
 
-        text = self.df.to_json(na="keep")
+        text = nybb_df.to_json(na="keep")
         data = json.loads(text)
         assert len(data["features"]) == 5
         for f in data["features"]:
@@ -548,15 +545,15 @@ class TestDataFrame:
                 assert np.isnan(props["Shape_Leng"])
                 assert "Shape_Area" in props
 
-    def test_to_json_drop_id(self):
-        text = self.df.to_json(drop_id=True)
+    def test_to_json_drop_id(self, nybb_df):
+        text = nybb_df.to_json(drop_id=True)
         data = json.loads(text)
         assert len(data["features"]) == 5
         for f in data["features"]:
             assert "id" not in f.keys()
 
-    def test_to_json_drop_id_only_geom_column(self):
-        text = self.df[["geometry"]].to_json(drop_id=True)
+    def test_to_json_drop_id_only_geom_column(self, nybb_df):
+        text = nybb_df[["geometry"]].to_json(drop_id=True)
         data = json.loads(text)
         assert len(data["features"]) == 5
         for f in data["features"]:
@@ -571,10 +568,10 @@ class TestDataFrame:
         ):
             df.to_json()
 
-    def test_copy(self):
-        df2 = self.df.copy()
+    def test_copy(self, nybb_df):
+        df2 = nybb_df.copy()
         assert type(df2) is GeoDataFrame
-        assert self.df.crs == df2.crs
+        assert nybb_df.crs == df2.crs
 
     def test_empty_copy(self):
         # https://github.com/geopandas/geopandas/issues/2765
@@ -589,9 +586,9 @@ class TestDataFrame:
         assert type(df) is GeoDataFrame
         assert type(df.copy()) is GeoDataFrame
 
-    def test_bool_index(self):
+    def test_bool_index(self, nybb_df):
         # Find boros with 'B' in their name
-        df = self.df[self.df["BoroName"].str.contains("B")]
+        df = nybb_df[nybb_df["BoroName"].str.contains("B")]
         assert len(df) == 2
         boros = df["BoroName"].values
         assert "Brooklyn" in boros
@@ -796,19 +793,19 @@ class TestDataFrame:
         res = GeoDataFrame.from_features(gdf)
         assert_frame_equal(res, expected)
 
-    def test_dataframe_to_geodataframe(self):
+    def test_dataframe_to_geodataframe(self, nybb_df):
         df = pd.DataFrame(
-            {"A": range(len(self.df)), "location": np.array(self.df.geometry)},
-            index=self.df.index,
+            {"A": range(len(nybb_df)), "location": np.array(nybb_df.geometry)},
+            index=nybb_df.index,
         )
-        gf = df.set_geometry("location", crs=self.df.crs)
+        gf = df.set_geometry("location", crs=nybb_df.crs)
         assert isinstance(df, pd.DataFrame)
         assert isinstance(gf, GeoDataFrame)
-        assert_geoseries_equal(gf.geometry, self.df.geometry)
+        assert_geoseries_equal(gf.geometry, nybb_df.geometry)
         assert gf.geometry.name == "location"
         assert "geometry" not in gf
 
-        gf2 = df.set_geometry("location", crs=self.df.crs, drop=True)
+        gf2 = df.set_geometry("location", crs=nybb_df.crs, drop=True)
         assert isinstance(df, pd.DataFrame)
         assert isinstance(gf2, GeoDataFrame)
         assert gf2.geometry.name == "geometry"
@@ -824,20 +821,20 @@ class TestDataFrame:
         with pytest.raises(ValueError):
             df.set_geometry("location", inplace=True)
 
-    def test_dataframe_not_manipulated(self):
+    def test_dataframe_not_manipulated(self, nybb_df):
         df = pd.DataFrame(
             {
-                "A": range(len(self.df)),
-                "latitude": self.df.geometry.centroid.y,
-                "longitude": self.df.geometry.centroid.x,
+                "A": range(len(nybb_df)),
+                "latitude": nybb_df.geometry.centroid.y,
+                "longitude": nybb_df.geometry.centroid.x,
             },
-            index=self.df.index,
+            index=nybb_df.index,
         )
         df_copy = df.copy()
         gf = GeoDataFrame(
             df,
             geometry=points_from_xy(df["longitude"], df["latitude"]),
-            crs=self.df.crs,
+            crs=nybb_df.crs,
         )
         assert type(df) == pd.DataFrame
         assert "geometry" not in df
@@ -851,12 +848,12 @@ class TestDataFrame:
         gf["A"] = 3
         assert_frame_equal(df, df_copy)
 
-    def test_geodataframe_geointerface(self):
-        assert self.df.__geo_interface__["type"] == "FeatureCollection"
-        assert len(self.df.__geo_interface__["features"]) == self.df.shape[0]
+    def test_geodataframe_geointerface(self, nybb_df):
+        assert nybb_df.__geo_interface__["type"] == "FeatureCollection"
+        assert len(nybb_df.__geo_interface__["features"]) == nybb_df.shape[0]
 
-    def test_geodataframe_iterfeatures(self):
-        df = self.df.iloc[:1].copy()
+    def test_geodataframe_iterfeatures(self, nybb_df):
+        df = nybb_df.iloc[:1].copy()
         df.loc[0, "BoroName"] = np.nan
         # when containing missing values
         # null: output the missing entries as JSON null
@@ -926,38 +923,38 @@ class TestDataFrame:
         result = next(iter(df.iterfeatures(na="keep"))).get("properties")
         assert expected == result
 
-    def test_geodataframe_geojson_no_bbox(self):
-        geo = self.df.to_geo_dict(na="null", show_bbox=False)
+    def test_geodataframe_geojson_no_bbox(self, nybb_df):
+        geo = nybb_df.to_geo_dict(na="null", show_bbox=False)
         assert "bbox" not in geo.keys()
         for feature in geo["features"]:
             assert "bbox" not in feature.keys()
 
-    def test_geodataframe_geojson_bbox(self):
-        geo = self.df.to_geo_dict(na="null", show_bbox=True)
+    def test_geodataframe_geojson_bbox(self, nybb_df):
+        geo = nybb_df.to_geo_dict(na="null", show_bbox=True)
         assert "bbox" in geo.keys()
         assert len(geo["bbox"]) == 4
         assert isinstance(geo["bbox"], tuple)
         for feature in geo["features"]:
             assert "bbox" in feature.keys()
 
-    def test_pickle(self):
+    def test_pickle(self, nybb_df):
         import pickle
 
-        df2 = pickle.loads(pickle.dumps(self.df))
-        assert_geodataframe_equal(self.df, df2)
+        df2 = pickle.loads(pickle.dumps(nybb_df))
+        assert_geodataframe_equal(nybb_df, df2)
 
-    def test_pickle_method(self):
+    def test_pickle_method(self, nybb_df):
         filename = os.path.join(self.tempdir, "df.pkl")
-        self.df.to_pickle(filename)
+        nybb_df.to_pickle(filename)
         unpickled = pd.read_pickle(filename)
-        assert_frame_equal(self.df, unpickled)
-        assert self.df.crs == unpickled.crs
+        assert_frame_equal(nybb_df, unpickled)
+        assert nybb_df.crs == unpickled.crs
 
-    def test_estimate_utm_crs(self):
+    def test_estimate_utm_crs(self, nybb_df):
         pyproj = pytest.importorskip("pyproj")
 
-        assert self.df.estimate_utm_crs() == pyproj.CRS("EPSG:32618")
-        assert self.df.estimate_utm_crs("NAD83") == pyproj.CRS("EPSG:26918")
+        assert nybb_df.estimate_utm_crs() == pyproj.CRS("EPSG:32618")
+        assert nybb_df.estimate_utm_crs("NAD83") == pyproj.CRS("EPSG:26918")
 
     def test_to_wkb(self):
         wkbs0 = [
