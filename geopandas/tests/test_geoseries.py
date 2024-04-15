@@ -10,7 +10,6 @@ import pandas as pd
 import pytest
 from numpy.testing import assert_array_equal
 from pandas.testing import assert_index_equal, assert_series_equal
-from pyproj import CRS
 from shapely.geometry import (
     GeometryCollection,
     LineString,
@@ -22,9 +21,9 @@ from shapely.geometry import (
 )
 from shapely.geometry.base import BaseGeometry
 
-from geopandas import GeoDataFrame, GeoSeries, clip, datasets, read_file
+import geopandas._compat as compat
+from geopandas import GeoDataFrame, GeoSeries, clip, read_file
 from geopandas.array import GeometryArray, GeometryDtype
-import geopandas._compat as HAS_PYPROJ, compat
 from geopandas.testing import assert_geoseries_equal, geom_almost_equals
 from geopandas.tests.util import geom_equals
 
@@ -81,7 +80,7 @@ class TestSeries:
         assert a1["B"].equals(a2["B"])
         assert a1["C"] is None
 
-    @pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not available")
+    @pytest.mark.skipif(not compat.HAS_PYPROJ, reason="pyproj not available")
     def test_align_crs(self):
         a1 = self.a1
         a1.crs = "epsg:4326"
@@ -263,7 +262,7 @@ class TestSeries:
         assert np.all(self.g3.contains(self.g3.representative_point()))
         assert np.all(self.g4.contains(self.g4.representative_point()))
 
-    @pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not available")
+    @pytest.mark.skipif(not compat.HAS_PYPROJ, reason="pyproj not available")
     def test_transform(self):
         utm18n = self.landmarks.to_crs(epsg=26918)
         lonlat = utm18n.to_crs(epsg=4326)
@@ -284,14 +283,14 @@ class TestSeries:
             "EPSG:32618"
         )
 
-    @pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not available")
+    @pytest.mark.skipif(not compat.HAS_PYPROJ, reason="pyproj not available")
     def test_estimate_utm_crs__out_of_bounds(self):
         with pytest.raises(RuntimeError, match="Unable to determine UTM CRS"):
             GeoSeries(
                 [Polygon([(0, 90), (1, 90), (2, 90)])], crs="EPSG:4326"
             ).estimate_utm_crs()
 
-    @pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not available")
+    @pytest.mark.skipif(not compat.HAS_PYPROJ, reason="pyproj not available")
     def test_estimate_utm_crs__missing_crs(self):
         with pytest.raises(RuntimeError, match="crs must be set"):
             GeoSeries([Polygon([(0, 90), (1, 90), (2, 90)])]).estimate_utm_crs()
@@ -327,7 +326,7 @@ class TestSeries:
         assert self.g1.__geo_interface__["type"] == "FeatureCollection"
         assert len(self.g1.__geo_interface__["features"]) == self.g1.shape[0]
 
-    @pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not available")
+    @pytest.mark.skipif(not compat.HAS_PYPROJ, reason="pyproj not available")
     def test_proj4strings(self):
         # As string
         reprojected = self.g3.to_crs("+proj=utm +zone=30")
@@ -478,7 +477,7 @@ class TestSeries:
         expected = GeoSeries([Point(0, 2, -1), Point(3, 5, 4)])
         assert_geoseries_equal(expected, GeoSeries.from_xy(x, y, z))
 
-    @pytest.mark.skipif(HAS_PYPROJ, reason="pyproj installed")
+    @pytest.mark.skipif(compat.HAS_PYPROJ, reason="pyproj installed")
     def test_set_crs_pyproj_error(self):
         with pytest.raises(
             ImportError, match="The 'pyproj' package is required for set_crs"
@@ -516,7 +515,7 @@ def test_isna_empty_geoseries():
     assert_series_equal(result, pd.Series([], dtype="bool"))
 
 
-@pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not available")
+@pytest.mark.skipif(not compat.HAS_PYPROJ, reason="pyproj not available")
 def test_geoseries_crs():
     gs = GeoSeries()
     gs.crs = "IGNF:ETRS89UTM28"

@@ -9,7 +9,6 @@ import pandas as pd
 import shapely
 from pandas import Series
 from pandas.core.internals import SingleBlockManager
-from pyproj import CRS
 from shapely.geometry import GeometryCollection
 from shapely.geometry.base import BaseGeometry
 
