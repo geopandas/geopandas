@@ -5,6 +5,8 @@ import warnings
 import numpy as np
 from pandas import DataFrame, Series
 
+import shapely
+
 from geopandas._compat import import_optional_dependency
 from geopandas.array import from_wkb
 from geopandas import GeoDataFrame
@@ -256,7 +258,14 @@ def _geopandas_to_arrow(df, index=None, schema_version=None):
     # create geo metadata before altering incoming data frame
     geo_metadata = _create_metadata(df, schema_version=schema_version)
 
-    kwargs = {"flavor": "iso"}
+    if shapely.geos_version > (3, 10, 0):
+        kwargs = {"flavor": "iso"}
+    else:
+        if any(
+            df[col].array.has_z.any() for col in df.columns[df.dtypes == "geometry"]
+        ):
+            raise ValueError("Cannot write 3D geometries with GEOS<3.10")
+        kwargs = {}
     df = df.to_wkb(**kwargs)
 
     table = Table.from_pandas(df, preserve_index=index)
@@ -550,7 +559,7 @@ def _read_parquet(path, columns=None, storage_options=None, **kwargs):
         filesystem is preferred. Provide the instantiated fsspec filesystem using
         the ``filesystem`` keyword if you wish to use its implementation.
     **kwargs
-        Any additional kwargs passed to pyarrow.parquet.read_table().
+        Any additional kwargs passed to :func:`pyarrow.parquet.read_table`.
 
     Returns
     -------

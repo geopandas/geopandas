@@ -244,7 +244,14 @@ def geodataframe(request):
     return request.param
 
 
-@pytest.fixture(params=["GeoJSON", "ESRI Shapefile", "GPKG", "SQLite"])
+@pytest.fixture(
+    params=[
+        ("GeoJSON", ".geojson"),
+        ("ESRI Shapefile", ".shp"),
+        ("GPKG", ".gpkg"),
+        ("SQLite", ".sqlite"),
+    ]
+)
 def ogr_driver(request):
     return request.param
 
@@ -260,9 +267,10 @@ def engine(request):
 
 
 def test_to_file_roundtrip(tmpdir, geodataframe, ogr_driver, engine):
-    output_file = os.path.join(str(tmpdir), "output_file")
+    driver, ext = ogr_driver
+    output_file = os.path.join(str(tmpdir), "output_file" + ext)
     write_kwargs = {}
-    if ogr_driver == "SQLite":
+    if driver == "SQLite":
         write_kwargs["spatialite"] = True
 
         # This if statement can be removed once minimal fiona version >= 1.8.20
@@ -285,22 +293,35 @@ def test_to_file_roundtrip(tmpdir, geodataframe, ogr_driver, engine):
         ):
             write_kwargs["geometry_type"] = "Point Z"
 
-    expected_error = _expected_error_on(geodataframe, ogr_driver)
+    expected_error = _expected_error_on(geodataframe, driver)
     if expected_error:
         with pytest.raises(
             RuntimeError, match="Failed to write record|Could not add feature to layer"
         ):
             geodataframe.to_file(
-                output_file, driver=ogr_driver, engine=engine, **write_kwargs
+                output_file, driver=driver, engine=engine, **write_kwargs
             )
     else:
-        geodataframe.to_file(
-            output_file, driver=ogr_driver, engine=engine, **write_kwargs
-        )
+        if driver == "SQLite" and engine == "pyogrio":
+            try:
+                geodataframe.to_file(
+                    output_file, driver=driver, engine=engine, **write_kwargs
+                )
+            except ValueError as e:
+                if "unrecognized option 'SPATIALITE'" in str(e):
+                    pytest.xfail(
+                        "pyogrio wheels from PyPI do not come with SpatiaLite support. "
+                        f"Error: {e}"
+                    )
+                raise
+        else:
+            geodataframe.to_file(
+                output_file, driver=driver, engine=engine, **write_kwargs
+            )
 
         reloaded = geopandas.read_file(output_file, engine=engine)
 
-        if ogr_driver == "GeoJSON" and engine == "pyogrio":
+        if driver == "GeoJSON" and engine == "pyogrio":
             # For GeoJSON files, the int64 column comes back as int32
             reloaded["a"] = reloaded["a"].astype("int64")
 

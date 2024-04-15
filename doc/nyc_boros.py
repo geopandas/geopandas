@@ -56,7 +56,7 @@ R = 2000  # radius of buffer in feet
 xc = (xmax - xmin) * np.random.random(N) + xmin
 yc = (ymax - ymin) * np.random.random(N) + ymin
 pts = GeoSeries([Point(x, y) for x, y in zip(xc, yc)])
-mp = pts.buffer(R).unary_union
+mp = pts.buffer(R).union_all()
 boros_with_holes = boros.geometry - mp
 boros_with_holes.plot()
 plt.xticks(rotation=90)

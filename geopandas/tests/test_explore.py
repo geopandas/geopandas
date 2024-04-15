@@ -2,7 +2,10 @@ import geopandas as gpd
 import numpy as np
 import pandas as pd
 import pytest
+import shapely
 from packaging.version import Version
+
+from geopandas._compat import HAS_PYPROJ
 
 folium = pytest.importorskip("folium")
 branca = pytest.importorskip("branca")
@@ -18,18 +21,27 @@ BRANCA_05 = Version(branca.__version__) > Version("0.4.2")
 FOLIUM_G_014 = Version(folium.__version__) > Version("0.14.0")
 
 
-class TestExplore:
-    def setup_method(self):
-        self.nybb = gpd.read_file(gpd.datasets.get_path("nybb"))
-        self.world = gpd.read_file(gpd.datasets.get_path("naturalearth_lowres"))
-        self.cities = gpd.read_file(gpd.datasets.get_path("naturalearth_cities"))
-        self.chicago = gpd.read_file(geodatasets.get_path("geoda.chicago_commpop"))
-        self.world["range"] = range(len(self.world))
-        self.missing = self.world.copy()
-        np.random.seed(42)
-        self.missing.loc[np.random.choice(self.missing.index, 40), "continent"] = np.nan
-        self.missing.loc[np.random.choice(self.missing.index, 40), "pop_est"] = np.nan
+@pytest.fixture(scope="class")
+def _setup_class_test_explore(
+    nybb_filename, naturalearth_lowres, naturalearth_cities, request
+):
+    request.cls.nybb = gpd.read_file(nybb_filename)
+    request.cls.world = gpd.read_file(naturalearth_lowres)
+    request.cls.cities = gpd.read_file(naturalearth_cities)
+    request.cls.chicago = gpd.read_file(geodatasets.get_path("geoda.chicago_commpop"))
+    request.cls.world["range"] = range(len(request.cls.world))
+    request.cls.missing = request.cls.world.copy()
+    np.random.seed(42)
+    request.cls.missing.loc[
+        np.random.choice(request.cls.missing.index, 40), "continent"
+    ] = np.nan
+    request.cls.missing.loc[
+        np.random.choice(request.cls.missing.index, 40), "pop_est"
+    ] = np.nan
 
+
+@pytest.mark.usefixtures("_setup_class_test_explore")
+class TestExplore:
     def _fetch_map_string(self, m):
         out = m._parent.render()
         out_str = "".join(out.split())
@@ -46,6 +58,7 @@ class TestExplore:
         """Make sure default choropleth pass"""
         self.world.explore(column="pop_est")
 
+    @pytest.mark.skipif(not HAS_PYPROJ, reason="requires pyproj")
     def test_map_settings_default(self):
         """Check default map settings"""
         m = self.world.explore()
@@ -64,6 +77,7 @@ class TestExplore:
         assert m.global_switches.disable_3d is False
         assert "openstreetmap" in m.to_dict()["children"].keys()
 
+    @pytest.mark.skipif(not HAS_PYPROJ, reason="requires pyproj")
     def test_map_settings_custom(self):
         """Check custom map settings"""
         m = self.nybb.explore(
@@ -351,12 +365,12 @@ class TestExplore:
         m = self.world.explore(
             style_kwds={
                 "style_function": lambda x: {
-                    "fillColor": "red"
-                    if x["properties"]["gdp_md_est"] < 10**6
-                    else "green",
-                    "color": "black"
-                    if x["properties"]["gdp_md_est"] < 10**6
-                    else "white",
+                    "fillColor": (
+                        "red" if x["properties"]["gdp_md_est"] < 10**6 else "green"
+                    ),
+                    "color": (
+                        "black" if x["properties"]["gdp_md_est"] < 10**6 else "white"
+                    ),
                 }
             }
         )
@@ -683,6 +697,7 @@ class TestExplore:
             == "tickValues([140.0,'','','',559086084.0,'','','',1118172028.0,'','',''])"
         )
 
+    @pytest.mark.skipif(not HAS_PYPROJ, reason="requires pyproj")
     def test_xyzservices_providers(self):
         xyzservices = pytest.importorskip("xyzservices")
 
@@ -699,6 +714,7 @@ class TestExplore:
         )
         assert '"maxNativeZoom":20,"maxZoom":20,"minZoom":0' in out_str
 
+    @pytest.mark.skipif(not HAS_PYPROJ, reason="requires pyproj")
     def test_xyzservices_query_name(self):
         pytest.importorskip("xyzservices")
 
@@ -715,6 +731,7 @@ class TestExplore:
         )
         assert '"maxNativeZoom":20,"maxZoom":20,"minZoom":0' in out_str
 
+    @pytest.mark.skipif(not HAS_PYPROJ, reason="requires pyproj")
     def test_xyzservices_providers_min_zoom_override(self):
         xyzservices = pytest.importorskip("xyzservices")
 
@@ -725,6 +742,7 @@ class TestExplore:
 
         assert '"maxNativeZoom":20,"maxZoom":20,"minZoom":3' in out_str
 
+    @pytest.mark.skipif(not HAS_PYPROJ, reason="requires pyproj")
     def test_xyzservices_providers_max_zoom_override(self):
         xyzservices = pytest.importorskip("xyzservices")
 
@@ -735,6 +753,7 @@ class TestExplore:
 
         assert '"maxNativeZoom":12,"maxZoom":12,"minZoom":0' in out_str
 
+    @pytest.mark.skipif(not HAS_PYPROJ, reason="requires pyproj")
     def test_xyzservices_providers_both_zooms_override(self):
         xyzservices = pytest.importorskip("xyzservices")
 
@@ -940,3 +959,17 @@ class TestExplore:
                     "zoom_control": False,
                 }
             )
+
+    def test_none_geometry(self):
+        # None and empty geoms are dropped prior plotting
+        df = self.nybb.copy()
+        df.loc[0, df.geometry.name] = None
+        m = df.explore()
+        self._fetch_map_string(m)
+
+    def test_empty_geometry(self):
+        # None and empty geoms are dropped prior plotting
+        df = self.nybb.copy()
+        df.loc[0, df.geometry.name] = shapely.Point()
+        m = df.explore()
+        self._fetch_map_string(m)

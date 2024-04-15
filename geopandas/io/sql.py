@@ -78,10 +78,6 @@ def _df_to_geodf(df, geom_col="geom", crs=None):
         load_geom_bytes = shapely.wkb.loads
         """Load from Python 3 binary."""
 
-        def load_geom_buffer(x):
-            """Load from Python 2 binary."""
-            return shapely.wkb.loads(str(x))
-
         def load_geom_text(x):
             """Load from binary encoded as text."""
             return shapely.wkb.loads(str(x), hex=True)
@@ -185,19 +181,6 @@ def _read_postgis(
             chunksize=chunksize,
         )
         return (_df_to_geodf(df, geom_col=geom_col, crs=crs) for df in df_generator)
-
-
-def read_postgis(*args, **kwargs):
-    import warnings
-
-    warnings.warn(
-        "geopandas.io.sql.read_postgis() is intended for internal "
-        "use only, and will be deprecated. Use geopandas.read_postgis() instead.",
-        FutureWarning,
-        stacklevel=2,
-    )
-
-    return _read_postgis(*args, **kwargs)
 
 
 def _get_geometry_type(gdf):
@@ -321,11 +304,16 @@ def _psql_insert_copy(tbl, conn, keys, data_iter):
     columns = ", ".join('"{}"'.format(k) for k in keys)
 
     dbapi_conn = conn.connection
+    sql = 'COPY "{}"."{}" ({}) FROM STDIN WITH CSV'.format(
+        tbl.table.schema, tbl.table.name, columns
+    )
     with dbapi_conn.cursor() as cur:
-        sql = 'COPY "{}"."{}" ({}) FROM STDIN WITH CSV'.format(
-            tbl.table.schema, tbl.table.name, columns
-        )
-        cur.copy_expert(sql=sql, file=s_buf)
+        # Use psycopg method if it's available
+        if hasattr(cur, "copy") and callable(cur.copy):
+            with cur.copy(sql) as copy:
+                copy.write(s_buf.read())
+        else:  # otherwise use psycopg2 method
+            cur.copy_expert(sql, s_buf)
 
 
 def _write_postgis(

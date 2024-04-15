@@ -10,15 +10,13 @@ from pandas.core.accessor import CachedAccessor
 from shapely.geometry import mapping, shape
 from shapely.geometry.base import BaseGeometry
 
-from pyproj import CRS
-
 from geopandas.array import GeometryArray, GeometryDtype, from_shapely, to_wkb, to_wkt
 from geopandas.base import GeoPandasBase, is_geometry_type
 from geopandas.geoseries import GeoSeries
 import geopandas.io
 from geopandas.explore import _explore
-from . import _compat as compat
 from ._decorator import doc
+from ._compat import HAS_PYPROJ
 
 
 def _geodataframe_constructor_with_fallback(*args, **kwargs):
@@ -93,9 +91,9 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
     >>> d = {'col1': ['name1', 'name2'], 'geometry': [Point(1, 2), Point(2, 1)]}
     >>> gdf = geopandas.GeoDataFrame(d, crs="EPSG:4326")
     >>> gdf
-        col1                 geometry
-    0  name1  POINT (1.00000 2.00000)
-    1  name2  POINT (2.00000 1.00000)
+        col1     geometry
+    0  name1  POINT (1 2)
+    1  name2  POINT (2 1)
 
     Notice that the inferred dtype of 'geometry' columns is geometry.
 
@@ -112,9 +110,9 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
     >>> gs = geopandas.GeoSeries.from_wkt(df['wkt'])
     >>> gdf = geopandas.GeoDataFrame(df, geometry=gs, crs="EPSG:4326")
     >>> gdf
-        col1          wkt                 geometry
-    0  name1  POINT (1 2)  POINT (1.00000 2.00000)
-    1  name2  POINT (2 1)  POINT (2.00000 1.00000)
+        col1          wkt     geometry
+    0  name1  POINT (1 2)  POINT (1 2)
+    1  name2  POINT (2 1)  POINT (2 1)
 
     See also
     --------
@@ -245,7 +243,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         fget=_get_geometry, fset=_set_geometry, doc="Geometry data for GeoDataFrame"
     )
 
-    def set_geometry(self, col, drop=False, inplace=False, crs=None):
+    def set_geometry(self, col, drop=None, inplace=False, crs=None):
         """
         Set the GeoDataFrame geometry using either an existing column or
         the specified input. By default yields a new object.
@@ -254,9 +252,20 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         Parameters
         ----------
-        col : column label or array
+        col : column label or array-like
+            An existing column name or values to set as the new geometry column.
+            If values (array-like, (Geo)Series) are passed, then if they are named
+            (Series) the new geometry column will have the corresponding name,
+            otherwise the existing geometry column will be replaced. If there is
+            no existing geometry column, the new geometry column will use the
+            default name "geometry".
         drop : boolean, default False
-            Delete column to be used as the new geometry
+            When specifying a named Series or an existing column name for `col`,
+            controls if the previous geometry column should be dropped from the
+            result. The default of False keeps both the old and new geometry column.
+
+            .. deprecated:: 1.0.0
+
         inplace : boolean, default False
             Modify the GeoDataFrame in place (do not create a new object)
         crs : pyproj.CRS, optional
@@ -272,25 +281,25 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         >>> d = {'col1': ['name1', 'name2'], 'geometry': [Point(1, 2), Point(2, 1)]}
         >>> gdf = geopandas.GeoDataFrame(d, crs="EPSG:4326")
         >>> gdf
-            col1                 geometry
-        0  name1  POINT (1.00000 2.00000)
-        1  name2  POINT (2.00000 1.00000)
+            col1     geometry
+        0  name1  POINT (1 2)
+        1  name2  POINT (2 1)
 
         Passing an array:
 
         >>> df1 = gdf.set_geometry([Point(0,0), Point(1,1)])
         >>> df1
-            col1                 geometry
-        0  name1  POINT (0.00000 0.00000)
-        1  name2  POINT (1.00000 1.00000)
+            col1     geometry
+        0  name1  POINT (0 0)
+        1  name2  POINT (1 1)
 
         Using existing column:
 
         >>> gdf["buffered"] = gdf.buffer(2)
         >>> df2 = gdf.set_geometry("buffered")
         >>> df2.geometry
-        0    POLYGON ((3.00000 2.00000, 2.99037 1.80397, 2....
-        1    POLYGON ((4.00000 1.00000, 3.99037 0.80397, 3....
+        0    POLYGON ((3 2, 2.99037 1.80397, 2.96157 1.6098...
+        1    POLYGON ((4 1, 3.99037 0.80397, 3.96157 0.6098...
         Name: buffered, dtype: geometry
 
         Returns
@@ -307,45 +316,71 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         else:
             frame = self.copy()
 
-        to_remove = None
         geo_column_name = self._geometry_column_name
+
         if geo_column_name is None:
             geo_column_name = "geometry"
         if isinstance(col, (Series, list, np.ndarray, GeometryArray)):
+            if drop:
+                msg = (
+                    "The `drop` keyword argument is deprecated and has no effect when "
+                    "`col` is an array-like value. You should stop passing `drop` to "
+                    "`set_geometry` when this is the case."
+                )
+                warnings.warn(msg, category=FutureWarning, stacklevel=2)
+            if isinstance(col, Series) and col.name is not None:
+                geo_column_name = col.name
+
             level = col
         elif hasattr(col, "ndim") and col.ndim > 1:
             raise ValueError("Must pass array with one dimension only.")
-        else:
+        else:  # should be a colname
             try:
                 level = frame[col]
             except KeyError:
                 raise ValueError("Unknown column %s" % col)
-            except Exception:
-                raise
             if isinstance(level, DataFrame):
                 raise ValueError(
                     "GeoDataFrame does not support setting the geometry column where "
                     "the column name is shared by multiple columns."
                 )
 
-            if drop:
-                to_remove = col
-            else:
-                geo_column_name = col
+            given_colname_drop_msg = (
+                "The `drop` keyword argument is deprecated and in future the only "
+                "supported behaviour will match drop=False. To silence this "
+                "warning and adopt the future behaviour, stop providing "
+                "`drop` as a keyword to `set_geometry`. To replicate the "
+                "`drop=True` behaviour you should update "
+                "your code to\n`geo_col_name = gdf.active_geometry_name;"
+                " gdf.set_geometry(new_geo_col).drop("
+                "columns=geo_col_name).rename_geometry(geo_col_name)`."
+            )
 
-        if to_remove:
-            del frame[to_remove]
+            if drop is False:  # specifically False, not falsy i.e. None
+                # User supplied False explicitly, but arg is deprecated
+                warnings.warn(
+                    given_colname_drop_msg,
+                    category=FutureWarning,
+                    stacklevel=2,
+                )
+            if drop:
+                del frame[col]
+                warnings.warn(
+                    given_colname_drop_msg,
+                    category=FutureWarning,
+                    stacklevel=2,
+                )
+            else:
+                # if not dropping, set the active geometry name to the given col name
+                geo_column_name = col
 
         if not crs:
             crs = getattr(level, "crs", None)
 
-        if isinstance(level, (GeoSeries, GeometryArray)) and level.crs != crs:
-            # Avoids caching issues/crs sharing issues
-            level = level.copy()
-            level.crs = crs
-
         # Check that we are using a listlike of geometries
         level = _ensure_geometry(level, crs=crs)
+        # ensure_geometry only sets crs on level if it has crs==None
+        level.crs = crs
         # update _geometry_column_name prior to assignment
         # to avoid default is None warning
         frame._geometry_column_name = geo_column_name
@@ -397,6 +432,26 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 )
             self.rename(columns={geometry_col: col}, inplace=inplace)
             self.set_geometry(col, inplace=inplace)
+
+    @property
+    def active_geometry_name(self):
+        """Return the name of the active geometry column
+
+        Returns a string name if a GeoDataFrame has an active geometry column set.
+        Otherwise returns None. You can also access the active geometry column using the
+        ``.geometry`` property. You can set a GeoSeries to be an active geometry
+        using the :meth:`~GeoDataFrame.set_geometry` method.
+
+        Returns
+        -------
+        str
+            name of an active geometry column or None
+
+        See also
+        --------
+        GeoDataFrame.set_geometry : set the active geometry
+        """
+        return self._geometry_column_name
 
     @property
     def crs(self):
@@ -479,7 +534,15 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 crs = state.pop("crs", None)
             else:
                 crs = state.pop("_crs", None)
-            crs = CRS.from_user_input(crs) if crs is not None else crs
+            if crs is not None and not HAS_PYPROJ:
+                raise ImportError(
+                    "Unpickling a GeoDataFrame with CRS requires the 'pyproj' package, "
+                    "but it is not installed or does not import correctly. "
+                )
+            elif crs is not None:
+                from pyproj import CRS
+
+                crs = CRS.from_user_input(crs)
 
         super().__setstate__(state)
 
@@ -526,17 +589,17 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         It is recommended to use :func:`geopandas.read_file` instead.
 
         Can load a ``GeoDataFrame`` from a file in any format recognized by
-        `fiona`. See http://fiona.readthedocs.io/en/latest/manual.html for details.
+        `pyogrio`. See http://pyogrio.readthedocs.io/ for details.
 
         Parameters
         ----------
         filename : str
             File path or file handle to read from. Depending on which kwargs
             are included, the content of filename may vary. See
-            http://fiona.readthedocs.io/en/latest/README.html#usage for usage details.
+            :func:`pyogrio.read_dataframe` for usage details.
         kwargs : key-word arguments
-            These arguments are passed to fiona.open, and can be used to
-            access multi-layer data, data stored within archives (zip files),
+            These arguments are passed to :func:`pyogrio.read_dataframe`, and can be
+            used to access multi-layer data, data stored within archives (zip files),
             etc.
 
         Examples
@@ -625,9 +688,9 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         ... }
         >>> df = geopandas.GeoDataFrame.from_features(feature_coll)
         >>> df
-                          geometry   col1
-        0  POINT (1.00000 2.00000)  name1
-        1  POINT (2.00000 1.00000)  name2
+              geometry   col1
+        0  POINT (1 2)  name1
+        1  POINT (2 1)  name2
 
         """
         # Handle feature collections
@@ -788,9 +851,9 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         >>> d = {'col1': ['name1', 'name2'], 'geometry': [Point(1, 2), Point(2, 1)]}
         >>> gdf = geopandas.GeoDataFrame(d, crs="EPSG:3857")
         >>> gdf
-            col1             geometry
-        0  name1  POINT (1.000 2.000)
-        1  name2  POINT (2.000 1.000)
+            col1     geometry
+        0  name1  POINT (1 2)
+        1  name2  POINT (2 1)
 
         >>> gdf.to_json()
         '{"type": "FeatureCollection", "features": [{"id": "0", "type": "Feature", \
@@ -818,7 +881,7 @@ es": {"name": "urn:ogc:def:crs:EPSG::3857"}}}'
         else:
             df = self
 
-        geo = df._to_geo(na=na, show_bbox=show_bbox, drop_id=drop_id)
+        geo = df.to_geo_dict(na=na, show_bbox=show_bbox, drop_id=drop_id)
 
         # if the geometry is not in WGS84, include CRS in the JSON
         if df.crs is not None and not df.crs.equals("epsg:4326"):
@@ -846,7 +909,7 @@ es": {"name": "urn:ogc:def:crs:EPSG::3857"}}}'
         represents the ``GeoDataFrame`` as a GeoJSON-like
         ``FeatureCollection``.
 
-        This differs from `_to_geo()` only in that it is a property with
+        This differs from :meth:`to_geo_dict` only in that it is a property with
         default args instead of a method.
 
         CRS of the dataframe is not passed on to the output, unlike
@@ -859,9 +922,9 @@ es": {"name": "urn:ogc:def:crs:EPSG::3857"}}}'
         >>> d = {'col1': ['name1', 'name2'], 'geometry': [Point(1, 2), Point(2, 1)]}
         >>> gdf = geopandas.GeoDataFrame(d, crs="EPSG:4326")
         >>> gdf
-            col1                 geometry
-        0  name1  POINT (1.00000 2.00000)
-        1  name2  POINT (2.00000 1.00000)
+            col1     geometry
+        0  name1  POINT (1 2)
+        1  name2  POINT (2 1)
 
         >>> gdf.__geo_interface__
         {'type': 'FeatureCollection', 'features': [{'id': '0', 'type': 'Feature', \
@@ -870,7 +933,7 @@ es": {"name": "urn:ogc:def:crs:EPSG::3857"}}}'
 ': {'col1': 'name2'}, 'geometry': {'type': 'Point', 'coordinates': (2.0, 1.0)}, 'b\
 box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
         """
-        return self._to_geo(na="null", show_bbox=True, drop_id=False)
+        return self.to_geo_dict(na="null", show_bbox=True, drop_id=False)
 
     def iterfeatures(self, na="null", show_bbox=False, drop_id=False):
         """
@@ -902,9 +965,9 @@ individually so that features may have different properties
         >>> d = {'col1': ['name1', 'name2'], 'geometry': [Point(1, 2), Point(2, 1)]}
         >>> gdf = geopandas.GeoDataFrame(d, crs="EPSG:4326")
         >>> gdf
-            col1                 geometry
-        0  name1  POINT (1.00000 2.00000)
-        1  name2  POINT (2.00000 1.00000)
+            col1     geometry
+        0  name1  POINT (1 2)
+        1  name2  POINT (2 1)
 
         >>> feature = next(gdf.iterfeatures())
         >>> feature
@@ -916,8 +979,8 @@ individually so that features may have different properties
 
         if self._geometry_column_name not in self:
             raise AttributeError(
-                "No geometry data set (expected in"
-                " column '%s')." % self._geometry_column_name
+                "No geometry data set (expected in column '%s')."
+                % self._geometry_column_name
             )
 
         ids = np.array(self.index, copy=False)
@@ -980,18 +1043,60 @@ individually so that features may have different properties
 
                 yield feature
 
-    def _to_geo(self, **kwargs):
+    def to_geo_dict(self, na="null", show_bbox=False, drop_id=False):
         """
-        Returns a python feature collection (i.e. the geointerface)
-        representation of the GeoDataFrame.
+        Returns a python feature collection representation of the GeoDataFrame
+        as a dictionary with a list of features based on the ``__geo_interface__``
+        GeoJSON-like specification.
+
+        Parameters
+        ----------
+        na : str, optional
+            Options are {'null', 'drop', 'keep'}, default 'null'.
+            Indicates how to output missing (NaN) values in the GeoDataFrame
+
+            - null: output the missing entries as JSON null
+            - drop: remove the property from the feature. This applies to each feature \
+individually so that features may have different properties
+            - keep: output the missing entries as NaN
+
+        show_bbox : bool, optional
+            Include bbox (bounds) in the geojson. Default False.
+        drop_id : bool, default: False
+            Whether to retain the index of the GeoDataFrame as the id property
+            in the generated dictionary. Default is False, but may want True
+            if the index is just arbitrary row numbers.
+
+        Examples
+        --------
+
+        >>> from shapely.geometry import Point
+        >>> d = {'col1': ['name1', 'name2'], 'geometry': [Point(1, 2), Point(2, 1)]}
+        >>> gdf = geopandas.GeoDataFrame(d)
+        >>> gdf
+            col1     geometry
+        0  name1  POINT (1 2)
+        1  name2  POINT (2 1)
+
+        >>> gdf.to_geo_dict()
+        {'type': 'FeatureCollection', 'features': [{'id': '0', 'type': 'Feature', '\
+properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.0, \
+2.0)}}, {'id': '1', 'type': 'Feature', 'properties': {'col1': 'name2'}, 'geometry':\
+ {'type': 'Point', 'coordinates': (2.0, 1.0)}}]}
+
+        See also
+        --------
+        GeoDataFrame.to_json : return a GeoDataFrame as a GeoJSON string
 
         """
         geo = {
             "type": "FeatureCollection",
-            "features": list(self.iterfeatures(**kwargs)),
+            "features": list(
+                self.iterfeatures(na=na, show_bbox=show_bbox, drop_id=drop_id)
+            ),
         }
 
-        if kwargs.get("show_bbox", False):
+        if show_bbox:
             geo["bbox"] = tuple(self.total_bounds)
 
         return geo
@@ -1055,15 +1160,6 @@ individually so that features may have different properties
 
         Requires 'pyarrow'.
 
-        WARNING: this is an early implementation of Parquet file support and
-        associated metadata, the specification for which continues to evolve.
-        This is tracking version 0.4.0 of the GeoParquet specification at:
-        https://github.com/opengeospatial/geoparquet
-
-        This metadata specification does not yet make stability promises.  As such,
-        we do not yet recommend using this in a production setting unless you are
-        able to rewrite your Parquet files.
-
         .. versionadded:: 0.8
 
         Parameters
@@ -1077,7 +1173,7 @@ individually so that features may have different properties
             output except `RangeIndex` which is stored as metadata only.
         compression : {'snappy', 'gzip', 'brotli', None}, default 'snappy'
             Name of the compression to use. Use ``None`` for no compression.
-        schema_version : {'0.1.0', '0.4.0', None}
+        schema_version : {'0.1.0', '0.4.0', '1.0.0', None}
             GeoParquet specification version; if not provided will default to
             latest supported version.
         kwargs
@@ -1100,7 +1196,7 @@ individually so that features may have different properties
         engine = kwargs.pop("engine", "auto")
         if engine not in ("auto", "pyarrow"):
             raise ValueError(
-                f"GeoPandas only supports using pyarrow as the engine for "
+                "GeoPandas only supports using pyarrow as the engine for "
                 f"to_parquet: {engine!r} passed instead."
             )
 
@@ -1124,15 +1220,6 @@ individually so that features may have different properties
 
         Requires 'pyarrow' >= 0.17.
 
-        WARNING: this is an early implementation of Parquet file support and
-        associated metadata, the specification for which continues to evolve.
-        This is tracking version 0.4.0 of the GeoParquet specification at:
-        https://github.com/opengeospatial/geoparquet
-
-        This metadata specification does not yet make stability promises.  As such,
-        we do not yet recommend using this in a production setting unless you are
-        able to rewrite your Feather files.
-
         .. versionadded:: 0.8
 
         Parameters
@@ -1147,7 +1234,7 @@ individually so that features may have different properties
         compression : {'zstd', 'lz4', 'uncompressed'}, optional
             Name of the compression to use. Use ``"uncompressed"`` for no
             compression. By default uses LZ4 if available, otherwise uncompressed.
-        schema_version : {'0.1.0', '0.4.0', None}
+        schema_version : {'0.1.0', '0.4.0', '1.0.0', None}
             GeoParquet specification version; if not provided will default to
             latest supported version.
         kwargs
@@ -1180,11 +1267,11 @@ individually so that features may have different properties
         """Write the ``GeoDataFrame`` to a file.
 
         By default, an ESRI shapefile is written, but any OGR data source
-        supported by Fiona can be written. A dictionary of supported OGR
+        supported by Pyogrio or Fiona can be written. A dictionary of supported OGR
         providers is available via:
 
-        >>> import fiona
-        >>> fiona.supported_drivers  # doctest: +SKIP
+        >>> import pyogrio
+        >>> pyogrio.list_drivers()  # doctest: +SKIP
 
         Parameters
         ----------
@@ -1219,18 +1306,19 @@ individually so that features may have different properties
             will determine the crs based on crs df attribute.
             The value can be anything accepted
             by :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
-            such as an authority string (eg "EPSG:4326") or a WKT string.
-        engine : str, "fiona" or "pyogrio"
+            such as an authority string (eg "EPSG:4326") or a WKT string. The keyword
+            is not supported for the "pyogrio" engine.
+        engine : str, "pyogrio" or "fiona"
             The underlying library that is used to write the file. Currently, the
-            supported options are "fiona" and "pyogrio". Defaults to "fiona" if
-            installed, otherwise tries "pyogrio".
+            supported options are "pyogrio" and "fiona". Defaults to "pyogrio" if
+            installed, otherwise tries "fiona".
         **kwargs :
             Keyword args to be passed to the engine, and can be used to write
             to multi-layer data, store data within archives (zip files), etc.
-            In case of the "fiona" engine, the keyword arguments are passed to
-            fiona.open`. For more information on possible keywords, type:
-            ``import fiona; help(fiona.open)``. In case of the "pyogrio" engine,
-            the keyword arguments are passed to `pyogrio.write_dataframe`.
+            In case of the "pyogrio" engine, the keyword arguments are passed to
+            `pyogrio.write_dataframe`. In case of the "fiona" engine, the keyword
+            arguments are passed to fiona.open`. For more information on possible
+            keywords, type: ``import pyogrio; help(pyogrio.write_dataframe)``.
 
         Notes
         -----
@@ -1302,9 +1390,9 @@ individually so that features may have different properties
         >>> d = {'col1': ['name1', 'name2'], 'geometry': [Point(1, 2), Point(2, 1)]}
         >>> gdf = geopandas.GeoDataFrame(d)
         >>> gdf
-            col1                 geometry
-        0  name1  POINT (1.00000 2.00000)
-        1  name2  POINT (2.00000 1.00000)
+            col1     geometry
+        0  name1  POINT (1 2)
+        1  name2  POINT (2 1)
 
         Setting CRS to a GeoDataFrame without one:
 
@@ -1384,9 +1472,9 @@ individually so that features may have different properties
         >>> d = {'col1': ['name1', 'name2'], 'geometry': [Point(1, 2), Point(2, 1)]}
         >>> gdf = geopandas.GeoDataFrame(d, crs=4326)
         >>> gdf
-            col1                 geometry
-        0  name1  POINT (1.00000 2.00000)
-        1  name2  POINT (2.00000 1.00000)
+            col1     geometry
+        0  name1  POINT (1 2)
+        1  name2  POINT (2 1)
         >>> gdf.crs  # doctest: +SKIP
         <Geographic 2D CRS: EPSG:4326>
         Name: WGS 84
@@ -1565,13 +1653,6 @@ individually so that features may have different properties
         result = super().apply(
             func, axis=axis, raw=raw, result_type=result_type, args=args, **kwargs
         )
-        # pandas <1.4 re-attach last geometry col if lost
-        if (
-            not compat.PANDAS_GE_14
-            and isinstance(result, GeoDataFrame)
-            and result._geometry_column_name is None
-        ):
-            result._geometry_column_name = self._geometry_column_name
         # Reconstruct gdf if it was lost by apply
         if (
             isinstance(result, DataFrame)
@@ -1603,6 +1684,15 @@ individually so that features may have different properties
     def _constructor(self):
         return _geodataframe_constructor_with_fallback
 
+    def _constructor_from_mgr(self, mgr, axes):
+        # replicate _geodataframe_constructor_with_fallback behaviour
+        # unless safe to skip
+        if not any(isinstance(block.dtype, GeometryDtype) for block in mgr.blocks):
+            return _geodataframe_constructor_with_fallback(
+                pd.DataFrame._from_mgr(mgr, axes)
+            )
+        return GeoDataFrame._from_mgr(mgr, axes)
+
     @property
     def _constructor_sliced(self):
         def _geodataframe_constructor_sliced(*args, **kwargs):
@@ -1629,6 +1719,13 @@ individually so that features may have different properties
 
         return _geodataframe_constructor_sliced
 
+    def _constructor_sliced_from_mgr(self, mgr, axes):
+        is_row_proxy = mgr.index.is_(self.columns)
+
+        if isinstance(mgr.blocks[0].dtype, GeometryDtype) and not is_row_proxy:
+            return GeoSeries._from_mgr(mgr, axes)
+        return Series._from_mgr(mgr, axes)
+
     def __finalize__(self, other, method=None, **kwargs):
         """propagate metadata from other to self"""
         self = super().__finalize__(other, method=method, **kwargs)
@@ -1646,8 +1743,8 @@ individually so that features may have different properties
                 raise ValueError(
                     "Concat operation has resulted in multiple columns using "
                     f"the geometry column name '{self._geometry_column_name}'.\n"
-                    f"Please ensure this column from the first DataFrame is not "
-                    f"repeated."
+                    "Please ensure this column from the first DataFrame is not "
+                    "repeated."
                 )
         elif method == "unstack":
             # unstack adds multiindex columns and reshapes data.
@@ -1669,7 +1766,7 @@ individually so that features may have different properties
     ):
         """
         Dissolve geometries within `groupby` into single observation.
-        This is accomplished by applying the `unary_union` method
+        This is accomplished by applying the `union_all` method
         to all geometries within a groupself.
 
         Observations associated with each `groupby` group will be aggregated
@@ -1736,17 +1833,17 @@ individually so that features may have different properties
         ... }
         >>> gdf = geopandas.GeoDataFrame(d, crs=4326)
         >>> gdf
-            col1                 geometry
-        0  name1  POINT (1.00000 2.00000)
-        1  name2  POINT (2.00000 1.00000)
-        2  name1  POINT (0.00000 1.00000)
+            col1     geometry
+        0  name1  POINT (1 2)
+        1  name2  POINT (2 1)
+        2  name1  POINT (0 1)
 
         >>> dissolved = gdf.dissolve('col1')
         >>> dissolved  # doctest: +SKIP
-                                                    geometry
+                                geometry
         col1
-        name1  MULTIPOINT (0.00000 1.00000, 1.00000 2.00000)
-        name2                        POINT (2.00000 1.00000)
+        name1  MULTIPOINT ((0 1), (1 2))
+        name2                POINT (2 1)
 
         See also
         --------
@@ -1791,7 +1888,7 @@ individually so that features may have different properties
 
         # Process spatial component
         def merge_geometries(block):
-            merged_geom = block.unary_union
+            merged_geom = block.union_all()
             return merged_geom
 
         g = self.groupby(group_keys=False, **groupby_kwargs)[self.geometry.name].agg(
@@ -1810,7 +1907,7 @@ individually so that features may have different properties
         return aggregated
 
     # overrides the pandas native explode method to break up features geometrically
-    def explode(self, column=None, ignore_index=False, index_parts=None, **kwargs):
+    def explode(self, column=None, ignore_index=False, index_parts=False, **kwargs):
         """
         Explode multi-part geometries into multiple single geometries.
 
@@ -1827,7 +1924,7 @@ individually so that features may have different properties
         ignore_index : bool, default False
             If True, the resulting index will be labelled 0, 1, …, n - 1,
             ignoring `index_parts`.
-        index_parts : boolean, default True
+        index_parts : boolean, default False
             If True, the resulting index will be a multi-index (original
             index with an additional level indicating the multiple
             geometries: a new zero-based index for each single part geometry
@@ -1852,33 +1949,33 @@ individually so that features may have different properties
         ... }
         >>> gdf = geopandas.GeoDataFrame(d, crs=4326)
         >>> gdf
-            col1                                       geometry
-        0  name1  MULTIPOINT (1.00000 2.00000, 3.00000 4.00000)
-        1  name2  MULTIPOINT (2.00000 1.00000, 0.00000 0.00000)
+            col1               geometry
+        0  name1  MULTIPOINT ((1 2), (3 4))
+        1  name2  MULTIPOINT ((2 1), (0 0))
 
         >>> exploded = gdf.explode(index_parts=True)
         >>> exploded
-              col1                 geometry
-        0 0  name1  POINT (1.00000 2.00000)
-          1  name1  POINT (3.00000 4.00000)
-        1 0  name2  POINT (2.00000 1.00000)
-          1  name2  POINT (0.00000 0.00000)
+              col1     geometry
+        0 0  name1  POINT (1 2)
+          1  name1  POINT (3 4)
+        1 0  name2  POINT (2 1)
+          1  name2  POINT (0 0)
 
         >>> exploded = gdf.explode(index_parts=False)
         >>> exploded
-            col1                 geometry
-        0  name1  POINT (1.00000 2.00000)
-        0  name1  POINT (3.00000 4.00000)
-        1  name2  POINT (2.00000 1.00000)
-        1  name2  POINT (0.00000 0.00000)
+            col1     geometry
+        0  name1  POINT (1 2)
+        0  name1  POINT (3 4)
+        1  name2  POINT (2 1)
+        1  name2  POINT (0 0)
 
         >>> exploded = gdf.explode(ignore_index=True)
         >>> exploded
-            col1                 geometry
-        0  name1  POINT (1.00000 2.00000)
-        1  name1  POINT (3.00000 4.00000)
-        2  name2  POINT (2.00000 1.00000)
-        3  name2  POINT (0.00000 0.00000)
+            col1     geometry
+        0  name1  POINT (1 2)
+        1  name1  POINT (3 4)
+        2  name2  POINT (2 1)
+        3  name2  POINT (0 0)
 
         See also
         --------
@@ -1892,18 +1989,6 @@ individually so that features may have different properties
         # If the specified column is not a geometry dtype use pandas explode
         if not isinstance(self[column].dtype, GeometryDtype):
             return super().explode(column, ignore_index=ignore_index, **kwargs)
-
-        if index_parts is None:
-            if not ignore_index:
-                warnings.warn(
-                    "Currently, index_parts defaults to True, but in the future, "
-                    "it will default to False to be consistent with Pandas. "
-                    "Use `index_parts=True` to keep the current behavior and "
-                    "True/False to silence the warning.",
-                    FutureWarning,
-                    stacklevel=2,
-                )
-            index_parts = True
 
         exploded_geom = self.geometry.reset_index(drop=True).explode(index_parts=True)
 
@@ -1966,7 +2051,7 @@ individually so that features may have different properties
         Upload GeoDataFrame into PostGIS database.
 
         This method requires SQLAlchemy and GeoAlchemy2, and a PostgreSQL
-        Python driver (e.g. psycopg2) to be installed.
+        Python driver (psycopg or psycopg2) to be installed.
 
         It is also possible to use :meth:`~GeoDataFrame.to_file` to write to a database.
         Especially for file geodatabases like GeoPackage or SpatiaLite this can be
@@ -2018,47 +2103,6 @@ individually so that features may have different properties
         geopandas.io.sql._write_postgis(
             self, name, con, schema, if_exists, index, index_label, chunksize, dtype
         )
-
-        #
-        # Implement standard operators for GeoSeries
-        #
-
-    def __xor__(self, other):
-        """Implement ^ operator as for builtin set type"""
-        warnings.warn(
-            "'^' operator will be deprecated. Use the 'symmetric_difference' "
-            "method instead.",
-            FutureWarning,
-            stacklevel=2,
-        )
-        return self.geometry.symmetric_difference(other)
-
-    def __or__(self, other):
-        """Implement | operator as for builtin set type"""
-        warnings.warn(
-            "'|' operator will be deprecated. Use the 'union' method instead.",
-            FutureWarning,
-            stacklevel=2,
-        )
-        return self.geometry.union(other)
-
-    def __and__(self, other):
-        """Implement & operator as for builtin set type"""
-        warnings.warn(
-            "'&' operator will be deprecated. Use the 'intersection' method instead.",
-            FutureWarning,
-            stacklevel=2,
-        )
-        return self.geometry.intersection(other)
-
-    def __sub__(self, other):
-        """Implement - operator as for builtin set type"""
-        warnings.warn(
-            "'-' operator will be deprecated. Use the 'difference' method instead.",
-            FutureWarning,
-            stacklevel=2,
-        )
-        return self.geometry.difference(other)
 
     plot = CachedAccessor("plot", geopandas.plotting.GeoplotAccessor)
 
@@ -2113,22 +2157,22 @@ individually so that features may have different properties
         [5 rows x 9 columns]
 
         >>> groceries.head()  # doctest: +SKIP
-           OBJECTID     Ycoord  ...  Category                         geometry
-        0        16  41.973266  ...       NaN  MULTIPOINT (-87.65661 41.97321)
-        1        18  41.696367  ...       NaN  MULTIPOINT (-87.68136 41.69713)
-        2        22  41.868634  ...       NaN  MULTIPOINT (-87.63918 41.86847)
-        3        23  41.877590  ...       new  MULTIPOINT (-87.65495 41.87783)
-        4        27  41.737696  ...       NaN  MULTIPOINT (-87.62715 41.73623)
+           OBJECTID     Ycoord  ...  Category                           geometry
+        0        16  41.973266  ...       NaN  MULTIPOINT ((-87.65661 41.97321))
+        1        18  41.696367  ...       NaN  MULTIPOINT ((-87.68136 41.69713))
+        2        22  41.868634  ...       NaN  MULTIPOINT ((-87.63918 41.86847))
+        3        23  41.877590  ...       new  MULTIPOINT ((-87.65495 41.87783))
+        4        27  41.737696  ...       NaN  MULTIPOINT ((-87.62715 41.73623))
         [5 rows x 8 columns]
 
         >>> groceries_w_communities = groceries.sjoin(chicago)
         >>> groceries_w_communities[["OBJECTID", "community", "geometry"]].head()
-             OBJECTID    community                         geometry
-        0          16       UPTOWN  MULTIPOINT (-87.65661 41.97321)
-        87        365       UPTOWN  MULTIPOINT (-87.65465 41.96138)
-        90        373       UPTOWN  MULTIPOINT (-87.65598 41.96297)
-        140       582       UPTOWN  MULTIPOINT (-87.67417 41.96977)
-        1          18  MORGAN PARK  MULTIPOINT (-87.68136 41.69713)
+           OBJECTID       community                           geometry
+        0        16          UPTOWN  MULTIPOINT ((-87.65661 41.97321))
+        1        18     MORGAN PARK  MULTIPOINT ((-87.68136 41.69713))
+        2        22  NEAR WEST SIDE  MULTIPOINT ((-87.63918 41.86847))
+        3        23  NEAR WEST SIDE  MULTIPOINT ((-87.65495 41.87783))
+        4        27         CHATHAM  MULTIPOINT ((-87.62715 41.73623))
 
         Notes
         -----
@@ -2204,7 +2248,7 @@ individually so that features may have different properties
         ... ).to_crs(groceries.crs)
 
         >>> chicago.head()  # doctest: +SKIP
-            ComAreaID  ...                                           geometry
+           ComAreaID  ...                                           geometry
         0         35  ...  POLYGON ((-87.60914 41.84469, -87.60915 41.844...
         1         36  ...  POLYGON ((-87.59215 41.81693, -87.59231 41.816...
         2         37  ...  POLYGON ((-87.62880 41.80189, -87.62879 41.801...
@@ -2213,19 +2257,19 @@ individually so that features may have different properties
         [5 rows x 87 columns]
 
         >>> groceries.head()  # doctest: +SKIP
-            OBJECTID     Ycoord  ...  Category                         geometry
-        0        16  41.973266  ...       NaN  MULTIPOINT (-87.65661 41.97321)
-        1        18  41.696367  ...       NaN  MULTIPOINT (-87.68136 41.69713)
-        2        22  41.868634  ...       NaN  MULTIPOINT (-87.63918 41.86847)
-        3        23  41.877590  ...       new  MULTIPOINT (-87.65495 41.87783)
-        4        27  41.737696  ...       NaN  MULTIPOINT (-87.62715 41.73623)
+           OBJECTID     Ycoord  ...  Category                           geometry
+        0        16  41.973266  ...       NaN  MULTIPOINT ((-87.65661 41.97321))
+        1        18  41.696367  ...       NaN  MULTIPOINT ((-87.68136 41.69713))
+        2        22  41.868634  ...       NaN  MULTIPOINT ((-87.63918 41.86847))
+        3        23  41.877590  ...       new  MULTIPOINT ((-87.65495 41.87783))
+        4        27  41.737696  ...       NaN  MULTIPOINT ((-87.62715 41.73623))
         [5 rows x 8 columns]
 
         >>> groceries_w_communities = groceries.sjoin_nearest(chicago)
         >>> groceries_w_communities[["Chain", "community", "geometry"]].head(2)
-                     Chain community                              geometry
-        0   VIET HOA PLAZA    UPTOWN  MULTIPOINT (1168268.672 1933554.350)
-        87      JEWEL OSCO    UPTOWN  MULTIPOINT (1168837.980 1929246.962)
+                       Chain    community                                geometry
+        0     VIET HOA PLAZA       UPTOWN   MULTIPOINT ((1168268.672 1933554.35))
+        1  COUNTY FAIR FOODS  MORGAN PARK  MULTIPOINT ((1162302.618 1832900.224))
 
 
         To include the distances:
@@ -2233,10 +2277,10 @@ individually so that features may have different properties
         >>> groceries_w_communities = groceries.sjoin_nearest(chicago, \
 distance_col="distances")
         >>> groceries_w_communities[["Chain", "community", \
-"distances"]].head(2)  # doctest: +SKIP
-                     Chain community  distances
-        0   VIET HOA PLAZA    UPTOWN        0.0
-        87      JEWEL OSCO    UPTOWN        0.0
+"distances"]].head(2)
+                       Chain    community  distances
+        0     VIET HOA PLAZA       UPTOWN        0.0
+        1  COUNTY FAIR FOODS  MORGAN PARK        0.0
 
         In the following example, we get multiple groceries for Uptown because all
         results are equidistant (in this case zero because they intersect).
@@ -2246,7 +2290,7 @@ distance_col="distances")
 distance_col="distances", how="right")
         >>> uptown_results = \
 chicago_w_groceries[chicago_w_groceries["community"] == "UPTOWN"]
-        >>> uptown_results[["Chain", "community"]]  # doctest: +SKIP
+        >>> uptown_results[["Chain", "community"]]
                     Chain community
         30  VIET HOA PLAZA    UPTOWN
         30      JEWEL OSCO    UPTOWN
@@ -2355,7 +2399,7 @@ chicago_w_groceries[chicago_w_groceries["community"] == "UPTOWN"]
             geometries.
         make_valid : bool, default True
             If True, any invalid input geometries are corrected with a call to
-            `buffer(0)`, if False, a `ValueError` is raised if any input geometries
+            make_valid(), if False, a `ValueError` is raised if any input geometries
             are invalid.
 
         Returns
@@ -2375,40 +2419,40 @@ chicago_w_groceries[chicago_w_groceries["community"] == "UPTOWN"]
         >>> df2 = geopandas.GeoDataFrame({'geometry': polys2, 'df2_data':[1,2]})
 
         >>> df1.overlay(df2, how='union')
-        df1_data  df2_data                                           geometry
-        0       1.0       1.0  POLYGON ((2.00000 2.00000, 2.00000 1.00000, 1....
-        1       2.0       1.0  POLYGON ((2.00000 2.00000, 2.00000 3.00000, 3....
-        2       2.0       2.0  POLYGON ((4.00000 4.00000, 4.00000 3.00000, 3....
-        3       1.0       NaN  POLYGON ((2.00000 0.00000, 0.00000 0.00000, 0....
-        4       2.0       NaN  MULTIPOLYGON (((3.00000 4.00000, 3.00000 3.000...
-        5       NaN       1.0  MULTIPOLYGON (((2.00000 3.00000, 2.00000 2.000...
-        6       NaN       2.0  POLYGON ((3.00000 5.00000, 5.00000 5.00000, 5....
+           df1_data  df2_data                                           geometry
+        0       1.0       1.0                POLYGON ((2 2, 2 1, 1 1, 1 2, 2 2))
+        1       2.0       1.0                POLYGON ((2 2, 2 3, 3 3, 3 2, 2 2))
+        2       2.0       2.0                POLYGON ((4 4, 4 3, 3 3, 3 4, 4 4))
+        3       1.0       NaN      POLYGON ((2 0, 0 0, 0 2, 1 2, 1 1, 2 1, 2 0))
+        4       2.0       NaN  MULTIPOLYGON (((3 4, 3 3, 2 3, 2 4, 3 4)), ((4...
+        5       NaN       1.0  MULTIPOLYGON (((2 3, 2 2, 1 2, 1 3, 2 3)), ((3...
+        6       NaN       2.0      POLYGON ((3 5, 5 5, 5 3, 4 3, 4 4, 3 4, 3 5))
 
         >>> df1.overlay(df2, how='intersection')
-        df1_data  df2_data                                           geometry
-        0         1         1  POLYGON ((2.00000 2.00000, 2.00000 1.00000, 1....
-        1         2         1  POLYGON ((2.00000 2.00000, 2.00000 3.00000, 3....
-        2         2         2  POLYGON ((4.00000 4.00000, 4.00000 3.00000, 3....
+           df1_data  df2_data                             geometry
+        0         1         1  POLYGON ((2 2, 2 1, 1 1, 1 2, 2 2))
+        1         2         1  POLYGON ((2 2, 2 3, 3 3, 3 2, 2 2))
+        2         2         2  POLYGON ((4 4, 4 3, 3 3, 3 4, 4 4))
 
         >>> df1.overlay(df2, how='symmetric_difference')
-        df1_data  df2_data                                           geometry
-        0       1.0       NaN  POLYGON ((2.00000 0.00000, 0.00000 0.00000, 0....
-        1       2.0       NaN  MULTIPOLYGON (((3.00000 4.00000, 3.00000 3.000...
-        2       NaN       1.0  MULTIPOLYGON (((2.00000 3.00000, 2.00000 2.000...
-        3       NaN       2.0  POLYGON ((3.00000 5.00000, 5.00000 5.00000, 5....
+           df1_data  df2_data                                           geometry
+        0       1.0       NaN      POLYGON ((2 0, 0 0, 0 2, 1 2, 1 1, 2 1, 2 0))
+        1       2.0       NaN  MULTIPOLYGON (((3 4, 3 3, 2 3, 2 4, 3 4)), ((4...
+        2       NaN       1.0  MULTIPOLYGON (((2 3, 2 2, 1 2, 1 3, 2 3)), ((3...
+        3       NaN       2.0      POLYGON ((3 5, 5 5, 5 3, 4 3, 4 4, 3 4, 3 5))
 
         >>> df1.overlay(df2, how='difference')
-                                                geometry  df1_data
-        0  POLYGON ((2.00000 0.00000, 0.00000 0.00000, 0....         1
-        1  MULTIPOLYGON (((3.00000 4.00000, 3.00000 3.000...         2
+                                                    geometry  df1_data
+        0      POLYGON ((2 0, 0 0, 0 2, 1 2, 1 1, 2 1, 2 0))         1
+        1  MULTIPOLYGON (((3 4, 3 3, 2 3, 2 4, 3 4)), ((4...         2
 
         >>> df1.overlay(df2, how='identity')
-        df1_data  df2_data                                           geometry
-        0       1.0       1.0  POLYGON ((2.00000 2.00000, 2.00000 1.00000, 1....
-        1       2.0       1.0  POLYGON ((2.00000 2.00000, 2.00000 3.00000, 3....
-        2       2.0       2.0  POLYGON ((4.00000 4.00000, 4.00000 3.00000, 3....
-        3       1.0       NaN  POLYGON ((2.00000 0.00000, 0.00000 0.00000, 0....
-        4       2.0       NaN  MULTIPOLYGON (((3.00000 4.00000, 3.00000 3.000...
+           df1_data  df2_data                                           geometry
+        0       1.0       1.0                POLYGON ((2 2, 2 1, 1 1, 1 2, 2 2))
+        1       2.0       1.0                POLYGON ((2 2, 2 3, 3 3, 3 2, 2 2))
+        2       2.0       2.0                POLYGON ((4 4, 4 3, 3 3, 3 4, 4 4))
+        3       1.0       NaN      POLYGON ((2 0, 0 0, 0 2, 1 2, 1 1, 2 1, 2 0))
+        4       2.0       NaN  MULTIPOLYGON (((3 4, 3 3, 2 3, 2 4, 3 4)), ((4...
 
         See also
         --------

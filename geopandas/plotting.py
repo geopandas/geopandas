@@ -12,21 +12,6 @@ from packaging.version import Version
 from ._decorator import doc
 
 
-def deprecated(new, warning_type=FutureWarning):
-    """Helper to provide deprecation warning."""
-
-    def old(*args, **kwargs):
-        warnings.warn(
-            "{} is intended for internal ".format(new.__name__[1:])
-            + "use only, and will be deprecated.",
-            warning_type,
-            stacklevel=2,
-        )
-        new(*args, **kwargs)
-
-    return old
-
-
 def _sanitize_geoms(geoms, prefix="Multi"):
     """
     Returns Series like geoms and index, except that any Multi geometries
@@ -76,17 +61,10 @@ def _expand_kwargs(kwargs, multiindex):
     it (in place) to the correct length/formats with help of 'multiindex', unless
     the value appears to already be a valid (single) value for the key.
     """
-    import matplotlib
     from matplotlib.colors import is_color_like
     from typing import Iterable
 
-    mpl = Version(matplotlib.__version__)
-    if mpl >= Version("3.4"):
-        # alpha is supported as array argument with matplotlib 3.4+
-        scalar_kwargs = ["marker", "path_effects"]
-    else:
-        scalar_kwargs = ["marker", "alpha", "path_effects"]
-
+    scalar_kwargs = ["marker", "path_effects"]
     for att, value in kwargs.items():
         if "color" in att:  # color(s), edgecolor(s), facecolor(s)
             if is_color_like(value):
@@ -194,9 +172,6 @@ def _plot_polygon_collection(
     return collection
 
 
-plot_polygon_collection = deprecated(_plot_polygon_collection)
-
-
 def _plot_linestring_collection(
     ax, geoms, values=None, color=None, cmap=None, vmin=None, vmax=None, **kwargs
 ):
@@ -250,9 +225,6 @@ def _plot_linestring_collection(
     ax.add_collection(collection, autolim=True)
     ax.autoscale_view()
     return collection
-
-
-plot_linestring_collection = deprecated(_plot_linestring_collection)
 
 
 def _plot_point_collection(
@@ -318,9 +290,6 @@ def _plot_point_collection(
     return collection
 
 
-plot_point_collection = deprecated(_plot_point_collection)
-
-
 def plot_series(
     s, cmap=None, color=None, ax=None, figsize=None, aspect="auto", **style_kwds
 ):
@@ -367,22 +336,6 @@ def plot_series(
     -------
     ax : matplotlib axes instance
     """
-    if "colormap" in style_kwds:
-        warnings.warn(
-            "'colormap' is deprecated, please use 'cmap' instead "
-            "(for consistency with matplotlib)",
-            FutureWarning,
-            stacklevel=3,
-        )
-        cmap = style_kwds.pop("colormap")
-    if "axes" in style_kwds:
-        warnings.warn(
-            "'axes' is deprecated, please use 'ax' instead "
-            "(for consistency with pandas)",
-            FutureWarning,
-            stacklevel=3,
-        )
-        ax = style_kwds.pop("axes")
 
     try:
         import matplotlib.pyplot as plt
@@ -491,7 +444,7 @@ def plot_series(
             ax, points, values_, color=color_, cmap=cmap, **style_kwds
         )
 
-    plt.draw()
+    ax.figure.canvas.draw_idle()
     return ax
 
 
@@ -645,22 +598,6 @@ def plot_dataframe(
     See the User Guide page :doc:`../../user_guide/mapping` for details.
 
     """
-    if "colormap" in style_kwds:
-        warnings.warn(
-            "'colormap' is deprecated, please use 'cmap' instead "
-            "(for consistency with matplotlib)",
-            FutureWarning,
-            stacklevel=3,
-        )
-        cmap = style_kwds.pop("colormap")
-    if "axes" in style_kwds:
-        warnings.warn(
-            "'axes' is deprecated, please use 'ax' instead "
-            "(for consistency with pandas)",
-            FutureWarning,
-            stacklevel=3,
-        )
-        ax = style_kwds.pop("axes")
     if column is not None and color is not None:
         warnings.warn(
             "Only specify one of 'column' or 'color'. Using 'color'.",
@@ -964,7 +901,7 @@ def plot_dataframe(
             n_cmap.set_array(np.array([]))
             ax.get_figure().colorbar(n_cmap, **legend_kwds)
 
-    plt.draw()
+    ax.figure.canvas.draw_idle()
     return ax
 
 

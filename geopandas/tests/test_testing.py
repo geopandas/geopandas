@@ -10,6 +10,7 @@ from geopandas import GeoDataFrame, GeoSeries
 from geopandas.array import from_shapely
 
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
+from geopandas._compat import HAS_PYPROJ
 import pytest
 
 s1 = GeoSeries(
@@ -102,9 +103,10 @@ def test_geodataframe():
         assert_geodataframe_equal(df1, df3)
 
     assert_geodataframe_equal(df5, df4, check_like=True)
-    df5.geom2.crs = 3857
-    with pytest.raises(AssertionError):
-        assert_geodataframe_equal(df5, df4, check_like=True)
+    if HAS_PYPROJ:
+        df5.geom2.crs = 3857
+        with pytest.raises(AssertionError):
+            assert_geodataframe_equal(df5, df4, check_like=True)
 
 
 def test_equal_nans():
@@ -119,6 +121,7 @@ def test_no_crs():
     assert_geodataframe_equal(df1, df2)
 
 
+@pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not available")
 def test_ignore_crs_mismatch():
     df1 = GeoDataFrame({"col1": [1, 2], "geometry": s1.copy()}, crs="EPSG:4326")
     df2 = GeoDataFrame({"col1": [1, 2], "geometry": s1}, crs="EPSG:31370")

@@ -24,6 +24,7 @@ Serialization / IO / conversion
    GeoDataFrame.from_postgis
    GeoDataFrame.to_file
    GeoDataFrame.to_json
+   GeoDataFrame.to_geo_dict
    GeoDataFrame.to_parquet
    GeoDataFrame.to_feather
    GeoDataFrame.to_postgis
@@ -49,6 +50,7 @@ Active geometry handling
 
    GeoDataFrame.rename_geometry
    GeoDataFrame.set_geometry
+   GeoDataFrame.active_geometry_name
 
 Aggregating and exploding
 -------------------------

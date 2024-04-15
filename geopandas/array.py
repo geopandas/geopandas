@@ -1,30 +1,31 @@
+import inspect
 import numbers
 import operator
 import warnings
-import inspect
 from functools import lru_cache
 
 import numpy as np
 import pandas as pd
+import shapely
+import shapely.affinity
+import shapely.geometry
+import shapely.ops
+import shapely.wkt
 from pandas.api.extensions import (
     ExtensionArray,
     ExtensionDtype,
     register_extension_dtype,
 )
 
-import shapely
-import shapely.affinity
-import shapely.geometry
 from shapely.geometry.base import BaseGeometry
-import shapely.ops
-import shapely.wkt
-from pyproj import CRS, Transformer
-from pyproj.aoi import AreaOfInterest
-from pyproj.database import query_utm_crs_info
 
 from .sindex import SpatialIndex
+from ._compat import HAS_PYPROJ, requires_pyproj
 
-TransformerFromCRS = lru_cache(Transformer.from_crs)
+if HAS_PYPROJ:
+    from pyproj import Transformer
+
+    TransformerFromCRS = lru_cache(Transformer.from_crs)
 
 _names = {
     "MISSING": None,
@@ -192,7 +193,7 @@ def to_shapely(geoms):
     return geoms._data
 
 
-def from_wkb(data, crs=None):
+def from_wkb(data, crs=None, on_invalid="raise"):
     """
     Convert a list or array of WKB objects to a GeometryArray.
 
@@ -204,9 +205,14 @@ def from_wkb(data, crs=None):
         Coordinate Reference System of the geometry objects. Can be anything accepted by
         :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
         such as an authority string (eg "EPSG:4326") or a WKT string.
+    on_invalid: {"raise", "warn", "ignore"}, default "raise"
+        - raise: an exception will be raised if a WKB input geometry is invalid.
+        - warn: a warning will be raised and invalid WKB geometries will be returned as
+          None.
+        - ignore: invalid WKB geometries will be returned as None without a warning.
 
     """
-    return GeometryArray(shapely.from_wkb(data), crs=crs)
+    return GeometryArray(shapely.from_wkb(data, on_invalid=on_invalid), crs=crs)
 
 
 def to_wkb(geoms, hex=False, **kwargs):
@@ -218,7 +224,7 @@ def to_wkb(geoms, hex=False, **kwargs):
     return shapely.to_wkb(geoms, hex=hex, **kwargs)
 
 
-def from_wkt(data, crs=None):
+def from_wkt(data, crs=None, on_invalid="raise"):
     """
     Convert a list or array of WKT objects to a GeometryArray.
 
@@ -230,9 +236,14 @@ def from_wkt(data, crs=None):
         Coordinate Reference System of the geometry objects. Can be anything accepted by
         :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
         such as an authority string (eg "EPSG:4326") or a WKT string.
+    on_invalid : {"raise", "warn", "ignore"}, default "raise"
+        - raise: an exception will be raised if a WKT input geometry is invalid.
+        - warn: a warning will be raised and invalid WKT geometries will be
+          returned as ``None``.
+        - ignore: invalid WKT geometries will be returned as ``None`` without a warning.
 
     """
-    return GeometryArray(shapely.from_wkt(data), crs=crs)
+    return GeometryArray(shapely.from_wkt(data, on_invalid=on_invalid), crs=crs)
 
 
 def to_wkt(geoms, **kwargs):
@@ -324,17 +335,6 @@ class GeometryArray(ExtensionArray):
         self._sindex = None
 
     @property
-    def data(self):
-        warnings.warn(
-            "Accessing the underlying geometries through the `.data` attribute is "
-            "deprecated and will be removed in GeoPandas 1.0. You can use "
-            "`np.asarray(..)` or the `to_numpy()` method instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return self._data
-
-    @property
     def sindex(self):
         if self._sindex is None:
             self._sindex = SpatialIndex(self._data)
@@ -381,7 +381,21 @@ class GeometryArray(ExtensionArray):
     @crs.setter
     def crs(self, value):
         """Sets the value of the crs"""
-        self._crs = None if not value else CRS.from_user_input(value)
+        if HAS_PYPROJ:
+            from pyproj import CRS
+
+            self._crs = None if not value else CRS.from_user_input(value)
+        else:
+            if value is not None:
+                warnings.warn(
+                    "Cannot set the CRS, falling back to None. The CRS support requires"
+                    " the 'pyproj' package, but it is not installed or does not import"
+                    " correctly. The functions depending on CRS will raise an error or"
+                    " may produce unexpected results.",
+                    UserWarning,
+                    stacklevel=2,
+                )
+            self._crs = None
 
     def check_geographic_crs(self, stacklevel):
         """Check CRS and warn if the planar operation is done in a geographic CRS"""
@@ -522,11 +536,13 @@ class GeometryArray(ExtensionArray):
         self.check_geographic_crs(stacklevel=5)
         return shapely.length(self._data)
 
-    @property
     def count_coordinates(self):
         out = np.empty(len(self._data), dtype=np.int_)
         out[:] = [shapely.count_coordinates(s) for s in self._data]
         return out
+
+    def get_precision(self):
+        return shapely.get_precision(self._data)
 
     #
     # Unary operations that return new geometries
@@ -638,6 +654,28 @@ class GeometryArray(ExtensionArray):
             crs=self.crs,
         )
 
+    def force_2d(self):
+        return GeometryArray(shapely.force_2d(self._data), crs=self.crs)
+
+    def force_3d(self, z=0):
+        return GeometryArray(shapely.force_3d(self._data, z=z), crs=self.crs)
+
+    def transform(self, transformation, include_z=False):
+        return GeometryArray(
+            shapely.transform(self._data, transformation, include_z), crs=self.crs
+        )
+
+    def line_merge(self, directed=False):
+        return GeometryArray(
+            shapely.line_merge(self._data, directed=directed), crs=self.crs
+        )
+
+    def set_precision(self, grid_size, mode="valid_output"):
+        return GeometryArray(
+            shapely.set_precision(self._data, grid_size=grid_size, mode=mode),
+            crs=self.crs,
+        )
+
     #
     # Binary predicates
     #
@@ -665,6 +703,9 @@ class GeometryArray(ExtensionArray):
     def contains(self, other):
         return self._binary_method("contains", self, other)
 
+    def contains_properly(self, other):
+        return self._binary_method("contains_properly", self, other)
+
     def crosses(self, other):
         return self._binary_method("crosses", self, other)
 
@@ -685,6 +726,10 @@ class GeometryArray(ExtensionArray):
 
     def within(self, other):
         return self._binary_method("within", self, other)
+
+    def dwithin(self, other, distance):
+        self.check_geographic_crs(stacklevel=6)
+        return self._binary_method("dwithin", self, other, distance=distance)
 
     def geom_equals_exact(self, other, tolerance):
         return self._binary_method("equals_exact", self, other, tolerance=tolerance)
@@ -728,6 +773,11 @@ class GeometryArray(ExtensionArray):
     def shortest_line(self, other):
         return GeometryArray(
             self._binary_method("shortest_line", self, other), crs=self.crs
+        )
+
+    def snap(self, other, tolerance):
+        return GeometryArray(
+            self._binary_method("snap", self, other, tolerance=tolerance), crs=self.crs
         )
 
     #
@@ -784,20 +834,16 @@ class GeometryArray(ExtensionArray):
     #
 
     def unary_union(self):
-        warning_msg = (
-            "`unary_union` returned None due to all-None GeoSeries. In future, "
-            "`unary_union` will return 'GEOMETRYCOLLECTION EMPTY' instead."
+        warnings.warn(
+            "The 'unary_union' attribute is deprecated, "
+            "use the 'union_all' method instead.",
+            FutureWarning,
+            stacklevel=2,
         )
-        data = shapely.union_all(self._data)
-        if data is None or data.is_empty:
-            warnings.warn(
-                warning_msg,
-                FutureWarning,
-                stacklevel=4,
-            )
-            return None
-        else:
-            return data
+        return self.union_all()
+
+    def union_all(self):
+        return shapely.union_all(self._data)
 
     #
     # Affinity operations
@@ -856,6 +902,7 @@ class GeometryArray(ExtensionArray):
             crs=self.crs,
         )
 
+    @requires_pyproj
     def to_crs(self, crs=None, epsg=None):
         """Returns a ``GeometryArray`` with all geometries transformed to a new
         coordinate reference system.
@@ -925,6 +972,8 @@ class GeometryArray(ExtensionArray):
         - Prime Meridian: Greenwich
 
         """
+        from pyproj import CRS
+
         if self.crs is None:
             raise ValueError(
                 "Cannot transform naive geometries.  "
@@ -946,6 +995,7 @@ class GeometryArray(ExtensionArray):
         new_data = transform(self._data, transformer.transform)
         return GeometryArray(new_data, crs=crs)
 
+    @requires_pyproj
     def estimate_utm_crs(self, datum_name="WGS 84"):
         """Returns the estimated UTM CRS based on the bounds of the dataset.
 
@@ -984,6 +1034,9 @@ class GeometryArray(ExtensionArray):
         - Ellipsoid: WGS 84
         - Prime Meridian: Greenwich
         """
+        from pyproj import CRS
+        from pyproj.aoi import AreaOfInterest
+        from pyproj.database import query_utm_crs_info
 
         if not self.crs:
             raise RuntimeError("crs must be set to estimate UTM CRS.")
@@ -1088,14 +1141,19 @@ class GeometryArray(ExtensionArray):
             # TODO with numpy >= 1.15, the 'initial' argument can be used
             return np.array([np.nan, np.nan, np.nan, np.nan])
         b = self.bounds
-        return np.array(
-            (
-                np.nanmin(b[:, 0]),  # minx
-                np.nanmin(b[:, 1]),  # miny
-                np.nanmax(b[:, 2]),  # maxx
-                np.nanmax(b[:, 3]),  # maxy
+        with warnings.catch_warnings():
+            # if all rows are empty geometry / none, nan is expected
+            warnings.filterwarnings(
+                "ignore", r"All-NaN slice encountered", RuntimeWarning
             )
-        )
+            return np.array(
+                (
+                    np.nanmin(b[:, 0]),  # minx
+                    np.nanmin(b[:, 1]),  # miny
+                    np.nanmax(b[:, 2]),  # maxx
+                    np.nanmax(b[:, 3]),  # maxy
+                )
+            )
 
     # -------------------------------------------------------------------------
     # general array like compat
@@ -1128,7 +1186,7 @@ class GeometryArray(ExtensionArray):
 
         result = take(self._data, indices, allow_fill=allow_fill, fill_value=fill_value)
         if allow_fill and fill_value is None:
-            result[pd.isna(result)] = None
+            result[~shapely.is_valid_input(result)] = None
         return GeometryArray(result, crs=self.crs)
 
     def _fill(self, idx, value):
@@ -1230,7 +1288,13 @@ class GeometryArray(ExtensionArray):
                 return pd.array(string_values, dtype=pd_dtype)
             return string_values.astype(dtype, copy=False)
         else:
-            return np.array(self, dtype=dtype, copy=copy)
+            # numpy 2.0 makes copy=False case strict (errors if cannot avoid the copy)
+            # -> in that case use `np.asarray` as backwards compatible alternative
+            # for `copy=None` (when requiring numpy 2+, this can be cleaned up)
+            if not copy:
+                return np.asarray(self, dtype=dtype)
+            else:
+                return np.array(self, dtype=dtype, copy=copy)
 
     def isna(self):
         """
@@ -1349,6 +1413,29 @@ class GeometryArray(ExtensionArray):
         if isinstance(scalars, BaseGeometry):
             scalars = [scalars]
         return from_shapely(scalars)
+
+    @classmethod
+    def _from_sequence_of_strings(cls, strings, *, dtype=None, copy=False):
+        """
+        Construct a new ExtensionArray from a sequence of strings.
+
+        Parameters
+        ----------
+        strings : Sequence
+            Each element will be an instance of the scalar type for this
+            array, ``cls.dtype.type``.
+        dtype : dtype, optional
+            Construct for this particular dtype. This should be a Dtype
+            compatible with the ExtensionArray.
+        copy : bool, default False
+            If True, copy the underlying data.
+
+        Returns
+        -------
+        ExtensionArray
+        """
+        # GH 3099
+        return from_wkt(strings)
 
     def _values_for_factorize(self):
         # type: () -> Tuple[np.ndarray, Any]
@@ -1505,7 +1592,7 @@ class GeometryArray(ExtensionArray):
                         # typically projected coordinates
                         # (in case of unit meter: mm precision)
                         precision = 3
-            return lambda geom: shapely.wkt.dumps(geom, rounding_precision=precision)
+            return lambda geom: shapely.to_wkt(geom, rounding_precision=precision)
         return repr
 
     @classmethod
@@ -1527,14 +1614,14 @@ class GeometryArray(ExtensionArray):
     def _reduce(self, name, skipna=True, **kwargs):
         # including the base class version here (that raises by default)
         # because this was not yet defined in pandas 0.23
-        if name == "any" or name == "all":
+        if name in ("any", "all"):
             return getattr(to_shapely(self), name)()
         raise TypeError(
             f"'{type(self).__name__}' with dtype {self.dtype} "
             f"does not support reduction '{name}'"
         )
 
-    def __array__(self, dtype=None):
+    def __array__(self, dtype=None, copy=None):
         """
         The numpy array interface.
 
@@ -1542,7 +1629,9 @@ class GeometryArray(ExtensionArray):
         -------
         values : numpy array
         """
-        return to_shapely(self)
+        if copy and (dtype is None or dtype == np.dtype("object")):
+            return self._data.copy()
+        return self._data
 
     def _binop(self, other, op):
         def convert_values(param):
