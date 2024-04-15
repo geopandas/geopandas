@@ -47,7 +47,11 @@ def _ensure_geometry(data, crs=None):
             data = GeoSeries(data)
         if data.crs is None and crs is not None:
             # Avoids caching issues/crs sharing issues
-            data = data.set_crs(crs)
+            data = data.copy()
+            try:
+                data.crs = crs
+            except DeprecationWarning:
+                data.set_crs(crs, inplace=True, allow_override=True)
         return data
     else:
         if isinstance(data, Series):
