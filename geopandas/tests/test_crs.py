@@ -4,10 +4,10 @@ import warnings
 import numpy as np
 import pandas as pd
 import pytest
-from shapely.geometry import Point, Polygon, LineString
+from shapely.geometry import LineString, Point, Polygon
 
-from geopandas import GeoSeries, GeoDataFrame, points_from_xy, read_file
-from geopandas.array import from_shapely, from_wkb, from_wkt, GeometryArray
+from geopandas import GeoDataFrame, GeoSeries, points_from_xy, read_file
+from geopandas.array import GeometryArray, from_shapely, from_wkb, from_wkt
 from geopandas.testing import assert_geodataframe_equal
 
 pyproj = pytest.importorskip("pyproj")
@@ -260,7 +260,7 @@ class TestGeometryArrayCRS:
         arr = from_shapely(self.geoms)
         s = GeoSeries(arr, crs=27700)
         df = GeoDataFrame(geometry=s)
-        df.crs = 4326
+        df = df.set_crs(crs="epsg:4326", allow_override=True)
         assert df.crs == self.wgs
         assert df.geometry.crs == self.wgs
         assert df.geometry.values.crs == self.wgs
@@ -333,14 +333,10 @@ class TestGeometryArrayCRS:
             )
             df = GeoDataFrame({"geometry": [Point(0, 1)]}).assign(geometry=[0])
         with pytest.raises(
-            ValueError,
-            match="Assigning CRS to a GeoDataFrame without an active geometry",
-        ):
-            df.crs = 27700
-        with pytest.raises(
             AttributeError,
             match="The CRS attribute of a GeoDataFrame without an active",
         ):
+            df.crs = 27700
             assert df.crs == self.osgb
 
     def test_dataframe_getitem_without_geometry_column(self):

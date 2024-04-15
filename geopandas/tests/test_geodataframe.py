@@ -6,18 +6,16 @@ import warnings
 
 import numpy as np
 import pandas as pd
-
+import pytest
+from pandas.testing import assert_frame_equal, assert_index_equal, assert_series_equal
 from shapely.geometry import Point, Polygon, box
 
 import geopandas
+import geopandas._compat as compat
 from geopandas import GeoDataFrame, GeoSeries, points_from_xy, read_file
 from geopandas.array import GeometryArray, GeometryDtype, from_shapely
-
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 from geopandas.tests.util import PACKAGE_DIR, validate_boro_df
-from pandas.testing import assert_frame_equal, assert_index_equal, assert_series_equal
-import geopandas._compat as compat
-import pytest
 
 
 @pytest.fixture
@@ -376,7 +374,7 @@ class TestDataFrame:
     def test_geoseries_override_existing_crs_warning(self):
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
-            self.df.crs = "epsg:2100"
+            self.df.geometry.crs = "epsg:2100"
             assert issubclass(w[-1].category, DeprecationWarning)
 
     def test_active_geometry_name(self):

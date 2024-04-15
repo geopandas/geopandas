@@ -6,17 +6,17 @@ import pandas as pd
 import shapely.errors
 from pandas import DataFrame, Series
 from pandas.core.accessor import CachedAccessor
-
 from shapely.geometry import mapping, shape
 from shapely.geometry.base import BaseGeometry
 
+import geopandas.io
 from geopandas.array import GeometryArray, GeometryDtype, from_shapely, to_wkb, to_wkt
 from geopandas.base import GeoPandasBase, is_geometry_type
-from geopandas.geoseries import GeoSeries
-import geopandas.io
 from geopandas.explore import _explore
-from ._decorator import doc
+from geopandas.geoseries import GeoSeries
+
 from ._compat import HAS_PYPROJ
+from ._decorator import doc
 
 
 def _geodataframe_constructor_with_fallback(*args, **kwargs):
@@ -47,8 +47,7 @@ def _ensure_geometry(data, crs=None):
             data = GeoSeries(data)
         if data.crs is None and crs is not None:
             # Avoids caching issues/crs sharing issues
-            data = data.copy()
-            data.crs = crs
+            data = data.set_crs(crs)
         return data
     else:
         if isinstance(data, Series):
@@ -506,10 +505,10 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 "geometry column.",
             )
 
-        if self.geometry.values.crs is not None:
-            crs = self.geometry.values.crs
+        if self.crs is not None:
             warnings.warn(
-                f"Overriding the CRS of a GeoDataFrame that already has CRS: {crs}."
+                f"Overriding the CRS of a GeoDataFrame that "
+                f"already has CRS: {self.crs}. "
                 f"This unsafe behavior will be deprecated in future versions."
                 f"Use GeoDataFrame.set_crs method instead!",
                 stacklevel=1,
