@@ -451,6 +451,16 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 "geometry column.",
             )
 
+        if self.geometry.values.crs is not None:
+            crs = self.geometry.values.crs
+            warnings.warn(
+                f"Overriding the CRS of a GeoDataFrame that already has CRS: {crs}."
+                f"This unsafe behavior will be deprecated in future versions."
+                f"Use GeoDataFrame.set_crs method instead!",
+                stacklevel=1,
+                category=DeprecationWarning,
+            )
+
         if hasattr(self.geometry.values, "crs"):
             self.geometry.values.crs = value
         else:

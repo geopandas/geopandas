@@ -2,6 +2,7 @@ import json
 import os
 import shutil
 import tempfile
+import warnings
 
 import numpy as np
 import pandas as pd
@@ -362,6 +363,12 @@ class TestDataFrame:
         # it should not fall back to column named "geometry"
         with pytest.raises(AttributeError, match=msg_geo_col_missing):
             df.geometry
+
+    def test_geoseries_override_existing_crs_warning(self):
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            self.df.crs = "epsg:2100"
+            assert issubclass(w[-1].category, DeprecationWarning)
 
     def test_align(self):
         df = self.df2
