@@ -18,15 +18,11 @@ def _ensure_geometry_column(df):
         if PANDAS_GE_30:
             if "geometry" in df.columns:
                 df = df.drop("geometry", axis=1)
-            df = df.rename(columns={df._geometry_column_name: "geometry"})
-            df = df.set_geometry("geometry")
+            df = df.rename_geometry("geometry")
         else:
             if "geometry" in df.columns:
                 df.drop("geometry", axis=1, inplace=True)
-            df.rename(
-                columns={df._geometry_column_name: "geometry"}, copy=False, inplace=True
-            )
-            df.set_geometry("geometry", inplace=True)
+            df.rename_geometry("geometry", inplace=True)
     return df
 
 
