@@ -16,7 +16,7 @@ from geopandas.geoseries import GeoSeries
 import geopandas.io
 from geopandas.explore import _explore
 from ._decorator import doc
-from ._compat import HAS_PYPROJ
+from ._compat import HAS_PYPROJ, PANDAS_GE_30
 
 
 def _geodataframe_constructor_with_fallback(*args, **kwargs):
@@ -314,7 +314,10 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         if inplace:
             frame = self
         else:
-            frame = self.copy()
+            if PANDAS_GE_30:
+                frame = self.copy(deep=False)
+            else:
+                frame = self.copy()
 
         geo_column_name = self._geometry_column_name
 
