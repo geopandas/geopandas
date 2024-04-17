@@ -1516,22 +1516,22 @@ def test_geodataframe_crs_colname():
 
 @pytest.mark.parametrize("geo_col_name", ["geometry", "polygons"])
 def test_set_geometry_supply_colname(dfs, geo_col_name):
-    df1, _ = dfs
+    df, _ = dfs
     if geo_col_name != "geometry":
-        df1 = df1.rename_geometry(geo_col_name)
-    df1["centroid"] = df1.geometry.centroid
-    res = df1.set_geometry("centroid")
+        df = df.rename_geometry(geo_col_name)
+    df["centroid"] = df.geometry.centroid
+    res = df.set_geometry("centroid")
     assert res.active_geometry_name == "centroid"
     assert geo_col_name in res.columns
 
     # Test that drop=False explicitly warns
     deprecated = "The `drop` keyword argument is deprecated"
     with pytest.warns(FutureWarning, match=deprecated):
-        res2 = df1.set_geometry("centroid", drop=False)
+        res2 = df.set_geometry("centroid", drop=False)
     assert_geodataframe_equal(res, res2)
 
     with pytest.warns(FutureWarning, match=deprecated):
-        res3 = df1.set_geometry("centroid", drop=True)
+        res3 = df.set_geometry("centroid", drop=True)
     # drop=True should preserve previous geometry col name (keep old behaviour)
     assert res3.active_geometry_name == geo_col_name
     assert "centroid" not in res3.columns
@@ -1539,7 +1539,7 @@ def test_set_geometry_supply_colname(dfs, geo_col_name):
     # Test that alternative suggested without using drop=True is equivalent
     assert_geodataframe_equal(
         res3,
-        df1.set_geometry("centroid")
+        df.set_geometry("centroid")
         .drop(columns=geo_col_name)
         .rename_geometry(geo_col_name),
     )
@@ -1547,11 +1547,11 @@ def test_set_geometry_supply_colname(dfs, geo_col_name):
 
 @pytest.mark.parametrize("geo_col_name", ["geometry", "polygons"])
 def test_set_geometry_supply_arraylike(dfs, geo_col_name):
-    df1, _ = dfs
+    df, _ = dfs
     if geo_col_name != "geometry":
-        df1 = df1.rename_geometry(geo_col_name)
-    centroids = df1.geometry.centroid
-    res = df1.set_geometry(centroids)
+        df = df.rename_geometry(geo_col_name)
+    centroids = df.geometry.centroid
+    res = df.set_geometry(centroids)
     assert res.active_geometry_name == geo_col_name
     # drop should do nothing if the column already exists
     match_str = (
@@ -1562,11 +1562,11 @@ def test_set_geometry_supply_arraylike(dfs, geo_col_name):
         FutureWarning,
         match=match_str,
     ):
-        res2 = df1.set_geometry(centroids, drop=True)
+        res2 = df.set_geometry(centroids, drop=True)
     assert res2.active_geometry_name == geo_col_name
 
     centroids = centroids.rename("centroids")
-    res3 = df1.set_geometry(centroids)
+    res3 = df.set_geometry(centroids)
     # Should preserve the geoseries name
     # (and old geometry column should be kept)
     assert res3.active_geometry_name == "centroids"
@@ -1577,6 +1577,6 @@ def test_set_geometry_supply_arraylike(dfs, geo_col_name):
         FutureWarning,
         match=match_str,
     ):
-        res4 = df1.set_geometry(centroids, drop=True)
+        res4 = df.set_geometry(centroids, drop=True)
     assert res4.active_geometry_name == "centroids"
     assert geo_col_name in res4.columns
