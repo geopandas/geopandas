@@ -51,7 +51,7 @@ def _ensure_geometry(data, crs=None):
             if isinstance(data, GeometryArray):
                 data.crs = crs
             else:
-                data.set_crs(crs, inplace=True)
+                data.array.crs = crs
         return data
     else:
         if isinstance(data, Series):
