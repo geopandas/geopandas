@@ -784,10 +784,10 @@ GeometryCollection
         """Returns a ``GeoSeries`` consisting of objects representing
         the computed Voronoi diagram around the vertices of an input geometry.
 
-        The output is a ``GeometryCollection`` containing polygons (default) or
+        The output rows are each a ``GeometryCollection`` containing polygons (default) or
         ``MultiLineStrings`` (see only_edges).
 
-        Returns an empty GeometryCollection if an input geometry contains less than 2
+        For each row, returns an empty GeometryCollection if an input geometry contains less than 2
         vertices.
 
         Parameters
