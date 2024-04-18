@@ -16,6 +16,8 @@ jobs:
   Linting:
     runs-on: ubuntu-latest
 
+    # skip scheduled runs on forks
+    if: (github.event_name == 'schedule' && github.repository == 'geopandas/geopandas') || (github.event_name != 'schedule')
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -28,6 +30,8 @@ jobs:
     defaults:
       run:
         shell: bash -l {0}
+    # skip scheduled runs on forks
+    if: (github.event_name == 'schedule' && github.repository == 'geopandas/geopandas') || (github.event_name != 'schedule')
     strategy:
       fail-fast: false
       matrix:
