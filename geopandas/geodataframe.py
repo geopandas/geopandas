@@ -2459,7 +2459,7 @@ chicago_w_groceries[chicago_w_groceries["community"] == "UPTOWN"]
         )
 
 
-def _dataframe_set_geometry(self, col, drop=False, inplace=False, crs=None):
+def _dataframe_set_geometry(self, col, drop=None, inplace=False, crs=None):
     if inplace:
         raise ValueError(
             "Can't do inplace setting when converting from DataFrame to GeoDataFrame"
