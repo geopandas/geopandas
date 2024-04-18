@@ -48,10 +48,10 @@ def _ensure_geometry(data, crs=None):
         if data.crs is None and crs is not None:
             # Avoids caching issues/crs sharing issues
             data = data.copy()
-            try:
+            if isinstance(data, GeometryArray):
                 data.crs = crs
-            except DeprecationWarning:
-                data.set_crs(crs, inplace=True, allow_override=True)
+            else:
+                data.set_crs(crs, inplace=True)
         return data
     else:
         if isinstance(data, Series):
