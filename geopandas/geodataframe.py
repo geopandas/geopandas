@@ -383,7 +383,10 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         # Check that we are using a listlike of geometries
         level = _ensure_geometry(level, crs=crs)
         # ensure_geometry only sets crs on level if it has crs==None
-        level.crs = crs
+        if isinstance(level, GeoSeries):
+            level.array.crs = crs
+        else:
+            level.crs = crs
         # update _geometry_column_name prior to assignment
         # to avoid default is None warning
         frame._geometry_column_name = geo_column_name
