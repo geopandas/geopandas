@@ -243,7 +243,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         fget=_get_geometry, fset=_set_geometry, doc="Geometry data for GeoDataFrame"
     )
 
-    def set_geometry(self, col, drop=False, inplace=False, crs=None):
+    def set_geometry(self, col, drop=None, inplace=False, crs=None):
         """
         Set the GeoDataFrame geometry using either an existing column or
         the specified input. By default yields a new object.
@@ -252,9 +252,20 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         Parameters
         ----------
-        col : column label or array
+        col : column label or array-like
+            An existing column name or values to set as the new geometry column.
+            If values (array-like, (Geo)Series) are passed, then if they are named
+            (Series) the new geometry column will have the corresponding name,
+            otherwise the existing geometry column will be replaced. If there is
+            no existing geometry column, the new geometry column will use the
+            default name "geometry".
         drop : boolean, default False
-            Delete column to be used as the new geometry
+            When specifying a named Series or an existing column name for `col`,
+            controls if the previous geometry column should be dropped from the
+            result. The default of False keeps both the old and new geometry column.
+
+            .. deprecated:: 1.0.0
+
         inplace : boolean, default False
             Modify the GeoDataFrame in place (do not create a new object)
         crs : pyproj.CRS, optional
@@ -305,15 +316,25 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         else:
             frame = self.copy()
 
-        to_remove = None
         geo_column_name = self._geometry_column_name
+
         if geo_column_name is None:
             geo_column_name = "geometry"
         if isinstance(col, (Series, list, np.ndarray, GeometryArray)):
+            if drop:
+                msg = (
+                    "The `drop` keyword argument is deprecated and has no effect when "
+                    "`col` is an array-like value. You should stop passing `drop` to "
+                    "`set_geometry` when this is the case."
+                )
+                warnings.warn(msg, category=FutureWarning, stacklevel=2)
+            if isinstance(col, Series) and col.name is not None:
+                geo_column_name = col.name
+
             level = col
         elif hasattr(col, "ndim") and col.ndim > 1:
             raise ValueError("Must pass array with one dimension only.")
-        else:
+        else:  # should be a colname
             try:
                 level = frame[col]
             except KeyError:
@@ -324,24 +345,42 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                     "the column name is shared by multiple columns."
                 )
 
-            if drop:
-                to_remove = col
-            else:
-                geo_column_name = col
+            given_colname_drop_msg = (
+                "The `drop` keyword argument is deprecated and in future the only "
+                "supported behaviour will match drop=False. To silence this "
+                "warning and adopt the future behaviour, stop providing "
+                "`drop` as a keyword to `set_geometry`. To replicate the "
+                "`drop=True` behaviour you should update "
+                "your code to\n`geo_col_name = gdf.active_geometry_name;"
+                " gdf.set_geometry(new_geo_col).drop("
+                "columns=geo_col_name).rename_geometry(geo_col_name)`."
+            )
 
-        if to_remove:
-            del frame[to_remove]
+            if drop is False:  # specifically False, not falsy i.e. None
+                # User supplied False explicitly, but arg is deprecated
+                warnings.warn(
+                    given_colname_drop_msg,
+                    category=FutureWarning,
+                    stacklevel=2,
+                )
+            if drop:
+                del frame[col]
+                warnings.warn(
+                    given_colname_drop_msg,
+                    category=FutureWarning,
+                    stacklevel=2,
+                )
+            else:
+                # if not dropping, set the active geometry name to the given col name
+                geo_column_name = col
 
         if not crs:
             crs = getattr(level, "crs", None)
 
-        if isinstance(level, (GeoSeries, GeometryArray)) and level.crs != crs:
-            # Avoids caching issues/crs sharing issues
-            level = level.copy()
-            level.crs = crs
-
         # Check that we are using a listlike of geometries
         level = _ensure_geometry(level, crs=crs)
+        # ensure_geometry only sets crs on level if it has crs==None
+        level.crs = crs
         # update _geometry_column_name prior to assignment
         # to avoid default is None warning
         frame._geometry_column_name = geo_column_name
@@ -2296,8 +2335,9 @@ chicago_w_groceries[chicago_w_groceries["community"] == "UPTOWN"]
             resulting in multiple geometry types or GeometryCollections.
             If False, return all resulting geometries (potentially mixed types).
         sort : boolean, default False
-            If True, the order of rows in the clipped GeoDataFrame will be preserved at small 
-            performance cost. If False the order of rows in the clipped GeoDataFrame will be random.
+            If True, the order of rows in the clipped GeoDataFrame will be preserved at
+            small performance cost. If False the order of rows in the clipped
+            GeoDataFrame will be random.
 
         Returns
         -------
@@ -2423,7 +2463,7 @@ chicago_w_groceries[chicago_w_groceries["community"] == "UPTOWN"]
         )
 
 
-def _dataframe_set_geometry(self, col, drop=False, inplace=False, crs=None):
+def _dataframe_set_geometry(self, col, drop=None, inplace=False, crs=None):
     if inplace:
         raise ValueError(
             "Can't do inplace setting when converting from DataFrame to GeoDataFrame"
