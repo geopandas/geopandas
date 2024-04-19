@@ -904,3 +904,23 @@ def test_parquet_read_partitioned_dataset_fsspec(tmpdir, naturalearth_lowres):
 
     result = read_parquet("memory://partitioned_dataset")
     assert_geodataframe_equal(result, df)
+
+
+def test_read_dtype_backend_pyarrow():
+    expected_dtypes = {
+        "col_str": "string[pyarrow]",
+        "col_int": "int64[pyarrow]",
+        "col_float": "float64[pyarrow]",
+        "geometry": "geometry",
+    }
+    df = geopandas.read_feather(
+        DATA_PATH / "arrow" / "test_data_gdal350.arrow", dtype_backend="pyarrow"
+    )
+    assert df.dtypes.to_dict() == expected_dtypes
+
+
+def test_read_invalid_dtype_backend():
+    with pytest.raises(ValueError):
+        geopandas.read_feather(
+            DATA_PATH / "arrow" / "test_data_gdal350.arrow", dtype_backend="FOO"
+        )

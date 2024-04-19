@@ -2,6 +2,7 @@ import warnings
 from contextlib import contextmanager
 
 import pandas as pd
+from pandas._libs import lib
 
 import shapely
 import shapely.wkb
@@ -107,6 +108,7 @@ def _read_postgis(
     parse_dates=None,
     params=None,
     chunksize=None,
+    dtype_backend=lib.no_default,
 ):
     """
     Returns a GeoDataFrame corresponding to the result of the query
@@ -131,6 +133,13 @@ def _read_postgis(
     chunksize : int, default None
         If specified, return an iterator where chunksize is the number of rows to
         include in each chunk.
+    dtype_backend : {{"numpy _nullable","pyarrow"}}. defaults to NumPy backed DataFrames
+        Which dtype_backend to use, e.g. whether a DataFrame should have NumPy
+        arrays, nullable types are used for all types that have a nullable
+        implementation when "numpy_nullable" is set, pyarrow is used for all
+        dtypes if "pyarrow" is set.
+
+        The dtype backends are still experimential.
 
     See the documentation for pandas.read_sql for further explanation
     of the following parameters:
@@ -166,6 +175,7 @@ def _read_postgis(
             parse_dates=parse_dates,
             params=params,
             chunksize=chunksize,
+            dtype_backend=dtype_backend,
         )
         return _df_to_geodf(df, geom_col=geom_col, crs=crs)
 
@@ -179,6 +189,7 @@ def _read_postgis(
             parse_dates=parse_dates,
             params=params,
             chunksize=chunksize,
+            dtype_backend=dtype_backend,
         )
         return (_df_to_geodf(df, geom_col=geom_col, crs=crs) for df in df_generator)
 
