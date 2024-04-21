@@ -1306,7 +1306,7 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
         """
         return Series(to_wkt(self.array, **kwargs), index=self.index)
 
-    def clip(self, mask, keep_geom_type: bool = False) -> GeoSeries:
+    def clip(self, mask, keep_geom_type: bool = False, sort=False) -> GeoSeries:
         """Clip points, lines, or polygon geometries to the mask extent.
 
         Both layers must be in the same Coordinate Reference System (CRS).
@@ -1329,6 +1329,10 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
             If True, return only geometries of original type in case of intersection
             resulting in multiple geometry types or GeometryCollections.
             If False, return all resulting geometries (potentially mixed-types).
+        sort : boolean, default False
+            If True, the order of rows in the clipped GeoSeries will be preserved
+            at small performance cost.
+            If False the order of rows in the clipped GeoSeries will be random.
 
         Returns
         -------
@@ -1359,4 +1363,4 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
         >>> nws_groceries.shape
         (7,)
         """
-        return geopandas.clip(self, mask=mask, keep_geom_type=keep_geom_type)
+        return geopandas.clip(self, mask=mask, keep_geom_type=keep_geom_type, sort=sort)

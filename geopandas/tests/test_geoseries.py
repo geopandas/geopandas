@@ -436,6 +436,29 @@ class TestSeries:
         result = left.geometry.clip(south_america)
         assert_geoseries_equal(result, expected)
 
+    def test_clip_sorting(self, naturalearth_cities, naturalearth_lowres):
+        """
+        Test sorting of geodseries when clipping.
+        """
+        cities = read_file(naturalearth_cities)
+        world = read_file(naturalearth_lowres)
+        south_america = world[world["continent"] == "South America"]
+
+        unsorted_clipped_cities = clip(cities, south_america, sort=False)
+        sorted_clipped_cities = clip(cities, south_america, sort=True)
+
+        expected_sorted_index = pd.Index(
+            [55, 59, 62, 88, 101, 114, 122, 169, 181, 189, 210, 230, 236, 238, 239]
+        )
+
+        assert not (
+            sorted(unsorted_clipped_cities.index) == unsorted_clipped_cities.index
+        ).all()
+        assert (
+            sorted(sorted_clipped_cities.index) == sorted_clipped_cities.index
+        ).all()
+        assert_index_equal(expected_sorted_index, sorted_clipped_cities.index)
+
     def test_from_xy_points(self):
         x = self.landmarks.x.values
         y = self.landmarks.y.values

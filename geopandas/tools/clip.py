@@ -22,7 +22,7 @@ def _mask_is_list_like_rectangle(mask):
     )
 
 
-def _clip_gdf_with_mask(gdf, mask):
+def _clip_gdf_with_mask(gdf, mask, sort=False):
     """Clip geometry to the polygon/rectangle extent.
 
     Clip an input GeoDataFrame to the polygon extent of the polygon
@@ -36,6 +36,10 @@ def _clip_gdf_with_mask(gdf, mask):
     mask : (Multi)Polygon, list-like
         Reference polygon/rectangle for clipping.
 
+    sort : boolean, default False
+        If True, the results will be sorted in ascending order using the
+        geometries' indexes as the primary key.
+
     Returns
     -------
     GeoDataFrame
@@ -48,7 +52,9 @@ def _clip_gdf_with_mask(gdf, mask):
     else:
         intersection_polygon = mask
 
-    gdf_sub = gdf.iloc[gdf.sindex.query(intersection_polygon, predicate="intersects")]
+    gdf_sub = gdf.iloc[
+        gdf.sindex.query(intersection_polygon, predicate="intersects", sort=sort)
+    ]
 
     # For performance reasons points don't need to be intersected with poly
     non_point_mask = gdf_sub.geom_type != "Point"
@@ -82,7 +88,7 @@ def _clip_gdf_with_mask(gdf, mask):
     return clipped
 
 
-def clip(gdf, mask, keep_geom_type=False):
+def clip(gdf, mask, keep_geom_type=False, sort=False):
     """Clip points, lines, or polygon geometries to the mask extent.
 
     Both layers must be in the same Coordinate Reference System (CRS).
@@ -113,6 +119,9 @@ def clip(gdf, mask, keep_geom_type=False):
         If True, return only geometries of original type in case of intersection
         resulting in multiple geometry types or GeometryCollections.
         If False, return all resulting geometries (potentially mixed-types).
+    sort : boolean, default False
+        If True, the results will be sorted in ascending order using the
+        geometries' indexes as the primary key.
 
     Returns
     -------
@@ -190,7 +199,7 @@ def clip(gdf, mask, keep_geom_type=False):
     else:
         combined_mask = mask
 
-    clipped = _clip_gdf_with_mask(gdf, combined_mask)
+    clipped = _clip_gdf_with_mask(gdf, combined_mask, sort=sort)
 
     if keep_geom_type:
         geomcoll_concat = (clipped.geom_type == "GeometryCollection").any()
