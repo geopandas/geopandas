@@ -55,6 +55,9 @@ class TestSeries:
         self.l1 = LineString([(0, 0), (0, 1), (1, 1)])
         self.l2 = LineString([(0, 0), (1, 0), (1, 1), (0, 1)])
         self.g5 = GeoSeries([self.l1, self.l2])
+        self.esb3857 = Point(-8235939.130493107, 4975301.253789809)
+        self.sol3857 = Point(-8242607.167991625, 4966620.938285081)
+        self.landmarks3857 = GeoSeries([self.esb3857, self.sol3857], crs="epsg:3857")
 
     def teardown_method(self):
         shutil.rmtree(self.tempdir)
@@ -110,11 +113,11 @@ class TestSeries:
         # Test that warning is issued when operating on non-aligned series
 
         # _series_op
-        with pytest.warns(UserWarning, match="The indices .+ different"):
+        with pytest.warns(UserWarning, match="The indices .+ not equal"):
             self.a1.contains(self.a2)
 
         # _geo_op
-        with pytest.warns(UserWarning, match="The indices .+ different"):
+        with pytest.warns(UserWarning, match="The indices .+ not equal"):
             self.a1.union(self.a2)
 
     def test_no_warning_if_aligned(self):
@@ -136,8 +139,7 @@ class TestSeries:
         assert_array_equal(self.g1.geom_equals(self.sq), [False, True])
 
     def test_geom_equals_align(self):
-        with pytest.warns(UserWarning, match="The indices .+ different"):
-            a = self.a1.geom_equals(self.a2, align=True)
+        a = self.a1.geom_equals(self.a2, align=True)
         exp = pd.Series([False, True, False], index=["A", "B", "C"])
         assert_series_equal(a, exp)
 
@@ -153,7 +155,7 @@ class TestSeries:
         with warnings.catch_warnings():
             warnings.filterwarnings(
                 "ignore",
-                "The indices of the two GeoSeries are different",
+                "The indices of the left and right GeoSeries' are not equal",
                 UserWarning,
             )
             assert_array_equal(
@@ -170,7 +172,9 @@ class TestSeries:
         assert_array_equal(self.g1.geom_equals_exact(self.sq, 0.001), [False, True])
         with warnings.catch_warnings():
             warnings.filterwarnings(
-                "ignore", "The indices of the two GeoSeries are different", UserWarning
+                "ignore",
+                "The indices of the left and right GeoSeries' are not equal",
+                UserWarning,
             )
             assert_array_equal(
                 self.a1.geom_equals_exact(self.a2, 0.001, align=True),
@@ -200,8 +204,61 @@ class TestSeries:
         Test whether GeoSeries.to_json works and returns an actual json file.
         """
         json_str = self.g3.to_json()
-        json.loads(json_str)
+        data = json.loads(json_str)
+        assert "id" in data["features"][0].keys()
+        assert "bbox" in data["features"][0].keys()
         # TODO : verify the output is a valid GeoJSON.
+
+    def test_to_json_drop_id(self):
+        """
+        Test whether GeoSeries.to_json works when drop_id is True.
+        """
+        json_str = self.g3.to_json(drop_id=True)
+        data = json.loads(json_str)
+        assert "id" not in data["features"][0].keys()
+
+    def test_to_json_no_bbox(self):
+        """
+        Test whether GeoSeries.to_json works when show_bbox is False.
+        """
+        json_str = self.g3.to_json(show_bbox=False)
+        data = json.loads(json_str)
+        assert "bbox" not in data["features"][0].keys()
+
+    def test_to_json_no_bbox_drop_id(self):
+        """
+        Test whether GeoSeries.to_json works when show_bbox is False
+        and drop_id is True.
+        """
+        json_str = self.g3.to_json(show_bbox=False, drop_id=True)
+        data = json.loads(json_str)
+        assert "id" not in data["features"][0].keys()
+        assert "bbox" not in data["features"][0].keys()
+
+    @pytest.mark.skipif(not compat.HAS_PYPROJ, reason="Requires pyproj")
+    def test_to_json_wgs84(self):
+        """
+        Test whether the wgs84 conversion works as intended.
+        """
+        text = self.landmarks3857.to_json(to_wgs84=True)
+        data = json.loads(text)
+        assert data["type"] == "FeatureCollection"
+        assert "id" in data["features"][0].keys()
+        coord1 = data["features"][0]["geometry"]["coordinates"]
+        coord2 = data["features"][1]["geometry"]["coordinates"]
+        np.testing.assert_allclose(coord1, self.esb.coords[0])
+        np.testing.assert_allclose(coord2, self.sol.coords[0])
+
+    def test_to_json_wgs84_false(self):
+        """
+        Ensure no conversion to wgs84
+        """
+        text = self.landmarks3857.to_json()
+        data = json.loads(text)
+        coord1 = data["features"][0]["geometry"]["coordinates"]
+        coord2 = data["features"][1]["geometry"]["coordinates"]
+        assert coord1 == [-8235939.130493107, 4975301.253789809]
+        assert coord2 == [-8242607.167991625, 4966620.938285081]
 
     def test_representative_point(self):
         assert np.all(self.g1.contains(self.g1.representative_point()))

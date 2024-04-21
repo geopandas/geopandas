@@ -7,7 +7,7 @@ dependencies:
   - numpy
   - pandas
   - shapely
-  - fiona
+  # - pyogrio # comes as 0.5.1
   - pyproj>=3.3.0
   - geos
   - packaging
@@ -23,6 +23,7 @@ dependencies:
   - libspatialite
   - pip
   - pip:
+      - pyogrio
       - geopy
       - mapclassify
       - pyarrow

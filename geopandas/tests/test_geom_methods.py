@@ -179,6 +179,17 @@ class TestGeomMethods:
         self.l6 = LineString([(5, 5), (5, 100), (100, 5)])
         self.g12 = GeoSeries([self.l5])
         self.g13 = GeoSeries([self.l6])
+        self.g14 = GeoSeries(
+            [
+                MultiLineString([[(0, 2), (0, 10)], [(0, 10), (5, 10)]]),
+                MultiLineString([[(0, 2), (0, 10)], [(0, 11), (5, 10)]]),
+                MultiLineString(),
+                MultiLineString([[(0, 0), (1, 0)], [(0, 0), (3, 0)]]),
+                Point(0, 0),
+            ],
+            crs=4326,
+            index=range(2, 7),
+        )
 
     def _test_unary_real(self, op, expected, a):
         """Tests for 'area', 'length', 'is_valid', etc."""
@@ -300,15 +311,26 @@ class TestGeomMethods:
     #         self._test_binary_topological('intersection', self.g3,
     #                                       self.g3, no_crs_g3)
 
+    def test_alignment_warning(self):
+        with pytest.warns(
+            UserWarning,
+            match="The indices of the left and right GeoSeries' are not equal",
+        ):
+            self.g0.intersection(self.g9, align=None)
+
+        with warnings.catch_warnings(record=True) as record:
+            self.g0.intersection(self.g9, align=True)
+            self.g0.intersection(self.g9, align=False)
+
+            assert len(record) == 0
+
     def test_intersection(self):
         self._test_binary_topological("intersection", self.t1, self.g1, self.g2)
-        with pytest.warns(UserWarning, match="The indices .+ different"):
-            self._test_binary_topological(
-                "intersection", self.all_none, self.g1, self.empty
-            )
+        self._test_binary_topological(
+            "intersection", self.all_none, self.g1, self.empty
+        )
 
-        with pytest.warns(UserWarning, match="The indices .+ different"):
-            assert len(self.g0.intersection(self.g9, align=True) == 8)
+        assert len(self.g0.intersection(self.g9, align=True) == 8)
         assert len(self.g0.intersection(self.g9, align=False) == 7)
 
     def test_clip_by_rect(self):
@@ -323,8 +345,7 @@ class TestGeomMethods:
     def test_union_series(self):
         self._test_binary_topological("union", self.sq, self.g1, self.g2)
 
-        with pytest.warns(UserWarning, match="The indices .+ different"):
-            assert len(self.g0.union(self.g9, align=True) == 8)
+        assert len(self.g0.union(self.g9, align=True) == 8)
         assert len(self.g0.union(self.g9, align=False) == 7)
 
     def test_union_polygon(self):
@@ -333,8 +354,7 @@ class TestGeomMethods:
     def test_symmetric_difference_series(self):
         self._test_binary_topological("symmetric_difference", self.sq, self.g3, self.g4)
 
-        with pytest.warns(UserWarning, match="The indices .+ different"):
-            assert len(self.g0.symmetric_difference(self.g9, align=True) == 8)
+        assert len(self.g0.symmetric_difference(self.g9, align=True) == 8)
         assert len(self.g0.symmetric_difference(self.g9, align=False) == 7)
 
     def test_symmetric_difference_poly(self):
@@ -347,8 +367,7 @@ class TestGeomMethods:
         expected = GeoSeries([GeometryCollection(), self.t2])
         self._test_binary_topological("difference", expected, self.g1, self.g2)
 
-        with pytest.warns(UserWarning, match="The indices .+ different"):
-            assert len(self.g0.difference(self.g9, align=True) == 8)
+        assert len(self.g0.difference(self.g9, align=True) == 8)
         assert len(self.g0.difference(self.g9, align=False) == 7)
 
     def test_difference_poly(self):
@@ -493,8 +512,7 @@ class TestGeomMethods:
         assert_array_dtype_equal(expected, self.g0.contains(self.t1))
 
         expected = [False, True, True, True, True, True, False, False]
-        with pytest.warns(UserWarning, match="The indices .+ different"):
-            assert_array_dtype_equal(expected, self.g0.contains(self.g9, align=True))
+        assert_array_dtype_equal(expected, self.g0.contains(self.g9, align=True))
 
         expected = [False, False, True, False, False, False, False]
         assert_array_dtype_equal(expected, self.g0.contains(self.g9, align=False))
@@ -504,10 +522,9 @@ class TestGeomMethods:
         assert_array_dtype_equal(expected, self.g0.contains_properly(Point(0.25, 0.25)))
 
         expected = [False, False, False, False, False, True, False, False]
-        with pytest.warns(UserWarning, match="The indices .+ different"):
-            assert_array_dtype_equal(
-                expected, self.g0.contains_properly(self.g9, align=True)
-            )
+        assert_array_dtype_equal(
+            expected, self.g0.contains_properly(self.g9, align=True)
+        )
 
         expected = [False, False, True, False, False, False, False]
         assert_array_dtype_equal(
@@ -520,8 +537,7 @@ class TestGeomMethods:
         assert_array_dtype_equal(expected, self.g0.dwithin(self.p0, 6))
 
         expected = [False, True, True, True, True, True, False, False]
-        with pytest.warns(UserWarning, match="The indices .+ different"):
-            assert_array_dtype_equal(expected, self.g0.dwithin(self.g9, 1, align=True))
+        assert_array_dtype_equal(expected, self.g0.dwithin(self.g9, 1, align=True))
         expected = [True, True, True, True, False, False, False]
         assert_array_dtype_equal(expected, self.g0.dwithin(self.g9, 1, align=False))
 
@@ -552,8 +568,7 @@ class TestGeomMethods:
         assert_array_dtype_equal(expected, self.crossed_lines.crosses(self.l3))
 
         expected = [False] * 8
-        with pytest.warns(UserWarning, match="The indices .+ different"):
-            assert_array_dtype_equal(expected, self.g0.crosses(self.g9, align=True))
+        assert_array_dtype_equal(expected, self.g0.crosses(self.g9, align=True))
 
         expected = [False] * 7
         assert_array_dtype_equal(expected, self.g0.crosses(self.g9, align=False))
@@ -563,8 +578,7 @@ class TestGeomMethods:
         assert_array_dtype_equal(expected, self.g0.disjoint(self.t1))
 
         expected = [False] * 8
-        with pytest.warns(UserWarning, match="The indices .+ different"):
-            assert_array_dtype_equal(expected, self.g0.disjoint(self.g9, align=True))
+        assert_array_dtype_equal(expected, self.g0.disjoint(self.g9, align=True))
 
         expected = [False, False, False, False, True, False, False]
         assert_array_dtype_equal(expected, self.g0.disjoint(self.g9, align=False))
@@ -601,8 +615,7 @@ class TestGeomMethods:
             index=range(8),
         )
 
-        with pytest.warns(UserWarning, match="The indices .+ different"):
-            assert_array_dtype_equal(expected, self.g0.relate(self.g9, align=True))
+        assert_array_dtype_equal(expected, self.g0.relate(self.g9, align=True))
 
         expected = Series(
             [
@@ -628,8 +641,7 @@ class TestGeomMethods:
         assert_array_dtype_equal(expected, self.g6.distance(self.na_none))
 
         expected = Series(np.array([np.nan, 0, 0, 0, 0, 0, np.nan, np.nan]), range(8))
-        with pytest.warns(UserWarning, match="The indices .+ different"):
-            assert_array_dtype_equal(expected, self.g0.distance(self.g9, align=True))
+        assert_array_dtype_equal(expected, self.g0.distance(self.g9, align=True))
 
         val = self.g0.iloc[4].distance(self.g9.iloc[4])
         expected = Series(np.array([0, 0, 0, 0, val, np.nan, np.nan]), self.g0.index)
@@ -649,10 +661,9 @@ class TestGeomMethods:
         assert_array_dtype_equal(expected, self.na_none.hausdorff_distance(self.p0))
 
         expected = Series(np.array([np.nan, 0, 0, 0, 0, 0, np.nan, np.nan]), range(8))
-        with pytest.warns(UserWarning, match="The indices .+ different"):
-            assert_array_dtype_equal(
-                expected, self.g0.hausdorff_distance(self.g9, align=True)
-            )
+        assert_array_dtype_equal(
+            expected, self.g0.hausdorff_distance(self.g9, align=True)
+        )
 
         val_1 = self.g0.iloc[0].hausdorff_distance(self.g9.iloc[0])
         val_2 = self.g0.iloc[2].hausdorff_distance(self.g9.iloc[2])
@@ -678,10 +689,9 @@ class TestGeomMethods:
         assert_array_dtype_equal(expected, self.na_none.frechet_distance(self.p0))
 
         expected = Series(np.array([np.nan, 0, 0, 0, 0, 0, np.nan, np.nan]), range(8))
-        with pytest.warns(UserWarning, match="The indices .+ different"):
-            assert_array_dtype_equal(
-                expected, self.g0.frechet_distance(self.g9, align=True)
-            )
+        assert_array_dtype_equal(
+            expected, self.g0.frechet_distance(self.g9, align=True)
+        )
 
         # expected returns
         val_1 = 1.0
@@ -717,8 +727,7 @@ class TestGeomMethods:
         assert_array_dtype_equal(expected, self.g0.intersects(self.empty_poly))
 
         expected = [False, True, True, True, True, True, False, False]
-        with pytest.warns(UserWarning, match="The indices .+ different"):
-            assert_array_dtype_equal(expected, self.g0.intersects(self.g9, align=True))
+        assert_array_dtype_equal(expected, self.g0.intersects(self.g9, align=True))
 
         expected = [True, True, True, True, False, False, False]
         assert_array_dtype_equal(expected, self.g0.intersects(self.g9, align=False))
@@ -731,8 +740,7 @@ class TestGeomMethods:
         assert_array_dtype_equal(expected, self.g4.overlaps(self.t1))
 
         expected = [False] * 8
-        with pytest.warns(UserWarning, match="The indices .+ different"):
-            assert_array_dtype_equal(expected, self.g0.overlaps(self.g9, align=True))
+        assert_array_dtype_equal(expected, self.g0.overlaps(self.g9, align=True))
 
         expected = [False] * 7
         assert_array_dtype_equal(expected, self.g0.overlaps(self.g9, align=False))
@@ -742,8 +750,7 @@ class TestGeomMethods:
         assert_array_dtype_equal(expected, self.g0.touches(self.t1))
 
         expected = [False] * 8
-        with pytest.warns(UserWarning, match="The indices .+ different"):
-            assert_array_dtype_equal(expected, self.g0.touches(self.g9, align=True))
+        assert_array_dtype_equal(expected, self.g0.touches(self.g9, align=True))
 
         expected = [True, False, False, True, False, False, False]
         assert_array_dtype_equal(expected, self.g0.touches(self.g9, align=False))
@@ -756,8 +763,7 @@ class TestGeomMethods:
         assert_array_dtype_equal(expected, self.g0.within(self.sq))
 
         expected = [False, True, True, True, True, True, False, False]
-        with pytest.warns(UserWarning, match="The indices .+ different"):
-            assert_array_dtype_equal(expected, self.g0.within(self.g9, align=True))
+        assert_array_dtype_equal(expected, self.g0.within(self.g9, align=True))
 
         expected = [False, True, False, False, False, False, False]
         assert_array_dtype_equal(expected, self.g0.within(self.g9, align=False))
@@ -774,8 +780,7 @@ class TestGeomMethods:
         assert_series_equal(res, exp)
 
         expected = [False, True, True, True, True, True, False, False]
-        with pytest.warns(UserWarning, match="The indices .+ different"):
-            assert_array_dtype_equal(expected, self.g0.covers(self.g9, align=True))
+        assert_array_dtype_equal(expected, self.g0.covers(self.g9, align=True))
 
         expected = [False, False, True, False, False, False, False]
         assert_array_dtype_equal(expected, self.g0.covers(self.g9, align=False))
@@ -791,8 +796,7 @@ class TestGeomMethods:
         assert_series_equal(res, exp)
 
         expected = [False, True, True, True, True, True, False, False]
-        with pytest.warns(UserWarning, match="The indices .+ different"):
-            assert_array_dtype_equal(expected, self.g0.covered_by(self.g9, align=True))
+        assert_array_dtype_equal(expected, self.g0.covered_by(self.g9, align=True))
 
         expected = [False, True, False, False, False, False, False]
         assert_array_dtype_equal(expected, self.g0.covered_by(self.g9, align=False))
@@ -1105,8 +1109,7 @@ class TestGeomMethods:
 
         s = GeoSeries([Point(2, 2), Point(0.5, 0.5)], index=[1, 2])
         expected = Series([np.nan, 2.0, np.nan])
-        with pytest.warns(UserWarning, match="The indices .+ different"):
-            assert_series_equal(self.g5.project(s), expected)
+        assert_series_equal(self.g5.project(s), expected)
 
         expected = Series([2.0, 0.5], index=self.g5.index)
         assert_series_equal(self.g5.project(s, align=False), expected)
@@ -1814,6 +1817,35 @@ class TestGeomMethods:
             ],
         )
         assert_geoseries_equal(expected, self.g1.force_3d([1, 2]))
+
+    def test_line_merge(self):
+        expected = GeoSeries(
+            [
+                LineString([(0, 2), (0, 10), (5, 10)]),
+                MultiLineString([[(0, 2), (0, 10)], [(0, 11), (5, 10)]]),
+                GeometryCollection(),
+                LineString([(0, 0), (1, 0), (3, 0)]),
+                GeometryCollection(),
+            ],
+            crs=4326,
+            index=range(2, 7),
+        )
+        assert_geoseries_equal(expected, self.g14.line_merge())
+
+    @pytest.mark.skipif(shapely.geos_version < (3, 11, 0), reason="requires GEOS>=3.11")
+    def test_line_merge_directed(self):
+        expected = GeoSeries(
+            [
+                LineString([(0, 2), (0, 10), (5, 10)]),
+                MultiLineString([[(0, 2), (0, 10)], [(0, 11), (5, 10)]]),
+                GeometryCollection(),
+                MultiLineString([[(0, 0), (1, 0)], [(0, 0), (3, 0)]]),
+                GeometryCollection(),
+            ],
+            crs=4326,
+            index=range(2, 7),
+        )
+        assert_geoseries_equal(expected, self.g14.line_merge(directed=True))
 
     @pytest.mark.skipif(
         shapely.geos_version < (3, 9, 5), reason="Empty geom bug in GEOS<3.9.5"
