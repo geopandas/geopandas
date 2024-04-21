@@ -845,6 +845,9 @@ class GeometryArray(ExtensionArray):
     def union_all(self):
         return shapely.union_all(self._data)
 
+    def intersection_all(self):
+        return shapely.intersection_all(self._data)
+
     #
     # Affinity operations
     #

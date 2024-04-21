@@ -1732,17 +1732,42 @@ GeometryCollection
         --------
 
         >>> from shapely.geometry import box
-        >>> s = geopandas.GeoSeries([box(0,0,1,1), box(0,0,2,2)])
+        >>> s = geopandas.GeoSeries([box(0, 0, 1, 1), box(0, 0, 2, 2)])
         >>> s
         0    POLYGON ((1 0, 1 1, 0 1, 0 0, 1 0))
         1    POLYGON ((2 0, 2 2, 0 2, 0 0, 2 0))
         dtype: geometry
 
-        >>> union = s.union_all()
-        >>> print(union)
-        POLYGON ((0 1, 0 2, 2 2, 2 0, 1 0, 0 0, 0 1))
+        >>> s.union_all()
+        <POLYGON ((0 1, 0 2, 2 2, 2 0, 1 0, 0 0, 0 1))>
         """
         return self.geometry.values.union_all()
+
+    def intersection_all(self):
+        """Returns a geometry containing the intersection of all geometries in
+        the ``GeoSeries``.
+
+        This method ignores None values when other geometries are present.
+        If all elements of the GeoSeries are None, an empty GeometryCollection is
+        returned.
+
+        Examples
+        --------
+
+        >>> from shapely.geometry import box
+        >>> s = geopandas.GeoSeries(
+        ...     [box(0, 0, 2, 2), box(1, 1, 3, 3), box(0, 0, 1.5, 1.5)]
+        ... )
+        >>> s
+        0              POLYGON ((2 0, 2 2, 0 2, 0 0, 2 0))
+        1              POLYGON ((3 1, 3 3, 1 3, 1 1, 3 1))
+        2    POLYGON ((1.5 0, 1.5 1.5, 0 1.5, 0 0, 1.5 0))
+        dtype: geometry
+
+        >>> s.intersection_all()
+        <POLYGON ((1 1, 1 1.5, 1.5 1.5, 1.5 1, 1 1))>
+        """
+        return self.geometry.values.intersection_all()
 
     #
     # Binary operations that return a pandas Series
