@@ -7,6 +7,8 @@ import pandas as pd
 
 from packaging.version import Version
 
+from pandas.api.types import is_datetime64_any_dtype
+
 _MAP_KWARGS = [
     "location",
     "prefer_canvas",
@@ -322,6 +324,14 @@ def _explore(
         tiles = None
     elif not gdf.crs.equals(4326):
         gdf = gdf.to_crs(4326)
+
+    # Fields which are not JSON serializable are coerced to strings
+    json_not_supported_cols = gdf.columns[
+        [is_datetime64_any_dtype(gdf[c]) for c in gdf.columns]
+    ].union(gdf.columns[gdf.dtypes == "object"])
+
+    if len(json_not_supported_cols) > 0:
+        gdf = gdf.astype({c: "string" for c in json_not_supported_cols})
 
     # create folium.Map object
     if m is None:
