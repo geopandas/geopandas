@@ -318,6 +318,8 @@ def _explore(
         gdf.geometry[rings_mask] = gdf.geometry[rings_mask].apply(
             lambda g: LineString(g)
         )
+    if isinstance(gdf, geopandas.GeoSeries):
+        gdf = gdf.to_frame()
 
     if gdf.crs is None:
         kwargs["crs"] = "Simple"
