@@ -2,7 +2,7 @@ version: 2
 build:
   os: ubuntu-22.04
   tools:
-    python: mambaforge-latest
+    python: 3.11
   jobs:
     post_checkout:
       # we need the tags for versioneer to work
@@ -10,8 +10,8 @@ build:
       - git fetch --tags
 python:
   install:
+  - requirements: doc/requirements.txt
   - method: pip
     path: .
-conda:
-  environment: doc/environment.yml
+
 formats: []
