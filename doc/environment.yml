@@ -6,7 +6,6 @@ dependencies:
   - pandas
   - shapely
   - fiona
-  - pyproj
   - pyogrio
   - geopy
   - matplotlib
@@ -29,7 +28,6 @@ dependencies:
   # specify additional dependencies to reduce solving for conda
   - gdal
   - libgdal
-  - proj
   - geos
   - nbsphinx
   - jupyter_client
@@ -42,5 +40,6 @@ dependencies:
   - pointpats
   - pip
   - pip:
+      - pyproj
       - sphinx-toggleprompt
       - geodatasets
