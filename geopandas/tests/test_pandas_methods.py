@@ -882,6 +882,9 @@ def test_preserve_flags(df):
         pd.concat([df, df])
 
 
+@pytest.mark.skipif(
+    not compat.SHAPELY_GE_20, reason="ufunc only exists in shapely >= 2"
+)
 def test_ufunc():
     # this is calling a shapely ufunc, but we currently rely on pandas' implementation
     # of `__array_ufunc__` to wrap the result back into a GeoSeries
