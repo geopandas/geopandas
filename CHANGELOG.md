@@ -21,6 +21,7 @@ API changes:
 
 New methods:
 
+- Added `intersection_all` method from shapely to GeoSeries/GeoDataframe (#3228).
 - Added `line_merge` method from shapely to GeoSeries/GeoDataframe (#3214).
 - Added `set_precision` and `get_precision` methods from shapely to GeoSeries/GeoDataframe (#3175).
 - Added `count_coordinates` method from shapely to GeoSeries/GeoDataframe (#3026).
@@ -48,6 +49,8 @@ New features and improvements:
   the specified columns (#3101).
 - Added support to ``read_file`` for the ``mask`` keyword for the pyogrio engine (#3062).
 - Added support to ``read_file`` for the ``columns`` keyword for the fiona engine (#3133).
+- Add `sort` keyword to `clip` method for GeoSeries and GeoDataFrame to allow optional
+  preservation of the original order of observations. (#3233)
 - Added `show_bbox`, `drop_id` and `to_wgs84` arguments to allow further customization of
   `GeoSeries.to_json` (#3226)
 
@@ -80,7 +83,7 @@ Deprecations and compatibility notes:
 - The deprecation of `geopandas.datasets` has been enforced and the module has been
   removed. New sample datasets are now available in the
   [geodatasets](https://geodatasets.readthedocs.io/en/latest/) package (#3084).
-- Many longstanding deprecated functions, methods and properties have been removed (#3174), (#3189)
+- Many longstanding deprecated functions, methods and properties have been removed (#3174), (#3190)
   - Removed deprecated functions
     `geopandas.io.read_file`, `geopandas.io.to_file` and `geopandas.io.sql.read_postgis`.
     `geopandas.read_file`, `geopandas.read_postgis` and the GeoDataFrame/GeoSeries `to_file(..)`

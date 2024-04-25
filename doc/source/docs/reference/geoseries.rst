@@ -147,6 +147,7 @@ Aggregating and exploding
    :toctree: api/
 
    GeoSeries.union_all
+   GeoSeries.intersection_all
    GeoSeries.explode
 
 Serialization / IO / conversion

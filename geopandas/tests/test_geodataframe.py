@@ -1066,6 +1066,29 @@ class TestDataFrame:
         result = left.clip(south_america)
         assert_geodataframe_equal(result, expected)
 
+    def test_clip_sorting(self, naturalearth_cities, naturalearth_lowres):
+        """
+        Test sorting of geodataframe when clipping.
+        """
+        cities = read_file(naturalearth_cities)
+        world = read_file(naturalearth_lowres)
+        south_america = world[world["continent"] == "South America"]
+
+        unsorted_clipped_cities = geopandas.clip(cities, south_america, sort=False)
+        sorted_clipped_cities = geopandas.clip(cities, south_america, sort=True)
+
+        expected_sorted_index = pd.Index(
+            [55, 59, 62, 88, 101, 114, 122, 169, 181, 189, 210, 230, 236, 238, 239]
+        )
+
+        assert not (
+            sorted(unsorted_clipped_cities.index) == unsorted_clipped_cities.index
+        ).all()
+        assert (
+            sorted(sorted_clipped_cities.index) == sorted_clipped_cities.index
+        ).all()
+        assert_index_equal(expected_sorted_index, sorted_clipped_cities.index)
+
     def test_overlay(self, dfs, how):
         """
         Basic test for availability of the GeoDataFrame method. Other
@@ -1514,28 +1537,24 @@ def test_geodataframe_crs_colname():
     assert getattr(gdf, "crs") is None
 
 
-@pytest.fixture
-def nybb2(nybb_filename):
-    yield read_file(nybb_filename).head(2)
-
-
 @pytest.mark.parametrize("geo_col_name", ["geometry", "polygons"])
-def test_set_geometry_supply_colname(nybb2, geo_col_name):
+def test_set_geometry_supply_colname(dfs, geo_col_name):
+    df, _ = dfs
     if geo_col_name != "geometry":
-        nybb2 = nybb2.rename_geometry(geo_col_name)
-    nybb2["centroid"] = nybb2.geometry.centroid
-    res = nybb2.set_geometry("centroid")
+        df = df.rename_geometry(geo_col_name)
+    df["centroid"] = df.geometry.centroid
+    res = df.set_geometry("centroid")
     assert res.active_geometry_name == "centroid"
     assert geo_col_name in res.columns
 
     # Test that drop=False explicitly warns
     deprecated = "The `drop` keyword argument is deprecated"
     with pytest.warns(FutureWarning, match=deprecated):
-        res2 = nybb2.set_geometry("centroid", drop=False)
+        res2 = df.set_geometry("centroid", drop=False)
     assert_geodataframe_equal(res, res2)
 
     with pytest.warns(FutureWarning, match=deprecated):
-        res3 = nybb2.set_geometry("centroid", drop=True)
+        res3 = df.set_geometry("centroid", drop=True)
     # drop=True should preserve previous geometry col name (keep old behaviour)
     assert res3.active_geometry_name == geo_col_name
     assert "centroid" not in res3.columns
@@ -1543,18 +1562,19 @@ def test_set_geometry_supply_colname(nybb2, geo_col_name):
     # Test that alternative suggested without using drop=True is equivalent
     assert_geodataframe_equal(
         res3,
-        nybb2.set_geometry("centroid")
+        df.set_geometry("centroid")
         .drop(columns=geo_col_name)
         .rename_geometry(geo_col_name),
     )
 
 
 @pytest.mark.parametrize("geo_col_name", ["geometry", "polygons"])
-def test_set_geometry_supply_arraylike(nybb2, geo_col_name):
+def test_set_geometry_supply_arraylike(dfs, geo_col_name):
+    df, _ = dfs
     if geo_col_name != "geometry":
-        nybb2 = nybb2.rename_geometry(geo_col_name)
-    centroids = nybb2.geometry.centroid
-    res = nybb2.set_geometry(centroids)
+        df = df.rename_geometry(geo_col_name)
+    centroids = df.geometry.centroid
+    res = df.set_geometry(centroids)
     assert res.active_geometry_name == geo_col_name
     # drop should do nothing if the column already exists
     match_str = (
@@ -1565,11 +1585,11 @@ def test_set_geometry_supply_arraylike(nybb2, geo_col_name):
         FutureWarning,
         match=match_str,
     ):
-        res2 = nybb2.set_geometry(centroids, drop=True)
+        res2 = df.set_geometry(centroids, drop=True)
     assert res2.active_geometry_name == geo_col_name
 
     centroids = centroids.rename("centroids")
-    res3 = nybb2.set_geometry(centroids)
+    res3 = df.set_geometry(centroids)
     # Should preserve the geoseries name
     # (and old geometry column should be kept)
     assert res3.active_geometry_name == "centroids"
@@ -1580,6 +1600,6 @@ def test_set_geometry_supply_arraylike(nybb2, geo_col_name):
         FutureWarning,
         match=match_str,
     ):
-        res4 = nybb2.set_geometry(centroids, drop=True)
+        res4 = df.set_geometry(centroids, drop=True)
     assert res4.active_geometry_name == "centroids"
     assert geo_col_name in res4.columns
