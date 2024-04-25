@@ -1,4 +1,6 @@
+import json
 import os.path
+from pathlib import Path
 
 from pandas import Series
 
@@ -8,6 +10,7 @@ from geopandas.testing import (  # noqa: F401
     assert_geoseries_equal,
     geom_almost_equals,
     geom_equals,
+    assert_geodataframe_equal,
 )
 
 HERE = os.path.abspath(os.path.dirname(__file__))
@@ -21,7 +24,12 @@ _NATURALEARTH_CITIES = os.path.join(
 _NATURALEARTH_LOWRES = os.path.join(
     _TEST_DATA_DIR, "naturalearth_lowres", "naturalearth_lowres.shp"
 )
-
+_GEOJSON_CONVERTED_DATA_DIR = Path(_TEST_DATA_DIR) / "as_geojson"
+_GEOJSON_CONVERTED_NYBB = _GEOJSON_CONVERTED_DATA_DIR / "nybb_16a.geojson"
+_GEOJSON_CONVERTED_NATURALEARTH_CITIES = (
+    _GEOJSON_CONVERTED_DATA_DIR / "naturalearth_cities.shp"
+)
+_GEOJSON_CONVERTED_NATURALEARTH_LOWRES = _GEOJSON_CONVERTED_DATA_DIR / "nybb_16a.zip"
 
 # mock not used here, but the import from here is used in other modules
 try:
@@ -149,3 +157,22 @@ def create_postgis(con, df, srid=None, geom_col="geom"):
     finally:
         cursor.close()
         con.commit()
+
+
+def get_test_df_from_geojson(filename_stem: str) -> GeoDataFrame:
+    geojson_path = Path(_GEOJSON_CONVERTED_DATA_DIR) / f"{filename_stem}.geojson"
+    additional_info_path = (
+        Path(_GEOJSON_CONVERTED_DATA_DIR) / f"{filename_stem}_additional.json"
+    )
+    with open(geojson_path, "r") as f:
+        raw_geojson = json.load(f)
+    with open(additional_info_path, "r") as f2:
+        addtional_info = json.load(f2)
+    crs = addtional_info["crs"]
+    dtypes = addtional_info["dtypes"]
+    df = GeoDataFrame.from_features(raw_geojson, crs=crs)
+    # fix the column order, geometry is last when using fiona/ pyogrio
+    df = df[df.columns[df.columns != "geometry"].to_list() + ["geometry"]]
+    # as geojson isn't precise with dtypes, pass these through explicitly
+    df = df.astype(dtypes)
+    return df

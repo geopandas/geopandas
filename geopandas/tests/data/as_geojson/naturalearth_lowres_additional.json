@@ -1,0 +1,1 @@
+{"crs": "EPSG:4326", "dtypes": {"pop_est": "float64", "continent": "object", "name": "object", "iso_a3": "object", "gdp_md_est": "int64", "geometry": "geometry"}}
