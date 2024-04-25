@@ -1488,6 +1488,8 @@ class GeometryArray(ExtensionArray):
         -------
         values : numpy array
         """
+        if compat.USE_PYGEOS:
+            return to_shapely(self)
         if copy and (dtype is None or dtype == np.dtype("object")):
             return self._data.copy()
         return self._data
