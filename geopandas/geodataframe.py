@@ -306,7 +306,10 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         if inplace:
             frame = self
         else:
-            frame = self.copy()
+            if compat.PANDAS_GE_30:
+                frame = self.copy(deep=False)
+            else:
+                frame = self.copy()
 
         to_remove = None
         geo_column_name = self._geometry_column_name
@@ -1947,7 +1950,7 @@ individually so that features may have different properties
         return df
 
     # overrides the pandas astype method to ensure the correct return type
-    def astype(self, dtype, copy=True, errors="raise", **kwargs):
+    def astype(self, dtype, copy=None, errors="raise", **kwargs):
         """
         Cast a pandas object to a specified dtype ``dtype``.
 
@@ -1960,7 +1963,12 @@ individually so that features may have different properties
         -------
         GeoDataFrame or DataFrame
         """
-        df = super().astype(dtype, copy=copy, errors=errors, **kwargs)
+        if not compat.PANDAS_GE_30 and copy is None:
+            copy = True
+        if copy is not None:
+            kwargs["copy"] = copy
+
+        df = super().astype(dtype, errors=errors, **kwargs)
 
         try:
             geoms = df[self._geometry_column_name]
