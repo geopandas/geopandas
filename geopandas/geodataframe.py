@@ -16,7 +16,7 @@ from geopandas.geoseries import GeoSeries
 import geopandas.io
 from geopandas.explore import _explore
 from ._decorator import doc
-from ._compat import HAS_PYPROJ
+from ._compat import HAS_PYPROJ, PANDAS_GE_30
 
 
 def _geodataframe_constructor_with_fallback(*args, **kwargs):
@@ -314,7 +314,10 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         if inplace:
             frame = self
         else:
-            frame = self.copy()
+            if PANDAS_GE_30:
+                frame = self.copy(deep=False)
+            else:
+                frame = self.copy()
 
         geo_column_name = self._geometry_column_name
 
@@ -2004,7 +2007,7 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
 
     # overrides the pandas astype method to ensure the correct return type
     # should be removable when pandas 1.4 is dropped
-    def astype(self, dtype, copy=True, errors="raise", **kwargs):
+    def astype(self, dtype, copy=None, errors="raise", **kwargs):
         """
         Cast a pandas object to a specified dtype ``dtype``.
         Returns a GeoDataFrame when the geometry column is kept as geometries,
@@ -2014,7 +2017,12 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
         -------
         GeoDataFrame or DataFrame
         """
-        df = super().astype(dtype, copy=copy, errors=errors, **kwargs)
+        if not PANDAS_GE_30 and copy is None:
+            copy = True
+        if copy is not None:
+            kwargs["copy"] = copy
+
+        df = super().astype(dtype, errors=errors, **kwargs)
 
         try:
             geoms = df[self._geometry_column_name]
