@@ -82,7 +82,7 @@ def _import_pyogrio():
 
 
 def _check_fiona(func):
-    if fiona is None:
+    if not fiona:
         raise ImportError(
             f"the {func} requires the 'fiona' package, but it is not installed or does "
             f"not import correctly.\nImporting fiona resulted in: {fiona_import_error}"
@@ -90,7 +90,7 @@ def _check_fiona(func):
 
 
 def _check_pyogrio(func):
-    if pyogrio is None:
+    if not pyogrio:
         raise ImportError(
             f"the {func} requires the 'pyogrio' package, but it is not installed "
             "or does not import correctly."
