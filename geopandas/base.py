@@ -3358,7 +3358,7 @@ GeometryCollection
         """
         return _binary_op("distance", self, other, align)
 
-    def hausdorff_distance(self, other, align=True, densify=None):
+    def hausdorff_distance(self, other, align=None, densify=None):
         """Returns a ``Series`` containing the Hausdorff distance to aligned `other`.
 
         The Hausdorff distance is the largest distance consisting of any point in `self`
@@ -3473,7 +3473,7 @@ GeometryCollection
         """
         return _binary_op("hausdorff_distance", self, other, align, densify=densify)
 
-    def frechet_distance(self, other, align=True, densify=None):
+    def frechet_distance(self, other, align=None, densify=None):
         """Returns a ``Series`` containing the Frechet distance to aligned `other`.
 
         The Fréchet distance is a measure of similarity: it is the greatest distance
