@@ -874,7 +874,7 @@ def test_read_file__columns_empty(engine, naturalearth_lowres):
     assert gdf.columns.tolist() == ["geometry"]
 
 
-@pytest.mark.skipif(FIONA_GE_19, reason="test for fiona < 1.9")
+@pytest.mark.skipif(FIONA_GE_19 or not fiona, reason="test for fiona < 1.9")
 def test_read_file__columns_old_fiona(naturalearth_lowres):
     with pytest.raises(NotImplementedError):
         geopandas.read_file(
