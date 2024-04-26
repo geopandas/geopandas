@@ -9,7 +9,7 @@ from geopandas import GeoDataFrame, read_file
 from pandas.testing import assert_frame_equal
 import pytest
 
-from geopandas._compat import PANDAS_GE_15, PANDAS_GE_20, PANDAS_GE_30
+from geopandas._compat import PANDAS_GE_15, PANDAS_GE_20
 from geopandas.testing import assert_geodataframe_equal, geom_almost_equals
 
 
@@ -261,7 +261,7 @@ def test_dissolve_categorical():
 
     # when observed=False we get an additional observation
     # that wasn't in the original data
-    none_val = "GEOMETRYCOLLECTION EMPTY" if PANDAS_GE_30 else None
+    none_val = None
     expected_gdf_observed_false = geopandas.GeoDataFrame(
         {
             "cat": pd.Categorical(["a", "a", "b", "b"]),
