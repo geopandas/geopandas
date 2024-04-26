@@ -431,7 +431,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         else:
             if not inplace:
                 return self.rename(columns={geometry_col: col}).set_geometry(
-                    col, inplace
+                    col, inplace=inplace
                 )
             self.rename(columns={geometry_col: col}, inplace=inplace)
             self.set_geometry(col, inplace=inplace)
