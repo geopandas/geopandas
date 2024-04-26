@@ -5,14 +5,21 @@ import numpy as np
 import pandas as pd
 import shapely
 
-from shapely.geometry import Point, Polygon, GeometryCollection
+from shapely.geometry import Point, Polygon, GeometryCollection, box
 
 import geopandas
 import geopandas._compat as compat
-from geopandas import GeoDataFrame, GeoSeries, read_file, sjoin, sjoin_nearest
+from geopandas import (
+    GeoDataFrame,
+    GeoSeries,
+    read_file,
+    sjoin,
+    sjoin_nearest,
+    points_from_xy,
+)
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 
-from pandas.testing import assert_frame_equal, assert_series_equal
+from pandas.testing import assert_frame_equal, assert_series_equal, assert_index_equal
 import pytest
 
 
@@ -383,6 +390,39 @@ class TestSpatialJoin:
         expected_gdf["index_right"] = expected_right
         joined = sjoin(left, right, how=how, predicate="dwithin", distance=distance)
         assert_frame_equal(expected_gdf.sort_index(), joined.sort_index())
+
+    # GH3239
+    @pytest.mark.parametrize(
+        "predicate",
+        [
+            "contains",
+            "contains_properly",
+            "covered_by",
+            "covers",
+            "crosses",
+            "intersects",
+            "touches",
+            "within",
+        ],
+    )
+    def test_sjoin_left_order(self, predicate):
+        # a set of points in random order -> that order should be preserved
+        # with a left join
+        pts = GeoDataFrame(
+            geometry=points_from_xy([0.1, 0.4, 0.3, 0.7], [0.8, 0.6, 0.9, 0.1])
+        )
+        polys = GeoDataFrame(
+            {"id": [1, 2, 3, 4]},
+            geometry=[
+                box(0, 0, 0.5, 0.5),
+                box(0, 0.5, 0.5, 1),
+                box(0.5, 0, 1, 0.5),
+                box(0.5, 0.5, 1, 1),
+            ],
+        )
+
+        joined = sjoin(pts, polys, predicate=predicate, how="left")
+        assert_index_equal(joined.index, pts.index)
 
 
 class TestIndexNames:

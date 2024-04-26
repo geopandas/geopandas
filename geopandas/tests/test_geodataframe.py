@@ -249,7 +249,6 @@ class TestDataFrame:
         with pytest.raises(ValueError, match=msg):
             self.df.rename_geometry("Shape_Area", inplace=True)
 
-    @pytest.mark.skipif(not compat.HAS_PYPROJ, reason="Requires pyproj")
     def test_set_geometry(self):
         geom = GeoSeries([Point(x, y) for x, y in zip(range(5), range(5))])
         original_geom = self.df.geometry
@@ -266,6 +265,10 @@ class TestDataFrame:
         # ndim error
         with pytest.raises(ValueError):
             self.df.set_geometry(self.df)
+
+    @pytest.mark.skipif(not compat.HAS_PYPROJ, reason="Requires pyproj")
+    def test_set_geometry_crs(self):
+        geom = GeoSeries([Point(x, y) for x, y in zip(range(5), range(5))])
 
         # new crs - setting should default to GeoSeries' crs
         gs = GeoSeries(geom, crs="epsg:3857")
@@ -958,24 +961,24 @@ class TestDataFrame:
 
     def test_to_wkb(self):
         wkbs0 = [
-            (
+            (  # POINT (0 0)
                 b"\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00"
                 b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
-            ),  # POINT (0 0)
-            (
+            ),
+            (  # POINT (1 1)
                 b"\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00"
                 b"\x00\xf0?\x00\x00\x00\x00\x00\x00\xf0?"
-            ),  # POINT (1 1)
+            ),
         ]
         wkbs1 = [
-            (
+            (  # POINT (2 2)
                 b"\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00"
                 b"\x00\x00@\x00\x00\x00\x00\x00\x00\x00@"
-            ),  # POINT (2 2)
-            (
+            ),
+            (  # POINT (3 3)
                 b"\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00"
                 b"\x00\x08@\x00\x00\x00\x00\x00\x00\x08@"
-            ),  # POINT (3 3)
+            ),
         ]
         gs0 = GeoSeries.from_wkb(wkbs0)
         gs1 = GeoSeries.from_wkb(wkbs1)
@@ -1062,6 +1065,29 @@ class TestDataFrame:
         expected = geopandas.clip(left, south_america)
         result = left.clip(south_america)
         assert_geodataframe_equal(result, expected)
+
+    def test_clip_sorting(self, naturalearth_cities, naturalearth_lowres):
+        """
+        Test sorting of geodataframe when clipping.
+        """
+        cities = read_file(naturalearth_cities)
+        world = read_file(naturalearth_lowres)
+        south_america = world[world["continent"] == "South America"]
+
+        unsorted_clipped_cities = geopandas.clip(cities, south_america, sort=False)
+        sorted_clipped_cities = geopandas.clip(cities, south_america, sort=True)
+
+        expected_sorted_index = pd.Index(
+            [55, 59, 62, 88, 101, 114, 122, 169, 181, 189, 210, 230, 236, 238, 239]
+        )
+
+        assert not (
+            sorted(unsorted_clipped_cities.index) == unsorted_clipped_cities.index
+        ).all()
+        assert (
+            sorted(sorted_clipped_cities.index) == sorted_clipped_cities.index
+        ).all()
+        assert_index_equal(expected_sorted_index, sorted_clipped_cities.index)
 
     def test_overlay(self, dfs, how):
         """
@@ -1284,7 +1310,6 @@ class TestConstructor:
         check_geodataframe(gdf)
         gdf.columns == ["geometry", "a"]
 
-    @pytest.mark.xfail
     def test_preserve_series_name(self):
         geoms = [Point(1, 1), Point(2, 2), Point(3, 3)]
         gs = GeoSeries(geoms)
@@ -1510,3 +1535,71 @@ def test_geodataframe_crs_colname():
     assert gdf.crs is None
     assert gdf["crs"].iloc[0] == 1
     assert getattr(gdf, "crs") is None
+
+
+@pytest.mark.parametrize("geo_col_name", ["geometry", "polygons"])
+def test_set_geometry_supply_colname(dfs, geo_col_name):
+    df, _ = dfs
+    if geo_col_name != "geometry":
+        df = df.rename_geometry(geo_col_name)
+    df["centroid"] = df.geometry.centroid
+    res = df.set_geometry("centroid")
+    assert res.active_geometry_name == "centroid"
+    assert geo_col_name in res.columns
+
+    # Test that drop=False explicitly warns
+    deprecated = "The `drop` keyword argument is deprecated"
+    with pytest.warns(FutureWarning, match=deprecated):
+        res2 = df.set_geometry("centroid", drop=False)
+    assert_geodataframe_equal(res, res2)
+
+    with pytest.warns(FutureWarning, match=deprecated):
+        res3 = df.set_geometry("centroid", drop=True)
+    # drop=True should preserve previous geometry col name (keep old behaviour)
+    assert res3.active_geometry_name == geo_col_name
+    assert "centroid" not in res3.columns
+
+    # Test that alternative suggested without using drop=True is equivalent
+    assert_geodataframe_equal(
+        res3,
+        df.set_geometry("centroid")
+        .drop(columns=geo_col_name)
+        .rename_geometry(geo_col_name),
+    )
+
+
+@pytest.mark.parametrize("geo_col_name", ["geometry", "polygons"])
+def test_set_geometry_supply_arraylike(dfs, geo_col_name):
+    df, _ = dfs
+    if geo_col_name != "geometry":
+        df = df.rename_geometry(geo_col_name)
+    centroids = df.geometry.centroid
+    res = df.set_geometry(centroids)
+    assert res.active_geometry_name == geo_col_name
+    # drop should do nothing if the column already exists
+    match_str = (
+        "The `drop` keyword argument is deprecated and has no effect when "
+        "`col` is an array-like value"
+    )
+    with pytest.warns(
+        FutureWarning,
+        match=match_str,
+    ):
+        res2 = df.set_geometry(centroids, drop=True)
+    assert res2.active_geometry_name == geo_col_name
+
+    centroids = centroids.rename("centroids")
+    res3 = df.set_geometry(centroids)
+    # Should preserve the geoseries name
+    # (and old geometry column should be kept)
+    assert res3.active_geometry_name == "centroids"
+    assert geo_col_name in res3.columns
+
+    # Drop should not remove previous active geometry colname for arraylike inputs
+    with pytest.warns(
+        FutureWarning,
+        match=match_str,
+    ):
+        res4 = df.set_geometry(centroids, drop=True)
+    assert res4.active_geometry_name == "centroids"
+    assert geo_col_name in res4.columns

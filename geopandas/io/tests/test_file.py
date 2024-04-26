@@ -874,7 +874,7 @@ def test_read_file__columns_empty(engine, naturalearth_lowres):
     assert gdf.columns.tolist() == ["geometry"]
 
 
-@pytest.mark.skipif(FIONA_GE_19, reason="test for fiona < 1.9")
+@pytest.mark.skipif(FIONA_GE_19 or not fiona, reason="test for fiona < 1.9")
 def test_read_file__columns_old_fiona(naturalearth_lowres):
     with pytest.raises(NotImplementedError):
         geopandas.read_file(
@@ -1304,3 +1304,44 @@ def test_option_io_engine(nybb_filename):
     finally:
         fiona.supported_drivers["ESRI Shapefile"] = orig
         geopandas.options.io_engine = None
+
+
+@pytest.mark.skipif(pyogrio, reason="test for pyogrio not installed")
+def test_error_engine_unavailable_pyogrio(tmp_path, df_points, file_path):
+
+    with pytest.raises(ImportError, match="the 'read_file' function requires"):
+        geopandas.read_file(file_path, engine="pyogrio")
+
+    with pytest.raises(ImportError, match="the 'to_file' method requires"):
+        df_points.to_file(tmp_path / "test.gpkg", engine="pyogrio")
+
+
+@pytest.mark.skipif(fiona, reason="test for fiona not installed")
+def test_error_engine_unavailable_fiona(tmp_path, df_points, file_path):
+
+    with pytest.raises(ImportError, match="the 'read_file' function requires"):
+        geopandas.read_file(file_path, engine="fiona")
+
+    with pytest.raises(ImportError, match="the 'to_file' method requires"):
+        df_points.to_file(tmp_path / "test.gpkg", engine="fiona")
+
+
+@PYOGRIO_MARK
+def test_list_layers(df_points, tmpdir):
+    tempfilename = os.path.join(str(tmpdir), "dataset.gpkg")
+    df_points.to_file(tempfilename, layer="original")
+    df_points.set_geometry(df_points.buffer(1)).to_file(tempfilename, layer="buffered")
+    df_points.set_geometry(df_points.buffer(2).boundary).to_file(
+        tempfilename, layer="boundary"
+    )
+    pyogrio.write_dataframe(
+        df_points[["value1", "value2"]], tempfilename, layer="non-spatial"
+    )
+    layers = geopandas.list_layers(tempfilename)
+    expected = pd.DataFrame(
+        {
+            "name": ["original", "buffered", "boundary", "non-spatial"],
+            "geometry_type": ["Point", "Polygon", "LineString", None],
+        }
+    )
+    assert_frame_equal(layers, expected)

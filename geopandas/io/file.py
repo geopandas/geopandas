@@ -82,7 +82,7 @@ def _import_pyogrio():
 
 
 def _check_fiona(func):
-    if fiona is None:
+    if not fiona:
         raise ImportError(
             f"the {func} requires the 'fiona' package, but it is not installed or does "
             f"not import correctly.\nImporting fiona resulted in: {fiona_import_error}"
@@ -90,7 +90,7 @@ def _check_fiona(func):
 
 
 def _check_pyogrio(func):
-    if pyogrio is None:
+    if not pyogrio:
         raise ImportError(
             f"the {func} requires the 'pyogrio' package, but it is not installed "
             "or does not import correctly."
@@ -796,3 +796,34 @@ def _geometry_types(df):
         geom_types = geom_types[0]
 
     return geom_types
+
+
+def _list_layers(filename) -> pd.DataFrame:
+    """List layers available in a file.
+
+    Provides an overview of layers available in a file or URL together with their
+    geometry types. When supported by the data source, this includes both spatial and
+    non-spatial layers. Non-spatial layers are indicated by the ``"geometry_type"``
+    column being ``None``. GeoPandas will not read such layers but they can be read into
+    a pd.DataFrame using :func:`pyogrio.read_dataframe`.
+
+    Parameters
+    ----------
+    filename : str, path object or file-like object
+        Either the absolute or relative path to the file or URL to
+        be opened, or any object with a read() method (such as an open file
+        or StringIO)
+
+    Returns
+    -------
+    pandas.DataFrame
+        A DataFrame with columns "name" and "geometry_type" and one row per layer.
+    """
+    _import_pyogrio()
+    _check_pyogrio("list_layers")
+
+    import pyogrio
+
+    return pd.DataFrame(
+        pyogrio.list_layers(filename), columns=["name", "geometry_type"]
+    )

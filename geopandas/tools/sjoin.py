@@ -196,6 +196,9 @@ def _geom_predicate_query(left_df, right_df, predicate, distance):
         # within is implemented as the inverse of contains
         # flip back the results
         r_idx, l_idx = l_idx, r_idx
+        indexer = np.lexsort((r_idx, l_idx))
+        l_idx = l_idx[indexer]
+        r_idx = r_idx[indexer]
 
     return l_idx, r_idx
 
@@ -319,14 +322,6 @@ def _adjust_indexers(indices, distances, original_length, how, predicate):
     """
     # the indices represent an inner join, no adjustment needed
     if how == "inner":
-        if predicate == "within":
-            # except for the within predicate, where we switched to contains
-            # with swapped left/right -> need to re-sort to have consistent result
-            l_idx, r_idx = indices
-            indexer = np.lexsort((r_idx, l_idx))
-            indices = l_idx[indexer], r_idx[indexer]
-            if distances is not None:
-                distances = distances[indexer]
         return indices, distances
 
     l_idx, r_idx = indices
@@ -427,10 +422,11 @@ def _frame_join(
     new_index = pd.RangeIndex(len(l_idx))
     left = left_df._reindex_with_indexers({0: (new_index, l_idx)})
     right = right_df._reindex_with_indexers({0: (new_index, r_idx)})
-    if PANDAS_GE_30:  # CoW means copy is deprecated
-        joined = pd.concat([left, right], axis=1)
+    if PANDAS_GE_30:
+        kwargs = {}
     else:
-        joined = pd.concat([left, right], axis=1, copy=False)
+        kwargs = dict(copy=False)
+    joined = pd.concat([left, right], axis=1, **kwargs)
 
     if how in ("inner", "left"):
         joined = _restore_index(joined, left_index, left_index_original)

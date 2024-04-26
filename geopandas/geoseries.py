@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 import typing
 from typing import Optional, Any, Callable, Dict
 import warnings
@@ -1190,12 +1189,31 @@ class GeoSeries(GeoPandasBase, Series):
         """
         return self.values.estimate_utm_crs(datum_name)
 
-    def to_json(self, **kwargs) -> str:
+    def to_json(
+        self,
+        show_bbox: bool = True,
+        drop_id: bool = False,
+        to_wgs84: bool = False,
+        **kwargs,
+    ) -> str:
         """
         Returns a GeoJSON string representation of the GeoSeries.
 
         Parameters
         ----------
+        show_bbox : bool, optional, default: True
+            Include bbox (bounds) in the geojson
+        drop_id : bool, default: False
+            Whether to retain the index of the GeoSeries as the id property
+            in the generated GeoJSON. Default is False, but may want True
+            if the index is just arbitrary row numbers.
+        to_wgs84: bool, optional, default: False
+            If the CRS is set on the active geometry column it is exported as
+            WGS84 (EPSG:4326) to meet the `2016 GeoJSON specification
+            <https://tools.ietf.org/html/rfc7946>`_.
+            Set to True to force re-projection and set to False to ignore CRS. False by
+            default.
+
         *kwargs* that will be passed to json.dumps().
 
         Returns
@@ -1224,7 +1242,9 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
         --------
         GeoSeries.to_file : write GeoSeries to file
         """
-        return json.dumps(self.__geo_interface__, **kwargs)
+        return self.to_frame("geometry").to_json(
+            na="null", show_bbox=show_bbox, drop_id=drop_id, to_wgs84=to_wgs84, **kwargs
+        )
 
     def to_wkb(self, hex: bool = False, **kwargs) -> Series:
         """
@@ -1286,7 +1306,7 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
         """
         return Series(to_wkt(self.array, **kwargs), index=self.index)
 
-    def clip(self, mask, keep_geom_type: bool = False) -> GeoSeries:
+    def clip(self, mask, keep_geom_type: bool = False, sort=False) -> GeoSeries:
         """Clip points, lines, or polygon geometries to the mask extent.
 
         Both layers must be in the same Coordinate Reference System (CRS).
@@ -1309,6 +1329,10 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
             If True, return only geometries of original type in case of intersection
             resulting in multiple geometry types or GeometryCollections.
             If False, return all resulting geometries (potentially mixed-types).
+        sort : boolean, default False
+            If True, the order of rows in the clipped GeoSeries will be preserved
+            at small performance cost.
+            If False the order of rows in the clipped GeoSeries will be random.
 
         Returns
         -------
@@ -1339,4 +1363,4 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
         >>> nws_groceries.shape
         (7,)
         """
-        return geopandas.clip(self, mask=mask, keep_geom_type=keep_geom_type)
+        return geopandas.clip(self, mask=mask, keep_geom_type=keep_geom_type, sort=sort)
