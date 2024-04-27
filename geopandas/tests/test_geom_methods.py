@@ -962,6 +962,13 @@ class TestGeomMethods:
         assert_geoseries_equal(expected_g1, result_g1)
         assert_geoseries_equal(expected_g5, result_g5)
 
+    def test_segmentize_wrong_index(self):
+        with pytest.raises(
+            ValueError,
+            match="Index of the Series passed as 'max_segment_length' does not match",
+        ):
+            self.g1.segmentize(max_segment_length=Series([0.5, 0.5], index=[99, 98]))
+
     def test_transform(self):
         # Test 2D
         test_2d = GeoSeries(
@@ -1017,6 +1024,20 @@ class TestGeomMethods:
         s = GeoSeries(MultiPoint([(0, 0), (0, 3), (1, 1), (3, 0), (3, 3)]))
         assert_geoseries_equal(expected, s.concave_hull(ratio=ratio))
 
+    def test_concave_hull_wrong_index(self):
+        with pytest.raises(
+            ValueError, match="Index of the Series passed as 'ratio' does not match"
+        ):
+            self.g1.concave_hull(ratio=Series([0.0, 1.0], index=[99, 98]))
+
+        with pytest.raises(
+            ValueError,
+            match="Index of the Series passed as 'allow_holes' does not match",
+        ):
+            self.g1.concave_hull(
+                ratio=0.1, allow_holes=Series([True, False], index=[99, 98])
+            )
+
     def test_convex_hull(self):
         # the convex hull of a square should be the same as the square
         assert_geoseries_equal(self.squares, self.squares.convex_hull)
@@ -1042,6 +1063,18 @@ class TestGeomMethods:
         dlt = self.g3.delaunay_triangles(only_edges=True)
         assert isinstance(dlt, GeoSeries)
         assert_series_equal(expected, dlt)
+
+    def test_delaunay_triangles_wrong_index(self):
+        with pytest.raises(
+            ValueError,
+            match="Index of the Series passed as 'only_edges' does not match",
+        ):
+            self.g3.delaunay_triangles(only_edges=Series([True, False], index=[99, 98]))
+
+        with pytest.raises(
+            ValueError, match="Index of the Series passed as 'tolerance' does not match"
+        ):
+            self.g3.delaunay_triangles(tolerance=Series([0.1, 0.2], index=[99, 98]))
 
     def test_exterior(self):
         exp_exterior = GeoSeries([LinearRing(p.boundary) for p in self.g3])
@@ -1089,7 +1122,9 @@ class TestGeomMethods:
 
     def test_interpolate_distance_wrong_index(self):
         distances = Series([1, 2], index=[99, 98])
-        with pytest.raises(ValueError):
+        with pytest.raises(
+            ValueError, match="Index of the Series passed as 'distance' does not match"
+        ):
             self.g5.interpolate(distances)
 
     @pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not available")
@@ -1212,7 +1247,9 @@ class TestGeomMethods:
     def test_buffer_distance_wrong_index(self):
         original = GeoSeries([self.p0, self.p0], index=[0, 1])
         distances = Series(data=[1, 2], index=[99, 98])
-        with pytest.raises(ValueError):
+        with pytest.raises(
+            ValueError, match="Index of the Series passed as 'distance' does not match"
+        ):
             original.buffer(distances)
 
     def test_buffer_empty_none(self):
@@ -1235,6 +1272,17 @@ class TestGeomMethods:
 
         for r in record:
             assert "Geometry is in a geographic CRS." not in str(r.message)
+
+    def test_simplify(self):
+        s = GeoSeries([shapely.LineString([(0, 0), (1, 0.1), (2, 0)])])
+        e = GeoSeries([shapely.LineString([(0, 0), (2, 0)])])
+        assert_geoseries_equal(s.simplify(0.2), e)
+
+    def test_simplify_wrong_index(self):
+        with pytest.raises(
+            ValueError, match="Index of the Series passed as 'tolerance' does not match"
+        ):
+            self.g1.simplify(Series([0.1], index=[99]))
 
     def test_envelope(self):
         e = self.g3.envelope
@@ -1758,6 +1806,12 @@ class TestGeomMethods:
         assert_geoseries_equal(expected, oc)
         assert isinstance(oc, GeoSeries)
 
+    def test_offset_curve_wrong_index(self):
+        with pytest.raises(
+            ValueError, match="Index of the Series passed as 'distance' does not match"
+        ):
+            GeoSeries([self.l1]).offset_curve(Series([1], index=[99]))
+
     @pytest.mark.skipif(shapely.geos_version < (3, 11, 0), reason="requires GEOS>=3.11")
     @pytest.mark.parametrize(
         "geom,expected",
@@ -1774,6 +1828,12 @@ class TestGeomMethods:
     )
     def test_remove_repeated_points(self, geom, expected):
         assert_geoseries_equal(expected, geom.remove_repeated_points(tolerance=0.0))
+
+    def test_remove_repeated_points_wrong_index(self):
+        with pytest.raises(
+            ValueError, match="Index of the Series passed as 'tolerance' does not match"
+        ):
+            GeoSeries([self.l1]).remove_repeated_points(Series([1], index=[99]))
 
     def test_force_2d(self):
         expected = GeoSeries(
@@ -1817,6 +1877,12 @@ class TestGeomMethods:
             ],
         )
         assert_geoseries_equal(expected, self.g1.force_3d([1, 2]))
+
+    def test_force_3d_wrong_index(self):
+        with pytest.raises(
+            ValueError, match="Index of the Series passed as 'z' does not match"
+        ):
+            self.g1.force_3d(Series([1], index=[99]))
 
     def test_line_merge(self):
         expected = GeoSeries(
