@@ -7,6 +7,7 @@ import warnings
 import numpy as np
 import pandas as pd
 from pandas import Series
+import pandas.api.extensions
 from pandas.core.internals import SingleBlockManager
 
 import shapely
@@ -75,6 +76,7 @@ def _geoseries_expanddim(data=None, *args, **kwargs):
     return _expanddim_logic(df)
 
 
+@pandas.api.extensions.register_series_accessor("geo")
 class GeoSeries(GeoPandasBase, Series):
     """
     A Series object designed to store shapely geometry objects.

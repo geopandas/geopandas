@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import shapely.errors
 from pandas import DataFrame, Series
+import pandas.api.extensions
 from pandas.core.accessor import CachedAccessor
 
 from shapely.geometry import mapping, shape
@@ -67,6 +68,7 @@ crs_mismatch_error = (
 )
 
 
+@pandas.api.extensions.register_dataframe_accessor("geo")
 class GeoDataFrame(GeoPandasBase, DataFrame):
     """
     A GeoDataFrame object is a pandas.DataFrame that has a column

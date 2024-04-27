@@ -53,6 +53,8 @@ def _delegate_binary_method(op, this, other, align, *args, **kwargs):
         other = GeometryArray(other.values)
     elif isinstance(other, BaseGeometry):
         a_this = GeometryArray(this.values)
+    elif isinstance(other, pd.Series) and isinstance(other.dtype, GeometryDtype):
+        a_this = GeometryArray(this.values)
     else:
         raise TypeError(type(this), type(other))
 
