@@ -11,14 +11,18 @@ from geopandas.array import GeometryDtype
 
 @pytest.fixture
 def s():
-    return pd.Series([Point(x, y) for x, y in zip(range(3), range(3))], dtype=GeometryDtype())
+    return pd.Series(
+        [Point(x, y) for x, y in zip(range(3), range(3))], dtype=GeometryDtype()
+    )
 
 
 @pytest.fixture
 def df():
     return pd.DataFrame(
         {
-            "geometry": pd.Series([Point(x, x) for x in range(3)], dtype=GeometryDtype()),
+            "geometry": pd.Series(
+                [Point(x, x) for x in range(3)], dtype=GeometryDtype()
+            ),
             "value1": np.arange(3, dtype="int64"),
             "value2": np.array([1, 2, 1], dtype="int64"),
         }
