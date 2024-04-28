@@ -50,6 +50,8 @@ New features and improvements:
 - Added support to ``read_file`` for the ``columns`` keyword for the fiona engine (#3133).
 - Added `show_bbox`, `drop_id` and `to_wgs84` arguments to allow further customization of
   `GeoSeries.to_json` (#3226)
+- `explore` now supports `GeoDataFrame`s with additional columns containing datetimes, uuids and 
+  other non JSON serializable objects (#3261).
 
 Backwards incompatible API changes:
 
