@@ -404,11 +404,15 @@ GeometryCollection
 
     def count_geometries(self):
         """
-        Returns a ``Series`` containing the count of geometries in a collection.
+        Returns a ``Series`` containing the count of geometries in each multi-part
+        geometry.
 
-        For single-part geometry objects, this is always 1. For collections, like
-        ``MultiPoint`` or ``MultiLineString``, it is the number of parts in the
-        collection.
+        For single-part geometry objects, this is always 1. For multi-part geometries,
+        like ``MultiPoint`` or ``MultiLineString``, it is the number of parts in the
+        geometry. For ``GeometryCollection``, it is the number of geometries direct
+        parts of the collection (the method does not recurse into collections within
+        collections).
+
 
         Examples
         --------
@@ -446,6 +450,8 @@ GeometryCollection
         """
         Returns a ``Series`` containing the count of the number of interior rings
         in a polygonal geometry.
+
+        For non-polygonal geometries, this is always 0.
 
         Examples
         --------
