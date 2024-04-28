@@ -918,10 +918,12 @@ GeometryCollection
         --------
         GeoSeries.delaunay_triangles : Delaunay triangulation around vertices
         """
-        if isinstance(extend_to, GeoPandasBase):
-            extend_to = extend_to.align(self)[0]
         return _delegate_geo_method(
-            "voronoi_polygons", self, tolerance, extend_to, only_edges
+            "voronoi_polygons",
+            self,
+            tolerance=tolerance,
+            extend_to=extend_to,
+            only_edges=only_edges,
         )
 
     @property

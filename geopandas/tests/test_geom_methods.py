@@ -1095,6 +1095,10 @@ class TestGeomMethods:
         vp = self.g1.voronoi_polygons(extend_to=self.g1.buffer(10))
         assert_geoseries_equal(expected, vp)
 
+    def test_voronoi_polygons_wrong_index(self):
+        with pytest.raises(ValueError):
+            self.g1.voronoi_polygons(tolerance=Series([0.1, 0.2], index=[98, 99]))
+
     def test_exterior(self):
         exp_exterior = GeoSeries([LinearRing(p.boundary) for p in self.g3])
         for expected, computed in zip(exp_exterior, self.g3.exterior):
