@@ -362,7 +362,7 @@ GeometryCollection
     def count_coordinates(self):
         """
         Returns a ``Series`` containing the count of the number of coordinate pairs
-        in a geometry array.
+        in each geometry.
 
         Examples
         --------
@@ -393,13 +393,103 @@ GeometryCollection
         2    1
         3    5
         4    0
-        dtype: int64
+        dtype: int32
 
         See also
         --------
         GeoSeries.get_coordinates : extract coordinates as a :class:`~pandas.DataFrame`
+        GoSeries.count_geometries : count the number of geometries in a collection
         """
         return Series(self.geometry.values.count_coordinates(), index=self.index)
+
+    def count_geometries(self):
+        """
+        Returns a ``Series`` containing the count of geometries in each multi-part
+        geometry.
+
+        For single-part geometry objects, this is always 1. For multi-part geometries,
+        like ``MultiPoint`` or ``MultiLineString``, it is the number of parts in the
+        geometry. For ``GeometryCollection``, it is the number of geometries direct
+        parts of the collection (the method does not recurse into collections within
+        collections).
+
+
+        Examples
+        --------
+        >>> from shapely.geometry import Point, MultiPoint, LineString, MultiLineString
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         MultiPoint([(0, 0), (1, 1), (1, -1), (0, 1)]),
+        ...         MultiLineString([((0, 0), (1, 1)), ((-1, 0), (1, 0))]),
+        ...         LineString([(0, 0), (1, 1), (1, -1)]),
+        ...         Point(0, 0),
+        ...     ]
+        ... )
+        >>> s
+        0     MULTIPOINT ((0 0), (1 1), (1 -1), (0 1))
+        1    MULTILINESTRING ((0 0, 1 1), (-1 0, 1 0))
+        2                  LINESTRING (0 0, 1 1, 1 -1)
+        3                                  POINT (0 0)
+        dtype: geometry
+
+        >>> s.count_geometries()
+        0    4
+        1    2
+        2    1
+        3    1
+        dtype: int32
+
+        See also
+        --------
+        GeoSeries.count_coordinates : count the number of coordinates in a geometry
+        GeoSeries.count_interior_rings : count the number of interior rings
+        """
+        return Series(self.geometry.values.count_geometries(), index=self.index)
+
+    def count_interior_rings(self):
+        """
+        Returns a ``Series`` containing the count of the number of interior rings
+        in a polygonal geometry.
+
+        For non-polygonal geometries, this is always 0.
+
+        Examples
+        --------
+        >>> from shapely.geometry import Polygon, Point
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon(
+        ...             [(0, 0), (0, 5), (5, 5), (5, 0)],
+        ...             [[(1, 1), (1, 4), (4, 4), (4, 1)]],
+        ...         ),
+        ...         Polygon(
+        ...             [(0, 0), (0, 5), (5, 5), (5, 0)],
+        ...             [
+        ...                 [(1, 1), (1, 2), (2, 2), (2, 1)],
+        ...                 [(3, 2), (3, 3), (4, 3), (4, 2)],
+        ...             ],
+        ...         ),
+        ...         Point(0, 1),
+        ...     ]
+        ... )
+        >>> s
+        0    POLYGON ((0 0, 0 5, 5 5, 5 0, 0 0), (1 1, 1 4,...
+        1    POLYGON ((0 0, 0 5, 5 5, 5 0, 0 0), (1 1, 1 2,...
+        2                                          POINT (0 1)
+        dtype: geometry
+
+        >>> s.count_interior_rings()
+        0    1
+        1    2
+        2    0
+        dtype: int32
+
+        See also
+        --------
+        GeoSeries.count_coordinates : count the number of coordinates in a geometry
+        GeoSeries.count_geometries : count the number of geometries in a collection
+        """
+        return Series(self.geometry.values.count_interior_rings(), index=self.index)
 
     @property
     def is_simple(self):

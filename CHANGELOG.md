@@ -24,6 +24,9 @@ API changes:
 
 New methods:
 
+
+- Added `count_geometries` method from shapely to GeoSeries/GeoDataframe (#3154).
+- Added `count_interior_rings` method from shapely to GeoSeries/GeoDataframe (#3154)
 - Added `relate_pattern` method from shapely to GeoSeries/GeoDataframe (#3211).
 - Added `intersection_all` method from shapely to GeoSeries/GeoDataframe (#3228).
 - Added `line_merge` method from shapely to GeoSeries/GeoDataframe (#3214).
