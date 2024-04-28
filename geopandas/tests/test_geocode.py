@@ -11,6 +11,8 @@ from pandas.testing import assert_series_equal
 from geopandas.testing import assert_geodataframe_equal
 import pytest
 
+from geopandas._compat import HAS_PYPROJ
+
 geopy = pytest.importorskip("geopy")
 
 
@@ -71,7 +73,8 @@ def test_prepare_result():
 
     df = _prepare_geocode_result(d)
     assert type(df) is GeoDataFrame
-    assert df.crs == "EPSG:4326"
+    if HAS_PYPROJ:
+        assert df.crs == "EPSG:4326"
     assert len(df) == 2
     assert "address" in df
 
@@ -93,7 +96,8 @@ def test_prepare_result_none():
 
     df = _prepare_geocode_result(d)
     assert type(df) is GeoDataFrame
-    assert df.crs == "EPSG:4326"
+    if HAS_PYPROJ:
+        assert df.crs == "EPSG:4326"
     assert len(df) == 2
     assert "address" in df
 

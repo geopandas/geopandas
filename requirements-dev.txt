@@ -1,12 +1,13 @@
 # required
-fiona>=1.8.21
+pyogrio>=0.7.2
 pandas>=1.4.0
 pyproj>=3.3.0
 shapely>=2.0.0
 packaging
 
 # geodatabase access
-psycopg2>=2.8.0
+psycopg2-binary>=2.8.0
+psycopg-binary>=3.1.0
 SQLAlchemy>=1.3
 
 # geocoding
@@ -15,10 +16,13 @@ geopy
 # plotting
 matplotlib>=3.5.0
 mapclassify
+xyzservices
+folium
 
 # testing
 pytest>=3.1.0
 pytest-cov
+pytest-xdist
 codecov
 
 # styling
@@ -27,3 +31,6 @@ pre-commit
 
 # PostGIS writing
 GeoAlchemy2
+
+# parquet
+pyarrow>=8.0.0

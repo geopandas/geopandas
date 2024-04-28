@@ -1079,6 +1079,7 @@ def _setup_class_geographic_aspect(naturalearth_lowres, request):
 
 
 @pytest.mark.usefixtures("_setup_class_geographic_aspect")
+@pytest.mark.skipif(not compat.HAS_PYPROJ, reason="pyproj not available")
 class TestGeographicAspect:
     def test_auto(self):
         ax = self.north.geometry.plot()
@@ -1462,7 +1463,7 @@ class TestPlotCollections:
         )
 
     def test_points(self):
-        from geopandas.plotting import _plot_point_collection, plot_point_collection
+        from geopandas.plotting import _plot_point_collection
         from matplotlib.collections import PathCollection
 
         fig, ax = plt.subplots()
@@ -1516,10 +1517,6 @@ class TestPlotCollections:
         with pytest.raises((TypeError, ValueError)):
             _plot_point_collection(ax, self.points, color="not color")
 
-        # check FutureWarning
-        with pytest.warns(FutureWarning):
-            plot_point_collection(ax, self.points)
-
     def test_points_values(self):
         from geopandas.plotting import _plot_point_collection
 
@@ -1534,10 +1531,7 @@ class TestPlotCollections:
         # _check_colors(self.N, coll.get_edgecolors(), expected_colors)
 
     def test_linestrings(self):
-        from geopandas.plotting import (
-            _plot_linestring_collection,
-            plot_linestring_collection,
-        )
+        from geopandas.plotting import _plot_linestring_collection
         from matplotlib.collections import LineCollection
 
         fig, ax = plt.subplots()
@@ -1589,9 +1583,6 @@ class TestPlotCollections:
         # not a color
         with pytest.raises((TypeError, ValueError)):
             _plot_linestring_collection(ax, self.lines, color="not color")
-        # check FutureWarning
-        with pytest.warns(FutureWarning):
-            plot_linestring_collection(ax, self.lines)
 
     def test_linestrings_values(self):
         from geopandas.plotting import _plot_linestring_collection
@@ -1623,7 +1614,7 @@ class TestPlotCollections:
         ax.cla()
 
     def test_polygons(self):
-        from geopandas.plotting import _plot_polygon_collection, plot_polygon_collection
+        from geopandas.plotting import _plot_polygon_collection
         from matplotlib.collections import PatchCollection
 
         fig, ax = plt.subplots()
@@ -1681,9 +1672,6 @@ class TestPlotCollections:
         # not a color
         with pytest.raises((TypeError, ValueError)):
             _plot_polygon_collection(ax, self.polygons, color="not color")
-        # check FutureWarning
-        with pytest.warns(FutureWarning):
-            plot_polygon_collection(ax, self.polygons)
 
     def test_polygons_values(self):
         from geopandas.plotting import _plot_polygon_collection
