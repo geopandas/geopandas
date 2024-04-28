@@ -1127,6 +1127,18 @@ class TestGeomMethods:
         dlt = self.g3.delaunay_triangles(only_edges=True)
         assert_geoseries_equal(expected, dlt)
 
+    def test_delaunay_triangles_wrong_index(self):
+        with pytest.raises(
+            ValueError,
+            match="Index of the Series passed as 'only_edges' does not match",
+        ):
+            self.g3.delaunay_triangles(only_edges=Series([True, False], index=[99, 98]))
+
+        with pytest.raises(
+            ValueError, match="Index of the Series passed as 'tolerance' does not match"
+        ):
+            self.g3.delaunay_triangles(tolerance=Series([0.1, 0.2], index=[99, 98]))
+
     def test_voronoi_polygons(self):
         expected = GeoSeries.from_wkt(
             [
@@ -1192,20 +1204,11 @@ class TestGeomMethods:
         assert_geoseries_equal(expected, vp)
 
     def test_voronoi_polygons_wrong_index(self):
-        with pytest.raises(ValueError):
-            self.g1.voronoi_polygons(tolerance=Series([0.1, 0.2], index=[98, 99]))
-
-    def test_delaunay_triangles_wrong_index(self):
         with pytest.raises(
             ValueError,
-            match="Index of the Series passed as 'only_edges' does not match",
+            match="Index of the Series passed as 'tolerance' does not match",
         ):
-            self.g3.delaunay_triangles(only_edges=Series([True, False], index=[99, 98]))
-
-        with pytest.raises(
-            ValueError, match="Index of the Series passed as 'tolerance' does not match"
-        ):
-            self.g3.delaunay_triangles(tolerance=Series([0.1, 0.2], index=[99, 98]))
+            self.g1.voronoi_polygons(tolerance=Series([0.1, 0.2], index=[98, 99]))
 
     def test_exterior(self):
         exp_exterior = GeoSeries([LinearRing(p.boundary) for p in self.g3])
