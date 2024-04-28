@@ -7,12 +7,11 @@ dependencies:
   - pandas=2.0
   - numpy=1.24 # released 4 months before pandas 2.0
   - shapely
-  - fiona
+  - pyogrio
   - pyproj
   - packaging
   # testing
-  # TEMP pin, 8.1 breaks doctestplus, see https://github.com/scientific-python/pytest-doctestplus/issues/239
-  - pytest==8.0.*
+  - pytest
   - pytest-cov
   - pytest-xdist
   - fsspec
