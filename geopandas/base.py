@@ -88,13 +88,32 @@ def _delegate_property(op, this):
         return Series(data, index=this.index)
 
 
-def _delegate_geo_method(op, this, *args, **kwargs):
+def _delegate_geo_method(op, this, **kwargs):
     # type: (str, GeoSeries) -> GeoSeries
     """Unary operation that returns a GeoSeries"""
     from .geoseries import GeoSeries
+    from .geodataframe import GeoDataFrame
+
+    if isinstance(this, GeoSeries):
+        klass, var_name = "GeoSeries", "gs"
+    elif isinstance(this, GeoDataFrame):
+        klass, var_name = "GeoDataFrame", "gdf"
+    else:
+        klass, var_name = this.__class__.__name__, "this"
+
+    for key, val in kwargs.items():
+        if isinstance(val, pd.Series) and not val.index.equals(this.index):
+            raise ValueError(
+                f"Index of the Series passed as '{key}' does not match index of the "
+                f"{klass}. If you want both Series to be aligned, align them before "
+                f"passing them to this method as "
+                f"`{var_name}, {key} = {var_name}.align({key})`. If "
+                f"you want to ignore the index, pass the underlying array as '{key}' "
+                f"using `{key}.values`."
+            )
 
     a_this = GeometryArray(this.geometry.values)
-    data = getattr(a_this, op)(*args, **kwargs)
+    data = getattr(a_this, op)(**kwargs)
     return GeoSeries(data, index=this.index, crs=this.crs)
 
 
@@ -835,7 +854,9 @@ GeometryCollection
         2    MULTILINESTRING ((5 3, 10 10), (5 3, 6 3), (6 ...
         dtype: geometry
         """
-        return _delegate_geo_method("delaunay_triangles", self, tolerance, only_edges)
+        return _delegate_geo_method(
+            "delaunay_triangles", self, tolerance=tolerance, only_edges=only_edges
+        )
 
     @property
     def envelope(self):
@@ -1032,7 +1053,7 @@ GeometryCollection
         return _delegate_geo_method(
             "offset_curve",
             self,
-            distance,
+            distance=distance,
             quad_segs=quad_segs,
             join_style=join_style,
             mitre_limit=mitre_limit,
@@ -1479,7 +1500,9 @@ GeometryCollection
         1    POLYGON ((0 0, 5 0, 10 0, 10 5, 10 10, 5 10, 0...
         dtype: geometry
         """
-        return _delegate_geo_method("segmentize", self, max_segment_length)
+        return _delegate_geo_method(
+            "segmentize", self, max_segment_length=max_segment_length
+        )
 
     def transform(self, transformation, include_z=False):
         """Returns a ``GeoSeries`` with the transformation function
@@ -1519,7 +1542,9 @@ GeometryCollection
         0    POINT Z (1 1 1)
         dtype: geometry
         """
-        return _delegate_geo_method("transform", self, transformation, include_z)
+        return _delegate_geo_method(
+            "transform", self, transformation=transformation, include_z=include_z
+        )
 
     def force_2d(self):
         """Forces the dimensionality of a geometry to 2D.
@@ -4538,18 +4563,10 @@ GeometryCollection
         .. plot:: _static/code/buffer.py
 
         """
-        if isinstance(distance, pd.Series):
-            if not self.index.equals(distance.index):
-                raise ValueError(
-                    "Index values of distance sequence does "
-                    "not match index values of the GeoSeries"
-                )
-            distance = np.asarray(distance)
-
         return _delegate_geo_method(
             "buffer",
             self,
-            distance,
+            distance=distance,
             resolution=resolution,
             cap_style=cap_style,
             join_style=join_style,
@@ -4558,7 +4575,7 @@ GeometryCollection
             **kwargs,
         )
 
-    def simplify(self, *args, **kwargs):
+    def simplify(self, tolerance, preserve_topology=True):
         """Returns a ``GeoSeries`` containing a simplified representation of
         each geometry.
 
@@ -4606,7 +4623,9 @@ GeometryCollection
         1              LINESTRING (0 0, 0 20)
         dtype: geometry
         """
-        return _delegate_geo_method("simplify", self, *args, **kwargs)
+        return _delegate_geo_method(
+            "simplify", self, tolerance=tolerance, preserve_topology=preserve_topology
+        )
 
     def relate(self, other, align=None):
         """
@@ -4854,15 +4873,8 @@ GeometryCollection
         2                POINT (0 2)
         dtype: geometry
         """
-        if isinstance(distance, pd.Series):
-            if not self.index.equals(distance.index):
-                raise ValueError(
-                    "Index values of distance sequence does "
-                    "not match index values of the GeoSeries"
-                )
-            distance = np.asarray(distance)
         return _delegate_geo_method(
-            "interpolate", self, distance, normalized=normalized
+            "interpolate", self, distance=distance, normalized=normalized
         )
 
     def affine_transform(self, matrix):
@@ -4905,7 +4917,7 @@ GeometryCollection
         dtype: geometry
 
         """  # (E501 link is longer than max line length)
-        return _delegate_geo_method("affine_transform", self, matrix)
+        return _delegate_geo_method("affine_transform", self, matrix=matrix)
 
     def translate(self, xoff=0.0, yoff=0.0, zoff=0.0):
         """Returns a ``GeoSeries`` with translated geometries.
@@ -4943,7 +4955,7 @@ GeometryCollection
         dtype: geometry
 
         """  # (E501 link is longer than max line length)
-        return _delegate_geo_method("translate", self, xoff, yoff, zoff)
+        return _delegate_geo_method("translate", self, xoff=xoff, yoff=yoff, zoff=zoff)
 
     def rotate(self, angle, origin="center", use_radians=False):
         """Returns a ``GeoSeries`` with rotated geometries.
@@ -4994,7 +5006,7 @@ GeometryCollection
 
         """
         return _delegate_geo_method(
-            "rotate", self, angle, origin=origin, use_radians=use_radians
+            "rotate", self, angle=angle, origin=origin, use_radians=use_radians
         )
 
     def scale(self, xfact=1.0, yfact=1.0, zfact=1.0, origin="center"):
@@ -5043,7 +5055,9 @@ GeometryCollection
         2    POLYGON ((6 -3, 8 0, 6 3, 6 -3))
         dtype: geometry
         """
-        return _delegate_geo_method("scale", self, xfact, yfact, zfact, origin=origin)
+        return _delegate_geo_method(
+            "scale", self, xfact=xfact, yfact=yfact, zfact=zfact, origin=origin
+        )
 
     def skew(self, xs=0.0, ys=0.0, origin="center", use_radians=False):
         """Returns a ``GeoSeries`` with skewed geometries.
@@ -5095,7 +5109,7 @@ GeometryCollection
         dtype: geometry
         """
         return _delegate_geo_method(
-            "skew", self, xs, ys, origin=origin, use_radians=use_radians
+            "skew", self, xs=xs, ys=ys, origin=origin, use_radians=use_radians
         )
 
     @property
