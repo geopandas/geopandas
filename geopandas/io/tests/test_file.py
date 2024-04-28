@@ -874,7 +874,7 @@ def test_read_file__columns_empty(engine, naturalearth_lowres):
     assert gdf.columns.tolist() == ["geometry"]
 
 
-@pytest.mark.skipif(FIONA_GE_19, reason="test for fiona < 1.9")
+@pytest.mark.skipif(FIONA_GE_19 or not fiona, reason="test for fiona < 1.9")
 def test_read_file__columns_old_fiona(naturalearth_lowres):
     with pytest.raises(NotImplementedError):
         geopandas.read_file(
@@ -1304,6 +1304,26 @@ def test_option_io_engine(nybb_filename):
     finally:
         fiona.supported_drivers["ESRI Shapefile"] = orig
         geopandas.options.io_engine = None
+
+
+@pytest.mark.skipif(pyogrio, reason="test for pyogrio not installed")
+def test_error_engine_unavailable_pyogrio(tmp_path, df_points, file_path):
+
+    with pytest.raises(ImportError, match="the 'read_file' function requires"):
+        geopandas.read_file(file_path, engine="pyogrio")
+
+    with pytest.raises(ImportError, match="the 'to_file' method requires"):
+        df_points.to_file(tmp_path / "test.gpkg", engine="pyogrio")
+
+
+@pytest.mark.skipif(fiona, reason="test for fiona not installed")
+def test_error_engine_unavailable_fiona(tmp_path, df_points, file_path):
+
+    with pytest.raises(ImportError, match="the 'read_file' function requires"):
+        geopandas.read_file(file_path, engine="fiona")
+
+    with pytest.raises(ImportError, match="the 'to_file' method requires"):
+        df_points.to_file(tmp_path / "test.gpkg", engine="fiona")
 
 
 @PYOGRIO_MARK

@@ -16,7 +16,7 @@ from geopandas.geoseries import GeoSeries
 import geopandas.io
 from geopandas.explore import _explore
 from ._decorator import doc
-from ._compat import HAS_PYPROJ
+from ._compat import HAS_PYPROJ, PANDAS_GE_30
 
 
 def _geodataframe_constructor_with_fallback(*args, **kwargs):
@@ -314,7 +314,10 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         if inplace:
             frame = self
         else:
-            frame = self.copy()
+            if PANDAS_GE_30:
+                frame = self.copy(deep=False)
+            else:
+                frame = self.copy()
 
         geo_column_name = self._geometry_column_name
 
@@ -428,7 +431,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         else:
             if not inplace:
                 return self.rename(columns={geometry_col: col}).set_geometry(
-                    col, inplace
+                    col, inplace=inplace
                 )
             self.rename(columns={geometry_col: col}, inplace=inplace)
             self.set_geometry(col, inplace=inplace)
@@ -1752,6 +1755,7 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
         sort=True,
         observed=False,
         dropna=True,
+        method="unary",
         **kwargs,
     ):
         """
@@ -1784,26 +1788,28 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
         level : int or str or sequence of int or sequence of str, default None
             If the axis is a MultiIndex (hierarchical), group by a
             particular level or levels.
-
-            .. versionadded:: 0.9.0
         sort : bool, default True
             Sort group keys. Get better performance by turning this off.
             Note this does not influence the order of observations within
             each group. Groupby preserves the order of rows within each group.
-
-            .. versionadded:: 0.9.0
         observed : bool, default False
             This only applies if any of the groupers are Categoricals.
             If True: only show observed values for categorical groupers.
             If False: show all values for categorical groupers.
-
-            .. versionadded:: 0.9.0
         dropna : bool, default True
             If True, and if group keys contain NA values, NA values
             together with row/column will be dropped. If False, NA
             values will also be treated as the key in groups.
+        method : str (default ``"unary"``)
+            The method to use for the union. Options are:
 
-            .. versionadded:: 0.9.0
+            * ``"unary"``: use the unary union algorithm. This option is the most robust
+              but can be slow for large numbers of geometries (default).
+            * ``"coverage"``: use the coverage union algorithm. This option is optimized
+              for non-overlapping polygons and can be significantly faster than the
+              unary union algorithm. However, it can produce invalid geometries if the
+              polygons overlap.
+
         **kwargs :
             Keyword arguments to be passed to the pandas `DataFrameGroupby.agg` method
             which is used by `dissolve`. In particular, `numeric_only` may be
@@ -1878,7 +1884,7 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
 
         # Process spatial component
         def merge_geometries(block):
-            merged_geom = block.union_all()
+            merged_geom = block.union_all(method=method)
             return merged_geom
 
         g = self.groupby(group_keys=False, **groupby_kwargs)[self.geometry.name].agg(
@@ -2004,7 +2010,7 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
 
     # overrides the pandas astype method to ensure the correct return type
     # should be removable when pandas 1.4 is dropped
-    def astype(self, dtype, copy=True, errors="raise", **kwargs):
+    def astype(self, dtype, copy=None, errors="raise", **kwargs):
         """
         Cast a pandas object to a specified dtype ``dtype``.
         Returns a GeoDataFrame when the geometry column is kept as geometries,
@@ -2014,7 +2020,12 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
         -------
         GeoDataFrame or DataFrame
         """
-        df = super().astype(dtype, copy=copy, errors=errors, **kwargs)
+        if not PANDAS_GE_30 and copy is None:
+            copy = True
+        if copy is not None:
+            kwargs["copy"] = copy
+
+        df = super().astype(dtype, errors=errors, **kwargs)
 
         try:
             geoms = df[self._geometry_column_name]
@@ -2311,7 +2322,7 @@ chicago_w_groceries[chicago_w_groceries["community"] == "UPTOWN"]
             exclusive=exclusive,
         )
 
-    def clip(self, mask, keep_geom_type=False):
+    def clip(self, mask, keep_geom_type=False, sort=False):
         """Clip points, lines, or polygon geometries to the mask extent.
 
         Both layers must be in the same Coordinate Reference System (CRS).
@@ -2334,6 +2345,10 @@ chicago_w_groceries[chicago_w_groceries["community"] == "UPTOWN"]
             If True, return only geometries of original type in case of intersection
             resulting in multiple geometry types or GeometryCollections.
             If False, return all resulting geometries (potentially mixed types).
+        sort : boolean, default False
+            If True, the order of rows in the clipped GeoDataFrame will be preserved at
+            small performance cost. If False the order of rows in the clipped
+            GeoDataFrame will be random.
 
         Returns
         -------
@@ -2364,7 +2379,7 @@ chicago_w_groceries[chicago_w_groceries["community"] == "UPTOWN"]
         >>> nws_groceries.shape
         (7, 8)
         """
-        return geopandas.clip(self, mask=mask, keep_geom_type=keep_geom_type)
+        return geopandas.clip(self, mask=mask, keep_geom_type=keep_geom_type, sort=sort)
 
     def overlay(self, right, how="intersection", keep_geom_type=None, make_valid=True):
         """Perform spatial overlay between GeoDataFrames.
@@ -2459,7 +2474,7 @@ chicago_w_groceries[chicago_w_groceries["community"] == "UPTOWN"]
         )
 
 
-def _dataframe_set_geometry(self, col, drop=False, inplace=False, crs=None):
+def _dataframe_set_geometry(self, col, drop=None, inplace=False, crs=None):
     if inplace:
         raise ValueError(
             "Can't do inplace setting when converting from DataFrame to GeoDataFrame"

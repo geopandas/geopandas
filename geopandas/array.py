@@ -537,9 +537,13 @@ class GeometryArray(ExtensionArray):
         return shapely.length(self._data)
 
     def count_coordinates(self):
-        out = np.empty(len(self._data), dtype=np.int_)
-        out[:] = [shapely.count_coordinates(s) for s in self._data]
-        return out
+        return shapely.get_num_coordinates(self._data)
+
+    def count_geometries(self):
+        return shapely.get_num_geometries(self._data)
+
+    def count_interior_rings(self):
+        return shapely.get_num_interior_rings(self._data)
 
     def get_precision(self):
         return shapely.get_precision(self._data)
@@ -837,6 +841,11 @@ class GeometryArray(ExtensionArray):
             other = other._data
         return shapely.relate(self._data, other)
 
+    def relate_pattern(self, other, pattern):
+        if isinstance(other, GeometryArray):
+            other = other._data
+        return shapely.relate_pattern(self._data, other, pattern)
+
     #
     # Reduction operations that return a Shapely geometry
     #
@@ -850,8 +859,18 @@ class GeometryArray(ExtensionArray):
         )
         return self.union_all()
 
-    def union_all(self):
-        return shapely.union_all(self._data)
+    def union_all(self, method="unary"):
+        if method == "coverage":
+            return shapely.coverage_union_all(self._data)
+        elif method == "unary":
+            return shapely.union_all(self._data)
+        else:
+            raise ValueError(
+                f"Method '{method}' not recognized. Use 'coverage' or 'unary'."
+            )
+
+    def intersection_all(self):
+        return shapely.intersection_all(self._data)
 
     #
     # Affinity operations
