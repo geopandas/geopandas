@@ -27,13 +27,24 @@ def is_geometry_type(data):
 
 def _delegate_binary_method(op, this, other, align, *args, **kwargs):
     # type: (str, GeoSeries, GeoSeries) -> GeoSeries/Series
+    if align is None:
+        align = True
+        maybe_warn = True
+    else:
+        maybe_warn = False
     this = this.geometry
     if isinstance(other, GeoPandasBase):
         if align and not this.index.equals(other.index):
-            warn(
-                "The indices of the two GeoSeries are different.",
-                stacklevel=4,
-            )
+            if maybe_warn:
+                warn(
+                    "The indices of the left and right GeoSeries' are not equal, and "
+                    "therefore they will be aligned (reordering and/or introducing "
+                    "missing values) before executing the operation. If this alignment "
+                    "is the desired behaviour, you can silence this warning by passing "
+                    "'align=True'. If you don't want alignment and protect yourself of "
+                    "accidentally aligning, you can pass 'align=False'.",
+                    stacklevel=4,
+                )
             this, other = this.align(other.geometry)
         else:
             other = other.geometry
@@ -77,13 +88,32 @@ def _delegate_property(op, this):
         return Series(data, index=this.index)
 
 
-def _delegate_geo_method(op, this, *args, **kwargs):
+def _delegate_geo_method(op, this, **kwargs):
     # type: (str, GeoSeries) -> GeoSeries
     """Unary operation that returns a GeoSeries"""
     from .geoseries import GeoSeries
+    from .geodataframe import GeoDataFrame
+
+    if isinstance(this, GeoSeries):
+        klass, var_name = "GeoSeries", "gs"
+    elif isinstance(this, GeoDataFrame):
+        klass, var_name = "GeoDataFrame", "gdf"
+    else:
+        klass, var_name = this.__class__.__name__, "this"
+
+    for key, val in kwargs.items():
+        if isinstance(val, pd.Series) and not val.index.equals(this.index):
+            raise ValueError(
+                f"Index of the Series passed as '{key}' does not match index of the "
+                f"{klass}. If you want both Series to be aligned, align them before "
+                f"passing them to this method as "
+                f"`{var_name}, {key} = {var_name}.align({key})`. If "
+                f"you want to ignore the index, pass the underlying array as '{key}' "
+                f"using `{key}.values`."
+            )
 
     a_this = GeometryArray(this.geometry.values)
-    data = getattr(a_this, op)(*args, **kwargs)
+    data = getattr(a_this, op)(**kwargs)
     return GeoSeries(data, index=this.index, crs=this.crs)
 
 
@@ -824,7 +854,9 @@ GeometryCollection
         2    MULTILINESTRING ((5 3, 10 10), (5 3, 6 3), (6 ...
         dtype: geometry
         """
-        return _delegate_geo_method("delaunay_triangles", self, tolerance, only_edges)
+        return _delegate_geo_method(
+            "delaunay_triangles", self, tolerance=tolerance, only_edges=only_edges
+        )
 
     @property
     def envelope(self):
@@ -1021,7 +1053,7 @@ GeometryCollection
         return _delegate_geo_method(
             "offset_curve",
             self,
-            distance,
+            distance=distance,
             quad_segs=quad_segs,
             join_style=join_style,
             mitre_limit=mitre_limit,
@@ -1468,7 +1500,9 @@ GeometryCollection
         1    POLYGON ((0 0, 5 0, 10 0, 10 5, 10 10, 5 10, 0...
         dtype: geometry
         """
-        return _delegate_geo_method("segmentize", self, max_segment_length)
+        return _delegate_geo_method(
+            "segmentize", self, max_segment_length=max_segment_length
+        )
 
     def transform(self, transformation, include_z=False):
         """Returns a ``GeoSeries`` with the transformation function
@@ -1508,7 +1542,9 @@ GeometryCollection
         0    POINT Z (1 1 1)
         dtype: geometry
         """
-        return _delegate_geo_method("transform", self, transformation, include_z)
+        return _delegate_geo_method(
+            "transform", self, transformation=transformation, include_z=include_z
+        )
 
     def force_2d(self):
         """Forces the dimensionality of a geometry to 2D.
@@ -1606,6 +1642,73 @@ GeometryCollection
         """
         return _delegate_geo_method("force_3d", self, z=z)
 
+    def line_merge(self, directed=False):
+        """Returns (Multi)LineStrings formed by combining the lines in a
+        MultiLineString.
+
+        Lines are joined together at their endpoints in case two lines are intersecting.
+        Lines are not joined when 3 or more lines are intersecting at the endpoints.
+        Line elements that cannot be joined are kept as is in the resulting
+        MultiLineString.
+
+        The direction of each merged LineString will be that of the majority of the
+        LineStrings from which it was derived. Except if ``directed=True`` is specified,
+        then the operation will not change the order of points within lines and so only
+        lines which can be joined with no change in direction are merged.
+
+        Non-linear geometeries result in an empty GeometryCollection.
+
+        Parameters
+        ----------
+        directed : bool, default False
+            Only combine lines if possible without changing point order.
+            Requires GEOS >= 3.11.0
+
+        Returns
+        -------
+        GeoSeries
+
+        Examples
+        --------
+        >>> from shapely.geometry import MultiLineString, Point
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         MultiLineString([[(0, 2), (0, 10)], [(0, 10), (5, 10)]]),
+        ...         MultiLineString([[(0, 2), (0, 10)], [(0, 11), (5, 10)]]),
+        ...         MultiLineString(),
+        ...         MultiLineString([[(0, 0), (1, 0)], [(0, 0), (3, 0)]]),
+        ...         Point(0, 0),
+        ...     ]
+        ... )
+        >>> s
+        0    MULTILINESTRING ((0 2, 0 10), (0 10, 5 10))
+        1    MULTILINESTRING ((0 2, 0 10), (0 11, 5 10))
+        2                          MULTILINESTRING EMPTY
+        3       MULTILINESTRING ((0 0, 1 0), (0 0, 3 0))
+        4                                    POINT (0 0)
+        dtype: geometry
+
+        >>> s.line_merge()
+        0                   LINESTRING (0 2, 0 10, 5 10)
+        1    MULTILINESTRING ((0 2, 0 10), (0 11, 5 10))
+        2                       GEOMETRYCOLLECTION EMPTY
+        3                     LINESTRING (1 0, 0 0, 3 0)
+        4                       GEOMETRYCOLLECTION EMPTY
+        dtype: geometry
+
+        With ``directed=True``, you can avoid changing the order of points within lines
+        and merge only lines where no change of direction is required:
+
+        >>> s.line_merge(directed=True)
+        0                   LINESTRING (0 2, 0 10, 5 10)
+        1    MULTILINESTRING ((0 2, 0 10), (0 11, 5 10))
+        2                       GEOMETRYCOLLECTION EMPTY
+        3       MULTILINESTRING ((0 0, 1 0), (0 0, 3 0))
+        4                       GEOMETRYCOLLECTION EMPTY
+        dtype: geometry
+        """
+        return _delegate_geo_method("line_merge", self, directed=directed)
+
     #
     # Reduction operations that return a Shapely geometry
     #
@@ -1654,23 +1757,48 @@ GeometryCollection
         --------
 
         >>> from shapely.geometry import box
-        >>> s = geopandas.GeoSeries([box(0,0,1,1), box(0,0,2,2)])
+        >>> s = geopandas.GeoSeries([box(0, 0, 1, 1), box(0, 0, 2, 2)])
         >>> s
         0    POLYGON ((1 0, 1 1, 0 1, 0 0, 1 0))
         1    POLYGON ((2 0, 2 2, 0 2, 0 0, 2 0))
         dtype: geometry
 
-        >>> union = s.union_all()
-        >>> print(union)
-        POLYGON ((0 1, 0 2, 2 2, 2 0, 1 0, 0 0, 0 1))
+        >>> s.union_all()
+        <POLYGON ((0 1, 0 2, 2 2, 2 0, 1 0, 0 0, 0 1))>
         """
         return self.geometry.values.union_all()
+
+    def intersection_all(self):
+        """Returns a geometry containing the intersection of all geometries in
+        the ``GeoSeries``.
+
+        This method ignores None values when other geometries are present.
+        If all elements of the GeoSeries are None, an empty GeometryCollection is
+        returned.
+
+        Examples
+        --------
+
+        >>> from shapely.geometry import box
+        >>> s = geopandas.GeoSeries(
+        ...     [box(0, 0, 2, 2), box(1, 1, 3, 3), box(0, 0, 1.5, 1.5)]
+        ... )
+        >>> s
+        0              POLYGON ((2 0, 2 2, 0 2, 0 0, 2 0))
+        1              POLYGON ((3 1, 3 3, 1 3, 1 1, 3 1))
+        2    POLYGON ((1.5 0, 1.5 1.5, 0 1.5, 0 0, 1.5 0))
+        dtype: geometry
+
+        >>> s.intersection_all()
+        <POLYGON ((1 1, 1 1.5, 1.5 1.5, 1.5 1, 1 1))>
+        """
+        return self.geometry.values.intersection_all()
 
     #
     # Binary operations that return a pandas Series
     #
 
-    def contains(self, other, align=True):
+    def contains(self, other, align=None):
         """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
         each aligned geometry that contains `other`.
 
@@ -1693,9 +1821,9 @@ GeometryCollection
         other : GeoSeries or geometric object
             The GeoSeries (elementwise) or geometric object to test if it
             is contained.
-        align : bool (default True)
+        align : bool | None (default None)
             If True, automatically aligns GeoSeries based on their indices.
-            If False, the order of elements is preserved.
+            If False, the order of elements is preserved. None defaults to True.
 
         Returns
         -------
@@ -1786,7 +1914,7 @@ GeometryCollection
         """
         return _binary_op("contains", self, other, align)
 
-    def contains_properly(self, other, align=True):
+    def contains_properly(self, other, align=None):
         """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
         each aligned geometry that is completely inside ``other``, with no common
         boundary points.
@@ -1806,9 +1934,9 @@ GeometryCollection
         other : GeoSeries or geometric object
             The GeoSeries (elementwise) or geometric object to test if it
             is contained.
-        align : bool (default True)
+        align : bool | None (default None)
             If True, automatically aligns GeoSeries based on their indices.
-            If False, the order of elements is preserved.
+            If False, the order of elements is preserved. None defaults to True.
 
         Returns
         -------
@@ -1907,7 +2035,7 @@ GeometryCollection
         """
         return _binary_op("contains_properly", self, other, align)
 
-    def dwithin(self, other, distance, align=True):
+    def dwithin(self, other, distance, align=None):
         """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
         each aligned geometry that is within a set distance from ``other``.
 
@@ -1926,9 +2054,9 @@ GeometryCollection
             applied to all geometries. An array or Series will be applied elementwise.
             If np.array or pd.Series are used then it must have same length as the
             GeoSeries.
-        align : bool (default True)
+        align : bool | None (default None)
             If True, automatically aligns GeoSeries based on their indices.
-            If False, the order of elements is preserved.
+            If False, the order of elements is preserved. None defaults to True.
 
         Returns
         -------
@@ -2018,7 +2146,7 @@ GeometryCollection
         """
         return _binary_op("dwithin", self, other, distance=distance, align=align)
 
-    def geom_equals(self, other, align=True):
+    def geom_equals(self, other, align=None):
         """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
         each aligned geometry equal to `other`.
 
@@ -2036,9 +2164,9 @@ GeometryCollection
         other : GeoSeries or geometric object
             The GeoSeries (elementwise) or geometric object to test for
             equality.
-        align : bool (default True)
+        align : bool | None (default None)
             If True, automatically aligns GeoSeries based on their indices.
-            If False, the order of elements is preserved.
+            If False, the order of elements is preserved. None defaults to True.
 
         Returns
         -------
@@ -2128,7 +2256,7 @@ GeometryCollection
         """
         return _binary_op("geom_equals", self, other, align)
 
-    def geom_almost_equals(self, other, decimal=6, align=True):
+    def geom_almost_equals(self, other, decimal=6, align=None):
         """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` if
         each aligned geometry is approximately equal to `other`.
 
@@ -2146,9 +2274,9 @@ GeometryCollection
             The GeoSeries (elementwise) or geometric object to compare to.
         decimal : int
             Decimal place precision used when testing for approximate equality.
-        align : bool (default True)
+        align : bool | None (default None)
             If True, automatically aligns GeoSeries based on their indices.
-            If False, the order of elements is preserved.
+            If False, the order of elements is preserved. None defaults to True.
 
         Returns
         -------
@@ -2205,7 +2333,7 @@ GeometryCollection
             "geom_equals_exact", self, other, tolerance=tolerance, align=align
         )
 
-    def geom_equals_exact(self, other, tolerance, align=True):
+    def geom_equals_exact(self, other, tolerance, align=None):
         """Return True for all geometries that equal aligned *other* to a given
         tolerance, else False.
 
@@ -2220,9 +2348,9 @@ GeometryCollection
             The GeoSeries (elementwise) or geometric object to compare to.
         tolerance : float
             Decimal place precision used when testing for approximate equality.
-        align : bool (default True)
+        align : bool | None (default None)
             If True, automatically aligns GeoSeries based on their indices.
-            If False, the order of elements is preserved.
+            If False, the order of elements is preserved. None defaults to True.
 
         Returns
         -------
@@ -2270,7 +2398,7 @@ GeometryCollection
             "geom_equals_exact", self, other, tolerance=tolerance, align=align
         )
 
-    def crosses(self, other, align=True):
+    def crosses(self, other, align=None):
         """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
         each aligned geometry that cross `other`.
 
@@ -2288,9 +2416,9 @@ GeometryCollection
         other : GeoSeries or geometric object
             The GeoSeries (elementwise) or geometric object to test if is
             crossed.
-        align : bool (default True)
+        align : bool | None (default None)
             If True, automatically aligns GeoSeries based on their indices.
-            If False, the order of elements is preserved.
+            If False, the order of elements is preserved. None defaults to True.
 
         Returns
         -------
@@ -2382,7 +2510,7 @@ GeometryCollection
         """
         return _binary_op("crosses", self, other, align)
 
-    def disjoint(self, other, align=True):
+    def disjoint(self, other, align=None):
         """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
         each aligned geometry disjoint to `other`.
 
@@ -2399,9 +2527,9 @@ GeometryCollection
         other : GeoSeries or geometric object
             The GeoSeries (elementwise) or geometric object to test if is
             disjoint.
-        align : bool (default True)
+        align : bool | None (default None)
             If True, automatically aligns GeoSeries based on their indices.
-            If False, the order of elements is preserved.
+            If False, the order of elements is preserved. None defaults to True.
 
         Returns
         -------
@@ -2483,7 +2611,7 @@ GeometryCollection
         """
         return _binary_op("disjoint", self, other, align)
 
-    def intersects(self, other, align=True):
+    def intersects(self, other, align=None):
         """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
         each aligned geometry that intersects `other`.
 
@@ -2500,9 +2628,9 @@ GeometryCollection
         other : GeoSeries or geometric object
             The GeoSeries (elementwise) or geometric object to test if is
             intersected.
-        align : bool (default True)
+        align : bool | None (default None)
             If True, automatically aligns GeoSeries based on their indices.
-            If False, the order of elements is preserved.
+            If False, the order of elements is preserved. None defaults to True.
 
         Returns
         -------
@@ -2594,7 +2722,7 @@ GeometryCollection
         """
         return _binary_op("intersects", self, other, align)
 
-    def overlaps(self, other, align=True):
+    def overlaps(self, other, align=None):
         """Returns True for all aligned geometries that overlap *other*, else False.
 
         Geometries overlaps if they have more than one but not all
@@ -2612,9 +2740,9 @@ GeometryCollection
         other : GeoSeries or geometric object
             The GeoSeries (elementwise) or geometric object to test if
             overlaps.
-        align : bool (default True)
+        align : bool | None (default None)
             If True, automatically aligns GeoSeries based on their indices.
-            If False, the order of elements is preserved.
+            If False, the order of elements is preserved. None defaults to True.
 
         Returns
         -------
@@ -2705,7 +2833,7 @@ GeometryCollection
         """
         return _binary_op("overlaps", self, other, align)
 
-    def touches(self, other, align=True):
+    def touches(self, other, align=None):
         """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
         each aligned geometry that touches `other`.
 
@@ -2723,9 +2851,9 @@ GeometryCollection
         other : GeoSeries or geometric object
             The GeoSeries (elementwise) or geometric object to test if is
             touched.
-        align : bool (default True)
+        align : bool | None (default None)
             If True, automatically aligns GeoSeries based on their indices.
-            If False, the order of elements is preserved.
+            If False, the order of elements is preserved. None defaults to True.
 
         Returns
         -------
@@ -2817,7 +2945,7 @@ GeometryCollection
         """
         return _binary_op("touches", self, other, align)
 
-    def within(self, other, align=True):
+    def within(self, other, align=None):
         """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
         each aligned geometry that is within `other`.
 
@@ -2839,9 +2967,9 @@ GeometryCollection
         other : GeoSeries or geometric object
             The GeoSeries (elementwise) or geometric object to test if each
             geometry is within.
-        align : bool (default True)
+        align : bool | None (default None)
             If True, automatically aligns GeoSeries based on their indices.
-            If False, the order of elements is preserved.
+            If False, the order of elements is preserved. None defaults to True.
 
         Returns
         -------
@@ -2931,7 +3059,7 @@ GeometryCollection
         """
         return _binary_op("within", self, other, align)
 
-    def covers(self, other, align=True):
+    def covers(self, other, align=None):
         """
         Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
         each aligned geometry that is entirely covering `other`.
@@ -2953,9 +3081,9 @@ GeometryCollection
         ----------
         other : Geoseries or geometric object
             The Geoseries (elementwise) or geometric object to check is being covered.
-        align : bool (default True)
+        align : bool | None (default None)
             If True, automatically aligns GeoSeries based on their indices.
-            If False, the order of elements is preserved.
+            If False, the order of elements is preserved. None defaults to True.
 
         Returns
         -------
@@ -3045,7 +3173,7 @@ GeometryCollection
         """
         return _binary_op("covers", self, other, align)
 
-    def covered_by(self, other, align=True):
+    def covered_by(self, other, align=None):
         """
         Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
         each aligned geometry that is entirely covered by `other`.
@@ -3066,9 +3194,9 @@ GeometryCollection
         ----------
         other : Geoseries or geometric object
             The Geoseries (elementwise) or geometric object to check is being covered.
-        align : bool (default True)
+        align : bool | None (default None)
             If True, automatically aligns GeoSeries based on their indices.
-            If False, the order of elements is preserved.
+            If False, the order of elements is preserved. None defaults to True.
 
         Returns
         -------
@@ -3159,7 +3287,7 @@ GeometryCollection
         """
         return _binary_op("covered_by", self, other, align)
 
-    def distance(self, other, align=True):
+    def distance(self, other, align=None):
         """Returns a ``Series`` containing the distance to aligned `other`.
 
         The operation works on a 1-to-1 row-wise manner:
@@ -3172,9 +3300,9 @@ GeometryCollection
         other : Geoseries or geometric object
             The Geoseries (elementwise) or geometric object to find the
             distance to.
-        align : bool (default True)
+        align : bool | None (default None)
             If True, automatically aligns GeoSeries based on their indices.
-            If False, the order of elements is preserved.
+            If False, the order of elements is preserved. None defaults to True.
 
 
         Returns
@@ -3255,7 +3383,7 @@ GeometryCollection
         """
         return _binary_op("distance", self, other, align)
 
-    def hausdorff_distance(self, other, align=True, densify=None):
+    def hausdorff_distance(self, other, align=None, densify=None):
         """Returns a ``Series`` containing the Hausdorff distance to aligned `other`.
 
         The Hausdorff distance is the largest distance consisting of any point in `self`
@@ -3271,9 +3399,9 @@ GeometryCollection
         other : GeoSeries or geometric object
             The Geoseries (elementwise) or geometric object to find the
             distance to.
-        align : bool (default True)
+        align : bool | None (default None)
             If True, automatically aligns GeoSeries based on their indices.
-            If False, the order of elements is preserved.
+            If False, the order of elements is preserved. None defaults to True.
         densify : float (default None)
             A value between 0 and 1, that splits each subsegment of a line string
             into equal length segments, making the approximation less coarse.
@@ -3370,7 +3498,7 @@ GeometryCollection
         """
         return _binary_op("hausdorff_distance", self, other, align, densify=densify)
 
-    def frechet_distance(self, other, align=True, densify=None):
+    def frechet_distance(self, other, align=None, densify=None):
         """Returns a ``Series`` containing the Frechet distance to aligned `other`.
 
         The Fréchet distance is a measure of similarity: it is the greatest distance
@@ -3393,9 +3521,9 @@ GeometryCollection
         other : GeoSeries or geometric object
             The Geoseries (elementwise) or geometric object to find the
             distance to.
-        align : bool (default True)
+        align : bool | None (default None)
             If True, automatically aligns GeoSeries based on their indices.
-            If False, the order of elements is preserved.
+            If False, the order of elements is preserved. None defaults to True.
         densify : float (default None)
             A value between 0 and 1, that splits each subsegment of a line string
             into equal length segments, making the approximation less coarse.
@@ -3494,7 +3622,7 @@ GeometryCollection
     # Binary operations that return a GeoSeries
     #
 
-    def difference(self, other, align=True):
+    def difference(self, other, align=None):
         """Returns a ``GeoSeries`` of the points in each aligned geometry that
         are not in `other`.
 
@@ -3511,9 +3639,9 @@ GeometryCollection
         other : Geoseries or geometric object
             The Geoseries (elementwise) or geometric object to find the
             difference to.
-        align : bool (default True)
+        align : bool | None (default None)
             If True, automatically aligns GeoSeries based on their indices.
-            If False, the order of elements is preserved.
+            If False, the order of elements is preserved. None defaults to True.
 
         Returns
         -------
@@ -3605,7 +3733,7 @@ GeometryCollection
         """
         return _binary_geo("difference", self, other, align)
 
-    def symmetric_difference(self, other, align=True):
+    def symmetric_difference(self, other, align=None):
         """Returns a ``GeoSeries`` of the symmetric difference of points in
         each aligned geometry with `other`.
 
@@ -3626,9 +3754,9 @@ GeometryCollection
         other : Geoseries or geometric object
             The Geoseries (elementwise) or geometric object to find the
             symmetric difference to.
-        align : bool (default True)
+        align : bool | None (default None)
             If True, automatically aligns GeoSeries based on their indices.
-            If False, the order of elements is preserved.
+            If False, the order of elements is preserved. None defaults to True.
 
         Returns
         -------
@@ -3720,7 +3848,7 @@ GeometryCollection
         """
         return _binary_geo("symmetric_difference", self, other, align)
 
-    def union(self, other, align=True):
+    def union(self, other, align=None):
         """Returns a ``GeoSeries`` of the union of points in each aligned geometry with
         `other`.
 
@@ -3738,9 +3866,9 @@ GeometryCollection
         other : Geoseries or geometric object
             The Geoseries (elementwise) or geometric object to find the union
             with.
-        align : bool (default True)
+        align : bool | None (default None)
             If True, automatically aligns GeoSeries based on their indices.
-            If False, the order of elements is preserved.
+            If False, the order of elements is preserved. None defaults to True.
 
         Returns
         -------
@@ -3834,7 +3962,7 @@ GeometryCollection
         """
         return _binary_geo("union", self, other, align)
 
-    def intersection(self, other, align=True):
+    def intersection(self, other, align=None):
         """Returns a ``GeoSeries`` of the intersection of points in each
         aligned geometry with `other`.
 
@@ -3852,9 +3980,9 @@ GeometryCollection
         other : Geoseries or geometric object
             The Geoseries (elementwise) or geometric object to find the
             intersection with.
-        align : bool (default True)
+        align : bool | None (default None)
             If True, automatically aligns GeoSeries based on their indices.
-            If False, the order of elements is preserved.
+            If False, the order of elements is preserved. None defaults to True.
 
         Returns
         -------
@@ -4016,7 +4144,7 @@ GeometryCollection
         clipped_geometry = geometry_array.clip_by_rect(xmin, ymin, xmax, ymax)
         return GeoSeries(clipped_geometry, index=self.index, crs=self.crs)
 
-    def shortest_line(self, other, align=True):
+    def shortest_line(self, other, align=None):
         """
         Returns the shortest two-point line between two geometries.
 
@@ -4037,9 +4165,9 @@ GeometryCollection
         other : Geoseries or geometric object
             The Geoseries (elementwise) or geometric object to find the
             shortest line with.
-        align : bool (default True)
+        align : bool | None (default None)
             If True, automatically aligns GeoSeries based on their indices.
-            If False, the order of elements is preserved.
+            If False, the order of elements is preserved. None defaults to True.
 
         Returns
         -------
@@ -4119,7 +4247,7 @@ GeometryCollection
         """
         return _binary_geo("shortest_line", self, other, align)
 
-    def snap(self, other, tolerance, align=True):
+    def snap(self, other, tolerance, align=None):
         """Snaps an input geometry to reference geometry’s vertices.
 
         Vertices of the first geometry are snapped to vertices of the second. geometry,
@@ -4148,9 +4276,9 @@ GeometryCollection
             The Geoseries (elementwise) or geometric object to snap to.
         tolerance : float or array like
             Maximum distance between vertices that shall be snapped
-        align : bool (default True)
+        align : bool | None (default None)
             If True, automatically aligns GeoSeries based on their indices.
-            If False, the order of elements is preserved.
+            If False, the order of elements is preserved. None defaults to True.
 
         Returns
         -------
@@ -4527,18 +4655,10 @@ GeometryCollection
         .. plot:: _static/code/buffer.py
 
         """
-        if isinstance(distance, pd.Series):
-            if not self.index.equals(distance.index):
-                raise ValueError(
-                    "Index values of distance sequence does "
-                    "not match index values of the GeoSeries"
-                )
-            distance = np.asarray(distance)
-
         return _delegate_geo_method(
             "buffer",
             self,
-            distance,
+            distance=distance,
             resolution=resolution,
             cap_style=cap_style,
             join_style=join_style,
@@ -4547,7 +4667,7 @@ GeometryCollection
             **kwargs,
         )
 
-    def simplify(self, *args, **kwargs):
+    def simplify(self, tolerance, preserve_topology=True):
         """Returns a ``GeoSeries`` containing a simplified representation of
         each geometry.
 
@@ -4595,9 +4715,11 @@ GeometryCollection
         1              LINESTRING (0 0, 0 20)
         dtype: geometry
         """
-        return _delegate_geo_method("simplify", self, *args, **kwargs)
+        return _delegate_geo_method(
+            "simplify", self, tolerance=tolerance, preserve_topology=preserve_topology
+        )
 
-    def relate(self, other, align=True):
+    def relate(self, other, align=None):
         """
         Returns the DE-9IM intersection matrices for the geometries
 
@@ -4611,9 +4733,9 @@ GeometryCollection
         other : BaseGeometry or GeoSeries
             The other geometry to computed
             the DE-9IM intersection matrices from.
-        align : bool (default True)
+        align : bool | None (default None)
             If True, automatically aligns GeoSeries based on their indices.
-            If False, the order of elements is preserved.
+            If False, the order of elements is preserved. None defaults to True.
 
         Returns
         -------
@@ -4702,7 +4824,7 @@ GeometryCollection
         """
         return _binary_op("relate", self, other, align)
 
-    def project(self, other, normalized=False, align=True):
+    def project(self, other, normalized=False, align=None):
         """
         Return the distance along each geometry nearest to *other*
 
@@ -4723,9 +4845,9 @@ GeometryCollection
         normalized : boolean
             If normalized is True, return the distance normalized to
             the length of the object.
-        align : bool (default True)
+        align : bool | None (default None)
             If True, automatically aligns GeoSeries based on their indices.
-            If False, the order of elements is preserved.
+            If False, the order of elements is preserved. None defaults to True.
 
         Returns
         -------
@@ -4843,15 +4965,8 @@ GeometryCollection
         2                POINT (0 2)
         dtype: geometry
         """
-        if isinstance(distance, pd.Series):
-            if not self.index.equals(distance.index):
-                raise ValueError(
-                    "Index values of distance sequence does "
-                    "not match index values of the GeoSeries"
-                )
-            distance = np.asarray(distance)
         return _delegate_geo_method(
-            "interpolate", self, distance, normalized=normalized
+            "interpolate", self, distance=distance, normalized=normalized
         )
 
     def affine_transform(self, matrix):
@@ -4894,7 +5009,7 @@ GeometryCollection
         dtype: geometry
 
         """  # (E501 link is longer than max line length)
-        return _delegate_geo_method("affine_transform", self, matrix)
+        return _delegate_geo_method("affine_transform", self, matrix=matrix)
 
     def translate(self, xoff=0.0, yoff=0.0, zoff=0.0):
         """Returns a ``GeoSeries`` with translated geometries.
@@ -4932,7 +5047,7 @@ GeometryCollection
         dtype: geometry
 
         """  # (E501 link is longer than max line length)
-        return _delegate_geo_method("translate", self, xoff, yoff, zoff)
+        return _delegate_geo_method("translate", self, xoff=xoff, yoff=yoff, zoff=zoff)
 
     def rotate(self, angle, origin="center", use_radians=False):
         """Returns a ``GeoSeries`` with rotated geometries.
@@ -4983,7 +5098,7 @@ GeometryCollection
 
         """
         return _delegate_geo_method(
-            "rotate", self, angle, origin=origin, use_radians=use_radians
+            "rotate", self, angle=angle, origin=origin, use_radians=use_radians
         )
 
     def scale(self, xfact=1.0, yfact=1.0, zfact=1.0, origin="center"):
@@ -5032,7 +5147,9 @@ GeometryCollection
         2    POLYGON ((6 -3, 8 0, 6 3, 6 -3))
         dtype: geometry
         """
-        return _delegate_geo_method("scale", self, xfact, yfact, zfact, origin=origin)
+        return _delegate_geo_method(
+            "scale", self, xfact=xfact, yfact=yfact, zfact=zfact, origin=origin
+        )
 
     def skew(self, xs=0.0, ys=0.0, origin="center", use_radians=False):
         """Returns a ``GeoSeries`` with skewed geometries.
@@ -5084,7 +5201,7 @@ GeometryCollection
         dtype: geometry
         """
         return _delegate_geo_method(
-            "skew", self, xs, ys, origin=origin, use_radians=use_radians
+            "skew", self, xs=xs, ys=ys, origin=origin, use_radians=use_radians
         )
 
     @property
