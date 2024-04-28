@@ -4348,7 +4348,7 @@ GeometryCollection
         """
         return _binary_geo("snap", self, other, align, tolerance=tolerance)
 
-    def shared_paths(self, other, align=True):
+    def shared_paths(self, other, align=None):
         """
         Returns the shared paths between two geometries.
 
@@ -4369,9 +4369,9 @@ GeometryCollection
         other : Geoseries or geometric object
             The Geoseries (elementwise) or geometric object to find the shared paths
             with. Has to contain only (Multi)LineString or LinearRing geometry types.
-        align : bool (default True)
-            If True, automatically aligns GeoSeries based on their indices. If False,
-            the order of elements is preserved.
+        align : bool | None (default None)
+            If True, automatically aligns GeoSeries based on their indices.
+            If False, the order of elements is preserved. None defaults to True.
 
         Returns
         -------
