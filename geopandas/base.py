@@ -4732,7 +4732,7 @@ GeometryCollection
         """
         return _binary_op("relate", self, other, align)
 
-    def relate_pattern(self, other, pattern, align=True):
+    def relate_pattern(self, other, pattern, align=None):
         """
         Returns True if the DE-9IM string code for the relationship between
         the geometries satisfies the pattern, else False.
@@ -4755,9 +4755,9 @@ GeometryCollection
             The other geometry to be tested agains the pattern.
         pattern : str
             The DE-9IM pattern to test against.
-        align : bool (default True)
+        align : bool | None (default None)
             If True, automatically aligns GeoSeries based on their indices.
-            If False, the order of elements is preserved.
+            If False, the order of elements is preserved. None defaults to True.
 
         Returns
         -------

@@ -645,9 +645,9 @@ class TestGeomMethods:
         expected = Series(
             [False] + [True] * 5 + [False, False], index=range(8), dtype=bool
         )
-        with pytest.warns(UserWarning, match="The indices .+ different"):
+        with pytest.warns(UserWarning, match="The indices of the left and right"):
             assert_array_dtype_equal(
-                expected, self.g0.relate_pattern(self.g9, "T********", align=True)
+                expected, self.g0.relate_pattern(self.g9, "T********", align=None)
             )
         expected = Series(
             [False] + [True] * 2 + [False] * 4, index=self.g0.index, dtype=bool
