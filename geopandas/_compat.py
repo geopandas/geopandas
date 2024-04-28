@@ -13,8 +13,10 @@ import shapely.geos
 PANDAS_GE_14 = Version(pd.__version__) >= Version("1.4.0rc0")
 PANDAS_GE_15 = Version(pd.__version__) >= Version("1.5.0")
 PANDAS_GE_20 = Version(pd.__version__) >= Version("2.0.0")
+PANDAS_GE_202 = Version(pd.__version__) >= Version("2.0.2")
 PANDAS_GE_21 = Version(pd.__version__) >= Version("2.1.0")
-PANDAS_GE_22 = Version(pd.__version__) >= Version("2.2.0.dev0")
+PANDAS_GE_22 = Version(pd.__version__) >= Version("2.2.0")
+PANDAS_GE_30 = Version(pd.__version__) >= Version("3.0.0.dev0")
 
 
 # -----------------------------------------------------------------------------
@@ -66,3 +68,24 @@ def import_optional_dependency(name: str, extra: str = ""):
 # -----------------------------------------------------------------------------
 # pyproj compat
 # -----------------------------------------------------------------------------
+try:
+    import pyproj  # noqa: F401
+
+    HAS_PYPROJ = True
+
+except ImportError as err:
+    HAS_PYPROJ = False
+    pyproj_import_error = str(err)
+
+
+def requires_pyproj(func):
+    def wrapper(*args, **kwargs):
+        if not HAS_PYPROJ:
+            raise ImportError(
+                f"The 'pyproj' package is required for {func.__name__} to work. "
+                "Install it and initialize the object with a CRS before using it."
+                f"\nImporting pyproj resulted in: {pyproj_import_error}"
+            )
+        return func(*args, **kwargs)
+
+    return wrapper

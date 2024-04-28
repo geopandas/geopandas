@@ -35,6 +35,10 @@ General methods and attributes
    GeoSeries.z
    GeoSeries.get_coordinates
    GeoSeries.count_coordinates
+   GeoSeries.count_geometries
+   GeoSeries.count_interior_rings
+   GeoSeries.set_precision
+   GeoSeries.get_precision
 
 Unary predicates
 ----------------
@@ -62,6 +66,7 @@ Binary predicates
    GeoSeries.contains_properly
    GeoSeries.crosses
    GeoSeries.disjoint
+   GeoSeries.dwithin
    GeoSeries.geom_equals
    GeoSeries.geom_almost_equals
    GeoSeries.geom_equals_exact
@@ -72,6 +77,7 @@ Binary predicates
    GeoSeries.covers
    GeoSeries.covered_by
    GeoSeries.relate
+   GeoSeries.relate_pattern
 
 
 Set-theoretic methods
@@ -135,6 +141,7 @@ Linestring operations
    :toctree: api/
 
    GeoSeries.interpolate
+   GeoSeries.line_merge
    GeoSeries.project
 
 Aggregating and exploding
@@ -144,6 +151,7 @@ Aggregating and exploding
    :toctree: api/
 
    GeoSeries.union_all
+   GeoSeries.intersection_all
    GeoSeries.explode
 
 Serialization / IO / conversion
