@@ -327,7 +327,7 @@ class TestGeomMethods:
     def test_intersection(self):
         self._test_binary_topological("intersection", self.t1, self.g1, self.g2)
         self._test_binary_topological(
-            "intersection", self.all_none, self.g1, self.empty
+            "intersection", self.all_none, self.g1, self.empty, align=True
         )
 
         assert len(self.g0.intersection(self.g9, align=True) == 8)
@@ -1144,7 +1144,7 @@ class TestGeomMethods:
 
         s = GeoSeries([Point(2, 2), Point(0.5, 0.5)], index=[1, 2])
         expected = Series([np.nan, 2.0, np.nan])
-        assert_series_equal(self.g5.project(s), expected)
+        assert_series_equal(self.g5.project(s, align=True), expected)
 
         expected = Series([2.0, 0.5], index=self.g5.index)
         assert_series_equal(self.g5.project(s, align=False), expected)
