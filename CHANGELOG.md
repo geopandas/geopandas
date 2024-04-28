@@ -18,6 +18,8 @@ API changes:
 - The `sjoin` method will now preserve the name of the index of the right
   GeoDataFrame, if it has one, instead of always using `"index_right"` as the
   name for the resulting column in the return value (#846, #2144).
+- GeoPandas now raises a ValueError when an unaligned Series is passed as a method
+  argument to avoid confusion of whether the automatic alignment happens or not (#3271).
 
 New methods:
 
