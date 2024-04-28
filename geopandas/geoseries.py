@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 import typing
 from typing import Optional, Any, Callable, Dict
 import warnings
@@ -325,7 +324,7 @@ class GeoSeries(GeoPandasBase, Series):
         """Alternate constructor to create a ``GeoSeries`` from a file.
 
         Can load a ``GeoSeries`` from a file from any format recognized by
-        `fiona`. See http://fiona.readthedocs.io/en/latest/manual.html for details.
+        `pyogrio`. See http://pyogrio.readthedocs.io/ for details.
         From a file with attributes loads only geometry column. Note that to do
         that, GeoPandas first loads the whole GeoDataFrame.
 
@@ -334,10 +333,10 @@ class GeoSeries(GeoPandasBase, Series):
         filename : str
             File path or file handle to read from. Depending on which kwargs
             are included, the content of filename may vary. See
-            http://fiona.readthedocs.io/en/latest/README.html#usage for usage details.
+            :func:`pyogrio.read_dataframe` for usage details.
         kwargs : key-word arguments
-            These arguments are passed to fiona.open, and can be used to
-            access multi-layer data, data stored within archives (zip files),
+            These arguments are passed to :func:`pyogrio.read_dataframe`, and can be
+            used to access multi-layer data, data stored within archives (zip files),
             etc.
 
         Examples
@@ -577,7 +576,7 @@ class GeoSeries(GeoPandasBase, Series):
         """Write the ``GeoSeries`` to a file.
 
         By default, an ESRI shapefile is written, but any OGR data source
-        supported by Fiona can be written.
+        supported by Pyogrio or Fiona can be written.
 
         Parameters
         ----------
@@ -607,18 +606,19 @@ class GeoSeries(GeoPandasBase, Series):
             will determine the crs based on crs df attribute.
             The value can be anything accepted
             by :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
-            such as an authority string (eg "EPSG:4326") or a WKT string.
-        engine : str, "fiona" or "pyogrio"
+            such as an authority string (eg "EPSG:4326") or a WKT string. The keyword
+            is not supported for the "pyogrio" engine.
+        engine : str, "pyogrio" or "fiona"
             The underlying library that is used to write the file. Currently, the
-            supported options are "fiona" and "pyogrio". Defaults to "fiona" if
-            installed, otherwise tries "pyogrio".
+            supported options are "pyogrio" and "fiona". Defaults to "pyogrio" if
+            installed, otherwise tries "fiona".
         **kwargs :
             Keyword args to be passed to the engine, and can be used to write
             to multi-layer data, store data within archives (zip files), etc.
-            In case of the "fiona" engine, the keyword arguments are passed to
-            fiona.open`. For more information on possible keywords, type:
-            ``import fiona; help(fiona.open)``. In case of the "pyogrio" engine,
-            the keyword arguments are passed to `pyogrio.write_dataframe`.
+            In case of the "pyogrio" engine, the keyword arguments are passed to
+            `pyogrio.write_dataframe`. In case of the "fiona" engine, the keyword
+            arguments are passed to fiona.open`. For more information on possible
+            keywords, type: ``import pyogrio; help(pyogrio.write_dataframe)``.
 
         See Also
         --------
@@ -1189,12 +1189,31 @@ class GeoSeries(GeoPandasBase, Series):
         """
         return self.values.estimate_utm_crs(datum_name)
 
-    def to_json(self, **kwargs) -> str:
+    def to_json(
+        self,
+        show_bbox: bool = True,
+        drop_id: bool = False,
+        to_wgs84: bool = False,
+        **kwargs,
+    ) -> str:
         """
         Returns a GeoJSON string representation of the GeoSeries.
 
         Parameters
         ----------
+        show_bbox : bool, optional, default: True
+            Include bbox (bounds) in the geojson
+        drop_id : bool, default: False
+            Whether to retain the index of the GeoSeries as the id property
+            in the generated GeoJSON. Default is False, but may want True
+            if the index is just arbitrary row numbers.
+        to_wgs84: bool, optional, default: False
+            If the CRS is set on the active geometry column it is exported as
+            WGS84 (EPSG:4326) to meet the `2016 GeoJSON specification
+            <https://tools.ietf.org/html/rfc7946>`_.
+            Set to True to force re-projection and set to False to ignore CRS. False by
+            default.
+
         *kwargs* that will be passed to json.dumps().
 
         Returns
@@ -1223,7 +1242,9 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
         --------
         GeoSeries.to_file : write GeoSeries to file
         """
-        return json.dumps(self.__geo_interface__, **kwargs)
+        return self.to_frame("geometry").to_json(
+            na="null", show_bbox=show_bbox, drop_id=drop_id, to_wgs84=to_wgs84, **kwargs
+        )
 
     def to_wkb(self, hex: bool = False, **kwargs) -> Series:
         """
@@ -1285,7 +1306,7 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
         """
         return Series(to_wkt(self.array, **kwargs), index=self.index)
 
-    def clip(self, mask, keep_geom_type: bool = False) -> GeoSeries:
+    def clip(self, mask, keep_geom_type: bool = False, sort=False) -> GeoSeries:
         """Clip points, lines, or polygon geometries to the mask extent.
 
         Both layers must be in the same Coordinate Reference System (CRS).
@@ -1308,6 +1329,10 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
             If True, return only geometries of original type in case of intersection
             resulting in multiple geometry types or GeometryCollections.
             If False, return all resulting geometries (potentially mixed-types).
+        sort : boolean, default False
+            If True, the order of rows in the clipped GeoSeries will be preserved
+            at small performance cost.
+            If False the order of rows in the clipped GeoSeries will be random.
 
         Returns
         -------
@@ -1338,4 +1363,4 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
         >>> nws_groceries.shape
         (7,)
         """
-        return geopandas.clip(self, mask=mask, keep_geom_type=keep_geom_type)
+        return geopandas.clip(self, mask=mask, keep_geom_type=keep_geom_type, sort=sort)

@@ -1,24 +1,32 @@
 # Changelog
 
-## Development version
+## Version 1.0.0-alpha1 (Apr 13, 2024)
 
 Notes on dependencies:
 
 - GeoPandas 1.0 drops support for shapely<2 and PyGEOS. The only geometry engine that is
   currently supported is shapely >= 2. As a consequence, spatial indexing based on the
   rtree package has also been removed. (#3035)
+- The I/O engine now defaults to Pyogrio which is now installed with GeoPandas instead
+  of Fiona. (#3223)
 
 API changes:
 
 - `unary_union` is now deprecated and replaced by the `union_all` method (#3007).
+- `align` keyword in binary methods now defaults to `None`, treated as True. Explicit True
+  will silence the warning about mismachted indices. (#3212)
 - The `sjoin` method will now preserve the name of the index of the right
   GeoDataFrame, if it has one, instead of always using `"index_right"` as the
   name for the resulting column in the return value (#846, #2144).
+- GeoPandas now raises a ValueError when an unaligned Series is passed as a method
+  argument to avoid confusion of whether the automatic alignment happens or not (#3271).
 
 New methods:
 
 - Added `count_geometries` method from shapely to GeoSeries/GeoDataframe (#3154).
 - Added `count_interior_rings` method from shapely to GeoSeries/GeoDataframe (#3154)
+- Added `intersection_all` method from shapely to GeoSeries/GeoDataframe (#3228).
+- Added `line_merge` method from shapely to GeoSeries/GeoDataframe (#3214).
 - Added `set_precision` and `get_precision` methods from shapely to GeoSeries/GeoDataframe (#3175).
 - Added `count_coordinates` method from shapely to GeoSeries/GeoDataframe (#3026).
 - Added `minimum_clearance` method from shapely to GeoSeries/GeoDataframe (#2989).
@@ -43,13 +51,22 @@ New features and improvements:
   `buffer(0)` (#3113).
 - Passing `"geometry"` as `dtype` to `pd.read_csv` will now return a GeoSeries for
   the specified columns (#3101).
--
-API changes:
-- Added support for ``mask`` keyword for pyogrio engine for pyogrio >= 0.7.0 (#3062).
+- Added support to ``read_file`` for the ``mask`` keyword for the pyogrio engine (#3062).
+- Added support to ``read_file`` for the ``columns`` keyword for the fiona engine (#3133).
+- Add `sort` keyword to `clip` method for GeoSeries and GeoDataFrame to allow optional
+  preservation of the original order of observations. (#3233)
+- Added `show_bbox`, `drop_id` and `to_wgs84` arguments to allow further customization of
+  `GeoSeries.to_json` (#3226)
 
 Backwards incompatible API changes:
+
 - The deprecated default value of GeoDataFrame/ GeoSeries `explode(.., index_parts=True)` is now
-  set to false for consistency with pandas (#3174)
+  set to false for consistency with pandas (#3174).
+- The behaviour of `set_geometry` has been changed when passed a (Geo)Series `ser` with a name.
+  The new active geometry column name in this case will be `ser.name`, if not None, rather than
+  the previous active geometry column name. This means that if the new and old names are
+  different, then both columns will be preserved in the GeoDataFrame. To replicate the previous
+  behaviour, you can instead call `gdf.set_geometry(ser.rename(gdf.active_geometry_name))` (#3237).
 
 Potentially breaking changes:
 
@@ -62,13 +79,15 @@ Bug fixes:
 - Fix `GeoDataFrame.merge()` incorrectly returning a `DataFrame` instead of a
   `GeoDataFrame` when the `suffixes` argument is applied to the active
   geometry column (#2933).
+- Fix bug in `GeoDataFrame` constructor where if `geometry` is given a named
+  `GeoSeries` the name was not used as the active geometry column name (#3237).
 
 Deprecations and compatibility notes:
 
 - The deprecation of `geopandas.datasets` has been enforced and the module has been
   removed. New sample datasets are now available in the
   [geodatasets](https://geodatasets.readthedocs.io/en/latest/) package (#3084).
-- Many longstanding deprecated functions, methods and properties have been removed (#3174)
+- Many longstanding deprecated functions, methods and properties have been removed (#3174), (#3190)
   - Removed deprecated functions
     `geopandas.io.read_file`, `geopandas.io.to_file` and `geopandas.io.sql.read_postgis`.
     `geopandas.read_file`, `geopandas.read_postgis` and the GeoDataFrame/GeoSeries `to_file(..)`
@@ -80,8 +99,31 @@ Deprecations and compatibility notes:
   - Removed deprecated GeoSeries/ GeoDataFrame methods `__xor__`, `__or__`, `__and__` and
     `__sub__`. Instead use methods `symmetric_difference`, `union`, `intersection` and
     `difference` respectively.
+  - Removed deprecated plotting functions `plot_polygon_collection`,
+    `plot_linestring_collection` and `plot_point_collection`, use the GeoSeries/GeoDataFrame `.plot`
+    method directly instead.
+  - Removed deprecated GeoSeries/GeoDataFrame `.plot` parameters `axes` and `colormap`, instead use
+    `ax` and `cmap` respectively.
 - Fixes for compatibility with psycopg (#3167).
+- The ``include_fields`` and ``ignore_fields`` keywords in ``read_file()`` are deprecated
+  for the default pyogrio engine. Currently those are translated to the ``columns`` keyword
+  for backwards compatibility, but you should directly use the ``columns`` keyword instead
+  to select which columns to read (#3133).
+- The `drop` keyword in `set_geometry` has been deprecated, and in future the `drop=True`
+  behaviour will be removed (#3237). To prepare for this change, you should remove any explicit
+  `drop=False` calls in your code (the default behaviour already is the same as `drop=False`).
+  To replicate the previous `drop=True` behaviour you should replace
+  `gdf.set_geometry(new_geo_col, drop=True)` with
 
+  ```python
+  geo_col_name = gdf.active_geometry_name
+  gdf.set_geometry(new_geo_col).drop(columns=geo_col_name).rename_geometry(geo_col_name)
+  ```
+
+## Version 0.14.4 (April 26, 2024)
+
+- Several fixes for compatibility with the upcoming pandas 3.0, numpy 2.0 and
+  fiona 1.10 releases.
 
 ## Version 0.14.3 (Jan 31, 2024)
 

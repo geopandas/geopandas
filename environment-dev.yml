@@ -4,7 +4,7 @@ channels:
 dependencies:
     - python
     # required
-    - fiona>=1.8.21
+    - pyogrio>=0.7.2
     - pandas>=1.3.0
     - pyproj>=3.3.0
     - shapely>=2.0.0
