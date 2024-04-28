@@ -1906,9 +1906,12 @@ class TestGeomMethods:
             ]
         )
 
-        with pytest.warns(UserWarning, match="The indices .+ different"):
+        with pytest.warns(
+            UserWarning,
+            match="The indices of the left and right GeoSeries' are not equal",
+        ):
             assert_geoseries_equal(
-                self.crossed_lines.shared_paths(s2, align=True), expected
+                self.crossed_lines.shared_paths(s2, align=None), expected
             )
 
         expected = GeoSeries.from_wkt(
