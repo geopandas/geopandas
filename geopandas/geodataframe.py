@@ -16,7 +16,7 @@ from geopandas.geoseries import GeoSeries
 import geopandas.io
 from geopandas.explore import _explore
 from ._decorator import doc
-from ._compat import HAS_PYPROJ
+from ._compat import HAS_PYPROJ, PANDAS_GE_30
 
 
 def _geodataframe_constructor_with_fallback(*args, **kwargs):
@@ -243,7 +243,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         fget=_get_geometry, fset=_set_geometry, doc="Geometry data for GeoDataFrame"
     )
 
-    def set_geometry(self, col, drop=False, inplace=False, crs=None):
+    def set_geometry(self, col, drop=None, inplace=False, crs=None):
         """
         Set the GeoDataFrame geometry using either an existing column or
         the specified input. By default yields a new object.
@@ -252,9 +252,20 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         Parameters
         ----------
-        col : column label or array
+        col : column label or array-like
+            An existing column name or values to set as the new geometry column.
+            If values (array-like, (Geo)Series) are passed, then if they are named
+            (Series) the new geometry column will have the corresponding name,
+            otherwise the existing geometry column will be replaced. If there is
+            no existing geometry column, the new geometry column will use the
+            default name "geometry".
         drop : boolean, default False
-            Delete column to be used as the new geometry
+            When specifying a named Series or an existing column name for `col`,
+            controls if the previous geometry column should be dropped from the
+            result. The default of False keeps both the old and new geometry column.
+
+            .. deprecated:: 1.0.0
+
         inplace : boolean, default False
             Modify the GeoDataFrame in place (do not create a new object)
         crs : pyproj.CRS, optional
@@ -303,17 +314,30 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         if inplace:
             frame = self
         else:
-            frame = self.copy()
+            if PANDAS_GE_30:
+                frame = self.copy(deep=False)
+            else:
+                frame = self.copy()
 
-        to_remove = None
         geo_column_name = self._geometry_column_name
+
         if geo_column_name is None:
             geo_column_name = "geometry"
         if isinstance(col, (Series, list, np.ndarray, GeometryArray)):
+            if drop:
+                msg = (
+                    "The `drop` keyword argument is deprecated and has no effect when "
+                    "`col` is an array-like value. You should stop passing `drop` to "
+                    "`set_geometry` when this is the case."
+                )
+                warnings.warn(msg, category=FutureWarning, stacklevel=2)
+            if isinstance(col, Series) and col.name is not None:
+                geo_column_name = col.name
+
             level = col
         elif hasattr(col, "ndim") and col.ndim > 1:
             raise ValueError("Must pass array with one dimension only.")
-        else:
+        else:  # should be a colname
             try:
                 level = frame[col]
             except KeyError:
@@ -324,24 +348,42 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                     "the column name is shared by multiple columns."
                 )
 
-            if drop:
-                to_remove = col
-            else:
-                geo_column_name = col
+            given_colname_drop_msg = (
+                "The `drop` keyword argument is deprecated and in future the only "
+                "supported behaviour will match drop=False. To silence this "
+                "warning and adopt the future behaviour, stop providing "
+                "`drop` as a keyword to `set_geometry`. To replicate the "
+                "`drop=True` behaviour you should update "
+                "your code to\n`geo_col_name = gdf.active_geometry_name;"
+                " gdf.set_geometry(new_geo_col).drop("
+                "columns=geo_col_name).rename_geometry(geo_col_name)`."
+            )
 
-        if to_remove:
-            del frame[to_remove]
+            if drop is False:  # specifically False, not falsy i.e. None
+                # User supplied False explicitly, but arg is deprecated
+                warnings.warn(
+                    given_colname_drop_msg,
+                    category=FutureWarning,
+                    stacklevel=2,
+                )
+            if drop:
+                del frame[col]
+                warnings.warn(
+                    given_colname_drop_msg,
+                    category=FutureWarning,
+                    stacklevel=2,
+                )
+            else:
+                # if not dropping, set the active geometry name to the given col name
+                geo_column_name = col
 
         if not crs:
             crs = getattr(level, "crs", None)
 
-        if isinstance(level, (GeoSeries, GeometryArray)) and level.crs != crs:
-            # Avoids caching issues/crs sharing issues
-            level = level.copy()
-            level.crs = crs
-
         # Check that we are using a listlike of geometries
         level = _ensure_geometry(level, crs=crs)
+        # ensure_geometry only sets crs on level if it has crs==None
+        level.crs = crs
         # update _geometry_column_name prior to assignment
         # to avoid default is None warning
         frame._geometry_column_name = geo_column_name
@@ -389,7 +431,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         else:
             if not inplace:
                 return self.rename(columns={geometry_col: col}).set_geometry(
-                    col, inplace
+                    col, inplace=inplace
                 )
             self.rename(columns={geometry_col: col}, inplace=inplace)
             self.set_geometry(col, inplace=inplace)
@@ -540,17 +582,17 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         It is recommended to use :func:`geopandas.read_file` instead.
 
         Can load a ``GeoDataFrame`` from a file in any format recognized by
-        `fiona`. See http://fiona.readthedocs.io/en/latest/manual.html for details.
+        `pyogrio`. See http://pyogrio.readthedocs.io/ for details.
 
         Parameters
         ----------
         filename : str
             File path or file handle to read from. Depending on which kwargs
             are included, the content of filename may vary. See
-            http://fiona.readthedocs.io/en/latest/README.html#usage for usage details.
+            :func:`pyogrio.read_dataframe` for usage details.
         kwargs : key-word arguments
-            These arguments are passed to fiona.open, and can be used to
-            access multi-layer data, data stored within archives (zip files),
+            These arguments are passed to :func:`pyogrio.read_dataframe`, and can be
+            used to access multi-layer data, data stored within archives (zip files),
             etc.
 
         Examples
@@ -1218,11 +1260,11 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
         """Write the ``GeoDataFrame`` to a file.
 
         By default, an ESRI shapefile is written, but any OGR data source
-        supported by Fiona can be written. A dictionary of supported OGR
+        supported by Pyogrio or Fiona can be written. A dictionary of supported OGR
         providers is available via:
 
-        >>> import fiona
-        >>> fiona.supported_drivers  # doctest: +SKIP
+        >>> import pyogrio
+        >>> pyogrio.list_drivers()  # doctest: +SKIP
 
         Parameters
         ----------
@@ -1257,18 +1299,19 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
             will determine the crs based on crs df attribute.
             The value can be anything accepted
             by :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
-            such as an authority string (eg "EPSG:4326") or a WKT string.
-        engine : str, "fiona" or "pyogrio"
+            such as an authority string (eg "EPSG:4326") or a WKT string. The keyword
+            is not supported for the "pyogrio" engine.
+        engine : str, "pyogrio" or "fiona"
             The underlying library that is used to write the file. Currently, the
-            supported options are "fiona" and "pyogrio". Defaults to "fiona" if
-            installed, otherwise tries "pyogrio".
+            supported options are "pyogrio" and "fiona". Defaults to "pyogrio" if
+            installed, otherwise tries "fiona".
         **kwargs :
             Keyword args to be passed to the engine, and can be used to write
             to multi-layer data, store data within archives (zip files), etc.
-            In case of the "fiona" engine, the keyword arguments are passed to
-            fiona.open`. For more information on possible keywords, type:
-            ``import fiona; help(fiona.open)``. In case of the "pyogrio" engine,
-            the keyword arguments are passed to `pyogrio.write_dataframe`.
+            In case of the "pyogrio" engine, the keyword arguments are passed to
+            `pyogrio.write_dataframe`. In case of the "fiona" engine, the keyword
+            arguments are passed to fiona.open`. For more information on possible
+            keywords, type: ``import pyogrio; help(pyogrio.write_dataframe)``.
 
         Notes
         -----
@@ -1964,7 +2007,7 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
 
     # overrides the pandas astype method to ensure the correct return type
     # should be removable when pandas 1.4 is dropped
-    def astype(self, dtype, copy=True, errors="raise", **kwargs):
+    def astype(self, dtype, copy=None, errors="raise", **kwargs):
         """
         Cast a pandas object to a specified dtype ``dtype``.
         Returns a GeoDataFrame when the geometry column is kept as geometries,
@@ -1974,7 +2017,12 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
         -------
         GeoDataFrame or DataFrame
         """
-        df = super().astype(dtype, copy=copy, errors=errors, **kwargs)
+        if not PANDAS_GE_30 and copy is None:
+            copy = True
+        if copy is not None:
+            kwargs["copy"] = copy
+
+        df = super().astype(dtype, errors=errors, **kwargs)
 
         try:
             geoms = df[self._geometry_column_name]
@@ -2117,12 +2165,12 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
 
         >>> groceries_w_communities = groceries.sjoin(chicago)
         >>> groceries_w_communities[["OBJECTID", "community", "geometry"]].head()
-             OBJECTID    community                           geometry
-        0          16       UPTOWN  MULTIPOINT ((-87.65661 41.97321))
-        87        365       UPTOWN  MULTIPOINT ((-87.65465 41.96138))
-        90        373       UPTOWN  MULTIPOINT ((-87.65598 41.96297))
-        140       582       UPTOWN  MULTIPOINT ((-87.67417 41.96977))
-        1          18  MORGAN PARK  MULTIPOINT ((-87.68136 41.69713))
+           OBJECTID       community                           geometry
+        0        16          UPTOWN  MULTIPOINT ((-87.65661 41.97321))
+        1        18     MORGAN PARK  MULTIPOINT ((-87.68136 41.69713))
+        2        22  NEAR WEST SIDE  MULTIPOINT ((-87.63918 41.86847))
+        3        23  NEAR WEST SIDE  MULTIPOINT ((-87.65495 41.87783))
+        4        27         CHATHAM  MULTIPOINT ((-87.62715 41.73623))
 
         Notes
         -----
@@ -2217,9 +2265,9 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
 
         >>> groceries_w_communities = groceries.sjoin_nearest(chicago)
         >>> groceries_w_communities[["Chain", "community", "geometry"]].head(2)
-                     Chain community                               geometry
-        0   VIET HOA PLAZA    UPTOWN  MULTIPOINT ((1168268.672 1933554.35))
-        87      JEWEL OSCO    UPTOWN  MULTIPOINT ((1168837.98 1929246.962))
+                       Chain    community                                geometry
+        0     VIET HOA PLAZA       UPTOWN   MULTIPOINT ((1168268.672 1933554.35))
+        1  COUNTY FAIR FOODS  MORGAN PARK  MULTIPOINT ((1162302.618 1832900.224))
 
 
         To include the distances:
@@ -2227,10 +2275,10 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
         >>> groceries_w_communities = groceries.sjoin_nearest(chicago, \
 distance_col="distances")
         >>> groceries_w_communities[["Chain", "community", \
-"distances"]].head(2)  # doctest: +SKIP
-                     Chain community  distances
-        0   VIET HOA PLAZA    UPTOWN        0.0
-        87      JEWEL OSCO    UPTOWN        0.0
+"distances"]].head(2)
+                       Chain    community  distances
+        0     VIET HOA PLAZA       UPTOWN        0.0
+        1  COUNTY FAIR FOODS  MORGAN PARK        0.0
 
         In the following example, we get multiple groceries for Uptown because all
         results are equidistant (in this case zero because they intersect).
@@ -2240,7 +2288,7 @@ distance_col="distances")
 distance_col="distances", how="right")
         >>> uptown_results = \
 chicago_w_groceries[chicago_w_groceries["community"] == "UPTOWN"]
-        >>> uptown_results[["Chain", "community"]]  # doctest: +SKIP
+        >>> uptown_results[["Chain", "community"]]
                     Chain community
         30  VIET HOA PLAZA    UPTOWN
         30      JEWEL OSCO    UPTOWN
@@ -2271,7 +2319,7 @@ chicago_w_groceries[chicago_w_groceries["community"] == "UPTOWN"]
             exclusive=exclusive,
         )
 
-    def clip(self, mask, keep_geom_type=False):
+    def clip(self, mask, keep_geom_type=False, sort=False):
         """Clip points, lines, or polygon geometries to the mask extent.
 
         Both layers must be in the same Coordinate Reference System (CRS).
@@ -2294,6 +2342,10 @@ chicago_w_groceries[chicago_w_groceries["community"] == "UPTOWN"]
             If True, return only geometries of original type in case of intersection
             resulting in multiple geometry types or GeometryCollections.
             If False, return all resulting geometries (potentially mixed types).
+        sort : boolean, default False
+            If True, the order of rows in the clipped GeoDataFrame will be preserved at
+            small performance cost. If False the order of rows in the clipped
+            GeoDataFrame will be random.
 
         Returns
         -------
@@ -2324,7 +2376,7 @@ chicago_w_groceries[chicago_w_groceries["community"] == "UPTOWN"]
         >>> nws_groceries.shape
         (7, 8)
         """
-        return geopandas.clip(self, mask=mask, keep_geom_type=keep_geom_type)
+        return geopandas.clip(self, mask=mask, keep_geom_type=keep_geom_type, sort=sort)
 
     def overlay(self, right, how="intersection", keep_geom_type=None, make_valid=True):
         """Perform spatial overlay between GeoDataFrames.
@@ -2419,7 +2471,7 @@ chicago_w_groceries[chicago_w_groceries["community"] == "UPTOWN"]
         )
 
 
-def _dataframe_set_geometry(self, col, drop=False, inplace=False, crs=None):
+def _dataframe_set_geometry(self, col, drop=None, inplace=False, crs=None):
     if inplace:
         raise ValueError(
             "Can't do inplace setting when converting from DataFrame to GeoDataFrame"

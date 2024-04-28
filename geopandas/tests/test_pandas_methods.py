@@ -704,20 +704,12 @@ def test_groupby_metadata(crs, geometry_name):
         **kwargs,
     )
 
-    if compat.PANDAS_GE_22:
-        # merge sort behaviour changed in pandas #54611
-        take_indices = [0, 0, 2, 2, 1]
-        value_right = [0, 2, 0, 2, 1]
-    else:
-        take_indices = [0, 2, 0, 2, 1]
-        value_right = [0, 0, 2, 2, 1]
-
     expected = (
-        df.take(take_indices)
+        df.take([0, 0, 2, 2, 1])
         .set_index("value2", drop=compat.PANDAS_GE_22, append=True)
         .swaplevel()
         .rename(columns={"value1": "value1_left"})
-        .assign(value1_right=value_right)
+        .assign(value1_right=[0, 2, 0, 2, 1])
     )
     assert_geodataframe_equal(res.drop(columns=["index_right"]), expected)
 
