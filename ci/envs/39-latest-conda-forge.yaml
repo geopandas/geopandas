@@ -8,7 +8,7 @@ dependencies:
   - shapely=2
   - geos
   - cython
-  - fiona
+  - pyogrio>=0.7.2
   - pyproj
   # use this build to have one with only shapely 2.0 installed
   - packaging

@@ -1,5 +1,3 @@
-import warnings
-
 import numpy as np
 import shapely
 from shapely.geometry.base import BaseGeometry
@@ -248,82 +246,6 @@ class SpatialIndex:
             return None
         else:
             return np.asarray(geometry)
-
-    def query_bulk(self, geometry, predicate=None, sort=False, distance=None):
-        """
-        DEPRECATED: use `query` instead.
-
-        Returns all combinations of each input geometry and geometries in
-        the tree where the envelope of each input geometry intersects with
-        the envelope of a tree geometry.
-
-        In the context of a spatial join, input geometries are the “left”
-        geometries that determine the order of the results, and tree geometries
-        are “right” geometries that are joined against the left geometries.
-        This effectively performs an inner join, where only those combinations
-        of geometries that can be joined based on envelope overlap or optional
-        predicate are returned.
-
-        Parameters
-        ----------
-        geometry : {GeoSeries, GeometryArray, numpy.array of Shapely geometries}
-            Accepts GeoPandas geometry iterables (GeoSeries, GeometryArray)
-            or a numpy array of Shapely geometries.
-        predicate : {None, "contains", "contains_properly", "covered_by", "covers", \
-"crosses", "intersects", "overlaps", "touches", "within"}, optional
-            If predicate is provided, the input geometries are tested using
-            the predicate function against each item in the tree whose extent
-            intersects the envelope of the each input geometry:
-            predicate(input_geometry, tree_geometry).  If possible, prepared
-            geometries are used to help speed up the predicate operation.
-        sort : bool, default False
-            If True, results sorted lexicographically using
-            geometry's indexes as the primary key and the sindex's indexes as the
-            secondary key. If False, no additional sorting is applied.
-
-        Returns
-        -------
-        ndarray with shape (2, n)
-            The first subarray contains input geometry integer indexes.
-            The second subarray contains tree geometry integer indexes.
-
-        Examples
-        --------
-        >>> from shapely.geometry import Point, box
-        >>> s = geopandas.GeoSeries(geopandas.points_from_xy(range(10), range(10)))
-        >>> s
-        0    POINT (0 0)
-        1    POINT (1 1)
-        2    POINT (2 2)
-        3    POINT (3 3)
-        4    POINT (4 4)
-        5    POINT (5 5)
-        6    POINT (6 6)
-        7    POINT (7 7)
-        8    POINT (8 8)
-        9    POINT (9 9)
-        dtype: geometry
-        >>> s2 = geopandas.GeoSeries([box(2, 2, 4, 4), box(5, 5, 6, 6)])
-        >>> s2
-        0    POLYGON ((4 2, 4 4, 2 4, 2 2, 4 2))
-        1    POLYGON ((6 5, 6 6, 5 6, 5 5, 6 5))
-        dtype: geometry
-
-        >>> s.sindex.query_bulk(s2)
-        array([[0, 0, 0, 1, 1],
-                [2, 3, 4, 5, 6]])
-
-        >>> s.sindex.query_bulk(s2, predicate="contains")
-        array([[0],
-                [3]])
-        """
-        warnings.warn(
-            "The `query_bulk()` method is deprecated and will be removed in "
-            "GeoPandas 1.0. You can use the `query()` method instead.",
-            FutureWarning,
-            stacklevel=2,
-        )
-        return self.query(geometry, predicate=predicate, sort=sort, distance=distance)
 
     def nearest(
         self,

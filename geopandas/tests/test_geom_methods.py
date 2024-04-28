@@ -16,6 +16,7 @@ from shapely.geometry import (
     MultiPolygon,
     Point,
     Polygon,
+    box,
 )
 from shapely.geometry.collection import GeometryCollection
 from shapely.ops import unary_union
@@ -24,6 +25,7 @@ from geopandas import GeoDataFrame, GeoSeries
 from geopandas.base import GeoPandasBase
 from geopandas.testing import assert_geodataframe_equal
 from geopandas.tests.util import assert_geoseries_equal, geom_almost_equals, geom_equals
+from geopandas._compat import HAS_PYPROJ
 
 
 def assert_array_dtype_equal(a, b, *args, **kwargs):
@@ -177,6 +179,17 @@ class TestGeomMethods:
         self.l6 = LineString([(5, 5), (5, 100), (100, 5)])
         self.g12 = GeoSeries([self.l5])
         self.g13 = GeoSeries([self.l6])
+        self.g14 = GeoSeries(
+            [
+                MultiLineString([[(0, 2), (0, 10)], [(0, 10), (5, 10)]]),
+                MultiLineString([[(0, 2), (0, 10)], [(0, 11), (5, 10)]]),
+                MultiLineString(),
+                MultiLineString([[(0, 0), (1, 0)], [(0, 0), (3, 0)]]),
+                Point(0, 0),
+            ],
+            crs=4326,
+            index=range(2, 7),
+        )
 
     def _test_unary_real(self, op, expected, a):
         """Tests for 'area', 'length', 'is_valid', etc."""
@@ -212,27 +225,6 @@ class TestGeomMethods:
     def _test_binary_real(self, op, expected, a, b, *args, **kwargs):
         fcmp = assert_series_equal
         self._binary_op_test(op, expected, a, b, fcmp, True, False, *args, **kwargs)
-
-    def _test_binary_operator(self, op, expected, a, b):
-        """
-        The operators only have GeoSeries on the left, but can have
-        GeoSeries or GeoDataFrame on the right.
-        If GeoDataFrame is on the left, geometry column is used.
-
-        """
-        if isinstance(expected, GeoPandasBase):
-            fcmp = assert_geoseries_equal
-        else:
-
-            def fcmp(a, b):
-                assert geom_equals(a, b)
-
-        if isinstance(b, GeoPandasBase):
-            right_df = True
-        else:
-            right_df = False
-
-        self._binary_op_test(op, expected, a, b, fcmp, False, right_df)
 
     def _binary_op_test(
         self, op, expected, left, right, fcmp, left_df, right_df, *args, **kwargs
@@ -319,15 +311,26 @@ class TestGeomMethods:
     #         self._test_binary_topological('intersection', self.g3,
     #                                       self.g3, no_crs_g3)
 
+    def test_alignment_warning(self):
+        with pytest.warns(
+            UserWarning,
+            match="The indices of the left and right GeoSeries' are not equal",
+        ):
+            self.g0.intersection(self.g9, align=None)
+
+        with warnings.catch_warnings(record=True) as record:
+            self.g0.intersection(self.g9, align=True)
+            self.g0.intersection(self.g9, align=False)
+
+            assert len(record) == 0
+
     def test_intersection(self):
         self._test_binary_topological("intersection", self.t1, self.g1, self.g2)
-        with pytest.warns(UserWarning, match="The indices .+ different"):
-            self._test_binary_topological(
-                "intersection", self.all_none, self.g1, self.empty
-            )
+        self._test_binary_topological(
+            "intersection", self.all_none, self.g1, self.empty, align=True
+        )
 
-        with pytest.warns(UserWarning, match="The indices .+ different"):
-            assert len(self.g0.intersection(self.g9, align=True) == 8)
+        assert len(self.g0.intersection(self.g9, align=True) == 8)
         assert len(self.g0.intersection(self.g9, align=False) == 7)
 
     def test_clip_by_rect(self):
@@ -342,8 +345,7 @@ class TestGeomMethods:
     def test_union_series(self):
         self._test_binary_topological("union", self.sq, self.g1, self.g2)
 
-        with pytest.warns(UserWarning, match="The indices .+ different"):
-            assert len(self.g0.union(self.g9, align=True) == 8)
+        assert len(self.g0.union(self.g9, align=True) == 8)
         assert len(self.g0.union(self.g9, align=False) == 7)
 
     def test_union_polygon(self):
@@ -352,8 +354,7 @@ class TestGeomMethods:
     def test_symmetric_difference_series(self):
         self._test_binary_topological("symmetric_difference", self.sq, self.g3, self.g4)
 
-        with pytest.warns(UserWarning, match="The indices .+ different"):
-            assert len(self.g0.symmetric_difference(self.g9, align=True) == 8)
+        assert len(self.g0.symmetric_difference(self.g9, align=True) == 8)
         assert len(self.g0.symmetric_difference(self.g9, align=False) == 7)
 
     def test_symmetric_difference_poly(self):
@@ -366,8 +367,7 @@ class TestGeomMethods:
         expected = GeoSeries([GeometryCollection(), self.t2])
         self._test_binary_topological("difference", expected, self.g1, self.g2)
 
-        with pytest.warns(UserWarning, match="The indices .+ different"):
-            assert len(self.g0.difference(self.g9, align=True) == 8)
+        assert len(self.g0.difference(self.g9, align=True) == 8)
         assert len(self.g0.difference(self.g9, align=False) == 7)
 
     def test_difference_poly(self):
@@ -436,6 +436,7 @@ class TestGeomMethods:
         expected = Series(np.array([0.5, np.nan]), index=self.na_none.index)
         self._test_unary_real("area", expected, self.na_none)
 
+    @pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not available")
     def test_area_crs_warn(self):
         with pytest.warns(UserWarning, match="Geometry is in a geographic CRS"):
             self.g4.area
@@ -496,13 +497,24 @@ class TestGeomMethods:
             result = g.unary_union
         assert result == g.union_all()
 
+    def test_intersection_all(self):
+        expected = Polygon([(1, 1), (1, 1.5), (1.5, 1.5), (1.5, 1), (1, 1)])
+        g = GeoSeries([box(0, 0, 2, 2), box(1, 1, 3, 3), box(0, 0, 1.5, 1.5)])
+
+        assert g.intersection_all().equals(expected)
+
+        g2 = GeoSeries([box(0, 0, 2, 2), None])
+        assert g2.intersection_all().equals(g2[0])
+
+        g3 = GeoSeries([None, None])
+        assert g3.intersection_all().equals(shapely.GeometryCollection())
+
     def test_contains(self):
         expected = [True, False, True, False, False, False, False]
         assert_array_dtype_equal(expected, self.g0.contains(self.t1))
 
         expected = [False, True, True, True, True, True, False, False]
-        with pytest.warns(UserWarning, match="The indices .+ different"):
-            assert_array_dtype_equal(expected, self.g0.contains(self.g9, align=True))
+        assert_array_dtype_equal(expected, self.g0.contains(self.g9, align=True))
 
         expected = [False, False, True, False, False, False, False]
         assert_array_dtype_equal(expected, self.g0.contains(self.g9, align=False))
@@ -512,15 +524,24 @@ class TestGeomMethods:
         assert_array_dtype_equal(expected, self.g0.contains_properly(Point(0.25, 0.25)))
 
         expected = [False, False, False, False, False, True, False, False]
-        with pytest.warns(UserWarning, match="The indices .+ different"):
-            assert_array_dtype_equal(
-                expected, self.g0.contains_properly(self.g9, align=True)
-            )
+        assert_array_dtype_equal(
+            expected, self.g0.contains_properly(self.g9, align=True)
+        )
 
         expected = [False, False, True, False, False, False, False]
         assert_array_dtype_equal(
             expected, self.g0.contains_properly(self.g9, align=False)
         )
+
+    @pytest.mark.skipif(shapely.geos_version < (3, 10, 0), reason="requires GEOS>=3.10")
+    def test_dwithin(self):
+        expected = [True, True, True, False, True, True, False]
+        assert_array_dtype_equal(expected, self.g0.dwithin(self.p0, 6))
+
+        expected = [False, True, True, True, True, True, False, False]
+        assert_array_dtype_equal(expected, self.g0.dwithin(self.g9, 1, align=True))
+        expected = [True, True, True, True, False, False, False]
+        assert_array_dtype_equal(expected, self.g0.dwithin(self.g9, 1, align=False))
 
     def test_length(self):
         expected = Series(np.array([2 + np.sqrt(2), 4]), index=self.g1.index)
@@ -529,6 +550,7 @@ class TestGeomMethods:
         expected = Series(np.array([2 + np.sqrt(2), np.nan]), index=self.na_none.index)
         self._test_unary_real("length", expected, self.na_none)
 
+    @pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not available")
     def test_length_crs_warn(self):
         with pytest.warns(UserWarning, match="Geometry is in a geographic CRS"):
             self.g4.length
@@ -548,8 +570,7 @@ class TestGeomMethods:
         assert_array_dtype_equal(expected, self.crossed_lines.crosses(self.l3))
 
         expected = [False] * 8
-        with pytest.warns(UserWarning, match="The indices .+ different"):
-            assert_array_dtype_equal(expected, self.g0.crosses(self.g9, align=True))
+        assert_array_dtype_equal(expected, self.g0.crosses(self.g9, align=True))
 
         expected = [False] * 7
         assert_array_dtype_equal(expected, self.g0.crosses(self.g9, align=False))
@@ -559,8 +580,7 @@ class TestGeomMethods:
         assert_array_dtype_equal(expected, self.g0.disjoint(self.t1))
 
         expected = [False] * 8
-        with pytest.warns(UserWarning, match="The indices .+ different"):
-            assert_array_dtype_equal(expected, self.g0.disjoint(self.g9, align=True))
+        assert_array_dtype_equal(expected, self.g0.disjoint(self.g9, align=True))
 
         expected = [False, False, False, False, True, False, False]
         assert_array_dtype_equal(expected, self.g0.disjoint(self.g9, align=False))
@@ -597,8 +617,7 @@ class TestGeomMethods:
             index=range(8),
         )
 
-        with pytest.warns(UserWarning, match="The indices .+ different"):
-            assert_array_dtype_equal(expected, self.g0.relate(self.g9, align=True))
+        assert_array_dtype_equal(expected, self.g0.relate(self.g9, align=True))
 
         expected = Series(
             [
@@ -624,34 +643,29 @@ class TestGeomMethods:
         assert_array_dtype_equal(expected, self.g6.distance(self.na_none))
 
         expected = Series(np.array([np.nan, 0, 0, 0, 0, 0, np.nan, np.nan]), range(8))
-        with pytest.warns(UserWarning, match="The indices .+ different"):
-            assert_array_dtype_equal(expected, self.g0.distance(self.g9, align=True))
+        assert_array_dtype_equal(expected, self.g0.distance(self.g9, align=True))
 
         val = self.g0.iloc[4].distance(self.g9.iloc[4])
         expected = Series(np.array([0, 0, 0, 0, val, np.nan, np.nan]), self.g0.index)
         assert_array_dtype_equal(expected, self.g0.distance(self.g9, align=False))
 
+    @pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not available")
     def test_distance_crs_warning(self):
         with pytest.warns(UserWarning, match="Geometry is in a geographic CRS"):
             self.g4.distance(self.p0)
 
     def test_hausdorff_distance(self):
         # closest point is (0, 0) in self.p1
-        expected = Series(
-            np.array([np.sqrt(5**2 + 5**2), np.nan]), self.na_none.index
-        )
+        expected = Series(np.array([np.sqrt(5**2 + 5**2), np.nan]), self.na_none.index)
         assert_array_dtype_equal(expected, self.na_none.hausdorff_distance(self.p0))
 
-        expected = Series(
-            np.array([np.sqrt(5**2 + 5**2), np.nan]), self.na_none.index
-        )
+        expected = Series(np.array([np.sqrt(5**2 + 5**2), np.nan]), self.na_none.index)
         assert_array_dtype_equal(expected, self.na_none.hausdorff_distance(self.p0))
 
         expected = Series(np.array([np.nan, 0, 0, 0, 0, 0, np.nan, np.nan]), range(8))
-        with pytest.warns(UserWarning, match="The indices .+ different"):
-            assert_array_dtype_equal(
-                expected, self.g0.hausdorff_distance(self.g9, align=True)
-            )
+        assert_array_dtype_equal(
+            expected, self.g0.hausdorff_distance(self.g9, align=True)
+        )
 
         val_1 = self.g0.iloc[0].hausdorff_distance(self.g9.iloc[0])
         val_2 = self.g0.iloc[2].hausdorff_distance(self.g9.iloc[2])
@@ -673,16 +687,13 @@ class TestGeomMethods:
     )
     def test_frechet_distance(self):
         # closest point is (0, 0) in self.p1
-        expected = Series(
-            np.array([np.sqrt(5**2 + 5**2), np.nan]), self.na_none.index
-        )
+        expected = Series(np.array([np.sqrt(5**2 + 5**2), np.nan]), self.na_none.index)
         assert_array_dtype_equal(expected, self.na_none.frechet_distance(self.p0))
 
         expected = Series(np.array([np.nan, 0, 0, 0, 0, 0, np.nan, np.nan]), range(8))
-        with pytest.warns(UserWarning, match="The indices .+ different"):
-            assert_array_dtype_equal(
-                expected, self.g0.frechet_distance(self.g9, align=True)
-            )
+        assert_array_dtype_equal(
+            expected, self.g0.frechet_distance(self.g9, align=True)
+        )
 
         # expected returns
         val_1 = 1.0
@@ -696,9 +707,7 @@ class TestGeomMethods:
             expected, self.g0.frechet_distance(self.g9, align=False)
         )
 
-        expected = Series(
-            np.array([np.sqrt(100**2 + (100 - 5) ** 2)]), self.g12.index
-        )
+        expected = Series(np.array([np.sqrt(100**2 + (100 - 5) ** 2)]), self.g12.index)
         assert_array_dtype_equal(
             expected, self.g12.frechet_distance(self.g13, densify=0.25)
         )
@@ -720,8 +729,7 @@ class TestGeomMethods:
         assert_array_dtype_equal(expected, self.g0.intersects(self.empty_poly))
 
         expected = [False, True, True, True, True, True, False, False]
-        with pytest.warns(UserWarning, match="The indices .+ different"):
-            assert_array_dtype_equal(expected, self.g0.intersects(self.g9, align=True))
+        assert_array_dtype_equal(expected, self.g0.intersects(self.g9, align=True))
 
         expected = [True, True, True, True, False, False, False]
         assert_array_dtype_equal(expected, self.g0.intersects(self.g9, align=False))
@@ -734,8 +742,7 @@ class TestGeomMethods:
         assert_array_dtype_equal(expected, self.g4.overlaps(self.t1))
 
         expected = [False] * 8
-        with pytest.warns(UserWarning, match="The indices .+ different"):
-            assert_array_dtype_equal(expected, self.g0.overlaps(self.g9, align=True))
+        assert_array_dtype_equal(expected, self.g0.overlaps(self.g9, align=True))
 
         expected = [False] * 7
         assert_array_dtype_equal(expected, self.g0.overlaps(self.g9, align=False))
@@ -745,8 +752,7 @@ class TestGeomMethods:
         assert_array_dtype_equal(expected, self.g0.touches(self.t1))
 
         expected = [False] * 8
-        with pytest.warns(UserWarning, match="The indices .+ different"):
-            assert_array_dtype_equal(expected, self.g0.touches(self.g9, align=True))
+        assert_array_dtype_equal(expected, self.g0.touches(self.g9, align=True))
 
         expected = [True, False, False, True, False, False, False]
         assert_array_dtype_equal(expected, self.g0.touches(self.g9, align=False))
@@ -759,8 +765,7 @@ class TestGeomMethods:
         assert_array_dtype_equal(expected, self.g0.within(self.sq))
 
         expected = [False, True, True, True, True, True, False, False]
-        with pytest.warns(UserWarning, match="The indices .+ different"):
-            assert_array_dtype_equal(expected, self.g0.within(self.g9, align=True))
+        assert_array_dtype_equal(expected, self.g0.within(self.g9, align=True))
 
         expected = [False, True, False, False, False, False, False]
         assert_array_dtype_equal(expected, self.g0.within(self.g9, align=False))
@@ -777,8 +782,7 @@ class TestGeomMethods:
         assert_series_equal(res, exp)
 
         expected = [False, True, True, True, True, True, False, False]
-        with pytest.warns(UserWarning, match="The indices .+ different"):
-            assert_array_dtype_equal(expected, self.g0.covers(self.g9, align=True))
+        assert_array_dtype_equal(expected, self.g0.covers(self.g9, align=True))
 
         expected = [False, False, True, False, False, False, False]
         assert_array_dtype_equal(expected, self.g0.covers(self.g9, align=False))
@@ -794,8 +798,7 @@ class TestGeomMethods:
         assert_series_equal(res, exp)
 
         expected = [False, True, True, True, True, True, False, False]
-        with pytest.warns(UserWarning, match="The indices .+ different"):
-            assert_array_dtype_equal(expected, self.g0.covered_by(self.g9, align=True))
+        assert_array_dtype_equal(expected, self.g0.covered_by(self.g9, align=True))
 
         expected = [False, True, False, False, False, False, False]
         assert_array_dtype_equal(expected, self.g0.covered_by(self.g9, align=False))
@@ -870,6 +873,7 @@ class TestGeomMethods:
         points = GeoSeries([point for i in range(3)])
         assert_geoseries_equal(polygons.centroid, points)
 
+    @pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not available")
     def test_centroid_crs_warn(self):
         with pytest.warns(UserWarning, match="Geometry is in a geographic CRS"):
             self.g4.centroid
@@ -960,6 +964,13 @@ class TestGeomMethods:
         assert_geoseries_equal(expected_g1, result_g1)
         assert_geoseries_equal(expected_g5, result_g5)
 
+    def test_segmentize_wrong_index(self):
+        with pytest.raises(
+            ValueError,
+            match="Index of the Series passed as 'max_segment_length' does not match",
+        ):
+            self.g1.segmentize(max_segment_length=Series([0.5, 0.5], index=[99, 98]))
+
     def test_transform(self):
         # Test 2D
         test_2d = GeoSeries(
@@ -1015,6 +1026,20 @@ class TestGeomMethods:
         s = GeoSeries(MultiPoint([(0, 0), (0, 3), (1, 1), (3, 0), (3, 3)]))
         assert_geoseries_equal(expected, s.concave_hull(ratio=ratio))
 
+    def test_concave_hull_wrong_index(self):
+        with pytest.raises(
+            ValueError, match="Index of the Series passed as 'ratio' does not match"
+        ):
+            self.g1.concave_hull(ratio=Series([0.0, 1.0], index=[99, 98]))
+
+        with pytest.raises(
+            ValueError,
+            match="Index of the Series passed as 'allow_holes' does not match",
+        ):
+            self.g1.concave_hull(
+                ratio=0.1, allow_holes=Series([True, False], index=[99, 98])
+            )
+
     def test_convex_hull(self):
         # the convex hull of a square should be the same as the square
         assert_geoseries_equal(self.squares, self.squares.convex_hull)
@@ -1040,6 +1065,18 @@ class TestGeomMethods:
         dlt = self.g3.delaunay_triangles(only_edges=True)
         assert isinstance(dlt, GeoSeries)
         assert_series_equal(expected, dlt)
+
+    def test_delaunay_triangles_wrong_index(self):
+        with pytest.raises(
+            ValueError,
+            match="Index of the Series passed as 'only_edges' does not match",
+        ):
+            self.g3.delaunay_triangles(only_edges=Series([True, False], index=[99, 98]))
+
+        with pytest.raises(
+            ValueError, match="Index of the Series passed as 'tolerance' does not match"
+        ):
+            self.g3.delaunay_triangles(tolerance=Series([0.1, 0.2], index=[99, 98]))
 
     def test_exterior(self):
         exp_exterior = GeoSeries([LinearRing(p.boundary) for p in self.g3])
@@ -1087,9 +1124,12 @@ class TestGeomMethods:
 
     def test_interpolate_distance_wrong_index(self):
         distances = Series([1, 2], index=[99, 98])
-        with pytest.raises(ValueError):
+        with pytest.raises(
+            ValueError, match="Index of the Series passed as 'distance' does not match"
+        ):
             self.g5.interpolate(distances)
 
+    @pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not available")
     def test_interpolate_crs_warning(self):
         g5_crs = self.g5.copy()
         g5_crs.crs = 4326
@@ -1106,8 +1146,7 @@ class TestGeomMethods:
 
         s = GeoSeries([Point(2, 2), Point(0.5, 0.5)], index=[1, 2])
         expected = Series([np.nan, 2.0, np.nan])
-        with pytest.warns(UserWarning, match="The indices .+ different"):
-            assert_series_equal(self.g5.project(s), expected)
+        assert_series_equal(self.g5.project(s, align=True), expected)
 
         expected = Series([2.0, 0.5], index=self.g5.index)
         assert_series_equal(self.g5.project(s, align=False), expected)
@@ -1210,7 +1249,9 @@ class TestGeomMethods:
     def test_buffer_distance_wrong_index(self):
         original = GeoSeries([self.p0, self.p0], index=[0, 1])
         distances = Series(data=[1, 2], index=[99, 98])
-        with pytest.raises(ValueError):
+        with pytest.raises(
+            ValueError, match="Index of the Series passed as 'distance' does not match"
+        ):
             original.buffer(distances)
 
     def test_buffer_empty_none(self):
@@ -1222,6 +1263,7 @@ class TestGeomMethods:
         result = s.buffer(np.array([0, 0, 0]))
         assert_geoseries_equal(result, s)
 
+    @pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not available")
     def test_buffer_crs_warn(self):
         with pytest.warns(UserWarning, match="Geometry is in a geographic CRS"):
             self.g4.buffer(1)
@@ -1232,6 +1274,17 @@ class TestGeomMethods:
 
         for r in record:
             assert "Geometry is in a geographic CRS." not in str(r.message)
+
+    def test_simplify(self):
+        s = GeoSeries([shapely.LineString([(0, 0), (1, 0.1), (2, 0)])])
+        e = GeoSeries([shapely.LineString([(0, 0), (2, 0)])])
+        assert_geoseries_equal(s.simplify(0.2), e)
+
+    def test_simplify_wrong_index(self):
+        with pytest.raises(
+            ValueError, match="Index of the Series passed as 'tolerance' does not match"
+        ):
+            self.g1.simplify(Series([0.1], index=[99]))
 
     def test_envelope(self):
         e = self.g3.envelope
@@ -1293,8 +1346,7 @@ class TestGeomMethods:
             index=MultiIndex.from_tuples(index, names=expected_index_name),
             crs=4326,
         )
-        with pytest.warns(FutureWarning, match="Currently, index_parts defaults"):
-            assert_geoseries_equal(expected, s.explode())
+        assert_geoseries_equal(expected, s.explode(index_parts=True))
 
     @pytest.mark.parametrize("index_name", [None, "test"])
     def test_explode_geodataframe(self, index_name):
@@ -1302,8 +1354,7 @@ class TestGeomMethods:
         df = GeoDataFrame({"col": [1, 2], "geometry": s})
         df.index.name = index_name
 
-        with pytest.warns(FutureWarning, match="Currently, index_parts defaults"):
-            test_df = df.explode()
+        test_df = df.explode(index_parts=True)
 
         expected_s = GeoSeries([Point(1, 2), Point(2, 3), Point(5, 5)])
         expected_df = GeoDataFrame({"col": [1, 1, 2], "geometry": expected_s})
@@ -1633,47 +1684,6 @@ class TestGeomMethods:
         assert test_df.geometry.name == test_df._geometry_column_name
         assert "geometry" in test_df.columns
 
-    #
-    # Test '&', '|', '^', and '-'
-    #
-    def test_intersection_operator(self):
-        with pytest.warns(FutureWarning):
-            self._test_binary_operator("__and__", self.t1, self.g1, self.g2)
-        with pytest.warns(FutureWarning):
-            self._test_binary_operator("__and__", self.t1, self.gdf1, self.g2)
-
-    def test_union_operator(self):
-        with pytest.warns(FutureWarning):
-            self._test_binary_operator("__or__", self.sq, self.g1, self.g2)
-        with pytest.warns(FutureWarning):
-            self._test_binary_operator("__or__", self.sq, self.gdf1, self.g2)
-
-    def test_union_operator_polygon(self):
-        with pytest.warns(FutureWarning):
-            self._test_binary_operator("__or__", self.sq, self.g1, self.t2)
-        with pytest.warns(FutureWarning):
-            self._test_binary_operator("__or__", self.sq, self.gdf1, self.t2)
-
-    def test_symmetric_difference_operator(self):
-        with pytest.warns(FutureWarning):
-            self._test_binary_operator("__xor__", self.sq, self.g3, self.g4)
-        with pytest.warns(FutureWarning):
-            self._test_binary_operator("__xor__", self.sq, self.gdf3, self.g4)
-
-    def test_difference_series2(self):
-        expected = GeoSeries([GeometryCollection(), self.t2])
-        with pytest.warns(FutureWarning):
-            self._test_binary_operator("__sub__", expected, self.g1, self.g2)
-        with pytest.warns(FutureWarning):
-            self._test_binary_operator("__sub__", expected, self.gdf1, self.g2)
-
-    def test_difference_poly2(self):
-        expected = GeoSeries([self.t1, self.t1])
-        with pytest.warns(FutureWarning):
-            self._test_binary_operator("__sub__", expected, self.g1, self.t2)
-        with pytest.warns(FutureWarning):
-            self._test_binary_operator("__sub__", expected, self.gdf1, self.t2)
-
     def test_get_coordinates(self):
         expected = DataFrame(
             data=self.expected_2d,
@@ -1798,6 +1808,12 @@ class TestGeomMethods:
         assert_geoseries_equal(expected, oc)
         assert isinstance(oc, GeoSeries)
 
+    def test_offset_curve_wrong_index(self):
+        with pytest.raises(
+            ValueError, match="Index of the Series passed as 'distance' does not match"
+        ):
+            GeoSeries([self.l1]).offset_curve(Series([1], index=[99]))
+
     @pytest.mark.skipif(shapely.geos_version < (3, 11, 0), reason="requires GEOS>=3.11")
     @pytest.mark.parametrize(
         "geom,expected",
@@ -1814,6 +1830,12 @@ class TestGeomMethods:
     )
     def test_remove_repeated_points(self, geom, expected):
         assert_geoseries_equal(expected, geom.remove_repeated_points(tolerance=0.0))
+
+    def test_remove_repeated_points_wrong_index(self):
+        with pytest.raises(
+            ValueError, match="Index of the Series passed as 'tolerance' does not match"
+        ):
+            GeoSeries([self.l1]).remove_repeated_points(Series([1], index=[99]))
 
     def test_force_2d(self):
         expected = GeoSeries(
@@ -1857,3 +1879,97 @@ class TestGeomMethods:
             ],
         )
         assert_geoseries_equal(expected, self.g1.force_3d([1, 2]))
+
+    def test_force_3d_wrong_index(self):
+        with pytest.raises(
+            ValueError, match="Index of the Series passed as 'z' does not match"
+        ):
+            self.g1.force_3d(Series([1], index=[99]))
+
+    def test_line_merge(self):
+        expected = GeoSeries(
+            [
+                LineString([(0, 2), (0, 10), (5, 10)]),
+                MultiLineString([[(0, 2), (0, 10)], [(0, 11), (5, 10)]]),
+                GeometryCollection(),
+                LineString([(0, 0), (1, 0), (3, 0)]),
+                GeometryCollection(),
+            ],
+            crs=4326,
+            index=range(2, 7),
+        )
+        assert_geoseries_equal(expected, self.g14.line_merge())
+
+    @pytest.mark.skipif(shapely.geos_version < (3, 11, 0), reason="requires GEOS>=3.11")
+    def test_line_merge_directed(self):
+        expected = GeoSeries(
+            [
+                LineString([(0, 2), (0, 10), (5, 10)]),
+                MultiLineString([[(0, 2), (0, 10)], [(0, 11), (5, 10)]]),
+                GeometryCollection(),
+                MultiLineString([[(0, 0), (1, 0)], [(0, 0), (3, 0)]]),
+                GeometryCollection(),
+            ],
+            crs=4326,
+            index=range(2, 7),
+        )
+        assert_geoseries_equal(expected, self.g14.line_merge(directed=True))
+
+    @pytest.mark.skipif(
+        shapely.geos_version < (3, 9, 5), reason="Empty geom bug in GEOS<3.9.5"
+    )
+    def test_set_precision(self):
+        expected = GeoSeries(
+            [
+                Point(-74, 41, 30.3244),
+                Point(-74, 41, 31.2344),
+                Point(-74, 41),
+                self.pt_empty,
+            ],
+            crs=4326,
+        )
+        assert_geoseries_equal(expected, self.landmarks_mixed_empty.set_precision(1))
+
+        s = GeoSeries(
+            [
+                LineString([(0, 0), (0, 0.1), (0, 1), (1, 1)]),
+                LineString([(0, 0), (0, 0.1), (0.1, 0.1)]),
+            ],
+        )
+        expected = GeoSeries(
+            [
+                LineString([(0, 0), (0, 1), (1, 1)]),
+                LineString(),
+            ],
+        )
+        assert_geoseries_equal(expected, s.set_precision(1))
+
+        expected = GeoSeries(
+            [
+                LineString([(0, 0), (0, 0), (0, 1), (1, 1)]),
+                LineString([(0, 0), (0, 0), (0, 0)]),
+            ]
+        )
+        assert_series_equal(
+            expected.to_wkt(), s.set_precision(1, mode="pointwise").to_wkt()
+        )
+
+        expected = GeoSeries(
+            [
+                LineString([(0, 0), (0, 1), (1, 1)]),
+                LineString([(0, 0), (0, 0)]),
+            ]
+        )
+        assert_series_equal(
+            expected.to_wkt(), s.set_precision(1, mode="keep_collapsed").to_wkt()
+        )
+
+    def test_get_precision(self):
+        expected = Series([0.0, 0.0, 0.0, 0.0], index=self.landmarks_mixed_empty.index)
+        assert_series_equal(expected, self.landmarks_mixed_empty.get_precision())
+        with_precision = self.landmarks_mixed_empty.set_precision(1)
+        expected = Series([1.0, 1.0, 1.0, 1.0], index=with_precision.index)
+        assert_series_equal(expected, with_precision.get_precision())
+        mixed = concat([self.landmarks_mixed_empty, with_precision])
+        expected = Series([0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0], index=mixed.index)
+        assert_series_equal(expected, mixed.get_precision())
