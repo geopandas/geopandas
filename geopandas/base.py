@@ -95,7 +95,7 @@ def _delegate_geo_method(op, this, **kwargs):
     from .geodataframe import GeoDataFrame
 
     if isinstance(this, GeoSeries):
-        klass, var_name = "GeoSeries", "g"
+        klass, var_name = "GeoSeries", "gs"
     elif isinstance(this, GeoDataFrame):
         klass, var_name = "GeoDataFrame", "gdf"
     else:
