@@ -24,6 +24,7 @@ API changes:
 
 New methods:
 
+- Added `relate_pattern` method from shapely to GeoSeries/GeoDataframe (#3211).
 - Added `intersection_all` method from shapely to GeoSeries/GeoDataframe (#3228).
 - Added `line_merge` method from shapely to GeoSeries/GeoDataframe (#3214).
 - Added `set_precision` and `get_precision` methods from shapely to GeoSeries/GeoDataframe (#3175).
