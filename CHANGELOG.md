@@ -12,7 +12,8 @@ Notes on dependencies:
 
 API changes:
 
-- `unary_union` is now deprecated and replaced by the `union_all` method (#3007).
+- `unary_union` attribute is now deprecated and replaced by the `union_all()` method (#3007) allowing
+  opting for a faster union algorithm for coverages (#3151).
 - `align` keyword in binary methods now defaults to `None`, treated as True. Explicit True
   will silence the warning about mismachted indices. (#3212)
 - The `sjoin` method will now preserve the name of the index of the right
@@ -23,12 +24,15 @@ API changes:
 
 New methods:
 
-- Added `shared_paths` method from shapely to GeoSeries/GeoDataframe (#3215).
+- Added `count_geometries` method from shapely to GeoSeries/GeoDataframe (#3154).
+- Added `count_interior_rings` method from shapely to GeoSeries/GeoDataframe (#3154)
+- Added `relate_pattern` method from shapely to GeoSeries/GeoDataframe (#3211).
 - Added `intersection_all` method from shapely to GeoSeries/GeoDataframe (#3228).
 - Added `line_merge` method from shapely to GeoSeries/GeoDataframe (#3214).
 - Added `set_precision` and `get_precision` methods from shapely to GeoSeries/GeoDataframe (#3175).
 - Added `count_coordinates` method from shapely to GeoSeries/GeoDataframe (#3026).
 - Added `minimum_clearance` method from shapely to GeoSeries/GeoDataframe (#2989).
+- Added `shared_paths` method from shapely to GeoSeries/GeoDataframe (#3215).
 - Added `is_ccw` method from shapely to GeoSeries/GeoDataframe (#3027).
 - Added `is_closed` attribute from shapely to GeoSeries/GeoDataframe (#3092).
 - Added `force_2d` and `force_3d` methods from shapely to GeoSeries/GeoDataframe (#3090).

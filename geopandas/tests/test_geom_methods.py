@@ -485,6 +485,8 @@ class TestGeomMethods:
         g3 = GeoSeries([None, None])
         assert g3.union_all().equals(shapely.GeometryCollection())
 
+        assert g.union_all(method="coverage").equals(expected)
+
     def test_unary_union_deprecated(self):
         p1 = self.t1
         p2 = Polygon([(2, 0), (3, 0), (3, 1)])
@@ -555,10 +557,46 @@ class TestGeomMethods:
 
     def test_count_coordinates(self):
         expected = Series(np.array([4, 5]), index=self.g1.index)
-        assert_series_equal(self.g1.count_coordinates(), expected)
+        assert_series_equal(self.g1.count_coordinates(), expected, check_dtype=False)
 
         expected = Series(np.array([4, 0]), index=self.na_none.index)
-        assert_series_equal(self.na_none.count_coordinates(), expected)
+        assert_series_equal(
+            self.na_none.count_coordinates(), expected, check_dtype=False
+        )
+
+    def test_count_geometries(self):
+        expected = Series(np.array([4, 2, 1, 1, 0]))
+        s = GeoSeries(
+            [
+                MultiPoint([(0, 0), (1, 1), (1, -1), (0, 1)]),
+                MultiLineString([((0, 0), (1, 1)), ((-1, 0), (1, 0))]),
+                LineString([(0, 0), (1, 1), (1, -1)]),
+                Point(0, 0),
+                None,
+            ]
+        )
+        assert_series_equal(s.count_geometries(), expected, check_dtype=False)
+
+    def test_count_interior_rings(self):
+        expected = Series(np.array([1, 2, 0, 0]))
+        s = GeoSeries(
+            [
+                Polygon(
+                    [(0, 0), (0, 5), (5, 5), (5, 0)],
+                    [[(1, 1), (1, 4), (4, 4), (4, 1)]],
+                ),
+                Polygon(
+                    [(0, 0), (0, 5), (5, 5), (5, 0)],
+                    [
+                        [(1, 1), (1, 2), (2, 2), (2, 1)],
+                        [(3, 2), (3, 3), (4, 3), (4, 2)],
+                    ],
+                ),
+                Point(0, 1),
+                None,
+            ]
+        )
+        assert_series_equal(s.count_interior_rings(), expected, check_dtype=False)
 
     def test_crosses(self):
         expected = [False, False, False, False, False, False, False]
@@ -630,6 +668,31 @@ class TestGeomMethods:
             index=self.g0.index,
         )
         assert_array_dtype_equal(expected, self.g0.relate(self.g9, align=False))
+
+    def test_relate_pattern(self):
+        expected = Series([True] * 4 + [False] * 3, index=self.g0.index, dtype=bool)
+        assert_array_dtype_equal(
+            expected, self.g0.relate_pattern(self.inner_sq, "2********")
+        )
+
+        expected = Series([True, False], index=self.g6.index, dtype=bool)
+        assert_array_dtype_equal(
+            expected, self.g6.relate_pattern(self.na_none, "FF0******")
+        )
+
+        expected = Series(
+            [False] + [True] * 5 + [False, False], index=range(8), dtype=bool
+        )
+        with pytest.warns(UserWarning, match="The indices of the left and right"):
+            assert_array_dtype_equal(
+                expected, self.g0.relate_pattern(self.g9, "T********", align=None)
+            )
+        expected = Series(
+            [False] + [True] * 2 + [False] * 4, index=self.g0.index, dtype=bool
+        )
+        assert_array_dtype_equal(
+            expected, self.g0.relate_pattern(self.g9, "T********", align=False)
+        )
 
     def test_distance(self):
         expected = Series(
