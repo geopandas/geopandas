@@ -10,7 +10,7 @@ Notes on dependencies:
 
 API changes:
 
-- `unary_union` is now deprecated and replaced by the `union_all` method (#3007) allowing
+- `unary_union` attribute is now deprecated and replaced by the `union_all()` method (#3007) allowing
   opting for a faster union algorithm for coverages (#3151).
 
 New methods:
