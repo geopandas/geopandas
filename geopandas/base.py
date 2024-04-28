@@ -92,14 +92,23 @@ def _delegate_geo_method(op, this, **kwargs):
     # type: (str, GeoSeries) -> GeoSeries
     """Unary operation that returns a GeoSeries"""
     from .geoseries import GeoSeries
+    from .geodataframe import GeoDataFrame
+
+    if isinstance(this, GeoSeries):
+        klass, var_name = "GeoSeries", "g"
+    elif isinstance(this, GeoDataFrame):
+        klass, var_name = "GeoDataFrame", "gdf"
+    else:
+        klass, var_name = this.__class__.__name__, "this"
 
     for key, val in kwargs.items():
         if isinstance(val, pd.Series) and not val.index.equals(this.index):
             raise ValueError(
                 f"Index of the Series passed as '{key}' does not match index of the "
-                "GeoSeries. If you want both Series to be aligned, align them before "
-                f"passing them to this method as `this, {key} = this.align({key})`. If "
-                f"you want to ignore the index pass the underlying array as '{key}' "
+                f"{klass}. If you want both Series to be aligned, align them before "
+                f"passing them to this method as "
+                f"`{var_name}, {key} = {var_name}.align({key})`. If "
+                f"you want to ignore the index, pass the underlying array as '{key}' "
                 f"using `{key}.values`."
             )
 
