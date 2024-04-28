@@ -12,7 +12,8 @@ Notes on dependencies:
 
 API changes:
 
-- `unary_union` is now deprecated and replaced by the `union_all` method (#3007).
+- `unary_union` attribute is now deprecated and replaced by the `union_all()` method (#3007) allowing
+  opting for a faster union algorithm for coverages (#3151).
 - `align` keyword in binary methods now defaults to `None`, treated as True. Explicit True
   will silence the warning about mismachted indices. (#3212)
 - The `sjoin` method will now preserve the name of the index of the right

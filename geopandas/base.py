@@ -1749,9 +1749,25 @@ GeometryCollection
 
         return self.geometry.values.union_all()
 
-    def union_all(self):
+    def union_all(self, method="unary"):
         """Returns a geometry containing the union of all geometries in the
         ``GeoSeries``.
+
+        By default, the unary union algorithm is used. If the geometries are
+        non-overlapping (forming a coverage), GeoPandas can use a significantly faster
+        algorithm to perform the union using the ``method="coverage"`` option.
+
+        Parameters
+        ----------
+        method : str (default ``"unary"``)
+            The method to use for the union. Options are:
+
+            * ``"unary"``: use the unary union algorithm. This option is the most robust
+              but can be slow for large numbers of geometries (default).
+            * ``"coverage"``: use the coverage union algorithm. This option is optimized
+              for non-overlapping polygons and can be significantly faster than the
+              unary union algorithm. However, it can produce invalid geometries if the
+              polygons overlap.
 
         Examples
         --------
@@ -1766,7 +1782,7 @@ GeometryCollection
         >>> s.union_all()
         <POLYGON ((0 1, 0 2, 2 2, 2 0, 1 0, 0 0, 0 1))>
         """
-        return self.geometry.values.union_all()
+        return self.geometry.values.union_all(method=method)
 
     def intersection_all(self):
         """Returns a geometry containing the intersection of all geometries in

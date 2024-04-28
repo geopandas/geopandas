@@ -842,8 +842,15 @@ class GeometryArray(ExtensionArray):
         )
         return self.union_all()
 
-    def union_all(self):
-        return shapely.union_all(self._data)
+    def union_all(self, method="unary"):
+        if method == "coverage":
+            return shapely.coverage_union_all(self._data)
+        elif method == "unary":
+            return shapely.union_all(self._data)
+        else:
+            raise ValueError(
+                f"Method '{method}' not recognized. Use 'coverage' or 'unary'."
+            )
 
     def intersection_all(self):
         return shapely.intersection_all(self._data)

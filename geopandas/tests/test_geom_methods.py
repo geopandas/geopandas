@@ -485,6 +485,8 @@ class TestGeomMethods:
         g3 = GeoSeries([None, None])
         assert g3.union_all().equals(shapely.GeometryCollection())
 
+        assert g.union_all(method="coverage").equals(expected)
+
     def test_unary_union_deprecated(self):
         p1 = self.t1
         p2 = Polygon([(2, 0), (3, 0), (3, 1)])
