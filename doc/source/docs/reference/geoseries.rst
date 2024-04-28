@@ -76,6 +76,7 @@ Binary predicates
    GeoSeries.covers
    GeoSeries.covered_by
    GeoSeries.relate
+   GeoSeries.relate_pattern
 
 
 Set-theoretic methods

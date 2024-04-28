@@ -485,6 +485,8 @@ class TestGeomMethods:
         g3 = GeoSeries([None, None])
         assert g3.union_all().equals(shapely.GeometryCollection())
 
+        assert g.union_all(method="coverage").equals(expected)
+
     def test_unary_union_deprecated(self):
         p1 = self.t1
         p2 = Polygon([(2, 0), (3, 0), (3, 1)])
@@ -666,6 +668,31 @@ class TestGeomMethods:
             index=self.g0.index,
         )
         assert_array_dtype_equal(expected, self.g0.relate(self.g9, align=False))
+
+    def test_relate_pattern(self):
+        expected = Series([True] * 4 + [False] * 3, index=self.g0.index, dtype=bool)
+        assert_array_dtype_equal(
+            expected, self.g0.relate_pattern(self.inner_sq, "2********")
+        )
+
+        expected = Series([True, False], index=self.g6.index, dtype=bool)
+        assert_array_dtype_equal(
+            expected, self.g6.relate_pattern(self.na_none, "FF0******")
+        )
+
+        expected = Series(
+            [False] + [True] * 5 + [False, False], index=range(8), dtype=bool
+        )
+        with pytest.warns(UserWarning, match="The indices of the left and right"):
+            assert_array_dtype_equal(
+                expected, self.g0.relate_pattern(self.g9, "T********", align=None)
+            )
+        expected = Series(
+            [False] + [True] * 2 + [False] * 4, index=self.g0.index, dtype=bool
+        )
+        assert_array_dtype_equal(
+            expected, self.g0.relate_pattern(self.g9, "T********", align=False)
+        )
 
     def test_distance(self):
         expected = Series(
