@@ -1,6 +1,6 @@
 # Changelog
 
-## Version 0.14.4 (April 26, 2024)
+## Version 0.14.4 (April 28, 2024)
 
 - Several fixes for compatibility with the upcoming pandas 3.0, numpy 2.0 and
   fiona 1.10 releases.
