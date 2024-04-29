@@ -5614,7 +5614,7 @@ GeometryCollection
         Parameters
         ----------
         node : bool, default True
-            perform noding prior to building the areas, by default True
+            Perform noding prior to building the areas, by default True.
 
         Returns
         -------
