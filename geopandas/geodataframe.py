@@ -68,7 +68,6 @@ crs_mismatch_error = (
 )
 
 
-@pandas.api.extensions.register_dataframe_accessor("geo")
 class GeoDataFrame(GeoPandasBase, DataFrame):
     """
     A GeoDataFrame object is a pandas.DataFrame that has a column
