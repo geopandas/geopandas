@@ -5679,6 +5679,67 @@ GeometryCollection
 
         return GeoSeries(result, name="sampled_points", crs=self.crs, index=self.index)
 
+    def build_area(self, node=True):
+        """Creates an areal geometry formed by the constituent linework.
+
+        Builds areas from the GeoSeries that contain linework which represents the edges
+        of a planar graph. Any geometry type may be provided as input; only the
+        constituent lines and rings will be used to create the output polygons. All
+        geometries within the GeoSeries are considered together and the resulting
+        polygons therefore do not map 1:1 to input geometries.
+
+        This function converts inner rings into holes. To turn inner rings into polygons
+        as well, use polygonize.
+
+        Unless you know that the input GeoSeries represents a planar graph with a clean
+        topology (e.g. there is a node on both lines where they intersect), it is
+        recommended to use ``node=True`` which performs noding prior to building areal
+        geometry. Using ``node=False`` will provide performance benefits but may result
+        in incorrect polygons if the input is not of the proper topology.
+
+        If the input linework crosses, this function may produce invalid polygons. Use
+        :meth:`GeoSeries.make_valid` to ensure valid geometries.
+
+        Parameters
+        ----------
+        node : bool, default True
+            Perform noding prior to building the areas, by default True.
+
+        Returns
+        -------
+        GeoSeries
+            GeoSeries with polygons
+
+        Examples
+        --------
+        >>> from shapely.geometry import LineString, Polygon
+        >>> s = geopandas.GeoSeries([
+        ...     LineString([(18, 4), (4, 2), (2, 9)]),
+        ...     LineString([(18, 4), (16, 16)]),
+        ...     LineString([(16, 16), (8, 19), (8, 12), (2, 9)]),
+        ...     LineString([(8, 6), (12, 13), (15, 8)]),
+        ...     LineString([(8, 6), (15, 8)]),
+        ...     LineString([(0, 0), (0, 3), (3, 3), (3, 0), (0, 0)]),
+        ...     Polygon([(1, 1), (2, 2), (1, 2), (1, 1)]),
+        ... ])
+        >>> s.build_area()
+        0    POLYGON ((0 3, 3 3, 3 0, 0 0, 0 3), (1 1, 2 2,...
+        1    POLYGON ((4 2, 2 9, 8 12, 8 19, 16 16, 18 4, 4...
+        Name: polygons, dtype: geometry
+
+        """
+        from .geoseries import GeoSeries
+
+        if node:
+            geometry_input = self.geometry.union_all()
+        else:
+            geometry_input = shapely.geometrycollections(self.geometry.values._data)
+
+        polygons = shapely.build_area(geometry_input)
+        return GeoSeries(polygons, crs=self.crs, name="polygons").explode(
+            ignore_index=True
+        )
+
 
 def _get_index_for_parts(orig_idx, outer_idx, ignore_index, index_parts):
     """Helper to handle index when geometries get exploded to parts.

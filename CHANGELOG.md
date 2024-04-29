@@ -37,6 +37,7 @@ New methods:
 - Added `force_2d` and `force_3d` methods from shapely to GeoSeries/GeoDataframe (#3090).
 - Added `voronoi_polygons` method from shapely to GeoSeries/GeoDataframe (#3177).
 - Added `contains_properly` method from shapely to GeoSeries/GeoDataframe (#3105).
+- Added `build_area` method exposing `build_area` shapely to GeoSeries/GeoDataframe (#3202).
 - Added `snap` method from shapely to GeoSeries/GeoDataframe (#3086).
 - Added `transform` method from shapely to GeoSeries/GeoDataFrame (#3075).
 - Added `dwithin` method to check for a "distance within" predicate on
