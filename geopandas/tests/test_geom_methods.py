@@ -1108,36 +1108,25 @@ class TestGeomMethods:
     def test_delaunay_triangles(self):
         expected = GeoSeries(
             [
-                GeometryCollection([Polygon([(0, 0), (1, 0), (1, 1), (0, 0)])]),
-                GeometryCollection([Polygon([(0, 1), (0, 0), (1, 1), (0, 1)])]),
+                Polygon([(0, 1), (0, 0), (1, 0), (0, 1)]),
+                Polygon([(0, 1), (1, 0), (1, 1), (0, 1)]),
             ]
         )
-        dlt = self.g3.delaunay_triangles()
-        assert isinstance(dlt, GeoSeries)
-        assert_series_equal(expected, dlt)
+        dlt = self.g5.delaunay_triangles()
+        assert_geoseries_equal(expected, dlt)
 
     def test_delaunay_triangles_pass_kwargs(self):
         expected = GeoSeries(
             [
-                MultiLineString([[(0, 0), (1, 1)], [(0, 0), (1, 0)], [(1, 0), (1, 1)]]),
-                MultiLineString([[(0, 1), (1, 1)], [(0, 0), (0, 1)], [(0, 0), (1, 1)]]),
-            ]
+                LineString([(0, 1), (1, 1)]),
+                LineString([(0, 0), (0, 1)]),
+                LineString([(0, 0), (1, 0)]),
+                LineString([(1, 0), (1, 1)]),
+                LineString([(0, 1), (1, 0)]),
+            ],
         )
-        dlt = self.g3.delaunay_triangles(only_edges=True)
-        assert isinstance(dlt, GeoSeries)
-        assert_series_equal(expected, dlt)
-
-    def test_delaunay_triangles_wrong_index(self):
-        with pytest.raises(
-            ValueError,
-            match="Index of the Series passed as 'only_edges' does not match",
-        ):
-            self.g3.delaunay_triangles(only_edges=Series([True, False], index=[99, 98]))
-
-        with pytest.raises(
-            ValueError, match="Index of the Series passed as 'tolerance' does not match"
-        ):
-            self.g3.delaunay_triangles(tolerance=Series([0.1, 0.2], index=[99, 98]))
+        dlt = self.g5.delaunay_triangles(only_edges=True)
+        assert_geoseries_equal(expected, dlt)
 
     def test_exterior(self):
         exp_exterior = GeoSeries([LinearRing(p.boundary) for p in self.g3])
