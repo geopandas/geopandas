@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 import shapely
 from pandas import DataFrame, Series
-from shapely.geometry import MultiPoint, box, GeometryCollection
+from shapely.geometry import MultiPoint, box
 from shapely.geometry.base import BaseGeometry
 
 from . import _compat as compat
