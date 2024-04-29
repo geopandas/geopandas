@@ -1142,13 +1142,10 @@ class TestGeomMethods:
     def test_voronoi_polygons(self):
         expected = GeoSeries.from_wkt(
             [
-                "GEOMETRYCOLLECTION (POLYGON ((-1 -1, -1 2, 0.5 0.5, 0.5 -1, -1 -1)), "
-                "POLYGON ((-1 2, 2 2, 2 0.5, 0.5 0.5, -1 2, -1 2)), "
-                "POLYGON ((2 -1, 0.5 -1, 0.5 0.5, 2 0.5, 2 -1)))",
-                "GEOMETRYCOLLECTION (POLYGON ((2 2, 2 0.5, 0.5 0.5, 0.5 2, 2 2)), "
-                "POLYGON ((-1 2, 0.5 2, 0.5 0.5, -1 0.5, -1 2)), "
-                "POLYGON ((-1 -1, -1 0.5, 0.5 0.5, 0.5 -1, -1 -1)), "
-                "POLYGON ((2 -1, 0.5 -1, 0.5 0.5, 2 0.5, 2 -1)))",
+                "POLYGON ((2 2, 2 0.5, 0.5 0.5, 0.5 2, 2 2))",
+                "POLYGON ((-1 2, 0.5 2, 0.5 0.5, -1 0.5, -1 2))",
+                "POLYGON ((-1 -1, -1 0.5, 0.5 0.5, 0.5 -1, -1 -1))",
+                "POLYGON ((2 -1, 0.5 -1, 0.5 0.5, 2 0.5, 2 -1))",
             ],
             crs=self.g1.crs,
         )
@@ -1158,10 +1155,10 @@ class TestGeomMethods:
     def test_voronoi_polygons_only_edges(self):
         expected = GeoSeries.from_wkt(
             [
-                "MULTILINESTRING ((-1 2, 0.5 0.5), (0.5 0.5, 0.5 -1), "
-                "(2 0.5, 0.5 0.5))",
-                "MULTILINESTRING ((0.5 0.5, 0.5 2), (2 0.5, 0.5 0.5), "
-                "(0.5 0.5, -1 0.5), (0.5 0.5, 0.5 -1))",
+                "LINESTRING (0.5 0.5, 0.5 2)",
+                "LINESTRING (2 0.5, 0.5 0.5)",
+                "LINESTRING (0.5 0.5, -1 0.5)",
+                "LINESTRING (0.5 0.5, 0.5 -1)",
             ],
             crs=self.g1.crs,
         )
@@ -1171,44 +1168,15 @@ class TestGeomMethods:
     def test_voronoi_polygons_extend_to(self):
         expected = GeoSeries.from_wkt(
             [
-                "GEOMETRYCOLLECTION (POLYGON ((-2 -1, -2 3, 0.5 0.5, 0.5 -1, -2 -1)), "
-                "POLYGON ((3 3, 3 0.5, 0.5 0.5, -2 3, 3 3)), "
-                "POLYGON ((3 -1, 0.5 -1, 0.5 0.5, 3 0.5, 3 -1)))",
-                "GEOMETRYCOLLECTION (POLYGON ((3 3, 3 0.5, 0.5 0.5, 0.5 3, 3 3)), "
-                "POLYGON ((-2 3, 0.5 3, 0.5 0.5, -2 0.5, -2 3)), "
-                "POLYGON ((-2 -1, -2 0.5, 0.5 0.5, 0.5 -1, -2 -1)), "
-                "POLYGON ((3 -1, 0.5 -1, 0.5 0.5, 3 0.5, 3 -1)))",
+                "POLYGON ((3 3, 3 0.5, 0.5 0.5, 0.5 3, 3 3))",
+                "POLYGON ((-2 3, 0.5 3, 0.5 0.5, -2 0.5, -2 3))",
+                "POLYGON ((-2 -1, -2 0.5, 0.5 0.5, 0.5 -1, -2 -1))",
+                "POLYGON ((3 -1, 0.5 -1, 0.5 0.5, 3 0.5, 3 -1))",
             ],
             crs=self.g1.crs,
         )
         vp = self.g1.voronoi_polygons(extend_to=box(-2, 0, 3, 3))
         assert_geoseries_equal(expected, vp)
-
-    def test_voronoi_polygons_extend_to_series(self):
-        expected = GeoSeries.from_wkt(
-            [
-                "GEOMETRYCOLLECTION ("
-                "POLYGON ((-10 -10, -10 11, 0.5 0.5, 0.5 -10, -10 -10)), "
-                "POLYGON ((11 11, 11 0.5, 0.5 0.5, -10 11, 11 11)), "
-                "POLYGON ((11 -10, 0.5 -10, 0.5 0.5, 11 0.5, 11 -10)))",
-                "GEOMETRYCOLLECTION ("
-                "POLYGON ((11 11, 11 0.5, 0.5 0.5, 0.5 11, 11 11)), "
-                "POLYGON ((-10 11, 0.5 11, 0.5 0.5, -10 0.5, -10 11)), "
-                "POLYGON ((-10 -10, -10 0.5, 0.5 0.5, 0.5 -10, -10 -10)), "
-                "POLYGON ((11 -10, 0.5 -10, 0.5 0.5, 11 0.5, 11 -10)))",
-            ],
-            crs=self.g1.crs,
-        )
-
-        vp = self.g1.voronoi_polygons(extend_to=self.g1.buffer(10))
-        assert_geoseries_equal(expected, vp)
-
-    def test_voronoi_polygons_wrong_index(self):
-        with pytest.raises(
-            ValueError,
-            match="Index of the Series passed as 'tolerance' does not match",
-        ):
-            self.g1.voronoi_polygons(tolerance=Series([0.1, 0.2], index=[98, 99]))
 
     def test_exterior(self):
         exp_exterior = GeoSeries([LinearRing(p.boundary) for p in self.g3])
