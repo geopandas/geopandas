@@ -5644,7 +5644,7 @@ GeometryCollection
         if node:
             geometry_input = self.geometry.union_all()
         else:
-            geometry_input = GeometryCollection(self.geometry.values._data)
+            geometry_input = shapely.geometrycollections(self.geometry.values._data)
 
         polygons = shapely.build_area(geometry_input)
         return GeoSeries(polygons, crs=self.crs, name="polygons").explode(
