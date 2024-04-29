@@ -5602,7 +5602,7 @@ GeometryCollection
 
         Unless you know that the input GeoSeries represents a planar graph with a clean
         topology (e.g. there is a node on both lines where they intersect), it is
-        recommended to use ``node=True`` which performs noding prior polygonization.
+        recommended to use ``node=True`` which performs noding prior to polygonization.
         Using ``node=False`` will provide performance benefits but may result in
         incorrect polygons if the input is not of the proper topology.
 
