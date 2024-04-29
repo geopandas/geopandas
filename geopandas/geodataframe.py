@@ -5,7 +5,6 @@ import numpy as np
 import pandas as pd
 import shapely.errors
 from pandas import DataFrame, Series
-import pandas.api.extensions
 from pandas.core.accessor import CachedAccessor
 
 from shapely.geometry import mapping, shape
