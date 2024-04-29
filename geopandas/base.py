@@ -5621,9 +5621,9 @@ GeometryCollection
         Parameters
         ----------
         node : bool, default True
-            perform noding prior to polygonization, by default True
+            Perform noding prior to polygonization, by default True.
         full : bool, default False
-            return the full output composed of a tuple of GeoSeries, by default False
+            Return the full output composed of a tuple of GeoSeries, by default False.
 
         Returns
         -------
@@ -5648,10 +5648,9 @@ GeometryCollection
 
         """
         from .geoseries import GeoSeries
-        from .array import from_shapely
 
         if node:
-            geometry_input = from_shapely([self.geometry.union_all()])
+            geometry_input = [self.geometry.union_all()]
         else:
             geometry_input = self.geometry.values
 
@@ -5665,7 +5664,7 @@ GeometryCollection
                 ignore_index=True
             )
             invalid = GeoSeries(
-                invalid, crs=self.crs, name="invalid ring lines"
+                invalid, crs=self.crs, name="invalid_rings"
             ).explode(ignore_index=True)
             polygons = GeoSeries(polygons, crs=self.crs, name="polygons").explode(
                 ignore_index=True
