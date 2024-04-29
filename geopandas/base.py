@@ -1000,7 +1000,8 @@ GeometryCollection
         0    POINT (1 1)
         1    POINT (2 2)
         2    POINT (1 3)
-        3    POINT (0 2
+        3    POINT (0 2)
+        dtype: geometry
 
         By default, you get back a GeoSeries of polygons:
 
