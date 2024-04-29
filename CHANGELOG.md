@@ -12,15 +12,21 @@ Notes on dependencies:
 
 API changes:
 
-- `unary_union` is now deprecated and replaced by the `union_all` method (#3007).
+- `unary_union` attribute is now deprecated and replaced by the `union_all()` method (#3007) allowing
+  opting for a faster union algorithm for coverages (#3151).
 - `align` keyword in binary methods now defaults to `None`, treated as True. Explicit True
   will silence the warning about mismachted indices. (#3212)
 - The `sjoin` method will now preserve the name of the index of the right
   GeoDataFrame, if it has one, instead of always using `"index_right"` as the
   name for the resulting column in the return value (#846, #2144).
+- GeoPandas now raises a ValueError when an unaligned Series is passed as a method
+  argument to avoid confusion of whether the automatic alignment happens or not (#3271).
 
 New methods:
 
+- Added `count_geometries` method from shapely to GeoSeries/GeoDataframe (#3154).
+- Added `count_interior_rings` method from shapely to GeoSeries/GeoDataframe (#3154)
+- Added `relate_pattern` method from shapely to GeoSeries/GeoDataframe (#3211).
 - Added `intersection_all` method from shapely to GeoSeries/GeoDataframe (#3228).
 - Added `line_merge` method from shapely to GeoSeries/GeoDataframe (#3214).
 - Added `set_precision` and `get_precision` methods from shapely to GeoSeries/GeoDataframe (#3175).
@@ -30,6 +36,7 @@ New methods:
 - Added `is_closed` attribute from shapely to GeoSeries/GeoDataframe (#3092).
 - Added `force_2d` and `force_3d` methods from shapely to GeoSeries/GeoDataframe (#3090).
 - Added `contains_properly` method from shapely to GeoSeries/GeoDataframe (#3105).
+- Added `build_area` method exposing `build_area` shapely to GeoSeries/GeoDataframe (#3202).
 - Added `snap` method from shapely to GeoSeries/GeoDataframe (#3086).
 - Added `transform` method from shapely to GeoSeries/GeoDataFrame (#3075).
 - Added `dwithin` method to check for a "distance within" predicate on

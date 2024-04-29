@@ -90,13 +90,32 @@ def _delegate_property(op, this):
         return Series(data, index=this.index)
 
 
-def _delegate_geo_method(op, this, *args, **kwargs):
+def _delegate_geo_method(op, this, **kwargs):
     # type: (str, GeoSeries) -> GeoSeries
     """Unary operation that returns a GeoSeries"""
     from .geoseries import GeoSeries
+    from .geodataframe import GeoDataFrame
+
+    if isinstance(this, GeoSeries):
+        klass, var_name = "GeoSeries", "gs"
+    elif isinstance(this, GeoDataFrame):
+        klass, var_name = "GeoDataFrame", "gdf"
+    else:
+        klass, var_name = this.__class__.__name__, "this"
+
+    for key, val in kwargs.items():
+        if isinstance(val, pd.Series) and not val.index.equals(this.index):
+            raise ValueError(
+                f"Index of the Series passed as '{key}' does not match index of the "
+                f"{klass}. If you want both Series to be aligned, align them before "
+                f"passing them to this method as "
+                f"`{var_name}, {key} = {var_name}.align({key})`. If "
+                f"you want to ignore the index, pass the underlying array as '{key}' "
+                f"using `{key}.values`."
+            )
 
     a_this = GeometryArray(this.geometry.values)
-    data = getattr(a_this, op)(*args, **kwargs)
+    data = getattr(a_this, op)(**kwargs)
     return GeoSeries(data, index=this.index, crs=this.crs)
 
 
@@ -345,7 +364,7 @@ GeometryCollection
     def count_coordinates(self):
         """
         Returns a ``Series`` containing the count of the number of coordinate pairs
-        in a geometry array.
+        in each geometry.
 
         Examples
         --------
@@ -376,13 +395,103 @@ GeometryCollection
         2    1
         3    5
         4    0
-        dtype: int64
+        dtype: int32
 
         See also
         --------
         GeoSeries.get_coordinates : extract coordinates as a :class:`~pandas.DataFrame`
+        GoSeries.count_geometries : count the number of geometries in a collection
         """
         return Series(self.geometry.values.count_coordinates(), index=self.index)
+
+    def count_geometries(self):
+        """
+        Returns a ``Series`` containing the count of geometries in each multi-part
+        geometry.
+
+        For single-part geometry objects, this is always 1. For multi-part geometries,
+        like ``MultiPoint`` or ``MultiLineString``, it is the number of parts in the
+        geometry. For ``GeometryCollection``, it is the number of geometries direct
+        parts of the collection (the method does not recurse into collections within
+        collections).
+
+
+        Examples
+        --------
+        >>> from shapely.geometry import Point, MultiPoint, LineString, MultiLineString
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         MultiPoint([(0, 0), (1, 1), (1, -1), (0, 1)]),
+        ...         MultiLineString([((0, 0), (1, 1)), ((-1, 0), (1, 0))]),
+        ...         LineString([(0, 0), (1, 1), (1, -1)]),
+        ...         Point(0, 0),
+        ...     ]
+        ... )
+        >>> s
+        0     MULTIPOINT ((0 0), (1 1), (1 -1), (0 1))
+        1    MULTILINESTRING ((0 0, 1 1), (-1 0, 1 0))
+        2                  LINESTRING (0 0, 1 1, 1 -1)
+        3                                  POINT (0 0)
+        dtype: geometry
+
+        >>> s.count_geometries()
+        0    4
+        1    2
+        2    1
+        3    1
+        dtype: int32
+
+        See also
+        --------
+        GeoSeries.count_coordinates : count the number of coordinates in a geometry
+        GeoSeries.count_interior_rings : count the number of interior rings
+        """
+        return Series(self.geometry.values.count_geometries(), index=self.index)
+
+    def count_interior_rings(self):
+        """
+        Returns a ``Series`` containing the count of the number of interior rings
+        in a polygonal geometry.
+
+        For non-polygonal geometries, this is always 0.
+
+        Examples
+        --------
+        >>> from shapely.geometry import Polygon, Point
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon(
+        ...             [(0, 0), (0, 5), (5, 5), (5, 0)],
+        ...             [[(1, 1), (1, 4), (4, 4), (4, 1)]],
+        ...         ),
+        ...         Polygon(
+        ...             [(0, 0), (0, 5), (5, 5), (5, 0)],
+        ...             [
+        ...                 [(1, 1), (1, 2), (2, 2), (2, 1)],
+        ...                 [(3, 2), (3, 3), (4, 3), (4, 2)],
+        ...             ],
+        ...         ),
+        ...         Point(0, 1),
+        ...     ]
+        ... )
+        >>> s
+        0    POLYGON ((0 0, 0 5, 5 5, 5 0, 0 0), (1 1, 1 4,...
+        1    POLYGON ((0 0, 0 5, 5 5, 5 0, 0 0), (1 1, 1 2,...
+        2                                          POINT (0 1)
+        dtype: geometry
+
+        >>> s.count_interior_rings()
+        0    1
+        1    2
+        2    0
+        dtype: int32
+
+        See also
+        --------
+        GeoSeries.count_coordinates : count the number of coordinates in a geometry
+        GeoSeries.count_geometries : count the number of geometries in a collection
+        """
+        return Series(self.geometry.values.count_interior_rings(), index=self.index)
 
     @property
     def is_simple(self):
@@ -837,7 +946,9 @@ GeometryCollection
         2    MULTILINESTRING ((5 3, 10 10), (5 3, 6 3), (6 ...
         dtype: geometry
         """
-        return _delegate_geo_method("delaunay_triangles", self, tolerance, only_edges)
+        return _delegate_geo_method(
+            "delaunay_triangles", self, tolerance=tolerance, only_edges=only_edges
+        )
 
     @property
     def envelope(self):
@@ -1034,7 +1145,7 @@ GeometryCollection
         return _delegate_geo_method(
             "offset_curve",
             self,
-            distance,
+            distance=distance,
             quad_segs=quad_segs,
             join_style=join_style,
             mitre_limit=mitre_limit,
@@ -1481,7 +1592,9 @@ GeometryCollection
         1    POLYGON ((0 0, 5 0, 10 0, 10 5, 10 10, 5 10, 0...
         dtype: geometry
         """
-        return _delegate_geo_method("segmentize", self, max_segment_length)
+        return _delegate_geo_method(
+            "segmentize", self, max_segment_length=max_segment_length
+        )
 
     def transform(self, transformation, include_z=False):
         """Returns a ``GeoSeries`` with the transformation function
@@ -1521,7 +1634,9 @@ GeometryCollection
         0    POINT Z (1 1 1)
         dtype: geometry
         """
-        return _delegate_geo_method("transform", self, transformation, include_z)
+        return _delegate_geo_method(
+            "transform", self, transformation=transformation, include_z=include_z
+        )
 
     def force_2d(self):
         """Forces the dimensionality of a geometry to 2D.
@@ -1726,9 +1841,25 @@ GeometryCollection
 
         return self.geometry.values.union_all()
 
-    def union_all(self):
+    def union_all(self, method="unary"):
         """Returns a geometry containing the union of all geometries in the
         ``GeoSeries``.
+
+        By default, the unary union algorithm is used. If the geometries are
+        non-overlapping (forming a coverage), GeoPandas can use a significantly faster
+        algorithm to perform the union using the ``method="coverage"`` option.
+
+        Parameters
+        ----------
+        method : str (default ``"unary"``)
+            The method to use for the union. Options are:
+
+            * ``"unary"``: use the unary union algorithm. This option is the most robust
+              but can be slow for large numbers of geometries (default).
+            * ``"coverage"``: use the coverage union algorithm. This option is optimized
+              for non-overlapping polygons and can be significantly faster than the
+              unary union algorithm. However, it can produce invalid geometries if the
+              polygons overlap.
 
         Examples
         --------
@@ -1743,7 +1874,7 @@ GeometryCollection
         >>> s.union_all()
         <POLYGON ((0 1, 0 2, 2 2, 2 0, 1 0, 0 0, 0 1))>
         """
-        return self.geometry.values.union_all()
+        return self.geometry.values.union_all(method=method)
 
     def intersection_all(self):
         """Returns a geometry containing the intersection of all geometries in
@@ -3360,7 +3491,7 @@ GeometryCollection
         """
         return _binary_op("distance", self, other, align)
 
-    def hausdorff_distance(self, other, align=True, densify=None):
+    def hausdorff_distance(self, other, align=None, densify=None):
         """Returns a ``Series`` containing the Hausdorff distance to aligned `other`.
 
         The Hausdorff distance is the largest distance consisting of any point in `self`
@@ -3475,7 +3606,7 @@ GeometryCollection
         """
         return _binary_op("hausdorff_distance", self, other, align, densify=densify)
 
-    def frechet_distance(self, other, align=True, densify=None):
+    def frechet_distance(self, other, align=None, densify=None):
         """Returns a ``Series`` containing the Frechet distance to aligned `other`.
 
         The Fréchet distance is a measure of similarity: it is the greatest distance
@@ -4540,18 +4671,10 @@ GeometryCollection
         .. plot:: _static/code/buffer.py
 
         """
-        if isinstance(distance, pd.Series):
-            if not self.index.equals(distance.index):
-                raise ValueError(
-                    "Index values of distance sequence does "
-                    "not match index values of the GeoSeries"
-                )
-            distance = np.asarray(distance)
-
         return _delegate_geo_method(
             "buffer",
             self,
-            distance,
+            distance=distance,
             resolution=resolution,
             cap_style=cap_style,
             join_style=join_style,
@@ -4560,7 +4683,7 @@ GeometryCollection
             **kwargs,
         )
 
-    def simplify(self, *args, **kwargs):
+    def simplify(self, tolerance, preserve_topology=True):
         """Returns a ``GeoSeries`` containing a simplified representation of
         each geometry.
 
@@ -4608,7 +4731,9 @@ GeometryCollection
         1              LINESTRING (0 0, 0 20)
         dtype: geometry
         """
-        return _delegate_geo_method("simplify", self, *args, **kwargs)
+        return _delegate_geo_method(
+            "simplify", self, tolerance=tolerance, preserve_topology=preserve_topology
+        )
 
     def relate(self, other, align=None):
         """
@@ -4714,6 +4839,118 @@ GeometryCollection
 
         """
         return _binary_op("relate", self, other, align)
+
+    def relate_pattern(self, other, pattern, align=None):
+        """
+        Returns True if the DE-9IM string code for the relationship between
+        the geometries satisfies the pattern, else False.
+
+        This function compares the DE-9IM code string for two geometries
+        against a specified pattern. If the string matches the pattern then
+        ``True`` is returned, otherwise ``False``. The pattern specified can
+        be an exact match (``0``, ``1`` or ``2``), a boolean match
+        (uppercase ``T`` or ``F``), or a wildcard (``*``). For example,
+        the pattern for the ``within`` predicate is ``'T*F**F***'``
+
+        The operation works on a 1-to-1 row-wise manner:
+
+        .. image:: ../../../_static/binary_op-01.svg
+           :align: center
+
+        Parameters
+        ----------
+        other : BaseGeometry or GeoSeries
+            The other geometry to be tested agains the pattern.
+        pattern : str
+            The DE-9IM pattern to test against.
+        align : bool | None (default None)
+            If True, automatically aligns GeoSeries based on their indices.
+            If False, the order of elements is preserved. None defaults to True.
+
+        Returns
+        -------
+        Series
+
+        Examples
+        --------
+        >>> from shapely.geometry import Polygon, LineString, Point
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0, 0), (2, 2), (0, 2)]),
+        ...         Polygon([(0, 0), (2, 2), (0, 2)]),
+        ...         LineString([(0, 0), (2, 2)]),
+        ...         LineString([(2, 0), (0, 2)]),
+        ...         Point(0, 1),
+        ...     ],
+        ... )
+        >>> s2 = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0, 0), (1, 1), (0, 1)]),
+        ...         LineString([(1, 0), (1, 3)]),
+        ...         LineString([(2, 0), (0, 2)]),
+        ...         Point(1, 1),
+        ...         Point(0, 1),
+        ...     ],
+        ...     index=range(1, 6),
+        ... )
+
+        >>> s
+        0    POLYGON ((0 0, 2 2, 0 2, 0 0))
+        1    POLYGON ((0 0, 2 2, 0 2, 0 0))
+        2             LINESTRING (0 0, 2 2)
+        3             LINESTRING (2 0, 0 2)
+        4                       POINT (0 1)
+        dtype: geometry
+
+        >>> s2
+        1    POLYGON ((0 0, 1 1, 0 1, 0 0))
+        2             LINESTRING (1 0, 1 3)
+        3             LINESTRING (2 0, 0 2)
+        4                       POINT (1 1)
+        5                       POINT (0 1)
+        dtype: geometry
+
+        We can check the relate pattern of each geometry and a single
+        shapely geometry:
+
+        .. image:: ../../../_static/binary_op-03.svg
+           :align: center
+
+        >>> s.relate_pattern(Polygon([(0, 0), (1, 1), (0, 1)]), "2*T***F**")
+        0     True
+        1     True
+        2    False
+        3    False
+        4    False
+        dtype: bool
+
+        We can also check two GeoSeries against each other, row by row.
+        The GeoSeries above have different indices. We can either align both GeoSeries
+        based on index values and compare elements with the same index using
+        ``align=True`` or ignore index and compare elements based on their matching
+        order using ``align=False``:
+
+        .. image:: ../../../_static/binary_op-02.svg
+
+        >>> s.relate_pattern(s2, "TF******T", align=True)
+        0    False
+        1    False
+        2     True
+        3     True
+        4    False
+        5    False
+        dtype: bool
+
+        >>> s.relate_pattern(s2, "TF******T", align=False)
+        0    False
+        1     True
+        2     True
+        3     True
+        4     True
+        dtype: bool
+
+        """
+        return _binary_op("relate_pattern", self, other, pattern=pattern, align=align)
 
     def project(self, other, normalized=False, align=None):
         """
@@ -4856,15 +5093,8 @@ GeometryCollection
         2                POINT (0 2)
         dtype: geometry
         """
-        if isinstance(distance, pd.Series):
-            if not self.index.equals(distance.index):
-                raise ValueError(
-                    "Index values of distance sequence does "
-                    "not match index values of the GeoSeries"
-                )
-            distance = np.asarray(distance)
         return _delegate_geo_method(
-            "interpolate", self, distance, normalized=normalized
+            "interpolate", self, distance=distance, normalized=normalized
         )
 
     def affine_transform(self, matrix):
@@ -4907,7 +5137,7 @@ GeometryCollection
         dtype: geometry
 
         """  # (E501 link is longer than max line length)
-        return _delegate_geo_method("affine_transform", self, matrix)
+        return _delegate_geo_method("affine_transform", self, matrix=matrix)
 
     def translate(self, xoff=0.0, yoff=0.0, zoff=0.0):
         """Returns a ``GeoSeries`` with translated geometries.
@@ -4945,7 +5175,7 @@ GeometryCollection
         dtype: geometry
 
         """  # (E501 link is longer than max line length)
-        return _delegate_geo_method("translate", self, xoff, yoff, zoff)
+        return _delegate_geo_method("translate", self, xoff=xoff, yoff=yoff, zoff=zoff)
 
     def rotate(self, angle, origin="center", use_radians=False):
         """Returns a ``GeoSeries`` with rotated geometries.
@@ -4996,7 +5226,7 @@ GeometryCollection
 
         """
         return _delegate_geo_method(
-            "rotate", self, angle, origin=origin, use_radians=use_radians
+            "rotate", self, angle=angle, origin=origin, use_radians=use_radians
         )
 
     def scale(self, xfact=1.0, yfact=1.0, zfact=1.0, origin="center"):
@@ -5045,7 +5275,9 @@ GeometryCollection
         2    POLYGON ((6 -3, 8 0, 6 3, 6 -3))
         dtype: geometry
         """
-        return _delegate_geo_method("scale", self, xfact, yfact, zfact, origin=origin)
+        return _delegate_geo_method(
+            "scale", self, xfact=xfact, yfact=yfact, zfact=zfact, origin=origin
+        )
 
     def skew(self, xs=0.0, ys=0.0, origin="center", use_radians=False):
         """Returns a ``GeoSeries`` with skewed geometries.
@@ -5097,7 +5329,7 @@ GeometryCollection
         dtype: geometry
         """
         return _delegate_geo_method(
-            "skew", self, xs, ys, origin=origin, use_radians=use_radians
+            "skew", self, xs=xs, ys=ys, origin=origin, use_radians=use_radians
         )
 
     @property
@@ -5359,6 +5591,67 @@ GeometryCollection
             )
 
         return GeoSeries(result, name="sampled_points", crs=self.crs, index=self.index)
+
+    def build_area(self, node=True):
+        """Creates an areal geometry formed by the constituent linework.
+
+        Builds areas from the GeoSeries that contain linework which represents the edges
+        of a planar graph. Any geometry type may be provided as input; only the
+        constituent lines and rings will be used to create the output polygons. All
+        geometries within the GeoSeries are considered together and the resulting
+        polygons therefore do not map 1:1 to input geometries.
+
+        This function converts inner rings into holes. To turn inner rings into polygons
+        as well, use polygonize.
+
+        Unless you know that the input GeoSeries represents a planar graph with a clean
+        topology (e.g. there is a node on both lines where they intersect), it is
+        recommended to use ``node=True`` which performs noding prior to building areal
+        geometry. Using ``node=False`` will provide performance benefits but may result
+        in incorrect polygons if the input is not of the proper topology.
+
+        If the input linework crosses, this function may produce invalid polygons. Use
+        :meth:`GeoSeries.make_valid` to ensure valid geometries.
+
+        Parameters
+        ----------
+        node : bool, default True
+            Perform noding prior to building the areas, by default True.
+
+        Returns
+        -------
+        GeoSeries
+            GeoSeries with polygons
+
+        Examples
+        --------
+        >>> from shapely.geometry import LineString, Polygon
+        >>> s = geopandas.GeoSeries([
+        ...     LineString([(18, 4), (4, 2), (2, 9)]),
+        ...     LineString([(18, 4), (16, 16)]),
+        ...     LineString([(16, 16), (8, 19), (8, 12), (2, 9)]),
+        ...     LineString([(8, 6), (12, 13), (15, 8)]),
+        ...     LineString([(8, 6), (15, 8)]),
+        ...     LineString([(0, 0), (0, 3), (3, 3), (3, 0), (0, 0)]),
+        ...     Polygon([(1, 1), (2, 2), (1, 2), (1, 1)]),
+        ... ])
+        >>> s.build_area()
+        0    POLYGON ((0 3, 3 3, 3 0, 0 0, 0 3), (1 1, 2 2,...
+        1    POLYGON ((4 2, 2 9, 8 12, 8 19, 16 16, 18 4, 4...
+        Name: polygons, dtype: geometry
+
+        """
+        from .geoseries import GeoSeries
+
+        if node:
+            geometry_input = self.geometry.union_all()
+        else:
+            geometry_input = shapely.geometrycollections(self.geometry.values._data)
+
+        polygons = shapely.build_area(geometry_input)
+        return GeoSeries(polygons, crs=self.crs, name="polygons").explode(
+            ignore_index=True
+        )
 
 
 def _get_index_for_parts(orig_idx, outer_idx, ignore_index, index_parts):
