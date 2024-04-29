@@ -5663,9 +5663,9 @@ GeometryCollection
             dangles = GeoSeries(dangles, crs=self.crs, name="dangles").explode(
                 ignore_index=True
             )
-            invalid = GeoSeries(
-                invalid, crs=self.crs, name="invalid_rings"
-            ).explode(ignore_index=True)
+            invalid = GeoSeries(invalid, crs=self.crs, name="invalid_rings").explode(
+                ignore_index=True
+            )
             polygons = GeoSeries(polygons, crs=self.crs, name="polygons").explode(
                 ignore_index=True
             )
