@@ -1977,6 +1977,67 @@ class TestGeomMethods:
         assert_geoseries_equal(expected, self.g14.line_merge(directed=True))
 
     @pytest.mark.skipif(
+        shapely.geos_version < (3, 11, 0), reason="different order in GEOS<3.11"
+    )
+    def test_build_area(self):
+        # test with polgon in it
+        s = GeoSeries.from_wkt(
+            [
+                "LINESTRING (18 4, 4 2, 2 9)",
+                "LINESTRING (18 4, 16 16)",
+                "LINESTRING (16 16, 8 19, 8 12, 2 9)",
+                "LINESTRING (8 6, 12 13, 15 8)",
+                "LINESTRING (8 6, 15 8)",
+                "LINESTRING (0 0, 0 3, 3 3, 3 0, 0 0)",
+                "POLYGON ((1 1, 2 2, 1 2, 1 1))",
+                "LINESTRING (10 7, 13 8, 12 10, 10 7)",
+            ],
+            crs=4326,
+        )
+
+        expected = GeoSeries.from_wkt(
+            [
+                "POLYGON ((0 3, 3 3, 3 0, 0 0, 0 3), (2 2, 1 2, 1 1, 2 2))",
+                "POLYGON ((13 8, 10 7, 12 10, 13 8))",
+                "POLYGON ((2 9, 8 12, 8 19, 16 16, 18 4, 4 2, 2 9), "
+                "(8 6, 15 8, 12 13, 8 6))",
+            ],
+            crs=4326,
+            name="polygons",
+        )
+        assert_geoseries_equal(expected, s.build_area())
+
+        # test difference caused by nodign
+        s2 = GeoSeries.from_wkt(
+            [
+                "LINESTRING (8 6, 12 13, 15 8)",
+                "LINESTRING (8 6, 15 8)",
+                "LINESTRING (0 0, 0 15, 12 15, 12 0, 0 0)",
+                "LINESTRING (10 7, 13 8, 12 10, 10 7)",
+            ],
+            crs=4326,
+        )
+
+        noded = GeoSeries.from_wkt(
+            ["POLYGON ((12 0, 0 0, 0 15, 12 15, 12 13, 15 8, 12 7.142857, 12 0))"],
+            crs=4326,
+            name="polygons",
+        )
+        assert_geoseries_equal(noded, s2.build_area(node=True), check_less_precise=True)
+
+        non_noded = GeoSeries.from_wkt(
+            [
+                "POLYGON ((0 15, 12 15, 12 13, 15 8, 12 7.142857, 12 0, 0 0, 0 15), "
+                "(12 7.666667, 13 8, 12 10, 12 7.666667))"
+            ],
+            crs=4326,
+            name="polygons",
+        )
+        assert_geoseries_equal(
+            non_noded, s2.build_area(node=False), check_less_precise=True
+        )
+
+    @pytest.mark.skipif(
         shapely.geos_version < (3, 9, 5), reason="Empty geom bug in GEOS<3.9.5"
     )
     def test_set_precision(self):

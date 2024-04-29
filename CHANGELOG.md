@@ -24,7 +24,6 @@ API changes:
 
 New methods:
 
-
 - Added `count_geometries` method from shapely to GeoSeries/GeoDataframe (#3154).
 - Added `count_interior_rings` method from shapely to GeoSeries/GeoDataframe (#3154)
 - Added `relate_pattern` method from shapely to GeoSeries/GeoDataframe (#3211).
@@ -37,6 +36,7 @@ New methods:
 - Added `is_closed` attribute from shapely to GeoSeries/GeoDataframe (#3092).
 - Added `force_2d` and `force_3d` methods from shapely to GeoSeries/GeoDataframe (#3090).
 - Added `contains_properly` method from shapely to GeoSeries/GeoDataframe (#3105).
+- Added `build_area` method exposing `build_area` shapely to GeoSeries/GeoDataframe (#3202).
 - Added `snap` method from shapely to GeoSeries/GeoDataframe (#3086).
 - Added `transform` method from shapely to GeoSeries/GeoDataFrame (#3075).
 - Added `dwithin` method to check for a "distance within" predicate on

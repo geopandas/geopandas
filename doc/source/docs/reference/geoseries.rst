@@ -99,6 +99,7 @@ Constructive methods and attributes
 
    GeoSeries.boundary
    GeoSeries.buffer
+   GeoSeries.build_area
    GeoSeries.centroid
    GeoSeries.concave_hull
    GeoSeries.convex_hull
