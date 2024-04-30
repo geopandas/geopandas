@@ -181,9 +181,17 @@ def _basic_checks(left_df, right_df, how, lsuffix, rsuffix, on_attribute=None):
 
     if on_attribute:
         for attr in on_attribute:
-            if not ((attr in left_df) and (attr in right_df)):
+            if (attr not in left_df) and (attr not in right_df):
                 raise ValueError(
-                    f"Expected column {attr} is missing from one of the dataframes"
+                    f"Expected column {attr} is missing from both of the dataframes."
+                )
+            if attr not in left_df:
+                raise ValueError(
+                    f"Expected column {attr} is missing from the left dataframe."
+                )
+            if attr not in right_df:
+                raise ValueError(
+                    f"Expected column {attr} is missing from the right dataframe."
                 )
             if attr in (left_df.geometry.name, right_df.geometry.name):
                 raise ValueError(

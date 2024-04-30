@@ -2125,6 +2125,16 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
             Suffix to apply to overlapping column names (left GeoDataFrame).
         rsuffix : string, default 'right'
             Suffix to apply to overlapping column names (right GeoDataFrame).
+        distance : number or array_like, optional
+            Distance(s) around each input geometry within which to query the tree
+            for the 'dwithin' predicate. If array_like, must be
+            one-dimesional with length equal to length of left GeoDataFrame.
+            Required if ``predicate='dwithin'``.
+        on_attribute : string, list or tuple
+            Column or names to join on as an additional join restriction on top
+            of the spatial predicate. These must be found in both DataFrames.
+            If set, observations are joined only if the predicate applies
+            and values in specified columns match.
 
         Examples
         --------
@@ -2226,6 +2236,9 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
             If True, the nearest geometries that are equal to the input geometry
             will not be returned, default False.
             Requires Shapely >= 2.0
+        on_attribute : string, list or tuple, default None
+            column name in both dataframes where a join will occur
+            only if the entry in the on_attribute is the same.
 
         Examples
         --------

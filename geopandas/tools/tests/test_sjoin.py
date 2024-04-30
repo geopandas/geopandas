@@ -481,6 +481,7 @@ class TestSpatialJoin:
         assert (
             result["country"].astype(str).str[0] == result["name"].astype(str).str[0]
         ).all()
+        assert result.shape == (23, 5)
 
     @pytest.mark.parametrize(
         "attr1_key_change_dict, attr2_key_change_dict",
@@ -520,7 +521,6 @@ class TestSpatialJoin:
         assert (["A", "B"] == joined["attr_tracker"].values).all()
 
     def test_sjoin_multiple_attributes_check_header(self, dfs_shared_attribute):
-
         left_gdf, right_gdf = dfs_shared_attribute
         joined = sjoin(left_gdf, right_gdf, on_attribute=["attr1"])
 
@@ -530,15 +530,26 @@ class TestSpatialJoin:
 
     def test_sjoin_error_column_does_not_exist(self, dfs_shared_attribute):
         left_gdf, right_gdf = dfs_shared_attribute
-        right_gdf = right_gdf.drop("attr1", axis=1)
+        right_gdf_dropped_attr = right_gdf.drop("attr1", axis=1)
+        left_gdf_dropped_attr = left_gdf.drop("attr1", axis=1)
 
         with pytest.raises(
             ValueError,
-            match="Expected column {} is missing from one of the dataframes".format(
-                "attr1"
-            ),
+            match="Expected column attr1 is missing from the right dataframe.",
         ):
-            sjoin(left_gdf, right_gdf, on_attribute="attr1")
+            sjoin(left_gdf, right_gdf_dropped_attr, on_attribute="attr1")
+
+        with pytest.raises(
+            ValueError,
+            match="Expected column attr1 is missing from the left dataframe.",
+        ):
+            sjoin(left_gdf_dropped_attr, right_gdf, on_attribute="attr1")
+
+        with pytest.raises(
+            ValueError,
+            match="Expected column attr1 is missing from both of the dataframes.",
+        ):
+            sjoin(left_gdf_dropped_attr, right_gdf_dropped_attr, on_attribute="attr1")
 
     def test_sjoin_error_use_geometry_column(self, dfs_shared_attribute):
         left_gdf, right_gdf = dfs_shared_attribute
@@ -1415,16 +1426,27 @@ class TestNearest:
 
     def test_sjoin_nearest_error_column_does_not_exist(self, dfs_shared_attribute):
         left_gdf, right_gdf = dfs_shared_attribute
-        right_gdf = right_gdf.drop("attr1", axis=1)
+        right_gdf_dropped_attr = right_gdf.drop("attr1", axis=1)
+        left_gdf_dropped_attr = left_gdf.drop("attr1", axis=1)
 
         with pytest.raises(
             ValueError,
-            match="Expected column {} is missing from one of the dataframes".format(
-                "attr1"
-            ),
+            match="Expected column attr1 is missing from the right dataframe.",
+        ):
+            sjoin_nearest(left_gdf, right_gdf_dropped_attr, on_attribute="attr1")
+
+        with pytest.raises(
+            ValueError,
+            match="Expected column attr1 is missing from the left dataframe.",
+        ):
+            sjoin_nearest(left_gdf_dropped_attr, right_gdf, on_attribute="attr1")
+
+        with pytest.raises(
+            ValueError,
+            match="Expected column attr1 is missing from both of the dataframes.",
         ):
             sjoin_nearest(
-                left_gdf, right_gdf, distance_col="dist", on_attribute="attr1"
+                left_gdf_dropped_attr, right_gdf_dropped_attr, on_attribute="attr1"
             )
 
     def test_sjoin_nearest_error_use_geometry_column(self, dfs_shared_attribute):
