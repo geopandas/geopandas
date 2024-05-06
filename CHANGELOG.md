@@ -71,7 +71,8 @@ Backwards incompatible API changes:
   different, then both columns will be preserved in the GeoDataFrame. To replicate the previous
   behaviour, you can instead call `gdf.set_geometry(ser.rename(gdf.active_geometry_name))` (#3237).
 - `delaunay_triangles` now consider all geometries together when creating the Delaunay trianguation
-  instead of performing the operation element-wise (#3273)
+  instead of performing the operation element-wise. If you want to generate a Delaunay
+  triangles for each geometry separately, use ``shapely.delaunay_triangles`` instead. (#3273)
 
 
 Potentially breaking changes:
