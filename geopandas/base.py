@@ -980,14 +980,143 @@ GeometryCollection
         7    POLYGON ((2 0, 2 1, 1 1, 2 0))
         8    POLYGON ((2 0, 1 1, 1 0, 2 0))
         dtype: geometry
+
+        See also
+        --------
+        GeoSeries.voronoi_polygons : Voronoi diagram around vertices
         """
         from .geoseries import GeoSeries
 
         geometry_input = shapely.geometrycollections(self.geometry.values._data)
 
-        voronoi = shapely.delaunay_triangles(
+        delaunay = shapely.delaunay_triangles(
             geometry_input,
             tolerance=tolerance,
+            only_edges=only_edges,
+        )
+        return GeoSeries(delaunay, crs=self.crs).explode(ignore_index=True)
+
+    def voronoi_polygons(self, tolerance=0.0, extend_to=None, only_edges=False):
+        """Returns a ``GeoSeries`` consisting of objects representing
+        the computed Voronoi diagram around the vertices of an input geometry.
+
+        All geometries within the GeoSeries are considered together within a single
+        Voronoi diagram. The resulting geometries therefore do not necessarily map 1:1
+        to input geometries. Note that each vertex of a geometry is considered a site
+        for the Voronoi diagram, so the diagram will be constructed around the vertices
+        of each geometry.
+
+        Notes
+        -----
+        The order of polygons in the output currently does not correspond to the order
+        of input vertices.
+
+        If you want to generate a Voronoi diagram for each geometry separately, use
+        :func:`shapely.voronoi_polygons` instead.
+
+        Parameters
+        ----------
+        tolerance : float, default 0.0
+            Snap input vertices together if their distance is less than this value.
+        extend_to : shapely.Geometry, default None
+            If set, the Voronoi diagram will be extended to cover the
+            envelope of this geometry (unless this envelope is smaller than the input
+            geometry).
+        only_edges : bool (optional, default False)
+            If set to True, the diagram will return LineStrings instead
+            of Polygons.
+
+        Examples
+        --------
+        The most common use case is to generate polygons representing the Voronoi
+        diagram around a set of points:
+
+        >>> from shapely import LineString, MultiPoint, Point, Polygon
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Point(1, 1),
+        ...         Point(2, 2),
+        ...         Point(1, 3),
+        ...         Point(0, 2),
+        ...     ]
+        ... )
+        >>> s
+        0    POINT (1 1)
+        1    POINT (2 2)
+        2    POINT (1 3)
+        3    POINT (0 2)
+        dtype: geometry
+
+        By default, you get back a GeoSeries of polygons:
+
+        >>> s.voronoi_polygons()
+        0     POLYGON ((-2 5, 1 2, -2 -1, -2 5))
+        1        POLYGON ((4 5, 1 2, -2 5, 4 5))
+        2    POLYGON ((-2 -1, 1 2, 4 -1, -2 -1))
+        3       POLYGON ((4 -1, 1 2, 4 5, 4 -1))
+        dtype: geometry
+
+        If you set only_edges to True, you get back LineStrings representing the
+        edges of the Voronoi diagram:
+
+        >>> s.voronoi_polygons(only_edges=True)
+        0     LINESTRING (-2 5, 1 2)
+        1    LINESTRING (1 2, -2 -1)
+        2      LINESTRING (4 5, 1 2)
+        3     LINESTRING (1 2, 4 -1)
+        dtype: geometry
+
+        You can also extend each diagram to a given geometry:
+
+        >>> limit = Polygon([(-10, -10), (0, 15), (15, 15), (15, 0)])
+        >>> s.voronoi_polygons(extend_to=limit)
+        0              POLYGON ((-10 13, 1 2, -10 -9, -10 13))
+        1    POLYGON ((15 15, 15 -10, 13 -10, 1 2, 14 15, 1...
+        2    POLYGON ((-10 -10, -10 -9, 1 2, 13 -10, -10 -10))
+        3       POLYGON ((-10 15, 14 15, 1 2, -10 13, -10 15))
+        dtype: geometry
+
+        The method supports any geometry type but keep in mind that the underlying
+        algorithm is based on the vertices of the input geometries only and does not
+        consider edge segments between vertices.
+
+        >>> s2 = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0, 0), (1, 1), (0, 1)]),
+        ...         LineString([(1, 0), (2, 1), (1, 2)]),
+        ...         MultiPoint([(2, 3), (2, 0), (3, 1)]),
+        ...     ]
+        ... )
+        >>> s2
+        0      POLYGON ((0 0, 1 1, 0 1, 0 0))
+        1          LINESTRING (1 0, 2 1, 1 2)
+        2    MULTIPOINT ((2 3), (2 0), (3 1))
+        dtype: geometry
+
+        >>> s2.voronoi_polygons()
+        0    POLYGON ((1.5 1.5, 1.5 0.5, 0.5 0.5, 0.5 1.5, ...
+        1    POLYGON ((1.5 0.5, 1.5 1.5, 2 2, 2.5 2, 2.5 0....
+        2    POLYGON ((-3 -3, -3 0.5, 0.5 0.5, 0.5 -3, -3 -3))
+        3    POLYGON ((0.5 -3, 0.5 0.5, 1.5 0.5, 1.5 -3, 0....
+        4     POLYGON ((-3 5, 0.5 1.5, 0.5 0.5, -3 0.5, -3 5))
+        5    POLYGON ((-3 6, -2 6, 2 2, 1.5 1.5, 0.5 1.5, -...
+        6    POLYGON ((1.5 -3, 1.5 0.5, 2.5 0.5, 6 -3, 1.5 ...
+        7       POLYGON ((6 6, 6 3.75, 2.5 2, 2 2, -2 6, 6 6))
+        8       POLYGON ((6 -3, 2.5 0.5, 2.5 2, 6 3.75, 6 -3))
+        dtype: geometry
+
+        See also
+        --------
+        GeoSeries.delaunay_triangles : Delaunay triangulation around vertices
+        """
+        from .geoseries import GeoSeries
+
+        geometry_input = shapely.geometrycollections(self.geometry.values._data)
+
+        voronoi = shapely.voronoi_polygons(
+            geometry_input,
+            tolerance=tolerance,
+            extend_to=extend_to,
             only_edges=only_edges,
         )
 

@@ -1128,6 +1128,45 @@ class TestGeomMethods:
         dlt = self.g5.delaunay_triangles(only_edges=True)
         assert_geoseries_equal(expected, dlt)
 
+    def test_voronoi_polygons(self):
+        expected = GeoSeries.from_wkt(
+            [
+                "POLYGON ((2 2, 2 0.5, 0.5 0.5, 0.5 2, 2 2))",
+                "POLYGON ((-1 2, 0.5 2, 0.5 0.5, -1 0.5, -1 2))",
+                "POLYGON ((-1 -1, -1 0.5, 0.5 0.5, 0.5 -1, -1 -1))",
+                "POLYGON ((2 -1, 0.5 -1, 0.5 0.5, 2 0.5, 2 -1))",
+            ],
+            crs=self.g1.crs,
+        )
+        vp = self.g1.voronoi_polygons()
+        assert_geoseries_equal(expected, vp)
+
+    def test_voronoi_polygons_only_edges(self):
+        expected = GeoSeries.from_wkt(
+            [
+                "LINESTRING (0.5 0.5, 0.5 2)",
+                "LINESTRING (2 0.5, 0.5 0.5)",
+                "LINESTRING (0.5 0.5, -1 0.5)",
+                "LINESTRING (0.5 0.5, 0.5 -1)",
+            ],
+            crs=self.g1.crs,
+        )
+        vp = self.g1.voronoi_polygons(only_edges=True)
+        assert_geoseries_equal(expected, vp, check_less_precise=True)
+
+    def test_voronoi_polygons_extend_to(self):
+        expected = GeoSeries.from_wkt(
+            [
+                "POLYGON ((3 3, 3 0.5, 0.5 0.5, 0.5 3, 3 3))",
+                "POLYGON ((-2 3, 0.5 3, 0.5 0.5, -2 0.5, -2 3))",
+                "POLYGON ((-2 -1, -2 0.5, 0.5 0.5, 0.5 -1, -2 -1))",
+                "POLYGON ((3 -1, 0.5 -1, 0.5 0.5, 3 0.5, 3 -1))",
+            ],
+            crs=self.g1.crs,
+        )
+        vp = self.g1.voronoi_polygons(extend_to=box(-2, 0, 3, 3))
+        assert_geoseries_equal(expected, vp)
+
     def test_exterior(self):
         exp_exterior = GeoSeries([LinearRing(p.boundary) for p in self.g3])
         for expected, computed in zip(exp_exterior, self.g3.exterior):

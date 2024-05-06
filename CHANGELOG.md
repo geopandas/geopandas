@@ -35,6 +35,7 @@ New methods:
 - Added `is_ccw` method from shapely to GeoSeries/GeoDataframe (#3027).
 - Added `is_closed` attribute from shapely to GeoSeries/GeoDataframe (#3092).
 - Added `force_2d` and `force_3d` methods from shapely to GeoSeries/GeoDataframe (#3090).
+- Added `voronoi_polygons` method from shapely to GeoSeries/GeoDataframe (#3177).
 - Added `contains_properly` method from shapely to GeoSeries/GeoDataframe (#3105).
 - Added `build_area` method exposing `build_area` shapely to GeoSeries/GeoDataframe (#3202).
 - Added `snap` method from shapely to GeoSeries/GeoDataframe (#3086).
