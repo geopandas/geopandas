@@ -2,6 +2,7 @@ import datetime
 import io
 import os
 import pathlib
+import shutil
 import tempfile
 from collections import OrderedDict
 
@@ -691,6 +692,17 @@ def test_allow_legacy_gdal_path(engine, nybb_filename):
     # Construct a GDAL-style zip path.
     path = "/vsizip/" + nybb_filename[6:]
     gdf = read_file(path, engine=engine)
+    assert isinstance(gdf, geopandas.GeoDataFrame)
+
+
+def test_read_file_with_hash_in_path(engine, nybb_filename, tmp_path):
+    if engine == "pyogrio":
+        pytest.xfail("upstream bug")
+    folder_with_hash = tmp_path / "path with # present"
+    folder_with_hash.mkdir(exist_ok=True, parents=True)
+    read_path = folder_with_hash / "nybb.zip"
+    shutil.copy(nybb_filename[6:], read_path)
+    gdf = read_file(read_path, engine=engine)
     assert isinstance(gdf, geopandas.GeoDataFrame)
 
 
