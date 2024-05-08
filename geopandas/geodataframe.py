@@ -1102,7 +1102,7 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
 
         return df
 
-    def to_arrow(self, index=None, geometry_encoding="WKB"):
+    def to_arrow(self, index=None, geometry_encoding="WKB", interleaved=True):
         """Encode a GeoDataFrame to GeoArrow format.
 
         Parameters
@@ -1127,6 +1127,7 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
             self,
             index=index,
             geometry_encoding=geometry_encoding,
+            interleaved=interleaved,
         )
 
     def to_parquet(
