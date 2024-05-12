@@ -5,6 +5,8 @@ import pandas.testing
 import pytest
 from shapely.geometry import Point
 
+# Use this import to register the "geo" accessor.
+import geopandas.accessors  # noqa # pylint: disable=unused-import
 from geopandas.array import GeometryDtype
 
 
