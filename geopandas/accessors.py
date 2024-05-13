@@ -20,9 +20,7 @@ class GeoSeriesAccessor:
 
     def __init__(self, series):
         if not isinstance(series.dtype, GeometryDtype):
-            raise AttributeError(
-                "Can only use .geo accessor with geometry values"
-            )
+            raise AttributeError("Can only use .geo accessor with geometry values")
         
         self._geoseries = geopandas.geoseries.GeoSeries(series)
     
