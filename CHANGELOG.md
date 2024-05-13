@@ -1,6 +1,6 @@
 # Changelog
 
-## Version 1.0.0-alpha1 (Apr 13, 2024)
+## Version 1.0.0
 
 Notes on dependencies:
 
@@ -123,6 +123,8 @@ Deprecations and compatibility notes:
   geo_col_name = gdf.active_geometry_name
   gdf.set_geometry(new_geo_col).drop(columns=geo_col_name).rename_geometry(geo_col_name)
   ```
+- The `geopandas.use_pygeos` option has been deprecated and will be removed in GeoPandas
+  1.1 (#3283)
 
 ## Version 0.14.4 (April 26, 2024)
 
