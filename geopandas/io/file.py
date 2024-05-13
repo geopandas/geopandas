@@ -81,10 +81,10 @@ def _import_pyogrio():
         except ImportError as err:
             pyogrio = False
             pyogrio_import_error = str(err)
-
-        PYOGRIO_GE_081 = Version(Version(pyogrio.__version__).base_version) >= Version(
-            "0.8.1"
-        )
+        else:
+            PYOGRIO_GE_081 = Version(
+                Version(pyogrio.__version__).base_version
+            ) >= Version("0.8.1")
 
 
 def _check_fiona(func):
