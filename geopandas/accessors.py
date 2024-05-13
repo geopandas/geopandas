@@ -23,6 +23,6 @@ class GeoSeriesAccessor:
             raise AttributeError("Can only use .geo accessor with geometry values")
 
         self._geoseries = geopandas.geoseries.GeoSeries(series)
-    
+
     def __getattr__(self, name):
         return getattr(self._geoseries, name)
