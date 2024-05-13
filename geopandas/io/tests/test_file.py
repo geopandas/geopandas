@@ -18,7 +18,7 @@ from shapely.geometry import Point, Polygon, box, mapping
 import geopandas
 from geopandas import GeoDataFrame, read_file
 from geopandas._compat import PANDAS_GE_20, HAS_PYPROJ
-from geopandas.io.file import _detect_driver, _EXTENSION_TO_DRIVER
+from geopandas.io.file import _detect_driver, _EXTENSION_TO_DRIVER, PYOGRIO_GE_081
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 from geopandas.tests.util import PACKAGE_DIR, validate_boro_df
 
@@ -695,9 +695,8 @@ def test_allow_legacy_gdal_path(engine, nybb_filename):
     assert isinstance(gdf, geopandas.GeoDataFrame)
 
 
+@pytest.mark.skipif(not PYOGRIO_GE_081, reason="bug fixed in pyogrio 0.8.1")
 def test_read_file_with_hash_in_path(engine, nybb_filename, tmp_path):
-    if engine == "pyogrio":
-        pytest.xfail("upstream bug")
     folder_with_hash = tmp_path / "path with # present"
     folder_with_hash.mkdir(exist_ok=True, parents=True)
     read_path = folder_with_hash / "nybb.zip"
