@@ -20,6 +20,8 @@ from geopandas.array import to_wkb
 from geopandas.io.arrow import (
     METADATA_VERSION,
     SUPPORTED_VERSIONS,
+    _check_bbox_column_in_parquet,
+    _convert_bbox_to_parquet_filter,
     _create_metadata,
     _decode_metadata,
     _encode_metadata,
@@ -988,3 +990,219 @@ def test_read_parquet_geoarrow(geometry_type):
         / f"data-{geometry_type}-encoding_wkb.parquet"
     )
     assert_geodataframe_equal(result, expected, check_crs=True)
+
+
+@pytest.mark.xfail()
+def test_to_parquet_bbox_structure_and_metadata(tmpdir, naturalearth_lowres):
+    # check metadata being written for covering.
+    from pyarrow import parquet
+
+    df = read_file(naturalearth_lowres)
+    filename = os.path.join(str(tmpdir), "test.pq")
+    df.to_parquet(filename, write_bbox_covering="bbox_column_name")
+    assert "bbox_column_name" in df.columns
+    assert [*df["bbox_column_name"][0].keys()] == ["xmin", "ymin", "xmax", "ymax"]
+
+    table = parquet.read_table(filename)
+    metadata = json.loads(table.schema.metadata[b"geo"].decode("utf-8"))
+    assert metadata["columns"]["geometry"]["covering"] == {
+        "bbox": {
+            "xmin": ["bbox_column_name", "xmin"],
+            "ymin": ["bbox_column_nam", "ymin"],
+            "xmax": ["bbox_column_name", "xmax"],
+            "ymax": ["bbox_column_name", "ymax"],
+        }
+    }
+
+
+@pytest.mark.xfail()
+@pytest.mark.parametrize(
+    "geometry, expected_bbox",
+    [
+        (Point(1, 3), {"xmin": 1.0, "ymin": 3.0, "xmax": 1.0, "ymax": 3.0}),
+        (
+            LineString([(1, 1), (3, 3)]),
+            {"xmin": 1.0, "ymin": 1.0, "xmax": 3.0, "ymax": 3.0},
+        ),
+        (
+            Polygon([(2, 1), (1, 2), (2, 3), (3, 2)]),
+            {"xmin": 1.0, "ymin": 1.0, "xmax": 3.0, "ymax": 3.0},
+        ),
+        (
+            MultiPolygon([box(0, 0, 1, 1), box(2, 2, 3, 3), box(4, 4, 5, 5)]),
+            {"xmin": 0.0, "ymin": 0.0, "xmax": 5.0, "ymax": 5.0},
+        ),
+    ],
+    ids=["Point geometry", "LineString geometry", "Polygon", "Multipolygon"],
+)
+def test_to_parquet_bbox_values(tmpdir, geometry, expected_bbox):
+    # check bbox bounds being written for different geometry types.
+    df = GeoDataFrame(data=[[1, 2]], columns=["a", "b"], geometry=[geometry])
+    filename = os.path.join(str(tmpdir), "test.pq")
+
+    df.to_parquet(filename, write_bbox_covering="bbox_column_name")
+
+    assert df["bbox_column_name"][0] == expected_bbox
+
+
+@pytest.mark.xfail()
+@pytest.mark.skipif(
+    Version(pyarrow.__version__) < Version("9.0.0"), reason="needs pyarrow >= 9.0.0"
+)
+def test_read_parquet_bbox_single_point(tmpdir):
+    # confirm that on a single point, bbox will pick it up.
+    df = GeoDataFrame(data=[[1, 2]], columns=["a", "b"], geometry=[Point(1, 1)])
+    filename = os.path.join(str(tmpdir), "test.pq")
+    df.to_parquet(filename, write_bbox_covering="bbox_column_name")
+
+    pq_df = read_parquet(filename, bbox=(1, 1, 1, 1))
+    assert len(pq_df) == 1
+    assert pq_df.geometry[0] == Point(1, 1)
+
+
+@pytest.mark.xfail()
+@pytest.mark.skipif(
+    Version(pyarrow.__version__) < Version("9.0.0"), reason="needs pyarrow >= 9.0.0"
+)
+def test_read_parquet_bbox(tmpdir, naturalearth_lowres):
+    # check bbox is being used to filter results.
+    df = read_file(naturalearth_lowres)
+    filename = os.path.join(str(tmpdir), "test.pq")
+    df.to_parquet(filename, write_bbox_covering="bbox_column_name")
+
+    pq_df = read_parquet(filename, bbox=(0, 0, 20, 20))
+
+    assert pq_df["name"].values.tolist() == [
+        "Benin",
+        "Nigeria",
+        "Cameroon",
+        "Eq. Guinea",
+    ]
+
+
+@pytest.mark.xfail()
+@pytest.mark.skipif(
+    Version(pyarrow.__version__) < Version("9.0.0"), reason="needs pyarrow >= 9.0.0"
+)
+def test_read_parquet_bbox_partitioned(tmpdir, naturalearth_lowres):
+    # check bbox is being used to filter results on partioned data.
+    df = read_file(naturalearth_lowres)
+
+    # manually create partitioned dataset
+    basedir = tmpdir / "partitioned_dataset"
+    basedir.mkdir()
+    df[:100].to_parquet(
+        basedir / "data1.parquet", write_bbox_covering="bbox_column_name"
+    )
+    df[100:].to_parquet(
+        basedir / "data2.parquet", write_bbox_covering="bbox_column_name"
+    )
+
+    pq_df = read_parquet(basedir, bbox=(0, 0, 20, 20))
+
+    assert pq_df["name"].values.tolist() == [
+        "Benin",
+        "Nigeria",
+        "Cameroon",
+        "Eq. Guinea",
+    ]
+
+
+@pytest.mark.xfail()
+def test_read_parquet_no_bbox(tmpdir, naturalearth_lowres):
+    # check error message when parquet lacks a bbox column but
+    # want to use bbox kwarg in read_parquet.
+    df = read_file(naturalearth_lowres)
+    filename = os.path.join(str(tmpdir), "test.pq")
+    df.to_parquet(filename, write_bbox_covering=None)
+    with pytest.raises(
+        ValueError, match="Parquet does not have a bbox covering column."
+    ):
+        read_parquet(filename, bbox=(0, 0, 20, 20))
+
+
+@pytest.mark.xfail()
+def test_read_parquet_no_bbox_partitioned(tmpdir, naturalearth_lowres):
+    # check error message when partitioned parquet data does not have
+    # a bbox column but want to use kwarg to read_parquet.
+    df = read_file(naturalearth_lowres)
+
+    # manually create partitioned dataset
+    basedir = tmpdir / "partitioned_dataset"
+    basedir.mkdir()
+    df[:100].to_parquet(basedir / "data1.parquet")
+    df[100:].to_parquet(basedir / "data2.parquet")
+
+    with pytest.raises(
+        ValueError, match="Parquet does not have a bbox covering column."
+    ):
+        read_parquet(basedir, bbox=(0, 0, 20, 20))
+
+
+@pytest.mark.xfail()
+def test_check_bbox_covering_column_in_parquet(tmpdir, naturalearth_lowres):
+    # check error message
+    from pyarrow import parquet
+
+    df = read_file(naturalearth_lowres)
+    filename = os.path.join(str(tmpdir), "test.pq")
+    df.to_parquet(filename, write_bbox_covering=None)
+    schema = parquet.read_schema(filename)
+
+    with pytest.raises(
+        ValueError, match="Parquet does not have a bbox covering column."
+    ):
+        _check_bbox_column_in_parquet(schema)
+
+
+@pytest.mark.xfail()
+@pytest.mark.skipif(
+    Version(pyarrow.__version__) < Version("9.0.0"), reason="needs pyarrow >= 9.0.0"
+)
+def test_convert_bbox_to_parquet_filter():
+    # check conversion of bbox to parquet filter expression
+    import pyarrow.compute as pc
+
+    bbox = (0, 0, 25, 35)
+    expected = (
+        (pc.field(("bbox_column_name", "xmin")) >= 0)
+        & (pc.field(("bbox_column_name", "ymin")) >= 0)
+        & (pc.field(("bbox_column_name", "xmax")) <= 25)
+        & (pc.field(("bbox_column_name", "ymax")) <= 35)
+    )
+    assert expected.equals(_convert_bbox_to_parquet_filter(bbox, "bbox_column_name"))
+
+
+@pytest.mark.xfail()
+def test_read_parquet_bbox_column_default_behaviour(tmpdir, naturalearth_lowres):
+    # check that bbox column is not read in by default
+
+    df = read_file(naturalearth_lowres)
+    filename = os.path.join(str(tmpdir), "test.pq")
+    df.to_parquet(filename, write_bbox_covering="bbox_column_name")
+    pq_df_default = read_parquet(filename)
+    assert "bbox_column_name" not in pq_df_default
+
+    pq_df_read_bbox = read_parquet(filename, read_bbox_column=True)
+    assert "bbox_column_name" in pq_df_read_bbox
+
+
+@pytest.mark.xfail()
+def test_read_parquet_colums_and_bbox(tmpdir, naturalearth_lowres):
+    # confirm columns list over-rides read_bbox_column argument.
+    # if column list includes 'bbox' and read_bbox_column=False -> include 'bbox'
+    # if column list excludes 'bbox' and read_bbox_column=True -> exclude 'bbox'
+    from pyarrow import parquet
+
+    df = read_file(naturalearth_lowres)
+    filename = os.path.join(str(tmpdir), "test.pq")
+    df.to_parquet(filename, write_bbox_covering="bbox_column_name")
+    schema = parquet.read_schema(filename)
+    columns = schema.names
+
+    pq_df1 = read_parquet(filename, columns=columns, read_bbox_column=False)
+    assert "bbox_column_name" in pq_df1
+
+    columns.remove("bbox_column_name")
+    pq_df2 = read_parquet(filename, columns=columns, read_bbox_column=True)
+    assert "bbox_column_name" not in pq_df2

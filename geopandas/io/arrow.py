@@ -754,3 +754,11 @@ def _validate_metadata(metadata):
         raise ValueError("Missing or malformed geo metadata in Parquet/Feather file")
 
     _validate_geo_metadata(decoded_geo_metadata)
+
+
+def _convert_bbox_to_parquet_filter():
+    pass
+
+
+def _check_bbox_column_in_parquet():
+    pass
