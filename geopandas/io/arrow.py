@@ -13,7 +13,6 @@ from geopandas._compat import import_optional_dependency
 from geopandas.array import from_shapely, from_wkb
 
 from .file import _expand_user
-from pyarrow import parquet
 
 METADATA_VERSION = "1.0.0"
 SUPPORTED_VERSIONS = ["0.1.0", "0.4.0", "1.0.0-beta.1", "1.0.0", "1.1.0"]
@@ -641,7 +640,6 @@ def _read_parquet(path, columns=None, storage_options=None, **kwargs):
     kwargs["use_pandas_metadata"] = True
     table = parquet.read_table(path, columns=columns, filesystem=filesystem, **kwargs)
 
-    metadata = None if metadata == table.schema.metadata else metadata
     return _arrow_to_geopandas(table, metadata)
 
 
@@ -716,7 +714,12 @@ def _read_feather(path, columns=None, **kwargs):
 
 
 def _read_parquet_metadata(path, filesystem):
-    import pyarrow.dataset as ds
+    ds = import_optional_dependency(
+        "pyarrow.dataset", extra="pyarrow is required for Feather support."
+    )
+    parquet = import_optional_dependency(
+        "pyarrow.parquet", extra="pyarrow is required for Parquet support."
+    )
 
     metadata = ds.dataset(path, filesystem=filesystem).schema.metadata
 
