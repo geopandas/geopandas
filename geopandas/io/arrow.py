@@ -443,23 +443,11 @@ def _arrow_to_geopandas(table, metadata=None):
 
     metadata = metadata or table.schema.metadata
 
-    if metadata is None or b"geo" not in metadata:
-        raise ValueError(
-            """Missing geo metadata in Parquet/Feather file.
-            Use pandas.read_parquet/read_feather() instead."""
-        )
-
-    try:
-        metadata = _decode_metadata(metadata.get(b"geo", b""))
-
-    except (TypeError, json.decoder.JSONDecodeError):
-        raise ValueError("Missing or malformed geo metadata in Parquet/Feather file")
-
-    _validate_geo_metadata(metadata)
+    geo_metadata = _decode_metadata(metadata.get(b"geo", b""))
 
     # Find all geometry columns that were read from the file.  May
     # be a subset if 'columns' parameter is used.
-    geometry_columns = df.columns.intersection(metadata["columns"])
+    geometry_columns = df.columns.intersection(geo_metadata["columns"])
 
     if not len(geometry_columns):
         raise ValueError(
@@ -468,7 +456,7 @@ def _arrow_to_geopandas(table, metadata=None):
             use pandas.read_parquet/read_feather() instead."""
         )
 
-    geometry = metadata["primary_column"]
+    geometry = geo_metadata["primary_column"]
 
     # Missing geometry likely indicates a subset of columns was read;
     # promote the first available geometry to the primary geometry.
@@ -485,7 +473,7 @@ def _arrow_to_geopandas(table, metadata=None):
 
     # Convert the WKB columns that are present back to geometry.
     for col in geometry_columns:
-        col_metadata = metadata["columns"][col]
+        col_metadata = geo_metadata["columns"][col]
         if "crs" in col_metadata:
             crs = col_metadata["crs"]
             if isinstance(crs, dict):
@@ -648,6 +636,7 @@ def _read_parquet(path, columns=None, storage_options=None, **kwargs):
 
     path = _expand_user(path)
     metadata = _read_parquet_metadata(path, filesystem)
+    _validate_metadata(metadata)
 
     kwargs["use_pandas_metadata"] = True
     table = parquet.read_table(path, columns=columns, filesystem=filesystem, **kwargs)
@@ -744,8 +733,6 @@ def _read_parquet_metadata(path, filesystem):
                 metadata = parquet.read_metadata(path).metadata
         except Exception:
             pass
-
-    _validate_metadata(metadata)
 
     return metadata
 
