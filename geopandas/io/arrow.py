@@ -232,7 +232,7 @@ def _validate_dataframe(df):
         raise ValueError("Index level names must be strings")
 
 
-def _validate_metadata(metadata):
+def _validate_geo_metadata(metadata):
     """Validate geo metadata.
     Must not be empty, and must contain the structure specified above.
 
@@ -455,7 +455,7 @@ def _arrow_to_geopandas(table, metadata=None):
     except (TypeError, json.decoder.JSONDecodeError):
         raise ValueError("Missing or malformed geo metadata in Parquet/Feather file")
 
-    _validate_metadata(metadata)
+    _validate_geo_metadata(metadata)
 
     # Find all geometry columns that were read from the file.  May
     # be a subset if 'columns' parameter is used.
@@ -757,6 +757,6 @@ def _read_parquet_metadata(path, filesystem):
     except (TypeError, json.decoder.JSONDecodeError):
         raise ValueError("Missing or malformed geo metadata in Parquet/Feather file")
 
-    _validate_metadata(decoded_geo_metadata)
+    _validate_geo_metadata(decoded_geo_metadata)
 
     return metadata

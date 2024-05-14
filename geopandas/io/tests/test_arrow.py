@@ -27,7 +27,8 @@ from geopandas.io.arrow import (
     _get_filesystem_path,
     _remove_id_from_member_of_ensembles,
     _validate_dataframe,
-    _validate_metadata,
+    _validate_geo_metadata,
+    METADATA_VERSION,
 )
 
 import pytest
@@ -210,8 +211,8 @@ def test_validate_dataframe(naturalearth_lowres):
         _validate_dataframe("not a dataframe")
 
 
-def test_validate_metadata_valid():
-    _validate_metadata(
+def test_validate_geo_metadata_valid():
+    _validate_geo_metadata(
         {
             "primary_column": "geometry",
             "columns": {"geometry": {"crs": None, "encoding": "WKB"}},
@@ -219,7 +220,7 @@ def test_validate_metadata_valid():
         }
     )
 
-    _validate_metadata(
+    _validate_geo_metadata(
         {
             "primary_column": "geometry",
             "columns": {"geometry": {"crs": None, "encoding": "WKB"}},
@@ -227,7 +228,7 @@ def test_validate_metadata_valid():
         }
     )
 
-    _validate_metadata(
+    _validate_geo_metadata(
         {
             "primary_column": "geometry",
             "columns": {
@@ -296,12 +297,12 @@ def test_validate_metadata_valid():
         ),
     ],
 )
-def test_validate_metadata_invalid(metadata, error):
+def test_validate_geo_metadata_invalid(metadata, error):
     with pytest.raises(ValueError, match=error):
-        _validate_metadata(metadata)
+        _validate_geo_metadata(metadata)
 
 
-def test_validate_metadata_edges():
+def test_validate_geo_metadata_edges():
     metadata = {
         "primary_column": "geometry",
         "columns": {"geometry": {"crs": None, "encoding": "WKB", "edges": "spherical"}},
@@ -311,7 +312,7 @@ def test_validate_metadata_edges():
         UserWarning,
         match="The geo metadata indicate that column 'geometry' has spherical edges",
     ):
-        _validate_metadata(metadata)
+        _validate_geo_metadata(metadata)
 
 
 def test_to_parquet_fails_on_invalid_engine(tmpdir):
