@@ -13,6 +13,7 @@ from geopandas._compat import import_optional_dependency
 from geopandas.array import from_shapely, from_wkb
 
 from .file import _expand_user
+from pyarrow import parquet
 
 METADATA_VERSION = "1.0.0"
 SUPPORTED_VERSIONS = ["0.1.0", "0.4.0", "1.0.0-beta.1", "1.0.0", "1.1.0"]
@@ -646,26 +647,12 @@ def _read_parquet(path, columns=None, storage_options=None, **kwargs):
     )
 
     path = _expand_user(path)
+    metadata = _read_parquet_metadata(path, filesystem)
+
     kwargs["use_pandas_metadata"] = True
     table = parquet.read_table(path, columns=columns, filesystem=filesystem, **kwargs)
 
-    # read metadata separately to get the raw Parquet FileMetaData metadata
-    # (pyarrow doesn't properly exposes those in schema.metadata for files
-    # created by GDAL - https://issues.apache.org/jira/browse/ARROW-16688)
-    metadata = None
-    if table.schema.metadata is None or b"geo" not in table.schema.metadata:
-        try:
-            # read_metadata does not accept a filesystem keyword, so need to
-            # handle this manually (https://issues.apache.org/jira/browse/ARROW-16719)
-            if filesystem is not None:
-                pa_filesystem = _ensure_arrow_fs(filesystem)
-                with pa_filesystem.open_input_file(path) as source:
-                    metadata = parquet.read_metadata(source).metadata
-            else:
-                metadata = parquet.read_metadata(path).metadata
-        except Exception:
-            pass
-
+    metadata = None if metadata == table.schema.metadata else metadata
     return _arrow_to_geopandas(table, metadata)
 
 
@@ -733,5 +720,43 @@ def _read_feather(path, columns=None, **kwargs):
         raise ImportError("pyarrow >= 0.17 required for Feather support")
 
     path = _expand_user(path)
+
     table = feather.read_table(path, columns=columns, **kwargs)
     return _arrow_to_geopandas(table)
+
+
+def _read_parquet_metadata(path, filesystem):
+    import pyarrow.dataset as ds
+
+    metadata = ds.dataset(path, filesystem=filesystem).schema.metadata
+
+    # if GDAL-produced malformed file
+    if metadata is None or b"geo" not in metadata:
+        try:
+            # read_metadata does not accept a filesystem keyword, so need to
+            # handle this manually (https://issues.apache.org/jira/browse/ARROW-16719)
+            if filesystem is not None:
+                pa_filesystem = _ensure_arrow_fs(filesystem)
+                with pa_filesystem.open_input_file(path) as source:
+                    metadata = parquet.read_metadata(source).metadata
+            else:
+                metadata = parquet.read_metadata(path).metadata
+        except Exception:
+            pass
+
+    # if still no metadata, raise error,
+    if metadata is None or b"geo" not in metadata:
+        raise ValueError(
+            """Missing geo metadata in Parquet/Feather file.
+            Use pandas.read_parquet/read_feather() instead."""
+        )
+
+    # check for malformed metadata
+    try:
+        decoded_geo_metadata = _decode_metadata(metadata.get(b"geo", b""))
+    except (TypeError, json.decoder.JSONDecodeError):
+        raise ValueError("Missing or malformed geo metadata in Parquet/Feather file")
+
+    _validate_metadata(decoded_geo_metadata)
+
+    return metadata
