@@ -722,6 +722,7 @@ def _read_feather(path, columns=None, **kwargs):
     path = _expand_user(path)
 
     table = feather.read_table(path, columns=columns, **kwargs)
+    _validate_metadata(table.schema.metadata)
     return _arrow_to_geopandas(table)
 
 
@@ -744,7 +745,12 @@ def _read_parquet_metadata(path, filesystem):
         except Exception:
             pass
 
-    # if still no metadata, raise error,
+    _validate_metadata(metadata)
+
+    return metadata
+
+
+def _validate_metadata(metadata):
     if metadata is None or b"geo" not in metadata:
         raise ValueError(
             """Missing geo metadata in Parquet/Feather file.
@@ -758,5 +764,3 @@ def _read_parquet_metadata(path, filesystem):
         raise ValueError("Missing or malformed geo metadata in Parquet/Feather file")
 
     _validate_geo_metadata(decoded_geo_metadata)
-
-    return metadata
