@@ -1,11 +1,15 @@
-import io
-import urllib
+import os
+import pathlib
 
 import pytest
 
+import numpy as np
 import pyarrow as pa
 from pyarrow import feather
-import geopandas
+from geopandas import GeoDataFrame, GeoSeries
+
+
+DATA_PATH = pathlib.Path(os.path.dirname(__file__)) / "data"
 
 
 def assert_table_equal(left, right, check_metadata=False):
@@ -44,6 +48,7 @@ def assert_table_equal(left, right, check_metadata=False):
     raise AssertionError("Tables not equal for unknown reason")
 
 
+@pytest.mark.parametrize("dim", ["xy", "xyz"])
 @pytest.mark.parametrize(
     "geometry_type",
     [
@@ -55,22 +60,29 @@ def assert_table_equal(left, right, check_metadata=False):
         "multipolygon",
     ],
 )
-def test_geoarrow_export(geometry_type):
-    base_url = (
-        "https://raw.githubusercontent.com/geoarrow/geoarrow-data/v0.1.0/example/"
-    )
+def test_geoarrow_export(geometry_type, dim):
+    base_path = DATA_PATH / "geoarrow"
+    suffix = geometry_type + ("_z" if dim == "xyz" else "")
 
     # Read the example data
-    df = geopandas.read_file(base_url + f"example-{geometry_type}.gpkg")
+    df = feather.read_feather(base_path / f"example-{suffix}-wkb.arrow")
+    df["geometry"] = GeoSeries.from_wkb(df["geometry"])
     df["row_number"] = df["row_number"].astype("int32")
+    df = GeoDataFrame(df)
     df.geometry.crs = None
 
     result1 = df.to_arrow(geometry_encoding="WKB")
     # TODO this still contains "geo" key in addition to pandas
     # remove the "pandas" metadata
     result1 = result1.replace_schema_metadata(None)
-    with urllib.request.urlopen(base_url + f"example-{geometry_type}-wkb.arrow") as req:
-        expected1 = feather.read_table(io.BytesIO(req.read()))
+    expected1 = feather.read_table(base_path / f"example-{suffix}-wkb.arrow")
+
+    if dim == "xyz" and geometry_type.startswith("multi"):
+        # for collections with z dimension, drop the empties because those don't
+        # roundtrip correctly to WKB
+        # (https://github.com/libgeos/geos/issues/888)
+        result1 = result1.filter(np.asarray(~df.geometry.is_empty))
+        expected1 = expected1.filter(np.asarray(~df.geometry.is_empty))
 
     assert_table_equal(result1, expected1, check_metadata=True)
 
@@ -78,10 +90,7 @@ def test_geoarrow_export(geometry_type):
     # TODO this still contains "geo" key in addition to pandas
     # remove the "pandas" metadata
     result2 = result2.replace_schema_metadata(None)
-    with urllib.request.urlopen(
-        base_url + f"example-{geometry_type}-interleaved.arrow"
-    ) as req:
-        expected2 = feather.read_table(io.BytesIO(req.read()))
+    expected2 = feather.read_table(base_path / f"example-{suffix}-interleaved.arrow")
 
     assert_table_equal(result2, expected2, check_metadata=True)
 
@@ -89,7 +98,6 @@ def test_geoarrow_export(geometry_type):
     # TODO this still contains "geo" key in addition to pandas
     # remove the "pandas" metadata
     result3 = result3.replace_schema_metadata(None)
-    with urllib.request.urlopen(base_url + f"example-{geometry_type}.arrow") as req:
-        expected3 = feather.read_table(io.BytesIO(req.read()))
+    expected3 = feather.read_table(base_path / f"example-{suffix}.arrow")
 
     assert_table_equal(result3, expected3, check_metadata=True)

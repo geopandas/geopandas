@@ -30,7 +30,7 @@ def _convert_inner_coords(coords, interleaved, dims, mask=None):
             )
         else:
             parr = pa.StructArray.from_arrays(
-                [coords[:, 0].copy(), coords[:, 0].copy(), coords[:, 2].copy()],
+                [coords[:, 0].copy(), coords[:, 1].copy(), coords[:, 2].copy()],
                 names=["x", "y", "z"],
                 mask=mask,
             )
