@@ -1,6 +1,6 @@
 # Changelog
 
-## Version 1.0.0-alpha1 (Apr 13, 2024)
+## Version 1.0.0
 
 Notes on dependencies:
 
@@ -85,6 +85,9 @@ Bug fixes:
   geometry column (#2933).
 - Fix bug in `GeoDataFrame` constructor where if `geometry` is given a named
   `GeoSeries` the name was not used as the active geometry column name (#3237).
+- Fix regression preventing reading from file paths containing hashes in `read_file` 
+  with the fiona engine (#3280). An analgous fix for pyogrio is included in 
+  pyogrio 0.8.1.
 
 Deprecations and compatibility notes:
 
@@ -123,6 +126,8 @@ Deprecations and compatibility notes:
   geo_col_name = gdf.active_geometry_name
   gdf.set_geometry(new_geo_col).drop(columns=geo_col_name).rename_geometry(geo_col_name)
   ```
+- The `geopandas.use_pygeos` option has been deprecated and will be removed in GeoPandas
+  1.1 (#3283)
 
 ## Version 0.14.4 (April 26, 2024)
 
