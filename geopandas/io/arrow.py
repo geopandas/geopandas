@@ -1,7 +1,7 @@
 import json
 import warnings
 from packaging.version import Version
-
+from collections import OrderedDict
 import numpy as np
 from pandas import DataFrame, Series
 
@@ -110,7 +110,7 @@ def _get_geometry_types(series):
     return sorted([_geometry_type_names[idx] for idx in geometry_types])
 
 
-def _create_metadata(df, schema_version=None):
+def _create_metadata(df, schema_version=None, bbox_column_name=None):
     """Create and encode geo metadata dict.
 
     Parameters
@@ -119,6 +119,9 @@ def _create_metadata(df, schema_version=None):
     schema_version : {'0.1.0', '0.4.0', '1.0.0-beta.1', '1.0.0', None}
         GeoParquet specification version; if not provided will default to
         latest supported version.
+    bbox_column_name : str, default None
+        If a string is input, the bbox column will be written with this value
+        as its column name. If None, the bbox column will not be written.
 
     Returns
     -------
@@ -163,6 +166,16 @@ def _create_metadata(df, schema_version=None):
         if np.isfinite(bbox).all():
             # don't add bbox with NaNs for empty / all-NA geometry column
             column_metadata[col]["bbox"] = bbox
+
+        if bbox_column_name:
+            column_metadata[col]["covering"] = {
+                "bbox": {
+                    "xmin": [bbox_column_name, "xmin"],
+                    "ymin": [bbox_column_name, "ymin"],
+                    "xmax": [bbox_column_name, "xmax"],
+                    "ymax": [bbox_column_name, "ymax"],
+                },
+            }
 
     return {
         "primary_column": df._geometry_column_name,
@@ -293,16 +306,27 @@ def _validate_geo_metadata(metadata):
             )
 
 
-def _geopandas_to_arrow(df, index=None, schema_version=None):
+def _geopandas_to_arrow(df, index=None, schema_version=None, bbox_column_name=None):
     """
     Helper function with main, shared logic for to_parquet/to_feather.
     """
     from pyarrow import Table
 
+    if bbox_column_name:
+        geometry_bbox = df.bounds.rename(
+            OrderedDict(
+                [("minx", "xmin"), ("miny", "ymin"), ("maxx", "xmax"), ("maxy", "ymax")]
+            ),
+            axis=1,
+        )
+        df[bbox_column_name] = geometry_bbox.to_dict("records")
+
     _validate_dataframe(df)
 
     # create geo metadata before altering incoming data frame
-    geo_metadata = _create_metadata(df, schema_version=schema_version)
+    geo_metadata = _create_metadata(
+        df, schema_version=schema_version, bbox_column_name=bbox_column_name
+    )
 
     if shapely.geos_version > (3, 10, 0):
         kwargs = {"flavor": "iso"}
@@ -325,7 +349,13 @@ def _geopandas_to_arrow(df, index=None, schema_version=None):
 
 
 def _to_parquet(
-    df, path, index=None, compression="snappy", schema_version=None, **kwargs
+    df,
+    path,
+    index=None,
+    compression="snappy",
+    schema_version=None,
+    bbox_column_name=None,
+    **kwargs,
 ):
     """
     Write a GeoDataFrame to the Parquet format.
@@ -354,6 +384,9 @@ def _to_parquet(
     schema_version : {'0.1.0', '0.4.0', '1.0.0', None}
         GeoParquet specification version; if not provided will default to
         latest supported version.
+    bbox_column_name : str, default None
+        If a string is input, the bbox column will be written with this value
+        as its column name. If None, the bbox column will not be written.
     **kwargs
         Additional keyword arguments passed to pyarrow.parquet.write_table().
     """
@@ -373,7 +406,12 @@ def _to_parquet(
             schema_version = kwargs.pop("version")
 
     path = _expand_user(path)
-    table = _geopandas_to_arrow(df, index=index, schema_version=schema_version)
+    table = _geopandas_to_arrow(
+        df,
+        index=index,
+        schema_version=schema_version,
+        bbox_column_name=bbox_column_name,
+    )
     parquet.write_table(table, path, compression=compression, **kwargs)
 
 

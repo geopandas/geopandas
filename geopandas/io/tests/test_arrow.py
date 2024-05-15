@@ -337,7 +337,12 @@ def test_to_parquet_does_not_pass_engine_along(mock_to_parquet):
     # assert that engine keyword is not passed through to _to_parquet (and thus
     # parquet.write_table)
     mock_to_parquet.assert_called_with(
-        df, "", compression="snappy", index=None, schema_version=None
+        df,
+        "",
+        compression="snappy",
+        index=None,
+        schema_version=None,
+        bbox_column_name=None,
     )
 
 
@@ -992,30 +997,29 @@ def test_read_parquet_geoarrow(geometry_type):
     assert_geodataframe_equal(result, expected, check_crs=True)
 
 
-@pytest.mark.xfail()
 def test_to_parquet_bbox_structure_and_metadata(tmpdir, naturalearth_lowres):
     # check metadata being written for covering.
     from pyarrow import parquet
 
+    bbox_col_name = "bbox_column_name"
     df = read_file(naturalearth_lowres)
     filename = os.path.join(str(tmpdir), "test.pq")
-    df.to_parquet(filename, write_bbox_covering="bbox_column_name")
-    assert "bbox_column_name" in df.columns
-    assert [*df["bbox_column_name"][0].keys()] == ["xmin", "ymin", "xmax", "ymax"]
+    df.to_parquet(filename, bbox_column_name=bbox_col_name)
+    assert bbox_col_name in df.columns
+    assert [*df[bbox_col_name][0].keys()] == ["xmin", "ymin", "xmax", "ymax"]
 
     table = parquet.read_table(filename)
     metadata = json.loads(table.schema.metadata[b"geo"].decode("utf-8"))
     assert metadata["columns"]["geometry"]["covering"] == {
         "bbox": {
-            "xmin": ["bbox_column_name", "xmin"],
-            "ymin": ["bbox_column_nam", "ymin"],
-            "xmax": ["bbox_column_name", "xmax"],
-            "ymax": ["bbox_column_name", "ymax"],
+            "xmin": [bbox_col_name, "xmin"],
+            "ymin": [bbox_col_name, "ymin"],
+            "xmax": [bbox_col_name, "xmax"],
+            "ymax": [bbox_col_name, "ymax"],
         }
     }
 
 
-@pytest.mark.xfail()
 @pytest.mark.parametrize(
     "geometry, expected_bbox",
     [
@@ -1040,7 +1044,7 @@ def test_to_parquet_bbox_values(tmpdir, geometry, expected_bbox):
     df = GeoDataFrame(data=[[1, 2]], columns=["a", "b"], geometry=[geometry])
     filename = os.path.join(str(tmpdir), "test.pq")
 
-    df.to_parquet(filename, write_bbox_covering="bbox_column_name")
+    df.to_parquet(filename, bbox_column_name="bbox_column_name")
 
     assert df["bbox_column_name"][0] == expected_bbox
 
