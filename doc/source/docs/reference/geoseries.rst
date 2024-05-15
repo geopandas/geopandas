@@ -35,6 +35,8 @@ General methods and attributes
    GeoSeries.z
    GeoSeries.get_coordinates
    GeoSeries.count_coordinates
+   GeoSeries.count_geometries
+   GeoSeries.count_interior_rings
    GeoSeries.set_precision
    GeoSeries.get_precision
 
@@ -74,6 +76,7 @@ Binary predicates
    GeoSeries.covers
    GeoSeries.covered_by
    GeoSeries.relate
+   GeoSeries.relate_pattern
 
 
 Set-theoretic methods
@@ -96,6 +99,7 @@ Constructive methods and attributes
 
    GeoSeries.boundary
    GeoSeries.buffer
+   GeoSeries.build_area
    GeoSeries.centroid
    GeoSeries.concave_hull
    GeoSeries.convex_hull
@@ -117,6 +121,7 @@ Constructive methods and attributes
    GeoSeries.simplify
    GeoSeries.snap
    GeoSeries.transform
+   GeoSeries.voronoi_polygons
 
 Affine transformations
 ----------------------
@@ -137,6 +142,7 @@ Linestring operations
    :toctree: api/
 
    GeoSeries.interpolate
+   GeoSeries.line_merge
    GeoSeries.project
 
 Aggregating and exploding
@@ -146,6 +152,7 @@ Aggregating and exploding
    :toctree: api/
 
    GeoSeries.union_all
+   GeoSeries.intersection_all
    GeoSeries.explode
 
 Serialization / IO / conversion

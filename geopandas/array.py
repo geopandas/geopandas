@@ -537,9 +537,13 @@ class GeometryArray(ExtensionArray):
         return shapely.length(self._data)
 
     def count_coordinates(self):
-        out = np.empty(len(self._data), dtype=np.int_)
-        out[:] = [shapely.count_coordinates(s) for s in self._data]
-        return out
+        return shapely.get_num_coordinates(self._data)
+
+    def count_geometries(self):
+        return shapely.get_num_geometries(self._data)
+
+    def count_interior_rings(self):
+        return shapely.get_num_interior_rings(self._data)
 
     def get_precision(self):
         return shapely.get_precision(self._data)
@@ -663,6 +667,11 @@ class GeometryArray(ExtensionArray):
     def transform(self, transformation, include_z=False):
         return GeometryArray(
             shapely.transform(self._data, transformation, include_z), crs=self.crs
+        )
+
+    def line_merge(self, directed=False):
+        return GeometryArray(
+            shapely.line_merge(self._data, directed=directed), crs=self.crs
         )
 
     def set_precision(self, grid_size, mode="valid_output"):
@@ -824,6 +833,11 @@ class GeometryArray(ExtensionArray):
             other = other._data
         return shapely.relate(self._data, other)
 
+    def relate_pattern(self, other, pattern):
+        if isinstance(other, GeometryArray):
+            other = other._data
+        return shapely.relate_pattern(self._data, other, pattern)
+
     #
     # Reduction operations that return a Shapely geometry
     #
@@ -837,8 +851,18 @@ class GeometryArray(ExtensionArray):
         )
         return self.union_all()
 
-    def union_all(self):
-        return shapely.union_all(self._data)
+    def union_all(self, method="unary"):
+        if method == "coverage":
+            return shapely.coverage_union_all(self._data)
+        elif method == "unary":
+            return shapely.union_all(self._data)
+        else:
+            raise ValueError(
+                f"Method '{method}' not recognized. Use 'coverage' or 'unary'."
+            )
+
+    def intersection_all(self):
+        return shapely.intersection_all(self._data)
 
     #
     # Affinity operations
@@ -1181,7 +1205,7 @@ class GeometryArray(ExtensionArray):
 
         result = take(self._data, indices, allow_fill=allow_fill, fill_value=fill_value)
         if allow_fill and fill_value is None:
-            result[pd.isna(result)] = None
+            result[~shapely.is_valid_input(result)] = None
         return GeometryArray(result, crs=self.crs)
 
     def _fill(self, idx, value):
@@ -1283,7 +1307,13 @@ class GeometryArray(ExtensionArray):
                 return pd.array(string_values, dtype=pd_dtype)
             return string_values.astype(dtype, copy=False)
         else:
-            return np.array(self, dtype=dtype, copy=copy)
+            # numpy 2.0 makes copy=False case strict (errors if cannot avoid the copy)
+            # -> in that case use `np.asarray` as backwards compatible alternative
+            # for `copy=None` (when requiring numpy 2+, this can be cleaned up)
+            if not copy:
+                return np.asarray(self, dtype=dtype)
+            else:
+                return np.array(self, dtype=dtype, copy=copy)
 
     def isna(self):
         """
@@ -1610,7 +1640,7 @@ class GeometryArray(ExtensionArray):
             f"does not support reduction '{name}'"
         )
 
-    def __array__(self, dtype=None):
+    def __array__(self, dtype=None, copy=None):
         """
         The numpy array interface.
 
@@ -1618,7 +1648,9 @@ class GeometryArray(ExtensionArray):
         -------
         values : numpy array
         """
-        return to_shapely(self)
+        if copy and (dtype is None or dtype == np.dtype("object")):
+            return self._data.copy()
+        return self._data
 
     def _binop(self, other, op):
         def convert_values(param):

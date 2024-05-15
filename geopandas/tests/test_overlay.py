@@ -210,6 +210,10 @@ def test_overlay_nybb(how, nybb_filename):
         expected.loc[24, "geometry"] = None
         result.loc[24, "geometry"] = None
 
+    # missing values get read as None in read_file for a string column, but
+    # are introduced as NaN by overlay
+    expected["BoroName"] = expected["BoroName"].fillna(np.nan)
+
     assert_geodataframe_equal(
         result,
         expected,
@@ -513,6 +517,12 @@ def test_overlay_strict(how, keep_geom_type, geom_types):
         cols = list(set(result.columns) - {"geometry"})
         expected = expected.sort_values(cols, axis=0).reset_index(drop=True)
         result = result.sort_values(cols, axis=0).reset_index(drop=True)
+
+        # some columns are all-NaN in the result, but get read as object dtype
+        # column of None values in read_file
+        for col in ["col1", "col3", "col4"]:
+            if col in expected.columns and expected[col].isna().all():
+                expected[col] = expected[col].astype("float64")
 
         assert_geodataframe_equal(
             result,

@@ -616,7 +616,7 @@ def _read_parquet(path, columns=None, storage_options=None, **kwargs):
         filesystem is preferred. Provide the instantiated fsspec filesystem using
         the ``filesystem`` keyword if you wish to use its implementation.
     **kwargs
-        Any additional kwargs passed to pyarrow.parquet.read_table().
+        Any additional kwargs passed to :func:`pyarrow.parquet.read_table`.
 
     Returns
     -------

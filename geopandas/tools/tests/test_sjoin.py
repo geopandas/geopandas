@@ -5,14 +5,21 @@ import numpy as np
 import pandas as pd
 import shapely
 
-from shapely.geometry import Point, Polygon, GeometryCollection
+from shapely.geometry import Point, Polygon, GeometryCollection, box
 
 import geopandas
 import geopandas._compat as compat
-from geopandas import GeoDataFrame, GeoSeries, read_file, sjoin, sjoin_nearest
+from geopandas import (
+    GeoDataFrame,
+    GeoSeries,
+    read_file,
+    sjoin,
+    sjoin_nearest,
+    points_from_xy,
+)
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 
-from pandas.testing import assert_frame_equal, assert_series_equal
+from pandas.testing import assert_frame_equal, assert_series_equal, assert_index_equal
 import pytest
 
 
@@ -384,6 +391,39 @@ class TestSpatialJoin:
         joined = sjoin(left, right, how=how, predicate="dwithin", distance=distance)
         assert_frame_equal(expected_gdf.sort_index(), joined.sort_index())
 
+    # GH3239
+    @pytest.mark.parametrize(
+        "predicate",
+        [
+            "contains",
+            "contains_properly",
+            "covered_by",
+            "covers",
+            "crosses",
+            "intersects",
+            "touches",
+            "within",
+        ],
+    )
+    def test_sjoin_left_order(self, predicate):
+        # a set of points in random order -> that order should be preserved
+        # with a left join
+        pts = GeoDataFrame(
+            geometry=points_from_xy([0.1, 0.4, 0.3, 0.7], [0.8, 0.6, 0.9, 0.1])
+        )
+        polys = GeoDataFrame(
+            {"id": [1, 2, 3, 4]},
+            geometry=[
+                box(0, 0, 0.5, 0.5),
+                box(0, 0.5, 0.5, 1),
+                box(0.5, 0, 1, 0.5),
+                box(0.5, 0.5, 1, 1),
+            ],
+        )
+
+        joined = sjoin(pts, polys, predicate=predicate, how="left")
+        assert_index_equal(joined.index, pts.index)
+
 
 class TestIndexNames:
     @pytest.mark.parametrize("how", ["inner", "left", "right"])
@@ -574,7 +614,6 @@ class TestIndexNames:
         with pytest.raises(ValueError, match="'index_right' cannot be a column name"):
             sjoin(df1, df2, how=how)
 
-    @pytest.mark.xfail
     @pytest.mark.parametrize("how", ["inner", "left", "right"])
     def test_conflicting_column_with_suffix(self, how):
         # test case where the auto-generated index name conflicts
@@ -608,6 +647,7 @@ class TestIndexNames:
                 "column_right",
                 "geometry",
             ]
+        expected = expected.set_geometry("geometry")
         assert_geodataframe_equal(result, expected)
 
 
@@ -1148,12 +1188,8 @@ class TestNearest:
         result5["index_right"] = result5["index_right"].astype("int64")
         assert_geodataframe_equal(result5, result4, check_like=True)
 
-    expected_index_uncapped = (
-        [1, 3, 3, 1, 2] if compat.PANDAS_GE_22 else [1, 1, 3, 3, 2]
-    )
-
     @pytest.mark.parametrize(
-        "max_distance,expected", [(None, expected_index_uncapped), (1.1, [3, 3, 1, 2])]
+        "max_distance,expected", [(None, [1, 3, 3, 1, 2]), (1.1, [3, 3, 1, 2])]
     )
     def test_sjoin_nearest_exclusive(self, max_distance, expected):
         geoms = shapely.points(np.arange(3), np.arange(3))
