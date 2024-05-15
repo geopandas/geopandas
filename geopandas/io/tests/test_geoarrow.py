@@ -1,3 +1,4 @@
+import json
 import os
 import pathlib
 
@@ -7,6 +8,7 @@ import numpy as np
 import pyarrow as pa
 from pyarrow import feather
 from geopandas import GeoDataFrame, GeoSeries
+from shapely import box
 
 
 DATA_PATH = pathlib.Path(os.path.dirname(__file__)) / "data"
@@ -101,3 +103,20 @@ def test_geoarrow_export(geometry_type, dim):
     expected3 = feather.read_table(base_path / f"example-{suffix}.arrow")
 
     assert_table_equal(result3, expected3, check_metadata=True)
+
+
+@pytest.mark.parametrize("encoding", ["WKB", "geoarrow"])
+def test_geoarrow_multiple_geometry_crs(encoding):
+    # ensure each geometry column has its own crs
+    gdf = GeoDataFrame(geometry=[box(0, 0, 10, 10)], crs="epsg:4326")
+    gdf["geom2"] = gdf.geometry.to_crs("epsg:3857")
+
+    result = gdf.to_arrow(geometry_encoding=encoding)
+    meta1 = json.loads(
+        result.schema.field("geometry").metadata[b"ARROW:extension:metadata"]
+    )
+    assert json.loads(meta1["crs"])["id"]["code"] == 4326
+    meta2 = json.loads(
+        result.schema.field("geom2").metadata[b"ARROW:extension:metadata"]
+    )
+    assert json.loads(meta2["crs"])["id"]["code"] == 3857

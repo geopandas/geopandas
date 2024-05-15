@@ -280,8 +280,6 @@ def _encode_geometry(
     from pyarrow import Table
     import pyarrow as pa
 
-    crs_str = df.crs.to_json() if df.crs is not None else None
-    df = DataFrame(df.copy())
     df_attr = df.select_dtypes(exclude="geometry")
 
     table = Table.from_pandas(df_attr, preserve_index=index)
@@ -291,6 +289,7 @@ def _encode_geometry(
         for col in df.columns[df.dtypes == "geometry"]:
             from geopandas.io.geoarrow import construct_geometry_array
 
+            crs_str = df[col].crs.to_json() if df[col].crs is not None else None
             field, geom_arr = construct_geometry_array(
                 np.array(df[col]),
                 include_z=include_z,
@@ -311,22 +310,25 @@ def _encode_geometry(
                 raise ValueError("Cannot write 3D geometries with GEOS<3.10")
             kwargs = {}
 
-        extension_metadata = {"ARROW:extension:name": "geoarrow.wkb"}
-        if crs_str is not None:
-            extension_metadata["ARROW:extension:metadata"] = json.dumps(
-                {"crs": crs_str}
-            )
-        else:
-            # TODO we shouldn't do this, just to get testing passed for now
-            extension_metadata["ARROW:extension:metadata"] = "{}"
-
         # Encode all geometry columns to WKB
         for col in df.columns[df.dtypes == "geometry"]:
             wkb_arr = shapely.to_wkb(df[col], **kwargs)
+            crs_str = df[col].crs.to_json() if df[col].crs is not None else None
+            extension_metadata = {"ARROW:extension:name": "geoarrow.wkb"}
+            if crs_str is not None:
+                extension_metadata["ARROW:extension:metadata"] = json.dumps(
+                    {"crs": crs_str}
+                )
+            else:
+                # TODO we shouldn't do this, just to get testing passed for now
+                extension_metadata["ARROW:extension:metadata"] = "{}"
+
             field = pa.field(
                 col, type=pa.binary(), nullable=True, metadata=extension_metadata
             )
-            table = table.append_column(field, pa.array(wkb_arr))
+            table = table.append_column(
+                field, pa.array(np.asarray(wkb_arr), pa.binary())
+            )
 
         return table
     else:
