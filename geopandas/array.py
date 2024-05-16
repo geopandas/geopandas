@@ -548,6 +548,9 @@ class GeometryArray(ExtensionArray):
     def get_precision(self):
         return shapely.get_precision(self._data)
 
+    def get_geometry(self, index):
+        return shapely.get_geometry(self._data, index=index)
+
     #
     # Unary operations that return new geometries
     #

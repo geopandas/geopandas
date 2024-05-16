@@ -2134,3 +2134,56 @@ class TestGeomMethods:
         mixed = concat([self.landmarks_mixed_empty, with_precision])
         expected = Series([0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0], index=mixed.index)
         assert_series_equal(expected, mixed.get_precision())
+
+    def test_get_geometry(self):
+        expected = GeoSeries(
+            [
+                LineString([(0, 2), (0, 10)]),
+                LineString([(0, 2), (0, 10)]),
+                None,
+                LineString([(0, 0), (1, 0)]),
+                Point(0, 0),
+            ],
+            index=range(2, 7),
+            crs=4326,
+        )
+        assert_series_equal(expected, self.g14.get_geometry(0))
+
+        expected = GeoSeries(
+            [
+                LineString([(0, 10), (5, 10)]),
+                LineString([(0, 11), (5, 10)]),
+                None,
+                LineString([(0, 0), (3, 0)]),
+                None,
+            ],
+            index=range(2, 7),
+            crs=4326,
+        )
+        assert_series_equal(expected, self.g14.get_geometry(1))
+
+        expected = GeoSeries(
+            [
+                LineString([(0, 10), (5, 10)]),
+                LineString([(0, 11), (5, 10)]),
+                None,
+                LineString([(0, 0), (3, 0)]),
+                Point(0, 0),
+            ],
+            index=range(2, 7),
+            crs=4326,
+        )
+        assert_series_equal(expected, self.g14.get_geometry(-1))
+
+        expected = GeoSeries(
+            [
+                LineString([(0, 2), (0, 10)]),
+                LineString([(0, 11), (5, 10)]),
+                None,
+                LineString([(0, 0), (3, 0)]),
+                Point(0, 0),
+            ],
+            index=range(2, 7),
+            crs=4326,
+        )
+        assert_series_equal(expected, self.g14.get_geometry([0, 1, 1, -1, 0]))

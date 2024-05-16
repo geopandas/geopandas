@@ -710,6 +710,62 @@ GeometryCollection
         """
         return Series(self.geometry.values.get_precision(), index=self.index)
 
+    def get_geometry(self, index):
+        """Returns the n-th geometry from a collection of geometries.
+
+        Parameters
+        ----------
+        index : int or array_like
+            Position of a geometry to be retrieved wihtin its collection
+
+        Returns
+        -------
+        GeoSeries
+
+        Notes
+        -----
+        Simple geometries act as collections of length 1. Any out-of-range index value
+        returns None.
+
+        Examples
+        --------
+        >>> from shapely.geometry import Point, MultiPoint, GeometryCollection
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Point(0, 0),
+        ...         MultiPoint([(0, 0), (1, 1), (0, 1), (1, 0)]),
+        ...         GeometryCollection(
+        ...             [MultiPoint([(0, 0), (1, 1), (0, 1), (1, 0)]), Point(0, 1)]
+        ...         ),
+        ...     ]
+        ... )
+        >>> s
+        0                                          POINT (0 0)
+        1              MULTIPOINT ((0 0), (1 1), (0 1), (1 0))
+        2    GEOMETRYCOLLECTION (MULTIPOINT ((0 0), (1 1), ...
+        dtype: geometry
+
+        >>> s.get_geometry(0)
+        0                                POINT (0 0)
+        1                                POINT (0 0)
+        2    MULTIPOINT ((0 0), (1 1), (0 1), (1 0))
+        dtype: geometry
+
+        >>> s.get_geometry(1)
+        0           None
+        1    POINT (1 1)
+        2    POINT (0 1)
+        dtype: geometry
+
+        >>> s.get_geometry(-1)
+        0    POINT (0 0)
+        1    POINT (1 0)
+        2    POINT (0 1)
+        dtype: geometry
+
+        """
+        return _delegate_geo_method("get_geometry", self, index=index)
+
     #
     # Unary operations that return a GeoSeries
     #
