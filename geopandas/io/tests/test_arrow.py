@@ -20,7 +20,7 @@ from geopandas.array import to_wkb
 from geopandas.io.arrow import (
     METADATA_VERSION,
     SUPPORTED_VERSIONS,
-    _check_bbox_column_in_parquet,
+    _validate_bbox_column_in_parquet,
     _convert_bbox_to_parquet_filter,
     _create_metadata,
     _decode_metadata,
@@ -1049,7 +1049,6 @@ def test_to_parquet_bbox_values(tmpdir, geometry, expected_bbox):
     assert df["bbox_column_name"][0] == expected_bbox
 
 
-@pytest.mark.xfail()
 @pytest.mark.skipif(
     Version(pyarrow.__version__) < Version("9.0.0"), reason="needs pyarrow >= 9.0.0"
 )
@@ -1057,14 +1056,13 @@ def test_read_parquet_bbox_single_point(tmpdir):
     # confirm that on a single point, bbox will pick it up.
     df = GeoDataFrame(data=[[1, 2]], columns=["a", "b"], geometry=[Point(1, 1)])
     filename = os.path.join(str(tmpdir), "test.pq")
-    df.to_parquet(filename, write_bbox_covering="bbox_column_name")
+    df.to_parquet(filename, bbox_column_name="bbox_column_name")
 
     pq_df = read_parquet(filename, bbox=(1, 1, 1, 1))
     assert len(pq_df) == 1
     assert pq_df.geometry[0] == Point(1, 1)
 
 
-@pytest.mark.xfail()
 @pytest.mark.skipif(
     Version(pyarrow.__version__) < Version("9.0.0"), reason="needs pyarrow >= 9.0.0"
 )
@@ -1072,7 +1070,7 @@ def test_read_parquet_bbox(tmpdir, naturalearth_lowres):
     # check bbox is being used to filter results.
     df = read_file(naturalearth_lowres)
     filename = os.path.join(str(tmpdir), "test.pq")
-    df.to_parquet(filename, write_bbox_covering="bbox_column_name")
+    df.to_parquet(filename, bbox_column_name="bbox_column_name")
 
     pq_df = read_parquet(filename, bbox=(0, 0, 20, 20))
 
@@ -1084,7 +1082,6 @@ def test_read_parquet_bbox(tmpdir, naturalearth_lowres):
     ]
 
 
-@pytest.mark.xfail()
 @pytest.mark.skipif(
     Version(pyarrow.__version__) < Version("9.0.0"), reason="needs pyarrow >= 9.0.0"
 )
@@ -1095,12 +1092,8 @@ def test_read_parquet_bbox_partitioned(tmpdir, naturalearth_lowres):
     # manually create partitioned dataset
     basedir = tmpdir / "partitioned_dataset"
     basedir.mkdir()
-    df[:100].to_parquet(
-        basedir / "data1.parquet", write_bbox_covering="bbox_column_name"
-    )
-    df[100:].to_parquet(
-        basedir / "data2.parquet", write_bbox_covering="bbox_column_name"
-    )
+    df[:100].to_parquet(basedir / "data1.parquet", bbox_column_name="bbox_column_name")
+    df[100:].to_parquet(basedir / "data2.parquet", bbox_column_name="bbox_column_name")
 
     pq_df = read_parquet(basedir, bbox=(0, 0, 20, 20))
 
@@ -1112,20 +1105,16 @@ def test_read_parquet_bbox_partitioned(tmpdir, naturalearth_lowres):
     ]
 
 
-@pytest.mark.xfail()
 def test_read_parquet_no_bbox(tmpdir, naturalearth_lowres):
     # check error message when parquet lacks a bbox column but
     # want to use bbox kwarg in read_parquet.
     df = read_file(naturalearth_lowres)
     filename = os.path.join(str(tmpdir), "test.pq")
-    df.to_parquet(filename, write_bbox_covering=None)
-    with pytest.raises(
-        ValueError, match="Parquet does not have a bbox covering column."
-    ):
+    df.to_parquet(filename, bbox_column_name=None)
+    with pytest.raises(ValueError, match="No covering bbox in parquet file."):
         read_parquet(filename, bbox=(0, 0, 20, 20))
 
 
-@pytest.mark.xfail()
 def test_read_parquet_no_bbox_partitioned(tmpdir, naturalearth_lowres):
     # check error message when partitioned parquet data does not have
     # a bbox column but want to use kwarg to read_parquet.
@@ -1137,29 +1126,23 @@ def test_read_parquet_no_bbox_partitioned(tmpdir, naturalearth_lowres):
     df[:100].to_parquet(basedir / "data1.parquet")
     df[100:].to_parquet(basedir / "data2.parquet")
 
-    with pytest.raises(
-        ValueError, match="Parquet does not have a bbox covering column."
-    ):
+    with pytest.raises(ValueError, match="No covering bbox in parquet file."):
         read_parquet(basedir, bbox=(0, 0, 20, 20))
 
 
-@pytest.mark.xfail()
 def test_check_bbox_covering_column_in_parquet(tmpdir, naturalearth_lowres):
     # check error message
     from pyarrow import parquet
 
     df = read_file(naturalearth_lowres)
     filename = os.path.join(str(tmpdir), "test.pq")
-    df.to_parquet(filename, write_bbox_covering=None)
-    schema = parquet.read_schema(filename)
+    df.to_parquet(filename, bbox_column_name=None)
+    metadata = parquet.read_schema(filename).metadata
 
-    with pytest.raises(
-        ValueError, match="Parquet does not have a bbox covering column."
-    ):
-        _check_bbox_column_in_parquet(schema)
+    with pytest.raises(ValueError, match="No covering bbox in parquet file."):
+        _validate_bbox_column_in_parquet(metadata)
 
 
-@pytest.mark.xfail()
 @pytest.mark.skipif(
     Version(pyarrow.__version__) < Version("9.0.0"), reason="needs pyarrow >= 9.0.0"
 )

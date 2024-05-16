@@ -596,7 +596,7 @@ def _ensure_arrow_fs(filesystem):
     return filesystem
 
 
-def _read_parquet(path, columns=None, storage_options=None, **kwargs):
+def _read_parquet(path, columns=None, storage_options=None, bbox=None, **kwargs):
     """
     Load a Parquet object from the file path, returning a GeoDataFrame.
 
@@ -640,6 +640,11 @@ def _read_parquet(path, columns=None, storage_options=None, **kwargs):
         both ``pyarrow.fs`` and ``fsspec`` (e.g. "s3://") then the ``pyarrow.fs``
         filesystem is preferred. Provide the instantiated fsspec filesystem using
         the ``filesystem`` keyword if you wish to use its implementation.
+    bbox: tuple, optional
+        Bounding box to be used to filter selection from geoparquet data. This
+        is only usable if the data was saved with the bbox covering metadata.
+        Input is of the tuple format (xmin, xmax, ymin, ymax).
+
     **kwargs
         Any additional kwargs passed to :func:`pyarrow.parquet.read_table`.
 
@@ -675,8 +680,12 @@ def _read_parquet(path, columns=None, storage_options=None, **kwargs):
     metadata = _read_parquet_metadata(path, filesystem)
     _validate_metadata(metadata)
 
+    bbox_filter = _get_parquet_bbox_filter(metadata, bbox) if bbox else None
+
     kwargs["use_pandas_metadata"] = True
-    table = parquet.read_table(path, columns=columns, filesystem=filesystem, **kwargs)
+    table = parquet.read_table(
+        path, columns=columns, filesystem=filesystem, filters=bbox_filter, **kwargs
+    )
 
     return _arrow_to_geopandas(table, metadata)
 
@@ -794,9 +803,44 @@ def _validate_metadata(metadata):
     _validate_geo_metadata(decoded_geo_metadata)
 
 
-def _convert_bbox_to_parquet_filter():
-    pass
+def _get_parquet_bbox_filter(metadata, bbox):
+
+    _validate_bbox_column_in_parquet(metadata)
+
+    bbox_column_name = _get_bbox_encoding_column_name(metadata)
+    return _convert_bbox_to_parquet_filter(bbox, bbox_column_name)
 
 
-def _check_bbox_column_in_parquet():
-    pass
+def _convert_bbox_to_parquet_filter(bbox, bbox_column_name):
+    import pyarrow.compute as pc
+    import pyarrow
+
+    if Version(pyarrow.__version__) < Version("9.0.0"):
+        raise ImportError(
+            "pyarrow >= 9.0.0 required to allow boolean expression to filter by bbox."
+        )
+
+    return (
+        (pc.field((bbox_column_name, "xmin")) >= bbox[0])
+        & (pc.field((bbox_column_name, "ymin")) >= bbox[1])
+        & (pc.field((bbox_column_name, "xmax")) <= bbox[2])
+        & (pc.field((bbox_column_name, "ymax")) <= bbox[3])
+    )
+
+
+def _validate_bbox_column_in_parquet(metadata):
+    geo_metadata = json.loads(metadata[b"geo"].decode())
+
+    if "covering" not in geo_metadata["columns"]["geometry"].keys():
+        raise ValueError("No covering bbox in parquet file.")
+
+    for var in ["xmin", "ymin", "xmax", "ymax"]:
+        if var not in geo_metadata["columns"]["geometry"]["covering"]["bbox"].keys():
+            raise ValueError("Metadata for bbox column is malformed.")
+
+    return True
+
+
+def _get_bbox_encoding_column_name(metadata):
+    geo_metadata = json.loads(metadata[b"geo"].decode())
+    return geo_metadata["columns"]["geometry"]["covering"]["bbox"]["xmin"][0]
