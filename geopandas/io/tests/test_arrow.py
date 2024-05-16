@@ -1160,13 +1160,12 @@ def test_convert_bbox_to_parquet_filter():
     assert expected.equals(_convert_bbox_to_parquet_filter(bbox, "bbox_column_name"))
 
 
-@pytest.mark.xfail()
 def test_read_parquet_bbox_column_default_behaviour(tmpdir, naturalearth_lowres):
     # check that bbox column is not read in by default
 
     df = read_file(naturalearth_lowres)
     filename = os.path.join(str(tmpdir), "test.pq")
-    df.to_parquet(filename, write_bbox_covering="bbox_column_name")
+    df.to_parquet(filename, bbox_column_name="bbox_column_name")
     pq_df_default = read_parquet(filename)
     assert "bbox_column_name" not in pq_df_default
 
@@ -1174,7 +1173,6 @@ def test_read_parquet_bbox_column_default_behaviour(tmpdir, naturalearth_lowres)
     assert "bbox_column_name" in pq_df_read_bbox
 
 
-@pytest.mark.xfail()
 def test_read_parquet_colums_and_bbox(tmpdir, naturalearth_lowres):
     # confirm columns list over-rides read_bbox_column argument.
     # if column list includes 'bbox' and read_bbox_column=False -> include 'bbox'
@@ -1183,7 +1181,7 @@ def test_read_parquet_colums_and_bbox(tmpdir, naturalearth_lowres):
 
     df = read_file(naturalearth_lowres)
     filename = os.path.join(str(tmpdir), "test.pq")
-    df.to_parquet(filename, write_bbox_covering="bbox_column_name")
+    df.to_parquet(filename, bbox_column_name="bbox_column_name")
     schema = parquet.read_schema(filename)
     columns = schema.names
 

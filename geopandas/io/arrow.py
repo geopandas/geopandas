@@ -596,7 +596,14 @@ def _ensure_arrow_fs(filesystem):
     return filesystem
 
 
-def _read_parquet(path, columns=None, storage_options=None, bbox=None, **kwargs):
+def _read_parquet(
+    path,
+    columns=None,
+    storage_options=None,
+    bbox=None,
+    read_bbox_column=False,
+    **kwargs,
+):
     """
     Load a Parquet object from the file path, returning a GeoDataFrame.
 
@@ -644,6 +651,14 @@ def _read_parquet(path, columns=None, storage_options=None, bbox=None, **kwargs)
         Bounding box to be used to filter selection from geoparquet data. This
         is only usable if the data was saved with the bbox covering metadata.
         Input is of the tuple format (xmin, xmax, ymin, ymax).
+    read_bbox_column: bool, default False
+        The bbox column is a struct with the minimum rectangular box that
+        encompasses the geometry. It is computationally expensive to read
+        in a struct into a GeoDataFrame. As such, it is default to not
+        read in this column unless explictly specified as True.
+        If  ``columns`` arguement is used and contains ``bbox``,
+        this will override ``read_bbox_column`` and include ``bbox``
+        even if this is False.
 
     **kwargs
         Any additional kwargs passed to :func:`pyarrow.parquet.read_table`.
@@ -677,14 +692,25 @@ def _read_parquet(path, columns=None, storage_options=None, bbox=None, **kwargs)
     )
 
     path = _expand_user(path)
-    metadata = _read_parquet_metadata(path, filesystem)
+    schema, metadata = _read_parquet_schema_and_metadata(path, filesystem)
     _validate_metadata(metadata)
 
     bbox_filter = _get_parquet_bbox_filter(metadata, bbox) if bbox else None
 
+    if_bbox_column_exists = _check_if_bbox_column_in_parquet(metadata)
+
+    if not (read_bbox_column or columns) and if_bbox_column_exists:
+        columns = _get_non_bbox_columns(schema, metadata)
+
     kwargs["use_pandas_metadata"] = True
+    if "filters" in kwargs:
+        filters = kwargs["filters"]
+        filters &= bbox_filter
+    else:
+        filters = bbox_filter
+
     table = parquet.read_table(
-        path, columns=columns, filesystem=filesystem, filters=bbox_filter, **kwargs
+        path, columns=columns, filesystem=filesystem, filters=filters, **kwargs
     )
 
     return _arrow_to_geopandas(table, metadata)
@@ -760,7 +786,7 @@ def _read_feather(path, columns=None, **kwargs):
     return _arrow_to_geopandas(table)
 
 
-def _read_parquet_metadata(path, filesystem):
+def _read_parquet_schema_and_metadata(path, filesystem):
     ds = import_optional_dependency(
         "pyarrow.dataset", extra="pyarrow is required for Feather support."
     )
@@ -768,7 +794,8 @@ def _read_parquet_metadata(path, filesystem):
         "pyarrow.parquet", extra="pyarrow is required for Parquet support."
     )
 
-    metadata = ds.dataset(path, filesystem=filesystem).schema.metadata
+    schema = ds.dataset(path, filesystem=filesystem).schema
+    metadata = schema.metadata
 
     # if GDAL-produced malformed file
     if metadata is None or b"geo" not in metadata:
@@ -784,7 +811,7 @@ def _read_parquet_metadata(path, filesystem):
         except Exception:
             pass
 
-    return metadata
+    return schema, metadata
 
 
 def _validate_metadata(metadata):
@@ -831,7 +858,7 @@ def _convert_bbox_to_parquet_filter(bbox, bbox_column_name):
 def _validate_bbox_column_in_parquet(metadata):
     geo_metadata = json.loads(metadata[b"geo"].decode())
 
-    if "covering" not in geo_metadata["columns"]["geometry"].keys():
+    if not _check_if_bbox_column_in_parquet(metadata):
         raise ValueError("No covering bbox in parquet file.")
 
     for var in ["xmin", "ymin", "xmax", "ymax"]:
@@ -841,6 +868,21 @@ def _validate_bbox_column_in_parquet(metadata):
     return True
 
 
+def _check_if_bbox_column_in_parquet(metadata):
+    geo_metadata = json.loads(metadata[b"geo"].decode())
+    return "covering" in geo_metadata["columns"]["geometry"].keys()
+
+
 def _get_bbox_encoding_column_name(metadata):
     geo_metadata = json.loads(metadata[b"geo"].decode())
     return geo_metadata["columns"]["geometry"]["covering"]["bbox"]["xmin"][0]
+
+
+def _get_non_bbox_columns(schema, metadata):
+
+    _validate_bbox_column_in_parquet(metadata)
+    bbox_column_name = _get_bbox_encoding_column_name(metadata)
+    columns = schema.names
+    if bbox_column_name in columns:
+        columns.remove(bbox_column_name)
+    return columns
