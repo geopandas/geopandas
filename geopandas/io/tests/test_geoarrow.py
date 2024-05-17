@@ -4,6 +4,7 @@ import pathlib
 from packaging.version import Version
 
 import numpy as np
+import shapely
 from shapely import box, Point, MultiPoint
 
 from geopandas import GeoDataFrame, GeoSeries
@@ -54,7 +55,19 @@ def assert_table_equal(left, right, check_metadata=True):
 
 
 @pytest.mark.parametrize("missing", [True, False])
-@pytest.mark.parametrize("dim", ["xy", "xyz"])
+@pytest.mark.parametrize(
+    "dim",
+    [
+        "xy",
+        pytest.param(
+            "xyz",
+            marks=pytest.mark.skipif(
+                shapely.geos_version < (3, 10, 0),
+                reason="GEOS < 3.9.0Cannot write 3D geometries with GEOS<3.10",
+            ),
+        ),
+    ],
+)
 @pytest.mark.parametrize(
     "geometry_type",
     [
