@@ -2,13 +2,16 @@ import json
 import os
 import pathlib
 
+import numpy as np
+from shapely import box
+
+from geopandas import GeoDataFrame, GeoSeries
+
 import pytest
 
-import numpy as np
+pytest.importorskip("pyarrow")
 import pyarrow as pa
 from pyarrow import feather
-from geopandas import GeoDataFrame, GeoSeries
-from shapely import box
 
 
 DATA_PATH = pathlib.Path(os.path.dirname(__file__)) / "data"
