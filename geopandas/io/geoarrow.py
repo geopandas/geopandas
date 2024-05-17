@@ -47,6 +47,9 @@ def geopandas_to_arrow(
     table = pa.Table.from_pandas(df_attr, preserve_index=index)
 
     if geometry_encoding.lower() == "geoarrow":
+        if Version(pa.__version__) < Version("10.0.0"):
+            raise ValueError("Converting to 'geoarrow' requires pyarrow >= 10.0.")
+
         # Encode all geometry columns to GeoArrow
         for i, col in zip(geometry_indices, geometry_columns):
             crs = df[col].crs.to_json() if df[col].crs is not None else None
@@ -166,9 +169,13 @@ def construct_geometry_array(
 
     mask = shapely.is_missing(shapely_arr)
     if mask.any():
-        if interleaved and Version(pa.__version__) < Version("15.0.0"):
+        if (
+            geom_type == GeometryType.POINT
+            and interleaved
+            and Version(pa.__version__) < Version("15.0.0")
+        ):
             raise ValueError(
-                "Converting geometries with missing values is not supported "
+                "Converting point geometries with missing values is not supported "
                 "for interleaved coordinates with pyarrow < 15.0.0. Please "
                 "upgrade to a newer version of pyarrow."
             )

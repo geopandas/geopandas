@@ -108,6 +108,7 @@ def test_geoarrow_export(geometry_type, dim, missing):
 
 @pytest.mark.parametrize("encoding", ["WKB", "geoarrow"])
 def test_geoarrow_multiple_geometry_crs(encoding):
+    pytest.importorskip("pyproj")
     # ensure each geometry column has its own crs
     gdf = GeoDataFrame(geometry=[box(0, 0, 10, 10)], crs="epsg:4326")
     gdf["geom2"] = gdf.geometry.to_crs("epsg:3857")
@@ -150,21 +151,26 @@ def test_geoarrow_mixed_geometry_types():
     )
 
 
+@pytest.mark.parametrize("geom_type", ["point", "polygon"])
 @pytest.mark.parametrize(
     "encoding, interleaved", [("WKB", True), ("geoarrow", True), ("geoarrow", False)]
 )
-def test_geoarrow_missing(encoding, interleaved):
+def test_geoarrow_missing(encoding, interleaved, geom_type):
     # dummy test for single geometry type until missing values are included
     # in the test data for test_geoarrow_export
-    gdf = GeoDataFrame(geometry=[box(0, 0, 10, 10), None], crs="epsg:4326")
+    gdf = GeoDataFrame(
+        geometry=[Point(0, 0) if geom_type == "point" else box(0, 0, 10, 10), None],
+        crs="epsg:4326",
+    )
     if (
         encoding == "geoarrow"
+        and geom_type == "point"
         and interleaved
         and Version(pa.__version__) < Version("15.0.0")
     ):
         with pytest.raises(
             ValueError,
-            match="Converting geometries with missing values is not supported",
+            match="Converting point geometries with missing values is not supported",
         ):
             gdf.to_arrow(geometry_encoding=encoding, interleaved=interleaved)
         return
