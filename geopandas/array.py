@@ -1208,30 +1208,6 @@ class GeometryArray(ExtensionArray):
             result[~shapely.is_valid_input(result)] = None
         return GeometryArray(result, crs=self.crs)
 
-    def _fill(self, idx, value):
-        """
-        Fill index locations with ``value``.
-
-        ``value`` should be a BaseGeometry or a GeometryArray.
-        """
-        if isna(value):
-            value = [None]
-        elif _is_scalar_geometry(value):
-            value = [value]
-        elif isinstance(value, GeometryArray):
-            value = value[idx]
-        else:
-            raise TypeError(
-                "'value' parameter must be None, a scalar geometry, or a GeoSeries, "
-                f"but you passed a {type(value).__name__!r}"
-            )
-
-        value_arr = np.empty(len(value), dtype=object)
-        value_arr[:] = value
-
-        self._data[idx] = value_arr
-        return self
-
     def fillna(self, value=None, method=None, limit=None, copy=True):
         """
         Fill NA values with geometry (or geometries) or using the specified method.
@@ -1272,7 +1248,25 @@ class GeometryArray(ExtensionArray):
             new_values = self.copy()
         else:
             new_values = self
-        return new_values._fill(mask, value) if mask.any() else new_values
+
+        if not mask.any():
+            return new_values
+
+        if isna(value):
+            value = [None]
+        elif _is_scalar_geometry(value):
+            value = [value]
+        elif isinstance(value, GeometryArray):
+            value = value[mask]
+        else:
+            raise TypeError(
+                "'value' parameter must be None, a scalar geometry, or a GeoSeries, "
+                f"but you passed a {type(value).__name__!r}"
+            )
+        value_arr = np.asarray(value, dtype=object)
+
+        new_values._data[mask] = value_arr
+        return new_values
 
     def astype(self, dtype, copy=True):
         """
