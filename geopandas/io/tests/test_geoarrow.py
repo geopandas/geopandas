@@ -3,7 +3,7 @@ import os
 import pathlib
 
 import numpy as np
-from shapely import box
+from shapely import box, Point, MultiPoint
 
 from geopandas import GeoDataFrame, GeoSeries
 
@@ -127,6 +127,26 @@ def test_geoarrow_unsupported_encoding():
 
     with pytest.raises(ValueError, match="Expected geometry encoding"):
         gdf.to_arrow(geometry_encoding="invalid")
+
+
+def test_geoarrow_mixed_geometry_types():
+    gdf = GeoDataFrame(
+        {"geometry": [Point(0, 0), box(0, 0, 10, 10)]},
+        crs="epsg:4326",
+    )
+
+    with pytest.raises(ValueError, match="Geometry type combination is not supported"):
+        gdf.to_arrow(geometry_encoding="geoarrow")
+
+    gdf = GeoDataFrame(
+        {"geometry": [Point(0, 0), MultiPoint([(0, 0), (1, 1)])]},
+        crs="epsg:4326",
+    )
+    result = gdf.to_arrow(geometry_encoding="geoarrow")
+    assert (
+        result.schema.field("geometry").metadata[b"ARROW:extension:name"]
+        == b"geoarrow.multipoint"
+    )
 
 
 @pytest.mark.parametrize("encoding", ["WKB", "geoarrow"])

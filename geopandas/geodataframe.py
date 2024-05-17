@@ -1151,6 +1151,8 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
     def to_arrow(self, index=None, geometry_encoding="WKB", interleaved=True):
         """Encode a GeoDataFrame to GeoArrow format.
 
+        See https://geoarrow.org/ for details on the GeoArrow specification.
+
         Parameters
         ----------
         index : bool, default None
@@ -1161,6 +1163,11 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
             output except `RangeIndex` which is stored as metadata only.
         geometry_encoding : {'WKB', 'geoarrow' }, default 'WKB'
             The GeoArrow encoding to use for the data conversion.
+        interleaved : bool, default True
+            Only relevant for 'geoarrow' encoding. If True, the geometries
+            coordinates are interleaved in a single fixed size list array.
+            If False, the coordinates are stored as separate arrays in a
+            struct type.
 
         Returns
         -------

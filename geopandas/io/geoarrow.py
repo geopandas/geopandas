@@ -1,5 +1,4 @@
 import json
-from enum import Enum
 from typing import Dict, Optional, Tuple
 
 import numpy as np
@@ -95,22 +94,13 @@ def geopandas_to_arrow(
     return table
 
 
-class CoordinateDimension(str, Enum):
-    XY = "xy"
-    XYZ = "xyz"
-    XYM = "xym"
-    XYZM = "xyzm"
-
-
 def _convert_inner_coords(coords, interleaved, dims, mask=None):
     if interleaved:
-        coords_field = pa.field(
-            "xy" if len(dims) == 2 else "xyz", pa.float64()
-        )  # , nullable=False)
+        coords_field = pa.field(dims, pa.float64())  # , nullable=False)
         typ = pa.list_(coords_field, len(dims))
         parr = pa.FixedSizeListArray.from_arrays(coords.flatten(), type=typ, mask=mask)
     else:
-        if dims == CoordinateDimension.XY:
+        if dims == "xy":
             parr = pa.StructArray.from_arrays(
                 [coords[:, 0].copy(), coords[:, 1].copy()], names=["x", "y"], mask=mask
             )
@@ -173,9 +163,9 @@ def construct_geometry_array(
         mask = None
 
     if coords.shape[-1] == 2:
-        dims = CoordinateDimension.XY
+        dims = "xy"
     elif coords.shape[-1] == 3:
-        dims = CoordinateDimension.XYZ
+        dims = "xyz"
     else:
         raise ValueError(f"Unexpected coords dimensions: {coords.shape}")
 
