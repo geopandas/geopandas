@@ -17,7 +17,7 @@ from pyarrow import feather
 DATA_PATH = pathlib.Path(os.path.dirname(__file__)) / "data"
 
 
-def assert_table_equal(left, right, check_metadata=False):
+def assert_table_equal(left, right, check_metadata=True):
     if left.equals(right, check_metadata=check_metadata):
         return
 
@@ -36,7 +36,6 @@ def assert_table_equal(left, right, check_metadata=False):
                         left.schema.metadata, right.schema.metadata
                     )
                 )
-        # TODO also check field metadata
         for col in left.schema.names:
             assert left.schema.field(col).equals(
                 right.schema.field(col), check_metadata=True
@@ -89,21 +88,21 @@ def test_geoarrow_export(geometry_type, dim, missing):
         result1 = result1.filter(np.asarray(~df.geometry.is_empty))
         expected1 = expected1.filter(np.asarray(~df.geometry.is_empty))
 
-    assert_table_equal(result1, expected1, check_metadata=True)
+    assert_table_equal(result1, expected1)
 
     result2 = df.to_arrow(geometry_encoding="geoarrow")
     # remove the "pandas" metadata
     result2 = result2.replace_schema_metadata(None)
     expected2 = feather.read_table(base_path / f"example-{suffix}-interleaved.arrow")
 
-    assert_table_equal(result2, expected2, check_metadata=True)
+    assert_table_equal(result2, expected2)
 
     result3 = df.to_arrow(geometry_encoding="geoarrow", interleaved=False)
     # remove the "pandas" metadata
     result3 = result3.replace_schema_metadata(None)
     expected3 = feather.read_table(base_path / f"example-{suffix}.arrow")
 
-    assert_table_equal(result3, expected3, check_metadata=True)
+    assert_table_equal(result3, expected3)
 
 
 @pytest.mark.parametrize("encoding", ["WKB", "geoarrow"])
