@@ -1,6 +1,8 @@
 import json
 from typing import Dict, Optional, Tuple
 
+from packaging.version import Version
+
 import numpy as np
 from numpy.typing import NDArray
 import pandas as pd
@@ -98,7 +100,13 @@ def _convert_inner_coords(coords, interleaved, dims, mask=None):
     if interleaved:
         coords_field = pa.field(dims, pa.float64())  # , nullable=False)
         typ = pa.list_(coords_field, len(dims))
-        parr = pa.FixedSizeListArray.from_arrays(coords.flatten(), type=typ, mask=mask)
+        if mask is None:
+            # mask keyword only added in pyarrow 15.0.0
+            parr = pa.FixedSizeListArray.from_arrays(coords.flatten(), type=typ)
+        else:
+            parr = pa.FixedSizeListArray.from_arrays(
+                coords.flatten(), type=typ, mask=mask
+            )
     else:
         if dims == "xy":
             parr = pa.StructArray.from_arrays(
@@ -158,6 +166,12 @@ def construct_geometry_array(
 
     mask = shapely.is_missing(shapely_arr)
     if mask.any():
+        if interleaved and Version(pa.__version__) < Version("15.0.0"):
+            raise ValueError(
+                "Converting geometries with missing values are not supported "
+                "for interleaved coordinates with pyarrow < 15.0.0. Please "
+                "upgrade to a newer version of pyarrow."
+            )
         mask = pa.array(mask, type=pa.bool_())
     else:
         mask = None

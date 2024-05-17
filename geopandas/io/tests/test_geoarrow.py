@@ -1,6 +1,7 @@
 import json
 import os
 import pathlib
+from packaging.version import Version
 
 import numpy as np
 from shapely import box, Point, MultiPoint
@@ -149,11 +150,24 @@ def test_geoarrow_mixed_geometry_types():
     )
 
 
-@pytest.mark.parametrize("encoding", ["WKB", "geoarrow"])
-def test_geoarrow_missing(encoding):
+@pytest.mark.parametrize(
+    "encoding, interleaved", [("WKB", True), ("geoarrow", True), ("geoarrow", False)]
+)
+def test_geoarrow_missing(encoding, interleaved):
     # dummy test for single geometry type until missing values are included
     # in the test data for test_geoarrow_export
     gdf = GeoDataFrame(geometry=[box(0, 0, 10, 10), None], crs="epsg:4326")
-    result = gdf.to_arrow(geometry_encoding=encoding)
+    if (
+        encoding == "geoarrow"
+        and interleaved
+        and Version(pa.__version__) < Version("15.0.0")
+    ):
+        with pytest.raises(
+            ValueError,
+            match="Converting geometries with missing values is not supported",
+        ):
+            gdf.to_arrow(geometry_encoding=encoding, interleaved=interleaved)
+        return
+    result = gdf.to_arrow(geometry_encoding=encoding, interleaved=interleaved)
     assert result["geometry"].null_count == 1
     assert result["geometry"].is_null().to_pylist() == [False, True]
