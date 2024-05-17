@@ -8,13 +8,22 @@ from pandas import DataFrame, Series
 import shapely
 
 from geopandas._compat import import_optional_dependency
-from geopandas.array import from_wkb
+from geopandas.array import from_wkb, from_shapely
 from geopandas import GeoDataFrame
 import geopandas
 from .file import _expand_user
 
 METADATA_VERSION = "1.0.0"
-SUPPORTED_VERSIONS = ["0.1.0", "0.4.0", "1.0.0-beta.1", "1.0.0"]
+SUPPORTED_VERSIONS = ["0.1.0", "0.4.0", "1.0.0-beta.1", "1.0.0", "1.1.0"]
+GEOARROW_ENCODINGS = [
+    "point",
+    "linestring",
+    "polygon",
+    "multipoint",
+    "multilinestring",
+    "multipolygon",
+]
+SUPPORTED_ENCODINGS = ["WKB"] + GEOARROW_ENCODINGS
 # reference: https://github.com/opengeospatial/geoparquet
 
 # Metadata structure:
@@ -233,8 +242,12 @@ def _validate_metadata(metadata):
                     "'{key}' for column '{col}'".format(key=key, col=col)
                 )
 
-        if column_metadata["encoding"] != "WKB":
-            raise ValueError("Only WKB geometry encoding is supported")
+        if column_metadata["encoding"] not in SUPPORTED_ENCODINGS:
+            raise ValueError(
+                "Only WKB geometry encoding or one of the native encodings "
+                f"({GEOARROW_ENCODINGS!r}) are supported, "
+                f"got: {column_metadata['encoding']}"
+            )
 
         if column_metadata.get("edges", "planar") == "spherical":
             warnings.warn(
@@ -507,7 +520,17 @@ def _arrow_to_geopandas(table, metadata=None):
             # OGC:CRS84
             crs = "OGC:CRS84"
 
-        df[col] = from_wkb(df[col].values, crs=crs)
+        if col_metadata["encoding"] == "WKB":
+            df[col] = from_wkb(df[col].values, crs=crs)
+        else:
+            from geopandas.io.geoarrow import construct_shapely_array
+
+            df[col] = from_shapely(
+                construct_shapely_array(
+                    table[col].combine_chunks(), "geoarrow." + col_metadata["encoding"]
+                ),
+                crs=crs,
+            )
 
     return GeoDataFrame(df, geometry=geometry)
 

@@ -5,7 +5,6 @@ import numpy as np
 import pandas as pd
 import shapely.errors
 from pandas import DataFrame, Series
-from pandas.core.accessor import CachedAccessor
 
 from shapely.geometry import mapping, shape
 from shapely.geometry.base import BaseGeometry
@@ -17,6 +16,11 @@ import geopandas.io
 from geopandas.explore import _explore
 from ._decorator import doc
 from ._compat import HAS_PYPROJ, PANDAS_GE_30
+
+if PANDAS_GE_30:
+    from pandas.core.accessor import Accessor
+else:
+    from pandas.core.accessor import CachedAccessor as Accessor
 
 
 def _geodataframe_constructor_with_fallback(*args, **kwargs):
@@ -2133,7 +2137,7 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
             self, name, con, schema, if_exists, index, index_label, chunksize, dtype
         )
 
-    plot = CachedAccessor("plot", geopandas.plotting.GeoplotAccessor)
+    plot = Accessor("plot", geopandas.plotting.GeoplotAccessor)
 
     @doc(_explore)
     def explore(self, *args, **kwargs):
