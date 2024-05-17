@@ -453,28 +453,6 @@ class TestMissing(extension_tests.BaseMissingTests):
         # `geopandas\tests\test_pandas_methods.py::test_fillna_scalar`
         # and `geopandas\tests\test_pandas_methods.py::test_fillna_series`.
 
-    @pytest.mark.skip("fillna method not supported")
-    def test_fillna_limit_pad(self, data_missing):
-        pass
-
-    @pytest.mark.skip("fillna method not supported")
-    def test_fillna_limit_backfill(self, data_missing):
-        pass
-
-    @pytest.mark.skip("fillna method not supported")
-    def test_fillna_series_method(self, data_missing, method):
-        pass
-
-    @pytest.mark.skip("fillna method not supported")
-    def test_fillna_no_op_returns_copy(self, data):
-        pass
-
-    @pytest.mark.skip("fillna method not supported")
-    def test_ffill_limit_area(
-        self, data_missing, limit_area, input_ilocs, expected_ilocs
-    ):
-        pass
-
 
 if PANDAS_GE_22:
     from pandas.tests.extension.base import BaseReduceTests

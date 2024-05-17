@@ -1225,12 +1225,7 @@ class GeometryArray(ExtensionArray):
             backfill / bfill: use NEXT valid observation to fill gap
 
         limit : int, default None
-            If method is specified, this is the maximum number of consecutive
-            NaN values to forward/backward fill. In other words, if there is
-            a gap with more than this number of consecutive NaNs, it will only
-            be partially filled. If method is not specified, this is the
-            maximum number of entries along the entire axis where NaNs will be
-            filled.
+            The maximum number of entries where NA values will be filled.
 
         copy : bool, default True
             Whether to make a copy of the data before filling. If False, then
@@ -1251,6 +1246,11 @@ class GeometryArray(ExtensionArray):
 
         if not mask.any():
             return new_values
+
+        if limit is not None and limit < len(self):
+            modify = mask.cumsum() > limit
+            if modify.any():
+                mask[modify] = False
 
         if isna(value):
             value = [None]
