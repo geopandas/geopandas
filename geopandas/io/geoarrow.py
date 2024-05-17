@@ -102,10 +102,10 @@ def _convert_inner_coords(coords, interleaved, dims, mask=None):
         typ = pa.list_(coords_field, len(dims))
         if mask is None:
             # mask keyword only added in pyarrow 15.0.0
-            parr = pa.FixedSizeListArray.from_arrays(coords.flatten(), type=typ)
+            parr = pa.FixedSizeListArray.from_arrays(coords.ravel(), type=typ)
         else:
             parr = pa.FixedSizeListArray.from_arrays(
-                coords.flatten(), type=typ, mask=mask
+                coords.ravel(), type=typ, mask=mask
             )
     else:
         if dims == "xy":
@@ -168,7 +168,7 @@ def construct_geometry_array(
     if mask.any():
         if interleaved and Version(pa.__version__) < Version("15.0.0"):
             raise ValueError(
-                "Converting geometries with missing values are not supported "
+                "Converting geometries with missing values is not supported "
                 "for interleaved coordinates with pyarrow < 15.0.0. Please "
                 "upgrade to a newer version of pyarrow."
             )
