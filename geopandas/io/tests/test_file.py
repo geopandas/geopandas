@@ -178,7 +178,9 @@ def test_to_file_bool(tmpdir, driver, ext, engine):
         if engine == "fiona":
             df["col"] = df["col"].astype("int64")
         else:
-            df["col"] = df["col"].astype("int32")
+            # GDAL 3.9 supports boolean fields in SHP
+            if pyogrio.__gdal_version__ < (3, 9):
+                df["col"] = df["col"].astype("int32")
     assert_geodataframe_equal(result, df)
     # check the expected driver
     assert_correct_driver(tempfilename, ext, engine)
