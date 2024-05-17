@@ -1213,7 +1213,7 @@ class GeometryArray(ExtensionArray):
         self, method, limit=None, limit_area=None, copy=True, **kwargs
     ):
         return super()._pad_or_backfill(
-            method, limit=limit, limit_area=limit_area, copy=copy, **kwargs
+            method=method, limit=limit, limit_area=limit_area, copy=copy, **kwargs
         )
 
     def fillna(self, value=None, method=None, limit=None, copy=True):

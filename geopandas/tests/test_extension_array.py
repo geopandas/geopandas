@@ -26,7 +26,7 @@ import shapely.geometry
 from shapely.geometry import Point
 
 from geopandas.array import GeometryArray, GeometryDtype, from_shapely
-from geopandas._compat import PANDAS_GE_15, PANDAS_GE_22
+from geopandas._compat import PANDAS_GE_15, PANDAS_GE_21, PANDAS_GE_22
 
 import pytest
 
@@ -452,6 +452,30 @@ class TestMissing(extension_tests.BaseMissingTests):
         # More `GeoSeries.fillna` testcases are in
         # `geopandas\tests\test_pandas_methods.py::test_fillna_scalar`
         # and `geopandas\tests\test_pandas_methods.py::test_fillna_series`.
+
+    @pytest.mark.skipif(
+        not PANDAS_GE_21, reason="fillna method not supported with older pandas"
+    )
+    def test_fillna_limit_pad(self, data_missing):
+        super().test_fillna_limit_pad(data_missing)
+
+    @pytest.mark.skipif(
+        not PANDAS_GE_21, reason="fillna method not supported with older pandas"
+    )
+    def test_fillna_limit_backfill(self, data_missing):
+        super().test_fillna_limit_backfill(data_missing)
+
+    @pytest.mark.skipif(
+        not PANDAS_GE_21, reason="fillna method not supported with older pandas"
+    )
+    def test_fillna_series_method(self, data_missing, fillna_method):
+        super().test_fillna_series_method(data_missing, fillna_method)
+
+    @pytest.mark.skipif(
+        not PANDAS_GE_21, reason="fillna method not supported with older pandas"
+    )
+    def test_fillna_no_op_returns_copy(self, data):
+        super().test_fillna_no_op_returns_copy(data)
 
 
 if PANDAS_GE_22:
