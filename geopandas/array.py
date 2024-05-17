@@ -1209,8 +1209,12 @@ class GeometryArray(ExtensionArray):
         return GeometryArray(result, crs=self.crs)
 
     # compat for pandas < 3.0
-    def _pad_or_backfill(self, *args, **kwargs):
-        return super()._pad_or_backfill(*args, **kwargs)
+    def _pad_or_backfill(
+        self, method, limit=None, limit_area=None, copy=True, **kwargs
+    ):
+        return super()._pad_or_backfill(
+            method, limit=limit, limit_area=limit_area, copy=copy, **kwargs
+        )
 
     def fillna(self, value=None, method=None, limit=None, copy=True):
         """
