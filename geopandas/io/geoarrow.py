@@ -4,10 +4,95 @@ from typing import Dict, Optional, Tuple
 
 import numpy as np
 from numpy.typing import NDArray
+import pandas as pd
 import pyarrow as pa
 
 import shapely
 from shapely import GeometryType
+
+
+def geopandas_to_arrow(
+    df, index=None, geometry_encoding="WKB", include_z=None, interleaved=True
+):
+    """
+    Convert GeoDataFrame to a pyarrow.Table.
+
+    Parameters
+    ----------
+    df : GeoDataFrame
+        The GeoDataFrame to convert.
+    index : bool, default None
+        If ``True``, always include the dataframe's index(es) as columns
+        in the file output.
+        If ``False``, the index(es) will not be written to the file.
+        If ``None``, the index(ex) will be included as columns in the file
+        output except `RangeIndex` which is stored as metadata only.
+    geometry_encoding : {'WKB', 'geoarrow' }, default 'WKB'
+        The GeoArrow encoding to use for the data conversion.
+
+    """
+    mask = df.dtypes == "geometry"
+    geometry_columns = df.columns[mask]
+    geometry_indices = np.asarray(mask).nonzero()[0]
+
+    df_attr = pd.DataFrame(df.copy(deep=False))
+
+    # replace geometry columsn with dummy values -> will get converted to
+    # Arrow null column (not holding any memory), so we can afterwards
+    # fill the resulting table with the correct geometry fields
+    for col in geometry_columns:
+        df_attr[col] = None
+
+    table = pa.Table.from_pandas(df_attr, preserve_index=index)
+
+    if geometry_encoding.lower() == "geoarrow":
+        # Encode all geometry columns to GeoArrow
+        for i, col in zip(geometry_indices, geometry_columns):
+            crs = df[col].crs.to_json() if df[col].crs is not None else None
+            field, geom_arr = construct_geometry_array(
+                np.array(df[col]),
+                include_z=include_z,
+                field_name=col,
+                crs=crs,
+                interleaved=interleaved,
+            )
+            table = table.set_column(i, field, geom_arr)
+
+    elif geometry_encoding.lower() == "wkb":
+        if shapely.geos_version > (3, 10, 0):
+            kwargs = {"flavor": "iso"}
+        else:
+            if any(
+                df[col].array.has_z.any() for col in df.columns[df.dtypes == "geometry"]
+            ):
+                raise ValueError("Cannot write 3D geometries with GEOS<3.10")
+            kwargs = {}
+
+        # Encode all geometry columns to WKB
+        for i, col in zip(geometry_indices, geometry_columns):
+            wkb_arr = shapely.to_wkb(df[col], **kwargs)
+            crs = df[col].crs.to_json() if df[col].crs is not None else None
+            extension_metadata = {"ARROW:extension:name": "geoarrow.wkb"}
+            if crs is not None:
+                extension_metadata["ARROW:extension:metadata"] = json.dumps(
+                    {"crs": crs}
+                )
+            else:
+                # TODO we shouldn't do this, just to get testing passed for now
+                extension_metadata["ARROW:extension:metadata"] = "{}"
+
+            field = pa.field(
+                col, type=pa.binary(), nullable=True, metadata=extension_metadata
+            )
+            table = table.set_column(
+                i, field, pa.array(np.asarray(wkb_arr), pa.binary())
+            )
+
+    else:
+        raise ValueError(
+            f"Expected geometry encoding 'WKB' or 'geoarrow' got {geometry_encoding}"
+        )
+    return table
 
 
 class CoordinateDimension(str, Enum):
@@ -71,7 +156,7 @@ def construct_geometry_array(
     include_z: Optional[bool] = None,
     *,
     field_name: str = "geometry",
-    crs_str: Optional[str] = None,
+    crs: Optional[str] = None,
     interleaved: bool = True,
 ) -> Tuple[pa.Field, pa.Array]:
     # NOTE: this implementation returns a (field, array) pair so that it can set the
@@ -95,8 +180,8 @@ def construct_geometry_array(
         raise ValueError(f"Unexpected coords dimensions: {coords.shape}")
 
     extension_metadata: Dict[str, str] = {}
-    if crs_str is not None:
-        extension_metadata["ARROW:extension:metadata"] = json.dumps({"crs": crs_str})
+    if crs is not None:
+        extension_metadata["ARROW:extension:metadata"] = json.dumps({"crs": crs})
     else:
         # TODO we shouldn't do this, just to get testing passed for now
         extension_metadata["ARROW:extension:metadata"] = "{}"

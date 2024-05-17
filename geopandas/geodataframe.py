@@ -1167,9 +1167,9 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
         pyarrow.Table
             a Table with geometry columns encoded to GeoArrow
         """
-        from geopandas.io.arrow import _geopandas_to_arrow
+        from geopandas.io.geoarrow import geopandas_to_arrow
 
-        return _geopandas_to_arrow(
+        return geopandas_to_arrow(
             self,
             index=index,
             geometry_encoding=geometry_encoding,

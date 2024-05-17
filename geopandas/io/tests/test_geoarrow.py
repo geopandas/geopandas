@@ -77,7 +77,6 @@ def test_geoarrow_export(geometry_type, dim):
     df.geometry.crs = None
 
     result1 = df.to_arrow(geometry_encoding="WKB")
-    # TODO this still contains "geo" key in addition to pandas
     # remove the "pandas" metadata
     result1 = result1.replace_schema_metadata(None)
     expected1 = feather.read_table(base_path / f"example-{suffix}-wkb.arrow")
@@ -92,7 +91,6 @@ def test_geoarrow_export(geometry_type, dim):
     assert_table_equal(result1, expected1, check_metadata=True)
 
     result2 = df.to_arrow(geometry_encoding="geoarrow")
-    # TODO this still contains "geo" key in addition to pandas
     # remove the "pandas" metadata
     result2 = result2.replace_schema_metadata(None)
     expected2 = feather.read_table(base_path / f"example-{suffix}-interleaved.arrow")
@@ -100,7 +98,6 @@ def test_geoarrow_export(geometry_type, dim):
     assert_table_equal(result2, expected2, check_metadata=True)
 
     result3 = df.to_arrow(geometry_encoding="geoarrow", interleaved=False)
-    # TODO this still contains "geo" key in addition to pandas
     # remove the "pandas" metadata
     result3 = result3.replace_schema_metadata(None)
     expected3 = feather.read_table(base_path / f"example-{suffix}.arrow")

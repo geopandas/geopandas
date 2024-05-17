@@ -5,8 +5,6 @@ import warnings
 import numpy as np
 from pandas import DataFrame, Series
 
-import shapely
-
 from geopandas._compat import import_optional_dependency
 from geopandas.array import from_wkb, from_shapely
 from geopandas import GeoDataFrame
@@ -260,23 +258,19 @@ def _validate_metadata(metadata):
             )
 
 
-def _geopandas_to_arrow(
-    df, index=None, schema_version=None, geometry_encoding="WKB", interleaved=True
-):
+def _geopandas_to_arrow(df, index=None, schema_version=None, geometry_encoding="WKB"):
     """
     Helper function with main, shared logic for to_parquet/to_feather.
     """
+    from geopandas.io.geoarrow import geopandas_to_arrow
+
     _validate_dataframe(df)
 
     # create geo metadata before altering incoming data frame
     geo_metadata = _create_metadata(df, schema_version=schema_version)
 
-    table = _encode_geometry(
-        df,
-        geometry_encoding=geometry_encoding,
-        index=index,
-        include_z=None,
-        interleaved=interleaved,
+    table = geopandas_to_arrow(
+        df, geometry_encoding=geometry_encoding, index=index, interleaved=True
     )
 
     # Store geopandas specific file-level metadata
@@ -285,69 +279,6 @@ def _geopandas_to_arrow(
     metadata.update({b"geo": _encode_metadata(geo_metadata)})
 
     return table.replace_schema_metadata(metadata)
-
-
-def _encode_geometry(
-    df, geometry_encoding="WKB", include_z=None, index=None, interleaved=True
-):
-    from pyarrow import Table
-    import pyarrow as pa
-
-    df_attr = df.select_dtypes(exclude="geometry")
-
-    table = Table.from_pandas(df_attr, preserve_index=index)
-
-    if geometry_encoding.lower() == "geoarrow":
-        # Encode all geometry columns to GeoArrow
-        for col in df.columns[df.dtypes == "geometry"]:
-            from geopandas.io.geoarrow import construct_geometry_array
-
-            crs_str = df[col].crs.to_json() if df[col].crs is not None else None
-            field, geom_arr = construct_geometry_array(
-                np.array(df[col]),
-                include_z=include_z,
-                field_name=col,
-                crs_str=crs_str,
-                interleaved=interleaved,
-            )
-            table = table.append_column(field, geom_arr)
-
-        return table
-    elif geometry_encoding.lower() == "wkb":
-        if shapely.geos_version > (3, 10, 0):
-            kwargs = {"flavor": "iso"}
-        else:
-            if any(
-                df[col].array.has_z.any() for col in df.columns[df.dtypes == "geometry"]
-            ):
-                raise ValueError("Cannot write 3D geometries with GEOS<3.10")
-            kwargs = {}
-
-        # Encode all geometry columns to WKB
-        for col in df.columns[df.dtypes == "geometry"]:
-            wkb_arr = shapely.to_wkb(df[col], **kwargs)
-            crs_str = df[col].crs.to_json() if df[col].crs is not None else None
-            extension_metadata = {"ARROW:extension:name": "geoarrow.wkb"}
-            if crs_str is not None:
-                extension_metadata["ARROW:extension:metadata"] = json.dumps(
-                    {"crs": crs_str}
-                )
-            else:
-                # TODO we shouldn't do this, just to get testing passed for now
-                extension_metadata["ARROW:extension:metadata"] = "{}"
-
-            field = pa.field(
-                col, type=pa.binary(), nullable=True, metadata=extension_metadata
-            )
-            table = table.append_column(
-                field, pa.array(np.asarray(wkb_arr), pa.binary())
-            )
-
-        return table
-    else:
-        raise ValueError(
-            f"Expected geometry encoding 'WKB' or 'geoarrow' got {geometry_encoding}"
-        )
 
 
 def _to_parquet(
