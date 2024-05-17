@@ -258,7 +258,7 @@ def _validate_metadata(metadata):
             )
 
 
-def _geopandas_to_arrow(df, index=None, schema_version=None, geometry_encoding="WKB"):
+def _geopandas_to_arrow(df, index=None, schema_version=None):
     """
     Helper function with main, shared logic for to_parquet/to_feather.
     """
@@ -270,7 +270,7 @@ def _geopandas_to_arrow(df, index=None, schema_version=None, geometry_encoding="
     geo_metadata = _create_metadata(df, schema_version=schema_version)
 
     table = geopandas_to_arrow(
-        df, geometry_encoding=geometry_encoding, index=index, interleaved=True
+        df, geometry_encoding="WKB", index=index, interleaved=True
     )
 
     # Store geopandas specific file-level metadata
