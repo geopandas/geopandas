@@ -1208,6 +1208,9 @@ class GeometryArray(ExtensionArray):
             result[~shapely.is_valid_input(result)] = None
         return GeometryArray(result, crs=self.crs)
 
+    # compat for pandas < 3.0
+    _pad_or_backfill = ExtensionArray._pad_or_backfill
+
     def fillna(self, value=None, method=None, limit=None, copy=True):
         """
         Fill NA values with geometry (or geometries) or using the specified method.
