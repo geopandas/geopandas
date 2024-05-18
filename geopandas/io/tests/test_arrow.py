@@ -1005,8 +1005,10 @@ def test_to_parquet_bbox_structure_and_metadata(tmpdir, naturalearth_lowres):
     df = read_file(naturalearth_lowres)
     filename = os.path.join(str(tmpdir), "test.pq")
     df.to_parquet(filename, bbox_column_name=bbox_col_name)
-    assert bbox_col_name in df.columns
-    assert [*df[bbox_col_name][0].keys()] == ["xmin", "ymin", "xmax", "ymax"]
+
+    pq_df = read_parquet(filename, read_bbox_column=True)
+    assert bbox_col_name in pq_df.columns
+    assert [*pq_df[bbox_col_name][0].keys()] == ["xmin", "ymin", "xmax", "ymax"]
 
     table = parquet.read_table(filename)
     metadata = json.loads(table.schema.metadata[b"geo"].decode("utf-8"))
@@ -1046,7 +1048,8 @@ def test_to_parquet_bbox_values(tmpdir, geometry, expected_bbox):
 
     df.to_parquet(filename, bbox_column_name="bbox_column_name")
 
-    assert df["bbox_column_name"][0] == expected_bbox
+    pq_df = read_parquet(filename, read_bbox_column=True)
+    assert pq_df["bbox_column_name"][0] == expected_bbox
 
 
 @pytest.mark.skipif(

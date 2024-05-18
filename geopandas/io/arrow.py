@@ -312,15 +312,14 @@ def _geopandas_to_arrow(df, index=None, schema_version=None, bbox_column_name=No
     """
     from pyarrow import Table, StructArray
 
+    _validate_dataframe(df)
+
     if bbox_column_name:
         bounds = df.bounds
-        df[bbox_column_name] = StructArray.from_arrays(
+        bbox_array = StructArray.from_arrays(
             [bounds["minx"], bounds["miny"], bounds["maxx"], bounds["maxy"]],
             names=["xmin", "ymin", "xmax", "ymax"],
         )
-
-    _validate_dataframe(df)
-
     # create geo metadata before altering incoming data frame
     geo_metadata = _create_metadata(
         df, schema_version=schema_version, bbox_column_name=bbox_column_name
@@ -337,6 +336,9 @@ def _geopandas_to_arrow(df, index=None, schema_version=None, bbox_column_name=No
     df = df.to_wkb(**kwargs)
 
     table = Table.from_pandas(df, preserve_index=index)
+
+    if bbox_column_name:
+        table = table.append_column(bbox_column_name, bbox_array)
 
     # Store geopandas specific file-level metadata
     # This must be done AFTER creating the table or it is not persisted
