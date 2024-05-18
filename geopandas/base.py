@@ -909,7 +909,7 @@ GeometryCollection
 
         Notes
         -----
-        If you want to generate a Delaunay triangles for each geometry separately, use
+        If you want to generate Delaunay triangles for each geometry separately, use
         :func:`shapely.delaunay_triangles` instead.
 
         Parameters
