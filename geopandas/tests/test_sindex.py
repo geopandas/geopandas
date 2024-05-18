@@ -1,7 +1,6 @@
 from math import sqrt
 
 import numpy as np
-import pandas as pd
 import pytest
 import shapely
 from numpy.testing import assert_array_equal
@@ -164,15 +163,15 @@ class TestFrameSindex:
         """Selecting a subset of columns preserves the index."""
         original_index = self.df.sindex
         # Selecting a subset of columns preserves the index for pandas < 2.0
-        # with pandas 2.0, the column is now copied, losing the index (although
-        # with Copy-on-Write, this will again be preserved)
+        # with pandas 2.0, the column is now copied, losing the index. But
+        # with pandas >= 3.0 and Copy-on-Write this is preserved again
         subset1 = self.df[["geom", "A"]]
-        if compat.PANDAS_GE_20 and not pd.options.mode.copy_on_write:
+        if compat.PANDAS_GE_20 and not compat.PANDAS_GE_30:
             assert subset1.sindex is not original_index
         else:
             assert subset1.sindex is original_index
         subset2 = self.df[["A", "geom"]]
-        if compat.PANDAS_GE_20 and not pd.options.mode.copy_on_write:
+        if compat.PANDAS_GE_20 and not compat.PANDAS_GE_30:
             assert subset2.sindex is not original_index
         else:
             assert subset2.sindex is original_index
