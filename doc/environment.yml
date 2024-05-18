@@ -16,7 +16,6 @@ dependencies:
   - ipython
   - pillow
   - mock
-  - cartopy
   - pyepsg
   - contextily
   - rasterio
@@ -43,3 +42,4 @@ dependencies:
       - sphinx-toggleprompt
       - geodatasets
       - pyproj
+      - cartopy
