@@ -716,7 +716,7 @@ GeometryCollection
         Parameters
         ----------
         index : int or array_like
-            Position of a geometry to be retrieved wihtin its collection
+            Position of a geometry to be retrieved within its collection
 
         Returns
         -------
