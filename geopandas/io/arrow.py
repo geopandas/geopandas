@@ -310,16 +310,14 @@ def _geopandas_to_arrow(df, index=None, schema_version=None, bbox_column_name=No
     """
     Helper function with main, shared logic for to_parquet/to_feather.
     """
-    from pyarrow import Table
+    from pyarrow import Table, StructArray
 
     if bbox_column_name:
-        geometry_bbox = df.bounds.rename(
-            OrderedDict(
-                [("minx", "xmin"), ("miny", "ymin"), ("maxx", "xmax"), ("maxy", "ymax")]
-            ),
-            axis=1,
+        bounds = df.bounds
+        df[bbox_column_name] = StructArray.from_arrays(
+            [bounds["minx"], bounds["miny"], bounds["maxx"], bounds["maxy"]],
+            names=["xmin", "ymin", "xmax", "ymax"],
         )
-        df[bbox_column_name] = geometry_bbox.to_dict("records")
 
     _validate_dataframe(df)
 
