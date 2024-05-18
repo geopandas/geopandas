@@ -66,6 +66,8 @@ New features and improvements:
   preservation of the original order of observations. (#3233)
 - Added `show_bbox`, `drop_id` and `to_wgs84` arguments to allow further customization of
   `GeoSeries.to_json` (#3226)
+- `explore` now supports `GeoDataFrame`s with additional columns containing datetimes, uuids and 
+  other non JSON serializable objects (#3261).
 - The `GeoSeries.fillna` method now supports the `limit` keyword (#3290).
 
 Backwards incompatible API changes:
