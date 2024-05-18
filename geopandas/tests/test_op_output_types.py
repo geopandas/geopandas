@@ -1,12 +1,13 @@
+import numpy as np
 import pandas as pd
-import pytest
 
 from shapely.geometry import Point
-import numpy as np
 
-from geopandas import GeoDataFrame, GeoSeries
-from geopandas.testing import assert_geodataframe_equal
 import geopandas
+from geopandas import GeoDataFrame, GeoSeries
+
+import pytest
+from geopandas.testing import assert_geodataframe_equal
 
 pyproj = pytest.importorskip("pyproj")
 

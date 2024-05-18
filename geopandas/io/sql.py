@@ -26,7 +26,7 @@ def _get_conn(conn_or_engine):
     -------
     Connection
     """
-    from sqlalchemy.engine.base import Engine, Connection
+    from sqlalchemy.engine.base import Connection, Engine
 
     if isinstance(conn_or_engine, Connection):
         if not conn_or_engine.in_transaction():
@@ -293,8 +293,8 @@ def _convert_to_ewkb(gdf, geom_name, srid):
 
 
 def _psql_insert_copy(tbl, conn, keys, data_iter):
-    import io
     import csv
+    import io
 
     s_buf = io.StringIO()
     writer = csv.writer(s_buf)

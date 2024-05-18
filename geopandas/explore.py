@@ -1,11 +1,12 @@
+from packaging.version import Version
 from statistics import mean
 
-import geopandas
-from shapely.geometry import LineString
 import numpy as np
 import pandas as pd
 
-from packaging.version import Version
+from shapely.geometry import LineString
+
+import geopandas
 
 _MAP_KWARGS = [
     "location",
@@ -277,13 +278,14 @@ def _explore(
                 return cm.get_cmap(_cmap, n_resample)(idx)
 
     try:
+        import re
+
         import branca as bc
         import folium
-        import re
         import matplotlib
-        from matplotlib import colors
         import matplotlib.pyplot as plt
         from mapclassify import classify
+        from matplotlib import colors
 
         # isolate MPL version - GH#2596
         MPL_361 = Version(matplotlib.__version__) >= Version("3.6.1")

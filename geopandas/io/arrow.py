@@ -1,16 +1,17 @@
-from packaging.version import Version
 import json
 import warnings
+from packaging.version import Version
 
 import numpy as np
 from pandas import DataFrame, Series
 
 import shapely
 
-from geopandas._compat import import_optional_dependency
-from geopandas.array import from_wkb, from_shapely
-from geopandas import GeoDataFrame
 import geopandas
+from geopandas import GeoDataFrame
+from geopandas._compat import import_optional_dependency
+from geopandas.array import from_shapely, from_wkb
+
 from .file import _expand_user
 
 METADATA_VERSION = "1.0.0"
@@ -693,6 +694,7 @@ def _read_feather(path, columns=None, **kwargs):
     )
     # TODO move this into `import_optional_dependency`
     import pyarrow
+
     import geopandas.io._pyarrow_hotfix  # noqa: F401
 
     if Version(pyarrow.__version__) < Version("0.17.0"):

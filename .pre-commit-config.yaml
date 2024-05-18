@@ -13,3 +13,6 @@ repos:
       rev: "v0.4.4"
       hooks:
         - id: ruff
+          name: sort imports with ruff
+          args: [--select, I, --fix]
+        - id: ruff

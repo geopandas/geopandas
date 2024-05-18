@@ -3,15 +3,14 @@ import pandas as pd
 from shapely.geometry import Point
 
 from geopandas import GeoDataFrame, GeoSeries
+from geopandas._compat import HAS_PYPROJ
 from geopandas.tools import geocode, reverse_geocode
 from geopandas.tools.geocoding import _prepare_geocode_result
 
+import pytest
+from geopandas.testing import assert_geodataframe_equal
 from geopandas.tests.util import assert_geoseries_equal, mock
 from pandas.testing import assert_series_equal
-from geopandas.testing import assert_geodataframe_equal
-import pytest
-
-from geopandas._compat import HAS_PYPROJ
 
 geopy = pytest.importorskip("geopy")
 

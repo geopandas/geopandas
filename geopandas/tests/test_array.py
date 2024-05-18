@@ -7,25 +7,24 @@ import pandas as pd
 import shapely
 import shapely.affinity
 import shapely.geometry
-from shapely.geometry.base import CAP_STYLE, JOIN_STYLE
 import shapely.wkb
 import shapely.wkt
 from shapely import geos_version
+from shapely.geometry.base import CAP_STYLE, JOIN_STYLE
 
 import geopandas
+from geopandas._compat import HAS_PYPROJ
 from geopandas.array import (
     GeometryArray,
+    _check_crs,
+    _crs_mismatch_warn,
     from_shapely,
     from_wkb,
     from_wkt,
     points_from_xy,
     to_wkb,
     to_wkt,
-    _check_crs,
-    _crs_mismatch_warn,
 )
-
-from geopandas._compat import HAS_PYPROJ
 
 import pytest
 

@@ -1,11 +1,14 @@
-import geopandas as gpd
-import numpy as np
-import pandas as pd
-import pytest
-import shapely
 from packaging.version import Version
 
+import numpy as np
+import pandas as pd
+
+import shapely
+
+import geopandas as gpd
 from geopandas._compat import HAS_PYPROJ
+
+import pytest
 
 folium = pytest.importorskip("folium")
 branca = pytest.importorskip("branca")
@@ -13,9 +16,8 @@ matplotlib = pytest.importorskip("matplotlib")
 mapclassify = pytest.importorskip("mapclassify")
 geodatasets = pytest.importorskip("geodatasets")
 
-from matplotlib import cm
-from matplotlib import colors
 from branca.colormap import StepColormap
+from matplotlib import cm, colors
 
 BRANCA_05 = Version(branca.__version__) > Version("0.4.2")
 FOLIUM_G_014 = Version(folium.__version__) > Version("0.14.0")
