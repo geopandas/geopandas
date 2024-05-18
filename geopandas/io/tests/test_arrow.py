@@ -175,7 +175,7 @@ def test_validate_metadata_valid():
                         # not validated here
                         "id": {"authority": "EPSG", "code": 4326},
                     },
-                    "encoding": "WKB",
+                    "encoding": "point",
                 }
             },
             "version": "0.4.0",
@@ -222,7 +222,7 @@ def test_validate_metadata_valid():
                 "columns": {"foo": {"crs": None, "encoding": None}},
                 "version": "<version>",
             },
-            "Only WKB geometry encoding is supported",
+            "Only WKB geometry encoding",
         ),
         (
             {
@@ -230,7 +230,7 @@ def test_validate_metadata_valid():
                 "columns": {"foo": {"crs": None, "encoding": "BKW"}},
                 "version": "<version>",
             },
-            "Only WKB geometry encoding is supported",
+            "Only WKB geometry encoding",
         ),
     ],
 )
@@ -904,3 +904,24 @@ def test_parquet_read_partitioned_dataset_fsspec(tmpdir, naturalearth_lowres):
 
     result = read_parquet("memory://partitioned_dataset")
     assert_geodataframe_equal(result, df)
+
+
+@pytest.mark.parametrize(
+    "geometry_type",
+    ["point", "linestring", "polygon", "multipoint", "multilinestring", "multipolygon"],
+)
+def test_read_parquet_geoarrow(geometry_type):
+
+    result = geopandas.read_parquet(
+        DATA_PATH
+        / "arrow"
+        / "geoparquet"
+        / f"data-{geometry_type}-encoding_native.parquet"
+    )
+    expected = geopandas.read_parquet(
+        DATA_PATH
+        / "arrow"
+        / "geoparquet"
+        / f"data-{geometry_type}-encoding_wkb.parquet"
+    )
+    assert_geodataframe_equal(result, expected, check_crs=True)

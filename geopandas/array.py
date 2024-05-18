@@ -537,12 +537,19 @@ class GeometryArray(ExtensionArray):
         return shapely.length(self._data)
 
     def count_coordinates(self):
-        out = np.empty(len(self._data), dtype=np.int_)
-        out[:] = [shapely.count_coordinates(s) for s in self._data]
-        return out
+        return shapely.get_num_coordinates(self._data)
+
+    def count_geometries(self):
+        return shapely.get_num_geometries(self._data)
+
+    def count_interior_rings(self):
+        return shapely.get_num_interior_rings(self._data)
 
     def get_precision(self):
         return shapely.get_precision(self._data)
+
+    def get_geometry(self, index):
+        return shapely.get_geometry(self._data, index=index)
 
     #
     # Unary operations that return new geometries
@@ -829,6 +836,11 @@ class GeometryArray(ExtensionArray):
             other = other._data
         return shapely.relate(self._data, other)
 
+    def relate_pattern(self, other, pattern):
+        if isinstance(other, GeometryArray):
+            other = other._data
+        return shapely.relate_pattern(self._data, other, pattern)
+
     #
     # Reduction operations that return a Shapely geometry
     #
@@ -842,8 +854,18 @@ class GeometryArray(ExtensionArray):
         )
         return self.union_all()
 
-    def union_all(self):
-        return shapely.union_all(self._data)
+    def union_all(self, method="unary"):
+        if method == "coverage":
+            return shapely.coverage_union_all(self._data)
+        elif method == "unary":
+            return shapely.union_all(self._data)
+        else:
+            raise ValueError(
+                f"Method '{method}' not recognized. Use 'coverage' or 'unary'."
+            )
+
+    def intersection_all(self):
+        return shapely.intersection_all(self._data)
 
     #
     # Affinity operations
@@ -1189,29 +1211,13 @@ class GeometryArray(ExtensionArray):
             result[~shapely.is_valid_input(result)] = None
         return GeometryArray(result, crs=self.crs)
 
-    def _fill(self, idx, value):
-        """
-        Fill index locations with ``value``.
-
-        ``value`` should be a BaseGeometry or a GeometryArray.
-        """
-        if isna(value):
-            value = [None]
-        elif _is_scalar_geometry(value):
-            value = [value]
-        elif isinstance(value, GeometryArray):
-            value = value[idx]
-        else:
-            raise TypeError(
-                "'value' parameter must be None, a scalar geometry, or a GeoSeries, "
-                f"but you passed a {type(value).__name__!r}"
-            )
-
-        value_arr = np.empty(len(value), dtype=object)
-        value_arr[:] = value
-
-        self._data[idx] = value_arr
-        return self
+    # compat for pandas < 3.0
+    def _pad_or_backfill(
+        self, method, limit=None, limit_area=None, copy=True, **kwargs
+    ):
+        return super()._pad_or_backfill(
+            method=method, limit=limit, limit_area=limit_area, copy=copy, **kwargs
+        )
 
     def fillna(self, value=None, method=None, limit=None, copy=True):
         """
@@ -1230,12 +1236,7 @@ class GeometryArray(ExtensionArray):
             backfill / bfill: use NEXT valid observation to fill gap
 
         limit : int, default None
-            If method is specified, this is the maximum number of consecutive
-            NaN values to forward/backward fill. In other words, if there is
-            a gap with more than this number of consecutive NaNs, it will only
-            be partially filled. If method is not specified, this is the
-            maximum number of entries along the entire axis where NaNs will be
-            filled.
+            The maximum number of entries where NA values will be filled.
 
         copy : bool, default True
             Whether to make a copy of the data before filling. If False, then
@@ -1253,7 +1254,30 @@ class GeometryArray(ExtensionArray):
             new_values = self.copy()
         else:
             new_values = self
-        return new_values._fill(mask, value) if mask.any() else new_values
+
+        if not mask.any():
+            return new_values
+
+        if limit is not None and limit < len(self):
+            modify = mask.cumsum() > limit
+            if modify.any():
+                mask[modify] = False
+
+        if isna(value):
+            value = [None]
+        elif _is_scalar_geometry(value):
+            value = [value]
+        elif isinstance(value, GeometryArray):
+            value = value[mask]
+        else:
+            raise TypeError(
+                "'value' parameter must be None, a scalar geometry, or a GeoSeries, "
+                f"but you passed a {type(value).__name__!r}"
+            )
+        value_arr = np.asarray(value, dtype=object)
+
+        new_values._data[mask] = value_arr
+        return new_values
 
     def astype(self, dtype, copy=True):
         """

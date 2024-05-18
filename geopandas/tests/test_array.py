@@ -685,6 +685,12 @@ def test_union_all():
     expected = shapely.geometry.Polygon([(0, 0), (1, 0), (1, 1), (0, 1)])
     assert u.equals(expected)
 
+    u_cov = G.union_all(method="coverage")
+    assert u_cov.equals(expected)
+
+    with pytest.raises(ValueError, match="Method 'invalid' not recognized."):
+        G.union_all(method="invalid")
+
 
 @pytest.mark.parametrize(
     "attr, arg",

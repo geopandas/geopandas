@@ -808,7 +808,7 @@ class GeoSeries(GeoPandasBase, Series):
         """Alias for `notna` method. See `notna` for more detail."""
         return self.notna()
 
-    def fillna(self, value=None, inplace: bool = False, **kwargs):
+    def fillna(self, value=None, inplace: bool = False, limit=None, **kwargs):
         """
         Fill NA values with geometry (or geometries).
 
@@ -821,6 +821,9 @@ class GeoSeries(GeoPandasBase, Series):
             are passed, missing values will be filled based on the corresponding index
             locations. If pd.NA or np.nan are passed, values will be filled with
             ``None`` (not GEOMETRYCOLLECTION EMPTY).
+        limit : int, default None
+            This is the maximum number of entries along the entire axis
+            where NaNs will be filled. Must be greater than 0 if not None.
 
         Returns
         -------
@@ -880,7 +883,7 @@ class GeoSeries(GeoPandasBase, Series):
         """
         if value is None:
             value = GeometryCollection()
-        return super().fillna(value=value, inplace=inplace, **kwargs)
+        return super().fillna(value=value, limit=limit, inplace=inplace, **kwargs)
 
     def __contains__(self, other) -> bool:
         """Allow tests of the form "geom in s"
@@ -1306,7 +1309,7 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
         """
         return Series(to_wkt(self.array, **kwargs), index=self.index)
 
-    def clip(self, mask, keep_geom_type: bool = False) -> GeoSeries:
+    def clip(self, mask, keep_geom_type: bool = False, sort=False) -> GeoSeries:
         """Clip points, lines, or polygon geometries to the mask extent.
 
         Both layers must be in the same Coordinate Reference System (CRS).
@@ -1329,6 +1332,10 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
             If True, return only geometries of original type in case of intersection
             resulting in multiple geometry types or GeometryCollections.
             If False, return all resulting geometries (potentially mixed-types).
+        sort : boolean, default False
+            If True, the order of rows in the clipped GeoSeries will be preserved
+            at small performance cost.
+            If False the order of rows in the clipped GeoSeries will be random.
 
         Returns
         -------
@@ -1359,4 +1366,4 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
         >>> nws_groceries.shape
         (7,)
         """
-        return geopandas.clip(self, mask=mask, keep_geom_type=keep_geom_type)
+        return geopandas.clip(self, mask=mask, keep_geom_type=keep_geom_type, sort=sort)
