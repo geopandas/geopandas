@@ -60,7 +60,7 @@ New features and improvements:
   `buffer(0)` (#3113).
 - Passing `"geometry"` as `dtype` to `pd.read_csv` will now return a GeoSeries for
   the specified columns (#3101).
--- Added support to ``read_file`` for the ``mask`` keyword for the pyogrio engine (#3062).
+- Added support to ``read_file`` for the ``mask`` keyword for the pyogrio engine (#3062).
 - Added support to ``read_file`` for the ``columns`` keyword for the fiona engine (#3133).
 - Added support to ``read_parquet`` for reading files using the GeoArrow-based native geometry encoding of GeoParquet 1.1 (#3253).
 - Add `sort` keyword to `clip` method for GeoSeries and GeoDataFrame to allow optional
