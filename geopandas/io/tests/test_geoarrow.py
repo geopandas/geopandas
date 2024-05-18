@@ -54,6 +54,10 @@ def assert_table_equal(left, right, check_metadata=True):
     raise AssertionError("Tables not equal for unknown reason")
 
 
+@pytest.mark.skipif(
+    shapely.geos_version < (3, 9, 0),
+    reason="Checking for empty is buggy with GEOS<3.9",
+)  # an old GEOS is installed in the CI builds with the defaults channel
 @pytest.mark.parametrize("missing", [True, False])
 @pytest.mark.parametrize(
     "dim",
@@ -63,7 +67,7 @@ def assert_table_equal(left, right, check_metadata=True):
             "xyz",
             marks=pytest.mark.skipif(
                 shapely.geos_version < (3, 10, 0),
-                reason="GEOS < 3.9.0Cannot write 3D geometries with GEOS<3.10",
+                reason="Cannot write 3D geometries with GEOS<3.10",
             ),
         ),
     ],
