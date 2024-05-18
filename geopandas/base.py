@@ -997,59 +997,103 @@ GeometryCollection
 
     def delaunay_triangles(self, tolerance=0.0, only_edges=False):
         """Returns a ``GeoSeries`` consisting of objects representing
-        the computed Delaunay triangulation around the vertices of
+        the computed Delaunay triangulation between the vertices of
         an input geometry.
 
-        The output is a ``GeometryCollection`` containing polygons
-        (default) or linestrings (see only_edges).
+        All geometries within the GeoSeries are considered together within a single
+        Delaunay triangulation. The resulting geometries therefore do not map 1:1
+        to input geometries. Note that each vertex of a geometry is considered a site
+        for the triangulation, so the triangles will be constructed between the vertices
+        of each geometry.
 
-        Returns an empty GeometryCollection if an input geometry
-        contains less than 3 vertices.
+        Notes
+        -----
+        If you want to generate Delaunay triangles for each geometry separately, use
+        :func:`shapely.delaunay_triangles` instead.
 
         Parameters
         ----------
-        tolerance : float | array-like, default 0.0
+        tolerance : float, default 0.0
             Snap input vertices together if their distance is less than this value.
-        only_edges : bool | array_like, (optional, default False)
-            If set to True, the triangulation will return a collection of
-            linestrings instead of polygons.
+        only_edges : bool (optional, default False)
+            If set to True, the triangulation will return linestrings instead of
+            polygons.
 
         Examples
         --------
 
-        >>> from shapely import LineString, MultiPoint, Polygon
+        >>> from shapely import LineString, MultiPoint, Point, Polygon
         >>> s = geopandas.GeoSeries(
         ...     [
-        ...         MultiPoint([(5, 3), (6, 3), (10, 10)]),
-        ...         Polygon([(5, 3), (6, 3), (10, 10), (5, 3)]),
-        ...         LineString([(5, 3), (6, 3), (10, 10)]),
+        ...         Point(1, 1),
+        ...         Point(2, 2),
+        ...         Point(1, 3),
+        ...         Point(0, 2),
         ...     ]
         ... )
         >>> s
-        0    MULTIPOINT ((5 3), (6 3), (10 10))
-        1      POLYGON ((5 3, 6 3, 10 10, 5 3))
-        2          LINESTRING (5 3, 6 3, 10 10)
+        0    POINT (1 1)
+        1    POINT (2 2)
+        2    POINT (1 3)
+        3    POINT (0 2)
         dtype: geometry
 
         >>> s.delaunay_triangles()
-        0    GEOMETRYCOLLECTION (POLYGON ((10 10, 5 3, 6 3,...
-        1    GEOMETRYCOLLECTION (POLYGON ((10 10, 5 3, 6 3,...
-        2    GEOMETRYCOLLECTION (POLYGON ((10 10, 5 3, 6 3,...
+        0    POLYGON ((0 2, 1 1, 1 3, 0 2))
+        1    POLYGON ((1 3, 1 1, 2 2, 1 3))
         dtype: geometry
 
         >>> s.delaunay_triangles(only_edges=True)
-        0    MULTILINESTRING ((5 3, 10 10), (5 3, 6 3), (6 ...
-        1    MULTILINESTRING ((5 3, 10 10), (5 3, 6 3), (6 ...
-        2    MULTILINESTRING ((5 3, 10 10), (5 3, 6 3), (6 ...
+        0    LINESTRING (1 3, 2 2)
+        1    LINESTRING (0 2, 1 3)
+        2    LINESTRING (0 2, 1 1)
+        3    LINESTRING (1 1, 2 2)
+        4    LINESTRING (1 1, 1 3)
+        dtype: geometry
+
+        The method supports any geometry type but keep in mind that the underlying
+        algorithm is based on the vertices of the input geometries only and does not
+        consider edge segments between vertices.
+
+        >>> s2 = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0, 0), (1, 1), (0, 1)]),
+        ...         LineString([(1, 0), (2, 1), (1, 2)]),
+        ...         MultiPoint([(2, 3), (2, 0), (3, 1)]),
+        ...     ]
+        ... )
+        >>> s2
+        0      POLYGON ((0 0, 1 1, 0 1, 0 0))
+        1          LINESTRING (1 0, 2 1, 1 2)
+        2    MULTIPOINT ((2 3), (2 0), (3 1))
+        dtype: geometry
+
+        >>> s2.delaunay_triangles()
+        0    POLYGON ((0 1, 0 0, 1 0, 0 1))
+        1    POLYGON ((0 1, 1 0, 1 1, 0 1))
+        2    POLYGON ((0 1, 1 1, 1 2, 0 1))
+        3    POLYGON ((1 2, 1 1, 2 1, 1 2))
+        4    POLYGON ((1 2, 2 1, 2 3, 1 2))
+        5    POLYGON ((2 3, 2 1, 3 1, 2 3))
+        6    POLYGON ((3 1, 2 1, 2 0, 3 1))
+        7    POLYGON ((2 0, 2 1, 1 1, 2 0))
+        8    POLYGON ((2 0, 1 1, 1 0, 2 0))
         dtype: geometry
 
         See also
         --------
         GeoSeries.voronoi_polygons : Voronoi diagram around vertices
         """
-        return _delegate_geo_method(
-            "delaunay_triangles", self, tolerance=tolerance, only_edges=only_edges
+        from .geoseries import GeoSeries
+
+        geometry_input = shapely.geometrycollections(self.geometry.values._data)
+
+        delaunay = shapely.delaunay_triangles(
+            geometry_input,
+            tolerance=tolerance,
+            only_edges=only_edges,
         )
+        return GeoSeries(delaunay, crs=self.crs).explode(ignore_index=True)
 
     def voronoi_polygons(self, tolerance=0.0, extend_to=None, only_edges=False):
         """Returns a ``GeoSeries`` consisting of objects representing
