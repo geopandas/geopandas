@@ -39,6 +39,7 @@ General methods and attributes
    GeoSeries.count_interior_rings
    GeoSeries.set_precision
    GeoSeries.get_precision
+   GeoSeries.get_geometry
 
 Unary predicates
 ----------------
@@ -99,6 +100,7 @@ Constructive methods and attributes
 
    GeoSeries.boundary
    GeoSeries.buffer
+   GeoSeries.build_area
    GeoSeries.centroid
    GeoSeries.concave_hull
    GeoSeries.convex_hull
@@ -121,6 +123,7 @@ Constructive methods and attributes
    GeoSeries.simplify
    GeoSeries.snap
    GeoSeries.transform
+   GeoSeries.voronoi_polygons
 
 Affine transformations
 ----------------------
