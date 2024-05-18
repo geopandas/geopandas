@@ -648,7 +648,7 @@ def _read_parquet(
     bbox: tuple, optional
         Bounding box to be used to filter selection from geoparquet data. This
         is only usable if the data was saved with the bbox covering metadata.
-        Input is of the tuple format (xmin, xmax, ymin, ymax).
+        Input is of the tuple format (xmin, ymin, xmax, ymax).
     read_bbox_column: bool, default False
         The bbox column is a struct with the minimum rectangular box that
         encompasses the geometry. It is computationally expensive to read
