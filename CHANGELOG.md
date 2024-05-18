@@ -40,6 +40,7 @@ New methods:
 - Added `build_area` method exposing `build_area` shapely to GeoSeries/GeoDataframe (#3202).
 - Added `snap` method from shapely to GeoSeries/GeoDataframe (#3086).
 - Added `transform` method from shapely to GeoSeries/GeoDataFrame (#3075).
+- Added `get_geometry` method from shapely to GeoSeries/GeoDataframe (#3287).
 - Added `dwithin` method to check for a "distance within" predicate on
   GeoSeries/GeoDataFrame (#3153).
 - Added `to_geo_dict` method to generate GeoJSON-like dictionary from a GeoDataFrame (#3132).
@@ -87,8 +88,8 @@ Bug fixes:
   geometry column (#2933).
 - Fix bug in `GeoDataFrame` constructor where if `geometry` is given a named
   `GeoSeries` the name was not used as the active geometry column name (#3237).
-- Fix regression preventing reading from file paths containing hashes in `read_file` 
-  with the fiona engine (#3280). An analgous fix for pyogrio is included in 
+- Fix regression preventing reading from file paths containing hashes in `read_file`
+  with the fiona engine (#3280). An analgous fix for pyogrio is included in
   pyogrio 0.8.1.
 
 Deprecations and compatibility notes:
