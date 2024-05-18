@@ -324,8 +324,51 @@ GeometryCollection
         3    False
         dtype: bool
 
+        See also
+        --------
+        GeoSeries.is_valid_reason : reason for invalidity
         """
         return _delegate_property("is_valid", self)
+
+    def is_valid_reason(self):
+        """Returns a ``Series`` of strings with the reason for invalidity of
+        each geometry.
+
+        Examples
+        --------
+
+        An example with one invalid polygon (a bowtie geometry crossing itself)
+        and one missing geometry:
+
+        >>> from shapely.geometry import Polygon
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0, 0), (1, 1), (0, 1)]),
+        ...         Polygon([(0,0), (1, 1), (1, 0), (0, 1)]),  # bowtie geometry
+        ...         Polygon([(0, 0), (2, 2), (2, 0)]),
+        ...         None
+        ...     ]
+        ... )
+        >>> s
+        0         POLYGON ((0 0, 1 1, 0 1, 0 0))
+        1    POLYGON ((0 0, 1 1, 1 0, 0 1, 0 0))
+        2         POLYGON ((0 0, 2 2, 2 0, 0 0))
+        3                                   None
+        dtype: geometry
+
+        >>> s.is_valid_reason()
+        0    Valid Geometry
+        1    Self-intersection[0.5 0.5]
+        2    Valid Geometry
+        3    None
+        dtype: object
+
+        See also
+        --------
+        GeoSeries.is_valid : detect invalid geometries
+        GeoSeries.make_valid : fix invalid geometries
+        """
+        return Series(self.geometry.values.is_valid_reason(), index=self.index)
 
     @property
     def is_empty(self):
@@ -710,6 +753,62 @@ GeometryCollection
         """
         return Series(self.geometry.values.get_precision(), index=self.index)
 
+    def get_geometry(self, index):
+        """Returns the n-th geometry from a collection of geometries.
+
+        Parameters
+        ----------
+        index : int or array_like
+            Position of a geometry to be retrieved within its collection
+
+        Returns
+        -------
+        GeoSeries
+
+        Notes
+        -----
+        Simple geometries act as collections of length 1. Any out-of-range index value
+        returns None.
+
+        Examples
+        --------
+        >>> from shapely.geometry import Point, MultiPoint, GeometryCollection
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Point(0, 0),
+        ...         MultiPoint([(0, 0), (1, 1), (0, 1), (1, 0)]),
+        ...         GeometryCollection(
+        ...             [MultiPoint([(0, 0), (1, 1), (0, 1), (1, 0)]), Point(0, 1)]
+        ...         ),
+        ...     ]
+        ... )
+        >>> s
+        0                                          POINT (0 0)
+        1              MULTIPOINT ((0 0), (1 1), (0 1), (1 0))
+        2    GEOMETRYCOLLECTION (MULTIPOINT ((0 0), (1 1), ...
+        dtype: geometry
+
+        >>> s.get_geometry(0)
+        0                                POINT (0 0)
+        1                                POINT (0 0)
+        2    MULTIPOINT ((0 0), (1 1), (0 1), (1 0))
+        dtype: geometry
+
+        >>> s.get_geometry(1)
+        0           None
+        1    POINT (1 1)
+        2    POINT (0 1)
+        dtype: geometry
+
+        >>> s.get_geometry(-1)
+        0    POINT (0 0)
+        1    POINT (1 0)
+        2    POINT (0 1)
+        dtype: geometry
+
+        """
+        return _delegate_geo_method("get_geometry", self, index=index)
+
     #
     # Unary operations that return a GeoSeries
     #
@@ -943,10 +1042,140 @@ GeometryCollection
         1    MULTILINESTRING ((5 3, 10 10), (5 3, 6 3), (6 ...
         2    MULTILINESTRING ((5 3, 10 10), (5 3, 6 3), (6 ...
         dtype: geometry
+
+        See also
+        --------
+        GeoSeries.voronoi_polygons : Voronoi diagram around vertices
         """
         return _delegate_geo_method(
             "delaunay_triangles", self, tolerance=tolerance, only_edges=only_edges
         )
+
+    def voronoi_polygons(self, tolerance=0.0, extend_to=None, only_edges=False):
+        """Returns a ``GeoSeries`` consisting of objects representing
+        the computed Voronoi diagram around the vertices of an input geometry.
+
+        All geometries within the GeoSeries are considered together within a single
+        Voronoi diagram. The resulting geometries therefore do not necessarily map 1:1
+        to input geometries. Note that each vertex of a geometry is considered a site
+        for the Voronoi diagram, so the diagram will be constructed around the vertices
+        of each geometry.
+
+        Notes
+        -----
+        The order of polygons in the output currently does not correspond to the order
+        of input vertices.
+
+        If you want to generate a Voronoi diagram for each geometry separately, use
+        :func:`shapely.voronoi_polygons` instead.
+
+        Parameters
+        ----------
+        tolerance : float, default 0.0
+            Snap input vertices together if their distance is less than this value.
+        extend_to : shapely.Geometry, default None
+            If set, the Voronoi diagram will be extended to cover the
+            envelope of this geometry (unless this envelope is smaller than the input
+            geometry).
+        only_edges : bool (optional, default False)
+            If set to True, the diagram will return LineStrings instead
+            of Polygons.
+
+        Examples
+        --------
+        The most common use case is to generate polygons representing the Voronoi
+        diagram around a set of points:
+
+        >>> from shapely import LineString, MultiPoint, Point, Polygon
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Point(1, 1),
+        ...         Point(2, 2),
+        ...         Point(1, 3),
+        ...         Point(0, 2),
+        ...     ]
+        ... )
+        >>> s
+        0    POINT (1 1)
+        1    POINT (2 2)
+        2    POINT (1 3)
+        3    POINT (0 2)
+        dtype: geometry
+
+        By default, you get back a GeoSeries of polygons:
+
+        >>> s.voronoi_polygons()
+        0     POLYGON ((-2 5, 1 2, -2 -1, -2 5))
+        1        POLYGON ((4 5, 1 2, -2 5, 4 5))
+        2    POLYGON ((-2 -1, 1 2, 4 -1, -2 -1))
+        3       POLYGON ((4 -1, 1 2, 4 5, 4 -1))
+        dtype: geometry
+
+        If you set only_edges to True, you get back LineStrings representing the
+        edges of the Voronoi diagram:
+
+        >>> s.voronoi_polygons(only_edges=True)
+        0     LINESTRING (-2 5, 1 2)
+        1    LINESTRING (1 2, -2 -1)
+        2      LINESTRING (4 5, 1 2)
+        3     LINESTRING (1 2, 4 -1)
+        dtype: geometry
+
+        You can also extend each diagram to a given geometry:
+
+        >>> limit = Polygon([(-10, -10), (0, 15), (15, 15), (15, 0)])
+        >>> s.voronoi_polygons(extend_to=limit)
+        0              POLYGON ((-10 13, 1 2, -10 -9, -10 13))
+        1    POLYGON ((15 15, 15 -10, 13 -10, 1 2, 14 15, 1...
+        2    POLYGON ((-10 -10, -10 -9, 1 2, 13 -10, -10 -10))
+        3       POLYGON ((-10 15, 14 15, 1 2, -10 13, -10 15))
+        dtype: geometry
+
+        The method supports any geometry type but keep in mind that the underlying
+        algorithm is based on the vertices of the input geometries only and does not
+        consider edge segments between vertices.
+
+        >>> s2 = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0, 0), (1, 1), (0, 1)]),
+        ...         LineString([(1, 0), (2, 1), (1, 2)]),
+        ...         MultiPoint([(2, 3), (2, 0), (3, 1)]),
+        ...     ]
+        ... )
+        >>> s2
+        0      POLYGON ((0 0, 1 1, 0 1, 0 0))
+        1          LINESTRING (1 0, 2 1, 1 2)
+        2    MULTIPOINT ((2 3), (2 0), (3 1))
+        dtype: geometry
+
+        >>> s2.voronoi_polygons()
+        0    POLYGON ((1.5 1.5, 1.5 0.5, 0.5 0.5, 0.5 1.5, ...
+        1    POLYGON ((1.5 0.5, 1.5 1.5, 2 2, 2.5 2, 2.5 0....
+        2    POLYGON ((-3 -3, -3 0.5, 0.5 0.5, 0.5 -3, -3 -3))
+        3    POLYGON ((0.5 -3, 0.5 0.5, 1.5 0.5, 1.5 -3, 0....
+        4     POLYGON ((-3 5, 0.5 1.5, 0.5 0.5, -3 0.5, -3 5))
+        5    POLYGON ((-3 6, -2 6, 2 2, 1.5 1.5, 0.5 1.5, -...
+        6    POLYGON ((1.5 -3, 1.5 0.5, 2.5 0.5, 6 -3, 1.5 ...
+        7       POLYGON ((6 6, 6 3.75, 2.5 2, 2 2, -2 6, 6 6))
+        8       POLYGON ((6 -3, 2.5 0.5, 2.5 2, 6 3.75, 6 -3))
+        dtype: geometry
+
+        See also
+        --------
+        GeoSeries.delaunay_triangles : Delaunay triangulation around vertices
+        """
+        from .geoseries import GeoSeries
+
+        geometry_input = shapely.geometrycollections(self.geometry.values._data)
+
+        voronoi = shapely.voronoi_polygons(
+            geometry_input,
+            tolerance=tolerance,
+            extend_to=extend_to,
+            only_edges=only_edges,
+        )
+
+        return GeoSeries(voronoi, crs=self.crs).explode(ignore_index=True)
 
     @property
     def envelope(self):
@@ -1910,7 +2139,7 @@ GeometryCollection
 
         An object is said to contain `other` if at least one point of `other` lies in
         the interior and no points of `other` lie in the exterior of the object.
-        (Therefore, any given polygon does not contain its own boundary – there is not
+        (Therefore, any given polygon does not contain its own boundary - there is not
         any point that lies in the interior.)
         If either object is empty, this operation returns ``False``.
 
@@ -4354,7 +4583,7 @@ GeometryCollection
         return _binary_geo("shortest_line", self, other, align)
 
     def snap(self, other, tolerance, align=None):
-        """Snaps an input geometry to reference geometry’s vertices.
+        """Snaps an input geometry to reference geometry's vertices.
 
         Vertices of the first geometry are snapped to vertices of the second. geometry,
         returning a new geometry; the input geometries are not modified. The result
@@ -4778,7 +5007,7 @@ GeometryCollection
         each geometry.
 
         The algorithm (Douglas-Peucker) recursively splits the original line
-        into smaller parts and connects these parts’ endpoints
+        into smaller parts and connects these parts' endpoints
         by a straight line. Then, it removes all points whose distance
         to the straight line is smaller than `tolerance`. It does not
         move any points and it always preserves endpoints of
@@ -5681,6 +5910,154 @@ GeometryCollection
             )
 
         return GeoSeries(result, name="sampled_points", crs=self.crs, index=self.index)
+
+    def build_area(self, node=True):
+        """Creates an areal geometry formed by the constituent linework.
+
+        Builds areas from the GeoSeries that contain linework which represents the edges
+        of a planar graph. Any geometry type may be provided as input; only the
+        constituent lines and rings will be used to create the output polygons. All
+        geometries within the GeoSeries are considered together and the resulting
+        polygons therefore do not map 1:1 to input geometries.
+
+        This function converts inner rings into holes. To turn inner rings into polygons
+        as well, use polygonize.
+
+        Unless you know that the input GeoSeries represents a planar graph with a clean
+        topology (e.g. there is a node on both lines where they intersect), it is
+        recommended to use ``node=True`` which performs noding prior to building areal
+        geometry. Using ``node=False`` will provide performance benefits but may result
+        in incorrect polygons if the input is not of the proper topology.
+
+        If the input linework crosses, this function may produce invalid polygons. Use
+        :meth:`GeoSeries.make_valid` to ensure valid geometries.
+
+        Parameters
+        ----------
+        node : bool, default True
+            Perform noding prior to building the areas, by default True.
+
+        Returns
+        -------
+        GeoSeries
+            GeoSeries with polygons
+
+        Examples
+        --------
+        >>> from shapely.geometry import LineString, Polygon
+        >>> s = geopandas.GeoSeries([
+        ...     LineString([(18, 4), (4, 2), (2, 9)]),
+        ...     LineString([(18, 4), (16, 16)]),
+        ...     LineString([(16, 16), (8, 19), (8, 12), (2, 9)]),
+        ...     LineString([(8, 6), (12, 13), (15, 8)]),
+        ...     LineString([(8, 6), (15, 8)]),
+        ...     LineString([(0, 0), (0, 3), (3, 3), (3, 0), (0, 0)]),
+        ...     Polygon([(1, 1), (2, 2), (1, 2), (1, 1)]),
+        ... ])
+        >>> s.build_area()
+        0    POLYGON ((0 3, 3 3, 3 0, 0 0, 0 3), (1 1, 2 2,...
+        1    POLYGON ((4 2, 2 9, 8 12, 8 19, 16 16, 18 4, 4...
+        Name: polygons, dtype: geometry
+
+        """
+        from .geoseries import GeoSeries
+
+        if node:
+            geometry_input = self.geometry.union_all()
+        else:
+            geometry_input = shapely.geometrycollections(self.geometry.values._data)
+
+        polygons = shapely.build_area(geometry_input)
+        return GeoSeries(polygons, crs=self.crs, name="polygons").explode(
+            ignore_index=True
+        )
+
+    def polygonize(self, node=True, full=False):
+        """Creates polygons formed from the linework of a GeoSeries.
+
+        Polygonizes the GeoSeries that contain linework which represents the
+        edges of a planar graph. Any geometry type may be provided as input; only the
+        constituent lines and rings will be used to create the output polygons.
+
+        Lines or rings that when combined do not completely close a polygon will be
+        ignored. Duplicate segments are ignored.
+
+        Unless you know that the input GeoSeries represents a planar graph with a clean
+        topology (e.g. there is a node on both lines where they intersect), it is
+        recommended to use ``node=True`` which performs noding prior to polygonization.
+        Using ``node=False`` will provide performance benefits but may result in
+        incorrect polygons if the input is not of the proper topology.
+
+        When ``full=True``, the return value is a 4-tuple containing output polygons,
+        along with lines which could not be converted to polygons. The return value
+        consists of 4 elements or varying lenghts:
+
+        - GeoSeries of the valid polygons (same as with ``full=False``)
+        - GeoSeries of cut edges: edges connected on both ends but not part of
+          polygonal output
+        - GeoSeries of dangles: edges connected on one end but not part of polygonal
+          output
+        - GeoSeries of invalid rings: polygons that are formed but are not valid
+          (bowties, etc)
+
+        Parameters
+        ----------
+        node : bool, default True
+            Perform noding prior to polygonization, by default True.
+        full : bool, default False
+            Return the full output composed of a tuple of GeoSeries, by default False.
+
+        Returns
+        -------
+        GeoSeries | tuple(GeoSeries, GeoSeries, GeoSeries, GeoSeries)
+            GeoSeries with the polygons or a tuple of four GeoSeries as
+            ``(polygons, cuts, dangles, invalid)``
+
+        Examples
+        --------
+        >>> from shapely.geometry import LineString
+        >>> s = geopandas.GeoSeries([
+        ...     LineString([(0, 0), (1, 1)]),
+        ...     LineString([(0, 0), (0, 1), (1, 1), (1, 0), (0, 0)]),
+        ...     LineString([(0.5, 0.2), (0.5, 0.8)]),
+        ... ])
+        >>> s.polygonize()
+        0        POLYGON ((0 0, 0.5 0.5, 1 1, 1 0, 0 0))
+        1    POLYGON ((0.5 0.5, 0 0, 0 1, 1 1, 0.5 0.5))
+        Name: polygons, dtype: geometry
+
+        >>> polygons, cuts, dangles, invalid = s.polygonize(full=True)
+
+        """
+        from .geoseries import GeoSeries
+
+        if node:
+            geometry_input = [self.geometry.union_all()]
+        else:
+            geometry_input = self.geometry.values
+
+        if full:
+            polygons, cuts, dangles, invalid = shapely.polygonize_full(geometry_input)
+
+            cuts = GeoSeries(cuts, crs=self.crs, name="cut_edges").explode(
+                ignore_index=True
+            )
+            dangles = GeoSeries(dangles, crs=self.crs, name="dangles").explode(
+                ignore_index=True
+            )
+            invalid = GeoSeries(invalid, crs=self.crs, name="invalid_rings").explode(
+                ignore_index=True
+            )
+            polygons = GeoSeries(polygons, crs=self.crs, name="polygons").explode(
+                ignore_index=True
+            )
+
+            return (polygons, cuts, dangles, invalid)
+
+        polygons = shapely.polygonize(geometry_input)
+        return GeoSeries(polygons, crs=self.crs, name="polygons").explode(
+            ignore_index=True
+        )
 
 
 def _get_index_for_parts(orig_idx, outer_idx, ignore_index, index_parts):

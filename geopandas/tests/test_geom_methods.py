@@ -174,6 +174,20 @@ class TestGeomMethods:
         self.l6 = LineString([(5, 5), (5, 100), (100, 5)])
         self.g12 = GeoSeries([self.l5])
         self.g13 = GeoSeries([self.l6])
+        self.lines = GeoSeries(
+            [
+                LineString([(0, 0), (1, 1)]),
+                LineString([(0, 0), (0, 1)]),
+                LineString([(0, 1), (1, 1)]),
+                LineString([(1, 1), (1, 0)]),
+                LineString([(1, 0), (0, 0)]),
+                LineString([(5, 5), (6, 6)]),
+                LineString([(0.5, -1), (0.5, 2)]),
+                Point(0, 0),
+            ],
+            crs=4326,
+            index=range(2, 10),
+        )
 
         self.l5 = LineString([(100, 0), (0, 0), (0, 100)])
         self.l6 = LineString([(5, 5), (5, 100), (100, 5)])
@@ -868,6 +882,20 @@ class TestGeomMethods:
         expected = Series(np.array([True] * len(self.g1)), self.g1.index)
         self._test_unary_real("is_valid", expected, self.g1)
 
+    def test_is_valid_reason(self):
+        expected = Series(np.array(["Valid Geometry"] * len(self.g1)), self.g1.index)
+        assert_series_equal(self.g1.is_valid_reason(), expected)
+
+        s = GeoSeries(
+            [
+                Polygon([(0, 0), (1, 1), (1, 0), (0, 1)]),  # bowtie geometry
+                Polygon([(0, 0), (1, 1), (1, 1), (0, 1)]),
+                None,
+            ]
+        )
+        expected = Series(["Self-intersection[0.5 0.5]", "Valid Geometry", None])
+        assert_series_equal(s.is_valid_reason(), expected)
+
     def test_is_empty(self):
         expected = Series(np.array([False] * len(self.g1)), self.g1.index)
         self._test_unary_real("is_empty", expected, self.g1)
@@ -1110,22 +1138,22 @@ class TestGeomMethods:
             [
                 GeometryCollection([Polygon([(0, 0), (1, 0), (1, 1), (0, 0)])]),
                 GeometryCollection([Polygon([(0, 1), (0, 0), (1, 1), (0, 1)])]),
-            ]
+            ],
+            crs=self.g3.crs,
         )
         dlt = self.g3.delaunay_triangles()
-        assert isinstance(dlt, GeoSeries)
-        assert_series_equal(expected, dlt)
+        assert_geoseries_equal(expected, dlt)
 
     def test_delaunay_triangles_pass_kwargs(self):
         expected = GeoSeries(
             [
                 MultiLineString([[(0, 0), (1, 1)], [(0, 0), (1, 0)], [(1, 0), (1, 1)]]),
                 MultiLineString([[(0, 1), (1, 1)], [(0, 0), (0, 1)], [(0, 0), (1, 1)]]),
-            ]
+            ],
+            crs=self.g3.crs,
         )
         dlt = self.g3.delaunay_triangles(only_edges=True)
-        assert isinstance(dlt, GeoSeries)
-        assert_series_equal(expected, dlt)
+        assert_geoseries_equal(expected, dlt)
 
     def test_delaunay_triangles_wrong_index(self):
         with pytest.raises(
@@ -1138,6 +1166,45 @@ class TestGeomMethods:
             ValueError, match="Index of the Series passed as 'tolerance' does not match"
         ):
             self.g3.delaunay_triangles(tolerance=Series([0.1, 0.2], index=[99, 98]))
+
+    def test_voronoi_polygons(self):
+        expected = GeoSeries.from_wkt(
+            [
+                "POLYGON ((2 2, 2 0.5, 0.5 0.5, 0.5 2, 2 2))",
+                "POLYGON ((-1 2, 0.5 2, 0.5 0.5, -1 0.5, -1 2))",
+                "POLYGON ((-1 -1, -1 0.5, 0.5 0.5, 0.5 -1, -1 -1))",
+                "POLYGON ((2 -1, 0.5 -1, 0.5 0.5, 2 0.5, 2 -1))",
+            ],
+            crs=self.g1.crs,
+        )
+        vp = self.g1.voronoi_polygons()
+        assert_geoseries_equal(expected, vp)
+
+    def test_voronoi_polygons_only_edges(self):
+        expected = GeoSeries.from_wkt(
+            [
+                "LINESTRING (0.5 0.5, 0.5 2)",
+                "LINESTRING (2 0.5, 0.5 0.5)",
+                "LINESTRING (0.5 0.5, -1 0.5)",
+                "LINESTRING (0.5 0.5, 0.5 -1)",
+            ],
+            crs=self.g1.crs,
+        )
+        vp = self.g1.voronoi_polygons(only_edges=True)
+        assert_geoseries_equal(expected, vp, check_less_precise=True)
+
+    def test_voronoi_polygons_extend_to(self):
+        expected = GeoSeries.from_wkt(
+            [
+                "POLYGON ((3 3, 3 0.5, 0.5 0.5, 0.5 3, 3 3))",
+                "POLYGON ((-2 3, 0.5 3, 0.5 0.5, -2 0.5, -2 3))",
+                "POLYGON ((-2 -1, -2 0.5, 0.5 0.5, 0.5 -1, -2 -1))",
+                "POLYGON ((3 -1, 0.5 -1, 0.5 0.5, 3 0.5, 3 -1))",
+            ],
+            crs=self.g1.crs,
+        )
+        vp = self.g1.voronoi_polygons(extend_to=box(-2, 0, 3, 3))
+        assert_geoseries_equal(expected, vp)
 
     def test_exterior(self):
         exp_exterior = GeoSeries([LinearRing(p.boundary) for p in self.g3])
@@ -1875,6 +1942,61 @@ class TestGeomMethods:
         ):
             GeoSeries([self.l1]).offset_curve(Series([1], index=[99]))
 
+    def test_polygonize(self):
+        expected = GeoSeries.from_wkt(
+            [
+                "POLYGON ((0 0, 0.5 0.5, 0.5 0, 0 0))",
+                "POLYGON ((0.5 0.5, 0 0, 0 1, 0.5 1, 0.5 0.5))",
+                "POLYGON ((0.5 0.5, 1 1, 1 0, 0.5 0, 0.5 0.5))",
+                "POLYGON ((1 1, 0.5 0.5, 0.5 1, 1 1))",
+            ],
+            name="polygons",
+            crs=4326,
+        )
+
+        result = self.lines.polygonize()
+        assert_geoseries_equal(expected, result)
+        assert_index_equal(self.lines.index, Index(range(2, 10)))
+
+    def test_polygonize_no_node(self):
+        expected = GeoSeries.from_wkt(
+            ["POLYGON ((0 0, 1 1, 1 0, 0 0))", "POLYGON ((1 1, 0 0, 0 1, 1 1))"],
+            name="polygons",
+            crs=4326,
+        )
+        result = self.lines.polygonize(node=False)
+        assert_geoseries_equal(expected, result)
+        assert_index_equal(self.lines.index, Index(range(2, 10)))
+
+    def test_polygonize_full(self):
+        expected_poly = GeoSeries.from_wkt(
+            [
+                "POLYGON ((0 0, 0.5 0.5, 0.5 0, 0 0))",
+                "POLYGON ((0.5 0.5, 0 0, 0 1, 0.5 1, 0.5 0.5))",
+                "POLYGON ((0.5 0.5, 1 1, 1 0, 0.5 0, 0.5 0.5))",
+                "POLYGON ((1 1, 0.5 0.5, 0.5 1, 1 1))",
+            ],
+            name="polygons",
+            crs=4326,
+        )
+        expected_cuts = GeoSeries([], name="cut edges", crs=4326)
+        expected_dangles = GeoSeries.from_wkt(
+            [
+                "LINESTRING (5 5, 6 6)",
+                "LINESTRING (0.5 1, 0.5 2)",
+                "LINESTRING (0.5 -1, 0.5 0)",
+            ],
+            name="dangles",
+            crs=4326,
+        )
+        expected_invalid = GeoSeries([], name="invalid ring lines", crs=4326)
+        result = self.lines.polygonize(full=True)
+        assert_geoseries_equal(expected_poly, result[0])
+        assert_geoseries_equal(expected_cuts, result[1])
+        assert_geoseries_equal(expected_dangles, result[2])
+        assert_geoseries_equal(expected_invalid, result[3])
+        assert_index_equal(self.lines.index, Index(range(2, 10)))
+
     @pytest.mark.skipif(shapely.geos_version < (3, 11, 0), reason="requires GEOS>=3.11")
     @pytest.mark.parametrize(
         "geom,expected",
@@ -2025,6 +2147,67 @@ class TestGeomMethods:
         assert_geoseries_equal(expected, self.g14.line_merge(directed=True))
 
     @pytest.mark.skipif(
+        shapely.geos_version < (3, 11, 0), reason="different order in GEOS<3.11"
+    )
+    def test_build_area(self):
+        # test with polgon in it
+        s = GeoSeries.from_wkt(
+            [
+                "LINESTRING (18 4, 4 2, 2 9)",
+                "LINESTRING (18 4, 16 16)",
+                "LINESTRING (16 16, 8 19, 8 12, 2 9)",
+                "LINESTRING (8 6, 12 13, 15 8)",
+                "LINESTRING (8 6, 15 8)",
+                "LINESTRING (0 0, 0 3, 3 3, 3 0, 0 0)",
+                "POLYGON ((1 1, 2 2, 1 2, 1 1))",
+                "LINESTRING (10 7, 13 8, 12 10, 10 7)",
+            ],
+            crs=4326,
+        )
+
+        expected = GeoSeries.from_wkt(
+            [
+                "POLYGON ((0 3, 3 3, 3 0, 0 0, 0 3), (2 2, 1 2, 1 1, 2 2))",
+                "POLYGON ((13 8, 10 7, 12 10, 13 8))",
+                "POLYGON ((2 9, 8 12, 8 19, 16 16, 18 4, 4 2, 2 9), "
+                "(8 6, 15 8, 12 13, 8 6))",
+            ],
+            crs=4326,
+            name="polygons",
+        )
+        assert_geoseries_equal(expected, s.build_area())
+
+        # test difference caused by nodign
+        s2 = GeoSeries.from_wkt(
+            [
+                "LINESTRING (8 6, 12 13, 15 8)",
+                "LINESTRING (8 6, 15 8)",
+                "LINESTRING (0 0, 0 15, 12 15, 12 0, 0 0)",
+                "LINESTRING (10 7, 13 8, 12 10, 10 7)",
+            ],
+            crs=4326,
+        )
+
+        noded = GeoSeries.from_wkt(
+            ["POLYGON ((12 0, 0 0, 0 15, 12 15, 12 13, 15 8, 12 7.142857, 12 0))"],
+            crs=4326,
+            name="polygons",
+        )
+        assert_geoseries_equal(noded, s2.build_area(node=True), check_less_precise=True)
+
+        non_noded = GeoSeries.from_wkt(
+            [
+                "POLYGON ((0 15, 12 15, 12 13, 15 8, 12 7.142857, 12 0, 0 0, 0 15), "
+                "(12 7.666667, 13 8, 12 10, 12 7.666667))"
+            ],
+            crs=4326,
+            name="polygons",
+        )
+        assert_geoseries_equal(
+            non_noded, s2.build_area(node=False), check_less_precise=True
+        )
+
+    @pytest.mark.skipif(
         shapely.geos_version < (3, 9, 5), reason="Empty geom bug in GEOS<3.9.5"
     )
     def test_set_precision(self):
@@ -2082,3 +2265,56 @@ class TestGeomMethods:
         mixed = concat([self.landmarks_mixed_empty, with_precision])
         expected = Series([0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0], index=mixed.index)
         assert_series_equal(expected, mixed.get_precision())
+
+    def test_get_geometry(self):
+        expected = GeoSeries(
+            [
+                LineString([(0, 2), (0, 10)]),
+                LineString([(0, 2), (0, 10)]),
+                None,
+                LineString([(0, 0), (1, 0)]),
+                Point(0, 0),
+            ],
+            index=range(2, 7),
+            crs=4326,
+        )
+        assert_series_equal(expected, self.g14.get_geometry(0))
+
+        expected = GeoSeries(
+            [
+                LineString([(0, 10), (5, 10)]),
+                LineString([(0, 11), (5, 10)]),
+                None,
+                LineString([(0, 0), (3, 0)]),
+                None,
+            ],
+            index=range(2, 7),
+            crs=4326,
+        )
+        assert_series_equal(expected, self.g14.get_geometry(1))
+
+        expected = GeoSeries(
+            [
+                LineString([(0, 10), (5, 10)]),
+                LineString([(0, 11), (5, 10)]),
+                None,
+                LineString([(0, 0), (3, 0)]),
+                Point(0, 0),
+            ],
+            index=range(2, 7),
+            crs=4326,
+        )
+        assert_series_equal(expected, self.g14.get_geometry(-1))
+
+        expected = GeoSeries(
+            [
+                LineString([(0, 2), (0, 10)]),
+                LineString([(0, 11), (5, 10)]),
+                None,
+                LineString([(0, 0), (3, 0)]),
+                Point(0, 0),
+            ],
+            index=range(2, 7),
+            crs=4326,
+        )
+        assert_series_equal(expected, self.g14.get_geometry([0, 1, 1, -1, 0]))

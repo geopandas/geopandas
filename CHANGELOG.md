@@ -1,6 +1,6 @@
 # Changelog
 
-## Version 1.0.0-alpha1 (Apr 13, 2024)
+## Version 1.0.0
 
 Notes on dependencies:
 
@@ -36,12 +36,18 @@ New methods:
 - Added `is_ccw` method from shapely to GeoSeries/GeoDataframe (#3027).
 - Added `is_closed` attribute from shapely to GeoSeries/GeoDataframe (#3092).
 - Added `force_2d` and `force_3d` methods from shapely to GeoSeries/GeoDataframe (#3090).
+- Added `voronoi_polygons` method from shapely to GeoSeries/GeoDataframe (#3177).
 - Added `contains_properly` method from shapely to GeoSeries/GeoDataframe (#3105).
+- Added `build_area` method exposing `build_area` shapely to GeoSeries/GeoDataframe (#3202).
 - Added `snap` method from shapely to GeoSeries/GeoDataframe (#3086).
 - Added `transform` method from shapely to GeoSeries/GeoDataFrame (#3075).
+- Added `get_geometry` method from shapely to GeoSeries/GeoDataframe (#3287).
 - Added `dwithin` method to check for a "distance within" predicate on
   GeoSeries/GeoDataFrame (#3153).
 - Added `to_geo_dict` method to generate GeoJSON-like dictionary from a GeoDataFrame (#3132).
+- Added `polygonize` method exposing both `polygonize` and `polygonize_full` from
+  shapely to GeoSeries/GeoDataframe (#2963).
+- Added `is_valid_reason` method from shapely to GeoSeries/GeoDataframe (#3176).
 
 New features and improvements:
 
@@ -56,10 +62,12 @@ New features and improvements:
   the specified columns (#3101).
 -- Added support to ``read_file`` for the ``mask`` keyword for the pyogrio engine (#3062).
 - Added support to ``read_file`` for the ``columns`` keyword for the fiona engine (#3133).
+- Added support to ``read_parquet`` for reading files using the GeoArrow-based native geometry encoding of GeoParquet 1.1 (#3253).
 - Add `sort` keyword to `clip` method for GeoSeries and GeoDataFrame to allow optional
   preservation of the original order of observations. (#3233)
 - Added `show_bbox`, `drop_id` and `to_wgs84` arguments to allow further customization of
   `GeoSeries.to_json` (#3226)
+- The `GeoSeries.fillna` method now supports the `limit` keyword (#3290).
 
 Backwards incompatible API changes:
 
@@ -84,6 +92,9 @@ Bug fixes:
   geometry column (#2933).
 - Fix bug in `GeoDataFrame` constructor where if `geometry` is given a named
   `GeoSeries` the name was not used as the active geometry column name (#3237).
+- Fix regression preventing reading from file paths containing hashes in `read_file`
+  with the fiona engine (#3280). An analgous fix for pyogrio is included in
+  pyogrio 0.8.1.
 
 Deprecations and compatibility notes:
 
@@ -122,6 +133,8 @@ Deprecations and compatibility notes:
   geo_col_name = gdf.active_geometry_name
   gdf.set_geometry(new_geo_col).drop(columns=geo_col_name).rename_geometry(geo_col_name)
   ```
+- The `geopandas.use_pygeos` option has been deprecated and will be removed in GeoPandas
+  1.1 (#3283)
 
 ## Version 0.14.4 (April 26, 2024)
 
