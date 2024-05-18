@@ -32,10 +32,8 @@ dependencies:
   - ipykernel
   - myst-parser
   - folium
-  - libpysal
   - xyzservices
   - packaging
-  - pointpats
   - pip
   - pip:
       - sphinx-toggleprompt
@@ -43,3 +41,6 @@ dependencies:
       - pyproj
       - cartopy
       - geoplot
+      # temp from pip, depend on geopandas -> pyproj
+      - pointpats
+      - libpysal
