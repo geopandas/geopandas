@@ -10,7 +10,6 @@ def cumsum(whatever):
 
     It computes the cumulative {operation}.
     """
-    ...
 
 
 @doc(
