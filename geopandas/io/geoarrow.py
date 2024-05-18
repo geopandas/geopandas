@@ -11,6 +11,8 @@ import pyarrow as pa
 import shapely
 from shapely import GeometryType
 
+from geopandas._compat import SHAPELY_GE_204
+
 
 def geopandas_to_arrow(
     df, index=None, geometry_encoding="WKB", include_z=None, interleaved=True
@@ -180,6 +182,14 @@ def construct_geometry_array(
                 "upgrade to a newer version of pyarrow."
             )
         mask = pa.array(mask, type=pa.bool_())
+
+        if geom_type == GeometryType.POINT and not SHAPELY_GE_204:
+            # bug in shapely < 2.0.4, see https://github.com/shapely/shapely/pull/2034
+            # this workaround only works if there are no empty points
+            indices = np.nonzero(mask)[0]
+            indices = indices - np.arange(len(indices))
+            coords = np.insert(coords, indices, np.nan, axis=0)
+
     else:
         mask = None
 
