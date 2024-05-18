@@ -39,6 +39,7 @@ General methods and attributes
    GeoSeries.count_interior_rings
    GeoSeries.set_precision
    GeoSeries.get_precision
+   GeoSeries.get_geometry
 
 Unary predicates
 ----------------
@@ -51,6 +52,7 @@ Unary predicates
    GeoSeries.is_ring
    GeoSeries.is_simple
    GeoSeries.is_valid
+   GeoSeries.is_valid_reason
    GeoSeries.has_z
    GeoSeries.is_ccw
 

@@ -497,6 +497,9 @@ class GeometryArray(ExtensionArray):
     def is_valid(self):
         return shapely.is_valid(self._data)
 
+    def is_valid_reason(self):
+        return shapely.is_valid_reason(self._data)
+
     @property
     def is_empty(self):
         return shapely.is_empty(self._data)
@@ -547,6 +550,9 @@ class GeometryArray(ExtensionArray):
 
     def get_precision(self):
         return shapely.get_precision(self._data)
+
+    def get_geometry(self, index):
+        return shapely.get_geometry(self._data, index=index)
 
     #
     # Unary operations that return new geometries

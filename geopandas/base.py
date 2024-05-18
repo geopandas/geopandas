@@ -324,8 +324,51 @@ GeometryCollection
         3    False
         dtype: bool
 
+        See also
+        --------
+        GeoSeries.is_valid_reason : reason for invalidity
         """
         return _delegate_property("is_valid", self)
+
+    def is_valid_reason(self):
+        """Returns a ``Series`` of strings with the reason for invalidity of
+        each geometry.
+
+        Examples
+        --------
+
+        An example with one invalid polygon (a bowtie geometry crossing itself)
+        and one missing geometry:
+
+        >>> from shapely.geometry import Polygon
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0, 0), (1, 1), (0, 1)]),
+        ...         Polygon([(0,0), (1, 1), (1, 0), (0, 1)]),  # bowtie geometry
+        ...         Polygon([(0, 0), (2, 2), (2, 0)]),
+        ...         None
+        ...     ]
+        ... )
+        >>> s
+        0         POLYGON ((0 0, 1 1, 0 1, 0 0))
+        1    POLYGON ((0 0, 1 1, 1 0, 0 1, 0 0))
+        2         POLYGON ((0 0, 2 2, 2 0, 0 0))
+        3                                   None
+        dtype: geometry
+
+        >>> s.is_valid_reason()
+        0    Valid Geometry
+        1    Self-intersection[0.5 0.5]
+        2    Valid Geometry
+        3    None
+        dtype: object
+
+        See also
+        --------
+        GeoSeries.is_valid : detect invalid geometries
+        GeoSeries.make_valid : fix invalid geometries
+        """
+        return Series(self.geometry.values.is_valid_reason(), index=self.index)
 
     @property
     def is_empty(self):
@@ -709,6 +752,62 @@ GeometryCollection
         GeoSeries.set_precision : set precision grid size
         """
         return Series(self.geometry.values.get_precision(), index=self.index)
+
+    def get_geometry(self, index):
+        """Returns the n-th geometry from a collection of geometries.
+
+        Parameters
+        ----------
+        index : int or array_like
+            Position of a geometry to be retrieved within its collection
+
+        Returns
+        -------
+        GeoSeries
+
+        Notes
+        -----
+        Simple geometries act as collections of length 1. Any out-of-range index value
+        returns None.
+
+        Examples
+        --------
+        >>> from shapely.geometry import Point, MultiPoint, GeometryCollection
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Point(0, 0),
+        ...         MultiPoint([(0, 0), (1, 1), (0, 1), (1, 0)]),
+        ...         GeometryCollection(
+        ...             [MultiPoint([(0, 0), (1, 1), (0, 1), (1, 0)]), Point(0, 1)]
+        ...         ),
+        ...     ]
+        ... )
+        >>> s
+        0                                          POINT (0 0)
+        1              MULTIPOINT ((0 0), (1 1), (0 1), (1 0))
+        2    GEOMETRYCOLLECTION (MULTIPOINT ((0 0), (1 1), ...
+        dtype: geometry
+
+        >>> s.get_geometry(0)
+        0                                POINT (0 0)
+        1                                POINT (0 0)
+        2    MULTIPOINT ((0 0), (1 1), (0 1), (1 0))
+        dtype: geometry
+
+        >>> s.get_geometry(1)
+        0           None
+        1    POINT (1 1)
+        2    POINT (0 1)
+        dtype: geometry
+
+        >>> s.get_geometry(-1)
+        0    POINT (0 0)
+        1    POINT (1 0)
+        2    POINT (0 1)
+        dtype: geometry
+
+        """
+        return _delegate_geo_method("get_geometry", self, index=index)
 
     #
     # Unary operations that return a GeoSeries
@@ -2040,7 +2139,7 @@ GeometryCollection
 
         An object is said to contain `other` if at least one point of `other` lies in
         the interior and no points of `other` lie in the exterior of the object.
-        (Therefore, any given polygon does not contain its own boundary – there is not
+        (Therefore, any given polygon does not contain its own boundary - there is not
         any point that lies in the interior.)
         If either object is empty, this operation returns ``False``.
 
@@ -4484,7 +4583,7 @@ GeometryCollection
         return _binary_geo("shortest_line", self, other, align)
 
     def snap(self, other, tolerance, align=None):
-        """Snaps an input geometry to reference geometry’s vertices.
+        """Snaps an input geometry to reference geometry's vertices.
 
         Vertices of the first geometry are snapped to vertices of the second. geometry,
         returning a new geometry; the input geometries are not modified. The result
@@ -4816,7 +4915,7 @@ GeometryCollection
         each geometry.
 
         The algorithm (Douglas-Peucker) recursively splits the original line
-        into smaller parts and connects these parts’ endpoints
+        into smaller parts and connects these parts' endpoints
         by a straight line. Then, it removes all points whose distance
         to the straight line is smaller than `tolerance`. It does not
         move any points and it always preserves endpoints of

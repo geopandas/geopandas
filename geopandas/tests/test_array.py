@@ -820,7 +820,7 @@ def test_setitem(item):
 
 def test_equality_ops():
     with pytest.raises(ValueError):
-        P[:5] == P[:7]
+        _ = P[:5] == P[:7]
 
     a1 = from_shapely([points[1], points[2], points[3]])
     a2 = from_shapely([points[1], points[0], points[3]])

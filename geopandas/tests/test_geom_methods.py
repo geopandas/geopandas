@@ -868,6 +868,20 @@ class TestGeomMethods:
         expected = Series(np.array([True] * len(self.g1)), self.g1.index)
         self._test_unary_real("is_valid", expected, self.g1)
 
+    def test_is_valid_reason(self):
+        expected = Series(np.array(["Valid Geometry"] * len(self.g1)), self.g1.index)
+        assert_series_equal(self.g1.is_valid_reason(), expected)
+
+        s = GeoSeries(
+            [
+                Polygon([(0, 0), (1, 1), (1, 0), (0, 1)]),  # bowtie geometry
+                Polygon([(0, 0), (1, 1), (1, 1), (0, 1)]),
+                None,
+            ]
+        )
+        expected = Series(["Self-intersection[0.5 0.5]", "Valid Geometry", None])
+        assert_series_equal(s.is_valid_reason(), expected)
+
     def test_is_empty(self):
         expected = Series(np.array([False] * len(self.g1)), self.g1.index)
         self._test_unary_real("is_empty", expected, self.g1)
@@ -2134,3 +2148,56 @@ class TestGeomMethods:
         mixed = concat([self.landmarks_mixed_empty, with_precision])
         expected = Series([0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0], index=mixed.index)
         assert_series_equal(expected, mixed.get_precision())
+
+    def test_get_geometry(self):
+        expected = GeoSeries(
+            [
+                LineString([(0, 2), (0, 10)]),
+                LineString([(0, 2), (0, 10)]),
+                None,
+                LineString([(0, 0), (1, 0)]),
+                Point(0, 0),
+            ],
+            index=range(2, 7),
+            crs=4326,
+        )
+        assert_series_equal(expected, self.g14.get_geometry(0))
+
+        expected = GeoSeries(
+            [
+                LineString([(0, 10), (5, 10)]),
+                LineString([(0, 11), (5, 10)]),
+                None,
+                LineString([(0, 0), (3, 0)]),
+                None,
+            ],
+            index=range(2, 7),
+            crs=4326,
+        )
+        assert_series_equal(expected, self.g14.get_geometry(1))
+
+        expected = GeoSeries(
+            [
+                LineString([(0, 10), (5, 10)]),
+                LineString([(0, 11), (5, 10)]),
+                None,
+                LineString([(0, 0), (3, 0)]),
+                Point(0, 0),
+            ],
+            index=range(2, 7),
+            crs=4326,
+        )
+        assert_series_equal(expected, self.g14.get_geometry(-1))
+
+        expected = GeoSeries(
+            [
+                LineString([(0, 2), (0, 10)]),
+                LineString([(0, 11), (5, 10)]),
+                None,
+                LineString([(0, 0), (3, 0)]),
+                Point(0, 0),
+            ],
+            index=range(2, 7),
+            crs=4326,
+        )
+        assert_series_equal(expected, self.g14.get_geometry([0, 1, 1, -1, 0]))

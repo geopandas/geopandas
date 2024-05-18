@@ -855,7 +855,7 @@ def plot_dataframe(
             if scheme is not None:
                 categories = labels
             patches = []
-            for value, cat in enumerate(categories):
+            for i in range(len(categories)):
                 patches.append(
                     Line2D(
                         [0],
@@ -864,7 +864,7 @@ def plot_dataframe(
                         marker="o",
                         alpha=style_kwds.get("alpha", 1),
                         markersize=10,
-                        markerfacecolor=n_cmap.to_rgba(value),
+                        markerfacecolor=n_cmap.to_rgba(i),
                         markeredgewidth=0,
                     )
                 )
