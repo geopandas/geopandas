@@ -19,6 +19,13 @@ from pyarrow import feather
 DATA_PATH = pathlib.Path(os.path.dirname(__file__)) / "data"
 
 
+def pa_table(table):
+    if Version(pa.__version__) < Version("14.0.0"):
+        return table._pa_table
+    else:
+        return pa.table(table)
+
+
 def assert_table_equal(left, right, check_metadata=True):
     if left.equals(right, check_metadata=check_metadata):
         return
@@ -94,7 +101,7 @@ def test_geoarrow_export(geometry_type, dim, missing):
     df = GeoDataFrame(df)
     df.geometry.crs = None
 
-    result1 = df.to_arrow(geometry_encoding="WKB")
+    result1 = pa_table(df.to_arrow(geometry_encoding="WKB"))
     # remove the "pandas" metadata
     result1 = result1.replace_schema_metadata(None)
     expected1 = feather.read_table(base_path / f"example-{suffix}-wkb.arrow")
@@ -108,14 +115,14 @@ def test_geoarrow_export(geometry_type, dim, missing):
 
     assert_table_equal(result1, expected1)
 
-    result2 = df.to_arrow(geometry_encoding="geoarrow")
+    result2 = pa_table(df.to_arrow(geometry_encoding="geoarrow"))
     # remove the "pandas" metadata
     result2 = result2.replace_schema_metadata(None)
     expected2 = feather.read_table(base_path / f"example-{suffix}-interleaved.arrow")
 
     assert_table_equal(result2, expected2)
 
-    result3 = df.to_arrow(geometry_encoding="geoarrow", interleaved=False)
+    result3 = pa_table(df.to_arrow(geometry_encoding="geoarrow", interleaved=False))
     # remove the "pandas" metadata
     result3 = result3.replace_schema_metadata(None)
     expected3 = feather.read_table(base_path / f"example-{suffix}.arrow")
@@ -130,7 +137,7 @@ def test_geoarrow_multiple_geometry_crs(encoding):
     gdf = GeoDataFrame(geometry=[box(0, 0, 10, 10)], crs="epsg:4326")
     gdf["geom2"] = gdf.geometry.to_crs("epsg:3857")
 
-    result = gdf.to_arrow(geometry_encoding=encoding)
+    result = pa_table(gdf.to_arrow(geometry_encoding=encoding))
     meta1 = json.loads(
         result.schema.field("geometry").metadata[b"ARROW:extension:metadata"]
     )
@@ -161,7 +168,7 @@ def test_geoarrow_mixed_geometry_types():
         {"geometry": [Point(0, 0), MultiPoint([(0, 0), (1, 1)])]},
         crs="epsg:4326",
     )
-    result = gdf.to_arrow(geometry_encoding="geoarrow")
+    result = pa_table(gdf.to_arrow(geometry_encoding="geoarrow"))
     assert (
         result.schema.field("geometry").metadata[b"ARROW:extension:name"]
         == b"geoarrow.multipoint"
@@ -191,6 +198,6 @@ def test_geoarrow_missing(encoding, interleaved, geom_type):
         ):
             gdf.to_arrow(geometry_encoding=encoding, interleaved=interleaved)
         return
-    result = gdf.to_arrow(geometry_encoding=encoding, interleaved=interleaved)
+    result = pa_table(gdf.to_arrow(geometry_encoding=encoding, interleaved=interleaved))
     assert result["geometry"].null_count == 1
     assert result["geometry"].is_null().to_pylist() == [False, True]

@@ -1153,6 +1153,13 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
 
         See https://geoarrow.org/ for details on the GeoArrow specification.
 
+        This functions returns a generic Arrow data object implementing
+        the `Arrow PyCapsule Protocol`_ (i.e. having an ``__arrow_c_stream__``
+        method). This object can then be consumed by your Arrow implementation
+        of choice that supports this protocol.
+
+        .. _Arrow PyCapsule Protocol: https://arrow.apache.org/docs/format/CDataInterface/PyCapsuleInterface.html
+
         Parameters
         ----------
         index : bool, default None
@@ -1171,17 +1178,49 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
 
         Returns
         -------
-        pyarrow.Table
-            a Table with geometry columns encoded to GeoArrow
-        """
-        from geopandas.io.geoarrow import geopandas_to_arrow
+        ArrowTable
+            A generic Arrow table object with geometry columns encoded to
+            GeoArrow.
 
-        return geopandas_to_arrow(
+        Examples
+        --------
+        >>> from shapely.geometry import Point
+        >>> data = {'col1': ['name1', 'name2'], 'geometry': [Point(1, 2), Point(2, 1)]}
+        >>> gdf = geopandas.GeoDataFrame(data)
+        >>> gdf
+            col1     geometry
+        0  name1  POINT (1 2)
+        1  name2  POINT (2 1)
+
+        >>> arrow_table = gdf.to_arrow()
+        >>> arrow_table
+        <geopandas.io.geoarrow.ArrowTable object at ...>
+
+        The returned data object needs to be consumed by a library implementing
+        the Arrow PyCapsule Protocol. For example, wrapping the data as a
+        pyarrow.Table (requires pyarrow >= 14.0):
+
+        >>> import pyarrow as pa
+        >>> table = pa.table(arrow_table)
+        >>> table
+        pyarrow.Table
+        col1: string
+        geometry: binary
+        ----
+        col1: [["name1","name2"]]
+        geometry: [[0101000000000000000000F03F0000000000000040,\
+01010000000000000000000040000000000000F03F]]
+
+        """
+        from geopandas.io.geoarrow import geopandas_to_arrow, ArrowTable
+
+        table = geopandas_to_arrow(
             self,
             index=index,
             geometry_encoding=geometry_encoding,
             interleaved=interleaved,
         )
+        return ArrowTable(table)
 
     def to_parquet(
         self, path, index=None, compression="snappy", schema_version=None, **kwargs

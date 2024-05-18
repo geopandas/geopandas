@@ -14,6 +14,30 @@ from shapely import GeometryType
 from geopandas._compat import SHAPELY_GE_204
 
 
+class ArrowTable:
+    """
+    Wrapper class for Arrow data.
+
+    This class implements the `Arrow PyCapsule Protocol`_ (i.e. having an
+    ``__arrow_c_stream__`` method). This object can then be consumed by
+    your Arrow implementation of choice that supports this protocol.
+
+    .. _Arrow PyCapsule Protocol: https://arrow.apache.org/docs/format/CDataInterface/PyCapsuleInterface.html
+
+    Example
+    -------
+    >>> import pyarrow as pa
+    >>> pa.table(gdf.to_arrow())  # doctest: +SKIP
+
+    """
+
+    def __init__(self, pa_table):
+        self._pa_table = pa_table
+
+    def __arrow_c_stream__(self, requested_schema=None):
+        return self._pa_table.__arrow_c_stream__(requested_schema=requested_schema)
+
+
 def geopandas_to_arrow(
     df, index=None, geometry_encoding="WKB", include_z=None, interleaved=True
 ):
