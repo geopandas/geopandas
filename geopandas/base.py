@@ -4689,7 +4689,7 @@ GeometryCollection
 
         Geometries within the GeoSeries should be only (Multi)LineStrings or
         LinearRings. A GeoSeries of GeometryCollections is returned with two elements
-        in each GeometryCollections. The first element is a MultiLineString containing
+        in each GeometryCollection. The first element is a MultiLineString containing
         shared paths with the same direction for both inputs. The second element is a
         MultiLineString containing shared paths with the opposite direction for the two
         inputs.
