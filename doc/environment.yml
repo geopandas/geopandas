@@ -4,39 +4,42 @@ channels:
 dependencies:
   - python
   - pandas
+  - shapely
+  - fiona
+  - pyogrio
+  - geopy
   - matplotlib
+  - mapclassify
   - sphinx
   - pydata-sphinx-theme
   - numpydoc
   - ipython
   - pillow
   - mock
+  - cartopy
+  - pyepsg
+  - contextily
+  - rasterio
+  - geoplot
   - sphinx-gallery
   - jinja2
   - doc2dash
   - matplotlib-scalebar
   # specify additional dependencies to reduce solving for conda
+  - gdal
+  - libgdal
+  - geos
   - nbsphinx
   - jupyter_client
   - ipykernel
   - myst-parser
+  - folium
+  - libpysal
+  - xyzservices
   - packaging
+  - pointpats
   - pip
   - pip:
       - sphinx-toggleprompt
       - geodatasets
-      # geo packages all from pip to avoid PROJ ERROR in html
-      - shapely
-      - fiona
       - pyproj
-      - pyogrio
-      - geopy
-      - pyepsg
-      - cartopy
-      - mapclassify
-      - contextily
-      - rasterio
-      - folium
-      - libpysal
-      - pointpats
-      - xyzservices
