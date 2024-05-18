@@ -240,9 +240,8 @@ def construct_geometry_array(
         ring_offsets, geom_offsets = offsets
         _parr = _convert_inner_coords(coords, interleaved, dims)
         _parr1 = pa.ListArray.from_arrays(pa.array(ring_offsets), _parr)
-        parr = pa.ListArray.from_arrays(
-            pa.array(geom_offsets), _parr1, type=_polygon_type(_parr.type), mask=mask
-        )
+        parr = pa.ListArray.from_arrays(pa.array(geom_offsets), _parr1, mask=mask)
+        parr = parr.cast(_polygon_type(_parr.type))
         extension_metadata["ARROW:extension:name"] = "geoarrow.polygon"
         field = pa.field(
             field_name,
