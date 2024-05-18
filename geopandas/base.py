@@ -2096,7 +2096,7 @@ GeometryCollection
 
         An object is said to contain `other` if at least one point of `other` lies in
         the interior and no points of `other` lie in the exterior of the object.
-        (Therefore, any given polygon does not contain its own boundary – there is not
+        (Therefore, any given polygon does not contain its own boundary - there is not
         any point that lies in the interior.)
         If either object is empty, this operation returns ``False``.
 
@@ -4540,7 +4540,7 @@ GeometryCollection
         return _binary_geo("shortest_line", self, other, align)
 
     def snap(self, other, tolerance, align=None):
-        """Snaps an input geometry to reference geometry’s vertices.
+        """Snaps an input geometry to reference geometry's vertices.
 
         Vertices of the first geometry are snapped to vertices of the second. geometry,
         returning a new geometry; the input geometries are not modified. The result
@@ -4872,7 +4872,7 @@ GeometryCollection
         each geometry.
 
         The algorithm (Douglas-Peucker) recursively splits the original line
-        into smaller parts and connects these parts’ endpoints
+        into smaller parts and connects these parts' endpoints
         by a straight line. Then, it removes all points whose distance
         to the straight line is smaller than `tolerance`. It does not
         move any points and it always preserves endpoints of
