@@ -19,7 +19,6 @@ dependencies:
   - pyepsg
   - contextily
   - rasterio
-  - geoplot
   - sphinx-gallery
   - jinja2
   - doc2dash
@@ -43,3 +42,4 @@ dependencies:
       - geodatasets
       - pyproj
       - cartopy
+      - geoplot
