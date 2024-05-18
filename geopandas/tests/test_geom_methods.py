@@ -174,6 +174,20 @@ class TestGeomMethods:
         self.l6 = LineString([(5, 5), (5, 100), (100, 5)])
         self.g12 = GeoSeries([self.l5])
         self.g13 = GeoSeries([self.l6])
+        self.lines = GeoSeries(
+            [
+                LineString([(0, 0), (1, 1)]),
+                LineString([(0, 0), (0, 1)]),
+                LineString([(0, 1), (1, 1)]),
+                LineString([(1, 1), (1, 0)]),
+                LineString([(1, 0), (0, 0)]),
+                LineString([(5, 5), (6, 6)]),
+                LineString([(0.5, -1), (0.5, 2)]),
+                Point(0, 0),
+            ],
+            crs=4326,
+            index=range(2, 10),
+        )
 
         self.l5 = LineString([(100, 0), (0, 0), (0, 100)])
         self.l6 = LineString([(5, 5), (5, 100), (100, 5)])
@@ -1927,6 +1941,61 @@ class TestGeomMethods:
             ValueError, match="Index of the Series passed as 'distance' does not match"
         ):
             GeoSeries([self.l1]).offset_curve(Series([1], index=[99]))
+
+    def test_polygonize(self):
+        expected = GeoSeries.from_wkt(
+            [
+                "POLYGON ((0 0, 0.5 0.5, 0.5 0, 0 0))",
+                "POLYGON ((0.5 0.5, 0 0, 0 1, 0.5 1, 0.5 0.5))",
+                "POLYGON ((0.5 0.5, 1 1, 1 0, 0.5 0, 0.5 0.5))",
+                "POLYGON ((1 1, 0.5 0.5, 0.5 1, 1 1))",
+            ],
+            name="polygons",
+            crs=4326,
+        )
+
+        result = self.lines.polygonize()
+        assert_geoseries_equal(expected, result)
+        assert_index_equal(self.lines.index, Index(range(2, 10)))
+
+    def test_polygonize_no_node(self):
+        expected = GeoSeries.from_wkt(
+            ["POLYGON ((0 0, 1 1, 1 0, 0 0))", "POLYGON ((1 1, 0 0, 0 1, 1 1))"],
+            name="polygons",
+            crs=4326,
+        )
+        result = self.lines.polygonize(node=False)
+        assert_geoseries_equal(expected, result)
+        assert_index_equal(self.lines.index, Index(range(2, 10)))
+
+    def test_polygonize_full(self):
+        expected_poly = GeoSeries.from_wkt(
+            [
+                "POLYGON ((0 0, 0.5 0.5, 0.5 0, 0 0))",
+                "POLYGON ((0.5 0.5, 0 0, 0 1, 0.5 1, 0.5 0.5))",
+                "POLYGON ((0.5 0.5, 1 1, 1 0, 0.5 0, 0.5 0.5))",
+                "POLYGON ((1 1, 0.5 0.5, 0.5 1, 1 1))",
+            ],
+            name="polygons",
+            crs=4326,
+        )
+        expected_cuts = GeoSeries([], name="cut edges", crs=4326)
+        expected_dangles = GeoSeries.from_wkt(
+            [
+                "LINESTRING (5 5, 6 6)",
+                "LINESTRING (0.5 1, 0.5 2)",
+                "LINESTRING (0.5 -1, 0.5 0)",
+            ],
+            name="dangles",
+            crs=4326,
+        )
+        expected_invalid = GeoSeries([], name="invalid ring lines", crs=4326)
+        result = self.lines.polygonize(full=True)
+        assert_geoseries_equal(expected_poly, result[0])
+        assert_geoseries_equal(expected_cuts, result[1])
+        assert_geoseries_equal(expected_dangles, result[2])
+        assert_geoseries_equal(expected_invalid, result[3])
+        assert_index_equal(self.lines.index, Index(range(2, 10)))
 
     @pytest.mark.skipif(shapely.geos_version < (3, 11, 0), reason="requires GEOS>=3.11")
     @pytest.mark.parametrize(

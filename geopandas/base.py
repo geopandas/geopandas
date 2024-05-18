@@ -5880,6 +5880,93 @@ GeometryCollection
             ignore_index=True
         )
 
+    def polygonize(self, node=True, full=False):
+        """Creates polygons formed from the linework of a GeoSeries.
+
+        Polygonizes the GeoSeries that contain linework which represents the
+        edges of a planar graph. Any geometry type may be provided as input; only the
+        constituent lines and rings will be used to create the output polygons.
+
+        Lines or rings that when combined do not completely close a polygon will be
+        ignored. Duplicate segments are ignored.
+
+        Unless you know that the input GeoSeries represents a planar graph with a clean
+        topology (e.g. there is a node on both lines where they intersect), it is
+        recommended to use ``node=True`` which performs noding prior to polygonization.
+        Using ``node=False`` will provide performance benefits but may result in
+        incorrect polygons if the input is not of the proper topology.
+
+        When ``full=True``, the return value is a 4-tuple containing output polygons,
+        along with lines which could not be converted to polygons. The return value
+        consists of 4 elements or varying lenghts:
+
+        - GeoSeries of the valid polygons (same as with ``full=False``)
+        - GeoSeries of cut edges: edges connected on both ends but not part of
+          polygonal output
+        - GeoSeries of dangles: edges connected on one end but not part of polygonal
+          output
+        - GeoSeries of invalid rings: polygons that are formed but are not valid
+          (bowties, etc)
+
+        Parameters
+        ----------
+        node : bool, default True
+            Perform noding prior to polygonization, by default True.
+        full : bool, default False
+            Return the full output composed of a tuple of GeoSeries, by default False.
+
+        Returns
+        -------
+        GeoSeries | tuple(GeoSeries, GeoSeries, GeoSeries, GeoSeries)
+            GeoSeries with the polygons or a tuple of four GeoSeries as
+            ``(polygons, cuts, dangles, invalid)``
+
+        Examples
+        --------
+        >>> from shapely.geometry import LineString
+        >>> s = geopandas.GeoSeries([
+        ...     LineString([(0, 0), (1, 1)]),
+        ...     LineString([(0, 0), (0, 1), (1, 1), (1, 0), (0, 0)]),
+        ...     LineString([(0.5, 0.2), (0.5, 0.8)]),
+        ... ])
+        >>> s.polygonize()
+        0        POLYGON ((0 0, 0.5 0.5, 1 1, 1 0, 0 0))
+        1    POLYGON ((0.5 0.5, 0 0, 0 1, 1 1, 0.5 0.5))
+        Name: polygons, dtype: geometry
+
+        >>> polygons, cuts, dangles, invalid = s.polygonize(full=True)
+
+        """
+        from .geoseries import GeoSeries
+
+        if node:
+            geometry_input = [self.geometry.union_all()]
+        else:
+            geometry_input = self.geometry.values
+
+        if full:
+            polygons, cuts, dangles, invalid = shapely.polygonize_full(geometry_input)
+
+            cuts = GeoSeries(cuts, crs=self.crs, name="cut_edges").explode(
+                ignore_index=True
+            )
+            dangles = GeoSeries(dangles, crs=self.crs, name="dangles").explode(
+                ignore_index=True
+            )
+            invalid = GeoSeries(invalid, crs=self.crs, name="invalid_rings").explode(
+                ignore_index=True
+            )
+            polygons = GeoSeries(polygons, crs=self.crs, name="polygons").explode(
+                ignore_index=True
+            )
+
+            return (polygons, cuts, dangles, invalid)
+
+        polygons = shapely.polygonize(geometry_input)
+        return GeoSeries(polygons, crs=self.crs, name="polygons").explode(
+            ignore_index=True
+        )
+
 
 def _get_index_for_parts(orig_idx, outer_idx, ignore_index, index_parts):
     """Helper to handle index when geometries get exploded to parts.
