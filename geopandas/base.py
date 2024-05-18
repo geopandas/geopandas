@@ -4694,6 +4694,9 @@ GeometryCollection
         MultiLineString containing shared paths with the opposite direction for the two
         inputs.
 
+        You can extract individual geometries of the resulting GeometryCollection using
+        the :meth:`GeoSeries.get_geometry` method.
+
         The operation works on a 1-to-1 row-wise manner:
 
         .. image:: ../../../_static/binary_op-01.svg
@@ -4771,6 +4774,10 @@ GeometryCollection
         1    GEOMETRYCOLLECTION (MULTILINESTRING EMPTY, MUL...
         2    GEOMETRYCOLLECTION (MULTILINESTRING ((1 0, 2 0...
         dtype: geometry
+
+        See Also
+        --------
+        GeoSeries.get_geometry
         """
 
         return _binary_geo("shared_paths", self, other, align)
