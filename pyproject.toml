@@ -153,26 +153,12 @@ ignore = [ # space before : (needed for how black formats slicing)
     # "W503",  # not yet implemented
     # line break after binary operator
     # "W504",  # not yet implemented
-    # controversial
+    # mutable-argument-default
     "B006",
-    # controversial
+    # unused-loop-control-variable
     "B007",
-    # controversial
-    "B008",
-    # setattr is used to side-step mypy
+    # get-attr-with-constant
     "B009",
-    # getattr is used to side-step mypy
-    "B010",
-    # tests use assert False
-    "B011",
-    # tests use comparisons but not their returned value
-    "B015",
-    # false positives
-    "B019",
-    # Loop control variable overrides iterable it iterates
-    "B020",
-    # Function definition does not bind loop variable
-    "B023",
     # Functions defined inside a loop must not use variables redefined in the loop
     # "B301",  # not yet implemented
     # Only works with python >=3.10

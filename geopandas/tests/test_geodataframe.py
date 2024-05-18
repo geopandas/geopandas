@@ -1300,7 +1300,7 @@ class TestConstructor:
             geometry="geometry",
         )
         check_geodataframe(gdf)
-        gdf.columns == ["geometry", "a"]
+        assert gdf.columns == ["geometry", "a"]
 
         # with non-default index
         gdf = GeoDataFrame(
@@ -1310,7 +1310,7 @@ class TestConstructor:
             geometry="geometry",
         )
         check_geodataframe(gdf)
-        gdf.columns == ["geometry", "a"]
+        assert gdf.columns == ["geometry", "a"]
 
     def test_preserve_series_name(self):
         geoms = [Point(1, 1), Point(2, 2), Point(3, 3)]
