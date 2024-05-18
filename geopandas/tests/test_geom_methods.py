@@ -2052,6 +2052,54 @@ class TestGeomMethods:
         )
         assert_geoseries_equal(expected, self.g1.force_3d([1, 2]))
 
+    def test_shared_paths(self):
+        line = LineString([(0, 0), (0.5, 0.5), (0, 1)])
+        expected = GeoSeries.from_wkt(
+            [
+                "GEOMETRYCOLLECTION (MULTILINESTRING ((0 0, 0.5 0.5)),"
+                " MULTILINESTRING EMPTY)",
+                "GEOMETRYCOLLECTION (MULTILINESTRING EMPTY,"
+                " MULTILINESTRING ((0 1, 0.5 0.5)))",
+            ]
+        )
+        assert_geoseries_equal(expected, self.crossed_lines.shared_paths(line))
+
+        s2 = GeoSeries(
+            [
+                LineString([(0, 0), (0.5, 0.5), (1, 0), (1, 1), (0.9, 0.9)]),
+                LineString([(1, 1), (0, 1), (1, 0)]),
+            ],
+            index=[1, 2],
+        )
+        expected = GeoSeries.from_wkt(
+            [
+                None,
+                "GEOMETRYCOLLECTION (MULTILINESTRING ((0.5 0.5, 1 0)),"
+                " MULTILINESTRING EMPTY)",
+                None,
+            ]
+        )
+
+        with pytest.warns(
+            UserWarning,
+            match="The indices of the left and right GeoSeries' are not equal",
+        ):
+            assert_geoseries_equal(
+                self.crossed_lines.shared_paths(s2, align=None), expected
+            )
+
+        expected = GeoSeries.from_wkt(
+            [
+                "GEOMETRYCOLLECTION (MULTILINESTRING ((0 0, 0.5 0.5)),"
+                " MULTILINESTRING ((0.9 0.9, 1 1)))",
+                "GEOMETRYCOLLECTION (MULTILINESTRING ((0 1, 1 0)),"
+                " MULTILINESTRING EMPTY)",
+            ]
+        )
+        assert_geoseries_equal(
+            self.crossed_lines.shared_paths(s2, align=False), expected
+        )
+
     def test_force_3d_wrong_index(self):
         with pytest.raises(
             ValueError, match="Index of the Series passed as 'z' does not match"

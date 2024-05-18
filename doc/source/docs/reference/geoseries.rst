@@ -147,6 +147,7 @@ Linestring operations
    GeoSeries.interpolate
    GeoSeries.line_merge
    GeoSeries.project
+   GeoSeries.shared_paths
 
 Aggregating and exploding
 -------------------------
