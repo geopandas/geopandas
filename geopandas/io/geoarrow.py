@@ -56,7 +56,7 @@ def geopandas_to_arrow(
         for i, col in zip(geometry_indices, geometry_columns):
             crs = df[col].crs.to_json() if df[col].crs is not None else None
             field, geom_arr = construct_geometry_array(
-                np.array(df[col]),
+                np.array(df[col].array),
                 include_z=include_z,
                 field_name=col,
                 crs=crs,
