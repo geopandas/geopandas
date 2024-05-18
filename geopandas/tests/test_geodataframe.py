@@ -296,7 +296,8 @@ class TestDataFrame:
         assert_geoseries_equal(df2.geometry, g_simplified)
 
         # If True, drops column and renames to geometry
-        df3 = self.df.set_geometry("simplified_geometry", drop=True)
+        with pytest.warns(FutureWarning):
+            df3 = self.df.set_geometry("simplified_geometry", drop=True)
         assert "simplified_geometry" not in df3
         assert_geoseries_equal(df3.geometry, g_simplified)
 
@@ -808,7 +809,8 @@ class TestDataFrame:
         assert gf.geometry.name == "location"
         assert "geometry" not in gf
 
-        gf2 = df.set_geometry("location", crs=self.df.crs, drop=True)
+        with pytest.warns(FutureWarning):
+            gf2 = df.set_geometry("location", crs=self.df.crs, drop=True)
         assert isinstance(df, pd.DataFrame)
         assert isinstance(gf2, GeoDataFrame)
         assert gf2.geometry.name == "geometry"

@@ -69,7 +69,7 @@ def _parse_uri(path: str):
     scheme : str
         URI scheme such as "https" or "zip+s3".
     """
-    parts = urlparse(path)
+    parts = urlparse(path, allow_fragments=False)
 
     # if the scheme is not one of GDAL's supported schemes, return raw path
     if parts.scheme and not all(p in SCHEMES for p in parts.scheme.split("+")):

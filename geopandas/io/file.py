@@ -66,11 +66,13 @@ def _import_fiona():
 
 pyogrio = None
 pyogrio_import_error = None
+PYOGRIO_GE_081 = False
 
 
 def _import_pyogrio():
     global pyogrio
     global pyogrio_import_error
+    global PYOGRIO_GE_081
 
     if pyogrio is None:
         try:
@@ -79,10 +81,14 @@ def _import_pyogrio():
         except ImportError as err:
             pyogrio = False
             pyogrio_import_error = str(err)
+        else:
+            PYOGRIO_GE_081 = Version(
+                Version(pyogrio.__version__).base_version
+            ) >= Version("0.8.1")
 
 
 def _check_fiona(func):
-    if fiona is None:
+    if not fiona:
         raise ImportError(
             f"the {func} requires the 'fiona' package, but it is not installed or does "
             f"not import correctly.\nImporting fiona resulted in: {fiona_import_error}"
@@ -90,7 +96,7 @@ def _check_fiona(func):
 
 
 def _check_pyogrio(func):
-    if pyogrio is None:
+    if not pyogrio:
         raise ImportError(
             f"the {func} requires the 'pyogrio' package, but it is not installed "
             "or does not import correctly."
