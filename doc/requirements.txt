@@ -16,7 +16,6 @@ cartopy
 pyepsg
 contextily
 rasterio
-geoplot
 sphinx-gallery
 jinja2
 doc2dash
