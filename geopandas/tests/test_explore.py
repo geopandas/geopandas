@@ -743,7 +743,7 @@ class TestExplore:
             'attribution":"\\u0026copy;\\u003cahref=\\"https://www.openstreetmap.org'
             in out_str
         )
-        assert '"maxNativeZoom":20,"maxZoom":20,"minZoom":0' in out_str
+        assert '"maxZoom":20,"minZoom":0' in out_str
 
     @pytest.mark.skipif(not HAS_PYPROJ, reason="requires pyproj")
     def test_xyzservices_query_name(self):
@@ -760,7 +760,7 @@ class TestExplore:
             'attribution":"\\u0026copy;\\u003cahref=\\"https://www.openstreetmap.org'
             in out_str
         )
-        assert '"maxNativeZoom":20,"maxZoom":20,"minZoom":0' in out_str
+        assert '"maxZoom":20,"minZoom":0' in out_str
 
     @pytest.mark.skipif(not HAS_PYPROJ, reason="requires pyproj")
     def test_xyzservices_providers_min_zoom_override(self):
@@ -771,7 +771,7 @@ class TestExplore:
         )
         out_str = self._fetch_map_string(m)
 
-        assert '"maxNativeZoom":20,"maxZoom":20,"minZoom":3' in out_str
+        assert '"maxZoom":20,"minZoom":3' in out_str
 
     @pytest.mark.skipif(not HAS_PYPROJ, reason="requires pyproj")
     def test_xyzservices_providers_max_zoom_override(self):
@@ -782,7 +782,7 @@ class TestExplore:
         )
         out_str = self._fetch_map_string(m)
 
-        assert '"maxNativeZoom":12,"maxZoom":12,"minZoom":0' in out_str
+        assert '"maxZoom":12,"minZoom":0' in out_str
 
     @pytest.mark.skipif(not HAS_PYPROJ, reason="requires pyproj")
     def test_xyzservices_providers_both_zooms_override(self):
@@ -795,7 +795,7 @@ class TestExplore:
         )
         out_str = self._fetch_map_string(m)
 
-        assert '"maxNativeZoom":12,"maxZoom":12,"minZoom":3' in out_str
+        assert '"maxZoom":12,"minZoom":3' in out_str
 
     def test_linearrings(self):
         rings = self.nybb.explode(index_parts=True).exterior
