@@ -5,22 +5,24 @@ import pathlib
 import shutil
 import tempfile
 from collections import OrderedDict
+from packaging.version import Version
 
 import numpy as np
 import pandas as pd
-import pytest
 import pytz
-from packaging.version import Version
 from pandas.api.types import is_datetime64_any_dtype
-from pandas.testing import assert_series_equal, assert_frame_equal
+
 from shapely.geometry import Point, Polygon, box, mapping
 
 import geopandas
 from geopandas import GeoDataFrame, read_file
-from geopandas._compat import PANDAS_GE_20, HAS_PYPROJ
-from geopandas.io.file import _detect_driver, _EXTENSION_TO_DRIVER, PYOGRIO_GE_081
+from geopandas._compat import HAS_PYPROJ, PANDAS_GE_20
+from geopandas.io.file import _EXTENSION_TO_DRIVER, PYOGRIO_GE_081, _detect_driver
+
+import pytest
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 from geopandas.tests.util import PACKAGE_DIR, validate_boro_df
+from pandas.testing import assert_frame_equal, assert_series_equal
 
 try:
     import pyogrio

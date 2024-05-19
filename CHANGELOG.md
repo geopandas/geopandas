@@ -32,6 +32,7 @@ New methods:
 - Added `set_precision` and `get_precision` methods from shapely to GeoSeries/GeoDataframe (#3175).
 - Added `count_coordinates` method from shapely to GeoSeries/GeoDataframe (#3026).
 - Added `minimum_clearance` method from shapely to GeoSeries/GeoDataframe (#2989).
+- Added `shared_paths` method from shapely to GeoSeries/GeoDataframe (#3215).
 - Added `is_ccw` method from shapely to GeoSeries/GeoDataframe (#3027).
 - Added `is_closed` attribute from shapely to GeoSeries/GeoDataframe (#3092).
 - Added `force_2d` and `force_3d` methods from shapely to GeoSeries/GeoDataframe (#3090).
@@ -44,6 +45,8 @@ New methods:
 - Added `dwithin` method to check for a "distance within" predicate on
   GeoSeries/GeoDataFrame (#3153).
 - Added `to_geo_dict` method to generate GeoJSON-like dictionary from a GeoDataFrame (#3132).
+- Added `polygonize` method exposing both `polygonize` and `polygonize_full` from
+  shapely to GeoSeries/GeoDataframe (#2963).
 - Added `is_valid_reason` method from shapely to GeoSeries/GeoDataframe (#3176).
 
 New features and improvements:
@@ -64,6 +67,8 @@ New features and improvements:
   preservation of the original order of observations. (#3233)
 - Added `show_bbox`, `drop_id` and `to_wgs84` arguments to allow further customization of
   `GeoSeries.to_json` (#3226)
+- `explore` now supports `GeoDataFrame`s with additional columns containing datetimes, uuids and 
+  other non JSON serializable objects (#3261).
 - The `GeoSeries.fillna` method now supports the `limit` keyword (#3290).
 
 Backwards incompatible API changes:
@@ -75,6 +80,10 @@ Backwards incompatible API changes:
   the previous active geometry column name. This means that if the new and old names are
   different, then both columns will be preserved in the GeoDataFrame. To replicate the previous
   behaviour, you can instead call `gdf.set_geometry(ser.rename(gdf.active_geometry_name))` (#3237).
+- `delaunay_triangles` now considers all geometries together when creating the Delaunay trianguation
+  instead of performing the operation element-wise. If you want to generate Delaunay
+  triangles for each geometry separately, use ``shapely.delaunay_triangles`` instead. (#3273)
+
 
 Potentially breaking changes:
 
@@ -92,6 +101,7 @@ Bug fixes:
 - Fix regression preventing reading from file paths containing hashes in `read_file`
   with the fiona engine (#3280). An analgous fix for pyogrio is included in
   pyogrio 0.8.1.
+- Fix `to_parquet` to write correct metadata in case of 3D geometries (#2824).
 
 Deprecations and compatibility notes:
 

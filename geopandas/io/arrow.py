@@ -1,14 +1,15 @@
-from packaging.version import Version
 import json
 import warnings
+from packaging.version import Version
 
 import numpy as np
 from pandas import DataFrame, Series
 
-from geopandas._compat import import_optional_dependency
-from geopandas.array import from_wkb, from_shapely
-from geopandas import GeoDataFrame
 import geopandas
+from geopandas import GeoDataFrame
+from geopandas._compat import import_optional_dependency
+from geopandas.array import from_shapely, from_wkb
+
 from .file import _expand_user
 
 METADATA_VERSION = "1.0.0"
@@ -102,7 +103,14 @@ def _create_metadata(df, schema_version=None):
     column_metadata = {}
     for col in df.columns[df.dtypes == "geometry"]:
         series = df[col]
-        geometry_types = sorted(Series(series.geom_type.unique()).dropna())
+
+        # ensure to include "... Z" for 3D geometries
+        geometry_types = {
+            f"{geom} Z" if has_z else geom
+            for geom, has_z in zip(series.geom_type, series.has_z)
+        }
+        geometry_types = sorted(Series(list(geometry_types)).dropna())
+
         if schema_version[0] == "0":
             geometry_types_name = "geometry_type"
             if len(geometry_types) == 1:
@@ -683,6 +691,7 @@ def _read_feather(path, columns=None, **kwargs):
     )
     # TODO move this into `import_optional_dependency`
     import pyarrow
+
     import geopandas.io._pyarrow_hotfix  # noqa: F401
 
     if Version(pyarrow.__version__) < Version("0.17.0"):

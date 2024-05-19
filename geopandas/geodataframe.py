@@ -3,19 +3,20 @@ import warnings
 
 import numpy as np
 import pandas as pd
-import shapely.errors
 from pandas import DataFrame, Series
 
+import shapely.errors
 from shapely.geometry import mapping, shape
 from shapely.geometry.base import BaseGeometry
 
+import geopandas.io
 from geopandas.array import GeometryArray, GeometryDtype, from_shapely, to_wkb, to_wkt
 from geopandas.base import GeoPandasBase, is_geometry_type
-from geopandas.geoseries import GeoSeries
-import geopandas.io
 from geopandas.explore import _explore
-from ._decorator import doc
+from geopandas.geoseries import GeoSeries
+
 from ._compat import HAS_PYPROJ, PANDAS_GE_30
+from ._decorator import doc
 
 if PANDAS_GE_30:
     from pandas.core.accessor import Accessor
@@ -1212,7 +1213,7 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
 01010000000000000000000040000000000000F03F]]
 
         """
-        from geopandas.io.geoarrow import geopandas_to_arrow, ArrowTable
+        from geopandas.io.geoarrow import ArrowTable, geopandas_to_arrow
 
         table = geopandas_to_arrow(
             self,

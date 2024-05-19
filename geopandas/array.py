@@ -6,21 +6,21 @@ from functools import lru_cache
 
 import numpy as np
 import pandas as pd
-import shapely
-import shapely.affinity
-import shapely.geometry
-import shapely.ops
-import shapely.wkt
 from pandas.api.extensions import (
     ExtensionArray,
     ExtensionDtype,
     register_extension_dtype,
 )
 
+import shapely
+import shapely.affinity
+import shapely.geometry
+import shapely.ops
+import shapely.wkt
 from shapely.geometry.base import BaseGeometry
 
-from .sindex import SpatialIndex
 from ._compat import HAS_PYPROJ, requires_pyproj
+from .sindex import SpatialIndex
 
 if HAS_PYPROJ:
     from pyproj import Transformer
@@ -574,12 +574,6 @@ class GeometryArray(ExtensionArray):
     def convex_hull(self):
         return GeometryArray(shapely.convex_hull(self._data), crs=self.crs)
 
-    def delaunay_triangles(self, tolerance, only_edges):
-        return GeometryArray(
-            shapely.delaunay_triangles(self._data, tolerance, only_edges),
-            crs=self.crs,
-        )
-
     @property
     def envelope(self):
         return GeometryArray(shapely.envelope(self._data), crs=self.crs)
@@ -788,6 +782,11 @@ class GeometryArray(ExtensionArray):
     def snap(self, other, tolerance):
         return GeometryArray(
             self._binary_method("snap", self, other, tolerance=tolerance), crs=self.crs
+        )
+
+    def shared_paths(self, other):
+        return GeometryArray(
+            self._binary_method("shared_paths", self, other), crs=self.crs
         )
 
     #

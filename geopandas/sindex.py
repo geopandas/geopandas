@@ -1,9 +1,10 @@
 import numpy as np
+
 import shapely
 from shapely.geometry.base import BaseGeometry
 
-from . import array, geoseries
 from . import _compat as compat
+from . import array, geoseries
 
 PREDICATES = {p.name for p in shapely.strtree.BinaryPredicate} | {None}
 
@@ -52,7 +53,9 @@ class SpatialIndex:
         """
         return PREDICATES
 
-    def query(self, geometry, predicate=None, sort=False, distance=None):
+    def query(
+        self, geometry, predicate=None, sort=False, distance=None, output_format="tuple"
+    ):
         """
         Return the integer indices of all combinations of each input geometry
         and tree geometries where the bounding box of each input geometry
@@ -208,16 +211,36 @@ class SpatialIndex:
 
         indices = self._tree.query(geometry, predicate=predicate, **kwargs)
 
+        if output_format != "tuple":
+            sort = True
+
         if sort:
             if indices.ndim == 1:
-                return np.sort(indices)
+                indices = np.sort(indices)
             else:
                 # sort by first array (geometry) and then second (tree)
                 geo_idx, tree_idx = indices
                 sort_indexer = np.lexsort((tree_idx, geo_idx))
-                return np.vstack((geo_idx[sort_indexer], tree_idx[sort_indexer]))
+                indices = np.vstack((geo_idx[sort_indexer], tree_idx[sort_indexer]))
 
-        return indices
+        if output_format == "sparse":
+            from scipy.sparse import coo_array
+
+            return coo_array(
+                (np.ones(len(indices[0]), dtype=np.bool_), indices),
+                shape=(len(self.geometries), len(geometry)),
+                dtype=np.bool_,
+            )
+
+        if output_format == "dense":
+            dense = np.zeros((len(self.geometries), len(geometry)), dtype=bool)
+            dense[indices] = True
+            return dense
+
+        if output_format == "tuple":
+            return indices
+
+        raise ValueError("Invalid output_format: {}".format(output_format))
 
     @staticmethod
     def _as_geometry_array(geometry):

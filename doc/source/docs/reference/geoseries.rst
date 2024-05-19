@@ -115,6 +115,7 @@ Constructive methods and attributes
    GeoSeries.minimum_clearance
    GeoSeries.minimum_rotated_rectangle
    GeoSeries.normalize
+   GeoSeries.polygonize
    GeoSeries.remove_repeated_points
    GeoSeries.reverse
    GeoSeries.sample_points
@@ -146,6 +147,7 @@ Linestring operations
    GeoSeries.interpolate
    GeoSeries.line_merge
    GeoSeries.project
+   GeoSeries.shared_paths
 
 Aggregating and exploding
 -------------------------
