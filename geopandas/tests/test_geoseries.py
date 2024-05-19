@@ -659,6 +659,7 @@ class TestConstructor:
         assert s.name == g.name
         assert s.index is g.index
 
+    @pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not available")
     def test_from_series_no_set_crs_on_construction(self):
         # https://github.com/geopandas/geopandas/issues/2492
         # also when passing Series[geometry], ensure we don't change crs of
