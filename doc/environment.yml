@@ -7,7 +7,7 @@ dependencies:
   - shapely
   - fiona
   - pyproj
-  - rtree
+  - pyogrio
   - geopy
   - matplotlib
   - mapclassify
@@ -37,10 +37,10 @@ dependencies:
   - myst-parser
   - folium
   - libpysal
-  - pygeos
   - xyzservices
   - packaging
+  - pointpats
   - pip
   - pip:
       - sphinx-toggleprompt
-      - git+https://github.com/geopandas/geodatasets.git@main
+      - geodatasets

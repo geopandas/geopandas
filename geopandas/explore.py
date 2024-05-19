@@ -7,6 +7,8 @@ import pandas as pd
 
 from packaging.version import Version
 
+from pandas.api.types import is_datetime64_any_dtype
+
 _MAP_KWARGS = [
     "location",
     "prefer_canvas",
@@ -93,8 +95,7 @@ def _explore(
         pass :class:`xyzservices.TileProvider` object or pass custom XYZ URL.
         The current list of built-in providers (when ``xyzservices`` is not available):
 
-        ``["OpenStreetMap", "Stamen Terrain", “Stamen Toner", “Stamen Watercolor"
-        "CartoDB positron", “CartoDB dark_matter"]``
+        ``["OpenStreetMap", "CartoDB positron", “CartoDB dark_matter"]``
 
         You can pass a custom tileset to Folium by passing a Leaflet-style URL
         to the tiles parameter: ``http://{s}.yourtiles.com/{z}/{x}/{y}.png``.
@@ -253,16 +254,18 @@ def _explore(
 
     Examples
     --------
-    >>> df = geopandas.read_file(geopandas.datasets.get_path("naturalearth_lowres"))
+    >>> import geodatasets
+    >>> df = geopandas.read_file(
+    ...     geodatasets.get_path("geoda.chicago_health")
+    ... )
     >>> df.head(2)  # doctest: +SKIP
-        pop_est      continent                      name iso_a3  \
-gdp_md_est                                           geometry
-    0     920938        Oceania                      Fiji    FJI      8374.0  MULTIPOLY\
-GON (((180.00000 -16.06713, 180.00000...
-    1   53950935         Africa                  Tanzania    TZA    150600.0  POLYGON (\
-(33.90371 -0.95000, 34.07262 -1.05982...
+       ComAreaID  ...                                           geometry
+    0         35  ...  POLYGON ((-87.60914 41.84469, -87.60915 41.844...
+    1         36  ...  POLYGON ((-87.59215 41.81693, -87.59231 41.816...
 
-    >>> df.explore("pop_est", cmap="Blues")  # doctest: +SKIP
+    [2 rows x 87 columns]
+
+    >>> df.explore("Pop2012", cmap="Blues")  # doctest: +SKIP
     """
 
     def _colormap_helper(_cmap, n_resample=None, idx=None):
@@ -280,7 +283,7 @@ GON (((180.00000 -16.06713, 180.00000...
         import folium
         import re
         import matplotlib
-        import matplotlib.colors as colors
+        from matplotlib import colors
         import matplotlib.pyplot as plt
         from mapclassify import classify
 
@@ -289,7 +292,7 @@ GON (((180.00000 -16.06713, 180.00000...
         if MPL_361:
             from matplotlib import colormaps as cm
         else:
-            import matplotlib.cm as cm
+            from matplotlib import cm
 
     except (ImportError, ModuleNotFoundError):
         raise ImportError(
@@ -315,12 +318,22 @@ GON (((180.00000 -16.06713, 180.00000...
         gdf.geometry[rings_mask] = gdf.geometry[rings_mask].apply(
             lambda g: LineString(g)
         )
+    if isinstance(gdf, geopandas.GeoSeries):
+        gdf = gdf.to_frame()
 
     if gdf.crs is None:
         kwargs["crs"] = "Simple"
         tiles = None
     elif not gdf.crs.equals(4326):
         gdf = gdf.to_crs(4326)
+
+    # Fields which are not JSON serializable are coerced to strings
+    json_not_supported_cols = gdf.columns[
+        [is_datetime64_any_dtype(gdf[c]) for c in gdf.columns]
+    ].union(gdf.columns[gdf.dtypes == "object"])
+
+    if len(json_not_supported_cols) > 0:
+        gdf = gdf.astype({c: "string" for c in json_not_supported_cols})
 
     # create folium.Map object
     if m is None:
@@ -395,7 +408,7 @@ GON (((180.00000 -16.06713, 180.00000...
                 column_name = "__plottable_column"
                 gdf[column_name] = column
                 column = column_name
-        elif pd.api.types.is_categorical_dtype(gdf[column]):
+        elif isinstance(gdf[column].dtype, pd.CategoricalDtype):
             if categories is not None:
                 raise ValueError(
                     "Cannot specify 'categories' when column has categorical dtype"
@@ -447,7 +460,7 @@ GON (((180.00000 -16.06713, 180.00000...
 
         elif callable(cmap):
             # List of colors based on Branca colormaps or self-defined functions
-            color = list(map(lambda x: cmap(x), df[column]))
+            color = [cmap(x) for x in df[column]]
 
         else:
             vmin = gdf[column].min() if vmin is None else vmin
@@ -466,7 +479,7 @@ GON (((180.00000 -16.06713, 180.00000...
                 color = np.apply_along_axis(
                     colors.to_hex,
                     1,
-                    _colormap_helper(cmap, n_resample=k, idx=binning.yb),
+                    _colormap_helper(cmap, n_resample=binning.k, idx=binning.yb),
                 )
 
             else:
@@ -617,11 +630,13 @@ GON (((180.00000 -16.06713, 180.00000...
         tooltip = None
         popup = None
     # escape the curly braces {{}} for jinja2 templates
-    feature_collection = gdf.__geo_interface__
+    feature_collection = gdf[
+        ~(gdf.geometry.isna() | gdf.geometry.is_empty)  # drop missing or empty geoms
+    ].__geo_interface__
     for feature in feature_collection["features"]:
         for k in feature["properties"]:
             # escape the curly braces in values
-            if type(feature["properties"][k]) == str:
+            if isinstance(feature["properties"][k], str):
                 feature["properties"][k] = re.sub(
                     r"\{{2,}",
                     lambda x: "{% raw %}" + x.group(0) + "{% endraw %}",
@@ -906,8 +921,7 @@ def _explore_geoseries(
         pass :class:`xyzservices.TileProvider` object or pass custom XYZ URL.
         The current list of built-in providers (when ``xyzservices`` is not available):
 
-        ``["OpenStreetMap", "Stamen Terrain", “Stamen Toner", “Stamen Watercolor"
-        "CartoDB positron", “CartoDB dark_matter"]``
+        ``["OpenStreetMap", "CartoDB positron", “CartoDB dark_matter"]``
 
         You can pass a custom tileset to Folium by passing a Leaflet-style URL
         to the tiles parameter: ``http://{s}.yourtiles.com/{z}/{x}/{y}.png``.

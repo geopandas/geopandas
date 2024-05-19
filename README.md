@@ -4,6 +4,7 @@
 [![Join the chat at https://gitter.im/geopandas/geopandas](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/geopandas/geopandas?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![Binder](https://mybinder.org/badge.svg)](https://mybinder.org/v2/gh/geopandas/geopandas/main)
 [![DOI](https://zenodo.org/badge/11002815.svg)](https://zenodo.org/badge/latestdoi/11002815)
+[![Powered by NumFOCUS](https://img.shields.io/badge/powered%20by-NumFOCUS-orange.svg?style=flat&colorA=E1523D&colorB=007D8A)](https://numfocus.org)
 
 GeoPandas
 ---------
@@ -32,6 +33,22 @@ Documentation is available at [geopandas.org](http://geopandas.org)
 [Read the Docs](http://geopandas.readthedocs.io/en/latest/)
 (release and development versions).
 
+[//]: # (numfocus-fiscal-sponsor-attribution)
+
+The GeoPandas project uses an [open governance model](https://github.com/geopandas/governance/blob/main/Governance.md)
+and is fiscally sponsored by [NumFOCUS](https://numfocus.org/). Consider making
+a [tax-deductible donation](https://numfocus.org/donate-for-geopandas) to help the project
+pay for developer time, professional services, travel, workshops, and a variety of other needs.
+
+<div align="center">
+  <a href="https://numfocus.org/project/geopandas">
+    <img height="60px"
+         src="https://raw.githubusercontent.com/numfocus/templates/master/images/numfocus-logo.png"
+         align="center">
+  </a>
+</div>
+<br>
+
 Install
 --------
 
@@ -40,14 +57,11 @@ for all details. GeoPandas depends on the following packages:
 
 - ``pandas``
 - ``shapely``
-- ``fiona``
+- ``pyogrio``
 - ``pyproj``
 - ``packaging``
 
-Further, ``matplotlib`` is an optional dependency, required
-for plotting, and [``rtree``](https://github.com/Toblerity/rtree) is an optional
-dependency, required for spatial joins. ``rtree`` requires the C library [``libspatialindex``](https://github.com/libspatialindex/libspatialindex).
-
+Further, ``matplotlib`` is an optional dependency, required for plotting.
 Those packages depend on several low-level libraries for geospatial analysis, which can be a challenge to install. Therefore, we recommend to install GeoPandas using the [conda package manager](https://conda.io/en/latest/). See the [installation docs](https://geopandas.readthedocs.io/en/latest/install.html) for more details.
 
 Get in touch
@@ -76,7 +90,7 @@ Examples
 
 ![Example 1](doc/source/gallery/test.png)
 
-Some geographic operations return normal pandas object.  The `area` property of a `GeoSeries` will return a `pandas.Series` containing the area of each item in the `GeoSeries`:
+Some geographic operations return normal pandas objects.  The `area` property of a `GeoSeries` will return a `pandas.Series` containing the area of each item in the `GeoSeries`:
 
     >>> print(g.area)
     0    0.5
@@ -95,14 +109,15 @@ Other operations return GeoPandas objects:
 ![Example 2](doc/source/gallery/test_buffer.png)
 
 GeoPandas objects also know how to plot themselves. GeoPandas uses
-[matplotlib](http://matplotlib.org) for plotting. To generate a plot of our
-GeoSeries, use:
+[matplotlib](http://matplotlib.org) for plotting. To generate a plot of a
+`GeoSeries`, use:
 
     >>> g.plot()
 
-GeoPandas also implements alternate constructors that can read any data format recognized by [fiona](http://fiona.readthedocs.io/en/latest/). To read a zip file containing an ESRI shapefile with the [boroughs boundaries of New York City](https://data.cityofnewyork.us/City-Government/Borough-Boundaries/tqmj-j8zm) (GeoPandas includes this as an example dataset):
+GeoPandas also implements alternate constructors that can read any data format recognized by [pyogrio](http://pyogrio.readthedocs.io/en/latest/). To read a zip file containing an ESRI shapefile with the [boroughs boundaries of New York City](https://data.cityofnewyork.us/City-Government/Borough-Boundaries/tqmj-j8zm) (the example can be fetched using the [`geodatasets`](https://geodatasets.readthedocs.io/en/latest/) package):
 
-    >>> nybb_path = geopandas.datasets.get_path('nybb')
+    >>> import geodatasets
+    >>> nybb_path = geodatasets.get_path('nybb')
     >>> boros = geopandas.read_file(nybb_path)
     >>> boros.set_index('BoroCode', inplace=True)
     >>> boros.sort_index(inplace=True)

@@ -8,8 +8,6 @@ import shapely.wkb
 
 from geopandas import GeoDataFrame
 
-from .. import _compat as compat
-
 
 @contextmanager
 def _get_conn(conn_or_engine):
@@ -68,15 +66,17 @@ def _df_to_geodf(df, geom_col="geom", crs=None):
     if geom_col not in df:
         raise ValueError("Query missing geometry column '{}'".format(geom_col))
 
+    if df.columns.to_list().count(geom_col) > 1:
+        raise ValueError(
+            f"Duplicate geometry column '{geom_col}' detected in SQL query output. Only"
+            "one geometry column is allowed."
+        )
+
     geoms = df[geom_col].dropna()
 
     if not geoms.empty:
         load_geom_bytes = shapely.wkb.loads
         """Load from Python 3 binary."""
-
-        def load_geom_buffer(x):
-            """Load from Python 2 binary."""
-            return shapely.wkb.loads(str(x))
 
         def load_geom_text(x):
             """Load from binary encoded as text."""
@@ -89,10 +89,7 @@ def _df_to_geodf(df, geom_col="geom", crs=None):
 
         df[geom_col] = geoms = geoms.apply(load_geom)
         if crs is None:
-            if compat.SHAPELY_GE_20:
-                srid = shapely.get_srid(geoms.iat[0])
-            else:
-                srid = shapely.geos.lgeos.GEOSGetSRID(geoms.iat[0]._geom)
+            srid = shapely.get_srid(geoms.iat[0])
             # if no defined SRID in geodatabase, returns SRID of 0
             if srid != 0:
                 crs = "epsg:{}".format(srid)
@@ -186,19 +183,6 @@ def _read_postgis(
         return (_df_to_geodf(df, geom_col=geom_col, crs=crs) for df in df_generator)
 
 
-def read_postgis(*args, **kwargs):
-    import warnings
-
-    warnings.warn(
-        "geopandas.io.sql.read_postgis() is intended for internal "
-        "use only, and will be deprecated. Use geopandas.read_postgis() instead.",
-        FutureWarning,
-        stacklevel=2,
-    )
-
-    return _read_postgis(*args, **kwargs)
-
-
 def _get_geometry_type(gdf):
     """
     Get basic geometry type of a GeoDataFrame. See more info from:
@@ -282,8 +266,8 @@ def _get_srid_from_crs(gdf):
 def _convert_linearring_to_linestring(gdf, geom_name):
     from shapely.geometry import LineString
 
-    # Todo: Use Pygeos function once it's implemented:
-    #  https://github.com/pygeos/pygeos/issues/76
+    # Todo: Use shapely function once it's implemented:
+    # https://github.com/shapely/shapely/issues/1617
 
     mask = gdf.geom_type == "LinearRing"
     gdf.loc[mask, geom_name] = gdf.loc[mask, geom_name].apply(
@@ -294,26 +278,11 @@ def _convert_linearring_to_linestring(gdf, geom_name):
 
 def _convert_to_ewkb(gdf, geom_name, srid):
     """Convert geometries to ewkb."""
-    if compat.USE_SHAPELY_20:
-        geoms = shapely.to_wkb(
-            shapely.set_srid(gdf[geom_name].values._data, srid=srid),
-            hex=True,
-            include_srid=True,
-        )
-
-    elif compat.USE_PYGEOS:
-        from pygeos import set_srid, to_wkb
-
-        geoms = to_wkb(
-            set_srid(gdf[geom_name].values._data, srid=srid),
-            hex=True,
-            include_srid=True,
-        )
-
-    else:
-        from shapely.wkb import dumps
-
-        geoms = [dumps(geom, srid=srid, hex=True) for geom in gdf[geom_name]]
+    geoms = shapely.to_wkb(
+        shapely.set_srid(gdf[geom_name].values._data, srid=srid),
+        hex=True,
+        include_srid=True,
+    )
 
     # The gdf will warn that the geometry column doesn't hold in-memory geometries
     # now that they are EWKB, so convert back to a regular dataframe to avoid warning
@@ -335,11 +304,16 @@ def _psql_insert_copy(tbl, conn, keys, data_iter):
     columns = ", ".join('"{}"'.format(k) for k in keys)
 
     dbapi_conn = conn.connection
+    sql = 'COPY "{}"."{}" ({}) FROM STDIN WITH CSV'.format(
+        tbl.table.schema, tbl.table.name, columns
+    )
     with dbapi_conn.cursor() as cur:
-        sql = 'COPY "{}"."{}" ({}) FROM STDIN WITH CSV'.format(
-            tbl.table.schema, tbl.table.name, columns
-        )
-        cur.copy_expert(sql=sql, file=s_buf)
+        # Use psycopg method if it's available
+        if hasattr(cur, "copy") and callable(cur.copy):
+            with cur.copy(sql) as copy:
+                copy.write(s_buf.read())
+        else:  # otherwise use psycopg2 method
+            cur.copy_expert(sql, s_buf)
 
 
 def _write_postgis(
@@ -463,5 +437,3 @@ def _write_postgis(
             dtype=dtype,
             method=_psql_insert_copy,
         )
-
-    return

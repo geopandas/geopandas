@@ -18,3 +18,5 @@ specification in the :doc:`API reference <reference>`.
 
   user_guide/missing_empty
   user_guide/reproject_fiona
+  user_guide/pygeos_to_shapely
+  user_guide/fiona_to_pyogrio

@@ -33,11 +33,11 @@ def test_get_deps_info():
     assert "fiona" in deps_info
     assert "numpy" in deps_info
     assert "shapely" in deps_info
-    assert "rtree" in deps_info
     assert "pyproj" in deps_info
     assert "matplotlib" in deps_info
     assert "mapclassify" in deps_info
     assert "geopy" in deps_info
+    assert "psycopg" in deps_info
     assert "psycopg2" in deps_info
     assert "geoalchemy2" in deps_info
 

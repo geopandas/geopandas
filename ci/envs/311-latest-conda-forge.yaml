@@ -4,9 +4,9 @@ channels:
 dependencies:
   - python=3.11
   # required
-  # - pandas
+  - pandas
   - shapely
-  - fiona
+  - pyogrio
   - pyproj
   - packaging
   # testing
@@ -15,24 +15,22 @@ dependencies:
   - pytest-xdist
   - fsspec
   # optional
-  - pygeos
-  - pyogrio
-  - rtree
+  - fiona
   - matplotlib
   - mapclassify
   - folium
   - xyzservices
   - scipy
   - geopy
+  - pointpats
+  - geodatasets
   # installed in tests.yaml, because not available on windows
   # - postgis
   - SQLalchemy>=2
+  - psycopg
   - psycopg2
   - libspatialite
   - geoalchemy2
   - pyarrow
   # doctest testing
   - pytest-doctestplus
-  - pip
-  - pip:
-    - pandas==2.0.0rc1

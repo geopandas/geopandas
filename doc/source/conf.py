@@ -21,6 +21,7 @@ geodatasets.fetch(
         "ny.bb",
         "geoda.malaria",
         "geoda.chicago_health",
+        "geoda.chicago_commpop",
         "geoda.groceries",
         "geoda.natregimes",
         "geoda.nepal",
@@ -70,6 +71,7 @@ ipython_exec_lines = [
 
 # Fix issue with warnings from numpydoc (see discussion in PR #534)
 numpydoc_show_class_members = False
+autodoc_typehints = "none"
 
 
 def setup(app):
@@ -105,7 +107,7 @@ master_doc = "index"
 
 # General information about the project.
 project = "GeoPandas"
-copyright = "2013–2022, GeoPandas developers"
+copyright = "2013–, GeoPandas developers"
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -413,10 +415,6 @@ intersphinx_mapping = {
         "https://pyepsg.readthedocs.io/en/stable/",
         "https://pyepsg.readthedocs.io/en/stable/objects.inv",
     ),
-    "pygeos": (
-        "https://pygeos.readthedocs.io/en/latest/",
-        "https://pygeos.readthedocs.io/en/latest/objects.inv",
-    ),
     "pyproj": (
         "https://pyproj4.github.io/pyproj/stable/",
         "https://pyproj4.github.io/pyproj/stable/objects.inv",
@@ -424,10 +422,6 @@ intersphinx_mapping = {
     "python": (
         "https://docs.python.org/3",
         "https://docs.python.org/3/objects.inv",
-    ),
-    "rtree": (
-        "https://rtree.readthedocs.io/en/stable/",
-        "https://rtree.readthedocs.io/en/stable/objects.inv",
     ),
     "rasterio": (
         "https://rasterio.readthedocs.io/en/stable/",
