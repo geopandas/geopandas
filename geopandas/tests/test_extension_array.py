@@ -19,16 +19,16 @@ import operator
 
 import numpy as np
 import pandas as pd
-from pandas.testing import assert_series_equal, assert_frame_equal
 from pandas.tests.extension import base as extension_tests
 
 import shapely.geometry
 from shapely.geometry import Point
 
-from geopandas.array import GeometryArray, GeometryDtype, from_shapely
 from geopandas._compat import PANDAS_GE_15, PANDAS_GE_21, PANDAS_GE_22
+from geopandas.array import GeometryArray, GeometryDtype, from_shapely
 
 import pytest
+from pandas.testing import assert_frame_equal, assert_series_equal
 
 # -----------------------------------------------------------------------------
 # Compat with extension tests in older pandas versions

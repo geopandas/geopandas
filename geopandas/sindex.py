@@ -1,9 +1,10 @@
 import numpy as np
+
 import shapely
 from shapely.geometry.base import BaseGeometry
 
-from . import array, geoseries
 from . import _compat as compat
+from . import array, geoseries
 
 PREDICATES = {p.name for p in shapely.strtree.BinaryPredicate} | {None}
 

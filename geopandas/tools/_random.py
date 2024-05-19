@@ -1,6 +1,7 @@
 from warnings import warn
 
 import numpy
+
 from shapely.geometry import MultiPoint
 
 from geopandas.array import from_shapely, points_from_xy

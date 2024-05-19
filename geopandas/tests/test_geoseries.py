@@ -6,9 +6,7 @@ import tempfile
 import warnings
 
 import numpy as np
-from numpy.testing import assert_array_equal
 import pandas as pd
-from pandas.testing import assert_index_equal
 
 from shapely.geometry import (
     GeometryCollection,
@@ -21,15 +19,16 @@ from shapely.geometry import (
 )
 from shapely.geometry.base import BaseGeometry
 
-from geopandas import GeoSeries, GeoDataFrame, read_file, clip
-from geopandas.array import GeometryArray, GeometryDtype
 import geopandas._compat as compat
-from geopandas.testing import assert_geoseries_equal, geom_almost_equals
-
-from geopandas.tests.util import geom_equals
+from geopandas import GeoDataFrame, GeoSeries, clip, read_file
 from geopandas._compat import HAS_PYPROJ
-from pandas.testing import assert_series_equal
+from geopandas.array import GeometryArray, GeometryDtype
+
 import pytest
+from geopandas.testing import assert_geoseries_equal, geom_almost_equals
+from geopandas.tests.util import geom_equals
+from numpy.testing import assert_array_equal
+from pandas.testing import assert_index_equal, assert_series_equal
 
 
 class TestSeries:

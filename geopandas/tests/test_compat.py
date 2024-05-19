@@ -1,6 +1,6 @@
-import pytest
-
 from geopandas._compat import import_optional_dependency
+
+import pytest
 
 
 def test_import_optional_dependency_present():
