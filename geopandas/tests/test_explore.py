@@ -1,3 +1,4 @@
+import uuid
 from packaging.version import Version
 
 import numpy as np
@@ -299,6 +300,34 @@ class TestExplore:
         out2_str = self._fetch_map_string(m2)
         assert '"__folium_color":"#9edae5","bool":true' in out2_str
         assert '"__folium_color":"#1f77b4","bool":false' in out2_str
+
+    def test_datetime(self):
+        df = self.nybb.copy().head(2)
+        date1 = pd.Timestamp(2022, 1, 1, 1, 22, 0, 0)
+        date2 = pd.Timestamp(2025, 1, 1, 1, 22, 0, 0)
+        df["datetime"] = [date1, date2]
+        m1 = df.explore("datetime")
+
+        out1_str = self._fetch_map_string(m1)
+        assert '"__folium_color":"#9edae5","datetime":"2025-01-0101:22:00"' in out1_str
+        assert '"__folium_color":"#1f77b4","datetime":"2022-01-0101:22:00"' in out1_str
+
+    def test_non_json_serialisable(self):
+        df = self.nybb.copy().head(2)
+        uuid1 = uuid.UUID("12345678123456781234567812345678")
+        uuid2 = uuid.UUID("12345678123456781234567812345679")
+        df["object"] = [uuid1, uuid2]
+        m1 = df.explore("object")
+
+        out1_str = self._fetch_map_string(m1)
+        assert (
+            '"__folium_color":"#9edae5","object":"12345678-1234-5678-1234-567812345679"}'
+            in out1_str
+        )
+        assert (
+            '"__folium_color":"#1f77b4","object":"12345678-1234-5678-1234-567812345678"'
+            in out1_str
+        )
 
     def test_string(self):
         df = self.nybb.copy()

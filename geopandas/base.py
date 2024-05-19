@@ -998,59 +998,103 @@ GeometryCollection
 
     def delaunay_triangles(self, tolerance=0.0, only_edges=False):
         """Returns a ``GeoSeries`` consisting of objects representing
-        the computed Delaunay triangulation around the vertices of
+        the computed Delaunay triangulation between the vertices of
         an input geometry.
 
-        The output is a ``GeometryCollection`` containing polygons
-        (default) or linestrings (see only_edges).
+        All geometries within the GeoSeries are considered together within a single
+        Delaunay triangulation. The resulting geometries therefore do not map 1:1
+        to input geometries. Note that each vertex of a geometry is considered a site
+        for the triangulation, so the triangles will be constructed between the vertices
+        of each geometry.
 
-        Returns an empty GeometryCollection if an input geometry
-        contains less than 3 vertices.
+        Notes
+        -----
+        If you want to generate Delaunay triangles for each geometry separately, use
+        :func:`shapely.delaunay_triangles` instead.
 
         Parameters
         ----------
-        tolerance : float | array-like, default 0.0
+        tolerance : float, default 0.0
             Snap input vertices together if their distance is less than this value.
-        only_edges : bool | array_like, (optional, default False)
-            If set to True, the triangulation will return a collection of
-            linestrings instead of polygons.
+        only_edges : bool (optional, default False)
+            If set to True, the triangulation will return linestrings instead of
+            polygons.
 
         Examples
         --------
 
-        >>> from shapely import LineString, MultiPoint, Polygon
+        >>> from shapely import LineString, MultiPoint, Point, Polygon
         >>> s = geopandas.GeoSeries(
         ...     [
-        ...         MultiPoint([(5, 3), (6, 3), (10, 10)]),
-        ...         Polygon([(5, 3), (6, 3), (10, 10), (5, 3)]),
-        ...         LineString([(5, 3), (6, 3), (10, 10)]),
+        ...         Point(1, 1),
+        ...         Point(2, 2),
+        ...         Point(1, 3),
+        ...         Point(0, 2),
         ...     ]
         ... )
         >>> s
-        0    MULTIPOINT ((5 3), (6 3), (10 10))
-        1      POLYGON ((5 3, 6 3, 10 10, 5 3))
-        2          LINESTRING (5 3, 6 3, 10 10)
+        0    POINT (1 1)
+        1    POINT (2 2)
+        2    POINT (1 3)
+        3    POINT (0 2)
         dtype: geometry
 
         >>> s.delaunay_triangles()
-        0    GEOMETRYCOLLECTION (POLYGON ((10 10, 5 3, 6 3,...
-        1    GEOMETRYCOLLECTION (POLYGON ((10 10, 5 3, 6 3,...
-        2    GEOMETRYCOLLECTION (POLYGON ((10 10, 5 3, 6 3,...
+        0    POLYGON ((0 2, 1 1, 1 3, 0 2))
+        1    POLYGON ((1 3, 1 1, 2 2, 1 3))
         dtype: geometry
 
         >>> s.delaunay_triangles(only_edges=True)
-        0    MULTILINESTRING ((5 3, 10 10), (5 3, 6 3), (6 ...
-        1    MULTILINESTRING ((5 3, 10 10), (5 3, 6 3), (6 ...
-        2    MULTILINESTRING ((5 3, 10 10), (5 3, 6 3), (6 ...
+        0    LINESTRING (1 3, 2 2)
+        1    LINESTRING (0 2, 1 3)
+        2    LINESTRING (0 2, 1 1)
+        3    LINESTRING (1 1, 2 2)
+        4    LINESTRING (1 1, 1 3)
+        dtype: geometry
+
+        The method supports any geometry type but keep in mind that the underlying
+        algorithm is based on the vertices of the input geometries only and does not
+        consider edge segments between vertices.
+
+        >>> s2 = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0, 0), (1, 1), (0, 1)]),
+        ...         LineString([(1, 0), (2, 1), (1, 2)]),
+        ...         MultiPoint([(2, 3), (2, 0), (3, 1)]),
+        ...     ]
+        ... )
+        >>> s2
+        0      POLYGON ((0 0, 1 1, 0 1, 0 0))
+        1          LINESTRING (1 0, 2 1, 1 2)
+        2    MULTIPOINT ((2 3), (2 0), (3 1))
+        dtype: geometry
+
+        >>> s2.delaunay_triangles()
+        0    POLYGON ((0 1, 0 0, 1 0, 0 1))
+        1    POLYGON ((0 1, 1 0, 1 1, 0 1))
+        2    POLYGON ((0 1, 1 1, 1 2, 0 1))
+        3    POLYGON ((1 2, 1 1, 2 1, 1 2))
+        4    POLYGON ((1 2, 2 1, 2 3, 1 2))
+        5    POLYGON ((2 3, 2 1, 3 1, 2 3))
+        6    POLYGON ((3 1, 2 1, 2 0, 3 1))
+        7    POLYGON ((2 0, 2 1, 1 1, 2 0))
+        8    POLYGON ((2 0, 1 1, 1 0, 2 0))
         dtype: geometry
 
         See also
         --------
         GeoSeries.voronoi_polygons : Voronoi diagram around vertices
         """
-        return _delegate_geo_method(
-            "delaunay_triangles", self, tolerance=tolerance, only_edges=only_edges
+        from .geoseries import GeoSeries
+
+        geometry_input = shapely.geometrycollections(self.geometry.values._data)
+
+        delaunay = shapely.delaunay_triangles(
+            geometry_input,
+            tolerance=tolerance,
+            only_edges=only_edges,
         )
+        return GeoSeries(delaunay, crs=self.crs).explode(ignore_index=True)
 
     def voronoi_polygons(self, tolerance=0.0, extend_to=None, only_edges=False):
         """Returns a ``GeoSeries`` consisting of objects representing
@@ -4604,7 +4648,7 @@ GeometryCollection
         The operation works in a 1-to-1 row-wise manner:
 
         .. image:: ../../../_static/binary_op-01.svg
-        :align: center
+           :align: center
 
         Parameters
         ----------
@@ -4683,6 +4727,105 @@ GeometryCollection
         dtype: geometry
         """
         return _binary_geo("snap", self, other, align, tolerance=tolerance)
+
+    def shared_paths(self, other, align=None):
+        """
+        Returns the shared paths between two geometries.
+
+        Geometries within the GeoSeries should be only (Multi)LineStrings or
+        LinearRings. A GeoSeries of GeometryCollections is returned with two elements
+        in each GeometryCollection. The first element is a MultiLineString containing
+        shared paths with the same direction for both inputs. The second element is a
+        MultiLineString containing shared paths with the opposite direction for the two
+        inputs.
+
+        You can extract individual geometries of the resulting GeometryCollection using
+        the :meth:`GeoSeries.get_geometry` method.
+
+        The operation works on a 1-to-1 row-wise manner:
+
+        .. image:: ../../../_static/binary_op-01.svg
+           :align: center
+
+        Parameters
+        ----------
+        other : Geoseries or geometric object
+            The Geoseries (elementwise) or geometric object to find the shared paths
+            with. Has to contain only (Multi)LineString or LinearRing geometry types.
+        align : bool | None (default None)
+            If True, automatically aligns GeoSeries based on their indices.
+            If False, the order of elements is preserved. None defaults to True.
+
+        Returns
+        -------
+        GeoSeries
+
+        Examples
+        --------
+        >>> from shapely.geometry import LineString, MultiLineString
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         LineString([(0, 0), (1, 0), (1, 1), (0, 1), (0, 0)]),
+        ...         LineString([(1, 0), (2, 0), (2, 1), (1, 1), (1, 0)]),
+        ...         MultiLineString([[(1, 0), (2, 0)], [(2, 1), (1, 1), (1, 0)]]),
+        ...     ],
+        ... )
+        >>> s
+        0             LINESTRING (0 0, 1 0, 1 1, 0 1, 0 0)
+        1             LINESTRING (1 0, 2 0, 2 1, 1 1, 1 0)
+        2    MULTILINESTRING ((1 0, 2 0), (2 1, 1 1, 1 0))
+        dtype: geometry
+
+        We can find the shared paths between each geometry and a single shapely
+        geometry:
+
+        .. image:: ../../../_static/binary_op-03.svg
+           :align: center
+
+        >>> l = LineString([(1, 1), (0, 1)])
+        >>> s.shared_paths(l)
+        0    GEOMETRYCOLLECTION (MULTILINESTRING ((1 1, 0 1...
+        1    GEOMETRYCOLLECTION (MULTILINESTRING EMPTY, MUL...
+        2    GEOMETRYCOLLECTION (MULTILINESTRING EMPTY, MUL...
+        dtype: geometry
+
+        We can also check two GeoSeries against each other, row by row. The GeoSeries
+        above have different indices than the one below. We can either align both
+        GeoSeries based on index values and compare elements with the same index using
+        ``align=True`` or ignore index and compare elements based on their matching
+        order using ``align=False``:
+
+        .. image:: ../../../_static/binary_op-02.svg
+
+        >>> s2 = geopandas.GeoSeries(
+        ...     [
+        ...         LineString([(1, 1), (0, 1)]),
+        ...         LineString([(0, 0), (1, 0), (1, 1), (0, 1), (0, 0)]),
+        ...         LineString([(1, 0), (2, 0), (2, 1), (1, 1), (1, 0)]),
+        ...     ],
+        ...     index=[1, 2, 3]
+        ... )
+
+        >>> s.shared_paths(s2, align=True)
+        0                                                 None
+        1    GEOMETRYCOLLECTION (MULTILINESTRING EMPTY, MUL...
+        2    GEOMETRYCOLLECTION (MULTILINESTRING EMPTY, MUL...
+        3                                                 None
+        dtype: geometry
+        >>>
+
+        >>> s.shared_paths(s2, align=False)
+        0    GEOMETRYCOLLECTION (MULTILINESTRING ((1 1, 0 1...
+        1    GEOMETRYCOLLECTION (MULTILINESTRING EMPTY, MUL...
+        2    GEOMETRYCOLLECTION (MULTILINESTRING ((1 0, 2 0...
+        dtype: geometry
+
+        See Also
+        --------
+        GeoSeries.get_geometry
+        """
+
+        return _binary_geo("shared_paths", self, other, align)
 
     #
     # Other operations

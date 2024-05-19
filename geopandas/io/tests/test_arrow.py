@@ -11,7 +11,7 @@ from pandas import DataFrame
 from pandas import read_parquet as pd_read_parquet
 
 import shapely
-from shapely.geometry import MultiPolygon, Point, box
+from shapely.geometry import LineString, MultiPolygon, Point, Polygon, box
 
 import geopandas
 from geopandas import GeoDataFrame, read_feather, read_file, read_parquet
@@ -85,6 +85,61 @@ def test_create_metadata(naturalearth_lowres):
 
     assert metadata["creator"]["library"] == "geopandas"
     assert metadata["creator"]["version"] == geopandas.__version__
+
+
+def test_create_metadata_with_z_geometries():
+    geometry_types = [
+        "Point",
+        "Point Z",
+        "LineString",
+        "LineString Z",
+        "Polygon",
+        "Polygon Z",
+        "MultiPolygon",
+        "MultiPolygon Z",
+    ]
+    df = geopandas.GeoDataFrame(
+        {
+            "geo_type": geometry_types,
+            "geometry": [
+                Point(1, 2),
+                Point(1, 2, 3),
+                LineString([(0, 0), (1, 1), (2, 2)]),
+                LineString([(0, 0, 1), (1, 1, 2), (2, 2, 3)]),
+                Polygon([(0, 0), (0, 1), (1, 1), (1, 0)]),
+                Polygon([(0, 0, 0), (0, 1, 0.5), (1, 1, 1), (1, 0, 0.5)]),
+                MultiPolygon(
+                    [
+                        Polygon([(0, 0), (0, 1), (1, 1), (1, 0)]),
+                        Polygon([(0.5, 0.5), (0.5, 1.5), (1.5, 1.5), (1.5, 0.5)]),
+                    ]
+                ),
+                MultiPolygon(
+                    [
+                        Polygon([(0, 0, 0), (0, 1, 0.5), (1, 1, 1), (1, 0, 0.5)]),
+                        Polygon(
+                            [
+                                (0.5, 0.5, 1),
+                                (0.5, 1.5, 1.5),
+                                (1.5, 1.5, 2),
+                                (1.5, 0.5, 1.5),
+                            ]
+                        ),
+                    ]
+                ),
+            ],
+        },
+    )
+    metadata = _create_metadata(df)
+    assert sorted(metadata["columns"]["geometry"]["geometry_types"]) == sorted(
+        geometry_types
+    )
+    # only 3D geometries
+    metadata = _create_metadata(df.iloc[1::2])
+    assert all(
+        geom_type.endswith(" Z")
+        for geom_type in metadata["columns"]["geometry"]["geometry_types"]
+    )
 
 
 def test_crs_metadata_datum_ensemble():

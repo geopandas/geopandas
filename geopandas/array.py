@@ -574,12 +574,6 @@ class GeometryArray(ExtensionArray):
     def convex_hull(self):
         return GeometryArray(shapely.convex_hull(self._data), crs=self.crs)
 
-    def delaunay_triangles(self, tolerance, only_edges):
-        return GeometryArray(
-            shapely.delaunay_triangles(self._data, tolerance, only_edges),
-            crs=self.crs,
-        )
-
     @property
     def envelope(self):
         return GeometryArray(shapely.envelope(self._data), crs=self.crs)
@@ -788,6 +782,11 @@ class GeometryArray(ExtensionArray):
     def snap(self, other, tolerance):
         return GeometryArray(
             self._binary_method("snap", self, other, tolerance=tolerance), crs=self.crs
+        )
+
+    def shared_paths(self, other):
+        return GeometryArray(
+            self._binary_method("shared_paths", self, other), crs=self.crs
         )
 
     #

@@ -3,6 +3,7 @@ from statistics import mean
 
 import numpy as np
 import pandas as pd
+from pandas.api.types import is_datetime64_any_dtype
 
 from shapely.geometry import LineString
 
@@ -318,12 +319,22 @@ def _explore(
         gdf.geometry[rings_mask] = gdf.geometry[rings_mask].apply(
             lambda g: LineString(g)
         )
+    if isinstance(gdf, geopandas.GeoSeries):
+        gdf = gdf.to_frame()
 
     if gdf.crs is None:
         kwargs["crs"] = "Simple"
         tiles = None
     elif not gdf.crs.equals(4326):
         gdf = gdf.to_crs(4326)
+
+    # Fields which are not JSON serializable are coerced to strings
+    json_not_supported_cols = gdf.columns[
+        [is_datetime64_any_dtype(gdf[c]) for c in gdf.columns]
+    ].union(gdf.columns[gdf.dtypes == "object"])
+
+    if len(json_not_supported_cols) > 0:
+        gdf = gdf.astype({c: "string" for c in json_not_supported_cols})
 
     # create folium.Map object
     if m is None:
