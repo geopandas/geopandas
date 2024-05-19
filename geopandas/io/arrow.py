@@ -104,7 +104,14 @@ def _create_metadata(df, schema_version=None):
     column_metadata = {}
     for col in df.columns[df.dtypes == "geometry"]:
         series = df[col]
-        geometry_types = sorted(Series(series.geom_type.unique()).dropna())
+
+        # ensure to include "... Z" for 3D geometries
+        geometry_types = {
+            f"{geom} Z" if has_z else geom
+            for geom, has_z in zip(series.geom_type, series.has_z)
+        }
+        geometry_types = sorted(Series(list(geometry_types)).dropna())
+
         if schema_version[0] == "0":
             geometry_types_name = "geometry_type"
             if len(geometry_types) == 1:
