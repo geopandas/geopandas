@@ -1,9 +1,8 @@
 from math import sqrt
 
 import numpy as np
-import pytest
+
 import shapely
-from numpy.testing import assert_array_equal
 from shapely.geometry import (
     GeometryCollection,
     LineString,
@@ -16,6 +15,9 @@ from shapely.geometry import (
 import geopandas
 from geopandas import GeoDataFrame, GeoSeries, read_file
 from geopandas import _compat as compat
+
+import pytest
+from numpy.testing import assert_array_equal
 
 
 class TestSeriesSindex:

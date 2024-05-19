@@ -3,8 +3,9 @@ from warnings import warn
 
 import numpy as np
 import pandas as pd
-import shapely
 from pandas import DataFrame, Series
+
+import shapely
 from shapely.geometry import MultiPoint, box
 from shapely.geometry.base import BaseGeometry
 
@@ -91,8 +92,8 @@ def _delegate_property(op, this):
 def _delegate_geo_method(op, this, **kwargs):
     # type: (str, GeoSeries) -> GeoSeries
     """Unary operation that returns a GeoSeries"""
-    from .geoseries import GeoSeries
     from .geodataframe import GeoDataFrame
+    from .geoseries import GeoSeries
 
     if isinstance(this, GeoSeries):
         klass, var_name = "GeoSeries", "gs"
