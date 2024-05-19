@@ -154,8 +154,12 @@ class GeoSeries(GeoPandasBase, Series):
     """
 
     def __init__(self, data=None, index=None, crs: Optional[Any] = None, **kwargs):
-        if hasattr(data, "crs") and crs:
-            if not data.crs:
+        if (
+            hasattr(data, "crs")
+            or (isinstance(data, pd.Series) and hasattr(data.array, "crs"))
+        ) and crs:
+            data_crs = data.crs if hasattr(data, "crs") else data.array.crs
+            if not data_crs:
                 # make a copy to avoid setting CRS to passed GeometryArray
                 data = data.copy()
             else:
