@@ -4,8 +4,9 @@ import pathlib
 from packaging.version import Version
 
 import numpy as np
+
 import shapely
-from shapely import box, Point, MultiPoint
+from shapely import MultiPoint, Point, box
 
 from geopandas import GeoDataFrame, GeoSeries
 
@@ -14,7 +15,6 @@ import pytest
 pytest.importorskip("pyarrow")
 import pyarrow as pa
 from pyarrow import feather
-
 
 DATA_PATH = pathlib.Path(os.path.dirname(__file__)) / "data"
 

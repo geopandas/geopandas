@@ -1,12 +1,11 @@
 import json
+from packaging.version import Version
 from typing import Dict, Optional, Tuple
 
-from packaging.version import Version
-
 import numpy as np
-from numpy.typing import NDArray
 import pandas as pd
 import pyarrow as pa
+from numpy.typing import NDArray
 
 import shapely
 from shapely import GeometryType
