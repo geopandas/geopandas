@@ -6,21 +6,21 @@ from functools import lru_cache
 
 import numpy as np
 import pandas as pd
-import shapely
-import shapely.affinity
-import shapely.geometry
-import shapely.ops
-import shapely.wkt
 from pandas.api.extensions import (
     ExtensionArray,
     ExtensionDtype,
     register_extension_dtype,
 )
 
+import shapely
+import shapely.affinity
+import shapely.geometry
+import shapely.ops
+import shapely.wkt
 from shapely.geometry.base import BaseGeometry
 
-from .sindex import SpatialIndex
 from ._compat import HAS_PYPROJ, requires_pyproj
+from .sindex import SpatialIndex
 
 if HAS_PYPROJ:
     from pyproj import Transformer

@@ -133,7 +133,7 @@ select = [
     # Ruff-specific rules
     "RUF",
     # isort
-    # "I",
+    "I",
 ]
 
 ignore = [
@@ -183,4 +183,21 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"geopandas/__init__.py" = ["F401"]
+"geopandas/__init__.py" = ["F401", "I"]
+
+[tool.ruff.lint.isort]
+extra-standard-library = ["packaging"]
+
+section-order = [
+  "future",
+  "standard-library",
+  "third-party",
+  "geo",
+  "first-party",
+  "local-folder",
+  "testing"
+]
+
+[tool.ruff.lint.isort.sections]
+"geo" = ["shapely", "pyproj"]
+"testing" = ["pytest", "pandas.testing", "numpy.testing", "geopandas.tests", "geopandas.testing"]

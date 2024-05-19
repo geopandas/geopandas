@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import typing
-from typing import Optional, Any, Callable, Dict
 import warnings
+from typing import Any, Callable, Dict, Optional
 
 import numpy as np
 import pandas as pd
@@ -10,13 +10,13 @@ from pandas import Series
 from pandas.core.internals import SingleBlockManager
 
 import shapely
-from shapely.geometry.base import BaseGeometry
 from shapely.geometry import GeometryCollection
+from shapely.geometry.base import BaseGeometry
 
-from geopandas.base import GeoPandasBase, _delegate_property
-from geopandas.plotting import plot_series
-from geopandas.explore import _explore_geoseries
 import geopandas
+from geopandas.base import GeoPandasBase, _delegate_property
+from geopandas.explore import _explore_geoseries
+from geopandas.plotting import plot_series
 
 from . import _compat as compat
 from ._decorator import doc
