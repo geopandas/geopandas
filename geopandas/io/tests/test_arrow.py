@@ -1196,6 +1196,9 @@ def test_read_parquet_colums_and_bbox(tmpdir, naturalearth_lowres):
     assert "bbox_column_name" not in pq_df2
 
 
+@pytest.mark.skipif(
+    Version(pyarrow.__version__) < Version("9.0.0"), reason="needs pyarrow >= 9.0.0"
+)
 def test_filters_format_as_DNF(tmpdir, naturalearth_lowres):
     df = read_file(naturalearth_lowres)
     filename = os.path.join(str(tmpdir), "test.pq")
@@ -1211,6 +1214,9 @@ def test_filters_format_as_DNF(tmpdir, naturalearth_lowres):
     ]
 
 
+@pytest.mark.skipif(
+    Version(pyarrow.__version__) < Version("9.0.0"), reason="needs pyarrow >= 9.0.0"
+)
 def test_filters_format_as_expression(tmpdir, naturalearth_lowres):
     import pyarrow.compute as pc
 
