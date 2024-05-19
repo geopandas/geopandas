@@ -1194,3 +1194,35 @@ def test_read_parquet_colums_and_bbox(tmpdir, naturalearth_lowres):
     columns.remove("bbox_column_name")
     pq_df2 = read_parquet(filename, columns=columns, read_bbox_column=True)
     assert "bbox_column_name" not in pq_df2
+
+
+def test_filters_format_as_DNF(tmpdir, naturalearth_lowres):
+    df = read_file(naturalearth_lowres)
+    filename = os.path.join(str(tmpdir), "test.pq")
+    df.to_parquet(filename, bbox_column_name="bbox_column_name")
+
+    filters = [("gdp_md_est", ">", 15000)]
+
+    pq_df = read_parquet(filename, filters=filters, bbox=(0, 0, 20, 20))
+
+    assert pq_df["name"].values.tolist() == [
+        "Nigeria",
+        "Cameroon",
+    ]
+
+
+def test_filters_format_as_expression(tmpdir, naturalearth_lowres):
+    import pyarrow.compute as pc
+
+    df = read_file(naturalearth_lowres)
+    filename = os.path.join(str(tmpdir), "test.pq")
+    df.to_parquet(filename, bbox_column_name="bbox_column_name")
+
+    filters = pc.field("gdp_md_est") > 15000
+
+    pq_df = read_parquet(filename, filters=filters, bbox=(0, 0, 20, 20))
+
+    assert pq_df["name"].values.tolist() == [
+        "Nigeria",
+        "Cameroon",
+    ]

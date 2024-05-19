@@ -704,8 +704,9 @@ def _read_parquet(
 
     kwargs["use_pandas_metadata"] = True
     if "filters" in kwargs:
-        filters = kwargs["filters"]
-        filters &= bbox_filter
+        filters_kwarg = kwargs["filters"]
+        kwargs.pop("filters")
+        filters = _splice_bbox_and_filters(filters_kwarg, bbox_filter)
     else:
         filters = bbox_filter
 
@@ -886,3 +887,14 @@ def _get_non_bbox_columns(schema, metadata):
     if bbox_column_name in columns:
         columns.remove(bbox_column_name)
     return columns
+
+
+def _splice_bbox_and_filters(kwarg_filters, bbox_filter):
+    parquet = import_optional_dependency(
+        "pyarrow.parquet", extra="pyarrow is required for Parquet support."
+    )
+    if bbox_filter is None:
+        return kwarg_filters
+
+    filters_expression = parquet.filters_to_expression(kwarg_filters)
+    return bbox_filter & filters_expression
