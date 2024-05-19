@@ -1376,6 +1376,7 @@ GeometryCollection
     def offset_curve(self, distance, quad_segs=8, join_style="round", mitre_limit=5.0):
         """Returns a ``LineString`` or ``MultiLineString`` geometry at a
         distance from the object on its right or its left side.
+
         Parameters
         ----------
         distance : float | array-like
