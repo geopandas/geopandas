@@ -14,6 +14,7 @@ import pandas.api.types
 from shapely.geometry import MultiPolygon, Polygon, box
 
 from geopandas import GeoDataFrame, GeoSeries
+from geopandas._compat import PANDAS_GE_30
 from geopandas.array import _check_crs, _crs_mismatch_warn
 
 
@@ -66,7 +67,7 @@ def _clip_gdf_with_mask(gdf, mask, sort=False):
 
     # Clip the data with the polygon
     if isinstance(gdf_sub, GeoDataFrame):
-        clipped = gdf_sub
+        clipped = gdf_sub.copy(deep=not PANDAS_GE_30)
         if clipping_by_rectangle:
             clipped.loc[non_point_mask, clipped._geometry_column_name] = (
                 gdf_sub.geometry.values[non_point_mask].clip_by_rect(*mask)
@@ -77,7 +78,7 @@ def _clip_gdf_with_mask(gdf, mask, sort=False):
             )
     else:
         # GeoSeries
-        clipped = gdf_sub
+        clipped = gdf_sub.copy(deep=not PANDAS_GE_30)
         if clipping_by_rectangle:
             clipped[non_point_mask] = gdf_sub.values[non_point_mask].clip_by_rect(*mask)
         else:
