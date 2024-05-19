@@ -101,6 +101,7 @@ Bug fixes:
 - Fix regression preventing reading from file paths containing hashes in `read_file`
   with the fiona engine (#3280). An analgous fix for pyogrio is included in
   pyogrio 0.8.1.
+- Fix `to_parquet` to write correct metadata in case of 3D geometries (#2824).
 
 Deprecations and compatibility notes:
 

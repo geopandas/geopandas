@@ -105,16 +105,12 @@ def _create_metadata(df, schema_version=None):
     for col in df.columns[df.dtypes == "geometry"]:
         series = df[col]
 
-        # Defines geometry_types according to the geoparquet standard:
-        # https://github.com/opengeospatial/geoparquet/blob/main/format-specs/geoparquet.md#geometry_types
-        # Instead of going through the `_vectorized.geometry_type_values`
-        # that do not include the "Z" varieties.
+        # ensure to include "... Z" for 3D geometries
         geometry_types = {
             f"{geom} Z" if has_z else geom
             for geom, has_z in zip(series.geom_type, series.has_z)
         }
         geometry_types = sorted(Series(list(geometry_types)).dropna())
-        # geometry_types = sorted(Series(series.geom_type.unique()).dropna())
 
         if schema_version[0] == "0":
             geometry_types_name = "geometry_type"

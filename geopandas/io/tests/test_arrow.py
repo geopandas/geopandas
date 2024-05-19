@@ -130,20 +130,15 @@ def test_create_metadata_with_z_geometries():
         },
     )
     metadata = _create_metadata(df)
-    assert isinstance(metadata, dict)
-    assert metadata["version"] == METADATA_VERSION
-    assert metadata["primary_column"] == "geometry"
-    assert "geometry" in metadata["columns"]
-
     assert sorted(metadata["columns"]["geometry"]["geometry_types"]) == sorted(
         geometry_types
     )
-
-    assert np.array_equal(
-        metadata["columns"]["geometry"]["bbox"], df.geometry.total_bounds
+    # only 3D geometries
+    metadata = _create_metadata(df.iloc[1::2])
+    assert all(
+        geom_type.endswith(" Z")
+        for geom_type in metadata["columns"]["geometry"]["geometry_types"]
     )
-    assert metadata["creator"]["library"] == "geopandas"
-    assert metadata["creator"]["version"] == geopandas.__version__
 
 
 def test_crs_metadata_datum_ensemble():
