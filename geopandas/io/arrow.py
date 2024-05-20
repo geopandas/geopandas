@@ -701,9 +701,13 @@ def _read_parquet(
 
     if_bbox_column_exists = _check_if_bbox_column_in_parquet(metadata)
 
+    # by default, bbox column is not read in, so must specify which
+    # columns are read in if it exists. Not enforced if bbox is
+    # listed in columns argument.
     if not (read_bbox_column or columns) and if_bbox_column_exists:
         columns = _get_non_bbox_columns(schema, metadata)
 
+    # if both bbox and filters kwargs are used, must splice together.
     kwargs["use_pandas_metadata"] = True
     if "filters" in kwargs:
         filters_kwarg = kwargs["filters"]
