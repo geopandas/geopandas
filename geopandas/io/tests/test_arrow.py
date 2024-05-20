@@ -20,7 +20,6 @@ from geopandas.array import to_wkb
 from geopandas.io.arrow import (
     METADATA_VERSION,
     SUPPORTED_VERSIONS,
-    _validate_bbox_column_in_parquet,
     _convert_bbox_to_parquet_filter,
     _create_metadata,
     _decode_metadata,
@@ -28,9 +27,9 @@ from geopandas.io.arrow import (
     _geopandas_to_arrow,
     _get_filesystem_path,
     _remove_id_from_member_of_ensembles,
+    _validate_bbox_column_in_parquet,
     _validate_dataframe,
     _validate_geo_metadata,
-    METADATA_VERSION,
 )
 
 import pytest
