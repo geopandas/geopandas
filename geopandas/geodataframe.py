@@ -1155,7 +1155,7 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
         index=None,
         compression="snappy",
         schema_version=None,
-        bbox_column_name=None,
+        write_bbox_column=False,
         **kwargs,
     ):
         """Write a GeoDataFrame to the Parquet format.
@@ -1180,6 +1180,10 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
         schema_version : {'0.1.0', '0.4.0', '1.0.0', None}
             GeoParquet specification version; if not provided will default to
             latest supported version.
+        write_bbox_column : bool, default False
+            Writes the bounding box column for each row entry with column
+            name 'bbox'. Writing a bbox column can be computationally
+            expensive, hence is default setting is False.
         kwargs
             Additional keyword arguments passed to :func:`pyarrow.parquet.write_table`.
 
@@ -1212,7 +1216,7 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
             compression=compression,
             index=index,
             schema_version=schema_version,
-            bbox_column_name=bbox_column_name,
+            write_bbox_column=write_bbox_column,
             **kwargs,
         )
 

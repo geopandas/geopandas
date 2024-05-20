@@ -110,7 +110,7 @@ def _get_geometry_types(series):
     return sorted([_geometry_type_names[idx] for idx in geometry_types])
 
 
-def _create_metadata(df, schema_version=None, bbox_column_name=None):
+def _create_metadata(df, schema_version=None, write_bbox_column=False):
     """Create and encode geo metadata dict.
 
     Parameters
@@ -119,9 +119,10 @@ def _create_metadata(df, schema_version=None, bbox_column_name=None):
     schema_version : {'0.1.0', '0.4.0', '1.0.0-beta.1', '1.0.0', None}
         GeoParquet specification version; if not provided will default to
         latest supported version.
-    bbox_column_name : str, default None
-        If a string is input, the bbox column will be written with this value
-        as its column name. If None, the bbox column will not be written.
+    write_bbox_column : bool, default False
+        Writes the bounding box column for each row entry with column
+        name 'bbox'. Writing a bbox column can be computationally
+        expensive, hence is default setting is False.
 
     Returns
     -------
@@ -167,13 +168,13 @@ def _create_metadata(df, schema_version=None, bbox_column_name=None):
             # don't add bbox with NaNs for empty / all-NA geometry column
             column_metadata[col]["bbox"] = bbox
 
-        if bbox_column_name:
+        if write_bbox_column:
             column_metadata[col]["covering"] = {
                 "bbox": {
-                    "xmin": [bbox_column_name, "xmin"],
-                    "ymin": [bbox_column_name, "ymin"],
-                    "xmax": [bbox_column_name, "xmax"],
-                    "ymax": [bbox_column_name, "ymax"],
+                    "xmin": ["bbox", "xmin"],
+                    "ymin": ["bbox", "ymin"],
+                    "xmax": ["bbox", "xmax"],
+                    "ymax": ["bbox", "ymax"],
                 },
             }
 
@@ -306,7 +307,7 @@ def _validate_geo_metadata(metadata):
             )
 
 
-def _geopandas_to_arrow(df, index=None, schema_version=None, bbox_column_name=None):
+def _geopandas_to_arrow(df, index=None, schema_version=None, write_bbox_column=None):
     """
     Helper function with main, shared logic for to_parquet/to_feather.
     """
@@ -314,7 +315,7 @@ def _geopandas_to_arrow(df, index=None, schema_version=None, bbox_column_name=No
 
     _validate_dataframe(df)
 
-    if bbox_column_name:
+    if write_bbox_column:
         bounds = df.bounds
         bbox_array = StructArray.from_arrays(
             [bounds["minx"], bounds["miny"], bounds["maxx"], bounds["maxy"]],
@@ -322,7 +323,7 @@ def _geopandas_to_arrow(df, index=None, schema_version=None, bbox_column_name=No
         )
     # create geo metadata before altering incoming data frame
     geo_metadata = _create_metadata(
-        df, schema_version=schema_version, bbox_column_name=bbox_column_name
+        df, schema_version=schema_version, write_bbox_column=write_bbox_column
     )
 
     if shapely.geos_version > (3, 10, 0):
@@ -337,8 +338,8 @@ def _geopandas_to_arrow(df, index=None, schema_version=None, bbox_column_name=No
 
     table = Table.from_pandas(df, preserve_index=index)
 
-    if bbox_column_name:
-        table = table.append_column(bbox_column_name, bbox_array)
+    if write_bbox_column:
+        table = table.append_column("bbox", bbox_array)
 
     # Store geopandas specific file-level metadata
     # This must be done AFTER creating the table or it is not persisted
@@ -354,7 +355,7 @@ def _to_parquet(
     index=None,
     compression="snappy",
     schema_version=None,
-    bbox_column_name=None,
+    write_bbox_column=False,
     **kwargs,
 ):
     """
@@ -384,9 +385,10 @@ def _to_parquet(
     schema_version : {'0.1.0', '0.4.0', '1.0.0', None}
         GeoParquet specification version; if not provided will default to
         latest supported version.
-    bbox_column_name : str, default None
-        If a string is input, the bbox column will be written with this value
-        as its column name. If None, the bbox column will not be written.
+    write_bbox_column : bool, default False
+        Writes the bounding box column for each row entry with column
+        name 'bbox'. Writing a bbox column can be computationally
+        expensive, hence is default setting is False.
     **kwargs
         Additional keyword arguments passed to pyarrow.parquet.write_table().
     """
@@ -410,7 +412,7 @@ def _to_parquet(
         df,
         index=index,
         schema_version=schema_version,
-        bbox_column_name=bbox_column_name,
+        write_bbox_column=write_bbox_column,
     )
     parquet.write_table(table, path, compression=compression, **kwargs)
 
