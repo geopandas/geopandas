@@ -796,8 +796,11 @@ def _read_parquet_schema_and_metadata(path, filesystem):
     parquet = import_optional_dependency(
         "pyarrow.parquet", extra="pyarrow is required for Parquet support."
     )
+    try:
+        schema = ds.dataset(path, filesystem=filesystem).schema
+    except Exception:
+        schema = parquet.read_schema(path, filesystem=filesystem)
 
-    schema = ds.dataset(path, filesystem=filesystem).schema
     metadata = schema.metadata
 
     # if GDAL-produced malformed file
