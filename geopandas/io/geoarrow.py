@@ -1,8 +1,68 @@
+import json
+
 import numpy as np
 import pyarrow as pa
 
 import shapely
 from shapely import GeometryType
+
+from geopandas import GeoDataFrame
+from geopandas.array import from_shapely, from_wkb
+
+GEOARROW_ENCODINGS = [
+    "point",
+    "linestring",
+    "polygon",
+    "multipoint",
+    "multilinestring",
+    "multipolygon",
+]
+
+
+def get_arrow_geometry_field(field):
+    if (meta := field.metadata) is not None:
+        if (ext_name := meta.get(b"ARROW:extension:name", None)) is not None:
+            if ext_name.startswith(b"geoarrow."):
+                if (
+                    ext_meta := meta.get(b"ARROW:extension:metadata", None)
+                ) is not None:
+                    ext_meta = json.loads(ext_meta.decode())
+                return ext_name.decode(), ext_meta
+    return None
+
+
+def arrow_to_geopandas(table):
+    """
+    Convert pyarrow.Table to a GeoDataFrame based on GeoArrow extension types.
+    """
+    geom_fields = []
+
+    for field in table.schema:
+        geom = get_arrow_geometry_field(field)
+        if geom is not None:
+            geom_fields.append((field.name, *geom))
+
+    df = table.to_pandas()
+
+    if len(geom_fields) == 0:
+        raise ValueError("""Missing geometry columns.""")
+
+    for col, ext_name, ext_meta in geom_fields:
+        crs = None
+        if ext_meta is not None and "crs" in ext_meta:
+            crs = ext_meta["crs"]
+
+        if ext_name == "geoarrow.wkb":
+            df[col] = from_wkb(df[col].values, crs=crs)
+        elif ext_name.split(".")[1] in GEOARROW_ENCODINGS:
+
+            df[col] = from_shapely(
+                construct_shapely_array(table[col].combine_chunks(), ext_name), crs=crs
+            )
+        else:
+            raise ValueError(f"Unknown GeoArrow extension type: {ext_name}")
+
+    return GeoDataFrame(df, geometry=geom_fields[0][0])
 
 
 def _get_inner_coords(arr):

@@ -802,6 +802,26 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         return df
 
+    @classmethod
+    def from_arrow(cls, table):
+        """
+        Construct a GeoDataFrame from a pyarrow.Table based on GeoArrow
+        extension types.
+
+        Parameters
+        ----------
+        table : pyarrow.Table
+            Arrow Table object
+
+        Returns
+        -------
+        GeoDataFrame
+
+        """
+        from geopandas.io.geoarrow import arrow_to_geopandas
+
+        return arrow_to_geopandas(table)
+
     def to_json(
         self, na="null", show_bbox=False, drop_id=False, to_wgs84=False, **kwargs
     ):
