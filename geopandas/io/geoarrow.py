@@ -106,9 +106,6 @@ def geopandas_to_arrow(
                 extension_metadata["ARROW:extension:metadata"] = json.dumps(
                     {"crs": crs}
                 )
-            else:
-                # TODO we shouldn't do this, just to get testing passed for now
-                extension_metadata["ARROW:extension:metadata"] = "{}"
 
             field = pa.field(
                 col, type=pa.binary(), nullable=True, metadata=extension_metadata
@@ -126,7 +123,7 @@ def geopandas_to_arrow(
 
 def _convert_inner_coords(coords, interleaved, dims, mask=None):
     if interleaved:
-        coords_field = pa.field(dims, pa.float64())  # , nullable=False)
+        coords_field = pa.field(dims, pa.float64(), nullable=False)
         typ = pa.list_(coords_field, len(dims))
         if mask is None:
             # mask keyword only added in pyarrow 15.0.0
@@ -137,44 +134,53 @@ def _convert_inner_coords(coords, interleaved, dims, mask=None):
             )
     else:
         if dims == "xy":
+            fields = [
+                pa.field("x", pa.float64(), nullable=False),
+                pa.field("y", pa.float64(), nullable=False),
+            ]
             parr = pa.StructArray.from_arrays(
-                [coords[:, 0].copy(), coords[:, 1].copy()], names=["x", "y"], mask=mask
+                [coords[:, 0].copy(), coords[:, 1].copy()], fields=fields, mask=mask
             )
         else:
+            fields = [
+                pa.field("x", pa.float64(), nullable=False),
+                pa.field("y", pa.float64(), nullable=False),
+                pa.field("z", pa.float64(), nullable=False),
+            ]
             parr = pa.StructArray.from_arrays(
                 [coords[:, 0].copy(), coords[:, 1].copy(), coords[:, 2].copy()],
-                names=["x", "y", "z"],
+                fields=fields,
                 mask=mask,
             )
     return parr
 
 
 def _linestring_type(point_type):
-    return pa.list_(pa.field("vertices", point_type))  # , nullable=False))
+    return pa.list_(pa.field("vertices", point_type, nullable=False))
 
 
 def _polygon_type(point_type):
     return pa.list_(
         pa.field(
-            "rings", pa.list_(pa.field("vertices", point_type))  # , nullable=False)
-        )  # , nullable=False)
+            "rings",
+            pa.list_(pa.field("vertices", point_type, nullable=False)),
+            nullable=False,
+        )
     )
 
 
 def _multipoint_type(point_type):
-    return pa.list_(pa.field("points", point_type))  # , nullable=False))
+    return pa.list_(pa.field("points", point_type, nullable=False))
 
 
 def _multilinestring_type(point_type):
     return pa.list_(
-        pa.field("linestrings", _linestring_type(point_type))  # , nullable=False)
+        pa.field("linestrings", _linestring_type(point_type), nullable=False)
     )
 
 
 def _multipolygon_type(point_type):
-    return pa.list_(
-        pa.field("polygons", _polygon_type(point_type))  # , nullable=False)
-    )
+    return pa.list_(pa.field("polygons", _polygon_type(point_type), nullable=False))
 
 
 def construct_geometry_array(
@@ -226,9 +232,6 @@ def construct_geometry_array(
     extension_metadata: Dict[str, str] = {}
     if crs is not None:
         extension_metadata["ARROW:extension:metadata"] = json.dumps({"crs": crs})
-    else:
-        # TODO we shouldn't do this, just to get testing passed for now
-        extension_metadata["ARROW:extension:metadata"] = "{}"
 
     if geom_type == GeometryType.POINT:
         # TODO support shapely < 2.0.4 for missing values
