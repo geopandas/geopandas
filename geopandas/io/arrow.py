@@ -1,7 +1,7 @@
 import json
 import warnings
 from packaging.version import Version
-from collections import OrderedDict
+
 import numpy as np
 from pandas import DataFrame, Series
 
@@ -311,7 +311,7 @@ def _geopandas_to_arrow(df, index=None, schema_version=None, write_bbox_column=N
     """
     Helper function with main, shared logic for to_parquet/to_feather.
     """
-    from pyarrow import Table, StructArray
+    from pyarrow import StructArray, Table
 
     _validate_dataframe(df)
 
@@ -849,8 +849,8 @@ def _get_parquet_bbox_filter(metadata, bbox):
 
 
 def _convert_bbox_to_parquet_filter(bbox, bbox_column_name):
-    import pyarrow.compute as pc
     import pyarrow
+    import pyarrow.compute as pc
 
     if Version(pyarrow.__version__) < Version("9.0.0"):
         raise ImportError(
