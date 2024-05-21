@@ -1232,6 +1232,7 @@ GeometryCollection
     def offset_curve(self, distance, quad_segs=8, join_style="round", mitre_limit=5.0):
         """Returns a ``LineString`` or ``MultiLineString`` geometry at a
         distance from the object on its right or its left side.
+
         Parameters
         ----------
         distance : float | array-like
@@ -4394,7 +4395,7 @@ GeometryCollection
         The operation works on a 1-to-1 row-wise manner:
 
         .. image:: ../../../_static/binary_op-01.svg
-        :align: center
+            :align: center
 
         Parameters
         ----------
@@ -4504,7 +4505,7 @@ GeometryCollection
         The operation works in a 1-to-1 row-wise manner:
 
         .. image:: ../../../_static/binary_op-01.svg
-        :align: center
+            :align: center
 
         Parameters
         ----------
