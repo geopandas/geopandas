@@ -70,6 +70,7 @@ New features and improvements:
 - `explore` now supports `GeoDataFrame`s with additional columns containing datetimes, uuids and 
   other non JSON serializable objects (#3261).
 - The `GeoSeries.fillna` method now supports the `limit` keyword (#3290).
+- Added `area_averaged_mean` aggfunc option to `GeoDataFrame.dissolve()` (#3229)
 
 Backwards incompatible API changes:
 

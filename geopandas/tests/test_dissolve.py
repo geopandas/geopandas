@@ -3,6 +3,8 @@ import warnings
 import numpy as np
 import pandas as pd
 
+from shapely.geometry import LineString, Point, Polygon
+
 import geopandas
 from geopandas import GeoDataFrame, read_file
 from geopandas._compat import HAS_PYPROJ, PANDAS_GE_15, PANDAS_GE_20, PANDAS_GE_30
@@ -370,3 +372,102 @@ def test_coverage_dissolve(nybb_polydf):
 
     test = nybb_polydf.dissolve("manhattan_bronx", method="coverage")
     assert_frame_equal(merged_shapes, test, check_column_type=False)
+
+
+@pytest.mark.parametrize(
+    "geometry, quantity, expected",
+    [
+        pytest.param(
+            [
+                Polygon([(0, 0), (5, 0), (5, 10), (0, 10)]),
+                Polygon([(5, 0), (10, 0), (10, 10), (5, 10)]),
+            ],
+            [10, 20],
+            15,
+            id="equal areas of 50 sq units each",
+        ),
+        pytest.param(
+            [
+                Polygon([(0, 0), (5, 0), (5, 10), (0, 10)]),
+                Polygon([(5, 0), (20, 0), (20, 10), (5, 10)]),
+            ],
+            [10, 20],
+            17.5,
+            id="areas of 100 and 50",
+        ),
+        pytest.param(
+            [
+                Polygon([(0, 0), (5, 0), (5, 10), (0, 10)]),
+                Polygon([(5, 0), (40, 0), (40, 10), (5, 10)]),
+            ],
+            [10, 20],
+            18.75,
+            id="areas of 200 and 50",
+        ),
+    ],
+)
+def test_area_weighted_mean_dissolve(geometry, quantity, expected):
+    gdf = GeoDataFrame({"geometry": geometry, "quantity": quantity})
+    dissolved_df = gdf.dissolve(aggfunc="area_weighted_mean")
+    assert dissolved_df.quantity[0] == expected
+
+
+@pytest.mark.parametrize(
+    "geometry, quantity, expectedErrorMsg",
+    [
+        pytest.param(
+            [Point(0, 0), Point(1, 1)],
+            [10, 20],
+            "There are 1-dimensional geometry types ",
+            id="two Points",
+        ),
+        pytest.param(
+            [LineString([(0, 0), (0, 1)]), LineString([(1, 1), (2, 1)])],
+            [10, 20],
+            "There are 1-dimensional geometry types ",
+            id="two LineStrings",
+        ),
+        pytest.param(
+            [Point(0, 0), LineString([(1, 1), (2, 1)])],
+            [10, 20],
+            "There are 1-dimensional geometry types ",
+            id="mix of Point and LineStrings",
+        ),
+    ],
+)
+def test_area_weighted_mean_dissolve_geom_types_error(
+    geometry, quantity, expectedErrorMsg
+):
+    gdf = GeoDataFrame({"geometry": geometry, "quantity": quantity})
+    with pytest.raises(ValueError, match=expectedErrorMsg):
+        gdf.dissolve(aggfunc="area_weighted_mean")
+
+
+def test_numeric_only_bug(naturalearth_lowres):
+    # This test describes an upstream bug in pandas with the
+    # numeric_only kwarg only working with the pre-defined
+    # aggfunc text - 'sum', 'mean' etc.
+    # It does not work with user defined functions (UDF)such as np.sum
+    # as all kwargs are passed into the UDF.
+    # This is expected to be fixed in the next major release
+    # of pandas.
+
+    # This has particular implications for the spatially_averaged_mean
+    # as it is based on a UDF.
+    countries = read_file(naturalearth_lowres)
+
+    with pytest.raises(TypeError):
+        countries.dissolve(aggfunc=np.sum, numeric_only=True)
+    with pytest.raises(ValueError):
+        countries.dissolve(aggfunc="area_weighted_mean")
+    with pytest.raises(ValueError):
+        countries.dissolve(aggfunc="area_weighted_mean", numeric_only=True)
+
+
+def test_area_weighted_mean_with_groupby(naturalearth_lowres):
+    # Check that the 'by' columns won't get caught as an invalid non-numeric column
+    countries = read_file(naturalearth_lowres)
+
+    numeric_df = countries.drop(["name", "iso_a3"], axis=1)
+    dissolved_df = numeric_df.dissolve(by="continent", aggfunc="area_weighted_mean")
+    assert len(dissolved_df) == 8

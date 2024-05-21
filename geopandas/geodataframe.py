@@ -4,6 +4,7 @@ import warnings
 import numpy as np
 import pandas as pd
 from pandas import DataFrame, Series
+from pandas.api.types import is_numeric_dtype
 
 import shapely.errors
 from shapely.geometry import mapping, shape
@@ -1865,6 +1866,15 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
 
         # Process non-spatial component
         data = self.drop(labels=self.geometry.name, axis=1)
+
+        if aggfunc == "area_weighted_mean":
+            # special additional aggfunc in geopandas
+            _check_geometry_is_2d(self.geometry.geom_type)
+            _check_columns_are_numeric(data, by)
+            aggfunc = lambda x: np.average(
+                x, weights=self.loc[x.index, self.geometry.name].area
+            )
+
         with warnings.catch_warnings(record=True) as record:
             aggregated_data = data.groupby(**groupby_kwargs).agg(aggfunc, **kwargs)
         for w in record:
@@ -2490,3 +2500,31 @@ def _dataframe_set_geometry(self, col, drop=None, inplace=False, crs=None):
 
 
 DataFrame.set_geometry = _dataframe_set_geometry
+
+
+def _check_geometry_is_2d(geom_type):
+    if any(
+        geometry_type_1d in geom_type.values
+        for geometry_type_1d in [
+            "Point",
+            "MultiPoint",
+            "LineString",
+            "MultiLineString",
+        ]
+    ):
+        raise ValueError(
+            "There are 1-dimensional geometry types (Points or "
+            "Linestrings) in your geodataframe. Aggfunc area-weighted-mean "
+            "only works on 2-dimensional geometry types (Polygons)."
+        )
+
+
+def _check_columns_are_numeric(data, by):
+    if any(by):
+        data = data.drop(by, axis=1)
+    if not all(is_numeric_dtype(data[col]) for col in data.columns):
+        raise ValueError(
+            "aggfunc area_weighted_mean does not work if there are "
+            "any non-numeric columns in the dataframe. Please "
+            "remove all non-numeric dataframes first."
+        )
