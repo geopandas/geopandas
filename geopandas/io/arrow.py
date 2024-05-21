@@ -1,20 +1,30 @@
-from packaging.version import Version
 import json
 import warnings
+from packaging.version import Version
 
 import numpy as np
 from pandas import DataFrame, Series
 
 import shapely
 
-from geopandas._compat import import_optional_dependency
-from geopandas.array import from_wkb
-from geopandas import GeoDataFrame
 import geopandas
+from geopandas import GeoDataFrame
+from geopandas._compat import import_optional_dependency
+from geopandas.array import from_shapely, from_wkb
+
 from .file import _expand_user
 
 METADATA_VERSION = "1.0.0"
-SUPPORTED_VERSIONS = ["0.1.0", "0.4.0", "1.0.0-beta.1", "1.0.0"]
+SUPPORTED_VERSIONS = ["0.1.0", "0.4.0", "1.0.0-beta.1", "1.0.0", "1.1.0"]
+GEOARROW_ENCODINGS = [
+    "point",
+    "linestring",
+    "polygon",
+    "multipoint",
+    "multilinestring",
+    "multipolygon",
+]
+SUPPORTED_ENCODINGS = ["WKB"] + GEOARROW_ENCODINGS
 # reference: https://github.com/opengeospatial/geoparquet
 
 # Metadata structure:
@@ -69,6 +79,37 @@ def _remove_id_from_member_of_ensembles(json_dict):
                 member.pop("id", None)
 
 
+# type ids 0 to 7
+_geometry_type_names = [
+    "Point",
+    "LineString",
+    "LineString",
+    "Polygon",
+    "MultiPoint",
+    "MultiLineString",
+    "MultiPolygon",
+    "GeometryCollection",
+]
+_geometry_type_names += [geom_type + " Z" for geom_type in _geometry_type_names]
+
+
+def _get_geometry_types(series):
+    """
+    Get unique geometry types from a GeoSeries.
+    """
+    arr_geometry_types = shapely.get_type_id(series.array._data)
+    # ensure to include "... Z" for 3D geometries
+    has_z = shapely.has_z(series.array._data)
+    arr_geometry_types[has_z] += 8
+
+    geometry_types = Series(arr_geometry_types).unique().tolist()
+    # drop missing values (shapely.get_type_id returns -1 for those)
+    if -1 in geometry_types:
+        geometry_types.remove(-1)
+
+    return sorted([_geometry_type_names[idx] for idx in geometry_types])
+
+
 def _create_metadata(df, schema_version=None):
     """Create and encode geo metadata dict.
 
@@ -95,7 +136,8 @@ def _create_metadata(df, schema_version=None):
     column_metadata = {}
     for col in df.columns[df.dtypes == "geometry"]:
         series = df[col]
-        geometry_types = sorted(Series(series.geom_type.unique()).dropna())
+
+        geometry_types = _get_geometry_types(series)
         if schema_version[0] == "0":
             geometry_types_name = "geometry_type"
             if len(geometry_types) == 1:
@@ -233,8 +275,12 @@ def _validate_metadata(metadata):
                     "'{key}' for column '{col}'".format(key=key, col=col)
                 )
 
-        if column_metadata["encoding"] != "WKB":
-            raise ValueError("Only WKB geometry encoding is supported")
+        if column_metadata["encoding"] not in SUPPORTED_ENCODINGS:
+            raise ValueError(
+                "Only WKB geometry encoding or one of the native encodings "
+                f"({GEOARROW_ENCODINGS!r}) are supported, "
+                f"got: {column_metadata['encoding']}"
+            )
 
         if column_metadata.get("edges", "planar") == "spherical":
             warnings.warn(
@@ -448,7 +494,17 @@ def _arrow_to_geopandas(table, metadata=None):
             # OGC:CRS84
             crs = "OGC:CRS84"
 
-        df[col] = from_wkb(df[col].values, crs=crs)
+        if col_metadata["encoding"] == "WKB":
+            df[col] = from_wkb(df[col].values, crs=crs)
+        else:
+            from geopandas.io.geoarrow import construct_shapely_array
+
+            df[col] = from_shapely(
+                construct_shapely_array(
+                    table[col].combine_chunks(), "geoarrow." + col_metadata["encoding"]
+                ),
+                crs=crs,
+            )
 
     return GeoDataFrame(df, geometry=geometry)
 
@@ -670,6 +726,7 @@ def _read_feather(path, columns=None, **kwargs):
     )
     # TODO move this into `import_optional_dependency`
     import pyarrow
+
     import geopandas.io._pyarrow_hotfix  # noqa: F401
 
     if Version(pyarrow.__version__) < Version("0.17.0"):

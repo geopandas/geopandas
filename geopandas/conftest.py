@@ -1,8 +1,9 @@
 import os.path
 
-import pytest
 import geopandas
-from geopandas.tests.util import _NYBB, _NATURALEARTH_LOWRES, _NATURALEARTH_CITIES
+
+import pytest
+from geopandas.tests.util import _NATURALEARTH_CITIES, _NATURALEARTH_LOWRES, _NYBB
 
 
 @pytest.fixture(autouse=True)

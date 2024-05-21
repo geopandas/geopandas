@@ -1,15 +1,15 @@
 import warnings
 
 import pandas as pd
-import pytest
-
-from geopandas._compat import PANDAS_GE_21, HAS_PYPROJ
-from geopandas.testing import assert_geodataframe_equal
-from pandas.testing import assert_index_equal
 
 from shapely.geometry import Point
 
 from geopandas import GeoDataFrame, GeoSeries
+from geopandas._compat import HAS_PYPROJ, PANDAS_GE_21
+
+import pytest
+from geopandas.testing import assert_geodataframe_equal
+from pandas.testing import assert_index_equal
 
 
 class TestMerging:

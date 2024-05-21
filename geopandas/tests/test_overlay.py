@@ -4,14 +4,14 @@ import numpy as np
 import pandas as pd
 
 from shapely import make_valid
-from shapely.geometry import Point, Polygon, LineString, GeometryCollection, box
+from shapely.geometry import GeometryCollection, LineString, Point, Polygon, box
 
 import geopandas
 from geopandas import GeoDataFrame, GeoSeries, overlay, read_file
-from geopandas._compat import PANDAS_GE_20, HAS_PYPROJ
+from geopandas._compat import HAS_PYPROJ, PANDAS_GE_20
 
-from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 import pytest
+from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 
 try:
     from fiona.errors import DriverError

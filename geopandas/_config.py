@@ -6,9 +6,9 @@ with nested options, deprecated options, ..), just the attribute-style dict
 like holding the options and giving a nice repr.
 """
 
-from collections import namedtuple
 import textwrap
-
+import warnings
+from collections import namedtuple
 
 Option = namedtuple("Option", "key default_value doc validator callback")
 
@@ -87,9 +87,12 @@ display_precision = Option(
 )
 
 
-def _validate_bool(value):
-    if not isinstance(value, bool):
-        raise TypeError("Expected bool value, got {0}".format(type(value)))
+def _warn_use_pygeos_deprecated(_value):
+    warnings.warn(
+        "pygeos support was removed in 1.0. "
+        "geopandas.use_pygeos is a no-op and will be removed in geopandas 1.1.",
+        stacklevel=3,
+    )
 
 
 def _validate_io_engine(value):
@@ -114,11 +117,10 @@ use_pygeos = Option(
     key="use_pygeos",
     default_value=False,
     doc=(
-        "Whether to use PyGEOS to speed up spatial operations. The default is True "
-        "if PyGEOS is installed, and follows the USE_PYGEOS environment variable "
-        "if set."
+        "Deprecated option previously used to enable PyGEOS. "
+        "It will be removed in GeoPandas 1.1."
     ),
-    validator=_validate_bool,
+    validator=_warn_use_pygeos_deprecated,
     callback=None,
 )
 

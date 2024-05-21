@@ -9,14 +9,14 @@ import pandas as pd
 from shapely.geometry import Point, Polygon, box
 
 import geopandas
+import geopandas._compat as compat
 from geopandas import GeoDataFrame, GeoSeries, points_from_xy, read_file
 from geopandas.array import GeometryArray, GeometryDtype, from_shapely
 
+import pytest
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 from geopandas.tests.util import PACKAGE_DIR, validate_boro_df
 from pandas.testing import assert_frame_equal, assert_index_equal, assert_series_equal
-import geopandas._compat as compat
-import pytest
 
 
 @pytest.fixture
@@ -296,7 +296,8 @@ class TestDataFrame:
         assert_geoseries_equal(df2.geometry, g_simplified)
 
         # If True, drops column and renames to geometry
-        df3 = self.df.set_geometry("simplified_geometry", drop=True)
+        with pytest.warns(FutureWarning):
+            df3 = self.df.set_geometry("simplified_geometry", drop=True)
         assert "simplified_geometry" not in df3
         assert_geoseries_equal(df3.geometry, g_simplified)
 
@@ -808,7 +809,8 @@ class TestDataFrame:
         assert gf.geometry.name == "location"
         assert "geometry" not in gf
 
-        gf2 = df.set_geometry("location", crs=self.df.crs, drop=True)
+        with pytest.warns(FutureWarning):
+            gf2 = df.set_geometry("location", crs=self.df.crs, drop=True)
         assert isinstance(df, pd.DataFrame)
         assert isinstance(gf2, GeoDataFrame)
         assert gf2.geometry.name == "geometry"
@@ -1066,6 +1068,29 @@ class TestDataFrame:
         result = left.clip(south_america)
         assert_geodataframe_equal(result, expected)
 
+    def test_clip_sorting(self, naturalearth_cities, naturalearth_lowres):
+        """
+        Test sorting of geodataframe when clipping.
+        """
+        cities = read_file(naturalearth_cities)
+        world = read_file(naturalearth_lowres)
+        south_america = world[world["continent"] == "South America"]
+
+        unsorted_clipped_cities = geopandas.clip(cities, south_america, sort=False)
+        sorted_clipped_cities = geopandas.clip(cities, south_america, sort=True)
+
+        expected_sorted_index = pd.Index(
+            [55, 59, 62, 88, 101, 114, 122, 169, 181, 189, 210, 230, 236, 238, 239]
+        )
+
+        assert not (
+            sorted(unsorted_clipped_cities.index) == unsorted_clipped_cities.index
+        ).all()
+        assert (
+            sorted(sorted_clipped_cities.index) == sorted_clipped_cities.index
+        ).all()
+        assert_index_equal(expected_sorted_index, sorted_clipped_cities.index)
+
     def test_overlay(self, dfs, how):
         """
         Basic test for availability of the GeoDataFrame method. Other
@@ -1275,7 +1300,7 @@ class TestConstructor:
             geometry="geometry",
         )
         check_geodataframe(gdf)
-        gdf.columns == ["geometry", "a"]
+        assert list(gdf.columns) == ["geometry", "a"]
 
         # with non-default index
         gdf = GeoDataFrame(
@@ -1285,7 +1310,7 @@ class TestConstructor:
             geometry="geometry",
         )
         check_geodataframe(gdf)
-        gdf.columns == ["geometry", "a"]
+        assert list(gdf.columns) == ["geometry", "a"]
 
     def test_preserve_series_name(self):
         geoms = [Point(1, 1), Point(2, 2), Point(3, 3)]

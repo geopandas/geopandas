@@ -27,8 +27,9 @@ import sys
 
 import pandas as pd
 
-import geopandas
 from shapely.geometry import Point
+
+import geopandas
 
 
 def create_pickle_data():

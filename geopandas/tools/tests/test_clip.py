@@ -1,26 +1,27 @@
 """Tests for the clip module."""
 
 import numpy as np
+import pandas as pd
 
 import shapely
 from shapely.geometry import (
-    Polygon,
-    Point,
-    LineString,
-    LinearRing,
     GeometryCollection,
+    LinearRing,
+    LineString,
     MultiPoint,
+    Point,
+    Polygon,
     box,
 )
 
 import geopandas
 from geopandas import GeoDataFrame, GeoSeries, clip
 from geopandas._compat import HAS_PYPROJ
-
-from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
-import pytest
-
 from geopandas.tools.clip import _mask_is_list_like_rectangle
+
+import pytest
+from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
+from pandas.testing import assert_index_equal
 
 mask_variants_single_rectangle = [
     "single_rectangle_gdf",
@@ -38,6 +39,14 @@ mask_variants_large_rectangle = [
 def point_gdf():
     """Create a point GeoDataFrame."""
     pts = np.array([[2, 2], [3, 4], [9, 8], [-12, -15]])
+    gdf = GeoDataFrame([Point(xy) for xy in pts], columns=["geometry"], crs="EPSG:3857")
+    return gdf
+
+
+@pytest.fixture
+def point_gdf2():
+    """Create a point GeoDataFrame."""
+    pts = np.array([[5, 5], [2, 2], [4, 4], [0, 0], [3, 3], [1, 1]])
     gdf = GeoDataFrame([Point(xy) for xy in pts], columns=["geometry"], crs="EPSG:3857")
     return gdf
 
@@ -460,3 +469,16 @@ def test_clip_empty_mask(buffered_locations, mask):
     )
     clipped = clip(buffered_locations.geometry, mask)
     assert_geoseries_equal(clipped, GeoSeries([], crs="EPSG:3857"))
+
+
+def test_clip_sorting(point_gdf2):
+    """Test the sorting kwarg in clip"""
+    bbox = shapely.geometry.box(0, 0, 2, 2)
+    unsorted_clipped_gdf = point_gdf2.clip(bbox)
+    sorted_clipped_gdf = point_gdf2.clip(bbox, sort=True)
+
+    expected_sorted_index = pd.Index([1, 3, 5])
+
+    assert not (sorted(unsorted_clipped_gdf.index) == unsorted_clipped_gdf.index).all()
+    assert (sorted(sorted_clipped_gdf.index) == sorted_clipped_gdf.index).all()
+    assert_index_equal(expected_sorted_index, sorted_clipped_gdf.index)
