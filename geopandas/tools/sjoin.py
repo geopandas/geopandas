@@ -570,7 +570,7 @@ def _filter_shared_attribute(left_df, right_df, l_idx, r_idx, attribute):
     with the same entry.
     """
     shared_attribute_rows = (
-        left_df.iloc[l_idx][attribute].values == right_df.iloc[r_idx][attribute].values
+        left_df[attribute].iloc[l_idx].values == right_df[attribute].iloc[r_idx].values
     )
 
     l_idx = l_idx[shared_attribute_rows]
