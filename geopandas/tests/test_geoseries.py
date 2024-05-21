@@ -6,9 +6,7 @@ import tempfile
 import warnings
 
 import numpy as np
-from numpy.testing import assert_array_equal
 import pandas as pd
-from pandas.testing import assert_index_equal
 
 from shapely.geometry import (
     GeometryCollection,
@@ -21,15 +19,16 @@ from shapely.geometry import (
 )
 from shapely.geometry.base import BaseGeometry
 
-from geopandas import GeoSeries, GeoDataFrame, read_file, clip
-from geopandas.array import GeometryArray, GeometryDtype
 import geopandas._compat as compat
-from geopandas.testing import assert_geoseries_equal, geom_almost_equals
-
-from geopandas.tests.util import geom_equals
+from geopandas import GeoDataFrame, GeoSeries, clip, read_file
 from geopandas._compat import HAS_PYPROJ
-from pandas.testing import assert_series_equal
+from geopandas.array import GeometryArray, GeometryDtype
+
 import pytest
+from geopandas.testing import assert_geoseries_equal, geom_almost_equals
+from geopandas.tests.util import geom_equals
+from numpy.testing import assert_array_equal
+from pandas.testing import assert_index_equal, assert_series_equal
 
 
 class TestSeries:
@@ -658,6 +657,18 @@ class TestConstructor:
         assert [a.equals(b) for a, b in zip(s, g)]
         assert s.name == g.name
         assert s.index is g.index
+
+    @pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not available")
+    def test_from_series_no_set_crs_on_construction(self):
+        # https://github.com/geopandas/geopandas/issues/2492
+        # also when passing Series[geometry], ensure we don't change crs of
+        # original data
+        gs = GeoSeries([Point(1, 1), Point(2, 2), Point(3, 3)])
+        s = pd.Series(gs)
+        result = GeoSeries(s, crs=4326)
+        assert s.values.crs is None
+        assert gs.crs is None
+        assert result.crs == "EPSG:4326"
 
     def test_copy(self):
         # default is to copy with CoW / pandas 3+

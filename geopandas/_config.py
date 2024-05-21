@@ -6,10 +6,9 @@ with nested options, deprecated options, ..), just the attribute-style dict
 like holding the options and giving a nice repr.
 """
 
+import textwrap
 import warnings
 from collections import namedtuple
-import textwrap
-
 
 Option = namedtuple("Option", "key default_value doc validator callback")
 

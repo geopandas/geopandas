@@ -1,23 +1,24 @@
 from __future__ import absolute_import
 
-from itertools import product
 import json
-from packaging.version import Version
 import os
 import pathlib
+from itertools import product
+from packaging.version import Version
 
-import pytest
-from pandas import DataFrame, read_parquet as pd_read_parquet
-from pandas.testing import assert_frame_equal
 import numpy as np
-import shapely
-from shapely.geometry import box, Point, MultiPolygon
+from pandas import DataFrame
+from pandas import read_parquet as pd_read_parquet
 
+import shapely
+from shapely.geometry import LineString, MultiPolygon, Point, Polygon, box
 
 import geopandas
-from geopandas import GeoDataFrame, read_file, read_parquet, read_feather
+from geopandas import GeoDataFrame, read_feather, read_file, read_parquet
+from geopandas._compat import HAS_PYPROJ
 from geopandas.array import to_wkb
 from geopandas.io.arrow import (
+    METADATA_VERSION,
     SUPPORTED_VERSIONS,
     _create_metadata,
     _decode_metadata,
@@ -27,12 +28,12 @@ from geopandas.io.arrow import (
     _remove_id_from_member_of_ensembles,
     _validate_dataframe,
     _validate_metadata,
-    METADATA_VERSION,
 )
+
+import pytest
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 from geopandas.tests.util import mock
-from geopandas._compat import HAS_PYPROJ
-
+from pandas.testing import assert_frame_equal
 
 DATA_PATH = pathlib.Path(os.path.dirname(__file__)) / "data"
 
@@ -84,6 +85,67 @@ def test_create_metadata(naturalearth_lowres):
 
     assert metadata["creator"]["library"] == "geopandas"
     assert metadata["creator"]["version"] == geopandas.__version__
+
+
+def test_create_metadata_with_z_geometries():
+    geometry_types = [
+        "Point",
+        "Point Z",
+        "LineString",
+        "LineString Z",
+        "Polygon",
+        "Polygon Z",
+        "MultiPolygon",
+        "MultiPolygon Z",
+    ]
+    df = geopandas.GeoDataFrame(
+        {
+            "geo_type": geometry_types,
+            "geometry": [
+                Point(1, 2),
+                Point(1, 2, 3),
+                LineString([(0, 0), (1, 1), (2, 2)]),
+                LineString([(0, 0, 1), (1, 1, 2), (2, 2, 3)]),
+                Polygon([(0, 0), (0, 1), (1, 1), (1, 0)]),
+                Polygon([(0, 0, 0), (0, 1, 0.5), (1, 1, 1), (1, 0, 0.5)]),
+                MultiPolygon(
+                    [
+                        Polygon([(0, 0), (0, 1), (1, 1), (1, 0)]),
+                        Polygon([(0.5, 0.5), (0.5, 1.5), (1.5, 1.5), (1.5, 0.5)]),
+                    ]
+                ),
+                MultiPolygon(
+                    [
+                        Polygon([(0, 0, 0), (0, 1, 0.5), (1, 1, 1), (1, 0, 0.5)]),
+                        Polygon(
+                            [
+                                (0.5, 0.5, 1),
+                                (0.5, 1.5, 1.5),
+                                (1.5, 1.5, 2),
+                                (1.5, 0.5, 1.5),
+                            ]
+                        ),
+                    ]
+                ),
+            ],
+        },
+    )
+    metadata = _create_metadata(df)
+    assert sorted(metadata["columns"]["geometry"]["geometry_types"]) == sorted(
+        geometry_types
+    )
+    # only 3D geometries
+    metadata = _create_metadata(df.iloc[1::2])
+    assert all(
+        geom_type.endswith(" Z")
+        for geom_type in metadata["columns"]["geometry"]["geometry_types"]
+    )
+
+    metadata = _create_metadata(df.iloc[5:7])
+    assert metadata["columns"]["geometry"]["geometry_types"] == [
+        "MultiPolygon",
+        "Polygon Z",
+    ]
 
 
 def test_crs_metadata_datum_ensemble():
@@ -476,7 +538,7 @@ def test_parquet_invalid_metadata(tmpdir, geo_meta, error, naturalearth_lowres):
     control the metadata that is written for this test.
     """
 
-    from pyarrow import parquet, Table
+    from pyarrow import Table, parquet
 
     df = read_file(naturalearth_lowres)
 

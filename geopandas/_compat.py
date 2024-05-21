@@ -1,10 +1,10 @@
-from packaging.version import Version
 import importlib
+from packaging.version import Version
 
 import pandas as pd
+
 import shapely
 import shapely.geos
-
 
 # -----------------------------------------------------------------------------
 # pandas compat

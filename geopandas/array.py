@@ -6,21 +6,21 @@ from functools import lru_cache
 
 import numpy as np
 import pandas as pd
-import shapely
-import shapely.affinity
-import shapely.geometry
-import shapely.ops
-import shapely.wkt
 from pandas.api.extensions import (
     ExtensionArray,
     ExtensionDtype,
     register_extension_dtype,
 )
 
+import shapely
+import shapely.affinity
+import shapely.geometry
+import shapely.ops
+import shapely.wkt
 from shapely.geometry.base import BaseGeometry
 
-from .sindex import SpatialIndex
 from ._compat import HAS_PYPROJ, requires_pyproj
+from .sindex import SpatialIndex
 
 if HAS_PYPROJ:
     from pyproj import Transformer
@@ -497,6 +497,9 @@ class GeometryArray(ExtensionArray):
     def is_valid(self):
         return shapely.is_valid(self._data)
 
+    def is_valid_reason(self):
+        return shapely.is_valid_reason(self._data)
+
     @property
     def is_empty(self):
         return shapely.is_empty(self._data)
@@ -548,6 +551,9 @@ class GeometryArray(ExtensionArray):
     def get_precision(self):
         return shapely.get_precision(self._data)
 
+    def get_geometry(self, index):
+        return shapely.get_geometry(self._data, index=index)
+
     #
     # Unary operations that return new geometries
     #
@@ -567,12 +573,6 @@ class GeometryArray(ExtensionArray):
     @property
     def convex_hull(self):
         return GeometryArray(shapely.convex_hull(self._data), crs=self.crs)
-
-    def delaunay_triangles(self, tolerance, only_edges):
-        return GeometryArray(
-            shapely.delaunay_triangles(self._data, tolerance, only_edges),
-            crs=self.crs,
-        )
 
     @property
     def envelope(self):
@@ -782,6 +782,11 @@ class GeometryArray(ExtensionArray):
     def snap(self, other, tolerance):
         return GeometryArray(
             self._binary_method("snap", self, other, tolerance=tolerance), crs=self.crs
+        )
+
+    def shared_paths(self, other):
+        return GeometryArray(
+            self._binary_method("shared_paths", self, other), crs=self.crs
         )
 
     #

@@ -5,24 +5,23 @@ import pandas as pd
 
 import shapely
 from shapely.geometry import (
-    Polygon,
-    Point,
-    LineString,
-    LinearRing,
     GeometryCollection,
+    LinearRing,
+    LineString,
     MultiPoint,
+    Point,
+    Polygon,
     box,
 )
 
 import geopandas
 from geopandas import GeoDataFrame, GeoSeries, clip
 from geopandas._compat import HAS_PYPROJ
+from geopandas.tools.clip import _mask_is_list_like_rectangle
 
+import pytest
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 from pandas.testing import assert_index_equal
-import pytest
-
-from geopandas.tools.clip import _mask_is_list_like_rectangle
 
 mask_variants_single_rectangle = [
     "single_rectangle_gdf",

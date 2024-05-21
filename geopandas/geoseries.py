@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import typing
-from typing import Optional, Any, Callable, Dict
 import warnings
+from typing import Any, Callable, Dict, Optional
 
 import numpy as np
 import pandas as pd
@@ -10,13 +10,13 @@ from pandas import Series
 from pandas.core.internals import SingleBlockManager
 
 import shapely
-from shapely.geometry.base import BaseGeometry
 from shapely.geometry import GeometryCollection
+from shapely.geometry.base import BaseGeometry
 
-from geopandas.base import GeoPandasBase, _delegate_property
-from geopandas.plotting import plot_series
-from geopandas.explore import _explore_geoseries
 import geopandas
+from geopandas.base import GeoPandasBase, _delegate_property
+from geopandas.explore import _explore_geoseries
+from geopandas.plotting import plot_series
 
 from . import _compat as compat
 from ._decorator import doc
@@ -154,8 +154,12 @@ class GeoSeries(GeoPandasBase, Series):
     """
 
     def __init__(self, data=None, index=None, crs: Optional[Any] = None, **kwargs):
-        if hasattr(data, "crs") and crs:
-            if not data.crs:
+        if (
+            hasattr(data, "crs")
+            or (isinstance(data, pd.Series) and hasattr(data.array, "crs"))
+        ) and crs:
+            data_crs = data.crs if hasattr(data, "crs") else data.array.crs
+            if not data_crs:
                 # make a copy to avoid setting CRS to passed GeometryArray
                 data = data.copy()
             else:

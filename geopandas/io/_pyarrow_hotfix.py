@@ -2,7 +2,6 @@ from packaging.version import Version
 
 import pyarrow
 
-
 _ERROR_MSG = """\
 Disallowed deserialization of 'arrow.py_extension_type':
 storage_type = {storage_type}

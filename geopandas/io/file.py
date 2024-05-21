@@ -1,12 +1,16 @@
-from io import IOBase
 import os
+import urllib.request
+import warnings
+from io import IOBase
 from packaging.version import Version
 from pathlib import Path
-import warnings
+
+# Adapted from pandas.io.common
+from urllib.parse import urlparse as parse_url
+from urllib.parse import uses_netloc, uses_params, uses_relative
 
 import numpy as np
 import pandas as pd
-from geopandas.io.util import vsi_path
 from pandas.api.types import is_integer_dtype
 
 import shapely
@@ -14,13 +18,8 @@ from shapely.geometry import mapping
 from shapely.geometry.base import BaseGeometry
 
 from geopandas import GeoDataFrame, GeoSeries
-
-# Adapted from pandas.io.common
-from urllib.parse import urlparse as parse_url
-from urllib.parse import uses_netloc, uses_params, uses_relative
-import urllib.request
-
-from geopandas._compat import PANDAS_GE_20, HAS_PYPROJ
+from geopandas._compat import HAS_PYPROJ, PANDAS_GE_20
+from geopandas.io.util import vsi_path
 
 _VALID_URLS = set(uses_relative + uses_netloc + uses_params)
 _VALID_URLS.discard("")

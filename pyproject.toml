@@ -100,22 +100,23 @@ line-length = 88
 
 [tool.ruff]
 line-length = 88
+extend-exclude = ["doc/*", "benchmarks/*", "versioneer.py", "geopandas/_version.py"]
+
+[tool.ruff.lint]
 select = [
     # pyflakes
     "F",
     # pycodestyle
     "E",
     "W",
-    # flake8-2020
-    "YTT",
+    # pyupgrade
+    # "UP",
     # flake8-bugbear
     "B",
-    # flake8-quotes
-    "Q",
     # flake8-debugger
     "T10",
-    # flake8-gettext
-    "INT",
+    # flake8-simplify
+    # "SIM",
     # pylint
     "PLC",
     "PLE",
@@ -123,54 +124,30 @@ select = [
     "PLW",
     # misc lints
     "PIE",
-    # flake8-pyi
-    "PYI",
-    # tidy imports
-    "TID",
     # implicit string concatenation
     "ISC",
     # type-checking imports
     "TCH",
     # comprehensions
     "C4",
-    # pygrep-hooks
-    "PGH",
     # Ruff-specific rules
     "RUF",
+    # isort
+    "I",
 ]
-target-version = "py39"
-ignore = [ # space before : (needed for how black formats slicing)
-    # "E203",  # not yet implemented
+
+ignore = [
+    ### Intentionally disabled
     # module level import not at top of file
     "E402",
     # do not assign a lambda expression, use a def
     "E731",
-    # line break before binary operator
-    # "W503",  # not yet implemented
-    # line break after binary operator
-    # "W504",  # not yet implemented
-    # controversial
+    # mutable-argument-default
     "B006",
-    # controversial
+    # unused-loop-control-variable
     "B007",
-    # controversial
-    "B008",
-    # setattr is used to side-step mypy
+    # get-attr-with-constant
     "B009",
-    # getattr is used to side-step mypy
-    "B010",
-    # tests use assert False
-    "B011",
-    # tests use comparisons but not their returned value
-    "B015",
-    # false positives
-    "B019",
-    # Loop control variable overrides iterable it iterates
-    "B020",
-    # Function definition does not bind loop variable
-    "B023",
-    # Functions defined inside a loop must not use variables redefined in the loop
-    # "B301",  # not yet implemented
     # Only works with python >=3.10
     "B905",
     # dict literals
@@ -183,50 +160,44 @@ ignore = [ # space before : (needed for how black formats slicing)
     "PLR0912",
     # Too many statements
     "PLR0915",
+    # Magic number
+    "PLR2004",
     # Redefined loop name
     "PLW2901",
     # Global statements are discouraged
     "PLW0603",
-    # Docstrings should not be included in stubs
-    "PYI021",
-    # Use `typing.NamedTuple` instead of `collections.namedtuple`
-    "PYI024",
-    # No builtin `eval()` allowed
-    "PGH001",
     # compare-to-empty-string
     "PLC1901",
-    # Use typing_extensions.TypeAlias for type aliases
-    # "PYI026",  # not yet implemented
-    # Use "collections.abc.*" instead of "typing.*" (PEP 585 syntax)
-    # "PYI027",  # not yet implemented
-    # while int | float can be shortened to float, the former is more explicit
-    # "PYI041",  # not yet implemented
 
-    # Additional checks that don't pass yet
+    ### Additional checks that don't pass yet
     # Useless statement
     "B018",
     # Within an except clause, raise exceptions with ...
     "B904",
-    # Magic number
-    "PLR2004",
     # Consider `elif` instead of `else` then `if` to remove indentation level
     "PLR5501",
-    # ambiguous-unicode-character-string
-    "RUF001",
-    # ambiguous-unicode-character-docstring
-    "RUF002",
-    # ambiguous-unicode-character-comment
-    "RUF003",
     # collection-literal-concatenation
     "RUF005",
-    # pairwise-over-zipped (>=PY310 only)
-    "RUF007",
-    # explicit-f-string-type-conversion
-    "RUF010",
     # Mutable class attributes should be annotated with `typing.ClassVar`,
     "RUF012"
 ]
-extend-exclude = ["doc/*", "benchmarks/*", "versioneer.py", "geopandas/_version.py"]
 
-[tool.ruff.per-file-ignores]
-"geopandas/__init__.py" = ["F401"]
+[tool.ruff.lint.per-file-ignores]
+"geopandas/__init__.py" = ["F401", "I"]
+
+[tool.ruff.lint.isort]
+extra-standard-library = ["packaging"]
+
+section-order = [
+  "future",
+  "standard-library",
+  "third-party",
+  "geo",
+  "first-party",
+  "local-folder",
+  "testing"
+]
+
+[tool.ruff.lint.isort.sections]
+"geo" = ["shapely", "pyproj"]
+"testing" = ["pytest", "pandas.testing", "numpy.testing", "geopandas.tests", "geopandas.testing"]

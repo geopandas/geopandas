@@ -1,13 +1,12 @@
 import warnings
+from packaging.version import Version
 
 import numpy as np
 import pandas as pd
-from pandas.plotting import PlotAccessor
 from pandas import CategoricalDtype
+from pandas.plotting import PlotAccessor
 
 import geopandas
-
-from packaging.version import Version
 
 from ._decorator import doc
 
@@ -61,8 +60,9 @@ def _expand_kwargs(kwargs, multiindex):
     it (in place) to the correct length/formats with help of 'multiindex', unless
     the value appears to already be a valid (single) value for the key.
     """
-    from matplotlib.colors import is_color_like
     from typing import Iterable
+
+    from matplotlib.colors import is_color_like
 
     scalar_kwargs = ["marker", "path_effects"]
     for att, value in kwargs.items():
@@ -843,9 +843,9 @@ def plot_dataframe(
         if "fmt" in legend_kwds:
             legend_kwds.pop("fmt")
 
-        from matplotlib.lines import Line2D
-        from matplotlib.colors import Normalize
         from matplotlib import cm
+        from matplotlib.colors import Normalize
+        from matplotlib.lines import Line2D
 
         norm = style_kwds.get("norm", None)
         if not norm:
@@ -855,7 +855,7 @@ def plot_dataframe(
             if scheme is not None:
                 categories = labels
             patches = []
-            for value, cat in enumerate(categories):
+            for i in range(len(categories)):
                 patches.append(
                     Line2D(
                         [0],
@@ -864,7 +864,7 @@ def plot_dataframe(
                         marker="o",
                         alpha=style_kwds.get("alpha", 1),
                         markersize=10,
-                        markerfacecolor=n_cmap.to_rgba(value),
+                        markerfacecolor=n_cmap.to_rgba(i),
                         markeredgewidth=0,
                     )
                 )

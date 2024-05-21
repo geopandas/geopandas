@@ -1,16 +1,17 @@
-from packaging.version import Version
 import json
 import warnings
+from packaging.version import Version
 
 import numpy as np
 from pandas import DataFrame, Series
 
 import shapely
 
-from geopandas._compat import import_optional_dependency
-from geopandas.array import from_wkb, from_shapely
-from geopandas import GeoDataFrame
 import geopandas
+from geopandas import GeoDataFrame
+from geopandas._compat import import_optional_dependency
+from geopandas.array import from_shapely, from_wkb
+
 from .file import _expand_user
 
 METADATA_VERSION = "1.0.0"
@@ -78,6 +79,37 @@ def _remove_id_from_member_of_ensembles(json_dict):
                 member.pop("id", None)
 
 
+# type ids 0 to 7
+_geometry_type_names = [
+    "Point",
+    "LineString",
+    "LineString",
+    "Polygon",
+    "MultiPoint",
+    "MultiLineString",
+    "MultiPolygon",
+    "GeometryCollection",
+]
+_geometry_type_names += [geom_type + " Z" for geom_type in _geometry_type_names]
+
+
+def _get_geometry_types(series):
+    """
+    Get unique geometry types from a GeoSeries.
+    """
+    arr_geometry_types = shapely.get_type_id(series.array._data)
+    # ensure to include "... Z" for 3D geometries
+    has_z = shapely.has_z(series.array._data)
+    arr_geometry_types[has_z] += 8
+
+    geometry_types = Series(arr_geometry_types).unique().tolist()
+    # drop missing values (shapely.get_type_id returns -1 for those)
+    if -1 in geometry_types:
+        geometry_types.remove(-1)
+
+    return sorted([_geometry_type_names[idx] for idx in geometry_types])
+
+
 def _create_metadata(df, schema_version=None):
     """Create and encode geo metadata dict.
 
@@ -104,7 +136,8 @@ def _create_metadata(df, schema_version=None):
     column_metadata = {}
     for col in df.columns[df.dtypes == "geometry"]:
         series = df[col]
-        geometry_types = sorted(Series(series.geom_type.unique()).dropna())
+
+        geometry_types = _get_geometry_types(series)
         if schema_version[0] == "0":
             geometry_types_name = "geometry_type"
             if len(geometry_types) == 1:
@@ -693,6 +726,7 @@ def _read_feather(path, columns=None, **kwargs):
     )
     # TODO move this into `import_optional_dependency`
     import pyarrow
+
     import geopandas.io._pyarrow_hotfix  # noqa: F401
 
     if Version(pyarrow.__version__) < Version("0.17.0"):
