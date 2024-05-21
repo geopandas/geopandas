@@ -9,9 +9,6 @@ build:
       - git fetch origin --depth 150
       - git fetch --tags
     post_build:
-      - python -V
-      - python -c "import geopandas; geopandas.show_versions();"
-      - mamba info
       - mamba list
 python:
   install:
