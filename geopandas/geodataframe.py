@@ -2147,7 +2147,7 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
             one-dimesional with length equal to length of left GeoDataFrame.
             Required if ``predicate='dwithin'``.
         on_attribute : string, list or tuple
-            Column or names to join on as an additional join restriction on top
+            Column name(s) to join on as an additional join restriction on top
             of the spatial predicate. These must be found in both DataFrames.
             If set, observations are joined only if the predicate applies
             and values in specified columns match.
