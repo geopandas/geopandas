@@ -70,8 +70,8 @@ New features and improvements:
 - `explore` now supports `GeoDataFrame`s with additional columns containing datetimes, uuids and 
   other non JSON serializable objects (#3261).
 - The `GeoSeries.fillna` method now supports the `limit` keyword (#3290).
-- Added ``on_attribute`` option argument to the ``sjoin.sjoin()`` and 
-  ``sjoin.sjoin_nearest()`` methods allowing to restrict joins to the observations with 
+- Added ``on_attribute`` option argument to the ``sjoin.sjoin()``
+  method, allowing to restrict joins to the observations with 
   matching attributes. (#3231)
 
 Backwards incompatible API changes:

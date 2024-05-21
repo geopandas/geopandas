@@ -1,6 +1,6 @@
 import warnings
 from functools import partial
-from typing import Optional, Union
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -587,7 +587,6 @@ def sjoin_nearest(
     rsuffix: str = "right",
     distance_col: Optional[str] = None,
     exclusive: bool = False,
-    on_attribute: Optional[Union[str, list, tuple]] = None,
 ) -> GeoDataFrame:
     """Spatial join of two GeoDataFrames based on the distance between their geometries.
 
@@ -628,9 +627,6 @@ def sjoin_nearest(
     exclusive : bool, default False
         If True, the nearest geometries that are equal to the input geometry
         will not be returned, default False.
-    on_attribute : string, list or tuple, default None
-        column name in both dataframes where a join will occur
-        only if the entry in the on_attribute is the same.
 
     Examples
     --------
@@ -706,9 +702,7 @@ chicago_w_groceries[chicago_w_groceries["community"] == "UPTOWN"]
     dimension is not taken into account.
     """
 
-    on_attribute = _maybe_make_list(on_attribute)
-
-    _basic_checks(left_df, right_df, how, lsuffix, rsuffix, on_attribute=on_attribute)
+    _basic_checks(left_df, right_df, how, lsuffix, rsuffix)
 
     left_df.geometry.values.check_geographic_crs(stacklevel=1)
     right_df.geometry.values.check_geographic_crs(stacklevel=1)
@@ -722,7 +716,6 @@ chicago_w_groceries[chicago_w_groceries["community"] == "UPTOWN"]
         how,
         return_distance,
         exclusive,
-        on_attribute=on_attribute,
     )
     joined, distances = _frame_join(
         left_df,
@@ -733,7 +726,6 @@ chicago_w_groceries[chicago_w_groceries["community"] == "UPTOWN"]
         lsuffix,
         rsuffix,
         None,
-        on_attribute=on_attribute,
     )
 
     if return_distance:

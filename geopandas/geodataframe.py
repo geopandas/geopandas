@@ -2252,9 +2252,6 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
             If True, the nearest geometries that are equal to the input geometry
             will not be returned, default False.
             Requires Shapely >= 2.0
-        on_attribute : string, list or tuple, default None
-            column name in both dataframes where a join will occur
-            only if the entry in the on_attribute is the same.
 
         Examples
         --------
