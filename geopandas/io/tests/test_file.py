@@ -592,6 +592,8 @@ def test_read_file(engine, nybb_filename):
         "https://geonode.goosocean.org/download/480",
         # url to web service
         "https://demo.pygeoapi.io/stable/collections/obs/items",
+        # url to flaky web service, see #3284
+        "https://cdn.jsdelivr.net/npm/vega-datasets@v1.29.0/data/earthquakes.json",
     ],
 )
 def test_read_file_url(engine, url):
