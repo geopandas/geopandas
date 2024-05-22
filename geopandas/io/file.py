@@ -287,31 +287,14 @@ def _read_file(
     engine = _check_engine(engine, "'read_file' function")
     filename = _expand_user(filename)
 
-    from_bytes = False
-    if _is_url(filename):
-        if _url_supports_random_access(filename):
-            # the filename is a URL and the server should support partial data access
-            try:
-                return _read_file_fiona(
-                    filename,
-                    from_bytes=from_bytes,
-                    bbox=bbox,
-                    mask=mask,
-                    columns=columns,
-                    rows=rows,
-                    **kwargs,
-                )
-            except Exception as e:
-                if fiona and isinstance(e, fiona.errors.DriverError):
-                    pass   # fall back to downloading the data below
-                raise
-        
-        with urllib.request.urlopen(filename) as response:
-            # no partial data access, retrieve full file using GET request
-            file_as_bytes = response.read()
-            from_bytes = True
-
     if engine == "pyogrio":
+        from_bytes = False
+        if _is_url(filename):            
+            with urllib.request.urlopen(filename) as response:
+                # no partial data access, retrieve full file using GET request
+                file_as_bytes = response.read()
+                from_bytes = True
+
         return _read_file_pyogrio(
             path_or_bytes=file_as_bytes if from_bytes else filename,
             bbox=bbox,
@@ -322,7 +305,31 @@ def _read_file(
         )
 
     elif engine == "fiona":
-        if pd.api.types.is_file_like(filename):
+        from_bytes = False
+        if _is_url(filename):            
+            if _url_supports_random_access(filename):
+                # the filename is a URL and the server should support partial data access
+                try:
+                    return _read_file_fiona(
+                        filename,
+                        from_bytes=from_bytes,
+                        bbox=bbox,
+                        mask=mask,
+                        columns=columns,
+                        rows=rows,
+                        **kwargs,
+                    )
+                except Exception as e:
+                    if fiona and isinstance(e, fiona.errors.DriverError):
+                        pass   # fall back to downloading the data below
+                    raise
+
+            with urllib.request.urlopen(filename) as response:
+                # no partial data access, retrieve full file using GET request
+                file_as_bytes = response.read()
+                from_bytes = True                
+
+        elif pd.api.types.is_file_like(filename):
             data = filename.read()
             file_as_bytes = data.encode("utf-8") if isinstance(data, str) else data
             from_bytes = True
