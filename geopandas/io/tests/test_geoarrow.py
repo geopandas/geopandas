@@ -1,3 +1,4 @@
+import contextlib
 import json
 import os
 import pathlib
@@ -65,7 +66,6 @@ def assert_table_equal(left, right, check_metadata=True):
     shapely.geos_version < (3, 9, 0),
     reason="Checking for empty is buggy with GEOS<3.9",
 )  # an old GEOS is installed in the CI builds with the defaults channel
-@pytest.mark.parametrize("missing", [True, False])
 @pytest.mark.parametrize(
     "dim",
     [
@@ -90,7 +90,7 @@ def assert_table_equal(left, right, check_metadata=True):
         "multipolygon",
     ],
 )
-def test_geoarrow_export(geometry_type, dim, missing):
+def test_geoarrow_export(geometry_type, dim):
     base_path = DATA_PATH / "geoarrow"
     suffix = geometry_type + ("_z" if dim == "xyz" else "")
 
@@ -201,3 +201,44 @@ def test_geoarrow_missing(encoding, interleaved, geom_type):
     result = pa_table(gdf.to_arrow(geometry_encoding=encoding, interleaved=interleaved))
     assert result["geometry"].null_count == 1
     assert result["geometry"].is_null().to_pylist() == [False, True]
+
+
+@contextlib.contextmanager
+def with_geoarrow_extension_types():
+    gp = pytest.importorskip("geoarrow.pyarrow")
+    gp.register_extension_types()
+    try:
+        yield
+    finally:
+        gp.unregister_extension_types()
+
+
+@pytest.mark.parametrize("dim", ["xy", "xyz"])
+@pytest.mark.parametrize(
+    "geometry_type",
+    ["point", "linestring", "polygon", "multipoint", "multilinestring", "multipolygon"],
+)
+def test_geoarrow_export_with_extension_types(geometry_type, dim):
+    # ensure the exported data can be imported by geoarrow-pyarrow and are
+    # recognized as extension types
+    base_path = DATA_PATH / "geoarrow"
+    suffix = geometry_type + ("_z" if dim == "xyz" else "")
+
+    # Read the example data
+    df = feather.read_feather(base_path / f"example-{suffix}-wkb.arrow")
+    df["geometry"] = GeoSeries.from_wkb(df["geometry"])
+    df["row_number"] = df["row_number"].astype("int32")
+    df = GeoDataFrame(df)
+    df.geometry.crs = None
+
+    pytest.importorskip("geoarrow.pyarrow")
+
+    with with_geoarrow_extension_types():
+        result1 = pa_table(df.to_arrow(geometry_encoding="WKB"))
+        assert isinstance(result1["geometry"].type, pa.ExtensionType)
+
+        result2 = pa_table(df.to_arrow(geometry_encoding="geoarrow"))
+        assert isinstance(result2["geometry"].type, pa.ExtensionType)
+
+        result3 = pa_table(df.to_arrow(geometry_encoding="geoarrow", interleaved=False))
+        assert isinstance(result3["geometry"].type, pa.ExtensionType)
