@@ -44,13 +44,13 @@ def assert_table_equal(left, right, check_metadata=True):
     if pa.types.is_fixed_size_list(geom_type):
         left_values = left["geometry"].chunk(0).values
         right_values = right["geometry"].chunk(0).values
-        assert left_values.is_nan().equals(right_values.is_nan())
+        assert pc.is_nan(left_values).equals(pc.is_nan(right_values))
         left_geoms = pa.FixedSizeListArray.from_arrays(
-            pc.replace_with_mask(left_values, left_values.is_nan(), 0.0),
+            pc.replace_with_mask(left_values, pc.is_nan(left_values), 0.0),
             type=left["geometry"].type,
         )
         right_geoms = pa.FixedSizeListArray.from_arrays(
-            pc.replace_with_mask(right_values, right_values.is_nan(), 0.0),
+            pc.replace_with_mask(right_values, pc.is_nan(right_values), 0.0),
             type=right["geometry"].type,
         )
         left = left.set_column(1, left.schema.field("geometry"), left_geoms)
@@ -61,11 +61,13 @@ def assert_table_equal(left, right, check_metadata=True):
         right_arr = right["geometry"].chunk(0)
 
         for i in range(left_arr.type.num_fields):
-            assert left_arr.field(i).is_nan().equals(right_arr.field(i).is_nan())
+            assert pc.is_nan(left_arr.field(i)).equals(pc.is_nan(right_arr.field(i)))
 
         left_geoms = pa.StructArray.from_arrays(
             [
-                pc.replace_with_mask(left_arr.field(i), left_arr.field(i).is_nan(), 0.0)
+                pc.replace_with_mask(
+                    left_arr.field(i), pc.is_nan(left_arr.field(i)), 0.0
+                )
                 for i in range(left_arr.type.num_fields)
             ],
             fields=list(left["geometry"].type),
@@ -73,7 +75,7 @@ def assert_table_equal(left, right, check_metadata=True):
         right_geoms = pa.StructArray.from_arrays(
             [
                 pc.replace_with_mask(
-                    right_arr.field(i), right_arr.field(i).is_nan(), 0.0
+                    right_arr.field(i), pc.is_nan(right_arr.field(i)), 0.0
                 )
                 for i in range(right_arr.type.num_fields)
             ],
