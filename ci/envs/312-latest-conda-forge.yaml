@@ -29,4 +29,3 @@ dependencies:
   # - libspatialite
   # - geoalchemy2
   - pyarrow
-  - geoarrow-pyarrow

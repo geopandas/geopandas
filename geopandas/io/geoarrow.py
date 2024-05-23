@@ -37,6 +37,38 @@ class ArrowTable:
         return self._pa_table.__arrow_c_stream__(requested_schema=requested_schema)
 
 
+class GeoArrowArray:
+    """
+    Wrapper class for a geometry array as Arrow data.
+
+    This class implements the `Arrow PyCapsule Protocol`_ (i.e. having an
+    ``__arrow_c_array/stream__`` method). This object can then be consumed by
+    your Arrow implementation of choice that supports this protocol.
+
+    .. _Arrow PyCapsule Protocol: https://arrow.apache.org/docs/format/CDataInterface/PyCapsuleInterface.html
+
+    Example
+    -------
+    >>> import pyarrow as pa
+    >>> pa.array(ser.to_arrow())  # doctest: +SKIP
+
+    """
+
+    def __init__(self, pa_field, pa_array):
+        self._pa_array = pa_array
+        self._pa_field = pa_field
+
+    def __arrow_c_array__(self, requested_schema=None):
+        if requested_schema is not None:
+            raise NotImplementedError(
+                "Requested schema is not supported for geometry arrays"
+            )
+        return (
+            self._pa_field.__arrow_c_schema__(),
+            self._pa_array.__arrow_c_array__()[1],
+        )
+
+
 def geopandas_to_arrow(
     df, index=None, geometry_encoding="WKB", include_z=None, interleaved=True
 ):
@@ -77,53 +109,61 @@ def geopandas_to_arrow(
 
         # Encode all geometry columns to GeoArrow
         for i, col in zip(geometry_indices, geometry_columns):
-            crs = df[col].crs.to_json() if df[col].crs is not None else None
             field, geom_arr = construct_geometry_array(
                 np.array(df[col].array),
                 include_z=include_z,
                 field_name=col,
-                crs=crs,
+                crs=df[col].crs,
                 interleaved=interleaved,
             )
             table = table.set_column(i, field, geom_arr)
 
     elif geometry_encoding.lower() == "wkb":
-        if shapely.geos_version > (3, 10, 0):
-            kwargs = {"flavor": "iso"}
-        else:
-            if any(
-                df[col].array.has_z.any() for col in df.columns[df.dtypes == "geometry"]
-            ):
-                raise ValueError("Cannot write 3D geometries with GEOS<3.10")
-            kwargs = {}
-
         # Encode all geometry columns to WKB
         for i, col in zip(geometry_indices, geometry_columns):
-            wkb_arr = shapely.to_wkb(df[col], **kwargs)
-            crs = df[col].crs.to_json() if df[col].crs is not None else None
-            extension_metadata = {"ARROW:extension:name": "geoarrow.wkb"}
-            if crs is not None:
-                extension_metadata["ARROW:extension:metadata"] = json.dumps(
-                    {"crs": crs}
-                )
-            else:
-                # In theory this should not be needed, but otherwise pyarrow < 17
-                # crashes on receiving such data through C Data Interface
-                # https://github.com/apache/arrow/issues/41741
-                extension_metadata["ARROW:extension:metadata"] = "{}"
-
-            field = pa.field(
-                col, type=pa.binary(), nullable=True, metadata=extension_metadata
+            field, wkb_arr = construct_wkb_array(
+                np.asarray(df[col].array), field_name=col, crs=df[col].crs
             )
-            table = table.set_column(
-                i, field, pa.array(np.asarray(wkb_arr), pa.binary())
-            )
+            table = table.set_column(i, field, wkb_arr)
 
     else:
         raise ValueError(
             f"Expected geometry encoding 'WKB' or 'geoarrow' got {geometry_encoding}"
         )
     return table
+
+
+def construct_wkb_array(
+    shapely_arr: NDArray[np.object_],
+    *,
+    field_name: str = "geometry",
+    crs: Optional[str] = None,
+) -> Tuple[pa.Field, pa.Array]:
+
+    if shapely.geos_version > (3, 10, 0):
+        kwargs = {"flavor": "iso"}
+    else:
+        if shapely.has_z(shapely_arr).any():
+            raise ValueError("Cannot write 3D geometries with GEOS<3.10")
+        kwargs = {}
+
+    wkb_arr = shapely.to_wkb(shapely_arr, **kwargs)
+    extension_metadata = {"ARROW:extension:name": "geoarrow.wkb"}
+    if crs is not None:
+        extension_metadata["ARROW:extension:metadata"] = json.dumps(
+            {"crs": crs.to_json()}
+        )
+    else:
+        # In theory this should not be needed, but otherwise pyarrow < 17
+        # crashes on receiving such data through C Data Interface
+        # https://github.com/apache/arrow/issues/41741
+        extension_metadata["ARROW:extension:metadata"] = "{}"
+
+    field = pa.field(
+        field_name, type=pa.binary(), nullable=True, metadata=extension_metadata
+    )
+    parr = pa.array(np.asarray(wkb_arr), pa.binary())
+    return field, parr
 
 
 def _convert_inner_coords(coords, interleaved, dims, mask=None):
@@ -236,7 +276,9 @@ def construct_geometry_array(
 
     extension_metadata: Dict[str, str] = {}
     if crs is not None:
-        extension_metadata["ARROW:extension:metadata"] = json.dumps({"crs": crs})
+        extension_metadata["ARROW:extension:metadata"] = json.dumps(
+            {"crs": crs.to_json()}
+        )
     else:
         # In theory this should not be needed, but otherwise pyarrow < 17
         # crashes on receiving such data through C Data Interface

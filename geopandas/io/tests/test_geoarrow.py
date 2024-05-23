@@ -27,6 +27,13 @@ def pa_table(table):
         return pa.table(table)
 
 
+def pa_array(array):
+    if Version(pa.__version__) < Version("14.0.0"):
+        return array._pa_array
+    else:
+        return pa.array(array)
+
+
 def assert_table_equal(left, right, check_metadata=True):
     if left.equals(right, check_metadata=check_metadata):
         return
@@ -90,7 +97,12 @@ def assert_table_equal(left, right, check_metadata=True):
         "multipolygon",
     ],
 )
-def test_geoarrow_export(geometry_type, dim):
+@pytest.mark.parametrize(
+    "geometry_encoding, interleaved",
+    [("WKB", None), ("geoarrow", True), ("geoarrow", False)],
+    ids=["WKB", "geoarrow-interleaved", "geoarrow-separated"],
+)
+def test_geoarrow_export(geometry_type, dim, geometry_encoding, interleaved):
     base_path = DATA_PATH / "geoarrow"
     suffix = geometry_type + ("_z" if dim == "xyz" else "")
 
@@ -101,33 +113,44 @@ def test_geoarrow_export(geometry_type, dim):
     df = GeoDataFrame(df)
     df.geometry.crs = None
 
-    result1 = pa_table(df.to_arrow(geometry_encoding="WKB"))
-    # remove the "pandas" metadata
-    result1 = result1.replace_schema_metadata(None)
-    expected1 = feather.read_table(base_path / f"example-{suffix}-wkb.arrow")
+    # Read the expected data
+    if geometry_encoding == "WKB":
+        filename = f"example-{suffix}-wkb.arrow"
+    else:
+        filename = f"example-{suffix}{'-interleaved' if interleaved else ''}.arrow"
+    expected = feather.read_table(base_path / filename)
 
-    if dim == "xyz" and geometry_type.startswith("multi"):
+    # GeoDataFrame -> Arrow Table
+    result = pa_table(
+        df.to_arrow(geometry_encoding=geometry_encoding, interleaved=interleaved)
+    )
+    # remove the "pandas" metadata
+    result = result.replace_schema_metadata(None)
+
+    mask_nonempty = None
+    if (
+        geometry_encoding == "WKB"
+        and dim == "xyz"
+        and geometry_type.startswith("multi")
+    ):
         # for collections with z dimension, drop the empties because those don't
         # roundtrip correctly to WKB
         # (https://github.com/libgeos/geos/issues/888)
-        result1 = result1.filter(np.asarray(~df.geometry.is_empty))
-        expected1 = expected1.filter(np.asarray(~df.geometry.is_empty))
+        mask_nonempty = pa.array(np.asarray(~df.geometry.is_empty))
+        result = result.filter(mask_nonempty)
+        expected = expected.filter(mask_nonempty)
 
-    assert_table_equal(result1, expected1)
+    assert_table_equal(result, expected)
 
-    result2 = pa_table(df.to_arrow(geometry_encoding="geoarrow"))
-    # remove the "pandas" metadata
-    result2 = result2.replace_schema_metadata(None)
-    expected2 = feather.read_table(base_path / f"example-{suffix}-interleaved.arrow")
-
-    assert_table_equal(result2, expected2)
-
-    result3 = pa_table(df.to_arrow(geometry_encoding="geoarrow", interleaved=False))
-    # remove the "pandas" metadata
-    result3 = result3.replace_schema_metadata(None)
-    expected3 = feather.read_table(base_path / f"example-{suffix}.arrow")
-
-    assert_table_equal(result3, expected3)
+    # GeoSeries -> Arrow array
+    result_arr = pa_array(
+        df.geometry.to_arrow(
+            geometry_encoding=geometry_encoding, interleaved=interleaved
+        )
+    )
+    if mask_nonempty is not None:
+        result_arr = result_arr.filter(mask_nonempty)
+    assert result_arr.equals(expected["geometry"].chunk(0))
 
 
 @pytest.mark.parametrize("encoding", ["WKB", "geoarrow"])
@@ -148,11 +171,38 @@ def test_geoarrow_multiple_geometry_crs(encoding):
     assert json.loads(meta2["crs"])["id"]["code"] == 3857
 
 
+@pytest.mark.parametrize("encoding", ["WKB", "geoarrow"])
+def test_geoarrow_series_name_crs(encoding):
+    pytest.importorskip("pyproj")
+    pytest.importorskip("pyarrow", minversion="14.0.0")
+
+    gser = GeoSeries([box(0, 0, 10, 10)], crs="epsg:4326", name="geom")
+    schema_capsule, _ = gser.to_arrow(geometry_encoding=encoding).__arrow_c_array__()
+    field = pa.Field._import_from_c_capsule(schema_capsule)
+    assert field.name == "geom"
+    assert (
+        field.metadata[b"ARROW:extension:name"] == b"geoarrow.wkb"
+        if encoding == "WKB"
+        else b"geoarrow.polygon"
+    )
+    meta = json.loads(field.metadata[b"ARROW:extension:metadata"])
+    assert json.loads(meta["crs"])["id"]["code"] == 4326
+
+    # ensure it also works without a name
+    gser = GeoSeries([box(0, 0, 10, 10)])
+    schema_capsule, _ = gser.to_arrow(geometry_encoding=encoding).__arrow_c_array__()
+    field = pa.Field._import_from_c_capsule(schema_capsule)
+    assert field.name == ""
+
+
 def test_geoarrow_unsupported_encoding():
     gdf = GeoDataFrame(geometry=[box(0, 0, 10, 10)], crs="epsg:4326")
 
     with pytest.raises(ValueError, match="Expected geometry encoding"):
         gdf.to_arrow(geometry_encoding="invalid")
+
+    with pytest.raises(ValueError, match="Expected geometry encoding"):
+        gdf.geometry.to_arrow(geometry_encoding="invalid")
 
 
 def test_geoarrow_mixed_geometry_types():
