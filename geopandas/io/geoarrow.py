@@ -106,6 +106,11 @@ def geopandas_to_arrow(
                 extension_metadata["ARROW:extension:metadata"] = json.dumps(
                     {"crs": crs}
                 )
+            else:
+                # In theory this should not be needed, but otherwise pyarrow < 17
+                # crashes on receiving such data through C Data Interface
+                # https://github.com/apache/arrow/issues/41741
+                extension_metadata["ARROW:extension:metadata"] = "{}"
 
             field = pa.field(
                 col, type=pa.binary(), nullable=True, metadata=extension_metadata
@@ -232,6 +237,11 @@ def construct_geometry_array(
     extension_metadata: Dict[str, str] = {}
     if crs is not None:
         extension_metadata["ARROW:extension:metadata"] = json.dumps({"crs": crs})
+    else:
+        # In theory this should not be needed, but otherwise pyarrow < 17
+        # crashes on receiving such data through C Data Interface
+        # https://github.com/apache/arrow/issues/41741
+        extension_metadata["ARROW:extension:metadata"] = "{}"
 
     if geom_type == GeometryType.POINT:
         # TODO support shapely < 2.0.4 for missing values
