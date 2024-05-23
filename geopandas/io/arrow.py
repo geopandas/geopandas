@@ -5,6 +5,8 @@ from packaging.version import Version
 import numpy as np
 from pandas import DataFrame, Series
 
+import shapely
+
 import geopandas
 from geopandas import GeoDataFrame
 from geopandas._compat import import_optional_dependency
