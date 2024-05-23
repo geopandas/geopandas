@@ -77,6 +77,37 @@ def _remove_id_from_member_of_ensembles(json_dict):
                 member.pop("id", None)
 
 
+# type ids 0 to 7
+_geometry_type_names = [
+    "Point",
+    "LineString",
+    "LineString",
+    "Polygon",
+    "MultiPoint",
+    "MultiLineString",
+    "MultiPolygon",
+    "GeometryCollection",
+]
+_geometry_type_names += [geom_type + " Z" for geom_type in _geometry_type_names]
+
+
+def _get_geometry_types(series):
+    """
+    Get unique geometry types from a GeoSeries.
+    """
+    arr_geometry_types = shapely.get_type_id(series.array._data)
+    # ensure to include "... Z" for 3D geometries
+    has_z = shapely.has_z(series.array._data)
+    arr_geometry_types[has_z] += 8
+
+    geometry_types = Series(arr_geometry_types).unique().tolist()
+    # drop missing values (shapely.get_type_id returns -1 for those)
+    if -1 in geometry_types:
+        geometry_types.remove(-1)
+
+    return sorted([_geometry_type_names[idx] for idx in geometry_types])
+
+
 def _create_metadata(df, schema_version=None):
     """Create and encode geo metadata dict.
 
@@ -104,13 +135,7 @@ def _create_metadata(df, schema_version=None):
     for col in df.columns[df.dtypes == "geometry"]:
         series = df[col]
 
-        # ensure to include "... Z" for 3D geometries
-        geometry_types = {
-            f"{geom} Z" if has_z else geom
-            for geom, has_z in zip(series.geom_type, series.has_z)
-        }
-        geometry_types = sorted(Series(list(geometry_types)).dropna())
-
+        geometry_types = _get_geometry_types(series)
         if schema_version[0] == "0":
             geometry_types_name = "geometry_type"
             if len(geometry_types) == 1:

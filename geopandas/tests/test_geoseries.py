@@ -658,6 +658,18 @@ class TestConstructor:
         assert s.name == g.name
         assert s.index is g.index
 
+    @pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not available")
+    def test_from_series_no_set_crs_on_construction(self):
+        # https://github.com/geopandas/geopandas/issues/2492
+        # also when passing Series[geometry], ensure we don't change crs of
+        # original data
+        gs = GeoSeries([Point(1, 1), Point(2, 2), Point(3, 3)])
+        s = pd.Series(gs)
+        result = GeoSeries(s, crs=4326)
+        assert s.values.crs is None
+        assert gs.crs is None
+        assert result.crs == "EPSG:4326"
+
     def test_copy(self):
         # default is to copy with CoW / pandas 3+
         arr = np.array([Point(x, x) for x in range(3)], dtype=object)

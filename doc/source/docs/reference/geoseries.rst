@@ -101,11 +101,9 @@ Constructive methods and attributes
 
    GeoSeries.boundary
    GeoSeries.buffer
-   GeoSeries.build_area
    GeoSeries.centroid
    GeoSeries.concave_hull
    GeoSeries.convex_hull
-   GeoSeries.delaunay_triangles
    GeoSeries.envelope
    GeoSeries.extract_unique_points
    GeoSeries.force_2d
@@ -115,7 +113,6 @@ Constructive methods and attributes
    GeoSeries.minimum_clearance
    GeoSeries.minimum_rotated_rectangle
    GeoSeries.normalize
-   GeoSeries.polygonize
    GeoSeries.remove_repeated_points
    GeoSeries.reverse
    GeoSeries.sample_points
@@ -124,7 +121,6 @@ Constructive methods and attributes
    GeoSeries.simplify
    GeoSeries.snap
    GeoSeries.transform
-   GeoSeries.voronoi_polygons
 
 Affine transformations
 ----------------------
@@ -155,9 +151,14 @@ Aggregating and exploding
 .. autosummary::
    :toctree: api/
 
-   GeoSeries.union_all
-   GeoSeries.intersection_all
+   GeoSeries.build_area
+   GeoSeries.delaunay_triangles
    GeoSeries.explode
+   GeoSeries.intersection_all
+   GeoSeries.polygonize
+   GeoSeries.union_all
+   GeoSeries.voronoi_polygons
+
 
 Serialization / IO / conversion
 -------------------------------

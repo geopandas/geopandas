@@ -141,6 +141,12 @@ def test_create_metadata_with_z_geometries():
         for geom_type in metadata["columns"]["geometry"]["geometry_types"]
     )
 
+    metadata = _create_metadata(df.iloc[5:7])
+    assert metadata["columns"]["geometry"]["geometry_types"] == [
+        "MultiPolygon",
+        "Polygon Z",
+    ]
+
 
 def test_crs_metadata_datum_ensemble():
     pyproj = pytest.importorskip("pyproj")
