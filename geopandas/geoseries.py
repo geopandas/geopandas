@@ -1345,14 +1345,14 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
         --------
         >>> from shapely.geometry import Point
         >>> gser = geopandas.GeoSeries([Point(1, 2), Point(2, 1)])
-        >>> gdf
+        >>> gser
         0    POINT (1 2)
         1    POINT (2 1)
         dtype: geometry
 
         >>> arrow_array = gser.to_arrow()
         >>> arrow_array
-        <geopandas.io.geoarrow.GeoArrowArray at ...>
+        <geopandas.io.geoarrow.GeoArrowArray object at ...>
 
         The returned array object needs to be consumed by a library implementing
         the Arrow PyCapsule Protocol. For example, wrapping the data as a
