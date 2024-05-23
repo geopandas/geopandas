@@ -15,6 +15,7 @@ import pytest
 
 pytest.importorskip("pyarrow")
 import pyarrow as pa
+import pyarrow.compute as pc
 from pyarrow import feather
 
 DATA_PATH = pathlib.Path(os.path.dirname(__file__)) / "data"
@@ -35,6 +36,53 @@ def pa_array(array):
 
 
 def assert_table_equal(left, right, check_metadata=True):
+
+    geom_type = left["geometry"].type
+    # in case of Points (directly the inner fixed_size_list or struct type)
+    # -> there are NaNs for empties -> we need to compare them separately
+    # and then fill, because pyarrow.Table.equals considers NaNs as not equal
+    if pa.types.is_fixed_size_list(geom_type):
+        left_values = left["geometry"].chunk(0).values
+        right_values = right["geometry"].chunk(0).values
+        assert left_values.is_nan().equals(right_values.is_nan())
+        left_geoms = pa.FixedSizeListArray.from_arrays(
+            pc.replace_with_mask(left_values, left_values.is_nan(), 0.0),
+            type=left["geometry"].type,
+        )
+        right_geoms = pa.FixedSizeListArray.from_arrays(
+            pc.replace_with_mask(right_values, right_values.is_nan(), 0.0),
+            type=right["geometry"].type,
+        )
+        left = left.set_column(1, left.schema.field("geometry"), left_geoms)
+        right = right.set_column(1, right.schema.field("geometry"), right_geoms)
+
+    elif pa.types.is_struct(geom_type):
+        left_arr = left["geometry"].chunk(0)
+        right_arr = right["geometry"].chunk(0)
+
+        for i in range(left_arr.type.num_fields):
+            assert left_arr.field(i).is_nan().equals(right_arr.field(i).is_nan())
+
+        left_geoms = pa.StructArray.from_arrays(
+            [
+                pc.replace_with_mask(left_arr.field(i), left_arr.field(i).is_nan(), 0.0)
+                for i in range(left_arr.type.num_fields)
+            ],
+            fields=list(left["geometry"].type),
+        )
+        right_geoms = pa.StructArray.from_arrays(
+            [
+                pc.replace_with_mask(
+                    right_arr.field(i), right_arr.field(i).is_nan(), 0.0
+                )
+                for i in range(right_arr.type.num_fields)
+            ],
+            fields=list(right["geometry"].type),
+        )
+
+        left = left.set_column(1, left.schema.field("geometry"), left_geoms)
+        right = right.set_column(1, right.schema.field("geometry"), right_geoms)
+
     if left.equals(right, check_metadata=check_metadata):
         return
 
@@ -88,14 +136,7 @@ def assert_table_equal(left, right, check_metadata=True):
 )
 @pytest.mark.parametrize(
     "geometry_type",
-    [
-        pytest.param("point", marks=pytest.mark.xfail),
-        "linestring",
-        "polygon",
-        "multipoint",
-        "multilinestring",
-        "multipolygon",
-    ],
+    ["point", "linestring", "polygon", "multipoint", "multilinestring", "multipolygon"],
 )
 @pytest.mark.parametrize(
     "geometry_encoding, interleaved",
@@ -143,6 +184,10 @@ def test_geoarrow_export(geometry_type, dim, geometry_encoding, interleaved):
     assert_table_equal(result, expected)
 
     # GeoSeries -> Arrow array
+    if geometry_encoding != "WKB" and geometry_type == "point":
+        # for points, we again have to handle NaNs separately, we already did that
+        # for table so let's just skip this part
+        return
     result_arr = pa_array(
         df.geometry.to_arrow(
             geometry_encoding=geometry_encoding, interleaved=interleaved
