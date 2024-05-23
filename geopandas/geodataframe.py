@@ -1172,7 +1172,7 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
         geometry_encoding : {'WKB', 'geoarrow' }, default 'WKB'
             The GeoArrow encoding to use for the data conversion.
         interleaved : bool, default True
-            Only relevant for 'geoarrow' encoding. If True, the geometries
+            Only relevant for 'geoarrow' encoding. If True, the geometries'
             coordinates are interleaved in a single fixed size list array.
             If False, the coordinates are stored as separate arrays in a
             struct type.
