@@ -63,7 +63,7 @@ def geopandas_to_arrow(
 
     df_attr = pd.DataFrame(df.copy(deep=False))
 
-    # replace geometry columsn with dummy values -> will get converted to
+    # replace geometry columns with dummy values -> will get converted to
     # Arrow null column (not holding any memory), so we can afterwards
     # fill the resulting table with the correct geometry fields
     for col in geometry_columns:
@@ -244,7 +244,6 @@ def construct_geometry_array(
         extension_metadata["ARROW:extension:metadata"] = "{}"
 
     if geom_type == GeometryType.POINT:
-        # TODO support shapely < 2.0.4 for missing values
         parr = _convert_inner_coords(coords, interleaved, dims, mask=mask)
         extension_metadata["ARROW:extension:name"] = "geoarrow.point"
         field = pa.field(
