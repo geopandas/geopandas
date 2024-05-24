@@ -1163,6 +1163,8 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
 
         .. _Arrow PyCapsule Protocol: https://arrow.apache.org/docs/format/CDataInterface/PyCapsuleInterface.html
 
+        .. versionadded:: 1.0
+
         Parameters
         ----------
         index : bool, default None

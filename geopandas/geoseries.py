@@ -1326,6 +1326,8 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
 
         .. _Arrow PyCapsule Protocol: https://arrow.apache.org/docs/format/CDataInterface/PyCapsuleInterface.html
 
+        .. versionadded:: 1.0
+
         Parameters
         ----------
         geometry_encoding : {'WKB', 'geoarrow' }, default 'WKB'
