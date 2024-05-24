@@ -25,6 +25,7 @@ GEOARROW_ENCODINGS = [
     "multipolygon",
 ]
 SUPPORTED_ENCODINGS = ["WKB"] + GEOARROW_ENCODINGS
+
 # reference: https://github.com/opengeospatial/geoparquet
 
 # Metadata structure:
@@ -110,7 +111,7 @@ def _get_geometry_types(series):
     return sorted([_geometry_type_names[idx] for idx in geometry_types])
 
 
-def _create_metadata(df, schema_version=None):
+def _create_metadata(df, schema_version=None, geometry_encoding=None):
     """Create and encode geo metadata dict.
 
     Parameters
@@ -124,8 +125,13 @@ def _create_metadata(df, schema_version=None):
     -------
     dict
     """
-
-    schema_version = schema_version or METADATA_VERSION
+    if schema_version is None:
+        if geometry_encoding and any(
+            encoding != "WKB" for encoding in geometry_encoding.values()
+        ):
+            schema_version = "1.1.0"
+        else:
+            schema_version = METADATA_VERSION
 
     if schema_version not in SUPPORTED_VERSIONS:
         raise ValueError(
@@ -154,7 +160,7 @@ def _create_metadata(df, schema_version=None):
                 _remove_id_from_member_of_ensembles(crs)
 
         column_metadata[col] = {
-            "encoding": "WKB",
+            "encoding": geometry_encoding[col],
             "crs": crs,
             geometry_types_name: geometry_types,
         }
@@ -167,7 +173,7 @@ def _create_metadata(df, schema_version=None):
     return {
         "primary_column": df._geometry_column_name,
         "columns": column_metadata,
-        "version": schema_version or METADATA_VERSION,
+        "version": schema_version,
         "creator": {"library": "geopandas", "version": geopandas.__version__},
     }
 
@@ -293,7 +299,7 @@ def _validate_metadata(metadata):
             )
 
 
-def _geopandas_to_arrow(df, index=None, schema_version=None):
+def _geopandas_to_arrow(df, index=None, geometry_encoding="WKB", schema_version=None):
     """
     Helper function with main, shared logic for to_parquet/to_feather.
     """
@@ -301,11 +307,17 @@ def _geopandas_to_arrow(df, index=None, schema_version=None):
 
     _validate_dataframe(df)
 
-    # create geo metadata before altering incoming data frame
-    geo_metadata = _create_metadata(df, schema_version=schema_version)
+    if schema_version is not None:
+        if geometry_encoding != "WKB" and schema_version != "1.1.0":
+            raise ValueError(
+                "'geoarrow' encoding is only supported with schema version 1.1.0"
+            )
 
-    table = geopandas_to_arrow(
-        df, geometry_encoding="WKB", index=index, interleaved=True
+    table, geometry_encoding_dict = geopandas_to_arrow(
+        df, geometry_encoding=geometry_encoding, index=index, interleaved=False
+    )
+    geo_metadata = _create_metadata(
+        df, schema_version=schema_version, geometry_encoding=geometry_encoding_dict
     )
 
     # Store geopandas specific file-level metadata
@@ -317,7 +329,13 @@ def _geopandas_to_arrow(df, index=None, schema_version=None):
 
 
 def _to_parquet(
-    df, path, index=None, compression="snappy", schema_version=None, **kwargs
+    df,
+    path,
+    index=None,
+    compression="snappy",
+    geometry_encoding="WKB",
+    schema_version=None,
+    **kwargs,
 ):
     """
     Write a GeoDataFrame to the Parquet format.
@@ -365,7 +383,12 @@ def _to_parquet(
             schema_version = kwargs.pop("version")
 
     path = _expand_user(path)
-    table = _geopandas_to_arrow(df, index=index, schema_version=schema_version)
+    table = _geopandas_to_arrow(
+        df,
+        index=index,
+        geometry_encoding=geometry_encoding,
+        schema_version=schema_version,
+    )
     parquet.write_table(table, path, compression=compression, **kwargs)
 
 

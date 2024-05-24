@@ -63,7 +63,7 @@ def file_format(request):
 
 def test_create_metadata(naturalearth_lowres):
     df = read_file(naturalearth_lowres)
-    metadata = _create_metadata(df)
+    metadata = _create_metadata(df, geometry_encoding={"geometry": "WKB"})
 
     assert isinstance(metadata, dict)
     assert metadata["version"] == METADATA_VERSION
@@ -130,18 +130,18 @@ def test_create_metadata_with_z_geometries():
             ],
         },
     )
-    metadata = _create_metadata(df)
+    metadata = _create_metadata(df, geometry_encoding={"geometry": "WKB"})
     assert sorted(metadata["columns"]["geometry"]["geometry_types"]) == sorted(
         geometry_types
     )
     # only 3D geometries
-    metadata = _create_metadata(df.iloc[1::2])
+    metadata = _create_metadata(df.iloc[1::2], geometry_encoding={"geometry": "WKB"})
     assert all(
         geom_type.endswith(" Z")
         for geom_type in metadata["columns"]["geometry"]["geometry_types"]
     )
 
-    metadata = _create_metadata(df.iloc[5:7])
+    metadata = _create_metadata(df.iloc[5:7], geometry_encoding={"geometry": "WKB"})
     assert metadata["columns"]["geometry"]["geometry_types"] == [
         "MultiPolygon",
         "Polygon Z",
@@ -987,3 +987,21 @@ def test_read_parquet_geoarrow(geometry_type):
         / f"data-{geometry_type}-encoding_wkb.parquet"
     )
     assert_geodataframe_equal(result, expected, check_crs=True)
+
+
+@pytest.mark.parametrize(
+    "geometry_type",
+    ["point", "linestring", "polygon", "multipoint", "multilinestring", "multipolygon"],
+)
+def test_geoarrow_roundtrip(tmp_path, geometry_type):
+
+    df = geopandas.read_parquet(
+        DATA_PATH
+        / "arrow"
+        / "geoparquet"
+        / f"data-{geometry_type}-encoding_wkb.parquet"
+    )
+
+    df.to_parquet(tmp_path / "test.parquet", geometry_encoding="geoarrow")
+    result = geopandas.read_parquet(tmp_path / "test.parquet")
+    assert_geodataframe_equal(result, df, check_crs=True)

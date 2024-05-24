@@ -1228,7 +1228,7 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
         """
         from geopandas.io.geoarrow import ArrowTable, geopandas_to_arrow
 
-        table = geopandas_to_arrow(
+        table, _ = geopandas_to_arrow(
             self,
             index=index,
             geometry_encoding=geometry_encoding,
