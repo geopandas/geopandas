@@ -803,7 +803,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         return df
 
     @classmethod
-    def from_arrow(cls, table):
+    def from_arrow(cls, table, geometry=None):
         """
         Construct a GeoDataFrame from a pyarrow.Table based on GeoArrow
         extension types.
@@ -812,6 +812,9 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         ----------
         table : pyarrow.Table
             Arrow Table object
+        geometry : str, default None
+            The name of the geometry column to set as the active geometry
+            column. If None, the first geometry column found will be used.
 
         Returns
         -------
@@ -820,7 +823,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         """
         from geopandas.io.geoarrow import arrow_to_geopandas
 
-        return arrow_to_geopandas(table)
+        return arrow_to_geopandas(table, geometry=geometry)
 
     def to_json(
         self, na="null", show_bbox=False, drop_id=False, to_wgs84=False, **kwargs

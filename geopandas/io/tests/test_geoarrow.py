@@ -405,6 +405,29 @@ def test_geoarrow_import(geometry_type, dim):
     assert_geodataframe_equal(result3, df)
 
 
+@pytest.mark.parametrize("encoding", ["WKB", "geoarrow"])
+def test_geoarrow_import_geometry_column(encoding):
+    pytest.importorskip("pyproj")
+    # ensure each geometry column has its own crs
+    gdf = GeoDataFrame(geometry=[box(0, 0, 10, 10)])
+    gdf["centroid"] = gdf.geometry.centroid
+
+    result = GeoDataFrame.from_arrow(pa_table(gdf.to_arrow(geometry_encoding=encoding)))
+    assert_geodataframe_equal(result, gdf)
+    assert result.active_geometry_name == "geometry"
+
+    result = GeoDataFrame.from_arrow(
+        pa_table(gdf[["centroid"]].to_arrow(geometry_encoding=encoding))
+    )
+    assert result.active_geometry_name == "centroid"
+
+    result = GeoDataFrame.from_arrow(
+        pa_table(gdf.to_arrow(geometry_encoding=encoding)), geometry="centroid"
+    )
+    assert result.active_geometry_name == "centroid"
+    assert_geodataframe_equal(result, gdf.set_geometry("centroid"))
+
+
 # def test_geoarrow_unsupported_encoding():
 #     gdf = GeoDataFrame(geometry=[box(0, 0, 10, 10)], crs="epsg:4326")
 

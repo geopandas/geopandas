@@ -440,6 +440,10 @@ def arrow_to_geopandas(table, geometry=None):
         The name of the geometry column to set as the active geometry
         column. If None, the first geometry column found will be used.
 
+    Returns
+    -------
+    GeoDataFrame
+
     """
     geom_fields = []
 
@@ -471,7 +475,7 @@ def arrow_to_geopandas(table, geometry=None):
 
         df.insert(i, col, geom_arr)
 
-    return GeoDataFrame(df, geometry=geom_fields[0][1])
+    return GeoDataFrame(df, geometry=geometry or geom_fields[0][1])
 
 
 def _get_inner_coords(arr):
