@@ -1149,7 +1149,9 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
 
         return df
 
-    def to_arrow(self, index=None, geometry_encoding="WKB", interleaved=True):
+    def to_arrow(
+        self, *, index=None, geometry_encoding="WKB", interleaved=True, include_z=None
+    ):
         """Encode a GeoDataFrame to GeoArrow format.
 
         See https://geoarrow.org/ for details on the GeoArrow specification.
@@ -1176,6 +1178,15 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
             coordinates are interleaved in a single fixed size list array.
             If False, the coordinates are stored as separate arrays in a
             struct type.
+        include_z : bool, default None
+            Only relevant for 'geoarrow' encoding (for WKB, the dimensionality
+            of the individial geometries is preserved).
+            If False, return 2D geometries. If True, include the third dimension
+            in the output (if a geometry has no third dimension, the z-coordinates
+            will be NaN). By default, will infer the dimensionality from the
+            input geometries. Note that this inference can be unreliable with
+            empty geometries (for a guaranteed result, it is recommended to
+            specify the keyword).
 
         Returns
         -------
@@ -1220,6 +1231,7 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
             index=index,
             geometry_encoding=geometry_encoding,
             interleaved=interleaved,
+            include_z=include_z,
         )
         return ArrowTable(table)
 

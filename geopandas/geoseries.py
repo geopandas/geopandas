@@ -1314,7 +1314,7 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
         """
         return Series(to_wkt(self.array, **kwargs), index=self.index)
 
-    def to_arrow(self, geometry_encoding="WKB", interleaved=True):
+    def to_arrow(self, geometry_encoding="WKB", interleaved=True, include_z=None):
         """Encode a GeoSeries to GeoArrow format.
 
         See https://geoarrow.org/ for details on the GeoArrow specification.
@@ -1335,6 +1335,15 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
             coordinates are interleaved in a single fixed size list array.
             If False, the coordinates are stored as separate arrays in a
             struct type.
+        include_z : bool, default None
+            Only relevant for 'geoarrow' encoding (for WKB, the dimensionality
+            of the individial geometries is preserved).
+            If False, return 2D geometries. If True, include the third dimension
+            in the output (if a geometry has no third dimension, the z-coordinates
+            will be NaN). By default, will infer the dimensionality from the
+            input geometries. Note that this inference can be unreliable with
+            empty geometries (for a guaranteed result, it is recommended to
+            specify the keyword).
 
         Returns
         -------
@@ -1384,7 +1393,7 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
 
             field, geom_arr = construct_geometry_array(
                 np.array(self.array),
-                include_z=None,
+                include_z=include_z,
                 field_name=field_name,
                 crs=self.crs,
                 interleaved=interleaved,

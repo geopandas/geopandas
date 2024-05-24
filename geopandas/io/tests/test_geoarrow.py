@@ -300,6 +300,29 @@ def test_geoarrow_missing(encoding, interleaved, geom_type):
     assert result["geometry"].is_null().to_pylist() == [False, True]
 
 
+def test_geoarrow_include_z():
+    gdf = GeoDataFrame({"geometry": [Point(0, 0), Point(1, 1), Point()]})
+
+    table = pa_table(gdf.to_arrow(geometry_encoding="geoarrow"))
+    assert table["geometry"].type.value_field.name == "xy"
+    assert table["geometry"].type.list_size == 2
+
+    table = pa_table(gdf.to_arrow(geometry_encoding="geoarrow", include_z=True))
+    assert table["geometry"].type.value_field.name == "xyz"
+    assert table["geometry"].type.list_size == 3
+    assert np.isnan(table["geometry"].chunk(0).values.to_numpy()[2::3]).all()
+
+    gdf = GeoDataFrame({"geometry": [Point(0, 0, 0), Point(1, 1, 1), Point()]})
+
+    table = pa_table(gdf.to_arrow(geometry_encoding="geoarrow"))
+    assert table["geometry"].type.value_field.name == "xyz"
+    assert table["geometry"].type.list_size == 3
+
+    table = pa_table(gdf.to_arrow(geometry_encoding="geoarrow", include_z=False))
+    assert table["geometry"].type.value_field.name == "xy"
+    assert table["geometry"].type.list_size == 2
+
+
 @contextlib.contextmanager
 def with_geoarrow_extension_types():
     gp = pytest.importorskip("geoarrow.pyarrow")
