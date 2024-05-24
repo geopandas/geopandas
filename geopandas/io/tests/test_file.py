@@ -177,12 +177,11 @@ def test_to_file_bool(tmpdir, driver, ext, engine):
     result = read_file(tempfilename, engine=engine)
     if ext in (".shp", ""):
         # Shapefile does not support boolean, so is read back as int
-        if engine == "fiona":
+        # but since GDAL 3.9 supports boolean fields in SHP
+        if engine == "fiona" and fiona.gdal_version.minor < 9:
             df["col"] = df["col"].astype("int64")
-        else:
-            # GDAL 3.9 supports boolean fields in SHP
-            if pyogrio.__gdal_version__ < (3, 9):
-                df["col"] = df["col"].astype("int32")
+        elif engine == "pyogrio" and pyogrio.__gdal_version__ < (3, 9):
+            df["col"] = df["col"].astype("int32")
     assert_geodataframe_equal(result, df)
     # check the expected driver
     assert_correct_driver(tempfilename, ext, engine)

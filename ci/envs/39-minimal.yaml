@@ -20,7 +20,7 @@ dependencies:
   - geopy
   - SQLalchemy
   - libspatialite
-  - pyarrow=8.0.0
+  - pyarrow=10.0
   - geodatasets
   - pip
   - pip:
