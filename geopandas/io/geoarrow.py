@@ -24,50 +24,7 @@ GEOARROW_ENCODINGS = [
 ]
 
 
-def get_arrow_geometry_field(field):
-    if (meta := field.metadata) is not None:
-        if (ext_name := meta.get(b"ARROW:extension:name", None)) is not None:
-            if ext_name.startswith(b"geoarrow."):
-                if (
-                    ext_meta := meta.get(b"ARROW:extension:metadata", None)
-                ) is not None:
-                    ext_meta = json.loads(ext_meta.decode())
-                return ext_name.decode(), ext_meta
-    return None
-
-
-def arrow_to_geopandas(table):
-    """
-    Convert pyarrow.Table to a GeoDataFrame based on GeoArrow extension types.
-    """
-    geom_fields = []
-
-    for field in table.schema:
-        geom = get_arrow_geometry_field(field)
-        if geom is not None:
-            geom_fields.append((field.name, *geom))
-
-    df = table.to_pandas()
-
-    if len(geom_fields) == 0:
-        raise ValueError("""Missing geometry columns.""")
-
-    for col, ext_name, ext_meta in geom_fields:
-        crs = None
-        if ext_meta is not None and "crs" in ext_meta:
-            crs = ext_meta["crs"]
-
-        if ext_name == "geoarrow.wkb":
-            df[col] = from_wkb(df[col].values, crs=crs)
-        elif ext_name.split(".")[1] in GEOARROW_ENCODINGS:
-
-            df[col] = from_shapely(
-                construct_shapely_array(table[col].combine_chunks(), ext_name), crs=crs
-            )
-        else:
-            raise ValueError(f"Unknown GeoArrow extension type: {ext_name}")
-
-    return GeoDataFrame(df, geometry=geom_fields[0][0])
+## GeoPandas -> GeoArrow
 
 
 class ArrowTable:
@@ -454,6 +411,67 @@ def construct_geometry_array(
 
     else:
         raise ValueError(f"Unsupported type for geoarrow: {geom_type}")
+
+
+## GeoArrow -> GeoPandas
+
+
+def get_arrow_geometry_field(field):
+    if (meta := field.metadata) is not None:
+        if (ext_name := meta.get(b"ARROW:extension:name", None)) is not None:
+            if ext_name.startswith(b"geoarrow."):
+                if (
+                    ext_meta := meta.get(b"ARROW:extension:metadata", None)
+                ) is not None:
+                    ext_meta = json.loads(ext_meta.decode())
+                return ext_name.decode(), ext_meta
+    return None
+
+
+def arrow_to_geopandas(table, geometry=None):
+    """
+    Convert pyarrow.Table to a GeoDataFrame based on GeoArrow extension types.
+
+    Parameters
+    ----------
+    table : pyarrow.Table
+        The Arrow table to convert.
+    geometry : str, default None
+        The name of the geometry column to set as the active geometry
+        column. If None, the first geometry column found will be used.
+
+    """
+    geom_fields = []
+
+    for i, field in enumerate(table.schema):
+        geom = get_arrow_geometry_field(field)
+        if geom is not None:
+            geom_fields.append((i, field.name, *geom))
+
+    if len(geom_fields) == 0:
+        raise ValueError("""Missing geometry columns.""")
+
+    table_attr = table.drop([f[1] for f in geom_fields])
+    df = table_attr.to_pandas()
+
+    for i, col, ext_name, ext_meta in geom_fields:
+        crs = None
+        if ext_meta is not None and "crs" in ext_meta:
+            crs = ext_meta["crs"]
+
+        if ext_name == "geoarrow.wkb":
+            geom_arr = from_wkb(np.array(table[col]), crs=crs)
+        elif ext_name.split(".")[1] in GEOARROW_ENCODINGS:
+
+            geom_arr = from_shapely(
+                construct_shapely_array(table[col].combine_chunks(), ext_name), crs=crs
+            )
+        else:
+            raise ValueError(f"Unknown GeoArrow extension type: {ext_name}")
+
+        df.insert(i, col, geom_arr)
+
+    return GeoDataFrame(df, geometry=geom_fields[0][1])
 
 
 def _get_inner_coords(arr):

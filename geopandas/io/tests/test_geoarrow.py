@@ -218,6 +218,11 @@ def test_geoarrow_multiple_geometry_crs(encoding):
     )
     assert json.loads(meta2["crs"])["id"]["code"] == 3857
 
+    roundtripped = GeoDataFrame.from_arrow(result)
+    assert_geodataframe_equal(gdf, roundtripped)
+    assert gdf.geometry.crs == "epsg:4326"
+    assert gdf.geom2.crs == "epsg:3857"
+
 
 @pytest.mark.parametrize("encoding", ["WKB", "geoarrow"])
 def test_geoarrow_series_name_crs(encoding):
