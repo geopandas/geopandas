@@ -325,7 +325,13 @@ def _geopandas_to_arrow(df, index=None, schema_version=None):
 
 
 def _to_parquet(
-    df, path, index=None, compression="snappy", schema_version=None, **kwargs
+    df,
+    path,
+    index=None,
+    compression="snappy",
+    schema_version=None,
+    partition_cols=None,
+    **kwargs,
 ):
     """
     Write a GeoDataFrame to the Parquet format.
@@ -354,6 +360,10 @@ def _to_parquet(
     schema_version : {'0.1.0', '0.4.0', '1.0.0', None}
         GeoParquet specification version; if not provided will default to
         latest supported version.
+    partition_cols : str or list, optional, default None
+        Column names by which to partition the dataset. Columns are
+        partitioned in the order they are given. Must be None if path is not
+        a string.
     **kwargs
         Additional keyword arguments passed to pyarrow.parquet.write_table().
     """
@@ -374,7 +384,18 @@ def _to_parquet(
 
     path = _expand_user(path)
     table = _geopandas_to_arrow(df, index=index, schema_version=schema_version)
-    parquet.write_table(table, path, compression=compression, **kwargs)
+    if partition_cols is not None:
+        # write to multiple files under the given path
+        parquet.write_to_dataset(
+            table,
+            path,
+            compression=compression,
+            partition_cols=partition_cols,
+            **kwargs,
+        )
+    else:
+        # write to single output file
+        parquet.write_table(table, path, compression=compression, **kwargs)
 
 
 def _to_feather(df, path, index=None, compression=None, schema_version=None, **kwargs):
