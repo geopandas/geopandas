@@ -310,7 +310,7 @@ def _geopandas_to_arrow(df, index=None, geometry_encoding="WKB", schema_version=
     if schema_version is not None:
         if geometry_encoding != "WKB" and schema_version != "1.1.0":
             raise ValueError(
-                "'geoarrow' encoding is only supported with schema version 1.1.0"
+                "'geoarrow' encoding is only supported with schema version >= 1.1.0"
             )
 
     table, geometry_encoding_dict = geopandas_to_arrow(

@@ -86,6 +86,10 @@ def test_create_metadata(naturalearth_lowres):
     assert metadata["creator"]["library"] == "geopandas"
     assert metadata["creator"]["version"] == geopandas.__version__
 
+    # specifying non-WKB encoding sets default schema to 1.1.0
+    metadata = _create_metadata(df, geometry_encoding={"geometry": "point"})
+    assert metadata["version"] == "1.1.0"
+
 
 def test_create_metadata_with_z_geometries():
     geometry_types = [
@@ -166,10 +170,16 @@ def test_crs_metadata_datum_ensemble():
     assert pyproj.CRS(crs_json) == crs
 
 
-def test_write_metadata_invalid_spec_version():
+def test_write_metadata_invalid_spec_version(tmp_path):
     gdf = geopandas.GeoDataFrame(geometry=[box(0, 0, 10, 10)], crs="EPSG:4326")
     with pytest.raises(ValueError, match="schema_version must be one of"):
         _create_metadata(gdf, schema_version="invalid")
+
+    with pytest.raises(
+        ValueError,
+        match="'geoarrow' encoding is only supported with schema version >= 1.1.0",
+    ):
+        gdf.to_parquet(tmp_path, schema_version="1.0.0", geometry_encoding="geoarrow")
 
 
 def test_encode_metadata():
