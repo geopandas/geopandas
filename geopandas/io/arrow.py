@@ -361,6 +361,10 @@ def _to_parquet(
         output except `RangeIndex` which is stored as metadata only.
     compression : {'snappy', 'gzip', 'brotli', None}, default 'snappy'
         Name of the compression to use. Use ``None`` for no compression.
+    geometry_encoding : {'WKB', 'geoarrow'}, default 'WKB'
+        The encoding to use for the geometry columns. Defaults to "WKB"
+        for maximum interoperability. Specify "geoarrow" to use one of the
+        native GeoArrow-based single-geometry type encodings.
     schema_version : {'0.1.0', '0.4.0', '1.0.0', None}
         GeoParquet specification version; if not provided will default to
         latest supported version.
