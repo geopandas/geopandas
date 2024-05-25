@@ -1243,7 +1243,7 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
         index=None,
         compression="snappy",
         schema_version=None,
-        write_bbox_column=False,
+        write_covering_bbox=False,
         **kwargs,
     ):
         """Write a GeoDataFrame to the Parquet format.
@@ -1268,7 +1268,7 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
         schema_version : {'0.1.0', '0.4.0', '1.0.0', None}
             GeoParquet specification version; if not provided will default to
             latest supported version.
-        write_bbox_column : bool, default False
+        write_covering_bbox : bool, default False
             Writes the bounding box column for each row entry with column
             name 'bbox'. Writing a bbox column can be computationally
             expensive, hence is default setting is False.
@@ -1304,7 +1304,7 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
             compression=compression,
             index=index,
             schema_version=schema_version,
-            write_bbox_column=write_bbox_column,
+            write_covering_bbox=write_covering_bbox,
             **kwargs,
         )
 

@@ -341,7 +341,7 @@ def test_to_parquet_does_not_pass_engine_along(mock_to_parquet):
         compression="snappy",
         index=None,
         schema_version=None,
-        write_bbox_column=False,
+        write_covering_bbox=False,
     )
 
 
@@ -1000,23 +1000,22 @@ def test_to_parquet_bbox_structure_and_metadata(tmpdir, naturalearth_lowres):
     # check metadata being written for covering.
     from pyarrow import parquet
 
-    bbox_col_name = "bbox"
     df = read_file(naturalearth_lowres)
     filename = os.path.join(str(tmpdir), "test.pq")
-    df.to_parquet(filename, write_bbox_column=True)
+    df.to_parquet(filename, write_covering_bbox=True)
 
     pq_df = read_parquet(filename, read_bbox_column=True)
-    assert bbox_col_name in pq_df.columns
-    assert [*pq_df[bbox_col_name][0].keys()] == ["xmin", "ymin", "xmax", "ymax"]
+    assert "bbox" in pq_df.columns
+    assert [*pq_df["bbox"][0].keys()] == ["xmin", "ymin", "xmax", "ymax"]
 
     table = parquet.read_table(filename)
     metadata = json.loads(table.schema.metadata[b"geo"].decode("utf-8"))
     assert metadata["columns"]["geometry"]["covering"] == {
         "bbox": {
-            "xmin": [bbox_col_name, "xmin"],
-            "ymin": [bbox_col_name, "ymin"],
-            "xmax": [bbox_col_name, "xmax"],
-            "ymax": [bbox_col_name, "ymax"],
+            "xmin": ["bbox", "xmin"],
+            "ymin": ["bbox", "ymin"],
+            "xmax": ["bbox", "xmax"],
+            "ymax": ["bbox", "ymax"],
         }
     }
 
@@ -1045,7 +1044,7 @@ def test_to_parquet_bbox_values(tmpdir, geometry, expected_bbox):
     df = GeoDataFrame(data=[[1, 2]], columns=["a", "b"], geometry=[geometry])
     filename = os.path.join(str(tmpdir), "test.pq")
 
-    df.to_parquet(filename, write_bbox_column=True)
+    df.to_parquet(filename, write_covering_bbox=True)
 
     pq_df = read_parquet(filename, read_bbox_column=True)
     assert pq_df["bbox"][0] == expected_bbox
@@ -1055,7 +1054,7 @@ def test_read_parquet_bbox_single_point(tmpdir):
     # confirm that on a single point, bbox will pick it up.
     df = GeoDataFrame(data=[[1, 2]], columns=["a", "b"], geometry=[Point(1, 1)])
     filename = os.path.join(str(tmpdir), "test.pq")
-    df.to_parquet(filename, write_bbox_column=True)
+    df.to_parquet(filename, write_covering_bbox=True)
 
     pq_df = read_parquet(filename, bbox=(1, 1, 1, 1))
     assert len(pq_df) == 1
@@ -1066,7 +1065,7 @@ def test_read_parquet_bbox(tmpdir, naturalearth_lowres):
     # check bbox is being used to filter results.
     df = read_file(naturalearth_lowres)
     filename = os.path.join(str(tmpdir), "test.pq")
-    df.to_parquet(filename, write_bbox_column=True)
+    df.to_parquet(filename, write_covering_bbox=True)
 
     pq_df = read_parquet(filename, bbox=(0, 0, 20, 20))
 
@@ -1085,8 +1084,8 @@ def test_read_parquet_bbox_partitioned(tmpdir, naturalearth_lowres):
     # manually create partitioned dataset
     basedir = tmpdir / "partitioned_dataset"
     basedir.mkdir()
-    df[:100].to_parquet(basedir / "data1.parquet", write_bbox_column=True)
-    df[100:].to_parquet(basedir / "data2.parquet", write_bbox_column=True)
+    df[:100].to_parquet(basedir / "data1.parquet", write_covering_bbox=True)
+    df[100:].to_parquet(basedir / "data2.parquet", write_covering_bbox=True)
 
     pq_df = read_parquet(basedir, bbox=(0, 0, 20, 20))
 
@@ -1155,7 +1154,7 @@ def test_read_parquet_bbox_column_default_behaviour(tmpdir, naturalearth_lowres)
 
     df = read_file(naturalearth_lowres)
     filename = os.path.join(str(tmpdir), "test.pq")
-    df.to_parquet(filename, write_bbox_column=True)
+    df.to_parquet(filename, write_covering_bbox=True)
     pq_df_default = read_parquet(filename)
     assert "bbox" not in pq_df_default
 
@@ -1171,7 +1170,7 @@ def test_read_parquet_colums_and_bbox(tmpdir, naturalearth_lowres):
 
     df = read_file(naturalearth_lowres)
     filename = os.path.join(str(tmpdir), "test.pq")
-    df.to_parquet(filename, write_bbox_column=True)
+    df.to_parquet(filename, write_covering_bbox=True)
     schema = parquet.read_schema(filename)
     columns = schema.names
 
@@ -1186,7 +1185,7 @@ def test_read_parquet_colums_and_bbox(tmpdir, naturalearth_lowres):
 def test_filters_format_as_DNF(tmpdir, naturalearth_lowres):
     df = read_file(naturalearth_lowres)
     filename = os.path.join(str(tmpdir), "test.pq")
-    df.to_parquet(filename, write_bbox_column=True)
+    df.to_parquet(filename, write_covering_bbox=True)
 
     filters = [("gdp_md_est", ">", 15000)]
 
@@ -1203,7 +1202,7 @@ def test_filters_format_as_expression(tmpdir, naturalearth_lowres):
 
     df = read_file(naturalearth_lowres)
     filename = os.path.join(str(tmpdir), "test.pq")
-    df.to_parquet(filename, write_bbox_column=True)
+    df.to_parquet(filename, write_covering_bbox=True)
 
     filters = pc.field("gdp_md_est") > 15000
 
