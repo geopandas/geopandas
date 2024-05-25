@@ -468,15 +468,15 @@ def _to_feather(df, path, index=None, compression=None, schema_version=None, **k
     feather.write_feather(table, path, compression=compression, **kwargs)
 
 
-def _arrow_to_geopandas(table, metadata=None):
+def _arrow_to_geopandas(table, geo_metadata=None):
     """
     Helper function with main, shared logic for read_parquet/read_feather.
     """
     df = table.to_pandas()
 
-    metadata = metadata or table.schema.metadata
-
-    geo_metadata = _decode_metadata(metadata.get(b"geo", b""))
+    geo_metadata = geo_metadata or _decode_metadata(
+        table.schema.metadata.get(b"geo", b"")
+    )
 
     # Find all geometry columns that were read from the file.  May
     # be a subset if 'columns' parameter is used.
@@ -714,7 +714,7 @@ def _read_parquet(
         path, columns=columns, filesystem=filesystem, filters=filters, **kwargs
     )
 
-    return _arrow_to_geopandas(table, metadata)
+    return _arrow_to_geopandas(table, geo_metadata)
 
 
 def _read_feather(path, columns=None, **kwargs):
