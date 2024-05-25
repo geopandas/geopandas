@@ -689,17 +689,17 @@ def _read_parquet(
 
     path = _expand_user(path)
     schema, metadata = _read_parquet_schema_and_metadata(path, filesystem)
-    _validate_metadata(metadata)
+    geo_metadata = _validate_metadata(metadata)
 
-    bbox_filter = _get_parquet_bbox_filter(metadata, bbox) if bbox else None
+    bbox_filter = _get_parquet_bbox_filter(geo_metadata, bbox) if bbox else None
 
-    if_bbox_column_exists = _check_if_bbox_column_in_parquet(metadata)
+    if_bbox_column_exists = _check_if_bbox_column_in_parquet(geo_metadata)
 
     # by default, bbox column is not read in, so must specify which
     # columns are read in if it exists. Not enforced if bbox is
     # listed in columns argument.
     if not (read_bbox_column or columns) and if_bbox_column_exists:
-        columns = _get_non_bbox_columns(schema, metadata)
+        columns = _get_non_bbox_columns(schema, geo_metadata)
 
     # if both bbox and filters kwargs are used, must splice together.
     kwargs["use_pandas_metadata"] = True
@@ -832,13 +832,14 @@ def _validate_metadata(metadata):
         raise ValueError("Missing or malformed geo metadata in Parquet/Feather file")
 
     _validate_geo_metadata(decoded_geo_metadata)
+    return decoded_geo_metadata
 
 
-def _get_parquet_bbox_filter(metadata, bbox):
+def _get_parquet_bbox_filter(geo_metadata, bbox):
 
-    _validate_bbox_column_in_parquet(metadata)
+    _validate_bbox_column_in_parquet(geo_metadata)
 
-    bbox_column_name = _get_bbox_encoding_column_name(metadata)
+    bbox_column_name = _get_bbox_encoding_column_name(geo_metadata)
     return _convert_bbox_to_parquet_filter(bbox, bbox_column_name)
 
 
@@ -859,10 +860,8 @@ def _convert_bbox_to_parquet_filter(bbox, bbox_column_name):
     )
 
 
-def _validate_bbox_column_in_parquet(metadata):
-    geo_metadata = json.loads(metadata[b"geo"].decode())
-
-    if not _check_if_bbox_column_in_parquet(metadata):
+def _validate_bbox_column_in_parquet(geo_metadata):
+    if not _check_if_bbox_column_in_parquet(geo_metadata):
         raise ValueError("No covering bbox in parquet file.")
 
     for var in ["xmin", "ymin", "xmax", "ymax"]:
@@ -872,20 +871,18 @@ def _validate_bbox_column_in_parquet(metadata):
     return True
 
 
-def _check_if_bbox_column_in_parquet(metadata):
-    geo_metadata = json.loads(metadata[b"geo"].decode())
+def _check_if_bbox_column_in_parquet(geo_metadata):
     return "covering" in geo_metadata["columns"]["geometry"].keys()
 
 
-def _get_bbox_encoding_column_name(metadata):
-    geo_metadata = json.loads(metadata[b"geo"].decode())
+def _get_bbox_encoding_column_name(geo_metadata):
     return geo_metadata["columns"]["geometry"]["covering"]["bbox"]["xmin"][0]
 
 
-def _get_non_bbox_columns(schema, metadata):
+def _get_non_bbox_columns(schema, geo_metadata):
 
-    _validate_bbox_column_in_parquet(metadata)
-    bbox_column_name = _get_bbox_encoding_column_name(metadata)
+    _validate_bbox_column_in_parquet(geo_metadata)
+    bbox_column_name = _get_bbox_encoding_column_name(geo_metadata)
     columns = schema.names
     if bbox_column_name in columns:
         columns.remove(bbox_column_name)

@@ -1130,9 +1130,9 @@ def test_check_bbox_covering_column_in_parquet(tmpdir, naturalearth_lowres):
     filename = os.path.join(str(tmpdir), "test.pq")
     df.to_parquet(filename)
     metadata = parquet.read_schema(filename).metadata
-
+    geo_metadata = _decode_metadata(metadata.get(b"geo", b""))
     with pytest.raises(ValueError, match="No covering bbox in parquet file."):
-        _validate_bbox_column_in_parquet(metadata)
+        _validate_bbox_column_in_parquet(geo_metadata)
 
 
 def test_convert_bbox_to_parquet_filter():
