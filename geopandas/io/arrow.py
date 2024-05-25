@@ -311,7 +311,8 @@ def _geopandas_to_arrow(df, index=None, schema_version=None, write_bbox_column=N
     """
     Helper function with main, shared logic for to_parquet/to_feather.
     """
-    from pyarrow import StructArray, Table
+    from pyarrow import StructArray
+
     from geopandas.io.geoarrow import geopandas_to_arrow
 
     _validate_dataframe(df)
