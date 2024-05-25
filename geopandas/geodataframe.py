@@ -1867,13 +1867,7 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
         # Process non-spatial component
         data = self.drop(labels=self.geometry.name, axis=1)
 
-        if aggfunc == "area_weighted_mean":
-            # special additional aggfunc in geopandas
-            _check_geometry_is_2d(self.geometry.geom_type)
-            _check_columns_are_numeric(data, by)
-            aggfunc = lambda x: np.average(
-                x, weights=self.loc[x.index, self.geometry.name].area
-            )
+        aggfunc = _convert_area_weighted_mean_aggfunc(aggfunc, self, by)
 
         with warnings.catch_warnings(record=True) as record:
             aggregated_data = data.groupby(**groupby_kwargs).agg(aggfunc, **kwargs)
@@ -2521,10 +2515,50 @@ def _check_geometry_is_2d(geom_type):
 
 def _check_columns_are_numeric(data, by):
     if any(by):
-        data = data.drop(by, axis=1)
+        try:
+            data = data.drop(by, axis=1)
+        except Exception:
+            pass
     if not all(is_numeric_dtype(data[col]) for col in data.columns):
         raise ValueError(
-            "aggfunc area_weighted_mean does not work if there are "
-            "any non-numeric columns in the dataframe. Please "
-            "remove all non-numeric dataframes first."
+            "aggfunc area_weighted_mean does not work on "
+            "non-numeric columns in the dataframe. Please "
+            "remove all non-numeric dataframes first or use "
+            "a dictionary input for aggfunc specifying a "
+            "non-numeric column."
         )
+
+
+def _convert_area_weighted_mean_aggfunc(aggfunc, df, by):
+    # if area_weighted_mean is used as a str, within a list
+    # or within a dict, it should be updated to the
+    # lambda function. Other elements should remain unchanged.
+    data = df.drop(labels=df.geometry.name, axis=1)
+
+    area_weighted_mean_function = lambda x: np.average(
+        x, weights=df.loc[x.index, df.geometry.name].area
+    )
+
+    if isinstance(aggfunc, str):
+        if aggfunc == "area_weighted_mean":
+            _check_geometry_is_2d(df.geometry.geom_type)
+            _check_columns_are_numeric(data, by)
+            aggfunc = area_weighted_mean_function
+    elif isinstance(aggfunc, list):
+        if "area_weighted_mean" in aggfunc:
+            _check_geometry_is_2d(df.geometry.geom_type)
+            _check_columns_are_numeric(data, by)
+            aggfunc[aggfunc.index("area_weighted_mean")] = area_weighted_mean_function
+    elif isinstance(aggfunc, dict):
+        if "area_weighted_mean" in aggfunc.values():
+            _check_geometry_is_2d(df.geometry.geom_type)
+
+            area_weighted_mean_columns = [
+                x for x in aggfunc.keys() if aggfunc[x] == "area_weighted_mean"
+            ]
+            data = data[area_weighted_mean_columns]
+            _check_columns_are_numeric(data, by)
+            for col in area_weighted_mean_columns:
+                aggfunc[col] = area_weighted_mean_function
+
+    return aggfunc

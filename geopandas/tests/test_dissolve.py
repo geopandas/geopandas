@@ -410,6 +410,19 @@ def test_area_weighted_mean_dissolve(geometry, quantity, expected):
     gdf = GeoDataFrame({"geometry": geometry, "quantity": quantity})
     dissolved_df = gdf.dissolve(aggfunc="area_weighted_mean")
     assert dissolved_df.quantity[0] == expected
+    assert dissolved_df.columns.to_list() == ["geometry", "quantity"]
+
+    dissolved_df = gdf.dissolve(aggfunc=["area_weighted_mean"])
+    assert dissolved_df[("quantity", "<lambda>")][0] == expected
+    assert dissolved_df.columns.to_list() == ["geometry", ("quantity", "<lambda>")]
+
+    dissolved_df = gdf.dissolve(aggfunc=["area_weighted_mean", "sum"])
+    assert dissolved_df[("quantity", "<lambda_0>")][0] == expected
+    assert dissolved_df.columns.to_list() == [
+        "geometry",
+        ("quantity", "<lambda_0>"),
+        ("quantity", "sum"),
+    ]
 
 
 @pytest.mark.parametrize(
@@ -471,3 +484,22 @@ def test_area_weighted_mean_with_groupby(naturalearth_lowres):
     numeric_df = countries.drop(["name", "iso_a3"], axis=1)
     dissolved_df = numeric_df.dissolve(by="continent", aggfunc="area_weighted_mean")
     assert len(dissolved_df) == 8
+
+
+def test_area_weighted_mean_with_dictionary_input(naturalearth_lowres):
+    # Check that non-numeric columns in dataframe are okay if dict input
+    # uses a numeric column with area weighted mean.
+    countries = read_file(naturalearth_lowres)
+    dissolved_df = countries.dissolve(
+        by="continent", aggfunc={"pop_est": "area_weighted_mean", "gdp_md_est": np.mean}
+    )
+
+    assert len(dissolved_df) == 8
+    assert ["geometry", "pop_est", "gdp_md_est"] == dissolved_df.columns.to_list()
+
+
+def test_area_weighted_mean_with_invalid_dictionary_input(naturalearth_lowres):
+    # Check error is raised if area_weighted_mean is used with a non-numeric column.
+    countries = read_file(naturalearth_lowres)
+    with pytest.raises(ValueError):
+        countries.dissolve(by="continent", aggfunc={"name": "area_weighted_mean"})
