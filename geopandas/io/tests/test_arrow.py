@@ -1205,10 +1205,35 @@ def test_filters_format_as_expression(tmpdir, naturalearth_lowres):
     df.to_parquet(filename, write_covering_bbox=True)
 
     filters = pc.field("gdp_md_est") > 15000
-
     pq_df = read_parquet(filename, filters=filters, bbox=(0, 0, 20, 20))
 
     assert pq_df["name"].values.tolist() == [
         "Nigeria",
         "Cameroon",
     ]
+
+
+def test_filters_without_bbox_as_DNF(tmpdir, naturalearth_lowres):
+
+    df = read_file(naturalearth_lowres)
+    filename = os.path.join(str(tmpdir), "test.pq")
+    df.to_parquet(filename, write_covering_bbox=True)
+
+    filters = [("gdp_md_est", ">", 15000), ("gdp_md_est", "<", 16000)]
+
+    pq_df = read_parquet(filename, filters=filters)
+
+    assert pq_df["name"].values.tolist() == ["Burkina Faso", "Mozambique", "Albania"]
+
+
+def test_filters_without_bbox_as_expression(tmpdir, naturalearth_lowres):
+    import pyarrow.compute as pc
+
+    df = read_file(naturalearth_lowres)
+    filename = os.path.join(str(tmpdir), "test.pq")
+    df.to_parquet(filename, write_covering_bbox=True)
+
+    filters = (pc.field("gdp_md_est") > 15000) & (pc.field("gdp_md_est") < 16000)
+    pq_df = read_parquet(filename, filters=filters)
+
+    assert pq_df["name"].values.tolist() == ["Burkina Faso", "Mozambique", "Albania"]
