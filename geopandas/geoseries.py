@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import typing
 import warnings
+from packaging.version import Version
 from typing import Any, Callable, Dict, Optional
 
 import numpy as np
@@ -1312,6 +1313,104 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
         GeoSeries.to_wkb
         """
         return Series(to_wkt(self.array, **kwargs), index=self.index)
+
+    def to_arrow(self, geometry_encoding="WKB", interleaved=True, include_z=None):
+        """Encode a GeoSeries to GeoArrow format.
+
+        See https://geoarrow.org/ for details on the GeoArrow specification.
+
+        This functions returns a generic Arrow array object implementing
+        the `Arrow PyCapsule Protocol`_ (i.e. having an ``__arrow_c_array__``
+        method). This object can then be consumed by your Arrow implementation
+        of choice that supports this protocol.
+
+        .. _Arrow PyCapsule Protocol: https://arrow.apache.org/docs/format/CDataInterface/PyCapsuleInterface.html
+
+        .. versionadded:: 1.0
+
+        Parameters
+        ----------
+        geometry_encoding : {'WKB', 'geoarrow' }, default 'WKB'
+            The GeoArrow encoding to use for the data conversion.
+        interleaved : bool, default True
+            Only relevant for 'geoarrow' encoding. If True, the geometries'
+            coordinates are interleaved in a single fixed size list array.
+            If False, the coordinates are stored as separate arrays in a
+            struct type.
+        include_z : bool, default None
+            Only relevant for 'geoarrow' encoding (for WKB, the dimensionality
+            of the individial geometries is preserved).
+            If False, return 2D geometries. If True, include the third dimension
+            in the output (if a geometry has no third dimension, the z-coordinates
+            will be NaN). By default, will infer the dimensionality from the
+            input geometries. Note that this inference can be unreliable with
+            empty geometries (for a guaranteed result, it is recommended to
+            specify the keyword).
+
+        Returns
+        -------
+        GeoArrowArray
+            A generic Arrow array object with geometry data encoded to GeoArrow.
+
+        Examples
+        --------
+        >>> from shapely.geometry import Point
+        >>> gser = geopandas.GeoSeries([Point(1, 2), Point(2, 1)])
+        >>> gser
+        0    POINT (1 2)
+        1    POINT (2 1)
+        dtype: geometry
+
+        >>> arrow_array = gser.to_arrow()
+        >>> arrow_array
+        <geopandas.io.geoarrow.GeoArrowArray object at ...>
+
+        The returned array object needs to be consumed by a library implementing
+        the Arrow PyCapsule Protocol. For example, wrapping the data as a
+        pyarrow.Array (requires pyarrow >= 14.0):
+
+        >>> import pyarrow as pa
+        >>> array = pa.array(arrow_array)
+        >>> array
+        <pyarrow.lib.BinaryArray object at ...>
+        [
+          0101000000000000000000F03F0000000000000040,
+          01010000000000000000000040000000000000F03F
+        ]
+
+        """
+        import pyarrow as pa
+
+        from geopandas.io.geoarrow import (
+            GeoArrowArray,
+            construct_geometry_array,
+            construct_wkb_array,
+        )
+
+        field_name = self.name if self.name is not None else ""
+
+        if geometry_encoding.lower() == "geoarrow":
+            if Version(pa.__version__) < Version("10.0.0"):
+                raise ValueError("Converting to 'geoarrow' requires pyarrow >= 10.0.")
+
+            field, geom_arr = construct_geometry_array(
+                np.array(self.array),
+                include_z=include_z,
+                field_name=field_name,
+                crs=self.crs,
+                interleaved=interleaved,
+            )
+        elif geometry_encoding.lower() == "wkb":
+            field, geom_arr = construct_wkb_array(
+                np.asarray(self.array), field_name=field_name, crs=self.crs
+            )
+        else:
+            raise ValueError(
+                "Expected geometry encoding 'WKB' or 'geoarrow' "
+                f"got {geometry_encoding}"
+            )
+
+        return GeoArrowArray(field, geom_arr)
 
     def clip(self, mask, keep_geom_type: bool = False, sort=False) -> GeoSeries:
         """Clip points, lines, or polygon geometries to the mask extent.

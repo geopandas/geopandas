@@ -312,6 +312,7 @@ def _geopandas_to_arrow(df, index=None, schema_version=None, write_bbox_column=N
     Helper function with main, shared logic for to_parquet/to_feather.
     """
     from pyarrow import StructArray, Table
+    from geopandas.io.geoarrow import geopandas_to_arrow
 
     _validate_dataframe(df)
 
@@ -326,17 +327,9 @@ def _geopandas_to_arrow(df, index=None, schema_version=None, write_bbox_column=N
         df, schema_version=schema_version, write_bbox_column=write_bbox_column
     )
 
-    if shapely.geos_version > (3, 10, 0):
-        kwargs = {"flavor": "iso"}
-    else:
-        if any(
-            df[col].array.has_z.any() for col in df.columns[df.dtypes == "geometry"]
-        ):
-            raise ValueError("Cannot write 3D geometries with GEOS<3.10")
-        kwargs = {}
-    df = df.to_wkb(**kwargs)
-
-    table = Table.from_pandas(df, preserve_index=index)
+    table = geopandas_to_arrow(
+        df, geometry_encoding="WKB", index=index, interleaved=True
+    )
 
     if write_bbox_column:
         table = table.append_column("bbox", bbox_array)
