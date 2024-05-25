@@ -1051,9 +1051,6 @@ def test_to_parquet_bbox_values(tmpdir, geometry, expected_bbox):
     assert pq_df["bbox"][0] == expected_bbox
 
 
-@pytest.mark.skipif(
-    Version(pyarrow.__version__) < Version("9.0.0"), reason="needs pyarrow >= 9.0.0"
-)
 def test_read_parquet_bbox_single_point(tmpdir):
     # confirm that on a single point, bbox will pick it up.
     df = GeoDataFrame(data=[[1, 2]], columns=["a", "b"], geometry=[Point(1, 1)])
@@ -1065,9 +1062,6 @@ def test_read_parquet_bbox_single_point(tmpdir):
     assert pq_df.geometry[0] == Point(1, 1)
 
 
-@pytest.mark.skipif(
-    Version(pyarrow.__version__) < Version("9.0.0"), reason="needs pyarrow >= 9.0.0"
-)
 def test_read_parquet_bbox(tmpdir, naturalearth_lowres):
     # check bbox is being used to filter results.
     df = read_file(naturalearth_lowres)
@@ -1084,9 +1078,6 @@ def test_read_parquet_bbox(tmpdir, naturalearth_lowres):
     ]
 
 
-@pytest.mark.skipif(
-    Version(pyarrow.__version__) < Version("9.0.0"), reason="needs pyarrow >= 9.0.0"
-)
 def test_read_parquet_bbox_partitioned(tmpdir, naturalearth_lowres):
     # check bbox is being used to filter results on partioned data.
     df = read_file(naturalearth_lowres)
@@ -1145,9 +1136,6 @@ def test_check_bbox_covering_column_in_parquet(tmpdir, naturalearth_lowres):
         _validate_bbox_column_in_parquet(metadata)
 
 
-@pytest.mark.skipif(
-    Version(pyarrow.__version__) < Version("9.0.0"), reason="needs pyarrow >= 9.0.0"
-)
 def test_convert_bbox_to_parquet_filter():
     # check conversion of bbox to parquet filter expression
     import pyarrow.compute as pc
@@ -1195,9 +1183,6 @@ def test_read_parquet_colums_and_bbox(tmpdir, naturalearth_lowres):
     assert "bbox" not in pq_df2
 
 
-@pytest.mark.skipif(
-    Version(pyarrow.__version__) < Version("9.0.0"), reason="needs pyarrow >= 9.0.0"
-)
 def test_filters_format_as_DNF(tmpdir, naturalearth_lowres):
     df = read_file(naturalearth_lowres)
     filename = os.path.join(str(tmpdir), "test.pq")
@@ -1213,9 +1198,6 @@ def test_filters_format_as_DNF(tmpdir, naturalearth_lowres):
     ]
 
 
-@pytest.mark.skipif(
-    Version(pyarrow.__version__) < Version("9.0.0"), reason="needs pyarrow >= 9.0.0"
-)
 def test_filters_format_as_expression(tmpdir, naturalearth_lowres):
     import pyarrow.compute as pc
 
