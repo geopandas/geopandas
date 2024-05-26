@@ -12,7 +12,7 @@ from shapely import MultiPoint, Point, box
 from geopandas import GeoDataFrame, GeoSeries
 
 import pytest
-from geopandas.testing import assert_geodataframe_equal
+from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 
 pytest.importorskip("pyarrow")
 import pyarrow as pa
@@ -470,3 +470,18 @@ def test_geoarrow_import_from_extension_types(geometry_type, dim):
             pa_table(df.to_arrow(geometry_encoding="geoarrow", interleaved=False))
         )
         assert_geodataframe_equal(result3, df)
+
+
+def test_geoarrow_import_geoseries():
+    pytest.importorskip("pyproj")
+    gp = pytest.importorskip("geoarrow.pyarrow")
+    ser = GeoSeries.from_wkt(["POINT (1 1)", "POINT (2 2)"], crs="EPSG:3857")
+
+    with with_geoarrow_extension_types():
+        arr = gp.array(ser.to_arrow(geometry_encoding="WKB"))
+        result = GeoSeries.from_arrow(arr)
+        assert_geoseries_equal(result, ser)
+
+        arr = gp.array(ser.to_arrow(geometry_encoding="geoarrow"))
+        result = GeoSeries.from_arrow(arr)
+        assert_geoseries_equal(result, ser)

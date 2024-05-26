@@ -416,7 +416,7 @@ def construct_geometry_array(
 ## GeoArrow -> GeoPandas
 
 
-def get_arrow_geometry_field(field):
+def _get_arrow_geometry_field(field):
     if (meta := field.metadata) is not None:
         if (ext_name := meta.get(b"ARROW:extension:name", None)) is not None:
             if ext_name.startswith(b"geoarrow."):
@@ -441,7 +441,7 @@ def get_arrow_geometry_field(field):
 
 def arrow_to_geopandas(table, geometry=None):
     """
-    Convert pyarrow.Table to a GeoDataFrame based on GeoArrow extension types.
+    Convert Arrow table object to a GeoDataFrame based on GeoArrow extension types.
 
     Parameters
     ----------
@@ -462,7 +462,7 @@ def arrow_to_geopandas(table, geometry=None):
     geom_fields = []
 
     for i, field in enumerate(table.schema):
-        geom = get_arrow_geometry_field(field)
+        geom = _get_arrow_geometry_field(field)
         if geom is not None:
             geom_fields.append((i, field.name, *geom))
 
@@ -490,6 +490,37 @@ def arrow_to_geopandas(table, geometry=None):
         df.insert(i, col, geom_arr)
 
     return GeoDataFrame(df, geometry=geometry or geom_fields[0][1])
+
+
+def arrow_to_geometry_array(arr):
+    """
+    Convert Arrow array object (representing single GeoArrow array) to a
+    geopandas GeometryArray.
+
+    Specifically for GeoSeries.from_arrow.
+    """
+    schema_capsule, _ = arr.__arrow_c_array__()
+    field = pa.Field._import_from_c_capsule(schema_capsule)
+    pa_arr = pa.array(arr)
+
+    geom_info = _get_arrow_geometry_field(field)
+    if geom_info is None:
+        raise ValueError("No GeoArrow geometry field found.")
+    ext_name, ext_meta = geom_info
+
+    crs = None
+    if ext_meta is not None and "crs" in ext_meta:
+        crs = ext_meta["crs"]
+
+    if ext_name == "geoarrow.wkb":
+        geom_arr = from_wkb(np.array(pa_arr), crs=crs)
+    elif ext_name.split(".")[1] in GEOARROW_ENCODINGS:
+
+        geom_arr = from_shapely(construct_shapely_array(pa_arr, ext_name), crs=crs)
+    else:
+        raise ValueError(f"Unknown GeoArrow extension type: {ext_name}")
+
+    return geom_arr
 
 
 def _get_inner_coords(arr):

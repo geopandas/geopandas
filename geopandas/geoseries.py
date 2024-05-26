@@ -544,6 +544,26 @@ class GeoSeries(GeoPandasBase, Series):
             **kwargs,
         )
 
+    @classmethod
+    def from_arrow(cls, arr, **kwargs) -> GeoSeries:
+        """
+        Construct a GeoDataFrame from a pyarrow.Table based on GeoArrow
+        extension types.
+
+        Parameters
+        ----------
+        arr : Arrow array
+            Arrow Table object
+
+        Returns
+        -------
+        GeoDataFrame
+
+        """
+        from geopandas.io.geoarrow import arrow_to_geometry_array
+
+        return cls(arrow_to_geometry_array(arr), **kwargs)
+
     @property
     def __geo_interface__(self) -> Dict:
         """Returns a ``GeoSeries`` as a python feature collection.
