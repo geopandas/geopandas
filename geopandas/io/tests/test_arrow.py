@@ -1055,7 +1055,6 @@ def test_read_parquet_bbox_single_point(tmpdir):
     df = GeoDataFrame(data=[[1, 2]], columns=["a", "b"], geometry=[Point(1, 1)])
     filename = os.path.join(str(tmpdir), "test.pq")
     df.to_parquet(filename, write_covering_bbox=True)
-
     pq_df = read_parquet(filename, bbox=(1, 1, 1, 1))
     assert len(pq_df) == 1
     assert pq_df.geometry[0] == Point(1, 1)
@@ -1067,12 +1066,17 @@ def test_read_parquet_bbox(tmpdir, naturalearth_lowres):
     filename = os.path.join(str(tmpdir), "test.pq")
     df.to_parquet(filename, write_covering_bbox=True)
 
-    pq_df = read_parquet(filename, bbox=(0, 0, 20, 20))
+    pq_df = read_parquet(filename, bbox=(0, 0, 10, 10), read_bbox_column=True)
 
     assert pq_df["name"].values.tolist() == [
+        "France",
         "Benin",
         "Nigeria",
         "Cameroon",
+        "Togo",
+        "Ghana",
+        "Burkina Faso",
+        "Gabon",
         "Eq. Guinea",
     ]
 
@@ -1087,14 +1091,41 @@ def test_read_parquet_bbox_partitioned(tmpdir, naturalearth_lowres):
     df[:100].to_parquet(basedir / "data1.parquet", write_covering_bbox=True)
     df[100:].to_parquet(basedir / "data2.parquet", write_covering_bbox=True)
 
-    pq_df = read_parquet(basedir, bbox=(0, 0, 20, 20))
+    pq_df = read_parquet(basedir, bbox=(0, 0, 10, 10))
 
     assert pq_df["name"].values.tolist() == [
+        "France",
         "Benin",
         "Nigeria",
         "Cameroon",
+        "Togo",
+        "Ghana",
+        "Burkina Faso",
+        "Gabon",
         "Eq. Guinea",
     ]
+
+
+@pytest.mark.parametrize(
+    "geometry, bbox",
+    [
+        (LineString([(1, 1), (3, 3)]), (1.5, 1.5, 3.5, 3.5)),
+        (LineString([(1, 1), (3, 3)]), (3, 3, 3, 3)),
+        (LineString([(1, 1), (3, 3)]), (1.5, 1.5, 2.5, 2.5)),
+        (Polygon([(0, 0), (4, 0), (4, 4), (0, 4)]), (1, 1, 3, 3)),
+        (Polygon([(0, 0), (4, 0), (4, 4), (0, 4)]), (1, 1, 5, 5)),
+        (Polygon([(0, 0), (4, 0), (4, 4), (0, 4)]), (2, 2, 4, 4)),
+        (Polygon([(0, 0), (4, 0), (4, 4), (0, 4)]), (4, 4, 4, 4)),
+        (Polygon([(0, 0), (4, 0), (4, 4), (0, 4)]), (1, 1, 5, 3)),
+    ],
+)
+def test_partial_overlap_of_geometry(tmpdir, geometry, bbox):
+    df = GeoDataFrame(data=[[1, 2]], columns=["a", "b"], geometry=[geometry])
+    filename = os.path.join(str(tmpdir), "test.pq")
+    df.to_parquet(filename, write_covering_bbox=True)
+
+    pq_df = read_parquet(filename, bbox=bbox)
+    assert len(pq_df) == 1
 
 
 def test_read_parquet_no_bbox(tmpdir, naturalearth_lowres):
@@ -1140,11 +1171,11 @@ def test_convert_bbox_to_parquet_filter():
     import pyarrow.compute as pc
 
     bbox = (0, 0, 25, 35)
-    expected = (
-        (pc.field(("bbox", "xmin")) >= 0)
-        & (pc.field(("bbox", "ymin")) >= 0)
-        & (pc.field(("bbox", "xmax")) <= 25)
-        & (pc.field(("bbox", "ymax")) <= 35)
+    expected = ~(
+        (pc.field(("bbox", "xmin")) > 25)
+        | (pc.field(("bbox", "ymin")) > 35)
+        | (pc.field(("bbox", "xmax")) < 0)
+        | (pc.field(("bbox", "ymax")) < 0)
     )
     assert expected.equals(_convert_bbox_to_parquet_filter(bbox, "bbox"))
 
@@ -1187,13 +1218,17 @@ def test_filters_format_as_DNF(tmpdir, naturalearth_lowres):
     filename = os.path.join(str(tmpdir), "test.pq")
     df.to_parquet(filename, write_covering_bbox=True)
 
-    filters = [("gdp_md_est", ">", 15000)]
+    filters = [("gdp_md_est", ">", 20000)]
 
     pq_df = read_parquet(filename, filters=filters, bbox=(0, 0, 20, 20))
-
     assert pq_df["name"].values.tolist() == [
+        "Dem. Rep. Congo",
+        "France",
         "Nigeria",
         "Cameroon",
+        "Ghana",
+        "Algeria",
+        "Libya",
     ]
 
 
@@ -1204,12 +1239,17 @@ def test_filters_format_as_expression(tmpdir, naturalearth_lowres):
     filename = os.path.join(str(tmpdir), "test.pq")
     df.to_parquet(filename, write_covering_bbox=True)
 
-    filters = pc.field("gdp_md_est") > 15000
+    filters = pc.field("gdp_md_est") > 20000
     pq_df = read_parquet(filename, filters=filters, bbox=(0, 0, 20, 20))
 
     assert pq_df["name"].values.tolist() == [
+        "Dem. Rep. Congo",
+        "France",
         "Nigeria",
         "Cameroon",
+        "Ghana",
+        "Algeria",
+        "Libya",
     ]
 
 

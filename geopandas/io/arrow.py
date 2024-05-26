@@ -844,19 +844,13 @@ def _get_parquet_bbox_filter(geo_metadata, bbox):
 
 
 def _convert_bbox_to_parquet_filter(bbox, bbox_column_name):
-    import pyarrow
     import pyarrow.compute as pc
 
-    if Version(pyarrow.__version__) < Version("9.0.0"):
-        raise ImportError(
-            "pyarrow >= 9.0.0 required to allow boolean expression to filter by bbox."
-        )
-
-    return (
-        (pc.field((bbox_column_name, "xmin")) >= bbox[0])
-        & (pc.field((bbox_column_name, "ymin")) >= bbox[1])
-        & (pc.field((bbox_column_name, "xmax")) <= bbox[2])
-        & (pc.field((bbox_column_name, "ymax")) <= bbox[3])
+    return ~(
+        (pc.field((bbox_column_name, "xmin")) > bbox[2])
+        | (pc.field((bbox_column_name, "ymin")) > bbox[3])
+        | (pc.field((bbox_column_name, "xmax")) < bbox[0])
+        | (pc.field((bbox_column_name, "ymax")) < bbox[1])
     )
 
 
