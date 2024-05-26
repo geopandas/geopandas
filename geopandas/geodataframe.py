@@ -805,13 +805,26 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
     @classmethod
     def from_arrow(cls, table, geometry=None):
         """
-        Construct a GeoDataFrame from a pyarrow.Table based on GeoArrow
+        Construct a GeoDataFrame from a Arrow table object based on GeoArrow
         extension types.
+
+        See https://geoarrow.org/ for details on the GeoArrow specification.
+
+        This functions accepts any tabular Arrow object implementing
+        the `Arrow PyCapsule Protocol`_ (i.e. having an ``__arrow_c_array__``
+        or ``__arrow_c_stream__`` method).
+
+        .. _Arrow PyCapsule Protocol: https://arrow.apache.org/docs/format/CDataInterface/PyCapsuleInterface.html
+
+        .. versionadded:: 1.0
 
         Parameters
         ----------
-        table : pyarrow.Table
-            Arrow Table object
+        table : pyarrow.Table or Arrow-compatible table
+            Any tabular object implementing the Arrow PyCapsule Protocol
+            (i.e. has an ``__arrow_c_array__`` or ``__arrow_c_stream__``
+            method). This table should have at least one column with a
+            geoarrow geometry type.
         geometry : str, default None
             The name of the geometry column to set as the active geometry
             column. If None, the first geometry column found will be used.

@@ -485,3 +485,12 @@ def test_geoarrow_import_geoseries():
         arr = gp.array(ser.to_arrow(geometry_encoding="geoarrow"))
         result = GeoSeries.from_arrow(arr)
         assert_geoseries_equal(result, ser)
+
+        # the name is lost when going through a pyarrow.Array
+        ser.name = "name"
+        arr = gp.array(ser.to_arrow())
+        result = GeoSeries.from_arrow(arr)
+        assert result.name is None
+        # we can specify the name as one of the kwargs
+        result = GeoSeries.from_arrow(arr, name="test")
+        assert_geoseries_equal(result, ser)

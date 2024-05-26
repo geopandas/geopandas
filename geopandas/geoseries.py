@@ -547,17 +547,32 @@ class GeoSeries(GeoPandasBase, Series):
     @classmethod
     def from_arrow(cls, arr, **kwargs) -> GeoSeries:
         """
-        Construct a GeoDataFrame from a pyarrow.Table based on GeoArrow
-        extension types.
+        Construct a GeoSeries from a Arrow array object with a GeoArrow
+        extension type.
+
+        See https://geoarrow.org/ for details on the GeoArrow specification.
+
+        This functions accepts any Arrow array object implementing
+        the `Arrow PyCapsule Protocol`_ (i.e. having an ``__arrow_c_array__``
+        method).
+
+        .. _Arrow PyCapsule Protocol: https://arrow.apache.org/docs/format/CDataInterface/PyCapsuleInterface.html
+
+        .. versionadded:: 1.0
 
         Parameters
         ----------
-        arr : Arrow array
-            Arrow Table object
+        arr : pyarrow.Array, Arrow array
+            Any array object implementing the Arrow PyCapsule Protocol
+            (i.e. has an ``__arrow_c_array__`` or ``__arrow_c_stream__``
+            method). The type of the array should be one of the
+            geoarrow geometry types.
+        **kwargs
+            Other parameters passed to the GeoSeries constructor.
 
         Returns
         -------
-        GeoDataFrame
+        GeoSeries
 
         """
         from geopandas.io.geoarrow import arrow_to_geometry_array
