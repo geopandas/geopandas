@@ -201,6 +201,10 @@ def test_geoarrow_export(geometry_type, dim, geometry_encoding, interleaved):
     assert result_arr.equals(expected["geometry"].chunk(0))
 
 
+@pytest.mark.skipif(
+    Version(shapely.__version__) < Version("2.0.2"),
+    reason="from_ragged_array failing with read-only array input",
+)
 @pytest.mark.parametrize("encoding", ["WKB", "geoarrow"])
 def test_geoarrow_multiple_geometry_crs(encoding):
     pytest.importorskip("pyproj")
@@ -370,6 +374,10 @@ def test_geoarrow_export_with_extension_types(geometry_type, dim):
         assert isinstance(result3["geometry"].type, pa.ExtensionType)
 
 
+@pytest.mark.skipif(
+    Version(shapely.__version__) < Version("2.0.2"),
+    reason="from_ragged_array failing with read-only array input",
+)
 @pytest.mark.parametrize("dim", ["xy", "xyz"])
 @pytest.mark.parametrize(
     "geometry_type",
@@ -405,6 +413,10 @@ def test_geoarrow_import(geometry_type, dim):
     assert_geodataframe_equal(result3, df)
 
 
+@pytest.mark.skipif(
+    Version(shapely.__version__) < Version("2.0.2"),
+    reason="from_ragged_array failing with read-only array input",
+)
 @pytest.mark.parametrize("encoding", ["WKB", "geoarrow"])
 def test_geoarrow_import_geometry_column(encoding):
     pytest.importorskip("pyproj")
@@ -430,6 +442,7 @@ def test_geoarrow_import_geometry_column(encoding):
 
 def test_geoarrow_import_capsule_interface():
     # ensure we can import non-pyarrow object
+    pytest.importorskip("pyarrow", minversion="14.0.0")
     gdf = GeoDataFrame({"col": [1]}, geometry=[box(0, 0, 10, 10)])
 
     result = GeoDataFrame.from_arrow(gdf.to_arrow())
