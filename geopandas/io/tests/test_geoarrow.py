@@ -428,8 +428,9 @@ def test_geoarrow_import_geometry_column(encoding):
     assert_geodataframe_equal(result, gdf.set_geometry("centroid"))
 
 
-# def test_geoarrow_unsupported_encoding():
-#     gdf = GeoDataFrame(geometry=[box(0, 0, 10, 10)], crs="epsg:4326")
+def test_geoarrow_import_capsule_interface():
+    # ensure we can import non-pyarrow object
+    gdf = GeoDataFrame({"col": [1]}, geometry=[box(0, 0, 10, 10)])
 
-#     with pytest.raises(ValueError, match="Expected geometry encoding"):
-#         gdf.to_arrow(geometry_encoding="invalid")
+    result = GeoDataFrame.from_arrow(gdf.to_arrow())
+    assert_geodataframe_equal(result, gdf)

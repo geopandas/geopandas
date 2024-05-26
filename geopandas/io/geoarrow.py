@@ -445,6 +445,9 @@ def arrow_to_geopandas(table, geometry=None):
     GeoDataFrame
 
     """
+    if not isinstance(table, pa.Table):
+        table = pa.table(table)
+
     geom_fields = []
 
     for i, field in enumerate(table.schema):
