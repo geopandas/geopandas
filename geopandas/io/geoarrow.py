@@ -425,6 +425,17 @@ def get_arrow_geometry_field(field):
                 ) is not None:
                     ext_meta = json.loads(ext_meta.decode())
                 return ext_name.decode(), ext_meta
+
+    if isinstance(field.type, pa.ExtensionType):
+        ext_name = field.type.extension_name
+        if ext_name.startswith("geoarrow."):
+            ext_meta_ser = field.type.__arrow_ext_serialize__()
+            if ext_meta_ser:
+                ext_meta = json.loads(ext_meta_ser.decode())
+            else:
+                ext_meta = None
+            return ext_name, ext_meta
+
     return None
 
 
@@ -507,6 +518,9 @@ def construct_shapely_array(arr: pa.Array, extension_name: str):
     with GeoArrow extension type.
 
     """
+    if isinstance(arr, pa.ExtensionArray):
+        arr = arr.storage
+
     if extension_name == "geoarrow.point":
         coords = _get_inner_coords(arr)
         result = shapely.from_ragged_array(GeometryType.POINT, coords, None)

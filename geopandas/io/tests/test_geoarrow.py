@@ -434,3 +434,39 @@ def test_geoarrow_import_capsule_interface():
 
     result = GeoDataFrame.from_arrow(gdf.to_arrow())
     assert_geodataframe_equal(result, gdf)
+
+
+@pytest.mark.parametrize("dim", ["xy", "xyz"])
+@pytest.mark.parametrize(
+    "geometry_type",
+    ["point", "linestring", "polygon", "multipoint", "multilinestring", "multipolygon"],
+)
+def test_geoarrow_import_from_extension_types(geometry_type, dim):
+    # ensure the exported data can be imported by geoarrow-pyarrow and are
+    # recognized as extension types
+    pytest.importorskip("pyproj")
+    base_path = DATA_PATH / "geoarrow"
+    suffix = geometry_type + ("_z" if dim == "xyz" else "")
+
+    # Read the example data
+    df = feather.read_feather(base_path / f"example-{suffix}-wkb.arrow")
+    df["geometry"] = GeoSeries.from_wkb(df["geometry"])
+    df = GeoDataFrame(df, crs="EPSG:3857")
+
+    pytest.importorskip("geoarrow.pyarrow")
+
+    with with_geoarrow_extension_types():
+        result1 = GeoDataFrame.from_arrow(
+            pa_table(df.to_arrow(geometry_encoding="WKB"))
+        )
+        assert_geodataframe_equal(result1, df)
+
+        result2 = GeoDataFrame.from_arrow(
+            pa_table(df.to_arrow(geometry_encoding="geoarrow"))
+        )
+        assert_geodataframe_equal(result2, df)
+
+        result3 = GeoDataFrame.from_arrow(
+            pa_table(df.to_arrow(geometry_encoding="geoarrow", interleaved=False))
+        )
+        assert_geodataframe_equal(result3, df)
