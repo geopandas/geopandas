@@ -704,8 +704,7 @@ def _read_parquet(
     # if both bbox and filters kwargs are used, must splice together.
     kwargs["use_pandas_metadata"] = True
     if "filters" in kwargs:
-        filters_kwarg = kwargs["filters"]
-        kwargs.pop("filters")
+        filters_kwarg = kwargs.pop("filters")
         filters = _splice_bbox_and_filters(filters_kwarg, bbox_filter)
     else:
         filters = bbox_filter
