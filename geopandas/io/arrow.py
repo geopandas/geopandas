@@ -317,12 +317,6 @@ def _geopandas_to_arrow(df, index=None, schema_version=None, write_covering_bbox
 
     _validate_dataframe(df)
 
-    if write_covering_bbox:
-        bounds = df.bounds
-        bbox_array = StructArray.from_arrays(
-            [bounds["minx"], bounds["miny"], bounds["maxx"], bounds["maxy"]],
-            names=["xmin", "ymin", "xmax", "ymax"],
-        )
     # create geo metadata before altering incoming data frame
     geo_metadata = _create_metadata(
         df, schema_version=schema_version, write_covering_bbox=write_covering_bbox
@@ -333,6 +327,11 @@ def _geopandas_to_arrow(df, index=None, schema_version=None, write_covering_bbox
     )
 
     if write_covering_bbox:
+        bounds = df.bounds
+        bbox_array = StructArray.from_arrays(
+            [bounds["minx"], bounds["miny"], bounds["maxx"], bounds["maxy"]],
+            names=["xmin", "ymin", "xmax", "ymax"],
+        )
         table = table.append_column("bbox", bbox_array)
 
     # Store geopandas specific file-level metadata
@@ -597,7 +596,7 @@ def _read_parquet(
     columns=None,
     storage_options=None,
     bbox=None,
-    read_bbox_column=False,
+    read_covering_column=False,
     **kwargs,
 ):
     """
@@ -647,14 +646,13 @@ def _read_parquet(
         Bounding box to be used to filter selection from geoparquet data. This
         is only usable if the data was saved with the bbox covering metadata.
         Input is of the tuple format (xmin, ymin, xmax, ymax).
-    read_bbox_column : bool, default False
-        The bbox column is a struct with the minimum rectangular box that
-        encompasses the geometry. It is computationally expensive to read
-        a struct into a GeoDataFrame. As such, the default is to
-        skip reading this columns.
-        If  the bbox column name specified in parquet metadata (under the the "covering" key) 
-        is specified in ``columns``, then the column will always be included and the value of 
-        ``read_bbox_column`` is ignored.
+    read_covering_column : bool, default False
+        The covering field in geoparquet specifies the minimum bounding rectangle (MBR)
+        that encompasses the geometry. It is computationally expensive to read
+        into a GeoDataFrame. As such, the default is to skip reading this columns.
+        If the MBR column name specified in parquet metadata (under the
+        "covering" key) is specified in ``columns``, then the column will
+        always be included and the value of ``read_covering_column`` is ignored.
 
     **kwargs
         Any additional kwargs passed to :func:`pyarrow.parquet.read_table`.
@@ -690,15 +688,19 @@ def _read_parquet(
     path = _expand_user(path)
     schema, metadata = _read_parquet_schema_and_metadata(path, filesystem)
     geo_metadata = _validate_metadata(metadata)
+    if read_covering_column:
+        _validate_bbox_column_in_parquet(geo_metadata)
 
-    bbox_filter = _get_parquet_bbox_filter(geo_metadata, bbox) if bbox is not None else None
+    bbox_filter = (
+        _get_parquet_bbox_filter(geo_metadata, bbox) if bbox is not None else None
+    )
 
-    if_bbox_column_exists = _check_if_bbox_column_in_parquet(geo_metadata)
+    if_bbox_column_exists = _check_if_covering_in_geo_metadata(geo_metadata)
 
     # by default, bbox column is not read in, so must specify which
     # columns are read in if it exists. Not enforced if bbox is
     # listed in columns argument.
-    if not (read_bbox_column or columns) and if_bbox_column_exists:
+    if not (read_covering_column or columns) and if_bbox_column_exists:
         columns = _get_non_bbox_columns(schema, geo_metadata)
 
     # if both bbox and filters kwargs are used, must splice together.
@@ -854,7 +856,7 @@ def _convert_bbox_to_parquet_filter(bbox, bbox_column_name):
 
 
 def _validate_bbox_column_in_parquet(geo_metadata):
-    if not _check_if_bbox_column_in_parquet(geo_metadata):
+    if not _check_if_covering_in_geo_metadata(geo_metadata):
         raise ValueError("No covering bbox in parquet file.")
 
     for var in ["xmin", "ymin", "xmax", "ymax"]:
@@ -864,7 +866,7 @@ def _validate_bbox_column_in_parquet(geo_metadata):
     return True
 
 
-def _check_if_bbox_column_in_parquet(geo_metadata):
+def _check_if_covering_in_geo_metadata(geo_metadata):
     return "covering" in geo_metadata["columns"]["geometry"].keys()
 
 
