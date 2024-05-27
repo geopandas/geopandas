@@ -691,7 +691,7 @@ def _read_parquet(
     schema, metadata = _read_parquet_schema_and_metadata(path, filesystem)
     geo_metadata = _validate_metadata(metadata)
 
-    bbox_filter = _get_parquet_bbox_filter(geo_metadata, bbox) if bbox else None
+    bbox_filter = _get_parquet_bbox_filter(geo_metadata, bbox) if bbox is not None else None
 
     if_bbox_column_exists = _check_if_bbox_column_in_parquet(geo_metadata)
 
