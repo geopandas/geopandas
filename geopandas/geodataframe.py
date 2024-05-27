@@ -1238,7 +1238,13 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
         return ArrowTable(table)
 
     def to_parquet(
-        self, path, index=None, compression="snappy", schema_version=None, **kwargs
+        self,
+        path,
+        index=None,
+        compression="snappy",
+        schema_version=None,
+        write_covering_bbox=False,
+        **kwargs,
     ):
         """Write a GeoDataFrame to the Parquet format.
 
@@ -1262,6 +1268,11 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
         schema_version : {'0.1.0', '0.4.0', '1.0.0', None}
             GeoParquet specification version; if not provided will default to
             latest supported version.
+        write_covering_bbox : bool, default False
+            Writes the bounding box column for each row entry with column
+            name 'bbox'. Writing a bbox column can be computationally
+            expensive, but allows you to specify a `bbox` in :
+            func:`read_parquet` for filtered reading.
         kwargs
             Additional keyword arguments passed to :func:`pyarrow.parquet.write_table`.
 
@@ -1294,6 +1305,7 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
             compression=compression,
             index=index,
             schema_version=schema_version,
+            write_covering_bbox=write_covering_bbox,
             **kwargs,
         )
 

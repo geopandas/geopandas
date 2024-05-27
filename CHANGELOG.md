@@ -70,6 +70,8 @@ New features and improvements:
 - `explore` now supports `GeoDataFrame`s with additional columns containing datetimes, uuids and 
   other non JSON serializable objects (#3261).
 - The `GeoSeries.fillna` method now supports the `limit` keyword (#3290).
+- Added support for `bbox` covering encoding in geoparquet. Can filter reading of parquet
+files based on a bounding box, and write out a bounding box column to parquet files (#3282)
 
 Backwards incompatible API changes:
 
