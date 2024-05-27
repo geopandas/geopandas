@@ -1066,7 +1066,7 @@ def test_read_parquet_bbox(tmpdir, naturalearth_lowres):
     filename = os.path.join(str(tmpdir), "test.pq")
     df.to_parquet(filename, write_covering_bbox=True)
 
-    pq_df = read_parquet(filename, bbox=(0, 0, 10, 10), read_bbox_column=True)
+    pq_df = read_parquet(filename, bbox=(0, 0, 10, 10))
 
     assert pq_df["name"].values.tolist() == [
         "France",
