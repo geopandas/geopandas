@@ -1004,10 +1004,6 @@ def test_to_parquet_bbox_structure_and_metadata(tmpdir, naturalearth_lowres):
     filename = os.path.join(str(tmpdir), "test.pq")
     df.to_parquet(filename, write_covering_bbox=True)
 
-    pq_df = read_parquet(filename, read_covering_column=True)
-    assert "bbox" in pq_df.columns
-    assert [*pq_df["bbox"][0].keys()] == ["xmin", "ymin", "xmax", "ymax"]
-
     table = parquet.read_table(filename)
     metadata = json.loads(table.schema.metadata[b"geo"].decode("utf-8"))
     assert metadata["columns"]["geometry"]["covering"] == {
@@ -1018,6 +1014,13 @@ def test_to_parquet_bbox_structure_and_metadata(tmpdir, naturalearth_lowres):
             "ymax": ["bbox", "ymax"],
         }
     }
+    assert "bbox" in table.schema.names
+    assert [field.name for field in table.schema.field("bbox").type] == [
+        "xmin",
+        "ymin",
+        "xmax",
+        "ymax",
+    ]
 
 
 @pytest.mark.parametrize(
@@ -1041,13 +1044,15 @@ def test_to_parquet_bbox_structure_and_metadata(tmpdir, naturalearth_lowres):
 )
 def test_to_parquet_bbox_values(tmpdir, geometry, expected_bbox):
     # check bbox bounds being written for different geometry types.
+    import pyarrow.parquet as pq
+
     df = GeoDataFrame(data=[[1, 2]], columns=["a", "b"], geometry=[geometry])
     filename = os.path.join(str(tmpdir), "test.pq")
 
     df.to_parquet(filename, write_covering_bbox=True)
 
-    pq_df = read_parquet(filename, read_covering_column=True)
-    assert pq_df["bbox"][0] == expected_bbox
+    result = pq.read_table(filename).to_pandas()
+    assert result["bbox"][0] == expected_bbox
 
 
 def test_read_parquet_bbox_single_point(tmpdir):
@@ -1186,31 +1191,12 @@ def test_read_parquet_bbox_column_default_behaviour(tmpdir, naturalearth_lowres)
     df = read_file(naturalearth_lowres)
     filename = os.path.join(str(tmpdir), "test.pq")
     df.to_parquet(filename, write_covering_bbox=True)
-    pq_df_default = read_parquet(filename)
-    assert "bbox" not in pq_df_default
+    result1 = read_parquet(filename)
+    assert "bbox" not in result1
 
-    pq_df_read_bbox = read_parquet(filename, read_covering_column=True)
-    assert "bbox" in pq_df_read_bbox
-
-
-def test_read_parquet_colums_and_bbox(tmpdir, naturalearth_lowres):
-    # confirm columns list over-rides read_covering_column argument.
-    # if column list includes 'bbox' and read_covering_column=False -> include 'bbox'
-    # if column list excludes 'bbox' and read_covering_column=True -> exclude 'bbox'
-    from pyarrow import parquet
-
-    df = read_file(naturalearth_lowres)
-    filename = os.path.join(str(tmpdir), "test.pq")
-    df.to_parquet(filename, write_covering_bbox=True)
-    schema = parquet.read_schema(filename)
-    columns = schema.names
-
-    pq_df1 = read_parquet(filename, columns=columns, read_covering_column=False)
-    assert "bbox" in pq_df1
-
-    columns.remove("bbox")
-    pq_df2 = read_parquet(filename, columns=columns, read_covering_column=True)
-    assert "bbox" not in pq_df2
+    result2 = read_parquet(filename, columns=["name", "geometry"])
+    assert "bbox" not in result2
+    assert list(result2.columns) == ["name", "geometry"]
 
 
 def test_filters_format_as_DNF(tmpdir, naturalearth_lowres):
@@ -1273,12 +1259,3 @@ def test_filters_without_bbox_with_different_format(
     pq_df = read_parquet(filename, filters=filters)
 
     assert pq_df["name"].values.tolist() == ["Burkina Faso", "Mozambique", "Albania"]
-
-
-def read_covering_column_does_not_exist_error(tmpdir, naturalearth_lowres):
-    df = read_file(naturalearth_lowres)
-    filename = os.path.join(str(tmpdir), "test.pq")
-    df.to_parquet(filename, write_covering_bbox=False)
-
-    with pytest.raises(ValueError, match="No covering bbox in parquet file."):
-        read_parquet(filename, read_covering_column=True)

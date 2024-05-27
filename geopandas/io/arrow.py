@@ -596,7 +596,6 @@ def _read_parquet(
     columns=None,
     storage_options=None,
     bbox=None,
-    read_covering_column=False,
     **kwargs,
 ):
     """
@@ -646,13 +645,6 @@ def _read_parquet(
         Bounding box to be used to filter selection from geoparquet data. This
         is only usable if the data was saved with the bbox covering metadata.
         Input is of the tuple format (xmin, ymin, xmax, ymax).
-    read_covering_column : bool, default False
-        The covering field in geoparquet specifies the minimum bounding rectangle (MBR)
-        that encompasses the geometry. It is computationally expensive to read
-        into a GeoDataFrame. As such, the default is to skip reading this columns.
-        If the MBR column name specified in parquet metadata (under the
-        "covering" key) is specified in ``columns``, then the column will
-        always be included and the value of ``read_covering_column`` is ignored.
 
     **kwargs
         Any additional kwargs passed to :func:`pyarrow.parquet.read_table`.
@@ -688,8 +680,6 @@ def _read_parquet(
     path = _expand_user(path)
     schema, metadata = _read_parquet_schema_and_metadata(path, filesystem)
     geo_metadata = _validate_metadata(metadata)
-    if read_covering_column:
-        _validate_bbox_column_in_parquet(geo_metadata)
 
     bbox_filter = (
         _get_parquet_bbox_filter(geo_metadata, bbox) if bbox is not None else None
@@ -698,9 +688,8 @@ def _read_parquet(
     if_bbox_column_exists = _check_if_covering_in_geo_metadata(geo_metadata)
 
     # by default, bbox column is not read in, so must specify which
-    # columns are read in if it exists. Not enforced if bbox is
-    # listed in columns argument.
-    if not (read_covering_column or columns) and if_bbox_column_exists:
+    # columns are read in if it exists.
+    if not columns and if_bbox_column_exists:
         columns = _get_non_bbox_columns(schema, geo_metadata)
 
     # if both bbox and filters kwargs are used, must splice together.
