@@ -562,6 +562,41 @@ def _ensure_arrow_fs(filesystem):
     return filesystem
 
 
+def _read_parquet_schema_and_metadata(path, filesystem):
+    """
+    Opening the Parquet file/dataset a first time to get the schema and metadata.
+
+    TODO: we should look into how we can reuse opened dataset for reading the
+    actual data, to avoid discovering the dataset twice (problem right now is
+    that the ParquetDataset interface doesn't allow passing the filters on read)
+
+    """
+    import pyarrow
+    from pyarrow import parquet
+
+    kwargs = {}
+    if Version(pyarrow.__version__) < Version("15.0.0"):
+        kwargs = dict(use_legacy_dataset=False)
+
+    try:
+        schema = parquet.ParquetDataset(path, filesystem=filesystem, **kwargs).schema
+    except Exception:
+        schema = parquet.read_schema(path, filesystem=filesystem)
+
+    metadata = schema.metadata
+
+    # read metadata separately to get the raw Parquet FileMetaData metadata
+    # (pyarrow doesn't properly exposes those in schema.metadata for files
+    # created by GDAL - https://issues.apache.org/jira/browse/ARROW-16688)
+    if metadata is None or b"geo" not in metadata:
+        try:
+            metadata = parquet.read_metadata(path, filesystem=filesystem).metadata
+        except Exception:
+            pass
+
+    return schema, metadata
+
+
 def _read_parquet(path, columns=None, storage_options=None, **kwargs):
     """
     Load a Parquet object from the file path, returning a GeoDataFrame.
@@ -636,27 +671,12 @@ def _read_parquet(path, columns=None, storage_options=None, **kwargs):
     filesystem, path = _get_filesystem_path(
         path, filesystem=filesystem, storage_options=storage_options
     )
-
     path = _expand_user(path)
+
+    _, metadata = _read_parquet_schema_and_metadata(path, filesystem)
+
     kwargs["use_pandas_metadata"] = True
     table = parquet.read_table(path, columns=columns, filesystem=filesystem, **kwargs)
-
-    # read metadata separately to get the raw Parquet FileMetaData metadata
-    # (pyarrow doesn't properly exposes those in schema.metadata for files
-    # created by GDAL - https://issues.apache.org/jira/browse/ARROW-16688)
-    metadata = None
-    if table.schema.metadata is None or b"geo" not in table.schema.metadata:
-        try:
-            # read_metadata does not accept a filesystem keyword, so need to
-            # handle this manually (https://issues.apache.org/jira/browse/ARROW-16719)
-            if filesystem is not None:
-                pa_filesystem = _ensure_arrow_fs(filesystem)
-                with pa_filesystem.open_input_file(path) as source:
-                    metadata = parquet.read_metadata(source).metadata
-            else:
-                metadata = parquet.read_metadata(path).metadata
-        except Exception:
-            pass
 
     return _arrow_to_geopandas(table, metadata)
 
