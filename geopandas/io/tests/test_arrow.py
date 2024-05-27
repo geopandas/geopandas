@@ -1037,7 +1037,7 @@ def test_to_parquet_bbox_structure_and_metadata(tmpdir, naturalearth_lowres):
             {"xmin": 0.0, "ymin": 0.0, "xmax": 5.0, "ymax": 5.0},
         ),
     ],
-    ids=["Point geometry", "LineString geometry", "Polygon", "Multipolygon"],
+    ids=["Point", "LineString", "Polygon", "Multipolygon"],
 )
 def test_to_parquet_bbox_values(tmpdir, geometry, expected_bbox):
     # check bbox bounds being written for different geometry types.
