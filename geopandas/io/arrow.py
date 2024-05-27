@@ -591,13 +591,37 @@ def _ensure_arrow_fs(filesystem):
     return filesystem
 
 
-def _read_parquet(
-    path,
-    columns=None,
-    storage_options=None,
-    bbox=None,
-    **kwargs,
-):
+def _read_parquet_schema_and_metadata(path, filesystem):
+    """
+    Opening the Parquet file/dataset a first time to get the schema and metadata.
+
+    TODO: we should look into how we can reuse opened dataset for reading the
+    actual data, to avoid discovering the dataset twice (problem right now is
+    that the ParquetDataset interface doesn't allow passing the filters on read)
+
+    """
+    from pyarrow import parquet
+
+    try:
+        schema = parquet.ParquetDataset(path, filesystem=filesystem).schema
+    except Exception:
+        schema = parquet.read_schema(path, filesystem=filesystem)
+
+    metadata = schema.metadata
+
+    # read metadata separately to get the raw Parquet FileMetaData metadata
+    # (pyarrow doesn't properly exposes those in schema.metadata for files
+    # created by GDAL - https://issues.apache.org/jira/browse/ARROW-16688)
+    if metadata is None or b"geo" not in metadata:
+        try:
+            metadata = parquet.read_metadata(path, filesystem=filesystem).metadata
+        except Exception:
+            pass
+
+    return schema, metadata
+
+
+def _read_parquet(path, columns=None, storage_options=None, bbox=None, **kwargs):
     """
     Load a Parquet object from the file path, returning a GeoDataFrame.
 
@@ -676,9 +700,9 @@ def _read_parquet(
     filesystem, path = _get_filesystem_path(
         path, filesystem=filesystem, storage_options=storage_options
     )
-
     path = _expand_user(path)
     schema, metadata = _read_parquet_schema_and_metadata(path, filesystem)
+
     geo_metadata = _validate_metadata(metadata)
 
     bbox_filter = (
@@ -693,12 +717,13 @@ def _read_parquet(
         columns = _get_non_bbox_columns(schema, geo_metadata)
 
     # if both bbox and filters kwargs are used, must splice together.
-    kwargs["use_pandas_metadata"] = True
     if "filters" in kwargs:
         filters_kwarg = kwargs.pop("filters")
         filters = _splice_bbox_and_filters(filters_kwarg, bbox_filter)
     else:
         filters = bbox_filter
+
+    kwargs["use_pandas_metadata"] = True
 
     table = parquet.read_table(
         path, columns=columns, filesystem=filesystem, filters=filters, **kwargs
@@ -775,37 +800,6 @@ def _read_feather(path, columns=None, **kwargs):
     table = feather.read_table(path, columns=columns, **kwargs)
     _validate_metadata(table.schema.metadata)
     return _arrow_to_geopandas(table)
-
-
-def _read_parquet_schema_and_metadata(path, filesystem):
-    ds = import_optional_dependency(
-        "pyarrow.dataset", extra="pyarrow is required for Feather support."
-    )
-    parquet = import_optional_dependency(
-        "pyarrow.parquet", extra="pyarrow is required for Parquet support."
-    )
-    try:
-        schema = ds.dataset(path, filesystem=filesystem).schema
-    except Exception:
-        schema = parquet.read_schema(path, filesystem=filesystem)
-
-    metadata = schema.metadata
-
-    # if GDAL-produced malformed file
-    if metadata is None or b"geo" not in metadata:
-        try:
-            # read_metadata does not accept a filesystem keyword, so need to
-            # handle this manually (https://issues.apache.org/jira/browse/ARROW-16719)
-            if filesystem is not None:
-                pa_filesystem = _ensure_arrow_fs(filesystem)
-                with pa_filesystem.open_input_file(path) as source:
-                    metadata = parquet.read_metadata(source).metadata
-            else:
-                metadata = parquet.read_metadata(path).metadata
-        except Exception:
-            pass
-
-    return schema, metadata
 
 
 def _validate_metadata(metadata):
