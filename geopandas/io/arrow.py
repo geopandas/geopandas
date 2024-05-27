@@ -306,6 +306,14 @@ def _validate_geo_metadata(metadata):
                 stacklevel=4,
             )
 
+        if "covering" in column_metadata:
+            covering = column_metadata["covering"]
+            if "bbox" in covering:
+                bbox = covering["bbox"]
+                for var in ["xmin", "ymin", "xmax", "ymax"]:
+                    if var not in bbox.keys():
+                        raise ValueError("Metadata for bbox column is malformed.")
+
 
 def _geopandas_to_arrow(df, index=None, schema_version=None, write_covering_bbox=None):
     """
@@ -591,6 +599,23 @@ def _ensure_arrow_fs(filesystem):
     return filesystem
 
 
+def _validate_and_decode_metadata(metadata):
+    if metadata is None or b"geo" not in metadata:
+        raise ValueError(
+            """Missing geo metadata in Parquet/Feather file.
+            Use pandas.read_parquet/read_feather() instead."""
+        )
+
+    # check for malformed metadata
+    try:
+        decoded_geo_metadata = _decode_metadata(metadata.get(b"geo", b""))
+    except (TypeError, json.decoder.JSONDecodeError):
+        raise ValueError("Missing or malformed geo metadata in Parquet/Feather file")
+
+    _validate_geo_metadata(decoded_geo_metadata)
+    return decoded_geo_metadata
+
+
 def _read_parquet_schema_and_metadata(path, filesystem):
     """
     Opening the Parquet file/dataset a first time to get the schema and metadata.
@@ -708,7 +733,7 @@ def _read_parquet(path, columns=None, storage_options=None, bbox=None, **kwargs)
     path = _expand_user(path)
     schema, metadata = _read_parquet_schema_and_metadata(path, filesystem)
 
-    geo_metadata = _validate_metadata(metadata)
+    geo_metadata = _validate_and_decode_metadata(metadata)
 
     bbox_filter = (
         _get_parquet_bbox_filter(geo_metadata, bbox) if bbox is not None else None
@@ -803,30 +828,14 @@ def _read_feather(path, columns=None, **kwargs):
     path = _expand_user(path)
 
     table = feather.read_table(path, columns=columns, **kwargs)
-    _validate_metadata(table.schema.metadata)
+    _validate_and_decode_metadata(table.schema.metadata)
     return _arrow_to_geopandas(table)
-
-
-def _validate_metadata(metadata):
-    if metadata is None or b"geo" not in metadata:
-        raise ValueError(
-            """Missing geo metadata in Parquet/Feather file.
-            Use pandas.read_parquet/read_feather() instead."""
-        )
-
-    # check for malformed metadata
-    try:
-        decoded_geo_metadata = _decode_metadata(metadata.get(b"geo", b""))
-    except (TypeError, json.decoder.JSONDecodeError):
-        raise ValueError("Missing or malformed geo metadata in Parquet/Feather file")
-
-    _validate_geo_metadata(decoded_geo_metadata)
-    return decoded_geo_metadata
 
 
 def _get_parquet_bbox_filter(geo_metadata, bbox):
 
-    _validate_bbox_column_in_parquet(geo_metadata)
+    if not _check_if_covering_in_geo_metadata(geo_metadata):
+        raise ValueError("No covering bbox in parquet file.")
 
     bbox_column_name = _get_bbox_encoding_column_name(geo_metadata)
     return _convert_bbox_to_parquet_filter(bbox, bbox_column_name)
@@ -843,17 +852,6 @@ def _convert_bbox_to_parquet_filter(bbox, bbox_column_name):
     )
 
 
-def _validate_bbox_column_in_parquet(geo_metadata):
-    if not _check_if_covering_in_geo_metadata(geo_metadata):
-        raise ValueError("No covering bbox in parquet file.")
-
-    for var in ["xmin", "ymin", "xmax", "ymax"]:
-        if var not in geo_metadata["columns"]["geometry"]["covering"]["bbox"].keys():
-            raise ValueError("Metadata for bbox column is malformed.")
-
-    return True
-
-
 def _check_if_covering_in_geo_metadata(geo_metadata):
     return "covering" in geo_metadata["columns"]["geometry"].keys()
 
@@ -864,7 +862,6 @@ def _get_bbox_encoding_column_name(geo_metadata):
 
 def _get_non_bbox_columns(schema, geo_metadata):
 
-    _validate_bbox_column_in_parquet(geo_metadata)
     bbox_column_name = _get_bbox_encoding_column_name(geo_metadata)
     columns = schema.names
     if bbox_column_name in columns:
