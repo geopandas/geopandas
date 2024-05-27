@@ -1271,7 +1271,7 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
         write_covering_bbox : bool, default False
             Writes the bounding box column for each row entry with column
             name 'bbox'. Writing a bbox column can be computationally
-            expensive, hence is default setting is False.
+            expensive, but allows you to specify a `bbox` in :func:`read_parquet` for filtered reading.
         kwargs
             Additional keyword arguments passed to :func:`pyarrow.parquet.write_table`.
 
