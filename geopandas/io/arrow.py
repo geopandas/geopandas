@@ -650,11 +650,11 @@ def _read_parquet(
     read_bbox_column: bool, default False
         The bbox column is a struct with the minimum rectangular box that
         encompasses the geometry. It is computationally expensive to read
-        in a struct into a GeoDataFrame. As such, it is default to not
-        read in this column unless explictly specified as True.
-        If  ``columns`` arguement is used and contains ``bbox``,
-        this will override ``read_bbox_column`` and include ``bbox``
-        even if this is False.
+        a struct into a GeoDataFrame. As such, the default is to
+        skip reading this columns.
+        If  the bbox column name specified in parquet metadata (under the the "covering" key) 
+        is specified in ``columns``, then the column will always be included and the value of 
+        ``read_bbox_column`` is ignored.
 
     **kwargs
         Any additional kwargs passed to :func:`pyarrow.parquet.read_table`.
