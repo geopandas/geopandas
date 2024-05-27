@@ -27,7 +27,6 @@ from geopandas.io.arrow import (
     _geopandas_to_arrow,
     _get_filesystem_path,
     _remove_id_from_member_of_ensembles,
-    _validate_bbox_column_in_parquet,
     _validate_dataframe,
     _validate_geo_metadata,
 )
@@ -42,6 +41,8 @@ DATA_PATH = pathlib.Path(os.path.dirname(__file__)) / "data"
 
 # Skip all tests in this module if pyarrow is not available
 pyarrow = pytest.importorskip("pyarrow")
+
+import pyarrow.compute as pc
 
 
 @pytest.fixture(
@@ -1124,7 +1125,7 @@ def test_read_parquet_bbox_partitioned(tmpdir, naturalearth_lowres):
         (Polygon([(0, 0), (4, 0), (4, 4), (0, 4)]), (1, 1, 5, 3)),
     ],
 )
-def test_partial_overlap_of_geometry(tmpdir, geometry, bbox):
+def test_read_parquet_bbox_partial_overlap_of_geometry(tmpdir, geometry, bbox):
     df = GeoDataFrame(data=[[1, 2]], columns=["a", "b"], geometry=[geometry])
     filename = os.path.join(str(tmpdir), "test.pq")
     df.to_parquet(filename, write_covering_bbox=True)
@@ -1158,19 +1159,6 @@ def test_read_parquet_no_bbox_partitioned(tmpdir, naturalearth_lowres):
         read_parquet(basedir, bbox=(0, 0, 20, 20))
 
 
-def test_check_bbox_covering_column_in_parquet(tmpdir, naturalearth_lowres):
-    # check error message
-    from pyarrow import parquet
-
-    df = read_file(naturalearth_lowres)
-    filename = os.path.join(str(tmpdir), "test.pq")
-    df.to_parquet(filename)
-    metadata = parquet.read_schema(filename).metadata
-    geo_metadata = _decode_metadata(metadata.get(b"geo", b""))
-    with pytest.raises(ValueError, match="No covering bbox in parquet file."):
-        _validate_bbox_column_in_parquet(geo_metadata)
-
-
 def test_convert_bbox_to_parquet_filter():
     # check conversion of bbox to parquet filter expression
     import pyarrow.compute as pc
@@ -1199,36 +1187,20 @@ def test_read_parquet_bbox_column_default_behaviour(tmpdir, naturalearth_lowres)
     assert list(result2.columns) == ["name", "geometry"]
 
 
-def test_filters_format_as_DNF(tmpdir, naturalearth_lowres):
+@pytest.mark.parametrize(
+    "filters",
+    [
+        [("gdp_md_est", ">", 20000)],
+        pc.field("gdp_md_est") > 20000,
+    ],
+)
+def test_read_parquet_filters_and_bbox(tmpdir, naturalearth_lowres, filters):
     df = read_file(naturalearth_lowres)
     filename = os.path.join(str(tmpdir), "test.pq")
     df.to_parquet(filename, write_covering_bbox=True)
 
-    filters = [("gdp_md_est", ">", 20000)]
-
-    pq_df = read_parquet(filename, filters=filters, bbox=(0, 0, 20, 20))
-    assert pq_df["name"].values.tolist() == [
-        "Dem. Rep. Congo",
-        "France",
-        "Nigeria",
-        "Cameroon",
-        "Ghana",
-        "Algeria",
-        "Libya",
-    ]
-
-
-def test_filters_format_as_expression(tmpdir, naturalearth_lowres):
-    import pyarrow.compute as pc
-
-    df = read_file(naturalearth_lowres)
-    filename = os.path.join(str(tmpdir), "test.pq")
-    df.to_parquet(filename, write_covering_bbox=True)
-
-    filters = pc.field("gdp_md_est") > 20000
-    pq_df = read_parquet(filename, filters=filters, bbox=(0, 0, 20, 20))
-
-    assert pq_df["name"].values.tolist() == [
+    result = read_parquet(filename, filters=filters, bbox=(0, 0, 20, 20))
+    assert result["name"].values.tolist() == [
         "Dem. Rep. Congo",
         "France",
         "Nigeria",
@@ -1243,19 +1215,13 @@ def test_filters_format_as_expression(tmpdir, naturalearth_lowres):
     "filters",
     [
         ([("gdp_md_est", ">", 15000), ("gdp_md_est", "<", 16000)]),
-        (
-            (pyarrow.compute.field("gdp_md_est") > 15000)
-            & (pyarrow.compute.field("gdp_md_est") < 16000)
-        ),
+        ((pc.field("gdp_md_est") > 15000) & (pc.field("gdp_md_est") < 16000)),
     ],
 )
-def test_filters_without_bbox_with_different_format(
-    tmpdir, naturalearth_lowres, filters
-):
+def test_read_parquet_filters_without_bbox(tmpdir, naturalearth_lowres, filters):
     df = read_file(naturalearth_lowres)
     filename = os.path.join(str(tmpdir), "test.pq")
     df.to_parquet(filename, write_covering_bbox=True)
 
-    pq_df = read_parquet(filename, filters=filters)
-
-    assert pq_df["name"].values.tolist() == ["Burkina Faso", "Mozambique", "Albania"]
+    result = read_parquet(filename, filters=filters)
+    assert result["name"].values.tolist() == ["Burkina Faso", "Mozambique", "Albania"]
