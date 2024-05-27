@@ -600,10 +600,15 @@ def _read_parquet_schema_and_metadata(path, filesystem):
     that the ParquetDataset interface doesn't allow passing the filters on read)
 
     """
+    import pyarrow
     from pyarrow import parquet
 
+    kwargs = {}
+    if Version(pyarrow.__version__) < Version("15.0.0"):
+        kwargs = dict(use_legacy_dataset=False)
+
     try:
-        schema = parquet.ParquetDataset(path, filesystem=filesystem).schema
+        schema = parquet.ParquetDataset(path, filesystem=filesystem, **kwargs).schema
     except Exception:
         schema = parquet.read_schema(path, filesystem=filesystem)
 
