@@ -1149,8 +1149,102 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
 
         return df
 
+    def to_arrow(
+        self, *, index=None, geometry_encoding="WKB", interleaved=True, include_z=None
+    ):
+        """Encode a GeoDataFrame to GeoArrow format.
+
+        See https://geoarrow.org/ for details on the GeoArrow specification.
+
+        This functions returns a generic Arrow data object implementing
+        the `Arrow PyCapsule Protocol`_ (i.e. having an ``__arrow_c_stream__``
+        method). This object can then be consumed by your Arrow implementation
+        of choice that supports this protocol.
+
+        .. _Arrow PyCapsule Protocol: https://arrow.apache.org/docs/format/CDataInterface/PyCapsuleInterface.html
+
+        .. versionadded:: 1.0
+
+        Parameters
+        ----------
+        index : bool, default None
+            If ``True``, always include the dataframe's index(es) as columns
+            in the file output.
+            If ``False``, the index(es) will not be written to the file.
+            If ``None``, the index(ex) will be included as columns in the file
+            output except `RangeIndex` which is stored as metadata only.
+        geometry_encoding : {'WKB', 'geoarrow' }, default 'WKB'
+            The GeoArrow encoding to use for the data conversion.
+        interleaved : bool, default True
+            Only relevant for 'geoarrow' encoding. If True, the geometries'
+            coordinates are interleaved in a single fixed size list array.
+            If False, the coordinates are stored as separate arrays in a
+            struct type.
+        include_z : bool, default None
+            Only relevant for 'geoarrow' encoding (for WKB, the dimensionality
+            of the individial geometries is preserved).
+            If False, return 2D geometries. If True, include the third dimension
+            in the output (if a geometry has no third dimension, the z-coordinates
+            will be NaN). By default, will infer the dimensionality from the
+            input geometries. Note that this inference can be unreliable with
+            empty geometries (for a guaranteed result, it is recommended to
+            specify the keyword).
+
+        Returns
+        -------
+        ArrowTable
+            A generic Arrow table object with geometry columns encoded to
+            GeoArrow.
+
+        Examples
+        --------
+        >>> from shapely.geometry import Point
+        >>> data = {'col1': ['name1', 'name2'], 'geometry': [Point(1, 2), Point(2, 1)]}
+        >>> gdf = geopandas.GeoDataFrame(data)
+        >>> gdf
+            col1     geometry
+        0  name1  POINT (1 2)
+        1  name2  POINT (2 1)
+
+        >>> arrow_table = gdf.to_arrow()
+        >>> arrow_table
+        <geopandas.io.geoarrow.ArrowTable object at ...>
+
+        The returned data object needs to be consumed by a library implementing
+        the Arrow PyCapsule Protocol. For example, wrapping the data as a
+        pyarrow.Table (requires pyarrow >= 14.0):
+
+        >>> import pyarrow as pa
+        >>> table = pa.table(arrow_table)
+        >>> table
+        pyarrow.Table
+        col1: string
+        geometry: binary
+        ----
+        col1: [["name1","name2"]]
+        geometry: [[0101000000000000000000F03F0000000000000040,\
+01010000000000000000000040000000000000F03F]]
+
+        """
+        from geopandas.io.geoarrow import ArrowTable, geopandas_to_arrow
+
+        table = geopandas_to_arrow(
+            self,
+            index=index,
+            geometry_encoding=geometry_encoding,
+            interleaved=interleaved,
+            include_z=include_z,
+        )
+        return ArrowTable(table)
+
     def to_parquet(
-        self, path, index=None, compression="snappy", schema_version=None, **kwargs
+        self,
+        path,
+        index=None,
+        compression="snappy",
+        schema_version=None,
+        write_covering_bbox=False,
+        **kwargs,
     ):
         """Write a GeoDataFrame to the Parquet format.
 
@@ -1174,6 +1268,11 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
         schema_version : {'0.1.0', '0.4.0', '1.0.0', None}
             GeoParquet specification version; if not provided will default to
             latest supported version.
+        write_covering_bbox : bool, default False
+            Writes the bounding box column for each row entry with column
+            name 'bbox'. Writing a bbox column can be computationally
+            expensive, but allows you to specify a `bbox` in :
+            func:`read_parquet` for filtered reading.
         kwargs
             Additional keyword arguments passed to :func:`pyarrow.parquet.write_table`.
 
@@ -1206,6 +1305,7 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
             compression=compression,
             index=index,
             schema_version=schema_version,
+            write_covering_bbox=write_covering_bbox,
             **kwargs,
         )
 
