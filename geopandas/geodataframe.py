@@ -1243,6 +1243,7 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
         index=None,
         compression="snappy",
         geometry_encoding="WKB",
+        write_covering_bbox=False,
         schema_version=None,
         **kwargs,
     ):
@@ -1272,6 +1273,11 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
         schema_version : {'0.1.0', '0.4.0', '1.0.0', None}
             GeoParquet specification version; if not provided will default to
             latest supported version.
+        write_covering_bbox : bool, default False
+            Writes the bounding box column for each row entry with column
+            name 'bbox'. Writing a bbox column can be computationally
+            expensive, but allows you to specify a `bbox` in :
+            func:`read_parquet` for filtered reading.
         kwargs
             Additional keyword arguments passed to :func:`pyarrow.parquet.write_table`.
 
@@ -1305,6 +1311,7 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
             geometry_encoding=geometry_encoding,
             index=index,
             schema_version=schema_version,
+            write_covering_bbox=write_covering_bbox,
             **kwargs,
         )
 
