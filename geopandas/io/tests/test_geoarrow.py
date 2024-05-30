@@ -440,6 +440,15 @@ def test_geoarrow_import_geometry_column(encoding):
     assert_geodataframe_equal(result, gdf.set_geometry("centroid"))
 
 
+def test_geoarrow_import_missing_geometry():
+    table = pa.table({"a": [0, 1, 2], "b": [0.1, 0.2, 0.3]})
+    with pytest.raises(ValueError, match="No geometry column found"):
+        GeoDataFrame.from_arrow(table)
+
+    with pytest.raises(ValueError, match="No GeoArrow geometry field found"):
+        GeoSeries.from_arrow(table["a"].chunk(0))
+
+
 def test_geoarrow_import_capsule_interface():
     # ensure we can import non-pyarrow object
     pytest.importorskip("pyarrow", minversion="14.0.0")
@@ -507,3 +516,21 @@ def test_geoarrow_import_geoseries():
         # we can specify the name as one of the kwargs
         result = GeoSeries.from_arrow(arr, name="test")
         assert_geoseries_equal(result, ser)
+
+
+def test_geoarrow_import_unknown_geoarrow_type():
+    gdf = GeoDataFrame({"col": [1]}, geometry=[box(0, 0, 10, 10)])
+    table = pa_table(gdf.to_arrow())
+    schema = table.schema
+    new_field = schema.field("geometry").with_metadata(
+        {
+            b"ARROW:extension:name": b"geoarrow.unknown",
+            b"ARROW:extension:metadata": b"{}",
+        }
+    )
+
+    new_schema = pa.schema([schema.field(0), new_field])
+    new_table = table.cast(new_schema)
+
+    with pytest.raises(TypeError, match="Unknown GeoArrow extension type"):
+        GeoDataFrame.from_arrow(new_table)

@@ -467,7 +467,7 @@ def arrow_to_geopandas(table, geometry=None):
             geom_fields.append((i, field.name, *geom))
 
     if len(geom_fields) == 0:
-        raise ValueError("""Missing geometry columns.""")
+        raise ValueError("No geometry column found in the Arrow table.")
 
     table_attr = table.drop([f[1] for f in geom_fields])
     df = table_attr.to_pandas()
@@ -485,7 +485,7 @@ def arrow_to_geopandas(table, geometry=None):
                 construct_shapely_array(table[col].combine_chunks(), ext_name), crs=crs
             )
         else:
-            raise ValueError(f"Unknown GeoArrow extension type: {ext_name}")
+            raise TypeError(f"Unknown GeoArrow extension type: {ext_name}")
 
         df.insert(i, col, geom_arr)
 
