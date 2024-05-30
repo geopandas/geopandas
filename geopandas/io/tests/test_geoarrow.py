@@ -441,6 +441,8 @@ def test_geoarrow_import_geometry_column(encoding):
 
 
 def test_geoarrow_import_missing_geometry():
+    pytest.importorskip("pyarrow", minversion="14.0.0")
+
     table = pa.table({"a": [0, 1, 2], "b": [0.1, 0.2, 0.3]})
     with pytest.raises(ValueError, match="No geometry column found"):
         GeoDataFrame.from_arrow(table)
