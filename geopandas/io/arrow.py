@@ -110,7 +110,7 @@ def _get_geometry_types(series):
     return sorted([_geometry_type_names[idx] for idx in geometry_types])
 
 
-def _create_metadata(df, schema_version=None):
+def _create_metadata(df, schema_version=None, write_covering_bbox=False):
     """Create and encode geo metadata dict.
 
     Parameters
@@ -119,6 +119,10 @@ def _create_metadata(df, schema_version=None):
     schema_version : {'0.1.0', '0.4.0', '1.0.0-beta.1', '1.0.0', None}
         GeoParquet specification version; if not provided will default to
         latest supported version.
+    write_covering_bbox : bool, default False
+        Writes the bounding box column for each row entry with column
+        name 'bbox'. Writing a bbox column can be computationally
+        expensive, hence is default setting is False.
 
     Returns
     -------
@@ -163,6 +167,16 @@ def _create_metadata(df, schema_version=None):
         if np.isfinite(bbox).all():
             # don't add bbox with NaNs for empty / all-NA geometry column
             column_metadata[col]["bbox"] = bbox
+
+        if write_covering_bbox:
+            column_metadata[col]["covering"] = {
+                "bbox": {
+                    "xmin": ["bbox", "xmin"],
+                    "ymin": ["bbox", "ymin"],
+                    "xmax": ["bbox", "xmax"],
+                    "ymax": ["bbox", "ymax"],
+                },
+            }
 
     return {
         "primary_column": df._geometry_column_name,
@@ -231,7 +245,7 @@ def _validate_dataframe(df):
         raise ValueError("Index level names must be strings")
 
 
-def _validate_metadata(metadata):
+def _validate_geo_metadata(metadata):
     """Validate geo metadata.
     Must not be empty, and must contain the structure specified above.
 
@@ -292,21 +306,41 @@ def _validate_metadata(metadata):
                 stacklevel=4,
             )
 
+        if "covering" in column_metadata:
+            covering = column_metadata["covering"]
+            if "bbox" in covering:
+                bbox = covering["bbox"]
+                for var in ["xmin", "ymin", "xmax", "ymax"]:
+                    if var not in bbox.keys():
+                        raise ValueError("Metadata for bbox column is malformed.")
 
-def _geopandas_to_arrow(df, index=None, schema_version=None):
+
+def _geopandas_to_arrow(df, index=None, schema_version=None, write_covering_bbox=None):
     """
     Helper function with main, shared logic for to_parquet/to_feather.
     """
+    from pyarrow import StructArray
+
     from geopandas.io.geoarrow import geopandas_to_arrow
 
     _validate_dataframe(df)
 
     # create geo metadata before altering incoming data frame
-    geo_metadata = _create_metadata(df, schema_version=schema_version)
+    geo_metadata = _create_metadata(
+        df, schema_version=schema_version, write_covering_bbox=write_covering_bbox
+    )
 
     table = geopandas_to_arrow(
         df, geometry_encoding="WKB", index=index, interleaved=True
     )
+
+    if write_covering_bbox:
+        bounds = df.bounds
+        bbox_array = StructArray.from_arrays(
+            [bounds["minx"], bounds["miny"], bounds["maxx"], bounds["maxy"]],
+            names=["xmin", "ymin", "xmax", "ymax"],
+        )
+        table = table.append_column("bbox", bbox_array)
 
     # Store geopandas specific file-level metadata
     # This must be done AFTER creating the table or it is not persisted
@@ -317,7 +351,13 @@ def _geopandas_to_arrow(df, index=None, schema_version=None):
 
 
 def _to_parquet(
-    df, path, index=None, compression="snappy", schema_version=None, **kwargs
+    df,
+    path,
+    index=None,
+    compression="snappy",
+    schema_version=None,
+    write_covering_bbox=False,
+    **kwargs,
 ):
     """
     Write a GeoDataFrame to the Parquet format.
@@ -346,6 +386,10 @@ def _to_parquet(
     schema_version : {'0.1.0', '0.4.0', '1.0.0', None}
         GeoParquet specification version; if not provided will default to
         latest supported version.
+    write_covering_bbox : bool, default False
+        Writes the bounding box column for each row entry with column
+        name 'bbox'. Writing a bbox column can be computationally
+        expensive, hence is default setting is False.
     **kwargs
         Additional keyword arguments passed to pyarrow.parquet.write_table().
     """
@@ -365,7 +409,12 @@ def _to_parquet(
             schema_version = kwargs.pop("version")
 
     path = _expand_user(path)
-    table = _geopandas_to_arrow(df, index=index, schema_version=schema_version)
+    table = _geopandas_to_arrow(
+        df,
+        index=index,
+        schema_version=schema_version,
+        write_covering_bbox=write_covering_bbox,
+    )
     parquet.write_table(table, path, compression=compression, **kwargs)
 
 
@@ -426,31 +475,19 @@ def _to_feather(df, path, index=None, compression=None, schema_version=None, **k
     feather.write_feather(table, path, compression=compression, **kwargs)
 
 
-def _arrow_to_geopandas(table, metadata=None):
+def _arrow_to_geopandas(table, geo_metadata=None):
     """
     Helper function with main, shared logic for read_parquet/read_feather.
     """
     df = table.to_pandas()
 
-    metadata = metadata or table.schema.metadata
-
-    if metadata is None or b"geo" not in metadata:
-        raise ValueError(
-            """Missing geo metadata in Parquet/Feather file.
-            Use pandas.read_parquet/read_feather() instead."""
-        )
-
-    try:
-        metadata = _decode_metadata(metadata.get(b"geo", b""))
-
-    except (TypeError, json.decoder.JSONDecodeError):
-        raise ValueError("Missing or malformed geo metadata in Parquet/Feather file")
-
-    _validate_metadata(metadata)
+    geo_metadata = geo_metadata or _decode_metadata(
+        table.schema.metadata.get(b"geo", b"")
+    )
 
     # Find all geometry columns that were read from the file.  May
     # be a subset if 'columns' parameter is used.
-    geometry_columns = df.columns.intersection(metadata["columns"])
+    geometry_columns = df.columns.intersection(geo_metadata["columns"])
 
     if not len(geometry_columns):
         raise ValueError(
@@ -459,7 +496,7 @@ def _arrow_to_geopandas(table, metadata=None):
             use pandas.read_parquet/read_feather() instead."""
         )
 
-    geometry = metadata["primary_column"]
+    geometry = geo_metadata["primary_column"]
 
     # Missing geometry likely indicates a subset of columns was read;
     # promote the first available geometry to the primary geometry.
@@ -476,7 +513,7 @@ def _arrow_to_geopandas(table, metadata=None):
 
     # Convert the WKB columns that are present back to geometry.
     for col in geometry_columns:
-        col_metadata = metadata["columns"][col]
+        col_metadata = geo_metadata["columns"][col]
         if "crs" in col_metadata:
             crs = col_metadata["crs"]
             if isinstance(crs, dict):
@@ -562,7 +599,59 @@ def _ensure_arrow_fs(filesystem):
     return filesystem
 
 
-def _read_parquet(path, columns=None, storage_options=None, **kwargs):
+def _validate_and_decode_metadata(metadata):
+    if metadata is None or b"geo" not in metadata:
+        raise ValueError(
+            """Missing geo metadata in Parquet/Feather file.
+            Use pandas.read_parquet/read_feather() instead."""
+        )
+
+    # check for malformed metadata
+    try:
+        decoded_geo_metadata = _decode_metadata(metadata.get(b"geo", b""))
+    except (TypeError, json.decoder.JSONDecodeError):
+        raise ValueError("Missing or malformed geo metadata in Parquet/Feather file")
+
+    _validate_geo_metadata(decoded_geo_metadata)
+    return decoded_geo_metadata
+
+
+def _read_parquet_schema_and_metadata(path, filesystem):
+    """
+    Opening the Parquet file/dataset a first time to get the schema and metadata.
+
+    TODO: we should look into how we can reuse opened dataset for reading the
+    actual data, to avoid discovering the dataset twice (problem right now is
+    that the ParquetDataset interface doesn't allow passing the filters on read)
+
+    """
+    import pyarrow
+    from pyarrow import parquet
+
+    kwargs = {}
+    if Version(pyarrow.__version__) < Version("15.0.0"):
+        kwargs = dict(use_legacy_dataset=False)
+
+    try:
+        schema = parquet.ParquetDataset(path, filesystem=filesystem, **kwargs).schema
+    except Exception:
+        schema = parquet.read_schema(path, filesystem=filesystem)
+
+    metadata = schema.metadata
+
+    # read metadata separately to get the raw Parquet FileMetaData metadata
+    # (pyarrow doesn't properly exposes those in schema.metadata for files
+    # created by GDAL - https://issues.apache.org/jira/browse/ARROW-16688)
+    if metadata is None or b"geo" not in metadata:
+        try:
+            metadata = parquet.read_metadata(path, filesystem=filesystem).metadata
+        except Exception:
+            pass
+
+    return schema, metadata
+
+
+def _read_parquet(path, columns=None, storage_options=None, bbox=None, **kwargs):
     """
     Load a Parquet object from the file path, returning a GeoDataFrame.
 
@@ -606,6 +695,11 @@ def _read_parquet(path, columns=None, storage_options=None, **kwargs):
         both ``pyarrow.fs`` and ``fsspec`` (e.g. "s3://") then the ``pyarrow.fs``
         filesystem is preferred. Provide the instantiated fsspec filesystem using
         the ``filesystem`` keyword if you wish to use its implementation.
+    bbox : tuple, optional
+        Bounding box to be used to filter selection from geoparquet data. This
+        is only usable if the data was saved with the bbox covering metadata.
+        Input is of the tuple format (xmin, ymin, xmax, ymax).
+
     **kwargs
         Any additional kwargs passed to :func:`pyarrow.parquet.read_table`.
 
@@ -636,29 +730,36 @@ def _read_parquet(path, columns=None, storage_options=None, **kwargs):
     filesystem, path = _get_filesystem_path(
         path, filesystem=filesystem, storage_options=storage_options
     )
-
     path = _expand_user(path)
+    schema, metadata = _read_parquet_schema_and_metadata(path, filesystem)
+
+    geo_metadata = _validate_and_decode_metadata(metadata)
+
+    bbox_filter = (
+        _get_parquet_bbox_filter(geo_metadata, bbox) if bbox is not None else None
+    )
+
+    if_bbox_column_exists = _check_if_covering_in_geo_metadata(geo_metadata)
+
+    # by default, bbox column is not read in, so must specify which
+    # columns are read in if it exists.
+    if not columns and if_bbox_column_exists:
+        columns = _get_non_bbox_columns(schema, geo_metadata)
+
+    # if both bbox and filters kwargs are used, must splice together.
+    if "filters" in kwargs:
+        filters_kwarg = kwargs.pop("filters")
+        filters = _splice_bbox_and_filters(filters_kwarg, bbox_filter)
+    else:
+        filters = bbox_filter
+
     kwargs["use_pandas_metadata"] = True
-    table = parquet.read_table(path, columns=columns, filesystem=filesystem, **kwargs)
 
-    # read metadata separately to get the raw Parquet FileMetaData metadata
-    # (pyarrow doesn't properly exposes those in schema.metadata for files
-    # created by GDAL - https://issues.apache.org/jira/browse/ARROW-16688)
-    metadata = None
-    if table.schema.metadata is None or b"geo" not in table.schema.metadata:
-        try:
-            # read_metadata does not accept a filesystem keyword, so need to
-            # handle this manually (https://issues.apache.org/jira/browse/ARROW-16719)
-            if filesystem is not None:
-                pa_filesystem = _ensure_arrow_fs(filesystem)
-                with pa_filesystem.open_input_file(path) as source:
-                    metadata = parquet.read_metadata(source).metadata
-            else:
-                metadata = parquet.read_metadata(path).metadata
-        except Exception:
-            pass
+    table = parquet.read_table(
+        path, columns=columns, filesystem=filesystem, filters=filters, **kwargs
+    )
 
-    return _arrow_to_geopandas(table, metadata)
+    return _arrow_to_geopandas(table, geo_metadata)
 
 
 def _read_feather(path, columns=None, **kwargs):
@@ -725,5 +826,55 @@ def _read_feather(path, columns=None, **kwargs):
         raise ImportError("pyarrow >= 0.17 required for Feather support")
 
     path = _expand_user(path)
+
     table = feather.read_table(path, columns=columns, **kwargs)
+    _validate_and_decode_metadata(table.schema.metadata)
     return _arrow_to_geopandas(table)
+
+
+def _get_parquet_bbox_filter(geo_metadata, bbox):
+
+    if not _check_if_covering_in_geo_metadata(geo_metadata):
+        raise ValueError("No covering bbox in parquet file.")
+
+    bbox_column_name = _get_bbox_encoding_column_name(geo_metadata)
+    return _convert_bbox_to_parquet_filter(bbox, bbox_column_name)
+
+
+def _convert_bbox_to_parquet_filter(bbox, bbox_column_name):
+    import pyarrow.compute as pc
+
+    return ~(
+        (pc.field((bbox_column_name, "xmin")) > bbox[2])
+        | (pc.field((bbox_column_name, "ymin")) > bbox[3])
+        | (pc.field((bbox_column_name, "xmax")) < bbox[0])
+        | (pc.field((bbox_column_name, "ymax")) < bbox[1])
+    )
+
+
+def _check_if_covering_in_geo_metadata(geo_metadata):
+    return "covering" in geo_metadata["columns"]["geometry"].keys()
+
+
+def _get_bbox_encoding_column_name(geo_metadata):
+    return geo_metadata["columns"]["geometry"]["covering"]["bbox"]["xmin"][0]
+
+
+def _get_non_bbox_columns(schema, geo_metadata):
+
+    bbox_column_name = _get_bbox_encoding_column_name(geo_metadata)
+    columns = schema.names
+    if bbox_column_name in columns:
+        columns.remove(bbox_column_name)
+    return columns
+
+
+def _splice_bbox_and_filters(kwarg_filters, bbox_filter):
+    parquet = import_optional_dependency(
+        "pyarrow.parquet", extra="pyarrow is required for Parquet support."
+    )
+    if bbox_filter is None:
+        return kwarg_filters
+
+    filters_expression = parquet.filters_to_expression(kwarg_filters)
+    return bbox_filter & filters_expression
