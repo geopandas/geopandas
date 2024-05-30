@@ -547,6 +547,7 @@ def test_geoseries_crs():
     assert gs.crs.to_authority() == ("IGNF", "ETRS89UTM28")
 
 
+@pytest.mark.skipif(not compat.HAS_PYPROJ, reason="Requires pyproj")
 def test_geoseries_override_existing_crs_warning():
     gs = GeoSeries(crs="epsg:4326")
     with pytest.warns(

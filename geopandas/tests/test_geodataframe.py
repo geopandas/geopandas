@@ -373,6 +373,7 @@ class TestDataFrame:
         with pytest.raises(AttributeError, match=msg_geo_col_missing):
             df.geometry
 
+    @pytest.mark.skipif(not compat.HAS_PYPROJ, reason="Requires pyproj")
     def test_override_existing_crs_warning(self):
         with pytest.warns(
             DeprecationWarning,
