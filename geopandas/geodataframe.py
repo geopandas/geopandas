@@ -520,16 +520,15 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 "geometry column.",
             )
 
-        if self.crs is not None:
-            warnings.warn(
-                "Overriding the CRS of a GeoDataFrame that already has CRS. "
-                "This unsafe behavior will be deprecated in future versions."
-                "Use GeoDataFrame.set_crs method instead",
-                stacklevel=2,
-                category=DeprecationWarning,
-            )
-
         if hasattr(self.geometry.values, "crs"):
+            if self.crs is not None:
+                warnings.warn(
+                    "Overriding the CRS of a GeoDataFrame that already has CRS. "
+                    "This unsafe behavior will be deprecated in future versions."
+                    "Use GeoDataFrame.set_crs method instead",
+                    stacklevel=2,
+                    category=DeprecationWarning,
+                )
             self.geometry.values.crs = value
         else:
             # column called 'geometry' without geometry
