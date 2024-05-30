@@ -335,10 +335,14 @@ class TestGeometryArrayCRS:
             )
             df = GeoDataFrame({"geometry": [Point(0, 1)]}).assign(geometry=[0])
         with pytest.raises(
+            ValueError,
+            match="Assigning CRS to a GeoDataFrame without an active geometry",
+        ):
+            df.crs = 27700
+        with pytest.raises(
             AttributeError,
             match="The CRS attribute of a GeoDataFrame without an active",
         ):
-            df.crs = 27700
             assert df.crs == self.osgb
 
     def test_dataframe_getitem_without_geometry_column(self):
