@@ -508,7 +508,7 @@ class TestGeomMethods:
         p2 = Polygon([(2, 0), (3, 0), (3, 1)])
         g = GeoSeries([p1, p2])
         with pytest.warns(
-            FutureWarning, match="The 'unary_union' attribute is deprecated"
+            DeprecationWarning, match="The 'unary_union' attribute is deprecated"
         ):
             result = g.unary_union
         assert result == g.union_all()
