@@ -21,7 +21,6 @@ from shapely.geometry.base import BaseGeometry
 
 import geopandas._compat as compat
 from geopandas import GeoDataFrame, GeoSeries, clip, read_file
-from geopandas._compat import HAS_PYPROJ
 from geopandas.array import GeometryArray, GeometryDtype
 
 import pytest
@@ -550,10 +549,11 @@ def test_geoseries_crs():
 
 def test_geoseries_override_existing_crs_warning():
     gs = GeoSeries(crs="epsg:4326")
-    with warnings.catch_warnings(record=True) as w:
-        warnings.simplefilter("always")
+    with pytest.warns(
+        DeprecationWarning,
+        match="Overriding the CRS of a GeoSeries that already has CRS",
+    ):
         gs.crs = "epsg:2100"
-        assert issubclass(w[-1].category, DeprecationWarning)
 
 
 # -----------------------------------------------------------------------------
@@ -666,7 +666,7 @@ class TestConstructor:
         assert s.name == g.name
         assert s.index is g.index
 
-    @pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not available")
+    @pytest.mark.skipif(not compat.HAS_PYPROJ, reason="pyproj not available")
     def test_from_series_no_set_crs_on_construction(self):
         # https://github.com/geopandas/geopandas/issues/2492
         # also when passing Series[geometry], ensure we don't change crs of

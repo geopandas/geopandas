@@ -2,7 +2,6 @@ import json
 import os
 import shutil
 import tempfile
-import warnings
 
 import numpy as np
 import pandas as pd
@@ -374,11 +373,18 @@ class TestDataFrame:
         with pytest.raises(AttributeError, match=msg_geo_col_missing):
             df.geometry
 
-    def test_geoseries_override_existing_crs_warning(self):
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter("always")
+    def test_override_existing_crs_warning(self):
+        with pytest.warns(
+            DeprecationWarning,
+            match="Overriding the CRS of a GeoSeries that already has CRS",
+        ):
             self.df.geometry.crs = "epsg:2100"
-            assert issubclass(w[-1].category, DeprecationWarning)
+
+        with pytest.warns(
+            DeprecationWarning,
+            match="Overriding the CRS of a GeoDataFrame that already has CRS",
+        ):
+            self.df.crs = "epsg:4326"
 
     def test_active_geometry_name(self):
         # default single active called "geometry"
