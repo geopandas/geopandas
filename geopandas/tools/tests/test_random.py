@@ -1,8 +1,9 @@
-import pytest
 import numpy
-import geopandas
 
+import geopandas
 from geopandas.tools._random import uniform
+
+import pytest
 
 
 @pytest.fixture

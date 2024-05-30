@@ -35,8 +35,11 @@ General methods and attributes
    GeoSeries.z
    GeoSeries.get_coordinates
    GeoSeries.count_coordinates
+   GeoSeries.count_geometries
+   GeoSeries.count_interior_rings
    GeoSeries.set_precision
    GeoSeries.get_precision
+   GeoSeries.get_geometry
 
 Unary predicates
 ----------------
@@ -49,6 +52,7 @@ Unary predicates
    GeoSeries.is_ring
    GeoSeries.is_simple
    GeoSeries.is_valid
+   GeoSeries.is_valid_reason
    GeoSeries.has_z
    GeoSeries.is_ccw
 
@@ -74,6 +78,7 @@ Binary predicates
    GeoSeries.covers
    GeoSeries.covered_by
    GeoSeries.relate
+   GeoSeries.relate_pattern
 
 
 Set-theoretic methods
@@ -99,7 +104,6 @@ Constructive methods and attributes
    GeoSeries.centroid
    GeoSeries.concave_hull
    GeoSeries.convex_hull
-   GeoSeries.delaunay_triangles
    GeoSeries.envelope
    GeoSeries.extract_unique_points
    GeoSeries.force_2d
@@ -139,6 +143,7 @@ Linestring operations
    GeoSeries.interpolate
    GeoSeries.line_merge
    GeoSeries.project
+   GeoSeries.shared_paths
 
 Aggregating and exploding
 -------------------------
@@ -146,8 +151,14 @@ Aggregating and exploding
 .. autosummary::
    :toctree: api/
 
-   GeoSeries.union_all
+   GeoSeries.build_area
+   GeoSeries.delaunay_triangles
    GeoSeries.explode
+   GeoSeries.intersection_all
+   GeoSeries.polygonize
+   GeoSeries.union_all
+   GeoSeries.voronoi_polygons
+
 
 Serialization / IO / conversion
 -------------------------------

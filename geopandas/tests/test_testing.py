@@ -1,17 +1,17 @@
 import warnings
 
 import numpy as np
-
-from shapely.geometry import Point, Polygon
 import pandas as pd
 from pandas import DataFrame, Series
 
+from shapely.geometry import Point, Polygon
+
 from geopandas import GeoDataFrame, GeoSeries
+from geopandas._compat import HAS_PYPROJ
 from geopandas.array import from_shapely
 
-from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
-from geopandas._compat import HAS_PYPROJ
 import pytest
+from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 
 s1 = GeoSeries(
     [

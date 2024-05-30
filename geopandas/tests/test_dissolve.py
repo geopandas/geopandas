@@ -5,12 +5,11 @@ import pandas as pd
 
 import geopandas
 from geopandas import GeoDataFrame, read_file
+from geopandas._compat import HAS_PYPROJ, PANDAS_GE_15, PANDAS_GE_20, PANDAS_GE_30
 
-from pandas.testing import assert_frame_equal
 import pytest
-
-from geopandas._compat import PANDAS_GE_15, PANDAS_GE_20, PANDAS_GE_30, HAS_PYPROJ
 from geopandas.testing import assert_geodataframe_equal, geom_almost_equals
+from pandas.testing import assert_frame_equal
 
 
 @pytest.fixture
@@ -349,3 +348,25 @@ def test_dissolve_multi_agg(nybb_polydf, merged_shapes):
         )
     assert_geodataframe_equal(test, merged_shapes)
     assert len(record) == 0
+
+
+def test_coverage_dissolve(nybb_polydf):
+    manhattan_bronx = nybb_polydf.loc[3:4]
+    others = nybb_polydf.loc[0:2]
+
+    collapsed = [
+        others.geometry.union_all(method="coverage"),
+        manhattan_bronx.geometry.union_all(method="coverage"),
+    ]
+    merged_shapes = GeoDataFrame(
+        {"myshapes": collapsed},
+        geometry="myshapes",
+        index=pd.Index([5, 6], name="manhattan_bronx"),
+        crs=nybb_polydf.crs,
+    )
+
+    merged_shapes["BoroName"] = ["Staten Island", "Manhattan"]
+    merged_shapes["BoroCode"] = [5, 1]
+
+    test = nybb_polydf.dissolve("manhattan_bronx", method="coverage")
+    assert_frame_equal(merged_shapes, test, check_column_type=False)

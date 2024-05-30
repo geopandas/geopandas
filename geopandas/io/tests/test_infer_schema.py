@@ -1,5 +1,8 @@
 from collections import OrderedDict
 
+import numpy as np
+import pandas as pd
+
 from shapely.geometry import (
     LineString,
     MultiLineString,
@@ -9,11 +12,10 @@ from shapely.geometry import (
     Polygon,
 )
 
-import pandas as pd
-import pytest
-import numpy as np
 from geopandas import GeoDataFrame
 from geopandas.io.file import infer_schema
+
+import pytest
 
 # Credit: Polygons below come from Montreal city Open Data portal
 # http://donnees.ville.montreal.qc.ca/dataset/unites-evaluation-fonciere

@@ -1,13 +1,13 @@
+import warnings
 from functools import partial
 from typing import Optional
-import warnings
 
 import numpy as np
 import pandas as pd
 
 from geopandas import GeoDataFrame
-from geopandas.array import _check_crs, _crs_mismatch_warn
 from geopandas._compat import PANDAS_GE_30
+from geopandas.array import _check_crs, _crs_mismatch_warn
 
 
 def sjoin(
@@ -422,7 +422,11 @@ def _frame_join(
     new_index = pd.RangeIndex(len(l_idx))
     left = left_df._reindex_with_indexers({0: (new_index, l_idx)})
     right = right_df._reindex_with_indexers({0: (new_index, r_idx)})
-    joined = pd.concat([left, right], axis=1, copy=False)
+    if PANDAS_GE_30:
+        kwargs = {}
+    else:
+        kwargs = dict(copy=False)
+    joined = pd.concat([left, right], axis=1, **kwargs)
 
     if how in ("inner", "left"):
         joined = _restore_index(joined, left_index, left_index_original)

@@ -70,7 +70,6 @@ jobs:
           - env: ci/envs/311-dev.yaml
             os: ubuntu-latest
             dev: true
-            pandas_copy_on_write: "1"
 
     steps:
       - uses: actions/checkout@v4
@@ -88,15 +87,6 @@ jobs:
           micromamba list
 
       - name: Test
-        env:
-          PANDAS_COPY_ON_WRITE: ${{ matrix.pandas_copy_on_write || '0' }}
-        run: |
-          pytest -v -r fEs -n auto --color=yes --cov=geopandas --cov-append --cov-report term-missing --cov-report xml geopandas/
-
-      - name: Test with Copy-on-Write
-        if: ${{ always() && matrix.dev }}
-        env:
-          PANDAS_COPY_ON_WRITE: '1'
         run: |
           pytest -v -r fEs -n auto --color=yes --cov=geopandas --cov-append --cov-report term-missing --cov-report xml geopandas/
 

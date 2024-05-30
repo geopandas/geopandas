@@ -19,16 +19,16 @@ import operator
 
 import numpy as np
 import pandas as pd
-from pandas.testing import assert_series_equal, assert_frame_equal
 from pandas.tests.extension import base as extension_tests
 
 import shapely.geometry
 from shapely.geometry import Point
 
+from geopandas._compat import PANDAS_GE_15, PANDAS_GE_21, PANDAS_GE_22
 from geopandas.array import GeometryArray, GeometryDtype, from_shapely
-from geopandas._compat import PANDAS_GE_15, PANDAS_GE_22
 
 import pytest
+from pandas.testing import assert_frame_equal, assert_series_equal
 
 # -----------------------------------------------------------------------------
 # Compat with extension tests in older pandas versions
@@ -453,27 +453,29 @@ class TestMissing(extension_tests.BaseMissingTests):
         # `geopandas\tests\test_pandas_methods.py::test_fillna_scalar`
         # and `geopandas\tests\test_pandas_methods.py::test_fillna_series`.
 
-    @pytest.mark.skip("fillna method not supported")
+    @pytest.mark.skipif(
+        not PANDAS_GE_21, reason="fillna method not supported with older pandas"
+    )
     def test_fillna_limit_pad(self, data_missing):
-        pass
+        super().test_fillna_limit_pad(data_missing)
 
-    @pytest.mark.skip("fillna method not supported")
+    @pytest.mark.skipif(
+        not PANDAS_GE_21, reason="fillna method not supported with older pandas"
+    )
     def test_fillna_limit_backfill(self, data_missing):
-        pass
+        super().test_fillna_limit_backfill(data_missing)
 
-    @pytest.mark.skip("fillna method not supported")
-    def test_fillna_series_method(self, data_missing, method):
-        pass
+    @pytest.mark.skipif(
+        not PANDAS_GE_21, reason="fillna method not supported with older pandas"
+    )
+    def test_fillna_series_method(self, data_missing, fillna_method):
+        super().test_fillna_series_method(data_missing, fillna_method)
 
-    @pytest.mark.skip("fillna method not supported")
+    @pytest.mark.skipif(
+        not PANDAS_GE_21, reason="fillna method not supported with older pandas"
+    )
     def test_fillna_no_op_returns_copy(self, data):
-        pass
-
-    @pytest.mark.skip("fillna method not supported")
-    def test_ffill_limit_area(
-        self, data_missing, limit_area, input_ilocs, expected_ilocs
-    ):
-        pass
+        super().test_fillna_no_op_returns_copy(data)
 
 
 if PANDAS_GE_22:

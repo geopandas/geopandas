@@ -1,4 +1,5 @@
 import numpy as np
+
 from shapely.geometry import Point
 from shapely.wkt import loads
 

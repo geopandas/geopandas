@@ -2,24 +2,27 @@ import datetime
 import io
 import os
 import pathlib
+import shutil
 import tempfile
 from collections import OrderedDict
+from packaging.version import Version
 
 import numpy as np
 import pandas as pd
-import pytest
 import pytz
-from packaging.version import Version
 from pandas.api.types import is_datetime64_any_dtype
-from pandas.testing import assert_series_equal, assert_frame_equal
+
 from shapely.geometry import Point, Polygon, box, mapping
 
 import geopandas
 from geopandas import GeoDataFrame, read_file
-from geopandas._compat import PANDAS_GE_20, HAS_PYPROJ
-from geopandas.io.file import _detect_driver, _EXTENSION_TO_DRIVER
+from geopandas._compat import HAS_PYPROJ, PANDAS_GE_20
+from geopandas.io.file import _EXTENSION_TO_DRIVER, PYOGRIO_GE_081, _detect_driver
+
+import pytest
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 from geopandas.tests.util import PACKAGE_DIR, validate_boro_df
+from pandas.testing import assert_frame_equal, assert_series_equal
 
 try:
     import pyogrio
@@ -174,9 +177,10 @@ def test_to_file_bool(tmpdir, driver, ext, engine):
     result = read_file(tempfilename, engine=engine)
     if ext in (".shp", ""):
         # Shapefile does not support boolean, so is read back as int
-        if engine == "fiona":
+        # but since GDAL 3.9 supports boolean fields in SHP
+        if engine == "fiona" and fiona.gdal_version.minor < 9:
             df["col"] = df["col"].astype("int64")
-        else:
+        elif engine == "pyogrio" and pyogrio.__gdal_version__ < (3, 9):
             df["col"] = df["col"].astype("int32")
     assert_geodataframe_equal(result, df)
     # check the expected driver
@@ -694,6 +698,16 @@ def test_allow_legacy_gdal_path(engine, nybb_filename):
     assert isinstance(gdf, geopandas.GeoDataFrame)
 
 
+@pytest.mark.skipif(not PYOGRIO_GE_081, reason="bug fixed in pyogrio 0.8.1")
+def test_read_file_with_hash_in_path(engine, nybb_filename, tmp_path):
+    folder_with_hash = tmp_path / "path with # present"
+    folder_with_hash.mkdir(exist_ok=True, parents=True)
+    read_path = folder_with_hash / "nybb.zip"
+    shutil.copy(nybb_filename[6:], read_path)
+    gdf = read_file(read_path, engine=engine)
+    assert isinstance(gdf, geopandas.GeoDataFrame)
+
+
 def test_read_file_bbox_tuple(df_nybb, engine, nybb_filename):
     bbox = (
         1031051.7879884212,
@@ -874,7 +888,7 @@ def test_read_file__columns_empty(engine, naturalearth_lowres):
     assert gdf.columns.tolist() == ["geometry"]
 
 
-@pytest.mark.skipif(FIONA_GE_19, reason="test for fiona < 1.9")
+@pytest.mark.skipif(FIONA_GE_19 or not fiona, reason="test for fiona < 1.9")
 def test_read_file__columns_old_fiona(naturalearth_lowres):
     with pytest.raises(NotImplementedError):
         geopandas.read_file(
@@ -1304,6 +1318,26 @@ def test_option_io_engine(nybb_filename):
     finally:
         fiona.supported_drivers["ESRI Shapefile"] = orig
         geopandas.options.io_engine = None
+
+
+@pytest.mark.skipif(pyogrio, reason="test for pyogrio not installed")
+def test_error_engine_unavailable_pyogrio(tmp_path, df_points, file_path):
+
+    with pytest.raises(ImportError, match="the 'read_file' function requires"):
+        geopandas.read_file(file_path, engine="pyogrio")
+
+    with pytest.raises(ImportError, match="the 'to_file' method requires"):
+        df_points.to_file(tmp_path / "test.gpkg", engine="pyogrio")
+
+
+@pytest.mark.skipif(fiona, reason="test for fiona not installed")
+def test_error_engine_unavailable_fiona(tmp_path, df_points, file_path):
+
+    with pytest.raises(ImportError, match="the 'read_file' function requires"):
+        geopandas.read_file(file_path, engine="fiona")
+
+    with pytest.raises(ImportError, match="the 'to_file' method requires"):
+        df_points.to_file(tmp_path / "test.gpkg", engine="fiona")
 
 
 @PYOGRIO_MARK

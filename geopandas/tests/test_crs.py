@@ -3,11 +3,13 @@ import warnings
 
 import numpy as np
 import pandas as pd
-import pytest
+
 from shapely.geometry import LineString, Point, Polygon
 
 from geopandas import GeoDataFrame, GeoSeries, points_from_xy, read_file
 from geopandas.array import GeometryArray, from_shapely, from_wkb, from_wkt
+
+import pytest
 from geopandas.testing import assert_geodataframe_equal
 
 pyproj = pytest.importorskip("pyproj")

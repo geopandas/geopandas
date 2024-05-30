@@ -1,26 +1,25 @@
 import itertools
-from packaging.version import Version
 import warnings
+from packaging.version import Version
 
 import numpy as np
 import pandas as pd
 
 from shapely.affinity import rotate
 from shapely.geometry import (
-    MultiPolygon,
-    Polygon,
-    LineString,
-    LinearRing,
-    Point,
-    MultiPoint,
-    MultiLineString,
     GeometryCollection,
+    LinearRing,
+    LineString,
+    MultiLineString,
+    MultiPoint,
+    MultiPolygon,
+    Point,
+    Polygon,
     box,
 )
 
-
-from geopandas import GeoDataFrame, GeoSeries, read_file
 import geopandas._compat as compat
+from geopandas import GeoDataFrame, GeoSeries, read_file
 from geopandas.plotting import GeoplotAccessor
 
 import pytest
@@ -1463,8 +1462,9 @@ class TestPlotCollections:
         )
 
     def test_points(self):
-        from geopandas.plotting import _plot_point_collection
         from matplotlib.collections import PathCollection
+
+        from geopandas.plotting import _plot_point_collection
 
         fig, ax = plt.subplots()
         coll = _plot_point_collection(ax, self.points)
@@ -1531,8 +1531,9 @@ class TestPlotCollections:
         # _check_colors(self.N, coll.get_edgecolors(), expected_colors)
 
     def test_linestrings(self):
-        from geopandas.plotting import _plot_linestring_collection
         from matplotlib.collections import LineCollection
+
+        from geopandas.plotting import _plot_linestring_collection
 
         fig, ax = plt.subplots()
         coll = _plot_linestring_collection(ax, self.lines)
@@ -1614,8 +1615,9 @@ class TestPlotCollections:
         ax.cla()
 
     def test_polygons(self):
-        from geopandas.plotting import _plot_polygon_collection
         from matplotlib.collections import PatchCollection
+
+        from geopandas.plotting import _plot_polygon_collection
 
         fig, ax = plt.subplots()
         coll = _plot_polygon_collection(ax, self.polygons)
@@ -1826,8 +1828,9 @@ def test_column_values():
 def test_polygon_patch():
     # test adapted from descartes by Sean Gillies
     # (BSD license, https://pypi.org/project/descartes).
-    from geopandas.plotting import _PolygonPatch
     from matplotlib.patches import PathPatch
+
+    from geopandas.plotting import _PolygonPatch
 
     polygon = (
         Point(0, 0).buffer(10.0).difference(MultiPoint([(-5, 0), (5, 0)]).buffer(3.0))

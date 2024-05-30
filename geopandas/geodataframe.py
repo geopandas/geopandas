@@ -3,9 +3,9 @@ import warnings
 
 import numpy as np
 import pandas as pd
-import shapely.errors
 from pandas import DataFrame, Series
-from pandas.core.accessor import CachedAccessor
+
+import shapely.errors
 from shapely.geometry import mapping, shape
 from shapely.geometry.base import BaseGeometry
 
@@ -15,8 +15,13 @@ from geopandas.base import GeoPandasBase, is_geometry_type
 from geopandas.explore import _explore
 from geopandas.geoseries import GeoSeries
 
-from ._compat import HAS_PYPROJ
+from ._compat import HAS_PYPROJ, PANDAS_GE_30
 from ._decorator import doc
+
+if PANDAS_GE_30:
+    from pandas.core.accessor import Accessor
+else:
+    from pandas.core.accessor import CachedAccessor as Accessor
 
 
 def _geodataframe_constructor_with_fallback(*args, **kwargs):
@@ -317,7 +322,10 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         if inplace:
             frame = self
         else:
-            frame = self.copy()
+            if PANDAS_GE_30:
+                frame = self.copy(deep=False)
+            else:
+                frame = self.copy()
 
         geo_column_name = self._geometry_column_name
 
@@ -434,7 +442,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         else:
             if not inplace:
                 return self.rename(columns={geometry_col: col}).set_geometry(
-                    col, inplace
+                    col, inplace=inplace
                 )
             self.rename(columns={geometry_col: col}, inplace=inplace)
             self.set_geometry(col, inplace=inplace)
@@ -1157,8 +1165,102 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
 
         return df
 
+    def to_arrow(
+        self, *, index=None, geometry_encoding="WKB", interleaved=True, include_z=None
+    ):
+        """Encode a GeoDataFrame to GeoArrow format.
+
+        See https://geoarrow.org/ for details on the GeoArrow specification.
+
+        This functions returns a generic Arrow data object implementing
+        the `Arrow PyCapsule Protocol`_ (i.e. having an ``__arrow_c_stream__``
+        method). This object can then be consumed by your Arrow implementation
+        of choice that supports this protocol.
+
+        .. _Arrow PyCapsule Protocol: https://arrow.apache.org/docs/format/CDataInterface/PyCapsuleInterface.html
+
+        .. versionadded:: 1.0
+
+        Parameters
+        ----------
+        index : bool, default None
+            If ``True``, always include the dataframe's index(es) as columns
+            in the file output.
+            If ``False``, the index(es) will not be written to the file.
+            If ``None``, the index(ex) will be included as columns in the file
+            output except `RangeIndex` which is stored as metadata only.
+        geometry_encoding : {'WKB', 'geoarrow' }, default 'WKB'
+            The GeoArrow encoding to use for the data conversion.
+        interleaved : bool, default True
+            Only relevant for 'geoarrow' encoding. If True, the geometries'
+            coordinates are interleaved in a single fixed size list array.
+            If False, the coordinates are stored as separate arrays in a
+            struct type.
+        include_z : bool, default None
+            Only relevant for 'geoarrow' encoding (for WKB, the dimensionality
+            of the individial geometries is preserved).
+            If False, return 2D geometries. If True, include the third dimension
+            in the output (if a geometry has no third dimension, the z-coordinates
+            will be NaN). By default, will infer the dimensionality from the
+            input geometries. Note that this inference can be unreliable with
+            empty geometries (for a guaranteed result, it is recommended to
+            specify the keyword).
+
+        Returns
+        -------
+        ArrowTable
+            A generic Arrow table object with geometry columns encoded to
+            GeoArrow.
+
+        Examples
+        --------
+        >>> from shapely.geometry import Point
+        >>> data = {'col1': ['name1', 'name2'], 'geometry': [Point(1, 2), Point(2, 1)]}
+        >>> gdf = geopandas.GeoDataFrame(data)
+        >>> gdf
+            col1     geometry
+        0  name1  POINT (1 2)
+        1  name2  POINT (2 1)
+
+        >>> arrow_table = gdf.to_arrow()
+        >>> arrow_table
+        <geopandas.io.geoarrow.ArrowTable object at ...>
+
+        The returned data object needs to be consumed by a library implementing
+        the Arrow PyCapsule Protocol. For example, wrapping the data as a
+        pyarrow.Table (requires pyarrow >= 14.0):
+
+        >>> import pyarrow as pa
+        >>> table = pa.table(arrow_table)
+        >>> table
+        pyarrow.Table
+        col1: string
+        geometry: binary
+        ----
+        col1: [["name1","name2"]]
+        geometry: [[0101000000000000000000F03F0000000000000040,\
+01010000000000000000000040000000000000F03F]]
+
+        """
+        from geopandas.io.geoarrow import ArrowTable, geopandas_to_arrow
+
+        table = geopandas_to_arrow(
+            self,
+            index=index,
+            geometry_encoding=geometry_encoding,
+            interleaved=interleaved,
+            include_z=include_z,
+        )
+        return ArrowTable(table)
+
     def to_parquet(
-        self, path, index=None, compression="snappy", schema_version=None, **kwargs
+        self,
+        path,
+        index=None,
+        compression="snappy",
+        schema_version=None,
+        write_covering_bbox=False,
+        **kwargs,
     ):
         """Write a GeoDataFrame to the Parquet format.
 
@@ -1182,6 +1284,11 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
         schema_version : {'0.1.0', '0.4.0', '1.0.0', None}
             GeoParquet specification version; if not provided will default to
             latest supported version.
+        write_covering_bbox : bool, default False
+            Writes the bounding box column for each row entry with column
+            name 'bbox'. Writing a bbox column can be computationally
+            expensive, but allows you to specify a `bbox` in :
+            func:`read_parquet` for filtered reading.
         kwargs
             Additional keyword arguments passed to :func:`pyarrow.parquet.write_table`.
 
@@ -1214,6 +1321,7 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
             compression=compression,
             index=index,
             schema_version=schema_version,
+            write_covering_bbox=write_covering_bbox,
             **kwargs,
         )
 
@@ -1768,6 +1876,7 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
         sort=True,
         observed=False,
         dropna=True,
+        method="unary",
         **kwargs,
     ):
         """
@@ -1800,26 +1909,28 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
         level : int or str or sequence of int or sequence of str, default None
             If the axis is a MultiIndex (hierarchical), group by a
             particular level or levels.
-
-            .. versionadded:: 0.9.0
         sort : bool, default True
             Sort group keys. Get better performance by turning this off.
             Note this does not influence the order of observations within
             each group. Groupby preserves the order of rows within each group.
-
-            .. versionadded:: 0.9.0
         observed : bool, default False
             This only applies if any of the groupers are Categoricals.
             If True: only show observed values for categorical groupers.
             If False: show all values for categorical groupers.
-
-            .. versionadded:: 0.9.0
         dropna : bool, default True
             If True, and if group keys contain NA values, NA values
             together with row/column will be dropped. If False, NA
             values will also be treated as the key in groups.
+        method : str (default ``"unary"``)
+            The method to use for the union. Options are:
 
-            .. versionadded:: 0.9.0
+            * ``"unary"``: use the unary union algorithm. This option is the most robust
+              but can be slow for large numbers of geometries (default).
+            * ``"coverage"``: use the coverage union algorithm. This option is optimized
+              for non-overlapping polygons and can be significantly faster than the
+              unary union algorithm. However, it can produce invalid geometries if the
+              polygons overlap.
+
         **kwargs :
             Keyword arguments to be passed to the pandas `DataFrameGroupby.agg` method
             which is used by `dissolve`. In particular, `numeric_only` may be
@@ -1894,7 +2005,7 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
 
         # Process spatial component
         def merge_geometries(block):
-            merged_geom = block.union_all()
+            merged_geom = block.union_all(method=method)
             return merged_geom
 
         g = self.groupby(group_keys=False, **groupby_kwargs)[self.geometry.name].agg(
@@ -2020,7 +2131,7 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
 
     # overrides the pandas astype method to ensure the correct return type
     # should be removable when pandas 1.4 is dropped
-    def astype(self, dtype, copy=True, errors="raise", **kwargs):
+    def astype(self, dtype, copy=None, errors="raise", **kwargs):
         """
         Cast a pandas object to a specified dtype ``dtype``.
         Returns a GeoDataFrame when the geometry column is kept as geometries,
@@ -2030,7 +2141,12 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
         -------
         GeoDataFrame or DataFrame
         """
-        df = super().astype(dtype, copy=copy, errors=errors, **kwargs)
+        if not PANDAS_GE_30 and copy is None:
+            copy = True
+        if copy is not None:
+            kwargs["copy"] = copy
+
+        df = super().astype(dtype, errors=errors, **kwargs)
 
         try:
             geoms = df[self._geometry_column_name]
@@ -2110,7 +2226,7 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
             self, name, con, schema, if_exists, index, index_label, chunksize, dtype
         )
 
-    plot = CachedAccessor("plot", geopandas.plotting.GeoplotAccessor)
+    plot = Accessor("plot", geopandas.plotting.GeoplotAccessor)
 
     @doc(_explore)
     def explore(self, *args, **kwargs):
@@ -2327,7 +2443,7 @@ chicago_w_groceries[chicago_w_groceries["community"] == "UPTOWN"]
             exclusive=exclusive,
         )
 
-    def clip(self, mask, keep_geom_type=False):
+    def clip(self, mask, keep_geom_type=False, sort=False):
         """Clip points, lines, or polygon geometries to the mask extent.
 
         Both layers must be in the same Coordinate Reference System (CRS).
@@ -2350,6 +2466,10 @@ chicago_w_groceries[chicago_w_groceries["community"] == "UPTOWN"]
             If True, return only geometries of original type in case of intersection
             resulting in multiple geometry types or GeometryCollections.
             If False, return all resulting geometries (potentially mixed types).
+        sort : boolean, default False
+            If True, the order of rows in the clipped GeoDataFrame will be preserved at
+            small performance cost. If False the order of rows in the clipped
+            GeoDataFrame will be random.
 
         Returns
         -------
@@ -2380,7 +2500,7 @@ chicago_w_groceries[chicago_w_groceries["community"] == "UPTOWN"]
         >>> nws_groceries.shape
         (7, 8)
         """
-        return geopandas.clip(self, mask=mask, keep_geom_type=keep_geom_type)
+        return geopandas.clip(self, mask=mask, keep_geom_type=keep_geom_type, sort=sort)
 
     def overlay(self, right, how="intersection", keep_geom_type=None, make_valid=True):
         """Perform spatial overlay between GeoDataFrames.
@@ -2475,7 +2595,7 @@ chicago_w_groceries[chicago_w_groceries["community"] == "UPTOWN"]
         )
 
 
-def _dataframe_set_geometry(self, col, drop=False, inplace=False, crs=None):
+def _dataframe_set_geometry(self, col, drop=None, inplace=False, crs=None):
     if inplace:
         raise ValueError(
             "Can't do inplace setting when converting from DataFrame to GeoDataFrame"
