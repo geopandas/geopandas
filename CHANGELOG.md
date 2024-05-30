@@ -55,7 +55,7 @@ New features and improvements:
   preservation of the original order of observations. (#3233)
 - Added `show_bbox`, `drop_id` and `to_wgs84` arguments to allow further customization of
   `GeoSeries.to_json` (#3226)
-- `explore` now supports `GeoDataFrame`s with additional columns containing datetimes, uuids and 
+- `explore` now supports `GeoDataFrame`s with additional columns containing datetimes, uuids and
   other non JSON serializable objects (#3261).
 - The `GeoSeries.fillna` method now supports the `limit` keyword (#3290).
 - Added support for `bbox` covering encoding in geoparquet. Can filter reading of parquet
@@ -127,6 +127,8 @@ New deprecations:
   ```
 - The `geopandas.use_pygeos` option has been deprecated and will be removed in GeoPandas
   1.1 (#3283)
+- Manual overriding of an existing CRS of a GeoSeries using the `crs.setter` has been deprecated
+  and will be disabled in future. Use the `set_crs()` method instead (#3085).
 
 Bug fixes:
 
@@ -158,9 +160,6 @@ Bug fixes:
 - Fix regression in `overlay` where using `buffer(0)` instead of `make_valid` internally
   produced invalid results (#3074).
 - Fix `explore()` method when the active geometry contains missing and empty geometries (#3094).
-
-Deprecations and compatibility notes:
--  Added warning about manually overriding an existing CRS of a GeoSeries from the `crs.setter` and point to `set_crs` method instead. THis is to be deprecated in an upcoming version. (#3085)
 
 ## Version 0.14.1 (Nov 11, 2023)
 
