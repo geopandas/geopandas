@@ -741,6 +741,7 @@ class TestSetCRS:
         assert non_naive.crs == "EPSG:3857"
         assert result.crs == "EPSG:3857"
 
-        # raise error when no crs is passed
-        with pytest.raises(ValueError):
-            naive.set_crs(crs=None, epsg=None)
+        # set CRS to None
+        result = non_naive.set_crs(crs=None, allow_override=True)
+        assert result.crs is None
+        assert non_naive.crs == "EPSG:3857"

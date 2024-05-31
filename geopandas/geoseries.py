@@ -999,12 +999,16 @@ class GeoSeries(GeoPandasBase, Series):
         """
         Set the Coordinate Reference System (CRS) of a ``GeoSeries``.
 
-        NOTE: The underlying geometries are not transformed to this CRS. To
+        Pass ``None`` to remove CRS from the ``GeoSeries``.
+
+        Notes
+        -----
+        The underlying geometries are not transformed to this CRS. To
         transform the geometries to a new CRS, use the ``to_crs`` method.
 
         Parameters
         ----------
-        crs : pyproj.CRS, optional if `epsg` is specified
+        crs : pyproj.CRS | None, optional
             The value can be anything accepted
             by :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
             such as an authority string (eg "EPSG:4326") or a WKT string.
@@ -1072,8 +1076,6 @@ class GeoSeries(GeoPandasBase, Series):
             crs = CRS.from_user_input(crs)
         elif epsg is not None:
             crs = CRS.from_epsg(epsg)
-        else:
-            raise ValueError("Must pass either crs or epsg.")
 
         if not allow_override and self.crs is not None and not self.crs == crs:
             raise ValueError(
