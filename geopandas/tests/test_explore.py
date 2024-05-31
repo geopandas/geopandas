@@ -1015,7 +1015,8 @@ class TestExplore:
         ):
             m = with_crs.explore()
         out_str = self._fetch_map_string(m)
-        assert "center:[0.0,0.0],crs:L.CRS.EPSG3857" in out_str
+        if HAS_PYPROJ:
+            assert "center:[0.0,0.0],crs:L.CRS.EPSG3857" in out_str
 
         no_crs = gpd.GeoDataFrame(geometry=[shapely.Point(), shapely.Point()])
         with pytest.warns(
