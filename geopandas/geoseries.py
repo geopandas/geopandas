@@ -240,8 +240,8 @@ class GeoSeries(GeoPandasBase, Series):
     def crs(self, value):
         if self.crs is not None:
             warnings.warn(
-                "Overriding the CRS of a GeoSeries that already has CRS."
-                "This unsafe behavior will be deprecated in future versions."
+                "Overriding the CRS of a GeoSeries that already has CRS. "
+                "This unsafe behavior will be deprecated in future versions. "
                 "Use GeoSeries.set_crs method instead.",
                 stacklevel=2,
                 category=DeprecationWarning,
