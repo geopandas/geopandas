@@ -143,6 +143,7 @@ Bug fixes:
   pyogrio 0.8.1.
 - Fix `to_parquet` to write correct metadata in case of 3D geometries (#2824).
 - Fixes for compatibility with psycopg (#3167).
+- Fix plotting of all-empty GeoSeries using `explore` (#3316).
 
 ## Version 0.14.4 (April 26, 2024)
 

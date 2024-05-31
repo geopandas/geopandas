@@ -1,3 +1,4 @@
+import warnings
 from packaging.version import Version
 from statistics import mean
 
@@ -341,7 +342,7 @@ def _explore(
         # Get bounds to specify location and map extent
         bounds = gdf.total_bounds
         location = kwargs.pop("location", None)
-        if location is None:
+        if location is None and not np.isnan(bounds).all():
             x = mean([bounds[0], bounds[2]])
             y = mean([bounds[1], bounds[3]])
             location = (y, x)
@@ -393,6 +394,15 @@ def _explore(
         # fit bounds to get a proper zoom level
         if fit:
             m.fit_bounds([[bounds[1], bounds[0]], [bounds[3], bounds[2]]])
+
+    if gdf.is_empty.all():
+        warnings.warn(
+            "The GeoSeries you are attempting to plot is "
+            "composed of empty geometries. Nothing has been displayed.",
+            UserWarning,
+            stacklevel=3,
+        )
+        return m
 
     for map_kwd in _MAP_KWARGS:
         kwargs.pop(map_kwd, None)
