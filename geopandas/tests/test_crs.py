@@ -262,7 +262,7 @@ class TestGeometryArrayCRS:
         arr = from_shapely(self.geoms)
         s = GeoSeries(arr, crs=27700)
         df = GeoDataFrame(geometry=s)
-        df.crs = 4326
+        df = df.set_crs(crs="epsg:4326", allow_override=True)
         assert df.crs == self.wgs
         assert df.geometry.crs == self.wgs
         assert df.geometry.values.crs == self.wgs

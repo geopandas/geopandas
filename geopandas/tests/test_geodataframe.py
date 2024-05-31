@@ -373,6 +373,20 @@ class TestDataFrame:
         with pytest.raises(AttributeError, match=msg_geo_col_missing):
             df.geometry
 
+    @pytest.mark.skipif(not compat.HAS_PYPROJ, reason="Requires pyproj")
+    def test_override_existing_crs_warning(self):
+        with pytest.warns(
+            DeprecationWarning,
+            match="Overriding the CRS of a GeoSeries that already has CRS",
+        ):
+            self.df.geometry.crs = "epsg:2100"
+
+        with pytest.warns(
+            DeprecationWarning,
+            match="Overriding the CRS of a GeoDataFrame that already has CRS",
+        ):
+            self.df.crs = "epsg:4326"
+
     def test_active_geometry_name(self):
         # default single active called "geometry"
         assert self.df.active_geometry_name == "geometry"

@@ -53,7 +53,10 @@ def _ensure_geometry(data, crs=None):
         if data.crs is None and crs is not None:
             # Avoids caching issues/crs sharing issues
             data = data.copy()
-            data.crs = crs
+            if isinstance(data, GeometryArray):
+                data.crs = crs
+            else:
+                data.array.crs = crs
         return data
     else:
         if isinstance(data, Series):
@@ -388,7 +391,10 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         # Check that we are using a listlike of geometries
         level = _ensure_geometry(level, crs=crs)
         # ensure_geometry only sets crs on level if it has crs==None
-        level.crs = crs
+        if isinstance(level, GeoSeries):
+            level.array.crs = crs
+        else:
+            level.crs = crs
         # update _geometry_column_name prior to assignment
         # to avoid default is None warning
         frame._geometry_column_name = geo_column_name
@@ -515,6 +521,14 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             )
 
         if hasattr(self.geometry.values, "crs"):
+            if self.crs is not None:
+                warnings.warn(
+                    "Overriding the CRS of a GeoDataFrame that already has CRS. "
+                    "This unsafe behavior will be deprecated in future versions."
+                    "Use GeoDataFrame.set_crs method instead",
+                    stacklevel=2,
+                    category=DeprecationWarning,
+                )
             self.geometry.values.crs = value
         else:
             # column called 'geometry' without geometry

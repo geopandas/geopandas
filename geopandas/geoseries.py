@@ -236,6 +236,18 @@ class GeoSeries(GeoPandasBase, Series):
     def append(self, *args, **kwargs) -> GeoSeries:
         return self._wrapped_pandas_method("append", *args, **kwargs)
 
+    @GeoPandasBase.crs.setter
+    def crs(self, value):
+        if self.crs is not None:
+            warnings.warn(
+                "Overriding the CRS of a GeoSeries that already has CRS."
+                "This unsafe behavior will be deprecated in future versions."
+                "Use GeoSeries.set_crs method instead.",
+                stacklevel=2,
+                category=DeprecationWarning,
+            )
+        self.geometry.values.crs = value
+
     @property
     def geometry(self) -> GeoSeries:
         return self

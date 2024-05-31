@@ -21,7 +21,6 @@ from shapely.geometry.base import BaseGeometry
 
 import geopandas._compat as compat
 from geopandas import GeoDataFrame, GeoSeries, clip, read_file
-from geopandas._compat import HAS_PYPROJ
 from geopandas.array import GeometryArray, GeometryDtype
 
 import pytest
@@ -83,7 +82,7 @@ class TestSeries:
         assert a1["B"].equals(a2["B"])
         assert a1["C"] is None
 
-    @pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not available")
+    @pytest.mark.skipif(not compat.HAS_PYPROJ, reason="pyproj not available")
     def test_align_crs(self):
         a1 = self.a1
         a1.crs = "epsg:4326"
@@ -265,7 +264,7 @@ class TestSeries:
         assert np.all(self.g3.contains(self.g3.representative_point()))
         assert np.all(self.g4.contains(self.g4.representative_point()))
 
-    @pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not available")
+    @pytest.mark.skipif(not compat.HAS_PYPROJ, reason="pyproj not available")
     def test_transform(self):
         utm18n = self.landmarks.to_crs(epsg=26918)
         lonlat = utm18n.to_crs(epsg=4326)
@@ -286,14 +285,14 @@ class TestSeries:
             "EPSG:32618"
         )
 
-    @pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not available")
+    @pytest.mark.skipif(not compat.HAS_PYPROJ, reason="pyproj not available")
     def test_estimate_utm_crs__out_of_bounds(self):
         with pytest.raises(RuntimeError, match="Unable to determine UTM CRS"):
             GeoSeries(
                 [Polygon([(0, 90), (1, 90), (2, 90)])], crs="EPSG:4326"
             ).estimate_utm_crs()
 
-    @pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not available")
+    @pytest.mark.skipif(not compat.HAS_PYPROJ, reason="pyproj not available")
     def test_estimate_utm_crs__missing_crs(self):
         with pytest.raises(RuntimeError, match="crs must be set"):
             GeoSeries([Polygon([(0, 90), (1, 90), (2, 90)])]).estimate_utm_crs()
@@ -329,7 +328,7 @@ class TestSeries:
         assert self.g1.__geo_interface__["type"] == "FeatureCollection"
         assert len(self.g1.__geo_interface__["features"]) == self.g1.shape[0]
 
-    @pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not available")
+    @pytest.mark.skipif(not compat.HAS_PYPROJ, reason="pyproj not available")
     def test_proj4strings(self):
         # As string
         reprojected = self.g3.to_crs("+proj=utm +zone=30")
@@ -503,7 +502,7 @@ class TestSeries:
         expected = GeoSeries([Point(0, 2, -1), Point(3, 5, 4)])
         assert_geoseries_equal(expected, GeoSeries.from_xy(x, y, z))
 
-    @pytest.mark.skipif(HAS_PYPROJ, reason="pyproj installed")
+    @pytest.mark.skipif(compat.HAS_PYPROJ, reason="pyproj installed")
     def test_set_crs_pyproj_error(self):
         with pytest.raises(
             ImportError, match="The 'pyproj' package is required for set_crs"
@@ -541,11 +540,21 @@ def test_isna_empty_geoseries():
     assert_series_equal(result, pd.Series([], dtype="bool"))
 
 
-@pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not available")
+@pytest.mark.skipif(not compat.HAS_PYPROJ, reason="pyproj not available")
 def test_geoseries_crs():
     gs = GeoSeries()
     gs.crs = "IGNF:ETRS89UTM28"
     assert gs.crs.to_authority() == ("IGNF", "ETRS89UTM28")
+
+
+@pytest.mark.skipif(not compat.HAS_PYPROJ, reason="Requires pyproj")
+def test_geoseries_override_existing_crs_warning():
+    gs = GeoSeries(crs="epsg:4326")
+    with pytest.warns(
+        DeprecationWarning,
+        match="Overriding the CRS of a GeoSeries that already has CRS",
+    ):
+        gs.crs = "epsg:2100"
 
 
 # -----------------------------------------------------------------------------
@@ -658,7 +667,7 @@ class TestConstructor:
         assert s.name == g.name
         assert s.index is g.index
 
-    @pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not available")
+    @pytest.mark.skipif(not compat.HAS_PYPROJ, reason="pyproj not available")
     def test_from_series_no_set_crs_on_construction(self):
         # https://github.com/geopandas/geopandas/issues/2492
         # also when passing Series[geometry], ensure we don't change crs of
