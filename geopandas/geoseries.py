@@ -654,7 +654,6 @@ class GeoSeries(GeoPandasBase, Series):
         from geopandas import GeoDataFrame
 
         data = GeoDataFrame({"geometry": self}, index=self.index)
-        data.crs = self.crs
         data.to_file(filename, driver, index=index, **kwargs)
 
     #
@@ -1088,7 +1087,7 @@ class GeoSeries(GeoPandasBase, Series):
             result = self.copy()
         else:
             result = self
-        result.crs = crs
+        result.array.crs = crs
         return result
 
     def to_crs(

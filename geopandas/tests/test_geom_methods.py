@@ -318,14 +318,12 @@ class TestGeomMethods:
             result = getattr(gdf, op)
         fcmp(result, expected)
 
-    # TODO re-enable for all operations once we use pyproj > 2
-    # def test_crs_warning(self):
-    #     # operations on geometries should warn for different CRS
-    #     no_crs_g3 = self.g3.copy()
-    #     no_crs_g3.crs = None
-    #     with pytest.warns(UserWarning):
-    #         self._test_binary_topological('intersection', self.g3,
-    #                                       self.g3, no_crs_g3)
+    @pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not available")
+    def test_crs_warning(self):
+        # operations on geometries should warn for different CRS
+        no_crs_g3 = self.g3.copy().set_crs(None, allow_override=True)
+        with pytest.warns(UserWarning):
+            self._test_binary_topological("intersection", self.g3, self.g3, no_crs_g3)
 
     def test_alignment_warning(self):
         with pytest.warns(

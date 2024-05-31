@@ -70,7 +70,7 @@ def test_dissolve_retains_existing_crs(nybb_polydf):
 
 
 def test_dissolve_retains_nonexisting_crs(nybb_polydf):
-    nybb_polydf.crs = None
+    nybb_polydf.geometry.array.crs = None
     test = nybb_polydf.dissolve("manhattan_bronx")
     assert test.crs is None
 

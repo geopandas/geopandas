@@ -636,7 +636,7 @@ def test_missing_crs(tmpdir, file_format, naturalearth_lowres):
     reader, writer = file_format
 
     df = read_file(naturalearth_lowres)
-    df.crs = None
+    df.geometry.array.crs = None
 
     filename = os.path.join(str(tmpdir), "test.pq")
     writer(df, filename)
@@ -981,7 +981,6 @@ def test_parquet_read_partitioned_dataset_fsspec(tmpdir, naturalearth_lowres):
     ["point", "linestring", "polygon", "multipoint", "multilinestring", "multipolygon"],
 )
 def test_read_parquet_geoarrow(geometry_type):
-
     result = geopandas.read_parquet(
         DATA_PATH
         / "arrow"

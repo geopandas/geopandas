@@ -36,7 +36,6 @@ def pa_array(array):
 
 
 def assert_table_equal(left, right, check_metadata=True):
-
     geom_type = left["geometry"].type
     # in case of Points (directly the inner fixed_size_list or struct type)
     # -> there are NaNs for empties -> we need to compare them separately
@@ -154,7 +153,7 @@ def test_geoarrow_export(geometry_type, dim, geometry_encoding, interleaved):
     df["geometry"] = GeoSeries.from_wkb(df["geometry"])
     df["row_number"] = df["row_number"].astype("int32")
     df = GeoDataFrame(df)
-    df.geometry.crs = None
+    df.geometry.array.crs = None
 
     # Read the expected data
     if geometry_encoding == "WKB":
@@ -349,7 +348,7 @@ def test_geoarrow_export_with_extension_types(geometry_type, dim):
     df["geometry"] = GeoSeries.from_wkb(df["geometry"])
     df["row_number"] = df["row_number"].astype("int32")
     df = GeoDataFrame(df)
-    df.geometry.crs = None
+    df.geometry.array.crs = None
 
     pytest.importorskip("geoarrow.pyarrow")
 

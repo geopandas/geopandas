@@ -38,8 +38,7 @@ class TestSeries:
         self.sq = Polygon([(0, 0), (1, 0), (1, 1), (0, 1)])
         self.g1 = GeoSeries([self.t1, self.sq])
         self.g2 = GeoSeries([self.sq, self.t1])
-        self.g3 = GeoSeries([self.t1, self.t2])
-        self.g3.crs = "epsg:4326"
+        self.g3 = GeoSeries([self.t1, self.t2], crs="epsg:4326")
         self.g4 = GeoSeries([self.t2, self.t1])
         self.na = GeoSeries([self.t1, self.t2, Polygon()])
         self.na_none = GeoSeries([self.t1, self.t2, None])
@@ -84,17 +83,14 @@ class TestSeries:
 
     @pytest.mark.skipif(not compat.HAS_PYPROJ, reason="pyproj not available")
     def test_align_crs(self):
-        a1 = self.a1
-        a1.crs = "epsg:4326"
-        a2 = self.a2
-        a2.crs = "epsg:31370"
+        a1 = self.a1.set_crs("epsg:4326")
+        a2 = self.a2.set_crs("epsg:31370")
 
         res1, res2 = a1.align(a2)
         assert res1.crs == "epsg:4326"
         assert res2.crs == "epsg:31370"
 
-        a2.crs = None
-        res1, res2 = a1.align(a2)
+        res1, res2 = a1.align(a2.set_crs(None, allow_override=True))
         assert res1.crs == "epsg:4326"
         assert res2.crs is None
 
@@ -341,8 +337,7 @@ class TestSeries:
         assert geom_almost_equals(self.g3, reprojected_back)
 
         # Set to equivalent string, convert, compare to original
-        copy = self.g3.copy()
-        copy.crs = "epsg:4326"
+        copy = self.g3.copy().set_crs("epsg:4326", allow_override=True)
         reprojected = copy.to_crs({"proj": "utm", "zone": "30"})
         reprojected_back = reprojected.to_crs(epsg=4326)
         assert geom_almost_equals(self.g3, reprojected_back)
@@ -542,8 +537,7 @@ def test_isna_empty_geoseries():
 
 @pytest.mark.skipif(not compat.HAS_PYPROJ, reason="pyproj not available")
 def test_geoseries_crs():
-    gs = GeoSeries()
-    gs.crs = "IGNF:ETRS89UTM28"
+    gs = GeoSeries().set_crs("IGNF:ETRS89UTM28")
     assert gs.crs.to_authority() == ("IGNF", "ETRS89UTM28")
 
 
