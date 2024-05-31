@@ -1,6 +1,6 @@
 import os
-import urllib.request
 import urllib.error
+import urllib.request
 import warnings
 from io import IOBase
 from packaging.version import Version
@@ -182,7 +182,7 @@ def _is_url(url):
 def _url_supports_random_access(filename):
     # try first with a HEAD request to check if the server supports random access
     try:
-        url_head = urllib.request.Request(filename, method='HEAD')
+        url_head = urllib.request.Request(filename, method="HEAD")
         with urllib.request.urlopen(url_head) as response:
             accept_ranges = response.headers.get("Accept-Ranges")
     except (urllib.error.HTTPError, urllib.error.URLError):
@@ -192,7 +192,7 @@ def _url_supports_random_access(filename):
                 accept_ranges = response.headers.get("Accept-Ranges")
         except (urllib.error.HTTPError, urllib.error.URLError):
             return False
-        
+
     return accept_ranges == "bytes"
 
 
@@ -289,7 +289,7 @@ def _read_file(
 
     if engine == "pyogrio":
         from_bytes = False
-        if _is_url(filename):            
+        if _is_url(filename):
             with urllib.request.urlopen(filename) as response:
                 # no partial data access, retrieve full file using GET request
                 file_as_bytes = response.read()
@@ -301,14 +301,14 @@ def _read_file(
             mask=mask,
             columns=columns,
             rows=rows,
-            **kwargs
+            **kwargs,
         )
 
     elif engine == "fiona":
         from_bytes = False
-        if _is_url(filename):            
+        if _is_url(filename):
             if _url_supports_random_access(filename):
-                # the filename is a URL and the server should support partial data access
+                # filename is a URL and the server should support partial data access
                 try:
                     return _read_file_fiona(
                         filename,
@@ -321,13 +321,13 @@ def _read_file(
                     )
                 except Exception as e:
                     if fiona and isinstance(e, fiona.errors.DriverError):
-                        pass   # fall back to downloading the data below
+                        pass  # fall back to downloading the data below
                     raise
 
             with urllib.request.urlopen(filename) as response:
                 # no partial data access, retrieve full file using GET request
                 file_as_bytes = response.read()
-                from_bytes = True                
+                from_bytes = True
 
         elif pd.api.types.is_file_like(filename):
             data = filename.read()
