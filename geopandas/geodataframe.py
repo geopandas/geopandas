@@ -524,7 +524,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             if self.crs is not None:
                 warnings.warn(
                     "Overriding the CRS of a GeoDataFrame that already has CRS. "
-                    "This unsafe behavior will be deprecated in future versions."
+                    "This unsafe behavior will be deprecated in future versions. "
                     "Use GeoDataFrame.set_crs method instead",
                     stacklevel=2,
                     category=DeprecationWarning,
