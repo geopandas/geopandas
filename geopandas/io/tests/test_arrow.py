@@ -350,6 +350,7 @@ def test_to_parquet_does_not_pass_engine_along(mock_to_parquet):
         df,
         "",
         compression="snappy",
+        geometry_encoding="WKB",
         index=None,
         schema_version=None,
         write_covering_bbox=False,
