@@ -66,7 +66,7 @@ def file_format(request):
 
 def test_create_metadata(naturalearth_lowres):
     df = read_file(naturalearth_lowres)
-    metadata = _create_metadata(df)
+    metadata = _create_metadata(df, geometry_encoding={"geometry": "WKB"})
 
     assert isinstance(metadata, dict)
     assert metadata["version"] == METADATA_VERSION
@@ -88,6 +88,10 @@ def test_create_metadata(naturalearth_lowres):
 
     assert metadata["creator"]["library"] == "geopandas"
     assert metadata["creator"]["version"] == geopandas.__version__
+
+    # specifying non-WKB encoding sets default schema to 1.1.0
+    metadata = _create_metadata(df, geometry_encoding={"geometry": "point"})
+    assert metadata["version"] == "1.1.0"
 
 
 def test_create_metadata_with_z_geometries():
@@ -133,18 +137,18 @@ def test_create_metadata_with_z_geometries():
             ],
         },
     )
-    metadata = _create_metadata(df)
+    metadata = _create_metadata(df, geometry_encoding={"geometry": "WKB"})
     assert sorted(metadata["columns"]["geometry"]["geometry_types"]) == sorted(
         geometry_types
     )
     # only 3D geometries
-    metadata = _create_metadata(df.iloc[1::2])
+    metadata = _create_metadata(df.iloc[1::2], geometry_encoding={"geometry": "WKB"})
     assert all(
         geom_type.endswith(" Z")
         for geom_type in metadata["columns"]["geometry"]["geometry_types"]
     )
 
-    metadata = _create_metadata(df.iloc[5:7])
+    metadata = _create_metadata(df.iloc[5:7], geometry_encoding={"geometry": "WKB"})
     assert metadata["columns"]["geometry"]["geometry_types"] == [
         "MultiPolygon",
         "Polygon Z",
@@ -169,10 +173,16 @@ def test_crs_metadata_datum_ensemble():
     assert pyproj.CRS(crs_json) == crs
 
 
-def test_write_metadata_invalid_spec_version():
+def test_write_metadata_invalid_spec_version(tmp_path):
     gdf = geopandas.GeoDataFrame(geometry=[box(0, 0, 10, 10)], crs="EPSG:4326")
     with pytest.raises(ValueError, match="schema_version must be one of"):
         _create_metadata(gdf, schema_version="invalid")
+
+    with pytest.raises(
+        ValueError,
+        match="'geoarrow' encoding is only supported with schema version >= 1.1.0",
+    ):
+        gdf.to_parquet(tmp_path, schema_version="1.0.0", geometry_encoding="geoarrow")
 
 
 def test_encode_metadata():
@@ -340,6 +350,7 @@ def test_to_parquet_does_not_pass_engine_along(mock_to_parquet):
         df,
         "",
         compression="snappy",
+        geometry_encoding="WKB",
         index=None,
         schema_version=None,
         write_covering_bbox=False,
@@ -994,6 +1005,24 @@ def test_read_parquet_geoarrow(geometry_type):
         / f"data-{geometry_type}-encoding_wkb.parquet"
     )
     assert_geodataframe_equal(result, expected, check_crs=True)
+
+
+@pytest.mark.parametrize(
+    "geometry_type",
+    ["point", "linestring", "polygon", "multipoint", "multilinestring", "multipolygon"],
+)
+def test_geoarrow_roundtrip(tmp_path, geometry_type):
+
+    df = geopandas.read_parquet(
+        DATA_PATH
+        / "arrow"
+        / "geoparquet"
+        / f"data-{geometry_type}-encoding_wkb.parquet"
+    )
+
+    df.to_parquet(tmp_path / "test.parquet", geometry_encoding="geoarrow")
+    result = geopandas.read_parquet(tmp_path / "test.parquet")
+    assert_geodataframe_equal(result, df, check_crs=True)
 
 
 def test_to_parquet_bbox_structure_and_metadata(tmpdir, naturalearth_lowres):
