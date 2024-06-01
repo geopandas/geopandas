@@ -506,15 +506,15 @@ def _arrow_to_geopandas(table, geo_metadata=None):
     """
     Helper function with main, shared logic for read_parquet/read_feather.
     """
-    df = table.to_pandas()
-
     geo_metadata = geo_metadata or _decode_metadata(
         table.schema.metadata.get(b"geo", b"")
     )
 
     # Find all geometry columns that were read from the file.  May
     # be a subset if 'columns' parameter is used.
-    geometry_columns = df.columns.intersection(geo_metadata["columns"])
+    geometry_columns = [
+        col for col in geo_metadata["columns"] if col in table.column_names
+    ]
 
     if not len(geometry_columns):
         raise ValueError(
@@ -538,6 +538,9 @@ def _arrow_to_geopandas(table, geo_metadata=None):
                 stacklevel=3,
             )
 
+    table_attr = table.drop(geometry_columns)
+    df = table_attr.to_pandas()
+
     # Convert the WKB columns that are present back to geometry.
     for col in geometry_columns:
         col_metadata = geo_metadata["columns"][col]
@@ -551,16 +554,17 @@ def _arrow_to_geopandas(table, geo_metadata=None):
             crs = "OGC:CRS84"
 
         if col_metadata["encoding"] == "WKB":
-            df[col] = from_wkb(df[col].values, crs=crs)
+            geom_arr = from_wkb(np.array(table[col]), crs=crs)
         else:
             from geopandas.io.geoarrow import construct_shapely_array
 
-            df[col] = from_shapely(
+            geom_arr = from_shapely(
                 construct_shapely_array(
                     table[col].combine_chunks(), "geoarrow." + col_metadata["encoding"]
                 ),
                 crs=crs,
             )
+        df[col] = geom_arr
 
     return GeoDataFrame(df, geometry=geometry)
 
