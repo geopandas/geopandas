@@ -1282,3 +1282,12 @@ def test_read_parquet_with_bbox_filter_with_custom_geometry_name(
         "Gabon",
         "Eq. Guinea",
     ]
+
+
+def test_to_parquet_with_existing_bbox_column(tmpdir, naturalearth_lowres):
+    df = read_file(naturalearth_lowres)
+    df = df.assign(bbox=[0] * len(df))
+    filename = os.path.join(str(tmpdir), "test.pq")
+
+    with pytest.raises(ValueError):
+        df.to_parquet(filename, write_covering_bbox=True)
