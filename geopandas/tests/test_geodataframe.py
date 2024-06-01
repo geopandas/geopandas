@@ -373,6 +373,20 @@ class TestDataFrame:
         with pytest.raises(AttributeError, match=msg_geo_col_missing):
             df.geometry
 
+    @pytest.mark.skipif(not compat.HAS_PYPROJ, reason="Requires pyproj")
+    def test_override_existing_crs_warning(self):
+        with pytest.warns(
+            DeprecationWarning,
+            match="Overriding the CRS of a GeoSeries that already has CRS",
+        ):
+            self.df.geometry.crs = "epsg:2100"
+
+        with pytest.warns(
+            DeprecationWarning,
+            match="Overriding the CRS of a GeoDataFrame that already has CRS",
+        ):
+            self.df.crs = "epsg:4326"
+
     def test_active_geometry_name(self):
         # default single active called "geometry"
         assert self.df.active_geometry_name == "geometry"
@@ -401,8 +415,7 @@ class TestDataFrame:
 
         if compat.HAS_PYPROJ:
             # assert crs is / is not preserved on mixed dataframes
-            df_nocrs = df.copy()
-            df_nocrs.crs = None
+            df_nocrs = df.copy().set_crs(None, allow_override=True)
             res1, res2 = df.align(df_nocrs)
             assert_geodataframe_equal(res1, df)
             assert res1.crs is not None
@@ -429,10 +442,8 @@ class TestDataFrame:
         assert_geodataframe_equal(res2, exp2)
 
         if compat.HAS_PYPROJ:
-            df2_nocrs = df2.copy()
-            df2_nocrs.crs = None
-            exp2_nocrs = exp2.copy()
-            exp2_nocrs.crs = None
+            df2_nocrs = df2.copy().set_crs(None, allow_override=True)
+            exp2_nocrs = exp2.copy().set_crs(None, allow_override=True)
             res1, res2 = df1.align(df2_nocrs)
             assert_geodataframe_equal(res1, exp1)
             assert res1.crs is not None
@@ -466,7 +477,7 @@ class TestDataFrame:
         assert coord == [970217.0223999023, 145643.33221435547]
 
     def test_to_json_no_crs(self):
-        self.df.crs = None
+        self.df.geometry.array.crs = None
         with pytest.raises(ValueError, match="CRS is not set"):
             self.df.to_json(to_wgs84=True)
 

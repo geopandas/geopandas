@@ -461,8 +461,7 @@ def test_to_file_crs(tmpdir, engine, nybb_filename):
     assert result.crs == "epsg:3857"
 
     # specify CRS for gdf without one
-    df2 = df.copy()
-    df2.crs = None
+    df2 = df.set_crs(None, allow_override=True)
     df2.to_file(tempfilename, crs=2263, engine=engine)
     df = GeoDataFrame.from_file(tempfilename, engine=engine)
     assert df.crs == "epsg:2263"
@@ -555,7 +554,7 @@ def test_empty_crs(tmpdir, driver, ext, engine):
 
     if ext == ".geojson":
         # geojson by default assumes epsg:4326
-        df.crs = "EPSG:4326"
+        df.geometry.array.crs = "EPSG:4326"
 
     assert_geodataframe_equal(result, df)
 
