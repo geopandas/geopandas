@@ -878,8 +878,8 @@ def _get_parquet_bbox_filter(geo_metadata, bbox):
 
     else:
         raise ValueError(
-            "Specifying 'bbox' not supported for this Parquet file (it does not have "
-            "a bbox covering column, or does not use 'point' encoding)."
+            "Specifying 'bbox' not supported for this Parquet file (it should either "
+            "have a bbox covering column or use 'point' encoding)."
         )
 
 
