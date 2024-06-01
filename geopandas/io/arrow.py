@@ -110,7 +110,9 @@ def _get_geometry_types(series):
     return sorted([_geometry_type_names[idx] for idx in geometry_types])
 
 
-def _create_metadata(df, schema_version=None, write_covering_bbox=False):
+def _create_metadata(
+    df, schema_version=None, write_covering_bbox=False, bbox_encoding_fieldname="bbox"
+):
     """Create and encode geo metadata dict.
 
     Parameters
@@ -123,6 +125,9 @@ def _create_metadata(df, schema_version=None, write_covering_bbox=False):
         Writes the bounding box column for each row entry with column
         name 'bbox'. Writing a bbox column can be computationally
         expensive, hence is default setting is False.
+    bbox_encoding_fieldname : string, default "bbox"
+        Column name for the covering bbox encoding field. Currently, the
+        only allowable name for this column in writing is "bbox".
 
     Returns
     -------
@@ -171,10 +176,10 @@ def _create_metadata(df, schema_version=None, write_covering_bbox=False):
         if write_covering_bbox:
             column_metadata[col]["covering"] = {
                 "bbox": {
-                    "xmin": ["bbox", "xmin"],
-                    "ymin": ["bbox", "ymin"],
-                    "xmax": ["bbox", "xmax"],
-                    "ymax": ["bbox", "ymax"],
+                    "xmin": [bbox_encoding_fieldname, "xmin"],
+                    "ymin": [bbox_encoding_fieldname, "ymin"],
+                    "xmax": [bbox_encoding_fieldname, "xmax"],
+                    "ymax": [bbox_encoding_fieldname, "ymax"],
                 },
             }
 
@@ -315,7 +320,13 @@ def _validate_geo_metadata(metadata):
                         raise ValueError("Metadata for bbox column is malformed.")
 
 
-def _geopandas_to_arrow(df, index=None, schema_version=None, write_covering_bbox=None):
+def _geopandas_to_arrow(
+    df,
+    index=None,
+    schema_version=None,
+    write_covering_bbox=None,
+    bbox_encoding_fieldname="bbox",
+):
     """
     Helper function with main, shared logic for to_parquet/to_feather.
     """
@@ -327,7 +338,10 @@ def _geopandas_to_arrow(df, index=None, schema_version=None, write_covering_bbox
 
     # create geo metadata before altering incoming data frame
     geo_metadata = _create_metadata(
-        df, schema_version=schema_version, write_covering_bbox=write_covering_bbox
+        df,
+        schema_version=schema_version,
+        write_covering_bbox=write_covering_bbox,
+        bbox_encoding_fieldname=bbox_encoding_fieldname,
     )
 
     table = geopandas_to_arrow(
@@ -340,7 +354,7 @@ def _geopandas_to_arrow(df, index=None, schema_version=None, write_covering_bbox
             [bounds["minx"], bounds["miny"], bounds["maxx"], bounds["maxy"]],
             names=["xmin", "ymin", "xmax", "ymax"],
         )
-        table = table.append_column("bbox", bbox_array)
+        table = table.append_column(bbox_encoding_fieldname, bbox_array)
 
     # Store geopandas specific file-level metadata
     # This must be done AFTER creating the table or it is not persisted

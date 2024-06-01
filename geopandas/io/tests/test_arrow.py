@@ -14,6 +14,7 @@ import shapely
 from shapely.geometry import LineString, MultiPolygon, Point, Polygon, box
 
 import geopandas
+import geopandas.geodataframe
 from geopandas import GeoDataFrame, read_feather, read_file, read_parquet
 from geopandas._compat import HAS_PYPROJ
 from geopandas.array import to_wkb
@@ -1225,3 +1226,35 @@ def test_read_parquet_filters_without_bbox(tmpdir, naturalearth_lowres, filters)
 
     result = read_parquet(filename, filters=filters)
     assert result["name"].values.tolist() == ["Burkina Faso", "Mozambique", "Albania"]
+
+
+def test_write_parquet_file(tmpdir, naturalearth_lowres):
+    import pyarrow.parquet as pq
+
+    df = read_file(naturalearth_lowres)
+    filename = os.path.join(str(tmpdir), "test.pq")
+
+    table = _geopandas_to_arrow(
+        df,
+        index=None,
+        schema_version=None,
+        write_covering_bbox=True,
+        bbox_encoding_fieldname="custom_bbox_name",
+    )
+    pq.write_table(table, filename, compression="snappy")
+
+    pq_table = pq.read_table(filename)
+    assert "custom_bbox_name" in pq_table.schema.names
+
+    pq_df = read_parquet(filename, bbox=(0, 0, 10, 10))
+    assert pq_df["name"].values.tolist() == [
+        "France",
+        "Benin",
+        "Nigeria",
+        "Cameroon",
+        "Togo",
+        "Ghana",
+        "Burkina Faso",
+        "Gabon",
+        "Eq. Guinea",
+    ]
