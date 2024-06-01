@@ -39,7 +39,5 @@ dependencies:
       - pyogrio
       - rasterio
       - contextily
-      # pyproj deps via geopandas conda-forge, can be moved once pyproj
-      # is no longer a required dep on conda forge
       - pointpats
       - libpysal
