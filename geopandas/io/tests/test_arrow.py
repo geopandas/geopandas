@@ -14,7 +14,6 @@ import shapely
 from shapely.geometry import LineString, MultiPolygon, Point, Polygon, box
 
 import geopandas
-import geopandas.geodataframe
 from geopandas import GeoDataFrame, read_feather, read_file, read_parquet
 from geopandas._compat import HAS_PYPROJ
 from geopandas.array import to_wkb
