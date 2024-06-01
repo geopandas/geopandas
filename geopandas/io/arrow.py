@@ -872,7 +872,8 @@ def _convert_bbox_to_parquet_filter(bbox, bbox_column_name):
 
 
 def _check_if_covering_in_geo_metadata(geo_metadata):
-    return "covering" in next(iter(geo_metadata["columns"].values()))
+    primary_column = geo_metadata["primary_column"]
+    return "covering" in geo_metadata["columns"][primary_column].keys()
 
 
 def _get_bbox_encoding_column_name(geo_metadata):
