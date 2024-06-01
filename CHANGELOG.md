@@ -51,7 +51,7 @@ New features and improvements:
 - Added support to ``read_file`` for the ``mask`` keyword for the pyogrio engine (#3062).
 - Added support to ``read_file`` for the ``columns`` keyword for the fiona engine (#3133).
 - Added support to ``to_parquet`` and ``read_parquet`` for writing and reading files
-  using the GeoArrow-based native geometry encoding of GeoParquet 1.1 (#3253).
+  using the GeoArrow-based native geometry encoding of GeoParquet 1.1 (#3253, #3275).
 - Add `sort` keyword to `clip` method for GeoSeries and GeoDataFrame to allow optional
   preservation of the original order of observations. (#3233)
 - Added `show_bbox`, `drop_id` and `to_wgs84` arguments to allow further customization of
