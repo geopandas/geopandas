@@ -62,6 +62,8 @@ New features and improvements:
 files based on a bounding box, and write out a bounding box column to parquet files (#3282)
 - `align` keyword in binary methods now defaults to `None`, treated as True. Explicit True
   will silence the warning about mismachted indices. (#3212)
+- `GeoSeries.set_crs` can now be used to remove CRS information by passing
+  `crs=None, allow_override=True`. (#3316)
 
 Backwards incompatible API changes:
 
