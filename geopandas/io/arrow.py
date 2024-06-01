@@ -111,7 +111,9 @@ def _get_geometry_types(series):
 
 
 def _create_metadata(
-    df, schema_version=None, write_covering_bbox=False, bbox_encoding_fieldname="bbox"
+    df,
+    schema_version=None,
+    write_covering_bbox=False,
 ):
     """Create and encode geo metadata dict.
 
@@ -125,9 +127,6 @@ def _create_metadata(
         Writes the bounding box column for each row entry with column
         name 'bbox'. Writing a bbox column can be computationally
         expensive, hence is default setting is False.
-    bbox_encoding_fieldname : string, default "bbox"
-        Column name for the covering bbox encoding field. Currently, the
-        only allowable name for this column in writing is "bbox".
 
     Returns
     -------
@@ -176,10 +175,10 @@ def _create_metadata(
         if write_covering_bbox:
             column_metadata[col]["covering"] = {
                 "bbox": {
-                    "xmin": [bbox_encoding_fieldname, "xmin"],
-                    "ymin": [bbox_encoding_fieldname, "ymin"],
-                    "xmax": [bbox_encoding_fieldname, "xmax"],
-                    "ymax": [bbox_encoding_fieldname, "ymax"],
+                    "xmin": ["bbox", "xmin"],
+                    "ymin": ["bbox", "ymin"],
+                    "xmax": ["bbox", "xmax"],
+                    "ymax": ["bbox", "ymax"],
                 },
             }
 
@@ -325,7 +324,6 @@ def _geopandas_to_arrow(
     index=None,
     schema_version=None,
     write_covering_bbox=None,
-    bbox_encoding_fieldname="bbox",
 ):
     """
     Helper function with main, shared logic for to_parquet/to_feather.
@@ -341,7 +339,6 @@ def _geopandas_to_arrow(
         df,
         schema_version=schema_version,
         write_covering_bbox=write_covering_bbox,
-        bbox_encoding_fieldname=bbox_encoding_fieldname,
     )
 
     table = geopandas_to_arrow(
@@ -349,9 +346,9 @@ def _geopandas_to_arrow(
     )
 
     if write_covering_bbox:
-        if bbox_encoding_fieldname in df.columns:
+        if "bbox" in df.columns:
             raise ValueError(
-                f"An existing column '{bbox_encoding_fieldname}' already "
+                "An existing column 'bbox' already "
                 "exists in the dataframe. Please rename to write covering bbox."
             )
         bounds = df.bounds
@@ -359,7 +356,7 @@ def _geopandas_to_arrow(
             [bounds["minx"], bounds["miny"], bounds["maxx"], bounds["maxy"]],
             names=["xmin", "ymin", "xmax", "ymax"],
         )
-        table = table.append_column(bbox_encoding_fieldname, bbox_array)
+        table = table.append_column("bbox", bbox_array)
 
     # Store geopandas specific file-level metadata
     # This must be done AFTER creating the table or it is not persisted
