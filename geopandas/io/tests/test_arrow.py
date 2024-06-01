@@ -1228,7 +1228,9 @@ def test_read_parquet_filters_without_bbox(tmpdir, naturalearth_lowres, filters)
     assert result["name"].values.tolist() == ["Burkina Faso", "Mozambique", "Albania"]
 
 
-def test_write_parquet_file(tmpdir, naturalearth_lowres):
+def test_read_parquet_file_with_custom_bbox_encoding_fieldname(
+    tmpdir, naturalearth_lowres
+):
     import pyarrow.parquet as pq
 
     df = read_file(naturalearth_lowres)
@@ -1245,6 +1247,28 @@ def test_write_parquet_file(tmpdir, naturalearth_lowres):
 
     pq_table = pq.read_table(filename)
     assert "custom_bbox_name" in pq_table.schema.names
+
+    pq_df = read_parquet(filename, bbox=(0, 0, 10, 10))
+    assert pq_df["name"].values.tolist() == [
+        "France",
+        "Benin",
+        "Nigeria",
+        "Cameroon",
+        "Togo",
+        "Ghana",
+        "Burkina Faso",
+        "Gabon",
+        "Eq. Guinea",
+    ]
+
+
+def test_read_parquet_with_bbox_filter_with_custom_geometry_name(
+    tmpdir, naturalearth_lowres
+):
+    df = read_file(naturalearth_lowres)
+    df = df.rename_geometry("custom_geometry_label")
+    filename = os.path.join(str(tmpdir), "test.pq")
+    df.to_parquet(filename, write_covering_bbox=True)
 
     pq_df = read_parquet(filename, bbox=(0, 0, 10, 10))
     assert pq_df["name"].values.tolist() == [

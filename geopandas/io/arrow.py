@@ -867,11 +867,12 @@ def _convert_bbox_to_parquet_filter(bbox, bbox_column_name):
 
 
 def _check_if_covering_in_geo_metadata(geo_metadata):
-    return "covering" in geo_metadata["columns"]["geometry"].keys()
+    return "covering" in next(iter(geo_metadata["columns"].values()))
 
 
 def _get_bbox_encoding_column_name(geo_metadata):
-    return geo_metadata["columns"]["geometry"]["covering"]["bbox"]["xmin"][0]
+    covering = next(iter(geo_metadata["columns"].values()))["covering"]
+    return covering["bbox"]["xmin"][0]
 
 
 def _get_non_bbox_columns(schema, geo_metadata):
