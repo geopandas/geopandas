@@ -890,8 +890,8 @@ def _check_if_covering_in_geo_metadata(geo_metadata):
 
 
 def _get_bbox_encoding_column_name(geo_metadata):
-    covering = next(iter(geo_metadata["columns"].values()))["covering"]
-    return covering["bbox"]["xmin"][0]
+    primary_column = geo_metadata["primary_column"]
+    return geo_metadata["columns"][primary_column]["covering"]["bbox"]["xmin"][0]
 
 
 def _get_non_bbox_columns(schema, geo_metadata):
