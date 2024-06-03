@@ -941,7 +941,11 @@ def test_read_gdal_files():
     and then the gpkg file is converted to Parquet/Arrow with:
     $ ogr2ogr -f Parquet -lco FID= test_data_gdal350.parquet test_data.gpkg
     $ ogr2ogr -f Arrow -lco FID= -lco GEOMETRY_ENCODING=WKB test_data_gdal350.arrow test_data.gpkg
+
+    Repeated for GDAL 3.9 which adds a bbox covering column:
+    $ ogr2ogr -f Parquet -lco FID= test_data_gdal390.parquet test_data.gpkg
     """  # noqa: E501
+    pytest.importorskip("pyproj")
     expected = geopandas.GeoDataFrame(
         {"col_str": ["a", "b"], "col_int": [1, 2], "col_float": [0.1, 0.2]},
         geometry=[MultiPolygon([box(0, 0, 1, 1), box(2, 2, 3, 3)]), box(4, 4, 5, 5)],
@@ -953,6 +957,17 @@ def test_read_gdal_files():
 
     df = geopandas.read_feather(DATA_PATH / "arrow" / "test_data_gdal350.arrow")
     assert_geodataframe_equal(df, expected, check_crs=True)
+
+    df = geopandas.read_parquet(DATA_PATH / "arrow" / "test_data_gdal390.parquet")
+    # recent GDAL no longer writes CRS in metadata in case of EPSG:4326, so comes back
+    # as default OGC:CRS84
+    expected = expected.to_crs("OGC:CRS84")
+    assert_geodataframe_equal(df, expected, check_crs=True)
+
+    df = geopandas.read_parquet(
+        DATA_PATH / "arrow" / "test_data_gdal390.parquet", bbox=(0, 0, 2, 2)
+    )
+    assert len(df) == 1
 
 
 def test_parquet_read_partitioned_dataset(tmpdir, naturalearth_lowres):
