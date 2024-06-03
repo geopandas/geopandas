@@ -1411,7 +1411,7 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
 
         >>> arrow_array = gser.to_arrow()
         >>> arrow_array
-        <geopandas.io.geoarrow.GeoArrowArray object at ...>
+        <geopandas.io._geoarrow.GeoArrowArray object at ...>
 
         The returned array object needs to be consumed by a library implementing
         the Arrow PyCapsule Protocol. For example, wrapping the data as a

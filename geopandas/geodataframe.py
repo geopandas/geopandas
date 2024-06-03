@@ -1258,7 +1258,7 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
 
         >>> arrow_table = gdf.to_arrow()
         >>> arrow_table
-        <geopandas.io.geoarrow.ArrowTable object at ...>
+        <geopandas.io._geoarrow.ArrowTable object at ...>
 
         The returned data object needs to be consumed by a library implementing
         the Arrow PyCapsule Protocol. For example, wrapping the data as a
