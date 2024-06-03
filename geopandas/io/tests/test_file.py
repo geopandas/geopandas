@@ -16,7 +16,7 @@ from shapely.geometry import Point, Polygon, box, mapping
 
 import geopandas
 from geopandas import GeoDataFrame, read_file
-from geopandas._compat import HAS_PYPROJ, PANDAS_GE_20
+from geopandas._compat import HAS_PYPROJ, PANDAS_GE_20, PANDAS_GE_30
 from geopandas.io.file import _EXTENSION_TO_DRIVER, PYOGRIO_GE_081, _detect_driver
 
 import pytest
@@ -277,9 +277,13 @@ def test_read_file_datetime_out_of_bounds_ns(tmpdir, ext, engine):
     date_str = "9999-12-31T00:00:00"  # valid to GDAL, not to [ns] format
     tempfilename = write_invalid_date_file(date_str, tmpdir, ext, engine)
     res = read_file(tempfilename, engine=engine)
-    # Pandas invalid datetimes are read in as object dtype (strings)
-    assert res["date"].dtype == "object"
-    assert isinstance(res["date"].iloc[0], str)
+    if PANDAS_GE_30:
+        assert res["date"].dtype == "datetime64[ms]"
+        assert res["date"].iloc[-1] == pd.Timestamp("9999-12-31 00:00:00")
+    else:
+        # Pandas invalid datetimes are read in as object dtype (strings)
+        assert res["date"].dtype == "object"
+        assert isinstance(res["date"].iloc[0], str)
 
 
 def test_read_file_datetime_mixed_offsets(tmpdir):
