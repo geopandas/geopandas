@@ -538,6 +538,8 @@ def _arrow_to_geopandas(table, geo_metadata=None):
                 stacklevel=3,
             )
 
+    result_column_names = list(table.slice(0, 0).to_pandas().columns)
+
     table_attr = table.drop(geometry_columns)
     df = table_attr.to_pandas()
 
@@ -564,7 +566,8 @@ def _arrow_to_geopandas(table, geo_metadata=None):
                 ),
                 crs=crs,
             )
-        df[col] = geom_arr
+
+        df.insert(result_column_names.index(col), col, geom_arr)
 
     return GeoDataFrame(df, geometry=geometry)
 
