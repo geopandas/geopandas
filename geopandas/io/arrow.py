@@ -515,6 +515,8 @@ def _arrow_to_geopandas(table, geo_metadata=None):
     geometry_columns = [
         col for col in geo_metadata["columns"] if col in table.column_names
     ]
+    result_column_names = list(table.slice(0, 0).to_pandas().columns)
+    geometry_columns.sort(key=result_column_names.index)
 
     if not len(geometry_columns):
         raise ValueError(
@@ -537,8 +539,6 @@ def _arrow_to_geopandas(table, geo_metadata=None):
                 "file. The first column read was promoted to the primary geometry.",
                 stacklevel=3,
             )
-
-    result_column_names = list(table.slice(0, 0).to_pandas().columns)
 
     table_attr = table.drop(geometry_columns)
     df = table_attr.to_pandas()
