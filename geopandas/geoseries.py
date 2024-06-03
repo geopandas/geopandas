@@ -587,7 +587,7 @@ class GeoSeries(GeoPandasBase, Series):
         GeoSeries
 
         """
-        from geopandas.io.geoarrow import arrow_to_geometry_array
+        from geopandas.io._geoarrow import arrow_to_geometry_array
 
         return cls(arrow_to_geometry_array(arr), **kwargs)
 
@@ -1429,7 +1429,7 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
         """
         import pyarrow as pa
 
-        from geopandas.io.geoarrow import (
+        from geopandas.io._geoarrow import (
             GeoArrowArray,
             construct_geometry_array,
             construct_wkb_array,

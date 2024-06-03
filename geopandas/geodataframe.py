@@ -848,7 +848,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         GeoDataFrame
 
         """
-        from geopandas.io.geoarrow import arrow_to_geopandas
+        from geopandas.io._geoarrow import arrow_to_geopandas
 
         return arrow_to_geopandas(table, geometry=geometry)
 
@@ -1276,7 +1276,7 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
 01010000000000000000000040000000000000F03F]]
 
         """
-        from geopandas.io.geoarrow import ArrowTable, geopandas_to_arrow
+        from geopandas.io._geoarrow import ArrowTable, geopandas_to_arrow
 
         table, _ = geopandas_to_arrow(
             self,
