@@ -507,9 +507,12 @@ def arrow_to_geometry_array(arr):
 
     Specifically for GeoSeries.from_arrow.
     """
-    schema_capsule, _ = arr.__arrow_c_array__()
+    if Version(pa.__version__) < Version("14.0.0"):
+        raise ValueError("Importing from Arrow requires pyarrow >= 14.0.")
+
+    schema_capsule, array_capsule = arr.__arrow_c_array__()
     field = pa.Field._import_from_c_capsule(schema_capsule)
-    pa_arr = pa.array(arr)
+    pa_arr = pa.Array._import_from_c_capsule(field.__arrow_c_schema__(), array_capsule)
 
     geom_info = _get_arrow_geometry_field(field)
     if geom_info is None:
