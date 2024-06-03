@@ -356,6 +356,11 @@ def _geopandas_to_arrow(
     )
 
     if write_covering_bbox:
+        if "bbox" in df.columns:
+            raise ValueError(
+                "An existing column 'bbox' already exists in the dataframe. "
+                "Please rename to write covering bbox."
+            )
         bounds = df.bounds
         bbox_array = StructArray.from_arrays(
             [bounds["minx"], bounds["miny"], bounds["maxx"], bounds["maxy"]],
@@ -880,11 +885,13 @@ def _convert_bbox_to_parquet_filter(bbox, bbox_column_name):
 
 
 def _check_if_covering_in_geo_metadata(geo_metadata):
-    return "covering" in geo_metadata["columns"]["geometry"].keys()
+    primary_column = geo_metadata["primary_column"]
+    return "covering" in geo_metadata["columns"][primary_column].keys()
 
 
 def _get_bbox_encoding_column_name(geo_metadata):
-    return geo_metadata["columns"]["geometry"]["covering"]["bbox"]["xmin"][0]
+    primary_column = geo_metadata["primary_column"]
+    return geo_metadata["columns"][primary_column]["covering"]["bbox"]["xmin"][0]
 
 
 def _get_non_bbox_columns(schema, geo_metadata):

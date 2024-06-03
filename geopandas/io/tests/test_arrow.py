@@ -1094,9 +1094,13 @@ def test_read_parquet_bbox_single_point(tmpdir):
     assert pq_df.geometry[0] == Point(1, 1)
 
 
-def test_read_parquet_bbox(tmpdir, naturalearth_lowres):
+@pytest.mark.parametrize("geometry_name", ["geometry", "custum_geom_col"])
+def test_read_parquet_bbox(tmpdir, naturalearth_lowres, geometry_name):
     # check bbox is being used to filter results.
     df = read_file(naturalearth_lowres)
+    if geometry_name != "geometry":
+        df = df.rename_geometry(geometry_name)
+
     filename = os.path.join(str(tmpdir), "test.pq")
     df.to_parquet(filename, write_covering_bbox=True)
 
@@ -1115,9 +1119,12 @@ def test_read_parquet_bbox(tmpdir, naturalearth_lowres):
     ]
 
 
-def test_read_parquet_bbox_partitioned(tmpdir, naturalearth_lowres):
+@pytest.mark.parametrize("geometry_name", ["geometry", "custum_geom_col"])
+def test_read_parquet_bbox_partitioned(tmpdir, naturalearth_lowres, geometry_name):
     # check bbox is being used to filter results on partioned data.
     df = read_file(naturalearth_lowres)
+    if geometry_name != "geometry":
+        df = df.rename_geometry(geometry_name)
 
     # manually create partitioned dataset
     basedir = tmpdir / "partitioned_dataset"
@@ -1253,3 +1260,52 @@ def test_read_parquet_filters_without_bbox(tmpdir, naturalearth_lowres, filters)
 
     result = read_parquet(filename, filters=filters)
     assert result["name"].values.tolist() == ["Burkina Faso", "Mozambique", "Albania"]
+
+
+def test_read_parquet_file_with_custom_bbox_encoding_fieldname(tmpdir):
+    import pyarrow.parquet as pq
+
+    data = {
+        "name": ["point1", "point2", "point3"],
+        "geometry": [Point(1, 1), Point(2, 2), Point(3, 3)],
+    }
+    df = GeoDataFrame(data)
+    filename = os.path.join(str(tmpdir), "test.pq")
+
+    table = _geopandas_to_arrow(
+        df,
+        schema_version="1.1.0",
+        write_covering_bbox=True,
+    )
+    metadata = table.schema.metadata  # rename_columns results in wiping of metadata
+
+    table = table.rename_columns(["name", "geometry", "custom_bbox_name"])
+
+    geo_metadata = json.loads(metadata[b"geo"])
+    geo_metadata["columns"]["geometry"]["covering"]["bbox"] = {
+        "xmin": ["custom_bbox_name", "xmin"],
+        "ymin": ["custom_bbox_name", "ymin"],
+        "xmax": ["custom_bbox_name", "xmax"],
+        "ymax": ["custom_bbox_name", "ymax"],
+    }
+    metadata.update({b"geo": _encode_metadata(geo_metadata)})
+
+    table = table.replace_schema_metadata(metadata)
+    pq.write_table(table, filename)
+
+    pq_table = pq.read_table(filename)
+    assert "custom_bbox_name" in pq_table.schema.names
+
+    pq_df = read_parquet(filename, bbox=(1.5, 1.5, 2.5, 2.5))
+    assert pq_df["name"].values.tolist() == ["point2"]
+
+
+def test_to_parquet_with_existing_bbox_column(tmpdir, naturalearth_lowres):
+    df = read_file(naturalearth_lowres)
+    df = df.assign(bbox=[0] * len(df))
+    filename = os.path.join(str(tmpdir), "test.pq")
+
+    with pytest.raises(
+        ValueError, match="An existing column 'bbox' already exists in the dataframe"
+    ):
+        df.to_parquet(filename, write_covering_bbox=True)
