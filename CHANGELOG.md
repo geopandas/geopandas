@@ -53,18 +53,21 @@ New features and improvements:
   the specified columns (#3101).
 - Added support to ``read_file`` for the ``mask`` keyword for the pyogrio engine (#3062).
 - Added support to ``read_file`` for the ``columns`` keyword for the fiona engine (#3133).
-- Added support to ``read_parquet`` for reading files using the GeoArrow-based native geometry encoding of GeoParquet 1.1 (#3253).
+- Added support to ``to_parquet`` and ``read_parquet`` for writing and reading files
+  using the GeoArrow-based native geometry encoding of GeoParquet 1.1 (#3253, #3275).
 - Add `sort` keyword to `clip` method for GeoSeries and GeoDataFrame to allow optional
   preservation of the original order of observations. (#3233)
 - Added `show_bbox`, `drop_id` and `to_wgs84` arguments to allow further customization of
   `GeoSeries.to_json` (#3226)
-- `explore` now supports `GeoDataFrame`s with additional columns containing datetimes, uuids and 
+- `explore` now supports `GeoDataFrame`s with additional columns containing datetimes, uuids and
   other non JSON serializable objects (#3261).
 - The `GeoSeries.fillna` method now supports the `limit` keyword (#3290).
 - Added support for `bbox` covering encoding in geoparquet. Can filter reading of parquet
 files based on a bounding box, and write out a bounding box column to parquet files (#3282)
 - `align` keyword in binary methods now defaults to `None`, treated as True. Explicit True
   will silence the warning about mismachted indices. (#3212)
+- `GeoSeries.set_crs` can now be used to remove CRS information by passing
+  `crs=None, allow_override=True`. (#3316)
 
 Backwards incompatible API changes:
 
@@ -130,6 +133,8 @@ New deprecations:
   ```
 - The `geopandas.use_pygeos` option has been deprecated and will be removed in GeoPandas
   1.1 (#3283)
+- Manual overriding of an existing CRS of a GeoSeries using the `crs.setter` has been deprecated
+  and will be disabled in future. Use the `set_crs()` method instead (#3085).
 
 Bug fixes:
 

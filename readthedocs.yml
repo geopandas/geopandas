@@ -8,6 +8,8 @@ build:
       # we need the tags for versioneer to work
       - git fetch origin --depth 150
       - git fetch --tags
+    post_build:
+      - mamba list
 python:
   install:
   - method: pip

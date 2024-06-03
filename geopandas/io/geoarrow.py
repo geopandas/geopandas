@@ -135,6 +135,8 @@ def geopandas_to_arrow(
 
     table = pa.Table.from_pandas(df_attr, preserve_index=index)
 
+    geometry_encoding_dict = {}
+
     if geometry_encoding.lower() == "geoarrow":
         if Version(pa.__version__) < Version("10.0.0"):
             raise ValueError("Converting to 'geoarrow' requires pyarrow >= 10.0.")
@@ -149,6 +151,11 @@ def geopandas_to_arrow(
                 interleaved=interleaved,
             )
             table = table.set_column(i, field, geom_arr)
+            geometry_encoding_dict[col] = (
+                field.metadata[b"ARROW:extension:name"]
+                .decode()
+                .removeprefix("geoarrow.")
+            )
 
     elif geometry_encoding.lower() == "wkb":
         # Encode all geometry columns to WKB
@@ -157,12 +164,13 @@ def geopandas_to_arrow(
                 np.asarray(df[col].array), field_name=col, crs=df[col].crs
             )
             table = table.set_column(i, field, wkb_arr)
+            geometry_encoding_dict[col] = "WKB"
 
     else:
         raise ValueError(
             f"Expected geometry encoding 'WKB' or 'geoarrow' got {geometry_encoding}"
         )
-    return table
+    return table, geometry_encoding_dict
 
 
 def construct_wkb_array(
