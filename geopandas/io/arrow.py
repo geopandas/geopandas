@@ -358,8 +358,8 @@ def _geopandas_to_arrow(
     if write_covering_bbox:
         if "bbox" in df.columns:
             raise ValueError(
-                "An existing column 'bbox' already "
-                "exists in the dataframe. Please rename to write covering bbox."
+                "An existing column 'bbox' already exists in the dataframe. "
+                "Please rename to write covering bbox."
             )
         bounds = df.bounds
         bbox_array = StructArray.from_arrays(
