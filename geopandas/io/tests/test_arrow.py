@@ -945,6 +945,7 @@ def test_read_gdal_files():
     Repeated for GDAL 3.9 which adds a bbox covering column:
     $ ogr2ogr -f Parquet -lco FID= test_data_gdal390.parquet test_data.gpkg
     """  # noqa: E501
+    pytest.importorskip("pyproj")
     expected = geopandas.GeoDataFrame(
         {"col_str": ["a", "b"], "col_int": [1, 2], "col_float": [0.1, 0.2]},
         geometry=[MultiPolygon([box(0, 0, 1, 1), box(2, 2, 3, 3)]), box(4, 4, 5, 5)],
