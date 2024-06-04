@@ -3,24 +3,24 @@ from typing import Sequence
 
 import numpy as np
 import pandas as pd
-import shapely
 
-from shapely.geometry import Point, Polygon, GeometryCollection, box
+import shapely
+from shapely.geometry import GeometryCollection, Point, Polygon, box
 
 import geopandas
 import geopandas._compat as compat
 from geopandas import (
     GeoDataFrame,
     GeoSeries,
+    points_from_xy,
     read_file,
     sjoin,
     sjoin_nearest,
-    points_from_xy,
 )
-from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 
-from pandas.testing import assert_frame_equal, assert_series_equal, assert_index_equal
 import pytest
+from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
+from pandas.testing import assert_frame_equal, assert_index_equal, assert_series_equal
 
 
 @pytest.fixture()

@@ -12,12 +12,13 @@ from importlib.util import find_spec
 import pandas as pd
 
 import geopandas
-from geopandas import GeoDataFrame, read_file, read_postgis
-
 import geopandas._compat as compat
-from geopandas.io.sql import _get_conn as get_conn, _write_postgis as write_postgis
-from geopandas.tests.util import create_postgis, create_spatialite, validate_boro_df
+from geopandas import GeoDataFrame, read_file, read_postgis
+from geopandas.io.sql import _get_conn as get_conn
+from geopandas.io.sql import _write_postgis as write_postgis
+
 import pytest
+from geopandas.tests.util import create_postgis, create_spatialite, validate_boro_df
 
 try:
     from sqlalchemy import text
@@ -156,7 +157,7 @@ def drop_table_if_exists(conn_or_engine, table):
 
 @pytest.fixture
 def df_mixed_single_and_multi():
-    from shapely.geometry import Point, LineString, MultiLineString
+    from shapely.geometry import LineString, MultiLineString, Point
 
     df = geopandas.GeoDataFrame(
         {
@@ -173,7 +174,7 @@ def df_mixed_single_and_multi():
 
 @pytest.fixture
 def df_geom_collection():
-    from shapely.geometry import Point, LineString, Polygon, GeometryCollection
+    from shapely.geometry import GeometryCollection, LineString, Point, Polygon
 
     df = geopandas.GeoDataFrame(
         {
@@ -204,7 +205,7 @@ def df_linear_ring():
 
 @pytest.fixture
 def df_3D_geoms():
-    from shapely.geometry import Point, LineString, Polygon
+    from shapely.geometry import LineString, Point, Polygon
 
     df = geopandas.GeoDataFrame(
         {
@@ -489,7 +490,7 @@ class TestIO:
         table = "nybb"
 
         # Write to db
-        df_nybb.crs = None
+        df_nybb.geometry.array.crs = None
         with pytest.warns(UserWarning, match="Could not parse CRS from the GeoDataF"):
             write_postgis(df_nybb, con=engine, name=table, if_exists="replace")
         # Validate that srid is -1

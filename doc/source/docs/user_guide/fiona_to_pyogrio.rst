@@ -62,6 +62,7 @@ Pyogrio writes EMPTY and None geometries as such to e.g. GPKG files, Fiona write
 as None.
 
 .. ipython:: python
+    :okwarning:
 
     import shapely
     

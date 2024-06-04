@@ -2,24 +2,27 @@ import datetime
 import io
 import os
 import pathlib
+import shutil
 import tempfile
 from collections import OrderedDict
+from packaging.version import Version
 
 import numpy as np
 import pandas as pd
-import pytest
 import pytz
-from packaging.version import Version
 from pandas.api.types import is_datetime64_any_dtype
-from pandas.testing import assert_series_equal, assert_frame_equal
+
 from shapely.geometry import Point, Polygon, box, mapping
 
 import geopandas
 from geopandas import GeoDataFrame, read_file
-from geopandas._compat import PANDAS_GE_20, HAS_PYPROJ
-from geopandas.io.file import _detect_driver, _EXTENSION_TO_DRIVER
+from geopandas._compat import HAS_PYPROJ, PANDAS_GE_20, PANDAS_GE_30
+from geopandas.io.file import _EXTENSION_TO_DRIVER, PYOGRIO_GE_081, _detect_driver
+
+import pytest
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 from geopandas.tests.util import PACKAGE_DIR, validate_boro_df
+from pandas.testing import assert_frame_equal, assert_series_equal
 
 try:
     import pyogrio
@@ -174,9 +177,10 @@ def test_to_file_bool(tmpdir, driver, ext, engine):
     result = read_file(tempfilename, engine=engine)
     if ext in (".shp", ""):
         # Shapefile does not support boolean, so is read back as int
-        if engine == "fiona":
+        # but since GDAL 3.9 supports boolean fields in SHP
+        if engine == "fiona" and fiona.gdal_version.minor < 9:
             df["col"] = df["col"].astype("int64")
-        else:
+        elif engine == "pyogrio" and pyogrio.__gdal_version__ < (3, 9):
             df["col"] = df["col"].astype("int32")
     assert_geodataframe_equal(result, df)
     # check the expected driver
@@ -273,9 +277,13 @@ def test_read_file_datetime_out_of_bounds_ns(tmpdir, ext, engine):
     date_str = "9999-12-31T00:00:00"  # valid to GDAL, not to [ns] format
     tempfilename = write_invalid_date_file(date_str, tmpdir, ext, engine)
     res = read_file(tempfilename, engine=engine)
-    # Pandas invalid datetimes are read in as object dtype (strings)
-    assert res["date"].dtype == "object"
-    assert isinstance(res["date"].iloc[0], str)
+    if PANDAS_GE_30:
+        assert res["date"].dtype == "datetime64[ms]"
+        assert res["date"].iloc[-1] == pd.Timestamp("9999-12-31 00:00:00")
+    else:
+        # Pandas invalid datetimes are read in as object dtype (strings)
+        assert res["date"].dtype == "object"
+        assert isinstance(res["date"].iloc[0], str)
 
 
 def test_read_file_datetime_mixed_offsets(tmpdir):
@@ -457,8 +465,7 @@ def test_to_file_crs(tmpdir, engine, nybb_filename):
     assert result.crs == "epsg:3857"
 
     # specify CRS for gdf without one
-    df2 = df.copy()
-    df2.crs = None
+    df2 = df.set_crs(None, allow_override=True)
     df2.to_file(tempfilename, crs=2263, engine=engine)
     df = GeoDataFrame.from_file(tempfilename, engine=engine)
     assert df.crs == "epsg:2263"
@@ -551,7 +558,7 @@ def test_empty_crs(tmpdir, driver, ext, engine):
 
     if ext == ".geojson":
         # geojson by default assumes epsg:4326
-        df.crs = "EPSG:4326"
+        df.geometry.array.crs = "EPSG:4326"
 
     assert_geodataframe_equal(result, df)
 
@@ -691,6 +698,16 @@ def test_allow_legacy_gdal_path(engine, nybb_filename):
     # Construct a GDAL-style zip path.
     path = "/vsizip/" + nybb_filename[6:]
     gdf = read_file(path, engine=engine)
+    assert isinstance(gdf, geopandas.GeoDataFrame)
+
+
+@pytest.mark.skipif(not PYOGRIO_GE_081, reason="bug fixed in pyogrio 0.8.1")
+def test_read_file_with_hash_in_path(engine, nybb_filename, tmp_path):
+    folder_with_hash = tmp_path / "path with # present"
+    folder_with_hash.mkdir(exist_ok=True, parents=True)
+    read_path = folder_with_hash / "nybb.zip"
+    shutil.copy(nybb_filename[6:], read_path)
+    gdf = read_file(read_path, engine=engine)
     assert isinstance(gdf, geopandas.GeoDataFrame)
 
 

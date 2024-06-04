@@ -5,12 +5,11 @@ import pandas as pd
 
 import geopandas
 from geopandas import GeoDataFrame, read_file
+from geopandas._compat import HAS_PYPROJ, PANDAS_GE_15, PANDAS_GE_20, PANDAS_GE_30
 
-from pandas.testing import assert_frame_equal
 import pytest
-
-from geopandas._compat import PANDAS_GE_15, PANDAS_GE_20, PANDAS_GE_30, HAS_PYPROJ
 from geopandas.testing import assert_geodataframe_equal, geom_almost_equals
+from pandas.testing import assert_frame_equal
 
 
 @pytest.fixture
@@ -71,7 +70,7 @@ def test_dissolve_retains_existing_crs(nybb_polydf):
 
 
 def test_dissolve_retains_nonexisting_crs(nybb_polydf):
-    nybb_polydf.crs = None
+    nybb_polydf.geometry.array.crs = None
     test = nybb_polydf.dissolve("manhattan_bronx")
     assert test.crs is None
 

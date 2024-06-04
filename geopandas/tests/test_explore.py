@@ -1,11 +1,15 @@
-import geopandas as gpd
-import numpy as np
-import pandas as pd
-import pytest
-import shapely
+import uuid
 from packaging.version import Version
 
+import numpy as np
+import pandas as pd
+
+import shapely
+
+import geopandas as gpd
 from geopandas._compat import HAS_PYPROJ
+
+import pytest
 
 folium = pytest.importorskip("folium")
 branca = pytest.importorskip("branca")
@@ -13,9 +17,8 @@ matplotlib = pytest.importorskip("matplotlib")
 mapclassify = pytest.importorskip("mapclassify")
 geodatasets = pytest.importorskip("geodatasets")
 
-from matplotlib import cm
-from matplotlib import colors
 from branca.colormap import StepColormap
+from matplotlib import cm, colors
 
 BRANCA_05 = Version(branca.__version__) > Version("0.4.2")
 FOLIUM_G_014 = Version(folium.__version__) > Version("0.14.0")
@@ -298,6 +301,34 @@ class TestExplore:
         assert '"__folium_color":"#9edae5","bool":true' in out2_str
         assert '"__folium_color":"#1f77b4","bool":false' in out2_str
 
+    def test_datetime(self):
+        df = self.nybb.copy().head(2)
+        date1 = pd.Timestamp(2022, 1, 1, 1, 22, 0, 0)
+        date2 = pd.Timestamp(2025, 1, 1, 1, 22, 0, 0)
+        df["datetime"] = [date1, date2]
+        m1 = df.explore("datetime")
+
+        out1_str = self._fetch_map_string(m1)
+        assert '"__folium_color":"#9edae5","datetime":"2025-01-0101:22:00"' in out1_str
+        assert '"__folium_color":"#1f77b4","datetime":"2022-01-0101:22:00"' in out1_str
+
+    def test_non_json_serialisable(self):
+        df = self.nybb.copy().head(2)
+        uuid1 = uuid.UUID("12345678123456781234567812345678")
+        uuid2 = uuid.UUID("12345678123456781234567812345679")
+        df["object"] = [uuid1, uuid2]
+        m1 = df.explore("object")
+
+        out1_str = self._fetch_map_string(m1)
+        assert (
+            '"__folium_color":"#9edae5","object":"12345678-1234-5678-1234-567812345679"}'
+            in out1_str
+        )
+        assert (
+            '"__folium_color":"#1f77b4","object":"12345678-1234-5678-1234-567812345678"'
+            in out1_str
+        )
+
     def test_string(self):
         df = self.nybb.copy()
         df["string"] = pd.array([1, 2, 3, 4, 5], dtype="string")
@@ -347,7 +378,7 @@ class TestExplore:
     def test_no_crs(self):
         """Naive geometry get no tiles"""
         df = self.world.copy()
-        df.crs = None
+        df.geometry.array.crs = None
         m = df.explore()
         assert "openstreetmap" not in m.to_dict()["children"].keys()
 
@@ -712,7 +743,7 @@ class TestExplore:
             'attribution":"\\u0026copy;\\u003cahref=\\"https://www.openstreetmap.org'
             in out_str
         )
-        assert '"maxNativeZoom":20,"maxZoom":20,"minZoom":0' in out_str
+        assert '"maxZoom":20,"minZoom":0' in out_str
 
     @pytest.mark.skipif(not HAS_PYPROJ, reason="requires pyproj")
     def test_xyzservices_query_name(self):
@@ -729,7 +760,7 @@ class TestExplore:
             'attribution":"\\u0026copy;\\u003cahref=\\"https://www.openstreetmap.org'
             in out_str
         )
-        assert '"maxNativeZoom":20,"maxZoom":20,"minZoom":0' in out_str
+        assert '"maxZoom":20,"minZoom":0' in out_str
 
     @pytest.mark.skipif(not HAS_PYPROJ, reason="requires pyproj")
     def test_xyzservices_providers_min_zoom_override(self):
@@ -740,7 +771,7 @@ class TestExplore:
         )
         out_str = self._fetch_map_string(m)
 
-        assert '"maxNativeZoom":20,"maxZoom":20,"minZoom":3' in out_str
+        assert '"maxZoom":20,"minZoom":3' in out_str
 
     @pytest.mark.skipif(not HAS_PYPROJ, reason="requires pyproj")
     def test_xyzservices_providers_max_zoom_override(self):
@@ -751,7 +782,7 @@ class TestExplore:
         )
         out_str = self._fetch_map_string(m)
 
-        assert '"maxNativeZoom":12,"maxZoom":12,"minZoom":0' in out_str
+        assert '"maxZoom":12,"minZoom":0' in out_str
 
     @pytest.mark.skipif(not HAS_PYPROJ, reason="requires pyproj")
     def test_xyzservices_providers_both_zooms_override(self):
@@ -764,7 +795,7 @@ class TestExplore:
         )
         out_str = self._fetch_map_string(m)
 
-        assert '"maxNativeZoom":12,"maxZoom":12,"minZoom":3' in out_str
+        assert '"maxZoom":12,"minZoom":3' in out_str
 
     def test_linearrings(self):
         rings = self.nybb.explode(index_parts=True).exterior

@@ -10,7 +10,8 @@ import warnings
 
 import numpy as np
 import pandas.api.types
-from shapely.geometry import Polygon, MultiPolygon, box
+
+from shapely.geometry import MultiPolygon, Polygon, box
 
 from geopandas import GeoDataFrame, GeoSeries
 from geopandas.array import _check_crs, _crs_mismatch_warn

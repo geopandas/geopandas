@@ -6,21 +6,21 @@ from functools import lru_cache
 
 import numpy as np
 import pandas as pd
-import shapely
-import shapely.affinity
-import shapely.geometry
-import shapely.ops
-import shapely.wkt
 from pandas.api.extensions import (
     ExtensionArray,
     ExtensionDtype,
     register_extension_dtype,
 )
 
+import shapely
+import shapely.affinity
+import shapely.geometry
+import shapely.ops
+import shapely.wkt
 from shapely.geometry.base import BaseGeometry
 
-from .sindex import SpatialIndex
 from ._compat import HAS_PYPROJ, requires_pyproj
+from .sindex import SpatialIndex
 
 if HAS_PYPROJ:
     from pyproj import Transformer
@@ -497,6 +497,9 @@ class GeometryArray(ExtensionArray):
     def is_valid(self):
         return shapely.is_valid(self._data)
 
+    def is_valid_reason(self):
+        return shapely.is_valid_reason(self._data)
+
     @property
     def is_empty(self):
         return shapely.is_empty(self._data)
@@ -548,6 +551,9 @@ class GeometryArray(ExtensionArray):
     def get_precision(self):
         return shapely.get_precision(self._data)
 
+    def get_geometry(self, index):
+        return shapely.get_geometry(self._data, index=index)
+
     #
     # Unary operations that return new geometries
     #
@@ -567,12 +573,6 @@ class GeometryArray(ExtensionArray):
     @property
     def convex_hull(self):
         return GeometryArray(shapely.convex_hull(self._data), crs=self.crs)
-
-    def delaunay_triangles(self, tolerance, only_edges):
-        return GeometryArray(
-            shapely.delaunay_triangles(self._data, tolerance, only_edges),
-            crs=self.crs,
-        )
 
     @property
     def envelope(self):
@@ -784,6 +784,11 @@ class GeometryArray(ExtensionArray):
             self._binary_method("snap", self, other, tolerance=tolerance), crs=self.crs
         )
 
+    def shared_paths(self, other):
+        return GeometryArray(
+            self._binary_method("shared_paths", self, other), crs=self.crs
+        )
+
     #
     # Other operations
     #
@@ -846,7 +851,7 @@ class GeometryArray(ExtensionArray):
         warnings.warn(
             "The 'unary_union' attribute is deprecated, "
             "use the 'union_all' method instead.",
-            FutureWarning,
+            DeprecationWarning,
             stacklevel=2,
         )
         return self.union_all()
@@ -1208,29 +1213,13 @@ class GeometryArray(ExtensionArray):
             result[~shapely.is_valid_input(result)] = None
         return GeometryArray(result, crs=self.crs)
 
-    def _fill(self, idx, value):
-        """
-        Fill index locations with ``value``.
-
-        ``value`` should be a BaseGeometry or a GeometryArray.
-        """
-        if isna(value):
-            value = [None]
-        elif _is_scalar_geometry(value):
-            value = [value]
-        elif isinstance(value, GeometryArray):
-            value = value[idx]
-        else:
-            raise TypeError(
-                "'value' parameter must be None, a scalar geometry, or a GeoSeries, "
-                f"but you passed a {type(value).__name__!r}"
-            )
-
-        value_arr = np.empty(len(value), dtype=object)
-        value_arr[:] = value
-
-        self._data[idx] = value_arr
-        return self
+    # compat for pandas < 3.0
+    def _pad_or_backfill(
+        self, method, limit=None, limit_area=None, copy=True, **kwargs
+    ):
+        return super()._pad_or_backfill(
+            method=method, limit=limit, limit_area=limit_area, copy=copy, **kwargs
+        )
 
     def fillna(self, value=None, method=None, limit=None, copy=True):
         """
@@ -1249,12 +1238,7 @@ class GeometryArray(ExtensionArray):
             backfill / bfill: use NEXT valid observation to fill gap
 
         limit : int, default None
-            If method is specified, this is the maximum number of consecutive
-            NaN values to forward/backward fill. In other words, if there is
-            a gap with more than this number of consecutive NaNs, it will only
-            be partially filled. If method is not specified, this is the
-            maximum number of entries along the entire axis where NaNs will be
-            filled.
+            The maximum number of entries where NA values will be filled.
 
         copy : bool, default True
             Whether to make a copy of the data before filling. If False, then
@@ -1272,7 +1256,30 @@ class GeometryArray(ExtensionArray):
             new_values = self.copy()
         else:
             new_values = self
-        return new_values._fill(mask, value) if mask.any() else new_values
+
+        if not mask.any():
+            return new_values
+
+        if limit is not None and limit < len(self):
+            modify = mask.cumsum() > limit
+            if modify.any():
+                mask[modify] = False
+
+        if isna(value):
+            value = [None]
+        elif _is_scalar_geometry(value):
+            value = [value]
+        elif isinstance(value, GeometryArray):
+            value = value[mask]
+        else:
+            raise TypeError(
+                "'value' parameter must be None, a scalar geometry, or a GeoSeries, "
+                f"but you passed a {type(value).__name__!r}"
+            )
+        value_arr = np.asarray(value, dtype=object)
+
+        new_values._data[mask] = value_arr
+        return new_values
 
     def astype(self, dtype, copy=True):
         """
