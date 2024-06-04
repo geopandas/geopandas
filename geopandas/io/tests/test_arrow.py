@@ -1190,7 +1190,7 @@ def test_read_parquet_no_bbox(tmpdir, naturalearth_lowres):
     df = read_file(naturalearth_lowres)
     filename = os.path.join(str(tmpdir), "test.pq")
     df.to_parquet(filename)
-    with pytest.raises(ValueError, match="No covering bbox in parquet file."):
+    with pytest.raises(ValueError, match="Specifying 'bbox' not supported"):
         read_parquet(filename, bbox=(0, 0, 20, 20))
 
 
@@ -1205,7 +1205,7 @@ def test_read_parquet_no_bbox_partitioned(tmpdir, naturalearth_lowres):
     df[:100].to_parquet(basedir / "data1.parquet")
     df[100:].to_parquet(basedir / "data2.parquet")
 
-    with pytest.raises(ValueError, match="No covering bbox in parquet file."):
+    with pytest.raises(ValueError, match="Specifying 'bbox' not supported"):
         read_parquet(basedir, bbox=(0, 0, 20, 20))
 
 
@@ -1324,3 +1324,16 @@ def test_to_parquet_with_existing_bbox_column(tmpdir, naturalearth_lowres):
         ValueError, match="An existing column 'bbox' already exists in the dataframe"
     ):
         df.to_parquet(filename, write_covering_bbox=True)
+
+
+def test_read_parquet_bbox_points(tmp_path):
+    # check bbox filtering on point geometries
+    df = geopandas.GeoDataFrame(
+        {"col": range(10)}, geometry=[Point(i, i) for i in range(10)]
+    )
+    df.to_parquet(tmp_path / "test.parquet", geometry_encoding="geoarrow")
+
+    result = geopandas.read_parquet(tmp_path / "test.parquet", bbox=(0, 0, 10, 10))
+    assert len(result) == 10
+    result = geopandas.read_parquet(tmp_path / "test.parquet", bbox=(3, 3, 5, 5))
+    assert len(result) == 3

@@ -865,12 +865,27 @@ def _read_feather(path, columns=None, **kwargs):
 
 
 def _get_parquet_bbox_filter(geo_metadata, bbox):
+    primary_column = geo_metadata["primary_column"]
 
-    if not _check_if_covering_in_geo_metadata(geo_metadata):
-        raise ValueError("No covering bbox in parquet file.")
+    if _check_if_covering_in_geo_metadata(geo_metadata):
+        bbox_column_name = _get_bbox_encoding_column_name(geo_metadata)
+        return _convert_bbox_to_parquet_filter(bbox, bbox_column_name)
 
-    bbox_column_name = _get_bbox_encoding_column_name(geo_metadata)
-    return _convert_bbox_to_parquet_filter(bbox, bbox_column_name)
+    elif geo_metadata["columns"][primary_column]["encoding"] == "point":
+        import pyarrow.compute as pc
+
+        return (
+            (pc.field((primary_column, "x")) >= bbox[0])
+            & (pc.field((primary_column, "x")) <= bbox[2])
+            & (pc.field((primary_column, "y")) >= bbox[1])
+            & (pc.field((primary_column, "y")) <= bbox[3])
+        )
+
+    else:
+        raise ValueError(
+            "Specifying 'bbox' not supported for this Parquet file (it should either "
+            "have a bbox covering column or use 'point' encoding)."
+        )
 
 
 def _convert_bbox_to_parquet_filter(bbox, bbox_column_name):
