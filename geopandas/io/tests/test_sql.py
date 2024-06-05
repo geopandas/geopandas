@@ -363,7 +363,7 @@ class TestIO:
         # by user; should not be set to 0, as from get_srid failure
         assert df.crs is None
 
-    @pytest.xfail()
+    @pytest.mark.xfail()
     @pytest.mark.parametrize("connection_postgis", POSTGIS_DRIVERS, indirect=True)
     def test_read_postgis_multiple_geometry_columns(self, connection_postgis):
 
