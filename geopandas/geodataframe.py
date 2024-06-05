@@ -724,6 +724,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         sql,
         con,
         geom_col="geom",
+        additional_geom_cols=None,
         crs=None,
         index_col=None,
         coerce_float=True,
@@ -741,6 +742,10 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         con : sqlalchemy.engine.Connection or sqlalchemy.engine.Engine
         geom_col : string, default 'geom'
             column name to convert to shapely geometries
+        additional_geom_cols : list[str], default None
+            additional geometry columns to be converted to shapely geometries,
+            columns listed here will not be converted to the active geometry column.
+            The active geometry column (geom_col) should not be duplicated here.
         crs : optional
             Coordinate reference system to use for the returned GeoDataFrame
         index_col : string or list of strings, optional, default: None
@@ -792,6 +797,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             sql,
             con,
             geom_col=geom_col,
+            additional_geom_cols=additional_geom_cols,
             crs=crs,
             index_col=index_col,
             coerce_float=coerce_float,

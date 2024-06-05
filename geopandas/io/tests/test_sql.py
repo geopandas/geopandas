@@ -363,6 +363,24 @@ class TestIO:
         # by user; should not be set to 0, as from get_srid failure
         assert df.crs is None
 
+    @pytest.xfail()
+    @pytest.mark.parametrize("connection_postgis", POSTGIS_DRIVERS, indirect=True)
+    def test_read_postgis_multiple_geometry_columns(self, connection_postgis):
+
+        from shapely import Point
+
+        gdf = GeoDataFrame(
+            {
+                "a": [1, 2, 3],
+                "extra_geom_col1": [Point(10, 10), Point(20, 20), Point(30, 30)],
+                "extra_geom_col2": [Point(40, 40), Point(50, 50), Point(60, 60)],
+                "geometry": [Point(0, 0), Point(1, 1), Point(2, 2)],
+            }
+        )
+
+        con = connection_postgis
+        create_postgis(con, gdf)
+
     @pytest.mark.parametrize("engine_postgis", POSTGIS_DRIVERS, indirect=True)
     def test_write_postgis_default(self, engine_postgis, df_nybb):
         """Tests that GeoDataFrame can be written to PostGIS with defaults."""
