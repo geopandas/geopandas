@@ -460,7 +460,7 @@ class TestIO:
                 additional_geom_cols=["data", "additional_geometry_01"],
             )
 
-        # Check when geometry column is repated in both gom_cols
+        # Check when geometry column is repeated in both gom_cols
         # and additional_geom_cols
         with pytest.raises(
             ValueError,
