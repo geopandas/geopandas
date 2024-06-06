@@ -81,7 +81,7 @@ def _df_to_geodf(df, geom_col="geom", additional_geom_cols=None, crs=None):
     if additional_geom_cols is not None:
         if geom_col in additional_geom_cols:
             raise ValueError(
-                f"Active geometry colum, {geom_col}, should not be"
+                f"Active geometry colum, {geom_col}, should not be "
                 "listed as an additional_geom_cols."
             )
 
@@ -120,8 +120,14 @@ def _convert_geometry_column_to_shapely_geometries(df, geometry_column_name):
             load_geom = load_geom_bytes
         else:
             load_geom = load_geom_text
-
-        df[geometry_column_name] = geometry = geometry.apply(load_geom)
+        try:
+            geometry = geometry.apply(load_geom)
+        except shapely.errors.GEOSException:
+            raise TypeError(
+                "Encountered an issue in converting the geometry column. "
+                "Check the geometry columns are listed correctly."
+            )
+        df[geometry_column_name] = geometry
 
     return df, geometry
 
