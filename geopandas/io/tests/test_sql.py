@@ -782,13 +782,11 @@ class TestIO:
         engine = engine_postgis
         df_nybb.crs = None
         table = "nybb"
+
         write_postgis(df_nybb, con=engine, name=table, if_exists="replace")
+        # append another dataframe with no crs
 
-        # Reproject
         df_nybb2 = df_nybb
-
-        # # Should raise error when appending
-        # with pytest.raises(ValueError, match="CRS of the target table"):
         write_postgis(df_nybb2, con=engine, name=table, if_exists="append")
 
     @pytest.mark.parametrize("engine_postgis", POSTGIS_DRIVERS, indirect=True)
