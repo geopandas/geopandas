@@ -775,6 +775,10 @@ class TestIO:
 
     @pytest.mark.parametrize("engine_postgis", POSTGIS_DRIVERS, indirect=True)
     def test_append_without_crs(self, engine_postgis, df_nybb):
+        # This test was included in #3328 when the default value for no
+        # CRS was changed from an SRID of -1 to 0. This resolves issues
+        # of appending dataframes to postgis that have no CRS as postgis
+        # no CRS value is 0.
         engine = engine_postgis
         df_nybb.crs = None
         table = "nybb"
