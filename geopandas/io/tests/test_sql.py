@@ -448,8 +448,6 @@ class TestIO:
         ).all()
 
         # Check when non-geometry column is listed in additional_geom_cols
-        # match_str = """Encountered an issue in converting the geometry column.
-        #     Check the geometry column(s) is/are listed correctly."""
         with pytest.raises(
             TypeError,
             match="Encountered an issue in converting the geometry column. "
