@@ -804,3 +804,14 @@ class TestIO:
 
         with pytest.raises(ValueError):
             read_postgis(sql, engine, geom_col="geom")
+
+    @pytest.mark.parametrize("connection_postgis", POSTGIS_DRIVERS, indirect=True)
+    def test_read_non_epsg_crs(self, connection_postgis, df_nybb):
+        con = connection_postgis
+        df_nybb = df_nybb.to_crs(crs="esri:54052")
+        create_postgis(con, df_nybb, srid=54052)
+
+        sql = "SELECT * FROM nybb;"
+        df = read_postgis(sql, con)
+        validate_boro_df(df)
+        assert "ESRI:54052" in df.crs.to_string()

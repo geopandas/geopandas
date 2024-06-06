@@ -41,7 +41,7 @@ def _get_conn(conn_or_engine):
         raise ValueError(f"Unknown Connectable: {conn_or_engine}")
 
 
-def _df_to_geodf(df, geom_col="geom", crs=None):
+def _df_to_geodf(df, geom_col="geom", crs=None, spatial_ref_sys_df=None):
     """
     Transforms a pandas DataFrame into a GeoDataFrame.
     The column 'geom_col' must be a geometry column in WKB representation.
@@ -58,6 +58,10 @@ def _df_to_geodf(df, geom_col="geom", crs=None):
         such as an authority string (eg "EPSG:4326") or a WKT string.
         If not set, tries to determine CRS from the SRID associated with the
         first geometry in the database, and assigns that to all geometries.
+    spatial_ref_sys_df : Dataframe, default None
+        Dataframe of the database of spatial refence system built-in to
+        postgis. This is used to query the correct authority based on the
+        derived srid. If a crs is specified, this is not used.
     Returns
     -------
     GeoDataFrame
@@ -92,7 +96,8 @@ def _df_to_geodf(df, geom_col="geom", crs=None):
             srid = shapely.get_srid(geoms.iat[0])
             # if no defined SRID in geodatabase, returns SRID of 0
             if srid != 0:
-                crs = "epsg:{}".format(srid)
+                entry = spatial_ref_sys_df.loc[spatial_ref_sys_df["srid"] == srid]
+                crs = f"{entry['auth_name'].values[0]}:{srid}"
 
     return GeoDataFrame(df, crs=crs, geometry=geom_col)
 
@@ -155,6 +160,16 @@ def _read_postgis(
     >>> sql = "SELECT ST_AsBinary(geom) AS geom, highway FROM roads"
     >>> df = geopandas.read_postgis(sql, con)  # doctest: +SKIP
     """
+    try:
+        spatial_ref_sys_sql = "SELECT * FROM public.spatial_ref_sys"
+        spatial_ref_sys_df = (
+            pd.read_sql(spatial_ref_sys_sql, con) if crs is None else None
+        )
+    except pd.errors.DatabaseError:  # sqlite3 stores it directly as spatial_ref_sys
+        spatial_ref_sys_sql = "SELECT * FROM spatial_ref_sys"
+        spatial_ref_sys_df = (
+            pd.read_sql(spatial_ref_sys_sql, con) if crs is None else None
+        )
 
     if chunksize is None:
         # read all in one chunk and return a single GeoDataFrame
@@ -167,7 +182,9 @@ def _read_postgis(
             params=params,
             chunksize=chunksize,
         )
-        return _df_to_geodf(df, geom_col=geom_col, crs=crs)
+        return _df_to_geodf(
+            df, geom_col=geom_col, crs=crs, spatial_ref_sys_df=spatial_ref_sys_df
+        )
 
     else:
         # read data in chunks and return a generator
@@ -180,7 +197,12 @@ def _read_postgis(
             params=params,
             chunksize=chunksize,
         )
-        return (_df_to_geodf(df, geom_col=geom_col, crs=crs) for df in df_generator)
+        return (
+            _df_to_geodf(
+                df, geom_col=geom_col, crs=crs, spatial_ref_sys_df=spatial_ref_sys_df
+            )
+            for df in df_generator
+        )
 
 
 def _get_geometry_type(gdf):
