@@ -378,7 +378,7 @@ class TestExplore:
     def test_no_crs(self):
         """Naive geometry get no tiles"""
         df = self.world.copy()
-        df.crs = None
+        df.geometry.array.crs = None
         m = df.explore()
         assert "openstreetmap" not in m.to_dict()["children"].keys()
 
