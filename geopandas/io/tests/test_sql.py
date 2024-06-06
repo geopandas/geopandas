@@ -774,6 +774,20 @@ class TestIO:
             write_postgis(df_nybb2, con=engine, name=table, if_exists="append")
 
     @pytest.mark.parametrize("engine_postgis", POSTGIS_DRIVERS, indirect=True)
+    def test_append_without_crs(self, engine_postgis, df_nybb):
+        engine = engine_postgis
+        df_nybb.crs = None
+        table = "nybb"
+        write_postgis(df_nybb, con=engine, name=table, if_exists="replace")
+
+        # Reproject
+        df_nybb2 = df_nybb
+
+        # # Should raise error when appending
+        # with pytest.raises(ValueError, match="CRS of the target table"):
+        write_postgis(df_nybb2, con=engine, name=table, if_exists="append")
+
+    @pytest.mark.parametrize("engine_postgis", POSTGIS_DRIVERS, indirect=True)
     @pytest.mark.xfail(
         compat.PANDAS_GE_20 and not compat.PANDAS_GE_202,
         reason="Duplicate columns are dropped in read_sql with pandas 2.0.0 and 2.0.1",
