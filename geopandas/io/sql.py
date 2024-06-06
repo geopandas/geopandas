@@ -96,9 +96,11 @@ def _df_to_geodf(df, geom_col="geom", crs=None, spatial_ref_sys_df=None):
             srid = shapely.get_srid(geoms.iat[0])
             # if no defined SRID in geodatabase, returns SRID of 0
             if srid != 0:
-                entry = spatial_ref_sys_df.loc[spatial_ref_sys_df["srid"] == srid]
-                crs = f"{entry['auth_name'].values[0]}:{srid}"
-
+                if spatial_ref_sys_df is not None:
+                    entry = spatial_ref_sys_df.loc[spatial_ref_sys_df["srid"] == srid]
+                    crs = f"{entry['auth_name'].values[0]}:{srid}"
+                else:
+                    crs = "epsg:{}".format(srid)
     return GeoDataFrame(df, crs=crs, geometry=geom_col)
 
 
@@ -160,16 +162,14 @@ def _read_postgis(
     >>> sql = "SELECT ST_AsBinary(geom) AS geom, highway FROM roads"
     >>> df = geopandas.read_postgis(sql, con)  # doctest: +SKIP
     """
+
     try:
-        spatial_ref_sys_sql = "SELECT * FROM public.spatial_ref_sys"
-        spatial_ref_sys_df = (
-            pd.read_sql(spatial_ref_sys_sql, con) if crs is None else None
-        )
-    except pd.errors.DatabaseError:  # sqlite3 stores it directly as spatial_ref_sys
         spatial_ref_sys_sql = "SELECT * FROM spatial_ref_sys"
         spatial_ref_sys_df = (
             pd.read_sql(spatial_ref_sys_sql, con) if crs is None else None
         )
+    except pd.errors.DatabaseError:
+        spatial_ref_sys_df = None
 
     if chunksize is None:
         # read all in one chunk and return a single GeoDataFrame
