@@ -50,7 +50,8 @@ New features and improvements:
   the specified columns (#3101).
 - Added support to ``read_file`` for the ``mask`` keyword for the pyogrio engine (#3062).
 - Added support to ``read_file`` for the ``columns`` keyword for the fiona engine (#3133).
-- Added support to ``read_parquet`` for reading files using the GeoArrow-based native geometry encoding of GeoParquet 1.1 (#3253).
+- Added support to ``to_parquet`` and ``read_parquet`` for writing and reading files
+  using the GeoArrow-based native geometry encoding of GeoParquet 1.1 (#3253, #3275).
 - Add `sort` keyword to `clip` method for GeoSeries and GeoDataFrame to allow optional
   preservation of the original order of observations. (#3233)
 - Added `show_bbox`, `drop_id` and `to_wgs84` arguments to allow further customization of
@@ -62,6 +63,8 @@ New features and improvements:
 files based on a bounding box, and write out a bounding box column to parquet files (#3282)
 - `align` keyword in binary methods now defaults to `None`, treated as True. Explicit True
   will silence the warning about mismachted indices. (#3212)
+- `GeoSeries.set_crs` can now be used to remove CRS information by passing
+  `crs=None, allow_override=True`. (#3316)
 
 Backwards incompatible API changes:
 
@@ -143,6 +146,7 @@ Bug fixes:
   pyogrio 0.8.1.
 - Fix `to_parquet` to write correct metadata in case of 3D geometries (#2824).
 - Fixes for compatibility with psycopg (#3167).
+- Fix to allow appending dataframes with no CRS to PostGIS tables with no CRS (#3328)
 - Fix plotting of all-empty GeoSeries using `explore` (#3316).
 
 ## Version 0.14.4 (April 26, 2024)

@@ -4539,7 +4539,7 @@ GeometryCollection
         The operation works on a 1-to-1 row-wise manner:
 
         .. image:: ../../../_static/binary_op-01.svg
-        :align: center
+            :align: center
 
         Parameters
         ----------

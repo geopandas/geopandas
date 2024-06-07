@@ -5,9 +5,6 @@ dependencies:
   - python
   - pandas
   - shapely
-  - fiona
-  - pyproj
-  - pyogrio
   - geopy
   - matplotlib
   - mapclassify
@@ -17,30 +14,30 @@ dependencies:
   - ipython
   - pillow
   - mock
-  - cartopy
   - pyepsg
-  - contextily
-  - rasterio
-  - geoplot
   - sphinx-gallery
   - jinja2
   - doc2dash
   - matplotlib-scalebar
   # specify additional dependencies to reduce solving for conda
-  - gdal
-  - libgdal
-  - proj
   - geos
   - nbsphinx
   - jupyter_client
   - ipykernel
   - myst-parser
   - folium
-  - libpysal
   - xyzservices
   - packaging
-  - pointpats
   - pip
   - pip:
       - sphinx-toggleprompt
       - geodatasets
+      # proj/pyproj deps from pip to avoid Proj env warning from conda+readthedocs
+      - pyproj
+      - cartopy
+      - fiona
+      - pyogrio
+      - rasterio
+      - contextily
+      - pointpats
+      - libpysal
