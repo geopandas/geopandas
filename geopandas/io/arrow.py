@@ -356,6 +356,11 @@ def _geopandas_to_arrow(
     )
 
     if write_covering_bbox:
+        if "bbox" in df.columns:
+            raise ValueError(
+                "An existing column 'bbox' already exists in the dataframe. "
+                "Please rename to write covering bbox."
+            )
         bounds = df.bounds
         bbox_array = StructArray.from_arrays(
             [bounds["minx"], bounds["miny"], bounds["maxx"], bounds["maxy"]],
@@ -506,15 +511,17 @@ def _arrow_to_geopandas(table, geo_metadata=None):
     """
     Helper function with main, shared logic for read_parquet/read_feather.
     """
-    df = table.to_pandas()
-
     geo_metadata = geo_metadata or _decode_metadata(
         table.schema.metadata.get(b"geo", b"")
     )
 
     # Find all geometry columns that were read from the file.  May
     # be a subset if 'columns' parameter is used.
-    geometry_columns = df.columns.intersection(geo_metadata["columns"])
+    geometry_columns = [
+        col for col in geo_metadata["columns"] if col in table.column_names
+    ]
+    result_column_names = list(table.slice(0, 0).to_pandas().columns)
+    geometry_columns.sort(key=result_column_names.index)
 
     if not len(geometry_columns):
         raise ValueError(
@@ -538,6 +545,9 @@ def _arrow_to_geopandas(table, geo_metadata=None):
                 stacklevel=3,
             )
 
+    table_attr = table.drop(geometry_columns)
+    df = table_attr.to_pandas()
+
     # Convert the WKB columns that are present back to geometry.
     for col in geometry_columns:
         col_metadata = geo_metadata["columns"][col]
@@ -551,16 +561,18 @@ def _arrow_to_geopandas(table, geo_metadata=None):
             crs = "OGC:CRS84"
 
         if col_metadata["encoding"] == "WKB":
-            df[col] = from_wkb(df[col].values, crs=crs)
+            geom_arr = from_wkb(np.array(table[col]), crs=crs)
         else:
             from geopandas.io._geoarrow import construct_shapely_array
 
-            df[col] = from_shapely(
+            geom_arr = from_shapely(
                 construct_shapely_array(
                     table[col].combine_chunks(), "geoarrow." + col_metadata["encoding"]
                 ),
                 crs=crs,
             )
+
+        df.insert(result_column_names.index(col), col, geom_arr)
 
     return GeoDataFrame(df, geometry=geometry)
 
@@ -860,12 +872,27 @@ def _read_feather(path, columns=None, **kwargs):
 
 
 def _get_parquet_bbox_filter(geo_metadata, bbox):
+    primary_column = geo_metadata["primary_column"]
 
-    if not _check_if_covering_in_geo_metadata(geo_metadata):
-        raise ValueError("No covering bbox in parquet file.")
+    if _check_if_covering_in_geo_metadata(geo_metadata):
+        bbox_column_name = _get_bbox_encoding_column_name(geo_metadata)
+        return _convert_bbox_to_parquet_filter(bbox, bbox_column_name)
 
-    bbox_column_name = _get_bbox_encoding_column_name(geo_metadata)
-    return _convert_bbox_to_parquet_filter(bbox, bbox_column_name)
+    elif geo_metadata["columns"][primary_column]["encoding"] == "point":
+        import pyarrow.compute as pc
+
+        return (
+            (pc.field((primary_column, "x")) >= bbox[0])
+            & (pc.field((primary_column, "x")) <= bbox[2])
+            & (pc.field((primary_column, "y")) >= bbox[1])
+            & (pc.field((primary_column, "y")) <= bbox[3])
+        )
+
+    else:
+        raise ValueError(
+            "Specifying 'bbox' not supported for this Parquet file (it should either "
+            "have a bbox covering column or use 'point' encoding)."
+        )
 
 
 def _convert_bbox_to_parquet_filter(bbox, bbox_column_name):
@@ -880,11 +907,13 @@ def _convert_bbox_to_parquet_filter(bbox, bbox_column_name):
 
 
 def _check_if_covering_in_geo_metadata(geo_metadata):
-    return "covering" in geo_metadata["columns"]["geometry"].keys()
+    primary_column = geo_metadata["primary_column"]
+    return "covering" in geo_metadata["columns"][primary_column].keys()
 
 
 def _get_bbox_encoding_column_name(geo_metadata):
-    return geo_metadata["columns"]["geometry"]["covering"]["bbox"]["xmin"][0]
+    primary_column = geo_metadata["primary_column"]
+    return geo_metadata["columns"][primary_column]["covering"]["bbox"]["xmin"][0]
 
 
 def _get_non_bbox_columns(schema, geo_metadata):

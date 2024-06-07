@@ -774,6 +774,22 @@ class TestIO:
             write_postgis(df_nybb2, con=engine, name=table, if_exists="append")
 
     @pytest.mark.parametrize("engine_postgis", POSTGIS_DRIVERS, indirect=True)
+    def test_append_without_crs(self, engine_postgis, df_nybb):
+        # This test was included in #3328 when the default value for no
+        # CRS was changed from an SRID of -1 to 0. This resolves issues
+        # of appending dataframes to postgis that have no CRS as postgis
+        # no CRS value is 0.
+        engine = engine_postgis
+        df_nybb = df_nybb.set_.crs(None, allow_override=True)
+        table = "nybb"
+
+        write_postgis(df_nybb, con=engine, name=table, if_exists="replace")
+        # append another dataframe with no crs
+
+        df_nybb2 = df_nybb
+        write_postgis(df_nybb2, con=engine, name=table, if_exists="append")
+
+    @pytest.mark.parametrize("engine_postgis", POSTGIS_DRIVERS, indirect=True)
     @pytest.mark.xfail(
         compat.PANDAS_GE_20 and not compat.PANDAS_GE_202,
         reason="Duplicate columns are dropped in read_sql with pandas 2.0.0 and 2.0.1",

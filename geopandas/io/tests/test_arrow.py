@@ -43,6 +43,8 @@ DATA_PATH = pathlib.Path(os.path.dirname(__file__)) / "data"
 pyarrow = pytest.importorskip("pyarrow")
 
 import pyarrow.compute as pc
+import pyarrow.parquet as pq
+from pyarrow import feather
 
 
 @pytest.fixture(
@@ -431,6 +433,37 @@ def test_index(tmpdir, file_format, naturalearth_lowres):
     writer(df, filename, index=False)
     pq_df = reader(filename)
     assert_geodataframe_equal(df.reset_index(drop=True), pq_df)
+
+
+def test_column_order(tmpdir, file_format, naturalearth_lowres):
+    """The order of columns should be preserved in the output."""
+    reader, writer = file_format
+
+    df = read_file(naturalearth_lowres)
+    df = df.set_index("iso_a3")
+    df["geom2"] = df.geometry.representative_point()
+    table = _geopandas_to_arrow(df)
+    custom_column_order = [
+        "iso_a3",
+        "geom2",
+        "pop_est",
+        "continent",
+        "name",
+        "geometry",
+        "gdp_md_est",
+    ]
+    table = table.select(custom_column_order)
+
+    if reader is read_parquet:
+        filename = os.path.join(str(tmpdir), "test_column_order.pq")
+        pq.write_table(table, filename)
+    else:
+        filename = os.path.join(str(tmpdir), "test_column_order.feather")
+        feather.write_feather(table, filename)
+
+    result = reader(filename)
+    assert list(result.columns) == custom_column_order[1:]
+    assert_geodataframe_equal(result, df[custom_column_order[1:]])
 
 
 @pytest.mark.parametrize("compression", ["snappy", "gzip", "brotli", None])
@@ -941,7 +974,11 @@ def test_read_gdal_files():
     and then the gpkg file is converted to Parquet/Arrow with:
     $ ogr2ogr -f Parquet -lco FID= test_data_gdal350.parquet test_data.gpkg
     $ ogr2ogr -f Arrow -lco FID= -lco GEOMETRY_ENCODING=WKB test_data_gdal350.arrow test_data.gpkg
+
+    Repeated for GDAL 3.9 which adds a bbox covering column:
+    $ ogr2ogr -f Parquet -lco FID= test_data_gdal390.parquet test_data.gpkg
     """  # noqa: E501
+    pytest.importorskip("pyproj")
     expected = geopandas.GeoDataFrame(
         {"col_str": ["a", "b"], "col_int": [1, 2], "col_float": [0.1, 0.2]},
         geometry=[MultiPolygon([box(0, 0, 1, 1), box(2, 2, 3, 3)]), box(4, 4, 5, 5)],
@@ -953,6 +990,17 @@ def test_read_gdal_files():
 
     df = geopandas.read_feather(DATA_PATH / "arrow" / "test_data_gdal350.arrow")
     assert_geodataframe_equal(df, expected, check_crs=True)
+
+    df = geopandas.read_parquet(DATA_PATH / "arrow" / "test_data_gdal390.parquet")
+    # recent GDAL no longer writes CRS in metadata in case of EPSG:4326, so comes back
+    # as default OGC:CRS84
+    expected = expected.to_crs("OGC:CRS84")
+    assert_geodataframe_equal(df, expected, check_crs=True)
+
+    df = geopandas.read_parquet(
+        DATA_PATH / "arrow" / "test_data_gdal390.parquet", bbox=(0, 0, 2, 2)
+    )
+    assert len(df) == 1
 
 
 def test_parquet_read_partitioned_dataset(tmpdir, naturalearth_lowres):
@@ -1094,9 +1142,13 @@ def test_read_parquet_bbox_single_point(tmpdir):
     assert pq_df.geometry[0] == Point(1, 1)
 
 
-def test_read_parquet_bbox(tmpdir, naturalearth_lowres):
+@pytest.mark.parametrize("geometry_name", ["geometry", "custum_geom_col"])
+def test_read_parquet_bbox(tmpdir, naturalearth_lowres, geometry_name):
     # check bbox is being used to filter results.
     df = read_file(naturalearth_lowres)
+    if geometry_name != "geometry":
+        df = df.rename_geometry(geometry_name)
+
     filename = os.path.join(str(tmpdir), "test.pq")
     df.to_parquet(filename, write_covering_bbox=True)
 
@@ -1115,9 +1167,12 @@ def test_read_parquet_bbox(tmpdir, naturalearth_lowres):
     ]
 
 
-def test_read_parquet_bbox_partitioned(tmpdir, naturalearth_lowres):
+@pytest.mark.parametrize("geometry_name", ["geometry", "custum_geom_col"])
+def test_read_parquet_bbox_partitioned(tmpdir, naturalearth_lowres, geometry_name):
     # check bbox is being used to filter results on partioned data.
     df = read_file(naturalearth_lowres)
+    if geometry_name != "geometry":
+        df = df.rename_geometry(geometry_name)
 
     # manually create partitioned dataset
     basedir = tmpdir / "partitioned_dataset"
@@ -1168,7 +1223,7 @@ def test_read_parquet_no_bbox(tmpdir, naturalearth_lowres):
     df = read_file(naturalearth_lowres)
     filename = os.path.join(str(tmpdir), "test.pq")
     df.to_parquet(filename)
-    with pytest.raises(ValueError, match="No covering bbox in parquet file."):
+    with pytest.raises(ValueError, match="Specifying 'bbox' not supported"):
         read_parquet(filename, bbox=(0, 0, 20, 20))
 
 
@@ -1183,7 +1238,7 @@ def test_read_parquet_no_bbox_partitioned(tmpdir, naturalearth_lowres):
     df[:100].to_parquet(basedir / "data1.parquet")
     df[100:].to_parquet(basedir / "data2.parquet")
 
-    with pytest.raises(ValueError, match="No covering bbox in parquet file."):
+    with pytest.raises(ValueError, match="Specifying 'bbox' not supported"):
         read_parquet(basedir, bbox=(0, 0, 20, 20))
 
 
@@ -1253,3 +1308,65 @@ def test_read_parquet_filters_without_bbox(tmpdir, naturalearth_lowres, filters)
 
     result = read_parquet(filename, filters=filters)
     assert result["name"].values.tolist() == ["Burkina Faso", "Mozambique", "Albania"]
+
+
+def test_read_parquet_file_with_custom_bbox_encoding_fieldname(tmpdir):
+    import pyarrow.parquet as pq
+
+    data = {
+        "name": ["point1", "point2", "point3"],
+        "geometry": [Point(1, 1), Point(2, 2), Point(3, 3)],
+    }
+    df = GeoDataFrame(data)
+    filename = os.path.join(str(tmpdir), "test.pq")
+
+    table = _geopandas_to_arrow(
+        df,
+        schema_version="1.1.0",
+        write_covering_bbox=True,
+    )
+    metadata = table.schema.metadata  # rename_columns results in wiping of metadata
+
+    table = table.rename_columns(["name", "geometry", "custom_bbox_name"])
+
+    geo_metadata = json.loads(metadata[b"geo"])
+    geo_metadata["columns"]["geometry"]["covering"]["bbox"] = {
+        "xmin": ["custom_bbox_name", "xmin"],
+        "ymin": ["custom_bbox_name", "ymin"],
+        "xmax": ["custom_bbox_name", "xmax"],
+        "ymax": ["custom_bbox_name", "ymax"],
+    }
+    metadata.update({b"geo": _encode_metadata(geo_metadata)})
+
+    table = table.replace_schema_metadata(metadata)
+    pq.write_table(table, filename)
+
+    pq_table = pq.read_table(filename)
+    assert "custom_bbox_name" in pq_table.schema.names
+
+    pq_df = read_parquet(filename, bbox=(1.5, 1.5, 2.5, 2.5))
+    assert pq_df["name"].values.tolist() == ["point2"]
+
+
+def test_to_parquet_with_existing_bbox_column(tmpdir, naturalearth_lowres):
+    df = read_file(naturalearth_lowres)
+    df = df.assign(bbox=[0] * len(df))
+    filename = os.path.join(str(tmpdir), "test.pq")
+
+    with pytest.raises(
+        ValueError, match="An existing column 'bbox' already exists in the dataframe"
+    ):
+        df.to_parquet(filename, write_covering_bbox=True)
+
+
+def test_read_parquet_bbox_points(tmp_path):
+    # check bbox filtering on point geometries
+    df = geopandas.GeoDataFrame(
+        {"col": range(10)}, geometry=[Point(i, i) for i in range(10)]
+    )
+    df.to_parquet(tmp_path / "test.parquet", geometry_encoding="geoarrow")
+
+    result = geopandas.read_parquet(tmp_path / "test.parquet", bbox=(0, 0, 10, 10))
+    assert len(result) == 10
+    result = geopandas.read_parquet(tmp_path / "test.parquet", bbox=(3, 3, 5, 5))
+    assert len(result) == 3
