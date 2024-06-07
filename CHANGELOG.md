@@ -36,6 +36,9 @@ New methods:
 - Added `polygonize` method exposing both `polygonize` and `polygonize_full` from
   shapely to GeoSeries/GeoDataframe (#2963).
 - Added `is_valid_reason` method from shapely to GeoSeries/GeoDataframe (#3176).
+- Added `to_arrow` method and `from_arrow` class method to
+  GeoSeries/GeoDataFrame to export and import to/from Arrow data with GeoArrow
+  extension types (#3219, #3301).
 
 New features and improvements:
 

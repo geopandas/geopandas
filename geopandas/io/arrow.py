@@ -335,7 +335,7 @@ def _geopandas_to_arrow(
     """
     from pyarrow import StructArray
 
-    from geopandas.io.geoarrow import geopandas_to_arrow
+    from geopandas.io._geoarrow import geopandas_to_arrow
 
     _validate_dataframe(df)
 
@@ -563,7 +563,7 @@ def _arrow_to_geopandas(table, geo_metadata=None):
         if col_metadata["encoding"] == "WKB":
             geom_arr = from_wkb(np.array(table[col]), crs=crs)
         else:
-            from geopandas.io.geoarrow import construct_shapely_array
+            from geopandas.io._geoarrow import construct_shapely_array
 
             geom_arr = from_shapely(
                 construct_shapely_array(
