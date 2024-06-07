@@ -6,8 +6,7 @@
    import geopandas
    import matplotlib
    orig = matplotlib.rcParams['figure.figsize']
-   matplotlib.rcParams['figure.figsize'] = [orig[0] * 1.5, orig[1]]
-
+   matplotlib.rcParams['figure.figsize'] = [orig[0] * 1.5, orig[1] * 1.5]
 
 
 Data structures
@@ -32,7 +31,7 @@ GeoPandas has three basic classes of geometric objects (which are actually *shap
 * Lines / Multi-Lines
 * Polygons / Multi-Polygons
 
-Note that all entries in  a :class:`GeoSeries` need not be of the same geometric type, although certain export operations will fail if this is not the case.
+Note that all entries in a :class:`GeoSeries` do not need to be of the same geometric type, although certain export operations will fail if this is not the case.
 
 Overview of attributes and methods
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -73,7 +72,7 @@ Basic methods
 Relationship tests
 ^^^^^^^^^^^^^^^^^^^
 
-* :meth:`~GeoSeries.geom_almost_equals`: is shape almost the same as ``other`` (good when floating point precision issues make shapes slightly different)
+* :meth:`~GeoSeries.geom_equals_exact`: is shape the same as ``other`` (up to a specified decimal place tolerance)
 * :meth:`~GeoSeries.contains`: is shape contained within ``other``
 * :meth:`~GeoSeries.intersects`: does shape intersect ``other``
 
@@ -89,41 +88,43 @@ The "geometry" column -- no matter its name -- can be accessed through the :attr
 
 A :class:`GeoDataFrame` may also contain other columns with geometrical (shapely) objects, but only one column can be the active geometry at a time. To change which column is the active geometry column, use the :meth:`GeoDataFrame.set_geometry` method.
 
-An example using the ``worlds`` GeoDataFrame:
+An example using the ``geoda.malaria`` dataset from ``geodatasets`` containing the counties of Colombia:
 
 .. ipython:: python
 
-    world = geopandas.read_file(geopandas.datasets.get_path('naturalearth_lowres'))
+    import geodatasets
 
-    world.head()
-    #Plot countries
-    @savefig world_borders.png
-    world.plot();
+    colombia = geopandas.read_file(geodatasets.get_path('geoda.malaria'))
 
-Currently, the column named "geometry" with country borders is the active
+    colombia.head()
+    # Plot countries
+    @savefig colombia_borders.png
+    colombia.plot(markersize=.5);
+
+Currently, the column named "geometry" with county borders is the active
 geometry column:
 
 .. ipython:: python
 
-    world.geometry.name
+    colombia.geometry.name
 
 You can also rename this column to "borders":
 
 .. ipython:: python
 
-    world = world.rename(columns={'geometry': 'borders'}).set_geometry('borders')
-    world.geometry.name
+    colombia = colombia.rename_geometry('borders')
+    colombia.geometry.name
 
 Now, you create centroids and make it the geometry:
 
 .. ipython:: python
    :okwarning:
 
-    world['centroid_column'] = world.centroid
-    world = world.set_geometry('centroid_column')
+    colombia['centroid_column'] = colombia.centroid
+    colombia = colombia.set_geometry('centroid_column')
 
-    @savefig world_centroids.png
-    world.plot();
+    @savefig colombia_centroids.png
+    colombia.plot();
 
 
 **Note:** A :class:`GeoDataFrame` keeps track of the active column by name, so if you rename the active geometry column, you must also reset the geometry::
@@ -159,16 +160,16 @@ option to control:
 
 The ``geopandas.options.display_precision`` option can control the number of
 decimals to show in the display of coordinates in the geometry column.
-In the ``world`` example of above, the default is to show 5 decimals for
+In the ``colombia`` example of above, the default is to show 5 decimals for
 geographic coordinates:
 
 .. ipython:: python
 
-    world['centroid_column'].head()
+    colombia['centroid_column'].head()
 
 If you want to change this, for example to see more decimals, you can do:
 
 .. ipython:: python
 
     geopandas.options.display_precision = 9
-    world['centroid_column'].head()
+    colombia['centroid_column'].head()

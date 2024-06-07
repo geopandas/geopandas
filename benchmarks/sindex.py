@@ -1,6 +1,7 @@
 from shapely.geometry import Point
-
-from geopandas import read_file, datasets, GeoSeries
+from geopandas.tests.util import _NATURALEARTH_LOWRES
+from geopandas.tests.util import _NATURALEARTH_CITIES
+from geopandas import read_file, GeoSeries
 
 
 # Derive list of valid query predicates based on underlying index backend;
@@ -12,8 +13,8 @@ geom_types = ("mixed", "points", "polygons")
 
 
 def generate_test_df():
-    world = read_file(datasets.get_path("naturalearth_lowres"))
-    capitals = read_file(datasets.get_path("naturalearth_cities"))
+    world = read_file(_NATURALEARTH_LOWRES)
+    capitals = read_file(_NATURALEARTH_CITIES)
     countries = world.to_crs("epsg:3395")[["geometry"]]
     capitals = capitals.to_crs("epsg:3395")[["geometry"]]
     mixed = capitals.append(countries)  # get a mix of geometries
@@ -27,7 +28,7 @@ def generate_test_df():
     }
     # ensure index is pre-generated
     for data_type in data.keys():
-        data[data_type].sindex.query(data[data_type].geometry.values.data[0])
+        data[data_type].sindex.query(data[data_type].geometry.values[0])
     return data
 
 
@@ -75,7 +76,7 @@ class BenchIndexCreation:
         tree = self.data[tree_geom_type].sindex
         # also do a single query to ensure the index is actually
         # generated and used
-        tree.query(self.data[tree_geom_type].geometry.values.data[0])
+        tree.query(self.data[tree_geom_type].geometry.values[0])
 
 
 class BenchQuery:
@@ -90,12 +91,12 @@ class BenchQuery:
         self.data = generate_test_df()
 
     def time_query_bulk(self, predicate, input_geom_type, tree_geom_type):
-        self.data[tree_geom_type].sindex.query_bulk(
-            self.data[input_geom_type].geometry.values.data,
+        self.data[tree_geom_type].sindex.query(
+            self.data[input_geom_type].geometry.values,
             predicate=predicate,
         )
 
     def time_query(self, predicate, input_geom_type, tree_geom_type):
         tree = self.data[tree_geom_type].sindex
-        for geom in self.data[input_geom_type].geometry.values.data:
+        for geom in self.data[input_geom_type].geometry.values:
             tree.query(geom, predicate=predicate)

@@ -18,7 +18,7 @@ def _hilbert_distance(geoms, total_bounds=None, level=16):
         have coordinates in the range [0, 2^level - 1]).
 
     Returns
-    ---------
+    -------
     np.ndarray
         Array containing distances along the Hilbert curve
 
@@ -54,7 +54,7 @@ def _continuous_to_discrete_coords(bounds, level, total_bounds):
     total_bounds : Total bounds of geometries - array
 
     Returns
-    ---------
+    -------
     Discrete two-dimensional numpy array
     Two-dimensional array Array of hilbert distances for each geom
 
@@ -98,11 +98,13 @@ def _continuous_to_discrete(vals, val_range, n):
     n : Number of discrete values
 
     Returns
-    ---------
+    -------
     One-dimensional array of discrete ints
 
     """
     width = val_range[1] - val_range[0]
+    if width == 0:
+        return np.zeros_like(vals, dtype=np.uint32)
     res = (vals - val_range[0]) * (n / width)
 
     np.clip(res, 0, n, out=res)

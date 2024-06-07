@@ -11,7 +11,7 @@ from setuptools import setup
 # https://github.com/python-versioneer/python-versioneer/issues/193
 sys.path.append(os.path.dirname(__file__))
 
-import versioneer  # noqa: E402
+import versioneer
 
 # see pyproject.toml for static project metadata
 setup(

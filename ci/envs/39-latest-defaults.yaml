@@ -2,13 +2,13 @@ name: test
 channels:
   - defaults
 dependencies:
-  - python=3.8
+  - python=3.9
   # required
   - numpy
   - pandas
   - shapely
-  - fiona
-  - pyproj>=3
+  # - pyogrio # comes as 0.5.1
+  - pyproj>=3.3.0
   - geos
   - packaging
   # testing
@@ -17,15 +17,16 @@ dependencies:
   - pytest-xdist
   - fsspec
   # optional
-  - rtree
   - matplotlib
   #- geopy
   - SQLalchemy
   - libspatialite
   - pip
   - pip:
+      - pyogrio
       - geopy
       - mapclassify
       - pyarrow
       - folium
       - xyzservices
+      - geodatasets

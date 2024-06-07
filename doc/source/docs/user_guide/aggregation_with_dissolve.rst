@@ -4,7 +4,7 @@
    import geopandas
    import matplotlib
    orig = matplotlib.rcParams['figure.figsize']
-   matplotlib.rcParams['figure.figsize'] = [orig[0] * 1.5, orig[1]]
+   matplotlib.rcParams['figure.figsize'] = [orig[0] * 1.5, orig[1] * 1.5]
 
 
 Aggregation with dissolve
@@ -16,41 +16,50 @@ In a non-spatial setting, when you need summary statistics of the data, you can 
 
 :meth:`~geopandas.GeoDataFrame.dissolve` can be thought of as doing three things:
 
-(a) it dissolves all the geometries within a given group together into a single geometric feature (using the :attr:`~geopandas.GeoSeries.unary_union` method), and
+(a) it dissolves all the geometries within a given group together into a single geometric feature (using the :meth:`~geopandas.GeoSeries.union_all` method), and
 (b) it aggregates all the rows of data in a group using :ref:`groupby.aggregate <groupby.aggregate>`, and
 (c) it combines those two results.
 
 :meth:`~geopandas.GeoDataFrame.dissolve` Example
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Suppose you are interested in studying continents, but you only have country-level data like the country dataset included in GeoPandas. You can easily convert this to a continent-level dataset.
+Take example of administrative areas in Nepal. You have districts, which are smaller, and zones, which are larger. A group of districts always compose a single zone. Suppose you are interested in Nepalese zone, but you only have Nepalese district-level data like the `geoda.nepal` dataset included in `geodatasets`. You can easily convert this to a zone-level dataset.
 
 
-First, let's look at the most simple case where you just want continent shapes and names. By default, :meth:`~geopandas.GeoDataFrame.dissolve` will pass ``'first'`` to :ref:`groupby.aggregate <groupby.aggregate>`.
+First, let's look at the most simple case where you just want zone shapes and names.
 
 .. ipython:: python
 
-    world = geopandas.read_file(geopandas.datasets.get_path('naturalearth_lowres'))
-    world = world[['continent', 'geometry']]
-    continents = world.dissolve(by='continent')
+    import geodatasets
 
-    @savefig continents1.png
-    continents.plot();
+    nepal = geopandas.read_file(geodatasets.get_path('geoda.nepal'))
+    nepal = nepal.rename(columns={"name_2": "zone"})  # rename to remember the column
+    nepal[["zone", "geometry"]].head()
 
-    continents.head()
+
+By default, :meth:`~geopandas.GeoDataFrame.dissolve` will pass ``'first'`` to :ref:`groupby.aggregate <groupby.aggregate>`.
+
+.. ipython:: python
+
+    nepal_zone = nepal[['zone', 'geometry']]
+    zones = nepal_zone.dissolve(by='zone')
+
+    @savefig zones1.png
+    zones.plot();
+
+    zones.head()
 
 If you are interested in aggregate populations, however, you can pass different functions to the :meth:`~geopandas.GeoDataFrame.dissolve` method to aggregate populations using the ``aggfunc =`` argument:
 
 .. ipython:: python
 
-   world = geopandas.read_file(geopandas.datasets.get_path('naturalearth_lowres'))
-   world = world[['continent', 'geometry', 'pop_est']]
-   continents = world.dissolve(by='continent', aggfunc='sum')
+   nepal_pop = nepal[['zone', 'geometry', 'population']]
+   zones = nepal_pop.dissolve(by='zone', aggfunc='sum')
 
-   @savefig continents2.png
-   continents.plot(column = 'pop_est', scheme='quantiles', cmap='YlOrRd');
+   @savefig zones2.png
+   zones.plot(column = 'population', scheme='quantiles', cmap='YlOrRd');
 
-   continents.head()
+   zones.head()
 
 
 .. ipython:: python
@@ -87,12 +96,11 @@ and the ``'pop_est'`` column using ``'min'`` and ``'max'``:
 
 .. ipython:: python
 
-    world = geopandas.read_file(geopandas.datasets.get_path("naturalearth_lowres"))
-    continents = world.dissolve(
-        by="continent",
+    zones = nepal.dissolve(
+        by="zone",
         aggfunc={
-            "name": "count",
-            "pop_est": ["min", "max"],
+            "district": "count",
+            "population": ["min", "max"],
         },
     )
-   continents.head()
+   zones.head()

@@ -1,29 +1,14 @@
 import warnings
+from packaging.version import Version
 
 import numpy as np
 import pandas as pd
+from pandas import CategoricalDtype
 from pandas.plotting import PlotAccessor
 
 import geopandas
 
-from packaging.version import Version
-
 from ._decorator import doc
-
-
-def deprecated(new, warning_type=FutureWarning):
-    """Helper to provide deprecation warning."""
-
-    def old(*args, **kwargs):
-        warnings.warn(
-            "{} is intended for internal ".format(new.__name__[1:])
-            + "use only, and will be deprecated.",
-            warning_type,
-            stacklevel=2,
-        )
-        new(*args, **kwargs)
-
-    return old
 
 
 def _sanitize_geoms(geoms, prefix="Multi"):
@@ -75,17 +60,11 @@ def _expand_kwargs(kwargs, multiindex):
     it (in place) to the correct length/formats with help of 'multiindex', unless
     the value appears to already be a valid (single) value for the key.
     """
-    import matplotlib
-    from matplotlib.colors import is_color_like
     from typing import Iterable
 
-    mpl = Version(matplotlib.__version__)
-    if mpl >= Version("3.4"):
-        # alpha is supported as array argument with matplotlib 3.4+
-        scalar_kwargs = ["marker", "path_effects"]
-    else:
-        scalar_kwargs = ["marker", "alpha", "path_effects"]
+    from matplotlib.colors import is_color_like
 
+    scalar_kwargs = ["marker", "path_effects"]
     for att, value in kwargs.items():
         if "color" in att:  # color(s), edgecolor(s), facecolor(s)
             if is_color_like(value):
@@ -203,9 +182,6 @@ def _plot_polygon_collection(
     return collection
 
 
-plot_polygon_collection = deprecated(_plot_polygon_collection)
-
-
 def _plot_linestring_collection(
     ax,
     geoms,
@@ -271,9 +247,6 @@ def _plot_linestring_collection(
     return collection
 
 
-plot_linestring_collection = deprecated(_plot_linestring_collection)
-
-
 def _plot_point_collection(
     ax,
     geoms,
@@ -337,9 +310,6 @@ def _plot_point_collection(
     return collection
 
 
-plot_point_collection = deprecated(_plot_point_collection)
-
-
 def plot_series(
     s,
     cmap=None,
@@ -395,20 +365,6 @@ def plot_series(
     -------
     ax : matplotlib axes instance
     """
-    if "colormap" in style_kwds:
-        warnings.warn(
-            "'colormap' is deprecated, please use 'cmap' instead "
-            "(for consistency with matplotlib)",
-            FutureWarning,
-        )
-        cmap = style_kwds.pop("colormap")
-    if "axes" in style_kwds:
-        warnings.warn(
-            "'axes' is deprecated, please use 'ax' instead "
-            "(for consistency with pandas)",
-            FutureWarning,
-        )
-        ax = style_kwds.pop("axes")
 
     try:
         import matplotlib.pyplot as plt
@@ -439,6 +395,7 @@ def plot_series(
             "The GeoSeries you are attempting to plot is "
             "empty. Nothing has been displayed.",
             UserWarning,
+            stacklevel=3,
         )
         return ax
 
@@ -447,6 +404,7 @@ def plot_series(
             "The GeoSeries you are attempting to plot is "
             "composed of empty geometries. Nothing has been displayed.",
             UserWarning,
+            stacklevel=3,
         )
         return ax
 
@@ -521,7 +479,7 @@ def plot_series(
             ax, points, values_, color=color_, cmap=cmap, **style_kwds
         )
 
-    plt.draw()
+    ax.figure.canvas.draw_idle()
     return ax
 
 
@@ -563,20 +521,20 @@ def plot_dataframe(
         dataframe. Values are used to color the plot. Ignored if `color` is
         also set.
     kind: str
-        The kind of plots to produce:
-         - 'geo': Map (default)
-         Pandas Kinds
-         - 'line' : line plot
-         - 'bar' : vertical bar plot
-         - 'barh' : horizontal bar plot
-         - 'hist' : histogram
-         - 'box' : BoxPlot
-         - 'kde' : Kernel Density Estimation plot
-         - 'density' : same as 'kde'
-         - 'area' : area plot
-         - 'pie' : pie plot
-         - 'scatter' : scatter plot
-         - 'hexbin' : hexbin plot.
+        The kind of plots to produce. The default is to create a map ("geo").
+        Other supported kinds of plots from pandas:
+
+        - 'line' : line plot
+        - 'bar' : vertical bar plot
+        - 'barh' : horizontal bar plot
+        - 'hist' : histogram
+        - 'box' : BoxPlot
+        - 'kde' : Kernel Density Estimation plot
+        - 'density' : same as 'kde'
+        - 'area' : area plot
+        - 'pie' : pie plot
+        - 'scatter' : scatter plot
+        - 'hexbin' : hexbin plot.
     cmap : str (default None)
         The name of a colormap recognized by matplotlib.
     color : str, np.array, pd.Series (default None)
@@ -662,43 +620,26 @@ def plot_dataframe(
 
     Examples
     --------
-    >>> df = geopandas.read_file(geopandas.datasets.get_path("naturalearth_lowres"))
+    >>> import geodatasets
+    >>> df = geopandas.read_file(geodatasets.get_path("nybb"))
     >>> df.head()  # doctest: +SKIP
-        pop_est      continent                      name iso_a3  \
-gdp_md_est                                           geometry
-    0     920938        Oceania                      Fiji    FJI      8374.0  MULTIPOLY\
-GON (((180.00000 -16.06713, 180.00000...
-    1   53950935         Africa                  Tanzania    TZA    150600.0  POLYGON (\
-(33.90371 -0.95000, 34.07262 -1.05982...
-    2     603253         Africa                 W. Sahara    ESH       906.5  POLYGON (\
-(-8.66559 27.65643, -8.66512 27.58948...
-    3   35623680  North America                    Canada    CAN   1674000.0  MULTIPOLY\
-GON (((-122.84000 49.00000, -122.9742...
-    4  326625791  North America  United States of America    USA  18560000.0  MULTIPOLY\
-GON (((-122.84000 49.00000, -120.0000...
+       BoroCode  ...                                           geometry
+    0         5  ...  MULTIPOLYGON (((970217.022 145643.332, 970227....
+    1         4  ...  MULTIPOLYGON (((1029606.077 156073.814, 102957...
+    2         3  ...  MULTIPOLYGON (((1021176.479 151374.797, 102100...
+    3         1  ...  MULTIPOLYGON (((981219.056 188655.316, 980940....
+    4         2  ...  MULTIPOLYGON (((1012821.806 229228.265, 101278...
 
-    >>> df.plot("pop_est", cmap="Blues")  # doctest: +SKIP
+    >>> df.plot("BoroName", cmap="Set1")  # doctest: +SKIP
 
     See the User Guide page :doc:`../../user_guide/mapping` for details.
 
     """
-    if "colormap" in style_kwds:
-        warnings.warn(
-            "'colormap' is deprecated, please use 'cmap' instead "
-            "(for consistency with matplotlib)",
-            FutureWarning,
-        )
-        cmap = style_kwds.pop("colormap")
-    if "axes" in style_kwds:
-        warnings.warn(
-            "'axes' is deprecated, please use 'ax' instead "
-            "(for consistency with pandas)",
-            FutureWarning,
-        )
-        ax = style_kwds.pop("axes")
     if column is not None and color is not None:
         warnings.warn(
-            "Only specify one of 'column' or 'color'. Using 'color'.", UserWarning
+            "Only specify one of 'column' or 'color'. Using 'color'.",
+            UserWarning,
+            stacklevel=3,
         )
         column = None
 
@@ -738,6 +679,7 @@ GON (((-122.84000 49.00000, -120.0000...
             "The GeoDataFrame you are attempting to plot is "
             "empty. Nothing has been displayed.",
             UserWarning,
+            stacklevel=3,
         )
         return ax
 
@@ -772,7 +714,7 @@ GON (((-122.84000 49.00000, -120.0000...
     else:
         values = df[column]
 
-    if pd.api.types.is_categorical_dtype(values.dtype):
+    if isinstance(values.dtype, CategoricalDtype):
         if categories is not None:
             raise ValueError(
                 "Cannot specify 'categories' when column has categorical dtype"
@@ -953,9 +895,9 @@ GON (((-122.84000 49.00000, -120.0000...
         if "fmt" in legend_kwds:
             legend_kwds.pop("fmt")
 
-        from matplotlib.lines import Line2D
-        from matplotlib.colors import Normalize
         from matplotlib import cm
+        from matplotlib.colors import Normalize
+        from matplotlib.lines import Line2D
 
         norm = style_kwds.get("norm", None)
         if not norm:
@@ -965,7 +907,7 @@ GON (((-122.84000 49.00000, -120.0000...
             if scheme is not None:
                 categories = labels
             patches = []
-            for value, cat in enumerate(categories):
+            for i in range(len(categories)):
                 patches.append(
                     Line2D(
                         [0],
@@ -974,7 +916,7 @@ GON (((-122.84000 49.00000, -120.0000...
                         marker="o",
                         alpha=style_kwds.get("alpha", 1),
                         markersize=10,
-                        markerfacecolor=n_cmap.to_rgba(value),
+                        markerfacecolor=n_cmap.to_rgba(i),
                         markeredgewidth=0,
                     )
                 )
@@ -999,7 +941,9 @@ GON (((-122.84000 49.00000, -120.0000...
                 categories.append(merged_kwds.get("label", "NaN"))
             legend_kwds.setdefault("numpoints", 1)
             legend_kwds.setdefault("loc", "best")
-            ax.legend(patches, categories, **legend_kwds)
+            legend_kwds.setdefault("handles", patches)
+            legend_kwds.setdefault("labels", categories)
+            ax.legend(**legend_kwds)
         else:
             if cax is not None:
                 legend_kwds.setdefault("cax", cax)
@@ -1009,7 +953,7 @@ GON (((-122.84000 49.00000, -120.0000...
             n_cmap.set_array(np.array([]))
             ax.get_figure().colorbar(n_cmap, **legend_kwds)
 
-    plt.draw()
+    ax.figure.canvas.draw_idle()
     return ax
 
 
@@ -1030,4 +974,4 @@ class GeoplotAccessor(PlotAccessor):
             raise ValueError(f"{kind} is not a valid plot kind")
 
     def geo(self, *args, **kwargs):
-        return self(kind="geo", *args, **kwargs)
+        return self(kind="geo", *args, **kwargs)  # noqa: B026

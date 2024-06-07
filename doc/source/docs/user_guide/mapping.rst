@@ -6,7 +6,7 @@
    import geopandas
    import matplotlib
    orig = matplotlib.rcParams['figure.figsize']
-   matplotlib.rcParams['figure.figsize'] = [orig[0] * 1.5, orig[1]]
+   matplotlib.rcParams['figure.figsize'] = [orig[0] * 1.5, orig[1] * 1.5]
    import matplotlib.pyplot as plt
    plt.close('all')
 
@@ -23,19 +23,21 @@ Loading some example data:
 
 .. ipython:: python
 
-    world = geopandas.read_file(geopandas.datasets.get_path('naturalearth_lowres'))
-    cities = geopandas.read_file(geopandas.datasets.get_path('naturalearth_cities'))
+    import geodatasets
+
+    chicago = geopandas.read_file(geodatasets.get_path("geoda.chicago_commpop"))
+    groceries = geopandas.read_file(geodatasets.get_path("geoda.groceries"))
 
 You can now plot those GeoDataFrames:
 
 .. ipython:: python
 
-    # Examine country GeoDataFrame
-    world.head()
+    # Examine the chicago GeoDataFrame
+    chicago.head()
 
-    # Basic plot, random colors
-    @savefig world_randomcolors.png
-    world.plot();
+    # Basic plot, single color
+    @savefig chicago_singlecolor.png
+    chicago.plot();
 
 Note that in general, any options one can pass to `pyplot <http://matplotlib.org/api/pyplot_api.html>`_ in matplotlib_ (or `style options that work for lines <http://matplotlib.org/api/lines_api.html>`_) can be passed to the :meth:`~GeoDataFrame.plot` method.
 
@@ -48,11 +50,9 @@ GeoPandas makes it easy to create Choropleth maps (maps where the color of each 
 .. ipython:: python
    :okwarning:
 
-    # Plot by GDP per capita
-    world = world[(world.pop_est>0) & (world.name!="Antarctica")]
-    world['gdp_per_cap'] = world.gdp_md_est / world.pop_est
-    @savefig world_gdp_per_cap.png
-    world.plot(column='gdp_per_cap');
+    # Plot by population
+    @savefig chicago_population.png
+    chicago.plot(column="POP2010");
 
 
 Creating a legend
@@ -63,37 +63,39 @@ When plotting a map, one can enable a legend using the ``legend`` argument:
 .. ipython:: python
 
     # Plot population estimates with an accurate legend
-    import matplotlib.pyplot as plt
-    fig, ax = plt.subplots(1, 1)
-    @savefig world_pop_est.png
-    world.plot(column='pop_est', ax=ax, legend=True)
+    @savefig chicago_choro.png
+    chicago.plot(column='POP2010', legend=True);
 
-However, the default appearance of the legend and plot axes may not be desirable. One can define the plot axes (with ``ax``) and the legend axes (with ``cax``) and then pass those in to the :meth:`~GeoDataFrame.plot` call. The following example uses ``mpl_toolkits`` to vertically align the plot axes and the legend axes:
+The following example plots the color bar below the map and adds its label using ``legend_kwds``:
 
 .. ipython:: python
 
     # Plot population estimates with an accurate legend
+    @savefig chicago_horizontal.png
+    chicago.plot(
+        column="POP2010",
+        legend=True,
+        legend_kwds={"label": "Population in 2010", "orientation": "horizontal"},
+    );
+
+However, the default appearance of the legend and plot axes may not be desirable. One can define the plot axes (with ``ax``) and the legend axes (with ``cax``) and then pass those in to the :meth:`~GeoDataFrame.plot` call. The following example uses ``mpl_toolkits`` to horizontally align the plot axes and the legend axes and change the width:
+
+.. ipython:: python
+
+    # Plot population estimates with an accurate legend
+    import matplotlib.pyplot as plt
     from mpl_toolkits.axes_grid1 import make_axes_locatable
     fig, ax = plt.subplots(1, 1)
     divider = make_axes_locatable(ax)
-    cax = divider.append_axes("right", size="5%", pad=0.1)
-    @savefig world_pop_est_fixed_legend_height.png
-    world.plot(column='pop_est', ax=ax, legend=True, cax=cax)
-
-
-And the following example plots the color bar below the map and adds its label using ``legend_kwds``:
-
-.. ipython:: python
-
-    # Plot population estimates with an accurate legend
-    import matplotlib.pyplot as plt
-    fig, ax = plt.subplots(1, 1)
-    @savefig world_pop_est_horizontal.png
-    world.plot(column='pop_est',
-               ax=ax,
-               legend=True,
-               legend_kwds={'label': "Population by Country",
-                            'orientation': "horizontal"})
+    cax = divider.append_axes("bottom", size="5%", pad=0.1)
+    @savefig chicago_cax.png
+    chicago.plot(
+        column="POP2010",
+        ax=ax,
+        legend=True,
+        cax=cax,
+        legend_kwds={"label": "Population in 2010", "orientation": "horizontal"},
+    );
 
 
 Choosing colors
@@ -103,16 +105,16 @@ You can also modify the colors used by :meth:`~GeoDataFrame.plot` with the ``cma
 
 .. ipython:: python
 
-    @savefig world_gdp_per_cap_red.png
-    world.plot(column='gdp_per_cap', cmap='OrRd');
+    @savefig chicago_red.png
+    chicago.plot(column='POP2010', cmap='OrRd');
 
 
-To make the color transparent for when you just want to show the boundary, you have two options. One option is to do ``world.plot(facecolor="none", edgecolor="black")``. However, this can cause a lot of confusion because ``"none"``  and ``None`` are different in the context of using ``facecolor`` and they do opposite things. ``None`` does the "default behavior" based on matplotlib, and if you use it for ``facecolor``, it actually adds a color. The second option is to use ``world.boundary.plot()``. This option is more explicit and clear.:
+To make the color transparent for when you just want to show the boundary, you have two options. One option is to do ``chicago.plot(facecolor="none", edgecolor="black")``. However, this can cause a lot of confusion because ``"none"``  and ``None`` are different in the context of using ``facecolor`` and they do opposite things. ``None`` does the "default behavior" based on matplotlib, and if you use it for ``facecolor``, it actually adds a color. The second option is to use ``chicago.boundary.plot()``. This option is more explicit and clear.:
 
 .. ipython:: python
 
-    @savefig world_gdp_per_cap_transparent.png
-    world.boundary.plot();
+    @savefig chicago_transparent.png
+    chicago.boundary.plot();
 
 
 The way color maps are scaled can also be manipulated with the ``scheme`` option (if you have ``mapclassify`` installed, which can be accomplished via ``conda install -c conda-forge mapclassify``). The ``scheme`` option can be set to any scheme provided by mapclassify (e.g. 'box_plot', 'equal_interval',
@@ -120,8 +122,8 @@ The way color maps are scaled can also be manipulated with the ``scheme`` option
 
 .. ipython:: python
 
-    @savefig world_gdp_per_cap_quantiles.png
-    world.plot(column='gdp_per_cap', cmap='OrRd', scheme='quantiles');
+    @savefig chicago_quantiles.png
+    chicago.plot(column='POP2010', cmap='OrRd', scheme='quantiles');
 
 
 Missing data
@@ -132,20 +134,20 @@ In some cases one may want to plot data which contains missing values - for some
 .. ipython:: python
 
     import numpy as np
-    world.loc[np.random.choice(world.index, 40), 'pop_est'] = np.nan
+    chicago.loc[np.random.choice(chicago.index, 30), 'POP2010'] = np.nan
     @savefig missing_vals.png
-    world.plot(column='pop_est');
+    chicago.plot(column='POP2010');
 
 However, passing ``missing_kwds`` one can specify the style and label of features containing None or NaN.
 
 .. ipython:: python
 
     @savefig missing_vals_grey.png
-    world.plot(column='pop_est', missing_kwds={'color': 'lightgrey'});
+    chicago.plot(column='POP2010', missing_kwds={'color': 'lightgrey'});
 
     @savefig missing_vals_hatch.png
-    world.plot(
-        column="pop_est",
+    chicago.plot(
+        column="POP2010",
         legend=True,
         scheme="quantiles",
         figsize=(15, 10),
@@ -164,7 +166,7 @@ Maps usually do not have to have axis labels. You can turn them off using ``set_
 
 .. ipython:: python
 
-    ax = world.plot()
+    ax = chicago.plot()
     @savefig set_axis_off.png
     ax.set_axis_off();
 
@@ -180,38 +182,30 @@ Before combining maps, however, remember to always ensure they share a common CR
     # Look at capitals
     # Note use of standard `pyplot` line style options
     @savefig capitals.png
-    cities.plot(marker='*', color='green', markersize=5);
+    groceries.plot(marker='*', color='green', markersize=5);
 
     # Check crs
-    cities = cities.to_crs(world.crs)
+    groceries = groceries.to_crs(chicago.crs)
 
-    # Now you can overlay over country outlines
-    # And yes, there are lots of island capitals
-    # apparently in the middle of the ocean!
+    # Now you can overlay over the outlines
 
 **Method 1**
 
 .. ipython:: python
 
-    base = world.plot(color='white', edgecolor='black')
-    @savefig capitals_over_countries_1.png
-    cities.plot(ax=base, marker='o', color='red', markersize=5);
+    base = chicago.plot(color='white', edgecolor='black')
+    @savefig groceries_over_chicago_1.png
+    groceries.plot(ax=base, marker='o', color='red', markersize=5);
 
 **Method 2: Using matplotlib objects**
 
 .. ipython:: python
 
-    import matplotlib.pyplot as plt
     fig, ax = plt.subplots()
 
-    # set aspect to equal. This is done automatically
-    # when using GeoPandas plot on it's own, but not when
-    # working with pyplot directly.
-    ax.set_aspect('equal')
-
-    world.plot(ax=ax, color='white', edgecolor='black')
-    cities.plot(ax=ax, marker='o', color='red', markersize=5)
-    @savefig capitals_over_countries_2.png
+    chicago.plot(ax=ax, color='white', edgecolor='black')
+    groceries.plot(ax=ax, marker='o', color='red', markersize=5)
+    @savefig groceries_over_chicago_2.png
     plt.show();
 
 Control the order of multiple layers in a plot
@@ -224,17 +218,17 @@ Without specified ``zorder``, cities (Points) gets plotted below world (Polygons
 
 .. ipython:: python
 
-    ax = cities.plot(color='k')
+    ax = groceries.plot(color='k')
     @savefig zorder_default.png
-    world.plot(ax=ax);
+    chicago.plot(ax=ax);
 
 You can set the ``zorder`` for cities higher than for world to move it of top.
 
 .. ipython:: python
 
-    ax = cities.plot(color='k', zorder=2)
+    ax = groceries.plot(color='k', zorder=2)
     @savefig zorder_set.png
-    world.plot(ax=ax, zorder=1);
+    chicago.plot(ax=ax, zorder=1);
 
 
 Pandas plots
@@ -257,16 +251,16 @@ the ``kind`` keyword argument in :meth:`~GeoDataFrame.plot`, and include:
 
 .. ipython:: python
 
-    gdf = world.head(10)
     @savefig pandas_line_plot.png
-    gdf.plot(kind='scatter', x="pop_est", y="gdp_md_est")
+    chicago.plot(kind="scatter", x="POP2010", y="POP2000")
 
 You can also create these other plots using the ``GeoDataFrame.plot.<kind>`` accessor methods instead of providing the ``kind`` keyword argument.
+For example, ``hist``, can be used to plot histograms of population for two different years from the Chicago dataset.
 
 .. ipython:: python
 
-    @savefig pandas_bar_plot.png
-    gdf.plot.bar()
+    @savefig pandas_hist_plot.png
+    chicago[["POP2000", "POP2010", "geometry"]].plot.hist(alpha=.4)
 
 For more information, see `Chart visualization <https://pandas.pydata.org/pandas-docs/stable/user_guide/visualization.html>`_ in the pandas documentation.
 

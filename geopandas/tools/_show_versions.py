@@ -58,33 +58,27 @@ def _get_C_info():
             geos_dir = None
 
     try:
-        import fiona
+        import pyogrio
 
-        gdal_version = fiona.env.get_gdal_release_name()
+        gdal_version = pyogrio.__gdal_version_string__
+        gdal_dir = pyogrio.get_gdal_data_path()
     except Exception:
         gdal_version = None
-    try:
-        import fiona
-
-        gdal_dir = fiona.env.GDALDataFinder().search()
-    except Exception:
         gdal_dir = None
 
     if gdal_version is None:
         try:
-            import pyogrio
+            import fiona
 
-            gdal_version = pyogrio.__gdal_version_string__
-            gdal_dir = None
+            gdal_version = fiona.env.get_gdal_release_name()
         except Exception:
-            pass
+            gdal_version = None
         try:
-            # get_gdal_data_path is only available in pyogrio >= 0.4.2
-            from pyogrio import get_gdal_data_path
+            import fiona
 
-            gdal_dir = get_gdal_data_path()
+            gdal_dir = fiona.env.GDALDataFinder().search()
         except Exception:
-            pass
+            gdal_dir = None
 
     blob = [
         ("GEOS", geos_version),
@@ -114,16 +108,15 @@ def _get_deps_info():
         "pyproj",
         "shapely",
         # optional deps
-        "fiona",
+        "pyogrio",
         "geoalchemy2",
         "geopy",
         "matplotlib",
         "mapclassify",
-        "pygeos",
-        "pyogrio",
+        "fiona",
+        "psycopg",
         "psycopg2",
         "pyarrow",
-        "rtree",
     ]
 
     def get_version(module):

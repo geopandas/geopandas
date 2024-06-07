@@ -1,15 +1,17 @@
 import warnings
 
 import numpy as np
+import pandas as pd
+from pandas import DataFrame, Series
 
 from shapely.geometry import Point, Polygon
-from pandas import Series
 
 from geopandas import GeoDataFrame, GeoSeries
+from geopandas._compat import HAS_PYPROJ
 from geopandas.array import from_shapely
 
-from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 import pytest
+from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 
 s1 = GeoSeries(
     [
@@ -45,9 +47,9 @@ df1 = GeoDataFrame({"col1": [1, 2], "geometry": s1})
 df2 = GeoDataFrame({"col1": [1, 2], "geometry": s2})
 
 s4 = s1.copy()
-s4.crs = 4326
+s4.array.crs = 4326
 s5 = s2.copy()
-s5.crs = 27700
+s5.array.crs = 27700
 
 s6 = GeoSeries(
     [
@@ -101,9 +103,10 @@ def test_geodataframe():
         assert_geodataframe_equal(df1, df3)
 
     assert_geodataframe_equal(df5, df4, check_like=True)
-    df5.geom2.crs = 3857
-    with pytest.raises(AssertionError):
-        assert_geodataframe_equal(df5, df4, check_like=True)
+    if HAS_PYPROJ:
+        df5["geom2"] = df5.geom2.set_crs(3857, allow_override=True)
+        with pytest.raises(AssertionError):
+            assert_geodataframe_equal(df5, df4, check_like=True)
 
 
 def test_equal_nans():
@@ -118,6 +121,7 @@ def test_no_crs():
     assert_geodataframe_equal(df1, df2)
 
 
+@pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not available")
 def test_ignore_crs_mismatch():
     df1 = GeoDataFrame({"col1": [1, 2], "geometry": s1.copy()}, crs="EPSG:4326")
     df2 = GeoDataFrame({"col1": [1, 2], "geometry": s1}, crs="EPSG:31370")
@@ -139,3 +143,44 @@ def test_almost_equal_but_not_equal():
     assert_geoseries_equal(s_origin, s_almost_origin, check_less_precise=True)
     with pytest.raises(AssertionError):
         assert_geoseries_equal(s_origin, s_almost_origin)
+
+
+def test_geodataframe_no_active_geometry_column():
+    def create_dataframe():
+        gdf = GeoDataFrame({"value": [1, 2], "geometry": [Point(1, 1), Point(2, 2)]})
+        gdf["geom2"] = GeoSeries([Point(3, 3), Point(4, 4)])
+        return gdf
+
+    # no active geometry column (None)
+    df1 = create_dataframe()
+    df1._geometry_column_name = None
+    df2 = create_dataframe()
+    df2._geometry_column_name = None
+    assert_geodataframe_equal(df1, df2)
+
+    # active geometry column ("geometry") not present
+    df1 = create_dataframe()[["value", "geom2"]]
+    df2 = create_dataframe()[["value", "geom2"]]
+    assert_geodataframe_equal(df1, df2)
+
+    df1 = GeoDataFrame(create_dataframe()[["value"]])
+    df2 = GeoDataFrame(create_dataframe()[["value"]])
+    assert_geodataframe_equal(df1, df2)
+
+
+def test_geodataframe_multiindex():
+    def create_dataframe():
+        gdf = DataFrame([[Point(0, 0), Point(1, 1)], [Point(2, 2), Point(3, 3)]])
+        gdf = GeoDataFrame(gdf.astype("geometry"))
+        gdf.columns = pd.MultiIndex.from_product([["geometry"], [0, 1]])
+        return gdf
+
+    df1 = create_dataframe()
+    df2 = create_dataframe()
+    assert_geodataframe_equal(df1, df2)
+
+    df1 = create_dataframe()
+    df1._geometry_column_name = None
+    df2 = create_dataframe()
+    df2._geometry_column_name = None
+    assert_geodataframe_equal(df1, df2)

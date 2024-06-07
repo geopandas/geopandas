@@ -1,24 +1,284 @@
 # Changelog
 
-## Development version
+## Version 1.0.0
+
+Notes on dependencies:
+
+- GeoPandas 1.0 drops support for shapely<2 and PyGEOS. The only geometry engine that is
+  currently supported is shapely >= 2. As a consequence, spatial indexing based on the
+  rtree package has also been removed. (#3035)
+- The I/O engine now defaults to Pyogrio which is now installed with GeoPandas instead
+  of Fiona. (#3223)
+
+New methods:
+
+- Added `count_geometries` method from shapely to GeoSeries/GeoDataframe (#3154).
+- Added `count_interior_rings` method from shapely to GeoSeries/GeoDataframe (#3154)
+- Added `relate_pattern` method from shapely to GeoSeries/GeoDataframe (#3211).
+- Added `intersection_all` method from shapely to GeoSeries/GeoDataframe (#3228).
+- Added `line_merge` method from shapely to GeoSeries/GeoDataframe (#3214).
+- Added `set_precision` and `get_precision` methods from shapely to GeoSeries/GeoDataframe (#3175).
+- Added `count_coordinates` method from shapely to GeoSeries/GeoDataframe (#3026).
+- Added `minimum_clearance` method from shapely to GeoSeries/GeoDataframe (#2989).
+- Added `shared_paths` method from shapely to GeoSeries/GeoDataframe (#3215).
+- Added `is_ccw` method from shapely to GeoSeries/GeoDataframe (#3027).
+- Added `is_closed` attribute from shapely to GeoSeries/GeoDataframe (#3092).
+- Added `force_2d` and `force_3d` methods from shapely to GeoSeries/GeoDataframe (#3090).
+- Added `voronoi_polygons` method from shapely to GeoSeries/GeoDataframe (#3177).
+- Added `contains_properly` method from shapely to GeoSeries/GeoDataframe (#3105).
+- Added `build_area` method exposing `build_area` shapely to GeoSeries/GeoDataframe (#3202).
+- Added `snap` method from shapely to GeoSeries/GeoDataframe (#3086).
+- Added `transform` method from shapely to GeoSeries/GeoDataFrame (#3075).
+- Added `get_geometry` method from shapely to GeoSeries/GeoDataframe (#3287).
+- Added `dwithin` method to check for a "distance within" predicate on
+  GeoSeries/GeoDataFrame (#3153).
+- Added `to_geo_dict` method to generate GeoJSON-like dictionary from a GeoDataFrame (#3132).
+- Added `polygonize` method exposing both `polygonize` and `polygonize_full` from
+  shapely to GeoSeries/GeoDataframe (#2963).
+- Added `is_valid_reason` method from shapely to GeoSeries/GeoDataframe (#3176).
+- Added `to_arrow` method and `from_arrow` class method to
+  GeoSeries/GeoDataFrame to export and import to/from Arrow data with GeoArrow
+  extension types (#3219, #3301).
 
 New features and improvements:
 
-- Added ``get_coordinates()`` method from shapely to GeoSeries/GeoDataframe (#2624).
-- The Parquet and Feather IO functions now support the latest 1.0.0-beta.1 version
+- Added ``predicate="dwithin"`` option and ``distance`` argument to the ``sindex.query()`` method
+ and ``sjoin`` (#2882).
+- GeoSeries and GeoDataFrame `__repr__` now trims trailing zeros for a more readable
+  output (#3087).
+- Add `on_invalid` parameter to `from_wkt` and `from_wkb` (#3110).
+- `make_valid` option in `overlay` now uses the `make_valid` method instead of
+  `buffer(0)` (#3113).
+- Passing `"geometry"` as `dtype` to `pd.read_csv` will now return a GeoSeries for
+  the specified columns (#3101).
+- Added support to ``read_file`` for the ``mask`` keyword for the pyogrio engine (#3062).
+- Added support to ``read_file`` for the ``columns`` keyword for the fiona engine (#3133).
+- Added support to ``to_parquet`` and ``read_parquet`` for writing and reading files
+  using the GeoArrow-based native geometry encoding of GeoParquet 1.1 (#3253, #3275).
+- Add `sort` keyword to `clip` method for GeoSeries and GeoDataFrame to allow optional
+  preservation of the original order of observations. (#3233)
+- Added `show_bbox`, `drop_id` and `to_wgs84` arguments to allow further customization of
+  `GeoSeries.to_json` (#3226)
+- `explore` now supports `GeoDataFrame`s with additional columns containing datetimes, uuids and
+  other non JSON serializable objects (#3261).
+- The `GeoSeries.fillna` method now supports the `limit` keyword (#3290).
+- Added support for `bbox` covering encoding in geoparquet. Can filter reading of parquet
+files based on a bounding box, and write out a bounding box column to parquet files (#3282)
+- `align` keyword in binary methods now defaults to `None`, treated as True. Explicit True
+  will silence the warning about mismachted indices. (#3212)
+- `GeoSeries.set_crs` can now be used to remove CRS information by passing
+  `crs=None, allow_override=True`. (#3316)
+- Added ``autolim`` keyword argument to ``GeoSeries.plot()`` and ``GeoDataFrame.plot()`` (#2817).
+
+Backwards incompatible API changes:
+
+- The `sjoin` method will now preserve the name of the index of the right
+  GeoDataFrame, if it has one, instead of always using `"index_right"` as the
+  name for the resulting column in the return value (#846, #2144).
+- GeoPandas now raises a ValueError when an unaligned Series is passed as a method
+  argument to avoid confusion of whether the automatic alignment happens or not (#3271).
+- The deprecated default value of GeoDataFrame/ GeoSeries `explode(.., index_parts=True)` is now
+  set to false for consistency with pandas (#3174).
+- The behaviour of `set_geometry` has been changed when passed a (Geo)Series `ser` with a name.
+  The new active geometry column name in this case will be `ser.name`, if not None, rather than
+  the previous active geometry column name. This means that if the new and old names are
+  different, then both columns will be preserved in the GeoDataFrame. To replicate the previous
+  behaviour, you can instead call `gdf.set_geometry(ser.rename(gdf.active_geometry_name))` (#3237).
+- `delaunay_triangles` now considers all geometries together when creating the Delaunay trianguation
+  instead of performing the operation element-wise. If you want to generate Delaunay
+  triangles for each geometry separately, use ``shapely.delaunay_triangles`` instead. (#3273)
+- Reading a data source that does not have a geometry field using ``read_file``
+  now returns a Pandas DataFrame instead of a GeoDataFrame with an empty
+  ``geometry`` column.
+
+Enforced deprecations:
+
+- The deprecation of `geopandas.datasets` has been enforced and the module has been
+  removed. New sample datasets are now available in the
+  [geodatasets](https://geodatasets.readthedocs.io/en/latest/) package (#3084).
+- Many longstanding deprecated functions, methods and properties have been removed (#3174), (#3190)
+  - Removed deprecated functions
+    `geopandas.io.read_file`, `geopandas.io.to_file` and `geopandas.io.sql.read_postgis`.
+    `geopandas.read_file`, `geopandas.read_postgis` and the GeoDataFrame/GeoSeries `to_file(..)`
+    method should be used instead.
+  - Removed deprecated `GeometryArray.data` property, `np.asarray(..)` or the `to_numpy()`
+    method should be used instead.
+  - Removed deprecated `sindex.query_bulk` method, using `sindex.query` instead.
+  - Removed deprecated `sjoin` parameter `op`, `predicate` should be supplied instead.
+  - Removed deprecated GeoSeries/ GeoDataFrame methods `__xor__`, `__or__`, `__and__` and
+    `__sub__`. Instead use methods `symmetric_difference`, `union`, `intersection` and
+    `difference` respectively.
+  - Removed deprecated plotting functions `plot_polygon_collection`,
+    `plot_linestring_collection` and `plot_point_collection`, use the GeoSeries/GeoDataFrame `.plot`
+    method directly instead.
+  - Removed deprecated GeoSeries/GeoDataFrame `.plot` parameters `axes` and `colormap`, instead use
+    `ax` and `cmap` respectively.
+
+New deprecations:
+
+- `unary_union` attribute is now deprecated and replaced by the `union_all()` method (#3007) allowing
+  opting for a faster union algorithm for coverages (#3151).
+- The ``include_fields`` and ``ignore_fields`` keywords in ``read_file()`` are deprecated
+  for the default pyogrio engine. Currently those are translated to the ``columns`` keyword
+  for backwards compatibility, but you should directly use the ``columns`` keyword instead
+  to select which columns to read (#3133).
+- The `drop` keyword in `set_geometry` has been deprecated, and in future the `drop=True`
+  behaviour will be removed (#3237). To prepare for this change, you should remove any explicit
+  `drop=False` calls in your code (the default behaviour already is the same as `drop=False`).
+  To replicate the previous `drop=True` behaviour you should replace
+  `gdf.set_geometry(new_geo_col, drop=True)` with
+
+  ```python
+  geo_col_name = gdf.active_geometry_name
+  gdf.set_geometry(new_geo_col).drop(columns=geo_col_name).rename_geometry(geo_col_name)
+  ```
+- The `geopandas.use_pygeos` option has been deprecated and will be removed in GeoPandas
+  1.1 (#3283)
+- Manual overriding of an existing CRS of a GeoSeries using the `crs.setter` has been deprecated
+  and will be disabled in future. Use the `set_crs()` method instead (#3085).
+
+Bug fixes:
+
+- Fix `GeoDataFrame.merge()` incorrectly returning a `DataFrame` instead of a
+  `GeoDataFrame` when the `suffixes` argument is applied to the active
+  geometry column (#2933).
+- Fix bug in `GeoDataFrame` constructor where if `geometry` is given a named
+  `GeoSeries` the name was not used as the active geometry column name (#3237).
+- Fix bug in `GeoSeries` constructor when passing a Series and specifying a `crs` to not change the original input data (#2492).
+- Fix regression preventing reading from file paths containing hashes in `read_file`
+  with the fiona engine (#3280). An analgous fix for pyogrio is included in
+  pyogrio 0.8.1.
+- Fix `to_parquet` to write correct metadata in case of 3D geometries (#2824).
+- Fixes for compatibility with psycopg (#3167).
+- Fix to allow appending dataframes with no CRS to PostGIS tables with no CRS (#3328)
+- Fix plotting of all-empty GeoSeries using `explore` (#3316).
+
+## Version 0.14.4 (April 26, 2024)
+
+- Several fixes for compatibility with the upcoming pandas 3.0, numpy 2.0 and
+  fiona 1.10 releases.
+
+## Version 0.14.3 (Jan 31, 2024)
+
+- Several fixes for compatibility with the latest pandas 2.2 release.
+- Fix bug in `pandas.concat` CRS consistency checking where CRS differing by WKT
+  whitespace only were treated as incompatible (#3023).
+
+## Version 0.14.2 (Jan 4, 2024)
+
+- Fix regression in `overlay` where using `buffer(0)` instead of `make_valid` internally
+  produced invalid results (#3074).
+- Fix `explore()` method when the active geometry contains missing and empty geometries (#3094).
+
+## Version 0.14.1 (Nov 11, 2023)
+
+- The Parquet and Feather IO functions now support the latest 1.0.0 version
   of the GeoParquet specification (geoparquet.org) (#2663).
+- Fix `read_parquet` and `read_feather` for [CVE-2023-47248](https://www.cve.org/CVERecord?id=CVE-2023-47248>) (#3070).
+
+## Version 0.14 (Sep 15, 2023)
+
+GeoPandas will use Shapely 2.0 by default instead of PyGEOS when both Shapely >= 2.0 and
+PyGEOS are installed.  PyGEOS will continue to be used by default when PyGEOS is
+installed alongside Shapely < 2.0.  Support for PyGEOS and Shapely < 2.0 will be removed
+in GeoPandas 1.0. (#2999)
+
+API changes:
+
+- ``seed`` keyword in ``sample_points`` is deprecated. Use ``rng`` instead. (#2913).
+
+New methods:
+
+- Added ``concave_hull`` method from shapely to GeoSeries/GeoDataframe (#2903).
+- Added ``delaunay_triangles`` method from shapely to GeoSeries/GeoDataframe (#2907).
+- Added ``extract_unique_points`` method from shapely to GeoSeries/GeoDataframe (#2915).
+- Added ``frechet_distance()`` method from shapely to GeoSeries/GeoDataframe (#2929).
+- Added ``hausdorff_distance`` method from shapely to GeoSeries/GeoDataframe (#2909).
+- Added ``minimum_rotated_rectangle`` method from shapely to GeoSeries/GeoDataframe (#2541).
+- Added ``offset_curve`` method from shapely to GeoSeries/GeoDataframe (#2902).
+- Added ``remove_repeated_points`` method from shapely to GeoSeries/GeoDataframe (#2940).
+- Added ``reverse`` method from shapely to GeoSeries/GeoDataframe (#2988).
+- Added ``segmentize`` method from shapely to GeoSeries/GeoDataFrame (#2910).
+- Added ``shortest_line`` method from shapely to GeoSeries/GeoDataframe (#2960).
+
+New features and improvements:
+
+- Added ``exclusive`` parameter to ``sjoin_nearest`` method for Shapely >= 2.0 (#2877)
+- Added ``GeoDataFrame.active_geometry_name`` property returning the active geometry column's name or None if no active geometry column is set.
+- The ``to_file()`` method will now automatically detect the FlatGeoBuf driver
+  for files with the `.fgb` extension (#2958)
+
+Bug fixes:
+
+- Fix ambiguous error when GeoDataFrame is initialized with a column called ``"crs"`` (#2944)
+- Fix a color assignment in ``explore`` when using ``UserDefined`` bins (#2923)
+- Fix bug in `apply` with `axis=1` where the given user defined function returns nested
+  data in the geometry column (#2959)
+- Properly infer schema for ``np.int32`` and ``pd.Int32Dtype`` columns (#2950)
+- ``assert_geodataframe_equal`` now handles GeoDataFrames with no active geometry (#2498)
+
+Notes on (optional) dependencies:
+
+- GeoPandas 0.14 drops support for Python 3.8 and pandas 1.3 and below (the minimum
+  supported pandas version is now 1.4). Further, the minimum required versions for the
+  listed dependencies have now changed to shapely 1.8.0, fiona 1.8.21, pyproj 3.3.0 and
+  matplotlib 3.5.0 (#3001)
+
+Deprecations and compatibility notes:
+
+- `geom_almost_equals()` methods have been deprecated and
+   `geom_equals_exact()` should be used instead (#2604).
+
+## Version 0.13.2 (Jun 6, 2023)
+
+Bug fix:
+
+- Fix a regression in reading from local file URIs (``file://..``) using
+  ``geopandas.read_file`` (#2948).
+
+## Version 0.13.1 (Jun 5, 2023)
+
+Bug fix:
+
+- Fix a regression in reading from URLs using ``geopandas.read_file`` (#2908). This
+  restores the behaviour to download all data up-front before passing it to the
+  underlying engine (fiona or pyogrio), except if the server supports partial requests
+  (to support reading a subset of a large file).
+
+## Version 0.13 (May 6, 2023)
+
+New methods:
+
+- Added ``sample_points`` method to sample random points from Polygon or LineString
+  geometries (#2860).
 - New ``hilbert_distance()`` method that calculates the distance along a Hilbert curve
   for each geometry in a GeoSeries/GeoDataFrame (#2297).
 - Support for sorting geometries (for example, using ``sort_values()``) based on
   the distance along the Hilbert curve (#2070).
+- Added ``get_coordinates()`` method from shapely to GeoSeries/GeoDataframe (#2624).
 - Added ``minimum_bounding_circle()`` method from shapely to GeoSeries/GeoDataframe (#2621).
+- Added `minimum_bounding_radius()` as GeoSeries method (#2827).
+
+Other new features and improvements:
+
+- The Parquet and Feather IO functions now support the latest 1.0.0-beta.1 version
+  of the GeoParquet specification (<geoparquet.org>) (#2663).
+- Added support to fill missing values in `GeoSeries.fillna` via another `GeoSeries` (#2535).
 - Support specifying ``min_zoom`` and ``max_zoom`` inside the ``map_kwds`` argument for ``.explore()`` (#2599).
-- Added ``autolim`` keyword argument to ``GeoSeries.plot()`` and ``GeoDataFrame.plot()`` (#2817).
+- Added support for append (``mode="a"`` or ``append=True``) in ``to_file()``
+  using ``engine="pyogrio"`` (#2788).
+- Added a ``to_wgs84`` keyword to ``to_json`` allowing automatic re-projecting to follow
+  the 2016 GeoJSON specification (#416).
+- ``to_json`` output now includes a ``"crs"`` field if the CRS is not the default WGS84 (#1774).
+- Improve error messages when accessing the `geometry` attribute of GeoDataFrame without an active geometry column
+  related to the default name `"geometry"` being provided in the constructor (#2577)
 
 Deprecations and compatibility notes:
 
 - Added warning that ``unary_union`` will return ``'GEOMETRYCOLLECTION EMPTY'`` instead
   of None for all-None GeoSeries. (#2618)
+- The ``query_bulk()`` method of the spatial index `.sindex` property is deprecated
+  in favor of ``query()`` (#2823).
 
 Bug fixes:
 
@@ -31,6 +291,12 @@ Bug fixes:
 - Fix `to_parquet`/`to_feather` to use correct WKB flavor for 3D geometries (#2654)
 - Fix `read_file` to avoid reading all file bytes prior to calling Fiona or
   Pyogrio if provided a URL as input (#2796)
+- Fix `copy()` downcasting GeoDataFrames without an active geometry column to a
+  DataFrame (#2775)
+- Fix geometry column name propagation when GeoDataFrame columns are a multiindex (#2088)
+- Fix `iterfeatures()` method of GeoDataFrame to correctly handle non-scalar values
+  when `na='drop'` is specified (#2811)
+- Fix issue with passing custom legend labels to `plot` (#2886)
 
 Notes on (optional) dependencies:
 

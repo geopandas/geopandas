@@ -80,24 +80,25 @@ Re-projecting is the process of changing the representation of locations from on
 
 .. ipython:: python
 
+    import geodatasets
+
     # load example data
-    world = geopandas.read_file(geopandas.datasets.get_path('naturalearth_lowres'))
+    usa = geopandas.read_file(geodatasets.get_path('geoda.natregimes'))
 
     # Check original projection
     # (it's Plate Carrée! x-y are long and lat)
-    world.crs
+    usa.crs
 
     # Visualize
-    ax = world.plot()
-    @savefig world_starting.png
+    ax = usa.plot()
+    @savefig usa_starting.png
     ax.set_title("WGS84 (lat/lon)");
 
-    # Reproject to Mercator (after dropping Antartica)
-    world = world[(world.name != "Antarctica") & (world.name != "Fr. S. Antarctic Lands")]
-    world = world.to_crs("EPSG:3395") # world.to_crs(epsg=3395) would also work
-    ax = world.plot()
-    @savefig world_reproj.png
-    ax.set_title("Mercator");
+    # Reproject to Albers contiguous USA
+    usa = usa.to_crs("ESRI:102003")
+    ax = usa.plot()
+    @savefig usa_reproj.png
+    ax.set_title("NAD 1983 Albers contiguous USA");
 
 
 Projection for multiple geometry columns
@@ -179,7 +180,7 @@ yields a proper CRS:
 
 .. ipython:: python
 
-   df = geopandas.read_file(geopandas.datasets.get_path('naturalearth_lowres'))
+   df = geopandas.read_file(geodatasets.get_path('naturalearth.land'))
    df.crs
 
 However, in certain cases (with older CRS formats), the resulting CRS object

@@ -13,8 +13,8 @@ def test_no_additional_imports():
         # "fiona",
         # "matplotlib",  # matplotlib gets imported by pandas, see below
         "mapclassify",
-        # 'rtree',  # rtree actually gets imported if installed
         "sqlalchemy",
+        "psycopg",
         "psycopg2",
         "geopy",
         "geoalchemy2",
@@ -34,5 +34,5 @@ if mods:
         blacklist
     )
     call = [sys.executable, "-c", code]
-    returncode = subprocess.run(call).returncode
+    returncode = subprocess.run(call, check=False).returncode
     assert returncode == 0

@@ -16,11 +16,12 @@ import matplotlib.pyplot as plt
 from shapely.geometry import Point
 from geopandas import GeoSeries, GeoDataFrame
 import geopandas as gpd
+import geodatasets
 
 np.random.seed(1)
 DPI = 100
 
-path_nybb = gpd.datasets.get_path("nybb")
+path_nybb = geodatasets.get_path("nybb")
 boros = GeoDataFrame.from_file(path_nybb)
 boros = boros.set_index("BoroCode")
 boros
@@ -55,7 +56,7 @@ R = 2000  # radius of buffer in feet
 xc = (xmax - xmin) * np.random.random(N) + xmin
 yc = (ymax - ymin) * np.random.random(N) + ymin
 pts = GeoSeries([Point(x, y) for x, y in zip(xc, yc)])
-mp = pts.buffer(R).unary_union
+mp = pts.buffer(R).union_all()
 boros_with_holes = boros.geometry - mp
 boros_with_holes.plot()
 plt.xticks(rotation=90)

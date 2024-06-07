@@ -135,60 +135,58 @@ but with the geometries obtained from overlaying ``df1`` with ``df2``:
     df2.plot(ax=ax, facecolor='none', edgecolor='k');
 
 
-Overlay countries example
+Overlay groceries example
 -------------------------
 
-First, load the countries and cities example datasets and select:
+First, load the Chicago community areas and groceries example datasets and select :
 
 .. ipython:: python
 
-    world = geopandas.read_file(geopandas.datasets.get_path('naturalearth_lowres'))
-    capitals = geopandas.read_file(geopandas.datasets.get_path('naturalearth_cities'))
+    import geodatasets
 
-    # Select South America and some columns
-    countries = world[world['continent'] == "South America"]
-    countries = countries[['geometry', 'name']]
+    chicago = geopandas.read_file(geodatasets.get_path("geoda.chicago_commpop"))
+    groceries = geopandas.read_file(geodatasets.get_path("geoda.groceries"))
 
     # Project to crs that uses meters as distance measure
-    countries = countries.to_crs('epsg:3395')
-    capitals = capitals.to_crs('epsg:3395')
+    chicago = chicago.to_crs("ESRI:102003")
+    groceries = groceries.to_crs("ESRI:102003")
 
 To illustrate the :meth:`~geopandas.GeoDataFrame.overlay` method, consider the following case in which one
-wishes to identify the "core" portion of each country -- defined as areas within
-500km of a capital -- using a ``GeoDataFrame`` of countries and a
-``GeoDataFrame`` of capitals.
+wishes to identify the "served" portion of each area -- defined as areas within
+1km of a grocery store -- using a ``GeoDataFrame`` of community areas and a
+``GeoDataFrame`` of groceries.
 
 .. ipython:: python
 
-    # Look at countries:
-    @savefig world_basic.png width=5in
-    countries.plot();
+    # Look at Chicago:
+    @savefig chicago_basic.png width=5in
+    chicago.plot();
 
-    # Now buffer cities to find area within 500km.
-    # Check CRS -- World Mercator, units of meters.
-    capitals.crs
+    # Now buffer groceries to find area within 1km.
+    # Check CRS -- USA Contiguous Albers Equal Area, units of meters.
+    groceries.crs
 
-    # make 500km buffer
-    capitals['geometry']= capitals.buffer(500000)
-    @savefig capital_buffers.png width=5in
-    capitals.plot();
+    # make 1km buffer
+    groceries['geometry']= groceries.buffer(1000)
+    @savefig groceries_buffers.png width=5in
+    groceries.plot();
 
 
-To select only the portion of countries within 500km of a capital, specify the ``how`` option to be ``'intersection'``, which creates a new set of polygons where these two layers overlap:
-
-.. ipython:: python
-
-   country_cores = countries.overlay(capitals, how='intersection')
-   @savefig country_cores.png width=5in
-   country_cores.plot(alpha=0.5, edgecolor='k', cmap='tab10');
-
-Changing the ``how`` option allows for different types of overlay operations. For example, if you were interested in the portions of countries *far* from capitals (the peripheries), you would compute the difference of the two.
+To select only the portion of community areas within 1km of a grocery, specify the ``how`` option to be "intersect", which creates a new set of polygons where these two layers overlap:
 
 .. ipython:: python
 
-   country_peripheries = countries.overlay(capitals, how='difference')
-   @savefig country_peripheries.png width=5in
-   country_peripheries.plot(alpha=0.5, edgecolor='k', cmap='tab10');
+   chicago_cores = chicago.overlay(groceries, how='intersection')
+   @savefig chicago_cores.png width=5in
+   chicago_cores.plot(alpha=0.5, edgecolor='k', cmap='tab10');
+
+Changing the ``how`` option allows for different types of overlay operations. For example, if you were interested in the portions of Chicago *far* from groceries (the peripheries), you would compute the difference of the two.
+
+.. ipython:: python
+
+   chicago_peripheries = chicago.overlay(groceries, how='difference')
+   @savefig chicago_peripheries.png width=5in
+   chicago_peripheries.plot(alpha=0.5, edgecolor='k', cmap='tab10');
 
 
 .. ipython:: python
