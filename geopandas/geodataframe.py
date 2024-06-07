@@ -1849,7 +1849,12 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
             return _geodataframe_constructor_with_fallback(
                 pd.DataFrame._from_mgr(mgr, axes)
             )
-        return GeoDataFrame._from_mgr(mgr, axes)
+        gdf = GeoDataFrame._from_mgr(mgr, axes)
+        # _from_mgr doesn't preserve metadata (expect __finalize__ to be called)
+        # still need to mimic __init__ behaviour with geometry=None
+        if (gdf.columns == "geometry").sum() == 1:  # only if "geometry" is single col
+            gdf._geometry_column_name = "geometry"
+        return gdf
 
     @property
     def _constructor_sliced(self):
