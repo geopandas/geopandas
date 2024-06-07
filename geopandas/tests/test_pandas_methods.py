@@ -687,7 +687,7 @@ def test_groupby_metadata(crs, geometry_name):
     # selecting the non-group columns -> no need to pass the keyword
     if (
         compat.PANDAS_GE_22
-        or (compat.PANDAS_GE_21 and geometry_name == "geometry")
+        or (compat.PANDAS_GE_20 and geometry_name == "geometry")
         or not compat.PANDAS_GE_20
     ):
         df.groupby("value2")[[geometry_name, "value1"]].apply(func)
