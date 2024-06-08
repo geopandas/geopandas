@@ -1,3 +1,5 @@
+import numpy as np
+
 from shapely.geometry import Point
 from shapely.wkt import loads
 
@@ -63,3 +65,12 @@ def test_empty(geoseries_points, empty):
         ValueError, match="cannot be computed on a GeoSeries with empty"
     ):
         s.hilbert_distance()
+
+
+def test_zero_width():
+    # special case of all points on the same line -> avoid warnings because
+    # of division by 0 and introducing NaN
+    s = geopandas.GeoSeries([Point(0, 0), Point(0, 2), Point(0, 1)])
+    with np.errstate(all="raise"):
+        result = s.hilbert_distance()
+    assert np.array(result).argsort().tolist() == [0, 2, 1]

@@ -54,11 +54,16 @@ Constructive methods
 
   Returns a :class:`~geopandas.GeoSeries` of geometries containing all distinct
   vertices of each input geometry as a multipoint.
-  
+
 .. method:: GeoSeries.offset_curve(distance, quad_segs=8, join_style="round", mitre_limit=5.0)
 
   Returns a :class:`~geopandas.GeoSeries` containing a `Linestring` or `MultiLineString`
   geometry at a distance from the object on its right or its left side.
+
+.. method:: GeoSeries.remove_repeated_points
+
+   Returns a :class:`~geopandas.GeoSeries` containing a copy of the input geometry
+   with repeated points removed.
 
 .. method:: GeoSeries.simplify(tolerance, preserve_topology=True)
 
@@ -70,7 +75,7 @@ Constructive methods
   Returns a :class:`~geopandas.GeoSeries` with additional vertices added to line
   segments based on max_segment_length.
 
-.. attribute:: GeoSeries.unary_union
+.. method:: GeoSeries.union_all()
 
   Return a geometry containing the union of all geometries in the :class:`~geopandas.GeoSeries`.
 
@@ -148,7 +153,7 @@ GeoPandas objects also know how to plot themselves. GeoPandas uses `matplotlib`_
 
     >>> g.plot()
 
-GeoPandas also implements alternate constructors that can read any data format recognized by `Fiona`_.  To read a zip file containing an ESRI shapefile with the `borough boundaries of New York City`_ (GeoPandas includes this as an example dataset):
+GeoPandas also implements alternate constructors that can read any data format recognized by `Pyogrio`_.  To read a zip file containing an ESRI shapefile with the `borough boundaries of New York City`_ (provided by the ``geodatasets`` package):
 
 .. sourcecode:: python
 
@@ -212,7 +217,7 @@ geometry with
 
 .. sourcecode:: python
 
-    >>> mp = circles.unary_union
+    >>> mp = circles.union_all()
 
 To extract the part of this geometry contained in each borough, you can
 just use:
@@ -252,7 +257,7 @@ borough that are in the holes:
     dtype: float64
 
 .. _matplotlib: http://matplotlib.org
-.. _fiona: http://fiona.readthedocs.io/en/latest/
+.. _pyogrio: http://pyogrio.readthedocs.io/en/latest/
 .. _geopy: https://github.com/geopy/geopy
 .. _geo_interface: https://gist.github.com/sgillies/2217756
 .. _borough boundaries of New York City: https://data.cityofnewyork.us/City-Government/Borough-Boundaries/tqmj-j8zm

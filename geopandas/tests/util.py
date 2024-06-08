@@ -13,6 +13,15 @@ from geopandas.testing import (  # noqa: F401
 HERE = os.path.abspath(os.path.dirname(__file__))
 PACKAGE_DIR = os.path.dirname(os.path.dirname(HERE))
 
+_TEST_DATA_DIR = os.path.join(PACKAGE_DIR, "geopandas", "tests", "data")
+_NYBB = "zip://" + os.path.join(_TEST_DATA_DIR, "nybb_16a.zip")
+_NATURALEARTH_CITIES = os.path.join(
+    _TEST_DATA_DIR, "naturalearth_cities", "naturalearth_cities.shp"
+)
+_NATURALEARTH_LOWRES = os.path.join(
+    _TEST_DATA_DIR, "naturalearth_lowres", "naturalearth_lowres.shp"
+)
+
 
 # mock not used here, but the import from here is used in other modules
 try:

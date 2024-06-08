@@ -103,6 +103,8 @@ def _continuous_to_discrete(vals, val_range, n):
 
     """
     width = val_range[1] - val_range[0]
+    if width == 0:
+        return np.zeros_like(vals, dtype=np.uint32)
     res = (vals - val_range[0]) * (n / width)
 
     np.clip(res, 0, n, out=res)

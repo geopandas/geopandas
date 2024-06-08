@@ -4,14 +4,13 @@ channels:
 dependencies:
   - python=3.9
   # required
-  - pandas=1.4
+  - pandas=1.5
   - shapely=2
   - geos
   - cython
-  - fiona
+  - pyogrio>=0.7.2
   - pyproj
   # use this build to have one with only shapely 2.0 installed
-  # - pygeos
   - packaging
   # testing
   - pytest
@@ -19,7 +18,6 @@ dependencies:
   - pytest-xdist
   - fsspec
   # optional
-  - rtree
   - matplotlib
   - mapclassify
   - folium

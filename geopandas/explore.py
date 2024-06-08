@@ -1,11 +1,14 @@
+import warnings
+from packaging.version import Version
 from statistics import mean
 
-import geopandas
-from shapely.geometry import LineString
 import numpy as np
 import pandas as pd
+from pandas.api.types import is_datetime64_any_dtype
 
-from packaging.version import Version
+from shapely.geometry import LineString
+
+import geopandas
 
 _MAP_KWARGS = [
     "location",
@@ -93,8 +96,7 @@ def _explore(
         pass :class:`xyzservices.TileProvider` object or pass custom XYZ URL.
         The current list of built-in providers (when ``xyzservices`` is not available):
 
-        ``["OpenStreetMap", "Stamen Terrain", “Stamen Toner", “Stamen Watercolor"
-        "CartoDB positron", “CartoDB dark_matter"]``
+        ``["OpenStreetMap", "CartoDB positron", “CartoDB dark_matter"]``
 
         You can pass a custom tileset to Folium by passing a Leaflet-style URL
         to the tiles parameter: ``http://{s}.yourtiles.com/{z}/{x}/{y}.png``.
@@ -278,13 +280,14 @@ def _explore(
                 return cm.get_cmap(_cmap, n_resample)(idx)
 
     try:
+        import re
+
         import branca as bc
         import folium
-        import re
         import matplotlib
-        from matplotlib import colors
         import matplotlib.pyplot as plt
         from mapclassify import classify
+        from matplotlib import colors
 
         # isolate MPL version - GH#2596
         MPL_361 = Version(matplotlib.__version__) >= Version("3.6.1")
@@ -317,6 +320,8 @@ def _explore(
         gdf.geometry[rings_mask] = gdf.geometry[rings_mask].apply(
             lambda g: LineString(g)
         )
+    if isinstance(gdf, geopandas.GeoSeries):
+        gdf = gdf.to_frame()
 
     if gdf.crs is None:
         kwargs["crs"] = "Simple"
@@ -324,12 +329,20 @@ def _explore(
     elif not gdf.crs.equals(4326):
         gdf = gdf.to_crs(4326)
 
+    # Fields which are not JSON serializable are coerced to strings
+    json_not_supported_cols = gdf.columns[
+        [is_datetime64_any_dtype(gdf[c]) for c in gdf.columns]
+    ].union(gdf.columns[gdf.dtypes == "object"])
+
+    if len(json_not_supported_cols) > 0:
+        gdf = gdf.astype({c: "string" for c in json_not_supported_cols})
+
     # create folium.Map object
     if m is None:
         # Get bounds to specify location and map extent
         bounds = gdf.total_bounds
         location = kwargs.pop("location", None)
-        if location is None:
+        if location is None and not np.isnan(bounds).all():
             x = mean([bounds[0], bounds[2]])
             y = mean([bounds[1], bounds[3]])
             location = (y, x)
@@ -382,6 +395,15 @@ def _explore(
         if fit:
             m.fit_bounds([[bounds[1], bounds[0]], [bounds[3], bounds[2]]])
 
+    if gdf.is_empty.all():
+        warnings.warn(
+            "The GeoSeries you are attempting to plot is "
+            "composed of empty geometries. Nothing has been displayed.",
+            UserWarning,
+            stacklevel=3,
+        )
+        return m
+
     for map_kwd in _MAP_KWARGS:
         kwargs.pop(map_kwd, None)
 
@@ -397,7 +419,7 @@ def _explore(
                 column_name = "__plottable_column"
                 gdf[column_name] = column
                 column = column_name
-        elif pd.api.types.is_categorical_dtype(gdf[column]):
+        elif isinstance(gdf[column].dtype, pd.CategoricalDtype):
             if categories is not None:
                 raise ValueError(
                     "Cannot specify 'categories' when column has categorical dtype"
@@ -619,11 +641,13 @@ def _explore(
         tooltip = None
         popup = None
     # escape the curly braces {{}} for jinja2 templates
-    feature_collection = gdf.__geo_interface__
+    feature_collection = gdf[
+        ~(gdf.geometry.isna() | gdf.geometry.is_empty)  # drop missing or empty geoms
+    ].__geo_interface__
     for feature in feature_collection["features"]:
         for k in feature["properties"]:
             # escape the curly braces in values
-            if type(feature["properties"][k]) == str:
+            if isinstance(feature["properties"][k], str):
                 feature["properties"][k] = re.sub(
                     r"\{{2,}",
                     lambda x: "{% raw %}" + x.group(0) + "{% endraw %}",
@@ -908,8 +932,7 @@ def _explore_geoseries(
         pass :class:`xyzservices.TileProvider` object or pass custom XYZ URL.
         The current list of built-in providers (when ``xyzservices`` is not available):
 
-        ``["OpenStreetMap", "Stamen Terrain", “Stamen Toner", “Stamen Watercolor"
-        "CartoDB positron", “CartoDB dark_matter"]``
+        ``["OpenStreetMap", "CartoDB positron", “CartoDB dark_matter"]``
 
         You can pass a custom tileset to Folium by passing a Leaflet-style URL
         to the tiles parameter: ``http://{s}.yourtiles.com/{z}/{x}/{y}.png``.
