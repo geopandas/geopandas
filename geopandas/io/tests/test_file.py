@@ -1304,7 +1304,7 @@ def test_write_read_file(test_file, engine):
 
 @pytest.mark.skipif(fiona is False, reason="Fiona not available")
 @pytest.mark.skipif(FIONA_GE_19, reason="Fiona >= 1.9 supports metadata")
-def test_to_file_metadata_unsupported_fiona_version(tmp_path, df_points, engine):
+def test_to_file_metadata_unsupported_fiona_version(tmp_path, df_points):
     metadata = {"title": "test"}
     tmp_file = tmp_path / "test.gpkg"
     match = "'metadata' keyword is only supported for Fiona >= 1.9"
@@ -1313,7 +1313,7 @@ def test_to_file_metadata_unsupported_fiona_version(tmp_path, df_points, engine)
 
 
 @pytest.mark.skipif(not FIONA_GE_19, reason="only Fiona >= 1.9 supports metadata")
-def test_to_file_metadata_supported_fiona_version(tmp_path, df_points, engine):
+def test_to_file_metadata_supported_fiona_version(tmp_path, df_points):
     metadata = {"title": "test"}
     tmp_file = tmp_path / "test.gpkg"
 
@@ -1327,7 +1327,7 @@ def test_to_file_metadata_supported_fiona_version(tmp_path, df_points, engine):
 
 @pytest.mark.skipif(pyogrio is False, reason="Pyogrio not available")
 @pytest.mark.skipif(PYOGRIO_GE_06, reason="Pyogrio >= 0.6 supports metadata")
-def test_to_file_metadata_unsupported_pyogrio_version(tmp_path, df_points, engine):
+def test_to_file_metadata_unsupported_pyogrio_version(tmp_path, df_points):
     metadata = {"title": "test"}
     match = "'metadata' keyword is only supported for Pyogrio >= 0.6"
     with pytest.raises(NotImplementedError, match=match):
@@ -1336,7 +1336,7 @@ def test_to_file_metadata_unsupported_pyogrio_version(tmp_path, df_points, engin
 
 
 @pytest.mark.skipif(not PYOGRIO_GE_06, reason="only Pyogrio >= 0.6 supports metadata")
-def test_to_file_metadata_supported_pyogrio_version(tmp_path, df_points, engine):
+def test_to_file_metadata_supported_pyogrio_version(tmp_path, df_points):
     metadata = {"title": "test"}
     tmp_file = tmp_path / "test.gpkg"
 
