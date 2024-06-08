@@ -104,6 +104,24 @@ def _check_pyogrio(func):
         )
 
 
+def _check_metadata_supported(metadata: str | None, engine: str, driver: str) -> None:
+    if metadata is None:
+        return
+    if driver != "GPKG":
+        raise NotImplementedError(
+            "The 'metadata' keyword is only supported for the GPKG driver."
+        )
+
+    if engine == "fiona" and not FIONA_GE_19:
+        raise NotImplementedError(
+            "The 'metadata' keyword is only supported for Fiona >= 1.9."
+        )
+    elif engine == "pyogrio" and not PYOGRIO_GE_06:
+        raise NotImplementedError(
+            "The 'metadata' keyword is only supported for Pyogrio >= 0.6.0"
+        )
+
+
 def _check_engine(engine, func):
     # if not specified through keyword or option, then default to "pyogrio" if
     # installed, otherwise try fiona
@@ -669,6 +687,7 @@ def _to_file(
             "to a supported format like a well-known text (WKT) using "
             "`GeoSeries.to_wkt()`.",
         )
+    _check_metadata_supported(metadata, engine, driver)
 
     if mode not in ("w", "a"):
         raise ValueError(f"'mode' should be one of 'w' or 'a', got '{mode}' instead")
@@ -687,17 +706,6 @@ def _to_file_fiona(df, filename, driver, schema, crs, mode, metadata, **kwargs):
             "The 'pyproj' package is required to write a file with a CRS, but it is not"
             " installed or does not import correctly."
         )
-
-    if metadata is not None:
-        if driver != "GPKG":
-            raise NotImplementedError(
-                "The 'metadata' keyword is only supported for the GPKG driver."
-            )
-
-        if not FIONA_GE_19:
-            raise NotImplementedError(
-                "The 'metadata' keyword is only supported for Fiona >= 1.9."
-            )
 
     if schema is None:
         schema = infer_schema(df)
@@ -731,17 +739,6 @@ def _to_file_fiona(df, filename, driver, schema, crs, mode, metadata, **kwargs):
 
 def _to_file_pyogrio(df, filename, driver, schema, crs, mode, metadata, **kwargs):
     import pyogrio
-
-    if metadata is not None:
-        if driver != "GPKG":
-            raise NotImplementedError(
-                "The 'metadata' keyword is only supported for the GPKG driver."
-            )
-
-        if not PYOGRIO_GE_06:
-            raise NotImplementedError(
-                "The 'metadata' keyword is only supported for Pyogrio >= 0.6.0"
-            )
 
     if schema is not None:
         raise ValueError(
