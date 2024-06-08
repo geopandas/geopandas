@@ -1307,12 +1307,9 @@ def test_write_read_file(test_file, engine):
 def test_to_file_metadata_unsupported_fiona_version(tmp_path, df_points, engine):
     metadata = {"title": "test"}
     tmp_file = tmp_path / "test.gpkg"
-    df_points.to_file(tmp_file, driver="GPKG", engine="fiona", metadata=metadata)
-
-    # Check that metadata is written to the file
-    with fiona.open(tmp_file) as src:
-        tags = src.tags()
-        assert tags == metadata
+    match = "'metadata' keyword is only supported for Fiona >= 1.9"
+    with pytest.raises(NotImplementedError, match=match):
+        df_points.to_file(tmp_file, driver="GPKG", engine="fiona", metadata=metadata)
 
 
 @pytest.mark.skipif(not FIONA_GE_19, reason="only Fiona >= 1.9 supports metadata")
@@ -1320,9 +1317,12 @@ def test_to_file_metadata_supported_fiona_version(tmp_path, df_points, engine):
     metadata = {"title": "test"}
     tmp_file = tmp_path / "test.gpkg"
 
-    match = "'metadata' keyword is only supported for Fiona >= 1.9"
-    with pytest.raises(NotImplementedError, match=match):
-        df_points.to_file(tmp_file, driver="GPKG", engine="fiona", metadata=metadata)
+    df_points.to_file(tmp_file, driver="GPKG", engine="fiona", metadata=metadata)
+
+    # Check that metadata is written to the file
+    with fiona.open(tmp_file) as src:
+        tags = src.tags()
+        assert tags == metadata
 
 
 @pytest.mark.skipif(pyogrio is False, reason="Pyogrio not available")
