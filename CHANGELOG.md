@@ -68,6 +68,7 @@ files based on a bounding box, and write out a bounding box column to parquet fi
   will silence the warning about mismachted indices. (#3212)
 - `GeoSeries.set_crs` can now be used to remove CRS information by passing
   `crs=None, allow_override=True`. (#3316)
+- Added ``autolim`` keyword argument to ``GeoSeries.plot()`` and ``GeoDataFrame.plot()`` (#2817).
 
 Backwards incompatible API changes:
 
