@@ -887,46 +887,6 @@ def test_write_spec_version(tmpdir, format, schema_version):
         assert metadata["columns"]["geometry"]["geometry_types"] == ["Polygon"]
 
 
-@pytest.mark.parametrize(
-    "format,version", product(["feather", "parquet"], [None] + SUPPORTED_VERSIONS)
-)
-def test_write_deprecated_version_parameter(tmpdir, format, version):
-    if format == "feather":
-        from pyarrow.feather import read_table
-
-        version = version or 2
-
-    else:
-        from pyarrow.parquet import read_table
-
-        version = version or "2.6"
-
-    filename = os.path.join(str(tmpdir), f"test.{format}")
-    gdf = geopandas.GeoDataFrame(geometry=[box(0, 0, 10, 10)], crs="EPSG:4326")
-    write = getattr(gdf, f"to_{format}")
-
-    if version in SUPPORTED_VERSIONS:
-        with pytest.warns(
-            FutureWarning,
-            match="the `version` parameter has been replaced with `schema_version`",
-        ):
-            write(filename, version=version)
-
-    else:
-        # no warning raised if not one of the captured versions
-        write(filename, version=version)
-
-    table = read_table(filename)
-    metadata = json.loads(table.schema.metadata[b"geo"])
-
-    if version in SUPPORTED_VERSIONS:
-        # version is captured as a parameter
-        assert metadata["version"] == version
-    else:
-        # version is passed to underlying writer
-        assert metadata["version"] == METADATA_VERSION
-
-
 @pytest.mark.parametrize("version", ["0.1.0", "0.4.0", "1.0.0-beta.1"])
 def test_read_versioned_file(version):
     """

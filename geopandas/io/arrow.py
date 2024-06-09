@@ -428,17 +428,6 @@ def _to_parquet(
         "pyarrow.parquet", extra="pyarrow is required for Parquet support."
     )
 
-    if kwargs and "version" in kwargs and kwargs["version"] is not None:
-        if schema_version is None and kwargs["version"] in SUPPORTED_VERSIONS:
-            warnings.warn(
-                "the `version` parameter has been replaced with `schema_version`. "
-                "`version` will instead be passed directly to the underlying "
-                "parquet writer unless `version` is 0.1.0 or 0.4.0.",
-                FutureWarning,
-                stacklevel=2,
-            )
-            schema_version = kwargs.pop("version")
-
     path = _expand_user(path)
     table = _geopandas_to_arrow(
         df,
@@ -490,17 +479,6 @@ def _to_feather(df, path, index=None, compression=None, schema_version=None, **k
 
     if Version(pyarrow.__version__) < Version("0.17.0"):
         raise ImportError("pyarrow >= 0.17 required for Feather support")
-
-    if kwargs and "version" in kwargs and kwargs["version"] is not None:
-        if schema_version is None and kwargs["version"] in SUPPORTED_VERSIONS:
-            warnings.warn(
-                "the `version` parameter has been replaced with `schema_version`. "
-                "`version` will instead be passed directly to the underlying "
-                "feather writer unless `version` is 0.1.0 or 0.4.0.",
-                FutureWarning,
-                stacklevel=2,
-            )
-            schema_version = kwargs.pop("version")
 
     path = _expand_user(path)
     table = _geopandas_to_arrow(df, index=index, schema_version=schema_version)
