@@ -1299,7 +1299,8 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
     ):
         """Write a GeoDataFrame to the Parquet format.
 
-        Any geometry columns present are serialized to WKB format in the file.
+        By default, all geometry columns present are serialized to WKB format
+        in the file.
 
         Requires 'pyarrow'.
 
@@ -1320,14 +1321,21 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
             The encoding to use for the geometry columns. Defaults to "WKB"
             for maximum interoperability. Specify "geoarrow" to use one of the
             native GeoArrow-based single-geometry type encodings.
-        schema_version : {'0.1.0', '0.4.0', '1.0.0', None}
-            GeoParquet specification version; if not provided will default to
-            latest supported version.
+            Note: the "geoarrow" option is part of the upcoming GeoParquet 1.1
+            specification, should be considered as experimental, and may not
+            be supported by all readers.
         write_covering_bbox : bool, default False
             Writes the bounding box column for each row entry with column
             name 'bbox'. Writing a bbox column can be computationally
             expensive, but allows you to specify a `bbox` in :
             func:`read_parquet` for filtered reading.
+            Note: this bbox column is part of the upcoming GeoParquet 1.1
+            specification and should be considered as experimental. While
+            writing the column is backwards compatible, using it for filtering
+            may not be supported by all readers.
+        schema_version : {'0.1.0', '0.4.0', '1.0.0', '1.1.0', None}
+            GeoParquet specification version; if not provided, will default to
+            latest supported stable version (1.0.0).
         kwargs
             Additional keyword arguments passed to :func:`pyarrow.parquet.write_table`.
 
