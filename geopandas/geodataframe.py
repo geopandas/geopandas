@@ -1804,6 +1804,9 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
         if type(copied) is pd.DataFrame:
             copied.__class__ = GeoDataFrame
             copied._geometry_column_name = self._geometry_column_name
+        if not deep:
+            for col in copied.columns[copied.dtypes == "geometry"]:
+                copied[col] = copied[col].array.view()
         return copied
 
     @doc(pd.DataFrame)
