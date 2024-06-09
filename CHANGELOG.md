@@ -134,7 +134,7 @@ New deprecations:
   ```
 - The `geopandas.use_pygeos` option has been deprecated and will be removed in GeoPandas
   1.1 (#3283)
-- Manual overriding of an existing CRS of a GeoSeries using the `crs.setter` has been deprecated
+- Manual overriding of an existing CRS of a GeoSeries or GeoDataFrame by setting the `crs` property has been deprecated
   and will be disabled in future. Use the `set_crs()` method instead (#3085).
 
 Bug fixes:
