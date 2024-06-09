@@ -112,7 +112,15 @@ def _PolygonPatch(polygon, **kwargs):
 
 
 def _plot_polygon_collection(
-    ax, geoms, values=None, color=None, cmap=None, vmin=None, vmax=None, **kwargs
+    ax,
+    geoms,
+    values=None,
+    color=None,
+    cmap=None,
+    vmin=None,
+    vmax=None,
+    autolim=True,
+    **kwargs,
 ):
     """
     Plots a collection of Polygon and MultiPolygon geometries to `ax`
@@ -133,6 +141,8 @@ def _plot_polygon_collection(
         Color to fill the polygons. Cannot be used together with `values`.
     color : single color or sequence of `N` colors
         Sets both `edgecolor` and `facecolor`
+    autolim : bool (default True)
+        Update axes data limits to contain the new geometries.
     **kwargs
         Additional keyword arguments passed to the collection
 
@@ -167,13 +177,21 @@ def _plot_polygon_collection(
         if "norm" not in kwargs:
             collection.set_clim(vmin, vmax)
 
-    ax.add_collection(collection, autolim=True)
+    ax.add_collection(collection, autolim=autolim)
     ax.autoscale_view()
     return collection
 
 
 def _plot_linestring_collection(
-    ax, geoms, values=None, color=None, cmap=None, vmin=None, vmax=None, **kwargs
+    ax,
+    geoms,
+    values=None,
+    color=None,
+    cmap=None,
+    vmin=None,
+    vmax=None,
+    autolim=True,
+    **kwargs,
 ):
     """
     Plots a collection of LineString and MultiLineString geometries to `ax`
@@ -189,6 +207,8 @@ def _plot_linestring_collection(
         have 1:1 correspondence with the geometries (not their components).
     color : single color or sequence of `N` colors
         Cannot be used together with `values`.
+    autolim : bool (default True)
+        Update axes data limits to contain the new geometries.
 
     Returns
     -------
@@ -222,7 +242,7 @@ def _plot_linestring_collection(
         if "norm" not in kwargs:
             collection.set_clim(vmin, vmax)
 
-    ax.add_collection(collection, autolim=True)
+    ax.add_collection(collection, autolim=autolim)
     ax.autoscale_view()
     return collection
 
@@ -291,7 +311,14 @@ def _plot_point_collection(
 
 
 def plot_series(
-    s, cmap=None, color=None, ax=None, figsize=None, aspect="auto", **style_kwds
+    s,
+    cmap=None,
+    color=None,
+    ax=None,
+    figsize=None,
+    aspect="auto",
+    autolim=True,
+    **style_kwds,
 ):
     """
     Plot a GeoSeries.
@@ -327,6 +354,8 @@ def plot_series(
         square appears square in the middle of the plot. This implies an
         Equirectangular projection. If None, the aspect of `ax` won't be changed. It can
         also be set manually (float) as the ratio of y-unit to x-unit.
+    autolim : bool (default True)
+        Update axes data limits to contain the new geometries.
     **style_kwds : dict
         Color options to be passed on to the actual plot function, such
         as ``edgecolor``, ``facecolor``, ``linewidth``, ``markersize``,
@@ -421,7 +450,13 @@ def plot_series(
 
         values_ = values[poly_idx] if cmap else None
         _plot_polygon_collection(
-            ax, polys, values_, facecolor=facecolor, cmap=cmap, **style_kwds
+            ax,
+            polys,
+            values_,
+            facecolor=facecolor,
+            cmap=cmap,
+            autolim=autolim,
+            **style_kwds,
         )
 
     # plot all LineStrings and MultiLineString components in same collection
@@ -431,7 +466,7 @@ def plot_series(
         color_ = expl_color[line_idx] if color_given else color
 
         _plot_linestring_collection(
-            ax, lines, values_, color=color_, cmap=cmap, **style_kwds
+            ax, lines, values_, color=color_, cmap=cmap, autolim=autolim, **style_kwds
         )
 
     # plot all Points in the same collection
@@ -468,6 +503,7 @@ def plot_dataframe(
     classification_kwds=None,
     missing_kwds=None,
     aspect="auto",
+    autolim=True,
     **style_kwds,
 ):
     """
@@ -571,7 +607,8 @@ def plot_dataframe(
         square appears square in the middle of the plot. This implies an
         Equirectangular projection. If None, the aspect of `ax` won't be changed. It can
         also be set manually (float) as the ratio of y-unit to x-unit.
-
+    autolim : bool (default True)
+        Update axes data limits to contain the new geometries.
     **style_kwds : dict
         Style options to be passed on to the actual plot function, such
         as ``edgecolor``, ``facecolor``, ``linewidth``, ``markersize``,
@@ -658,6 +695,7 @@ def plot_dataframe(
             figsize=figsize,
             markersize=markersize,
             aspect=aspect,
+            autolim=autolim,
             **style_kwds,
         )
 
@@ -797,7 +835,14 @@ def plot_dataframe(
     subset = values[poly_idx & np.invert(nan_idx)]
     if not polys.empty:
         _plot_polygon_collection(
-            ax, polys, subset, vmin=mn, vmax=mx, cmap=cmap, **style_kwds
+            ax,
+            polys,
+            subset,
+            vmin=mn,
+            vmax=mx,
+            cmap=cmap,
+            autolim=autolim,
+            **style_kwds,
         )
 
     # plot all LineStrings and MultiLineString components in same collection
@@ -805,7 +850,14 @@ def plot_dataframe(
     subset = values[line_idx & np.invert(nan_idx)]
     if not lines.empty:
         _plot_linestring_collection(
-            ax, lines, subset, vmin=mn, vmax=mx, cmap=cmap, **style_kwds
+            ax,
+            lines,
+            subset,
+            vmin=mn,
+            vmax=mx,
+            cmap=cmap,
+            autolim=autolim,
+            **style_kwds,
         )
 
     # plot all Points in the same collection

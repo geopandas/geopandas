@@ -213,7 +213,7 @@ class TestGeometryArrayCRS:
         assert s.values.crs == self.osgb
 
         # manually change CRS
-        s.crs = 4326
+        s = s.set_crs(4326, allow_override=True)
         assert s.crs == self.wgs
         assert s.values.crs == self.wgs
 
@@ -262,7 +262,7 @@ class TestGeometryArrayCRS:
         arr = from_shapely(self.geoms)
         s = GeoSeries(arr, crs=27700)
         df = GeoDataFrame(geometry=s)
-        df.crs = 4326
+        df = df.set_crs(crs="epsg:4326", allow_override=True)
         assert df.crs == self.wgs
         assert df.geometry.crs == self.wgs
         assert df.geometry.values.crs == self.wgs
@@ -418,7 +418,7 @@ class TestGeometryArrayCRS:
             FutureWarning, match="You are adding a column named 'geometry'"
         ):
             df["geometry"] = scalar
-        df.crs = 4326
+        df = df.set_crs(4326)
         assert df.crs == self.wgs
         assert df.geometry.crs == self.wgs
         assert df.geometry.values.crs == self.wgs
@@ -741,6 +741,7 @@ class TestSetCRS:
         assert non_naive.crs == "EPSG:3857"
         assert result.crs == "EPSG:3857"
 
-        # raise error when no crs is passed
-        with pytest.raises(ValueError):
-            naive.set_crs(crs=None, epsg=None)
+        # set CRS to None
+        result = non_naive.set_crs(crs=None, allow_override=True)
+        assert result.crs is None
+        assert non_naive.crs == "EPSG:3857"

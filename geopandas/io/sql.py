@@ -231,7 +231,7 @@ def _get_geometry_type(gdf):
 
 def _get_srid_from_crs(gdf):
     """
-    Get EPSG code from CRS if available. If not, return -1.
+    Get EPSG code from CRS if available. If not, return 0.
     """
 
     # Use geoalchemy2 default for srid
@@ -257,7 +257,7 @@ def _get_srid_from_crs(gdf):
             warnings.warn(warning_msg, UserWarning, stacklevel=2)
 
     if srid is None:
-        srid = -1
+        srid = 0
         warnings.warn(warning_msg, UserWarning, stacklevel=2)
 
     return srid

@@ -20,6 +20,7 @@ from geopandas.array import to_wkb
 from geopandas.io.arrow import (
     METADATA_VERSION,
     SUPPORTED_VERSIONS,
+    _convert_bbox_to_parquet_filter,
     _create_metadata,
     _decode_metadata,
     _encode_metadata,
@@ -27,7 +28,7 @@ from geopandas.io.arrow import (
     _get_filesystem_path,
     _remove_id_from_member_of_ensembles,
     _validate_dataframe,
-    _validate_metadata,
+    _validate_geo_metadata,
 )
 
 import pytest
@@ -40,6 +41,10 @@ DATA_PATH = pathlib.Path(os.path.dirname(__file__)) / "data"
 
 # Skip all tests in this module if pyarrow is not available
 pyarrow = pytest.importorskip("pyarrow")
+
+import pyarrow.compute as pc
+import pyarrow.parquet as pq
+from pyarrow import feather
 
 
 @pytest.fixture(
@@ -63,7 +68,7 @@ def file_format(request):
 
 def test_create_metadata(naturalearth_lowres):
     df = read_file(naturalearth_lowres)
-    metadata = _create_metadata(df)
+    metadata = _create_metadata(df, geometry_encoding={"geometry": "WKB"})
 
     assert isinstance(metadata, dict)
     assert metadata["version"] == METADATA_VERSION
@@ -85,6 +90,10 @@ def test_create_metadata(naturalearth_lowres):
 
     assert metadata["creator"]["library"] == "geopandas"
     assert metadata["creator"]["version"] == geopandas.__version__
+
+    # specifying non-WKB encoding sets default schema to 1.1.0
+    metadata = _create_metadata(df, geometry_encoding={"geometry": "point"})
+    assert metadata["version"] == "1.1.0"
 
 
 def test_create_metadata_with_z_geometries():
@@ -130,16 +139,22 @@ def test_create_metadata_with_z_geometries():
             ],
         },
     )
-    metadata = _create_metadata(df)
+    metadata = _create_metadata(df, geometry_encoding={"geometry": "WKB"})
     assert sorted(metadata["columns"]["geometry"]["geometry_types"]) == sorted(
         geometry_types
     )
     # only 3D geometries
-    metadata = _create_metadata(df.iloc[1::2])
+    metadata = _create_metadata(df.iloc[1::2], geometry_encoding={"geometry": "WKB"})
     assert all(
         geom_type.endswith(" Z")
         for geom_type in metadata["columns"]["geometry"]["geometry_types"]
     )
+
+    metadata = _create_metadata(df.iloc[5:7], geometry_encoding={"geometry": "WKB"})
+    assert metadata["columns"]["geometry"]["geometry_types"] == [
+        "MultiPolygon",
+        "Polygon Z",
+    ]
 
 
 def test_crs_metadata_datum_ensemble():
@@ -160,10 +175,16 @@ def test_crs_metadata_datum_ensemble():
     assert pyproj.CRS(crs_json) == crs
 
 
-def test_write_metadata_invalid_spec_version():
+def test_write_metadata_invalid_spec_version(tmp_path):
     gdf = geopandas.GeoDataFrame(geometry=[box(0, 0, 10, 10)], crs="EPSG:4326")
     with pytest.raises(ValueError, match="schema_version must be one of"):
         _create_metadata(gdf, schema_version="invalid")
+
+    with pytest.raises(
+        ValueError,
+        match="'geoarrow' encoding is only supported with schema version >= 1.1.0",
+    ):
+        gdf.to_parquet(tmp_path, schema_version="1.0.0", geometry_encoding="geoarrow")
 
 
 def test_encode_metadata():
@@ -204,8 +225,8 @@ def test_validate_dataframe(naturalearth_lowres):
         _validate_dataframe("not a dataframe")
 
 
-def test_validate_metadata_valid():
-    _validate_metadata(
+def test_validate_geo_metadata_valid():
+    _validate_geo_metadata(
         {
             "primary_column": "geometry",
             "columns": {"geometry": {"crs": None, "encoding": "WKB"}},
@@ -213,7 +234,7 @@ def test_validate_metadata_valid():
         }
     )
 
-    _validate_metadata(
+    _validate_geo_metadata(
         {
             "primary_column": "geometry",
             "columns": {"geometry": {"crs": None, "encoding": "WKB"}},
@@ -221,7 +242,7 @@ def test_validate_metadata_valid():
         }
     )
 
-    _validate_metadata(
+    _validate_geo_metadata(
         {
             "primary_column": "geometry",
             "columns": {
@@ -290,12 +311,12 @@ def test_validate_metadata_valid():
         ),
     ],
 )
-def test_validate_metadata_invalid(metadata, error):
+def test_validate_geo_metadata_invalid(metadata, error):
     with pytest.raises(ValueError, match=error):
-        _validate_metadata(metadata)
+        _validate_geo_metadata(metadata)
 
 
-def test_validate_metadata_edges():
+def test_validate_geo_metadata_edges():
     metadata = {
         "primary_column": "geometry",
         "columns": {"geometry": {"crs": None, "encoding": "WKB", "edges": "spherical"}},
@@ -305,7 +326,7 @@ def test_validate_metadata_edges():
         UserWarning,
         match="The geo metadata indicate that column 'geometry' has spherical edges",
     ):
-        _validate_metadata(metadata)
+        _validate_geo_metadata(metadata)
 
 
 def test_to_parquet_fails_on_invalid_engine(tmpdir):
@@ -328,7 +349,13 @@ def test_to_parquet_does_not_pass_engine_along(mock_to_parquet):
     # assert that engine keyword is not passed through to _to_parquet (and thus
     # parquet.write_table)
     mock_to_parquet.assert_called_with(
-        df, "", compression="snappy", index=None, schema_version=None
+        df,
+        "",
+        compression="snappy",
+        geometry_encoding="WKB",
+        index=None,
+        schema_version=None,
+        write_covering_bbox=False,
     )
 
 
@@ -406,6 +433,37 @@ def test_index(tmpdir, file_format, naturalearth_lowres):
     writer(df, filename, index=False)
     pq_df = reader(filename)
     assert_geodataframe_equal(df.reset_index(drop=True), pq_df)
+
+
+def test_column_order(tmpdir, file_format, naturalearth_lowres):
+    """The order of columns should be preserved in the output."""
+    reader, writer = file_format
+
+    df = read_file(naturalearth_lowres)
+    df = df.set_index("iso_a3")
+    df["geom2"] = df.geometry.representative_point()
+    table = _geopandas_to_arrow(df)
+    custom_column_order = [
+        "iso_a3",
+        "geom2",
+        "pop_est",
+        "continent",
+        "name",
+        "geometry",
+        "gdp_md_est",
+    ]
+    table = table.select(custom_column_order)
+
+    if reader is read_parquet:
+        filename = os.path.join(str(tmpdir), "test_column_order.pq")
+        pq.write_table(table, filename)
+    else:
+        filename = os.path.join(str(tmpdir), "test_column_order.feather")
+        feather.write_feather(table, filename)
+
+    result = reader(filename)
+    assert list(result.columns) == custom_column_order[1:]
+    assert_geodataframe_equal(result, df[custom_column_order[1:]])
 
 
 @pytest.mark.parametrize("compression", ["snappy", "gzip", "brotli", None])
@@ -622,7 +680,7 @@ def test_missing_crs(tmpdir, file_format, naturalearth_lowres):
     reader, writer = file_format
 
     df = read_file(naturalearth_lowres)
-    df.crs = None
+    df.geometry.array.crs = None
 
     filename = os.path.join(str(tmpdir), "test.pq")
     writer(df, filename)
@@ -829,46 +887,6 @@ def test_write_spec_version(tmpdir, format, schema_version):
         assert metadata["columns"]["geometry"]["geometry_types"] == ["Polygon"]
 
 
-@pytest.mark.parametrize(
-    "format,version", product(["feather", "parquet"], [None] + SUPPORTED_VERSIONS)
-)
-def test_write_deprecated_version_parameter(tmpdir, format, version):
-    if format == "feather":
-        from pyarrow.feather import read_table
-
-        version = version or 2
-
-    else:
-        from pyarrow.parquet import read_table
-
-        version = version or "2.6"
-
-    filename = os.path.join(str(tmpdir), f"test.{format}")
-    gdf = geopandas.GeoDataFrame(geometry=[box(0, 0, 10, 10)], crs="EPSG:4326")
-    write = getattr(gdf, f"to_{format}")
-
-    if version in SUPPORTED_VERSIONS:
-        with pytest.warns(
-            FutureWarning,
-            match="the `version` parameter has been replaced with `schema_version`",
-        ):
-            write(filename, version=version)
-
-    else:
-        # no warning raised if not one of the captured versions
-        write(filename, version=version)
-
-    table = read_table(filename)
-    metadata = json.loads(table.schema.metadata[b"geo"])
-
-    if version in SUPPORTED_VERSIONS:
-        # version is captured as a parameter
-        assert metadata["version"] == version
-    else:
-        # version is passed to underlying writer
-        assert metadata["version"] == METADATA_VERSION
-
-
 @pytest.mark.parametrize("version", ["0.1.0", "0.4.0", "1.0.0-beta.1"])
 def test_read_versioned_file(version):
     """
@@ -916,7 +934,11 @@ def test_read_gdal_files():
     and then the gpkg file is converted to Parquet/Arrow with:
     $ ogr2ogr -f Parquet -lco FID= test_data_gdal350.parquet test_data.gpkg
     $ ogr2ogr -f Arrow -lco FID= -lco GEOMETRY_ENCODING=WKB test_data_gdal350.arrow test_data.gpkg
+
+    Repeated for GDAL 3.9 which adds a bbox covering column:
+    $ ogr2ogr -f Parquet -lco FID= test_data_gdal390.parquet test_data.gpkg
     """  # noqa: E501
+    pytest.importorskip("pyproj")
     expected = geopandas.GeoDataFrame(
         {"col_str": ["a", "b"], "col_int": [1, 2], "col_float": [0.1, 0.2]},
         geometry=[MultiPolygon([box(0, 0, 1, 1), box(2, 2, 3, 3)]), box(4, 4, 5, 5)],
@@ -928,6 +950,17 @@ def test_read_gdal_files():
 
     df = geopandas.read_feather(DATA_PATH / "arrow" / "test_data_gdal350.arrow")
     assert_geodataframe_equal(df, expected, check_crs=True)
+
+    df = geopandas.read_parquet(DATA_PATH / "arrow" / "test_data_gdal390.parquet")
+    # recent GDAL no longer writes CRS in metadata in case of EPSG:4326, so comes back
+    # as default OGC:CRS84
+    expected = expected.to_crs("OGC:CRS84")
+    assert_geodataframe_equal(df, expected, check_crs=True)
+
+    df = geopandas.read_parquet(
+        DATA_PATH / "arrow" / "test_data_gdal390.parquet", bbox=(0, 0, 2, 2)
+    )
+    assert len(df) == 1
 
 
 def test_parquet_read_partitioned_dataset(tmpdir, naturalearth_lowres):
@@ -967,7 +1000,6 @@ def test_parquet_read_partitioned_dataset_fsspec(tmpdir, naturalearth_lowres):
     ["point", "linestring", "polygon", "multipoint", "multilinestring", "multipolygon"],
 )
 def test_read_parquet_geoarrow(geometry_type):
-
     result = geopandas.read_parquet(
         DATA_PATH
         / "arrow"
@@ -981,3 +1013,320 @@ def test_read_parquet_geoarrow(geometry_type):
         / f"data-{geometry_type}-encoding_wkb.parquet"
     )
     assert_geodataframe_equal(result, expected, check_crs=True)
+
+
+@pytest.mark.parametrize(
+    "geometry_type",
+    ["point", "linestring", "polygon", "multipoint", "multilinestring", "multipolygon"],
+)
+def test_geoarrow_roundtrip(tmp_path, geometry_type):
+
+    df = geopandas.read_parquet(
+        DATA_PATH
+        / "arrow"
+        / "geoparquet"
+        / f"data-{geometry_type}-encoding_wkb.parquet"
+    )
+
+    df.to_parquet(tmp_path / "test.parquet", geometry_encoding="geoarrow")
+    result = geopandas.read_parquet(tmp_path / "test.parquet")
+    assert_geodataframe_equal(result, df, check_crs=True)
+
+
+def test_to_parquet_bbox_structure_and_metadata(tmpdir, naturalearth_lowres):
+    # check metadata being written for covering.
+    from pyarrow import parquet
+
+    df = read_file(naturalearth_lowres)
+    filename = os.path.join(str(tmpdir), "test.pq")
+    df.to_parquet(filename, write_covering_bbox=True)
+
+    table = parquet.read_table(filename)
+    metadata = json.loads(table.schema.metadata[b"geo"].decode("utf-8"))
+    assert metadata["columns"]["geometry"]["covering"] == {
+        "bbox": {
+            "xmin": ["bbox", "xmin"],
+            "ymin": ["bbox", "ymin"],
+            "xmax": ["bbox", "xmax"],
+            "ymax": ["bbox", "ymax"],
+        }
+    }
+    assert "bbox" in table.schema.names
+    assert [field.name for field in table.schema.field("bbox").type] == [
+        "xmin",
+        "ymin",
+        "xmax",
+        "ymax",
+    ]
+
+
+@pytest.mark.parametrize(
+    "geometry, expected_bbox",
+    [
+        (Point(1, 3), {"xmin": 1.0, "ymin": 3.0, "xmax": 1.0, "ymax": 3.0}),
+        (
+            LineString([(1, 1), (3, 3)]),
+            {"xmin": 1.0, "ymin": 1.0, "xmax": 3.0, "ymax": 3.0},
+        ),
+        (
+            Polygon([(2, 1), (1, 2), (2, 3), (3, 2)]),
+            {"xmin": 1.0, "ymin": 1.0, "xmax": 3.0, "ymax": 3.0},
+        ),
+        (
+            MultiPolygon([box(0, 0, 1, 1), box(2, 2, 3, 3), box(4, 4, 5, 5)]),
+            {"xmin": 0.0, "ymin": 0.0, "xmax": 5.0, "ymax": 5.0},
+        ),
+    ],
+    ids=["Point", "LineString", "Polygon", "Multipolygon"],
+)
+def test_to_parquet_bbox_values(tmpdir, geometry, expected_bbox):
+    # check bbox bounds being written for different geometry types.
+    import pyarrow.parquet as pq
+
+    df = GeoDataFrame(data=[[1, 2]], columns=["a", "b"], geometry=[geometry])
+    filename = os.path.join(str(tmpdir), "test.pq")
+
+    df.to_parquet(filename, write_covering_bbox=True)
+
+    result = pq.read_table(filename).to_pandas()
+    assert result["bbox"][0] == expected_bbox
+
+
+def test_read_parquet_bbox_single_point(tmpdir):
+    # confirm that on a single point, bbox will pick it up.
+    df = GeoDataFrame(data=[[1, 2]], columns=["a", "b"], geometry=[Point(1, 1)])
+    filename = os.path.join(str(tmpdir), "test.pq")
+    df.to_parquet(filename, write_covering_bbox=True)
+    pq_df = read_parquet(filename, bbox=(1, 1, 1, 1))
+    assert len(pq_df) == 1
+    assert pq_df.geometry[0] == Point(1, 1)
+
+
+@pytest.mark.parametrize("geometry_name", ["geometry", "custum_geom_col"])
+def test_read_parquet_bbox(tmpdir, naturalearth_lowres, geometry_name):
+    # check bbox is being used to filter results.
+    df = read_file(naturalearth_lowres)
+    if geometry_name != "geometry":
+        df = df.rename_geometry(geometry_name)
+
+    filename = os.path.join(str(tmpdir), "test.pq")
+    df.to_parquet(filename, write_covering_bbox=True)
+
+    pq_df = read_parquet(filename, bbox=(0, 0, 10, 10))
+
+    assert pq_df["name"].values.tolist() == [
+        "France",
+        "Benin",
+        "Nigeria",
+        "Cameroon",
+        "Togo",
+        "Ghana",
+        "Burkina Faso",
+        "Gabon",
+        "Eq. Guinea",
+    ]
+
+
+@pytest.mark.parametrize("geometry_name", ["geometry", "custum_geom_col"])
+def test_read_parquet_bbox_partitioned(tmpdir, naturalearth_lowres, geometry_name):
+    # check bbox is being used to filter results on partioned data.
+    df = read_file(naturalearth_lowres)
+    if geometry_name != "geometry":
+        df = df.rename_geometry(geometry_name)
+
+    # manually create partitioned dataset
+    basedir = tmpdir / "partitioned_dataset"
+    basedir.mkdir()
+    df[:100].to_parquet(basedir / "data1.parquet", write_covering_bbox=True)
+    df[100:].to_parquet(basedir / "data2.parquet", write_covering_bbox=True)
+
+    pq_df = read_parquet(basedir, bbox=(0, 0, 10, 10))
+
+    assert pq_df["name"].values.tolist() == [
+        "France",
+        "Benin",
+        "Nigeria",
+        "Cameroon",
+        "Togo",
+        "Ghana",
+        "Burkina Faso",
+        "Gabon",
+        "Eq. Guinea",
+    ]
+
+
+@pytest.mark.parametrize(
+    "geometry, bbox",
+    [
+        (LineString([(1, 1), (3, 3)]), (1.5, 1.5, 3.5, 3.5)),
+        (LineString([(1, 1), (3, 3)]), (3, 3, 3, 3)),
+        (LineString([(1, 1), (3, 3)]), (1.5, 1.5, 2.5, 2.5)),
+        (Polygon([(0, 0), (4, 0), (4, 4), (0, 4)]), (1, 1, 3, 3)),
+        (Polygon([(0, 0), (4, 0), (4, 4), (0, 4)]), (1, 1, 5, 5)),
+        (Polygon([(0, 0), (4, 0), (4, 4), (0, 4)]), (2, 2, 4, 4)),
+        (Polygon([(0, 0), (4, 0), (4, 4), (0, 4)]), (4, 4, 4, 4)),
+        (Polygon([(0, 0), (4, 0), (4, 4), (0, 4)]), (1, 1, 5, 3)),
+    ],
+)
+def test_read_parquet_bbox_partial_overlap_of_geometry(tmpdir, geometry, bbox):
+    df = GeoDataFrame(data=[[1, 2]], columns=["a", "b"], geometry=[geometry])
+    filename = os.path.join(str(tmpdir), "test.pq")
+    df.to_parquet(filename, write_covering_bbox=True)
+
+    pq_df = read_parquet(filename, bbox=bbox)
+    assert len(pq_df) == 1
+
+
+def test_read_parquet_no_bbox(tmpdir, naturalearth_lowres):
+    # check error message when parquet lacks a bbox column but
+    # want to use bbox kwarg in read_parquet.
+    df = read_file(naturalearth_lowres)
+    filename = os.path.join(str(tmpdir), "test.pq")
+    df.to_parquet(filename)
+    with pytest.raises(ValueError, match="Specifying 'bbox' not supported"):
+        read_parquet(filename, bbox=(0, 0, 20, 20))
+
+
+def test_read_parquet_no_bbox_partitioned(tmpdir, naturalearth_lowres):
+    # check error message when partitioned parquet data does not have
+    # a bbox column but want to use kwarg to read_parquet.
+    df = read_file(naturalearth_lowres)
+
+    # manually create partitioned dataset
+    basedir = tmpdir / "partitioned_dataset"
+    basedir.mkdir()
+    df[:100].to_parquet(basedir / "data1.parquet")
+    df[100:].to_parquet(basedir / "data2.parquet")
+
+    with pytest.raises(ValueError, match="Specifying 'bbox' not supported"):
+        read_parquet(basedir, bbox=(0, 0, 20, 20))
+
+
+def test_convert_bbox_to_parquet_filter():
+    # check conversion of bbox to parquet filter expression
+    import pyarrow.compute as pc
+
+    bbox = (0, 0, 25, 35)
+    expected = ~(
+        (pc.field(("bbox", "xmin")) > 25)
+        | (pc.field(("bbox", "ymin")) > 35)
+        | (pc.field(("bbox", "xmax")) < 0)
+        | (pc.field(("bbox", "ymax")) < 0)
+    )
+    assert expected.equals(_convert_bbox_to_parquet_filter(bbox, "bbox"))
+
+
+def test_read_parquet_bbox_column_default_behaviour(tmpdir, naturalearth_lowres):
+    # check that bbox column is not read in by default
+
+    df = read_file(naturalearth_lowres)
+    filename = os.path.join(str(tmpdir), "test.pq")
+    df.to_parquet(filename, write_covering_bbox=True)
+    result1 = read_parquet(filename)
+    assert "bbox" not in result1
+
+    result2 = read_parquet(filename, columns=["name", "geometry"])
+    assert "bbox" not in result2
+    assert list(result2.columns) == ["name", "geometry"]
+
+
+@pytest.mark.parametrize(
+    "filters",
+    [
+        [("gdp_md_est", ">", 20000)],
+        pc.field("gdp_md_est") > 20000,
+    ],
+)
+def test_read_parquet_filters_and_bbox(tmpdir, naturalearth_lowres, filters):
+    df = read_file(naturalearth_lowres)
+    filename = os.path.join(str(tmpdir), "test.pq")
+    df.to_parquet(filename, write_covering_bbox=True)
+
+    result = read_parquet(filename, filters=filters, bbox=(0, 0, 20, 20))
+    assert result["name"].values.tolist() == [
+        "Dem. Rep. Congo",
+        "France",
+        "Nigeria",
+        "Cameroon",
+        "Ghana",
+        "Algeria",
+        "Libya",
+    ]
+
+
+@pytest.mark.parametrize(
+    "filters",
+    [
+        ([("gdp_md_est", ">", 15000), ("gdp_md_est", "<", 16000)]),
+        ((pc.field("gdp_md_est") > 15000) & (pc.field("gdp_md_est") < 16000)),
+    ],
+)
+def test_read_parquet_filters_without_bbox(tmpdir, naturalearth_lowres, filters):
+    df = read_file(naturalearth_lowres)
+    filename = os.path.join(str(tmpdir), "test.pq")
+    df.to_parquet(filename, write_covering_bbox=True)
+
+    result = read_parquet(filename, filters=filters)
+    assert result["name"].values.tolist() == ["Burkina Faso", "Mozambique", "Albania"]
+
+
+def test_read_parquet_file_with_custom_bbox_encoding_fieldname(tmpdir):
+    import pyarrow.parquet as pq
+
+    data = {
+        "name": ["point1", "point2", "point3"],
+        "geometry": [Point(1, 1), Point(2, 2), Point(3, 3)],
+    }
+    df = GeoDataFrame(data)
+    filename = os.path.join(str(tmpdir), "test.pq")
+
+    table = _geopandas_to_arrow(
+        df,
+        schema_version="1.1.0",
+        write_covering_bbox=True,
+    )
+    metadata = table.schema.metadata  # rename_columns results in wiping of metadata
+
+    table = table.rename_columns(["name", "geometry", "custom_bbox_name"])
+
+    geo_metadata = json.loads(metadata[b"geo"])
+    geo_metadata["columns"]["geometry"]["covering"]["bbox"] = {
+        "xmin": ["custom_bbox_name", "xmin"],
+        "ymin": ["custom_bbox_name", "ymin"],
+        "xmax": ["custom_bbox_name", "xmax"],
+        "ymax": ["custom_bbox_name", "ymax"],
+    }
+    metadata.update({b"geo": _encode_metadata(geo_metadata)})
+
+    table = table.replace_schema_metadata(metadata)
+    pq.write_table(table, filename)
+
+    pq_table = pq.read_table(filename)
+    assert "custom_bbox_name" in pq_table.schema.names
+
+    pq_df = read_parquet(filename, bbox=(1.5, 1.5, 2.5, 2.5))
+    assert pq_df["name"].values.tolist() == ["point2"]
+
+
+def test_to_parquet_with_existing_bbox_column(tmpdir, naturalearth_lowres):
+    df = read_file(naturalearth_lowres)
+    df = df.assign(bbox=[0] * len(df))
+    filename = os.path.join(str(tmpdir), "test.pq")
+
+    with pytest.raises(
+        ValueError, match="An existing column 'bbox' already exists in the dataframe"
+    ):
+        df.to_parquet(filename, write_covering_bbox=True)
+
+
+def test_read_parquet_bbox_points(tmp_path):
+    # check bbox filtering on point geometries
+    df = geopandas.GeoDataFrame(
+        {"col": range(10)}, geometry=[Point(i, i) for i in range(10)]
+    )
+    df.to_parquet(tmp_path / "test.parquet", geometry_encoding="geoarrow")
+
+    result = geopandas.read_parquet(tmp_path / "test.parquet", bbox=(0, 0, 10, 10))
+    assert len(result) == 10
+    result = geopandas.read_parquet(tmp_path / "test.parquet", bbox=(3, 3, 5, 5))
+    assert len(result) == 3

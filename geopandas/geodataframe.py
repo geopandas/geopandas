@@ -53,7 +53,10 @@ def _ensure_geometry(data, crs=None):
         if data.crs is None and crs is not None:
             # Avoids caching issues/crs sharing issues
             data = data.copy()
-            data.crs = crs
+            if isinstance(data, GeometryArray):
+                data.crs = crs
+            else:
+                data.array.crs = crs
         return data
     else:
         if isinstance(data, Series):
@@ -388,7 +391,10 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         # Check that we are using a listlike of geometries
         level = _ensure_geometry(level, crs=crs)
         # ensure_geometry only sets crs on level if it has crs==None
-        level.crs = crs
+        if isinstance(level, GeoSeries):
+            level.array.crs = crs
+        else:
+            level.crs = crs
         # update _geometry_column_name prior to assignment
         # to avoid default is None warning
         frame._geometry_column_name = geo_column_name
@@ -515,6 +521,14 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             )
 
         if hasattr(self.geometry.values, "crs"):
+            if self.crs is not None:
+                warnings.warn(
+                    "Overriding the CRS of a GeoDataFrame that already has CRS. "
+                    "This unsafe behavior will be deprecated in future versions. "
+                    "Use GeoDataFrame.set_crs method instead",
+                    stacklevel=2,
+                    category=DeprecationWarning,
+                )
             self.geometry.values.crs = value
         else:
             # column called 'geometry' without geometry
@@ -801,6 +815,42 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         )
 
         return df
+
+    @classmethod
+    def from_arrow(cls, table, geometry=None):
+        """
+        Construct a GeoDataFrame from a Arrow table object based on GeoArrow
+        extension types.
+
+        See https://geoarrow.org/ for details on the GeoArrow specification.
+
+        This functions accepts any tabular Arrow object implementing
+        the `Arrow PyCapsule Protocol`_ (i.e. having an ``__arrow_c_array__``
+        or ``__arrow_c_stream__`` method).
+
+        .. _Arrow PyCapsule Protocol: https://arrow.apache.org/docs/format/CDataInterface/PyCapsuleInterface.html
+
+        .. versionadded:: 1.0
+
+        Parameters
+        ----------
+        table : pyarrow.Table or Arrow-compatible table
+            Any tabular object implementing the Arrow PyCapsule Protocol
+            (i.e. has an ``__arrow_c_array__`` or ``__arrow_c_stream__``
+            method). This table should have at least one column with a
+            geoarrow geometry type.
+        geometry : str, default None
+            The name of the geometry column to set as the active geometry
+            column. If None, the first geometry column found will be used.
+
+        Returns
+        -------
+        GeoDataFrame
+
+        """
+        from geopandas.io._geoarrow import arrow_to_geopandas
+
+        return arrow_to_geopandas(table, geometry=geometry)
 
     def to_json(
         self, na="null", show_bbox=False, drop_id=False, to_wgs84=False, **kwargs
@@ -1149,8 +1199,103 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
 
         return df
 
+    def to_arrow(
+        self, *, index=None, geometry_encoding="WKB", interleaved=True, include_z=None
+    ):
+        """Encode a GeoDataFrame to GeoArrow format.
+
+        See https://geoarrow.org/ for details on the GeoArrow specification.
+
+        This functions returns a generic Arrow data object implementing
+        the `Arrow PyCapsule Protocol`_ (i.e. having an ``__arrow_c_stream__``
+        method). This object can then be consumed by your Arrow implementation
+        of choice that supports this protocol.
+
+        .. _Arrow PyCapsule Protocol: https://arrow.apache.org/docs/format/CDataInterface/PyCapsuleInterface.html
+
+        .. versionadded:: 1.0
+
+        Parameters
+        ----------
+        index : bool, default None
+            If ``True``, always include the dataframe's index(es) as columns
+            in the file output.
+            If ``False``, the index(es) will not be written to the file.
+            If ``None``, the index(ex) will be included as columns in the file
+            output except `RangeIndex` which is stored as metadata only.
+        geometry_encoding : {'WKB', 'geoarrow' }, default 'WKB'
+            The GeoArrow encoding to use for the data conversion.
+        interleaved : bool, default True
+            Only relevant for 'geoarrow' encoding. If True, the geometries'
+            coordinates are interleaved in a single fixed size list array.
+            If False, the coordinates are stored as separate arrays in a
+            struct type.
+        include_z : bool, default None
+            Only relevant for 'geoarrow' encoding (for WKB, the dimensionality
+            of the individial geometries is preserved).
+            If False, return 2D geometries. If True, include the third dimension
+            in the output (if a geometry has no third dimension, the z-coordinates
+            will be NaN). By default, will infer the dimensionality from the
+            input geometries. Note that this inference can be unreliable with
+            empty geometries (for a guaranteed result, it is recommended to
+            specify the keyword).
+
+        Returns
+        -------
+        ArrowTable
+            A generic Arrow table object with geometry columns encoded to
+            GeoArrow.
+
+        Examples
+        --------
+        >>> from shapely.geometry import Point
+        >>> data = {'col1': ['name1', 'name2'], 'geometry': [Point(1, 2), Point(2, 1)]}
+        >>> gdf = geopandas.GeoDataFrame(data)
+        >>> gdf
+            col1     geometry
+        0  name1  POINT (1 2)
+        1  name2  POINT (2 1)
+
+        >>> arrow_table = gdf.to_arrow()
+        >>> arrow_table
+        <geopandas.io._geoarrow.ArrowTable object at ...>
+
+        The returned data object needs to be consumed by a library implementing
+        the Arrow PyCapsule Protocol. For example, wrapping the data as a
+        pyarrow.Table (requires pyarrow >= 14.0):
+
+        >>> import pyarrow as pa
+        >>> table = pa.table(arrow_table)
+        >>> table
+        pyarrow.Table
+        col1: string
+        geometry: binary
+        ----
+        col1: [["name1","name2"]]
+        geometry: [[0101000000000000000000F03F0000000000000040,\
+01010000000000000000000040000000000000F03F]]
+
+        """
+        from geopandas.io._geoarrow import ArrowTable, geopandas_to_arrow
+
+        table, _ = geopandas_to_arrow(
+            self,
+            index=index,
+            geometry_encoding=geometry_encoding,
+            interleaved=interleaved,
+            include_z=include_z,
+        )
+        return ArrowTable(table)
+
     def to_parquet(
-        self, path, index=None, compression="snappy", schema_version=None, **kwargs
+        self,
+        path,
+        index=None,
+        compression="snappy",
+        geometry_encoding="WKB",
+        write_covering_bbox=False,
+        schema_version=None,
+        **kwargs,
     ):
         """Write a GeoDataFrame to the Parquet format.
 
@@ -1171,9 +1316,18 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
             output except `RangeIndex` which is stored as metadata only.
         compression : {'snappy', 'gzip', 'brotli', None}, default 'snappy'
             Name of the compression to use. Use ``None`` for no compression.
+        geometry_encoding : {'WKB', 'geoarrow'}, default 'WKB'
+            The encoding to use for the geometry columns. Defaults to "WKB"
+            for maximum interoperability. Specify "geoarrow" to use one of the
+            native GeoArrow-based single-geometry type encodings.
         schema_version : {'0.1.0', '0.4.0', '1.0.0', None}
             GeoParquet specification version; if not provided will default to
             latest supported version.
+        write_covering_bbox : bool, default False
+            Writes the bounding box column for each row entry with column
+            name 'bbox'. Writing a bbox column can be computationally
+            expensive, but allows you to specify a `bbox` in :
+            func:`read_parquet` for filtered reading.
         kwargs
             Additional keyword arguments passed to :func:`pyarrow.parquet.write_table`.
 
@@ -1204,8 +1358,10 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
             self,
             path,
             compression=compression,
+            geometry_encoding=geometry_encoding,
             index=index,
             schema_version=schema_version,
+            write_covering_bbox=write_covering_bbox,
             **kwargs,
         )
 
@@ -1363,16 +1519,20 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
         If there are multiple geometry columns within the GeoDataFrame, only
         the CRS of the active geometry column is set.
 
-        NOTE: The underlying geometries are not transformed to this CRS. To
+        Pass ``None`` to remove CRS from the active geometry column.
+
+        Notes
+        -----
+        The underlying geometries are not transformed to this CRS. To
         transform the geometries to a new CRS, use the ``to_crs`` method.
 
         Parameters
         ----------
-        crs : pyproj.CRS, optional if `epsg` is specified
+        crs : pyproj.CRS | None, optional
             The value can be anything accepted
             by :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
             such as an authority string (eg "EPSG:4326") or a WKT string.
-        epsg : int, optional if `crs` is specified
+        epsg : int, optional
             EPSG code specifying the projection.
         inplace : bool, default False
             If True, the CRS of the GeoDataFrame will be changed in place
@@ -1689,7 +1849,12 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
             return _geodataframe_constructor_with_fallback(
                 pd.DataFrame._from_mgr(mgr, axes)
             )
-        return GeoDataFrame._from_mgr(mgr, axes)
+        gdf = GeoDataFrame._from_mgr(mgr, axes)
+        # _from_mgr doesn't preserve metadata (expect __finalize__ to be called)
+        # still need to mimic __init__ behaviour with geometry=None
+        if (gdf.columns == "geometry").sum() == 1:  # only if "geometry" is single col
+            gdf._geometry_column_name = "geometry"
+        return gdf
 
     @property
     def _constructor_sliced(self):

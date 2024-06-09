@@ -490,7 +490,7 @@ class TestIO:
         table = "nybb"
 
         # Write to db
-        df_nybb.crs = None
+        df_nybb.geometry.array.crs = None
         with pytest.warns(UserWarning, match="Could not parse CRS from the GeoDataF"):
             write_postgis(df_nybb, con=engine, name=table, if_exists="replace")
         # Validate that srid is -1
@@ -772,6 +772,22 @@ class TestIO:
         # Should raise error when appending
         with pytest.raises(ValueError, match="CRS of the target table"):
             write_postgis(df_nybb2, con=engine, name=table, if_exists="append")
+
+    @pytest.mark.parametrize("engine_postgis", POSTGIS_DRIVERS, indirect=True)
+    def test_append_without_crs(self, engine_postgis, df_nybb):
+        # This test was included in #3328 when the default value for no
+        # CRS was changed from an SRID of -1 to 0. This resolves issues
+        # of appending dataframes to postgis that have no CRS as postgis
+        # no CRS value is 0.
+        engine = engine_postgis
+        df_nybb = df_nybb.set_.crs(None, allow_override=True)
+        table = "nybb"
+
+        write_postgis(df_nybb, con=engine, name=table, if_exists="replace")
+        # append another dataframe with no crs
+
+        df_nybb2 = df_nybb
+        write_postgis(df_nybb2, con=engine, name=table, if_exists="append")
 
     @pytest.mark.parametrize("engine_postgis", POSTGIS_DRIVERS, indirect=True)
     @pytest.mark.xfail(
