@@ -1321,7 +1321,7 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
             The encoding to use for the geometry columns. Defaults to "WKB"
             for maximum interoperability. Specify "geoarrow" to use one of the
             native GeoArrow-based single-geometry type encodings.
-            Note: the "geoarrow" option is part of the upcoming GeoParquet 1.1
+            Note: the "geoarrow" option is part of the newer GeoParquet 1.1
             specification, should be considered as experimental, and may not
             be supported by all readers.
         write_covering_bbox : bool, default False
@@ -1329,7 +1329,7 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
             name 'bbox'. Writing a bbox column can be computationally
             expensive, but allows you to specify a `bbox` in :
             func:`read_parquet` for filtered reading.
-            Note: this bbox column is part of the upcoming GeoParquet 1.1
+            Note: this bbox column is part of the newer GeoParquet 1.1
             specification and should be considered as experimental. While
             writing the column is backwards compatible, using it for filtering
             may not be supported by all readers.
