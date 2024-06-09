@@ -100,7 +100,7 @@ def _df_to_geodf(df, geom_col="geom", crs=None, spatial_ref_sys_df=None):
                     srid in spatial_ref_sys_df["srid"].values
                 ):
                     entry = spatial_ref_sys_df.loc[spatial_ref_sys_df["srid"] == srid]
-                    crs = f"{entry['auth_name'].values[0]}:{srid}"
+                    crs = f"{entry['auth_name'].item()}:{srid}"
                 else:
                     warning_msg = (
                         f"Could not find the spatial reference system table "
