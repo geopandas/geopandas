@@ -96,10 +96,20 @@ def _df_to_geodf(df, geom_col="geom", crs=None, spatial_ref_sys_df=None):
             srid = shapely.get_srid(geoms.iat[0])
             # if no defined SRID in geodatabase, returns SRID of 0
             if srid != 0:
-                if spatial_ref_sys_df is not None:
+                if (spatial_ref_sys_df is not None) and (
+                    srid in spatial_ref_sys_df["srid"].values
+                ):
                     entry = spatial_ref_sys_df.loc[spatial_ref_sys_df["srid"] == srid]
                     crs = f"{entry['auth_name'].values[0]}:{srid}"
                 else:
+                    warning_msg = (
+                        f"Could not find the spatial reference system table "
+                        f"(spatial_ref_sys) in PostGIS, or could not find "
+                        f"srid {srid} in the spatial_ref_sys table. "
+                        f"Trying epsg:{srid} as a fallback."
+                    )
+                    warnings.warn(warning_msg, UserWarning, stacklevel=2)
+
                     crs = "epsg:{}".format(srid)
     return GeoDataFrame(df, crs=crs, geometry=geom_col)
 
