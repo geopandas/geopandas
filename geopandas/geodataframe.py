@@ -191,6 +191,11 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             ):
                 raise ValueError(crs_mismatch_error)
 
+            if hasattr(geometry, "name") and geometry.name != "geometry":
+                # __init__ always creates geometry col named "geometry"
+                # but `set_geometry` respects the given series name
+                geometry = geometry.rename("geometry")
+
             self.set_geometry(geometry, inplace=True, crs=crs)
 
         if geometry is None and crs:
