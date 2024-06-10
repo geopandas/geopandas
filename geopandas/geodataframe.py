@@ -197,7 +197,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 msg = (
                     f"You have passed a Series named {geometry.name!r} as the active "
                     f"geometry column to use, but the name {geometry.name!r} will be "
-                    f"ignored as the GeoDataFrame constructor "
+                    "ignored as the GeoDataFrame constructor "
                     'always creates a geometry column named "geometry". To silence '
                     "this warning you can either call "
                     'GeoDataFrame(..., geometry=ser.rename("geometry")) to keep the '
