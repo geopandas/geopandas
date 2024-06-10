@@ -80,9 +80,14 @@ Backwards incompatible API changes:
   the previous active geometry column name. This means that if the new and old names are
   different, then both columns will be preserved in the GeoDataFrame. To replicate the previous
   behaviour, you can instead call `gdf.set_geometry(ser.rename(gdf.active_geometry_name))` (#3237).
+  Note that this behaviour change does not affect the `GeoDataframe` constructor, passing a named 
+  GeoSeries `ser` to `GeoDataFrame(df, geometry=ser)` will always produce a GeoDataFrame with a
+  geometry column named "geometry" to preserve backwards compatibility. If you would like to
+  instead propagate the name of `ser` when constructing a GeoDataFrame, you can instead call
+  `df.set_geometry(ser)` or `GeoDataFrame(df, geometry=ser).rename_geometry(ser.name)`.
 - `delaunay_triangles` now considers all geometries together when creating the Delaunay trianguation
   instead of performing the operation element-wise. If you want to generate Delaunay
-  triangles for each geometry separately, use ``shapely.delaunay_triangles`` instead. (#3273)
+  triangles for each geometry separately, use ``shapely.delaunay_triangles`` instead (#3273).
 
 
 Potentially breaking changes:
@@ -96,8 +101,6 @@ Bug fixes:
 - Fix `GeoDataFrame.merge()` incorrectly returning a `DataFrame` instead of a
   `GeoDataFrame` when the `suffixes` argument is applied to the active
   geometry column (#2933).
-- Fix bug in `GeoDataFrame` constructor where if `geometry` is given a named
-  `GeoSeries` the name was not used as the active geometry column name (#3237).
 - Fix bug in `GeoSeries` constructor when passing a Series and specifying a `crs` to not change the original input data (#2492).
 - Fix regression preventing reading from file paths containing hashes in `read_file`
   with the fiona engine (#3280). An analgous fix for pyogrio is included in
