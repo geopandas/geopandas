@@ -47,9 +47,9 @@ df1 = GeoDataFrame({"col1": [1, 2], "geometry": s1})
 df2 = GeoDataFrame({"col1": [1, 2], "geometry": s2})
 
 s4 = s1.copy()
-s4.crs = 4326
+s4.array.crs = 4326
 s5 = s2.copy()
-s5.crs = 27700
+s5.array.crs = 27700
 
 s6 = GeoSeries(
     [
@@ -104,7 +104,7 @@ def test_geodataframe():
 
     assert_geodataframe_equal(df5, df4, check_like=True)
     if HAS_PYPROJ:
-        df5.geom2.crs = 3857
+        df5["geom2"] = df5.geom2.set_crs(3857, allow_override=True)
         with pytest.raises(AssertionError):
             assert_geodataframe_equal(df5, df4, check_like=True)
 

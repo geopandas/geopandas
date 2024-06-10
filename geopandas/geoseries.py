@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import typing
 import warnings
+from packaging.version import Version
 from typing import Any, Callable, Dict, Optional
 
 import numpy as np
@@ -234,6 +235,18 @@ class GeoSeries(GeoPandasBase, Series):
 
     def append(self, *args, **kwargs) -> GeoSeries:
         return self._wrapped_pandas_method("append", *args, **kwargs)
+
+    @GeoPandasBase.crs.setter
+    def crs(self, value):
+        if self.crs is not None:
+            warnings.warn(
+                "Overriding the CRS of a GeoSeries that already has CRS. "
+                "This unsafe behavior will be deprecated in future versions. "
+                "Use GeoSeries.set_crs method instead.",
+                stacklevel=2,
+                category=DeprecationWarning,
+            )
+        self.geometry.values.crs = value
 
     @property
     def geometry(self) -> GeoSeries:
@@ -543,6 +556,41 @@ class GeoSeries(GeoPandasBase, Series):
             **kwargs,
         )
 
+    @classmethod
+    def from_arrow(cls, arr, **kwargs) -> GeoSeries:
+        """
+        Construct a GeoSeries from a Arrow array object with a GeoArrow
+        extension type.
+
+        See https://geoarrow.org/ for details on the GeoArrow specification.
+
+        This functions accepts any Arrow array object implementing
+        the `Arrow PyCapsule Protocol`_ (i.e. having an ``__arrow_c_array__``
+        method).
+
+        .. _Arrow PyCapsule Protocol: https://arrow.apache.org/docs/format/CDataInterface/PyCapsuleInterface.html
+
+        .. versionadded:: 1.0
+
+        Parameters
+        ----------
+        arr : pyarrow.Array, Arrow array
+            Any array object implementing the Arrow PyCapsule Protocol
+            (i.e. has an ``__arrow_c_array__`` or ``__arrow_c_stream__``
+            method). The type of the array should be one of the
+            geoarrow geometry types.
+        **kwargs
+            Other parameters passed to the GeoSeries constructor.
+
+        Returns
+        -------
+        GeoSeries
+
+        """
+        from geopandas.io._geoarrow import arrow_to_geometry_array
+
+        return cls(arrow_to_geometry_array(arr), **kwargs)
+
     @property
     def __geo_interface__(self) -> Dict:
         """Returns a ``GeoSeries`` as a python feature collection.
@@ -641,7 +689,6 @@ class GeoSeries(GeoPandasBase, Series):
         from geopandas import GeoDataFrame
 
         data = GeoDataFrame({"geometry": self}, index=self.index)
-        data.crs = self.crs
         data.to_file(filename, driver, index=index, **kwargs)
 
     #
@@ -986,12 +1033,16 @@ class GeoSeries(GeoPandasBase, Series):
         """
         Set the Coordinate Reference System (CRS) of a ``GeoSeries``.
 
-        NOTE: The underlying geometries are not transformed to this CRS. To
+        Pass ``None`` to remove CRS from the ``GeoSeries``.
+
+        Notes
+        -----
+        The underlying geometries are not transformed to this CRS. To
         transform the geometries to a new CRS, use the ``to_crs`` method.
 
         Parameters
         ----------
-        crs : pyproj.CRS, optional if `epsg` is specified
+        crs : pyproj.CRS | None, optional
             The value can be anything accepted
             by :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
             such as an authority string (eg "EPSG:4326") or a WKT string.
@@ -1059,8 +1110,6 @@ class GeoSeries(GeoPandasBase, Series):
             crs = CRS.from_user_input(crs)
         elif epsg is not None:
             crs = CRS.from_epsg(epsg)
-        else:
-            raise ValueError("Must pass either crs or epsg.")
 
         if not allow_override and self.crs is not None and not self.crs == crs:
             raise ValueError(
@@ -1073,7 +1122,7 @@ class GeoSeries(GeoPandasBase, Series):
             result = self.copy()
         else:
             result = self
-        result.crs = crs
+        result.array.crs = crs
         return result
 
     def to_crs(
@@ -1312,6 +1361,104 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
         GeoSeries.to_wkb
         """
         return Series(to_wkt(self.array, **kwargs), index=self.index)
+
+    def to_arrow(self, geometry_encoding="WKB", interleaved=True, include_z=None):
+        """Encode a GeoSeries to GeoArrow format.
+
+        See https://geoarrow.org/ for details on the GeoArrow specification.
+
+        This functions returns a generic Arrow array object implementing
+        the `Arrow PyCapsule Protocol`_ (i.e. having an ``__arrow_c_array__``
+        method). This object can then be consumed by your Arrow implementation
+        of choice that supports this protocol.
+
+        .. _Arrow PyCapsule Protocol: https://arrow.apache.org/docs/format/CDataInterface/PyCapsuleInterface.html
+
+        .. versionadded:: 1.0
+
+        Parameters
+        ----------
+        geometry_encoding : {'WKB', 'geoarrow' }, default 'WKB'
+            The GeoArrow encoding to use for the data conversion.
+        interleaved : bool, default True
+            Only relevant for 'geoarrow' encoding. If True, the geometries'
+            coordinates are interleaved in a single fixed size list array.
+            If False, the coordinates are stored as separate arrays in a
+            struct type.
+        include_z : bool, default None
+            Only relevant for 'geoarrow' encoding (for WKB, the dimensionality
+            of the individial geometries is preserved).
+            If False, return 2D geometries. If True, include the third dimension
+            in the output (if a geometry has no third dimension, the z-coordinates
+            will be NaN). By default, will infer the dimensionality from the
+            input geometries. Note that this inference can be unreliable with
+            empty geometries (for a guaranteed result, it is recommended to
+            specify the keyword).
+
+        Returns
+        -------
+        GeoArrowArray
+            A generic Arrow array object with geometry data encoded to GeoArrow.
+
+        Examples
+        --------
+        >>> from shapely.geometry import Point
+        >>> gser = geopandas.GeoSeries([Point(1, 2), Point(2, 1)])
+        >>> gser
+        0    POINT (1 2)
+        1    POINT (2 1)
+        dtype: geometry
+
+        >>> arrow_array = gser.to_arrow()
+        >>> arrow_array
+        <geopandas.io._geoarrow.GeoArrowArray object at ...>
+
+        The returned array object needs to be consumed by a library implementing
+        the Arrow PyCapsule Protocol. For example, wrapping the data as a
+        pyarrow.Array (requires pyarrow >= 14.0):
+
+        >>> import pyarrow as pa
+        >>> array = pa.array(arrow_array)
+        >>> array
+        <pyarrow.lib.BinaryArray object at ...>
+        [
+          0101000000000000000000F03F0000000000000040,
+          01010000000000000000000040000000000000F03F
+        ]
+
+        """
+        import pyarrow as pa
+
+        from geopandas.io._geoarrow import (
+            GeoArrowArray,
+            construct_geometry_array,
+            construct_wkb_array,
+        )
+
+        field_name = self.name if self.name is not None else ""
+
+        if geometry_encoding.lower() == "geoarrow":
+            if Version(pa.__version__) < Version("10.0.0"):
+                raise ValueError("Converting to 'geoarrow' requires pyarrow >= 10.0.")
+
+            field, geom_arr = construct_geometry_array(
+                np.array(self.array),
+                include_z=include_z,
+                field_name=field_name,
+                crs=self.crs,
+                interleaved=interleaved,
+            )
+        elif geometry_encoding.lower() == "wkb":
+            field, geom_arr = construct_wkb_array(
+                np.asarray(self.array), field_name=field_name, crs=self.crs
+            )
+        else:
+            raise ValueError(
+                "Expected geometry encoding 'WKB' or 'geoarrow' "
+                f"got {geometry_encoding}"
+            )
+
+        return GeoArrowArray(field, geom_arr)
 
     def clip(self, mask, keep_geom_type: bool = False, sort=False) -> GeoSeries:
         """Clip points, lines, or polygon geometries to the mask extent.

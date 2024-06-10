@@ -2108,7 +2108,7 @@ GeometryCollection
         warn(
             "The 'unary_union' attribute is deprecated, "
             "use the 'union_all()' method instead.",
-            FutureWarning,
+            DeprecationWarning,
             stacklevel=2,
         )
 
@@ -4539,7 +4539,7 @@ GeometryCollection
         The operation works on a 1-to-1 row-wise manner:
 
         .. image:: ../../../_static/binary_op-01.svg
-        :align: center
+            :align: center
 
         Parameters
         ----------

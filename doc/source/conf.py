@@ -383,8 +383,8 @@ intersphinx_mapping = {
         "https://fiona.readthedocs.io/en/stable/objects.inv",
     ),
     "folium": (
-        "https://python-visualization.github.io/folium/",
-        "https://python-visualization.github.io/folium/objects.inv",
+        "https://python-visualization.github.io/folium/latest",
+        "https://python-visualization.github.io/folium/latest/objects.inv",
     ),
     "geoplot": (
         "https://residentmario.github.io/geoplot/index.html",

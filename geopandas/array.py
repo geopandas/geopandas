@@ -851,7 +851,7 @@ class GeometryArray(ExtensionArray):
         warnings.warn(
             "The 'unary_union' attribute is deprecated, "
             "use the 'union_all' method instead.",
-            FutureWarning,
+            DeprecationWarning,
             stacklevel=2,
         )
         return self.union_all()

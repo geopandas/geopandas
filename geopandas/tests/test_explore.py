@@ -378,7 +378,7 @@ class TestExplore:
     def test_no_crs(self):
         """Naive geometry get no tiles"""
         df = self.world.copy()
-        df.crs = None
+        df.geometry.array.crs = None
         m = df.explore()
         assert "openstreetmap" not in m.to_dict()["children"].keys()
 
@@ -1004,3 +1004,37 @@ class TestExplore:
         df.loc[0, df.geometry.name] = shapely.Point()
         m = df.explore()
         self._fetch_map_string(m)
+
+    def test_all_empty(self):
+        with_crs = gpd.GeoDataFrame(
+            geometry=[shapely.Point(), shapely.Point()], crs=4326
+        )
+        with pytest.warns(
+            UserWarning,
+            match="The GeoSeries you are attempting to plot is composed of empty",
+        ):
+            m = with_crs.explore()
+        out_str = self._fetch_map_string(m)
+        if HAS_PYPROJ:
+            assert "center:[0.0,0.0],crs:L.CRS.EPSG3857" in out_str
+
+        no_crs = gpd.GeoDataFrame(geometry=[shapely.Point(), shapely.Point()])
+        with pytest.warns(
+            UserWarning,
+            match="The GeoSeries you are attempting to plot is composed of empty",
+        ):
+            m = no_crs.explore()
+        out_str = self._fetch_map_string(m)
+        assert "center:[0.0,0.0],crs:L.CRS.Simple" in out_str
+
+    def test_add_all_empty_named_index(self):
+        gdf1 = gpd.GeoDataFrame(geometry=[shapely.Point(0, 0), shapely.Point(1, 1)])
+        gdf2 = gpd.GeoDataFrame(geometry=[shapely.Point(), shapely.Point()])
+        m = gdf1.rename_axis(index="index_name").explore()
+        with pytest.warns(
+            UserWarning,
+            match="The GeoSeries you are attempting to plot is composed of empty",
+        ):
+            m = gdf2.rename_axis(index="index_name").explore(m=m, color="red")
+        out_str = self._fetch_map_string(m)
+        assert "center:[0.5,0.5],crs:L.CRS.Simple" in out_str
