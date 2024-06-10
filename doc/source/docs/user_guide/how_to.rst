@@ -21,11 +21,11 @@ and then use the standard :meth:`~pandas.DataFrame.drop_duplicates` method::
 
 The effect of the :meth:`~geopandas.GeoSeries.normalize` method can be seen in the following example::
 
-    geopandas.GeoSeries([
-        shapely.LineString([(0, 0), (1, 0), (2, 0)]),
-        shapely.LineString([(2, 0), (1, 0), (0, 0)]),
-    ]).normalize().to_wkt()
-
+```suggestion
+    >>> geopandas.GeoSeries([
+    ...     shapely.LineString([(0, 0), (1, 0), (2, 0)]),
+    ...     shapely.LineString([(2, 0), (1, 0), (0, 0)]),
+    ... ]).normalize().to_wkt()
     0    LINESTRING (0 0, 1 0, 2 0)
     1    LINESTRING (0 0, 1 0, 2 0)
     dtype: object
