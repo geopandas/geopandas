@@ -21,7 +21,6 @@ and then use the standard :meth:`~pandas.DataFrame.drop_duplicates` method::
 
 The effect of the :meth:`~geopandas.GeoSeries.normalize` method can be seen in the following example::
 
-```suggestion
     >>> geopandas.GeoSeries([
     ...     shapely.LineString([(0, 0), (1, 0), (2, 0)]),
     ...     shapely.LineString([(2, 0), (1, 0), (0, 0)]),
