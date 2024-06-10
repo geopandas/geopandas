@@ -194,6 +194,18 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             if hasattr(geometry, "name") and geometry.name != "geometry":
                 # __init__ always creates geometry col named "geometry"
                 # but `set_geometry` respects the given series name
+                msg = (
+                    f"You have passed a Series named {geometry.name!r} as the active "
+                    f"geometry column to use, but the name {geometry.name!r} will be "
+                    f"ignored as the GeoDataFrame constructor "
+                    'always creates a geometry column named "geometry". To silence '
+                    "this warning you can either call "
+                    'GeoDataFrame(..., geometry=ser.rename("geometry")) to keep the '
+                    'geometry column named "geometry", or you can call '
+                    "df.set_geometry(ser) to construct a GeoDataFrame with an active "
+                    f"geometry column called {geometry.name!r}."
+                )
+                warnings.warn(msg, category=UserWarning, stacklevel=2)
                 geometry = geometry.rename("geometry")
 
             self.set_geometry(geometry, inplace=True, crs=crs)

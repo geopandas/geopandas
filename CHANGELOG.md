@@ -70,6 +70,9 @@ New features and improvements:
 - `explore` now supports `GeoDataFrame`s with additional columns containing datetimes, uuids and 
   other non JSON serializable objects (#3261).
 - The `GeoSeries.fillna` method now supports the `limit` keyword (#3290).
+- Passing a named (Geo)Series as the `geometry` argument to the GeoDataFrame constructor now
+  produces a warning that the name is ignored to consistently return a geometry column named
+  "geometry", rather than silently ignoring the name (#3337).
 
 Backwards incompatible API changes:
 
@@ -84,7 +87,7 @@ Backwards incompatible API changes:
   GeoSeries `ser` to `GeoDataFrame(df, geometry=ser)` will always produce a GeoDataFrame with a
   geometry column named "geometry" to preserve backwards compatibility. If you would like to
   instead propagate the name of `ser` when constructing a GeoDataFrame, you can instead call
-  `df.set_geometry(ser)` or `GeoDataFrame(df, geometry=ser).rename_geometry(ser.name)`.
+  `df.set_geometry(ser)` or `GeoDataFrame(df, geometry=ser).rename_geometry(ser.name)` (#3337).
 - `delaunay_triangles` now considers all geometries together when creating the Delaunay trianguation
   instead of performing the operation element-wise. If you want to generate Delaunay
   triangles for each geometry separately, use ``shapely.delaunay_triangles`` instead (#3273).
