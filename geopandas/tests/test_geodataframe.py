@@ -2,6 +2,7 @@ import json
 import os
 import shutil
 import tempfile
+import warnings
 
 import numpy as np
 import pandas as pd
@@ -1324,7 +1325,13 @@ class TestConstructor:
         match = "You have passed a Series named "
         with pytest.warns(UserWarning, match=match):
             gdf = GeoDataFrame({"a": [1, 2, 3]}, geometry=gs)
+        check_geodataframe(gdf, geometry_column="geometry")
 
+        # should not warn if name=None
+        gs = GeoSeries(geoms, name=None)
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            gdf = GeoDataFrame({"a": [1, 2, 3]}, geometry=gs)
         check_geodataframe(gdf, geometry_column="geometry")
 
     def test_overwrite_geometry(self):
