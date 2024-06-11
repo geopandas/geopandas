@@ -1,6 +1,7 @@
 """Ensure geopandas methods can be accessed via pandas 'geo' accessor."""
 
 import pandas as pd
+
 from shapely.geometry import Point
 
 # Use this import to register the "geo" accessor.
