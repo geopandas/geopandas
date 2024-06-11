@@ -825,7 +825,7 @@ class TestIO:
 
     @mock.patch("shapely.get_srid")
     @pytest.mark.parametrize("connection_postgis", POSTGIS_DRIVERS, indirect=True)
-    def test_read_non_existent_srid(self, mock_get_srid, connection_postgis, df_nybb):
+    def test_read_srid_not_in_table(self, mock_get_srid, connection_postgis, df_nybb):
         # mock a non-existent srid for edge case if shapely has an srid
         # not present in postgis table.
         mock_get_srid.return_value = 99999
@@ -836,5 +836,5 @@ class TestIO:
 
         sql = "SELECT * FROM nybb;"
         with pytest.raises(CRSError, match="crs not found"):
-            with pytest.warns(UserWarning, match="could not find srid 99999"):
+            with pytest.warns(UserWarning, match="Could not find srid 99999"):
                 read_postgis(sql, con)

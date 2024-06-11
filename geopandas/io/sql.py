@@ -41,7 +41,7 @@ def _get_conn(conn_or_engine):
         raise ValueError(f"Unknown Connectable: {conn_or_engine}")
 
 
-def _df_to_geodf(df, geom_col="geom", crs=None, spatial_ref_sys_df=None):
+def _df_to_geodf(df, geom_col="geom", crs=None, con=None):
     """
     Transforms a pandas DataFrame into a GeoDataFrame.
     The column 'geom_col' must be a geometry column in WKB representation.
@@ -96,21 +96,35 @@ def _df_to_geodf(df, geom_col="geom", crs=None, spatial_ref_sys_df=None):
             srid = shapely.get_srid(geoms.iat[0])
             # if no defined SRID in geodatabase, returns SRID of 0
             if srid != 0:
-                if (spatial_ref_sys_df is not None) and (
-                    srid in spatial_ref_sys_df["srid"].values
-                ):
-                    entry = spatial_ref_sys_df.loc[spatial_ref_sys_df["srid"] == srid]
-                    crs = f"{entry['auth_name'].item()}:{srid}"
-                else:
+
+                try:
+                    spatial_ref_sys_sql = (
+                        f"SELECT srid, auth_name FROM "
+                        f"spatial_ref_sys WHERE srid = {srid}"
+                    )
+                    spatial_ref_sys_df = pd.read_sql(spatial_ref_sys_sql, con)
+                except pd.errors.DatabaseError:
                     warning_msg = (
                         f"Could not find the spatial reference system table "
-                        f"(spatial_ref_sys) in PostGIS, or could not find "
-                        f"srid {srid} in the spatial_ref_sys table. "
+                        f"(spatial_ref_sys) in PostGIS."
+                        f"Trying epsg:{srid} as a fallback."
+                    )
+                    spatial_ref_sys_df = None
+                    warnings.warn(warning_msg, UserWarning, stacklevel=2)
+                    crs = "epsg:{}".format(srid)
+
+                if not spatial_ref_sys_df.empty:
+                    auth_name = spatial_ref_sys_df["auth_name"].item()
+                    crs = f"{auth_name}:{srid}"
+                else:
+                    warning_msg = (
+                        f"Could not find srid {srid} in the "
+                        f"spatial_ref_sys table. "
                         f"Trying epsg:{srid} as a fallback."
                     )
                     warnings.warn(warning_msg, UserWarning, stacklevel=2)
-
                     crs = "epsg:{}".format(srid)
+
     return GeoDataFrame(df, crs=crs, geometry=geom_col)
 
 
@@ -173,14 +187,6 @@ def _read_postgis(
     >>> df = geopandas.read_postgis(sql, con)  # doctest: +SKIP
     """
 
-    try:
-        spatial_ref_sys_sql = "SELECT * FROM spatial_ref_sys"
-        spatial_ref_sys_df = (
-            pd.read_sql(spatial_ref_sys_sql, con) if crs is None else None
-        )
-    except pd.errors.DatabaseError:
-        spatial_ref_sys_df = None
-
     if chunksize is None:
         # read all in one chunk and return a single GeoDataFrame
         df = pd.read_sql(
@@ -192,9 +198,7 @@ def _read_postgis(
             params=params,
             chunksize=chunksize,
         )
-        return _df_to_geodf(
-            df, geom_col=geom_col, crs=crs, spatial_ref_sys_df=spatial_ref_sys_df
-        )
+        return _df_to_geodf(df, geom_col=geom_col, crs=crs, con=con)
 
     else:
         # read data in chunks and return a generator
@@ -208,10 +212,7 @@ def _read_postgis(
             chunksize=chunksize,
         )
         return (
-            _df_to_geodf(
-                df, geom_col=geom_col, crs=crs, spatial_ref_sys_df=spatial_ref_sys_df
-            )
-            for df in df_generator
+            _df_to_geodf(df, geom_col=geom_col, crs=crs, con=con) for df in df_generator
         )
 
 
