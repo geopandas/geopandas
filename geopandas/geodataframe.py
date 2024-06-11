@@ -816,6 +816,42 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         return df
 
+    @classmethod
+    def from_arrow(cls, table, geometry=None):
+        """
+        Construct a GeoDataFrame from a Arrow table object based on GeoArrow
+        extension types.
+
+        See https://geoarrow.org/ for details on the GeoArrow specification.
+
+        This functions accepts any tabular Arrow object implementing
+        the `Arrow PyCapsule Protocol`_ (i.e. having an ``__arrow_c_array__``
+        or ``__arrow_c_stream__`` method).
+
+        .. _Arrow PyCapsule Protocol: https://arrow.apache.org/docs/format/CDataInterface/PyCapsuleInterface.html
+
+        .. versionadded:: 1.0
+
+        Parameters
+        ----------
+        table : pyarrow.Table or Arrow-compatible table
+            Any tabular object implementing the Arrow PyCapsule Protocol
+            (i.e. has an ``__arrow_c_array__`` or ``__arrow_c_stream__``
+            method). This table should have at least one column with a
+            geoarrow geometry type.
+        geometry : str, default None
+            The name of the geometry column to set as the active geometry
+            column. If None, the first geometry column found will be used.
+
+        Returns
+        -------
+        GeoDataFrame
+
+        """
+        from geopandas.io._geoarrow import arrow_to_geopandas
+
+        return arrow_to_geopandas(table, geometry=geometry)
+
     def to_json(
         self, na="null", show_bbox=False, drop_id=False, to_wgs84=False, **kwargs
     ):
@@ -1222,7 +1258,7 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
 
         >>> arrow_table = gdf.to_arrow()
         >>> arrow_table
-        <geopandas.io.geoarrow.ArrowTable object at ...>
+        <geopandas.io._geoarrow.ArrowTable object at ...>
 
         The returned data object needs to be consumed by a library implementing
         the Arrow PyCapsule Protocol. For example, wrapping the data as a
@@ -1240,7 +1276,7 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
 01010000000000000000000040000000000000F03F]]
 
         """
-        from geopandas.io.geoarrow import ArrowTable, geopandas_to_arrow
+        from geopandas.io._geoarrow import ArrowTable, geopandas_to_arrow
 
         table, _ = geopandas_to_arrow(
             self,
@@ -1813,7 +1849,12 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
             return _geodataframe_constructor_with_fallback(
                 pd.DataFrame._from_mgr(mgr, axes)
             )
-        return GeoDataFrame._from_mgr(mgr, axes)
+        gdf = GeoDataFrame._from_mgr(mgr, axes)
+        # _from_mgr doesn't preserve metadata (expect __finalize__ to be called)
+        # still need to mimic __init__ behaviour with geometry=None
+        if (gdf.columns == "geometry").sum() == 1:  # only if "geometry" is single col
+            gdf._geometry_column_name = "geometry"
+        return gdf
 
     @property
     def _constructor_sliced(self):

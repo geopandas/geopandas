@@ -689,14 +689,16 @@ def test_groupby_metadata(crs, geometry_name):
     df.groupby("value2").apply(func, **kwargs)
     # selecting the non-group columns -> no need to pass the keyword
     if (
-        compat.PANDAS_GE_21 if geometry_name == "geometry" else compat.PANDAS_GE_20
-    ) and not compat.PANDAS_GE_22:
+        compat.PANDAS_GE_22
+        or (compat.PANDAS_GE_20 and geometry_name == "geometry")
+        or not compat.PANDAS_GE_20
+    ):
+        df.groupby("value2")[[geometry_name, "value1"]].apply(func)
+    else:
         # https://github.com/geopandas/geopandas/pull/2966#issuecomment-1878816712
-        # with pandas 2.0 and 2.1 this is failing
+        # with pandas 2.0 and 2.1 with geom col != geometry this is failing
         with pytest.raises(AttributeError):
             df.groupby("value2")[[geometry_name, "value1"]].apply(func)
-    else:
-        df.groupby("value2")[[geometry_name, "value1"]].apply(func)
 
     # actual test with functionality
     res = df.groupby("value2").apply(

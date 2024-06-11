@@ -12,6 +12,7 @@ from shapely import MultiPoint, Point, box
 from geopandas import GeoDataFrame, GeoSeries
 
 import pytest
+from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 
 pytest.importorskip("pyarrow")
 import pyarrow as pa
@@ -199,6 +200,10 @@ def test_geoarrow_export(geometry_type, dim, geometry_encoding, interleaved):
     assert result_arr.equals(expected["geometry"].chunk(0))
 
 
+@pytest.mark.skipif(
+    Version(shapely.__version__) < Version("2.0.2"),
+    reason="from_ragged_array failing with read-only array input",
+)
 @pytest.mark.parametrize("encoding", ["WKB", "geoarrow"])
 def test_geoarrow_multiple_geometry_crs(encoding):
     pytest.importorskip("pyproj")
@@ -215,6 +220,11 @@ def test_geoarrow_multiple_geometry_crs(encoding):
         result.schema.field("geom2").metadata[b"ARROW:extension:metadata"]
     )
     assert json.loads(meta2["crs"])["id"]["code"] == 3857
+
+    roundtripped = GeoDataFrame.from_arrow(result)
+    assert_geodataframe_equal(gdf, roundtripped)
+    assert gdf.geometry.crs == "epsg:4326"
+    assert gdf.geom2.crs == "epsg:3857"
 
 
 @pytest.mark.parametrize("encoding", ["WKB", "geoarrow"])
@@ -361,3 +371,167 @@ def test_geoarrow_export_with_extension_types(geometry_type, dim):
 
         result3 = pa_table(df.to_arrow(geometry_encoding="geoarrow", interleaved=False))
         assert isinstance(result3["geometry"].type, pa.ExtensionType)
+
+
+@pytest.mark.skipif(
+    Version(shapely.__version__) < Version("2.0.2"),
+    reason="from_ragged_array failing with read-only array input",
+)
+@pytest.mark.parametrize("dim", ["xy", "xyz"])
+@pytest.mark.parametrize(
+    "geometry_type",
+    [
+        "point",
+        "linestring",
+        "polygon",
+        "multipoint",
+        "multilinestring",
+        "multipolygon",
+    ],
+)
+def test_geoarrow_import(geometry_type, dim):
+    base_path = DATA_PATH / "geoarrow"
+    suffix = geometry_type + ("_z" if dim == "xyz" else "")
+
+    # Read the example data
+    df = feather.read_feather(base_path / f"example-{suffix}-wkb.arrow")
+    df["geometry"] = GeoSeries.from_wkb(df["geometry"])
+    df = GeoDataFrame(df)
+    df.geometry.crs = None
+
+    table1 = feather.read_table(base_path / f"example-{suffix}-wkb.arrow")
+    result1 = GeoDataFrame.from_arrow(table1)
+    assert_geodataframe_equal(result1, df)
+
+    table2 = feather.read_table(base_path / f"example-{suffix}-interleaved.arrow")
+    result2 = GeoDataFrame.from_arrow(table2)
+    assert_geodataframe_equal(result2, df)
+
+    table3 = feather.read_table(base_path / f"example-{suffix}.arrow")
+    result3 = GeoDataFrame.from_arrow(table3)
+    assert_geodataframe_equal(result3, df)
+
+
+@pytest.mark.skipif(
+    Version(shapely.__version__) < Version("2.0.2"),
+    reason="from_ragged_array failing with read-only array input",
+)
+@pytest.mark.parametrize("encoding", ["WKB", "geoarrow"])
+def test_geoarrow_import_geometry_column(encoding):
+    pytest.importorskip("pyproj")
+    # ensure each geometry column has its own crs
+    gdf = GeoDataFrame(geometry=[box(0, 0, 10, 10)])
+    gdf["centroid"] = gdf.geometry.centroid
+
+    result = GeoDataFrame.from_arrow(pa_table(gdf.to_arrow(geometry_encoding=encoding)))
+    assert_geodataframe_equal(result, gdf)
+    assert result.active_geometry_name == "geometry"
+
+    result = GeoDataFrame.from_arrow(
+        pa_table(gdf[["centroid"]].to_arrow(geometry_encoding=encoding))
+    )
+    assert result.active_geometry_name == "centroid"
+
+    result = GeoDataFrame.from_arrow(
+        pa_table(gdf.to_arrow(geometry_encoding=encoding)), geometry="centroid"
+    )
+    assert result.active_geometry_name == "centroid"
+    assert_geodataframe_equal(result, gdf.set_geometry("centroid"))
+
+
+def test_geoarrow_import_missing_geometry():
+    pytest.importorskip("pyarrow", minversion="14.0.0")
+
+    table = pa.table({"a": [0, 1, 2], "b": [0.1, 0.2, 0.3]})
+    with pytest.raises(ValueError, match="No geometry column found"):
+        GeoDataFrame.from_arrow(table)
+
+    with pytest.raises(ValueError, match="No GeoArrow geometry field found"):
+        GeoSeries.from_arrow(table["a"].chunk(0))
+
+
+def test_geoarrow_import_capsule_interface():
+    # ensure we can import non-pyarrow object
+    pytest.importorskip("pyarrow", minversion="14.0.0")
+    gdf = GeoDataFrame({"col": [1]}, geometry=[box(0, 0, 10, 10)])
+
+    result = GeoDataFrame.from_arrow(gdf.to_arrow())
+    assert_geodataframe_equal(result, gdf)
+
+
+@pytest.mark.parametrize("dim", ["xy", "xyz"])
+@pytest.mark.parametrize(
+    "geometry_type",
+    ["point", "linestring", "polygon", "multipoint", "multilinestring", "multipolygon"],
+)
+def test_geoarrow_import_from_extension_types(geometry_type, dim):
+    # ensure the exported data can be imported by geoarrow-pyarrow and are
+    # recognized as extension types
+    pytest.importorskip("pyproj")
+    base_path = DATA_PATH / "geoarrow"
+    suffix = geometry_type + ("_z" if dim == "xyz" else "")
+
+    # Read the example data
+    df = feather.read_feather(base_path / f"example-{suffix}-wkb.arrow")
+    df["geometry"] = GeoSeries.from_wkb(df["geometry"])
+    df = GeoDataFrame(df, crs="EPSG:3857")
+
+    pytest.importorskip("geoarrow.pyarrow")
+
+    with with_geoarrow_extension_types():
+        result1 = GeoDataFrame.from_arrow(
+            pa_table(df.to_arrow(geometry_encoding="WKB"))
+        )
+        assert_geodataframe_equal(result1, df)
+
+        result2 = GeoDataFrame.from_arrow(
+            pa_table(df.to_arrow(geometry_encoding="geoarrow"))
+        )
+        assert_geodataframe_equal(result2, df)
+
+        result3 = GeoDataFrame.from_arrow(
+            pa_table(df.to_arrow(geometry_encoding="geoarrow", interleaved=False))
+        )
+        assert_geodataframe_equal(result3, df)
+
+
+def test_geoarrow_import_geoseries():
+    pytest.importorskip("pyproj")
+    gp = pytest.importorskip("geoarrow.pyarrow")
+    ser = GeoSeries.from_wkt(["POINT (1 1)", "POINT (2 2)"], crs="EPSG:3857")
+
+    with with_geoarrow_extension_types():
+        arr = gp.array(ser.to_arrow(geometry_encoding="WKB"))
+        result = GeoSeries.from_arrow(arr)
+        assert_geoseries_equal(result, ser)
+
+        arr = gp.array(ser.to_arrow(geometry_encoding="geoarrow"))
+        result = GeoSeries.from_arrow(arr)
+        assert_geoseries_equal(result, ser)
+
+        # the name is lost when going through a pyarrow.Array
+        ser.name = "name"
+        arr = gp.array(ser.to_arrow())
+        result = GeoSeries.from_arrow(arr)
+        assert result.name is None
+        # we can specify the name as one of the kwargs
+        result = GeoSeries.from_arrow(arr, name="test")
+        assert_geoseries_equal(result, ser)
+
+
+def test_geoarrow_import_unknown_geoarrow_type():
+    gdf = GeoDataFrame({"col": [1]}, geometry=[box(0, 0, 10, 10)])
+    table = pa_table(gdf.to_arrow())
+    schema = table.schema
+    new_field = schema.field("geometry").with_metadata(
+        {
+            b"ARROW:extension:name": b"geoarrow.unknown",
+            b"ARROW:extension:metadata": b"{}",
+        }
+    )
+
+    new_schema = pa.schema([schema.field(0), new_field])
+    new_table = table.cast(new_schema)
+
+    with pytest.raises(TypeError, match="Unknown GeoArrow extension type"):
+        GeoDataFrame.from_arrow(new_table)

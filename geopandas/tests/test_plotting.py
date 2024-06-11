@@ -494,6 +494,28 @@ class TestLineStringPlotting:
         )
         self.df3 = GeoDataFrame({"geometry": self.linearrings, "values": values})
 
+    def test_autolim_false(self):
+        """Test linestring plot preserving axes limits."""
+        ax = self.lines[: self.N // 2].plot()
+        ylim = ax.get_ylim()
+        self.lines.plot(ax=ax, autolim=False)
+        assert ax.get_ylim() == ylim
+        ax = self.df[: self.N // 2].plot()
+        ylim = ax.get_ylim()
+        self.df.plot(ax=ax, autolim=False)
+        assert ax.get_ylim() == ylim
+
+    def test_autolim_true(self):
+        """Test linestring plot autoscaling axes limits."""
+        ax = self.lines[: self.N // 2].plot()
+        ylim = ax.get_ylim()
+        self.lines.plot(ax=ax, autolim=True)
+        assert ax.get_ylim() != ylim
+        ax = self.df[: self.N // 2].plot()
+        ylim = ax.get_ylim()
+        self.df.plot(ax=ax, autolim=True)
+        assert ax.get_ylim() != ylim
+
     def test_single_color(self):
         ax = self.lines.plot(color="green")
         _check_colors(self.N, ax.collections[0].get_colors(), ["green"] * self.N)
@@ -636,6 +658,28 @@ class TestPolygonPlotting:
         t3 = Polygon([(2, 0), (3, 0), (3, 1)])
         df_nan = GeoDataFrame({"geometry": t3, "values": [np.nan]})
         self.df3 = pd.concat([self.df, df_nan])
+
+    def test_autolim_false(self):
+        """Test polygon plot preserving axes limits."""
+        ax = self.polys[:1].plot()
+        xlim = ax.get_xlim()
+        self.polys.plot(ax=ax, autolim=False)
+        assert ax.get_xlim() == xlim
+        ax = self.df[:1].plot()
+        xlim = ax.get_xlim()
+        self.df.plot(ax=ax, autolim=False)
+        assert ax.get_xlim() == xlim
+
+    def test_autolim_true(self):
+        """Test polygon plot autoscaling axes limits."""
+        ax = self.polys[:1].plot()
+        xlim = ax.get_xlim()
+        self.polys.plot(ax=ax, autolim=True)
+        assert ax.get_xlim() != xlim
+        ax = self.df[:1].plot()
+        xlim = ax.get_xlim()
+        self.df.plot(ax=ax, autolim=True)
+        assert ax.get_xlim() != xlim
 
     def test_single_color(self):
         ax = self.polys.plot(color="green")

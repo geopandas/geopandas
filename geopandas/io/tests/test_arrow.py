@@ -43,6 +43,8 @@ DATA_PATH = pathlib.Path(os.path.dirname(__file__)) / "data"
 pyarrow = pytest.importorskip("pyarrow")
 
 import pyarrow.compute as pc
+import pyarrow.parquet as pq
+from pyarrow import feather
 
 
 @pytest.fixture(
@@ -431,6 +433,37 @@ def test_index(tmpdir, file_format, naturalearth_lowres):
     writer(df, filename, index=False)
     pq_df = reader(filename)
     assert_geodataframe_equal(df.reset_index(drop=True), pq_df)
+
+
+def test_column_order(tmpdir, file_format, naturalearth_lowres):
+    """The order of columns should be preserved in the output."""
+    reader, writer = file_format
+
+    df = read_file(naturalearth_lowres)
+    df = df.set_index("iso_a3")
+    df["geom2"] = df.geometry.representative_point()
+    table = _geopandas_to_arrow(df)
+    custom_column_order = [
+        "iso_a3",
+        "geom2",
+        "pop_est",
+        "continent",
+        "name",
+        "geometry",
+        "gdp_md_est",
+    ]
+    table = table.select(custom_column_order)
+
+    if reader is read_parquet:
+        filename = os.path.join(str(tmpdir), "test_column_order.pq")
+        pq.write_table(table, filename)
+    else:
+        filename = os.path.join(str(tmpdir), "test_column_order.feather")
+        feather.write_feather(table, filename)
+
+    result = reader(filename)
+    assert list(result.columns) == custom_column_order[1:]
+    assert_geodataframe_equal(result, df[custom_column_order[1:]])
 
 
 @pytest.mark.parametrize("compression", ["snappy", "gzip", "brotli", None])
@@ -852,46 +885,6 @@ def test_write_spec_version(tmpdir, format, schema_version):
     else:
         assert "geometry_types" in metadata["columns"]["geometry"]
         assert metadata["columns"]["geometry"]["geometry_types"] == ["Polygon"]
-
-
-@pytest.mark.parametrize(
-    "format,version", product(["feather", "parquet"], [None] + SUPPORTED_VERSIONS)
-)
-def test_write_deprecated_version_parameter(tmpdir, format, version):
-    if format == "feather":
-        from pyarrow.feather import read_table
-
-        version = version or 2
-
-    else:
-        from pyarrow.parquet import read_table
-
-        version = version or "2.6"
-
-    filename = os.path.join(str(tmpdir), f"test.{format}")
-    gdf = geopandas.GeoDataFrame(geometry=[box(0, 0, 10, 10)], crs="EPSG:4326")
-    write = getattr(gdf, f"to_{format}")
-
-    if version in SUPPORTED_VERSIONS:
-        with pytest.warns(
-            FutureWarning,
-            match="the `version` parameter has been replaced with `schema_version`",
-        ):
-            write(filename, version=version)
-
-    else:
-        # no warning raised if not one of the captured versions
-        write(filename, version=version)
-
-    table = read_table(filename)
-    metadata = json.loads(table.schema.metadata[b"geo"])
-
-    if version in SUPPORTED_VERSIONS:
-        # version is captured as a parameter
-        assert metadata["version"] == version
-    else:
-        # version is passed to underlying writer
-        assert metadata["version"] == METADATA_VERSION
 
 
 @pytest.mark.parametrize("version", ["0.1.0", "0.4.0", "1.0.0-beta.1"])

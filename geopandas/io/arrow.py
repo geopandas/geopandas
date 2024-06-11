@@ -335,7 +335,7 @@ def _geopandas_to_arrow(
     """
     from pyarrow import StructArray
 
-    from geopandas.io.geoarrow import geopandas_to_arrow
+    from geopandas.io._geoarrow import geopandas_to_arrow
 
     _validate_dataframe(df)
 
@@ -428,17 +428,6 @@ def _to_parquet(
         "pyarrow.parquet", extra="pyarrow is required for Parquet support."
     )
 
-    if kwargs and "version" in kwargs and kwargs["version"] is not None:
-        if schema_version is None and kwargs["version"] in SUPPORTED_VERSIONS:
-            warnings.warn(
-                "the `version` parameter has been replaced with `schema_version`. "
-                "`version` will instead be passed directly to the underlying "
-                "parquet writer unless `version` is 0.1.0 or 0.4.0.",
-                FutureWarning,
-                stacklevel=2,
-            )
-            schema_version = kwargs.pop("version")
-
     path = _expand_user(path)
     table = _geopandas_to_arrow(
         df,
@@ -491,17 +480,6 @@ def _to_feather(df, path, index=None, compression=None, schema_version=None, **k
     if Version(pyarrow.__version__) < Version("0.17.0"):
         raise ImportError("pyarrow >= 0.17 required for Feather support")
 
-    if kwargs and "version" in kwargs and kwargs["version"] is not None:
-        if schema_version is None and kwargs["version"] in SUPPORTED_VERSIONS:
-            warnings.warn(
-                "the `version` parameter has been replaced with `schema_version`. "
-                "`version` will instead be passed directly to the underlying "
-                "feather writer unless `version` is 0.1.0 or 0.4.0.",
-                FutureWarning,
-                stacklevel=2,
-            )
-            schema_version = kwargs.pop("version")
-
     path = _expand_user(path)
     table = _geopandas_to_arrow(df, index=index, schema_version=schema_version)
     feather.write_feather(table, path, compression=compression, **kwargs)
@@ -511,15 +489,17 @@ def _arrow_to_geopandas(table, geo_metadata=None):
     """
     Helper function with main, shared logic for read_parquet/read_feather.
     """
-    df = table.to_pandas()
-
     geo_metadata = geo_metadata or _decode_metadata(
         table.schema.metadata.get(b"geo", b"")
     )
 
     # Find all geometry columns that were read from the file.  May
     # be a subset if 'columns' parameter is used.
-    geometry_columns = df.columns.intersection(geo_metadata["columns"])
+    geometry_columns = [
+        col for col in geo_metadata["columns"] if col in table.column_names
+    ]
+    result_column_names = list(table.slice(0, 0).to_pandas().columns)
+    geometry_columns.sort(key=result_column_names.index)
 
     if not len(geometry_columns):
         raise ValueError(
@@ -543,6 +523,9 @@ def _arrow_to_geopandas(table, geo_metadata=None):
                 stacklevel=3,
             )
 
+    table_attr = table.drop(geometry_columns)
+    df = table_attr.to_pandas()
+
     # Convert the WKB columns that are present back to geometry.
     for col in geometry_columns:
         col_metadata = geo_metadata["columns"][col]
@@ -556,16 +539,18 @@ def _arrow_to_geopandas(table, geo_metadata=None):
             crs = "OGC:CRS84"
 
         if col_metadata["encoding"] == "WKB":
-            df[col] = from_wkb(df[col].values, crs=crs)
+            geom_arr = from_wkb(np.array(table[col]), crs=crs)
         else:
-            from geopandas.io.geoarrow import construct_shapely_array
+            from geopandas.io._geoarrow import construct_shapely_array
 
-            df[col] = from_shapely(
+            geom_arr = from_shapely(
                 construct_shapely_array(
                     table[col].combine_chunks(), "geoarrow." + col_metadata["encoding"]
                 ),
                 crs=crs,
             )
+
+        df.insert(result_column_names.index(col), col, geom_arr)
 
     return GeoDataFrame(df, geometry=geometry)
 

@@ -36,6 +36,9 @@ New methods:
 - Added `polygonize` method exposing both `polygonize` and `polygonize_full` from
   shapely to GeoSeries/GeoDataframe (#2963).
 - Added `is_valid_reason` method from shapely to GeoSeries/GeoDataframe (#3176).
+- Added `to_arrow` method and `from_arrow` class method to
+  GeoSeries/GeoDataFrame to export and import to/from Arrow data with GeoArrow
+  extension types (#3219, #3301).
 
 New features and improvements:
 
@@ -65,6 +68,7 @@ files based on a bounding box, and write out a bounding box column to parquet fi
   will silence the warning about mismachted indices. (#3212)
 - `GeoSeries.set_crs` can now be used to remove CRS information by passing
   `crs=None, allow_override=True`. (#3316)
+- Added ``autolim`` keyword argument to ``GeoSeries.plot()`` and ``GeoDataFrame.plot()`` (#2817).
 
 Backwards incompatible API changes:
 
@@ -130,7 +134,7 @@ New deprecations:
   ```
 - The `geopandas.use_pygeos` option has been deprecated and will be removed in GeoPandas
   1.1 (#3283)
-- Manual overriding of an existing CRS of a GeoSeries using the `crs.setter` has been deprecated
+- Manual overriding of an existing CRS of a GeoSeries or GeoDataFrame by setting the `crs` property has been deprecated
   and will be disabled in future. Use the `set_crs()` method instead (#3085).
 
 Bug fixes:
@@ -146,6 +150,8 @@ Bug fixes:
   pyogrio 0.8.1.
 - Fix `to_parquet` to write correct metadata in case of 3D geometries (#2824).
 - Fixes for compatibility with psycopg (#3167).
+- Fix to allow appending dataframes with no CRS to PostGIS tables with no CRS (#3328)
+- Fix plotting of all-empty GeoSeries using `explore` (#3316).
 
 ## Version 0.14.4 (April 26, 2024)
 
