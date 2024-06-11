@@ -1,13 +1,14 @@
 """Ensure geopandas methods can be accessed via pandas 'geo' accessor."""
 
 import pandas as pd
-import pandas.testing
-import pytest
 from shapely.geometry import Point
 
 # Use this import to register the "geo" accessor.
 import geopandas.accessors  # noqa: F401 # pylint: disable=unused-import
 from geopandas.array import GeometryDtype
+
+import pandas.testing
+import pytest
 
 
 @pytest.fixture
