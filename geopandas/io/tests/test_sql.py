@@ -821,7 +821,7 @@ class TestIO:
         sql = "SELECT * FROM nybb;"
         df = read_postgis(sql, con)
         validate_boro_df(df)
-        assert "ESRI:54052" in df.crs.to_string()
+        assert df.crs == "ESRI:54052"
 
     @mock.patch("shapely.get_srid")
     @pytest.mark.parametrize("connection_postgis", POSTGIS_DRIVERS, indirect=True)
@@ -838,3 +838,18 @@ class TestIO:
         with pytest.raises(CRSError, match="crs not found"):
             with pytest.warns(UserWarning, match="Could not find srid 99999"):
                 read_postgis(sql, con)
+
+    @pytest.mark.parametrize("connection_postgis", POSTGIS_DRIVERS, indirect=True)
+    def test_read_non_epsg_crs_chunksize(self, connection_postgis, df_nybb):
+        """Test chunksize argument with non epsg crs"""
+        chunksize = 2
+        con = connection_postgis
+        df_nybb = df_nybb.to_crs(crs="esri:54052")
+
+        create_postgis(con, df_nybb, srid=54052)
+
+        sql = "SELECT * FROM nybb;"
+        df = pd.concat(read_postgis(sql, con, chunksize=chunksize))
+
+        validate_boro_df(df)
+        assert df.crs == "ESRI:54052"

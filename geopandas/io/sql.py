@@ -1,5 +1,6 @@
 import warnings
 from contextlib import contextmanager
+from functools import lru_cache
 
 import pandas as pd
 
@@ -58,10 +59,8 @@ def _df_to_geodf(df, geom_col="geom", crs=None, con=None):
         such as an authority string (eg "EPSG:4326") or a WKT string.
         If not set, tries to determine CRS from the SRID associated with the
         first geometry in the database, and assigns that to all geometries.
-    spatial_ref_sys_df : Dataframe, default None
-        Dataframe of the database of spatial refence system built-in to
-        postgis. This is used to query the correct authority based on the
-        derived srid. If a crs is specified, this is not used.
+    con : sqlalchemy.engine.Connection or sqlalchemy.engine.Engine
+        Active connection to the database to query.
     Returns
     -------
     GeoDataFrame
@@ -96,8 +95,9 @@ def _df_to_geodf(df, geom_col="geom", crs=None, con=None):
             srid = shapely.get_srid(geoms.iat[0])
             # if no defined SRID in geodatabase, returns SRID of 0
             if srid != 0:
-
                 try:
+                    spatial_ref_sys_df = _get_spatial_ref_sys_df(con, srid)
+
                     spatial_ref_sys_sql = (
                         f"SELECT srid, auth_name FROM "
                         f"spatial_ref_sys WHERE srid = {srid}"
@@ -470,3 +470,11 @@ def _write_postgis(
             dtype=dtype,
             method=_psql_insert_copy,
         )
+
+
+@lru_cache
+def _get_spatial_ref_sys_df(con, srid):
+    spatial_ref_sys_sql = (
+        f"SELECT srid, auth_name FROM spatial_ref_sys WHERE srid = {srid}"
+    )
+    return pd.read_sql(spatial_ref_sys_sql, con)
