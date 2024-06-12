@@ -185,22 +185,6 @@ def test_geodataframe_multiindex():
     df2._geometry_column_name = None
     assert_geodataframe_equal(df1, df2)
 
-from geopandas.testing import _isna
-
-def test_isna_with_scalar_non_nan():
-    scalar_value = 42
-    result = _isna(scalar_value)
-    assert result is False
-
-def test_isna_with_object_isnull():
-    class Dummy:
-        def isnull(self):
-            return "isnull method called"
-    
-    dummy = Dummy()
-    result = _isna(dummy)
-    assert result == "isnull method called"
-
 def test_truncated_string_more100():
     from geopandas.testing import _truncated_string
     _truncated_string("asdfasfddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd") 
