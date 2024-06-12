@@ -7,6 +7,13 @@ from shapely.geometry import Point
 
 import geopandas
 
+branch_coverage = {
+   "throttle_branch_1": False, 
+   "throttle_branch_2": False   
+}
+
+def print_branch():
+    return branch_coverage
 
 def _get_throttle_time(provider):
     """
@@ -17,8 +24,10 @@ def _get_throttle_time(provider):
 
     # https://operations.osmfoundation.org/policies/nominatim/
     if provider == geopy.geocoders.Nominatim:
+        branch_coverage["throttle_branch_1"] = True
         return 1
     else:
+        branch_coverage["throttle_branch_2"] = True
         return 0
 
 
