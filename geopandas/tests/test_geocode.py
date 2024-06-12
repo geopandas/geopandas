@@ -168,3 +168,10 @@ def test_reverse(locations, points):
             ["address" + str(x) for x in range(len(points))], name="address"
         )
         assert_series_equal(g["address"], address)
+
+
+
+def test_throttle_time_provider_null():
+    import geopandas.tools.geocoding
+    assert geopandas.tools.geocoding._get_throttle_time(geopy.geocoders.Nominatim) == 1
+   
