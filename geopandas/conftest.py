@@ -45,3 +45,13 @@ def nybb_filename() -> str:
 def _setup_class_nybb_filename(nybb_filename, request):
     """Attach nybb_filename class attribute for unittest style setup_method"""
     request.cls.nybb_filename = nybb_filename
+
+def pytest_sessionfinish(session, exitstatus):
+    # Call the function to get the branch coverage information
+    from geopandas.tools.geocoding import print_branch
+    from geopandas.testing import print_branch_trunc
+    branch_coverage = print_branch()
+    branch_coverage2 = print_branch_trunc()
+
+    print(branch_coverage)
+    print(branch_coverage2)
