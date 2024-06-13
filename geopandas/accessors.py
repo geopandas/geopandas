@@ -4,7 +4,7 @@ Accessors for accessing GeoPandas functionality via pandas extension dtypes
 
 import pandas.api.extensions
 
-import geopandas.geoseries
+from geopandas import GeoSeries
 from geopandas.array import GeometryDtype
 
 
@@ -22,7 +22,7 @@ class GeoSeriesAccessor:
         if not isinstance(series.dtype, GeometryDtype):
             raise AttributeError("Can only use .geo accessor with geometry values")
 
-        self._geoseries = geopandas.geoseries.GeoSeries(series)
+        self._geoseries = GeoSeries(series)
 
     def __getattr__(self, name):
         return getattr(self._geoseries, name)
