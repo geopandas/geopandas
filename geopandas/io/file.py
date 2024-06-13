@@ -26,7 +26,6 @@ _VALID_URLS.discard("")
 # file:// URIs are supported by fiona/pyogrio -> don't already open + read the file here
 _VALID_URLS.discard("file")
 
-
 fiona = None
 fiona_env = None
 fiona_import_error = None
@@ -102,37 +101,47 @@ def _check_pyogrio(func):
             "\nImporting pyogrio resulted in: {pyogrio_import_error}"
         )
 
-
-def _check_engine(engine, func):
+def _check_engine(engine, func, cov_br_list = None):
+    cov_br_list[0] = 1
     # if not specified through keyword or option, then default to "pyogrio" if
     # installed, otherwise try fiona
     if engine is None:
+        cov_br_list[1] = 1
         import geopandas
 
         engine = geopandas.options.io_engine
 
     if engine is None:
+        cov_br_list[2] = 1
         _import_pyogrio()
+
         if pyogrio:
+            cov_br_list[3] = 1
             engine = "pyogrio"
         else:
+            cov_br_list[4] = 1
             _import_fiona()
             if fiona:
+                cov_br_list[5] = 1
                 engine = "fiona"
 
     if engine == "pyogrio":
+        cov_br_list[6] = 1
         _import_pyogrio()
         _check_pyogrio(func)
     elif engine == "fiona":
+        cov_br_list[7] = 1
         _import_fiona()
         _check_fiona(func)
     elif engine is None:
+        cov_br_list[8] = 1
         raise ImportError(
             f"The {func} requires the 'pyogrio' or 'fiona' package, "
             "but neither is installed or imports correctly."
             f"\nImporting pyogrio resulted in: {pyogrio_import_error}"
             f"\nImporting fiona resulted in: {fiona_import_error}"
         )
+    cov_br_list[9] = 1
 
     return engine
 
