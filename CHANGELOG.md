@@ -113,6 +113,8 @@ Enforced deprecations:
     method directly instead.
   - Removed deprecated GeoSeries/GeoDataFrame `.plot` parameters `axes` and `colormap`, instead use
     `ax` and `cmap` respectively.
+  - Removed compatibility for specifying the `version` keyword in `to_parquet` and `to_feather`.
+    This keyword will now be passed through to pyarrow and use `schema_version` to specify the GeoParquet specification version (#3334).
 
 New deprecations:
 
