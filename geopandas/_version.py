@@ -622,37 +622,62 @@ def render_git_describe_long(pieces: Dict[str, Any]) -> str:
     return rendered
 
 
+COVERAGE_FLAGS = {
+   "error_branch": False,
+   "default_style": False,
+   "pep440": False,
+   "pep440_branch": False,
+   "pep440_pre": False,
+   "pep440_post": False,
+   "pep440_post_branch": False,
+   "pep440_old": False,
+   "git_describe": False,
+   "git_describe_long": False,
+   "unknown_style": False,
+}
+
 def render(pieces: Dict[str, Any], style: str) -> Dict[str, Any]:
     """Render the given version pieces into the requested style."""
     if pieces["error"]:
+        COVERAGE_FLAGS["error_branch"] = True
         return {
             "version": "unknown",
             "full-revisionid": pieces.get("long"),
             "dirty": None,
             "error": pieces["error"],
             "date": None,
-        }
+}
 
     if not style or style == "default":
+        COVERAGE_FLAGS["default_style"] = True
         style = "pep440"  # the default
 
     if style == "pep440":
+        COVERAGE_FLAGS["pep440"] = True
         rendered = render_pep440(pieces)
     elif style == "pep440-branch":
+        COVERAGE_FLAGS["pep440_branch"] = True
         rendered = render_pep440_branch(pieces)
     elif style == "pep440-pre":
+        COVERAGE_FLAGS["pep440_pre"] = True
         rendered = render_pep440_pre(pieces)
     elif style == "pep440-post":
+        COVERAGE_FLAGS["pep440_post"] = True
         rendered = render_pep440_post(pieces)
     elif style == "pep440-post-branch":
+        COVERAGE_FLAGS["pep440_post_branch"] = True
         rendered = render_pep440_post_branch(pieces)
     elif style == "pep440-old":
+        COVERAGE_FLAGS["pep440_old"] = True
         rendered = render_pep440_old(pieces)
     elif style == "git-describe":
+        COVERAGE_FLAGS["git_describe"] = True
         rendered = render_git_describe(pieces)
     elif style == "git-describe-long":
+        COVERAGE_FLAGS["git_describe_long"] = True
         rendered = render_git_describe_long(pieces)
     else:
+        COVERAGE_FLAGS["unknown_style"] = True
         raise ValueError("unknown style '%s'" % style)
 
     return {
