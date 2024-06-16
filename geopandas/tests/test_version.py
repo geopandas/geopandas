@@ -1,13 +1,12 @@
 import sys
 import os
-import pytest
 
 
 parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
 sys.path.insert(0, parent_dir)
 
 
-from _version import render, COVERAGE_FLAGS
+from _version import render, COVERAGE_FLAGS, render_pep440, COVERAGE_FLAGS_EXTRA
 
 
 def test_render_with_error():
@@ -140,3 +139,24 @@ test_render_unknown_style()
 
 print_coverage(COVERAGE_FLAGS)
 print_percentage(COVERAGE_FLAGS)
+
+#Second function in the same file
+
+# NEW FUNCTION
+def test_render_pep440():
+  pieces = {"error": None, "long": "abcdef", "dirty": True, "closest-tag": "v1.0.0", "distance": 0,
+              "date": None, "short" : "abc"}
+  result = render_pep440(pieces)
+  assert result == "v1.0.0+0.gabc.dirty"
+
+def test_render_pep440_else():
+  pieces = {"error": None, "long": "abcdef", "dirty": True, "closest-tag": False, "distance": 0,
+              "date": None, "short" : "abc"}
+  result = render_pep440(pieces)
+  assert result == "0+untagged.0.gabc.dirty"
+
+test_render_pep440()
+test_render_pep440_else()
+
+print_coverage(COVERAGE_FLAGS_EXTRA)
+print_percentage(COVERAGE_FLAGS_EXTRA)

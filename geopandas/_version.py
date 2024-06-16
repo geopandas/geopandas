@@ -417,28 +417,45 @@ def plus_or_dot(pieces: Dict[str, Any]) -> str:
     return "+"
 
 
+COVERAGE_FLAGS_EXTRA = {
+   "closest_tag": False,
+   "distance_or_dirty": False,
+   "dirty": False,
+   "no_closing_tag": False,
+   "no_closing_tag_dirty": False
+}
+
+
 def render_pep440(pieces: Dict[str, Any]) -> str:
     """Build up version string, with post-release "local version identifier".
 
+
     Our goal: TAG[+DISTANCE.gHEX[.dirty]] . Note that if you
     get a tagged build and then dirty it, you'll get TAG+0.gHEX.dirty
+
 
     Exceptions:
     1: no tags. git_describe was just HEX. 0+untagged.DISTANCE.gHEX[.dirty]
     """
     if pieces["closest-tag"]:
+        COVERAGE_FLAGS_EXTRA["closest_tag"] = True
         rendered = pieces["closest-tag"]
         if pieces["distance"] or pieces["dirty"]:
+            COVERAGE_FLAGS_EXTRA["distance_or_dirty"] = True
             rendered += plus_or_dot(pieces)
             rendered += "%d.g%s" % (pieces["distance"], pieces["short"])
             if pieces["dirty"]:
+                COVERAGE_FLAGS_EXTRA["dirty"] = True
                 rendered += ".dirty"
     else:
+        COVERAGE_FLAGS_EXTRA["no_closing_tag"] = True
         # exception #1
         rendered = "0+untagged.%d.g%s" % (pieces["distance"], pieces["short"])
         if pieces["dirty"]:
+            COVERAGE_FLAGS_EXTRA["no_closing_tag_dirty"] = True
             rendered += ".dirty"
     return rendered
+
 
 
 def render_pep440_branch(pieces: Dict[str, Any]) -> str:
