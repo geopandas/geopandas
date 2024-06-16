@@ -97,12 +97,6 @@ def _df_to_geodf(df, geom_col="geom", crs=None, con=None):
             if srid != 0:
                 try:
                     spatial_ref_sys_df = _get_spatial_ref_sys_df(con, srid)
-
-                    spatial_ref_sys_sql = (
-                        f"SELECT srid, auth_name FROM "
-                        f"spatial_ref_sys WHERE srid = {srid}"
-                    )
-                    spatial_ref_sys_df = pd.read_sql(spatial_ref_sys_sql, con)
                 except pd.errors.DatabaseError:
                     warning_msg = (
                         f"Could not find the spatial reference system table "
