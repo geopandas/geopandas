@@ -2,7 +2,6 @@ import json
 import os
 import shutil
 import tempfile
-import warnings
 
 import numpy as np
 import pandas as pd
@@ -1325,24 +1324,15 @@ class TestConstructor:
         assert list(gdf.columns) == ["geometry", "a"]
 
     def test_do_not_preserve_series_name_in_constructor(self):
+        # GH3337
+        # GeoDataFrame(... geometry=...) should always create geom col "geometry"
         geoms = [Point(1, 1), Point(2, 2), Point(3, 3)]
         gs = GeoSeries(geoms)
         gdf = GeoDataFrame({"a": [1, 2, 3]}, geometry=gs)
-
         check_geodataframe(gdf, geometry_column="geometry")
-
-        geoms = [Point(1, 1), Point(2, 2), Point(3, 3)]
+        # still get "geometry", even with custom geoseries name
         gs = GeoSeries(geoms, name="my_geom")
-        match = "You have passed a Series named "
-        with pytest.warns(UserWarning, match=match):
-            gdf = GeoDataFrame({"a": [1, 2, 3]}, geometry=gs)
-        check_geodataframe(gdf, geometry_column="geometry")
-
-        # should not warn if name=None
-        gs = GeoSeries(geoms, name=None)
-        with warnings.catch_warnings():
-            warnings.simplefilter("error")
-            gdf = GeoDataFrame({"a": [1, 2, 3]}, geometry=gs)
+        gdf = GeoDataFrame({"a": [1, 2, 3]}, geometry=gs)
         check_geodataframe(gdf, geometry_column="geometry")
 
     def test_overwrite_geometry(self):

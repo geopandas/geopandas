@@ -69,9 +69,9 @@ files based on a bounding box, and write out a bounding box column to parquet fi
 - `GeoSeries.set_crs` can now be used to remove CRS information by passing
   `crs=None, allow_override=True` (#3316).
 - Added ``autolim`` keyword argument to ``GeoSeries.plot()`` and ``GeoDataFrame.plot()`` (#2817).
-- Passing a named (Geo)Series as the `geometry` argument to the GeoDataFrame constructor now
-  produces a warning that the name is ignored to consistently return a geometry column named
-  "geometry", rather than silently ignoring the name (#3337).
+- Updated documentation to clarify that passing a named (Geo)Series as the `geometry`
+  argument to the GeoDataFrame constructor will not use the name but will always  
+  produce a GeoDataFrame with an active geometry column named "geometry" (#3337).
 
 Backwards incompatible API changes:
 
