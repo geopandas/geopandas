@@ -173,5 +173,5 @@ def test_reverse(locations, points):
 
 def test_throttle_time_provider_null():
     import geopandas.tools.geocoding
-    assert geopandas.tools.geocoding._get_throttle_time(geopy.geocoders.Nominatim) == 1
+    assert geopandas.tools.geocoding._get_throttle_time(geopy.geocoders.Nominatim) == 1    #add this for review
    
