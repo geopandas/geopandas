@@ -11,11 +11,10 @@ from importlib.util import find_spec
 
 import pandas as pd
 
-from pyproj.exceptions import CRSError
-
 import geopandas
 import geopandas._compat as compat
 from geopandas import GeoDataFrame, read_file, read_postgis
+from geopandas._compat import HAS_PYPROJ
 from geopandas.io.sql import _get_conn as get_conn
 from geopandas.io.sql import _write_postgis as write_postgis
 
@@ -823,11 +822,14 @@ class TestIO:
         validate_boro_df(df)
         assert df.crs == "ESRI:54052"
 
+    @pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not installed")
     @mock.patch("shapely.get_srid")
     @pytest.mark.parametrize("connection_postgis", POSTGIS_DRIVERS, indirect=True)
     def test_read_srid_not_in_table(self, mock_get_srid, connection_postgis, df_nybb):
         # mock a non-existent srid for edge case if shapely has an srid
         # not present in postgis table.
+        pyproj = pytest.importorskip("pyproj")
+
         mock_get_srid.return_value = 99999
 
         con = connection_postgis
@@ -835,7 +837,7 @@ class TestIO:
         create_postgis(con, df_nybb)
 
         sql = "SELECT * FROM nybb;"
-        with pytest.raises(CRSError, match="crs not found"):
+        with pytest.raises(pyproj.exceptions.CRSError, match="crs not found"):
             with pytest.warns(UserWarning, match="Could not find srid 99999"):
                 read_postgis(sql, con)
 
