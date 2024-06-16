@@ -185,6 +185,6 @@ def test_geodataframe_multiindex():
     df2._geometry_column_name = None
     assert_geodataframe_equal(df1, df2)
 
-def test_truncated_string_more100():
-    from geopandas.testing import _truncated_string
+def test_truncated_string_more100():        #Own test that was created
+    from geopandas.testing import _truncated_string  
     _truncated_string("asdfasfddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd") 
