@@ -1,15 +1,14 @@
 import pytest
+import pathlib
+from operator import countOf
 from unittest.mock import patch, DEFAULT
 from geopandas.io import file
+from geopandas.io.file import coverage_branches_cheng, coverage_branches_expusr
 
 # --------
-# Unit test
-#
-# Func: def _check_engine(engine, func)
+# Func: _check_engine(engine, func)
 # Path: geopandas/io/file.py
 # --------
-
-cov_br_list = [None] * 10
 
 engine_res_pairs_mock_pyogrio = [
     (None, "fiona"),
@@ -25,28 +24,52 @@ engine_res_pairs = [
     ("some_text", "some_text"),
 ]
 
-# --- PYTEST ---
-
 @pytest.mark.parametrize("engine, excpt_res", engine_res_pairs_mock_pyogrio)
 def test_bcov_check_engine_mock_pyogrio(engine, excpt_res):
     with patch.multiple("geopandas.io.file", _import_pyogrio = DEFAULT, _check_pyogrio = DEFAULT ):
-        res = file._check_engine(engine, "'read_file' function", cov_br_list)
+        res = file._check_engine(engine, "'read_file' function")
         
         assert(excpt_res == res)
 
 @pytest.mark.parametrize("engine, excpt_res", engine_res_pairs)
 def test_bcov_check_engine(engine, excpt_res):
-    res = file._check_engine(engine, "'read_file' function", cov_br_list)
+    res = file._check_engine(engine, "'read_file' function")
 
     assert(excpt_res == res)
 
 
+# --------
+# Func: _expand_user(path)
+# Path: geopandas/io/file.py
+# --------
+
+def test_expand_user_str(): 
+    file._expand_user("any/path")
+
+def test_expand_user_path(): 
+    file._expand_user(pathlib.Path("any/path"))
+
+
 # --- OWN COVERAGE TOOL ---
+
+def print_coverage(flags: dict):
+    for branch, hit in flags.items():
+        print(f"{branch} was {'hit' if hit else 'not hit'}")
+    print(f"Coverage: {float(countOf(flags.values(), True) / len(flags)) * 100}%")
+
+
+# Main
 
 for args in engine_res_pairs_mock_pyogrio:
     test_bcov_check_engine_mock_pyogrio(args[0], args[1])
 
 for args in engine_res_pairs:
-    test_bcov_check_engine(args[0], args[1]) 
+    test_bcov_check_engine(args[0], args[1])
 
-print("Branch coverage: " + str(int(cov_br_list.count(1) / len(cov_br_list) * 100)) + "%")
+print_coverage(coverage_branches_cheng)
+
+test_expand_user_str()
+test_expand_user_path()
+
+print_coverage(coverage_branches_expusr)
+
