@@ -1,6 +1,6 @@
 # Changelog
 
-## Version 1.0.0
+## Version 1.0.0-rc1 (June 17, 2024)
 
 Notes on dependencies:
 
