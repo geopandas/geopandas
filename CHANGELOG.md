@@ -72,6 +72,10 @@ files based on a bounding box, and write out a bounding box column to parquet fi
 - Updated documentation to clarify that passing a named (Geo)Series as the `geometry`
   argument to the GeoDataFrame constructor will not use the name but will always  
   produce a GeoDataFrame with an active geometry column named "geometry" (#3337).
+- `read_postgis` will query the spatial_ref_sys table to determine the CRS authority
+  instead of its current behaviour of assuming EPSG. In the event the spiatal_ref_sys
+  table is not present, or the SRID is not present, `read_postgis` will fallback
+  on assuming EPSG CRS authority. (#3329)
 
 Backwards incompatible API changes:
 
