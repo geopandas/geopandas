@@ -780,7 +780,7 @@ class TestIO:
         # of appending dataframes to postgis that have no CRS as postgis
         # no CRS value is 0.
         engine = engine_postgis
-        df_nybb = df_nybb.set_.crs(None, allow_override=True)
+        df_nybb = df_nybb.set_crs(None, allow_override=True)
         table = "nybb"
 
         write_postgis(df_nybb, con=engine, name=table, if_exists="replace")
