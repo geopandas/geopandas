@@ -103,7 +103,7 @@ def _df_to_geodf(df, geom_col="geom", crs=None, con=None):
                         f"(spatial_ref_sys) in PostGIS."
                         f"Trying epsg:{srid} as a fallback."
                     )
-                    warnings.warn(warning_msg, UserWarning, stacklevel=2)
+                    warnings.warn(warning_msg, UserWarning, stacklevel=3)
                     crs = "epsg:{}".format(srid)
                 else:
                     if not spatial_ref_sys_df.empty:
@@ -115,7 +115,7 @@ def _df_to_geodf(df, geom_col="geom", crs=None, con=None):
                             f"spatial_ref_sys table. "
                             f"Trying epsg:{srid} as a fallback."
                         )
-                        warnings.warn(warning_msg, UserWarning, stacklevel=2)
+                        warnings.warn(warning_msg, UserWarning, stacklevel=3)
                         crs = "epsg:{}".format(srid)
 
     return GeoDataFrame(df, crs=crs, geometry=geom_col)
