@@ -1323,18 +1323,17 @@ class TestConstructor:
         check_geodataframe(gdf)
         assert list(gdf.columns) == ["geometry", "a"]
 
-    def test_preserve_series_name(self):
+    def test_do_not_preserve_series_name_in_constructor(self):
+        # GH3337
+        # GeoDataFrame(... geometry=...) should always create geom col "geometry"
         geoms = [Point(1, 1), Point(2, 2), Point(3, 3)]
         gs = GeoSeries(geoms)
         gdf = GeoDataFrame({"a": [1, 2, 3]}, geometry=gs)
-
         check_geodataframe(gdf, geometry_column="geometry")
-
-        geoms = [Point(1, 1), Point(2, 2), Point(3, 3)]
+        # still get "geometry", even with custom geoseries name
         gs = GeoSeries(geoms, name="my_geom")
         gdf = GeoDataFrame({"a": [1, 2, 3]}, geometry=gs)
-
-        check_geodataframe(gdf, geometry_column="my_geom")
+        check_geodataframe(gdf, geometry_column="geometry")
 
     def test_overwrite_geometry(self):
         # GH602
