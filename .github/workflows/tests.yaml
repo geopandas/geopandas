@@ -101,6 +101,7 @@ jobs:
         run: |
           conda install postgis -c conda-forge
           sh ci/scripts/setup_postgres.sh
+          set -o pipefail
           pytest -v -r fEs --color=yes --cov=geopandas --cov-append --cov-report term-missing --cov-report xml geopandas/io/tests/test_sql.py | tee /dev/stderr | if grep SKIPPED >/dev/null;then echo "TESTS SKIPPED, FAILING" && exit 1;fi
 
       - name: Test docstrings
