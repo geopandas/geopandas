@@ -103,21 +103,20 @@ def _df_to_geodf(df, geom_col="geom", crs=None, con=None):
                         f"(spatial_ref_sys) in PostGIS."
                         f"Trying epsg:{srid} as a fallback."
                     )
-                    spatial_ref_sys_df = None
                     warnings.warn(warning_msg, UserWarning, stacklevel=2)
                     crs = "epsg:{}".format(srid)
-
-                if not spatial_ref_sys_df.empty:
-                    auth_name = spatial_ref_sys_df["auth_name"].item()
-                    crs = f"{auth_name}:{srid}"
                 else:
-                    warning_msg = (
-                        f"Could not find srid {srid} in the "
-                        f"spatial_ref_sys table. "
-                        f"Trying epsg:{srid} as a fallback."
-                    )
-                    warnings.warn(warning_msg, UserWarning, stacklevel=2)
-                    crs = "epsg:{}".format(srid)
+                    if not spatial_ref_sys_df.empty:
+                        auth_name = spatial_ref_sys_df["auth_name"].item()
+                        crs = f"{auth_name}:{srid}"
+                    else:
+                        warning_msg = (
+                            f"Could not find srid {srid} in the "
+                            f"spatial_ref_sys table. "
+                            f"Trying epsg:{srid} as a fallback."
+                        )
+                        warnings.warn(warning_msg, UserWarning, stacklevel=2)
+                        crs = "epsg:{}".format(srid)
 
     return GeoDataFrame(df, crs=crs, geometry=geom_col)
 

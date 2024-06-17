@@ -841,6 +841,27 @@ class TestIO:
             with pytest.warns(UserWarning, match="Could not find srid 99999"):
                 read_postgis(sql, con)
 
+    @mock.patch("geopandas.io.sql._get_spatial_ref_sys_df")
+    @pytest.mark.parametrize("connection_postgis", POSTGIS_DRIVERS, indirect=True)
+    def test_read_no_spatial_ref_sys_table_in_postgis(
+        self, mock_get_spatial_ref_sys_df, connection_postgis, df_nybb
+    ):
+        # mock for a non-existent spatial_ref_sys database
+
+        mock_get_spatial_ref_sys_df.side_effect = pd.errors.DatabaseError
+
+        con = connection_postgis
+        df_nybb = df_nybb.to_crs(crs="epsg:4326")
+        create_postgis(con, df_nybb, srid=4326)
+
+        sql = "SELECT * FROM nybb;"
+        with pytest.warns(
+            UserWarning, match="Could not find the spatial reference system table"
+        ):
+            df = read_postgis(sql, con)
+
+        assert df.crs == "EPSG:4326"
+
     @pytest.mark.parametrize("connection_postgis", POSTGIS_DRIVERS, indirect=True)
     def test_read_non_epsg_crs_chunksize(self, connection_postgis, df_nybb):
         """Test chunksize argument with non epsg crs"""
