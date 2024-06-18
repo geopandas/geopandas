@@ -68,6 +68,7 @@ files based on a bounding box, and write out a bounding box column to parquet fi
   will silence the warning about mismachted indices. (#3212)
 - `GeoSeries.set_crs` can now be used to remove CRS information by passing
   `crs=None, allow_override=True`. (#3316)
+- Added ``autolim`` keyword argument to ``GeoSeries.plot()`` and ``GeoDataFrame.plot()`` (#2817).
 - Added `metadata` parameter to `GeoDataFrame.to_file` (#2850)
 
 Backwards incompatible API changes:
@@ -113,6 +114,8 @@ Enforced deprecations:
     method directly instead.
   - Removed deprecated GeoSeries/GeoDataFrame `.plot` parameters `axes` and `colormap`, instead use
     `ax` and `cmap` respectively.
+  - Removed compatibility for specifying the `version` keyword in `to_parquet` and `to_feather`.
+    This keyword will now be passed through to pyarrow and use `schema_version` to specify the GeoParquet specification version (#3334).
 
 New deprecations:
 
@@ -134,7 +137,7 @@ New deprecations:
   ```
 - The `geopandas.use_pygeos` option has been deprecated and will be removed in GeoPandas
   1.1 (#3283)
-- Manual overriding of an existing CRS of a GeoSeries using the `crs.setter` has been deprecated
+- Manual overriding of an existing CRS of a GeoSeries or GeoDataFrame by setting the `crs` property has been deprecated
   and will be disabled in future. Use the `set_crs()` method instead (#3085).
 
 Bug fixes:
