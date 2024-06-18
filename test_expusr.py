@@ -1,5 +1,4 @@
 import pathlib
-import pytest
 
 from operator import countOf
 from unittest.mock import patch, DEFAULT
