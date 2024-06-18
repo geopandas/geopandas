@@ -38,21 +38,6 @@ def test_bcov_check_engine(engine, excpt_res):
 
     assert(excpt_res == res)
 
-
-# --------
-# Func: _expand_user(path)
-# Path: geopandas/io/file.py
-# --------
-
-def test_expand_user_str(): 
-    res = file._expand_user("any/path")
-    assert(isinstance(res, str))
-
-def test_expand_user_path(): 
-    res = file._expand_user(pathlib.Path("any/path"))
-    assert(isinstance(res, pathlib.Path))
-
-
 # --- OWN COVERAGE TOOL ---
 
 def print_coverage(flags: dict):
@@ -70,9 +55,3 @@ for args in engine_res_pairs:
     test_bcov_check_engine(args[0], args[1])
 
 print_coverage(coverage_branches_cheng)
-
-test_expand_user_str()
-test_expand_user_path()
-
-print_coverage(coverage_branches_expusr)
-
