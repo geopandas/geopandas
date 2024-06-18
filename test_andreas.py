@@ -1,5 +1,6 @@
-import pytest
 import pathlib
+import pytest
+
 from operator import countOf
 from unittest.mock import patch, DEFAULT
 from geopandas.io import file
@@ -44,10 +45,12 @@ def test_bcov_check_engine(engine, excpt_res):
 # --------
 
 def test_expand_user_str(): 
-    file._expand_user("any/path")
+    res = file._expand_user("any/path")
+    assert(isinstance(res, str))
 
 def test_expand_user_path(): 
-    file._expand_user(pathlib.Path("any/path"))
+    res = file._expand_user(pathlib.Path("any/path"))
+    assert(isinstance(res, pathlib.Path))
 
 
 # --- OWN COVERAGE TOOL ---
