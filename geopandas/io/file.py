@@ -73,7 +73,6 @@ def _import_pyogrio():
     global pyogrio
     global pyogrio_import_error
     global PYOGRIO_GE_081
-    global PYOGRIO_GE_06
 
     if pyogrio is None:
         try:
@@ -86,7 +85,6 @@ def _import_pyogrio():
             PYOGRIO_GE_081 = Version(
                 Version(pyogrio.__version__).base_version
             ) >= Version("0.8.1")
-            PYOGRIO_GE_06 = Version(pyogrio.__version__) >= Version("0.6.0")
 
 
 def _check_fiona(func):
@@ -117,10 +115,6 @@ def _check_metadata_supported(metadata: str | None, engine: str, driver: str) ->
     if engine == "fiona" and not FIONA_GE_19:
         raise NotImplementedError(
             "The 'metadata' keyword is only supported for Fiona >= 1.9."
-        )
-    elif engine == "pyogrio" and not PYOGRIO_GE_06:
-        raise NotImplementedError(
-            "The 'metadata' keyword is only supported for Pyogrio >= 0.6.0"
         )
 
 

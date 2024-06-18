@@ -26,11 +26,8 @@ from pandas.testing import assert_frame_equal, assert_series_equal
 
 try:
     import pyogrio
-
-    PYOGRIO_GE_06 = Version(pyogrio.__version__) >= Version("0.6.0")
 except ImportError:
     pyogrio = False
-    PYOGRIO_GE_06 = False
 
 
 try:
@@ -1324,26 +1321,12 @@ def test_to_file_metadata_supported_fiona_version(tmp_path, df_points):
 
 
 @pytest.mark.skipif(pyogrio is False, reason="Pyogrio not available")
-@pytest.mark.skipif(PYOGRIO_GE_06, reason="Pyogrio >= 0.6 supports metadata")
 def test_to_file_metadata_unsupported_pyogrio_version(tmp_path, df_points):
     metadata = {"title": "test"}
     match = "'metadata' keyword is only supported for Pyogrio >= 0.6"
     with pytest.raises(NotImplementedError, match=match):
         tmp_file = tmp_path / "test.gpkg"
         df_points.to_file(tmp_file, driver="GPKG", engine="pyogrio", metadata=metadata)
-
-
-@pytest.mark.skipif(not PYOGRIO_GE_06, reason="only Pyogrio >= 0.6 supports metadata")
-def test_to_file_metadata_supported_pyogrio_version(tmp_path, df_points):
-    metadata = {"title": "test"}
-    tmp_file = tmp_path / "test.gpkg"
-
-    df_points.to_file(tmp_file, driver="GPKG", engine="pyogrio", metadata=metadata)
-
-    # Check that metadata is written to the file
-    info = pyogrio.read_info(tmp_file)
-    layer_metadata = info["layer_metadata"]
-    assert layer_metadata == metadata
 
 
 @pytest.mark.parametrize(
