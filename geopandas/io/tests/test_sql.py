@@ -14,11 +14,17 @@ import pandas as pd
 import geopandas
 import geopandas._compat as compat
 from geopandas import GeoDataFrame, read_file, read_postgis
+from geopandas._compat import HAS_PYPROJ
 from geopandas.io.sql import _get_conn as get_conn
 from geopandas.io.sql import _write_postgis as write_postgis
 
 import pytest
-from geopandas.tests.util import create_postgis, create_spatialite, validate_boro_df
+from geopandas.tests.util import (
+    create_postgis,
+    create_spatialite,
+    mock,
+    validate_boro_df,
+)
 
 try:
     from sqlalchemy import text
@@ -780,7 +786,7 @@ class TestIO:
         # of appending dataframes to postgis that have no CRS as postgis
         # no CRS value is 0.
         engine = engine_postgis
-        df_nybb = df_nybb.set_.crs(None, allow_override=True)
+        df_nybb = df_nybb.set_crs(None, allow_override=True)
         table = "nybb"
 
         write_postgis(df_nybb, con=engine, name=table, if_exists="replace")
@@ -804,3 +810,69 @@ class TestIO:
 
         with pytest.raises(ValueError):
             read_postgis(sql, engine, geom_col="geom")
+
+    @pytest.mark.parametrize("connection_postgis", POSTGIS_DRIVERS, indirect=True)
+    def test_read_non_epsg_crs(self, connection_postgis, df_nybb):
+        con = connection_postgis
+        df_nybb = df_nybb.to_crs(crs="esri:54052")
+        create_postgis(con, df_nybb, srid=54052)
+
+        sql = "SELECT * FROM nybb;"
+        df = read_postgis(sql, con)
+        validate_boro_df(df)
+        assert df.crs == "ESRI:54052"
+
+    @pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not installed")
+    @mock.patch("shapely.get_srid")
+    @pytest.mark.parametrize("connection_postgis", POSTGIS_DRIVERS, indirect=True)
+    def test_read_srid_not_in_table(self, mock_get_srid, connection_postgis, df_nybb):
+        # mock a non-existent srid for edge case if shapely has an srid
+        # not present in postgis table.
+        pyproj = pytest.importorskip("pyproj")
+
+        mock_get_srid.return_value = 99999
+
+        con = connection_postgis
+        df_nybb = df_nybb.to_crs(crs="epsg:4326")
+        create_postgis(con, df_nybb)
+
+        sql = "SELECT * FROM nybb;"
+        with pytest.raises(pyproj.exceptions.CRSError, match="crs not found"):
+            with pytest.warns(UserWarning, match="Could not find srid 99999"):
+                read_postgis(sql, con)
+
+    @mock.patch("geopandas.io.sql._get_spatial_ref_sys_df")
+    @pytest.mark.parametrize("connection_postgis", POSTGIS_DRIVERS, indirect=True)
+    def test_read_no_spatial_ref_sys_table_in_postgis(
+        self, mock_get_spatial_ref_sys_df, connection_postgis, df_nybb
+    ):
+        # mock for a non-existent spatial_ref_sys database
+
+        mock_get_spatial_ref_sys_df.side_effect = pd.errors.DatabaseError
+
+        con = connection_postgis
+        df_nybb = df_nybb.to_crs(crs="epsg:4326")
+        create_postgis(con, df_nybb, srid=4326)
+
+        sql = "SELECT * FROM nybb;"
+        with pytest.warns(
+            UserWarning, match="Could not find the spatial reference system table"
+        ):
+            df = read_postgis(sql, con)
+
+        assert df.crs == "EPSG:4326"
+
+    @pytest.mark.parametrize("connection_postgis", POSTGIS_DRIVERS, indirect=True)
+    def test_read_non_epsg_crs_chunksize(self, connection_postgis, df_nybb):
+        """Test chunksize argument with non epsg crs"""
+        chunksize = 2
+        con = connection_postgis
+        df_nybb = df_nybb.to_crs(crs="esri:54052")
+
+        create_postgis(con, df_nybb, srid=54052)
+
+        sql = "SELECT * FROM nybb;"
+        df = pd.concat(read_postgis(sql, con, chunksize=chunksize))
+
+        validate_boro_df(df)
+        assert df.crs == "ESRI:54052"
