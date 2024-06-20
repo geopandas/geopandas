@@ -1337,7 +1337,6 @@ def test_to_file_metadata_pyogrio(tmp_path, df_points):
     "driver, ext", [("ESRI Shapefile", ".shp"), ("GeoJSON", ".geojson")]
 )
 def test_to_file_metadata_unsupported_driver(driver, ext, tmpdir, df_points, engine):
-    skip_pyogrio_not_supported(engine)
     metadata = {"title": "Test"}
     tempfilename = os.path.join(str(tmpdir), "test" + ext)
     with pytest.raises(
