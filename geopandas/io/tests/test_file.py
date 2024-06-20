@@ -1321,12 +1321,16 @@ def test_to_file_metadata_supported_fiona_version(tmp_path, df_points):
 
 
 @pytest.mark.skipif(pyogrio is False, reason="Pyogrio not available")
-def test_to_file_metadata_unsupported_pyogrio_version(tmp_path, df_points):
+def test_to_file_metadata_pyogrio(tmp_path, df_points):
     metadata = {"title": "test"}
-    match = "'metadata' keyword is only supported for Pyogrio >= 0.6"
-    with pytest.raises(NotImplementedError, match=match):
-        tmp_file = tmp_path / "test.gpkg"
-        df_points.to_file(tmp_file, driver="GPKG", engine="pyogrio", metadata=metadata)
+    tmp_file = tmp_path / "test.gpkg"
+
+    df_points.to_file(tmp_file, driver="GPKG", engine="pyogrio", metadata=metadata)
+
+    # Check that metadata is written to the file
+    info = pyogrio.read_info(tmp_file)
+    layer_metadata = info["layer_metadata"]
+    assert layer_metadata == metadata
 
 
 @pytest.mark.parametrize(
