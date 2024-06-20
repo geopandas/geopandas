@@ -3,7 +3,7 @@ import pytest
 from operator import countOf
 from unittest.mock import patch, DEFAULT
 from geopandas.io import file
-from geopandas.io.file import coverage_branches_cheng, coverage_branches_expusr
+from geopandas.io.file import coverage_branches_cheng
 
 # --------
 # Func: _check_engine(engine, func)
