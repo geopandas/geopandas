@@ -1483,6 +1483,9 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
             The underlying library that is used to write the file. Currently, the
             supported options are "pyogrio" and "fiona". Defaults to "pyogrio" if
             installed, otherwise tries "fiona".
+        metadata : dict[str, str], default None
+            Optional metadata to be stored in the file. Keys and values must be
+            strings. Supported only for "GPKG" driver.
         **kwargs :
             Keyword args to be passed to the engine, and can be used to write
             to multi-layer data, store data within archives (zip files), etc.
