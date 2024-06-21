@@ -65,13 +65,13 @@ def _import_fiona():
 
 pyogrio = None
 pyogrio_import_error = None
-PYOGRIO_GE_081 = False
+PYOGRIO_GE_090 = False
 
 
 def _import_pyogrio():
     global pyogrio
     global pyogrio_import_error
-    global PYOGRIO_GE_081
+    global PYOGRIO_GE_090
 
     if pyogrio is None:
         try:
@@ -81,9 +81,9 @@ def _import_pyogrio():
             pyogrio = False
             pyogrio_import_error = str(err)
         else:
-            PYOGRIO_GE_081 = Version(
+            PYOGRIO_GE_090 = Version(
                 Version(pyogrio.__version__).base_version
-            ) >= Version("0.8.1")
+            ) >= Version("0.9.0")
 
 
 def _check_fiona(func):

@@ -1,5 +1,6 @@
 import datetime
 import io
+import json
 import os
 import pathlib
 import shutil
@@ -17,7 +18,7 @@ from shapely.geometry import Point, Polygon, box, mapping
 import geopandas
 from geopandas import GeoDataFrame, read_file
 from geopandas._compat import HAS_PYPROJ, PANDAS_GE_20, PANDAS_GE_30
-from geopandas.io.file import _EXTENSION_TO_DRIVER, PYOGRIO_GE_081, _detect_driver
+from geopandas.io.file import _EXTENSION_TO_DRIVER, PYOGRIO_GE_090, _detect_driver
 
 import pytest
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
@@ -607,6 +608,23 @@ def test_read_file_local_uri(file_path, engine):
     assert isinstance(gdf, geopandas.GeoDataFrame)
 
 
+def test_read_file_geojson_string_path(engine):
+    expected = GeoDataFrame({"val_with_hash": ["row # 0"], "geometry": [Point(0, 1)]})
+    features = {
+        "type": "FeatureCollection",
+        "features": [
+            {
+                "id": "0",
+                "type": "Feature",
+                "properties": {"val_with_hash": "row # 0"},
+                "geometry": {"type": "Point", "coordinates": [0.0, 1.0]},
+            }
+        ],
+    }
+    df_read = read_file(json.dumps(features))
+    assert_geodataframe_equal(expected, df_read)
+
+
 def test_read_file_textio(file_path, engine):
     file_text_stream = open(file_path)
     file_stringio = io.StringIO(open(file_path).read())
@@ -701,7 +719,7 @@ def test_allow_legacy_gdal_path(engine, nybb_filename):
     assert isinstance(gdf, geopandas.GeoDataFrame)
 
 
-@pytest.mark.skipif(not PYOGRIO_GE_081, reason="bug fixed in pyogrio 0.8.1")
+@pytest.mark.skipif(not PYOGRIO_GE_090, reason="bug fixed in pyogrio 0.8.1")
 def test_read_file_with_hash_in_path(engine, nybb_filename, tmp_path):
     folder_with_hash = tmp_path / "path with # present"
     folder_with_hash.mkdir(exist_ok=True, parents=True)
