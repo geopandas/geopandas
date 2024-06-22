@@ -609,6 +609,8 @@ def test_read_file_local_uri(file_path, engine):
 
 
 def test_read_file_geojson_string_path(engine):
+    if not PYOGRIO_GE_090:
+        pytest.skip("fixed in pyogrio 0.9.0")
     expected = GeoDataFrame({"val_with_hash": ["row # 0"], "geometry": [Point(0, 1)]})
     features = {
         "type": "FeatureCollection",
@@ -622,7 +624,7 @@ def test_read_file_geojson_string_path(engine):
         ],
     }
     df_read = read_file(json.dumps(features))
-    assert_geodataframe_equal(expected, df_read)
+    assert_geodataframe_equal(expected.set_crs("EPSG:4326"), df_read)
 
 
 def test_read_file_textio(file_path, engine):
