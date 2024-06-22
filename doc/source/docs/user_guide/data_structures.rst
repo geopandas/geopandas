@@ -145,10 +145,11 @@ Attributes and methods
 Any of the attributes calls or methods described for a :class:`GeoSeries` will work on a :class:`GeoDataFrame` -- they are just applied to the active geometry column :class:`GeoSeries`.
 
 However, :class:`GeoDataFrames <GeoDataFrame>` also have a number few extra methods for:
-* file input and output, describe on the :doc:`Reading and writing files <io>` page
-* :doc:`spatial joins <mergingdata.spatial-joins>`
-* :doc:`spatial aggregations <user_guide/aggregation_with_dissolve>`
-* :doc:`geocoding <geocoding>`
+
+* :doc:`Reading and writing files <io>`
+* :ref:`Spatial joins <mergingdata.spatial-joins>`
+* :doc:`Spatial aggregations <aggregation_with_dissolve>`
+* :doc:`Geocoding <geocoding>`
 
 
 
@@ -161,8 +162,7 @@ However, :class:`GeoDataFrames <GeoDataFrame>` also have a number few extra meth
 Display options
 ---------------
 
-GeoPandas has an ``options`` attribute with currently a single configuration
-option to control:
+GeoPandas has an ``options`` attribute with global configuration attributes:
 
 .. ipython:: python
 
