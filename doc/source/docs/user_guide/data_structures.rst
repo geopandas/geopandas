@@ -25,7 +25,8 @@ of only one shape (like a single polygon) or multiple shapes that are
 meant to be thought of as one observation (like the many polygons that
 make up the State of Hawaii or a country like Indonesia).
 
-GeoPandas has three basic classes of geometric objects (which are actually *shapely* objects):
+GeoPandas has three basic classes of geometric objects (which are actually
+`Shapely <https://shapely.readthedocs.io/en/stable/manual.html>`__ objects):
 
 * Points / Multi-Points
 * Lines / Multi-Lines
@@ -82,9 +83,14 @@ GeoDataFrame
 
 A :class:`GeoDataFrame` is a tabular data structure that contains a :class:`GeoSeries`.
 
-The most important property of a :class:`GeoDataFrame` is that it always has one :class:`GeoSeries` column that holds a special status. This :class:`GeoSeries` is referred to as the :class:`GeoDataFrame`'s "geometry". When a spatial method is applied to a :class:`GeoDataFrame` (or a spatial attribute like ``area`` is called), this commands will always act on the "geometry" column.
+The most important property of a :class:`GeoDataFrame` is that it always has one :class:`GeoSeries` column that
+holds a special status - the "active geometry column". When a spatial method is applied to a
+:class:`GeoDataFrame` (or a spatial attribute like ``area`` is called), these operations will always act on the
+active geometry column.
 
-The "geometry" column -- no matter its name -- can be accessed through the :attr:`~GeoDataFrame.geometry` attribute (``gdf.geometry``), and the name of the ``geometry`` column can be found by typing ``gdf.geometry.name``.
+The active geometry column -- no matter the name of the corresponding :class:`GeoSeries` --
+can be accessed through the :attr:`~GeoDataFrame.geometry` attribute (``gdf.geometry``),
+and the name of the ``geometry`` column can be found by typing ``gdf.geometry.name`` or ``gdf.active_geometry_name``.
 
 A :class:`GeoDataFrame` may also contain other columns with geometrical (shapely) objects, but only one column can be the active geometry at a time. To change which column is the active geometry column, use the :meth:`GeoDataFrame.set_geometry` method.
 
@@ -136,9 +142,14 @@ Now, you create centroids and make it the geometry:
 Attributes and methods
 ~~~~~~~~~~~~~~~~~~~~~~
 
-Any of the attributes calls or methods described for a :class:`GeoSeries` will work on a :class:`GeoDataFrame` -- effectively, they are just applied to the "geometry" :class:`GeoSeries`.
+Any of the attributes calls or methods described for a :class:`GeoSeries` will work on a :class:`GeoDataFrame` -- they are just applied to the active geometry column :class:`GeoSeries`.
 
-However, :class:`GeoDataFrames <GeoDataFrame>` also have a few extra methods for input and output which are described on the :doc:`Reading and writing files <io>` page and for geocoding with are described in :doc:`Geocoding <geocoding>`.
+However, :class:`GeoDataFrames <GeoDataFrame>` also have a number few extra methods for:
+* file input and output, describe on the :doc:`Reading and writing files <io>` page
+* :doc:`spatial joins <mergingdata.spatial-joins>`
+* :doc:`spatial aggregations <user_guide/aggregation_with_dissolve>`
+* :doc:`geocoding <geocoding>`
+
 
 
 .. ipython:: python
