@@ -88,9 +88,12 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
         such as an authority string (eg "EPSG:4326") or a WKT string.
     geometry : str or array-like (optional)
-        If str, column to use as active geometry column. If array-like, it will be
-        added as new column named 'geometry' column on GeoDataFrame and set as the
-        active geometry column. Note that if ``geometry`` is a (Geo)Series with a
+        Value to use as the active geometry column.
+        If str, treated as column name to use. If array-like, it will be
+        added as new column named 'geometry' on the GeoDataFrame and set as the
+        active geometry column.
+
+        Note that if ``geometry`` is a (Geo)Series with a
         name, the name will not be used, a column named "geometry" will still be
         added. To preserve the name, you can use :meth:`~GeoDataFrame.rename_geometry`
         to update the geometry column name.
