@@ -26,7 +26,7 @@ engine_res_pairs = [
 
 @pytest.mark.parametrize("engine, excpt_res", engine_res_pairs_mock_pyogrio)
 def test_bcov_check_engine_mock_pyogrio(engine, excpt_res):
-    with patch.multiple("geopandas.io.file", _import_pyogrio = DEFAULT, _check_pyogrio = DEFAULT ):
+    with patch.multiple("geopandas.io.file", _import_pyogrio = DEFAULT, _check_pyogrio = DEFAULT, pyogrio = False):
         res = file._check_engine(engine, "'read_file' function")
         
         assert(excpt_res == res)
@@ -36,6 +36,7 @@ def test_bcov_check_engine(engine, excpt_res):
     res = file._check_engine(engine, "'read_file' function")
 
     assert(excpt_res == res)
+
 
 # --- OWN COVERAGE TOOL ---
 
