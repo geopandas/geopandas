@@ -17,3 +17,45 @@ def print_coverage(coverage_dict):
     for branch, hit in coverage_dict.items():
         print(f"{branch} was {'hit' if hit else 'not hit'}")
 
+def test_render_pep440_old():
+    testDict = {
+        "closest-tag": "v1.2.3",
+        "distance": 0,
+        "dirty": False
+    }
+    assert render_pep440_old(testDict) == "v1.2.3"
+
+    testDict = {
+        "closest-tag": "v1.2.3",
+        "distance": 5,
+        "dirty": False
+    }
+    assert render_pep440_old(testDict) == "v1.2.3.post5"
+
+    testDict = {
+        "closest-tag": "v1.2.3",
+        "distance": 5,
+        "dirty": True
+    }
+    assert render_pep440_old(testDict) == "v1.2.3.post5.dev0"
+
+
+    testDict = {
+        "closest-tag": None,
+        "distance": 7,
+        "dirty": False
+    }
+    assert render_pep440_old(testDict) == "0.post7"
+
+    testDict = {
+        "closest-tag": None,
+        "distance": 7,
+        "dirty": True
+    }
+    assert render_pep440_old(testDict) == "0.post7.dev0"
+
+    print()
+    print("render_pep440_old coverage:")
+    print_coverage(coverage_render_pep440_old)
+    print_percentage(coverage_render_pep440_old)
+
