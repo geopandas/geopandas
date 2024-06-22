@@ -602,6 +602,14 @@ def render_git_describe(pieces: Dict[str, Any]) -> str:
     return rendered
 
 
+coverage_branches_rgdl = {
+    "enter": False,
+    "pieces_closest_tag": False,
+    "pieces_short": False,
+    "pieces_dirty": False,
+    "return": False,
+}
+
 def render_git_describe_long(pieces: Dict[str, Any]) -> str:
     """TAG-DISTANCE-gHEX[-dirty].
 
@@ -611,14 +619,19 @@ def render_git_describe_long(pieces: Dict[str, Any]) -> str:
     Exceptions:
     1: no tags. HEX[-dirty]  (note: no 'g' prefix)
     """
+    coverage_branches_rgdl["enter"] = True
     if pieces["closest-tag"]:
         rendered = pieces["closest-tag"]
+        coverage_branches_rgdl["pieces_closest_tag"] = True
         rendered += "-%d-g%s" % (pieces["distance"], pieces["short"])
     else:
         # exception #1
         rendered = pieces["short"]
+        coverage_branches_rgdl["pieces_short"] = True
     if pieces["dirty"]:
+        coverage_branches_rgdl["pieces_dirty"] = True
         rendered += "-dirty"
+    coverage_branches_rgdl["return"] = True
     return rendered
 
 
