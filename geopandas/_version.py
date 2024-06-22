@@ -575,6 +575,13 @@ def render_pep440_post_branch(pieces: Dict[str, Any]) -> str:
     return rendered
 
 
+coverage_render_pep440_old = {
+    "branch1" : False,
+    "branch2" : False,
+    "branch3" : False,
+    "branch4" : False,
+    "branch5" : False,
+}
 
 def render_pep440_old(pieces: Dict[str, Any]) -> str:
     """TAG[.postDISTANCE[.dev0]] .
@@ -585,15 +592,20 @@ def render_pep440_old(pieces: Dict[str, Any]) -> str:
     1: no tags. 0.postDISTANCE[.dev0]
     """
     if pieces["closest-tag"]:
+        coverage_render_pep440_old["branch1"] = True 
         rendered = pieces["closest-tag"]
         if pieces["distance"] or pieces["dirty"]:
+            coverage_render_pep440_old["branch2"] = True 
             rendered += ".post%d" % pieces["distance"]
             if pieces["dirty"]:
+                coverage_render_pep440_old["branch3"] = True 
                 rendered += ".dev0"
     else:
+        coverage_render_pep440_old["branch4"] = True 
         # exception #1
         rendered = "0.post%d" % pieces["distance"]
         if pieces["dirty"]:
+            coverage_render_pep440_old["branch5"] = True 
             rendered += ".dev0"
     return rendered
 
