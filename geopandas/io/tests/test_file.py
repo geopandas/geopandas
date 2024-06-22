@@ -26,7 +26,6 @@ from pandas.testing import assert_frame_equal, assert_series_equal
 
 try:
     import pyogrio
-
 except ImportError:
     pyogrio = False
 
@@ -1296,6 +1295,54 @@ def test_write_read_file(test_file, engine):
     df_json = geopandas.read_file(test_file, engine=engine)
     assert_geodataframe_equal(gdf, df_json, check_crs=True)
     os.remove(os.path.expanduser(test_file))
+
+
+@pytest.mark.skipif(fiona is False, reason="Fiona not available")
+@pytest.mark.skipif(FIONA_GE_19, reason="Fiona >= 1.9 supports metadata")
+def test_to_file_metadata_unsupported_fiona_version(tmp_path, df_points):
+    metadata = {"title": "test"}
+    tmp_file = tmp_path / "test.gpkg"
+    match = "'metadata' keyword is only supported for Fiona >= 1.9"
+    with pytest.raises(NotImplementedError, match=match):
+        df_points.to_file(tmp_file, driver="GPKG", engine="fiona", metadata=metadata)
+
+
+@pytest.mark.skipif(not FIONA_GE_19, reason="only Fiona >= 1.9 supports metadata")
+def test_to_file_metadata_supported_fiona_version(tmp_path, df_points):
+    metadata = {"title": "test"}
+    tmp_file = tmp_path / "test.gpkg"
+
+    df_points.to_file(tmp_file, driver="GPKG", engine="fiona", metadata=metadata)
+
+    # Check that metadata is written to the file
+    with fiona.open(tmp_file) as src:
+        tags = src.tags()
+        assert tags == metadata
+
+
+@pytest.mark.skipif(pyogrio is False, reason="Pyogrio not available")
+def test_to_file_metadata_pyogrio(tmp_path, df_points):
+    metadata = {"title": "test"}
+    tmp_file = tmp_path / "test.gpkg"
+
+    df_points.to_file(tmp_file, driver="GPKG", engine="pyogrio", metadata=metadata)
+
+    # Check that metadata is written to the file
+    info = pyogrio.read_info(tmp_file)
+    layer_metadata = info["layer_metadata"]
+    assert layer_metadata == metadata
+
+
+@pytest.mark.parametrize(
+    "driver, ext", [("ESRI Shapefile", ".shp"), ("GeoJSON", ".geojson")]
+)
+def test_to_file_metadata_unsupported_driver(driver, ext, tmpdir, df_points, engine):
+    metadata = {"title": "Test"}
+    tempfilename = os.path.join(str(tmpdir), "test" + ext)
+    with pytest.raises(
+        NotImplementedError, match="'metadata' keyword is only supported for"
+    ):
+        df_points.to_file(tempfilename, driver=driver, metadata=metadata)
 
 
 def test_multiple_geom_cols_error(tmpdir, df_nybb):

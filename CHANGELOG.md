@@ -1,14 +1,14 @@
 # Changelog
 
-## Version 1.0.0
+## Version 1.0.0-rc1 (June 17, 2024)
 
 Notes on dependencies:
 
 - GeoPandas 1.0 drops support for shapely<2 and PyGEOS. The only geometry engine that is
   currently supported is shapely >= 2. As a consequence, spatial indexing based on the
-  rtree package has also been removed. (#3035)
+  rtree package has also been removed (#3035).
 - The I/O engine now defaults to Pyogrio which is now installed with GeoPandas instead
-  of Fiona. (#3223)
+  of Fiona (#3223).
 
 New methods:
 
@@ -56,19 +56,27 @@ New features and improvements:
 - Added support to ``to_parquet`` and ``read_parquet`` for writing and reading files
   using the GeoArrow-based native geometry encoding of GeoParquet 1.1 (#3253, #3275).
 - Add `sort` keyword to `clip` method for GeoSeries and GeoDataFrame to allow optional
-  preservation of the original order of observations. (#3233)
+  preservation of the original order of observations (#3233).
 - Added `show_bbox`, `drop_id` and `to_wgs84` arguments to allow further customization of
-  `GeoSeries.to_json` (#3226)
+  `GeoSeries.to_json` (#3226).
 - `explore` now supports `GeoDataFrame`s with additional columns containing datetimes, uuids and
   other non JSON serializable objects (#3261).
 - The `GeoSeries.fillna` method now supports the `limit` keyword (#3290).
 - Added support for `bbox` covering encoding in geoparquet. Can filter reading of parquet
-files based on a bounding box, and write out a bounding box column to parquet files (#3282)
+files based on a bounding box, and write out a bounding box column to parquet files (#3282).
 - `align` keyword in binary methods now defaults to `None`, treated as True. Explicit True
-  will silence the warning about mismachted indices. (#3212)
+  will silence the warning about mismatched indices (#3212).
 - `GeoSeries.set_crs` can now be used to remove CRS information by passing
-  `crs=None, allow_override=True`. (#3316)
+  `crs=None, allow_override=True` (#3316).
 - Added ``autolim`` keyword argument to ``GeoSeries.plot()`` and ``GeoDataFrame.plot()`` (#2817).
+- Added `metadata` parameter to `GeoDataFrame.to_file` (#2850)
+- Updated documentation to clarify that passing a named (Geo)Series as the `geometry`
+  argument to the GeoDataFrame constructor will not use the name but will always  
+  produce a GeoDataFrame with an active geometry column named "geometry" (#3337).
+- `read_postgis` will query the spatial_ref_sys table to determine the CRS authority
+  instead of its current behaviour of assuming EPSG. In the event the spiatal_ref_sys
+  table is not present, or the SRID is not present, `read_postgis` will fallback
+  on assuming EPSG CRS authority. (#3329)
 
 Backwards incompatible API changes:
 
@@ -84,7 +92,12 @@ Backwards incompatible API changes:
   the previous active geometry column name. This means that if the new and old names are
   different, then both columns will be preserved in the GeoDataFrame. To replicate the previous
   behaviour, you can instead call `gdf.set_geometry(ser.rename(gdf.active_geometry_name))` (#3237).
-- `delaunay_triangles` now considers all geometries together when creating the Delaunay trianguation
+  Note that this behaviour change does not affect the `GeoDataframe` constructor, passing a named 
+  GeoSeries `ser` to `GeoDataFrame(df, geometry=ser)` will always produce a GeoDataFrame with a
+  geometry column named "geometry" to preserve backwards compatibility. If you would like to
+  instead propagate the name of `ser` when constructing a GeoDataFrame, you can instead call
+  `df.set_geometry(ser)` or `GeoDataFrame(df, geometry=ser).rename_geometry(ser.name)` (#3337).
+- `delaunay_triangles` now considers all geometries together when creating the Delaunay triangulation
   instead of performing the operation element-wise. If you want to generate Delaunay
   triangles for each geometry separately, use ``shapely.delaunay_triangles`` instead. (#3273)
 - Reading a data source that does not have a geometry field using ``read_file``

@@ -87,9 +87,13 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         Coordinate Reference System of the geometry objects. Can be anything accepted by
         :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
         such as an authority string (eg "EPSG:4326") or a WKT string.
-    geometry : str or array (optional)
-        If str, column to use as geometry. If array, will be set as 'geometry'
-        column on GeoDataFrame.
+    geometry : str or array-like (optional)
+        If str, column to use as active geometry column. If array-like, it will be
+        added as new column named 'geometry' column on GeoDataFrame and set as the
+        active geometry column. Note that if ``geometry`` is a (Geo)Series with a
+        name, the name will not be used, a column named "geometry" will still be
+        added. To preserve the name, you can use :meth:`~GeoDataFrame.rename_geometry`
+        to update the geometry column name.
 
     Examples
     --------
@@ -193,6 +197,11 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 and not geometry.crs == crs
             ):
                 raise ValueError(crs_mismatch_error)
+
+            if hasattr(geometry, "name") and geometry.name not in ("geometry", None):
+                # __init__ always creates geometry col named "geometry"
+                # rename as `set_geometry` respects the given series name
+                geometry = geometry.rename("geometry")
 
             self.set_geometry(geometry, inplace=True, crs=crs)
 
@@ -1474,6 +1483,9 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
             The underlying library that is used to write the file. Currently, the
             supported options are "pyogrio" and "fiona". Defaults to "pyogrio" if
             installed, otherwise tries "fiona".
+        metadata : dict[str, str], default None
+            Optional metadata to be stored in the file. Keys and values must be
+            strings. Supported only for "GPKG" driver.
         **kwargs :
             Keyword args to be passed to the engine, and can be used to write
             to multi-layer data, store data within archives (zip files), etc.
