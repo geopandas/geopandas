@@ -55,7 +55,7 @@ def _import_fiona():
                     fiona_env = None
 
             FIONA_GE_19 = Version(Version(fiona.__version__).base_version) >= Version(
-                "1.9.0"
+                "1.9.0.dev0"
             )
 
         except ImportError as err:

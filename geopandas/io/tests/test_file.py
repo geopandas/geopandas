@@ -609,7 +609,7 @@ def test_read_file_local_uri(file_path, engine):
 
 
 def test_read_file_geojson_string_path(engine):
-    if not PYOGRIO_GE_090:
+    if engine == "pyogrio" and not PYOGRIO_GE_090:
         pytest.skip("fixed in pyogrio 0.9.0")
     expected = GeoDataFrame({"val_with_hash": ["row # 0"], "geometry": [Point(0, 1)]})
     features = {
@@ -721,7 +721,7 @@ def test_allow_legacy_gdal_path(engine, nybb_filename):
     assert isinstance(gdf, geopandas.GeoDataFrame)
 
 
-@pytest.mark.skipif(not PYOGRIO_GE_090, reason="bug fixed in pyogrio 0.8.1")
+@pytest.mark.skipif(not PYOGRIO_GE_090, reason="bug fixed in pyogrio 0.9.0")
 def test_read_file_with_hash_in_path(engine, nybb_filename, tmp_path):
     folder_with_hash = tmp_path / "path with # present"
     folder_with_hash.mkdir(exist_ok=True, parents=True)
