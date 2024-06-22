@@ -107,7 +107,7 @@ coverage_branches_cheng = {
     "engine_none_import_geopandas": False,
     "engine_none_import_gyoprio": False,
     "engine_none_check_gyoprio": False,
-    "engine_none_import_fona": False,
+    "engine_none_import_fiona": False,
     "engine_none_check_fiona": False,
     "engine_pyogrio_import_pyogrio": False,
     "engine_fiona_import_fiona": False,
@@ -133,7 +133,7 @@ def _check_engine(engine, func):
             coverage_branches_cheng["engine_none_check_gyoprio"] = True
             engine = "pyogrio"
         else:
-            coverage_branches_cheng["engine_none_import_fona"] = True
+            coverage_branches_cheng["engine_none_import_fiona"] = True
             _import_fiona()
             if fiona:
                 coverage_branches_cheng["engine_none_check_fiona"] = True
