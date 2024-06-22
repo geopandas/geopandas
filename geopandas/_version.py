@@ -480,6 +480,14 @@ def pep440_split_post(ver: str) -> Tuple[str, Optional[int]]:
     return vc[0], int(vc[1] or 0) if len(vc) == 2 else None
 
 
+coverage_render_pep440_pre = {
+    "branch1" : False,
+    "branch2" : False,
+    "branch3" : False,
+    "branch4" : False,
+    "branch5" : False,
+    "branch6" : False,
+}
 def render_pep440_pre(pieces: Dict[str, Any]) -> str:
     """TAG[.postN.devDISTANCE] -- No -dirty.
 
@@ -487,18 +495,24 @@ def render_pep440_pre(pieces: Dict[str, Any]) -> str:
     1: no tags. 0.post0.devDISTANCE
     """
     if pieces["closest-tag"]:
+        coverage_render_pep440_pre["branch1"] = True
         if pieces["distance"]:
+            coverage_render_pep440_pre["branch2"] = True
             # update the post release segment
             tag_version, post_version = pep440_split_post(pieces["closest-tag"])
             rendered = tag_version
             if post_version is not None:
+                coverage_render_pep440_pre["branch3"] = True
                 rendered += ".post%d.dev%d" % (post_version + 1, pieces["distance"])
             else:
+                coverage_render_pep440_pre["branch4"] = True
                 rendered += ".post0.dev%d" % (pieces["distance"])
         else:
+            coverage_render_pep440_pre["branch5"] = True
             # no commits, use the tag as the version
             rendered = pieces["closest-tag"]
     else:
+        coverage_render_pep440_pre["branch6"] = True
         # exception #1
         rendered = "0.post0.dev%d" % pieces["distance"]
     return rendered
@@ -559,6 +573,7 @@ def render_pep440_post_branch(pieces: Dict[str, Any]) -> str:
         if pieces["dirty"]:
             rendered += ".dirty"
     return rendered
+
 
 
 def render_pep440_old(pieces: Dict[str, Any]) -> str:
