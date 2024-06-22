@@ -756,30 +756,46 @@ def _explore(
     return m
 
 
+coverage_tool_tip = {
+    "branch1" : False,
+    "branch2" : False,
+    "branch3" : False,
+    "branch4" : False,
+    "branch5" : False,
+    "branch6" : False,
+    "branch7" : False,
+}
+
 def _tooltip_popup(type, fields, gdf, **kwds):
     """get tooltip or popup"""
     import folium
-
     # specify fields to show in the tooltip
     if fields is False or fields is None or fields == 0:
+        coverage_tool_tip["branch1"] = True
         return None
     else:
         if fields is True:
+            coverage_tool_tip["branch2"] = True
             fields = gdf.columns.drop(gdf.geometry.name).to_list()
         elif isinstance(fields, int):
+            coverage_tool_tip["branch3"] = True
             fields = gdf.columns.drop(gdf.geometry.name).to_list()[:fields]
         elif isinstance(fields, str):
+            coverage_tool_tip["branch4"] = True
             fields = [fields]
 
     for field in ["__plottable_column", "__folium_color"]:
         if field in fields:
+            coverage_tool_tip["branch5"] = True
             fields.remove(field)
 
     # Cast fields to str
     fields = list(map(str, fields))
     if type == "tooltip":
+        coverage_tool_tip["branch6"] = True
         return folium.GeoJsonTooltip(fields, **kwds)
     elif type == "popup":
+        coverage_tool_tip["branch7"] = True
         return folium.GeoJsonPopup(fields, **kwds)
 
 
