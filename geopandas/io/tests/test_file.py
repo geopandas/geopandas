@@ -18,7 +18,7 @@ from shapely.geometry import Point, Polygon, box, mapping
 import geopandas
 from geopandas import GeoDataFrame, read_file
 from geopandas._compat import HAS_PYPROJ, PANDAS_GE_20, PANDAS_GE_30
-from geopandas.io.file import _EXTENSION_TO_DRIVER, PYOGRIO_GE_090, _detect_driver
+from geopandas.io.file import _EXTENSION_TO_DRIVER, _detect_driver
 
 import pytest
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
@@ -28,8 +28,13 @@ from pandas.testing import assert_frame_equal, assert_series_equal
 try:
     import pyogrio
 
+    PYOGRIO_GE_090 = Version(Version(pyogrio.__version__).base_version) >= Version(
+        "0.9.0"
+    )
+
 except ImportError:
     pyogrio = False
+    PYOGRIO_GE_090 = False
 
 
 try:
@@ -616,7 +621,6 @@ def test_read_file_geojson_string_path(engine):
         "type": "FeatureCollection",
         "features": [
             {
-                "id": "0",
                 "type": "Feature",
                 "properties": {"val_with_hash": "row # 0"},
                 "geometry": {"type": "Point", "coordinates": [0.0, 1.0]},
