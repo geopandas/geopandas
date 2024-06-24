@@ -3,8 +3,8 @@ GeoDataFrame
 ============
 .. currentmodule:: geopandas
 
-A ``GeoDataFrame`` is a tabular data structure that contains a column
-which contains a ``GeoSeries`` storing geometry.
+A ``GeoDataFrame`` is a tabular data structure that contains at least
+one ``GeoSeries`` column storing geometry.
 
 Constructor
 -----------

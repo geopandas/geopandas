@@ -73,7 +73,7 @@ supported by that project::
 You can also read path objects::
 
     import pathlib
-    path_object = pathlib.path(filename)
+    path_object = pathlib.Path(filename)
     df = geopandas.read_file(path_object)
 
 Reading subsets of the data
@@ -173,21 +173,23 @@ Load in a subset of data with a `SQL WHERE clause <https://gdal.org/user/ogr_sql
         where="subborough='Coney Island'",
     )
 
-Supported drivers
-~~~~~~~~~~~~~~~~~
+Supported drivers / file formats
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 When using pyogrio, all drivers supported by the GDAL installation are enabled,
 and you can check those with::
 
     import pyogrio; pyogrio.list_drivers()
 
-Fiona only exposes the default drivers. To display those, type::
+where the values indicate whether reading, writing or both are supported for
+a given driver.
+Fiona only exposes a default subset of drivers. To display those, type::
 
     import fiona; fiona.supported_drivers
 
 There is a `list of available drivers <https://github.com/Toblerity/Fiona/blob/master/fiona/drvsupport.py>`_
-which are unexposed but supported (depending on the GDAL-build). You can activate
-these on runtime by updating the `supported_drivers` dictionary like::
+which are unexposed by default but may be supported (depending on the GDAL-build). You can activate
+these at runtime by updating the `supported_drivers` dictionary like::
 
     fiona.supported_drivers["NAS"] = "raw"
 
@@ -271,10 +273,10 @@ the spatial information.
 
 .. note::
 
-    This is tracking version 1.0.0 of the GeoParquet specification at:
+    The GeoParquet specification is developed at:
     https://github.com/opengeospatial/geoparquet.
 
-    Previous versions are still supported as well. By default, the latest
-    version is used when writing files (older versions can be specified using
-    the ``schema_version`` keyword), and GeoPandas supports reading files
-    of any version.
+    By default, the latest
+    version is used when writing files, but older versions can be specified using
+    the ``schema_version`` keyword. GeoPandas supports reading files
+    encoded using any GeoParquet version.

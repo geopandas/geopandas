@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 import urllib.request
 import warnings
@@ -25,7 +27,6 @@ _VALID_URLS = set(uses_relative + uses_netloc + uses_params)
 _VALID_URLS.discard("")
 # file:// URIs are supported by fiona/pyogrio -> don't already open + read the file here
 _VALID_URLS.discard("file")
-
 
 fiona = None
 fiona_env = None
@@ -55,7 +56,7 @@ def _import_fiona():
                     fiona_env = None
 
             FIONA_GE_19 = Version(Version(fiona.__version__).base_version) >= Version(
-                "1.9.0.dev0"
+                "1.9.0"
             )
 
         except ImportError as err:
@@ -94,6 +95,20 @@ def _check_pyogrio(func):
             f"the {func} requires the 'pyogrio' package, but it is not installed "
             "or does not import correctly."
             "\nImporting pyogrio resulted in: {pyogrio_import_error}"
+        )
+
+
+def _check_metadata_supported(metadata: str | None, engine: str, driver: str) -> None:
+    if metadata is None:
+        return
+    if driver != "GPKG":
+        raise NotImplementedError(
+            "The 'metadata' keyword is only supported for the GPKG driver."
+        )
+
+    if engine == "fiona" and not FIONA_GE_19:
+        raise NotImplementedError(
+            "The 'metadata' keyword is only supported for Fiona >= 1.9."
         )
 
 
@@ -559,6 +574,7 @@ def _to_file(
     mode="w",
     crs=None,
     engine=None,
+    metadata=None,
     **kwargs,
 ):
     """
@@ -614,6 +630,10 @@ def _to_file(
         supported options are "pyogrio" and "fiona". Defaults to "pyogrio" if
         installed, otherwise tries "fiona". Engine can also be set globally
         with the ``geopandas.options.io_engine`` option.
+    metadata : dict[str, str], default None
+        Optional metadata to be stored in the file. Keys and values must be
+        strings. Only supported for the "GPKG" driver
+        (requires Fiona >= 1.9 or pyogrio >= 0.6).
     **kwargs :
         Keyword args to be passed to the engine, and can be used to write
         to multi-layer data, store data within archives (zip files), etc.
@@ -657,19 +677,20 @@ def _to_file(
             "to a supported format like a well-known text (WKT) using "
             "`GeoSeries.to_wkt()`.",
         )
+    _check_metadata_supported(metadata, engine, driver)
 
     if mode not in ("w", "a"):
         raise ValueError(f"'mode' should be one of 'w' or 'a', got '{mode}' instead")
 
     if engine == "pyogrio":
-        _to_file_pyogrio(df, filename, driver, schema, crs, mode, **kwargs)
+        _to_file_pyogrio(df, filename, driver, schema, crs, mode, metadata, **kwargs)
     elif engine == "fiona":
-        _to_file_fiona(df, filename, driver, schema, crs, mode, **kwargs)
+        _to_file_fiona(df, filename, driver, schema, crs, mode, metadata, **kwargs)
     else:
         raise ValueError(f"unknown engine '{engine}'")
 
 
-def _to_file_fiona(df, filename, driver, schema, crs, mode, **kwargs):
+def _to_file_fiona(df, filename, driver, schema, crs, mode, metadata, **kwargs):
     if not HAS_PYPROJ and crs:
         raise ImportError(
             "The 'pyproj' package is required to write a file with a CRS, but it is not"
@@ -701,10 +722,12 @@ def _to_file_fiona(df, filename, driver, schema, crs, mode, **kwargs):
         with fiona.open(
             filename, mode=mode, driver=driver, crs_wkt=crs_wkt, schema=schema, **kwargs
         ) as colxn:
+            if metadata is not None:
+                colxn.update_tags(metadata)
             colxn.writerecords(df.iterfeatures())
 
 
-def _to_file_pyogrio(df, filename, driver, schema, crs, mode, **kwargs):
+def _to_file_pyogrio(df, filename, driver, schema, crs, mode, metadata, **kwargs):
     import pyogrio
 
     if schema is not None:
@@ -722,7 +745,7 @@ def _to_file_pyogrio(df, filename, driver, schema, crs, mode, **kwargs):
     if not df.columns.is_unique:
         raise ValueError("GeoDataFrame cannot contain duplicated column names.")
 
-    pyogrio.write_dataframe(df, filename, driver=driver, **kwargs)
+    pyogrio.write_dataframe(df, filename, driver=driver, metadata=metadata, **kwargs)
 
 
 def infer_schema(df):
