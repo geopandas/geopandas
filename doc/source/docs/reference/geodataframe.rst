@@ -22,10 +22,12 @@ Serialization / IO / conversion
    GeoDataFrame.from_file
    GeoDataFrame.from_features
    GeoDataFrame.from_postgis
+   GeoDataFrame.from_arrow
    GeoDataFrame.to_file
    GeoDataFrame.to_json
    GeoDataFrame.to_geo_dict
    GeoDataFrame.to_parquet
+   GeoDataFrame.to_arrow
    GeoDataFrame.to_feather
    GeoDataFrame.to_postgis
    GeoDataFrame.to_wkb
