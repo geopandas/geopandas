@@ -43,7 +43,7 @@ def test_bcov_check_engine(engine, excpt_res):
 def print_coverage(flags: dict):
     for branch, hit in flags.items():
         print(f"{branch} was {'hit' if hit else 'not hit'}")
-    print(f"Coverage: {float(countOf(flags.values(), True) / len(flags)) * 100}%")
+    print(f"Coverage: {round((float(countOf(flags.values(), True) / len(flags)) * 100), 2)}%")
 
 
 # Main
