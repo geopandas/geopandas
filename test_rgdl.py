@@ -1,13 +1,11 @@
-import pathlib
-
 from operator import countOf
 from geopandas import _version
 from geopandas._version import coverage_branches_rgdl
 
 
 # --------
-# Func: _expand_user(path)
-# Path: geopandas/io/file.py
+# Func: render_git_describe_long(pieces: Dict[str, Any])
+# Path: geopandas/_version.py
 # --------
 
 def test_git_describe_long_ct(): 
