@@ -614,6 +614,7 @@ def test_read_file_local_uri(file_path, engine):
     assert isinstance(gdf, geopandas.GeoDataFrame)
 
 
+@pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not installed")
 def test_read_file_geojson_string_path(engine):
     if engine == "pyogrio" and not PYOGRIO_GE_090:
         pytest.skip("fixed in pyogrio 0.9.0")
