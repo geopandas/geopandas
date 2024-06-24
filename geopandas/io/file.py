@@ -105,10 +105,13 @@ def _check_pyogrio(func):
 coverage_branches_cheng = {
     "enter": False,
     "engine_none_import_geopandas": False,
+    "invisible_none_import_geopandas": False,
     "engine_none_import_gyoprio": False,
     "engine_none_check_gyoprio": False,
     "engine_none_import_fiona": False,
     "engine_none_check_fiona": False,
+    "invisible_none": False,
+    "invisible_none_check_fiona": False,
     "engine_pyogrio_import_pyogrio": False,
     "engine_fiona_import_fiona": False,
     "engine_none_import_error": False,
@@ -124,6 +127,8 @@ def _check_engine(engine, func):
         import geopandas
 
         engine = geopandas.options.io_engine
+    else:
+        coverage_branches_cheng["invisible_none_import_geopandas"] = True
 
     if engine is None:
         coverage_branches_cheng["engine_none_import_gyoprio"] = True
@@ -138,6 +143,10 @@ def _check_engine(engine, func):
             if fiona:
                 coverage_branches_cheng["engine_none_check_fiona"] = True
                 engine = "fiona"
+            else:
+                coverage_branches_cheng["invisible_none_check_fiona"] = True
+    else:
+        coverage_branches_cheng["invisible_none"] = True
 
     if engine == "pyogrio":
         coverage_branches_cheng["engine_pyogrio_import_pyogrio"] = True
