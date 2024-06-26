@@ -739,7 +739,7 @@ def _to_file_pyogrio(df, filename, driver, schema, crs, mode, metadata, **kwargs
         kwargs["append"] = True
 
     if crs is not None:
-        raise ValueError("Passing 'crs' it not supported with the 'pyogrio' engine.")
+        raise ValueError("Passing 'crs' is not supported with the 'pyogrio' engine.")
 
     # for the fiona engine, this check is done in gdf.iterfeatures()
     if not df.columns.is_unique:

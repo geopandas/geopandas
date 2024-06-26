@@ -462,7 +462,7 @@ def test_to_file_crs(tmpdir, engine, nybb_filename):
     assert result.crs == df.crs
 
     if engine == "pyogrio":
-        with pytest.raises(ValueError, match="Passing 'crs' it not supported"):
+        with pytest.raises(ValueError, match="Passing 'crs' is not supported"):
             df.to_file(tempfilename, crs=3857, engine=engine)
         return
 
