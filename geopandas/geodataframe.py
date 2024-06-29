@@ -1429,7 +1429,7 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
             GeoParquet specification version; if not provided, will default to
             latest supported stable version (1.0.0).
         kwargs
-            Additional keyword arguments passed to to pyarrow.parquet.write_table().
+            Additional keyword arguments passed to :func:`pyarrow.parquet.write_table`.
 
         Examples
         --------
@@ -1497,7 +1497,8 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
             GeoParquet specification version; if not provided will default to
             latest supported version.
         kwargs
-            Additional keyword arguments passed to to pyarrow.feather.write_feather().
+            Additional keyword arguments passed to
+            :func:`pyarrow.feather.write_feather`.
 
         Examples
         --------
