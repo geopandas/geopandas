@@ -44,7 +44,7 @@ In particular, when submitting a pull request:
   imports when possible, and explicit relative imports for local
   imports when necessary in tests.
 
-- GeoPandas supports Python 3.8+ only. The last version of GeoPandas
+- GeoPandas supports Python 3.9+ only. The last version of GeoPandas
   supporting Python 2 is 0.6.
 
 - Unless your PR implements minor changes or internal work only, make sure
@@ -214,7 +214,7 @@ GeoPandas. If you used the provided environment in section 2, skip this
 step and continue to section 4. If you created the environment manually, we suggest installing
 dependencies using the following commands (executed after your development environment has been activated)::
 
-    conda install -c conda-forge pandas fiona shapely pyproj rtree pytest
+    conda install -c conda-forge pandas pyogrio shapely pyproj pytest
 
 This should install all necessary dependencies.
 

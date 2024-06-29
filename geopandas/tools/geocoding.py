@@ -1,5 +1,5 @@
-from collections import defaultdict
 import time
+from collections import defaultdict
 
 import pandas as pd
 
@@ -120,8 +120,8 @@ def reverse_geocode(points, provider=None, **kwargs):
 
 def _query(data, forward, provider, throttle_time, **kwargs):
     # generic wrapper for calls over lists to geopy Geocoders
-    from geopy.geocoders.base import GeocoderQueryError
     from geopy.geocoders import get_geocoder_for_service
+    from geopy.geocoders.base import GeocoderQueryError
 
     if forward:
         if not isinstance(data, pd.Series):

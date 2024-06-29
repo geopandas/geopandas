@@ -1,7 +1,6 @@
 from textwrap import dedent
 from typing import Callable, Union
 
-
 # doc decorator function ported with modifications from Pandas
 # https://github.com/pandas-dev/pandas/blob/master/pandas/util/_decorators.py
 
@@ -39,9 +38,11 @@ def doc(*docstrings: Union[str, Callable], **params) -> Callable:
 
         # formatting templates and concatenating docstring
         decorated.__doc__ = "".join(
-            component.format(**params)
-            if isinstance(component, str)
-            else dedent(component.__doc__ or "")
+            (
+                component.format(**params)
+                if isinstance(component, str)
+                else dedent(component.__doc__ or "")
+            )
             for component in docstring_components
         )
 

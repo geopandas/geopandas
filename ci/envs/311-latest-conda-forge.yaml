@@ -6,7 +6,7 @@ dependencies:
   # required
   - pandas
   - shapely
-  - fiona
+  - pyogrio
   - pyproj
   - packaging
   # testing
@@ -15,9 +15,7 @@ dependencies:
   - pytest-xdist
   - fsspec
   # optional
-  - pygeos
-  - pyogrio
-  - rtree
+  - fiona
   - matplotlib
   - mapclassify
   - folium
@@ -29,9 +27,11 @@ dependencies:
   # installed in tests.yaml, because not available on windows
   # - postgis
   - SQLalchemy>=2
+  - psycopg
   - psycopg2
   - libspatialite
   - geoalchemy2
   - pyarrow
+  - geoarrow-pyarrow
   # doctest testing
   - pytest-doctestplus

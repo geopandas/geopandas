@@ -2,14 +2,13 @@ name: test
 channels:
   - conda-forge
 dependencies:
-  - python=3.9
+  - python=3.10
   # required
-  - pandas=1.3
-  - numpy=1.21 # released 1 month before pandas 1.3
+  - pandas=2.0
+  - numpy=1.24 # released 4 months before pandas 2.0
   - shapely
-  - fiona
+  - pyogrio
   - pyproj
-  - pygeos
   - packaging
   # testing
   - pytest
@@ -17,7 +16,6 @@ dependencies:
   - pytest-xdist
   - fsspec
   # optional
-  - rtree
   - matplotlib
   - mapclassify
   - folium

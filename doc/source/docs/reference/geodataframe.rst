@@ -3,8 +3,8 @@ GeoDataFrame
 ============
 .. currentmodule:: geopandas
 
-A ``GeoDataFrame`` is a tabular data structure that contains a column
-which contains a ``GeoSeries`` storing geometry.
+A ``GeoDataFrame`` is a tabular data structure that contains at least
+one ``GeoSeries`` column storing geometry.
 
 Constructor
 -----------
@@ -22,9 +22,12 @@ Serialization / IO / conversion
    GeoDataFrame.from_file
    GeoDataFrame.from_features
    GeoDataFrame.from_postgis
+   GeoDataFrame.from_arrow
    GeoDataFrame.to_file
    GeoDataFrame.to_json
+   GeoDataFrame.to_geo_dict
    GeoDataFrame.to_parquet
+   GeoDataFrame.to_arrow
    GeoDataFrame.to_feather
    GeoDataFrame.to_postgis
    GeoDataFrame.to_wkb
@@ -49,6 +52,7 @@ Active geometry handling
 
    GeoDataFrame.rename_geometry
    GeoDataFrame.set_geometry
+   GeoDataFrame.active_geometry_name
 
 Aggregating and exploding
 -------------------------

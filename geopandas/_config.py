@@ -5,9 +5,10 @@ Based on https://github.com/topper-123/optioneer, but simplified (don't deal
 with nested options, deprecated options, ..), just the attribute-style dict
 like holding the options and giving a nice repr.
 """
-from collections import namedtuple
-import textwrap
 
+import textwrap
+import warnings
+from collections import namedtuple
 
 Option = namedtuple("Option", "key default_value doc validator callback")
 
@@ -86,35 +87,47 @@ display_precision = Option(
 )
 
 
-def _validate_bool(value):
-    if not isinstance(value, bool):
-        raise TypeError("Expected bool value, got {0}".format(type(value)))
+def _warn_use_pygeos_deprecated(_value):
+    warnings.warn(
+        "pygeos support was removed in 1.0. "
+        "geopandas.use_pygeos is a no-op and will be removed in geopandas 1.1.",
+        stacklevel=3,
+    )
 
 
-def _default_use_pygeos():
-    import geopandas._compat as compat
-
-    return compat.USE_PYGEOS
-
-
-def _callback_use_pygeos(key, value):
-    assert key == "use_pygeos"
-    import geopandas._compat as compat
-
-    compat.set_use_pygeos(value)
+def _validate_io_engine(value):
+    if value is not None:
+        if value not in ("pyogrio", "fiona"):
+            raise ValueError(f"Expected 'pyogrio' or 'fiona', got '{value}'")
 
 
-use_pygeos = Option(
-    key="use_pygeos",
-    default_value=_default_use_pygeos(),
+io_engine = Option(
+    key="io_engine",
+    default_value=None,
     doc=(
-        "Whether to use PyGEOS to speed up spatial operations. The default is True "
-        "if PyGEOS is installed, and follows the USE_PYGEOS environment variable "
-        "if set."
+        "The default engine for ``read_file`` and ``to_file``. "
+        "Options are 'pyogrio' and 'fiona'."
     ),
-    validator=_validate_bool,
-    callback=_callback_use_pygeos,
+    validator=_validate_io_engine,
+    callback=None,
 )
 
+# TODO: deprecate this
+use_pygeos = Option(
+    key="use_pygeos",
+    default_value=False,
+    doc=(
+        "Deprecated option previously used to enable PyGEOS. "
+        "It will be removed in GeoPandas 1.1."
+    ),
+    validator=_warn_use_pygeos_deprecated,
+    callback=None,
+)
 
-options = Options({"display_precision": display_precision, "use_pygeos": use_pygeos})
+options = Options(
+    {
+        "display_precision": display_precision,
+        "use_pygeos": use_pygeos,
+        "io_engine": io_engine,
+    }
+)

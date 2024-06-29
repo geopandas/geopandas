@@ -1,29 +1,32 @@
+from __future__ import annotations
+
 import os
+import urllib.request
+import warnings
+from io import IOBase
 from packaging.version import Version
 from pathlib import Path
-import warnings
+
+# Adapted from pandas.io.common
+from urllib.parse import urlparse as parse_url
+from urllib.parse import uses_netloc, uses_params, uses_relative
 
 import numpy as np
 import pandas as pd
 from pandas.api.types import is_integer_dtype
 
-import pyproj
+import shapely
 from shapely.geometry import mapping
 from shapely.geometry.base import BaseGeometry
 
 from geopandas import GeoDataFrame, GeoSeries
-
-# Adapted from pandas.io.common
-from urllib.parse import urlparse as parse_url
-from urllib.parse import uses_netloc, uses_params, uses_relative
-import urllib.request
-
+from geopandas._compat import HAS_PYPROJ, PANDAS_GE_20
+from geopandas.io.util import vsi_path
 
 _VALID_URLS = set(uses_relative + uses_netloc + uses_params)
 _VALID_URLS.discard("")
 # file:// URIs are supported by fiona/pyogrio -> don't already open + read the file here
 _VALID_URLS.discard("file")
-
 
 fiona = None
 fiona_env = None
@@ -55,6 +58,7 @@ def _import_fiona():
             FIONA_GE_19 = Version(Version(fiona.__version__).base_version) >= Version(
                 "1.9.0"
             )
+
         except ImportError as err:
             fiona = False
             fiona_import_error = str(err)
@@ -71,13 +75,14 @@ def _import_pyogrio():
     if pyogrio is None:
         try:
             import pyogrio
+
         except ImportError as err:
             pyogrio = False
             pyogrio_import_error = str(err)
 
 
 def _check_fiona(func):
-    if fiona is None:
+    if not fiona:
         raise ImportError(
             f"the {func} requires the 'fiona' package, but it is not installed or does "
             f"not import correctly.\nImporting fiona resulted in: {fiona_import_error}"
@@ -85,7 +90,7 @@ def _check_fiona(func):
 
 
 def _check_pyogrio(func):
-    if pyogrio is None:
+    if not pyogrio:
         raise ImportError(
             f"the {func} requires the 'pyogrio' package, but it is not installed "
             "or does not import correctly."
@@ -93,29 +98,49 @@ def _check_pyogrio(func):
         )
 
 
-def _check_engine(engine, func):
-    # default to "fiona" if installed, otherwise try pyogrio
-    if engine is None:
-        _import_fiona()
-        if fiona:
-            engine = "fiona"
-        else:
-            _import_pyogrio()
-            if pyogrio:
-                engine = "pyogrio"
+def _check_metadata_supported(metadata: str | None, engine: str, driver: str) -> None:
+    if metadata is None:
+        return
+    if driver != "GPKG":
+        raise NotImplementedError(
+            "The 'metadata' keyword is only supported for the GPKG driver."
+        )
 
-    if engine == "fiona":
-        _import_fiona()
-        _check_fiona(func)
-    elif engine == "pyogrio":
+    if engine == "fiona" and not FIONA_GE_19:
+        raise NotImplementedError(
+            "The 'metadata' keyword is only supported for Fiona >= 1.9."
+        )
+
+
+def _check_engine(engine, func):
+    # if not specified through keyword or option, then default to "pyogrio" if
+    # installed, otherwise try fiona
+    if engine is None:
+        import geopandas
+
+        engine = geopandas.options.io_engine
+
+    if engine is None:
+        _import_pyogrio()
+        if pyogrio:
+            engine = "pyogrio"
+        else:
+            _import_fiona()
+            if fiona:
+                engine = "fiona"
+
+    if engine == "pyogrio":
         _import_pyogrio()
         _check_pyogrio(func)
+    elif engine == "fiona":
+        _import_fiona()
+        _check_fiona(func)
     elif engine is None:
         raise ImportError(
             f"The {func} requires the 'pyogrio' or 'fiona' package, "
             "but neither is installed or imports correctly."
-            f"\nImporting fiona resulted in: {fiona_import_error}"
             f"\nImporting pyogrio resulted in: {pyogrio_import_error}"
+            f"\nImporting fiona resulted in: {fiona_import_error}"
         )
 
     return engine
@@ -141,6 +166,7 @@ _EXTENSION_TO_DRIVER = {
     ".mif": "MapInfo File",
     ".mid": "MapInfo File",
     ".dgn": "DGN",
+    ".fgb": "FlatGeobuf",
 }
 
 
@@ -161,21 +187,11 @@ def _is_url(url):
         return False
 
 
-def _is_zip(path):
-    """Check if a given path is a zipfile"""
-    parsed = fiona.path.ParsedPath.from_uri(path)
-    return (
-        parsed.archive.endswith(".zip")
-        if parsed.archive
-        else parsed.path.endswith(".zip")
-    )
-
-
-def _read_file(filename, bbox=None, mask=None, rows=None, engine=None, **kwargs):
+def _read_file(
+    filename, bbox=None, mask=None, columns=None, rows=None, engine=None, **kwargs
+):
     """
     Returns a GeoDataFrame from a file or URL.
-
-    .. versionadded:: 0.7.0 mask, rows
 
     Parameters
     ----------
@@ -193,21 +209,28 @@ def _read_file(filename, bbox=None, mask=None, rows=None, engine=None, **kwargs)
         Filter for features that intersect with the given dict-like geojson
         geometry, GeoSeries, GeoDataFrame or shapely geometry.
         CRS mis-matches are resolved if given a GeoSeries or GeoDataFrame.
-        Cannot be used with bbox.
+        Cannot be used with bbox. If multiple geometries are passed, this will
+        first union all geometries, which may be computationally expensive.
+    columns : list, optional
+        List of column names to import from the data source. Column names
+        must exactly match the names in the data source. To avoid reading
+        any columns (besides the geometry column), pass an empty list-like.
+        By default reads all columns.
     rows : int or slice, default None
         Load in specific rows by passing an integer (first `n` rows) or a
         slice() object.
-    engine : str, "fiona" or "pyogrio"
+    engine : str,  "pyogrio" or "fiona"
         The underlying library that is used to read the file. Currently, the
-        supported options are "fiona" and "pyogrio". Defaults to "fiona" if
-        installed, otherwise tries "pyogrio".
+        supported options are "pyogrio" and "fiona". Defaults to "pyogrio" if
+        installed, otherwise tries "fiona". Engine can also be set globally
+        with the ``geopandas.options.io_engine`` option.
     **kwargs :
-        Keyword args to be passed to the engine. In case of the "fiona" engine,
-        the keyword arguments are passed to :func:`fiona.open` or
-        :class:`fiona.collection.BytesCollection` when opening the file.
-        For more information on possible keywords, type:
-        ``import fiona; help(fiona.open)``. In case of the "pyogrio" engine,
-        the keyword arguments are passed to :func:`pyogrio.read_dataframe`.
+        Keyword args to be passed to the engine, and can be used to write
+        to multi-layer data, store data within archives (zip files), etc.
+        In case of the "pyogrio" engine, the keyword arguments are passed to
+        `pyogrio.write_dataframe`. In case of the "fiona" engine, the keyword
+        arguments are passed to fiona.open`. For more information on possible
+        keywords, type: ``import pyogrio; help(pyogrio.write_dataframe)``.
 
 
     Examples
@@ -268,7 +291,9 @@ def _read_file(filename, bbox=None, mask=None, rows=None, engine=None, **kwargs)
                 from_bytes = True
 
     if engine == "pyogrio":
-        return _read_file_pyogrio(filename, bbox=bbox, mask=mask, rows=rows, **kwargs)
+        return _read_file_pyogrio(
+            filename, bbox=bbox, mask=mask, columns=columns, rows=rows, **kwargs
+        )
 
     elif engine == "fiona":
         if pd.api.types.is_file_like(filename):
@@ -279,7 +304,13 @@ def _read_file(filename, bbox=None, mask=None, rows=None, engine=None, **kwargs)
             path_or_bytes = filename
 
         return _read_file_fiona(
-            path_or_bytes, from_bytes, bbox=bbox, mask=mask, rows=rows, **kwargs
+            path_or_bytes,
+            from_bytes,
+            bbox=bbox,
+            mask=mask,
+            columns=columns,
+            rows=rows,
+            **kwargs,
         )
 
     else:
@@ -287,31 +318,36 @@ def _read_file(filename, bbox=None, mask=None, rows=None, engine=None, **kwargs)
 
 
 def _read_file_fiona(
-    path_or_bytes, from_bytes, bbox=None, mask=None, rows=None, where=None, **kwargs
+    path_or_bytes,
+    from_bytes,
+    bbox=None,
+    mask=None,
+    columns=None,
+    rows=None,
+    where=None,
+    **kwargs,
 ):
     if where is not None and not FIONA_GE_19:
         raise NotImplementedError("where requires fiona 1.9+")
+
+    if columns is not None:
+        if "include_fields" in kwargs:
+            raise ValueError(
+                "Cannot specify both 'include_fields' and 'columns' keywords"
+            )
+        if not FIONA_GE_19:
+            raise NotImplementedError("'columns' keyword requires fiona 1.9+")
+        kwargs["include_fields"] = columns
+    elif "include_fields" in kwargs:
+        # alias to columns, as this variable is used below to specify column order
+        # in the dataframe creation
+        columns = kwargs["include_fields"]
 
     if not from_bytes:
         # Opening a file via URL or file-like-object above automatically detects a
         # zipped file. In order to match that behavior, attempt to add a zip scheme
         # if missing.
-        if _is_zip(str(path_or_bytes)):
-            parsed = fiona.parse_path(str(path_or_bytes))
-            if isinstance(parsed, fiona.path.ParsedPath):
-                # If fiona is able to parse the path, we can safely look at the scheme
-                # and update it to have a zip scheme if necessary.
-                schemes = (parsed.scheme or "").split("+")
-                if "zip" not in schemes:
-                    parsed.scheme = "+".join(["zip"] + schemes)
-                path_or_bytes = parsed.name
-            elif isinstance(parsed, fiona.path.UnparsedPath) and not str(
-                path_or_bytes
-            ).startswith("/vsi"):
-                # If fiona is unable to parse the path, it might have a Windows drive
-                # scheme. Try adding zip:// to the front. If the path starts with "/vsi"
-                # it is a legacy GDAL path type, so let it pass unmodified.
-                path_or_bytes = "zip://" + parsed.name
+        path_or_bytes = vsi_path(str(path_or_bytes))
 
     if from_bytes:
         reader = fiona.BytesCollection
@@ -343,7 +379,7 @@ def _read_file_fiona(
                 assert len(bbox) == 4
             # handle loading the mask
             elif isinstance(mask, (GeoDataFrame, GeoSeries)):
-                mask = mapping(mask.to_crs(crs).unary_union)
+                mask = mapping(mask.to_crs(crs).union_all())
             elif isinstance(mask, BaseGeometry):
                 mask = mapping(mask)
 
@@ -367,11 +403,14 @@ def _read_file_fiona(
             else:
                 f_filt = features
             # get list of columns
-            columns = list(features.schema["properties"])
+            columns = columns or list(features.schema["properties"])
             datetime_fields = [
                 k for (k, v) in features.schema["properties"].items() if v == "datetime"
             ]
-            if kwargs.get("ignore_geometry", False):
+            if (
+                kwargs.get("ignore_geometry", False)
+                or features.schema["geometry"] == "None"
+            ):
                 df = pd.DataFrame(
                     [record["properties"] for record in f_filt], columns=columns
                 )
@@ -380,16 +419,39 @@ def _read_file_fiona(
                     f_filt, crs=crs, columns=columns + ["geometry"]
                 )
             for k in datetime_fields:
-                as_dt = pd.to_datetime(df[k], errors="ignore")
-                # if to_datetime failed, try again for mixed timezone offsets
-                if as_dt.dtype == "object":
+                as_dt = None
+                # plain try catch for when pandas will raise in the future
+                # TODO we can tighten the exception type in future when it does
+                try:
+                    with warnings.catch_warnings():
+                        # pandas 2.x does not yet enforce this behaviour but raises a
+                        # warning  -> we want to to suppress this warning for our users,
+                        # and do this by turning it into an error so we take the
+                        # `except` code path to try again with utc=True
+                        warnings.filterwarnings(
+                            "error",
+                            "In a future version of pandas, parsing datetimes with "
+                            "mixed time zones will raise an error",
+                            FutureWarning,
+                        )
+                        as_dt = pd.to_datetime(df[k])
+                except Exception:
+                    pass
+                if as_dt is None or as_dt.dtype == "object":
+                    # if to_datetime failed, try again for mixed timezone offsets
                     # This can still fail if there are invalid datetimes
-                    as_dt = pd.to_datetime(df[k], errors="ignore", utc=True)
+                    try:
+                        as_dt = pd.to_datetime(df[k], utc=True)
+                    except Exception:
+                        pass
                 # if to_datetime succeeded, round datetimes as
                 # fiona only supports up to ms precision (any microseconds are
                 # floating point rounding error)
-                if not (as_dt.dtype == "object"):
-                    df[k] = as_dt.dt.round(freq="ms")
+                if as_dt is not None and not (as_dt.dtype == "object"):
+                    if PANDAS_GE_20:
+                        df[k] = as_dt.dt.as_unit("ms")
+                    else:
+                        df[k] = as_dt.dt.round(freq="ms")
             return df
 
 
@@ -401,6 +463,10 @@ def _read_file_pyogrio(path_or_bytes, bbox=None, mask=None, rows=None, **kwargs)
             kwargs["max_features"] = rows
         elif isinstance(rows, slice):
             if rows.start is not None:
+                if rows.start < 0:
+                    raise ValueError(
+                        "Negative slice start not supported with the 'pyogrio' engine."
+                    )
                 kwargs["skip_features"] = rows.start
             if rows.stop is not None:
                 kwargs["max_features"] = rows.stop - (rows.start or 0)
@@ -408,46 +474,77 @@ def _read_file_pyogrio(path_or_bytes, bbox=None, mask=None, rows=None, **kwargs)
                 raise ValueError("slice with step is not supported")
         else:
             raise TypeError("'rows' must be an integer or a slice.")
+
+    if bbox is not None and mask is not None:
+        # match error message from Fiona
+        raise ValueError("mask and bbox can not be set together")
+
     if bbox is not None:
         if isinstance(bbox, (GeoDataFrame, GeoSeries)):
-            bbox = tuple(bbox.total_bounds)
+            crs = pyogrio.read_info(path_or_bytes).get("crs")
+            if isinstance(path_or_bytes, IOBase):
+                path_or_bytes.seek(0)
+
+            bbox = tuple(bbox.to_crs(crs).total_bounds)
         elif isinstance(bbox, BaseGeometry):
             bbox = bbox.bounds
         if len(bbox) != 4:
             raise ValueError("'bbox' should be a length-4 tuple.")
+
     if mask is not None:
-        raise ValueError(
-            "The 'mask' keyword is not supported with the 'pyogrio' engine. "
-            "You can use 'bbox' instead."
-        )
+        # NOTE: mask cannot be used at same time as bbox keyword
+        if isinstance(mask, (GeoDataFrame, GeoSeries)):
+            crs = pyogrio.read_info(path_or_bytes).get("crs")
+            if isinstance(path_or_bytes, IOBase):
+                path_or_bytes.seek(0)
+
+            mask = shapely.unary_union(mask.to_crs(crs).geometry.values)
+        elif isinstance(mask, BaseGeometry):
+            mask = shapely.unary_union(mask)
+        elif isinstance(mask, dict) or hasattr(mask, "__geo_interface__"):
+            # convert GeoJSON to shapely geometry
+            mask = shapely.geometry.shape(mask)
+
+        kwargs["mask"] = mask
+
     if kwargs.pop("ignore_geometry", False):
         kwargs["read_geometry"] = False
 
-    # TODO: if bbox is not None, check its CRS vs the CRS of the file
+    # translate `ignore_fields`/`include_fields` keyword for back compat with fiona
+    if "ignore_fields" in kwargs and "include_fields" in kwargs:
+        raise ValueError("Cannot specify both 'ignore_fields' and 'include_fields'")
+    elif "ignore_fields" in kwargs:
+        if kwargs.get("columns", None) is not None:
+            raise ValueError(
+                "Cannot specify both 'columns' and 'ignore_fields' keywords"
+            )
+        warnings.warn(
+            "The 'include_fields' and 'ignore_fields' keywords are deprecated, and "
+            "will be removed in a future release. You can use the 'columns' keyword "
+            "instead to select which columns to read.",
+            DeprecationWarning,
+            stacklevel=3,
+        )
+        ignore_fields = kwargs.pop("ignore_fields")
+        fields = pyogrio.read_info(path_or_bytes)["fields"]
+        include_fields = [col for col in fields if col not in ignore_fields]
+        kwargs["columns"] = include_fields
+    elif "include_fields" in kwargs:
+        # translate `include_fields` keyword for back compat with fiona engine
+        if kwargs.get("columns", None) is not None:
+            raise ValueError(
+                "Cannot specify both 'columns' and 'include_fields' keywords"
+            )
+        warnings.warn(
+            "The 'include_fields' and 'ignore_fields' keywords are deprecated, and "
+            "will be removed in a future release. You can use the 'columns' keyword "
+            "instead to select which columns to read.",
+            DeprecationWarning,
+            stacklevel=3,
+        )
+        kwargs["columns"] = kwargs.pop("include_fields")
+
     return pyogrio.read_dataframe(path_or_bytes, bbox=bbox, **kwargs)
-
-
-def read_file(*args, **kwargs):
-    warnings.warn(
-        "geopandas.io.file.read_file() is intended for internal "
-        "use only, and will be deprecated. Use geopandas.read_file() instead.",
-        FutureWarning,
-        stacklevel=2,
-    )
-
-    return _read_file(*args, **kwargs)
-
-
-def to_file(*args, **kwargs):
-    warnings.warn(
-        "geopandas.io.file.to_file() is intended for internal "
-        "use only, and will be deprecated. Use GeoDataFrame.to_file() "
-        "or GeoSeries.to_file() instead.",
-        FutureWarning,
-        stacklevel=2,
-    )
-
-    return _to_file(*args, **kwargs)
 
 
 def _detect_driver(path):
@@ -477,14 +574,16 @@ def _to_file(
     mode="w",
     crs=None,
     engine=None,
+    metadata=None,
     **kwargs,
 ):
     """
     Write this GeoDataFrame to an OGR data source
 
     A dictionary of supported OGR providers is available via:
-    >>> import fiona
-    >>> fiona.supported_drivers  # doctest: +SKIP
+
+    >>> import pyogrio
+    >>> pyogrio.list_drivers()  # doctest: +SKIP
 
     Parameters
     ----------
@@ -526,10 +625,15 @@ def _to_file(
         The value can be anything accepted
         by :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
         such as an authority string (eg "EPSG:4326") or a WKT string.
-    engine : str, "fiona" or "pyogrio"
-        The underlying library that is used to write the file. Currently, the
-        supported options are "fiona" and "pyogrio". Defaults to "fiona" if
-        installed, otherwise tries "pyogrio".
+    engine : str,  "pyogrio" or "fiona"
+        The underlying library that is used to read the file. Currently, the
+        supported options are "pyogrio" and "fiona". Defaults to "pyogrio" if
+        installed, otherwise tries "fiona". Engine can also be set globally
+        with the ``geopandas.options.io_engine`` option.
+    metadata : dict[str, str], default None
+        Optional metadata to be stored in the file. Keys and values must be
+        strings. Only supported for the "GPKG" driver
+        (requires Fiona >= 1.9 or pyogrio >= 0.6).
     **kwargs :
         Keyword args to be passed to the engine, and can be used to write
         to multi-layer data, store data within archives (zip files), etc.
@@ -565,43 +669,65 @@ def _to_file(
             stacklevel=3,
         )
 
+    if (df.dtypes == "geometry").sum() > 1:
+        raise ValueError(
+            "GeoDataFrame contains multiple geometry columns but GeoDataFrame.to_file "
+            "supports only a single geometry column. Use a GeoDataFrame.to_parquet or "
+            "GeoDataFrame.to_feather, drop additional geometry columns or convert them "
+            "to a supported format like a well-known text (WKT) using "
+            "`GeoSeries.to_wkt()`.",
+        )
+    _check_metadata_supported(metadata, engine, driver)
+
     if mode not in ("w", "a"):
         raise ValueError(f"'mode' should be one of 'w' or 'a', got '{mode}' instead")
 
-    if engine == "fiona":
-        _to_file_fiona(df, filename, driver, schema, crs, mode, **kwargs)
-    elif engine == "pyogrio":
-        _to_file_pyogrio(df, filename, driver, schema, crs, mode, **kwargs)
+    if engine == "pyogrio":
+        _to_file_pyogrio(df, filename, driver, schema, crs, mode, metadata, **kwargs)
+    elif engine == "fiona":
+        _to_file_fiona(df, filename, driver, schema, crs, mode, metadata, **kwargs)
     else:
         raise ValueError(f"unknown engine '{engine}'")
 
 
-def _to_file_fiona(df, filename, driver, schema, crs, mode, **kwargs):
+def _to_file_fiona(df, filename, driver, schema, crs, mode, metadata, **kwargs):
+    if not HAS_PYPROJ and crs:
+        raise ImportError(
+            "The 'pyproj' package is required to write a file with a CRS, but it is not"
+            " installed or does not import correctly."
+        )
+
     if schema is None:
         schema = infer_schema(df)
 
     if crs:
-        crs = pyproj.CRS.from_user_input(crs)
+        from pyproj import CRS
+
+        crs = CRS.from_user_input(crs)
     else:
         crs = df.crs
 
     with fiona_env():
         crs_wkt = None
         try:
-            gdal_version = fiona.env.get_gdal_release_name()
-        except AttributeError:
-            gdal_version = "2.0.0"  # just assume it is not the latest
-        if Version(gdal_version) >= Version("3.0.0") and crs:
+            gdal_version = Version(
+                fiona.env.get_gdal_release_name().strip("e")
+            )  # GH3147
+        except (AttributeError, ValueError):
+            gdal_version = Version("2.0.0")  # just assume it is not the latest
+        if gdal_version >= Version("3.0.0") and crs:
             crs_wkt = crs.to_wkt()
         elif crs:
             crs_wkt = crs.to_wkt("WKT1_GDAL")
         with fiona.open(
             filename, mode=mode, driver=driver, crs_wkt=crs_wkt, schema=schema, **kwargs
         ) as colxn:
+            if metadata is not None:
+                colxn.update_tags(metadata)
             colxn.writerecords(df.iterfeatures())
 
 
-def _to_file_pyogrio(df, filename, driver, schema, crs, mode, **kwargs):
+def _to_file_pyogrio(df, filename, driver, schema, crs, mode, metadata, **kwargs):
     import pyogrio
 
     if schema is not None:
@@ -613,20 +739,26 @@ def _to_file_pyogrio(df, filename, driver, schema, crs, mode, **kwargs):
         kwargs["append"] = True
 
     if crs is not None:
-        raise ValueError("Passing 'crs' it not supported with the 'pyogrio' engine.")
+        raise ValueError("Passing 'crs' is not supported with the 'pyogrio' engine.")
 
     # for the fiona engine, this check is done in gdf.iterfeatures()
     if not df.columns.is_unique:
         raise ValueError("GeoDataFrame cannot contain duplicated column names.")
 
-    pyogrio.write_dataframe(df, filename, driver=driver, **kwargs)
+    pyogrio.write_dataframe(df, filename, driver=driver, metadata=metadata, **kwargs)
 
 
 def infer_schema(df):
     from collections import OrderedDict
 
     # TODO: test pandas string type and boolean type once released
-    types = {"Int64": "int", "string": "str", "boolean": "bool"}
+    types = {
+        "Int32": "int32",
+        "int32": "int32",
+        "Int64": "int",
+        "string": "str",
+        "boolean": "bool",
+    }
 
     def convert_type(column, in_type):
         if in_type == object:
@@ -686,3 +818,34 @@ def _geometry_types(df):
         geom_types = geom_types[0]
 
     return geom_types
+
+
+def _list_layers(filename) -> pd.DataFrame:
+    """List layers available in a file.
+
+    Provides an overview of layers available in a file or URL together with their
+    geometry types. When supported by the data source, this includes both spatial and
+    non-spatial layers. Non-spatial layers are indicated by the ``"geometry_type"``
+    column being ``None``. GeoPandas will not read such layers but they can be read into
+    a pd.DataFrame using :func:`pyogrio.read_dataframe`.
+
+    Parameters
+    ----------
+    filename : str, path object or file-like object
+        Either the absolute or relative path to the file or URL to
+        be opened, or any object with a read() method (such as an open file
+        or StringIO)
+
+    Returns
+    -------
+    pandas.DataFrame
+        A DataFrame with columns "name" and "geometry_type" and one row per layer.
+    """
+    _import_pyogrio()
+    _check_pyogrio("list_layers")
+
+    import pyogrio
+
+    return pd.DataFrame(
+        pyogrio.list_layers(filename), columns=["name", "geometry_type"]
+    )

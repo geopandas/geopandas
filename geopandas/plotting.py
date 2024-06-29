@@ -1,29 +1,14 @@
 import warnings
+from packaging.version import Version
 
 import numpy as np
 import pandas as pd
+from pandas import CategoricalDtype
 from pandas.plotting import PlotAccessor
 
 import geopandas
 
-from packaging.version import Version
-
 from ._decorator import doc
-
-
-def deprecated(new, warning_type=FutureWarning):
-    """Helper to provide deprecation warning."""
-
-    def old(*args, **kwargs):
-        warnings.warn(
-            "{} is intended for internal ".format(new.__name__[1:])
-            + "use only, and will be deprecated.",
-            warning_type,
-            stacklevel=2,
-        )
-        new(*args, **kwargs)
-
-    return old
 
 
 def _sanitize_geoms(geoms, prefix="Multi"):
@@ -75,17 +60,11 @@ def _expand_kwargs(kwargs, multiindex):
     it (in place) to the correct length/formats with help of 'multiindex', unless
     the value appears to already be a valid (single) value for the key.
     """
-    import matplotlib
-    from matplotlib.colors import is_color_like
     from typing import Iterable
 
-    mpl = Version(matplotlib.__version__)
-    if mpl >= Version("3.4"):
-        # alpha is supported as array argument with matplotlib 3.4+
-        scalar_kwargs = ["marker", "path_effects"]
-    else:
-        scalar_kwargs = ["marker", "alpha", "path_effects"]
+    from matplotlib.colors import is_color_like
 
+    scalar_kwargs = ["marker", "path_effects"]
     for att, value in kwargs.items():
         if "color" in att:  # color(s), edgecolor(s), facecolor(s)
             if is_color_like(value):
@@ -133,7 +112,15 @@ def _PolygonPatch(polygon, **kwargs):
 
 
 def _plot_polygon_collection(
-    ax, geoms, values=None, color=None, cmap=None, vmin=None, vmax=None, **kwargs
+    ax,
+    geoms,
+    values=None,
+    color=None,
+    cmap=None,
+    vmin=None,
+    vmax=None,
+    autolim=True,
+    **kwargs,
 ):
     """
     Plots a collection of Polygon and MultiPolygon geometries to `ax`
@@ -154,6 +141,8 @@ def _plot_polygon_collection(
         Color to fill the polygons. Cannot be used together with `values`.
     color : single color or sequence of `N` colors
         Sets both `edgecolor` and `facecolor`
+    autolim : bool (default True)
+        Update axes data limits to contain the new geometries.
     **kwargs
         Additional keyword arguments passed to the collection
 
@@ -188,16 +177,21 @@ def _plot_polygon_collection(
         if "norm" not in kwargs:
             collection.set_clim(vmin, vmax)
 
-    ax.add_collection(collection, autolim=True)
+    ax.add_collection(collection, autolim=autolim)
     ax.autoscale_view()
     return collection
 
 
-plot_polygon_collection = deprecated(_plot_polygon_collection)
-
-
 def _plot_linestring_collection(
-    ax, geoms, values=None, color=None, cmap=None, vmin=None, vmax=None, **kwargs
+    ax,
+    geoms,
+    values=None,
+    color=None,
+    cmap=None,
+    vmin=None,
+    vmax=None,
+    autolim=True,
+    **kwargs,
 ):
     """
     Plots a collection of LineString and MultiLineString geometries to `ax`
@@ -213,6 +207,8 @@ def _plot_linestring_collection(
         have 1:1 correspondence with the geometries (not their components).
     color : single color or sequence of `N` colors
         Cannot be used together with `values`.
+    autolim : bool (default True)
+        Update axes data limits to contain the new geometries.
 
     Returns
     -------
@@ -246,12 +242,9 @@ def _plot_linestring_collection(
         if "norm" not in kwargs:
             collection.set_clim(vmin, vmax)
 
-    ax.add_collection(collection, autolim=True)
+    ax.add_collection(collection, autolim=autolim)
     ax.autoscale_view()
     return collection
-
-
-plot_linestring_collection = deprecated(_plot_linestring_collection)
 
 
 def _plot_point_collection(
@@ -317,11 +310,15 @@ def _plot_point_collection(
     return collection
 
 
-plot_point_collection = deprecated(_plot_point_collection)
-
-
 def plot_series(
-    s, cmap=None, color=None, ax=None, figsize=None, aspect="auto", **style_kwds
+    s,
+    cmap=None,
+    color=None,
+    ax=None,
+    figsize=None,
+    aspect="auto",
+    autolim=True,
+    **style_kwds,
 ):
     """
     Plot a GeoSeries.
@@ -357,6 +354,8 @@ def plot_series(
         square appears square in the middle of the plot. This implies an
         Equirectangular projection. If None, the aspect of `ax` won't be changed. It can
         also be set manually (float) as the ratio of y-unit to x-unit.
+    autolim : bool (default True)
+        Update axes data limits to contain the new geometries.
     **style_kwds : dict
         Color options to be passed on to the actual plot function, such
         as ``edgecolor``, ``facecolor``, ``linewidth``, ``markersize``,
@@ -366,22 +365,6 @@ def plot_series(
     -------
     ax : matplotlib axes instance
     """
-    if "colormap" in style_kwds:
-        warnings.warn(
-            "'colormap' is deprecated, please use 'cmap' instead "
-            "(for consistency with matplotlib)",
-            FutureWarning,
-            stacklevel=3,
-        )
-        cmap = style_kwds.pop("colormap")
-    if "axes" in style_kwds:
-        warnings.warn(
-            "'axes' is deprecated, please use 'ax' instead "
-            "(for consistency with pandas)",
-            FutureWarning,
-            stacklevel=3,
-        )
-        ax = style_kwds.pop("axes")
 
     try:
         import matplotlib.pyplot as plt
@@ -467,7 +450,13 @@ def plot_series(
 
         values_ = values[poly_idx] if cmap else None
         _plot_polygon_collection(
-            ax, polys, values_, facecolor=facecolor, cmap=cmap, **style_kwds
+            ax,
+            polys,
+            values_,
+            facecolor=facecolor,
+            cmap=cmap,
+            autolim=autolim,
+            **style_kwds,
         )
 
     # plot all LineStrings and MultiLineString components in same collection
@@ -477,7 +466,7 @@ def plot_series(
         color_ = expl_color[line_idx] if color_given else color
 
         _plot_linestring_collection(
-            ax, lines, values_, color=color_, cmap=cmap, **style_kwds
+            ax, lines, values_, color=color_, cmap=cmap, autolim=autolim, **style_kwds
         )
 
     # plot all Points in the same collection
@@ -490,7 +479,7 @@ def plot_series(
             ax, points, values_, color=color_, cmap=cmap, **style_kwds
         )
 
-    plt.draw()
+    ax.figure.canvas.draw_idle()
     return ax
 
 
@@ -514,6 +503,7 @@ def plot_dataframe(
     classification_kwds=None,
     missing_kwds=None,
     aspect="auto",
+    autolim=True,
     **style_kwds,
 ):
     """
@@ -617,7 +607,8 @@ def plot_dataframe(
         square appears square in the middle of the plot. This implies an
         Equirectangular projection. If None, the aspect of `ax` won't be changed. It can
         also be set manually (float) as the ratio of y-unit to x-unit.
-
+    autolim : bool (default True)
+        Update axes data limits to contain the new geometries.
     **style_kwds : dict
         Style options to be passed on to the actual plot function, such
         as ``edgecolor``, ``facecolor``, ``linewidth``, ``markersize``,
@@ -644,22 +635,6 @@ def plot_dataframe(
     See the User Guide page :doc:`../../user_guide/mapping` for details.
 
     """
-    if "colormap" in style_kwds:
-        warnings.warn(
-            "'colormap' is deprecated, please use 'cmap' instead "
-            "(for consistency with matplotlib)",
-            FutureWarning,
-            stacklevel=3,
-        )
-        cmap = style_kwds.pop("colormap")
-    if "axes" in style_kwds:
-        warnings.warn(
-            "'axes' is deprecated, please use 'ax' instead "
-            "(for consistency with pandas)",
-            FutureWarning,
-            stacklevel=3,
-        )
-        ax = style_kwds.pop("axes")
     if column is not None and color is not None:
         warnings.warn(
             "Only specify one of 'column' or 'color'. Using 'color'.",
@@ -720,6 +695,7 @@ def plot_dataframe(
             figsize=figsize,
             markersize=markersize,
             aspect=aspect,
+            autolim=autolim,
             **style_kwds,
         )
 
@@ -738,7 +714,7 @@ def plot_dataframe(
     else:
         values = df[column]
 
-    if pd.api.types.is_categorical_dtype(values.dtype):
+    if isinstance(values.dtype, CategoricalDtype):
         if categories is not None:
             raise ValueError(
                 "Cannot specify 'categories' when column has categorical dtype"
@@ -859,7 +835,14 @@ def plot_dataframe(
     subset = values[poly_idx & np.invert(nan_idx)]
     if not polys.empty:
         _plot_polygon_collection(
-            ax, polys, subset, vmin=mn, vmax=mx, cmap=cmap, **style_kwds
+            ax,
+            polys,
+            subset,
+            vmin=mn,
+            vmax=mx,
+            cmap=cmap,
+            autolim=autolim,
+            **style_kwds,
         )
 
     # plot all LineStrings and MultiLineString components in same collection
@@ -867,7 +850,14 @@ def plot_dataframe(
     subset = values[line_idx & np.invert(nan_idx)]
     if not lines.empty:
         _plot_linestring_collection(
-            ax, lines, subset, vmin=mn, vmax=mx, cmap=cmap, **style_kwds
+            ax,
+            lines,
+            subset,
+            vmin=mn,
+            vmax=mx,
+            cmap=cmap,
+            autolim=autolim,
+            **style_kwds,
         )
 
     # plot all Points in the same collection
@@ -905,9 +895,9 @@ def plot_dataframe(
         if "fmt" in legend_kwds:
             legend_kwds.pop("fmt")
 
-        from matplotlib.lines import Line2D
-        from matplotlib.colors import Normalize
         from matplotlib import cm
+        from matplotlib.colors import Normalize
+        from matplotlib.lines import Line2D
 
         norm = style_kwds.get("norm", None)
         if not norm:
@@ -917,7 +907,7 @@ def plot_dataframe(
             if scheme is not None:
                 categories = labels
             patches = []
-            for value, cat in enumerate(categories):
+            for i in range(len(categories)):
                 patches.append(
                     Line2D(
                         [0],
@@ -926,7 +916,7 @@ def plot_dataframe(
                         marker="o",
                         alpha=style_kwds.get("alpha", 1),
                         markersize=10,
-                        markerfacecolor=n_cmap.to_rgba(value),
+                        markerfacecolor=n_cmap.to_rgba(i),
                         markeredgewidth=0,
                     )
                 )
@@ -963,7 +953,7 @@ def plot_dataframe(
             n_cmap.set_array(np.array([]))
             ax.get_figure().colorbar(n_cmap, **legend_kwds)
 
-    plt.draw()
+    ax.figure.canvas.draw_idle()
     return ax
 
 

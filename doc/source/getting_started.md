@@ -29,7 +29,7 @@ conda install -c conda-forge geopandas
 
 ### Detailed instructions
 
-Do you prefer ``pip install`` or installation from source? Or specific version? See
+Do you prefer ``pip install`` or installation from source? Or want to install a specific version? See
 {doc}`detailed instructions <getting_started/install>`.
 
 ### What now?
@@ -37,7 +37,7 @@ Do you prefer ``pip install`` or installation from source? Or specific version? 
 - If you don't have GeoPandas yet, check {doc}`Installation <getting_started/install>`.
 - If you have never used GeoPandas and want to get familiar with it and its core
   functionality quickly, see {doc}`Getting Started Tutorial <getting_started/introduction>`.
-- Detailed illustration how to work with different parts of GeoPandas, how to make maps,
+- Detailed illustration of how to work with different parts of GeoPandas, make maps,
   manage projections, spatially merge data or geocode are part of our
   {doc}`User Guide <docs/user_guide>`.
 - And if you are interested in the complete
