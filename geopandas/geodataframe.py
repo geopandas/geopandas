@@ -30,13 +30,17 @@ else:
 
 if typing.TYPE_CHECKING:
     import os
+    from typing import Iterable
 
     import folium
     import sqlalchemy.text
 
     from pyproj import CRS
 
-    from geopandas.io.arrow import SUPPORTED_VERSIONS_LITERAL
+    from geopandas.io.arrow import (
+        PARQUET_GEOMETRY_ENCODINGS,
+        SUPPORTED_VERSIONS_LITERAL,
+    )
 
 
 def _geodataframe_constructor_with_fallback(
@@ -514,7 +518,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             self.set_geometry(col, inplace=inplace)
 
     @property
-    def active_geometry_name(self):
+    def active_geometry_name(self) -> str:
         """Return the name of the active geometry column
 
         Returns a string name if a GeoDataFrame has an active geometry column set.
@@ -719,7 +723,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
     @classmethod
     def from_features(
-        cls, features, crs: Any | None = None, columns=None
+        cls, features, crs: Any | None = None, columns: Iterable[str] | None = None
     ) -> GeoDataFrame:
         """
         Alternate constructor to create GeoDataFrame from an iterable of
@@ -891,7 +895,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         return df
 
     @classmethod
-    def from_arrow(cls, table, geometry=None):
+    def from_arrow(cls, table, geometry: str | None = None) -> GeoDataFrame:
         """
         Construct a GeoDataFrame from a Arrow table object based on GeoArrow
         extension types.
@@ -1172,7 +1176,9 @@ individually so that features may have different properties
 
                 yield feature
 
-    def to_geo_dict(self, na="null", show_bbox=False, drop_id=False) -> dict:
+    def to_geo_dict(
+        self, na="null", show_bbox: bool = False, drop_id: bool = False
+    ) -> dict:
         """
         Returns a python feature collection representation of the GeoDataFrame
         as a dictionary with a list of features based on the ``__geo_interface__``
@@ -1281,7 +1287,12 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
         return df
 
     def to_arrow(
-        self, *, index=None, geometry_encoding="WKB", interleaved=True, include_z=None
+        self,
+        *,
+        index: bool | None = None,
+        geometry_encoding="WKB",
+        interleaved: bool = True,
+        include_z: bool | None = None,
     ):
         """Encode a GeoDataFrame to GeoArrow format.
 
@@ -1373,8 +1384,8 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
         path: os.PathLike | typing.IO,
         index: bool | None = None,
         compression: str = "snappy",
-        geometry_encoding="WKB",
-        write_covering_bbox=False,
+        geometry_encoding: PARQUET_GEOMETRY_ENCODINGS = "WKB",
+        write_covering_bbox: bool = False,
         schema_version: SUPPORTED_VERSIONS_LITERAL | None = None,
         **kwargs,
     ) -> None:
@@ -1998,7 +2009,7 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
     def _constructor(self) -> DataFrame | GeoDataFrame:
         return _geodataframe_constructor_with_fallback
 
-    def _constructor_from_mgr(self, mgr, axes):
+    def _constructor_from_mgr(self, mgr, axes) -> DataFrame | GeoDataFrame:
         # replicate _geodataframe_constructor_with_fallback behaviour
         # unless safe to skip
         if not any(isinstance(block.dtype, GeometryDtype) for block in mgr.blocks):
@@ -2038,14 +2049,16 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
 
         return _geodataframe_constructor_sliced
 
-    def _constructor_sliced_from_mgr(self, mgr, axes):
+    def _constructor_sliced_from_mgr(self, mgr, axes) -> Series | GeoSeries:
         is_row_proxy = mgr.index.is_(self.columns)
 
         if isinstance(mgr.blocks[0].dtype, GeometryDtype) and not is_row_proxy:
             return GeoSeries._from_mgr(mgr, axes)
         return Series._from_mgr(mgr, axes)
 
-    def __finalize__(self, other, method: str | None = None, **kwargs):
+    def __finalize__(
+        self, other, method: str | None = None, **kwargs
+    ) -> GeoDataFrame | GeoSeries:
         """propagate metadata from other to self"""
         self = super().__finalize__(other, method=method, **kwargs)
 
@@ -2231,7 +2244,7 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
     # overrides the pandas native explode method to break up features geometrically
     def explode(
         self,
-        column=None,
+        column: str | None = None,
         ignore_index: bool = False,
         index_parts: bool = False,
         **kwargs,
@@ -2378,7 +2391,7 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
         schema: str | None = None,
         if_exists: Literal["fail", "replace", "append"] = "fail",
         index: bool = False,
-        index_label=None,
+        index_label: Iterable[str] | str | None = None,
         chunksize: int | None = None,
         dtype=None,
     ) -> None:
@@ -2551,11 +2564,11 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
         self,
         right: GeoDataFrame,
         how: Literal["left", "right", "inner"] = "inner",
-        max_distance=None,
-        lsuffix="left",
-        rsuffix="right",
-        distance_col=None,
-        exclusive=False,
+        max_distance: float | None = None,
+        lsuffix: str = "left",
+        rsuffix: str = "right",
+        distance_col: str | None = None,
+        exclusive: bool = False,
     ) -> GeoDataFrame:
         """
         Spatial join of two GeoDataFrames based on the distance between their
@@ -2596,7 +2609,6 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
         exclusive : bool, optional, default False
             If True, the nearest geometries that are equal to the input geometry
             will not be returned, default False.
-            Requires Shapely >= 2.0
 
         Examples
         --------
@@ -2682,7 +2694,9 @@ chicago_w_groceries[chicago_w_groceries["community"] == "UPTOWN"]
             exclusive=exclusive,
         )
 
-    def clip(self, mask, keep_geom_type: bool = False, sort=False) -> GeoDataFrame:
+    def clip(
+        self, mask, keep_geom_type: bool = False, sort: bool = False
+    ) -> GeoDataFrame:
         """Clip points, lines, or polygon geometries to the mask extent.
 
         Both layers must be in the same Coordinate Reference System (CRS).

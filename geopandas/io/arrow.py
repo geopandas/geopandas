@@ -27,6 +27,7 @@ GEOARROW_ENCODINGS = [
     "multipolygon",
 ]
 SUPPORTED_ENCODINGS = ["WKB"] + GEOARROW_ENCODINGS
+PARQUET_GEOMETRY_ENCODINGS = Literal["WKB", "geoarrow"]
 
 # reference: https://github.com/opengeospatial/geoparquet
 
