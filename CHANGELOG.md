@@ -1,5 +1,11 @@
 # Changelog
 
+
+## Version 1.1.0
+
+Notes on dependencies:
+
+
 ## Version 1.0.0 (June 24, 2024)
 
 Notes on dependencies:
