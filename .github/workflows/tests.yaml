@@ -39,7 +39,7 @@ jobs:
         postgis: [false]
         dev: [false]
         env:
-          - ci/envs/39-minimal.yaml
+          - ci/envs/310-minimal.yaml
           - ci/envs/39-no-optional-deps.yaml
           - ci/envs/39-pd15-defaults.yaml
           - ci/envs/39-latest-defaults.yaml
@@ -47,7 +47,6 @@ jobs:
           - ci/envs/39-latest-conda-forge_no_pyogrio.yaml
           - ci/envs/310-pd20-conda-forge.yaml
           - ci/envs/310-latest-conda-forge.yaml
-          - ci/envs/311-latest-conda-forge.yaml
           - ci/envs/312-latest-conda-forge.yaml
           - ci/envs/312-latest-conda-forge_no_pyproj.yaml
         include:
@@ -67,7 +66,7 @@ jobs:
             os: windows-latest
             postgis: false
             dev: false
-          - env: ci/envs/311-dev.yaml
+          - env: ci/envs/312-dev.yaml
             os: ubuntu-latest
             dev: true
 
@@ -91,7 +90,7 @@ jobs:
           pytest -v -r fEs -n auto --color=yes --cov=geopandas --cov-append --cov-report term-missing --cov-report xml geopandas/
 
       - name: Test with PostGIS
-        if: (contains(matrix.env, '310-pd20-conda-forge.yaml') || contains(matrix.env, '311-latest-conda-forge.yaml'))
+        if: (contains(matrix.env, '310-pd20-conda-forge.yaml') || contains(matrix.env, '312-latest-conda-forge.yaml'))
           && contains(matrix.os, 'ubuntu')
         env:
           PGUSER: postgres

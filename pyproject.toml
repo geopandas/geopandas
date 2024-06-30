@@ -35,9 +35,9 @@ all = [
     "SQLAlchemy>=1.4",
     "geopy",
     "matplotlib>=3.6.0",
-    "mapclassify",
+    "mapclassify", # 2.5
     "xyzservices",
-    "folium",
+    "folium", # 0.12
     "GeoAlchemy2",
     "pyarrow>=8.0.0",
 ]
