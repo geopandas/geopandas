@@ -312,6 +312,12 @@ class TestExplore:
         assert '"__folium_color":"#9edae5","datetime":"2025-01-0101:22:00"' in out1_str
         assert '"__folium_color":"#1f77b4","datetime":"2022-01-0101:22:00"' in out1_str
 
+        df2 = df.set_index("datetime")
+        m2 = df2.explore()
+        out2_str = self._fetch_map_string(m2)
+        assert '"datetime":"2025-01-0101:22:00"' in out2_str
+        assert '"datetime":"2022-01-0101:22:00"' in out2_str
+
     def test_non_json_serialisable(self):
         df = self.nybb.copy().head(2)
         uuid1 = uuid.UUID("12345678123456781234567812345678")
