@@ -1,5 +1,11 @@
 # Changelog
 
+## Version 1.0.1
+
+Bug fixes:
+
+- Fix a regression preventing a Series as an argument for geometric methods (#3363)
+
 ## Version 1.0.0 (June 24, 2024)
 
 Notes on dependencies:
@@ -63,7 +69,7 @@ New features and improvements:
   other non JSON serializable objects (#3261).
 - The `GeoSeries.fillna` method now supports the `limit` keyword (#3290).
 - Added ``on_attribute`` option argument to the ``sjoin()``
-  method, allowing to restrict joins to the observations with 
+  method, allowing to restrict joins to the observations with
   matching attributes. (#3231)
 - Added support for `bbox` covering encoding in geoparquet. Can filter reading of parquet
 files based on a bounding box, and write out a bounding box column to parquet files (#3282).
@@ -74,7 +80,7 @@ files based on a bounding box, and write out a bounding box column to parquet fi
 - Added ``autolim`` keyword argument to ``GeoSeries.plot()`` and ``GeoDataFrame.plot()`` (#2817).
 - Added `metadata` parameter to `GeoDataFrame.to_file` (#2850)
 - Updated documentation to clarify that passing a named (Geo)Series as the `geometry`
-  argument to the GeoDataFrame constructor will not use the name but will always  
+  argument to the GeoDataFrame constructor will not use the name but will always
   produce a GeoDataFrame with an active geometry column named "geometry" (#3337).
 - `read_postgis` will query the spatial_ref_sys table to determine the CRS authority
   instead of its current behaviour of assuming EPSG. In the event the spiatal_ref_sys
@@ -95,7 +101,7 @@ Backwards incompatible API changes:
   the previous active geometry column name. This means that if the new and old names are
   different, then both columns will be preserved in the GeoDataFrame. To replicate the previous
   behaviour, you can instead call `gdf.set_geometry(ser.rename(gdf.active_geometry_name))` (#3237).
-  Note that this behaviour change does not affect the `GeoDataframe` constructor, passing a named 
+  Note that this behaviour change does not affect the `GeoDataframe` constructor, passing a named
   GeoSeries `ser` to `GeoDataFrame(df, geometry=ser)` will always produce a GeoDataFrame with a
   geometry column named "geometry" to preserve backwards compatibility. If you would like to
   instead propagate the name of `ser` when constructing a GeoDataFrame, you can instead call

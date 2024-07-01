@@ -103,15 +103,17 @@ def _delegate_geo_method(op, this, **kwargs):
         klass, var_name = this.__class__.__name__, "this"
 
     for key, val in kwargs.items():
-        if isinstance(val, pd.Series) and not val.index.equals(this.index):
-            raise ValueError(
-                f"Index of the Series passed as '{key}' does not match index of the "
-                f"{klass}. If you want both Series to be aligned, align them before "
-                f"passing them to this method as "
-                f"`{var_name}, {key} = {var_name}.align({key})`. If "
-                f"you want to ignore the index, pass the underlying array as '{key}' "
-                f"using `{key}.values`."
-            )
+        if isinstance(val, pd.Series):
+            if not val.index.equals(this.index):
+                raise ValueError(
+                    f"Index of the Series passed as '{key}' does not match index of "
+                    f"the {klass}. If you want both Series to be aligned, align them "
+                    f"before passing them to this method as "
+                    f"`{var_name}, {key} = {var_name}.align({key})`. If "
+                    f"you want to ignore the index, pass the underlying array as "
+                    f"'{key}' using `{key}.values`."
+                )
+            kwargs[key] = np.asarray(val)
 
     a_this = GeometryArray(this.geometry.values)
     data = getattr(a_this, op)(**kwargs)
