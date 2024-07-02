@@ -1,4 +1,5 @@
 import os.path
+from unittest import mock
 
 from pandas import Series
 
@@ -21,13 +22,6 @@ _NATURALEARTH_CITIES = os.path.join(
 _NATURALEARTH_LOWRES = os.path.join(
     _TEST_DATA_DIR, "naturalearth_lowres", "naturalearth_lowres.shp"
 )
-
-
-# mock not used here, but the import from here is used in other modules
-try:
-    from unittest import mock
-except ImportError:
-    from unittest import mock
 
 
 def validate_boro_df(df, case_sensitive=False):
