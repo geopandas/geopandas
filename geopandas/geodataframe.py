@@ -1035,7 +1035,7 @@ individually so that features may have different properties
 'type': 'Point', 'coordinates': (1.0, 2.0)}}
         """
         if na not in ["null", "drop", "keep"]:
-            raise ValueError("Unknown na method {0}".format(na))
+            raise ValueError(f"Unknown na method {na}")
 
         if self._geometry_column_name not in self:
             raise AttributeError(

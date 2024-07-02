@@ -46,7 +46,7 @@ class ReverseMock(mock.MagicMock):
         self._n = 0
 
     def __call__(self, *args, **kwargs):
-        self.return_value = "address{0}".format(self._n), args[0]
+        self.return_value = f"address{self._n}", args[0]
         self._n += 1
         return super().__call__(*args, **kwargs)
 

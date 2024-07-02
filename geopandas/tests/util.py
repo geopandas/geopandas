@@ -23,13 +23,6 @@ _NATURALEARTH_LOWRES = os.path.join(
 )
 
 
-# mock not used here, but the import from here is used in other modules
-try:
-    from unittest import mock
-except ImportError:
-    import mock  # noqa: F401
-
-
 def validate_boro_df(df, case_sensitive=False):
     """Tests a GeoDataFrame that has been read in from the nybb dataset."""
     assert isinstance(df, GeoDataFrame)
@@ -111,8 +104,8 @@ def create_postgis(con, df, srid=None, geom_col="geom"):
     # > createdb test_geopandas
     # > psql -c "CREATE EXTENSION postgis" -d test_geopandas
     if srid is not None:
-        geom_schema = "geometry(MULTIPOLYGON, {})".format(srid)
-        geom_insert = "ST_SetSRID(ST_GeometryFromText(%s), {})".format(srid)
+        geom_schema = f"geometry(MULTIPOLYGON, {srid})"
+        geom_insert = f"ST_SetSRID(ST_GeometryFromText(%s), {srid})"
     else:
         geom_schema = "geometry"
         geom_insert = "ST_GeometryFromText(%s)"

@@ -36,7 +36,7 @@ def collect(x, multi=False):
     if not all(g.geom_type == t for g in x):
         raise ValueError("Geometry type must be homogeneous")
     if len(x) > 1 and t.startswith("Multi"):
-        raise ValueError("Cannot collect {0}. Must have single geometries".format(t))
+        raise ValueError(f"Cannot collect {t}. Must have single geometries")
 
     if len(x) == 1 and (t.startswith("Multi") or not multi):
         # If there's only one single part geom and we're not forcing to
