@@ -320,20 +320,22 @@ class TestExplore:
 
     def test_non_json_serialisable(self):
         df = self.nybb.copy().head(2)
-        uuid1 = uuid.UUID("12345678123456781234567812345678")
-        uuid2 = uuid.UUID("12345678123456781234567812345679")
+
+        u1 = "12345678-1234-5678-1234-567812345678"
+        uuid1 = uuid.UUID(u1)
+        u2 = "12345678-1234-5678-1234-567812345679"
+        uuid2 = uuid.UUID(u2)
         df["object"] = [uuid1, uuid2]
         m1 = df.explore("object")
 
         out1_str = self._fetch_map_string(m1)
-        assert (
-            '"__folium_color":"#9edae5","object":"12345678-1234-5678-1234-567812345679"}'
-            in out1_str
-        )
-        assert (
-            '"__folium_color":"#1f77b4","object":"12345678-1234-5678-1234-567812345678"'
-            in out1_str
-        )
+        assert f'"__folium_color":"#9edae5","object":"{u2}"' in out1_str
+        assert f'"__folium_color":"#1f77b4","object":"{u1}"' in out1_str
+        df2 = df.set_index("object")
+        m2 = df2.explore()
+        out2_str = self._fetch_map_string(m2)
+        assert f'"object":"{u2}"' in out2_str
+        assert f'"object":"{u1}"' in out2_str
 
     def test_string(self):
         df = self.nybb.copy()

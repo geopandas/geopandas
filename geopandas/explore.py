@@ -337,8 +337,10 @@ def _explore(
     if len(json_not_supported_cols) > 0:
         gdf = gdf.astype({c: "string" for c in json_not_supported_cols})
 
-    if is_datetime64_any_dtype(gdf.index):
-        gdf.index = gdf.index.astype("str")
+    if not isinstance(gdf.index, pd.MultiIndex) and (
+        is_datetime64_any_dtype(gdf.index) or (gdf.index.dtype == "object")
+    ):
+        gdf.index = gdf.index.astype("string")
 
     # create folium.Map object
     if m is None:
