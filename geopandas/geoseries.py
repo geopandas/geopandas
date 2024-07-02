@@ -739,6 +739,14 @@ class GeoSeries(GeoPandasBase, Series):
         return self._wrapped_pandas_method("select", *args, **kwargs)
 
     @doc(pd.Series)
+    def copy(self, deep=True):
+        if not deep:
+            return GeoSeries(
+                self.array.view(), index=self.index, name=self.name
+            ).__finalize__(self)
+        return super().copy(deep=deep)
+
+    @doc(pd.Series)
     def apply(self, func, convert_dtype: Optional[bool] = None, args=(), **kwargs):
         if convert_dtype is not None:
             kwargs["convert_dtype"] = convert_dtype
@@ -1119,7 +1127,7 @@ class GeoSeries(GeoPandasBase, Series):
                 "transform the geometries, use 'GeoSeries.to_crs' instead."
             )
         if not inplace:
-            result = self.copy()
+            result = self.copy(deep=not compat.PANDAS_GE_30)
         else:
             result = self
         result.array.crs = crs
