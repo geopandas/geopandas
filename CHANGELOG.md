@@ -4,7 +4,7 @@
 
 Bug fixes:
 
-- Support a named datetime index in `explore()` (#3360).
+- Support a named datetime or object dtype index in `explore()` (#3360).
 
 ## Version 1.0.0 (June 24, 2024)
 
