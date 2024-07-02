@@ -1,6 +1,6 @@
 # Changelog
 
-## Version 1.0.1
+## Version 1.0.1 (July 2, 2024)
 
 Bug fixes:
 
