@@ -1,5 +1,4 @@
 import os.path
-from unittest import mock
 
 from pandas import Series
 
