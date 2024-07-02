@@ -180,10 +180,10 @@ def assert_geoseries_equal(
         if not isinstance(right, GeoSeries):
             right = GeoSeries(right, index=left.index)
 
-    assert left.index.equals(right.index), "index: %s != %s" % (left.index, right.index)
+    assert left.index.equals(right.index), f"index: {left.index} != {right.index}"
 
     if check_geom_type:
-        assert (left.geom_type == right.geom_type).all(), "type: %s != %s" % (
+        assert (left.geom_type == right.geom_type).all(), "type: {} != {}".format(
             left.geom_type,
             right.geom_type,
         )

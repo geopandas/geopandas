@@ -67,7 +67,7 @@ def _df_to_geodf(df, geom_col="geom", crs=None, con=None):
     """
 
     if geom_col not in df:
-        raise ValueError("Query missing geometry column '{}'".format(geom_col))
+        raise ValueError(f"Query missing geometry column '{geom_col}'")
 
     if df.columns.to_list().count(geom_col) > 1:
         raise ValueError(
@@ -104,7 +104,7 @@ def _df_to_geodf(df, geom_col="geom", crs=None, con=None):
                         f"Trying epsg:{srid} as a fallback."
                     )
                     warnings.warn(warning_msg, UserWarning, stacklevel=3)
-                    crs = "epsg:{}".format(srid)
+                    crs = f"epsg:{srid}"
                 else:
                     if not spatial_ref_sys_df.empty:
                         auth_name = spatial_ref_sys_df["auth_name"].item()
@@ -116,7 +116,7 @@ def _df_to_geodf(df, geom_col="geom", crs=None, con=None):
                             f"Trying epsg:{srid} as a fallback."
                         )
                         warnings.warn(warning_msg, UserWarning, stacklevel=3)
-                        crs = "epsg:{}".format(srid)
+                        crs = f"epsg:{srid}"
 
     return GeoDataFrame(df, crs=crs, geometry=geom_col)
 
@@ -327,7 +327,7 @@ def _psql_insert_copy(tbl, conn, keys, data_iter):
     writer.writerows(data_iter)
     s_buf.seek(0)
 
-    columns = ", ".join('"{}"'.format(k) for k in keys)
+    columns = ", ".join(f'"{k}"' for k in keys)
 
     dbapi_conn = conn.connection
     sql = 'COPY "{}"."{}" ({}) FROM STDIN WITH CSV'.format(

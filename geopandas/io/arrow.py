@@ -587,7 +587,7 @@ def _get_filesystem_path(path, filesystem=None, storage_options=None):
 
     if filesystem is None and storage_options:
         raise ValueError(
-            "Cannot provide 'storage_options' with non-fsspec path '{}'".format(path)
+            f"Cannot provide 'storage_options' with non-fsspec path '{path}'"
         )
 
     return filesystem, path

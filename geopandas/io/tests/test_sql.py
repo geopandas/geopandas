@@ -381,7 +381,7 @@ class TestIO:
         # Write to db
         write_postgis(df_nybb, con=engine, name=table, if_exists="fail")
         # Validate
-        sql = text("SELECT * FROM {table};".format(table=table))
+        sql = text(f"SELECT * FROM {table};")
         df = read_postgis(sql, engine, geom_col="geometry")
         validate_boro_df(df)
 
@@ -397,7 +397,7 @@ class TestIO:
         # Write to db
         write_postgis(df_nybb, con=engine, name=table, if_exists="fail")
         # Validate
-        sql = text('SELECT * FROM "{table}";'.format(table=table))
+        sql = text(f'SELECT * FROM "{table}";')
         df = read_postgis(sql, engine, geom_col="geometry")
         validate_boro_df(df)
 
@@ -413,7 +413,7 @@ class TestIO:
             # Write to db
             write_postgis(df_nybb, con=con, name=table, if_exists="fail")
             # Validate
-            sql = text("SELECT * FROM {table};".format(table=table))
+            sql = text(f"SELECT * FROM {table};")
             df = read_postgis(sql, con, geom_col="geometry")
             validate_boro_df(df)
 
@@ -451,7 +451,7 @@ class TestIO:
         # Overwrite
         write_postgis(df_nybb, con=engine, name=table, if_exists="replace")
         # Validate
-        sql = text("SELECT * FROM {table};".format(table=table))
+        sql = text(f"SELECT * FROM {table};")
         df = read_postgis(sql, engine, geom_col="geometry")
         validate_boro_df(df)
 
@@ -469,7 +469,7 @@ class TestIO:
         write_postgis(df_nybb, con=engine, name=table, if_exists="replace")
         write_postgis(df_nybb, con=engine, name=table, if_exists="append")
         # Validate
-        sql = text("SELECT * FROM {table};".format(table=table))
+        sql = text(f"SELECT * FROM {table};")
         df = read_postgis(sql, engine, geom_col="geometry")
         new_rows, new_cols = df.shape
 
@@ -553,7 +553,7 @@ class TestIO:
         )
         with engine.connect() as conn:
             geom_type = conn.execute(sql).fetchone()[0]
-        sql = text("SELECT * FROM {table};".format(table=table))
+        sql = text(f"SELECT * FROM {table};")
         df = read_postgis(sql, engine, geom_col="geometry")
 
         assert geom_type.upper() == "GEOMETRYCOLLECTION"
@@ -625,7 +625,7 @@ class TestIO:
             chunksize=1,
         )
         # Validate row count
-        sql = text("SELECT COUNT(geometry) FROM {table};".format(table=table))
+        sql = text(f"SELECT COUNT(geometry) FROM {table};")
         with engine.connect() as conn:
             row_cnt = conn.execute(sql).fetchone()[0]
         assert row_cnt == 3
@@ -651,7 +651,7 @@ class TestIO:
 
         table = "nybb"
         schema_to_use = "test"
-        sql = text("CREATE SCHEMA IF NOT EXISTS {schema};".format(schema=schema_to_use))
+        sql = text(f"CREATE SCHEMA IF NOT EXISTS {schema_to_use};")
         with engine.begin() as conn:
             conn.execute(sql)
 
@@ -660,7 +660,7 @@ class TestIO:
         )
         # Validate
         sql = text(
-            "SELECT * FROM {schema}.{table};".format(schema=schema_to_use, table=table)
+            f"SELECT * FROM {schema_to_use}.{table};"
         )
 
         df = read_postgis(sql, engine, geom_col="geometry")
@@ -677,7 +677,7 @@ class TestIO:
 
         table = "nybb"
         schema_to_use = "test"
-        sql = text("CREATE SCHEMA IF NOT EXISTS {schema};".format(schema=schema_to_use))
+        sql = text(f"CREATE SCHEMA IF NOT EXISTS {schema_to_use};")
         with engine.begin() as conn:
             conn.execute(sql)
 
@@ -705,7 +705,7 @@ class TestIO:
         )
         # Validate
         sql = text(
-            "SELECT * FROM {schema}.{table};".format(schema=schema_to_use, table=table)
+            f"SELECT * FROM {schema_to_use}.{table};"
         )
 
         df = read_postgis(sql, engine, geom_col="geometry")
@@ -723,7 +723,7 @@ class TestIO:
         write_postgis(df_3D_geoms, con=engine, name=table, if_exists="replace")
 
         # Check that all geometries have 3 dimensions
-        sql = text("SELECT * FROM {table};".format(table=table))
+        sql = text(f"SELECT * FROM {table};")
         df = read_postgis(sql, engine, geom_col="geometry")
         assert list(df.geometry.has_z) == [True, True, True]
 
@@ -740,7 +740,7 @@ class TestIO:
         write_postgis(df_nybb, con=engine, name=table, if_exists="replace")
 
         # Check that the row order matches
-        sql = text("SELECT * FROM {table};".format(table=table))
+        sql = text(f"SELECT * FROM {table};")
         df = read_postgis(sql, engine, geom_col="geometry")
         assert df["BoroCode"].tolist() == correct_order
 
@@ -758,7 +758,7 @@ class TestIO:
         write_postgis(df_nybb, con=engine, name=table, if_exists="append")
 
         # Check that the row order matches
-        sql = text("SELECT * FROM {table};".format(table=table))
+        sql = text(f"SELECT * FROM {table};")
         df = read_postgis(sql, engine, geom_col="geometry")
         validate_boro_df(df)
 

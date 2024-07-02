@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # GeoPandas documentation build configuration file, created by
 # sphinx-quickstart on Tue Oct 15 08:08:14 2013.

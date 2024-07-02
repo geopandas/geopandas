@@ -543,7 +543,7 @@ class TestShapelyInterface:
                     "rtree results are known to be unordered, see "
                     "https://github.com/geopandas/geopandas/issues/1337\n"
                     "Expected:\n {}\n".format(expected)
-                    + "Got:\n {}\n".format(res.tolist())
+                    + f"Got:\n {res.tolist()}\n"
                 )
             raise e
 
@@ -768,7 +768,7 @@ class TestShapelyInterface:
                     "rtree results are known to be unordered, see "
                     "https://github.com/geopandas/geopandas/issues/1337\n"
                     "Expected:\n {}\n".format(expected)
-                    + "Got:\n {}\n".format(res.tolist())
+                    + f"Got:\n {res.tolist()}\n"
                 )
             raise e
 
