@@ -34,7 +34,7 @@ all = [
     "psycopg-binary>=3.1.0",
     "SQLAlchemy>=1.4",
     "geopy",
-    "matplotlib>=3.6.0",
+    "matplotlib>=3.6.1",
     "mapclassify", # 2.5
     "xyzservices",
     "folium", # 0.12

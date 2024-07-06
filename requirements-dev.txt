@@ -15,7 +15,7 @@ SQLAlchemy>=1.4
 geopy
 
 # plotting
-matplotlib>=3.6.0
+matplotlib>=3.6.1
 mapclassify
 xyzservices
 folium
