@@ -7,8 +7,9 @@ Notes on dependencies:
 - GeoPandas 1.1 now requires Python 3.10 or greater and pandas 1.5, numpy 1.24, pyproj 3.4,
   are now the minimum required version for these dependencies.
   Furthermore, the minimum tested version for optional dependencies has been updated to
-  matplotlib 3.6.1, mapclassify 2.5, folium 0.12 and SQLAlchemy 1.4. Older versions of
-  these libraries may continue to work, but are no longer considered supported (#3371)
+  fiona 1.8.21, scipy 1.9, matplotlib 3.6.1, mapclassify 2.5, folium 0.12 and 
+  SQLAlchemy 1.4. Older versions of these libraries may continue to work, but are no longer
+  considered supported (#3371).
 
 ## Version 1.0.1 (July 2, 2024)
 
