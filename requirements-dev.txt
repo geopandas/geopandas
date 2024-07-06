@@ -16,7 +16,7 @@ geopy
 
 # plotting
 matplotlib>=3.6.1
-mapclassify
+mapclassify>2.5
 xyzservices
 folium
 
