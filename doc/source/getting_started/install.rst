@@ -16,7 +16,7 @@ To install GeoPandas and all its dependencies, we recommend to use the `conda`_
 package manager. This can be obtained by installing the
 `Anaconda Distribution`_ (a free Python distribution for data science), or
 through `miniconda`_ (minimal distribution only containing Python and the
-`conda`_ package manager). See also the `installation docs
+`conda`_ package manager). See also the `Conda installation docs
 <https://conda.io/docs/user-guide/install/download.html>`__ for more information
 on how to install Anaconda or miniconda locally.
 
@@ -38,7 +38,8 @@ which packages can be installed, in addition to the "*defaults*" channel
 provided by Anaconda.
 Depending on what other packages you are working with, the *defaults* channel
 or *conda-forge* channel may be better for your needs (e.g. some packages are
-available on *conda-forge* and not on *defaults*).
+available on *conda-forge* and not on *defaults*). Generally, *conda-forge* is
+more up to date with the latest versions of geospatial python packages.
 
 GeoPandas and all its dependencies are available on the *conda-forge*
 channel, and can be installed as::
@@ -92,7 +93,7 @@ as well::
     When using pip to install GeoPandas, you need to make sure that all dependencies are
     installed correctly.
 
-    Our main dependencies (`shapely`_, `pyproj`_, `fiona`_, `pyogrio`_) provide binary
+    Our main dependencies (`shapely`_, `pyproj`_, `pyogrio`_) provide binary
     wheels with dependencies included for Mac, Linux, and Windows.
 
     However, depending on your platform or Python version, there might be no
@@ -100,6 +101,10 @@ as well::
     dependencies manually. We refer to the individual packages for more details on
     installing those. Using conda (see above) avoids the need to compile the
     dependencies yourself.
+
+Optional runtime dependencies can also be installed all at once::
+
+    pip install 'geopandas[all]'
 
 Installing from source
 ----------------------
@@ -111,6 +116,11 @@ You may install the latest development version by cloning the
     cd geopandas
     pip install .
 
+Development dependencies can be installed using the dev optional
+dependency group::
+
+    pip install '.[dev]'
+
 It is also possible to install the latest development version
 directly from the GitHub repository with::
 
@@ -121,7 +131,7 @@ the need to have all dependencies correctly installed applies. But, those
 dependencies can also be installed independently with conda before installing
 GeoPandas from source::
 
-    conda install pandas fiona shapely pyproj
+    conda install pandas pyogrio shapely pyproj
 
 See the :ref:`section on conda <install-conda>` above for more details on
 getting running with Anaconda.
@@ -136,14 +146,15 @@ Required dependencies:
 - `numpy`_
 - `pandas`_ (version 1.4 or later)
 - `shapely`_ (interface to `GEOS`_; version 2.0.0 or later)
-- `fiona`_ (interface to `GDAL`_; version 1.8.21 or later)
+- `pyogrio`_ (interface to `GDAL`_; version 0.7.2 or later)
 - `pyproj`_ (interface to `PROJ`_; version 3.3.0 or later)
 - `packaging`_
 
 Further, optional dependencies are:
 
-- `pyogrio`_ (optional; faster alternative for fiona, will become the default in GeoPandas 1.0)
-- `psycopg2`_ (optional; for PostGIS connection)
+- `fiona`_ (optional; slower alternative to `pyogrio`)
+- `psycopg`_ (optional; for PostGIS connection)
+- `psycopg2`_ (optional; for PostGIS connection - older version of `psycopg` library)
 - `GeoAlchemy2`_ (optional; for writing to PostGIS)
 - `geopy`_ (optional; for geocoding)
 - `pointpats`_ (optional; for advanced point sampling)
@@ -153,6 +164,7 @@ For plotting, these additional packages may be used:
 
 - `matplotlib`_ (>= 3.5.0)
 - `mapclassify`_ (>= 2.4.0)
+- `folium`_ (for interactive plotting)
 
 
 .. _PyPI: https://pypi.python.org/pypi/geopandas
@@ -172,6 +184,8 @@ For plotting, these additional packages may be used:
 .. _matplotlib: http://matplotlib.org
 
 .. _geopy: https://github.com/geopy/geopy
+
+.. _psycopg: https://pypi.python.org/pypi/psycopg
 
 .. _psycopg2: https://pypi.python.org/pypi/psycopg2
 
@@ -198,3 +212,5 @@ For plotting, these additional packages may be used:
 .. _packaging: https://packaging.pypa.io/en/latest/
 
 .. _pointpats: https://pysal.org/pointpats/
+
+.. _folium: https://python-visualization.github.io/folium/stable/

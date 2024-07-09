@@ -13,20 +13,22 @@ A set of fixtures are defined to provide data for the tests (the fixtures
 expected to be available to pytest by the inherited pandas tests).
 
 """
+
+import itertools
 import operator
 
 import numpy as np
 import pandas as pd
-from pandas.testing import assert_series_equal
 from pandas.tests.extension import base as extension_tests
 
 import shapely.geometry
 from shapely.geometry import Point
 
+from geopandas._compat import PANDAS_GE_15, PANDAS_GE_21, PANDAS_GE_22
 from geopandas.array import GeometryArray, GeometryDtype, from_shapely
-from geopandas._compat import PANDAS_GE_15, PANDAS_GE_22
 
 import pytest
+from pandas.testing import assert_frame_equal, assert_series_equal
 
 # -----------------------------------------------------------------------------
 # Compat with extension tests in older pandas versions
@@ -333,7 +335,74 @@ class TestConstructors(extension_tests.BaseConstructorsTests):
 
 
 class TestReshaping(extension_tests.BaseReshapingTests):
-    pass
+
+    # NOTE: this test is copied from pandas/tests/extension/base/reshaping.py
+    # because starting with pandas 3.0 the assert_frame_equal is strict regarding
+    # the exact missing value (None vs NaN)
+    # Our `result` uses None, but the way the `expected` is created results in
+    # NaNs (and specifying to use None as fill value in unstack also does not
+    # help)
+    # -> the only change compared to the upstream test is marked
+    @pytest.mark.parametrize(
+        "index",
+        [
+            # Two levels, uniform.
+            pd.MultiIndex.from_product(([["A", "B"], ["a", "b"]]), names=["a", "b"]),
+            # non-uniform
+            pd.MultiIndex.from_tuples([("A", "a"), ("A", "b"), ("B", "b")]),
+            # three levels, non-uniform
+            pd.MultiIndex.from_product([("A", "B"), ("a", "b", "c"), (0, 1, 2)]),
+            pd.MultiIndex.from_tuples(
+                [
+                    ("A", "a", 1),
+                    ("A", "b", 0),
+                    ("A", "a", 0),
+                    ("B", "a", 0),
+                    ("B", "c", 1),
+                ]
+            ),
+        ],
+    )
+    @pytest.mark.parametrize("obj", ["series", "frame"])
+    def test_unstack(self, data, index, obj):
+        data = data[: len(index)]
+        if obj == "series":
+            ser = pd.Series(data, index=index)
+        else:
+            ser = pd.DataFrame({"A": data, "B": data}, index=index)
+
+        n = index.nlevels
+        levels = list(range(n))
+        # [0, 1, 2]
+        # [(0,), (1,), (2,), (0, 1), (0, 2), (1, 0), (1, 2), (2, 0), (2, 1)]
+        combinations = itertools.chain.from_iterable(
+            itertools.permutations(levels, i) for i in range(1, n)
+        )
+
+        for level in combinations:
+            result = ser.unstack(level=level)
+            assert all(
+                isinstance(result[col].array, type(data)) for col in result.columns
+            )
+
+            if obj == "series":
+                # We should get the same result with to_frame+unstack+droplevel
+                df = ser.to_frame()
+
+                alt = df.unstack(level=level).droplevel(0, axis=1)
+                assert_frame_equal(result, alt)
+
+            obj_ser = ser.astype(object)
+
+            expected = obj_ser.unstack(level=level, fill_value=data.dtype.na_value)
+            if obj == "series":
+                assert (expected.dtypes == object).all()
+            # <------------ next line is added
+            expected[expected.isna()] = None
+            # ------------->
+
+            result = result.astype(object)
+            assert_frame_equal(result, expected)
 
 
 class TestGetitem(extension_tests.BaseGetitemTests):
@@ -384,27 +453,29 @@ class TestMissing(extension_tests.BaseMissingTests):
         # `geopandas\tests\test_pandas_methods.py::test_fillna_scalar`
         # and `geopandas\tests\test_pandas_methods.py::test_fillna_series`.
 
-    @pytest.mark.skip("fillna method not supported")
+    @pytest.mark.skipif(
+        not PANDAS_GE_21, reason="fillna method not supported with older pandas"
+    )
     def test_fillna_limit_pad(self, data_missing):
-        pass
+        super().test_fillna_limit_pad(data_missing)
 
-    @pytest.mark.skip("fillna method not supported")
+    @pytest.mark.skipif(
+        not PANDAS_GE_21, reason="fillna method not supported with older pandas"
+    )
     def test_fillna_limit_backfill(self, data_missing):
-        pass
+        super().test_fillna_limit_backfill(data_missing)
 
-    @pytest.mark.skip("fillna method not supported")
-    def test_fillna_series_method(self, data_missing, method):
-        pass
+    @pytest.mark.skipif(
+        not PANDAS_GE_21, reason="fillna method not supported with older pandas"
+    )
+    def test_fillna_series_method(self, data_missing, fillna_method):
+        super().test_fillna_series_method(data_missing, fillna_method)
 
-    @pytest.mark.skip("fillna method not supported")
+    @pytest.mark.skipif(
+        not PANDAS_GE_21, reason="fillna method not supported with older pandas"
+    )
     def test_fillna_no_op_returns_copy(self, data):
-        pass
-
-    @pytest.mark.skip("fillna method not supported")
-    def test_ffill_limit_area(
-        self, data_missing, limit_area, input_ilocs, expected_ilocs
-    ):
-        pass
+        super().test_fillna_no_op_returns_copy(data)
 
 
 if PANDAS_GE_22:

@@ -2,29 +2,30 @@ name: test
 channels:
   - conda-forge
 dependencies:
-  - python=3.9
+  - python=3.12
   # required
   - pandas
   - shapely
-  # - fiona  # build with only pyogrio
-  - libgdal
-  - pyproj
+  # - pyogrio
+  # - pyproj
   - packaging
   # testing
   - pytest
   - pytest-cov
   - pytest-xdist
-  # - fsspec  # to have one non-minimal build without fsspec
+  - fsspec
   # optional
-  - matplotlib>=3.6
+  - fiona
+  - matplotlib
   - mapclassify
   - folium
   - xyzservices
   - scipy
   - geopy
-  - SQLalchemy
-  - libspatialite
-  - pyarrow
-  - pyogrio
-  - pointpats
+  # - pointpats
   - geodatasets
+  # - SQLalchemy>=2
+  # - psycopg2
+  # - libspatialite
+  # - geoalchemy2
+  - pyarrow

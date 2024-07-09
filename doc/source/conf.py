@@ -107,7 +107,7 @@ master_doc = "index"
 
 # General information about the project.
 project = "GeoPandas"
-copyright = "2013–2022, GeoPandas developers"
+copyright = "2013–, GeoPandas developers"
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -383,8 +383,8 @@ intersphinx_mapping = {
         "https://fiona.readthedocs.io/en/stable/objects.inv",
     ),
     "folium": (
-        "https://python-visualization.github.io/folium/",
-        "https://python-visualization.github.io/folium/objects.inv",
+        "https://python-visualization.github.io/folium/latest",
+        "https://python-visualization.github.io/folium/latest/objects.inv",
     ),
     "geoplot": (
         "https://residentmario.github.io/geoplot/index.html",

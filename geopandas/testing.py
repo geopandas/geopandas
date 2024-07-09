@@ -1,6 +1,7 @@
 """
 Testing functionality for geopandas objects.
 """
+
 import warnings
 
 import pandas as pd

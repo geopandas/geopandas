@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 
 from geopandas import GeoDataFrame, GeoSeries
+from geopandas._compat import PANDAS_GE_30
 from geopandas.array import _check_crs, _crs_mismatch_warn
 
 
@@ -14,12 +15,15 @@ def _ensure_geometry_column(df):
     If another column with that name exists, it will be dropped.
     """
     if not df._geometry_column_name == "geometry":
-        if "geometry" in df.columns:
-            df.drop("geometry", axis=1, inplace=True)
-        df.rename(
-            columns={df._geometry_column_name: "geometry"}, copy=False, inplace=True
-        )
-        df.set_geometry("geometry", inplace=True)
+        if PANDAS_GE_30:
+            if "geometry" in df.columns:
+                df = df.drop("geometry", axis=1)
+            df = df.rename_geometry("geometry")
+        else:
+            if "geometry" in df.columns:
+                df.drop("geometry", axis=1, inplace=True)
+            df.rename_geometry("geometry", inplace=True)
+    return df
 
 
 def _overlay_intersection(df1, df2):
@@ -111,8 +115,8 @@ def _overlay_symmetric_diff(df1, df2):
     dfdiff1["__idx2"] = np.nan
     dfdiff2["__idx1"] = np.nan
     # ensure geometry name (otherwise merge goes wrong)
-    _ensure_geometry_column(dfdiff1)
-    _ensure_geometry_column(dfdiff2)
+    dfdiff1 = _ensure_geometry_column(dfdiff1)
+    dfdiff2 = _ensure_geometry_column(dfdiff2)
     # combine both 'difference' dataframes
     dfsym = dfdiff1.merge(
         dfdiff2, on=["__idx1", "__idx2"], how="outer", suffixes=("_1", "_2")

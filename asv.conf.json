@@ -56,7 +56,7 @@
     "matrix": {
         "pandas": [],
         "shapely": [],
-        "fiona": [],
+        "pyogrio": [],
         "pyproj": [],
         "matplotlib": [],
     },

@@ -12,6 +12,7 @@ on:
 jobs:
   versioneer:
     runs-on: ubuntu-latest
+    if: github.repository == 'geopandas/geopandas'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -19,10 +20,10 @@ jobs:
         run: |
           pip install versioneer
           versioneer install
-      - name: Blacken code
-        uses: psf/black@stable
-        with:
-          options: "--verbose"
+      - name: Run pre-commit
+        run: |
+          pip install pre-commit
+          pre-commit run --all-files
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:

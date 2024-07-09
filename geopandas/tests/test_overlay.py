@@ -4,14 +4,14 @@ import numpy as np
 import pandas as pd
 
 from shapely import make_valid
-from shapely.geometry import Point, Polygon, LineString, GeometryCollection, box
+from shapely.geometry import GeometryCollection, LineString, Point, Polygon, box
 
 import geopandas
 from geopandas import GeoDataFrame, GeoSeries, overlay, read_file
-from geopandas._compat import PANDAS_GE_20
+from geopandas._compat import HAS_PYPROJ, PANDAS_GE_20
 
-from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 import pytest
+from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 
 try:
     from fiona.errors import DriverError
@@ -81,7 +81,7 @@ def test_overlay(dfs_index, how):
         expected = read_file(
             os.path.join(DATA, "polys", "df1_df2-{0}.geojson".format(name))
         )
-        expected.crs = None
+        expected.geometry.array.crs = None
         for col in expected.columns[expected.dtypes == "int32"]:
             expected[col] = expected[col].astype("int64")
         return expected
@@ -209,6 +209,10 @@ def test_overlay_nybb(how, nybb_filename):
     if how == "union":
         expected.loc[24, "geometry"] = None
         result.loc[24, "geometry"] = None
+
+    # missing values get read as None in read_file for a string column, but
+    # are introduced as NaN by overlay
+    expected["BoroName"] = expected["BoroName"].fillna(np.nan)
 
     assert_geodataframe_equal(
         result,
@@ -345,6 +349,7 @@ def test_geoseries_warning(dfs):
         overlay(df1, df2.geometry, how="union")
 
 
+@pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not available")
 def test_preserve_crs(dfs, how):
     df1, df2 = dfs
     result = overlay(df1, df2, how=how)
@@ -356,6 +361,7 @@ def test_preserve_crs(dfs, how):
     assert result.crs == crs
 
 
+@pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not available")
 def test_crs_mismatch(dfs, how):
     df1, df2 = dfs
     df1.crs = 4326
@@ -511,6 +517,12 @@ def test_overlay_strict(how, keep_geom_type, geom_types):
         cols = list(set(result.columns) - {"geometry"})
         expected = expected.sort_values(cols, axis=0).reset_index(drop=True)
         result = result.sort_values(cols, axis=0).reset_index(drop=True)
+
+        # some columns are all-NaN in the result, but get read as object dtype
+        # column of None values in read_file
+        for col in ["col1", "col3", "col4"]:
+            if col in expected.columns and expected[col].isna().all():
+                expected[col] = expected[col].astype("float64")
 
         assert_geodataframe_equal(
             result,

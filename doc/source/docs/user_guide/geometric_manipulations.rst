@@ -62,7 +62,7 @@ Constructive methods
 
 .. method:: GeoSeries.remove_repeated_points
 
-   Returns a :class:`~geopandas.GeoSeries` containing a copy of the input geometry 
+   Returns a :class:`~geopandas.GeoSeries` containing a copy of the input geometry
    with repeated points removed.
 
 .. method:: GeoSeries.simplify(tolerance, preserve_topology=True)
@@ -106,7 +106,7 @@ Affine transformations
 
 
 Examples of geometric manipulations
-------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. sourcecode:: python
 
@@ -153,7 +153,7 @@ GeoPandas objects also know how to plot themselves. GeoPandas uses `matplotlib`_
 
     >>> g.plot()
 
-GeoPandas also implements alternate constructors that can read any data format recognized by `Fiona`_.  To read a zip file containing an ESRI shapefile with the `borough boundaries of New York City`_ (GeoPandas includes this as an example dataset):
+GeoPandas also implements alternate constructors that can read any data format recognized by `Pyogrio`_.  To read a zip file containing an ESRI shapefile with the `borough boundaries of New York City`_ (provided by the ``geodatasets`` package):
 
 .. sourcecode:: python
 
@@ -257,7 +257,7 @@ borough that are in the holes:
     dtype: float64
 
 .. _matplotlib: http://matplotlib.org
-.. _fiona: http://fiona.readthedocs.io/en/latest/
+.. _pyogrio: http://pyogrio.readthedocs.io/en/latest/
 .. _geopy: https://github.com/geopy/geopy
 .. _geo_interface: https://gist.github.com/sgillies/2217756
 .. _borough boundaries of New York City: https://data.cityofnewyork.us/City-Government/Borough-Boundaries/tqmj-j8zm

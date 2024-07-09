@@ -14,6 +14,7 @@ def test_no_additional_imports():
         # "matplotlib",  # matplotlib gets imported by pandas, see below
         "mapclassify",
         "sqlalchemy",
+        "psycopg",
         "psycopg2",
         "geopy",
         "geoalchemy2",

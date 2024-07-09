@@ -4,26 +4,26 @@ import warnings
 import numpy as np
 import pandas as pd
 
-from pyproj import CRS
 import shapely
 import shapely.affinity
 import shapely.geometry
-from shapely.geometry.base import CAP_STYLE, JOIN_STYLE
 import shapely.wkb
 import shapely.wkt
 from shapely import geos_version
+from shapely.geometry.base import CAP_STYLE, JOIN_STYLE
 
 import geopandas
+from geopandas._compat import HAS_PYPROJ
 from geopandas.array import (
     GeometryArray,
+    _check_crs,
+    _crs_mismatch_warn,
     from_shapely,
     from_wkb,
     from_wkt,
     points_from_xy,
     to_wkb,
     to_wkt,
-    _check_crs,
-    _crs_mismatch_warn,
 )
 
 import pytest
@@ -306,9 +306,11 @@ def test_predicates_vector_scalar(attr, args):
         assert result.dtype == bool
 
         expected = [
-            getattr(tri, attr if "geom" not in attr else attr[5:])(other, *args)
-            if tri is not None
-            else na_value
+            (
+                getattr(tri, attr if "geom" not in attr else attr[5:])(other, *args)
+                if tri is not None
+                else na_value
+            )
             for tri in triangles
         ]
 
@@ -545,9 +547,11 @@ def test_binary_distance():
     # vector - vector
     result = P[: len(T)].distance(T[::-1])
     expected = [
-        getattr(p, attr)(t)
-        if not ((t is None or t.is_empty) or (p is None or p.is_empty))
-        else na_value
+        (
+            getattr(p, attr)(t)
+            if not ((t is None or t.is_empty) or (p is None or p.is_empty))
+            else na_value
+        )
         for t, p in zip(triangles[::-1], points)
     ]
     np.testing.assert_allclose(result, expected)
@@ -604,9 +608,11 @@ def test_binary_project(normalized):
 
     result = L.project(P, normalized=normalized)
     expected = [
-        line.project(p, normalized=normalized)
-        if line is not None and p is not None
-        else na_value
+        (
+            line.project(p, normalized=normalized)
+            if line is not None and p is not None
+            else na_value
+        )
         for p, line in zip(points, lines)
     ]
     np.testing.assert_allclose(result, expected)
@@ -618,9 +624,13 @@ def test_binary_project(normalized):
 def test_buffer(resolution, cap_style, join_style):
     na_value = None
     expected = [
-        p.buffer(0.1, resolution=resolution, cap_style=cap_style, join_style=join_style)
-        if p is not None
-        else na_value
+        (
+            p.buffer(
+                0.1, resolution=resolution, cap_style=cap_style, join_style=join_style
+            )
+            if p is not None
+            else na_value
+        )
         for p in points
     ]
     result = P.buffer(
@@ -655,7 +665,9 @@ def test_unary_union():
         shapely.geometry.Polygon([(0, 0), (1, 0), (1, 1)]),
     ]
     G = from_shapely(geoms)
-    with pytest.warns(FutureWarning, match="The 'unary_union' attribute is deprecated"):
+    with pytest.warns(
+        DeprecationWarning, match="The 'unary_union' attribute is deprecated"
+    ):
         u = G.unary_union()
 
     expected = shapely.geometry.Polygon([(0, 0), (1, 0), (1, 1), (0, 1)])
@@ -673,6 +685,12 @@ def test_union_all():
 
     expected = shapely.geometry.Polygon([(0, 0), (1, 0), (1, 1), (0, 1)])
     assert u.equals(expected)
+
+    u_cov = G.union_all(method="coverage")
+    assert u_cov.equals(expected)
+
+    with pytest.raises(ValueError, match="Method 'invalid' not recognized."):
+        G.union_all(method="invalid")
 
 
 @pytest.mark.parametrize(
@@ -803,7 +821,7 @@ def test_setitem(item):
 
 def test_equality_ops():
     with pytest.raises(ValueError):
-        P[:5] == P[:7]
+        _ = P[:5] == P[:7]
 
     a1 = from_shapely([points[1], points[2], points[3]])
     a2 = from_shapely([points[1], points[0], points[3]])
@@ -887,6 +905,7 @@ def test_astype_multipolygon():
     assert result[0] == multi_poly.wkt[:10]
 
 
+@pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not installed")
 def test_check_crs():
     t1 = T.copy()
     t1.crs = 4326
@@ -895,6 +914,7 @@ def test_check_crs():
     assert _check_crs(t1, T, allow_none=True) is True
 
 
+@pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not installed")
 def test_crs_mismatch_warn():
     t1 = T.copy()
     t2 = T.copy()
@@ -912,6 +932,14 @@ def test_crs_mismatch_warn():
     # right None
     with pytest.warns(UserWarning, match="CRS mismatch between the CRS"):
         _crs_mismatch_warn(t1, T)
+
+
+@pytest.mark.skipif(HAS_PYPROJ, reason="pyproj installed")
+def test_missing_pyproj():
+    with pytest.warns(UserWarning, match="Cannot set the CRS, falling back to None"):
+        t = T.copy()
+        t.crs = 4326
+    assert t.crs is None
 
 
 @pytest.mark.parametrize("NA", [None, np.nan])
@@ -941,6 +969,24 @@ def test_unique_has_crs():
     assert t.unique().crs == t.crs
 
 
+@pytest.mark.skipif(HAS_PYPROJ, reason="pyproj installed")
+def test_to_crs_pyproj_error():
+    t = T.copy()
+    t.crs = 4326
+    with pytest.raises(
+        ImportError, match="The 'pyproj' package is required for to_crs"
+    ):
+        t.to_crs(3857)
+
+
+@pytest.mark.skipif(HAS_PYPROJ, reason="pyproj installed")
+def test_estimate_utm_crs_pyproj_error():
+    with pytest.raises(
+        ImportError, match="The 'pyproj' package is required for estimate_utm_crs"
+    ):
+        T.estimate_utm_crs()
+
+
 class TestEstimateUtmCrs:
     def setup_method(self):
         self.esb = shapely.geometry.Point(-73.9847, 40.7484)
@@ -948,15 +994,21 @@ class TestEstimateUtmCrs:
         self.landmarks = from_shapely([self.esb, self.sol], crs="epsg:4326")
 
     def test_estimate_utm_crs__geographic(self):
-        assert self.landmarks.estimate_utm_crs() == CRS("EPSG:32618")
-        assert self.landmarks.estimate_utm_crs("NAD83") == CRS("EPSG:26918")
+        pyproj = pytest.importorskip("pyproj")
+
+        assert self.landmarks.estimate_utm_crs() == pyproj.CRS("EPSG:32618")
+        assert self.landmarks.estimate_utm_crs("NAD83") == pyproj.CRS("EPSG:26918")
 
     def test_estimate_utm_crs__projected(self):
-        assert self.landmarks.to_crs("EPSG:3857").estimate_utm_crs() == CRS(
+        pyproj = pytest.importorskip("pyproj")
+
+        assert self.landmarks.to_crs("EPSG:3857").estimate_utm_crs() == pyproj.CRS(
             "EPSG:32618"
         )
 
     def test_estimate_utm_crs__antimeridian(self):
+        pyproj = pytest.importorskip("pyproj")
+
         antimeridian = from_shapely(
             [
                 shapely.geometry.Point(1722483.900174921, 5228058.6143420935),
@@ -964,15 +1016,19 @@ class TestEstimateUtmCrs:
             ],
             crs="EPSG:3851",
         )
-        assert antimeridian.estimate_utm_crs() == CRS("EPSG:32760")
+        assert antimeridian.estimate_utm_crs() == pyproj.CRS("EPSG:32760")
 
     def test_estimate_utm_crs__out_of_bounds(self):
+        pytest.importorskip("pyproj")
+
         with pytest.raises(RuntimeError, match="Unable to determine UTM CRS"):
             from_shapely(
                 [shapely.geometry.Polygon([(0, 90), (1, 90), (2, 90)])], crs="EPSG:4326"
             ).estimate_utm_crs()
 
     def test_estimate_utm_crs__missing_crs(self):
+        pytest.importorskip("pyproj")
+
         with pytest.raises(RuntimeError, match="crs must be set"):
             from_shapely(
                 [shapely.geometry.Polygon([(0, 90), (1, 90), (2, 90)])]

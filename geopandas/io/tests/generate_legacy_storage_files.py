@@ -19,6 +19,7 @@ pickles and test versus the current data that is generated
 (with master). These are then compared.
 
 """
+
 import os
 import pickle
 import platform
@@ -26,8 +27,9 @@ import sys
 
 import pandas as pd
 
-import geopandas
 from shapely.geometry import Point
+
+import geopandas
 
 
 def create_pickle_data():

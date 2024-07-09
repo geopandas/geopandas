@@ -7,7 +7,7 @@ dependencies:
   - numpy=1.22
   - pandas=1.4
   - shapely=2.0.0
-  - fiona=1.8.21
+  # - pyogrio=0.7.2
   - packaging
   # testing
   - pytest
@@ -20,8 +20,9 @@ dependencies:
   - geopy
   - SQLalchemy
   - libspatialite
-  - pyarrow=8.0.0
+  - pyarrow=10.0
   - geodatasets
   - pip
   - pip:
     - pyproj==3.3.0
+    - pyogrio==0.7.2

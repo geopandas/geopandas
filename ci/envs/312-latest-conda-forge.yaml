@@ -6,7 +6,7 @@ dependencies:
   # required
   - pandas
   - shapely
-  - fiona
+  - pyogrio
   - pyproj
   - packaging
   # testing
@@ -15,7 +15,7 @@ dependencies:
   - pytest-xdist
   - fsspec
   # optional
-  - pyogrio
+  - fiona
   - matplotlib
   - mapclassify
   - folium

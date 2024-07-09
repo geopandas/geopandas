@@ -1,26 +1,25 @@
 import itertools
-from packaging.version import Version
 import warnings
+from packaging.version import Version
 
 import numpy as np
 import pandas as pd
 
 from shapely.affinity import rotate
 from shapely.geometry import (
-    MultiPolygon,
-    Polygon,
-    LineString,
-    LinearRing,
-    Point,
-    MultiPoint,
-    MultiLineString,
     GeometryCollection,
+    LinearRing,
+    LineString,
+    MultiLineString,
+    MultiPoint,
+    MultiPolygon,
+    Point,
+    Polygon,
     box,
 )
 
-
-from geopandas import GeoDataFrame, GeoSeries, read_file
 import geopandas._compat as compat
+from geopandas import GeoDataFrame, GeoSeries, read_file
 from geopandas.plotting import GeoplotAccessor
 
 import pytest
@@ -495,6 +494,28 @@ class TestLineStringPlotting:
         )
         self.df3 = GeoDataFrame({"geometry": self.linearrings, "values": values})
 
+    def test_autolim_false(self):
+        """Test linestring plot preserving axes limits."""
+        ax = self.lines[: self.N // 2].plot()
+        ylim = ax.get_ylim()
+        self.lines.plot(ax=ax, autolim=False)
+        assert ax.get_ylim() == ylim
+        ax = self.df[: self.N // 2].plot()
+        ylim = ax.get_ylim()
+        self.df.plot(ax=ax, autolim=False)
+        assert ax.get_ylim() == ylim
+
+    def test_autolim_true(self):
+        """Test linestring plot autoscaling axes limits."""
+        ax = self.lines[: self.N // 2].plot()
+        ylim = ax.get_ylim()
+        self.lines.plot(ax=ax, autolim=True)
+        assert ax.get_ylim() != ylim
+        ax = self.df[: self.N // 2].plot()
+        ylim = ax.get_ylim()
+        self.df.plot(ax=ax, autolim=True)
+        assert ax.get_ylim() != ylim
+
     def test_single_color(self):
         ax = self.lines.plot(color="green")
         _check_colors(self.N, ax.collections[0].get_colors(), ["green"] * self.N)
@@ -637,6 +658,28 @@ class TestPolygonPlotting:
         t3 = Polygon([(2, 0), (3, 0), (3, 1)])
         df_nan = GeoDataFrame({"geometry": t3, "values": [np.nan]})
         self.df3 = pd.concat([self.df, df_nan])
+
+    def test_autolim_false(self):
+        """Test polygon plot preserving axes limits."""
+        ax = self.polys[:1].plot()
+        xlim = ax.get_xlim()
+        self.polys.plot(ax=ax, autolim=False)
+        assert ax.get_xlim() == xlim
+        ax = self.df[:1].plot()
+        xlim = ax.get_xlim()
+        self.df.plot(ax=ax, autolim=False)
+        assert ax.get_xlim() == xlim
+
+    def test_autolim_true(self):
+        """Test polygon plot autoscaling axes limits."""
+        ax = self.polys[:1].plot()
+        xlim = ax.get_xlim()
+        self.polys.plot(ax=ax, autolim=True)
+        assert ax.get_xlim() != xlim
+        ax = self.df[:1].plot()
+        xlim = ax.get_xlim()
+        self.df.plot(ax=ax, autolim=True)
+        assert ax.get_xlim() != xlim
 
     def test_single_color(self):
         ax = self.polys.plot(color="green")
@@ -1079,6 +1122,7 @@ def _setup_class_geographic_aspect(naturalearth_lowres, request):
 
 
 @pytest.mark.usefixtures("_setup_class_geographic_aspect")
+@pytest.mark.skipif(not compat.HAS_PYPROJ, reason="pyproj not available")
 class TestGeographicAspect:
     def test_auto(self):
         ax = self.north.geometry.plot()
@@ -1462,8 +1506,9 @@ class TestPlotCollections:
         )
 
     def test_points(self):
-        from geopandas.plotting import _plot_point_collection, plot_point_collection
         from matplotlib.collections import PathCollection
+
+        from geopandas.plotting import _plot_point_collection
 
         fig, ax = plt.subplots()
         coll = _plot_point_collection(ax, self.points)
@@ -1516,10 +1561,6 @@ class TestPlotCollections:
         with pytest.raises((TypeError, ValueError)):
             _plot_point_collection(ax, self.points, color="not color")
 
-        # check FutureWarning
-        with pytest.warns(FutureWarning):
-            plot_point_collection(ax, self.points)
-
     def test_points_values(self):
         from geopandas.plotting import _plot_point_collection
 
@@ -1534,11 +1575,9 @@ class TestPlotCollections:
         # _check_colors(self.N, coll.get_edgecolors(), expected_colors)
 
     def test_linestrings(self):
-        from geopandas.plotting import (
-            _plot_linestring_collection,
-            plot_linestring_collection,
-        )
         from matplotlib.collections import LineCollection
+
+        from geopandas.plotting import _plot_linestring_collection
 
         fig, ax = plt.subplots()
         coll = _plot_linestring_collection(ax, self.lines)
@@ -1589,9 +1628,6 @@ class TestPlotCollections:
         # not a color
         with pytest.raises((TypeError, ValueError)):
             _plot_linestring_collection(ax, self.lines, color="not color")
-        # check FutureWarning
-        with pytest.warns(FutureWarning):
-            plot_linestring_collection(ax, self.lines)
 
     def test_linestrings_values(self):
         from geopandas.plotting import _plot_linestring_collection
@@ -1623,8 +1659,9 @@ class TestPlotCollections:
         ax.cla()
 
     def test_polygons(self):
-        from geopandas.plotting import _plot_polygon_collection, plot_polygon_collection
         from matplotlib.collections import PatchCollection
+
+        from geopandas.plotting import _plot_polygon_collection
 
         fig, ax = plt.subplots()
         coll = _plot_polygon_collection(ax, self.polygons)
@@ -1681,9 +1718,6 @@ class TestPlotCollections:
         # not a color
         with pytest.raises((TypeError, ValueError)):
             _plot_polygon_collection(ax, self.polygons, color="not color")
-        # check FutureWarning
-        with pytest.warns(FutureWarning):
-            plot_polygon_collection(ax, self.polygons)
 
     def test_polygons_values(self):
         from geopandas.plotting import _plot_polygon_collection
@@ -1838,8 +1872,9 @@ def test_column_values():
 def test_polygon_patch():
     # test adapted from descartes by Sean Gillies
     # (BSD license, https://pypi.org/project/descartes).
-    from geopandas.plotting import _PolygonPatch
     from matplotlib.patches import PathPatch
+
+    from geopandas.plotting import _PolygonPatch
 
     polygon = (
         Point(0, 0).buffer(10.0).difference(MultiPoint([(-5, 0), (5, 0)]).buffer(3.0))

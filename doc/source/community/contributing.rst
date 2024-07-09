@@ -214,7 +214,7 @@ GeoPandas. If you used the provided environment in section 2, skip this
 step and continue to section 4. If you created the environment manually, we suggest installing
 dependencies using the following commands (executed after your development environment has been activated)::
 
-    conda install -c conda-forge pandas fiona shapely pyproj pytest
+    conda install -c conda-forge pandas pyogrio shapely pyproj pytest
 
 This should install all necessary dependencies.
 

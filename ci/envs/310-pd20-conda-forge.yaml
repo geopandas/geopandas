@@ -7,7 +7,7 @@ dependencies:
   - pandas=2.0
   - numpy=1.24 # released 4 months before pandas 2.0
   - shapely
-  - fiona
+  - pyogrio
   - pyproj
   - packaging
   # testing

@@ -2,6 +2,7 @@
 See generate_legacy_storage_files.py for the creation of the legacy files.
 
 """
+
 import glob
 import os
 import pathlib

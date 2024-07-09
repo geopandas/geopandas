@@ -14,34 +14,26 @@ shapefile, GeoJSON files and more using the :func:`geopandas.read_file` command:
 which returns a GeoDataFrame object. This is possible because GeoPandas makes
 use of the massive open-source program called
 `GDAL/OGR <http://www.gdal.org/>`_ designed to facilitate spatial data
-transformations, through the Python packages `Fiona <http://fiona.readthedocs.io/en/latest/manual.html>`_
-or `pyogrio <https://pyogrio.readthedocs.io/en/stable/>`_, which both provide bindings to GDAL.
-
-.. note::
-
-    GeoPandas currently defaults to use Fiona as the engine in ``read_file``. However,
-    GeoPandas 1.0 will switch to use pyogrio as the default engine, since pyogrio can
-    provide a significant speedup compared to Fiona. We recommend to already install
-    pyogrio and specify the engine by using the ``engine`` keyword
-    (``geopandas.read_file(..., engine="pyogrio")``), or by setting the default for the
-    ``engine`` keyword globally with::
-
-        geopandas.options.io_engine = "pyogrio"
+transformations, through the Python packages `Pyogrio <https://pyogrio.readthedocs.io/en/stable/>`_
+or `Fiona <http://fiona.readthedocs.io/en/latest/manual.html>`_, which both provide bindings to GDAL.
 
 Any arguments passed to :func:`geopandas.read_file` after the file name will be
-passed directly to :func:`fiona.open` or :func:`pyogrio.read_dataframe`, which
+passed directly to :func:`pyogrio.read_dataframe` or :func:`fiona.open`, which
 does the actual data importation.
 In general, :func:`geopandas.read_file` is pretty smart and should do what you want
 without extra arguments, but for more help, type::
 
-    import fiona; help(fiona.open)
     import pyogrio; help(pyogrio.read_dataframe)
+    import fiona; help(fiona.open)
 
 Among other things, one can explicitly set the driver (shapefile, GeoJSON) with
 the ``driver`` keyword, or pick a single layer from a multi-layered file with
 the ``layer`` keyword::
 
     countries_gdf = geopandas.read_file("package.gpkg", layer='countries')
+
+If you have a file with multiple layers, you can list them using
+:func:`geopandas.list_layers`. Note that this function requires Pyogrio.
 
 GeoPandas can also load resources directly from
 a web URL, for example for GeoJSON files from `geojson.xyz <http://geojson.xyz/>`_::
@@ -81,7 +73,7 @@ supported by that project::
 You can also read path objects::
 
     import pathlib
-    path_object = pathlib.path(filename)
+    path_object = pathlib.Path(filename)
     df = geopandas.read_file(path_object)
 
 Reading subsets of the data
@@ -143,29 +135,18 @@ or a slice object.
 Field/column filters
 ^^^^^^^^^^^^^^^^^^^^
 
-Load in a subset of fields from the file:
-
-.. note:: Requires Fiona 1.9+
-
-.. code-block:: python
-
-    gdf = geopandas.read_file(
-        geodatasets.get_path("geoda.nyc"),
-        include_fields=["name", "rent2008", "kids2000"],
-    )
-
-.. note:: Requires Fiona 1.8+
+Load in a subset of fields from the file using the ``columns`` keyword
+(this requires pyogrio or Fiona 1.9+):
 
 .. code-block:: python
 
     gdf = geopandas.read_file(
         geodatasets.get_path("geoda.nyc"),
-        ignore_fields=["rent2008", "kids2000"],
+        columns=["name", "rent2008", "kids2000"],
     )
 
 Skip loading geometry from the file:
 
-.. note:: Requires Fiona 1.8+
 .. note:: Returns :obj:`pandas.DataFrame`
 
 .. code-block:: python
@@ -192,31 +173,32 @@ Load in a subset of data with a `SQL WHERE clause <https://gdal.org/user/ogr_sql
         where="subborough='Coney Island'",
     )
 
-Supported drivers
-~~~~~~~~~~~~~~~~~
-
-Currently fiona only exposes the default drivers. To display those, type::
-
-    import fiona; fiona.supported_drivers
-
-There is a `list of available drivers <https://github.com/Toblerity/Fiona/blob/master/fiona/drvsupport.py>`_
-which are unexposed but supported (depending on the GDAL-build). You can activate
-these on runtime by updating the `supported_drivers` dictionary like::
-
-    fiona.supported_drivers["NAS"] = "raw"
+Supported drivers / file formats
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 When using pyogrio, all drivers supported by the GDAL installation are enabled,
 and you can check those with::
 
     import pyogrio; pyogrio.list_drivers()
 
+where the values indicate whether reading, writing or both are supported for
+a given driver.
+Fiona only exposes a default subset of drivers. To display those, type::
+
+    import fiona; fiona.supported_drivers
+
+There is a `list of available drivers <https://github.com/Toblerity/Fiona/blob/master/fiona/drvsupport.py>`_
+which are unexposed by default but may be supported (depending on the GDAL-build). You can activate
+these at runtime by updating the `supported_drivers` dictionary like::
+
+    fiona.supported_drivers["NAS"] = "raw"
 
 Writing spatial data
 ---------------------
 
 GeoDataFrames can be exported to many different standard formats using the
 :meth:`geopandas.GeoDataFrame.to_file` method.
-For a full list of supported formats, type ``import fiona; fiona.supported_drivers``.
+For a full list of supported formats, type ``import pyogrio; pyogrio.list_drivers()``.
 
 In addition, GeoDataFrames can be uploaded to `PostGIS <https://postgis.net/>`__ database (starting with GeoPandas 0.8)
 by using the :meth:`geopandas.GeoDataFrame.to_postgis` method.
@@ -229,8 +211,8 @@ by using the :meth:`geopandas.GeoDataFrame.to_postgis` method.
 
 .. note::
 
-    One GeoDataFrame can contain multiple geometry (GeoSeries) columns, but most standard GIS file formats, e.g. GeoPackage or ESRI Shapefile, 
-    support only a single geometry column. To store multiple geometry columns, non-active GeoSeries need to be converted to 
+    One GeoDataFrame can contain multiple geometry (GeoSeries) columns, but most standard GIS file formats, e.g. GeoPackage or ESRI Shapefile,
+    support only a single geometry column. To store multiple geometry columns, non-active GeoSeries need to be converted to
     an alternative representation like well-known text (WKT) or well-known binary (WKB) before saving to file. Alternatively, they can be saved as an Apache (Geo)Parquet or Feather file, both of which support multiple geometry columns natively.
 
 **Writing to Shapefile**::
@@ -291,10 +273,10 @@ the spatial information.
 
 .. note::
 
-    This is tracking version 1.0.0 of the GeoParquet specification at:
+    The GeoParquet specification is developed at:
     https://github.com/opengeospatial/geoparquet.
 
-    Previous versions are still supported as well. By default, the latest
-    version is used when writing files (older versions can be specified using
-    the ``schema_version`` keyword), and GeoPandas supports reading files
-    of any version.
+    By default, the latest
+    version is used when writing files, but older versions can be specified using
+    the ``schema_version`` keyword. GeoPandas supports reading files
+    encoded using any GeoParquet version.

@@ -5,6 +5,7 @@ from geopandas.geodataframe import GeoDataFrame
 from geopandas.array import points_from_xy
 
 from geopandas.io.file import _read_file as read_file
+from geopandas.io.file import _list_layers as list_layers
 from geopandas.io.arrow import _read_parquet as read_parquet
 from geopandas.io.arrow import _read_feather as read_feather
 from geopandas.io.sql import _read_postgis as read_postgis

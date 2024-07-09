@@ -1,11 +1,14 @@
+import warnings
+from packaging.version import Version
 from statistics import mean
 
-import geopandas
-from shapely.geometry import LineString
 import numpy as np
 import pandas as pd
+from pandas.api.types import is_datetime64_any_dtype
 
-from packaging.version import Version
+from shapely.geometry import LineString
+
+import geopandas
 
 _MAP_KWARGS = [
     "location",
@@ -277,13 +280,14 @@ def _explore(
                 return cm.get_cmap(_cmap, n_resample)(idx)
 
     try:
+        import re
+
         import branca as bc
         import folium
-        import re
         import matplotlib
-        from matplotlib import colors
         import matplotlib.pyplot as plt
         from mapclassify import classify
+        from matplotlib import colors
 
         # isolate MPL version - GH#2596
         MPL_361 = Version(matplotlib.__version__) >= Version("3.6.1")
@@ -316,6 +320,8 @@ def _explore(
         gdf.geometry[rings_mask] = gdf.geometry[rings_mask].apply(
             lambda g: LineString(g)
         )
+    if isinstance(gdf, geopandas.GeoSeries):
+        gdf = gdf.to_frame()
 
     if gdf.crs is None:
         kwargs["crs"] = "Simple"
@@ -323,12 +329,25 @@ def _explore(
     elif not gdf.crs.equals(4326):
         gdf = gdf.to_crs(4326)
 
+    # Fields which are not JSON serializable are coerced to strings
+    json_not_supported_cols = gdf.columns[
+        [is_datetime64_any_dtype(gdf[c]) for c in gdf.columns]
+    ].union(gdf.columns[gdf.dtypes == "object"])
+
+    if len(json_not_supported_cols) > 0:
+        gdf = gdf.astype({c: "string" for c in json_not_supported_cols})
+
+    if not isinstance(gdf.index, pd.MultiIndex) and (
+        is_datetime64_any_dtype(gdf.index) or (gdf.index.dtype == "object")
+    ):
+        gdf.index = gdf.index.astype("string")
+
     # create folium.Map object
     if m is None:
         # Get bounds to specify location and map extent
         bounds = gdf.total_bounds
         location = kwargs.pop("location", None)
-        if location is None:
+        if location is None and not np.isnan(bounds).all():
             x = mean([bounds[0], bounds[2]])
             y = mean([bounds[1], bounds[3]])
             location = (y, x)
@@ -380,6 +399,15 @@ def _explore(
         # fit bounds to get a proper zoom level
         if fit:
             m.fit_bounds([[bounds[1], bounds[0]], [bounds[3], bounds[2]]])
+
+    if gdf.is_empty.all():
+        warnings.warn(
+            "The GeoSeries you are attempting to plot is "
+            "composed of empty geometries. Nothing has been displayed.",
+            UserWarning,
+            stacklevel=3,
+        )
+        return m
 
     for map_kwd in _MAP_KWARGS:
         kwargs.pop(map_kwd, None)

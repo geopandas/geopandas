@@ -57,7 +57,7 @@ for all details. GeoPandas depends on the following packages:
 
 - ``pandas``
 - ``shapely``
-- ``fiona``
+- ``pyogrio``
 - ``pyproj``
 - ``packaging``
 
@@ -114,7 +114,7 @@ GeoPandas objects also know how to plot themselves. GeoPandas uses
 
     >>> g.plot()
 
-GeoPandas also implements alternate constructors that can read any data format recognized by [fiona](http://fiona.readthedocs.io/en/latest/). To read a zip file containing an ESRI shapefile with the [boroughs boundaries of New York City](https://data.cityofnewyork.us/City-Government/Borough-Boundaries/tqmj-j8zm) (the example can be fetched using the [`geodatasets`](https://geodatasets.readthedocs.io/en/latest/) package):
+GeoPandas also implements alternate constructors that can read any data format recognized by [pyogrio](http://pyogrio.readthedocs.io/en/latest/). To read a zip file containing an ESRI shapefile with the [boroughs boundaries of New York City](https://data.cityofnewyork.us/City-Government/Borough-Boundaries/tqmj-j8zm) (the example can be fetched using the [`geodatasets`](https://geodatasets.readthedocs.io/en/latest/) package):
 
     >>> import geodatasets
     >>> nybb_path = geodatasets.get_path('nybb')

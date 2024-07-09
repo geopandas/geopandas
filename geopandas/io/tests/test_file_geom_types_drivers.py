@@ -12,11 +12,10 @@ from shapely.geometry import (
 import geopandas
 from geopandas import GeoDataFrame
 
-from geopandas.testing import assert_geodataframe_equal
-import pytest
-
 from .test_file import FIONA_MARK, PYOGRIO_MARK
 
+import pytest
+from geopandas.testing import assert_geodataframe_equal
 
 # Credit: Polygons below come from Montreal city Open Data portal
 # http://donnees.ville.montreal.qc.ca/dataset/unites-evaluation-fonciere
@@ -275,8 +274,9 @@ def test_to_file_roundtrip(tmpdir, geodataframe, ogr_driver, engine):
 
         # This if statement can be removed once minimal fiona version >= 1.8.20
         if engine == "fiona":
-            import fiona
             from packaging.version import Version
+
+            import fiona
 
             if Version(fiona.__version__) < Version("1.8.20"):
                 pytest.skip("SQLite driver only available from version 1.8.20")
@@ -302,7 +302,22 @@ def test_to_file_roundtrip(tmpdir, geodataframe, ogr_driver, engine):
                 output_file, driver=driver, engine=engine, **write_kwargs
             )
     else:
-        geodataframe.to_file(output_file, driver=driver, engine=engine, **write_kwargs)
+        if driver == "SQLite" and engine == "pyogrio":
+            try:
+                geodataframe.to_file(
+                    output_file, driver=driver, engine=engine, **write_kwargs
+                )
+            except ValueError as e:
+                if "unrecognized option 'SPATIALITE'" in str(e):
+                    pytest.xfail(
+                        "pyogrio wheels from PyPI do not come with SpatiaLite support. "
+                        f"Error: {e}"
+                    )
+                raise
+        else:
+            geodataframe.to_file(
+                output_file, driver=driver, engine=engine, **write_kwargs
+            )
 
         reloaded = geopandas.read_file(output_file, engine=engine)
 
