@@ -228,9 +228,9 @@ def _read_file(
         Keyword args to be passed to the engine, and can be used to write
         to multi-layer data, store data within archives (zip files), etc.
         In case of the "pyogrio" engine, the keyword arguments are passed to
-        `pyogrio.write_dataframe`. In case of the "fiona" engine, the keyword
+        `pyogrio.read_dataframe`. In case of the "fiona" engine, the keyword
         arguments are passed to fiona.open`. For more information on possible
-        keywords, type: ``import pyogrio; help(pyogrio.write_dataframe)``.
+        keywords, type: ``import pyogrio; help(pyogrio.read_dataframe)``.
 
 
     Examples
