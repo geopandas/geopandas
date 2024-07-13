@@ -306,6 +306,51 @@ def points_from_xy(x, y, z=None, crs=None):
     return GeometryArray(shapely.points(x, y, z), crs=crs)
 
 
+def lines_from_xy(xy, crs=None):
+    """
+    Generate GeometryArray of shapely LineString geometries from a list of x, y(,z) coordinates.
+
+    In case of geographic coordinates, it is assumed that longitude is captured by
+    ``x`` coordinates and latitude by ``y``.
+
+    Parameters
+    ----------
+    xy : A list of tuples of iterables
+    crs : value, optional
+            Coordinate Reference System of the geometry objects. Can be anything accepted by
+            :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
+            such as an authority string (eg "EPSG:4326") or a WKT string.
+    Examples
+    ----------
+    >>> import pandas as pd
+    >>> df = pd.DataFrame({'x1': [0, 1, 2], 'y1': [0, 1, 2], 'z1': [0, 1, 2],
+    ...                         'x2': [1, 2, 3], 'y2': [1, 2, 3], 'z2': [1, 2, 3]})
+    >>> df
+       x1  y1  z1  x2  y2  z2
+    0   0   0   0   1   1   1
+    1   1   1   1   2   2   2
+    2   2   2   2   3   3   3
+    >>> geometry = geopandas.lines_from_xy([(df['x1'], df['y1'],df['z1']), (df['x2'], df['y2'],df['z2'])])
+    >>> gdf = geopandas.GeoDataFrame(
+    ...     df, geometry=geopandas.lines_from_xy([(df['x1'], df['y1']), (df['x2'], df['y2'])]))
+
+    Having geographic coordinates:
+
+    >>> df = pd.DataFrame({'longitude_start': [-140, 0, 123], 'latitude_start': [-65, 1, 48],
+    ...                     'longitude_end' : [-130,1, 124], 'latitude_end': [-42, 2, 49]})
+    >>> gdf = geopandas.GeoDataFrame(df,geometry=geopandas.lines_from_xy(
+    ...     [(df['longitude_start'], df['latitude_start']),
+    ...      (df['longitude_end'], df['latitude_end'])], crs="EPSG:4326"))
+    >>> gdf
+         longitude_start  latitude_start  longitude_end  latitude_end  geometry
+    0             -140             -65           -130           -42    LINESTRING (-140 -65, -130 -42)
+    1                0               1              1             2    LINESTRING (0 1, 1 2)
+    2              123              48            124            49    LINESTRING (123 48, 124 49)
+
+    """
+    return GeometryArray(shapely.linestrings(np.stack(xy, axis=1).T), crs=crs)
+
+
 class GeometryArray(ExtensionArray):
     """
     Class wrapping a numpy array of Shapely objects and

@@ -2,7 +2,7 @@ from geopandas._config import options
 
 from geopandas.geoseries import GeoSeries
 from geopandas.geodataframe import GeoDataFrame
-from geopandas.array import points_from_xy
+from geopandas.array import points_from_xy, lines_from_xy
 
 from geopandas.io.file import _read_file as read_file
 from geopandas.io.file import _list_layers as list_layers
