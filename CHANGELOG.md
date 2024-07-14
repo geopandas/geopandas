@@ -1,5 +1,10 @@
 # Changelog
+# Version 1.0.2 (???)
 
+New methods :
+
+- Added `lines_from_xy` method to create LineString geometries from x and y coordinates.
+- 
 ## Version 1.0.1 (July 2, 2024)
 
 Bug fixes:
