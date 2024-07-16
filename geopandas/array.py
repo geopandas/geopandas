@@ -347,9 +347,9 @@ def lines_from_xy(xy, crs=None):
     ...      (df['lon_end'], df['lat_end'])], crs="EPSG:4326"))
     >>> gdf
         lon_start  lat_start  lon_end  lat_end  geometry
-    0       -14        -65       -13      -42    LINESTRING (-140 -65, -130 -42)
-    1         0          1         1        2              LINESTRING (0 1, 1 2)
-    2       123         48       124       49        LINESTRING (123 48, 124 49)
+    0       -14        -65       -13      -42   LINESTRING (-14 -65, -13 -42)
+    1         0          1         1        2           LINESTRING (0 1, 1 2)
+    2       123         48       124       49     LINESTRING (123 48, 124 49)
 
     """
     return GeometryArray(shapely.linestrings(np.stack(xy, axis=1).T), crs=crs)
