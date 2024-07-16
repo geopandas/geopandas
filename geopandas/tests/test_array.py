@@ -21,6 +21,7 @@ from geopandas.array import (
     from_shapely,
     from_wkb,
     from_wkt,
+    lines_from_xy,
     points_from_xy,
     to_wkb,
     to_wkt,
@@ -63,6 +64,81 @@ def test_points():
         assert isinstance(points[i], shapely.geometry.Point)
         assert points[i].x == x[i]
         assert points[i].y == y[i]
+
+
+def test_lines():
+    x1 = np.arange(10).astype(np.float64)
+    x2 = np.arange(10).astype(np.float64) + 10
+    y1 = np.arange(10).astype(np.float64) + 20
+    y2 = np.arange(10).astype(np.float64) + 30
+    lines = lines_from_xy([(x1, y1), (x2, y2)])
+    assert isinstance(lines, GeometryArray)
+    for i in range(10):
+        assert isinstance(lines[i], shapely.geometry.LineString)
+        assert lines[i].coords[0] == (x1[i], y1[i])
+        assert lines[i].coords[-1] == (x2[i], y2[i])
+
+
+def test_lines_from_xy():
+    x1 = np.arange(10).astype(np.float64)
+    x2 = np.arange(10).astype(np.float64) + 10
+    x3 = np.arange(10).astype(np.float64) + 20
+    y1 = np.arange(10).astype(np.float64) + 100
+    y2 = np.arange(10).astype(np.float64) + 200
+    y3 = np.arange(10).astype(np.float64) + 300
+    z1 = np.arange(10).astype(np.float64) + 1000
+    z2 = np.arange(10).astype(np.float64) + 2000
+    z3 = np.arange(10).astype(np.float64) + 3000
+    df = pd.DataFrame(
+        {
+            "x1": x1,
+            "x2": x2,
+            "y1": y1,
+            "y2": y2,
+            "x3": x3,
+            "y3": y3,
+            "z1": z1,
+            "z2": z2,
+            "z3": z3,
+        }
+    )
+    lines = lines_from_xy(
+        [
+            (df["x1"], df["y1"], df["z1"]),
+            (df["x2"], df["y2"], df["z2"]),
+            (df["x3"], df["y3"], df["z3"]),
+        ]
+    )
+    assert isinstance(lines, GeometryArray)
+    assert len(lines) == 10
+    for i in range(10):
+        assert isinstance(lines[i], shapely.geometry.LineString)
+        assert lines[i].coords[0] == (x1[i], y1[i], z1[i])
+        assert lines[i].coords[1] == (x2[i], y2[i], z2[i])
+        assert lines[i].coords[2] == (x3[i], y3[i], z3[i])
+
+
+def test_lines_from_xy_incorrect_args():
+    # (x1,y1) and (x2,y2) having different lengths should throw an error
+    with pytest.raises(ValueError):
+        x1 = np.arange(5).astype(np.float64)
+        x2 = np.arange(10).astype(np.float64) + 10
+        y1 = np.arange(5).astype(np.float64) + 20
+        y2 = np.arange(10).astype(np.float64) + 30
+        geopandas.lines_from_xy(xy=[(x1, y1), (x2, y2)])
+    # Give only one point columns
+    with pytest.raises(shapely.errors.GEOSException):
+        x1 = np.arange(10).astype(np.float64)
+        y1 = np.arange(10).astype(np.float64) + 20
+        geopandas.lines_from_xy(xy=[(x1, y1)])
+    # Having point in differents space (2dim and 3dim) should throw an error
+    with pytest.raises(ValueError):
+        x1 = np.arange(10).astype(np.float64)
+        x2 = np.arange(10).astype(np.float64) + 10
+        y1 = np.arange(10).astype(np.float64) + 20
+        y2 = np.arange(10).astype(np.float64) + 30
+        z2 = np.arange(10).astype(np.float64) + 1000
+        geopandas.lines_from_xy(xy=[(x1, y1), (x2, y2, z2)])
 
 
 def test_points_from_xy():
