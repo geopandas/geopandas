@@ -77,8 +77,8 @@ crs_mismatch_error = (
 
 class GeoDataFrame(GeoPandasBase, DataFrame):
     """
-    A GeoDataFrame object is a pandas.DataFrame that has a column
-    with geometry. In addition to the standard DataFrame constructor arguments,
+    A GeoDataFrame object is a pandas.DataFrame that has one or more columns
+    containing geometry. In addition to the standard DataFrame constructor arguments,
     GeoDataFrame also accepts the following keyword arguments:
 
     Parameters
@@ -88,9 +88,12 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
         such as an authority string (eg "EPSG:4326") or a WKT string.
     geometry : str or array-like (optional)
-        If str, column to use as active geometry column. If array-like, it will be
-        added as new column named 'geometry' column on GeoDataFrame and set as the
-        active geometry column. Note that if ``geometry`` is a (Geo)Series with a
+        Value to use as the active geometry column.
+        If str, treated as column name to use. If array-like, it will be
+        added as new column named 'geometry' on the GeoDataFrame and set as the
+        active geometry column.
+
+        Note that if ``geometry`` is a (Geo)Series with a
         name, the name will not be used, a column named "geometry" will still be
         added. To preserve the name, you can use :meth:`~GeoDataFrame.rename_geometry`
         to update the geometry column name.
@@ -1483,6 +1486,9 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
             The underlying library that is used to write the file. Currently, the
             supported options are "pyogrio" and "fiona". Defaults to "pyogrio" if
             installed, otherwise tries "fiona".
+        metadata : dict[str, str], default None
+            Optional metadata to be stored in the file. Keys and values must be
+            strings. Supported only for "GPKG" driver.
         **kwargs :
             Keyword args to be passed to the engine, and can be used to write
             to multi-layer data, store data within archives (zip files), etc.
@@ -2323,6 +2329,16 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
             Suffix to apply to overlapping column names (left GeoDataFrame).
         rsuffix : string, default 'right'
             Suffix to apply to overlapping column names (right GeoDataFrame).
+        distance : number or array_like, optional
+            Distance(s) around each input geometry within which to query the tree
+            for the 'dwithin' predicate. If array_like, must be
+            one-dimesional with length equal to length of left GeoDataFrame.
+            Required if ``predicate='dwithin'``.
+        on_attribute : string, list or tuple
+            Column name(s) to join on as an additional join restriction on top
+            of the spatial predicate. These must be found in both DataFrames.
+            If set, observations are joined only if the predicate applies
+            and values in specified columns match.
 
         Examples
         --------

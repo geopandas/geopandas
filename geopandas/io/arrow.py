@@ -489,9 +489,9 @@ def _arrow_to_geopandas(table, geo_metadata=None):
     """
     Helper function with main, shared logic for read_parquet/read_feather.
     """
-    geo_metadata = geo_metadata or _decode_metadata(
-        table.schema.metadata.get(b"geo", b"")
-    )
+    if geo_metadata is None:
+        # Note: this path of not passing metadata is also used by dask-geopandas
+        geo_metadata = _validate_and_decode_metadata(table.schema.metadata)
 
     # Find all geometry columns that were read from the file.  May
     # be a subset if 'columns' parameter is used.
@@ -845,7 +845,6 @@ def _read_feather(path, columns=None, **kwargs):
     path = _expand_user(path)
 
     table = feather.read_table(path, columns=columns, **kwargs)
-    _validate_and_decode_metadata(table.schema.metadata)
     return _arrow_to_geopandas(table)
 
 
