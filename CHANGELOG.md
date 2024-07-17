@@ -1,5 +1,12 @@
 # Changelog
 
+## Version 1.0.2 (???)
+
+Bug fixes:
+
+- Support GeoDataFrame constructor receiving arguments to `geometry` which are not
+  (Geo)Series, but instead should be interpreted as column names (#3384).
+
 ## Version 1.0.0-rc1 (June 17, 2024)
 
 Notes on dependencies:
