@@ -164,7 +164,7 @@ class GeoSeries(GeoPandasBase, Series):
                 # make a copy to avoid setting CRS to passed GeometryArray
                 data = data.copy()
             else:
-                if not data.crs == crs:
+                if not data_crs == crs:
                     raise ValueError(
                         "CRS mismatch between CRS of the passed geometries "
                         "and 'crs'. Use 'GeoSeries.set_crs(crs, "
