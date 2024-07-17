@@ -675,9 +675,8 @@ class TestConstructor:
 
         # https://github.com/geopandas/geopandas/issues/3382
         s2 = pd.Series(gs.set_crs("EPSG:4326"))
-        # result = GeoSeries(s2, crs=4326)
-        # assert result.crs == "EPSG:4326"
-
+        result = GeoSeries(s2, crs=4326)
+        assert result.crs == "EPSG:4326"
         with pytest.raises(
             ValueError,
             match="CRS mismatch between CRS of the passed geometries and 'crs'",
