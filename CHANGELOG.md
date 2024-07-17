@@ -1,5 +1,12 @@
 # Changelog
 
+## Version 1.0.2 (???)
+
+Bug fixes:
+
+- Fix regression where constructing a GeoSeries from a pd.Series with GeometryDtype values 
+  failed when `crs` was provided(#3383).
+
 ## Version 1.0.1 (July 2, 2024)
 
 Bug fixes:
