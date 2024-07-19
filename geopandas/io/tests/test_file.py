@@ -1076,6 +1076,7 @@ def test_read_file_mask_gdf_mismatched_crs(df_nybb, engine, nybb_filename):
     assert filtered_df_shape == (2, 5)
 
 
+@pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not installed")
 def test_read_file_multi_layer_with_layer_arg_no_warning():
     # While reading a file with multiple layers, if the layer is properly
     # specified, a "Specify layer" warning should not be emitted
