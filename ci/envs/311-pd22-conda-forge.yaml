@@ -2,15 +2,13 @@ name: test
 channels:
   - conda-forge
 dependencies:
-  - python=3.10
+  - python=3.11
   # required
-  - pandas=1.5
-  - shapely=2
-  - geos
-  - cython
-  - pyogrio>=0.7.2
+  - pandas=2.2
+  - numpy=1.26 # released 4 months before pandas 2.2
+  - shapely
+  - pyogrio
   - pyproj
-  # use this build to have one with only shapely 2.0 installed
   - packaging
   # testing
   - pytest
@@ -24,7 +22,6 @@ dependencies:
   - xyzservices
   - scipy
   - geopy
-  - pointpats
   - geodatasets
   # installed in tests.yaml, because not available on windows
   # - postgis

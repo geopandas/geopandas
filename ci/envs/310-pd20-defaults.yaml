@@ -4,7 +4,7 @@ channels:
 dependencies:
   - python=3.10
   # required
-  - pandas=1.5
+  - pandas=2.0
   - shapely
   # - pyogrio # comes as 0.5.1
   - numpy=1.24
