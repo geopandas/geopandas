@@ -32,5 +32,6 @@ dependencies:
   - libspatialite
   - geoalchemy2
   - pyarrow
+  - geoarrow-pyarrow
   # doctest testing
   - pytest-doctestplus
