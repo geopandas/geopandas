@@ -16,7 +16,7 @@ dependencies:
   - fsspec
   # optional
   #- geopy
-  - SQLalchemy==2.0 # oldest support sqlalchemy version
+  - SQLalchemy<2.1 # test oldest support sqlalchemy version
   - libspatialite
   - pip
   - pip:
