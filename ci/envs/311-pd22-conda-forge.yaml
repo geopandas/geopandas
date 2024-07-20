@@ -25,7 +25,7 @@ dependencies:
   - geodatasets
   # installed in tests.yaml, because not available on windows
   # - postgis
-  - SQLalchemy<2
+  - SQLalchemy==2.0 # oldest support sqlalchemy version
   - psycopg2
   - libspatialite
   - geoalchemy2

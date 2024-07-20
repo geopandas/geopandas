@@ -32,7 +32,7 @@ dependencies = [
 [project.optional-dependencies]
 all = [
     "psycopg-binary>=3.1.0",
-    "SQLAlchemy>=1.4",
+    "SQLAlchemy>=2.0",
     "geopy",
     "matplotlib>=3.7",
     "mapclassify>=2.5",
