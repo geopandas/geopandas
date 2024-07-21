@@ -1,5 +1,13 @@
 # Changelog
 
+## Version 1.0.2 (???)
+
+Bug fixes:
+
+- Fix unspecified layer warning being emitted reading multilayer datasets, even
+  when layer is specified (#3378).
+
+
 ## Version 1.0.1 (July 2, 2024)
 
 Bug fixes:
