@@ -5,7 +5,7 @@
 Bug fixes:
 
 - Fix unspecified layer warning being emitted reading multilayer datasets, even
-  when layer is specified (#3378).
+  when layer is specified when using the mask or bbox keywords (#3378).
 
 
 ## Version 1.0.1 (July 2, 2024)
