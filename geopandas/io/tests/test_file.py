@@ -1077,19 +1077,19 @@ def test_read_file_mask_gdf_mismatched_crs(df_nybb, engine, nybb_filename):
 
 
 @pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not installed")
-def test_read_file_multi_layer_with_layer_arg_no_warning():
+def test_read_file_multi_layer_with_layer_arg_no_warning(tmp_path, engine):
     # While reading a file with multiple layers, if the layer is properly
     # specified, a "Specify layer" warning should not be emitted
     data1 = {"geometry": [Point(1, 2), Point(2, 1)]}
     gdf = geopandas.GeoDataFrame(data1, crs="EPSG:4326")
-    tmpfile_path = tempfile.mktemp(suffix=".gpkg")
-    gdf.to_file(tmpfile_path, layer="layer1", driver="GPKG")
-    gdf.to_file(tmpfile_path, layer="layer2", driver="GPKG")
+    file_path = tmp_path / "out.gpkg"
+    gdf.to_file(file_path, layer="layer1", engine=engine)
+    gdf.to_file(file_path, layer="layer2", engine=engine)
 
     with warnings.catch_warnings(record=True) as captured:
         warnings.simplefilter("always")
-        read_file(tmpfile_path, bbox=gdf, layer="layer1")
-        read_file(tmpfile_path, mask=gdf, layer="layer1")
+        read_file(file_path, bbox=gdf, layer="layer1", engine=engine)
+        read_file(file_path, mask=gdf, layer="layer1", engine=engine)
         specify_layer_warnings = [
             warning
             for warning in captured
@@ -1099,9 +1099,6 @@ def test_read_file_multi_layer_with_layer_arg_no_warning():
         assert (
             len(specify_layer_warnings) == 0
         ), "'Specify layer parameter' warning was raised, but the layer was specified."
-
-    if os.path.exists(tmpfile_path):
-        os.remove(tmpfile_path)
 
 
 def test_read_file_bbox_mask_not_allowed(engine, nybb_filename):
