@@ -650,6 +650,25 @@ def test_groupby(df):
     assert_series_equal(res, exp)
 
 
+def test_groupby_agg_tuple(df):
+    res_dict = (
+        df.groupby("value2")
+        .agg({"geometry": lambda x: x.union_all()})
+        .set_geometry("geometry")  # groupby does not set active geom
+    )
+    res_tup = (
+        df.groupby("value2")
+        .agg(geometry=("geometry", lambda x: x.union_all()))
+        .set_geometry("geometry")
+    )
+    exp = GeoDataFrame(
+        geometry=[shapely.geometry.MultiPoint([(0, 0), (2, 2)]), Point(1, 1)],
+        index=pd.Index([1, 2], name="value2"),
+    )
+    assert_geodataframe_equal(res_tup, exp)
+    assert_geodataframe_equal(res_dict, res_tup)
+
+
 def test_groupby_groups(df):
     g = df.groupby("value2")
     res = g.get_group(1)

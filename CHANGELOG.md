@@ -1,5 +1,11 @@
 # Changelog
 
+## Version 1.0.2 (???)
+
+Bug fixes:
+
+- Properly support named aggregations over a geometry column in `GroupBy.agg` (#3368).
+
 ## Version 1.0.1 (July 2, 2024)
 
 Bug fixes:
