@@ -1925,7 +1925,16 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
             for name in self._metadata:
                 object.__setattr__(self, name, getattr(other.objs[0], name, None))
 
-            if (self.columns == self._geometry_column_name).sum() > 1:
+            if (
+                self.columns.nlevels == 1
+                and (self.columns == self._geometry_column_name).sum() > 1
+            ) or (
+                self.columns.nlevels > 1
+                and (
+                    self.columns.get_level_values(0) == self._geometry_column_name
+                ).sum()
+                > 1
+            ):
                 raise ValueError(
                     "Concat operation has resulted in multiple columns using "
                     f"the geometry column name '{self._geometry_column_name}'.\n"

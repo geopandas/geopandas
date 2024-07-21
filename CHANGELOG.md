@@ -6,7 +6,7 @@ Bug fixes:
 
 - Fix unspecified layer warning being emitted reading multilayer datasets, even
   when layer is specified when using the mask or bbox keywords (#3378).
-
+- Properly support named aggregations over a geometry column in `GroupBy.agg` (#3368).
 
 ## Version 1.0.1 (July 2, 2024)
 
