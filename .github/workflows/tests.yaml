@@ -88,7 +88,7 @@ jobs:
 
       - name: Test
         run: |
-          pytest -v -r fEs -n auto --color=yes --cov=geopandas --cov-append --cov-report term-missing --cov-report xml geopandas/
+          pytest -v -r a -n auto --color=yes --cov=geopandas --cov-append --cov-report term-missing --cov-report xml geopandas/
 
       - name: Test with PostGIS
         if: (contains(matrix.env, '310-pd20-conda-forge.yaml') || contains(matrix.env, '311-latest-conda-forge.yaml'))
@@ -102,7 +102,7 @@ jobs:
           conda install postgis -c conda-forge
           sh ci/scripts/setup_postgres.sh
           set -o pipefail
-          pytest -v -r fEs --color=yes --cov=geopandas --cov-append --cov-report term-missing --cov-report xml geopandas/io/tests/test_sql.py | tee /dev/stderr | if grep SKIPPED >/dev/null;then echo "TESTS SKIPPED, FAILING" && exit 1;fi
+          pytest -v -r a --color=yes --cov=geopandas --cov-append --cov-report term-missing --cov-report xml geopandas/io/tests/test_sql.py | tee /dev/stderr | if grep SKIPPED >/dev/null;then echo "TESTS SKIPPED, FAILING" && exit 1;fi
 
       - name: Test docstrings
         if: contains(matrix.env, '310-pd20-conda-forge.yaml') && contains(matrix.os, 'ubuntu')
