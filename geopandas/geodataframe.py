@@ -1180,7 +1180,7 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
             geometry columns are encoded to WKB
         """
 
-        df = DataFrame(self.copy())
+        df = DataFrame(self.copy(deep=not PANDAS_GE_30))
 
         # Encode all geometry columns to WKB
         for col in df.columns[df.dtypes == "geometry"]:
@@ -1203,7 +1203,7 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
             geometry columns are encoded to WKT
         """
 
-        df = DataFrame(self.copy())
+        df = DataFrame(self.copy(deep=not PANDAS_GE_30))
 
         # Encode all geometry columns to WKT
         for col in df.columns[df.dtypes == "geometry"]:
@@ -1610,7 +1610,7 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
 
         """
         if not inplace:
-            df = self.copy()
+            df = self.copy(deep=not PANDAS_GE_30)
         else:
             df = self
         df.geometry = df.geometry.set_crs(
@@ -1697,7 +1697,7 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
         if inplace:
             df = self
         else:
-            df = self.copy()
+            df = self.copy(deep=not PANDAS_GE_30)
         geom = df.geometry.to_crs(crs=crs, epsg=epsg)
         df.geometry = geom
         if not inplace:
@@ -1827,6 +1827,9 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
         if type(copied) is pd.DataFrame:
             copied.__class__ = GeoDataFrame
             copied._geometry_column_name = self._geometry_column_name
+        if not deep:
+            for col in copied.columns[copied.dtypes == "geometry"]:
+                copied[col] = copied[col].array.view()
         return copied
 
     @doc(pd.DataFrame)
