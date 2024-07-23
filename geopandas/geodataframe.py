@@ -1218,7 +1218,7 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
 
         See https://geoarrow.org/ for details on the GeoArrow specification.
 
-        This functions returns a generic Arrow data object implementing
+        This function returns a generic Arrow data object implementing
         the `Arrow PyCapsule Protocol`_ (i.e. having an ``__arrow_c_stream__``
         method). This object can then be consumed by your Arrow implementation
         of choice that supports this protocol.
