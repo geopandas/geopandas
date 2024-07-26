@@ -1,5 +1,6 @@
 import datetime
 import io
+import json
 import os
 import pathlib
 import shutil
@@ -17,7 +18,7 @@ from shapely.geometry import Point, Polygon, box, mapping
 import geopandas
 from geopandas import GeoDataFrame, read_file
 from geopandas._compat import HAS_PYPROJ, PANDAS_GE_20, PANDAS_GE_30
-from geopandas.io.file import _EXTENSION_TO_DRIVER, PYOGRIO_GE_081, _detect_driver
+from geopandas.io.file import _EXTENSION_TO_DRIVER, _detect_driver
 
 import pytest
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
@@ -27,8 +28,14 @@ from pandas.testing import assert_frame_equal, assert_series_equal
 try:
     import pyogrio
 
+    # those version checks have to be defined here instead of imported from
+    # geopandas.io.file (those are only initialized lazily on first usage)
+    PYOGRIO_GE_090 = Version(Version(pyogrio.__version__).base_version) >= Version(
+        "0.9.0"
+    )
 except ImportError:
     pyogrio = False
+    PYOGRIO_GE_090 = False
 
 
 try:
@@ -455,7 +462,7 @@ def test_to_file_crs(tmpdir, engine, nybb_filename):
     assert result.crs == df.crs
 
     if engine == "pyogrio":
-        with pytest.raises(ValueError, match="Passing 'crs' it not supported"):
+        with pytest.raises(ValueError, match="Passing 'crs' is not supported"):
             df.to_file(tempfilename, crs=3857, engine=engine)
         return
 
@@ -607,6 +614,25 @@ def test_read_file_local_uri(file_path, engine):
     assert isinstance(gdf, geopandas.GeoDataFrame)
 
 
+@pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not installed")
+def test_read_file_geojson_string_path(engine):
+    if engine == "pyogrio" and not PYOGRIO_GE_090:
+        pytest.skip("fixed in pyogrio 0.9.0")
+    expected = GeoDataFrame({"val_with_hash": ["row # 0"], "geometry": [Point(0, 1)]})
+    features = {
+        "type": "FeatureCollection",
+        "features": [
+            {
+                "type": "Feature",
+                "properties": {"val_with_hash": "row # 0"},
+                "geometry": {"type": "Point", "coordinates": [0.0, 1.0]},
+            }
+        ],
+    }
+    df_read = read_file(json.dumps(features))
+    assert_geodataframe_equal(expected.set_crs("EPSG:4326"), df_read)
+
+
 def test_read_file_textio(file_path, engine):
     file_text_stream = open(file_path)
     file_stringio = io.StringIO(open(file_path).read())
@@ -701,7 +727,7 @@ def test_allow_legacy_gdal_path(engine, nybb_filename):
     assert isinstance(gdf, geopandas.GeoDataFrame)
 
 
-@pytest.mark.skipif(not PYOGRIO_GE_081, reason="bug fixed in pyogrio 0.8.1")
+@pytest.mark.skipif(not PYOGRIO_GE_090, reason="bug fixed in pyogrio 0.9.0")
 def test_read_file_with_hash_in_path(engine, nybb_filename, tmp_path):
     folder_with_hash = tmp_path / "path with # present"
     folder_with_hash.mkdir(exist_ok=True, parents=True)
@@ -1296,6 +1322,54 @@ def test_write_read_file(test_file, engine):
     df_json = geopandas.read_file(test_file, engine=engine)
     assert_geodataframe_equal(gdf, df_json, check_crs=True)
     os.remove(os.path.expanduser(test_file))
+
+
+@pytest.mark.skipif(fiona is False, reason="Fiona not available")
+@pytest.mark.skipif(FIONA_GE_19, reason="Fiona >= 1.9 supports metadata")
+def test_to_file_metadata_unsupported_fiona_version(tmp_path, df_points):
+    metadata = {"title": "test"}
+    tmp_file = tmp_path / "test.gpkg"
+    match = "'metadata' keyword is only supported for Fiona >= 1.9"
+    with pytest.raises(NotImplementedError, match=match):
+        df_points.to_file(tmp_file, driver="GPKG", engine="fiona", metadata=metadata)
+
+
+@pytest.mark.skipif(not FIONA_GE_19, reason="only Fiona >= 1.9 supports metadata")
+def test_to_file_metadata_supported_fiona_version(tmp_path, df_points):
+    metadata = {"title": "test"}
+    tmp_file = tmp_path / "test.gpkg"
+
+    df_points.to_file(tmp_file, driver="GPKG", engine="fiona", metadata=metadata)
+
+    # Check that metadata is written to the file
+    with fiona.open(tmp_file) as src:
+        tags = src.tags()
+        assert tags == metadata
+
+
+@pytest.mark.skipif(pyogrio is False, reason="Pyogrio not available")
+def test_to_file_metadata_pyogrio(tmp_path, df_points):
+    metadata = {"title": "test"}
+    tmp_file = tmp_path / "test.gpkg"
+
+    df_points.to_file(tmp_file, driver="GPKG", engine="pyogrio", metadata=metadata)
+
+    # Check that metadata is written to the file
+    info = pyogrio.read_info(tmp_file)
+    layer_metadata = info["layer_metadata"]
+    assert layer_metadata == metadata
+
+
+@pytest.mark.parametrize(
+    "driver, ext", [("ESRI Shapefile", ".shp"), ("GeoJSON", ".geojson")]
+)
+def test_to_file_metadata_unsupported_driver(driver, ext, tmpdir, df_points, engine):
+    metadata = {"title": "Test"}
+    tempfilename = os.path.join(str(tmpdir), "test" + ext)
+    with pytest.raises(
+        NotImplementedError, match="'metadata' keyword is only supported for"
+    ):
+        df_points.to_file(tempfilename, driver=driver, metadata=metadata)
 
 
 def test_multiple_geom_cols_error(tmpdir, df_nybb):

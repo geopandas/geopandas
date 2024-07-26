@@ -106,7 +106,7 @@ Affine transformations
 
 
 Examples of geometric manipulations
-------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. sourcecode:: python
 
