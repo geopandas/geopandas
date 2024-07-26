@@ -246,7 +246,7 @@ def overlay(df1, df2, how="intersection", keep_geom_type=None, make_valid=True):
     # Error Messages
     if how not in allowed_hows:
         raise ValueError(
-            "`how` was '{0}' but is expected to be in {1}".format(how, allowed_hows)
+            f"`how` was '{how}' but is expected to be in {allowed_hows}"
         )
 
     if isinstance(df1, GeoSeries) or isinstance(df2, GeoSeries):
@@ -272,7 +272,7 @@ def overlay(df1, df2, how="intersection", keep_geom_type=None, make_valid=True):
         points_check = df.geom_type.isin(points).any()
         if sum([poly_check, lines_check, points_check]) > 1:
             raise NotImplementedError(
-                "df{} contains mixed geometry types.".format(i + 1)
+                f"df{i + 1} contains mixed geometry types."
             )
 
     if how == "intersection":
@@ -354,7 +354,7 @@ def overlay(df1, df2, how="intersection", keep_geom_type=None, make_valid=True):
                 exploded.loc[~exploded.geom_type.isin(points), geom_col] = None
             else:
                 raise TypeError(
-                    "`keep_geom_type` does not support {}.".format(geom_type)
+                    f"`keep_geom_type` does not support {geom_type}."
                 )
             num_dropped_collection = (
                 orig_num_geoms_exploded - exploded.geometry.isna().sum()
@@ -382,7 +382,7 @@ def overlay(df1, df2, how="intersection", keep_geom_type=None, make_valid=True):
         elif geom_type in points:
             result = result.loc[result.geom_type.isin(points)]
         else:
-            raise TypeError("`keep_geom_type` does not support {}.".format(geom_type))
+            raise TypeError(f"`keep_geom_type` does not support {geom_type}.")
         num_dropped = orig_num_geoms - result.shape[0]
 
         if (num_dropped > 0 or num_dropped_collection > 0) and keep_geom_type_warning:

@@ -103,7 +103,7 @@ def _construct_vsi_path(path, archive, scheme) -> str:
 
     if schemes:
         prefix = "/".join(
-            "vsi{0}".format(SCHEMES[p]) for p in schemes if p and p != "file"
+            f"vsi{SCHEMES[p]}" for p in schemes if p and p != "file"
         )
 
         if schemes[-1] in CURLSCHEMES:
@@ -113,6 +113,6 @@ def _construct_vsi_path(path, archive, scheme) -> str:
         if archive:
             return "/{}/{}{}/{}".format(prefix, suffix, archive, path.lstrip("/"))
         else:
-            return "/{}/{}{}".format(prefix, suffix, path)
+            return f"/{prefix}/{suffix}{path}"
 
     return path

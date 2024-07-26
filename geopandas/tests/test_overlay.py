@@ -79,7 +79,7 @@ def test_overlay(dfs_index, how):
 
     def _read(name):
         expected = read_file(
-            os.path.join(DATA, "polys", "df1_df2-{0}.geojson".format(name))
+            os.path.join(DATA, "polys", f"df1_df2-{name}.geojson")
         )
         expected.geometry.array.crs = None
         for col in expected.columns[expected.dtypes == "int32"]:
@@ -147,7 +147,7 @@ def test_overlay_nybb(how, nybb_filename):
         expected = read_file(os.path.join(DATA, "nybb_qgis", "qgis-union.shp"))
     else:
         expected = read_file(
-            os.path.join(DATA, "nybb_qgis", "qgis-{0}.shp".format(how))
+            os.path.join(DATA, "nybb_qgis", f"qgis-{how}.shp")
         )
 
     # The result of QGIS for 'union' contains incorrect geometries:
@@ -260,7 +260,7 @@ def test_overlay_overlap(how):
         raise pytest.skip()
 
     expected = read_file(
-        os.path.join(DATA, "overlap", "df1_df2_overlap-{0}.geojson".format(how))
+        os.path.join(DATA, "overlap", f"df1_df2_overlap-{how}.geojson")
     )
 
     if how == "union":
@@ -506,7 +506,7 @@ def test_overlay_strict(how, keep_geom_type, geom_types):
             os.path.join(
                 DATA,
                 "strict",
-                "{t}_{h}_{s}.geojson".format(t=geom_types, h=how, s=keep_geom_type),
+                f"{geom_types}_{how}_{keep_geom_type}.geojson",
             )
         )
 

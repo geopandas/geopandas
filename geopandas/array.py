@@ -55,13 +55,13 @@ class GeometryDtype(ExtensionDtype):
     def construct_from_string(cls, string):
         if not isinstance(string, str):
             raise TypeError(
-                "'construct_from_string' expects a string, got {}".format(type(string))
+                f"'construct_from_string' expects a string, got {type(string)}"
             )
         elif string == cls.name:
             return cls()
         else:
             raise TypeError(
-                "Cannot construct a '{}' from '{}'".format(cls.__name__, string)
+                f"Cannot construct a '{cls.__name__}' from '{string}'"
             )
 
     @classmethod
@@ -109,8 +109,8 @@ def _crs_mismatch_warn(left, right, stacklevel=3):
         "and the CRS of right geometries.\n"
         "Use `to_crs()` to reproject one of "
         "the input geometries to match the CRS of the other.\n\n"
-        "Left CRS: {0}\n"
-        "Right CRS: {1}\n".format(left_srs, right_srs),
+        "Left CRS: {}\n"
+        "Right CRS: {}\n".format(left_srs, right_srs),
         UserWarning,
         stacklevel=stacklevel,
     )
@@ -177,7 +177,7 @@ def from_shapely(data, crs=None):
                 out.append(None)
             else:
                 raise TypeError(
-                    "Input must be valid geometry objects: {0}".format(geom)
+                    f"Input must be valid geometry objects: {geom}"
                 )
         arr = np.array(out, dtype=object)
 
@@ -688,7 +688,7 @@ class GeometryArray(ExtensionArray):
     def _binary_method(op, left, right, **kwargs):
         if isinstance(right, GeometryArray):
             if len(left) != len(right):
-                msg = "Lengths of inputs do not match. Left: {0}, Right: {1}".format(
+                msg = "Lengths of inputs do not match. Left: {}, Right: {}".format(
                     len(left), len(right)
                 )
                 raise ValueError(msg)

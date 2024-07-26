@@ -1010,7 +1010,6 @@ class TestGeomMethods:
         expected_g1 = GeoSeries(
             [
                 Polygon(
-                    (
                         (
                             (0, 0),
                             (0.5, 0),
@@ -1021,10 +1020,8 @@ class TestGeomMethods:
                             (0.3333333333333333, 0.3333333333333333),
                             (0, 0),
                         )
-                    )
                 ),
                 Polygon(
-                    (
                         (
                             (0, 0),
                             (0.5, 0),
@@ -1036,7 +1033,6 @@ class TestGeomMethods:
                             (0, 0.5),
                             (0, 0),
                         )
-                    )
                 ),
             ]
         )

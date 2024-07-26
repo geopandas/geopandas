@@ -13,7 +13,7 @@ from collections import namedtuple
 Option = namedtuple("Option", "key default_value doc validator callback")
 
 
-class Options(object):
+class Options:
     """Provide attribute-style access to configuration dict."""
 
     def __init__(self, options):
@@ -64,7 +64,7 @@ class Options(object):
             description += doc_text + "\n"
         space = "\n  "
         description = description.replace("\n", space)
-        return "{}({}{})".format(cls, space, description)
+        return f"{cls}({space}{description})"
 
 
 def _validate_display_precision(value):

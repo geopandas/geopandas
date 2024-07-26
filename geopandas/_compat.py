@@ -54,7 +54,7 @@ def import_optional_dependency(name: str, extra: str = ""):
 
     if not isinstance(name, str):
         raise ValueError(
-            "Invalid module name: '{name}'; must be a string".format(name=name)
+            f"Invalid module name: '{name}'; must be a string"
         )
 
     try:

@@ -162,18 +162,18 @@ def _basic_checks(left_df, right_df, how, lsuffix, rsuffix, on_attribute=None):
     """
     if not isinstance(left_df, GeoDataFrame):
         raise ValueError(
-            "'left_df' should be GeoDataFrame, got {}".format(type(left_df))
+            f"'left_df' should be GeoDataFrame, got {type(left_df)}"
         )
 
     if not isinstance(right_df, GeoDataFrame):
         raise ValueError(
-            "'right_df' should be GeoDataFrame, got {}".format(type(right_df))
+            f"'right_df' should be GeoDataFrame, got {type(right_df)}"
         )
 
     allowed_hows = ["left", "right", "inner"]
     if how not in allowed_hows:
         raise ValueError(
-            '`how` was "{}" but is expected to be in {}'.format(how, allowed_hows)
+            f'`how` was "{how}" but is expected to be in {allowed_hows}'
         )
 
     if not _check_crs(left_df, right_df):
@@ -286,7 +286,7 @@ def _reset_index_with_suffix(df, suffix, other):
             # check new label will not be in other dataframe
             if new_label in df.columns or new_label in other.columns:
                 raise ValueError(
-                    "'{0}' cannot be a column name in the frames being"
+                    "'{}' cannot be a column name in the frames being"
                     " joined".format(new_label)
                 )
             column_names[i] = new_label
