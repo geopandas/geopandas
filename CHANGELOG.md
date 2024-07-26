@@ -1,6 +1,5 @@
 # Changelog
 
-
 ## Version 1.1.0
 
 Notes on dependencies:
@@ -10,6 +9,12 @@ Notes on dependencies:
   fiona 1.8.21, scipy 1.9, matplotlib 3.7, mapclassify 2.5, folium 0.12 and 
   SQLAlchemy 2.0. Older versions of these libraries may continue to work, but are no longer
   considered supported (#3371).
+
+## Version 1.0.2 (???)
+
+Bug fixes:
+
+- Properly support named aggregations over a geometry column in `GroupBy.agg` (#3368).
 
 ## Version 1.0.1 (July 2, 2024)
 

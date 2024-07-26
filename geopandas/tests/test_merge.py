@@ -133,7 +133,7 @@ class TestMerging:
         with pytest.warns(
             UserWarning, match=r"CRS not set for some of the concatenation inputs.*"
         ):
-            partial_none_case = self.gdf[["geometry"]]
+            partial_none_case = self.gdf[["geometry"]].copy()
             partial_none_case.iloc[0] = None
             pd.concat([single_geom_col, partial_none_case])
 

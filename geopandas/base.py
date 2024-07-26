@@ -1152,10 +1152,10 @@ GeometryCollection
         By default, you get back a GeoSeries of polygons:
 
         >>> s.voronoi_polygons()
-        0     POLYGON ((-2 5, 1 2, -2 -1, -2 5))
-        1        POLYGON ((4 5, 1 2, -2 5, 4 5))
-        2    POLYGON ((-2 -1, 1 2, 4 -1, -2 -1))
-        3       POLYGON ((4 -1, 1 2, 4 5, 4 -1))
+        0        POLYGON ((-2 5, 1 2, -2 -1, -2 5))
+        1           POLYGON ((4 5, 1 2, -2 5, 4 5))
+        2       POLYGON ((-2 -1, 1 2, 4 -1, -2 -1))
+        3    POLYGON ((4 -1, 4 -1, 1 2, 4 5, 4 -1))
         dtype: geometry
 
         If you set only_edges to True, you get back LineStrings representing the
@@ -1561,7 +1561,7 @@ GeometryCollection
         0                   POINT (1 1)
         1             POINT Z (1 1 0.9)
         2    LINESTRING (0 0, 0 1, 1 1)
-        3            LINESTRING Z EMPTY
+        3              LINESTRING EMPTY
         dtype: geometry
 
         >>> s.set_precision(1, mode="pointwise")
