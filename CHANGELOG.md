@@ -6,6 +6,11 @@ Bug fixes:
 
 - Properly support named aggregations over a geometry column in `GroupBy.agg` (#3368).
 
+Deprecations and compatibility notes:
+
+- The `GeoSeries.select` method wrapping the pandas `Series.select` method has been removed.
+  The upstream method no longer exists in all supported version of pandas (#3394).
+
 ## Version 1.0.1 (July 2, 2024)
 
 Bug fixes:
