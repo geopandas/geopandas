@@ -300,7 +300,12 @@ def overlay(df1, df2, how="intersection", keep_geom_type=None, make_valid=True):
             mask = ~df.geometry.is_valid
             col = df._geometry_column_name
             if make_valid:
+                geom_type = df.geom_type.iloc[0]
                 df.loc[mask, col] = df.loc[mask, col].make_valid()
+                # Extract only the input geometry type, as make_valid may change it
+                if mask.any():
+                    df = _collection_extract(df, geom_type, False)
+
             elif mask.any():
                 raise ValueError(
                     "You have passed make_valid=False along with "
@@ -335,67 +340,69 @@ def overlay(df1, df2, how="intersection", keep_geom_type=None, make_valid=True):
             result.drop(["__idx1", "__idx2"], axis=1, inplace=True)
 
     if keep_geom_type:
-        # First we filter the geometry types inside GeometryCollections objects
-        # (e.g. GeometryCollection([polygon, point]) -> polygon)
-        # we do this separately on only the relevant rows, as this is an expensive
-        # operation (an expensive no-op for geometry types other than collections)
-        is_collection = result.geom_type == "GeometryCollection"
-        if is_collection.any():
-            geom_col = result._geometry_column_name
-            collections = result[[geom_col]][is_collection]
-
-            exploded = collections.reset_index(drop=True).explode(index_parts=True)
-            exploded = exploded.reset_index(level=0)
-
-            orig_num_geoms_exploded = exploded.shape[0]
-            if geom_type in polys:
-                exploded.loc[~exploded.geom_type.isin(polys), geom_col] = None
-            elif geom_type in lines:
-                exploded.loc[~exploded.geom_type.isin(lines), geom_col] = None
-            elif geom_type in points:
-                exploded.loc[~exploded.geom_type.isin(points), geom_col] = None
-            else:
-                raise TypeError(
-                    "`keep_geom_type` does not support {}.".format(geom_type)
-                )
-            num_dropped_collection = (
-                orig_num_geoms_exploded - exploded.geometry.isna().sum()
-            )
-
-            # level_0 created with above reset_index operation
-            # and represents the original geometry collections
-            # TODO avoiding dissolve to call union_all in this case could further
-            # improve performance (we only need to collect geometries in their
-            # respective Multi version)
-            dissolved = exploded.dissolve(by="level_0")
-            result.loc[is_collection, geom_col] = dissolved[geom_col].values
-        else:
-            num_dropped_collection = 0
-
-        # Now we filter all geometries (in theory we don't need to do this
-        # again for the rows handled above for GeometryCollections, but filtering
-        # them out is probably more expensive as simply including them when this
-        # is typically about only a few rows)
-        orig_num_geoms = result.shape[0]
-        if geom_type in polys:
-            result = result.loc[result.geom_type.isin(polys)]
-        elif geom_type in lines:
-            result = result.loc[result.geom_type.isin(lines)]
-        elif geom_type in points:
-            result = result.loc[result.geom_type.isin(points)]
-        else:
-            raise TypeError("`keep_geom_type` does not support {}.".format(geom_type))
-        num_dropped = orig_num_geoms - result.shape[0]
-
-        if (num_dropped > 0 or num_dropped_collection > 0) and keep_geom_type_warning:
-            warnings.warn(
-                "`keep_geom_type=True` in overlay resulted in {} dropped "
-                "geometries of different geometry types than df1 has. "
-                "Set `keep_geom_type=False` to retain all "
-                "geometries".format(num_dropped + num_dropped_collection),
-                UserWarning,
-                stacklevel=2,
-            )
+        result = _collection_extract(result, geom_type, keep_geom_type_warning)
 
     result.reset_index(drop=True, inplace=True)
+    return result
+
+
+def _collection_extract(df, geom_type, keep_geom_type_warning):
+    # Check input
+    if geom_type in ["Polygon", "MultiPolygon"]:
+        geom_types = ["Polygon", "MultiPolygon"]
+    elif geom_type in ["LineString", "MultiLineString", "LinearRing"]:
+        geom_types = ["LineString", "MultiLineString", "LinearRing"]
+    elif geom_type in ["Point", "MultiPoint"]:
+        geom_types = ["Point", "MultiPoint"]
+    else:
+        raise TypeError(f"`geom_type` does not support {geom_type}.")
+
+    result = df.copy()
+
+    # First we filter the geometry types inside GeometryCollections objects
+    # (e.g. GeometryCollection([polygon, point]) -> polygon)
+    # we do this separately on only the relevant rows, as this is an expensive
+    # operation (an expensive no-op for geometry types other than collections)
+    is_collection = result.geom_type == "GeometryCollection"
+    if is_collection.any():
+        geom_col = result._geometry_column_name
+        collections = result[[geom_col]][is_collection]
+
+        exploded = collections.reset_index(drop=True).explode(index_parts=True)
+        exploded = exploded.reset_index(level=0)
+
+        orig_num_geoms_exploded = exploded.shape[0]
+        exploded.loc[~exploded.geom_type.isin(geom_types), geom_col] = None
+        num_dropped_collection = (
+            orig_num_geoms_exploded - exploded.geometry.isna().sum()
+        )
+
+        # level_0 created with above reset_index operation
+        # and represents the original geometry collections
+        # TODO avoiding dissolve to call union_all in this case could further
+        # improve performance (we only need to collect geometries in their
+        # respective Multi version)
+        dissolved = exploded.dissolve(by="level_0")
+        result.loc[is_collection, geom_col] = dissolved[geom_col].values
+    else:
+        num_dropped_collection = 0
+
+    # Now we filter all geometries (in theory we don't need to do this
+    # again for the rows handled above for GeometryCollections, but filtering
+    # them out is probably more expensive as simply including them when this
+    # is typically about only a few rows)
+    orig_num_geoms = result.shape[0]
+    result = result.loc[result.geom_type.isin(geom_types)]
+    num_dropped = orig_num_geoms - result.shape[0]
+
+    if (num_dropped > 0 or num_dropped_collection > 0) and keep_geom_type_warning:
+        warnings.warn(
+            "`keep_geom_type=True` in overlay resulted in "
+            f"{num_dropped + num_dropped_collection} dropped geometries of different "
+            "geometry types than df1 has. Set `keep_geom_type=False` to retain all "
+            "geometries",
+            UserWarning,
+            stacklevel=2,
+        )
+
     return result
