@@ -6,7 +6,15 @@ Bug fixes:
 
 - Properly support named aggregations over a geometry column in `GroupBy.agg` (#3368).
 - Support GeoDataFrame constructor receiving arguments to `geometry` which are not
-  (Geo)Series, but instead should be interpreted as column names (#3384).
+  (Geo)Series, but instead should be interpreted as column names, like Enums (#3384).
+- Fix regression where constructing a GeoSeries from a pd.Series with GeometryDtype values 
+  failed when `crs` was provided(#3383).
+
+Deprecations and compatibility notes:
+
+- The `GeoSeries.select` method wrapping the pandas `Series.select` method has been removed.
+  The upstream method no longer exists in all supported version of pandas (#3394).
+>>>>>>> upstream/main
 
 ## Version 1.0.1 (July 2, 2024)
 
