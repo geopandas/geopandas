@@ -310,6 +310,10 @@ def overlay(df1, df2, how="intersection", keep_geom_type=None, make_valid=True):
                 )
         return df
 
+    # Determine the geometry type before make_valid, as make_valid may change it
+    if keep_geom_type:
+        geom_type = df1.geom_type.iloc[0]
+
     df1 = _make_valid(df1)
     df2 = _make_valid(df2)
 
@@ -331,8 +335,6 @@ def overlay(df1, df2, how="intersection", keep_geom_type=None, make_valid=True):
             result.drop(["__idx1", "__idx2"], axis=1, inplace=True)
 
     if keep_geom_type:
-        geom_type = df1.geom_type.iloc[0]
-
         # First we filter the geometry types inside GeometryCollections objects
         # (e.g. GeometryCollection([polygon, point]) -> polygon)
         # we do this separately on only the relevant rows, as this is an expensive
