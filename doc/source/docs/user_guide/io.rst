@@ -27,7 +27,7 @@ without extra arguments, but for more help, type::
     import fiona; help(fiona.open)
 
 .. note::
-    For faster data reading, pass ``use_arrow=True`` when using the default pyogrio engine. This can be 2-4 times faster than the default reading behavior and works with all drivers.
+    For faster data reading, pass ``use_arrow=True`` when using the default pyogrio engine. This can be 2-4 times faster than the default reading behavior and works with all drivers. See `pyogrio.read_dataframe <https://pyogrio.readthedocs.io/en/latest/api.html#pyogrio.read_dataframe>`_ for full details.
 
     Note that this requires the ``pyarrow`` dependency to exist in your environment.
 
@@ -84,7 +84,9 @@ You can also read path objects::
 Using Arrow for faster reading
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-For faster data reading, pass ``use_arrow=True`` when using the default pyogrio engine. This can be 2-4 times faster than the default reading behavior and works with all drivers.
+For faster data reading, pass ``use_arrow=True`` when using the default pyogrio engine. This can be 2-4 times faster than the default reading behavior and works with all drivers. See `pyogrio.read_dataframe <https://pyogrio.readthedocs.io/en/latest/api.html#pyogrio.read_dataframe>`_ for full details.
+
+It is also possible to enable this by default by setting the environment variable ``PYOGRIO_USE_ARROW=1``?
 
 Note that this requires the ``pyarrow`` dependency to exist in your environment.
 
@@ -216,7 +218,7 @@ In addition, GeoDataFrames can be uploaded to `PostGIS <https://postgis.net/>`__
 by using the :meth:`geopandas.GeoDataFrame.to_postgis` method.
 
 .. note::
-    For faster data writing, pass ``use_arrow=True`` when using the default pyogrio engine. This can be 2-4 times faster than the default writing behavior and works with all drivers.
+    For faster data writing, pass ``use_arrow=True`` when using the default pyogrio engine. This can be 2-4 times faster than the default writing behavior and works with all drivers. See `pyogrio.write_dataframe <https://pyogrio.readthedocs.io/en/latest/api.html#pyogrio.write_dataframe>`_ for full details.
 
     Note that this requires the ``pyarrow`` dependency to exist in your environment.
 
