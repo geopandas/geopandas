@@ -855,7 +855,7 @@ class TestDataFrame:
         assert type(df) is pd.DataFrame
         assert "geometry" not in df
         assert_frame_equal(df, df_copy)
-        assert type(gf) is GeoDataFrame
+        assert isinstance(gf, GeoDataFrame)
         assert hasattr(gf, "geometry")
 
         # ensure mutating columns in gf doesn't update df
