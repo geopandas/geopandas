@@ -13,7 +13,7 @@ from urllib.parse import uses_netloc, uses_params, uses_relative
 
 import numpy as np
 import pandas as pd
-from pandas.api.types import is_integer_dtype
+from pandas.api.types import is_integer_dtype, is_object_dtype
 
 import shapely
 from shapely.geometry import mapping
@@ -761,7 +761,7 @@ def infer_schema(df):
     }
 
     def convert_type(column, in_type):
-        if in_type is object:
+        if is_object_dtype(in_type):
             return "str"
         if in_type.name.startswith("datetime64"):
             # numpy datetime type regardless of frequency
