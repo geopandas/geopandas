@@ -46,8 +46,8 @@ dev = [
     "pytest-cov",
     "pytest-xdist",
     "codecov",
-    "black",
     "pre-commit",
+    "ruff",
 ]
 
 
