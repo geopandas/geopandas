@@ -761,7 +761,7 @@ def infer_schema(df):
     }
 
     def convert_type(column, in_type):
-        if in_type == object:
+        if in_type is object:
             return "str"
         if in_type.name.startswith("datetime64"):
             # numpy datetime type regardless of frequency

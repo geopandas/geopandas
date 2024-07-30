@@ -95,9 +95,6 @@ filterwarnings = [
     "ignore:Cannot set the CRS, falling back to None:UserWarning:geopandas",
 ]
 
-[tool.black]
-line-length = 88
-
 [tool.ruff]
 line-length = 88
 extend-exclude = ["doc/*", "benchmarks/*", "versioneer.py", "geopandas/_version.py"]

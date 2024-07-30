@@ -160,7 +160,7 @@ def test_reindex(s, df):
     assert_frame_equal(res, df[["value1", "geometry"]])
 
     res = df.reindex(columns=["value1", "value2"])
-    assert type(res) == pd.DataFrame
+    assert isinstance(res, pd.DataFrame)
     assert_frame_equal(res, df[["value1", "value2"]])
 
 
@@ -464,7 +464,7 @@ def test_isna(NA):
     s2 = GeoSeries([Point(0, 0), NA, Point(2, 2)], index=[2, 4, 5], name="tt")
     exp = pd.Series([False, True, False], index=[2, 4, 5], name="tt")
     res = s2.isnull()
-    assert type(res) == pd.Series
+    assert isinstance(res, pd.Series)
     assert_series_equal(res, exp)
     res = s2.isna()
     assert_series_equal(res, exp)

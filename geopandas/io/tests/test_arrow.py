@@ -715,7 +715,7 @@ def test_feather_arrow_version(tmpdir, naturalearth_lowres):
 
 
 def test_fsspec_url(naturalearth_lowres):
-    fsspec = pytest.importorskip("fsspec")
+    _ = pytest.importorskip("fsspec")
     import fsspec.implementations.memory
 
     class MyMemoryFileSystem(fsspec.implementations.memory.MemoryFileSystem):
@@ -1020,7 +1020,6 @@ def test_read_parquet_geoarrow(geometry_type):
     ["point", "linestring", "polygon", "multipoint", "multilinestring", "multipolygon"],
 )
 def test_geoarrow_roundtrip(tmp_path, geometry_type):
-
     df = geopandas.read_parquet(
         DATA_PATH
         / "arrow"

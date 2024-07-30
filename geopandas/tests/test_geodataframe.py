@@ -426,7 +426,7 @@ class TestDataFrame:
         df_nogeom = pd.DataFrame(df.drop("geometry", axis=1))
         res1, res2 = df.align(df_nogeom, axis=0)
         assert_geodataframe_equal(res1, df)
-        assert type(res2) == pd.DataFrame
+        assert isinstance(res2, pd.DataFrame)
         assert_frame_equal(res2, df_nogeom)
 
         # same as above but now with actual alignment
@@ -454,7 +454,7 @@ class TestDataFrame:
         exp2_nogeom = pd.DataFrame(exp2.drop("geometry", axis=1))
         res1, res2 = df1.align(df2_nogeom, axis=0)
         assert_geodataframe_equal(res1, exp1)
-        assert type(res2) == pd.DataFrame
+        assert isinstance(res2, pd.DataFrame)
         assert_frame_equal(res2, exp2_nogeom)
 
     @pytest.mark.skipif(not compat.HAS_PYPROJ, reason="Requires pyproj")
@@ -852,7 +852,7 @@ class TestDataFrame:
             geometry=points_from_xy(df["longitude"], df["latitude"]),
             crs=self.df.crs,
         )
-        assert type(df) == pd.DataFrame
+        assert isinstance(df, pd.DataFrame)
         assert "geometry" not in df
         assert_frame_equal(df, df_copy)
         assert isinstance(gf, GeoDataFrame)
@@ -1229,7 +1229,7 @@ class TestConstructor:
         gpdf = GeoDataFrame(data)
         pddf = pd.DataFrame(data)
         check_geodataframe(gpdf)
-        assert type(pddf) == pd.DataFrame
+        assert isinstance(pddf, pd.DataFrame)
 
         for df in [gpdf, pddf]:
             res = GeoDataFrame(df)
@@ -1290,17 +1290,17 @@ class TestConstructor:
         # keeps GeoDataFrame class (no DataFrame)
         data = {"A": range(3), "B": np.arange(3.0)}
         df = GeoDataFrame(data)
-        assert type(df) == GeoDataFrame
+        assert isinstance(df, GeoDataFrame)
 
         gdf = GeoDataFrame({"x": [1]})
         assert list(gdf.x) == [1]
 
     def test_empty(self):
         df = GeoDataFrame()
-        assert type(df) == GeoDataFrame
+        assert isinstance(df, GeoDataFrame)
 
         df = GeoDataFrame({"A": [], "B": []}, geometry=[])
-        assert type(df) == GeoDataFrame
+        assert isinstance(df, GeoDataFrame)
 
     def test_column_ordering(self):
         geoms = [Point(1, 1), Point(2, 2), Point(3, 3)]

@@ -1399,7 +1399,6 @@ def test_option_io_engine(nybb_filename):
 
 @pytest.mark.skipif(pyogrio, reason="test for pyogrio not installed")
 def test_error_engine_unavailable_pyogrio(tmp_path, df_points, file_path):
-
     with pytest.raises(ImportError, match="the 'read_file' function requires"):
         geopandas.read_file(file_path, engine="pyogrio")
 
@@ -1409,7 +1408,6 @@ def test_error_engine_unavailable_pyogrio(tmp_path, df_points, file_path):
 
 @pytest.mark.skipif(fiona, reason="test for fiona not installed")
 def test_error_engine_unavailable_fiona(tmp_path, df_points, file_path):
-
     with pytest.raises(ImportError, match="the 'read_file' function requires"):
         geopandas.read_file(file_path, engine="fiona")
 

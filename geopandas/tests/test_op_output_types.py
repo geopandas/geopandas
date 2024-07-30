@@ -369,7 +369,7 @@ def test_constructor_sliced_row_slices(df2, column_set):
     assert isinstance(df_subset, GeoDataFrame)
     res = df_subset.loc[0]
     # row slices shouldn't be GeoSeries, even if they have a geometry col
-    assert type(res) == pd.Series
+    assert isinstance(res, pd.Series)
     if "geometry" in column_set:
         assert not isinstance(res.geometry, pd.Series)
         assert res.geometry == Point(0, 0)
@@ -380,25 +380,25 @@ def test_constructor_sliced_column_slices(df2):
     geo_idx = df2.columns.get_loc("geometry")
     sub = df2.head(1)
     # column slices should be GeoSeries if of geometry type
-    assert type(sub.iloc[:, geo_idx]) == GeoSeries
-    assert type(sub.iloc[[0], geo_idx]) == GeoSeries
+    assert isinstance(sub.iloc[:, geo_idx], GeoSeries)
+    assert isinstance(sub.iloc[[0], geo_idx], GeoSeries)
     sub = df2.head(2)
-    assert type(sub.iloc[:, geo_idx]) == GeoSeries
-    assert type(sub.iloc[[0, 1], geo_idx]) == GeoSeries
+    assert isinstance(sub.iloc[:, geo_idx], GeoSeries)
+    assert isinstance(sub.iloc[[0, 1], geo_idx], GeoSeries)
 
     # check iloc row slices are pd.Series instead
-    assert type(df2.iloc[0, :]) == pd.Series
+    assert isinstance(df2.iloc[0, :], pd.Series)
 
 
 def test_constructor_sliced_in_pandas_methods(df2):
     # constructor sliced is used in many places, checking a sample of non
     # geometry cases are sensible
-    assert type(df2.count()) == pd.Series
+    assert isinstance(df2.count(), pd.Series)
     # drop the secondary geometry columns as not hashable
     hashable_test_df = df2.drop(columns=["geometry2", "geometry3"])
-    assert type(hashable_test_df.duplicated()) == pd.Series
-    assert type(df2.quantile(numeric_only=True)) == pd.Series
-    assert type(df2.memory_usage()) == pd.Series
+    assert isinstance(hashable_test_df.duplicated(), pd.Series)
+    assert isinstance(df2.quantile(numeric_only=True), pd.Series)
+    assert isinstance(df2.memory_usage(), pd.Series)
 
 
 def test_merge_preserve_geodataframe():

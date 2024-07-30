@@ -17,8 +17,8 @@ dependencies:
     - fsspec
     - codecov
     # styling
-    - black
     - pre-commit
+    - ruff==0.5.5
 
     # optional
     - folium

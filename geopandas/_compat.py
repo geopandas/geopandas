@@ -48,9 +48,7 @@ def import_optional_dependency(name: str, extra: str = ""):
     module
     """
     msg = """Missing optional dependency '{name}'. {extra}  "
-        "Use pip or conda to install {name}.""".format(
-        name=name, extra=extra
-    )
+        "Use pip or conda to install {name}.""".format(name=name, extra=extra)
 
     if not isinstance(name, str):
         raise ValueError(

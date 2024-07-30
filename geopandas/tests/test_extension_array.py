@@ -335,7 +335,6 @@ class TestConstructors(extension_tests.BaseConstructorsTests):
 
 
 class TestReshaping(extension_tests.BaseReshapingTests):
-
     # NOTE: this test is copied from pandas/tests/extension/base/reshaping.py
     # because starting with pandas 3.0 the assert_frame_equal is strict regarding
     # the exact missing value (None vs NaN)
@@ -396,7 +395,7 @@ class TestReshaping(extension_tests.BaseReshapingTests):
 
             expected = obj_ser.unstack(level=level, fill_value=data.dtype.na_value)
             if obj == "series":
-                assert (expected.dtypes == object).all()
+                assert (expected.dtypes is object).all()
             # <------------ next line is added
             expected[expected.isna()] = None
             # ------------->
