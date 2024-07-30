@@ -46,7 +46,6 @@ Style
 
 - GeoPandas follows [the PEP 8
   standard](http://www.python.org/dev/peps/pep-0008/) and uses
-  [Black](https://black.readthedocs.io/en/stable/) and
   [ruff](https://beta.ruff.rs/docs/) to ensure a consistent
   code format throughout the project.
 
@@ -57,7 +56,7 @@ Style
   imports when necessary in tests.
 
 - You can set up [pre-commit hooks](https://pre-commit.com/) to
-  automatically run `black` and `ruff` when you make a git
+  automatically run `ruff` when you make a git
   commit. This can be done by installing `pre-commit`:
 
     $ python -m pip install pre-commit
@@ -67,7 +66,7 @@ Style
 
     $ pre-commit install
 
-  Then `black` and `ruff` will be run automatically each time you
+  Then `ruff` will be run automatically each time you
   commit changes. You can skip these checks with `git commit
   --no-verify`. You can also configure your local git clone to have
   `git blame` ignore the commits that introduced large formatting-only
