@@ -19,6 +19,7 @@ import operator
 
 import numpy as np
 import pandas as pd
+from pandas.api.types import is_object_dtype
 from pandas.tests.extension import base as extension_tests
 
 import shapely.geometry
@@ -395,7 +396,7 @@ class TestReshaping(extension_tests.BaseReshapingTests):
 
             expected = obj_ser.unstack(level=level, fill_value=data.dtype.na_value)
             if obj == "series":
-                assert all(isinstance(x, object) for x in expected.dtypes)
+                assert all(is_object_dtype(x) for x in expected.dtypes)
             # <------------ next line is added
             expected[expected.isna()] = None
             # ------------->
