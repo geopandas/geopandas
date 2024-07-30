@@ -713,7 +713,7 @@ class TestConstructor:
         )
         s = s.explode(index_parts=True)
         df = s.reset_index()
-        assert isinstance(df, GeoDataFrame)
+        assert type(df) is GeoDataFrame
         # name None -> 0, otherwise name preserved
         assert df.geometry.name == (name if name is not None else 0)
         assert df.crs == s.crs
@@ -723,7 +723,7 @@ class TestConstructor:
     def test_to_frame(self, name, crs):
         s = GeoSeries([Point(0, 0), Point(1, 1)], name=name, crs=crs)
         df = s.to_frame()
-        assert isinstance(df, GeoDataFrame)
+        assert type(df) is GeoDataFrame
         # name None -> 0, otherwise name preserved
         expected_name = name if name is not None else 0
         assert df.geometry.name == expected_name
@@ -732,7 +732,7 @@ class TestConstructor:
 
         # if name is provided to to_frame, it should override
         df2 = s.to_frame(name="geom")
-        assert isinstance(df, GeoDataFrame)
+        assert type(df) is GeoDataFrame
         assert df2.geometry.name == "geom"
         assert df2.crs == s.crs
 
