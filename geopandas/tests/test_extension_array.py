@@ -395,7 +395,7 @@ class TestReshaping(extension_tests.BaseReshapingTests):
 
             expected = obj_ser.unstack(level=level, fill_value=data.dtype.na_value)
             if obj == "series":
-                assert (expected.dtypes is object).all()
+                assert all(isinstance(x, object) for x in expected.dtypes)
             # <------------ next line is added
             expected[expected.isna()] = None
             # ------------->
