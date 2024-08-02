@@ -330,7 +330,7 @@ submitting code to run the check yourself::
 
    ruff format geopandas
    ruff check geopandas
-   git diff upstream/main -u -- "*.py" | ruff .
+   git diff upstream/main -u -- "*.py" | ruff check .
 
 to auto-format your code. Additionally, many editors have plugins that will
 apply ``ruff`` as you edit files.
