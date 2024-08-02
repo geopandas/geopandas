@@ -46,7 +46,7 @@ Style
 
 - GeoPandas follows [the PEP 8
   standard](http://www.python.org/dev/peps/pep-0008/) and uses
-  [ruff](https://beta.ruff.rs/docs/) to ensure a consistent
+  [ruff](https://docs.astral.sh/ruff/) to ensure a consistent
   code format throughout the project.
 
 - Imports should be grouped with standard library imports first,

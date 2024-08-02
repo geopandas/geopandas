@@ -32,7 +32,7 @@ In particular, when submitting a pull request:
   line of a docstring should be a standalone summary.  Parameters and
   return values should be documented explicitly.
 
-- Follow PEP 8 when possible. We use `ruff <https://beta.ruff.rs/docs/>`_
+- Follow PEP 8 when possible. We use `ruff <https://docs.astral.sh/ruff/>`_
   to ensure a consistent code format throughout the project. For more details
   see :ref:`below <contributing_style>`.
 
@@ -321,14 +321,15 @@ Style Guide & Linting
 ---------------------
 
 GeoPandas follows the `PEP8 <http://www.python.org/dev/peps/pep-0008/>`_
-standard and uses `ruff <https://beta.ruff.rs/docs/>`_ to ensure a consistent
+standard and uses `ruff <https://docs.astral.sh/ruff/>`_ to ensure a consistent
 code format throughout the project.
 
 Continuous Integration (GitHub Actions) will run those tools and
 report any stylistic errors in your code. Therefore, it is helpful before
 submitting code to run the check yourself::
 
-   ruff geopandas
+   ruff format geopandas
+   ruff check geopandas
    git diff upstream/main -u -- "*.py" | ruff .
 
 to auto-format your code. Additionally, many editors have plugins that will
