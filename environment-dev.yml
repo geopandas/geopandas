@@ -16,6 +16,7 @@ dependencies:
     - pytest-xdist
     - fsspec
     - codecov
+
     # styling
     - pre-commit
     - ruff==0.5.5
