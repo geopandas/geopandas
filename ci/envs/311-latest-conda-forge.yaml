@@ -32,8 +32,6 @@ dependencies:
   - pyarrow
   - geoarrow-pyarrow
   - fiona
+  - pyogrio
   # doctest testing
   - pytest-doctestplus
-  - pip
-  - pip:
-      - git+https://github.com/geopandas/pyogrio.git@main
