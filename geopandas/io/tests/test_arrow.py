@@ -466,7 +466,7 @@ def test_column_order(tmpdir, file_format, naturalearth_lowres):
     assert_geodataframe_equal(result, df[custom_column_order[1:]])
 
 
-@pytest.mark.parametrize("compression", ["snappy", "gzip", "brotli", None])
+@pytest.mark.parametrize("compression", ["snappy", "gzip", "brotli", "lz4", "zstd", None])
 def test_parquet_compression(compression, tmpdir, naturalearth_lowres):
     """Using compression options should not raise errors, and should
     return identical GeoDataFrame.
