@@ -1,5 +1,4 @@
 import warnings
-from packaging.version import Version
 from statistics import mean
 
 import numpy as np
@@ -274,27 +273,17 @@ def _explore(
         if not n_resample:
             return cm.get_cmap(_cmap)
         else:
-            if MPL_361:
-                return cm.get_cmap(_cmap).resampled(n_resample)(idx)
-            else:
-                return cm.get_cmap(_cmap, n_resample)(idx)
+            return cm.get_cmap(_cmap).resampled(n_resample)(idx)
 
     try:
         import re
 
         import branca as bc
         import folium
-        import matplotlib
         import matplotlib.pyplot as plt
         from mapclassify import classify
+        from matplotlib import colormaps as cm
         from matplotlib import colors
-
-        # isolate MPL version - GH#2596
-        MPL_361 = Version(matplotlib.__version__) >= Version("3.6.1")
-        if MPL_361:
-            from matplotlib import colormaps as cm
-        else:
-            from matplotlib import cm
 
     except (ImportError, ModuleNotFoundError):
         raise ImportError(

@@ -629,7 +629,7 @@ def test_read_file_geojson_string_path(engine):
             }
         ],
     }
-    df_read = read_file(json.dumps(features))
+    df_read = read_file(json.dumps(features), engine=engine)
     assert_geodataframe_equal(expected.set_crs("EPSG:4326"), df_read)
 
 

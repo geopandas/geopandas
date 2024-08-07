@@ -2,13 +2,13 @@ name: test
 channels:
   - defaults
 dependencies:
-  - python=3.9
+  - python=3.11
   # required
-  - pandas=1.5
+  - numpy
+  - pandas
   - shapely
   # - pyogrio # comes as 0.5.1
-  - numpy=1.23
-  - pyproj>=3.3.0
+  - pyproj>=3.4.0
   - geos
   - packaging
   # testing
@@ -25,6 +25,8 @@ dependencies:
   - pip:
       - pyogrio
       - geopy
-      - mapclassify==2.4.0
+      - mapclassify
       - pyarrow
+      - folium
+      - xyzservices
       - geodatasets
