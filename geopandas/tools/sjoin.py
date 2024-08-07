@@ -111,7 +111,11 @@ def sjoin(
 
     on_attribute = _maybe_make_list(on_attribute)
 
-    _basic_checks(left_df, right_df, how, lsuffix, rsuffix, on_attribute=on_attribute),
+    (
+        _basic_checks(
+            left_df, right_df, how, lsuffix, rsuffix, on_attribute=on_attribute
+        ),
+    )
 
     indices = _geom_predicate_query(
         left_df, right_df, predicate, distance, on_attribute=on_attribute

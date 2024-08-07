@@ -30,9 +30,7 @@ mods = blacklist & set(m.split('.')[0] for m in sys.modules)
 if mods:
     sys.stderr.write('err: geopandas should not import: {{}}'.format(', '.join(mods)))
     sys.exit(len(mods))
-""".format(
-        blacklist
-    )
+""".format(blacklist)
     call = [sys.executable, "-c", code]
     returncode = subprocess.run(call, check=False).returncode
     assert returncode == 0

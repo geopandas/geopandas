@@ -338,7 +338,8 @@ def test_dissolve_multi_agg(nybb_polydf, merged_shapes):
     merged_shapes[("BoroCode", "max")] = [5, 2]
     merged_shapes[("BoroName", "count")] = [3, 2]
 
-    with warnings.catch_warnings(record=True) as record:
+    with warnings.catch_warnings():
+        warnings.simplefilter(action="error")
         test = nybb_polydf.dissolve(
             by="manhattan_bronx",
             aggfunc={
@@ -346,8 +347,8 @@ def test_dissolve_multi_agg(nybb_polydf, merged_shapes):
                 "BoroName": "count",
             },
         )
+
     assert_geodataframe_equal(test, merged_shapes)
-    assert len(record) == 0
 
 
 def test_coverage_dissolve(nybb_polydf):

@@ -894,7 +894,6 @@ def _get_bbox_encoding_column_name(geo_metadata):
 
 
 def _get_non_bbox_columns(schema, geo_metadata):
-
     bbox_column_name = _get_bbox_encoding_column_name(geo_metadata)
     columns = schema.names
     if bbox_column_name in columns:

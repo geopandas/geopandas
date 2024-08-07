@@ -19,6 +19,7 @@ import operator
 
 import numpy as np
 import pandas as pd
+from pandas.api.types import is_object_dtype
 from pandas.tests.extension import base as extension_tests
 
 import shapely.geometry
@@ -335,7 +336,6 @@ class TestConstructors(extension_tests.BaseConstructorsTests):
 
 
 class TestReshaping(extension_tests.BaseReshapingTests):
-
     # NOTE: this test is copied from pandas/tests/extension/base/reshaping.py
     # because starting with pandas 3.0 the assert_frame_equal is strict regarding
     # the exact missing value (None vs NaN)
@@ -396,7 +396,7 @@ class TestReshaping(extension_tests.BaseReshapingTests):
 
             expected = obj_ser.unstack(level=level, fill_value=data.dtype.na_value)
             if obj == "series":
-                assert (expected.dtypes == object).all()
+                assert all(is_object_dtype(x) for x in expected.dtypes)
             # <------------ next line is added
             expected[expected.isna()] = None
             # ------------->
