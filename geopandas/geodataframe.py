@@ -1327,7 +1327,7 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
             If ``False``, the index(es) will not be written to the file.
             If ``None``, the index(ex) will be included as columns in the file
             output except `RangeIndex` which is stored as metadata only.
-        compression : {'snappy', 'gzip', 'brotli', None}, default 'snappy'
+        compression : {'snappy', 'gzip', 'brotli', 'lz4', 'zstd', None}, default 'snappy'
             Name of the compression to use. Use ``None`` for no compression.
         geometry_encoding : {'WKB', 'geoarrow'}, default 'WKB'
             The encoding to use for the geometry columns. Defaults to "WKB"
