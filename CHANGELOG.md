@@ -7,6 +7,8 @@ Bug fixes:
 - Properly support named aggregations over a geometry column in `GroupBy.agg` (#3368).
 - Fix regression where constructing a GeoSeries from a pd.Series with GeometryDtype values 
   failed when `crs` was provided(#3383).
+- Fix regression where `overlay` with `keep_geom_type` returns wrong results if the
+  input contains invalid geometries (#3395).
 
 Deprecations and compatibility notes:
 
