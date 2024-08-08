@@ -204,7 +204,11 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             if hasattr(geometry, "name") and geometry.name not in ("geometry", None):
                 # __init__ always creates geometry col named "geometry"
                 # rename as `set_geometry` respects the given series name
-                geometry = geometry.rename("geometry")
+                try:
+                    geometry = geometry.rename("geometry")
+                except AttributeError:
+                    # May be StrEnum object, which has name() but not rename()
+                    pass
 
             self.set_geometry(geometry, inplace=True, crs=crs)
 
