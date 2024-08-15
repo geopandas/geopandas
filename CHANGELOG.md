@@ -5,6 +5,8 @@
 Bug fixes:
 
 - Properly support named aggregations over a geometry column in `GroupBy.agg` (#3368).
+- Support GeoDataFrame constructor receiving arguments to `geometry` which are not
+  (Geo)Series, but instead should be interpreted as column names, like Enums (#3384).
 - Fix regression where constructing a GeoSeries from a pd.Series with GeometryDtype values 
   failed when `crs` was provided(#3383).
 
