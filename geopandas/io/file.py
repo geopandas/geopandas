@@ -228,9 +228,9 @@ def _read_file(
         Keyword args to be passed to the engine, and can be used to write
         to multi-layer data, store data within archives (zip files), etc.
         In case of the "pyogrio" engine, the keyword arguments are passed to
-        `pyogrio.write_dataframe`. In case of the "fiona" engine, the keyword
+        `pyogrio.read_dataframe`. In case of the "fiona" engine, the keyword
         arguments are passed to fiona.open`. For more information on possible
-        keywords, type: ``import pyogrio; help(pyogrio.write_dataframe)``.
+        keywords, type: ``import pyogrio; help(pyogrio.read_dataframe)``.
 
 
     Examples
@@ -481,7 +481,7 @@ def _read_file_pyogrio(path_or_bytes, bbox=None, mask=None, rows=None, **kwargs)
 
     if bbox is not None:
         if isinstance(bbox, (GeoDataFrame, GeoSeries)):
-            crs = pyogrio.read_info(path_or_bytes).get("crs")
+            crs = pyogrio.read_info(path_or_bytes, layer=kwargs.get("layer")).get("crs")
             if isinstance(path_or_bytes, IOBase):
                 path_or_bytes.seek(0)
 
@@ -494,7 +494,7 @@ def _read_file_pyogrio(path_or_bytes, bbox=None, mask=None, rows=None, **kwargs)
     if mask is not None:
         # NOTE: mask cannot be used at same time as bbox keyword
         if isinstance(mask, (GeoDataFrame, GeoSeries)):
-            crs = pyogrio.read_info(path_or_bytes).get("crs")
+            crs = pyogrio.read_info(path_or_bytes, layer=kwargs.get("layer")).get("crs")
             if isinstance(path_or_bytes, IOBase):
                 path_or_bytes.seek(0)
 
@@ -526,7 +526,7 @@ def _read_file_pyogrio(path_or_bytes, bbox=None, mask=None, rows=None, **kwargs)
             stacklevel=3,
         )
         ignore_fields = kwargs.pop("ignore_fields")
-        fields = pyogrio.read_info(path_or_bytes)["fields"]
+        fields = pyogrio.read_info(path_or_bytes, layer=kwargs.get("layer"))["fields"]
         include_fields = [col for col in fields if col not in ignore_fields]
         kwargs["columns"] = include_fields
     elif "include_fields" in kwargs:

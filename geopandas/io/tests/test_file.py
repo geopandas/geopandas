@@ -5,6 +5,7 @@ import os
 import pathlib
 import shutil
 import tempfile
+import warnings
 from collections import OrderedDict
 from packaging.version import Version
 
@@ -1073,6 +1074,31 @@ def test_read_file_mask_gdf_mismatched_crs(df_nybb, engine, nybb_filename):
     filtered_df_shape = filtered_df.shape
     assert full_df_shape != filtered_df_shape
     assert filtered_df_shape == (2, 5)
+
+
+@pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not installed")
+def test_read_file_multi_layer_with_layer_arg_no_warning(tmp_path, engine):
+    # While reading a file with multiple layers, if the layer is properly
+    # specified, a "Specify layer" warning should not be emitted
+    data1 = {"geometry": [Point(1, 2), Point(2, 1)]}
+    gdf = geopandas.GeoDataFrame(data1, crs="EPSG:4326")
+    file_path = tmp_path / "out.gpkg"
+    gdf.to_file(file_path, layer="layer1", engine=engine)
+    gdf.to_file(file_path, layer="layer2", engine=engine)
+
+    with warnings.catch_warnings(record=True) as captured:
+        warnings.simplefilter("always")
+        read_file(file_path, bbox=gdf, layer="layer1", engine=engine)
+        read_file(file_path, mask=gdf, layer="layer1", engine=engine)
+        specify_layer_warnings = [
+            warning
+            for warning in captured
+            if warning.category == UserWarning
+            and "specify layer parameter" in str(warning.message).lower()
+        ]
+        assert (
+            len(specify_layer_warnings) == 0
+        ), "'Specify layer parameter' warning was raised, but the layer was specified."
 
 
 def test_read_file_bbox_mask_not_allowed(engine, nybb_filename):
