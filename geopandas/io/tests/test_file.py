@@ -11,7 +11,6 @@ from packaging.version import Version
 
 import numpy as np
 import pandas as pd
-import pytz
 from pandas.api.types import is_datetime64_any_dtype
 
 from shapely.geometry import Point, Polygon, box, mapping
@@ -47,6 +46,7 @@ except ImportError:
     fiona = False
     FIONA_GE_19 = False
 
+pytz = pytest.importorskip("pytz")
 
 PYOGRIO_MARK = pytest.mark.skipif(not pyogrio, reason="pyogrio not installed")
 FIONA_MARK = pytest.mark.skipif(not fiona, reason="fiona not installed")
@@ -1425,7 +1425,6 @@ def test_option_io_engine(nybb_filename):
 
 @pytest.mark.skipif(pyogrio, reason="test for pyogrio not installed")
 def test_error_engine_unavailable_pyogrio(tmp_path, df_points, file_path):
-
     with pytest.raises(ImportError, match="the 'read_file' function requires"):
         geopandas.read_file(file_path, engine="pyogrio")
 
@@ -1435,7 +1434,6 @@ def test_error_engine_unavailable_pyogrio(tmp_path, df_points, file_path):
 
 @pytest.mark.skipif(fiona, reason="test for fiona not installed")
 def test_error_engine_unavailable_fiona(tmp_path, df_points, file_path):
-
     with pytest.raises(ImportError, match="the 'read_file' function requires"):
         geopandas.read_file(file_path, engine="fiona")
 
