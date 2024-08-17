@@ -54,6 +54,7 @@ GeoPandas makes it easy to create Choropleth maps (maps where the color of each 
     @savefig chicago_population.png
     chicago.plot(column="POP2010");
 
+You can also plot the index of a GeoDataFrame, by passing ``column=gdf.index.values`` (in this example ``column=chicago.index.values``).
 
 Creating a legend
 ~~~~~~~~~~~~~~~~~
