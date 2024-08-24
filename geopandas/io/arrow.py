@@ -169,7 +169,11 @@ def _create_metadata(
                 _remove_id_from_member_of_ensembles(crs)
 
         column_metadata[col] = {
-            "encoding": geometry_encoding[col] if geometry_encoding is not None and col in geometry_encoding else "WKB",
+            "encoding": (
+                geometry_encoding[col]
+                if geometry_encoding and col in geometry_encoding
+                else "WKB"
+            ),
             "crs": crs,
             geometry_types_name: geometry_types,
         }
