@@ -119,7 +119,7 @@ def _create_metadata(
     Parameters
     ----------
     df : GeoDataFrame
-    schema_version : {'0.1.0', '0.4.0', '1.0.0-beta.1', '1.0.0', None}
+    schema_version : {'0.1.0', '0.4.0', '1.0.0-beta.1', '1.0.0', '1.1.0', None}
         GeoParquet specification version; if not provided will default to
         latest supported version.
     write_covering_bbox : bool, default False
@@ -414,7 +414,7 @@ def _to_parquet(
         The encoding to use for the geometry columns. Defaults to "WKB"
         for maximum interoperability. Specify "geoarrow" to use one of the
         native GeoArrow-based single-geometry type encodings.
-    schema_version : {'0.1.0', '0.4.0', '1.0.0', None}
+    schema_version : {'0.1.0', '0.4.0', '1.0.0', '1.1.0', None}
         GeoParquet specification version; if not provided will default to
         latest supported version.
     write_covering_bbox : bool, default False
@@ -465,7 +465,7 @@ def _to_feather(df, path, index=None, compression=None, schema_version=None, **k
     compression : {'zstd', 'lz4', 'uncompressed'}, optional
         Name of the compression to use. Use ``"uncompressed"`` for no
         compression. By default uses LZ4 if available, otherwise uncompressed.
-    schema_version : {'0.1.0', '0.4.0', '1.0.0', None}
+    schema_version : {'0.1.0', '0.4.0', '1.0.0', '1.1.0', None}
         GeoParquet specification version for the metadata; if not provided
         will default to latest supported version.
     kwargs
@@ -793,7 +793,7 @@ def _read_feather(path, columns=None, **kwargs):
       columns, the first available geometry column will be set as the geometry
       column of the returned GeoDataFrame.
 
-    Supports versions 0.1.0, 0.4.0 and 1.0.0 of the GeoParquet
+    Supports versions 0.1.0, 0.4.0, 1.0.0 and 1.1.0 of the GeoParquet
     specification at: https://github.com/opengeospatial/geoparquet
 
     If 'crs' key is not present in the Feather metadata associated with the
