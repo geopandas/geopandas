@@ -122,6 +122,9 @@ def _create_metadata(
     schema_version : {'0.1.0', '0.4.0', '1.0.0-beta.1', '1.0.0', None}
         GeoParquet specification version; if not provided will default to
         latest supported version.
+    geometry_encoding : dict, default None
+        GeoParquet encoding per geometry column.
+        Defaults to "WKB" for columns that are not present in the dictionary.
     write_covering_bbox : bool, default False
         Writes the bounding box column for each row entry with column
         name 'bbox'. Writing a bbox column can be computationally
@@ -166,7 +169,7 @@ def _create_metadata(
                 _remove_id_from_member_of_ensembles(crs)
 
         column_metadata[col] = {
-            "encoding": geometry_encoding[col],
+            "encoding": geometry_encoding[col] if geometry_encoding is not None and col in geometry_encoding else "WKB",
             "crs": crs,
             geometry_types_name: geometry_types,
         }
