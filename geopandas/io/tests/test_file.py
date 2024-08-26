@@ -197,7 +197,14 @@ def test_to_file_bool(tmpdir, driver, ext, engine):
 
 TEST_DATE = datetime.datetime(2021, 11, 21, 1, 7, 43, 17500)
 eastern = zoneinfo.ZoneInfo("America/New_York")
-utc = datetime.timezone.utc
+if not PANDAS_GE_20:
+    import pytz  # required dep of pandas up to pandas 3.0
+
+    utc = pytz.utc
+else:
+    # from pandas 2.0, utc equality checks less stringent, forward compat with zoneinfo
+    utc = datetime.timezone.utc
+
 
 datetime_type_tests = (TEST_DATE, TEST_DATE.replace(tzinfo=eastern))
 
