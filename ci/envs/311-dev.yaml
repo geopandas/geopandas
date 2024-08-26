@@ -14,9 +14,10 @@ dependencies:
   - pytest-cov
   - pytest-xdist
   - fsspec
-  - pytz
+
   # optional
   #- geopy
+  #- pytz (optional only for pandas 3.0+)
   - SQLalchemy<2
   - libspatialite
   - pip
