@@ -18,7 +18,7 @@ from shapely.geometry import Point, Polygon, box, mapping
 
 import geopandas
 from geopandas import GeoDataFrame, read_file
-from geopandas._compat import HAS_PYPROJ, PANDAS_GE_20, PANDAS_GE_30
+from geopandas._compat import HAS_PYPROJ, PANDAS_GE_15, PANDAS_GE_20, PANDAS_GE_30
 from geopandas.io.file import _EXTENSION_TO_DRIVER, _detect_driver
 
 import pytest
@@ -196,6 +196,7 @@ def test_to_file_bool(tmpdir, driver, ext, engine):
 
 
 TEST_DATE = datetime.datetime(2021, 11, 21, 1, 7, 43, 17500)
+
 eastern = zoneinfo.ZoneInfo("America/New_York")
 if not PANDAS_GE_20:
     import pytz  # required dep of pandas up to pandas 3.0
@@ -205,8 +206,15 @@ else:
     # from pandas 2.0, utc equality checks less stringent, forward compat with zoneinfo
     utc = datetime.timezone.utc
 
+if not PANDAS_GE_15:
+    eastern = pytz.timezone("America/New_York")
+    test_date_eastern = eastern.localize(TEST_DATE)
+else:
+    eastern = zoneinfo.ZoneInfo("America/New_York")
+    test_date_eastern = TEST_DATE.replace(tzinfo=eastern)
 
-datetime_type_tests = (TEST_DATE, TEST_DATE.replace(tzinfo=eastern))
+
+datetime_type_tests = (TEST_DATE, test_date_eastern)
 
 
 @pytest.mark.filterwarnings(
