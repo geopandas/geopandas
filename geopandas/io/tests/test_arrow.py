@@ -94,6 +94,11 @@ def test_create_metadata(naturalearth_lowres):
     # specifying non-WKB encoding sets default schema to 1.1.0
     metadata = _create_metadata(df, geometry_encoding={"geometry": "point"})
     assert metadata["version"] == "1.1.0"
+    assert metadata["columns"]["geometry"]["encoding"] == "point"
+
+    # check that providing no geometry encoding defaults to WKB
+    metadata = _create_metadata(df)
+    assert metadata["columns"]["geometry"]["encoding"] == "WKB"
 
 
 def test_create_metadata_with_z_geometries():
