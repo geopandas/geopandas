@@ -68,7 +68,7 @@ def file_format(request):
 
 def test_create_metadata(naturalearth_lowres):
     df = read_file(naturalearth_lowres)
-    metadata = _create_metadata(df)
+    metadata = _create_metadata(df, geometry_encoding={"geometry": "WKB"})
 
     assert isinstance(metadata, dict)
     assert metadata["version"] == METADATA_VERSION
