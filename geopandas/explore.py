@@ -304,6 +304,14 @@ def _explore(
             "or 'pip install folium matplotlib mapclassify'."
         )
 
+    # check for minimum version of folium
+    if Version(folium.__version__) < Version("0.12.0"):
+        raise ImportError(
+            "The 'folium' package version must be at least 0.12.0, "
+            f"yours is {folium.__version__}. You can update it with "
+            "'conda update folium' or 'pip install -U folium'."
+        )
+
     # xyservices is an optional dependency
     try:
         import xyzservices
