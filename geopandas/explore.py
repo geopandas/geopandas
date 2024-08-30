@@ -303,12 +303,16 @@ def _explore(
         else:
             from matplotlib import cm
 
+        # check for minimum version of folium
+        if Version(folium.__version__) < Version("0.12.0"):
+            raise ImportError
+
     except (ImportError, ModuleNotFoundError):
         raise ImportError(
-            "The 'folium', 'matplotlib' and 'mapclassify' packages are required for "
-            "'explore()'. You can install them using "
-            "'conda install -c conda-forge folium matplotlib mapclassify' "
-            "or 'pip install folium matplotlib mapclassify'."
+            "The 'folium>=0.12', 'matplotlib' and 'mapclassify' packages "
+            "are required for 'explore()'. You can install them using "
+            "'conda install -c conda-forge \"folium>=0.12\" matplotlib mapclassify' "
+            "or 'pip install \"folium>=0.12\" matplotlib mapclassify'."
         )
 
     # xyservices is an optional dependency
