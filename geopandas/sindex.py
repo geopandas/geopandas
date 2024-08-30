@@ -324,7 +324,8 @@ class SpatialIndex:
                 dense[indices] = True
             else:
                 dense = np.zeros((len(self.geometries), len(geometry)), dtype=bool)
-                dense[*indices[::-1]] = True
+                tree, other = indices[::-1]
+                dense[tree, other] = True
             return dense
 
         if output_format == "indices":
