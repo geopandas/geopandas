@@ -77,47 +77,6 @@ def _binary_op(op, this, other, align, *args, **kwargs):
     return Series(data, index=index)
 
 
-def _binary_matrix_old(op, this, other, boolean=False):
-    """Binary matrix-wise operation that returns a Series"""
-    this = this.geometry
-    inp, res = other.sindex.query_bulk(this, predicate=op)
-
-    if boolean:
-        return Series(np.isin(np.arange(0, len(this)), inp), index=this.index)
-
-    unique, counts = np.unique(inp, return_counts=True)
-    values = np.split(res, np.cumsum(counts)[:-1])
-    indices = np.empty(len(this), dtype="object")
-    indices[unique] = values
-
-    return Series(indices, index=this.index)
-
-
-def _binary_matrix(op, this, other, sparse=True):
-    """Binary matrix-wise operation that returns a sparse or dense matrix"""
-    from sparse import COO
-
-    # from scipy.sparse import coo_matrix
-
-    this = this.geometry
-    this_idx, other_idx = other.sindex.query_bulk(this, predicate=op)
-
-    if sparse:
-        data = [True] * len(this_idx)
-
-        # sparse.COO
-        return COO([this_idx, other_idx], data, shape=(len(this), len(other)))
-
-        # scipy.sparse.COO
-        # return coo_matrix((data, (this_idx, other_idx)),
-        #                   shape=(len(this), len(other)),
-        #                   dtype=np.bool_)
-
-    dense = np.zeros(shape=(len(this), len(other)), dtype=np.bool_)
-    dense[this_idx, other_idx] = True
-    return dense
-
-
 def _delegate_property(op, this):
     # type: (str, GeoSeries) -> GeoSeries/Series
     a_this = GeometryArray(this.geometry.values)
