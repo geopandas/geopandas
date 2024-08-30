@@ -224,8 +224,8 @@ class SpatialIndex:
 
         indices = self._tree.query(geometry, predicate=predicate, **kwargs)
 
-        if output_format != "indices":
-            sort = True
+        # if output_format != "indices":
+        #     sort = True
 
         if sort:
             if indices.ndim == 1:
@@ -247,7 +247,7 @@ class SpatialIndex:
                 )
             return scipy.sparse.coo_array(
                 (np.ones(len(indices[0]), dtype=np.bool_), indices),
-                shape=(len(self.geometries), len(geometry)),
+                shape=(len(geometry), len(self.geometries)),
                 dtype=np.bool_,
             )
 
@@ -256,7 +256,7 @@ class SpatialIndex:
                 dense = np.zeros(len(self.geometries), dtype=bool)
                 dense[indices] = True
             else:
-                dense = np.zeros((len(self.geometries), len(geometry)), dtype=bool)
+                dense = np.zeros((len(geometry), len(self.geometries)), dtype=bool)
                 dense[*indices] = True
             return dense
 
