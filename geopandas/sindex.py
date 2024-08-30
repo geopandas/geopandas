@@ -80,7 +80,20 @@ class SpatialIndex:
             result.
         ``'sparse'``
             If the input geometry is a scalar, this returns a boolean scipy.sparse COO
-            array of shape (len(gs))
+            array of shape (len(tree), ) with boolean values marking whether the
+            bounding box of a geometry in the tree intersects a bounding box of a given
+            scalar. If the input geometry is an array_like, this returns a boolean
+            scipy.sparse COO array with shape (len(tree), n) with boolean values marking
+            whether the bounding box of a geometry in the tree intersects a bounding box
+            of a given scalar.
+        ``'dense'``
+            If the input geometry is a scalar, this returns a boolean numpy
+            array of shape (len(tree), ) with boolean values marking whether the
+            bounding box of a geometry in the tree intersects a bounding box of a given
+            scalar. If the input geometry is an array_like, this returns a boolean
+            numpy array with shape (len(tree), n) with boolean values marking
+            whether the bounding box of a geometry in the tree intersects a bounding box
+            of a given scalar.
 
         If a predicate is provided, the tree geometries are first queried based
         on the bounding box of the input geometry and then are further filtered
@@ -123,18 +136,48 @@ class SpatialIndex:
             Distances around each input geometry within which to query the tree for
             the 'dwithin' predicate. If array_like, shape must be broadcastable to shape
             of geometry. Required if ``predicate='dwithin'``.
+        output_format : {"indices", "sparse", "dense"}, default "indices"
+            Type of the output format representing the result of the query.
 
         Returns
         -------
-        ndarray with shape (n,) if geometry is a scalar
+        ndarray with shape (n,)
             Integer indices for matching geometries from the spatial index
-            tree geometries.
+            tree geometries.  If geometry is a scalar and ``output_format="indices"``.
 
         OR
 
-        ndarray with shape (2, n) if geometry is an array_like
+        ndarray with shape (2, n)
             The first subarray contains input geometry integer indices.
             The second subarray contains tree geometry integer indices.
+            If geometry is an array_like and ``output_format="indices"``.
+
+        OR
+
+        scipy.sparse COO array with shape (len(tree), )
+            Boolean array aligned with array of geometries in the tree.
+            If geometry is a scalar and ``output_format="sparse"``.
+
+        OR
+
+        scipy.sparse COO array with shape (len(tree), n)
+            Boolean array aligned with array of geometries in the tree along axis 0 and
+            with ``geometry`` along axis 1.
+            If geometry is a array_like and ``output_format="sparse"``.
+
+        OR
+
+        ndarray with shape (len(tree), )
+            Boolean array aligned with array of geometries in the tree.
+            If geometry is a scalar and ``output_format="dense"``.
+
+        OR
+
+        ndarray with shape (len(tree), n)
+            Boolean array aligned with array of geometries in the tree along axis 0 and
+            with ``geometry`` along axis 1.
+            If geometry is a array_like and ``output_format="dense"``.
+
 
         Examples
         --------
@@ -182,6 +225,32 @@ class SpatialIndex:
 
         >>> s.sindex.query(box(1, 1, 3, 3), predicate="dwithin", distance=2)
         array([0, 1, 2, 3, 4])
+
+        Returning boolean arrays:
+
+        >>> s.sindex.query(box(1, 1, 3, 3), output_format="sparse")
+        <COOrdinate sparse array of dtype 'bool'
+            with 3 stored elements and shape (10,)>
+
+        >>> s.sindex.query(box(1, 1, 3, 3), output_format="dense")
+        array([False,  True,  True,  True, False, False, False, False, False,
+               False])
+
+        >>> s.sindex.query(s2, output_format="sparse")
+        <COOrdinate sparse array of dtype 'bool'
+            with 5 stored elements and shape (10, 2)>
+
+        >>> s.sindex.query(s2, output_format="dense")
+        array([[False, False],
+               [False, False],
+               [ True, False],
+               [ True, False],
+               [ True, False],
+               [False,  True],
+               [False,  True],
+               [False, False],
+               [False, False],
+               [False, False]])
 
         Notes
         -----
@@ -246,8 +315,8 @@ class SpatialIndex:
                     dtype=np.bool_,
                 )
             return scipy.sparse.coo_array(
-                (np.ones(len(indices[0]), dtype=np.bool_), indices),
-                shape=(len(geometry), len(self.geometries)),
+                (np.ones(len(indices[0]), dtype=np.bool_), indices[::-1]),
+                shape=(len(self.geometries), len(geometry)),
                 dtype=np.bool_,
             )
 
@@ -256,8 +325,8 @@ class SpatialIndex:
                 dense = np.zeros(len(self.geometries), dtype=bool)
                 dense[indices] = True
             else:
-                dense = np.zeros((len(geometry), len(self.geometries)), dtype=bool)
-                dense[*indices] = True
+                dense = np.zeros((len(self.geometries), len(geometry)), dtype=bool)
+                dense[*indices[::-1]] = True
             return dense
 
         if output_format == "indices":
