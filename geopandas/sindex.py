@@ -332,7 +332,7 @@ class SpatialIndex:
             return indices
 
         raise ValueError(
-            "Invalid output_format: '{output_format}'. "
+            f"Invalid output_format: '{output_format}'. "
             "Use one of 'indices', 'sparse', 'dense'."
         )
 
