@@ -66,13 +66,21 @@ class SpatialIndex:
         and tree geometries where the bounding box of each input geometry
         intersects the bounding box of a tree geometry.
 
-        If the input geometry is a scalar, this returns an array of shape (n, ) with
-        the indices of the matching tree geometries.  If the input geometry is an
-        array_like, this returns an array with shape (2,n) where the subarrays
-        correspond to the indices of the input geometries and indices of the
-        tree geometries associated with each.  To generate an array of pairs of
-        input geometry index and tree geometry index, simply transpose the
-        result.
+        The result can be returned as an array of 'indices' or a boolean 'sparse' or
+        'dense' array. This can be controlled using the ``output_format`` keyword.
+        Options are as follows.
+
+        ``'indices'``
+            If the input geometry is a scalar, this returns an array of shape (n, ) with
+            the indices of the matching tree geometries.  If the input geometry is an
+            array_like, this returns an array with shape (2,n) where the subarrays
+            correspond to the indices of the input geometries and indices of the
+            tree geometries associated with each.  To generate an array of pairs of
+            input geometry index and tree geometry index, simply transpose the
+            result.
+        ``'sparse'``
+            If the input geometry is a scalar, this returns a boolean scipy.sparse COO
+            array of shape (len(gs))
 
         If a predicate is provided, the tree geometries are first queried based
         on the bounding box of the input geometry and then are further filtered
@@ -233,7 +241,7 @@ class SpatialIndex:
 
             if indices.ndim == 1:
                 return scipy.sparse.coo_array(
-                    (np.ones(len(indices), dtype=np.bool_), indices.reshape(-1, 1)),
+                    (np.ones(len(indices), dtype=np.bool_), indices.reshape(1, -1)),
                     shape=(len(self.geometries),),
                     dtype=np.bool_,
                 )
@@ -246,9 +254,10 @@ class SpatialIndex:
         if output_format == "dense":
             if indices.ndim == 1:
                 dense = np.zeros(len(self.geometries), dtype=bool)
+                dense[indices] = True
             else:
                 dense = np.zeros((len(self.geometries), len(geometry)), dtype=bool)
-            dense[indices] = True
+                dense[*indices] = True
             return dense
 
         if output_format == "indices":
