@@ -6,31 +6,30 @@
    import geopandas
 
 
-Managing Projections
-=========================================
+Projections
+===========
 
 
-Coordinate Reference Systems
+Coordinate reference systems
 -----------------------------
 
-The Coordinate Reference System (CRS) is important because the geometric shapes
+The coordinate reference system (CRS) is important because the geometric shapes
 in a GeoSeries or GeoDataFrame object are simply a collection of coordinates in
 an arbitrary space. A CRS tells Python how those coordinates relate to places on
 the Earth.
 
-You can find the codes for most commonly used projections from
-`www.spatialreference.org <https://spatialreference.org/>`_.
+For reference codes of the most commonly used projections, see `spatialreference.org <https://spatialreference.org/>`_.
 
 The same CRS can often be referred to in many ways. For example, one of the most
 commonly used CRS is the WGS84 latitude-longitude projection. This can be
 referred to using the authority code ``"EPSG:4326"``.
 
-*geopandas* can accept anything accepted by :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`:
+GeoPandas can accept anything accepted by :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`:
 
 - CRS WKT string
 - An authority string (i.e. "epsg:4326")
 - An EPSG integer code (i.e. 4326)
-- A ``pyproj.CRS``
+- A :class:`pyproj.CRS <pyproj.crs.CRS>`
 - An object with a to_wkt method.
 - PROJ string
 - Dictionary of PROJ parameters
@@ -39,10 +38,9 @@ referred to using the authority code ``"EPSG:4326"``.
 
 For reference, a few very common projections and their EPSG codes:
 
-* WGS84 Latitude/Longitude: ``"EPSG:4326"``
-* UTM Zones (North): ``"EPSG:32633"``
-* UTM Zones (South): ``"EPSG:32733"``
-
+* WGS84 Latitude/Longitude: EPSG:4326
+* UTM Zones (North): EPSG:32633
+* UTM Zones (South): EPSG:32733
 
 What is the best format to store the CRS information?
 -----------------------------------------------------
@@ -50,19 +48,19 @@ What is the best format to store the CRS information?
 Generally, WKT or SRID's are preferred over PROJ strings as they can contain more information about a given CRS.
 Conversions between WKT and PROJ strings will in most cases cause a loss of information, potentially leading to erroneous transformations. If possible WKT2 should be used.
 
-For more details, see https://proj.org/faq.html#what-is-the-best-format-for-describing-coordinate-reference-systems
+For more details, see `What is the best format for describing coordinate reference systems <https://proj.org/faq.html#what-is-the-best-format-for-describing-coordinate-reference-systems>`_.
 
 
-Setting a Projection
+Setting a projection
 ----------------------
 
 There are two relevant operations for projections: setting a projection and re-projecting.
 
-Setting a projection may be necessary when for some reason *geopandas* has coordinate data (x-y values), but no information about how those coordinates refer to locations in the real world. Setting a projection is how one tells *geopandas* how to interpret coordinates. If no CRS is set, *geopandas* geometry operations will still work, but coordinate transformations will not be possible and exported files may not be interpreted correctly by other software.
+Setting a projection may be necessary when for some reason GeoPandas has coordinate data (x-y values), but no information about how those coordinates refer to locations in the real world. Setting a projection is how one tells GeoPandas how to interpret coordinates. If no CRS is set, GeoPandas geometry operations will still work, but coordinate transformations will not be possible and exported files may not be interpreted correctly by other software.
 
 Be aware that **most of the time** you don't have to set a projection. Data loaded from a reputable source (using the :func:`geopandas.read_file()` command) *should* always include projection information. You can see an objects current CRS through the :attr:`GeoSeries.crs` attribute.
 
-From time to time, however, you may get data that does not include a projection. In this situation, you have to set the CRS so *geopandas* knows how to interpret the coordinates.
+From time to time, however, you may get data that does not include a projection. In this situation, you have to set the CRS so GeoPandas knows how to interpret the coordinates.
 
 For example, if you convert a spreadsheet of latitudes and longitudes into a
 GeoSeries by hand, you would set the projection by passing the WGS84
@@ -75,31 +73,32 @@ the :attr:`GeoSeries.crs` attribute):
     my_geoseries = my_geoseries.set_crs(epsg=4326)
 
 
-Re-Projecting
+Re-projecting
 ----------------
 
-Re-projecting is the process of changing the representation of locations from one coordinate system to another. All projections of locations on the Earth into a two-dimensional plane `are distortions <https://en.wikipedia.org/wiki/Map_projection#Which_projection_is_best.3F>`_, the projection that is best for your application may be different from the projection associated with the data you import. In these cases, data can be re-projected using the :meth:`GeoDataFrame.to_crs` command:
+Re-projecting is the process of changing the representation of locations from one coordinate system to another. All projections of locations on the Earth into a two-dimensional plane have distortions. See `Which projection is best <https://en.wikipedia.org/wiki/Map_projection#Which_projection_is_best.3F>`_ for more information. The projection that is best for your application may be different from the projection associated with the data you import. In these cases, data can be re-projected using the :meth:`GeoDataFrame.to_crs` command:
 
 .. ipython:: python
 
+    import geodatasets
+
     # load example data
-    world = geopandas.read_file(geopandas.datasets.get_path('naturalearth_lowres'))
+    usa = geopandas.read_file(geodatasets.get_path('geoda.natregimes'))
 
     # Check original projection
-    # (it's Platte Carre! x-y are long and lat)
-    world.crs
+    # (it's Plate Carrée! x-y are long and lat)
+    usa.crs
 
     # Visualize
-    ax = world.plot()
-    @savefig world_starting.png
+    ax = usa.plot()
+    @savefig usa_starting.png
     ax.set_title("WGS84 (lat/lon)");
 
-    # Reproject to Mercator (after dropping Antartica)
-    world = world[(world.name != "Antarctica") & (world.name != "Fr. S. Antarctic Lands")]
-    world = world.to_crs("EPSG:3395") # world.to_crs(epsg=3395) would also work
-    ax = world.plot()
-    @savefig world_reproj.png
-    ax.set_title("Mercator");
+    # Reproject to Albers contiguous USA
+    usa = usa.to_crs("ESRI:102003")
+    ax = usa.plot()
+    @savefig usa_reproj.png
+    ax.set_title("NAD 1983 Albers contiguous USA");
 
 
 Projection for multiple geometry columns
@@ -109,8 +108,8 @@ GeoPandas 0.8 implements support for different projections assigned to different
 columns of the same GeoDataFrame. The projection is now stored together with geometries per column (directly
 on the GeometryArray level).
 
-Note that if GeometryArray has assigned projection, it is preferred over the
-projection passed to GeoSeries or GeoDataFrame during the creation:
+Note that if GeometryArray has an assigned projection, it cannot be overridden by an another inconsistent
+projection during the creation of a GeoSeries or GeoDataFrame:
 
 .. code-block:: python
 
@@ -121,18 +120,12 @@ projection passed to GeoSeries or GeoDataFrame during the creation:
    - Lat[north]: Geodetic latitude (degree)
    - Lon[east]: Geodetic longitude (degree)
    ...
-   >>> GeoSeries(array, crs=3395).crs  # crs=3395 is ignored as array already has CRS
-   FutureWarning: CRS mismatch between CRS of the passed geometries and 'crs'. Use 'GeoDataFrame.set_crs(crs, allow_override=True)' to overwrite CRS or 'GeoDataFrame.to_crs(crs)' to reproject geometries. CRS mismatch will raise an error in the future versions of GeoPandas.
+   >>> GeoSeries(array, crs=4326)  # crs=4326 is okay, as it matches the existing CRS
+   >>> GeoSeries(array, crs=3395)  # crs=3395 is forbidden as array already has CRS
+   ValueError: CRS mismatch between CRS of the passed geometries and 'crs'. Use 'GeoSeries.set_crs(crs, allow_override=True)' to overwrite CRS or 'GeoSeries.to_crs(crs)' to reproject geometries.
        GeoSeries(array, crs=3395).crs
 
-   <Geographic 2D CRS: EPSG:4326>
-   Name: WGS 84
-   Axis Info [ellipsoidal]:
-   - Lat[north]: Geodetic latitude (degree)
-   - Lon[east]: Geodetic longitude (degree)
-   ...
-
-If you want to overwrite projection, you can then assign it to the GeoSeries
+If you want to overwrite the projection, you can then assign it to the GeoSeries
 manually or re-project geometries to the target projection using either
 ``GeoSeries.set_crs(epsg=3395, allow_override=True)`` or
 ``GeoSeries.to_crs(epsg=3395)``.
@@ -145,7 +138,7 @@ Upgrading to GeoPandas 0.7 with pyproj > 2.2 and PROJ > 6
 ---------------------------------------------------------
 
 Starting with GeoPandas 0.7, the `.crs` attribute of a GeoSeries or GeoDataFrame
-stores the CRS information as a ``pyproj.CRS``, and no longer as a proj4 string
+stores the CRS information as a :class:`pyproj.CRS <pyproj.crs.CRS>`, and no longer as a proj4 string
 or dict.
 
 Before, you might have seen this:
@@ -172,11 +165,11 @@ while now you will see something like this:
 This gives a better user interface and integrates improvements from pyproj and
 PROJ 6, but might also require some changes in your code. See `this blogpost
 <https://jorisvandenbossche.github.io/blog/2020/02/11/geopandas-pyproj-crs/>`__
-for some more background, and the subsections below cover different possible
+for some more information. The subsections below cover different possible
 migration issues.
 
-See the `pyproj docs <https://pyproj4.github.io/pyproj/stable/>`__ for more on
-the ``pyproj.CRS`` object.
+See the `pyproj documentation <https://pyproj4.github.io/pyproj/stable/>`__ for more on
+the :class:`pyproj.CRS <pyproj.crs.CRS>` object.
 
 Importing data from files
 ^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -187,7 +180,7 @@ yields a proper CRS:
 
 .. ipython:: python
 
-   df = geopandas.read_file(geopandas.datasets.get_path('naturalearth_lowres'))
+   df = geopandas.read_file(geodatasets.get_path('naturalearth.land'))
    df.crs
 
 However, in certain cases (with older CRS formats), the resulting CRS object
@@ -234,19 +227,17 @@ The above will now raise a deprecation warning from pyproj, and instead of the
 Although a full proj4 string is not deprecated (as opposed to the "init" string
 above), it is still recommended to change it with an EPSG code if possible.
 
-For example, instead of:
+For example, *if* you know the EPSG code for the projection you are using, instead of:
 
 .. code-block:: python
 
    gdf.crs = "+proj=laea +lat_0=45 +lon_0=-100 +x_0=0 +y_0=0 +a=6370997 +b=6370997 +units=m +no_defs"
 
-we recommend to do:
+this is recommended:
 
 .. code-block:: python
 
    gdf.crs = "EPSG:2163"
-
-*if* you know the EPSG code for the projection you are using.
 
 One possible way to find out the EPSG code is using pyproj for this:
 
@@ -260,18 +251,18 @@ One possible way to find out the EPSG code is using pyproj for this:
 (you might need to set the ``min_confidence`` keyword of ``to_epsg`` to a lower
 value if the match is not perfect)
 
-Further, on websites such as `spatialreference.org <https://spatialreference.org/>`__
-and `epsg.io <https://epsg.io/>`__ the descriptions of many CRS can be found
+Further, on websites such as `Spatial Reference <https://spatialreference.org/>`__
+and `epsg.org <https://epsg.org/>`__ the descriptions of many CRS can be found
 including their EPSG codes and proj4 string definitions.
 
 **Other formats**
 
 Next to the EPSG code mentioned above, there are also other ways to specify the
-CRS: an actual ``pyproj.CRS`` object, a WKT string, a PROJ JSON string, etc.
-Anything that is accepted by ``pyproj.CRS.from_user_input`` can by specified
+CRS: an actual :class:`pyproj.CRS <pyproj.crs.CRS>` object, a WKT string, a PROJ JSON string, etc.
+Anything that is accepted by :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>` can by specified
 to the ``crs`` keyword/attribute in GeoPandas.
 
-Also compatible CRS objects, such as from the ``rasterio`` package, can be
+Also compatible CRS objects, such as from the :mod:`rasterio` package, can be
 passed directly to GeoPandas.
 
 
@@ -306,8 +297,8 @@ Why is it not properly recognizing my CRS?
 There are many file sources and CRS definitions out there "in the wild" that
 might have a CRS description that does not fully conform to the new standards of
 PROJ > 6 (proj4 strings, older WKT formats, ...). In such cases, you will get a
-``pyproj.CRS`` object that might not be fully what you expected (e.g. not equal
-to the expected EPSG code). Below we list a few possible cases.
+:class:`pyproj.CRS <pyproj.crs.CRS>` object that might not be fully what you expected (e.g. not equal
+to the expected EPSG code). Below is a list of a few possible cases.
 
 I get a "Bound CRS"?
 ~~~~~~~~~~~~~~~~~~~~
@@ -315,9 +306,9 @@ I get a "Bound CRS"?
 Some CRS definitions include a *"towgs84" clause*, which can give problems in
 recognizing the actual CRS.
 
-For example, both the proj4 and WKT representation for EPSG:31370 (the local
-projection used in Belgium) as can be found at `https://spatialreference.org/ref/epsg/31370/ <https://spatialreference.org/ref/epsg/31370/>`__
-include this. When taking one of those definitions from that site, and creating
+For example, both the proj4 and WKT representations for EPSG:31370 (the local
+projection used in Belgium) as can be found at `EPSG:31370 <https://spatialreference.org/ref/epsg/31370/>`__
+include this clause. When taking one of those definitions from that site, and creating
 a CRS object:
 
 .. code-block:: python
@@ -353,7 +344,7 @@ To get the actual underlying projected CRS, you can use the ``.source_crs`` attr
    Name: unknown
    ...
 
-Now we have a "Projected CRS", and now it will also recognize the correct EPSG
+Now you have a "Projected CRS", and now it will also recognize the correct EPSG
 number:
 
 .. code-block:: python
@@ -370,9 +361,9 @@ As mentioned above, pyproj now honours the axis order of the EPSG definition.
 However, proj4 strings or older WKT versions don't specify this correctly, which
 can be a reason that the CRS object is not equal to the expected EPSG code.
 
-Consider the following example of a Canadian projected CRS "EPSG:2953". When
+Consider the following example of a Canadian projected CRS EPSG:2953. When
 constructing the CRS object from the WKT string as provided on
-`https://epsg.io/2953 <https://epsg.io/2953>`__:
+`EPSG:2953 <https://spatialreference.org/ref/epsg/2953/>`__:
 
 .. code-block:: python
 
@@ -413,7 +404,7 @@ does not evaluate equal to this EPSG code:
    >>> crs == "EPSG:2953"
    False
 
-If we construct the CRS object from the EPSG code (truncated output):
+If you construct the CRS object from the EPSG code (truncated output):
 
 .. code-block:: python
 
@@ -447,7 +438,7 @@ The ``.crs`` attribute is no longer a dict or string
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 If you relied on the ``.crs`` object being a dict or a string, such code can
-be broken given it is now a ``pyproj.CRS`` object. But this object actually
+be broken given it is now a :class:`pyproj.CRS <pyproj.crs.CRS>` object. But this object actually
 provides a more robust interface to get information about the CRS.
 
 For example, if you used the following code to get the EPSG code:
@@ -457,7 +448,7 @@ For example, if you used the following code to get the EPSG code:
    gdf.crs['init']
 
 This will no longer work. To get the EPSG code from a ``crs`` object, you can use
-the ``to_epsg()`` method.
+the :meth:`~pyproj.crs.CRS.to_epsg` method.
 
 Or to check if a CRS was a certain UTM zone:
 
@@ -471,5 +462,5 @@ could be replaced with the more robust check (requires pyproj 2.6+):
 
    gdf.crs.utm_zone is not None
 
-And there are many other methods available on the ``pyproj.CRS`` class to get
+And there are many other methods available on the :class:`pyproj.CRS <pyproj.crs.CRS>` class to get
 information about the CRS.

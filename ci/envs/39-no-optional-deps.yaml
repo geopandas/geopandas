@@ -1,0 +1,15 @@
+name: test
+channels:
+  - conda-forge
+dependencies:
+  - python=3.9
+  # required
+  - pandas
+  - shapely
+  - pyogrio>=0.7.2
+  - pyproj
+  - packaging
+  # testing
+  - pytest
+  - pytest-cov
+  - pytest-xdist

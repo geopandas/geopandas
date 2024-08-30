@@ -1,0 +1,44 @@
+# See https://github.com/python-versioneer/python-versioneer
+name: "Update Versioneer"
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 6 1 * *" # 1st day of each month at 06:00 UTC
+  push:
+    paths:
+      - "setup.cfg"
+      - ".github/workflows/versioneer.yml"
+
+jobs:
+  versioneer:
+    runs-on: ubuntu-latest
+    if: github.repository == 'geopandas/geopandas'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+      - name: Install and run versioneer
+        run: |
+          pip install versioneer
+          versioneer install
+      - name: Run pre-commit
+        run: |
+          pip install pre-commit
+          pre-commit run --all-files
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          path: versioneer.py
+      - name: Ignore changes in __init__
+        run: |
+          git reset -- geopandas/__init__.py
+          git checkout -- geopandas/__init__.py
+      - name: Create PR
+        uses: peter-evans/create-pull-request@v6
+        with:
+          title: "Update Versioneer"
+          branch: update-versioneer
+          base: main
+          commit-message: "[Bot] Update Versioneer"
+
+          body: |
+            Automatic update of Versioneer by the `versioneer.yml` workflow.

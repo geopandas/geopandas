@@ -1,9 +1,19 @@
 version: 2
-formats: []
-conda:
-    environment: doc/environment.yml
+build:
+  os: ubuntu-22.04
+  tools:
+    python: mambaforge-latest
+  jobs:
+    post_checkout:
+      # we need the tags for versioneer to work
+      - git fetch origin --depth 150
+      - git fetch --tags
+    post_build:
+      - mamba list
 python:
-    version: 3
-    install:
-        - method: pip
-          path: .
+  install:
+  - method: pip
+    path: .
+conda:
+  environment: doc/environment.yml
+formats: []

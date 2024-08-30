@@ -12,7 +12,7 @@ Missing and empty geometries
 ============================
 
 GeoPandas supports, just like in pandas, the concept of missing values (NA
-or null values). But for geometry values, we have an additional concept of
+or null values). But for geometry values, there is an additional concept of
 empty geometries:
 
 - **Empty geometries** are actual geometry objects but that have no coordinates
@@ -22,7 +22,7 @@ empty geometries:
   a Shapely geometry object.
 - **Missing geometries** are unknown values in a GeoSeries. They will typically
   be propagated in operations (for example in calculations of the area or of
-  the intersection), or ignored in reductions such as ``unary_union``.
+  the intersection), or ignored in reductions such as :meth:`~GeoSeries.union_all`.
   The scalar object (when accessing a single element of a GeoSeries) is the
   Python ``None`` object.
 
@@ -67,7 +67,7 @@ you can use the :attr:`GeoSeries.is_empty` attribute:
 
     s.is_empty
 
-To get only the actual geometry objects that are neiter missing nor empty,
+To get only the actual geometry objects that are neither missing nor empty,
 you can use a combination of both:
 
 .. ipython:: python
@@ -160,7 +160,7 @@ Consider the following small toy example:
 
   .. code-block:: python
 
-    >>> s1.intersection(s2)                                                                                                                                                                                       
+    >>> s1.intersection(s2)
     0    GEOMETRYCOLLECTION EMPTY
     1                 POINT (1 1)
     2    GEOMETRYCOLLECTION EMPTY
@@ -169,7 +169,7 @@ Consider the following small toy example:
 * Starting from GeoPandas v0.6.0, :meth:`GeoSeries.align` will use missing
   values to fill in the non-aligned indices, to be consistent with the
   behaviour in pandas:
-  
+
   .. ipython:: python
 
     s1_aligned, s2_aligned = s1.align(s2)
@@ -181,5 +181,6 @@ Consider the following small toy example:
   depending on the spatial operation:
 
   .. ipython:: python
+    :okwarning:
 
     s1.intersection(s2)

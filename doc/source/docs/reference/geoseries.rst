@@ -22,13 +22,24 @@ General methods and attributes
    GeoSeries.total_bounds
    GeoSeries.length
    GeoSeries.geom_type
+   GeoSeries.offset_curve
    GeoSeries.distance
+   GeoSeries.hausdorff_distance
+   GeoSeries.frechet_distance
    GeoSeries.representative_point
    GeoSeries.exterior
    GeoSeries.interiors
+   GeoSeries.minimum_bounding_radius
    GeoSeries.x
    GeoSeries.y
    GeoSeries.z
+   GeoSeries.get_coordinates
+   GeoSeries.count_coordinates
+   GeoSeries.count_geometries
+   GeoSeries.count_interior_rings
+   GeoSeries.set_precision
+   GeoSeries.get_precision
+   GeoSeries.get_geometry
 
 Unary predicates
 ----------------
@@ -36,22 +47,27 @@ Unary predicates
 .. autosummary::
    :toctree: api/
 
+   GeoSeries.is_closed
    GeoSeries.is_empty
    GeoSeries.is_ring
    GeoSeries.is_simple
    GeoSeries.is_valid
+   GeoSeries.is_valid_reason
    GeoSeries.has_z
+   GeoSeries.is_ccw
 
 
-Binary Predicates
+Binary predicates
 -----------------
 
 .. autosummary::
    :toctree: api/
 
    GeoSeries.contains
+   GeoSeries.contains_properly
    GeoSeries.crosses
    GeoSeries.disjoint
+   GeoSeries.dwithin
    GeoSeries.geom_equals
    GeoSeries.geom_almost_equals
    GeoSeries.geom_equals_exact
@@ -61,31 +77,50 @@ Binary Predicates
    GeoSeries.within
    GeoSeries.covers
    GeoSeries.covered_by
+   GeoSeries.relate
+   GeoSeries.relate_pattern
 
 
-Set-theoretic Methods
+Set-theoretic methods
 ---------------------
 
 .. autosummary::
    :toctree: api/
 
+   GeoSeries.clip_by_rect
    GeoSeries.difference
    GeoSeries.intersection
    GeoSeries.symmetric_difference
    GeoSeries.union
 
-Constructive Methods and Attributes
+Constructive methods and attributes
 -----------------------------------
 
 .. autosummary::
    :toctree: api/
 
-   GeoSeries.buffer
    GeoSeries.boundary
+   GeoSeries.buffer
    GeoSeries.centroid
+   GeoSeries.concave_hull
    GeoSeries.convex_hull
    GeoSeries.envelope
+   GeoSeries.extract_unique_points
+   GeoSeries.force_2d
+   GeoSeries.force_3d
+   GeoSeries.make_valid
+   GeoSeries.minimum_bounding_circle
+   GeoSeries.minimum_clearance
+   GeoSeries.minimum_rotated_rectangle
+   GeoSeries.normalize
+   GeoSeries.remove_repeated_points
+   GeoSeries.reverse
+   GeoSeries.sample_points
+   GeoSeries.segmentize
+   GeoSeries.shortest_line
    GeoSeries.simplify
+   GeoSeries.snap
+   GeoSeries.transform
 
 Affine transformations
 ----------------------
@@ -99,14 +134,31 @@ Affine transformations
    GeoSeries.skew
    GeoSeries.translate
 
+Linestring operations
+---------------------
+
+.. autosummary::
+   :toctree: api/
+
+   GeoSeries.interpolate
+   GeoSeries.line_merge
+   GeoSeries.project
+   GeoSeries.shared_paths
+
 Aggregating and exploding
 -------------------------
 
 .. autosummary::
    :toctree: api/
 
-   GeoSeries.unary_union
+   GeoSeries.build_area
+   GeoSeries.delaunay_triangles
    GeoSeries.explode
+   GeoSeries.intersection_all
+   GeoSeries.polygonize
+   GeoSeries.union_all
+   GeoSeries.voronoi_polygons
+
 
 Serialization / IO / conversion
 -------------------------------
@@ -114,9 +166,12 @@ Serialization / IO / conversion
 .. autosummary::
    :toctree: api/
 
+   GeoSeries.from_arrow
    GeoSeries.from_file
    GeoSeries.from_wkb
    GeoSeries.from_wkt
+   GeoSeries.from_xy
+   GeoSeries.to_arrow
    GeoSeries.to_file
    GeoSeries.to_json
    GeoSeries.to_wkb
@@ -143,6 +198,14 @@ Missing values
    GeoSeries.isna
    GeoSeries.notna
 
+Overlay operations
+------------------
+
+.. autosummary::
+   :toctree: api/
+
+   GeoSeries.clip
+
 Plotting
 --------
 
@@ -150,6 +213,7 @@ Plotting
    :toctree: api/
 
    GeoSeries.plot
+   GeoSeries.explore
 
 
 Spatial index

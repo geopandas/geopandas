@@ -1,73 +1,21 @@
-#!/usr/bin/env/python
-"""Installation script
-
-"""
+#!/usr/bin/env python3
+"""Installation script."""
 
 import os
+import sys
 
-try:
-    from setuptools import setup
-except ImportError:
-    from distutils.core import setup
+from setuptools import setup
+
+# ensure the current directory is on sys.path so versioneer can be imported
+# when pip uses PEP 517/518 build rules.
+# https://github.com/python-versioneer/python-versioneer/issues/193
+sys.path.append(os.path.dirname(__file__))
 
 import versioneer
 
-LONG_DESCRIPTION = """GeoPandas is a project to add support for geographic data to
-`pandas`_ objects.
-
-The goal of GeoPandas is to make working with geospatial data in
-python easier. It combines the capabilities of `pandas`_ and `shapely`_,
-providing geospatial operations in pandas and a high-level interface
-to multiple geometries to shapely. GeoPandas enables you to easily do
-operations in python that would otherwise require a spatial database
-such as PostGIS.
-
-.. _pandas: http://pandas.pydata.org
-.. _shapely: http://shapely.readthedocs.io/en/latest/
-"""
-
-if os.environ.get("READTHEDOCS", False) == "True":
-    INSTALL_REQUIRES = []
-else:
-    INSTALL_REQUIRES = [
-        "pandas >= 0.24.0",
-        "shapely >= 1.6",
-        "fiona >= 1.8",
-        "pyproj >= 2.2.0",
-    ]
-
-# get all data dirs in the datasets module
-data_files = []
-
-for item in os.listdir("geopandas/datasets"):
-    if not item.startswith("__"):
-        if os.path.isdir(os.path.join("geopandas/datasets/", item)):
-            data_files.append(os.path.join("datasets", item, "*"))
-        elif item.endswith(".zip"):
-            data_files.append(os.path.join("datasets", item))
-
-data_files.append("tests/data/*")
-
-
+# see pyproject.toml for static project metadata
 setup(
-    name="geopandas",
+    name="geopandas",  # need by GitHub dependency graph
     version=versioneer.get_version(),
-    description="Geographic pandas extensions",
-    license="BSD",
-    author="GeoPandas contributors",
-    author_email="kjordahl@alum.mit.edu",
-    url="http://geopandas.org",
-    long_description=LONG_DESCRIPTION,
-    packages=[
-        "geopandas",
-        "geopandas.io",
-        "geopandas.tools",
-        "geopandas.datasets",
-        "geopandas.tests",
-        "geopandas.tools.tests",
-    ],
-    package_data={"geopandas": data_files},
-    python_requires=">=3.6",
-    install_requires=INSTALL_REQUIRES,
     cmdclass=versioneer.get_cmdclass(),
 )

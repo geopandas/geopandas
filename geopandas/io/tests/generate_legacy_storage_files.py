@@ -19,6 +19,7 @@ pickles and test versus the current data that is generated
 (with master). These are then compared.
 
 """
+
 import os
 import pickle
 import platform
@@ -26,12 +27,13 @@ import sys
 
 import pandas as pd
 
-import geopandas
 from shapely.geometry import Point
+
+import geopandas
 
 
 def create_pickle_data():
-    """ create the pickle data """
+    """create the pickle data"""
 
     # custom geometry column name
     gdf_the_geom = geopandas.GeoDataFrame(
@@ -45,7 +47,7 @@ def create_pickle_data():
         crs="EPSG:4326",
     )
 
-    return dict(gdf_the_geom=gdf_the_geom, gdf_crs=gdf_crs)
+    return {"gdf_the_geom": gdf_the_geom, "gdf_crs": gdf_crs}
 
 
 def platform_name():
@@ -80,7 +82,7 @@ def write_legacy_pickles(output_dir):
 
 def main():
     if len(sys.argv) != 3:
-        exit(
+        sys.exit(
             "Specify output directory and storage type: generate_legacy_"
             "storage_files.py <output_dir> <storage_type> "
         )
@@ -91,7 +93,7 @@ def main():
     if storage_type == "pickle":
         write_legacy_pickles(output_dir=output_dir)
     else:
-        exit("storage_type must be one of {'pickle'}")
+        sys.exit("storage_type must be one of {'pickle'}")
 
 
 if __name__ == "__main__":

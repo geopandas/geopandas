@@ -1,8 +1,6 @@
 import subprocess
 import sys
 
-from geopandas._compat import PANDAS_GE_10
-
 
 def test_no_additional_imports():
     # test that 'import geopandas' does not import any of the optional or
@@ -15,15 +13,13 @@ def test_no_additional_imports():
         # "fiona",
         # "matplotlib",  # matplotlib gets imported by pandas, see below
         "mapclassify",
-        # 'rtree',  # rtree actually gets imported if installed
         "sqlalchemy",
+        "psycopg",
         "psycopg2",
         "geopy",
         "geoalchemy2",
+        "matplotlib",
     }
-    if PANDAS_GE_10:
-        # pandas > 0.25 stopped importing matplotlib by default
-        blacklist.add("matplotlib")
 
     code = """
 import sys
@@ -38,5 +34,5 @@ if mods:
         blacklist
     )
     call = [sys.executable, "-c", code]
-    returncode = subprocess.run(call).returncode
+    returncode = subprocess.run(call, check=False).returncode
     assert returncode == 0

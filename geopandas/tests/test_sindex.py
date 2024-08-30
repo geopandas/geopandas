@@ -1,25 +1,25 @@
-import sys
+from math import sqrt
 
-from shapely.geometry import (
-    Point,
-    Polygon,
-    MultiPolygon,
-    box,
-    GeometryCollection,
-    LineString,
-)
-from numpy.testing import assert_array_equal
-
-import geopandas
-from geopandas import _compat as compat
-from geopandas import GeoDataFrame, GeoSeries, read_file, datasets
-
-import pytest
 import numpy as np
 
+import shapely
+from shapely.geometry import (
+    GeometryCollection,
+    LineString,
+    MultiPolygon,
+    Point,
+    Polygon,
+    box,
+)
 
-@pytest.mark.skipif(sys.platform.startswith("win"), reason="fails on AppVeyor")
-@pytest.mark.skip_no_sindex
+import geopandas
+from geopandas import GeoDataFrame, GeoSeries, read_file
+from geopandas import _compat as compat
+
+import pytest
+from numpy.testing import assert_array_equal
+
+
 class TestSeriesSindex:
     def test_has_sindex(self):
         """Test the has_sindex method."""
@@ -71,6 +71,8 @@ class TestSeriesSindex:
         s = GeoSeries([t1, t2, sq])
         assert s.sindex.size == 3
 
+    @pytest.mark.filterwarnings("ignore:The series.append method is deprecated")
+    @pytest.mark.skipif(compat.PANDAS_GE_20, reason="append removed in pandas 2.0")
     def test_polygons_append(self):
         t1 = Polygon([(0, 0), (1, 0), (1, 1)])
         t2 = Polygon([(0, 0), (1, 1), (0, 1)])
@@ -107,8 +109,6 @@ class TestSeriesSindex:
         assert sliced.sindex is not original_index
 
 
-@pytest.mark.skipif(sys.platform.startswith("win"), reason="fails on AppVeyor")
-@pytest.mark.skip_no_sindex
 class TestFrameSindex:
     def setup_method(self):
         data = {
@@ -161,25 +161,54 @@ class TestFrameSindex:
         geometry_col = self.df.geometry
         assert geometry_col.sindex is original_index
 
-    @pytest.mark.skipif(
-        not compat.PANDAS_GE_10, reason="Column selection returns a copy on pd<=1.0.0"
-    )
     def test_rebuild_on_multiple_col_selection(self):
         """Selecting a subset of columns preserves the index."""
         original_index = self.df.sindex
-        # Selecting a subset of columns preserves the index
+        # Selecting a subset of columns preserves the index for pandas < 2.0
+        # with pandas 2.0, the column is now copied, losing the index. But
+        # with pandas >= 3.0 and Copy-on-Write this is preserved again
         subset1 = self.df[["geom", "A"]]
-        assert subset1.sindex is original_index
+        if compat.PANDAS_GE_20 and not compat.PANDAS_GE_30:
+            assert subset1.sindex is not original_index
+        else:
+            assert subset1.sindex is original_index
         subset2 = self.df[["A", "geom"]]
-        assert subset2.sindex is original_index
+        if compat.PANDAS_GE_20 and not compat.PANDAS_GE_30:
+            assert subset2.sindex is not original_index
+        else:
+            assert subset2.sindex is original_index
+
+    def test_rebuild_on_update_inplace(self):
+        gdf = self.df.copy()
+        old_sindex = gdf.sindex
+        # sorting in place
+        gdf.sort_values("A", ascending=False, inplace=True)
+        # spatial index should be invalidated
+        assert not gdf.has_sindex
+        new_sindex = gdf.sindex
+        # and should be different
+        assert new_sindex is not old_sindex
+
+        # sorting should still have happened though
+        assert gdf.index.tolist() == [4, 3, 2, 1, 0]
+
+    def test_update_inplace_no_rebuild(self):
+        gdf = self.df.copy()
+        old_sindex = gdf.sindex
+        gdf.rename(columns={"A": "AA"}, inplace=True)
+        # a rename shouldn't invalidate the index
+        assert gdf.has_sindex
+        # and the "new" should be the same
+        new_sindex = gdf.sindex
+        assert old_sindex is new_sindex
 
 
-# Skip to accommodate Shapely geometries being unhashable
+# Skip to accommodate Shapely geometries being unhashable # TODO unskip?
 @pytest.mark.skip
+@pytest.mark.usefixtures("_setup_class_nybb_filename")
 class TestJoinSindex:
     def setup_method(self):
-        nybb_filename = geopandas.datasets.get_path("nybb")
-        self.boros = read_file(nybb_filename)
+        self.boros = read_file(self.nybb_filename)
 
     def test_merge_geo(self):
         # First check that we gets hits from the boros frame.
@@ -212,8 +241,7 @@ class TestJoinSindex:
         assert res == ["Bronx", "Queens"]
 
 
-@pytest.mark.skip_no_sindex
-class TestPygeosInterface:
+class TestShapelyInterface:
     def setup_method(self):
         data = {
             "geom": [Point(x, y) for x, y in zip(range(5), range(5))]
@@ -240,15 +268,9 @@ class TestPygeosInterface:
     @pytest.mark.parametrize("test_geom", ((-1, -1, -0.5), -0.5, None, Point(0, 0)))
     def test_intersection_invalid_bounds_tuple(self, test_geom):
         """Tests the `intersection` method with invalid inputs."""
-        if compat.USE_PYGEOS:
-            with pytest.raises(TypeError):
-                # we raise a useful TypeError
-                self.df.sindex.intersection(test_geom)
-        else:
-            with pytest.raises((TypeError, Exception)):
-                # catch a general exception
-                # rtree raises an RTreeError which we need to catch
-                self.df.sindex.intersection(test_geom)
+        with pytest.raises(TypeError):
+            # we raise a useful TypeError
+            self.df.sindex.intersection(test_geom)
 
     # ------------------------------ `query` tests ------------------------------ #
     @pytest.mark.parametrize(
@@ -359,6 +381,108 @@ class TestPygeosInterface:
         with pytest.raises(TypeError):
             self.df.sindex.query("notavalidgeom")
 
+    @pytest.mark.skipif(not compat.GEOS_GE_310, reason="Requires GEOS 3.10")
+    @pytest.mark.parametrize(
+        "distance, test_geom, expected",
+        (
+            # bounds don't intersect and not within distance=0
+            (
+                0,
+                box(9.0, 9.0, 9.9, 9.9),
+                [],
+            ),
+            # bounds don't intersect but is within distance=1
+            (
+                1,
+                box(9.0, 9.0, 9.9, 9.9),
+                [5],
+            ),
+            # within 1-D absolute distance in both axes, but not euclidean distance
+            (
+                0.5,
+                Point(0.5, 0.5),
+                [],
+            ),
+            # same as before but within euclidean distance
+            (
+                sqrt(2 * 0.5**2) + 1e-9,
+                Point(0.5, 0.5),
+                [0, 1],
+            ),
+            # less than euclidean distance between points, multi-object
+            (
+                sqrt(2) - 1e-9,
+                [
+                    Polygon([(0, 0), (1, 0), (1, 1)]),
+                    Polygon([(1, 1), (2, 1), (2, 2)]),
+                ],  # multi-object test
+                [[0, 0, 1, 1], [0, 1, 1, 2]],
+            ),
+            # more than euclidean distance between points, multi-object
+            (
+                sqrt(2) + 1e-9,
+                [
+                    Polygon([(0, 0), (1, 0), (1, 1)]),
+                    Polygon([(1, 1), (2, 1), (2, 2)]),
+                ],
+                [[0, 0, 0, 1, 1, 1, 1], [0, 1, 2, 0, 1, 2, 3]],
+            ),
+            # distance is array-like, broadcastable to geometry
+            (
+                [2, 10],
+                [Point(0.5, 0.5), Point(1, 1)],
+                [[0, 0, 1, 1, 1, 1, 1], [0, 1, 0, 1, 2, 3, 4]],
+            ),
+        ),
+    )
+    def test_query_dwithin(self, distance, test_geom, expected):
+        """Tests the `query` method with predicates that require keyword arguments."""
+        res = self.df.sindex.query(test_geom, predicate="dwithin", distance=distance)
+        assert_array_equal(res, expected)
+
+    @pytest.mark.skipif(not compat.GEOS_GE_310, reason="Requires GEOS 3.10")
+    def test_dwithin_no_distance(self):
+        """Tests the `query` method with keyword arguments that are
+        invalid for certain predicates."""
+        with pytest.raises(
+            ValueError, match="'distance' parameter is required for 'dwithin' predicate"
+        ):
+            self.df.sindex.query(Point(0, 0), predicate="dwithin")
+
+    @pytest.mark.parametrize(
+        "predicate",
+        [
+            None,
+            "contains",
+            "contains_properly",
+            "covered_by",
+            "covers",
+            "crosses",
+            "intersects",
+            "overlaps",
+            "touches",
+            "within",
+        ],
+    )
+    def test_query_distance_invalid(self, predicate):
+        """Tests the `query` method with keyword arguments that are
+        invalid for certain predicates."""
+        msg = "'distance' parameter is only supported in combination with 'dwithin'"
+        with pytest.raises(ValueError, match=msg):
+            self.df.sindex.query(Point(0, 0), predicate=predicate, distance=0)
+
+    @pytest.mark.skipif(
+        compat.GEOS_GE_310, reason="Test for 'dwithin'-incompatible versions of GEOS"
+    )
+    def test_dwithin_requirements(self):
+        """Tests whether a ValueError is raised when trying to use dwithin with
+        incompatible versions of shapely or pyGEOS
+        """
+        with pytest.raises(
+            ValueError, match="predicate = 'dwithin' requires GEOS >= 3.10.0"
+        ):
+            self.df.sindex.query(Point(0, 0), predicate="dwithin", distance=0)
+
     @pytest.mark.parametrize(
         "test_geom, expected_value",
         [
@@ -405,13 +529,8 @@ class TestPygeosInterface:
         )
         expected = [0, 1, 2]
 
-        # pass through GeoSeries to have GeoPandas
-        # determine if it should use shapely or pygeos geometry objects
-        tree_df = geopandas.GeoDataFrame(geometry=tree_polys)
-        test_df = geopandas.GeoDataFrame(geometry=test_polys)
-
-        test_geo = test_df.geometry.values.data[0]
-        res = tree_df.sindex.query(test_geo, sort=sort)
+        test_geo = test_polys.values[0]
+        res = tree_polys.sindex.query(test_geo, sort=sort)
 
         # asserting the same elements
         assert sorted(res) == sorted(expected)
@@ -529,15 +648,12 @@ class TestPygeosInterface:
         ),
     )
     def test_query_bulk(self, predicate, test_geom, expected):
-        """Tests the `query_bulk` method with valid
+        """Tests the `query` method with valid
         inputs and valid predicates.
         """
-        # pass through GeoSeries to have GeoPandas
-        # determine if it should use shapely or pygeos geometry objects
-        test_geom = geopandas.GeoSeries(
-            [box(*geom) for geom in test_geom], index=range(len(test_geom))
+        res = self.df.sindex.query(
+            [box(*geom) for geom in test_geom], predicate=predicate
         )
-        res = self.df.sindex.query_bulk(test_geom, predicate=predicate)
         assert_array_equal(res, expected)
 
     @pytest.mark.parametrize(
@@ -552,40 +668,32 @@ class TestPygeosInterface:
         ],
     )
     def test_query_bulk_empty_geometry(self, test_geoms, expected_value):
-        """Tests the `query_bulk` method with an empty geometry."""
-        # pass through GeoSeries to have GeoPandas
-        # determine if it should use shapely or pygeos geometry objects
-        # note: for this test, test_geoms (note plural) is a list already
-        test_geoms = geopandas.GeoSeries(test_geoms, index=range(len(test_geoms)))
-        res = self.df.sindex.query_bulk(test_geoms)
+        """Tests the `query` method with an empty geometries."""
+        res = self.df.sindex.query(test_geoms)
         assert_array_equal(res, expected_value)
 
     def test_query_bulk_empty_input_array(self):
-        """Tests the `query_bulk` method with an empty input array."""
+        """Tests the `query` method with an empty input array."""
         test_array = np.array([], dtype=object)
         expected_value = [[], []]
-        res = self.df.sindex.query_bulk(test_array)
+        res = self.df.sindex.query(test_array)
         assert_array_equal(res, expected_value)
 
     def test_query_bulk_invalid_input_geometry(self):
         """
-        Tests the `query_bulk` method with invalid input for the `geometry` parameter.
+        Tests the `query` method with invalid input for the `geometry` parameter.
         """
         test_array = "notanarray"
         with pytest.raises(TypeError):
-            self.df.sindex.query_bulk(test_array)
+            self.df.sindex.query(test_array)
 
     def test_query_bulk_invalid_predicate(self):
-        """Tests the `query_bulk` method with invalid predicates."""
+        """Tests the `query` method with invalid predicates."""
         test_geom_bounds = (-1, -1, -0.5, -0.5)
         test_predicate = "test"
 
-        # pass through GeoSeries to have GeoPandas
-        # determine if it should use shapely or pygeos geometry objects
-        test_geom = geopandas.GeoSeries([box(*test_geom_bounds)], index=["0"])
-
         with pytest.raises(ValueError):
-            self.df.sindex.query_bulk(test_geom.geometry, predicate=test_predicate)
+            self.df.sindex.query([box(*test_geom_bounds)], predicate=test_predicate)
 
     @pytest.mark.parametrize(
         "predicate, test_geom, expected",
@@ -596,30 +704,29 @@ class TestPygeosInterface:
         ),
     )
     def test_query_bulk_input_type(self, predicate, test_geom, expected):
-        """Tests that query_bulk can accept a GeoSeries, GeometryArray or
+        """Tests that query can accept a GeoSeries, GeometryArray or
         numpy array.
         """
-        # pass through GeoSeries to have GeoPandas
-        # determine if it should use shapely or pygeos geometry objects
+        # pass through GeoSeries to test input type
         test_geom = geopandas.GeoSeries([box(*test_geom)], index=["0"])
 
         # test GeoSeries
-        res = self.df.sindex.query_bulk(test_geom, predicate=predicate)
+        res = self.df.sindex.query(test_geom, predicate=predicate)
         assert_array_equal(res, expected)
 
         # test GeometryArray
-        res = self.df.sindex.query_bulk(test_geom.geometry, predicate=predicate)
+        res = self.df.sindex.query(test_geom.geometry, predicate=predicate)
         assert_array_equal(res, expected)
-        res = self.df.sindex.query_bulk(test_geom.geometry.values, predicate=predicate)
+        res = self.df.sindex.query(test_geom.geometry.values, predicate=predicate)
         assert_array_equal(res, expected)
 
         # test numpy array
-        res = self.df.sindex.query_bulk(
-            test_geom.geometry.values.data, predicate=predicate
+        res = self.df.sindex.query(
+            test_geom.geometry.values.to_numpy(), predicate=predicate
         )
         assert_array_equal(res, expected)
-        res = self.df.sindex.query_bulk(
-            test_geom.geometry.values.data, predicate=predicate
+        res = self.df.sindex.query(
+            test_geom.geometry.values.to_numpy(), predicate=predicate
         )
         assert_array_equal(res, expected)
 
@@ -632,7 +739,7 @@ class TestPygeosInterface:
         ),
     )
     def test_query_bulk_sorting(self, sort, expected):
-        """Check that results from `query_bulk` don't depend
+        """Check that results from `query` don't depend
         on the order of geometries.
         """
         # these geometries come from a reported issue:
@@ -647,12 +754,7 @@ class TestPygeosInterface:
             ]
         )
 
-        # pass through GeoSeries to have GeoPandas
-        # determine if it should use shapely or pygeos geometry objects
-        tree_df = geopandas.GeoDataFrame(geometry=tree_polys)
-        test_df = geopandas.GeoDataFrame(geometry=test_polys)
-
-        res = tree_df.sindex.query_bulk(test_df.geometry, sort=sort)
+        res = tree_polys.sindex.query(test_polys, sort=sort)
 
         # asserting the same elements
         assert sorted(res[0]) == sorted(expected[0])
@@ -669,6 +771,141 @@ class TestPygeosInterface:
                     + "Got:\n {}\n".format(res.tolist())
                 )
             raise e
+
+    # ------------------------- `nearest` tests ------------------------- #
+    @pytest.mark.parametrize("return_all", [True, False])
+    @pytest.mark.parametrize(
+        "geometry,expected",
+        [
+            ([0.25, 0.25], [[0], [0]]),
+            ([0.75, 0.75], [[0], [1]]),
+        ],
+    )
+    def test_nearest_single(self, geometry, expected, return_all):
+        geoms = shapely.points(np.arange(10), np.arange(10))
+        df = geopandas.GeoDataFrame({"geometry": geoms})
+
+        p = Point(geometry)
+        res = df.sindex.nearest(p, return_all=return_all)
+        assert_array_equal(res, expected)
+
+        p = shapely.points(geometry)
+        res = df.sindex.nearest(p, return_all=return_all)
+        assert_array_equal(res, expected)
+
+    @pytest.mark.parametrize("return_all", [True, False])
+    @pytest.mark.parametrize(
+        "geometry,expected",
+        [
+            ([(1, 1), (0, 0)], [[0, 1], [1, 0]]),
+            ([(1, 1), (0.25, 1)], [[0, 1], [1, 1]]),
+        ],
+    )
+    def test_nearest_multi(self, geometry, expected, return_all):
+        geoms = shapely.points(np.arange(10), np.arange(10))
+        df = geopandas.GeoDataFrame({"geometry": geoms})
+
+        ps = [Point(p) for p in geometry]
+        res = df.sindex.nearest(ps, return_all=return_all)
+        assert_array_equal(res, expected)
+
+        ps = shapely.points(geometry)
+        res = df.sindex.nearest(ps, return_all=return_all)
+        assert_array_equal(res, expected)
+
+        s = geopandas.GeoSeries(ps)
+        res = df.sindex.nearest(s, return_all=return_all)
+        assert_array_equal(res, expected)
+
+        x, y = zip(*geometry)
+        ga = geopandas.points_from_xy(x, y)
+        res = df.sindex.nearest(ga, return_all=return_all)
+        assert_array_equal(res, expected)
+
+    @pytest.mark.parametrize("return_all", [True, False])
+    @pytest.mark.parametrize(
+        "geometry,expected",
+        [
+            (None, [[], []]),
+            ([None], [[], []]),
+        ],
+    )
+    def test_nearest_none(self, geometry, expected, return_all):
+        geoms = shapely.points(np.arange(10), np.arange(10))
+        df = geopandas.GeoDataFrame({"geometry": geoms})
+
+        res = df.sindex.nearest(geometry, return_all=return_all)
+        assert_array_equal(res, expected)
+
+    @pytest.mark.parametrize("return_distance", [True, False])
+    @pytest.mark.parametrize(
+        "return_all,max_distance,expected",
+        [
+            (True, None, ([[0, 0, 1], [0, 1, 5]], [sqrt(0.5), sqrt(0.5), sqrt(50)])),
+            (False, None, ([[0, 1], [0, 5]], [sqrt(0.5), sqrt(50)])),
+            (True, 1, ([[0, 0], [0, 1]], [sqrt(0.5), sqrt(0.5)])),
+            (False, 1, ([[0], [0]], [sqrt(0.5)])),
+        ],
+    )
+    def test_nearest_max_distance(
+        self, expected, max_distance, return_all, return_distance
+    ):
+        geoms = shapely.points(np.arange(10), np.arange(10))
+        df = geopandas.GeoDataFrame({"geometry": geoms})
+
+        ps = [Point(0.5, 0.5), Point(0, 10)]
+        res = df.sindex.nearest(
+            ps,
+            return_all=return_all,
+            max_distance=max_distance,
+            return_distance=return_distance,
+        )
+        if return_distance:
+            assert_array_equal(res[0], expected[0])
+            assert_array_equal(res[1], expected[1])
+        else:
+            assert_array_equal(res, expected[0])
+
+    @pytest.mark.parametrize("return_distance", [True, False])
+    @pytest.mark.parametrize(
+        "return_all,max_distance,exclusive,expected",
+        [
+            (False, None, False, ([[0, 1, 2, 3, 4], [0, 1, 2, 3, 4]], 5 * [0])),
+            (False, None, True, ([[0, 1, 2, 3, 4], [1, 0, 1, 2, 3]], 5 * [sqrt(2)])),
+            (True, None, False, ([[0, 1, 2, 3, 4], [0, 1, 2, 3, 4]], 5 * [0])),
+            (
+                True,
+                None,
+                True,
+                ([[0, 1, 1, 2, 2, 3, 3, 4], [1, 0, 2, 1, 3, 2, 4, 3]], 8 * [sqrt(2)]),
+            ),
+            (False, 1.1, True, ([[1, 2, 5], [5, 5, 1]], 3 * [1])),
+            (True, 1.1, True, ([[1, 2, 5, 5], [5, 5, 1, 2]], 4 * [1])),
+        ],
+    )
+    def test_nearest_exclusive(
+        self, expected, max_distance, return_all, return_distance, exclusive
+    ):
+        geoms = shapely.points(np.arange(5), np.arange(5))
+        if max_distance:
+            # add a non grid point
+            geoms = np.append(geoms, [Point(1, 2)])
+
+        df = geopandas.GeoDataFrame({"geometry": geoms})
+
+        ps = geoms
+        res = df.sindex.nearest(
+            ps,
+            return_all=return_all,
+            max_distance=max_distance,
+            return_distance=return_distance,
+            exclusive=exclusive,
+        )
+        if return_distance:
+            assert_array_equal(res[0], expected[0])
+            assert_array_equal(res[1], expected[1])
+        else:
+            assert_array_equal(res, expected[0])
 
     # --------------------------- misc tests ---------------------------- #
 
@@ -702,32 +939,21 @@ class TestPygeosInterface:
     @pytest.mark.parametrize(
         "predicate, expected_shape",
         [
-            (None, (2, 396)),
-            ("intersects", (2, 172)),
-            ("within", (2, 172)),
+            (None, (2, 471)),
+            ("intersects", (2, 213)),
+            ("within", (2, 213)),
             ("contains", (2, 0)),
             ("overlaps", (2, 0)),
             ("crosses", (2, 0)),
             ("touches", (2, 0)),
         ],
     )
-    def test_integration_natural_earth(self, predicate, expected_shape):
+    def test_integration_natural_earth(
+        self, predicate, expected_shape, naturalearth_lowres, naturalearth_cities
+    ):
         """Tests output sizes for the naturalearth datasets."""
-        world = read_file(datasets.get_path("naturalearth_lowres"))
-        capitals = read_file(datasets.get_path("naturalearth_cities"))
+        world = read_file(naturalearth_lowres)
+        capitals = read_file(naturalearth_cities)
 
-        res = world.sindex.query_bulk(capitals.geometry, predicate)
+        res = world.sindex.query(capitals.geometry, predicate)
         assert res.shape == expected_shape
-
-
-@pytest.mark.skipif(not compat.HAS_RTREE, reason="no rtree installed")
-def test_old_spatial_index_deprecated():
-    t1 = Polygon([(0, 0), (1, 0), (1, 1)])
-    t2 = Polygon([(0, 0), (1, 1), (0, 1)])
-
-    stream = ((i, item.bounds, None) for i, item in enumerate([t1, t2]))
-
-    with pytest.warns(FutureWarning):
-        idx = geopandas.sindex.SpatialIndex(stream)
-
-    assert list(idx.intersection((0, 0, 1, 1))) == [0, 1]

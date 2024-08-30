@@ -3,13 +3,14 @@ import pandas as pd
 from shapely.geometry import Point
 
 from geopandas import GeoDataFrame, GeoSeries
+from geopandas._compat import HAS_PYPROJ
 from geopandas.tools import geocode, reverse_geocode
 from geopandas.tools.geocoding import _prepare_geocode_result
 
+import pytest
+from geopandas.testing import assert_geodataframe_equal
 from geopandas.tests.util import assert_geoseries_equal, mock
 from pandas.testing import assert_series_equal
-from geopandas.testing import assert_geodataframe_equal
-import pytest
 
 geopy = pytest.importorskip("geopy")
 
@@ -23,13 +24,13 @@ class ForwardMock(mock.MagicMock):
     """
 
     def __init__(self, *args, **kwargs):
-        super(ForwardMock, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self._n = 0.0
 
     def __call__(self, *args, **kwargs):
         self.return_value = args[0], (self._n, self._n + 0.5)
         self._n += 1
-        return super(ForwardMock, self).__call__(*args, **kwargs)
+        return super().__call__(*args, **kwargs)
 
 
 class ReverseMock(mock.MagicMock):
@@ -41,13 +42,13 @@ class ReverseMock(mock.MagicMock):
     """
 
     def __init__(self, *args, **kwargs):
-        super(ReverseMock, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self._n = 0
 
     def __call__(self, *args, **kwargs):
         self.return_value = "address{0}".format(self._n), args[0]
         self._n += 1
-        return super(ReverseMock, self).__call__(*args, **kwargs)
+        return super().__call__(*args, **kwargs)
 
 
 @pytest.fixture
@@ -71,7 +72,8 @@ def test_prepare_result():
 
     df = _prepare_geocode_result(d)
     assert type(df) is GeoDataFrame
-    assert df.crs == "EPSG:4326"
+    if HAS_PYPROJ:
+        assert df.crs == "EPSG:4326"
     assert len(df) == 2
     assert "address" in df
 
@@ -93,25 +95,21 @@ def test_prepare_result_none():
 
     df = _prepare_geocode_result(d)
     assert type(df) is GeoDataFrame
-    assert df.crs == "EPSG:4326"
+    if HAS_PYPROJ:
+        assert df.crs == "EPSG:4326"
     assert len(df) == 2
     assert "address" in df
 
     row = df.loc["b"]
-    # The shapely.geometry.Point() is actually a GeometryCollection, and thus
-    # gets converted to that in conversion to pygeos. When converting back
-    # on access, you now get a GeometryCollection object instead of Point,
-    # which has no coords
-    # see https://github.com/Toblerity/Shapely/issues/742/#issuecomment-545296708
+
     # TODO we should probably replace this with a missing value instead of point?
-    # assert len(row["geometry"].coords) == 0
+    assert len(row["geometry"].coords) == 0
     assert row["geometry"].is_empty
     assert row["address"] is None
 
 
 @pytest.mark.parametrize("geocode_result", (None, (None, None)))
 def test_prepare_geocode_result_when_result_is(geocode_result):
-
     result = {0: geocode_result}
     expected_output = GeoDataFrame(
         {"geometry": [Point()], "address": [None]},
@@ -134,14 +132,14 @@ def test_bad_provider_reverse():
     from geopy.exc import GeocoderNotFound
 
     with pytest.raises(GeocoderNotFound):
-        reverse_geocode(["cambridge, ma"], "badprovider")
+        reverse_geocode([Point(0, 0)], "badprovider")
 
 
 def test_forward(locations, points):
-    from geopy.geocoders import GeocodeFarm
+    from geopy.geocoders import Photon
 
-    for provider in ["geocodefarm", GeocodeFarm]:
-        with mock.patch("geopy.geocoders.GeocodeFarm.geocode", ForwardMock()) as m:
+    for provider in ["photon", Photon]:
+        with mock.patch("geopy.geocoders.Photon.geocode", ForwardMock()) as m:
             g = geocode(locations, provider=provider, timeout=2)
             assert len(locations) == m.call_count
 
@@ -155,10 +153,10 @@ def test_forward(locations, points):
 
 
 def test_reverse(locations, points):
-    from geopy.geocoders import GeocodeFarm
+    from geopy.geocoders import Photon
 
-    for provider in ["geocodefarm", GeocodeFarm]:
-        with mock.patch("geopy.geocoders.GeocodeFarm.reverse", ReverseMock()) as m:
+    for provider in ["photon", Photon]:
+        with mock.patch("geopy.geocoders.Photon.reverse", ReverseMock()) as m:
             g = reverse_geocode(points, provider=provider, timeout=2)
             assert len(points) == m.call_count
 

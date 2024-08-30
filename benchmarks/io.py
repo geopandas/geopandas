@@ -44,7 +44,6 @@ format_dict = {
 
 
 class Bench:
-
     params = ["ESRI Shapefile", "GeoJSON", "GPKG", "Parquet", "Feather"]
     param_names = ["file_format"]
 
@@ -74,7 +73,6 @@ class Bench:
 
 
 class BenchFrame(Bench):
-
     params = ["ESRI Shapefile", "GeoJSON", "GPKG", "Parquet", "Feather"]
     param_names = ["file_format"]
 
@@ -88,7 +86,6 @@ class BenchFrame(Bench):
 
 
 class BenchSeries(Bench):
-
     params = ["ESRI Shapefile", "GeoJSON", "GPKG"]
     param_names = ["file_format"]
 
