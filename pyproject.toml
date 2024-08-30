@@ -40,6 +40,7 @@ all = [
     "folium",
     "GeoAlchemy2",
     "pyarrow>=8.0.0",
+    "scipy",
 ]
 dev = [
     "pytest>=3.1.0",
