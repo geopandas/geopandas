@@ -208,7 +208,7 @@ def _explore(
         Additional style for missing values:
 
         color : str
-            Color of NaN values. Defaults to ``None``, which uses Folium's default.
+            Color of missing values. Defaults to ``None``, which uses Folium's default.
         label : str (default "NaN")
             Legend entry for missing values.
     tooltip_kwds : dict (default {})
