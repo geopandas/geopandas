@@ -685,7 +685,8 @@ class TestShapelyInterface:
 
         if output_format != "indices":
             dense = np.zeros((len(self.df), len(test_geoms)), dtype=bool)
-            dense[*expected[::-1]] = True
+            tree, other = expected[::-1]
+            dense[tree, other] = True
 
         if output_format == "dense":
             res = self.df.sindex.query(
