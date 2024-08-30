@@ -54,10 +54,15 @@ class SpatialIndex:
         return PREDICATES
 
     def query(
-        self, geometry, predicate=None, sort=False, distance=None, output_format="tuple"
+        self,
+        geometry,
+        predicate=None,
+        sort=False,
+        distance=None,
+        output_format="indices",
     ):
         """
-        Return the integer indices of all combinations of each input geometry
+        Return all combinations of each input geometry
         and tree geometries where the bounding box of each input geometry
         intersects the bounding box of a tree geometry.
 
@@ -211,7 +216,7 @@ class SpatialIndex:
 
         indices = self._tree.query(geometry, predicate=predicate, **kwargs)
 
-        if output_format != "tuple":
+        if output_format != "indices":
             sort = True
 
         if sort:
@@ -224,23 +229,35 @@ class SpatialIndex:
                 indices = np.vstack((geo_idx[sort_indexer], tree_idx[sort_indexer]))
 
         if output_format == "sparse":
-            from scipy.sparse import coo_array
+            scipy = compat.import_optional_dependency("scipy")
 
-            return coo_array(
+            if indices.ndim == 1:
+                return scipy.sparse.coo_array(
+                    (np.ones(len(indices), dtype=np.bool_), indices.reshape(-1, 1)),
+                    shape=(len(self.geometries),),
+                    dtype=np.bool_,
+                )
+            return scipy.sparse.coo_array(
                 (np.ones(len(indices[0]), dtype=np.bool_), indices),
                 shape=(len(self.geometries), len(geometry)),
                 dtype=np.bool_,
             )
 
         if output_format == "dense":
-            dense = np.zeros((len(self.geometries), len(geometry)), dtype=bool)
+            if indices.ndim == 1:
+                dense = np.zeros(len(self.geometries), dtype=bool)
+            else:
+                dense = np.zeros((len(self.geometries), len(geometry)), dtype=bool)
             dense[indices] = True
             return dense
 
-        if output_format == "tuple":
+        if output_format == "indices":
             return indices
 
-        raise ValueError("Invalid output_format: {}".format(output_format))
+        raise ValueError(
+            "Invalid output_format: '{output_format}'. "
+            "Use one of 'indices', 'sparse', 'dense'."
+        )
 
     @staticmethod
     def _as_geometry_array(geometry):
