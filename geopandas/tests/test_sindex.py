@@ -19,6 +19,13 @@ from geopandas import _compat as compat
 import pytest
 from numpy.testing import assert_array_equal
 
+try:
+    from scipy.sparse import coo_array  # noqa: F401
+
+    HAS_SCIPY = True
+except ImportError:
+    HAS_SCIPY = False
+
 
 class TestSeriesSindex:
     def test_has_sindex(self):
@@ -273,6 +280,7 @@ class TestShapelyInterface:
             self.df.sindex.intersection(test_geom)
 
     # ------------------------------ `query` tests ------------------------------ #
+    @pytest.mark.parametrize("output_format", ("indices", "sparse", "dense"))
     @pytest.mark.parametrize(
         "predicate, test_geom, expected",
         (
@@ -371,10 +379,29 @@ class TestShapelyInterface:
             ),  # contains but does not contains_properly
         ),
     )
-    def test_query(self, predicate, test_geom, expected):
+    def test_query(self, predicate, test_geom, expected, output_format):
         """Tests the `query` method with valid inputs and valid predicates."""
         res = self.df.sindex.query(test_geom, predicate=predicate)
         assert_array_equal(res, expected)
+
+        if output_format != "indices":
+            dense = np.zeros(len(self.df), dtype=bool)
+            dense[expected] = True
+
+        if output_format == "dense":
+            res = self.df.sindex.query(
+                test_geom, predicate=predicate, output_format=output_format
+            )
+            assert_array_equal(res, dense)
+
+        elif output_format == "sparse":
+            if not HAS_SCIPY:
+                pytest.skip("scipy is required for sparse output")
+            else:
+                res = self.df.sindex.query(
+                    test_geom, predicate=predicate, output_format=output_format
+                )
+                assert_array_equal(res.todense(), dense)
 
     def test_query_invalid_geometry(self):
         """Tests the `query` method with invalid geometry."""
@@ -548,6 +575,7 @@ class TestShapelyInterface:
             raise e
 
     # ------------------------- `query_bulk` tests -------------------------- #
+    @pytest.mark.parametrize("output_format", ("indices", "sparse", "dense"))
     @pytest.mark.parametrize(
         "predicate, test_geom, expected",
         (
@@ -647,14 +675,32 @@ class TestShapelyInterface:
             ),  # contains but does not contains_properly
         ),
     )
-    def test_query_bulk(self, predicate, test_geom, expected):
+    def test_query_bulk(self, predicate, test_geom, expected, output_format):
         """Tests the `query` method with valid
         inputs and valid predicates.
         """
-        res = self.df.sindex.query(
-            [box(*geom) for geom in test_geom], predicate=predicate
-        )
+        test_geoms = [box(*geom) for geom in test_geom]
+        res = self.df.sindex.query(test_geoms, predicate=predicate)
         assert_array_equal(res, expected)
+
+        if output_format != "indices":
+            dense = np.zeros((len(self.df), len(test_geoms)), dtype=bool)
+            dense[*expected[::-1]] = True
+
+        if output_format == "dense":
+            res = self.df.sindex.query(
+                test_geoms, predicate=predicate, output_format=output_format
+            )
+            assert_array_equal(res, dense)
+
+        elif output_format == "sparse":
+            if not HAS_SCIPY:
+                pytest.skip("scipy is required for sparse output")
+            else:
+                res = self.df.sindex.query(
+                    test_geoms, predicate=predicate, output_format=output_format
+                )
+                assert_array_equal(res.todense(), dense)
 
     @pytest.mark.parametrize(
         "test_geoms, expected_value",

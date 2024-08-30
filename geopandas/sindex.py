@@ -132,6 +132,7 @@ class SpatialIndex:
             as the secondary key.
             If False, no additional sorting is applied (results are often
             sorted but there is no guarantee).
+            Applicable only if output_format="indices".
         distance : number or array_like, optional
             Distances around each input geometry within which to query the tree for
             the 'dwithin' predicate. If array_like, shape must be broadcastable to shape
@@ -293,10 +294,7 @@ class SpatialIndex:
 
         indices = self._tree.query(geometry, predicate=predicate, **kwargs)
 
-        # if output_format != "indices":
-        #     sort = True
-
-        if sort:
+        if output_format == "indices" and sort:
             if indices.ndim == 1:
                 indices = np.sort(indices)
             else:
