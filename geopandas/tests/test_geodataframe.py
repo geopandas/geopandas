@@ -1639,7 +1639,7 @@ def test_reduce_geometry_array():
     `geopandas.array.GeometryArray._reduce` issues a FutureWarning if
     the parameter `keepdims` is not set.
     `GeometryArray` inherits from `pandas.api.extensions.ExtensionArray`
-    and its `_reduce` is overiden in `GeometryArray`.
+    and its `_reduce` is overridden in `GeometryArray`.
     This warning is issued with pandas 2.2.2 (tested).
     """
     N = 10
