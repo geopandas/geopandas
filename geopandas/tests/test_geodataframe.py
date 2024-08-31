@@ -1647,7 +1647,7 @@ def test_reduce_geometry_array():
         [
             {"geometry": Point(x, y), "value1": x + y, "value2": x * y}
             for x, y in zip(range(N), range(N))
-            ]
-            )
+        ]
+    )
     mask = geodf["value1"].duplicated(keep=False)
     geodf[mask].dropna(subset=["geometry"])
