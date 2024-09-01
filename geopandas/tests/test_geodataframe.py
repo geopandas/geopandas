@@ -1629,3 +1629,17 @@ def test_set_geometry_supply_arraylike(dfs, geo_col_name):
         res4 = df.set_geometry(centroids, drop=True)
     assert res4.active_geometry_name == "centroids"
     assert geo_col_name in res4.columns
+
+
+@pytest.mark.filterwarnings("error::FutureWarning")
+def test_reduce_geometry_array():
+    """
+    Check for a FutureWarning.
+
+    `geopandas.array.GeometryArray._reduce` issues a FutureWarning if
+    the parameter `keepdims` is not set.
+    `GeometryArray` inherits from `pandas.api.extensions.ExtensionArray`
+    and its `_reduce` is overridden in `GeometryArray`.
+    This warning is issued with pandas 2.2.2 (tested).
+    """
+    GeoDataFrame({"geometry": []}).all()
