@@ -1642,12 +1642,4 @@ def test_reduce_geometry_array():
     and its `_reduce` is overridden in `GeometryArray`.
     This warning is issued with pandas 2.2.2 (tested).
     """
-    N = 10
-    geodf = GeoDataFrame(
-        [
-            {"geometry": Point(x, y), "value1": x + y, "value2": x * y}
-            for x, y in zip(range(N), range(N))
-        ]
-    )
-    mask = geodf["value1"].duplicated(keep=False)
-    geodf[mask].dropna(subset=["geometry"])
+    GeoDataFrame({"geometry": []}).all()
