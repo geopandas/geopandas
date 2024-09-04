@@ -1093,7 +1093,7 @@ def test_read_file_multi_layer_with_layer_arg_no_warning(tmp_path, engine):
         specify_layer_warnings = [
             warning
             for warning in captured
-            if warning.category == UserWarning
+            if warning.category is UserWarning
             and "specify layer parameter" in str(warning.message).lower()
         ]
         assert (
