@@ -278,11 +278,18 @@ def construct_geometry_array(
     # NOTE: this implementation returns a (field, array) pair so that it can set the
     # extension metadata on the field without instantiating extension types into the
     # global pyarrow registry
+
+    mask = shapely.is_missing(shapely_arr)
+    if len(shapely_arr) == 0 or mask.all():
+        raise NotImplementedError(
+            "Converting an empty or all-missing GeoDataFrame to the 'geoarrow' "
+            "encoding is not yet supported."
+        )
+
     geom_type, coords, offsets = shapely.to_ragged_array(
         shapely_arr, include_z=include_z
     )
 
-    mask = shapely.is_missing(shapely_arr)
     if mask.any():
         if (
             geom_type == GeometryType.POINT

@@ -14,6 +14,7 @@ dependencies:
   - pytest-cov
   - pytest-xdist
   - fsspec
+  - pytz
   # optional
   #- geopy
   - SQLalchemy<2

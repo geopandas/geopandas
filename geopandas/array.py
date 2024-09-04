@@ -1637,7 +1637,7 @@ class GeometryArray(ExtensionArray):
         data = np.concatenate([ga._data for ga in to_concat])
         return GeometryArray(data, crs=_get_common_crs(to_concat))
 
-    def _reduce(self, name, skipna=True, **kwargs):
+    def _reduce(self, name, skipna=True, keepdims=False, **kwargs):
         # including the base class version here (that raises by default)
         # because this was not yet defined in pandas 0.23
         if name in ("any", "all"):

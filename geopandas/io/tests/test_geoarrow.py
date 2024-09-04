@@ -373,6 +373,29 @@ def test_geoarrow_export_with_extension_types(geometry_type, dim):
         assert isinstance(result3["geometry"].type, pa.ExtensionType)
 
 
+def test_geoarrow_export_empty():
+    gdf_empty = GeoDataFrame(columns=["col", "geometry"], geometry="geometry")
+    gdf_all_missing = GeoDataFrame(
+        {"col": [1], "geometry": [None]}, geometry="geometry"
+    )
+
+    # no geometries to infer the geometry type -> raise error for now
+    with pytest.raises(NotImplementedError):
+        gdf_empty.to_arrow(geometry_encoding="geoarrow")
+
+    with pytest.raises(NotImplementedError):
+        gdf_all_missing.to_arrow(geometry_encoding="geoarrow")
+
+    # with WKB encoding it roundtrips fine
+    result = pa_table(gdf_empty.to_arrow(geometry_encoding="WKB"))
+    roundtripped = GeoDataFrame.from_arrow(result)
+    assert_geodataframe_equal(gdf_empty, roundtripped)
+
+    result = pa_table(gdf_all_missing.to_arrow(geometry_encoding="WKB"))
+    roundtripped = GeoDataFrame.from_arrow(result)
+    assert_geodataframe_equal(gdf_all_missing, roundtripped)
+
+
 @pytest.mark.skipif(
     Version(shapely.__version__) < Version("2.0.2"),
     reason="from_ragged_array failing with read-only array input",

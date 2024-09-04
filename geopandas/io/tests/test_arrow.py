@@ -94,6 +94,11 @@ def test_create_metadata(naturalearth_lowres):
     # specifying non-WKB encoding sets default schema to 1.1.0
     metadata = _create_metadata(df, geometry_encoding={"geometry": "point"})
     assert metadata["version"] == "1.1.0"
+    assert metadata["columns"]["geometry"]["encoding"] == "point"
+
+    # check that providing no geometry encoding defaults to WKB
+    metadata = _create_metadata(df)
+    assert metadata["columns"]["geometry"]["encoding"] == "WKB"
 
 
 def test_create_metadata_with_z_geometries():
@@ -466,7 +471,9 @@ def test_column_order(tmpdir, file_format, naturalearth_lowres):
     assert_geodataframe_equal(result, df[custom_column_order[1:]])
 
 
-@pytest.mark.parametrize("compression", ["snappy", "gzip", "brotli", None])
+@pytest.mark.parametrize(
+    "compression", ["snappy", "gzip", "brotli", "lz4", "zstd", None]
+)
 def test_parquet_compression(compression, tmpdir, naturalearth_lowres):
     """Using compression options should not raise errors, and should
     return identical GeoDataFrame.
