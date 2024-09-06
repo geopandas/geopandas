@@ -2,6 +2,7 @@ import json
 import os
 import shutil
 import tempfile
+from enum import Enum
 
 import numpy as np
 import pandas as pd
@@ -1489,6 +1490,19 @@ class TestConstructor:
         df[other_df.columns] = other_df
         assert_geodataframe_equal(df, expected)
 
+    def test_geometry_colname_enum(self):
+        # ensure that other classes to geometry arg in GeoDataFrame
+        # with `name` attribute are not assumed to be (Geo)Series
+        class Fruit(Enum):
+            apple = 1
+            pear = 2
+
+        df = pd.DataFrame(
+            {Fruit.apple: [1, 2], Fruit.pear: GeoSeries.from_xy([1, 2], [3, 4])}
+        )
+        res = GeoDataFrame(df, geometry=Fruit.pear)
+        assert res.active_geometry_name == Fruit.pear
+
 
 @pytest.mark.skipif(not compat.HAS_PYPROJ, reason="pyproj not available")
 def test_geodataframe_crs():
@@ -1615,3 +1629,17 @@ def test_set_geometry_supply_arraylike(dfs, geo_col_name):
         res4 = df.set_geometry(centroids, drop=True)
     assert res4.active_geometry_name == "centroids"
     assert geo_col_name in res4.columns
+
+
+@pytest.mark.filterwarnings("error::FutureWarning")
+def test_reduce_geometry_array():
+    """
+    Check for a FutureWarning.
+
+    `geopandas.array.GeometryArray._reduce` issues a FutureWarning if
+    the parameter `keepdims` is not set.
+    `GeometryArray` inherits from `pandas.api.extensions.ExtensionArray`
+    and its `_reduce` is overridden in `GeometryArray`.
+    This warning is issued with pandas 2.2.2 (tested).
+    """
+    GeoDataFrame({"geometry": []}).all()

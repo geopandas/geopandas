@@ -1,6 +1,30 @@
 # Changelog
 
-## Version 1.0.0
+## Version 1.0.2 (???)
+
+Bug fixes:
+
+- Fix unspecified layer warning being emitted while reading multilayer datasets, even
+  when layer is specified when using the mask or bbox keywords (#3378).
+- Properly support named aggregations over a geometry column in `GroupBy.agg` (#3368).
+- Support GeoDataFrame constructor receiving arguments to `geometry` which are not
+  (Geo)Series, but instead should be interpreted as column names, like Enums (#3384).
+- Fix regression where constructing a GeoSeries from a pd.Series with GeometryDtype values 
+  failed when `crs` was provided(#3383).
+
+Deprecations and compatibility notes:
+
+- The `GeoSeries.select` method wrapping the pandas `Series.select` method has been removed.
+  The upstream method no longer exists in all supported version of pandas (#3394).
+
+## Version 1.0.1 (July 2, 2024)
+
+Bug fixes:
+
+- Support a named datetime or object dtype index in `explore()` (#3360, #3364).
+- Fix a regression preventing a Series as an argument for geometric methods (#3363)
+
+## Version 1.0.0 (June 24, 2024)
 
 Notes on dependencies:
 
@@ -62,6 +86,9 @@ New features and improvements:
 - `explore` now supports `GeoDataFrame`s with additional columns containing datetimes, uuids and
   other non JSON serializable objects (#3261).
 - The `GeoSeries.fillna` method now supports the `limit` keyword (#3290).
+- Added ``on_attribute`` option argument to the ``sjoin()``
+  method, allowing to restrict joins to the observations with
+  matching attributes. (#3231)
 - Added support for `bbox` covering encoding in geoparquet. Can filter reading of parquet
 files based on a bounding box, and write out a bounding box column to parquet files (#3282).
 - `align` keyword in binary methods now defaults to `None`, treated as True. Explicit True
@@ -69,9 +96,14 @@ files based on a bounding box, and write out a bounding box column to parquet fi
 - `GeoSeries.set_crs` can now be used to remove CRS information by passing
   `crs=None, allow_override=True` (#3316).
 - Added ``autolim`` keyword argument to ``GeoSeries.plot()`` and ``GeoDataFrame.plot()`` (#2817).
+- Added `metadata` parameter to `GeoDataFrame.to_file` (#2850)
 - Updated documentation to clarify that passing a named (Geo)Series as the `geometry`
-  argument to the GeoDataFrame constructor will not use the name but will always  
+  argument to the GeoDataFrame constructor will not use the name but will always
   produce a GeoDataFrame with an active geometry column named "geometry" (#3337).
+- `read_postgis` will query the spatial_ref_sys table to determine the CRS authority
+  instead of its current behaviour of assuming EPSG. In the event the spiatal_ref_sys
+  table is not present, or the SRID is not present, `read_postgis` will fallback
+  on assuming EPSG CRS authority. (#3329)
 
 Backwards incompatible API changes:
 
@@ -87,7 +119,7 @@ Backwards incompatible API changes:
   the previous active geometry column name. This means that if the new and old names are
   different, then both columns will be preserved in the GeoDataFrame. To replicate the previous
   behaviour, you can instead call `gdf.set_geometry(ser.rename(gdf.active_geometry_name))` (#3237).
-  Note that this behaviour change does not affect the `GeoDataframe` constructor, passing a named 
+  Note that this behaviour change does not affect the `GeoDataframe` constructor, passing a named
   GeoSeries `ser` to `GeoDataFrame(df, geometry=ser)` will always produce a GeoDataFrame with a
   geometry column named "geometry" to preserve backwards compatibility. If you would like to
   instead propagate the name of `ser` when constructing a GeoDataFrame, you can instead call

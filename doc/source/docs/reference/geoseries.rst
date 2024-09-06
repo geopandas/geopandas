@@ -166,10 +166,12 @@ Serialization / IO / conversion
 .. autosummary::
    :toctree: api/
 
+   GeoSeries.from_arrow
    GeoSeries.from_file
    GeoSeries.from_wkb
    GeoSeries.from_wkt
    GeoSeries.from_xy
+   GeoSeries.to_arrow
    GeoSeries.to_file
    GeoSeries.to_json
    GeoSeries.to_wkb

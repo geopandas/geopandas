@@ -105,15 +105,17 @@ def _delegate_geo_method(op, this, **kwargs):
         klass, var_name = this.__class__.__name__, "this"
 
     for key, val in kwargs.items():
-        if isinstance(val, pd.Series) and not val.index.equals(this.index):
-            raise ValueError(
-                f"Index of the Series passed as '{key}' does not match index of the "
-                f"{klass}. If you want both Series to be aligned, align them before "
-                f"passing them to this method as "
-                f"`{var_name}, {key} = {var_name}.align({key})`. If "
-                f"you want to ignore the index, pass the underlying array as '{key}' "
-                f"using `{key}.values`."
-            )
+        if isinstance(val, pd.Series):
+            if not val.index.equals(this.index):
+                raise ValueError(
+                    f"Index of the Series passed as '{key}' does not match index of "
+                    f"the {klass}. If you want both Series to be aligned, align them "
+                    f"before passing them to this method as "
+                    f"`{var_name}, {key} = {var_name}.align({key})`. If "
+                    f"you want to ignore the index, pass the underlying array as "
+                    f"'{key}' using `{key}.values`."
+                )
+            kwargs[key] = np.asarray(val)
 
     a_this = GeometryArray(this.geometry.values)
     data = getattr(a_this, op)(**kwargs)
@@ -1152,10 +1154,10 @@ GeometryCollection
         By default, you get back a GeoSeries of polygons:
 
         >>> s.voronoi_polygons()
-        0     POLYGON ((-2 5, 1 2, -2 -1, -2 5))
-        1        POLYGON ((4 5, 1 2, -2 5, 4 5))
-        2    POLYGON ((-2 -1, 1 2, 4 -1, -2 -1))
-        3       POLYGON ((4 -1, 1 2, 4 5, 4 -1))
+        0        POLYGON ((-2 5, 1 2, -2 -1, -2 5))
+        1           POLYGON ((4 5, 1 2, -2 5, 4 5))
+        2       POLYGON ((-2 -1, 1 2, 4 -1, -2 -1))
+        3    POLYGON ((4 -1, 4 -1, 1 2, 4 5, 4 -1))
         dtype: geometry
 
         If you set only_edges to True, you get back LineStrings representing the
@@ -1561,7 +1563,7 @@ GeometryCollection
         0                   POINT (1 1)
         1             POINT Z (1 1 0.9)
         2    LINESTRING (0 0, 0 1, 1 1)
-        3            LINESTRING Z EMPTY
+        3              LINESTRING EMPTY
         dtype: geometry
 
         >>> s.set_precision(1, mode="pointwise")
