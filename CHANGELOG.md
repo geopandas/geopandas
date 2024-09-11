@@ -10,7 +10,9 @@ Bug fixes:
 - Support GeoDataFrame constructor receiving arguments to `geometry` which are not
   (Geo)Series, but instead should be interpreted as column names, like Enums (#3384).
 - Fix regression where constructing a GeoSeries from a pd.Series with GeometryDtype values 
-  failed when `crs` was provided(#3383).
+  failed when `crs` was provided (#3383).
+- Fix the dtype of the GeometryArray backing data being incorrect for zero length 
+  GeoDataFrames causing errors in `overlay` (3424).
 
 Deprecations and compatibility notes:
 
