@@ -300,11 +300,12 @@ def overlay(df1, df2, how="intersection", keep_geom_type=None, make_valid=True):
             mask = ~df.geometry.is_valid
             col = df._geometry_column_name
             if make_valid:
-                geom_type = df.geom_type.iloc[0]
                 df.loc[mask, col] = df.loc[mask, col].make_valid()
                 # Extract only the input geometry type, as make_valid may change it
                 if mask.any():
-                    df = _collection_extract(df, geom_type, False)
+                    df = _collection_extract(
+                        df, geom_type="Polygon", keep_geom_type_warning=False
+                    )
 
             elif mask.any():
                 raise ValueError(
@@ -366,7 +367,7 @@ def _collection_extract(df, geom_type, keep_geom_type_warning):
     is_collection = result.geom_type == "GeometryCollection"
     if is_collection.any():
         geom_col = result._geometry_column_name
-        collections = result[[geom_col]][is_collection]
+        collections = result.loc[is_collection, [geom_col]]
 
         exploded = collections.reset_index(drop=True).explode(index_parts=True)
         exploded = exploded.reset_index(level=0)
