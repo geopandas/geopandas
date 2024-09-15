@@ -14,7 +14,13 @@ import pandas.api.types
 from shapely.geometry import MultiPolygon, Polygon, box
 
 from geopandas import GeoDataFrame, GeoSeries
-from geopandas.array import _check_crs, _crs_mismatch_warn
+from geopandas.array import (
+    LINE_GEOM_TYPES,
+    POINT_GEOM_TYPES,
+    POLYGON_GEOM_TYPES,
+    _check_crs,
+    _crs_mismatch_warn,
+)
 
 
 def _mask_is_list_like_rectangle(mask):
@@ -215,25 +221,21 @@ def clip(gdf, mask, keep_geom_type=False, sort=False):
                 stacklevel=2,
             )
         else:
-            polys = ["Polygon", "MultiPolygon"]
-            lines = ["LineString", "MultiLineString", "LinearRing"]
-            points = ["Point", "MultiPoint"]
-
             # Check that the gdf for multiple geom types (points, lines and/or polys)
             orig_types_total = sum(
                 [
-                    gdf.geom_type.isin(polys).any(),
-                    gdf.geom_type.isin(lines).any(),
-                    gdf.geom_type.isin(points).any(),
+                    gdf.geom_type.isin(POLYGON_GEOM_TYPES).any(),
+                    gdf.geom_type.isin(LINE_GEOM_TYPES).any(),
+                    gdf.geom_type.isin(POINT_GEOM_TYPES).any(),
                 ]
             )
 
             # Check how many geometry types are in the clipped GeoDataFrame
             clip_types_total = sum(
                 [
-                    clipped.geom_type.isin(polys).any(),
-                    clipped.geom_type.isin(lines).any(),
-                    clipped.geom_type.isin(points).any(),
+                    clipped.geom_type.isin(POLYGON_GEOM_TYPES).any(),
+                    clipped.geom_type.isin(LINE_GEOM_TYPES).any(),
+                    clipped.geom_type.isin(POINT_GEOM_TYPES).any(),
                 ]
             )
 
@@ -249,9 +251,9 @@ def clip(gdf, mask, keep_geom_type=False, sort=False):
                 orig_type = gdf.geom_type.iloc[0]
                 if new_collection:
                     clipped = clipped.explode(index_parts=False)
-                if orig_type in polys:
-                    clipped = clipped.loc[clipped.geom_type.isin(polys)]
-                elif orig_type in lines:
-                    clipped = clipped.loc[clipped.geom_type.isin(lines)]
+                if orig_type in POLYGON_GEOM_TYPES:
+                    clipped = clipped.loc[clipped.geom_type.isin(POLYGON_GEOM_TYPES)]
+                elif orig_type in LINE_GEOM_TYPES:
+                    clipped = clipped.loc[clipped.geom_type.isin(LINE_GEOM_TYPES)]
 
     return clipped

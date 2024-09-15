@@ -6,7 +6,13 @@ import pandas as pd
 
 from geopandas import GeoDataFrame, GeoSeries
 from geopandas._compat import PANDAS_GE_30
-from geopandas.array import _check_crs, _crs_mismatch_warn
+from geopandas.array import (
+    LINE_GEOM_TYPES,
+    POINT_GEOM_TYPES,
+    POLYGON_GEOM_TYPES,
+    _check_crs,
+    _crs_mismatch_warn,
+)
 
 
 def _ensure_geometry_column(df):
@@ -39,7 +45,7 @@ def _overlay_intersection(df1, df2):
         right = df2.geometry.take(idx2)
         right.reset_index(drop=True, inplace=True)
         intersections = left.intersection(right)
-        poly_ix = intersections.geom_type.isin(["Polygon", "MultiPolygon"])
+        poly_ix = intersections.geom_type.isin(POLYGON_GEOM_TYPES)
         intersections.loc[poly_ix] = intersections[poly_ix].make_valid()
 
         # only keep actual intersecting geometries
@@ -96,7 +102,7 @@ def _overlay_difference(df1, df2):
         )
         new_g.append(new)
     differences = GeoSeries(new_g, index=df1.index, crs=df1.crs)
-    poly_ix = differences.geom_type.isin(["Polygon", "MultiPolygon"])
+    poly_ix = differences.geom_type.isin(POLYGON_GEOM_TYPES)
     differences.loc[poly_ix] = differences[poly_ix].make_valid()
     geom_diff = differences[~differences.is_empty].copy()
     dfdiff = df1[~differences.is_empty].copy()
@@ -263,13 +269,10 @@ def overlay(df1, df2, how="intersection", keep_geom_type=None, make_valid=True):
     else:
         keep_geom_type_warning = False
 
-    polys = ["Polygon", "MultiPolygon"]
-    lines = ["LineString", "MultiLineString", "LinearRing"]
-    points = ["Point", "MultiPoint"]
     for i, df in enumerate([df1, df2]):
-        poly_check = df.geom_type.isin(polys).any()
-        lines_check = df.geom_type.isin(lines).any()
-        points_check = df.geom_type.isin(points).any()
+        poly_check = df.geom_type.isin(POLYGON_GEOM_TYPES).any()
+        lines_check = df.geom_type.isin(LINE_GEOM_TYPES).any()
+        points_check = df.geom_type.isin(POINT_GEOM_TYPES).any()
         if sum([poly_check, lines_check, points_check]) > 1:
             raise NotImplementedError(
                 "df{} contains mixed geometry types.".format(i + 1)
@@ -296,7 +299,7 @@ def overlay(df1, df2, how="intersection", keep_geom_type=None, make_valid=True):
     # Computations
     def _make_valid(df):
         df = df.copy()
-        if df.geom_type.isin(polys).all():
+        if df.geom_type.isin(POLYGON_GEOM_TYPES).all():
             mask = ~df.geometry.is_valid
             col = df._geometry_column_name
             if make_valid:
@@ -349,12 +352,12 @@ def overlay(df1, df2, how="intersection", keep_geom_type=None, make_valid=True):
 
 def _collection_extract(df, geom_type, keep_geom_type_warning):
     # Check input
-    if geom_type in ["Polygon", "MultiPolygon"]:
-        geom_types = ["Polygon", "MultiPolygon"]
-    elif geom_type in ["LineString", "MultiLineString", "LinearRing"]:
-        geom_types = ["LineString", "MultiLineString", "LinearRing"]
-    elif geom_type in ["Point", "MultiPoint"]:
-        geom_types = ["Point", "MultiPoint"]
+    if geom_type in POLYGON_GEOM_TYPES:
+        geom_types = POLYGON_GEOM_TYPES
+    elif geom_type in LINE_GEOM_TYPES:
+        geom_types = LINE_GEOM_TYPES
+    elif geom_type in POINT_GEOM_TYPES:
+        geom_types = POINT_GEOM_TYPES
     else:
         raise TypeError(f"`geom_type` does not support {geom_type}.")
 
