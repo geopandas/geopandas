@@ -125,7 +125,7 @@ def test_overlay_invalid_input(keep_geom_type):
     # will should always be 2.
     assert len(df1_df2) == 2
     if keep_geom_type:
-        assert df1_df2.geom_type.isin(["Polygon", "MultiPolygon"]).all()
+        assert df1_df2.geom_type.isin(["Polygon"]).all()
 
 
 @pytest.mark.filterwarnings("ignore:GeoSeries crs mismatch:UserWarning")
