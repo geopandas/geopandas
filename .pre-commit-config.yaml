@@ -12,3 +12,4 @@ repos:
           name: sort imports with ruff
           args: [--select, I, --fix]
         - id: ruff
+          args: [--fix]

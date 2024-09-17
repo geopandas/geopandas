@@ -107,7 +107,7 @@ select = [
     "E",
     "W",
     # pyupgrade
-    # "UP",
+    "UP",
     # flake8-bugbear
     "B",
     # flake8-debugger
@@ -176,7 +176,9 @@ ignore = [
     # collection-literal-concatenation
     "RUF005",
     # Mutable class attributes should be annotated with `typing.ClassVar`,
-    "RUF012"
+    "RUF012",
+    # Use `X | Y` for type annotations
+    "UP007"
 ]
 
 [tool.ruff.lint.per-file-ignores]

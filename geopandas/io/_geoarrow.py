@@ -1,6 +1,6 @@
 import json
 from packaging.version import Version
-from typing import Dict, Optional, Tuple
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -178,7 +178,7 @@ def construct_wkb_array(
     *,
     field_name: str = "geometry",
     crs: Optional[str] = None,
-) -> Tuple[pa.Field, pa.Array]:
+) -> tuple[pa.Field, pa.Array]:
     if shapely.geos_version > (3, 10, 0):
         kwargs = {"flavor": "iso"}
     else:
@@ -274,7 +274,7 @@ def construct_geometry_array(
     field_name: str = "geometry",
     crs: Optional[str] = None,
     interleaved: bool = True,
-) -> Tuple[pa.Field, pa.Array]:
+) -> tuple[pa.Field, pa.Array]:
     # NOTE: this implementation returns a (field, array) pair so that it can set the
     # extension metadata on the field without instantiating extension types into the
     # global pyarrow registry
@@ -320,7 +320,7 @@ def construct_geometry_array(
     else:
         raise ValueError(f"Unexpected coords dimensions: {coords.shape}")
 
-    extension_metadata: Dict[str, str] = {}
+    extension_metadata: dict[str, str] = {}
     if crs is not None:
         extension_metadata["ARROW:extension:metadata"] = json.dumps(
             {"crs": crs.to_json()}

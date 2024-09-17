@@ -60,7 +60,7 @@ def _expand_kwargs(kwargs, multiindex):
     it (in place) to the correct length/formats with help of 'multiindex', unless
     the value appears to already be a valid (single) value for the key.
     """
-    from typing import Iterable
+    from collections.abc import Iterable
 
     from matplotlib.colors import is_color_like
 
@@ -799,7 +799,7 @@ def plot_dataframe(
         if missing:
             raise ValueError(
                 "Column contains values not listed in categories. "
-                "Missing categories: {}.".format(missing)
+                f"Missing categories: {missing}."
             )
 
         values = cat.codes[~nan_idx]

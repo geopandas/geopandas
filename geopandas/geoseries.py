@@ -3,7 +3,7 @@ from __future__ import annotations
 import typing
 import warnings
 from packaging.version import Version
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Callable, Optional
 
 import numpy as np
 import pandas as pd
@@ -592,7 +592,7 @@ class GeoSeries(GeoPandasBase, Series):
         return cls(arrow_to_geometry_array(arr), **kwargs)
 
     @property
-    def __geo_interface__(self) -> Dict:
+    def __geo_interface__(self) -> dict:
         """Returns a ``GeoSeries`` as a python feature collection.
 
         Implements the `geo_interface`. The returned python data structure

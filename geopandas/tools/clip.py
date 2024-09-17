@@ -155,9 +155,7 @@ def clip(gdf, mask, keep_geom_type=False, sort=False):
     (7, 8)
     """
     if not isinstance(gdf, (GeoDataFrame, GeoSeries)):
-        raise TypeError(
-            "'gdf' should be GeoDataFrame or GeoSeries, got {}".format(type(gdf))
-        )
+        raise TypeError(f"'gdf' should be GeoDataFrame or GeoSeries, got {type(gdf)}")
 
     mask_is_list_like = _mask_is_list_like_rectangle(mask)
     if (

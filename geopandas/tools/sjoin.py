@@ -161,20 +161,14 @@ def _basic_checks(left_df, right_df, how, lsuffix, rsuffix, on_attribute=None):
         list of column names to merge on along with geometry
     """
     if not isinstance(left_df, GeoDataFrame):
-        raise ValueError(
-            "'left_df' should be GeoDataFrame, got {}".format(type(left_df))
-        )
+        raise ValueError(f"'left_df' should be GeoDataFrame, got {type(left_df)}")
 
     if not isinstance(right_df, GeoDataFrame):
-        raise ValueError(
-            "'right_df' should be GeoDataFrame, got {}".format(type(right_df))
-        )
+        raise ValueError(f"'right_df' should be GeoDataFrame, got {type(right_df)}")
 
     allowed_hows = ["left", "right", "inner"]
     if how not in allowed_hows:
-        raise ValueError(
-            '`how` was "{}" but is expected to be in {}'.format(how, allowed_hows)
-        )
+        raise ValueError(f'`how` was "{how}" but is expected to be in {allowed_hows}')
 
     if not _check_crs(left_df, right_df):
         _crs_mismatch_warn(left_df, right_df, stacklevel=4)
@@ -286,8 +280,8 @@ def _reset_index_with_suffix(df, suffix, other):
             # check new label will not be in other dataframe
             if new_label in df.columns or new_label in other.columns:
                 raise ValueError(
-                    "'{0}' cannot be a column name in the frames being"
-                    " joined".format(new_label)
+                    f"'{new_label}' cannot be a column name in the frames being"
+                    " joined"
                 )
             column_names[i] = new_label
     return df_reset, pd.Index(column_names)

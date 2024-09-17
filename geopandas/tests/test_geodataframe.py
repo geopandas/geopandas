@@ -768,7 +768,7 @@ class TestDataFrame:
         assert_frame_equal(gdf1, gdf2)
 
     def test_from_features_geom_interface_feature(self):
-        class Placemark(object):
+        class Placemark:
             def __init__(self, geom, val):
                 self.__geo_interface__ = {
                     "type": "Feature",

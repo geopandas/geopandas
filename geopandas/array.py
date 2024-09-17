@@ -55,14 +55,12 @@ class GeometryDtype(ExtensionDtype):
     def construct_from_string(cls, string):
         if not isinstance(string, str):
             raise TypeError(
-                "'construct_from_string' expects a string, got {}".format(type(string))
+                f"'construct_from_string' expects a string, got {type(string)}"
             )
         elif string == cls.name:
             return cls()
         else:
-            raise TypeError(
-                "Cannot construct a '{}' from '{}'".format(cls.__name__, string)
-            )
+            raise TypeError(f"Cannot construct a '{cls.__name__}' from '{string}'")
 
     @classmethod
     def construct_array_type(cls):
@@ -109,8 +107,8 @@ def _crs_mismatch_warn(left, right, stacklevel=3):
         "and the CRS of right geometries.\n"
         "Use `to_crs()` to reproject one of "
         "the input geometries to match the CRS of the other.\n\n"
-        "Left CRS: {0}\n"
-        "Right CRS: {1}\n".format(left_srs, right_srs),
+        f"Left CRS: {left_srs}\n"
+        f"Right CRS: {right_srs}\n",
         UserWarning,
         stacklevel=stacklevel,
     )
@@ -176,9 +174,7 @@ def from_shapely(data, crs=None):
             elif isna(geom):
                 out.append(None)
             else:
-                raise TypeError(
-                    "Input must be valid geometry objects: {0}".format(geom)
-                )
+                raise TypeError(f"Input must be valid geometry objects: {geom}")
         arr = np.array(out, dtype=object)
 
     return GeometryArray(arr, crs=crs)
@@ -401,11 +397,10 @@ class GeometryArray(ExtensionArray):
         """Check CRS and warn if the planar operation is done in a geographic CRS"""
         if self.crs and self.crs.is_geographic:
             warnings.warn(
-                "Geometry is in a geographic CRS. Results from '{}' are likely "
-                "incorrect. Use 'GeoSeries.to_crs()' to re-project geometries to a "
-                "projected CRS before this operation.\n".format(
-                    inspect.stack()[1].function
-                ),
+                "Geometry is in a geographic CRS. Results from "
+                f"'{inspect.stack()[1].function}' are likely incorrect. "
+                "Use 'GeoSeries.to_crs()' to re-project geometries to a "
+                "projected CRS before this operation.\n",
                 UserWarning,
                 stacklevel=stacklevel,
             )
@@ -457,7 +452,7 @@ class GeometryArray(ExtensionArray):
                 self._data[key] = value
         else:
             raise TypeError(
-                "Value should be either a BaseGeometry or None, got %s" % str(value)
+                f"Value should be either a BaseGeometry or None, got {value!s}"
             )
 
         # invalidate spatial index
@@ -688,8 +683,9 @@ class GeometryArray(ExtensionArray):
     def _binary_method(op, left, right, **kwargs):
         if isinstance(right, GeometryArray):
             if len(left) != len(right):
-                msg = "Lengths of inputs do not match. Left: {0}, Right: {1}".format(
-                    len(left), len(right)
+                msg = (
+                    "Lengths of inputs do not match. "
+                    f"Left: {len(left)}, Right: {len(right)}"
                 )
                 raise ValueError(msg)
             if not _check_crs(left, right):
