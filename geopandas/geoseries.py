@@ -3,7 +3,7 @@ from __future__ import annotations
 import typing
 import warnings
 from packaging.version import Version
-from typing import Any, Callable, Optional
+from typing import Any, Callable
 
 import numpy as np
 import pandas as pd
@@ -37,7 +37,7 @@ if typing.TYPE_CHECKING:
 
 
 def _geoseries_constructor_with_fallback(
-    data=None, index=None, crs: Optional[Any] = None, **kwargs
+    data=None, index=None, crs: Any | None = None, **kwargs
 ):
     """
     A flexible constructor for GeoSeries._constructor, which needs to be able
@@ -154,7 +154,7 @@ class GeoSeries(GeoPandasBase, Series):
 
     """
 
-    def __init__(self, data=None, index=None, crs: Optional[Any] = None, **kwargs):
+    def __init__(self, data=None, index=None, crs: Any | None = None, **kwargs):
         if (
             hasattr(data, "crs")
             or (isinstance(data, pd.Series) and hasattr(data.array, "crs"))
@@ -381,7 +381,7 @@ class GeoSeries(GeoPandasBase, Series):
 
     @classmethod
     def from_wkb(
-        cls, data, index=None, crs: Optional[Any] = None, on_invalid="raise", **kwargs
+        cls, data, index=None, crs: Any | None = None, on_invalid="raise", **kwargs
     ) -> GeoSeries:
         """
         Alternate constructor to create a ``GeoSeries``
@@ -423,7 +423,7 @@ class GeoSeries(GeoPandasBase, Series):
 
     @classmethod
     def from_wkt(
-        cls, data, index=None, crs: Optional[Any] = None, on_invalid="raise", **kwargs
+        cls, data, index=None, crs: Any | None = None, on_invalid="raise", **kwargs
     ) -> GeoSeries:
         """
         Alternate constructor to create a ``GeoSeries``
@@ -539,7 +539,7 @@ class GeoSeries(GeoPandasBase, Series):
         from_wkb_or_wkt_function: Callable,
         data,
         index=None,
-        crs: Optional[Any] = None,
+        crs: Any | None = None,
         on_invalid: str = "raise",
         **kwargs,
     ) -> GeoSeries:
@@ -621,8 +621,8 @@ class GeoSeries(GeoPandasBase, Series):
     def to_file(
         self,
         filename: os.PathLike | typing.IO,
-        driver: Optional[str] = None,
-        index: Optional[bool] = None,
+        driver: str | None = None,
+        index: bool | None = None,
         **kwargs,
     ):
         """Write the ``GeoSeries`` to a file.
@@ -735,7 +735,7 @@ class GeoSeries(GeoPandasBase, Series):
         return self._wrapped_pandas_method("take", *args, **kwargs)
 
     @doc(pd.Series)
-    def apply(self, func, convert_dtype: Optional[bool] = None, args=(), **kwargs):
+    def apply(self, func, convert_dtype: bool | None = None, args=(), **kwargs):
         if convert_dtype is not None:
             kwargs["convert_dtype"] = convert_dtype
         else:
@@ -1021,8 +1021,8 @@ class GeoSeries(GeoPandasBase, Series):
     @compat.requires_pyproj
     def set_crs(
         self,
-        crs: Optional[Any] = None,
-        epsg: Optional[int] = None,
+        crs: Any | None = None,
+        epsg: int | None = None,
         inplace: bool = False,
         allow_override: bool = False,
     ):
@@ -1122,7 +1122,7 @@ class GeoSeries(GeoPandasBase, Series):
         return result
 
     def to_crs(
-        self, crs: Optional[Any] = None, epsg: Optional[int] = None
+        self, crs: Any | None = None, epsg: int | None = None
     ) -> GeoSeries:
         """Returns a ``GeoSeries`` with all geometries transformed to a new
         coordinate reference system.
