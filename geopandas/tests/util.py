@@ -126,16 +126,12 @@ def create_postgis(con, df, srid=None, geom_col="geom"):
             boroname     varchar(40),
             shape_leng   float,
             shape_area   float
-            );""".format(
-            geom_col=geom_col, geom_schema=geom_schema
-        )
+            );""".format(geom_col=geom_col, geom_schema=geom_schema)
         cursor.execute(sql)
 
         for i, row in df.iterrows():
             sql = """INSERT INTO nybb VALUES ({}, %s, %s, %s, %s
-            );""".format(
-                geom_insert
-            )
+            );""".format(geom_insert)
             cursor.execute(
                 sql,
                 (
