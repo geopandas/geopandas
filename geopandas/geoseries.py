@@ -1121,9 +1121,7 @@ class GeoSeries(GeoPandasBase, Series):
         result.array.crs = crs
         return result
 
-    def to_crs(
-        self, crs: Any | None = None, epsg: int | None = None
-    ) -> GeoSeries:
+    def to_crs(self, crs: Any | None = None, epsg: int | None = None) -> GeoSeries:
         """Returns a ``GeoSeries`` with all geometries transformed to a new
         coordinate reference system.
 
