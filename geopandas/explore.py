@@ -661,13 +661,13 @@ def _explore(
         ~(gdf.geometry.isna() | gdf.geometry.is_empty)  # drop missing or empty geoms
     ].__geo_interface__
     for feature in feature_collection["features"]:
-        for k in feature["properties"]:
+        for prop in feature["properties"]:
             # escape the curly braces in values
-            if isinstance(feature["properties"][k], str):
-                feature["properties"][k] = re.sub(
+            if isinstance(feature["properties"][prop], str):
+                feature["properties"][prop] = re.sub(
                     r"\{{2,}",
                     lambda x: "{% raw %}" + x.group(0) + "{% endraw %}",
-                    feature["properties"][k],
+                    feature["properties"][prop],
                 )
 
     # add dataframe to map

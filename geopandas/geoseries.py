@@ -718,7 +718,7 @@ class GeoSeries(GeoPandasBase, Series):
     def _wrapped_pandas_method(self, mtd, *args, **kwargs):
         """Wrap a generic pandas method to ensure it returns a GeoSeries"""
         val = getattr(super(), mtd)(*args, **kwargs)
-        if type(val) == Series:
+        if type(val) is Series:
             val.__class__ = GeoSeries
             val.crs = self.crs
         return val

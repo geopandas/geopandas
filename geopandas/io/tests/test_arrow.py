@@ -722,7 +722,7 @@ def test_feather_arrow_version(tmpdir, naturalearth_lowres):
 
 
 def test_fsspec_url(naturalearth_lowres):
-    fsspec = pytest.importorskip("fsspec")
+    _ = pytest.importorskip("fsspec")
     import fsspec.implementations.memory
 
     class MyMemoryFileSystem(fsspec.implementations.memory.MemoryFileSystem):

@@ -46,8 +46,8 @@ dev = [
     "pytest-cov",
     "pytest-xdist",
     "codecov",
-    "black",
     "pre-commit",
+    "ruff",
 ]
 
 
@@ -94,9 +94,6 @@ filterwarnings = [
     "ignore:datetime.datetime.utcfromtimestamp:DeprecationWarning:dateutil",
     "ignore:Cannot set the CRS, falling back to None:UserWarning:geopandas",
 ]
-
-[tool.black]
-line-length = 88
 
 [tool.ruff]
 line-length = 88
