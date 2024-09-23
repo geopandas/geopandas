@@ -699,7 +699,7 @@ def plot_dataframe(
         )
 
     # To accept pd.Series and np.arrays as column
-    if isinstance(column, (np.ndarray, pd.Series)):
+    if isinstance(column, np.ndarray | pd.Series):
         if column.shape[0] != df.shape[0]:
             raise ValueError(
                 "The dataframe and given column have different number of rows."

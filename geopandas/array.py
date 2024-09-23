@@ -429,7 +429,7 @@ class GeometryArray(ExtensionArray):
             value = value.values
         if isinstance(value, pd.DataFrame):
             value = value.values.flatten()
-        if isinstance(value, (list, np.ndarray)):
+        if isinstance(value, list | np.ndarray):
             value = from_shapely(value)
         if isinstance(value, GeometryArray):
             if isinstance(key, numbers.Integral):
@@ -444,7 +444,7 @@ class GeometryArray(ExtensionArray):
                 value = from_shapely([value])._data[0]
             else:
                 raise TypeError("should be valid geometry")
-            if isinstance(key, (slice, list, np.ndarray)):
+            if isinstance(key, slice | list | np.ndarray):
                 value_array = np.empty(1, dtype=object)
                 value_array[:] = [value]
                 self._data[key] = value_array
@@ -802,7 +802,7 @@ class GeometryArray(ExtensionArray):
         return self._binary_method("frechet_distance", self, other, **kwargs)
 
     def buffer(self, distance, resolution=16, **kwargs):
-        if not (isinstance(distance, (int, float)) and distance == 0):
+        if not (isinstance(distance, int | float) and distance == 0):
             self.check_geographic_crs(stacklevel=5)
         return GeometryArray(
             shapely.buffer(self._data, distance, quad_segs=resolution, **kwargs),
@@ -1670,7 +1670,7 @@ class GeometryArray(ExtensionArray):
                 ovalues = [param] * len(self)
             return ovalues
 
-        if isinstance(other, (pd.Series, pd.Index, pd.DataFrame)):
+        if isinstance(other, pd.Series | pd.Index | pd.DataFrame):
             # rely on pandas to unbox and dispatch to us
             return NotImplemented
 

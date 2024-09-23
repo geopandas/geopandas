@@ -346,7 +346,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         if geo_column_name is None:
             geo_column_name = "geometry"
-        if isinstance(col, (Series, list, np.ndarray, GeometryArray)):
+        if isinstance(col, Series | list | np.ndarray | GeometryArray):
             if drop:
                 msg = (
                     "The `drop` keyword argument is deprecated and has no effect when "
