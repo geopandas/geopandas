@@ -545,13 +545,6 @@ def test_unique():
     assert_array_equal(s.unique(), exp)
 
 
-def pd14_compat_index(index):
-    if compat.PANDAS_GE_14:
-        return from_shapely(index)
-    else:
-        return index
-
-
 def test_value_counts():
     # each object is considered unique
     s = GeoSeries([Point(0, 0), Point(1, 1), Point(0, 0)])
@@ -560,33 +553,29 @@ def test_value_counts():
         name = "count"
     else:
         name = None
-    exp = pd.Series(
-        [2, 1], index=pd14_compat_index([Point(0, 0), Point(1, 1)]), name=name
-    )
+    exp = pd.Series([2, 1], index=from_shapely([Point(0, 0), Point(1, 1)]), name=name)
     assert_series_equal(res, exp)
     # Check crs doesn't make a difference - note it is not kept in output index anyway
     s2 = GeoSeries([Point(0, 0), Point(1, 1), Point(0, 0)], crs="EPSG:4326")
     res2 = s2.value_counts()
     assert_series_equal(res2, exp)
-    if compat.PANDAS_GE_14:
-        # TODO should/ can we fix CRS being lost
-        assert s2.value_counts().index.array.crs is None
+
+    # TODO should/ can we fix CRS being lost
+    assert s2.value_counts().index.array.crs is None
 
     # check mixed geometry
     s3 = GeoSeries([Point(0, 0), LineString([[1, 1], [2, 2]]), Point(0, 0)])
     res3 = s3.value_counts()
-    index = pd14_compat_index([Point(0, 0), LineString([[1, 1], [2, 2]])])
+    index = from_shapely([Point(0, 0), LineString([[1, 1], [2, 2]])])
     exp3 = pd.Series([2, 1], index=index, name=name)
     assert_series_equal(res3, exp3)
 
     # check None is handled
     s4 = GeoSeries([Point(0, 0), None, Point(0, 0)])
     res4 = s4.value_counts(dropna=True)
-    exp4_dropna = pd.Series([2], index=pd14_compat_index([Point(0, 0)]), name=name)
+    exp4_dropna = pd.Series([2], index=from_shapely([Point(0, 0)]), name=name)
     assert_series_equal(res4, exp4_dropna)
-    exp4_keepna = pd.Series(
-        [2, 1], index=pd14_compat_index([Point(0, 0), None]), name=name
-    )
+    exp4_keepna = pd.Series([2, 1], index=from_shapely([Point(0, 0), None]), name=name)
     res4_keepna = s4.value_counts(dropna=False)
     assert_series_equal(res4_keepna, exp4_keepna)
 
