@@ -19,7 +19,7 @@ import shapely.ops
 import shapely.wkt
 from shapely.geometry.base import BaseGeometry
 
-from ._compat import HAS_PYPROJ, requires_pyproj
+from ._compat import HAS_PYPROJ, PANDAS_GE_21, PANDAS_GE_22, requires_pyproj
 from .sindex import SpatialIndex
 
 if HAS_PYPROJ:
@@ -1213,9 +1213,14 @@ class GeometryArray(ExtensionArray):
     def _pad_or_backfill(
         self, method, limit=None, limit_area=None, copy=True, **kwargs
     ):
-        return super()._pad_or_backfill(
-            method=method, limit=limit, limit_area=limit_area, copy=copy, **kwargs
-        )
+        if PANDAS_GE_21 and not PANDAS_GE_22:
+            if limit_area is not None:
+                # limit area not supported, but, but we feed through
+                # so the caller gets the pandas exception
+                kwargs["limit_area"] = limit_area
+        else:
+            kwargs["limit_area"] = limit_area
+        return super()._pad_or_backfill(method=method, limit=limit, copy=copy, **kwargs)
 
     def fillna(self, value=None, method=None, limit=None, copy=True):
         """

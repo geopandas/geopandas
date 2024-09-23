@@ -19,28 +19,34 @@ classifiers = [
     "Programming Language :: Python :: 3 :: Only",
     "Topic :: Scientific/Engineering :: GIS",
 ]
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 dependencies = [
-    "numpy >= 1.22",
+    "numpy >= 1.24",
     "pyogrio >= 0.7.2",
     "packaging",
-    "pandas >= 1.4.0",
-    "pyproj >= 3.3.0",
+    "pandas >= 2.0.0",
+    "pyproj >= 3.5.0",
     "shapely >= 2.0.0",
 ]
 
 [project.optional-dependencies]
 all = [
     "psycopg-binary>=3.1.0",
-    "SQLAlchemy>=1.3",
+    "SQLAlchemy>=2.0",
     "geopy",
-    "matplotlib>=3.5.0",
-    "mapclassify",
+    "matplotlib>=3.7",
+    "mapclassify>=2.5",
     "xyzservices",
-    "folium",
+    "folium", # >=0.12 (implied minimum version, but older versions may work)
     "GeoAlchemy2",
-    "pyarrow>=8.0.0",
+    "pyarrow>=10.0.0",
 ]
+
+# Minimum supported additional deps, not installed as part of `all` extra
+# (useful to track for bumping minimum dep versions)
+# fiona>=1.8.21
+# scipy>=1.10.0
+
 dev = [
     "pytest>=3.1.0",
     "pytest-cov",

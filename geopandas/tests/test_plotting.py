@@ -1,6 +1,5 @@
 import itertools
 import warnings
-from packaging.version import Version
 
 import numpy as np
 import pandas as pd
@@ -221,13 +220,6 @@ class TestPointPlotting:
                 np.linspace(0, 0.0, 1.0, self.N), ax.collections[0].get_alpha()
             )
 
-    # TODO temporary skip for mpl 3.8.0.dev
-    # (https://github.com/matplotlib/matplotlib/issues/25162)
-    @pytest.mark.skipif(
-        Version(matplotlib.__version__) >= Version("3.8.0.dev")
-        and Version(matplotlib.__version__) < Version("3.8.0"),
-        reason="failing with matplotlib dev",
-    )
     def test_legend(self):
         with warnings.catch_warnings(record=True) as _:  # don't print warning
             # legend ignored if color is given.
