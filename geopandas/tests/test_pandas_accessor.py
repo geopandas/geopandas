@@ -34,7 +34,9 @@ def test_series_geo_buffer(s):
     assert isinstance(got.dtype, GeometryDtype)
 
     # Double-check that the .geo accessor works on the result.
-    assert all(got.geo.minimum_bounding_radius() >= 0.2)
+    radius = got.geo.minimum_bounding_radius()
+    for row in radius.index:
+        assert radius[row] >= 0.1999  # Allow for some rounding error.
 
 
 def test_series_geo_distance(s, s2):
