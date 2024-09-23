@@ -3,7 +3,7 @@ from __future__ import annotations
 import typing
 import warnings
 from packaging.version import Version
-from typing import Any, Callable
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -34,6 +34,7 @@ from .base import is_geometry_type
 
 if typing.TYPE_CHECKING:
     import os
+    from collections.abc import Callable
 
 
 def _geoseries_constructor_with_fallback(

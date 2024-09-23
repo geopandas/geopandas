@@ -1,6 +1,5 @@
 import json
 from packaging.version import Version
-from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -177,7 +176,7 @@ def construct_wkb_array(
     shapely_arr: NDArray[np.object_],
     *,
     field_name: str = "geometry",
-    crs: Optional[str] = None,
+    crs: str | None = None,
 ) -> tuple[pa.Field, pa.Array]:
     if shapely.geos_version > (3, 10, 0):
         kwargs = {"flavor": "iso"}
@@ -269,10 +268,10 @@ def _multipolygon_type(point_type):
 
 def construct_geometry_array(
     shapely_arr: NDArray[np.object_],
-    include_z: Optional[bool] = None,
+    include_z: bool | None = None,
     *,
     field_name: str = "geometry",
-    crs: Optional[str] = None,
+    crs: str | None = None,
     interleaved: bool = True,
 ) -> tuple[pa.Field, pa.Array]:
     # NOTE: this implementation returns a (field, array) pair so that it can set the

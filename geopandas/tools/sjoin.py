@@ -1,6 +1,5 @@
 import warnings
 from functools import partial
-from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -508,7 +507,7 @@ def _nearest_query(
     how: str,
     return_distance: bool,
     exclusive: bool,
-    on_attribute: Optional[list] = None,
+    on_attribute: list | None = None,
 ):
     # use the opposite of the join direction for the index
     use_left_as_sindex = how == "right"
@@ -576,10 +575,10 @@ def sjoin_nearest(
     left_df: GeoDataFrame,
     right_df: GeoDataFrame,
     how: str = "inner",
-    max_distance: Optional[float] = None,
+    max_distance: float | None = None,
     lsuffix: str = "left",
     rsuffix: str = "right",
-    distance_col: Optional[str] = None,
+    distance_col: str | None = None,
     exclusive: bool = False,
 ) -> GeoDataFrame:
     """Spatial join of two GeoDataFrames based on the distance between their geometries.
