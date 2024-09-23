@@ -27,8 +27,8 @@ pytest-xdist
 codecov
 
 # styling
-black
 pre-commit
+ruff
 
 # PostGIS writing
 GeoAlchemy2

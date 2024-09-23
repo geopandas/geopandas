@@ -14,6 +14,7 @@ dependencies:
   - pytest-cov
   - pytest-xdist
   - fsspec
+  - pytz
   # optional
   - matplotlib=3.6.1
   - mapclassify=2.5.0

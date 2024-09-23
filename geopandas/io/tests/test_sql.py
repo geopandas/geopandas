@@ -274,9 +274,7 @@ class TestIO:
         create_postgis(con, df_nybb, geom_col=orig_geom)
 
         sql = """SELECT borocode, boroname, shape_leng, shape_area,
-                    {} as {} FROM nybb;""".format(
-            orig_geom, out_geom
-        )
+                    {} as {} FROM nybb;""".format(orig_geom, out_geom)
         df = read_postgis(sql, con, geom_col=out_geom)
 
         validate_boro_df(df)

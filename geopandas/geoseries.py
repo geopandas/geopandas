@@ -164,7 +164,7 @@ class GeoSeries(GeoPandasBase, Series):
                 # make a copy to avoid setting CRS to passed GeometryArray
                 data = data.copy()
             else:
-                if not data.crs == crs:
+                if not data_crs == crs:
                     raise ValueError(
                         "CRS mismatch between CRS of the passed geometries "
                         "and 'crs'. Use 'GeoSeries.set_crs(crs, "
@@ -718,7 +718,7 @@ class GeoSeries(GeoPandasBase, Series):
     def _wrapped_pandas_method(self, mtd, *args, **kwargs):
         """Wrap a generic pandas method to ensure it returns a GeoSeries"""
         val = getattr(super(), mtd)(*args, **kwargs)
-        if type(val) == Series:
+        if type(val) is Series:
             val.__class__ = GeoSeries
             val.crs = self.crs
         return val
@@ -733,10 +733,6 @@ class GeoSeries(GeoPandasBase, Series):
     @doc(pd.Series)
     def take(self, *args, **kwargs):
         return self._wrapped_pandas_method("take", *args, **kwargs)
-
-    @doc(pd.Series)
-    def select(self, *args, **kwargs):
-        return self._wrapped_pandas_method("select", *args, **kwargs)
 
     @doc(pd.Series)
     def apply(self, func, convert_dtype: Optional[bool] = None, args=(), **kwargs):
