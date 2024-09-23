@@ -4,9 +4,11 @@ channels:
 dependencies:
   - python=3.10
   # required
-  - pandas
-  - shapely
-  - pyogrio
+  - pandas=2.1
+  - shapely=2
+  - geos
+  - cython
+  - pyogrio>=0.7.2
   - pyproj
   - packaging
   # testing
@@ -16,7 +18,7 @@ dependencies:
   - fsspec
   - pytz
   # optional
-  - matplotlib-base
+  - matplotlib
   - mapclassify
   - folium
   - xyzservices
@@ -26,14 +28,10 @@ dependencies:
   - geodatasets
   # installed in tests.yaml, because not available on windows
   # - postgis
-  - SQLalchemy<2
+  - SQLalchemy<2.1 # test oldest support sqlalchemy version
   - psycopg2
   - libspatialite
   - geoalchemy2
   - pyarrow
-  - fiona
   # doctest testing
   - pytest-doctestplus
-  - pip
-  - pip:
-      - git+https://github.com/geopandas/pyogrio.git@main

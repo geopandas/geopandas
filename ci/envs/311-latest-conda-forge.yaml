@@ -16,8 +16,7 @@ dependencies:
   - fsspec
   - pytz
   # optional
-  - fiona
-  - matplotlib
+  - matplotlib-base
   - mapclassify
   - folium
   - xyzservices
@@ -27,12 +26,13 @@ dependencies:
   - geodatasets
   # installed in tests.yaml, because not available on windows
   # - postgis
-  - SQLalchemy>=2
-  - psycopg
+  - SQLalchemy<2.1 # test oldest support sqlalchemy version
   - psycopg2
   - libspatialite
   - geoalchemy2
   - pyarrow
   - geoarrow-pyarrow
+  - fiona
+  - pyogrio
   # doctest testing
   - pytest-doctestplus

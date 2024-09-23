@@ -1,5 +1,4 @@
 import warnings
-from packaging.version import Version
 
 import numpy as np
 import pandas as pd
@@ -731,17 +730,11 @@ def plot_dataframe(
     nan_idx = np.asarray(pd.isna(values), dtype="bool")
 
     if scheme is not None:
-        mc_err = (
-            "The 'mapclassify' package (>= 2.4.0) is "
-            "required to use the 'scheme' keyword."
-        )
+        mc_err = "The 'mapclassify' package is required to use the 'scheme' keyword."
         try:
             import mapclassify
 
         except ImportError:
-            raise ImportError(mc_err)
-
-        if Version(mapclassify.__version__) < Version("2.4.0"):
             raise ImportError(mc_err)
 
         if classification_kwds is None:
