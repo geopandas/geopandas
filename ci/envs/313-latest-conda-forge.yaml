@@ -1,6 +1,7 @@
 name: test
 channels:
   - conda-forge
+  - python_rc
 dependencies:
   - python=3.13.rc2
   # required
