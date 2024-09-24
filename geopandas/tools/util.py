@@ -12,7 +12,7 @@ _multi_type_map = {
 
 def collect(x, multi=False):
     """
-    Collect single part geometries into their Multi* counterpart
+    Collect single part geometries into their Multi* counterpart.
 
     Parameters
     ----------

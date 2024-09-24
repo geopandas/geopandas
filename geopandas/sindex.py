@@ -444,7 +444,7 @@ geometries}
 
     @property
     def size(self):
-        """Size of the spatial index
+        """Size of the spatial index.
 
         Number of leaves (input geometries) in the index.
 
@@ -472,7 +472,7 @@ geometries}
 
     @property
     def is_empty(self):
-        """Check if the spatial index is empty
+        """Check if the spatial index is empty.
 
         Examples
         --------

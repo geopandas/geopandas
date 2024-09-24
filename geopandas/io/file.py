@@ -548,9 +548,7 @@ def _read_file_pyogrio(path_or_bytes, bbox=None, mask=None, rows=None, **kwargs)
 
 
 def _detect_driver(path):
-    """
-    Attempt to auto-detect driver based on the extension
-    """
+    """Attempt to auto-detect driver based on the extension."""
     try:
         # in case the path is a file handle
         path = path.name
@@ -578,7 +576,7 @@ def _to_file(
     **kwargs,
 ):
     """
-    Write this GeoDataFrame to an OGR data source
+    Write this GeoDataFrame to an OGR data source.
 
     A dictionary of supported OGR providers is available via:
 
@@ -800,9 +798,7 @@ def infer_schema(df):
 
 
 def _geometry_types(df):
-    """
-    Determine the geometry types in the GeoDataFrame for the schema.
-    """
+    """Determine the geometry types in the GeoDataFrame for the schema."""
     geom_types_2D = df[~df.geometry.has_z].geometry.geom_type.unique()
     geom_types_2D = [gtype for gtype in geom_types_2D if gtype is not None]
     geom_types_3D = df[df.geometry.has_z].geometry.geom_type.unique()

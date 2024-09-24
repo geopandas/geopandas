@@ -149,7 +149,7 @@ def _query(data, forward, provider, throttle_time, **kwargs):
 
 def _prepare_geocode_result(results):
     """
-    Helper function for the geocode function
+    Helper function for the geocode function.
 
     Takes a dict where keys are index entries, values are tuples containing:
     (address, (lat, lon))

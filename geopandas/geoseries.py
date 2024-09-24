@@ -43,7 +43,7 @@ def _geoseries_constructor_with_fallback(
     """
     A flexible constructor for GeoSeries._constructor, which needs to be able
     to fall back to a Series (if a certain operation does not produce
-    geometries)
+    geometries).
     """
     try:
         return GeoSeries(data=data, index=index, crs=crs, **kwargs)
@@ -254,7 +254,7 @@ class GeoSeries(GeoPandasBase, Series):
 
     @property
     def x(self) -> Series:
-        """Return the x location of point geometries in a GeoSeries
+        """Return the x location of point geometries in a GeoSeries.
 
         Returns
         -------
@@ -280,7 +280,7 @@ class GeoSeries(GeoPandasBase, Series):
 
     @property
     def y(self) -> Series:
-        """Return the y location of point geometries in a GeoSeries
+        """Return the y location of point geometries in a GeoSeries.
 
         Returns
         -------
@@ -306,7 +306,7 @@ class GeoSeries(GeoPandasBase, Series):
 
     @property
     def z(self) -> Series:
-        """Return the z location of point geometries in a GeoSeries
+        """Return the z location of point geometries in a GeoSeries.
 
         Returns
         -------
@@ -379,7 +379,7 @@ class GeoSeries(GeoPandasBase, Series):
     ) -> GeoSeries:
         """
         Alternate constructor to create a ``GeoSeries``
-        from a list or array of WKB objects
+        from a list or array of WKB objects.
 
         Parameters
         ----------
@@ -421,7 +421,7 @@ class GeoSeries(GeoPandasBase, Series):
     ) -> GeoSeries:
         """
         Alternate constructor to create a ``GeoSeries``
-        from a list or array of WKT objects
+        from a list or array of WKT objects.
 
         Parameters
         ----------
@@ -475,7 +475,7 @@ class GeoSeries(GeoPandasBase, Series):
     def from_xy(cls, x, y, z=None, index=None, crs=None, **kwargs) -> GeoSeries:
         """
         Alternate constructor to create a :class:`~geopandas.GeoSeries` of Point
-        geometries from lists or arrays of x, y(, z) coordinates
+        geometries from lists or arrays of x, y(, z) coordinates.
 
         In case of geographic coordinates, it is assumed that longitude is captured
         by ``x`` coordinates and latitude by ``y``.
@@ -535,7 +535,7 @@ class GeoSeries(GeoPandasBase, Series):
         on_invalid: str = "raise",
         **kwargs,
     ) -> GeoSeries:
-        """Create a GeoSeries from either WKT or WKB values"""
+        """Create a GeoSeries from either WKT or WKB values."""
         if isinstance(data, Series):
             if index is not None:
                 data = data.reindex(index)
@@ -706,7 +706,7 @@ class GeoSeries(GeoPandasBase, Series):
         return _expanddim_logic(df)
 
     def _wrapped_pandas_method(self, mtd, *args, **kwargs):
-        """Wrap a generic pandas method to ensure it returns a GeoSeries"""
+        """Wrap a generic pandas method to ensure it returns a GeoSeries."""
         val = getattr(super(), mtd)(*args, **kwargs)
         if type(val) is Series:
             val.__class__ = GeoSeries
@@ -921,7 +921,7 @@ class GeoSeries(GeoPandasBase, Series):
         return super().fillna(value=value, limit=limit, inplace=inplace, **kwargs)
 
     def __contains__(self, other) -> bool:
-        """Allow tests of the form "geom in s"
+        """Allow tests of the form "geom in s".
 
         Tests whether a GeoSeries contains a geometry.
 
@@ -938,7 +938,7 @@ class GeoSeries(GeoPandasBase, Series):
 
     @doc(_explore_geoseries)
     def explore(self, *args, **kwargs):
-        """Interactive map based on folium/leaflet.js"""
+        """Interactive map based on folium/leaflet.js."""
         return _explore_geoseries(self, *args, **kwargs)
 
     def explode(self, ignore_index=False, index_parts=False) -> GeoSeries:
@@ -1286,7 +1286,7 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
 
     def to_wkb(self, hex: bool = False, **kwargs) -> Series:
         """
-        Convert GeoSeries geometries to WKB
+        Convert GeoSeries geometries to WKB.
 
         Parameters
         ----------
@@ -1310,7 +1310,7 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
 
     def to_wkt(self, **kwargs) -> Series:
         """
-        Convert GeoSeries geometries to WKT
+        Convert GeoSeries geometries to WKT.
 
         Parameters
         ----------

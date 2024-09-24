@@ -1,6 +1,4 @@
-"""
-Testing functionality for geopandas objects.
-"""
+"""Testing functionality for geopandas objects."""
 
 import warnings
 
@@ -11,7 +9,7 @@ from geopandas.array import GeometryDtype
 
 
 def _isna(this):
-    """Isna version that works for both scalars and (Geo)Series"""
+    """Isna version that works for both scalars and (Geo)Series."""
     with warnings.catch_warnings():
         # GeoSeries.isna will raise a warning about no longer returning True
         # for empty geometries. This helper is used below always in combination
@@ -197,7 +195,7 @@ def assert_geoseries_equal(
 
 
 def _truncated_string(geom):
-    """Truncated WKT repr of geom"""
+    """Truncated WKT repr of geom."""
     s = str(geom)
     if len(s) > 100:
         return s[:100] + "..."
@@ -249,7 +247,7 @@ def assert_geodataframe_equal(
     normalize=False,
 ):
     """
-    Check that two GeoDataFrames are equal/
+    Check that two GeoDataFrames are equal.
 
     Parameters
     ----------

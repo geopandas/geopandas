@@ -258,8 +258,7 @@ def _get_geometry_type(gdf):
 
 def _get_srid_from_crs(gdf):
     """
-    Get EPSG code from CRS if available. If not, return 0.
-    """
+    """Get EPSG code from CRS if available. If not, return 0."""
     # Use geoalchemy2 default for srid
     # Note: undefined srid in PostGIS is 0
     srid = None

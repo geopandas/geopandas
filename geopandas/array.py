@@ -85,9 +85,7 @@ def _check_crs(left, right, allow_none=False):
 
 
 def _crs_mismatch_warn(left, right, stacklevel=3):
-    """
-    Raise a CRS mismatch warning with the information on the assigned CRS.
-    """
+    """Raise a CRS mismatch warning with the information on the assigned CRS."""
     if left.crs:
         left_srs = left.crs.to_string()
         left_srs = left_srs if len(left_srs) <= 50 else " ".join([left_srs[:50], "..."])
@@ -181,9 +179,7 @@ def from_shapely(data, crs=None):
 
 
 def to_shapely(geoms):
-    """
-    Convert GeometryArray to numpy object array of shapely objects.
-    """
+    """Convert GeometryArray to numpy object array of shapely objects."""
     if not isinstance(geoms, GeometryArray):
         raise ValueError("'geoms' must be a GeometryArray")
     return geoms._data
@@ -212,9 +208,7 @@ def from_wkb(data, crs=None, on_invalid="raise"):
 
 
 def to_wkb(geoms, hex=False, **kwargs):
-    """
-    Convert GeometryArray to a numpy object array of WKB objects.
-    """
+    """Convert GeometryArray to a numpy object array of WKB objects."""
     if not isinstance(geoms, GeometryArray):
         raise ValueError("'geoms' must be a GeometryArray")
     return shapely.to_wkb(geoms, hex=hex, **kwargs)
@@ -243,9 +237,7 @@ def from_wkt(data, crs=None, on_invalid="raise"):
 
 
 def to_wkt(geoms, **kwargs):
-    """
-    Convert GeometryArray to a numpy object array of WKT objects.
-    """
+    """Convert GeometryArray to a numpy object array of WKT objects."""
     if not isinstance(geoms, GeometryArray):
         raise ValueError("'geoms' must be a GeometryArray")
     return shapely.to_wkt(geoms, **kwargs)
@@ -376,7 +368,7 @@ class GeometryArray(ExtensionArray):
 
     @crs.setter
     def crs(self, value):
-        """Sets the value of the crs"""
+        """Sets the value of the crs."""
         if HAS_PYPROJ:
             from pyproj import CRS
 
@@ -394,7 +386,7 @@ class GeometryArray(ExtensionArray):
             self._crs = None
 
     def check_geographic_crs(self, stacklevel):
-        """Check CRS and warn if the planar operation is done in a geographic CRS"""
+        """Check CRS and warn if the planar operation is done in a geographic CRS."""
         if self.crs and self.crs.is_geographic:
             warnings.warn(
                 "Geometry is in a geographic CRS. Results from "
@@ -1104,7 +1096,7 @@ class GeometryArray(ExtensionArray):
 
     @property
     def x(self):
-        """Return the x location of point geometries in a GeoSeries"""
+        """Return the x location of point geometries in a GeoSeries."""
         if (self.geom_type[~self.isna()] == "Point").all():
             empty = self.is_empty
             if empty.any():
@@ -1120,7 +1112,7 @@ class GeometryArray(ExtensionArray):
 
     @property
     def y(self):
-        """Return the y location of point geometries in a GeoSeries"""
+        """Return the y location of point geometries in a GeoSeries."""
         if (self.geom_type[~self.isna()] == "Point").all():
             empty = self.is_empty
             if empty.any():
@@ -1136,7 +1128,7 @@ class GeometryArray(ExtensionArray):
 
     @property
     def z(self):
-        """Return the z location of point geometries in a GeoSeries"""
+        """Return the z location of point geometries in a GeoSeries."""
         if (self.geom_type[~self.isna()] == "Point").all():
             empty = self.is_empty
             if empty.any():
@@ -1324,9 +1316,7 @@ class GeometryArray(ExtensionArray):
                 return np.array(self, dtype=dtype, copy=copy)
 
     def isna(self):
-        """
-        Boolean NumPy array indicating if each value is missing
-        """
+        """Boolean NumPy array indicating if each value is missing."""
         return shapely.is_missing(self._data)
 
     def value_counts(
@@ -1624,7 +1614,7 @@ class GeometryArray(ExtensionArray):
     @classmethod
     def _concat_same_type(cls, to_concat):
         """
-        Concatenate multiple array
+        Concatenate multiple array.
 
         Parameters
         ----------
@@ -1693,9 +1683,7 @@ class GeometryArray(ExtensionArray):
         return self._binop(other, operator.ne)
 
     def __contains__(self, item):
-        """
-        Return for `item in self`.
-        """
+        """Return for `item in self`."""
         if isna(item):
             if (
                 item is self.dtype.na_value

@@ -85,7 +85,7 @@ def _expand_kwargs(kwargs, multiindex):
 
 
 def _PolygonPatch(polygon, **kwargs):
-    """Constructs a matplotlib patch from a Polygon geometry
+    """Constructs a matplotlib patch from a Polygon geometry.
 
     The `kwargs` are those supported by the matplotlib.patches.PathPatch class
     constructor. Returns an instance of matplotlib.patches.PathPatch.
@@ -122,7 +122,7 @@ def _plot_polygon_collection(
     **kwargs,
 ):
     """
-    Plots a collection of Polygon and MultiPolygon geometries to `ax`
+    Plots a collection of Polygon and MultiPolygon geometries to `ax`.
 
     Parameters
     ----------
@@ -193,7 +193,7 @@ def _plot_linestring_collection(
     **kwargs,
 ):
     """
-    Plots a collection of LineString and MultiLineString geometries to `ax`
+    Plots a collection of LineString and MultiLineString geometries to `ax`.
 
     Parameters
     ----------
@@ -259,7 +259,7 @@ def _plot_point_collection(
     **kwargs,
 ):
     """
-    Plots a collection of Point and MultiPoint geometries to `ax`
+    Plots a collection of Point and MultiPoint geometries to `ax`.
 
     Parameters
     ----------

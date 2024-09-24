@@ -28,7 +28,7 @@ def _geodataframe_constructor_with_fallback(*args, **kwargs):
     """
     A flexible constructor for GeoDataFrame._constructor, which falls back
     to returning a DataFrame (if a certain operation does not preserve the
-    geometry column)
+    geometry column).
     """
     df = GeoDataFrame(*args, **kwargs)
     geometry_cols_mask = df.dtypes == "geometry"
@@ -464,7 +464,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
     @property
     def active_geometry_name(self):
-        """Return the name of the active geometry column
+        """Return the name of the active geometry column.
 
         Returns a string name if a GeoDataFrame has an active geometry column set.
         Otherwise returns None. You can also access the active geometry column using the
@@ -526,7 +526,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
     @crs.setter
     def crs(self, value):
-        """Sets the value of the crs"""
+        """Sets the value of the crs."""
         if self._geometry_column_name is None:
             raise ValueError(
                 "Assigning CRS to a GeoDataFrame without a geometry column is not "
@@ -586,7 +586,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
     def from_dict(cls, data, geometry=None, crs=None, **kwargs):
         """
         Construct GeoDataFrame from dict of array-like or dicts by
-        overriding DataFrame.from_dict method with geometry and crs
+        overriding DataFrame.from_dict method with geometry and crs.
 
         Parameters
         ----------
@@ -997,7 +997,7 @@ box': (2.0, 1.0, 2.0, 1.0)}], 'bbox': (1.0, 1.0, 2.0, 2.0)}
     def iterfeatures(self, na="null", show_bbox=False, drop_id=False):
         """
         Returns an iterator that yields feature dictionaries that comply with
-        __geo_interface__
+        __geo_interface__.
 
         Parameters
         ----------
@@ -1905,6 +1905,7 @@ default 'snappy'
 
     def __finalize__(self, other, method=None, **kwargs):
         """Propagate metadata from other to self"""
+        """Propagate metadata from other to self."""
         self = super().__finalize__(other, method=method, **kwargs)
 
         # merge operation: using metadata of the left object

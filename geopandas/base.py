@@ -63,7 +63,7 @@ def _delegate_binary_method(op, this, other, align, *args, **kwargs):
 
 def _binary_geo(op, this, other, align, *args, **kwargs):
     # type: (str, GeoSeries, GeoSeries) -> GeoSeries
-    """Binary operation on GeoSeries objects that returns a GeoSeries"""
+    """Binary operation on GeoSeries objects that returns a GeoSeries."""
     from .geoseries import GeoSeries
 
     geoms, index = _delegate_binary_method(op, this, other, align, *args, **kwargs)
@@ -72,7 +72,7 @@ def _binary_geo(op, this, other, align, *args, **kwargs):
 
 def _binary_op(op, this, other, align, *args, **kwargs):
     # type: (str, GeoSeries, GeoSeries, args/kwargs) -> Series[bool/float]
-    """Binary operation on GeoSeries objects that returns a Series"""
+    """Binary operation on GeoSeries objects that returns a Series."""
     data, index = _delegate_binary_method(op, this, other, align, *args, **kwargs)
     return Series(data, index=index)
 
@@ -91,7 +91,7 @@ def _delegate_property(op, this):
 
 def _delegate_geo_method(op, this, **kwargs):
     # type: (str, GeoSeries) -> GeoSeries
-    """Unary operation that returns a GeoSeries"""
+    """Unary operation that returns a GeoSeries."""
     from .geodataframe import GeoDataFrame
     from .geoseries import GeoSeries
 
@@ -205,7 +205,7 @@ class GeoPandasBase:
 
     @crs.setter
     def crs(self, value):
-        """Sets the value of the crs"""
+        """Sets the value of the crs."""
         self.geometry.values.crs = value
 
     @property
@@ -230,7 +230,7 @@ class GeoPandasBase:
 
     @property
     def type(self):
-        """Return the geometry type of each geometry in the GeoSeries"""
+        """Return the geometry type of each geometry in the GeoSeries."""
         return self.geom_type
 
     @property
@@ -4860,7 +4860,7 @@ GeometryCollection
 
     @property
     def sindex(self):
-        """Generate the spatial index
+        """Generate the spatial index.
 
         Creates R-tree spatial index based on ``shapely.STRtree``.
 
@@ -5081,7 +5081,7 @@ GeometryCollection
 
     def relate(self, other, align=None):
         """
-        Returns the DE-9IM intersection matrices for the geometries
+        Returns the DE-9IM intersection matrices for the geometries.
 
         The operation works on a 1-to-1 row-wise manner:
 
@@ -5298,7 +5298,7 @@ GeometryCollection
 
     def project(self, other, normalized=False, align=None):
         """
-        Return the distance along each geometry nearest to *other*
+        Return the distance along each geometry nearest to *other*.
 
         The operation works on a 1-to-1 row-wise manner:
 
@@ -5397,7 +5397,7 @@ GeometryCollection
 
     def interpolate(self, distance, normalized=False):
         """
-        Return a point at the specified distance along each geometry
+        Return a point at the specified distance along each geometry.
 
         Parameters
         ----------

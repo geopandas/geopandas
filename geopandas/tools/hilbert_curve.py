@@ -42,7 +42,7 @@ def _hilbert_distance(geoms, total_bounds=None, level=16):
 def _continuous_to_discrete_coords(bounds, level, total_bounds):
     """
     Calculates mid points & ranges of geoms and returns
-    as discrete coords
+    as discrete coords.
 
     Parameters
     ----------
@@ -86,7 +86,7 @@ def _continuous_to_discrete_coords(bounds, level, total_bounds):
 def _continuous_to_discrete(vals, val_range, n):
     """
     Convert a continuous one-dimensional array to discrete integer values
-    based their ranges
+    based their ranges.
 
     Parameters
     ----------

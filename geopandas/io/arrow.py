@@ -95,9 +95,7 @@ _geometry_type_names += [geom_type + " Z" for geom_type in _geometry_type_names]
 
 
 def _get_geometry_types(series):
-    """
-    Get unique geometry types from a GeoSeries.
-    """
+    """Get unique geometry types from a GeoSeries."""
     arr_geometry_types = shapely.get_type_id(series.array._data)
     # ensure to include "... Z" for 3D geometries
     has_z = shapely.has_z(series.array._data)
@@ -202,7 +200,7 @@ def _create_metadata(
 
 
 def _encode_metadata(metadata):
-    """Encode metadata dict to UTF-8 JSON string
+    """Encode metadata dict to UTF-8 JSON string.
 
     Parameters
     ----------
@@ -216,7 +214,7 @@ def _encode_metadata(metadata):
 
 
 def _decode_metadata(metadata_str):
-    """Decode a UTF-8 encoded JSON string to dict
+    """Decode a UTF-8 encoded JSON string to dict.
 
     Parameters
     ----------
@@ -335,9 +333,7 @@ def _geopandas_to_arrow(
     schema_version=None,
     write_covering_bbox=None,
 ):
-    """
-    Helper function with main, shared logic for to_parquet/to_feather.
-    """
+    """Helper function with main, shared logic for to_parquet/to_feather."""
     from pyarrow import StructArray
 
     from geopandas.io._geoarrow import geopandas_to_arrow
@@ -491,9 +487,7 @@ def _to_feather(df, path, index=None, compression=None, schema_version=None, **k
 
 
 def _arrow_to_geopandas(table, geo_metadata=None):
-    """
-    Helper function with main, shared logic for read_parquet/read_feather.
-    """
+    """Helper function with main, shared logic for read_parquet/read_feather."""
     if geo_metadata is None:
         # Note: this path of not passing metadata is also used by dask-geopandas
         geo_metadata = _validate_and_decode_metadata(table.schema.metadata)
@@ -602,7 +596,7 @@ def _ensure_arrow_fs(filesystem):
     """
     Simplified version of pyarrow.fs._ensure_filesystem. This is only needed
     below because `pyarrow.parquet.read_metadata` does not yet accept a
-    filesystem keyword (https://issues.apache.org/jira/browse/ARROW-16719)
+    filesystem keyword (https://issues.apache.org/jira/browse/ARROW-16719).
     """
     from pyarrow import fs
 

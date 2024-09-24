@@ -1,4 +1,4 @@
-"""Vendored, cut down version of pyogrio/util.py for use with fiona"""
+"""Vendored, cut down version of pyogrio/util.py for use with fiona."""
 
 import re
 import sys
@@ -6,10 +6,7 @@ from urllib.parse import urlparse
 
 
 def vsi_path(path: str) -> str:
-    """
-    Ensure path is a local path or a GDAL-compatible vsi path.
-
-    """
+    """Ensure path is a local path or a GDAL-compatible vsi path."""
     # path is already in GDAL format
     if path.startswith("/vsi"):
         return path
@@ -56,7 +53,7 @@ CURLSCHEMES = {k for k, v in SCHEMES.items() if v == "curl"}
 
 def _parse_uri(path: str):
     """
-    Parse a URI
+    Parse a URI.
 
     Returns a tuples of (path, archive, scheme)
 
@@ -91,7 +88,7 @@ def _parse_uri(path: str):
 
 
 def _construct_vsi_path(path, archive, scheme) -> str:
-    """Convert a parsed path to a GDAL VSI path"""
+    """Convert a parsed path to a GDAL VSI path."""
     prefix = ""
     suffix = ""
     schemes = scheme.split("+")
