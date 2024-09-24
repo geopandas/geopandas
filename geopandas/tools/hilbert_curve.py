@@ -46,7 +46,6 @@ def _continuous_to_discrete_coords(bounds, level, total_bounds):
 
     Parameters
     ----------
-
     bounds : Bounds of each geometry - array
 
     p : The number of iterations used in constructing the Hilbert curve

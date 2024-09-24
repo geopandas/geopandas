@@ -24,6 +24,7 @@ def _get_sys_info():
 
 def _get_C_info():
     """Information on system PROJ, GDAL, GEOS
+
     Returns
     -------
     c_info: dict
@@ -144,7 +145,6 @@ def show_versions():
 
     Examples
     --------
-
     ::
 
         $ python -c "import geopandas; geopandas.show_versions()"

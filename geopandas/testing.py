@@ -11,7 +11,7 @@ from geopandas.array import GeometryDtype
 
 
 def _isna(this):
-    """isna version that works for both scalars and (Geo)Series"""
+    """Isna version that works for both scalars and (Geo)Series"""
     with warnings.catch_warnings():
         # GeoSeries.isna will raise a warning about no longer returning True
         # for empty geometries. This helper is used below always in combination
@@ -43,7 +43,6 @@ def _geom_equals_mask(this, that):
     Series
         boolean Series, True if geometries in left equal geometries in right
     """
-
     return (
         this.geom_equals(that)
         | (this.is_empty & that.is_empty)
@@ -66,7 +65,6 @@ def geom_equals(this, that):
     bool
         True if all geometries in left equal geometries in right
     """
-
     return _geom_equals_mask(this, that).all()
 
 
@@ -87,7 +85,6 @@ def _geom_almost_equals_mask(this, that):
     Series
         boolean Series, True if geometries in left almost equal geometries in right
     """
-
     return (
         this.geom_equals_exact(that, tolerance=0.5 * 10 ** (-6))
         | (this.is_empty & that.is_empty)

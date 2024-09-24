@@ -244,7 +244,6 @@ def _validate_dataframe(df):
     ----------
     df : GeoDataFrame
     """
-
     if not isinstance(df, DataFrame):
         raise ValueError("Writing to Parquet/Feather only supports IO with DataFrames")
 
@@ -270,7 +269,6 @@ def _validate_geo_metadata(metadata):
     ----------
     metadata : dict
     """
-
     if not metadata:
         raise ValueError("Missing or malformed geo metadata in Parquet/Feather file")
 
@@ -742,7 +740,6 @@ def _read_parquet(path, columns=None, storage_options=None, bbox=None, **kwargs)
     ...     columns=["geometry", "pop_est"]
     ... )  # doctest: +SKIP
     """
-
     parquet = import_optional_dependency(
         "pyarrow.parquet", extra="pyarrow is required for Parquet support."
     )
@@ -837,7 +834,6 @@ def _read_feather(path, columns=None, **kwargs):
     ...     columns=["geometry", "pop_est"]
     ... )  # doctest: +SKIP
     """
-
     feather = import_optional_dependency(
         "pyarrow.feather", extra="pyarrow is required for Feather support."
     )

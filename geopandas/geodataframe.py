@@ -129,7 +129,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
     0  name1  POINT (1 2)  POINT (1 2)
     1  name2  POINT (2 1)  POINT (2 1)
 
-    See also
+    See Also
     --------
     GeoSeries : Series object designed to store shapely geometry objects
     """
@@ -329,7 +329,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         -------
         GeoDataFrame
 
-        See also
+        See Also
         --------
         GeoDataFrame.rename_geometry : rename an active geometry column
         """
@@ -447,7 +447,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         -------
         geodataframe : GeoDataFrame
 
-        See also
+        See Also
         --------
         GeoDataFrame.set_geometry : set the active geometry
         """
@@ -476,7 +476,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         str
             name of an active geometry column or None
 
-        See also
+        See Also
         --------
         GeoDataFrame.set_geometry : set the active geometry
         """
@@ -496,7 +496,6 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         Examples
         --------
-
         >>> gdf.crs  # doctest: +SKIP
         <Geographic 2D CRS: EPSG:4326>
         Name: WGS 84
@@ -510,7 +509,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         - Ellipsoid: WGS 84
         - Prime Meridian: Greenwich
 
-        See also
+        See Also
         --------
         GeoDataFrame.set_crs : assign CRS
         GeoDataFrame.to_crs : re-project to another CRS
@@ -652,7 +651,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         >>> gdf = geopandas.read_file(path)
 
-        See also
+        See Also
         --------
         read_file : read file to GeoDataFame
         GeoDataFrame.to_file : write GeoDataFrame to file
@@ -812,11 +811,10 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         >>> df = geopandas.read_postgis(sql, con)  # doctest: +SKIP
 
-        See also
+        See Also
         --------
         geopandas.read_postgis : read PostGIS database to GeoDataFrame
         """
-
         df = geopandas.io.sql._read_postgis(
             sql,
             con,
@@ -909,7 +907,6 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         Examples
         --------
-
         >>> from shapely.geometry import Point
         >>> d = {'col1': ['name1', 'name2'], 'geometry': [Point(1, 2), Point(2, 1)]}
         >>> gdf = geopandas.GeoDataFrame(d, crs="EPSG:3857")
@@ -929,7 +926,7 @@ es": {"name": "urn:ogc:def:crs:EPSG::3857"}}}'
 
         >>> gdf.to_file(path, driver="GeoJSON")  # doctest: +SKIP
 
-        See also
+        See Also
         --------
         GeoDataFrame.to_file : write GeoDataFrame to file
 
@@ -980,7 +977,6 @@ es": {"name": "urn:ogc:def:crs:EPSG::3857"}}}'
 
         Examples
         --------
-
         >>> from shapely.geometry import Point
         >>> d = {'col1': ['name1', 'name2'], 'geometry': [Point(1, 2), Point(2, 1)]}
         >>> gdf = geopandas.GeoDataFrame(d, crs="EPSG:4326")
@@ -1023,7 +1019,6 @@ individually so that features may have different properties
 
         Examples
         --------
-
         >>> from shapely.geometry import Point
         >>> d = {'col1': ['name1', 'name2'], 'geometry': [Point(1, 2), Point(2, 1)]}
         >>> gdf = geopandas.GeoDataFrame(d, crs="EPSG:4326")
@@ -1132,7 +1127,6 @@ individually so that features may have different properties
 
         Examples
         --------
-
         >>> from shapely.geometry import Point
         >>> d = {'col1': ['name1', 'name2'], 'geometry': [Point(1, 2), Point(2, 1)]}
         >>> gdf = geopandas.GeoDataFrame(d)
@@ -1147,7 +1141,7 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
 2.0)}}, {'id': '1', 'type': 'Feature', 'properties': {'col1': 'name2'}, 'geometry':\
  {'type': 'Point', 'coordinates': (2.0, 1.0)}}]}
 
-        See also
+        See Also
         --------
         GeoDataFrame.to_json : return a GeoDataFrame as a GeoJSON string
 
@@ -1182,7 +1176,6 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
         DataFrame
             geometry columns are encoded to WKB
         """
-
         df = DataFrame(self.copy())
 
         # Encode all geometry columns to WKB
@@ -1205,7 +1198,6 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
         DataFrame
             geometry columns are encoded to WKT
         """
-
         df = DataFrame(self.copy())
 
         # Encode all geometry columns to WKT
@@ -1357,15 +1349,13 @@ default 'snappy'
 
         Examples
         --------
-
         >>> gdf.to_parquet('data.parquet')  # doctest: +SKIP
 
-        See also
+        See Also
         --------
         GeoDataFrame.to_feather : write GeoDataFrame to feather
         GeoDataFrame.to_file : write GeoDataFrame to file
         """
-
         # Accept engine keyword for compatibility with pandas.DataFrame.to_parquet
         # The only engine currently supported by GeoPandas is pyarrow, so no
         # other engine should be specified.
@@ -1421,15 +1411,13 @@ default 'snappy'
 
         Examples
         --------
-
         >>> gdf.to_feather('data.feather')  # doctest: +SKIP
 
-        See also
+        See Also
         --------
         GeoDataFrame.to_parquet : write GeoDataFrame to parquet
         GeoDataFrame.to_file : write GeoDataFrame to file
         """
-
         from geopandas.io.arrow import _to_feather
 
         _to_feather(
@@ -1516,7 +1504,6 @@ default 'snappy'
 
         Examples
         --------
-
         >>> gdf.to_file('dataframe.shp')  # doctest: +SKIP
 
         >>> gdf.to_file('dataframe.gpkg', driver='GPKG', layer='name')  # doctest: +SKIP
@@ -1608,7 +1595,7 @@ default 'snappy'
         Without ``allow_override=True``, ``set_crs`` returns an error if you try to
         override CRS.
 
-        See also
+        See Also
         --------
         GeoDataFrame.to_crs : re-project to another CRS
 
@@ -1694,7 +1681,7 @@ default 'snappy'
         - Ellipsoid: WGS 84
         - Prime Meridian: Greenwich
 
-        See also
+        See Also
         --------
         GeoDataFrame.set_crs : assign CRS without re-projection
         """
@@ -1778,7 +1765,8 @@ default 'snappy'
 
     def _persist_old_default_geometry_colname(self):
         """Internal util to temporarily persist the default geometry column
-        name of 'geometry' for backwards compatibility."""
+        name of 'geometry' for backwards compatibility.
+        """
         # self.columns check required to avoid this warning in __init__
         if self._geometry_column_name is None and "geometry" not in self.columns:
             msg = (
@@ -1799,7 +1787,6 @@ default 'snappy'
         Overwritten to preserve CRS of GeometryArray in cases like
         df['geometry'] = [geom... for geom in df.geometry]
         """
-
         if not pd.api.types.is_list_like(key) and (
             key == self._geometry_column_name
             or key == "geometry"
@@ -1917,7 +1904,7 @@ default 'snappy'
         return Series._from_mgr(mgr, axes)
 
     def __finalize__(self, other, method=None, **kwargs):
-        """propagate metadata from other to self"""
+        """Propagate metadata from other to self"""
         self = super().__finalize__(other, method=method, **kwargs)
 
         # merge operation: using metadata of the left object
@@ -2022,6 +2009,7 @@ default 'snappy'
             supplied, which will be required in pandas 2.0 for certain aggfuncs.
 
             .. versionadded:: 0.13.0
+
         Returns
         -------
         GeoDataFrame
@@ -2047,12 +2035,11 @@ default 'snappy'
         name1  MULTIPOINT ((0 1), (1 2))
         name2                POINT (2 1)
 
-        See also
+        See Also
         --------
         GeoDataFrame.explode : explode multi-part geometries into single geometries
 
         """
-
         if by is None and level is None:
             by = np.zeros(len(self), dtype="int64")
 
@@ -2140,7 +2127,6 @@ default 'snappy'
 
         Examples
         --------
-
         >>> from shapely.geometry import MultiPoint
         >>> d = {
         ...     "col1": ["name1", "name2"],
@@ -2179,12 +2165,11 @@ default 'snappy'
         2  name2  POINT (2 1)
         3  name2  POINT (0 0)
 
-        See also
+        See Also
         --------
         GeoDataFrame.dissolve : dissolve geometries into a single observation.
 
         """
-
         # If no column is specified then default to the active geometry column
         if column is None:
             column = self.geometry.name
@@ -2222,6 +2207,7 @@ default 'snappy'
         Returns a GeoDataFrame when the geometry column is kept as geometries,
         otherwise returns a pandas DataFrame.
         See the pandas.DataFrame.astype docstring for more details.
+
         Returns
         -------
         GeoDataFrame or DataFrame
@@ -2295,13 +2281,12 @@ default 'snappy'
 
         Examples
         --------
-
         >>> from sqlalchemy import create_engine
         >>> engine = create_engine("postgresql://myusername:mypassword@myhost:5432\
 /mydatabase")  # doctest: +SKIP
         >>> gdf.to_postgis("my_table", engine)  # doctest: +SKIP
 
-        See also
+        See Also
         --------
         GeoDataFrame.to_file : write GeoDataFrame to file
         read_postgis : read PostGIS database to GeoDataFrame
@@ -2396,7 +2381,7 @@ default 'snappy'
         Every operation in GeoPandas is planar, i.e. the potential third
         dimension is not taken into account.
 
-        See also
+        See Also
         --------
         GeoDataFrame.sjoin_nearest : nearest neighbor join
         sjoin : equivalent top-level function
@@ -2514,7 +2499,7 @@ chicago_w_groceries[chicago_w_groceries["community"] == "UPTOWN"]
         30          TARGET    UPTOWN
         30       Mariano's    UPTOWN
 
-        See also
+        See Also
         --------
         GeoDataFrame.sjoin : binary predicate joins
         sjoin_nearest : equivalent top-level function
@@ -2572,7 +2557,7 @@ chicago_w_groceries[chicago_w_groceries["community"] == "UPTOWN"]
             Vector data (points, lines, polygons) from the GeoDataFrame clipped to
             polygon boundary from mask.
 
-        See also
+        See Also
         --------
         clip : equivalent top-level function
 
@@ -2675,7 +2660,7 @@ chicago_w_groceries[chicago_w_groceries["community"] == "UPTOWN"]
         3       1.0       NaN      POLYGON ((2 0, 0 0, 0 2, 1 2, 1 1, 2 1, 2 0))
         4       2.0       NaN  MULTIPOLYGON (((3 4, 3 3, 2 3, 2 4, 3 4)), ((4...
 
-        See also
+        See Also
         --------
         GeoDataFrame.sjoin : spatial join
         overlay : equivalent top-level function

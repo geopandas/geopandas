@@ -349,7 +349,7 @@ class GeometryArray(ExtensionArray):
         initialized until the first use.
 
         See Also
-        ---------
+        --------
         GeoDataFrame.has_sindex
 
         Returns
@@ -1345,7 +1345,6 @@ class GeometryArray(ExtensionArray):
         -------
         pd.Series
         """
-
         # note ExtensionArray usage of value_counts only specifies dropna,
         # so sort, normalize and bins are not arguments
         values = to_wkb(self)

@@ -128,7 +128,6 @@ class GeoPandasBase:
 
         Examples
         --------
-
         >>> from shapely.geometry import Polygon, LineString, Point
         >>> s = geopandas.GeoSeries(
         ...     [
@@ -155,7 +154,7 @@ class GeoPandasBase:
         4     0.0
         dtype: float64
 
-        See also
+        See Also
         --------
         GeoSeries.length : measure length
 
@@ -184,7 +183,6 @@ class GeoPandasBase:
 
         Examples
         --------
-
         >>> s.crs  # doctest: +SKIP
         <Geographic 2D CRS: EPSG:4326>
         Name: WGS 84
@@ -198,7 +196,7 @@ class GeoPandasBase:
         - Ellipsoid: WGS 84
         - Prime Meridian: Greenwich
 
-        See also
+        See Also
         --------
         GeoSeries.set_crs : assign CRS
         GeoSeries.to_crs : re-project to another CRS
@@ -245,7 +243,6 @@ class GeoPandasBase:
 
         Examples
         --------
-
         >>> from shapely.geometry import Polygon, LineString, MultiLineString, Point, \
 GeometryCollection
         >>> s = geopandas.GeoSeries(
@@ -277,7 +274,7 @@ GeometryCollection
         5    16.180340
         dtype: float64
 
-        See also
+        See Also
         --------
         GeoSeries.area : measure area of a polygon
 
@@ -300,7 +297,6 @@ GeometryCollection
 
         Examples
         --------
-
         An example with one invalid polygon (a bowtie geometry crossing itself)
         and one missing geometry:
 
@@ -327,7 +323,7 @@ GeometryCollection
         3    False
         dtype: bool
 
-        See also
+        See Also
         --------
         GeoSeries.is_valid_reason : reason for invalidity
         """
@@ -339,7 +335,6 @@ GeometryCollection
 
         Examples
         --------
-
         An example with one invalid polygon (a bowtie geometry crossing itself)
         and one missing geometry:
 
@@ -366,7 +361,7 @@ GeometryCollection
         3    None
         dtype: object
 
-        See also
+        See Also
         --------
         GeoSeries.is_valid : detect invalid geometries
         GeoSeries.make_valid : fix invalid geometries
@@ -441,7 +436,7 @@ GeometryCollection
         4    0
         dtype: int32
 
-        See also
+        See Also
         --------
         GeoSeries.get_coordinates : extract coordinates as a :class:`~pandas.DataFrame`
         GoSeries.count_geometries : count the number of geometries in a collection
@@ -485,7 +480,7 @@ GeometryCollection
         3    1
         dtype: int32
 
-        See also
+        See Also
         --------
         GeoSeries.count_coordinates : count the number of coordinates in a geometry
         GeoSeries.count_interior_rings : count the number of interior rings
@@ -530,7 +525,7 @@ GeometryCollection
         2    0
         dtype: int32
 
-        See also
+        See Also
         --------
         GeoSeries.count_coordinates : count the number of coordinates in a geometry
         GeoSeries.count_geometries : count the number of geometries in a collection
@@ -750,7 +745,7 @@ GeometryCollection
         2    1.0
         dtype: float64
 
-        See also
+        See Also
         --------
         GeoSeries.set_precision : set precision grid size
         """
@@ -823,7 +818,6 @@ GeometryCollection
 
         Examples
         --------
-
         >>> from shapely.geometry import Polygon, LineString, Point
         >>> s = geopandas.GeoSeries(
         ...     [
@@ -844,7 +838,7 @@ GeometryCollection
         2           GEOMETRYCOLLECTION EMPTY
         dtype: geometry
 
-        See also
+        See Also
         --------
         GeoSeries.exterior : outer boundary (without interior rings)
 
@@ -860,7 +854,6 @@ GeometryCollection
 
         Examples
         --------
-
         >>> from shapely.geometry import Polygon, LineString, Point
         >>> s = geopandas.GeoSeries(
         ...     [
@@ -881,7 +874,7 @@ GeometryCollection
         2                POINT (0 0)
         dtype: geometry
 
-        See also
+        See Also
         --------
         GeoSeries.representative_point : point guaranteed to be within each geometry
         """
@@ -914,7 +907,6 @@ GeometryCollection
 
         Examples
         --------
-
         >>> from shapely.geometry import Polygon, LineString, Point, MultiPoint
         >>> s = geopandas.GeoSeries(
         ...     [
@@ -942,7 +934,7 @@ GeometryCollection
         4                                         POINT (0 0)
         dtype: geometry
 
-        See also
+        See Also
         --------
         GeoSeries.convex_hull : convex hull geometry
 
@@ -963,7 +955,6 @@ GeometryCollection
 
         Examples
         --------
-
         >>> from shapely.geometry import Polygon, LineString, Point, MultiPoint
         >>> s = geopandas.GeoSeries(
         ...     [
@@ -990,7 +981,7 @@ GeometryCollection
         4                            POINT (0 0)
         dtype: geometry
 
-        See also
+        See Also
         --------
         GeoSeries.concave_hull : concave hull geometry
         GeoSeries.envelope : bounding rectangle geometry
@@ -1024,7 +1015,6 @@ GeometryCollection
 
         Examples
         --------
-
         >>> from shapely import LineString, MultiPoint, Point, Polygon
         >>> s = geopandas.GeoSeries(
         ...     [
@@ -1083,7 +1073,7 @@ GeometryCollection
         8    POLYGON ((2 0, 1 1, 1 0, 2 0))
         dtype: geometry
 
-        See also
+        See Also
         --------
         GeoSeries.voronoi_polygons : Voronoi diagram around vertices
         """
@@ -1207,7 +1197,7 @@ GeometryCollection
         8       POLYGON ((6 -3, 2.5 0.5, 2.5 2, 6 3.75, 6 -3))
         dtype: geometry
 
-        See also
+        See Also
         --------
         GeoSeries.delaunay_triangles : Delaunay triangulation around vertices
         """
@@ -1235,7 +1225,6 @@ GeometryCollection
 
         Examples
         --------
-
         >>> from shapely.geometry import Polygon, LineString, Point, MultiPoint
         >>> s = geopandas.GeoSeries(
         ...     [
@@ -1259,7 +1248,7 @@ GeometryCollection
         3                            POINT (0 0)
         dtype: geometry
 
-        See also
+        See Also
         --------
         GeoSeries.convex_hull : convex hull geometry
         """
@@ -1275,7 +1264,6 @@ GeometryCollection
 
         Examples
         --------
-
         >>> from shapely.geometry import Polygon, LineString, Point, MultiPoint
         >>> s = geopandas.GeoSeries(
         ...     [
@@ -1299,7 +1287,7 @@ GeometryCollection
         3                            POINT (0 0)
         dtype: geometry
 
-        See also
+        See Also
         --------
         GeoSeries.envelope : bounding rectangle
         """
@@ -1315,7 +1303,6 @@ GeometryCollection
 
         Examples
         --------
-
         >>> from shapely.geometry import Polygon, Point
         >>> s = geopandas.GeoSeries(
         ...     [
@@ -1336,7 +1323,7 @@ GeometryCollection
         2                               None
         dtype: geometry
 
-        See also
+        See Also
         --------
         GeoSeries.boundary : complete set-theoretic boundary
         GeoSeries.interiors : list of inner rings of each polygon
@@ -1350,7 +1337,6 @@ GeometryCollection
 
         Examples
         --------
-
         >>> from shapely import LineString, Polygon
         >>> s = geopandas.GeoSeries(
         ...     [
@@ -1368,9 +1354,8 @@ GeometryCollection
         1    MULTIPOINT ((0 0), (1 1))
         dtype: geometry
 
-        See also
+        See Also
         --------
-
         GeoSeries.get_coordinates : extract coordinates as a :class:`~pandas.DataFrame`
         """
         return _delegate_geo_method("extract_unique_points", self)
@@ -1401,7 +1386,6 @@ GeometryCollection
 
         Examples
         --------
-
         >>> from shapely.geometry import LineString
         >>> s = geopandas.GeoSeries(
         ...     [
@@ -1440,7 +1424,6 @@ GeometryCollection
 
         Examples
         --------
-
         >>> from shapely.geometry import Polygon
         >>> s = geopandas.GeoSeries(
         ...     [
@@ -1461,7 +1444,7 @@ GeometryCollection
         1                                                   []
         dtype: object
 
-        See also
+        See Also
         --------
         GeoSeries.exterior : outer boundary
         """
@@ -1485,7 +1468,6 @@ GeometryCollection
 
         Examples
         --------
-
         >>> from shapely import LineString, Polygon
         >>> s = geopandas.GeoSeries(
         ...     [
@@ -1540,7 +1522,6 @@ GeometryCollection
 
         Examples
         --------
-
         >>> from shapely import LineString, Point
         >>> s = geopandas.GeoSeries(
         ...     [
@@ -1600,7 +1581,6 @@ GeometryCollection
 
         Examples
         --------
-
         >>> from shapely.geometry import Polygon, LineString, Point
         >>> s = geopandas.GeoSeries(
         ...     [
@@ -1621,7 +1601,7 @@ GeometryCollection
         2         POINT (0 0)
         dtype: geometry
 
-        See also
+        See Also
         --------
         GeoSeries.centroid : geometric centroid
         """
@@ -1633,7 +1613,6 @@ GeometryCollection
 
         Examples
         --------
-
         >>> from shapely.geometry import Polygon, LineString, Point
         >>> s = geopandas.GeoSeries(
         ...     [
@@ -1654,7 +1633,7 @@ GeometryCollection
         2                                          POINT (0 0)
         dtype: geometry
 
-        See also
+        See Also
         --------
         GeoSeries.convex_hull : convex hull geometry
         """
@@ -1686,7 +1665,7 @@ GeometryCollection
         2    0.000000
         dtype: float64
 
-        See also
+        See Also
         --------
         GeoSeries.minumum_bounding_circle : minimum bounding circle (geometry)
 
@@ -1703,7 +1682,6 @@ GeometryCollection
 
         Examples
         --------
-
         >>> from shapely.geometry import Polygon, LineString, Point
         >>> s = geopandas.GeoSeries(
         ...     [
@@ -1736,7 +1714,6 @@ GeometryCollection
 
         Examples
         --------
-
         >>> from shapely.geometry import Polygon, LineString, Point
         >>> s = geopandas.GeoSeries(
         ...     [
@@ -1802,7 +1779,6 @@ GeometryCollection
 
         Examples
         --------
-
         >>> from shapely.geometry import Polygon, LineString, Point
         >>> s = geopandas.GeoSeries(
         ...     [
@@ -1823,7 +1799,7 @@ GeometryCollection
         2                       POINT (0 0)
         dtype: geometry
 
-        See also
+        See Also
         --------
         GeoSeries.normalize : normalize order of coordinates
         """
@@ -2090,7 +2066,6 @@ GeometryCollection
 
         Examples
         --------
-
         >>> from shapely.geometry import box
         >>> s = geopandas.GeoSeries([box(0,0,1,1), box(0,0,2,2)])
         >>> s
@@ -2102,11 +2077,10 @@ GeometryCollection
         >>> print(union)
         POLYGON ((0 1, 0 2, 2 2, 2 0, 1 0, 0 0, 0 1))
 
-        See also
+        See Also
         --------
         GeoSeries.union_all
         """
-
         warn(
             "The 'unary_union' attribute is deprecated, "
             "use the 'union_all()' method instead.",
@@ -2138,7 +2112,6 @@ GeometryCollection
 
         Examples
         --------
-
         >>> from shapely.geometry import box
         >>> s = geopandas.GeoSeries([box(0, 0, 1, 1), box(0, 0, 2, 2)])
         >>> s
@@ -2161,7 +2134,6 @@ GeometryCollection
 
         Examples
         --------
-
         >>> from shapely.geometry import box
         >>> s = geopandas.GeoSeries(
         ...     [box(0, 0, 2, 2), box(1, 1, 3, 3), box(0, 0, 1.5, 1.5)]
@@ -2290,7 +2262,7 @@ GeometryCollection
         This method works in a row-wise manner. It does not check if an element
         of one GeoSeries ``contains`` *any* element of the other one.
 
-        See also
+        See Also
         --------
         GeoSeries.contains_properly
         GeoSeries.within
@@ -2412,7 +2384,7 @@ GeometryCollection
         This method works in a row-wise manner. It does not check if an element
         of one GeoSeries ``contains_properly`` *any* element of the other one.
 
-        See also
+        See Also
         --------
         GeoSeries.contains
         """
@@ -2523,7 +2495,7 @@ GeometryCollection
         This method works in a row-wise manner. It does not check if an element
         of one GeoSeries is within the set distance of *any* element of the other one.
 
-        See also
+        See Also
         --------
         GeoSeries.within
         """
@@ -2632,7 +2604,7 @@ GeometryCollection
         This method works in a row-wise manner. It does not check if an element
         of one GeoSeries is equal to *any* element of the other one.
 
-        See also
+        See Also
         --------
         GeoSeries.geom_equals_exact
 
@@ -2699,7 +2671,7 @@ GeometryCollection
         This method works in a row-wise manner. It does not check if an element
         of one GeoSeries is equal to *any* element of the other one.
 
-        See also
+        See Also
         --------
         GeoSeries.geom_equals
         GeoSeries.geom_equals_exact
@@ -2773,7 +2745,7 @@ GeometryCollection
         This method works in a row-wise manner. It does not check if an element
         of one GeoSeries is equal to *any* element of the other one.
 
-        See also
+        See Also
         --------
         GeoSeries.geom_equals
         """
@@ -2885,7 +2857,7 @@ GeometryCollection
         This method works in a row-wise manner. It does not check if an element
         of one GeoSeries ``crosses`` *any* element of the other one.
 
-        See also
+        See Also
         --------
         GeoSeries.disjoint
         GeoSeries.intersects
@@ -2986,7 +2958,7 @@ GeometryCollection
         This method works in a row-wise manner. It does not check if an element
         of one GeoSeries is equal to *any* element of the other one.
 
-        See also
+        See Also
         --------
         GeoSeries.intersects
         GeoSeries.touches
@@ -3096,7 +3068,7 @@ GeometryCollection
         This method works in a row-wise manner. It does not check if an element
         of one GeoSeries ``crosses`` *any* element of the other one.
 
-        See also
+        See Also
         --------
         GeoSeries.disjoint
         GeoSeries.crosses
@@ -3208,7 +3180,7 @@ GeometryCollection
         This method works in a row-wise manner. It does not check if an element
         of one GeoSeries ``overlaps`` *any* element of the other one.
 
-        See also
+        See Also
         --------
         GeoSeries.crosses
         GeoSeries.intersects
@@ -3320,7 +3292,7 @@ GeometryCollection
         This method works in a row-wise manner. It does not check if an element
         of one GeoSeries ``touches`` *any* element of the other one.
 
-        See also
+        See Also
         --------
         GeoSeries.overlaps
         GeoSeries.intersects
@@ -3436,7 +3408,7 @@ GeometryCollection
         This method works in a row-wise manner. It does not check if an element
         of one GeoSeries is ``within`` *any* element of the other one.
 
-        See also
+        See Also
         --------
         GeoSeries.contains
         """
@@ -3549,7 +3521,7 @@ GeometryCollection
         This method works in a row-wise manner. It does not check if an element
         of one GeoSeries ``covers`` *any* element of the other one.
 
-        See also
+        See Also
         --------
         GeoSeries.covered_by
         GeoSeries.overlaps
@@ -3663,7 +3635,7 @@ GeometryCollection
         This method works in a row-wise manner. It does not check if an element
         of one GeoSeries is ``covered_by`` *any* element of the other one.
 
-        See also
+        See Also
         --------
         GeoSeries.covers
         GeoSeries.overlaps
@@ -4517,7 +4489,7 @@ GeometryCollection
         4          GEOMETRYCOLLECTION EMPTY
         dtype: geometry
 
-        See also
+        See Also
         --------
         GeoSeries.intersection
         """
@@ -4827,7 +4799,6 @@ GeometryCollection
         --------
         GeoSeries.get_geometry
         """
-
         return _binary_geo("shared_paths", self, other, align)
 
     #
@@ -4953,7 +4924,6 @@ GeometryCollection
 
         Examples
         --------
-
         >>> from shapely.geometry import Point
         >>> d = {'geometry': [Point(1, 2), Point(2, 1)]}
         >>> gdf = geopandas.GeoDataFrame(d)
@@ -5419,7 +5389,7 @@ GeometryCollection
         2    0.707107
         dtype: float64
 
-        See also
+        See Also
         --------
         GeoSeries.interpolate
         """
@@ -6134,7 +6104,6 @@ def _get_index_for_parts(orig_idx, outer_idx, ignore_index, index_parts):
     pandas.Index
         index or multiindex
     """
-
     if ignore_index:
         return None
     else:

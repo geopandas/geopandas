@@ -98,7 +98,6 @@ class GeoSeries(GeoPandasBase, Series):
 
     Examples
     --------
-
     >>> from shapely.geometry import Point
     >>> s = geopandas.GeoSeries([Point(1, 1), Point(2, 2), Point(3, 3)])
     >>> s
@@ -263,7 +262,6 @@ class GeoSeries(GeoPandasBase, Series):
 
         Examples
         --------
-
         >>> from shapely.geometry import Point
         >>> s = geopandas.GeoSeries([Point(1, 1), Point(2, 2), Point(3, 3)])
         >>> s.x
@@ -274,7 +272,6 @@ class GeoSeries(GeoPandasBase, Series):
 
         See Also
         --------
-
         GeoSeries.y
         GeoSeries.z
 
@@ -291,7 +288,6 @@ class GeoSeries(GeoPandasBase, Series):
 
         Examples
         --------
-
         >>> from shapely.geometry import Point
         >>> s = geopandas.GeoSeries([Point(1, 1), Point(2, 2), Point(3, 3)])
         >>> s.y
@@ -302,7 +298,6 @@ class GeoSeries(GeoPandasBase, Series):
 
         See Also
         --------
-
         GeoSeries.x
         GeoSeries.z
 
@@ -319,7 +314,6 @@ class GeoSeries(GeoPandasBase, Series):
 
         Examples
         --------
-
         >>> from shapely.geometry import Point
         >>> s = geopandas.GeoSeries([Point(1, 1, 1), Point(2, 2, 2), Point(3, 3, 3)])
         >>> s.z
@@ -330,7 +324,6 @@ class GeoSeries(GeoPandasBase, Series):
 
         See Also
         --------
-
         GeoSeries.x
         GeoSeries.y
 
@@ -462,7 +455,6 @@ class GeoSeries(GeoPandasBase, Series):
 
         Examples
         --------
-
         >>> wkts = [
         ... 'POINT (1 1)',
         ... 'POINT (2 2)',
@@ -514,7 +506,6 @@ class GeoSeries(GeoPandasBase, Series):
 
         Examples
         --------
-
         >>> x = [2.5, 5, -3.0]
         >>> y = [0.5, 1, 1.5]
         >>> s = geopandas.GeoSeries.from_xy(x, y, crs="EPSG:4326")
@@ -603,7 +594,6 @@ class GeoSeries(GeoPandasBase, Series):
 
         Examples
         --------
-
         >>> from shapely.geometry import Point
         >>> s = geopandas.GeoSeries([Point(1, 1), Point(2, 2), Point(3, 3)])
         >>> s.__geo_interface__
@@ -680,7 +670,6 @@ class GeoSeries(GeoPandasBase, Series):
 
         Examples
         --------
-
         >>> s.to_file('series.shp')  # doctest: +SKIP
 
         >>> s.to_file('series.gpkg', driver='GPKG', layer='name1')  # doctest: +SKIP
@@ -769,7 +758,6 @@ class GeoSeries(GeoPandasBase, Series):
 
         Examples
         --------
-
         >>> from shapely.geometry import Polygon
         >>> s = geopandas.GeoSeries(
         ...     [Polygon([(0, 0), (1, 1), (0, 1)]), None, Polygon([])]
@@ -814,7 +802,6 @@ class GeoSeries(GeoPandasBase, Series):
 
         Examples
         --------
-
         >>> from shapely.geometry import Polygon
         >>> s = geopandas.GeoSeries(
         ...     [Polygon([(0, 0), (1, 1), (0, 1)]), None, Polygon([])]
@@ -998,7 +985,7 @@ class GeoSeries(GeoPandasBase, Series):
            2    POINT (4 4)
         dtype: geometry
 
-        See also
+        See Also
         --------
         GeoDataFrame.explode
 
@@ -1315,7 +1302,7 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
         Series
             WKB representations of the geometries
 
-        See also
+        See Also
         --------
         GeoSeries.to_wkt
         """
@@ -1351,7 +1338,7 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
         2    POINT (3 3)
         dtype: object
 
-        See also
+        See Also
         --------
         GeoSeries.to_wkb
         """
@@ -1489,7 +1476,7 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
             Vector data (points, lines, polygons) from `gdf` clipped to
             polygon boundary from mask.
 
-        See also
+        See Also
         --------
         clip : top-level function for clip
 

@@ -63,7 +63,6 @@ def _uniform_line(geom, size, generator):
     """
     Sample points from an input shapely linestring
     """
-
     fracs = generator.uniform(size=size)
     return from_shapely(geom.interpolate(fracs, normalized=True)).union_all()
 

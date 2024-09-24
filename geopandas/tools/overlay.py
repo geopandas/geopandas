@@ -225,7 +225,7 @@ def overlay(df1, df2, how="intersection", keep_geom_type=None, make_valid=True):
     3       1.0       NaN      POLYGON ((2 0, 0 0, 0 2, 1 2, 1 1, 2 1, 2 0))
     4       2.0       NaN  MULTIPOLYGON (((3 4, 3 3, 2 3, 2 4, 3 4)), ((4...
 
-    See also
+    See Also
     --------
     sjoin : spatial join
     GeoDataFrame.overlay : equivalent method

@@ -763,7 +763,7 @@ def _explore(
 
 
 def _tooltip_popup(type, fields, gdf, **kwds):
-    """get tooltip or popup"""
+    """Get tooltip or popup"""
     import folium
 
     # specify fields to show in the tooltip
@@ -810,7 +810,6 @@ def _categorical_legend(m, title, categories, colors):
     colors : list-like
         list of colors (in the same order as categories)
     """
-
     # Header to Add
     head = """
     {% macro header(this, kwargs) %}

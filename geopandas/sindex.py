@@ -15,7 +15,6 @@ if compat.GEOS_GE_310:
 class SpatialIndex:
     """A simple wrapper around Shapely's STRTree.
 
-
     Parameters
     ----------
     geometry : np.array of Shapely geometries

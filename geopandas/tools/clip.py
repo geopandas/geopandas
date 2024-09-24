@@ -130,7 +130,7 @@ def clip(gdf, mask, keep_geom_type=False, sort=False):
          Vector data (points, lines, polygons) from ``gdf`` clipped to
          polygon boundary from mask.
 
-    See also
+    See Also
     --------
     GeoDataFrame.clip : equivalent GeoDataFrame method
     GeoSeries.clip : equivalent GeoSeries method

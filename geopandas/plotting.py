@@ -364,7 +364,6 @@ def plot_series(
     -------
     ax : matplotlib axes instance
     """
-
     try:
         import matplotlib.pyplot as plt
     except ImportError:

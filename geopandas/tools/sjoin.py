@@ -94,7 +94,7 @@ def sjoin(
     4        27         CHATHAM  MULTIPOINT ((-87.62715 41.73623))
     [5 rows x 95 columns]
 
-    See also
+    See Also
     --------
     overlay : overlay operation resulting in a new geometry
     GeoDataFrame.sjoin : equivalent method
@@ -147,7 +147,7 @@ def _basic_checks(left_df, right_df, how, lsuffix, rsuffix, on_attribute=None):
     exist as columns in the left or right data frames.
 
     Parameters
-    ------------
+    ----------
     left_df : GeoDataFrame
     right_df : GeoData Frame
     how : str, one of 'left', 'right', 'inner'
@@ -212,7 +212,6 @@ def _geom_predicate_query(left_df, right_df, predicate, distance, on_attribute=N
         DataFrame with matching indices in
         columns named `_key_left` and `_key_right`.
     """
-
     original_predicate = predicate
 
     if predicate == "within":
@@ -681,7 +680,7 @@ chicago_w_groceries[chicago_w_groceries["community"] == "UPTOWN"]
     30          TARGET    UPTOWN
     30       Mariano's    UPTOWN
 
-    See also
+    See Also
     --------
     sjoin : binary predicate joins
     GeoDataFrame.sjoin_nearest : equivalent method
@@ -694,7 +693,6 @@ chicago_w_groceries[chicago_w_groceries["community"] == "UPTOWN"]
     Every operation in GeoPandas is planar, i.e. the potential third
     dimension is not taken into account.
     """
-
     _basic_checks(left_df, right_df, how, lsuffix, rsuffix)
 
     left_df.geometry.values.check_geographic_crs(stacklevel=1)

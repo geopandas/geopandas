@@ -23,6 +23,7 @@ def _get_conn(conn_or_engine):
     ----------
     conn_or_engine : Connection or Engine
         A sqlalchemy Connection or Engine instance
+
     Returns
     -------
     Connection
@@ -47,6 +48,7 @@ def _df_to_geodf(df, geom_col="geom", crs=None, con=None):
     Transforms a pandas DataFrame into a GeoDataFrame.
     The column 'geom_col' must be a geometry column in WKB representation.
     To be used to convert df based on pd.read_sql to gdf.
+
     Parameters
     ----------
     df : DataFrame
@@ -61,11 +63,11 @@ def _df_to_geodf(df, geom_col="geom", crs=None, con=None):
         first geometry in the database, and assigns that to all geometries.
     con : sqlalchemy.engine.Connection or sqlalchemy.engine.Engine
         Active connection to the database to query.
+
     Returns
     -------
     GeoDataFrame
     """
-
     if geom_col not in df:
         raise ValueError(f"Query missing geometry column '{geom_col}'")
 
@@ -179,7 +181,6 @@ def _read_postgis(
     >>> sql = "SELECT ST_AsBinary(geom) AS geom, highway FROM roads"
     >>> df = geopandas.read_postgis(sql, con)  # doctest: +SKIP
     """
-
     if chunksize is None:
         # read all in one chunk and return a single GeoDataFrame
         df = pd.read_sql(
@@ -259,7 +260,6 @@ def _get_srid_from_crs(gdf):
     """
     Get EPSG code from CRS if available. If not, return 0.
     """
-
     # Use geoalchemy2 default for srid
     # Note: undefined srid in PostGIS is 0
     srid = None
@@ -390,7 +390,6 @@ def _write_postgis(
 
     Examples
     --------
-
     >>> from sqlalchemy import create_engine  # doctest: +SKIP
     >>> engine = create_engine("postgresql://myusername:mypassword@myhost:5432\
 /mydatabase";)  # doctest: +SKIP
