@@ -1904,7 +1904,6 @@ default 'snappy'
         return Series._from_mgr(mgr, axes)
 
     def __finalize__(self, other, method=None, **kwargs):
-        """Propagate metadata from other to self"""
         """Propagate metadata from other to self."""
         self = super().__finalize__(other, method=method, **kwargs)
 
