@@ -287,7 +287,7 @@ def _validate_geo_metadata(metadata):
         if metadata.get(key, None) is None:
             raise ValueError(
                 "'geo' metadata in Parquet/Feather file is missing required key: "
-                "'{key}'".format(key=key)
+                f"'{key}'"
             )
 
     if not isinstance(metadata["columns"], dict):
@@ -301,7 +301,7 @@ def _validate_geo_metadata(metadata):
             if key not in column_metadata:
                 raise ValueError(
                     "'geo' metadata in Parquet/Feather file is missing required key "
-                    "'{key}' for column '{col}'".format(key=key, col=col)
+                    f"'{key}' for column '{col}'"
                 )
 
         if column_metadata["encoding"] not in SUPPORTED_ENCODINGS:
@@ -594,7 +594,7 @@ def _get_filesystem_path(path, filesystem=None, storage_options=None):
 
     if filesystem is None and storage_options:
         raise ValueError(
-            "Cannot provide 'storage_options' with non-fsspec path '{}'".format(path)
+            f"Cannot provide 'storage_options' with non-fsspec path '{path}'"
         )
 
     return filesystem, path

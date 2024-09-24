@@ -90,18 +90,15 @@ def assert_table_equal(left, right, check_metadata=True):
 
     if not left.schema.equals(right.schema):
         raise AssertionError(
-            "Schema not equal\nLeft:\n{0}\nRight:\n{1}".format(
-                left.schema, right.schema
-            )
+            f"Schema not equal\nLeft:\n{left.schema}\nRight:\n{right.schema}"
         )
 
     if check_metadata:
         if not left.schema.equals(right.schema, check_metadata=True):
             if not left.schema.metadata == right.schema.metadata:
                 raise AssertionError(
-                    "Metadata not equal\nLeft:\n{0}\nRight:\n{1}".format(
-                        left.schema.metadata, right.schema.metadata
-                    )
+                    f"Metadata not equal\nLeft:\n{left.schema.metadata}\n"
+                    f"Right:\n{right.schema.metadata}"
                 )
         for col in left.schema.names:
             assert left.schema.field(col).equals(
@@ -112,9 +109,7 @@ def assert_table_equal(left, right, check_metadata=True):
         a_left = pa.concat_arrays(left.column(col).chunks)
         a_right = pa.concat_arrays(right.column(col).chunks)
         if not a_left.equals(a_right):
-            raise AssertionError(
-                "Column '{0}' not equal:\n{1}".format(col, a_left.diff(a_right))
-            )
+            raise AssertionError(f"Column '{col}' not equal:\n{a_left.diff(a_right)}")
 
     raise AssertionError("Tables not equal for unknown reason")
 

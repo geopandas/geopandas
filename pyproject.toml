@@ -113,7 +113,7 @@ select = [
     "E",
     "W",
     # pyupgrade
-    # "UP",
+    "UP",
     # flake8-bugbear
     "B",
     # flake8-debugger
