@@ -48,6 +48,7 @@ jobs:
           - ci/envs/311-pd22-conda-forge.yaml
           - ci/envs/311-latest-conda-forge.yaml
           - ci/envs/312-latest-conda-forge.yaml
+          - ci/envs/313-latest-conda-forge.yaml
           - ci/envs/312-latest-conda-forge_no_pyproj.yaml
         include:
           - env: ci/envs/310-latest-conda-forge_no_pyogrio.yaml
