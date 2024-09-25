@@ -2655,6 +2655,21 @@ GeometryCollection
     def geom_equals_exact(self, other, tolerance, align=None):
         """Return for each aligned geometry if it equals *other* to a given tolerance.
 
+        The operation works on a 1-to-1 row-wise manner:
+
+        .. image:: ../../../_static/binary_op-01.svg
+           :align: center
+
+        Parameters
+        ----------
+        other : GeoSeries or geometric object
+            The GeoSeries (elementwise) or geometric object to compare to.
+        tolerance : float
+            Decimal place precision used when testing for approximate equality.
+        align : bool | None (default None)
+            If True, automatically aligns GeoSeries based on their indices.
+            If False, the order of elements is preserved. None defaults to True.
+
         Returns
         -------
         Series (bool)
