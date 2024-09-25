@@ -43,5 +43,5 @@ def nybb_filename() -> str:
 
 @pytest.fixture(scope="class")
 def _setup_class_nybb_filename(nybb_filename, request):
-    """Attach nybb_filename class attribute for unittest style setup_method"""
+    """Attach nybb_filename class attribute for unittest style setup_method."""
     request.cls.nybb_filename = nybb_filename

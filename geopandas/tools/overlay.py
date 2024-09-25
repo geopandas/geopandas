@@ -1,3 +1,5 @@
+"""Tools for overlaying GeoDataFrames."""
+
 import warnings
 from functools import reduce
 
@@ -10,8 +12,8 @@ from geopandas.array import _check_crs, _crs_mismatch_warn
 
 
 def _ensure_geometry_column(df):
-    """
-    Helper function to ensure the geometry column is called 'geometry'.
+    """Make sure that the geometry column is called 'geometry'.
+
     If another column with that name exists, it will be dropped.
     """
     if not df._geometry_column_name == "geometry":
@@ -27,9 +29,7 @@ def _ensure_geometry_column(df):
 
 
 def _overlay_intersection(df1, df2):
-    """
-    Overlay Intersection operation used in overlay function
-    """
+    """Overlay Intersection operation used in overlay function."""
     # Spatial Index to create intersections
     idx1, idx2 = df2.sindex.query(df1.geometry, predicate="intersects", sort=True)
     # Create pairs of geometries in both dataframes to be intersected
@@ -77,9 +77,7 @@ def _overlay_intersection(df1, df2):
 
 
 def _overlay_difference(df1, df2):
-    """
-    Overlay Difference operation used in overlay function
-    """
+    """Overlay Difference operation used in overlay function."""
     # spatial index query to find intersections
     idx1, idx2 = df2.sindex.query(df1.geometry, predicate="intersects", sort=True)
     idx1_unique, idx1_unique_indices = np.unique(idx1, return_index=True)
@@ -105,9 +103,7 @@ def _overlay_difference(df1, df2):
 
 
 def _overlay_symmetric_diff(df1, df2):
-    """
-    Overlay Symmetric Difference operation used in overlay function
-    """
+    """Overlay Symmetric Difference operation used in overlay function."""
     dfdiff1 = _overlay_difference(df1, df2)
     dfdiff2 = _overlay_difference(df2, df1)
     dfdiff1["__idx1"] = range(len(dfdiff1))
@@ -134,9 +130,7 @@ def _overlay_symmetric_diff(df1, df2):
 
 
 def _overlay_union(df1, df2):
-    """
-    Overlay Union operation used in overlay function
-    """
+    """Overlay Union operation used in overlay function."""
     dfinter = _overlay_intersection(df1, df2)
     dfsym = _overlay_symmetric_diff(df1, df2)
     dfunion = pd.concat([dfinter, dfsym], ignore_index=True, sort=False)
@@ -225,7 +219,7 @@ def overlay(df1, df2, how="intersection", keep_geom_type=None, make_valid=True):
     3       1.0       NaN      POLYGON ((2 0, 0 0, 0 2, 1 2, 1 1, 2 1, 2 0))
     4       2.0       NaN  MULTIPOLYGON (((3 4, 3 3, 2 3, 2 4, 3 4)), ((4...
 
-    See also
+    See Also
     --------
     sjoin : spatial join
     GeoDataFrame.overlay : equivalent method

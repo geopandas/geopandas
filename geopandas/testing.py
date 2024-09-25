@@ -1,6 +1,4 @@
-"""
-Testing functionality for geopandas objects.
-"""
+"""Testing functionality for geopandas objects."""
 
 import warnings
 
@@ -11,7 +9,7 @@ from geopandas.array import GeometryDtype
 
 
 def _isna(this):
-    """isna version that works for both scalars and (Geo)Series"""
+    """Isna version that works for both scalars and (Geo)Series."""
     with warnings.catch_warnings():
         # GeoSeries.isna will raise a warning about no longer returning True
         # for empty geometries. This helper is used below always in combination
@@ -29,9 +27,9 @@ def _isna(this):
 
 
 def _geom_equals_mask(this, that):
-    """
-    Test for geometric equality. Empty or missing geometries are considered
-    equal.
+    """Test for geometric equality.
+
+    Empty or missing geometries are considered equal.
 
     Parameters
     ----------
@@ -43,7 +41,6 @@ def _geom_equals_mask(this, that):
     Series
         boolean Series, True if geometries in left equal geometries in right
     """
-
     return (
         this.geom_equals(that)
         | (this.is_empty & that.is_empty)
@@ -52,9 +49,9 @@ def _geom_equals_mask(this, that):
 
 
 def geom_equals(this, that):
-    """
-    Test for geometric equality. Empty or missing geometries are considered
-    equal.
+    """Test for geometric equality.
+
+    Empty or missing geometries are considered equal.
 
     Parameters
     ----------
@@ -66,14 +63,13 @@ def geom_equals(this, that):
     bool
         True if all geometries in left equal geometries in right
     """
-
     return _geom_equals_mask(this, that).all()
 
 
 def _geom_almost_equals_mask(this, that):
-    """
-    Test for 'almost' geometric equality. Empty or missing geometries
-    considered equal.
+    """Test for 'almost' geometric equality.
+
+    Empty or missing geometries are considered equal.
 
     This method allows small difference in the coordinates, but this
     requires coordinates be in the same order for all components of a geometry.
@@ -87,7 +83,6 @@ def _geom_almost_equals_mask(this, that):
     Series
         boolean Series, True if geometries in left almost equal geometries in right
     """
-
     return (
         this.geom_equals_exact(that, tolerance=0.5 * 10 ** (-6))
         | (this.is_empty & that.is_empty)
@@ -96,9 +91,9 @@ def _geom_almost_equals_mask(this, that):
 
 
 def geom_almost_equals(this, that):
-    """
-    Test for 'almost' geometric equality. Empty or missing geometries
-    considered equal.
+    """Test for 'almost' geometric equality.
+
+    Empty or missing geometries are considered equal.
 
     This method allows small difference in the coordinates, but this
     requires coordinates be in the same order for all components of a geometry.
@@ -200,7 +195,7 @@ def assert_geoseries_equal(
 
 
 def _truncated_string(geom):
-    """Truncated WKT repr of geom"""
+    """Return truncated WKT repr of geom."""
     s = str(geom)
     if len(s) > 100:
         return s[:100] + "..."
@@ -252,7 +247,7 @@ def assert_geodataframe_equal(
     normalize=False,
 ):
     """
-    Check that two GeoDataFrames are equal/
+    Check that two GeoDataFrames are equal.
 
     Parameters
     ----------

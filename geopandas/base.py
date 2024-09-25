@@ -1,3 +1,5 @@
+"""Base class for GeoPandas objects."""
+
 import warnings
 from warnings import warn
 
@@ -63,7 +65,7 @@ def _delegate_binary_method(op, this, other, align, *args, **kwargs):
 
 def _binary_geo(op, this, other, align, *args, **kwargs):
     # type: (str, GeoSeries, GeoSeries) -> GeoSeries
-    """Binary operation on GeoSeries objects that returns a GeoSeries"""
+    """Binary operation on GeoSeries objects that returns a GeoSeries."""
     from .geoseries import GeoSeries
 
     geoms, index = _delegate_binary_method(op, this, other, align, *args, **kwargs)
@@ -72,7 +74,7 @@ def _binary_geo(op, this, other, align, *args, **kwargs):
 
 def _binary_op(op, this, other, align, *args, **kwargs):
     # type: (str, GeoSeries, GeoSeries, args/kwargs) -> Series[bool/float]
-    """Binary operation on GeoSeries objects that returns a Series"""
+    """Binary operation on GeoSeries objects that returns a Series."""
     data, index = _delegate_binary_method(op, this, other, align, *args, **kwargs)
     return Series(data, index=index)
 
@@ -91,7 +93,7 @@ def _delegate_property(op, this):
 
 def _delegate_geo_method(op, this, **kwargs):
     # type: (str, GeoSeries) -> GeoSeries
-    """Unary operation that returns a GeoSeries"""
+    """Unary operation that returns a GeoSeries."""
     from .geodataframe import GeoDataFrame
     from .geoseries import GeoSeries
 
@@ -121,14 +123,14 @@ def _delegate_geo_method(op, this, **kwargs):
 
 
 class GeoPandasBase:
+    """Base class for GeoPandas objects."""
+
     @property
     def area(self):
-        """Returns a ``Series`` containing the area of each geometry in the
-        ``GeoSeries`` expressed in the units of the CRS.
+        """Return the area of each geometry expressed in the units of the CRS.
 
         Examples
         --------
-
         >>> from shapely.geometry import Polygon, LineString, Point
         >>> s = geopandas.GeoSeries(
         ...     [
@@ -155,7 +157,7 @@ class GeoPandasBase:
         4     0.0
         dtype: float64
 
-        See also
+        See Also
         --------
         GeoSeries.length : measure length
 
@@ -172,9 +174,7 @@ class GeoPandasBase:
 
     @property
     def crs(self):
-        """
-        The Coordinate Reference System (CRS) represented as a ``pyproj.CRS``
-        object.
+        """The Coordinate Reference System (CRS).
 
         Returns None if the CRS is not set, and to set the value it
         :getter: Returns a ``pyproj.CRS`` or None. When setting, the value
@@ -184,7 +184,6 @@ class GeoPandasBase:
 
         Examples
         --------
-
         >>> s.crs  # doctest: +SKIP
         <Geographic 2D CRS: EPSG:4326>
         Name: WGS 84
@@ -198,7 +197,7 @@ class GeoPandasBase:
         - Ellipsoid: WGS 84
         - Prime Meridian: Greenwich
 
-        See also
+        See Also
         --------
         GeoSeries.set_crs : assign CRS
         GeoSeries.to_crs : re-project to another CRS
@@ -207,14 +206,13 @@ class GeoPandasBase:
 
     @crs.setter
     def crs(self, value):
-        """Sets the value of the crs"""
+        """Set the value of the crs."""
         self.geometry.values.crs = value
 
     @property
     def geom_type(self):
         """
-        Returns a ``Series`` of strings specifying the `Geometry Type` of each
-        object.
+        Return strings specifying the `Geometry Type` of each object.
 
         Examples
         --------
@@ -232,20 +230,18 @@ class GeoPandasBase:
 
     @property
     def type(self):
-        """Return the geometry type of each geometry in the GeoSeries"""
+        """Return the geometry type of each geometry in the GeoSeries."""
         return self.geom_type
 
     @property
     def length(self):
-        """Returns a ``Series`` containing the length of each geometry
-        expressed in the units of the CRS.
+        """Return the length of each geometry expressed in the units of the CRS.
 
         In the case of a (Multi)Polygon it measures the length
         of its exterior (i.e. perimeter).
 
         Examples
         --------
-
         >>> from shapely.geometry import Polygon, LineString, MultiLineString, Point, \
 GeometryCollection
         >>> s = geopandas.GeoSeries(
@@ -277,7 +273,7 @@ GeometryCollection
         5    16.180340
         dtype: float64
 
-        See also
+        See Also
         --------
         GeoSeries.area : measure area of a polygon
 
@@ -295,12 +291,10 @@ GeometryCollection
 
     @property
     def is_valid(self):
-        """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
-        geometries that are valid.
+        """Return if geometries are valid.
 
         Examples
         --------
-
         An example with one invalid polygon (a bowtie geometry crossing itself)
         and one missing geometry:
 
@@ -327,19 +321,17 @@ GeometryCollection
         3    False
         dtype: bool
 
-        See also
+        See Also
         --------
         GeoSeries.is_valid_reason : reason for invalidity
         """
         return _delegate_property("is_valid", self)
 
     def is_valid_reason(self):
-        """Returns a ``Series`` of strings with the reason for invalidity of
-        each geometry.
+        """Return strings with the reason for invalidity of each geometry.
 
         Examples
         --------
-
         An example with one invalid polygon (a bowtie geometry crossing itself)
         and one missing geometry:
 
@@ -366,7 +358,7 @@ GeometryCollection
         3    None
         dtype: object
 
-        See also
+        See Also
         --------
         GeoSeries.is_valid : detect invalid geometries
         GeoSeries.make_valid : fix invalid geometries
@@ -376,8 +368,7 @@ GeometryCollection
     @property
     def is_empty(self):
         """
-        Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
-        empty geometries.
+        Return if geometries are empty.
 
         Examples
         --------
@@ -406,9 +397,7 @@ GeometryCollection
         return _delegate_property("is_empty", self)
 
     def count_coordinates(self):
-        """
-        Returns a ``Series`` containing the count of the number of coordinate pairs
-        in each geometry.
+        """Return the number of coordinate pairs in each geometry.
 
         Examples
         --------
@@ -441,7 +430,7 @@ GeometryCollection
         4    0
         dtype: int32
 
-        See also
+        See Also
         --------
         GeoSeries.get_coordinates : extract coordinates as a :class:`~pandas.DataFrame`
         GoSeries.count_geometries : count the number of geometries in a collection
@@ -449,9 +438,7 @@ GeometryCollection
         return Series(self.geometry.values.count_coordinates(), index=self.index)
 
     def count_geometries(self):
-        """
-        Returns a ``Series`` containing the count of geometries in each multi-part
-        geometry.
+        """Return the number of geometries in each (multi-part) geometry.
 
         For single-part geometry objects, this is always 1. For multi-part geometries,
         like ``MultiPoint`` or ``MultiLineString``, it is the number of parts in the
@@ -485,7 +472,7 @@ GeometryCollection
         3    1
         dtype: int32
 
-        See also
+        See Also
         --------
         GeoSeries.count_coordinates : count the number of coordinates in a geometry
         GeoSeries.count_interior_rings : count the number of interior rings
@@ -494,8 +481,7 @@ GeometryCollection
 
     def count_interior_rings(self):
         """
-        Returns a ``Series`` containing the count of the number of interior rings
-        in a polygonal geometry.
+        Return the number of interior rings in each polygonal geometry.
 
         For non-polygonal geometries, this is always 0.
 
@@ -530,7 +516,7 @@ GeometryCollection
         2    0
         dtype: int32
 
-        See also
+        See Also
         --------
         GeoSeries.count_coordinates : count the number of coordinates in a geometry
         GeoSeries.count_geometries : count the number of geometries in a collection
@@ -539,8 +525,7 @@ GeometryCollection
 
     @property
     def is_simple(self):
-        """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
-        geometries that do not cross themselves.
+        """Return True for geometries that do not cross themselves.
 
         This is meaningful only for `LineStrings` and `LinearRings`.
 
@@ -567,8 +552,7 @@ GeometryCollection
 
     @property
     def is_ring(self):
-        """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
-        features that are closed.
+        """Return True for features that are closed.
 
         When constructing a LinearRing, the sequence of coordinates may be
         explicitly closed by passing identical values in the first and last indices.
@@ -602,8 +586,7 @@ GeometryCollection
 
     @property
     def is_ccw(self):
-        """Returns a ``Series`` of ``dtype('bool')`` with value ``True``
-        if a LineString or LinearRing is counterclockwise.
+        """Return if a LineString or LinearRing is counterclockwise.
 
         Note that there are no checks on whether lines are actually
         closed and not self-intersecting, while this is a requirement
@@ -643,8 +626,7 @@ GeometryCollection
 
     @property
     def is_closed(self):
-        """Returns a ``Series`` of ``dtype('bool')`` with value ``True``
-        if a LineString's or LinearRing's first and last points are equal.
+        """Return if a LineString's or LinearRing's first and last points are equal.
 
         Returns False for any other geometry type.
 
@@ -677,8 +659,7 @@ GeometryCollection
 
     @property
     def has_z(self):
-        """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
-        features that have a z-component.
+        """Return True for features that have a z-component.
 
         Notes
         -----
@@ -707,7 +688,7 @@ GeometryCollection
         return _delegate_property("has_z", self)
 
     def get_precision(self):
-        """Returns a ``Series`` of the precision of each geometry.
+        """Return the precision of each geometry.
 
         If a precision has not been previously set, it will be 0, indicating regular
         double precision coordinates are in use. Otherwise, it will return the precision
@@ -750,14 +731,14 @@ GeometryCollection
         2    1.0
         dtype: float64
 
-        See also
+        See Also
         --------
         GeoSeries.set_precision : set precision grid size
         """
         return Series(self.geometry.values.get_precision(), index=self.index)
 
     def get_geometry(self, index):
-        """Returns the n-th geometry from a collection of geometries.
+        """Return the n-th geometry from a collection of geometries.
 
         Parameters
         ----------
@@ -818,12 +799,11 @@ GeometryCollection
 
     @property
     def boundary(self):
-        """Returns a ``GeoSeries`` of lower dimensional objects representing
-        each geometry's set-theoretic `boundary`.
+        """Return the lower dimensional objects representing each geometry's
+        set-theoretic `boundary`.
 
         Examples
         --------
-
         >>> from shapely.geometry import Polygon, LineString, Point
         >>> s = geopandas.GeoSeries(
         ...     [
@@ -844,23 +824,21 @@ GeometryCollection
         2           GEOMETRYCOLLECTION EMPTY
         dtype: geometry
 
-        See also
+        See Also
         --------
         GeoSeries.exterior : outer boundary (without interior rings)
 
-        """
+        """  # noqa: D205
         return _delegate_property("boundary", self)
 
     @property
     def centroid(self):
-        """Returns a ``GeoSeries`` of points representing the centroid of each
-        geometry.
+        """Return the points representing the centroid of each geometry.
 
         Note that centroid does not have to be on or within original geometry.
 
         Examples
         --------
-
         >>> from shapely.geometry import Polygon, LineString, Point
         >>> s = geopandas.GeoSeries(
         ...     [
@@ -881,15 +859,14 @@ GeometryCollection
         2                POINT (0 0)
         dtype: geometry
 
-        See also
+        See Also
         --------
         GeoSeries.representative_point : point guaranteed to be within each geometry
         """
         return _delegate_property("centroid", self)
 
     def concave_hull(self, ratio=0.0, allow_holes=False):
-        """Returns a ``GeoSeries`` of geometries representing the concave hull
-        of each geometry.
+        """Return the concave hull of each geometry.
 
         The concave hull of a geometry is the smallest concave `Polygon`
         containing all the points in each geometry, unless the number of points
@@ -914,7 +891,6 @@ GeometryCollection
 
         Examples
         --------
-
         >>> from shapely.geometry import Polygon, LineString, Point, MultiPoint
         >>> s = geopandas.GeoSeries(
         ...     [
@@ -942,7 +918,7 @@ GeometryCollection
         4                                         POINT (0 0)
         dtype: geometry
 
-        See also
+        See Also
         --------
         GeoSeries.convex_hull : convex hull geometry
 
@@ -953,8 +929,7 @@ GeometryCollection
 
     @property
     def convex_hull(self):
-        """Returns a ``GeoSeries`` of geometries representing the convex hull
-        of each geometry.
+        """Return the convex hull of each geometry.
 
         The convex hull of a geometry is the smallest convex `Polygon`
         containing all the points in each geometry, unless the number of points
@@ -963,7 +938,6 @@ GeometryCollection
 
         Examples
         --------
-
         >>> from shapely.geometry import Polygon, LineString, Point, MultiPoint
         >>> s = geopandas.GeoSeries(
         ...     [
@@ -990,7 +964,7 @@ GeometryCollection
         4                            POINT (0 0)
         dtype: geometry
 
-        See also
+        See Also
         --------
         GeoSeries.concave_hull : concave hull geometry
         GeoSeries.envelope : bounding rectangle geometry
@@ -999,9 +973,7 @@ GeometryCollection
         return _delegate_property("convex_hull", self)
 
     def delaunay_triangles(self, tolerance=0.0, only_edges=False):
-        """Returns a ``GeoSeries`` consisting of objects representing
-        the computed Delaunay triangulation between the vertices of
-        an input geometry.
+        """Return the Delaunay triangulation between the vertices of an input geometry.
 
         All geometries within the GeoSeries are considered together within a single
         Delaunay triangulation. The resulting geometries therefore do not map 1:1
@@ -1024,7 +996,6 @@ GeometryCollection
 
         Examples
         --------
-
         >>> from shapely import LineString, MultiPoint, Point, Polygon
         >>> s = geopandas.GeoSeries(
         ...     [
@@ -1083,7 +1054,7 @@ GeometryCollection
         8    POLYGON ((2 0, 1 1, 1 0, 2 0))
         dtype: geometry
 
-        See also
+        See Also
         --------
         GeoSeries.voronoi_polygons : Voronoi diagram around vertices
         """
@@ -1099,8 +1070,7 @@ GeometryCollection
         return GeoSeries(delaunay, crs=self.crs).explode(ignore_index=True)
 
     def voronoi_polygons(self, tolerance=0.0, extend_to=None, only_edges=False):
-        """Returns a ``GeoSeries`` consisting of objects representing
-        the computed Voronoi diagram around the vertices of an input geometry.
+        """Return the Voronoi diagram around the vertices of an input geometry.
 
         All geometries within the GeoSeries are considered together within a single
         Voronoi diagram. The resulting geometries therefore do not necessarily map 1:1
@@ -1207,7 +1177,7 @@ GeometryCollection
         8       POLYGON ((6 -3, 2.5 0.5, 2.5 2, 6 3.75, 6 -3))
         dtype: geometry
 
-        See also
+        See Also
         --------
         GeoSeries.delaunay_triangles : Delaunay triangulation around vertices
         """
@@ -1226,8 +1196,7 @@ GeometryCollection
 
     @property
     def envelope(self):
-        """Returns a ``GeoSeries`` of geometries representing the envelope of
-        each geometry.
+        """Return the envelope of each geometry.
 
         The envelope of a geometry is the bounding rectangle. That is, the
         point or smallest rectangular polygon (with sides parallel to the
@@ -1235,7 +1204,6 @@ GeometryCollection
 
         Examples
         --------
-
         >>> from shapely.geometry import Polygon, LineString, Point, MultiPoint
         >>> s = geopandas.GeoSeries(
         ...     [
@@ -1259,15 +1227,14 @@ GeometryCollection
         3                            POINT (0 0)
         dtype: geometry
 
-        See also
+        See Also
         --------
         GeoSeries.convex_hull : convex hull geometry
         """
         return _delegate_property("envelope", self)
 
     def minimum_rotated_rectangle(self):
-        """Returns a ``GeoSeries`` of the general minimum bounding rectangle
-        that contains the object.
+        """Return the general minimum bounding rectangle that contains each geometry.
 
         Unlike envelope this rectangle is not constrained to be parallel
         to the coordinate axes. If the convex hull of the object is a
@@ -1275,7 +1242,6 @@ GeometryCollection
 
         Examples
         --------
-
         >>> from shapely.geometry import Polygon, LineString, Point, MultiPoint
         >>> s = geopandas.GeoSeries(
         ...     [
@@ -1299,7 +1265,7 @@ GeometryCollection
         3                            POINT (0 0)
         dtype: geometry
 
-        See also
+        See Also
         --------
         GeoSeries.envelope : bounding rectangle
         """
@@ -1307,15 +1273,13 @@ GeometryCollection
 
     @property
     def exterior(self):
-        """Returns a ``GeoSeries`` of LinearRings representing the outer
-        boundary of each polygon in the GeoSeries.
+        """Return the LinearRings representing the outer boundary of each polygon.
 
         Applies to GeoSeries containing only Polygons. Returns ``None``` for
         other geometry types.
 
         Examples
         --------
-
         >>> from shapely.geometry import Polygon, Point
         >>> s = geopandas.GeoSeries(
         ...     [
@@ -1336,7 +1300,7 @@ GeometryCollection
         2                               None
         dtype: geometry
 
-        See also
+        See Also
         --------
         GeoSeries.boundary : complete set-theoretic boundary
         GeoSeries.interiors : list of inner rings of each polygon
@@ -1345,12 +1309,10 @@ GeometryCollection
         return _delegate_property("exterior", self)
 
     def extract_unique_points(self):
-        """Returns a ``GeoSeries`` of MultiPoints representing all
-        distinct vertices of an input geometry.
+        """Return the MultiPoints with all distinct vertices of each input geometry.
 
         Examples
         --------
-
         >>> from shapely import LineString, Polygon
         >>> s = geopandas.GeoSeries(
         ...     [
@@ -1368,15 +1330,14 @@ GeometryCollection
         1    MULTIPOINT ((0 0), (1 1))
         dtype: geometry
 
-        See also
+        See Also
         --------
-
         GeoSeries.get_coordinates : extract coordinates as a :class:`~pandas.DataFrame`
         """
         return _delegate_geo_method("extract_unique_points", self)
 
     def offset_curve(self, distance, quad_segs=8, join_style="round", mitre_limit=5.0):
-        """Returns a ``LineString`` or ``MultiLineString`` geometry at a
+        """Return a ``LineString`` or ``MultiLineString`` geometry at a
         distance from the object on its right or its left side.
 
         Parameters
@@ -1401,7 +1362,6 @@ GeometryCollection
 
         Examples
         --------
-
         >>> from shapely.geometry import LineString
         >>> s = geopandas.GeoSeries(
         ...     [
@@ -1416,7 +1376,7 @@ GeometryCollection
         >>> s.offset_curve(1)
         0    LINESTRING (-1 0, -1 1, -0.981 1.195, -0.924 1...
         dtype: geometry
-        """
+        """  # noqa: D205
         return _delegate_geo_method(
             "offset_curve",
             self,
@@ -1428,8 +1388,7 @@ GeometryCollection
 
     @property
     def interiors(self):
-        """Returns a ``Series`` of List representing the
-        inner rings of each polygon in the GeoSeries.
+        """Return the inner rings of each polygon.
 
         Applies to GeoSeries containing only Polygons.
 
@@ -1440,7 +1399,6 @@ GeometryCollection
 
         Examples
         --------
-
         >>> from shapely.geometry import Polygon
         >>> s = geopandas.GeoSeries(
         ...     [
@@ -1461,15 +1419,14 @@ GeometryCollection
         1                                                   []
         dtype: object
 
-        See also
+        See Also
         --------
         GeoSeries.exterior : outer boundary
         """
         return _delegate_property("interiors", self)
 
     def remove_repeated_points(self, tolerance=0.0):
-        """Returns a ``GeoSeries`` containing a copy of the input geometry
-        with repeated points removed.
+        """Return the input geometries with repeated points removed.
 
         From the start of the coordinate sequence, each next point within the
         tolerance is removed.
@@ -1485,7 +1442,6 @@ GeometryCollection
 
         Examples
         --------
-
         >>> from shapely import LineString, Polygon
         >>> s = geopandas.GeoSeries(
         ...     [
@@ -1506,7 +1462,7 @@ GeometryCollection
         return _delegate_geo_method("remove_repeated_points", self, tolerance=tolerance)
 
     def set_precision(self, grid_size, mode="valid_output"):
-        """Returns a ``GeoSeries`` with the precision set to a precision grid size.
+        """Return the input geometries with the precision set to a precision grid size.
 
         By default, geometries use double precision coordinates (``grid_size=0``).
 
@@ -1540,7 +1496,6 @@ GeometryCollection
 
         Examples
         --------
-
         >>> from shapely import LineString, Point
         >>> s = geopandas.GeoSeries(
         ...     [
@@ -1595,12 +1550,12 @@ GeometryCollection
         )
 
     def representative_point(self):
-        """Returns a ``GeoSeries`` of (cheaply computed) points that are
-        guaranteed to be within each geometry.
+        """Return points that are guaranteed to be within each geometry.
+
+        The calculation of the points is cheap.
 
         Examples
         --------
-
         >>> from shapely.geometry import Polygon, LineString, Point
         >>> s = geopandas.GeoSeries(
         ...     [
@@ -1621,19 +1576,18 @@ GeometryCollection
         2         POINT (0 0)
         dtype: geometry
 
-        See also
+        See Also
         --------
         GeoSeries.centroid : geometric centroid
         """
         return _delegate_geo_method("representative_point", self)
 
     def minimum_bounding_circle(self):
-        """Returns a ``GeoSeries`` of geometries representing the minimum bounding
-        circle that encloses each geometry.
+        """Return geometries representing the minimum bounding
+        circle that encloses each input geometry.
 
         Examples
         --------
-
         >>> from shapely.geometry import Polygon, LineString, Point
         >>> s = geopandas.GeoSeries(
         ...     [
@@ -1654,15 +1608,14 @@ GeometryCollection
         2                                          POINT (0 0)
         dtype: geometry
 
-        See also
+        See Also
         --------
         GeoSeries.convex_hull : convex hull geometry
-        """
+        """  # noqa: D205
         return _delegate_geo_method("minimum_bounding_circle", self)
 
     def minimum_bounding_radius(self):
-        """Returns a `Series` of the radii of the minimum bounding circles
-        that enclose each geometry.
+        """Return the radii of the minimum bounding circles that enclose each geometry.
 
         Examples
         --------
@@ -1686,7 +1639,7 @@ GeometryCollection
         2    0.000000
         dtype: float64
 
-        See also
+        See Also
         --------
         GeoSeries.minumum_bounding_circle : minimum bounding circle (geometry)
 
@@ -1694,8 +1647,9 @@ GeometryCollection
         return Series(self.geometry.values.minimum_bounding_radius(), index=self.index)
 
     def minimum_clearance(self):
-        """Returns a ``Series`` containing the minimum clearance distance,
-        which is the smallest distance by which a vertex of the geometry
+        """Return the minimum clearance distances of the input geometries.
+
+        This is the smallest distance by which a vertex of the geometry
         could be moved to produce an invalid geometry.
 
         If no minimum clearance exists for a geometry (for example,
@@ -1703,7 +1657,6 @@ GeometryCollection
 
         Examples
         --------
-
         >>> from shapely.geometry import Polygon, LineString, Point
         >>> s = geopandas.GeoSeries(
         ...     [
@@ -1727,8 +1680,7 @@ GeometryCollection
         return Series(self.geometry.values.minimum_clearance(), index=self.index)
 
     def normalize(self):
-        """Returns a ``GeoSeries`` of normalized
-        geometries to normal form (or canonical form).
+        """Return the input geometries in normalized (or canonical) form.
 
         This method orders the coordinates, rings of a polygon and parts of
         multi geometries consistently. Typically useful for testing purposes
@@ -1736,7 +1688,6 @@ GeometryCollection
 
         Examples
         --------
-
         >>> from shapely.geometry import Polygon, LineString, Point
         >>> s = geopandas.GeoSeries(
         ...     [
@@ -1798,11 +1749,10 @@ GeometryCollection
         return _delegate_geo_method("make_valid", self)
 
     def reverse(self):
-        """Returns a ``GeoSeries`` with the order of coordinates reversed.
+        """Return the geometries with the order of coordinates reversed.
 
         Examples
         --------
-
         >>> from shapely.geometry import Polygon, LineString, Point
         >>> s = geopandas.GeoSeries(
         ...     [
@@ -1823,15 +1773,14 @@ GeometryCollection
         2                       POINT (0 0)
         dtype: geometry
 
-        See also
+        See Also
         --------
         GeoSeries.normalize : normalize order of coordinates
         """
         return _delegate_geo_method("reverse", self)
 
     def segmentize(self, max_segment_length):
-        """Returns a ``GeoSeries`` with vertices added to line segments based on
-        maximum segment length.
+        """Return the geometries with vertices added to line segments.
 
         Additional vertices will be added to every line segment in an input geometry so
         that segments are no longer than the provided maximum segment length. New
@@ -1872,8 +1821,7 @@ GeometryCollection
         )
 
     def transform(self, transformation, include_z=False):
-        """Returns a ``GeoSeries`` with the transformation function
-        applied to the geometry coordinates.
+        """Return the geometries with the transformation function applied to them.
 
         Parameters
         ----------
@@ -1914,7 +1862,7 @@ GeometryCollection
         )
 
     def force_2d(self):
-        """Forces the dimensionality of a geometry to 2D.
+        """Force the dimensionality of a geometry to 2D.
 
         Removes the additional Z coordinate dimension from all geometries.
 
@@ -1947,7 +1895,7 @@ GeometryCollection
         return _delegate_geo_method("force_2d", self)
 
     def force_3d(self, z=0):
-        """Forces the dimensionality of a geometry to 3D.
+        """Force the dimensionality of a geometry to 3D.
 
         2D geometries will get the provided Z coordinate; 3D geometries
         are unchanged (unless their Z coordinate is ``np.nan``).
@@ -2010,8 +1958,7 @@ GeometryCollection
         return _delegate_geo_method("force_3d", self, z=z)
 
     def line_merge(self, directed=False):
-        """Returns (Multi)LineStrings formed by combining the lines in a
-        MultiLineString.
+        """Return (Multi)LineStrings formed by combining the lines in a MultiLineString.
 
         Lines are joined together at their endpoints in case two lines are intersecting.
         Lines are not joined when 3 or more lines are intersecting at the endpoints.
@@ -2082,15 +2029,13 @@ GeometryCollection
 
     @property
     def unary_union(self):
-        """Returns a geometry containing the union of all geometries in the
-        ``GeoSeries``.
+        """Return a geometry containing the union of all geometries in the input.
 
         The ``unary_union`` attribute is deprecated. Use :meth:`union_all`
         instead.
 
         Examples
         --------
-
         >>> from shapely.geometry import box
         >>> s = geopandas.GeoSeries([box(0,0,1,1), box(0,0,2,2)])
         >>> s
@@ -2102,11 +2047,10 @@ GeometryCollection
         >>> print(union)
         POLYGON ((0 1, 0 2, 2 2, 2 0, 1 0, 0 0, 0 1))
 
-        See also
+        See Also
         --------
         GeoSeries.union_all
         """
-
         warn(
             "The 'unary_union' attribute is deprecated, "
             "use the 'union_all()' method instead.",
@@ -2117,8 +2061,7 @@ GeometryCollection
         return self.geometry.values.union_all()
 
     def union_all(self, method="unary"):
-        """Returns a geometry containing the union of all geometries in the
-        ``GeoSeries``.
+        """Return a geometry containing the union of all geometries in the input.
 
         By default, the unary union algorithm is used. If the geometries are
         non-overlapping (forming a coverage), GeoPandas can use a significantly faster
@@ -2138,7 +2081,6 @@ GeometryCollection
 
         Examples
         --------
-
         >>> from shapely.geometry import box
         >>> s = geopandas.GeoSeries([box(0, 0, 1, 1), box(0, 0, 2, 2)])
         >>> s
@@ -2152,8 +2094,7 @@ GeometryCollection
         return self.geometry.values.union_all(method=method)
 
     def intersection_all(self):
-        """Returns a geometry containing the intersection of all geometries in
-        the ``GeoSeries``.
+        """Return a geometry containing the intersection of all geometries in the input.
 
         This method ignores None values when other geometries are present.
         If all elements of the GeoSeries are None, an empty GeometryCollection is
@@ -2161,7 +2102,6 @@ GeometryCollection
 
         Examples
         --------
-
         >>> from shapely.geometry import box
         >>> s = geopandas.GeoSeries(
         ...     [box(0, 0, 2, 2), box(1, 1, 3, 3), box(0, 0, 1.5, 1.5)]
@@ -2182,8 +2122,7 @@ GeometryCollection
     #
 
     def contains(self, other, align=None):
-        """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
-        each aligned geometry that contains `other`.
+        """Return for each aligned geometry if it contains `other`.
 
         An object is said to contain `other` if at least one point of `other` lies in
         the interior and no points of `other` lie in the exterior of the object.
@@ -2290,7 +2229,7 @@ GeometryCollection
         This method works in a row-wise manner. It does not check if an element
         of one GeoSeries ``contains`` *any* element of the other one.
 
-        See also
+        See Also
         --------
         GeoSeries.contains_properly
         GeoSeries.within
@@ -2298,9 +2237,8 @@ GeometryCollection
         return _binary_op("contains", self, other, align)
 
     def contains_properly(self, other, align=None):
-        """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
-        each aligned geometry that is completely inside ``other``, with no common
-        boundary points.
+        """Return for each aligned geometry if it is completely inside ``other``, with
+        no common boundary points.
 
         Geometry A contains geometry B properly if B intersects the interior of A but
         not the boundary (or exterior). This means that a geometry A does not “contain
@@ -2412,15 +2350,15 @@ GeometryCollection
         This method works in a row-wise manner. It does not check if an element
         of one GeoSeries ``contains_properly`` *any* element of the other one.
 
-        See also
+        See Also
         --------
         GeoSeries.contains
-        """
+        """  # noqa: D205
         return _binary_op("contains_properly", self, other, align)
 
     def dwithin(self, other, distance, align=None):
-        """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
-        each aligned geometry that is within a set distance from ``other``.
+        """Return for each aligned geometry if it is within a set distance from
+        ``other``.
 
         The operation works on a 1-to-1 row-wise manner:
 
@@ -2523,15 +2461,14 @@ GeometryCollection
         This method works in a row-wise manner. It does not check if an element
         of one GeoSeries is within the set distance of *any* element of the other one.
 
-        See also
+        See Also
         --------
         GeoSeries.within
-        """
+        """  # noqa: D205
         return _binary_op("dwithin", self, other, distance=distance, align=align)
 
     def geom_equals(self, other, align=None):
-        """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
-        each aligned geometry equal to `other`.
+        """Return for each aligned geometry if it is equal to `other`.
 
         An object is said to be equal to `other` if its set-theoretic
         `boundary`, `interior`, and `exterior` coincides with those of the
@@ -2632,7 +2569,7 @@ GeometryCollection
         This method works in a row-wise manner. It does not check if an element
         of one GeoSeries is equal to *any* element of the other one.
 
-        See also
+        See Also
         --------
         GeoSeries.geom_equals_exact
 
@@ -2640,8 +2577,7 @@ GeometryCollection
         return _binary_op("geom_equals", self, other, align)
 
     def geom_almost_equals(self, other, decimal=6, align=None):
-        """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` if
-        each aligned geometry is approximately equal to `other`.
+        """Return for each aligned geometry if it is almost equal to `other`.
 
         Approximate equality is tested at all points to the specified `decimal`
         place precision.
@@ -2699,7 +2635,7 @@ GeometryCollection
         This method works in a row-wise manner. It does not check if an element
         of one GeoSeries is equal to *any* element of the other one.
 
-        See also
+        See Also
         --------
         GeoSeries.geom_equals
         GeoSeries.geom_equals_exact
@@ -2717,8 +2653,7 @@ GeometryCollection
         )
 
     def geom_equals_exact(self, other, tolerance, align=None):
-        """Return True for all geometries that equal aligned *other* to a given
-        tolerance, else False.
+        """Return for each aligned geometry if it equals *other* to a given tolerance.
 
         The operation works on a 1-to-1 row-wise manner:
 
@@ -2773,7 +2708,7 @@ GeometryCollection
         This method works in a row-wise manner. It does not check if an element
         of one GeoSeries is equal to *any* element of the other one.
 
-        See also
+        See Also
         --------
         GeoSeries.geom_equals
         """
@@ -2782,8 +2717,7 @@ GeometryCollection
         )
 
     def crosses(self, other, align=None):
-        """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
-        each aligned geometry that cross `other`.
+        """Return for each aligned geometry if it crossses `other`.
 
         An object is said to cross `other` if its `interior` intersects the
         `interior` of the other but does not contain it, and the dimension of
@@ -2885,7 +2819,7 @@ GeometryCollection
         This method works in a row-wise manner. It does not check if an element
         of one GeoSeries ``crosses`` *any* element of the other one.
 
-        See also
+        See Also
         --------
         GeoSeries.disjoint
         GeoSeries.intersects
@@ -2894,8 +2828,7 @@ GeometryCollection
         return _binary_op("crosses", self, other, align)
 
     def disjoint(self, other, align=None):
-        """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
-        each aligned geometry disjoint to `other`.
+        """Return for each aligned geometry if it is disjoint to `other`.
 
         An object is said to be disjoint to `other` if its `boundary` and
         `interior` does not intersect at all with those of the other.
@@ -2986,7 +2919,7 @@ GeometryCollection
         This method works in a row-wise manner. It does not check if an element
         of one GeoSeries is equal to *any* element of the other one.
 
-        See also
+        See Also
         --------
         GeoSeries.intersects
         GeoSeries.touches
@@ -2995,8 +2928,7 @@ GeometryCollection
         return _binary_op("disjoint", self, other, align)
 
     def intersects(self, other, align=None):
-        """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
-        each aligned geometry that intersects `other`.
+        """Return for each aligned geometry if it  intersects `other`.
 
         An object is said to intersect `other` if its `boundary` and `interior`
         intersects in any way with those of the other.
@@ -3096,7 +3028,7 @@ GeometryCollection
         This method works in a row-wise manner. It does not check if an element
         of one GeoSeries ``crosses`` *any* element of the other one.
 
-        See also
+        See Also
         --------
         GeoSeries.disjoint
         GeoSeries.crosses
@@ -3106,7 +3038,7 @@ GeometryCollection
         return _binary_op("intersects", self, other, align)
 
     def overlaps(self, other, align=None):
-        """Returns True for all aligned geometries that overlap *other*, else False.
+        """Return for all aligned geometries if it overlaps *other*.
 
         Geometries overlaps if they have more than one but not all
         points in common, have the same dimension, and the intersection of the
@@ -3208,7 +3140,7 @@ GeometryCollection
         This method works in a row-wise manner. It does not check if an element
         of one GeoSeries ``overlaps`` *any* element of the other one.
 
-        See also
+        See Also
         --------
         GeoSeries.crosses
         GeoSeries.intersects
@@ -3217,8 +3149,7 @@ GeometryCollection
         return _binary_op("overlaps", self, other, align)
 
     def touches(self, other, align=None):
-        """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
-        each aligned geometry that touches `other`.
+        """Return for each aligned geometry if it touches `other`.
 
         An object is said to touch `other` if it has at least one point in
         common with `other` and its interior does not intersect with any part
@@ -3320,7 +3251,7 @@ GeometryCollection
         This method works in a row-wise manner. It does not check if an element
         of one GeoSeries ``touches`` *any* element of the other one.
 
-        See also
+        See Also
         --------
         GeoSeries.overlaps
         GeoSeries.intersects
@@ -3329,8 +3260,7 @@ GeometryCollection
         return _binary_op("touches", self, other, align)
 
     def within(self, other, align=None):
-        """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
-        each aligned geometry that is within `other`.
+        """Return for each aligned geometry if it is within `other`.
 
         An object is said to be within `other` if at least one of its points is located
         in the `interior` and no points are located in the `exterior` of the other.
@@ -3436,7 +3366,7 @@ GeometryCollection
         This method works in a row-wise manner. It does not check if an element
         of one GeoSeries is ``within`` *any* element of the other one.
 
-        See also
+        See Also
         --------
         GeoSeries.contains
         """
@@ -3444,8 +3374,7 @@ GeometryCollection
 
     def covers(self, other, align=None):
         """
-        Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
-        each aligned geometry that is entirely covering `other`.
+        Return for each aligned geometry if it is entirely covering `other`.
 
         An object A is said to cover another object B if no points of B lie
         in the exterior of A.
@@ -3549,7 +3478,7 @@ GeometryCollection
         This method works in a row-wise manner. It does not check if an element
         of one GeoSeries ``covers`` *any* element of the other one.
 
-        See also
+        See Also
         --------
         GeoSeries.covered_by
         GeoSeries.overlaps
@@ -3558,8 +3487,7 @@ GeometryCollection
 
     def covered_by(self, other, align=None):
         """
-        Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
-        each aligned geometry that is entirely covered by `other`.
+        Return for each aligned geometry if is entirely covered by `other`.
 
         An object A is said to cover another object B if no points of B lie
         in the exterior of A.
@@ -3663,7 +3591,7 @@ GeometryCollection
         This method works in a row-wise manner. It does not check if an element
         of one GeoSeries is ``covered_by`` *any* element of the other one.
 
-        See also
+        See Also
         --------
         GeoSeries.covers
         GeoSeries.overlaps
@@ -3671,7 +3599,7 @@ GeometryCollection
         return _binary_op("covered_by", self, other, align)
 
     def distance(self, other, align=None):
-        """Returns a ``Series`` containing the distance to aligned `other`.
+        """Return the distances to aligned `other`.
 
         The operation works on a 1-to-1 row-wise manner:
 
@@ -3767,7 +3695,7 @@ GeometryCollection
         return _binary_op("distance", self, other, align)
 
     def hausdorff_distance(self, other, align=None, densify=None):
-        """Returns a ``Series`` containing the Hausdorff distance to aligned `other`.
+        """Return the Hausdorff distances to aligned `other`.
 
         The Hausdorff distance is the largest distance consisting of any point in `self`
         with the nearest point in `other`.
@@ -3882,7 +3810,7 @@ GeometryCollection
         return _binary_op("hausdorff_distance", self, other, align, densify=densify)
 
     def frechet_distance(self, other, align=None, densify=None):
-        """Returns a ``Series`` containing the Frechet distance to aligned `other`.
+        """Return the Frechet distances to aligned `other`.
 
         The Fréchet distance is a measure of similarity: it is the greatest distance
         between any point in A and the closest point in B. The discrete distance is an
@@ -4006,8 +3934,7 @@ GeometryCollection
     #
 
     def difference(self, other, align=None):
-        """Returns a ``GeoSeries`` of the points in each aligned geometry that
-        are not in `other`.
+        """Return the difference of each aligned geometry with `other`.
 
         .. image:: ../../../_static/binary_geo-difference.svg
            :align: center
@@ -4117,8 +4044,7 @@ GeometryCollection
         return _binary_geo("difference", self, other, align)
 
     def symmetric_difference(self, other, align=None):
-        """Returns a ``GeoSeries`` of the symmetric difference of points in
-        each aligned geometry with `other`.
+        """Return the symmetric difference of each aligned geometry with `other`.
 
         For each geometry, the symmetric difference consists of points in the
         geometry not in `other`, and points in `other` not in the geometry.
@@ -4232,8 +4158,7 @@ GeometryCollection
         return _binary_geo("symmetric_difference", self, other, align)
 
     def union(self, other, align=None):
-        """Returns a ``GeoSeries`` of the union of points in each aligned geometry with
-        `other`.
+        """Return the union of each aligned geometry with `other`.
 
         .. image:: ../../../_static/binary_geo-union.svg
            :align: center
@@ -4346,8 +4271,7 @@ GeometryCollection
         return _binary_geo("union", self, other, align)
 
     def intersection(self, other, align=None):
-        """Returns a ``GeoSeries`` of the intersection of points in each
-        aligned geometry with `other`.
+        """Return the intersection of each aligned geometry with `other`.
 
         .. image:: ../../../_static/binary_geo-intersection.svg
            :align: center
@@ -4459,8 +4383,7 @@ GeometryCollection
         return _binary_geo("intersection", self, other, align)
 
     def clip_by_rect(self, xmin, ymin, xmax, ymax):
-        """Returns a ``GeoSeries`` of the portions of geometry within the given
-        rectangle.
+        """Return the portions of geometry within the given rectangle.
 
         Note that the results are not exactly equal to
         :meth:`~GeoSeries.intersection()`. E.g. in edge cases,
@@ -4517,7 +4440,7 @@ GeometryCollection
         4          GEOMETRYCOLLECTION EMPTY
         dtype: geometry
 
-        See also
+        See Also
         --------
         GeoSeries.intersection
         """
@@ -4528,8 +4451,7 @@ GeometryCollection
         return GeoSeries(clipped_geometry, index=self.index, crs=self.crs)
 
     def shortest_line(self, other, align=None):
-        """
-        Returns the shortest two-point line between two geometries.
+        """Return the shortest two-point line between two geometries.
 
         The resulting line consists of two points, representing the nearest points
         between the geometry pair. The line always starts in the first geometry a
@@ -4732,8 +4654,7 @@ GeometryCollection
         return _binary_geo("snap", self, other, align, tolerance=tolerance)
 
     def shared_paths(self, other, align=None):
-        """
-        Returns the shared paths between two geometries.
+        """Return the shared paths between two geometries.
 
         Geometries within the GeoSeries should be only (Multi)LineStrings or
         LinearRings. A GeoSeries of GeometryCollections is returned with two elements
@@ -4827,7 +4748,6 @@ GeometryCollection
         --------
         GeoSeries.get_geometry
         """
-
         return _binary_geo("shared_paths", self, other, align)
 
     #
@@ -4836,7 +4756,9 @@ GeometryCollection
 
     @property
     def bounds(self):
-        """Returns a ``DataFrame`` with columns ``minx``, ``miny``, ``maxx``,
+        """Determine the bounds of each geometry.
+
+        Returns a ``DataFrame`` with columns ``minx``, ``miny``, ``maxx``,
         ``maxy`` values containing the bounds for each geometry.
 
         See ``GeoSeries.total_bounds`` for the limits of the entire series.
@@ -4870,8 +4792,7 @@ GeometryCollection
 
     @property
     def total_bounds(self):
-        """Returns a tuple containing ``minx``, ``miny``, ``maxx``, ``maxy``
-        values for the bounds of the series as a whole.
+        """Return the bounds of the series as a whole.
 
         See ``GeoSeries.bounds`` for the bounds of the geometries contained in
         the series.
@@ -4889,7 +4810,7 @@ GeometryCollection
 
     @property
     def sindex(self):
-        """Generate the spatial index
+        """Generate the spatial index.
 
         Creates R-tree spatial index based on ``shapely.STRtree``.
 
@@ -4953,7 +4874,6 @@ GeometryCollection
 
         Examples
         --------
-
         >>> from shapely.geometry import Point
         >>> d = {'geometry': [Point(1, 2), Point(2, 1)]}
         >>> gdf = geopandas.GeoDataFrame(d)
@@ -4981,8 +4901,7 @@ GeometryCollection
         single_sided=False,
         **kwargs,
     ):
-        """Returns a ``GeoSeries`` of geometries representing all points within
-        a given ``distance`` of each geometric object.
+        """Apply a buffer to the geometries.
 
         Computes the buffer of a geometry for positive and negative buffer distance.
 
@@ -5058,8 +4977,7 @@ GeometryCollection
         )
 
     def simplify(self, tolerance, preserve_topology=True):
-        """Returns a ``GeoSeries`` containing a simplified representation of
-        each geometry.
+        """Simplify the geometries.
 
         The algorithm (Douglas-Peucker) recursively splits the original line
         into smaller parts and connects these parts' endpoints
@@ -5110,8 +5028,7 @@ GeometryCollection
         )
 
     def relate(self, other, align=None):
-        """
-        Returns the DE-9IM intersection matrices for the geometries
+        """Return the DE-9IM intersection matrices for the geometries.
 
         The operation works on a 1-to-1 row-wise manner:
 
@@ -5215,9 +5132,7 @@ GeometryCollection
         return _binary_op("relate", self, other, align)
 
     def relate_pattern(self, other, pattern, align=None):
-        """
-        Returns True if the DE-9IM string code for the relationship between
-        the geometries satisfies the pattern, else False.
+        """Check if the geometries relationship satisfies the DE-9IM string pattern.
 
         This function compares the DE-9IM code string for two geometries
         against a specified pattern. If the string matches the pattern then
@@ -5328,7 +5243,7 @@ GeometryCollection
 
     def project(self, other, normalized=False, align=None):
         """
-        Return the distance along each geometry nearest to *other*
+        Return the distance along each geometry nearest to *other*.
 
         The operation works on a 1-to-1 row-wise manner:
 
@@ -5419,7 +5334,7 @@ GeometryCollection
         2    0.707107
         dtype: float64
 
-        See also
+        See Also
         --------
         GeoSeries.interpolate
         """
@@ -5427,7 +5342,7 @@ GeometryCollection
 
     def interpolate(self, distance, normalized=False):
         """
-        Return a point at the specified distance along each geometry
+        Return a point at the specified distance along each geometry.
 
         Parameters
         ----------
@@ -5514,7 +5429,7 @@ GeometryCollection
         return _delegate_geo_method("affine_transform", self, matrix=matrix)
 
     def translate(self, xoff=0.0, yoff=0.0, zoff=0.0):
-        """Returns a ``GeoSeries`` with translated geometries.
+        """Return a ``GeoSeries`` with translated geometries.
 
         See http://shapely.readthedocs.io/en/latest/manual.html#shapely.affinity.translate
         for details.
@@ -5552,7 +5467,7 @@ GeometryCollection
         return _delegate_geo_method("translate", self, xoff=xoff, yoff=yoff, zoff=zoff)
 
     def rotate(self, angle, origin="center", use_radians=False):
-        """Returns a ``GeoSeries`` with rotated geometries.
+        """Return a ``GeoSeries`` with rotated geometries.
 
         See http://shapely.readthedocs.io/en/latest/manual.html#shapely.affinity.rotate
         for details.
@@ -5604,7 +5519,7 @@ GeometryCollection
         )
 
     def scale(self, xfact=1.0, yfact=1.0, zfact=1.0, origin="center"):
-        """Returns a ``GeoSeries`` with scaled geometries.
+        """Return a ``GeoSeries`` with scaled geometries.
 
         The geometries can be scaled by different factors along each
         dimension. Negative scale factors will mirror or reflect coordinates.
@@ -5654,7 +5569,7 @@ GeometryCollection
         )
 
     def skew(self, xs=0.0, ys=0.0, origin="center", use_radians=False):
-        """Returns a ``GeoSeries`` with skewed geometries.
+        """Return a ``GeoSeries`` with skewed geometries.
 
         The geometries are sheared by angles along the x and y dimensions.
 
@@ -5744,8 +5659,7 @@ GeometryCollection
         return _CoordinateIndexer(self)
 
     def get_coordinates(self, include_z=False, ignore_index=False, index_parts=False):
-        """Gets coordinates from a :class:`GeoSeries` as a :class:`~pandas.DataFrame` of
-        floats.
+        """Get coordinates as a :class:`~pandas.DataFrame` of floats.
 
         The shape of the returned :class:`~pandas.DataFrame` is (N, 2), with N being the
         number of coordinate pairs. With the default of ``include_z=False``,
@@ -5967,7 +5881,7 @@ GeometryCollection
         return GeoSeries(result, name="sampled_points", crs=self.crs, index=self.index)
 
     def build_area(self, node=True):
-        """Creates an areal geometry formed by the constituent linework.
+        """Create an areal geometry formed by the constituent linework.
 
         Builds areas from the GeoSeries that contain linework which represents the edges
         of a planar graph. Any geometry type may be provided as input; only the
@@ -6028,7 +5942,7 @@ GeometryCollection
         )
 
     def polygonize(self, node=True, full=False):
-        """Creates polygons formed from the linework of a GeoSeries.
+        """Create polygons formed from the linework of a GeoSeries.
 
         Polygonizes the GeoSeries that contain linework which represents the
         edges of a planar graph. Any geometry type may be provided as input; only the
@@ -6116,7 +6030,7 @@ GeometryCollection
 
 
 def _get_index_for_parts(orig_idx, outer_idx, ignore_index, index_parts):
-    """Helper to handle index when geometries get exploded to parts.
+    """Handle index when geometries get exploded to parts.
 
     Used in get_coordinates and explode.
 
@@ -6134,7 +6048,6 @@ def _get_index_for_parts(orig_idx, outer_idx, ignore_index, index_parts):
     pandas.Index
         index or multiindex
     """
-
     if ignore_index:
         return None
     else:

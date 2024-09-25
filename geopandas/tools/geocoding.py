@@ -1,3 +1,5 @@
+"""Geocoding tools."""
+
 import time
 from collections import defaultdict
 
@@ -9,9 +11,10 @@ import geopandas
 
 
 def _get_throttle_time(provider):
-    """
-    Amount of time to wait between requests to a geocoding API, for providers
-    that specify rate limits in their terms of service.
+    """Amount of time to wait between requests to a geocoding API.
+
+    To be used for providers that specify rate limits in their terms of
+    service.
     """
     import geopy.geocoders
 
@@ -59,7 +62,6 @@ def geocode(strings, provider=None, **kwargs):
     0  POINT (-71.05863 42.35899)                          Boston, MA, United States
     1  POINT (-77.03651 38.89766)  1600 Pennsylvania Ave NW, Washington, DC 20006...
     """
-
     if provider is None:
         provider = "photon"
     throttle_time = _get_throttle_time(provider)
@@ -68,18 +70,16 @@ def geocode(strings, provider=None, **kwargs):
 
 
 def reverse_geocode(points, provider=None, **kwargs):
-    """
-    Reverse geocode a set of points and get a GeoDataFrame of the resulting
-    addresses.
+    """Reverse geocode a set of points.
 
-    The points
+    The result is a GeoDataFrame with the resulting addresses.
 
     Parameters
     ----------
     points : list or Series of Shapely Point objects.
         x coordinate is longitude
         y coordinate is latitude
-    provider : str or geopy.geocoder (opt)
+    provider : str or geopy.geocoder, optional
         Specifies geocoding service to use. If none is provided,
         will use 'photon' (see the Photon's terms of service at:
         https://photon.komoot.io).
@@ -110,7 +110,6 @@ def reverse_geocode(points, provider=None, **kwargs):
     0  POINT (-71.05941 42.35837)       29 Court Sq, Boston, MA 02108, United States
     1  POINT (-77.03641 38.89766)  1600 Pennsylvania Ave NW, Washington, DC 20006...
     """
-
     if provider is None:
         provider = "photon"
     throttle_time = _get_throttle_time(provider)
@@ -150,8 +149,7 @@ def _query(data, forward, provider, throttle_time, **kwargs):
 
 
 def _prepare_geocode_result(results):
-    """
-    Helper function for the geocode function
+    """Prepare the geocode result into a GeoDataFrame.
 
     Takes a dict where keys are index entries, values are tuples containing:
     (address, (lat, lon))

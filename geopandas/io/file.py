@@ -1,3 +1,5 @@
+"""Read/write data from/to a file or URL."""
+
 from __future__ import annotations
 
 import os
@@ -190,8 +192,7 @@ def _is_url(url):
 def _read_file(
     filename, bbox=None, mask=None, columns=None, rows=None, engine=None, **kwargs
 ):
-    """
-    Returns a GeoDataFrame from a file or URL.
+    """Return a GeoDataFrame from a file or URL.
 
     Parameters
     ----------
@@ -548,9 +549,7 @@ def _read_file_pyogrio(path_or_bytes, bbox=None, mask=None, rows=None, **kwargs)
 
 
 def _detect_driver(path):
-    """
-    Attempt to auto-detect driver based on the extension
-    """
+    """Attempt to auto-detect driver based on the extension."""
     try:
         # in case the path is a file handle
         path = path.name
@@ -578,7 +577,7 @@ def _to_file(
     **kwargs,
 ):
     """
-    Write this GeoDataFrame to an OGR data source
+    Write this GeoDataFrame to an OGR data source.
 
     A dictionary of supported OGR providers is available via:
 
@@ -749,6 +748,7 @@ def _to_file_pyogrio(df, filename, driver, schema, crs, mode, metadata, **kwargs
 
 
 def infer_schema(df):
+    """Infer the schema of a GeoDataFrame."""
     from collections import OrderedDict
 
     # TODO: test pandas string type and boolean type once released
@@ -800,9 +800,7 @@ def infer_schema(df):
 
 
 def _geometry_types(df):
-    """
-    Determine the geometry types in the GeoDataFrame for the schema.
-    """
+    """Determine the geometry types in the GeoDataFrame for the schema."""
     geom_types_2D = df[~df.geometry.has_z].geometry.geom_type.unique()
     geom_types_2D = [gtype for gtype in geom_types_2D if gtype is not None]
     geom_types_3D = df[df.geometry.has_z].geometry.geom_type.unique()

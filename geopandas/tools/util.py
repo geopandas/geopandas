@@ -1,3 +1,5 @@
+"""Utility functions for GeoPandas."""
+
 import pandas as pd
 
 from shapely.geometry import MultiLineString, MultiPoint, MultiPolygon
@@ -12,7 +14,7 @@ _multi_type_map = {
 
 def collect(x, multi=False):
     """
-    Collect single part geometries into their Multi* counterpart
+    Collect single part geometries into their Multi* counterpart.
 
     Parameters
     ----------

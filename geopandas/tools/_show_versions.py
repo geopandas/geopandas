@@ -4,7 +4,7 @@ import sys
 
 
 def _get_sys_info():
-    """System information
+    """System information.
 
     Returns
     -------
@@ -23,7 +23,8 @@ def _get_sys_info():
 
 
 def _get_C_info():
-    """Information on system PROJ, GDAL, GEOS
+    """Information on system PROJ, GDAL, GEOS.
+
     Returns
     -------
     c_info: dict
@@ -93,7 +94,7 @@ def _get_C_info():
 
 
 def _get_deps_info():
-    """Overview of the installed version of main dependencies
+    """Overview of the installed version of main dependencies.
 
     Returns
     -------
@@ -144,7 +145,6 @@ def show_versions():
 
     Examples
     --------
-
     ::
 
         $ python -c "import geopandas; geopandas.show_versions()"
