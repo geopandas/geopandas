@@ -1117,7 +1117,7 @@ class GeoSeries(GeoPandasBase, Series):
     def to_crs(self, crs: Any | None = None, epsg: int | None = None) -> GeoSeries:
         """Transform all geometries to the ``crs`` specified.
 
-        All geometries in a GeoSeries are trnsformed to a different coordinate
+        All geometries in a GeoSeries are transformed to a different coordinate
         reference system.  The ``crs`` attribute on the current GeoSeries must
         be set.  Either ``crs`` or ``epsg`` may be specified for output.
 
