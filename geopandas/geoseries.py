@@ -1,3 +1,5 @@
+"""GeoPandas Geoseries."""
+
 from __future__ import annotations
 
 import typing
@@ -40,7 +42,8 @@ if typing.TYPE_CHECKING:
 def _geoseries_constructor_with_fallback(
     data=None, index=None, crs: Any | None = None, **kwargs
 ):
-    """
+    """GeoSeries constructor with fallback to Series.
+
     A flexible constructor for GeoSeries._constructor, which needs to be able
     to fall back to a Series (if a certain operation does not produce
     geometries).
@@ -234,10 +237,12 @@ class GeoSeries(GeoPandasBase, Series):
             self.crs = crs
 
     def append(self, *args, **kwargs) -> GeoSeries:
+        """Append values to the end of the GeoSeries."""
         return self._wrapped_pandas_method("append", *args, **kwargs)
 
     @GeoPandasBase.crs.setter
     def crs(self, value):
+        """Set the CRS of the GeoSeries."""
         if self.crs is not None:
             warnings.warn(
                 "Overriding the CRS of a GeoSeries that already has CRS. "
@@ -250,6 +255,7 @@ class GeoSeries(GeoPandasBase, Series):
 
     @property
     def geometry(self) -> GeoSeries:
+        """Return the geometries in the GeoSeries."""
         return self
 
     @property
@@ -377,9 +383,7 @@ class GeoSeries(GeoPandasBase, Series):
     def from_wkb(
         cls, data, index=None, crs: Any | None = None, on_invalid="raise", **kwargs
     ) -> GeoSeries:
-        """
-        Alternate constructor to create a ``GeoSeries``
-        from a list or array of WKB objects.
+        """Create a :class:`~geopandas.GeoSeries` from WKB objects.
 
         Parameters
         ----------
@@ -419,9 +423,7 @@ class GeoSeries(GeoPandasBase, Series):
     def from_wkt(
         cls, data, index=None, crs: Any | None = None, on_invalid="raise", **kwargs
     ) -> GeoSeries:
-        """
-        Alternate constructor to create a ``GeoSeries``
-        from a list or array of WKT objects.
+        """Create a :class:`~geopandas.GeoSeries` from WKT strings.
 
         Parameters
         ----------
@@ -473,9 +475,7 @@ class GeoSeries(GeoPandasBase, Series):
 
     @classmethod
     def from_xy(cls, x, y, z=None, index=None, crs=None, **kwargs) -> GeoSeries:
-        """
-        Alternate constructor to create a :class:`~geopandas.GeoSeries` of Point
-        geometries from lists or arrays of x, y(, z) coordinates.
+        """Create a :class:`~geopandas.GeoSeries` from x, y(, z) coordinates.
 
         In case of geographic coordinates, it is assumed that longitude is captured
         by ``x`` coordinates and latitude by ``y``.
@@ -550,9 +550,9 @@ class GeoSeries(GeoPandasBase, Series):
 
     @classmethod
     def from_arrow(cls, arr, **kwargs) -> GeoSeries:
-        """
-        Construct a GeoSeries from a Arrow array object with a GeoArrow
-        extension type.
+        """Construct a GeoSeries from an Arrow array object.
+
+        The Arrow array object should have a GeoArrow extension type.
 
         See https://geoarrow.org/ for details on the GeoArrow specification.
 
@@ -714,18 +714,22 @@ class GeoSeries(GeoPandasBase, Series):
         return val
 
     def __getitem__(self, key):
+        """Get item from GeoSeries."""
         return self._wrapped_pandas_method("__getitem__", key)
 
     @doc(pd.Series)
     def sort_index(self, *args, **kwargs):
+        """Sort by labels (along an axis)."""
         return self._wrapped_pandas_method("sort_index", *args, **kwargs)
 
     @doc(pd.Series)
     def take(self, *args, **kwargs):
+        """Return the elements in the given *positional* indices."""
         return self._wrapped_pandas_method("take", *args, **kwargs)
 
     @doc(pd.Series)
     def apply(self, func, convert_dtype: bool | None = None, args=(), **kwargs):
+        """Apply a function on the GeoSeries."""
         if convert_dtype is not None:
             kwargs["convert_dtype"] = convert_dtype
         else:
@@ -934,6 +938,7 @@ class GeoSeries(GeoPandasBase, Series):
 
     @doc(plot_series)
     def plot(self, *args, **kwargs):
+        """Plot the GeoSeries."""
         return plot_series(self, *args, **kwargs)
 
     @doc(_explore_geoseries)
@@ -1110,10 +1115,9 @@ class GeoSeries(GeoPandasBase, Series):
         return result
 
     def to_crs(self, crs: Any | None = None, epsg: int | None = None) -> GeoSeries:
-        """Returns a ``GeoSeries`` with all geometries transformed to a new
-        coordinate reference system.
+        """Transform all geometries to the ``crs`` specified.
 
-        Transform all geometries in a GeoSeries to a different coordinate
+        All geometries in a GeoSeries are trnsformed to a different coordinate
         reference system.  The ``crs`` attribute on the current GeoSeries must
         be set.  Either ``crs`` or ``epsg`` may be specified for output.
 
@@ -1190,7 +1194,7 @@ class GeoSeries(GeoPandasBase, Series):
         )
 
     def estimate_utm_crs(self, datum_name: str = "WGS 84"):
-        """Returns the estimated UTM CRS based on the bounds of the dataset.
+        """Return the estimated UTM CRS based on the bounds of the dataset.
 
         .. versionadded:: 0.9
 
@@ -1234,8 +1238,7 @@ class GeoSeries(GeoPandasBase, Series):
         to_wgs84: bool = False,
         **kwargs,
     ) -> str:
-        """
-        Returns a GeoJSON string representation of the GeoSeries.
+        """Return a GeoJSON string representation of the GeoSeries.
 
         Parameters
         ----------

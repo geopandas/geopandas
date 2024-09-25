@@ -1,3 +1,5 @@
+"""Read/write data from/to a file or URL."""
+
 from __future__ import annotations
 
 import os
@@ -190,8 +192,7 @@ def _is_url(url):
 def _read_file(
     filename, bbox=None, mask=None, columns=None, rows=None, engine=None, **kwargs
 ):
-    """
-    Returns a GeoDataFrame from a file or URL.
+    """Return a GeoDataFrame from a file or URL.
 
     Parameters
     ----------
@@ -747,6 +748,7 @@ def _to_file_pyogrio(df, filename, driver, schema, crs, mode, metadata, **kwargs
 
 
 def infer_schema(df):
+    """Infer the schema of a GeoDataFrame."""
     from collections import OrderedDict
 
     # TODO: test pandas string type and boolean type once released

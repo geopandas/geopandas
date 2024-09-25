@@ -1,3 +1,5 @@
+"""Plotting utilities."""
+
 import warnings
 
 import numpy as np
@@ -11,7 +13,8 @@ from ._decorator import doc
 
 
 def _sanitize_geoms(geoms, prefix="Multi"):
-    """
+    """Sanitize geometries for plotting.
+
     Returns Series like geoms and index, except that any Multi geometries
     are split into their components and indices are repeated for all component
     in the same Multi geometry. At the same time, empty or missing geometries are
@@ -53,7 +56,8 @@ def _sanitize_geoms(geoms, prefix="Multi"):
 
 
 def _expand_kwargs(kwargs, multiindex):
-    """
+    """Expand plot arguments if needed.
+
     Most arguments to the plot functions must be a (single) value, or a sequence
     of values. This function checks each key-value pair in 'kwargs' and expands
     it (in place) to the correct length/formats with help of 'multiindex', unless
@@ -85,7 +89,7 @@ def _expand_kwargs(kwargs, multiindex):
 
 
 def _PolygonPatch(polygon, **kwargs):
-    """Constructs a matplotlib patch from a Polygon geometry.
+    """Construct a matplotlib patch from a Polygon geometry.
 
     The `kwargs` are those supported by the matplotlib.patches.PathPatch class
     constructor. Returns an instance of matplotlib.patches.PathPatch.
@@ -121,8 +125,7 @@ def _plot_polygon_collection(
     autolim=True,
     **kwargs,
 ):
-    """
-    Plots a collection of Polygon and MultiPolygon geometries to `ax`.
+    """Plot a collection of Polygon and MultiPolygon geometries to `ax`.
 
     Parameters
     ----------
@@ -192,8 +195,7 @@ def _plot_linestring_collection(
     autolim=True,
     **kwargs,
 ):
-    """
-    Plots a collection of LineString and MultiLineString geometries to `ax`.
+    """Plot a collection of LineString and MultiLineString geometries to `ax`.
 
     Parameters
     ----------
@@ -258,8 +260,7 @@ def _plot_point_collection(
     markersize=None,
     **kwargs,
 ):
-    """
-    Plots a collection of Point and MultiPoint geometries to `ax`.
+    """Plot a collection of Point and MultiPoint geometries to `ax`.
 
     Parameters
     ----------
@@ -951,9 +952,12 @@ def plot_dataframe(
 
 @doc(plot_dataframe)
 class GeoplotAccessor(PlotAccessor):
+    """Accessor for GeoPandas plots."""
+
     _pandas_kinds = PlotAccessor._all_kinds
 
     def __call__(self, *args, **kwargs):
+        """Plot the GeoDataFrame."""
         data = self._parent.copy()
         kind = kwargs.pop("kind", "geo")
         if kind == "geo":
@@ -966,4 +970,5 @@ class GeoplotAccessor(PlotAccessor):
             raise ValueError(f"{kind} is not a valid plot kind")
 
     def geo(self, *args, **kwargs):
+        """Plot the GeoDataFrame."""
         return self(kind="geo", *args, **kwargs)  # noqa: B026

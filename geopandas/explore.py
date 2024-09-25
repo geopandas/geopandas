@@ -1,3 +1,5 @@
+"""Interactive map based on GeoPandas and folium/leaflet.js."""
+
 import warnings
 from packaging.version import Version
 from statistics import mean
@@ -277,7 +279,7 @@ def _explore(
     """
 
     def _colormap_helper(_cmap, n_resample=None, idx=None):
-        """Helper for MPL deprecation - GH#2596."""
+        """Help for MPL deprecation - GH#2596."""
         if not n_resample:
             return cm.get_cmap(_cmap)
         else:

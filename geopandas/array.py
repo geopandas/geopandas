@@ -1009,7 +1009,7 @@ class GeometryArray(ExtensionArray):
 
     @requires_pyproj
     def estimate_utm_crs(self, datum_name="WGS 84"):
-        """Returns the estimated UTM CRS based on the bounds of the dataset.
+        """Return the estimated UTM CRS based on the bounds of the dataset.
 
         .. versionadded:: 0.9
 

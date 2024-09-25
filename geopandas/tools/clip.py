@@ -1,10 +1,4 @@
-"""
-geopandas.clip
-==============
-
-A module to clip vector data using GeoPandas.
-
-"""
+"""Module to clip vector data using GeoPandas."""
 
 import warnings
 

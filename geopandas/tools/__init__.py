@@ -1,3 +1,5 @@
+"""Tools to apply on GeoDataFrames."""
+
 from .clip import clip
 from .geocoding import geocode, reverse_geocode
 from .overlay import overlay

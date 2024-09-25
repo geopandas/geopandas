@@ -1,3 +1,7 @@
+"""Spatial index."""
+
+from __future__ import annotations
+
 import numpy as np
 
 import shapely
@@ -55,8 +59,9 @@ class SpatialIndex:
     def query(
         self, geometry, predicate=None, sort=False, distance=None, output_format="tuple"
     ):
-        """
-        Return the integer indices of all combinations of each input geometry
+        """Query the spatial index.
+
+        Returns the integer indices of all combinations of each input geometry
         and tree geometries where the bounding box of each input geometry
         intersects the bounding box of a tree geometry.
 
@@ -277,9 +282,7 @@ class SpatialIndex:
         return_distance=False,
         exclusive=False,
     ):
-        """
-        Return the nearest geometry in the tree for each input geometry in
-        ``geometry``.
+        """Return the nearest geometry for each input geometry in ``geometry``.
 
         If multiple tree geometries have the same distance from an input geometry,
         multiple results will be returned for that input geometry by default.
@@ -378,8 +381,9 @@ geometries}
             return indices
 
     def intersection(self, coordinates):
-        """Compatibility wrapper for rtree.index.Index.intersection,
-        use ``query`` instead.
+        """Compatibility wrapper, use ``query`` instead.
+
+        Reference rtree.index.Index.intersection.
 
         Parameters
         ----------
@@ -501,4 +505,5 @@ geometries}
         return len(self._tree) == 0
 
     def __len__(self):
+        """Length of the spatial index."""
         return len(self._tree)

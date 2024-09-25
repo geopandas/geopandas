@@ -1,3 +1,5 @@
+"""Read/write data from/to a parquet or feather file."""
+
 import json
 import warnings
 from packaging.version import Version
@@ -63,7 +65,8 @@ def _is_fsspec_url(url):
 
 
 def _remove_id_from_member_of_ensembles(json_dict):
-    """
+    """Remove ids not supported by old PROJ versions.
+
     Older PROJ versions will not recognize IDs of datum ensemble members that
     were added in more recent PROJ database versions.
 
@@ -231,8 +234,7 @@ def _decode_metadata(metadata_str):
 
 
 def _validate_dataframe(df):
-    """Validate that the GeoDataFrame conforms to requirements for writing
-    to Parquet format.
+    """Check if GeoDataFrame can be written to Parquet/Feather.
 
     Raises `ValueError` if the GeoDataFrame is not valid.
 
@@ -259,6 +261,7 @@ def _validate_dataframe(df):
 
 def _validate_geo_metadata(metadata):
     """Validate geo metadata.
+
     Must not be empty, and must contain the structure specified above.
 
     Raises ValueError if metadata is not valid.
@@ -333,7 +336,10 @@ def _geopandas_to_arrow(
     schema_version=None,
     write_covering_bbox=None,
 ):
-    """Helper function with main, shared logic for to_parquet/to_feather."""
+    """Convert a GeoDataFrame to an Arrow table.
+
+    Contains main, shared logic for to_parquet/to_feather.
+    """
     from pyarrow import StructArray
 
     from geopandas.io._geoarrow import geopandas_to_arrow
@@ -487,7 +493,10 @@ def _to_feather(df, path, index=None, compression=None, schema_version=None, **k
 
 
 def _arrow_to_geopandas(table, geo_metadata=None):
-    """Helper function with main, shared logic for read_parquet/read_feather."""
+    """Convert arrow table to GeoDataFrame.
+
+    Contains main, shared logic for read_parquet/read_feather.
+    """
     if geo_metadata is None:
         # Note: this path of not passing metadata is also used by dask-geopandas
         geo_metadata = _validate_and_decode_metadata(table.schema.metadata)
@@ -593,10 +602,11 @@ def _get_filesystem_path(path, filesystem=None, storage_options=None):
 
 
 def _ensure_arrow_fs(filesystem):
-    """
-    Simplified version of pyarrow.fs._ensure_filesystem. This is only needed
-    below because `pyarrow.parquet.read_metadata` does not yet accept a
-    filesystem keyword (https://issues.apache.org/jira/browse/ARROW-16719).
+    """Simplified version of pyarrow.fs._ensure_filesystem.
+
+    This is only needed below because `pyarrow.parquet.read_metadata` does
+    not yet accept a filesystem keyword
+    (https://issues.apache.org/jira/browse/ARROW-16719).
     """
     from pyarrow import fs
 
@@ -633,8 +643,7 @@ def _validate_and_decode_metadata(metadata):
 
 
 def _read_parquet_schema_and_metadata(path, filesystem):
-    """
-    Opening the Parquet file/dataset a first time to get the schema and metadata.
+    """Open the Parquet file/dataset a first time to get the schema and metadata.
 
     TODO: we should look into how we can reuse opened dataset for reading the
     actual data, to avoid discovering the dataset twice (problem right now is

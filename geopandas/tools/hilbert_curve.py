@@ -1,3 +1,5 @@
+"""Hilbert curve functions."""
+
 import numpy as np
 
 
@@ -40,17 +42,17 @@ def _hilbert_distance(geoms, total_bounds=None, level=16):
 
 
 def _continuous_to_discrete_coords(bounds, level, total_bounds):
-    """
-    Calculates mid points & ranges of geoms and returns
-    as discrete coords.
+    """Calculate mid points & ranges of geoms and return them as discrete coords.
 
     Parameters
     ----------
-    bounds : Bounds of each geometry - array
-
-    p : The number of iterations used in constructing the Hilbert curve
-
-    total_bounds : Total bounds of geometries - array
+    bounds : array of bounds
+        Bounds of each geometry.
+    level : int (1 - 16)
+        Determines the precision of the curve (points on the curve will
+        have coordinates in the range [0, 2^level - 1]).
+    total_bounds : 4-element array
+        Total bounds of geometries.
 
     Returns
     -------
@@ -84,9 +86,7 @@ def _continuous_to_discrete_coords(bounds, level, total_bounds):
 
 
 def _continuous_to_discrete(vals, val_range, n):
-    """
-    Convert a continuous one-dimensional array to discrete integer values
-    based their ranges.
+    """Convert a continuous one-dimensional array to discrete integer values.
 
     Parameters
     ----------

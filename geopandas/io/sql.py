@@ -1,3 +1,5 @@
+"""Read/write data to/from an SQL backend."""
+
 import warnings
 from contextlib import contextmanager
 from functools import lru_cache
@@ -44,8 +46,8 @@ def _get_conn(conn_or_engine):
 
 
 def _df_to_geodf(df, geom_col="geom", crs=None, con=None):
-    """
-    Transforms a pandas DataFrame into a GeoDataFrame.
+    """Transform a pandas DataFrame into a GeoDataFrame.
+
     The column 'geom_col' must be a geometry column in WKB representation.
     To be used to convert df based on pd.read_sql to gdf.
 
@@ -134,7 +136,8 @@ def _read_postgis(
     params=None,
     chunksize=None,
 ):
-    """
+    """Read data from PostGIS using a SQL query.
+
     Returns a GeoDataFrame corresponding to the result of the query
     string, which must contain a geometry column in WKB representation.
 
@@ -211,8 +214,9 @@ def _read_postgis(
 
 
 def _get_geometry_type(gdf):
-    """
-    Get basic geometry type of a GeoDataFrame. See more info from:
+    """Get basic geometry type of a GeoDataFrame.
+
+    See more info from:
     https://geoalchemy-2.readthedocs.io/en/latest/types.html#geoalchemy2.types._GISType
 
     Following rules apply:

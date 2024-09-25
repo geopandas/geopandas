@@ -1,3 +1,5 @@
+"""Tools for overlaying GeoDataFrames."""
+
 import warnings
 from functools import reduce
 
@@ -10,8 +12,8 @@ from geopandas.array import _check_crs, _crs_mismatch_warn
 
 
 def _ensure_geometry_column(df):
-    """
-    Helper function to ensure the geometry column is called 'geometry'.
+    """Make sure that the geometry column is called 'geometry'.
+
     If another column with that name exists, it will be dropped.
     """
     if not df._geometry_column_name == "geometry":
