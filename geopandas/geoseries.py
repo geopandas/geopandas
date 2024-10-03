@@ -384,7 +384,7 @@ class GeoSeries(GeoPandasBase, Series):
     def from_wkb(
         cls, data, index=None, crs: Any | None = None, on_invalid="raise", **kwargs
     ) -> GeoSeries:
-        """
+        r"""
         Alternate constructor to create a ``GeoSeries``
         from a list or array of WKB objects
 
