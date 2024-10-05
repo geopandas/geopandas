@@ -951,6 +951,8 @@ class TestDataFrame:
         assert "bbox" in geo.keys()
         assert len(geo["bbox"]) == 4
         assert isinstance(geo["bbox"], tuple)
+        for bound in geo["bbox"]:
+            assert not isinstance(bound, np.float64)
         for feature in geo["features"]:
             assert "bbox" in feature.keys()
 
