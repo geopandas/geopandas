@@ -427,7 +427,7 @@ class TestDataFrame:
         df_nogeom = pd.DataFrame(df.drop("geometry", axis=1))
         res1, res2 = df.align(df_nogeom, axis=0)
         assert_geodataframe_equal(res1, df)
-        assert type(res2) == pd.DataFrame
+        assert type(res2) is pd.DataFrame
         assert_frame_equal(res2, df_nogeom)
 
         # same as above but now with actual alignment
@@ -455,7 +455,7 @@ class TestDataFrame:
         exp2_nogeom = pd.DataFrame(exp2.drop("geometry", axis=1))
         res1, res2 = df1.align(df2_nogeom, axis=0)
         assert_geodataframe_equal(res1, exp1)
-        assert type(res2) == pd.DataFrame
+        assert type(res2) is pd.DataFrame
         assert_frame_equal(res2, exp2_nogeom)
 
     @pytest.mark.skipif(not compat.HAS_PYPROJ, reason="Requires pyproj")
@@ -768,7 +768,7 @@ class TestDataFrame:
         assert_frame_equal(gdf1, gdf2)
 
     def test_from_features_geom_interface_feature(self):
-        class Placemark(object):
+        class Placemark:
             def __init__(self, geom, val):
                 self.__geo_interface__ = {
                     "type": "Feature",
@@ -853,7 +853,7 @@ class TestDataFrame:
             geometry=points_from_xy(df["longitude"], df["latitude"]),
             crs=self.df.crs,
         )
-        assert type(df) == pd.DataFrame
+        assert type(df) is pd.DataFrame
         assert "geometry" not in df
         assert_frame_equal(df, df_copy)
         assert isinstance(gf, GeoDataFrame)
@@ -1230,7 +1230,7 @@ class TestConstructor:
         gpdf = GeoDataFrame(data)
         pddf = pd.DataFrame(data)
         check_geodataframe(gpdf)
-        assert type(pddf) == pd.DataFrame
+        assert type(pddf) is pd.DataFrame
 
         for df in [gpdf, pddf]:
             res = GeoDataFrame(df)
@@ -1291,17 +1291,17 @@ class TestConstructor:
         # keeps GeoDataFrame class (no DataFrame)
         data = {"A": range(3), "B": np.arange(3.0)}
         df = GeoDataFrame(data)
-        assert type(df) == GeoDataFrame
+        assert type(df) is GeoDataFrame
 
         gdf = GeoDataFrame({"x": [1]})
         assert list(gdf.x) == [1]
 
     def test_empty(self):
         df = GeoDataFrame()
-        assert type(df) == GeoDataFrame
+        assert type(df) is GeoDataFrame
 
         df = GeoDataFrame({"A": [], "B": []}, geometry=[])
-        assert type(df) == GeoDataFrame
+        assert type(df) is GeoDataFrame
 
     def test_column_ordering(self):
         geoms = [Point(1, 1), Point(2, 2), Point(3, 3)]
@@ -1629,3 +1629,17 @@ def test_set_geometry_supply_arraylike(dfs, geo_col_name):
         res4 = df.set_geometry(centroids, drop=True)
     assert res4.active_geometry_name == "centroids"
     assert geo_col_name in res4.columns
+
+
+@pytest.mark.filterwarnings("error::FutureWarning")
+def test_reduce_geometry_array():
+    """
+    Check for a FutureWarning.
+
+    `geopandas.array.GeometryArray._reduce` issues a FutureWarning if
+    the parameter `keepdims` is not set.
+    `GeometryArray` inherits from `pandas.api.extensions.ExtensionArray`
+    and its `_reduce` is overridden in `GeometryArray`.
+    This warning is issued with pandas 2.2.2 (tested).
+    """
+    GeoDataFrame({"geometry": []}).all()

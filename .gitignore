@@ -75,3 +75,8 @@ doc/source/getting_started/my_file.geojson
 .env
 doc/test_fiona.gpkg
 doc/test_pyogrio.gpkg
+# pixi environments
+.pixi
+*.egg-info
+pixi.toml
+pixi.lock
