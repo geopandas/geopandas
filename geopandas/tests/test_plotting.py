@@ -451,6 +451,17 @@ class TestPointPlotting:
         df["category"] = df["values"].astype("str")
         df.plot("category", missing_kwds={"facecolor": "none"}, legend=True)
 
+    def test_missing_aspect(self):
+        self.df.loc[0, "values"] = np.nan
+        ax = self.df.plot(
+            "values",
+            missing_kwds={"color": "r"},
+            categorical=True,
+            legend=True,
+            aspect=2,
+        )
+        assert ax.get_aspect() == 2
+
 
 class TestPointZPlotting:
     def setup_method(self):
