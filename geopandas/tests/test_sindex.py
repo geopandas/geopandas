@@ -575,7 +575,9 @@ class TestShapelyInterface:
             self.df.sindex.query(test_geom, output_format="dataarray")
 
     # ------------------------- `query_bulk` tests -------------------------- #
-    @pytest.mark.parametrize("output_format", ("indices", "sparse", "dense"))
+    @pytest.mark.parametrize(
+        "output_format", ("indices", pytest.param("sparse", marks=SCIPY_MARK), "dense")
+    )
     @pytest.mark.parametrize(
         "predicate, test_geom, expected",
         (
