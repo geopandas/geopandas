@@ -159,6 +159,8 @@ def from_shapely(data, crs=None):
     if not isinstance(data, np.ndarray):
         arr = np.empty(len(data), dtype=object)
         arr[:] = data
+    elif len(data) == 0 and data.dtype == "float64":
+        arr = data.astype(object)
     else:
         arr = data
 

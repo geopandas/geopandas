@@ -811,6 +811,26 @@ def test_no_intersection():
     assert_geodataframe_equal(result, expected, check_index_type=False)
 
 
+def test_zero_len():
+    # https://github.com/geopandas/geopandas/issues/3422
+    gdf1 = GeoDataFrame(
+        {
+            "geometry": [
+                Polygon([[0.0, 0.0], [2.0, 0.0], [2.0, 2.0], [0.0, 2.0], [0.0, 0.0]])
+            ]
+        },
+        crs=4326,
+    )
+    # overlay with empty geodataframe shouldn't throw
+    gdf2 = GeoDataFrame({"geometry": []}, crs=4326)
+    res = gdf1.overlay(gdf2, how="union")
+    assert_geodataframe_equal(res, gdf1)
+
+    gdf2 = GeoDataFrame(geometry=[], crs=4326)
+    res = gdf1.overlay(gdf2, how="union")
+    assert_geodataframe_equal(res, gdf1)
+
+
 class TestOverlayWikiExample:
     def setup_method(self):
         self.layer_a = GeoDataFrame(geometry=[box(0, 2, 6, 6)])
