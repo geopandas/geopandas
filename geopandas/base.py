@@ -120,7 +120,7 @@ def _delegate_geo_method(op, this, **kwargs):
     return GeoSeries(data, index=this.index, crs=this.crs)
 
 
-class GeoPandasBase(object):
+class GeoPandasBase:
     @property
     def area(self):
         """Returns a ``Series`` containing the area of each geometry in the
@@ -6170,7 +6170,7 @@ def _get_index_for_parts(orig_idx, outer_idx, ignore_index, index_parts):
     return index
 
 
-class _CoordinateIndexer(object):
+class _CoordinateIndexer:
     # see docstring GeoPandasBase.cx property above
 
     def __init__(self, obj):

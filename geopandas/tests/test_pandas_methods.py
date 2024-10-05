@@ -160,7 +160,7 @@ def test_reindex(s, df):
     assert_frame_equal(res, df[["value1", "geometry"]])
 
     res = df.reindex(columns=["value1", "value2"])
-    assert type(res) == pd.DataFrame
+    assert type(res) is pd.DataFrame
     assert_frame_equal(res, df[["value1", "value2"]])
 
 
@@ -464,7 +464,7 @@ def test_isna(NA):
     s2 = GeoSeries([Point(0, 0), NA, Point(2, 2)], index=[2, 4, 5], name="tt")
     exp = pd.Series([False, True, False], index=[2, 4, 5], name="tt")
     res = s2.isnull()
-    assert type(res) == pd.Series
+    assert type(res) is pd.Series
     assert_series_equal(res, exp)
     res = s2.isna()
     assert_series_equal(res, exp)
@@ -545,13 +545,6 @@ def test_unique():
     assert_array_equal(s.unique(), exp)
 
 
-def pd14_compat_index(index):
-    if compat.PANDAS_GE_14:
-        return from_shapely(index)
-    else:
-        return index
-
-
 def test_value_counts():
     # each object is considered unique
     s = GeoSeries([Point(0, 0), Point(1, 1), Point(0, 0)])
@@ -560,33 +553,29 @@ def test_value_counts():
         name = "count"
     else:
         name = None
-    exp = pd.Series(
-        [2, 1], index=pd14_compat_index([Point(0, 0), Point(1, 1)]), name=name
-    )
+    exp = pd.Series([2, 1], index=from_shapely([Point(0, 0), Point(1, 1)]), name=name)
     assert_series_equal(res, exp)
     # Check crs doesn't make a difference - note it is not kept in output index anyway
     s2 = GeoSeries([Point(0, 0), Point(1, 1), Point(0, 0)], crs="EPSG:4326")
     res2 = s2.value_counts()
     assert_series_equal(res2, exp)
-    if compat.PANDAS_GE_14:
-        # TODO should/ can we fix CRS being lost
-        assert s2.value_counts().index.array.crs is None
+
+    # TODO should/ can we fix CRS being lost
+    assert s2.value_counts().index.array.crs is None
 
     # check mixed geometry
     s3 = GeoSeries([Point(0, 0), LineString([[1, 1], [2, 2]]), Point(0, 0)])
     res3 = s3.value_counts()
-    index = pd14_compat_index([Point(0, 0), LineString([[1, 1], [2, 2]])])
+    index = from_shapely([Point(0, 0), LineString([[1, 1], [2, 2]])])
     exp3 = pd.Series([2, 1], index=index, name=name)
     assert_series_equal(res3, exp3)
 
     # check None is handled
     s4 = GeoSeries([Point(0, 0), None, Point(0, 0)])
     res4 = s4.value_counts(dropna=True)
-    exp4_dropna = pd.Series([2], index=pd14_compat_index([Point(0, 0)]), name=name)
+    exp4_dropna = pd.Series([2], index=from_shapely([Point(0, 0)]), name=name)
     assert_series_equal(res4, exp4_dropna)
-    exp4_keepna = pd.Series(
-        [2, 1], index=pd14_compat_index([Point(0, 0), None]), name=name
-    )
+    exp4_keepna = pd.Series([2, 1], index=from_shapely([Point(0, 0), None]), name=name)
     res4_keepna = s4.value_counts(dropna=False)
     assert_series_equal(res4_keepna, exp4_keepna)
 

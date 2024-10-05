@@ -180,13 +180,12 @@ def assert_geoseries_equal(
         if not isinstance(right, GeoSeries):
             right = GeoSeries(right, index=left.index)
 
-    assert left.index.equals(right.index), "index: %s != %s" % (left.index, right.index)
+    assert left.index.equals(right.index), f"index: {left.index} != {right.index}"
 
     if check_geom_type:
-        assert (left.geom_type == right.geom_type).all(), "type: %s != %s" % (
-            left.geom_type,
-            right.geom_type,
-        )
+        assert (
+            left.geom_type == right.geom_type
+        ).all(), f"type: {left.geom_type} != {right.geom_type}"
 
     if normalize:
         left = GeoSeries(left.array.normalize())
@@ -315,10 +314,8 @@ def assert_geodataframe_equal(
 
     # shape comparison
     assert left.shape == right.shape, (
-        "GeoDataFrame shape mismatch, left: {lshape!r}, right: {rshape!r}.\n"
-        "Left columns: {lcols!r}, right columns: {rcols!r}"
-    ).format(
-        lshape=left.shape, rshape=right.shape, lcols=left.columns, rcols=right.columns
+        f"GeoDataFrame shape mismatch, left: {left.shape!r}, right: {right.shape!r}.\n"
+        f"Left columns: {left.columns!r}, right columns: {right.columns!r}"
     )
 
     if check_like:

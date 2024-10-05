@@ -25,8 +25,14 @@ dependencies:
   - geopy
   - pointpats
   - geodatasets
-  # - SQLalchemy>=2
-  # - psycopg2
-  # - libspatialite
-  # - geoalchemy2
+  # installed in tests.yaml, because not available on windows
+  # - postgis
+  - SQLalchemy
+  - psycopg
+  - psycopg2
+  - libspatialite
+  - geoalchemy2
   - pyarrow
+  - geoarrow-pyarrow
+  # doctest testing
+  - pytest-doctestplus

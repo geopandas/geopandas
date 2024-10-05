@@ -154,7 +154,7 @@ def show_versions():
     proj_info = _get_C_info()
 
     maxlen = max(len(x) for x in deps_info)
-    tpl = "{{k:<{maxlen}}}: {{stat}}".format(maxlen=maxlen)
+    tpl = f"{{k:<{maxlen}}}: {{stat}}"
     print("\nSYSTEM INFO")
     print("-----------")
     for k, stat in sys_info.items():
