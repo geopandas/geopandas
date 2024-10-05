@@ -25,7 +25,7 @@ try:
     HAS_SCIPY = True
 except ImportError:
     HAS_SCIPY = False
-
+SCIPY_MARK = pytest.mark.skipif(not HAS_SCIPY, reason="scipy not installed")
 
 class TestSeriesSindex:
     def test_has_sindex(self):
@@ -280,7 +280,7 @@ class TestShapelyInterface:
             self.df.sindex.intersection(test_geom)
 
     # ------------------------------ `query` tests ------------------------------ #
-    @pytest.mark.parametrize("output_format", ("indices", "sparse", "dense"))
+    @pytest.mark.parametrize("output_format", ("indices", pytest.param("sparse", marks=SCIPY_MARK), "dense"))
     @pytest.mark.parametrize(
         "predicate, test_geom, expected",
         (
@@ -388,20 +388,12 @@ class TestShapelyInterface:
             dense = np.zeros(len(self.df), dtype=bool)
             dense[expected] = True
 
-        if output_format == "dense":
-            res = self.df.sindex.query(
-                test_geom, predicate=predicate, output_format=output_format
-            )
-            assert_array_equal(res, dense)
-
-        elif output_format == "sparse":
-            if not HAS_SCIPY:
-                pytest.skip("scipy is required for sparse output")
-            else:
-                res = self.df.sindex.query(
-                    test_geom, predicate=predicate, output_format=output_format
-                )
-                assert_array_equal(res.todense(), dense)
+          res = self.df.sindex.query(
+              test_geom, predicate=predicate, output_format=output_format
+          )
+          if output_format =="sparse":
+              res = res.todense()
+          assert_array_equal(res, dense)
 
     def test_query_invalid_geometry(self):
         """Tests the `query` method with invalid geometry."""
@@ -693,20 +685,12 @@ class TestShapelyInterface:
             tree, other = expected[::-1]
             dense[tree, other] = True
 
-        if output_format == "dense":
             res = self.df.sindex.query(
                 test_geoms, predicate=predicate, output_format=output_format
             )
+            if output_format == "sparse":
+                res = res.todense()
             assert_array_equal(res, dense)
-
-        elif output_format == "sparse":
-            if not HAS_SCIPY:
-                pytest.skip("scipy is required for sparse output")
-            else:
-                res = self.df.sindex.query(
-                    test_geoms, predicate=predicate, output_format=output_format
-                )
-                assert_array_equal(res.todense(), dense)
 
     @pytest.mark.parametrize(
         "test_geoms, expected_value",
