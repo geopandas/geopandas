@@ -12,7 +12,7 @@ Notes on dependencies:
 
 Bug fixes:
 
-- Fix an issue that showed numpy dtypes in bbox in `to_geo_dict` and `__geo_interface__`.
+- Fix an issue that showed numpy dtypes in bbox in `to_geo_dict` and `__geo_interface__`. (#3436)
 
 ## Version 1.0.2 (???)
 
