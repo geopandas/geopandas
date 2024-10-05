@@ -3,12 +3,20 @@
 ## Version 1.1.0
 
 Notes on dependencies:
+
 - GeoPandas 1.1 now requires Python 3.10 or greater and pandas 2.0, numpy 1.24, pyproj 3.5,
   are now the minimum required version for these dependencies.
   Furthermore, the minimum tested version for optional dependencies has been updated to
-  fiona 1.8.21, scipy 1.9, matplotlib 3.7, mapclassify 2.5, folium 0.12 and 
+  fiona 1.8.21, scipy 1.9, matplotlib 3.7, mapclassify 2.5, folium 0.12 and
   SQLAlchemy 2.0. Older versions of these libraries may continue to work, but are no longer
   considered supported (#3371).
+
+New features and improvements:
+
+- Added options to return the result of `SpatialIndex.query` in a form of a dense or a
+  sparse boolean array. This adds optional dependency on `scipy` for the sparse output.
+  Note that this also changes the previously undocumented behaviour of the `output_format`
+  keyword (#1674).
 
 ## Version 1.0.2 (???)
 
@@ -19,7 +27,7 @@ Bug fixes:
 - Properly support named aggregations over a geometry column in `GroupBy.agg` (#3368).
 - Support GeoDataFrame constructor receiving arguments to `geometry` which are not
   (Geo)Series, but instead should be interpreted as column names, like Enums (#3384).
-- Fix regression where constructing a GeoSeries from a pd.Series with GeometryDtype values 
+- Fix regression where constructing a GeoSeries from a pd.Series with GeometryDtype values
   failed when `crs` was provided(#3383).
 
 Deprecations and compatibility notes:
