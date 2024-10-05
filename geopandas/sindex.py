@@ -142,42 +142,45 @@ class SpatialIndex:
 
         Returns
         -------
+        `If geometry is a scalar:`
+
         ndarray with shape (n,)
             Integer indices for matching geometries from the spatial index
-            tree geometries.  If geometry is a scalar and ``output_format="indices"``.
-
-        OR
-
-        ndarray with shape (2, n)
-            The first subarray contains input geometry integer indices.
-            The second subarray contains tree geometry integer indices.
-            If geometry is an array_like and ``output_format="indices"``.
+            tree geometries.  If ``output_format="indices"``.
 
         OR
 
         scipy.sparse COO array with shape (len(tree), )
             Boolean array aligned with array of geometries in the tree.
-            If geometry is a scalar and ``output_format="sparse"``.
+            If ``output_format="sparse"``.
+
+        OR
+
+        ndarray with shape (len(tree), )
+            Boolean array aligned with array of geometries in the tree.
+            If ``output_format="dense"``.
+
+
+        `If geometry is an array_like:`
+
+        ndarray with shape (2, n)
+            The first subarray contains input geometry integer indices.
+            The second subarray contains tree geometry integer indices.
+            If ``output_format="indices"``.
 
         OR
 
         scipy.sparse COO array with shape (len(tree), n)
             Boolean array aligned with array of geometries in the tree along axis 0 and
             with ``geometry`` along axis 1.
-            If geometry is a array_like and ``output_format="sparse"``.
-
-        OR
-
-        ndarray with shape (len(tree), )
-            Boolean array aligned with array of geometries in the tree.
-            If geometry is a scalar and ``output_format="dense"``.
+            If ``output_format="sparse"``.
 
         OR
 
         ndarray with shape (len(tree), n)
             Boolean array aligned with array of geometries in the tree along axis 0 and
             with ``geometry`` along axis 1.
-            If geometry is a array_like and ``output_format="dense"``.
+            If ``output_format="dense"``.
 
 
         Examples
