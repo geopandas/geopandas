@@ -251,9 +251,7 @@ def overlay(df1, df2, how="intersection", keep_geom_type=None, make_valid=True):
     ]
     # Error Messages
     if how not in allowed_hows:
-        raise ValueError(
-            "`how` was '{0}' but is expected to be in {1}".format(how, allowed_hows)
-        )
+        raise ValueError(f"`how` was '{how}' but is expected to be in {allowed_hows}")
 
     if isinstance(df1, GeoSeries) or isinstance(df2, GeoSeries):
         raise NotImplementedError(
@@ -274,9 +272,7 @@ def overlay(df1, df2, how="intersection", keep_geom_type=None, make_valid=True):
         lines_check = df.geom_type.isin(LINE_GEOM_TYPES).any()
         points_check = df.geom_type.isin(POINT_GEOM_TYPES).any()
         if sum([poly_check, lines_check, points_check]) > 1:
-            raise NotImplementedError(
-                "df{} contains mixed geometry types.".format(i + 1)
-            )
+            raise NotImplementedError(f"df{i + 1} contains mixed geometry types.")
 
     if how == "intersection":
         box_gdf1 = df1.total_bounds

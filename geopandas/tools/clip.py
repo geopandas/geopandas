@@ -25,7 +25,7 @@ from geopandas.array import (
 
 def _mask_is_list_like_rectangle(mask):
     return pandas.api.types.is_list_like(mask) and not isinstance(
-        mask, (GeoDataFrame, GeoSeries, Polygon, MultiPolygon)
+        mask, GeoDataFrame | GeoSeries | Polygon | MultiPolygon
     )
 
 
@@ -160,14 +160,12 @@ def clip(gdf, mask, keep_geom_type=False, sort=False):
     >>> nws_groceries.shape
     (7, 8)
     """
-    if not isinstance(gdf, (GeoDataFrame, GeoSeries)):
-        raise TypeError(
-            "'gdf' should be GeoDataFrame or GeoSeries, got {}".format(type(gdf))
-        )
+    if not isinstance(gdf, GeoDataFrame | GeoSeries):
+        raise TypeError(f"'gdf' should be GeoDataFrame or GeoSeries, got {type(gdf)}")
 
     mask_is_list_like = _mask_is_list_like_rectangle(mask)
     if (
-        not isinstance(mask, (GeoDataFrame, GeoSeries, Polygon, MultiPolygon))
+        not isinstance(mask, GeoDataFrame | GeoSeries | Polygon | MultiPolygon)
         and not mask_is_list_like
     ):
         raise TypeError(
@@ -180,11 +178,11 @@ def clip(gdf, mask, keep_geom_type=False, sort=False):
             "If 'mask' is list-like, it must have four values (minx, miny, maxx, maxy)"
         )
 
-    if isinstance(mask, (GeoDataFrame, GeoSeries)):
+    if isinstance(mask, GeoDataFrame | GeoSeries):
         if not _check_crs(gdf, mask):
             _crs_mismatch_warn(gdf, mask, stacklevel=3)
 
-    if isinstance(mask, (GeoDataFrame, GeoSeries)):
+    if isinstance(mask, GeoDataFrame | GeoSeries):
         box_mask = mask.total_bounds
     elif mask_is_list_like:
         box_mask = mask
@@ -201,7 +199,7 @@ def clip(gdf, mask, keep_geom_type=False, sort=False):
     ):
         return gdf.iloc[:0]
 
-    if isinstance(mask, (GeoDataFrame, GeoSeries)):
+    if isinstance(mask, GeoDataFrame | GeoSeries):
         combined_mask = mask.geometry.union_all()
     else:
         combined_mask = mask

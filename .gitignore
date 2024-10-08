@@ -73,3 +73,8 @@ doc/source/getting_started/my_file.geojson
 
 .ruff_cache
 .env
+# pixi environments
+.pixi
+*.egg-info
+pixi.toml
+pixi.lock

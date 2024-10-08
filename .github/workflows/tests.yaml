@@ -39,35 +39,34 @@ jobs:
         postgis: [false]
         dev: [false]
         env:
-          - ci/envs/39-minimal.yaml
-          - ci/envs/39-no-optional-deps.yaml
-          - ci/envs/39-pd15-defaults.yaml
-          - ci/envs/39-latest-defaults.yaml
-          - ci/envs/39-latest-conda-forge.yaml
-          - ci/envs/39-latest-conda-forge_no_pyogrio.yaml
-          - ci/envs/310-pd20-conda-forge.yaml
-          - ci/envs/310-latest-conda-forge.yaml
+          - ci/envs/310-minimal.yaml
+          - ci/envs/310-no-optional-deps.yaml
+          - ci/envs/310-pd20-defaults.yaml
+          - ci/envs/311-latest-defaults.yaml
+          - ci/envs/310-pd21-conda-forge.yaml
+          - ci/envs/310-latest-conda-forge_no_pyogrio.yaml
+          - ci/envs/311-pd22-conda-forge.yaml
           - ci/envs/311-latest-conda-forge.yaml
           - ci/envs/312-latest-conda-forge.yaml
           - ci/envs/312-latest-conda-forge_no_pyproj.yaml
         include:
-          - env: ci/envs/39-latest-conda-forge_no_pyogrio.yaml
+          - env: ci/envs/310-latest-conda-forge_no_pyogrio.yaml
             os: macos-latest
             postgis: false
             dev: false
-          - env: ci/envs/39-latest-conda-forge.yaml
+          - env: ci/envs/311-latest-conda-forge.yaml
             os: macos-latest
             postgis: false
             dev: false
-          - env: ci/envs/39-latest-conda-forge_no_pyogrio.yaml
+          - env: ci/envs/310-latest-conda-forge_no_pyogrio.yaml
             os: windows-latest
             postgis: false
             dev: false
-          - env: ci/envs/39-latest-conda-forge.yaml
+          - env: ci/envs/311-latest-conda-forge.yaml
             os: windows-latest
             postgis: false
             dev: false
-          - env: ci/envs/311-dev.yaml
+          - env: ci/envs/312-dev.yaml
             os: ubuntu-latest
             dev: true
 
@@ -75,7 +74,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install Conda environment with Micromamba
-        uses: mamba-org/setup-micromamba@v1
+        uses: mamba-org/setup-micromamba@v2
         with:
           environment-file: ${{ matrix.env }}
 
@@ -88,10 +87,10 @@ jobs:
 
       - name: Test
         run: |
-          pytest -v -r fEs -n auto --color=yes --cov=geopandas --cov-append --cov-report term-missing --cov-report xml geopandas/
+          pytest -v -r a -n auto --color=yes --cov=geopandas --cov-append --cov-report term-missing --cov-report xml geopandas/
 
       - name: Test with PostGIS
-        if: (contains(matrix.env, '310-pd20-conda-forge.yaml') || contains(matrix.env, '311-latest-conda-forge.yaml'))
+        if: (contains(matrix.env, '311-pd22-conda-forge.yaml') || contains(matrix.env, '312-latest-conda-forge.yaml'))
           && contains(matrix.os, 'ubuntu')
         env:
           PGUSER: postgres
@@ -102,10 +101,10 @@ jobs:
           conda install postgis -c conda-forge
           sh ci/scripts/setup_postgres.sh
           set -o pipefail
-          pytest -v -r fEs --color=yes --cov=geopandas --cov-append --cov-report term-missing --cov-report xml geopandas/io/tests/test_sql.py | tee /dev/stderr | if grep SKIPPED >/dev/null;then echo "TESTS SKIPPED, FAILING" && exit 1;fi
+          pytest -v -r a --color=yes --cov=geopandas --cov-append --cov-report term-missing --cov-report xml geopandas/io/tests/test_sql.py | tee /dev/stderr | if grep SKIPPED >/dev/null;then echo "TESTS SKIPPED, FAILING" && exit 1;fi
 
       - name: Test docstrings
-        if: contains(matrix.env, '310-pd20-conda-forge.yaml') && contains(matrix.os, 'ubuntu')
+        if: contains(matrix.env, '311-pd22-conda-forge.yaml') && contains(matrix.os, 'ubuntu')
         run: |
           pytest -v --color=yes --doctest-only geopandas --ignore=geopandas/datasets
 

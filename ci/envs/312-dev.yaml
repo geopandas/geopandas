@@ -2,7 +2,7 @@ name: test
 channels:
   - conda-forge
 dependencies:
-  - python=3.11
+  - python=3.12
   - cython
   # required
   - pyproj
@@ -14,17 +14,18 @@ dependencies:
   - pytest-cov
   - pytest-xdist
   - fsspec
+  - pytz
   # optional
   #- geopy
-  - SQLalchemy<2
+  - SQLalchemy<2.1 # test oldest support sqlalchemy version
   - libspatialite
   - pip
   - pip:
     - geopy
-    - mapclassify>=2.4.0
+    - mapclassify>=2.5.0
     # dev versions of packages
     - --pre --index-url https://pypi.anaconda.org/scientific-python-nightly-wheels/simple --extra-index-url https://pypi.fury.io/arrow-nightlies/ --extra-index-url https://pypi.org/simple
-    - numpy>=2.0.0.dev
+    - numpy>=2.0.0
     - fiona
     - pandas
     - matplotlib

@@ -78,9 +78,7 @@ def test_overlay(dfs_index, how):
     # construction of result
 
     def _read(name):
-        expected = read_file(
-            os.path.join(DATA, "polys", "df1_df2-{0}.geojson".format(name))
-        )
+        expected = read_file(os.path.join(DATA, "polys", f"df1_df2-{name}.geojson"))
         expected.geometry.array.crs = None
         for col in expected.columns[expected.dtypes == "int32"]:
             expected[col] = expected[col].astype("int64")
@@ -162,9 +160,7 @@ def test_overlay_nybb(how, nybb_filename):
         # read union one, further down below we take the appropriate subset
         expected = read_file(os.path.join(DATA, "nybb_qgis", "qgis-union.shp"))
     else:
-        expected = read_file(
-            os.path.join(DATA, "nybb_qgis", "qgis-{0}.shp".format(how))
-        )
+        expected = read_file(os.path.join(DATA, "nybb_qgis", f"qgis-{how}.shp"))
 
     # The result of QGIS for 'union' contains incorrect geometries:
     # 24 is a full original circle overlapping with unioned geometries, and
@@ -276,7 +272,7 @@ def test_overlay_overlap(how):
         raise pytest.skip()
 
     expected = read_file(
-        os.path.join(DATA, "overlap", "df1_df2_overlap-{0}.geojson".format(how))
+        os.path.join(DATA, "overlap", f"df1_df2_overlap-{how}.geojson")
     )
 
     if how == "union":
@@ -522,7 +518,7 @@ def test_overlay_strict(how, keep_geom_type, geom_types):
             os.path.join(
                 DATA,
                 "strict",
-                "{t}_{h}_{s}.geojson".format(t=geom_types, h=how, s=keep_geom_type),
+                f"{geom_types}_{how}_{keep_geom_type}.geojson",
             )
         )
 
@@ -829,6 +825,26 @@ def test_no_intersection():
     expected = GeoDataFrame(columns=["foo", "bar", "geometry"])
     result = overlay(gdf1, gdf2, how="intersection")
     assert_geodataframe_equal(result, expected, check_index_type=False)
+
+
+def test_zero_len():
+    # https://github.com/geopandas/geopandas/issues/3422
+    gdf1 = GeoDataFrame(
+        {
+            "geometry": [
+                Polygon([[0.0, 0.0], [2.0, 0.0], [2.0, 2.0], [0.0, 2.0], [0.0, 0.0]])
+            ]
+        },
+        crs=4326,
+    )
+    # overlay with empty geodataframe shouldn't throw
+    gdf2 = GeoDataFrame({"geometry": []}, crs=4326)
+    res = gdf1.overlay(gdf2, how="union")
+    assert_geodataframe_equal(res, gdf1)
+
+    gdf2 = GeoDataFrame(geometry=[], crs=4326)
+    res = gdf1.overlay(gdf2, how="union")
+    assert_geodataframe_equal(res, gdf1)
 
 
 class TestOverlayWikiExample:

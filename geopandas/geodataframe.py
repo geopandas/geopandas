@@ -201,7 +201,10 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             ):
                 raise ValueError(crs_mismatch_error)
 
-            if hasattr(geometry, "name") and geometry.name not in ("geometry", None):
+            if isinstance(geometry, pd.Series) and geometry.name not in (
+                "geometry",
+                None,
+            ):
                 # __init__ always creates geometry col named "geometry"
                 # rename as `set_geometry` respects the given series name
                 geometry = geometry.rename("geometry")
@@ -343,7 +346,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         if geo_column_name is None:
             geo_column_name = "geometry"
-        if isinstance(col, (Series, list, np.ndarray, GeometryArray)):
+        if isinstance(col, Series | list | np.ndarray | GeometryArray):
             if drop:
                 msg = (
                     "The `drop` keyword argument is deprecated and has no effect when "
@@ -361,7 +364,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             try:
                 level = frame[col]
             except KeyError:
-                raise ValueError("Unknown column %s" % col)
+                raise ValueError(f"Unknown column {col}")
             if isinstance(level, DataFrame):
                 raise ValueError(
                     "GeoDataFrame does not support setting the geometry column where "
@@ -1035,12 +1038,12 @@ individually so that features may have different properties
 'type': 'Point', 'coordinates': (1.0, 2.0)}}
         """
         if na not in ["null", "drop", "keep"]:
-            raise ValueError("Unknown na method {0}".format(na))
+            raise ValueError(f"Unknown na method {na}")
 
         if self._geometry_column_name not in self:
             raise AttributeError(
-                "No geometry data set (expected in column '%s')."
-                % self._geometry_column_name
+                "No geometry data set (expected in column "
+                f"'{self._geometry_column_name}')."
             )
 
         ids = np.array(self.index, copy=False)
@@ -1327,7 +1330,8 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
             If ``False``, the index(es) will not be written to the file.
             If ``None``, the index(ex) will be included as columns in the file
             output except `RangeIndex` which is stored as metadata only.
-        compression : {'snappy', 'gzip', 'brotli', None}, default 'snappy'
+        compression : {'snappy', 'gzip', 'brotli', 'lz4', 'zstd', None}, \
+default 'snappy'
             Name of the compression to use. Use ``None`` for no compression.
         geometry_encoding : {'WKB', 'geoarrow'}, default 'WKB'
             The encoding to use for the geometry columns. Defaults to "WKB"
