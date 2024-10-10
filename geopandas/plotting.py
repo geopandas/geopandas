@@ -1,5 +1,4 @@
 import warnings
-from packaging.version import Version
 
 import numpy as np
 import pandas as pd
@@ -60,7 +59,7 @@ def _expand_kwargs(kwargs, multiindex):
     it (in place) to the correct length/formats with help of 'multiindex', unless
     the value appears to already be a valid (single) value for the key.
     """
-    from typing import Iterable
+    from collections.abc import Iterable
 
     from matplotlib.colors import is_color_like
 
@@ -700,7 +699,7 @@ def plot_dataframe(
         )
 
     # To accept pd.Series and np.arrays as column
-    if isinstance(column, (np.ndarray, pd.Series)):
+    if isinstance(column, np.ndarray | pd.Series):
         if column.shape[0] != df.shape[0]:
             raise ValueError(
                 "The dataframe and given column have different number of rows."
@@ -731,17 +730,11 @@ def plot_dataframe(
     nan_idx = np.asarray(pd.isna(values), dtype="bool")
 
     if scheme is not None:
-        mc_err = (
-            "The 'mapclassify' package (>= 2.4.0) is "
-            "required to use the 'scheme' keyword."
-        )
+        mc_err = "The 'mapclassify' package is required to use the 'scheme' keyword."
         try:
             import mapclassify
 
         except ImportError:
-            raise ImportError(mc_err)
-
-        if Version(mapclassify.__version__) < Version("2.4.0"):
             raise ImportError(mc_err)
 
         if classification_kwds is None:
@@ -799,7 +792,7 @@ def plot_dataframe(
         if missing:
             raise ValueError(
                 "Column contains values not listed in categories. "
-                "Missing categories: {}.".format(missing)
+                f"Missing categories: {missing}."
             )
 
         values = cat.codes[~nan_idx]

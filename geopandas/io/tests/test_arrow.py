@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-
 import json
 import os
 import pathlib
@@ -94,6 +92,11 @@ def test_create_metadata(naturalearth_lowres):
     # specifying non-WKB encoding sets default schema to 1.1.0
     metadata = _create_metadata(df, geometry_encoding={"geometry": "point"})
     assert metadata["version"] == "1.1.0"
+    assert metadata["columns"]["geometry"]["encoding"] == "point"
+
+    # check that providing no geometry encoding defaults to WKB
+    metadata = _create_metadata(df)
+    assert metadata["columns"]["geometry"]["encoding"] == "WKB"
 
 
 def test_create_metadata_with_z_geometries():
@@ -717,7 +720,7 @@ def test_feather_arrow_version(tmpdir, naturalearth_lowres):
 
 
 def test_fsspec_url(naturalearth_lowres):
-    fsspec = pytest.importorskip("fsspec")
+    _ = pytest.importorskip("fsspec")
     import fsspec.implementations.memory
 
     class MyMemoryFileSystem(fsspec.implementations.memory.MemoryFileSystem):

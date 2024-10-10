@@ -204,6 +204,13 @@ def _explore(
     highlight_kwds : dict (default {})
         Style to be passed to folium highlight_function. Uses the same keywords
         as ``style_kwds``. When empty, defaults to ``{"fillOpacity": 0.75}``.
+    missing_kwds : dict (default {})
+        Additional style for missing values:
+
+        color : str
+            Color of missing values. Defaults to ``None``, which uses Folium's default.
+        label : str (default "NaN")
+            Legend entry for missing values.
     tooltip_kwds : dict (default {})
         Additional keywords to be passed to :class:`folium.features.GeoJsonTooltip`,
         e.g. ``aliases``, ``labels``, or ``sticky``.
@@ -274,34 +281,28 @@ def _explore(
         if not n_resample:
             return cm.get_cmap(_cmap)
         else:
-            if MPL_361:
-                return cm.get_cmap(_cmap).resampled(n_resample)(idx)
-            else:
-                return cm.get_cmap(_cmap, n_resample)(idx)
+            return cm.get_cmap(_cmap).resampled(n_resample)(idx)
 
     try:
         import re
 
         import branca as bc
         import folium
-        import matplotlib
         import matplotlib.pyplot as plt
         from mapclassify import classify
+        from matplotlib import colormaps as cm
         from matplotlib import colors
 
-        # isolate MPL version - GH#2596
-        MPL_361 = Version(matplotlib.__version__) >= Version("3.6.1")
-        if MPL_361:
-            from matplotlib import colormaps as cm
-        else:
-            from matplotlib import cm
+        # check for minimum version of folium
+        if Version(folium.__version__) < Version("0.12.0"):
+            raise ImportError
 
     except (ImportError, ModuleNotFoundError):
         raise ImportError(
-            "The 'folium', 'matplotlib' and 'mapclassify' packages are required for "
-            "'explore()'. You can install them using "
-            "'conda install -c conda-forge folium matplotlib mapclassify' "
-            "or 'pip install folium matplotlib mapclassify'."
+            "The 'folium>=0.12', 'matplotlib' and 'mapclassify' packages "
+            "are required for 'explore()'. You can install them using "
+            "'conda install -c conda-forge \"folium>=0.12\" matplotlib mapclassify' "
+            "or 'pip install \"folium>=0.12\" matplotlib mapclassify'."
         )
 
     # xyservices is an optional dependency
@@ -650,13 +651,13 @@ def _explore(
         ~(gdf.geometry.isna() | gdf.geometry.is_empty)  # drop missing or empty geoms
     ].__geo_interface__
     for feature in feature_collection["features"]:
-        for k in feature["properties"]:
+        for prop in feature["properties"]:
             # escape the curly braces in values
-            if isinstance(feature["properties"][k], str):
-                feature["properties"][k] = re.sub(
+            if isinstance(feature["properties"][prop], str):
+                feature["properties"][prop] = re.sub(
                     r"\{{2,}",
                     lambda x: "{% raw %}" + x.group(0) + "{% endraw %}",
-                    feature["properties"][k],
+                    feature["properties"][prop],
                 )
 
     # add dataframe to map

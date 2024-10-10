@@ -184,8 +184,8 @@ class SpatialIndex:
                 raise ValueError("predicate = 'dwithin' requires GEOS >= 3.10.0")
 
             raise ValueError(
-                "Got predicate='{}'; ".format(predicate)
-                + "`predicate` must be one of {}".format(self.valid_query_predicates)
+                f"Got predicate='{predicate}'; "
+                f"`predicate` must be one of {self.valid_query_predicates}"
             )
 
         # distance argument requirement of predicate `dwithin`
@@ -240,7 +240,7 @@ class SpatialIndex:
         if output_format == "tuple":
             return indices
 
-        raise ValueError("Invalid output_format: {}".format(output_format))
+        raise ValueError(f"Invalid output_format: {output_format}")
 
     @staticmethod
     def _as_geometry_array(geometry):
@@ -426,7 +426,7 @@ geometries}
             raise TypeError(
                 "Invalid coordinates, must be iterable in format "
                 "(minx, miny, maxx, maxy) (for bounds) or (x, y) (for points). "
-                "Got `coordinates` = {}.".format(coordinates)
+                f"Got `coordinates` = {coordinates}."
             )
 
         # need to convert tuple of bounds to a geometry object
@@ -438,7 +438,7 @@ geometries}
             raise TypeError(
                 "Invalid coordinates, must be iterable in format "
                 "(minx, miny, maxx, maxy) (for bounds) or (x, y) (for points). "
-                "Got `coordinates` = {}.".format(coordinates)
+                f"Got `coordinates` = {coordinates}."
             )
 
         return indexes

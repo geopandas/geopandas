@@ -172,7 +172,7 @@ def test_to_file_pathlib(tmpdir, df_nybb, driver, ext, engine):
 @pytest.mark.parametrize("driver,ext", driver_ext_pairs)
 def test_to_file_bool(tmpdir, driver, ext, engine):
     """Test error raise when writing with a boolean column (GH #437)."""
-    tempfilename = os.path.join(str(tmpdir), "temp.{0}".format(ext))
+    tempfilename = os.path.join(str(tmpdir), f"temp.{ext}")
     df = GeoDataFrame(
         {
             "col": [True, False, True],
@@ -642,7 +642,7 @@ def test_read_file_geojson_string_path(engine):
             }
         ],
     }
-    df_read = read_file(json.dumps(features))
+    df_read = read_file(json.dumps(features), engine=engine)
     assert_geodataframe_equal(expected.set_crs("EPSG:4326"), df_read)
 
 
@@ -1105,7 +1105,7 @@ def test_read_file_multi_layer_with_layer_arg_no_warning(tmp_path, engine):
         specify_layer_warnings = [
             warning
             for warning in captured
-            if warning.category == UserWarning
+            if warning.category is UserWarning
             and "specify layer parameter" in str(warning.message).lower()
         ]
         assert (
@@ -1157,7 +1157,7 @@ def test_read_file_empty_shapefile(tmpdir, engine):
     assert all(empty.columns == ["A", "Z", "geometry"])
 
 
-class FileNumber(object):
+class FileNumber:
     def __init__(self, tmpdir, base, ext):
         self.tmpdir = str(tmpdir)
         self.base = base
@@ -1165,7 +1165,7 @@ class FileNumber(object):
         self.fileno = 0
 
     def __repr__(self):
-        filename = "{0}{1:02d}.{2}".format(self.base, self.fileno, self.ext)
+        filename = f"{self.base}{self.fileno:02d}.{self.ext}"
         return os.path.join(self.tmpdir, filename)
 
     def __next__(self):
