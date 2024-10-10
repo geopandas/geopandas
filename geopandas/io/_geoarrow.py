@@ -137,9 +137,6 @@ def geopandas_to_arrow(
     geometry_encoding_dict = {}
 
     if geometry_encoding.lower() == "geoarrow":
-        if Version(pa.__version__) < Version("10.0.0"):
-            raise ValueError("Converting to 'geoarrow' requires pyarrow >= 10.0.")
-
         # Encode all geometry columns to GeoArrow
         for i, col in zip(geometry_indices, geometry_columns):
             field, geom_arr = construct_geometry_array(
