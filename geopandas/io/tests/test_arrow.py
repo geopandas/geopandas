@@ -690,16 +690,6 @@ def test_default_geo_col_writes(tmp_path):
     assert_frame_equal(df, pq_df)
 
 
-def test_feather_arrow_version(tmpdir, naturalearth_lowres):
-    df = read_file(naturalearth_lowres)
-    filename = os.path.join(str(tmpdir), "test.feather")
-
-    with pytest.raises(
-        ImportError, match="pyarrow >= 0.17 required for Feather support"
-    ):
-        df.to_feather(filename)
-
-
 def test_fsspec_url(naturalearth_lowres):
     _ = pytest.importorskip("fsspec")
     import fsspec.implementations.memory
