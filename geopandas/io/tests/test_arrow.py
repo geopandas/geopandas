@@ -45,18 +45,7 @@ import pyarrow.parquet as pq
 from pyarrow import feather
 
 
-@pytest.fixture(
-    params=[
-        "parquet",
-        pytest.param(
-            "feather",
-            marks=pytest.mark.skipif(
-                Version(pyarrow.__version__) < Version("0.17.0"),
-                reason="needs pyarrow >= 0.17",
-            ),
-        ),
-    ]
-)
+@pytest.fixture(params=["parquet", pytest.param("feather")])
 def file_format(request):
     if request.param == "parquet":
         return read_parquet, GeoDataFrame.to_parquet
@@ -487,10 +476,6 @@ def test_parquet_compression(compression, tmpdir, naturalearth_lowres):
     assert_geodataframe_equal(df, pq_df)
 
 
-@pytest.mark.skipif(
-    Version(pyarrow.__version__) < Version("0.17.0"),
-    reason="Feather only supported for pyarrow >= 0.17",
-)
 @pytest.mark.parametrize("compression", ["uncompressed", "lz4", "zstd"])
 def test_feather_compression(compression, tmpdir, naturalearth_lowres):
     """Using compression options should not raise errors, and should
@@ -705,10 +690,6 @@ def test_default_geo_col_writes(tmp_path):
     assert_frame_equal(df, pq_df)
 
 
-@pytest.mark.skipif(
-    Version(pyarrow.__version__) >= Version("0.17.0"),
-    reason="Feather only supported for pyarrow >= 0.17",
-)
 def test_feather_arrow_version(tmpdir, naturalearth_lowres):
     df = read_file(naturalearth_lowres)
     filename = os.path.join(str(tmpdir), "test.feather")
@@ -755,10 +736,6 @@ def test_non_fsspec_url_with_storage_options_raises(naturalearth_lowres):
         read_parquet(naturalearth_lowres, storage_options={"foo": "bar"})
 
 
-@pytest.mark.skipif(
-    Version(pyarrow.__version__) < Version("5.0.0"),
-    reason="pyarrow.fs requires pyarrow>=5.0.0",
-)
 def test_prefers_pyarrow_fs():
     filesystem, _ = _get_filesystem_path("file:///data.parquet")
     assert isinstance(filesystem, pyarrow.fs.LocalFileSystem)

@@ -25,7 +25,7 @@ from pandas.tests.extension import base as extension_tests
 import shapely.geometry
 from shapely.geometry import Point
 
-from geopandas._compat import PANDAS_GE_15, PANDAS_GE_21, PANDAS_GE_22
+from geopandas._compat import PANDAS_GE_21, PANDAS_GE_22
 from geopandas.array import GeometryArray, GeometryDtype, from_shapely
 
 import pytest
@@ -557,16 +557,10 @@ class TestComparisonOps(extension_tests.BaseComparisonOpsTests):
 
 
 class TestMethods(extension_tests.BaseMethodsTests):
-    @pytest.mark.skipif(
-        not PANDAS_GE_15, reason="sorting index not yet working with older pandas"
-    )
     @pytest.mark.parametrize("dropna", [True, False])
     def test_value_counts(self, all_data, dropna):
         pass
 
-    @pytest.mark.skipif(
-        not PANDAS_GE_15, reason="sorting index not yet working with older pandas"
-    )
     def test_value_counts_with_normalize(self, data):
         pass
 
