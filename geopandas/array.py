@@ -854,11 +854,13 @@ class GeometryArray(ExtensionArray):
         )
         return self.union_all()
 
-    def union_all(self, method="unary"):
+    def union_all(self, method="unary", grid_size=None):
         if method == "coverage":
+            if grid_size is not None:
+                raise ValueError("grid_size is not supported for method 'coverage'.")
             return shapely.coverage_union_all(self._data)
         elif method == "unary":
-            return shapely.union_all(self._data)
+            return shapely.union_all(self._data, grid_size=grid_size)
         else:
             raise ValueError(
                 f"Method '{method}' not recognized. Use 'coverage' or 'unary'."
