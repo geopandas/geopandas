@@ -3,12 +3,17 @@
 ## Version 1.1.0
 
 Notes on dependencies:
+
 - GeoPandas 1.1 now requires Python 3.10 or greater and pandas 2.0, numpy 1.24, pyproj 3.5,
   are now the minimum required version for these dependencies.
   Furthermore, the minimum tested version for optional dependencies has been updated to
   fiona 1.8.21, scipy 1.9, matplotlib 3.7, mapclassify 2.5, folium 0.12 and 
   SQLAlchemy 2.0. Older versions of these libraries may continue to work, but are no longer
   considered supported (#3371).
+
+New features and improvements:
+
+- Add ``grid_size`` parameter to ``union_all`` and ``dissolve`` (#3445).
 
 ## Version 1.0.2 (???)
 
