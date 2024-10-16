@@ -2116,7 +2116,7 @@ GeometryCollection
 
         return self.geometry.values.union_all()
 
-    def union_all(self, method="unary"):
+    def union_all(self, method="unary", grid_size=None):
         """Returns a geometry containing the union of all geometries in the
         ``GeoSeries``.
 
@@ -2136,6 +2136,14 @@ GeometryCollection
               unary union algorithm. However, it can produce invalid geometries if the
               polygons overlap.
 
+        grid_size : float, default None
+            When grid size is specified, a fixed-precision space is used. The inputs
+            are snapped to a grid of the given size, and the result vertices are
+            computed on that same grid. Is only supported for ``method`` ``"unary"``.
+            If None, the highest precision of the inputs will be used. Defaults to None.
+
+            .. versionadded:: 1.1.0
+
         Examples
         --------
 
@@ -2149,7 +2157,7 @@ GeometryCollection
         >>> s.union_all()
         <POLYGON ((0 1, 0 2, 2 2, 2 0, 1 0, 0 0, 0 1))>
         """
-        return self.geometry.values.union_all(method=method)
+        return self.geometry.values.union_all(method=method, grid_size=grid_size)
 
     def intersection_all(self):
         """Returns a geometry containing the intersection of all geometries in

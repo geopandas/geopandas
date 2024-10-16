@@ -1962,6 +1962,7 @@ default 'snappy'
         observed=False,
         dropna=True,
         method="unary",
+        grid_size=None,
         **kwargs,
     ):
         """
@@ -2016,6 +2017,13 @@ default 'snappy'
               unary union algorithm. However, it can produce invalid geometries if the
               polygons overlap.
 
+        grid_size : float, default None
+            When grid size is specified, a fixed-precision space is used. The inputs
+            are snapped to a grid of the given size, and the result vertices are
+            computed on that same grid. Is only supported for ``method`` ``"unary"``.
+            If None, the highest precision of the inputs will be used. Defaults to None.
+
+            .. versionadded:: 1.1.0
         **kwargs :
             Keyword arguments to be passed to the pandas `DataFrameGroupby.agg` method
             which is used by `dissolve`. In particular, `numeric_only` may be
@@ -2090,7 +2098,7 @@ default 'snappy'
 
         # Process spatial component
         def merge_geometries(block):
-            merged_geom = block.union_all(method=method)
+            merged_geom = block.union_all(method=method, grid_size=grid_size)
             return merged_geom
 
         g = self.groupby(group_keys=False, **groupby_kwargs)[self.geometry.name].agg(
