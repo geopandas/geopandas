@@ -52,7 +52,7 @@ geometry_type_values = np.array(list(type_mapping.values()), dtype=object)
 class GeometryDtype(ExtensionDtype):
     type = BaseGeometry
     name = "geometry"
-    na_value = np.nan
+    na_value = None
 
     @classmethod
     def construct_from_string(cls, string):
