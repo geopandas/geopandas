@@ -17,6 +17,7 @@ from shapely.geometry import (
 import geopandas
 from geopandas import GeoDataFrame, GeoSeries, clip
 from geopandas._compat import HAS_PYPROJ
+from geopandas.array import POLYGON_GEOM_TYPES
 from geopandas.tools.clip import _mask_is_list_like_rectangle
 
 import pytest
@@ -304,7 +305,7 @@ class TestClipWithSingleRectangleGdf:
         )
         assert np.array_equal(clipped.total_bounds, expected_bounds)
         # Assert returned data is a not geometry collection
-        assert (clipped.geom_type.isin(["Polygon", "MultiPolygon"])).all()
+        assert (clipped.geom_type.isin(POLYGON_GEOM_TYPES)).all()
 
     def test_clip_multiline(self, multi_line, mask):
         """Test that clipping a multiline feature with a poly returns expected

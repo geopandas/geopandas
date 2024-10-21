@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import typing
 import warnings
-from packaging.version import Version
 from typing import Any
 
 import numpy as np
@@ -384,7 +383,7 @@ class GeoSeries(GeoPandasBase, Series):
     def from_wkb(
         cls, data, index=None, crs: Any | None = None, on_invalid="raise", **kwargs
     ) -> GeoSeries:
-        """
+        r"""
         Alternate constructor to create a ``GeoSeries``
         from a list or array of WKB objects
 
@@ -417,6 +416,29 @@ class GeoSeries(GeoPandasBase, Series):
         --------
         GeoSeries.from_wkt
 
+        Examples
+        --------
+
+        >>> wkbs = [
+        ... (
+        ...     b"\x01\x01\x00\x00\x00\x00\x00\x00\x00"
+        ...     b"\x00\x00\xf0?\x00\x00\x00\x00\x00\x00\xf0?"
+        ... ),
+        ... (
+        ...     b"\x01\x01\x00\x00\x00\x00\x00\x00\x00"
+        ...     b"\x00\x00\x00@\x00\x00\x00\x00\x00\x00\x00@"
+        ... ),
+        ... (
+        ...    b"\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00"
+        ...    b"\x00\x08@\x00\x00\x00\x00\x00\x00\x08@"
+        ... ),
+        ... ]
+        >>> s = geopandas.GeoSeries.from_wkb(wkbs)
+        >>> s
+        0    POINT (1 1)
+        1    POINT (2 2)
+        2    POINT (3 3)
+        dtype: geometry
         """
         return cls._from_wkb_or_wkt(
             from_wkb, data, index=index, crs=crs, on_invalid=on_invalid, **kwargs
@@ -1422,8 +1444,6 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
         ]
 
         """
-        import pyarrow as pa
-
         from geopandas.io._geoarrow import (
             GeoArrowArray,
             construct_geometry_array,
@@ -1433,9 +1453,6 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
         field_name = self.name if self.name is not None else ""
 
         if geometry_encoding.lower() == "geoarrow":
-            if Version(pa.__version__) < Version("10.0.0"):
-                raise ValueError("Converting to 'geoarrow' requires pyarrow >= 10.0.")
-
             field, geom_arr = construct_geometry_array(
                 np.array(self.array),
                 include_z=include_z,
