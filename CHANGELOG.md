@@ -26,6 +26,8 @@ Bug fixes:
   (Geo)Series, but instead should be interpreted as column names, like Enums (#3384).
 - Fix regression where constructing a GeoSeries from a pd.Series with GeometryDtype values 
   failed when `crs` was provided (#3383).
+- Fix regression where `overlay` with `keep_geom_type` returns wrong results if the
+  input contains invalid geometries (#3395).
 - Fix the dtype of the GeometryArray backing data being incorrect for zero length 
   GeoDataFrames causing errors in `overlay` (3424).
 

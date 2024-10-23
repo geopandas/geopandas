@@ -13,18 +13,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  Linting:
-    runs-on: ubuntu-latest
-
-    # skip scheduled runs on forks
-    if: (github.event_name == 'schedule' && github.repository == 'geopandas/geopandas') || (github.event_name != 'schedule')
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-      - uses: pre-commit/action@v3.0.1
-
   Test:
-    needs: Linting
     name: ${{ matrix.os }}, ${{ matrix.env }}
     runs-on: ${{ matrix.os }}
     defaults:
