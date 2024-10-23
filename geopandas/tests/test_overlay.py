@@ -110,6 +110,22 @@ def test_overlay(dfs_index, how):
         assert_geodataframe_equal(result, expected, check_column_type=False)
 
 
+@pytest.mark.parametrize("keep_geom_type", [True, False])
+def test_overlay_invalid_input(keep_geom_type):
+    invalid_polygon = Polygon([(0, 0), (1, 1), (1, 2), (1, 1), (0, 0)])
+    square = Polygon(((0, 0), (1, 0), (1, 1), (0, 1), (0, 0)))
+    df1 = geopandas.GeoDataFrame({"A": [1, 2]}, geometry=[invalid_polygon, square])
+    df2 = geopandas.GeoDataFrame({"B": [5, 6]}, geometry=[square, square])
+
+    df1_df2 = df1.overlay(df2, keep_geom_type=keep_geom_type)
+    # As overlay only supports inputs with uniform geometry types, `make_valid` of
+    # `invalid_polygon` should always result in POLYGON EMPTY, so the number of results
+    # will should always be 2.
+    assert len(df1_df2) == 2
+    if keep_geom_type:
+        assert df1_df2.geom_type.isin(["Polygon"]).all()
+
+
 @pytest.mark.filterwarnings("ignore:GeoSeries crs mismatch:UserWarning")
 def test_overlay_nybb(how, nybb_filename):
     polydf = read_file(nybb_filename)
