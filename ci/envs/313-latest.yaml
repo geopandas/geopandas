@@ -32,7 +32,14 @@ dependencies:
   - psycopg2
   - libspatialite
   - geoalchemy2
-  - pyarrow
-  - geoarrow-pyarrow
+#  - pyarrow
+#  - geoarrow-pyarrow
   # doctest testing
   - pytest-doctestplus
+  - geopy
+  - mapclassify>=2.5.0
+  - pip
+  - pip:
+        # dev versions of packages
+        - --pre --extra-index-url https://pypi.fury.io/arrow-nightlies/
+        - pyarrow
