@@ -13,18 +13,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  Linting:
-    runs-on: ubuntu-latest
-
-    # skip scheduled runs on forks
-    if: (github.event_name == 'schedule' && github.repository == 'geopandas/geopandas') || (github.event_name != 'schedule')
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-      - uses: pre-commit/action@v3.0.1
-
   Test:
-    needs: Linting
     name: ${{ matrix.os }}, ${{ matrix.env }}
     runs-on: ${{ matrix.os }}
     defaults:
@@ -41,28 +30,26 @@ jobs:
         env:
           - ci/envs/310-minimal.yaml
           - ci/envs/310-no-optional-deps.yaml
-          - ci/envs/310-pd20-defaults.yaml
-          - ci/envs/311-latest-defaults.yaml
-          - ci/envs/310-pd21-conda-forge.yaml
-          - ci/envs/310-latest-conda-forge_no_pyogrio.yaml
-          - ci/envs/311-pd22-conda-forge.yaml
-          - ci/envs/311-latest-conda-forge.yaml
-          - ci/envs/312-latest-conda-forge.yaml
-          - ci/envs/312-latest-conda-forge_no_pyproj.yaml
+          - ci/envs/310-pd21.yaml
+          - ci/envs/310-latest-no-pyogrio.yaml
+          - ci/envs/311-pd22.yaml
+          - ci/envs/311-latest.yaml
+          - ci/envs/312-latest.yaml
+          - ci/envs/312-latest-no-pyproj.yaml
         include:
-          - env: ci/envs/310-latest-conda-forge_no_pyogrio.yaml
+          - env: ci/envs/310-latest-no-pyogrio.yaml
             os: macos-latest
             postgis: false
             dev: false
-          - env: ci/envs/311-latest-conda-forge.yaml
+          - env: ci/envs/311-latest.yaml
             os: macos-latest
             postgis: false
             dev: false
-          - env: ci/envs/310-latest-conda-forge_no_pyogrio.yaml
+          - env: ci/envs/310-latest-no-pyogrio.yaml
             os: windows-latest
             postgis: false
             dev: false
-          - env: ci/envs/311-latest-conda-forge.yaml
+          - env: ci/envs/311-latest.yaml
             os: windows-latest
             postgis: false
             dev: false
@@ -74,7 +61,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install Conda environment with Micromamba
-        uses: mamba-org/setup-micromamba@v1
+        uses: mamba-org/setup-micromamba@v2
         with:
           environment-file: ${{ matrix.env }}
 
@@ -90,7 +77,7 @@ jobs:
           pytest -v -r a -n auto --color=yes --cov=geopandas --cov-append --cov-report term-missing --cov-report xml geopandas/
 
       - name: Test with PostGIS
-        if: (contains(matrix.env, '311-pd22-conda-forge.yaml') || contains(matrix.env, '312-latest-conda-forge.yaml'))
+        if: (contains(matrix.env, '311-pd22.yaml') || contains(matrix.env, '312-latest.yaml'))
           && contains(matrix.os, 'ubuntu')
         env:
           PGUSER: postgres
@@ -104,7 +91,7 @@ jobs:
           pytest -v -r a --color=yes --cov=geopandas --cov-append --cov-report term-missing --cov-report xml geopandas/io/tests/test_sql.py | tee /dev/stderr | if grep SKIPPED >/dev/null;then echo "TESTS SKIPPED, FAILING" && exit 1;fi
 
       - name: Test docstrings
-        if: contains(matrix.env, '311-pd22-conda-forge.yaml') && contains(matrix.os, 'ubuntu')
+        if: contains(matrix.env, '311-pd22.yaml') && contains(matrix.os, 'ubuntu')
         run: |
           pytest -v --color=yes --doctest-only geopandas --ignore=geopandas/datasets
 

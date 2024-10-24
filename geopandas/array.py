@@ -40,6 +40,9 @@ _names = {
     "GEOMETRYCOLLECTION": "GeometryCollection",
 }
 
+POLYGON_GEOM_TYPES = {"Polygon", "MultiPolygon"}
+LINE_GEOM_TYPES = {"LineString", "MultiLineString", "LinearRing"}
+POINT_GEOM_TYPES = {"Point", "MultiPoint"}
 
 type_mapping = {p.value: _names[p.name] for p in shapely.GeometryType}
 geometry_type_ids = list(type_mapping.keys())
@@ -159,6 +162,8 @@ def from_shapely(data, crs=None):
     if not isinstance(data, np.ndarray):
         arr = np.empty(len(data), dtype=object)
         arr[:] = data
+    elif len(data) == 0 and data.dtype == "float64":
+        arr = data.astype(object)
     else:
         arr = data
 
