@@ -131,10 +131,10 @@ def test_reset_index(nybb_polydf, first):
         (
             None,
             shapely.MultiPolygon(
-                [[[(0, 0), (10, 0), (10, 10)]], [[(0, 0.4), (4.6, 5), (0, 5)]]]
+                [[[(0, 0), (10, 0), (10, 9)]], [[(0, 0.4), (4.6, 5), (0, 5)]]]
             ),
         ),
-        (1, shapely.Polygon([(0, 5), (5, 5), (10, 10), (10, 0), (0, 0)])),
+        (1, shapely.Polygon([(0, 5), (5, 5), (10, 9), (10, 0), (0, 0)])),
     ],
 )
 def test_dissolve_grid_size(grid_size, expected):
