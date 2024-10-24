@@ -3,6 +3,8 @@ import warnings
 import numpy as np
 import pandas as pd
 
+import shapely
+
 import geopandas
 from geopandas import GeoDataFrame, read_file
 from geopandas._compat import HAS_PYPROJ, PANDAS_GE_20, PANDAS_GE_30
@@ -121,6 +123,30 @@ def test_reset_index(nybb_polydf, first):
     test = nybb_polydf.dissolve("manhattan_bronx", as_index=False)
     comparison = first.reset_index()
     assert_frame_equal(comparison, test, check_column_type=False)
+
+
+@pytest.mark.parametrize(
+    "grid_size, expected",
+    [
+        (
+            None,
+            shapely.MultiPolygon(
+                [[[(0, 0), (10, 0), (10, 9)]], [[(0, 0.4), (4.6, 5), (0, 5)]]]
+            ),
+        ),
+        (1, shapely.Polygon([(0, 5), (5, 5), (10, 9), (10, 0), (0, 0)])),
+    ],
+)
+def test_dissolve_grid_size(grid_size, expected):
+    gdf = geopandas.GeoDataFrame(
+        geometry=[
+            shapely.Polygon([(0, 0), (10, 0), (10, 9)]),
+            shapely.Polygon([(0, 0.4), (4.6, 5), (0, 5)]),
+        ]
+    )
+
+    dissolved_gdf = gdf.dissolve(grid_size=grid_size)
+    assert dissolved_gdf.geometry[0].equals(expected)
 
 
 def test_dissolve_none(nybb_polydf):
