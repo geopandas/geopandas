@@ -2137,10 +2137,13 @@ GeometryCollection
               polygons overlap.
 
         grid_size : float, default None
-            When grid size is specified, a fixed-precision space is used. The inputs
-            are snapped to a grid of the given size, and the result vertices are
-            computed on that same grid. Is only supported for ``method`` ``"unary"``.
-            If None, the highest precision of the inputs will be used. Defaults to None.
+            When grid size is specified, dissolve will also union input geometries that
+            are close to each other. The inputs are first snapped to a grid of the given
+            size. When a line segment of a geometry is within tolerance off a vertex of
+            another geometry, this vertex will be inserted in the line segment.
+            Finally, the result vertices are computed on the same grid. Is only
+            supported for ``method`` ``"unary"``. If None, the highest precision of the
+            inputs will be used. Defaults to None.
 
             .. versionadded:: 1.1.0
 
