@@ -10,8 +10,6 @@ import shapely.geos
 # pandas compat
 # -----------------------------------------------------------------------------
 
-PANDAS_GE_14 = Version(pd.__version__) >= Version("1.4.0rc0")
-PANDAS_GE_15 = Version(pd.__version__) >= Version("1.5.0")
 PANDAS_GE_20 = Version(pd.__version__) >= Version("2.0.0")
 PANDAS_GE_202 = Version(pd.__version__) >= Version("2.0.2")
 PANDAS_GE_21 = Version(pd.__version__) >= Version("2.1.0")
@@ -47,15 +45,11 @@ def import_optional_dependency(name: str, extra: str = ""):
     -------
     module
     """
-    msg = """Missing optional dependency '{name}'. {extra}  "
-        "Use pip or conda to install {name}.""".format(
-        name=name, extra=extra
-    )
+    msg = f"""Missing optional dependency '{name}'. {extra}  "
+        "Use pip or conda to install {name}."""
 
     if not isinstance(name, str):
-        raise ValueError(
-            "Invalid module name: '{name}'; must be a string".format(name=name)
-        )
+        raise ValueError(f"Invalid module name: '{name}'; must be a string")
 
     try:
         module = importlib.import_module(name)

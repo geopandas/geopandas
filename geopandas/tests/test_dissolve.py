@@ -5,7 +5,7 @@ import pandas as pd
 
 import geopandas
 from geopandas import GeoDataFrame, read_file
-from geopandas._compat import HAS_PYPROJ, PANDAS_GE_15, PANDAS_GE_20, PANDAS_GE_30
+from geopandas._compat import HAS_PYPROJ, PANDAS_GE_20, PANDAS_GE_30
 
 import pytest
 from geopandas.testing import assert_geodataframe_equal, geom_almost_equals
@@ -81,38 +81,14 @@ def test_first_dissolve(nybb_polydf, first):
 
 
 def test_mean_dissolve(nybb_polydf, first, expected_mean):
-    if not PANDAS_GE_15:
-        test = nybb_polydf.dissolve("manhattan_bronx", aggfunc="mean")
-        test2 = nybb_polydf.dissolve("manhattan_bronx", aggfunc=np.mean)
-    elif PANDAS_GE_15 and not PANDAS_GE_20:
-        with pytest.warns(FutureWarning, match=".*used in dissolve is deprecated.*"):
-            test = nybb_polydf.dissolve("manhattan_bronx", aggfunc="mean")
-            test2 = nybb_polydf.dissolve("manhattan_bronx", aggfunc=np.mean)
-    else:  # pandas 2.0
-        test = nybb_polydf.dissolve(
-            "manhattan_bronx", aggfunc="mean", numeric_only=True
-        )
-        # for non pandas "mean", numeric only cannot be applied. Drop columns manually
-        test2 = nybb_polydf.drop(columns=["BoroName"]).dissolve(
-            "manhattan_bronx", aggfunc="mean"
-        )
+    test = nybb_polydf.dissolve("manhattan_bronx", aggfunc="mean", numeric_only=True)
+    # for non pandas "mean", numeric only cannot be applied. Drop columns manually
+    test2 = nybb_polydf.drop(columns=["BoroName"]).dissolve(
+        "manhattan_bronx", aggfunc="mean"
+    )
 
     assert_frame_equal(expected_mean, test, check_column_type=False)
     assert_frame_equal(expected_mean, test2, check_column_type=False)
-
-
-@pytest.mark.skipif(not PANDAS_GE_15 or PANDAS_GE_20, reason="warning for pandas 1.5.x")
-def test_mean_dissolve_warning_capture(nybb_polydf, first, expected_mean):
-    with pytest.warns(
-        FutureWarning,
-        match=".*used in dissolve is deprecated.*",
-    ):
-        nybb_polydf.dissolve("manhattan_bronx", aggfunc="mean")
-
-    # test no warning for aggfunc first which doesn't have numeric only semantics
-    with warnings.catch_warnings():
-        warnings.simplefilter("error")
-        nybb_polydf.dissolve("manhattan_bronx", aggfunc="first")
 
 
 def test_dissolve_emits_other_warnings(nybb_polydf):
@@ -338,7 +314,8 @@ def test_dissolve_multi_agg(nybb_polydf, merged_shapes):
     merged_shapes[("BoroCode", "max")] = [5, 2]
     merged_shapes[("BoroName", "count")] = [3, 2]
 
-    with warnings.catch_warnings(record=True) as record:
+    with warnings.catch_warnings():
+        warnings.simplefilter(action="error")
         test = nybb_polydf.dissolve(
             by="manhattan_bronx",
             aggfunc={
@@ -346,8 +323,8 @@ def test_dissolve_multi_agg(nybb_polydf, merged_shapes):
                 "BoroName": "count",
             },
         )
+
     assert_geodataframe_equal(test, merged_shapes)
-    assert len(record) == 0
 
 
 def test_coverage_dissolve(nybb_polydf):

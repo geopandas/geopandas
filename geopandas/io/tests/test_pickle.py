@@ -49,7 +49,7 @@ def test_round_trip_current(tmpdir, current_pickle_data):
     data = current_pickle_data
 
     for name, value in data.items():
-        path = str(tmpdir / "{}.pickle".format(name))
+        path = str(tmpdir / f"{name}.pickle")
         value.to_pickle(path)
         result = pd.read_pickle(path)
         assert_geodataframe_equal(result, value)

@@ -355,7 +355,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         if geo_column_name is None:
             geo_column_name = "geometry"
-        if isinstance(col, (Series, list, np.ndarray, GeometryArray)):
+        if isinstance(col, Series | list | np.ndarray | GeometryArray):
             if drop:
                 msg = (
                     "The `drop` keyword argument is deprecated and has no effect when "
@@ -373,7 +373,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             try:
                 level = frame[col]
             except KeyError:
-                raise ValueError("Unknown column %s" % col)
+                raise ValueError(f"Unknown column {col}")
             if isinstance(level, DataFrame):
                 raise ValueError(
                     "GeoDataFrame does not support setting the geometry column where "
@@ -1047,12 +1047,12 @@ individually so that features may have different properties
 'type': 'Point', 'coordinates': (1.0, 2.0)}}
         """
         if na not in ["null", "drop", "keep"]:
-            raise ValueError("Unknown na method {0}".format(na))
+            raise ValueError(f"Unknown na method {na}")
 
         if self._geometry_column_name not in self:
             raise AttributeError(
-                "No geometry data set (expected in column '%s')."
-                % self._geometry_column_name
+                "No geometry data set (expected in column "
+                f"'{self._geometry_column_name}')."
             )
 
         ids = np.array(self.index, copy=False)

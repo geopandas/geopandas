@@ -122,6 +122,9 @@ def _create_metadata(
     schema_version : {'0.1.0', '0.4.0', '1.0.0-beta.1', '1.0.0', '1.1.0', None}
         GeoParquet specification version; if not provided will default to
         latest supported version.
+    geometry_encoding : dict, default None
+        GeoParquet encoding per geometry column.
+        Defaults to "WKB" for columns that are not present in the dictionary.
     write_covering_bbox : bool, default False
         Writes the bounding box column for each row entry with column
         name 'bbox'. Writing a bbox column can be computationally
@@ -166,7 +169,11 @@ def _create_metadata(
                 _remove_id_from_member_of_ensembles(crs)
 
         column_metadata[col] = {
-            "encoding": geometry_encoding[col],
+            "encoding": (
+                geometry_encoding[col]
+                if geometry_encoding and col in geometry_encoding
+                else "WKB"
+            ),
             "crs": crs,
             geometry_types_name: geometry_types,
         }
@@ -280,7 +287,7 @@ def _validate_geo_metadata(metadata):
         if metadata.get(key, None) is None:
             raise ValueError(
                 "'geo' metadata in Parquet/Feather file is missing required key: "
-                "'{key}'".format(key=key)
+                f"'{key}'"
             )
 
     if not isinstance(metadata["columns"], dict):
@@ -294,7 +301,7 @@ def _validate_geo_metadata(metadata):
             if key not in column_metadata:
                 raise ValueError(
                     "'geo' metadata in Parquet/Feather file is missing required key "
-                    "'{key}' for column '{col}'".format(key=key, col=col)
+                    f"'{key}' for column '{col}'"
                 )
 
         if column_metadata["encoding"] not in SUPPORTED_ENCODINGS:
@@ -474,11 +481,6 @@ def _to_feather(df, path, index=None, compression=None, schema_version=None, **k
     feather = import_optional_dependency(
         "pyarrow.feather", extra="pyarrow is required for Feather support."
     )
-    # TODO move this into `import_optional_dependency`
-    import pyarrow
-
-    if Version(pyarrow.__version__) < Version("0.17.0"):
-        raise ImportError("pyarrow >= 0.17 required for Feather support")
 
     path = _expand_user(path)
     table = _geopandas_to_arrow(df, index=index, schema_version=schema_version)
@@ -561,14 +563,7 @@ def _get_filesystem_path(path, filesystem=None, storage_options=None):
 
     If the filesystem is not None then it's just returned as is.
     """
-    import pyarrow
-
-    if (
-        isinstance(path, str)
-        and storage_options is None
-        and filesystem is None
-        and Version(pyarrow.__version__) >= Version("5.0.0")
-    ):
+    if isinstance(path, str) and storage_options is None and filesystem is None:
         # Use the native pyarrow filesystem if possible.
         try:
             from pyarrow.fs import FileSystem
@@ -587,7 +582,7 @@ def _get_filesystem_path(path, filesystem=None, storage_options=None):
 
     if filesystem is None and storage_options:
         raise ValueError(
-            "Cannot provide 'storage_options' with non-fsspec path '{}'".format(path)
+            f"Cannot provide 'storage_options' with non-fsspec path '{path}'"
         )
 
     return filesystem, path
@@ -834,13 +829,7 @@ def _read_feather(path, columns=None, **kwargs):
     feather = import_optional_dependency(
         "pyarrow.feather", extra="pyarrow is required for Feather support."
     )
-    # TODO move this into `import_optional_dependency`
-    import pyarrow
-
     import geopandas.io._pyarrow_hotfix  # noqa: F401
-
-    if Version(pyarrow.__version__) < Version("0.17.0"):
-        raise ImportError("pyarrow >= 0.17 required for Feather support")
 
     path = _expand_user(path)
 
@@ -894,7 +883,6 @@ def _get_bbox_encoding_column_name(geo_metadata):
 
 
 def _get_non_bbox_columns(schema, geo_metadata):
-
     bbox_column_name = _get_bbox_encoding_column_name(geo_metadata)
     columns = schema.names
     if bbox_column_name in columns:
