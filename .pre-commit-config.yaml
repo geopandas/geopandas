@@ -1,6 +1,6 @@
 ci:
     autofix_prs: false
-    autoupdate_schedule: weekly
+    autoupdate_schedule: quarterly
 
 files: 'geopandas\/'
 repos:

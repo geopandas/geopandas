@@ -1,5 +1,4 @@
 import warnings
-from packaging.version import Version
 from statistics import mean
 
 import numpy as np
@@ -292,10 +291,6 @@ def _explore(
         from mapclassify import classify
         from matplotlib import colormaps as cm
         from matplotlib import colors
-
-        # check for minimum version of folium
-        if Version(folium.__version__) < Version("0.12.0"):
-            raise ImportError
 
     except (ImportError, ModuleNotFoundError):
         raise ImportError(
