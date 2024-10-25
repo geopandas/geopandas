@@ -186,11 +186,11 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             ):
                 raise ValueError(crs_mismatch_error)
             # If "geometry" is potentially coercible to geometry, we try and convert it
-            # special case for zero len geometry=[]
             geom_dtype = self["geometry"].dtype
             if (
                 geom_dtype == "geometry"
                 or geom_dtype == "object"
+                # special case for geometry = [], has float dtype
                 or (len(self) == 0 and geom_dtype == "float")
             ):
                 try:
