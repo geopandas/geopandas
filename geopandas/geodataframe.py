@@ -188,7 +188,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             # If "geometry" is potentially coercible to geometry, we try and convert it
             geom_dtype = self["geometry"].dtype
             if (
-                geom_dtype == "geometry"
+                geom_dtype == "geometry"  # noqa: PLR1714
                 or geom_dtype == "object"
                 # special case for geometry = [], has float dtype
                 or (len(self) == 0 and geom_dtype == "float")
