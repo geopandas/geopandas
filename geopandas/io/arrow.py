@@ -481,11 +481,6 @@ def _to_feather(df, path, index=None, compression=None, schema_version=None, **k
     feather = import_optional_dependency(
         "pyarrow.feather", extra="pyarrow is required for Feather support."
     )
-    # TODO move this into `import_optional_dependency`
-    import pyarrow
-
-    if Version(pyarrow.__version__) < Version("0.17.0"):
-        raise ImportError("pyarrow >= 0.17 required for Feather support")
 
     path = _expand_user(path)
     table = _geopandas_to_arrow(df, index=index, schema_version=schema_version)
@@ -568,14 +563,7 @@ def _get_filesystem_path(path, filesystem=None, storage_options=None):
 
     If the filesystem is not None then it's just returned as is.
     """
-    import pyarrow
-
-    if (
-        isinstance(path, str)
-        and storage_options is None
-        and filesystem is None
-        and Version(pyarrow.__version__) >= Version("5.0.0")
-    ):
+    if isinstance(path, str) and storage_options is None and filesystem is None:
         # Use the native pyarrow filesystem if possible.
         try:
             from pyarrow.fs import FileSystem
@@ -841,13 +829,7 @@ def _read_feather(path, columns=None, **kwargs):
     feather = import_optional_dependency(
         "pyarrow.feather", extra="pyarrow is required for Feather support."
     )
-    # TODO move this into `import_optional_dependency`
-    import pyarrow
-
     import geopandas.io._pyarrow_hotfix  # noqa: F401
-
-    if Version(pyarrow.__version__) < Version("0.17.0"):
-        raise ImportError("pyarrow >= 0.17 required for Feather support")
 
     path = _expand_user(path)
 

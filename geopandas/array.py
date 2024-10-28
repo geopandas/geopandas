@@ -40,6 +40,9 @@ _names = {
     "GEOMETRYCOLLECTION": "GeometryCollection",
 }
 
+POLYGON_GEOM_TYPES = {"Polygon", "MultiPolygon"}
+LINE_GEOM_TYPES = {"LineString", "MultiLineString", "LinearRing"}
+POINT_GEOM_TYPES = {"Point", "MultiPoint"}
 
 type_mapping = {p.value: _names[p.name] for p in shapely.GeometryType}
 geometry_type_ids = list(type_mapping.keys())
@@ -159,6 +162,8 @@ def from_shapely(data, crs=None):
     if not isinstance(data, np.ndarray):
         arr = np.empty(len(data), dtype=object)
         arr[:] = data
+    elif len(data) == 0 and data.dtype == "float64":
+        arr = data.astype(object)
     else:
         arr = data
 
@@ -1642,7 +1647,7 @@ class GeometryArray(ExtensionArray):
         # including the base class version here (that raises by default)
         # because this was not yet defined in pandas 0.23
         if name in ("any", "all"):
-            return getattr(to_shapely(self), name)()
+            return getattr(self._data, name)(keepdims=keepdims)
         raise TypeError(
             f"'{type(self).__name__}' with dtype {self.dtype} "
             f"does not support reduction '{name}'"
