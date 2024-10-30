@@ -698,17 +698,17 @@ def test_union_all():
     [
         (
             None,
-            shapely.MultiPolygon(
+            shapely.geometry.MultiPolygon(
                 [[[(0, 0), (10, 0), (10, 10)]], [[(0, 0.4), (4.6, 5), (0, 5)]]]
             ),
         ),
-        (1, shapely.Polygon([(0, 5), (5, 5), (10, 10), (10, 0), (0, 0)])),
+        (1, shapely.geometry.Polygon([(0, 5), (5, 5), (10, 10), (10, 0), (0, 0)])),
     ],
 )
 def test_union_all_grid_size(grid_size, expected):
     geoms = [
-        shapely.Polygon([(0, 0), (10, 0), (10, 10)]),
-        shapely.Polygon([(0, 0.4), (4.6, 5), (0, 5)]),
+        shapely.geometry.Polygon([(0, 0), (10, 0), (10, 10)]),
+        shapely.geometry.Polygon([(0, 0.4), (4.6, 5), (0, 5)]),
     ]
     G = from_shapely(geoms)
     u = G.union_all(grid_size=grid_size)
@@ -717,8 +717,8 @@ def test_union_all_grid_size(grid_size, expected):
 
 def test_union_all_grid_size_error():
     geoms = [
-        shapely.Polygon([(0, 0), (0, 1), (1, 1)]),
-        shapely.Polygon([(0, 0), (1, 0), (1, 1)]),
+        shapely.geometry.Polygon([(0, 0), (0, 1), (1, 1)]),
+        shapely.geometry.Polygon([(0, 0), (1, 0), (1, 1)]),
     ]
     G = from_shapely(geoms)
 

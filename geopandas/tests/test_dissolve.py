@@ -130,18 +130,18 @@ def test_reset_index(nybb_polydf, first):
     [
         (
             None,
-            shapely.MultiPolygon(
+            shapely.geometry.MultiPolygon(
                 [[[(0, 0), (10, 0), (10, 9)]], [[(0, 0.4), (4.6, 5), (0, 5)]]]
             ),
         ),
-        (1, shapely.Polygon([(0, 5), (5, 5), (10, 9), (10, 0), (0, 0)])),
+        (1, shapely.geometry.Polygon([(0, 5), (5, 5), (10, 9), (10, 0), (0, 0)])),
     ],
 )
 def test_dissolve_grid_size(grid_size, expected):
     gdf = geopandas.GeoDataFrame(
         geometry=[
-            shapely.Polygon([(0, 0), (10, 0), (10, 9)]),
-            shapely.Polygon([(0, 0.4), (4.6, 5), (0, 5)]),
+            shapely.geometry.Polygon([(0, 0), (10, 0), (10, 9)]),
+            shapely.geometry.Polygon([(0, 0.4), (4.6, 5), (0, 5)]),
         ]
     )
 
