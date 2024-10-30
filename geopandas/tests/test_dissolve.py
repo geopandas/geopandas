@@ -3,7 +3,7 @@ import warnings
 import numpy as np
 import pandas as pd
 
-import shapely
+from shapely import MultiPolygon, Polygon
 
 import geopandas
 from geopandas import GeoDataFrame, read_file
@@ -130,18 +130,21 @@ def test_reset_index(nybb_polydf, first):
     [
         (
             None,
-            shapely.geometry.MultiPolygon(
-                [[[(0, 0), (10, 0), (10, 9)]], [[(0, 0.4), (4.6, 5), (0, 5)]]]
+            MultiPolygon(
+                [
+                    Polygon([(0, 0), (10, 0), (10, 9)]),
+                    Polygon([(0, 0.4), (4.6, 5), (0, 5)]),
+                ]
             ),
         ),
-        (1, shapely.geometry.Polygon([(0, 5), (5, 5), (10, 9), (10, 0), (0, 0)])),
+        (1, Polygon([(0, 5), (5, 5), (10, 9), (10, 0), (0, 0)])),
     ],
 )
 def test_dissolve_grid_size(grid_size, expected):
     gdf = geopandas.GeoDataFrame(
         geometry=[
-            shapely.geometry.Polygon([(0, 0), (10, 0), (10, 9)]),
-            shapely.geometry.Polygon([(0, 0.4), (4.6, 5), (0, 5)]),
+            Polygon([(0, 0), (10, 0), (10, 9)]),
+            Polygon([(0, 0.4), (4.6, 5), (0, 5)]),
         ]
     )
 

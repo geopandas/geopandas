@@ -9,7 +9,7 @@ import shapely.affinity
 import shapely.geometry
 import shapely.wkb
 import shapely.wkt
-from shapely import geos_version
+from shapely import MultiPolygon, Polygon, geos_version
 from shapely.geometry.base import CAP_STYLE, JOIN_STYLE
 
 import geopandas
@@ -698,17 +698,20 @@ def test_union_all():
     [
         (
             None,
-            shapely.geometry.MultiPolygon(
-                [[[(0, 0), (10, 0), (10, 10)]], [[(0, 0.4), (4.6, 5), (0, 5)]]]
+            MultiPolygon(
+                [
+                    Polygon([(0, 0), (10, 0), (10, 10)]),
+                    Polygon([(0, 0.4), (4.6, 5), (0, 5)]),
+                ]
             ),
         ),
-        (1, shapely.geometry.Polygon([(0, 5), (5, 5), (10, 10), (10, 0), (0, 0)])),
+        (1, Polygon([(0, 5), (5, 5), (10, 10), (10, 0), (0, 0)])),
     ],
 )
 def test_union_all_grid_size(grid_size, expected):
     geoms = [
-        shapely.geometry.Polygon([(0, 0), (10, 0), (10, 10)]),
-        shapely.geometry.Polygon([(0, 0.4), (4.6, 5), (0, 5)]),
+        Polygon([(0, 0), (10, 0), (10, 10)]),
+        Polygon([(0, 0.4), (4.6, 5), (0, 5)]),
     ]
     G = from_shapely(geoms)
     u = G.union_all(grid_size=grid_size)
