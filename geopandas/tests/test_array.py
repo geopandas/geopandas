@@ -1068,3 +1068,9 @@ class TestEstimateUtmCrs:
             from_shapely(
                 [shapely.geometry.Polygon([(0, 90), (1, 90), (2, 90)])]
             ).estimate_utm_crs()
+
+
+def test_reduce_keepdims():
+    arr = geopandas.GeoDataFrame(geometry=[]).geometry.array
+    assert arr._reduce("all", keepdims=True) == np.array([True], dtype=object)
+    assert arr._reduce("all", keepdims=False)

@@ -1160,7 +1160,7 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
         }
 
         if show_bbox:
-            geo["bbox"] = tuple(self.total_bounds)
+            geo["bbox"] = tuple(self.total_bounds.tolist())  # tolist to avoid np dtypes
 
         return geo
 

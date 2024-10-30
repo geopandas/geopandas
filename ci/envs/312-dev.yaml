@@ -14,7 +14,7 @@ dependencies:
   - pytest-cov
   - pytest-xdist
   - fsspec
-  - pytz
+
   # optional
   #- geopy
   - SQLalchemy<2.1 # test oldest support sqlalchemy version
