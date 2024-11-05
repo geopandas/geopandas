@@ -1,3 +1,4 @@
+import os
 import subprocess
 import sys
 
@@ -31,6 +32,9 @@ if mods:
     sys.stderr.write('err: geopandas should not import: {{}}'.format(', '.join(mods)))
     sys.exit(len(mods))
 """
+    # remove COV_CORE_SOURCE to avoid pytest-cov importing itself in the subprocess
+    env = os.environ.copy()
+    env.pop("COV_CORE_SOURCE", None)
     call = [sys.executable, "-c", code]
-    returncode = subprocess.run(call, check=False).returncode
+    returncode = subprocess.run(call, check=False, env=env).returncode
     assert returncode == 0
