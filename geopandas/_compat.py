@@ -4,7 +4,6 @@ from packaging.version import Version
 import pandas as pd
 
 import shapely
-import shapely.geos
 
 # -----------------------------------------------------------------------------
 # pandas compat
@@ -23,8 +22,8 @@ PANDAS_GE_30 = Version(pd.__version__) >= Version("3.0.0.dev0")
 
 SHAPELY_GE_204 = Version(shapely.__version__) >= Version("2.0.4")
 
-GEOS_GE_390 = shapely.geos.geos_version >= (3, 9, 0)
-GEOS_GE_310 = shapely.geos.geos_version >= (3, 10, 0)
+GEOS_GE_390 = shapely.geos_version >= (3, 9, 0)
+GEOS_GE_310 = shapely.geos_version >= (3, 10, 0)
 
 
 def import_optional_dependency(name: str, extra: str = ""):
