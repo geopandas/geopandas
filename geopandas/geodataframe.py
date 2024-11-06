@@ -1046,8 +1046,8 @@ individually so that features may have different properties
                 f"'{self._geometry_column_name}')."
             )
 
-        ids = np.array(self.index, copy=False)
-        geometries = np.array(self[self._geometry_column_name], copy=False)
+        ids = np.asarray(self.index)
+        geometries = np.asarray(self[self._geometry_column_name])
 
         if not self.columns.is_unique:
             raise ValueError("GeoDataFrame cannot contain duplicated column names.")
