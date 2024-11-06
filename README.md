@@ -5,6 +5,7 @@
 [![Binder](https://mybinder.org/badge.svg)](https://mybinder.org/v2/gh/geopandas/geopandas/main)
 [![DOI](https://zenodo.org/badge/11002815.svg)](https://zenodo.org/badge/latestdoi/11002815)
 [![Powered by NumFOCUS](https://img.shields.io/badge/powered%20by-NumFOCUS-orange.svg?style=flat&colorA=E1523D&colorB=007D8A)](https://numfocus.org)
+[![Gurubase](https://img.shields.io/badge/Gurubase-Ask%20GeoPandas%20Guru-006BFF)](https://gurubase.io/g/geopandas)
 
 GeoPandas
 ---------
