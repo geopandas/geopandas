@@ -148,6 +148,13 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             and not isinstance(data, GeoDataFrame)
         ):
             kwargs.update(copy=True)
+
+        if data is None and "columns" not in kwargs:
+            # pandas will interpret "str" as object dtype for pandas < 3 and
+            # as string dtype for pandas >= 3. This ensures we still get string
+            # columns when doing GeoDataFrame(geometry=[..])
+            kwargs["columns"] = pd.Index([], dtype="str")
+
         super().__init__(data, *args, **kwargs)
 
         # set_geometry ensures the geometry data have the proper dtype,
