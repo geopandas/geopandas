@@ -14,6 +14,11 @@ Bug fixes:
 
 - Fix an issue that showed numpy dtypes in bbox in `to_geo_dict` and `__geo_interface__`. (#3436)
 
+Deprecations and compatibility notes:
+
+- The `GeoSeries.append` method wrapping the removed pandas `Series.append` method has been
+  removed (#3460).
+
 ## Version 1.0.2 (???)
 
 Bug fixes:
