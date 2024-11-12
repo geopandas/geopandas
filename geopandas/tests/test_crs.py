@@ -1,4 +1,6 @@
+import os
 import random
+import tempfile
 import warnings
 
 import numpy as np
@@ -434,6 +436,48 @@ class TestGeometryArrayCRS:
         assert df.crs == pyproj.CRS(2263)
         assert df.geometry.crs == pyproj.CRS(2263)
         assert df.geometry.values.crs == pyproj.CRS(2263)
+
+    def test_read_file_error_message(self):
+        """
+        When reading a file with a GeoDataFrame or GeoSeries mask,
+        the file needs to have a valid CRS to apply the mask.
+        If there is no CRS data in the file, an error should be raised.
+        """
+        temp_filename = os.path.join(tempfile.mkdtemp(), "test.shp")
+        df = pd.DataFrame(
+            {
+                "Latitude": [0, 1, 2, 3, 4],
+                "Longitude": [0, 1, 2, 3, 4],
+            }
+        )
+
+        gdf_without_crs = GeoDataFrame(
+            df, geometry=points_from_xy(df.Longitude, df.Latitude)
+        )
+        gdf_with_crs = GeoDataFrame(
+            df, geometry=points_from_xy(df.Longitude, df.Latitude), crs="EPSG:4326"
+        )
+
+        gdf_without_crs.to_file(temp_filename)
+
+        with pytest.raises(
+            ValueError,
+            match="""There is no CRS defined in the source dataset.
+                           This is required when a geodataframe mask is used.""",
+        ):
+            read_file(temp_filename, mask=gdf_with_crs)
+
+        # Check with GeoSeries as a mask
+        series_with_crs = GeoSeries(
+            points_from_xy(df.Longitude, df.Latitude), crs="EPSG:3857"
+        )
+
+        with pytest.raises(
+            ValueError,
+            match="""There is no CRS defined in the source dataset.
+                           This is required when a geodataframe mask is used.""",
+        ):
+            read_file(temp_filename, mask=series_with_crs)
 
     def test_multiple_geoms(self):
         arr = from_shapely(self.geoms, crs=27700)

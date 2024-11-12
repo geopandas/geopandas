@@ -495,6 +495,11 @@ def _read_file_pyogrio(path_or_bytes, bbox=None, mask=None, rows=None, **kwargs)
         # NOTE: mask cannot be used at same time as bbox keyword
         if isinstance(mask, GeoDataFrame | GeoSeries):
             crs = pyogrio.read_info(path_or_bytes, layer=kwargs.get("layer")).get("crs")
+
+            if crs is None:
+                raise ValueError("""There is no CRS defined in the source dataset.
+                           This is required when a geodataframe mask is used.""")
+
             if isinstance(path_or_bytes, IOBase):
                 path_or_bytes.seek(0)
 

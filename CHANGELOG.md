@@ -14,6 +14,11 @@ Bug fixes:
 
 - Fix an issue that showed numpy dtypes in bbox in `to_geo_dict` and `__geo_interface__`. (#3436)
 
+New features and improvements:
+
+- An error message is raised when `read_file` is used wth a GeoDataFrame or GeoSeries mask 
+  to read a source dataset without a defined CRS. (#####)
+
 ## Version 1.0.2 (???)
 
 Bug fixes:
