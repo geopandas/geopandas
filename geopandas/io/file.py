@@ -498,7 +498,8 @@ def _read_file_pyogrio(path_or_bytes, bbox=None, mask=None, rows=None, **kwargs)
 
             if crs is None:
                 raise ValueError("""There is no CRS defined in the source dataset.
-                           This is required when a geodataframe mask is used.""")
+                    This is required when a GeoDataFrame or GeoSeries
+                    mask is used.""")
 
             if isinstance(path_or_bytes, IOBase):
                 path_or_bytes.seek(0)

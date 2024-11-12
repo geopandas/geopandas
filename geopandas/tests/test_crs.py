@@ -463,7 +463,8 @@ class TestGeometryArrayCRS:
         with pytest.raises(
             ValueError,
             match="""There is no CRS defined in the source dataset.
-                           This is required when a geodataframe mask is used.""",
+                    This is required when a GeoDataFrame or GeoSeries
+                    mask is used.""",
         ):
             read_file(temp_filename, mask=gdf_with_crs)
 
@@ -475,7 +476,8 @@ class TestGeometryArrayCRS:
         with pytest.raises(
             ValueError,
             match="""There is no CRS defined in the source dataset.
-                           This is required when a geodataframe mask is used.""",
+                    This is required when a GeoDataFrame or GeoSeries
+                    mask is used.""",
         ):
             read_file(temp_filename, mask=series_with_crs)
 
