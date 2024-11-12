@@ -1833,7 +1833,7 @@ def test_column_values():
     # Build test data
     t1 = Polygon([(0, 0), (1, 0), (1, 1)])
     t2 = Polygon([(1, 0), (2, 0), (2, 1)])
-    polys = GeoSeries([t1, t2], index=list("AB"))
+    polys = GeoSeries([t1, t2], index=[0, 1])
     df = GeoDataFrame({"geometry": polys, "values": [0, 1]})
 
     # Test with continuous values
@@ -1853,6 +1853,11 @@ def test_column_values():
     colors_series = ax.collections[0].get_facecolors()
     np.testing.assert_array_equal(colors, colors_series)
     ax = df.plot(column=df["values"].values, categorical=True)
+    colors_array = ax.collections[0].get_facecolors()
+    np.testing.assert_array_equal(colors, colors_array)
+
+    # Test with pd.Index
+    ax = df.plot(column=df.index, categorical=True)
     colors_array = ax.collections[0].get_facecolors()
     np.testing.assert_array_equal(colors, colors_array)
 

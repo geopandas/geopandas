@@ -122,6 +122,8 @@ files based on a bounding box, and write out a bounding box column to parquet fi
   instead of its current behaviour of assuming EPSG. In the event the spiatal_ref_sys
   table is not present, or the SRID is not present, `read_postgis` will fallback
   on assuming EPSG CRS authority. (#3329)
+- `plot_dataframe` now supports pd.Index as a column to permit colouring based on the
+   geodataframe's index ``GeoDataFrame.plot(column=GeoDataFrame.index). (#TBA)
 
 Backwards incompatible API changes:
 
