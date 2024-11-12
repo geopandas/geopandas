@@ -14,6 +14,10 @@ Bug fixes:
 
 - Fix an issue that showed numpy dtypes in bbox in `to_geo_dict` and `__geo_interface__`. (#3436)
 
+New features and improvements:
+
+-  `GeoDataFrame.plot` now supports `pd.Index` as an input for the `column` keyword (#3463).
+
 ## Version 1.0.2 (???)
 
 Bug fixes:
