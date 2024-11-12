@@ -14,6 +14,10 @@ Bug fixes:
 
 - Fix an issue that showed numpy dtypes in bbox in `to_geo_dict` and `__geo_interface__`. (#3436)
 
+New features and improvements:
+
+-  `GeoDataFrame.plot` now supports `pd.Index` as an input for the `column` keyword (#3463).
+
 ## Version 1.0.2 (???)
 
 Bug fixes:
@@ -122,8 +126,6 @@ files based on a bounding box, and write out a bounding box column to parquet fi
   instead of its current behaviour of assuming EPSG. In the event the spiatal_ref_sys
   table is not present, or the SRID is not present, `read_postgis` will fallback
   on assuming EPSG CRS authority. (#3329)
-- `plot_dataframe` `column` kwarg will support `pd.Index` to colour based on the
-   geodataframe index (i.e. ``GeoDataFrame.plot(column=GeoDataFrame.index)``). (#3463)
 
 Backwards incompatible API changes:
 
