@@ -6,6 +6,7 @@ import pathlib
 import shutil
 import tempfile
 import warnings
+import zoneinfo
 from collections import OrderedDict
 from packaging.version import Version
 
@@ -46,7 +47,6 @@ except ImportError:
     fiona = False
     FIONA_GE_19 = False
 
-pytz = pytest.importorskip("pytz")
 
 PYOGRIO_MARK = pytest.mark.skipif(not pyogrio, reason="pyogrio not installed")
 FIONA_MARK = pytest.mark.skipif(not fiona, reason="fiona not installed")
@@ -172,7 +172,7 @@ def test_to_file_pathlib(tmpdir, df_nybb, driver, ext, engine):
 @pytest.mark.parametrize("driver,ext", driver_ext_pairs)
 def test_to_file_bool(tmpdir, driver, ext, engine):
     """Test error raise when writing with a boolean column (GH #437)."""
-    tempfilename = os.path.join(str(tmpdir), "temp.{0}".format(ext))
+    tempfilename = os.path.join(str(tmpdir), f"temp.{ext}")
     df = GeoDataFrame(
         {
             "col": [True, False, True],
@@ -196,9 +196,11 @@ def test_to_file_bool(tmpdir, driver, ext, engine):
 
 
 TEST_DATE = datetime.datetime(2021, 11, 21, 1, 7, 43, 17500)
-eastern = pytz.timezone("America/New_York")
-
-datetime_type_tests = (TEST_DATE, eastern.localize(TEST_DATE))
+# from pandas 2.0, utc equality checks less stringent, forward compat with zoneinfo
+utc = datetime.timezone.utc
+eastern = zoneinfo.ZoneInfo("America/New_York")
+test_date_eastern = TEST_DATE.replace(tzinfo=eastern)
+datetime_type_tests = (TEST_DATE, test_date_eastern)
 
 
 @pytest.mark.filterwarnings(
@@ -231,11 +233,11 @@ def test_to_file_datetime(tmpdir, driver, ext, time, engine):
         expected = df["b"].dt.as_unit("ms")
     actual = df_read["b"]
     if df["b"].dt.tz is not None:
-        # US/Eastern becomes pytz.FixedOffset(-300) when read from file
+        # US/Eastern becomes a UTC-5 fixed offset when read from file
         # as GDAL only models offsets, not timezones.
         # Compare fair result in terms of UTC instead
-        expected = expected.dt.tz_convert(pytz.utc)
-        actual = actual.dt.tz_convert(pytz.utc)
+        expected = expected.dt.tz_convert(utc)
+        actual = actual.dt.tz_convert(utc)
 
     assert_series_equal(expected, actual)
 
@@ -311,10 +313,6 @@ def test_read_file_datetime_mixed_offsets(tmpdir):
     res = read_file(tempfilename)
     # Convert mixed timezones to UTC equivalent
     assert is_datetime64_any_dtype(res["date"])
-    if not PANDAS_GE_20:
-        utc = pytz.utc
-    else:
-        utc = datetime.timezone.utc
     assert res["date"].dt.tz == utc
 
 
@@ -1145,7 +1143,7 @@ def test_read_file_empty_shapefile(tmpdir, engine):
     assert all(empty.columns == ["A", "Z", "geometry"])
 
 
-class FileNumber(object):
+class FileNumber:
     def __init__(self, tmpdir, base, ext):
         self.tmpdir = str(tmpdir)
         self.base = base
@@ -1153,7 +1151,7 @@ class FileNumber(object):
         self.fileno = 0
 
     def __repr__(self):
-        filename = "{0}{1:02d}.{2}".format(self.base, self.fileno, self.ext)
+        filename = f"{self.base}{self.fileno:02d}.{self.ext}"
         return os.path.join(self.tmpdir, filename)
 
     def __next__(self):

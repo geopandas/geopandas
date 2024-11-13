@@ -1,3 +1,4 @@
+import os
 import subprocess
 import sys
 
@@ -21,16 +22,19 @@ def test_no_additional_imports():
         "matplotlib",
     }
 
-    code = """
+    code = f"""
 import sys
 import geopandas
-blacklist = {0!r}
+blacklist = {blacklist!r}
 
 mods = blacklist & set(m.split('.')[0] for m in sys.modules)
 if mods:
     sys.stderr.write('err: geopandas should not import: {{}}'.format(', '.join(mods)))
     sys.exit(len(mods))
-""".format(blacklist)
+"""
+    # remove COV_CORE_SOURCE to avoid pytest-cov importing itself in the subprocess
+    env = os.environ.copy()
+    env.pop("COV_CORE_SOURCE", None)
     call = [sys.executable, "-c", code]
-    returncode = subprocess.run(call, check=False).returncode
+    returncode = subprocess.run(call, check=False, env=env).returncode
     assert returncode == 0

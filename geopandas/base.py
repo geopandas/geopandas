@@ -132,7 +132,7 @@ def _delegate_geo_method(op, this, **kwargs):
     return GeoSeries(data, index=this.index, crs=this.crs)
 
 
-class GeoPandasBase(object):
+class GeoPandasBase:
     @property
     def area(self):
         """Returns a ``Series`` containing the area of each geometry in the
@@ -1426,7 +1426,7 @@ GeometryCollection
         dtype: geometry
 
         >>> s.offset_curve(1)
-        0    LINESTRING (-1 0, -1 1, -0.981 1.195, -0.924 1...
+        0    LINESTRING (-1 0, -1 1, -1 1.195, -0.9 1.383, ...
         dtype: geometry
         """
         return _delegate_geo_method(
@@ -5710,7 +5710,7 @@ GeometryCollection
 
         >>> s.skew(45, 30, origin=(0, 0))
         0                                    POINT (2 1.57735)
-        1                   LINESTRING (0 -0.42265, 1 0.57735)
+        1         LINESTRING (1.11022e-16 -0.42265, 1 0.57735)
         2    POLYGON ((2 0.73205, 4 2.3094, 4 2.73205, 2 0....
         dtype: geometry
         """
@@ -6182,7 +6182,7 @@ def _get_index_for_parts(orig_idx, outer_idx, ignore_index, index_parts):
     return index
 
 
-class _CoordinateIndexer(object):
+class _CoordinateIndexer:
     # see docstring GeoPandasBase.cx property above
 
     def __init__(self, obj):

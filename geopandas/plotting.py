@@ -59,7 +59,7 @@ def _expand_kwargs(kwargs, multiindex):
     it (in place) to the correct length/formats with help of 'multiindex', unless
     the value appears to already be a valid (single) value for the key.
     """
-    from typing import Iterable
+    from collections.abc import Iterable
 
     from matplotlib.colors import is_color_like
 
@@ -514,11 +514,11 @@ def plot_dataframe(
 
     Parameters
     ----------
-    column : str, np.array, pd.Series (default None)
-        The name of the dataframe column, np.array, or pd.Series to be plotted.
-        If np.array or pd.Series are used then it must have same length as
-        dataframe. Values are used to color the plot. Ignored if `color` is
-        also set.
+    column : str, np.array, pd.Series, pd.Index (default None)
+        The name of the dataframe column, np.array, pd.Series, or pd.Index
+        to be plotted. If np.array, pd.Series, or pd.Index are used then it
+        must have same length as dataframe. Values are used to color the plot.
+        Ignored if `color` is also set.
     kind: str
         The kind of plots to produce. The default is to create a map ("geo").
         Other supported kinds of plots from pandas:
@@ -699,11 +699,13 @@ def plot_dataframe(
         )
 
     # To accept pd.Series and np.arrays as column
-    if isinstance(column, (np.ndarray, pd.Series)):
+    if isinstance(column, np.ndarray | pd.Series | pd.Index):
         if column.shape[0] != df.shape[0]:
             raise ValueError(
                 "The dataframe and given column have different number of rows."
             )
+        elif isinstance(column, pd.Index):
+            values = column.values
         else:
             values = column
 
@@ -792,7 +794,7 @@ def plot_dataframe(
         if missing:
             raise ValueError(
                 "Column contains values not listed in categories. "
-                "Missing categories: {}.".format(missing)
+                f"Missing categories: {missing}."
             )
 
         values = cat.codes[~nan_idx]

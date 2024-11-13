@@ -1835,6 +1835,8 @@ def test_column_values():
     t2 = Polygon([(1, 0), (2, 0), (2, 1)])
     polys = GeoSeries([t1, t2], index=list("AB"))
     df = GeoDataFrame({"geometry": polys, "values": [0, 1]})
+    numeric_index_polys = GeoSeries([t1, t2], index=[0, 1])
+    numeric_index_df = GeoDataFrame({"geometry": numeric_index_polys, "values": [0, 1]})
 
     # Test with continuous values
     ax = df.plot(column="values")
@@ -1853,6 +1855,11 @@ def test_column_values():
     colors_series = ax.collections[0].get_facecolors()
     np.testing.assert_array_equal(colors, colors_series)
     ax = df.plot(column=df["values"].values, categorical=True)
+    colors_array = ax.collections[0].get_facecolors()
+    np.testing.assert_array_equal(colors, colors_array)
+
+    # Test with pd.Index
+    ax = numeric_index_df.plot(column=numeric_index_df.index, categorical=True)
     colors_array = ax.collections[0].get_facecolors()
     np.testing.assert_array_equal(colors, colors_array)
 
@@ -1916,9 +1923,9 @@ def _check_colors(N, actual_colors, expected_colors, alpha=None):
     ), "Different lengths of actual and expected colors!"
 
     for actual, expected in zip(all_actual_colors, expected_colors):
-        assert actual == conv.to_rgba(expected, alpha=alpha), "{} != {}".format(
-            actual, conv.to_rgba(expected, alpha=alpha)
-        )
+        assert actual == conv.to_rgba(
+            expected, alpha=alpha
+        ), f"{actual} != {conv.to_rgba(expected, alpha=alpha)}"
 
 
 def _style_to_linestring_onoffseq(linestyle, linewidth):
@@ -1947,7 +1954,7 @@ def _get_ax(fig, label):
     for ax in fig.axes:
         if ax.get_label() == label:
             return ax
-    raise ValueError("no ax found with label {0}".format(label))
+    raise ValueError(f"no ax found with label {label}")
 
 
 def _get_colorbar_ax(fig):
