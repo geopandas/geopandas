@@ -3,6 +3,7 @@
 ## Version 1.1.0
 
 Notes on dependencies:
+
 - GeoPandas 1.1 now requires Python 3.10 or greater and pandas 2.0, numpy 1.24, pyproj 3.5,
   are now the minimum required version for these dependencies.
   Furthermore, the minimum tested version for optional dependencies has been updated to
@@ -10,14 +11,17 @@ Notes on dependencies:
   SQLAlchemy 2.0. Older versions of these libraries may continue to work, but are no longer
   considered supported (#3371).
 
+New features and improvements:
+
+- Add ``grid_size`` parameter to ``union_all`` and ``dissolve`` (#3445).
+
 Bug fixes:
 
 - Fix an issue that showed numpy dtypes in bbox in `to_geo_dict` and `__geo_interface__`. (#3436)
 
-Deprecations and compatibility notes:
+New features and improvements:
 
-- The `GeoSeries.append` method wrapping the removed pandas `Series.append` method has been
-  removed (#3460).
+- `GeoDataFrame.plot` now supports `pd.Index` as an input for the `column` keyword (#3463).
 
 ## Version 1.0.2 (???)
 
@@ -28,11 +32,11 @@ Bug fixes:
 - Properly support named aggregations over a geometry column in `GroupBy.agg` (#3368).
 - Support GeoDataFrame constructor receiving arguments to `geometry` which are not
   (Geo)Series, but instead should be interpreted as column names, like Enums (#3384).
-- Fix regression where constructing a GeoSeries from a pd.Series with GeometryDtype values 
+- Fix regression where constructing a GeoSeries from a pd.Series with GeometryDtype values
   failed when `crs` was provided (#3383).
 - Fix regression where `overlay` with `keep_geom_type` returns wrong results if the
   input contains invalid geometries (#3395).
-- Fix the dtype of the GeometryArray backing data being incorrect for zero length 
+- Fix the dtype of the GeometryArray backing data being incorrect for zero length
   GeoDataFrames causing errors in `overlay` (3424).
 
 Deprecations and compatibility notes:
