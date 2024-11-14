@@ -855,7 +855,7 @@ def _read_feather(path, columns=None, to_pandas_kwargs=None, **kwargs):
     path = _expand_user(path)
 
     table = feather.read_table(path, columns=columns, **kwargs)
-    return _arrow_to_geopandas(table, to_pandas_kwargs)
+    return _arrow_to_geopandas(table, to_pandas_kwargs=to_pandas_kwargs)
 
 
 def _get_parquet_bbox_filter(geo_metadata, bbox):
