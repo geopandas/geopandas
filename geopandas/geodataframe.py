@@ -2066,25 +2066,7 @@ default 'snappy'
 
         # Process non-spatial component
         data = self.drop(labels=self.geometry.name, axis=1)
-        with warnings.catch_warnings(record=True) as record:
-            aggregated_data = data.groupby(**groupby_kwargs).agg(aggfunc, **kwargs)
-        for w in record:
-            if str(w.message).startswith("The default value of numeric_only"):
-                msg = (
-                    f"The default value of numeric_only in aggfunc='{aggfunc}' "
-                    "within pandas.DataFrameGroupBy.agg used in dissolve is "
-                    "deprecated. In pandas 2.0, numeric_only will default to False. "
-                    "Either specify numeric_only as additional argument in dissolve() "
-                    "or select only columns which should be valid for the function."
-                )
-                warnings.warn(msg, FutureWarning, stacklevel=2)
-            else:
-                # Only want to capture specific warning,
-                # other warnings from pandas should be passed through
-                # TODO this is not an ideal approach
-                warnings.showwarning(
-                    w.message, w.category, w.filename, w.lineno, w.file, w.line
-                )
+        aggregated_data = data.groupby(**groupby_kwargs).agg(aggfunc, **kwargs)
 
         aggregated_data.columns = aggregated_data.columns.to_flat_index()
 

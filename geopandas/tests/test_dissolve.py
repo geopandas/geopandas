@@ -5,7 +5,7 @@ import pandas as pd
 
 import geopandas
 from geopandas import GeoDataFrame, read_file
-from geopandas._compat import HAS_PYPROJ, PANDAS_GE_20, PANDAS_GE_30
+from geopandas._compat import HAS_PYPROJ, PANDAS_GE_30
 
 import pytest
 from geopandas.testing import assert_geodataframe_equal, geom_almost_equals
@@ -96,10 +96,7 @@ def test_dissolve_emits_other_warnings(nybb_polydf):
     # test to be true on any version
     def sum_and_warn(group):
         warnings.warn("foo")  # noqa: B028
-        if PANDAS_GE_20:
-            return group.sum(numeric_only=False)
-        else:
-            return group.sum()
+        return group.sum(numeric_only=False)
 
     with pytest.warns(UserWarning, match="foo"):
         nybb_polydf.dissolve("manhattan_bronx", aggfunc=sum_and_warn)
