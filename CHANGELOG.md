@@ -18,6 +18,7 @@ New features and improvements:
 Bug fixes:
 
 - Fix an issue that showed numpy dtypes in bbox in `to_geo_dict` and `__geo_interface__`. (#3436)
+- Fix an issue in `sample_points` that could occasionally result in non-uniform distribution (#3471å)
 
 New features and improvements:
 
