@@ -69,13 +69,14 @@ def test_uniform_generator(polygons):
     assert not sample.equals(gen_sample2)
 
 
-def test_unimodality():  # GH 3470
+@pytest.mark.parametrize("size", range(5, 12))
+def test_unimodality(size):  # GH 3470
     circle = shapely.Point(0, 0).buffer(1)
     generator = numpy.random.default_rng(seed=1)
     centers_x = []
     centers_y = []
-    for i in range(200):
-        pts = shapely.get_coordinates(uniform(circle, size=2**10, rng=generator))
+    for _ in range(200):
+        pts = shapely.get_coordinates(uniform(circle, size=2**size, rng=generator))
         centers_x.append(numpy.mean(pts[:, 0]))
         centers_y.append(numpy.mean(pts[:, 1]))
 
