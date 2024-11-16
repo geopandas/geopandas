@@ -9,7 +9,7 @@ import shapely.affinity
 import shapely.geometry
 import shapely.wkb
 import shapely.wkt
-from shapely import geos_version
+from shapely import MultiPolygon, Polygon, geos_version
 from shapely.geometry.base import CAP_STYLE, JOIN_STYLE
 
 import geopandas
@@ -691,6 +691,44 @@ def test_union_all():
 
     with pytest.raises(ValueError, match="Method 'invalid' not recognized."):
         G.union_all(method="invalid")
+
+
+@pytest.mark.parametrize(
+    "grid_size, expected",
+    [
+        (
+            None,
+            MultiPolygon(
+                [
+                    Polygon([(0, 0), (10, 0), (10, 10)]),
+                    Polygon([(0, 0.4), (4.6, 5), (0, 5)]),
+                ]
+            ),
+        ),
+        (1, Polygon([(0, 5), (5, 5), (10, 10), (10, 0), (0, 0)])),
+    ],
+)
+def test_union_all_grid_size(grid_size, expected):
+    geoms = [
+        Polygon([(0, 0), (10, 0), (10, 10)]),
+        Polygon([(0, 0.4), (4.6, 5), (0, 5)]),
+    ]
+    G = from_shapely(geoms)
+    u = G.union_all(grid_size=grid_size)
+    assert u.equals(expected)
+
+
+def test_union_all_grid_size_error():
+    geoms = [
+        shapely.geometry.Polygon([(0, 0), (0, 1), (1, 1)]),
+        shapely.geometry.Polygon([(0, 0), (1, 0), (1, 1)]),
+    ]
+    G = from_shapely(geoms)
+
+    with pytest.raises(
+        ValueError, match="grid_size is not supported for method 'coverage'"
+    ):
+        G.union_all(method="coverage", grid_size=1)
 
 
 @pytest.mark.parametrize(
