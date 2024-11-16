@@ -11,7 +11,7 @@ dependencies:
   - packaging
   # testing
   - pytest
-  - pytest-cov==5.0.0
+  - pytest-cov
   - pytest-xdist
   - fsspec
   - pytz
