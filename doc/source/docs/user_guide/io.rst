@@ -86,7 +86,7 @@ Using Arrow for faster reading
 
 For faster data reading, pass ``use_arrow=True`` when using the default pyogrio engine. This can be 2-4 times faster than the default reading behavior and works with all drivers. See `pyogrio.read_dataframe <https://pyogrio.readthedocs.io/en/latest/api.html#pyogrio.read_dataframe>`_ for full details.
 
-It is also possible to enable this by default by setting the environment variable ``PYOGRIO_USE_ARROW=1``.
+It is also possible to enable this by default by setting the environment variable ``PYOGRIO_USE_ARROW=1`` (which will also enable writing data using arrow).
 
 Note that this requires the ``pyarrow`` dependency to exist in your environment.
 
