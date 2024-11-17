@@ -1,0 +1,38 @@
+name: test
+channels:
+  - conda-forge
+dependencies:
+  - python=3.12
+  - cython
+  # required
+  - pyproj
+  - gdal
+  - geos
+  - packaging
+  # testing
+  - pytest
+  - pytest-cov
+  - pytest-xdist
+  - fsspec
+
+  # optional
+  #- geopy
+  - SQLalchemy<2.1 # test oldest support sqlalchemy version
+  - libspatialite
+  - pip
+  - pip:
+    - geopy
+    - mapclassify>=2.5.0
+    # dev versions of packages
+    - --pre --index-url https://pypi.anaconda.org/scientific-python-nightly-wheels/simple --extra-index-url https://pypi.fury.io/arrow-nightlies/ --extra-index-url https://pypi.org/simple
+    - numpy>=2.0.0
+    - fiona
+    - pandas
+    - matplotlib
+    - pyarrow
+    - git+https://github.com/shapely/shapely.git@main
+    - git+https://github.com/python-visualization/folium.git@main
+    - git+https://github.com/python-visualization/branca.git@main
+    - git+https://github.com/geopandas/xyzservices.git@main
+    - git+https://github.com/geopandas/geodatasets.git@main
+    - git+https://github.com/geopandas/pyogrio.git@main

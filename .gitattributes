@@ -1,1 +1,3 @@
 geopandas/_version.py export-subst
+# GitHub syntax highlighting
+pixi.lock linguist-language=YAML linguist-generated=true

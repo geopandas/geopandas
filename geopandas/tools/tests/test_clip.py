@@ -1,31 +1,29 @@
 """Tests for the clip module."""
 
-from packaging.version import Version
-
 import numpy as np
 import pandas as pd
 
 import shapely
 from shapely.geometry import (
-    Polygon,
-    Point,
-    LineString,
-    LinearRing,
     GeometryCollection,
+    LinearRing,
+    LineString,
     MultiPoint,
+    Point,
+    Polygon,
     box,
 )
 
 import geopandas
 from geopandas import GeoDataFrame, GeoSeries, clip
-
-from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
-import pytest
-
+from geopandas._compat import HAS_PYPROJ
+from geopandas.array import POLYGON_GEOM_TYPES
 from geopandas.tools.clip import _mask_is_list_like_rectangle
 
-pytestmark = pytest.mark.skip_no_sindex
-pandas_133 = Version(pd.__version__) == Version("1.3.3")
+import pytest
+from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
+from pandas.testing import assert_index_equal
+
 mask_variants_single_rectangle = [
     "single_rectangle_gdf",
     "single_rectangle_gdf_list_bounds",
@@ -42,6 +40,14 @@ mask_variants_large_rectangle = [
 def point_gdf():
     """Create a point GeoDataFrame."""
     pts = np.array([[2, 2], [3, 4], [9, 8], [-12, -15]])
+    gdf = GeoDataFrame([Point(xy) for xy in pts], columns=["geometry"], crs="EPSG:3857")
+    return gdf
+
+
+@pytest.fixture
+def point_gdf2():
+    """Create a point GeoDataFrame."""
+    pts = np.array([[5, 5], [2, 2], [4, 4], [0, 0], [3, 3], [1, 1]])
     gdf = GeoDataFrame([Point(xy) for xy in pts], columns=["geometry"], crs="EPSG:3857")
     return gdf
 
@@ -140,7 +146,7 @@ def two_line_gdf():
 @pytest.fixture
 def multi_poly_gdf(donut_geometry):
     """Create a multi-polygon GeoDataFrame."""
-    multi_poly = donut_geometry.unary_union
+    multi_poly = donut_geometry.union_all()
     out_df = GeoDataFrame(geometry=GeoSeries(multi_poly), crs="EPSG:3857")
     out_df["attr"] = ["pool"]
     return out_df
@@ -151,7 +157,7 @@ def multi_line(two_line_gdf):
     """Create a multi-line GeoDataFrame.
     This GDF has one multiline and one regular line."""
     # Create a single and multi line object
-    multiline_feat = two_line_gdf.unary_union
+    multiline_feat = two_line_gdf.union_all()
     linec = LineString([(2, 1), (3, 1), (4, 1), (5, 2)])
     out_df = GeoDataFrame(geometry=GeoSeries([multiline_feat, linec]), crs="EPSG:3857")
     out_df["attr"] = ["road", "stream"]
@@ -161,7 +167,7 @@ def multi_line(two_line_gdf):
 @pytest.fixture
 def multi_point(point_gdf):
     """Create a multi-point GeoDataFrame."""
-    multi_point = point_gdf.unary_union
+    multi_point = point_gdf.union_all()
     out_df = GeoDataFrame(
         geometry=GeoSeries(
             [multi_point, Point(2, 5), Point(-11, -14), Point(-10, -12)]
@@ -289,7 +295,6 @@ class TestClipWithSingleRectangleGdf:
         assert len(clipped_poly) == 3
         assert all(clipped_poly.geom_type == "Polygon")
 
-    @pytest.mark.xfail(pandas_133, reason="Regression in pandas 1.3.3 (GH #2101)")
     def test_clip_multipoly_keep_geom_type(self, multi_poly_gdf, mask):
         """Test a multi poly object where the return includes a sliver.
         Also the bounds of the object should == the bounds of the clip object
@@ -300,7 +305,7 @@ class TestClipWithSingleRectangleGdf:
         )
         assert np.array_equal(clipped.total_bounds, expected_bounds)
         # Assert returned data is a not geometry collection
-        assert (clipped.geom_type.isin(["Polygon", "MultiPolygon"])).all()
+        assert (clipped.geom_type.isin(POLYGON_GEOM_TYPES)).all()
 
     def test_clip_multiline(self, multi_line, mask):
         """Test that clipping a multiline feature with a poly returns expected
@@ -325,7 +330,7 @@ class TestClipWithSingleRectangleGdf:
         )
         assert clipped.iloc[0].geometry.wkt == clipped_mutltipoint.wkt
         shape_for_points = (
-            box(*mask) if _mask_is_list_like_rectangle(mask) else mask.unary_union
+            box(*mask) if _mask_is_list_like_rectangle(mask) else mask.union_all()
         )
         assert all(clipped.intersects(shape_for_points))
 
@@ -392,7 +397,6 @@ def test_clip_line_keep_slivers(sliver_line, single_rectangle_gdf):
     assert "LineString" == clipped.geom_type[1]
 
 
-@pytest.mark.xfail(pandas_133, reason="Regression in pandas 1.3.3 (GH #2101)")
 def test_clip_multipoly_keep_slivers(multi_poly_gdf, single_rectangle_gdf):
     """Test a multi poly object where the return includes a sliver.
     Also the bounds of the object should == the bounds of the clip object
@@ -403,6 +407,7 @@ def test_clip_multipoly_keep_slivers(multi_poly_gdf, single_rectangle_gdf):
     assert "GeometryCollection" in clipped.geom_type[0]
 
 
+@pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not available")
 def test_warning_crs_mismatch(point_gdf, single_rectangle_gdf):
     with pytest.warns(UserWarning, match="CRS mismatch between the CRS"):
         clip(point_gdf, single_rectangle_gdf.to_crs(4326))
@@ -465,3 +470,16 @@ def test_clip_empty_mask(buffered_locations, mask):
     )
     clipped = clip(buffered_locations.geometry, mask)
     assert_geoseries_equal(clipped, GeoSeries([], crs="EPSG:3857"))
+
+
+def test_clip_sorting(point_gdf2):
+    """Test the sorting kwarg in clip"""
+    bbox = shapely.geometry.box(0, 0, 2, 2)
+    unsorted_clipped_gdf = point_gdf2.clip(bbox)
+    sorted_clipped_gdf = point_gdf2.clip(bbox, sort=True)
+
+    expected_sorted_index = pd.Index([1, 3, 5])
+
+    assert not (sorted(unsorted_clipped_gdf.index) == unsorted_clipped_gdf.index).all()
+    assert (sorted(sorted_clipped_gdf.index) == sorted_clipped_gdf.index).all()
+    assert_index_equal(expected_sorted_index, sorted_clipped_gdf.index)

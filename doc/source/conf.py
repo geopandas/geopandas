@@ -107,7 +107,7 @@ master_doc = "index"
 
 # General information about the project.
 project = "GeoPandas"
-copyright = "2013–2022, GeoPandas developers"
+copyright = "2013–, GeoPandas developers"
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -246,6 +246,13 @@ html_additional_pages = {page[0]: "redirect.html" for page in moved_pages}
 
 html_context = {"redirects": {old: new for old, new in moved_pages}}
 
+# Define the canonical URL if you are using a custom domain on Read the Docs
+html_baseurl = os.environ.get("READTHEDOCS_CANONICAL_URL", "")
+
+# Tell Jinja2 templates the build is running on Read the Docs
+if os.environ.get("READTHEDOCS", "") == "True":
+    html_context["READTHEDOCS"] = True
+
 # If false, no module index is generated.
 # html_domain_indices = True
 
@@ -383,8 +390,8 @@ intersphinx_mapping = {
         "https://fiona.readthedocs.io/en/stable/objects.inv",
     ),
     "folium": (
-        "https://python-visualization.github.io/folium/",
-        "https://python-visualization.github.io/folium/objects.inv",
+        "https://python-visualization.github.io/folium/latest",
+        "https://python-visualization.github.io/folium/latest/objects.inv",
     ),
     "geoplot": (
         "https://residentmario.github.io/geoplot/index.html",
@@ -415,10 +422,6 @@ intersphinx_mapping = {
         "https://pyepsg.readthedocs.io/en/stable/",
         "https://pyepsg.readthedocs.io/en/stable/objects.inv",
     ),
-    "pygeos": (
-        "https://pygeos.readthedocs.io/en/latest/",
-        "https://pygeos.readthedocs.io/en/latest/objects.inv",
-    ),
     "pyproj": (
         "https://pyproj4.github.io/pyproj/stable/",
         "https://pyproj4.github.io/pyproj/stable/objects.inv",
@@ -426,10 +429,6 @@ intersphinx_mapping = {
     "python": (
         "https://docs.python.org/3",
         "https://docs.python.org/3/objects.inv",
-    ),
-    "rtree": (
-        "https://rtree.readthedocs.io/en/stable/",
-        "https://rtree.readthedocs.io/en/stable/objects.inv",
     ),
     "rasterio": (
         "https://rasterio.readthedocs.io/en/stable/",

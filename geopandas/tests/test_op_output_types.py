@@ -1,12 +1,15 @@
+import numpy as np
 import pandas as pd
-import pyproj
-import pytest
 
 from shapely.geometry import Point
-import numpy as np
 
+import geopandas
 from geopandas import GeoDataFrame, GeoSeries
 
+import pytest
+from geopandas.testing import assert_geodataframe_equal
+
+pyproj = pytest.importorskip("pyproj")
 
 crs_osgb = pyproj.CRS(27700)
 crs_wgs = pyproj.CRS(4326)
@@ -142,6 +145,32 @@ def test_loc(df):
     assert_object(df.loc[:, geo_name], GeoSeries, geo_name)
     assert_object(df.loc[:, "geometry2"], GeoSeries, "geometry2", crs=crs_osgb)
     assert_object(df.loc[:, "value1"], pd.Series)
+
+
+@pytest.mark.parametrize(
+    "geom_name",
+    [
+        "geometry",
+        pytest.param(
+            "geom",
+            marks=pytest.mark.xfail(
+                reason="pre-regression behaviour only works for geometry col geometry"
+            ),
+        ),
+    ],
+)
+def test_loc_add_row(geom_name, nybb_filename):
+    # https://github.com/geopandas/geopandas/issues/3119
+
+    nybb = geopandas.read_file(nybb_filename)[["BoroCode", "geometry"]]
+    if geom_name != "geometry":
+        nybb = nybb.rename_geometry(geom_name)
+    # crs_orig = nybb.crs
+
+    # add a new row
+    nybb.loc[5] = [6, nybb.geometry.iloc[0]]
+    assert nybb.geometry.dtype == "geometry"
+    assert nybb.crs is None  # TODO this should be crs_orig, regressed in #2373
 
 
 def test_iloc(df):
@@ -284,7 +313,7 @@ def test_expandim_in_groupby_aggregate_multiple_funcs():
     s = GeoSeries.from_xy([0, 1, 2], [0, 1, 3])
 
     def union(s):
-        return s.unary_union
+        return s.union_all()
 
     def total_area(s):
         return s.area.sum()
@@ -340,7 +369,7 @@ def test_constructor_sliced_row_slices(df2, column_set):
     assert isinstance(df_subset, GeoDataFrame)
     res = df_subset.loc[0]
     # row slices shouldn't be GeoSeries, even if they have a geometry col
-    assert type(res) == pd.Series
+    assert type(res) is pd.Series
     if "geometry" in column_set:
         assert not isinstance(res.geometry, pd.Series)
         assert res.geometry == Point(0, 0)
@@ -351,22 +380,32 @@ def test_constructor_sliced_column_slices(df2):
     geo_idx = df2.columns.get_loc("geometry")
     sub = df2.head(1)
     # column slices should be GeoSeries if of geometry type
-    assert type(sub.iloc[:, geo_idx]) == GeoSeries
-    assert type(sub.iloc[[0], geo_idx]) == GeoSeries
+    assert type(sub.iloc[:, geo_idx]) is GeoSeries
+    assert type(sub.iloc[[0], geo_idx]) is GeoSeries
     sub = df2.head(2)
-    assert type(sub.iloc[:, geo_idx]) == GeoSeries
-    assert type(sub.iloc[[0, 1], geo_idx]) == GeoSeries
+    assert type(sub.iloc[:, geo_idx]) is GeoSeries
+    assert type(sub.iloc[[0, 1], geo_idx]) is GeoSeries
 
     # check iloc row slices are pd.Series instead
-    assert type(df2.iloc[0, :]) == pd.Series
+    assert type(df2.iloc[0, :]) is pd.Series
 
 
 def test_constructor_sliced_in_pandas_methods(df2):
     # constructor sliced is used in many places, checking a sample of non
     # geometry cases are sensible
-    assert type(df2.count()) == pd.Series
+    assert type(df2.count()) is pd.Series
     # drop the secondary geometry columns as not hashable
     hashable_test_df = df2.drop(columns=["geometry2", "geometry3"])
-    assert type(hashable_test_df.duplicated()) == pd.Series
-    assert type(df2.quantile(numeric_only=True)) == pd.Series
-    assert type(df2.memory_usage()) == pd.Series
+    assert type(hashable_test_df.duplicated()) is pd.Series
+    assert type(df2.quantile(numeric_only=True)) is pd.Series
+    assert type(df2.memory_usage()) is pd.Series
+
+
+def test_merge_preserve_geodataframe():
+    # https://github.com/geopandas/geopandas/issues/2932
+    ser = GeoSeries.from_xy([1], [1])
+    df = GeoDataFrame({"geo": ser})
+    res = df.merge(df, left_index=True, right_index=True)
+    assert_obj_no_active_geo_col(res, GeoDataFrame, geo_colname=None)
+    expected = GeoDataFrame({"geo_x": ser, "geo_y": ser})
+    assert_geodataframe_equal(expected, res)

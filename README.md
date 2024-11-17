@@ -57,14 +57,11 @@ for all details. GeoPandas depends on the following packages:
 
 - ``pandas``
 - ``shapely``
-- ``fiona``
+- ``pyogrio``
 - ``pyproj``
 - ``packaging``
 
-Further, ``matplotlib`` is an optional dependency, required
-for plotting, and [``rtree``](https://github.com/Toblerity/rtree) is an optional
-dependency, required for spatial joins. ``rtree`` requires the C library [``libspatialindex``](https://github.com/libspatialindex/libspatialindex).
-
+Further, ``matplotlib`` is an optional dependency, required for plotting.
 Those packages depend on several low-level libraries for geospatial analysis, which can be a challenge to install. Therefore, we recommend to install GeoPandas using the [conda package manager](https://conda.io/en/latest/). See the [installation docs](https://geopandas.readthedocs.io/en/latest/install.html) for more details.
 
 Get in touch
@@ -117,7 +114,7 @@ GeoPandas objects also know how to plot themselves. GeoPandas uses
 
     >>> g.plot()
 
-GeoPandas also implements alternate constructors that can read any data format recognized by [fiona](http://fiona.readthedocs.io/en/latest/). To read a zip file containing an ESRI shapefile with the [boroughs boundaries of New York City](https://data.cityofnewyork.us/City-Government/Borough-Boundaries/tqmj-j8zm) (the example can be fetched using the [`geodatasets`](https://geodatasets.readthedocs.io/en/latest/) package):
+GeoPandas also implements alternate constructors that can read any data format recognized by [pyogrio](http://pyogrio.readthedocs.io/en/latest/). To read a zip file containing an ESRI shapefile with the [boroughs boundaries of New York City](https://data.cityofnewyork.us/City-Government/Borough-Boundaries/tqmj-j8zm) (the example can be fetched using the [`geodatasets`](https://geodatasets.readthedocs.io/en/latest/) package):
 
     >>> import geodatasets
     >>> nybb_path = geodatasets.get_path('nybb')

@@ -12,19 +12,20 @@ on:
 jobs:
   versioneer:
     runs-on: ubuntu-latest
+    if: github.repository == 'geopandas/geopandas'
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
       - name: Install and run versioneer
         run: |
           pip install versioneer
           versioneer install
-      - name: Blacken code
-        uses: psf/black@stable
-        with:
-          options: "--verbose"
+      - name: Run pre-commit
+        run: |
+          pip install pre-commit
+          pre-commit run --all-files
       - name: Upload artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           path: versioneer.py
       - name: Ignore changes in __init__
@@ -32,7 +33,7 @@ jobs:
           git reset -- geopandas/__init__.py
           git checkout -- geopandas/__init__.py
       - name: Create PR
-        uses: peter-evans/create-pull-request@v5
+        uses: peter-evans/create-pull-request@v7
         with:
           title: "Update Versioneer"
           branch: update-versioneer
