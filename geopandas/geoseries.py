@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import typing
 import warnings
-from packaging.version import Version
 from typing import Any
 
 import numpy as np
@@ -233,9 +232,6 @@ class GeoSeries(GeoPandasBase, Series):
         super().__init__(data, index=index, name=name, **kwargs)
         if not self.crs:
             self.crs = crs
-
-    def append(self, *args, **kwargs) -> GeoSeries:
-        return self._wrapped_pandas_method("append", *args, **kwargs)
 
     @GeoPandasBase.crs.setter
     def crs(self, value):
@@ -1445,8 +1441,6 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
         ]
 
         """
-        import pyarrow as pa
-
         from geopandas.io._geoarrow import (
             GeoArrowArray,
             construct_geometry_array,
@@ -1456,9 +1450,6 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
         field_name = self.name if self.name is not None else ""
 
         if geometry_encoding.lower() == "geoarrow":
-            if Version(pa.__version__) < Version("10.0.0"):
-                raise ValueError("Converting to 'geoarrow' requires pyarrow >= 10.0.")
-
             field, geom_arr = construct_geometry_array(
                 np.array(self.array),
                 include_z=include_z,

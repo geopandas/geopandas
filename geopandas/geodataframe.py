@@ -1046,8 +1046,8 @@ individually so that features may have different properties
                 f"'{self._geometry_column_name}')."
             )
 
-        ids = np.array(self.index, copy=False)
-        geometries = np.array(self[self._geometry_column_name], copy=False)
+        ids = np.asarray(self.index)
+        geometries = np.asarray(self[self._geometry_column_name])
 
         if not self.columns.is_unique:
             raise ValueError("GeoDataFrame cannot contain duplicated column names.")
@@ -1160,7 +1160,7 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
         }
 
         if show_bbox:
-            geo["bbox"] = tuple(self.total_bounds)
+            geo["bbox"] = tuple(self.total_bounds.tolist())  # tolist to avoid np dtypes
 
         return geo
 
@@ -1962,6 +1962,7 @@ default 'snappy'
         observed=False,
         dropna=True,
         method="unary",
+        grid_size=None,
         **kwargs,
     ):
         """
@@ -2016,6 +2017,19 @@ default 'snappy'
               unary union algorithm. However, it can produce invalid geometries if the
               polygons overlap.
 
+        grid_size : float, default None
+            When grid size is specified, a fixed-precision space is used to perform the
+            union operations. This can be useful when unioning geometries that are not
+            perfectly snapped or to avoid geometries not being unioned because of
+            `robustness issues <https://libgeos.org/usage/faq/#why-doesnt-a-computed-point-lie-exactly-on-a-line>`_.
+            The inputs are first snapped to a grid of the given size. When a line
+            segment of a geometry is within tolerance off a vertex of another geometry,
+            this vertex will be inserted in the line segment. Finally, the result
+            vertices are computed on the same grid. Is only supported for ``method``
+            ``"unary"``. If None, the highest precision of the inputs will be used.
+            Defaults to None.
+
+            .. versionadded:: 1.1.0
         **kwargs :
             Keyword arguments to be passed to the pandas `DataFrameGroupby.agg` method
             which is used by `dissolve`. In particular, `numeric_only` may be
@@ -2090,7 +2104,7 @@ default 'snappy'
 
         # Process spatial component
         def merge_geometries(block):
-            merged_geom = block.union_all(method=method)
+            merged_geom = block.union_all(method=method, grid_size=grid_size)
             return merged_geom
 
         g = self.groupby(group_keys=False, **groupby_kwargs)[self.geometry.name].agg(
