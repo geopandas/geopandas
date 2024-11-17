@@ -2210,35 +2210,6 @@ default 'snappy'
 
         return df
 
-    # overrides the pandas astype method to ensure the correct return type
-    # should be removable when pandas 1.4 is dropped
-    def astype(self, dtype, copy=None, errors="raise", **kwargs):
-        """
-        Cast a pandas object to a specified dtype ``dtype``.
-        Returns a GeoDataFrame when the geometry column is kept as geometries,
-        otherwise returns a pandas DataFrame.
-        See the pandas.DataFrame.astype docstring for more details.
-        Returns
-        -------
-        GeoDataFrame or DataFrame
-        """
-        if not PANDAS_GE_30 and copy is None:
-            copy = True
-        if copy is not None:
-            kwargs["copy"] = copy
-
-        df = super().astype(dtype, errors=errors, **kwargs)
-
-        try:
-            geoms = df[self._geometry_column_name]
-            if is_geometry_type(geoms):
-                return geopandas.GeoDataFrame(df, geometry=self._geometry_column_name)
-        except KeyError:
-            pass
-        # if the geometry column is converted to non-geometries or did not exist
-        # do not return a GeoDataFrame
-        return pd.DataFrame(df)
-
     def to_postgis(
         self,
         name,
