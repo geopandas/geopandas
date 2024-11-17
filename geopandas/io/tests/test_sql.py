@@ -767,7 +767,7 @@ class TestIO:
 
     @pytest.mark.parametrize("engine_postgis", POSTGIS_DRIVERS, indirect=True)
     @pytest.mark.xfail(
-        compat.PANDAS_GE_20 and not compat.PANDAS_GE_202,
+        not compat.PANDAS_GE_202,
         reason="Duplicate columns are dropped in read_sql with pandas 2.0.0 and 2.0.1",
     )
     def test_duplicate_geometry_column_fails(self, engine_postgis):

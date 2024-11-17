@@ -11,6 +11,7 @@ New features and improvements:
 Bug fixes:
 
 - Fix an issue that showed numpy dtypes in bbox in `to_geo_dict` and `__geo_interface__`. (#3436)
+- Fix an issue in `sample_points` that could occasionally result in non-uniform distribution (#3470).
 - Fix unspecified layer warning being emitted while reading multilayer datasets, even
   when layer is specified when using the mask or bbox keywords (#3378).
 - Properly support named aggregations over a geometry column in `GroupBy.agg` (#3368).
