@@ -30,7 +30,7 @@ else:
 
 if typing.TYPE_CHECKING:
     import os
-    from typing import Iterable
+    from collections.abc import Iterable
 
     import folium
     import sqlalchemy.text
@@ -163,7 +163,12 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
     _geometry_column_name = None
 
     def __init__(
-        self, data=None, *args, geometry: Any = None, crs: Any | None = None, **kwargs
+        self,
+        data=None,
+        *args,
+        geometry: Any | None = None,
+        crs: Any | None = None,
+        **kwargs,
     ):
         if (
             kwargs.get("copy") is None
@@ -248,7 +253,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         else:
             super().__setattr__(attr, val)
 
-    def _get_geometry(self):
+    def _get_geometry(self) -> GeoSeries:
         if self._geometry_column_name not in self:
             if self._geometry_column_name is None:
                 msg = (
@@ -468,18 +473,18 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
     @typing.overload
     def rename_geometry(
         self,
-        col,
+        col: str,
         inplace: Literal[True] = ...,
     ) -> None: ...
 
     @typing.overload
     def rename_geometry(
         self,
-        col,
+        col: str,
         inplace: Literal[False] = ...,
     ) -> GeoDataFrame: ...
 
-    def rename_geometry(self, col, inplace: bool = False) -> GeoDataFrame | None:
+    def rename_geometry(self, col: str, inplace: bool = False) -> GeoDataFrame | None:
         """
         Renames the GeoDataFrame geometry column to
         the specified name. By default yields a new object.
@@ -1180,7 +1185,7 @@ individually so that features may have different properties
                 yield feature
 
     def to_geo_dict(
-        self, na="null", show_bbox: bool = False, drop_id: bool = False
+        self, na: str | None = "null", show_bbox: bool = False, drop_id: bool = False
     ) -> dict:
         """
         Returns a python feature collection representation of the GeoDataFrame
@@ -1293,7 +1298,7 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
         self,
         *,
         index: bool | None = None,
-        geometry_encoding="WKB",
+        geometry_encoding: PARQUET_GEOMETRY_ENCODINGS = "WKB",
         interleaved: bool = True,
         include_z: bool | None = None,
     ):
@@ -1913,7 +1918,7 @@ default 'snappy'
                 result.__class__ = DataFrame
         return result
 
-    def _persist_old_default_geometry_colname(self):
+    def _persist_old_default_geometry_colname(self) -> None:
         """Internal util to temporarily persist the default geometry column
         name of 'geometry' for backwards compatibility."""
         # self.columns check required to avoid this warning in __init__
@@ -2108,8 +2113,8 @@ default 'snappy'
         sort: bool = True,
         observed: bool = False,
         dropna: bool = True,
-        method="unary",
-        grid_size=None,
+        method: Literal["unary", "coverage"] = "unary",
+        grid_size: float | None = None,
         **kwargs,
     ) -> GeoDataFrame:
         """
@@ -2472,7 +2477,7 @@ default 'snappy'
         self,
         df: GeoDataFrame,
         how: Literal["left", "right", "inner"] = "inner",
-        predicate="intersects",
+        predicate: str = "intersects",
         lsuffix: str = "left",
         rsuffix: str = "right",
         **kwargs,
