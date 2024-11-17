@@ -673,6 +673,16 @@ class TestConstructor:
         assert gs.crs is None
         assert result.crs == "EPSG:4326"
 
+        # https://github.com/geopandas/geopandas/issues/3382
+        s2 = pd.Series(gs.set_crs("EPSG:4326"))
+        result = GeoSeries(s2, crs=4326)
+        assert result.crs == "EPSG:4326"
+        with pytest.raises(
+            ValueError,
+            match="CRS mismatch between CRS of the passed geometries and 'crs'",
+        ):
+            GeoSeries(s2, crs=4283)
+
     def test_copy(self):
         # default is to copy with CoW / pandas 3+
         arr = np.array([Point(x, x) for x in range(3)], dtype=object)
@@ -703,7 +713,7 @@ class TestConstructor:
         )
         s = s.explode(index_parts=True)
         df = s.reset_index()
-        assert type(df) == GeoDataFrame
+        assert type(df) is GeoDataFrame
         # name None -> 0, otherwise name preserved
         assert df.geometry.name == (name if name is not None else 0)
         assert df.crs == s.crs
@@ -713,7 +723,7 @@ class TestConstructor:
     def test_to_frame(self, name, crs):
         s = GeoSeries([Point(0, 0), Point(1, 1)], name=name, crs=crs)
         df = s.to_frame()
-        assert type(df) == GeoDataFrame
+        assert type(df) is GeoDataFrame
         # name None -> 0, otherwise name preserved
         expected_name = name if name is not None else 0
         assert df.geometry.name == expected_name
@@ -722,7 +732,7 @@ class TestConstructor:
 
         # if name is provided to to_frame, it should override
         df2 = s.to_frame(name="geom")
-        assert type(df) == GeoDataFrame
+        assert type(df) is GeoDataFrame
         assert df2.geometry.name == "geom"
         assert df2.crs == s.crs
 

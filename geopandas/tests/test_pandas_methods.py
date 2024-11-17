@@ -160,7 +160,7 @@ def test_reindex(s, df):
     assert_frame_equal(res, df[["value1", "geometry"]])
 
     res = df.reindex(columns=["value1", "value2"])
-    assert type(res) == pd.DataFrame
+    assert type(res) is pd.DataFrame
     assert_frame_equal(res, df[["value1", "value2"]])
 
 
@@ -332,10 +332,7 @@ def test_to_csv(df):
 def test_numerical_operations(s, df):
     # df methods ignore the geometry column
     exp = pd.Series([3, 4], index=["value1", "value2"])
-    if not compat.PANDAS_GE_20:
-        res = df.sum()
-    else:
-        res = df.sum(numeric_only=True)
+    res = df.sum(numeric_only=True)
     assert_series_equal(res, exp)
 
     # series methods raise error (not supported for geometry)
@@ -464,7 +461,7 @@ def test_isna(NA):
     s2 = GeoSeries([Point(0, 0), NA, Point(2, 2)], index=[2, 4, 5], name="tt")
     exp = pd.Series([False, True, False], index=[2, 4, 5], name="tt")
     res = s2.isnull()
-    assert type(res) == pd.Series
+    assert type(res) is pd.Series
     assert_series_equal(res, exp)
     res = s2.isna()
     assert_series_equal(res, exp)
@@ -545,48 +542,34 @@ def test_unique():
     assert_array_equal(s.unique(), exp)
 
 
-def pd14_compat_index(index):
-    if compat.PANDAS_GE_14:
-        return from_shapely(index)
-    else:
-        return index
-
-
 def test_value_counts():
     # each object is considered unique
     s = GeoSeries([Point(0, 0), Point(1, 1), Point(0, 0)])
     res = s.value_counts()
-    if compat.PANDAS_GE_20:
-        name = "count"
-    else:
-        name = None
-    exp = pd.Series(
-        [2, 1], index=pd14_compat_index([Point(0, 0), Point(1, 1)]), name=name
-    )
+    name = "count"
+    exp = pd.Series([2, 1], index=from_shapely([Point(0, 0), Point(1, 1)]), name=name)
     assert_series_equal(res, exp)
     # Check crs doesn't make a difference - note it is not kept in output index anyway
     s2 = GeoSeries([Point(0, 0), Point(1, 1), Point(0, 0)], crs="EPSG:4326")
     res2 = s2.value_counts()
     assert_series_equal(res2, exp)
-    if compat.PANDAS_GE_14:
-        # TODO should/ can we fix CRS being lost
-        assert s2.value_counts().index.array.crs is None
+
+    # TODO should/ can we fix CRS being lost
+    assert s2.value_counts().index.array.crs is None
 
     # check mixed geometry
     s3 = GeoSeries([Point(0, 0), LineString([[1, 1], [2, 2]]), Point(0, 0)])
     res3 = s3.value_counts()
-    index = pd14_compat_index([Point(0, 0), LineString([[1, 1], [2, 2]])])
+    index = from_shapely([Point(0, 0), LineString([[1, 1], [2, 2]])])
     exp3 = pd.Series([2, 1], index=index, name=name)
     assert_series_equal(res3, exp3)
 
     # check None is handled
     s4 = GeoSeries([Point(0, 0), None, Point(0, 0)])
     res4 = s4.value_counts(dropna=True)
-    exp4_dropna = pd.Series([2], index=pd14_compat_index([Point(0, 0)]), name=name)
+    exp4_dropna = pd.Series([2], index=from_shapely([Point(0, 0)]), name=name)
     assert_series_equal(res4, exp4_dropna)
-    exp4_keepna = pd.Series(
-        [2, 1], index=pd14_compat_index([Point(0, 0), None]), name=name
-    )
+    exp4_keepna = pd.Series([2, 1], index=from_shapely([Point(0, 0), None]), name=name)
     res4_keepna = s4.value_counts(dropna=False)
     assert_series_equal(res4_keepna, exp4_keepna)
 
@@ -624,10 +607,8 @@ def test_groupby(df):
     assert_frame_equal(res, exp)
 
     # reductions ignore geometry column
-    if not compat.PANDAS_GE_20:
-        res = df.groupby("value2").sum()
-    else:
-        res = df.groupby("value2").sum(numeric_only=True)
+
+    res = df.groupby("value2").sum(numeric_only=True)
     exp = pd.DataFrame({"value1": [2, 1], "value2": [1, 2]}, dtype="int64").set_index(
         "value2"
     )
@@ -648,6 +629,25 @@ def test_groupby(df):
     exp = pd.Series([0.0, 0.0], index=pd.Index([1, 2], name="value2"), name="geometry")
 
     assert_series_equal(res, exp)
+
+
+def test_groupby_agg_tuple(df):
+    res_dict = (
+        df.groupby("value2")
+        .agg({"geometry": lambda x: x.union_all()})
+        .set_geometry("geometry")  # groupby does not set active geom
+    )
+    res_tup = (
+        df.groupby("value2")
+        .agg(geometry=("geometry", lambda x: x.union_all()))
+        .set_geometry("geometry")
+    )
+    exp = GeoDataFrame(
+        geometry=[shapely.geometry.MultiPoint([(0, 0), (2, 2)]), Point(1, 1)],
+        index=pd.Index([1, 2], name="value2"),
+    )
+    assert_geodataframe_equal(res_tup, exp)
+    assert_geodataframe_equal(res_dict, res_tup)
 
 
 def test_groupby_groups(df):
@@ -688,11 +688,7 @@ def test_groupby_metadata(crs, geometry_name):
 
     df.groupby("value2").apply(func, **kwargs)
     # selecting the non-group columns -> no need to pass the keyword
-    if (
-        compat.PANDAS_GE_22
-        or (compat.PANDAS_GE_20 and geometry_name == "geometry")
-        or not compat.PANDAS_GE_20
-    ):
+    if compat.PANDAS_GE_22 or (geometry_name == "geometry"):
         df.groupby("value2")[[geometry_name, "value1"]].apply(func)
     else:
         # https://github.com/geopandas/geopandas/pull/2966#issuecomment-1878816712

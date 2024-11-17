@@ -2,8 +2,7 @@ from __future__ import annotations
 
 import typing
 import warnings
-from packaging.version import Version
-from typing import Any, Callable, Dict, Optional
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -34,10 +33,11 @@ from .base import is_geometry_type
 
 if typing.TYPE_CHECKING:
     import os
+    from collections.abc import Callable
 
 
 def _geoseries_constructor_with_fallback(
-    data=None, index=None, crs: Optional[Any] = None, **kwargs
+    data=None, index=None, crs: Any | None = None, **kwargs
 ):
     """
     A flexible constructor for GeoSeries._constructor, which needs to be able
@@ -154,7 +154,7 @@ class GeoSeries(GeoPandasBase, Series):
 
     """
 
-    def __init__(self, data=None, index=None, crs: Optional[Any] = None, **kwargs):
+    def __init__(self, data=None, index=None, crs: Any | None = None, **kwargs):
         if (
             hasattr(data, "crs")
             or (isinstance(data, pd.Series) and hasattr(data.array, "crs"))
@@ -164,7 +164,7 @@ class GeoSeries(GeoPandasBase, Series):
                 # make a copy to avoid setting CRS to passed GeometryArray
                 data = data.copy()
             else:
-                if not data.crs == crs:
+                if not data_crs == crs:
                     raise ValueError(
                         "CRS mismatch between CRS of the passed geometries "
                         "and 'crs'. Use 'GeoSeries.set_crs(crs, "
@@ -232,9 +232,6 @@ class GeoSeries(GeoPandasBase, Series):
         super().__init__(data, index=index, name=name, **kwargs)
         if not self.crs:
             self.crs = crs
-
-    def append(self, *args, **kwargs) -> GeoSeries:
-        return self._wrapped_pandas_method("append", *args, **kwargs)
 
     @GeoPandasBase.crs.setter
     def crs(self, value):
@@ -381,9 +378,9 @@ class GeoSeries(GeoPandasBase, Series):
 
     @classmethod
     def from_wkb(
-        cls, data, index=None, crs: Optional[Any] = None, on_invalid="raise", **kwargs
+        cls, data, index=None, crs: Any | None = None, on_invalid="raise", **kwargs
     ) -> GeoSeries:
-        """
+        r"""
         Alternate constructor to create a ``GeoSeries``
         from a list or array of WKB objects
 
@@ -416,6 +413,29 @@ class GeoSeries(GeoPandasBase, Series):
         --------
         GeoSeries.from_wkt
 
+        Examples
+        --------
+
+        >>> wkbs = [
+        ... (
+        ...     b"\x01\x01\x00\x00\x00\x00\x00\x00\x00"
+        ...     b"\x00\x00\xf0?\x00\x00\x00\x00\x00\x00\xf0?"
+        ... ),
+        ... (
+        ...     b"\x01\x01\x00\x00\x00\x00\x00\x00\x00"
+        ...     b"\x00\x00\x00@\x00\x00\x00\x00\x00\x00\x00@"
+        ... ),
+        ... (
+        ...    b"\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00"
+        ...    b"\x00\x08@\x00\x00\x00\x00\x00\x00\x08@"
+        ... ),
+        ... ]
+        >>> s = geopandas.GeoSeries.from_wkb(wkbs)
+        >>> s
+        0    POINT (1 1)
+        1    POINT (2 2)
+        2    POINT (3 3)
+        dtype: geometry
         """
         return cls._from_wkb_or_wkt(
             from_wkb, data, index=index, crs=crs, on_invalid=on_invalid, **kwargs
@@ -423,7 +443,7 @@ class GeoSeries(GeoPandasBase, Series):
 
     @classmethod
     def from_wkt(
-        cls, data, index=None, crs: Optional[Any] = None, on_invalid="raise", **kwargs
+        cls, data, index=None, crs: Any | None = None, on_invalid="raise", **kwargs
     ) -> GeoSeries:
         """
         Alternate constructor to create a ``GeoSeries``
@@ -539,7 +559,7 @@ class GeoSeries(GeoPandasBase, Series):
         from_wkb_or_wkt_function: Callable,
         data,
         index=None,
-        crs: Optional[Any] = None,
+        crs: Any | None = None,
         on_invalid: str = "raise",
         **kwargs,
     ) -> GeoSeries:
@@ -592,7 +612,7 @@ class GeoSeries(GeoPandasBase, Series):
         return cls(arrow_to_geometry_array(arr), **kwargs)
 
     @property
-    def __geo_interface__(self) -> Dict:
+    def __geo_interface__(self) -> dict:
         """Returns a ``GeoSeries`` as a python feature collection.
 
         Implements the `geo_interface`. The returned python data structure
@@ -621,8 +641,8 @@ class GeoSeries(GeoPandasBase, Series):
     def to_file(
         self,
         filename: os.PathLike | typing.IO,
-        driver: Optional[str] = None,
-        index: Optional[bool] = None,
+        driver: str | None = None,
+        index: bool | None = None,
         **kwargs,
     ):
         """Write the ``GeoSeries`` to a file.
@@ -718,7 +738,7 @@ class GeoSeries(GeoPandasBase, Series):
     def _wrapped_pandas_method(self, mtd, *args, **kwargs):
         """Wrap a generic pandas method to ensure it returns a GeoSeries"""
         val = getattr(super(), mtd)(*args, **kwargs)
-        if type(val) == Series:
+        if type(val) is Series:
             val.__class__ = GeoSeries
             val.crs = self.crs
         return val
@@ -735,11 +755,7 @@ class GeoSeries(GeoPandasBase, Series):
         return self._wrapped_pandas_method("take", *args, **kwargs)
 
     @doc(pd.Series)
-    def select(self, *args, **kwargs):
-        return self._wrapped_pandas_method("select", *args, **kwargs)
-
-    @doc(pd.Series)
-    def apply(self, func, convert_dtype: Optional[bool] = None, args=(), **kwargs):
+    def apply(self, func, convert_dtype: bool | None = None, args=(), **kwargs):
         if convert_dtype is not None:
             kwargs["convert_dtype"] = convert_dtype
         else:
@@ -1025,8 +1041,8 @@ class GeoSeries(GeoPandasBase, Series):
     @compat.requires_pyproj
     def set_crs(
         self,
-        crs: Optional[Any] = None,
-        epsg: Optional[int] = None,
+        crs: Any | None = None,
+        epsg: int | None = None,
         inplace: bool = False,
         allow_override: bool = False,
     ):
@@ -1125,9 +1141,7 @@ class GeoSeries(GeoPandasBase, Series):
         result.array.crs = crs
         return result
 
-    def to_crs(
-        self, crs: Optional[Any] = None, epsg: Optional[int] = None
-    ) -> GeoSeries:
+    def to_crs(self, crs: Any | None = None, epsg: int | None = None) -> GeoSeries:
         """Returns a ``GeoSeries`` with all geometries transformed to a new
         coordinate reference system.
 
@@ -1427,8 +1441,6 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
         ]
 
         """
-        import pyarrow as pa
-
         from geopandas.io._geoarrow import (
             GeoArrowArray,
             construct_geometry_array,
@@ -1438,9 +1450,6 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
         field_name = self.name if self.name is not None else ""
 
         if geometry_encoding.lower() == "geoarrow":
-            if Version(pa.__version__) < Version("10.0.0"):
-                raise ValueError("Converting to 'geoarrow' requires pyarrow >= 10.0.")
-
             field, geom_arr = construct_geometry_array(
                 np.array(self.array),
                 include_z=include_z,

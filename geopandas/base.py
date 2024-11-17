@@ -103,22 +103,24 @@ def _delegate_geo_method(op, this, **kwargs):
         klass, var_name = this.__class__.__name__, "this"
 
     for key, val in kwargs.items():
-        if isinstance(val, pd.Series) and not val.index.equals(this.index):
-            raise ValueError(
-                f"Index of the Series passed as '{key}' does not match index of the "
-                f"{klass}. If you want both Series to be aligned, align them before "
-                f"passing them to this method as "
-                f"`{var_name}, {key} = {var_name}.align({key})`. If "
-                f"you want to ignore the index, pass the underlying array as '{key}' "
-                f"using `{key}.values`."
-            )
+        if isinstance(val, pd.Series):
+            if not val.index.equals(this.index):
+                raise ValueError(
+                    f"Index of the Series passed as '{key}' does not match index of "
+                    f"the {klass}. If you want both Series to be aligned, align them "
+                    f"before passing them to this method as "
+                    f"`{var_name}, {key} = {var_name}.align({key})`. If "
+                    f"you want to ignore the index, pass the underlying array as "
+                    f"'{key}' using `{key}.values`."
+                )
+            kwargs[key] = np.asarray(val)
 
     a_this = GeometryArray(this.geometry.values)
     data = getattr(a_this, op)(**kwargs)
     return GeoSeries(data, index=this.index, crs=this.crs)
 
 
-class GeoPandasBase(object):
+class GeoPandasBase:
     @property
     def area(self):
         """Returns a ``Series`` containing the area of each geometry in the
@@ -1150,10 +1152,10 @@ GeometryCollection
         By default, you get back a GeoSeries of polygons:
 
         >>> s.voronoi_polygons()
-        0     POLYGON ((-2 5, 1 2, -2 -1, -2 5))
-        1        POLYGON ((4 5, 1 2, -2 5, 4 5))
-        2    POLYGON ((-2 -1, 1 2, 4 -1, -2 -1))
-        3       POLYGON ((4 -1, 1 2, 4 5, 4 -1))
+        0        POLYGON ((-2 5, 1 2, -2 -1, -2 5))
+        1           POLYGON ((4 5, 1 2, -2 5, 4 5))
+        2       POLYGON ((-2 -1, 1 2, 4 -1, -2 -1))
+        3    POLYGON ((4 -1, 4 -1, 1 2, 4 5, 4 -1))
         dtype: geometry
 
         If you set only_edges to True, you get back LineStrings representing the
@@ -1412,7 +1414,7 @@ GeometryCollection
         dtype: geometry
 
         >>> s.offset_curve(1)
-        0    LINESTRING (-1 0, -1 1, -0.981 1.195, -0.924 1...
+        0    LINESTRING (-1 0, -1 1, -1 1.195, -0.9 1.383, ...
         dtype: geometry
         """
         return _delegate_geo_method(
@@ -1559,7 +1561,7 @@ GeometryCollection
         0                   POINT (1 1)
         1             POINT Z (1 1 0.9)
         2    LINESTRING (0 0, 0 1, 1 1)
-        3            LINESTRING Z EMPTY
+        3              LINESTRING EMPTY
         dtype: geometry
 
         >>> s.set_precision(1, mode="pointwise")
@@ -2114,7 +2116,7 @@ GeometryCollection
 
         return self.geometry.values.union_all()
 
-    def union_all(self, method="unary"):
+    def union_all(self, method="unary", grid_size=None):
         """Returns a geometry containing the union of all geometries in the
         ``GeoSeries``.
 
@@ -2134,6 +2136,20 @@ GeometryCollection
               unary union algorithm. However, it can produce invalid geometries if the
               polygons overlap.
 
+        grid_size : float, default None
+            When grid size is specified, a fixed-precision space is used to perform the
+            union operations. This can be useful when unioning geometries that are not
+            perfectly snapped or to avoid geometries not being unioned because of
+            `robustness issues <https://libgeos.org/usage/faq/#why-doesnt-a-computed-point-lie-exactly-on-a-line>`_.
+            The inputs are first snapped to a grid of the given size. When a line
+            segment of a geometry is within tolerance off a vertex of another geometry,
+            this vertex will be inserted in the line segment. Finally, the result
+            vertices are computed on the same grid. Is only supported for ``method``
+            ``"unary"``. If None, the highest precision of the inputs will be used.
+            Defaults to None.
+
+            .. versionadded:: 1.1.0
+
         Examples
         --------
 
@@ -2147,7 +2163,7 @@ GeometryCollection
         >>> s.union_all()
         <POLYGON ((0 1, 0 2, 2 2, 2 0, 1 0, 0 0, 0 1))>
         """
-        return self.geometry.values.union_all(method=method)
+        return self.geometry.values.union_all(method=method, grid_size=grid_size)
 
     def intersection_all(self):
         """Returns a geometry containing the intersection of all geometries in
@@ -5696,7 +5712,7 @@ GeometryCollection
 
         >>> s.skew(45, 30, origin=(0, 0))
         0                                    POINT (2 1.57735)
-        1                   LINESTRING (0 -0.42265, 1 0.57735)
+        1         LINESTRING (1.11022e-16 -0.42265, 1 0.57735)
         2    POLYGON ((2 0.73205, 4 2.3094, 4 2.73205, 2 0....
         dtype: geometry
         """
@@ -6168,7 +6184,7 @@ def _get_index_for_parts(orig_idx, outer_idx, ignore_index, index_parts):
     return index
 
 
-class _CoordinateIndexer(object):
+class _CoordinateIndexer:
     # see docstring GeoPandasBase.cx property above
 
     def __init__(self, obj):

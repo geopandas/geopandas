@@ -1011,31 +1011,27 @@ class TestGeomMethods:
             [
                 Polygon(
                     (
-                        (
-                            (0, 0),
-                            (0.5, 0),
-                            (1, 0),
-                            (1, 0.5),
-                            (1, 1),
-                            (0.6666666666666666, 0.6666666666666666),
-                            (0.3333333333333333, 0.3333333333333333),
-                            (0, 0),
-                        )
+                        (0, 0),
+                        (0.5, 0),
+                        (1, 0),
+                        (1, 0.5),
+                        (1, 1),
+                        (0.6666666666666666, 0.6666666666666666),
+                        (0.3333333333333333, 0.3333333333333333),
+                        (0, 0),
                     )
                 ),
                 Polygon(
                     (
-                        (
-                            (0, 0),
-                            (0.5, 0),
-                            (1, 0),
-                            (1, 0.5),
-                            (1, 1),
-                            (0.5, 1),
-                            (0, 1),
-                            (0, 0.5),
-                            (0, 0),
-                        )
+                        (0, 0),
+                        (0.5, 0),
+                        (1, 0),
+                        (1, 0.5),
+                        (1, 1),
+                        (0.5, 1),
+                        (0, 1),
+                        (0, 0.5),
+                        (0, 0),
                     )
                 ),
             ]
@@ -1362,6 +1358,17 @@ class TestGeomMethods:
         distances = np.array([1, 2, 3])
         with pytest.raises(ValueError):
             original.buffer(distances)
+
+    def test_buffer_distance_series(self):
+        original = GeoSeries([self.p0, self.p0])
+        expected = GeoSeries(
+            [
+                Polygon(((6, 5), (5, 4), (4, 5), (5, 6), (6, 5))),
+                Polygon(((10, 5), (5, 0), (0, 5), (5, 10), (10, 5))),
+            ]
+        )
+        calculated = original.buffer(Series([1, 5]), resolution=1)
+        assert_geoseries_equal(calculated, expected, check_less_precise=True)
 
     def test_buffer_distance_wrong_index(self):
         original = GeoSeries([self.p0, self.p0], index=[0, 1])

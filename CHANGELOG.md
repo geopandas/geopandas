@@ -1,5 +1,57 @@
 # Changelog
 
+## Version 1.1.0
+
+Notes on dependencies:
+
+- GeoPandas 1.1 now requires Python 3.10 or greater and pandas 2.0, numpy 1.24, pyproj 3.5,
+  are now the minimum required version for these dependencies.
+  Furthermore, the minimum tested version for optional dependencies has been updated to
+  fiona 1.8.21, scipy 1.9, matplotlib 3.7, mapclassify 2.5, folium 0.12 and
+  SQLAlchemy 2.0. Older versions of these libraries may continue to work, but are no longer
+  considered supported (#3371).
+
+New features and improvements:
+
+- Add ``grid_size`` parameter to ``union_all`` and ``dissolve`` (#3445).
+
+Bug fixes:
+
+- Fix an issue that showed numpy dtypes in bbox in `to_geo_dict` and `__geo_interface__`. (#3436)
+- Fix an issue in `sample_points` that could occasionally result in non-uniform distribution (#3470)
+
+New features and improvements:
+
+- `GeoDataFrame.plot` now supports `pd.Index` as an input for the `column` keyword (#3463).
+
+## Version 1.0.2 (???)
+
+Bug fixes:
+
+- Fix unspecified layer warning being emitted while reading multilayer datasets, even
+  when layer is specified when using the mask or bbox keywords (#3378).
+- Properly support named aggregations over a geometry column in `GroupBy.agg` (#3368).
+- Support GeoDataFrame constructor receiving arguments to `geometry` which are not
+  (Geo)Series, but instead should be interpreted as column names, like Enums (#3384).
+- Fix regression where constructing a GeoSeries from a pd.Series with GeometryDtype values
+  failed when `crs` was provided (#3383).
+- Fix regression where `overlay` with `keep_geom_type` returns wrong results if the
+  input contains invalid geometries (#3395).
+- Fix the dtype of the GeometryArray backing data being incorrect for zero length
+  GeoDataFrames causing errors in `overlay` (3424).
+
+Deprecations and compatibility notes:
+
+- The `GeoSeries.select` method wrapping the pandas `Series.select` method has been removed.
+  The upstream method no longer exists in all supported version of pandas (#3394).
+
+## Version 1.0.1 (July 2, 2024)
+
+Bug fixes:
+
+- Support a named datetime or object dtype index in `explore()` (#3360, #3364).
+- Fix a regression preventing a Series as an argument for geometric methods (#3363)
+
 ## Version 1.0.0 (June 24, 2024)
 
 Notes on dependencies:
@@ -63,7 +115,7 @@ New features and improvements:
   other non JSON serializable objects (#3261).
 - The `GeoSeries.fillna` method now supports the `limit` keyword (#3290).
 - Added ``on_attribute`` option argument to the ``sjoin()``
-  method, allowing to restrict joins to the observations with 
+  method, allowing to restrict joins to the observations with
   matching attributes. (#3231)
 - Added support for `bbox` covering encoding in geoparquet. Can filter reading of parquet
 files based on a bounding box, and write out a bounding box column to parquet files (#3282).
@@ -74,7 +126,7 @@ files based on a bounding box, and write out a bounding box column to parquet fi
 - Added ``autolim`` keyword argument to ``GeoSeries.plot()`` and ``GeoDataFrame.plot()`` (#2817).
 - Added `metadata` parameter to `GeoDataFrame.to_file` (#2850)
 - Updated documentation to clarify that passing a named (Geo)Series as the `geometry`
-  argument to the GeoDataFrame constructor will not use the name but will always  
+  argument to the GeoDataFrame constructor will not use the name but will always
   produce a GeoDataFrame with an active geometry column named "geometry" (#3337).
 - `read_postgis` will query the spatial_ref_sys table to determine the CRS authority
   instead of its current behaviour of assuming EPSG. In the event the spiatal_ref_sys
@@ -95,7 +147,7 @@ Backwards incompatible API changes:
   the previous active geometry column name. This means that if the new and old names are
   different, then both columns will be preserved in the GeoDataFrame. To replicate the previous
   behaviour, you can instead call `gdf.set_geometry(ser.rename(gdf.active_geometry_name))` (#3237).
-  Note that this behaviour change does not affect the `GeoDataframe` constructor, passing a named 
+  Note that this behaviour change does not affect the `GeoDataframe` constructor, passing a named
   GeoSeries `ser` to `GeoDataFrame(df, geometry=ser)` will always produce a GeoDataFrame with a
   geometry column named "geometry" to preserve backwards compatibility. If you would like to
   instead propagate the name of `ser` when constructing a GeoDataFrame, you can instead call
