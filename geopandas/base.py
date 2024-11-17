@@ -120,7 +120,7 @@ def _delegate_geo_method(op, this, **kwargs):
     return GeoSeries(data, index=this.index, crs=this.crs)
 
 
-class GeoPandasBase(object):
+class GeoPandasBase:
     @property
     def area(self):
         """Returns a ``Series`` containing the area of each geometry in the
@@ -1414,7 +1414,7 @@ GeometryCollection
         dtype: geometry
 
         >>> s.offset_curve(1)
-        0    LINESTRING (-1 0, -1 1, -0.981 1.195, -0.924 1...
+        0    LINESTRING (-1 0, -1 1, -1 1.195, -0.9 1.383, ...
         dtype: geometry
         """
         return _delegate_geo_method(
@@ -2116,7 +2116,7 @@ GeometryCollection
 
         return self.geometry.values.union_all()
 
-    def union_all(self, method="unary"):
+    def union_all(self, method="unary", grid_size=None):
         """Returns a geometry containing the union of all geometries in the
         ``GeoSeries``.
 
@@ -2136,6 +2136,20 @@ GeometryCollection
               unary union algorithm. However, it can produce invalid geometries if the
               polygons overlap.
 
+        grid_size : float, default None
+            When grid size is specified, a fixed-precision space is used to perform the
+            union operations. This can be useful when unioning geometries that are not
+            perfectly snapped or to avoid geometries not being unioned because of
+            `robustness issues <https://libgeos.org/usage/faq/#why-doesnt-a-computed-point-lie-exactly-on-a-line>`_.
+            The inputs are first snapped to a grid of the given size. When a line
+            segment of a geometry is within tolerance off a vertex of another geometry,
+            this vertex will be inserted in the line segment. Finally, the result
+            vertices are computed on the same grid. Is only supported for ``method``
+            ``"unary"``. If None, the highest precision of the inputs will be used.
+            Defaults to None.
+
+            .. versionadded:: 1.1.0
+
         Examples
         --------
 
@@ -2149,7 +2163,7 @@ GeometryCollection
         >>> s.union_all()
         <POLYGON ((0 1, 0 2, 2 2, 2 0, 1 0, 0 0, 0 1))>
         """
-        return self.geometry.values.union_all(method=method)
+        return self.geometry.values.union_all(method=method, grid_size=grid_size)
 
     def intersection_all(self):
         """Returns a geometry containing the intersection of all geometries in
@@ -5698,7 +5712,7 @@ GeometryCollection
 
         >>> s.skew(45, 30, origin=(0, 0))
         0                                    POINT (2 1.57735)
-        1                   LINESTRING (0 -0.42265, 1 0.57735)
+        1         LINESTRING (1.11022e-16 -0.42265, 1 0.57735)
         2    POLYGON ((2 0.73205, 4 2.3094, 4 2.73205, 2 0....
         dtype: geometry
         """
@@ -6170,7 +6184,7 @@ def _get_index_for_parts(orig_idx, outer_idx, ignore_index, index_parts):
     return index
 
 
-class _CoordinateIndexer(object):
+class _CoordinateIndexer:
     # see docstring GeoPandasBase.cx property above
 
     def __init__(self, obj):

@@ -201,7 +201,10 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             ):
                 raise ValueError(crs_mismatch_error)
 
-            if hasattr(geometry, "name") and geometry.name not in ("geometry", None):
+            if isinstance(geometry, pd.Series) and geometry.name not in (
+                "geometry",
+                None,
+            ):
                 # __init__ always creates geometry col named "geometry"
                 # rename as `set_geometry` respects the given series name
                 geometry = geometry.rename("geometry")
@@ -343,7 +346,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         if geo_column_name is None:
             geo_column_name = "geometry"
-        if isinstance(col, (Series, list, np.ndarray, GeometryArray)):
+        if isinstance(col, Series | list | np.ndarray | GeometryArray):
             if drop:
                 msg = (
                     "The `drop` keyword argument is deprecated and has no effect when "
@@ -361,7 +364,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             try:
                 level = frame[col]
             except KeyError:
-                raise ValueError("Unknown column %s" % col)
+                raise ValueError(f"Unknown column {col}")
             if isinstance(level, DataFrame):
                 raise ValueError(
                     "GeoDataFrame does not support setting the geometry column where "
@@ -1035,16 +1038,16 @@ individually so that features may have different properties
 'type': 'Point', 'coordinates': (1.0, 2.0)}}
         """
         if na not in ["null", "drop", "keep"]:
-            raise ValueError("Unknown na method {0}".format(na))
+            raise ValueError(f"Unknown na method {na}")
 
         if self._geometry_column_name not in self:
             raise AttributeError(
-                "No geometry data set (expected in column '%s')."
-                % self._geometry_column_name
+                "No geometry data set (expected in column "
+                f"'{self._geometry_column_name}')."
             )
 
-        ids = np.array(self.index, copy=False)
-        geometries = np.array(self[self._geometry_column_name], copy=False)
+        ids = np.asarray(self.index)
+        geometries = np.asarray(self[self._geometry_column_name])
 
         if not self.columns.is_unique:
             raise ValueError("GeoDataFrame cannot contain duplicated column names.")
@@ -1157,7 +1160,7 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
         }
 
         if show_bbox:
-            geo["bbox"] = tuple(self.total_bounds)
+            geo["bbox"] = tuple(self.total_bounds.tolist())  # tolist to avoid np dtypes
 
         return geo
 
@@ -1327,7 +1330,8 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
             If ``False``, the index(es) will not be written to the file.
             If ``None``, the index(ex) will be included as columns in the file
             output except `RangeIndex` which is stored as metadata only.
-        compression : {'snappy', 'gzip', 'brotli', None}, default 'snappy'
+        compression : {'snappy', 'gzip', 'brotli', 'lz4', 'zstd', None}, \
+default 'snappy'
             Name of the compression to use. Use ``None`` for no compression.
         geometry_encoding : {'WKB', 'geoarrow'}, default 'WKB'
             The encoding to use for the geometry columns. Defaults to "WKB"
@@ -1958,6 +1962,7 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
         observed=False,
         dropna=True,
         method="unary",
+        grid_size=None,
         **kwargs,
     ):
         """
@@ -2012,6 +2017,19 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
               unary union algorithm. However, it can produce invalid geometries if the
               polygons overlap.
 
+        grid_size : float, default None
+            When grid size is specified, a fixed-precision space is used to perform the
+            union operations. This can be useful when unioning geometries that are not
+            perfectly snapped or to avoid geometries not being unioned because of
+            `robustness issues <https://libgeos.org/usage/faq/#why-doesnt-a-computed-point-lie-exactly-on-a-line>`_.
+            The inputs are first snapped to a grid of the given size. When a line
+            segment of a geometry is within tolerance off a vertex of another geometry,
+            this vertex will be inserted in the line segment. Finally, the result
+            vertices are computed on the same grid. Is only supported for ``method``
+            ``"unary"``. If None, the highest precision of the inputs will be used.
+            Defaults to None.
+
+            .. versionadded:: 1.1.0
         **kwargs :
             Keyword arguments to be passed to the pandas `DataFrameGroupby.agg` method
             which is used by `dissolve`. In particular, `numeric_only` may be
@@ -2062,31 +2080,13 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
 
         # Process non-spatial component
         data = self.drop(labels=self.geometry.name, axis=1)
-        with warnings.catch_warnings(record=True) as record:
-            aggregated_data = data.groupby(**groupby_kwargs).agg(aggfunc, **kwargs)
-        for w in record:
-            if str(w.message).startswith("The default value of numeric_only"):
-                msg = (
-                    f"The default value of numeric_only in aggfunc='{aggfunc}' "
-                    "within pandas.DataFrameGroupBy.agg used in dissolve is "
-                    "deprecated. In pandas 2.0, numeric_only will default to False. "
-                    "Either specify numeric_only as additional argument in dissolve() "
-                    "or select only columns which should be valid for the function."
-                )
-                warnings.warn(msg, FutureWarning, stacklevel=2)
-            else:
-                # Only want to capture specific warning,
-                # other warnings from pandas should be passed through
-                # TODO this is not an ideal approach
-                warnings.showwarning(
-                    w.message, w.category, w.filename, w.lineno, w.file, w.line
-                )
+        aggregated_data = data.groupby(**groupby_kwargs).agg(aggfunc, **kwargs)
 
         aggregated_data.columns = aggregated_data.columns.to_flat_index()
 
         # Process spatial component
         def merge_geometries(block):
-            merged_geom = block.union_all(method=method)
+            merged_geom = block.union_all(method=method, grid_size=grid_size)
             return merged_geom
 
         g = self.groupby(group_keys=False, **groupby_kwargs)[self.geometry.name].agg(

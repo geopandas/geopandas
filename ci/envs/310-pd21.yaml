@@ -2,21 +2,21 @@ name: test
 channels:
   - conda-forge
 dependencies:
-  - python=3.9
+  - python=3.10
   # required
-  - pandas=1.5
+  - pandas=2.1
   - shapely=2
   - geos
   - cython
   - pyogrio>=0.7.2
   - pyproj
-  # use this build to have one with only shapely 2.0 installed
   - packaging
   # testing
   - pytest
   - pytest-cov
   - pytest-xdist
   - fsspec
+  - pytz
   # optional
   - matplotlib
   - mapclassify
@@ -28,7 +28,7 @@ dependencies:
   - geodatasets
   # installed in tests.yaml, because not available on windows
   # - postgis
-  - SQLalchemy<2
+  - SQLalchemy<2.1 # test oldest support sqlalchemy version
   - psycopg2
   - libspatialite
   - geoalchemy2

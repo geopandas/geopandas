@@ -1,11 +1,11 @@
+from collections.abc import Callable
 from textwrap import dedent
-from typing import Callable, Union
 
 # doc decorator function ported with modifications from Pandas
 # https://github.com/pandas-dev/pandas/blob/master/pandas/util/_decorators.py
 
 
-def doc(*docstrings: Union[str, Callable], **params) -> Callable:
+def doc(*docstrings: str | Callable, **params) -> Callable:
     """
     A decorator take docstring templates, concatenate them and perform string
     substitution on it.
@@ -26,7 +26,7 @@ def doc(*docstrings: Union[str, Callable], **params) -> Callable:
 
     def decorator(decorated: Callable) -> Callable:
         # collecting docstring and docstring templates
-        docstring_components: list[Union[str, Callable]] = []
+        docstring_components: list[str | Callable] = []
         if decorated.__doc__:
             docstring_components.append(dedent(decorated.__doc__))
 

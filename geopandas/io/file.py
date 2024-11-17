@@ -13,14 +13,14 @@ from urllib.parse import uses_netloc, uses_params, uses_relative
 
 import numpy as np
 import pandas as pd
-from pandas.api.types import is_integer_dtype
+from pandas.api.types import is_datetime64_any_dtype, is_integer_dtype, is_object_dtype
 
 import shapely
 from shapely.geometry import mapping
 from shapely.geometry.base import BaseGeometry
 
 from geopandas import GeoDataFrame, GeoSeries
-from geopandas._compat import HAS_PYPROJ, PANDAS_GE_20
+from geopandas._compat import HAS_PYPROJ
 from geopandas.io.util import vsi_path
 
 _VALID_URLS = set(uses_relative + uses_netloc + uses_params)
@@ -228,9 +228,9 @@ def _read_file(
         Keyword args to be passed to the engine, and can be used to write
         to multi-layer data, store data within archives (zip files), etc.
         In case of the "pyogrio" engine, the keyword arguments are passed to
-        `pyogrio.write_dataframe`. In case of the "fiona" engine, the keyword
+        `pyogrio.read_dataframe`. In case of the "fiona" engine, the keyword
         arguments are passed to fiona.open`. For more information on possible
-        keywords, type: ``import pyogrio; help(pyogrio.write_dataframe)``.
+        keywords, type: ``import pyogrio; help(pyogrio.read_dataframe)``.
 
 
     Examples
@@ -377,13 +377,13 @@ def _read_file_fiona(
 
             # handle loading the bounding box
             if bbox is not None:
-                if isinstance(bbox, (GeoDataFrame, GeoSeries)):
+                if isinstance(bbox, GeoDataFrame | GeoSeries):
                     bbox = tuple(bbox.to_crs(crs).total_bounds)
                 elif isinstance(bbox, BaseGeometry):
                     bbox = bbox.bounds
                 assert len(bbox) == 4
             # handle loading the mask
-            elif isinstance(mask, (GeoDataFrame, GeoSeries)):
+            elif isinstance(mask, GeoDataFrame | GeoSeries):
                 mask = mapping(mask.to_crs(crs).union_all())
             elif isinstance(mask, BaseGeometry):
                 mask = mapping(mask)
@@ -453,10 +453,7 @@ def _read_file_fiona(
                 # fiona only supports up to ms precision (any microseconds are
                 # floating point rounding error)
                 if as_dt is not None and not (as_dt.dtype == "object"):
-                    if PANDAS_GE_20:
-                        df[k] = as_dt.dt.as_unit("ms")
-                    else:
-                        df[k] = as_dt.dt.round(freq="ms")
+                    df[k] = as_dt.dt.as_unit("ms")
             return df
 
 
@@ -485,8 +482,8 @@ def _read_file_pyogrio(path_or_bytes, bbox=None, mask=None, rows=None, **kwargs)
         raise ValueError("mask and bbox can not be set together")
 
     if bbox is not None:
-        if isinstance(bbox, (GeoDataFrame, GeoSeries)):
-            crs = pyogrio.read_info(path_or_bytes).get("crs")
+        if isinstance(bbox, GeoDataFrame | GeoSeries):
+            crs = pyogrio.read_info(path_or_bytes, layer=kwargs.get("layer")).get("crs")
             if isinstance(path_or_bytes, IOBase):
                 path_or_bytes.seek(0)
 
@@ -498,8 +495,8 @@ def _read_file_pyogrio(path_or_bytes, bbox=None, mask=None, rows=None, **kwargs)
 
     if mask is not None:
         # NOTE: mask cannot be used at same time as bbox keyword
-        if isinstance(mask, (GeoDataFrame, GeoSeries)):
-            crs = pyogrio.read_info(path_or_bytes).get("crs")
+        if isinstance(mask, GeoDataFrame | GeoSeries):
+            crs = pyogrio.read_info(path_or_bytes, layer=kwargs.get("layer")).get("crs")
             if isinstance(path_or_bytes, IOBase):
                 path_or_bytes.seek(0)
 
@@ -531,7 +528,7 @@ def _read_file_pyogrio(path_or_bytes, bbox=None, mask=None, rows=None, **kwargs)
             stacklevel=3,
         )
         ignore_fields = kwargs.pop("ignore_fields")
-        fields = pyogrio.read_info(path_or_bytes)["fields"]
+        fields = pyogrio.read_info(path_or_bytes, layer=kwargs.get("layer"))["fields"]
         include_fields = [col for col in fields if col not in ignore_fields]
         kwargs["columns"] = include_fields
     elif "include_fields" in kwargs:
@@ -766,9 +763,9 @@ def infer_schema(df):
     }
 
     def convert_type(column, in_type):
-        if in_type == object:
+        if is_object_dtype(in_type):
             return "str"
-        if in_type.name.startswith("datetime64"):
+        if is_datetime64_any_dtype(in_type):
             # numpy datetime type regardless of frequency
             return "datetime"
         if str(in_type) in types:
