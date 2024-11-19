@@ -1970,6 +1970,7 @@ default 'snappy'
         observed=False,
         dropna=True,
         method="unary",
+        grid_size=None,
         **kwargs,
     ):
         """
@@ -2024,6 +2025,19 @@ default 'snappy'
               unary union algorithm. However, it can produce invalid geometries if the
               polygons overlap.
 
+        grid_size : float, default None
+            When grid size is specified, a fixed-precision space is used to perform the
+            union operations. This can be useful when unioning geometries that are not
+            perfectly snapped or to avoid geometries not being unioned because of
+            `robustness issues <https://libgeos.org/usage/faq/#why-doesnt-a-computed-point-lie-exactly-on-a-line>`_.
+            The inputs are first snapped to a grid of the given size. When a line
+            segment of a geometry is within tolerance off a vertex of another geometry,
+            this vertex will be inserted in the line segment. Finally, the result
+            vertices are computed on the same grid. Is only supported for ``method``
+            ``"unary"``. If None, the highest precision of the inputs will be used.
+            Defaults to None.
+
+            .. versionadded:: 1.1.0
         **kwargs :
             Keyword arguments to be passed to the pandas `DataFrameGroupby.agg` method
             which is used by `dissolve`. In particular, `numeric_only` may be
@@ -2074,31 +2088,13 @@ default 'snappy'
 
         # Process non-spatial component
         data = self.drop(labels=self.geometry.name, axis=1)
-        with warnings.catch_warnings(record=True) as record:
-            aggregated_data = data.groupby(**groupby_kwargs).agg(aggfunc, **kwargs)
-        for w in record:
-            if str(w.message).startswith("The default value of numeric_only"):
-                msg = (
-                    f"The default value of numeric_only in aggfunc='{aggfunc}' "
-                    "within pandas.DataFrameGroupBy.agg used in dissolve is "
-                    "deprecated. In pandas 2.0, numeric_only will default to False. "
-                    "Either specify numeric_only as additional argument in dissolve() "
-                    "or select only columns which should be valid for the function."
-                )
-                warnings.warn(msg, FutureWarning, stacklevel=2)
-            else:
-                # Only want to capture specific warning,
-                # other warnings from pandas should be passed through
-                # TODO this is not an ideal approach
-                warnings.showwarning(
-                    w.message, w.category, w.filename, w.lineno, w.file, w.line
-                )
+        aggregated_data = data.groupby(**groupby_kwargs).agg(aggfunc, **kwargs)
 
         aggregated_data.columns = aggregated_data.columns.to_flat_index()
 
         # Process spatial component
         def merge_geometries(block):
-            merged_geom = block.union_all(method=method)
+            merged_geom = block.union_all(method=method, grid_size=grid_size)
             return merged_geom
 
         g = self.groupby(group_keys=False, **groupby_kwargs)[self.geometry.name].agg(

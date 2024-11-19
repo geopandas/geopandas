@@ -20,7 +20,7 @@ from shapely.geometry import mapping
 from shapely.geometry.base import BaseGeometry
 
 from geopandas import GeoDataFrame, GeoSeries
-from geopandas._compat import HAS_PYPROJ, PANDAS_GE_20
+from geopandas._compat import HAS_PYPROJ
 from geopandas.io.util import vsi_path
 
 _VALID_URLS = set(uses_relative + uses_netloc + uses_params)
@@ -448,10 +448,7 @@ def _read_file_fiona(
                 # fiona only supports up to ms precision (any microseconds are
                 # floating point rounding error)
                 if as_dt is not None and not (as_dt.dtype == "object"):
-                    if PANDAS_GE_20:
-                        df[k] = as_dt.dt.as_unit("ms")
-                    else:
-                        df[k] = as_dt.dt.round(freq="ms")
+                    df[k] = as_dt.dt.as_unit("ms")
             return df
 
 

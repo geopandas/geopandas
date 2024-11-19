@@ -71,18 +71,6 @@ class TestSeriesSindex:
         s = GeoSeries([t1, t2, sq])
         assert s.sindex.size == 3
 
-    @pytest.mark.filterwarnings("ignore:The series.append method is deprecated")
-    @pytest.mark.skipif(compat.PANDAS_GE_20, reason="append removed in pandas 2.0")
-    def test_polygons_append(self):
-        t1 = Polygon([(0, 0), (1, 0), (1, 1)])
-        t2 = Polygon([(0, 0), (1, 1), (0, 1)])
-        sq = Polygon([(0, 0), (1, 0), (1, 1), (0, 1)])
-        s = GeoSeries([t1, t2, sq])
-        t = GeoSeries([t1, t2, sq], [3, 4, 5])
-        s = s.append(t)
-        assert len(s) == 6
-        assert s.sindex.size == 6
-
     def test_lazy_build(self):
         s = GeoSeries([Point(0, 0)])
         assert s.values._sindex is None
@@ -168,12 +156,12 @@ class TestFrameSindex:
         # with pandas 2.0, the column is now copied, losing the index. But
         # with pandas >= 3.0 and Copy-on-Write this is preserved again
         subset1 = self.df[["geom", "A"]]
-        if compat.PANDAS_GE_20 and not compat.PANDAS_GE_30:
+        if not compat.PANDAS_GE_30:
             assert subset1.sindex is not original_index
         else:
             assert subset1.sindex is original_index
         subset2 = self.df[["A", "geom"]]
-        if compat.PANDAS_GE_20 and not compat.PANDAS_GE_30:
+        if not compat.PANDAS_GE_30:
             assert subset2.sindex is not original_index
         else:
             assert subset2.sindex is original_index
