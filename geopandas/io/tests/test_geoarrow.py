@@ -196,6 +196,10 @@ def test_geoarrow_export(geometry_type, dim, geometry_encoding, interleaved):
     assert result_arr.equals(expected["geometry"].chunk(0))
 
 
+@pytest.mark.skipif(
+    Version(shapely.__version__) < Version("2.0.2"),
+    reason="from_ragged_array failing with read-only array input",
+)
 @pytest.mark.parametrize("encoding", ["WKB", "geoarrow"])
 def test_geoarrow_to_pandas_kwargs(encoding):
     g = box(0, 0, 10, 10)
