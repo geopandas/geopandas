@@ -486,6 +486,8 @@ def arrow_to_geopandas(table, geometry=None, to_pandas_kwargs=None):
         raise ValueError("No geometry column found in the Arrow table.")
 
     table_attr = table.drop([f[1] for f in geom_fields])
+    if to_pandas_kwargs is None:
+        to_pandas_kwargs = {}
     df = table_attr.to_pandas(**to_pandas_kwargs)
 
     for i, col, ext_name, ext_meta in geom_fields:
