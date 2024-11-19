@@ -200,7 +200,7 @@ def test_geoarrow_export(geometry_type, dim, geometry_encoding, interleaved):
 def test_geoarrow_to_pandas_kwargs(encoding):
     g = box(0, 0, 10, 10)
     gdf = GeoDataFrame({"geometry": [g], "i": [1], "s": ["a"]})
-    table = gdf.to_arrow(geometry_encoding=encoding)
+    table = pa_table(gdf.to_arrow(geometry_encoding=encoding))
     # simulate the `dtype_backend="pyarrow"` option in `pandas.read_parquet`
     gdf_roundtrip = GeoDataFrame.from_arrow(
         table, to_pandas_kwargs={"types_mapper": ArrowDtype}
