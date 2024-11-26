@@ -3,9 +3,11 @@ import warnings
 import numpy as np
 import pandas as pd
 
+from shapely import MultiPolygon, Polygon
+
 import geopandas
 from geopandas import GeoDataFrame, read_file
-from geopandas._compat import HAS_PYPROJ, PANDAS_GE_20, PANDAS_GE_30
+from geopandas._compat import HAS_PYPROJ, PANDAS_GE_30
 
 import pytest
 from geopandas.testing import assert_geodataframe_equal, geom_almost_equals
@@ -96,10 +98,7 @@ def test_dissolve_emits_other_warnings(nybb_polydf):
     # test to be true on any version
     def sum_and_warn(group):
         warnings.warn("foo")  # noqa: B028
-        if PANDAS_GE_20:
-            return group.sum(numeric_only=False)
-        else:
-            return group.sum()
+        return group.sum(numeric_only=False)
 
     with pytest.warns(UserWarning, match="foo"):
         nybb_polydf.dissolve("manhattan_bronx", aggfunc=sum_and_warn)
@@ -121,6 +120,33 @@ def test_reset_index(nybb_polydf, first):
     test = nybb_polydf.dissolve("manhattan_bronx", as_index=False)
     comparison = first.reset_index()
     assert_frame_equal(comparison, test, check_column_type=False)
+
+
+@pytest.mark.parametrize(
+    "grid_size, expected",
+    [
+        (
+            None,
+            MultiPolygon(
+                [
+                    Polygon([(0, 0), (10, 0), (10, 9)]),
+                    Polygon([(0, 0.4), (4.6, 5), (0, 5)]),
+                ]
+            ),
+        ),
+        (1, Polygon([(0, 5), (5, 5), (10, 9), (10, 0), (0, 0)])),
+    ],
+)
+def test_dissolve_grid_size(grid_size, expected):
+    gdf = geopandas.GeoDataFrame(
+        geometry=[
+            Polygon([(0, 0), (10, 0), (10, 9)]),
+            Polygon([(0, 0.4), (4.6, 5), (0, 5)]),
+        ]
+    )
+
+    dissolved_gdf = gdf.dissolve(grid_size=grid_size)
+    assert dissolved_gdf.geometry[0].equals(expected)
 
 
 def test_dissolve_none(nybb_polydf):

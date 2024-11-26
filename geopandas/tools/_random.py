@@ -86,4 +86,5 @@ def _uniform_polygon(geom, size, generator):
         )
         valid_samples = batch[batch.sindex.query(geom, predicate="contains")]
         candidates.extend(valid_samples)
+    generator.shuffle(candidates)  # avoid the artifacts of STRTree ordering
     return GeoSeries(candidates[:size]).union_all()

@@ -233,9 +233,6 @@ class GeoSeries(GeoPandasBase, Series):
         if not self.crs:
             self.crs = crs
 
-    def append(self, *args, **kwargs) -> GeoSeries:
-        return self._wrapped_pandas_method("append", *args, **kwargs)
-
     @GeoPandasBase.crs.setter
     def crs(self, value):
         if self.crs is not None:

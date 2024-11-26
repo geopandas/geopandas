@@ -882,7 +882,7 @@ def plot_dataframe(
         merged_kwds = style_kwds.copy()
         merged_kwds.update(missing_kwds)
 
-        plot_series(expl_series[nan_idx], ax=ax, **merged_kwds)
+        plot_series(expl_series[nan_idx], ax=ax, **merged_kwds, aspect=None)
 
     if legend and not color:
         if legend_kwds is None:
