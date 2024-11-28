@@ -451,6 +451,17 @@ class TestPointPlotting:
         df["category"] = df["values"].astype("str")
         df.plot("category", missing_kwds={"facecolor": "none"}, legend=True)
 
+    def test_missing_aspect(self):
+        self.df.loc[0, "values"] = np.nan
+        ax = self.df.plot(
+            "values",
+            missing_kwds={"color": "r"},
+            categorical=True,
+            legend=True,
+            aspect=2,
+        )
+        assert ax.get_aspect() == 2
+
 
 class TestPointZPlotting:
     def setup_method(self):
@@ -1835,6 +1846,8 @@ def test_column_values():
     t2 = Polygon([(1, 0), (2, 0), (2, 1)])
     polys = GeoSeries([t1, t2], index=list("AB"))
     df = GeoDataFrame({"geometry": polys, "values": [0, 1]})
+    numeric_index_polys = GeoSeries([t1, t2], index=[0, 1])
+    numeric_index_df = GeoDataFrame({"geometry": numeric_index_polys, "values": [0, 1]})
 
     # Test with continuous values
     ax = df.plot(column="values")
@@ -1853,6 +1866,11 @@ def test_column_values():
     colors_series = ax.collections[0].get_facecolors()
     np.testing.assert_array_equal(colors, colors_series)
     ax = df.plot(column=df["values"].values, categorical=True)
+    colors_array = ax.collections[0].get_facecolors()
+    np.testing.assert_array_equal(colors, colors_array)
+
+    # Test with pd.Index
+    ax = numeric_index_df.plot(column=numeric_index_df.index, categorical=True)
     colors_array = ax.collections[0].get_facecolors()
     np.testing.assert_array_equal(colors, colors_array)
 

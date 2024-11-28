@@ -857,11 +857,13 @@ class GeometryArray(ExtensionArray):
         )
         return self.union_all()
 
-    def union_all(self, method="unary"):
+    def union_all(self, method="unary", grid_size=None):
         if method == "coverage":
+            if grid_size is not None:
+                raise ValueError("grid_size is not supported for method 'coverage'.")
             return shapely.coverage_union_all(self._data)
         elif method == "unary":
-            return shapely.union_all(self._data)
+            return shapely.union_all(self._data, grid_size=grid_size)
         else:
             raise ValueError(
                 f"Method '{method}' not recognized. Use 'coverage' or 'unary'."
@@ -1647,7 +1649,7 @@ class GeometryArray(ExtensionArray):
         # including the base class version here (that raises by default)
         # because this was not yet defined in pandas 0.23
         if name in ("any", "all"):
-            return getattr(to_shapely(self), name)()
+            return getattr(self._data, name)(keepdims=keepdims)
         raise TypeError(
             f"'{type(self).__name__}' with dtype {self.dtype} "
             f"does not support reduction '{name}'"

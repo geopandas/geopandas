@@ -2,6 +2,34 @@
 
 ## Version 1.1.0
 
+New features and improvements:
+
+- Added options to return the result of `SpatialIndex.query` in a form of a dense or a
+  sparse boolean array. This adds optional dependency on `scipy` for the sparse output.
+  Note that this also changes the previously undocumented behaviour of the `output_format`
+  keyword (#1674).
+- Add ``grid_size`` parameter to ``union_all`` and ``dissolve`` (#3445).
+- `GeoDataFrame.plot` now supports `pd.Index` as an input for the `column` keyword (#3463).
+- Avoid change of the plot aspect when plotting missing values (#3438).
+
+Bug fixes:
+
+- Fix an issue that showed numpy dtypes in bbox in `to_geo_dict` and `__geo_interface__`. (#3436)
+- Fix an issue in `sample_points` that could occasionally result in non-uniform distribution (#3470).
+- Fix unspecified layer warning being emitted while reading multilayer datasets, even
+  when layer is specified when using the mask or bbox keywords (#3378).
+- Properly support named aggregations over a geometry column in `GroupBy.agg` (#3368).
+- Support GeoDataFrame constructor receiving arguments to `geometry` which are not
+  (Geo)Series, but instead should be interpreted as column names, like Enums (#3384).
+- Fix regression where constructing a GeoSeries from a pd.Series with GeometryDtype values
+  failed when `crs` was provided (#3383).
+- Fix regression where `overlay` with `keep_geom_type` returns wrong results if the
+  input contains invalid geometries (#3395).
+- Fix the dtype of the GeometryArray backing data being incorrect for zero length
+  GeoDataFrames causing errors in `overlay` (#3424).
+- Fix regression where constructing a GeoSeries from a pd.Series with GeometryDtype values
+  failed when `crs` was provided (#3383).
+
 Notes on dependencies:
 
 - GeoPandas 1.1 now requires Python 3.10 or greater and pandas 2.0, numpy 1.24, pyproj 3.5,
@@ -10,29 +38,6 @@ Notes on dependencies:
   fiona 1.8.21, scipy 1.9, matplotlib 3.7, mapclassify 2.5, folium 0.12 and
   SQLAlchemy 2.0. Older versions of these libraries may continue to work, but are no longer
   considered supported (#3371).
-
-New features and improvements:
-
-- Added options to return the result of `SpatialIndex.query` in a form of a dense or a
-  sparse boolean array. This adds optional dependency on `scipy` for the sparse output.
-  Note that this also changes the previously undocumented behaviour of the `output_format`
-  keyword (#1674).
-
-## Version 1.0.2 (???)
-
-Bug fixes:
-
-- Fix unspecified layer warning being emitted while reading multilayer datasets, even
-  when layer is specified when using the mask or bbox keywords (#3378).
-- Properly support named aggregations over a geometry column in `GroupBy.agg` (#3368).
-- Support GeoDataFrame constructor receiving arguments to `geometry` which are not
-  (Geo)Series, but instead should be interpreted as column names, like Enums (#3384).
-- Fix regression where constructing a GeoSeries from a pd.Series with GeometryDtype values 
-  failed when `crs` was provided (#3383).
-- Fix regression where `overlay` with `keep_geom_type` returns wrong results if the
-  input contains invalid geometries (#3395).
-- Fix the dtype of the GeometryArray backing data being incorrect for zero length 
-  GeoDataFrames causing errors in `overlay` (3424).
 
 Deprecations and compatibility notes:
 

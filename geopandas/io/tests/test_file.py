@@ -6,6 +6,7 @@ import pathlib
 import shutil
 import tempfile
 import warnings
+import zoneinfo
 from collections import OrderedDict
 from packaging.version import Version
 
@@ -17,7 +18,7 @@ from shapely.geometry import Point, Polygon, box, mapping
 
 import geopandas
 from geopandas import GeoDataFrame, read_file
-from geopandas._compat import HAS_PYPROJ, PANDAS_GE_20, PANDAS_GE_30
+from geopandas._compat import HAS_PYPROJ, PANDAS_GE_30
 from geopandas.io.file import _EXTENSION_TO_DRIVER, _detect_driver
 
 import pytest
@@ -46,7 +47,6 @@ except ImportError:
     fiona = False
     FIONA_GE_19 = False
 
-pytz = pytest.importorskip("pytz")
 
 PYOGRIO_MARK = pytest.mark.skipif(not pyogrio, reason="pyogrio not installed")
 FIONA_MARK = pytest.mark.skipif(not fiona, reason="fiona not installed")
@@ -196,9 +196,11 @@ def test_to_file_bool(tmpdir, driver, ext, engine):
 
 
 TEST_DATE = datetime.datetime(2021, 11, 21, 1, 7, 43, 17500)
-eastern = pytz.timezone("America/New_York")
-
-datetime_type_tests = (TEST_DATE, eastern.localize(TEST_DATE))
+# from pandas 2.0, utc equality checks less stringent, forward compat with zoneinfo
+utc = datetime.timezone.utc
+eastern = zoneinfo.ZoneInfo("America/New_York")
+test_date_eastern = TEST_DATE.replace(tzinfo=eastern)
+datetime_type_tests = (TEST_DATE, test_date_eastern)
 
 
 @pytest.mark.filterwarnings(
@@ -227,15 +229,14 @@ def test_to_file_datetime(tmpdir, driver, ext, time, engine):
     assert_geodataframe_equal(df.drop(columns=["b"]), df_read.drop(columns=["b"]))
     # Check datetime column
     expected = df["b"]
-    if PANDAS_GE_20:
-        expected = df["b"].dt.as_unit("ms")
+    expected = df["b"].dt.as_unit("ms")
     actual = df_read["b"]
     if df["b"].dt.tz is not None:
-        # US/Eastern becomes pytz.FixedOffset(-300) when read from file
+        # US/Eastern becomes a UTC-5 fixed offset when read from file
         # as GDAL only models offsets, not timezones.
         # Compare fair result in terms of UTC instead
-        expected = expected.dt.tz_convert(pytz.utc)
-        actual = actual.dt.tz_convert(pytz.utc)
+        expected = expected.dt.tz_convert(utc)
+        actual = actual.dt.tz_convert(utc)
 
     assert_series_equal(expected, actual)
 
@@ -279,8 +280,6 @@ def test_read_file_datetime_invalid(tmpdir, ext, engine):
 
 @pytest.mark.parametrize("ext", dt_exts)
 def test_read_file_datetime_out_of_bounds_ns(tmpdir, ext, engine):
-    if engine == "pyogrio" and not PANDAS_GE_20:
-        pytest.skip("with pyogrio requires pandas >= 2.0 to pass")
     # https://github.com/geopandas/geopandas/issues/2502
     date_str = "9999-12-31T00:00:00"  # valid to GDAL, not to [ns] format
     tempfilename = write_invalid_date_file(date_str, tmpdir, ext, engine)
@@ -311,10 +310,6 @@ def test_read_file_datetime_mixed_offsets(tmpdir):
     res = read_file(tempfilename)
     # Convert mixed timezones to UTC equivalent
     assert is_datetime64_any_dtype(res["date"])
-    if not PANDAS_GE_20:
-        utc = pytz.utc
-    else:
-        utc = datetime.timezone.utc
     assert res["date"].dt.tz == utc
 
 

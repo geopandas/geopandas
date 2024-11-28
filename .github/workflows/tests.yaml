@@ -36,6 +36,7 @@ jobs:
           - ci/envs/311-latest.yaml
           - ci/envs/312-latest.yaml
           - ci/envs/312-latest-no-pyproj.yaml
+          - ci/envs/313-latest.yaml
         include:
           - env: ci/envs/310-latest-no-pyogrio.yaml
             os: macos-latest
@@ -95,4 +96,4 @@ jobs:
         run: |
           pytest -v --color=yes --doctest-only geopandas --ignore=geopandas/datasets
 
-      - uses: codecov/codecov-action@v4
+      - uses: codecov/codecov-action@v5
