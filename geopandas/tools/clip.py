@@ -24,13 +24,29 @@ from geopandas.array import (
 
 
 def _mask_is_list_like_rectangle(mask):
+    """
+    Check if the input mask is list-like and not an instance of
+    specific geometric types.
+
+    Parameters
+    ----------
+    mask : GeoDataFrame, GeoSeries, (Multi)Polygon, list-like
+        Polygon vector layer used to clip ``gdf``.
+
+    Returns
+    -------
+    bool
+        True if `mask` is list-like and not an instance of `GeoDataFrame`,
+        `GeoSeries`, `Polygon`, or `MultiPolygon`, otherwise False.
+    """
     return pandas.api.types.is_list_like(mask) and not isinstance(
         mask, GeoDataFrame | GeoSeries | Polygon | MultiPolygon
     )
 
 
 def _clip_gdf_with_mask(gdf, mask, sort=False):
-    """Clip geometry to the polygon/rectangle extent.
+    """
+    Clip geometry to the polygon/rectangle extent.
 
     Clip an input GeoDataFrame to the polygon extent of the polygon
     parameter.
@@ -163,17 +179,17 @@ def clip(gdf, mask, keep_geom_type=False, sort=False):
     if not isinstance(gdf, GeoDataFrame | GeoSeries):
         raise TypeError(f"'gdf' should be GeoDataFrame or GeoSeries, got {type(gdf)}")
 
-    mask_is_list_like = _mask_is_list_like_rectangle(mask)
+    clipping_by_rectangle = _mask_is_list_like_rectangle(mask)
     if (
         not isinstance(mask, GeoDataFrame | GeoSeries | Polygon | MultiPolygon)
-        and not mask_is_list_like
+        and not clipping_by_rectangle
     ):
         raise TypeError(
             "'mask' should be GeoDataFrame, GeoSeries,"
             f"(Multi)Polygon or list-like, got {type(mask)}"
         )
 
-    if mask_is_list_like and len(mask) != 4:
+    if clipping_by_rectangle and len(mask) != 4:
         raise TypeError(
             "If 'mask' is list-like, it must have four values (minx, miny, maxx, maxy)"
         )
@@ -184,7 +200,7 @@ def clip(gdf, mask, keep_geom_type=False, sort=False):
 
     if isinstance(mask, GeoDataFrame | GeoSeries):
         box_mask = mask.total_bounds
-    elif mask_is_list_like:
+    elif clipping_by_rectangle:
         box_mask = mask
     else:
         # Avoid empty tuple returned by .bounds when geometry is empty. A tuple of
