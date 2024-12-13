@@ -786,7 +786,7 @@ class TestExplore:
         )
         out_str = self._fetch_map_string(m)
 
-        assert '"min_zoom":3' in out_str
+        assert '"minZoom":3' in out_str
 
     @pytest.mark.skipif(not HAS_PYPROJ, reason="requires pyproj")
     def test_xyzservices_providers_max_zoom_override(self):
