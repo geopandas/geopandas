@@ -40,6 +40,7 @@ all = [
     "folium", # >=0.12 (implied minimum version, but older versions may work)
     "GeoAlchemy2",
     "pyarrow>=10.0.0",
+    "scipy",
 ]
 
 # Minimum supported additional deps, not installed as part of `all` extra
