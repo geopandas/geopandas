@@ -34,6 +34,18 @@ def _delegate_binary_method(op, this, other, align, *args, **kwargs):
     else:
         maybe_warn = False
     this = this.geometry
+
+    # Use same alignment logic, regardless of if `other` is Series or GeoSeries.
+    if (
+        not isinstance(other, GeoPandasBase)
+        and isinstance(other, pd.Series)
+        and isinstance(other.dtype, GeometryDtype)
+    ):
+        # Avoid circular imports by importing here.
+        import geopandas.geoseries
+
+        other = geopandas.geoseries.GeoSeries(other)
+
     if isinstance(other, GeoPandasBase):
         if align and not this.index.equals(other.index):
             if maybe_warn:
