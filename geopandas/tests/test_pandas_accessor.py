@@ -60,7 +60,7 @@ def test_series_geo_x_attributeerror_for_not_geo_dtype():
 
     with pytest.raises(
         AttributeError,
-        match=re.escape("Can only use .geo accessor with geometry values"),
+        match=re.escape("Can only use .geo accessor with GeometryDtype values"),
     ):
         s.geo.x
 
