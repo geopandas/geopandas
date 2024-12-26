@@ -264,6 +264,11 @@ def _read_file(
     may fail. In this case, the proper encoding can be specified explicitly
     by using the encoding keyword parameter, e.g. ``encoding='utf-8'``.
 
+    For faster data reading with the default pyogrio engine when
+    pyarrow is installed, pass ``use_arrow=True`` as an argument. See the User
+    Guide page :doc:`../../../user_guide/io` for details.
+
+
     When specifying a URL, geopandas will check if the server supports reading
     partial data and in that case pass the URL as is to the underlying engine,
     which will then use the network file system handler of GDAL to read from
