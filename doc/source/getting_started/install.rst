@@ -158,6 +158,7 @@ Further, optional dependencies are:
 - `GeoAlchemy2`_ (optional; for writing to PostGIS)
 - `geopy`_ (optional; for geocoding)
 - `pointpats`_ (optional; for advanced point sampling)
+- `scipy`_ (optional; for sparse output of spatial indexing)
 
 
 For plotting, these additional packages may be used:
@@ -214,3 +215,5 @@ For plotting, these additional packages may be used:
 .. _pointpats: https://pysal.org/pointpats/
 
 .. _folium: https://python-visualization.github.io/folium/stable/
+
+.. _scipy: https://docs.scipy.org/doc/scipy/
