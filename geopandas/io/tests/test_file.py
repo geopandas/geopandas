@@ -274,7 +274,7 @@ def test_read_file_datetime_invalid(tmpdir, ext, engine):
         assert is_datetime64_any_dtype(res["date"])
         assert pd.isna(res["date"].iloc[-1])
     else:
-        assert res["date"].dtype == "object"
+        assert res["date"].dtype == "str" if PANDAS_GE_30 else object
         assert isinstance(res["date"].iloc[-1], str)
 
 
