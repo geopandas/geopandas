@@ -842,13 +842,15 @@ class TestPolygonPlotting:
 
     def test_plot_polygon_with_holes(self):
         """Test that geometries are properly normalized so holes appear."""
-        geoms = [Polygon(
-            [(0, 0), (0, 5), (5, 5), (5, 0)],
-            [
-                [(1, 1), (1, 2), (2, 2), (2, 1)],
-                [(3, 2), (3, 3), (4, 3), (4, 2)],
-            ],
-        )]
+        geoms = [
+            Polygon(
+                [(0, 0), (0, 5), (5, 5), (5, 0)],
+                [
+                    [(1, 1), (1, 2), (2, 2), (2, 1)],
+                    [(3, 2), (3, 3), (4, 3), (4, 2)],
+                ],
+            )
+        ]
 
         _df = GeoDataFrame(geometry=geoms)
         ax = _df.plot()
@@ -939,11 +941,10 @@ class TestPolygonPlotting:
         plotted_vertices = np.append(
             ax.collections[0].get_paths()[0].vertices,
             ax.collections[0].get_paths()[1].vertices,
-            axis=0
+            axis=0,
         )
         expected_vertices = _df.normalize().get_coordinates().to_numpy()
         np.testing.assert_array_equal(plotted_vertices, expected_vertices)
-
 
     def test_subplots_norm(self):
         # colors of subplots are the same as for plot (norm is applied)
