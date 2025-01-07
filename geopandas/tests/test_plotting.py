@@ -840,6 +840,22 @@ class TestPolygonPlotting:
         cax = _get_colorbar_ax(ax.get_figure())
         assert cax.get_xlabel() == label_txt
 
+    def test_plot_polygon_with_holes(self):
+        """Test that geometries are properly normalized so holes appear."""
+        geoms = [Polygon(
+            [(0, 0), (0, 5), (5, 5), (5, 0)],
+            [
+                [(1, 1), (1, 2), (2, 2), (2, 1)],
+                [(3, 2), (3, 3), (4, 3), (4, 2)],
+            ],
+        )]
+
+        _df = GeoDataFrame(geometry=geoms)
+        ax = _df.plot()
+        plotted_vertices = ax.collections[0].get_paths()[0].vertices
+        expected_vertices = _df.normalize().get_coordinates().to_numpy()
+        np.testing.assert_array_equal(plotted_vertices, expected_vertices)
+
     def test_fmt_ignore(self):
         # test if fmt is removed if scheme is not passed (it would raise Error)
         # GH #1253
@@ -910,6 +926,24 @@ class TestPolygonPlotting:
             np.testing.assert_array_equal(
                 [0.7, 0.7, 0.2, 0.2], ax.collections[0].get_alpha()
             )
+
+    def test_multipolygons_with_interior(self):
+        """Test multipolygons properly orient so holes will appear.
+        Test derived from shapely PR #1933."""
+        poly1 = Polygon([(0, 0), (0, 5), (5, 5), (5, 0)])
+        poly2 = Polygon([(1, 1), (1, 2), (2, 2), (2, 1)])
+        poly3 = Polygon([(3, 2), (3, 3), (4, 3), (4, 2)])
+        multipoly = MultiPolygon([poly1, poly2, poly3])
+        _df = GeoDataFrame(geometry=[multipoly])
+        ax = _df.plot()
+        plotted_vertices = np.append(
+            ax.collections[0].get_paths()[0].vertices,
+            ax.collections[0].get_paths()[1].vertices,
+            axis=0
+        )
+        expected_vertices = _df.normalize().get_coordinates().to_numpy()
+        np.testing.assert_array_equal(plotted_vertices, expected_vertices)
+
 
     def test_subplots_norm(self):
         # colors of subplots are the same as for plot (norm is applied)
