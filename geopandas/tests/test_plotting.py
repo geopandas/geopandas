@@ -932,10 +932,9 @@ class TestPolygonPlotting:
     def test_multipolygons_with_interior(self):
         """Test multipolygons properly orient so holes will appear.
         Test derived from shapely PR #1933."""
-        poly1 = Polygon([(0, 0), (0, 5), (5, 5), (5, 0)])
-        poly2 = Polygon([(1, 1), (1, 2), (2, 2), (2, 1)])
-        poly3 = Polygon([(3, 2), (3, 3), (4, 3), (4, 2)])
-        multipoly = MultiPolygon([poly1, poly2, poly3])
+        poly1 = box(0, 0, 1, 1).difference(box(0.2, 0.2, 0.5, 0.5))
+        poly2 = box(3, 3, 6, 6).difference(box(4, 4, 5, 5))
+        multipoly = MultiPolygon([poly1, poly2])
         _df = GeoDataFrame(geometry=[multipoly])
         ax = _df.plot()
         plotted_vertices = np.append(
