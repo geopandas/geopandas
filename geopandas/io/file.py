@@ -266,7 +266,7 @@ def _read_file(
 
     For faster data reading with the default pyogrio engine when
     pyarrow is installed, pass ``use_arrow=True`` as an argument. See the User
-    Guide page :doc:`../../../user_guide/io` for details.
+    Guide page :doc:`../../user_guide/io` for details.
 
 
     When specifying a URL, geopandas will check if the server supports reading
