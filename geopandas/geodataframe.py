@@ -1802,8 +1802,7 @@ default 'snappy'
 
         if not pd.api.types.is_list_like(key) and (
             key == self._geometry_column_name
-            or key == "geometry"
-            and self._geometry_column_name is None
+            or (key == "geometry" and self._geometry_column_name is None)
         ):
             if pd.api.types.is_scalar(value) or isinstance(value, BaseGeometry):
                 value = [value] * self.shape[0]
@@ -1918,7 +1917,7 @@ default 'snappy'
 
     def __finalize__(self, other, method=None, **kwargs):
         """propagate metadata from other to self"""
-        self = super().__finalize__(other, method=method, **kwargs)
+        self = super().__finalize__(other, method=method, **kwargs)  # noqa: PLW0642
 
         # merge operation: using metadata of the left object
         if method == "merge":
