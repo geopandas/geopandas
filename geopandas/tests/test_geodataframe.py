@@ -602,6 +602,14 @@ class TestDataFrame:
         assert type(df) is GeoDataFrame
         assert type(df.copy()) is GeoDataFrame
 
+    def test_empty(self):
+        df = GeoDataFrame({"geometry": []})
+        assert df.geometry.dtype == "geometry"
+        df = GeoDataFrame({"a": []}, geometry="a")
+        assert df.geometry.dtype == "geometry"
+        df = GeoDataFrame(geometry=[])
+        assert df.geometry.dtype == "geometry"
+
     def test_bool_index(self):
         # Find boros with 'B' in their name
         df = self.df[self.df["BoroName"].str.contains("B")]

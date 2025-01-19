@@ -2,32 +2,16 @@
 
 ## Version 1.1.0
 
-Notes on dependencies:
-
-- GeoPandas 1.1 now requires Python 3.10 or greater and pandas 2.0, numpy 1.24, pyproj 3.5,
-  are now the minimum required version for these dependencies.
-  Furthermore, the minimum tested version for optional dependencies has been updated to
-  fiona 1.8.21, scipy 1.9, matplotlib 3.7, mapclassify 2.5, folium 0.12 and
-  SQLAlchemy 2.0. Older versions of these libraries may continue to work, but are no longer
-  considered supported (#3371).
-
 New features and improvements:
 
 - Add ``grid_size`` parameter to ``union_all`` and ``dissolve`` (#3445).
+- `GeoDataFrame.plot` now supports `pd.Index` as an input for the `column` keyword (#3463).
+- Avoid change of the plot aspect when plotting missing values (#3438).
 
 Bug fixes:
 
 - Fix an issue that showed numpy dtypes in bbox in `to_geo_dict` and `__geo_interface__`. (#3436)
-- Fix an issue in `sample_points` that could occasionally result in non-uniform distribution (#3470)
-
-New features and improvements:
-
-- `GeoDataFrame.plot` now supports `pd.Index` as an input for the `column` keyword (#3463).
-
-## Version 1.0.2 (???)
-
-Bug fixes:
-
+- Fix an issue in `sample_points` that could occasionally result in non-uniform distribution (#3470).
 - Fix unspecified layer warning being emitted while reading multilayer datasets, even
   when layer is specified when using the mask or bbox keywords (#3378).
 - Properly support named aggregations over a geometry column in `GroupBy.agg` (#3368).
@@ -38,12 +22,29 @@ Bug fixes:
 - Fix regression where `overlay` with `keep_geom_type` returns wrong results if the
   input contains invalid geometries (#3395).
 - Fix the dtype of the GeometryArray backing data being incorrect for zero length
-  GeoDataFrames causing errors in `overlay` (3424).
+  GeoDataFrames causing errors in `overlay` (#3424).
+- Fix regression where constructing a GeoSeries from a pd.Series with GeometryDtype values
+  failed when `crs` was provided (#3383).
+
+Notes on dependencies:
+
+- GeoPandas 1.1 now requires Python 3.10 or greater and pandas 2.0, numpy 1.24, pyproj 3.5,
+  are now the minimum required version for these dependencies.
+  Furthermore, the minimum tested version for optional dependencies has been updated to
+  fiona 1.8.21, scipy 1.9, matplotlib 3.7, mapclassify 2.5, folium 0.12 and
+  SQLAlchemy 2.0. Older versions of these libraries may continue to work, but are no longer
+  considered supported (#3371).
 
 Deprecations and compatibility notes:
 
 - The `GeoSeries.select` method wrapping the pandas `Series.select` method has been removed.
   The upstream method no longer exists in all supported version of pandas (#3394).
+
+New features and improvements:
+
+- Added `geopandas.accessors` module. Import this module to register a
+  `pandas.Series.geo` accessor, which exposes GeoSeries methods via pandas's
+  extension mechanism (#3272).
 
 ## Version 1.0.1 (July 2, 2024)
 

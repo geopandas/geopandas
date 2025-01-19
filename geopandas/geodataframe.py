@@ -206,19 +206,28 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 )
 
             # only if we have actual geometry values -> call set_geometry
-            try:
-                if (
-                    hasattr(self["geometry"].values, "crs")
-                    and self["geometry"].values.crs
-                    and crs
-                    and not self["geometry"].values.crs == crs
-                ):
-                    raise ValueError(crs_mismatch_error)
-                self["geometry"] = _ensure_geometry(self["geometry"].values, crs)
-            except TypeError:
-                pass
-            else:
-                geometry = "geometry"
+            if (
+                hasattr(self["geometry"].values, "crs")
+                and self["geometry"].values.crs
+                and crs
+                and not self["geometry"].values.crs == crs
+            ):
+                raise ValueError(crs_mismatch_error)
+            # If "geometry" is potentially coercible to geometry, we try and convert it
+            geom_dtype = self["geometry"].dtype
+            if (
+                geom_dtype == "geometry"  # noqa: PLR1714
+                or geom_dtype == "object"
+                # special case for geometry = [], has float dtype
+                or (len(self) == 0 and geom_dtype == "float")
+            ):
+                try:
+                    self["geometry"] = _ensure_geometry(self["geometry"].values, crs)
+                except TypeError:
+                    pass
+                else:
+                    # feed through to call set geometry below
+                    geometry = "geometry"
 
         if geometry is not None:
             if (
@@ -1310,7 +1319,7 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
 
         See https://geoarrow.org/ for details on the GeoArrow specification.
 
-        This functions returns a generic Arrow data object implementing
+        This function returns a generic Arrow data object implementing
         the `Arrow PyCapsule Protocol`_ (i.e. having an ``__arrow_c_stream__``
         method). This object can then be consumed by your Arrow implementation
         of choice that supports this protocol.
@@ -1948,8 +1957,7 @@ default 'snappy'
 
         if not pd.api.types.is_list_like(key) and (
             key == self._geometry_column_name
-            or key == "geometry"
-            and self._geometry_column_name is None
+            or (key == "geometry" and self._geometry_column_name is None)
         ):
             if pd.api.types.is_scalar(value) or isinstance(value, BaseGeometry):
                 value = [value] * self.shape[0]
@@ -2074,7 +2082,7 @@ default 'snappy'
         self, other, method: str | None = None, **kwargs
     ) -> GeoDataFrame | GeoSeries:
         """propagate metadata from other to self"""
-        self = super().__finalize__(other, method=method, **kwargs)
+        self = super().__finalize__(other, method=method, **kwargs)  # noqa: PLW0642
 
         # merge operation: using metadata of the left object
         if method == "merge":
@@ -2371,37 +2379,6 @@ default 'snappy'
             )
 
         return df
-
-    # overrides the pandas astype method to ensure the correct return type
-    # should be removable when pandas 1.4 is dropped
-    def astype(
-        self, dtype, copy: bool | None = None, errors="raise", **kwargs
-    ) -> pd.DataFrame | GeoDataFrame:
-        """
-        Cast a pandas object to a specified dtype ``dtype``.
-        Returns a GeoDataFrame when the geometry column is kept as geometries,
-        otherwise returns a pandas DataFrame.
-        See the pandas.DataFrame.astype docstring for more details.
-        Returns
-        -------
-        GeoDataFrame or DataFrame
-        """
-        if not PANDAS_GE_30 and copy is None:
-            copy = True
-        if copy is not None:
-            kwargs["copy"] = copy
-
-        df = super().astype(dtype, errors=errors, **kwargs)
-
-        try:
-            geoms = df[self._geometry_column_name]
-            if is_geometry_type(geoms):
-                return geopandas.GeoDataFrame(df, geometry=self._geometry_column_name)
-        except KeyError:
-            pass
-        # if the geometry column is converted to non-geometries or did not exist
-        # do not return a GeoDataFrame
-        return pd.DataFrame(df)
 
     def to_postgis(
         self,
