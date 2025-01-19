@@ -298,7 +298,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
     def set_geometry(
         self,
         col,
-        drop: bool = ...,
+        drop: bool | None = ...,
         inplace: Literal[True] = ...,
         crs: Any | None = ...,
     ) -> None: ...
@@ -307,7 +307,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
     def set_geometry(
         self,
         col,
-        drop: bool = ...,
+        drop: bool | None = ...,
         inplace: Literal[False] = ...,
         crs: Any | None = ...,
     ) -> GeoDataFrame: ...
@@ -2220,7 +2220,7 @@ default 'snappy'
         """
 
         if by is None and level is None:
-            by = np.zeros(len(self), dtype="int64")
+            by = np.zeros(len(self), dtype="int64")  # type: ignore [assignment]
 
         groupby_kwargs = {
             "by": by,
