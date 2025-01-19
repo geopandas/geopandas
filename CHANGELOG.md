@@ -4,6 +4,10 @@
 
 New features and improvements:
 
+- Added options to return the result of `SpatialIndex.query` in a form of a dense or a
+  sparse boolean array. This adds optional dependency on `scipy` for the sparse output.
+  Note that this also changes the previously undocumented behaviour of the `output_format`
+  keyword (#1674).
 - Add ``grid_size`` parameter to ``union_all`` and ``dissolve`` (#3445).
 - `GeoDataFrame.plot` now supports `pd.Index` as an input for the `column` keyword (#3463).
 - Avoid change of the plot aspect when plotting missing values (#3438).
