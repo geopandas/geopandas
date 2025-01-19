@@ -829,6 +829,19 @@ def test_pivot(df):
     assert_geodataframe_equal(result, expected)
 
 
+def test_isna_empty_dtypes():
+    # https://github.com/geopandas/geopandas/issues/3417
+    # should not auto coerce isna to geometry dtype
+    expected = pd.DataFrame({"geometry": []}).isna()
+    actual = GeoDataFrame({"geometry": []}).isna()
+    assert_frame_equal(expected, actual)
+
+    # different geometry col name
+    expected = pd.DataFrame({"a": []}).isna()
+    actual = GeoDataFrame({"a": []}, geometry="a").isna()
+    assert_frame_equal(expected, actual)
+
+
 def test_preserve_attrs(df):
     # https://github.com/geopandas/geopandas/issues/1654
     df.attrs["name"] = "my_name"

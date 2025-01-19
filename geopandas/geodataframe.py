@@ -178,19 +178,28 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 )
 
             # only if we have actual geometry values -> call set_geometry
-            try:
-                if (
-                    hasattr(self["geometry"].values, "crs")
-                    and self["geometry"].values.crs
-                    and crs
-                    and not self["geometry"].values.crs == crs
-                ):
-                    raise ValueError(crs_mismatch_error)
-                self["geometry"] = _ensure_geometry(self["geometry"].values, crs)
-            except TypeError:
-                pass
-            else:
-                geometry = "geometry"
+            if (
+                hasattr(self["geometry"].values, "crs")
+                and self["geometry"].values.crs
+                and crs
+                and not self["geometry"].values.crs == crs
+            ):
+                raise ValueError(crs_mismatch_error)
+            # If "geometry" is potentially coercible to geometry, we try and convert it
+            geom_dtype = self["geometry"].dtype
+            if (
+                geom_dtype == "geometry"  # noqa: PLR1714
+                or geom_dtype == "object"
+                # special case for geometry = [], has float dtype
+                or (len(self) == 0 and geom_dtype == "float")
+            ):
+                try:
+                    self["geometry"] = _ensure_geometry(self["geometry"].values, crs)
+                except TypeError:
+                    pass
+                else:
+                    # feed through to call set geometry below
+                    geometry = "geometry"
 
         if geometry is not None:
             if (
@@ -1221,7 +1230,7 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
 
         See https://geoarrow.org/ for details on the GeoArrow specification.
 
-        This functions returns a generic Arrow data object implementing
+        This function returns a generic Arrow data object implementing
         the `Arrow PyCapsule Protocol`_ (i.e. having an ``__arrow_c_stream__``
         method). This object can then be consumed by your Arrow implementation
         of choice that supports this protocol.
@@ -1802,8 +1811,7 @@ default 'snappy'
 
         if not pd.api.types.is_list_like(key) and (
             key == self._geometry_column_name
-            or key == "geometry"
-            and self._geometry_column_name is None
+            or (key == "geometry" and self._geometry_column_name is None)
         ):
             if pd.api.types.is_scalar(value) or isinstance(value, BaseGeometry):
                 value = [value] * self.shape[0]
@@ -1918,7 +1926,7 @@ default 'snappy'
 
     def __finalize__(self, other, method=None, **kwargs):
         """propagate metadata from other to self"""
-        self = super().__finalize__(other, method=method, **kwargs)
+        self = super().__finalize__(other, method=method, **kwargs)  # noqa: PLW0642
 
         # merge operation: using metadata of the left object
         if method == "merge":

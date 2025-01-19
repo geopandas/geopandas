@@ -44,6 +44,12 @@ Deprecations and compatibility notes:
 - The `GeoSeries.select` method wrapping the pandas `Series.select` method has been removed.
   The upstream method no longer exists in all supported version of pandas (#3394).
 
+New features and improvements:
+
+- Added `geopandas.accessors` module. Import this module to register a
+  `pandas.Series.geo` accessor, which exposes GeoSeries methods via pandas's
+  extension mechanism (#3272).
+
 ## Version 1.0.1 (July 2, 2024)
 
 Bug fixes:
