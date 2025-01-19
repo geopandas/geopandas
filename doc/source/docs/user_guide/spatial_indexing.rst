@@ -3,7 +3,7 @@
 Spatial indexing
 ================
 
-When you are asking about a spatial relationship (a so called spatial
+When you are asking about a spatial relationship (a so-called spatial
 predicate) between a set of geometries A and a geometry B (or a set of
 them), you can naively check if a geometry B against any geometry in a
 set A. However, as you can imagine, that is not the most performant way
@@ -13,10 +13,10 @@ Sort-Tile-Recursive R-tree from shapely on any GeoDataFrame and
 GeoSeries using the :attr:`GeoSeries.sindex` property. This page outlines its options
 and common usage patterns.
 
-Note that in many operations where spatial index provides a significant
+Note that in many operations where spatial index provides significant
 performance benefits, GeoPandas uses it automatically (like :meth:`~GeoDataFrame.sjoin`,
 :meth:`~GeoDataFrame.overlay`, or :meth:`~GeoDataFrame.clip`). However, more advanced use cases may require
-a direct interaction with index.
+a direct interaction with the index.
 
 .. ipython:: python
 
@@ -84,7 +84,7 @@ Scalar query
 
 You can now use the :attr:`~GeoSeries.sindex` property to query the index. The
 :meth:`~sindex.SpatialIndex.query` method, by default, returns positions of all geometries
-which bounding boxes intersect the bounding box of input geometry.
+whose bounding boxes intersect the bounding box of the input geometry.
 
 .. ipython:: python
 
@@ -154,7 +154,7 @@ Array query
 ~~~~~~~~~~~
 
 Checking a single geometry against the tree is nice but not that
-efficient if you are intersted in many-to-many relationships. The
+efficient if you are interested in many-to-many relationships. The
 :meth:`~sindex.SpatialIndex.query` method allows passing any 1-D array of geometries to be
 checked against the tree. If you do so, the output structure is slightly
 different:
@@ -169,7 +169,7 @@ By default, the method returns a 2-D array of indices where the query
 found a hit where the subarrays correspond to the indices of the input
 geometries and indices of the tree geometries associated with each. In
 the example above, the 0-th geometry in the ``points`` GeoSeries
-intersects bounding box of the geometry at the poisition 1 from the
+intersects the bounding box of the geometry at the position 1 from the
 ``nyc`` GeoDataFrame, while the geometry 1 in the ``points`` matches
 geometry 16 in the ``nyc``. You may notice that these are the same
 indices as you’ve seen above.
@@ -177,7 +177,7 @@ indices as you’ve seen above.
 The other option is to return a boolean array with shape
 ``(len(tree), n)`` with boolean values marking whether the bounding box
 of a geometry in the tree intersects a bounding box of a given geometry.
-This can be either dense numpy array, or a sparse scipy array. Keep in
+This can be either a dense numpy array, or a sparse scipy array. Keep in
 mind that the output will be, in most cases, mostly filled with
 ``False`` and the array can become really large, so it is recommended to
 use the sparse format, if possible.
@@ -240,7 +240,7 @@ the nearest geometry. The API is similar as above:
     nearest_indices
 
 You can see that the nearest query returns the indices representation.
-If you are intersted how “near” the geometries actually are, the method
+If you are interested in how “near” the geometries actually are, the method
 can also return distances. In this case, the return format is a tuple of
 arrays.
 
