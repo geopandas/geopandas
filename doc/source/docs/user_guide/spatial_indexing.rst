@@ -3,18 +3,18 @@
 Spatial indexing
 ================
 
-When you are asking about a spatial relationship (a so-called spatial
+When you want to know a spatial relationship (known as a spatial
 predicate) between a set of geometries A and a geometry B (or a set of
-them), you can naively check if a geometry B against any geometry in a
-set A. However, as you can imagine, that is not the most performant way
-in most cases. The efficient assessment of spatial predicates hence
-needs to be supported by a spatial index. GeoPandas exposes
+them), you can compare geometry B against any geometry in a
+set A. However, that is not the most performant approach
+in most cases. A spatial index is a more efficient method for pre-filtering comparisons of geometries before using more computationally expensive spatial predicates.
+GeoPandas exposes the
 Sort-Tile-Recursive R-tree from shapely on any GeoDataFrame and
 GeoSeries using the :attr:`GeoSeries.sindex` property. This page outlines its options
 and common usage patterns.
 
-Note that in many operations where spatial index provides significant
-performance benefits, GeoPandas uses it automatically (like :meth:`~GeoDataFrame.sjoin`,
+Note that for many operations where a spatial index provides significant
+performance benefits, GeoPandas already uses it automatically (like :meth:`~GeoDataFrame.sjoin`,
 :meth:`~GeoDataFrame.overlay`, or :meth:`~GeoDataFrame.clip`). However, more advanced use cases may require
 a direct interaction with the index.
 
@@ -37,7 +37,7 @@ R-tree principle
 ----------------
 
 In principle, any R-tree index builds a hierarchical collection of
-bounding boxes representing first individual geometries and then their
+bounding boxes (envelopes) representing first individual geometries and then their
 most efficient combinations (from a spatial query perspective). When
 creating one, you can imagine that your geometries are represented by
 their envelopes, as illustrated below.
@@ -118,7 +118,7 @@ box.
 
 Thankfully, the spatial index allows for further filtering based on the
 actual geometry. In this case, the tree is first queried as above but
-afterwards, each of the possible hits is checked using a set predicate.
+afterwards, each of the possible hits is checked using a spatial predicate.
 
 .. ipython:: python
 
@@ -201,9 +201,7 @@ The same array can be represented as a :func:`scipy.sparse.coo_array`:
     bbox_array_query_sparse = nyc.sindex.query(points, output_format="sparse")
     bbox_array_query_sparse
 
-One example illustrating the usage is a task of finding the number of
-neighboring geometries for each subborough. You can use the spatial
-index to check all geometries against each other.
+For example, to find the number of neighboring geometries for each subborough, you can use the spatial index to compare all geometries against each other.
 
 .. ipython:: python
 
@@ -230,8 +228,8 @@ The result is a numpy array you can directly plot on a map.
 Nearest geometry query
 ----------------------
 
-While checking the predicate query is indeed extremely useful, GeoPandas
-also allows you to use the spatial index for the nearest query - finding
+While checking the spatial predicate using the spatial index is indeed extremely useful, GeoPandas
+also allows you to use the spatial index to find
 the nearest geometry. The API is similar as above:
 
 .. ipython:: python
