@@ -69,6 +69,11 @@ class GeometryDtype(ExtensionDtype):
     def construct_array_type(cls):
         return GeometryArray
 
+    def __from_arrow__(self, array) -> ExtensionArray:
+        from .io import _geoarrow
+
+        return _geoarrow.arrow_to_geometry_array(array)
+
 
 register_extension_dtype(GeometryDtype)
 
