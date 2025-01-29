@@ -201,15 +201,17 @@ The same array can be represented as a :func:`scipy.sparse.coo_array`:
     bbox_array_query_sparse = nyc.sindex.query(points, output_format="sparse")
     bbox_array_query_sparse
 
-For example, to find the number of neighboring geometries for each subborough, you can use the spatial index to compare all geometries against each other.
+For example, to find the number of neighboring geometries for each subborough, you can
+use the spatial index to compare all geometries against each other. Since you are using
+``nyc`` on both sides of the query here, the resulting array is square-shaped with
+diagonal filled with ``True``.
 
 .. ipython:: python
 
-    neighbors = nyc.sindex.query(nyc.geometry, predicate="intersects", output_format="sparse")
+    neighbors = nyc.sindex.query(nyc.geometry, predicate="intersects", output_format="dense")
     neighbors
 
-Since you are using ``nyc`` on both sides of the query here, the
-resulting array is square-shaped with diagonal filled with ``True``.
+
 Getting the sum along one axis can then give you the answer. Note that
 since a geometry always intersects itself, you need to subtract one.
 
