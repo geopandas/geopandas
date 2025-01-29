@@ -1,6 +1,7 @@
 import json
 import warnings
 from packaging.version import Version
+from typing import Literal, get_args
 
 import numpy as np
 from pandas import DataFrame, Series
@@ -15,7 +16,8 @@ from geopandas.array import from_shapely, from_wkb
 from .file import _expand_user
 
 METADATA_VERSION = "1.0.0"
-SUPPORTED_VERSIONS = ["0.1.0", "0.4.0", "1.0.0-beta.1", "1.0.0", "1.1.0"]
+SUPPORTED_VERSIONS_LITERAL = Literal["0.1.0", "0.4.0", "1.0.0-beta.1", "1.0.0", "1.1.0"]
+SUPPORTED_VERSIONS = list(get_args(SUPPORTED_VERSIONS_LITERAL))
 GEOARROW_ENCODINGS = [
     "point",
     "linestring",
@@ -25,6 +27,7 @@ GEOARROW_ENCODINGS = [
     "multipolygon",
 ]
 SUPPORTED_ENCODINGS = ["WKB"] + GEOARROW_ENCODINGS
+PARQUET_GEOMETRY_ENCODINGS = Literal["WKB", "geoarrow"]
 
 # reference: https://github.com/opengeospatial/geoparquet
 
