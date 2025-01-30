@@ -46,9 +46,9 @@ their envelopes, as illustrated below.
 
     fig, axs = plt.subplots(1, 2, sharey=True, figsize=(8, 4))
 
-    nyc.plot(ax=axs[0], edgecolor="black", linewidth=1)
+    _ = nyc.plot(ax=axs[0], edgecolor="black", linewidth=1)
     @savefig bbox.png
-    nyc.envelope.boundary.plot(ax=axs[1], color='black');
+    _ = nyc.envelope.boundary.plot(ax=axs[1], color='black')
 
 
 The left side of the figure shows the original geometries, while the
@@ -224,6 +224,7 @@ The result is a numpy array you can directly plot on a map.
 
 .. ipython:: python
 
+    @savefig neighbors.png
     nyc.plot(n_neighbors, legend=True);
 
 
