@@ -11,6 +11,7 @@ New features and improvements:
 - Add ``grid_size`` parameter to ``union_all`` and ``dissolve`` (#3445).
 - `GeoDataFrame.plot` now supports `pd.Index` as an input for the `column` keyword (#3463).
 - Avoid change of the plot aspect when plotting missing values (#3438).
+- Fix another ambiguous error when GeoDataFrame is initialised with a column called "crs" (#3502)
 
 Bug fixes:
 

@@ -1572,6 +1572,22 @@ def test_geodataframe_crs_colname():
     assert gdf["crs"].iloc[0] == 1
     assert getattr(gdf, "crs") is None
 
+    # https://github.com/geopandas/geopandas/issues/3501
+    gdf = GeoDataFrame({"crs": [1]}, geometry=[Point(1, 1)])
+    assert gdf.crs is None
+    assert gdf["crs"].iloc[0] == 1
+    assert getattr(gdf, "crs") is None
+
+    # test multiindex handling
+    df = pd.DataFrame([[1, 0], [0, 1]], columns=[["crs", "crs"], ["x", "y"]])
+    x_col = df["crs", "x"]
+    y_col = df["crs", "y"]
+
+    gdf = GeoDataFrame(df, geometry=points_from_xy(x_col, y_col))
+    assert gdf.crs is None
+    assert gdf["crs"].iloc[0].to_list() == [1, 0]
+    assert getattr(gdf, "crs") is None
+
 
 @pytest.mark.parametrize("geo_col_name", ["geometry", "polygons"])
 def test_set_geometry_supply_colname(dfs, geo_col_name):
