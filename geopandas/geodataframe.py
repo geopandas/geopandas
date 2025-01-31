@@ -1960,20 +1960,23 @@ default 'snappy'
             or (key == "geometry" and self._geometry_column_name is None)
         ):
             if pd.api.types.is_scalar(value) or isinstance(value, BaseGeometry):
-                value = [value] * self.shape[0]
+                value = [value for _ in range(self.shape[0])]
+
+            crs = getattr(self, "crs", None)
+            # if we don't have a GeoDataframe yet and there is a column named crs,
+            # don't try to use that as a crs
+            if isinstance(crs, pd.Series | pd.DataFrame):
+                crs = None
             try:
-                if self._geometry_column_name is not None:
-                    crs = getattr(self, "crs", None)
-                else:  # don't use getattr, because a col "crs" might exist
-                    crs = None
                 value = _ensure_geometry(value, crs=crs)
-                if key == "geometry":
-                    self._persist_old_default_geometry_colname()
             except TypeError:
                 warnings.warn(
                     "Geometry column does not contain geometry.",
                     stacklevel=2,
                 )
+            else:
+                if key == "geometry":
+                    self._persist_old_default_geometry_colname()
         super().__setitem__(key, value)
 
     #
