@@ -26,6 +26,11 @@ without extra arguments, but for more help, type::
     import pyogrio; help(pyogrio.read_dataframe)
     import fiona; help(fiona.open)
 
+.. note::
+    For faster data reading, pass ``use_arrow=True`` when using the default pyogrio engine. This can be 2-4 times faster than the default reading behavior and works with all drivers. See `pyogrio.read_dataframe <https://pyogrio.readthedocs.io/en/latest/api.html#pyogrio.read_dataframe>`_ for full details.
+
+    Note that this requires the ``pyarrow`` dependency to exist in your environment.
+
 Among other things, one can explicitly set the driver (shapefile, GeoJSON) with
 the ``driver`` keyword, or pick a single layer from a multi-layered file with
 the ``layer`` keyword::
@@ -75,6 +80,15 @@ You can also read path objects::
     import pathlib
     path_object = pathlib.Path(filename)
     df = geopandas.read_file(path_object)
+
+Using Arrow for faster reading
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+For faster data reading, pass ``use_arrow=True`` when using the default pyogrio engine. This can be 2-4 times faster than the default reading behavior and works with all drivers. See `pyogrio.read_dataframe <https://pyogrio.readthedocs.io/en/latest/api.html#pyogrio.read_dataframe>`_ for full details.
+
+It is also possible to enable this by default by setting the environment variable ``PYOGRIO_USE_ARROW=1`` (which will also enable writing data using arrow).
+
+Note that this requires the ``pyarrow`` dependency to exist in your environment.
 
 Reading subsets of the data
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -204,6 +218,11 @@ In addition, GeoDataFrames can be uploaded to `PostGIS <https://postgis.net/>`__
 by using the :meth:`geopandas.GeoDataFrame.to_postgis` method.
 
 .. note::
+    For faster data writing, pass ``use_arrow=True`` when using the default pyogrio engine. This can be 2-4 times faster than the default writing behavior and works with all drivers. See `pyogrio.write_dataframe <https://pyogrio.readthedocs.io/en/latest/api.html#pyogrio.write_dataframe>`_ for full details.
+
+    Note that this requires the ``pyarrow`` dependency to exist in your environment.
+
+.. note::
 
     GeoDataFrame can contain more field types than supported by most of the file formats. For example tuples or lists
     can be easily stored in the GeoDataFrame, but saving them to e.g. GeoPackage or Shapefile will raise a ValueError.
@@ -218,6 +237,10 @@ by using the :meth:`geopandas.GeoDataFrame.to_postgis` method.
 **Writing to Shapefile**::
 
     countries_gdf.to_file("countries.shp")
+
+**Writing to Shapefile with via Arrow**::
+
+    countries_gdf.to_file("countries.shp", use_arrow=True)
 
 **Writing to GeoJSON**::
 
@@ -257,7 +280,7 @@ Apache Parquet and Feather file formats
 
 .. versionadded:: 0.8.0
 
-GeoPandas supports writing and reading the Apache Parquet and Feather file
+GeoPandas supports writing and reading the Apache Parquet (`GeoParquet <https://geoparquet.org/>`__) and Feather file
 formats.
 
 `Apache Parquet <https://parquet.apache.org/>`__ is an efficient, columnar
@@ -267,7 +290,7 @@ representation of the `Apache Arrow <https://arrow.apache.org/>`__ memory
 format, an open standard for in-memory columnar data.
 
 The :func:`geopandas.read_parquet`, :func:`geopandas.read_feather`,
-:meth:`GeoDataFrame.to_parquet` and :meth:`GeoDataFrame.to_feather` methods
+:meth:`geopandas.GeoDataFrame.to_parquet` and :meth:`geopandas.GeoDataFrame.to_feather` methods
 enable fast roundtrip from GeoPandas to those binary file formats, preserving
 the spatial information.
 

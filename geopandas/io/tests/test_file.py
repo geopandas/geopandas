@@ -18,7 +18,7 @@ from shapely.geometry import Point, Polygon, box, mapping
 
 import geopandas
 from geopandas import GeoDataFrame, read_file
-from geopandas._compat import HAS_PYPROJ, PANDAS_GE_20, PANDAS_GE_30
+from geopandas._compat import HAS_PYPROJ, PANDAS_GE_30
 from geopandas.io.file import _EXTENSION_TO_DRIVER, _detect_driver
 
 import pytest
@@ -229,8 +229,7 @@ def test_to_file_datetime(tmpdir, driver, ext, time, engine):
     assert_geodataframe_equal(df.drop(columns=["b"]), df_read.drop(columns=["b"]))
     # Check datetime column
     expected = df["b"]
-    if PANDAS_GE_20:
-        expected = df["b"].dt.as_unit("ms")
+    expected = df["b"].dt.as_unit("ms")
     actual = df_read["b"]
     if df["b"].dt.tz is not None:
         # US/Eastern becomes a UTC-5 fixed offset when read from file
@@ -281,8 +280,6 @@ def test_read_file_datetime_invalid(tmpdir, ext, engine):
 
 @pytest.mark.parametrize("ext", dt_exts)
 def test_read_file_datetime_out_of_bounds_ns(tmpdir, ext, engine):
-    if engine == "pyogrio" and not PANDAS_GE_20:
-        pytest.skip("with pyogrio requires pandas >= 2.0 to pass")
     # https://github.com/geopandas/geopandas/issues/2502
     date_str = "9999-12-31T00:00:00"  # valid to GDAL, not to [ns] format
     tempfilename = write_invalid_date_file(date_str, tmpdir, ext, engine)
