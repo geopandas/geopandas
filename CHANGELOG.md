@@ -16,8 +16,8 @@ Bug fixes:
 
 New features and improvements:
 
-- An error message is raised when `read_file` is used wth a GeoDataFrame or GeoSeries mask 
-  to read a source dataset without a defined CRS. (#3464)
+- A warning message is raised when `read_file` is used when a GeoDataFrame or GeoSeries mask 
+  and/or the source dataset is missing a defined CRS. (#3464)
 
 ## Version 1.0.2 (???)
 

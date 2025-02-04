@@ -495,16 +495,31 @@ def _read_file_pyogrio(path_or_bytes, bbox=None, mask=None, rows=None, **kwargs)
         # NOTE: mask cannot be used at same time as bbox keyword
         if isinstance(mask, GeoDataFrame | GeoSeries):
             crs = pyogrio.read_info(path_or_bytes, layer=kwargs.get("layer")).get("crs")
-
-            if crs is None:
-                raise ValueError("""There is no CRS defined in the source dataset.
-                    This is required when a GeoDataFrame or GeoSeries
-                    mask is used.""")
+            if (crs is None) and (mask.crs is None):
+                warnings.warn(
+                    """There is no CRS defined in the source dataset nor mask.""",
+                    UserWarning,
+                    stacklevel=3,
+                )
+            elif (crs is None) and (mask.crs is not None):
+                warnings.warn(
+                    """There is no CRS defined in the source dataset.""",
+                    UserWarning,
+                    stacklevel=3,
+                )
+            elif (crs is not None) and (mask.crs is None):
+                warnings.warn(
+                    """There is no CRS defined in the mask.""",
+                    UserWarning,
+                    stacklevel=3,
+                )
+            else:  # both have CRS
+                mask = mask.to_crs(crs)
 
             if isinstance(path_or_bytes, IOBase):
                 path_or_bytes.seek(0)
 
-            mask = shapely.unary_union(mask.to_crs(crs).geometry.values)
+            mask = shapely.unary_union(mask.geometry.values)
         elif isinstance(mask, BaseGeometry):
             mask = shapely.unary_union(mask)
         elif isinstance(mask, dict) or hasattr(mask, "__geo_interface__"):
