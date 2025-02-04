@@ -173,7 +173,10 @@ def test_overlay_nybb(how, nybb_filename):
 
     if how == "identity":
         expected = expected[expected.BoroCode.notnull()].copy()
-        expected["BoroCode"] = expected["BoroCode"].astype("int32")
+        boro_code_dtype = result["BoroCode"].dtype
+        if boro_code_dtype in ("int32", "int64"):
+            # Depending on the pandas version, the dtype might be int32 or int64
+            expected["BoroCode"] = expected["BoroCode"].astype(boro_code_dtype)
 
     # Order GeoDataFrames
     expected = expected.sort_values(cols).reset_index(drop=True)
