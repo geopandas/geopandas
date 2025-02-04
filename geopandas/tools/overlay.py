@@ -110,6 +110,21 @@ def _overlay_difference(df1, df2):
     return dfdiff
 
 
+def _overlay_identity(df1, df2):
+    """
+    Overlay Identity operation used in overlay function.
+    """
+    dfintersection = _overlay_intersection(df1, df2)
+    dfdifference = _overlay_difference(df1, df2)
+    dfdifference = _ensure_geometry_column(dfdifference)
+    result = pd.concat([dfintersection, dfdifference], ignore_index=True, sort=False)
+    # keep geometry column last
+    columns = list(dfintersection.columns)
+    columns.remove("geometry")
+    columns.append("geometry")
+    return result.reindex(columns=columns)
+
+
 def _overlay_symmetric_diff(df1, df2):
     """
     Overlay Symmetric Difference operation used in overlay function
@@ -335,6 +350,7 @@ def overlay(df1, df2, how="intersection", keep_geom_type=None, make_valid=True):
         elif how == "identity":
             dfunion = _overlay_union(df1, df2)
             result = dfunion[dfunion["__idx1"].notnull()].copy()
+            result = _overlay_identity(df1, df2)
 
         if how in ["intersection", "symmetric_difference", "union", "identity"]:
             result.drop(["__idx1", "__idx2"], axis=1, inplace=True)
