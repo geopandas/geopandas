@@ -1,5 +1,5 @@
-import warnings
 from functools import reduce
+import warnings
 
 import numpy as np
 import pandas as pd
@@ -15,7 +15,7 @@ from geopandas.array import (
 )
 
 
-def _ensure_geometry_column(df):
+def _ensure_geometry_column(df: GeoDataFrame) -> None:
     """
     Helper function to ensure the geometry column is called 'geometry'.
     If another column with that name exists, it will be dropped.
@@ -32,7 +32,7 @@ def _ensure_geometry_column(df):
     return df
 
 
-def _overlay_intersection(df1, df2):
+def _overlay_intersection(df1: GeoDataFrame, df2: GeoDataFrame) -> GeoDataFrame:
     """
     Overlay Intersection operation used in overlay function
     """
@@ -82,7 +82,7 @@ def _overlay_intersection(df1, df2):
         ]
 
 
-def _overlay_difference(df1, df2):
+def _overlay_difference(df1: GeoDataFrame, df2: GeoDataFrame) -> GeoDataFrame:
     """
     Overlay Difference operation used in overlay function
     """
@@ -110,7 +110,7 @@ def _overlay_difference(df1, df2):
     return dfdiff
 
 
-def _overlay_symmetric_diff(df1, df2):
+def _overlay_symmetric_diff(df1: GeoDataFrame, df2: GeoDataFrame) -> GeoDataFrame:
     """
     Overlay Symmetric Difference operation used in overlay function
     """
@@ -139,7 +139,7 @@ def _overlay_symmetric_diff(df1, df2):
     return dfsym
 
 
-def _overlay_union(df1, df2):
+def _overlay_union(df1: GeoDataFrame, df2: GeoDataFrame) -> GeoDataFrame:
     """
     Overlay Union operation used in overlay function
     """
@@ -153,7 +153,13 @@ def _overlay_union(df1, df2):
     return dfunion.reindex(columns=columns)
 
 
-def overlay(df1, df2, how="intersection", keep_geom_type=None, make_valid=True):
+def overlay(
+    df1: GeoDataFrame,
+    df2: GeoDataFrame,
+    how: str = "intersection",
+    keep_geom_type: bool = None,
+    make_valid: bool = True,
+) -> GeoDataFrame:
     """Perform spatial overlay between two GeoDataFrames.
 
     Currently only supports data GeoDataFrames with uniform geometry types,
@@ -293,7 +299,7 @@ def overlay(df1, df2, how="intersection", keep_geom_type=None, make_valid=True):
             ]
 
     # Computations
-    def _make_valid(df):
+    def _make_valid(df: GeoDataFrame) -> GeoDataFrame:
         df = df.copy()
         if df.geom_type.isin(POLYGON_GEOM_TYPES).all():
             mask = ~df.geometry.is_valid
