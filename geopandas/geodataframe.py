@@ -1924,7 +1924,7 @@ default 'snappy'
             result.__class__ = GeoSeries
         elif isinstance(result, DataFrame):
             if (result.dtypes == "geometry").sum() > 0:
-                result.__class__ = GeoDataFrame
+                result.__class__ = self.__class__
                 if geo_col in result:
                     result._geometry_column_name = geo_col
             else:
@@ -1983,7 +1983,7 @@ default 'snappy'
     def copy(self, deep: bool = True) -> GeoDataFrame:
         copied = super().copy(deep=deep)
         if type(copied) is pd.DataFrame:
-            copied.__class__ = GeoDataFrame
+            copied.__class__ = self.__class__
             copied._geometry_column_name = self._geometry_column_name
         return copied
 
@@ -2038,7 +2038,7 @@ default 'snappy'
             return _geodataframe_constructor_with_fallback(
                 pd.DataFrame._from_mgr(mgr, axes)
             )
-        gdf = GeoDataFrame._from_mgr(mgr, axes)
+        gdf = self._from_mgr(mgr, axes)
         # _from_mgr doesn't preserve metadata (expect __finalize__ to be called)
         # still need to mimic __init__ behaviour with geometry=None
         if (gdf.columns == "geometry").sum() == 1:  # only if "geometry" is single col
