@@ -901,7 +901,7 @@ GeometryCollection
 
     def concave_hull(self, ratio=0.0, allow_holes=False):
         """Returns a ``GeoSeries`` of geometries representing the concave hull
-        of each geometry.
+        of vertices of each geometry.
 
         The concave hull of a geometry is the smallest concave `Polygon`
         containing all the points in each geometry, unless the number of points
@@ -957,6 +957,12 @@ GeometryCollection
         See also
         --------
         GeoSeries.convex_hull : convex hull geometry
+
+        Notes
+        -----
+        The algorithms considers only vertices of each geometry. As a result the
+        hull may not fully enclose input geometry. If that happens, increasing ``ratio``
+        should resolve the issue.
 
         """
         return _delegate_geo_method(
