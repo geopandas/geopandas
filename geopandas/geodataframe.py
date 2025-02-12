@@ -2258,7 +2258,9 @@ default 'snappy'
         )
 
         # Aggregate
-        aggregated_geometry = GeoDataFrame(g, geometry=self.geometry.name, crs=self.crs)
+        aggregated_geometry = self._constructor(
+            g, geometry=self.geometry.name, crs=self.crs
+        )
         # Recombine
         aggregated = aggregated_geometry.join(aggregated_data)
 

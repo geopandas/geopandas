@@ -1674,6 +1674,8 @@ def test_inheritance(dfs):
         dfc,
         dfc.iloc[[0]],
         dfc.loc[dfc.col1 == 1],
+        dfc.rename_geometry("geometry2"),
+        dfc.dissolve(),
         dfc[["col2", "geometry"]],
         dfc.copy(),
     ]
