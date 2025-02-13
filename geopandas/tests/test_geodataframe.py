@@ -1670,14 +1670,21 @@ def test_inheritance(dfs):
 
     dfc = GDFChild(df)
 
+    dfc2 = dfc.rename_geometry("geometry2")
+
     children = [
         dfc,
         dfc.iloc[[0]],
         dfc.loc[dfc.col1 == 1],
-        dfc.rename_geometry("geometry2"),
         dfc.dissolve(),
         dfc[["col2", "geometry"]],
         dfc.copy(),
+        dfc2,
+        dfc2.iloc[[0]],
+        dfc2.loc[dfc.col1 == 1],
+        dfc2.dissolve(),
+        dfc2[["col2", "geometry2"]],
+        dfc2.copy(),
     ]
 
     for v in children:
