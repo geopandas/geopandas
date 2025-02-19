@@ -34,6 +34,18 @@ def _delegate_binary_method(op, this, other, align, *args, **kwargs):
     else:
         maybe_warn = False
     this = this.geometry
+
+    # Use same alignment logic, regardless of if `other` is Series or GeoSeries.
+    if (
+        not isinstance(other, GeoPandasBase)
+        and isinstance(other, pd.Series)
+        and isinstance(other.dtype, GeometryDtype)
+    ):
+        # Avoid circular imports by importing here.
+        import geopandas.geoseries
+
+        other = geopandas.geoseries.GeoSeries(other)
+
     if isinstance(other, GeoPandasBase):
         if align and not this.index.equals(other.index):
             if maybe_warn:
@@ -889,7 +901,7 @@ GeometryCollection
 
     def concave_hull(self, ratio=0.0, allow_holes=False):
         """Returns a ``GeoSeries`` of geometries representing the concave hull
-        of each geometry.
+        of vertices of each geometry.
 
         The concave hull of a geometry is the smallest concave `Polygon`
         containing all the points in each geometry, unless the number of points
@@ -945,6 +957,12 @@ GeometryCollection
         See also
         --------
         GeoSeries.convex_hull : convex hull geometry
+
+        Notes
+        -----
+        The algorithms considers only vertices of each geometry. As a result the
+        hull may not fully enclose input geometry. If that happens, increasing ``ratio``
+        should resolve the issue.
 
         """
         return _delegate_geo_method(
