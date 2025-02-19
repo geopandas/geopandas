@@ -109,6 +109,8 @@ class SpatialIndex:
         Any input geometry that is None or empty will never match geometries in
         the tree.
 
+        See the User Guide page :doc:`../../user_guide/spatial_indexing` for more.
+
         Parameters
         ----------
         geometry : shapely.Geometry or array-like of geometries \

@@ -16,6 +16,7 @@ specification in the :doc:`API reference <reference>`.
 .. toctree::
   :maxdepth: 2
 
+  user_guide/spatial_indexing
   user_guide/missing_empty
   user_guide/reproject_fiona
   user_guide/pygeos_to_shapely
