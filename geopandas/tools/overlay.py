@@ -110,6 +110,21 @@ def _overlay_difference(df1, df2):
     return dfdiff
 
 
+def _overlay_identity(df1, df2):
+    """
+    Overlay Identity operation used in overlay function.
+    """
+    dfintersection = _overlay_intersection(df1, df2)
+    dfdifference = _overlay_difference(df1, df2)
+    dfdifference = _ensure_geometry_column(dfdifference)
+    result = pd.concat([dfintersection, dfdifference], ignore_index=True, sort=False)
+    # keep geometry column last
+    columns = list(dfintersection.columns)
+    columns.remove("geometry")
+    columns.append("geometry")
+    return result.reindex(columns=columns)
+
+
 def _overlay_symmetric_diff(df1, df2):
     """
     Overlay Symmetric Difference operation used in overlay function
@@ -225,11 +240,11 @@ def overlay(df1, df2, how="intersection", keep_geom_type=None, make_valid=True):
 
     >>> geopandas.overlay(df1, df2, how='identity')
        df1_data  df2_data                                           geometry
-    0       1.0       1.0                POLYGON ((2 2, 2 1, 1 1, 1 2, 2 2))
-    1       2.0       1.0                POLYGON ((2 2, 2 3, 3 3, 3 2, 2 2))
-    2       2.0       2.0                POLYGON ((4 4, 4 3, 3 3, 3 4, 4 4))
-    3       1.0       NaN      POLYGON ((2 0, 0 0, 0 2, 1 2, 1 1, 2 1, 2 0))
-    4       2.0       NaN  MULTIPOLYGON (((3 4, 3 3, 2 3, 2 4, 3 4)), ((4...
+    0         1       1.0                POLYGON ((2 2, 2 1, 1 1, 1 2, 2 2))
+    1         2       1.0                POLYGON ((2 2, 2 3, 3 3, 3 2, 2 2))
+    2         2       2.0                POLYGON ((4 4, 4 3, 3 3, 3 4, 4 4))
+    3         1       NaN      POLYGON ((2 0, 0 0, 0 2, 1 2, 1 1, 2 1, 2 0))
+    4         2       NaN  MULTIPOLYGON (((3 4, 3 3, 2 3, 2 4, 3 4)), ((4...
 
     See also
     --------
@@ -333,8 +348,7 @@ def overlay(df1, df2, how="intersection", keep_geom_type=None, make_valid=True):
         elif how == "union":
             result = _overlay_union(df1, df2)
         elif how == "identity":
-            dfunion = _overlay_union(df1, df2)
-            result = dfunion[dfunion["__idx1"].notnull()].copy()
+            result = _overlay_identity(df1, df2)
 
         if how in ["intersection", "symmetric_difference", "union", "identity"]:
             result.drop(["__idx1", "__idx2"], axis=1, inplace=True)
