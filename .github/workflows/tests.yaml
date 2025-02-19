@@ -57,6 +57,7 @@ jobs:
           - env: ci/envs/312-dev.yaml
             os: ubuntu-latest
             dev: true
+            pandas_future_infer_string: "1"
 
     steps:
       - uses: actions/checkout@v4
@@ -74,6 +75,8 @@ jobs:
           micromamba list
 
       - name: Test
+        env:
+          PANDAS_FUTURE_INFER_STRING: ${{ matrix.pandas_future_infer_string || '0' }}
         run: |
           pytest -v -r a -n auto --color=yes --cov=geopandas --cov-append --cov-report term-missing --cov-report xml geopandas/
 
