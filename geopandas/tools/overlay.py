@@ -348,8 +348,6 @@ def overlay(df1, df2, how="intersection", keep_geom_type=None, make_valid=True):
         elif how == "union":
             result = _overlay_union(df1, df2)
         elif how == "identity":
-            dfunion = _overlay_union(df1, df2)
-            result = dfunion[dfunion["__idx1"].notnull()].copy()
             result = _overlay_identity(df1, df2)
 
         if how in ["intersection", "symmetric_difference", "union", "identity"]:
