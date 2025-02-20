@@ -1656,10 +1656,6 @@ def test_reduce_geometry_array():
 
 
 class GDFChild(GeoDataFrame):
-    @property
-    def _constructor(self):
-        return GDFChild
-
     def custom_method(self):
         return "this is a custom output"
 
