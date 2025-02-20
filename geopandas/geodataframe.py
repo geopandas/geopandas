@@ -2031,7 +2031,7 @@ default 'snappy'
 
     @property
     def _constructor(self) -> DataFrame | GeoDataFrame:
-        return self.__class__._geodataframe_constructor_with_fallback
+        return self._geodataframe_constructor_with_fallback
 
     def _constructor_from_mgr(self, mgr, axes) -> DataFrame | GeoDataFrame:
         # replicate _geodataframe_constructor_with_fallback behaviour
