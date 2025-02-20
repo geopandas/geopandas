@@ -158,7 +158,7 @@ def assert_geoseries_equal(
         Typically useful with ``check_less_precise=True``, which uses
         ``geom_equals_exact`` and requires exact coordinate order.
     """
-    assert len(left) == len(right), "%d != %d" % (len(left), len(right))
+    assert len(left) == len(right), f"{len(left)} != {len(right)}"
 
     if check_dtype:
         msg = "dtype should be a GeometryDtype, got {0}"

@@ -4,6 +4,10 @@
 
 New features and improvements:
 
+- Added options to return the result of `SpatialIndex.query` in a form of a dense or a
+  sparse boolean array. This adds optional dependency on `scipy` for the sparse output.
+  Note that this also changes the previously undocumented behaviour of the `output_format`
+  keyword (#1674).
 - Add ``grid_size`` parameter to ``union_all`` and ``dissolve`` (#3445).
 - `GeoDataFrame.plot` now supports `pd.Index` as an input for the `column` keyword (#3463).
 - Avoid change of the plot aspect when plotting missing values (#3438).
@@ -39,6 +43,12 @@ Deprecations and compatibility notes:
 
 - The `GeoSeries.select` method wrapping the pandas `Series.select` method has been removed.
   The upstream method no longer exists in all supported version of pandas (#3394).
+
+New features and improvements:
+
+- Added `geopandas.accessors` module. Import this module to register a
+  `pandas.Series.geo` accessor, which exposes GeoSeries methods via pandas's
+  extension mechanism (#3272).
 
 ## Version 1.0.1 (July 2, 2024)
 
