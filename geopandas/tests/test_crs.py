@@ -674,7 +674,6 @@ class TestGeometryArrayCRS:
         arr = from_shapely(self.geoms, crs=27700)
         df = GeoDataFrame({"col1": [0, 1]}, geometry=arr)
         df2 = df.astype({"col1": str})
-        print(type(df), type(df2))
         assert df2.crs == self.osgb
 
     def test_apply(self):
