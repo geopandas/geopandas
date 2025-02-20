@@ -2260,7 +2260,7 @@ default 'snappy'
         )
 
         # Aggregate
-        aggregated_geometry = self._constructor(
+        aggregated_geometry = self.__class__(
             g, geometry=self.geometry.name, crs=self.crs
         )
         # Recombine
