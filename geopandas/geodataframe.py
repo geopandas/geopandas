@@ -43,22 +43,6 @@ if typing.TYPE_CHECKING:
     )
 
 
-def _geodataframe_constructor_with_fallback(
-    *args, **kwargs
-) -> pd.DataFrame | GeoDataFrame:
-    """
-    A flexible constructor for GeoDataFrame._constructor, which falls back
-    to returning a DataFrame (if a certain operation does not preserve the
-    geometry column)
-    """
-    df = GeoDataFrame(*args, **kwargs)
-    geometry_cols_mask = df.dtypes == "geometry"
-    if len(geometry_cols_mask) == 0 or geometry_cols_mask.sum() == 0:
-        df = pd.DataFrame(df)
-
-    return df
-
-
 def _ensure_geometry(data, crs: Any | None = None) -> GeoSeries | GeometryArray:
     """
     Ensure the data is of geometry dtype or converted to it.
@@ -2027,15 +2011,33 @@ default 'snappy'
 
         return result
 
+    @classmethod
+    def _geodataframe_constructor_with_fallback(
+        cls, *args, **kwargs
+    ) -> pd.DataFrame | GeoDataFrame:
+        """
+        A flexible constructor for GeoDataFrame._constructor, which falls back
+        to returning a DataFrame (if a certain operation does not preserve the
+        geometry column)
+        """
+        df = cls(*args, **kwargs)
+
+        geometry_cols_mask = df.dtypes == "geometry"
+
+        if len(geometry_cols_mask) == 0 or geometry_cols_mask.sum() == 0:
+            df = pd.DataFrame(df)
+
+        return df
+
     @property
     def _constructor(self) -> DataFrame | GeoDataFrame:
-        return _geodataframe_constructor_with_fallback
+        return self.__class__._geodataframe_constructor_with_fallback
 
     def _constructor_from_mgr(self, mgr, axes) -> DataFrame | GeoDataFrame:
         # replicate _geodataframe_constructor_with_fallback behaviour
         # unless safe to skip
         if not any(isinstance(block.dtype, GeometryDtype) for block in mgr.blocks):
-            return _geodataframe_constructor_with_fallback(
+            return self._geodataframe_constructor_with_fallback(
                 pd.DataFrame._from_mgr(mgr, axes)
             )
         gdf = self._from_mgr(mgr, axes)

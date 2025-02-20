@@ -1690,3 +1690,7 @@ def test_inheritance(dfs):
     for v in children:
         assert isinstance(v, GDFChild)
         assert v.custom_method() == "this is a custom output"
+
+    df2 = dfc2.drop(columns=["geometry2"])
+
+    assert not isinstance(df2, GDFChild)
