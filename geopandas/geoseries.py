@@ -26,7 +26,6 @@ from .array import (
     from_wkb,
     from_wkt,
     points_from_xy,
-    to_wkb,
     to_wkt,
 )
 from .base import is_geometry_type
@@ -1338,7 +1337,7 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
         --------
         GeoSeries.to_wkt
         """
-        return Series(to_wkb(self.array, hex=hex, **kwargs), index=self.index)
+        return Series(self.array.to_wkb(hex=hex, **kwargs), index=self.index)
 
     def to_wkt(self, **kwargs) -> Series:
         """

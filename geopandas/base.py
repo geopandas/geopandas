@@ -7,10 +7,9 @@ from pandas import DataFrame, Series
 
 import shapely
 from shapely.geometry import MultiPoint, box
-from shapely.geometry.base import BaseGeometry
 
 from . import _compat as compat
-from .array import GeometryArray, GeometryDtype, points_from_xy
+from .array import BaseGeometryArray, GeometryArray, GeometryDtype, points_from_xy
 
 
 def is_geometry_type(data):
@@ -50,10 +49,10 @@ def _delegate_binary_method(op, this, other, align, *args, **kwargs):
         else:
             other = other.geometry
 
-        a_this = GeometryArray(this.values)
-        other = GeometryArray(other.values)
-    elif isinstance(other, BaseGeometry):
-        a_this = GeometryArray(this.values)
+        a_this = this.values
+        other = other.values
+    elif isinstance(other, this.dtype.type):
+        a_this = this.values
     else:
         raise TypeError(type(this), type(other))
 
@@ -79,9 +78,9 @@ def _binary_op(op, this, other, align, *args, **kwargs):
 
 def _delegate_property(op, this):
     # type: (str, GeoSeries) -> GeoSeries/Series
-    a_this = GeometryArray(this.geometry.values)
+    a_this = this.geometry.values
     data = getattr(a_this, op)
-    if isinstance(data, GeometryArray):
+    if isinstance(data, BaseGeometryArray):
         from .geoseries import GeoSeries
 
         return GeoSeries(data, index=this.index, crs=this.crs)
@@ -115,7 +114,7 @@ def _delegate_geo_method(op, this, **kwargs):
                 )
             kwargs[key] = np.asarray(val)
 
-    a_this = GeometryArray(this.geometry.values)
+    a_this = this.geometry.values
     data = getattr(a_this, op)(**kwargs)
     return GeoSeries(data, index=this.index, crs=this.crs)
 

@@ -14,7 +14,6 @@ from shapely.geometry import LineString, MultiPolygon, Point, Polygon, box
 import geopandas
 from geopandas import GeoDataFrame, read_feather, read_file, read_parquet
 from geopandas._compat import HAS_PYPROJ
-from geopandas.array import to_wkb
 from geopandas.io.arrow import (
     METADATA_VERSION,
     SUPPORTED_VERSIONS,
@@ -525,7 +524,7 @@ def test_parquet_missing_metadata(tmpdir, naturalearth_lowres):
     df = DataFrame(df)
 
     # convert the geometry column so we can extract later
-    df["geometry"] = to_wkb(df["geometry"].values)
+    df["geometry"] = df["geometry"].to_wkb()
 
     filename = os.path.join(str(tmpdir), "test.pq")
 
@@ -586,7 +585,7 @@ def test_parquet_invalid_metadata(tmpdir, geo_meta, error, naturalearth_lowres):
 
     # convert to DataFrame and encode geometry to WKB
     df = DataFrame(df)
-    df["geometry"] = to_wkb(df["geometry"].values)
+    df["geometry"] = df["geometry"].to_wkb()
 
     table = Table.from_pandas(df)
     metadata = table.schema.metadata
