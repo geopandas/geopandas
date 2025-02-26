@@ -186,7 +186,7 @@ def construct_wkb_array(
     extension_metadata = {"ARROW:extension:name": "geoarrow.wkb"}
     if crs is not None:
         extension_metadata["ARROW:extension:metadata"] = json.dumps(
-            {"crs": crs.to_json()}
+            {"crs": crs.to_json_dict()}
         )
     else:
         # In theory this should not be needed, but otherwise pyarrow < 17
@@ -319,7 +319,7 @@ def construct_geometry_array(
     extension_metadata: dict[str, str] = {}
     if crs is not None:
         extension_metadata["ARROW:extension:metadata"] = json.dumps(
-            {"crs": crs.to_json()}
+            {"crs": crs.to_json_dict()}
         )
     else:
         # In theory this should not be needed, but otherwise pyarrow < 17
