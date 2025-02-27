@@ -1960,7 +1960,7 @@ default 'snappy'
             or (key == "geometry" and self._geometry_column_name is None)
         ):
             if pd.api.types.is_scalar(value) or isinstance(value, BaseGeometry):
-                value = [value for _ in range(self.shape[0])]
+                value = [value] * self.shape[0]
 
             crs = getattr(self, "crs", None)
             # if we don't have a GeoDataframe yet and there is a column named crs,
