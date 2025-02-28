@@ -1908,7 +1908,7 @@ default 'snappy'
             result.__class__ = GeoSeries
         elif isinstance(result, DataFrame):
             if (result.dtypes == "geometry").sum() > 0:
-                result.__class__ = self.__class__
+                result.__class__ = type(self)
                 if geo_col in result:
                     result._geometry_column_name = geo_col
             else:
