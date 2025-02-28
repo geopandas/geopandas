@@ -1967,7 +1967,7 @@ default 'snappy'
     def copy(self, deep: bool = True) -> GeoDataFrame:
         copied = super().copy(deep=deep)
         if type(copied) is pd.DataFrame:
-            copied.__class__ = self.__class__
+            copied.__class__ = type(self)
             copied._geometry_column_name = self._geometry_column_name
         return copied
 
