@@ -2260,9 +2260,7 @@ default 'snappy'
         )
 
         # Aggregate
-        aggregated_geometry = type(self)(
-            g, geometry=self.geometry.name, crs=self.crs
-        )
+        aggregated_geometry = type(self)(g, geometry=self.geometry.name, crs=self.crs)
         # Recombine
         aggregated = aggregated_geometry.join(aggregated_data)
 
