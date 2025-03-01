@@ -1945,19 +1945,22 @@ default 'snappy'
         ):
             if pd.api.types.is_scalar(value) or isinstance(value, BaseGeometry):
                 value = [value] * self.shape[0]
+
+            crs = getattr(self, "crs", None)
+            # if we don't have a GeoDataframe yet and there is a column named crs,
+            # don't try to use that as a crs
+            if isinstance(crs, pd.Series | pd.DataFrame):
+                crs = None
             try:
-                if self._geometry_column_name is not None:
-                    crs = getattr(self, "crs", None)
-                else:  # don't use getattr, because a col "crs" might exist
-                    crs = None
                 value = _ensure_geometry(value, crs=crs)
-                if key == "geometry":
-                    self._persist_old_default_geometry_colname()
             except TypeError:
                 warnings.warn(
                     "Geometry column does not contain geometry.",
                     stacklevel=2,
                 )
+            else:
+                if key == "geometry":
+                    self._persist_old_default_geometry_colname()
         super().__setitem__(key, value)
 
     #
@@ -2833,11 +2836,11 @@ chicago_w_groceries[chicago_w_groceries["community"] == "UPTOWN"]
 
         >>> df1.overlay(df2, how='identity')
            df1_data  df2_data                                           geometry
-        0       1.0       1.0                POLYGON ((2 2, 2 1, 1 1, 1 2, 2 2))
-        1       2.0       1.0                POLYGON ((2 2, 2 3, 3 3, 3 2, 2 2))
-        2       2.0       2.0                POLYGON ((4 4, 4 3, 3 3, 3 4, 4 4))
-        3       1.0       NaN      POLYGON ((2 0, 0 0, 0 2, 1 2, 1 1, 2 1, 2 0))
-        4       2.0       NaN  MULTIPOLYGON (((3 4, 3 3, 2 3, 2 4, 3 4)), ((4...
+        0         1       1.0                POLYGON ((2 2, 2 1, 1 1, 1 2, 2 2))
+        1         2       1.0                POLYGON ((2 2, 2 3, 3 3, 3 2, 2 2))
+        2         2       2.0                POLYGON ((4 4, 4 3, 3 3, 3 4, 4 4))
+        3         1       NaN      POLYGON ((2 0, 0 0, 0 2, 1 2, 1 1, 2 1, 2 0))
+        4         2       NaN  MULTIPOLYGON (((3 4, 3 3, 2 3, 2 4, 3 4)), ((4...
 
         See also
         --------
