@@ -43,22 +43,6 @@ if typing.TYPE_CHECKING:
     )
 
 
-def _geodataframe_constructor_with_fallback(
-    *args, **kwargs
-) -> pd.DataFrame | GeoDataFrame:
-    """
-    A flexible constructor for GeoDataFrame._constructor, which falls back
-    to returning a DataFrame (if a certain operation does not preserve the
-    geometry column)
-    """
-    df = GeoDataFrame(*args, **kwargs)
-    geometry_cols_mask = df.dtypes == "geometry"
-    if len(geometry_cols_mask) == 0 or geometry_cols_mask.sum() == 0:
-        df = pd.DataFrame(df)
-
-    return df
-
-
 def _ensure_geometry(data, crs: Any | None = None) -> GeoSeries | GeometryArray:
     """
     Ensure the data is of geometry dtype or converted to it.
@@ -1924,7 +1908,7 @@ default 'snappy'
             result.__class__ = GeoSeries
         elif isinstance(result, DataFrame):
             if (result.dtypes == "geometry").sum() > 0:
-                result.__class__ = GeoDataFrame
+                result.__class__ = type(self)
                 if geo_col in result:
                     result._geometry_column_name = geo_col
             else:
@@ -1986,7 +1970,7 @@ default 'snappy'
     def copy(self, deep: bool = True) -> GeoDataFrame:
         copied = super().copy(deep=deep)
         if type(copied) is pd.DataFrame:
-            copied.__class__ = GeoDataFrame
+            copied.__class__ = type(self)
             copied._geometry_column_name = self._geometry_column_name
         return copied
 
@@ -2030,18 +2014,36 @@ default 'snappy'
 
         return result
 
+    @classmethod
+    def _geodataframe_constructor_with_fallback(
+        cls, *args, **kwargs
+    ) -> pd.DataFrame | GeoDataFrame:
+        """
+        A flexible constructor for GeoDataFrame._constructor, which falls back
+        to returning a DataFrame (if a certain operation does not preserve the
+        geometry column)
+        """
+        df = cls(*args, **kwargs)
+
+        geometry_cols_mask = df.dtypes == "geometry"
+
+        if len(geometry_cols_mask) == 0 or geometry_cols_mask.sum() == 0:
+            df = pd.DataFrame(df)
+
+        return df
+
     @property
     def _constructor(self) -> DataFrame | GeoDataFrame:
-        return _geodataframe_constructor_with_fallback
+        return self._geodataframe_constructor_with_fallback
 
     def _constructor_from_mgr(self, mgr, axes) -> DataFrame | GeoDataFrame:
         # replicate _geodataframe_constructor_with_fallback behaviour
         # unless safe to skip
         if not any(isinstance(block.dtype, GeometryDtype) for block in mgr.blocks):
-            return _geodataframe_constructor_with_fallback(
+            return self._geodataframe_constructor_with_fallback(
                 pd.DataFrame._from_mgr(mgr, axes)
             )
-        gdf = GeoDataFrame._from_mgr(mgr, axes)
+        gdf = self._from_mgr(mgr, axes)
         # _from_mgr doesn't preserve metadata (expect __finalize__ to be called)
         # still need to mimic __init__ behaviour with geometry=None
         if (gdf.columns == "geometry").sum() == 1:  # only if "geometry" is single col
@@ -2261,7 +2263,7 @@ default 'snappy'
         )
 
         # Aggregate
-        aggregated_geometry = GeoDataFrame(g, geometry=self.geometry.name, crs=self.crs)
+        aggregated_geometry = type(self)(g, geometry=self.geometry.name, crs=self.crs)
         # Recombine
         aggregated = aggregated_geometry.join(aggregated_data)
 

@@ -1669,3 +1669,40 @@ def test_reduce_geometry_array():
     This warning is issued with pandas 2.2.2 (tested).
     """
     GeoDataFrame({"geometry": []}).all()
+
+
+class GDFChild(GeoDataFrame):
+    def custom_method(self):
+        return "this is a custom output"
+
+
+def test_inheritance(dfs):
+    df, _ = dfs
+    df.loc[:, "col2"] = ["a"] * len(df)
+
+    dfc = GDFChild(df)
+
+    dfc2 = dfc.rename_geometry("geometry2")
+
+    children = [
+        dfc,
+        dfc.iloc[[0]],
+        dfc.loc[dfc.col1 == 1],
+        dfc.dissolve(),
+        dfc[["col2", "geometry"]],
+        dfc.copy(),
+        dfc2,
+        dfc2.iloc[[0]],
+        dfc2.loc[dfc.col1 == 1],
+        dfc2.dissolve(),
+        dfc2[["col2", "geometry2"]],
+        dfc2.copy(),
+    ]
+
+    for v in children:
+        assert isinstance(v, GDFChild)
+        assert v.custom_method() == "this is a custom output"
+
+    df2 = dfc2.drop(columns=["geometry2"])
+
+    assert not isinstance(df2, GDFChild)
