@@ -240,7 +240,6 @@ moved_pages = [
     ("changelog", "docs/changelog"),
     ("code_of_conduct", "community/code_of_conduct"),
     ("contributing", "community/contributing"),
-    ("gallery/matplotlib_scalebar", "gallery/map_elements"),
 ]
 
 html_additional_pages = {page[0]: "redirect.html" for page in moved_pages}
