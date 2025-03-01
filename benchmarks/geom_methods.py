@@ -57,7 +57,6 @@ class Bench:
                 "touches",
                 "within",
                 "geom_equals",
-                "geom_almost_equals",
                 "geom_equals_exact",
             )
         ],
@@ -77,7 +76,6 @@ class Bench:
                 "touches",
                 "within",
                 "geom_equals",
-                "geom_almost_equals",
             )
         ],
     )  # 'geom_equals_exact')])

@@ -69,7 +69,6 @@ Binary predicates
    GeoSeries.disjoint
    GeoSeries.dwithin
    GeoSeries.geom_equals
-   GeoSeries.geom_almost_equals
    GeoSeries.geom_equals_exact
    GeoSeries.intersects
    GeoSeries.overlaps
