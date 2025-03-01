@@ -499,19 +499,28 @@ def _read_file_pyogrio(path_or_bytes, bbox=None, mask=None, rows=None, **kwargs)
             crs = pyogrio.read_info(path_or_bytes, layer=kwargs.get("layer")).get("crs")
             if (crs is None) and (mask.crs is None):
                 warnings.warn(
-                    """There is no CRS defined in the source dataset nor mask.""",
+                    "There is no CRS defined in the source dataset nor mask. This may "
+                    "lead to a misalignment of the mask and the source dataset, "
+                    "leading to incorrect masking. Ensure both input share the same "
+                    "CRS.",
                     UserWarning,
                     stacklevel=3,
                 )
             elif (crs is None) and (mask.crs is not None):
                 warnings.warn(
-                    """There is no CRS defined in the source dataset.""",
+                    "There is no CRS defined in the source dataset. This may "
+                    "lead to a misalignment of the mask and the source dataset, "
+                    "leading to incorrect masking. Ensure both input share the same "
+                    "CRS.",
                     UserWarning,
                     stacklevel=3,
                 )
             elif (crs is not None) and (mask.crs is None):
                 warnings.warn(
-                    """There is no CRS defined in the mask.""",
+                    "There is no CRS defined in the mask. This may "
+                    "lead to a misalignment of the mask and the source dataset, "
+                    "leading to incorrect masking. Ensure both input share the same "
+                    "CRS.",
                     UserWarning,
                     stacklevel=3,
                 )
