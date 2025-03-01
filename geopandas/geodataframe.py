@@ -43,22 +43,6 @@ if typing.TYPE_CHECKING:
     )
 
 
-def _geodataframe_constructor_with_fallback(
-    *args, **kwargs
-) -> pd.DataFrame | GeoDataFrame:
-    """
-    A flexible constructor for GeoDataFrame._constructor, which falls back
-    to returning a DataFrame (if a certain operation does not preserve the
-    geometry column)
-    """
-    df = GeoDataFrame(*args, **kwargs)
-    geometry_cols_mask = df.dtypes == "geometry"
-    if len(geometry_cols_mask) == 0 or geometry_cols_mask.sum() == 0:
-        df = pd.DataFrame(df)
-
-    return df
-
-
 def _ensure_geometry(data, crs: Any | None = None) -> GeoSeries | GeometryArray:
     """
     Ensure the data is of geometry dtype or converted to it.
@@ -1924,7 +1908,7 @@ default 'snappy'
             result.__class__ = GeoSeries
         elif isinstance(result, DataFrame):
             if (result.dtypes == "geometry").sum() > 0:
-                result.__class__ = GeoDataFrame
+                result.__class__ = type(self)
                 if geo_col in result:
                     result._geometry_column_name = geo_col
             else:
@@ -1961,19 +1945,22 @@ default 'snappy'
         ):
             if pd.api.types.is_scalar(value) or isinstance(value, BaseGeometry):
                 value = [value] * self.shape[0]
+
+            crs = getattr(self, "crs", None)
+            # if we don't have a GeoDataframe yet and there is a column named crs,
+            # don't try to use that as a crs
+            if isinstance(crs, pd.Series | pd.DataFrame):
+                crs = None
             try:
-                if self._geometry_column_name is not None:
-                    crs = getattr(self, "crs", None)
-                else:  # don't use getattr, because a col "crs" might exist
-                    crs = None
                 value = _ensure_geometry(value, crs=crs)
-                if key == "geometry":
-                    self._persist_old_default_geometry_colname()
             except TypeError:
                 warnings.warn(
                     "Geometry column does not contain geometry.",
                     stacklevel=2,
                 )
+            else:
+                if key == "geometry":
+                    self._persist_old_default_geometry_colname()
         super().__setitem__(key, value)
 
     #
@@ -1983,7 +1970,7 @@ default 'snappy'
     def copy(self, deep: bool = True) -> GeoDataFrame:
         copied = super().copy(deep=deep)
         if type(copied) is pd.DataFrame:
-            copied.__class__ = GeoDataFrame
+            copied.__class__ = type(self)
             copied._geometry_column_name = self._geometry_column_name
         return copied
 
@@ -2027,18 +2014,36 @@ default 'snappy'
 
         return result
 
+    @classmethod
+    def _geodataframe_constructor_with_fallback(
+        cls, *args, **kwargs
+    ) -> pd.DataFrame | GeoDataFrame:
+        """
+        A flexible constructor for GeoDataFrame._constructor, which falls back
+        to returning a DataFrame (if a certain operation does not preserve the
+        geometry column)
+        """
+        df = cls(*args, **kwargs)
+
+        geometry_cols_mask = df.dtypes == "geometry"
+
+        if len(geometry_cols_mask) == 0 or geometry_cols_mask.sum() == 0:
+            df = pd.DataFrame(df)
+
+        return df
+
     @property
     def _constructor(self) -> DataFrame | GeoDataFrame:
-        return _geodataframe_constructor_with_fallback
+        return self._geodataframe_constructor_with_fallback
 
     def _constructor_from_mgr(self, mgr, axes) -> DataFrame | GeoDataFrame:
         # replicate _geodataframe_constructor_with_fallback behaviour
         # unless safe to skip
         if not any(isinstance(block.dtype, GeometryDtype) for block in mgr.blocks):
-            return _geodataframe_constructor_with_fallback(
+            return self._geodataframe_constructor_with_fallback(
                 pd.DataFrame._from_mgr(mgr, axes)
             )
-        gdf = GeoDataFrame._from_mgr(mgr, axes)
+        gdf = self._from_mgr(mgr, axes)
         # _from_mgr doesn't preserve metadata (expect __finalize__ to be called)
         # still need to mimic __init__ behaviour with geometry=None
         if (gdf.columns == "geometry").sum() == 1:  # only if "geometry" is single col
@@ -2258,7 +2263,7 @@ default 'snappy'
         )
 
         # Aggregate
-        aggregated_geometry = GeoDataFrame(g, geometry=self.geometry.name, crs=self.crs)
+        aggregated_geometry = type(self)(g, geometry=self.geometry.name, crs=self.crs)
         # Recombine
         aggregated = aggregated_geometry.join(aggregated_data)
 
@@ -2831,11 +2836,11 @@ chicago_w_groceries[chicago_w_groceries["community"] == "UPTOWN"]
 
         >>> df1.overlay(df2, how='identity')
            df1_data  df2_data                                           geometry
-        0       1.0       1.0                POLYGON ((2 2, 2 1, 1 1, 1 2, 2 2))
-        1       2.0       1.0                POLYGON ((2 2, 2 3, 3 3, 3 2, 2 2))
-        2       2.0       2.0                POLYGON ((4 4, 4 3, 3 3, 3 4, 4 4))
-        3       1.0       NaN      POLYGON ((2 0, 0 0, 0 2, 1 2, 1 1, 2 1, 2 0))
-        4       2.0       NaN  MULTIPOLYGON (((3 4, 3 3, 2 3, 2 4, 3 4)), ((4...
+        0         1       1.0                POLYGON ((2 2, 2 1, 1 1, 1 2, 2 2))
+        1         2       1.0                POLYGON ((2 2, 2 3, 3 3, 3 2, 2 2))
+        2         2       2.0                POLYGON ((4 4, 4 3, 3 3, 3 4, 4 4))
+        3         1       NaN      POLYGON ((2 0, 0 0, 0 2, 1 2, 1 1, 2 1, 2 0))
+        4         2       NaN  MULTIPOLYGON (((3 4, 3 3, 2 3, 2 4, 3 4)), ((4...
 
         See also
         --------

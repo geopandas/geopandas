@@ -210,11 +210,11 @@ def test_geoarrow_multiple_geometry_crs(encoding):
     meta1 = json.loads(
         result.schema.field("geometry").metadata[b"ARROW:extension:metadata"]
     )
-    assert json.loads(meta1["crs"])["id"]["code"] == 4326
+    assert meta1["crs"]["id"]["code"] == 4326
     meta2 = json.loads(
         result.schema.field("geom2").metadata[b"ARROW:extension:metadata"]
     )
-    assert json.loads(meta2["crs"])["id"]["code"] == 3857
+    assert meta2["crs"]["id"]["code"] == 3857
 
     roundtripped = GeoDataFrame.from_arrow(result)
     assert_geodataframe_equal(gdf, roundtripped)
@@ -237,7 +237,7 @@ def test_geoarrow_series_name_crs(encoding):
         else b"geoarrow.polygon"
     )
     meta = json.loads(field.metadata[b"ARROW:extension:metadata"])
-    assert json.loads(meta["crs"])["id"]["code"] == 4326
+    assert meta["crs"]["id"]["code"] == 4326
 
     # ensure it also works without a name
     gser = GeoSeries([box(0, 0, 10, 10)])
