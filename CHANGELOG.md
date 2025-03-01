@@ -12,6 +12,7 @@ New features and improvements:
 - `GeoDataFrame.plot` now supports `pd.Index` as an input for the `column` keyword (#3463).
 - Avoid change of the plot aspect when plotting missing values (#3438).
 - Improve performance of `overlay` with `how=identity` (#3504).
+- Fix ambiguous error when GeoDataFrame is initialised with a column called "crs" (#3502)
 
 Bug fixes:
 
