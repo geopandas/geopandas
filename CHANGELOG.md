@@ -46,6 +46,8 @@ Deprecations and compatibility notes:
 
 - The `GeoSeries.select` method wrapping the pandas `Series.select` method has been removed.
   The upstream method no longer exists in all supported version of pandas (#3394).
+- The deprecated `geom_almost_equals` method has been removed. Use
+  `geom_equals_exact` instead (#3522).
 
 New features and improvements:
 
