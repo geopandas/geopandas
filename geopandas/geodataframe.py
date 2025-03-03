@@ -804,8 +804,14 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             # load geometry
             if hasattr(feature, "__geo_interface__"):
                 feature = feature.__geo_interface__
+            # Non spatial data from fiona may not have a geometry key and will error out with feature['geometry']. get provides a return of None without error
+            # This will succssfully allow for a data filter following the the use of fiona.filter on non-spatial data.
+            geometry = feature.get("geometry", None)
+            if geometry is not None:
+                if geometry: geometry = shape(geometry)
+                else: None
             row = {
-                "geometry": shape(feature["geometry"]) if feature["geometry"] else None
+                "geometry": geometry
             }
             # load properties
             properties = feature["properties"]
