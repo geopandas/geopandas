@@ -802,9 +802,8 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         rows = []
         for feature in features_lst:
             # load geometry
-            if hasattr(feature, "__geo_interface__"):
-                feature = feature.__geo_interface__
-            geometry = feature.get("geometry", None)
+            feature = getattr(feature, "__geo_interface__", feature)
+            geometry = feature.get("geometry")
             if geometry is not None:
                 if geometry: geometry = shape(geometry)
                 else: None
@@ -812,9 +811,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 "geometry": geometry
             }
             # load properties
-            properties = feature["properties"]
-            if properties is None:
-                properties = {}
+            properties = feature.get("properties", {})
             row.update(properties)
             rows.append(row)
         return cls(rows, columns=columns, crs=crs)
