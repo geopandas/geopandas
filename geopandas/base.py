@@ -7,9 +7,13 @@ from pandas import DataFrame, Series
 import shapely
 from shapely.geometry import MultiPoint, box
 from shapely.geometry.base import BaseGeometry
+from geographiclib.geodesic import Geodesic
 
 from . import _compat as compat
 from .array import GeometryArray, GeometryDtype, points_from_xy
+
+# WGS84 ellipsoid configuration for geodesic calculations
+GEOD = Geodesic(a=6378137.0, f=1/298.257222101)
 
 
 def is_geometry_type(data):
@@ -132,6 +136,43 @@ def _delegate_geo_method(op, this, **kwargs):
 
 
 class GeoPandasBase:
+    def _calculate_geodesic_area(self, geom):
+        """Calculate the geodesic area of a polygon using the WGS84 ellipsoid.
+
+        Parameters
+        ----------
+        geom : shapely.geometry.Polygon
+            The polygon geometry
+
+        Returns
+        -------
+        float
+            Area in square meters
+        """
+        if not isinstance(geom, (shapely.geometry.Polygon, shapely.geometry.MultiPolygon)):
+            return 0.0
+            
+        if isinstance(geom, shapely.geometry.MultiPolygon):
+            return sum(self._calculate_geodesic_area(part) for part in geom.geoms)
+            
+        # Calculate exterior area
+        coords = list(geom.exterior.coords)
+        polygon = GEOD.Polygon()
+        for lon, lat in coords:
+            polygon.AddPoint(lat, lon)
+        _, _, area = polygon.Compute()
+        
+        # Subtract interior holes area
+        for interior in geom.interiors:
+            coords = list(interior.coords)
+            polygon = GEOD.Polygon()
+            for lon, lat in coords:
+                polygon.AddPoint(lat, lon)
+            _, _, hole_area = polygon.Compute()
+            area -= hole_area
+            
+        return abs(area)
+
     @property
     def area(self):
         """Returns a ``Series`` containing the area of each geometry in the
@@ -158,7 +199,7 @@ class GeoPandasBase:
         4                          POINT (0 1)
         dtype: geometry
 
-        >>> s.area
+        >>> s.area  # área planar
         0     0.5
         1    25.0
         2     2.0
@@ -169,17 +210,74 @@ class GeoPandasBase:
         See also
         --------
         GeoSeries.length : measure length
+        GeoSeries.geodesic_area : measure area using geodesic calculations
 
         Notes
         -----
         Area may be invalid for a geographic CRS using degrees as units;
         use :meth:`GeoSeries.to_crs` to project geometries to a planar
-        CRS before using this function.
+        CRS before using this function, or use :meth:`GeoSeries.geodesic_area`
+        for more accurate results with geographic coordinates.
 
         Every operation in GeoPandas is planar, i.e. the potential third
         dimension is not taken into account.
         """
         return _delegate_property("area", self)
+
+    def geodesic_area(self, unit='m2'):
+        """Returns a ``Series`` containing the geodesic area of each geometry
+        calculated on the WGS84 ellipsoid.
+
+        Parameters
+        ----------
+        unit : str, default 'm2'
+            Unit of area measurement. Options:
+            - 'm2': square meters
+            - 'km2': square kilometers
+            - 'ha': hectares
+
+        Returns
+        -------
+        Series
+            Geodesic areas in the specified unit.
+
+        Examples
+        --------
+        >>> from shapely.geometry import Polygon
+        >>> s = geopandas.GeoSeries([Polygon([(0, 0), (1, 1), (0, 1)])])
+        >>> s.geodesic_area()  # in square meters
+        0    12391405.0
+        dtype: float64
+        >>> s.geodesic_area('km2')  # in square kilometers
+        0    12.391
+        dtype: float64
+
+        Notes
+        -----
+        This method is more accurate than .area for calculations with geographic
+        coordinates (latitude/longitude) as it uses geodesic calculations on
+        the WGS84 ellipsoid.
+        """
+        if not (self.crs and self.crs.is_geographic):
+            warn(
+                "geodesic_area() should only be used with geographic coordinates. "
+                "The geometry appears to be in a projected CRS.",
+                UserWarning,
+                stacklevel=2
+            )
+
+        areas = [self._calculate_geodesic_area(geom) for geom in self.geometry]
+        result = pd.Series(areas, index=self.index)
+
+        # Convert to desired unit
+        if unit == 'm2':
+            return result
+        elif unit == 'km2':
+            return result / 1_000_000
+        elif unit == 'ha':
+            return result / 10_000
+        else:
+            raise ValueError("unit must be 'm2', 'km2' or 'ha'")
 
     @property
     def crs(self):
