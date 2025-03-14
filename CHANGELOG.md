@@ -11,6 +11,9 @@ New features and improvements:
 - Add ``grid_size`` parameter to ``union_all`` and ``dissolve`` (#3445).
 - `GeoDataFrame.plot` now supports `pd.Index` as an input for the `column` keyword (#3463).
 - Avoid change of the plot aspect when plotting missing values (#3438).
+- GeoDataFrame no longer hard-codes the class internally, allowing easier subclassing (#3505).
+- Improve performance of `overlay` with `how=identity` (#3504).
+- Fix ambiguous error when GeoDataFrame is initialised with a column called "crs" (#3502)
 
 Bug fixes:
 
@@ -43,6 +46,8 @@ Deprecations and compatibility notes:
 
 - The `GeoSeries.select` method wrapping the pandas `Series.select` method has been removed.
   The upstream method no longer exists in all supported version of pandas (#3394).
+- The deprecated `geom_almost_equals` method has been removed. Use
+  `geom_equals_exact` instead (#3522).
 
 New features and improvements:
 
