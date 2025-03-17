@@ -455,6 +455,105 @@ class TestGeomMethods:
         with pytest.warns(UserWarning, match="Geometry is in a geographic CRS"):
             self.g4.area
 
+    @pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not available")
+    def test_geodesic_area(self):
+        # Test basic functionality with a simple polygon
+        poly = Polygon([(0, 0), (1, 0), (1, 1), (0, 1), (0, 0)])
+        gs = GeoSeries([poly], crs="EPSG:4326")
+        area_m2 = gs.geodesic_area().iloc[0]
+        area_km2 = gs.geodesic_area('km2').iloc[0]
+        area_ha = gs.geodesic_area('ha').iloc[0]
+
+        # Test unit conversions
+        assert_array_almost_equal([area_m2 / 1_000_000], [area_km2])
+        assert_array_almost_equal([area_m2 / 10_000], [area_ha])
+
+        # Test with invalid geometries (should return 0)
+        invalid = GeoSeries([Point(0, 0), LineString([(0, 0), (1, 1)])], crs="EPSG:4326")
+        assert_array_equal(invalid.geodesic_area(), [0, 0])
+
+        # Test with None and empty geometries
+        none_empty = GeoSeries([None, Polygon()], crs="EPSG:4326")
+        assert_array_equal(none_empty.geodesic_area(), [0, 0])
+
+        # Test with polygon with hole
+        outer = Polygon([(0, 0), (1, 0), (1, 1), (0, 1), (0, 0)])
+        inner = Polygon([(0.25, 0.25), (0.75, 0.25), (0.75, 0.75), (0.25, 0.75), (0.25, 0.25)])
+        poly_with_hole = Polygon(outer.exterior, [inner.exterior])
+        gs_with_hole = GeoSeries([poly_with_hole], crs="EPSG:4326")
+        area_with_hole = gs_with_hole.geodesic_area().iloc[0]
+        area_outer = GeoSeries([outer], crs="EPSG:4326").geodesic_area().iloc[0]
+        area_inner = GeoSeries([inner], crs="EPSG:4326").geodesic_area().iloc[0]
+        assert_array_almost_equal([area_with_hole], [area_outer - area_inner])
+
+        # Test with MultiPolygon
+        mp = MultiPolygon([outer, outer.translate(xoff=2)])
+        gs_mp = GeoSeries([mp], crs="EPSG:4326")
+        area_mp = gs_mp.geodesic_area().iloc[0]
+        assert_array_almost_equal([area_mp], [area_outer * 2])
+
+        # Test warning for non-geographic CRS
+        gs_projected = gs.to_crs("EPSG:3857")
+        with pytest.warns(UserWarning, match="should only be used with geographic coordinates"):
+            gs_projected.geodesic_area()
+
+        # Test invalid unit
+        with pytest.raises(ValueError, match="unit must be 'm2', 'km2' or 'ha'"):
+            gs.geodesic_area('invalid')
+        """Test geodesic area calculations"""
+        # Create a polygon near the equator
+        equator_square = Polygon([
+            (0, 0), (1, 0), (1, 1), (0, 1), (0, 0)
+        ])
+        # Create a polygon near the poles (should have different area due to projection)
+        pole_square = Polygon([
+            (0, 85), (1, 85), (1, 86), (0, 86), (0, 85)
+        ])
+        
+        gs = GeoSeries([equator_square, pole_square], crs="EPSG:4326")
+        
+        # Test different units
+        areas_m2 = gs.geodesic_area()
+        areas_km2 = gs.geodesic_area('km2')
+        areas_ha = gs.geodesic_area('ha')
+        
+        # Areas should be positive
+        assert (areas_m2 > 0).all()
+        # Pole area should be smaller than equator area due to projection
+        assert areas_m2[1] < areas_m2[0]
+        # Unit conversion tests
+        assert_array_almost_equal(areas_m2 / 1_000_000, areas_km2)
+        assert_array_almost_equal(areas_m2 / 10_000, areas_ha)
+        
+        # Test with invalid geometries
+        invalid_gs = GeoSeries([Point(0, 0), LineString([(0, 0), (1, 1)])], crs="EPSG:4326")
+        assert (invalid_gs.geodesic_area() == 0).all()
+        
+        # Test with polygon with hole
+        outer = Polygon([(0, 0), (1, 0), (1, 1), (0, 1), (0, 0)])
+        inner = Polygon([(0.25, 0.25), (0.75, 0.25), (0.75, 0.75), (0.25, 0.75), (0.25, 0.25)])
+        poly_with_hole = Polygon(outer.exterior, [inner.exterior])
+        gs_with_hole = GeoSeries([poly_with_hole], crs="EPSG:4326")
+        area_with_hole = gs_with_hole.geodesic_area().iloc[0]
+        area_outer = GeoSeries([outer], crs="EPSG:4326").geodesic_area().iloc[0]
+        area_inner = GeoSeries([inner], crs="EPSG:4326").geodesic_area().iloc[0]
+        assert_array_almost_equal(area_with_hole, area_outer - area_inner)
+        
+        # Test with MultiPolygon
+        mp = MultiPolygon([outer, Polygon([(2, 0), (3, 0), (3, 1), (2, 1), (2, 0)])])
+        gs_mp = GeoSeries([mp], crs="EPSG:4326")
+        area_mp = gs_mp.geodesic_area().iloc[0]
+        assert area_mp > area_outer  # MultiPolygon area should be larger
+        
+        # Test warning for non-geographic CRS
+        gs_projected = gs.to_crs("EPSG:3857")
+        with pytest.warns(UserWarning, match="should only be used with geographic coordinates"):
+            gs_projected.geodesic_area()
+        
+        # Test invalid unit
+        with pytest.raises(ValueError, match="unit must be 'm2', 'km2' or 'ha'"):
+            gs.geodesic_area('invalid')
+
     def test_bounds(self):
         # Set columns to get the order right
         expected = DataFrame(

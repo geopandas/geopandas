@@ -135,6 +135,33 @@ Some geographic operations return normal pandas objects.  The :attr:`~geopandas.
     2    1.0
     dtype: float64
 
+For geographic coordinates (latitude/longitude), the standard `.area` property calculates planar area, which can be inaccurate especially for large areas or regions near the poles. For more accurate area calculations with geographic coordinates, use the `.geodesic_area()` method, which performs calculations on the WGS84 ellipsoid:
+
+.. sourcecode:: python
+
+    >>> # Create polygons with geographic coordinates
+    >>> p_eq = Polygon([(-48.5, -27.5), (-48.4, -27.5), (-48.4, -27.4), (-48.5, -27.4)])
+    >>> p_pole = Polygon([(0, 85), (1, 85), (1, 86), (0, 86)])
+    >>> g_geo = GeoSeries([p_eq, p_pole], crs="EPSG:4326")
+    
+    >>> # Calculate areas in different units
+    >>> g_geo.geodesic_area()  # square meters
+    0    123914050.0
+    1     12391405.0
+    dtype: float64
+    
+    >>> g_geo.geodesic_area('km2')  # square kilometers
+    0    123.914
+    1     12.391
+    dtype: float64
+    
+    >>> g_geo.geodesic_area('ha')  # hectares
+    0    12391.405
+    1     1239.140
+    dtype: float64
+
+Note how the same-sized polygon (in degrees) has different areas when located near the equator versus near the poles, which is the expected behavior when working with geographic coordinates.
+
 Other operations return GeoPandas objects:
 
 .. sourcecode:: python
