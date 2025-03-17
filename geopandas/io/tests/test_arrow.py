@@ -5,7 +5,7 @@ from itertools import product
 from packaging.version import Version
 
 import numpy as np
-from pandas import DataFrame
+from pandas import ArrowDtype, DataFrame
 from pandas import read_parquet as pd_read_parquet
 
 import shapely
@@ -761,6 +761,26 @@ def test_write_empty_bbox(tmpdir, geometry):
     metadata = json.loads(table.schema.metadata[b"geo"])
     assert "encoding" in metadata["columns"]["geometry"]
     assert "bbox" not in metadata["columns"]["geometry"]
+
+
+@pytest.mark.parametrize("format", ["feather", "parquet"])
+def test_write_read_to_pandas_kwargs(tmpdir, format):
+    filename = os.path.join(str(tmpdir), f"test.{format}")
+    g = box(0, 0, 10, 10)
+    gdf = geopandas.GeoDataFrame({"geometry": [g], "i": [1], "s": ["a"]})
+
+    if format == "feather":
+        gdf.to_feather(filename)
+        read_func = read_feather
+    else:
+        gdf.to_parquet(filename)
+        read_func = read_parquet
+
+    # simulate the `dtype_backend="pyarrow"` option in `pandas.read_parquet`
+    gdf_roundtrip = read_func(filename, to_pandas_kwargs={"types_mapper": ArrowDtype})
+    assert isinstance(gdf_roundtrip, geopandas.GeoDataFrame)
+    assert isinstance(gdf_roundtrip.dtypes["i"], ArrowDtype)
+    assert isinstance(gdf_roundtrip.dtypes["s"], ArrowDtype)
 
 
 @pytest.mark.parametrize("format", ["feather", "parquet"])
