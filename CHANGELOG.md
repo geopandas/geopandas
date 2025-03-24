@@ -14,6 +14,7 @@ New features and improvements:
 - GeoDataFrame no longer hard-codes the class internally, allowing easier subclassing (#3505).
 - Improve performance of `overlay` with `how=identity` (#3504).
 - Fix ambiguous error when GeoDataFrame is initialised with a column called "crs" (#3502)
+- Added `disjoint_subset` union algorithm for `union_all` and `dissolve` (#3534).
 
 Bug fixes:
 
