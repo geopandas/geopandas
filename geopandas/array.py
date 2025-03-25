@@ -865,7 +865,7 @@ class GeometryArray(ExtensionArray):
         elif method == "disjoint_subset":
             if not (SHAPELY_GE_21 and GEOS_GE_312):
                 raise ImportError(
-                    "Method 'disjoin_subset' requires shapely>=2.1 or and GEOS>=3.12."
+                    "Method 'disjoin_subset' requires shapely>=2.1 and GEOS>=3.12."
                 )
             return shapely.disjoint_subset_union_all(self._data)
         else:
