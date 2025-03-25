@@ -870,7 +870,8 @@ class GeometryArray(ExtensionArray):
             return shapely.disjoint_subset_union_all(self._data)
         else:
             raise ValueError(
-                f"Method '{method}' not recognized. Use 'coverage' or 'unary'."
+                f"Method '{method}' not recognized. Use 'coverage', 'unary' or "
+                "'disjoint_subset'."
             )
 
     def intersection_all(self):
