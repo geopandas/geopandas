@@ -2140,6 +2140,8 @@ GeometryCollection
         By default, the unary union algorithm is used. If the geometries are
         non-overlapping (forming a coverage), GeoPandas can use a significantly faster
         algorithm to perform the union using the ``method="coverage"`` option.
+        Alternatively, for situations which can be divided into many disjoint subsets,
+        ``method="disjoint_subset"`` may be preferable.
 
         Parameters
         ----------
@@ -2152,6 +2154,10 @@ GeometryCollection
               for non-overlapping polygons and can be significantly faster than the
               unary union algorithm. However, it can produce invalid geometries if the
               polygons overlap.
+            * ``"disjoint_subset:``: use the disjoint subset union algorithm. This
+              option is optimized for inputs that can be divided into subsets that do
+              not intersect. If there is only one such subset, performance can be
+              expected to be worse than ``"unary"``.
 
         grid_size : float, default None
             When grid size is specified, a fixed-precision space is used to perform the
