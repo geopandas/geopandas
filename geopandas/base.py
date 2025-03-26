@@ -2155,7 +2155,7 @@ GeometryCollection
               unary union algorithm. However, it can produce invalid geometries if the
               polygons overlap.
             * ``"disjoint_subset:``: use the disjoint subset union algorithm. This
-              option is optimized for imputs that can be divided into subsets that do
+              option is optimized for inputs that can be divided into subsets that do
               not intersect. If there is only one such subset, performance can be
               expected to be worse than ``"unary"``.
 
