@@ -20,7 +20,7 @@ from shapely.geometry.collection import GeometryCollection
 from shapely.ops import unary_union
 
 from geopandas import GeoDataFrame, GeoSeries
-from geopandas._compat import HAS_PYPROJ
+from geopandas._compat import GEOS_GE_312, HAS_PYPROJ, SHAPELY_GE_21
 from geopandas.base import GeoPandasBase
 
 import pytest
@@ -500,6 +500,8 @@ class TestGeomMethods:
         assert g3.union_all().equals(shapely.GeometryCollection())
 
         assert g.union_all(method="coverage").equals(expected)
+        if GEOS_GE_312 and SHAPELY_GE_21:
+            assert g.union_all(method="disjoint_subset").equals(expected)
 
     def test_unary_union_deprecated(self):
         p1 = self.t1

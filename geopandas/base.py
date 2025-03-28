@@ -2140,6 +2140,8 @@ GeometryCollection
         By default, the unary union algorithm is used. If the geometries are
         non-overlapping (forming a coverage), GeoPandas can use a significantly faster
         algorithm to perform the union using the ``method="coverage"`` option.
+        Alternatively, for situations which can be divided into many disjoint subsets,
+        ``method="disjoint_subset"`` may be preferable.
 
         Parameters
         ----------
@@ -2152,6 +2154,10 @@ GeometryCollection
               for non-overlapping polygons and can be significantly faster than the
               unary union algorithm. However, it can produce invalid geometries if the
               polygons overlap.
+            * ``"disjoint_subset:``: use the disjoint subset union algorithm. This
+              option is optimized for inputs that can be divided into subsets that do
+              not intersect. If there is only one such subset, performance can be
+              expected to be worse than ``"unary"``.
 
         grid_size : float, default None
             When grid size is specified, a fixed-precision space is used to perform the
@@ -4585,22 +4591,22 @@ GeometryCollection
         return _binary_geo("shortest_line", self, other, align)
 
     def snap(self, other, tolerance, align=None):
-        """Snaps an input geometry to reference geometry's vertices.
+        """Snap the vertices and segments of the geometry to vertices of the reference.
 
-        Vertices of the first geometry are snapped to vertices of the second. geometry,
-        returning a new geometry; the input geometries are not modified. The result
-        geometry is the input geometry with the vertices snapped. If no snapping occurs
-        then the input geometry is returned unchanged. The tolerance is used to control
-        where snapping is performed.
+        Vertices and segments of the input geometry are snapped to vertices of the
+        reference geometry, returning a new geometry; the input geometries are not
+        modified. The result geometry is the input geometry with the vertices and
+        segments snapped. If no snapping occurs then the input geometry is returned
+        unchanged. The tolerance is used to control where snapping is performed.
 
         Where possible, this operation tries to avoid creating invalid geometries;
-        however, it does not guarantee that output geometries will be valid. It is the
-        responsibility of the caller to check for and handle invalid geometries.
+        however, it does not guarantee that output geometries will be valid. It is
+        the responsibility of the caller to check for and handle invalid geometries.
 
         Because too much snapping can result in invalid geometries being created,
-        heuristics are used to determine the number and location of snapped vertices
-        that are likely safe to snap. These heuristics may omit some potential snaps
-        that are otherwise within the tolerance.
+        heuristics are used to determine the number and location of snapped
+        vertices that are likely safe to snap. These heuristics may omit
+        some potential snaps that are otherwise within the tolerance.
 
         The operation works in a 1-to-1 row-wise manner:
 
