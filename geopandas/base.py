@@ -1431,7 +1431,7 @@ GeometryCollection
         dtype: geometry
 
         >>> s.offset_curve(1)
-        0    LINESTRING (-1 0, -1 1, -1 1.195, -0.9 1.383, ...
+        0    LINESTRING (-1 0, -1 1, -0.981 1.195, -0.924 1...
         dtype: geometry
         """
         return _delegate_geo_method(
