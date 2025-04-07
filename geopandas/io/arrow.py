@@ -281,8 +281,7 @@ def _validate_geo_metadata(metadata):
     version = metadata.get("version", metadata.get("schema_version"))
     if not version:
         raise ValueError(
-            "'geo' metadata in Parquet/Feather file is missing required key: "
-            "'version'"
+            "'geo' metadata in Parquet/Feather file is missing required key: 'version'"
         )
 
     required_keys = ("primary_column", "columns")
