@@ -5027,8 +5027,13 @@ GeometryCollection
         to the straight line is smaller than `tolerance`. It does not
         move any points and it always preserves endpoints of
         the original line or polygon.
-        See http://shapely.readthedocs.io/en/latest/manual.html#object.simplify
+        See https://shapely.readthedocs.io/en/latest/manual.html#object.simplify
         for details
+
+        Simplifies individual geometries independently, without considering
+        the topology of a potential polygonal coverage. If you would like to treat
+        the ``GeoSeries`` as a coverage and simplify its edges, while preserving the
+        coverage topology, see :meth:`simplify_coverage`.
 
         Parameters
         ----------
@@ -5049,6 +5054,10 @@ GeometryCollection
         coordinates: two geometries differing only in order of coordinates may be
         simplified differently.
 
+        See also
+        --------
+        simplify_coverage : simplify geometries using coverage simplification
+
         Examples
         --------
         >>> from shapely.geometry import Point, LineString
@@ -5067,6 +5076,80 @@ GeometryCollection
         """
         return _delegate_geo_method(
             "simplify", self, tolerance=tolerance, preserve_topology=preserve_topology
+        )
+
+    def simplify_coverage(self, tolerance, simplify_boundary=True):
+        """Returns a ``GeoSeries`` containing a simplified representation of
+        polygonal coverage.
+
+        Assumes that the ``GeoSeries`` forms a polygonal coverage. Under this
+        assumption, the method simplifies the edges using the Visvalingam-Whyatt
+        algorithm, while preserving a valid coverage. In the most simplified case,
+        polygons are reduced to triangles.
+
+        A ``GeoSeries`` of valid polygons is considered a coverage if the polygons are:
+
+        * **Non-overlapping** - polygons do not overlap (their interiors do not
+          intersect)
+        * **Edge-Matched** - vertices along shared edges are identical
+
+        The method allows simplification of all edges including the outer boundaries of
+        the coverage or simplification of only the inner (shared) edges.
+
+        If there are other geometry types than Polygons or MultiPolygons present, the
+        method will raise an error.
+
+        If the geometry is polygonal but does not form a valid coverage due to overlaps,
+        it will be simplified but it may result in invalid coverage topology.
+
+        .. versionadded:: 1.1.0
+
+        Parameters
+        ----------
+        tolerance : float
+            The degree of simplification roughly equal to the square root of the area
+            of triangles that will be removed. It has the same units
+            as the coordinate reference system of the GeoSeries.
+            For example, using `tolerance=100` in a projected CRS with meters
+            as units means a distance of 100 meters in reality.
+        simplify_boundary: bool (default True)
+            By default (True), simplifies both internal edges of the coverage as well
+            as its boundary. If set to False, only simplifies internal edges.
+
+
+        See also
+        --------
+        simplify : simplification of individual geometries
+
+        Examples
+        --------
+        >>> from shapely.geometry import Point, LineString
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0, 0), (1, 1.1), (2, 0), (1.5, 1), (2, 2), (0, 2)]),
+        ...         Polygon([(2, 0), (4, 0), (4, 2), (2, 2), (1.5, 1)]),
+        ...     ]
+        ... )
+        >>> s
+        0    POLYGON ((0 0, 1 1.1, 2 0, 1.5 1, 2 2, 0 2, 0 0))
+        1           POLYGON ((2 0, 4 0, 4 2, 2 2, 1.5 1, 2 0))
+        dtype: geometry
+
+        >>> s.simplify_coverage(1)
+        0         POLYGON ((2 0, 2 2, 0 2, 2 0))
+        1    POLYGON ((2 0, 4 0, 4 2, 2 2, 2 0))
+        dtype: geometry
+
+        >>> s.simplify_coverage(1, simplify_boundary=False)
+        0    POLYGON ((2 0, 2 2, 0 2, 0 0, 1 1.1, 2 0))
+        1           POLYGON ((2 0, 4 0, 4 2, 2 2, 2 0))
+        dtype: geometry
+        """
+        return _delegate_geo_method(
+            "simplify_coverage",
+            self,
+            tolerance=tolerance,
+            simplify_boundary=simplify_boundary,
         )
 
     def relate(self, other, align=None):

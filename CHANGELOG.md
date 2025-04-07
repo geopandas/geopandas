@@ -17,6 +17,8 @@ New features and improvements:
 - Added `disjoint_subset` union algorithm for `union_all` and `dissolve` (#3534).
 - Added `to_pandas_kwargs` argument to `from_arrow`, `read_parquet` and `read_feather`
   to allow better control of conversion of non-geometric Arrow data to DataFrames (#3466).
+- Added `simplify_coverage` method for topological simplification of polygonal coverages
+  to GeoSeries/GeoDataframe (#3541).
 
 Bug fixes:
 

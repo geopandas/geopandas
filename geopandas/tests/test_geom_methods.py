@@ -1412,6 +1412,35 @@ class TestGeomMethods:
         ):
             self.g1.simplify(Series([0.1], index=[99]))
 
+    def test_simplify_coverage(self):
+        s = GeoSeries(
+            [
+                shapely.Polygon(
+                    [(0, 0), (10, 1), (20, 0), (20, 10), (10, 5), (0, 10), (0, 0)]
+                ),
+                shapely.Polygon(
+                    [(0, 10), (10, 5), (20, 10), (20, 20), (0, 20), (0, 10)]
+                ),
+            ]
+        )
+        e = GeoSeries(
+            [
+                shapely.Polygon([(0, 0), (20, 0), (20, 10), (0, 10)]),
+                shapely.Polygon([(0, 10), (20, 10), (20, 20), (0, 20)]),
+            ]
+        )
+        assert_geoseries_equal(s.simplify_coverage(8), e.normalize())
+
+        e_boundary = GeoSeries(
+            [
+                shapely.Polygon([(0, 0), (10, 1), (20, 0), (20, 10), (0, 10)]),
+                shapely.Polygon([(0, 10), (20, 10), (20, 20), (0, 20)]),
+            ]
+        )
+        assert_geoseries_equal(
+            s.simplify_coverage(8, simplify_boundary=False), e_boundary.normalize()
+        )
+
     def test_envelope(self):
         e = self.g3.envelope
         assert np.all(e.geom_equals(self.sq))

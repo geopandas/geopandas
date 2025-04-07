@@ -827,6 +827,14 @@ class GeometryArray(ExtensionArray):
             crs=self.crs,
         )
 
+    def simplify_coverage(self, tolerance, simplify_boundary=True):
+        return GeometryArray(
+            shapely.coverage_simplify(
+                self._data, tolerance, simplify_boundary=simplify_boundary
+            ),
+            crs=self.crs,
+        )
+
     def project(self, other, normalized=False):
         if isinstance(other, GeometryArray):
             other = other._data
