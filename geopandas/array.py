@@ -828,6 +828,10 @@ class GeometryArray(ExtensionArray):
         )
 
     def simplify_coverage(self, tolerance, simplify_boundary=True):
+        if not (SHAPELY_GE_21 and GEOS_GE_312):
+            raise ImportError(
+                "'simplify_coverage' requires shapely>=2.1 and GEOS>=3.12."
+            )
         return GeometryArray(
             shapely.coverage_simplify(
                 self._data, tolerance, simplify_boundary=simplify_boundary

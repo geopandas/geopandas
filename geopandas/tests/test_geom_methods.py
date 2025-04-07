@@ -1412,6 +1412,9 @@ class TestGeomMethods:
         ):
             self.g1.simplify(Series([0.1], index=[99]))
 
+    @pytest.mark.skipif(
+        not (GEOS_GE_312 and SHAPELY_GE_21), reason="GEOS 3.12 and shapely 2.1 needed."
+    )
     def test_simplify_coverage(self):
         s = GeoSeries(
             [
