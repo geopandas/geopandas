@@ -17,6 +17,7 @@ New features and improvements:
 - Added `disjoint_subset` union algorithm for `union_all` and `dissolve` (#3534).
 - Added `to_pandas_kwargs` argument to `from_arrow`, `read_parquet` and `read_feather`
   to allow better control of conversion of non-geometric Arrow data to DataFrames (#3466).
+- Added `minimum_clearance_line` method from shapely to GeoSeries/GeoDataframe (#3543).
 
 Bug fixes:
 
