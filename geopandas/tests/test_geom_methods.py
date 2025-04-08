@@ -1887,6 +1887,14 @@ class TestGeomMethods:
             Series([1.0, 1.0]),
         )
 
+    def test_minimum_clearance_line(self):
+        mcl_geoms = self.g1.minimum_clearance_line()
+
+        expected = GeoSeries(
+            [LineString([(1, 0), (0.5, 0.5)]), LineString([(0, 0), (1, 0)])]
+        )
+        assert_geoseries_equal(mcl_geoms, expected)
+
     @pytest.mark.parametrize("size", [10, 20, 50])
     def test_sample_points(self, size):
         for gs in (

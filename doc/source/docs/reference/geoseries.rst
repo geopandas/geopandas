@@ -30,6 +30,7 @@ General methods and attributes
    GeoSeries.exterior
    GeoSeries.interiors
    GeoSeries.minimum_bounding_radius
+   GeoSeries.minimum_clearance   
    GeoSeries.x
    GeoSeries.y
    GeoSeries.z
@@ -109,7 +110,7 @@ Constructive methods and attributes
    GeoSeries.force_3d
    GeoSeries.make_valid
    GeoSeries.minimum_bounding_circle
-   GeoSeries.minimum_clearance
+   GeoSeries.minimum_clearance_line
    GeoSeries.minimum_rotated_rectangle
    GeoSeries.normalize
    GeoSeries.remove_repeated_points
