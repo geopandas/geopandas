@@ -1674,8 +1674,69 @@ GeometryCollection
         See also
         --------
         GeoSeries.convex_hull : convex hull geometry
+        GeoSeries.maximum_inscribed_circle : the largest circle within the geometry
         """
         return _delegate_geo_method("minimum_bounding_circle", self)
+
+    def maximum_inscribed_circle(self, tolerance=None):
+        """Returns a ``GeoSeries`` of geometries representing the largest circle that
+        is fully contained within the input geometry.
+
+        Constructs the “maximum inscribed circle” (MIC) for a polygonal geometry, up to
+        a specified tolerance. The MIC is determined by a point in the interior of the
+        area which has the farthest distance from the area boundary, along with a
+        boundary point at that distance. In the context of geography the center of the
+        MIC is known as the “pole of inaccessibility”. A cartographic use case is to
+        determine a suitable point to place a map label within a polygon. The radius
+        length of the MIC is a measure of how “narrow” a polygon is. It is the distance
+        at which the negative buffer becomes empty.
+
+        The method supports polygons with holes and multipolygons and will raise an
+        error for any other geometry type.
+
+        Returns a two-point linestring, with the first point at the center of the
+        inscribed circle and the second on the boundary of the inscribed circle.
+
+        Parameters
+        ----------
+        tolerance : float, np.array, pd.Series
+            Stop the algorithm when the search area is smaller than this tolerance.
+            When not specified, uses ``max(width, height) / 1000`` per geometry as the
+            default. If np.array or pd.Series are used then it must have same length as
+            the GeoSeries.
+
+        Examples
+        --------
+
+        >>> from shapely.geometry import Polygon, LineString, Point
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0, 0), (1, 1), (0, 1), (0, 0)]),
+        ...         Polygon([(0, 0), (10, 10), (0, 10), (0, 0)]),
+        ...     ]
+        ... )
+        >>> s
+        0       POLYGON ((0 0, 1 1, 0 1, 0 0))
+        1    POLYGON ((0 0, 10 10, 0 10, 0 0))
+        dtype: geometry
+
+        >>> s.maximum_inscribed_circle()
+        0    LINESTRING (0.29297 0.70703, 0.5 0.5)
+        1        LINESTRING (2.92969 7.07031, 5 5)
+        dtype: geometry
+
+        >>> s.maximum_inscribed_circle(tolerance=2)
+        0    LINESTRING (0.25 0.5, 0.375 0.375)
+        1          LINESTRING (2.5 7.5, 2.5 10)
+        dtype: geometry
+
+        See also
+        --------
+        minimum_bounding_circle
+        """
+        return _delegate_geo_method(
+            "maximum_inscribed_circle", self, tolerance=tolerance
+        )
 
     def minimum_bounding_radius(self):
         """Returns a `Series` of the radii of the minimum bounding circles
