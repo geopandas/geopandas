@@ -1887,6 +1887,7 @@ class TestGeomMethods:
             Series([1.0, 1.0]),
         )
 
+    @pytest.mark.skipif(not SHAPELY_GE_21, reason="requires shapely 2.1")
     def test_minimum_clearance_line(self):
         mcl_geoms = self.g1.minimum_clearance_line()
 
