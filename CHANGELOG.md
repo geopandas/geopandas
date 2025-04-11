@@ -4,9 +4,19 @@
 
 New features and improvements:
 
+- Added options to return the result of `SpatialIndex.query` in a form of a dense or a
+  sparse boolean array. This adds optional dependency on `scipy` for the sparse output.
+  Note that this also changes the previously undocumented behaviour of the `output_format`
+  keyword (#1674).
 - Add ``grid_size`` parameter to ``union_all`` and ``dissolve`` (#3445).
 - `GeoDataFrame.plot` now supports `pd.Index` as an input for the `column` keyword (#3463).
 - Avoid change of the plot aspect when plotting missing values (#3438).
+- GeoDataFrame no longer hard-codes the class internally, allowing easier subclassing (#3505).
+- Improve performance of `overlay` with `how=identity` (#3504).
+- Fix ambiguous error when GeoDataFrame is initialised with a column called "crs" (#3502)
+- Added `disjoint_subset` union algorithm for `union_all` and `dissolve` (#3534).
+- Added `to_pandas_kwargs` argument to `from_arrow`, `read_parquet` and `read_feather`
+  to allow better control of conversion of non-geometric Arrow data to DataFrames (#3466).
 
 Bug fixes:
 
@@ -39,6 +49,14 @@ Deprecations and compatibility notes:
 
 - The `GeoSeries.select` method wrapping the pandas `Series.select` method has been removed.
   The upstream method no longer exists in all supported version of pandas (#3394).
+- The deprecated `geom_almost_equals` method has been removed. Use
+  `geom_equals_exact` instead (#3522).
+
+New features and improvements:
+
+- Added `geopandas.accessors` module. Import this module to register a
+  `pandas.Series.geo` accessor, which exposes GeoSeries methods via pandas's
+  extension mechanism (#3272).
 
 ## Version 1.0.1 (July 2, 2024)
 

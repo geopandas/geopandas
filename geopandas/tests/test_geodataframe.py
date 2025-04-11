@@ -602,6 +602,14 @@ class TestDataFrame:
         assert type(df) is GeoDataFrame
         assert type(df.copy()) is GeoDataFrame
 
+    def test_empty(self):
+        df = GeoDataFrame({"geometry": []})
+        assert df.geometry.dtype == "geometry"
+        df = GeoDataFrame({"a": []}, geometry="a")
+        assert df.geometry.dtype == "geometry"
+        df = GeoDataFrame(geometry=[])
+        assert df.geometry.dtype == "geometry"
+
     def test_bool_index(self):
         # Find boros with 'B' in their name
         df = self.df[self.df["BoroName"].str.contains("B")]
@@ -1564,6 +1572,22 @@ def test_geodataframe_crs_colname():
     assert gdf["crs"].iloc[0] == 1
     assert getattr(gdf, "crs") is None
 
+    # https://github.com/geopandas/geopandas/issues/3501
+    gdf = GeoDataFrame({"crs": [1]}, geometry=[Point(1, 1)])
+    assert gdf.crs is None
+    assert gdf["crs"].iloc[0] == 1
+    assert getattr(gdf, "crs") is None
+
+    # test multiindex handling
+    df = pd.DataFrame([[1, 0], [0, 1]], columns=[["crs", "crs"], ["x", "y"]])
+    x_col = df["crs", "x"]
+    y_col = df["crs", "y"]
+
+    gdf = GeoDataFrame(df, geometry=points_from_xy(x_col, y_col))
+    assert gdf.crs is None
+    assert gdf["crs"].iloc[0].to_list() == [1, 0]
+    assert getattr(gdf, "crs") is None
+
 
 @pytest.mark.parametrize("geo_col_name", ["geometry", "polygons"])
 def test_set_geometry_supply_colname(dfs, geo_col_name):
@@ -1645,3 +1669,40 @@ def test_reduce_geometry_array():
     This warning is issued with pandas 2.2.2 (tested).
     """
     GeoDataFrame({"geometry": []}).all()
+
+
+class GDFChild(GeoDataFrame):
+    def custom_method(self):
+        return "this is a custom output"
+
+
+def test_inheritance(dfs):
+    df, _ = dfs
+    df.loc[:, "col2"] = ["a"] * len(df)
+
+    dfc = GDFChild(df)
+
+    dfc2 = dfc.rename_geometry("geometry2")
+
+    children = [
+        dfc,
+        dfc.iloc[[0]],
+        dfc.loc[dfc.col1 == 1],
+        dfc.dissolve(),
+        dfc[["col2", "geometry"]],
+        dfc.copy(),
+        dfc2,
+        dfc2.iloc[[0]],
+        dfc2.loc[dfc.col1 == 1],
+        dfc2.dissolve(),
+        dfc2[["col2", "geometry2"]],
+        dfc2.copy(),
+    ]
+
+    for v in children:
+        assert isinstance(v, GDFChild)
+        assert v.custom_method() == "this is a custom output"
+
+    df2 = dfc2.drop(columns=["geometry2"])
+
+    assert not isinstance(df2, GDFChild)

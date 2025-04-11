@@ -41,3 +41,4 @@ dependencies:
       - contextily
       - pointpats
       - libpysal
+      - matplotlib_map_utils

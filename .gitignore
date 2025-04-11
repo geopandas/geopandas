@@ -73,6 +73,8 @@ doc/source/getting_started/my_file.geojson
 
 .ruff_cache
 .env
+doc/test_fiona.gpkg
+doc/test_pyogrio.gpkg
 # pixi environments
 .pixi
 *.egg-info

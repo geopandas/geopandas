@@ -1999,14 +1999,14 @@ def _check_colors(N, actual_colors, expected_colors, alpha=None):
     actual_colors = map(tuple, actual_colors)
     all_actual_colors = list(itertools.islice(itertools.cycle(actual_colors), N))
 
-    assert len(all_actual_colors) == len(
-        expected_colors
-    ), "Different lengths of actual and expected colors!"
+    assert len(all_actual_colors) == len(expected_colors), (
+        "Different lengths of actual and expected colors!"
+    )
 
     for actual, expected in zip(all_actual_colors, expected_colors):
-        assert actual == conv.to_rgba(
-            expected, alpha=alpha
-        ), f"{actual} != {conv.to_rgba(expected, alpha=alpha)}"
+        assert actual == conv.to_rgba(expected, alpha=alpha), (
+            f"{actual} != {conv.to_rgba(expected, alpha=alpha)}"
+        )
 
 
 def _style_to_linestring_onoffseq(linestyle, linewidth):
