@@ -538,8 +538,52 @@ class GeometryArray(ExtensionArray):
 
     @property
     def area(self):
+        from geopandas import options
+
         self.check_geographic_crs(stacklevel=5)
+        if self.crs and self.crs.is_geographic:
+            if options.geodesic_calculation:
+                return self._calculate_geodesic_area()
+            else:
+                warnings.warn(
+                    "Calculating area in geographic CRS using planar geometry. "
+                    "Use 'geopandas.options.geodesic_calculation = True' to enable "
+                    "geodesic calculations (recommended for geographic CRS).",
+                    UserWarning,
+                    stacklevel=5,
+                )
         return shapely.area(self._data)
+    
+    def _calculate_geodesic_area(self):
+        from pyproj import Geod
+        
+        geod = Geod(ellps="WGS84")
+        def __geodesic_ring_area(rings):
+            areas = np.array([abs(geod.geometry_area_perimeter(shapely.geometry.shape(ring))[0]) 
+                            for ring in rings])
+            return areas
+        parts = shapely.get_parts(shapely.normalize(self._data))
+        part_area = __geodesic_ring_area(shapely.get_exterior_ring(parts))
+
+        num_rings = shapely.get_num_interior_rings(parts)
+        has_rings = num_rings > 0
+
+        if has_rings.any():
+            part_ix = np.repeat(np.arange(len(parts)), num_rings)
+            count = num_rings[has_rings]
+            starts = np.r_[True, part_ix[:-1] != part_ix[1:]]
+            inner_index = (~starts).cumsum()
+            inner_index -= np.repeat(inner_index[starts], count)
+            
+            hole_area = __geodesic_ring_area(shapely.get_interior_ring(parts[part_ix], inner_index))
+            breaks = np.append(np.cumsum(count) - count, count.sum())
+            part_hole_area = np.add.reduceat(hole_area, breaks[:-1])
+            part_area[has_rings] -= part_hole_area
+
+        num_parts = shapely.get_num_geometries(self._data)
+        breaks = np.append(np.cumsum(num_parts) - num_parts, num_parts.sum())
+        total = np.add.reduceat(part_area, breaks[:-1])
+        return total 
 
     @property
     def length(self):
