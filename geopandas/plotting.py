@@ -29,6 +29,7 @@ def _sanitize_geoms(geoms, prefix="Multi"):
     """
     # TODO(shapely) look into simplifying this with
     # shapely.get_parts(geoms, return_index=True) from shapely 2.0
+    geoms = geoms.normalize()
     components, component_index = [], []
 
     if (
