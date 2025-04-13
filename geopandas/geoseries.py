@@ -400,6 +400,9 @@ class GeoSeries(GeoPandasBase, Series):
             - warn: a warning will be raised and invalid WKB geometries will be returned
               as None.
             - ignore: invalid WKB geometries will be returned as None without a warning.
+            - fix: an effort is made to fix invalid input geometries (currently
+              just unclosed rings). If this is not possible, they are returned as
+              ``None`` without a warning. Requires GEOS >= 3.11 and shapely >= 2.1.
 
         kwargs
             Additional arguments passed to the Series constructor,
@@ -466,6 +469,9 @@ class GeoSeries(GeoPandasBase, Series):
               returned as ``None``.
             - ignore: invalid WKT geometries will be returned as ``None`` without a
               warning.
+            - fix: an effort is made to fix invalid input geometries (currently
+              just unclosed rings). If this is not possible, they are returned as
+              ``None`` without a warning. Requires GEOS >= 3.11 and shapely >= 2.1.
 
         kwargs
             Additional arguments passed to the Series constructor,
