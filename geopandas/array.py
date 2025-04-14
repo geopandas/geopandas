@@ -654,12 +654,17 @@ class GeometryArray(ExtensionArray):
         return GeometryArray(shapely.normalize(self._data), crs=self.crs)
 
     def make_valid(self, method="linework", keep_collapsed=True):
-        return GeometryArray(
-            shapely.make_valid(
-                self._data, method=method, keep_collapsed=keep_collapsed
-            ),
-            crs=self.crs,
-        )
+        kwargs = {}
+        if SHAPELY_GE_21:
+            kwargs["method"] = method
+            kwargs["keep_collapsed"] = keep_collapsed
+        else:
+            if method != "linework":
+                raise ValueError(
+                    "The 'structure' method requires GEOS >= 3.10 and shapely >= 2.1."
+                )
+
+        return GeometryArray(shapely.make_valid(self._data, **kwargs), crs=self.crs)
 
     def reverse(self):
         return GeometryArray(shapely.reverse(self._data), crs=self.crs)
