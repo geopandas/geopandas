@@ -1813,9 +1813,10 @@ GeometryCollection
 
             .. versionadded:: 1.1.0
         keep_collapsed : bool, default True
-            For the 'structure' method, True will keep components that have collapsed into a
-            lower dimensionality. For example, a ring collapsing to a line, or a line
-            collapsing to a point. Must be True for the 'linework' method.
+            For the 'structure' method, True will keep components that have
+            collapsed into a lower dimensionality. For example, a ring
+            collapsing to a line, or a line collapsing to a point. Must be True
+            for the 'linework' method.
 
             .. versionadded:: 1.1.0
 
