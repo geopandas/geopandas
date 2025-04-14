@@ -1014,7 +1014,7 @@ class TestGeomMethods:
             ("structure", False, Polygon()),
         ],
     )
-    @pytest.skipif(not SHAPELY_GE_21, reason="requires Shapely>=2.1")
+    @pytest.mark.skipif(not SHAPELY_GE_21, reason="requires Shapely>=2.1")
     def test_make_valid_method(self, method, keep_collapsed, expected):
         polygon = Polygon([(0, 0), (1, 1), (1, 2), (1, 1), (0, 0)])
         series = GeoSeries([polygon])
