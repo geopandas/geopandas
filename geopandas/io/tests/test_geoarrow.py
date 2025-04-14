@@ -5,6 +5,7 @@ import pathlib
 from packaging.version import Version
 
 import numpy as np
+from pandas import ArrowDtype
 
 import shapely
 from shapely import MultiPoint, Point, box
@@ -193,6 +194,24 @@ def test_geoarrow_export(geometry_type, dim, geometry_encoding, interleaved):
     if mask_nonempty is not None:
         result_arr = result_arr.filter(mask_nonempty)
     assert result_arr.equals(expected["geometry"].chunk(0))
+
+
+@pytest.mark.skipif(
+    Version(shapely.__version__) < Version("2.0.2"),
+    reason="from_ragged_array failing with read-only array input",
+)
+@pytest.mark.parametrize("encoding", ["WKB", "geoarrow"])
+def test_geoarrow_to_pandas_kwargs(encoding):
+    g = box(0, 0, 10, 10)
+    gdf = GeoDataFrame({"geometry": [g], "i": [1], "s": ["a"]})
+    table = pa_table(gdf.to_arrow(geometry_encoding=encoding))
+    # simulate the `dtype_backend="pyarrow"` option in `pandas.read_parquet`
+    gdf_roundtrip = GeoDataFrame.from_arrow(
+        table, to_pandas_kwargs={"types_mapper": ArrowDtype}
+    )
+    assert isinstance(gdf_roundtrip, GeoDataFrame)
+    assert isinstance(gdf_roundtrip.dtypes["i"], ArrowDtype)
+    assert isinstance(gdf_roundtrip.dtypes["s"], ArrowDtype)
 
 
 @pytest.mark.skipif(

@@ -900,7 +900,9 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         return df
 
     @classmethod
-    def from_arrow(cls, table, geometry: str | None = None) -> GeoDataFrame:
+    def from_arrow(
+        cls, table, geometry: str | None = None, to_pandas_kwargs: dict | None = None
+    ):
         """
         Construct a GeoDataFrame from a Arrow table object based on GeoArrow
         extension types.
@@ -925,6 +927,12 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         geometry : str, default None
             The name of the geometry column to set as the active geometry
             column. If None, the first geometry column found will be used.
+        to_pandas_kwargs : dict, optional
+            Arguments passed to the `pa.Table.to_pandas` method for non-geometry
+            columns. This can be used to control the behavior of the conversion of the
+            non-geometry columns to a pandas DataFrame. For example, you can use this
+            to control the dtype conversion of the columns. By default, the `to_pandas`
+            method is called with no additional arguments.
 
         Returns
         -------
@@ -933,7 +941,9 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         """
         from geopandas.io._geoarrow import arrow_to_geopandas
 
-        return arrow_to_geopandas(table, geometry=geometry)
+        return arrow_to_geopandas(
+            table, geometry=geometry, to_pandas_kwargs=to_pandas_kwargs
+        )
 
     def to_json(
         self,
@@ -2130,7 +2140,7 @@ default 'snappy'
         sort: bool = True,
         observed: bool = False,
         dropna: bool = True,
-        method: Literal["unary", "coverage"] = "unary",
+        method: Literal["unary", "coverage", "disjoint_subset"] = "unary",
         grid_size: float | None = None,
         **kwargs,
     ) -> GeoDataFrame:
@@ -2185,6 +2195,11 @@ default 'snappy'
               for non-overlapping polygons and can be significantly faster than the
               unary union algorithm. However, it can produce invalid geometries if the
               polygons overlap.
+            * ``"disjoint_subset:``: use the disjoint subset union algorithm. This
+              option is optimized for inputs that can be divided into subsets that do
+              not intersect. If there is only one such subset, performance can be
+              expected to be worse than ``"unary"``.
+
 
         grid_size : float, default None
             When grid size is specified, a fixed-precision space is used to perform the
