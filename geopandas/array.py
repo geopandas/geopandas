@@ -646,8 +646,13 @@ class GeometryArray(ExtensionArray):
     def normalize(self):
         return GeometryArray(shapely.normalize(self._data), crs=self.crs)
 
-    def make_valid(self):
-        return GeometryArray(shapely.make_valid(self._data), crs=self.crs)
+    def make_valid(self, method="linework", keep_collapsed=True):
+        return GeometryArray(
+            shapely.make_valid(
+                self._data, method=method, keep_collapsed=keep_collapsed
+            ),
+            crs=self.crs,
+        )
 
     def reverse(self):
         return GeometryArray(shapely.reverse(self._data), crs=self.crs)

@@ -13,7 +13,8 @@ New features and improvements:
 - Avoid change of the plot aspect when plotting missing values (#3438).
 - GeoDataFrame no longer hard-codes the class internally, allowing easier subclassing (#3505).
 - Improve performance of `overlay` with `how=identity` (#3504).
-- Fix ambiguous error when GeoDataFrame is initialised with a column called "crs" (#3502)
+- Fix ambiguous error when GeoDataFrame is initialised with a column called "crs" (#3502).
+- Add ``method`` and ``keep_collapsed`` parameters to ``make_valid`` (#).
 
 Bug fixes:
 
