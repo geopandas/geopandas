@@ -661,7 +661,7 @@ class GeometryArray(ExtensionArray):
         else:
             if method != "linework":
                 raise ValueError(
-                    "The 'structure' method requires GEOS >= 3.10 and shapely >= 2.1."
+                    "Only the 'linework' method is supported for shapely < 2.1."
                 )
 
         return GeometryArray(shapely.make_valid(self._data, **kwargs), crs=self.crs)
