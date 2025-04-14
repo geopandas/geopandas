@@ -1842,9 +1842,16 @@ GeometryCollection
         2                           LINESTRING (0 0, 1 1, 1 0)
         dtype: geometry
         """
-        return _delegate_geo_method(
-            "make_valid", self, method=method, keep_collapsed=keep_collapsed
-        )
+        kwargs = {}
+        if compat.SHAPELY_GE_21:
+            kwargs["method"] = method
+            kwargs["keep_collapsed"] = keep_collapsed
+        else:
+            if method != "linework":
+                raise ValueError(
+                    "The 'structure' method requires GEOS >= 3.10 and shapely >= 2.1."
+                )
+        return _delegate_geo_method("make_valid", self, **kwargs)
 
     def reverse(self):
         """Returns a ``GeoSeries`` with the order of coordinates reversed.
