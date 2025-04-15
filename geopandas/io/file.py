@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import urllib.error
 import urllib.request
 import warnings
 from io import IOBase
@@ -187,6 +188,23 @@ def _is_url(url):
         return False
 
 
+def _url_supports_random_access(filename):
+    # try first with a HEAD request to check if the server supports random access
+    try:
+        url_head = urllib.request.Request(filename, method="HEAD")
+        with urllib.request.urlopen(url_head) as response:
+            accept_ranges = response.headers.get("Accept-Ranges")
+    except (urllib.error.HTTPError, urllib.error.URLError):
+        # if HEAD request fails, try with a GET request
+        try:
+            with urllib.request.urlopen(filename) as response:
+                accept_ranges = response.headers.get("Accept-Ranges")
+        except (urllib.error.HTTPError, urllib.error.URLError):
+            return False
+
+    return accept_ranges == "bytes"
+
+
 def _read_file(
     filename, bbox=None, mask=None, columns=None, rows=None, engine=None, **kwargs
 ):
@@ -281,36 +299,58 @@ def _read_file(
 
     """
     engine = _check_engine(engine, "'read_file' function")
-
     filename = _expand_user(filename)
 
-    from_bytes = False
-    if _is_url(filename):
-        # if it is a url that supports random access -> pass through to
-        # pyogrio/fiona as is (to support downloading only part of the file)
-        # otherwise still download manually because pyogrio/fiona don't support
-        # all types of urls (https://github.com/geopandas/geopandas/issues/2908)
-        with urllib.request.urlopen(filename) as response:
-            if not response.headers.get("Accept-Ranges") == "bytes":
-                filename = response.read()
+    if engine == "pyogrio":
+        from_bytes = False
+        if _is_url(filename):
+            with urllib.request.urlopen(filename) as response:
+                # no partial data access, retrieve full file using GET request
+                file_as_bytes = response.read()
                 from_bytes = True
 
-    if engine == "pyogrio":
         return _read_file_pyogrio(
-            filename, bbox=bbox, mask=mask, columns=columns, rows=rows, **kwargs
+            path_or_bytes=file_as_bytes if from_bytes else filename,
+            bbox=bbox,
+            mask=mask,
+            columns=columns,
+            rows=rows,
+            **kwargs,
         )
 
     elif engine == "fiona":
-        if pd.api.types.is_file_like(filename):
+        from_bytes = False
+        if _is_url(filename):
+            if _url_supports_random_access(filename):
+                # filename is a URL and the server should support partial data access
+                try:
+                    return _read_file_fiona(
+                        filename,
+                        from_bytes=from_bytes,
+                        bbox=bbox,
+                        mask=mask,
+                        columns=columns,
+                        rows=rows,
+                        **kwargs,
+                    )
+                except Exception as e:
+                    if fiona and isinstance(e, fiona.errors.DriverError):
+                        pass  # fall back to downloading the data below
+                    raise
+
+            with urllib.request.urlopen(filename) as response:
+                # no partial data access, retrieve full file using GET request
+                file_as_bytes = response.read()
+                from_bytes = True
+
+        elif pd.api.types.is_file_like(filename):
             data = filename.read()
-            path_or_bytes = data.encode("utf-8") if isinstance(data, str) else data
+            file_as_bytes = data.encode("utf-8") if isinstance(data, str) else data
             from_bytes = True
-        else:
-            path_or_bytes = filename
 
         return _read_file_fiona(
-            path_or_bytes,
-            from_bytes,
+            path_or_bytes=file_as_bytes if from_bytes else filename,
+            from_bytes=from_bytes,
             bbox=bbox,
             mask=mask,
             columns=columns,
