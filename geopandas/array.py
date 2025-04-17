@@ -218,6 +218,9 @@ def from_wkb(data, crs=None, on_invalid="raise"):
         - warn: a warning will be raised and invalid WKB geometries will be returned as
           None.
         - ignore: invalid WKB geometries will be returned as None without a warning.
+        - fix: an effort is made to fix invalid input geometries (e.g. close
+          unclosed rings). If this is not possible, they are returned as ``None``
+          without a warning. Requires GEOS >= 3.11 and shapely >= 2.1.
 
     """
     return GeometryArray(shapely.from_wkb(data, on_invalid=on_invalid), crs=crs)
@@ -249,6 +252,9 @@ def from_wkt(data, crs=None, on_invalid="raise"):
         - warn: a warning will be raised and invalid WKT geometries will be
           returned as ``None``.
         - ignore: invalid WKT geometries will be returned as ``None`` without a warning.
+        - fix: an effort is made to fix invalid input geometries (e.g. close
+          unclosed rings). If this is not possible, they are returned as ``None``
+          without a warning. Requires GEOS >= 3.11 and shapely >= 2.1.
 
     """
     return GeometryArray(shapely.from_wkt(data, on_invalid=on_invalid), crs=crs)
