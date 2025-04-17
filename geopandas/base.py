@@ -1776,11 +1776,11 @@ GeometryCollection
         """
         return _delegate_geo_method("normalize", self)
 
-    def make_valid(self):
-        """
-        Repairs invalid geometries.
+    def make_valid(self, method="linework", keep_collapsed=True):
+        """Repairs invalid geometries.
 
         Returns a ``GeoSeries`` with valid geometries.
+
         If the input geometry is already valid, then it will be preserved.
         In many cases, in order to create a valid geometry, the input
         geometry must be split into multiple parts or multiple geometries.
@@ -1789,6 +1789,36 @@ GeometryCollection
         (e.g. a MultiPolygon).
         If the geometry must be split into multiple parts of different types
         to be made valid, then a GeometryCollection will be returned.
+
+        Two ``methods`` are available:
+
+        * the 'linework' algorithm tries to preserve every edge and vertex in
+          the input. It combines all rings into a set of noded lines and then
+          extracts valid polygons from that linework. An alternating even-odd
+          strategy is used to assign areas as interior or exterior. A
+          disadvantage is that for some relatively simple invalid geometries
+          this produces rather complex results.
+        * the 'structure' algorithm tries to reason from the structure of the
+          input to find the 'correct' repair: exterior rings bound area,
+          interior holes exclude area. It first makes all rings valid, then
+          shells are merged and holes are subtracted from the shells to
+          generate valid result. It assumes that holes and shells are correctly
+          categorized in the input geometry.
+
+        Parameters
+        ----------
+        method : {'linework', 'structure'}, default 'linework'
+            Algorithm to use when repairing geometry. 'structure'
+            requires GEOS >= 3.10 and shapely >= 2.1.
+
+            .. versionadded:: 1.1.0
+        keep_collapsed : bool, default True
+            For the 'structure' method, True will keep components that have
+            collapsed into a lower dimensionality. For example, a ring
+            collapsing to a line, or a line collapsing to a point. Must be True
+            for the 'linework' method.
+
+            .. versionadded:: 1.1.0
 
         Examples
         --------
@@ -1812,7 +1842,9 @@ GeometryCollection
         2                           LINESTRING (0 0, 1 1, 1 0)
         dtype: geometry
         """
-        return _delegate_geo_method("make_valid", self)
+        return _delegate_geo_method(
+            "make_valid", self, method=method, keep_collapsed=keep_collapsed
+        )
 
     def reverse(self):
         """Returns a ``GeoSeries`` with the order of coordinates reversed.
