@@ -11,6 +11,8 @@ New features and improvements:
 - Add ``grid_size`` parameter to ``union_all`` and ``dissolve`` (#3445).
 - `GeoDataFrame.plot` now supports `pd.Index` as an input for the `column` keyword (#3463).
 - Avoid change of the plot aspect when plotting missing values (#3438).
+- A warning message is raised in `read_file` when a GeoDataFrame or GeoSeries mask
+  and/or the source dataset is missing a defined CRS. (#3464)
 - GeoDataFrame no longer hard-codes the class internally, allowing easier subclassing (#3505).
 - Improve performance of `overlay` with `how=identity` (#3504).
 - Fix ambiguous error when GeoDataFrame is initialised with a column called "crs" (#3502).
