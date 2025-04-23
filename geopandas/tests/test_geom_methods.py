@@ -998,6 +998,42 @@ class TestGeomMethods:
         assert_geoseries_equal(result, expected)
         assert result.is_valid.all()
 
+    @pytest.mark.parametrize(
+        "method, keep_collapsed, expected",
+        [
+            (
+                "linework",
+                True,
+                MultiLineString([[(0, 0), (1, 1)], [(1, 1), (1, 2)]]),
+            ),
+            (
+                "structure",
+                True,
+                LineString([(0, 0), (1, 1), (1, 2), (1, 1), (0, 0)]),
+            ),
+            ("structure", False, Polygon()),
+        ],
+    )
+    @pytest.mark.skipif(not SHAPELY_GE_21, reason="requires Shapely>=2.1")
+    def test_make_valid_method(self, method, keep_collapsed, expected):
+        polygon = Polygon([(0, 0), (1, 1), (1, 2), (1, 1), (0, 0)])
+        series = GeoSeries([polygon])
+        expected = GeoSeries([expected])
+        assert not series.is_valid.all()
+        result = series.make_valid(method=method, keep_collapsed=keep_collapsed)
+        assert_geoseries_equal(result, expected, check_geom_type=True)
+        assert result.is_valid.all()
+
+    @pytest.mark.skipif(SHAPELY_GE_21, reason="test for Shapely<2.1")
+    def test_make_valid_old_shapely(self):
+        """Only the 'linework' method is supported for shapely < 2.1."""
+        polygon = Polygon([(0, 0), (1, 1), (1, 2), (1, 1), (0, 0)])
+        series = GeoSeries([polygon])
+        with pytest.raises(
+            ValueError, match="Only the 'linework' method is supported for"
+        ):
+            series.make_valid(method="structure")
+
     def test_reverse(self):
         expected = GeoSeries(
             [

@@ -13,11 +13,12 @@ New features and improvements:
 - Avoid change of the plot aspect when plotting missing values (#3438).
 - GeoDataFrame no longer hard-codes the class internally, allowing easier subclassing (#3505).
 - Improve performance of `overlay` with `how=identity` (#3504).
-- Fix ambiguous error when GeoDataFrame is initialised with a column called "crs" (#3502)
+- Fix ambiguous error when GeoDataFrame is initialised with a column called "crs" (#3502).
 - Added `disjoint_subset` union algorithm for `union_all` and `dissolve` (#3534).
 - Added `to_pandas_kwargs` argument to `from_arrow`, `read_parquet` and `read_feather`
   to allow better control of conversion of non-geometric Arrow data to DataFrames (#3466).
 - Added `minimum_clearance_line` method from shapely to GeoSeries/GeoDataframe (#3543).
+- Added ``method`` and ``keep_collapsed`` argument to ``make_valid`` (#3548).
 
 Bug fixes:
 
