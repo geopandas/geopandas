@@ -1694,8 +1694,9 @@ GeometryCollection
         The method supports polygons with holes and multipolygons but will raise an
         error for any other geometry type.
 
-        Returns a GeoSeries with two-point linestrings rows, with the first point at the center of the
-        inscribed circle and the second on the boundary of the inscribed circle.
+        Returns a GeoSeries with two-point linestrings rows, with the first point at the
+        center of the inscribed circle and the second on the boundary of the inscribed
+        circle.
 
         Parameters
         ----------
