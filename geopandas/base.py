@@ -400,7 +400,8 @@ GeometryCollection
         :meth:`coverage_invalid_edges` method can be used to find the edges of those
         gaps.
 
-        Geometries that are not Polygon or MultiPolygon are ignored.
+        Geometries that are not Polygon or MultiPolygon are ignored and an empty
+        LineString is returned.
 
         Parameters
         ----------
