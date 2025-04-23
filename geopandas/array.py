@@ -517,7 +517,7 @@ class GeometryArray(ExtensionArray):
     def invalid_coverage_edges(self, gap_width=0.0):
         if not (SHAPELY_GE_21 and GEOS_GE_312):
             raise ImportError(
-                "Method 'is_valid_coverage' requires shapely>=2.1 and GEOS>=3.12."
+                "Method 'invalid_coverage_edges' requires shapely>=2.1 and GEOS>=3.12."
             )
         return shapely.coverage_invalid_edges(self._data, gap_width=gap_width)
 
