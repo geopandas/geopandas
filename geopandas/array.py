@@ -218,6 +218,9 @@ def from_wkb(data, crs=None, on_invalid="raise"):
         - warn: a warning will be raised and invalid WKB geometries will be returned as
           None.
         - ignore: invalid WKB geometries will be returned as None without a warning.
+        - fix: an effort is made to fix invalid input geometries (e.g. close
+          unclosed rings). If this is not possible, they are returned as ``None``
+          without a warning. Requires GEOS >= 3.11 and shapely >= 2.1.
 
     """
     return GeometryArray(shapely.from_wkb(data, on_invalid=on_invalid), crs=crs)
@@ -249,6 +252,9 @@ def from_wkt(data, crs=None, on_invalid="raise"):
         - warn: a warning will be raised and invalid WKT geometries will be
           returned as ``None``.
         - ignore: invalid WKT geometries will be returned as ``None`` without a warning.
+        - fix: an effort is made to fix invalid input geometries (e.g. close
+          unclosed rings). If this is not possible, they are returned as ``None``
+          without a warning. Requires GEOS >= 3.11 and shapely >= 2.1.
 
     """
     return GeometryArray(shapely.from_wkt(data, on_invalid=on_invalid), crs=crs)
@@ -662,8 +668,18 @@ class GeometryArray(ExtensionArray):
     def normalize(self):
         return GeometryArray(shapely.normalize(self._data), crs=self.crs)
 
-    def make_valid(self):
-        return GeometryArray(shapely.make_valid(self._data), crs=self.crs)
+    def make_valid(self, method="linework", keep_collapsed=True):
+        kwargs = {}
+        if SHAPELY_GE_21:
+            kwargs["method"] = method
+            kwargs["keep_collapsed"] = keep_collapsed
+        else:
+            if method != "linework":
+                raise ValueError(
+                    "Only the 'linework' method is supported for shapely < 2.1."
+                )
+
+        return GeometryArray(shapely.make_valid(self._data, **kwargs), crs=self.crs)
 
     def reverse(self):
         return GeometryArray(shapely.reverse(self._data), crs=self.crs)
