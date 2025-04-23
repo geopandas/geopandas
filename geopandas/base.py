@@ -969,6 +969,36 @@ GeometryCollection
         )
 
     @property
+    def constrained_delaunay_triangles(self):
+        """Returns a :class:`~geopandas.GeoSeries` with the constrained
+        Delaunay triangulation of polygons.
+
+        A constrained Delaunay triangulation requires the edges of the input
+        polygon(s) to be in the set of resulting triangle edges. An
+        unconstrained delaunay triangulation only triangulates based on the
+        vertices, hence triangle edges could cross polygon boundaries.
+
+        Examples
+        --------
+
+        >>> from shapely.geometry import Polygon
+        >>> s = geopandas.GeoSeries([Polygon([(0, 0), (1, 1), (0, 1)])])
+        >>> s
+        0                       POLYGON ((0 0, 1 1, 0 1, 0 0))
+        dtype: geometry
+
+        >>> s.constrained_delaunay_triangles
+        0         GEOMETRYCOLLECTION (POLYGON ((0 0, 0 1, 1 1, 0...
+        dtype: geometry
+
+        See also
+        --------
+        GeoSeries.delaunay_triangles : Delaunay triangulation
+
+        """
+        return _delegate_property("constrained_delaunay_triangles", self)
+
+    @property
     def convex_hull(self):
         """Returns a ``GeoSeries`` of geometries representing the convex hull
         of each geometry.
@@ -1103,6 +1133,7 @@ GeometryCollection
         See also
         --------
         GeoSeries.voronoi_polygons : Voronoi diagram around vertices
+        GeoSeries.constrained_delaunay_triangles : constrained Delaunay triangulation
         """
         from .geoseries import GeoSeries
 

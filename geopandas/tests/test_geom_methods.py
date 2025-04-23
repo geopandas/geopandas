@@ -1163,6 +1163,15 @@ class TestGeomMethods:
                 ratio=0.1, allow_holes=Series([True, False], index=[99, 98])
             )
 
+    def test_constrained_delaunay_triangles(self):
+        input = GeoSeries([Polygon([(0, 0), (1, 1), (0, 1)])])
+        expected = GeoSeries(
+            [GeometryCollection([Polygon([(0, 0), (0, 1), (1, 1), (0, 0)])])]
+        )
+        assert_geoseries_equal(
+            input.constrained_delaunay_triangles, expected, check_geom_type=True
+        )
+
     def test_convex_hull(self):
         # the convex hull of a square should be the same as the square
         assert_geoseries_equal(self.squares, self.squares.convex_hull)

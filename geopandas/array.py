@@ -584,6 +584,13 @@ class GeometryArray(ExtensionArray):
         return shapely.concave_hull(self._data, ratio=ratio, allow_holes=allow_holes)
 
     @property
+    def constrained_delaunay_triangles(self):
+        return GeometryArray(
+            shapely.constrained_delaunay_triangles(self._data),
+            crs=self.crs,
+        )
+
+    @property
     def convex_hull(self):
         return GeometryArray(shapely.convex_hull(self._data), crs=self.crs)
 
