@@ -1691,10 +1691,10 @@ GeometryCollection
         length of the MIC is a measure of how “narrow” a polygon is. It is the distance
         at which the negative buffer becomes empty.
 
-        The method supports polygons with holes and multipolygons and will raise an
+        The method supports polygons with holes and multipolygons but will raise an
         error for any other geometry type.
 
-        Returns a two-point linestring, with the first point at the center of the
+        Returns a GeoSeries with two-point linestrings rows, with the first point at the center of the
         inscribed circle and the second on the boundary of the inscribed circle.
 
         Parameters
