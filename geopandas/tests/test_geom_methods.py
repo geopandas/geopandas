@@ -1163,13 +1163,14 @@ class TestGeomMethods:
                 ratio=0.1, allow_holes=Series([True, False], index=[99, 98])
             )
 
+    @pytest.mark.skipif(not SHAPELY_GE_21, reason="requires shapely 2.1")
     def test_constrained_delaunay_triangles(self):
         input = GeoSeries([Polygon([(0, 0), (1, 1), (0, 1)])])
         expected = GeoSeries(
             [GeometryCollection([Polygon([(0, 0), (0, 1), (1, 1), (0, 0)])])]
         )
         assert_geoseries_equal(
-            input.constrained_delaunay_triangles, expected, check_geom_type=True
+            input.constrained_delaunay_triangles(), expected, check_geom_type=True
         )
 
     def test_convex_hull(self):

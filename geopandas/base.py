@@ -968,7 +968,6 @@ GeometryCollection
             "concave_hull", self, ratio=ratio, allow_holes=allow_holes
         )
 
-    @property
     def constrained_delaunay_triangles(self):
         """Returns a :class:`~geopandas.GeoSeries` with the constrained
         Delaunay triangulation of polygons.
@@ -987,7 +986,7 @@ GeometryCollection
         0                       POLYGON ((0 0, 1 1, 0 1, 0 0))
         dtype: geometry
 
-        >>> s.constrained_delaunay_triangles
+        >>> s.constrained_delaunay_triangles()
         0         GEOMETRYCOLLECTION (POLYGON ((0 0, 0 1, 1 1, 0...
         dtype: geometry
 
@@ -996,7 +995,7 @@ GeometryCollection
         GeoSeries.delaunay_triangles : Delaunay triangulation
 
         """
-        return _delegate_property("constrained_delaunay_triangles", self)
+        return _delegate_geo_method("constrained_delaunay_triangles", self)
 
     @property
     def convex_hull(self):

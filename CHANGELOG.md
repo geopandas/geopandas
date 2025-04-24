@@ -15,7 +15,7 @@ New features and improvements:
 - Improve performance of `overlay` with `how=identity` (#3504).
 - Fix ambiguous error when GeoDataFrame is initialised with a column called "crs" (#3502).
 - Added `disjoint_subset` union algorithm for `union_all` and `dissolve` (#3534).
-- Added `constrained_delaunay_triangles` property to `GeoSeries` (#3552).
+- Added `constrained_delaunay_triangles` method to GeoSeries/GeoDataframe (#3552).
 - Added `to_pandas_kwargs` argument to `from_arrow`, `read_parquet` and `read_feather`
   to allow better control of conversion of non-geometric Arrow data to DataFrames (#3466).
 - Added ``method`` and ``keep_collapsed`` argument to ``make_valid`` (#3548).

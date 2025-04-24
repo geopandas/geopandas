@@ -569,9 +569,6 @@ class TestGeometryArrayCRS:
         cent = arr.centroid
         assert cent.crs == self.osgb
 
-        constrained_delaunay = arr.constrained_delaunay_triangles
-        assert constrained_delaunay.crs == self.osgb
-
         hull = arr.convex_hull
         assert hull.crs == self.osgb
 
