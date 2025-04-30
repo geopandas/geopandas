@@ -173,9 +173,9 @@ html_theme_options = {
             "icon": "fab fa-github-square fa-xl",
         },
         {
-            "name": "Twitter",
-            "url": "https://twitter.com/geopandas",
-            "icon": "fab fa-twitter-square fa-xl",
+            "name": "X",
+            "url": "https://x.com/geopandas",
+            "icon": "fab fa-x-twitter-square fa-xl",
         },
     ]
 }
