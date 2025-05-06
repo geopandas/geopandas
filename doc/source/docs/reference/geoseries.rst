@@ -53,6 +53,8 @@ Unary predicates
    GeoSeries.is_simple
    GeoSeries.is_valid
    GeoSeries.is_valid_reason
+   GeoSeries.is_valid_coverage
+   GeoSeries.invalid_coverage_edges
    GeoSeries.has_z
    GeoSeries.is_ccw
 
@@ -69,7 +71,6 @@ Binary predicates
    GeoSeries.disjoint
    GeoSeries.dwithin
    GeoSeries.geom_equals
-   GeoSeries.geom_almost_equals
    GeoSeries.geom_equals_exact
    GeoSeries.intersects
    GeoSeries.overlaps

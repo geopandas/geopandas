@@ -183,9 +183,9 @@ def assert_geoseries_equal(
     assert left.index.equals(right.index), f"index: {left.index} != {right.index}"
 
     if check_geom_type:
-        assert (
-            left.geom_type == right.geom_type
-        ).all(), f"type: {left.geom_type} != {right.geom_type}"
+        assert (left.geom_type == right.geom_type).all(), (
+            f"type: {left.geom_type} != {right.geom_type}"
+        )
 
     if normalize:
         left = GeoSeries(left.array.normalize())

@@ -449,7 +449,7 @@ def _get_arrow_geometry_field(field):
     return None
 
 
-def arrow_to_geopandas(table, geometry=None):
+def arrow_to_geopandas(table, geometry=None, to_pandas_kwargs=None):
     """
     Convert Arrow table object to a GeoDataFrame based on GeoArrow extension types.
 
@@ -460,6 +460,12 @@ def arrow_to_geopandas(table, geometry=None):
     geometry : str, default None
         The name of the geometry column to set as the active geometry
         column. If None, the first geometry column found will be used.
+    to_pandas_kwargs : dict, optional
+        Arguments passed to the `pa.Table.to_pandas` method for non-geometry columns.
+        This can be used to control the behavior of the conversion of the non-geometry
+        columns to a pandas DataFrame. For example, you can use this to control the
+        dtype conversion of the columns. By default, the `to_pandas` method is called
+        with no additional arguments.
 
     Returns
     -------
@@ -480,7 +486,9 @@ def arrow_to_geopandas(table, geometry=None):
         raise ValueError("No geometry column found in the Arrow table.")
 
     table_attr = table.drop([f[1] for f in geom_fields])
-    df = table_attr.to_pandas()
+    if to_pandas_kwargs is None:
+        to_pandas_kwargs = {}
+    df = table_attr.to_pandas(**to_pandas_kwargs)
 
     for i, col, ext_name, ext_meta in geom_fields:
         crs = None
