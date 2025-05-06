@@ -30,6 +30,7 @@ General methods and attributes
    GeoSeries.exterior
    GeoSeries.interiors
    GeoSeries.minimum_bounding_radius
+   GeoSeries.minimum_clearance
    GeoSeries.x
    GeoSeries.y
    GeoSeries.z
@@ -53,6 +54,8 @@ Unary predicates
    GeoSeries.is_simple
    GeoSeries.is_valid
    GeoSeries.is_valid_reason
+   GeoSeries.is_valid_coverage
+   GeoSeries.invalid_coverage_edges
    GeoSeries.has_z
    GeoSeries.is_ccw
 
@@ -109,7 +112,9 @@ Constructive methods and attributes
    GeoSeries.force_3d
    GeoSeries.make_valid
    GeoSeries.minimum_bounding_circle
+   GeoSeries.maximum_inscribed_circle
    GeoSeries.minimum_clearance
+   GeoSeries.minimum_clearance_line
    GeoSeries.minimum_rotated_rectangle
    GeoSeries.normalize
    GeoSeries.remove_repeated_points

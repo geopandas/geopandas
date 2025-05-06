@@ -384,6 +384,132 @@ GeometryCollection
         """
         return Series(self.geometry.values.is_valid_reason(), index=self.index)
 
+    def is_valid_coverage(self, gap_width=0.0):
+        """Returns a ``bool`` indicating whether a ``GeoSeries`` forms a valid coverage
+
+        A ``GeoSeries`` of valid polygons is considered a coverage if the polygons are:
+
+        * **Non-overlapping** - polygons do not overlap (their interiors do not
+          intersect)
+        * **Edge-Matched** - vertices along shared edges are identical
+
+        A valid coverage may contain holes (regions of no coverage). However, sometimes
+        it might be desirable to detect narrow gaps as invalidities in the coverage. The
+        ``gap_width`` parameter allows to specify the maximum width of gaps to detect.
+        When gaps are detected, this method will return ``False`` and the
+        :meth:`coverage_invalid_edges` method can be used to find the edges of those
+        gaps.
+
+        Geometries that are not Polygon or MultiPolygon are ignored and an empty
+        LineString is returned.
+
+        Parameters
+        ----------
+        gap_width : float, optional
+            The maximum width of gaps to detect, by default 0.0
+
+        Returns
+        -------
+        bool
+
+        Examples
+        --------
+        >>> from shapely import Polygon
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0, 0), (1, 1), (1, 0), (0, 0)]),
+        ...         Polygon([(0, 0), (1, 1), (0, 1), (0, 0)]),
+        ...     ]
+        ... )
+        >>> s
+        0    POLYGON ((0 0, 1 1, 1 0, 0 0))
+        1    POLYGON ((0 0, 1 1, 0 1, 0 0))
+        dtype: geometry
+
+        >>> s.is_valid_coverage()
+        True
+
+        Violation of edge-matching:
+
+        >>> s2 = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0, 0), (1, 1), (1, 0), (0, 0)]),
+        ...         Polygon([(0, 0), (0.5, 0.5), (1, 1), (0, 1), (0, 0)])
+        ...     ]
+        ... )
+        >>> s2
+        0             POLYGON ((0 0, 1 1, 1 0, 0 0))
+        1    POLYGON ((0 0, 0.5 0.5, 1 1, 0 1, 0 0))
+        dtype: geometry
+
+        >>> s2.is_valid_coverage()
+        False
+
+        See also
+        --------
+        GeoSeries.invalid_coverage_edges
+        GeoSeries.simplify_coverage
+        """
+        return self.geometry.values.is_valid_coverage(gap_width=gap_width)
+
+    def invalid_coverage_edges(self, gap_width=0.0):
+        """Returns a ``GeoSeries`` containing edges causing invalid polygonal coverage
+
+        This method returns (Multi)LineStrings showing the location of edges violating
+        polygonal coverage (if any) in each polygon in the input ``GeoSeries``.
+
+        A ``GeoSeries`` of valid polygons is considered a coverage if the polygons are:
+
+        * **Non-overlapping** - polygons do not overlap (their interiors do not
+          intersect)
+        * **Edge-Matched** - vertices along shared edges are identical
+
+        A valid coverage may contain holes (regions of no coverage). However, sometimes
+        it might be desirable to detect narrow gaps as invalidities in the coverage. The
+        ``gap_width`` parameter allows to specify the maximum width of gaps to detect.
+        When gaps are detected, the :meth:`is_valid_coverage` method will return
+        ``False`` and this method can be used to find the edges of those gaps.
+
+        Geometries that are not Polygon or MultiPolygon are ignored.
+
+        Parameters
+        ----------
+        gap_width : float, optional
+            The maximum width of gaps to detect, by default 0.0
+
+        Returns
+        -------
+        GeoSeries
+
+        Examples
+        --------
+        Violation of edge-matching:
+
+        >>> from shapely import Polygon
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0, 0), (1, 1), (1, 0), (0, 0)]),
+        ...         Polygon([(0, 0), (0.5, 0.5), (1, 1), (0, 1), (0, 0)])
+        ...     ]
+        ... )
+        >>> s
+        0             POLYGON ((0 0, 1 1, 1 0, 0 0))
+        1    POLYGON ((0 0, 0.5 0.5, 1 1, 0 1, 0 0))
+        dtype: geometry
+
+        >>> s.invalid_coverage_edges()
+        0             LINESTRING (0 0, 1 1)
+        1    LINESTRING (0 0, 0.5 0.5, 1 1)
+        dtype: geometry
+
+
+        See also
+        --------
+        GeoSeries.is_valid_coverage
+        GeoSeries.simplify_coverage
+        """
+        return _delegate_geo_method("invalid_coverage_edges", self, gap_width=gap_width)
+
     @property
     def is_empty(self):
         """
@@ -1674,8 +1800,70 @@ GeometryCollection
         See also
         --------
         GeoSeries.convex_hull : convex hull geometry
+        GeoSeries.maximum_inscribed_circle : the largest circle within the geometry
         """
         return _delegate_geo_method("minimum_bounding_circle", self)
+
+    def maximum_inscribed_circle(self, tolerance=None):
+        """Returns a ``GeoSeries`` of geometries representing the largest circle that
+        is fully contained within the input geometry.
+
+        Constructs the “maximum inscribed circle” (MIC) for a polygonal geometry, up to
+        a specified tolerance. The MIC is determined by a point in the interior of the
+        area which has the farthest distance from the area boundary, along with a
+        boundary point at that distance. In the context of geography the center of the
+        MIC is known as the “pole of inaccessibility”. A cartographic use case is to
+        determine a suitable point to place a map label within a polygon. The radius
+        length of the MIC is a measure of how “narrow” a polygon is. It is the distance
+        at which the negative buffer becomes empty.
+
+        The method supports polygons with holes and multipolygons but will raise an
+        error for any other geometry type.
+
+        Returns a GeoSeries with two-point linestrings rows, with the first point at the
+        center of the inscribed circle and the second on the boundary of the inscribed
+        circle.
+
+        Parameters
+        ----------
+        tolerance : float, np.array, pd.Series
+            Stop the algorithm when the search area is smaller than this tolerance.
+            When not specified, uses ``max(width, height) / 1000`` per geometry as the
+            default. If np.array or pd.Series are used then it must have same length as
+            the GeoSeries.
+
+        Examples
+        --------
+
+        >>> from shapely.geometry import Polygon, LineString, Point
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0, 0), (1, 1), (0, 1), (0, 0)]),
+        ...         Polygon([(0, 0), (10, 10), (0, 10), (0, 0)]),
+        ...     ]
+        ... )
+        >>> s
+        0       POLYGON ((0 0, 1 1, 0 1, 0 0))
+        1    POLYGON ((0 0, 10 10, 0 10, 0 0))
+        dtype: geometry
+
+        >>> s.maximum_inscribed_circle()
+        0    LINESTRING (0.29297 0.70703, 0.5 0.5)
+        1        LINESTRING (2.92969 7.07031, 5 5)
+        dtype: geometry
+
+        >>> s.maximum_inscribed_circle(tolerance=2)
+        0    LINESTRING (0.25 0.5, 0.375 0.375)
+        1          LINESTRING (2.5 7.5, 2.5 10)
+        dtype: geometry
+
+        See also
+        --------
+        minimum_bounding_circle
+        """
+        return _delegate_geo_method(
+            "maximum_inscribed_circle", self, tolerance=tolerance
+        )
 
     def minimum_bounding_radius(self):
         """Returns a `Series` of the radii of the minimum bounding circles
@@ -1740,8 +1928,50 @@ GeometryCollection
         1    1.414214
         2         inf
         dtype: float64
+
+        See also
+        --------
+        minimum_clearance_line
         """
         return Series(self.geometry.values.minimum_clearance(), index=self.index)
+
+    def minimum_clearance_line(self):
+        """Returns a ``GeoSeries`` of linestrings whose endpoints define the
+        minimum clearance.
+
+        A geometry's “minimum clearance” is the smallest distance by which a vertex
+        of the geometry could be moved to produce an invalid geometry.
+
+        If the geometry has no minimum clearance, an empty LineString will be returned.
+
+        Examples
+        --------
+
+        >>> from shapely.geometry import Polygon, LineString, Point
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0, 0), (1, 1), (0, 1), (0, 0)]),
+        ...         LineString([(0, 0), (1, 1), (3, 2)]),
+        ...         Point(0, 0),
+        ...     ]
+        ... )
+        >>> s
+        0    POLYGON ((0 0, 1 1, 0 1, 0 0))
+        1        LINESTRING (0 0, 1 1, 3 2)
+        2                       POINT (0 0)
+        dtype: geometry
+
+        >>> s.minimum_clearance_line()
+        0    LINESTRING (0 1, 0.5 0.5)
+        1        LINESTRING (0 0, 1 1)
+        2             LINESTRING EMPTY
+        dtype: geometry
+
+        See also
+        --------
+        minimum_clearance
+        """
+        return _delegate_geo_method("minimum_clearance_line", self)
 
     def normalize(self):
         """Returns a ``GeoSeries`` of normalized
@@ -1776,11 +2006,11 @@ GeometryCollection
         """
         return _delegate_geo_method("normalize", self)
 
-    def make_valid(self):
-        """
-        Repairs invalid geometries.
+    def make_valid(self, method="linework", keep_collapsed=True):
+        """Repairs invalid geometries.
 
         Returns a ``GeoSeries`` with valid geometries.
+
         If the input geometry is already valid, then it will be preserved.
         In many cases, in order to create a valid geometry, the input
         geometry must be split into multiple parts or multiple geometries.
@@ -1789,6 +2019,36 @@ GeometryCollection
         (e.g. a MultiPolygon).
         If the geometry must be split into multiple parts of different types
         to be made valid, then a GeometryCollection will be returned.
+
+        Two ``methods`` are available:
+
+        * the 'linework' algorithm tries to preserve every edge and vertex in
+          the input. It combines all rings into a set of noded lines and then
+          extracts valid polygons from that linework. An alternating even-odd
+          strategy is used to assign areas as interior or exterior. A
+          disadvantage is that for some relatively simple invalid geometries
+          this produces rather complex results.
+        * the 'structure' algorithm tries to reason from the structure of the
+          input to find the 'correct' repair: exterior rings bound area,
+          interior holes exclude area. It first makes all rings valid, then
+          shells are merged and holes are subtracted from the shells to
+          generate valid result. It assumes that holes and shells are correctly
+          categorized in the input geometry.
+
+        Parameters
+        ----------
+        method : {'linework', 'structure'}, default 'linework'
+            Algorithm to use when repairing geometry. 'structure'
+            requires GEOS >= 3.10 and shapely >= 2.1.
+
+            .. versionadded:: 1.1.0
+        keep_collapsed : bool, default True
+            For the 'structure' method, True will keep components that have
+            collapsed into a lower dimensionality. For example, a ring
+            collapsing to a line, or a line collapsing to a point. Must be True
+            for the 'linework' method.
+
+            .. versionadded:: 1.1.0
 
         Examples
         --------
@@ -1812,7 +2072,9 @@ GeometryCollection
         2                           LINESTRING (0 0, 1 1, 1 0)
         dtype: geometry
         """
-        return _delegate_geo_method("make_valid", self)
+        return _delegate_geo_method(
+            "make_valid", self, method=method, keep_collapsed=keep_collapsed
+        )
 
     def reverse(self):
         """Returns a ``GeoSeries`` with the order of coordinates reversed.

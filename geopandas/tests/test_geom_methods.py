@@ -898,6 +898,41 @@ class TestGeomMethods:
         expected = Series(["Self-intersection[0.5 0.5]", "Valid Geometry", None])
         assert_series_equal(s.is_valid_reason(), expected)
 
+    @pytest.mark.skipif(
+        not (GEOS_GE_312 and SHAPELY_GE_21), reason="GEOS 3.12 and shapely 2.1 needed."
+    )
+    def test_is_valid_coverage(self):
+        s = GeoSeries(
+            [
+                Polygon([(0, 0), (1, 1), (1, 0), (0, 0)]),
+                Polygon([(0, 0), (1, 1), (0, 1), (0, 0)]),
+            ]
+        )
+        assert s.is_valid_coverage()
+
+        s2 = GeoSeries(
+            [
+                Polygon([(0, 0), (1, 1), (1, 0), (0, 0)]),
+                Polygon([(0, 0), (0.5, 0.5), (1, 1), (0, 1), (0, 0)]),
+            ]
+        )
+        assert not s2.is_valid_coverage()
+
+    @pytest.mark.skipif(
+        not (GEOS_GE_312 and SHAPELY_GE_21), reason="GEOS 3.12 and shapely 2.1 needed."
+    )
+    def test_invalid_coverage_edges(self):
+        s = GeoSeries(
+            [
+                Polygon([(0, 0), (1, 1), (1, 0), (0, 0)]),
+                Polygon([(0, 0), (0.5, 0.5), (1, 1), (0, 1), (0, 0)]),
+            ]
+        )
+        expected = GeoSeries(
+            [LineString([(0, 0), (1, 1)]), LineString([(0, 0), (0.5, 0.5), (1, 1)])]
+        )
+        assert_geoseries_equal(s.invalid_coverage_edges(), expected)
+
     def test_is_empty(self):
         expected = Series(np.array([False] * len(self.g1)), self.g1.index)
         self._test_unary_real("is_empty", expected, self.g1)
@@ -997,6 +1032,42 @@ class TestGeomMethods:
         result = series.make_valid()
         assert_geoseries_equal(result, expected)
         assert result.is_valid.all()
+
+    @pytest.mark.parametrize(
+        "method, keep_collapsed, expected",
+        [
+            (
+                "linework",
+                True,
+                MultiLineString([[(0, 0), (1, 1)], [(1, 1), (1, 2)]]),
+            ),
+            (
+                "structure",
+                True,
+                LineString([(0, 0), (1, 1), (1, 2), (1, 1), (0, 0)]),
+            ),
+            ("structure", False, Polygon()),
+        ],
+    )
+    @pytest.mark.skipif(not SHAPELY_GE_21, reason="requires Shapely>=2.1")
+    def test_make_valid_method(self, method, keep_collapsed, expected):
+        polygon = Polygon([(0, 0), (1, 1), (1, 2), (1, 1), (0, 0)])
+        series = GeoSeries([polygon])
+        expected = GeoSeries([expected])
+        assert not series.is_valid.all()
+        result = series.make_valid(method=method, keep_collapsed=keep_collapsed)
+        assert_geoseries_equal(result, expected, check_geom_type=True)
+        assert result.is_valid.all()
+
+    @pytest.mark.skipif(SHAPELY_GE_21, reason="test for Shapely<2.1")
+    def test_make_valid_old_shapely(self):
+        """Only the 'linework' method is supported for shapely < 2.1."""
+        polygon = Polygon([(0, 0), (1, 1), (1, 2), (1, 1), (0, 0)])
+        series = GeoSeries([polygon])
+        with pytest.raises(
+            ValueError, match="Only the 'linework' method is supported for"
+        ):
+            series.make_valid(method="structure")
 
     def test_reverse(self):
         expected = GeoSeries(
@@ -1481,6 +1552,26 @@ class TestGeomMethods:
         assert isinstance(mbc, GeoSeries)
         assert self.g1.crs == mbc.crs
 
+    @pytest.mark.skipif(not SHAPELY_GE_21, reason="requires shapely 2.1")
+    def test_maximum_inscribed_circle(self):
+        mic = self.g1.maximum_inscribed_circle()
+        expected = GeoSeries(
+            [
+                LineString([(0.70703125, 0.29296875), (0.5, 0.5)]),
+                LineString([(0.5, 0.5), (0.5, 0)]),
+            ]
+        )
+        assert_geoseries_equal(mic, expected)
+
+        mic_tolerance = self.g1.maximum_inscribed_circle(tolerance=np.array([10, 0]))
+        expected_tol = GeoSeries(
+            [
+                LineString([(0.75, 0.5), (0.625, 0.625)]),
+                LineString([(0.5, 0.5), (0.5, 0)]),
+            ]
+        )
+        assert_geoseries_equal(mic_tolerance, expected_tol)
+
     def test_total_bounds(self):
         bbox = self.sol.x, self.sol.y, self.esb.x, self.esb.y
         assert isinstance(self.landmarks.total_bounds, np.ndarray)
@@ -1918,6 +2009,15 @@ class TestGeomMethods:
             mc_lines,
             Series([1.0, 1.0]),
         )
+
+    @pytest.mark.skipif(not SHAPELY_GE_21, reason="requires shapely 2.1")
+    def test_minimum_clearance_line(self):
+        mcl_geoms = self.g1.minimum_clearance_line()
+
+        expected = GeoSeries(
+            [LineString([(1, 0), (0.5, 0.5)]), LineString([(0, 0), (1, 0)])]
+        )
+        assert_geoseries_equal(mcl_geoms, expected)
 
     @pytest.mark.parametrize("size", [10, 20, 50])
     def test_sample_points(self, size):
