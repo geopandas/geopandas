@@ -597,6 +597,14 @@ class GeometryArray(ExtensionArray):
     def concave_hull(self, ratio, allow_holes):
         return shapely.concave_hull(self._data, ratio=ratio, allow_holes=allow_holes)
 
+    def constrained_delaunay_triangles(self):
+        if not SHAPELY_GE_21:
+            raise ImportError("'constrained_delaunay_triangles' requires shapely>=2.1.")
+
+        return GeometryArray(
+            shapely.constrained_delaunay_triangles(self._data), crs=self.crs
+        )
+
     @property
     def convex_hull(self):
         return GeometryArray(shapely.convex_hull(self._data), crs=self.crs)

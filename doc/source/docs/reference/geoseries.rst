@@ -157,6 +157,7 @@ Aggregating and exploding
    :toctree: api/
 
    GeoSeries.build_area
+   GeoSeries.constrained_delaunay_triangles
    GeoSeries.delaunay_triangles
    GeoSeries.explode
    GeoSeries.intersection_all
