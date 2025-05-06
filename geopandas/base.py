@@ -1,4 +1,3 @@
-import warnings
 from warnings import warn
 
 import numpy as np
@@ -34,6 +33,18 @@ def _delegate_binary_method(op, this, other, align, *args, **kwargs):
     else:
         maybe_warn = False
     this = this.geometry
+
+    # Use same alignment logic, regardless of if `other` is Series or GeoSeries.
+    if (
+        not isinstance(other, GeoPandasBase)
+        and isinstance(other, pd.Series)
+        and isinstance(other.dtype, GeometryDtype)
+    ):
+        # Avoid circular imports by importing here.
+        import geopandas.geoseries
+
+        other = geopandas.geoseries.GeoSeries(other)
+
     if isinstance(other, GeoPandasBase):
         if align and not this.index.equals(other.index):
             if maybe_warn:
@@ -372,6 +383,132 @@ GeometryCollection
         GeoSeries.make_valid : fix invalid geometries
         """
         return Series(self.geometry.values.is_valid_reason(), index=self.index)
+
+    def is_valid_coverage(self, gap_width=0.0):
+        """Returns a ``bool`` indicating whether a ``GeoSeries`` forms a valid coverage
+
+        A ``GeoSeries`` of valid polygons is considered a coverage if the polygons are:
+
+        * **Non-overlapping** - polygons do not overlap (their interiors do not
+          intersect)
+        * **Edge-Matched** - vertices along shared edges are identical
+
+        A valid coverage may contain holes (regions of no coverage). However, sometimes
+        it might be desirable to detect narrow gaps as invalidities in the coverage. The
+        ``gap_width`` parameter allows to specify the maximum width of gaps to detect.
+        When gaps are detected, this method will return ``False`` and the
+        :meth:`coverage_invalid_edges` method can be used to find the edges of those
+        gaps.
+
+        Geometries that are not Polygon or MultiPolygon are ignored and an empty
+        LineString is returned.
+
+        Parameters
+        ----------
+        gap_width : float, optional
+            The maximum width of gaps to detect, by default 0.0
+
+        Returns
+        -------
+        bool
+
+        Examples
+        --------
+        >>> from shapely import Polygon
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0, 0), (1, 1), (1, 0), (0, 0)]),
+        ...         Polygon([(0, 0), (1, 1), (0, 1), (0, 0)]),
+        ...     ]
+        ... )
+        >>> s
+        0    POLYGON ((0 0, 1 1, 1 0, 0 0))
+        1    POLYGON ((0 0, 1 1, 0 1, 0 0))
+        dtype: geometry
+
+        >>> s.is_valid_coverage()
+        True
+
+        Violation of edge-matching:
+
+        >>> s2 = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0, 0), (1, 1), (1, 0), (0, 0)]),
+        ...         Polygon([(0, 0), (0.5, 0.5), (1, 1), (0, 1), (0, 0)])
+        ...     ]
+        ... )
+        >>> s2
+        0             POLYGON ((0 0, 1 1, 1 0, 0 0))
+        1    POLYGON ((0 0, 0.5 0.5, 1 1, 0 1, 0 0))
+        dtype: geometry
+
+        >>> s2.is_valid_coverage()
+        False
+
+        See also
+        --------
+        GeoSeries.invalid_coverage_edges
+        GeoSeries.simplify_coverage
+        """
+        return self.geometry.values.is_valid_coverage(gap_width=gap_width)
+
+    def invalid_coverage_edges(self, gap_width=0.0):
+        """Returns a ``GeoSeries`` containing edges causing invalid polygonal coverage
+
+        This method returns (Multi)LineStrings showing the location of edges violating
+        polygonal coverage (if any) in each polygon in the input ``GeoSeries``.
+
+        A ``GeoSeries`` of valid polygons is considered a coverage if the polygons are:
+
+        * **Non-overlapping** - polygons do not overlap (their interiors do not
+          intersect)
+        * **Edge-Matched** - vertices along shared edges are identical
+
+        A valid coverage may contain holes (regions of no coverage). However, sometimes
+        it might be desirable to detect narrow gaps as invalidities in the coverage. The
+        ``gap_width`` parameter allows to specify the maximum width of gaps to detect.
+        When gaps are detected, the :meth:`is_valid_coverage` method will return
+        ``False`` and this method can be used to find the edges of those gaps.
+
+        Geometries that are not Polygon or MultiPolygon are ignored.
+
+        Parameters
+        ----------
+        gap_width : float, optional
+            The maximum width of gaps to detect, by default 0.0
+
+        Returns
+        -------
+        GeoSeries
+
+        Examples
+        --------
+        Violation of edge-matching:
+
+        >>> from shapely import Polygon
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0, 0), (1, 1), (1, 0), (0, 0)]),
+        ...         Polygon([(0, 0), (0.5, 0.5), (1, 1), (0, 1), (0, 0)])
+        ...     ]
+        ... )
+        >>> s
+        0             POLYGON ((0 0, 1 1, 1 0, 0 0))
+        1    POLYGON ((0 0, 0.5 0.5, 1 1, 0 1, 0 0))
+        dtype: geometry
+
+        >>> s.invalid_coverage_edges()
+        0             LINESTRING (0 0, 1 1)
+        1    LINESTRING (0 0, 0.5 0.5, 1 1)
+        dtype: geometry
+
+
+        See also
+        --------
+        GeoSeries.is_valid_coverage
+        GeoSeries.simplify_coverage
+        """
+        return _delegate_geo_method("invalid_coverage_edges", self, gap_width=gap_width)
 
     @property
     def is_empty(self):
@@ -889,7 +1026,7 @@ GeometryCollection
 
     def concave_hull(self, ratio=0.0, allow_holes=False):
         """Returns a ``GeoSeries`` of geometries representing the concave hull
-        of each geometry.
+        of vertices of each geometry.
 
         The concave hull of a geometry is the smallest concave `Polygon`
         containing all the points in each geometry, unless the number of points
@@ -945,6 +1082,12 @@ GeometryCollection
         See also
         --------
         GeoSeries.convex_hull : convex hull geometry
+
+        Notes
+        -----
+        The algorithms considers only vertices of each geometry. As a result the
+        hull may not fully enclose input geometry. If that happens, increasing ``ratio``
+        should resolve the issue.
 
         """
         return _delegate_geo_method(
@@ -1414,7 +1557,7 @@ GeometryCollection
         dtype: geometry
 
         >>> s.offset_curve(1)
-        0    LINESTRING (-1 0, -1 1, -1 1.195, -0.9 1.383, ...
+        0    LINESTRING (-1 0, -1 1, -0.981 1.195, -0.924 1...
         dtype: geometry
         """
         return _delegate_geo_method(
@@ -1759,11 +1902,11 @@ GeometryCollection
         """
         return _delegate_geo_method("normalize", self)
 
-    def make_valid(self):
-        """
-        Repairs invalid geometries.
+    def make_valid(self, method="linework", keep_collapsed=True):
+        """Repairs invalid geometries.
 
         Returns a ``GeoSeries`` with valid geometries.
+
         If the input geometry is already valid, then it will be preserved.
         In many cases, in order to create a valid geometry, the input
         geometry must be split into multiple parts or multiple geometries.
@@ -1772,6 +1915,36 @@ GeometryCollection
         (e.g. a MultiPolygon).
         If the geometry must be split into multiple parts of different types
         to be made valid, then a GeometryCollection will be returned.
+
+        Two ``methods`` are available:
+
+        * the 'linework' algorithm tries to preserve every edge and vertex in
+          the input. It combines all rings into a set of noded lines and then
+          extracts valid polygons from that linework. An alternating even-odd
+          strategy is used to assign areas as interior or exterior. A
+          disadvantage is that for some relatively simple invalid geometries
+          this produces rather complex results.
+        * the 'structure' algorithm tries to reason from the structure of the
+          input to find the 'correct' repair: exterior rings bound area,
+          interior holes exclude area. It first makes all rings valid, then
+          shells are merged and holes are subtracted from the shells to
+          generate valid result. It assumes that holes and shells are correctly
+          categorized in the input geometry.
+
+        Parameters
+        ----------
+        method : {'linework', 'structure'}, default 'linework'
+            Algorithm to use when repairing geometry. 'structure'
+            requires GEOS >= 3.10 and shapely >= 2.1.
+
+            .. versionadded:: 1.1.0
+        keep_collapsed : bool, default True
+            For the 'structure' method, True will keep components that have
+            collapsed into a lower dimensionality. For example, a ring
+            collapsing to a line, or a line collapsing to a point. Must be True
+            for the 'linework' method.
+
+            .. versionadded:: 1.1.0
 
         Examples
         --------
@@ -1795,7 +1968,9 @@ GeometryCollection
         2                           LINESTRING (0 0, 1 1, 1 0)
         dtype: geometry
         """
-        return _delegate_geo_method("make_valid", self)
+        return _delegate_geo_method(
+            "make_valid", self, method=method, keep_collapsed=keep_collapsed
+        )
 
     def reverse(self):
         """Returns a ``GeoSeries`` with the order of coordinates reversed.
@@ -2116,13 +2291,15 @@ GeometryCollection
 
         return self.geometry.values.union_all()
 
-    def union_all(self, method="unary"):
+    def union_all(self, method="unary", grid_size=None):
         """Returns a geometry containing the union of all geometries in the
         ``GeoSeries``.
 
         By default, the unary union algorithm is used. If the geometries are
         non-overlapping (forming a coverage), GeoPandas can use a significantly faster
         algorithm to perform the union using the ``method="coverage"`` option.
+        Alternatively, for situations which can be divided into many disjoint subsets,
+        ``method="disjoint_subset"`` may be preferable.
 
         Parameters
         ----------
@@ -2135,6 +2312,24 @@ GeometryCollection
               for non-overlapping polygons and can be significantly faster than the
               unary union algorithm. However, it can produce invalid geometries if the
               polygons overlap.
+            * ``"disjoint_subset:``: use the disjoint subset union algorithm. This
+              option is optimized for inputs that can be divided into subsets that do
+              not intersect. If there is only one such subset, performance can be
+              expected to be worse than ``"unary"``.
+
+        grid_size : float, default None
+            When grid size is specified, a fixed-precision space is used to perform the
+            union operations. This can be useful when unioning geometries that are not
+            perfectly snapped or to avoid geometries not being unioned because of
+            `robustness issues <https://libgeos.org/usage/faq/#why-doesnt-a-computed-point-lie-exactly-on-a-line>`_.
+            The inputs are first snapped to a grid of the given size. When a line
+            segment of a geometry is within tolerance off a vertex of another geometry,
+            this vertex will be inserted in the line segment. Finally, the result
+            vertices are computed on the same grid. Is only supported for ``method``
+            ``"unary"``. If None, the highest precision of the inputs will be used.
+            Defaults to None.
+
+            .. versionadded:: 1.1.0
 
         Examples
         --------
@@ -2149,7 +2344,7 @@ GeometryCollection
         >>> s.union_all()
         <POLYGON ((0 1, 0 2, 2 2, 2 0, 1 0, 0 0, 0 1))>
         """
-        return self.geometry.values.union_all(method=method)
+        return self.geometry.values.union_all(method=method, grid_size=grid_size)
 
     def intersection_all(self):
         """Returns a geometry containing the intersection of all geometries in
@@ -2638,83 +2833,6 @@ GeometryCollection
 
         """
         return _binary_op("geom_equals", self, other, align)
-
-    def geom_almost_equals(self, other, decimal=6, align=None):
-        """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` if
-        each aligned geometry is approximately equal to `other`.
-
-        Approximate equality is tested at all points to the specified `decimal`
-        place precision.
-
-        The operation works on a 1-to-1 row-wise manner:
-
-        .. image:: ../../../_static/binary_op-01.svg
-           :align: center
-
-        Parameters
-        ----------
-        other : GeoSeries or geometric object
-            The GeoSeries (elementwise) or geometric object to compare to.
-        decimal : int
-            Decimal place precision used when testing for approximate equality.
-        align : bool | None (default None)
-            If True, automatically aligns GeoSeries based on their indices.
-            If False, the order of elements is preserved. None defaults to True.
-
-        Returns
-        -------
-        Series (bool)
-
-        Examples
-        --------
-        >>> from shapely.geometry import Point
-        >>> s = geopandas.GeoSeries(
-        ...     [
-        ...         Point(0, 1.1),
-        ...         Point(0, 1.01),
-        ...         Point(0, 1.001),
-        ...     ],
-        ... )
-        >>> s
-        0      POINT (0 1.1)
-        1     POINT (0 1.01)
-        2    POINT (0 1.001)
-        dtype: geometry
-
-
-        >>> s.geom_almost_equals(Point(0, 1), decimal=2)
-        0    False
-        1    False
-        2     True
-        dtype: bool
-
-        >>> s.geom_almost_equals(Point(0, 1), decimal=1)
-        0    False
-        1     True
-        2     True
-        dtype: bool
-
-        Notes
-        -----
-        This method works in a row-wise manner. It does not check if an element
-        of one GeoSeries is equal to *any* element of the other one.
-
-        See also
-        --------
-        GeoSeries.geom_equals
-        GeoSeries.geom_equals_exact
-
-        """
-        warnings.warn(
-            "The 'geom_almost_equals()' method is deprecated because the name is "
-            "confusing. The 'geom_equals_exact()' method should be used instead.",
-            FutureWarning,
-            stacklevel=2,
-        )
-        tolerance = 0.5 * 10 ** (-decimal)
-        return _binary_op(
-            "geom_equals_exact", self, other, tolerance=tolerance, align=align
-        )
 
     def geom_equals_exact(self, other, tolerance, align=None):
         """Return True for all geometries that equal aligned *other* to a given
@@ -4631,22 +4749,22 @@ GeometryCollection
         return _binary_geo("shortest_line", self, other, align)
 
     def snap(self, other, tolerance, align=None):
-        """Snaps an input geometry to reference geometry's vertices.
+        """Snap the vertices and segments of the geometry to vertices of the reference.
 
-        Vertices of the first geometry are snapped to vertices of the second. geometry,
-        returning a new geometry; the input geometries are not modified. The result
-        geometry is the input geometry with the vertices snapped. If no snapping occurs
-        then the input geometry is returned unchanged. The tolerance is used to control
-        where snapping is performed.
+        Vertices and segments of the input geometry are snapped to vertices of the
+        reference geometry, returning a new geometry; the input geometries are not
+        modified. The result geometry is the input geometry with the vertices and
+        segments snapped. If no snapping occurs then the input geometry is returned
+        unchanged. The tolerance is used to control where snapping is performed.
 
         Where possible, this operation tries to avoid creating invalid geometries;
-        however, it does not guarantee that output geometries will be valid. It is the
-        responsibility of the caller to check for and handle invalid geometries.
+        however, it does not guarantee that output geometries will be valid. It is
+        the responsibility of the caller to check for and handle invalid geometries.
 
         Because too much snapping can result in invalid geometries being created,
-        heuristics are used to determine the number and location of snapped vertices
-        that are likely safe to snap. These heuristics may omit some potential snaps
-        that are otherwise within the tolerance.
+        heuristics are used to determine the number and location of snapped
+        vertices that are likely safe to snap. These heuristics may omit
+        some potential snaps that are otherwise within the tolerance.
 
         The operation works in a 1-to-1 row-wise manner:
 

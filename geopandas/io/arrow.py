@@ -1,6 +1,7 @@
 import json
 import warnings
 from packaging.version import Version
+from typing import Literal, get_args
 
 import numpy as np
 from pandas import DataFrame, Series
@@ -15,7 +16,8 @@ from geopandas.array import from_shapely, from_wkb
 from .file import _expand_user
 
 METADATA_VERSION = "1.0.0"
-SUPPORTED_VERSIONS = ["0.1.0", "0.4.0", "1.0.0-beta.1", "1.0.0", "1.1.0"]
+SUPPORTED_VERSIONS_LITERAL = Literal["0.1.0", "0.4.0", "1.0.0-beta.1", "1.0.0", "1.1.0"]
+SUPPORTED_VERSIONS = list(get_args(SUPPORTED_VERSIONS_LITERAL))
 GEOARROW_ENCODINGS = [
     "point",
     "linestring",
@@ -25,6 +27,7 @@ GEOARROW_ENCODINGS = [
     "multipolygon",
 ]
 SUPPORTED_ENCODINGS = ["WKB"] + GEOARROW_ENCODINGS
+PARQUET_GEOMETRY_ENCODINGS = Literal["WKB", "geoarrow"]
 
 # reference: https://github.com/opengeospatial/geoparquet
 
@@ -278,8 +281,7 @@ def _validate_geo_metadata(metadata):
     version = metadata.get("version", metadata.get("schema_version"))
     if not version:
         raise ValueError(
-            "'geo' metadata in Parquet/Feather file is missing required key: "
-            "'version'"
+            "'geo' metadata in Parquet/Feather file is missing required key: 'version'"
         )
 
     required_keys = ("primary_column", "columns")
@@ -487,7 +489,7 @@ def _to_feather(df, path, index=None, compression=None, schema_version=None, **k
     feather.write_feather(table, path, compression=compression, **kwargs)
 
 
-def _arrow_to_geopandas(table, geo_metadata=None):
+def _arrow_to_geopandas(table, geo_metadata=None, to_pandas_kwargs=None):
     """
     Helper function with main, shared logic for read_parquet/read_feather.
     """
@@ -526,7 +528,9 @@ def _arrow_to_geopandas(table, geo_metadata=None):
             )
 
     table_attr = table.drop(geometry_columns)
-    df = table_attr.to_pandas()
+    if to_pandas_kwargs is None:
+        to_pandas_kwargs = {}
+    df = table_attr.to_pandas(**to_pandas_kwargs)
 
     # Convert the WKB columns that are present back to geometry.
     for col in geometry_columns:
@@ -663,7 +667,14 @@ def _read_parquet_schema_and_metadata(path, filesystem):
     return schema, metadata
 
 
-def _read_parquet(path, columns=None, storage_options=None, bbox=None, **kwargs):
+def _read_parquet(
+    path,
+    columns=None,
+    storage_options=None,
+    bbox=None,
+    to_pandas_kwargs=None,
+    **kwargs,
+):
     """
     Load a Parquet object from the file path, returning a GeoDataFrame.
 
@@ -711,6 +722,12 @@ def _read_parquet(path, columns=None, storage_options=None, bbox=None, **kwargs)
         Bounding box to be used to filter selection from geoparquet data. This
         is only usable if the data was saved with the bbox covering metadata.
         Input is of the tuple format (xmin, ymin, xmax, ymax).
+    to_pandas_kwargs : dict, optional
+        Arguments passed to the `pa.Table.to_pandas` method for non-geometry columns.
+        This can be used to control the behavior of the conversion of the non-geometry
+        columns to a pandas DataFrame. For example, you can use this to control the
+        dtype conversion of the columns. By default, the `to_pandas` method is called
+        with no additional arguments.
 
     **kwargs
         Any additional kwargs passed to :func:`pyarrow.parquet.read_table`.
@@ -771,10 +788,10 @@ def _read_parquet(path, columns=None, storage_options=None, bbox=None, **kwargs)
         path, columns=columns, filesystem=filesystem, filters=filters, **kwargs
     )
 
-    return _arrow_to_geopandas(table, geo_metadata)
+    return _arrow_to_geopandas(table, geo_metadata, to_pandas_kwargs)
 
 
-def _read_feather(path, columns=None, **kwargs):
+def _read_feather(path, columns=None, to_pandas_kwargs=None, **kwargs):
     """
     Load a Feather object from the file path, returning a GeoDataFrame.
 
@@ -807,6 +824,12 @@ def _read_feather(path, columns=None, **kwargs):
         geometry read from the file will be set as the geometry column
         of the returned GeoDataFrame.  If no geometry columns are present,
         a ``ValueError`` will be raised.
+    to_pandas_kwargs : dict, optional
+        Arguments passed to the `pa.Table.to_pandas` method for non-geometry columns.
+        This can be used to control the behavior of the conversion of the non-geometry
+        columns to a pandas DataFrame. For example, you can use this to control the
+        dtype conversion of the columns. By default, the `to_pandas` method is called
+        with no additional arguments.
     **kwargs
         Any additional kwargs passed to pyarrow.feather.read_table().
 
@@ -834,7 +857,7 @@ def _read_feather(path, columns=None, **kwargs):
     path = _expand_user(path)
 
     table = feather.read_table(path, columns=columns, **kwargs)
-    return _arrow_to_geopandas(table)
+    return _arrow_to_geopandas(table, to_pandas_kwargs=to_pandas_kwargs)
 
 
 def _get_parquet_bbox_filter(geo_metadata, bbox):

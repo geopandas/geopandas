@@ -99,4 +99,4 @@ jobs:
         run: |
           pytest -v --color=yes --doctest-only geopandas --ignore=geopandas/datasets
 
-      - uses: codecov/codecov-action@v4
+      - uses: codecov/codecov-action@v5

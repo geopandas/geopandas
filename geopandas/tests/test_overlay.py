@@ -8,7 +8,7 @@ from shapely.geometry import GeometryCollection, LineString, Point, Polygon, box
 
 import geopandas
 from geopandas import GeoDataFrame, GeoSeries, overlay, read_file
-from geopandas._compat import HAS_PYPROJ, PANDAS_GE_20
+from geopandas._compat import HAS_PYPROJ
 
 import pytest
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
@@ -90,7 +90,6 @@ def test_overlay(dfs_index, how):
         expected = pd.concat(
             [expected_intersection, expected_difference], ignore_index=True, sort=False
         )
-        expected["col1"] = expected["col1"].astype(float)
     else:
         expected = _read(how)
 
@@ -174,6 +173,10 @@ def test_overlay_nybb(how, nybb_filename):
 
     if how == "identity":
         expected = expected[expected.BoroCode.notnull()].copy()
+        boro_code_dtype = result["BoroCode"].dtype
+        if boro_code_dtype in ("int32", "int64"):
+            # Depending on the pandas version, the dtype might be int32 or int64
+            expected["BoroCode"] = expected["BoroCode"].astype(boro_code_dtype)
 
     # Order GeoDataFrames
     expected = expected.sort_values(cols).reset_index(drop=True)
@@ -768,18 +771,12 @@ def test_non_overlapping(how):
     result = overlay(df1, df2, how=how)
 
     if how == "intersection":
-        if PANDAS_GE_20:
-            index = None
-        else:
-            index = pd.Index([], dtype="object")
-
         expected = GeoDataFrame(
             {
                 "col1": np.array([], dtype="int64"),
                 "col2": np.array([], dtype="int64"),
                 "geometry": [],
-            },
-            index=index,
+            }
         )
     elif how == "union":
         expected = GeoDataFrame(
@@ -792,7 +789,7 @@ def test_non_overlapping(how):
     elif how == "identity":
         expected = GeoDataFrame(
             {
-                "col1": [1.0],
+                "col1": [1],
                 "col2": [np.nan],
                 "geometry": [p1],
             }

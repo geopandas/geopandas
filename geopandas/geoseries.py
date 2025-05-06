@@ -233,9 +233,6 @@ class GeoSeries(GeoPandasBase, Series):
         if not self.crs:
             self.crs = crs
 
-    def append(self, *args, **kwargs) -> GeoSeries:
-        return self._wrapped_pandas_method("append", *args, **kwargs)
-
     @GeoPandasBase.crs.setter
     def crs(self, value):
         if self.crs is not None:
@@ -403,6 +400,9 @@ class GeoSeries(GeoPandasBase, Series):
             - warn: a warning will be raised and invalid WKB geometries will be returned
               as None.
             - ignore: invalid WKB geometries will be returned as None without a warning.
+            - fix: an effort is made to fix invalid input geometries (e.g. close
+              unclosed rings). If this is not possible, they are returned as ``None``
+              without a warning. Requires GEOS >= 3.11 and shapely >= 2.1.
 
         kwargs
             Additional arguments passed to the Series constructor,
@@ -469,6 +469,9 @@ class GeoSeries(GeoPandasBase, Series):
               returned as ``None``.
             - ignore: invalid WKT geometries will be returned as ``None`` without a
               warning.
+            - fix: an effort is made to fix invalid input geometries (e.g. close
+              unclosed rings). If this is not possible, they are returned as ``None``
+              without a warning. Requires GEOS >= 3.11 and shapely >= 2.1.
 
         kwargs
             Additional arguments passed to the Series constructor,

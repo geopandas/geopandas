@@ -16,12 +16,16 @@ dependencies:
     - pytest-xdist
     - fsspec
     - codecov
+    - geodatasets
+    - pytz
+    - geoarrow-pyarrow
 
     # styling
     - pre-commit
-    - ruff==0.5.5
+    - ruff==0.11.4
 
     # optional
+    - fiona
     - folium
     - xyzservices
     - scipy

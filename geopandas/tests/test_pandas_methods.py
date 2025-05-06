@@ -332,10 +332,7 @@ def test_to_csv(df):
 def test_numerical_operations(s, df):
     # df methods ignore the geometry column
     exp = pd.Series([3, 4], index=["value1", "value2"])
-    if not compat.PANDAS_GE_20:
-        res = df.sum()
-    else:
-        res = df.sum(numeric_only=True)
+    res = df.sum(numeric_only=True)
     assert_series_equal(res, exp)
 
     # series methods raise error (not supported for geometry)
@@ -549,10 +546,7 @@ def test_value_counts():
     # each object is considered unique
     s = GeoSeries([Point(0, 0), Point(1, 1), Point(0, 0)])
     res = s.value_counts()
-    if compat.PANDAS_GE_20:
-        name = "count"
-    else:
-        name = None
+    name = "count"
     exp = pd.Series([2, 1], index=from_shapely([Point(0, 0), Point(1, 1)]), name=name)
     assert_series_equal(res, exp)
     # Check crs doesn't make a difference - note it is not kept in output index anyway
@@ -613,10 +607,8 @@ def test_groupby(df):
     assert_frame_equal(res, exp)
 
     # reductions ignore geometry column
-    if not compat.PANDAS_GE_20:
-        res = df.groupby("value2").sum()
-    else:
-        res = df.groupby("value2").sum(numeric_only=True)
+
+    res = df.groupby("value2").sum(numeric_only=True)
     exp = pd.DataFrame({"value1": [2, 1], "value2": [1, 2]}, dtype="int64").set_index(
         "value2"
     )
@@ -696,11 +688,7 @@ def test_groupby_metadata(crs, geometry_name):
 
     df.groupby("value2").apply(func, **kwargs)
     # selecting the non-group columns -> no need to pass the keyword
-    if (
-        compat.PANDAS_GE_22
-        or (compat.PANDAS_GE_20 and geometry_name == "geometry")
-        or not compat.PANDAS_GE_20
-    ):
+    if compat.PANDAS_GE_22 or (geometry_name == "geometry"):
         df.groupby("value2")[[geometry_name, "value1"]].apply(func)
     else:
         # https://github.com/geopandas/geopandas/pull/2966#issuecomment-1878816712
@@ -839,6 +827,19 @@ def test_pivot(df):
     result = df.pivot(columns="value1")
     expected = GeoDataFrame(pd.DataFrame(df).pivot(columns="value1"))
     assert_geodataframe_equal(result, expected)
+
+
+def test_isna_empty_dtypes():
+    # https://github.com/geopandas/geopandas/issues/3417
+    # should not auto coerce isna to geometry dtype
+    expected = pd.DataFrame({"geometry": []}).isna()
+    actual = GeoDataFrame({"geometry": []}).isna()
+    assert_frame_equal(expected, actual)
+
+    # different geometry col name
+    expected = pd.DataFrame({"a": []}).isna()
+    actual = GeoDataFrame({"a": []}, geometry="a").isna()
+    assert_frame_equal(expected, actual)
 
 
 def test_preserve_attrs(df):

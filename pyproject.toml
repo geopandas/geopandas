@@ -31,7 +31,7 @@ dependencies = [
 
 [project.optional-dependencies]
 all = [
-    "psycopg-binary>=3.1.0",
+    "psycopg[binary]>=3.1.0",
     "SQLAlchemy>=2.0",
     "geopy",
     "matplotlib>=3.7",
@@ -40,6 +40,7 @@ all = [
     "folium", # >=0.12 (implied minimum version, but older versions may work)
     "GeoAlchemy2",
     "pyarrow>=10.0.0",
+    "scipy",
 ]
 
 # Minimum supported additional deps, not installed as part of `all` extra
@@ -171,6 +172,10 @@ ignore = [
     "PLW0603",
     # compare-to-empty-string
     "PLC1901",
+    # Unnecessary dict comprehension for iterable
+    "C420",
+    # `len(*)` used as condition without comparison
+    "PLC1802",
 
     ### Additional checks that don't pass yet
     # Useless statement
