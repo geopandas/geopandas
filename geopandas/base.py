@@ -384,6 +384,132 @@ GeometryCollection
         """
         return Series(self.geometry.values.is_valid_reason(), index=self.index)
 
+    def is_valid_coverage(self, gap_width=0.0):
+        """Returns a ``bool`` indicating whether a ``GeoSeries`` forms a valid coverage
+
+        A ``GeoSeries`` of valid polygons is considered a coverage if the polygons are:
+
+        * **Non-overlapping** - polygons do not overlap (their interiors do not
+          intersect)
+        * **Edge-Matched** - vertices along shared edges are identical
+
+        A valid coverage may contain holes (regions of no coverage). However, sometimes
+        it might be desirable to detect narrow gaps as invalidities in the coverage. The
+        ``gap_width`` parameter allows to specify the maximum width of gaps to detect.
+        When gaps are detected, this method will return ``False`` and the
+        :meth:`coverage_invalid_edges` method can be used to find the edges of those
+        gaps.
+
+        Geometries that are not Polygon or MultiPolygon are ignored and an empty
+        LineString is returned.
+
+        Parameters
+        ----------
+        gap_width : float, optional
+            The maximum width of gaps to detect, by default 0.0
+
+        Returns
+        -------
+        bool
+
+        Examples
+        --------
+        >>> from shapely import Polygon
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0, 0), (1, 1), (1, 0), (0, 0)]),
+        ...         Polygon([(0, 0), (1, 1), (0, 1), (0, 0)]),
+        ...     ]
+        ... )
+        >>> s
+        0    POLYGON ((0 0, 1 1, 1 0, 0 0))
+        1    POLYGON ((0 0, 1 1, 0 1, 0 0))
+        dtype: geometry
+
+        >>> s.is_valid_coverage()
+        True
+
+        Violation of edge-matching:
+
+        >>> s2 = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0, 0), (1, 1), (1, 0), (0, 0)]),
+        ...         Polygon([(0, 0), (0.5, 0.5), (1, 1), (0, 1), (0, 0)])
+        ...     ]
+        ... )
+        >>> s2
+        0             POLYGON ((0 0, 1 1, 1 0, 0 0))
+        1    POLYGON ((0 0, 0.5 0.5, 1 1, 0 1, 0 0))
+        dtype: geometry
+
+        >>> s2.is_valid_coverage()
+        False
+
+        See also
+        --------
+        GeoSeries.invalid_coverage_edges
+        GeoSeries.simplify_coverage
+        """
+        return self.geometry.values.is_valid_coverage(gap_width=gap_width)
+
+    def invalid_coverage_edges(self, gap_width=0.0):
+        """Returns a ``GeoSeries`` containing edges causing invalid polygonal coverage
+
+        This method returns (Multi)LineStrings showing the location of edges violating
+        polygonal coverage (if any) in each polygon in the input ``GeoSeries``.
+
+        A ``GeoSeries`` of valid polygons is considered a coverage if the polygons are:
+
+        * **Non-overlapping** - polygons do not overlap (their interiors do not
+          intersect)
+        * **Edge-Matched** - vertices along shared edges are identical
+
+        A valid coverage may contain holes (regions of no coverage). However, sometimes
+        it might be desirable to detect narrow gaps as invalidities in the coverage. The
+        ``gap_width`` parameter allows to specify the maximum width of gaps to detect.
+        When gaps are detected, the :meth:`is_valid_coverage` method will return
+        ``False`` and this method can be used to find the edges of those gaps.
+
+        Geometries that are not Polygon or MultiPolygon are ignored.
+
+        Parameters
+        ----------
+        gap_width : float, optional
+            The maximum width of gaps to detect, by default 0.0
+
+        Returns
+        -------
+        GeoSeries
+
+        Examples
+        --------
+        Violation of edge-matching:
+
+        >>> from shapely import Polygon
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0, 0), (1, 1), (1, 0), (0, 0)]),
+        ...         Polygon([(0, 0), (0.5, 0.5), (1, 1), (0, 1), (0, 0)])
+        ...     ]
+        ... )
+        >>> s
+        0             POLYGON ((0 0, 1 1, 1 0, 0 0))
+        1    POLYGON ((0 0, 0.5 0.5, 1 1, 0 1, 0 0))
+        dtype: geometry
+
+        >>> s.invalid_coverage_edges()
+        0             LINESTRING (0 0, 1 1)
+        1    LINESTRING (0 0, 0.5 0.5, 1 1)
+        dtype: geometry
+
+
+        See also
+        --------
+        GeoSeries.is_valid_coverage
+        GeoSeries.simplify_coverage
+        """
+        return _delegate_geo_method("invalid_coverage_edges", self, gap_width=gap_width)
+
     @property
     def is_empty(self):
         """
