@@ -898,6 +898,41 @@ class TestGeomMethods:
         expected = Series(["Self-intersection[0.5 0.5]", "Valid Geometry", None])
         assert_series_equal(s.is_valid_reason(), expected)
 
+    @pytest.mark.skipif(
+        not (GEOS_GE_312 and SHAPELY_GE_21), reason="GEOS 3.12 and shapely 2.1 needed."
+    )
+    def test_is_valid_coverage(self):
+        s = GeoSeries(
+            [
+                Polygon([(0, 0), (1, 1), (1, 0), (0, 0)]),
+                Polygon([(0, 0), (1, 1), (0, 1), (0, 0)]),
+            ]
+        )
+        assert s.is_valid_coverage()
+
+        s2 = GeoSeries(
+            [
+                Polygon([(0, 0), (1, 1), (1, 0), (0, 0)]),
+                Polygon([(0, 0), (0.5, 0.5), (1, 1), (0, 1), (0, 0)]),
+            ]
+        )
+        assert not s2.is_valid_coverage()
+
+    @pytest.mark.skipif(
+        not (GEOS_GE_312 and SHAPELY_GE_21), reason="GEOS 3.12 and shapely 2.1 needed."
+    )
+    def test_invalid_coverage_edges(self):
+        s = GeoSeries(
+            [
+                Polygon([(0, 0), (1, 1), (1, 0), (0, 0)]),
+                Polygon([(0, 0), (0.5, 0.5), (1, 1), (0, 1), (0, 0)]),
+            ]
+        )
+        expected = GeoSeries(
+            [LineString([(0, 0), (1, 1)]), LineString([(0, 0), (0.5, 0.5), (1, 1)])]
+        )
+        assert_geoseries_equal(s.invalid_coverage_edges(), expected)
+
     def test_is_empty(self):
         expected = Series(np.array([False] * len(self.g1)), self.g1.index)
         self._test_unary_real("is_empty", expected, self.g1)

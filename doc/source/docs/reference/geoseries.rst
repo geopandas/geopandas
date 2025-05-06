@@ -53,6 +53,8 @@ Unary predicates
    GeoSeries.is_simple
    GeoSeries.is_valid
    GeoSeries.is_valid_reason
+   GeoSeries.is_valid_coverage
+   GeoSeries.invalid_coverage_edges
    GeoSeries.has_z
    GeoSeries.is_ccw
 

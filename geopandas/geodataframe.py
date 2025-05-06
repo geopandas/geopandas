@@ -1957,7 +1957,7 @@ default 'snappy'
                 value = [value] * self.shape[0]
 
             crs = getattr(self, "crs", None)
-            # if we don't have a GeoDataframe yet and there is a column named crs,
+            # if we don't have a GeoDataFrame yet and there is a column named crs,
             # don't try to use that as a crs
             if isinstance(crs, pd.Series | pd.DataFrame):
                 crs = None
