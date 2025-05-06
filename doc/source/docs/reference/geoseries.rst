@@ -123,6 +123,7 @@ Constructive methods and attributes
    GeoSeries.segmentize
    GeoSeries.shortest_line
    GeoSeries.simplify
+   GeoSeries.simplify_coverage
    GeoSeries.snap
    GeoSeries.transform
 
