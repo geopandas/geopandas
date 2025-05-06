@@ -664,6 +664,15 @@ class GeometryArray(ExtensionArray):
     def minimum_bounding_circle(self):
         return GeometryArray(shapely.minimum_bounding_circle(self._data), crs=self.crs)
 
+    def maximum_inscribed_circle(self, tolerance):
+        if not SHAPELY_GE_21:
+            raise ImportError("'maximum_inscribed_circle' requires shapely>=2.1.")
+
+        return GeometryArray(
+            shapely.maximum_inscribed_circle(self._data, tolerance=tolerance),
+            crs=self.crs,
+        )
+
     def minimum_bounding_radius(self):
         return shapely.minimum_bounding_radius(self._data)
 

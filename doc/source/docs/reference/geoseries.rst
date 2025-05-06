@@ -111,6 +111,7 @@ Constructive methods and attributes
    GeoSeries.force_3d
    GeoSeries.make_valid
    GeoSeries.minimum_bounding_circle
+   GeoSeries.maximum_inscribed_circle
    GeoSeries.minimum_clearance
    GeoSeries.minimum_rotated_rectangle
    GeoSeries.normalize

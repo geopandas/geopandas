@@ -1520,6 +1520,26 @@ class TestGeomMethods:
         assert isinstance(mbc, GeoSeries)
         assert self.g1.crs == mbc.crs
 
+    @pytest.mark.skipif(not SHAPELY_GE_21, reason="requires shapely 2.1")
+    def test_maximum_inscribed_circle(self):
+        mic = self.g1.maximum_inscribed_circle()
+        expected = GeoSeries(
+            [
+                LineString([(0.70703125, 0.29296875), (0.5, 0.5)]),
+                LineString([(0.5, 0.5), (0.5, 0)]),
+            ]
+        )
+        assert_geoseries_equal(mic, expected)
+
+        mic_tolerance = self.g1.maximum_inscribed_circle(tolerance=np.array([10, 0]))
+        expected_tol = GeoSeries(
+            [
+                LineString([(0.75, 0.5), (0.625, 0.625)]),
+                LineString([(0.5, 0.5), (0.5, 0)]),
+            ]
+        )
+        assert_geoseries_equal(mic_tolerance, expected_tol)
+
     def test_total_bounds(self):
         bbox = self.sol.x, self.sol.y, self.esb.x, self.esb.y
         assert isinstance(self.landmarks.total_bounds, np.ndarray)
