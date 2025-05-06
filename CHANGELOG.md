@@ -19,6 +19,7 @@ New features and improvements:
   to allow better control of conversion of non-geometric Arrow data to DataFrames (#3466).
 - Added `is_valid_coverage` and `invalid_coverage_edges` to GeoSeries/GeoDataFrame to allow validation of polygonal coverage (#3545).
 - Added `maximum_inscribed_circle` method from shapely to GeoSeries/GeoDataframe (#3544).
+- Added `minimum_clearance_line` method from shapely to GeoSeries/GeoDataframe (#3543).
 - Added ``method`` and ``keep_collapsed`` argument to ``make_valid`` (#3548).
 
 Bug fixes:

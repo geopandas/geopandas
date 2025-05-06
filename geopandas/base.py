@@ -1928,8 +1928,50 @@ GeometryCollection
         1    1.414214
         2         inf
         dtype: float64
+
+        See also
+        --------
+        minimum_clearance_line
         """
         return Series(self.geometry.values.minimum_clearance(), index=self.index)
+
+    def minimum_clearance_line(self):
+        """Returns a ``GeoSeries`` of linestrings whose endpoints define the
+        minimum clearance.
+
+        A geometry's “minimum clearance” is the smallest distance by which a vertex
+        of the geometry could be moved to produce an invalid geometry.
+
+        If the geometry has no minimum clearance, an empty LineString will be returned.
+
+        Examples
+        --------
+
+        >>> from shapely.geometry import Polygon, LineString, Point
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon([(0, 0), (1, 1), (0, 1), (0, 0)]),
+        ...         LineString([(0, 0), (1, 1), (3, 2)]),
+        ...         Point(0, 0),
+        ...     ]
+        ... )
+        >>> s
+        0    POLYGON ((0 0, 1 1, 0 1, 0 0))
+        1        LINESTRING (0 0, 1 1, 3 2)
+        2                       POINT (0 0)
+        dtype: geometry
+
+        >>> s.minimum_clearance_line()
+        0    LINESTRING (0 1, 0.5 0.5)
+        1        LINESTRING (0 0, 1 1)
+        2             LINESTRING EMPTY
+        dtype: geometry
+
+        See also
+        --------
+        minimum_clearance
+        """
+        return _delegate_geo_method("minimum_clearance_line", self)
 
     def normalize(self):
         """Returns a ``GeoSeries`` of normalized

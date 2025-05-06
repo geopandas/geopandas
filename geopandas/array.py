@@ -679,6 +679,11 @@ class GeometryArray(ExtensionArray):
     def minimum_clearance(self):
         return shapely.minimum_clearance(self._data)
 
+    def minimum_clearance_line(self):
+        if not SHAPELY_GE_21:
+            raise ImportError("'minimum_clearance_line' requires shapely>=2.1.")
+        return GeometryArray(shapely.minimum_clearance_line(self._data), crs=self.crs)
+
     def normalize(self):
         return GeometryArray(shapely.normalize(self._data), crs=self.crs)
 
