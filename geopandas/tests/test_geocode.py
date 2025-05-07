@@ -106,7 +106,7 @@ def test_prepare_result_none():
     assert len(row["geometry"].coords) == 0
     assert row["geometry"].is_empty
     if PANDAS_GE_30 and pd.options.future.infer_string:
-        assert row["address"].isna()
+        assert pd.isna(row["address"])
     else:
         assert row["address"] is None
 
