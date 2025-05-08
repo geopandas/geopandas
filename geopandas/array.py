@@ -19,7 +19,14 @@ import shapely.ops
 import shapely.wkt
 from shapely.geometry.base import BaseGeometry
 
-from ._compat import HAS_PYPROJ, PANDAS_GE_21, PANDAS_GE_22, requires_pyproj
+from ._compat import (
+    GEOS_GE_312,
+    HAS_PYPROJ,
+    PANDAS_GE_21,
+    PANDAS_GE_22,
+    SHAPELY_GE_21,
+    requires_pyproj,
+)
 from .sindex import SpatialIndex
 
 if HAS_PYPROJ:
@@ -211,6 +218,9 @@ def from_wkb(data, crs=None, on_invalid="raise"):
         - warn: a warning will be raised and invalid WKB geometries will be returned as
           None.
         - ignore: invalid WKB geometries will be returned as None without a warning.
+        - fix: an effort is made to fix invalid input geometries (e.g. close
+          unclosed rings). If this is not possible, they are returned as ``None``
+          without a warning. Requires GEOS >= 3.11 and shapely >= 2.1.
 
     """
     return GeometryArray(shapely.from_wkb(data, on_invalid=on_invalid), crs=crs)
@@ -242,6 +252,9 @@ def from_wkt(data, crs=None, on_invalid="raise"):
         - warn: a warning will be raised and invalid WKT geometries will be
           returned as ``None``.
         - ignore: invalid WKT geometries will be returned as ``None`` without a warning.
+        - fix: an effort is made to fix invalid input geometries (e.g. close
+          unclosed rings). If this is not possible, they are returned as ``None``
+          without a warning. Requires GEOS >= 3.11 and shapely >= 2.1.
 
     """
     return GeometryArray(shapely.from_wkt(data, on_invalid=on_invalid), crs=crs)
@@ -500,6 +513,20 @@ class GeometryArray(ExtensionArray):
     def is_valid_reason(self):
         return shapely.is_valid_reason(self._data)
 
+    def is_valid_coverage(self, gap_width=0.0):
+        if not (SHAPELY_GE_21 and GEOS_GE_312):
+            raise ImportError(
+                "Method 'is_valid_coverage' requires shapely>=2.1 and GEOS>=3.12."
+            )
+        return bool(shapely.coverage_is_valid(self._data, gap_width=gap_width))
+
+    def invalid_coverage_edges(self, gap_width=0.0):
+        if not (SHAPELY_GE_21 and GEOS_GE_312):
+            raise ImportError(
+                "Method 'invalid_coverage_edges' requires shapely>=2.1 and GEOS>=3.12."
+            )
+        return shapely.coverage_invalid_edges(self._data, gap_width=gap_width)
+
     @property
     def is_empty(self):
         return shapely.is_empty(self._data)
@@ -570,6 +597,14 @@ class GeometryArray(ExtensionArray):
     def concave_hull(self, ratio, allow_holes):
         return shapely.concave_hull(self._data, ratio=ratio, allow_holes=allow_holes)
 
+    def constrained_delaunay_triangles(self):
+        if not SHAPELY_GE_21:
+            raise ImportError("'constrained_delaunay_triangles' requires shapely>=2.1.")
+
+        return GeometryArray(
+            shapely.constrained_delaunay_triangles(self._data), crs=self.crs
+        )
+
     @property
     def convex_hull(self):
         return GeometryArray(shapely.convex_hull(self._data), crs=self.crs)
@@ -637,17 +672,41 @@ class GeometryArray(ExtensionArray):
     def minimum_bounding_circle(self):
         return GeometryArray(shapely.minimum_bounding_circle(self._data), crs=self.crs)
 
+    def maximum_inscribed_circle(self, tolerance):
+        if not SHAPELY_GE_21:
+            raise ImportError("'maximum_inscribed_circle' requires shapely>=2.1.")
+
+        return GeometryArray(
+            shapely.maximum_inscribed_circle(self._data, tolerance=tolerance),
+            crs=self.crs,
+        )
+
     def minimum_bounding_radius(self):
         return shapely.minimum_bounding_radius(self._data)
 
     def minimum_clearance(self):
         return shapely.minimum_clearance(self._data)
 
+    def minimum_clearance_line(self):
+        if not SHAPELY_GE_21:
+            raise ImportError("'minimum_clearance_line' requires shapely>=2.1.")
+        return GeometryArray(shapely.minimum_clearance_line(self._data), crs=self.crs)
+
     def normalize(self):
         return GeometryArray(shapely.normalize(self._data), crs=self.crs)
 
-    def make_valid(self):
-        return GeometryArray(shapely.make_valid(self._data), crs=self.crs)
+    def make_valid(self, method="linework", keep_collapsed=True):
+        kwargs = {}
+        if SHAPELY_GE_21:
+            kwargs["method"] = method
+            kwargs["keep_collapsed"] = keep_collapsed
+        else:
+            if method != "linework":
+                raise ValueError(
+                    "Only the 'linework' method is supported for shapely < 2.1."
+                )
+
+        return GeometryArray(shapely.make_valid(self._data, **kwargs), crs=self.crs)
 
     def reverse(self):
         return GeometryArray(shapely.reverse(self._data), crs=self.crs)
@@ -739,15 +798,6 @@ class GeometryArray(ExtensionArray):
     def geom_equals_exact(self, other, tolerance):
         return self._binary_method("equals_exact", self, other, tolerance=tolerance)
 
-    def geom_almost_equals(self, other, decimal):
-        warnings.warn(
-            "The 'geom_almost_equals()' method is deprecated because the name is "
-            "confusing. The 'geom_equals_exact()' method should be used instead.",
-            FutureWarning,
-            stacklevel=2,
-        )
-        return self.geom_equals_exact(other, 0.5 * 10 ** (-decimal))
-
     #
     # Binary operations that return new geometries
     #
@@ -829,6 +879,18 @@ class GeometryArray(ExtensionArray):
             crs=self.crs,
         )
 
+    def simplify_coverage(self, tolerance, simplify_boundary=True):
+        if not (SHAPELY_GE_21 and GEOS_GE_312):
+            raise ImportError(
+                "'simplify_coverage' requires shapely>=2.1 and GEOS>=3.12."
+            )
+        return GeometryArray(
+            shapely.coverage_simplify(
+                self._data, tolerance, simplify_boundary=simplify_boundary
+            ),
+            crs=self.crs,
+        )
+
     def project(self, other, normalized=False):
         if isinstance(other, GeometryArray):
             other = other._data
@@ -858,15 +920,22 @@ class GeometryArray(ExtensionArray):
         return self.union_all()
 
     def union_all(self, method="unary", grid_size=None):
+        if method != "unary" and grid_size is not None:
+            raise ValueError(f"grid_size is not supported for method '{method}'.")
         if method == "coverage":
-            if grid_size is not None:
-                raise ValueError("grid_size is not supported for method 'coverage'.")
             return shapely.coverage_union_all(self._data)
         elif method == "unary":
             return shapely.union_all(self._data, grid_size=grid_size)
+        elif method == "disjoint_subset":
+            if not (SHAPELY_GE_21 and GEOS_GE_312):
+                raise ImportError(
+                    "Method 'disjoin_subset' requires shapely>=2.1 and GEOS>=3.12."
+                )
+            return shapely.disjoint_subset_union_all(self._data)
         else:
             raise ValueError(
-                f"Method '{method}' not recognized. Use 'coverage' or 'unary'."
+                f"Method '{method}' not recognized. Use 'coverage', 'unary' or "
+                "'disjoint_subset'."
             )
 
     def intersection_all(self):

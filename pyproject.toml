@@ -172,6 +172,10 @@ ignore = [
     "PLW0603",
     # compare-to-empty-string
     "PLC1901",
+    # Unnecessary dict comprehension for iterable
+    "C420",
+    # `len(*)` used as condition without comparison
+    "PLC1802",
 
     ### Additional checks that don't pass yet
     # Useless statement
