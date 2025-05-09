@@ -38,6 +38,14 @@ Constructive methods
   number of points in the object is less than three. For two points,
   the convex hull collapses to a `LineString`; for 1, a `Point`.
 
+.. method:: GeoSeries.constrained_delaunay_triangles
+
+  Returns a :class:`~geopandas.GeoSeries` with the constrained Delaunay triangulation
+  of polygons. A constrained Delaunay triangulation requires the edges of the input
+  polygon(s) to be in the set of resulting triangle edges. An unconstrained
+  delaunay triangulation only triangulates based on the vertices, hence triangle
+  edges could cross polygon boundaries.
+
 .. method:: GeoSeries.delaunay_triangles(tolerance, preserve_topology=True)
 
   Returns a :class:`~geopandas.GeoSeries` consisting of polygons (default) or linestrings

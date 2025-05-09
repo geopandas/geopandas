@@ -141,25 +141,6 @@ class TestSeries:
         exp = pd.Series([False, False], index=["A", "B"])
         assert_series_equal(a, exp)
 
-    @pytest.mark.filterwarnings(r"ignore:The 'geom_almost_equals\(\)':FutureWarning")
-    def test_geom_almost_equals(self):
-        # TODO: test decimal parameter
-        assert np.all(self.g1.geom_almost_equals(self.g1))
-        assert_array_equal(self.g1.geom_almost_equals(self.sq), [False, True])
-        with warnings.catch_warnings():
-            warnings.filterwarnings(
-                "ignore",
-                "The indices of the left and right GeoSeries' are not equal",
-                UserWarning,
-            )
-            assert_array_equal(
-                self.a1.geom_almost_equals(self.a2, align=True),
-                [False, True, False],
-            )
-        assert_array_equal(
-            self.a1.geom_almost_equals(self.a2, align=False), [False, False]
-        )
-
     def test_geom_equals_exact(self):
         # TODO: test tolerance parameter
         assert np.all(self.g1.geom_equals_exact(self.g1, 0.001))
