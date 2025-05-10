@@ -1231,6 +1231,22 @@ class GeometryArray(ExtensionArray):
             raise ValueError(message)
 
     @property
+    def m(self):
+        """Return the m coordinate of point geometries in a GeoSeries"""
+        if (self.geom_type[~self.isna()] == "Point").all():
+            empty = self.is_empty
+            if empty.any():
+                nonempty = ~empty
+                coords = np.full_like(nonempty, dtype=float, fill_value=np.nan)
+                coords[nonempty] = shapely.get_m(self._data[nonempty])
+                return coords
+            else:
+                return shapely.get_m(self._data)
+        else:
+            message = "m attribute access only provided for Point geometries"
+            raise ValueError(message)
+
+    @property
     def bounds(self):
         return shapely.bounds(self._data)
 

@@ -34,6 +34,7 @@ General methods and attributes
    GeoSeries.x
    GeoSeries.y
    GeoSeries.z
+   GeoSeries.m
    GeoSeries.get_coordinates
    GeoSeries.count_coordinates
    GeoSeries.count_geometries

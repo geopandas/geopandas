@@ -984,6 +984,18 @@ class TestGeomMethods:
         expected_z = [30.3244, 31.2344, np.nan]
         assert_array_dtype_equal(expected_z, self.landmarks_mixed.geometry.z)
 
+    def test_m_points(self):
+        s = GeoSeries.from_wkt(
+            [
+                "POINT M (2 3 5)",
+                "POINT M (1 2 3)",
+                "POINT (0 0)",
+            ]
+        )
+
+        expected = [5, 3, np.nan]
+        assert_array_dtype_equal(expected, s.m)
+
     def test_xyz_points_empty(self):
         expected_x = [-73.9847, -74.0446, -73.9847, np.nan]
         expected_y = [40.7484, 40.6893, 40.7484, np.nan]
