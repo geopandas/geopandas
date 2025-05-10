@@ -3082,7 +3082,7 @@ GeometryCollection
         ...     ]
         ... )
         >>> s
-        0    POINT (0 1)
+        0    POINT (0 1.1)
         1      POINT (0 1)
         2    POINT (0 1.2)
         dtype: geometry
