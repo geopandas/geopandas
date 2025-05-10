@@ -28,8 +28,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 try:  # skipif and importorskip do not work for decorators
-    from matplotlib.testing.decorators import check_figures_equal
-    from matplotlib.testing.dectorators import image_comparison
+    from matplotlib.testing.decorators import check_figures_equal, image_comparison
 
     MPL_DECORATORS = True
 except ImportError:
@@ -843,12 +842,13 @@ class TestPolygonPlotting:
 
     if MPL_DECORATORS:
         """Test that geometries are properly normalized so holes appear."""
+
         @image_comparison(
-                ["polygon_with_holes"], 
-                extensions=["png", "pdf"], 
-                remove_text=True, 
-                savefig_kwarg={"dpi":300, "bbox_inches": "tight"},
-            )
+            ["polygon_with_holes"],
+            extensions=["png", "pdf"],
+            remove_text=True,
+            savefig_kwarg={"dpi": 300, "bbox_inches": "tight"},
+        )
         def test_plot_polygon_with_holes(self):
             geoms = [
                 Polygon(
@@ -863,6 +863,7 @@ class TestPolygonPlotting:
             _df = GeoDataFrame(geometry=geoms)
             _df.plot()
     else:
+
         def test_plot_polygon_with_holes(self):
             geoms = [
                 Polygon(
@@ -954,12 +955,13 @@ class TestPolygonPlotting:
     if MPL_DECORATORS:
         """Test multipolygons properly orient so holes will appear.
         Test partly derived from shapely PR #1933."""
+
         @image_comparison(
-                ["multipolygon_with_holes"], 
-                extensions=["png", "pdf"], 
-                remove_text=True, 
-                savefig_kwarg={"dpi":300, "bbox_inches": "tight"},
-            )
+            ["multipolygon_with_holes"],
+            extensions=["png", "pdf"],
+            remove_text=True,
+            savefig_kwarg={"dpi": 300, "bbox_inches": "tight"},
+        )
         def test_multipolygons_with_interior(self):
             poly1 = box(0, 0, 1, 1).difference(box(0.2, 0.2, 0.5, 0.5))
             poly2 = box(3, 3, 6, 6).difference(box(4, 4, 5, 5))
@@ -967,6 +969,7 @@ class TestPolygonPlotting:
             _df = GeoDataFrame(geometry=[multipoly])
             _df.plot()
     else:
+
         def test_multipolygons_with_interior(self):
             poly1 = box(0, 0, 1, 1).difference(box(0.2, 0.2, 0.5, 0.5))
             poly2 = box(3, 3, 6, 6).difference(box(4, 4, 5, 5))
