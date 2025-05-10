@@ -1013,6 +1013,29 @@ class TestGeomMethods:
         expected = GeoSeries([polygon2, linestring, point])
         assert_geoseries_equal(series.normalize(), expected)
 
+    def test_orient_polygons(self):
+        polygon = Polygon(
+            [(0, 0), (0, 10), (10, 10), (10, 0), (0, 0)],
+            holes=[[(2, 2), (2, 4), (4, 4), (4, 2), (2, 2)]],
+        )
+        linestring = LineString([(0, 0), (1, 1), (1, 0)])
+        point = Point(0, 0)
+        series = GeoSeries([polygon, linestring, point])
+
+        polygon2 = Polygon(
+            [(0, 0), (10, 0), (10, 10), (0, 10), (0, 0)],
+            holes=[[(2, 2), (2, 4), (4, 4), (4, 2), (2, 2)]],
+        )
+        expected = GeoSeries([polygon2, linestring, point])
+        assert_geoseries_equal(series.orient_polygons(), expected)
+
+        polygon_cw = Polygon(
+            [(0, 0), (0, 10), (10, 10), (10, 0), (0, 0)],
+            holes=[[(2, 2), (2, 4), (4, 4), (4, 2), (2, 2)]],
+        )
+        expected = GeoSeries([polygon_cw, linestring, point])
+        assert_geoseries_equal(series.orient_polygons(True), expected)
+
     def test_make_valid(self):
         polygon1 = Polygon([(0, 0), (0, 2), (1, 1), (2, 2), (2, 0), (1, 1), (0, 0)])
         polygon2 = Polygon([(0, 2), (0, 1), (2, 0), (0, 0), (0, 2)])
