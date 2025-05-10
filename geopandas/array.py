@@ -552,6 +552,10 @@ class GeometryArray(ExtensionArray):
         return shapely.has_z(self._data)
 
     @property
+    def has_m(self):
+        return shapely.has_m(self._data)
+
+    @property
     def geom_type(self):
         res = shapely.get_type_id(self._data)
         return geometry_type_values[np.searchsorted(geometry_type_ids, res)]
@@ -1224,6 +1228,22 @@ class GeometryArray(ExtensionArray):
                 return shapely.get_z(self._data)
         else:
             message = "z attribute access only provided for Point geometries"
+            raise ValueError(message)
+
+    @property
+    def m(self):
+        """Return the m coordinate of point geometries in a GeoSeries"""
+        if (self.geom_type[~self.isna()] == "Point").all():
+            empty = self.is_empty
+            if empty.any():
+                nonempty = ~empty
+                coords = np.full_like(nonempty, dtype=float, fill_value=np.nan)
+                coords[nonempty] = shapely.get_m(self._data[nonempty])
+                return coords
+            else:
+                return shapely.get_m(self._data)
+        else:
+            message = "m attribute access only provided for Point geometries"
             raise ValueError(message)
 
     @property
