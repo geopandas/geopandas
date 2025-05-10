@@ -696,6 +696,8 @@ class GeometryArray(ExtensionArray):
         return GeometryArray(shapely.normalize(self._data), crs=self.crs)
 
     def orient_polygons(self, exterior_cw=False):
+        if not SHAPELY_GE_21:
+            raise ImportError("'orient_polygons' requires shapely>=2.1.")
         return GeometryArray(
             shapely.orient_polygons(self._data, exterior_cw=exterior_cw), crs=self.crs
         )

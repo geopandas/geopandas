@@ -1013,6 +1013,7 @@ class TestGeomMethods:
         expected = GeoSeries([polygon2, linestring, point])
         assert_geoseries_equal(series.normalize(), expected)
 
+    @pytest.mark.skipif(not SHAPELY_GE_21, reason="requires Shapely>=2.1")
     def test_orient_polygons(self):
         polygon = Polygon(
             [(0, 0), (0, 10), (10, 10), (10, 0), (0, 0)],
