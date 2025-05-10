@@ -35,6 +35,7 @@ Bug fixes:
   GeoDataFrames causing errors in `overlay` (#3424).
 - Fix regression where constructing a GeoSeries from a pd.Series with GeometryDtype values
   failed when `crs` was provided (#3383).
+- Fix plotting of polygons with holes by normalizing the coordinate order prior to plotting (#3483).
 
 Notes on dependencies:
 
