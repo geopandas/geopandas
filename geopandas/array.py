@@ -552,6 +552,10 @@ class GeometryArray(ExtensionArray):
         return shapely.has_z(self._data)
 
     @property
+    def has_m(self):
+        return shapely.has_m(self._data)
+
+    @property
     def geom_type(self):
         res = shapely.get_type_id(self._data)
         return geometry_type_values[np.searchsorted(geometry_type_ids, res)]

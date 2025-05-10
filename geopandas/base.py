@@ -843,6 +843,40 @@ GeometryCollection
         """
         return _delegate_property("has_z", self)
 
+    @property
+    def has_m(self):
+        """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
+        features that have a m-component.
+
+        Notes
+        -----
+        Every operation in GeoPandas is planar, i.e. the potential M
+        dimension is not taken into account.
+
+        Examples
+        --------
+        >>> from shapely.geometry import Point
+        >>> s = geopandas.GeoSeries.from_wkt(
+        ...     [
+        ...         "POINT M (2 3 5)",
+        ...         "POINT Z (1 2 3)",
+        ...         "POINT (0 0)",
+        ...     ]
+        ... )
+        >>> s
+        0    POINT M (2 3 5)
+        1    POINT Z (1 2 3)
+        2        POINT (0 0)
+        dtype: geometry
+
+        >>> s.has_m
+        0     True
+        1    False
+        2    False
+        dtype: bool
+        """
+        return _delegate_property("has_m", self)
+
     def get_precision(self):
         """Returns a ``Series`` of the precision of each geometry.
 

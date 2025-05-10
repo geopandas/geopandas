@@ -959,6 +959,18 @@ class TestGeomMethods:
         expected = Series([False, True], self.g_3d.index)
         self._test_unary_real("has_z", expected, self.g_3d)
 
+    @pytest.mark.skipif(not SHAPELY_GE_21, reason="requires shapely 2.1")
+    @pytest.mark.skipif(shapely.geos_version < (3, 12, 0), reason="requires GEOS>=3.12")
+    def test_has_m(self):
+        s = GeoSeries.from_wkt(
+            [
+                "POINT M (2 3 5)",
+                "POINT Z (1 2 3)",
+            ],
+        )
+        expected = Series([True, False])
+        self._test_unary_real("has_m", expected, s)
+
     def test_xyz_points(self):
         expected_x = [-73.9847, -74.0446]
         expected_y = [40.7484, 40.6893]
