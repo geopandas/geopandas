@@ -984,6 +984,7 @@ class TestGeomMethods:
         expected_z = [30.3244, 31.2344, np.nan]
         assert_array_dtype_equal(expected_z, self.landmarks_mixed.geometry.z)
 
+    @pytest.mark.skipif(not SHAPELY_GE_21, reason="requires shapely 2.1")
     def test_m_points(self):
         s = GeoSeries.from_wkt(
             [
