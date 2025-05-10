@@ -1983,6 +1983,36 @@ class TestGeomMethods:
         )
         assert_frame_equal(self.g11.get_coordinates(include_z=True), expected)
 
+    @pytest.mark.skipif(not SHAPELY_GE_21, reason="requires shapely 2.1")
+    def test_get_coordinates_m(self):
+        s = GeoSeries.from_wkt(
+            [
+                "POINT M (2 3 5)",
+                "POINT ZM (1 2 3 4)",
+            ],
+        )
+
+        # only m
+        expected = DataFrame(
+            data=np.array([[2.0, 3.0, 5.0], [1.0, 2.0, 4.0]]),
+            columns=["x", "y", "m"],
+        )
+        assert_frame_equal(s.get_coordinates(include_m=True), expected)
+
+        # only z
+        expected = DataFrame(
+            data=np.array([[2.0, 3.0, np.nan], [1.0, 2.0, 3.0]]),
+            columns=["x", "y", "z"],
+        )
+        assert_frame_equal(s.get_coordinates(include_z=True), expected)
+
+        # both
+        expected = DataFrame(
+            data=np.array([[2.0, 3.0, np.nan, 5.0], [1.0, 2.0, 3.0, 4.0]]),
+            columns=["x", "y", "z", "m"],
+        )
+        assert_frame_equal(s.get_coordinates(include_z=True, include_m=True), expected)
+
     def test_get_coordinates_ignore(self):
         expected = DataFrame(
             data=self.expected_2d,

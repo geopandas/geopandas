@@ -6112,7 +6112,9 @@ GeometryCollection
         """
         return _CoordinateIndexer(self)
 
-    def get_coordinates(self, include_z=False, ignore_index=False, index_parts=False):
+    def get_coordinates(
+        self, include_z=False, ignore_index=False, index_parts=False, include_m=False
+    ):
         """Gets coordinates from a :class:`GeoSeries` as a :class:`~pandas.DataFrame` of
         floats.
 
@@ -6132,6 +6134,8 @@ GeometryCollection
            If True, the resulting index will be a :class:`~pandas.MultiIndex` (original
            index with an additional level indicating the ordering of the coordinate
            pairs: a new zero-based index for each geometry in the original GeoSeries).
+        include_m : bool, default False
+            Include M coordinates
 
         Returns
         -------
@@ -6183,13 +6187,27 @@ GeometryCollection
           2  3.0  1.0
           3  3.0 -1.0
         """
-        coords, outer_idx = shapely.get_coordinates(
-            self.geometry.values._data, include_z=include_z, return_index=True
-        )
+        if include_m:
+            if not compat.SHAPELY_GE_21:
+                raise ImportError("Shapely >= 2.1 is required for include_m=True.")
+
+            # can be merged with the one below once min requirement is shapely 2.1
+            coords, outer_idx = shapely.get_coordinates(
+                self.geometry.values._data,
+                include_z=include_z,
+                include_m=include_m,
+                return_index=True,
+            )
+        else:
+            coords, outer_idx = shapely.get_coordinates(
+                self.geometry.values._data, include_z=include_z, return_index=True
+            )
 
         column_names = ["x", "y"]
         if include_z:
             column_names.append("z")
+        if include_m:
+            column_names.append("m")
 
         index = _get_index_for_parts(
             self.index,
