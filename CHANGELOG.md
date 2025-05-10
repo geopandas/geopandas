@@ -24,6 +24,7 @@ New features and improvements:
 - Added ``method`` and ``keep_collapsed`` argument to ``make_valid`` (#3548).
 - Added `simplify_coverage` method for topological simplification of polygonal coverages
   to GeoSeries/GeoDataframe (#3541).
+- Added `geom_equals_identical` method exposing `equals_identical` from shapely to GeoSeries/GeoDataFrame (#3560).
 
 Bug fixes:
 
