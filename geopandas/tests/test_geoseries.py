@@ -163,16 +163,10 @@ class TestSeries:
     def test_geom_equals_identical(self):
         assert np.all(self.g1.geom_equals_identical(self.g1))
         assert_array_equal(self.g1.geom_equals_identical(self.sq), [False, True])
-        with warnings.catch_warnings():
-            warnings.filterwarnings(
-                "ignore",
-                "The indices of the left and right GeoSeries' are not equal",
-                UserWarning,
-            )
-            assert_array_equal(
-                self.a1.geom_equals_identical(self.a2, align=True),
-                [False, True, False],
-            )
+        assert_array_equal(
+            self.a1.geom_equals_identical(self.a2, align=True),
+            [False, True, False],
+        )
         assert_array_equal(
             self.a1.geom_equals_identical(self.a2, align=False), [False, False]
         )
