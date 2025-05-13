@@ -2070,6 +2070,58 @@ GeometryCollection
         """
         return _delegate_geo_method("normalize", self)
 
+    def orient_polygons(self, exterior_cw=False):
+        """Returns a ``GeoSeries`` of geometries with enforced ring orientation.
+
+        Enforce a ring orientation on all polygonal elements in the ``GeoSeries``.
+
+        Forces (Multi)Polygons to use a counter-clockwise orientation for their exterior
+        ring, and a clockwise orientation for their interior rings (or the oppposite if
+        ``exterior_cw=True``).
+
+        Also processes geometries inside a GeometryCollection in the same way. Other
+        geometries are returned unchanged.
+
+        Parameters
+        ----------
+        exterior_cw : bool
+            If ``True``, exterior rings will be clockwise and interior rings will be
+            counter-clockwise.
+
+        Examples
+        --------
+
+        >>> from shapely.geometry import Polygon, LineString, Point
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon(
+        ...             [(0, 0), (0, 10), (10, 10), (10, 0), (0, 0)],
+        ...             holes=[[(2, 2), (2, 4), (4, 4), (4, 2), (2, 2)]],
+        ...     ),
+        ...         LineString([(0, 0), (1, 1), (1, 0)]),
+        ...         Point(0, 0),
+        ...     ],
+        ... )
+        >>> s
+        0    POLYGON ((0 0, 0 10, 10 10, 10 0, 0 0), (2 2, ...
+        1                           LINESTRING (0 0, 1 1, 1 0)
+        2                                          POINT (0 0)
+        dtype: geometry
+
+        >>> s.orient_polygons()
+        0    POLYGON ((0 0, 10 0, 10 10, 0 10, 0 0), (2 2, ...
+        1                           LINESTRING (0 0, 1 1, 1 0)
+        2                                          POINT (0 0)
+        dtype: geometry
+
+        >>> s.orient_polygons(exterior_cw=True)
+        0    POLYGON ((0 0, 0 10, 10 10, 10 0, 0 0), (2 2, ...
+        1                           LINESTRING (0 0, 1 1, 1 0)
+        2                                          POINT (0 0)
+        dtype: geometry
+        """
+        return _delegate_geo_method("orient_polygons", self, exterior_cw=exterior_cw)
+
     def make_valid(self, method="linework", keep_collapsed=True):
         """Repairs invalid geometries.
 
