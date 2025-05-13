@@ -118,6 +118,7 @@ Constructive methods and attributes
    GeoSeries.minimum_clearance_line
    GeoSeries.minimum_rotated_rectangle
    GeoSeries.normalize
+   GeoSeries.orient_polygons
    GeoSeries.remove_repeated_points
    GeoSeries.reverse
    GeoSeries.sample_points
