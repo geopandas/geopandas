@@ -553,6 +553,9 @@ class GeometryArray(ExtensionArray):
 
     @property
     def has_m(self):
+        if not SHAPELY_GE_21:
+            raise ImportError("'has_m' requires shapely>=2.1.")
+
         return shapely.has_m(self._data)
 
     @property
@@ -1240,6 +1243,9 @@ class GeometryArray(ExtensionArray):
     @property
     def m(self):
         """Return the m coordinate of point geometries in a GeoSeries"""
+        if not SHAPELY_GE_21:
+            raise ImportError("'m' requires shapely>=2.1.")
+
         if (self.geom_type[~self.isna()] == "Point").all():
             empty = self.is_empty
             if empty.any():
