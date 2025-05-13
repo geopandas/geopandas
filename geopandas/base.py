@@ -3098,10 +3098,10 @@ GeometryCollection
         Similarly to :meth:`geom_equals_exact`, this function uses exact coordinate
         equality and requires coordinates to be in the same order for all components
         (vertices, rings, or parts) of a geometry. However, in contrast to
-        :meth:`geom_equals_exact`, this function does not allow specifying specify a tolerance,
-        and additionally requires all dimensions to be the same (:meth:`geom_equals_exact`
-        ignores the Z and M dimensions), where NaN values are considered to be equal to
-        other NaN values.
+        :meth:`geom_equals_exact`, this function does not allow specifying specify
+        a tolerance, and additionally requires all dimensions to be the same
+        (:meth:`geom_equals_exact` ignores the Z and M dimensions), where NaN values
+        are considered to be equal to other NaN values.
 
         This function is the vectorized equivalent of scalar equality of geometry
         objects (``a == b``, i.e. ``__eq__``).
