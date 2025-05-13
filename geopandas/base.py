@@ -848,10 +848,6 @@ GeometryCollection
         """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
         features that have a m-component.
 
-        Notes
-        -----
-        Every operation in GeoPandas is planar, i.e. the potential M
-        dimension is not taken into account.
 
         Examples
         --------
