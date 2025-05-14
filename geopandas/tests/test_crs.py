@@ -9,6 +9,7 @@ import pandas as pd
 from shapely.geometry import LineString, Point, Polygon
 
 from geopandas import GeoDataFrame, GeoSeries, points_from_xy, read_file
+from geopandas._compat import HAS_PYPROJ
 from geopandas.array import GeometryArray, from_shapely, from_wkb, from_wkt
 
 import pytest
@@ -437,7 +438,9 @@ class TestGeometryArrayCRS:
         assert df.geometry.crs == pyproj.CRS(2263)
         assert df.geometry.values.crs == pyproj.CRS(2263)
 
-    def test_read_file_warning_messages(self):
+    @pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not installed")
+    @pytest.mark.parametrize("engine", ["fiona", "pyogrio"])
+    def test_read_file_warning_messages(self, engine):
         """
         Testing warning messages when one of, or both of, the
         file or mask is missing a crs.
@@ -465,25 +468,25 @@ class TestGeometryArrayCRS:
         with pytest.warns(
             UserWarning, match="""There is no CRS defined in the mask."""
         ):
-            data = read_file(file_with_crs, mask=gdf_without_crs)
+            data = read_file(file_with_crs, mask=gdf_without_crs, engine=engine)
             assert_geodataframe_equal(data, gdf_with_crs)
 
         with pytest.warns(
             UserWarning, match="""There is no CRS defined in the source dataset."""
         ):
-            data = read_file(file_without_crs, mask=gdf_with_crs)
+            data = read_file(file_without_crs, mask=gdf_with_crs, engine=engine)
             assert_geodataframe_equal(data, gdf_without_crs)
 
         with pytest.warns(
             UserWarning,
             match="""There is no CRS defined in the source dataset nor mask.""",
         ):
-            data = read_file(file_without_crs, mask=gdf_without_crs)
+            data = read_file(file_without_crs, mask=gdf_without_crs, engine=engine)
             assert_geodataframe_equal(data, gdf_without_crs)
 
         with warnings.catch_warnings():
             warnings.simplefilter("error")
-            data = read_file(file_with_crs, mask=gdf_with_crs)
+            data = read_file(file_with_crs, mask=gdf_with_crs, engine=engine)
             assert_geodataframe_equal(data, gdf_with_crs)
 
         # Check with GeoSeries as a mask
@@ -496,25 +499,25 @@ class TestGeometryArrayCRS:
         with pytest.warns(
             UserWarning, match="""There is no CRS defined in the mask."""
         ):
-            data = read_file(file_with_crs, mask=series_without_crs)
+            data = read_file(file_with_crs, mask=series_without_crs, engine=engine)
             assert_geodataframe_equal(data, gdf_with_crs)
 
         with pytest.warns(
             UserWarning, match="""There is no CRS defined in the source dataset."""
         ):
-            data = read_file(file_without_crs, mask=series_with_crs)
+            data = read_file(file_without_crs, mask=series_with_crs, engine=engine)
             assert_geodataframe_equal(data, gdf_without_crs)
 
         with pytest.warns(
             UserWarning,
             match="""There is no CRS defined in the source dataset nor mask.""",
         ):
-            data = read_file(file_without_crs, mask=series_without_crs)
+            data = read_file(file_without_crs, mask=series_without_crs, engine=engine)
             assert_geodataframe_equal(data, gdf_without_crs)
 
         with warnings.catch_warnings():
             warnings.simplefilter("error")
-            data = read_file(file_with_crs, mask=series_with_crs)
+            data = read_file(file_with_crs, mask=series_with_crs, engine=engine)
             assert_geodataframe_equal(data, gdf_with_crs)
 
     def test_multiple_geoms(self):
