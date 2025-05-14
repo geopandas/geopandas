@@ -497,36 +497,21 @@ def _read_file_pyogrio(path_or_bytes, bbox=None, mask=None, rows=None, **kwargs)
         # NOTE: mask cannot be used at same time as bbox keyword
         if isinstance(mask, GeoDataFrame | GeoSeries):
             crs = pyogrio.read_info(path_or_bytes, layer=kwargs.get("layer")).get("crs")
-            if (crs is None) and (mask.crs is None):
-                warnings.warn(
-                    "There is no CRS defined in the source dataset nor mask. This may "
-                    "lead to a misalignment of the mask and the source dataset, "
-                    "leading to incorrect masking. Ensure both input share the same "
-                    "CRS.",
-                    UserWarning,
-                    stacklevel=3,
-                )
-            elif (crs is None) and (mask.crs is not None):
-                warnings.warn(
-                    "There is no CRS defined in the source dataset. This may "
-                    "lead to a misalignment of the mask and the source dataset, "
-                    "leading to incorrect masking. Ensure both input share the same "
-                    "CRS.",
-                    UserWarning,
-                    stacklevel=3,
-                )
-            elif (crs is not None) and (mask.crs is None):
-                warnings.warn(
-                    "There is no CRS defined in the mask. This may "
-                    "lead to a misalignment of the mask and the source dataset, "
-                    "leading to incorrect masking. Ensure both input share the same "
-                    "CRS.",
-                    UserWarning,
-                    stacklevel=3,
-                )
-            else:  # both have CRS
+            if crs is not None and mask.crs is not None:
                 mask = mask.to_crs(crs)
-
+            else: # one or both missing CRS
+                if (crs is None) and (mask.crs is None):
+                    msg = "There is no CRS defined in the source dataset nor mask. "
+                elif (crs is None) and (mask.crs is not None):
+                    msg = "There is no CRS defined in the source dataset. "
+                else: # crs not None and mask.crs is None
+                    msg = "There is no CRS defined in the mask. "
+                msg += (
+                    "This may lead to a misalignment of the mask and the "
+                    "source dataset, leading to incorrect masking. Ensure "
+                    "both inputs share the same CRS."
+                )
+                warnings.warn(msg, UserWarning, stacklevel=3)
             if isinstance(path_or_bytes, IOBase):
                 path_or_bytes.seek(0)
 
