@@ -73,6 +73,7 @@ Binary predicates
    GeoSeries.dwithin
    GeoSeries.geom_equals
    GeoSeries.geom_equals_exact
+   GeoSeries.geom_equals_identical
    GeoSeries.intersects
    GeoSeries.overlaps
    GeoSeries.touches

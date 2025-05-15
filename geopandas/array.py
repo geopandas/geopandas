@@ -805,6 +805,11 @@ class GeometryArray(ExtensionArray):
     def geom_equals_exact(self, other, tolerance):
         return self._binary_method("equals_exact", self, other, tolerance=tolerance)
 
+    def geom_equals_identical(self, other):
+        if not SHAPELY_GE_21:
+            raise ImportError("'geom_equals_identical' requires shapely>=2.1.")
+        return self._binary_method("equals_identical", self, other)
+
     #
     # Binary operations that return new geometries
     #
