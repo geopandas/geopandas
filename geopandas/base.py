@@ -6183,7 +6183,7 @@ GeometryCollection
            index with an additional level indicating the ordering of the coordinate
            pairs: a new zero-based index for each geometry in the original GeoSeries).
         include_m : bool, default False
-            Include M coordinates
+            Include M coordinates. Requires shapely >= 2.1.
 
         Returns
         -------
