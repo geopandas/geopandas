@@ -959,6 +959,18 @@ class TestGeomMethods:
         expected = Series([False, True], self.g_3d.index)
         self._test_unary_real("has_z", expected, self.g_3d)
 
+    @pytest.mark.skipif(not SHAPELY_GE_21, reason="requires shapely 2.1")
+    @pytest.mark.skipif(shapely.geos_version < (3, 12, 0), reason="requires GEOS>=3.12")
+    def test_has_m(self):
+        s = GeoSeries.from_wkt(
+            [
+                "POINT M (2 3 5)",
+                "POINT Z (1 2 3)",
+            ],
+        )
+        expected = Series([True, False])
+        self._test_unary_real("has_m", expected, s)
+
     def test_xyz_points(self):
         expected_x = [-73.9847, -74.0446]
         expected_y = [40.7484, 40.6893]
@@ -971,6 +983,19 @@ class TestGeomMethods:
         # mixed dimensions
         expected_z = [30.3244, 31.2344, np.nan]
         assert_array_dtype_equal(expected_z, self.landmarks_mixed.geometry.z)
+
+    @pytest.mark.skipif(not SHAPELY_GE_21, reason="requires shapely 2.1")
+    def test_m_points(self):
+        s = GeoSeries.from_wkt(
+            [
+                "POINT M (2 3 5)",
+                "POINT M (1 2 3)",
+                "POINT (0 0)",
+            ]
+        )
+
+        expected = [5, 3, np.nan]
+        assert_array_dtype_equal(expected, s.m)
 
     def test_xyz_points_empty(self):
         expected_x = [-73.9847, -74.0446, -73.9847, np.nan]
@@ -1982,6 +2007,36 @@ class TestGeomMethods:
             index=[0, 1, 3, 3, 3, 3, 4, 4, 4, 4, 6, 6, 6],
         )
         assert_frame_equal(self.g11.get_coordinates(include_z=True), expected)
+
+    @pytest.mark.skipif(not SHAPELY_GE_21, reason="requires shapely 2.1")
+    def test_get_coordinates_m(self):
+        s = GeoSeries.from_wkt(
+            [
+                "POINT M (2 3 5)",
+                "POINT ZM (1 2 3 4)",
+            ],
+        )
+
+        # only m
+        expected = DataFrame(
+            data=np.array([[2.0, 3.0, 5.0], [1.0, 2.0, 4.0]]),
+            columns=["x", "y", "m"],
+        )
+        assert_frame_equal(s.get_coordinates(include_m=True), expected)
+
+        # only z
+        expected = DataFrame(
+            data=np.array([[2.0, 3.0, np.nan], [1.0, 2.0, 3.0]]),
+            columns=["x", "y", "z"],
+        )
+        assert_frame_equal(s.get_coordinates(include_z=True), expected)
+
+        # both
+        expected = DataFrame(
+            data=np.array([[2.0, 3.0, np.nan, 5.0], [1.0, 2.0, 3.0, 4.0]]),
+            columns=["x", "y", "z", "m"],
+        )
+        assert_frame_equal(s.get_coordinates(include_z=True, include_m=True), expected)
 
     def test_get_coordinates_ignore(self):
         expected = DataFrame(

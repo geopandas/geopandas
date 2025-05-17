@@ -34,6 +34,7 @@ General methods and attributes
    GeoSeries.x
    GeoSeries.y
    GeoSeries.z
+   GeoSeries.m
    GeoSeries.get_coordinates
    GeoSeries.count_coordinates
    GeoSeries.count_geometries
@@ -56,6 +57,7 @@ Unary predicates
    GeoSeries.is_valid_reason
    GeoSeries.is_valid_coverage
    GeoSeries.invalid_coverage_edges
+   GeoSeries.has_m
    GeoSeries.has_z
    GeoSeries.is_ccw
 
