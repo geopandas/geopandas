@@ -26,6 +26,7 @@ New features and improvements:
 - Added `simplify_coverage` method for topological simplification of polygonal coverages
   to GeoSeries/GeoDataframe (#3541).
 - Added initial support of M coordinates (`m` and `has_m` properties, `include_m` in `get_coordinates`) (#3561).
+- Added `geom_equals_identical` method exposing `equals_identical` from shapely to GeoSeries/GeoDataFrame (#3560).
 
 Bug fixes:
 

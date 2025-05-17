@@ -3046,6 +3046,7 @@ GeometryCollection
         See also
         --------
         GeoSeries.geom_equals_exact
+        GeoSeries.geom_equals_identical
 
         """
         return _binary_op("geom_equals", self, other, align)
@@ -3110,10 +3111,82 @@ GeometryCollection
         See also
         --------
         GeoSeries.geom_equals
+        GeoSeries.geom_equals_identical
         """
         return _binary_op(
             "geom_equals_exact", self, other, tolerance=tolerance, align=align
         )
+
+    def geom_equals_identical(self, other, align=None):
+        """Return True for all geometries that are identical aligned *other*, else
+        False.
+
+        This function verifies whether geometries are pointwise equivalent by checking
+        that the structure, ordering, and values of all vertices are identical in all
+        dimensions.
+
+        Similarly to :meth:`geom_equals_exact`, this function uses exact coordinate
+        equality and requires coordinates to be in the same order for all components
+        (vertices, rings, or parts) of a geometry. However, in contrast to
+        :meth:`geom_equals_exact`, this function does not allow specifying specify
+        a tolerance, and additionally requires all dimensions to be the same
+        (:meth:`geom_equals_exact` ignores the Z and M dimensions), where NaN values
+        are considered to be equal to other NaN values.
+
+        This function is the vectorized equivalent of scalar equality of geometry
+        objects (``a == b``, i.e. ``__eq__``).
+
+        The operation works on a 1-to-1 row-wise manner:
+
+        .. image:: ../../../_static/binary_op-01.svg
+           :align: center
+
+        Parameters
+        ----------
+        other : GeoSeries or geometric object
+            The GeoSeries (elementwise) or geometric object to compare to.
+        align : bool | None (default None)
+            If True, automatically aligns GeoSeries based on their indices.
+            If False, the order of elements is preserved. None defaults to True.
+
+        Returns
+        -------
+        Series (bool)
+
+        Examples
+        --------
+        >>> from shapely.geometry import Point
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Point(0, 1.1),
+        ...         Point(0, 1.0),
+        ...         Point(0, 1.2),
+        ...     ]
+        ... )
+        >>> s
+        0    POINT (0 1.1)
+        1      POINT (0 1)
+        2    POINT (0 1.2)
+        dtype: geometry
+
+
+        >>> s.geom_equals_identical(Point(0, 1))
+        0    False
+        1     True
+        2    False
+        dtype: bool
+
+        Notes
+        -----
+        This method works in a row-wise manner. It does not check if an element
+        of one GeoSeries is equal to *any* element of the other one.
+
+        See also
+        --------
+        GeoSeries.geom_equals
+        GeoSeries.geom_equals_exact
+        """
+        return _binary_op("geom_equals_identical", self, other, align=align)
 
     def crosses(self, other, align=None):
         """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
