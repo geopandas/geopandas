@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import urllib.request
 import warnings
+from http import HTTPStatus
 from io import IOBase
 from packaging.version import Version
 from pathlib import Path
@@ -10,6 +11,7 @@ from pathlib import Path
 # Adapted from pandas.io.common
 from urllib.parse import urlparse as parse_url
 from urllib.parse import uses_netloc, uses_params, uses_relative
+from urllib.request import Request
 
 import numpy as np
 import pandas as pd
@@ -290,8 +292,13 @@ def _read_file(
         # pyogrio/fiona as is (to support downloading only part of the file)
         # otherwise still download manually because pyogrio/fiona don't support
         # all types of urls (https://github.com/geopandas/geopandas/issues/2908)
-        with urllib.request.urlopen(filename) as response:
-            if not response.headers.get("Accept-Ranges") == "bytes":
+        with urllib.request.urlopen(
+            Request(filename, headers={"Range": "bytes=0-1"})
+        ) as response:
+            if (
+                response.headers.get("Accept-Ranges") == "none"
+                or response.status != HTTPStatus.PARTIAL_CONTENT
+            ):
                 filename = response.read()
                 from_bytes = True
 
