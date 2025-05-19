@@ -31,7 +31,7 @@ GeoPandas 0.14
   if Shapely 1.8 is installed instead of 2.0 or newer. The PyGEOS backend is still
   supported, but a user needs to opt in using the environment variable
   ``USE_PYGEOS`` as explained in the
-  `installation instructions <../getting_started/install>`__.
+  `installation instructions <../../getting_started/install.rst>`__.
 
 GeoPandas 1.0
 ^^^^^^^^^^^^^

@@ -386,7 +386,7 @@ class TestExplore:
             in out2_fields_str
         )
 
-        # GeoDataframe and the given list have different number of rows
+        # GeoDataFrame and the given list have different number of rows
         with pytest.raises(ValueError, match="different number of rows"):
             self.world.explore(column=np.array([1, 2, 3]))
 
