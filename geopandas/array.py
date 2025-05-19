@@ -565,21 +565,10 @@ class GeometryArray(ExtensionArray):
 
     @property
     def area(self):
-        from geopandas import options
-
+        #from geopandas import options
         self.check_geographic_crs(stacklevel=5)
-        if self.crs and self.crs.is_geographic:
-            if options.geodesic_calculation:
-                return self._calculate_geodesic_area()
-            else:
-                warnings.warn(
-                    "Calculating area in geographic CRS using planar geometry. "
-                    "Use 'geopandas.options.geodesic_calculation = True' to enable "
-                    "geodesic calculations (recommended for geographic CRS).",
-                    UserWarning,
-                    stacklevel=5,
-                )
-        return shapely.area(self._data)
+        return self._calculate_geodesic_area()
+        #return shapely.area(self._data)
     
     def _calculate_geodesic_area(self):
         from pyproj import Geod
