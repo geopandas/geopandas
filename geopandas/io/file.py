@@ -300,11 +300,13 @@ def _read_file(
                     response.headers.get("Accept-Ranges") == "none"
                     or response.status != HTTPStatus.PARTIAL_CONTENT
                 ):
-                    filename = response.read()
                     from_bytes = True
         except ConnectionError:
-            filename = response.read()
             from_bytes = True
+
+        if from_bytes:
+            with urllib.request.urlopen(filename) as response:
+                filename = response.read()
 
     if engine == "pyogrio":
         return _read_file_pyogrio(
