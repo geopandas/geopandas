@@ -292,15 +292,19 @@ def _read_file(
         # pyogrio/fiona as is (to support downloading only part of the file)
         # otherwise still download manually because pyogrio/fiona don't support
         # all types of urls (https://github.com/geopandas/geopandas/issues/2908)
-        with urllib.request.urlopen(
-            Request(filename, headers={"Range": "bytes=0-1"})
-        ) as response:
-            if (
-                response.headers.get("Accept-Ranges") == "none"
-                or response.status != HTTPStatus.PARTIAL_CONTENT
-            ):
-                filename = response.read()
-                from_bytes = True
+        try:
+            with urllib.request.urlopen(
+                Request(filename, headers={"Range": "bytes=0-1"})
+            ) as response:
+                if (
+                    response.headers.get("Accept-Ranges") == "none"
+                    or response.status != HTTPStatus.PARTIAL_CONTENT
+                ):
+                    filename = response.read()
+                    from_bytes = True
+        except ConnectionError:
+            filename = response.read()
+            from_bytes = True
 
     if engine == "pyogrio":
         return _read_file_pyogrio(
