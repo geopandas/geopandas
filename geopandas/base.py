@@ -2145,7 +2145,7 @@ GeometryCollection
         """
         return _delegate_geo_method("orient_polygons", self, exterior_cw=exterior_cw)
 
-    def make_valid(self, method="linework", keep_collapsed=True):
+    def make_valid(self, *, method="linework", keep_collapsed=True):
         """Repairs invalid geometries.
 
         Returns a ``GeoSeries`` with valid geometries.
@@ -2534,7 +2534,7 @@ GeometryCollection
 
         return self.geometry.values.union_all()
 
-    def union_all(self, method="unary", grid_size=None):
+    def union_all(self, method="unary", *, grid_size=None):
         """Returns a geometry containing the union of all geometries in the
         ``GeoSeries``.
 
@@ -5556,7 +5556,7 @@ GeometryCollection
             "simplify", self, tolerance=tolerance, preserve_topology=preserve_topology
         )
 
-    def simplify_coverage(self, tolerance, simplify_boundary=True):
+    def simplify_coverage(self, tolerance, *, simplify_boundary=True):
         """Returns a ``GeoSeries`` containing a simplified representation of
         polygonal coverage.
 
@@ -6267,7 +6267,7 @@ GeometryCollection
         return _CoordinateIndexer(self)
 
     def get_coordinates(
-        self, include_z=False, ignore_index=False, index_parts=False, include_m=False
+        self, include_z=False, ignore_index=False, index_parts=False, *, include_m=False
     ):
         """Gets coordinates from a :class:`GeoSeries` as a :class:`~pandas.DataFrame` of
         floats.
