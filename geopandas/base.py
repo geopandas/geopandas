@@ -405,6 +405,8 @@ GeometryCollection
 
         Requires Shapely >= 2.1.
 
+        .. versionadded:: 1.1.0
+
         Parameters
         ----------
         gap_width : float, optional
@@ -475,6 +477,8 @@ GeometryCollection
         Geometries that are not Polygon or MultiPolygon are ignored.
 
         Requires Shapely >= 2.1.
+
+        .. versionadded:: 1.1.0
 
         Parameters
         ----------
@@ -854,6 +858,8 @@ GeometryCollection
 
         Requires Shapely >= 2.1.
 
+        .. versionadded:: 1.1.0
+
         Examples
         --------
         >>> from shapely.geometry import Point
@@ -1139,6 +1145,8 @@ GeometryCollection
         vertices, hence triangle edges could cross polygon boundaries.
 
         Requires Shapely >= 2.1.
+
+        .. versionadded:: 1.1.0
 
         Examples
         --------
@@ -1893,6 +1901,8 @@ GeometryCollection
 
         Requires Shapely >= 2.1.
 
+        .. versionadded:: 1.1.0
+
         Parameters
         ----------
         tolerance : float, np.array, pd.Series
@@ -2015,6 +2025,8 @@ GeometryCollection
 
         Requires Shapely >= 2.1.
 
+        .. versionadded:: 1.1.0
+
         Examples
         --------
 
@@ -2090,6 +2102,8 @@ GeometryCollection
         geometries are returned unchanged.
 
         Requires Shapely >= 2.1.
+
+        .. versionadded:: 1.1.0
 
         Parameters
         ----------
@@ -3155,6 +3169,8 @@ GeometryCollection
            :align: center
 
         Requires Shapely >= 2.1.
+
+        .. versionadded:: 1.1.0
 
         Parameters
         ----------

@@ -341,6 +341,8 @@ class GeoSeries(GeoPandasBase, Series):
 
         Requires Shapely >= 2.1.
 
+        .. versionadded:: 1.1.0
+
         Returns
         -------
         pandas.Series
