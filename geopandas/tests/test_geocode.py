@@ -105,7 +105,7 @@ def test_prepare_result_none():
     # TODO we should probably replace this with a missing value instead of point?
     assert len(row["geometry"].coords) == 0
     assert row["geometry"].is_empty
-    assert row["address"] is None
+    assert pd.isna(row["address"])
 
 
 @pytest.mark.parametrize("geocode_result", (None, (None, None)))
