@@ -739,7 +739,8 @@ class GeometryArray(ExtensionArray):
 
     def transform(self, transformation, include_z=False):
         return GeometryArray(
-            shapely.transform(self._data, transformation, include_z), crs=self.crs
+            shapely.transform(self._data, transformation, include_z=include_z),
+            crs=self.crs,
         )
 
     def line_merge(self, directed=False):
