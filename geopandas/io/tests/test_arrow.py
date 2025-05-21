@@ -1321,3 +1321,20 @@ def test_read_parquet_bbox_points(tmp_path):
     assert len(result) == 10
     result = geopandas.read_parquet(tmp_path / "test.parquet", bbox=(3, 3, 5, 5))
     assert len(result) == 3
+
+
+def test_non_geo_parquet_read_with_proper_error(tmp_path):
+    # https://github.com/geopandas/geopandas/issues/3556
+
+    gdf = geopandas.GeoDataFrame(
+        {"col": [1, 2, 3]},
+        geometry=geopandas.points_from_xy([1, 2, 3], [1, 2, 3]),
+        crs="EPSG:4326",
+    )
+    del gdf["geometry"]
+
+    gdf.to_parquet(tmp_path / "test_no_geometry.parquet")
+    with pytest.raises(
+        ValueError, match="No geometry columns are included in the columns read"
+    ):
+        geopandas.read_parquet(tmp_path / "test_no_geometry.parquet")

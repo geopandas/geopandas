@@ -301,6 +301,7 @@ class GeoSeries(GeoPandasBase, Series):
 
         GeoSeries.x
         GeoSeries.z
+        GeoSeries.m
 
         """
         return _delegate_property("y", self)
@@ -329,9 +330,48 @@ class GeoSeries(GeoPandasBase, Series):
 
         GeoSeries.x
         GeoSeries.y
+        GeoSeries.m
 
         """
         return _delegate_property("z", self)
+
+    @property
+    def m(self) -> Series:
+        """Return the m coordinate of point geometries in a GeoSeries
+
+        Returns
+        -------
+        pandas.Series
+
+        Examples
+        --------
+
+        >>> from shapely.geometry import Point
+        >>> s = geopandas.GeoSeries.from_wkt(
+        ...     [
+        ...         "POINT M (2 3 5)",
+        ...         "POINT M (1 2 3)",
+        ...     ]
+        ... )
+        >>> s
+        0    POINT M (2 3 5)
+        1    POINT M (1 2 3)
+        dtype: geometry
+
+        >>> s.m
+        0    5.0
+        1    3.0
+        dtype: float64
+
+        See Also
+        --------
+
+        GeoSeries.x
+        GeoSeries.y
+        GeoSeries.z
+
+        """
+        return _delegate_property("m", self)
 
     @classmethod
     def from_file(cls, filename: os.PathLike | typing.IO, **kwargs) -> GeoSeries:
