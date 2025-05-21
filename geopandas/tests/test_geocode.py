@@ -3,7 +3,7 @@ import pandas as pd
 from shapely.geometry import Point
 
 from geopandas import GeoDataFrame, GeoSeries
-from geopandas._compat import HAS_PYPROJ, PANDAS_GE_30
+from geopandas._compat import HAS_PYPROJ
 from geopandas.tools import geocode, reverse_geocode
 from geopandas.tools.geocoding import _prepare_geocode_result
 
@@ -105,10 +105,7 @@ def test_prepare_result_none():
     # TODO we should probably replace this with a missing value instead of point?
     assert len(row["geometry"].coords) == 0
     assert row["geometry"].is_empty
-    if PANDAS_GE_30 and pd.options.future.infer_string:
-        assert pd.isna(row["address"])
-    else:
-        assert row["address"] is None
+    assert pd.isna(row["address"])
 
 
 @pytest.mark.parametrize("geocode_result", (None, (None, None)))
