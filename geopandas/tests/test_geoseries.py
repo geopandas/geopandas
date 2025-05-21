@@ -616,25 +616,32 @@ class TestConstructor:
         # not depending on the dtype
 
         # dtypes that can never hold geometry-like data
-        for arr in [
+        non_geom_compat_dtypes = [
             np.array([], dtype="bool"),
             np.array([], dtype="int64"),
             np.array([], dtype="float32"),
-            # this gets converted to object dtype by pandas
-            # np.array([], dtype="str"),
-        ]:
+        ]
+        # dtypes that can potentially hold geometry-like data (object) or
+        # can come from empty data (float64)
+        geom_compat_dtypes = [
+            np.array([], dtype="object"),
+            np.array([], dtype="float64"),
+        ]
+
+        if compat.PANDAS_GE_30 and pd.options.future.infer_string:
+            # in pandas >=3 future string, str is not converted to object
+            # so is non geom compatible
+            non_geom_compat_dtypes.append(np.array([], dtype="str"))
+        else:
+            geom_compat_dtypes.append(np.array([], dtype="str"))
+
+        for arr in non_geom_compat_dtypes:
             with pytest.raises(
                 TypeError, match="Non geometry data passed to GeoSeries"
             ):
                 GeoSeries(arr)
 
-        # dtypes that can potentially hold geometry-like data (object) or
-        # can come from empty data (float64)
-        for arr in [
-            np.array([], dtype="object"),
-            np.array([], dtype="float64"),
-            np.array([], dtype="str"),
-        ]:
+        for arr in geom_compat_dtypes:
             with warnings.catch_warnings(record=True) as record:
                 s = GeoSeries(arr)
             assert not record

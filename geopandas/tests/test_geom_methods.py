@@ -650,10 +650,10 @@ class TestGeomMethods:
             ],
             index=self.g0.index,
         )
-        assert_array_dtype_equal(expected, self.g0.relate(self.inner_sq))
+        assert_series_equal(expected, self.g0.relate(self.inner_sq))
 
         expected = Series(["FF0FFF212", None], index=self.g6.index)
-        assert_array_dtype_equal(expected, self.g6.relate(self.na_none))
+        assert_series_equal(expected, self.g6.relate(self.na_none))
 
         expected = Series(
             [
@@ -669,7 +669,7 @@ class TestGeomMethods:
             index=range(8),
         )
 
-        assert_array_dtype_equal(expected, self.g0.relate(self.g9, align=True))
+        assert_series_equal(expected, self.g0.relate(self.g9, align=True))
 
         expected = Series(
             [
@@ -683,7 +683,7 @@ class TestGeomMethods:
             ],
             index=self.g0.index,
         )
-        assert_array_dtype_equal(expected, self.g0.relate(self.g9, align=False))
+        assert_series_equal(expected, self.g0.relate(self.g9, align=False))
 
     def test_relate_pattern(self):
         expected = Series([True] * 4 + [False] * 3, index=self.g0.index, dtype=bool)
