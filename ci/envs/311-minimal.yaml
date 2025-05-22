@@ -2,10 +2,10 @@ name: test
 channels:
   - conda-forge
 dependencies:
-  - python=3.10
+  - python=3.11
   # required
-  - numpy=1.24
-  - pandas=2.0
+  - numpy=1.26
+  - pandas=2.1
   - shapely=2.0.0
   # - pyogrio=0.7.2
   - packaging
@@ -16,14 +16,14 @@ dependencies:
   - fsspec
   - pytz
   # optional
-  - matplotlib=3.6.1
-  - mapclassify=2.5.0
+  - matplotlib=3.8.0
+  - mapclassify=2.6.0
   - geopy
   - SQLalchemy
   - libspatialite
-  - pyarrow=10.0
+  - pyarrow=13.0
   - geodatasets
   - pip
   - pip:
-    - pyproj==3.4.0
+    - pyproj==3.7.0
     - pyogrio==0.7.2

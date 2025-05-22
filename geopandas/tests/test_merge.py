@@ -5,7 +5,7 @@ import pandas as pd
 from shapely.geometry import Point
 
 from geopandas import GeoDataFrame, GeoSeries
-from geopandas._compat import HAS_PYPROJ, PANDAS_GE_21
+from geopandas._compat import HAS_PYPROJ
 
 import pytest
 from geopandas.testing import assert_geodataframe_equal
@@ -183,18 +183,13 @@ class TestMerging:
         # https://github.com/geopandas/geopandas/issues/1230
         # Expect that concat should fail gracefully if duplicate column names belonging
         # to geometry columns are introduced.
-        if PANDAS_GE_21:
-            # _constructor_from_mgr changes mean we now get the concat specific error
-            # message in this case too
-            expected_err = (
-                "Concat operation has resulted in multiple columns using the geometry "
-                "column name 'geometry'."
-            )
-        else:
-            expected_err = (
-                "GeoDataFrame does not support multiple columns using the geometry"
-                " column name 'geometry'"
-            )
+
+        # _constructor_from_mgr changes mean we now get the concat specific error
+        # message in this case too
+        expected_err = (
+            "Concat operation has resulted in multiple columns using the geometry "
+            "column name 'geometry'."
+        )
         with pytest.raises(ValueError, match=expected_err):
             pd.concat([self.gdf, self.gdf], axis=1)
 
