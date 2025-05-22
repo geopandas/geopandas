@@ -27,6 +27,8 @@ New features and improvements:
   to GeoSeries/GeoDataframe (#3541).
 - Added initial support of M coordinates (`m` and `has_m` properties, `include_m` in `get_coordinates`) (#3561).
 - Added `geom_equals_identical` method exposing `equals_identical` from shapely to GeoSeries/GeoDataFrame (#3560).
+- GeoPandas now attempts to use a range request when reading from an URL even if the header
+ does not directly indicate its support (#3572).
 
 Bug fixes:
 
