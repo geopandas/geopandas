@@ -46,6 +46,7 @@ Bug fixes:
 - Fix regression where constructing a GeoSeries from a pd.Series with GeometryDtype values
   failed when `crs` was provided (#3383).
 - Fix plotting of polygons with holes by normalizing the coordinate order prior to plotting (#3483).
+- Fix an issue in plotting when polygon patches were not closed (#3576).
 
 Notes on dependencies:
 
