@@ -339,6 +339,10 @@ class GeoSeries(GeoPandasBase, Series):
     def m(self) -> Series:
         """Return the m coordinate of point geometries in a GeoSeries
 
+        Requires Shapely >= 2.1.
+
+        .. versionadded:: 1.1.0
+
         Returns
         -------
         pandas.Series

@@ -384,7 +384,7 @@ GeometryCollection
         """
         return Series(self.geometry.values.is_valid_reason(), index=self.index)
 
-    def is_valid_coverage(self, gap_width=0.0):
+    def is_valid_coverage(self, *, gap_width=0.0):
         """Returns a ``bool`` indicating whether a ``GeoSeries`` forms a valid coverage
 
         A ``GeoSeries`` of valid polygons is considered a coverage if the polygons are:
@@ -402,6 +402,10 @@ GeometryCollection
 
         Geometries that are not Polygon or MultiPolygon are ignored and an empty
         LineString is returned.
+
+        Requires Shapely >= 2.1.
+
+        .. versionadded:: 1.1.0
 
         Parameters
         ----------
@@ -452,7 +456,7 @@ GeometryCollection
         """
         return self.geometry.values.is_valid_coverage(gap_width=gap_width)
 
-    def invalid_coverage_edges(self, gap_width=0.0):
+    def invalid_coverage_edges(self, *, gap_width=0.0):
         """Returns a ``GeoSeries`` containing edges causing invalid polygonal coverage
 
         This method returns (Multi)LineStrings showing the location of edges violating
@@ -471,6 +475,10 @@ GeometryCollection
         ``False`` and this method can be used to find the edges of those gaps.
 
         Geometries that are not Polygon or MultiPolygon are ignored.
+
+        Requires Shapely >= 2.1.
+
+        .. versionadded:: 1.1.0
 
         Parameters
         ----------
@@ -848,6 +856,9 @@ GeometryCollection
         """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
         features that have a m-component.
 
+        Requires Shapely >= 2.1.
+
+        .. versionadded:: 1.1.0
 
         Examples
         --------
@@ -1132,6 +1143,10 @@ GeometryCollection
         polygon(s) to be in the set of resulting triangle edges. An
         unconstrained delaunay triangulation only triangulates based on the
         vertices, hence triangle edges could cross polygon boundaries.
+
+        Requires Shapely >= 2.1.
+
+        .. versionadded:: 1.1.0
 
         Examples
         --------
@@ -1864,7 +1879,7 @@ GeometryCollection
         """
         return _delegate_geo_method("minimum_bounding_circle", self)
 
-    def maximum_inscribed_circle(self, tolerance=None):
+    def maximum_inscribed_circle(self, *, tolerance=None):
         """Returns a ``GeoSeries`` of geometries representing the largest circle that
         is fully contained within the input geometry.
 
@@ -1883,6 +1898,10 @@ GeometryCollection
         Returns a GeoSeries with two-point linestrings rows, with the first point at the
         center of the inscribed circle and the second on the boundary of the inscribed
         circle.
+
+        Requires Shapely >= 2.1.
+
+        .. versionadded:: 1.1.0
 
         Parameters
         ----------
@@ -2004,6 +2023,10 @@ GeometryCollection
 
         If the geometry has no minimum clearance, an empty LineString will be returned.
 
+        Requires Shapely >= 2.1.
+
+        .. versionadded:: 1.1.0
+
         Examples
         --------
 
@@ -2066,7 +2089,7 @@ GeometryCollection
         """
         return _delegate_geo_method("normalize", self)
 
-    def orient_polygons(self, exterior_cw=False):
+    def orient_polygons(self, *, exterior_cw=False):
         """Returns a ``GeoSeries`` of geometries with enforced ring orientation.
 
         Enforce a ring orientation on all polygonal elements in the ``GeoSeries``.
@@ -2077,6 +2100,10 @@ GeometryCollection
 
         Also processes geometries inside a GeometryCollection in the same way. Other
         geometries are returned unchanged.
+
+        Requires Shapely >= 2.1.
+
+        .. versionadded:: 1.1.0
 
         Parameters
         ----------
@@ -2118,7 +2145,7 @@ GeometryCollection
         """
         return _delegate_geo_method("orient_polygons", self, exterior_cw=exterior_cw)
 
-    def make_valid(self, method="linework", keep_collapsed=True):
+    def make_valid(self, *, method="linework", keep_collapsed=True):
         """Repairs invalid geometries.
 
         Returns a ``GeoSeries`` with valid geometries.
@@ -2507,7 +2534,7 @@ GeometryCollection
 
         return self.geometry.values.union_all()
 
-    def union_all(self, method="unary", grid_size=None):
+    def union_all(self, method="unary", *, grid_size=None):
         """Returns a geometry containing the union of all geometries in the
         ``GeoSeries``.
 
@@ -2531,7 +2558,7 @@ GeometryCollection
             * ``"disjoint_subset:``: use the disjoint subset union algorithm. This
               option is optimized for inputs that can be divided into subsets that do
               not intersect. If there is only one such subset, performance can be
-              expected to be worse than ``"unary"``.
+              expected to be worse than ``"unary"``. Requires Shapely >= 2.1.
 
         grid_size : float, default None
             When grid size is specified, a fixed-precision space is used to perform the
@@ -3140,6 +3167,10 @@ GeometryCollection
 
         .. image:: ../../../_static/binary_op-01.svg
            :align: center
+
+        Requires Shapely >= 2.1.
+
+        .. versionadded:: 1.1.0
 
         Parameters
         ----------
@@ -5525,7 +5556,7 @@ GeometryCollection
             "simplify", self, tolerance=tolerance, preserve_topology=preserve_topology
         )
 
-    def simplify_coverage(self, tolerance, simplify_boundary=True):
+    def simplify_coverage(self, tolerance, *, simplify_boundary=True):
         """Returns a ``GeoSeries`` containing a simplified representation of
         polygonal coverage.
 
@@ -5548,6 +5579,8 @@ GeometryCollection
 
         If the geometry is polygonal but does not form a valid coverage due to overlaps,
         it will be simplified but it may result in invalid coverage topology.
+
+        Requires Shapely >= 2.1.
 
         .. versionadded:: 1.1.0
 
@@ -6234,7 +6267,7 @@ GeometryCollection
         return _CoordinateIndexer(self)
 
     def get_coordinates(
-        self, include_z=False, ignore_index=False, index_parts=False, include_m=False
+        self, include_z=False, ignore_index=False, index_parts=False, *, include_m=False
     ):
         """Gets coordinates from a :class:`GeoSeries` as a :class:`~pandas.DataFrame` of
         floats.

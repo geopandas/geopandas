@@ -2205,7 +2205,7 @@ default 'snappy'
             * ``"disjoint_subset:``: use the disjoint subset union algorithm. This
               option is optimized for inputs that can be divided into subsets that do
               not intersect. If there is only one such subset, performance can be
-              expected to be worse than ``"unary"``.
+              expected to be worse than ``"unary"``.  Requires Shapely >= 2.1.
 
 
         grid_size : float, default None
