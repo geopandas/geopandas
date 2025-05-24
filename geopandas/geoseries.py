@@ -807,9 +807,11 @@ class GeoSeries(GeoPandasBase, Series):
     @doc(pd.Series)
     def copy(self, deep=True):
         if not deep:
-            return GeoSeries(
+            res = GeoSeries(
                 self.array.view(), index=self.index, name=self.name
             ).__finalize__(self)
+            res.values._sindex = self.values._sindex
+            return res
         return super().copy(deep=deep)
 
     @doc(pd.Series)

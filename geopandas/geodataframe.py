@@ -1991,7 +1991,8 @@ default 'snappy'
             copied._geometry_column_name = self._geometry_column_name
         if not deep:
             for col in copied.columns[copied.dtypes == "geometry"]:
-                copied[col] = copied[col].array.view()
+                view = copied[col].array.view()
+                view._sindex = copied[col].array._sindex
         return copied
 
     @doc(pd.DataFrame)
