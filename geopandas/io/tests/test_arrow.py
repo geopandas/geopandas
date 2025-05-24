@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-
 import json
 import os
 import pathlib
@@ -7,7 +5,7 @@ from itertools import product
 from packaging.version import Version
 
 import numpy as np
-from pandas import DataFrame
+from pandas import ArrowDtype, DataFrame
 from pandas import read_parquet as pd_read_parquet
 
 import shapely
@@ -47,18 +45,7 @@ import pyarrow.parquet as pq
 from pyarrow import feather
 
 
-@pytest.fixture(
-    params=[
-        "parquet",
-        pytest.param(
-            "feather",
-            marks=pytest.mark.skipif(
-                Version(pyarrow.__version__) < Version("0.17.0"),
-                reason="needs pyarrow >= 0.17",
-            ),
-        ),
-    ]
-)
+@pytest.fixture(params=["parquet", pytest.param("feather")])
 def file_format(request):
     if request.param == "parquet":
         return read_parquet, GeoDataFrame.to_parquet
@@ -94,6 +81,11 @@ def test_create_metadata(naturalearth_lowres):
     # specifying non-WKB encoding sets default schema to 1.1.0
     metadata = _create_metadata(df, geometry_encoding={"geometry": "point"})
     assert metadata["version"] == "1.1.0"
+    assert metadata["columns"]["geometry"]["encoding"] == "point"
+
+    # check that providing no geometry encoding defaults to WKB
+    metadata = _create_metadata(df)
+    assert metadata["columns"]["geometry"]["encoding"] == "WKB"
 
 
 def test_create_metadata_with_z_geometries():
@@ -466,7 +458,9 @@ def test_column_order(tmpdir, file_format, naturalearth_lowres):
     assert_geodataframe_equal(result, df[custom_column_order[1:]])
 
 
-@pytest.mark.parametrize("compression", ["snappy", "gzip", "brotli", None])
+@pytest.mark.parametrize(
+    "compression", ["snappy", "gzip", "brotli", "lz4", "zstd", None]
+)
 def test_parquet_compression(compression, tmpdir, naturalearth_lowres):
     """Using compression options should not raise errors, and should
     return identical GeoDataFrame.
@@ -482,10 +476,6 @@ def test_parquet_compression(compression, tmpdir, naturalearth_lowres):
     assert_geodataframe_equal(df, pq_df)
 
 
-@pytest.mark.skipif(
-    Version(pyarrow.__version__) < Version("0.17.0"),
-    reason="Feather only supported for pyarrow >= 0.17",
-)
 @pytest.mark.parametrize("compression", ["uncompressed", "lz4", "zstd"])
 def test_feather_compression(compression, tmpdir, naturalearth_lowres):
     """Using compression options should not raise errors, and should
@@ -700,22 +690,8 @@ def test_default_geo_col_writes(tmp_path):
     assert_frame_equal(df, pq_df)
 
 
-@pytest.mark.skipif(
-    Version(pyarrow.__version__) >= Version("0.17.0"),
-    reason="Feather only supported for pyarrow >= 0.17",
-)
-def test_feather_arrow_version(tmpdir, naturalearth_lowres):
-    df = read_file(naturalearth_lowres)
-    filename = os.path.join(str(tmpdir), "test.feather")
-
-    with pytest.raises(
-        ImportError, match="pyarrow >= 0.17 required for Feather support"
-    ):
-        df.to_feather(filename)
-
-
 def test_fsspec_url(naturalearth_lowres):
-    fsspec = pytest.importorskip("fsspec")
+    _ = pytest.importorskip("fsspec")
     import fsspec.implementations.memory
 
     class MyMemoryFileSystem(fsspec.implementations.memory.MemoryFileSystem):
@@ -750,10 +726,6 @@ def test_non_fsspec_url_with_storage_options_raises(naturalearth_lowres):
         read_parquet(naturalearth_lowres, storage_options={"foo": "bar"})
 
 
-@pytest.mark.skipif(
-    Version(pyarrow.__version__) < Version("5.0.0"),
-    reason="pyarrow.fs requires pyarrow>=5.0.0",
-)
 def test_prefers_pyarrow_fs():
     filesystem, _ = _get_filesystem_path("file:///data.parquet")
     assert isinstance(filesystem, pyarrow.fs.LocalFileSystem)
@@ -789,6 +761,26 @@ def test_write_empty_bbox(tmpdir, geometry):
     metadata = json.loads(table.schema.metadata[b"geo"])
     assert "encoding" in metadata["columns"]["geometry"]
     assert "bbox" not in metadata["columns"]["geometry"]
+
+
+@pytest.mark.parametrize("format", ["feather", "parquet"])
+def test_write_read_to_pandas_kwargs(tmpdir, format):
+    filename = os.path.join(str(tmpdir), f"test.{format}")
+    g = box(0, 0, 10, 10)
+    gdf = geopandas.GeoDataFrame({"geometry": [g], "i": [1], "s": ["a"]})
+
+    if format == "feather":
+        gdf.to_feather(filename)
+        read_func = read_feather
+    else:
+        gdf.to_parquet(filename)
+        read_func = read_parquet
+
+    # simulate the `dtype_backend="pyarrow"` option in `pandas.read_parquet`
+    gdf_roundtrip = read_func(filename, to_pandas_kwargs={"types_mapper": ArrowDtype})
+    assert isinstance(gdf_roundtrip, geopandas.GeoDataFrame)
+    assert isinstance(gdf_roundtrip.dtypes["i"], ArrowDtype)
+    assert isinstance(gdf_roundtrip.dtypes["s"], ArrowDtype)
 
 
 @pytest.mark.parametrize("format", ["feather", "parquet"])
@@ -1020,7 +1012,6 @@ def test_read_parquet_geoarrow(geometry_type):
     ["point", "linestring", "polygon", "multipoint", "multilinestring", "multipolygon"],
 )
 def test_geoarrow_roundtrip(tmp_path, geometry_type):
-
     df = geopandas.read_parquet(
         DATA_PATH
         / "arrow"
@@ -1330,3 +1321,20 @@ def test_read_parquet_bbox_points(tmp_path):
     assert len(result) == 10
     result = geopandas.read_parquet(tmp_path / "test.parquet", bbox=(3, 3, 5, 5))
     assert len(result) == 3
+
+
+def test_non_geo_parquet_read_with_proper_error(tmp_path):
+    # https://github.com/geopandas/geopandas/issues/3556
+
+    gdf = geopandas.GeoDataFrame(
+        {"col": [1, 2, 3]},
+        geometry=geopandas.points_from_xy([1, 2, 3], [1, 2, 3]),
+        crs="EPSG:4326",
+    )
+    del gdf["geometry"]
+
+    gdf.to_parquet(tmp_path / "test_no_geometry.parquet")
+    with pytest.raises(
+        ValueError, match="No geometry columns are included in the columns read"
+    ):
+        geopandas.read_parquet(tmp_path / "test_no_geometry.parquet")

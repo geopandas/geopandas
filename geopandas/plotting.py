@@ -1,5 +1,4 @@
 import warnings
-from packaging.version import Version
 
 import numpy as np
 import pandas as pd
@@ -30,6 +29,7 @@ def _sanitize_geoms(geoms, prefix="Multi"):
     """
     # TODO(shapely) look into simplifying this with
     # shapely.get_parts(geoms, return_index=True) from shapely 2.0
+    geoms = geoms.normalize()
     components, component_index = [], []
 
     if (
@@ -60,7 +60,7 @@ def _expand_kwargs(kwargs, multiindex):
     it (in place) to the correct length/formats with help of 'multiindex', unless
     the value appears to already be a valid (single) value for the key.
     """
-    from typing import Iterable
+    from collections.abc import Iterable
 
     from matplotlib.colors import is_color_like
 
@@ -105,8 +105,11 @@ def _PolygonPatch(polygon, **kwargs):
     from matplotlib.path import Path
 
     path = Path.make_compound_path(
-        Path(np.asarray(polygon.exterior.coords)[:, :2]),
-        *[Path(np.asarray(ring.coords)[:, :2]) for ring in polygon.interiors],
+        Path(np.asarray(polygon.exterior.coords)[:, :2], closed=True),
+        *[
+            Path(np.asarray(ring.coords)[:, :2], closed=True)
+            for ring in polygon.interiors
+        ],
     )
     return PathPatch(path, **kwargs)
 
@@ -515,11 +518,11 @@ def plot_dataframe(
 
     Parameters
     ----------
-    column : str, np.array, pd.Series (default None)
-        The name of the dataframe column, np.array, or pd.Series to be plotted.
-        If np.array or pd.Series are used then it must have same length as
-        dataframe. Values are used to color the plot. Ignored if `color` is
-        also set.
+    column : str, np.array, pd.Series, pd.Index (default None)
+        The name of the dataframe column, np.array, pd.Series, or pd.Index
+        to be plotted. If np.array, pd.Series, or pd.Index are used then it
+        must have same length as dataframe. Values are used to color the plot.
+        Ignored if `color` is also set.
     kind: str
         The kind of plots to produce. The default is to create a map ("geo").
         Other supported kinds of plots from pandas:
@@ -700,11 +703,13 @@ def plot_dataframe(
         )
 
     # To accept pd.Series and np.arrays as column
-    if isinstance(column, (np.ndarray, pd.Series)):
+    if isinstance(column, np.ndarray | pd.Series | pd.Index):
         if column.shape[0] != df.shape[0]:
             raise ValueError(
                 "The dataframe and given column have different number of rows."
             )
+        elif isinstance(column, pd.Index):
+            values = column.values
         else:
             values = column
 
@@ -731,17 +736,11 @@ def plot_dataframe(
     nan_idx = np.asarray(pd.isna(values), dtype="bool")
 
     if scheme is not None:
-        mc_err = (
-            "The 'mapclassify' package (>= 2.4.0) is "
-            "required to use the 'scheme' keyword."
-        )
+        mc_err = "The 'mapclassify' package is required to use the 'scheme' keyword."
         try:
             import mapclassify
 
         except ImportError:
-            raise ImportError(mc_err)
-
-        if Version(mapclassify.__version__) < Version("2.4.0"):
             raise ImportError(mc_err)
 
         if classification_kwds is None:
@@ -799,7 +798,7 @@ def plot_dataframe(
         if missing:
             raise ValueError(
                 "Column contains values not listed in categories. "
-                "Missing categories: {}.".format(missing)
+                f"Missing categories: {missing}."
             )
 
         values = cat.codes[~nan_idx]
@@ -887,7 +886,7 @@ def plot_dataframe(
         merged_kwds = style_kwds.copy()
         merged_kwds.update(missing_kwds)
 
-        plot_series(expl_series[nan_idx], ax=ax, **merged_kwds)
+        plot_series(expl_series[nan_idx], ax=ax, **merged_kwds, aspect=None)
 
     if legend and not color:
         if legend_kwds is None:

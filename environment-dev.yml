@@ -5,8 +5,8 @@ dependencies:
     - python
     # required
     - pyogrio>=0.7.2
-    - pandas>=1.3.0
-    - pyproj>=3.3.0
+    - pandas>=2.0
+    - pyproj>=3.5.0
     - shapely>=2.0.0
     - packaging
 
@@ -16,11 +16,16 @@ dependencies:
     - pytest-xdist
     - fsspec
     - codecov
+    - geodatasets
+    - pytz
+    - geoarrow-pyarrow
+
     # styling
-    - black
     - pre-commit
+    - ruff==0.11.4
 
     # optional
+    - fiona
     - folium
     - xyzservices
     - scipy
@@ -34,9 +39,9 @@ dependencies:
     # geodatabase access
     - psycopg2>=2.8.0
     - psycopg>=3.1.0
-    - SQLAlchemy>=1.3
+    - SQLAlchemy>=2.0
     # plotting
-    - matplotlib>=3.5
+    - matplotlib>=3.7
     - mapclassify
     # point sampling
     - pointpats

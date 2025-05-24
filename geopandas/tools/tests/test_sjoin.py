@@ -1,5 +1,5 @@
 import math
-from typing import Sequence
+from collections.abc import Sequence
 
 import numpy as np
 import pandas as pd
@@ -96,6 +96,52 @@ def dfs(request):
     return [request.param, df1, df2, expected]
 
 
+@pytest.fixture()
+def dfs_shared_attribute():
+    geo_left = [
+        Point(0, 0),
+        Point(1, 1),
+        Point(2, 2),
+        Point(3, 3),
+        Point(4, 4),
+        Point(5, 5),
+        Point(6, 6),
+        Point(7, 7),
+    ]
+    geo_right = [
+        Point(0, 0),
+        Point(1, 1),
+        Point(2, 2),
+        Point(3, 3),
+        Point(4, 4),
+        Point(5, 5),
+        Point(6, 6),
+        Point(7, 7),
+    ]
+    attr_tracker = ["A", "B", "C", "D", "E", "F", "G", "H"]
+
+    left_gdf = geopandas.GeoDataFrame(
+        {
+            "geometry": geo_left,
+            "attr_tracker": attr_tracker,
+            "duplicate_column": [0, 1, 2, 3, 4, 5, 6, 7],
+            "attr1": [True, True, True, True, True, True, True, True],
+            "attr2": [True, True, True, True, True, True, True, True],
+        }
+    )
+
+    right_gdf = geopandas.GeoDataFrame(
+        {
+            "geometry": geo_right,
+            "duplicate_column": [0, 1, 2, 3, 4, 5, 6, 7],
+            "attr1": [True, True, False, False, True, True, False, False],
+            "attr2": [True, True, False, False, False, False, False, False],
+        }
+    )
+
+    return left_gdf, right_gdf
+
+
 class TestSpatialJoin:
     @pytest.mark.parametrize(
         "how, lsuffix, rsuffix, expected_cols",
@@ -147,7 +193,6 @@ class TestSpatialJoin:
         index, df1, df2, expected = dfs
 
         res = sjoin(df1, df2, how="inner", predicate=predicate)
-
         exp = expected[predicate].dropna().copy()
         exp = exp.drop("geometry_y", axis=1).rename(columns={"geometry_x": "geometry"})
         exp[["df1", "df2"]] = exp[["df1", "df2"]].astype("int64")
@@ -168,7 +213,6 @@ class TestSpatialJoin:
             exp.index.names = df1.index.names
         if index == "named-multi-index":
             exp = exp.set_index(["df1_ix1", "df1_ix2"])
-
         assert_frame_equal(res, exp)
 
     @pytest.mark.parametrize(
@@ -423,6 +467,104 @@ class TestSpatialJoin:
 
         joined = sjoin(pts, polys, predicate=predicate, how="left")
         assert_index_equal(joined.index, pts.index)
+
+    def test_sjoin_shared_attribute(self, naturalearth_lowres, naturalearth_cities):
+        countries = read_file(naturalearth_lowres)
+        cities = read_file(naturalearth_cities)
+        countries = countries[["geometry", "name"]].rename(columns={"name": "country"})
+
+        # Add first letter of country/city as an attribute column to be compared
+        countries["firstLetter"] = countries["country"].astype(str).str[0]
+        cities["firstLetter"] = cities["name"].astype(str).str[0]
+
+        result = sjoin(cities, countries, on_attribute="firstLetter")
+        assert (
+            result["country"].astype(str).str[0] == result["name"].astype(str).str[0]
+        ).all()
+        assert result.shape == (23, 5)
+
+    @pytest.mark.parametrize(
+        "attr1_key_change_dict, attr2_key_change_dict",
+        [
+            pytest.param(
+                {True: "merge", False: "no_merge"},
+                {True: "merge", False: "no_merge"},
+                id="merge on string attributes",
+            ),
+            pytest.param(
+                {True: 2, False: 1},
+                {True: 2, False: 1},
+                id="merge on integer attributes",
+            ),
+            pytest.param(
+                {True: True, False: False},
+                {True: True, False: False},
+                id="merge on boolean attributes",
+            ),
+            pytest.param(
+                {True: True, False: False},
+                {True: "merge", False: "no_merge"},
+                id="merge on mixed attributes",
+            ),
+        ],
+    )
+    def test_sjoin_multiple_attributes_datatypes(
+        self, dfs_shared_attribute, attr1_key_change_dict, attr2_key_change_dict
+    ):
+        left_gdf, right_gdf = dfs_shared_attribute
+        left_gdf["attr1"] = left_gdf["attr1"].map(attr1_key_change_dict)
+        left_gdf["attr2"] = left_gdf["attr2"].map(attr2_key_change_dict)
+        right_gdf["attr1"] = right_gdf["attr1"].map(attr1_key_change_dict)
+        right_gdf["attr2"] = right_gdf["attr2"].map(attr2_key_change_dict)
+
+        joined = sjoin(left_gdf, right_gdf, on_attribute=("attr1", "attr2"))
+        assert (["A", "B"] == joined["attr_tracker"].values).all()
+
+    def test_sjoin_multiple_attributes_check_header(self, dfs_shared_attribute):
+        left_gdf, right_gdf = dfs_shared_attribute
+        joined = sjoin(left_gdf, right_gdf, on_attribute=["attr1"])
+
+        assert (["A", "B", "E", "F"] == joined["attr_tracker"].values).all()
+        assert {"attr2_left", "attr2_right", "attr1"}.issubset(joined.columns)
+        assert "attr1_left" not in joined
+
+    def test_sjoin_error_column_does_not_exist(self, dfs_shared_attribute):
+        left_gdf, right_gdf = dfs_shared_attribute
+        right_gdf_dropped_attr = right_gdf.drop("attr1", axis=1)
+        left_gdf_dropped_attr = left_gdf.drop("attr1", axis=1)
+
+        with pytest.raises(
+            ValueError,
+            match="Expected column attr1 is missing from the right dataframe.",
+        ):
+            sjoin(left_gdf, right_gdf_dropped_attr, on_attribute="attr1")
+
+        with pytest.raises(
+            ValueError,
+            match="Expected column attr1 is missing from the left dataframe.",
+        ):
+            sjoin(left_gdf_dropped_attr, right_gdf, on_attribute="attr1")
+
+        with pytest.raises(
+            ValueError,
+            match="Expected column attr1 is missing from both of the dataframes.",
+        ):
+            sjoin(left_gdf_dropped_attr, right_gdf_dropped_attr, on_attribute="attr1")
+
+    def test_sjoin_error_use_geometry_column(self, dfs_shared_attribute):
+        left_gdf, right_gdf = dfs_shared_attribute
+        with pytest.raises(
+            ValueError,
+            match="Active geometry column cannot be used as an input for "
+            "on_attribute parameter.",
+        ):
+            sjoin(left_gdf, right_gdf, on_attribute="geometry")
+        with pytest.raises(
+            ValueError,
+            match="Active geometry column cannot be used as an input for "
+            "on_attribute parameter.",
+        ):
+            sjoin(left_gdf, right_gdf, on_attribute=["attr1", "geometry"])
 
 
 class TestIndexNames:

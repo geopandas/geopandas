@@ -2,7 +2,7 @@ name: test
 channels:
   - conda-forge
 dependencies:
-  - python=3.10
+  - python=3.12
   # required
   - pandas
   - shapely
@@ -14,8 +14,10 @@ dependencies:
   - pytest-cov
   - pytest-xdist
   - fsspec
+  - pytz
   # optional
-  - matplotlib-base
+  - fiona
+  - matplotlib
   - mapclassify
   - folium
   - xyzservices
@@ -25,14 +27,12 @@ dependencies:
   - geodatasets
   # installed in tests.yaml, because not available on windows
   # - postgis
-  - SQLalchemy<2
+  - SQLalchemy
+  - psycopg
   - psycopg2
   - libspatialite
   - geoalchemy2
   - pyarrow
-  - fiona
+  - geoarrow-pyarrow
   # doctest testing
   - pytest-doctestplus
-  - pip
-  - pip:
-      - git+https://github.com/geopandas/pyogrio.git@main

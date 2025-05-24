@@ -2,6 +2,7 @@ import json
 import os
 import shutil
 import tempfile
+from enum import Enum
 
 import numpy as np
 import pandas as pd
@@ -426,7 +427,7 @@ class TestDataFrame:
         df_nogeom = pd.DataFrame(df.drop("geometry", axis=1))
         res1, res2 = df.align(df_nogeom, axis=0)
         assert_geodataframe_equal(res1, df)
-        assert type(res2) == pd.DataFrame
+        assert type(res2) is pd.DataFrame
         assert_frame_equal(res2, df_nogeom)
 
         # same as above but now with actual alignment
@@ -454,7 +455,7 @@ class TestDataFrame:
         exp2_nogeom = pd.DataFrame(exp2.drop("geometry", axis=1))
         res1, res2 = df1.align(df2_nogeom, axis=0)
         assert_geodataframe_equal(res1, exp1)
-        assert type(res2) == pd.DataFrame
+        assert type(res2) is pd.DataFrame
         assert_frame_equal(res2, exp2_nogeom)
 
     @pytest.mark.skipif(not compat.HAS_PYPROJ, reason="Requires pyproj")
@@ -600,6 +601,14 @@ class TestDataFrame:
         df = GeoDataFrame(pd.DataFrame({"a": [1, 2, 3]}))
         assert type(df) is GeoDataFrame
         assert type(df.copy()) is GeoDataFrame
+
+    def test_empty(self):
+        df = GeoDataFrame({"geometry": []})
+        assert df.geometry.dtype == "geometry"
+        df = GeoDataFrame({"a": []}, geometry="a")
+        assert df.geometry.dtype == "geometry"
+        df = GeoDataFrame(geometry=[])
+        assert df.geometry.dtype == "geometry"
 
     def test_bool_index(self):
         # Find boros with 'B' in their name
@@ -767,7 +776,7 @@ class TestDataFrame:
         assert_frame_equal(gdf1, gdf2)
 
     def test_from_features_geom_interface_feature(self):
-        class Placemark(object):
+        class Placemark:
             def __init__(self, geom, val):
                 self.__geo_interface__ = {
                     "type": "Feature",
@@ -852,7 +861,7 @@ class TestDataFrame:
             geometry=points_from_xy(df["longitude"], df["latitude"]),
             crs=self.df.crs,
         )
-        assert type(df) == pd.DataFrame
+        assert type(df) is pd.DataFrame
         assert "geometry" not in df
         assert_frame_equal(df, df_copy)
         assert isinstance(gf, GeoDataFrame)
@@ -950,6 +959,8 @@ class TestDataFrame:
         assert "bbox" in geo.keys()
         assert len(geo["bbox"]) == 4
         assert isinstance(geo["bbox"], tuple)
+        for bound in geo["bbox"]:
+            assert not isinstance(bound, np.float64)
         for feature in geo["features"]:
             assert "bbox" in feature.keys()
 
@@ -1229,7 +1240,7 @@ class TestConstructor:
         gpdf = GeoDataFrame(data)
         pddf = pd.DataFrame(data)
         check_geodataframe(gpdf)
-        assert type(pddf) == pd.DataFrame
+        assert type(pddf) is pd.DataFrame
 
         for df in [gpdf, pddf]:
             res = GeoDataFrame(df)
@@ -1290,17 +1301,17 @@ class TestConstructor:
         # keeps GeoDataFrame class (no DataFrame)
         data = {"A": range(3), "B": np.arange(3.0)}
         df = GeoDataFrame(data)
-        assert type(df) == GeoDataFrame
+        assert type(df) is GeoDataFrame
 
         gdf = GeoDataFrame({"x": [1]})
         assert list(gdf.x) == [1]
 
     def test_empty(self):
         df = GeoDataFrame()
-        assert type(df) == GeoDataFrame
+        assert type(df) is GeoDataFrame
 
         df = GeoDataFrame({"A": [], "B": []}, geometry=[])
-        assert type(df) == GeoDataFrame
+        assert type(df) is GeoDataFrame
 
     def test_column_ordering(self):
         geoms = [Point(1, 1), Point(2, 2), Point(3, 3)]
@@ -1323,18 +1334,17 @@ class TestConstructor:
         check_geodataframe(gdf)
         assert list(gdf.columns) == ["geometry", "a"]
 
-    def test_preserve_series_name(self):
+    def test_do_not_preserve_series_name_in_constructor(self):
+        # GH3337
+        # GeoDataFrame(... geometry=...) should always create geom col "geometry"
         geoms = [Point(1, 1), Point(2, 2), Point(3, 3)]
         gs = GeoSeries(geoms)
         gdf = GeoDataFrame({"a": [1, 2, 3]}, geometry=gs)
-
         check_geodataframe(gdf, geometry_column="geometry")
-
-        geoms = [Point(1, 1), Point(2, 2), Point(3, 3)]
+        # still get "geometry", even with custom geoseries name
         gs = GeoSeries(geoms, name="my_geom")
         gdf = GeoDataFrame({"a": [1, 2, 3]}, geometry=gs)
-
-        check_geodataframe(gdf, geometry_column="my_geom")
+        check_geodataframe(gdf, geometry_column="geometry")
 
     def test_overwrite_geometry(self):
         # GH602
@@ -1490,6 +1500,19 @@ class TestConstructor:
         df[other_df.columns] = other_df
         assert_geodataframe_equal(df, expected)
 
+    def test_geometry_colname_enum(self):
+        # ensure that other classes to geometry arg in GeoDataFrame
+        # with `name` attribute are not assumed to be (Geo)Series
+        class Fruit(Enum):
+            apple = 1
+            pear = 2
+
+        df = pd.DataFrame(
+            {Fruit.apple: [1, 2], Fruit.pear: GeoSeries.from_xy([1, 2], [3, 4])}
+        )
+        res = GeoDataFrame(df, geometry=Fruit.pear)
+        assert res.active_geometry_name == Fruit.pear
+
 
 @pytest.mark.skipif(not compat.HAS_PYPROJ, reason="pyproj not available")
 def test_geodataframe_crs():
@@ -1547,6 +1570,22 @@ def test_geodataframe_crs_colname():
     gdf = GeoDataFrame({"crs": [1], "geometry": [Point(1, 1)]})
     assert gdf.crs is None
     assert gdf["crs"].iloc[0] == 1
+    assert getattr(gdf, "crs") is None
+
+    # https://github.com/geopandas/geopandas/issues/3501
+    gdf = GeoDataFrame({"crs": [1]}, geometry=[Point(1, 1)])
+    assert gdf.crs is None
+    assert gdf["crs"].iloc[0] == 1
+    assert getattr(gdf, "crs") is None
+
+    # test multiindex handling
+    df = pd.DataFrame([[1, 0], [0, 1]], columns=[["crs", "crs"], ["x", "y"]])
+    x_col = df["crs", "x"]
+    y_col = df["crs", "y"]
+
+    gdf = GeoDataFrame(df, geometry=points_from_xy(x_col, y_col))
+    assert gdf.crs is None
+    assert gdf["crs"].iloc[0].to_list() == [1, 0]
     assert getattr(gdf, "crs") is None
 
 
@@ -1616,3 +1655,54 @@ def test_set_geometry_supply_arraylike(dfs, geo_col_name):
         res4 = df.set_geometry(centroids, drop=True)
     assert res4.active_geometry_name == "centroids"
     assert geo_col_name in res4.columns
+
+
+@pytest.mark.filterwarnings("error::FutureWarning")
+def test_reduce_geometry_array():
+    """
+    Check for a FutureWarning.
+
+    `geopandas.array.GeometryArray._reduce` issues a FutureWarning if
+    the parameter `keepdims` is not set.
+    `GeometryArray` inherits from `pandas.api.extensions.ExtensionArray`
+    and its `_reduce` is overridden in `GeometryArray`.
+    This warning is issued with pandas 2.2.2 (tested).
+    """
+    GeoDataFrame({"geometry": []}).all()
+
+
+class GDFChild(GeoDataFrame):
+    def custom_method(self):
+        return "this is a custom output"
+
+
+def test_inheritance(dfs):
+    df, _ = dfs
+    df.loc[:, "col2"] = ["a"] * len(df)
+
+    dfc = GDFChild(df)
+
+    dfc2 = dfc.rename_geometry("geometry2")
+
+    children = [
+        dfc,
+        dfc.iloc[[0]],
+        dfc.loc[dfc.col1 == 1],
+        dfc.dissolve(),
+        dfc[["col2", "geometry"]],
+        dfc.copy(),
+        dfc2,
+        dfc2.iloc[[0]],
+        dfc2.loc[dfc.col1 == 1],
+        dfc2.dissolve(),
+        dfc2[["col2", "geometry2"]],
+        dfc2.copy(),
+    ]
+
+    for v in children:
+        assert isinstance(v, GDFChild)
+        assert v.custom_method() == "this is a custom output"
+
+    df2 = dfc2.drop(columns=["geometry2"])
+
+    assert not isinstance(df2, GDFChild)

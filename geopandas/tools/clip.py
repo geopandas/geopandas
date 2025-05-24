@@ -15,17 +15,39 @@ from shapely.geometry import MultiPolygon, Polygon, box
 
 from geopandas import GeoDataFrame, GeoSeries
 from geopandas._compat import PANDAS_GE_30
-from geopandas.array import _check_crs, _crs_mismatch_warn
+from geopandas.array import (
+    LINE_GEOM_TYPES,
+    POINT_GEOM_TYPES,
+    POLYGON_GEOM_TYPES,
+    _check_crs,
+    _crs_mismatch_warn,
+)
 
 
 def _mask_is_list_like_rectangle(mask):
+    """
+    Check if the input mask is list-like and not an instance of
+    specific geometric types.
+
+    Parameters
+    ----------
+    mask : GeoDataFrame, GeoSeries, (Multi)Polygon, list-like
+        Polygon vector layer used to clip ``gdf``.
+
+    Returns
+    -------
+    bool
+        True if `mask` is list-like and not an instance of `GeoDataFrame`,
+        `GeoSeries`, `Polygon`, or `MultiPolygon`, otherwise False.
+    """
     return pandas.api.types.is_list_like(mask) and not isinstance(
-        mask, (GeoDataFrame, GeoSeries, Polygon, MultiPolygon)
+        mask, GeoDataFrame | GeoSeries | Polygon | MultiPolygon
     )
 
 
 def _clip_gdf_with_mask(gdf, mask, sort=False):
-    """Clip geometry to the polygon/rectangle extent.
+    """
+    Clip geometry to the polygon/rectangle extent.
 
     Clip an input GeoDataFrame to the polygon extent of the polygon
     parameter.
@@ -155,33 +177,31 @@ def clip(gdf, mask, keep_geom_type=False, sort=False):
     >>> nws_groceries.shape
     (7, 8)
     """
-    if not isinstance(gdf, (GeoDataFrame, GeoSeries)):
-        raise TypeError(
-            "'gdf' should be GeoDataFrame or GeoSeries, got {}".format(type(gdf))
-        )
+    if not isinstance(gdf, GeoDataFrame | GeoSeries):
+        raise TypeError(f"'gdf' should be GeoDataFrame or GeoSeries, got {type(gdf)}")
 
-    mask_is_list_like = _mask_is_list_like_rectangle(mask)
+    clipping_by_rectangle = _mask_is_list_like_rectangle(mask)
     if (
-        not isinstance(mask, (GeoDataFrame, GeoSeries, Polygon, MultiPolygon))
-        and not mask_is_list_like
+        not isinstance(mask, GeoDataFrame | GeoSeries | Polygon | MultiPolygon)
+        and not clipping_by_rectangle
     ):
         raise TypeError(
             "'mask' should be GeoDataFrame, GeoSeries,"
             f"(Multi)Polygon or list-like, got {type(mask)}"
         )
 
-    if mask_is_list_like and len(mask) != 4:
+    if clipping_by_rectangle and len(mask) != 4:
         raise TypeError(
             "If 'mask' is list-like, it must have four values (minx, miny, maxx, maxy)"
         )
 
-    if isinstance(mask, (GeoDataFrame, GeoSeries)):
+    if isinstance(mask, GeoDataFrame | GeoSeries):
         if not _check_crs(gdf, mask):
             _crs_mismatch_warn(gdf, mask, stacklevel=3)
 
-    if isinstance(mask, (GeoDataFrame, GeoSeries)):
+    if isinstance(mask, GeoDataFrame | GeoSeries):
         box_mask = mask.total_bounds
-    elif mask_is_list_like:
+    elif clipping_by_rectangle:
         box_mask = mask
     else:
         # Avoid empty tuple returned by .bounds when geometry is empty. A tuple of
@@ -196,7 +216,7 @@ def clip(gdf, mask, keep_geom_type=False, sort=False):
     ):
         return gdf.iloc[:0]
 
-    if isinstance(mask, (GeoDataFrame, GeoSeries)):
+    if isinstance(mask, GeoDataFrame | GeoSeries):
         combined_mask = mask.geometry.union_all()
     else:
         combined_mask = mask
@@ -216,25 +236,21 @@ def clip(gdf, mask, keep_geom_type=False, sort=False):
                 stacklevel=2,
             )
         else:
-            polys = ["Polygon", "MultiPolygon"]
-            lines = ["LineString", "MultiLineString", "LinearRing"]
-            points = ["Point", "MultiPoint"]
-
             # Check that the gdf for multiple geom types (points, lines and/or polys)
             orig_types_total = sum(
                 [
-                    gdf.geom_type.isin(polys).any(),
-                    gdf.geom_type.isin(lines).any(),
-                    gdf.geom_type.isin(points).any(),
+                    gdf.geom_type.isin(POLYGON_GEOM_TYPES).any(),
+                    gdf.geom_type.isin(LINE_GEOM_TYPES).any(),
+                    gdf.geom_type.isin(POINT_GEOM_TYPES).any(),
                 ]
             )
 
             # Check how many geometry types are in the clipped GeoDataFrame
             clip_types_total = sum(
                 [
-                    clipped.geom_type.isin(polys).any(),
-                    clipped.geom_type.isin(lines).any(),
-                    clipped.geom_type.isin(points).any(),
+                    clipped.geom_type.isin(POLYGON_GEOM_TYPES).any(),
+                    clipped.geom_type.isin(LINE_GEOM_TYPES).any(),
+                    clipped.geom_type.isin(POINT_GEOM_TYPES).any(),
                 ]
             )
 
@@ -250,9 +266,9 @@ def clip(gdf, mask, keep_geom_type=False, sort=False):
                 orig_type = gdf.geom_type.iloc[0]
                 if new_collection:
                     clipped = clipped.explode(index_parts=False)
-                if orig_type in polys:
-                    clipped = clipped.loc[clipped.geom_type.isin(polys)]
-                elif orig_type in lines:
-                    clipped = clipped.loc[clipped.geom_type.isin(lines)]
+                if orig_type in POLYGON_GEOM_TYPES:
+                    clipped = clipped.loc[clipped.geom_type.isin(POLYGON_GEOM_TYPES)]
+                elif orig_type in LINE_GEOM_TYPES:
+                    clipped = clipped.loc[clipped.geom_type.isin(LINE_GEOM_TYPES)]
 
     return clipped

@@ -37,7 +37,7 @@ _Kelsey Jordahl, Joris Van den Bossche, Martin Fleischmann, Jacob Wasserman, Jam
                   Adam Greenhall and
                   Chris Holdgraf and
                   Filipe and
-                  François Leblanc},
+                  Fran\c{c}ois Leblanc},
   title        = {geopandas/geopandas: v0.8.1},
   month        = jul,
   year         = 2020,

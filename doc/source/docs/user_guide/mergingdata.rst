@@ -77,6 +77,7 @@ that initially has only area ID for each geometry by merging it with a :class:`~
    chicago_shapes = chicago_shapes.merge(chicago_names, on='NID')
    chicago_shapes.head()
 
+.. _mergingdata.spatial-joins:
 
 Spatial joins
 ----------------

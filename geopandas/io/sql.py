@@ -1,5 +1,6 @@
 import warnings
 from contextlib import contextmanager
+from functools import lru_cache
 
 import pandas as pd
 
@@ -41,7 +42,7 @@ def _get_conn(conn_or_engine):
         raise ValueError(f"Unknown Connectable: {conn_or_engine}")
 
 
-def _df_to_geodf(df, geom_col="geom", crs=None):
+def _df_to_geodf(df, geom_col="geom", crs=None, con=None):
     """
     Transforms a pandas DataFrame into a GeoDataFrame.
     The column 'geom_col' must be a geometry column in WKB representation.
@@ -58,13 +59,15 @@ def _df_to_geodf(df, geom_col="geom", crs=None):
         such as an authority string (eg "EPSG:4326") or a WKT string.
         If not set, tries to determine CRS from the SRID associated with the
         first geometry in the database, and assigns that to all geometries.
+    con : sqlalchemy.engine.Connection or sqlalchemy.engine.Engine
+        Active connection to the database to query.
     Returns
     -------
     GeoDataFrame
     """
 
     if geom_col not in df:
-        raise ValueError("Query missing geometry column '{}'".format(geom_col))
+        raise ValueError(f"Query missing geometry column '{geom_col}'")
 
     if df.columns.to_list().count(geom_col) > 1:
         raise ValueError(
@@ -92,7 +95,28 @@ def _df_to_geodf(df, geom_col="geom", crs=None):
             srid = shapely.get_srid(geoms.iat[0])
             # if no defined SRID in geodatabase, returns SRID of 0
             if srid != 0:
-                crs = "epsg:{}".format(srid)
+                try:
+                    spatial_ref_sys_df = _get_spatial_ref_sys_df(con, srid)
+                except pd.errors.DatabaseError:
+                    warning_msg = (
+                        f"Could not find the spatial reference system table "
+                        f"(spatial_ref_sys) in PostGIS."
+                        f"Trying epsg:{srid} as a fallback."
+                    )
+                    warnings.warn(warning_msg, UserWarning, stacklevel=3)
+                    crs = f"epsg:{srid}"
+                else:
+                    if not spatial_ref_sys_df.empty:
+                        auth_name = spatial_ref_sys_df["auth_name"].item()
+                        crs = f"{auth_name}:{srid}"
+                    else:
+                        warning_msg = (
+                            f"Could not find srid {srid} in the "
+                            f"spatial_ref_sys table. "
+                            f"Trying epsg:{srid} as a fallback."
+                        )
+                        warnings.warn(warning_msg, UserWarning, stacklevel=3)
+                        crs = f"epsg:{srid}"
 
     return GeoDataFrame(df, crs=crs, geometry=geom_col)
 
@@ -167,7 +191,7 @@ def _read_postgis(
             params=params,
             chunksize=chunksize,
         )
-        return _df_to_geodf(df, geom_col=geom_col, crs=crs)
+        return _df_to_geodf(df, geom_col=geom_col, crs=crs, con=con)
 
     else:
         # read data in chunks and return a generator
@@ -180,7 +204,9 @@ def _read_postgis(
             params=params,
             chunksize=chunksize,
         )
-        return (_df_to_geodf(df, geom_col=geom_col, crs=crs) for df in df_generator)
+        return (
+            _df_to_geodf(df, geom_col=geom_col, crs=crs, con=con) for df in df_generator
+        )
 
 
 def _get_geometry_type(gdf):
@@ -238,8 +264,7 @@ def _get_srid_from_crs(gdf):
     # Note: undefined srid in PostGIS is 0
     srid = None
     warning_msg = (
-        "Could not parse CRS from the GeoDataFrame. "
-        "Inserting data without defined CRS."
+        "Could not parse CRS from the GeoDataFrame. Inserting data without defined CRS."
     )
     if gdf.crs is not None:
         try:
@@ -301,11 +326,11 @@ def _psql_insert_copy(tbl, conn, keys, data_iter):
     writer.writerows(data_iter)
     s_buf.seek(0)
 
-    columns = ", ".join('"{}"'.format(k) for k in keys)
+    columns = ", ".join(f'"{k}"' for k in keys)
 
     dbapi_conn = conn.connection
-    sql = 'COPY "{}"."{}" ({}) FROM STDIN WITH CSV'.format(
-        tbl.table.schema, tbl.table.name, columns
+    sql = (
+        f'COPY "{tbl.table.schema}"."{tbl.table.name}" ({columns}) FROM STDIN WITH CSV'
     )
     with dbapi_conn.cursor() as cur:
         # Use psycopg method if it's available
@@ -409,19 +434,13 @@ def _write_postgis(
             # Only check SRID if table exists
             if connection.dialect.has_table(connection, name, schema):
                 target_srid = connection.execute(
-                    text(
-                        "SELECT Find_SRID('{schema}', '{table}', '{geom_col}');".format(
-                            schema=schema_name, table=name, geom_col=geom_name
-                        )
-                    )
+                    text(f"SELECT Find_SRID('{schema_name}', '{name}', '{geom_name}');")
                 ).fetchone()[0]
 
                 if target_srid != srid:
                     msg = (
-                        "The CRS of the target table (EPSG:{epsg_t}) differs from the "
-                        "CRS of current GeoDataFrame (EPSG:{epsg_src}).".format(
-                            epsg_t=target_srid, epsg_src=srid
-                        )
+                        f"The CRS of the target table (EPSG:{target_srid}) differs "
+                        f"from the CRS of current GeoDataFrame (EPSG:{srid})."
                     )
                     raise ValueError(msg)
 
@@ -437,3 +456,11 @@ def _write_postgis(
             dtype=dtype,
             method=_psql_insert_copy,
         )
+
+
+@lru_cache
+def _get_spatial_ref_sys_df(con, srid):
+    spatial_ref_sys_sql = (
+        f"SELECT srid, auth_name FROM spatial_ref_sys WHERE srid = {srid}"
+    )
+    return pd.read_sql(spatial_ref_sys_sql, con)

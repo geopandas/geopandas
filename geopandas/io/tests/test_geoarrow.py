@@ -5,6 +5,7 @@ import pathlib
 from packaging.version import Version
 
 import numpy as np
+from pandas import ArrowDtype
 
 import shapely
 from shapely import MultiPoint, Point, box
@@ -90,18 +91,15 @@ def assert_table_equal(left, right, check_metadata=True):
 
     if not left.schema.equals(right.schema):
         raise AssertionError(
-            "Schema not equal\nLeft:\n{0}\nRight:\n{1}".format(
-                left.schema, right.schema
-            )
+            f"Schema not equal\nLeft:\n{left.schema}\nRight:\n{right.schema}"
         )
 
     if check_metadata:
         if not left.schema.equals(right.schema, check_metadata=True):
             if not left.schema.metadata == right.schema.metadata:
                 raise AssertionError(
-                    "Metadata not equal\nLeft:\n{0}\nRight:\n{1}".format(
-                        left.schema.metadata, right.schema.metadata
-                    )
+                    f"Metadata not equal\nLeft:\n{left.schema.metadata}\n"
+                    f"Right:\n{right.schema.metadata}"
                 )
         for col in left.schema.names:
             assert left.schema.field(col).equals(
@@ -112,9 +110,7 @@ def assert_table_equal(left, right, check_metadata=True):
         a_left = pa.concat_arrays(left.column(col).chunks)
         a_right = pa.concat_arrays(right.column(col).chunks)
         if not a_left.equals(a_right):
-            raise AssertionError(
-                "Column '{0}' not equal:\n{1}".format(col, a_left.diff(a_right))
-            )
+            raise AssertionError(f"Column '{col}' not equal:\n{a_left.diff(a_right)}")
 
     raise AssertionError("Tables not equal for unknown reason")
 
@@ -205,6 +201,24 @@ def test_geoarrow_export(geometry_type, dim, geometry_encoding, interleaved):
     reason="from_ragged_array failing with read-only array input",
 )
 @pytest.mark.parametrize("encoding", ["WKB", "geoarrow"])
+def test_geoarrow_to_pandas_kwargs(encoding):
+    g = box(0, 0, 10, 10)
+    gdf = GeoDataFrame({"geometry": [g], "i": [1], "s": ["a"]})
+    table = pa_table(gdf.to_arrow(geometry_encoding=encoding))
+    # simulate the `dtype_backend="pyarrow"` option in `pandas.read_parquet`
+    gdf_roundtrip = GeoDataFrame.from_arrow(
+        table, to_pandas_kwargs={"types_mapper": ArrowDtype}
+    )
+    assert isinstance(gdf_roundtrip, GeoDataFrame)
+    assert isinstance(gdf_roundtrip.dtypes["i"], ArrowDtype)
+    assert isinstance(gdf_roundtrip.dtypes["s"], ArrowDtype)
+
+
+@pytest.mark.skipif(
+    Version(shapely.__version__) < Version("2.0.2"),
+    reason="from_ragged_array failing with read-only array input",
+)
+@pytest.mark.parametrize("encoding", ["WKB", "geoarrow"])
 def test_geoarrow_multiple_geometry_crs(encoding):
     pytest.importorskip("pyproj")
     # ensure each geometry column has its own crs
@@ -215,11 +229,11 @@ def test_geoarrow_multiple_geometry_crs(encoding):
     meta1 = json.loads(
         result.schema.field("geometry").metadata[b"ARROW:extension:metadata"]
     )
-    assert json.loads(meta1["crs"])["id"]["code"] == 4326
+    assert meta1["crs"]["id"]["code"] == 4326
     meta2 = json.loads(
         result.schema.field("geom2").metadata[b"ARROW:extension:metadata"]
     )
-    assert json.loads(meta2["crs"])["id"]["code"] == 3857
+    assert meta2["crs"]["id"]["code"] == 3857
 
     roundtripped = GeoDataFrame.from_arrow(result)
     assert_geodataframe_equal(gdf, roundtripped)
@@ -242,7 +256,7 @@ def test_geoarrow_series_name_crs(encoding):
         else b"geoarrow.polygon"
     )
     meta = json.loads(field.metadata[b"ARROW:extension:metadata"])
-    assert json.loads(meta["crs"])["id"]["code"] == 4326
+    assert meta["crs"]["id"]["code"] == 4326
 
     # ensure it also works without a name
     gser = GeoSeries([box(0, 0, 10, 10)])
@@ -371,6 +385,29 @@ def test_geoarrow_export_with_extension_types(geometry_type, dim):
 
         result3 = pa_table(df.to_arrow(geometry_encoding="geoarrow", interleaved=False))
         assert isinstance(result3["geometry"].type, pa.ExtensionType)
+
+
+def test_geoarrow_export_empty():
+    gdf_empty = GeoDataFrame(columns=["col", "geometry"], geometry="geometry")
+    gdf_all_missing = GeoDataFrame(
+        {"col": [1], "geometry": [None]}, geometry="geometry"
+    )
+
+    # no geometries to infer the geometry type -> raise error for now
+    with pytest.raises(NotImplementedError):
+        gdf_empty.to_arrow(geometry_encoding="geoarrow")
+
+    with pytest.raises(NotImplementedError):
+        gdf_all_missing.to_arrow(geometry_encoding="geoarrow")
+
+    # with WKB encoding it roundtrips fine
+    result = pa_table(gdf_empty.to_arrow(geometry_encoding="WKB"))
+    roundtripped = GeoDataFrame.from_arrow(result)
+    assert_geodataframe_equal(gdf_empty, roundtripped)
+
+    result = pa_table(gdf_all_missing.to_arrow(geometry_encoding="WKB"))
+    roundtripped = GeoDataFrame.from_arrow(result)
+    assert_geodataframe_equal(gdf_all_missing, roundtripped)
 
 
 @pytest.mark.skipif(

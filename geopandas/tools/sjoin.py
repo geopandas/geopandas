@@ -1,6 +1,5 @@
 import warnings
 from functools import partial
-from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -18,6 +17,7 @@ def sjoin(
     lsuffix="left",
     rsuffix="right",
     distance=None,
+    on_attribute=None,
     **kwargs,
 ):
     """Spatial join of two GeoDataFrames.
@@ -50,6 +50,11 @@ def sjoin(
         for the 'dwithin' predicate. If array_like, must be
         one-dimesional with length equal to length of left GeoDataFrame.
         Required if ``predicate='dwithin'``.
+    on_attribute : string, list or tuple
+        Column name(s) to join on as an additional join restriction on top
+        of the spatial predicate. These must be found in both DataFrames.
+        If set, observations are joined only if the predicate applies
+        and values in specified columns match.
 
     Examples
     --------
@@ -103,18 +108,38 @@ def sjoin(
         first = next(iter(kwargs.keys()))
         raise TypeError(f"sjoin() got an unexpected keyword argument '{first}'")
 
-    _basic_checks(left_df, right_df, how, lsuffix, rsuffix)
+    on_attribute = _maybe_make_list(on_attribute)
 
-    indices = _geom_predicate_query(left_df, right_df, predicate, distance)
+    _basic_checks(left_df, right_df, how, lsuffix, rsuffix, on_attribute=on_attribute)
+
+    indices = _geom_predicate_query(
+        left_df, right_df, predicate, distance, on_attribute=on_attribute
+    )
 
     joined, _ = _frame_join(
-        left_df, right_df, indices, None, how, lsuffix, rsuffix, predicate
+        left_df,
+        right_df,
+        indices,
+        None,
+        how,
+        lsuffix,
+        rsuffix,
+        predicate,
+        on_attribute=on_attribute,
     )
 
     return joined
 
 
-def _basic_checks(left_df, right_df, how, lsuffix, rsuffix):
+def _maybe_make_list(obj):
+    if isinstance(obj, tuple):
+        return list(obj)
+    if obj is not None and not isinstance(obj, list):
+        return [obj]
+    return obj
+
+
+def _basic_checks(left_df, right_df, how, lsuffix, rsuffix, on_attribute=None):
     """Checks the validity of join input parameters.
 
     `how` must be one of the valid options.
@@ -131,28 +156,44 @@ def _basic_checks(left_df, right_df, how, lsuffix, rsuffix):
         left index suffix
     rsuffix : str
         right index suffix
+    on_attribute : list, default None
+        list of column names to merge on along with geometry
     """
     if not isinstance(left_df, GeoDataFrame):
-        raise ValueError(
-            "'left_df' should be GeoDataFrame, got {}".format(type(left_df))
-        )
+        raise ValueError(f"'left_df' should be GeoDataFrame, got {type(left_df)}")
 
     if not isinstance(right_df, GeoDataFrame):
-        raise ValueError(
-            "'right_df' should be GeoDataFrame, got {}".format(type(right_df))
-        )
+        raise ValueError(f"'right_df' should be GeoDataFrame, got {type(right_df)}")
 
     allowed_hows = ["left", "right", "inner"]
     if how not in allowed_hows:
-        raise ValueError(
-            '`how` was "{}" but is expected to be in {}'.format(how, allowed_hows)
-        )
+        raise ValueError(f'`how` was "{how}" but is expected to be in {allowed_hows}')
 
     if not _check_crs(left_df, right_df):
         _crs_mismatch_warn(left_df, right_df, stacklevel=4)
 
+    if on_attribute:
+        for attr in on_attribute:
+            if (attr not in left_df) and (attr not in right_df):
+                raise ValueError(
+                    f"Expected column {attr} is missing from both of the dataframes."
+                )
+            if attr not in left_df:
+                raise ValueError(
+                    f"Expected column {attr} is missing from the left dataframe."
+                )
+            if attr not in right_df:
+                raise ValueError(
+                    f"Expected column {attr} is missing from the right dataframe."
+                )
+            if attr in (left_df.geometry.name, right_df.geometry.name):
+                raise ValueError(
+                    "Active geometry column cannot be used as an input "
+                    "for on_attribute parameter."
+                )
 
-def _geom_predicate_query(left_df, right_df, predicate, distance):
+
+def _geom_predicate_query(left_df, right_df, predicate, distance, on_attribute=None):
     """Compute geometric comparisons and get matching indices.
 
     Parameters
@@ -161,6 +202,9 @@ def _geom_predicate_query(left_df, right_df, predicate, distance):
     right_df : GeoDataFrame
     predicate : string
         Binary predicate to query.
+    on_attribute: list, default None
+        list of column names to merge on along with geometry
+
 
     Returns
     -------
@@ -200,6 +244,12 @@ def _geom_predicate_query(left_df, right_df, predicate, distance):
         l_idx = l_idx[indexer]
         r_idx = r_idx[indexer]
 
+    if on_attribute:
+        for attr in on_attribute:
+            (l_idx, r_idx), _ = _filter_shared_attribute(
+                left_df, right_df, l_idx, r_idx, attr
+            )
+
     return l_idx, r_idx
 
 
@@ -229,8 +279,7 @@ def _reset_index_with_suffix(df, suffix, other):
             # check new label will not be in other dataframe
             if new_label in df.columns or new_label in other.columns:
                 raise ValueError(
-                    "'{0}' cannot be a column name in the frames being"
-                    " joined".format(new_label)
+                    f"'{new_label}' cannot be a column name in the frames being joined"
                 )
             column_names[i] = new_label
     return df_reset, pd.Index(column_names)
@@ -356,7 +405,15 @@ def _adjust_indexers(indices, distances, original_length, how, predicate):
 
 
 def _frame_join(
-    left_df, right_df, indices, distances, how, lsuffix, rsuffix, predicate
+    left_df,
+    right_df,
+    indices,
+    distances,
+    how,
+    lsuffix,
+    rsuffix,
+    predicate,
+    on_attribute=None,
 ):
     """Join the GeoDataFrames at the DataFrame level.
 
@@ -376,12 +433,18 @@ def _frame_join(
         Suffix to apply to overlapping column names (left GeoDataFrame).
     rsuffix : string
         Suffix to apply to overlapping column names (right GeoDataFrame).
+    on_attribute: list, default None
+        list of column names to merge on along with geometry
+
 
     Returns
     -------
     GeoDataFrame
         Joined GeoDataFrame.
     """
+    if on_attribute:  # avoid renaming or duplicating shared column
+        right_df = right_df.drop(on_attribute, axis=1)
+
     if how in ("inner", "left"):
         right_df = right_df.drop(right_df.geometry.name, axis=1)
     else:  # how == 'right':
@@ -407,7 +470,6 @@ def _frame_join(
     )
     left_df.columns = left_column_names
     right_df.columns = right_column_names
-
     left_index = left_df.columns[:left_nlevels]
     right_index = right_df.columns[:right_nlevels]
 
@@ -444,6 +506,7 @@ def _nearest_query(
     how: str,
     return_distance: bool,
     exclusive: bool,
+    on_attribute: list | None = None,
 ):
     # use the opposite of the join direction for the index
     use_left_as_sindex = how == "right"
@@ -481,17 +544,40 @@ def _nearest_query(
             distances = np.array([], dtype=np.float64)
         else:
             distances = None
+
+    if on_attribute:
+        for attr in on_attribute:
+            (l_idx, r_idx), shared_attribute_rows = _filter_shared_attribute(
+                left_df, right_df, l_idx, r_idx, attr
+            )
+            distances = distances[shared_attribute_rows]
+
     return (l_idx, r_idx), distances
+
+
+def _filter_shared_attribute(left_df, right_df, l_idx, r_idx, attribute):
+    """
+    Returns the indices for the left and right dataframe that share the same entry
+    in the attribute column. Also returns a Boolean `shared_attribute_rows` for rows
+    with the same entry.
+    """
+    shared_attribute_rows = (
+        left_df[attribute].iloc[l_idx].values == right_df[attribute].iloc[r_idx].values
+    )
+
+    l_idx = l_idx[shared_attribute_rows]
+    r_idx = r_idx[shared_attribute_rows]
+    return (l_idx, r_idx), shared_attribute_rows
 
 
 def sjoin_nearest(
     left_df: GeoDataFrame,
     right_df: GeoDataFrame,
     how: str = "inner",
-    max_distance: Optional[float] = None,
+    max_distance: float | None = None,
     lsuffix: str = "left",
     rsuffix: str = "right",
-    distance_col: Optional[str] = None,
+    distance_col: str | None = None,
     exclusive: bool = False,
 ) -> GeoDataFrame:
     """Spatial join of two GeoDataFrames based on the distance between their geometries.
@@ -607,6 +693,7 @@ chicago_w_groceries[chicago_w_groceries["community"] == "UPTOWN"]
     Every operation in GeoPandas is planar, i.e. the potential third
     dimension is not taken into account.
     """
+
     _basic_checks(left_df, right_df, how, lsuffix, rsuffix)
 
     left_df.geometry.values.check_geographic_crs(stacklevel=1)
@@ -615,10 +702,22 @@ chicago_w_groceries[chicago_w_groceries["community"] == "UPTOWN"]
     return_distance = distance_col is not None
 
     indices, distances = _nearest_query(
-        left_df, right_df, max_distance, how, return_distance, exclusive
+        left_df,
+        right_df,
+        max_distance,
+        how,
+        return_distance,
+        exclusive,
     )
     joined, distances = _frame_join(
-        left_df, right_df, indices, distances, how, lsuffix, rsuffix, None
+        left_df,
+        right_df,
+        indices,
+        distances,
+        how,
+        lsuffix,
+        rsuffix,
+        None,
     )
 
     if return_distance:

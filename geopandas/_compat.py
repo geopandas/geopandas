@@ -4,15 +4,11 @@ from packaging.version import Version
 import pandas as pd
 
 import shapely
-import shapely.geos
 
 # -----------------------------------------------------------------------------
 # pandas compat
 # -----------------------------------------------------------------------------
 
-PANDAS_GE_14 = Version(pd.__version__) >= Version("1.4.0rc0")
-PANDAS_GE_15 = Version(pd.__version__) >= Version("1.5.0")
-PANDAS_GE_20 = Version(pd.__version__) >= Version("2.0.0")
 PANDAS_GE_202 = Version(pd.__version__) >= Version("2.0.2")
 PANDAS_GE_21 = Version(pd.__version__) >= Version("2.1.0")
 PANDAS_GE_22 = Version(pd.__version__) >= Version("2.2.0")
@@ -24,9 +20,11 @@ PANDAS_GE_30 = Version(pd.__version__) >= Version("3.0.0.dev0")
 # -----------------------------------------------------------------------------
 
 SHAPELY_GE_204 = Version(shapely.__version__) >= Version("2.0.4")
+SHAPELY_GE_21 = Version(shapely.__version__) >= Version("2.1rc1")
 
-GEOS_GE_390 = shapely.geos.geos_version >= (3, 9, 0)
-GEOS_GE_310 = shapely.geos.geos_version >= (3, 10, 0)
+GEOS_GE_390 = shapely.geos_version >= (3, 9, 0)
+GEOS_GE_310 = shapely.geos_version >= (3, 10, 0)
+GEOS_GE_312 = shapely.geos_version >= (3, 12, 0)
 
 
 def import_optional_dependency(name: str, extra: str = ""):
@@ -47,15 +45,11 @@ def import_optional_dependency(name: str, extra: str = ""):
     -------
     module
     """
-    msg = """Missing optional dependency '{name}'. {extra}  "
-        "Use pip or conda to install {name}.""".format(
-        name=name, extra=extra
-    )
+    msg = f"""Missing optional dependency '{name}'. {extra}  "
+        "Use pip or conda to install {name}."""
 
     if not isinstance(name, str):
-        raise ValueError(
-            "Invalid module name: '{name}'; must be a string".format(name=name)
-        )
+        raise ValueError(f"Invalid module name: '{name}'; must be a string")
 
     try:
         module = importlib.import_module(name)

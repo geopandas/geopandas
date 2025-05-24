@@ -1,6 +1,5 @@
 import itertools
 import warnings
-from packaging.version import Version
 
 import numpy as np
 import pandas as pd
@@ -29,7 +28,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 try:  # skipif and importorskip do not work for decorators
-    from matplotlib.testing.decorators import check_figures_equal
+    from matplotlib.testing.decorators import check_figures_equal, image_comparison
 
     MPL_DECORATORS = True
 except ImportError:
@@ -221,13 +220,6 @@ class TestPointPlotting:
                 np.linspace(0, 0.0, 1.0, self.N), ax.collections[0].get_alpha()
             )
 
-    # TODO temporary skip for mpl 3.8.0.dev
-    # (https://github.com/matplotlib/matplotlib/issues/25162)
-    @pytest.mark.skipif(
-        Version(matplotlib.__version__) >= Version("3.8.0.dev")
-        and Version(matplotlib.__version__) < Version("3.8.0"),
-        reason="failing with matplotlib dev",
-    )
     def test_legend(self):
         with warnings.catch_warnings(record=True) as _:  # don't print warning
             # legend ignored if color is given.
@@ -458,6 +450,17 @@ class TestPointPlotting:
         df = self.df.copy()
         df["category"] = df["values"].astype("str")
         df.plot("category", missing_kwds={"facecolor": "none"}, legend=True)
+
+    def test_missing_aspect(self):
+        self.df.loc[0, "values"] = np.nan
+        ax = self.df.plot(
+            "values",
+            missing_kwds={"color": "r"},
+            categorical=True,
+            legend=True,
+            aspect=2,
+        )
+        assert ax.get_aspect() == 2
 
 
 class TestPointZPlotting:
@@ -837,6 +840,47 @@ class TestPolygonPlotting:
         cax = _get_colorbar_ax(ax.get_figure())
         assert cax.get_xlabel() == label_txt
 
+    if MPL_DECORATORS:
+        """Test that geometries are properly normalized so holes appear."""
+
+        @image_comparison(
+            ["polygon_with_holes"],
+            extensions=["png", "pdf"],
+            remove_text=True,
+            savefig_kwarg={"dpi": 300, "bbox_inches": "tight"},
+        )
+        def test_plot_polygon_with_holes(self):
+            geoms = [
+                Polygon(
+                    [(0, 0), (0, 5), (5, 5), (5, 0)],
+                    [
+                        [(1, 1), (1, 2), (2, 2), (2, 1)],
+                        [(3, 2), (3, 3), (4, 3), (4, 2)],
+                    ],
+                )
+            ]
+
+            _df = GeoDataFrame(geometry=geoms)
+            _df.plot()
+    else:
+
+        def test_plot_polygon_with_holes(self):
+            geoms = [
+                Polygon(
+                    [(0, 0), (0, 5), (5, 5), (5, 0)],
+                    [
+                        [(1, 1), (1, 2), (2, 2), (2, 1)],
+                        [(3, 2), (3, 3), (4, 3), (4, 2)],
+                    ],
+                )
+            ]
+
+            _df = GeoDataFrame(geometry=geoms)
+            ax = _df.plot()
+            plotted_vertices = ax.collections[0].get_paths()[0].vertices
+            expected_vertices = _df.normalize().get_coordinates().to_numpy()
+            np.testing.assert_array_equal(plotted_vertices, expected_vertices)
+
     def test_fmt_ignore(self):
         # test if fmt is removed if scheme is not passed (it would raise Error)
         # GH #1253
@@ -907,6 +951,38 @@ class TestPolygonPlotting:
             np.testing.assert_array_equal(
                 [0.7, 0.7, 0.2, 0.2], ax.collections[0].get_alpha()
             )
+
+    if MPL_DECORATORS:
+        """Test multipolygons properly orient so holes will appear.
+        Test partly derived from shapely PR #1933."""
+
+        @image_comparison(
+            ["multipolygon_with_holes"],
+            extensions=["png", "pdf"],
+            remove_text=True,
+            savefig_kwarg={"dpi": 300, "bbox_inches": "tight"},
+        )
+        def test_multipolygons_with_interior(self):
+            poly1 = box(0, 0, 1, 1).difference(box(0.2, 0.2, 0.5, 0.5))
+            poly2 = box(3, 3, 6, 6).difference(box(4, 4, 5, 5))
+            multipoly = MultiPolygon([poly1, poly2])
+            _df = GeoDataFrame(geometry=[multipoly])
+            _df.plot()
+    else:
+
+        def test_multipolygons_with_interior(self):
+            poly1 = box(0, 0, 1, 1).difference(box(0.2, 0.2, 0.5, 0.5))
+            poly2 = box(3, 3, 6, 6).difference(box(4, 4, 5, 5))
+            multipoly = MultiPolygon([poly1, poly2])
+            _df = GeoDataFrame(geometry=[multipoly])
+            ax = _df.plot()
+            plotted_vertices = np.append(
+                ax.collections[0].get_paths()[0].vertices,
+                ax.collections[0].get_paths()[1].vertices,
+                axis=0,
+            )
+            expected_vertices = _df.normalize().get_coordinates().to_numpy()
+            np.testing.assert_array_equal(plotted_vertices, expected_vertices)
 
     def test_subplots_norm(self):
         # colors of subplots are the same as for plot (norm is applied)
@@ -1843,6 +1919,8 @@ def test_column_values():
     t2 = Polygon([(1, 0), (2, 0), (2, 1)])
     polys = GeoSeries([t1, t2], index=list("AB"))
     df = GeoDataFrame({"geometry": polys, "values": [0, 1]})
+    numeric_index_polys = GeoSeries([t1, t2], index=[0, 1])
+    numeric_index_df = GeoDataFrame({"geometry": numeric_index_polys, "values": [0, 1]})
 
     # Test with continuous values
     ax = df.plot(column="values")
@@ -1861,6 +1939,11 @@ def test_column_values():
     colors_series = ax.collections[0].get_facecolors()
     np.testing.assert_array_equal(colors, colors_series)
     ax = df.plot(column=df["values"].values, categorical=True)
+    colors_array = ax.collections[0].get_facecolors()
+    np.testing.assert_array_equal(colors, colors_array)
+
+    # Test with pd.Index
+    ax = numeric_index_df.plot(column=numeric_index_df.index, categorical=True)
     colors_array = ax.collections[0].get_facecolors()
     np.testing.assert_array_equal(colors, colors_array)
 
@@ -1919,13 +2002,13 @@ def _check_colors(N, actual_colors, expected_colors, alpha=None):
     actual_colors = map(tuple, actual_colors)
     all_actual_colors = list(itertools.islice(itertools.cycle(actual_colors), N))
 
-    assert len(all_actual_colors) == len(
-        expected_colors
-    ), "Different lengths of actual and expected colors!"
+    assert len(all_actual_colors) == len(expected_colors), (
+        "Different lengths of actual and expected colors!"
+    )
 
     for actual, expected in zip(all_actual_colors, expected_colors):
-        assert actual == conv.to_rgba(expected, alpha=alpha), "{} != {}".format(
-            actual, conv.to_rgba(expected, alpha=alpha)
+        assert actual == conv.to_rgba(expected, alpha=alpha), (
+            f"{actual} != {conv.to_rgba(expected, alpha=alpha)}"
         )
 
 
@@ -1955,7 +2038,7 @@ def _get_ax(fig, label):
     for ax in fig.axes:
         if ax.get_label() == label:
             return ax
-    raise ValueError("no ax found with label {0}".format(label))
+    raise ValueError(f"no ax found with label {label}")
 
 
 def _get_colorbar_ax(fig):

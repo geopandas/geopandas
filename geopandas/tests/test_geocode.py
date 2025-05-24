@@ -46,7 +46,7 @@ class ReverseMock(mock.MagicMock):
         self._n = 0
 
     def __call__(self, *args, **kwargs):
-        self.return_value = "address{0}".format(self._n), args[0]
+        self.return_value = f"address{self._n}", args[0]
         self._n += 1
         return super().__call__(*args, **kwargs)
 
@@ -105,7 +105,7 @@ def test_prepare_result_none():
     # TODO we should probably replace this with a missing value instead of point?
     assert len(row["geometry"].coords) == 0
     assert row["geometry"].is_empty
-    assert row["address"] is None
+    assert pd.isna(row["address"])
 
 
 @pytest.mark.parametrize("geocode_result", (None, (None, None)))

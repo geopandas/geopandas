@@ -14,11 +14,17 @@ import pandas as pd
 import geopandas
 import geopandas._compat as compat
 from geopandas import GeoDataFrame, read_file, read_postgis
+from geopandas._compat import HAS_PYPROJ
 from geopandas.io.sql import _get_conn as get_conn
 from geopandas.io.sql import _write_postgis as write_postgis
 
 import pytest
-from geopandas.tests.util import create_postgis, create_spatialite, validate_boro_df
+from geopandas.tests.util import (
+    create_postgis,
+    create_spatialite,
+    mock,
+    validate_boro_df,
+)
 
 try:
     from sqlalchemy import text
@@ -267,10 +273,8 @@ class TestIO:
         out_geom = "the_geom"
         create_postgis(con, df_nybb, geom_col=orig_geom)
 
-        sql = """SELECT borocode, boroname, shape_leng, shape_area,
-                    {} as {} FROM nybb;""".format(
-            orig_geom, out_geom
-        )
+        sql = f"""SELECT borocode, boroname, shape_leng, shape_area,
+                    {orig_geom} as {out_geom} FROM nybb;"""
         df = read_postgis(sql, con, geom_col=out_geom)
 
         validate_boro_df(df)
@@ -331,7 +335,7 @@ class TestIO:
         create_spatialite(con, df_nybb)
         sql = (
             "SELECT ogc_fid, borocode, boroname, shape_leng, shape_area, "
-            'AsEWKB("{0}") AS "{0}" FROM nybb'.format(geom_col)
+            f'AsEWKB("{geom_col}") AS "{geom_col}" FROM nybb'
         )
         df = read_postgis(sql, con, geom_col=geom_col)
         validate_boro_df(df)
@@ -343,7 +347,7 @@ class TestIO:
         create_spatialite(con, df_nybb)
         sql = (
             "SELECT ogc_fid, borocode, boroname, shape_leng, shape_area, "
-            'ST_AsBinary("{0}") AS "{0}" FROM nybb'.format(geom_col)
+            f'ST_AsBinary("{geom_col}") AS "{geom_col}" FROM nybb'
         )
         df = read_postgis(sql, con, geom_col=geom_col)
         validate_boro_df(df)
@@ -375,7 +379,7 @@ class TestIO:
         # Write to db
         write_postgis(df_nybb, con=engine, name=table, if_exists="fail")
         # Validate
-        sql = text("SELECT * FROM {table};".format(table=table))
+        sql = text(f"SELECT * FROM {table};")
         df = read_postgis(sql, engine, geom_col="geometry")
         validate_boro_df(df)
 
@@ -391,7 +395,7 @@ class TestIO:
         # Write to db
         write_postgis(df_nybb, con=engine, name=table, if_exists="fail")
         # Validate
-        sql = text('SELECT * FROM "{table}";'.format(table=table))
+        sql = text(f'SELECT * FROM "{table}";')
         df = read_postgis(sql, engine, geom_col="geometry")
         validate_boro_df(df)
 
@@ -407,7 +411,7 @@ class TestIO:
             # Write to db
             write_postgis(df_nybb, con=con, name=table, if_exists="fail")
             # Validate
-            sql = text("SELECT * FROM {table};".format(table=table))
+            sql = text(f"SELECT * FROM {table};")
             df = read_postgis(sql, con, geom_col="geometry")
             validate_boro_df(df)
 
@@ -445,7 +449,7 @@ class TestIO:
         # Overwrite
         write_postgis(df_nybb, con=engine, name=table, if_exists="replace")
         # Validate
-        sql = text("SELECT * FROM {table};".format(table=table))
+        sql = text(f"SELECT * FROM {table};")
         df = read_postgis(sql, engine, geom_col="geometry")
         validate_boro_df(df)
 
@@ -463,21 +467,17 @@ class TestIO:
         write_postgis(df_nybb, con=engine, name=table, if_exists="replace")
         write_postgis(df_nybb, con=engine, name=table, if_exists="append")
         # Validate
-        sql = text("SELECT * FROM {table};".format(table=table))
+        sql = text(f"SELECT * FROM {table};")
         df = read_postgis(sql, engine, geom_col="geometry")
         new_rows, new_cols = df.shape
 
         # There should be twice as many rows in the new table
         assert new_rows == orig_rows * 2, (
-            "There should be {target} rows,found: {current}".format(
-                target=orig_rows * 2, current=new_rows
-            ),
+            f"There should be {orig_rows * 2} rows,found: {new_rows}",
         )
         # Number of columns should stay the same
         assert new_cols == orig_cols, (
-            "There should be {target} columns,found: {current}".format(
-                target=orig_cols, current=new_cols
-            ),
+            f"There should be {orig_cols} columns,found: {new_cols}",
         )
 
     @pytest.mark.parametrize("engine_postgis", POSTGIS_DRIVERS, indirect=True)
@@ -501,7 +501,7 @@ class TestIO:
         )
         with engine.connect() as conn:
             target_srid = conn.execute(sql).fetchone()[0]
-        assert target_srid == 0, "SRID should be 0, found %s" % target_srid
+        assert target_srid == 0, f"SRID should be 0, found {target_srid}"
 
     @pytest.mark.parametrize("engine_postgis", POSTGIS_DRIVERS, indirect=True)
     def test_write_postgis_with_esri_authority(self, engine_postgis, df_nybb):
@@ -524,7 +524,7 @@ class TestIO:
         )
         with engine.connect() as conn:
             target_srid = conn.execute(sql).fetchone()[0]
-        assert target_srid == 102003, "SRID should be 102003, found %s" % target_srid
+        assert target_srid == 102003, f"SRID should be 102003, found {target_srid}"
 
     @pytest.mark.parametrize("engine_postgis", POSTGIS_DRIVERS, indirect=True)
     def test_write_postgis_geometry_collection(
@@ -540,14 +540,10 @@ class TestIO:
         write_postgis(df_geom_collection, con=engine, name=table, if_exists="replace")
 
         # Validate geometry type
-        sql = text(
-            "SELECT DISTINCT(GeometryType(geometry)) FROM {table} ORDER BY 1;".format(
-                table=table
-            )
-        )
+        sql = text(f"SELECT DISTINCT(GeometryType(geometry)) FROM {table} ORDER BY 1;")
         with engine.connect() as conn:
             geom_type = conn.execute(sql).fetchone()[0]
-        sql = text("SELECT * FROM {table};".format(table=table))
+        sql = text(f"SELECT * FROM {table};")
         df = read_postgis(sql, engine, geom_col="geometry")
 
         assert geom_type.upper() == "GEOMETRYCOLLECTION"
@@ -569,11 +565,7 @@ class TestIO:
         )
 
         # Validate geometry type
-        sql = text(
-            "SELECT DISTINCT GeometryType(geometry) FROM {table} ORDER BY 1;".format(
-                table=table
-            )
-        )
+        sql = text(f"SELECT DISTINCT GeometryType(geometry) FROM {table} ORDER BY 1;")
         with engine.connect() as conn:
             res = conn.execute(sql).fetchall()
         assert res[0][0].upper() == "LINESTRING"
@@ -592,11 +584,7 @@ class TestIO:
         write_postgis(df_linear_ring, con=engine, name=table, if_exists="replace")
 
         # Validate geometry type
-        sql = text(
-            "SELECT DISTINCT(GeometryType(geometry)) FROM {table} ORDER BY 1;".format(
-                table=table
-            )
-        )
+        sql = text(f"SELECT DISTINCT(GeometryType(geometry)) FROM {table} ORDER BY 1;")
         with engine.connect() as conn:
             geom_type = conn.execute(sql).fetchone()[0]
 
@@ -619,17 +607,13 @@ class TestIO:
             chunksize=1,
         )
         # Validate row count
-        sql = text("SELECT COUNT(geometry) FROM {table};".format(table=table))
+        sql = text(f"SELECT COUNT(geometry) FROM {table};")
         with engine.connect() as conn:
             row_cnt = conn.execute(sql).fetchone()[0]
         assert row_cnt == 3
 
         # Validate geometry type
-        sql = text(
-            "SELECT DISTINCT GeometryType(geometry) FROM {table} ORDER BY 1;".format(
-                table=table
-            )
-        )
+        sql = text(f"SELECT DISTINCT GeometryType(geometry) FROM {table} ORDER BY 1;")
         with engine.connect() as conn:
             res = conn.execute(sql).fetchall()
         assert res[0][0].upper() == "LINESTRING"
@@ -645,7 +629,7 @@ class TestIO:
 
         table = "nybb"
         schema_to_use = "test"
-        sql = text("CREATE SCHEMA IF NOT EXISTS {schema};".format(schema=schema_to_use))
+        sql = text(f"CREATE SCHEMA IF NOT EXISTS {schema_to_use};")
         with engine.begin() as conn:
             conn.execute(sql)
 
@@ -653,9 +637,7 @@ class TestIO:
             df_nybb, con=engine, name=table, if_exists="replace", schema=schema_to_use
         )
         # Validate
-        sql = text(
-            "SELECT * FROM {schema}.{table};".format(schema=schema_to_use, table=table)
-        )
+        sql = text(f"SELECT * FROM {schema_to_use}.{table};")
 
         df = read_postgis(sql, engine, geom_col="geometry")
         validate_boro_df(df)
@@ -671,7 +653,7 @@ class TestIO:
 
         table = "nybb"
         schema_to_use = "test"
-        sql = text("CREATE SCHEMA IF NOT EXISTS {schema};".format(schema=schema_to_use))
+        sql = text(f"CREATE SCHEMA IF NOT EXISTS {schema_to_use};")
         with engine.begin() as conn:
             conn.execute(sql)
 
@@ -680,11 +662,7 @@ class TestIO:
                 df_nybb, con=engine, name=table, if_exists="fail", schema=schema_to_use
             )
             # Validate
-            sql = text(
-                "SELECT * FROM {schema}.{table};".format(
-                    schema=schema_to_use, table=table
-                )
-            )
+            sql = text(f"SELECT * FROM {schema_to_use}.{table};")
 
             df = read_postgis(sql, engine, geom_col="geometry")
             validate_boro_df(df)
@@ -698,9 +676,7 @@ class TestIO:
             df_nybb, con=engine, name=table, if_exists="replace", schema=schema_to_use
         )
         # Validate
-        sql = text(
-            "SELECT * FROM {schema}.{table};".format(schema=schema_to_use, table=table)
-        )
+        sql = text(f"SELECT * FROM {schema_to_use}.{table};")
 
         df = read_postgis(sql, engine, geom_col="geometry")
         validate_boro_df(df)
@@ -717,7 +693,7 @@ class TestIO:
         write_postgis(df_3D_geoms, con=engine, name=table, if_exists="replace")
 
         # Check that all geometries have 3 dimensions
-        sql = text("SELECT * FROM {table};".format(table=table))
+        sql = text(f"SELECT * FROM {table};")
         df = read_postgis(sql, engine, geom_col="geometry")
         assert list(df.geometry.has_z) == [True, True, True]
 
@@ -734,7 +710,7 @@ class TestIO:
         write_postgis(df_nybb, con=engine, name=table, if_exists="replace")
 
         # Check that the row order matches
-        sql = text("SELECT * FROM {table};".format(table=table))
+        sql = text(f"SELECT * FROM {table};")
         df = read_postgis(sql, engine, geom_col="geometry")
         assert df["BoroCode"].tolist() == correct_order
 
@@ -752,7 +728,7 @@ class TestIO:
         write_postgis(df_nybb, con=engine, name=table, if_exists="append")
 
         # Check that the row order matches
-        sql = text("SELECT * FROM {table};".format(table=table))
+        sql = text(f"SELECT * FROM {table};")
         df = read_postgis(sql, engine, geom_col="geometry")
         validate_boro_df(df)
 
@@ -780,7 +756,7 @@ class TestIO:
         # of appending dataframes to postgis that have no CRS as postgis
         # no CRS value is 0.
         engine = engine_postgis
-        df_nybb = df_nybb.set_.crs(None, allow_override=True)
+        df_nybb = df_nybb.set_crs(None, allow_override=True)
         table = "nybb"
 
         write_postgis(df_nybb, con=engine, name=table, if_exists="replace")
@@ -791,7 +767,7 @@ class TestIO:
 
     @pytest.mark.parametrize("engine_postgis", POSTGIS_DRIVERS, indirect=True)
     @pytest.mark.xfail(
-        compat.PANDAS_GE_20 and not compat.PANDAS_GE_202,
+        not compat.PANDAS_GE_202,
         reason="Duplicate columns are dropped in read_sql with pandas 2.0.0 and 2.0.1",
     )
     def test_duplicate_geometry_column_fails(self, engine_postgis):
@@ -804,3 +780,69 @@ class TestIO:
 
         with pytest.raises(ValueError):
             read_postgis(sql, engine, geom_col="geom")
+
+    @pytest.mark.parametrize("connection_postgis", POSTGIS_DRIVERS, indirect=True)
+    def test_read_non_epsg_crs(self, connection_postgis, df_nybb):
+        con = connection_postgis
+        df_nybb = df_nybb.to_crs(crs="esri:54052")
+        create_postgis(con, df_nybb, srid=54052)
+
+        sql = "SELECT * FROM nybb;"
+        df = read_postgis(sql, con)
+        validate_boro_df(df)
+        assert df.crs == "ESRI:54052"
+
+    @pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not installed")
+    @mock.patch("shapely.get_srid")
+    @pytest.mark.parametrize("connection_postgis", POSTGIS_DRIVERS, indirect=True)
+    def test_read_srid_not_in_table(self, mock_get_srid, connection_postgis, df_nybb):
+        # mock a non-existent srid for edge case if shapely has an srid
+        # not present in postgis table.
+        pyproj = pytest.importorskip("pyproj")
+
+        mock_get_srid.return_value = 99999
+
+        con = connection_postgis
+        df_nybb = df_nybb.to_crs(crs="epsg:4326")
+        create_postgis(con, df_nybb)
+
+        sql = "SELECT * FROM nybb;"
+        with pytest.raises(pyproj.exceptions.CRSError, match="crs not found"):
+            with pytest.warns(UserWarning, match="Could not find srid 99999"):
+                read_postgis(sql, con)
+
+    @mock.patch("geopandas.io.sql._get_spatial_ref_sys_df")
+    @pytest.mark.parametrize("connection_postgis", POSTGIS_DRIVERS, indirect=True)
+    def test_read_no_spatial_ref_sys_table_in_postgis(
+        self, mock_get_spatial_ref_sys_df, connection_postgis, df_nybb
+    ):
+        # mock for a non-existent spatial_ref_sys database
+
+        mock_get_spatial_ref_sys_df.side_effect = pd.errors.DatabaseError
+
+        con = connection_postgis
+        df_nybb = df_nybb.to_crs(crs="epsg:4326")
+        create_postgis(con, df_nybb, srid=4326)
+
+        sql = "SELECT * FROM nybb;"
+        with pytest.warns(
+            UserWarning, match="Could not find the spatial reference system table"
+        ):
+            df = read_postgis(sql, con)
+
+        assert df.crs == "EPSG:4326"
+
+    @pytest.mark.parametrize("connection_postgis", POSTGIS_DRIVERS, indirect=True)
+    def test_read_non_epsg_crs_chunksize(self, connection_postgis, df_nybb):
+        """Test chunksize argument with non epsg crs"""
+        chunksize = 2
+        con = connection_postgis
+        df_nybb = df_nybb.to_crs(crs="esri:54052")
+
+        create_postgis(con, df_nybb, srid=54052)
+
+        sql = "SELECT * FROM nybb;"
+        df = pd.concat(read_postgis(sql, con, chunksize=chunksize))
+
+        validate_boro_df(df)
+        assert df.crs == "ESRI:54052"
