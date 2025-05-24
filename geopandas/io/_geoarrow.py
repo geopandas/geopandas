@@ -519,6 +519,12 @@ def arrow_to_geometry_array(arr):
     if Version(pa.__version__) < Version("14.0.0"):
         raise ValueError("Importing from Arrow requires pyarrow >= 14.0.")
 
+    if type(arr).__name__ == "ChunkedArray":
+        if len(arr) == 0:
+            arr = pa.array([], arr.type)
+        else:
+            arr = pa.concat_arrays(arr.chunks)
+
     schema_capsule, array_capsule = arr.__arrow_c_array__()
     field = pa.Field._import_from_c_capsule(schema_capsule)
     pa_arr = pa.Array._import_from_c_capsule(field.__arrow_c_schema__(), array_capsule)
