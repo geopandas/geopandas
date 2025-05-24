@@ -379,7 +379,8 @@ def _read_file_fiona(
 
     with fiona_env():
         with reader(path_or_bytes, **kwargs) as features:
-            crs = features.crs_wkt
+            crs = features.crs_wkt  # returns "" if empty
+            crs = crs or None
             # attempt to get EPSG code
             try:
                 # fiona 1.9+
@@ -402,7 +403,11 @@ def _read_file_fiona(
                 assert len(bbox) == 4
             # handle loading the mask
             elif isinstance(mask, GeoDataFrame | GeoSeries):
-                mask = mapping(mask.to_crs(crs).union_all())
+                if crs is not None and mask.crs is not None:
+                    mask = mask.to_crs(crs)
+                else:
+                    _warn_missing_crs_of_dataframe_and_mask(crs, mask)
+                mask = mapping(mask.union_all())
             elif isinstance(mask, BaseGeometry):
                 mask = mapping(mask)
 
@@ -515,10 +520,15 @@ def _read_file_pyogrio(path_or_bytes, bbox=None, mask=None, rows=None, **kwargs)
         # NOTE: mask cannot be used at same time as bbox keyword
         if isinstance(mask, GeoDataFrame | GeoSeries):
             crs = pyogrio.read_info(path_or_bytes, layer=kwargs.get("layer")).get("crs")
+            if crs is not None and mask.crs is not None:
+                mask = mask.to_crs(crs)
+            else:
+                _warn_missing_crs_of_dataframe_and_mask(crs, mask)
+
             if isinstance(path_or_bytes, IOBase):
                 path_or_bytes.seek(0)
 
-            mask = shapely.unary_union(mask.to_crs(crs).geometry.values)
+            mask = shapely.unary_union(mask.geometry.values)
         elif isinstance(mask, BaseGeometry):
             mask = shapely.unary_union(mask)
         elif isinstance(mask, dict) or hasattr(mask, "__geo_interface__"):
@@ -565,6 +575,25 @@ def _read_file_pyogrio(path_or_bytes, bbox=None, mask=None, rows=None, **kwargs)
         kwargs["columns"] = kwargs.pop("include_fields")
 
     return pyogrio.read_dataframe(path_or_bytes, bbox=bbox, **kwargs)
+
+
+def _warn_missing_crs_of_dataframe_and_mask(source_dataset_crs, mask):
+    """
+    Warn if one, or both, of the source dataset or mask does not
+    have a crs.
+    """
+    if (source_dataset_crs is None) and (mask.crs is None):
+        msg = "There is no CRS defined in the source dataset nor mask. "
+    elif (source_dataset_crs is None) and (mask.crs is not None):
+        msg = "There is no CRS defined in the source dataset. "
+    else:  # crs not None and mask.crs is None
+        msg = "There is no CRS defined in the mask. "
+    msg += (
+        "This may lead to a misalignment of the mask and the "
+        "source dataset, leading to incorrect masking. Ensure "
+        "both inputs share the same CRS."
+    )
+    warnings.warn(msg, UserWarning, stacklevel=3)
 
 
 def _detect_driver(path):
