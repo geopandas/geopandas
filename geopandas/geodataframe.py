@@ -8,6 +8,7 @@ from typing import Any, Literal
 import numpy as np
 import pandas as pd
 from pandas import DataFrame, Series
+from pandas.api.types import is_numeric_dtype
 
 import shapely.errors
 from shapely.geometry import mapping, shape
@@ -2271,6 +2272,9 @@ default 'snappy'
 
         # Process non-spatial component
         data = self.drop(labels=self.geometry.name, axis=1)
+
+        aggfunc = _create_area_weighted_mean_aggfunc(aggfunc, self, by)
+
         aggregated_data = data.groupby(**groupby_kwargs).agg(aggfunc, **kwargs)
 
         aggregated_data.columns = aggregated_data.columns.to_flat_index()
@@ -2896,3 +2900,73 @@ def _dataframe_set_geometry(
 
 
 DataFrame.set_geometry = _dataframe_set_geometry
+
+
+def _check_geometry_is_2d(geom_type):
+    if any(
+        geometry_type_1d in geom_type.values
+        for geometry_type_1d in [
+            "Point",
+            "MultiPoint",
+            "LineString",
+            "MultiLineString",
+        ]
+    ):
+        raise ValueError(
+            "There are 1-dimensional geometry types (Points or "
+            "Linestrings) in your geodataframe. Aggfunc area-weighted-mean "
+            "only works on 2-dimensional geometry types (Polygons)."
+        )
+
+
+def _check_columns_are_numeric(data, by):
+    if any(by):
+        try:
+            data = data.drop(by, axis=1)
+        except Exception:
+            pass
+    if not all(is_numeric_dtype(data[col]) for col in data.columns):
+        raise ValueError(
+            "aggfunc area_weighted_mean does not work on "
+            "non-numeric columns in the dataframe. Please "
+            "remove all non-numeric columns first or use "
+            "a dictionary input for aggfunc specifying a "
+            "non-numeric column."
+        )
+
+
+def _create_area_weighted_mean_aggfunc(aggfunc, df, by, numeric_only=False):
+    """
+    If area_weighted_mean is used as a str, within a list
+    or within a dict, it should be updated to the
+    lambda function. Other elements should remain unchanged.
+    """
+    data = df.drop(labels=df.geometry.name, axis=1)
+
+    area_weighted_mean_function = lambda x: np.average(
+        x, weights=df.loc[x.index, df.geometry.name].area
+    )
+
+    if isinstance(aggfunc, str):
+        if aggfunc == "area_weighted_mean":
+            _check_geometry_is_2d(df.geometry.geom_type)
+            _check_columns_are_numeric(data, by)
+            aggfunc = area_weighted_mean_function
+    elif isinstance(aggfunc, list):
+        if "area_weighted_mean" in aggfunc:
+            _check_geometry_is_2d(df.geometry.geom_type)
+            _check_columns_are_numeric(data, by)
+            aggfunc[aggfunc.index("area_weighted_mean")] = area_weighted_mean_function
+    elif isinstance(aggfunc, dict):
+        if "area_weighted_mean" in aggfunc.values():
+            _check_geometry_is_2d(df.geometry.geom_type)
+
+            area_weighted_mean_columns = [
+                x for x in aggfunc.keys() if aggfunc[x] == "area_weighted_mean"
+            ]
+            data = data[area_weighted_mean_columns]
+            _check_columns_are_numeric(data, by)
+            for col in area_weighted_mean_columns:
+                aggfunc[col] = area_weighted_mean_function
+
+    return aggfunc
