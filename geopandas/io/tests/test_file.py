@@ -274,7 +274,7 @@ def test_read_file_datetime_invalid(tmpdir, ext, engine):
         assert is_datetime64_any_dtype(res["date"])
         assert pd.isna(res["date"].iloc[-1])
     else:
-        assert res["date"].dtype == "object"
+        assert res["date"].dtype == "str" if PANDAS_GE_30 else object
         assert isinstance(res["date"].iloc[-1], str)
 
 
@@ -594,7 +594,11 @@ def test_read_file(engine, nybb_filename):
         "https://raw.githubusercontent.com/geopandas/geopandas/"
         "main/geopandas/tests/data/nybb_16a.zip",
         # url to zipfile without extension
-        "https://geonode.goosocean.org/download/480",
+        # https://github.com/geopandas/geopandas/issues/3583
+        pytest.param(
+            "https://geonode.goosocean.org/download/480",
+            marks=pytest.mark.xfail(reason="link broken"),
+        ),
         # url to web service
         "https://demo.pygeoapi.io/stable/collections/obs/items",
     ],

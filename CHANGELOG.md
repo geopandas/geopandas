@@ -17,10 +17,20 @@ New features and improvements:
 - Improve performance of `overlay` with `how=identity` (#3504).
 - Fix ambiguous error when GeoDataFrame is initialised with a column called "crs" (#3502).
 - Added `disjoint_subset` union algorithm for `union_all` and `dissolve` (#3534).
+- Added `constrained_delaunay_triangles` method to GeoSeries/GeoDataframe (#3552).
 - Added `to_pandas_kwargs` argument to `from_arrow`, `read_parquet` and `read_feather`
   to allow better control of conversion of non-geometric Arrow data to DataFrames (#3466).
 - Added `is_valid_coverage` and `invalid_coverage_edges` to GeoSeries/GeoDataFrame to allow validation of polygonal coverage (#3545).
+- Added `maximum_inscribed_circle` method from shapely to GeoSeries/GeoDataframe (#3544).
+- Added `minimum_clearance_line` method from shapely to GeoSeries/GeoDataframe (#3543).
+- Added `orient_polygons` method from shapely to GeoSeries/GeoDataFrame (#3559).
 - Added ``method`` and ``keep_collapsed`` argument to ``make_valid`` (#3548).
+- Added `simplify_coverage` method for topological simplification of polygonal coverages
+  to GeoSeries/GeoDataframe (#3541).
+- Added initial support of M coordinates (`m` and `has_m` properties, `include_m` in `get_coordinates`) (#3561).
+- Added `geom_equals_identical` method exposing `equals_identical` from shapely to GeoSeries/GeoDataFrame (#3560).
+- GeoPandas now attempts to use a range request when reading from an URL even if the header
+ does not directly indicate its support (#3572).
 
 Bug fixes:
 
@@ -39,6 +49,8 @@ Bug fixes:
   GeoDataFrames causing errors in `overlay` (#3424).
 - Fix regression where constructing a GeoSeries from a pd.Series with GeometryDtype values
   failed when `crs` was provided (#3383).
+- Fix plotting of polygons with holes by normalizing the coordinate order prior to plotting (#3483).
+- Fix an issue in plotting when polygon patches were not closed (#3576).
 
 Notes on dependencies:
 

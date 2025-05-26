@@ -763,6 +763,12 @@ def _read_parquet(
     schema, metadata = _read_parquet_schema_and_metadata(path, filesystem)
 
     geo_metadata = _validate_and_decode_metadata(metadata)
+    if len(geo_metadata["columns"]) == 0:
+        raise ValueError(
+            """No geometry columns are included in the columns read from
+            the Parquet/Feather file.  To read this file without geometry columns,
+            use pandas.read_parquet/read_feather() instead."""
+        )
 
     bbox_filter = (
         _get_parquet_bbox_filter(geo_metadata, bbox) if bbox is not None else None

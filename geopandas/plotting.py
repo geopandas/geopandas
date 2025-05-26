@@ -29,6 +29,7 @@ def _sanitize_geoms(geoms, prefix="Multi"):
     """
     # TODO(shapely) look into simplifying this with
     # shapely.get_parts(geoms, return_index=True) from shapely 2.0
+    geoms = geoms.normalize()
     components, component_index = [], []
 
     if (
@@ -104,8 +105,11 @@ def _PolygonPatch(polygon, **kwargs):
     from matplotlib.path import Path
 
     path = Path.make_compound_path(
-        Path(np.asarray(polygon.exterior.coords)[:, :2]),
-        *[Path(np.asarray(ring.coords)[:, :2]) for ring in polygon.interiors],
+        Path(np.asarray(polygon.exterior.coords)[:, :2], closed=True),
+        *[
+            Path(np.asarray(ring.coords)[:, :2], closed=True)
+            for ring in polygon.interiors
+        ],
     )
     return PathPatch(path, **kwargs)
 
