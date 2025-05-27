@@ -31,6 +31,7 @@ New features and improvements:
 - Added `geom_equals_identical` method exposing `equals_identical` from shapely to GeoSeries/GeoDataFrame (#3560).
 - GeoPandas now attempts to use a range request when reading from an URL even if the header
  does not directly indicate its support (#3572).
+- Added `area_weighted_mean` aggfunc option to `GeoDataFrame.dissolve()` (#3229)
 
 Bug fixes:
 
