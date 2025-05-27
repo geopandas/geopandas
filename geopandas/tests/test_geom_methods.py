@@ -650,10 +650,10 @@ class TestGeomMethods:
             ],
             index=self.g0.index,
         )
-        assert_array_dtype_equal(expected, self.g0.relate(self.inner_sq))
+        assert_series_equal(expected, self.g0.relate(self.inner_sq))
 
         expected = Series(["FF0FFF212", None], index=self.g6.index)
-        assert_array_dtype_equal(expected, self.g6.relate(self.na_none))
+        assert_series_equal(expected, self.g6.relate(self.na_none))
 
         expected = Series(
             [
@@ -669,7 +669,7 @@ class TestGeomMethods:
             index=range(8),
         )
 
-        assert_array_dtype_equal(expected, self.g0.relate(self.g9, align=True))
+        assert_series_equal(expected, self.g0.relate(self.g9, align=True))
 
         expected = Series(
             [
@@ -683,7 +683,7 @@ class TestGeomMethods:
             ],
             index=self.g0.index,
         )
-        assert_array_dtype_equal(expected, self.g0.relate(self.g9, align=False))
+        assert_series_equal(expected, self.g0.relate(self.g9, align=False))
 
     def test_relate_pattern(self):
         expected = Series([True] * 4 + [False] * 3, index=self.g0.index, dtype=bool)
@@ -959,6 +959,18 @@ class TestGeomMethods:
         expected = Series([False, True], self.g_3d.index)
         self._test_unary_real("has_z", expected, self.g_3d)
 
+    @pytest.mark.skipif(not SHAPELY_GE_21, reason="requires shapely 2.1")
+    @pytest.mark.skipif(shapely.geos_version < (3, 12, 0), reason="requires GEOS>=3.12")
+    def test_has_m(self):
+        s = GeoSeries.from_wkt(
+            [
+                "POINT M (2 3 5)",
+                "POINT Z (1 2 3)",
+            ],
+        )
+        expected = Series([True, False])
+        self._test_unary_real("has_m", expected, s)
+
     def test_xyz_points(self):
         expected_x = [-73.9847, -74.0446]
         expected_y = [40.7484, 40.6893]
@@ -971,6 +983,19 @@ class TestGeomMethods:
         # mixed dimensions
         expected_z = [30.3244, 31.2344, np.nan]
         assert_array_dtype_equal(expected_z, self.landmarks_mixed.geometry.z)
+
+    @pytest.mark.skipif(not SHAPELY_GE_21, reason="requires shapely 2.1")
+    def test_m_points(self):
+        s = GeoSeries.from_wkt(
+            [
+                "POINT M (2 3 5)",
+                "POINT M (1 2 3)",
+                "POINT (0 0)",
+            ]
+        )
+
+        expected = [5, 3, np.nan]
+        assert_array_dtype_equal(expected, s.m)
 
     def test_xyz_points_empty(self):
         expected_x = [-73.9847, -74.0446, -73.9847, np.nan]
@@ -1012,6 +1037,30 @@ class TestGeomMethods:
         polygon2 = Polygon([(0, 0), (0, 1), (1, 1)])
         expected = GeoSeries([polygon2, linestring, point])
         assert_geoseries_equal(series.normalize(), expected)
+
+    @pytest.mark.skipif(not SHAPELY_GE_21, reason="requires Shapely>=2.1")
+    def test_orient_polygons(self):
+        polygon = Polygon(
+            [(0, 0), (0, 10), (10, 10), (10, 0), (0, 0)],
+            holes=[[(2, 2), (2, 4), (4, 4), (4, 2), (2, 2)]],
+        )
+        linestring = LineString([(0, 0), (1, 1), (1, 0)])
+        point = Point(0, 0)
+        series = GeoSeries([polygon, linestring, point])
+
+        polygon2 = Polygon(
+            [(0, 0), (10, 0), (10, 10), (0, 10), (0, 0)],
+            holes=[[(2, 2), (2, 4), (4, 4), (4, 2), (2, 2)]],
+        )
+        expected = GeoSeries([polygon2, linestring, point])
+        assert_geoseries_equal(series.orient_polygons(), expected)
+
+        polygon_cw = Polygon(
+            [(0, 0), (0, 10), (10, 10), (10, 0), (0, 0)],
+            holes=[[(2, 2), (2, 4), (4, 4), (4, 2), (2, 2)]],
+        )
+        expected = GeoSeries([polygon_cw, linestring, point])
+        assert_geoseries_equal(series.orient_polygons(exterior_cw=True), expected)
 
     def test_make_valid(self):
         polygon1 = Polygon([(0, 0), (0, 2), (1, 1), (2, 2), (2, 0), (1, 1), (0, 0)])
@@ -1958,6 +2007,36 @@ class TestGeomMethods:
             index=[0, 1, 3, 3, 3, 3, 4, 4, 4, 4, 6, 6, 6],
         )
         assert_frame_equal(self.g11.get_coordinates(include_z=True), expected)
+
+    @pytest.mark.skipif(not SHAPELY_GE_21, reason="requires shapely 2.1")
+    def test_get_coordinates_m(self):
+        s = GeoSeries.from_wkt(
+            [
+                "POINT M (2 3 5)",
+                "POINT ZM (1 2 3 4)",
+            ],
+        )
+
+        # only m
+        expected = DataFrame(
+            data=np.array([[2.0, 3.0, 5.0], [1.0, 2.0, 4.0]]),
+            columns=["x", "y", "m"],
+        )
+        assert_frame_equal(s.get_coordinates(include_m=True), expected)
+
+        # only z
+        expected = DataFrame(
+            data=np.array([[2.0, 3.0, np.nan], [1.0, 2.0, 3.0]]),
+            columns=["x", "y", "z"],
+        )
+        assert_frame_equal(s.get_coordinates(include_z=True), expected)
+
+        # both
+        expected = DataFrame(
+            data=np.array([[2.0, 3.0, np.nan, 5.0], [1.0, 2.0, 3.0, 4.0]]),
+            columns=["x", "y", "z", "m"],
+        )
+        assert_frame_equal(s.get_coordinates(include_z=True, include_m=True), expected)
 
     def test_get_coordinates_ignore(self):
         expected = DataFrame(

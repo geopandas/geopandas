@@ -384,7 +384,7 @@ GeometryCollection
         """
         return Series(self.geometry.values.is_valid_reason(), index=self.index)
 
-    def is_valid_coverage(self, gap_width=0.0):
+    def is_valid_coverage(self, *, gap_width=0.0):
         """Returns a ``bool`` indicating whether a ``GeoSeries`` forms a valid coverage
 
         A ``GeoSeries`` of valid polygons is considered a coverage if the polygons are:
@@ -402,6 +402,10 @@ GeometryCollection
 
         Geometries that are not Polygon or MultiPolygon are ignored and an empty
         LineString is returned.
+
+        Requires Shapely >= 2.1.
+
+        .. versionadded:: 1.1.0
 
         Parameters
         ----------
@@ -452,7 +456,7 @@ GeometryCollection
         """
         return self.geometry.values.is_valid_coverage(gap_width=gap_width)
 
-    def invalid_coverage_edges(self, gap_width=0.0):
+    def invalid_coverage_edges(self, *, gap_width=0.0):
         """Returns a ``GeoSeries`` containing edges causing invalid polygonal coverage
 
         This method returns (Multi)LineStrings showing the location of edges violating
@@ -471,6 +475,10 @@ GeometryCollection
         ``False`` and this method can be used to find the edges of those gaps.
 
         Geometries that are not Polygon or MultiPolygon are ignored.
+
+        Requires Shapely >= 2.1.
+
+        .. versionadded:: 1.1.0
 
         Parameters
         ----------
@@ -843,6 +851,39 @@ GeometryCollection
         """
         return _delegate_property("has_z", self)
 
+    @property
+    def has_m(self):
+        """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
+        features that have a m-component.
+
+        Requires Shapely >= 2.1.
+
+        .. versionadded:: 1.1.0
+
+        Examples
+        --------
+        >>> from shapely.geometry import Point
+        >>> s = geopandas.GeoSeries.from_wkt(
+        ...     [
+        ...         "POINT M (2 3 5)",
+        ...         "POINT Z (1 2 3)",
+        ...         "POINT (0 0)",
+        ...     ]
+        ... )
+        >>> s
+        0    POINT M (2 3 5)
+        1    POINT Z (1 2 3)
+        2        POINT (0 0)
+        dtype: geometry
+
+        >>> s.has_m
+        0     True
+        1    False
+        2    False
+        dtype: bool
+        """
+        return _delegate_property("has_m", self)
+
     def get_precision(self):
         """Returns a ``Series`` of the precision of each geometry.
 
@@ -1102,6 +1143,10 @@ GeometryCollection
         polygon(s) to be in the set of resulting triangle edges. An
         unconstrained delaunay triangulation only triangulates based on the
         vertices, hence triangle edges could cross polygon boundaries.
+
+        Requires Shapely >= 2.1.
+
+        .. versionadded:: 1.1.0
 
         Examples
         --------
@@ -1834,7 +1879,7 @@ GeometryCollection
         """
         return _delegate_geo_method("minimum_bounding_circle", self)
 
-    def maximum_inscribed_circle(self, tolerance=None):
+    def maximum_inscribed_circle(self, *, tolerance=None):
         """Returns a ``GeoSeries`` of geometries representing the largest circle that
         is fully contained within the input geometry.
 
@@ -1853,6 +1898,10 @@ GeometryCollection
         Returns a GeoSeries with two-point linestrings rows, with the first point at the
         center of the inscribed circle and the second on the boundary of the inscribed
         circle.
+
+        Requires Shapely >= 2.1.
+
+        .. versionadded:: 1.1.0
 
         Parameters
         ----------
@@ -1974,6 +2023,10 @@ GeometryCollection
 
         If the geometry has no minimum clearance, an empty LineString will be returned.
 
+        Requires Shapely >= 2.1.
+
+        .. versionadded:: 1.1.0
+
         Examples
         --------
 
@@ -2036,7 +2089,63 @@ GeometryCollection
         """
         return _delegate_geo_method("normalize", self)
 
-    def make_valid(self, method="linework", keep_collapsed=True):
+    def orient_polygons(self, *, exterior_cw=False):
+        """Returns a ``GeoSeries`` of geometries with enforced ring orientation.
+
+        Enforce a ring orientation on all polygonal elements in the ``GeoSeries``.
+
+        Forces (Multi)Polygons to use a counter-clockwise orientation for their exterior
+        ring, and a clockwise orientation for their interior rings (or the oppposite if
+        ``exterior_cw=True``).
+
+        Also processes geometries inside a GeometryCollection in the same way. Other
+        geometries are returned unchanged.
+
+        Requires Shapely >= 2.1.
+
+        .. versionadded:: 1.1.0
+
+        Parameters
+        ----------
+        exterior_cw : bool
+            If ``True``, exterior rings will be clockwise and interior rings will be
+            counter-clockwise.
+
+        Examples
+        --------
+
+        >>> from shapely.geometry import Polygon, LineString, Point
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Polygon(
+        ...             [(0, 0), (0, 10), (10, 10), (10, 0), (0, 0)],
+        ...             holes=[[(2, 2), (2, 4), (4, 4), (4, 2), (2, 2)]],
+        ...     ),
+        ...         LineString([(0, 0), (1, 1), (1, 0)]),
+        ...         Point(0, 0),
+        ...     ],
+        ... )
+        >>> s
+        0    POLYGON ((0 0, 0 10, 10 10, 10 0, 0 0), (2 2, ...
+        1                           LINESTRING (0 0, 1 1, 1 0)
+        2                                          POINT (0 0)
+        dtype: geometry
+
+        >>> s.orient_polygons()
+        0    POLYGON ((0 0, 10 0, 10 10, 0 10, 0 0), (2 2, ...
+        1                           LINESTRING (0 0, 1 1, 1 0)
+        2                                          POINT (0 0)
+        dtype: geometry
+
+        >>> s.orient_polygons(exterior_cw=True)
+        0    POLYGON ((0 0, 0 10, 10 10, 10 0, 0 0), (2 2, ...
+        1                           LINESTRING (0 0, 1 1, 1 0)
+        2                                          POINT (0 0)
+        dtype: geometry
+        """
+        return _delegate_geo_method("orient_polygons", self, exterior_cw=exterior_cw)
+
+    def make_valid(self, *, method="linework", keep_collapsed=True):
         """Repairs invalid geometries.
 
         Returns a ``GeoSeries`` with valid geometries.
@@ -2425,7 +2534,7 @@ GeometryCollection
 
         return self.geometry.values.union_all()
 
-    def union_all(self, method="unary", grid_size=None):
+    def union_all(self, method="unary", *, grid_size=None):
         """Returns a geometry containing the union of all geometries in the
         ``GeoSeries``.
 
@@ -2449,7 +2558,7 @@ GeometryCollection
             * ``"disjoint_subset:``: use the disjoint subset union algorithm. This
               option is optimized for inputs that can be divided into subsets that do
               not intersect. If there is only one such subset, performance can be
-              expected to be worse than ``"unary"``.
+              expected to be worse than ``"unary"``. Requires Shapely >= 2.1.
 
         grid_size : float, default None
             When grid size is specified, a fixed-precision space is used to perform the
@@ -2964,6 +3073,7 @@ GeometryCollection
         See also
         --------
         GeoSeries.geom_equals_exact
+        GeoSeries.geom_equals_identical
 
         """
         return _binary_op("geom_equals", self, other, align)
@@ -3028,10 +3138,86 @@ GeometryCollection
         See also
         --------
         GeoSeries.geom_equals
+        GeoSeries.geom_equals_identical
         """
         return _binary_op(
             "geom_equals_exact", self, other, tolerance=tolerance, align=align
         )
+
+    def geom_equals_identical(self, other, align=None):
+        """Return True for all geometries that are identical aligned *other*, else
+        False.
+
+        This function verifies whether geometries are pointwise equivalent by checking
+        that the structure, ordering, and values of all vertices are identical in all
+        dimensions.
+
+        Similarly to :meth:`geom_equals_exact`, this function uses exact coordinate
+        equality and requires coordinates to be in the same order for all components
+        (vertices, rings, or parts) of a geometry. However, in contrast to
+        :meth:`geom_equals_exact`, this function does not allow specifying specify
+        a tolerance, and additionally requires all dimensions to be the same
+        (:meth:`geom_equals_exact` ignores the Z and M dimensions), where NaN values
+        are considered to be equal to other NaN values.
+
+        This function is the vectorized equivalent of scalar equality of geometry
+        objects (``a == b``, i.e. ``__eq__``).
+
+        The operation works on a 1-to-1 row-wise manner:
+
+        .. image:: ../../../_static/binary_op-01.svg
+           :align: center
+
+        Requires Shapely >= 2.1.
+
+        .. versionadded:: 1.1.0
+
+        Parameters
+        ----------
+        other : GeoSeries or geometric object
+            The GeoSeries (elementwise) or geometric object to compare to.
+        align : bool | None (default None)
+            If True, automatically aligns GeoSeries based on their indices.
+            If False, the order of elements is preserved. None defaults to True.
+
+        Returns
+        -------
+        Series (bool)
+
+        Examples
+        --------
+        >>> from shapely.geometry import Point
+        >>> s = geopandas.GeoSeries(
+        ...     [
+        ...         Point(0, 1.1),
+        ...         Point(0, 1.0),
+        ...         Point(0, 1.2),
+        ...     ]
+        ... )
+        >>> s
+        0    POINT (0 1.1)
+        1      POINT (0 1)
+        2    POINT (0 1.2)
+        dtype: geometry
+
+
+        >>> s.geom_equals_identical(Point(0, 1))
+        0    False
+        1     True
+        2    False
+        dtype: bool
+
+        Notes
+        -----
+        This method works in a row-wise manner. It does not check if an element
+        of one GeoSeries is equal to *any* element of the other one.
+
+        See also
+        --------
+        GeoSeries.geom_equals
+        GeoSeries.geom_equals_exact
+        """
+        return _binary_op("geom_equals_identical", self, other, align=align)
 
     def crosses(self, other, align=None):
         """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
@@ -5370,7 +5556,7 @@ GeometryCollection
             "simplify", self, tolerance=tolerance, preserve_topology=preserve_topology
         )
 
-    def simplify_coverage(self, tolerance, simplify_boundary=True):
+    def simplify_coverage(self, tolerance, *, simplify_boundary=True):
         """Returns a ``GeoSeries`` containing a simplified representation of
         polygonal coverage.
 
@@ -5393,6 +5579,8 @@ GeometryCollection
 
         If the geometry is polygonal but does not form a valid coverage due to overlaps,
         it will be simplified but it may result in invalid coverage topology.
+
+        Requires Shapely >= 2.1.
 
         .. versionadded:: 1.1.0
 
@@ -6078,7 +6266,9 @@ GeometryCollection
         """
         return _CoordinateIndexer(self)
 
-    def get_coordinates(self, include_z=False, ignore_index=False, index_parts=False):
+    def get_coordinates(
+        self, include_z=False, ignore_index=False, index_parts=False, *, include_m=False
+    ):
         """Gets coordinates from a :class:`GeoSeries` as a :class:`~pandas.DataFrame` of
         floats.
 
@@ -6098,6 +6288,8 @@ GeometryCollection
            If True, the resulting index will be a :class:`~pandas.MultiIndex` (original
            index with an additional level indicating the ordering of the coordinate
            pairs: a new zero-based index for each geometry in the original GeoSeries).
+        include_m : bool, default False
+            Include M coordinates. Requires shapely >= 2.1.
 
         Returns
         -------
@@ -6149,13 +6341,27 @@ GeometryCollection
           2  3.0  1.0
           3  3.0 -1.0
         """
-        coords, outer_idx = shapely.get_coordinates(
-            self.geometry.values._data, include_z=include_z, return_index=True
-        )
+        if include_m:
+            if not compat.SHAPELY_GE_21:
+                raise ImportError("Shapely >= 2.1 is required for include_m=True.")
+
+            # can be merged with the one below once min requirement is shapely 2.1
+            coords, outer_idx = shapely.get_coordinates(
+                self.geometry.values._data,
+                include_z=include_z,
+                include_m=include_m,
+                return_index=True,
+            )
+        else:
+            coords, outer_idx = shapely.get_coordinates(
+                self.geometry.values._data, include_z=include_z, return_index=True
+            )
 
         column_names = ["x", "y"]
         if include_z:
             column_names.append("z")
+        if include_m:
+            column_names.append("m")
 
         index = _get_index_for_parts(
             self.index,

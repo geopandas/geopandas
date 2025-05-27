@@ -17,7 +17,7 @@ from pandas.api.types import is_datetime64_any_dtype
 from shapely.geometry import Point, Polygon, box, mapping
 
 import geopandas
-from geopandas import GeoDataFrame, read_file
+from geopandas import GeoDataFrame, GeoSeries, points_from_xy, read_file
 from geopandas._compat import HAS_PYPROJ, PANDAS_GE_30
 from geopandas.io.file import _EXTENSION_TO_DRIVER, _detect_driver
 
@@ -274,7 +274,7 @@ def test_read_file_datetime_invalid(tmpdir, ext, engine):
         assert is_datetime64_any_dtype(res["date"])
         assert pd.isna(res["date"].iloc[-1])
     else:
-        assert res["date"].dtype == "object"
+        assert res["date"].dtype == "str" if PANDAS_GE_30 else object
         assert isinstance(res["date"].iloc[-1], str)
 
 
@@ -594,7 +594,11 @@ def test_read_file(engine, nybb_filename):
         "https://raw.githubusercontent.com/geopandas/geopandas/"
         "main/geopandas/tests/data/nybb_16a.zip",
         # url to zipfile without extension
-        "https://geonode.goosocean.org/download/480",
+        # https://github.com/geopandas/geopandas/issues/3583
+        pytest.param(
+            "https://geonode.goosocean.org/download/480",
+            marks=pytest.mark.xfail(reason="link broken"),
+        ),
         # url to web service
         "https://demo.pygeoapi.io/stable/collections/obs/items",
     ],
@@ -696,6 +700,84 @@ def test_read_text_file_fsspec(file_path, engine):
     with fsspec.open(file_path, "r") as f:
         gdf = read_file(f, engine=engine)
         assert isinstance(gdf, geopandas.GeoDataFrame)
+
+
+@pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not installed")
+def test_read_file_crs_warning_messages(engine):
+    """
+    Testing warning messages when one of, or both of, the
+    file or mask is missing a crs.
+    """
+    file_with_crs = os.path.join(tempfile.mkdtemp(), "file_with_crs.shp")
+    file_without_crs = os.path.join(tempfile.mkdtemp(), "file_without_crs.shp")
+
+    df = pd.DataFrame(
+        {
+            "Latitude": [0, 1, 2, 3, 4],
+            "Longitude": [0, 1, 2, 3, 4],
+        }
+    )
+
+    gdf_with_crs = GeoDataFrame(
+        df, geometry=points_from_xy(df.Longitude, df.Latitude), crs="EPSG:4326"
+    )
+    gdf_without_crs = GeoDataFrame(
+        df, geometry=points_from_xy(df.Longitude, df.Latitude)
+    )
+
+    gdf_with_crs.to_file(file_with_crs)
+    gdf_without_crs.to_file(file_without_crs)
+
+    with pytest.warns(UserWarning, match="""There is no CRS defined in the mask."""):
+        data = read_file(file_with_crs, mask=gdf_without_crs, engine=engine)
+        assert_geodataframe_equal(data, gdf_with_crs)
+
+    with pytest.warns(
+        UserWarning, match="""There is no CRS defined in the source dataset."""
+    ):
+        data = read_file(file_without_crs, mask=gdf_with_crs, engine=engine)
+        assert_geodataframe_equal(data, gdf_without_crs)
+
+    with pytest.warns(
+        UserWarning,
+        match="""There is no CRS defined in the source dataset nor mask.""",
+    ):
+        data = read_file(file_without_crs, mask=gdf_without_crs, engine=engine)
+        assert_geodataframe_equal(data, gdf_without_crs)
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        data = read_file(file_with_crs, mask=gdf_with_crs, engine=engine)
+        assert_geodataframe_equal(data, gdf_with_crs)
+
+    # Check with GeoSeries as a mask
+    series_with_crs = GeoSeries(
+        points_from_xy(df.Longitude, df.Latitude), crs="EPSG:4326"
+    )
+
+    series_without_crs = GeoSeries(points_from_xy(df.Longitude, df.Latitude))
+
+    with pytest.warns(UserWarning, match="""There is no CRS defined in the mask."""):
+        data = read_file(file_with_crs, mask=series_without_crs, engine=engine)
+        assert_geodataframe_equal(data, gdf_with_crs)
+
+    with pytest.warns(
+        UserWarning, match="""There is no CRS defined in the source dataset."""
+    ):
+        data = read_file(file_without_crs, mask=series_with_crs, engine=engine)
+        assert_geodataframe_equal(data, gdf_without_crs)
+
+    with pytest.warns(
+        UserWarning,
+        match="""There is no CRS defined in the source dataset nor mask.""",
+    ):
+        data = read_file(file_without_crs, mask=series_without_crs, engine=engine)
+        assert_geodataframe_equal(data, gdf_without_crs)
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        data = read_file(file_with_crs, mask=series_with_crs, engine=engine)
+        assert_geodataframe_equal(data, gdf_with_crs)
 
 
 def test_infer_zipped_file(engine, nybb_filename):

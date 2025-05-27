@@ -11,6 +11,8 @@ New features and improvements:
 - Add ``grid_size`` parameter to ``union_all`` and ``dissolve`` (#3445).
 - `GeoDataFrame.plot` now supports `pd.Index` as an input for the `column` keyword (#3463).
 - Avoid change of the plot aspect when plotting missing values (#3438).
+- A warning message is raised in `read_file` when a GeoDataFrame or GeoSeries mask
+  and/or the source dataset is missing a defined CRS. (#3464)
 - GeoDataFrame no longer hard-codes the class internally, allowing easier subclassing (#3505).
 - Improve performance of `overlay` with `how=identity` (#3504).
 - Fix ambiguous error when GeoDataFrame is initialised with a column called "crs" (#3502).
@@ -21,9 +23,14 @@ New features and improvements:
 - Added `is_valid_coverage` and `invalid_coverage_edges` to GeoSeries/GeoDataFrame to allow validation of polygonal coverage (#3545).
 - Added `maximum_inscribed_circle` method from shapely to GeoSeries/GeoDataframe (#3544).
 - Added `minimum_clearance_line` method from shapely to GeoSeries/GeoDataframe (#3543).
+- Added `orient_polygons` method from shapely to GeoSeries/GeoDataFrame (#3559).
 - Added ``method`` and ``keep_collapsed`` argument to ``make_valid`` (#3548).
 - Added `simplify_coverage` method for topological simplification of polygonal coverages
   to GeoSeries/GeoDataframe (#3541).
+- Added initial support of M coordinates (`m` and `has_m` properties, `include_m` in `get_coordinates`) (#3561).
+- Added `geom_equals_identical` method exposing `equals_identical` from shapely to GeoSeries/GeoDataFrame (#3560).
+- GeoPandas now attempts to use a range request when reading from an URL even if the header
+ does not directly indicate its support (#3572).
 
 Bug fixes:
 
@@ -42,6 +49,8 @@ Bug fixes:
   GeoDataFrames causing errors in `overlay` (#3424).
 - Fix regression where constructing a GeoSeries from a pd.Series with GeometryDtype values
   failed when `crs` was provided (#3383).
+- Fix plotting of polygons with holes by normalizing the coordinate order prior to plotting (#3483).
+- Fix an issue in plotting when polygon patches were not closed (#3576).
 
 Notes on dependencies:
 

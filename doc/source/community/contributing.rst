@@ -165,16 +165,16 @@ and running::
 
       conda env create -f environment-dev.yml
 
-This will create a new conda environment named ``geopandas_dev``.
+This will create a new conda environment named ``geopandas-dev``.
 
 Creating the environment manually
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Alternatively, it is possible to create a development environment manually.  To do this,
-tell conda to create a new environment named ``geopandas_dev``, or any other name you would like
+tell conda to create a new environment named ``geopandas-dev``, or any other name you would like
 for this environment, by running::
 
-      conda create -n geopandas_dev python
+      conda create -n geopandas-dev python
 
 This will create the new environment, and not touch any of your existing environments,
 nor any existing python installation.
@@ -185,7 +185,7 @@ Working with the environment
 To work in this environment, you need to ``activate`` it. The instructions below
 should work for both Windows, Mac and Linux::
 
-      conda activate geopandas_dev
+      conda activate geopandas-dev
 
 Once your environment is activated, you will see a confirmation message to
 indicate you are in the new development environment.

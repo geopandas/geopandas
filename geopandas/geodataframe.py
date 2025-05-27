@@ -160,6 +160,13 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
             and not isinstance(data, GeoDataFrame)
         ):
             kwargs.update(copy=True)
+
+        if data is None and "columns" not in kwargs:
+            # pandas will interpret "str" as object dtype for pandas < 3 and
+            # as string dtype for pandas >= 3. This ensures we still get string
+            # columns when doing GeoDataFrame(geometry=[..])
+            kwargs["columns"] = pd.Index([], dtype="str")
+
         super().__init__(data, *args, **kwargs)
 
         # set_geometry ensures the geometry data have the proper dtype,
@@ -2198,7 +2205,7 @@ default 'snappy'
             * ``"disjoint_subset:``: use the disjoint subset union algorithm. This
               option is optimized for inputs that can be divided into subsets that do
               not intersect. If there is only one such subset, performance can be
-              expected to be worse than ``"unary"``.
+              expected to be worse than ``"unary"``.  Requires Shapely >= 2.1.
 
 
         grid_size : float, default None

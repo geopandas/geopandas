@@ -34,6 +34,7 @@ General methods and attributes
    GeoSeries.x
    GeoSeries.y
    GeoSeries.z
+   GeoSeries.m
    GeoSeries.get_coordinates
    GeoSeries.count_coordinates
    GeoSeries.count_geometries
@@ -56,6 +57,7 @@ Unary predicates
    GeoSeries.is_valid_reason
    GeoSeries.is_valid_coverage
    GeoSeries.invalid_coverage_edges
+   GeoSeries.has_m
    GeoSeries.has_z
    GeoSeries.is_ccw
 
@@ -73,6 +75,7 @@ Binary predicates
    GeoSeries.dwithin
    GeoSeries.geom_equals
    GeoSeries.geom_equals_exact
+   GeoSeries.geom_equals_identical
    GeoSeries.intersects
    GeoSeries.overlaps
    GeoSeries.touches
@@ -117,6 +120,7 @@ Constructive methods and attributes
    GeoSeries.minimum_clearance_line
    GeoSeries.minimum_rotated_rectangle
    GeoSeries.normalize
+   GeoSeries.orient_polygons
    GeoSeries.remove_repeated_points
    GeoSeries.reverse
    GeoSeries.sample_points
