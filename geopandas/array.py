@@ -22,7 +22,6 @@ from shapely.geometry.base import BaseGeometry
 from ._compat import (
     GEOS_GE_312,
     HAS_PYPROJ,
-    PANDAS_GE_21,
     PANDAS_GE_22,
     SHAPELY_GE_21,
     requires_pyproj,
@@ -1328,7 +1327,7 @@ class GeometryArray(ExtensionArray):
     def _pad_or_backfill(
         self, method, limit=None, limit_area=None, copy=True, **kwargs
     ):
-        if PANDAS_GE_21 and not PANDAS_GE_22:
+        if not PANDAS_GE_22:
             if limit_area is not None:
                 # limit area not supported, but, but we feed through
                 # so the caller gets the pandas exception
