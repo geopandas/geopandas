@@ -1277,7 +1277,7 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
             geometry columns are encoded to WKB
         """
 
-        df = DataFrame(self.copy())
+        df = DataFrame(self.copy(deep=not PANDAS_GE_30))
 
         # Encode all geometry columns to WKB
         for col in df.columns[df.dtypes == "geometry"]:
@@ -1300,7 +1300,7 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
             geometry columns are encoded to WKT
         """
 
-        df = DataFrame(self.copy())
+        df = DataFrame(self.copy(deep=not PANDAS_GE_30))
 
         # Encode all geometry columns to WKT
         for col in df.columns[df.dtypes == "geometry"]:
@@ -1749,7 +1749,7 @@ default 'snappy'
 
         """
         if not inplace:
-            df = self.copy()
+            df = self.copy(deep=not PANDAS_GE_30)
         else:
             df = self
         df.geometry = df.geometry.set_crs(
@@ -1857,7 +1857,7 @@ default 'snappy'
         if inplace:
             df = self
         else:
-            df = self.copy()
+            df = self.copy(deep=not PANDAS_GE_30)
         geom = df.geometry.to_crs(crs=crs, epsg=epsg)
         df.geometry = geom
         if not inplace:
