@@ -1522,7 +1522,8 @@ class TestConstructor:
         assert gdf.shape == (1, 2)
         assert gdf.active_geometry_name == "geometry"
         assert gdf.geometry[0] is None
-        assert gdf.crs == "EPSG:4326"
+        if compat.HAS_PYPROJ:
+            assert gdf.crs == "EPSG:4326"
 
 
 @pytest.mark.skipif(not compat.HAS_PYPROJ, reason="pyproj not available")
