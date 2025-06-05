@@ -212,7 +212,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 # special case for geometry = [], has float dtype
                 or (len(self) == 0 and geom_dtype == "float")
                 # special case for geometry = [np.nan]
-                or (len(self) == 1 and pd.isna(self["geometry"].iloc[0]))
+                or ((not self.empty) and pd.isna(self["geometry"]).all())
             ):
                 try:
                     self["geometry"] = _ensure_geometry(self["geometry"].values, crs)
