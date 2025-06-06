@@ -1,5 +1,9 @@
 # Changelog
 
+## Version 1.1.1
+
+- Fix regression in the GeoDataFrame constructor when np.nan is given as an only geometry (#3591).
+
 ## Version 1.1.0 (June 1, 2025)
 
 Notes on dependencies:
