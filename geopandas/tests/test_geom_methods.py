@@ -347,6 +347,23 @@ class TestGeomMethods:
         assert len(self.g0.intersection(self.g9, align=True) == 8)
         assert len(self.g0.intersection(self.g9, align=False) == 7)
 
+    def test_intersection_grid_size(self):
+        poly1 = GeoSeries([Polygon([(0, 0), (2.2, 0), (2.2, 2.2), (0, 2.2)])])
+        poly2 = GeoSeries([Polygon([(0.8, 0.8), (3.2, 0.8), (3.2, 3.2), (0.8, 3.2)])])
+
+        result_no_grid_size = Polygon(
+            [(2.2, 2.2), (2.2, 0.8), (0.8, 0.8), (0.8, 2.2), (2.2, 2.2)]
+        )
+        result_grid_size_one = Polygon(
+            [(2.0, 2.0), (2.0, 1.0), (1.0, 1.0), (1.0, 2.0), (2.0, 2.0)]
+        )
+
+        self._test_binary_topological("intersection", result_no_grid_size, poly1, poly2)
+
+        self._test_binary_topological(
+            "intersection", result_grid_size_one, poly1, poly2, grid_size=1
+        )
+
     def test_clip_by_rect(self):
         self._test_binary_topological(
             "clip_by_rect", self.g1, self.g10, *self.sq.bounds
@@ -365,6 +382,26 @@ class TestGeomMethods:
     def test_union_polygon(self):
         self._test_binary_topological("union", self.sq, self.g1, self.t2)
 
+    def test_union_polygon_grid_size(self):
+        poly1 = GeoSeries([Polygon([(0, 0), (0, 1.0), (1.8, 1.0), (1.8, 0)])])
+        poly2 = GeoSeries([Polygon([(2.2, 0), (2.2, 1.0), (3.0, 1.0), (3.0, 0)])])
+
+        expected_no_grid_size = MultiPolygon(
+            [
+                Polygon([(0, 0), (0, 1.0), (1.8, 1.0), (1.8, 0)]),
+                Polygon([(2.2, 0), (2.2, 1.0), (3.0, 1.0), (3.0, 0)]),
+            ]
+        )
+
+        expected_grid_size_one = Polygon([(0, 0), (0, 1), (3, 1), (3, 0)])
+
+        self._test_binary_topological("union", expected_no_grid_size, poly1, poly2)
+        # Check no difference in polygon coverage
+        assert (
+            poly1.union(poly2, grid_size=1).difference(expected_grid_size_one)[0]
+            == self.empty_poly
+        )
+
     def test_symmetric_difference_series(self):
         self._test_binary_topological("symmetric_difference", self.sq, self.g3, self.g4)
 
@@ -377,6 +414,32 @@ class TestGeomMethods:
             "symmetric_difference", expected, self.g3, self.t1
         )
 
+    def test_symmetric_difference_poly_grid_size(self):
+        poly1 = GeoSeries(Polygon([(0, 0), (0, 1), (1.8, 1.0), (1.8, 0), (0, 0)]))
+        poly2 = GeoSeries(Polygon([(1.2, 0), (1.2, 1), (3.0, 1.0), (3.0, 0), (1.2, 0)]))
+        expected_no_grid_size = GeoSeries(
+            MultiPolygon(
+                [
+                    Polygon([(0, 1), (1.2, 1), (1.2, 0), (0, 0), (0, 1)]),
+                    Polygon([(1.8, 1), (3, 1), (3, 0), (1.8, 0), (1.8, 1)]),
+                ]
+            )
+        )
+        expected_grid_size_one = GeoSeries(
+            MultiPolygon(
+                [
+                    Polygon([(0, 1), (1, 1), (1, 0), (0, 0), (0, 1)]),
+                    Polygon([(2, 1), (3, 1), (3, 0), (2, 0), (2, 1)]),
+                ]
+            )
+        )
+        self._test_binary_topological(
+            "symmetric_difference", expected_no_grid_size, poly1, poly2
+        )
+        self._test_binary_topological(
+            "symmetric_difference", expected_grid_size_one, poly1, poly2, grid_size=1
+        )
+
     def test_difference_series(self):
         expected = GeoSeries([GeometryCollection(), self.t2])
         self._test_binary_topological("difference", expected, self.g1, self.g2)
@@ -387,6 +450,25 @@ class TestGeomMethods:
     def test_difference_poly(self):
         expected = GeoSeries([self.t1, self.t1])
         self._test_binary_topological("difference", expected, self.g1, self.t2)
+
+    def test_difference_poly_grid_size(self):
+        poly = Polygon([(0, 0), (0.8, 1.0), (0.0, 1.0), (0, 0)])
+
+        expected_no_grid_size = GeoSeries(
+            [
+                Polygon([(1, 1), (1, 0), (0, 0), (1, 1)]),
+                Polygon([(1, 1), (1, 0), (0, 0), (0.8, 1.0), (1.0, 1.0)]),
+            ]
+        )
+
+        expected_grid_size_one = self.g1.geometry
+
+        self._test_binary_topological(
+            "difference", expected_no_grid_size, self.g1, poly, grid_size=0
+        )
+        self._test_binary_topological(
+            "difference", expected_grid_size_one, self.g1, poly, grid_size=1
+        )
 
     def test_shortest_line(self):
         expected = GeoSeries([LineString([(1, 1), (5, 5)]), None])
