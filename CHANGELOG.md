@@ -1,5 +1,12 @@
 # Changelog
 
+## Version 1.1.1
+
+New features and improvements:
+
+- Add ``grid_size`` parameter to ``union``, ``difference``, ``symmetric_difference``
+  and ``intersection`` (#3593).
+
 ## Version 1.1.0
 
 New features and improvements:
