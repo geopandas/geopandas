@@ -920,18 +920,3 @@ class TestOverlayWikiExample:
     def test_b_identity_a(self):
         df_result = overlay(self.layer_b, self.layer_a, how="identity")
         assert_geodataframe_equal(df_result, self.b_identity_a)
-
-
-# def test_grid_size():
-#     polys1 = geopandas.GeoSeries([Polygon([(0,0), (2,0), (2,2), (0,2)]),
-#                               Polygon([(2,2), (4,2), (4,4), (2,4)])])
-#     polys2 = geopandas.GeoSeries([Polygon([(1,1), (3,1), (3,3), (1,3)]),
-#                                 Polygon([(3,3), (5,3), (5,5), (3,5)])])
-#     df1 = geopandas.GeoDataFrame({'geometry': polys1, 'df1_data':[1,2]})
-#     df2 = geopandas.GeoDataFrame({'geometry': polys2, 'df2_data':[1,2]})
-#     df1.plot()
-#     df2.plot()
-#     union_df = geopandas.overlay(df1, df2, how="union")
-#     diff_df = geopandas.overlay(df1, df2, how="difference")
-#     diff2_df = df1.difference(df2)
-#     import pdb; pdb.set_trace()
