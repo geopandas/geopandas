@@ -1513,6 +1513,32 @@ class TestConstructor:
         res = GeoDataFrame(df, geometry=Fruit.pear)
         assert res.active_geometry_name == Fruit.pear
 
+    def test_geometry_nan_scalar(self):
+        gdf = GeoDataFrame(
+            data=[[np.nan, np.nan]],
+            columns=["geometry", "something"],
+            crs="EPSG:4326",
+        )
+        assert gdf.shape == (1, 2)
+        assert gdf.active_geometry_name == "geometry"
+        assert gdf.geometry[0] is None
+        if compat.HAS_PYPROJ:
+            assert gdf.crs == "EPSG:4326"
+
+    def test_geometry_nan_array(self):
+        gdf = GeoDataFrame(
+            {
+                "geometry": [np.nan, None, pd.NA],
+                "something": [np.nan, np.nan, np.nan],
+            },
+            crs="EPSG:4326",
+        )
+        assert gdf.shape == (3, 2)
+        assert gdf.active_geometry_name == "geometry"
+        assert gdf.geometry.isna().all()
+        if compat.HAS_PYPROJ:
+            assert gdf.crs == "EPSG:4326"
+
 
 @pytest.mark.skipif(not compat.HAS_PYPROJ, reason="pyproj not available")
 def test_geodataframe_crs():
