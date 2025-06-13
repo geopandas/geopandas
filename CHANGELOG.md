@@ -1,9 +1,15 @@
 # Changelog
 
-## Version 1.1.1
-- Fix regression in the GeoDataFrame constructor when np.nan is given as an only geometry (#3591).
+## Version 1.2.0
+
+New features and improvements:
+
 - Add ``grid_size`` parameter to ``union``, ``difference``, ``symmetric_difference``
   and ``intersection`` (#3593).
+
+
+## Version 1.1.1
+- Fix regression in the GeoDataFrame constructor when np.nan is given as an only geometry (#3591).
 
 ## Version 1.1.0 (June 1, 2025)
 
