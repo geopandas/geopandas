@@ -827,23 +827,30 @@ class GeometryArray(ExtensionArray):
             shapely.clip_by_rect(self._data, xmin, ymin, xmax, ymax), crs=self.crs
         )
 
-    def difference(self, other):
+    def difference(self, other, grid_size=None):
         return GeometryArray(
-            self._binary_method("difference", self, other), crs=self.crs
+            self._binary_method("difference", self, other, grid_size=grid_size),
+            crs=self.crs,
         )
 
-    def intersection(self, other):
+    def intersection(self, other, grid_size=None):
         return GeometryArray(
-            self._binary_method("intersection", self, other), crs=self.crs
+            self._binary_method("intersection", self, other, grid_size=grid_size),
+            crs=self.crs,
         )
 
-    def symmetric_difference(self, other):
+    def symmetric_difference(self, other, grid_size=None):
         return GeometryArray(
-            self._binary_method("symmetric_difference", self, other), crs=self.crs
+            self._binary_method(
+                "symmetric_difference", self, other, grid_size=grid_size
+            ),
+            crs=self.crs,
         )
 
-    def union(self, other):
-        return GeometryArray(self._binary_method("union", self, other), crs=self.crs)
+    def union(self, other, grid_size=None):
+        return GeometryArray(
+            self._binary_method("union", self, other, grid_size=grid_size), crs=self.crs
+        )
 
     def shortest_line(self, other):
         return GeometryArray(
