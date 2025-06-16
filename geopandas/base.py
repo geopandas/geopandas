@@ -4463,6 +4463,10 @@ GeometryCollection
         align : bool | None (default None)
             If True, automatically aligns GeoSeries based on their indices.
             If False, the order of elements is preserved. None defaults to True.
+        grid_size : float | None (default None)
+            Precision grid size. If 0, will use double precision (will not modify
+            geometry if precision grid size was not previously set). If this value is
+            more precise than input geometry, the input geometry will not be modified.
 
         Returns
         -------
@@ -4578,6 +4582,10 @@ GeometryCollection
         align : bool | None (default None)
             If True, automatically aligns GeoSeries based on their indices.
             If False, the order of elements is preserved. None defaults to True.
+        grid_size : float | None (default None)
+            Precision grid size. If 0, will use double precision (will not modify
+            geometry if precision grid size was not previously set). If this value is
+            more precise than input geometry, the input geometry will not be modified.
 
         Returns
         -------
@@ -4692,6 +4700,10 @@ GeometryCollection
         align : bool | None (default None)
             If True, automatically aligns GeoSeries based on their indices.
             If False, the order of elements is preserved. None defaults to True.
+        grid_size : float | None (default None)
+            Precision grid size. If 0, will use double precision (will not modify
+            geometry if precision grid size was not previously set). If this value is
+            more precise than input geometry, the input geometry will not be modified.
 
         Returns
         -------
@@ -4806,6 +4818,10 @@ GeometryCollection
         align : bool | None (default None)
             If True, automatically aligns GeoSeries based on their indices.
             If False, the order of elements is preserved. None defaults to True.
+        grid_size : float | None (default None)
+            Precision grid size. If 0, will use double precision (will not modify
+            geometry if precision grid size was not previously set). If this value is
+            more precise than input geometry, the input geometry will not be modified.
 
         Returns
         -------
