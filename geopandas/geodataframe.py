@@ -169,6 +169,9 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         super().__init__(data, *args, **kwargs)
 
+        if isinstance(data, DataFrame) and data.attrs:
+            self.attrs = data.attrs
+
         # set_geometry ensures the geometry data have the proper dtype,
         # but is not called if `geometry=None` ('geometry' column present
         # in the data), so therefore need to ensure it here manually
