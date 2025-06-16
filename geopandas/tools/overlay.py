@@ -117,7 +117,18 @@ def _overlay_identity(df1, df2):
     dfintersection = _overlay_intersection(df1, df2)
     dfdifference = _overlay_difference(df1, df2)
     dfdifference = _ensure_geometry_column(dfdifference)
+
+    # Columns that were suffixed in dfintersection need to be suffixed in dfdifference
+    # as well so they can be matched properly in concat.
+    new_columns = [
+        col if col in dfintersection.columns else f"{col}_1"
+        for col in dfdifference.columns
+    ]
+    dfdifference.columns = new_columns
+
+    # Now we can concatenate the two dataframes
     result = pd.concat([dfintersection, dfdifference], ignore_index=True, sort=False)
+
     # keep geometry column last
     columns = list(dfintersection.columns)
     columns.remove("geometry")
