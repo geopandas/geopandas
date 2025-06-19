@@ -1,7 +1,14 @@
 # Changelog
 
-## Version 1.1.1
+## Version 1.2.0
 
+New features and improvements:
+
+- Add ``grid_size`` parameter to ``union``, ``difference``, ``symmetric_difference``
+  and ``intersection`` (#3593).
+
+
+## Version 1.1.1
 - Fix regression in the GeoDataFrame constructor when np.nan is given as an only geometry (#3591).
 - Fix regression in `overlay` with `how="identity"` when input dataframes have column
   names that are equal (#3596).
