@@ -240,6 +240,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 geometry = geometry.rename("geometry")
 
             self.set_geometry(geometry, inplace=True, crs=crs)
+            self.__finalize__(data)
 
         if geometry is None and crs:
             raise ValueError(
