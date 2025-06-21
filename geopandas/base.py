@@ -251,7 +251,7 @@ class GeoPandasBase:
 
     @property
     def type(self):
-        """Return the geometry type of each geometry."""
+        """Return the `Geometry Type` of each geometry as a string."""
         return self.geom_type
 
     @property
