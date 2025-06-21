@@ -1,3 +1,5 @@
+"""Read/write data from/to a parquet or feather file."""
+
 import json
 import warnings
 from packaging.version import Version
@@ -66,7 +68,8 @@ def _is_fsspec_url(url):
 
 
 def _remove_id_from_member_of_ensembles(json_dict):
-    """
+    """Remove ids not supported by old PROJ versions.
+
     Older PROJ versions will not recognize IDs of datum ensemble members that
     were added in more recent PROJ database versions.
 
@@ -234,8 +237,7 @@ def _decode_metadata(metadata_str):
 
 
 def _validate_dataframe(df):
-    """Validate that the GeoDataFrame conforms to requirements for writing
-    to Parquet format.
+    """Check if GeoDataFrame can be written to Parquet/Feather.
 
     Raises `ValueError` if the GeoDataFrame is not valid.
 
@@ -262,6 +264,7 @@ def _validate_dataframe(df):
 
 def _validate_geo_metadata(metadata):
     """Validate geo metadata.
+
     Must not be empty, and must contain the structure specified above.
 
     Raises ValueError if metadata is not valid.
@@ -335,9 +338,9 @@ def _geopandas_to_arrow(
     schema_version=None,
     write_covering_bbox=None,
 ):
-    """Convert a GeoDataFrame to a pyarrow Table.
+    """Convert a GeoDataFrame to an Arrow table.
 
-    Helper function with main, shared logic for to_parquet/to_feather.
+    Contains main, shared logic for to_parquet/to_feather.
     """
     from pyarrow import StructArray
 

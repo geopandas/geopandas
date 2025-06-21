@@ -1,3 +1,5 @@
+"""Interactive map based on GeoPandas and folium/leaflet.js."""
+
 import warnings
 from statistics import mean
 

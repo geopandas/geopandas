@@ -1,3 +1,5 @@
+"""Tools for overlaying GeoDataFrames."""
+
 import warnings
 from functools import reduce
 

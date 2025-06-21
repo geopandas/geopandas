@@ -1,3 +1,5 @@
+"""Utility functions for GeoPandas."""
+
 import pandas as pd
 
 from shapely.geometry import MultiLineString, MultiPoint, MultiPolygon

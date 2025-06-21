@@ -1,3 +1,5 @@
+"""Base class for GeoPandas objects."""
+
 from warnings import warn
 
 import numpy as np
@@ -25,7 +27,28 @@ def is_geometry_type(data):
 
 
 def _delegate_binary_method(op, this, other, align, *args, **kwargs):
-    # type: (str, GeoSeries, GeoSeries) -> GeoSeries/Series
+    """Binary method on GeoSeries objects that returns a Series/GeoSeries.
+
+    Parameters
+    ----------
+    op : str
+        The operation to perform, e.g. 'intersection', 'union', etc.
+    this : GeoSeries
+        The first GeoSeries operand.
+    other : GeoSeries
+        The second GeoSeries operand.
+    align : bool
+        Whether to align the indices of the two GeoSeries before performing the
+        operation.
+    *args, **kwargs : additional arguments
+        Additional arguments to pass to the method.
+
+    Returns
+    -------
+    Series or GeoSeries
+        A new Series/GeoSeries containing the result of the method.
+
+    """
     if align is None:
         align = True
         maybe_warn = True
@@ -72,8 +95,28 @@ def _delegate_binary_method(op, this, other, align, *args, **kwargs):
 
 
 def _binary_geo(op, this, other, align, *args, **kwargs):
-    # type: (str, GeoSeries, GeoSeries) -> GeoSeries
-    """Binary operation on GeoSeries objects that returns a GeoSeries."""
+    """Binary operation on GeoSeries objects that returns a GeoSeries.
+
+    Parameters
+    ----------
+    op : str
+        The operation to perform, e.g. 'intersection', 'union', etc.
+    this : GeoSeries
+        The first GeoSeries operand.
+    other : GeoSeries
+        The second GeoSeries operand.
+    align : bool
+        Whether to align the indices of the two GeoSeries before performing the
+        operation.
+    *args, **kwargs : additional arguments
+        Additional arguments to pass to the operation.
+
+    Returns
+    -------
+    GeoSeries
+        A new GeoSeries containing the result of the binary operation.
+
+    """
     from .geoseries import GeoSeries
 
     geoms, index = _delegate_binary_method(op, this, other, align, *args, **kwargs)
@@ -81,14 +124,48 @@ def _binary_geo(op, this, other, align, *args, **kwargs):
 
 
 def _binary_op(op, this, other, align, *args, **kwargs):
-    # type: (str, GeoSeries, GeoSeries, args/kwargs) -> Series[bool/float]
-    """Binary operation on GeoSeries objects that returns a Series."""
+    """Binary operation on GeoSeries objects that returns a Series.
+
+    Parameters
+    ----------
+    op : str
+        The operation to perform, e.g. 'intersection', 'union', etc.
+    this : GeoSeries
+        The first GeoSeries operand.
+    other : GeoSeries
+        The second GeoSeries operand.
+    align : bool
+        Whether to align the indices of the two GeoSeries before performing the
+        operation.
+    *args, **kwargs : additional arguments
+        Additional arguments to pass to the operation.
+
+    Returns
+    -------
+    Series
+        A Series containing the result of the binary operation.
+
+    """
     data, index = _delegate_binary_method(op, this, other, align, *args, **kwargs)
     return Series(data, index=index)
 
 
 def _delegate_property(op, this):
-    # type: (str, GeoSeries) -> GeoSeries/Series
+    """Property on GeoSeries that returns a Series/GeoSeries.
+
+    Parameters
+    ----------
+    op : str
+        The operation to perform, e.g. 'intersection', 'union', etc.
+    this : GeoSeries
+        The first GeoSeries operand.
+
+    Returns
+    -------
+    Series or GeoSeries
+        A new Series/GeoSeries containing the result of the property.
+
+    """
     a_this = GeometryArray(this.geometry.values)
     data = getattr(a_this, op)
     if isinstance(data, GeometryArray):
@@ -100,8 +177,23 @@ def _delegate_property(op, this):
 
 
 def _delegate_geo_method(op, this, **kwargs):
-    # type: (str, GeoSeries) -> GeoSeries
-    """Unary operation that returns a GeoSeries."""
+    """Unary operation that returns a GeoSeries.
+
+    Parameters
+    ----------
+    op : str
+        The operation to perform, e.g. 'buffer', 'simplify', etc.
+    this : GeoSeries
+        The first GeoSeries operand.
+    *args, **kwargs : additional arguments
+        Additional arguments to pass to the method.
+
+    Returns
+    -------
+    GeoSeries
+        A new Series/GeoSeries containing the result of the method.
+
+    """
     from .geodataframe import GeoDataFrame
     from .geoseries import GeoSeries
 
@@ -131,10 +223,17 @@ def _delegate_geo_method(op, this, **kwargs):
 
 
 class GeoPandasBase:
+    """Base class for GeoPandas objects like GeoDataFrame en GeoSeries."""
+
     @property
     def area(self):
-        """Return a ``Series`` containing the area of each geometry in the
-        ``GeoSeries`` expressed in the units of the CRS.
+        """Return the area of each geometry in the units of the CRS.
+
+        Returns
+        -------
+        Series (float)
+            The area of each geometry in the ``GeoSeries``, expressed in the
+            units of the CRS.
 
         Examples
         --------
@@ -187,7 +286,7 @@ class GeoPandasBase:
         :getter: Returns a ``pyproj.CRS`` or None. When setting, the value
         can be anything accepted by
         :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
-        such as an authority string (eg "EPSG:4326") or a WKT string.
+        such as an authority string (e.g. "EPSG:4326") or a WKT string.
 
         Examples
         --------
@@ -218,9 +317,12 @@ class GeoPandasBase:
 
     @property
     def geom_type(self):
-        """
-        Returns a ``Series`` of strings specifying the `Geometry Type` of each
-        object.
+        """Return the `Geometry Type` of each geometry as a string.
+
+        Returns
+        -------
+        Series (str)
+            The geometry type of each geometry as a string.
 
         Examples
         --------
@@ -238,16 +340,21 @@ class GeoPandasBase:
 
     @property
     def type(self):
-        """Return the geometry type of each geometry in the GeoSeries."""
+        """Return the `Geometry Type` of each geometry as a string."""
         return self.geom_type
 
     @property
     def length(self):
-        """Return a ``Series`` containing the length of each geometry
-        expressed in the units of the CRS.
+        """Return the length of each geometry in the units of the CRS.
 
         In the case of a (Multi)Polygon it measures the length
         of its exterior (i.e. perimeter).
+
+        Returns
+        -------
+        Series (float)
+            The length of each geometry in the ``GeoSeries``, expressed in the
+            units of the CRS.
 
         Examples
         --------
@@ -300,8 +407,13 @@ GeometryCollection
 
     @property
     def is_valid(self):
-        """Return a ``Series`` of ``dtype('bool')`` with value ``True`` for
-        geometries that are valid.
+        """Return for each geometry if it is valid.
+
+        Returns
+        -------
+        Series (bool)
+            A boolean Series with value ``True`` for valid geometries and
+            ``False`` for invalid geometries.
 
         Examples
         --------
@@ -1053,8 +1165,7 @@ GeometryCollection
         return _delegate_property("centroid", self)
 
     def concave_hull(self, ratio=0.0, allow_holes=False):
-        """Return a ``GeoSeries`` of geometries representing the concave hull
-        of vertices of each geometry.
+        """Return the concave hull of each geometry.
 
         The concave hull of a geometry is the smallest concave `Polygon`
         containing all the points in each geometry, unless the number of points
@@ -2499,8 +2610,7 @@ GeometryCollection
         return self.geometry.values.union_all()
 
     def union_all(self, method="unary", *, grid_size=None):
-        """Return a geometry containing the union of all geometries in the
-        ``GeoSeries``.
+        """Return a geometry containing the union of all geometries in the input.
 
         By default, the unary union algorithm is used. If the geometries are
         non-overlapping (forming a coverage), GeoPandas can use a significantly faster
@@ -3041,8 +3151,7 @@ GeometryCollection
         return _binary_op("geom_equals", self, other, align)
 
     def geom_equals_exact(self, other, tolerance, align=None):
-        """Return True for all geometries that equal aligned *other* to a given
-        tolerance, else False.
+        """Return for each aligned geometry if it is almost equal to `other`.
 
         The operation works on a 1-to-1 row-wise manner:
 
@@ -3107,8 +3216,7 @@ GeometryCollection
         )
 
     def geom_equals_identical(self, other, align=None):
-        """Return True for all geometries that are identical aligned *other*, else
-        False.
+        """Return for each aligned geometry if it is identical to *other*.
 
         This function verifies whether geometries are pointwise equivalent by checking
         that the structure, ordering, and values of all vertices are identical in all
@@ -5452,8 +5560,7 @@ GeometryCollection
         )
 
     def simplify(self, tolerance, preserve_topology=True):
-        """Return a ``GeoSeries`` containing a simplified representation of
-        each geometry.
+        """Return a simplified version of each geometry.
 
         The algorithm (Douglas-Peucker) recursively splits the original line
         into smaller parts and connects these parts' endpoints
@@ -5513,8 +5620,7 @@ GeometryCollection
         )
 
     def simplify_coverage(self, tolerance, *, simplify_boundary=True):
-        """Return a ``GeoSeries`` containing a simplified representation of
-        polygonal coverage.
+        """Return a simplified version of each geometry of the polygonal coverage.
 
         Assumes that the ``GeoSeries`` forms a polygonal coverage. Under this
         assumption, the method simplifies the edges using the Visvalingam-Whyatt
@@ -6221,8 +6327,7 @@ GeometryCollection
     def get_coordinates(
         self, include_z=False, ignore_index=False, index_parts=False, *, include_m=False
     ):
-        """Get coordinates from a :class:`GeoSeries` as a :class:`~pandas.DataFrame` of
-        floats.
+        """Get coordinates as a :class:`~pandas.DataFrame` of floats.
 
         The shape of the returned :class:`~pandas.DataFrame` is (N, 2), with N being the
         number of coordinate pairs. With the default of ``include_z=False``,

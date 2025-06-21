@@ -1,3 +1,5 @@
+"""Spatial join of two GeoDataFrames."""
+
 import warnings
 from functools import partial
 
@@ -253,10 +255,7 @@ def _geom_predicate_query(left_df, right_df, predicate, distance, on_attribute=N
 
 
 def _reset_index_with_suffix(df, suffix, other):
-    """
-    Equivalent of df.reset_index(), but with adding 'suffix' to auto-generated
-    column names.
-    """
+    """Equivalent of reset_index(), but add 'suffix' to auto-generated column names."""
     index_original = df.index.names
     if PANDAS_GE_30:
         df_reset = df.reset_index()
@@ -344,8 +343,9 @@ def _process_column_names_with_suffix(
 
 
 def _restore_index(joined, index_names, index_names_original):
-    """
-    Set back the the original index columns, and restoring their name as `None`
+    """Restore the index columns in the joined dataframe.
+
+    Set back the the original index columns, and restore their name as `None`
     if they didn't have a name originally.
     """
     if PANDAS_GE_30:
@@ -556,8 +556,7 @@ def _nearest_query(
 
 
 def _filter_shared_attribute(left_df, right_df, l_idx, r_idx, attribute):
-    """Return the indices for the left and right dataframe that share the same entry
-    in the attribute column.
+    """Return the indices that share the same entry in the attribute column.
 
     Also returns a Boolean `shared_attribute_rows` for rows with the same entry.
     """

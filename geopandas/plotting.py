@@ -1,3 +1,5 @@
+"""Plotting utilities."""
+
 import warnings
 
 import numpy as np
@@ -11,7 +13,9 @@ from ._decorator import doc
 
 
 def _sanitize_geoms(geoms, prefix="Multi"):
-    """Return Series like geoms and index, except that any Multi geometries
+    """Sanitize geometries for plotting.
+
+    Returns Series like geoms and index, except that any Multi geometries
     are split into their components and indices are repeated for all component
     in the same Multi geometry. At the same time, empty or missing geometries are
     filtered out.  Maintains 1:1 matching of geometry to value.
@@ -53,7 +57,8 @@ def _sanitize_geoms(geoms, prefix="Multi"):
 
 
 def _expand_kwargs(kwargs, multiindex):
-    """
+    """Expand plot arguments if needed.
+
     Most arguments to the plot functions must be a (single) value, or a sequence
     of values. This function checks each key-value pair in 'kwargs' and expands
     it (in place) to the correct length/formats with help of 'multiindex', unless
@@ -952,10 +957,11 @@ def plot_dataframe(
 
 
 @doc(plot_dataframe)
-class GeoplotAccessor(PlotAccessor):
+class GeoplotAccessor(PlotAccessor):  # noqa: D101
     _pandas_kinds = PlotAccessor._all_kinds
 
     def __call__(self, *args, **kwargs):
+        """Plot the GeoDataFrame."""
         data = self._parent.copy()
         kind = kwargs.pop("kind", "geo")
         if kind == "geo":
@@ -968,4 +974,5 @@ class GeoplotAccessor(PlotAccessor):
             raise ValueError(f"{kind} is not a valid plot kind")
 
     def geo(self, *args, **kwargs):
+        """Plot the GeoDataFrame."""
         return self(kind="geo", *args, **kwargs)  # noqa: B026
