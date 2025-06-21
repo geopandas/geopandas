@@ -138,6 +138,8 @@ select = [
     "RUF",
     # isort
     "I",
+    # pydocstyle
+    "D",
 ]
 
 ignore = [
@@ -191,6 +193,10 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
+# ignore pydocstyle errors in tests
+"**/tests/*" = ["D"]
+"geopandas/conftest.py" = ["D"]
+# the order of imports in __init__ is a bit tricky, so keep manual
 "geopandas/__init__.py" = ["F401", "I"]
 
 [tool.ruff.lint.isort]
@@ -209,3 +215,6 @@ section-order = [
 [tool.ruff.lint.isort.sections]
 "geo" = ["shapely", "pyproj"]
 "testing" = ["pytest", "pandas.testing", "numpy.testing", "geopandas.tests", "geopandas.testing"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"
