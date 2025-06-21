@@ -277,8 +277,7 @@ def _reset_index_with_suffix(df, suffix, other):
             # check new label will not be in other dataframe
             if new_label in df.columns or new_label in other.columns:
                 raise ValueError(
-                    f"'{new_label}' cannot be a column name in the frames being"
-                    " joined"
+                    f"'{new_label}' cannot be a column name in the frames being joined"
                 )
             column_names[i] = new_label
     return df_reset, pd.Index(column_names)

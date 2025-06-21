@@ -153,7 +153,7 @@ def assert_geoseries_equal(
         Typically useful with ``check_less_precise=True``, which uses
         ``geom_equals_exact`` and requires exact coordinate order.
     """
-    assert len(left) == len(right), "%d != %d" % (len(left), len(right))
+    assert len(left) == len(right), f"{len(left)} != {len(right)}"
 
     if check_dtype:
         msg = "dtype should be a GeometryDtype, got {0}"
@@ -178,9 +178,9 @@ def assert_geoseries_equal(
     assert left.index.equals(right.index), f"index: {left.index} != {right.index}"
 
     if check_geom_type:
-        assert (
-            left.geom_type == right.geom_type
-        ).all(), f"type: {left.geom_type} != {right.geom_type}"
+        assert (left.geom_type == right.geom_type).all(), (
+            f"type: {left.geom_type} != {right.geom_type}"
+        )
 
     if normalize:
         left = GeoSeries(left.array.normalize())

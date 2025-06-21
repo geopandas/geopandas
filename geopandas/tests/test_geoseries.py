@@ -141,25 +141,6 @@ class TestSeries:
         exp = pd.Series([False, False], index=["A", "B"])
         assert_series_equal(a, exp)
 
-    @pytest.mark.filterwarnings(r"ignore:The 'geom_almost_equals\(\)':FutureWarning")
-    def test_geom_almost_equals(self):
-        # TODO: test decimal parameter
-        assert np.all(self.g1.geom_almost_equals(self.g1))
-        assert_array_equal(self.g1.geom_almost_equals(self.sq), [False, True])
-        with warnings.catch_warnings():
-            warnings.filterwarnings(
-                "ignore",
-                "The indices of the left and right GeoSeries' are not equal",
-                UserWarning,
-            )
-            assert_array_equal(
-                self.a1.geom_almost_equals(self.a2, align=True),
-                [False, True, False],
-            )
-        assert_array_equal(
-            self.a1.geom_almost_equals(self.a2, align=False), [False, False]
-        )
-
     def test_geom_equals_exact(self):
         # TODO: test tolerance parameter
         assert np.all(self.g1.geom_equals_exact(self.g1, 0.001))
@@ -176,6 +157,18 @@ class TestSeries:
             )
         assert_array_equal(
             self.a1.geom_equals_exact(self.a2, 0.001, align=False), [False, False]
+        )
+
+    @pytest.mark.skipif(not compat.SHAPELY_GE_21, reason="requires Shapely>=2.1")
+    def test_geom_equals_identical(self):
+        assert np.all(self.g1.geom_equals_identical(self.g1))
+        assert_array_equal(self.g1.geom_equals_identical(self.sq), [False, True])
+        assert_array_equal(
+            self.a1.geom_equals_identical(self.a2, align=True),
+            [False, True, False],
+        )
+        assert_array_equal(
+            self.a1.geom_equals_identical(self.a2, align=False), [False, False]
         )
 
     def test_equal_comp_op(self):
@@ -623,25 +616,32 @@ class TestConstructor:
         # not depending on the dtype
 
         # dtypes that can never hold geometry-like data
-        for arr in [
+        non_geom_compat_dtypes = [
             np.array([], dtype="bool"),
             np.array([], dtype="int64"),
             np.array([], dtype="float32"),
-            # this gets converted to object dtype by pandas
-            # np.array([], dtype="str"),
-        ]:
+        ]
+        # dtypes that can potentially hold geometry-like data (object) or
+        # can come from empty data (float64)
+        geom_compat_dtypes = [
+            np.array([], dtype="object"),
+            np.array([], dtype="float64"),
+        ]
+
+        if compat.PANDAS_GE_30 and pd.options.future.infer_string:
+            # in pandas >=3 future string, str is not converted to object
+            # so is non geom compatible
+            non_geom_compat_dtypes.append(np.array([], dtype="str"))
+        else:
+            geom_compat_dtypes.append(np.array([], dtype="str"))
+
+        for arr in non_geom_compat_dtypes:
             with pytest.raises(
                 TypeError, match="Non geometry data passed to GeoSeries"
             ):
                 GeoSeries(arr)
 
-        # dtypes that can potentially hold geometry-like data (object) or
-        # can come from empty data (float64)
-        for arr in [
-            np.array([], dtype="object"),
-            np.array([], dtype="float64"),
-            np.array([], dtype="str"),
-        ]:
+        for arr in geom_compat_dtypes:
             with warnings.catch_warnings(record=True) as record:
                 s = GeoSeries(arr)
             assert not record

@@ -5,6 +5,7 @@ import pathlib
 from packaging.version import Version
 
 import numpy as np
+from pandas import ArrowDtype
 
 import shapely
 from shapely import MultiPoint, Point, box
@@ -200,6 +201,24 @@ def test_geoarrow_export(geometry_type, dim, geometry_encoding, interleaved):
     reason="from_ragged_array failing with read-only array input",
 )
 @pytest.mark.parametrize("encoding", ["WKB", "geoarrow"])
+def test_geoarrow_to_pandas_kwargs(encoding):
+    g = box(0, 0, 10, 10)
+    gdf = GeoDataFrame({"geometry": [g], "i": [1], "s": ["a"]})
+    table = pa_table(gdf.to_arrow(geometry_encoding=encoding))
+    # simulate the `dtype_backend="pyarrow"` option in `pandas.read_parquet`
+    gdf_roundtrip = GeoDataFrame.from_arrow(
+        table, to_pandas_kwargs={"types_mapper": ArrowDtype}
+    )
+    assert isinstance(gdf_roundtrip, GeoDataFrame)
+    assert isinstance(gdf_roundtrip.dtypes["i"], ArrowDtype)
+    assert isinstance(gdf_roundtrip.dtypes["s"], ArrowDtype)
+
+
+@pytest.mark.skipif(
+    Version(shapely.__version__) < Version("2.0.2"),
+    reason="from_ragged_array failing with read-only array input",
+)
+@pytest.mark.parametrize("encoding", ["WKB", "geoarrow"])
 def test_geoarrow_multiple_geometry_crs(encoding):
     pytest.importorskip("pyproj")
     # ensure each geometry column has its own crs
@@ -210,11 +229,11 @@ def test_geoarrow_multiple_geometry_crs(encoding):
     meta1 = json.loads(
         result.schema.field("geometry").metadata[b"ARROW:extension:metadata"]
     )
-    assert json.loads(meta1["crs"])["id"]["code"] == 4326
+    assert meta1["crs"]["id"]["code"] == 4326
     meta2 = json.loads(
         result.schema.field("geom2").metadata[b"ARROW:extension:metadata"]
     )
-    assert json.loads(meta2["crs"])["id"]["code"] == 3857
+    assert meta2["crs"]["id"]["code"] == 3857
 
     roundtripped = GeoDataFrame.from_arrow(result)
     assert_geodataframe_equal(gdf, roundtripped)
@@ -237,7 +256,7 @@ def test_geoarrow_series_name_crs(encoding):
         else b"geoarrow.polygon"
     )
     meta = json.loads(field.metadata[b"ARROW:extension:metadata"])
-    assert json.loads(meta["crs"])["id"]["code"] == 4326
+    assert meta["crs"]["id"]["code"] == 4326
 
     # ensure it also works without a name
     gser = GeoSeries([box(0, 0, 10, 10)])

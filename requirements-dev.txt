@@ -8,7 +8,7 @@ packaging
 
 # geodatabase access
 psycopg2-binary>=2.8.0
-psycopg-binary>=3.1.0
+psycopg[binary]>=3.1.0
 SQLAlchemy>=2.0
 
 # geocoding
@@ -24,7 +24,10 @@ folium
 pytest>=3.1.0
 pytest-cov
 pytest-xdist
+pytest-doctestplus
+fsspec
 codecov
+geodatasets
 
 # styling
 pre-commit
@@ -35,3 +38,13 @@ GeoAlchemy2
 
 # parquet
 pyarrow>=10.0.0
+geoarrow-pyarrow
+
+# sparse
+scipy
+
+# sampling
+pointpats
+
+# io
+fiona

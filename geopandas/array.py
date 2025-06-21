@@ -19,7 +19,14 @@ import shapely.ops
 import shapely.wkt
 from shapely.geometry.base import BaseGeometry
 
-from ._compat import HAS_PYPROJ, PANDAS_GE_21, PANDAS_GE_22, requires_pyproj
+from ._compat import (
+    GEOS_GE_312,
+    HAS_PYPROJ,
+    PANDAS_GE_21,
+    PANDAS_GE_22,
+    SHAPELY_GE_21,
+    requires_pyproj,
+)
 from .sindex import SpatialIndex
 
 if HAS_PYPROJ:
@@ -40,6 +47,9 @@ _names = {
     "GEOMETRYCOLLECTION": "GeometryCollection",
 }
 
+POLYGON_GEOM_TYPES = {"Polygon", "MultiPolygon"}
+LINE_GEOM_TYPES = {"LineString", "MultiLineString", "LinearRing"}
+POINT_GEOM_TYPES = {"Point", "MultiPoint"}
 
 type_mapping = {p.value: _names[p.name] for p in shapely.GeometryType}
 geometry_type_ids = list(type_mapping.keys())
@@ -49,7 +59,7 @@ geometry_type_values = np.array(list(type_mapping.values()), dtype=object)
 class GeometryDtype(ExtensionDtype):
     type = BaseGeometry
     name = "geometry"
-    na_value = np.nan
+    na_value = None
 
     @classmethod
     def construct_from_string(cls, string):
@@ -157,6 +167,8 @@ def from_shapely(data, crs=None):
     if not isinstance(data, np.ndarray):
         arr = np.empty(len(data), dtype=object)
         arr[:] = data
+    elif len(data) == 0 and data.dtype == "float64":
+        arr = data.astype(object)
     else:
         arr = data
 
@@ -202,6 +214,9 @@ def from_wkb(data, crs=None, on_invalid="raise"):
         - warn: a warning will be raised and invalid WKB geometries will be returned as
           None.
         - ignore: invalid WKB geometries will be returned as None without a warning.
+        - fix: an effort is made to fix invalid input geometries (e.g. close
+          unclosed rings). If this is not possible, they are returned as ``None``
+          without a warning. Requires GEOS >= 3.11 and shapely >= 2.1.
 
     """
     return GeometryArray(shapely.from_wkb(data, on_invalid=on_invalid), crs=crs)
@@ -231,6 +246,9 @@ def from_wkt(data, crs=None, on_invalid="raise"):
         - warn: a warning will be raised and invalid WKT geometries will be
           returned as ``None``.
         - ignore: invalid WKT geometries will be returned as ``None`` without a warning.
+        - fix: an effort is made to fix invalid input geometries (e.g. close
+          unclosed rings). If this is not possible, they are returned as ``None``
+          without a warning. Requires GEOS >= 3.11 and shapely >= 2.1.
 
     """
     return GeometryArray(shapely.from_wkt(data, on_invalid=on_invalid), crs=crs)
@@ -487,6 +505,20 @@ class GeometryArray(ExtensionArray):
     def is_valid_reason(self):
         return shapely.is_valid_reason(self._data)
 
+    def is_valid_coverage(self, gap_width=0.0):
+        if not (SHAPELY_GE_21 and GEOS_GE_312):
+            raise ImportError(
+                "Method 'is_valid_coverage' requires shapely>=2.1 and GEOS>=3.12."
+            )
+        return bool(shapely.coverage_is_valid(self._data, gap_width=gap_width))
+
+    def invalid_coverage_edges(self, gap_width=0.0):
+        if not (SHAPELY_GE_21 and GEOS_GE_312):
+            raise ImportError(
+                "Method 'invalid_coverage_edges' requires shapely>=2.1 and GEOS>=3.12."
+            )
+        return shapely.coverage_invalid_edges(self._data, gap_width=gap_width)
+
     @property
     def is_empty(self):
         return shapely.is_empty(self._data)
@@ -510,6 +542,13 @@ class GeometryArray(ExtensionArray):
     @property
     def has_z(self):
         return shapely.has_z(self._data)
+
+    @property
+    def has_m(self):
+        if not SHAPELY_GE_21:
+            raise ImportError("'has_m' requires shapely>=2.1.")
+
+        return shapely.has_m(self._data)
 
     @property
     def geom_type(self):
@@ -556,6 +595,14 @@ class GeometryArray(ExtensionArray):
 
     def concave_hull(self, ratio, allow_holes):
         return shapely.concave_hull(self._data, ratio=ratio, allow_holes=allow_holes)
+
+    def constrained_delaunay_triangles(self):
+        if not SHAPELY_GE_21:
+            raise ImportError("'constrained_delaunay_triangles' requires shapely>=2.1.")
+
+        return GeometryArray(
+            shapely.constrained_delaunay_triangles(self._data), crs=self.crs
+        )
 
     @property
     def convex_hull(self):
@@ -624,17 +671,48 @@ class GeometryArray(ExtensionArray):
     def minimum_bounding_circle(self):
         return GeometryArray(shapely.minimum_bounding_circle(self._data), crs=self.crs)
 
+    def maximum_inscribed_circle(self, tolerance):
+        if not SHAPELY_GE_21:
+            raise ImportError("'maximum_inscribed_circle' requires shapely>=2.1.")
+
+        return GeometryArray(
+            shapely.maximum_inscribed_circle(self._data, tolerance=tolerance),
+            crs=self.crs,
+        )
+
     def minimum_bounding_radius(self):
         return shapely.minimum_bounding_radius(self._data)
 
     def minimum_clearance(self):
         return shapely.minimum_clearance(self._data)
 
+    def minimum_clearance_line(self):
+        if not SHAPELY_GE_21:
+            raise ImportError("'minimum_clearance_line' requires shapely>=2.1.")
+        return GeometryArray(shapely.minimum_clearance_line(self._data), crs=self.crs)
+
     def normalize(self):
         return GeometryArray(shapely.normalize(self._data), crs=self.crs)
 
-    def make_valid(self):
-        return GeometryArray(shapely.make_valid(self._data), crs=self.crs)
+    def orient_polygons(self, exterior_cw=False):
+        if not SHAPELY_GE_21:
+            raise ImportError("'orient_polygons' requires shapely>=2.1.")
+        return GeometryArray(
+            shapely.orient_polygons(self._data, exterior_cw=exterior_cw), crs=self.crs
+        )
+
+    def make_valid(self, method="linework", keep_collapsed=True):
+        kwargs = {}
+        if SHAPELY_GE_21:
+            kwargs["method"] = method
+            kwargs["keep_collapsed"] = keep_collapsed
+        else:
+            if method != "linework":
+                raise ValueError(
+                    "Only the 'linework' method is supported for shapely < 2.1."
+                )
+
+        return GeometryArray(shapely.make_valid(self._data, **kwargs), crs=self.crs)
 
     def reverse(self):
         return GeometryArray(shapely.reverse(self._data), crs=self.crs)
@@ -653,7 +731,8 @@ class GeometryArray(ExtensionArray):
 
     def transform(self, transformation, include_z=False):
         return GeometryArray(
-            shapely.transform(self._data, transformation, include_z), crs=self.crs
+            shapely.transform(self._data, transformation, include_z=include_z),
+            crs=self.crs,
         )
 
     def line_merge(self, directed=False):
@@ -726,14 +805,10 @@ class GeometryArray(ExtensionArray):
     def geom_equals_exact(self, other, tolerance):
         return self._binary_method("equals_exact", self, other, tolerance=tolerance)
 
-    def geom_almost_equals(self, other, decimal):
-        warnings.warn(
-            "The 'geom_almost_equals()' method is deprecated because the name is "
-            "confusing. The 'geom_equals_exact()' method should be used instead.",
-            FutureWarning,
-            stacklevel=2,
-        )
-        return self.geom_equals_exact(other, 0.5 * 10 ** (-decimal))
+    def geom_equals_identical(self, other):
+        if not SHAPELY_GE_21:
+            raise ImportError("'geom_equals_identical' requires shapely>=2.1.")
+        return self._binary_method("equals_identical", self, other)
 
     #
     # Binary operations that return new geometries
@@ -816,6 +891,18 @@ class GeometryArray(ExtensionArray):
             crs=self.crs,
         )
 
+    def simplify_coverage(self, tolerance, simplify_boundary=True):
+        if not (SHAPELY_GE_21 and GEOS_GE_312):
+            raise ImportError(
+                "'simplify_coverage' requires shapely>=2.1 and GEOS>=3.12."
+            )
+        return GeometryArray(
+            shapely.coverage_simplify(
+                self._data, tolerance, simplify_boundary=simplify_boundary
+            ),
+            crs=self.crs,
+        )
+
     def project(self, other, normalized=False):
         if isinstance(other, GeometryArray):
             other = other._data
@@ -844,14 +931,23 @@ class GeometryArray(ExtensionArray):
         )
         return self.union_all()
 
-    def union_all(self, method="unary"):
+    def union_all(self, method="unary", grid_size=None):
+        if method != "unary" and grid_size is not None:
+            raise ValueError(f"grid_size is not supported for method '{method}'.")
         if method == "coverage":
             return shapely.coverage_union_all(self._data)
         elif method == "unary":
-            return shapely.union_all(self._data)
+            return shapely.union_all(self._data, grid_size=grid_size)
+        elif method == "disjoint_subset":
+            if not (SHAPELY_GE_21 and GEOS_GE_312):
+                raise ImportError(
+                    "Method 'disjoin_subset' requires shapely>=2.1 and GEOS>=3.12."
+                )
+            return shapely.disjoint_subset_union_all(self._data)
         else:
             raise ValueError(
-                f"Method '{method}' not recognized. Use 'coverage' or 'unary'."
+                f"Method '{method}' not recognized. Use 'coverage', 'unary' or "
+                "'disjoint_subset'."
             )
 
     def intersection_all(self):
@@ -1140,6 +1236,25 @@ class GeometryArray(ExtensionArray):
                 return shapely.get_z(self._data)
         else:
             message = "z attribute access only provided for Point geometries"
+            raise ValueError(message)
+
+    @property
+    def m(self):
+        """Return the m coordinate of point geometries in a GeoSeries"""
+        if not SHAPELY_GE_21:
+            raise ImportError("'m' requires shapely>=2.1.")
+
+        if (self.geom_type[~self.isna()] == "Point").all():
+            empty = self.is_empty
+            if empty.any():
+                nonempty = ~empty
+                coords = np.full_like(nonempty, dtype=float, fill_value=np.nan)
+                coords[nonempty] = shapely.get_m(self._data[nonempty])
+                return coords
+            else:
+                return shapely.get_m(self._data)
+        else:
+            message = "m attribute access only provided for Point geometries"
             raise ValueError(message)
 
     @property
@@ -1631,7 +1746,7 @@ class GeometryArray(ExtensionArray):
         # including the base class version here (that raises by default)
         # because this was not yet defined in pandas 0.23
         if name in ("any", "all"):
-            return getattr(to_shapely(self), name)()
+            return getattr(self._data, name)(keepdims=keepdims)
         raise TypeError(
             f"'{type(self).__name__}' with dtype {self.dtype} "
             f"does not support reduction '{name}'"

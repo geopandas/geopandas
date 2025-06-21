@@ -266,8 +266,7 @@ def _get_srid_from_crs(gdf):
     # Note: undefined srid in PostGIS is 0
     srid = None
     warning_msg = (
-        "Could not parse CRS from the GeoDataFrame. "
-        "Inserting data without defined CRS."
+        "Could not parse CRS from the GeoDataFrame. Inserting data without defined CRS."
     )
     if gdf.crs is not None:
         try:
