@@ -1,4 +1,7 @@
-"""Spatial index."""
+"""Spatial index implementation.
+
+Is a simple wrapper around Shapely's STRTree.
+"""
 
 import numpy as np
 
@@ -15,7 +18,9 @@ if compat.GEOS_GE_310:
 
 
 class SpatialIndex:
-    """A simple wrapper around Shapely's STRTree.
+    """Spatial index implementation.
+
+    Is a simple wrapper around Shapely's STRTree.
 
     Parameters
     ----------
