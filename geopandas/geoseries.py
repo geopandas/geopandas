@@ -786,18 +786,15 @@ class GeoSeries(GeoPandasBase, Series):
         return self._wrapped_pandas_method("__getitem__", key)
 
     @doc(pd.Series)
-    def sort_index(self, *args, **kwargs):
-        """Sort by labels (along an axis)."""
+    def sort_index(self, *args, **kwargs):  # noqa: D102
         return self._wrapped_pandas_method("sort_index", *args, **kwargs)
 
     @doc(pd.Series)
-    def take(self, *args, **kwargs):
-        """Return the elements in the given *positional* indices."""
+    def take(self, *args, **kwargs):  # noqa: D102
         return self._wrapped_pandas_method("take", *args, **kwargs)
 
     @doc(pd.Series)
-    def apply(self, func, convert_dtype: bool | None = None, args=(), **kwargs):
-        """Apply a function on the GeoSeries."""
+    def apply(self, func, convert_dtype: bool | None = None, args=(), **kwargs):  # noqa: D102
         if convert_dtype is not None:
             kwargs["convert_dtype"] = convert_dtype
         else:
@@ -814,8 +811,7 @@ class GeoSeries(GeoPandasBase, Series):
         return result
 
     def isna(self) -> Series:
-        """
-        Detect missing values.
+        """Detect missing values.
 
         Historically, NA values in a GeoSeries could be represented by
         empty geometric objects, in addition to standard representations
@@ -1005,13 +1001,12 @@ class GeoSeries(GeoPandasBase, Series):
             return False
 
     @doc(plot_series)
-    def plot(self, *args, **kwargs):
-        """Plot the GeoSeries."""
+    def plot(self, *args, **kwargs):  # noqa: D102
         return plot_series(self, *args, **kwargs)
 
     @doc(_explore_geoseries)
-    def explore(self, *args, **kwargs):
-        """Interactive map based on folium/leaflet.js."""
+    def explore(self, *args, **kwargs):  # noqa: D102
+        # Interactive map based on folium/leaflet.js.
         return _explore_geoseries(self, *args, **kwargs)
 
     def explode(self, ignore_index=False, index_parts=False) -> GeoSeries:

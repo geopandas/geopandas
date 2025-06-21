@@ -957,9 +957,7 @@ def plot_dataframe(
 
 
 @doc(plot_dataframe)
-class GeoplotAccessor(PlotAccessor):
-    """Accessor for GeoPandas plots."""
-
+class GeoplotAccessor(PlotAccessor):  # noqa: D101
     _pandas_kinds = PlotAccessor._all_kinds
 
     def __call__(self, *args, **kwargs):

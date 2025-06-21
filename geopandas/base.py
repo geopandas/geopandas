@@ -1,6 +1,5 @@
 """Base class for GeoPandas objects."""
 
-import warnings
 from warnings import warn
 
 import numpy as np
@@ -137,8 +136,15 @@ def _delegate_geo_method(op, this, **kwargs):
 class GeoPandasBase:
     @property
     def area(self):
-        """Returns a ``Series`` containing the area of each geometry in the
-        ``GeoSeries`` expressed in the units of the CRS.
+        """Return the area of each geometry.
+
+        The area will be expressed in the units of the CRS.
+
+        Returns
+        -------
+        Series (float)
+            The area of each geometry in the ``GeoSeries``, expressed in the
+            units of the CRS.
 
         Examples
         --------
@@ -185,15 +191,13 @@ class GeoPandasBase:
 
     @property
     def crs(self):
-        """
-        The Coordinate Reference System (CRS) represented as a ``pyproj.CRS``
-        object.
+        """The Coordinate Reference System (CRS) as a ``pyproj.CRS`` object.
 
         Returns None if the CRS is not set, and to set the value it
         :getter: Returns a ``pyproj.CRS`` or None. When setting, the value
         can be anything accepted by
         :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
-        such as an authority string (eg "EPSG:4326") or a WKT string.
+        such as an authority string (e.g. "EPSG:4326") or a WKT string.
 
         Examples
         --------
@@ -219,14 +223,17 @@ class GeoPandasBase:
 
     @crs.setter
     def crs(self, value):
-        """Sets the value of the crs"""
+        """Set the value of the crs."""
         self.geometry.values.crs = value
 
     @property
     def geom_type(self):
-        """
-        Returns a ``Series`` of strings specifying the `Geometry Type` of each
-        object.
+        """Return the `Geometry Type` of each geometry as a string.
+
+        Returns
+        -------
+        Series (str)
+            The geometry type of each geometry as a string.
 
         Examples
         --------
@@ -244,13 +251,14 @@ class GeoPandasBase:
 
     @property
     def type(self):
-        """Return the geometry type of each geometry in the GeoSeries"""
+        """Return the geometry type of each geometry."""
         return self.geom_type
 
     @property
     def length(self):
-        """Returns a ``Series`` containing the length of each geometry
-        expressed in the units of the CRS.
+        """Return the length of each geometry.
+
+        The length will be expressed in the units of the CRS.
 
         In the case of a (Multi)Polygon it measures the length
         of its exterior (i.e. perimeter).
@@ -306,8 +314,13 @@ GeometryCollection
 
     @property
     def is_valid(self):
-        """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
-        geometries that are valid.
+        """Return for each geometry if it is valid.
+
+        Returns
+        -------
+        Series (bool)
+            A boolean Series with value ``True`` for valid geometries and
+            ``False`` for invalid geometries.
 
         Examples
         --------

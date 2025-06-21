@@ -1197,7 +1197,7 @@ individually so that features may have different properties
         self, na: str | None = "null", show_bbox: bool = False, drop_id: bool = False
     ) -> dict:
         """Return the GeoDataFrame according the ``__geo_interface__`` specification.
-        
+
         In practice, this returns the GeoDataFrame as a dictionary with a list of
         features based on the ``__geo_interface__`` GeoJSON-like specification.
 
@@ -1975,8 +1975,7 @@ default 'snappy'
     # Implement pandas methods
     #
     @doc(pd.DataFrame)
-    def copy(self, deep: bool = True) -> GeoDataFrame:
-        """Copy the GeoDataFrame."""
+    def copy(self, deep: bool = True) -> GeoDataFrame:  # noqa: D102
         copied = super().copy(deep=deep)
         if type(copied) is pd.DataFrame:
             copied.__class__ = type(self)
@@ -1984,7 +1983,7 @@ default 'snappy'
         return copied
 
     @doc(pd.DataFrame)
-    def apply(
+    def apply(  # noqa: D102
         self,
         func,
         axis=0,
@@ -1993,7 +1992,6 @@ default 'snappy'
         args=(),
         **kwargs,
     ):
-        """Apply a function on the GeoDataFrame."""
         result = super().apply(
             func, axis=axis, raw=raw, result_type=result_type, args=args, **kwargs
         )
@@ -2469,8 +2467,8 @@ default 'snappy'
     plot = Accessor("plot", geopandas.plotting.GeoplotAccessor)
 
     @doc(_explore)
-    def explore(self, *args, **kwargs) -> folium.Map:
-        """Interactive map based on folium/leaflet.js."""
+    def explore(self, *args, **kwargs) -> folium.Map:  # noqa: D102
+        # Interactive map based on folium/leaflet.js.
         return _explore(self, *args, **kwargs)
 
     def sjoin(

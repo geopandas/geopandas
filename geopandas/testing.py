@@ -9,7 +9,7 @@ from geopandas.array import GeometryDtype
 
 
 def _isna(this):
-    """Isna version that works for both scalars and (Geo)Series."""
+    """Version of isna that works for both scalars and (Geo)Series."""
     with warnings.catch_warnings():
         # GeoSeries.isna will raise a warning about no longer returning True
         # for empty geometries. This helper is used below always in combination
