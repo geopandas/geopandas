@@ -28,7 +28,28 @@ def is_geometry_type(data):
 
 
 def _delegate_binary_method(op, this, other, align, *args, **kwargs):
-    # type: (str, GeoSeries, GeoSeries) -> GeoSeries/Series
+    """Binary method on GeoSeries objects that returns a Series/GeoSeries.
+
+    Parameters
+    ----------
+    op : str
+        The operation to perform, e.g. 'intersection', 'union', etc.
+    this : GeoSeries
+        The first GeoSeries operand.
+    other : GeoSeries
+        The second GeoSeries operand.
+    align : bool
+        Whether to align the indices of the two GeoSeries before performing the
+        operation.
+    *args, **kwargs : additional arguments
+        Additional arguments to pass to the method.
+
+    Returns
+    -------
+    Series or GeoSeries
+        A new Series/GeoSeries containing the result of the method.
+
+    """
     if align is None:
         align = True
         maybe_warn = True
@@ -75,8 +96,28 @@ def _delegate_binary_method(op, this, other, align, *args, **kwargs):
 
 
 def _binary_geo(op, this, other, align, *args, **kwargs):
-    # type: (str, GeoSeries, GeoSeries) -> GeoSeries
-    """Binary operation on GeoSeries objects that returns a GeoSeries"""
+    """Binary operation on GeoSeries objects that returns a GeoSeries.
+
+    Parameters
+    ----------
+    op : str
+        The operation to perform, e.g. 'intersection', 'union', etc.
+    this : GeoSeries
+        The first GeoSeries operand.
+    other : GeoSeries
+        The second GeoSeries operand.
+    align : bool
+        Whether to align the indices of the two GeoSeries before performing the
+        operation.
+    *args, **kwargs : additional arguments
+        Additional arguments to pass to the operation.
+
+    Returns
+    -------
+    GeoSeries
+        A new GeoSeries containing the result of the binary operation.
+
+    """
     from .geoseries import GeoSeries
 
     geoms, index = _delegate_binary_method(op, this, other, align, *args, **kwargs)
@@ -84,14 +125,48 @@ def _binary_geo(op, this, other, align, *args, **kwargs):
 
 
 def _binary_op(op, this, other, align, *args, **kwargs):
-    # type: (str, GeoSeries, GeoSeries, args/kwargs) -> Series[bool/float]
-    """Binary operation on GeoSeries objects that returns a Series"""
+    """Binary operation on GeoSeries objects that returns a Series.
+
+    Parameters
+    ----------
+    op : str
+        The operation to perform, e.g. 'intersection', 'union', etc.
+    this : GeoSeries
+        The first GeoSeries operand.
+    other : GeoSeries
+        The second GeoSeries operand.
+    align : bool
+        Whether to align the indices of the two GeoSeries before performing the
+        operation.
+    *args, **kwargs : additional arguments
+        Additional arguments to pass to the operation.
+
+    Returns
+    -------
+    Series
+        A Series containing the result of the binary operation.
+
+    """
     data, index = _delegate_binary_method(op, this, other, align, *args, **kwargs)
     return Series(data, index=index)
 
 
 def _delegate_property(op, this):
-    # type: (str, GeoSeries) -> GeoSeries/Series
+    """Property on GeoSeries that returns a Series/GeoSeries.
+
+    Parameters
+    ----------
+    op : str
+        The operation to perform, e.g. 'intersection', 'union', etc.
+    this : GeoSeries
+        The first GeoSeries operand.
+
+    Returns
+    -------
+    Series or GeoSeries
+        A new Series/GeoSeries containing the result of the property.
+
+    """
     a_this = GeometryArray(this.geometry.values)
     data = getattr(a_this, op)
     if isinstance(data, GeometryArray):
@@ -103,8 +178,23 @@ def _delegate_property(op, this):
 
 
 def _delegate_geo_method(op, this, **kwargs):
-    # type: (str, GeoSeries) -> GeoSeries
-    """Unary operation that returns a GeoSeries"""
+    """Unary operation that returns a GeoSeries.
+
+    Parameters
+    ----------
+    op : str
+        The operation to perform, e.g. 'buffer', 'simplify', etc.
+    this : GeoSeries
+        The first GeoSeries operand.
+    *args, **kwargs : additional arguments
+        Additional arguments to pass to the method.
+
+    Returns
+    -------
+    GeoSeries
+        A new Series/GeoSeries containing the result of the method.
+
+    """
     from .geodataframe import GeoDataFrame
     from .geoseries import GeoSeries
 
