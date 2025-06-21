@@ -16,7 +16,7 @@ from geopandas.array import (
 
 
 def _ensure_geometry_column(df):
-    """Help function to ensure the geometry column is called 'geometry'.
+    """Ensure that the geometry column is called 'geometry'.
 
     If another column with that name exists, it will be dropped.
     """

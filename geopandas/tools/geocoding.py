@@ -148,7 +148,7 @@ def _query(data, forward, provider, throttle_time, **kwargs):
 
 
 def _prepare_geocode_result(results):
-    """Help function for the geocode function.
+    """Convert the geocode results to a GeoDataFrame.
 
     Takes a dict where keys are index entries, values are tuples containing:
     (address, (lat, lon))

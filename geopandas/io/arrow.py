@@ -335,7 +335,10 @@ def _geopandas_to_arrow(
     schema_version=None,
     write_covering_bbox=None,
 ):
-    """Help function with main, shared logic for to_parquet/to_feather."""
+    """Convert a GeoDataFrame to a pyarrow Table.
+
+    Helper function with main, shared logic for to_parquet/to_feather.
+    """
     from pyarrow import StructArray
 
     from geopandas.io._geoarrow import geopandas_to_arrow
@@ -484,7 +487,10 @@ def _to_feather(df, path, index=None, compression=None, schema_version=None, **k
 
 
 def _arrow_to_geopandas(table, geo_metadata=None, to_pandas_kwargs=None):
-    """Help function with main, shared logic for read_parquet/read_feather."""
+    """Convert a pyarrow Table to a GeoDataFrame.
+
+    Helper function with main, shared logic for read_parquet/read_feather.
+    """
     if geo_metadata is None:
         # Note: this path of not passing metadata is also used by dask-geopandas
         geo_metadata = _validate_and_decode_metadata(table.schema.metadata)

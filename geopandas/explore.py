@@ -276,7 +276,10 @@ def _explore(
     """
 
     def _colormap_helper(_cmap, n_resample=None, idx=None):
-        """Help function for MPL deprecation - GH#2596."""
+        """Return the color map specified.
+
+        Helper function for MPL deprecation - GH#2596.
+        """
         if not n_resample:
             return cm.get_cmap(_cmap)
         else:
