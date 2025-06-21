@@ -134,11 +134,11 @@ def _delegate_geo_method(op, this, **kwargs):
 
 
 class GeoPandasBase:
+    """Base class for GeoPandas objects like GeoDataFrame en GeoSeries."""
+
     @property
     def area(self):
-        """Return the area of each geometry.
-
-        The area will be expressed in the units of the CRS.
+        """Return the area of each geometry in the units of the CRS.
 
         Returns
         -------
@@ -256,12 +256,16 @@ class GeoPandasBase:
 
     @property
     def length(self):
-        """Return the length of each geometry.
-
-        The length will be expressed in the units of the CRS.
+        """Return the length of each geometry in the units of the CRS.
 
         In the case of a (Multi)Polygon it measures the length
         of its exterior (i.e. perimeter).
+
+        Returns
+        -------
+        Series (float)
+            The length of each geometry in the ``GeoSeries``, expressed in the
+            units of the CRS.
 
         Examples
         --------
