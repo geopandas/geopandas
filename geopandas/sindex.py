@@ -15,7 +15,6 @@ if compat.GEOS_GE_310:
 class SpatialIndex:
     """A simple wrapper around Shapely's STRTree.
 
-
     Parameters
     ----------
     geometry : np.array of Shapely geometries
@@ -544,7 +543,7 @@ geometries}
 
     @property
     def size(self):
-        """Size of the spatial index
+        """Size of the spatial index.
 
         Number of leaves (input geometries) in the index.
 
@@ -572,7 +571,7 @@ geometries}
 
     @property
     def is_empty(self):
-        """Check if the spatial index is empty
+        """Check if the spatial index is empty.
 
         Examples
         --------

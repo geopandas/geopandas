@@ -6,7 +6,8 @@ from textwrap import dedent
 
 
 def doc(*docstrings: str | Callable, **params) -> Callable:
-    """
+    """Append docstrings to a callable.
+
     A decorator take docstring templates, concatenate them and perform string
     substitution on it.
     This decorator will add a variable "_docstring_components" to the wrapped

@@ -138,6 +138,8 @@ select = [
     "RUF",
     # isort
     "I",
+    # pydocstyle
+    "D",
 ]
 
 ignore = [
@@ -178,6 +180,20 @@ ignore = [
     "PLC1802",
 
     ### Additional checks that don't pass yet
+    # Missing docstring in public module
+    "D100",
+    # Missing docstring in public class
+    "D101",
+    # Missing docstring in public method
+    "D102",
+    # Missing docstring in public function
+    "D103",
+    # Missing docstring in public package
+    "D104",
+    # Missing docstring in magic method
+    "D105",
+    # 1 blank line required between summary line and description
+    "D205",
     # Useless statement
     "B018",
     # Within an except clause, raise exceptions with ...
@@ -191,6 +207,10 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
+# ignore pydocstyle errors in tests
+"**/tests/*" = ["D"]
+"geopandas/conftest.py" = ["D"]
+# the order of imports in __init__ is a bit tricky, so keep manual
 "geopandas/__init__.py" = ["F401", "I"]
 
 [tool.ruff.lint.isort]
@@ -209,3 +229,6 @@ section-order = [
 [tool.ruff.lint.isort.sections]
 "geo" = ["shapely", "pyproj"]
 "testing" = ["pytest", "pandas.testing", "numpy.testing", "geopandas.tests", "geopandas.testing"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"
