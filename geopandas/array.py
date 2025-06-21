@@ -11,6 +11,7 @@ from pandas.api.extensions import (
     ExtensionDtype,
     register_extension_dtype,
 )
+from pandas.core.indexing import need_slice
 
 import shapely
 import shapely.affinity
@@ -437,7 +438,12 @@ class GeometryArray(ExtensionArray):
         # validate and convert IntegerArray/BooleanArray
         # to numpy array, pass-through non-array-like indexers
         idx = pd.api.indexers.check_array_indexer(self, idx)
-        return GeometryArray(self._data[idx], crs=self.crs)
+        res = GeometryArray(self._data[idx], crs=self.crs)
+        if (isinstance(idx, slice) and not need_slice(idx)) or (
+            isinstance(idx, np.ndarray) and idx.all()
+        ):
+            res._sindex = self._sindex
+        return res
 
     def __setitem__(self, key, value):
         # validate and convert IntegerArray/BooleanArray
