@@ -56,8 +56,8 @@ def _continuous_to_discrete_coords(bounds, level, total_bounds):
 
     Returns
     -------
-    Discrete two-dimensional numpy array
-    Two-dimensional array Array of hilbert distances for each geom
+    numpy array
+        Two-dimensional array Array of hilbert distances for each geom
 
     """
     # Hilbert Side length
@@ -87,6 +87,8 @@ def _continuous_to_discrete_coords(bounds, level, total_bounds):
 
 def _continuous_to_discrete(vals, val_range, n):
     """Convert a continuous one-dimensional array to discrete integer values.
+
+    The discrete values are based on their ranges.
 
     Parameters
     ----------

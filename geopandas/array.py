@@ -313,9 +313,9 @@ def points_from_xy(x, y, z=None, crs=None):
 
 
 class GeometryArray(ExtensionArray):
-    """
-    Class wrapping a numpy array of Shapely objects and
-    holding the array-based implementations.
+    """Class wrapping a numpy array of Shapely objects.
+
+    It also holds the array-based implementations.
     """
 
     _dtype = GeometryDtype()
@@ -342,6 +342,7 @@ class GeometryArray(ExtensionArray):
 
     @property
     def sindex(self):
+        """Spatial index for the geometries in this array."""
         if self._sindex is None:
             self._sindex = SpatialIndex(self._data)
         return self._sindex
@@ -372,9 +373,7 @@ class GeometryArray(ExtensionArray):
 
     @property
     def crs(self):
-        """
-        The Coordinate Reference System (CRS) represented as a ``pyproj.CRS``
-        object.
+        """The Coordinate Reference System (CRS) represented as a ``pyproj.CRS`` object.
 
         Returns None if the CRS is not set, and to set the value it
         :getter: Returns a ``pyproj.CRS`` or None. When setting, the value
@@ -386,7 +385,7 @@ class GeometryArray(ExtensionArray):
 
     @crs.setter
     def crs(self, value):
-        """Sets the value of the crs."""
+        """Set the value of the crs."""
         if HAS_PYPROJ:
             from pyproj import CRS
 
@@ -557,6 +556,18 @@ class GeometryArray(ExtensionArray):
 
     @property
     def area(self):
+        """Return the area of the geometries in this array.
+
+        Raises a UserWarning if the CRS is geographic, as the area
+        calculation is not accurate in that case.
+
+        Note that the area is calculated in the units of the CRS.
+
+        Returns
+        -------
+        np.ndarray of float
+            Area of the geometries.
+        """
         self.check_geographic_crs(stacklevel=5)
         return shapely.area(self._data)
 
@@ -606,13 +617,16 @@ class GeometryArray(ExtensionArray):
 
     @property
     def convex_hull(self):
+        """Return the convex hull of the geometries in this array."""
         return GeometryArray(shapely.convex_hull(self._data), crs=self.crs)
 
     @property
     def envelope(self):
+        """Return the envelope of the geometries in this array."""
         return GeometryArray(shapely.envelope(self._data), crs=self.crs)
 
     def minimum_rotated_rectangle(self):
+        """Return the minimum rotated rectangle of the geometries in this array."""
         return GeometryArray(shapely.oriented_envelope(self._data), crs=self.crs)
 
     @property
@@ -1012,8 +1026,7 @@ class GeometryArray(ExtensionArray):
 
     @requires_pyproj
     def to_crs(self, crs=None, epsg=None):
-        """Returns a ``GeometryArray`` with all geometries transformed to a new
-        coordinate reference system.
+        """Transform all geometries to a different coordinate reference system.
 
         Transform all geometries in a GeometryArray to a different coordinate
         reference system.  The ``crs`` attribute on the current GeometryArray must
@@ -1240,7 +1253,7 @@ class GeometryArray(ExtensionArray):
 
     @property
     def m(self):
-        """Return the m coordinate of point geometries in a GeoSeries"""
+        """Return the m coordinate of point geometries in a GeoSeries."""
         if not SHAPELY_GE_21:
             raise ImportError("'m' requires shapely>=2.1.")
 
@@ -1672,7 +1685,7 @@ class GeometryArray(ExtensionArray):
         raise TypeError("geometries have no minimum or maximum")
 
     def _formatter(self, boxed=False):
-        """Formatting function for scalar values.
+        """Return a formatting function for scalar values.
 
         This is used in the default '__repr__'. The returned formatting
         function receives instances of your scalar type.
@@ -1728,8 +1741,7 @@ class GeometryArray(ExtensionArray):
 
     @classmethod
     def _concat_same_type(cls, to_concat):
-        """
-        Concatenate multiple array.
+        """Concatenate multiple arrays.
 
         Parameters
         ----------
@@ -1753,8 +1765,9 @@ class GeometryArray(ExtensionArray):
         )
 
     def __array__(self, dtype=None, copy=None):
-        """
-        The numpy array interface.
+        """Return the data as a numpy array.
+
+        This is the numpy array interface.
 
         Returns
         -------

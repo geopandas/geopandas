@@ -490,9 +490,9 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
     ) -> GeoDataFrame: ...
 
     def rename_geometry(self, col: str, inplace: bool = False) -> GeoDataFrame | None:
-        """
-        Renames the GeoDataFrame geometry column to
-        the specified name. By default yields a new object.
+        """Rename the GeoDataFrame geometry column to the specified name.
+
+        By default yields a new object.
 
         The original geometry column is replaced with the input.
 
@@ -661,7 +661,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         crs: Any | None = None,
         **kwargs,
     ) -> GeoDataFrame:
-        """Construct GeoDataFrame from dict of array-like or dicts.
+        """GeoDataFrame constructor from dict of array-like or dicts.
 
         This overrides the DataFrame.from_dict method with geometry and crs.
 
@@ -1196,7 +1196,7 @@ individually so that features may have different properties
     def to_geo_dict(
         self, na: str | None = "null", show_bbox: bool = False, drop_id: bool = False
     ) -> dict:
-        """Return the GeoDataFrame according the ``__geo_interface__`` specification.
+        """Return the GeoDataFrame according to the ``__geo_interface__`` specification.
 
         In practice, this returns the GeoDataFrame as a dictionary with a list of
         features based on the ``__geo_interface__`` GeoJSON-like specification.
@@ -1921,7 +1921,7 @@ default 'snappy'
         return result
 
     def _persist_old_default_geometry_colname(self) -> None:
-        """Temporarily persist the default geometry column name of 'geometry'.
+        """Persist the default geometry column name of 'geometry' temporarily.
 
         Used for backwards compatibility.
         """
@@ -2026,7 +2026,7 @@ default 'snappy'
     def _geodataframe_constructor_with_fallback(
         cls, *args, **kwargs
     ) -> pd.DataFrame | GeoDataFrame:
-        """Construct a GeoDataFrame with fallback to DataFrame.
+        """GeoDataFrame constructor with fallback to DataFrame.
 
         Fallback to DataFrame occurs if a certain operation does not preserve the
         geometry column.
@@ -2076,7 +2076,7 @@ default 'snappy'
               thus could have a geometry dtype). Therefore, we don't return a
               GeoSeries if we are sure we are in a row selection case (by
               checking the identity of the index)
-            """
+            """  # noqa: D401
             srs = pd.Series(*args, **kwargs)
             is_row_proxy = srs.index.is_(self.columns)
             if is_geometry_type(srs) and not is_row_proxy:

@@ -625,8 +625,7 @@ def _to_file(
     metadata=None,
     **kwargs,
 ):
-    """
-    Write this GeoDataFrame to an OGR data source.
+    """Write this GeoDataFrame to an OGR data source.
 
     A dictionary of supported OGR providers is available via:
 

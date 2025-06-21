@@ -168,6 +168,7 @@ def _read_postgis(
     Returns
     -------
     GeoDataFrame
+        A GeoDataFrame containing the data returned by the SQL query.
 
     Examples
     --------

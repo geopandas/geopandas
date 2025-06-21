@@ -18,7 +18,7 @@ from geopandas.array import (
 
 
 def _ensure_geometry_column(df):
-    """Make sure that the geometry column is called 'geometry'.
+    """Ensure that the geometry column is called 'geometry'.
 
     If another column with that name exists, it will be dropped.
     """
@@ -109,9 +109,7 @@ def _overlay_difference(df1, df2):
 
 
 def _overlay_identity(df1, df2):
-    """
-    Overlay Identity operation used in overlay function.
-    """
+    """Overlay Identity operation used in overlay function."""
     dfintersection = _overlay_intersection(df1, df2)
     dfdifference = _overlay_difference(df1, df2)
     dfdifference = _ensure_geometry_column(dfdifference)

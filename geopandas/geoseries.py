@@ -335,7 +335,7 @@ class GeoSeries(GeoPandasBase, Series):
 
     @property
     def m(self) -> Series:
-        """Return the m coordinate of point geometries in a GeoSeries
+        """Return the m coordinate of point geometries in a GeoSeries.
 
         Requires Shapely >= 2.1.
 
@@ -347,7 +347,6 @@ class GeoSeries(GeoPandasBase, Series):
 
         Examples
         --------
-
         >>> from shapely.geometry import Point
         >>> s = geopandas.GeoSeries.from_wkt(
         ...     [
@@ -367,7 +366,6 @@ class GeoSeries(GeoPandasBase, Series):
 
         See Also
         --------
-
         GeoSeries.x
         GeoSeries.y
         GeoSeries.z
@@ -422,7 +420,7 @@ class GeoSeries(GeoPandasBase, Series):
     def from_wkb(
         cls, data, index=None, crs: Any | None = None, on_invalid="raise", **kwargs
     ) -> GeoSeries:
-        r"""Alternate constructor to create a ``GeoSeries`` from WKB objects.
+        r"""Create a ``GeoSeries`` from WKB objects.
 
         Parameters
         ----------
@@ -458,7 +456,6 @@ class GeoSeries(GeoPandasBase, Series):
 
         Examples
         --------
-
         >>> wkbs = [
         ... (
         ...     b"\x01\x01\x00\x00\x00\x00\x00\x00\x00"
@@ -1005,8 +1002,8 @@ class GeoSeries(GeoPandasBase, Series):
         return plot_series(self, *args, **kwargs)
 
     @doc(_explore_geoseries)
-    def explore(self, *args, **kwargs):  # noqa: D102
-        # Interactive map based on folium/leaflet.js.
+    def explore(self, *args, **kwargs):
+        """Explore with an interactive map based on folium/leaflet.js."""
         return _explore_geoseries(self, *args, **kwargs)
 
     def explode(self, ignore_index=False, index_parts=False) -> GeoSeries:
@@ -1202,6 +1199,7 @@ class GeoSeries(GeoPandasBase, Series):
         Returns
         -------
         GeoSeries
+            A new GeoSeries with the geometries transformed to the specified CRS.
 
         Examples
         --------
@@ -1351,8 +1349,7 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
         )
 
     def to_wkb(self, hex: bool = False, **kwargs) -> Series:
-        """
-        Convert GeoSeries geometries to WKB.
+        """Convert GeoSeries geometries to WKB.
 
         Parameters
         ----------
@@ -1375,8 +1372,7 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
         return Series(to_wkb(self.array, hex=hex, **kwargs), index=self.index)
 
     def to_wkt(self, **kwargs) -> Series:
-        """
-        Convert GeoSeries geometries to WKT.
+        """Convert GeoSeries geometries to WKT.
 
         Parameters
         ----------

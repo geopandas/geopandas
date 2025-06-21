@@ -15,8 +15,7 @@ from .array import GeometryArray, GeometryDtype, points_from_xy
 
 
 def is_geometry_type(data):
-    """
-    Check if the data is of geometry dtype.
+    """Check if the data is of geometry dtype.
 
     Does not include object array of shapely scalars.
     """
@@ -451,7 +450,7 @@ GeometryCollection
         return _delegate_property("is_valid", self)
 
     def is_valid_reason(self):
-        """Returns a ``Series`` of strings with the reason for invalidity of
+        """Return a ``Series`` of strings with the reason for invalidity of
         each geometry.
 
         Examples
@@ -490,7 +489,7 @@ GeometryCollection
         return Series(self.geometry.values.is_valid_reason(), index=self.index)
 
     def is_valid_coverage(self, *, gap_width=0.0):
-        """Returns a ``bool`` indicating whether a ``GeoSeries`` forms a valid coverage
+        """Return a ``bool`` indicating whether a ``GeoSeries`` forms a valid coverage.
 
         A ``GeoSeries`` of valid polygons is considered a coverage if the polygons are:
 
@@ -562,7 +561,7 @@ GeometryCollection
         return self.geometry.values.is_valid_coverage(gap_width=gap_width)
 
     def invalid_coverage_edges(self, *, gap_width=0.0):
-        """Returns a ``GeoSeries`` containing edges causing invalid polygonal coverage
+        """Return a ``GeoSeries`` containing edges causing invalid polygonal coverage.
 
         This method returns (Multi)LineStrings showing the location of edges violating
         polygonal coverage (if any) in each polygon in the input ``GeoSeries``.
@@ -656,8 +655,7 @@ GeometryCollection
         return _delegate_property("is_empty", self)
 
     def count_coordinates(self):
-        """
-        Returns a ``Series`` containing the count of the number of coordinate pairs
+        """Return a ``Series`` containing the count of the number of coordinate pairs
         in each geometry.
 
         Examples
@@ -699,8 +697,7 @@ GeometryCollection
         return Series(self.geometry.values.count_coordinates(), index=self.index)
 
     def count_geometries(self):
-        """
-        Returns a ``Series`` containing the count of geometries in each multi-part
+        """Return a ``Series`` containing the count of geometries in each multi-part
         geometry.
 
         For single-part geometry objects, this is always 1. For multi-part geometries,
@@ -743,8 +740,7 @@ GeometryCollection
         return Series(self.geometry.values.count_geometries(), index=self.index)
 
     def count_interior_rings(self):
-        """
-        Returns a ``Series`` containing the count of the number of interior rings
+        """Return a ``Series`` containing the count of the number of interior rings
         in a polygonal geometry.
 
         For non-polygonal geometries, this is always 0.
@@ -789,7 +785,7 @@ GeometryCollection
 
     @property
     def is_simple(self):
-        """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
+        """Return a ``Series`` of ``dtype('bool')`` with value ``True`` for
         geometries that do not cross themselves.
 
         This is meaningful only for `LineStrings` and `LinearRings`.
@@ -817,7 +813,7 @@ GeometryCollection
 
     @property
     def is_ring(self):
-        """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
+        """Return a ``Series`` of ``dtype('bool')`` with value ``True`` for
         features that are closed.
 
         When constructing a LinearRing, the sequence of coordinates may be
@@ -852,7 +848,7 @@ GeometryCollection
 
     @property
     def is_ccw(self):
-        """Returns a ``Series`` of ``dtype('bool')`` with value ``True``
+        """Return a ``Series`` of ``dtype('bool')`` with value ``True``
         if a LineString or LinearRing is counterclockwise.
 
         Note that there are no checks on whether lines are actually
@@ -893,7 +889,7 @@ GeometryCollection
 
     @property
     def is_closed(self):
-        """Returns a ``Series`` of ``dtype('bool')`` with value ``True``
+        """Return a ``Series`` of ``dtype('bool')`` with value ``True``
         if a LineString's or LinearRing's first and last points are equal.
 
         Returns False for any other geometry type.
@@ -927,7 +923,7 @@ GeometryCollection
 
     @property
     def has_z(self):
-        """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
+        """Return a ``Series`` of ``dtype('bool')`` with value ``True`` for
         features that have a z-component.
 
         Notes
@@ -958,7 +954,7 @@ GeometryCollection
 
     @property
     def has_m(self):
-        """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
+        """Return a ``Series`` of ``dtype('bool')`` with value ``True`` for
         features that have a m-component.
 
         Requires Shapely >= 2.1.
@@ -990,7 +986,7 @@ GeometryCollection
         return _delegate_property("has_m", self)
 
     def get_precision(self):
-        """Returns a ``Series`` of the precision of each geometry.
+        """Return a ``Series`` of the precision of each geometry.
 
         If a precision has not been previously set, it will be 0, indicating regular
         double precision coordinates are in use. Otherwise, it will return the precision
@@ -1040,7 +1036,7 @@ GeometryCollection
         return Series(self.geometry.values.get_precision(), index=self.index)
 
     def get_geometry(self, index):
-        """Returns the n-th geometry from a collection of geometries.
+        """Return the n-th geometry from a collection of geometries.
 
         Parameters
         ----------
@@ -1101,7 +1097,7 @@ GeometryCollection
 
     @property
     def boundary(self):
-        """Returns a ``GeoSeries`` of lower dimensional objects representing
+        """Return a ``GeoSeries`` of lower dimensional objects representing
         each geometry's set-theoretic `boundary`.
 
         Examples
@@ -1135,7 +1131,7 @@ GeometryCollection
 
     @property
     def centroid(self):
-        """Returns a ``GeoSeries`` of points representing the centroid of each
+        """Return a ``GeoSeries`` of points representing the centroid of each
         geometry.
 
         Note that centroid does not have to be on or within original geometry.
@@ -1237,7 +1233,7 @@ GeometryCollection
         )
 
     def constrained_delaunay_triangles(self):
-        """Returns a :class:`~geopandas.GeoSeries` with the constrained
+        """Return a :class:`~geopandas.GeoSeries` with the constrained
         Delaunay triangulation of polygons.
 
         A constrained Delaunay triangulation requires the edges of the input
@@ -1270,7 +1266,7 @@ GeometryCollection
 
     @property
     def convex_hull(self):
-        """Returns a ``GeoSeries`` of geometries representing the convex hull
+        """Return a ``GeoSeries`` of geometries representing the convex hull
         of each geometry.
 
         The convex hull of a geometry is the smallest convex `Polygon`
@@ -1315,7 +1311,7 @@ GeometryCollection
         return _delegate_property("convex_hull", self)
 
     def delaunay_triangles(self, tolerance=0.0, only_edges=False):
-        """Returns a ``GeoSeries`` consisting of objects representing
+        """Return a ``GeoSeries`` consisting of objects representing
         the computed Delaunay triangulation between the vertices of
         an input geometry.
 
@@ -1415,7 +1411,7 @@ GeometryCollection
         return GeoSeries(delaunay, crs=self.crs).explode(ignore_index=True)
 
     def voronoi_polygons(self, tolerance=0.0, extend_to=None, only_edges=False):
-        """Returns a ``GeoSeries`` consisting of objects representing
+        """Return a ``GeoSeries`` consisting of objects representing
         the computed Voronoi diagram around the vertices of an input geometry.
 
         All geometries within the GeoSeries are considered together within a single
@@ -1542,7 +1538,7 @@ GeometryCollection
 
     @property
     def envelope(self):
-        """Returns a ``GeoSeries`` of geometries representing the envelope of
+        """Return a ``GeoSeries`` of geometries representing the envelope of
         each geometry.
 
         The envelope of a geometry is the bounding rectangle. That is, the
@@ -1581,7 +1577,7 @@ GeometryCollection
         return _delegate_property("envelope", self)
 
     def minimum_rotated_rectangle(self):
-        """Returns a ``GeoSeries`` of the general minimum bounding rectangle
+        """Return a ``GeoSeries`` of the general minimum bounding rectangle
         that contains the object.
 
         Unlike envelope this rectangle is not constrained to be parallel
@@ -1621,7 +1617,7 @@ GeometryCollection
 
     @property
     def exterior(self):
-        """Returns a ``GeoSeries`` of LinearRings representing the outer
+        """Return a ``GeoSeries`` of LinearRings representing the outer
         boundary of each polygon in the GeoSeries.
 
         Applies to GeoSeries containing only Polygons. Returns ``None``` for
@@ -1658,7 +1654,7 @@ GeometryCollection
         return _delegate_property("exterior", self)
 
     def extract_unique_points(self):
-        """Returns a ``GeoSeries`` of MultiPoints representing all
+        """Return a ``GeoSeries`` of MultiPoints representing all
         distinct vertices of an input geometry.
 
         Examples
@@ -1687,7 +1683,7 @@ GeometryCollection
         return _delegate_geo_method("extract_unique_points", self)
 
     def offset_curve(self, distance, quad_segs=8, join_style="round", mitre_limit=5.0):
-        """Returns a ``LineString`` or ``MultiLineString`` geometry at a
+        """Return a ``LineString`` or ``MultiLineString`` geometry at a
         distance from the object on its right or its left side.
 
         Parameters
@@ -1738,7 +1734,7 @@ GeometryCollection
 
     @property
     def interiors(self):
-        """Returns a ``Series`` of List representing the
+        """Return a ``Series`` of List representing the
         inner rings of each polygon in the GeoSeries.
 
         Applies to GeoSeries containing only Polygons.
@@ -1777,7 +1773,7 @@ GeometryCollection
         return _delegate_property("interiors", self)
 
     def remove_repeated_points(self, tolerance=0.0):
-        """Returns a ``GeoSeries`` containing a copy of the input geometry
+        """Return a ``GeoSeries`` containing a copy of the input geometry
         with repeated points removed.
 
         From the start of the coordinate sequence, each next point within the
@@ -1814,7 +1810,7 @@ GeometryCollection
         return _delegate_geo_method("remove_repeated_points", self, tolerance=tolerance)
 
     def set_precision(self, grid_size, mode="valid_output"):
-        """Returns a ``GeoSeries`` with the precision set to a precision grid size.
+        """Return a ``GeoSeries`` with the precision set to a precision grid size.
 
         By default, geometries use double precision coordinates (``grid_size=0``).
 
@@ -1902,7 +1898,7 @@ GeometryCollection
         )
 
     def representative_point(self):
-        """Returns a ``GeoSeries`` of (cheaply computed) points that are
+        """Return a ``GeoSeries`` of (cheaply computed) points that are
         guaranteed to be within each geometry.
 
         Examples
@@ -1934,7 +1930,7 @@ GeometryCollection
         return _delegate_geo_method("representative_point", self)
 
     def minimum_bounding_circle(self):
-        """Returns a ``GeoSeries`` of geometries representing the minimum bounding
+        """Return a ``GeoSeries`` of geometries representing the minimum bounding
         circle that encloses each geometry.
 
         Examples
@@ -1967,7 +1963,7 @@ GeometryCollection
         return _delegate_geo_method("minimum_bounding_circle", self)
 
     def maximum_inscribed_circle(self, *, tolerance=None):
-        """Returns a ``GeoSeries`` of geometries representing the largest circle that
+        """Return a ``GeoSeries`` of geometries representing the largest circle that
         is fully contained within the input geometry.
 
         Constructs the “maximum inscribed circle” (MIC) for a polygonal geometry, up to
@@ -2031,7 +2027,7 @@ GeometryCollection
         )
 
     def minimum_bounding_radius(self):
-        """Returns a `Series` of the radii of the minimum bounding circles
+        """Return a `Series` of the radii of the minimum bounding circles
         that enclose each geometry.
 
         Examples
@@ -2064,7 +2060,7 @@ GeometryCollection
         return Series(self.geometry.values.minimum_bounding_radius(), index=self.index)
 
     def minimum_clearance(self):
-        """Returns a ``Series`` containing the minimum clearance distance,
+        """Return a ``Series`` containing the minimum clearance distance,
         which is the smallest distance by which a vertex of the geometry
         could be moved to produce an invalid geometry.
 
@@ -2100,7 +2096,7 @@ GeometryCollection
         return Series(self.geometry.values.minimum_clearance(), index=self.index)
 
     def minimum_clearance_line(self):
-        """Returns a ``GeoSeries`` of linestrings whose endpoints define the
+        """Return a ``GeoSeries`` of linestrings whose endpoints define the
         minimum clearance.
 
         A geometry's “minimum clearance” is the smallest distance by which a vertex
@@ -2141,7 +2137,7 @@ GeometryCollection
         return _delegate_geo_method("minimum_clearance_line", self)
 
     def normalize(self):
-        """Returns a ``GeoSeries`` of normalized
+        """Return a ``GeoSeries`` of normalized
         geometries to normal form (or canonical form).
 
         This method orders the coordinates, rings of a polygon and parts of
@@ -2173,7 +2169,7 @@ GeometryCollection
         return _delegate_geo_method("normalize", self)
 
     def orient_polygons(self, *, exterior_cw=False):
-        """Returns a ``GeoSeries`` of geometries with enforced ring orientation.
+        """Return a ``GeoSeries`` of geometries with enforced ring orientation.
 
         Enforce a ring orientation on all polygonal elements in the ``GeoSeries``.
 
@@ -2298,7 +2294,7 @@ GeometryCollection
         )
 
     def reverse(self):
-        """Returns a ``GeoSeries`` with the order of coordinates reversed.
+        """Return a ``GeoSeries`` with the order of coordinates reversed.
 
         Examples
         --------
@@ -2329,7 +2325,7 @@ GeometryCollection
         return _delegate_geo_method("reverse", self)
 
     def segmentize(self, max_segment_length):
-        """Returns a ``GeoSeries`` with vertices added to line segments based on
+        """Return a ``GeoSeries`` with vertices added to line segments based on
         maximum segment length.
 
         Additional vertices will be added to every line segment in an input geometry so
@@ -2371,7 +2367,7 @@ GeometryCollection
         )
 
     def transform(self, transformation, include_z=False):
-        """Returns a ``GeoSeries`` with the transformation function
+        """Return a ``GeoSeries`` with the transformation function
         applied to the geometry coordinates.
 
         Parameters
@@ -2413,7 +2409,7 @@ GeometryCollection
         )
 
     def force_2d(self):
-        """Forces the dimensionality of a geometry to 2D.
+        """Force the dimensionality of a geometry to 2D.
 
         Removes the additional Z coordinate dimension from all geometries.
 
@@ -2446,7 +2442,7 @@ GeometryCollection
         return _delegate_geo_method("force_2d", self)
 
     def force_3d(self, z=0):
-        """Forces the dimensionality of a geometry to 3D.
+        """Force the dimensionality of a geometry to 3D.
 
         2D geometries will get the provided Z coordinate; 3D geometries
         are unchanged (unless their Z coordinate is ``np.nan``).
@@ -2509,7 +2505,7 @@ GeometryCollection
         return _delegate_geo_method("force_3d", self, z=z)
 
     def line_merge(self, directed=False):
-        """Returns (Multi)LineStrings formed by combining the lines in a
+        """Return (Multi)LineStrings formed by combining the lines in a
         MultiLineString.
 
         Lines are joined together at their endpoints in case two lines are intersecting.
@@ -2581,7 +2577,7 @@ GeometryCollection
 
     @property
     def unary_union(self):
-        """Returns a geometry containing the union of all geometries in the
+        """Return a geometry containing the union of all geometries in the
         ``GeoSeries``.
 
         The ``unary_union`` attribute is deprecated. Use :meth:`union_all`
@@ -2667,7 +2663,7 @@ GeometryCollection
         return self.geometry.values.union_all(method=method, grid_size=grid_size)
 
     def intersection_all(self):
-        """Returns a geometry containing the intersection of all geometries in
+        """Return a geometry containing the intersection of all geometries in
         the ``GeoSeries``.
 
         This method ignores None values when other geometries are present.
@@ -2696,7 +2692,7 @@ GeometryCollection
     #
 
     def contains(self, other, align=None):
-        """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
+        """Return a ``Series`` of ``dtype('bool')`` with value ``True`` for
         each aligned geometry that contains `other`.
 
         An object is said to contain `other` if at least one point of `other` lies in
@@ -2812,7 +2808,7 @@ GeometryCollection
         return _binary_op("contains", self, other, align)
 
     def contains_properly(self, other, align=None):
-        """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
+        """Return a ``Series`` of ``dtype('bool')`` with value ``True`` for
         each aligned geometry that is completely inside ``other``, with no common
         boundary points.
 
@@ -2933,7 +2929,7 @@ GeometryCollection
         return _binary_op("contains_properly", self, other, align)
 
     def dwithin(self, other, distance, align=None):
-        """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
+        """Return a ``Series`` of ``dtype('bool')`` with value ``True`` for
         each aligned geometry that is within a set distance from ``other``.
 
         The operation works on a 1-to-1 row-wise manner:
@@ -3044,7 +3040,7 @@ GeometryCollection
         return _binary_op("dwithin", self, other, distance=distance, align=align)
 
     def geom_equals(self, other, align=None):
-        """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
+        """Return a ``Series`` of ``dtype('bool')`` with value ``True`` for
         each aligned geometry equal to `other`.
 
         An object is said to be equal to `other` if its set-theoretic
@@ -3294,7 +3290,7 @@ GeometryCollection
         return _binary_op("geom_equals_identical", self, other, align=align)
 
     def crosses(self, other, align=None):
-        """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
+        """Return a ``Series`` of ``dtype('bool')`` with value ``True`` for
         each aligned geometry that cross `other`.
 
         An object is said to cross `other` if its `interior` intersects the
@@ -3406,7 +3402,7 @@ GeometryCollection
         return _binary_op("crosses", self, other, align)
 
     def disjoint(self, other, align=None):
-        """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
+        """Return a ``Series`` of ``dtype('bool')`` with value ``True`` for
         each aligned geometry disjoint to `other`.
 
         An object is said to be disjoint to `other` if its `boundary` and
@@ -3507,7 +3503,7 @@ GeometryCollection
         return _binary_op("disjoint", self, other, align)
 
     def intersects(self, other, align=None):
-        """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
+        """Return a ``Series`` of ``dtype('bool')`` with value ``True`` for
         each aligned geometry that intersects `other`.
 
         An object is said to intersect `other` if its `boundary` and `interior`
@@ -3618,7 +3614,7 @@ GeometryCollection
         return _binary_op("intersects", self, other, align)
 
     def overlaps(self, other, align=None):
-        """Returns True for all aligned geometries that overlap *other*, else False.
+        """Return True for all aligned geometries that overlap *other*, else False.
 
         Geometries overlaps if they have more than one but not all
         points in common, have the same dimension, and the intersection of the
@@ -3729,7 +3725,7 @@ GeometryCollection
         return _binary_op("overlaps", self, other, align)
 
     def touches(self, other, align=None):
-        """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
+        """Return a ``Series`` of ``dtype('bool')`` with value ``True`` for
         each aligned geometry that touches `other`.
 
         An object is said to touch `other` if it has at least one point in
@@ -3841,7 +3837,7 @@ GeometryCollection
         return _binary_op("touches", self, other, align)
 
     def within(self, other, align=None):
-        """Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
+        """Return a ``Series`` of ``dtype('bool')`` with value ``True`` for
         each aligned geometry that is within `other`.
 
         An object is said to be within `other` if at least one of its points is located
@@ -3955,8 +3951,7 @@ GeometryCollection
         return _binary_op("within", self, other, align)
 
     def covers(self, other, align=None):
-        """
-        Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
+        """Return a ``Series`` of ``dtype('bool')`` with value ``True`` for
         each aligned geometry that is entirely covering `other`.
 
         An object A is said to cover another object B if no points of B lie
@@ -4069,8 +4064,7 @@ GeometryCollection
         return _binary_op("covers", self, other, align)
 
     def covered_by(self, other, align=None):
-        """
-        Returns a ``Series`` of ``dtype('bool')`` with value ``True`` for
+        """Return a ``Series`` of ``dtype('bool')`` with value ``True`` for
         each aligned geometry that is entirely covered by `other`.
 
         An object A is said to cover another object B if no points of B lie
@@ -4183,7 +4177,7 @@ GeometryCollection
         return _binary_op("covered_by", self, other, align)
 
     def distance(self, other, align=None):
-        """Returns a ``Series`` containing the distance to aligned `other`.
+        """Return a ``Series`` containing the distance to aligned `other`.
 
         The operation works on a 1-to-1 row-wise manner:
 
@@ -4279,7 +4273,7 @@ GeometryCollection
         return _binary_op("distance", self, other, align)
 
     def hausdorff_distance(self, other, align=None, densify=None):
-        """Returns a ``Series`` containing the Hausdorff distance to aligned `other`.
+        """Return a ``Series`` containing the Hausdorff distance to aligned `other`.
 
         The Hausdorff distance is the largest distance consisting of any point in `self`
         with the nearest point in `other`.
@@ -4394,7 +4388,7 @@ GeometryCollection
         return _binary_op("hausdorff_distance", self, other, align, densify=densify)
 
     def frechet_distance(self, other, align=None, densify=None):
-        """Returns a ``Series`` containing the Frechet distance to aligned `other`.
+        """Return a ``Series`` containing the Frechet distance to aligned `other`.
 
         The Fréchet distance is a measure of similarity: it is the greatest distance
         between any point in A and the closest point in B. The discrete distance is an
@@ -4518,7 +4512,7 @@ GeometryCollection
     #
 
     def difference(self, other, align=None):
-        """Returns a ``GeoSeries`` of the points in each aligned geometry that
+        """Return a ``GeoSeries`` of the points in each aligned geometry that
         are not in `other`.
 
         .. image:: ../../../_static/binary_geo-difference.svg
@@ -4629,7 +4623,7 @@ GeometryCollection
         return _binary_geo("difference", self, other, align)
 
     def symmetric_difference(self, other, align=None):
-        """Returns a ``GeoSeries`` of the symmetric difference of points in
+        """Return a ``GeoSeries`` of the symmetric difference of points in
         each aligned geometry with `other`.
 
         For each geometry, the symmetric difference consists of points in the
@@ -4744,7 +4738,7 @@ GeometryCollection
         return _binary_geo("symmetric_difference", self, other, align)
 
     def union(self, other, align=None):
-        """Returns a ``GeoSeries`` of the union of points in each aligned geometry with
+        """Return a ``GeoSeries`` of the union of points in each aligned geometry with
         `other`.
 
         .. image:: ../../../_static/binary_geo-union.svg
@@ -4858,7 +4852,7 @@ GeometryCollection
         return _binary_geo("union", self, other, align)
 
     def intersection(self, other, align=None):
-        """Returns a ``GeoSeries`` of the intersection of points in each
+        """Return a ``GeoSeries`` of the intersection of points in each
         aligned geometry with `other`.
 
         .. image:: ../../../_static/binary_geo-intersection.svg
@@ -4971,7 +4965,7 @@ GeometryCollection
         return _binary_geo("intersection", self, other, align)
 
     def clip_by_rect(self, xmin, ymin, xmax, ymax):
-        """Returns a ``GeoSeries`` of the portions of geometry within the given
+        """Return a ``GeoSeries`` of the portions of geometry within the given
         rectangle.
 
         Note that the results are not exactly equal to
@@ -5040,8 +5034,7 @@ GeometryCollection
         return GeoSeries(clipped_geometry, index=self.index, crs=self.crs)
 
     def shortest_line(self, other, align=None):
-        """
-        Returns the shortest two-point line between two geometries.
+        """Return the shortest two-point line between two geometries.
 
         The resulting line consists of two points, representing the nearest points
         between the geometry pair. The line always starts in the first geometry a
@@ -5244,8 +5237,7 @@ GeometryCollection
         return _binary_geo("snap", self, other, align, tolerance=tolerance)
 
     def shared_paths(self, other, align=None):
-        """
-        Returns the shared paths between two geometries.
+        """Return the shared paths between two geometries.
 
         Geometries within the GeoSeries should be only (Multi)LineStrings or
         LinearRings. A GeoSeries of GeometryCollections is returned with two elements
@@ -5347,7 +5339,7 @@ GeometryCollection
 
     @property
     def bounds(self):
-        """Returns a ``DataFrame`` with columns ``minx``, ``miny``, ``maxx``,
+        """Return a ``DataFrame`` with columns ``minx``, ``miny``, ``maxx``,
         ``maxy`` values containing the bounds for each geometry.
 
         See ``GeoSeries.total_bounds`` for the limits of the entire series.
@@ -5381,7 +5373,7 @@ GeometryCollection
 
     @property
     def total_bounds(self):
-        """Returns a tuple containing ``minx``, ``miny``, ``maxx``, ``maxy``
+        """Return a tuple containing ``minx``, ``miny``, ``maxx``, ``maxy``
         values for the bounds of the series as a whole.
 
         See ``GeoSeries.bounds`` for the bounds of the geometries contained in
@@ -5400,7 +5392,7 @@ GeometryCollection
 
     @property
     def sindex(self):
-        """Generate the spatial index
+        """Generate the spatial index.
 
         Creates R-tree spatial index based on ``shapely.STRtree``.
 
@@ -5491,7 +5483,7 @@ GeometryCollection
         single_sided=False,
         **kwargs,
     ):
-        """Returns a ``GeoSeries`` of geometries representing all points within
+        """Return a ``GeoSeries`` of geometries representing all points within
         a given ``distance`` of each geometric object.
 
         Computes the buffer of a geometry for positive and negative buffer distance.
@@ -5568,7 +5560,7 @@ GeometryCollection
         )
 
     def simplify(self, tolerance, preserve_topology=True):
-        """Simplify the geometries.
+        """Return a simplified version of each geometry.
 
         The algorithm (Douglas-Peucker) recursively splits the original line
         into smaller parts and connects these parts' endpoints
@@ -5628,7 +5620,7 @@ GeometryCollection
         )
 
     def simplify_coverage(self, tolerance, *, simplify_boundary=True):
-        """Return the simplified representation of polygonal coverage.
+        """Return a simplified version of each geometry of the polygonal coverage.
 
         Assumes that the ``GeoSeries`` forms a polygonal coverage. Under this
         assumption, the method simplifies the edges using the Visvalingam-Whyatt
@@ -5667,7 +5659,7 @@ GeometryCollection
             as its boundary. If set to False, only simplifies internal edges.
 
 
-        See also
+        See Also
         --------
         simplify : simplification of individual geometries
 
@@ -5807,8 +5799,7 @@ GeometryCollection
         return _binary_op("relate", self, other, align)
 
     def relate_pattern(self, other, pattern, align=None):
-        """
-        Returns True if the DE-9IM string code for the relationship between
+        """Return True if the DE-9IM string code for the relationship between
         the geometries satisfies the pattern, else False.
 
         This function compares the DE-9IM code string for two geometries
@@ -5919,8 +5910,7 @@ GeometryCollection
         return _binary_op("relate_pattern", self, other, pattern=pattern, align=align)
 
     def project(self, other, normalized=False, align=None):
-        """
-        Return the distance along each geometry nearest to *other*
+        """Return the distance along each geometry nearest to *other*.
 
         The operation works on a 1-to-1 row-wise manner:
 
@@ -6018,8 +6008,7 @@ GeometryCollection
         return _binary_op("project", self, other, normalized=normalized, align=align)
 
     def interpolate(self, distance, normalized=False):
-        """
-        Return a point at the specified distance along each geometry
+        """Return a point at the specified distance along each geometry.
 
         Parameters
         ----------
@@ -6106,7 +6095,7 @@ GeometryCollection
         return _delegate_geo_method("affine_transform", self, matrix=matrix)
 
     def translate(self, xoff=0.0, yoff=0.0, zoff=0.0):
-        """Returns a ``GeoSeries`` with translated geometries.
+        """Return a ``GeoSeries`` with translated geometries.
 
         See http://shapely.readthedocs.io/en/latest/manual.html#shapely.affinity.translate
         for details.
@@ -6144,7 +6133,7 @@ GeometryCollection
         return _delegate_geo_method("translate", self, xoff=xoff, yoff=yoff, zoff=zoff)
 
     def rotate(self, angle, origin="center", use_radians=False):
-        """Returns a ``GeoSeries`` with rotated geometries.
+        """Return a ``GeoSeries`` with rotated geometries.
 
         See http://shapely.readthedocs.io/en/latest/manual.html#shapely.affinity.rotate
         for details.
@@ -6196,7 +6185,7 @@ GeometryCollection
         )
 
     def scale(self, xfact=1.0, yfact=1.0, zfact=1.0, origin="center"):
-        """Returns a ``GeoSeries`` with scaled geometries.
+        """Return a ``GeoSeries`` with scaled geometries.
 
         The geometries can be scaled by different factors along each
         dimension. Negative scale factors will mirror or reflect coordinates.
@@ -6246,7 +6235,7 @@ GeometryCollection
         )
 
     def skew(self, xs=0.0, ys=0.0, origin="center", use_radians=False):
-        """Returns a ``GeoSeries`` with skewed geometries.
+        """Return a ``GeoSeries`` with skewed geometries.
 
         The geometries are sheared by angles along the x and y dimensions.
 
@@ -6576,7 +6565,7 @@ GeometryCollection
         return GeoSeries(result, name="sampled_points", crs=self.crs, index=self.index)
 
     def build_area(self, node=True):
-        """Creates an areal geometry formed by the constituent linework.
+        """Create an areal geometry formed by the constituent linework.
 
         Builds areas from the GeoSeries that contain linework which represents the edges
         of a planar graph. Any geometry type may be provided as input; only the
@@ -6637,7 +6626,7 @@ GeometryCollection
         )
 
     def polygonize(self, node=True, full=False):
-        """Creates polygons formed from the linework of a GeoSeries.
+        """Create polygons formed from the linework of a GeoSeries.
 
         Polygonizes the GeoSeries that contain linework which represents the
         edges of a planar graph. Any geometry type may be provided as input; only the
@@ -6725,9 +6714,9 @@ GeometryCollection
 
 
 def _get_index_for_parts(orig_idx, outer_idx, ignore_index, index_parts):
-    """Helper to handle index when geometries get exploded to parts.
+    """Handle index when geometries get exploded to parts.
 
-    Used in get_coordinates and explode.
+    Helper function used in get_coordinates and explode.
 
     Parameters
     ----------

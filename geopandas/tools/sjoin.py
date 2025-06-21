@@ -363,7 +363,7 @@ def _restore_index(joined, index_names, index_names_original):
 
 
 def _adjust_indexers(indices, distances, original_length, how, predicate):
-    """Adjust the indexers based on the join type.
+    """Adjust the indexers for the join based on the `how` parameter.
 
     The left/right indexers from the query represents an inner join.
     For a left or right join, we need to adjust them to include the rows

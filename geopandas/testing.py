@@ -195,7 +195,7 @@ def assert_geoseries_equal(
 
 
 def _truncated_string(geom):
-    """Return truncated WKT repr of geom."""
+    """Truncate WKT repr of geom."""
     s = str(geom)
     if len(s) > 100:
         return s[:100] + "..."
@@ -246,8 +246,7 @@ def assert_geodataframe_equal(
     check_crs=True,
     normalize=False,
 ):
-    """
-    Check that two GeoDataFrames are equal.
+    """Check that two GeoDataFrames are equal.
 
     Parameters
     ----------

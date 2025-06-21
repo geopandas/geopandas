@@ -490,7 +490,10 @@ def _to_feather(df, path, index=None, compression=None, schema_version=None, **k
 
 
 def _arrow_to_geopandas(table, geo_metadata=None, to_pandas_kwargs=None):
-    """Helper function with main, shared logic for read_parquet/read_feather."""
+    """Convert a pyarrow Table to a GeoDataFrame.
+
+    Helper function with main, shared logic for read_parquet/read_feather.
+    """
     if geo_metadata is None:
         # Note: this path of not passing metadata is also used by dask-geopandas
         geo_metadata = _validate_and_decode_metadata(table.schema.metadata)
@@ -591,11 +594,11 @@ def _get_filesystem_path(path, filesystem=None, storage_options=None):
 
 
 def _ensure_arrow_fs(filesystem):
-    """Simplified version of pyarrow.fs._ensure_filesystem.
+    """Check if ``filesystem`` is a valid filesystem.
 
-    This is only needed below because `pyarrow.parquet.read_metadata` does
-    not yet accept a filesystem keyword
-    (https://issues.apache.org/jira/browse/ARROW-16719).
+    Simplified version of pyarrow.fs._ensure_filesystem. This is only needed
+    below because `pyarrow.parquet.read_metadata` does not yet accept a
+    filesystem keyword (https://issues.apache.org/jira/browse/ARROW-16719)
     """
     from pyarrow import fs
 
