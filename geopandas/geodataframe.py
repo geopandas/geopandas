@@ -816,9 +816,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 "geometry": shape(feature["geometry"]) if feature["geometry"] else None
             }
             # load properties
-            properties = feature["properties"]
-            if properties is None:
-                properties = {}
+            properties = feature.get("properties") or {}
             row.update(properties)
             rows.append(row)
         return cls(rows, columns=columns, crs=crs)
