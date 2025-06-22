@@ -774,6 +774,7 @@ class TestDataFrame:
         gdf2 = GeoDataFrame.from_features(gjson_null)
 
         assert_frame_equal(gdf1, gdf2)
+        assert "properties" not in gdf1.columns
 
     def test_from_features_no_properties(self):
         data = {
