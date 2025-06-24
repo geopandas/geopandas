@@ -1,5 +1,11 @@
 # Changelog
 
+## Version 1.2.0
+
+Deprecations and compatibility notes:
+- The `resolution` keyword to `buffer` has been deprecated to align with the convention in shapely,
+  `quad_segs` should be used instead (#3600).
+
 ## Version 1.1.1
 
 - Fix regression in the GeoDataFrame constructor when np.nan is given as an only geometry (#3591).
