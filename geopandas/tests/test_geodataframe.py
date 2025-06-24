@@ -774,6 +774,26 @@ class TestDataFrame:
         gdf2 = GeoDataFrame.from_features(gjson_null)
 
         assert_frame_equal(gdf1, gdf2)
+        assert "properties" not in gdf1.columns
+
+    def test_from_features_no_properties(self):
+        data = {
+            "type": "FeatureCollection",
+            "features": [
+                {
+                    "type": "Feature",
+                    "geometry": {"type": "Point", "coordinates": [0.0, 90.0]},
+                },
+                {
+                    "type": "Feature",
+                    "geometry": {"type": "Point", "coordinates": [0.0, -90.0]},
+                },
+            ],
+        }
+
+        gdf = GeoDataFrame.from_features(data)
+        assert gdf.shape == (2, 1)
+        assert "properties" not in gdf.columns
 
     def test_from_features_geom_interface_feature(self):
         class Placemark:
