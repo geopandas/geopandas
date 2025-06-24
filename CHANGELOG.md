@@ -1,5 +1,11 @@
 # Changelog
 
+## Version 1.2.0
+
+Bug fixes:
+
+- Fix an issue that caused an error in `GeoDataFrame.from_features` when there is no `properties` field (#3599).
+
 ## Version 1.1.1
 
 - Fix regression in the GeoDataFrame constructor when np.nan is given as an only geometry (#3591).
