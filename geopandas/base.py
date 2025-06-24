@@ -5368,7 +5368,7 @@ GeometryCollection
     def buffer(
         self,
         distance,
-        resolution=16,
+        quad_segs=16,
         cap_style="round",
         join_style="round",
         mitre_limit=5.0,
@@ -5392,7 +5392,7 @@ GeometryCollection
         distance : float, np.array, pd.Series
             The radius of the buffer in the Minkowski sum (or difference). If np.array
             or pd.Series are used then it must have same length as the GeoSeries.
-        resolution : int (optional, default 16)
+        quad_segs : int (optional, default 16)
             The resolution of the buffer around each vertex. Specifies the number of
             linear segments in a quarter circle in the approximation of circular arcs.
         cap_style : {'round', 'square', 'flat'}, default 'round'
@@ -5443,7 +5443,7 @@ GeometryCollection
             "buffer",
             self,
             distance=distance,
-            resolution=resolution,
+            quad_segs=quad_segs,
             cap_style=cap_style,
             join_style=join_style,
             mitre_limit=mitre_limit,
