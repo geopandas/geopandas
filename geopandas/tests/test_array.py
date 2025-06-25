@@ -642,7 +642,9 @@ def test_buffer_resolution_deprecation():
         ValueError, match="`buffer` received both `quad_segs` and `resolution`"
     ):
         P.buffer(2, resolution=2, quad_segs=2)
-    with pytest.warns(UserWarning, match="The `resolution` argument to `buffer`"):
+    with pytest.warns(
+        DeprecationWarning, match="The `resolution` argument to `buffer`"
+    ):
         P.buffer(2, resolution=2)
 
 

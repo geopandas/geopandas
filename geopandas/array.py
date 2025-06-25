@@ -899,7 +899,7 @@ class GeometryArray(ExtensionArray):
             )
             warnings.warn(
                 msg,
-                category=UserWarning,
+                category=DeprecationWarning,
                 stacklevel=4,
             )
             quad_segs = kwargs.pop("resolution")
