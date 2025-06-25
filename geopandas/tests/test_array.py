@@ -612,13 +612,13 @@ def test_binary_project(normalized):
 
 @pytest.mark.parametrize("cap_style", [CAP_STYLE.round, CAP_STYLE.square])
 @pytest.mark.parametrize("join_style", [JOIN_STYLE.round, JOIN_STYLE.bevel])
-@pytest.mark.parametrize("resolution", [16, 25])
-def test_buffer(resolution, cap_style, join_style):
+@pytest.mark.parametrize("quad_segs", [16, 25])
+def test_buffer(quad_segs, cap_style, join_style):
     na_value = None
     expected = [
         (
             p.buffer(
-                0.1, resolution=resolution, cap_style=cap_style, join_style=join_style
+                0.1, quad_segs=quad_segs, cap_style=cap_style, join_style=join_style
             )
             if p is not None
             else na_value
@@ -626,15 +626,26 @@ def test_buffer(resolution, cap_style, join_style):
         for p in points
     ]
     result = P.buffer(
-        0.1, resolution=resolution, cap_style=cap_style, join_style=join_style
+        0.1, quad_segs=quad_segs, cap_style=cap_style, join_style=join_style
     )
     assert equal_geometries(expected, result)
 
     dist = np.array([0.1] * len(P))
     result = P.buffer(
-        dist, resolution=resolution, cap_style=cap_style, join_style=join_style
+        dist, quad_segs=quad_segs, cap_style=cap_style, join_style=join_style
     )
     assert equal_geometries(expected, result)
+
+
+def test_buffer_resolution_deprecation():
+    with pytest.raises(
+        ValueError, match="`buffer` received both `quad_segs` and `resolution`"
+    ):
+        P.buffer(2, resolution=2, quad_segs=2)
+    with pytest.warns(
+        DeprecationWarning, match="The `resolution` argument to `buffer`"
+    ):
+        P.buffer(2, resolution=2)
 
 
 def test_simplify():

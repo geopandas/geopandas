@@ -1461,7 +1461,7 @@ class TestGeomMethods:
     def test_buffer(self):
         original = GeoSeries([Point(0, 0)])
         expected = GeoSeries([Polygon(((5, 0), (0, -5), (-5, 0), (0, 5), (5, 0)))])
-        calculated = original.buffer(5, resolution=1)
+        calculated = original.buffer(5, quad_segs=1)
         assert geom_almost_equals(expected, calculated)
 
     def test_buffer_args(self):
@@ -1482,7 +1482,7 @@ class TestGeomMethods:
                 Polygon(((10, 5), (5, 0), (0, 5), (5, 10), (10, 5))),
             ]
         )
-        calculated = original.buffer(np.array([1, 5]), resolution=1)
+        calculated = original.buffer(np.array([1, 5]), quad_segs=1)
         assert_geoseries_equal(calculated, expected, check_less_precise=True)
 
     def test_buffer_distance_wrong_length(self):
@@ -1499,7 +1499,7 @@ class TestGeomMethods:
                 Polygon(((10, 5), (5, 0), (0, 5), (5, 10), (10, 5))),
             ]
         )
-        calculated = original.buffer(Series([1, 5]), resolution=1)
+        calculated = original.buffer(Series([1, 5]), quad_segs=1)
         assert_geoseries_equal(calculated, expected, check_less_precise=True)
 
     def test_buffer_distance_wrong_index(self):
