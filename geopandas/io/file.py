@@ -1,3 +1,5 @@
+"""Read/write data from/to a file or URL."""
+
 from __future__ import annotations
 
 import os
@@ -794,6 +796,7 @@ def _to_file_pyogrio(df, filename, driver, schema, crs, mode, metadata, **kwargs
 
 
 def infer_schema(df):
+    """Infer the schema of a GeoDataFrame."""
     from collections import OrderedDict
 
     # TODO: test pandas string type and boolean type once released

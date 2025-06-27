@@ -180,20 +180,6 @@ ignore = [
     "PLC1802",
 
     ### Additional checks that don't pass yet
-    # Missing docstring in public module
-    "D100",
-    # Missing docstring in public class
-    "D101",
-    # Missing docstring in public method
-    "D102",
-    # Missing docstring in public function
-    "D103",
-    # Missing docstring in public package
-    "D104",
-    # Missing docstring in magic method
-    "D105",
-    # 1 blank line required between summary line and description
-    "D205",
     # Useless statement
     "B018",
     # Within an except clause, raise exceptions with ...

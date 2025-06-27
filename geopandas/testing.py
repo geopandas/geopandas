@@ -27,9 +27,9 @@ def _isna(this):
 
 
 def _geom_equals_mask(this, that):
-    """
-    Test for geometric equality. Empty or missing geometries are considered
-    equal.
+    """Test for geometric equality.
+
+    Empty or missing geometries are considered equal.
 
     Parameters
     ----------
@@ -49,9 +49,9 @@ def _geom_equals_mask(this, that):
 
 
 def geom_equals(this, that):
-    """
-    Test for geometric equality. Empty or missing geometries are considered
-    equal.
+    """Test for geometric equality.
+
+    Empty or missing geometries are considered equal.
 
     Parameters
     ----------
@@ -67,9 +67,9 @@ def geom_equals(this, that):
 
 
 def _geom_almost_equals_mask(this, that):
-    """
-    Test for 'almost' geometric equality. Empty or missing geometries
-    considered equal.
+    """Test for 'almost' geometric equality.
+
+    Empty or missing geometries are considered equal.
 
     This method allows small difference in the coordinates, but this
     requires coordinates be in the same order for all components of a geometry.
@@ -91,9 +91,9 @@ def _geom_almost_equals_mask(this, that):
 
 
 def geom_almost_equals(this, that):
-    """
-    Test for 'almost' geometric equality. Empty or missing geometries
-    considered equal.
+    """Test for 'almost' geometric equality.
+
+    Empty or missing geometries are considered equal.
 
     This method allows small difference in the coordinates, but this
     requires coordinates be in the same order for all components of a geometry.

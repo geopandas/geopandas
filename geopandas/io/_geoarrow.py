@@ -510,9 +510,9 @@ def arrow_to_geopandas(table, geometry=None, to_pandas_kwargs=None):
 
 
 def arrow_to_geometry_array(arr):
-    """
-    Convert Arrow array object (representing single GeoArrow array) to a
-    geopandas GeometryArray.
+    """Convert Arrow array object to a geopandas GeometryArray.
+
+    The input array should represent a single GeoArrow array.
 
     Specifically for GeoSeries.from_arrow.
     """
@@ -563,11 +563,7 @@ def _get_inner_coords(arr):
 
 
 def construct_shapely_array(arr: pa.Array, extension_name: str):
-    """
-    Construct a NumPy array of shapely geometries from a pyarrow.Array
-    with GeoArrow extension type.
-
-    """
+    """Construct a shapely array from a pyarrow.Array with GeoArrow extension type."""
     if isinstance(arr, pa.ExtensionArray):
         arr = arr.storage
 

@@ -1741,7 +1741,7 @@ class GeometryArray(ExtensionArray):
 
     @classmethod
     def _concat_same_type(cls, to_concat):
-        """Concatenate multiple array.
+        """Concatenate multiple arrays.
 
         Parameters
         ----------

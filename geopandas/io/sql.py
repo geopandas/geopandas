@@ -1,3 +1,5 @@
+"""Read/write data to/from an SQL backend."""
+
 import warnings
 from contextlib import contextmanager
 from functools import lru_cache
@@ -134,7 +136,9 @@ def _read_postgis(
     params=None,
     chunksize=None,
 ):
-    """Return a GeoDataFrame corresponding to the result of the query
+    """Read data from PostGIS using a SQL query.
+
+    Returns a GeoDataFrame corresponding to the result of the query
     string, which must contain a geometry column in WKB representation.
 
     It is also possible to use :meth:`~GeoDataFrame.read_file` to read from a database.
@@ -164,6 +168,7 @@ def _read_postgis(
     Returns
     -------
     GeoDataFrame
+        A GeoDataFrame containing the data returned by the SQL query.
 
     Examples
     --------

@@ -1,3 +1,5 @@
+"""Datasets for GeoPandas."""
+
 __all__ = []
 available = []  # previously part of __all__
 _prev_available = ["naturalearth_cities", "naturalearth_lowres", "nybb"]
