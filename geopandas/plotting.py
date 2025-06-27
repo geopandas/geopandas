@@ -153,10 +153,6 @@ def _plot_polygon_collection(
     """
     from matplotlib.collections import PatchCollection
 
-    geoms, multiindex = _sanitize_geoms(geoms)
-    if values is not None:
-        values = np.take(values, multiindex, axis=0)
-
     # PatchCollection does not accept some kwargs.
     kwargs = {
         att: value
@@ -167,8 +163,6 @@ def _plot_polygon_collection(
     # Add to kwargs for easier checking below.
     if color is not None:
         kwargs["color"] = color
-
-    _expand_kwargs(kwargs, multiindex)
 
     collection = PatchCollection([_PolygonPatch(poly) for poly in geoms], **kwargs)
 
@@ -216,10 +210,6 @@ def _plot_linestring_collection(
     """
     from matplotlib.collections import LineCollection
 
-    geoms, multiindex = _sanitize_geoms(geoms)
-    if values is not None:
-        values = np.take(values, multiindex, axis=0)
-
     # LineCollection does not accept some kwargs.
     kwargs = {
         att: value
@@ -230,8 +220,6 @@ def _plot_linestring_collection(
     # Add to kwargs for easier checking below.
     if color is not None:
         kwargs["color"] = color
-
-    _expand_kwargs(kwargs, multiindex)
 
     segments = [np.array(linestring.coords)[:, :2] for linestring in geoms]
     collection = LineCollection(segments, **kwargs)
@@ -282,7 +270,6 @@ def _plot_point_collection(
     if values is not None and color is not None:
         raise ValueError("Can only specify one of 'values' and 'color' kwargs")
 
-    geoms, multiindex = _sanitize_geoms(geoms)
     # values are expanded below as kwargs["c"]
 
     x = [p.x if not p.is_empty else None for p in geoms]
@@ -299,7 +286,6 @@ def _plot_point_collection(
         kwargs["color"] = color
     if marker is not None:
         kwargs["marker"] = marker
-    _expand_kwargs(kwargs, multiindex)
 
     if "norm" not in kwargs:
         collection = ax.scatter(x, y, vmin=vmin, vmax=vmax, cmap=cmap, **kwargs)
@@ -420,6 +406,7 @@ def plot_series(
 
     # decompose GeometryCollections
     geoms, multiindex = _sanitize_geoms(s.geometry, prefix="Geom")
+    _expand_kwargs(style_kwds, multiindex)
     values = np.take(values, multiindex, axis=0) if cmap else None
     # ensure indexes are consistent
     if color_given and isinstance(color, pd.Series):
@@ -811,6 +798,7 @@ def plot_dataframe(
 
     # decompose GeometryCollections
     geoms, multiindex = _sanitize_geoms(df.geometry, prefix="Geom")
+    _expand_kwargs(style_kwds, multiindex)
     values = np.take(values, multiindex, axis=0)
     nan_idx = np.take(nan_idx, multiindex, axis=0)
     expl_series = geopandas.GeoSeries(geoms)
