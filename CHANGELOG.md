@@ -6,7 +6,9 @@ New features and improvements:
 - `GeoDataFrame.to_parquet` and `read_parquet` will now write and read ``attrs`` 
   respectively (#3597)
 
-## Version 1.1.1
+## Version 1.1.1 (June 27, 2025)
+
+Bug fixes:
 
 - Fix regression in the GeoDataFrame constructor when np.nan is given as an only geometry (#3591).
 - Fix regression in `overlay` with `how="identity"` when input dataframes have column

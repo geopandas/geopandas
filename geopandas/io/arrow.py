@@ -98,9 +98,7 @@ _geometry_type_names += [geom_type + " Z" for geom_type in _geometry_type_names]
 
 
 def _get_geometry_types(series):
-    """
-    Get unique geometry types from a GeoSeries.
-    """
+    """Get unique geometry types from a GeoSeries."""
     arr_geometry_types = shapely.get_type_id(series.array._data)
     # ensure to include "... Z" for 3D geometries
     has_z = shapely.has_z(series.array._data)
@@ -205,7 +203,7 @@ def _create_metadata(
 
 
 def _encode_metadata(metadata):
-    """Encode metadata dict to UTF-8 JSON string
+    """Encode metadata dict to UTF-8 JSON string.
 
     Parameters
     ----------
@@ -219,7 +217,7 @@ def _encode_metadata(metadata):
 
 
 def _decode_metadata(metadata_str):
-    """Decode a UTF-8 encoded JSON string to dict
+    """Decode a UTF-8 encoded JSON string to dict.
 
     Parameters
     ----------
@@ -247,7 +245,6 @@ def _validate_dataframe(df):
     ----------
     df : GeoDataFrame
     """
-
     if not isinstance(df, DataFrame):
         raise ValueError("Writing to Parquet/Feather only supports IO with DataFrames")
 
@@ -273,7 +270,6 @@ def _validate_geo_metadata(metadata):
     ----------
     metadata : dict
     """
-
     if not metadata:
         raise ValueError("Missing or malformed geo metadata in Parquet/Feather file")
 
@@ -339,7 +335,8 @@ def _geopandas_to_arrow(
     schema_version=None,
     write_covering_bbox=None,
 ):
-    """
+    """Convert a GeoDataFrame to a pyarrow Table.
+
     Helper function with main, shared logic for to_parquet/to_feather.
     """
     from pyarrow import StructArray
@@ -495,7 +492,8 @@ def _to_feather(df, path, index=None, compression=None, schema_version=None, **k
 
 
 def _arrow_to_geopandas(table, geo_metadata=None, to_pandas_kwargs=None, df_attrs=None):
-    """
+    """Convert a pyarrow Table to a GeoDataFrame.
+
     Helper function with main, shared logic for read_parquet/read_feather.
     """
     if geo_metadata is None:
@@ -602,7 +600,8 @@ def _get_filesystem_path(path, filesystem=None, storage_options=None):
 
 
 def _ensure_arrow_fs(filesystem):
-    """
+    """Check if ``filesystem`` is a valid filesystem.
+
     Simplified version of pyarrow.fs._ensure_filesystem. This is only needed
     below because `pyarrow.parquet.read_metadata` does not yet accept a
     filesystem keyword (https://issues.apache.org/jira/browse/ARROW-16719)
@@ -642,8 +641,7 @@ def _validate_and_decode_metadata(metadata):
 
 
 def _read_parquet_schema_and_metadata(path, filesystem):
-    """
-    Opening the Parquet file/dataset a first time to get the schema and metadata.
+    """Open the Parquet file/dataset a first time to get the schema and metadata.
 
     TODO: we should look into how we can reuse opened dataset for reading the
     actual data, to avoid discovering the dataset twice (problem right now is
@@ -756,7 +754,6 @@ def _read_parquet(
     ...     columns=["geometry", "pop_est"]
     ... )  # doctest: +SKIP
     """
-
     parquet = import_optional_dependency(
         "pyarrow.parquet", extra="pyarrow is required for Parquet support."
     )
@@ -868,7 +865,6 @@ def _read_feather(path, columns=None, to_pandas_kwargs=None, **kwargs):
     ...     columns=["geometry", "pop_est"]
     ... )  # doctest: +SKIP
     """
-
     feather = import_optional_dependency(
         "pyarrow.feather", extra="pyarrow is required for Feather support."
     )
