@@ -385,7 +385,7 @@ def _geopandas_to_arrow(
     # Store attributes in metadata if exists
     if df.attrs:
         df_metadata = {"PANDAS_ATTRS": json.dumps(df.attrs)}
-        metadata = {**metadata, **df_metadata}
+        metadata |= df_metadata
 
     return table.replace_schema_metadata(metadata)
 
