@@ -5710,7 +5710,7 @@ GeometryCollection
         Parameters
         ----------
         other : BaseGeometry or GeoSeries
-            The other geometry to be tested agains the pattern.
+            The other geometry to be tested against the pattern.
         pattern : str
             The DE-9IM pattern to test against.
         align : bool | None (default None)
@@ -6537,7 +6537,7 @@ GeometryCollection
 
         When ``full=True``, the return value is a 4-tuple containing output polygons,
         along with lines which could not be converted to polygons. The return value
-        consists of 4 elements or varying lenghts:
+        consists of 4 elements or varying lengths:
 
         - GeoSeries of the valid polygons (same as with ``full=False``)
         - GeoSeries of cut edges: edges connected on both ends but not part of

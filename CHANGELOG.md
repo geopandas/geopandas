@@ -1055,7 +1055,7 @@ Bug fixes:
 - Fixed ``GeoDataFrame.to_file`` to preserve VFS file paths (e.g. when a "s3://" path is specified) (#1124).
 - Fixed failing case in ``geopandas.sjoin`` with empty geometries (#1138).
 
-In addition, the minimum required versions of some dependencies have been increased: GeoPandas now requirs pandas >=0.23.4 and matplotlib >=2.0.1 (#1002).
+In addition, the minimum required versions of some dependencies have been increased: GeoPandas now requires pandas >=0.23.4 and matplotlib >=2.0.1 (#1002).
 
 Version 0.5.1 (July 11, 2019)
 -----------------------------
