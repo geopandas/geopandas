@@ -214,6 +214,7 @@ For plotting, these additional packages may be used:
 
 .. _pointpats: https://pysal.org/pointpats/
 
-.. _folium: https://python-visualization.github.io/folium/stable/
+.. _folium: https://python-visualization.github.io/folium/latest/
 
 .. _scipy: https://docs.scipy.org/doc/scipy/
+
