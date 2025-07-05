@@ -377,13 +377,13 @@ class TestDataFrame:
     @pytest.mark.skipif(not compat.HAS_PYPROJ, reason="Requires pyproj")
     def test_override_existing_crs_warning(self):
         with pytest.warns(
-            DeprecationWarning,
+            FutureWarning,
             match="Overriding the CRS of a GeoSeries that already has CRS",
         ):
             self.df.geometry.crs = "epsg:2100"
 
         with pytest.warns(
-            DeprecationWarning,
+            FutureWarning,
             match="Overriding the CRS of a GeoDataFrame that already has CRS",
         ):
             self.df.crs = "epsg:4326"

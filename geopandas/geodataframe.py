@@ -611,7 +611,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                     "This unsafe behavior will be deprecated in future versions. "
                     "Use GeoDataFrame.set_crs method instead",
                     stacklevel=2,
-                    category=DeprecationWarning,
+                    category=FutureWarning,
                 )
             self.geometry.values.crs = value
         else:
