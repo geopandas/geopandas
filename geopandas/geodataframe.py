@@ -2100,7 +2100,12 @@ default 'snappy'
         # concat operation: using metadata of the first object
         elif method == "concat":
             for name in self._metadata:
-                object.__setattr__(self, name, getattr(other.objs[0], name, None))
+                # TODO pandas 3 supports this in merge as well as concat pandas#60357
+                if PANDAS_GE_30:
+                    first_obj = other.input_objs[0]
+                else:
+                    first_obj = other.objs[0]
+                object.__setattr__(self, name, getattr(first_obj, name, None))
 
             if (
                 self.columns.nlevels == 1
