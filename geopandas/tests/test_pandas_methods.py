@@ -861,6 +861,36 @@ def test_preserve_attrs(df):
     assert df3.attrs == attrs
 
 
+def test_attrs_concat():
+    # from pandas-dev/pandas#60357
+    # concat propagates attrs if all input attrs are equal
+    geoms = [Point(2, 2), Point(3, 3)]
+    df1 = GeoDataFrame({"A": [2, 3], "geometry": geoms})
+    df1.attrs = {"a": 1, "b": 2}
+    df2 = GeoDataFrame({"A": [4, 5], "geometry": geoms})
+    df2.attrs = df1.attrs.copy()
+    df3 = GeoDataFrame({"A": [6, 7], "geometry": geoms})
+    df3.attrs = df1.attrs.copy()
+    assert pd.concat([df1, df2, df3]).attrs == df1.attrs
+    # concat does not propagate attrs if input attrs are different
+    df2.attrs = {"c": 3}
+    assert pd.concat([df1, df2, df3]).attrs == {}
+
+
+def test_attrs_merge():
+    # from pandas-dev/pandas#60357
+    geoms = [Point(2, 2), Point(3, 3)]
+    # merge propagates attrs if all input attrs are equal
+    df1 = GeoDataFrame({"key": ["a", "b"], "val1": [1, 2], "geometry": geoms})
+    df1.attrs = {"a": 1, "b": 2}
+    df2 = GeoDataFrame({"key": ["a", "b"], "val2": [3, 4], "geometry": geoms})
+    df2.attrs = df1.attrs.copy()
+    assert pd.merge(df1, df2).attrs == df1.attrs
+    # merge does not propagate attrs if input attrs are different
+    df2.attrs = {"c": 3}
+    assert pd.merge(df1, df2).attrs == {}
+
+
 def test_preserve_flags(df):
     # https://github.com/geopandas/geopandas/issues/1654
     df = df.set_flags(allows_duplicate_labels=False)
