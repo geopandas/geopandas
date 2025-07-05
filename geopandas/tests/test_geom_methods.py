@@ -2122,8 +2122,6 @@ class TestGeomMethods:
                 len(output.explode(ignore_index=True))
                 == len(gs[~(gs.is_empty | gs.isna())]) * size
             )
-        with pytest.warns(FutureWarning, match="The 'seed' keyword is deprecated"):
-            _ = gs.sample_points(size, seed=1)
 
     def test_sample_points_array(self):
         output = concat([self.g1, self.g1]).sample_points([10, 15, 20, 25])

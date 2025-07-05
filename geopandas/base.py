@@ -6358,7 +6358,7 @@ GeometryCollection
 
         return pd.Series(distances, index=self.index, name="hilbert_distance")
 
-    def sample_points(self, size, method="uniform", seed=None, rng=None, **kwargs):
+    def sample_points(self, size, method="uniform", rng=None, **kwargs):
         """
         Sample points from each geometry.
 
@@ -6417,14 +6417,6 @@ GeometryCollection
         """  # noqa: E501
         from .geoseries import GeoSeries
         from .tools._random import uniform
-
-        if seed is not None:
-            warn(
-                "The 'seed' keyword is deprecated. Use 'rng' instead.",
-                FutureWarning,
-                stacklevel=2,
-            )
-            rng = seed
 
         if method == "uniform":
             if pd.api.types.is_list_like(size):
