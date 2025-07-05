@@ -6,7 +6,9 @@ Bug fixes:
 
 - Fix an issue that caused an error in `GeoDataFrame.from_features` when there is no `properties` field (#3599).
 
-## Version 1.1.1
+## Version 1.1.1 (June 27, 2025)
+
+Bug fixes:
 
 - Fix regression in the GeoDataFrame constructor when np.nan is given as an only geometry (#3591).
 - Fix regression in `overlay` with `how="identity"` when input dataframes have column
@@ -1059,7 +1061,7 @@ Bug fixes:
 - Fixed ``GeoDataFrame.to_file`` to preserve VFS file paths (e.g. when a "s3://" path is specified) (#1124).
 - Fixed failing case in ``geopandas.sjoin`` with empty geometries (#1138).
 
-In addition, the minimum required versions of some dependencies have been increased: GeoPandas now requirs pandas >=0.23.4 and matplotlib >=2.0.1 (#1002).
+In addition, the minimum required versions of some dependencies have been increased: GeoPandas now requires pandas >=0.23.4 and matplotlib >=2.0.1 (#1002).
 
 Version 0.5.1 (July 11, 2019)
 -----------------------------

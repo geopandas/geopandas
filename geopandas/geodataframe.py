@@ -558,11 +558,10 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         The Coordinate Reference System (CRS) represented as a ``pyproj.CRS``
         object.
 
-        Returns None if the CRS is not set, and to set the value it
-        :getter: Returns a ``pyproj.CRS`` or None. When setting, the value
-        can be anything accepted by
-        :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
-        such as an authority string (eg "EPSG:4326") or a WKT string.
+        Returns
+        -------
+        ``pyproj.CRS`` | None
+            CRS assigned to an active geometry column
 
         Examples
         --------
@@ -1335,7 +1334,7 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
             struct type.
         include_z : bool, default None
             Only relevant for 'geoarrow' encoding (for WKB, the dimensionality
-            of the individial geometries is preserved).
+            of the individual geometries is preserved).
             If False, return 2D geometries. If True, include the third dimension
             in the output (if a geometry has no third dimension, the z-coordinates
             will be NaN). By default, will infer the dimensionality from the
