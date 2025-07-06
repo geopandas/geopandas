@@ -407,7 +407,9 @@ class GeometryArray(ExtensionArray):
             warnings.warn(
                 "Geometry is in a geographic CRS. Results from "
                 f"'{inspect.stack()[1].function}' are likely incorrect. "
-                "Use 'GeoSeries.to_crs()' to re-project geometries to a "
+                "To obtain more accurate results, you can either enable the "
+                "geodesic calculation option by setting `geopandas.options.geodesic_calculation = True`, "
+                "or use 'GeoSeries.to_crs()' to re-project geometries to a "
                 "projected CRS before this operation.\n",
                 UserWarning,
                 stacklevel=stacklevel,
@@ -567,13 +569,103 @@ class GeometryArray(ExtensionArray):
         np.ndarray of float
             Area of the geometries.
         """
+        import geopandas
+
+        geodesic_calculation = geopandas.options.geodesic_calculation
+        if geodesic_calculation:
+            return self._calculate_geodesic_area()
+        
         self.check_geographic_crs(stacklevel=5)
         return shapely.area(self._data)
 
+    def _calculate_geodesic_area(self):
+        from pyproj import Geod
+        
+        geod = Geod(ellps="WGS84")
+        def __geodesic_ring_area(rings):
+            areas = np.array([abs(geod.geometry_area_perimeter(shapely.geometry.shape(ring))[0]) 
+                            for ring in rings])
+            return areas
+        parts = shapely.get_parts(shapely.normalize(self._data))
+        part_area = __geodesic_ring_area(shapely.get_exterior_ring(parts))
+
+        num_rings = shapely.get_num_interior_rings(parts)
+        has_rings = num_rings > 0
+
+        if has_rings.any():
+            part_ix = np.repeat(np.arange(len(parts)), num_rings)
+            count = num_rings[has_rings]
+            starts = np.r_[True, part_ix[:-1] != part_ix[1:]]
+            inner_index = (~starts).cumsum()
+            inner_index -= np.repeat(inner_index[starts], count)
+            
+            hole_area = __geodesic_ring_area(shapely.get_interior_ring(parts[part_ix], inner_index))
+            breaks = np.append(np.cumsum(count) - count, count.sum())
+            part_hole_area = np.add.reduceat(hole_area, breaks[:-1])
+            part_area[has_rings] -= part_hole_area
+
+        num_parts = shapely.get_num_geometries(self._data)
+        breaks = np.append(np.cumsum(num_parts) - num_parts, num_parts.sum())
+        total = np.add.reduceat(part_area, breaks[:-1])
+        return total 
+
     @property
     def length(self):
+        import geopandas
+
+        geodesic_calculation = geopandas.options.geodesic_calculation
+        if geodesic_calculation:
+            return self._calculate_geodesic_length()
+
         self.check_geographic_crs(stacklevel=5)
         return shapely.length(self._data)
+    
+    def _calculate_geodesic_length(self):
+        from pyproj import Geod
+        from shapely.geometry import LineString, MultiLineString, Polygon, MultiPolygon
+        geod = Geod(ellps="WGS84")
+        individual_lengths = []
+
+        def _get_length_of_linestring(linestring_obj_param):
+            """Helper to calculate length of a single LineString."""
+            current_length = 0
+            coords = list(linestring_obj_param.coords)
+            for i in range(len(coords) - 1):
+                lon1, lat1 = coords[i]
+                lon2, lat2 = coords[i + 1]
+                _, _, distance = geod.inv(lon1, lat1, lon2, lat2)
+                current_length += distance
+            return abs(current_length)
+
+        for geom_obj in self._data:
+            current_geom_total_length = 0 # Length for the current top-level geometry (e.g., one MultiLineString)
+
+            if isinstance(geom_obj, LineString):
+                current_geom_total_length = _get_length_of_linestring(geom_obj)
+
+            elif isinstance(geom_obj, MultiLineString):
+                for line_string in geom_obj.geoms:
+                    current_geom_total_length += _get_length_of_linestring(line_string)
+
+            elif isinstance(geom_obj, Polygon):
+                current_geom_total_length += _get_length_of_linestring(geom_obj.exterior)
+                # for interior_ring in geom_obj.interiors:
+                #     current_geom_total_length += _get_length_of_linestring(interior_ring)
+
+            elif isinstance(geom_obj, MultiPolygon):
+                for polygon in geom_obj.geoms:
+                    # For each polygon in the MultiPolygon, get its exterior perimeter
+                    current_geom_total_length += _get_length_of_linestring(polygon.exterior)
+                    # for interior_ring in polygon.interiors:
+                    #     current_geom_total_length += _get_length_of_linestring(interior_ring)
+
+            else:
+                print(f"Warning: Unsupported geometry type found: {type(geom_obj)}. Adding 0 length.")
+                current_geom_total_length = 0
+
+            individual_lengths.append(current_geom_total_length)
+
+        return pd.Series(individual_lengths)
 
     def count_coordinates(self):
         return shapely.get_num_coordinates(self._data)
