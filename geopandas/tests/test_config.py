@@ -10,6 +10,7 @@ def test_options():
         "display_precision",
         "use_pygeos",
         "io_engine",
+        "geodesic_calculation",
     }
 
     with pytest.raises(AttributeError):
@@ -45,3 +46,17 @@ def test_options_io_engine():
         geopandas.options.io_engine = -1
 
     geopandas.options.io_engine = None
+
+
+def test_options_geodesic_calculation():
+    assert geopandas.options.geodesic_calculation is False
+    geopandas.options.geodesic_calculation = True
+    assert geopandas.options.geodesic_calculation is True
+
+    with pytest.raises(ValueError):
+        geopandas.options.geodesic_calculation = "abc"
+
+    with pytest.raises(ValueError):
+        geopandas.options.geodesic_calculation = 1
+
+    geopandas.options.geodesic_calculation = False
