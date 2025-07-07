@@ -1,5 +1,11 @@
 # Changelog
 
+## Version 1.2.0
+
+New features and improvements:
+- `GeoDataFrame.to_parquet` and `read_parquet` will now write and read ``attrs`` 
+  respectively (#3597)
+
 ## Version 1.1.1 (June 27, 2025)
 
 Bug fixes:
