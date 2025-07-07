@@ -1,5 +1,10 @@
 # Changelog
 
+## Development Version
+
+- Expired deprecations; option `use_pygeos` which had no functionality, 
+  `seed` keyword in sample_points (replaced by `rng`)
+
 ## Version 1.1.1 (June 27, 2025)
 
 Bug fixes:

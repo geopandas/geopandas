@@ -239,7 +239,7 @@ class GeoSeries(GeoPandasBase, Series):
                 "This unsafe behavior will be deprecated in future versions. "
                 "Use GeoSeries.set_crs method instead.",
                 stacklevel=2,
-                category=DeprecationWarning,
+                category=FutureWarning,
             )
         self.geometry.values.crs = value
 
