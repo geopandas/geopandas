@@ -16,20 +16,21 @@ import matplotlib.pyplot as plt
 from shapely.geometry import Point
 from geopandas import GeoSeries, GeoDataFrame
 import geopandas as gpd
+import geodatasets
 
 np.random.seed(1)
 DPI = 100
 
-path_nybb = gpd.datasets.get_path('nybb')
+path_nybb = geodatasets.get_path("nybb")
 boros = GeoDataFrame.from_file(path_nybb)
-boros = boros.set_index('BoroCode')
+boros = boros.set_index("BoroCode")
 boros
 
 ##############################################################################
 # Next, we'll plot the raw data
 ax = boros.plot()
 plt.xticks(rotation=90)
-plt.savefig('nyc.png', dpi=DPI, bbox_inches='tight')
+plt.savefig("nyc.png", dpi=DPI, bbox_inches="tight")
 
 ##############################################################################
 # We can easily retrieve the convex hull of each shape. This corresponds to
@@ -41,7 +42,7 @@ plt.xticks(rotation=90)
 xmin, xmax = plt.gca().get_xlim()
 ymin, ymax = plt.gca().get_ylim()
 
-plt.savefig('nyc_hull.png', dpi=DPI, bbox_inches='tight')
+plt.savefig("nyc_hull.png", dpi=DPI, bbox_inches="tight")
 
 ##############################################################################
 # We'll generate some random dots scattered throughout our data, and will
@@ -51,15 +52,15 @@ plt.savefig('nyc_hull.png', dpi=DPI, bbox_inches='tight')
 N = 2000  # number of random points
 R = 2000  # radius of buffer in feet
 
-#xmin, xmax, ymin, ymax = 900000, 1080000, 120000, 280000
+# xmin, xmax, ymin, ymax = 900000, 1080000, 120000, 280000
 xc = (xmax - xmin) * np.random.random(N) + xmin
 yc = (ymax - ymin) * np.random.random(N) + ymin
 pts = GeoSeries([Point(x, y) for x, y in zip(xc, yc)])
-mp = pts.buffer(R).unary_union
+mp = pts.buffer(R).union_all()
 boros_with_holes = boros.geometry - mp
 boros_with_holes.plot()
 plt.xticks(rotation=90)
-plt.savefig('boros_with_holes.png', dpi=DPI, bbox_inches='tight')
+plt.savefig("boros_with_holes.png", dpi=DPI, bbox_inches="tight")
 
 ##############################################################################
 # Finally, we'll show the holes that were taken out of our boroughs.
@@ -67,5 +68,5 @@ plt.savefig('boros_with_holes.png', dpi=DPI, bbox_inches='tight')
 holes = boros.geometry & mp
 holes.plot()
 plt.xticks(rotation=90)
-plt.savefig('holes.png', dpi=DPI, bbox_inches='tight')
+plt.savefig("holes.png", dpi=DPI, bbox_inches="tight")
 plt.show()

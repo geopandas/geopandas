@@ -5,10 +5,10 @@ Based on https://github.com/topper-123/optioneer, but simplified (don't deal
 with nested options, deprecated options, ..), just the attribute-style dict
 like holding the options and giving a nice repr.
 """
-from collections import namedtuple
-import textwrap
-from typing import Optional, Callable
 
+import textwrap
+import warnings
+from collections import namedtuple
 
 Option = namedtuple("Option", "key default_value doc validator callback")
 
@@ -51,35 +51,20 @@ class Options:
         cls = self.__class__.__name__
         description = ""
         for key, option in self._options.items():
-            descr = f"{key}: {self._config[key]!r} [default: {option.default_value!r}]\n"
+            descr = (
+                f"{key}: {self._config[key]!r} [default: {option.default_value!r}]\n"
+            )
             description += descr
 
             if option.doc:
                 doc_text = "\n".join(textwrap.wrap(option.doc, width=70))
             else:
                 doc_text = "No description available."
-            doc_text = indent(doc_text, prefix="    ")
+            doc_text = textwrap.indent(doc_text, prefix="    ")
             description += doc_text + "\n"
         space = "\n  "
         description = description.replace("\n", space)
         return f"{cls}({space}{description})"
-
-
-def indent(text, prefix, predicate: Optional[Callable] = None) -> str:
-    """
-    This is the python 3 textwrap.indent function, which is not available in
-    python 2.
-    """
-    if predicate is None:
-
-        def predicate(line):
-            return line.strip()
-
-    def prefixed_lines():
-        for line in text.splitlines(True):
-            yield (prefix + line if predicate(line) else line)
-
-    return "".join(prefixed_lines())
 
 
 def _validate_display_precision(value) -> None:
@@ -102,35 +87,47 @@ display_precision = Option(
 )
 
 
-def _validate_bool(value) -> None:
-    if not isinstance(value, bool):
-        raise TypeError(f"Expected bool value, got {type(value)}")
+def _warn_use_pygeos_deprecated(_value):
+    warnings.warn(
+        "pygeos support was removed in 1.0. "
+        "geopandas.use_pygeos is a no-op and will be removed in geopandas 1.1.",
+        stacklevel=3,
+    )
 
 
-def _default_use_pygeos():
-    import geopandas._compat as compat
-
-    return compat.USE_PYGEOS
-
-
-def _callback_use_pygeos(key, value) -> None:
-    assert key == "use_pygeos"
-    import geopandas._compat as compat
-
-    compat.set_use_pygeos(value)
+def _validate_io_engine(value):
+    if value is not None:
+        if value not in ("pyogrio", "fiona"):
+            raise ValueError(f"Expected 'pyogrio' or 'fiona', got '{value}'")
 
 
-use_pygeos = Option(
-    key="use_pygeos",
-    default_value=_default_use_pygeos(),
+io_engine = Option(
+    key="io_engine",
+    default_value=None,
     doc=(
-        "Whether to use PyGEOS to speed up spatial operations. The default is True "
-        "if PyGEOS is installed, and follows the USE_PYGEOS environment variable "
-        "if set."
+        "The default engine for ``read_file`` and ``to_file``. "
+        "Options are 'pyogrio' and 'fiona'."
     ),
-    validator=_validate_bool,
-    callback=_callback_use_pygeos,
+    validator=_validate_io_engine,
+    callback=None,
 )
 
+# TODO: deprecate this
+use_pygeos = Option(
+    key="use_pygeos",
+    default_value=False,
+    doc=(
+        "Deprecated option previously used to enable PyGEOS. "
+        "It will be removed in GeoPandas 1.1."
+    ),
+    validator=_warn_use_pygeos_deprecated,
+    callback=None,
+)
 
-options = Options({"display_precision": display_precision, "use_pygeos": use_pygeos})
+options = Options(
+    {
+        "display_precision": display_precision,
+        "use_pygeos": use_pygeos,
+        "io_engine": io_engine,
+    }
+)

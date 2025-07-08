@@ -11,8 +11,7 @@ _multi_type_map = {
 
 
 def collect(x, multi=False):
-    """
-    Collect single part geometries into their Multi* counterpart
+    """Collect single part geometries into their Multi* counterpart.
 
     Parameters
     ----------
@@ -32,11 +31,11 @@ def collect(x, multi=False):
     # must be the same. If there is more than one element,
     # they cannot be Multi*, i.e., can't pass in combination of
     # Point and MultiPoint... or even just MultiPoint
-    t = x[0].type
-    if not all(g.type == t for g in x):
-        raise ValueError("Geometry type must be homogenous")
+    t = x[0].geom_type
+    if not all(g.geom_type == t for g in x):
+        raise ValueError("Geometry type must be homogeneous")
     if len(x) > 1 and t.startswith("Multi"):
-        raise ValueError("Cannot collect {0}. Must have single geometries".format(t))
+        raise ValueError(f"Cannot collect {t}. Must have single geometries")
 
     if len(x) == 1 and (t.startswith("Multi") or not multi):
         # If there's only one single part geom and we're not forcing to
