@@ -13,17 +13,17 @@ from typing import Optional, Callable
 Option = namedtuple("Option", "key default_value doc validator callback")
 
 
-class Options(object):
+class Options:
     """Provide attribute-style access to configuration dict."""
 
     def __init__(self, options):
-        super(Options, self).__setattr__("_options", options)
+        super().__setattr__("_options", options)
         # populate with default values
         config = {}
         for key, option in options.items():
             config[key] = option.default_value
 
-        super(Options, self).__setattr__("_config", config)
+        super().__setattr__("_config", config)
 
     def __setattr__(self, key, value):
         # you can't set new keys
@@ -51,20 +51,18 @@ class Options(object):
         cls = self.__class__.__name__
         description = ""
         for key, option in self._options.items():
-            descr = u"{key}: {cur!r} [default: {default!r}]\n".format(
-                key=key, cur=self._config[key], default=option.default_value
-            )
+            descr = f"{key}: {self._config[key]!r} [default: {option.default_value!r}]\n"
             description += descr
 
             if option.doc:
                 doc_text = "\n".join(textwrap.wrap(option.doc, width=70))
             else:
-                doc_text = u"No description available."
+                doc_text = "No description available."
             doc_text = indent(doc_text, prefix="    ")
             description += doc_text + "\n"
         space = "\n  "
         description = description.replace("\n", space)
-        return "{}({}{})".format(cls, space, description)
+        return f"{cls}({space}{description})"
 
 
 def indent(text, prefix, predicate: Optional[Callable] = None) -> str:
@@ -106,7 +104,7 @@ display_precision = Option(
 
 def _validate_bool(value) -> None:
     if not isinstance(value, bool):
-        raise TypeError("Expected bool value, got {0}".format(type(value)))
+        raise TypeError(f"Expected bool value, got {type(value)}")
 
 
 def _default_use_pygeos():
