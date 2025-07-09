@@ -1,31 +1,50 @@
 # required
-fiona>=1.8
-pandas>=0.25
-pyproj>=2.2.0
-shapely>=1.6
+numpy>=1.24
+pyogrio>=0.7.2
+pandas>=2.0
+pyproj>=3.5.0
+shapely>=2.0.0
+packaging
 
 # geodatabase access
-psycopg2>=2.5.1
-SQLAlchemy>=0.8.3
+psycopg2-binary>=2.8.0
+psycopg[binary]>=3.1.0
+SQLAlchemy>=2.0
 
 # geocoding
 geopy
 
 # plotting
-matplotlib>=2.2
-mapclassify
+matplotlib>=3.7
+mapclassify>=2.5
+xyzservices
+folium
 
 # testing
 pytest>=3.1.0
 pytest-cov
+pytest-xdist
+pytest-doctestplus
+fsspec
 codecov
-
-# spatial access methods
-rtree>=0.8
+geodatasets
 
 # styling
-black
 pre-commit
+ruff
 
 # PostGIS writing
 GeoAlchemy2
+
+# parquet
+pyarrow>=10.0.0
+geoarrow-pyarrow
+
+# sparse
+scipy
+
+# sampling
+pointpats
+
+# io
+fiona

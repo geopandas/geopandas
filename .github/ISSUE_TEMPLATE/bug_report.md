@@ -11,11 +11,11 @@ labels: "bug, needs triage"
 
 - [ ] I have confirmed this bug exists on the latest version of geopandas.
 
-- [ ] (optional) I have confirmed this bug exists on the master branch of geopandas.
+- [ ] (optional) I have confirmed this bug exists on the main branch of geopandas.
 
 ---
 
-**Note**: Please read [this guide](https://matthewrocklin.com/blog/work/2018/02/28/minimal-bug-reports) detailing how to provide the necessary information for us to reproduce your bug.
+**Note**: Please read [this guide](https://matthewrocklin.com/minimal-bug-reports) detailing how to provide the necessary information for us to reproduce your bug.
 
 #### Code Sample, a copy-pastable example
 

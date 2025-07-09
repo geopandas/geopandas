@@ -56,12 +56,9 @@
     "matrix": {
         "pandas": [],
         "shapely": [],
-        "pygeos": [],
-        "fiona": [],
+        "pyogrio": [],
         "pyproj": [],
-        "rtree": [],
         "matplotlib": [],
-        "descartes": []
     },
     //     "numpy": ["1.6", "1.7"],
     //     "six": ["", null],        // test with and without six installed

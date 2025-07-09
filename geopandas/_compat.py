@@ -1,157 +1,30 @@
-import contextlib
-from distutils.version import LooseVersion
 import importlib
-import os
-import warnings
+from packaging.version import Version
 
 import pandas as pd
-import pyproj
-import shapely
-import shapely.geos
 
+import shapely
 
 # -----------------------------------------------------------------------------
 # pandas compat
 # -----------------------------------------------------------------------------
 
-PANDAS_GE_10 = str(pd.__version__) >= LooseVersion("1.0.0")
-PANDAS_GE_11 = str(pd.__version__) >= LooseVersion("1.1.0")
-PANDAS_GE_115 = str(pd.__version__) >= LooseVersion("1.1.5")
-PANDAS_GE_12 = str(pd.__version__) >= LooseVersion("1.2.0")
+PANDAS_GE_202 = Version(pd.__version__) >= Version("2.0.2")
+PANDAS_GE_21 = Version(pd.__version__) >= Version("2.1.0")
+PANDAS_GE_22 = Version(pd.__version__) >= Version("2.2.0")
+PANDAS_GE_30 = Version(pd.__version__) >= Version("3.0.0.dev0")
 
 
 # -----------------------------------------------------------------------------
-# Shapely / PyGEOS compat
+# Shapely / GEOS compat
 # -----------------------------------------------------------------------------
 
+SHAPELY_GE_204 = Version(shapely.__version__) >= Version("2.0.4")
+SHAPELY_GE_21 = Version(shapely.__version__) >= Version("2.1rc1")
 
-SHAPELY_GE_17 = str(shapely.__version__) >= LooseVersion("1.7.0")
-SHAPELY_GE_18 = str(shapely.__version__) >= LooseVersion("1.8")
-SHAPELY_GE_20 = str(shapely.__version__) >= LooseVersion("2.0")
-
-GEOS_GE_390 = shapely.geos.geos_version >= (3, 9, 0)
-
-
-HAS_PYGEOS = None
-USE_PYGEOS = None
-PYGEOS_SHAPELY_COMPAT = None
-
-PYGEOS_GE_09 = None
-
-try:
-    import pygeos  # noqa
-
-    # only automatically use pygeos if version is high enough
-    if str(pygeos.__version__) >= LooseVersion("0.8"):
-        HAS_PYGEOS = True
-        PYGEOS_GE_09 = str(pygeos.__version__) >= LooseVersion("0.9")
-    else:
-        warnings.warn(
-            "The installed version of PyGEOS is too old ({0} installed, 0.8 required),"
-            " and thus GeoPandas will not use PyGEOS.".format(pygeos.__version__),
-            UserWarning,
-        )
-        HAS_PYGEOS = False
-except ImportError:
-    HAS_PYGEOS = False
-
-
-def set_use_pygeos(val=None):
-    """
-    Set the global configuration on whether to use PyGEOS or not.
-
-    The default is use PyGEOS if it is installed. This can be overridden
-    with an environment variable USE_PYGEOS (this is only checked at
-    first import, cannot be changed during interactive session).
-
-    Alternatively, pass a value here to force a True/False value.
-    """
-    global USE_PYGEOS
-    global PYGEOS_SHAPELY_COMPAT
-
-    if val is not None:
-        USE_PYGEOS = bool(val)
-    else:
-        if USE_PYGEOS is None:
-
-            USE_PYGEOS = HAS_PYGEOS
-
-            env_use_pygeos = os.getenv("USE_PYGEOS", None)
-            if env_use_pygeos is not None:
-                USE_PYGEOS = bool(int(env_use_pygeos))
-
-    # validate the pygeos version
-    if USE_PYGEOS:
-        try:
-            import pygeos  # noqa
-
-            # validate the pygeos version
-            if not str(pygeos.__version__) >= LooseVersion("0.8"):
-                raise ImportError(
-                    "PyGEOS >= 0.6 is required, version {0} is installed".format(
-                        pygeos.__version__
-                    )
-                )
-
-            # Check whether Shapely and PyGEOS use the same GEOS version.
-            # Based on PyGEOS from_shapely implementation.
-
-            from shapely.geos import geos_version_string as shapely_geos_version
-            from pygeos import geos_capi_version_string
-
-            # shapely has something like: "3.6.2-CAPI-1.10.2 4d2925d6"
-            # pygeos has something like: "3.6.2-CAPI-1.10.2"
-            if not shapely_geos_version.startswith(geos_capi_version_string):
-                warnings.warn(
-                    "The Shapely GEOS version ({}) is incompatible with the GEOS "
-                    "version PyGEOS was compiled with ({}). Conversions between both "
-                    "will be slow.".format(
-                        shapely_geos_version, geos_capi_version_string
-                    )
-                )
-                PYGEOS_SHAPELY_COMPAT = False
-            else:
-                PYGEOS_SHAPELY_COMPAT = True
-
-        except ImportError:
-            raise ImportError(
-                "To use the PyGEOS speed-ups within GeoPandas, you need to install "
-                "PyGEOS: 'conda install pygeos' or 'pip install pygeos'"
-            )
-
-
-set_use_pygeos()
-
-
-# compat related to deprecation warnings introduced in Shapely 1.8
-# -> creating a numpy array from a list-like of Multi-part geometries,
-# although doing the correct thing (not expanding in its parts), still raises
-# the warning about iteration being deprecated
-# This adds a context manager to explicitly ignore this warning
-
-
-try:
-    from shapely.errors import ShapelyDeprecationWarning as shapely_warning
-except ImportError:
-    shapely_warning = None
-
-
-if shapely_warning is not None and not SHAPELY_GE_20:
-
-    @contextlib.contextmanager
-    def ignore_shapely2_warnings():
-        with warnings.catch_warnings():
-            warnings.filterwarnings(
-                "ignore", "Iteration|The array interface|__len__", shapely_warning
-            )
-            yield
-
-
-else:
-
-    @contextlib.contextmanager
-    def ignore_shapely2_warnings():
-        yield
+GEOS_GE_390 = shapely.geos_version >= (3, 9, 0)
+GEOS_GE_310 = shapely.geos_version >= (3, 10, 0)
+GEOS_GE_312 = shapely.geos_version >= (3, 12, 0)
 
 
 def import_optional_dependency(name: str, extra: str = ""):
@@ -168,19 +41,16 @@ def import_optional_dependency(name: str, extra: str = ""):
         The module name.
     extra : str
         Additional text to include in the ImportError message.
+
     Returns
     -------
     module
     """
-    msg = """Missing optional dependency '{name}'. {extra}  "
-        "Use pip or conda to install {name}.""".format(
-        name=name, extra=extra
-    )
+    msg = f"""Missing optional dependency '{name}'. {extra}  "
+        "Use pip or conda to install {name}."""
 
     if not isinstance(name, str):
-        raise ValueError(
-            "Invalid module name: '{name}'; must be a string".format(name=name)
-        )
+        raise ValueError(f"Invalid module name: '{name}'; must be a string")
 
     try:
         module = importlib.import_module(name)
@@ -192,20 +62,26 @@ def import_optional_dependency(name: str, extra: str = ""):
 
 
 # -----------------------------------------------------------------------------
-# RTree compat
-# -----------------------------------------------------------------------------
-
-HAS_RTREE = None
-RTREE_GE_094 = False
-try:
-    import rtree  # noqa
-
-    HAS_RTREE = True
-except ImportError:
-    HAS_RTREE = False
-
-# -----------------------------------------------------------------------------
 # pyproj compat
 # -----------------------------------------------------------------------------
+try:
+    import pyproj  # noqa: F401
 
-PYPROJ_LT_3 = LooseVersion(pyproj.__version__) < LooseVersion("3")
+    HAS_PYPROJ = True
+
+except ImportError as err:
+    HAS_PYPROJ = False
+    pyproj_import_error = str(err)
+
+
+def requires_pyproj(func):
+    def wrapper(*args, **kwargs):
+        if not HAS_PYPROJ:
+            raise ImportError(
+                f"The 'pyproj' package is required for {func.__name__} to work. "
+                "Install it and initialize the object with a CRS before using it."
+                f"\nImporting pyproj resulted in: {pyproj_import_error}"
+            )
+        return func(*args, **kwargs)
+
+    return wrapper

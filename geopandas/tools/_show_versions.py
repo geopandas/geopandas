@@ -4,7 +4,7 @@ import sys
 
 
 def _get_sys_info():
-    """System information
+    """System information.
 
     Returns
     -------
@@ -23,7 +23,8 @@ def _get_sys_info():
 
 
 def _get_C_info():
-    """Information on system PROJ, GDAL, GEOS
+    """Information on system PROJ, GDAL, GEOS.
+
     Returns
     -------
     c_info: dict
@@ -48,21 +49,37 @@ def _get_C_info():
         geos_version = "{}.{}.{}".format(*shapely._buildcfg.geos_version)
         geos_dir = shapely._buildcfg.geos_library_path
     except Exception:
-        geos_version = None
-        geos_dir = None
+        try:
+            from shapely import geos_version_string
+
+            geos_version = geos_version_string
+            geos_dir = None
+        except Exception:
+            geos_version = None
+            geos_dir = None
 
     try:
-        import fiona
+        import pyogrio
 
-        gdal_version = fiona.env.get_gdal_release_name()
+        gdal_version = pyogrio.__gdal_version_string__
+        gdal_dir = pyogrio.get_gdal_data_path()
     except Exception:
         gdal_version = None
-    try:
-        import fiona
-
-        gdal_dir = fiona.env.GDALDataFinder().search()
-    except Exception:
         gdal_dir = None
+
+    if gdal_version is None:
+        try:
+            import fiona
+
+            gdal_version = fiona.env.get_gdal_release_name()
+        except Exception:
+            gdal_version = None
+        try:
+            import fiona
+
+            gdal_dir = fiona.env.GDALDataFinder().search()
+        except Exception:
+            gdal_dir = None
 
     blob = [
         ("GEOS", geos_version),
@@ -77,7 +94,7 @@ def _get_C_info():
 
 
 def _get_deps_info():
-    """Overview of the installed version of main dependencies
+    """Overview of the installed version of main dependencies.
 
     Returns
     -------
@@ -86,19 +103,21 @@ def _get_deps_info():
     """
     deps = [
         "geopandas",
-        "pandas",
-        "fiona",
+        # required deps
         "numpy",
-        "shapely",
-        "rtree",
+        "pandas",
         "pyproj",
+        "shapely",
+        # optional deps
+        "pyogrio",
+        "geoalchemy2",
+        "geopy",
         "matplotlib",
         "mapclassify",
-        "geopy",
+        "fiona",
+        "psycopg",
         "psycopg2",
-        "geoalchemy2",
         "pyarrow",
-        "pygeos",
     ]
 
     def get_version(module):
@@ -126,7 +145,6 @@ def show_versions():
 
     Examples
     --------
-
     ::
 
         $ python -c "import geopandas; geopandas.show_versions()"
@@ -136,7 +154,7 @@ def show_versions():
     proj_info = _get_C_info()
 
     maxlen = max(len(x) for x in deps_info)
-    tpl = "{{k:<{maxlen}}}: {{stat}}".format(maxlen=maxlen)
+    tpl = f"{{k:<{maxlen}}}: {{stat}}"
     print("\nSYSTEM INFO")
     print("-----------")
     for k, stat in sys_info.items():

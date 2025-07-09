@@ -1,0 +1,234 @@
+[build-system]
+requires = ["setuptools>=61.0.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "geopandas"
+dynamic = ["version"]
+authors = [{ name = "Kelsey Jordahl", email = "kjordahl@alum.mit.edu" }]
+maintainers = [{ name = "GeoPandas contributors" }]
+license = { text = "BSD 3-Clause" }
+description = "Geographic pandas extensions"
+keywords = ["GIS", "cartography", "pandas", "shapely"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: BSD License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Topic :: Scientific/Engineering :: GIS",
+]
+requires-python = ">=3.10"
+dependencies = [
+    "numpy >= 1.24",
+    "pyogrio >= 0.7.2",
+    "packaging",
+    "pandas >= 2.0.0",
+    "pyproj >= 3.5.0",
+    "shapely >= 2.0.0",
+]
+
+[project.optional-dependencies]
+all = [
+    "psycopg[binary]>=3.1.0",
+    "SQLAlchemy>=2.0",
+    "geopy",
+    "matplotlib>=3.7",
+    "mapclassify>=2.5",
+    "xyzservices",
+    "folium", # >=0.12 (implied minimum version, but older versions may work)
+    "GeoAlchemy2",
+    "pyarrow>=10.0.0",
+    "scipy",
+]
+
+# Minimum supported additional deps, not installed as part of `all` extra
+# (useful to track for bumping minimum dep versions)
+# fiona>=1.8.21
+# scipy>=1.10.0
+
+dev = [
+    "pytest>=3.1.0",
+    "pytest-cov",
+    "pytest-xdist",
+    "codecov",
+    "pre-commit",
+    "ruff",
+]
+
+
+[project.readme]
+text = """\
+GeoPandas is a project to add support for geographic data to
+`pandas`_ objects.
+
+The goal of GeoPandas is to make working with geospatial data in
+python easier. It combines the capabilities of `pandas`_ and `shapely`_,
+providing geospatial operations in pandas and a high-level interface
+to multiple geometries to shapely. GeoPandas enables you to easily do
+operations in python that would otherwise require a spatial database
+such as PostGIS.
+
+.. _pandas: https://pandas.pydata.org
+.. _shapely: https://shapely.readthedocs.io/en/latest/
+"""
+content-type = "text/x-rst"
+
+[project.urls]
+Home = "https://geopandas.org"
+Repository = "https://github.com/geopandas/geopandas"
+
+[tool.setuptools.packages.find]
+include = ["geopandas", "geopandas.*"]
+
+[tool.setuptools.package-data]
+geopandas = [
+    "tests/data/null_geom.geojson"
+]
+
+[tool.pytest.ini_options]
+markers = ["web: tests that need network connectivity"]
+xfail_strict = true
+
+filterwarnings = [
+    "ignore:distutils Version classes are deprecated.*:DeprecationWarning:pandas.*",
+    "ignore:distutils Version classes are deprecated.*:DeprecationWarning:numpy.*",
+    "ignore:The geopandas.dataset module is deprecated",
+    # pytest-xdist incompatibility with pytest-cov
+    "ignore:The --rsyncdir command line argument:DeprecationWarning",
+    # dateutil incompatibility with python 3.12 (https://github.com/dateutil/dateutil/issues/1284)
+    "ignore:datetime.datetime.utcfromtimestamp:DeprecationWarning:dateutil",
+    "ignore:Cannot set the CRS, falling back to None:UserWarning:geopandas",
+]
+
+[tool.ruff]
+line-length = 88
+extend-exclude = ["doc/*", "benchmarks/*", "versioneer.py", "geopandas/_version.py"]
+
+[tool.ruff.lint]
+select = [
+    # pyflakes
+    "F",
+    # pycodestyle
+    "E",
+    "W",
+    # pyupgrade
+    "UP",
+    # flake8-bugbear
+    "B",
+    # flake8-debugger
+    "T10",
+    # flake8-simplify
+    # "SIM",
+    # pylint
+    "PLC",
+    "PLE",
+    "PLR",
+    "PLW",
+    # misc lints
+    "PIE",
+    # implicit string concatenation
+    "ISC",
+    # type-checking imports
+    "TCH",
+    # comprehensions
+    "C4",
+    # Ruff-specific rules
+    "RUF",
+    # isort
+    "I",
+    # pydocstyle
+    "D",
+]
+
+ignore = [
+    ### Intentionally disabled
+    # module level import not at top of file
+    "E402",
+    # do not assign a lambda expression, use a def
+    "E731",
+    # mutable-argument-default
+    "B006",
+    # unused-loop-control-variable
+    "B007",
+    # get-attr-with-constant
+    "B009",
+    # Only works with python >=3.10
+    "B905",
+    # dict literals
+    "C408",
+    # Too many arguments to function call
+    "PLR0913",
+    # Too many returns
+    "PLR0911",
+    # Too many branches
+    "PLR0912",
+    # Too many statements
+    "PLR0915",
+    # Magic number
+    "PLR2004",
+    # Redefined loop name
+    "PLW2901",
+    # Global statements are discouraged
+    "PLW0603",
+    # compare-to-empty-string
+    "PLC1901",
+    # Unnecessary dict comprehension for iterable
+    "C420",
+    # `len(*)` used as condition without comparison
+    "PLC1802",
+
+    ### Additional checks that don't pass yet
+    # Missing docstring in public module
+    "D100",
+    # Missing docstring in public class
+    "D101",
+    # Missing docstring in public method
+    "D102",
+    # Missing docstring in public function
+    "D103",
+    # Missing docstring in public package
+    "D104",
+    # Missing docstring in magic method
+    "D105",
+    # 1 blank line required between summary line and description
+    "D205",
+    # Useless statement
+    "B018",
+    # Within an except clause, raise exceptions with ...
+    "B904",
+    # Consider `elif` instead of `else` then `if` to remove indentation level
+    "PLR5501",
+    # collection-literal-concatenation
+    "RUF005",
+    # Mutable class attributes should be annotated with `typing.ClassVar`,
+    "RUF012"
+]
+
+[tool.ruff.lint.per-file-ignores]
+# ignore pydocstyle errors in tests
+"**/tests/*" = ["D"]
+"geopandas/conftest.py" = ["D"]
+# the order of imports in __init__ is a bit tricky, so keep manual
+"geopandas/__init__.py" = ["F401", "I"]
+
+[tool.ruff.lint.isort]
+extra-standard-library = ["packaging"]
+
+section-order = [
+  "future",
+  "standard-library",
+  "third-party",
+  "geo",
+  "first-party",
+  "local-folder",
+  "testing"
+]
+
+[tool.ruff.lint.isort.sections]
+"geo" = ["shapely", "pyproj"]
+"testing" = ["pytest", "pandas.testing", "numpy.testing", "geopandas.tests", "geopandas.testing"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"
