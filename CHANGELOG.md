@@ -167,6 +167,7 @@ files based on a bounding box, and write out a bounding box column to parquet fi
   instead of its current behaviour of assuming EPSG. In the event the spiatal_ref_sys
   table is not present, or the SRID is not present, `read_postgis` will fallback
   on assuming EPSG CRS authority. (#3329)
+- Added ``GeoDataFrame.active_geometry_name`` property returning the active geometry column's name or None if no active geometry column is set (#2943).
 
 Backwards incompatible API changes:
 
@@ -309,7 +310,6 @@ New methods:
 New features and improvements:
 
 - Added ``exclusive`` parameter to ``sjoin_nearest`` method for Shapely >= 2.0 (#2877)
-- Added ``GeoDataFrame.active_geometry_name`` property returning the active geometry column's name or None if no active geometry column is set.
 - The ``to_file()`` method will now automatically detect the FlatGeoBuf driver
   for files with the `.fgb` extension (#2958)
 
