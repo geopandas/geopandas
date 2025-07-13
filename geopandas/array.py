@@ -3,6 +3,7 @@ import numbers
 import operator
 import warnings
 from functools import lru_cache
+from typing import ClassVar
 
 import numpy as np
 import pandas as pd
@@ -1805,6 +1806,12 @@ class GeometryArray(ExtensionArray):
 
     def __eq__(self, other):
         return self._binop(other, operator.eq)
+
+    # https://github.com/python/typeshed/issues/2148#issuecomment-520783318
+    # Incompatible types in assignment (expression has type "None", base class
+    # "object" defined the type as "Callable[[object], int]")
+    # (Explicitly mirrored from pandas to declare non hashable)
+    __hash__: ClassVar[None]  # type: ignore[assignment]
 
     def __ne__(self, other):
         return self._binop(other, operator.ne)

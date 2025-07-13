@@ -131,7 +131,7 @@ select = [
     # implicit string concatenation
     "ISC",
     # type-checking imports
-    "TCH",
+    "TC",
     # comprehensions
     "C4",
     # Ruff-specific rules
@@ -203,7 +203,10 @@ ignore = [
     # collection-literal-concatenation
     "RUF005",
     # Mutable class attributes should be annotated with `typing.ClassVar`,
-    "RUF012"
+    "RUF012",
+    # import should be at the top-level of a file
+    "PLC0415"
+
 ]
 
 [tool.ruff.lint.per-file-ignores]
