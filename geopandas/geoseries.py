@@ -1346,7 +1346,7 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
         )
 
     def to_wkb(self, hex: bool = False, **kwargs) -> Series:
-        """Convert GeoSeries geometries to WKB.
+        r"""Convert GeoSeries geometries to WKB.
 
         Parameters
         ----------
