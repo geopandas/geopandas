@@ -1370,12 +1370,12 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
         --------
         >>> from shapely.geometry import Point, Polygon
         >>> s = geopandas.GeoSeries(
-        >>>     [
-        >>>         Point(0, 0),
-        >>>         Polygon(),
-        >>>         Polygon([(0, 0), (1, 1), (1, 0)]),
-        >>>         None,
-        >>>     ]
+        ...     [
+        ...         Point(0, 0),
+        ...         Polygon(),
+        ...         Polygon([(0, 0), (1, 1), (1, 0)]),
+        ...         None,
+        ...     ]
         >>> )
 
         >>> s.to_wkb()
