@@ -1376,7 +1376,7 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
         ...         Polygon([(0, 0), (1, 1), (1, 0)]),
         ...         None,
         ...     ]
-        >>> )
+        ... )
 
         >>> s.to_wkb()
         0    b'\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00...
