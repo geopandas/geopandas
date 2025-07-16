@@ -1365,6 +1365,32 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
         See Also
         --------
         GeoSeries.to_wkt
+
+        Examples
+        --------
+        >>> from shapely.geometry import Point, Polygon
+        >>> s = geopandas.GeoSeries(
+        >>>     [
+        >>>         Point(0, 0),
+        >>>         Polygon(),
+        >>>         Polygon([(0, 0), (1, 1), (1, 0)]),
+        >>>         None,
+        >>>     ]
+        >>> )
+
+        >>> s.to_wkb()
+        0    b'\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00...
+        1              b'\x01\x03\x00\x00\x00\x00\x00\x00\x00'
+        2    b'\x01\x03\x00\x00\x00\x01\x00\x00\x00\x04\x00...
+        3                                                 None
+        dtype: object
+
+        >>> s.to_wkb(hex=True)
+        0           010100000000000000000000000000000000000000
+        1                                   010300000000000000
+        2    0103000000010000000400000000000000000000000000...
+        3                                                 None
+        dtype: object
         """
         return Series(to_wkb(self.array, hex=hex, **kwargs), index=self.index)
 
