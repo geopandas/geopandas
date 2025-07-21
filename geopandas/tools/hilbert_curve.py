@@ -40,13 +40,10 @@ def _hilbert_distance(geoms, total_bounds=None, level=16):
 
 
 def _continuous_to_discrete_coords(bounds, level, total_bounds):
-    """
-    Calculates mid points & ranges of geoms and returns
-    as discrete coords
+    """Calculate mid points & ranges of geoms and returns as discrete coords.
 
     Parameters
     ----------
-
     bounds : Bounds of each geometry - array
 
     p : The number of iterations used in constructing the Hilbert curve
@@ -85,9 +82,8 @@ def _continuous_to_discrete_coords(bounds, level, total_bounds):
 
 
 def _continuous_to_discrete(vals, val_range, n):
-    """
-    Convert a continuous one-dimensional array to discrete integer values
-    based their ranges
+    """Convert a continuous one-dimensional array to discrete integer values
+    based their ranges.
 
     Parameters
     ----------

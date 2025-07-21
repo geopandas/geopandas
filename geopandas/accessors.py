@@ -1,6 +1,4 @@
-"""
-Accessors for accessing GeoPandas functionality via pandas extension dtypes
-"""
+"""Accessors for accessing GeoPandas functionality via pandas extension dtypes."""
 
 import pandas.api.extensions
 

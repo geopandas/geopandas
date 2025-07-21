@@ -2468,7 +2468,7 @@ class TestGeomMethods:
         shapely.geos_version < (3, 11, 0), reason="different order in GEOS<3.11"
     )
     def test_build_area(self):
-        # test with polgon in it
+        # test with polygon in it
         s = GeoSeries.from_wkt(
             [
                 "LINESTRING (18 4, 4 2, 2 9)",
