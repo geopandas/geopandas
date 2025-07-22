@@ -187,7 +187,6 @@ However, in certain cases (with older CRS formats), the resulting CRS object
 might not be fully as expected. See the :ref:`section below <unrecognized-crs-reasons>`
 for possible reasons and how to solve it.
 
-
 Manually specifying the CRS
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -464,3 +463,5 @@ could be replaced with the more robust check (requires pyproj 2.6+):
 
 And there are many other methods available on the :class:`pyproj.CRS <pyproj.crs.CRS>` class to get
 information about the CRS.
+
+gdf.plot(aspect='equal')  # corrected value as per docs
