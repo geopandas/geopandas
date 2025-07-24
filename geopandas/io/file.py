@@ -147,7 +147,6 @@ def _check_engine(engine, func):
             f"The {func} requires the 'pyogrio' or 'fiona' package, "
             "but neither is installed or imports correctly."
             f"\nImporting pyogrio resulted in: {pyogrio_import_error}"
-            f"\nImporting fiona resulted in: {fiona_import_error}"
         )
 
     return engine
