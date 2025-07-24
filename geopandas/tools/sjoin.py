@@ -42,20 +42,22 @@ def sjoin(
         ``right_df.sindex.valid_query_predicates``
         
         Available predicates include:
+        
         * 'intersects': True if geometries intersect (boundaries and interiors)
         * 'within': True if left geometry is completely within right geometry
         * 'contains': True if left geometry completely contains right geometry
-        * 'contains_properly': True if left geometry contains right geometry 
+        * 'contains_properly': True if left geometry contains right geometry
           and their boundaries do not touch
         * 'overlaps': True if geometries overlap but neither contains the other
-        * 'crosses': True if geometries cross (interiors intersect but neither 
+        * 'crosses': True if geometries cross (interiors intersect but neither
           contains the other, with intersection dimension less than max dimension)
-        * 'touches': True if geometries touch at boundaries but interiors don't intersect
-        * 'covers': True if left geometry covers right geometry (every point of 
-          right is a point of left)
+        * 'touches': True if geometries touch at boundaries but interiors
+          don't intersect
+        * 'covers': True if left geometry covers right geometry (every point
+          of right is a point of left)
         * 'covered_by': True if left geometry is covered by right geometry
-        * 'dwithin': True if geometries are within specified distance (requires 
-          distance parameter)
+        * 'dwithin': True if geometries are within specified distance
+          (requires distance parameter)
         
         Replaces deprecated ``op`` parameter.
     lsuffix : string, default 'left'
