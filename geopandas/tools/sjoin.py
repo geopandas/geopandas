@@ -42,7 +42,6 @@ def sjoin(
         ``right_df.sindex.valid_query_predicates``
         
         Available predicates include:
-        
         * 'intersects': True if geometries intersect (boundaries and interiors)
         * 'within': True if left geometry is completely within right geometry
         * 'contains': True if left geometry completely contains right geometry
