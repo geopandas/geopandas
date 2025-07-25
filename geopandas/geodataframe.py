@@ -1397,6 +1397,7 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
         geometry_encoding: PARQUET_GEOMETRY_ENCODINGS = "WKB",
         write_covering_bbox: bool = False,
         schema_version: SUPPORTED_VERSIONS_LITERAL | None = None,
+        additional_metadata: dict = {},
         **kwargs,
     ) -> None:
         """Write a GeoDataFrame to the Parquet format.
@@ -1439,6 +1440,9 @@ default 'snappy'
         schema_version : {'0.1.0', '0.4.0', '1.0.0', '1.1.0', None}
             GeoParquet specification version; if not provided, will default to
             latest supported stable version (1.0.0).
+        additional_metadata : dict, default {}
+            Adds additional metadata to the Parquet file metadata.
+            Each value gets JSON-encoded.
         kwargs
             Additional keyword arguments passed to :func:`pyarrow.parquet.write_table`.
 
@@ -1471,6 +1475,7 @@ default 'snappy'
             index=index,
             schema_version=schema_version,
             write_covering_bbox=write_covering_bbox,
+            additional_metadata=additional_metadata,
             **kwargs,
         )
 

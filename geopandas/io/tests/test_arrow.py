@@ -348,6 +348,7 @@ def test_to_parquet_does_not_pass_engine_along(mock_to_parquet):
         index=None,
         schema_version=None,
         write_covering_bbox=False,
+        additional_metadata={},
     )
 
 
@@ -688,6 +689,18 @@ def test_default_geo_col_writes(tmp_path):
     # cannot be round tripped as gdf due to invalid geom col
     pq_df = pd_read_parquet(tmp_path / "test.pq")
     assert_frame_equal(df, pq_df)
+
+
+@pytest.mark.parametrize("value", ["test", 123.45, {"a": "b"}])
+def test_additional_metadata(tmp_path, value):
+    df = GeoDataFrame()
+    df.to_parquet(tmp_path / "test.parquet", additional_metadata={"extra": value})
+
+    from pyarrow.parquet import read_table
+
+    table = read_table(tmp_path / "test.parquet")
+    metadata = json.loads(table.schema.metadata[b"extra"])
+    assert metadata == value
 
 
 def test_fsspec_url(naturalearth_lowres):

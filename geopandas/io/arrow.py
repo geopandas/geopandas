@@ -334,6 +334,7 @@ def _geopandas_to_arrow(
     geometry_encoding="WKB",
     schema_version=None,
     write_covering_bbox=None,
+    additional_metadata={},
 ):
     """Convert a GeoDataFrame to a pyarrow Table.
 
@@ -377,6 +378,8 @@ def _geopandas_to_arrow(
     # Store geopandas specific file-level metadata
     # This must be done AFTER creating the table or it is not persisted
     metadata = table.schema.metadata
+    for key, value in additional_metadata.items():
+        metadata[key.encode()] = _encode_metadata(value)
     metadata.update({b"geo": _encode_metadata(geo_metadata)})
 
     return table.replace_schema_metadata(metadata)
@@ -390,6 +393,7 @@ def _to_parquet(
     geometry_encoding="WKB",
     schema_version=None,
     write_covering_bbox=False,
+    additional_metadata={},
     **kwargs,
 ):
     """
@@ -427,6 +431,9 @@ def _to_parquet(
         Writes the bounding box column for each row entry with column
         name 'bbox'. Writing a bbox column can be computationally
         expensive, hence is default setting is False.
+    additional_metadata : dict, default {}
+        Adds additional metadata to the Parquet file metadata.
+        Each value gets JSON-encoded.
     **kwargs
         Additional keyword arguments passed to pyarrow.parquet.write_table().
     """
@@ -441,6 +448,7 @@ def _to_parquet(
         geometry_encoding=geometry_encoding,
         schema_version=schema_version,
         write_covering_bbox=write_covering_bbox,
+        additional_metadata=additional_metadata,
     )
     parquet.write_table(table, path, compression=compression, **kwargs)
 
