@@ -39,6 +39,7 @@ def import_optional_dependency(name: str, extra: str = ""):
         The module name.
     extra : str
         Additional text to include in the ImportError message.
+
     Returns
     -------
     module

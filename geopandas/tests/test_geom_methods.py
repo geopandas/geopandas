@@ -1060,7 +1060,7 @@ class TestGeomMethods:
             holes=[[(2, 2), (2, 4), (4, 4), (4, 2), (2, 2)]],
         )
         expected = GeoSeries([polygon_cw, linestring, point])
-        assert_geoseries_equal(series.orient_polygons(True), expected)
+        assert_geoseries_equal(series.orient_polygons(exterior_cw=True), expected)
 
     def test_make_valid(self):
         polygon1 = Polygon([(0, 0), (0, 2), (1, 1), (2, 2), (2, 0), (1, 1), (0, 0)])
@@ -2369,7 +2369,7 @@ class TestGeomMethods:
         shapely.geos_version < (3, 11, 0), reason="different order in GEOS<3.11"
     )
     def test_build_area(self):
-        # test with polgon in it
+        # test with polygon in it
         s = GeoSeries.from_wkt(
             [
                 "LINESTRING (18 4, 4 2, 2 9)",

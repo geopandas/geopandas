@@ -1,6 +1,39 @@
 # Changelog
 
-## Version 1.1.0
+## Version 1.2.0
+
+Bug fixes:
+
+- Fix an issue that caused an error in `GeoDataFrame.from_features` when there is no `properties` field (#3599).
+
+
+Notes on dependencies:
+
+- GeoPandas 1.2 now requires Python 3.11 or greater and pandas 2.1, numpy 1.26, pyproj 3.7,
+  are now the minimum required version for these dependencies.
+  Furthermore, the minimum tested version for optional dependencies has been updated to
+  fiona 1.8.21, scipy 1.9, matplotlib 3.8, mapclassify 2.6, folium 0.15 and
+  SQLAlchemy 2.0. Older versions of these libraries may continue to work, but are no longer
+  considered supported (#3371, #3581).
+
+## Version 1.1.1 (June 27, 2025)
+
+Bug fixes:
+
+- Fix regression in the GeoDataFrame constructor when np.nan is given as an only geometry (#3591).
+- Fix regression in `overlay` with `how="identity"` when input dataframes have column
+  names that are equal (#3596).
+
+## Version 1.1.0 (June 1, 2025)
+
+Notes on dependencies:
+
+- GeoPandas 1.1 now requires Python 3.10 or greater and pandas 2.0, numpy 1.24, pyproj 3.5,
+  are now the minimum required version for these dependencies.
+  Furthermore, the minimum tested version for optional dependencies has been updated to
+  fiona 1.8.21, scipy 1.9, matplotlib 3.7, mapclassify 2.5, folium 0.12 and
+  SQLAlchemy 2.0. Older versions of these libraries may continue to work, but are no longer
+  considered supported (#3371).
 
 New features and improvements:
 
@@ -10,25 +43,29 @@ New features and improvements:
   keyword (#1674).
 - Add ``grid_size`` parameter to ``union_all`` and ``dissolve`` (#3445).
 - `GeoDataFrame.plot` now supports `pd.Index` as an input for the `column` keyword (#3463).
-- Avoid change of the plot aspect when plotting missing values (#3438).
-- GeoDataFrame no longer hard-codes the class internally, allowing easier subclassing (#3505).
-- Improve performance of `overlay` with `how=identity` (#3504).
-- Fix ambiguous error when GeoDataFrame is initialised with a column called "crs" (#3502).
 - Added `disjoint_subset` union algorithm for `union_all` and `dissolve` (#3534).
-- Added `constrained_delaunay_triangles` method to GeoSeries/GeoDataframe (#3552).
+- Added `constrained_delaunay_triangles` method to GeoSeries/GeoDataFrame (#3552).
 - Added `to_pandas_kwargs` argument to `from_arrow`, `read_parquet` and `read_feather`
   to allow better control of conversion of non-geometric Arrow data to DataFrames (#3466).
-- Added `is_valid_coverage` and `invalid_coverage_edges` to GeoSeries/GeoDataFrame to allow validation of polygonal coverage (#3545).
-- Added `maximum_inscribed_circle` method from shapely to GeoSeries/GeoDataframe (#3544).
-- Added `minimum_clearance_line` method from shapely to GeoSeries/GeoDataframe (#3543).
+- Added `is_valid_coverage` and `invalid_coverage_edges` to GeoSeries/GeoDataFrame to
+  allow validation of polygonal  coverage (#3545).
+- Added `maximum_inscribed_circle` method from shapely to GeoSeries/GeoDataFrame (#3544).
+- Added `minimum_clearance_line` method from shapely to GeoSeries/GeoDataFrame (#3543).
 - Added `orient_polygons` method from shapely to GeoSeries/GeoDataFrame (#3559).
 - Added ``method`` and ``keep_collapsed`` argument to ``make_valid`` (#3548).
 - Added `simplify_coverage` method for topological simplification of polygonal coverages
-  to GeoSeries/GeoDataframe (#3541).
+  to GeoSeries/GeoDataFrame (#3541).
 - Added initial support of M coordinates (`m` and `has_m` properties, `include_m` in `get_coordinates`) (#3561).
 - Added `geom_equals_identical` method exposing `equals_identical` from shapely to GeoSeries/GeoDataFrame (#3560).
 - GeoPandas now attempts to use a range request when reading from an URL even if the header
- does not directly indicate its support (#3572).
+  does not directly indicate its support (#3572).
+- Added `geopandas.accessors` module. Import this module to register a
+  `pandas.Series.geo` accessor, which exposes GeoSeries methods via pandas's
+  extension mechanism (#3272).
+- Improve performance of `overlay` with `how=identity` (#3504).
+- A warning message is raised in `read_file` when a GeoDataFrame or GeoSeries mask
+  and/or the source dataset is missing a defined CRS. (#3464)
+- GeoDataFrame no longer hard-codes the class internally, allowing easier subclassing (#3505).
 
 Bug fixes:
 
@@ -49,15 +86,8 @@ Bug fixes:
   failed when `crs` was provided (#3383).
 - Fix plotting of polygons with holes by normalizing the coordinate order prior to plotting (#3483).
 - Fix an issue in plotting when polygon patches were not closed (#3576).
-
-Notes on dependencies:
-
-- GeoPandas 1.1 now requires Python 3.11 or greater and pandas 2.1, numpy 1.26, pyproj 3.7,
-  are now the minimum required version for these dependencies.
-  Furthermore, the minimum tested version for optional dependencies has been updated to
-  fiona 1.8.21, scipy 1.9, matplotlib 3.8, mapclassify 2.6, folium 0.15 and
-  SQLAlchemy 2.0. Older versions of these libraries may continue to work, but are no longer
-  considered supported (#3371, #3581).
+- Fix ambiguous error when GeoDataFrame is initialised with a column called "crs" (#3502).
+- Avoid change of the plot aspect when plotting missing values (#3438).
 
 Deprecations and compatibility notes:
 
@@ -65,12 +95,6 @@ Deprecations and compatibility notes:
   The upstream method no longer exists in all supported version of pandas (#3394).
 - The deprecated `geom_almost_equals` method has been removed. Use
   `geom_equals_exact` instead (#3522).
-
-New features and improvements:
-
-- Added `geopandas.accessors` module. Import this module to register a
-  `pandas.Series.geo` accessor, which exposes GeoSeries methods via pandas's
-  extension mechanism (#3272).
 
 ## Version 1.0.1 (July 2, 2024)
 
@@ -159,6 +183,7 @@ files based on a bounding box, and write out a bounding box column to parquet fi
   instead of its current behaviour of assuming EPSG. In the event the spiatal_ref_sys
   table is not present, or the SRID is not present, `read_postgis` will fallback
   on assuming EPSG CRS authority. (#3329)
+- Added ``GeoDataFrame.active_geometry_name`` property returning the active geometry column's name or None if no active geometry column is set (#2943).
 
 Backwards incompatible API changes:
 
@@ -301,7 +326,6 @@ New methods:
 New features and improvements:
 
 - Added ``exclusive`` parameter to ``sjoin_nearest`` method for Shapely >= 2.0 (#2877)
-- Added ``GeoDataFrame.active_geometry_name`` property returning the active geometry column's name or None if no active geometry column is set.
 - The ``to_file()`` method will now automatically detect the FlatGeoBuf driver
   for files with the `.fgb` extension (#2958)
 
@@ -1047,7 +1071,7 @@ Bug fixes:
 - Fixed ``GeoDataFrame.to_file`` to preserve VFS file paths (e.g. when a "s3://" path is specified) (#1124).
 - Fixed failing case in ``geopandas.sjoin`` with empty geometries (#1138).
 
-In addition, the minimum required versions of some dependencies have been increased: GeoPandas now requirs pandas >=0.23.4 and matplotlib >=2.0.1 (#1002).
+In addition, the minimum required versions of some dependencies have been increased: GeoPandas now requires pandas >=0.23.4 and matplotlib >=2.0.1 (#1002).
 
 Version 0.5.1 (July 11, 2019)
 -----------------------------
