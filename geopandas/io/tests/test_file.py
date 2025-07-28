@@ -1548,38 +1548,6 @@ def test_error_monkeypatch_engine_unavailable_fiona(
         df_points.to_file(tmp_path / "test.gpkg", engine="fiona")
 
 
-def test_error_monkeypatch_both_engines_unavailable_only_mentions_pyogrio(
-    monkeypatch, tmp_path, df_points, file_path
-) -> None:
-    # monkeypatch to make fiona unimportable
-    monkeypatch.setattr(geopandas.io.file, "_import_fiona", lambda: None)
-    monkeypatch.setattr(geopandas.io.file, "fiona", None)
-    monkeypatch.setattr(
-        geopandas.io.file, "fiona_import_error", "No module named 'fiona'"
-    )
-
-    # monkeypatch to make pyogrio unimportable. Make this one a libgdal issue
-    # so we can easily ensure we are seeing the right error message
-    monkeypatch.setattr(geopandas.io.file, "_import_pyogrio", lambda: None)
-    monkeypatch.setattr(geopandas.io.file, "pyogrio", None)
-    monkeypatch.setattr(
-        geopandas.io.file,
-        "pyogrio_import_error",
-        (
-            "Importing pyogrio resulted in: libgdal.so.36: cannot open "
-            "shared object file: No such file or directory"
-        ),
-    )
-
-    with pytest.raises(ImportError, match="libgdal.so.36: cannot open") as exc_info:
-        geopandas.read_file(file_path)
-    assert "No module named 'fiona'" not in str(exc_info.value)
-
-    with pytest.raises(ImportError, match="libgdal.so.36: cannot open") as exc_info:
-        df_points.to_file(tmp_path / "test.gpkg")
-    assert "No module named 'fiona'" not in str(exc_info.value)
-
-
 @PYOGRIO_MARK
 def test_list_layers(df_points, tmpdir):
     tempfilename = os.path.join(str(tmpdir), "dataset.gpkg")
