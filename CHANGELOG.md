@@ -2,6 +2,10 @@
 
 ## Version 1.2.0
 
+New features and improvements:
+
+- Add ``schema`` and ``additional_metadata`` parameters to ``to_parquet`` (#3631).
+
 Bug fixes:
 
 - Fix an issue that caused an error in `GeoDataFrame.from_features` when there is no `properties` field (#3599).
