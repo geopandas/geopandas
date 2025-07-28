@@ -111,7 +111,7 @@ def geopandas_to_arrow(
         struct type.
     include_z : bool, default None
         Only relevant for 'geoarrow' encoding (for WKB, the dimensionality
-        of the individial geometries is preserved).
+        of the individual geometries is preserved).
         If False, return 2D geometries. If True, include the third dimension
         in the output (if a geometry has no third dimension, the z-coordinates
         will be NaN). By default, will infer the dimensionality from the

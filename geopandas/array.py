@@ -6,7 +6,7 @@ import operator
 import typing
 import warnings
 from functools import lru_cache
-from typing import Any, Literal
+from typing import Any, ClassVar, Literal
 
 import numpy as np
 import pandas as pd
@@ -404,8 +404,7 @@ class GeometryArray(ExtensionArray):
     def crs(self) -> CRS:
         """The Coordinate Reference System (CRS) represented as a ``pyproj.CRS`` object.
 
-        Returns None if the CRS is not set, and to set the value it
-        :getter: Returns a ``pyproj.CRS`` or None. When setting, the value
+        Returns a ``pyproj.CRS`` or None. When setting, the value
         Coordinate Reference System of the geometry objects. Can be anything accepted by
         :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
         such as an authority string (eg "EPSG:4326") or a WKT string.
@@ -1857,6 +1856,12 @@ class GeometryArray(ExtensionArray):
 
     def __eq__(self, other):
         return self._binop(other, operator.eq)
+
+    # https://github.com/python/typeshed/issues/2148#issuecomment-520783318
+    # Incompatible types in assignment (expression has type "None", base class
+    # "object" defined the type as "Callable[[object], int]")
+    # (Explicitly mirrored from pandas to declare non hashable)
+    __hash__: ClassVar[None]  # type: ignore[assignment]
 
     def __ne__(self, other):
         return self._binop(other, operator.ne)
