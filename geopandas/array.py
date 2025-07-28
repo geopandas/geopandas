@@ -1547,7 +1547,7 @@ class GeometryArray(ExtensionArray):
     def nbytes(self):
         return self._data.nbytes
 
-    def shift(self, periods: int = 1, fill_value: object = None) -> GeometryArray:
+    def shift(self, periods: int = 1, fill_value: Any | None = None) -> GeometryArray:
         """
         Shift values by desired number.
 
