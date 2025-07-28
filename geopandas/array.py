@@ -34,6 +34,8 @@ from ._compat import (
 from .sindex import SpatialIndex
 
 if typing.TYPE_CHECKING:
+    import numpy.typing as npt
+
     from .base import GeoPandasBase
 
     if HAS_PYPROJ:
@@ -93,7 +95,9 @@ class GeometryDtype(ExtensionDtype):
 register_extension_dtype(GeometryDtype)
 
 
-def _check_crs(left, right, allow_none: bool = False) -> bool:
+def _check_crs(
+    left: GeoPandasBase, right: GeoPandasBase, allow_none: bool = False
+) -> bool:
     """
     Check if the projection of both arrays is the same.
 
@@ -214,7 +218,7 @@ def to_shapely(geoms: GeometryArray) -> np.ndarray:
 
 def from_wkb(
     data,
-    crs=None,
+    crs: Any | None = None,
     on_invalid: Literal["raise", "warn", "ignore"] = "raise",
 ) -> GeometryArray:
     """
@@ -250,7 +254,7 @@ def to_wkb(geoms: GeometryArray, hex: bool = False, **kwargs):
 
 def from_wkt(
     data,
-    crs=None,
+    crs: Any | None = None,
     on_invalid: Literal["raise", "warn", "ignore"] = "raise",
 ) -> GeometryArray:
     """
@@ -284,7 +288,9 @@ def to_wkt(geoms: GeometryArray, **kwargs):
     return shapely.to_wkt(geoms, **kwargs)
 
 
-def points_from_xy(x: object, y: object, z: object = None, crs=None) -> GeometryArray:
+def points_from_xy(
+    x: npt.ArrayLike, y: npt.ArrayLike, z: npt.ArrayLike = None, crs: Any | None = None
+) -> GeometryArray:
     """
     Generate GeometryArray of shapely Point geometries from x, y(, z) coordinates.
 
@@ -425,7 +431,7 @@ class GeometryArray(ExtensionArray):
                 )
             self._crs = None
 
-    def check_geographic_crs(self, stacklevel: int):
+    def check_geographic_crs(self, stacklevel: int) -> None:
         """Check CRS and warn if the planar operation is done in a geographic CRS."""
         if self.crs and self.crs.is_geographic:
             warnings.warn(
@@ -656,7 +662,7 @@ class GeometryArray(ExtensionArray):
     def exterior(self) -> GeometryArray:
         return GeometryArray(shapely.get_exterior_ring(self._data), crs=self.crs)
 
-    def extract_unique_points(self):
+    def extract_unique_points(self) -> GeometryArray:
         return GeometryArray(shapely.extract_unique_points(self._data), crs=self.crs)
 
     def offset_curve(self, distance, quad_segs=8, join_style="round", mitre_limit=5.0):
@@ -696,7 +702,7 @@ class GeometryArray(ExtensionArray):
         data[:] = inner_rings
         return data
 
-    def remove_repeated_points(self, tolerance=0.0):
+    def remove_repeated_points(self, tolerance=0.0) -> GeometryArray:
         return GeometryArray(
             shapely.remove_repeated_points(self._data, tolerance=tolerance),
             crs=self.crs,
@@ -924,7 +930,7 @@ class GeometryArray(ExtensionArray):
             crs=self.crs,
         )
 
-    def simplify(self, tolerance, preserve_topology=True) -> GeometryArray:
+    def simplify(self, tolerance, preserve_topology: bool = True) -> GeometryArray:
         return GeometryArray(
             shapely.simplify(
                 self._data, tolerance, preserve_topology=preserve_topology
@@ -932,7 +938,9 @@ class GeometryArray(ExtensionArray):
             crs=self.crs,
         )
 
-    def simplify_coverage(self, tolerance, simplify_boundary=True) -> GeometryArray:
+    def simplify_coverage(
+        self, tolerance, simplify_boundary: bool = True
+    ) -> GeometryArray:
         if not (SHAPELY_GE_21 and GEOS_GE_312):
             raise ImportError(
                 "'simplify_coverage' requires shapely>=2.1 and GEOS>=3.12."
@@ -1386,7 +1394,7 @@ class GeometryArray(ExtensionArray):
         return super()._pad_or_backfill(method=method, limit=limit, copy=copy, **kwargs)
 
     def fillna(
-        self, value=None, method=None, limit: int | None = None, copy=True
+        self, value=None, method=None, limit: int | None = None, copy: bool = True
     ) -> GeometryArray:
         """
         Fill NA values with geometry (or geometries) or using the specified method.
