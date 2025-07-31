@@ -893,3 +893,30 @@ def _list_layers(filename) -> pd.DataFrame:
     return pd.DataFrame(
         pyogrio.list_layers(filename), columns=["name", "geometry_type"]
     )
+
+
+def _read_layer_metadata(filename, layer=None) -> dict:
+    """Reads layer metadata from a file.
+
+    Parameters
+    ----------
+    filename : str, path object or file-like object
+       Either the absolute or relative path to the file or URL to
+       be opened, or any object with a read() method (such as an open file
+       or StringIO)
+    layer : str or int, optional
+        If the file contains multiple layers, the name or number of the layer to be read.
+        If None, the first layer is read.
+
+    Returns
+    -------
+    dict
+        A dictionary with layer metadata.
+
+    """
+    _import_pyogrio()
+    _check_pyogrio("read_info")
+
+    import pyogrio
+
+    return pyogrio.read_info(filename, layer=layer).get("layer_metadata")

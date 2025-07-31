@@ -1169,9 +1169,9 @@ def test_read_file_multi_layer_with_layer_arg_no_warning(tmp_path, engine):
             if warning.category is UserWarning
             and "specify layer parameter" in str(warning.message).lower()
         ]
-        assert len(specify_layer_warnings) == 0, (
-            "'Specify layer parameter' warning was raised, but the layer was specified."
-        )
+        assert (
+            len(specify_layer_warnings) == 0
+        ), "'Specify layer parameter' warning was raised, but the layer was specified."
 
 
 def test_read_file_bbox_mask_not_allowed(engine, nybb_filename):
@@ -1456,6 +1456,18 @@ def test_to_file_metadata_pyogrio(tmp_path, df_points):
     # Check that metadata is written to the file
     info = pyogrio.read_info(tmp_file)
     layer_metadata = info["layer_metadata"]
+    assert layer_metadata == metadata
+
+
+@pytest.mark.skipif(pyogrio is False, reason="Pyogrio not available")
+def test_read_metadata_pyogrio(tmp_path, df_points):
+    metadata = {"title": "test"}
+    tmp_file = tmp_path / "test.gpkg"
+
+    df_points.to_file(tmp_file, driver="GPKG", engine="pyogrio", metadata=metadata)
+
+    # Check that metadata is written and read correctly
+    layer_metadata = geopandas.read_layer_metadata(tmp_file)
     assert layer_metadata == metadata
 
 
