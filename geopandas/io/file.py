@@ -896,7 +896,7 @@ def _list_layers(filename) -> pd.DataFrame:
 
 
 def _read_layer_metadata(filename, layer=None) -> dict:
-    """Reads layer metadata from a file.
+    """Read layer metadata from a file.
 
     Parameters
     ----------
@@ -905,7 +905,8 @@ def _read_layer_metadata(filename, layer=None) -> dict:
        be opened, or any object with a read() method (such as an open file
        or StringIO)
     layer : str or int, optional
-        If the file contains multiple layers, the name or number of the layer to be read.
+        If the file contains multiple layers, the name or number of the layer to be
+        read.
         If None, the first layer is read.
 
     Returns
