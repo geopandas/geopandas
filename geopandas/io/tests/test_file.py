@@ -1526,6 +1526,40 @@ def test_error_engine_unavailable_fiona(tmp_path, df_points, file_path):
         df_points.to_file(tmp_path / "test.gpkg", engine="fiona")
 
 
+def test_error_monkeypatch_engine_unavailable_pyogrio(
+    monkeypatch, tmp_path, df_points, file_path
+) -> None:
+    # monkeypatch to make pyogrio unimportable
+    monkeypatch.setattr(geopandas.io.file, "_import_pyogrio", lambda: None)
+    monkeypatch.setattr(geopandas.io.file, "pyogrio", None)
+    monkeypatch.setattr(
+        geopandas.io.file, "pyogrio_import_error", "No module named 'pyogrio'"
+    )
+
+    with pytest.raises(ImportError, match="No module named 'pyogrio'"):
+        geopandas.read_file(file_path, engine="pyogrio")
+
+    with pytest.raises(ImportError, match="No module named 'pyogrio'"):
+        df_points.to_file(tmp_path / "test.gpkg", engine="pyogrio")
+
+
+def test_error_monkeypatch_engine_unavailable_fiona(
+    monkeypatch, tmp_path, df_points, file_path
+) -> None:
+    # monkeypatch to make fiona unimportable
+    monkeypatch.setattr(geopandas.io.file, "_import_fiona", lambda: None)
+    monkeypatch.setattr(geopandas.io.file, "fiona", None)
+    monkeypatch.setattr(
+        geopandas.io.file, "fiona_import_error", "No module named 'fiona'"
+    )
+
+    with pytest.raises(ImportError, match="No module named 'fiona'"):
+        geopandas.read_file(file_path, engine="fiona")
+
+    with pytest.raises(ImportError, match="No module named 'fiona'"):
+        df_points.to_file(tmp_path / "test.gpkg", engine="fiona")
+
+
 @PYOGRIO_MARK
 def test_list_layers(df_points, tmpdir):
     tempfilename = os.path.join(str(tmpdir), "dataset.gpkg")

@@ -101,7 +101,7 @@ def _check_pyogrio(func):
         raise ImportError(
             f"the {func} requires the 'pyogrio' package, but it is not installed "
             "or does not import correctly."
-            "\nImporting pyogrio resulted in: {pyogrio_import_error}"
+            f"\nImporting pyogrio resulted in: {pyogrio_import_error}"
         )
 
 
