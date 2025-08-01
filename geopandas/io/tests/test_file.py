@@ -1169,9 +1169,9 @@ def test_read_file_multi_layer_with_layer_arg_no_warning(tmp_path, engine):
             if warning.category is UserWarning
             and "specify layer parameter" in str(warning.message).lower()
         ]
-        assert (
-            len(specify_layer_warnings) == 0
-        ), "'Specify layer parameter' warning was raised, but the layer was specified."
+        assert len(specify_layer_warnings) == 0, (
+            "'Specify layer parameter' warning was raised, but the layer was specified."
+        )
 
 
 def test_read_file_bbox_mask_not_allowed(engine, nybb_filename):
