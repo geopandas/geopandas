@@ -345,7 +345,7 @@ def _process_column_names_with_suffix(
 
 def _restore_index(joined, index_names, index_names_original):
     """
-    Set back the the original index columns, and restoring their name as `None`
+    Set back the original index columns, and restoring their name as `None`
     if they didn't have a name originally.
     """
     if PANDAS_GE_30:
