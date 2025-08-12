@@ -2,6 +2,11 @@
 
 ## Version 1.2.0
 
+New features and improvements:
+
+- Add ``grid_size`` parameter to ``union``, ``difference``, ``symmetric_difference``
+  and ``intersection`` (#3593).
+
 Bug fixes:
 
 - Fix an issue that caused an error in `GeoDataFrame.from_features` when there is no `properties` field (#3599).
