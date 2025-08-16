@@ -24,6 +24,4 @@ import geopandas as gpd
 import pandas as pd
 import numpy as np
 
-from . import _version
-
-__version__ = _version.get_versions()["version"]
+from geopandas._version import __version__
