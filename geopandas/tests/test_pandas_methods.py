@@ -1,5 +1,4 @@
 import os
-import warnings
 from packaging.version import Version
 
 import numpy as np
@@ -444,9 +443,7 @@ def test_fillna_inplace(s):
     arr = s2.array
     s2.fillna(Point(1, 1), inplace=True)
     assert_geoseries_equal(s2, s)
-    if compat.PANDAS_GE_21:
-        # starting from pandas 2.1, there is support to do this actually inplace
-        assert s2.array is arr
+    assert s2.array is arr
 
 
 def test_dropna():
@@ -745,20 +742,12 @@ def test_apply_loc_len1(df):
 @pytest.mark.skipif(compat.PANDAS_GE_30, reason="convert_dtype is removed in pandas 3")
 def test_apply_convert_dtypes_keyword(s):
     # ensure the convert_dtypes keyword is accepted
-    if not compat.PANDAS_GE_21:
-        recorder = warnings.catch_warnings(record=True)
-    else:
-        recorder = pytest.warns()
-
-    with recorder as record:
+    with pytest.warns() as record:
         res = s.apply(lambda x: x, convert_dtype=True, args=())
     assert_geoseries_equal(res, s)
 
-    if compat.PANDAS_GE_21:
-        assert len(record) == 1
-        assert "the convert_dtype parameter" in str(record[0].message)
-    else:
-        assert len(record) == 0
+    assert len(record) == 1
+    assert "the convert_dtype parameter" in str(record[0].message)
 
 
 @pytest.mark.parametrize("crs", [None, "EPSG:4326"])
