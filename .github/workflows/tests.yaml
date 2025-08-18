@@ -74,6 +74,9 @@ jobs:
           micromamba info
           micromamba list
 
+      - name: Install package
+        run: pip install -e .
+
       - name: Test
         env:
           PANDAS_FUTURE_INFER_STRING: ${{ matrix.pandas_future_infer_string || '0' }}
