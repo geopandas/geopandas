@@ -3,9 +3,10 @@ import os
 import pathlib
 from itertools import product
 from packaging.version import Version
+import re
 
 import numpy as np
-from pandas import ArrowDtype, DataFrame
+from pandas import ArrowDtype, DataFrame, Index, Series
 from pandas import read_parquet as pd_read_parquet
 
 import shapely
@@ -766,8 +767,22 @@ def test_write_empty_bbox(tmpdir, geometry):
 @pytest.mark.parametrize("format", ["feather", "parquet"])
 def test_write_read_to_pandas_kwargs(tmpdir, format):
     filename = os.path.join(str(tmpdir), f"test.{format}")
-    g = box(0, 0, 10, 10)
-    gdf = geopandas.GeoDataFrame({"geometry": [g], "i": [1], "s": ["a"]})
+
+    # Use arrow types to ensure that we can assert the roundtrip was successful
+    int_type = ArrowDtype(pyarrow.int64())
+    str_type = ArrowDtype(pyarrow.string())
+    complex_type = ArrowDtype(pyarrow.struct([pyarrow.field("foo", pyarrow.string())]))
+    index = Index([0], dtype=ArrowDtype(pyarrow.int64()))
+
+    gdf = geopandas.GeoDataFrame(
+        {
+            "geometry": [box(0, 0, 10, 10)],
+            "i": Series([1], index=index, dtype=int_type),
+            "s": Series(["a"], index=index, dtype=str_type),
+            "c": Series([{"foo": "bar"}], index=index, dtype=complex_type),
+        },
+        index=index,
+    )
 
     if format == "feather":
         gdf.to_feather(filename)
@@ -776,11 +791,19 @@ def test_write_read_to_pandas_kwargs(tmpdir, format):
         gdf.to_parquet(filename)
         read_func = read_parquet
 
+    # Note: due to bugs in pyarrow, we can't read complex types without using
+    # the types mapper
+    match = re.escape("data type 'struct<foo: string>[pyarrow]' not understood")
+    with pytest.raises(TypeError, match=match):
+        read_func(filename)
+
     # simulate the `dtype_backend="pyarrow"` option in `pandas.read_parquet`
     gdf_roundtrip = read_func(filename, to_pandas_kwargs={"types_mapper": ArrowDtype})
     assert isinstance(gdf_roundtrip, geopandas.GeoDataFrame)
-    assert isinstance(gdf_roundtrip.dtypes["i"], ArrowDtype)
-    assert isinstance(gdf_roundtrip.dtypes["s"], ArrowDtype)
+    assert gdf_roundtrip.dtypes["i"] == int_type
+    assert gdf_roundtrip.dtypes["s"] == str_type
+    assert gdf_roundtrip.dtypes["c"] == complex_type
+    assert_geodataframe_equal(gdf_roundtrip, gdf, check_dtype=True)
 
 
 @pytest.mark.parametrize("format", ["feather", "parquet"])
