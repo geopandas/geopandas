@@ -764,6 +764,10 @@ def test_write_empty_bbox(tmpdir, geometry):
     assert "bbox" not in metadata["columns"]["geometry"]
 
 
+@pytest.mark.skipif(
+    Version(pyarrow.__version__) < Version("19.0.0"),
+    reason="This version of pyarrow does not support reading complex types",
+)
 @pytest.mark.parametrize("format", ["feather", "parquet"])
 def test_write_read_to_pandas_kwargs(tmpdir, format):
     filename = os.path.join(str(tmpdir), f"test.{format}")
