@@ -942,6 +942,27 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         -------
         GeoDataFrame
 
+        See Also
+        --------
+        GeoDataFrame.to_arrow
+        GeoSeries.from_arrow
+
+        Examples
+        --------
+
+        >>> import geoarrow.pyarrow as ga
+        >>> import pyarrow as pa
+        >>> table = pa.Table.from_arrays([
+        ...     ga.as_geoarrow([None, "POLYGON ((0 0, 1 1, 0 1, 0 0))", "LINESTRING (0 0, -1 1, 0 -1)"]),
+        ...     pa.array([1, 2, 3]),
+        ...     pa.array(["a", "b", "c"]),
+        ... ], names=["geometry", "id", "value"])
+        >>> gdf = geopandas.GeoDataFrame.from_arrow(table)
+        >>> gdf
+                                   geometry   id  value
+        0                              None    1      a
+        1    POLYGON ((0 0, 1 1, 0 1, 0 0))    2      b
+        2      LINESTRING (0 0, -1 1, 0 -1)    3      c
         """
         from geopandas.io._geoarrow import arrow_to_geopandas
 
