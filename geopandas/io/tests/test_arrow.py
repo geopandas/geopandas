@@ -795,12 +795,6 @@ def test_write_read_to_pandas_kwargs(tmpdir, format):
         gdf.to_parquet(filename)
         read_func = read_parquet
 
-    # Note: due to bugs in pyarrow, we can't read complex types without using
-    # the types mapper
-    match = re.escape("data type 'struct<foo: string>[pyarrow]' not understood")
-    with pytest.raises(TypeError, match=match):
-        read_func(filename)
-
     # simulate the `dtype_backend="pyarrow"` option in `pandas.read_parquet`
     gdf_roundtrip = read_func(filename, to_pandas_kwargs={"types_mapper": ArrowDtype})
     assert isinstance(gdf_roundtrip, geopandas.GeoDataFrame)
@@ -808,6 +802,37 @@ def test_write_read_to_pandas_kwargs(tmpdir, format):
     assert gdf_roundtrip.dtypes["s"] == str_type
     assert gdf_roundtrip.dtypes["c"] == complex_type
     assert_geodataframe_equal(gdf_roundtrip, gdf, check_dtype=True)
+
+
+@pytest.mark.xfail(
+    "Pyarrow/Pandas cannot read complex types from parquet files with numpy backend. "
+    "This is a long standing pandas issue as noted here: "
+    "https://github.com/pandas-dev/pandas/issues/53011 and "
+    "https://github.com/apache/arrow/issues/39914"
+)
+@pytest.mark.parametrize("format", ["feather", "parquet"])
+def test_read_complex_type(tmpdir, format):
+    filename = os.path.join(str(tmpdir), f"test.{format}")
+    complex_type = ArrowDtype(pyarrow.struct([pyarrow.field("foo", pyarrow.string())]))
+    index = Index([0], dtype=ArrowDtype(pyarrow.int64()))
+    gdf = geopandas.GeoDataFrame(
+        {
+            "geometry": [box(0, 0, 10, 10)],
+            "c": Series([{"foo": "bar"}], index=index, dtype=complex_type),
+        },
+        index=index,
+    )
+    if format == "feather":
+        gdf.to_feather(filename)
+        read_func = read_feather
+    else:
+        gdf.to_parquet(filename)
+        read_func = read_parquet
+    # Note: due to bugs in pyarrow, we can't read complex types without using
+    # the types mapper
+    match = re.escape("data type 'struct<foo: string>[pyarrow]' not understood")
+    with pytest.raises(TypeError, match=match):
+        read_func(filename)
 
 
 @pytest.mark.parametrize("format", ["feather", "parquet"])
