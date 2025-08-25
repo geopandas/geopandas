@@ -1,9 +1,9 @@
 import json
 import os
 import pathlib
+import re
 from itertools import product
 from packaging.version import Version
-import re
 
 import numpy as np
 from pandas import ArrowDtype, DataFrame, Index, Series
@@ -806,8 +806,8 @@ def test_write_read_to_pandas_kwargs(tmpdir, format):
 
 @pytest.mark.xfail(
     reason=(
-        "Pyarrow/Pandas cannot read complex types from parquet files with numpy backend. "
-        "This is a long standing pandas issue as noted here: "
+        "Pyarrow/Pandas cannot read complex types from parquet files with "
+        "numpy backend. This is a long standing pandas issue as noted here: "
         "https://github.com/pandas-dev/pandas/issues/53011 and "
         "https://github.com/apache/arrow/issues/39914"
     ),
