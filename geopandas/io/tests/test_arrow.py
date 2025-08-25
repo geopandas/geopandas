@@ -805,10 +805,12 @@ def test_write_read_to_pandas_kwargs(tmpdir, format):
 
 
 @pytest.mark.xfail(
-    "Pyarrow/Pandas cannot read complex types from parquet files with numpy backend. "
-    "This is a long standing pandas issue as noted here: "
-    "https://github.com/pandas-dev/pandas/issues/53011 and "
-    "https://github.com/apache/arrow/issues/39914"
+    reason=(
+        "Pyarrow/Pandas cannot read complex types from parquet files with numpy backend. "
+        "This is a long standing pandas issue as noted here: "
+        "https://github.com/pandas-dev/pandas/issues/53011 and "
+        "https://github.com/apache/arrow/issues/39914"
+    ),
 )
 @pytest.mark.parametrize("format", ["feather", "parquet"])
 def test_read_complex_type(tmpdir, format):
