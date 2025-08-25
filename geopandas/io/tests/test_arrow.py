@@ -804,16 +804,8 @@ def test_write_read_to_pandas_kwargs(tmpdir, format):
     assert_geodataframe_equal(gdf_roundtrip, gdf, check_dtype=True)
 
 
-@pytest.mark.xfail(
-    reason=(
-        "Pyarrow/Pandas cannot read complex types from parquet files with "
-        "numpy backend. This is a long standing pandas issue as noted here: "
-        "https://github.com/pandas-dev/pandas/issues/53011 and "
-        "https://github.com/apache/arrow/issues/39914"
-    ),
-)
 @pytest.mark.parametrize("format", ["feather", "parquet"])
-def test_read_complex_type(tmpdir, format):
+def test_read_complex_type_with_numpy_backend_xfail(tmpdir, format):
     filename = os.path.join(str(tmpdir), f"test.{format}")
     complex_type = ArrowDtype(pyarrow.struct([pyarrow.field("foo", pyarrow.string())]))
     index = Index([0], dtype=ArrowDtype(pyarrow.int64()))
@@ -831,7 +823,9 @@ def test_read_complex_type(tmpdir, format):
         gdf.to_parquet(filename)
         read_func = read_parquet
     # Note: due to bugs in pyarrow, we can't read complex types without using
-    # the types mapper
+    # the types mapper. This is a long standing pandas issue as noted here:
+    # - https://github.com/pandas-dev/pandas/issues/53011
+    # - https://github.com/apache/arrow/issues/39914
     match = re.escape("data type 'struct<foo: string>[pyarrow]' not understood")
     with pytest.raises(TypeError, match=match):
         read_func(filename)
