@@ -494,13 +494,15 @@ def _arrow_to_geopandas(table, geo_metadata=None, to_pandas_kwargs=None):
     if geo_metadata is None:
         # Note: this path of not passing metadata is also used by dask-geopandas
         geo_metadata = _validate_and_decode_metadata(table.schema.metadata)
+    if to_pandas_kwargs is None:
+        to_pandas_kwargs = {}
 
     # Find all geometry columns that were read from the file.  May
     # be a subset if 'columns' parameter is used.
     geometry_columns = [
         col for col in geo_metadata["columns"] if col in table.column_names
     ]
-    result_column_names = list(table.slice(0, 0).to_pandas().columns)
+    result_column_names = list(table.slice(0, 0).to_pandas(**to_pandas_kwargs).columns)
     geometry_columns.sort(key=result_column_names.index)
 
     if not len(geometry_columns):
@@ -526,8 +528,6 @@ def _arrow_to_geopandas(table, geo_metadata=None, to_pandas_kwargs=None):
             )
 
     table_attr = table.drop(geometry_columns)
-    if to_pandas_kwargs is None:
-        to_pandas_kwargs = {}
     df = table_attr.to_pandas(**to_pandas_kwargs)
 
     # Convert the WKB columns that are present back to geometry.
