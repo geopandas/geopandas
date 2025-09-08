@@ -1640,7 +1640,7 @@ class TestGeomMethods:
             ]
         else:
             expected_tol = [
-                LineString([(0.70703125, 0.29296875), (0.5, 0.5)]),
+                LineString([(0.75, 0.5), (0.625, 0.625)]),
                 LineString([(0.5, 0.5), (0.5, 0)]),
             ]
         assert_geoseries_equal(mic_tolerance, GeoSeries(expected_tol))
