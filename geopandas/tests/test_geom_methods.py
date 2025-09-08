@@ -1630,13 +1630,20 @@ class TestGeomMethods:
         assert_geoseries_equal(mic, GeoSeries(expected))
 
         mic_tolerance = self.g1.maximum_inscribed_circle(tolerance=np.array([10, 0]))
-        expected_tol = GeoSeries(
-            [
-                LineString([(0.75, 0.5), (0.625, 0.625)]),
+        if shapely.geos_version >= (3, 14, 0):
+            # https://github.com/libgeos/geos/issues/1265
+            expected_tol = [
+                LineString(
+                    [(0.7071067811865475, 0.2928932188134525), (0.7071067811865475, 0)]
+                ),
+                LineString([(0.5000000000000001, 0.5), (1, 0.5)]),
+            ]
+        else:
+            expected_tol = [
+                LineString([(0.70703125, 0.29296875), (0.5, 0.5)]),
                 LineString([(0.5, 0.5), (0.5, 0)]),
             ]
-        )
-        assert_geoseries_equal(mic_tolerance, expected_tol)
+        assert_geoseries_equal(mic_tolerance, GeoSeries(expected_tol))
 
     def test_total_bounds(self):
         bbox = self.sol.x, self.sol.y, self.esb.x, self.esb.y
