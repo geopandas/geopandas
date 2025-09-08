@@ -593,13 +593,25 @@ def test_read_file(engine, nybb_filename):
         # url to zip file
         "https://raw.githubusercontent.com/geopandas/geopandas/"
         "main/geopandas/tests/data/nybb_16a.zip",
-        # url to zipfile without extension
-        "https://geonode.goosocean.org/download/480",
         # url to web service
         "https://demo.pygeoapi.io/stable/collections/obs/items",
     ],
 )
 def test_read_file_url(engine, url):
+    gdf = read_file(url, engine=engine)
+    assert isinstance(gdf, geopandas.GeoDataFrame)
+
+
+@pytest.mark.web
+@pytest.mark.parametrize(
+    "url",
+    [
+        # url to zipfile without extension
+        "https://geonode.goosocean.org/download/480",
+    ],
+)
+@pytest.mark.xfail(reason="SSL certificate issue")
+def test_read_file_url_flaky(engine, url):
     gdf = read_file(url, engine=engine)
     assert isinstance(gdf, geopandas.GeoDataFrame)
 

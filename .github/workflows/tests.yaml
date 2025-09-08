@@ -95,7 +95,7 @@ jobs:
           pytest -v -r a --color=yes --cov=geopandas --cov-append --cov-report term-missing --cov-report xml geopandas/io/tests/test_sql.py | tee /dev/stderr | if grep SKIPPED >/dev/null;then echo "TESTS SKIPPED, FAILING" && exit 1;fi
 
       - name: Test docstrings
-        if: contains(matrix.env, '311-pd22.yaml') && contains(matrix.os, 'ubuntu')
+        if: contains(matrix.env, '313-latest.yaml') && contains(matrix.os, 'ubuntu')
         run: |
           pytest -v --color=yes --doctest-only geopandas --ignore=geopandas/datasets
 
