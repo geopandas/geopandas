@@ -1615,8 +1615,11 @@ class TestGeomMethods:
     def test_maximum_inscribed_circle(self):
         mic = self.g1.maximum_inscribed_circle()
         if shapely.geos_version >= (3, 14, 0):
+            # https://github.com/libgeos/geos/issues/1265
             expected = [
-                LineString([(0.70710678, 0.29289322), (0.70710678, 0)]),
+                LineString(
+                    [(0.7071067811865475, 0.2928932188134525), (0.7071067811865475, 0)]
+                ),
                 LineString([(0.5, 0.5), (0.5, 0)]),
             ]
         else:
