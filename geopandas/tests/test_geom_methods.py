@@ -1614,13 +1614,17 @@ class TestGeomMethods:
     @pytest.mark.skipif(not SHAPELY_GE_21, reason="requires shapely 2.1")
     def test_maximum_inscribed_circle(self):
         mic = self.g1.maximum_inscribed_circle()
-        expected = GeoSeries(
-            [
+        if shapely.geos_version >= (3, 14, 0):
+            expected = [
+                LineString([(0.70703125, 0.29296875), (0.7071067811865475, 0)]),
+                LineString([(0.5, 0.5), (0.5, 0)]),
+            ]
+        else:
+            expected = [
                 LineString([(0.70703125, 0.29296875), (0.5, 0.5)]),
                 LineString([(0.5, 0.5), (0.5, 0)]),
             ]
-        )
-        assert_geoseries_equal(mic, expected)
+        assert_geoseries_equal(mic, GeoSeries(expected))
 
         mic_tolerance = self.g1.maximum_inscribed_circle(tolerance=np.array([10, 0]))
         expected_tol = GeoSeries(
