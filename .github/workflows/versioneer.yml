@@ -15,7 +15,7 @@ jobs:
     if: github.repository == 'geopandas/geopandas'
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
       - name: Install and run versioneer
         run: |
           pip install versioneer
