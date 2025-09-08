@@ -2996,7 +2996,7 @@ GeometryCollection
            :align: center
 
         >>> polygon = Polygon([(0, 0), (2, 2), (0, 2)])
-        >>> s.geom_equals(polygon)
+        >>> s.geom_equals(polygon, align=True)
         0     True
         1    False
         2    False
@@ -3572,7 +3572,7 @@ GeometryCollection
            :align: center
 
         >>> polygon = Polygon([(0, 0), (1, 0), (1, 1), (0, 1)])
-        >>> s.overlaps(polygon)
+        >>> s.overlaps(polygon, align=True)
         0     True
         1     True
         2    False
@@ -3800,7 +3800,7 @@ GeometryCollection
            :align: center
 
         >>> polygon = Polygon([(0, 0), (2, 2), (0, 2)])
-        >>> s.within(polygon)
+        >>> s.within(polygon, align=True)
         0     True
         1     True
         2    False
