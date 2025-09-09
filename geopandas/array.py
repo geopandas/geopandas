@@ -1728,6 +1728,13 @@ class GeometryArray(ExtensionArray):
             distances[mask_empty] = 0
         return distances
 
+    def _cast_pointwise_result(self, values) -> GeometryArray:
+        result = super()._cast_pointwise_result(values)
+        if result.dtype.kind == self.dtype.kind:
+            return type(self)._from_sequence(result)
+        else:  # special case for ea eq/neq methods
+            return result
+
     def argmin(self, skipna: bool = True) -> int:
         raise TypeError("geometries have no minimum or maximum")
 
