@@ -1730,8 +1730,12 @@ class GeometryArray(ExtensionArray):
 
     def _cast_pointwise_result(self, values) -> GeometryArray:
         result = super()._cast_pointwise_result(values)
+        # only attempt to construct GeometryArray from object dtype result
         if result.dtype.kind == self.dtype.kind:
-            return type(self)._from_sequence(result)
+            try:
+                return type(self)._from_sequence(result)
+            except (TypeError, shapely.errors.GeometryTypeError):
+                return result
         else:  # special case for ea eq/neq methods
             return result
 
