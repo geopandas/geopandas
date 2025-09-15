@@ -1909,12 +1909,12 @@ default 'snappy'
                 result.__class__ = DataFrame
         return result
 
-    # def __delitem__(self, key) -> None:
-    #     """If the active geometry column is removed, downcast to a dataframe."""
-    #     geo_col = self._geometry_column_name
-    #     super().__delitem__(key)
-    #     if key == geo_col:
-    #         self.__class__ = DataFrame
+    def __delitem__(self, key) -> None:
+        """If the active geometry column is removed, downcast to a dataframe."""
+        geo_col = self._geometry_column_name
+        super().__delitem__(key)
+        if key == geo_col:
+            self.__class__ = DataFrame
 
     def _persist_old_default_geometry_colname(self) -> None:
         """Persist the default geometry column name of 'geometry' temporarily for
