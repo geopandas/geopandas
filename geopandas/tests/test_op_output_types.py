@@ -409,3 +409,11 @@ def test_merge_preserve_geodataframe():
     assert_obj_no_active_geo_col(res, GeoDataFrame, geo_colname=None)
     expected = GeoDataFrame({"geo_x": ser, "geo_y": ser})
     assert_geodataframe_equal(expected, res)
+
+
+def test_del_geometry_returns_dataframe():
+    # https://github.com/geopandas/geopandas/issues/2932
+    df = GeoDataFrame({"geometry": GeoSeries.from_xy([1], [1]), "a": [1]})
+    del df["geometry"]
+
+    assert not isinstance(df, GeoDataFrame) and isinstance(df, pd.DataFrame)
