@@ -2223,7 +2223,7 @@ default 'snappy'
             which is used by `dissolve`. In particular, `numeric_only` may be
             supplied, which will be required in pandas 2.0 for certain aggfuncs.
 
-            .. versionadded:: 0.13.0pi
+            .. versionadded:: 0.13.0
 
         Returns
         -------
