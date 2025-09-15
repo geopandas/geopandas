@@ -1124,14 +1124,8 @@ individually so that features may have different properties
         if na not in ["null", "drop", "keep"]:
             raise ValueError(f"Unknown na method {na}")
 
-        if self._geometry_column_name not in self:
-            raise AttributeError(
-                "No geometry data set (expected in column "
-                f"'{self._geometry_column_name}')."
-            )
-
         ids = np.asarray(self.index)
-        geometries = np.asarray(self[self._geometry_column_name])
+        geometries = np.asarray(self.geometry)
 
         if not self.columns.is_unique:
             raise ValueError("GeoDataFrame cannot contain duplicated column names.")
@@ -1915,12 +1909,12 @@ default 'snappy'
                 result.__class__ = DataFrame
         return result
 
-    def __delitem__(self, key) -> None:
-        """If the active geometry column is removed, downcast to a dataframe."""
-        geo_col = self._geometry_column_name
-        super().__delitem__(key)
-        if key == geo_col:
-            self.__class__ = DataFrame
+    # def __delitem__(self, key) -> None:
+    #     """If the active geometry column is removed, downcast to a dataframe."""
+    #     geo_col = self._geometry_column_name
+    #     super().__delitem__(key)
+    #     if key == geo_col:
+    #         self.__class__ = DataFrame
 
     def _persist_old_default_geometry_colname(self) -> None:
         """Persist the default geometry column name of 'geometry' temporarily for
