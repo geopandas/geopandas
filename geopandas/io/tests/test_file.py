@@ -604,6 +604,22 @@ def test_read_file_url(engine, url):
     assert isinstance(gdf, geopandas.GeoDataFrame)
 
 
+@pytest.mark.web
+@pytest.mark.parametrize(
+    "url",
+    [
+        # url to zipfile without extension
+        "https://geonode.goosocean.org/download/480",
+    ],
+)
+# Marked strict=False as state is not stable see
+# #3584, #3585, #3644
+@pytest.mark.xfail(reason="SSL certificate issue", strict=False)
+def test_read_file_url_flaky(engine, url):
+    gdf = read_file(url, engine=engine)
+    assert isinstance(gdf, geopandas.GeoDataFrame)
+
+
 def test_read_file_local_uri(file_path, engine):
     local_uri = "file://" + file_path
     gdf = read_file(local_uri, engine=engine)
