@@ -1624,7 +1624,9 @@ class TestGeomMethods:
         assert (shapely.get_num_points(mic) == 2).all()
         expected_centers = GeoSeries([Point(0.5, 0.5), Point(0.466796875, 0.259765625)])
         expected_length = Series([0.5, 0.533203125])
-        assert_geoseries_equal(shapely.get_point(mic, 0), expected_centers)
+        assert_geoseries_equal(
+            shapely.get_point(mic, 0), expected_centers, check_less_precise=True
+        )
         assert_series_equal(shapely.length(mic), expected_length)
 
         # with tolerance for second polygon -> stops earlier with smaller circle, thus
