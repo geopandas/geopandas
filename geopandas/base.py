@@ -1888,7 +1888,7 @@ GeometryCollection
         >>> s = geopandas.GeoSeries(
         ...     [
         ...         Polygon([(0, 0), (1, 1), (0, 1), (0, 0)]),
-        ...         Polygon([(0, 0), (10, 10), (0, 10), (0, 0)]),
+        ...         Polygon([(0, 0), (0.5, -1), (1, 0), (1, 1), (-0.5, 0.5)]),
         ...     ]
         ... )
         >>> s
@@ -1897,13 +1897,13 @@ GeometryCollection
         dtype: geometry
 
         >>> s.maximum_inscribed_circle()
-        0    LINESTRING (0.29297 0.70703, 0.5 0.5)
-        1        LINESTRING (2.92969 7.07031, 5 5)
+        0    LINESTRING (0.29289 0.70711, 0.5 0.5)
+        1    LINESTRING (0.4668 0.25977, 1 0.25977)
         dtype: geometry
 
         >>> s.maximum_inscribed_circle(tolerance=2)
-        0    LINESTRING (0.25 0.5, 0.375 0.375)
-        1          LINESTRING (2.5 7.5, 2.5 10)
+        0    LINESTRING (0.29289 0.70711, 0.5 0.5)
+        1             LINESTRING (0.375 0.25, 0 0)
         dtype: geometry
 
         See Also
