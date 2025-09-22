@@ -1892,8 +1892,8 @@ GeometryCollection
         ...     ]
         ... )
         >>> s
-        0       POLYGON ((0 0, 1 1, 0 1, 0 0))
-        1    POLYGON ((0 0, 10 10, 0 10, 0 0))
+        0                      POLYGON ((0 0, 1 1, 0 1, 0 0))
+        1    POLYGON ((0 0, 0.5 -1, 1 0, 1 1, -0.5 0.5, 0 0))
         dtype: geometry
 
         >>> s.maximum_inscribed_circle()
