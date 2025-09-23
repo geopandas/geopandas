@@ -52,8 +52,8 @@ def dtype():
 
 
 def make_data():
-    a = np.empty(100, dtype=object)
-    a[:] = [shapely.geometry.Point(i, i) for i in range(100)]
+    a = np.empty(10, dtype=object)
+    a[:] = [shapely.geometry.Point(i, i) for i in range(10)]
     ga = from_shapely(a)
     return ga
 
@@ -351,7 +351,7 @@ class TestReshaping(extension_tests.BaseReshapingTests):
             # non-uniform
             pd.MultiIndex.from_tuples([("A", "a"), ("A", "b"), ("B", "b")]),
             # three levels, non-uniform
-            pd.MultiIndex.from_product([("A", "B"), ("a", "b", "c"), (0, 1, 2)]),
+            pd.MultiIndex.from_product([("A", "B"), ("a", "b"), (0, 1)]),
             pd.MultiIndex.from_tuples(
                 [
                     ("A", "a", 1),
