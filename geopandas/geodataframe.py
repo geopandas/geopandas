@@ -558,11 +558,10 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         The Coordinate Reference System (CRS) represented as a ``pyproj.CRS``
         object.
 
-        Returns None if the CRS is not set, and to set the value it
-        :getter: Returns a ``pyproj.CRS`` or None. When setting, the value
-        can be anything accepted by
-        :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
-        such as an authority string (eg "EPSG:4326") or a WKT string.
+        Returns
+        -------
+        ``pyproj.CRS`` | None
+            CRS assigned to an active geometry column
 
         Examples
         --------
@@ -816,9 +815,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 "geometry": shape(feature["geometry"]) if feature["geometry"] else None
             }
             # load properties
-            properties = feature["properties"]
-            if properties is None:
-                properties = {}
+            properties = feature.get("properties") or {}
             row.update(properties)
             rows.append(row)
         return cls(rows, columns=columns, crs=crs)
@@ -1337,7 +1334,7 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
             struct type.
         include_z : bool, default None
             Only relevant for 'geoarrow' encoding (for WKB, the dimensionality
-            of the individial geometries is preserved).
+            of the individual geometries is preserved).
             If False, return 2D geometries. If True, include the third dimension
             in the output (if a geometry has no third dimension, the z-coordinates
             will be NaN). By default, will infer the dimensionality from the
@@ -2095,12 +2092,24 @@ default 'snappy'
 
         # merge operation: using metadata of the left object
         if method == "merge":
+            # pandas-dev/pandas#60357 : merge/concat use input_objs
+            if PANDAS_GE_30:
+                # other is a types.SimpleNameSpace
+                left_obj = other.input_objs[0]
+            else:
+                # other is a _MergeOperation
+                left_obj = other.left
             for name in self._metadata:
-                object.__setattr__(self, name, getattr(other.left, name, None))
+                object.__setattr__(self, name, getattr(left_obj, name, None))
         # concat operation: using metadata of the first object
         elif method == "concat":
+            # pandas-dev/pandas#60357 : merge/concat use input_objs
+            if PANDAS_GE_30:
+                first_obj = other.input_objs[0]
+            else:
+                first_obj = other.objs[0]
             for name in self._metadata:
-                object.__setattr__(self, name, getattr(other.objs[0], name, None))
+                object.__setattr__(self, name, getattr(first_obj, name, None))
 
             if (
                 self.columns.nlevels == 1

@@ -3,10 +3,19 @@
 ## Version 1.2.0
 
 Deprecations and compatibility notes:
+
 - The `resolution` keyword to `buffer` has been deprecated to align with the convention in shapely,
   `quad_segs` should be used instead (#3600).
 
-## Version 1.1.1
+Bug fixes:
+
+- Fix an issue that caused an error in `GeoDataFrame.from_features` when there is no `properties` field (#3599).
+- Fix `read_file` and `to_file` errors (#3682)
+- Fix `read_parquet` with `to_pandas_kwargs` for complex (list/struct) arrow types (#3640)
+
+## Version 1.1.1 (June 27, 2025)
+
+Bug fixes:
 
 - Fix regression in the GeoDataFrame constructor when np.nan is given as an only geometry (#3591).
 - Fix regression in `overlay` with `how="identity"` when input dataframes have column
@@ -171,6 +180,7 @@ files based on a bounding box, and write out a bounding box column to parquet fi
   instead of its current behaviour of assuming EPSG. In the event the spiatal_ref_sys
   table is not present, or the SRID is not present, `read_postgis` will fallback
   on assuming EPSG CRS authority. (#3329)
+- Added ``GeoDataFrame.active_geometry_name`` property returning the active geometry column's name or None if no active geometry column is set (#2943).
 
 Backwards incompatible API changes:
 
@@ -313,7 +323,6 @@ New methods:
 New features and improvements:
 
 - Added ``exclusive`` parameter to ``sjoin_nearest`` method for Shapely >= 2.0 (#2877)
-- Added ``GeoDataFrame.active_geometry_name`` property returning the active geometry column's name or None if no active geometry column is set.
 - The ``to_file()`` method will now automatically detect the FlatGeoBuf driver
   for files with the `.fgb` extension (#2958)
 
@@ -1059,7 +1068,7 @@ Bug fixes:
 - Fixed ``GeoDataFrame.to_file`` to preserve VFS file paths (e.g. when a "s3://" path is specified) (#1124).
 - Fixed failing case in ``geopandas.sjoin`` with empty geometries (#1138).
 
-In addition, the minimum required versions of some dependencies have been increased: GeoPandas now requirs pandas >=0.23.4 and matplotlib >=2.0.1 (#1002).
+In addition, the minimum required versions of some dependencies have been increased: GeoPandas now requires pandas >=0.23.4 and matplotlib >=2.0.1 (#1002).
 
 Version 0.5.1 (July 11, 2019)
 -----------------------------

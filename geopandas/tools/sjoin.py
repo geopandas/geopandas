@@ -345,7 +345,7 @@ def _process_column_names_with_suffix(
 
 def _restore_index(joined, index_names, index_names_original):
     """
-    Set back the the original index columns, and restoring their name as `None`
+    Set back the original index columns, and restoring their name as `None`
     if they didn't have a name originally.
     """
     if PANDAS_GE_30:
@@ -426,7 +426,7 @@ def _frame_join(
         indices representing the matches from `left_df` and `right_df`
         respectively.
     distances : ndarray, optional
-        Passed trough and adapted based on the indices, if needed.
+        Passed through and adapted based on the indices, if needed.
     how : string
         The type of join to use on the DataFrame level.
     lsuffix : string
