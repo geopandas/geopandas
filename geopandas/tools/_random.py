@@ -65,18 +65,13 @@ def uniform(geom, size, rng=None):
 
 
 def _uniform_line(geom, size, generator):
-    """
-    Sample points from an input shapely linestring
-    """
-
+    """Sample points from an input shapely linestring."""
     fracs = generator.uniform(size=size)
     return from_shapely(geom.interpolate(fracs, normalized=True)).union_all()
 
 
 def _uniform_polygon(geom, size, generator):
-    """
-    Sample uniformly from within a polygon using batched sampling.
-    """
+    """Sample uniformly from within a polygon using batched sampling."""
     xmin, ymin, xmax, ymax = geom.bounds
     candidates = []
     while len(candidates) < size:
