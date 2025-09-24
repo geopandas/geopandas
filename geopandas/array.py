@@ -914,11 +914,32 @@ class GeometryArray(ExtensionArray):
         self.check_geographic_crs(stacklevel=6)
         return self._binary_method("frechet_distance", self, other, **kwargs)
 
-    def buffer(self, distance, resolution: int = 16, **kwargs) -> GeometryArray:
+    def buffer(self, distance, quad_segs: int | None = None, **kwargs):
         if not (isinstance(distance, int | float) and distance == 0):
             self.check_geographic_crs(stacklevel=5)
+        if "resolution" in kwargs:
+            if quad_segs is not None:
+                msg = (
+                    "`buffer` received both `quad_segs` and `resolution` but these are "
+                    "aliases for the same parameter. Use `quad_segs` only instead."
+                )
+                raise ValueError(msg)
+
+            msg = (
+                "The `resolution` argument to `buffer` is deprecated, `quad_segs` "
+                "should be used instead to align with shapely."
+            )
+            warnings.warn(
+                msg,
+                category=DeprecationWarning,
+                stacklevel=4,
+            )
+            quad_segs = kwargs.pop("resolution")
+        if quad_segs is None:
+            quad_segs = 16  # note shapely default is 8, 16 is historical choice
+
         return GeometryArray(
-            shapely.buffer(self._data, distance, quad_segs=resolution, **kwargs),
+            shapely.buffer(self._data, distance, quad_segs=quad_segs, **kwargs),
             crs=self.crs,
         )
 
