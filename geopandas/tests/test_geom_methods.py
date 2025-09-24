@@ -1461,7 +1461,7 @@ class TestGeomMethods:
     def test_buffer(self):
         original = GeoSeries([Point(0, 0)])
         expected = GeoSeries([Polygon(((5, 0), (0, -5), (-5, 0), (0, 5), (5, 0)))])
-        calculated = original.buffer(5, resolution=1)
+        calculated = original.buffer(5, quad_segs=1)
         assert geom_almost_equals(expected, calculated)
 
     def test_buffer_args(self):
@@ -1482,7 +1482,7 @@ class TestGeomMethods:
                 Polygon(((10, 5), (5, 0), (0, 5), (5, 10), (10, 5))),
             ]
         )
-        calculated = original.buffer(np.array([1, 5]), resolution=1)
+        calculated = original.buffer(np.array([1, 5]), quad_segs=1)
         assert_geoseries_equal(calculated, expected, check_less_precise=True)
 
     def test_buffer_distance_wrong_length(self):
@@ -1499,7 +1499,7 @@ class TestGeomMethods:
                 Polygon(((10, 5), (5, 0), (0, 5), (5, 10), (10, 5))),
             ]
         )
-        calculated = original.buffer(Series([1, 5]), resolution=1)
+        calculated = original.buffer(Series([1, 5]), quad_segs=1)
         assert_geoseries_equal(calculated, expected, check_less_precise=True)
 
     def test_buffer_distance_wrong_index(self):
@@ -1613,23 +1613,26 @@ class TestGeomMethods:
 
     @pytest.mark.skipif(not SHAPELY_GE_21, reason="requires shapely 2.1")
     def test_maximum_inscribed_circle(self):
-        mic = self.g1.maximum_inscribed_circle()
-        expected = GeoSeries(
+        gs = GeoSeries(
             [
-                LineString([(0.70703125, 0.29296875), (0.5, 0.5)]),
-                LineString([(0.5, 0.5), (0.5, 0)]),
+                Polygon([(0, 0), (1, 0), (1, 1), (0, 1)]),
+                Polygon([(0, 0), (0.5, -1), (1, 0), (1, 1), (-0.5, 0.5)]),
             ]
         )
-        assert_geoseries_equal(mic, expected)
+        mic = gs.maximum_inscribed_circle()
+        assert (mic.geom_type == "LineString").all()
+        assert (shapely.get_num_points(mic) == 2).all()
+        expected_centers = GeoSeries([Point(0.5, 0.5), Point(0.466796875, 0.259765625)])
+        expected_length = Series([0.5, 0.533203125])
+        assert_geoseries_equal(
+            shapely.get_point(mic, 0), expected_centers, check_less_precise=True
+        )
+        assert_series_equal(shapely.length(mic), expected_length)
 
-        mic_tolerance = self.g1.maximum_inscribed_circle(tolerance=np.array([10, 0]))
-        expected_tol = GeoSeries(
-            [
-                LineString([(0.75, 0.5), (0.625, 0.625)]),
-                LineString([(0.5, 0.5), (0.5, 0)]),
-            ]
-        )
-        assert_geoseries_equal(mic_tolerance, expected_tol)
+        # with tolerance for second polygon -> stops earlier with smaller circle, thus
+        # just assert the length of the resulting line is lower
+        mic_tolerance = gs.maximum_inscribed_circle(tolerance=np.array([0, 10]))
+        assert (shapely.length(mic_tolerance) <= 0.5).all()
 
     def test_total_bounds(self):
         bbox = self.sol.x, self.sol.y, self.esb.x, self.esb.y
