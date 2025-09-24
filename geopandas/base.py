@@ -1888,22 +1888,22 @@ GeometryCollection
         >>> s = geopandas.GeoSeries(
         ...     [
         ...         Polygon([(0, 0), (1, 1), (0, 1), (0, 0)]),
-        ...         Polygon([(0, 0), (10, 10), (0, 10), (0, 0)]),
+        ...         Polygon([(0, 0), (0.5, -1), (1, 0), (1, 1), (-0.5, 0.5)]),
         ...     ]
         ... )
         >>> s
-        0       POLYGON ((0 0, 1 1, 0 1, 0 0))
-        1    POLYGON ((0 0, 10 10, 0 10, 0 0))
+        0                      POLYGON ((0 0, 1 1, 0 1, 0 0))
+        1    POLYGON ((0 0, 0.5 -1, 1 0, 1 1, -0.5 0.5, 0 0))
         dtype: geometry
 
         >>> s.maximum_inscribed_circle()
-        0    LINESTRING (0.29297 0.70703, 0.5 0.5)
-        1        LINESTRING (2.92969 7.07031, 5 5)
+        0    LINESTRING (0.29289 0.70711, 0.5 0.5)
+        1    LINESTRING (0.4668 0.25977, 1 0.25977)
         dtype: geometry
 
         >>> s.maximum_inscribed_circle(tolerance=2)
-        0    LINESTRING (0.25 0.5, 0.375 0.375)
-        1          LINESTRING (2.5 7.5, 2.5 10)
+        0    LINESTRING (0.29289 0.70711, 0.5 0.5)
+        1             LINESTRING (0.375 0.25, 0 0)
         dtype: geometry
 
         See Also
@@ -5367,7 +5367,7 @@ GeometryCollection
     def buffer(
         self,
         distance,
-        resolution=16,
+        quad_segs=16,
         cap_style="round",
         join_style="round",
         mitre_limit=5.0,
@@ -5391,7 +5391,7 @@ GeometryCollection
         distance : float, np.array, pd.Series
             The radius of the buffer in the Minkowski sum (or difference). If np.array
             or pd.Series are used then it must have same length as the GeoSeries.
-        resolution : int (optional, default 16)
+        quad_segs : int (optional, default 16)
             The resolution of the buffer around each vertex. Specifies the number of
             linear segments in a quarter circle in the approximation of circular arcs.
         cap_style : {'round', 'square', 'flat'}, default 'round'
@@ -5442,7 +5442,7 @@ GeometryCollection
             "buffer",
             self,
             distance=distance,
-            resolution=resolution,
+            quad_segs=quad_segs,
             cap_style=cap_style,
             join_style=join_style,
             mitre_limit=mitre_limit,
