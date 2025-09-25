@@ -1464,6 +1464,13 @@ class TestGeomMethods:
         calculated = original.buffer(5, quad_segs=1)
         assert geom_almost_equals(expected, calculated)
 
+        with pytest.warns(
+            DeprecationWarning,
+            match="The `resolution` argument to `buffer` is deprecated",
+        ):
+            calculated = original.buffer(5, resolution=1)
+            assert geom_almost_equals(expected, calculated)
+
     def test_buffer_args(self):
         args = {"cap_style": 3, "join_style": 2, "mitre_limit": 2.5}
         calculated_series = self.g0.buffer(10, **args)
