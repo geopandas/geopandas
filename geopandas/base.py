@@ -5367,7 +5367,7 @@ GeometryCollection
     def buffer(
         self,
         distance,
-        quad_segs=16,
+        quad_segs=None,
         cap_style="round",
         join_style="round",
         mitre_limit=5.0,
