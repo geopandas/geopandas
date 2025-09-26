@@ -7,7 +7,23 @@ from pandas.plotting import PlotAccessor
 
 import geopandas
 
+from ._compat import HAS_MATPLOTLIB
 from ._decorator import doc
+
+if HAS_MATPLOTLIB:
+    from matplotlib.collections import PatchCollection
+
+    class GeoPandasPolyCollection(PatchCollection):
+        """Subclass to assign handler without overriding one for PatchCollection."""
+
+    from matplotlib.legend import Legend
+    from matplotlib.legend_handler import HandlerPolyCollection
+
+    # PatchCollection is not supported by Legend but we can use PolyCollection handler
+    # instead in our specific case. Define a subclass and assign a handler.
+    Legend.update_default_handler_map(
+        {GeoPandasPolyCollection: HandlerPolyCollection()}
+    )
 
 
 def _sanitize_geoms(geoms, prefix="Multi"):
@@ -166,8 +182,6 @@ def _plot_polygon_collection(
     -------
     collection : matplotlib.collections.Collection that was plotted
     """
-    from matplotlib.collections import PatchCollection
-
     geoms, multiindex = _sanitize_geoms(geoms)
     if values is not None:
         values = np.take(values, multiindex, axis=0)
@@ -185,7 +199,9 @@ def _plot_polygon_collection(
 
     _expand_kwargs(kwargs, multiindex)
 
-    collection = PatchCollection([_PolygonPatch(poly) for poly in geoms], **kwargs)
+    collection = GeoPandasPolyCollection(
+        [_PolygonPatch(poly) for poly in geoms], **kwargs
+    )
 
     if values is not None:
         collection.set_array(np.asarray(values))
