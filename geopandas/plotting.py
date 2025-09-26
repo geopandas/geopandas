@@ -85,10 +85,14 @@ def _expand_kwargs(kwargs, multiindex):
 
 
 def _PolygonPatch(polygon, **kwargs):
-    """Construct a matplotlib patch from a Polygon geometry.
+    """Construct a matplotlib patch from a (Multi)Polygon geometry.
 
     The `kwargs` are those supported by the matplotlib.patches.PathPatch class
     constructor. Returns an instance of matplotlib.patches.PathPatch.
+
+    To ensure proper rendering on the matplotlib side, winding order of individual
+    rings needs to be normalized as the order is what matplotlib uses to determine
+    if a Path represents a patch or a hole.
 
     Example (using Shapely Point and a matplotlib axes)::
 
@@ -103,13 +107,24 @@ def _PolygonPatch(polygon, **kwargs):
     from matplotlib.patches import PathPatch
     from matplotlib.path import Path
 
-    path = Path.make_compound_path(
-        Path(np.asarray(polygon.exterior.coords)[:, :2], closed=True),
-        *[
-            Path(np.asarray(ring.coords)[:, :2], closed=True)
-            for ring in polygon.interiors
-        ],
-    )
+    if polygon.geom_type == "Polygon":
+        path = Path.make_compound_path(
+            Path(np.asarray(polygon.exterior.coords)[:, :2], closed=True),
+            *[
+                Path(np.asarray(ring.coords)[:, :2], closed=True)
+                for ring in polygon.interiors
+            ],
+        )
+    else:
+        paths = []
+        for part in polygon.geoms:
+            # exteriors
+            paths.append(Path(np.asarray(part.exterior.coords)[:, :2], closed=True))
+            # interiors
+            for ring in part.interiors:
+                paths.append(Path(np.asarray(ring.coords)[:, :2], closed=True))
+        path = Path.make_compound_path(*paths)
+
     return PathPatch(path, **kwargs)
 
 
