@@ -9,7 +9,7 @@
 GeoPandas
 ---------
 
-Python tools for geographic data
+GeoPandas is a powerful Python library for working with vector-based geospatial data.
 
 Introduction
 ------------
