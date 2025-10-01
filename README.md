@@ -150,3 +150,4 @@ GeoPandas also implements alternate constructors that can read any data format r
     dtype: geometry
 
 ![Convex hulls of New York City boroughs](doc/source/gallery/nyc_hull.png)
+<!-- 111 -->
