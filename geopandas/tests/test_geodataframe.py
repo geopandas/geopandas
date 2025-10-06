@@ -1404,9 +1404,7 @@ class TestConstructor:
         df.columns = pd.MultiIndex.from_product([["geometry"], [0, 1]])
         # don't error in constructor
         gdf = GeoDataFrame(df)
-        with pytest.raises(
-            AttributeError, match=re.escape(".*geometry .* has not been set.*")
-        ):
+        with pytest.raises(AttributeError, match=r".*geometry .* has not been set.*"):
             gdf.geometry
         res_gdf = gdf.set_geometry(("geometry", 0))
         assert res_gdf.shape == gdf.shape

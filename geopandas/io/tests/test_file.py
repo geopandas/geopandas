@@ -879,9 +879,7 @@ def test_read_file_filtered__rows_bbox(df_nybb, engine, nybb_filename):
         # TODO: support negative rows in pyogrio
         with pytest.raises(
             ValueError,
-            match=re.escape(
-                "'skip_features' must be between 0 and 1|Negative slice start"
-            ),
+            match=r"'skip_features' must be between 0 and 1|Negative slice start",
         ):
             filtered_df = read_file(
                 nybb_filename, bbox=bbox, rows=slice(-1, None), engine=engine
