@@ -386,7 +386,7 @@ def test_crs_mismatch(dfs, how):
 
 
 def test_empty_intersection(dfs):
-    df1, df2 = dfs
+    df1, _df2 = dfs
     polys3 = GeoSeries(
         [
             Polygon([(-1, -1), (-3, -1), (-3, -3), (-1, -3)]),
@@ -401,7 +401,7 @@ def test_empty_intersection(dfs):
 
 def test_correct_index(dfs):
     # GH883 - case where the index was not properly reset
-    df1, df2 = dfs
+    _df1, df2 = dfs
     polys3 = GeoSeries(
         [
             Polygon([(1, 1), (3, 1), (3, 3), (1, 3)]),
@@ -420,7 +420,7 @@ def test_correct_index(dfs):
 
 
 def test_warn_on_keep_geom_type(dfs):
-    df1, df2 = dfs
+    _df1, df2 = dfs
     polys3 = GeoSeries(
         [
             Polygon([(1, 1), (3, 1), (3, 3), (1, 3)]),

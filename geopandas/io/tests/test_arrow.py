@@ -175,7 +175,9 @@ def test_write_metadata_invalid_spec_version(tmp_path):
 
     with pytest.raises(
         ValueError,
-        match="'geoarrow' encoding is only supported with schema version >= 1.1.0",
+        match=re.escape(
+            "'geoarrow' encoding is only supported with schema version >= 1.1.0"
+        ),
     ):
         gdf.to_parquet(tmp_path, schema_version="1.0.0", geometry_encoding="geoarrow")
 
@@ -328,8 +330,10 @@ def test_to_parquet_fails_on_invalid_engine(tmpdir):
     with pytest.raises(
         ValueError,
         match=(
-            "GeoPandas only supports using pyarrow as the engine for "
-            "to_parquet: 'fastparquet' passed instead."
+            re.escape(
+                "GeoPandas only supports using pyarrow as the engine for "
+                "to_parquet: 'fastparquet' passed instead."
+            )
         ),
     ):
         df.to_parquet(tmpdir / "test.parquet", engine="fastparquet")
@@ -430,7 +434,7 @@ def test_index(tmpdir, file_format, naturalearth_lowres):
 
 def test_column_order(tmpdir, file_format, naturalearth_lowres):
     """The order of columns should be preserved in the output."""
-    reader, writer = file_format
+    reader, _writer = file_format
 
     df = read_file(naturalearth_lowres)
     df = df.set_index("iso_a3")
@@ -535,7 +539,7 @@ def test_parquet_missing_metadata(tmpdir, naturalearth_lowres):
 
     # missing metadata will raise ValueError
     with pytest.raises(
-        ValueError, match="Missing geo metadata in Parquet/Feather file."
+        ValueError, match=re.escape("Missing geo metadata in Parquet/Feather file.")
     ):
         read_parquet(filename)
 
@@ -555,7 +559,7 @@ def test_parquet_missing_metadata2(tmpdir):
 
     # missing metadata will raise ValueError
     with pytest.raises(
-        ValueError, match="Missing geo metadata in Parquet/Feather file."
+        ValueError, match=re.escape("Missing geo metadata in Parquet/Feather file.")
     ):
         read_parquet(filename)
 
