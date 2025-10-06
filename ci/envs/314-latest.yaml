@@ -17,7 +17,7 @@ dependencies:
   - fsspec
   - pytz
   # optional
-  - fiona
+  # - fiona  # no 3.14 build yet
   - matplotlib
   - mapclassify
   - folium
@@ -28,7 +28,7 @@ dependencies:
   - geodatasets
   # installed in tests.yaml, because not available on windows
   # - postgis
-  # - SQLalchemy
+  # - SQLalchemy  # no 3.14 build yet
   - psycopg
   - psycopg2
   - libspatialite
