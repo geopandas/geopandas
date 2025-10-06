@@ -28,7 +28,7 @@ dependencies:
   - geodatasets
   # installed in tests.yaml, because not available on windows
   # - postgis
-  - SQLalchemy
+  # - SQLalchemy
   - psycopg
   - psycopg2
   - libspatialite
