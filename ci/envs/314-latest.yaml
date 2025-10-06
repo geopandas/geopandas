@@ -1,0 +1,38 @@
+name: test
+channels:
+  - conda-forge
+dependencies:
+  - python=3.14
+  # required
+  - pandas
+  - shapely
+  - pyogrio
+  - pyproj
+  - packaging
+  # testing
+  - pytest
+  - pytest-cov
+  - pytest-xdist
+  - fsspec
+  - pytz
+  # optional
+  - fiona
+  - matplotlib
+  - mapclassify
+  - folium
+  - xyzservices
+  - scipy
+  - geopy
+  - pointpats
+  - geodatasets
+  # installed in tests.yaml, because not available on windows
+  # - postgis
+  - SQLalchemy
+  - psycopg
+  - psycopg2
+  - libspatialite
+  - geoalchemy2
+  - pyarrow
+  - geoarrow-pyarrow
+  # doctest testing
+  - pytest-doctestplus
