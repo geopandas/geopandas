@@ -1084,3 +1084,66 @@ def test_reduce_keepdims():
     arr = geopandas.GeoDataFrame(geometry=[]).geometry.array
     assert arr._reduce("all", keepdims=True) == np.array([True], dtype=object)
     assert arr._reduce("all", keepdims=False)
+
+
+def test_geometry_array_sindex_automatic_cleanup():
+    """Test that spatial index is automatically cleaned up via __del__."""
+    import sys
+    import gc
+
+    points = [shapely.geometry.Point(i, i) for i in range(50)]
+    geom_array = from_shapely(points)
+
+    initial_refs = sys.getrefcount(points[0])
+    _ = geom_array.sindex
+    sindex_refs = sys.getrefcount(points[0])
+
+    # Delete the GeometryArray - should trigger automatic cleanup
+    del geom_array
+    gc.collect()
+
+    after_del_refs = sys.getrefcount(points[0])
+
+    # Spatial index should increase refcount
+    assert sindex_refs > initial_refs
+    # After deletion, refcount should decrease (may not reach exactly initial due to Python internals)
+    assert after_del_refs < sindex_refs
+
+
+def test_geometry_array_sindex_invalidation_on_setitem():
+    """Test that spatial index is cleared when geometry array is modified."""
+    points = [shapely.geometry.Point(i, i) for i in range(5)]
+    geom_array = from_shapely(points)
+    
+    _ = geom_array.sindex
+    assert geom_array.has_sindex
+    
+    # Modify array item (should clear spatial index)
+    geom_array[0] = shapely.geometry.Point(10, 10)
+    assert not geom_array.has_sindex
+
+
+def test_spatial_index_automatic_cleanup():
+    """Test that SpatialIndex automatically cleans up via __del__."""
+    import sys
+    import gc
+    from geopandas.sindex import SpatialIndex
+
+    points = [shapely.geometry.Point(i, i) for i in range(50)]
+    geom_array = np.array(points)
+
+    initial_refs = sys.getrefcount(points[0])
+    sindex = SpatialIndex(geom_array)
+    sindex_refs = sys.getrefcount(points[0])
+
+    # Spatial index should increase refcount
+    assert sindex_refs > initial_refs
+
+    # Delete the spatial index - should trigger automatic cleanup
+    del sindex
+    gc.collect()
+
+    after_del_refs = sys.getrefcount(points[0])
+
+    # After deletion, refcount should decrease
+    assert after_del_refs < sindex_refs

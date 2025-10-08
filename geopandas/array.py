@@ -493,7 +493,7 @@ class GeometryArray(ExtensionArray):
             )
 
         # invalidate spatial index
-        self._sindex = None
+        self._clear_sindex()
 
         # TODO: use this once pandas-dev/pandas#33457 is fixed
         # if hasattr(value, "crs"):
@@ -520,6 +520,14 @@ class GeometryArray(ExtensionArray):
             if "_crs" not in state:
                 state["_crs"] = None
             self.__dict__.update(state)
+
+    def _clear_sindex(self):
+        """Internal method to clear the spatial index when geometries are modified.
+
+        This is called automatically when geometries are changed to invalidate
+        the cached spatial index.
+        """
+        self._sindex = None
 
     # -------------------------------------------------------------------------
     # Geometry related methods

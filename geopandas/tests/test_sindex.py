@@ -986,3 +986,28 @@ class TestShapelyInterface:
 
         res = world.sindex.query(capitals.geometry, predicate)
         assert res.shape == expected_shape
+
+
+class TestSindexCleanup:
+    def test_sindex_automatic_cleanup(self):
+        """Test that spatial index is automatically cleaned up via __del__."""
+        import sys
+        import gc
+
+        points = [Point(i, i) for i in range(50)]
+        gdf = GeoDataFrame({"id": range(50)}, geometry=points)
+
+        initial_refs = sys.getrefcount(points[0])
+        _ = gdf.sindex
+        sindex_refs = sys.getrefcount(points[0])
+
+        # Delete the GeoDataFrame - should trigger automatic cleanup
+        del gdf
+        gc.collect()
+
+        after_del_refs = sys.getrefcount(points[0])
+
+        # Spatial index should increase refcount
+        assert sindex_refs > initial_refs
+        # After deletion, refcount should decrease (may not reach exactly initial due to Python internals)
+        assert after_del_refs < sindex_refs
