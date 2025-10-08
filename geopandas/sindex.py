@@ -32,28 +32,24 @@ class SpatialIndex:
         self._tree = shapely.STRtree(non_empty)
         # store geometries, including empty geometries for user access
         self.geometries = geometry.copy()
+        # Spatial index created successfully
 
     def __del__(self):
-        """Clean up STRTree and geometry references to prevent memory leaks."""
-        self._clear_references()
+        """Automatically cleanup geometry references when spatial index is garbage collected.
 
-    def _clear_references(self):
-        """Clear all geometry references held by the spatial index."""
-        # Clear the STRTree which holds references to geometry objects
-        if hasattr(self, '_tree'):
-            self._tree = None
-        # Clear the geometry array copy
-        if hasattr(self, 'geometries'):
-            self.geometries = None
-
-    def clear(self):
-        """Clear the spatial index to free memory.
-        
-        This method explicitly clears all references to geometry objects
-        held by the spatial index, allowing them to be garbage collected.
-        After calling this method, the spatial index becomes unusable.
+        This prevents memory leaks by releasing references to geometry objects
+        when the spatial index is no longer needed.
         """
-        self._clear_references()
+        try:
+            # Clear the STRTree which holds references to geometry objects
+            if hasattr(self, '_tree'):
+                self._tree = None
+            # Clear the geometry array copy
+            if hasattr(self, 'geometries'):
+                self.geometries = None
+        except Exception:
+            # Never raise exceptions in __del__
+            pass
 
     @property
     def valid_query_predicates(self):

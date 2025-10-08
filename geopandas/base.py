@@ -5364,32 +5364,6 @@ GeometryCollection
         """
         return self.geometry.values.has_sindex
 
-    def clear_sindex(self):
-        """Clear the spatial index cache to free memory.
-        
-        This method explicitly clears the cached spatial index to prevent
-        memory leaks where the spatial index (STRTree) holds references
-        to geometry objects, preventing garbage collection.
-        
-        The spatial index will be recreated automatically if accessed again
-        through the .sindex property.
-        
-        Examples
-        --------
-        >>> gdf = geopandas.read_file('large_file.shp')
-        >>> # Use spatial index for operations
-        >>> result = gdf.sindex.query(some_geometry)
-        >>> # Clear spatial index to free memory
-        >>> gdf.clear_sindex()
-        >>> # Spatial index is automatically recreated when needed
-        >>> result2 = gdf.sindex.query(other_geometry)
-        
-        See Also
-        --------
-        has_sindex : Check if spatial index exists without creating it.
-        """
-        self.geometry.values.clear_sindex()
-
     def buffer(
         self,
         distance,
