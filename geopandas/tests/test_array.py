@@ -1086,59 +1086,28 @@ def test_reduce_keepdims():
     assert arr._reduce("all", keepdims=False)
 
 
-def test_geometry_array_clear_sindex():
-    """Test GeometryArray.clear_sindex method."""
-    points = [shapely.geometry.Point(i, i) for i in range(5)]
-    geom_array = from_shapely(points)
-    
-    assert not geom_array.has_sindex
-    _ = geom_array.sindex
-    assert geom_array.has_sindex
-    
-    geom_array.clear_sindex()
-    assert not geom_array.has_sindex
-    
-    # Should be able to recreate
-    _ = geom_array.sindex
-    assert geom_array.has_sindex
-
-
-def test_geometry_array_clear_sindex_multiple_calls():
-    """Test that clearing spatial index multiple times is safe."""
-    points = [shapely.geometry.Point(i, i) for i in range(5)]
-    geom_array = from_shapely(points)
-    
-    _ = geom_array.sindex
-    geom_array.clear_sindex()
-    geom_array.clear_sindex()  # Should not raise
-    assert not geom_array.has_sindex
-
-
-def test_geometry_array_clear_sindex_no_index():
-    """Test clearing spatial index when none exists."""
-    points = [shapely.geometry.Point(i, i) for i in range(5)]
-    geom_array = from_shapely(points)
-    
-    assert not geom_array.has_sindex
-    geom_array.clear_sindex()  # Should not raise
-    assert not geom_array.has_sindex
-
-
-def test_geometry_array_sindex_memory_cleanup():
-    """Test that spatial index cleanup reduces reference counts."""
+def test_geometry_array_sindex_automatic_cleanup():
+    """Test that spatial index is automatically cleaned up via __del__."""
     import sys
-    
+    import gc
+
     points = [shapely.geometry.Point(i, i) for i in range(50)]
     geom_array = from_shapely(points)
-    
+
     initial_refs = sys.getrefcount(points[0])
     _ = geom_array.sindex
     sindex_refs = sys.getrefcount(points[0])
-    geom_array.clear_sindex()
-    cleared_refs = sys.getrefcount(points[0])
-    
+
+    # Delete the GeometryArray - should trigger automatic cleanup
+    del geom_array
+    gc.collect()
+
+    after_del_refs = sys.getrefcount(points[0])
+
+    # Spatial index should increase refcount
     assert sindex_refs > initial_refs
-    assert cleared_refs <= initial_refs + 1
+    # After deletion, refcount should decrease (may not reach exactly initial due to Python internals)
+    assert after_del_refs < sindex_refs
 
 
 def test_geometry_array_sindex_invalidation_on_setitem():

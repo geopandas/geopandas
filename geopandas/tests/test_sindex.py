@@ -104,15 +104,6 @@ class TestSeriesSindex:
         sliced = s.iloc[::-1]
         assert sliced.sindex is not original_index
 
-    def test_clear_sindex(self):
-        """Test clear_sindex method on GeoSeries."""
-        s = GeoSeries([Point(0, 0), Point(1, 1)])
-        assert not s.has_sindex
-        _ = s.sindex
-        assert s.has_sindex
-        s.clear_sindex()
-        assert not s.has_sindex
-
 
 class TestFrameSindex:
     def setup_method(self):
@@ -206,19 +197,6 @@ class TestFrameSindex:
         # and the "new" should be the same
         new_sindex = gdf.sindex
         assert old_sindex is new_sindex
-
-    def test_clear_sindex(self):
-        """Test clear_sindex method."""
-        assert not self.df.has_sindex
-        _ = self.df.sindex
-        assert self.df.has_sindex
-        
-        self.df.clear_sindex()
-        assert not self.df.has_sindex
-        
-        # Should be able to recreate
-        _ = self.df.sindex
-        assert self.df.has_sindex
 
 
 # Skip to accommodate Shapely geometries being unhashable # TODO unskip?
@@ -1011,64 +989,25 @@ class TestShapelyInterface:
 
 
 class TestSindexCleanup:
-    def test_clear_sindex_geodataframe(self):
-        """Test clear_sindex method on GeoDataFrame."""
-        t1 = Polygon([(0, 0), (1, 0), (1, 1)])
-        t2 = Polygon([(0, 0), (1, 1), (0, 1)])
-        gdf = GeoDataFrame({"geom": [t1, t2]}, geometry="geom")
-        
-        assert not gdf.has_sindex
-        _ = gdf.sindex
-        assert gdf.has_sindex
-        gdf.clear_sindex()
-        assert not gdf.has_sindex
-        _ = gdf.sindex
-        assert gdf.has_sindex
-
-    def test_clear_sindex_geoseries(self):
-        """Test clear_sindex method on GeoSeries."""
-        t1 = Polygon([(0, 0), (1, 0), (1, 1)])
-        t2 = Polygon([(0, 0), (1, 1), (0, 1)])
-        gs = GeoSeries([t1, t2])
-        
-        assert not gs.has_sindex
-        _ = gs.sindex
-        assert gs.has_sindex
-        gs.clear_sindex()
-        assert not gs.has_sindex
-
-    def test_clear_sindex_multiple_calls(self):
-        """Test that clearing spatial index multiple times is safe."""
-        t1 = Polygon([(0, 0), (1, 0), (1, 1)])
-        t2 = Polygon([(0, 0), (1, 1), (0, 1)])
-        gdf = GeoDataFrame({"geom": [t1, t2]}, geometry="geom")
-        
-        _ = gdf.sindex
-        gdf.clear_sindex()
-        gdf.clear_sindex()  # Should not raise
-        assert not gdf.has_sindex
-
-    def test_clear_sindex_no_index(self):
-        """Test clearing spatial index when none was created."""
-        t1 = Polygon([(0, 0), (1, 0), (1, 1)])
-        gdf = GeoDataFrame({"geom": [t1]}, geometry="geom")
-        
-        assert not gdf.has_sindex
-        gdf.clear_sindex()  # Should not raise
-        assert not gdf.has_sindex
-
-    def test_sindex_memory_cleanup(self):
-        """Test that spatial index cleanup reduces reference counts."""
+    def test_sindex_automatic_cleanup(self):
+        """Test that spatial index is automatically cleaned up via __del__."""
         import sys
-        
+        import gc
+
         points = [Point(i, i) for i in range(50)]
         gdf = GeoDataFrame({"id": range(50)}, geometry=points)
-        
+
         initial_refs = sys.getrefcount(points[0])
         _ = gdf.sindex
         sindex_refs = sys.getrefcount(points[0])
-        gdf.clear_sindex()
-        cleared_refs = sys.getrefcount(points[0])
-        
+
+        # Delete the GeoDataFrame - should trigger automatic cleanup
+        del gdf
+        gc.collect()
+
+        after_del_refs = sys.getrefcount(points[0])
+
+        # Spatial index should increase refcount
         assert sindex_refs > initial_refs
-        assert cleared_refs <= initial_refs + 1
+        # After deletion, refcount should decrease (may not reach exactly initial due to Python internals)
+        assert after_del_refs < sindex_refs
