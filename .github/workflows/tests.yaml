@@ -37,6 +37,7 @@ jobs:
           - ci/envs/312-latest.yaml
           - ci/envs/312-latest-no-pyproj.yaml
           - ci/envs/313-latest.yaml
+          - ci/envs/314-latest.yaml
         include:
           - env: ci/envs/310-latest-no-pyogrio.yaml
             os: macos-latest
