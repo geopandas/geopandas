@@ -494,8 +494,7 @@ def test_to_file_with_duplicate_columns(tmpdir, engine):
     df = GeoDataFrame(data=[[1, 2, 3]], columns=["a", "b", "a"], geometry=[Point(1, 1)])
     tempfilename = os.path.join(str(tmpdir), "duplicate.shp")
     with pytest.raises(
-        ValueError,
-        match="GeoDataFrame cannot contain duplicated column names",
+        ValueError, match="GeoDataFrame cannot contain duplicated column names"
     ):
         df.to_file(tempfilename, engine=engine)
 

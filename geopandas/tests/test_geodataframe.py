@@ -580,8 +580,7 @@ class TestDataFrame:
             data=[[1, 2, 3]], columns=["a", "b", "a"], geometry=[Point(1, 1)]
         )
         with pytest.raises(
-            ValueError,
-            match="GeoDataFrame cannot contain duplicated column names",
+            ValueError, match="GeoDataFrame cannot contain duplicated column names"
         ):
             df.to_json()
 
@@ -939,8 +938,7 @@ class TestDataFrame:
         assert isinstance(result["properties"]["Shape_Leng"], float)
 
         with pytest.raises(
-            ValueError,
-            match="GeoDataFrame cannot contain duplicated column names",
+            ValueError, match="GeoDataFrame cannot contain duplicated column names"
         ):
             df_with_duplicate_columns = df[
                 ["Shape_Leng", "Shape_Leng", "Shape_Area", "geometry"]

@@ -555,18 +555,14 @@ class TestSpatialJoin:
         left_gdf, right_gdf = dfs_shared_attribute
         with pytest.raises(
             ValueError,
-            match=(
-                "Active geometry column cannot be used as an input for "
-                "on_attribute parameter"
-            ),
+            match="Active geometry column cannot be used as an input for "
+            "on_attribute parameter",
         ):
             sjoin(left_gdf, right_gdf, on_attribute="geometry")
         with pytest.raises(
             ValueError,
-            match=(
-                "Active geometry column cannot be used as an input for "
-                "on_attribute parameter"
-            ),
+            match="Active geometry column cannot be used as an input for "
+            "on_attribute parameter",
         ):
             sjoin(left_gdf, right_gdf, on_attribute=["attr1", "geometry"])
 

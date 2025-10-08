@@ -412,8 +412,7 @@ class TestPointPlotting:
             self.df.plot(column="cats_object", categories="non_list")
 
         with pytest.raises(
-            ValueError,
-            match="Column contains values not listed in categories",
+            ValueError, match="Column contains values not listed in categories"
         ):
             self.df.plot(column="cats_object", categories=["cat1"])
 
