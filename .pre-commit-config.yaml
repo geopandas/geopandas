@@ -8,7 +8,7 @@ repos:
       rev: "v0.13.3"
       hooks:
         - id: ruff-format
-        - id: ruff
+        - id: ruff-check
           name: sort imports with ruff
           args: [--select, I, --fix]
-        - id: ruff
+        - id: ruff-check
