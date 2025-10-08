@@ -1123,21 +1123,27 @@ def test_geometry_array_sindex_invalidation_on_setitem():
     assert not geom_array.has_sindex
 
 
-def test_spatial_index_clear():
-    """Test SpatialIndex.clear method."""
+def test_spatial_index_automatic_cleanup():
+    """Test that SpatialIndex automatically cleans up via __del__."""
+    import sys
+    import gc
     from geopandas.sindex import SpatialIndex
-    
-    points = [shapely.geometry.Point(i, i) for i in range(5)]
+
+    points = [shapely.geometry.Point(i, i) for i in range(50)]
     geom_array = np.array(points)
+
+    initial_refs = sys.getrefcount(points[0])
     sindex = SpatialIndex(geom_array)
-    
-    # Verify it has references
-    assert sindex._tree is not None
-    assert sindex.geometries is not None
-    
-    # Clear the spatial index
-    sindex.clear()
-    
-    # Verify references are cleared
-    assert sindex._tree is None
-    assert sindex.geometries is None
+    sindex_refs = sys.getrefcount(points[0])
+
+    # Spatial index should increase refcount
+    assert sindex_refs > initial_refs
+
+    # Delete the spatial index - should trigger automatic cleanup
+    del sindex
+    gc.collect()
+
+    after_del_refs = sys.getrefcount(points[0])
+
+    # After deletion, refcount should decrease
+    assert after_del_refs < sindex_refs
