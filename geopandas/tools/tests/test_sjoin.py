@@ -1,5 +1,4 @@
 import math
-import re
 from collections.abc import Sequence
 
 import numpy as np
@@ -536,25 +535,19 @@ class TestSpatialJoin:
 
         with pytest.raises(
             ValueError,
-            match=re.escape(
-                "Expected column attr1 is missing from the right dataframe."
-            ),
+            match="Expected column attr1 is missing from the right dataframe",
         ):
             sjoin(left_gdf, right_gdf_dropped_attr, on_attribute="attr1")
 
         with pytest.raises(
             ValueError,
-            match=re.escape(
-                "Expected column attr1 is missing from the left dataframe."
-            ),
+            match="Expected column attr1 is missing from the left dataframe",
         ):
             sjoin(left_gdf_dropped_attr, right_gdf, on_attribute="attr1")
 
         with pytest.raises(
             ValueError,
-            match=re.escape(
-                "Expected column attr1 is missing from both of the dataframes."
-            ),
+            match="Expected column attr1 is missing from both of the dataframes",
         ):
             sjoin(left_gdf_dropped_attr, right_gdf_dropped_attr, on_attribute="attr1")
 
@@ -562,17 +555,17 @@ class TestSpatialJoin:
         left_gdf, right_gdf = dfs_shared_attribute
         with pytest.raises(
             ValueError,
-            match=re.escape(
+            match=(
                 "Active geometry column cannot be used as an input for "
-                "on_attribute parameter."
+                "on_attribute parameter"
             ),
         ):
             sjoin(left_gdf, right_gdf, on_attribute="geometry")
         with pytest.raises(
             ValueError,
-            match=re.escape(
+            match=(
                 "Active geometry column cannot be used as an input for "
-                "on_attribute parameter."
+                "on_attribute parameter"
             ),
         ):
             sjoin(left_gdf, right_gdf, on_attribute=["attr1", "geometry"])

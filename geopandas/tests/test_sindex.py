@@ -559,9 +559,7 @@ class TestShapelyInterface:
             raise e
 
     def test_unsupported_output(self):
-        with pytest.raises(
-            ValueError, match=re.escape("Invalid output_format: 'dataarray'.")
-        ):
+        with pytest.raises(ValueError, match="Invalid output_format: 'dataarray'"):
             test_geom = box(-1, -1, -0.5, -0.5)
             self.df.sindex.query(test_geom, output_format="dataarray")
 

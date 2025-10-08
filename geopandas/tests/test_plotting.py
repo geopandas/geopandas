@@ -1,5 +1,4 @@
 import itertools
-import re
 import warnings
 
 import numpy as np
@@ -414,7 +413,7 @@ class TestPointPlotting:
 
         with pytest.raises(
             ValueError,
-            match=re.escape("Column contains values not listed in categories."),
+            match="Column contains values not listed in categories",
         ):
             self.df.plot(column="cats_object", categories=["cat1"])
 

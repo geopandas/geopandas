@@ -330,10 +330,8 @@ def test_to_parquet_fails_on_invalid_engine(tmpdir):
     with pytest.raises(
         ValueError,
         match=(
-            re.escape(
-                "GeoPandas only supports using pyarrow as the engine for "
-                "to_parquet: 'fastparquet' passed instead."
-            )
+            "GeoPandas only supports using pyarrow as the engine for "
+            "to_parquet: 'fastparquet' passed instead"
         ),
     ):
         df.to_parquet(tmpdir / "test.parquet", engine="fastparquet")
@@ -539,7 +537,7 @@ def test_parquet_missing_metadata(tmpdir, naturalearth_lowres):
 
     # missing metadata will raise ValueError
     with pytest.raises(
-        ValueError, match=re.escape("Missing geo metadata in Parquet/Feather file.")
+        ValueError, match="Missing geo metadata in Parquet/Feather file"
     ):
         read_parquet(filename)
 
@@ -559,7 +557,7 @@ def test_parquet_missing_metadata2(tmpdir):
 
     # missing metadata will raise ValueError
     with pytest.raises(
-        ValueError, match=re.escape("Missing geo metadata in Parquet/Feather file.")
+        ValueError, match="Missing geo metadata in Parquet/Feather file"
     ):
         read_parquet(filename)
 

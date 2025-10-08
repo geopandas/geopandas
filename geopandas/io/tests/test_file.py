@@ -3,7 +3,6 @@ import io
 import json
 import os
 import pathlib
-import re
 import shutil
 import tempfile
 import warnings
@@ -496,7 +495,7 @@ def test_to_file_with_duplicate_columns(tmpdir, engine):
     tempfilename = os.path.join(str(tmpdir), "duplicate.shp")
     with pytest.raises(
         ValueError,
-        match=re.escape("GeoDataFrame cannot contain duplicated column names."),
+        match="GeoDataFrame cannot contain duplicated column names",
     ):
         df.to_file(tempfilename, engine=engine)
 

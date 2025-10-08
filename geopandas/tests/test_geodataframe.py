@@ -1,6 +1,5 @@
 import json
 import os
-import re
 import shutil
 import tempfile
 from enum import Enum
@@ -353,7 +352,7 @@ class TestDataFrame:
         # "geometry" originally present but dropped (but still a gdf)
         col_subset_drop_geometry = ["BoroCode", "BoroName", "geom2"]
         df2 = self.df.copy().assign(geom2=self.df.geometry)[col_subset_drop_geometry]
-        with pytest.raises(AttributeError, match=re.escape("is not present.")):
+        with pytest.raises(AttributeError, match="is not present"):
             df2.geometry
 
         msg_other_geo_cols_present = "There are columns with geometry data type"
@@ -582,7 +581,7 @@ class TestDataFrame:
         )
         with pytest.raises(
             ValueError,
-            match=re.escape("GeoDataFrame cannot contain duplicated column names."),
+            match="GeoDataFrame cannot contain duplicated column names",
         ):
             df.to_json()
 
@@ -941,7 +940,7 @@ class TestDataFrame:
 
         with pytest.raises(
             ValueError,
-            match=re.escape("GeoDataFrame cannot contain duplicated column names."),
+            match="GeoDataFrame cannot contain duplicated column names",
         ):
             df_with_duplicate_columns = df[
                 ["Shape_Leng", "Shape_Leng", "Shape_Area", "geometry"]
