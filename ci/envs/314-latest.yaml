@@ -27,11 +27,11 @@ dependencies:
   - geodatasets
   # installed in tests.yaml, because not available on windows
   # - postgis
-  # - SQLalchemy  # no 3.14 build yet
+  - SQLalchemy
   - psycopg
   - psycopg2
   - libspatialite
-  # - geoalchemy2  # no 3.14 build yet
+  - geoalchemy2
   - pyarrow
   - geoarrow-pyarrow
   # doctest testing
