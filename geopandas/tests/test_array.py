@@ -1084,3 +1084,91 @@ def test_reduce_keepdims():
     arr = geopandas.GeoDataFrame(geometry=[]).geometry.array
     assert arr._reduce("all", keepdims=True) == np.array([True], dtype=object)
     assert arr._reduce("all", keepdims=False)
+
+
+def test_geometry_array_clear_sindex():
+    """Test GeometryArray.clear_sindex method."""
+    points = [shapely.geometry.Point(i, i) for i in range(5)]
+    geom_array = from_shapely(points)
+    
+    assert not geom_array.has_sindex
+    _ = geom_array.sindex
+    assert geom_array.has_sindex
+    
+    geom_array.clear_sindex()
+    assert not geom_array.has_sindex
+    
+    # Should be able to recreate
+    _ = geom_array.sindex
+    assert geom_array.has_sindex
+
+
+def test_geometry_array_clear_sindex_multiple_calls():
+    """Test that clearing spatial index multiple times is safe."""
+    points = [shapely.geometry.Point(i, i) for i in range(5)]
+    geom_array = from_shapely(points)
+    
+    _ = geom_array.sindex
+    geom_array.clear_sindex()
+    geom_array.clear_sindex()  # Should not raise
+    assert not geom_array.has_sindex
+
+
+def test_geometry_array_clear_sindex_no_index():
+    """Test clearing spatial index when none exists."""
+    points = [shapely.geometry.Point(i, i) for i in range(5)]
+    geom_array = from_shapely(points)
+    
+    assert not geom_array.has_sindex
+    geom_array.clear_sindex()  # Should not raise
+    assert not geom_array.has_sindex
+
+
+def test_geometry_array_sindex_memory_cleanup():
+    """Test that spatial index cleanup reduces reference counts."""
+    import sys
+    
+    points = [shapely.geometry.Point(i, i) for i in range(50)]
+    geom_array = from_shapely(points)
+    
+    initial_refs = sys.getrefcount(points[0])
+    _ = geom_array.sindex
+    sindex_refs = sys.getrefcount(points[0])
+    geom_array.clear_sindex()
+    cleared_refs = sys.getrefcount(points[0])
+    
+    assert sindex_refs > initial_refs
+    assert cleared_refs <= initial_refs + 1
+
+
+def test_geometry_array_sindex_invalidation_on_setitem():
+    """Test that spatial index is cleared when geometry array is modified."""
+    points = [shapely.geometry.Point(i, i) for i in range(5)]
+    geom_array = from_shapely(points)
+    
+    _ = geom_array.sindex
+    assert geom_array.has_sindex
+    
+    # Modify array item (should clear spatial index)
+    geom_array[0] = shapely.geometry.Point(10, 10)
+    assert not geom_array.has_sindex
+
+
+def test_spatial_index_clear():
+    """Test SpatialIndex.clear method."""
+    from geopandas.sindex import SpatialIndex
+    
+    points = [shapely.geometry.Point(i, i) for i in range(5)]
+    geom_array = np.array(points)
+    sindex = SpatialIndex(geom_array)
+    
+    # Verify it has references
+    assert sindex._tree is not None
+    assert sindex.geometries is not None
+    
+    # Clear the spatial index
+    sindex.clear()
+    
+    # Verify references are cleared
+    assert sindex._tree is None
+    assert sindex.geometries is None
