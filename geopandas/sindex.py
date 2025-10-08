@@ -33,6 +33,28 @@ class SpatialIndex:
         # store geometries, including empty geometries for user access
         self.geometries = geometry.copy()
 
+    def __del__(self):
+        """Clean up STRTree and geometry references to prevent memory leaks."""
+        self._clear_references()
+
+    def _clear_references(self):
+        """Clear all geometry references held by the spatial index."""
+        # Clear the STRTree which holds references to geometry objects
+        if hasattr(self, '_tree'):
+            self._tree = None
+        # Clear the geometry array copy
+        if hasattr(self, 'geometries'):
+            self.geometries = None
+
+    def clear(self):
+        """Clear the spatial index to free memory.
+        
+        This method explicitly clears all references to geometry objects
+        held by the spatial index, allowing them to be garbage collected.
+        After calling this method, the spatial index becomes unusable.
+        """
+        self._clear_references()
+
     @property
     def valid_query_predicates(self):
         """Returns valid predicates for the spatial index.

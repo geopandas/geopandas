@@ -493,7 +493,7 @@ class GeometryArray(ExtensionArray):
             )
 
         # invalidate spatial index
-        self._sindex = None
+        self._clear_sindex()
 
         # TODO: use this once pandas-dev/pandas#33457 is fixed
         # if hasattr(value, "crs"):
@@ -520,6 +520,40 @@ class GeometryArray(ExtensionArray):
             if "_crs" not in state:
                 state["_crs"] = None
             self.__dict__.update(state)
+
+    def __del__(self):
+        """Clean up spatial index on object deletion to prevent memory leaks."""
+        self._clear_sindex()
+
+    def _clear_sindex(self):
+        """Clear the spatial index cache and free associated memory.
+        
+        This method explicitly clears the cached spatial index to prevent
+        memory leaks where the spatial index (STRTree) holds references
+        to geometry objects, preventing garbage collection.
+        """
+        if hasattr(self, '_sindex') and self._sindex is not None:
+            # Clear references within the spatial index before removing it
+            self._sindex._clear_references()
+            # Clear the spatial index to free references to geometry objects
+            self._sindex = None
+
+    def clear_sindex(self):
+        """Clear the spatial index cache to free memory.
+        
+        This method can be called explicitly by users to free memory
+        associated with the spatial index when it's no longer needed.
+        The spatial index will be recreated automatically if accessed again.
+        
+        Examples
+        --------
+        >>> gdf = geopandas.read_file('large_file.shp')
+        >>> # Use spatial index for operations
+        >>> result = gdf.sindex.query(some_geometry)
+        >>> # Clear spatial index to free memory
+        >>> gdf.geometry.values.clear_sindex()
+        """
+        self._clear_sindex()
 
     # -------------------------------------------------------------------------
     # Geometry related methods
