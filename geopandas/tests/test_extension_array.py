@@ -25,7 +25,7 @@ from pandas.tests.extension import base as extension_tests
 import shapely.geometry
 from shapely.geometry import Point
 
-from geopandas._compat import PANDAS_GE_21, PANDAS_GE_22
+from geopandas._compat import PANDAS_GE_21, PANDAS_GE_22, PANDAS_GE_30
 from geopandas.array import GeometryArray, GeometryDtype, from_shapely
 
 import pytest
@@ -52,8 +52,12 @@ def dtype():
 
 
 def make_data():
-    a = np.empty(100, dtype=object)
-    a[:] = [shapely.geometry.Point(i, i) for i in range(100)]
+    if PANDAS_GE_30:
+        size = 10
+    else:
+        size = 100
+    a = np.empty(size, dtype=object)
+    a[:] = [shapely.geometry.Point(i, i) for i in range(size)]
     ga = from_shapely(a)
     return ga
 
@@ -351,7 +355,9 @@ class TestReshaping(extension_tests.BaseReshapingTests):
             # non-uniform
             pd.MultiIndex.from_tuples([("A", "a"), ("A", "b"), ("B", "b")]),
             # three levels, non-uniform
-            pd.MultiIndex.from_product([("A", "B"), ("a", "b", "c"), (0, 1, 2)]),
+            pd.MultiIndex.from_product([("A", "B"), ("a", "b"), (0, 1)])
+            if PANDAS_GE_30
+            else pd.MultiIndex.from_product([("A", "B"), ("a", "b", "c"), (0, 1, 2)]),
             pd.MultiIndex.from_tuples(
                 [
                     ("A", "a", 1),
