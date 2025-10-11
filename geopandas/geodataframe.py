@@ -1910,10 +1910,9 @@ default 'snappy'
         return result
 
     def __delitem__(self, key) -> None:
-        """If the active geometry column is removed, downcast to a dataframe."""
-        geo_col = self._geometry_column_name
+        """If the last geometry column is removed, downcast to a dataframe."""
         super().__delitem__(key)
-        if key == geo_col:
+        if (self.dtypes == "geometry").sum() == 0:
             self.__class__ = DataFrame
 
     def _persist_old_default_geometry_colname(self) -> None:
