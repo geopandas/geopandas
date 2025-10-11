@@ -273,7 +273,7 @@ class TestExplore:
         for c in cmap:
             assert f'"fillColor":"{c}"' in out_str
 
-        with pytest.raises(ValueError, match="'cmap' is invalid."):
+        with pytest.raises(ValueError, match="'cmap' is invalid"):
             self.nybb.explore(column="BoroName", cmap="nonsense")
 
     def test_categories(self):

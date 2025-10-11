@@ -1,3 +1,4 @@
+import re
 import string
 import warnings
 
@@ -2156,7 +2157,9 @@ class TestGeomMethods:
                 len(output.explode(ignore_index=True)) == len(gs[~gs.is_empty]) * size
             )
 
-        with pytest.raises(AttributeError, match="pointpats.random module has no"):
+        with pytest.raises(
+            AttributeError, match=re.escape("pointpats.random module has no")
+        ):
             gs.sample_points(10, method="nonexistent")
 
     def test_offset_curve(self):
