@@ -344,6 +344,18 @@ def test_expanddim_in_unstack():
     assert_obj_no_active_geo_col(unstack, GeoDataFrame, expected_geo_name)
 
 
+def test_delitem():
+    # https://github.com/geopandas/geopandas/issues/2932
+    df = GeoDataFrame({"geometry": GeoSeries.from_xy([1], [1]), "a": [1]})
+    del df["geometry"]
+    assert_object(df, pd.DataFrame)
+
+    df2 = GeoDataFrame({"geometry": GeoSeries.from_xy([1], [1]), "a": [1]})
+    df2["geom2"] = df2.geometry
+    del df2["geometry"]
+    assert_obj_no_active_geo_col(df2, GeoDataFrame, geo_colname="geometry")
+
+
 # indexing /  constructor_sliced tests
 
 test_case_column_sets = [
