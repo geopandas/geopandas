@@ -549,13 +549,13 @@ def test_value_counts():
     name = "count"
     exp = pd.Series([2, 1], index=from_shapely([Point(0, 0), Point(1, 1)]), name=name)
     assert_series_equal(res, exp)
-    # Check crs doesn't make a difference - note it is not kept in output index anyway
+    # Check crs is preserved in the output index
     s2 = GeoSeries([Point(0, 0), Point(1, 1), Point(0, 0)], crs="EPSG:4326")
     res2 = s2.value_counts()
     assert_series_equal(res2, exp)
-
-    # TODO should/ can we fix CRS being lost
-    assert s2.value_counts().index.array.crs is None
+    # CRS should now be preserved in the index array
+    assert s2.value_counts().index.array.crs is not None
+    assert s2.value_counts().index.array.crs.to_string() == "EPSG:4326"
 
     # check mixed geometry
     s3 = GeoSeries([Point(0, 0), LineString([[1, 1], [2, 2]]), Point(0, 0)])
