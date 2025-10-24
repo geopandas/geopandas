@@ -373,8 +373,8 @@ nbsphinx_prolog = r"""
 # connect docs in other projects
 intersphinx_mapping = {
     "cartopy": (
-        "https://scitools.org.uk/cartopy/docs/latest/",
-        "https://scitools.org.uk/cartopy/docs/latest/objects.inv",
+        "https://cartopy.readthedocs.io/stable/",
+        "https://cartopy.readthedocs.io/stable/objects.inv",
     ),
     "contextily": (
         "https://contextily.readthedocs.io/en/stable/",
