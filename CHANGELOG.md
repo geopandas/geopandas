@@ -7,6 +7,7 @@ Bug fixes:
 - Fix an issue that caused an error in `GeoDataFrame.from_features` when there is no `properties` field (#3599).
 - Fix `read_file` and `to_file` errors (#3682)
 - Fix `read_parquet` with `to_pandas_kwargs` for complex (list/struct) arrow types (#3640)
+- `value_counts` on GeoSeries now preserves CRS (#3669)
 
 ## Version 1.1.1 (June 27, 2025)
 

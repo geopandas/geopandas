@@ -1473,7 +1473,7 @@ class GeometryArray(ExtensionArray):
         # Can't use fillna(None) or Index.putmask, as this gets converted back to nan
         # for object dtypes
         result.index = Index(
-            from_wkb(np.where(result.index.isna(), None, result.index))
+            from_wkb(np.where(result.index.isna(), None, result.index), crs=self.crs)
         )
         return result
 
