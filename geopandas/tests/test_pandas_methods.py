@@ -555,7 +555,7 @@ def test_value_counts():
     assert_series_equal(res2, exp)
     # CRS should now be preserved in the index array
     assert s2.value_counts().index.array.crs is not None
-    assert s2.value_counts().index.array.crs.to_string() == "EPSG:4326"
+    assert s2.value_counts().index.array.crs == "EPSG:4326"
 
     # check mixed geometry
     s3 = GeoSeries([Point(0, 0), LineString([[1, 1], [2, 2]]), Point(0, 0)])
