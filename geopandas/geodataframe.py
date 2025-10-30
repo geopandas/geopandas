@@ -446,6 +446,8 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 )
             if drop:
                 del frame[col]
+                frame.__class__ = GeoDataFrame
+                # revert the casting done in __delitem__, keep gdf
                 warnings.warn(
                     given_colname_drop_msg,
                     category=FutureWarning,
