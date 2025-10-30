@@ -3,9 +3,10 @@
 ## Version 1.2.0
 
 New features and improvements:
-
-- `GeoDataFrame.to_parquet` and `read_parquet` will now write and read ``attrs`` 
+- `GeoDataFrame.to_parquet` and `read_parquet` will now write and read pandas `attrs` 
   respectively (#3597)
+- Add `schema` and `additional_metadata` parameters to `to_parquet` (#3631).
+
 
 Deprecations and compatibility notes:
 

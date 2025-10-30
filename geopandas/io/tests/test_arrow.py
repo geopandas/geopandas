@@ -41,6 +41,7 @@ DATA_PATH = pathlib.Path(os.path.dirname(__file__)) / "data"
 # Skip all tests in this module if pyarrow is not available
 pyarrow = pytest.importorskip("pyarrow")
 
+import pyarrow as pa
 import pyarrow.compute as pc
 import pyarrow.parquet as pq
 from pyarrow import feather
@@ -351,6 +352,8 @@ def test_to_parquet_does_not_pass_engine_along(mock_to_parquet):
         index=None,
         schema_version=None,
         write_covering_bbox=False,
+        schema=None,
+        additional_metadata={},
     )
 
 
@@ -691,6 +694,70 @@ def test_default_geo_col_writes(tmp_path):
     # cannot be round tripped as gdf due to invalid geom col
     pq_df = pd_read_parquet(tmp_path / "test.pq")
     assert_frame_equal(df, pq_df)
+
+
+@pytest.mark.parametrize("value", ["test", 123.45, {"a": "b"}])
+def test_additional_metadata(tmp_path, value):
+    df = GeoDataFrame()
+    df.to_parquet(tmp_path / "test.parquet", additional_metadata={"extra": value})
+
+    from pyarrow.parquet import read_table
+
+    table = read_table(tmp_path / "test.parquet")
+    metadata = json.loads(table.schema.metadata[b"extra"])
+    assert metadata == value
+
+
+@pytest.mark.parametrize("int_type", [pa.int8(), pa.uint16(), pa.int64()])
+def test_set_schema(tmp_path, int_type):
+    geoField = pa.field("geometry", pa.binary())
+    intField = pa.field("i", int_type)
+    schema = pa.schema([geoField, intField])
+    gdf = geopandas.GeoDataFrame({"geometry": [box(0, 0, 10, 10)], "i": [1]})
+    gdf.to_parquet(tmp_path / "test.parquet", schema=schema)
+
+    from pyarrow.parquet import read_table
+
+    table = read_table(tmp_path / "test.parquet")
+    assert table.schema.field("geometry") == geoField
+    assert table.schema.field("i") == intField
+
+
+def test_schema_and_metadata(tmp_path):
+    intField = pa.field("i", pa.int8())
+    schema = pa.schema([intField])
+    schema = schema.with_metadata(
+        {
+            "foo": json.dumps("bar").encode("utf-8"),
+            "extra": json.dumps(1).encode("utf-8"),
+        }
+    )
+    gdf = geopandas.GeoDataFrame({"i": [1]})
+    gdf.to_parquet(
+        tmp_path / "test.parquet",
+        schema=schema,
+        additional_metadata={
+            # extra is overridden here
+            "extra": 2,
+            # add an additional property
+            "foo2": "bar2",
+            # ensure geo metadata is ignored
+            "geo": None,
+        },
+    )
+
+    from pyarrow.parquet import read_table
+
+    table = read_table(tmp_path / "test.parquet")
+    assert table.schema.field("i") == intField
+    extra = json.loads(table.schema.metadata[b"extra"])
+    assert extra == 2
+    foo = json.loads(table.schema.metadata[b"foo"])
+    assert foo == "bar"
+    foo2 = json.loads(table.schema.metadata[b"foo2"])
+    assert foo2 == "bar2"
+    geo = json.loads(table.schema.metadata[b"geo"])
+    assert geo is not None
 
 
 def test_fsspec_url(naturalearth_lowres):
