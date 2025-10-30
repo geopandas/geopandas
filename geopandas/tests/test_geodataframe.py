@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import shutil
 import tempfile
 from enum import Enum
@@ -469,6 +470,18 @@ class TestDataFrame:
         # check it converts to WGS84
         coord = data["features"][0]["geometry"]["coordinates"][0][0][0]
         np.testing.assert_allclose(coord, [-74.0505080640324, 40.5664220341941])
+
+    def test_to_json_missing_geom_errors_nicely(self):
+        df = self.df.copy()
+        # mock doing some operation where the tracking of the active geometry
+        # column is lost
+        df._geometry_column_name = None
+        msg = re.escape(
+            "You are calling a geospatial method on the GeoDataFrame, but the "
+            "active geometry column to use has not been set"
+        )
+        with pytest.raises(AttributeError, match=msg):
+            df.to_json()
 
     def test_to_json_wgs84_false(self):
         text = self.df.to_json()
