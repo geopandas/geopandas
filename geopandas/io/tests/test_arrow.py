@@ -1388,3 +1388,13 @@ def test_non_geo_parquet_read_with_proper_error(tmp_path):
         ValueError, match="No geometry columns are included in the columns read"
     ):
         geopandas.read_parquet(tmp_path / "test_no_geometry.parquet")
+
+
+def test_save_df_attrs_to_parquet_metadata(tmp_path):
+    gdf = geopandas.GeoDataFrame({"a": ["a"], "b": ["1"], "geometry": [None]})
+    gdf.attrs["test_key"] = "test_value"
+
+    gdf.to_parquet(tmp_path / "gdf.parquet")
+
+    gdf2 = geopandas.read_parquet(tmp_path / "gdf.parquet")
+    assert gdf2.attrs == {"test_key": "test_value"}

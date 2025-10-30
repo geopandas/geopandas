@@ -2,6 +2,11 @@
 
 ## Version 1.2.0
 
+New features and improvements:
+
+- `GeoDataFrame.to_parquet` and `read_parquet` will now write and read ``attrs`` 
+  respectively (#3597)
+
 Deprecations and compatibility notes:
 
 - The `resolution` keyword to `buffer` has been deprecated to align with the convention in shapely,
