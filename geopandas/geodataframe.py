@@ -952,11 +952,12 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         Examples
         --------
-
         >>> import geoarrow.pyarrow as ga
         >>> import pyarrow as pa
         >>> table = pa.Table.from_arrays([
-        ...     ga.as_geoarrow([None, "POLYGON ((0 0, 1 1, 0 1, 0 0))", "LINESTRING (0 0, -1 1, 0 -1)"]),
+        ...     ga.as_geoarrow(
+        ...     [None, "POLYGON ((0 0, 1 1, 0 1, 0 0))", "LINESTRING (0 0, -1 1, 0 -1)"]
+        ...     ),
         ...     pa.array([1, 2, 3]),
         ...     pa.array(["a", "b", "c"]),
         ... ], names=["geometry", "id", "value"])

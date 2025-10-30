@@ -647,9 +647,9 @@ class GeoSeries(GeoPandasBase, Series):
 
         Examples
         --------
-
         >>> import geoarrow.pyarrow as ga
-        >>> array = ga.as_geoarrow([None, "POLYGON ((0 0, 1 1, 0 1, 0 0))", "LINESTRING (0 0, -1 1, 0 -1)"])
+        >>> array = ga.as_geoarrow(
+        ... [None, "POLYGON ((0 0, 1 1, 0 1, 0 0))", "LINESTRING (0 0, -1 1, 0 -1)"])
         >>> geoseries = geopandas.GeoSeries.from_arrow(array)
         >>> geoseries
         0                              None
