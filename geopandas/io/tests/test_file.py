@@ -197,7 +197,7 @@ def test_to_file_bool(tmpdir, driver, ext, engine):
 
 TEST_DATE = datetime.datetime(2021, 11, 21, 1, 7, 43, 17500)
 # from pandas 2.0, utc equality checks less stringent, forward compat with zoneinfo
-utc = datetime.timezone.utc
+utc = datetime.UTC
 eastern = zoneinfo.ZoneInfo("America/New_York")
 test_date_eastern = TEST_DATE.replace(tzinfo=eastern)
 datetime_type_tests = (TEST_DATE, test_date_eastern)
