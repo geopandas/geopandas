@@ -1,6 +1,6 @@
 [build-system]
-requires = ["setuptools>=61.0.0"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
 
 [project]
 name = "geopandas"
@@ -79,12 +79,17 @@ content-type = "text/x-rst"
 Home = "https://geopandas.org"
 Repository = "https://github.com/geopandas/geopandas"
 
-[tool.setuptools.packages.find]
-include = ["geopandas", "geopandas.*"]
+[tool.hatch.version]
+source = "vcs"
 
-[tool.setuptools.package-data]
-geopandas = [
-    "tests/data/null_geom.geojson"
+[tool.hatch.build.hooks.vcs]
+version-file = "geopandas/_version.py"
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/README.md",
+    "/geopandas/**/*.py",
+    "/geopandas/tests/data/null_geom.geojson",
 ]
 
 [tool.pytest.ini_options]
