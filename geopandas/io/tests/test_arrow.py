@@ -1,11 +1,12 @@
 import json
 import os
 import pathlib
+import re
 from itertools import product
 from packaging.version import Version
 
 import numpy as np
-from pandas import ArrowDtype, DataFrame
+from pandas import ArrowDtype, DataFrame, Index, Series
 from pandas import read_parquet as pd_read_parquet
 
 import shapely
@@ -174,7 +175,9 @@ def test_write_metadata_invalid_spec_version(tmp_path):
 
     with pytest.raises(
         ValueError,
-        match="'geoarrow' encoding is only supported with schema version >= 1.1.0",
+        match=re.escape(
+            "'geoarrow' encoding is only supported with schema version >= 1.1.0"
+        ),
     ):
         gdf.to_parquet(tmp_path, schema_version="1.0.0", geometry_encoding="geoarrow")
 
@@ -328,7 +331,7 @@ def test_to_parquet_fails_on_invalid_engine(tmpdir):
         ValueError,
         match=(
             "GeoPandas only supports using pyarrow as the engine for "
-            "to_parquet: 'fastparquet' passed instead."
+            "to_parquet: 'fastparquet' passed instead"
         ),
     ):
         df.to_parquet(tmpdir / "test.parquet", engine="fastparquet")
@@ -429,7 +432,7 @@ def test_index(tmpdir, file_format, naturalearth_lowres):
 
 def test_column_order(tmpdir, file_format, naturalearth_lowres):
     """The order of columns should be preserved in the output."""
-    reader, writer = file_format
+    reader, _writer = file_format
 
     df = read_file(naturalearth_lowres)
     df = df.set_index("iso_a3")
@@ -534,7 +537,7 @@ def test_parquet_missing_metadata(tmpdir, naturalearth_lowres):
 
     # missing metadata will raise ValueError
     with pytest.raises(
-        ValueError, match="Missing geo metadata in Parquet/Feather file."
+        ValueError, match="Missing geo metadata in Parquet/Feather file"
     ):
         read_parquet(filename)
 
@@ -554,7 +557,7 @@ def test_parquet_missing_metadata2(tmpdir):
 
     # missing metadata will raise ValueError
     with pytest.raises(
-        ValueError, match="Missing geo metadata in Parquet/Feather file."
+        ValueError, match="Missing geo metadata in Parquet/Feather file"
     ):
         read_parquet(filename)
 
@@ -763,11 +766,29 @@ def test_write_empty_bbox(tmpdir, geometry):
     assert "bbox" not in metadata["columns"]["geometry"]
 
 
+@pytest.mark.skipif(
+    Version(pyarrow.__version__) < Version("19.0.0"),
+    reason="This version of pyarrow does not support reading complex types",
+)
 @pytest.mark.parametrize("format", ["feather", "parquet"])
 def test_write_read_to_pandas_kwargs(tmpdir, format):
     filename = os.path.join(str(tmpdir), f"test.{format}")
-    g = box(0, 0, 10, 10)
-    gdf = geopandas.GeoDataFrame({"geometry": [g], "i": [1], "s": ["a"]})
+
+    # Use arrow types to ensure that we can assert the roundtrip was successful
+    int_type = ArrowDtype(pyarrow.int64())
+    str_type = ArrowDtype(pyarrow.string())
+    complex_type = ArrowDtype(pyarrow.struct([pyarrow.field("foo", pyarrow.string())]))
+    index = Index([0], dtype=ArrowDtype(pyarrow.int64()))
+
+    gdf = geopandas.GeoDataFrame(
+        {
+            "geometry": [box(0, 0, 10, 10)],
+            "i": Series([1], index=index, dtype=int_type),
+            "s": Series(["a"], index=index, dtype=str_type),
+            "c": Series([{"foo": "bar"}], index=index, dtype=complex_type),
+        },
+        index=index,
+    )
 
     if format == "feather":
         gdf.to_feather(filename)
@@ -779,8 +800,37 @@ def test_write_read_to_pandas_kwargs(tmpdir, format):
     # simulate the `dtype_backend="pyarrow"` option in `pandas.read_parquet`
     gdf_roundtrip = read_func(filename, to_pandas_kwargs={"types_mapper": ArrowDtype})
     assert isinstance(gdf_roundtrip, geopandas.GeoDataFrame)
-    assert isinstance(gdf_roundtrip.dtypes["i"], ArrowDtype)
-    assert isinstance(gdf_roundtrip.dtypes["s"], ArrowDtype)
+    assert gdf_roundtrip.dtypes["i"] == int_type
+    assert gdf_roundtrip.dtypes["s"] == str_type
+    assert gdf_roundtrip.dtypes["c"] == complex_type
+    assert_geodataframe_equal(gdf_roundtrip, gdf, check_dtype=True)
+
+
+@pytest.mark.parametrize("format", ["feather", "parquet"])
+def test_read_complex_type_with_numpy_backend_xfail(tmpdir, format):
+    filename = os.path.join(str(tmpdir), f"test.{format}")
+    complex_type = ArrowDtype(pyarrow.struct([pyarrow.field("foo", pyarrow.string())]))
+    index = Index([0], dtype=ArrowDtype(pyarrow.int64()))
+    gdf = geopandas.GeoDataFrame(
+        {
+            "geometry": [box(0, 0, 10, 10)],
+            "c": Series([{"foo": "bar"}], index=index, dtype=complex_type),
+        },
+        index=index,
+    )
+    if format == "feather":
+        gdf.to_feather(filename)
+        read_func = read_feather
+    else:
+        gdf.to_parquet(filename)
+        read_func = read_parquet
+    # Note: due to bugs in pyarrow, we can't read complex types without using
+    # the types mapper. This is a long standing pandas issue as noted here:
+    # - https://github.com/pandas-dev/pandas/issues/53011
+    # - https://github.com/apache/arrow/issues/39914
+    match = re.escape("data type 'struct<foo: string>[pyarrow]' not understood")
+    with pytest.raises(TypeError, match=match):
+        read_func(filename)
 
 
 @pytest.mark.parametrize("format", ["feather", "parquet"])
@@ -1338,3 +1388,13 @@ def test_non_geo_parquet_read_with_proper_error(tmp_path):
         ValueError, match="No geometry columns are included in the columns read"
     ):
         geopandas.read_parquet(tmp_path / "test_no_geometry.parquet")
+
+
+def test_save_df_attrs_to_parquet_metadata(tmp_path):
+    gdf = geopandas.GeoDataFrame({"a": ["a"], "b": ["1"], "geometry": [None]})
+    gdf.attrs["test_key"] = "test_value"
+
+    gdf.to_parquet(tmp_path / "gdf.parquet")
+
+    gdf2 = geopandas.read_parquet(tmp_path / "gdf.parquet")
+    assert gdf2.attrs == {"test_key": "test_value"}
