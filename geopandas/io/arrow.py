@@ -387,6 +387,11 @@ def _geopandas_to_arrow(
         metadata[key.encode()] = _encode_metadata(value)
     metadata.update({b"geo": _encode_metadata(geo_metadata)})
 
+    # Store attributes in metadata if exists
+    if df.attrs:
+        df_metadata = {"PANDAS_ATTRS": json.dumps(df.attrs)}
+        metadata |= df_metadata
+
     return table.replace_schema_metadata(metadata)
 
 
@@ -511,7 +516,7 @@ def _to_feather(df, path, index=None, compression=None, schema_version=None, **k
     feather.write_feather(table, path, compression=compression, **kwargs)
 
 
-def _arrow_to_geopandas(table, geo_metadata=None, to_pandas_kwargs=None):
+def _arrow_to_geopandas(table, geo_metadata=None, to_pandas_kwargs=None, df_attrs=None):
     """Convert a pyarrow Table to a GeoDataFrame.
 
     Helper function with main, shared logic for read_parquet/read_feather.
@@ -580,6 +585,10 @@ def _arrow_to_geopandas(table, geo_metadata=None, to_pandas_kwargs=None):
             )
 
         df.insert(result_column_names.index(col), col, geom_arr)
+
+    # Add dataframe attrs
+    if df_attrs:
+        df.attrs = json.loads(df_attrs)
 
     return GeoDataFrame(df, geometry=geometry)
 
@@ -816,7 +825,12 @@ def _read_parquet(
         path, columns=columns, filesystem=filesystem, filters=filters, **kwargs
     )
 
-    return _arrow_to_geopandas(table, geo_metadata, to_pandas_kwargs)
+    if metadata and b"PANDAS_ATTRS" in metadata:
+        df_attrs = metadata[b"PANDAS_ATTRS"]
+    else:
+        df_attrs = None
+
+    return _arrow_to_geopandas(table, geo_metadata, to_pandas_kwargs, df_attrs)
 
 
 def _read_feather(path, columns=None, to_pandas_kwargs=None, **kwargs):
