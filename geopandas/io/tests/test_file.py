@@ -494,7 +494,7 @@ def test_to_file_with_duplicate_columns(tmpdir, engine):
     df = GeoDataFrame(data=[[1, 2, 3]], columns=["a", "b", "a"], geometry=[Point(1, 1)])
     tempfilename = os.path.join(str(tmpdir), "duplicate.shp")
     with pytest.raises(
-        ValueError, match="GeoDataFrame cannot contain duplicated column names."
+        ValueError, match="GeoDataFrame cannot contain duplicated column names"
     ):
         df.to_file(tempfilename, engine=engine)
 
@@ -593,13 +593,27 @@ def test_read_file(engine, nybb_filename):
         # url to zip file
         "https://raw.githubusercontent.com/geopandas/geopandas/"
         "main/geopandas/tests/data/nybb_16a.zip",
-        # url to zipfile without extension
-        "https://geonode.goosocean.org/download/480",
         # url to web service
         "https://demo.pygeoapi.io/stable/collections/obs/items",
     ],
 )
 def test_read_file_url(engine, url):
+    gdf = read_file(url, engine=engine)
+    assert isinstance(gdf, geopandas.GeoDataFrame)
+
+
+@pytest.mark.web
+@pytest.mark.parametrize(
+    "url",
+    [
+        # url to zipfile without extension
+        "https://geonode.goosocean.org/download/480",
+    ],
+)
+# Marked strict=False as state is not stable see
+# #3584, #3585, #3644
+@pytest.mark.xfail(reason="SSL certificate issue", strict=False)
+def test_read_file_url_flaky(engine, url):
     gdf = read_file(url, engine=engine)
     assert isinstance(gdf, geopandas.GeoDataFrame)
 
@@ -863,7 +877,7 @@ def test_read_file_filtered__rows_bbox(df_nybb, engine, nybb_filename):
         # TODO: support negative rows in pyogrio
         with pytest.raises(
             ValueError,
-            match="'skip_features' must be between 0 and 1|Negative slice start",
+            match=r"'skip_features' must be between 0 and 1|Negative slice start",
         ):
             filtered_df = read_file(
                 nybb_filename, bbox=bbox, rows=slice(-1, None), engine=engine
@@ -1511,6 +1525,40 @@ def test_error_engine_unavailable_fiona(tmp_path, df_points, file_path):
         geopandas.read_file(file_path, engine="fiona")
 
     with pytest.raises(ImportError, match="the 'to_file' method requires"):
+        df_points.to_file(tmp_path / "test.gpkg", engine="fiona")
+
+
+def test_error_monkeypatch_engine_unavailable_pyogrio(
+    monkeypatch, tmp_path, df_points, file_path
+) -> None:
+    # monkeypatch to make pyogrio unimportable
+    monkeypatch.setattr(geopandas.io.file, "_import_pyogrio", lambda: None)
+    monkeypatch.setattr(geopandas.io.file, "pyogrio", None)
+    monkeypatch.setattr(
+        geopandas.io.file, "pyogrio_import_error", "No module named 'pyogrio'"
+    )
+
+    with pytest.raises(ImportError, match="No module named 'pyogrio'"):
+        geopandas.read_file(file_path, engine="pyogrio")
+
+    with pytest.raises(ImportError, match="No module named 'pyogrio'"):
+        df_points.to_file(tmp_path / "test.gpkg", engine="pyogrio")
+
+
+def test_error_monkeypatch_engine_unavailable_fiona(
+    monkeypatch, tmp_path, df_points, file_path
+) -> None:
+    # monkeypatch to make fiona unimportable
+    monkeypatch.setattr(geopandas.io.file, "_import_fiona", lambda: None)
+    monkeypatch.setattr(geopandas.io.file, "fiona", None)
+    monkeypatch.setattr(
+        geopandas.io.file, "fiona_import_error", "No module named 'fiona'"
+    )
+
+    with pytest.raises(ImportError, match="No module named 'fiona'"):
+        geopandas.read_file(file_path, engine="fiona")
+
+    with pytest.raises(ImportError, match="No module named 'fiona'"):
         df_points.to_file(tmp_path / "test.gpkg", engine="fiona")
 
 
