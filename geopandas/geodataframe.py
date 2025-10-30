@@ -1498,9 +1498,9 @@ default 'snappy'
         compression : {'zstd', 'lz4', 'uncompressed'}, optional
             Name of the compression to use. Use ``"uncompressed"`` for no
             compression. By default uses LZ4 if available, otherwise uncompressed.
-        schema_version : {'0.1.0', '0.4.0', '1.0.0', None}
+        schema_version : {'0.1.0', '0.4.0', '1.0.0', '1.1.0' None}
             GeoParquet specification version; if not provided will default to
-            latest supported version.
+            latest supported stable version (1.0.0).
         kwargs
             Additional keyword arguments passed to
             :func:`pyarrow.feather.write_feather`.

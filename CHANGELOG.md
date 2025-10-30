@@ -10,6 +10,9 @@ Deprecations and compatibility notes:
 Bug fixes:
 
 - Fix an issue that caused an error in `GeoDataFrame.from_features` when there is no `properties` field (#3599).
+- Fix `read_file` and `to_file` errors (#3682)
+- Fix `read_parquet` with `to_pandas_kwargs` for complex (list/struct) arrow types (#3640)
+- `value_counts` on GeoSeries now preserves CRS in index (#3669)
 - Fix f-string placeholders appearing in error messages when `pyogrio` cannot be imported (#3682).
 - Fix `read_parquet` with `to_pandas_kwargs` for complex (list/struct) arrow types (#3640).
 - `.to_json` now provides a clearer error message when called on a GeoDataFrame without an active geometry

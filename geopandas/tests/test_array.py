@@ -696,7 +696,7 @@ def test_union_all():
         u_disjoint = G.union_all(method="disjoint_subset")
         assert u_disjoint.equals(expected)
 
-    with pytest.raises(ValueError, match="Method 'invalid' not recognized."):
+    with pytest.raises(ValueError, match="Method 'invalid' not recognized"):
         G.union_all(method="invalid")
 
 

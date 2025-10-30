@@ -273,7 +273,7 @@ class TestPointPlotting:
         actual_colors_orig = ax.collections[0].get_facecolors()
         exp_colors = cmap(np.arange(10) / (20))
         np.testing.assert_array_equal(exp_colors, actual_colors_orig)
-        fig, ax = plt.subplots()
+        _fig, ax = plt.subplots()
         self.df[1:].plot(column="values", ax=ax, norm=norm, cmap=cmap)
         actual_colors_sub = ax.collections[0].get_facecolors()
         np.testing.assert_array_equal(actual_colors_orig[1], actual_colors_sub[0])
@@ -412,7 +412,7 @@ class TestPointPlotting:
             self.df.plot(column="cats_object", categories="non_list")
 
         with pytest.raises(
-            ValueError, match="Column contains values not listed in categories."
+            ValueError, match="Column contains values not listed in categories"
         ):
             self.df.plot(column="cats_object", categories=["cat1"])
 
@@ -623,7 +623,7 @@ class TestLineStringPlotting:
         actual_colors_orig = ax.collections[0].get_edgecolors()
         exp_colors = cmap(np.arange(10) / (20))
         np.testing.assert_array_equal(exp_colors, actual_colors_orig)
-        fig, ax = plt.subplots()
+        _fig, ax = plt.subplots()
         self.df[1:].plot(column="values", ax=ax, norm=norm, cmap=cmap)
         actual_colors_sub = ax.collections[0].get_edgecolors()
         np.testing.assert_array_equal(actual_colors_orig[1], actual_colors_sub[0])
@@ -992,7 +992,7 @@ class TestPolygonPlotting:
         actual_colors_orig = ax.collections[0].get_facecolors()
         exp_colors = cmap(np.arange(2) / (10))
         np.testing.assert_array_equal(exp_colors, actual_colors_orig)
-        fig, ax = plt.subplots()
+        _fig, ax = plt.subplots()
         self.df[1:].plot(column="values", ax=ax, norm=norm, cmap=cmap)
         actual_colors_sub = ax.collections[0].get_facecolors()
         np.testing.assert_array_equal(actual_colors_orig[1], actual_colors_sub[0])
@@ -1586,7 +1586,7 @@ class TestPlotCollections:
 
         from geopandas.plotting import _plot_point_collection
 
-        fig, ax = plt.subplots()
+        _fig, ax = plt.subplots()
         coll = _plot_point_collection(ax, self.points)
         assert isinstance(coll, PathCollection)
         ax.cla()
@@ -1655,7 +1655,7 @@ class TestPlotCollections:
 
         from geopandas.plotting import _plot_linestring_collection
 
-        fig, ax = plt.subplots()
+        _fig, ax = plt.subplots()
         coll = _plot_linestring_collection(ax, self.lines)
         assert isinstance(coll, LineCollection)
         ax.cla()
@@ -1739,7 +1739,7 @@ class TestPlotCollections:
 
         from geopandas.plotting import _plot_polygon_collection
 
-        fig, ax = plt.subplots()
+        _fig, ax = plt.subplots()
         coll = _plot_polygon_collection(ax, self.polygons)
         assert isinstance(coll, PatchCollection)
         ax.cla()

@@ -686,7 +686,7 @@ def _read_parquet(
       columns, the first available geometry column will be set as the geometry
       column of the returned GeoDataFrame.
 
-    Supports versions 0.1.0, 0.4.0 and 1.0.0 of the GeoParquet
+    Supports versions 0.1.0, 0.4.0, 1.0.0, and 1.1.0 of the GeoParquet
     specification at: https://github.com/opengeospatial/geoparquet
 
     If 'crs' key is not present in the GeoParquet metadata associated with the
