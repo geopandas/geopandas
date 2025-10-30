@@ -6,9 +6,17 @@ New features and improvements:
 
 - Add ``schema`` and ``additional_metadata`` parameters to ``to_parquet`` (#3631).
 
+Deprecations and compatibility notes:
+
+- The `resolution` keyword to `buffer` has been deprecated to align with the convention in shapely,
+  `quad_segs` should be used instead (#3600).
+
 Bug fixes:
 
 - Fix an issue that caused an error in `GeoDataFrame.from_features` when there is no `properties` field (#3599).
+- Fix `read_file` and `to_file` errors (#3682)
+- Fix `read_parquet` with `to_pandas_kwargs` for complex (list/struct) arrow types (#3640)
+- `value_counts` on GeoSeries now preserves CRS (#3669)
 
 ## Version 1.1.1 (June 27, 2025)
 
