@@ -449,7 +449,7 @@ def _to_parquet(
         Adds additional metadata to the Parquet file metadata.
         Each value gets JSON-encoded.
         May override metadata that is provided through the 'schema' parameter,
-        but never the 'geo' metadata.
+        but 'geo' metadata is never overwritten.
     **kwargs
         Additional keyword arguments passed to pyarrow.parquet.write_table().
     """
