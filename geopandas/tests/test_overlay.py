@@ -386,7 +386,7 @@ def test_crs_mismatch(dfs, how):
 
 
 def test_empty_intersection(dfs):
-    df1, df2 = dfs
+    df1, _df2 = dfs
     polys3 = GeoSeries(
         [
             Polygon([(-1, -1), (-3, -1), (-3, -3), (-1, -3)]),
@@ -401,7 +401,7 @@ def test_empty_intersection(dfs):
 
 def test_correct_index(dfs):
     # GH883 - case where the index was not properly reset
-    df1, df2 = dfs
+    _df1, df2 = dfs
     polys3 = GeoSeries(
         [
             Polygon([(1, 1), (3, 1), (3, 3), (1, 3)]),
@@ -420,7 +420,7 @@ def test_correct_index(dfs):
 
 
 def test_warn_on_keep_geom_type(dfs):
-    df1, df2 = dfs
+    _df1, df2 = dfs
     polys3 = GeoSeries(
         [
             Polygon([(1, 1), (3, 1), (3, 3), (1, 3)]),
@@ -766,14 +766,16 @@ def test_empty_overlay_return_non_duplicated_columns(nybb_filename):
 def test_non_overlapping(how):
     p1 = Polygon([(0, 0), (2, 0), (2, 2), (0, 2)])
     p2 = Polygon([(3, 3), (5, 3), (5, 5), (3, 5)])
-    df1 = GeoDataFrame({"col1": [1], "geometry": [p1]})
-    df2 = GeoDataFrame({"col2": [2], "geometry": [p2]})
+    df1 = GeoDataFrame({"id": [1], "col1": [1], "geometry": [p1]})
+    df2 = GeoDataFrame({"id": [2], "col2": [2], "geometry": [p2]})
     result = overlay(df1, df2, how=how)
 
     if how == "intersection":
         expected = GeoDataFrame(
             {
+                "id_1": np.array([], dtype="int64"),
                 "col1": np.array([], dtype="int64"),
+                "id_2": np.array([], dtype="int64"),
                 "col2": np.array([], dtype="int64"),
                 "geometry": [],
             }
@@ -781,7 +783,9 @@ def test_non_overlapping(how):
     elif how == "union":
         expected = GeoDataFrame(
             {
+                "id_1": [1, np.nan],
                 "col1": [1, np.nan],
+                "id_2": [np.nan, 2],
                 "col2": [np.nan, 2],
                 "geometry": [p1, p2],
             }
@@ -789,7 +793,9 @@ def test_non_overlapping(how):
     elif how == "identity":
         expected = GeoDataFrame(
             {
+                "id_1": [1],
                 "col1": [1],
+                "id_2": [np.nan],
                 "col2": [np.nan],
                 "geometry": [p1],
             }
@@ -797,7 +803,9 @@ def test_non_overlapping(how):
     elif how == "symmetric_difference":
         expected = GeoDataFrame(
             {
+                "id_1": [1, np.nan],
                 "col1": [1, np.nan],
+                "id_2": [np.nan, 2],
                 "col2": [np.nan, 2],
                 "geometry": [p1, p2],
             }
@@ -805,6 +813,7 @@ def test_non_overlapping(how):
     elif how == "difference":
         expected = GeoDataFrame(
             {
+                "id": [1],
                 "col1": [1],
                 "geometry": [p1],
             }
@@ -848,54 +857,64 @@ def test_zero_len():
 
 class TestOverlayWikiExample:
     def setup_method(self):
-        self.layer_a = GeoDataFrame(geometry=[box(0, 2, 6, 6)])
+        self.layer_a = GeoDataFrame(data={"id": ["a"]}, geometry=[box(0, 2, 6, 6)])
 
-        self.layer_b = GeoDataFrame(geometry=[box(4, 0, 10, 4)])
+        self.layer_b = GeoDataFrame(data={"id": ["b"]}, geometry=[box(4, 0, 10, 4)])
 
-        self.intersection = GeoDataFrame(geometry=[box(4, 2, 6, 4)])
+        self.intersection = GeoDataFrame(
+            data={"id_1": ["a"], "id_2": ["b"]}, geometry=[box(4, 2, 6, 4)]
+        )
 
         self.union = GeoDataFrame(
+            data={"id_1": ["a", "a", np.nan], "id_2": ["b", np.nan, "b"]},
             geometry=[
                 box(4, 2, 6, 4),
                 Polygon([(4, 2), (0, 2), (0, 6), (6, 6), (6, 4), (4, 4), (4, 2)]),
                 Polygon([(10, 0), (4, 0), (4, 2), (6, 2), (6, 4), (10, 4), (10, 0)]),
-            ]
+            ],
         )
 
         self.a_difference_b = GeoDataFrame(
-            geometry=[Polygon([(4, 2), (0, 2), (0, 6), (6, 6), (6, 4), (4, 4), (4, 2)])]
+            data={"id": ["a"]},
+            geometry=[
+                Polygon([(4, 2), (0, 2), (0, 6), (6, 6), (6, 4), (4, 4), (4, 2)])
+            ],
         )
 
         self.b_difference_a = GeoDataFrame(
+            data={"id": ["b"]},
             geometry=[
                 Polygon([(10, 0), (4, 0), (4, 2), (6, 2), (6, 4), (10, 4), (10, 0)])
-            ]
+            ],
         )
 
         self.symmetric_difference = GeoDataFrame(
+            data={"id_1": ["a", np.nan], "id_2": [np.nan, "b"]},
             geometry=[
                 Polygon([(4, 2), (0, 2), (0, 6), (6, 6), (6, 4), (4, 4), (4, 2)]),
                 Polygon([(10, 0), (4, 0), (4, 2), (6, 2), (6, 4), (10, 4), (10, 0)]),
-            ]
+            ],
         )
 
         self.a_identity_b = GeoDataFrame(
+            data={"id_1": ["a", "a"], "id_2": ["b", np.nan]},
             geometry=[
                 box(4, 2, 6, 4),
                 Polygon([(4, 2), (0, 2), (0, 6), (6, 6), (6, 4), (4, 4), (4, 2)]),
-            ]
+            ],
         )
 
         self.b_identity_a = GeoDataFrame(
+            data={"id_1": ["b", "b"], "id_2": ["a", np.nan]},
             geometry=[
                 box(4, 2, 6, 4),
                 Polygon([(10, 0), (4, 0), (4, 2), (6, 2), (6, 4), (10, 4), (10, 0)]),
-            ]
+            ],
         )
 
     def test_intersection(self):
         df_result = overlay(self.layer_a, self.layer_b, how="intersection")
-        assert df_result.geom_equals(self.intersection).all()
+        assert_geodataframe_equal(df_result, self.intersection)
 
     def test_union(self):
         df_result = overlay(self.layer_a, self.layer_b, how="union")

@@ -352,7 +352,7 @@ class TestDataFrame:
         # "geometry" originally present but dropped (but still a gdf)
         col_subset_drop_geometry = ["BoroCode", "BoroName", "geom2"]
         df2 = self.df.copy().assign(geom2=self.df.geometry)[col_subset_drop_geometry]
-        with pytest.raises(AttributeError, match="is not present."):
+        with pytest.raises(AttributeError, match="is not present"):
             df2.geometry
 
         msg_other_geo_cols_present = "There are columns with geometry data type"
@@ -580,7 +580,7 @@ class TestDataFrame:
             data=[[1, 2, 3]], columns=["a", "b", "a"], geometry=[Point(1, 1)]
         )
         with pytest.raises(
-            ValueError, match="GeoDataFrame cannot contain duplicated column names."
+            ValueError, match="GeoDataFrame cannot contain duplicated column names"
         ):
             df.to_json()
 
@@ -774,6 +774,26 @@ class TestDataFrame:
         gdf2 = GeoDataFrame.from_features(gjson_null)
 
         assert_frame_equal(gdf1, gdf2)
+        assert "properties" not in gdf1.columns
+
+    def test_from_features_no_properties(self):
+        data = {
+            "type": "FeatureCollection",
+            "features": [
+                {
+                    "type": "Feature",
+                    "geometry": {"type": "Point", "coordinates": [0.0, 90.0]},
+                },
+                {
+                    "type": "Feature",
+                    "geometry": {"type": "Point", "coordinates": [0.0, -90.0]},
+                },
+            ],
+        }
+
+        gdf = GeoDataFrame.from_features(data)
+        assert gdf.shape == (2, 1)
+        assert "properties" not in gdf.columns
 
     def test_from_features_geom_interface_feature(self):
         class Placemark:
@@ -918,7 +938,7 @@ class TestDataFrame:
         assert isinstance(result["properties"]["Shape_Leng"], float)
 
         with pytest.raises(
-            ValueError, match="GeoDataFrame cannot contain duplicated column names."
+            ValueError, match="GeoDataFrame cannot contain duplicated column names"
         ):
             df_with_duplicate_columns = df[
                 ["Shape_Leng", "Shape_Leng", "Shape_Area", "geometry"]
@@ -1381,7 +1401,7 @@ class TestConstructor:
         df.columns = pd.MultiIndex.from_product([["geometry"], [0, 1]])
         # don't error in constructor
         gdf = GeoDataFrame(df)
-        with pytest.raises(AttributeError, match=".*geometry .* has not been set.*"):
+        with pytest.raises(AttributeError, match=r".*geometry .* has not been set.*"):
             gdf.geometry
         res_gdf = gdf.set_geometry(("geometry", 0))
         assert res_gdf.shape == gdf.shape
@@ -1512,6 +1532,32 @@ class TestConstructor:
         )
         res = GeoDataFrame(df, geometry=Fruit.pear)
         assert res.active_geometry_name == Fruit.pear
+
+    def test_geometry_nan_scalar(self):
+        gdf = GeoDataFrame(
+            data=[[np.nan, np.nan]],
+            columns=["geometry", "something"],
+            crs="EPSG:4326",
+        )
+        assert gdf.shape == (1, 2)
+        assert gdf.active_geometry_name == "geometry"
+        assert gdf.geometry[0] is None
+        if compat.HAS_PYPROJ:
+            assert gdf.crs == "EPSG:4326"
+
+    def test_geometry_nan_array(self):
+        gdf = GeoDataFrame(
+            {
+                "geometry": [np.nan, None, pd.NA],
+                "something": [np.nan, np.nan, np.nan],
+            },
+            crs="EPSG:4326",
+        )
+        assert gdf.shape == (3, 2)
+        assert gdf.active_geometry_name == "geometry"
+        assert gdf.geometry.isna().all()
+        if compat.HAS_PYPROJ:
+            assert gdf.crs == "EPSG:4326"
 
 
 @pytest.mark.skipif(not compat.HAS_PYPROJ, reason="pyproj not available")

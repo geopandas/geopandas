@@ -1,6 +1,6 @@
 [build-system]
-requires = ["setuptools>=61.0.0"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
 
 [project]
 name = "geopandas"
@@ -79,12 +79,17 @@ content-type = "text/x-rst"
 Home = "https://geopandas.org"
 Repository = "https://github.com/geopandas/geopandas"
 
-[tool.setuptools.packages.find]
-include = ["geopandas", "geopandas.*"]
+[tool.hatch.version]
+source = "vcs"
 
-[tool.setuptools.package-data]
-geopandas = [
-    "tests/data/null_geom.geojson"
+[tool.hatch.build.hooks.vcs]
+version-file = "geopandas/_version.py"
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/README.md",
+    "/geopandas/**/*.py",
+    "/geopandas/tests/data/null_geom.geojson",
 ]
 
 [tool.pytest.ini_options]
@@ -131,13 +136,15 @@ select = [
     # implicit string concatenation
     "ISC",
     # type-checking imports
-    "TCH",
+    "TC",
     # comprehensions
     "C4",
     # Ruff-specific rules
     "RUF",
     # isort
     "I",
+    # pydocstyle
+    "D",
 ]
 
 ignore = [
@@ -178,6 +185,20 @@ ignore = [
     "PLC1802",
 
     ### Additional checks that don't pass yet
+    # Missing docstring in public module
+    "D100",
+    # Missing docstring in public class
+    "D101",
+    # Missing docstring in public method
+    "D102",
+    # Missing docstring in public function
+    "D103",
+    # Missing docstring in public package
+    "D104",
+    # Missing docstring in magic method
+    "D105",
+    # 1 blank line required between summary line and description
+    "D205",
     # Useless statement
     "B018",
     # Within an except clause, raise exceptions with ...
@@ -187,10 +208,17 @@ ignore = [
     # collection-literal-concatenation
     "RUF005",
     # Mutable class attributes should be annotated with `typing.ClassVar`,
-    "RUF012"
+    "RUF012",
+    # import should be at the top-level of a file
+    "PLC0415"
+
 ]
 
 [tool.ruff.lint.per-file-ignores]
+# ignore pydocstyle errors in tests
+"**/tests/*" = ["D"]
+"geopandas/conftest.py" = ["D"]
+# the order of imports in __init__ is a bit tricky, so keep manual
 "geopandas/__init__.py" = ["F401", "I"]
 
 [tool.ruff.lint.isort]
@@ -209,3 +237,6 @@ section-order = [
 [tool.ruff.lint.isort.sections]
 "geo" = ["shapely", "pyproj"]
 "testing" = ["pytest", "pandas.testing", "numpy.testing", "geopandas.tests", "geopandas.testing"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"

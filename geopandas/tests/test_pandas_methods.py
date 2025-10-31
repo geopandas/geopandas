@@ -549,13 +549,13 @@ def test_value_counts():
     name = "count"
     exp = pd.Series([2, 1], index=from_shapely([Point(0, 0), Point(1, 1)]), name=name)
     assert_series_equal(res, exp)
-    # Check crs doesn't make a difference - note it is not kept in output index anyway
+    # Check crs is preserved in the output index
     s2 = GeoSeries([Point(0, 0), Point(1, 1), Point(0, 0)], crs="EPSG:4326")
     res2 = s2.value_counts()
     assert_series_equal(res2, exp)
-
-    # TODO should/ can we fix CRS being lost
-    assert s2.value_counts().index.array.crs is None
+    # CRS should now be preserved in the index array
+    assert s2.value_counts().index.array.crs is not None
+    assert s2.value_counts().index.array.crs == "EPSG:4326"
 
     # check mixed geometry
     s3 = GeoSeries([Point(0, 0), LineString([[1, 1], [2, 2]]), Point(0, 0)])
@@ -859,6 +859,36 @@ def test_preserve_attrs(df):
     # https://github.com/geopandas/geopandas/issues/1875
     df3 = df2.explode(index_parts=True)
     assert df3.attrs == attrs
+
+
+def test_attrs_concat():
+    # from pandas-dev/pandas#60357
+    # concat propagates attrs if all input attrs are equal
+    geoms = [Point(2, 2), Point(3, 3)]
+    df1 = GeoDataFrame({"A": [2, 3], "geometry": geoms})
+    df1.attrs = {"a": 1, "b": 2}
+    df2 = GeoDataFrame({"A": [4, 5], "geometry": geoms})
+    df2.attrs = df1.attrs.copy()
+    df3 = GeoDataFrame({"A": [6, 7], "geometry": geoms})
+    df3.attrs = df1.attrs.copy()
+    assert pd.concat([df1, df2, df3]).attrs == df1.attrs
+    # concat does not propagate attrs if input attrs are different
+    df2.attrs = {"c": 3}
+    assert pd.concat([df1, df2, df3]).attrs == {}
+
+
+def test_attrs_merge():
+    # from pandas-dev/pandas#60357
+    geoms = [Point(2, 2), Point(3, 3)]
+    # merge propagates attrs if all input attrs are equal
+    df1 = GeoDataFrame({"key": ["a", "b"], "val1": [1, 2], "geometry": geoms})
+    df1.attrs = {"a": 1, "b": 2}
+    df2 = GeoDataFrame({"key": ["a", "b"], "val2": [3, 4], "geometry": geoms})
+    df2.attrs = df1.attrs.copy()
+    assert pd.merge(df1, df2).attrs == df1.attrs
+    # merge does not propagate attrs if input attrs are different
+    df2.attrs = {"c": 3}
+    assert pd.merge(df1, df2).attrs == {}
 
 
 def test_preserve_flags(df):

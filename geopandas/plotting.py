@@ -11,8 +11,7 @@ from ._decorator import doc
 
 
 def _sanitize_geoms(geoms, prefix="Multi"):
-    """
-    Returns Series like geoms and index, except that any Multi geometries
+    """Return Series like geoms and index, except that any Multi geometries
     are split into their components and indices are repeated for all component
     in the same Multi geometry. At the same time, empty or missing geometries are
     filtered out.  Maintains 1:1 matching of geometry to value.
@@ -86,7 +85,7 @@ def _expand_kwargs(kwargs, multiindex):
 
 
 def _PolygonPatch(polygon, **kwargs):
-    """Constructs a matplotlib patch from a Polygon geometry
+    """Construct a matplotlib patch from a Polygon geometry.
 
     The `kwargs` are those supported by the matplotlib.patches.PathPatch class
     constructor. Returns an instance of matplotlib.patches.PathPatch.
@@ -125,8 +124,7 @@ def _plot_polygon_collection(
     autolim=True,
     **kwargs,
 ):
-    """
-    Plots a collection of Polygon and MultiPolygon geometries to `ax`
+    """Plot a collection of Polygon and MultiPolygon geometries to `ax`.
 
     Parameters
     ----------
@@ -196,8 +194,7 @@ def _plot_linestring_collection(
     autolim=True,
     **kwargs,
 ):
-    """
-    Plots a collection of LineString and MultiLineString geometries to `ax`
+    """Plot a collection of LineString and MultiLineString geometries to `ax`.
 
     Parameters
     ----------
@@ -262,8 +259,7 @@ def _plot_point_collection(
     markersize=None,
     **kwargs,
 ):
-    """
-    Plots a collection of Point and MultiPoint geometries to `ax`
+    """Plot a collection of Point and MultiPoint geometries to `ax`.
 
     Parameters
     ----------
@@ -368,7 +364,6 @@ def plot_series(
     -------
     ax : matplotlib axes instance
     """
-
     try:
         import matplotlib.pyplot as plt
     except ImportError:
@@ -379,7 +374,7 @@ def plot_series(
         )
 
     if ax is None:
-        fig, ax = plt.subplots(figsize=figsize)
+        _fig, ax = plt.subplots(figsize=figsize)
 
     if aspect == "auto":
         if s.crs and s.crs.is_geographic:
@@ -658,7 +653,7 @@ def plot_dataframe(
     if ax is None:
         if cax is not None:
             raise ValueError("'ax' can not be None if 'cax' is not.")
-        fig, ax = plt.subplots(figsize=figsize)
+        _fig, ax = plt.subplots(figsize=figsize)
 
     if aspect == "auto":
         if df.crs and df.crs.is_geographic:

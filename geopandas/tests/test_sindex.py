@@ -1,3 +1,4 @@
+import re
 from math import sqrt
 
 import numpy as np
@@ -490,7 +491,7 @@ class TestShapelyInterface:
         incompatible versions of shapely or pyGEOS
         """
         with pytest.raises(
-            ValueError, match="predicate = 'dwithin' requires GEOS >= 3.10.0"
+            ValueError, match=re.escape("predicate = 'dwithin' requires GEOS >= 3.10.0")
         ):
             self.df.sindex.query(Point(0, 0), predicate="dwithin", distance=0)
 
@@ -559,7 +560,7 @@ class TestShapelyInterface:
             raise e
 
     def test_unsupported_output(self):
-        with pytest.raises(ValueError, match="Invalid output_format: 'dataarray'."):
+        with pytest.raises(ValueError, match="Invalid output_format: 'dataarray'"):
             test_geom = box(-1, -1, -0.5, -0.5)
             self.df.sindex.query(test_geom, output_format="dataarray")
 
