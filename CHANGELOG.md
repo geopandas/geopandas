@@ -7,7 +7,13 @@ Bug fixes:
 - Fix an issue that caused an error in `GeoDataFrame.from_features` when there is no `properties` field (#3599).
 - Fix `read_file` and `to_file` errors (#3682)
 - Fix `read_parquet` with `to_pandas_kwargs` for complex (list/struct) arrow types (#3640)
-- `value_counts` on GeoSeries now preserves CRS (#3669)
+- `value_counts` on GeoSeries now preserves CRS in index (#3669)
+- Fix f-string placeholders appearing in error messages when `pyogrio` cannot be imported (#3682).
+- Fix `read_parquet` with `to_pandas_kwargs` for complex (list/struct) arrow types (#3640).
+- `.to_json` now provides a clearer error message when called on a GeoDataFrame without an active geometry
+  column (#3648).
+- Calling `del gdf["geometry"]` now will downcast to a `pd.DataFrame` if there are no geometry columns left
+  in the dataframe (#3648).
 
 ## Version 1.1.1 (June 27, 2025)
 
@@ -57,12 +63,12 @@ New features and improvements:
   extension mechanism (#3272).
 - Improve performance of `overlay` with `how=identity` (#3504).
 - A warning message is raised in `read_file` when a GeoDataFrame or GeoSeries mask
-  and/or the source dataset is missing a defined CRS. (#3464)
+  and/or the source dataset is missing a defined CRS (#3464).
 - GeoDataFrame no longer hard-codes the class internally, allowing easier subclassing (#3505).
 
 Bug fixes:
 
-- Fix an issue that showed numpy dtypes in bbox in `to_geo_dict` and `__geo_interface__`. (#3436)
+- Fix an issue that showed numpy dtypes in bbox in `to_geo_dict` and `__geo_interface__`. (#3436).
 - Fix an issue in `sample_points` that could occasionally result in non-uniform distribution (#3470).
 - Fix unspecified layer warning being emitted while reading multilayer datasets, even
   when layer is specified when using the mask or bbox keywords (#3378).
@@ -94,7 +100,7 @@ Deprecations and compatibility notes:
 Bug fixes:
 
 - Support a named datetime or object dtype index in `explore()` (#3360, #3364).
-- Fix a regression preventing a Series as an argument for geometric methods (#3363)
+- Fix a regression preventing a Series as an argument for geometric methods (#3363).
 
 ## Version 1.0.0 (June 24, 2024)
 
@@ -109,7 +115,7 @@ Notes on dependencies:
 New methods:
 
 - Added `count_geometries` method from shapely to GeoSeries/GeoDataFrame (#3154).
-- Added `count_interior_rings` method from shapely to GeoSeries/GeoDataFrame (#3154)
+- Added `count_interior_rings` method from shapely to GeoSeries/GeoDataFrame (#3154).
 - Added `relate_pattern` method from shapely to GeoSeries/GeoDataFrame (#3211).
 - Added `intersection_all` method from shapely to GeoSeries/GeoDataFrame (#3228).
 - Added `line_merge` method from shapely to GeoSeries/GeoDataFrame (#3214).
@@ -160,7 +166,7 @@ New features and improvements:
 - The `GeoSeries.fillna` method now supports the `limit` keyword (#3290).
 - Added ``on_attribute`` option argument to the ``sjoin()``
   method, allowing to restrict joins to the observations with
-  matching attributes. (#3231)
+  matching attributes (#3231).
 - Added support for `bbox` covering encoding in geoparquet. Can filter reading of parquet
 files based on a bounding box, and write out a bounding box column to parquet files (#3282).
 - `align` keyword in binary methods now defaults to `None`, treated as True. Explicit True
@@ -168,14 +174,14 @@ files based on a bounding box, and write out a bounding box column to parquet fi
 - `GeoSeries.set_crs` can now be used to remove CRS information by passing
   `crs=None, allow_override=True` (#3316).
 - Added ``autolim`` keyword argument to ``GeoSeries.plot()`` and ``GeoDataFrame.plot()`` (#2817).
-- Added `metadata` parameter to `GeoDataFrame.to_file` (#2850)
+- Added `metadata` parameter to `GeoDataFrame.to_file` (#2850).
 - Updated documentation to clarify that passing a named (Geo)Series as the `geometry`
   argument to the GeoDataFrame constructor will not use the name but will always
   produce a GeoDataFrame with an active geometry column named "geometry" (#3337).
 - `read_postgis` will query the spatial_ref_sys table to determine the CRS authority
   instead of its current behaviour of assuming EPSG. In the event the spiatal_ref_sys
   table is not present, or the SRID is not present, `read_postgis` will fallback
-  on assuming EPSG CRS authority. (#3329)
+  on assuming EPSG CRS authority (#3329).
 - Added ``GeoDataFrame.active_geometry_name`` property returning the active geometry column's name or None if no active geometry column is set (#2943).
 
 Backwards incompatible API changes:
