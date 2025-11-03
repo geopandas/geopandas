@@ -449,6 +449,8 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 )
             if drop:
                 del frame[col]
+                frame.__class__ = GeoDataFrame
+                # revert the casting done in __delitem__, keep gdf
                 warnings.warn(
                     given_colname_drop_msg,
                     category=FutureWarning,
@@ -1149,14 +1151,8 @@ individually so that features may have different properties
         if na not in ["null", "drop", "keep"]:
             raise ValueError(f"Unknown na method {na}")
 
-        if self._geometry_column_name not in self:
-            raise AttributeError(
-                "No geometry data set (expected in column "
-                f"'{self._geometry_column_name}')."
-            )
-
         ids = np.asarray(self.index)
-        geometries = np.asarray(self[self._geometry_column_name])
+        geometries = np.asarray(self.geometry)
 
         if not self.columns.is_unique:
             raise ValueError("GeoDataFrame cannot contain duplicated column names.")
@@ -1939,6 +1935,12 @@ default 'snappy'
             else:
                 result.__class__ = DataFrame
         return result
+
+    def __delitem__(self, key) -> None:
+        """If the last geometry column is removed, downcast to a dataframe."""
+        super().__delitem__(key)
+        if (self.dtypes == "geometry").sum() == 0:
+            self.__class__ = DataFrame
 
     def _persist_old_default_geometry_colname(self) -> None:
         """Persist the default geometry column name of 'geometry' temporarily for
