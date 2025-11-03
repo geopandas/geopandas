@@ -1396,7 +1396,7 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
         >>> table
         pyarrow.Table
         col1: string
-        geometry: binary
+        geometry: extension<geoarrow.wkb<WkbType>>
         ----
         col1: [["name1","name2"]]
         geometry: [[0101000000000000000000F03F0000000000000040,\

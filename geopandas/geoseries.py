@@ -1503,11 +1503,9 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
         >>> import pyarrow as pa
         >>> array = pa.array(arrow_array)
         >>> array
-        <pyarrow.lib.BinaryArray object at ...>
-        [
-          0101000000000000000000F03F0000000000000040,
-          01010000000000000000000040000000000000F03F
-        ]
+        GeometryExtensionArray:WkbType(geoarrow.wkb)[2]
+        <POINT (1 2)>
+        <POINT (2 1)>
 
         """
         from geopandas.io._geoarrow import (
