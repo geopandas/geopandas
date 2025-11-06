@@ -1349,7 +1349,7 @@ class GeometryArray(ExtensionArray):
         ----------
         value : shapely geometry object or GeometryArray
             If a geometry value is passed it is used to fill all missing values.
-            Alternatively, an GeometryArray 'value' can be given. It's expected
+            Alternatively, a GeometryArray 'value' can be given. It's expected
             that the GeometryArray has the same length as 'self'.
 
         method : {'backfill', 'bfill', 'pad', 'ffill', None}, default None

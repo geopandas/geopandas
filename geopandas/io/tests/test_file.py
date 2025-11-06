@@ -1328,7 +1328,7 @@ def test_write_index_to_file(tmpdir, df_points, driver, ext, engine):
     df.index += 1
     do_checks(df, index_is_used=False)
 
-    # index is a Int64Index regular sequence from 1
+    # index is an Int64Index regular sequence from 1
     df_p.index = list(range(1, len(df) + 1))
     df = GeoDataFrame(df_p["value1"], geometry=df_p.geometry)
     do_checks(df, index_is_used=False)
