@@ -75,7 +75,7 @@ autodoc_typehints = "none"
 
 
 def setup(app):
-    app.add_css_file("custom.css")  # may also be an URL
+    app.add_css_file("custom.css")  # may also be a URL
 
 
 # Add any paths that contain templates here, relative to this directory.
