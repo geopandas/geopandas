@@ -61,7 +61,7 @@ def _ensure_geometry(data, crs: Any | None = None) -> GeoSeries | GeometryArray:
             if isinstance(data, GeometryArray):
                 data.crs = crs
             else:
-                data.array.crs = crs
+                data._values = crs
         return data
     else:
         if isinstance(data, Series):
@@ -467,7 +467,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         level = _ensure_geometry(level, crs=crs)
         # ensure_geometry only sets crs on level if it has crs==None
         if isinstance(level, GeoSeries):
-            level.array.crs = crs
+            level._values.crs = crs
         else:
             level.crs = crs
         # update _geometry_column_name prior to assignment
@@ -617,7 +617,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                     stacklevel=2,
                     category=DeprecationWarning,
                 )
-            self.geometry.values.crs = value
+            self.geometry._values.crs = value
         else:
             # column called 'geometry' without geometry
             raise ValueError(

@@ -47,9 +47,9 @@ df1 = GeoDataFrame({"col1": [1, 2], "geometry": s1})
 df2 = GeoDataFrame({"col1": [1, 2], "geometry": s2})
 
 s4 = s1.copy()
-s4.array.crs = 4326
+s4._values = 4326
 s5 = s2.copy()
-s5.array.crs = 27700
+s5._values = 27700
 
 s6 = GeoSeries(
     [

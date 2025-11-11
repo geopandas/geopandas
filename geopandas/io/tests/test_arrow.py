@@ -673,7 +673,7 @@ def test_missing_crs(tmpdir, file_format, naturalearth_lowres):
     reader, writer = file_format
 
     df = read_file(naturalearth_lowres)
-    df.geometry.array.crs = None
+    df.geometry._values = None
 
     filename = os.path.join(str(tmpdir), "test.pq")
     writer(df, filename)

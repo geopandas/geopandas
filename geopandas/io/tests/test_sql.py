@@ -490,7 +490,7 @@ class TestIO:
         table = "nybb"
 
         # Write to db
-        df_nybb.geometry.array.crs = None
+        df_nybb.geometry._values = None
         with pytest.warns(UserWarning, match="Could not parse CRS from the GeoDataF"):
             write_postgis(df_nybb, con=engine, name=table, if_exists="replace")
         # Validate that srid is -1

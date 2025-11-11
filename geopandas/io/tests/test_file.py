@@ -561,7 +561,7 @@ def test_empty_crs(tmpdir, driver, ext, engine):
 
     if ext == ".geojson":
         # geojson by default assumes epsg:4326
-        df.geometry.array.crs = "EPSG:4326"
+        df.geometry._values = "EPSG:4326"
 
     assert_geodataframe_equal(result, df)
 

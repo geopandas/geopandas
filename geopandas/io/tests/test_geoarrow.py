@@ -150,7 +150,7 @@ def test_geoarrow_export(geometry_type, dim, geometry_encoding, interleaved):
     df["geometry"] = GeoSeries.from_wkb(df["geometry"])
     df["row_number"] = df["row_number"].astype("int32")
     df = GeoDataFrame(df)
-    df.geometry.array.crs = None
+    df.geometry._values = None
 
     # Read the expected data
     if geometry_encoding == "WKB":
@@ -372,7 +372,7 @@ def test_geoarrow_export_with_extension_types(geometry_type, dim):
     df["geometry"] = GeoSeries.from_wkb(df["geometry"])
     df["row_number"] = df["row_number"].astype("int32")
     df = GeoDataFrame(df)
-    df.geometry.array.crs = None
+    df.geometry._values = None
 
     pytest.importorskip("geoarrow.pyarrow")
 
