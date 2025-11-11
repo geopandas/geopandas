@@ -61,7 +61,7 @@ def _ensure_geometry(data, crs: Any | None = None) -> GeoSeries | GeometryArray:
             if isinstance(data, GeometryArray):
                 data.crs = crs
             else:
-                data._values = crs
+                data._values.crs = crs
         return data
     else:
         if isinstance(data, Series):
