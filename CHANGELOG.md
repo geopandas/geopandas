@@ -277,7 +277,7 @@ Bug fixes:
   `GeoSeries` the name was not used as the active geometry column name (#3237).
 - Fix bug in `GeoSeries` constructor when passing a Series and specifying a `crs` to not change the original input data (#2492).
 - Fix regression preventing reading from file paths containing hashes in `read_file`
-  with the fiona engine (#3280). An analgous fix for pyogrio is included in
+  with the fiona engine (#3280). An analogous fix for pyogrio is included in
   pyogrio 0.8.1.
 - Fix `to_parquet` to write correct metadata in case of 3D geometries (#2824).
 - Fixes for compatibility with psycopg (#3167).
@@ -634,7 +634,7 @@ Small bug-fix release:
   overlay of two geometries in a GeometryCollection with other geometry types
   (#2177).
 - Fix ``overlay()`` to honor the ``keep_geom_type`` keyword for the
-  ``op="differnce"`` case (#2164).
+  ``op="difference"`` case (#2164).
 - Fix regression in ``plot()`` with a mapclassify ``scheme`` in case the
   formatted legend labels have duplicates (#2166).
 - Fix a bug in the ``explore()`` method ignoring the ``vmin`` and ``vmax`` keywords

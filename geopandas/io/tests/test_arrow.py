@@ -1170,7 +1170,7 @@ def test_read_parquet_bbox(tmpdir, naturalearth_lowres, geometry_name):
 
 @pytest.mark.parametrize("geometry_name", ["geometry", "custum_geom_col"])
 def test_read_parquet_bbox_partitioned(tmpdir, naturalearth_lowres, geometry_name):
-    # check bbox is being used to filter results on partioned data.
+    # check bbox is being used to filter results on partitioned data.
     df = read_file(naturalearth_lowres)
     if geometry_name != "geometry":
         df = df.rename_geometry(geometry_name)
