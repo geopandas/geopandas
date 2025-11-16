@@ -578,7 +578,7 @@ def _get_filesystem_path(path, filesystem=None, storage_options=None):
 
     if _is_fsspec_url(path) and filesystem is None:
         fsspec = import_optional_dependency(
-            "fsspec", extra="fsspec is requred for 'storage_options'."
+            "fsspec", extra="fsspec is required for 'storage_options'."
         )
         filesystem, path = fsspec.core.url_to_fs(path, **(storage_options or {}))
 

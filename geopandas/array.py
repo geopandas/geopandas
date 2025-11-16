@@ -1648,7 +1648,7 @@ class GeometryArray(ExtensionArray):
             # process those. The missing values are handled separately by
             # pandas regardless of the values we return here (to sort
             # first/last depending on 'na_position'), the distances for the
-            # empty geometries are substitued below with an appropriate value
+            # empty geometries are replaced below with an appropriate value
             geoms = self.copy()
             indices = np.nonzero(~mask)[0]
             if indices.size:
