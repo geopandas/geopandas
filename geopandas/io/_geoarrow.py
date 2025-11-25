@@ -88,6 +88,7 @@ def geopandas_to_arrow(
     geometry_encoding="WKB",
     interleaved=True,
     include_z=None,
+    schema=None,
 ):
     """
     Convert GeoDataFrame to a pyarrow.Table.
@@ -118,6 +119,13 @@ def geopandas_to_arrow(
         input geometries. Note that this inference can be unreliable with
         empty geometries (for a guaranteed result, it is recommended to
         specify the keyword).
+    schema : pyarrow.Schema, default None
+        The expected schema of the Arrow Table. This can be used to indicate the
+        type of columns if we cannot infer it automatically. If passed, the
+        output will have exactly this schema. Columns specified in the schema
+        that are not found in the DataFrame columns or its index will raise an
+        error. Additional columns or index levels in the DataFrame which are not
+        specified in the schema will be ignored.
 
     """
     mask = df.dtypes == "geometry"
@@ -132,7 +140,7 @@ def geopandas_to_arrow(
     for col in geometry_columns:
         df_attr[col] = None
 
-    table = pa.Table.from_pandas(df_attr, preserve_index=index)
+    table = pa.Table.from_pandas(df_attr, preserve_index=index, schema=schema)
 
     geometry_encoding_dict = {}
 

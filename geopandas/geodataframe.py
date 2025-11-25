@@ -33,6 +33,7 @@ if typing.TYPE_CHECKING:
     from collections.abc import Iterable
 
     import folium
+    import pyarrow as pa
     import sqlalchemy.text
 
     from pyproj import CRS
@@ -1396,6 +1397,8 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
         geometry_encoding: PARQUET_GEOMETRY_ENCODINGS = "WKB",
         write_covering_bbox: bool = False,
         schema_version: SUPPORTED_VERSIONS_LITERAL | None = None,
+        schema: pa.Schema | None = None,
+        additional_metadata: dict = {},
         **kwargs,
     ) -> None:
         """Write a GeoDataFrame to the Parquet format.
@@ -1438,6 +1441,19 @@ default 'snappy'
         schema_version : {'0.1.0', '0.4.0', '1.0.0', '1.1.0', None}
             GeoParquet specification version; if not provided, will default to
             latest supported stable version (1.0.0).
+        schema : pyarrow.Schema, default None
+            The expected schema of the Parquet file. This can be used to
+            indicate the type of columns if we cannot infer it automatically.
+            If passed, the output will have exactly this schema.
+            Columns specified in the schema that are not found in the DataFrame
+            columns or its index will raise an error. Additional columns or
+            index levels in the DataFrame which are not specified in the schema
+            will be ignored.
+        additional_metadata : dict, default {}
+            Adds additional metadata to the Parquet file metadata.
+            Each value gets JSON-encoded.
+            May override metadata that is provided through the 'schema' parameter,
+            but never the 'geo' metadata.
         kwargs
             Additional keyword arguments passed to :func:`pyarrow.parquet.write_table`.
 
@@ -1470,6 +1486,8 @@ default 'snappy'
             index=index,
             schema_version=schema_version,
             write_covering_bbox=write_covering_bbox,
+            schema=schema,
+            additional_metadata=additional_metadata,
             **kwargs,
         )
 

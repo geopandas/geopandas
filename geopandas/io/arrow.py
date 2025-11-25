@@ -334,6 +334,8 @@ def _geopandas_to_arrow(
     geometry_encoding="WKB",
     schema_version=None,
     write_covering_bbox=None,
+    schema=None,
+    additional_metadata={},
 ):
     """Convert a GeoDataFrame to a pyarrow Table.
 
@@ -352,7 +354,11 @@ def _geopandas_to_arrow(
             )
 
     table, geometry_encoding_dict = geopandas_to_arrow(
-        df, geometry_encoding=geometry_encoding, index=index, interleaved=False
+        df,
+        geometry_encoding=geometry_encoding,
+        index=index,
+        interleaved=False,
+        schema=schema,
     )
     geo_metadata = _create_metadata(
         df,
@@ -377,6 +383,8 @@ def _geopandas_to_arrow(
     # Store geopandas specific file-level metadata
     # This must be done AFTER creating the table or it is not persisted
     metadata = table.schema.metadata
+    for key, value in additional_metadata.items():
+        metadata[key.encode()] = _encode_metadata(value)
     metadata.update({b"geo": _encode_metadata(geo_metadata)})
 
     # Store attributes in metadata if exists
@@ -395,6 +403,8 @@ def _to_parquet(
     geometry_encoding="WKB",
     schema_version=None,
     write_covering_bbox=False,
+    schema=None,
+    additional_metadata={},
     **kwargs,
 ):
     """
@@ -432,6 +442,19 @@ def _to_parquet(
         Writes the bounding box column for each row entry with column
         name 'bbox'. Writing a bbox column can be computationally
         expensive, hence is default setting is False.
+    schema : pyarrow.Schema, default None
+        The expected schema of the Parquet file. This can be used to
+        indicate the type of columns if we cannot infer it automatically.
+        If passed, the output will have exactly this schema.
+        Columns specified in the schema that are not found in the DataFrame
+        columns or its index will raise an error. Additional columns or
+        index levels in the DataFrame which are not specified in the schema
+        will be ignored.
+    additional_metadata : dict, default {}
+        Adds additional metadata to the Parquet file metadata.
+        Each value gets JSON-encoded.
+        May override metadata that is provided through the 'schema' parameter,
+        but 'geo' metadata is never overwritten.
     **kwargs
         Additional keyword arguments passed to pyarrow.parquet.write_table().
     """
@@ -446,6 +469,8 @@ def _to_parquet(
         geometry_encoding=geometry_encoding,
         schema_version=schema_version,
         write_covering_bbox=write_covering_bbox,
+        schema=schema,
+        additional_metadata=additional_metadata,
     )
     parquet.write_table(table, path, compression=compression, **kwargs)
 
