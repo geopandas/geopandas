@@ -18,7 +18,7 @@ from shapely.geometry import Point, Polygon, box, mapping
 
 import geopandas
 from geopandas import GeoDataFrame, GeoSeries, points_from_xy, read_file
-from geopandas._compat import HAS_PYPROJ, PANDAS_GE_30
+from geopandas._compat import HAS_PYPROJ, PANDAS_GE_30, PANDAS_INFER_STR
 from geopandas.io.file import _EXTENSION_TO_DRIVER, _detect_driver
 
 import pytest
@@ -274,7 +274,7 @@ def test_read_file_datetime_invalid(tmpdir, ext, engine):
         assert is_datetime64_any_dtype(res["date"])
         assert pd.isna(res["date"].iloc[-1])
     else:
-        assert res["date"].dtype == "str" if PANDAS_GE_30 else object
+        assert res["date"].dtype == "str" if PANDAS_INFER_STR else object
         assert isinstance(res["date"].iloc[-1], str)
 
 
