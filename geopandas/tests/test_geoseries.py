@@ -628,7 +628,7 @@ class TestConstructor:
             np.array([], dtype="float64"),
         ]
 
-        if compat.PANDAS_GE_30 and pd.options.future.infer_string:
+        if compat.PANDAS_INFER_STR:
             # in pandas >=3 future string, str is not converted to object
             # so is non geom compatible
             non_geom_compat_dtypes.append(np.array([], dtype="str"))

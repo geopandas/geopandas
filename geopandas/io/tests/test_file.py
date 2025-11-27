@@ -18,7 +18,7 @@ from shapely.geometry import Point, Polygon, box, mapping
 
 import geopandas
 from geopandas import GeoDataFrame, GeoSeries, points_from_xy, read_file
-from geopandas._compat import HAS_PYPROJ, PANDAS_GE_30
+from geopandas._compat import HAS_PYPROJ, PANDAS_GE_30, PANDAS_INFER_STR
 from geopandas.io.file import _EXTENSION_TO_DRIVER, _detect_driver
 
 import pytest
@@ -34,9 +34,13 @@ try:
     PYOGRIO_GE_090 = Version(Version(pyogrio.__version__).base_version) >= Version(
         "0.9.0"
     )
+    PYOGRIO_GE_012 = Version(Version(pyogrio.__version__).base_version) >= Version(
+        "0.12.0"
+    )
 except ImportError:
     pyogrio = False
     PYOGRIO_GE_090 = False
+    PYOGRIO_GE_012 = False
 
 
 try:
@@ -274,7 +278,7 @@ def test_read_file_datetime_invalid(tmpdir, ext, engine):
         assert is_datetime64_any_dtype(res["date"])
         assert pd.isna(res["date"].iloc[-1])
     else:
-        assert res["date"].dtype == "str" if PANDAS_GE_30 else object
+        assert res["date"].dtype == "str" if PANDAS_INFER_STR else object
         assert isinstance(res["date"].iloc[-1], str)
 
 
@@ -283,13 +287,19 @@ def test_read_file_datetime_out_of_bounds_ns(tmpdir, ext, engine):
     # https://github.com/geopandas/geopandas/issues/2502
     date_str = "9999-12-31T00:00:00"  # valid to GDAL, not to [ns] format
     tempfilename = write_invalid_date_file(date_str, tmpdir, ext, engine)
-    res = read_file(tempfilename, engine=engine)
+    if engine == "pyogrio" and PYOGRIO_GE_012 and not PANDAS_GE_30:
+        with pytest.warns(
+            UserWarning, match="Error parsing datetimes, original strings are returned"
+        ):
+            res = read_file(tempfilename, engine=engine)
+    else:
+        res = read_file(tempfilename, engine=engine)
     if PANDAS_GE_30:
         assert res["date"].dtype == "datetime64[ms]"
         assert res["date"].iloc[-1] == pd.Timestamp("9999-12-31 00:00:00")
     else:
         # Pandas invalid datetimes are read in as object dtype (strings)
-        assert res["date"].dtype == "object"
+        assert res["date"].dtype == "str" if PANDAS_INFER_STR else "object"
         assert isinstance(res["date"].iloc[0], str)
 
 
