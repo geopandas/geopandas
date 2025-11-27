@@ -1423,7 +1423,7 @@ class GeometryArray(ExtensionArray):
         ----------
         value : shapely geometry object or GeometryArray
             If a geometry value is passed it is used to fill all missing values.
-            Alternatively, an GeometryArray 'value' can be given. It's expected
+            Alternatively, a GeometryArray 'value' can be given. It's expected
             that the GeometryArray has the same length as 'self'.
 
         method : {'backfill', 'bfill', 'pad', 'ffill', None}, default None
@@ -1720,7 +1720,7 @@ class GeometryArray(ExtensionArray):
             # process those. The missing values are handled separately by
             # pandas regardless of the values we return here (to sort
             # first/last depending on 'na_position'), the distances for the
-            # empty geometries are substitued below with an appropriate value
+            # empty geometries are replaced below with an appropriate value
             geoms = self.copy()
             indices = np.nonzero(~mask)[0]
             if indices.size:

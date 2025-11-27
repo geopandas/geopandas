@@ -1170,7 +1170,7 @@ def test_read_parquet_bbox(tmpdir, naturalearth_lowres, geometry_name):
 
 @pytest.mark.parametrize("geometry_name", ["geometry", "custum_geom_col"])
 def test_read_parquet_bbox_partitioned(tmpdir, naturalearth_lowres, geometry_name):
-    # check bbox is being used to filter results on partioned data.
+    # check bbox is being used to filter results on partitioned data.
     df = read_file(naturalearth_lowres)
     if geometry_name != "geometry":
         df = df.rename_geometry(geometry_name)
@@ -1376,12 +1376,15 @@ def test_read_parquet_bbox_points(tmp_path):
 def test_non_geo_parquet_read_with_proper_error(tmp_path):
     # https://github.com/geopandas/geopandas/issues/3556
 
-    gdf = geopandas.GeoDataFrame(
+    gdf = GeoDataFrame(
         {"col": [1, 2, 3]},
         geometry=geopandas.points_from_xy([1, 2, 3], [1, 2, 3]),
         crs="EPSG:4326",
     )
     del gdf["geometry"]
+    # for the purposes of testing, force a situation where gdf will be written without
+    # a geometry column (but with the other metadata)
+    gdf.__class__ = GeoDataFrame
 
     gdf.to_parquet(tmp_path / "test_no_geometry.parquet")
     with pytest.raises(

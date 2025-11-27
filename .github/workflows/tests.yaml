@@ -61,7 +61,7 @@ jobs:
             pandas_future_infer_string: "1"
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: Install Conda environment with Micromamba
         uses: mamba-org/setup-micromamba@v2
