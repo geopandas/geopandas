@@ -707,7 +707,9 @@ def _read_parquet(
 
     Parameters
     ----------
-    path : str, path object
+    path : str, path object or file-like object
+        String, path object (implementing os.PathLike[str]) or file-like object
+        implementing a binary read() function.
     columns : list-like of strings, default=None
         If not None, only these columns will be read from the file.  If
         the primary geometry column is not included, the first secondary
