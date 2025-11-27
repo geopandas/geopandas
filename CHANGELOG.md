@@ -4,7 +4,7 @@
 
 New features and improvements:
 
-- `GeoDataFrame.to_parquet` and `read_parquet` will now write and read ``attrs`` 
+- `GeoDataFrame.to_parquet` and `read_parquet` will now write and read ``attrs``
   respectively (#3597)
 
 Deprecations and compatibility notes:
@@ -24,6 +24,10 @@ Bug fixes:
   column (#3648).
 - Calling `del gdf["geometry"]` now will downcast to a `pd.DataFrame` if there are no geometry columns left
   in the dataframe (#3648).
+
+Community:
+
+- GeoPandas now uses the NumFOCUS Code of Conduct.
 
 ## Version 1.1.1 (June 27, 2025)
 
