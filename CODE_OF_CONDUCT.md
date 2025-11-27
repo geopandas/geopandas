@@ -2,7 +2,7 @@
 
 You can find the whole document here [https://numfocus.org/code-of-conduct](https://numfocus.org/code-of-conduct).
 
-## The short vertion
+## The short version
 
 NumFOCUS is dedicated to providing a harassment-free community for everyone, regardless of gender, sexual orientation, gender identity and expression, disability, physical appearance, body size, race, or religion. We do not tolerate harassment of community members in any form.
 

@@ -27,7 +27,7 @@ Bug fixes:
 
 Community:
 
-- GeoPandas now uses NumFOCUS Code of Conduct.
+- GeoPandas now uses the NumFOCUS Code of Conduct.
 
 ## Version 1.1.1 (June 27, 2025)
 
