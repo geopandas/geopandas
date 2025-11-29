@@ -241,7 +241,7 @@ class GeoSeries(GeoPandasBase, Series):
                 stacklevel=2,
                 category=DeprecationWarning,
             )
-        self.geometry.values.crs = value
+        self.geometry._values.crs = value
 
     @property
     def geometry(self) -> GeoSeries:
@@ -1168,7 +1168,7 @@ class GeoSeries(GeoPandasBase, Series):
             result = self.copy()
         else:
             result = self
-        result.array.crs = crs
+        result._values.crs = crs
         return result
 
     def to_crs(self, crs: Any | None = None, epsg: int | None = None) -> GeoSeries:

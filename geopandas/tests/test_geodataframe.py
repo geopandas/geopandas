@@ -491,7 +491,7 @@ class TestDataFrame:
         assert coord == [970217.0223999023, 145643.33221435547]
 
     def test_to_json_no_crs(self):
-        self.df.geometry.array.crs = None
+        self.df.geometry._values.crs = None
         with pytest.raises(ValueError, match="CRS is not set"):
             self.df.to_json(to_wgs84=True)
 
