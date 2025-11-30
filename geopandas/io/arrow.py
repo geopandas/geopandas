@@ -755,6 +755,34 @@ def _read_parquet(
     ...     "data.parquet",
     ...     columns=["geometry", "pop_est"]
     ... )  # doctest: +SKIP
+
+    From bytes:
+
+    >>> from shapely.geometry import Point
+    >>> d = {'col1': ['name1', 'name2'], 'geometry': [Point(1, 2), Point(2, 1)]}
+    >>> original_gdf = gpd.GeoDataFrame(d, crs="4326")
+    >>> original_gdf
+        col1     geometry
+    0  name1  POINT (1 2)
+    1  name2  POINT (2 1)
+    >>> from io import BytesIO
+    >>> buf = BytesIO()
+    >>> original_gdf.to_parquet(buf)
+    >>> buf.seek(0)
+    >>> restored_gdf = gpd.read_parquet(BytesIO(buf.getvalue()))
+    >>> restored_df
+        col1     geometry
+    0  name1  POINT (1 2)
+    1  name2  POINT (2 1)
+    >>> restored_df.equals(original_gdf)
+    True
+    >>> restored_geom = gpd.read_parquet(BytesIO(buf.getvalue()), columns=["geometry"])
+    >>> restored_geom
+        geometry
+    0  POINT (1 2)
+    1  POINT (2 1)
+    >>> restored_geom.equals(original_gdf[['geometry']])
+    True #doctest +SKIP
     """
     parquet = import_optional_dependency(
         "pyarrow.parquet", extra="pyarrow is required for Parquet support."
