@@ -412,7 +412,9 @@ def _to_parquet(
 
     Parameters
     ----------
-    path : str, path object
+    path : str, path object or file-like object
+        String, path object (implementing os.PathLike[str]) or file-like object
+        implementing a binary read() function.
     index : bool, default None
         If ``True``, always include the dataframe's index(es) as columns
         in the file output.
@@ -466,7 +468,9 @@ def _to_feather(df, path, index=None, compression=None, schema_version=None, **k
 
     Parameters
     ----------
-    path : str, path object
+    path : str, path object or file-like object
+        String, path object (implementing os.PathLike[str]) or file-like object
+        implementing a binary read() function.
     index : bool, default None
         If ``True``, always include the dataframe's index(es) as columns
         in the file output.
