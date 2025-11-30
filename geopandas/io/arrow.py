@@ -412,7 +412,9 @@ def _to_parquet(
 
     Parameters
     ----------
-    path : str, path object
+    path : str, path object or file-like object
+        String, path object (implementing os.PathLike[str]) or file-like object
+        implementing a binary read() function.
     index : bool, default None
         If ``True``, always include the dataframe's index(es) as columns
         in the file output.
@@ -466,7 +468,9 @@ def _to_feather(df, path, index=None, compression=None, schema_version=None, **k
 
     Parameters
     ----------
-    path : str, path object
+    path : str, path object or file-like object
+        String, path object (implementing os.PathLike[str]) or file-like object
+        implementing a binary read() function.
     index : bool, default None
         If ``True``, always include the dataframe's index(es) as columns
         in the file output.
@@ -707,7 +711,9 @@ def _read_parquet(
 
     Parameters
     ----------
-    path : str, path object
+    path : str, path object or file-like object
+        String, path object (implementing os.PathLike[str]) or file-like object
+        implementing a binary read() function.
     columns : list-like of strings, default=None
         If not None, only these columns will be read from the file.  If
         the primary geometry column is not included, the first secondary
@@ -753,6 +759,35 @@ def _read_parquet(
     ...     "data.parquet",
     ...     columns=["geometry", "pop_est"]
     ... )  # doctest: +SKIP
+
+    From bytes:
+
+    >>> from shapely.geometry import Point # doctest: +SKIP
+    >>> d = {'col1': ['name1', 'name2'], 'geometry': [Point(1, 2), Point(2, 1)]}
+    >>> original_gdf = gpd.GeoDataFrame(d, crs="4326") # doctest: +SKIP
+    >>> original_gdf # doctest: +SKIP
+        col1     geometry
+    0  name1  POINT (1 2)
+    1  name2  POINT (2 1)
+    >>> from io import BytesIO # doctest: +SKIP
+    >>> buf = BytesIO() # doctest: +SKIP
+    >>> original_gdf.to_parquet(buf) # doctest: +SKIP
+    >>> buf.seek(0) # doctest: +SKIP
+    >>> restored_gdf = gpd.read_parquet(BytesIO(buf.getvalue())) # doctest: +SKIP
+    >>> restored_df # doctest: +SKIP
+        col1     geometry
+    0  name1  POINT (1 2)
+    1  name2  POINT (2 1)
+    >>> restored_df.equals(original_gdf) # doctest: +SKIP
+    True
+    >>> bts = BytesIO(buf.getvalue())
+    >>> restored_geom = gpd.read_parquet(bts, columns=["geometry"]) # doctest: +SKIP
+    >>> restored_geom # doctest: +SKIP
+        geometry
+    0  POINT (1 2)
+    1  POINT (2 1)
+    >>> restored_geom.equals(original_gdf[['geometry']]) # doctest: +SKIP
+    True
     """
     parquet = import_optional_dependency(
         "pyarrow.parquet", extra="pyarrow is required for Parquet support."
@@ -834,7 +869,9 @@ def _read_feather(path, columns=None, to_pandas_kwargs=None, **kwargs):
 
     Parameters
     ----------
-    path : str, path object
+    path : str, path object or file-like object
+        String, path object (implementing os.PathLike[str]) or file-like object
+        implementing a binary read() function.
     columns : list-like of strings, default=None
         If not None, only these columns will be read from the file.  If
         the primary geometry column is not included, the first secondary
@@ -864,6 +901,9 @@ def _read_feather(path, columns=None, to_pandas_kwargs=None, **kwargs):
     ...     "data.feather",
     ...     columns=["geometry", "pop_est"]
     ... )  # doctest: +SKIP
+
+    See the `read_parquet` docs for examples of reading and writing
+    to/from bytes objects.
     """
     feather = import_optional_dependency(
         "pyarrow.feather", extra="pyarrow is required for Feather support."
