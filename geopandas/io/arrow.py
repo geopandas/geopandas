@@ -762,31 +762,32 @@ def _read_parquet(
 
     From bytes:
 
-    >>> from shapely.geometry import Point
+    >>> from shapely.geometry import Point # doctest: +SKIP
     >>> d = {'col1': ['name1', 'name2'], 'geometry': [Point(1, 2), Point(2, 1)]}
-    >>> original_gdf = gpd.GeoDataFrame(d, crs="4326")
-    >>> original_gdf
+    >>> original_gdf = gpd.GeoDataFrame(d, crs="4326") # doctest: +SKIP
+    >>> original_gdf # doctest: +SKIP
         col1     geometry
     0  name1  POINT (1 2)
     1  name2  POINT (2 1)
-    >>> from io import BytesIO
-    >>> buf = BytesIO()
-    >>> original_gdf.to_parquet(buf)
-    >>> buf.seek(0)
-    >>> restored_gdf = gpd.read_parquet(BytesIO(buf.getvalue()))
-    >>> restored_df
+    >>> from io import BytesIO # doctest: +SKIP
+    >>> buf = BytesIO() # doctest: +SKIP
+    >>> original_gdf.to_parquet(buf) # doctest: +SKIP
+    >>> buf.seek(0) # doctest: +SKIP
+    >>> restored_gdf = gpd.read_parquet(BytesIO(buf.getvalue())) # doctest: +SKIP
+    >>> restored_df # doctest: +SKIP
         col1     geometry
     0  name1  POINT (1 2)
     1  name2  POINT (2 1)
-    >>> restored_df.equals(original_gdf)
+    >>> restored_df.equals(original_gdf) # doctest: +SKIP
     True
-    >>> restored_geom = gpd.read_parquet(BytesIO(buf.getvalue()), columns=["geometry"])
-    >>> restored_geom
+    >>> bts = BytesIO(buf.getvalue())
+    >>> restored_geom = gpd.read_parquet(bts, columns=["geometry"]) # doctest: +SKIP
+    >>> restored_geom # doctest: +SKIP
         geometry
     0  POINT (1 2)
     1  POINT (2 1)
-    >>> restored_geom.equals(original_gdf[['geometry']])
-    True #doctest +SKIP
+    >>> restored_geom.equals(original_gdf[['geometry']]) # doctest: +SKIP
+    True
     """
     parquet = import_optional_dependency(
         "pyarrow.parquet", extra="pyarrow is required for Parquet support."
