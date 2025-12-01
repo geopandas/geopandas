@@ -763,7 +763,10 @@ def _read_parquet(
     From bytes:
 
     >>> from shapely.geometry import Point # doctest: +SKIP
-    >>> d = {'col1': ['name1', 'name2'], 'geometry': [Point(1, 2), Point(2, 1)]}
+    >>> d = {
+    ...     "col1": ["name1", "name2"],
+    ...     "geometry": [Point(1, 2), Point(2, 1)]
+    ... } # doctest: +SKIP
     >>> original_gdf = gpd.GeoDataFrame(d, crs="4326") # doctest: +SKIP
     >>> original_gdf # doctest: +SKIP
         col1     geometry
@@ -773,15 +776,15 @@ def _read_parquet(
     >>> buf = BytesIO() # doctest: +SKIP
     >>> original_gdf.to_parquet(buf) # doctest: +SKIP
     >>> buf.seek(0) # doctest: +SKIP
-    >>> restored_gdf = gpd.read_parquet(BytesIO(buf.getvalue())) # doctest: +SKIP
+    >>> byts = BytesIO(buf.getvalue()) # doctest: +SKIP
+    >>> restored_gdf = gpd.read_parquet(byts) # doctest: +SKIP
     >>> restored_df # doctest: +SKIP
         col1     geometry
     0  name1  POINT (1 2)
     1  name2  POINT (2 1)
     >>> restored_df.equals(original_gdf) # doctest: +SKIP
     True
-    >>> bts = BytesIO(buf.getvalue())
-    >>> restored_geom = gpd.read_parquet(bts, columns=["geometry"]) # doctest: +SKIP
+    >>> restored_geom = gpd.read_parquet(byts, columns=["geometry"]) # doctest: +SKIP
     >>> restored_geom # doctest: +SKIP
         geometry
     0  POINT (1 2)
