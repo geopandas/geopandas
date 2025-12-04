@@ -37,10 +37,14 @@ try:
     PYOGRIO_GE_012 = Version(Version(pyogrio.__version__).base_version) >= Version(
         "0.12.0"
     )
+    PYOGRIO_GE_0121 = Version(Version(pyogrio.__version__).base_version) >= Version(
+        "0.12.1"
+    )
 except ImportError:
     pyogrio = False
     PYOGRIO_GE_090 = False
     PYOGRIO_GE_012 = False
+    PYOGRIO_GE_0121 = False
 
 
 try:
@@ -1006,7 +1010,13 @@ def test_read_file__columns(engine, naturalearth_lowres):
     gdf = geopandas.read_file(
         naturalearth_lowres, columns=["name", "pop_est"], engine=engine
     )
-    assert gdf.columns.tolist() == ["name", "pop_est", "geometry"]
+
+    expected = (
+        ["pop_est", "name", "geometry"]
+        if engine == "pyogrio" and PYOGRIO_GE_0121
+        else ["name", "pop_est", "geometry"]
+    )
+    assert gdf.columns.tolist() == expected
 
 
 def test_read_file__columns_empty(engine, naturalearth_lowres):
@@ -1035,7 +1045,13 @@ def test_read_file__include_fields(engine, naturalearth_lowres):
     gdf = geopandas.read_file(
         naturalearth_lowres, include_fields=["name", "pop_est"], engine=engine
     )
-    assert gdf.columns.tolist() == ["name", "pop_est", "geometry"]
+
+    expected = (
+        ["pop_est", "name", "geometry"]
+        if engine == "pyogrio" and PYOGRIO_GE_0121
+        else ["name", "pop_est", "geometry"]
+    )
+    assert gdf.columns.tolist() == expected
 
 
 @pytest.mark.skipif(not FIONA_GE_19, reason="columns requires fiona 1.9+")
