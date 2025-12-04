@@ -68,15 +68,15 @@ jobs:
         with:
           environment-file: ${{ matrix.env }}
 
+      - name: Install package
+        run: pip install -e .
+
       - name: Check and Log Environment
         run: |
           python -V
           python -c "import geopandas; geopandas.show_versions();"
           micromamba info
           micromamba list
-
-      - name: Install package
-        run: pip install -e .
 
       - name: Test
         env:
