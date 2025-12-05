@@ -24,6 +24,3 @@ dependencies:
   - libspatialite
   - pyarrow=15.0
   - geodatasets
-  - pip
-  - pip:
-    -
