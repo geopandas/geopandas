@@ -613,7 +613,7 @@ class GeoSeries(GeoPandasBase, Series):
     @classmethod
     def from_arrow(cls, arr, **kwargs) -> GeoSeries:
         """
-        Construct a GeoSeries from a Arrow array object with a GeoArrow
+        Construct a GeoSeries from an Arrow array object with a GeoArrow
         extension type.
 
         See https://geoarrow.org/ for details on the GeoArrow specification.

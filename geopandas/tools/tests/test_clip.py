@@ -16,7 +16,7 @@ from shapely.geometry import (
 
 import geopandas
 from geopandas import GeoDataFrame, GeoSeries, clip
-from geopandas._compat import HAS_PYPROJ, PANDAS_GE_30
+from geopandas._compat import HAS_PYPROJ, PANDAS_INFER_STR
 from geopandas.array import POLYGON_GEOM_TYPES
 from geopandas.tools.clip import _mask_is_list_like_rectangle
 
@@ -464,7 +464,7 @@ def test_clip_empty_mask(buffered_locations, mask):
     """Test that clipping with empty mask returns an empty result."""
     clipped = clip(buffered_locations, mask)
     expected = GeoDataFrame([], columns=["geometry", "type"], crs="EPSG:3857")
-    if PANDAS_GE_30:
+    if PANDAS_INFER_STR:
         expected = expected.astype({"type": "str"})
     assert_geodataframe_equal(
         clipped,

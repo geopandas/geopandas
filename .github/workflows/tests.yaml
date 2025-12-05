@@ -60,12 +60,15 @@ jobs:
             pandas_future_infer_string: "1"
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: Install Conda environment with Micromamba
         uses: mamba-org/setup-micromamba@v2
         with:
           environment-file: ${{ matrix.env }}
+
+      - name: Install package
+        run: pip install -e .
 
       - name: Check and Log Environment
         run: |
@@ -73,9 +76,6 @@ jobs:
           python -c "import geopandas; geopandas.show_versions();"
           micromamba info
           micromamba list
-
-      - name: Install package
-        run: pip install -e .
 
       - name: Test
         env:
