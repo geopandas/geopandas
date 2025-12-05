@@ -44,7 +44,7 @@ def test_get_deps_info():
 
 def test_show_versions(capsys):
     show_versions()
-    out, err = capsys.readouterr()
+    out, _err = capsys.readouterr()
 
     assert "python" in out
     assert "GEOS" in out

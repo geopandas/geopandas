@@ -1,9 +1,35 @@
 # Changelog
 
-## Development Version
+## Version 1.2.0
 
-- Expired deprecations; option `use_pygeos` which had no functionality, 
-  `seed` keyword in sample_points (replaced by `rng`)
+New features and improvements:
+
+- `GeoDataFrame.to_parquet` and `read_parquet` will now write and read ``attrs``
+  respectively (#3597)
+
+Deprecations and compatibility notes:
+
+- The `resolution` keyword to `buffer` has been deprecated to align with the convention in shapely,
+  `quad_segs` should be used instead (#3600).
+- Expired deprecations; option `use_pygeos` which had no functionality,
+  `seed` keyword in sample_points (replaced by `rng`) (#3613)
+
+Bug fixes:
+
+- Fix an issue that caused an error in `GeoDataFrame.from_features` when there is no `properties` field (#3599).
+- Fix `read_file` and `to_file` errors (#3682)
+- Fix `read_parquet` with `to_pandas_kwargs` for complex (list/struct) arrow types (#3640)
+- `value_counts` on GeoSeries now preserves CRS in index (#3669)
+- Fix f-string placeholders appearing in error messages when `pyogrio` cannot be imported (#3682).
+- Fix `read_parquet` with `to_pandas_kwargs` for complex (list/struct) arrow types (#3640).
+- `.to_json` now provides a clearer error message when called on a GeoDataFrame without an active geometry
+  column (#3648).
+- Calling `del gdf["geometry"]` now will downcast to a `pd.DataFrame` if there are no geometry columns left
+  in the dataframe (#3648).
+
+Community:
+
+- GeoPandas now uses the NumFOCUS Code of Conduct.
 
 ## Version 1.1.1 (June 27, 2025)
 
@@ -53,12 +79,12 @@ New features and improvements:
   extension mechanism (#3272).
 - Improve performance of `overlay` with `how=identity` (#3504).
 - A warning message is raised in `read_file` when a GeoDataFrame or GeoSeries mask
-  and/or the source dataset is missing a defined CRS. (#3464)
+  and/or the source dataset is missing a defined CRS (#3464).
 - GeoDataFrame no longer hard-codes the class internally, allowing easier subclassing (#3505).
 
 Bug fixes:
 
-- Fix an issue that showed numpy dtypes in bbox in `to_geo_dict` and `__geo_interface__`. (#3436)
+- Fix an issue that showed numpy dtypes in bbox in `to_geo_dict` and `__geo_interface__`. (#3436).
 - Fix an issue in `sample_points` that could occasionally result in non-uniform distribution (#3470).
 - Fix unspecified layer warning being emitted while reading multilayer datasets, even
   when layer is specified when using the mask or bbox keywords (#3378).
@@ -90,7 +116,7 @@ Deprecations and compatibility notes:
 Bug fixes:
 
 - Support a named datetime or object dtype index in `explore()` (#3360, #3364).
-- Fix a regression preventing a Series as an argument for geometric methods (#3363)
+- Fix a regression preventing a Series as an argument for geometric methods (#3363).
 
 ## Version 1.0.0 (June 24, 2024)
 
@@ -105,7 +131,7 @@ Notes on dependencies:
 New methods:
 
 - Added `count_geometries` method from shapely to GeoSeries/GeoDataFrame (#3154).
-- Added `count_interior_rings` method from shapely to GeoSeries/GeoDataFrame (#3154)
+- Added `count_interior_rings` method from shapely to GeoSeries/GeoDataFrame (#3154).
 - Added `relate_pattern` method from shapely to GeoSeries/GeoDataFrame (#3211).
 - Added `intersection_all` method from shapely to GeoSeries/GeoDataFrame (#3228).
 - Added `line_merge` method from shapely to GeoSeries/GeoDataFrame (#3214).
@@ -156,7 +182,7 @@ New features and improvements:
 - The `GeoSeries.fillna` method now supports the `limit` keyword (#3290).
 - Added ``on_attribute`` option argument to the ``sjoin()``
   method, allowing to restrict joins to the observations with
-  matching attributes. (#3231)
+  matching attributes (#3231).
 - Added support for `bbox` covering encoding in geoparquet. Can filter reading of parquet
 files based on a bounding box, and write out a bounding box column to parquet files (#3282).
 - `align` keyword in binary methods now defaults to `None`, treated as True. Explicit True
@@ -164,14 +190,15 @@ files based on a bounding box, and write out a bounding box column to parquet fi
 - `GeoSeries.set_crs` can now be used to remove CRS information by passing
   `crs=None, allow_override=True` (#3316).
 - Added ``autolim`` keyword argument to ``GeoSeries.plot()`` and ``GeoDataFrame.plot()`` (#2817).
-- Added `metadata` parameter to `GeoDataFrame.to_file` (#2850)
+- Added `metadata` parameter to `GeoDataFrame.to_file` (#2850).
 - Updated documentation to clarify that passing a named (Geo)Series as the `geometry`
   argument to the GeoDataFrame constructor will not use the name but will always
   produce a GeoDataFrame with an active geometry column named "geometry" (#3337).
 - `read_postgis` will query the spatial_ref_sys table to determine the CRS authority
   instead of its current behaviour of assuming EPSG. In the event the spiatal_ref_sys
   table is not present, or the SRID is not present, `read_postgis` will fallback
-  on assuming EPSG CRS authority. (#3329)
+  on assuming EPSG CRS authority (#3329).
+- Added ``GeoDataFrame.active_geometry_name`` property returning the active geometry column's name or None if no active geometry column is set (#2943).
 
 Backwards incompatible API changes:
 
@@ -256,7 +283,7 @@ Bug fixes:
   `GeoSeries` the name was not used as the active geometry column name (#3237).
 - Fix bug in `GeoSeries` constructor when passing a Series and specifying a `crs` to not change the original input data (#2492).
 - Fix regression preventing reading from file paths containing hashes in `read_file`
-  with the fiona engine (#3280). An analgous fix for pyogrio is included in
+  with the fiona engine (#3280). An analogous fix for pyogrio is included in
   pyogrio 0.8.1.
 - Fix `to_parquet` to write correct metadata in case of 3D geometries (#2824).
 - Fixes for compatibility with psycopg (#3167).
@@ -314,7 +341,6 @@ New methods:
 New features and improvements:
 
 - Added ``exclusive`` parameter to ``sjoin_nearest`` method for Shapely >= 2.0 (#2877)
-- Added ``GeoDataFrame.active_geometry_name`` property returning the active geometry column's name or None if no active geometry column is set.
 - The ``to_file()`` method will now automatically detect the FlatGeoBuf driver
   for files with the `.fgb` extension (#2958)
 
@@ -614,7 +640,7 @@ Small bug-fix release:
   overlay of two geometries in a GeometryCollection with other geometry types
   (#2177).
 - Fix ``overlay()`` to honor the ``keep_geom_type`` keyword for the
-  ``op="differnce"`` case (#2164).
+  ``op="difference"`` case (#2164).
 - Fix regression in ``plot()`` with a mapclassify ``scheme`` in case the
   formatted legend labels have duplicates (#2166).
 - Fix a bug in the ``explore()`` method ignoring the ``vmin`` and ``vmax`` keywords
@@ -1060,7 +1086,7 @@ Bug fixes:
 - Fixed ``GeoDataFrame.to_file`` to preserve VFS file paths (e.g. when a "s3://" path is specified) (#1124).
 - Fixed failing case in ``geopandas.sjoin`` with empty geometries (#1138).
 
-In addition, the minimum required versions of some dependencies have been increased: GeoPandas now requirs pandas >=0.23.4 and matplotlib >=2.0.1 (#1002).
+In addition, the minimum required versions of some dependencies have been increased: GeoPandas now requires pandas >=0.23.4 and matplotlib >=2.0.1 (#1002).
 
 Version 0.5.1 (July 11, 2019)
 -----------------------------

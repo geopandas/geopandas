@@ -163,14 +163,14 @@ class TestSpatialJoin:
     @pytest.mark.skipif(not compat.HAS_PYPROJ, reason="pyproj not available")
     @pytest.mark.parametrize("dfs", ["default-index", "string-index"], indirect=True)
     def test_crs_mismatch(self, dfs):
-        index, df1, df2, expected = dfs
+        _index, df1, df2, _expected = dfs
         df1.crs = "epsg:4326"
         with pytest.warns(UserWarning, match="CRS mismatch between the CRS"):
             sjoin(df1, df2)
 
     @pytest.mark.parametrize("dfs", ["default-index"], indirect=True)
     def test_unknown_kwargs(self, dfs):
-        _, df1, df2, _ = dfs
+        _index, df1, df2, _expected = dfs
         with pytest.raises(
             TypeError,
             match=r"sjoin\(\) got an unexpected keyword argument 'extra_param'",
@@ -321,7 +321,7 @@ class TestSpatialJoin:
 
     @pytest.mark.parametrize("dfs", ["default-index", "string-index"], indirect=True)
     def test_sjoin_invalid_args(self, dfs):
-        index, df1, df2, expected = dfs
+        _, df1, df2, _ = dfs
 
         with pytest.raises(ValueError, match="'left_df' should be GeoDataFrame"):
             sjoin(df1.geometry, df2)
@@ -535,19 +535,19 @@ class TestSpatialJoin:
 
         with pytest.raises(
             ValueError,
-            match="Expected column attr1 is missing from the right dataframe.",
+            match="Expected column attr1 is missing from the right dataframe",
         ):
             sjoin(left_gdf, right_gdf_dropped_attr, on_attribute="attr1")
 
         with pytest.raises(
             ValueError,
-            match="Expected column attr1 is missing from the left dataframe.",
+            match="Expected column attr1 is missing from the left dataframe",
         ):
             sjoin(left_gdf_dropped_attr, right_gdf, on_attribute="attr1")
 
         with pytest.raises(
             ValueError,
-            match="Expected column attr1 is missing from both of the dataframes.",
+            match="Expected column attr1 is missing from both of the dataframes",
         ):
             sjoin(left_gdf_dropped_attr, right_gdf_dropped_attr, on_attribute="attr1")
 
@@ -556,13 +556,13 @@ class TestSpatialJoin:
         with pytest.raises(
             ValueError,
             match="Active geometry column cannot be used as an input for "
-            "on_attribute parameter.",
+            "on_attribute parameter",
         ):
             sjoin(left_gdf, right_gdf, on_attribute="geometry")
         with pytest.raises(
             ValueError,
             match="Active geometry column cannot be used as an input for "
-            "on_attribute parameter.",
+            "on_attribute parameter",
         ):
             sjoin(left_gdf, right_gdf, on_attribute=["attr1", "geometry"])
 

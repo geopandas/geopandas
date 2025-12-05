@@ -170,6 +170,9 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         super().__init__(data, *args, **kwargs)
 
+        if isinstance(data, DataFrame) and data.attrs:
+            self.attrs = data.attrs
+
         # set_geometry ensures the geometry data have the proper dtype,
         # but is not called if `geometry=None` ('geometry' column present
         # in the data), so therefore need to ensure it here manually
@@ -446,6 +449,8 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 )
             if drop:
                 del frame[col]
+                frame.__class__ = GeoDataFrame
+                # revert the casting done in __delitem__, keep gdf
                 warnings.warn(
                     given_colname_drop_msg,
                     category=FutureWarning,
@@ -558,11 +563,10 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         The Coordinate Reference System (CRS) represented as a ``pyproj.CRS``
         object.
 
-        Returns None if the CRS is not set, and to set the value it
-        :getter: Returns a ``pyproj.CRS`` or None. When setting, the value
-        can be anything accepted by
-        :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
-        such as an authority string (eg "EPSG:4326") or a WKT string.
+        Returns
+        -------
+        ``pyproj.CRS`` | None
+            CRS assigned to an active geometry column
 
         Examples
         --------
@@ -816,9 +820,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 "geometry": shape(feature["geometry"]) if feature["geometry"] else None
             }
             # load properties
-            properties = feature["properties"]
-            if properties is None:
-                properties = {}
+            properties = feature.get("properties") or {}
             row.update(properties)
             rows.append(row)
         return cls(rows, columns=columns, crs=crs)
@@ -911,7 +913,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         cls, table, geometry: str | None = None, to_pandas_kwargs: dict | None = None
     ):
         """
-        Construct a GeoDataFrame from a Arrow table object based on GeoArrow
+        Construct a GeoDataFrame from an Arrow table object based on GeoArrow
         extension types.
 
         See https://geoarrow.org/ for details on the GeoArrow specification.
@@ -1127,14 +1129,8 @@ individually so that features may have different properties
         if na not in ["null", "drop", "keep"]:
             raise ValueError(f"Unknown na method {na}")
 
-        if self._geometry_column_name not in self:
-            raise AttributeError(
-                "No geometry data set (expected in column "
-                f"'{self._geometry_column_name}')."
-            )
-
         ids = np.asarray(self.index)
-        geometries = np.asarray(self[self._geometry_column_name])
+        geometries = np.asarray(self.geometry)
 
         if not self.columns.is_unique:
             raise ValueError("GeoDataFrame cannot contain duplicated column names.")
@@ -1337,7 +1333,7 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
             struct type.
         include_z : bool, default None
             Only relevant for 'geoarrow' encoding (for WKB, the dimensionality
-            of the individial geometries is preserved).
+            of the individual geometries is preserved).
             If False, return 2D geometries. If True, include the third dimension
             in the output (if a geometry has no third dimension, the z-coordinates
             will be NaN). By default, will infer the dimensionality from the
@@ -1505,9 +1501,9 @@ default 'snappy'
         compression : {'zstd', 'lz4', 'uncompressed'}, optional
             Name of the compression to use. Use ``"uncompressed"`` for no
             compression. By default uses LZ4 if available, otherwise uncompressed.
-        schema_version : {'0.1.0', '0.4.0', '1.0.0', None}
+        schema_version : {'0.1.0', '0.4.0', '1.0.0', '1.1.0' None}
             GeoParquet specification version; if not provided will default to
-            latest supported version.
+            latest supported stable version (1.0.0).
         kwargs
             Additional keyword arguments passed to
             :func:`pyarrow.feather.write_feather`.
@@ -1918,6 +1914,12 @@ default 'snappy'
                 result.__class__ = DataFrame
         return result
 
+    def __delitem__(self, key) -> None:
+        """If the last geometry column is removed, downcast to a dataframe."""
+        super().__delitem__(key)
+        if (self.dtypes == "geometry").sum() == 0:
+            self.__class__ = DataFrame
+
     def _persist_old_default_geometry_colname(self) -> None:
         """Persist the default geometry column name of 'geometry' temporarily for
         backwards compatibility.
@@ -2095,12 +2097,24 @@ default 'snappy'
 
         # merge operation: using metadata of the left object
         if method == "merge":
+            # pandas-dev/pandas#60357 : merge/concat use input_objs
+            if PANDAS_GE_30:
+                # other is a types.SimpleNameSpace
+                left_obj = other.input_objs[0]
+            else:
+                # other is a _MergeOperation
+                left_obj = other.left
             for name in self._metadata:
-                object.__setattr__(self, name, getattr(other.left, name, None))
+                object.__setattr__(self, name, getattr(left_obj, name, None))
         # concat operation: using metadata of the first object
         elif method == "concat":
+            # pandas-dev/pandas#60357 : merge/concat use input_objs
+            if PANDAS_GE_30:
+                first_obj = other.input_objs[0]
+            else:
+                first_obj = other.objs[0]
             for name in self._metadata:
-                object.__setattr__(self, name, getattr(other.objs[0], name, None))
+                object.__setattr__(self, name, getattr(first_obj, name, None))
 
             if (
                 self.columns.nlevels == 1
@@ -2494,6 +2508,24 @@ default 'snappy'
             You can check the valid values in left_df or right_df as
             ``left_df.sindex.valid_query_predicates`` or
             ``right_df.sindex.valid_query_predicates``
+
+            Available predicates include:
+
+            * ``'intersects'``: True if geometries intersect (boundaries and interiors)
+            * ``'within'``: True if left geometry is completely within right geometry
+            * ``'contains'``: True if left geometry completely contains right geometry
+            * ``'contains_properly'``: True if left geometry contains right geometry
+              and their boundaries do not touch
+            * ``'overlaps'``: True if geometries overlap but neither contains the other
+            * ``'crosses':`` True if geometries cross (interiors intersect but neither
+              contains the other, with intersection dimension less than max dimension)
+            * ``'touches'``: True if geometries touch at boundaries but interiors don't
+            * ``'covers'``: True if left geometry covers right geometry (every point of
+              right is a point of left)
+            * ``'covered_by'``: True if left geometry is covered by right geometry
+            * ``'dwithin'``: True if geometries are within specified distance (requires
+              distance parameter)
+
         lsuffix : string, default 'left'
             Suffix to apply to overlapping column names (left GeoDataFrame).
         rsuffix : string, default 'right'

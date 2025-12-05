@@ -97,7 +97,7 @@ class TestSeries:
     def test_align_mixed(self):
         a1 = self.a1
         s2 = pd.Series([1, 2], index=["B", "C"])
-        res1, res2 = a1.align(s2)
+        _res1, res2 = a1.align(s2)
 
         exp2 = pd.Series([np.nan, 1, 2], index=["A", "B", "C"])
         assert_series_equal(res2, exp2)
@@ -628,7 +628,7 @@ class TestConstructor:
             np.array([], dtype="float64"),
         ]
 
-        if compat.PANDAS_GE_30 and pd.options.future.infer_string:
+        if compat.PANDAS_INFER_STR:
             # in pandas >=3 future string, str is not converted to object
             # so is non geom compatible
             non_geom_compat_dtypes.append(np.array([], dtype="str"))

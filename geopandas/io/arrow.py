@@ -379,6 +379,11 @@ def _geopandas_to_arrow(
     metadata = table.schema.metadata
     metadata.update({b"geo": _encode_metadata(geo_metadata)})
 
+    # Store attributes in metadata if exists
+    if df.attrs:
+        df_metadata = {"PANDAS_ATTRS": json.dumps(df.attrs)}
+        metadata |= df_metadata
+
     return table.replace_schema_metadata(metadata)
 
 
@@ -486,7 +491,7 @@ def _to_feather(df, path, index=None, compression=None, schema_version=None, **k
     feather.write_feather(table, path, compression=compression, **kwargs)
 
 
-def _arrow_to_geopandas(table, geo_metadata=None, to_pandas_kwargs=None):
+def _arrow_to_geopandas(table, geo_metadata=None, to_pandas_kwargs=None, df_attrs=None):
     """Convert a pyarrow Table to a GeoDataFrame.
 
     Helper function with main, shared logic for read_parquet/read_feather.
@@ -494,13 +499,15 @@ def _arrow_to_geopandas(table, geo_metadata=None, to_pandas_kwargs=None):
     if geo_metadata is None:
         # Note: this path of not passing metadata is also used by dask-geopandas
         geo_metadata = _validate_and_decode_metadata(table.schema.metadata)
+    if to_pandas_kwargs is None:
+        to_pandas_kwargs = {}
 
     # Find all geometry columns that were read from the file.  May
     # be a subset if 'columns' parameter is used.
     geometry_columns = [
         col for col in geo_metadata["columns"] if col in table.column_names
     ]
-    result_column_names = list(table.slice(0, 0).to_pandas().columns)
+    result_column_names = list(table.slice(0, 0).to_pandas(**to_pandas_kwargs).columns)
     geometry_columns.sort(key=result_column_names.index)
 
     if not len(geometry_columns):
@@ -526,8 +533,6 @@ def _arrow_to_geopandas(table, geo_metadata=None, to_pandas_kwargs=None):
             )
 
     table_attr = table.drop(geometry_columns)
-    if to_pandas_kwargs is None:
-        to_pandas_kwargs = {}
     df = table_attr.to_pandas(**to_pandas_kwargs)
 
     # Convert the WKB columns that are present back to geometry.
@@ -556,6 +561,10 @@ def _arrow_to_geopandas(table, geo_metadata=None, to_pandas_kwargs=None):
 
         df.insert(result_column_names.index(col), col, geom_arr)
 
+    # Add dataframe attrs
+    if df_attrs:
+        df.attrs = json.loads(df_attrs)
+
     return GeoDataFrame(df, geometry=geometry)
 
 
@@ -578,7 +587,7 @@ def _get_filesystem_path(path, filesystem=None, storage_options=None):
 
     if _is_fsspec_url(path) and filesystem is None:
         fsspec = import_optional_dependency(
-            "fsspec", extra="fsspec is requred for 'storage_options'."
+            "fsspec", extra="fsspec is required for 'storage_options'."
         )
         filesystem, path = fsspec.core.url_to_fs(path, **(storage_options or {}))
 
@@ -686,7 +695,7 @@ def _read_parquet(
       columns, the first available geometry column will be set as the geometry
       column of the returned GeoDataFrame.
 
-    Supports versions 0.1.0, 0.4.0 and 1.0.0 of the GeoParquet
+    Supports versions 0.1.0, 0.4.0, 1.0.0, and 1.1.0 of the GeoParquet
     specification at: https://github.com/opengeospatial/geoparquet
 
     If 'crs' key is not present in the GeoParquet metadata associated with the
@@ -791,7 +800,12 @@ def _read_parquet(
         path, columns=columns, filesystem=filesystem, filters=filters, **kwargs
     )
 
-    return _arrow_to_geopandas(table, geo_metadata, to_pandas_kwargs)
+    if metadata and b"PANDAS_ATTRS" in metadata:
+        df_attrs = metadata[b"PANDAS_ATTRS"]
+    else:
+        df_attrs = None
+
+    return _arrow_to_geopandas(table, geo_metadata, to_pandas_kwargs, df_attrs)
 
 
 def _read_feather(path, columns=None, to_pandas_kwargs=None, **kwargs):
