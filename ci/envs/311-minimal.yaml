@@ -4,10 +4,11 @@ channels:
 dependencies:
   - python=3.11
   # required
-  - numpy=1.26
-  - pandas=2.1
-  - shapely=2.0.0
-  # - pyogrio=0.7.2
+  - numpy=2.0
+  - pandas=2.2
+  - shapely=2.1.0
+  - pyogrio=0.8
+  - pyproj=3.7.0
   - packaging
   # testing
   - pytest
@@ -16,14 +17,13 @@ dependencies:
   - fsspec
   - pytz
   # optional
-  - matplotlib=3.8.0
-  - mapclassify=2.6.0
+  - matplotlib=3.9.0
+  - mapclassify=2.7.0
   - geopy
   - SQLalchemy
   - libspatialite
-  - pyarrow=13.0
+  - pyarrow=15.0
   - geodatasets
   - pip
   - pip:
-    - pyproj==3.7.0
-    - pyogrio==0.7.2
+    -

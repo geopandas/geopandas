@@ -25,7 +25,7 @@ from pandas.tests.extension import base as extension_tests
 import shapely.geometry
 from shapely.geometry import Point
 
-from geopandas._compat import PANDAS_GE_22, PANDAS_GE_30
+from geopandas._compat import PANDAS_GE_30
 from geopandas.array import GeometryArray, GeometryDtype, from_shapely
 
 import pytest
@@ -472,10 +472,7 @@ class TestMissing(extension_tests.BaseMissingTests):
         super().test_fillna_no_op_returns_copy(data)
 
 
-if PANDAS_GE_22:
-    from pandas.tests.extension.base import BaseReduceTests
-else:
-    from pandas.tests.extension.base import BaseNoReduceTests as BaseReduceTests
+from pandas.tests.extension.base import BaseReduceTests
 
 
 class TestReduce(BaseReduceTests):

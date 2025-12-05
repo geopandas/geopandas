@@ -144,9 +144,9 @@ Dependencies
 Required dependencies:
 
 - `numpy`_
-- `pandas`_ (version 2.1 or later)
-- `shapely`_ (interface to `GEOS`_; version 2.0.0 or later)
-- `pyogrio`_ (interface to `GDAL`_; version 0.7.2 or later)
+- `pandas`_ (version 2.2 or later)
+- `shapely`_ (interface to `GEOS`_; version 2.1 or later)
+- `pyogrio`_ (interface to `GDAL`_; version 0.8 or later)
 - `pyproj`_ (interface to `PROJ`_; version 3.7.0 or later)
 - `packaging`_
 
@@ -163,8 +163,8 @@ Further, optional dependencies are:
 
 For plotting, these additional packages may be used:
 
-- `matplotlib`_ (>= 3.8.0)
-- `mapclassify`_ (>= 2.6.0)
+- `matplotlib`_ (>= 3.9.0)
+- `mapclassify`_ (>= 2.7.0)
 - `folium`_ (for interactive plotting)
 
 

@@ -7,7 +7,7 @@ from shapely import MultiPolygon, Polygon
 
 import geopandas
 from geopandas import GeoDataFrame, read_file
-from geopandas._compat import GEOS_GE_312, HAS_PYPROJ, PANDAS_GE_30, SHAPELY_GE_21
+from geopandas._compat import GEOS_GE_312, HAS_PYPROJ, PANDAS_GE_30
 
 import pytest
 from geopandas.testing import assert_geodataframe_equal, geom_almost_equals
@@ -355,8 +355,8 @@ def test_dissolve_multi_agg(nybb_polydf, merged_shapes):
 
 @pytest.mark.parametrize("method", ["coverage", "disjoint_subset"])
 def test_dissolve_method(nybb_polydf, method):
-    if method == "disjoint_subset" and not (GEOS_GE_312 and SHAPELY_GE_21):
-        pytest.skip("Unsupported shapely/GEOS.")
+    if method == "disjoint_subset" and not GEOS_GE_312:
+        pytest.skip("Unsupported GEOS.")
     manhattan_bronx = nybb_polydf.loc[3:4]
     others = nybb_polydf.loc[0:2]
 

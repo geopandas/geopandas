@@ -1,6 +1,5 @@
 import json
 import warnings
-from packaging.version import Version
 from typing import Literal, get_args
 
 import numpy as np
@@ -648,15 +647,10 @@ def _read_parquet_schema_and_metadata(path, filesystem):
     that the ParquetDataset interface doesn't allow passing the filters on read)
 
     """
-    import pyarrow
     from pyarrow import parquet
 
-    kwargs = {}
-    if Version(pyarrow.__version__) < Version("15.0.0"):
-        kwargs = dict(use_legacy_dataset=False)
-
     try:
-        schema = parquet.ParquetDataset(path, filesystem=filesystem, **kwargs).schema
+        schema = parquet.ParquetDataset(path, filesystem=filesystem).schema
     except Exception:
         schema = parquet.read_schema(path, filesystem=filesystem)
 
@@ -757,7 +751,6 @@ def _read_parquet(
     parquet = import_optional_dependency(
         "pyarrow.parquet", extra="pyarrow is required for Parquet support."
     )
-    import geopandas.io._pyarrow_hotfix  # noqa: F401
 
     # TODO(https://github.com/pandas-dev/pandas/pull/41194): see if pandas
     # adds filesystem as a keyword and match that.
@@ -868,7 +861,6 @@ def _read_feather(path, columns=None, to_pandas_kwargs=None, **kwargs):
     feather = import_optional_dependency(
         "pyarrow.feather", extra="pyarrow is required for Feather support."
     )
-    import geopandas.io._pyarrow_hotfix  # noqa: F401
 
     path = _expand_user(path)
 

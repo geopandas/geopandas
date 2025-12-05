@@ -1,5 +1,4 @@
 import os
-from packaging.version import Version
 
 import numpy as np
 import pandas as pd
@@ -251,13 +250,9 @@ def test_astype(s, df):
     assert s.astype(str)[0] == "POINT (0 0)"
 
     res = s.astype(object)
-    if not (
-        (Version(pd.__version__) == Version("2.1.0"))
-        or (Version(pd.__version__) == Version("2.1.1"))
-    ):
-        # https://github.com/geopandas/geopandas/issues/2948 - bug in pandas 2.1.0
-        assert isinstance(res, pd.Series) and not isinstance(res, GeoSeries)
-        assert res.dtype == object
+
+    assert isinstance(res, pd.Series) and not isinstance(res, GeoSeries)
+    assert res.dtype == object
 
     df = df.rename_geometry("geom_list")
 
@@ -671,37 +666,24 @@ def test_groupby_metadata(crs, geometry_name):
         geometry=geometry_name,
     )
 
-    kwargs = {}
-    if compat.PANDAS_GE_22:
-        # pandas is deprecating that the group key is present as column in the
-        # dataframe passed to `func`. To suppress this warning, it introduced
-        # a new include_groups keyword
-        kwargs = dict(include_groups=False)
-
     # dummy test asserting we can access the crs
     def func(group):
         assert isinstance(group, GeoDataFrame)
         assert group.crs == crs
 
-    df.groupby("value2").apply(func, **kwargs)
+    df.groupby("value2").apply(func, include_groups=False)
     # selecting the non-group columns -> no need to pass the keyword
-    if compat.PANDAS_GE_22 or (geometry_name == "geometry"):
-        df.groupby("value2")[[geometry_name, "value1"]].apply(func)
-    else:
-        # https://github.com/geopandas/geopandas/pull/2966#issuecomment-1878816712
-        # with pandas 2.0 and 2.1 with geom col != geometry this is failing
-        with pytest.raises(AttributeError):
-            df.groupby("value2")[[geometry_name, "value1"]].apply(func)
+    df.groupby("value2")[[geometry_name, "value1"]].apply(func)
 
     # actual test with functionality
     res = df.groupby("value2").apply(
         lambda x: geopandas.sjoin(x, x[[geometry_name, "value1"]], how="inner"),
-        **kwargs,
+        include_groups=False,
     )
 
     expected = (
         df.take([0, 0, 2, 2, 1])
-        .set_index("value2", drop=compat.PANDAS_GE_22, append=True)
+        .set_index("value2", drop=True, append=True)
         .swaplevel()
         .rename(columns={"value1": "value1_left"})
         .assign(value1_right=[0, 2, 0, 2, 1])

@@ -21,12 +21,12 @@ classifiers = [
 ]
 requires-python = ">=3.11"
 dependencies = [
-    "numpy >= 1.26",
-    "pyogrio >= 0.7.2",
+    "numpy >= 2",
+    "pyogrio >= 0.8",
     "packaging",
-    "pandas >= 2.1.0",
+    "pandas >= 2.2.0",
     "pyproj >= 3.7.0",
-    "shapely >= 2.0.0",
+    "shapely >= 2.1.0",
 ]
 
 [project.optional-dependencies]
@@ -34,12 +34,12 @@ all = [
     "psycopg[binary]>=3.2.0",
     "SQLAlchemy>=2.0",
     "geopy",
-    "matplotlib>=3.8",
-    "mapclassify>=2.6",
+    "matplotlib>=3.9",
+    "mapclassify>=2.7",
     "xyzservices",
     "folium", # >=0.12 (implied minimum version, but older versions may work)
     "GeoAlchemy2",
-    "pyarrow>=13.0.0",
+    "pyarrow>=15.0.0",
     "scipy",
 ]
 

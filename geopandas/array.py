@@ -26,8 +26,6 @@ from shapely.geometry.base import BaseGeometry
 from ._compat import (
     GEOS_GE_312,
     HAS_PYPROJ,
-    PANDAS_GE_22,
-    SHAPELY_GE_21,
     requires_pyproj,
 )
 from .sindex import SpatialIndex
@@ -532,16 +530,14 @@ class GeometryArray(ExtensionArray):
         return shapely.is_valid_reason(self._data)
 
     def is_valid_coverage(self, gap_width: float = 0.0):
-        if not (SHAPELY_GE_21 and GEOS_GE_312):
-            raise ImportError(
-                "Method 'is_valid_coverage' requires shapely>=2.1 and GEOS>=3.12."
-            )
+        if not GEOS_GE_312:
+            raise ImportError("Method 'is_valid_coverage' requires GEOS>=3.12.")
         return bool(shapely.coverage_is_valid(self._data, gap_width=gap_width))
 
     def invalid_coverage_edges(self, gap_width: float = 0.0):
-        if not (SHAPELY_GE_21 and GEOS_GE_312):
+        if not GEOS_GE_312:
             raise ImportError(
-                "Method 'invalid_coverage_edges' requires shapely>=2.1 and GEOS>=3.12."
+                "Method 'invalid_coverage_edges' requires and GEOS>=3.12."
             )
         return shapely.coverage_invalid_edges(self._data, gap_width=gap_width)
 
@@ -571,9 +567,6 @@ class GeometryArray(ExtensionArray):
 
     @property
     def has_m(self):
-        if not SHAPELY_GE_21:
-            raise ImportError("'has_m' requires shapely>=2.1.")
-
         return shapely.has_m(self._data)
 
     @property
@@ -635,9 +628,6 @@ class GeometryArray(ExtensionArray):
         return shapely.concave_hull(self._data, ratio=ratio, allow_holes=allow_holes)
 
     def constrained_delaunay_triangles(self) -> GeometryArray:
-        if not SHAPELY_GE_21:
-            raise ImportError("'constrained_delaunay_triangles' requires shapely>=2.1.")
-
         return GeometryArray(
             shapely.constrained_delaunay_triangles(self._data), crs=self.crs
         )
@@ -713,9 +703,6 @@ class GeometryArray(ExtensionArray):
         return GeometryArray(shapely.minimum_bounding_circle(self._data), crs=self.crs)
 
     def maximum_inscribed_circle(self, tolerance) -> GeometryArray:
-        if not SHAPELY_GE_21:
-            raise ImportError("'maximum_inscribed_circle' requires shapely>=2.1.")
-
         return GeometryArray(
             shapely.maximum_inscribed_circle(self._data, tolerance=tolerance),
             crs=self.crs,
@@ -728,16 +715,12 @@ class GeometryArray(ExtensionArray):
         return shapely.minimum_clearance(self._data)
 
     def minimum_clearance_line(self) -> GeometryArray:
-        if not SHAPELY_GE_21:
-            raise ImportError("'minimum_clearance_line' requires shapely>=2.1.")
         return GeometryArray(shapely.minimum_clearance_line(self._data), crs=self.crs)
 
     def normalize(self) -> GeometryArray:
         return GeometryArray(shapely.normalize(self._data), crs=self.crs)
 
     def orient_polygons(self, exterior_cw: bool = False) -> GeometryArray:
-        if not SHAPELY_GE_21:
-            raise ImportError("'orient_polygons' requires shapely>=2.1.")
         return GeometryArray(
             shapely.orient_polygons(self._data, exterior_cw=exterior_cw), crs=self.crs
         )
@@ -747,17 +730,12 @@ class GeometryArray(ExtensionArray):
         method: Literal["linework", "structure"] = "linework",
         keep_collapsed: bool = True,
     ) -> GeometryArray:
-        kwargs = {}
-        if SHAPELY_GE_21:
-            kwargs["method"] = method
-            kwargs["keep_collapsed"] = keep_collapsed
-        else:
-            if method != "linework":
-                raise ValueError(
-                    "Only the 'linework' method is supported for shapely < 2.1."
-                )
-
-        return GeometryArray(shapely.make_valid(self._data, **kwargs), crs=self.crs)
+        return GeometryArray(
+            shapely.make_valid(
+                self._data, method=method, keep_collapsed=keep_collapsed
+            ),
+            crs=self.crs,
+        )
 
     def reverse(self) -> GeometryArray:
         return GeometryArray(shapely.reverse(self._data), crs=self.crs)
@@ -851,8 +829,6 @@ class GeometryArray(ExtensionArray):
         return self._binary_method("equals_exact", self, other, tolerance=tolerance)
 
     def geom_equals_identical(self, other):
-        if not SHAPELY_GE_21:
-            raise ImportError("'geom_equals_identical' requires shapely>=2.1.")
         return self._binary_method("equals_identical", self, other)
 
     #
@@ -960,7 +936,7 @@ class GeometryArray(ExtensionArray):
     def simplify_coverage(
         self, tolerance, simplify_boundary: bool = True
     ) -> GeometryArray:
-        if not (SHAPELY_GE_21 and GEOS_GE_312):
+        if not GEOS_GE_312:
             raise ImportError(
                 "'simplify_coverage' requires shapely>=2.1 and GEOS>=3.12."
             )
@@ -1007,7 +983,7 @@ class GeometryArray(ExtensionArray):
         elif method == "unary":
             return shapely.union_all(self._data, grid_size=grid_size)
         elif method == "disjoint_subset":
-            if not (SHAPELY_GE_21 and GEOS_GE_312):
+            if not GEOS_GE_312:
                 raise ImportError(
                     "Method 'disjoin_subset' requires shapely>=2.1 and GEOS>=3.12."
                 )
@@ -1324,9 +1300,6 @@ class GeometryArray(ExtensionArray):
     @property
     def m(self):
         """Return the m coordinate of point geometries in a GeoSeries."""
-        if not SHAPELY_GE_21:
-            raise ImportError("'m' requires shapely>=2.1.")
-
         if (self.geom_type[~self.isna()] == "Point").all():
             empty = self.is_empty
             if empty.any():
@@ -1403,13 +1376,7 @@ class GeometryArray(ExtensionArray):
     def _pad_or_backfill(
         self, method, limit=None, limit_area=None, copy=True, **kwargs
     ):
-        if not PANDAS_GE_22:
-            if limit_area is not None:
-                # limit area not supported, but, but we feed through
-                # so the caller gets the pandas exception
-                kwargs["limit_area"] = limit_area
-        else:
-            kwargs["limit_area"] = limit_area
+        kwargs["limit_area"] = limit_area
         return super()._pad_or_backfill(method=method, limit=limit, copy=copy, **kwargs)
 
     def fillna(
