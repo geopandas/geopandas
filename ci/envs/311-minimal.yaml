@@ -17,7 +17,7 @@ dependencies:
   - fsspec
   - pytz
   # optional
-  - matplotlib=3.9.0
+  - matplotlib=3.9.1
   - mapclassify=2.7.0
   - geopy
   - SQLalchemy
