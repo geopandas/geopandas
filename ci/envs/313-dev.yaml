@@ -2,7 +2,7 @@ name: test
 channels:
   - conda-forge
 dependencies:
-  - python=3.12
+  - python=3.13
   - cython
   # required
   - pyproj
@@ -23,7 +23,7 @@ dependencies:
   - pip
   - pip:
     - geopy
-    - mapclassify>=2.5.0
+    - mapclassify>=2.6.0
     # dev versions of packages
     - --pre --index-url https://pypi.anaconda.org/scientific-python-nightly-wheels/simple --extra-index-url https://pypi.fury.io/arrow-nightlies/ --extra-index-url https://pypi.org/simple
     - numpy>=2.0.0

@@ -6293,9 +6293,6 @@ GeometryCollection
           3  3.0 -1.0
         """
         if include_m:
-            if not compat.SHAPELY_GE_21:
-                raise ImportError("Shapely >= 2.1 is required for include_m=True.")
-
             # can be merged with the one below once min requirement is shapely 2.1
             coords, outer_idx = shapely.get_coordinates(
                 self.geometry.values._data,

@@ -31,6 +31,16 @@ Community:
 
 - GeoPandas now uses the NumFOCUS Code of Conduct.
 
+
+Notes on dependencies:
+
+- GeoPandas 1.2 now requires Python 3.11 or greater and pandas 2.2, numpy 2.0, pyproj 3.7,
+  are now the minimum required version for these dependencies.
+  Furthermore, the minimum tested version for optional dependencies has been updated to
+  fiona 1.8.21, scipy 1.9, matplotlib 3.9, mapclassify 2.7 folium 0.15, pyarrow 15.0 and
+  SQLAlchemy 2.0. Older versions of these libraries may continue to work, but are no longer
+  considered supported (#3371, #3581).
+
 ## Version 1.1.1 (June 27, 2025)
 
 Bug fixes:
