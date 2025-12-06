@@ -11,6 +11,8 @@ Deprecations and compatibility notes:
 
 - The `resolution` keyword to `buffer` has been deprecated to align with the convention in shapely,
   `quad_segs` should be used instead (#3600).
+- Expired deprecations; option `use_pygeos` which had no functionality,
+  `seed` keyword in sample_points (replaced by `rng`) (#3613)
 
 Bug fixes:
 

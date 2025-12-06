@@ -538,7 +538,7 @@ def test_geoseries_crs():
 def test_geoseries_override_existing_crs_warning():
     gs = GeoSeries(crs="epsg:4326")
     with pytest.warns(
-        DeprecationWarning,
+        FutureWarning,
         match="Overriding the CRS of a GeoSeries that already has CRS",
     ):
         gs.crs = "epsg:2100"
