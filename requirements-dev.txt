@@ -7,7 +7,7 @@ shapely>=2.1.0
 packaging
 
 # geodatabase access
-psycopg[binary]>=3.120
+psycopg[binary]>=3.1.20
 SQLAlchemy>=2.0
 
 # geocoding
