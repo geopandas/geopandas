@@ -412,11 +412,19 @@ class TestReshaping(extension_tests.BaseReshapingTests):
 
 
 class TestGetitem(extension_tests.BaseGetitemTests):
-    pass
+    @pytest.mark.xfail(reason="read-only not yet implemented")
+    def test_getitem_propagates_readonly_property(self, data):
+        super().test_getitem_propagates_readonly_property(data)
 
 
 class TestSetitem(extension_tests.BaseSetitemTests):
-    pass
+    @pytest.mark.xfail(reason="read-only not yet implemented")
+    def test_readonly_property(self, data):
+        super().test_readonly_property(data)
+
+    @pytest.mark.xfail(reason="read-only not yet implemented")
+    def test_readonly_propagates_to_numpy_array(self, data):
+        super().test_readonly_propagates_to_numpy_array(data)
 
 
 class TestMissing(extension_tests.BaseMissingTests):
@@ -470,6 +478,10 @@ class TestMissing(extension_tests.BaseMissingTests):
 
     def test_fillna_no_op_returns_copy(self, data):
         super().test_fillna_no_op_returns_copy(data)
+
+    @pytest.mark.xfail(reason="read-only not yet implemented")
+    def test_fillna_readonly(self, data_missing):
+        super().test_fillna_readonly(data_missing)
 
 
 from pandas.tests.extension.base import BaseReduceTests

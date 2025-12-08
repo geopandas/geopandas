@@ -330,7 +330,7 @@ class TestIO:
         """Tests that geometry with NULL is accepted."""
         con = connection_spatialite
         geom_col = df_nybb.geometry.name
-        df_nybb.geometry.iat[0] = None
+        df_nybb.loc[0, "geometry"] = None
         create_spatialite(con, df_nybb)
         sql = (
             "SELECT ogc_fid, borocode, boroname, shape_leng, shape_area, "

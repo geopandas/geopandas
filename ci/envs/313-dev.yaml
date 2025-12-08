@@ -14,7 +14,6 @@ dependencies:
   - pytest-cov
   - pytest-xdist
   - fsspec
-  - pandas
 
   # optional
   #- geopy
@@ -28,7 +27,7 @@ dependencies:
     - --pre --index-url https://pypi.anaconda.org/scientific-python-nightly-wheels/simple --extra-index-url https://pypi.fury.io/arrow-nightlies/ --extra-index-url https://pypi.org/simple
     - numpy>=2.0.0
     - fiona
-    # - pandas
+    - pandas
     - matplotlib
     - pyarrow
     - git+https://github.com/shapely/shapely.git@main
