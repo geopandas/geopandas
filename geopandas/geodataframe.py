@@ -2095,12 +2095,24 @@ default 'snappy'
 
         # merge operation: using metadata of the left object
         if method == "merge":
+            # pandas-dev/pandas#60357 : merge/concat use input_objs
+            if PANDAS_GE_30:
+                # other is a types.SimpleNameSpace
+                left_obj = other.input_objs[0]
+            else:
+                # other is a _MergeOperation
+                left_obj = other.left
             for name in self._metadata:
-                object.__setattr__(self, name, getattr(other.left, name, None))
+                object.__setattr__(self, name, getattr(left_obj, name, None))
         # concat operation: using metadata of the first object
         elif method == "concat":
+            # pandas-dev/pandas#60357 : merge/concat use input_objs
+            if PANDAS_GE_30:
+                first_obj = other.input_objs[0]
+            else:
+                first_obj = other.objs[0]
             for name in self._metadata:
-                object.__setattr__(self, name, getattr(other.objs[0], name, None))
+                object.__setattr__(self, name, getattr(first_obj, name, None))
 
             if (
                 self.columns.nlevels == 1
