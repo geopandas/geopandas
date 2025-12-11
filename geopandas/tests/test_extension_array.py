@@ -25,7 +25,7 @@ from pandas.tests.extension import base as extension_tests
 import shapely.geometry
 from shapely.geometry import Point
 
-from geopandas._compat import PANDAS_GE_21, PANDAS_GE_22, PANDAS_GE_30
+from geopandas._compat import PANDAS_GE_30
 from geopandas.array import GeometryArray, GeometryDtype, from_shapely
 
 import pytest
@@ -412,11 +412,19 @@ class TestReshaping(extension_tests.BaseReshapingTests):
 
 
 class TestGetitem(extension_tests.BaseGetitemTests):
-    pass
+    @pytest.mark.xfail(reason="read-only not yet implemented")
+    def test_getitem_propagates_readonly_property(self, data):
+        super().test_getitem_propagates_readonly_property(data)
 
 
 class TestSetitem(extension_tests.BaseSetitemTests):
-    pass
+    @pytest.mark.xfail(reason="read-only not yet implemented")
+    def test_readonly_property(self, data):
+        super().test_readonly_property(data)
+
+    @pytest.mark.xfail(reason="read-only not yet implemented")
+    def test_readonly_propagates_to_numpy_array(self, data):
+        super().test_readonly_propagates_to_numpy_array(data)
 
 
 class TestMissing(extension_tests.BaseMissingTests):
@@ -459,35 +467,24 @@ class TestMissing(extension_tests.BaseMissingTests):
         # `geopandas\tests\test_pandas_methods.py::test_fillna_scalar`
         # and `geopandas\tests\test_pandas_methods.py::test_fillna_series`.
 
-    @pytest.mark.skipif(
-        not PANDAS_GE_21, reason="fillna method not supported with older pandas"
-    )
     def test_fillna_limit_pad(self, data_missing):
         super().test_fillna_limit_pad(data_missing)
 
-    @pytest.mark.skipif(
-        not PANDAS_GE_21, reason="fillna method not supported with older pandas"
-    )
     def test_fillna_limit_backfill(self, data_missing):
         super().test_fillna_limit_backfill(data_missing)
 
-    @pytest.mark.skipif(
-        not PANDAS_GE_21, reason="fillna method not supported with older pandas"
-    )
     def test_fillna_series_method(self, data_missing, fillna_method):
         super().test_fillna_series_method(data_missing, fillna_method)
 
-    @pytest.mark.skipif(
-        not PANDAS_GE_21, reason="fillna method not supported with older pandas"
-    )
     def test_fillna_no_op_returns_copy(self, data):
         super().test_fillna_no_op_returns_copy(data)
 
+    @pytest.mark.xfail(reason="read-only not yet implemented")
+    def test_fillna_readonly(self, data_missing):
+        super().test_fillna_readonly(data_missing)
 
-if PANDAS_GE_22:
-    from pandas.tests.extension.base import BaseReduceTests
-else:
-    from pandas.tests.extension.base import BaseNoReduceTests as BaseReduceTests
+
+from pandas.tests.extension.base import BaseReduceTests
 
 
 class TestReduce(BaseReduceTests):

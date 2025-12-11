@@ -12,7 +12,6 @@ from importlib.util import find_spec
 import pandas as pd
 
 import geopandas
-import geopandas._compat as compat
 from geopandas import GeoDataFrame, read_file, read_postgis
 from geopandas._compat import HAS_PYPROJ
 from geopandas.io.sql import _get_conn as get_conn
@@ -331,7 +330,7 @@ class TestIO:
         """Tests that geometry with NULL is accepted."""
         con = connection_spatialite
         geom_col = df_nybb.geometry.name
-        df_nybb.geometry.iat[0] = None
+        df_nybb.loc[0, "geometry"] = None
         create_spatialite(con, df_nybb)
         sql = (
             "SELECT ogc_fid, borocode, boroname, shape_leng, shape_area, "
@@ -766,10 +765,6 @@ class TestIO:
         write_postgis(df_nybb2, con=engine, name=table, if_exists="append")
 
     @pytest.mark.parametrize("engine_postgis", POSTGIS_DRIVERS, indirect=True)
-    @pytest.mark.xfail(
-        not compat.PANDAS_GE_202,
-        reason="Duplicate columns are dropped in read_sql with pandas 2.0.0 and 2.0.1",
-    )
     def test_duplicate_geometry_column_fails(self, engine_postgis):
         """
         Tests that a ValueError is raised if an SQL query returns two geometry columns.

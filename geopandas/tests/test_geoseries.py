@@ -159,7 +159,6 @@ class TestSeries:
             self.a1.geom_equals_exact(self.a2, 0.001, align=False), [False, False]
         )
 
-    @pytest.mark.skipif(not compat.SHAPELY_GE_21, reason="requires Shapely>=2.1")
     def test_geom_equals_identical(self):
         assert np.all(self.g1.geom_equals_identical(self.g1))
         assert_array_equal(self.g1.geom_equals_identical(self.sq), [False, True])
@@ -538,7 +537,7 @@ def test_geoseries_crs():
 def test_geoseries_override_existing_crs_warning():
     gs = GeoSeries(crs="epsg:4326")
     with pytest.warns(
-        DeprecationWarning,
+        FutureWarning,
         match="Overriding the CRS of a GeoSeries that already has CRS",
     ):
         gs.crs = "epsg:2100"

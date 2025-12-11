@@ -37,10 +37,14 @@ try:
     PYOGRIO_GE_012 = Version(Version(pyogrio.__version__).base_version) >= Version(
         "0.12.0"
     )
+    PYOGRIO_GE_0121 = Version(Version(pyogrio.__version__).base_version) >= Version(
+        "0.12.1"
+    )
 except ImportError:
     pyogrio = False
     PYOGRIO_GE_090 = False
     PYOGRIO_GE_012 = False
+    PYOGRIO_GE_0121 = False
 
 
 try:
@@ -201,7 +205,7 @@ def test_to_file_bool(tmpdir, driver, ext, engine):
 
 TEST_DATE = datetime.datetime(2021, 11, 21, 1, 7, 43, 17500)
 # from pandas 2.0, utc equality checks less stringent, forward compat with zoneinfo
-utc = datetime.timezone.utc
+utc = datetime.UTC
 eastern = zoneinfo.ZoneInfo("America/New_York")
 test_date_eastern = TEST_DATE.replace(tzinfo=eastern)
 datetime_type_tests = (TEST_DATE, test_date_eastern)
@@ -1004,7 +1008,13 @@ def test_read_file__columns(engine, naturalearth_lowres):
     gdf = geopandas.read_file(
         naturalearth_lowres, columns=["name", "pop_est"], engine=engine
     )
-    assert gdf.columns.tolist() == ["name", "pop_est", "geometry"]
+
+    expected = (
+        ["pop_est", "name", "geometry"]
+        if engine == "pyogrio" and PYOGRIO_GE_0121
+        else ["name", "pop_est", "geometry"]
+    )
+    assert gdf.columns.tolist() == expected
 
 
 def test_read_file__columns_empty(engine, naturalearth_lowres):
@@ -1033,7 +1043,13 @@ def test_read_file__include_fields(engine, naturalearth_lowres):
     gdf = geopandas.read_file(
         naturalearth_lowres, include_fields=["name", "pop_est"], engine=engine
     )
-    assert gdf.columns.tolist() == ["name", "pop_est", "geometry"]
+
+    expected = (
+        ["pop_est", "name", "geometry"]
+        if engine == "pyogrio" and PYOGRIO_GE_0121
+        else ["name", "pop_est", "geometry"]
+    )
+    assert gdf.columns.tolist() == expected
 
 
 @pytest.mark.skipif(not FIONA_GE_19, reason="columns requires fiona 1.9+")
