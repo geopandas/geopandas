@@ -79,7 +79,7 @@ def test_overlay(dfs_index, how):
 
     def _read(name):
         expected = read_file(os.path.join(DATA, "polys", f"df1_df2-{name}.geojson"))
-        expected.geometry.array.crs = None
+        expected.geometry._values.crs = None
         for col in expected.columns[expected.dtypes == "int32"]:
             expected[col] = expected[col].astype("int64")
         return expected
