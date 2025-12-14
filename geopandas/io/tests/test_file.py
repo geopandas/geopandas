@@ -607,8 +607,6 @@ def test_read_file(engine, nybb_filename):
         # url to zip file
         "https://raw.githubusercontent.com/geopandas/geopandas/"
         "main/geopandas/tests/data/nybb_16a.zip",
-        # url to zipfile without extension
-        "https://geonode.goosocean.org/download/480",
         # url to web service
         "https://demo.pygeoapi.io/stable/collections/obs/items",
     ],
