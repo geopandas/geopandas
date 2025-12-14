@@ -2,9 +2,9 @@ name: Tests
 
 on:
   push:
-    branches: [main, 0.**]
+    branches: [main, 0.**, 1.**]
   pull_request:
-    branches: [main, 0.**]
+    branches: [main, 0.**, 1.**]
   schedule:
     - cron: "0 0 * * *"
 
@@ -81,7 +81,8 @@ jobs:
           pytest -v -r a -n auto --color=yes --cov=geopandas --cov-append --cov-report term-missing --cov-report xml geopandas/
 
       - name: Test with PostGIS
-        if: (contains(matrix.env, '311-pd22.yaml') || contains(matrix.env, '312-latest.yaml'))
+        if:
+          (contains(matrix.env, '311-pd22.yaml') || contains(matrix.env, '312-latest.yaml'))
           && contains(matrix.os, 'ubuntu')
         env:
           PGUSER: postgres
