@@ -1677,7 +1677,7 @@ class GeometryArray(ExtensionArray):
             distances[mask_empty] = 0
         return distances
 
-    def _cast_pointwise_result(self, values) -> GeometryArray:
+    def _cast_pointwise_result(self, values):
         result = super()._cast_pointwise_result(values)
         # only attempt to construct GeometryArray from object dtype result
         if result.dtype.kind == self.dtype.kind:
