@@ -14,6 +14,7 @@ Bug fixes:
   column (#3648).
 - Calling `del gdf["geometry"]` now will downcast to a `pd.DataFrame` if there are no geometry columns left
   in the dataframe (#3648).
+- Fix SQL injection in `to_postgis` via geometry column name (#3681).
 
 ## Version 1.1.1 (June 27, 2025)
 
