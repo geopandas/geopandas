@@ -546,8 +546,9 @@ def test_value_counts():
     res2 = s2.value_counts()
     assert_series_equal(res2, exp)
     # CRS should now be preserved in the index array
-    assert s2.value_counts().index.array.crs is not None
-    assert s2.value_counts().index.array.crs == "EPSG:4326"
+    if compat.HAS_PYPROJ:
+        assert s2.value_counts().index.array.crs is not None
+        assert s2.value_counts().index.array.crs == "EPSG:4326"
 
     # check mixed geometry
     s3 = GeoSeries([Point(0, 0), LineString([[1, 1], [2, 2]]), Point(0, 0)])
