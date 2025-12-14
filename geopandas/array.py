@@ -581,7 +581,7 @@ class GeometryArray(ExtensionArray):
     def _calculate_geodesic_area(self):
         from pyproj import Geod
         
-        geod = Geod(ellps="WGS84")
+        geod = self.crs.get_geod()
         def __geodesic_ring_area(rings):
             areas = np.array([abs(geod.geometry_area_perimeter(shapely.geometry.shape(ring))[0]) 
                             for ring in rings])
