@@ -68,6 +68,7 @@ jobs:
           environment-file: ${{ matrix.env }}
 
       - name: Install package
+        # install without deps to avoid installing default but optional pyproj/pyogrio
         run: pip install -e . --no-deps
 
       - name: Check and Log Environment
