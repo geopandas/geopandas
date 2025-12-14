@@ -877,14 +877,15 @@ class TestIO:
         Tests that SQL injection attempts via geometry column name are prevented.
         This test verifies that malicious geometry column names are treated as
         literal strings and not executed as SQL code.
-        
+
         This test is based on issue #3679 which reported SQL injection vulnerability
         in the Find_SRID query when using to_postgis with if_exists='append'.
         """
         engine = engine_postgis
         table = "test_sql_injection"
 
-        # Create a test table first to ensure append mode triggers the vulnerable code path
+        # Create a test table first to ensure append mode triggers
+        # the vulnerable code path
         gdf_normal = df_nybb.copy()
         write_postgis(gdf_normal, con=engine, name=table, if_exists="replace")
 
@@ -893,7 +894,9 @@ class TestIO:
         # Use random name to avoid conflicts with existing tables
         test_target_table = f"test_target_{uuid.uuid4().hex[:12]}"
         with engine.begin() as conn:
-            conn.execute(text(f"CREATE TABLE IF NOT EXISTS {test_target_table} (id INTEGER);"))
+            conn.execute(
+                text(f"CREATE TABLE IF NOT EXISTS {test_target_table} (id INTEGER);")
+            )
             conn.execute(text(f"INSERT INTO {test_target_table} (id) VALUES (1);"))
 
         # Create GeoDataFrame with malicious geometry column name
@@ -925,16 +928,21 @@ class TestIO:
         with engine.connect() as conn:
             final_count = conn.execute(sql_check).fetchone()[0]
             target_still_exists = conn.execute(sql_check_target).fetchone()[0] == 1
-            
-        assert final_count == initial_count, "Test table should still exist after SQL injection attempt"
-        assert target_still_exists, f"Target table '{test_target_table}' should not be dropped by SQL injection"
+
+        assert final_count == initial_count, (
+            "Test table should still exist after SQL injection attempt"
+        )
+        assert target_still_exists, (
+            f"Target table '{test_target_table}' should not be dropped by SQL injection"
+        )
 
     @pytest.mark.parametrize("engine_postgis", POSTGIS_DRIVERS, indirect=True)
     def test_to_postgis_sql_injection_prevention_geometry_column_union(
         self, engine_postgis, df_nybb
     ):
         """
-        Tests another SQL injection pattern: UNION SELECT attack via geometry column name.
+        Tests another SQL injection pattern: UNION SELECT attack
+        via geometry column name.
         """
         engine = engine_postgis
         table = "test_sql_injection_union"
@@ -947,12 +955,18 @@ class TestIO:
         # Use random name to avoid conflicts with existing tables
         test_target_table = f"test_target_{uuid.uuid4().hex[:12]}"
         with engine.begin() as conn:
-            conn.execute(text(f"CREATE TABLE IF NOT EXISTS {test_target_table} (password TEXT);"))
-            conn.execute(text(f"INSERT INTO {test_target_table} (password) VALUES ('secret');"))
+            conn.execute(
+                text(f"CREATE TABLE IF NOT EXISTS {test_target_table} (password TEXT);")
+            )
+            conn.execute(
+                text(f"INSERT INTO {test_target_table} (password) VALUES ('secret');")
+            )
 
         # Create GeoDataFrame with UNION-based SQL injection attempt
         gdf_malicious = df_nybb.copy()
-        malicious_geom_name = f"geom') UNION SELECT password FROM {test_target_table} WHERE '1'='1"
+        malicious_geom_name = (
+            f"geom') UNION SELECT password FROM {test_target_table} WHERE '1'='1"
+        )
         gdf_malicious = gdf_malicious.rename_geometry(malicious_geom_name)
 
         # Verify tables exist before injection attempt
@@ -975,9 +989,14 @@ class TestIO:
         with engine.connect() as conn:
             final_count = conn.execute(sql_check).fetchone()[0]
             target_still_exists = conn.execute(sql_check_target).fetchone()[0] == 1
-            
-        assert final_count == initial_count, "Test table should still exist after SQL injection attempt"
-        assert target_still_exists, f"Target table '{test_target_table}' should not be affected by SQL injection"
+
+        assert final_count == initial_count, (
+            "Test table should still exist after SQL injection attempt"
+        )
+        assert target_still_exists, (
+            f"Target table '{test_target_table}' should not be "
+            "affected by SQL injection"
+        )
 
     @pytest.mark.parametrize("engine_postgis", POSTGIS_DRIVERS, indirect=True)
     def test_to_postgis_sql_injection_prevention_geometry_column_comment(
