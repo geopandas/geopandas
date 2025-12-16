@@ -407,7 +407,9 @@ def _to_parquet(
 
     Parameters
     ----------
-    path : str, path object
+    path : str, path object or file-like object
+        String, path object (implementing os.PathLike[str]) or file-like object
+        implementing a binary read() function.
     index : bool, default None
         If ``True``, always include the dataframe's index(es) as columns
         in the file output.
@@ -461,7 +463,9 @@ def _to_feather(df, path, index=None, compression=None, schema_version=None, **k
 
     Parameters
     ----------
-    path : str, path object
+    path : str, path object or file-like object
+        String, path object (implementing os.PathLike[str]) or file-like object
+        implementing a binary read() function.
     index : bool, default None
         If ``True``, always include the dataframe's index(es) as columns
         in the file output.
@@ -698,7 +702,9 @@ def _read_parquet(
 
     Parameters
     ----------
-    path : str, path object
+    path : str, path object or file-like object
+        String, path object (implementing os.PathLike[str]) or file-like object
+        implementing a binary read() function.
     columns : list-like of strings, default=None
         If not None, only these columns will be read from the file.  If
         the primary geometry column is not included, the first secondary
@@ -744,6 +750,12 @@ def _read_parquet(
     ...     "data.parquet",
     ...     columns=["geometry", "pop_est"]
     ... )  # doctest: +SKIP
+
+    From bytes:
+
+    >>> p_data = client.get_bytes("bucket/geodata.parquet") # doctest: +SKIP
+    >>> with BytesIO(p_data) as geo_bytes: # doctest: +SKIP
+    >>>     df = gpd.read_parquet(geo_bytes) # doctest: +SKIP
     """
     parquet = import_optional_dependency(
         "pyarrow.parquet", extra="pyarrow is required for Parquet support."
@@ -820,7 +832,9 @@ def _read_feather(path, columns=None, to_pandas_kwargs=None, **kwargs):
 
     Parameters
     ----------
-    path : str, path object
+    path : str, path object or file-like object
+        String, path object (implementing os.PathLike[str]) or file-like object
+        implementing a binary read() function.
     columns : list-like of strings, default=None
         If not None, only these columns will be read from the file.  If
         the primary geometry column is not included, the first secondary
@@ -850,6 +864,9 @@ def _read_feather(path, columns=None, to_pandas_kwargs=None, **kwargs):
     ...     "data.feather",
     ...     columns=["geometry", "pop_est"]
     ... )  # doctest: +SKIP
+
+    See the `read_parquet` docs for examples of reading and writing
+    to/from bytes objects.
     """
     feather = import_optional_dependency(
         "pyarrow.feather", extra="pyarrow is required for Feather support."

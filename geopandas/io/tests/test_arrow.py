@@ -2,6 +2,7 @@ import json
 import os
 import pathlib
 import re
+from io import BytesIO
 from itertools import product
 from packaging.version import Version
 
@@ -404,6 +405,32 @@ def test_roundtrip(tmpdir, file_format, test_dataset, request):
 
     # make sure that we can roundtrip the data frame
     pq_df = reader(filename)
+
+    assert isinstance(pq_df, GeoDataFrame)
+    assert_geodataframe_equal(df, pq_df)
+
+
+@pytest.mark.parametrize(
+    "test_dataset", ["naturalearth_lowres", "naturalearth_cities", "nybb_filename"]
+)
+def test_roundtrip_bytesio(file_format, test_dataset, request):
+    """Should be able to roundtrip in BytesIO."""
+    path = request.getfixturevalue(test_dataset)
+    reader, writer = file_format
+
+    df = read_file(path)
+    orig = df.copy()
+
+    buf = BytesIO()
+
+    writer(df, buf)
+    buf.seek(0)
+
+    # make sure that the original data frame is unaltered
+    assert_geodataframe_equal(df, orig)
+
+    # make sure that we can roundtrip the data frame
+    pq_df = reader(BytesIO(buf.getvalue()))
 
     assert isinstance(pq_df, GeoDataFrame)
     assert_geodataframe_equal(df, pq_df)
