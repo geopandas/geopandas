@@ -1428,3 +1428,9 @@ def test_save_df_attrs_to_parquet_metadata(tmp_path):
 
     gdf2 = geopandas.read_parquet(tmp_path / "gdf.parquet")
     assert gdf2.attrs == {"test_key": "test_value"}
+
+
+def test_read_parquet_from_https():
+    path = "https://github.com/opengeospatial/geoparquet/raw/refs/heads/main/test_data/data-polygon-encoding_wkb.parquet"
+    df = geopandas.read_parquet(path)
+    assert df.shape == (4, 2)
