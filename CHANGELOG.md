@@ -2,8 +2,6 @@
 
 ## Version 1.1.2 (December 22, 2025)
 
-GeoPandas 1.1.2 brings compatibility with pandas 3.0 and a series of bug fixes.
-
 Bug fixes:
 
 - Fix an issue that caused an error in `GeoDataFrame.from_features` when there is no `properties` field (#3599).
