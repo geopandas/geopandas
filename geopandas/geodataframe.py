@@ -446,6 +446,8 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 )
             if drop:
                 del frame[col]
+                frame.__class__ = GeoDataFrame
+                # revert the casting done in __delitem__, keep gdf
                 warnings.warn(
                     given_colname_drop_msg,
                     category=FutureWarning,
@@ -558,11 +560,10 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         The Coordinate Reference System (CRS) represented as a ``pyproj.CRS``
         object.
 
-        Returns None if the CRS is not set, and to set the value it
-        :getter: Returns a ``pyproj.CRS`` or None. When setting, the value
-        can be anything accepted by
-        :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
-        such as an authority string (eg "EPSG:4326") or a WKT string.
+        Returns
+        -------
+        ``pyproj.CRS`` | None
+            CRS assigned to an active geometry column
 
         Examples
         --------
@@ -911,7 +912,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         cls, table, geometry: str | None = None, to_pandas_kwargs: dict | None = None
     ):
         """
-        Construct a GeoDataFrame from a Arrow table object based on GeoArrow
+        Construct a GeoDataFrame from an Arrow table object based on GeoArrow
         extension types.
 
         See https://geoarrow.org/ for details on the GeoArrow specification.
@@ -1127,14 +1128,8 @@ individually so that features may have different properties
         if na not in ["null", "drop", "keep"]:
             raise ValueError(f"Unknown na method {na}")
 
-        if self._geometry_column_name not in self:
-            raise AttributeError(
-                "No geometry data set (expected in column "
-                f"'{self._geometry_column_name}')."
-            )
-
         ids = np.asarray(self.index)
-        geometries = np.asarray(self[self._geometry_column_name])
+        geometries = np.asarray(self.geometry)
 
         if not self.columns.is_unique:
             raise ValueError("GeoDataFrame cannot contain duplicated column names.")
@@ -1337,7 +1332,7 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
             struct type.
         include_z : bool, default None
             Only relevant for 'geoarrow' encoding (for WKB, the dimensionality
-            of the individial geometries is preserved).
+            of the individual geometries is preserved).
             If False, return 2D geometries. If True, include the third dimension
             in the output (if a geometry has no third dimension, the z-coordinates
             will be NaN). By default, will infer the dimensionality from the
@@ -1917,6 +1912,12 @@ default 'snappy'
             else:
                 result.__class__ = DataFrame
         return result
+
+    def __delitem__(self, key) -> None:
+        """If the last geometry column is removed, downcast to a dataframe."""
+        super().__delitem__(key)
+        if (self.dtypes == "geometry").sum() == 0:
+            self.__class__ = DataFrame
 
     def _persist_old_default_geometry_colname(self) -> None:
         """Persist the default geometry column name of 'geometry' temporarily for

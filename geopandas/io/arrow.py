@@ -407,7 +407,9 @@ def _to_parquet(
 
     Parameters
     ----------
-    path : str, path object
+    path : str, path object or file-like object
+        String, path object (implementing os.PathLike[str]) or file-like object
+        implementing a binary read() function.
     index : bool, default None
         If ``True``, always include the dataframe's index(es) as columns
         in the file output.
@@ -461,7 +463,9 @@ def _to_feather(df, path, index=None, compression=None, schema_version=None, **k
 
     Parameters
     ----------
-    path : str, path object
+    path : str, path object or file-like object
+        String, path object (implementing os.PathLike[str]) or file-like object
+        implementing a binary read() function.
     index : bool, default None
         If ``True``, always include the dataframe's index(es) as columns
         in the file output.
@@ -494,13 +498,15 @@ def _arrow_to_geopandas(table, geo_metadata=None, to_pandas_kwargs=None):
     if geo_metadata is None:
         # Note: this path of not passing metadata is also used by dask-geopandas
         geo_metadata = _validate_and_decode_metadata(table.schema.metadata)
+    if to_pandas_kwargs is None:
+        to_pandas_kwargs = {}
 
     # Find all geometry columns that were read from the file.  May
     # be a subset if 'columns' parameter is used.
     geometry_columns = [
         col for col in geo_metadata["columns"] if col in table.column_names
     ]
-    result_column_names = list(table.slice(0, 0).to_pandas().columns)
+    result_column_names = list(table.slice(0, 0).to_pandas(**to_pandas_kwargs).columns)
     geometry_columns.sort(key=result_column_names.index)
 
     if not len(geometry_columns):
@@ -526,8 +532,6 @@ def _arrow_to_geopandas(table, geo_metadata=None, to_pandas_kwargs=None):
             )
 
     table_attr = table.drop(geometry_columns)
-    if to_pandas_kwargs is None:
-        to_pandas_kwargs = {}
     df = table_attr.to_pandas(**to_pandas_kwargs)
 
     # Convert the WKB columns that are present back to geometry.
@@ -578,7 +582,7 @@ def _get_filesystem_path(path, filesystem=None, storage_options=None):
 
     if _is_fsspec_url(path) and filesystem is None:
         fsspec = import_optional_dependency(
-            "fsspec", extra="fsspec is requred for 'storage_options'."
+            "fsspec", extra="fsspec is required for 'storage_options'."
         )
         filesystem, path = fsspec.core.url_to_fs(path, **(storage_options or {}))
 
@@ -698,7 +702,9 @@ def _read_parquet(
 
     Parameters
     ----------
-    path : str, path object
+    path : str, path object or file-like object
+        String, path object (implementing os.PathLike[str]) or file-like object
+        implementing a binary read() function.
     columns : list-like of strings, default=None
         If not None, only these columns will be read from the file.  If
         the primary geometry column is not included, the first secondary
@@ -744,6 +750,12 @@ def _read_parquet(
     ...     "data.parquet",
     ...     columns=["geometry", "pop_est"]
     ... )  # doctest: +SKIP
+
+    From bytes:
+
+    >>> p_data = client.get_bytes("bucket/geodata.parquet") # doctest: +SKIP
+    >>> with BytesIO(p_data) as geo_bytes: # doctest: +SKIP
+    >>>     df = gpd.read_parquet(geo_bytes) # doctest: +SKIP
     """
     parquet = import_optional_dependency(
         "pyarrow.parquet", extra="pyarrow is required for Parquet support."
@@ -820,7 +832,9 @@ def _read_feather(path, columns=None, to_pandas_kwargs=None, **kwargs):
 
     Parameters
     ----------
-    path : str, path object
+    path : str, path object or file-like object
+        String, path object (implementing os.PathLike[str]) or file-like object
+        implementing a binary read() function.
     columns : list-like of strings, default=None
         If not None, only these columns will be read from the file.  If
         the primary geometry column is not included, the first secondary
@@ -850,6 +864,9 @@ def _read_feather(path, columns=None, to_pandas_kwargs=None, **kwargs):
     ...     "data.feather",
     ...     columns=["geometry", "pop_est"]
     ... )  # doctest: +SKIP
+
+    See the `read_parquet` docs for examples of reading and writing
+    to/from bytes objects.
     """
     feather = import_optional_dependency(
         "pyarrow.feather", extra="pyarrow is required for Feather support."

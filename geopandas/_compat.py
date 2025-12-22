@@ -12,7 +12,9 @@ import shapely
 PANDAS_GE_202 = Version(pd.__version__) >= Version("2.0.2")
 PANDAS_GE_21 = Version(pd.__version__) >= Version("2.1.0")
 PANDAS_GE_22 = Version(pd.__version__) >= Version("2.2.0")
+PANDAS_GE_23 = Version(pd.__version__) >= Version("2.3.0")
 PANDAS_GE_30 = Version(pd.__version__) >= Version("3.0.0.dev0")
+PANDAS_INFER_STR = PANDAS_GE_23 and pd.options.future.infer_string
 
 
 # -----------------------------------------------------------------------------

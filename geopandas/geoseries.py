@@ -613,7 +613,7 @@ class GeoSeries(GeoPandasBase, Series):
     @classmethod
     def from_arrow(cls, arr, **kwargs) -> GeoSeries:
         """
-        Construct a GeoSeries from a Arrow array object with a GeoArrow
+        Construct a GeoSeries from an Arrow array object with a GeoArrow
         extension type.
 
         See https://geoarrow.org/ for details on the GeoArrow specification.
@@ -1428,7 +1428,7 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
             struct type.
         include_z : bool, default None
             Only relevant for 'geoarrow' encoding (for WKB, the dimensionality
-            of the individial geometries is preserved).
+            of the individual geometries is preserved).
             If False, return 2D geometries. If True, include the third dimension
             in the output (if a geometry has no third dimension, the z-coordinates
             will be NaN). By default, will infer the dimensionality from the

@@ -375,8 +375,7 @@ class GeometryArray(ExtensionArray):
     def crs(self):
         """The Coordinate Reference System (CRS) represented as a ``pyproj.CRS`` object.
 
-        Returns None if the CRS is not set, and to set the value it
-        :getter: Returns a ``pyproj.CRS`` or None. When setting, the value
+        Returns a ``pyproj.CRS`` or None. When setting, the value
         Coordinate Reference System of the geometry objects. Can be anything accepted by
         :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
         such as an authority string (eg "EPSG:4326") or a WKT string.
@@ -1350,7 +1349,7 @@ class GeometryArray(ExtensionArray):
         ----------
         value : shapely geometry object or GeometryArray
             If a geometry value is passed it is used to fill all missing values.
-            Alternatively, an GeometryArray 'value' can be given. It's expected
+            Alternatively, a GeometryArray 'value' can be given. It's expected
             that the GeometryArray has the same length as 'self'.
 
         method : {'backfill', 'bfill', 'pad', 'ffill', None}, default None
@@ -1474,7 +1473,7 @@ class GeometryArray(ExtensionArray):
         # Can't use fillna(None) or Index.putmask, as this gets converted back to nan
         # for object dtypes
         result.index = Index(
-            from_wkb(np.where(result.index.isna(), None, result.index))
+            from_wkb(np.where(result.index.isna(), None, result.index), crs=self.crs)
         )
         return result
 
@@ -1649,7 +1648,7 @@ class GeometryArray(ExtensionArray):
             # process those. The missing values are handled separately by
             # pandas regardless of the values we return here (to sort
             # first/last depending on 'na_position'), the distances for the
-            # empty geometries are substitued below with an appropriate value
+            # empty geometries are replaced below with an appropriate value
             geoms = self.copy()
             indices = np.nonzero(~mask)[0]
             if indices.size:

@@ -8,7 +8,7 @@ from shapely.geometry import GeometryCollection, LineString, Point, Polygon, box
 
 import geopandas
 from geopandas import GeoDataFrame, GeoSeries, overlay, read_file
-from geopandas._compat import HAS_PYPROJ, PANDAS_GE_30
+from geopandas._compat import HAS_PYPROJ, PANDAS_INFER_STR
 
 import pytest
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
@@ -829,7 +829,7 @@ def test_no_intersection():
     gdf2 = GeoDataFrame({"bar": ["1", "3", "5"]}, geometry=gs.translate(1))
 
     expected = GeoDataFrame(columns=["foo", "bar", "geometry"])
-    if PANDAS_GE_30 and pd.options.future.infer_string:
+    if PANDAS_INFER_STR:
         expected = expected.astype({"foo": "str", "bar": "str"})
     result = overlay(gdf1, gdf2, how="intersection")
     assert_geodataframe_equal(result, expected, check_index_type=False)

@@ -431,7 +431,11 @@ def _write_postgis(
             # Only check SRID if table exists
             if connection.dialect.has_table(connection, name, schema):
                 target_srid = connection.execute(
-                    text(f"SELECT Find_SRID('{schema_name}', '{name}', '{geom_name}');")
+                    text(
+                        "SELECT Find_SRID(:schema_name, :name, :geom_name);"
+                    ).bindparams(
+                        schema_name=schema_name, name=name, geom_name=geom_name
+                    )
                 ).fetchone()[0]
 
                 if target_srid != srid:

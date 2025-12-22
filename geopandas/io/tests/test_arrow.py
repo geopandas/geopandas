@@ -1,11 +1,13 @@
 import json
 import os
 import pathlib
+import re
+from io import BytesIO
 from itertools import product
 from packaging.version import Version
 
 import numpy as np
-from pandas import ArrowDtype, DataFrame
+from pandas import ArrowDtype, DataFrame, Index, Series
 from pandas import read_parquet as pd_read_parquet
 
 import shapely
@@ -408,6 +410,32 @@ def test_roundtrip(tmpdir, file_format, test_dataset, request):
     assert_geodataframe_equal(df, pq_df)
 
 
+@pytest.mark.parametrize(
+    "test_dataset", ["naturalearth_lowres", "naturalearth_cities", "nybb_filename"]
+)
+def test_roundtrip_bytesio(file_format, test_dataset, request):
+    """Should be able to roundtrip in BytesIO."""
+    path = request.getfixturevalue(test_dataset)
+    reader, writer = file_format
+
+    df = read_file(path)
+    orig = df.copy()
+
+    buf = BytesIO()
+
+    writer(df, buf)
+    buf.seek(0)
+
+    # make sure that the original data frame is unaltered
+    assert_geodataframe_equal(df, orig)
+
+    # make sure that we can roundtrip the data frame
+    pq_df = reader(BytesIO(buf.getvalue()))
+
+    assert isinstance(pq_df, GeoDataFrame)
+    assert_geodataframe_equal(df, pq_df)
+
+
 def test_index(tmpdir, file_format, naturalearth_lowres):
     """Setting index=`True` should preserve index in output, and
     setting index=`False` should drop index from output.
@@ -763,11 +791,29 @@ def test_write_empty_bbox(tmpdir, geometry):
     assert "bbox" not in metadata["columns"]["geometry"]
 
 
+@pytest.mark.skipif(
+    Version(pyarrow.__version__) < Version("19.0.0"),
+    reason="This version of pyarrow does not support reading complex types",
+)
 @pytest.mark.parametrize("format", ["feather", "parquet"])
 def test_write_read_to_pandas_kwargs(tmpdir, format):
     filename = os.path.join(str(tmpdir), f"test.{format}")
-    g = box(0, 0, 10, 10)
-    gdf = geopandas.GeoDataFrame({"geometry": [g], "i": [1], "s": ["a"]})
+
+    # Use arrow types to ensure that we can assert the roundtrip was successful
+    int_type = ArrowDtype(pyarrow.int64())
+    str_type = ArrowDtype(pyarrow.string())
+    complex_type = ArrowDtype(pyarrow.struct([pyarrow.field("foo", pyarrow.string())]))
+    index = Index([0], dtype=ArrowDtype(pyarrow.int64()))
+
+    gdf = geopandas.GeoDataFrame(
+        {
+            "geometry": [box(0, 0, 10, 10)],
+            "i": Series([1], index=index, dtype=int_type),
+            "s": Series(["a"], index=index, dtype=str_type),
+            "c": Series([{"foo": "bar"}], index=index, dtype=complex_type),
+        },
+        index=index,
+    )
 
     if format == "feather":
         gdf.to_feather(filename)
@@ -779,8 +825,37 @@ def test_write_read_to_pandas_kwargs(tmpdir, format):
     # simulate the `dtype_backend="pyarrow"` option in `pandas.read_parquet`
     gdf_roundtrip = read_func(filename, to_pandas_kwargs={"types_mapper": ArrowDtype})
     assert isinstance(gdf_roundtrip, geopandas.GeoDataFrame)
-    assert isinstance(gdf_roundtrip.dtypes["i"], ArrowDtype)
-    assert isinstance(gdf_roundtrip.dtypes["s"], ArrowDtype)
+    assert gdf_roundtrip.dtypes["i"] == int_type
+    assert gdf_roundtrip.dtypes["s"] == str_type
+    assert gdf_roundtrip.dtypes["c"] == complex_type
+    assert_geodataframe_equal(gdf_roundtrip, gdf, check_dtype=True)
+
+
+@pytest.mark.parametrize("format", ["feather", "parquet"])
+def test_read_complex_type_with_numpy_backend_xfail(tmpdir, format):
+    filename = os.path.join(str(tmpdir), f"test.{format}")
+    complex_type = ArrowDtype(pyarrow.struct([pyarrow.field("foo", pyarrow.string())]))
+    index = Index([0], dtype=ArrowDtype(pyarrow.int64()))
+    gdf = geopandas.GeoDataFrame(
+        {
+            "geometry": [box(0, 0, 10, 10)],
+            "c": Series([{"foo": "bar"}], index=index, dtype=complex_type),
+        },
+        index=index,
+    )
+    if format == "feather":
+        gdf.to_feather(filename)
+        read_func = read_feather
+    else:
+        gdf.to_parquet(filename)
+        read_func = read_parquet
+    # Note: due to bugs in pyarrow, we can't read complex types without using
+    # the types mapper. This is a long standing pandas issue as noted here:
+    # - https://github.com/pandas-dev/pandas/issues/53011
+    # - https://github.com/apache/arrow/issues/39914
+    match = re.escape("data type 'struct<foo: string>[pyarrow]' not understood")
+    with pytest.raises(TypeError, match=match):
+        read_func(filename)
 
 
 @pytest.mark.parametrize("format", ["feather", "parquet"])
@@ -1120,7 +1195,7 @@ def test_read_parquet_bbox(tmpdir, naturalearth_lowres, geometry_name):
 
 @pytest.mark.parametrize("geometry_name", ["geometry", "custum_geom_col"])
 def test_read_parquet_bbox_partitioned(tmpdir, naturalearth_lowres, geometry_name):
-    # check bbox is being used to filter results on partioned data.
+    # check bbox is being used to filter results on partitioned data.
     df = read_file(naturalearth_lowres)
     if geometry_name != "geometry":
         df = df.rename_geometry(geometry_name)
@@ -1326,12 +1401,15 @@ def test_read_parquet_bbox_points(tmp_path):
 def test_non_geo_parquet_read_with_proper_error(tmp_path):
     # https://github.com/geopandas/geopandas/issues/3556
 
-    gdf = geopandas.GeoDataFrame(
+    gdf = GeoDataFrame(
         {"col": [1, 2, 3]},
         geometry=geopandas.points_from_xy([1, 2, 3], [1, 2, 3]),
         crs="EPSG:4326",
     )
     del gdf["geometry"]
+    # for the purposes of testing, force a situation where gdf will be written without
+    # a geometry column (but with the other metadata)
+    gdf.__class__ = GeoDataFrame
 
     gdf.to_parquet(tmp_path / "test_no_geometry.parquet")
     with pytest.raises(
