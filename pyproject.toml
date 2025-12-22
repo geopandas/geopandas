@@ -109,7 +109,7 @@ filterwarnings = [
 
 [tool.ruff]
 line-length = 88
-extend-exclude = ["doc/*", "benchmarks/*", "versioneer.py", "geopandas/_version.py"]
+extend-exclude = ["doc/*", "benchmarks/*", "geopandas/_version.py"]
 
 [tool.ruff.lint]
 select = [
