@@ -1,6 +1,8 @@
 # Changelog
 
-## Version 1.1.2
+## Version 1.1.2 (December 22, 2025)
+
+GeoPandas 1.1.2 brings compatibility with pandas 3.0 and a series of bug fixes.
 
 Bug fixes:
 
