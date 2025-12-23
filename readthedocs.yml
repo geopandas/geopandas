@@ -8,8 +8,8 @@ build:
     python: mambaforge-latest
   jobs:
     post_checkout:
-      # we need the tags for versioneer to work
       - git fetch origin --depth 150
+      # we need the tags for hatch-vcs to work
       - git fetch --tags
     post_build:
       - mamba list
