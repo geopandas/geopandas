@@ -2055,7 +2055,11 @@ class TestGeomMethods:
                 ]
             ),
         )
-        assert_frame_equal(self.g11.get_coordinates(index_parts=True), expected, check_index_type=False)
+        assert_frame_equal(
+            self.g11.get_coordinates(index_parts=True),
+            expected,
+            check_index_type=False,
+        )
 
     def test_minimum_bounding_radius(self):
         mbr_geoms = self.g1.minimum_bounding_radius()
