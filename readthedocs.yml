@@ -8,7 +8,7 @@ build:
     python: mambaforge-latest
   jobs:
     post_checkout:
-      # we need the tags for versioneer to work
+      # we need the tags for version to work
       - git fetch origin --depth 150
       - git fetch --tags
     post_build:
