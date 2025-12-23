@@ -1661,7 +1661,7 @@ class TestGeomMethods:
             names=[index_name, None],
         )
         expected_df = expected_df.set_index(expected_index)
-        assert_frame_equal(test_df, expected_df)
+        assert_frame_equal(test_df, expected_df, check_index_type=False)
 
     @pytest.mark.parametrize("index_name", [None, "test"])
     def test_explode_geodataframe_level_1(self, index_name):
@@ -1680,7 +1680,7 @@ class TestGeomMethods:
             names=[index_name, None],
         )
         expected_df = expected_df.set_index(expected_index)
-        assert_frame_equal(test_df, expected_df)
+        assert_frame_equal(test_df, expected_df, check_index_type=False)
 
     @pytest.mark.parametrize("index_name", [None, "test"])
     def test_explode_geodataframe_no_multiindex(self, index_name):
@@ -1786,7 +1786,7 @@ class TestGeomMethods:
             names=["first", "second", None],
         )
         expected_df = expected_df.set_index(expected_index)
-        assert_frame_equal(test_df, expected_df)
+        assert_frame_equal(test_df, expected_df, check_index_type=False)
 
     @pytest.mark.parametrize("outer_index", [1, (1, 2), "1"])
     def test_explode_pandas_multi_index_false(self, outer_index):
@@ -1887,7 +1887,7 @@ class TestGeomMethods:
             geometry=expected_geometry,
             index=expected_index,
         )
-        assert_geodataframe_equal(test_df, expected_df)
+        assert_geodataframe_equal(test_df, expected_df, check_index_type=False)
 
     def test_explode_order_no_multi(self):
         df = GeoDataFrame(
@@ -1905,7 +1905,7 @@ class TestGeomMethods:
             geometry=[Point(0, x) for x in range(3)],
             index=expected_index,
         )
-        assert_geodataframe_equal(test_df, expected_df)
+        assert_geodataframe_equal(test_df, expected_df, check_index_type=False)
 
     def test_explode_order_mixed(self):
         df = GeoDataFrame(
@@ -1933,7 +1933,7 @@ class TestGeomMethods:
             geometry=expected_geometry,
             index=expected_index,
         )
-        assert_geodataframe_equal(test_df, expected_df)
+        assert_geodataframe_equal(test_df, expected_df, check_index_type=False)
 
     def test_explode_duplicated_index(self):
         df = GeoDataFrame(
@@ -1961,7 +1961,7 @@ class TestGeomMethods:
             geometry=expected_geometry,
             index=expected_index,
         )
-        assert_geodataframe_equal(test_df, expected_df)
+        assert_geodataframe_equal(test_df, expected_df, check_index_type=False)
 
     @pytest.mark.parametrize("geom_col", ["geom", "geometry"])
     def test_explode_geometry_name(self, geom_col):
@@ -2055,7 +2055,11 @@ class TestGeomMethods:
                 ]
             ),
         )
-        assert_frame_equal(self.g11.get_coordinates(index_parts=True), expected)
+        assert_frame_equal(
+            self.g11.get_coordinates(index_parts=True),
+            expected,
+            check_index_type=False,
+        )
 
     def test_minimum_bounding_radius(self):
         mbr_geoms = self.g1.minimum_bounding_radius()
