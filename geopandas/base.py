@@ -2299,7 +2299,7 @@ GeometryCollection
     def force_2d(self):
         """Force the dimensionality of a geometry to 2D.
 
-        Removes the additional Z coordinate dimension from all geometries.
+        Removes the additional Z and M coordinate dimensions from all geometries.
 
         Returns
         -------
