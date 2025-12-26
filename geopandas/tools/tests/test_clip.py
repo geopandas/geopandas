@@ -16,7 +16,8 @@ from shapely.geometry import (
 
 import geopandas
 from geopandas import GeoDataFrame, GeoSeries, clip
-from geopandas._compat import HAS_PYPROJ
+from geopandas._compat import HAS_PYPROJ, PANDAS_INFER_STR
+from geopandas.array import POLYGON_GEOM_TYPES
 from geopandas.tools.clip import _mask_is_list_like_rectangle
 
 import pytest
@@ -303,8 +304,8 @@ class TestClipWithSingleRectangleGdf:
             mask if _mask_is_list_like_rectangle(mask) else mask.total_bounds
         )
         assert np.array_equal(clipped.total_bounds, expected_bounds)
-        # Assert returned data is a not geometry collection
-        assert (clipped.geom_type.isin(["Polygon", "MultiPolygon"])).all()
+        # Assert returned data is not a geometry collection
+        assert (clipped.geom_type.isin(POLYGON_GEOM_TYPES)).all()
 
     def test_clip_multiline(self, multi_line, mask):
         """Test that clipping a multiline feature with a poly returns expected
@@ -361,7 +362,7 @@ class TestClipWithSingleRectangleGdf:
         and keep_geom_type is True, no geometry collections should be returned."""
         clipped = clip(sliver_line, mask, keep_geom_type=True)
         assert len(clipped.geometry) == 1
-        # Assert returned data is a not geometry collection
+        # Assert returned data is not a geometry collection
         assert not (clipped.geom_type == "GeometryCollection").any()
 
     def test_clip_no_box_overlap(self, pointsoutside_nooverlap_gdf, mask):
@@ -462,9 +463,12 @@ def test_clip_single_multipoly_no_extra_geoms(
 def test_clip_empty_mask(buffered_locations, mask):
     """Test that clipping with empty mask returns an empty result."""
     clipped = clip(buffered_locations, mask)
+    expected = GeoDataFrame([], columns=["geometry", "type"], crs="EPSG:3857")
+    if PANDAS_INFER_STR:
+        expected = expected.astype({"type": "str"})
     assert_geodataframe_equal(
         clipped,
-        GeoDataFrame([], columns=["geometry", "type"], crs="EPSG:3857"),
+        expected,
         check_index_type=False,
     )
     clipped = clip(buffered_locations.geometry, mask)

@@ -1,6 +1,9 @@
+from __future__ import annotations
+
 import os
 import urllib.request
 import warnings
+from http import HTTPStatus
 from io import IOBase
 from packaging.version import Version
 from pathlib import Path
@@ -8,24 +11,29 @@ from pathlib import Path
 # Adapted from pandas.io.common
 from urllib.parse import urlparse as parse_url
 from urllib.parse import uses_netloc, uses_params, uses_relative
+from urllib.request import Request
 
 import numpy as np
 import pandas as pd
-from pandas.api.types import is_integer_dtype
+from pandas.api.types import (
+    is_datetime64_any_dtype,
+    is_integer_dtype,
+    is_object_dtype,
+    is_string_dtype,
+)
 
 import shapely
 from shapely.geometry import mapping
 from shapely.geometry.base import BaseGeometry
 
 from geopandas import GeoDataFrame, GeoSeries
-from geopandas._compat import HAS_PYPROJ, PANDAS_GE_20
+from geopandas._compat import HAS_PYPROJ
 from geopandas.io.util import vsi_path
 
 _VALID_URLS = set(uses_relative + uses_netloc + uses_params)
 _VALID_URLS.discard("")
 # file:// URIs are supported by fiona/pyogrio -> don't already open + read the file here
 _VALID_URLS.discard("file")
-
 
 fiona = None
 fiona_env = None
@@ -65,13 +73,11 @@ def _import_fiona():
 
 pyogrio = None
 pyogrio_import_error = None
-PYOGRIO_GE_081 = False
 
 
 def _import_pyogrio():
     global pyogrio
     global pyogrio_import_error
-    global PYOGRIO_GE_081
 
     if pyogrio is None:
         try:
@@ -80,10 +86,6 @@ def _import_pyogrio():
         except ImportError as err:
             pyogrio = False
             pyogrio_import_error = str(err)
-        else:
-            PYOGRIO_GE_081 = Version(
-                Version(pyogrio.__version__).base_version
-            ) >= Version("0.8.1")
 
 
 def _check_fiona(func):
@@ -99,7 +101,21 @@ def _check_pyogrio(func):
         raise ImportError(
             f"the {func} requires the 'pyogrio' package, but it is not installed "
             "or does not import correctly."
-            "\nImporting pyogrio resulted in: {pyogrio_import_error}"
+            f"\nImporting pyogrio resulted in: {pyogrio_import_error}"
+        )
+
+
+def _check_metadata_supported(metadata: str | None, engine: str, driver: str) -> None:
+    if metadata is None:
+        return
+    if driver != "GPKG":
+        raise NotImplementedError(
+            "The 'metadata' keyword is only supported for the GPKG driver."
+        )
+
+    if engine == "fiona" and not FIONA_GE_19:
+        raise NotImplementedError(
+            "The 'metadata' keyword is only supported for Fiona >= 1.9."
         )
 
 
@@ -181,8 +197,7 @@ def _is_url(url):
 def _read_file(
     filename, bbox=None, mask=None, columns=None, rows=None, engine=None, **kwargs
 ):
-    """
-    Returns a GeoDataFrame from a file or URL.
+    """Return a GeoDataFrame from a file or URL.
 
     Parameters
     ----------
@@ -219,9 +234,9 @@ def _read_file(
         Keyword args to be passed to the engine, and can be used to write
         to multi-layer data, store data within archives (zip files), etc.
         In case of the "pyogrio" engine, the keyword arguments are passed to
-        `pyogrio.write_dataframe`. In case of the "fiona" engine, the keyword
+        `pyogrio.read_dataframe`. In case of the "fiona" engine, the keyword
         arguments are passed to fiona.open`. For more information on possible
-        keywords, type: ``import pyogrio; help(pyogrio.write_dataframe)``.
+        keywords, type: ``import pyogrio; help(pyogrio.read_dataframe)``.
 
 
     Examples
@@ -255,6 +270,11 @@ def _read_file(
     may fail. In this case, the proper encoding can be specified explicitly
     by using the encoding keyword parameter, e.g. ``encoding='utf-8'``.
 
+    For faster data reading with the default pyogrio engine when
+    pyarrow is installed, pass ``use_arrow=True`` as an argument. See the User
+    Guide page :doc:`../../user_guide/io` for details.
+
+
     When specifying a URL, geopandas will check if the server supports reading
     partial data and in that case pass the URL as is to the underlying engine,
     which will then use the network file system handler of GDAL to read from
@@ -276,10 +296,21 @@ def _read_file(
         # pyogrio/fiona as is (to support downloading only part of the file)
         # otherwise still download manually because pyogrio/fiona don't support
         # all types of urls (https://github.com/geopandas/geopandas/issues/2908)
-        with urllib.request.urlopen(filename) as response:
-            if not response.headers.get("Accept-Ranges") == "bytes":
+        try:
+            with urllib.request.urlopen(
+                Request(filename, headers={"Range": "bytes=0-1"})
+            ) as response:
+                if (
+                    response.headers.get("Accept-Ranges") == "none"
+                    or response.status != HTTPStatus.PARTIAL_CONTENT
+                ):
+                    from_bytes = True
+        except ConnectionError:
+            from_bytes = True
+
+        if from_bytes:
+            with urllib.request.urlopen(filename) as response:
                 filename = response.read()
-                from_bytes = True
 
     if engine == "pyogrio":
         return _read_file_pyogrio(
@@ -347,7 +378,8 @@ def _read_file_fiona(
 
     with fiona_env():
         with reader(path_or_bytes, **kwargs) as features:
-            crs = features.crs_wkt
+            crs = features.crs_wkt  # returns "" if empty
+            crs = crs or None
             # attempt to get EPSG code
             try:
                 # fiona 1.9+
@@ -363,14 +395,18 @@ def _read_file_fiona(
 
             # handle loading the bounding box
             if bbox is not None:
-                if isinstance(bbox, (GeoDataFrame, GeoSeries)):
+                if isinstance(bbox, GeoDataFrame | GeoSeries):
                     bbox = tuple(bbox.to_crs(crs).total_bounds)
                 elif isinstance(bbox, BaseGeometry):
                     bbox = bbox.bounds
                 assert len(bbox) == 4
             # handle loading the mask
-            elif isinstance(mask, (GeoDataFrame, GeoSeries)):
-                mask = mapping(mask.to_crs(crs).union_all())
+            elif isinstance(mask, GeoDataFrame | GeoSeries):
+                if crs is not None and mask.crs is not None:
+                    mask = mask.to_crs(crs)
+                else:
+                    _warn_missing_crs_of_dataframe_and_mask(crs, mask)
+                mask = mapping(mask.union_all())
             elif isinstance(mask, BaseGeometry):
                 mask = mapping(mask)
 
@@ -439,10 +475,7 @@ def _read_file_fiona(
                 # fiona only supports up to ms precision (any microseconds are
                 # floating point rounding error)
                 if as_dt is not None and not (as_dt.dtype == "object"):
-                    if PANDAS_GE_20:
-                        df[k] = as_dt.dt.as_unit("ms")
-                    else:
-                        df[k] = as_dt.dt.round(freq="ms")
+                    df[k] = as_dt.dt.as_unit("ms")
             return df
 
 
@@ -471,8 +504,8 @@ def _read_file_pyogrio(path_or_bytes, bbox=None, mask=None, rows=None, **kwargs)
         raise ValueError("mask and bbox can not be set together")
 
     if bbox is not None:
-        if isinstance(bbox, (GeoDataFrame, GeoSeries)):
-            crs = pyogrio.read_info(path_or_bytes).get("crs")
+        if isinstance(bbox, GeoDataFrame | GeoSeries):
+            crs = pyogrio.read_info(path_or_bytes, layer=kwargs.get("layer")).get("crs")
             if isinstance(path_or_bytes, IOBase):
                 path_or_bytes.seek(0)
 
@@ -484,12 +517,17 @@ def _read_file_pyogrio(path_or_bytes, bbox=None, mask=None, rows=None, **kwargs)
 
     if mask is not None:
         # NOTE: mask cannot be used at same time as bbox keyword
-        if isinstance(mask, (GeoDataFrame, GeoSeries)):
-            crs = pyogrio.read_info(path_or_bytes).get("crs")
+        if isinstance(mask, GeoDataFrame | GeoSeries):
+            crs = pyogrio.read_info(path_or_bytes, layer=kwargs.get("layer")).get("crs")
+            if crs is not None and mask.crs is not None:
+                mask = mask.to_crs(crs)
+            else:
+                _warn_missing_crs_of_dataframe_and_mask(crs, mask)
+
             if isinstance(path_or_bytes, IOBase):
                 path_or_bytes.seek(0)
 
-            mask = shapely.unary_union(mask.to_crs(crs).geometry.values)
+            mask = shapely.unary_union(mask.geometry.values)
         elif isinstance(mask, BaseGeometry):
             mask = shapely.unary_union(mask)
         elif isinstance(mask, dict) or hasattr(mask, "__geo_interface__"):
@@ -517,7 +555,7 @@ def _read_file_pyogrio(path_or_bytes, bbox=None, mask=None, rows=None, **kwargs)
             stacklevel=3,
         )
         ignore_fields = kwargs.pop("ignore_fields")
-        fields = pyogrio.read_info(path_or_bytes)["fields"]
+        fields = pyogrio.read_info(path_or_bytes, layer=kwargs.get("layer"))["fields"]
         include_fields = [col for col in fields if col not in ignore_fields]
         kwargs["columns"] = include_fields
     elif "include_fields" in kwargs:
@@ -538,10 +576,27 @@ def _read_file_pyogrio(path_or_bytes, bbox=None, mask=None, rows=None, **kwargs)
     return pyogrio.read_dataframe(path_or_bytes, bbox=bbox, **kwargs)
 
 
+def _warn_missing_crs_of_dataframe_and_mask(source_dataset_crs, mask):
+    """
+    Warn if one, or both, of the source dataset or mask does not
+    have a crs.
+    """
+    if (source_dataset_crs is None) and (mask.crs is None):
+        msg = "There is no CRS defined in the source dataset nor mask. "
+    elif (source_dataset_crs is None) and (mask.crs is not None):
+        msg = "There is no CRS defined in the source dataset. "
+    else:  # crs not None and mask.crs is None
+        msg = "There is no CRS defined in the mask. "
+    msg += (
+        "This may lead to a misalignment of the mask and the "
+        "source dataset, leading to incorrect masking. Ensure "
+        "both inputs share the same CRS."
+    )
+    warnings.warn(msg, UserWarning, stacklevel=3)
+
+
 def _detect_driver(path):
-    """
-    Attempt to auto-detect driver based on the extension
-    """
+    """Attempt to auto-detect driver based on the extension."""
     try:
         # in case the path is a file handle
         path = path.name
@@ -565,10 +620,10 @@ def _to_file(
     mode="w",
     crs=None,
     engine=None,
+    metadata=None,
     **kwargs,
 ):
-    """
-    Write this GeoDataFrame to an OGR data source
+    """Write this GeoDataFrame to an OGR data source.
 
     A dictionary of supported OGR providers is available via:
 
@@ -620,6 +675,10 @@ def _to_file(
         supported options are "pyogrio" and "fiona". Defaults to "pyogrio" if
         installed, otherwise tries "fiona". Engine can also be set globally
         with the ``geopandas.options.io_engine`` option.
+    metadata : dict[str, str], default None
+        Optional metadata to be stored in the file. Keys and values must be
+        strings. Only supported for the "GPKG" driver
+        (requires Fiona >= 1.9 or pyogrio >= 0.6).
     **kwargs :
         Keyword args to be passed to the engine, and can be used to write
         to multi-layer data, store data within archives (zip files), etc.
@@ -663,19 +722,20 @@ def _to_file(
             "to a supported format like a well-known text (WKT) using "
             "`GeoSeries.to_wkt()`.",
         )
+    _check_metadata_supported(metadata, engine, driver)
 
     if mode not in ("w", "a"):
         raise ValueError(f"'mode' should be one of 'w' or 'a', got '{mode}' instead")
 
     if engine == "pyogrio":
-        _to_file_pyogrio(df, filename, driver, schema, crs, mode, **kwargs)
+        _to_file_pyogrio(df, filename, driver, schema, crs, mode, metadata, **kwargs)
     elif engine == "fiona":
-        _to_file_fiona(df, filename, driver, schema, crs, mode, **kwargs)
+        _to_file_fiona(df, filename, driver, schema, crs, mode, metadata, **kwargs)
     else:
         raise ValueError(f"unknown engine '{engine}'")
 
 
-def _to_file_fiona(df, filename, driver, schema, crs, mode, **kwargs):
+def _to_file_fiona(df, filename, driver, schema, crs, mode, metadata, **kwargs):
     if not HAS_PYPROJ and crs:
         raise ImportError(
             "The 'pyproj' package is required to write a file with a CRS, but it is not"
@@ -707,10 +767,12 @@ def _to_file_fiona(df, filename, driver, schema, crs, mode, **kwargs):
         with fiona.open(
             filename, mode=mode, driver=driver, crs_wkt=crs_wkt, schema=schema, **kwargs
         ) as colxn:
+            if metadata is not None:
+                colxn.update_tags(metadata)
             colxn.writerecords(df.iterfeatures())
 
 
-def _to_file_pyogrio(df, filename, driver, schema, crs, mode, **kwargs):
+def _to_file_pyogrio(df, filename, driver, schema, crs, mode, metadata, **kwargs):
     import pyogrio
 
     if schema is not None:
@@ -722,13 +784,13 @@ def _to_file_pyogrio(df, filename, driver, schema, crs, mode, **kwargs):
         kwargs["append"] = True
 
     if crs is not None:
-        raise ValueError("Passing 'crs' it not supported with the 'pyogrio' engine.")
+        raise ValueError("Passing 'crs' is not supported with the 'pyogrio' engine.")
 
     # for the fiona engine, this check is done in gdf.iterfeatures()
     if not df.columns.is_unique:
         raise ValueError("GeoDataFrame cannot contain duplicated column names.")
 
-    pyogrio.write_dataframe(df, filename, driver=driver, **kwargs)
+    pyogrio.write_dataframe(df, filename, driver=driver, metadata=metadata, **kwargs)
 
 
 def infer_schema(df):
@@ -744,9 +806,9 @@ def infer_schema(df):
     }
 
     def convert_type(column, in_type):
-        if in_type == object:
+        if is_object_dtype(in_type) or is_string_dtype(in_type):
             return "str"
-        if in_type.name.startswith("datetime64"):
+        if is_datetime64_any_dtype(in_type):
             # numpy datetime type regardless of frequency
             return "datetime"
         if str(in_type) in types:
@@ -783,13 +845,12 @@ def infer_schema(df):
 
 
 def _geometry_types(df):
-    """
-    Determine the geometry types in the GeoDataFrame for the schema.
-    """
+    """Determine the geometry types in the GeoDataFrame for the schema."""
     geom_types_2D = df[~df.geometry.has_z].geometry.geom_type.unique()
-    geom_types_2D = [gtype for gtype in geom_types_2D if gtype is not None]
+    geom_types_2D = list(geom_types_2D[pd.notna(geom_types_2D)])
     geom_types_3D = df[df.geometry.has_z].geometry.geom_type.unique()
-    geom_types_3D = ["3D " + gtype for gtype in geom_types_3D if gtype is not None]
+    geom_types_3D = list(geom_types_3D[pd.notna(geom_types_3D)])
+    geom_types_3D = ["3D " + gtype for gtype in geom_types_3D]
     geom_types = geom_types_3D + geom_types_2D
 
     if len(geom_types) == 0:

@@ -16,7 +16,7 @@ To install GeoPandas and all its dependencies, we recommend to use the `conda`_
 package manager. This can be obtained by installing the
 `Anaconda Distribution`_ (a free Python distribution for data science), or
 through `miniconda`_ (minimal distribution only containing Python and the
-`conda`_ package manager). See also the `installation docs
+`conda`_ package manager). See also the `Conda installation docs
 <https://conda.io/docs/user-guide/install/download.html>`__ for more information
 on how to install Anaconda or miniconda locally.
 
@@ -38,7 +38,8 @@ which packages can be installed, in addition to the "*defaults*" channel
 provided by Anaconda.
 Depending on what other packages you are working with, the *defaults* channel
 or *conda-forge* channel may be better for your needs (e.g. some packages are
-available on *conda-forge* and not on *defaults*).
+available on *conda-forge* and not on *defaults*). Generally, *conda-forge* is
+more up to date with the latest versions of geospatial python packages.
 
 GeoPandas and all its dependencies are available on the *conda-forge*
 channel, and can be installed as::
@@ -143,10 +144,10 @@ Dependencies
 Required dependencies:
 
 - `numpy`_
-- `pandas`_ (version 1.4 or later)
-- `shapely`_ (interface to `GEOS`_; version 2.0.0 or later)
-- `pyogrio`_ (interface to `GDAL`_; version 0.7.2 or later)
-- `pyproj`_ (interface to `PROJ`_; version 3.3.0 or later)
+- `pandas`_ (version 2.2 or later)
+- `shapely`_ (interface to `GEOS`_; version 2.1 or later)
+- `pyogrio`_ (interface to `GDAL`_; version 0.8 or later)
+- `pyproj`_ (interface to `PROJ`_; version 3.7.0 or later)
 - `packaging`_
 
 Further, optional dependencies are:
@@ -157,12 +158,14 @@ Further, optional dependencies are:
 - `GeoAlchemy2`_ (optional; for writing to PostGIS)
 - `geopy`_ (optional; for geocoding)
 - `pointpats`_ (optional; for advanced point sampling)
+- `scipy`_ (optional; for sparse output of spatial indexing)
 
 
 For plotting, these additional packages may be used:
 
-- `matplotlib`_ (>= 3.5.0)
-- `mapclassify`_ (>= 2.4.0)
+- `matplotlib`_ (>= 3.9.0)
+- `mapclassify`_ (>= 2.7.0)
+- `folium`_ (for interactive plotting)
 
 
 .. _PyPI: https://pypi.python.org/pypi/geopandas
@@ -210,3 +213,8 @@ For plotting, these additional packages may be used:
 .. _packaging: https://packaging.pypa.io/en/latest/
 
 .. _pointpats: https://pysal.org/pointpats/
+
+.. _folium: https://python-visualization.github.io/folium/latest/
+
+.. _scipy: https://docs.scipy.org/doc/scipy/
+

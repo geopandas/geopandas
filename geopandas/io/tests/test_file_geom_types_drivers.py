@@ -272,15 +272,6 @@ def test_to_file_roundtrip(tmpdir, geodataframe, ogr_driver, engine):
     if driver == "SQLite":
         write_kwargs["spatialite"] = True
 
-        # This if statement can be removed once minimal fiona version >= 1.8.20
-        if engine == "fiona":
-            from packaging.version import Version
-
-            import fiona
-
-            if Version(fiona.__version__) < Version("1.8.20"):
-                pytest.skip("SQLite driver only available from version 1.8.20")
-
         # If only 3D Points, geometry_type needs to be specified for spatialite at the
         # moment. This if can be removed once the following PR is released:
         # https://github.com/geopandas/pyogrio/pull/223
@@ -296,7 +287,7 @@ def test_to_file_roundtrip(tmpdir, geodataframe, ogr_driver, engine):
     expected_error = _expected_error_on(geodataframe, driver)
     if expected_error:
         with pytest.raises(
-            RuntimeError, match="Failed to write record|Could not add feature to layer"
+            RuntimeError, match=r"Failed to write record|Could not add feature to layer"
         ):
             geodataframe.to_file(
                 output_file, driver=driver, engine=engine, **write_kwargs

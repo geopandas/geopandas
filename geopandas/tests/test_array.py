@@ -9,11 +9,11 @@ import shapely.affinity
 import shapely.geometry
 import shapely.wkb
 import shapely.wkt
-from shapely import geos_version
+from shapely import MultiPolygon, Polygon, geos_version
 from shapely.geometry.base import CAP_STYLE, JOIN_STYLE
 
 import geopandas
-from geopandas._compat import HAS_PYPROJ
+from geopandas._compat import GEOS_GE_312, HAS_PYPROJ
 from geopandas.array import (
     GeometryArray,
     _check_crs,
@@ -288,12 +288,8 @@ def test_as_array():
         ("touches", ()),
         ("within", ()),
         ("geom_equals_exact", (0.1,)),
-        ("geom_almost_equals", (3,)),
     ],
 )
-# filters required for attr=geom_almost_equals only
-@pytest.mark.filterwarnings(r"ignore:The \'geom_almost_equals\(\)\' method is deprecat")
-@pytest.mark.filterwarnings(r"ignore:The \'almost_equals\(\)\' method is deprecated")
 def test_predicates_vector_scalar(attr, args):
     na_value = False
 
@@ -332,12 +328,8 @@ def test_predicates_vector_scalar(attr, args):
         ("touches", ()),
         ("within", ()),
         ("geom_equals_exact", (0.1,)),
-        ("geom_almost_equals", (3,)),
     ],
 )
-# filters required for attr=geom_almost_equals only
-@pytest.mark.filterwarnings(r"ignore:The \'geom_almost_equals\(\)\' method is deprecat")
-@pytest.mark.filterwarnings(r"ignore:The \'almost_equals\(\)\' method is deprecated")
 def test_predicates_vector_vector(attr, args):
     na_value = False
     empty_value = True if attr == "disjoint" else False
@@ -620,13 +612,13 @@ def test_binary_project(normalized):
 
 @pytest.mark.parametrize("cap_style", [CAP_STYLE.round, CAP_STYLE.square])
 @pytest.mark.parametrize("join_style", [JOIN_STYLE.round, JOIN_STYLE.bevel])
-@pytest.mark.parametrize("resolution", [16, 25])
-def test_buffer(resolution, cap_style, join_style):
+@pytest.mark.parametrize("quad_segs", [16, 25])
+def test_buffer(quad_segs, cap_style, join_style):
     na_value = None
     expected = [
         (
             p.buffer(
-                0.1, resolution=resolution, cap_style=cap_style, join_style=join_style
+                0.1, quad_segs=quad_segs, cap_style=cap_style, join_style=join_style
             )
             if p is not None
             else na_value
@@ -634,15 +626,26 @@ def test_buffer(resolution, cap_style, join_style):
         for p in points
     ]
     result = P.buffer(
-        0.1, resolution=resolution, cap_style=cap_style, join_style=join_style
+        0.1, quad_segs=quad_segs, cap_style=cap_style, join_style=join_style
     )
     assert equal_geometries(expected, result)
 
     dist = np.array([0.1] * len(P))
     result = P.buffer(
-        dist, resolution=resolution, cap_style=cap_style, join_style=join_style
+        dist, quad_segs=quad_segs, cap_style=cap_style, join_style=join_style
     )
     assert equal_geometries(expected, result)
+
+
+def test_buffer_resolution_deprecation():
+    with pytest.raises(
+        ValueError, match="`buffer` received both `quad_segs` and `resolution`"
+    ):
+        P.buffer(2, resolution=2, quad_segs=2)
+    with pytest.warns(
+        DeprecationWarning, match="The `resolution` argument to `buffer`"
+    ):
+        P.buffer(2, resolution=2)
 
 
 def test_simplify():
@@ -665,7 +668,9 @@ def test_unary_union():
         shapely.geometry.Polygon([(0, 0), (1, 0), (1, 1)]),
     ]
     G = from_shapely(geoms)
-    with pytest.warns(FutureWarning, match="The 'unary_union' attribute is deprecated"):
+    with pytest.warns(
+        DeprecationWarning, match="The 'unary_union' attribute is deprecated"
+    ):
         u = G.unary_union()
 
     expected = shapely.geometry.Polygon([(0, 0), (1, 0), (1, 1), (0, 1)])
@@ -687,8 +692,50 @@ def test_union_all():
     u_cov = G.union_all(method="coverage")
     assert u_cov.equals(expected)
 
-    with pytest.raises(ValueError, match="Method 'invalid' not recognized."):
+    if GEOS_GE_312:
+        u_disjoint = G.union_all(method="disjoint_subset")
+        assert u_disjoint.equals(expected)
+
+    with pytest.raises(ValueError, match="Method 'invalid' not recognized"):
         G.union_all(method="invalid")
+
+
+@pytest.mark.parametrize(
+    "grid_size, expected",
+    [
+        (
+            None,
+            MultiPolygon(
+                [
+                    Polygon([(0, 0), (10, 0), (10, 10)]),
+                    Polygon([(0, 0.4), (4.6, 5), (0, 5)]),
+                ]
+            ),
+        ),
+        (1, Polygon([(0, 5), (5, 5), (10, 10), (10, 0), (0, 0)])),
+    ],
+)
+def test_union_all_grid_size(grid_size, expected):
+    geoms = [
+        Polygon([(0, 0), (10, 0), (10, 10)]),
+        Polygon([(0, 0.4), (4.6, 5), (0, 5)]),
+    ]
+    G = from_shapely(geoms)
+    u = G.union_all(grid_size=grid_size)
+    assert u.equals(expected)
+
+
+def test_union_all_grid_size_error():
+    geoms = [
+        shapely.geometry.Polygon([(0, 0), (0, 1), (1, 1)]),
+        shapely.geometry.Polygon([(0, 0), (1, 0), (1, 1)]),
+    ]
+    G = from_shapely(geoms)
+
+    with pytest.raises(
+        ValueError, match="grid_size is not supported for method 'coverage'"
+    ):
+        G.union_all(method="coverage", grid_size=1)
 
 
 @pytest.mark.parametrize(
@@ -1031,3 +1078,9 @@ class TestEstimateUtmCrs:
             from_shapely(
                 [shapely.geometry.Polygon([(0, 90), (1, 90), (2, 90)])]
             ).estimate_utm_crs()
+
+
+def test_reduce_keepdims():
+    arr = geopandas.GeoDataFrame(geometry=[]).geometry.array
+    assert arr._reduce("all", keepdims=True) == np.array([True], dtype=object)
+    assert arr._reduce("all", keepdims=False)

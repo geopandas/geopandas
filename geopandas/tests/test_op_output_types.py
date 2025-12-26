@@ -344,6 +344,18 @@ def test_expanddim_in_unstack():
     assert_obj_no_active_geo_col(unstack, GeoDataFrame, expected_geo_name)
 
 
+def test_delitem():
+    # https://github.com/geopandas/geopandas/issues/2932
+    df = GeoDataFrame({"geometry": GeoSeries.from_xy([1], [1]), "a": [1]})
+    del df["geometry"]
+    assert_object(df, pd.DataFrame)
+
+    df2 = GeoDataFrame({"geometry": GeoSeries.from_xy([1], [1]), "a": [1]})
+    df2["geom2"] = df2.geometry
+    del df2["geometry"]
+    assert_obj_no_active_geo_col(df2, GeoDataFrame, geo_colname="geometry")
+
+
 # indexing /  constructor_sliced tests
 
 test_case_column_sets = [
@@ -369,7 +381,7 @@ def test_constructor_sliced_row_slices(df2, column_set):
     assert isinstance(df_subset, GeoDataFrame)
     res = df_subset.loc[0]
     # row slices shouldn't be GeoSeries, even if they have a geometry col
-    assert type(res) == pd.Series
+    assert type(res) is pd.Series
     if "geometry" in column_set:
         assert not isinstance(res.geometry, pd.Series)
         assert res.geometry == Point(0, 0)
@@ -380,25 +392,25 @@ def test_constructor_sliced_column_slices(df2):
     geo_idx = df2.columns.get_loc("geometry")
     sub = df2.head(1)
     # column slices should be GeoSeries if of geometry type
-    assert type(sub.iloc[:, geo_idx]) == GeoSeries
-    assert type(sub.iloc[[0], geo_idx]) == GeoSeries
+    assert type(sub.iloc[:, geo_idx]) is GeoSeries
+    assert type(sub.iloc[[0], geo_idx]) is GeoSeries
     sub = df2.head(2)
-    assert type(sub.iloc[:, geo_idx]) == GeoSeries
-    assert type(sub.iloc[[0, 1], geo_idx]) == GeoSeries
+    assert type(sub.iloc[:, geo_idx]) is GeoSeries
+    assert type(sub.iloc[[0, 1], geo_idx]) is GeoSeries
 
     # check iloc row slices are pd.Series instead
-    assert type(df2.iloc[0, :]) == pd.Series
+    assert type(df2.iloc[0, :]) is pd.Series
 
 
 def test_constructor_sliced_in_pandas_methods(df2):
     # constructor sliced is used in many places, checking a sample of non
     # geometry cases are sensible
-    assert type(df2.count()) == pd.Series
+    assert type(df2.count()) is pd.Series
     # drop the secondary geometry columns as not hashable
     hashable_test_df = df2.drop(columns=["geometry2", "geometry3"])
-    assert type(hashable_test_df.duplicated()) == pd.Series
-    assert type(df2.quantile(numeric_only=True)) == pd.Series
-    assert type(df2.memory_usage()) == pd.Series
+    assert type(hashable_test_df.duplicated()) is pd.Series
+    assert type(df2.quantile(numeric_only=True)) is pd.Series
+    assert type(df2.memory_usage()) is pd.Series
 
 
 def test_merge_preserve_geodataframe():

@@ -19,12 +19,13 @@ import operator
 
 import numpy as np
 import pandas as pd
+from pandas.api.types import is_object_dtype
 from pandas.tests.extension import base as extension_tests
 
 import shapely.geometry
 from shapely.geometry import Point
 
-from geopandas._compat import PANDAS_GE_15, PANDAS_GE_21, PANDAS_GE_22
+from geopandas._compat import PANDAS_GE_30
 from geopandas.array import GeometryArray, GeometryDtype, from_shapely
 
 import pytest
@@ -51,8 +52,12 @@ def dtype():
 
 
 def make_data():
-    a = np.empty(100, dtype=object)
-    a[:] = [shapely.geometry.Point(i, i) for i in range(100)]
+    if PANDAS_GE_30:
+        size = 10
+    else:
+        size = 100
+    a = np.empty(size, dtype=object)
+    a[:] = [shapely.geometry.Point(i, i) for i in range(size)]
     ga = from_shapely(a)
     return ga
 
@@ -335,7 +340,6 @@ class TestConstructors(extension_tests.BaseConstructorsTests):
 
 
 class TestReshaping(extension_tests.BaseReshapingTests):
-
     # NOTE: this test is copied from pandas/tests/extension/base/reshaping.py
     # because starting with pandas 3.0 the assert_frame_equal is strict regarding
     # the exact missing value (None vs NaN)
@@ -351,7 +355,9 @@ class TestReshaping(extension_tests.BaseReshapingTests):
             # non-uniform
             pd.MultiIndex.from_tuples([("A", "a"), ("A", "b"), ("B", "b")]),
             # three levels, non-uniform
-            pd.MultiIndex.from_product([("A", "B"), ("a", "b", "c"), (0, 1, 2)]),
+            pd.MultiIndex.from_product([("A", "B"), ("a", "b"), (0, 1)])
+            if PANDAS_GE_30
+            else pd.MultiIndex.from_product([("A", "B"), ("a", "b", "c"), (0, 1, 2)]),
             pd.MultiIndex.from_tuples(
                 [
                     ("A", "a", 1),
@@ -396,7 +402,7 @@ class TestReshaping(extension_tests.BaseReshapingTests):
 
             expected = obj_ser.unstack(level=level, fill_value=data.dtype.na_value)
             if obj == "series":
-                assert (expected.dtypes == object).all()
+                assert all(is_object_dtype(x) for x in expected.dtypes)
             # <------------ next line is added
             expected[expected.isna()] = None
             # ------------->
@@ -406,11 +412,19 @@ class TestReshaping(extension_tests.BaseReshapingTests):
 
 
 class TestGetitem(extension_tests.BaseGetitemTests):
-    pass
+    @pytest.mark.xfail(reason="read-only not yet implemented")
+    def test_getitem_propagates_readonly_property(self, data):
+        super().test_getitem_propagates_readonly_property(data)
 
 
 class TestSetitem(extension_tests.BaseSetitemTests):
-    pass
+    @pytest.mark.xfail(reason="read-only not yet implemented")
+    def test_readonly_property(self, data):
+        super().test_readonly_property(data)
+
+    @pytest.mark.xfail(reason="read-only not yet implemented")
+    def test_readonly_propagates_to_numpy_array(self, data):
+        super().test_readonly_propagates_to_numpy_array(data)
 
 
 class TestMissing(extension_tests.BaseMissingTests):
@@ -453,35 +467,24 @@ class TestMissing(extension_tests.BaseMissingTests):
         # `geopandas\tests\test_pandas_methods.py::test_fillna_scalar`
         # and `geopandas\tests\test_pandas_methods.py::test_fillna_series`.
 
-    @pytest.mark.skipif(
-        not PANDAS_GE_21, reason="fillna method not supported with older pandas"
-    )
     def test_fillna_limit_pad(self, data_missing):
         super().test_fillna_limit_pad(data_missing)
 
-    @pytest.mark.skipif(
-        not PANDAS_GE_21, reason="fillna method not supported with older pandas"
-    )
     def test_fillna_limit_backfill(self, data_missing):
         super().test_fillna_limit_backfill(data_missing)
 
-    @pytest.mark.skipif(
-        not PANDAS_GE_21, reason="fillna method not supported with older pandas"
-    )
     def test_fillna_series_method(self, data_missing, fillna_method):
         super().test_fillna_series_method(data_missing, fillna_method)
 
-    @pytest.mark.skipif(
-        not PANDAS_GE_21, reason="fillna method not supported with older pandas"
-    )
     def test_fillna_no_op_returns_copy(self, data):
         super().test_fillna_no_op_returns_copy(data)
 
+    @pytest.mark.xfail(reason="read-only not yet implemented")
+    def test_fillna_readonly(self, data_missing):
+        super().test_fillna_readonly(data_missing)
 
-if PANDAS_GE_22:
-    from pandas.tests.extension.base import BaseReduceTests
-else:
-    from pandas.tests.extension.base import BaseNoReduceTests as BaseReduceTests
+
+from pandas.tests.extension.base import BaseReduceTests
 
 
 class TestReduce(BaseReduceTests):
@@ -557,16 +560,10 @@ class TestComparisonOps(extension_tests.BaseComparisonOpsTests):
 
 
 class TestMethods(extension_tests.BaseMethodsTests):
-    @pytest.mark.skipif(
-        not PANDAS_GE_15, reason="sorting index not yet working with older pandas"
-    )
     @pytest.mark.parametrize("dropna", [True, False])
     def test_value_counts(self, all_data, dropna):
         pass
 
-    @pytest.mark.skipif(
-        not PANDAS_GE_15, reason="sorting index not yet working with older pandas"
-    )
     def test_value_counts_with_normalize(self, data):
         pass
 

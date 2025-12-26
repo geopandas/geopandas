@@ -2,27 +2,25 @@ name: test
 channels:
   - conda-forge
 dependencies:
-  - python=3.9
+  - python=3.11
   # required
-  - numpy=1.22
-  - pandas=1.4
-  - shapely=2.0.0
-  # - pyogrio=0.7.2
+  - numpy=2.0
+  - pandas=2.2
+  - shapely=2.1.0
+  - pyogrio=0.8
+  - pyproj=3.7.0
   - packaging
   # testing
   - pytest
   - pytest-cov
   - pytest-xdist
   - fsspec
+  - pytz
   # optional
-  - matplotlib=3.5.0
-  - mapclassify=2.4.0
+  - matplotlib=3.9.1
+  - mapclassify=2.7.0
   - geopy
   - SQLalchemy
   - libspatialite
-  - pyarrow=10.0
+  - pyarrow=15.0
   - geodatasets
-  - pip
-  - pip:
-    - pyproj==3.3.0
-    - pyogrio==0.7.2

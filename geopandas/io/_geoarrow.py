@@ -1,6 +1,4 @@
 import json
-from packaging.version import Version
-from typing import Dict, Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -10,7 +8,20 @@ from numpy.typing import NDArray
 import shapely
 from shapely import GeometryType
 
-from geopandas._compat import SHAPELY_GE_204
+from geopandas import GeoDataFrame
+from geopandas.array import from_shapely, from_wkb
+
+GEOARROW_ENCODINGS = [
+    "point",
+    "linestring",
+    "polygon",
+    "multipoint",
+    "multilinestring",
+    "multipolygon",
+]
+
+
+## GeoPandas -> GeoArrow
 
 
 class ArrowTable:
@@ -98,7 +109,7 @@ def geopandas_to_arrow(
         struct type.
     include_z : bool, default None
         Only relevant for 'geoarrow' encoding (for WKB, the dimensionality
-        of the individial geometries is preserved).
+        of the individual geometries is preserved).
         If False, return 2D geometries. If True, include the third dimension
         in the output (if a geometry has no third dimension, the z-coordinates
         will be NaN). By default, will infer the dimensionality from the
@@ -121,10 +132,9 @@ def geopandas_to_arrow(
 
     table = pa.Table.from_pandas(df_attr, preserve_index=index)
 
-    if geometry_encoding.lower() == "geoarrow":
-        if Version(pa.__version__) < Version("10.0.0"):
-            raise ValueError("Converting to 'geoarrow' requires pyarrow >= 10.0.")
+    geometry_encoding_dict = {}
 
+    if geometry_encoding.lower() == "geoarrow":
         # Encode all geometry columns to GeoArrow
         for i, col in zip(geometry_indices, geometry_columns):
             field, geom_arr = construct_geometry_array(
@@ -135,6 +145,11 @@ def geopandas_to_arrow(
                 interleaved=interleaved,
             )
             table = table.set_column(i, field, geom_arr)
+            geometry_encoding_dict[col] = (
+                field.metadata[b"ARROW:extension:name"]
+                .decode()
+                .removeprefix("geoarrow.")
+            )
 
     elif geometry_encoding.lower() == "wkb":
         # Encode all geometry columns to WKB
@@ -143,21 +158,21 @@ def geopandas_to_arrow(
                 np.asarray(df[col].array), field_name=col, crs=df[col].crs
             )
             table = table.set_column(i, field, wkb_arr)
+            geometry_encoding_dict[col] = "WKB"
 
     else:
         raise ValueError(
             f"Expected geometry encoding 'WKB' or 'geoarrow' got {geometry_encoding}"
         )
-    return table
+    return table, geometry_encoding_dict
 
 
 def construct_wkb_array(
     shapely_arr: NDArray[np.object_],
     *,
     field_name: str = "geometry",
-    crs: Optional[str] = None,
-) -> Tuple[pa.Field, pa.Array]:
-
+    crs: str | None = None,
+) -> tuple[pa.Field, pa.Array]:
     if shapely.geos_version > (3, 10, 0):
         kwargs = {"flavor": "iso"}
     else:
@@ -169,7 +184,7 @@ def construct_wkb_array(
     extension_metadata = {"ARROW:extension:name": "geoarrow.wkb"}
     if crs is not None:
         extension_metadata["ARROW:extension:metadata"] = json.dumps(
-            {"crs": crs.to_json()}
+            {"crs": crs.to_json_dict()}
         )
     else:
         # In theory this should not be needed, but otherwise pyarrow < 17
@@ -248,39 +263,29 @@ def _multipolygon_type(point_type):
 
 def construct_geometry_array(
     shapely_arr: NDArray[np.object_],
-    include_z: Optional[bool] = None,
+    include_z: bool | None = None,
     *,
     field_name: str = "geometry",
-    crs: Optional[str] = None,
+    crs: str | None = None,
     interleaved: bool = True,
-) -> Tuple[pa.Field, pa.Array]:
+) -> tuple[pa.Field, pa.Array]:
     # NOTE: this implementation returns a (field, array) pair so that it can set the
     # extension metadata on the field without instantiating extension types into the
     # global pyarrow registry
+
+    mask = shapely.is_missing(shapely_arr)
+    if len(shapely_arr) == 0 or mask.all():
+        raise NotImplementedError(
+            "Converting an empty or all-missing GeoDataFrame to the 'geoarrow' "
+            "encoding is not yet supported."
+        )
+
     geom_type, coords, offsets = shapely.to_ragged_array(
         shapely_arr, include_z=include_z
     )
 
-    mask = shapely.is_missing(shapely_arr)
     if mask.any():
-        if (
-            geom_type == GeometryType.POINT
-            and interleaved
-            and Version(pa.__version__) < Version("15.0.0")
-        ):
-            raise ValueError(
-                "Converting point geometries with missing values is not supported "
-                "for interleaved coordinates with pyarrow < 15.0.0. Please "
-                "upgrade to a newer version of pyarrow."
-            )
         mask = pa.array(mask, type=pa.bool_())
-
-        if geom_type == GeometryType.POINT and not SHAPELY_GE_204:
-            # bug in shapely < 2.0.4, see https://github.com/shapely/shapely/pull/2034
-            # this workaround only works if there are no empty points
-            indices = np.nonzero(mask)[0]
-            indices = indices - np.arange(len(indices))
-            coords = np.insert(coords, indices, np.nan, axis=0)
 
     else:
         mask = None
@@ -292,10 +297,10 @@ def construct_geometry_array(
     else:
         raise ValueError(f"Unexpected coords dimensions: {coords.shape}")
 
-    extension_metadata: Dict[str, str] = {}
+    extension_metadata: dict[str, str] = {}
     if crs is not None:
         extension_metadata["ARROW:extension:metadata"] = json.dumps(
-            {"crs": crs.to_json()}
+            {"crs": crs.to_json_dict()}
         )
     else:
         # In theory this should not be needed, but otherwise pyarrow < 17
@@ -399,6 +404,122 @@ def construct_geometry_array(
         raise ValueError(f"Unsupported type for geoarrow: {geom_type}")
 
 
+## GeoArrow -> GeoPandas
+
+
+def _get_arrow_geometry_field(field):
+    if (meta := field.metadata) is not None:
+        if (ext_name := meta.get(b"ARROW:extension:name", None)) is not None:
+            if ext_name.startswith(b"geoarrow."):
+                if (
+                    ext_meta := meta.get(b"ARROW:extension:metadata", None)
+                ) is not None:
+                    ext_meta = json.loads(ext_meta.decode())
+                return ext_name.decode(), ext_meta
+
+    if isinstance(field.type, pa.ExtensionType):
+        ext_name = field.type.extension_name
+        if ext_name.startswith("geoarrow."):
+            ext_meta_ser = field.type.__arrow_ext_serialize__()
+            if ext_meta_ser:
+                ext_meta = json.loads(ext_meta_ser.decode())
+            else:
+                ext_meta = None
+            return ext_name, ext_meta
+
+    return None
+
+
+def arrow_to_geopandas(table, geometry=None, to_pandas_kwargs=None):
+    """
+    Convert Arrow table object to a GeoDataFrame based on GeoArrow extension types.
+
+    Parameters
+    ----------
+    table : pyarrow.Table
+        The Arrow table to convert.
+    geometry : str, default None
+        The name of the geometry column to set as the active geometry
+        column. If None, the first geometry column found will be used.
+    to_pandas_kwargs : dict, optional
+        Arguments passed to the `pa.Table.to_pandas` method for non-geometry columns.
+        This can be used to control the behavior of the conversion of the non-geometry
+        columns to a pandas DataFrame. For example, you can use this to control the
+        dtype conversion of the columns. By default, the `to_pandas` method is called
+        with no additional arguments.
+
+    Returns
+    -------
+    GeoDataFrame
+
+    """
+    if not isinstance(table, pa.Table):
+        table = pa.table(table)
+
+    geom_fields = []
+
+    for i, field in enumerate(table.schema):
+        geom = _get_arrow_geometry_field(field)
+        if geom is not None:
+            geom_fields.append((i, field.name, *geom))
+
+    if len(geom_fields) == 0:
+        raise ValueError("No geometry column found in the Arrow table.")
+
+    table_attr = table.drop([f[1] for f in geom_fields])
+    if to_pandas_kwargs is None:
+        to_pandas_kwargs = {}
+    df = table_attr.to_pandas(**to_pandas_kwargs)
+
+    for i, col, ext_name, ext_meta in geom_fields:
+        crs = None
+        if ext_meta is not None and "crs" in ext_meta:
+            crs = ext_meta["crs"]
+
+        if ext_name == "geoarrow.wkb":
+            geom_arr = from_wkb(np.array(table[col]), crs=crs)
+        elif ext_name.split(".")[1] in GEOARROW_ENCODINGS:
+            geom_arr = from_shapely(
+                construct_shapely_array(table[col].combine_chunks(), ext_name), crs=crs
+            )
+        else:
+            raise TypeError(f"Unknown GeoArrow extension type: {ext_name}")
+
+        df.insert(i, col, geom_arr)
+
+    return GeoDataFrame(df, geometry=geometry or geom_fields[0][1])
+
+
+def arrow_to_geometry_array(arr):
+    """
+    Convert Arrow array object (representing single GeoArrow array) to a
+    geopandas GeometryArray.
+
+    Specifically for GeoSeries.from_arrow.
+    """
+    schema_capsule, array_capsule = arr.__arrow_c_array__()
+    field = pa.Field._import_from_c_capsule(schema_capsule)
+    pa_arr = pa.Array._import_from_c_capsule(field.__arrow_c_schema__(), array_capsule)
+
+    geom_info = _get_arrow_geometry_field(field)
+    if geom_info is None:
+        raise ValueError("No GeoArrow geometry field found.")
+    ext_name, ext_meta = geom_info
+
+    crs = None
+    if ext_meta is not None and "crs" in ext_meta:
+        crs = ext_meta["crs"]
+
+    if ext_name == "geoarrow.wkb":
+        geom_arr = from_wkb(np.array(pa_arr), crs=crs)
+    elif ext_name.split(".")[1] in GEOARROW_ENCODINGS:
+        geom_arr = from_shapely(construct_shapely_array(pa_arr, ext_name), crs=crs)
+    else:
+        raise ValueError(f"Unknown GeoArrow extension type: {ext_name}")
+
+    return geom_arr
+
+
 def _get_inner_coords(arr):
     if pa.types.is_struct(arr.type):
         if arr.type.num_fields == 2:
@@ -425,6 +546,9 @@ def construct_shapely_array(arr: pa.Array, extension_name: str):
     with GeoArrow extension type.
 
     """
+    if isinstance(arr, pa.ExtensionArray):
+        arr = arr.storage
+
     if extension_name == "geoarrow.point":
         coords = _get_inner_coords(arr)
         result = shapely.from_ragged_array(GeometryType.POINT, coords, None)

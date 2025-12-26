@@ -252,7 +252,7 @@ One possible way to find out the EPSG code is using pyproj for this:
 value if the match is not perfect)
 
 Further, on websites such as `Spatial Reference <https://spatialreference.org/>`__
-and `epsg.io <https://epsg.io/>`__ the descriptions of many CRS can be found
+and `epsg.org <https://epsg.org/>`__ the descriptions of many CRS can be found
 including their EPSG codes and proj4 string definitions.
 
 **Other formats**
@@ -331,7 +331,7 @@ a CRS object:
    - Prime Meridian: Greenwich
    Source CRS: unknown
 
-You notice that the above is a not a "Projected CRS" as expected, but a "Bound CRS".
+You notice that the above is not a "Projected CRS" as expected, but a "Bound CRS".
 This is because it is "bound" to a conversion to WGS84, and will always use this
 when reprojecting instead of letting PROJ determine the best conversion.
 
@@ -363,7 +363,7 @@ can be a reason that the CRS object is not equal to the expected EPSG code.
 
 Consider the following example of a Canadian projected CRS EPSG:2953. When
 constructing the CRS object from the WKT string as provided on
-`EPSG:2953 <https://epsg.io/2953>`__:
+`EPSG:2953 <https://spatialreference.org/ref/epsg/2953/>`__:
 
 .. code-block:: python
 

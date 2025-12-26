@@ -6,12 +6,18 @@ import pandas as pd
 
 from geopandas import GeoDataFrame, GeoSeries
 from geopandas._compat import PANDAS_GE_30
-from geopandas.array import _check_crs, _crs_mismatch_warn
+from geopandas.array import (
+    LINE_GEOM_TYPES,
+    POINT_GEOM_TYPES,
+    POLYGON_GEOM_TYPES,
+    _check_crs,
+    _crs_mismatch_warn,
+)
 
 
 def _ensure_geometry_column(df):
-    """
-    Helper function to ensure the geometry column is called 'geometry'.
+    """Ensure that the geometry column is called 'geometry'.
+
     If another column with that name exists, it will be dropped.
     """
     if not df._geometry_column_name == "geometry":
@@ -27,9 +33,7 @@ def _ensure_geometry_column(df):
 
 
 def _overlay_intersection(df1, df2):
-    """
-    Overlay Intersection operation used in overlay function
-    """
+    """Overlay Intersection operation used in overlay function."""
     # Spatial Index to create intersections
     idx1, idx2 = df2.sindex.query(df1.geometry, predicate="intersects", sort=True)
     # Create pairs of geometries in both dataframes to be intersected
@@ -39,7 +43,7 @@ def _overlay_intersection(df1, df2):
         right = df2.geometry.take(idx2)
         right.reset_index(drop=True, inplace=True)
         intersections = left.intersection(right)
-        poly_ix = intersections.geom_type.isin(["Polygon", "MultiPolygon"])
+        poly_ix = intersections.geom_type.isin(POLYGON_GEOM_TYPES)
         intersections.loc[poly_ix] = intersections[poly_ix].make_valid()
 
         # only keep actual intersecting geometries
@@ -77,9 +81,7 @@ def _overlay_intersection(df1, df2):
 
 
 def _overlay_difference(df1, df2):
-    """
-    Overlay Difference operation used in overlay function
-    """
+    """Overlay Difference operation used in overlay function."""
     # spatial index query to find intersections
     idx1, idx2 = df2.sindex.query(df1.geometry, predicate="intersects", sort=True)
     idx1_unique, idx1_unique_indices = np.unique(idx1, return_index=True)
@@ -96,7 +98,7 @@ def _overlay_difference(df1, df2):
         )
         new_g.append(new)
     differences = GeoSeries(new_g, index=df1.index, crs=df1.crs)
-    poly_ix = differences.geom_type.isin(["Polygon", "MultiPolygon"])
+    poly_ix = differences.geom_type.isin(POLYGON_GEOM_TYPES)
     differences.loc[poly_ix] = differences[poly_ix].make_valid()
     geom_diff = differences[~differences.is_empty].copy()
     dfdiff = df1[~differences.is_empty].copy()
@@ -104,10 +106,32 @@ def _overlay_difference(df1, df2):
     return dfdiff
 
 
+def _overlay_identity(df1, df2):
+    """Overlay Identity operation used in overlay function."""
+    dfintersection = _overlay_intersection(df1, df2)
+    dfdifference = _overlay_difference(df1, df2)
+    dfdifference = _ensure_geometry_column(dfdifference)
+
+    # Columns that were suffixed in dfintersection need to be suffixed in dfdifference
+    # as well so they can be matched properly in concat.
+    new_columns = [
+        col if col in dfintersection.columns else f"{col}_1"
+        for col in dfdifference.columns
+    ]
+    dfdifference.columns = new_columns
+
+    # Now we can concatenate the two dataframes
+    result = pd.concat([dfintersection, dfdifference], ignore_index=True, sort=False)
+
+    # keep geometry column last
+    columns = list(dfintersection.columns)
+    columns.remove("geometry")
+    columns.append("geometry")
+    return result.reindex(columns=columns)
+
+
 def _overlay_symmetric_diff(df1, df2):
-    """
-    Overlay Symmetric Difference operation used in overlay function
-    """
+    """Overlay Symmetric Difference operation used in overlay function."""
     dfdiff1 = _overlay_difference(df1, df2)
     dfdiff2 = _overlay_difference(df2, df1)
     dfdiff1["__idx1"] = range(len(dfdiff1))
@@ -134,9 +158,7 @@ def _overlay_symmetric_diff(df1, df2):
 
 
 def _overlay_union(df1, df2):
-    """
-    Overlay Union operation used in overlay function
-    """
+    """Overlay Union operation used in overlay function."""
     dfinter = _overlay_intersection(df1, df2)
     dfsym = _overlay_symmetric_diff(df1, df2)
     dfunion = pd.concat([dfinter, dfsym], ignore_index=True, sort=False)
@@ -219,13 +241,13 @@ def overlay(df1, df2, how="intersection", keep_geom_type=None, make_valid=True):
 
     >>> geopandas.overlay(df1, df2, how='identity')
        df1_data  df2_data                                           geometry
-    0       1.0       1.0                POLYGON ((2 2, 2 1, 1 1, 1 2, 2 2))
-    1       2.0       1.0                POLYGON ((2 2, 2 3, 3 3, 3 2, 2 2))
-    2       2.0       2.0                POLYGON ((4 4, 4 3, 3 3, 3 4, 4 4))
-    3       1.0       NaN      POLYGON ((2 0, 0 0, 0 2, 1 2, 1 1, 2 1, 2 0))
-    4       2.0       NaN  MULTIPOLYGON (((3 4, 3 3, 2 3, 2 4, 3 4)), ((4...
+    0         1       1.0                POLYGON ((2 2, 2 1, 1 1, 1 2, 2 2))
+    1         2       1.0                POLYGON ((2 2, 2 3, 3 3, 3 2, 2 2))
+    2         2       2.0                POLYGON ((4 4, 4 3, 3 3, 3 4, 4 4))
+    3         1       NaN      POLYGON ((2 0, 0 0, 0 2, 1 2, 1 1, 2 1, 2 0))
+    4         2       NaN  MULTIPOLYGON (((3 4, 3 3, 2 3, 2 4, 3 4)), ((4...
 
-    See also
+    See Also
     --------
     sjoin : spatial join
     GeoDataFrame.overlay : equivalent method
@@ -245,9 +267,7 @@ def overlay(df1, df2, how="intersection", keep_geom_type=None, make_valid=True):
     ]
     # Error Messages
     if how not in allowed_hows:
-        raise ValueError(
-            "`how` was '{0}' but is expected to be in {1}".format(how, allowed_hows)
-        )
+        raise ValueError(f"`how` was '{how}' but is expected to be in {allowed_hows}")
 
     if isinstance(df1, GeoSeries) or isinstance(df2, GeoSeries):
         raise NotImplementedError(
@@ -263,17 +283,12 @@ def overlay(df1, df2, how="intersection", keep_geom_type=None, make_valid=True):
     else:
         keep_geom_type_warning = False
 
-    polys = ["Polygon", "MultiPolygon"]
-    lines = ["LineString", "MultiLineString", "LinearRing"]
-    points = ["Point", "MultiPoint"]
     for i, df in enumerate([df1, df2]):
-        poly_check = df.geom_type.isin(polys).any()
-        lines_check = df.geom_type.isin(lines).any()
-        points_check = df.geom_type.isin(points).any()
+        poly_check = df.geom_type.isin(POLYGON_GEOM_TYPES).any()
+        lines_check = df.geom_type.isin(LINE_GEOM_TYPES).any()
+        points_check = df.geom_type.isin(POINT_GEOM_TYPES).any()
         if sum([poly_check, lines_check, points_check]) > 1:
-            raise NotImplementedError(
-                "df{} contains mixed geometry types.".format(i + 1)
-            )
+            raise NotImplementedError(f"df{i + 1} contains mixed geometry types.")
 
     if how == "intersection":
         box_gdf1 = df1.total_bounds
@@ -296,11 +311,17 @@ def overlay(df1, df2, how="intersection", keep_geom_type=None, make_valid=True):
     # Computations
     def _make_valid(df):
         df = df.copy()
-        if df.geom_type.isin(polys).all():
+        if df.geom_type.isin(POLYGON_GEOM_TYPES).all():
             mask = ~df.geometry.is_valid
             col = df._geometry_column_name
             if make_valid:
                 df.loc[mask, col] = df.loc[mask, col].make_valid()
+                # Extract only the input geometry type, as make_valid may change it
+                if mask.any():
+                    df = _collection_extract(
+                        df, geom_type="Polygon", keep_geom_type_warning=False
+                    )
+
             elif mask.any():
                 raise ValueError(
                     "You have passed make_valid=False along with "
@@ -309,6 +330,10 @@ def overlay(df1, df2, how="intersection", keep_geom_type=None, make_valid=True):
                     "are valid before using overlay."
                 )
         return df
+
+    # Determine the geometry type before make_valid, as make_valid may change it
+    if keep_geom_type:
+        geom_type = df1.geom_type.iloc[0]
 
     df1 = _make_valid(df1)
     df2 = _make_valid(df2)
@@ -324,76 +349,75 @@ def overlay(df1, df2, how="intersection", keep_geom_type=None, make_valid=True):
         elif how == "union":
             result = _overlay_union(df1, df2)
         elif how == "identity":
-            dfunion = _overlay_union(df1, df2)
-            result = dfunion[dfunion["__idx1"].notnull()].copy()
+            result = _overlay_identity(df1, df2)
 
         if how in ["intersection", "symmetric_difference", "union", "identity"]:
             result.drop(["__idx1", "__idx2"], axis=1, inplace=True)
 
     if keep_geom_type:
-        geom_type = df1.geom_type.iloc[0]
-
-        # First we filter the geometry types inside GeometryCollections objects
-        # (e.g. GeometryCollection([polygon, point]) -> polygon)
-        # we do this separately on only the relevant rows, as this is an expensive
-        # operation (an expensive no-op for geometry types other than collections)
-        is_collection = result.geom_type == "GeometryCollection"
-        if is_collection.any():
-            geom_col = result._geometry_column_name
-            collections = result[[geom_col]][is_collection]
-
-            exploded = collections.reset_index(drop=True).explode(index_parts=True)
-            exploded = exploded.reset_index(level=0)
-
-            orig_num_geoms_exploded = exploded.shape[0]
-            if geom_type in polys:
-                exploded.loc[~exploded.geom_type.isin(polys), geom_col] = None
-            elif geom_type in lines:
-                exploded.loc[~exploded.geom_type.isin(lines), geom_col] = None
-            elif geom_type in points:
-                exploded.loc[~exploded.geom_type.isin(points), geom_col] = None
-            else:
-                raise TypeError(
-                    "`keep_geom_type` does not support {}.".format(geom_type)
-                )
-            num_dropped_collection = (
-                orig_num_geoms_exploded - exploded.geometry.isna().sum()
-            )
-
-            # level_0 created with above reset_index operation
-            # and represents the original geometry collections
-            # TODO avoiding dissolve to call union_all in this case could further
-            # improve performance (we only need to collect geometries in their
-            # respective Multi version)
-            dissolved = exploded.dissolve(by="level_0")
-            result.loc[is_collection, geom_col] = dissolved[geom_col].values
-        else:
-            num_dropped_collection = 0
-
-        # Now we filter all geometries (in theory we don't need to do this
-        # again for the rows handled above for GeometryCollections, but filtering
-        # them out is probably more expensive as simply including them when this
-        # is typically about only a few rows)
-        orig_num_geoms = result.shape[0]
-        if geom_type in polys:
-            result = result.loc[result.geom_type.isin(polys)]
-        elif geom_type in lines:
-            result = result.loc[result.geom_type.isin(lines)]
-        elif geom_type in points:
-            result = result.loc[result.geom_type.isin(points)]
-        else:
-            raise TypeError("`keep_geom_type` does not support {}.".format(geom_type))
-        num_dropped = orig_num_geoms - result.shape[0]
-
-        if (num_dropped > 0 or num_dropped_collection > 0) and keep_geom_type_warning:
-            warnings.warn(
-                "`keep_geom_type=True` in overlay resulted in {} dropped "
-                "geometries of different geometry types than df1 has. "
-                "Set `keep_geom_type=False` to retain all "
-                "geometries".format(num_dropped + num_dropped_collection),
-                UserWarning,
-                stacklevel=2,
-            )
+        result = _collection_extract(result, geom_type, keep_geom_type_warning)
 
     result.reset_index(drop=True, inplace=True)
+    return result
+
+
+def _collection_extract(df, geom_type, keep_geom_type_warning):
+    # Check input
+    if geom_type in POLYGON_GEOM_TYPES:
+        geom_types = POLYGON_GEOM_TYPES
+    elif geom_type in LINE_GEOM_TYPES:
+        geom_types = LINE_GEOM_TYPES
+    elif geom_type in POINT_GEOM_TYPES:
+        geom_types = POINT_GEOM_TYPES
+    else:
+        raise TypeError(f"`geom_type` does not support {geom_type}.")
+
+    result = df.copy()
+
+    # First we filter the geometry types inside GeometryCollections objects
+    # (e.g. GeometryCollection([polygon, point]) -> polygon)
+    # we do this separately on only the relevant rows, as this is an expensive
+    # operation (an expensive no-op for geometry types other than collections)
+    is_collection = result.geom_type == "GeometryCollection"
+    if is_collection.any():
+        geom_col = result._geometry_column_name
+        collections = result.loc[is_collection, [geom_col]]
+
+        exploded = collections.reset_index(drop=True).explode(index_parts=True)
+        exploded = exploded.reset_index(level=0)
+
+        orig_num_geoms_exploded = exploded.shape[0]
+        exploded.loc[~exploded.geom_type.isin(geom_types), geom_col] = None
+        num_dropped_collection = (
+            orig_num_geoms_exploded - exploded.geometry.isna().sum()
+        )
+
+        # level_0 created with above reset_index operation
+        # and represents the original geometry collections
+        # TODO avoiding dissolve to call union_all in this case could further
+        # improve performance (we only need to collect geometries in their
+        # respective Multi version)
+        dissolved = exploded.dissolve(by="level_0")
+        result.loc[is_collection, geom_col] = dissolved[geom_col].values
+    else:
+        num_dropped_collection = 0
+
+    # Now we filter all geometries (in theory we don't need to do this
+    # again for the rows handled above for GeometryCollections, but filtering
+    # them out is probably more expensive as simply including them when this
+    # is typically about only a few rows)
+    orig_num_geoms = result.shape[0]
+    result = result.loc[result.geom_type.isin(geom_types)]
+    num_dropped = orig_num_geoms - result.shape[0]
+
+    if (num_dropped > 0 or num_dropped_collection > 0) and keep_geom_type_warning:
+        warnings.warn(
+            "`keep_geom_type=True` in overlay resulted in "
+            f"{num_dropped + num_dropped_collection} dropped geometries of different "
+            "geometry types than df1 has. Set `keep_geom_type=False` to retain all "
+            "geometries",
+            UserWarning,
+            stacklevel=2,
+        )
+
     return result

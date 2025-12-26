@@ -1,6 +1,4 @@
-"""
-Testing functionality for geopandas objects.
-"""
+"""Testing functionality for geopandas objects."""
 
 import warnings
 
@@ -11,7 +9,7 @@ from geopandas.array import GeometryDtype
 
 
 def _isna(this):
-    """isna version that works for both scalars and (Geo)Series"""
+    """Version of isna that works for both scalars and (Geo)Series."""
     with warnings.catch_warnings():
         # GeoSeries.isna will raise a warning about no longer returning True
         # for empty geometries. This helper is used below always in combination
@@ -43,7 +41,6 @@ def _geom_equals_mask(this, that):
     Series
         boolean Series, True if geometries in left equal geometries in right
     """
-
     return (
         this.geom_equals(that)
         | (this.is_empty & that.is_empty)
@@ -66,7 +63,6 @@ def geom_equals(this, that):
     bool
         True if all geometries in left equal geometries in right
     """
-
     return _geom_equals_mask(this, that).all()
 
 
@@ -87,7 +83,6 @@ def _geom_almost_equals_mask(this, that):
     Series
         boolean Series, True if geometries in left almost equal geometries in right
     """
-
     return (
         this.geom_equals_exact(that, tolerance=0.5 * 10 ** (-6))
         | (this.is_empty & that.is_empty)
@@ -158,7 +153,7 @@ def assert_geoseries_equal(
         Typically useful with ``check_less_precise=True``, which uses
         ``geom_equals_exact`` and requires exact coordinate order.
     """
-    assert len(left) == len(right), "%d != %d" % (len(left), len(right))
+    assert len(left) == len(right), f"{len(left)} != {len(right)}"
 
     if check_dtype:
         msg = "dtype should be a GeometryDtype, got {0}"
@@ -180,12 +175,11 @@ def assert_geoseries_equal(
         if not isinstance(right, GeoSeries):
             right = GeoSeries(right, index=left.index)
 
-    assert left.index.equals(right.index), "index: %s != %s" % (left.index, right.index)
+    assert left.index.equals(right.index), f"index: {left.index} != {right.index}"
 
     if check_geom_type:
-        assert (left.geom_type == right.geom_type).all(), "type: %s != %s" % (
-            left.geom_type,
-            right.geom_type,
+        assert (left.geom_type == right.geom_type).all(), (
+            f"type: {left.geom_type} != {right.geom_type}"
         )
 
     if normalize:
@@ -201,7 +195,7 @@ def assert_geoseries_equal(
 
 
 def _truncated_string(geom):
-    """Truncated WKT repr of geom"""
+    """Truncate WKT repr of geom."""
     s = str(geom)
     if len(s) > 100:
         return s[:100] + "..."
@@ -252,8 +246,7 @@ def assert_geodataframe_equal(
     check_crs=True,
     normalize=False,
 ):
-    """
-    Check that two GeoDataFrames are equal/
+    """Check that two GeoDataFrames are equal.
 
     Parameters
     ----------
@@ -315,10 +308,8 @@ def assert_geodataframe_equal(
 
     # shape comparison
     assert left.shape == right.shape, (
-        "GeoDataFrame shape mismatch, left: {lshape!r}, right: {rshape!r}.\n"
-        "Left columns: {lcols!r}, right columns: {rcols!r}"
-    ).format(
-        lshape=left.shape, rshape=right.shape, lcols=left.columns, rcols=right.columns
+        f"GeoDataFrame shape mismatch, left: {left.shape!r}, right: {right.shape!r}.\n"
+        f"Left columns: {left.columns!r}, right columns: {right.columns!r}"
     )
 
     if check_like:

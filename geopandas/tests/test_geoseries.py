@@ -21,7 +21,6 @@ from shapely.geometry.base import BaseGeometry
 
 import geopandas._compat as compat
 from geopandas import GeoDataFrame, GeoSeries, clip, read_file
-from geopandas._compat import HAS_PYPROJ
 from geopandas.array import GeometryArray, GeometryDtype
 
 import pytest
@@ -39,8 +38,7 @@ class TestSeries:
         self.sq = Polygon([(0, 0), (1, 0), (1, 1), (0, 1)])
         self.g1 = GeoSeries([self.t1, self.sq])
         self.g2 = GeoSeries([self.sq, self.t1])
-        self.g3 = GeoSeries([self.t1, self.t2])
-        self.g3.crs = "epsg:4326"
+        self.g3 = GeoSeries([self.t1, self.t2], crs="epsg:4326")
         self.g4 = GeoSeries([self.t2, self.t1])
         self.na = GeoSeries([self.t1, self.t2, Polygon()])
         self.na_none = GeoSeries([self.t1, self.t2, None])
@@ -83,26 +81,23 @@ class TestSeries:
         assert a1["B"].equals(a2["B"])
         assert a1["C"] is None
 
-    @pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not available")
+    @pytest.mark.skipif(not compat.HAS_PYPROJ, reason="pyproj not available")
     def test_align_crs(self):
-        a1 = self.a1
-        a1.crs = "epsg:4326"
-        a2 = self.a2
-        a2.crs = "epsg:31370"
+        a1 = self.a1.set_crs("epsg:4326")
+        a2 = self.a2.set_crs("epsg:31370")
 
         res1, res2 = a1.align(a2)
         assert res1.crs == "epsg:4326"
         assert res2.crs == "epsg:31370"
 
-        a2.crs = None
-        res1, res2 = a1.align(a2)
+        res1, res2 = a1.align(a2.set_crs(None, allow_override=True))
         assert res1.crs == "epsg:4326"
         assert res2.crs is None
 
     def test_align_mixed(self):
         a1 = self.a1
         s2 = pd.Series([1, 2], index=["B", "C"])
-        res1, res2 = a1.align(s2)
+        _res1, res2 = a1.align(s2)
 
         exp2 = pd.Series([np.nan, 1, 2], index=["A", "B", "C"])
         assert_series_equal(res2, exp2)
@@ -146,25 +141,6 @@ class TestSeries:
         exp = pd.Series([False, False], index=["A", "B"])
         assert_series_equal(a, exp)
 
-    @pytest.mark.filterwarnings(r"ignore:The 'geom_almost_equals\(\)':FutureWarning")
-    def test_geom_almost_equals(self):
-        # TODO: test decimal parameter
-        assert np.all(self.g1.geom_almost_equals(self.g1))
-        assert_array_equal(self.g1.geom_almost_equals(self.sq), [False, True])
-        with warnings.catch_warnings():
-            warnings.filterwarnings(
-                "ignore",
-                "The indices of the left and right GeoSeries' are not equal",
-                UserWarning,
-            )
-            assert_array_equal(
-                self.a1.geom_almost_equals(self.a2, align=True),
-                [False, True, False],
-            )
-        assert_array_equal(
-            self.a1.geom_almost_equals(self.a2, align=False), [False, False]
-        )
-
     def test_geom_equals_exact(self):
         # TODO: test tolerance parameter
         assert np.all(self.g1.geom_equals_exact(self.g1, 0.001))
@@ -181,6 +157,17 @@ class TestSeries:
             )
         assert_array_equal(
             self.a1.geom_equals_exact(self.a2, 0.001, align=False), [False, False]
+        )
+
+    def test_geom_equals_identical(self):
+        assert np.all(self.g1.geom_equals_identical(self.g1))
+        assert_array_equal(self.g1.geom_equals_identical(self.sq), [False, True])
+        assert_array_equal(
+            self.a1.geom_equals_identical(self.a2, align=True),
+            [False, True, False],
+        )
+        assert_array_equal(
+            self.a1.geom_equals_identical(self.a2, align=False), [False, False]
         )
 
     def test_equal_comp_op(self):
@@ -265,7 +252,7 @@ class TestSeries:
         assert np.all(self.g3.contains(self.g3.representative_point()))
         assert np.all(self.g4.contains(self.g4.representative_point()))
 
-    @pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not available")
+    @pytest.mark.skipif(not compat.HAS_PYPROJ, reason="pyproj not available")
     def test_transform(self):
         utm18n = self.landmarks.to_crs(epsg=26918)
         lonlat = utm18n.to_crs(epsg=4326)
@@ -286,14 +273,14 @@ class TestSeries:
             "EPSG:32618"
         )
 
-    @pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not available")
+    @pytest.mark.skipif(not compat.HAS_PYPROJ, reason="pyproj not available")
     def test_estimate_utm_crs__out_of_bounds(self):
         with pytest.raises(RuntimeError, match="Unable to determine UTM CRS"):
             GeoSeries(
                 [Polygon([(0, 90), (1, 90), (2, 90)])], crs="EPSG:4326"
             ).estimate_utm_crs()
 
-    @pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not available")
+    @pytest.mark.skipif(not compat.HAS_PYPROJ, reason="pyproj not available")
     def test_estimate_utm_crs__missing_crs(self):
         with pytest.raises(RuntimeError, match="crs must be set"):
             GeoSeries([Polygon([(0, 90), (1, 90), (2, 90)])]).estimate_utm_crs()
@@ -329,7 +316,7 @@ class TestSeries:
         assert self.g1.__geo_interface__["type"] == "FeatureCollection"
         assert len(self.g1.__geo_interface__["features"]) == self.g1.shape[0]
 
-    @pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not available")
+    @pytest.mark.skipif(not compat.HAS_PYPROJ, reason="pyproj not available")
     def test_proj4strings(self):
         # As string
         reprojected = self.g3.to_crs("+proj=utm +zone=30")
@@ -342,8 +329,7 @@ class TestSeries:
         assert geom_almost_equals(self.g3, reprojected_back)
 
         # Set to equivalent string, convert, compare to original
-        copy = self.g3.copy()
-        copy.crs = "epsg:4326"
+        copy = self.g3.copy().set_crs("epsg:4326", allow_override=True)
         reprojected = copy.to_crs({"proj": "utm", "zone": "30"})
         reprojected_back = reprojected.to_crs(epsg=4326)
         assert geom_almost_equals(self.g3, reprojected_back)
@@ -503,7 +489,7 @@ class TestSeries:
         expected = GeoSeries([Point(0, 2, -1), Point(3, 5, 4)])
         assert_geoseries_equal(expected, GeoSeries.from_xy(x, y, z))
 
-    @pytest.mark.skipif(HAS_PYPROJ, reason="pyproj installed")
+    @pytest.mark.skipif(compat.HAS_PYPROJ, reason="pyproj installed")
     def test_set_crs_pyproj_error(self):
         with pytest.raises(
             ImportError, match="The 'pyproj' package is required for set_crs"
@@ -541,11 +527,20 @@ def test_isna_empty_geoseries():
     assert_series_equal(result, pd.Series([], dtype="bool"))
 
 
-@pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not available")
+@pytest.mark.skipif(not compat.HAS_PYPROJ, reason="pyproj not available")
 def test_geoseries_crs():
-    gs = GeoSeries()
-    gs.crs = "IGNF:ETRS89UTM28"
+    gs = GeoSeries().set_crs("IGNF:ETRS89UTM28")
     assert gs.crs.to_authority() == ("IGNF", "ETRS89UTM28")
+
+
+@pytest.mark.skipif(not compat.HAS_PYPROJ, reason="Requires pyproj")
+def test_geoseries_override_existing_crs_warning():
+    gs = GeoSeries(crs="epsg:4326")
+    with pytest.warns(
+        FutureWarning,
+        match="Overriding the CRS of a GeoSeries that already has CRS",
+    ):
+        gs.crs = "epsg:2100"
 
 
 # -----------------------------------------------------------------------------
@@ -620,25 +615,32 @@ class TestConstructor:
         # not depending on the dtype
 
         # dtypes that can never hold geometry-like data
-        for arr in [
+        non_geom_compat_dtypes = [
             np.array([], dtype="bool"),
             np.array([], dtype="int64"),
             np.array([], dtype="float32"),
-            # this gets converted to object dtype by pandas
-            # np.array([], dtype="str"),
-        ]:
+        ]
+        # dtypes that can potentially hold geometry-like data (object) or
+        # can come from empty data (float64)
+        geom_compat_dtypes = [
+            np.array([], dtype="object"),
+            np.array([], dtype="float64"),
+        ]
+
+        if compat.PANDAS_INFER_STR:
+            # in pandas >=3 future string, str is not converted to object
+            # so is non geom compatible
+            non_geom_compat_dtypes.append(np.array([], dtype="str"))
+        else:
+            geom_compat_dtypes.append(np.array([], dtype="str"))
+
+        for arr in non_geom_compat_dtypes:
             with pytest.raises(
                 TypeError, match="Non geometry data passed to GeoSeries"
             ):
                 GeoSeries(arr)
 
-        # dtypes that can potentially hold geometry-like data (object) or
-        # can come from empty data (float64)
-        for arr in [
-            np.array([], dtype="object"),
-            np.array([], dtype="float64"),
-            np.array([], dtype="str"),
-        ]:
+        for arr in geom_compat_dtypes:
             with warnings.catch_warnings(record=True) as record:
                 s = GeoSeries(arr)
             assert not record
@@ -658,7 +660,7 @@ class TestConstructor:
         assert s.name == g.name
         assert s.index is g.index
 
-    @pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not available")
+    @pytest.mark.skipif(not compat.HAS_PYPROJ, reason="pyproj not available")
     def test_from_series_no_set_crs_on_construction(self):
         # https://github.com/geopandas/geopandas/issues/2492
         # also when passing Series[geometry], ensure we don't change crs of
@@ -669,6 +671,16 @@ class TestConstructor:
         assert s.values.crs is None
         assert gs.crs is None
         assert result.crs == "EPSG:4326"
+
+        # https://github.com/geopandas/geopandas/issues/3382
+        s2 = pd.Series(gs.set_crs("EPSG:4326"))
+        result = GeoSeries(s2, crs=4326)
+        assert result.crs == "EPSG:4326"
+        with pytest.raises(
+            ValueError,
+            match="CRS mismatch between CRS of the passed geometries and 'crs'",
+        ):
+            GeoSeries(s2, crs=4283)
 
     def test_copy(self):
         # default is to copy with CoW / pandas 3+
@@ -700,7 +712,7 @@ class TestConstructor:
         )
         s = s.explode(index_parts=True)
         df = s.reset_index()
-        assert type(df) == GeoDataFrame
+        assert type(df) is GeoDataFrame
         # name None -> 0, otherwise name preserved
         assert df.geometry.name == (name if name is not None else 0)
         assert df.crs == s.crs
@@ -710,7 +722,7 @@ class TestConstructor:
     def test_to_frame(self, name, crs):
         s = GeoSeries([Point(0, 0), Point(1, 1)], name=name, crs=crs)
         df = s.to_frame()
-        assert type(df) == GeoDataFrame
+        assert type(df) is GeoDataFrame
         # name None -> 0, otherwise name preserved
         expected_name = name if name is not None else 0
         assert df.geometry.name == expected_name
@@ -719,7 +731,7 @@ class TestConstructor:
 
         # if name is provided to to_frame, it should override
         df2 = s.to_frame(name="geom")
-        assert type(df) == GeoDataFrame
+        assert type(df) is GeoDataFrame
         assert df2.geometry.name == "geom"
         assert df2.crs == s.crs
 

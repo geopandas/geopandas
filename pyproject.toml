@@ -1,6 +1,6 @@
 [build-system]
-requires = ["setuptools>=61.0.0"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
 
 [project]
 name = "geopandas"
@@ -19,35 +19,42 @@ classifiers = [
     "Programming Language :: Python :: 3 :: Only",
     "Topic :: Scientific/Engineering :: GIS",
 ]
-requires-python = ">=3.9"
+requires-python = ">=3.11"
 dependencies = [
-    "numpy >= 1.22",
-    "pyogrio >= 0.7.2",
+    "numpy >= 2",
+    "pyogrio >= 0.8",
     "packaging",
-    "pandas >= 1.4.0",
-    "pyproj >= 3.3.0",
-    "shapely >= 2.0.0",
+    "pandas >= 2.2.0",
+    "pyproj >= 3.7.0",
+    "shapely >= 2.1.0",
 ]
 
 [project.optional-dependencies]
 all = [
-    "psycopg-binary>=3.1.0",
-    "SQLAlchemy>=1.3",
+    "psycopg[binary]>=3.2.0",
+    "SQLAlchemy>=2.0",
     "geopy",
-    "matplotlib>=3.5.0",
-    "mapclassify",
+    "matplotlib>=3.9",
+    "mapclassify>=2.7",
     "xyzservices",
-    "folium",
+    "folium", # >=0.12 (implied minimum version, but older versions may work)
     "GeoAlchemy2",
-    "pyarrow>=8.0.0",
+    "pyarrow>=15.0.0",
+    "scipy",
 ]
+
+# Minimum supported additional deps, not installed as part of `all` extra
+# (useful to track for bumping minimum dep versions)
+# fiona>=1.8.21
+# scipy>=1.10.0
+
 dev = [
     "pytest>=3.1.0",
     "pytest-cov",
     "pytest-xdist",
     "codecov",
-    "black",
     "pre-commit",
+    "ruff",
 ]
 
 
@@ -72,12 +79,17 @@ content-type = "text/x-rst"
 Home = "https://geopandas.org"
 Repository = "https://github.com/geopandas/geopandas"
 
-[tool.setuptools.packages.find]
-include = ["geopandas", "geopandas.*"]
+[tool.hatch.version]
+source = "vcs"
 
-[tool.setuptools.package-data]
-geopandas = [
-    "tests/data/null_geom.geojson"
+[tool.hatch.build.hooks.vcs]
+version-file = "geopandas/_version.py"
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/README.md",
+    "/geopandas/**/*.py",
+    "/geopandas/tests/data/null_geom.geojson",
 ]
 
 [tool.pytest.ini_options]
@@ -95,12 +107,9 @@ filterwarnings = [
     "ignore:Cannot set the CRS, falling back to None:UserWarning:geopandas",
 ]
 
-[tool.black]
-line-length = 88
-
 [tool.ruff]
 line-length = 88
-extend-exclude = ["doc/*", "benchmarks/*", "versioneer.py", "geopandas/_version.py"]
+extend-exclude = ["doc/*", "benchmarks/*"]
 
 [tool.ruff.lint]
 select = [
@@ -110,7 +119,7 @@ select = [
     "E",
     "W",
     # pyupgrade
-    # "UP",
+    "UP",
     # flake8-bugbear
     "B",
     # flake8-debugger
@@ -127,13 +136,15 @@ select = [
     # implicit string concatenation
     "ISC",
     # type-checking imports
-    "TCH",
+    "TC",
     # comprehensions
     "C4",
     # Ruff-specific rules
     "RUF",
     # isort
     "I",
+    # pydocstyle
+    "D",
 ]
 
 ignore = [
@@ -168,8 +179,26 @@ ignore = [
     "PLW0603",
     # compare-to-empty-string
     "PLC1901",
+    # Unnecessary dict comprehension for iterable
+    "C420",
+    # `len(*)` used as condition without comparison
+    "PLC1802",
 
     ### Additional checks that don't pass yet
+    # Missing docstring in public module
+    "D100",
+    # Missing docstring in public class
+    "D101",
+    # Missing docstring in public method
+    "D102",
+    # Missing docstring in public function
+    "D103",
+    # Missing docstring in public package
+    "D104",
+    # Missing docstring in magic method
+    "D105",
+    # 1 blank line required between summary line and description
+    "D205",
     # Useless statement
     "B018",
     # Within an except clause, raise exceptions with ...
@@ -179,10 +208,17 @@ ignore = [
     # collection-literal-concatenation
     "RUF005",
     # Mutable class attributes should be annotated with `typing.ClassVar`,
-    "RUF012"
+    "RUF012",
+    # import should be at the top-level of a file
+    "PLC0415"
+
 ]
 
 [tool.ruff.lint.per-file-ignores]
+# ignore pydocstyle errors in tests
+"**/tests/*" = ["D"]
+"geopandas/conftest.py" = ["D"]
+# the order of imports in __init__ is a bit tricky, so keep manual
 "geopandas/__init__.py" = ["F401", "I"]
 
 [tool.ruff.lint.isort]
@@ -201,3 +237,6 @@ section-order = [
 [tool.ruff.lint.isort.sections]
 "geo" = ["shapely", "pyproj"]
 "testing" = ["pytest", "pandas.testing", "numpy.testing", "geopandas.tests", "geopandas.testing"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"

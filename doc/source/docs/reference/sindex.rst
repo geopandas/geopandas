@@ -10,6 +10,8 @@ GeoPandas will use the STRtree implementation provided by the Shapely
 ``GeoSeries.sindex`` creates a spatial index, which can use the methods and
 properties documented below.
 
+See the User Guide page :doc:`../user_guide/spatial_indexing` for more.
+
 Constructor
 -----------
 .. autosummary::

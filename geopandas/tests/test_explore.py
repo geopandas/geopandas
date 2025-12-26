@@ -20,8 +20,7 @@ geodatasets = pytest.importorskip("geodatasets")
 from branca.colormap import StepColormap
 from matplotlib import cm, colors
 
-BRANCA_05 = Version(branca.__version__) > Version("0.4.2")
-FOLIUM_G_014 = Version(folium.__version__) > Version("0.14.0")
+FOLIUM_GE_019 = Version(folium.__version__) >= Version("0.19.0")
 
 
 @pytest.fixture(scope="class")
@@ -70,7 +69,10 @@ class TestExplore:
             pytest.approx(2.842170943040401e-14, rel=1e-6),
         ]
         assert m.options["zoom"] == 10
-        assert m.options["zoomControl"] is True
+        if not FOLIUM_GE_019:
+            assert m.options["zoomControl"] is True
+        else:
+            assert m.options["zoom_control"] is True
         assert m.position == "relative"
         assert m.height == (100.0, "%")
         assert m.width == (100.0, "%")
@@ -93,7 +95,10 @@ class TestExplore:
             pytest.approx(-73.9778006856748, rel=1e-6),
         ]
         assert m.options["zoom"] == 10
-        assert m.options["zoomControl"] is False
+        if not FOLIUM_GE_019:
+            assert m.options["zoomControl"] is False
+        else:
+            assert m.options["zoom_control"] is False
         assert m.height == (200.0, "px")
         assert m.width == (200.0, "px")
 
@@ -266,7 +271,7 @@ class TestExplore:
         for c in cmap:
             assert f'"fillColor":"{c}"' in out_str
 
-        with pytest.raises(ValueError, match="'cmap' is invalid."):
+        with pytest.raises(ValueError, match="'cmap' is invalid"):
             self.nybb.explore(column="BoroName", cmap="nonsense")
 
     def test_categories(self):
@@ -312,22 +317,30 @@ class TestExplore:
         assert '"__folium_color":"#9edae5","datetime":"2025-01-0101:22:00"' in out1_str
         assert '"__folium_color":"#1f77b4","datetime":"2022-01-0101:22:00"' in out1_str
 
+        df2 = df.set_index("datetime")
+        m2 = df2.explore()
+        out2_str = self._fetch_map_string(m2)
+        assert '"datetime":"2025-01-0101:22:00"' in out2_str
+        assert '"datetime":"2022-01-0101:22:00"' in out2_str
+
     def test_non_json_serialisable(self):
         df = self.nybb.copy().head(2)
-        uuid1 = uuid.UUID("12345678123456781234567812345678")
-        uuid2 = uuid.UUID("12345678123456781234567812345679")
+
+        u1 = "12345678-1234-5678-1234-567812345678"
+        uuid1 = uuid.UUID(u1)
+        u2 = "12345678-1234-5678-1234-567812345679"
+        uuid2 = uuid.UUID(u2)
         df["object"] = [uuid1, uuid2]
         m1 = df.explore("object")
 
         out1_str = self._fetch_map_string(m1)
-        assert (
-            '"__folium_color":"#9edae5","object":"12345678-1234-5678-1234-567812345679"}'
-            in out1_str
-        )
-        assert (
-            '"__folium_color":"#1f77b4","object":"12345678-1234-5678-1234-567812345678"'
-            in out1_str
-        )
+        assert f'"__folium_color":"#9edae5","object":"{u2}"' in out1_str
+        assert f'"__folium_color":"#1f77b4","object":"{u1}"' in out1_str
+        df2 = df.set_index("object")
+        m2 = df2.explore()
+        out2_str = self._fetch_map_string(m2)
+        assert f'"object":"{u2}"' in out2_str
+        assert f'"object":"{u1}"' in out2_str
 
     def test_string(self):
         df = self.nybb.copy()
@@ -371,14 +384,14 @@ class TestExplore:
             in out2_fields_str
         )
 
-        # GeoDataframe and the given list have different number of rows
+        # GeoDataFrame and the given list have different number of rows
         with pytest.raises(ValueError, match="different number of rows"):
             self.world.explore(column=np.array([1, 2, 3]))
 
     def test_no_crs(self):
         """Naive geometry get no tiles"""
         df = self.world.copy()
-        df.crs = None
+        df.geometry.array.crs = None
         m = df.explore()
         assert "openstreetmap" not in m.to_dict()["children"].keys()
 
@@ -592,14 +605,10 @@ class TestExplore:
         df2["values"] = df2["BoroCode"] * 10.0
         m = df2[df2["values"] >= 30].explore("values", vmin=0)
         out_str = self._fetch_map_string(m)
-        if FOLIUM_G_014:
-            assert 'case"0":return{"color":"#fde725","fillColor":"#fde725"' in out_str
-            assert 'case"1":return{"color":"#7ad151","fillColor":"#7ad151"' in out_str
-            assert 'default:return{"color":"#22a884","fillColor":"#22a884"' in out_str
-        else:
-            assert 'case"1":return{"color":"#7ad151","fillColor":"#7ad151"' in out_str
-            assert 'case"2":return{"color":"#22a884","fillColor":"#22a884"' in out_str
-            assert 'default:return{"color":"#fde725","fillColor":"#fde725"' in out_str
+
+        assert 'case"0":return{"color":"#fde725","fillColor":"#fde725"' in out_str
+        assert 'case"1":return{"color":"#7ad151","fillColor":"#7ad151"' in out_str
+        assert 'default:return{"color":"#22a884","fillColor":"#22a884"' in out_str
 
         df2["values_negative"] = df2["BoroCode"] * -10.0
         m = df2[df2["values_negative"] <= 30].explore("values_negative", vmax=0)
@@ -698,7 +707,6 @@ class TestExplore:
         assert out_str.count("f1e2ccff") == 62
         assert out_str.count("ccccccff") == 63
 
-    @pytest.mark.skipif(not BRANCA_05, reason="requires branca >= 0.5.0")
     def test_colorbar_max_labels(self):
         import re
 
@@ -743,7 +751,7 @@ class TestExplore:
             'attribution":"\\u0026copy;\\u003cahref=\\"https://www.openstreetmap.org'
             in out_str
         )
-        assert '"maxZoom":20,"minZoom":0' in out_str
+        assert '"maxZoom":20' in out_str
 
     @pytest.mark.skipif(not HAS_PYPROJ, reason="requires pyproj")
     def test_xyzservices_query_name(self):
@@ -760,7 +768,7 @@ class TestExplore:
             'attribution":"\\u0026copy;\\u003cahref=\\"https://www.openstreetmap.org'
             in out_str
         )
-        assert '"maxZoom":20,"minZoom":0' in out_str
+        assert '"maxZoom":20' in out_str
 
     @pytest.mark.skipif(not HAS_PYPROJ, reason="requires pyproj")
     def test_xyzservices_providers_min_zoom_override(self):
@@ -771,7 +779,7 @@ class TestExplore:
         )
         out_str = self._fetch_map_string(m)
 
-        assert '"maxZoom":20,"minZoom":3' in out_str
+        assert '"minZoom":3' in out_str
 
     @pytest.mark.skipif(not HAS_PYPROJ, reason="requires pyproj")
     def test_xyzservices_providers_max_zoom_override(self):
@@ -782,7 +790,7 @@ class TestExplore:
         )
         out_str = self._fetch_map_string(m)
 
-        assert '"maxZoom":12,"minZoom":0' in out_str
+        assert '"maxZoom":12' in out_str
 
     @pytest.mark.skipif(not HAS_PYPROJ, reason="requires pyproj")
     def test_xyzservices_providers_both_zooms_override(self):
@@ -795,7 +803,8 @@ class TestExplore:
         )
         out_str = self._fetch_map_string(m)
 
-        assert '"maxZoom":12,"minZoom":3' in out_str
+        assert '"maxZoom":12' in out_str
+        assert '"minZoom":3' in out_str
 
     def test_linearrings(self):
         rings = self.nybb.explode(index_parts=True).exterior
@@ -971,9 +980,15 @@ class TestExplore:
     def test_map_kwds(self):
         def check():
             out_str = self._fetch_map_string(m)
-            assert "zoomControl:false" in out_str
-            assert "dragging:false" in out_str
-            assert "scrollWheelZoom:false" in out_str
+            if not FOLIUM_GE_019:
+                assert m.options["zoomControl"] is False
+            else:
+                assert m.options["zoom_control"] is False
+            assert "dragging:false" in out_str or '"dragging":false' in out_str
+            assert (
+                "scrollWheelZoom:false" in out_str
+                or '"scrollWheelZoom":false' in out_str
+            )
 
         # check that folium and leaflet Map() parameters can be passed
         m = self.world.explore(
@@ -1004,3 +1019,37 @@ class TestExplore:
         df.loc[0, df.geometry.name] = shapely.Point()
         m = df.explore()
         self._fetch_map_string(m)
+
+    def test_all_empty(self):
+        with_crs = gpd.GeoDataFrame(
+            geometry=[shapely.Point(), shapely.Point()], crs=4326
+        )
+        with pytest.warns(
+            UserWarning,
+            match="The GeoSeries you are attempting to plot is composed of empty",
+        ):
+            m = with_crs.explore()
+        out_str = self._fetch_map_string(m)
+        if HAS_PYPROJ:
+            assert "center:[0.0,0.0],crs:L.CRS.EPSG3857" in out_str
+
+        no_crs = gpd.GeoDataFrame(geometry=[shapely.Point(), shapely.Point()])
+        with pytest.warns(
+            UserWarning,
+            match="The GeoSeries you are attempting to plot is composed of empty",
+        ):
+            m = no_crs.explore()
+        out_str = self._fetch_map_string(m)
+        assert "center:[0.0,0.0],crs:L.CRS.Simple" in out_str
+
+    def test_add_all_empty_named_index(self):
+        gdf1 = gpd.GeoDataFrame(geometry=[shapely.Point(0, 0), shapely.Point(1, 1)])
+        gdf2 = gpd.GeoDataFrame(geometry=[shapely.Point(), shapely.Point()])
+        m = gdf1.rename_axis(index="index_name").explore()
+        with pytest.warns(
+            UserWarning,
+            match="The GeoSeries you are attempting to plot is composed of empty",
+        ):
+            m = gdf2.rename_axis(index="index_name").explore(m=m, color="red")
+        out_str = self._fetch_map_string(m)
+        assert "center:[0.5,0.5],crs:L.CRS.Simple" in out_str

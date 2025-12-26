@@ -1,5 +1,4 @@
 import warnings
-from packaging.version import Version
 
 import numpy as np
 import pandas as pd
@@ -12,8 +11,7 @@ from ._decorator import doc
 
 
 def _sanitize_geoms(geoms, prefix="Multi"):
-    """
-    Returns Series like geoms and index, except that any Multi geometries
+    """Return Series like geoms and index, except that any Multi geometries
     are split into their components and indices are repeated for all component
     in the same Multi geometry. At the same time, empty or missing geometries are
     filtered out.  Maintains 1:1 matching of geometry to value.
@@ -30,6 +28,7 @@ def _sanitize_geoms(geoms, prefix="Multi"):
     """
     # TODO(shapely) look into simplifying this with
     # shapely.get_parts(geoms, return_index=True) from shapely 2.0
+    geoms = geoms.normalize()
     components, component_index = [], []
 
     if (
@@ -60,7 +59,7 @@ def _expand_kwargs(kwargs, multiindex):
     it (in place) to the correct length/formats with help of 'multiindex', unless
     the value appears to already be a valid (single) value for the key.
     """
-    from typing import Iterable
+    from collections.abc import Iterable
 
     from matplotlib.colors import is_color_like
 
@@ -86,7 +85,7 @@ def _expand_kwargs(kwargs, multiindex):
 
 
 def _PolygonPatch(polygon, **kwargs):
-    """Constructs a matplotlib patch from a Polygon geometry
+    """Construct a matplotlib patch from a Polygon geometry.
 
     The `kwargs` are those supported by the matplotlib.patches.PathPatch class
     constructor. Returns an instance of matplotlib.patches.PathPatch.
@@ -105,17 +104,27 @@ def _PolygonPatch(polygon, **kwargs):
     from matplotlib.path import Path
 
     path = Path.make_compound_path(
-        Path(np.asarray(polygon.exterior.coords)[:, :2]),
-        *[Path(np.asarray(ring.coords)[:, :2]) for ring in polygon.interiors],
+        Path(np.asarray(polygon.exterior.coords)[:, :2], closed=True),
+        *[
+            Path(np.asarray(ring.coords)[:, :2], closed=True)
+            for ring in polygon.interiors
+        ],
     )
     return PathPatch(path, **kwargs)
 
 
 def _plot_polygon_collection(
-    ax, geoms, values=None, color=None, cmap=None, vmin=None, vmax=None, **kwargs
+    ax,
+    geoms,
+    values=None,
+    color=None,
+    cmap=None,
+    vmin=None,
+    vmax=None,
+    autolim=True,
+    **kwargs,
 ):
-    """
-    Plots a collection of Polygon and MultiPolygon geometries to `ax`
+    """Plot a collection of Polygon and MultiPolygon geometries to `ax`.
 
     Parameters
     ----------
@@ -133,6 +142,8 @@ def _plot_polygon_collection(
         Color to fill the polygons. Cannot be used together with `values`.
     color : single color or sequence of `N` colors
         Sets both `edgecolor` and `facecolor`
+    autolim : bool (default True)
+        Update axes data limits to contain the new geometries.
     **kwargs
         Additional keyword arguments passed to the collection
 
@@ -167,16 +178,23 @@ def _plot_polygon_collection(
         if "norm" not in kwargs:
             collection.set_clim(vmin, vmax)
 
-    ax.add_collection(collection, autolim=True)
+    ax.add_collection(collection, autolim=autolim)
     ax.autoscale_view()
     return collection
 
 
 def _plot_linestring_collection(
-    ax, geoms, values=None, color=None, cmap=None, vmin=None, vmax=None, **kwargs
+    ax,
+    geoms,
+    values=None,
+    color=None,
+    cmap=None,
+    vmin=None,
+    vmax=None,
+    autolim=True,
+    **kwargs,
 ):
-    """
-    Plots a collection of LineString and MultiLineString geometries to `ax`
+    """Plot a collection of LineString and MultiLineString geometries to `ax`.
 
     Parameters
     ----------
@@ -189,6 +207,8 @@ def _plot_linestring_collection(
         have 1:1 correspondence with the geometries (not their components).
     color : single color or sequence of `N` colors
         Cannot be used together with `values`.
+    autolim : bool (default True)
+        Update axes data limits to contain the new geometries.
 
     Returns
     -------
@@ -222,7 +242,7 @@ def _plot_linestring_collection(
         if "norm" not in kwargs:
             collection.set_clim(vmin, vmax)
 
-    ax.add_collection(collection, autolim=True)
+    ax.add_collection(collection, autolim=autolim)
     ax.autoscale_view()
     return collection
 
@@ -239,8 +259,7 @@ def _plot_point_collection(
     markersize=None,
     **kwargs,
 ):
-    """
-    Plots a collection of Point and MultiPoint geometries to `ax`
+    """Plot a collection of Point and MultiPoint geometries to `ax`.
 
     Parameters
     ----------
@@ -291,7 +310,14 @@ def _plot_point_collection(
 
 
 def plot_series(
-    s, cmap=None, color=None, ax=None, figsize=None, aspect="auto", **style_kwds
+    s,
+    cmap=None,
+    color=None,
+    ax=None,
+    figsize=None,
+    aspect="auto",
+    autolim=True,
+    **style_kwds,
 ):
     """
     Plot a GeoSeries.
@@ -327,6 +353,8 @@ def plot_series(
         square appears square in the middle of the plot. This implies an
         Equirectangular projection. If None, the aspect of `ax` won't be changed. It can
         also be set manually (float) as the ratio of y-unit to x-unit.
+    autolim : bool (default True)
+        Update axes data limits to contain the new geometries.
     **style_kwds : dict
         Color options to be passed on to the actual plot function, such
         as ``edgecolor``, ``facecolor``, ``linewidth``, ``markersize``,
@@ -336,7 +364,6 @@ def plot_series(
     -------
     ax : matplotlib axes instance
     """
-
     try:
         import matplotlib.pyplot as plt
     except ImportError:
@@ -347,7 +374,7 @@ def plot_series(
         )
 
     if ax is None:
-        fig, ax = plt.subplots(figsize=figsize)
+        _fig, ax = plt.subplots(figsize=figsize)
 
     if aspect == "auto":
         if s.crs and s.crs.is_geographic:
@@ -421,7 +448,13 @@ def plot_series(
 
         values_ = values[poly_idx] if cmap else None
         _plot_polygon_collection(
-            ax, polys, values_, facecolor=facecolor, cmap=cmap, **style_kwds
+            ax,
+            polys,
+            values_,
+            facecolor=facecolor,
+            cmap=cmap,
+            autolim=autolim,
+            **style_kwds,
         )
 
     # plot all LineStrings and MultiLineString components in same collection
@@ -431,7 +464,7 @@ def plot_series(
         color_ = expl_color[line_idx] if color_given else color
 
         _plot_linestring_collection(
-            ax, lines, values_, color=color_, cmap=cmap, **style_kwds
+            ax, lines, values_, color=color_, cmap=cmap, autolim=autolim, **style_kwds
         )
 
     # plot all Points in the same collection
@@ -468,6 +501,7 @@ def plot_dataframe(
     classification_kwds=None,
     missing_kwds=None,
     aspect="auto",
+    autolim=True,
     **style_kwds,
 ):
     """
@@ -479,11 +513,11 @@ def plot_dataframe(
 
     Parameters
     ----------
-    column : str, np.array, pd.Series (default None)
-        The name of the dataframe column, np.array, or pd.Series to be plotted.
-        If np.array or pd.Series are used then it must have same length as
-        dataframe. Values are used to color the plot. Ignored if `color` is
-        also set.
+    column : str, np.array, pd.Series, pd.Index (default None)
+        The name of the dataframe column, np.array, pd.Series, or pd.Index
+        to be plotted. If np.array, pd.Series, or pd.Index are used then it
+        must have same length as dataframe. Values are used to color the plot.
+        Ignored if `color` is also set.
     kind: str
         The kind of plots to produce. The default is to create a map ("geo").
         Other supported kinds of plots from pandas:
@@ -571,7 +605,8 @@ def plot_dataframe(
         square appears square in the middle of the plot. This implies an
         Equirectangular projection. If None, the aspect of `ax` won't be changed. It can
         also be set manually (float) as the ratio of y-unit to x-unit.
-
+    autolim : bool (default True)
+        Update axes data limits to contain the new geometries.
     **style_kwds : dict
         Style options to be passed on to the actual plot function, such
         as ``edgecolor``, ``facecolor``, ``linewidth``, ``markersize``,
@@ -618,7 +653,7 @@ def plot_dataframe(
     if ax is None:
         if cax is not None:
             raise ValueError("'ax' can not be None if 'cax' is not.")
-        fig, ax = plt.subplots(figsize=figsize)
+        _fig, ax = plt.subplots(figsize=figsize)
 
     if aspect == "auto":
         if df.crs and df.crs.is_geographic:
@@ -658,15 +693,18 @@ def plot_dataframe(
             figsize=figsize,
             markersize=markersize,
             aspect=aspect,
+            autolim=autolim,
             **style_kwds,
         )
 
     # To accept pd.Series and np.arrays as column
-    if isinstance(column, (np.ndarray, pd.Series)):
+    if isinstance(column, np.ndarray | pd.Series | pd.Index):
         if column.shape[0] != df.shape[0]:
             raise ValueError(
                 "The dataframe and given column have different number of rows."
             )
+        elif isinstance(column, pd.Index):
+            values = column.values
         else:
             values = column
 
@@ -693,17 +731,11 @@ def plot_dataframe(
     nan_idx = np.asarray(pd.isna(values), dtype="bool")
 
     if scheme is not None:
-        mc_err = (
-            "The 'mapclassify' package (>= 2.4.0) is "
-            "required to use the 'scheme' keyword."
-        )
+        mc_err = "The 'mapclassify' package is required to use the 'scheme' keyword."
         try:
             import mapclassify
 
         except ImportError:
-            raise ImportError(mc_err)
-
-        if Version(mapclassify.__version__) < Version("2.4.0"):
             raise ImportError(mc_err)
 
         if classification_kwds is None:
@@ -761,7 +793,7 @@ def plot_dataframe(
         if missing:
             raise ValueError(
                 "Column contains values not listed in categories. "
-                "Missing categories: {}.".format(missing)
+                f"Missing categories: {missing}."
             )
 
         values = cat.codes[~nan_idx]
@@ -797,7 +829,14 @@ def plot_dataframe(
     subset = values[poly_idx & np.invert(nan_idx)]
     if not polys.empty:
         _plot_polygon_collection(
-            ax, polys, subset, vmin=mn, vmax=mx, cmap=cmap, **style_kwds
+            ax,
+            polys,
+            subset,
+            vmin=mn,
+            vmax=mx,
+            cmap=cmap,
+            autolim=autolim,
+            **style_kwds,
         )
 
     # plot all LineStrings and MultiLineString components in same collection
@@ -805,7 +844,14 @@ def plot_dataframe(
     subset = values[line_idx & np.invert(nan_idx)]
     if not lines.empty:
         _plot_linestring_collection(
-            ax, lines, subset, vmin=mn, vmax=mx, cmap=cmap, **style_kwds
+            ax,
+            lines,
+            subset,
+            vmin=mn,
+            vmax=mx,
+            cmap=cmap,
+            autolim=autolim,
+            **style_kwds,
         )
 
     # plot all Points in the same collection
@@ -835,7 +881,7 @@ def plot_dataframe(
         merged_kwds = style_kwds.copy()
         merged_kwds.update(missing_kwds)
 
-        plot_series(expl_series[nan_idx], ax=ax, **merged_kwds)
+        plot_series(expl_series[nan_idx], ax=ax, **merged_kwds, aspect=None)
 
     if legend and not color:
         if legend_kwds is None:

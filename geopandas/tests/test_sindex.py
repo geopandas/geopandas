@@ -1,3 +1,4 @@
+import re
 from math import sqrt
 
 import numpy as np
@@ -18,6 +19,14 @@ from geopandas import _compat as compat
 
 import pytest
 from numpy.testing import assert_array_equal
+
+try:
+    from scipy.sparse import coo_array  # noqa: F401
+
+    HAS_SCIPY = True
+except ImportError:
+    HAS_SCIPY = False
+SCIPY_MARK = pytest.mark.skipif(not HAS_SCIPY, reason="scipy not installed")
 
 
 class TestSeriesSindex:
@@ -70,18 +79,6 @@ class TestSeriesSindex:
         sq = Polygon([(0, 0), (1, 0), (1, 1), (0, 1)])
         s = GeoSeries([t1, t2, sq])
         assert s.sindex.size == 3
-
-    @pytest.mark.filterwarnings("ignore:The series.append method is deprecated")
-    @pytest.mark.skipif(compat.PANDAS_GE_20, reason="append removed in pandas 2.0")
-    def test_polygons_append(self):
-        t1 = Polygon([(0, 0), (1, 0), (1, 1)])
-        t2 = Polygon([(0, 0), (1, 1), (0, 1)])
-        sq = Polygon([(0, 0), (1, 0), (1, 1), (0, 1)])
-        s = GeoSeries([t1, t2, sq])
-        t = GeoSeries([t1, t2, sq], [3, 4, 5])
-        s = s.append(t)
-        assert len(s) == 6
-        assert s.sindex.size == 6
 
     def test_lazy_build(self):
         s = GeoSeries([Point(0, 0)])
@@ -168,12 +165,12 @@ class TestFrameSindex:
         # with pandas 2.0, the column is now copied, losing the index. But
         # with pandas >= 3.0 and Copy-on-Write this is preserved again
         subset1 = self.df[["geom", "A"]]
-        if compat.PANDAS_GE_20 and not compat.PANDAS_GE_30:
+        if not compat.PANDAS_GE_30:
             assert subset1.sindex is not original_index
         else:
             assert subset1.sindex is original_index
         subset2 = self.df[["A", "geom"]]
-        if compat.PANDAS_GE_20 and not compat.PANDAS_GE_30:
+        if not compat.PANDAS_GE_30:
             assert subset2.sindex is not original_index
         else:
             assert subset2.sindex is original_index
@@ -274,6 +271,9 @@ class TestShapelyInterface:
 
     # ------------------------------ `query` tests ------------------------------ #
     @pytest.mark.parametrize(
+        "output_format", ("indices", pytest.param("sparse", marks=SCIPY_MARK), "dense")
+    )
+    @pytest.mark.parametrize(
         "predicate, test_geom, expected",
         (
             (None, box(-1, -1, -0.5, -0.5), []),  # bbox does not intersect
@@ -371,10 +371,21 @@ class TestShapelyInterface:
             ),  # contains but does not contains_properly
         ),
     )
-    def test_query(self, predicate, test_geom, expected):
+    def test_query(self, predicate, test_geom, expected, output_format):
         """Tests the `query` method with valid inputs and valid predicates."""
         res = self.df.sindex.query(test_geom, predicate=predicate)
         assert_array_equal(res, expected)
+
+        if output_format != "indices":
+            dense = np.zeros(len(self.df), dtype=bool)
+            dense[expected] = True
+
+            res = self.df.sindex.query(
+                test_geom, predicate=predicate, output_format=output_format
+            )
+            if output_format == "sparse":
+                res = res.todense()
+            assert_array_equal(res, dense)
 
     def test_query_invalid_geometry(self):
         """Tests the `query` method with invalid geometry."""
@@ -479,7 +490,7 @@ class TestShapelyInterface:
         incompatible versions of shapely or pyGEOS
         """
         with pytest.raises(
-            ValueError, match="predicate = 'dwithin' requires GEOS >= 3.10.0"
+            ValueError, match=re.escape("predicate = 'dwithin' requires GEOS >= 3.10.0")
         ):
             self.df.sindex.query(Point(0, 0), predicate="dwithin", distance=0)
 
@@ -542,12 +553,20 @@ class TestShapelyInterface:
                 pytest.xfail(
                     "rtree results are known to be unordered, see "
                     "https://github.com/geopandas/geopandas/issues/1337\n"
-                    "Expected:\n {}\n".format(expected)
-                    + "Got:\n {}\n".format(res.tolist())
+                    f"Expected:\n {expected}\n"
+                    f"Got:\n {res.tolist()}\n"
                 )
             raise e
 
+    def test_unsupported_output(self):
+        with pytest.raises(ValueError, match="Invalid output_format: 'dataarray'"):
+            test_geom = box(-1, -1, -0.5, -0.5)
+            self.df.sindex.query(test_geom, output_format="dataarray")
+
     # ------------------------- `query_bulk` tests -------------------------- #
+    @pytest.mark.parametrize(
+        "output_format", ("indices", pytest.param("sparse", marks=SCIPY_MARK), "dense")
+    )
     @pytest.mark.parametrize(
         "predicate, test_geom, expected",
         (
@@ -647,14 +666,25 @@ class TestShapelyInterface:
             ),  # contains but does not contains_properly
         ),
     )
-    def test_query_bulk(self, predicate, test_geom, expected):
+    def test_query_bulk(self, predicate, test_geom, expected, output_format):
         """Tests the `query` method with valid
         inputs and valid predicates.
         """
-        res = self.df.sindex.query(
-            [box(*geom) for geom in test_geom], predicate=predicate
-        )
+        test_geoms = [box(*geom) for geom in test_geom]
+        res = self.df.sindex.query(test_geoms, predicate=predicate)
         assert_array_equal(res, expected)
+
+        if output_format != "indices":
+            dense = np.zeros((len(self.df), len(test_geoms)), dtype=bool)
+            tree, other = expected[::-1]
+            dense[tree, other] = True
+
+            res = self.df.sindex.query(
+                test_geoms, predicate=predicate, output_format=output_format
+            )
+            if output_format == "sparse":
+                res = res.todense()
+            assert_array_equal(res, dense)
 
     @pytest.mark.parametrize(
         "test_geoms, expected_value",
@@ -767,8 +797,8 @@ class TestShapelyInterface:
                 pytest.xfail(
                     "rtree results are known to be unordered, see "
                     "https://github.com/geopandas/geopandas/issues/1337\n"
-                    "Expected:\n {}\n".format(expected)
-                    + "Got:\n {}\n".format(res.tolist())
+                    f"Expected:\n {expected}\n"
+                    f"Got:\n {res.tolist()}\n"
                 )
             raise e
 

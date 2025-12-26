@@ -75,7 +75,7 @@ autodoc_typehints = "none"
 
 
 def setup(app):
-    app.add_css_file("custom.css")  # may also be an URL
+    app.add_css_file("custom.css")  # may also be a URL
 
 
 # Add any paths that contain templates here, relative to this directory.
@@ -172,11 +172,6 @@ html_theme_options = {
             "url": "https://github.com/geopandas/geopandas",
             "icon": "fab fa-github-square fa-xl",
         },
-        {
-            "name": "Twitter",
-            "url": "https://twitter.com/geopandas",
-            "icon": "fab fa-twitter-square fa-xl",
-        },
     ]
 }
 
@@ -245,6 +240,13 @@ moved_pages = [
 html_additional_pages = {page[0]: "redirect.html" for page in moved_pages}
 
 html_context = {"redirects": {old: new for old, new in moved_pages}}
+
+# Define the canonical URL if you are using a custom domain on Read the Docs
+html_baseurl = os.environ.get("READTHEDOCS_CANONICAL_URL", "")
+
+# Tell Jinja2 templates the build is running on Read the Docs
+if os.environ.get("READTHEDOCS", "") == "True":
+    html_context["READTHEDOCS"] = True
 
 # If false, no module index is generated.
 # html_domain_indices = True
@@ -371,8 +373,8 @@ nbsphinx_prolog = r"""
 # connect docs in other projects
 intersphinx_mapping = {
     "cartopy": (
-        "https://scitools.org.uk/cartopy/docs/latest/",
-        "https://scitools.org.uk/cartopy/docs/latest/objects.inv",
+        "https://cartopy.readthedocs.io/stable/",
+        "https://cartopy.readthedocs.io/stable/objects.inv",
     ),
     "contextily": (
         "https://contextily.readthedocs.io/en/stable/",
@@ -383,8 +385,8 @@ intersphinx_mapping = {
         "https://fiona.readthedocs.io/en/stable/objects.inv",
     ),
     "folium": (
-        "https://python-visualization.github.io/folium/",
-        "https://python-visualization.github.io/folium/objects.inv",
+        "https://python-visualization.github.io/folium/latest",
+        "https://python-visualization.github.io/folium/latest/objects.inv",
     ),
     "geoplot": (
         "https://residentmario.github.io/geoplot/index.html",
