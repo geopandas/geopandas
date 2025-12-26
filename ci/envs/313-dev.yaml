@@ -14,6 +14,8 @@ dependencies:
   - pytest-cov
   - pytest-xdist
   - fsspec
+  - requests
+  - aiohttp
 
   # optional
   #- geopy

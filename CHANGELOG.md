@@ -6,6 +6,7 @@ New features and improvements:
 
 - `GeoDataFrame.to_parquet` and `read_parquet` will now write and read ``attrs``
   respectively (#3597)
+- `read_parquet` now support direct reading from HTTP/HTTPS protocols (#3699)
 
 Deprecations and compatibility notes:
 

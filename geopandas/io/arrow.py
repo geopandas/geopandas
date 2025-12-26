@@ -57,11 +57,7 @@ PARQUET_GEOMETRY_ENCODINGS = Literal["WKB", "geoarrow"]
 
 
 def _is_fsspec_url(url):
-    return (
-        isinstance(url, str)
-        and "://" in url
-        and not url.startswith(("http://", "https://"))
-    )
+    return isinstance(url, str) and "://" in url
 
 
 def _remove_id_from_member_of_ensembles(json_dict):
