@@ -4661,9 +4661,9 @@ GeometryCollection
             If True, automatically aligns GeoSeries based on their indices.
             If False, the order of elements is preserved. None defaults to True.
         grid_size : float | None (default None)
-            Precision grid size. If 0, will use double precision (will not modify
-            geometry if precision grid size was not previously set). If this value is
-            more precise than input geometry, the input geometry will not be modified.
+            The cell size of the precision grid to use. All the vertices of the output geometry
+            will fall on the grid defined by the grid size. If None, the highest precision
+            (smallest grid size) of the inputs is used.
 
         Returns
         -------
