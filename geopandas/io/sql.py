@@ -93,8 +93,7 @@ def _df_to_geodf(df, geom_col="geom", additional_geom_cols=None, crs=None, con=N
         for additional_geom_col in additional_geom_cols:
             if additional_geom_col not in df:
                 raise ValueError(
-                    f"Missing additional geometry column {additional_geom_col}"
-                    "in query."
+                    f"Missing additional geometry column {additional_geom_col}in query."
                 )
             df, _ = _convert_geometry_column_to_shapely_geometries(
                 df, additional_geom_col
@@ -232,7 +231,11 @@ def _read_postgis(
             chunksize=chunksize,
         )
         return _df_to_geodf(
-            df, geom_col=geom_col, additional_geom_cols=additional_geom_cols, crs=crs, con=con
+            df,
+            geom_col=geom_col,
+            additional_geom_cols=additional_geom_cols,
+            crs=crs,
+            con=con,
         )
 
     else:
@@ -252,7 +255,7 @@ def _read_postgis(
                 geom_col=geom_col,
                 additional_geom_cols=additional_geom_cols,
                 crs=crs,
-                con=con
+                con=con,
             )
             for df in df_generator
         )

@@ -838,7 +838,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         params: list | tuple | dict | None = None,
         chunksize: int | None = None,
         *,
-        additional_geom_cols:list[str]|None=None,
+        additional_geom_cols: list[str] | None = None,
     ) -> GeoDataFrame:
         """
         Alternate constructor to create a ``GeoDataFrame`` from a sql query
