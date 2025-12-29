@@ -4423,9 +4423,10 @@ GeometryCollection
             If True, automatically aligns GeoSeries based on their indices.
             If False, the order of elements is preserved. None defaults to True.
         grid_size : float | None (default None)
-            The cell size of the precision grid to use. All the vertices of the output geometry
-            will fall on the grid defined by the grid size. If None, the highest precision
-            (smallest grid size) of the inputs is used.
+            The cell size of the precision grid to use. All the vertices of the
+            output geometry will fall on the grid defined by the grid size.
+            If None, the highest precision (smallest grid size) of the inputs
+            is used.
 
         Returns
         -------
@@ -4515,7 +4516,7 @@ GeometryCollection
         GeoSeries.union
         GeoSeries.intersection
         """
-        return _binary_geo("difference", self, other, align, grid_size)
+        return _binary_geo("difference", self, other, align, grid_size=grid_size)
 
     def symmetric_difference(self, other, align=None, grid_size=None):
         """Return a ``GeoSeries`` of the symmetric difference of points in
