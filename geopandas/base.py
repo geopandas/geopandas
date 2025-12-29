@@ -4543,9 +4543,10 @@ GeometryCollection
             If True, automatically aligns GeoSeries based on their indices.
             If False, the order of elements is preserved. None defaults to True.
         grid_size : float | None (default None)
-            The cell size of the precision grid to use. All the vertices of the output geometry
-            will fall on the grid defined by the grid size. If None, the highest precision
-            (smallest grid size) of the inputs is used.
+            The cell size of the precision grid to use. All the vertices of the
+            output geometry will fall on the grid defined by the grid size.
+            If None, the highest precision (smallest grid size) of the inputs
+            is used.
 
         Returns
         -------
@@ -4661,9 +4662,10 @@ GeometryCollection
             If True, automatically aligns GeoSeries based on their indices.
             If False, the order of elements is preserved. None defaults to True.
         grid_size : float | None (default None)
-            The cell size of the precision grid to use. All the vertices of the output geometry
-            will fall on the grid defined by the grid size. If None, the highest precision
-            (smallest grid size) of the inputs is used.
+            The cell size of the precision grid to use. All the vertices of the
+            output geometry will fall on the grid defined by the grid size.
+            If None, the highest precision (smallest grid size) of the inputs
+            is used.
 
         Returns
         -------
@@ -4779,9 +4781,10 @@ GeometryCollection
             If True, automatically aligns GeoSeries based on their indices.
             If False, the order of elements is preserved. None defaults to True.
         grid_size : float | None (default None)
-            The cell size of the precision grid to use. All the vertices of the output geometry
-            will fall on the grid defined by the grid size. If None, the highest precision
-            (smallest grid size) of the inputs is used.
+            The cell size of the precision grid to use. All the vertices of the
+            output geometry will fall on the grid defined by the grid size.
+            If None, the highest precision (smallest grid size) of the inputs
+            is used.
 
         Returns
         -------
