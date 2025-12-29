@@ -369,7 +369,6 @@ class TestIO:
 
     @pytest.mark.parametrize("connection_postgis", POSTGIS_DRIVERS, indirect=True)
     def test_read_postgis_multiple_geometry_columns(self, connection_postgis, df_nybb):
-
         from shapely import Point
 
         gdf = GeoDataFrame(
@@ -454,8 +453,8 @@ class TestIO:
         # Check when non-geometry column is listed in additional_geom_cols
         with pytest.raises(
             TypeError,
-            match="Encountered an issue in converting the geometry column. "
-            "Check the geometry columns are listed correctly.",
+            match=r"Encountered an issue in converting the geometry column. "
+            r"Check the geometry columns are listed correctly.",
         ):
             df = read_postgis(
                 sql,
@@ -468,8 +467,8 @@ class TestIO:
         # and additional_geom_cols
         with pytest.raises(
             ValueError,
-            match="Active geometry colum, geometry, should not be listed "
-            "as an additional_geom_cols.",
+            match=r"Active geometry colum, geometry, should not be listed "
+            r"as an additional_geom_cols.",
         ):
             df = read_postgis(
                 sql,
