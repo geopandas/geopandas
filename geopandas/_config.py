@@ -112,22 +112,10 @@ io_engine = Option(
     callback=None,
 )
 
-# TODO: deprecate this
-use_pygeos = Option(
-    key="use_pygeos",
-    default_value=False,
-    doc=(
-        "Deprecated option previously used to enable PyGEOS. "
-        "It will be removed in GeoPandas 1.1."
-    ),
-    validator=_warn_use_pygeos_deprecated,
-    callback=None,
-)
 
 options = Options(
     {
         "display_precision": display_precision,
-        "use_pygeos": use_pygeos,
         "io_engine": io_engine,
     }
 )

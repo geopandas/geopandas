@@ -1888,22 +1888,22 @@ GeometryCollection
         >>> s = geopandas.GeoSeries(
         ...     [
         ...         Polygon([(0, 0), (1, 1), (0, 1), (0, 0)]),
-        ...         Polygon([(0, 0), (10, 10), (0, 10), (0, 0)]),
+        ...         Polygon([(0, 0), (0.5, -1), (1, 0), (1, 1), (-0.5, 0.5)]),
         ...     ]
         ... )
         >>> s
-        0       POLYGON ((0 0, 1 1, 0 1, 0 0))
-        1    POLYGON ((0 0, 10 10, 0 10, 0 0))
+        0                      POLYGON ((0 0, 1 1, 0 1, 0 0))
+        1    POLYGON ((0 0, 0.5 -1, 1 0, 1 1, -0.5 0.5, 0 0))
         dtype: geometry
 
         >>> s.maximum_inscribed_circle()
-        0    LINESTRING (0.29297 0.70703, 0.5 0.5)
-        1        LINESTRING (2.92969 7.07031, 5 5)
+        0    LINESTRING (0.29289 0.70711, 0.5 0.5)
+        1    LINESTRING (0.4668 0.25977, 1 0.25977)
         dtype: geometry
 
         >>> s.maximum_inscribed_circle(tolerance=2)
-        0    LINESTRING (0.25 0.5, 0.375 0.375)
-        1          LINESTRING (2.5 7.5, 2.5 10)
+        0    LINESTRING (0.29289 0.70711, 0.5 0.5)
+        1             LINESTRING (0.375 0.25, 0 0)
         dtype: geometry
 
         See Also
@@ -2996,7 +2996,7 @@ GeometryCollection
            :align: center
 
         >>> polygon = Polygon([(0, 0), (2, 2), (0, 2)])
-        >>> s.geom_equals(polygon)
+        >>> s.geom_equals(polygon, align=True)
         0     True
         1    False
         2    False
@@ -3572,7 +3572,7 @@ GeometryCollection
            :align: center
 
         >>> polygon = Polygon([(0, 0), (1, 0), (1, 1), (0, 1)])
-        >>> s.overlaps(polygon)
+        >>> s.overlaps(polygon, align=True)
         0     True
         1     True
         2    False
@@ -3800,7 +3800,7 @@ GeometryCollection
            :align: center
 
         >>> polygon = Polygon([(0, 0), (2, 2), (0, 2)])
-        >>> s.within(polygon)
+        >>> s.within(polygon, align=True)
         0     True
         1     True
         2    False
@@ -5386,7 +5386,7 @@ GeometryCollection
     def buffer(
         self,
         distance,
-        resolution=16,
+        quad_segs=None,
         cap_style="round",
         join_style="round",
         mitre_limit=5.0,
@@ -5410,7 +5410,7 @@ GeometryCollection
         distance : float, np.array, pd.Series
             The radius of the buffer in the Minkowski sum (or difference). If np.array
             or pd.Series are used then it must have same length as the GeoSeries.
-        resolution : int (optional, default 16)
+        quad_segs : int (optional, default 16)
             The resolution of the buffer around each vertex. Specifies the number of
             linear segments in a quarter circle in the approximation of circular arcs.
         cap_style : {'round', 'square', 'flat'}, default 'round'
@@ -5461,7 +5461,7 @@ GeometryCollection
             "buffer",
             self,
             distance=distance,
-            resolution=resolution,
+            quad_segs=quad_segs,
             cap_style=cap_style,
             join_style=join_style,
             mitre_limit=mitre_limit,
@@ -6312,9 +6312,6 @@ GeometryCollection
           3  3.0 -1.0
         """
         if include_m:
-            if not compat.SHAPELY_GE_21:
-                raise ImportError("Shapely >= 2.1 is required for include_m=True.")
-
             # can be merged with the one below once min requirement is shapely 2.1
             coords, outer_idx = shapely.get_coordinates(
                 self.geometry.values._data,
@@ -6376,7 +6373,7 @@ GeometryCollection
 
         return pd.Series(distances, index=self.index, name="hilbert_distance")
 
-    def sample_points(self, size, method="uniform", seed=None, rng=None, **kwargs):
+    def sample_points(self, size, method="uniform", rng=None, **kwargs):
         """
         Sample points from each geometry.
 
@@ -6435,14 +6432,6 @@ GeometryCollection
         """  # noqa: E501
         from .geoseries import GeoSeries
         from .tools._random import uniform
-
-        if seed is not None:
-            warn(
-                "The 'seed' keyword is deprecated. Use 'rng' instead.",
-                FutureWarning,
-                stacklevel=2,
-            )
-            rng = seed
 
         if method == "uniform":
             if pd.api.types.is_list_like(size):

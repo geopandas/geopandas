@@ -374,7 +374,7 @@ def plot_series(
         )
 
     if ax is None:
-        fig, ax = plt.subplots(figsize=figsize)
+        _fig, ax = plt.subplots(figsize=figsize)
 
     if aspect == "auto":
         if s.crs and s.crs.is_geographic:
@@ -653,7 +653,7 @@ def plot_dataframe(
     if ax is None:
         if cax is not None:
             raise ValueError("'ax' can not be None if 'cax' is not.")
-        fig, ax = plt.subplots(figsize=figsize)
+        _fig, ax = plt.subplots(figsize=figsize)
 
     if aspect == "auto":
         if df.crs and df.crs.is_geographic:

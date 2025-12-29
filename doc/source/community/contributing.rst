@@ -206,7 +206,7 @@ At this point you can easily do a *development* install, as detailed in the next
 3) Installing Dependencies
 --------------------------
 
-To run GeoPandas in an development environment, you must first install the dependencies of
+To run GeoPandas in a development environment, you must first install the dependencies of
 GeoPandas. If you used the provided environment in section 2, skip this
 step and continue to section 4. If you created the environment manually, we suggest installing
 dependencies using the following commands (executed after your development environment has been activated)::
