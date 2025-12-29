@@ -31,31 +31,6 @@ Notes on dependencies:
 
 ## Version 1.1.2 (December 22, 2025)
 
-New features and improvements:
-
-- `GeoDataFrame.to_parquet` and `read_parquet` will now write and read ``attrs``
-  respectively (#3597)
-
-Deprecations and compatibility notes:
-
-- The `resolution` keyword to `buffer` has been deprecated to align with the convention in shapely,
-  `quad_segs` should be used instead (#3600).
-- Expired deprecations; option `use_pygeos` which had no functionality,
-  `seed` keyword in sample_points (replaced by `rng`) (#3613)
-
-Community:
-
-- GeoPandas now uses the NumFOCUS Code of Conduct.
-
-Notes on dependencies:
-
-- GeoPandas 1.2 now requires Python 3.11 or greater and pandas 2.2, numpy 2.0, pyproj 3.7, and
-  shapely 2.1, are now the minimum required version for these dependencies.
-  Furthermore, the minimum tested version for optional dependencies has been updated to
-  fiona 1.8.21, scipy 1.9, matplotlib 3.9, mapclassify 2.7 folium 0.15, pyarrow 15.0 and
-  SQLAlchemy 2.0. Older versions of these libraries may continue to work, but are no longer
-  considered supported (#3371, #3581).
-
 Bug fixes:
 
 - Fix an issue that caused an error in `GeoDataFrame.from_features` when there is no `properties` field (#3599).
