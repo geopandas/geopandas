@@ -6,6 +6,8 @@ New features and improvements:
 
 - `GeoDataFrame.to_parquet` and `read_parquet` will now write and read ``attrs``
   respectively (#3597)
+- Add ``grid_size`` parameter to ``union``, ``difference``, ``symmetric_difference``
+  and ``intersection`` (#3593).
 
 Deprecations and compatibility notes:
 
