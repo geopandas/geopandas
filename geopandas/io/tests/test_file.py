@@ -501,17 +501,21 @@ def test_to_file_column_len(tmpdir, df_points, engine):
     with warnings.catch_warnings(record=True) as captured:
         df.to_file(tempfilename, driver="ESRI Shapefile", engine=engine)
 
-    column_names_warning = [w for w in captured 
-    if w.category is UserWarning
-            and "Column names longer than 10 characters will be truncated" in str(w.message)
+    column_names_warning = [
+        w
+        for w in captured
+        if w.category is UserWarning
+        and "Column names longer than 10 characters will be truncated" in str(w.message)
     ]
-    assert len(column_names_warning) ==1
-    if engine =='pyogrio':
-        pyogrio_warning = [w for w in captured if 
-        w.category is RuntimeWarning
-                and "Normalized/laundered field name" in str(w.message)
+    assert len(column_names_warning) == 1
+    if engine == "pyogrio":
+        pyogrio_warning = [
+            w
+            for w in captured
+            if w.category is RuntimeWarning
+            and "Normalized/laundered field name" in str(w.message)
         ]
-        assert len(pyogrio_warning) ==1
+        assert len(pyogrio_warning) == 1
 
 
 def test_to_file_with_duplicate_columns(tmpdir, engine):
