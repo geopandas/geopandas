@@ -567,18 +567,13 @@ def test_value_counts():
     assert_series_equal(res4_keepna, exp4_keepna)
 
 
-@pytest.mark.xfail(strict=False)
 def test_drop_duplicates_series():
-    # duplicated does not yet use EA machinery
-    # (https://github.com/pandas-dev/pandas/issues/27264)
-    # but relies on unstable hashing of unhashable objects in numpy array
-    # giving flaky test (https://github.com/pandas-dev/pandas/issues/27035)
-    dups = GeoSeries([Point(0, 0), Point(0, 0)])
-    dropped = dups.drop_duplicates()
-    assert len(dropped) == 1
+    ser = GeoSeries([Point(0, 0), Point(0, 0)], crs="EPSG:4326")
+    dropped = ser.drop_duplicates()
+    expected = GeoSeries([Point(0, 0)], crs="EPSG:4326")
+    assert_geoseries_equal(expected, dropped)
 
 
-@pytest.mark.xfail(strict=False)
 def test_drop_duplicates_frame():
     # duplicated does not yet use EA machinery, see above
     gdf_len = 3
@@ -586,9 +581,9 @@ def test_drop_duplicates_frame():
         {"geometry": [Point(0, 0) for _ in range(gdf_len)], "value1": range(gdf_len)}
     )
     dropped_geometry = dup_gdf.drop_duplicates(subset="geometry")
-    assert len(dropped_geometry) == 1
+    assert_geodataframe_equal(dup_gdf.iloc[[0]], dropped_geometry)
     dropped_all = dup_gdf.drop_duplicates()
-    assert len(dropped_all) == gdf_len
+    assert_geodataframe_equal(dup_gdf, dropped_all)
 
 
 def test_groupby(df):
