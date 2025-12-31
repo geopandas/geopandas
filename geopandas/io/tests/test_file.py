@@ -498,10 +498,20 @@ def test_to_file_column_len(tmpdir, df_points, engine):
     df = df_points.iloc[:1].copy()
     df["0123456789A"] = ["the column name is 11 characters"]
 
-    with pytest.warns(
-        UserWarning, match="Column names longer than 10 characters will be truncated"
-    ):
+    with warnings.catch_warnings(record=True) as captured:
         df.to_file(tempfilename, driver="ESRI Shapefile", engine=engine)
+
+    column_names_warning = [w for w in captured 
+    if w.category is UserWarning
+            and "Column names longer than 10 characters will be truncated" in str(w.message)
+    ]
+    assert len(column_names_warning) ==1
+    if engine =='pyogrio':
+        pyogrio_warning = [w for w in captured if 
+        w.category is RuntimeWarning
+                and "Normalized/laundered field name" in str(w.message)
+        ]
+        assert len(pyogrio_warning) ==1
 
 
 def test_to_file_with_duplicate_columns(tmpdir, engine):
@@ -555,7 +565,6 @@ def test_mode_unsupported(tmpdir, df_nybb, engine):
         df_nybb.to_file(tempfilename, mode="r", engine=engine)
 
 
-@pytest.mark.filterwarnings("ignore:'crs' was not provided:UserWarning:pyogrio")
 @pytest.mark.parametrize("driver,ext", driver_ext_pairs)
 def test_empty_crs(tmpdir, driver, ext, engine):
     """Test handling of undefined CRS with GPKG driver (GH #1975)."""
@@ -750,7 +759,8 @@ def test_read_file_crs_warning_messages(engine):
     )
 
     gdf_with_crs.to_file(file_with_crs)
-    gdf_without_crs.to_file(file_without_crs)
+    with pytest.warns(UserWarning, match="""\'crs\' was not provided"""):
+        gdf_without_crs.to_file(file_without_crs)
 
     with pytest.warns(UserWarning, match="""There is no CRS defined in the mask."""):
         data = read_file(file_with_crs, mask=gdf_without_crs, engine=engine)
@@ -1589,6 +1599,7 @@ def test_error_monkeypatch_engine_unavailable_fiona(
 
 
 @PYOGRIO_MARK
+@pytest.mark.filterwarnings("ignore:Geometry is in a geographic CRS")
 def test_list_layers(df_points, tmpdir):
     tempfilename = os.path.join(str(tmpdir), "dataset.gpkg")
     df_points.to_file(tempfilename, layer="original")

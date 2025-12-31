@@ -1091,7 +1091,7 @@ class TestDataFrame:
     @pytest.mark.parametrize("how", ["left", "inner", "right"])
     @pytest.mark.parametrize("max_distance", [None, 1])
     @pytest.mark.parametrize("distance_col", [None, "distance"])
-    @pytest.mark.filterwarnings("ignore:Geometry is in a geographic CRS:UserWarning")
+    @pytest.mark.filterwarnings("ignore:'\\+init:DeprecationWarning")
     def test_sjoin_nearest(
         self, how, max_distance, distance_col, naturalearth_cities, naturalearth_lowres
     ):
