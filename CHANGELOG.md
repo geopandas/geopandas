@@ -4,13 +4,32 @@
 
 New features and improvements:
 
-- `GeoDataFrame.to_parquet` and `read_parquet` will now write and read ``attrs`` 
+- `GeoDataFrame.to_parquet` and `read_parquet` will now write and read ``attrs``
   respectively (#3597)
+- Add ``grid_size`` parameter to ``union``, ``difference``, ``symmetric_difference``
+  and ``intersection`` (#3593).
 
 Deprecations and compatibility notes:
 
 - The `resolution` keyword to `buffer` has been deprecated to align with the convention in shapely,
   `quad_segs` should be used instead (#3600).
+- Expired deprecations; option `use_pygeos` which had no functionality,
+  `seed` keyword in sample_points (replaced by `rng`) (#3613)
+
+Community:
+
+- GeoPandas now uses the NumFOCUS Code of Conduct.
+
+Notes on dependencies:
+
+- GeoPandas 1.2 now requires Python 3.11 or greater and pandas 2.2, numpy 2.0, pyproj 3.7, and
+  shapely 2.1, are now the minimum required version for these dependencies.
+  Furthermore, the minimum tested version for optional dependencies has been updated to
+  fiona 1.8.21, scipy 1.9, matplotlib 3.9, mapclassify 2.7 folium 0.15, pyarrow 15.0 and
+  SQLAlchemy 2.0. Older versions of these libraries may continue to work, but are no longer
+  considered supported (#3371, #3581).
+
+## Version 1.1.2 (December 22, 2025)
 
 Bug fixes:
 
@@ -24,6 +43,7 @@ Bug fixes:
   column (#3648).
 - Calling `del gdf["geometry"]` now will downcast to a `pd.DataFrame` if there are no geometry columns left
   in the dataframe (#3648).
+- Fix SQL injection in `to_postgis` via geometry column name (#3681).
 
 ## Version 1.1.1 (June 27, 2025)
 
@@ -277,7 +297,7 @@ Bug fixes:
   `GeoSeries` the name was not used as the active geometry column name (#3237).
 - Fix bug in `GeoSeries` constructor when passing a Series and specifying a `crs` to not change the original input data (#2492).
 - Fix regression preventing reading from file paths containing hashes in `read_file`
-  with the fiona engine (#3280). An analgous fix for pyogrio is included in
+  with the fiona engine (#3280). An analogous fix for pyogrio is included in
   pyogrio 0.8.1.
 - Fix `to_parquet` to write correct metadata in case of 3D geometries (#2824).
 - Fixes for compatibility with psycopg (#3167).
@@ -634,7 +654,7 @@ Small bug-fix release:
   overlay of two geometries in a GeometryCollection with other geometry types
   (#2177).
 - Fix ``overlay()`` to honor the ``keep_geom_type`` keyword for the
-  ``op="differnce"`` case (#2164).
+  ``op="difference"`` case (#2164).
 - Fix regression in ``plot()`` with a mapclassify ``scheme`` in case the
   formatted legend labels have duplicates (#2166).
 - Fix a bug in the ``explore()`` method ignoring the ``vmin`` and ``vmax`` keywords

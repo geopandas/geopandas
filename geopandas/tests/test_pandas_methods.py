@@ -1,6 +1,4 @@
 import os
-import warnings
-from packaging.version import Version
 
 import numpy as np
 import pandas as pd
@@ -252,13 +250,9 @@ def test_astype(s, df):
     assert s.astype(str)[0] == "POINT (0 0)"
 
     res = s.astype(object)
-    if not (
-        (Version(pd.__version__) == Version("2.1.0"))
-        or (Version(pd.__version__) == Version("2.1.1"))
-    ):
-        # https://github.com/geopandas/geopandas/issues/2948 - bug in pandas 2.1.0
-        assert isinstance(res, pd.Series) and not isinstance(res, GeoSeries)
-        assert res.dtype == object
+
+    assert isinstance(res, pd.Series) and not isinstance(res, GeoSeries)
+    assert res.dtype == object
 
     df = df.rename_geometry("geom_list")
 
@@ -444,9 +438,7 @@ def test_fillna_inplace(s):
     arr = s2.array
     s2.fillna(Point(1, 1), inplace=True)
     assert_geoseries_equal(s2, s)
-    if compat.PANDAS_GE_21:
-        # starting from pandas 2.1, there is support to do this actually inplace
-        assert s2.array is arr
+    assert s2.array is arr
 
 
 def test_dropna():
@@ -554,8 +546,9 @@ def test_value_counts():
     res2 = s2.value_counts()
     assert_series_equal(res2, exp)
     # CRS should now be preserved in the index array
-    assert s2.value_counts().index.array.crs is not None
-    assert s2.value_counts().index.array.crs == "EPSG:4326"
+    if compat.HAS_PYPROJ:
+        assert s2.value_counts().index.array.crs is not None
+        assert s2.value_counts().index.array.crs == "EPSG:4326"
 
     # check mixed geometry
     s3 = GeoSeries([Point(0, 0), LineString([[1, 1], [2, 2]]), Point(0, 0)])
@@ -674,37 +667,24 @@ def test_groupby_metadata(crs, geometry_name):
         geometry=geometry_name,
     )
 
-    kwargs = {}
-    if compat.PANDAS_GE_22:
-        # pandas is deprecating that the group key is present as column in the
-        # dataframe passed to `func`. To suppress this warning, it introduced
-        # a new include_groups keyword
-        kwargs = dict(include_groups=False)
-
     # dummy test asserting we can access the crs
     def func(group):
         assert isinstance(group, GeoDataFrame)
         assert group.crs == crs
 
-    df.groupby("value2").apply(func, **kwargs)
+    df.groupby("value2").apply(func, include_groups=False)
     # selecting the non-group columns -> no need to pass the keyword
-    if compat.PANDAS_GE_22 or (geometry_name == "geometry"):
-        df.groupby("value2")[[geometry_name, "value1"]].apply(func)
-    else:
-        # https://github.com/geopandas/geopandas/pull/2966#issuecomment-1878816712
-        # with pandas 2.0 and 2.1 with geom col != geometry this is failing
-        with pytest.raises(AttributeError):
-            df.groupby("value2")[[geometry_name, "value1"]].apply(func)
+    df.groupby("value2")[[geometry_name, "value1"]].apply(func)
 
     # actual test with functionality
     res = df.groupby("value2").apply(
         lambda x: geopandas.sjoin(x, x[[geometry_name, "value1"]], how="inner"),
-        **kwargs,
+        include_groups=False,
     )
 
     expected = (
         df.take([0, 0, 2, 2, 1])
-        .set_index("value2", drop=compat.PANDAS_GE_22, append=True)
+        .set_index("value2", drop=True, append=True)
         .swaplevel()
         .rename(columns={"value1": "value1_left"})
         .assign(value1_right=[0, 2, 0, 2, 1])
@@ -745,20 +725,12 @@ def test_apply_loc_len1(df):
 @pytest.mark.skipif(compat.PANDAS_GE_30, reason="convert_dtype is removed in pandas 3")
 def test_apply_convert_dtypes_keyword(s):
     # ensure the convert_dtypes keyword is accepted
-    if not compat.PANDAS_GE_21:
-        recorder = warnings.catch_warnings(record=True)
-    else:
-        recorder = pytest.warns()
-
-    with recorder as record:
+    with pytest.warns() as record:
         res = s.apply(lambda x: x, convert_dtype=True, args=())
     assert_geoseries_equal(res, s)
 
-    if compat.PANDAS_GE_21:
-        assert len(record) == 1
-        assert "the convert_dtype parameter" in str(record[0].message)
-    else:
-        assert len(record) == 0
+    assert len(record) == 1
+    assert "the convert_dtype parameter" in str(record[0].message)
 
 
 @pytest.mark.parametrize("crs", [None, "EPSG:4326"])

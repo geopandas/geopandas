@@ -4402,7 +4402,7 @@ GeometryCollection
     # Binary operations that return a GeoSeries
     #
 
-    def difference(self, other, align=None):
+    def difference(self, other, align=None, grid_size=None):
         """Return a ``GeoSeries`` of the points in each aligned geometry that
         are not in `other`.
 
@@ -4422,6 +4422,11 @@ GeometryCollection
         align : bool | None (default None)
             If True, automatically aligns GeoSeries based on their indices.
             If False, the order of elements is preserved. None defaults to True.
+        grid_size : float | None (default None)
+            The cell size of the precision grid to use. All the vertices of the
+            output geometry will fall on the grid defined by the grid size.
+            If None, the highest precision (smallest grid size) of the inputs
+            is used.
 
         Returns
         -------
@@ -4511,9 +4516,9 @@ GeometryCollection
         GeoSeries.union
         GeoSeries.intersection
         """
-        return _binary_geo("difference", self, other, align)
+        return _binary_geo("difference", self, other, align, grid_size=grid_size)
 
-    def symmetric_difference(self, other, align=None):
+    def symmetric_difference(self, other, align=None, grid_size=None):
         """Return a ``GeoSeries`` of the symmetric difference of points in
         each aligned geometry with `other`.
 
@@ -4537,6 +4542,11 @@ GeometryCollection
         align : bool | None (default None)
             If True, automatically aligns GeoSeries based on their indices.
             If False, the order of elements is preserved. None defaults to True.
+        grid_size : float | None (default None)
+            The cell size of the precision grid to use. All the vertices of the
+            output geometry will fall on the grid defined by the grid size.
+            If None, the highest precision (smallest grid size) of the inputs
+            is used.
 
         Returns
         -------
@@ -4626,9 +4636,11 @@ GeometryCollection
         GeoSeries.union
         GeoSeries.intersection
         """
-        return _binary_geo("symmetric_difference", self, other, align)
+        return _binary_geo(
+            "symmetric_difference", self, other, align, grid_size=grid_size
+        )
 
-    def union(self, other, align=None):
+    def union(self, other, align=None, grid_size=None):
         """Return a ``GeoSeries`` of the union of points in each aligned geometry with
         `other`.
 
@@ -4649,6 +4661,11 @@ GeometryCollection
         align : bool | None (default None)
             If True, automatically aligns GeoSeries based on their indices.
             If False, the order of elements is preserved. None defaults to True.
+        grid_size : float | None (default None)
+            The cell size of the precision grid to use. All the vertices of the
+            output geometry will fall on the grid defined by the grid size.
+            If None, the highest precision (smallest grid size) of the inputs
+            is used.
 
         Returns
         -------
@@ -4740,9 +4757,9 @@ GeometryCollection
         GeoSeries.difference
         GeoSeries.intersection
         """
-        return _binary_geo("union", self, other, align)
+        return _binary_geo("union", self, other, align, grid_size=grid_size)
 
-    def intersection(self, other, align=None):
+    def intersection(self, other, align=None, grid_size=None):
         """Return a ``GeoSeries`` of the intersection of points in each
         aligned geometry with `other`.
 
@@ -4763,6 +4780,11 @@ GeometryCollection
         align : bool | None (default None)
             If True, automatically aligns GeoSeries based on their indices.
             If False, the order of elements is preserved. None defaults to True.
+        grid_size : float | None (default None)
+            The cell size of the precision grid to use. All the vertices of the
+            output geometry will fall on the grid defined by the grid size.
+            If None, the highest precision (smallest grid size) of the inputs
+            is used.
 
         Returns
         -------
@@ -4853,7 +4875,7 @@ GeometryCollection
         GeoSeries.symmetric_difference
         GeoSeries.union
         """
-        return _binary_geo("intersection", self, other, align)
+        return _binary_geo("intersection", self, other, align, grid_size=grid_size)
 
     def clip_by_rect(self, xmin, ymin, xmax, ymax):
         """Return a ``GeoSeries`` of the portions of geometry within the given
@@ -6293,9 +6315,6 @@ GeometryCollection
           3  3.0 -1.0
         """
         if include_m:
-            if not compat.SHAPELY_GE_21:
-                raise ImportError("Shapely >= 2.1 is required for include_m=True.")
-
             # can be merged with the one below once min requirement is shapely 2.1
             coords, outer_idx = shapely.get_coordinates(
                 self.geometry.values._data,
@@ -6357,7 +6376,7 @@ GeometryCollection
 
         return pd.Series(distances, index=self.index, name="hilbert_distance")
 
-    def sample_points(self, size, method="uniform", seed=None, rng=None, **kwargs):
+    def sample_points(self, size, method="uniform", rng=None, **kwargs):
         """
         Sample points from each geometry.
 
@@ -6416,14 +6435,6 @@ GeometryCollection
         """  # noqa: E501
         from .geoseries import GeoSeries
         from .tools._random import uniform
-
-        if seed is not None:
-            warn(
-                "The 'seed' keyword is deprecated. Use 'rng' instead.",
-                FutureWarning,
-                stacklevel=2,
-            )
-            rng = seed
 
         if method == "uniform":
             if pd.api.types.is_list_like(size):

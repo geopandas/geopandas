@@ -239,7 +239,7 @@ class GeoSeries(GeoPandasBase, Series):
                 "This unsafe behavior will be deprecated in future versions. "
                 "Use GeoSeries.set_crs method instead.",
                 stacklevel=2,
-                category=DeprecationWarning,
+                category=FutureWarning,
             )
         self.geometry.values.crs = value
 
@@ -613,7 +613,7 @@ class GeoSeries(GeoPandasBase, Series):
     @classmethod
     def from_arrow(cls, arr, **kwargs) -> GeoSeries:
         """
-        Construct a GeoSeries from a Arrow array object with a GeoArrow
+        Construct a GeoSeries from an Arrow array object with a GeoArrow
         extension type.
 
         See https://geoarrow.org/ for details on the GeoArrow specification.
@@ -806,11 +806,6 @@ class GeoSeries(GeoPandasBase, Series):
     def apply(self, func, convert_dtype: bool | None = None, args=(), **kwargs):
         if convert_dtype is not None:
             kwargs["convert_dtype"] = convert_dtype
-        else:
-            # if compat.PANDAS_GE_21 don't pass through, use pandas default
-            # of true to avoid internally triggering the pandas warning
-            if not compat.PANDAS_GE_21:
-                kwargs["convert_dtype"] = True
 
         # to avoid warning
         result = super().apply(func, args=args, **kwargs)

@@ -615,7 +615,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                     "This unsafe behavior will be deprecated in future versions. "
                     "Use GeoDataFrame.set_crs method instead",
                     stacklevel=2,
-                    category=DeprecationWarning,
+                    category=FutureWarning,
                 )
             self.geometry.values.crs = value
         else:
@@ -913,7 +913,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         cls, table, geometry: str | None = None, to_pandas_kwargs: dict | None = None
     ):
         """
-        Construct a GeoDataFrame from a Arrow table object based on GeoArrow
+        Construct a GeoDataFrame from an Arrow table object based on GeoArrow
         extension types.
 
         See https://geoarrow.org/ for details on the GeoArrow specification.

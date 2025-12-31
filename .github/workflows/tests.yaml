@@ -28,45 +28,48 @@ jobs:
         postgis: [false]
         dev: [false]
         env:
-          - ci/envs/310-minimal.yaml
-          - ci/envs/310-no-optional-deps.yaml
-          - ci/envs/310-pd21.yaml
-          - ci/envs/310-latest-no-pyogrio.yaml
-          - ci/envs/311-pd22.yaml
           - ci/envs/311-latest.yaml
+          - ci/envs/311-minimal.yaml
+          - ci/envs/311-pd22.yaml
           - ci/envs/312-latest.yaml
-          - ci/envs/312-latest-no-pyproj.yaml
+          - ci/envs/313-latest-no-pyogrio.yaml
+          - ci/envs/313-latest-no-pyproj.yaml
           - ci/envs/313-latest.yaml
+          - ci/envs/313-no-optional-deps.yaml
           - ci/envs/314-latest.yaml
         include:
-          - env: ci/envs/310-latest-no-pyogrio.yaml
+          - env: ci/envs/313-latest-no-pyogrio.yaml
             os: macos-latest
             postgis: false
             dev: false
-          - env: ci/envs/311-latest.yaml
+          - env: ci/envs/313-latest.yaml
             os: macos-latest
             postgis: false
             dev: false
-          - env: ci/envs/310-latest-no-pyogrio.yaml
+          - env: ci/envs/313-latest-no-pyogrio.yaml
             os: windows-latest
             postgis: false
             dev: false
-          - env: ci/envs/311-latest.yaml
+          - env: ci/envs/313-latest.yaml
             os: windows-latest
             postgis: false
             dev: false
-          - env: ci/envs/312-dev.yaml
+          - env: ci/envs/313-dev.yaml
             os: ubuntu-latest
             dev: true
             pandas_future_infer_string: "1"
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: Install Conda environment with Micromamba
         uses: mamba-org/setup-micromamba@v2
         with:
           environment-file: ${{ matrix.env }}
+
+      - name: Install package
+        # install without deps to avoid installing default but optional pyproj/pyogrio
+        run: pip install -e . --no-deps
 
       - name: Check and Log Environment
         run: |
@@ -74,9 +77,6 @@ jobs:
           python -c "import geopandas; geopandas.show_versions();"
           micromamba info
           micromamba list
-
-      - name: Install package
-        run: pip install -e .
 
       - name: Test
         env:

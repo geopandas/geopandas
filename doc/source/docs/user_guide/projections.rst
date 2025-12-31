@@ -331,7 +331,7 @@ a CRS object:
    - Prime Meridian: Greenwich
    Source CRS: unknown
 
-You notice that the above is a not a "Projected CRS" as expected, but a "Bound CRS".
+You notice that the above is not a "Projected CRS" as expected, but a "Bound CRS".
 This is because it is "bound" to a conversion to WGS84, and will always use this
 when reprojecting instead of letting PROJ determine the best conversion.
 
