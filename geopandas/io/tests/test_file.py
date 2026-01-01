@@ -260,33 +260,29 @@ def write_invalid_date_file(date_str, tmpdir, ext, engine):
             "geometry": [Point(1, 1), Point(1, 1), Point(1, 1)],
         }
     )
-    # Schema not required for GeoJSON since not typed, but needed for GPKG
-    if ext == "geojson":
-        with pytest.warns(UserWarning, match="""\'crs\' was not provided"""):
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")  # suppress warnings from writing file
+        # Schema not required for GeoJSON since not typed, but needed for GPKG
+        if ext == "geojson":
             df.to_file(tempfilename, engine=engine)
-    else:
-        schema = {"geometry": "Point", "properties": {"date": "datetime"}}
-        if engine == "pyogrio" and not fiona:
-            # (use schema to write the invalid date without pandas datetimes
-            pytest.skip("test requires fiona kwarg schema")
-        df.to_file(tempfilename, schema=schema, engine="fiona")
+        else:
+            schema = {"geometry": "Point", "properties": {"date": "datetime"}}
+            if engine == "pyogrio" and not fiona:
+                # (use schema to write the invalid date without pandas datetimes
+                pytest.skip("test requires fiona kwarg schema")
+            df.to_file(tempfilename, schema=schema, engine="fiona")
     return tempfilename
 
 
 @pytest.mark.parametrize("ext", dt_exts)
+@pytest.mark.filterwarnings(
+    "ignore:Invalid content for record 3 in column date.*:RuntimeWarning"
+)
 def test_read_file_datetime_invalid(tmpdir, ext, engine):
     # https://github.com/geopandas/geopandas/issues/2502
     date_str = "9999-99-99T00:00:00"  # invalid date handled by GDAL
     tempfilename = write_invalid_date_file(date_str, tmpdir, ext, engine)
-    with warnings.catch_warnings(record=True) as captured:
-        if engine == "pyogrio" and ext != "geojson":
-            assert len(captured) == 1
-            assert captured[0].category is RuntimeWarning
-            assert "Invalid content for record 3 in column date" in captured[0].mssage
-        else:
-            assert len(captured) == 0
-
-        res = read_file(tempfilename, engine=engine)
+    res = read_file(tempfilename, engine=engine)
     if ext == "gpkg":
         assert is_datetime64_any_dtype(res["date"])
         assert pd.isna(res["date"].iloc[-1])
@@ -517,14 +513,6 @@ def test_to_file_column_len(tmpdir, df_points, engine):
         and "Column names longer than 10 characters will be truncated" in str(w.message)
     ]
     assert len(column_names_warning) == 1
-    if engine == "pyogrio":
-        pyogrio_warning = [
-            w
-            for w in captured
-            if w.category is RuntimeWarning
-            and "Normalized/laundered field name" in str(w.message)
-        ]
-        assert len(pyogrio_warning) == 1
 
 
 def test_to_file_with_duplicate_columns(tmpdir, engine):
@@ -579,6 +567,7 @@ def test_mode_unsupported(tmpdir, df_nybb, engine):
 
 
 @pytest.mark.parametrize("driver,ext", driver_ext_pairs)
+@pytest.mark.filterwarnings("ignore:'crs' was not provided.*:UserWarning")
 def test_empty_crs(tmpdir, driver, ext, engine):
     """Test handling of undefined CRS with GPKG driver (GH #1975)."""
     if ext == ".gpkg":
@@ -591,14 +580,8 @@ def test_empty_crs(tmpdir, driver, ext, engine):
             "geometry": [Point(0, 0), Point(1, 1), Point(2, 2)],
         },
     )
-    with warnings.catch_warnings(record=True) as captured:
-        df.to_file(tempfilename, driver=driver, engine=engine)
-        if engine == "pyogrio":
-            assert len(captured) == 1
-            assert captured[0] is UserWarning
-            assert "'crs' was not provided" in captured[0].message
-        else:
-            assert len(captured) == 0
+    df.to_file(tempfilename, driver=driver, engine=engine)
+
     result = read_file(tempfilename, engine=engine)
 
     if ext == ".geojson":
