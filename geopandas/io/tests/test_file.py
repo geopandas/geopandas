@@ -262,7 +262,8 @@ def write_invalid_date_file(date_str, tmpdir, ext, engine):
     )
     # Schema not required for GeoJSON since not typed, but needed for GPKG
     if ext == "geojson":
-        df.to_file(tempfilename, engine=engine)
+        with pytest.warns(UserWarning, match="""\'crs\' was not provided"""):
+            df.to_file(tempfilename, engine=engine)
     else:
         schema = {"geometry": "Point", "properties": {"date": "datetime"}}
         if engine == "pyogrio" and not fiona:
@@ -277,9 +278,14 @@ def test_read_file_datetime_invalid(tmpdir, ext, engine):
     # https://github.com/geopandas/geopandas/issues/2502
     date_str = "9999-99-99T00:00:00"  # invalid date handled by GDAL
     tempfilename = write_invalid_date_file(date_str, tmpdir, ext, engine)
-    with pytest.warns(
-        RuntimeWarning, match="""Invalid content for record 3 in column date"""
-    ):
+    with warnings.catch_warnings(record=True) as captured:
+        if engine == "pyogrio" and ext != "geojson":
+            assert len(captured) == 1
+            assert captured[0].category is RuntimeWarning
+            assert "Invalid content for record 3 in column date" in captured[0].mssage
+        else:
+            assert len(captured) == 0
+
         res = read_file(tempfilename, engine=engine)
     if ext == "gpkg":
         assert is_datetime64_any_dtype(res["date"])
@@ -585,8 +591,14 @@ def test_empty_crs(tmpdir, driver, ext, engine):
             "geometry": [Point(0, 0), Point(1, 1), Point(2, 2)],
         },
     )
-    with pytest.warns(UserWarning, match="""\'crs\' was not provided"""):
+    with warnings.catch_warnings(record=True) as captured:
         df.to_file(tempfilename, driver=driver, engine=engine)
+        if engine == "pyogrio":
+            assert len(captured) == 1
+            assert captured[0] is UserWarning
+            assert "'crs' was not provided" in captured[0].message
+        else:
+            assert len(captured) == 0
     result = read_file(tempfilename, engine=engine)
 
     if ext == ".geojson":
