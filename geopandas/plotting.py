@@ -784,8 +784,10 @@ def plot_dataframe(
     if categorical:
         if cmap is None:
             cmap = "tab10"
-
-        cat = pd.Categorical(values, categories=categories)
+        if isinstance(values, pd.Categorical):
+            cat = values
+        else:
+            cat = pd.Categorical(values, categories=categories)
         categories = list(cat.categories)
 
         # values missing in the Categorical but not in original values
