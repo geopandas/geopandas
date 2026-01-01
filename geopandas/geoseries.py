@@ -640,6 +640,22 @@ class GeoSeries(GeoPandasBase, Series):
         -------
         GeoSeries
 
+
+        See Also
+        --------
+        GeoSeries.to_arrow
+
+        Examples
+        --------
+        >>> import geoarrow.pyarrow as ga
+        >>> array = ga.as_geoarrow(
+        ... [None, "POLYGON ((0 0, 1 1, 0 1, 0 0))", "LINESTRING (0 0, -1 1, 0 -1)"])
+        >>> geoseries = geopandas.GeoSeries.from_arrow(array)
+        >>> geoseries
+        0                              None
+        1    POLYGON ((0 0, 1 1, 0 1, 0 0))
+        2      LINESTRING (0 0, -1 1, 0 -1)
+        dtype: geometry
         """
         from geopandas.io._geoarrow import arrow_to_geometry_array
 
@@ -1482,11 +1498,9 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
         >>> import pyarrow as pa
         >>> array = pa.array(arrow_array)
         >>> array
-        <pyarrow.lib.BinaryArray object at ...>
-        [
-          0101000000000000000000F03F0000000000000040,
-          01010000000000000000000040000000000000F03F
-        ]
+        GeometryExtensionArray:WkbType(geoarrow.wkb)[2]
+        <POINT (1 2)>
+        <POINT (2 1)>
 
         """
         from geopandas.io._geoarrow import (
