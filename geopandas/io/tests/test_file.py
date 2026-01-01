@@ -277,7 +277,10 @@ def test_read_file_datetime_invalid(tmpdir, ext, engine):
     # https://github.com/geopandas/geopandas/issues/2502
     date_str = "9999-99-99T00:00:00"  # invalid date handled by GDAL
     tempfilename = write_invalid_date_file(date_str, tmpdir, ext, engine)
-    res = read_file(tempfilename, engine=engine)
+    with pytest.warns(
+        RuntimeWarning, match="""Invalid content for record 3 in column date"""
+    ):
+        res = read_file(tempfilename, engine=engine)
     if ext == "gpkg":
         assert is_datetime64_any_dtype(res["date"])
         assert pd.isna(res["date"].iloc[-1])
@@ -582,8 +585,8 @@ def test_empty_crs(tmpdir, driver, ext, engine):
             "geometry": [Point(0, 0), Point(1, 1), Point(2, 2)],
         },
     )
-
-    df.to_file(tempfilename, driver=driver, engine=engine)
+    with pytest.warns(UserWarning, match="""\'crs\' was not provided"""):
+        df.to_file(tempfilename, driver=driver, engine=engine)
     result = read_file(tempfilename, engine=engine)
 
     if ext == ".geojson":
