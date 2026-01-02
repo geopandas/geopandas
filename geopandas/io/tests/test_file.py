@@ -260,19 +260,24 @@ def write_invalid_date_file(date_str, tmpdir, ext, engine):
             "geometry": [Point(1, 1), Point(1, 1), Point(1, 1)],
         }
     )
-    # Schema not required for GeoJSON since not typed, but needed for GPKG
-    if ext == "geojson":
-        df.to_file(tempfilename, engine=engine)
-    else:
-        schema = {"geometry": "Point", "properties": {"date": "datetime"}}
-        if engine == "pyogrio" and not fiona:
-            # (use schema to write the invalid date without pandas datetimes
-            pytest.skip("test requires fiona kwarg schema")
-        df.to_file(tempfilename, schema=schema, engine="fiona")
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")  # suppress warnings from writing file
+        # Schema not required for GeoJSON since not typed, but needed for GPKG
+        if ext == "geojson":
+            df.to_file(tempfilename, engine=engine)
+        else:
+            schema = {"geometry": "Point", "properties": {"date": "datetime"}}
+            if engine == "pyogrio" and not fiona:
+                # (use schema to write the invalid date without pandas datetimes
+                pytest.skip("test requires fiona kwarg schema")
+            df.to_file(tempfilename, schema=schema, engine="fiona")
     return tempfilename
 
 
 @pytest.mark.parametrize("ext", dt_exts)
+@pytest.mark.filterwarnings(
+    "ignore:Invalid content for record 3 in column date.*:RuntimeWarning"
+)
 def test_read_file_datetime_invalid(tmpdir, ext, engine):
     # https://github.com/geopandas/geopandas/issues/2502
     date_str = "9999-99-99T00:00:00"  # invalid date handled by GDAL
@@ -498,10 +503,16 @@ def test_to_file_column_len(tmpdir, df_points, engine):
     df = df_points.iloc[:1].copy()
     df["0123456789A"] = ["the column name is 11 characters"]
 
-    with pytest.warns(
-        UserWarning, match="Column names longer than 10 characters will be truncated"
-    ):
+    with warnings.catch_warnings(record=True) as captured:
         df.to_file(tempfilename, driver="ESRI Shapefile", engine=engine)
+
+    column_names_warning = [
+        w
+        for w in captured
+        if w.category is UserWarning
+        and "Column names longer than 10 characters will be truncated" in str(w.message)
+    ]
+    assert len(column_names_warning) == 1
 
 
 def test_to_file_with_duplicate_columns(tmpdir, engine):
@@ -555,8 +566,8 @@ def test_mode_unsupported(tmpdir, df_nybb, engine):
         df_nybb.to_file(tempfilename, mode="r", engine=engine)
 
 
-@pytest.mark.filterwarnings("ignore:'crs' was not provided:UserWarning:pyogrio")
 @pytest.mark.parametrize("driver,ext", driver_ext_pairs)
+@pytest.mark.filterwarnings("ignore:'crs' was not provided.*:UserWarning")
 def test_empty_crs(tmpdir, driver, ext, engine):
     """Test handling of undefined CRS with GPKG driver (GH #1975)."""
     if ext == ".gpkg":
@@ -569,8 +580,8 @@ def test_empty_crs(tmpdir, driver, ext, engine):
             "geometry": [Point(0, 0), Point(1, 1), Point(2, 2)],
         },
     )
-
     df.to_file(tempfilename, driver=driver, engine=engine)
+
     result = read_file(tempfilename, engine=engine)
 
     if ext == ".geojson":
@@ -750,7 +761,8 @@ def test_read_file_crs_warning_messages(engine):
     )
 
     gdf_with_crs.to_file(file_with_crs)
-    gdf_without_crs.to_file(file_without_crs)
+    with pytest.warns(UserWarning, match="""\'crs\' was not provided"""):
+        gdf_without_crs.to_file(file_without_crs)
 
     with pytest.warns(UserWarning, match="""There is no CRS defined in the mask."""):
         data = read_file(file_with_crs, mask=gdf_without_crs, engine=engine)
@@ -1589,6 +1601,7 @@ def test_error_monkeypatch_engine_unavailable_fiona(
 
 
 @PYOGRIO_MARK
+@pytest.mark.filterwarnings("ignore:Geometry is in a geographic CRS")
 def test_list_layers(df_points, tmpdir):
     tempfilename = os.path.join(str(tmpdir), "dataset.gpkg")
     df_points.to_file(tempfilename, layer="original")
