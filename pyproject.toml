@@ -7,13 +7,12 @@ name = "geopandas"
 dynamic = ["version"]
 authors = [{ name = "Kelsey Jordahl", email = "kjordahl@alum.mit.edu" }]
 maintainers = [{ name = "GeoPandas contributors" }]
-license = { text = "BSD 3-Clause" }
+license = "BSD-3-Clause"
 description = "Geographic pandas extensions"
 keywords = ["GIS", "cartography", "pandas", "shapely"]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: BSD License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
