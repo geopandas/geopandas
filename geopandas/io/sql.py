@@ -43,7 +43,7 @@ def _get_conn(conn_or_engine):
         raise ValueError(f"Unknown Connectable: {conn_or_engine}")
 
 
-def _df_to_geodf(df, geom_col="geom", crs=None, con=None):
+def _df_to_geodf(df, geom_col="geom", additional_geom_cols=None, crs=None, con=None):
     """Transform a pandas DataFrame into a GeoDataFrame.
 
     The column 'geom_col' must be a geometry column in WKB representation.
@@ -55,6 +55,10 @@ def _df_to_geodf(df, geom_col="geom", crs=None, con=None):
         pandas DataFrame with geometry column in WKB representation.
     geom_col : string, default 'geom'
         column name to convert to shapely geometries
+    additional_geom_cols : list[str], default None
+        additional geometry columns to be converted to shapely geometries,
+        columns listed here will not be converted to the active geometry column.
+        The active geometry column (geom_col) should not be duplicated here.
     crs : pyproj.CRS, optional
         CRS to use for the returned GeoDataFrame. The value can be anything accepted
         by :meth:`pyproj.CRS.from_user_input() <pyproj.crs.CRS.from_user_input>`,
@@ -77,24 +81,27 @@ def _df_to_geodf(df, geom_col="geom", crs=None, con=None):
             "one geometry column is allowed."
         )
 
-    geoms = df[geom_col].dropna()
+    df, active_geometry = _convert_geometry_column_to_shapely_geometries(df, geom_col)
 
-    if not geoms.empty:
-        load_geom_bytes = shapely.wkb.loads
-        """Load from Python 3 binary."""
+    if additional_geom_cols is not None:
+        if geom_col in additional_geom_cols:
+            raise ValueError(
+                f"Active geometry colum, {geom_col}, should not be "
+                "listed as an additional_geom_cols."
+            )
 
-        def load_geom_text(x):
-            """Load from binary encoded as text."""
-            return shapely.wkb.loads(str(x), hex=True)
+        for additional_geom_col in additional_geom_cols:
+            if additional_geom_col not in df:
+                raise ValueError(
+                    f"Missing additional geometry column {additional_geom_col}in query."
+                )
+            df, _ = _convert_geometry_column_to_shapely_geometries(
+                df, additional_geom_col
+            )
 
-        if isinstance(geoms.iat[0], bytes):
-            load_geom = load_geom_bytes
-        else:
-            load_geom = load_geom_text
-
-        df[geom_col] = geoms = geoms.apply(load_geom)
+    if not active_geometry.empty:
         if crs is None:
-            srid = shapely.get_srid(geoms.iat[0])
+            srid = shapely.get_srid(active_geometry.iat[0])
             # if no defined SRID in geodatabase, returns SRID of 0
             if srid != 0:
                 try:
@@ -123,10 +130,38 @@ def _df_to_geodf(df, geom_col="geom", crs=None, con=None):
     return GeoDataFrame(df, crs=crs, geometry=geom_col)
 
 
+def _convert_geometry_column_to_shapely_geometries(df, geometry_column_name):
+    geometry = df[geometry_column_name].dropna()
+
+    if not geometry.empty:
+        load_geom_bytes = shapely.wkb.loads
+        """Load from Python 3 binary."""
+
+        def load_geom_text(x):
+            """Load from binary encoded as text."""
+            return shapely.wkb.loads(str(x), hex=True)
+
+        if isinstance(geometry.iat[0], bytes):
+            load_geom = load_geom_bytes
+        else:
+            load_geom = load_geom_text
+        try:
+            geometry = geometry.apply(load_geom)
+        except shapely.errors.GEOSException:
+            raise TypeError(
+                "Encountered an issue in converting the geometry column. "
+                "Check the geometry columns are listed correctly."
+            )
+        df[geometry_column_name] = geometry
+
+    return df, geometry
+
+
 def _read_postgis(
     sql,
     con,
     geom_col="geom",
+    additional_geom_cols=None,
     crs=None,
     index_col=None,
     coerce_float=True,
@@ -148,7 +183,11 @@ def _read_postgis(
     con : sqlalchemy.engine.Connection or sqlalchemy.engine.Engine
         Active connection to the database to query.
     geom_col : string, default 'geom'
-        column name to convert to shapely geometries
+        column name to convert to shapely geometries as active geometry column.
+    additional_geom_cols : list[str], default None
+        additional geometry columns to be converted to shapely geometries,
+        columns listed here will not be converted to the active geometry column.
+        The active geometry column (geom_col) should not be duplicated here.
     crs : dict or str, optional
         CRS to use for the returned GeoDataFrame; if not set, tries to
         determine CRS from the SRID associated with the first geometry in
@@ -191,7 +230,13 @@ def _read_postgis(
             params=params,
             chunksize=chunksize,
         )
-        return _df_to_geodf(df, geom_col=geom_col, crs=crs, con=con)
+        return _df_to_geodf(
+            df,
+            geom_col=geom_col,
+            additional_geom_cols=additional_geom_cols,
+            crs=crs,
+            con=con,
+        )
 
     else:
         # read data in chunks and return a generator
@@ -205,7 +250,14 @@ def _read_postgis(
             chunksize=chunksize,
         )
         return (
-            _df_to_geodf(df, geom_col=geom_col, crs=crs, con=con) for df in df_generator
+            _df_to_geodf(
+                df,
+                geom_col=geom_col,
+                additional_geom_cols=additional_geom_cols,
+                crs=crs,
+                con=con,
+            )
+            for df in df_generator
         )
 
 
