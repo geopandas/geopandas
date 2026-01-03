@@ -996,6 +996,8 @@ class GeoSeries(GeoPandasBase, Series):
 
     @doc(plot_series)
     def plot(self, *args, **kwargs):
+        from geopandas.plotting_v2 import plot_series
+
         return plot_series(self, *args, **kwargs)
 
     @doc(_explore_geoseries)
