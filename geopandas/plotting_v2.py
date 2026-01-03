@@ -1,7 +1,10 @@
 import warnings
+from collections.abc import Sequence
+from typing import Literal
 
 import numpy as np
 import pandas as pd
+from matplotlib.collections import PathCollection
 
 import shapely
 
@@ -11,9 +14,12 @@ from ._compat import HAS_MATPLOTLIB
 
 if HAS_MATPLOTLIB:
     import matplotlib.pyplot as plt
+    from matplotlib.axes import Axes
     from matplotlib.collections import LineCollection, PatchCollection
+    from matplotlib.colors import Colormap
     from matplotlib.legend import Legend
     from matplotlib.legend_handler import HandlerPolyCollection
+    from matplotlib.markers import MarkerStyle
     from matplotlib.patches import PathPatch
     from matplotlib.path import Path
 
@@ -151,15 +157,15 @@ def _PolygonPatch(polygon: shapely.Geometry, **kwargs) -> "PathPatch":
 
 
 def _plot_polygon_collection(
-    ax,
-    geoms,
-    values=None,
-    cmap=None,
-    vmin=None,
-    vmax=None,
-    autolim=True,
+    ax: Axes,
+    geoms: geopandas.GeoSeries,
+    values: np.ndarray | None = None,
+    cmap: str | Colormap | None = None,
+    vmin: float | int | None = None,
+    vmax: float | int | None = None,
+    autolim: bool = True,
     **kwargs,
-):
+) -> GeoPandasPolyCollection:
     """Plot a collection of Polygon and MultiPolygon geometries to `ax`.
 
     Note that all style keywords, like ``color`` that can be set as an array in
@@ -214,16 +220,16 @@ def _plot_polygon_collection(
 
 
 def _plot_linestring_collection(
-    ax,
-    geoms,
-    values=None,
-    color=None,
-    cmap=None,
-    vmin=None,
-    vmax=None,
-    autolim=True,
+    ax: Axes,
+    geoms: geopandas.GeoSeries,
+    values: np.ndarray | None = None,
+    color: str | Sequence | None = None,
+    cmap: str | Colormap | None = None,
+    vmin: float | int | None = None,
+    vmax: float | int | None = None,
+    autolim: bool = True,
     **kwargs,
-):
+) -> LineCollection:
     """Plot a collection of LineString and MultiLineString geometries to `ax`.
 
     Parameters
@@ -277,17 +283,17 @@ def _plot_linestring_collection(
 
 
 def _plot_point_collection(
-    ax,
-    geoms,
-    values=None,
-    color=None,
-    cmap=None,
-    vmin=None,
-    vmax=None,
-    marker="o",
-    markersize=None,
+    ax: Axes,
+    geoms: geopandas.GeoSeries,
+    values: np.ndarray | None = None,
+    color: str | Sequence | None = None,
+    cmap: str | Colormap | None = None,
+    vmin: float | int | None = None,
+    vmax: float | int | None = None,
+    marker: str | MarkerStyle | Path = "o",
+    markersize: float | Sequence[float] | None = None,
     **kwargs,
-):
+) -> PathCollection:
     """Plot a collection of Point and MultiPoint geometries to `ax`.
 
     Parameters
@@ -338,15 +344,15 @@ def _plot_point_collection(
 
 
 def plot_series(
-    s,
-    cmap=None,
-    color=None,
-    ax=None,
-    figsize=None,
-    aspect="auto",
-    autolim=True,
+    s: geopandas.GeoSeries,
+    cmap: str | Colormap | None = None,
+    color: str | Sequence | None = None,
+    ax: Axes | None = None,
+    figsize: tuple[float, float] | None = None,
+    aspect: float | Literal["auto", "equal", None] = "auto",
+    autolim: bool = True,
     **style_kwds,
-):
+) -> Axes:
     """
     Plot a GeoSeries.
 
@@ -442,8 +448,8 @@ def plot_series(
     # if cmap is specified, create range of colors based on cmap
     if cmap is not None:
         values = np.arange(len(s))
-        if hasattr(cmap, "N"):
-            # repeat the cmap rather than expanding it for ListedColormap and likes
+        if isinstance(cmap, Colormap) and hasattr(cmap, "N"):
+            # repeat for cmap with limited number of colors
             values = values % cmap.N
         style_kwds["vmin"] = values.min()
         style_kwds["vmax"] = values.max()
@@ -459,7 +465,7 @@ def plot_series(
             # ensure indexes are consistent
             if isinstance(color, pd.Series):
                 color = color.reindex(s.index)
-            color = np.take(color, multiindex, axis=0)
+            color = np.take(color, multiindex, axis=0)  # ty:ignore[invalid-assignment]
 
     # subdivide by geometry type - each has its own collection
     geom_types = geoms.geom_type
@@ -479,7 +485,7 @@ def plot_series(
         facecolor = style_kwds.pop("facecolor", None)
 
         if color is not None:
-            facecolor = color[poly_idx] if color_given else color
+            facecolor = color[poly_idx] if color_given else color  # ty:ignore[invalid-argument-type]
 
         values_ = values[poly_idx] if values is not None else None
 
@@ -498,7 +504,7 @@ def plot_series(
     if not lines.empty:
         values_ = values[line_idx] if values is not None else None
 
-        color_ = color[line_idx] if color_given else color  # ty:ignore[not-subscriptable]
+        color_ = color[line_idx] if color_given else color  # ty:ignore[not-subscriptable, invalid-argument-type]
 
         _plot_linestring_collection(
             ax, lines, values_, color=color_, cmap=cmap, autolim=autolim, **style_kwds
@@ -509,7 +515,7 @@ def plot_series(
     if not points.empty:
         values_ = values[point_idx] if values is not None else None
 
-        color_ = color[point_idx] if color_given else color  # ty:ignore[not-subscriptable]
+        color_ = color[point_idx] if color_given else color  # ty:ignore[not-subscriptable, invalid-argument-type]
 
         _plot_point_collection(
             ax, points, values_, color=color_, cmap=cmap, **style_kwds
