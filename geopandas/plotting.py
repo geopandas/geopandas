@@ -272,7 +272,7 @@ def _plot_linestring_collection(
     """
     from matplotlib.collections import LineCollection
 
-    geoms, multiindex = shapely.get_parts(geoms, return_index=True)
+    geoms, multiindex = shapely.get_parts(geoms.values, return_index=True)
     if values is not None:
         values = np.take(values, multiindex, axis=0)
 
@@ -348,7 +348,7 @@ def _plot_point_collection(
     -------
     collection : matplotlib.collections.Collection that was plotted
     """
-    geoms, multiindex = shapely.get_parts(geoms, return_index=True)
+    geoms, multiindex = shapely.get_parts(geoms.values, return_index=True)
 
     xy = shapely.get_coordinates(geoms)
 
