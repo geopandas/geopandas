@@ -1,5 +1,5 @@
 import warnings
-from collections.abc import Sequence
+from collections.abc import Iterable, Sequence
 from typing import Literal
 
 import numpy as np
@@ -16,20 +16,20 @@ if HAS_MATPLOTLIB:
     import matplotlib.pyplot as plt
     from matplotlib.axes import Axes
     from matplotlib.collections import LineCollection, PatchCollection
-    from matplotlib.colors import Colormap
+    from matplotlib.colors import Colormap, is_color_like
     from matplotlib.legend import Legend
     from matplotlib.legend_handler import HandlerPolyCollection
     from matplotlib.markers import MarkerStyle
     from matplotlib.patches import PathPatch
     from matplotlib.path import Path
 
-    class GeoPandasPolyCollection(PatchCollection):
+    class _GeoPandasPolyCollection(PatchCollection):
         """Subclass to assign handler without overriding one for PatchCollection."""
 
     # PatchCollection is not supported by Legend but we can use PolyCollection handler
     # instead in our specific case. Define a subclass and assign a handler.
     Legend.update_default_handler_map(
-        {GeoPandasPolyCollection: HandlerPolyCollection()}
+        {_GeoPandasPolyCollection: HandlerPolyCollection()}
     )
 
 
@@ -90,10 +90,6 @@ def _expand_kwargs(kwargs: dict, multiindex: np.ndarray) -> None:
     it (in place) to the correct length/formats with help of 'multiindex', unless
     the value appears to already be a valid (single) value for the key.
     """
-    from collections.abc import Iterable
-
-    from matplotlib.colors import is_color_like
-
     scalar_kwargs = ["marker", "path_effects"]
     for att, value in kwargs.items():
         if "color" in att:  # color(s), edgecolor(s), facecolor(s)
@@ -165,7 +161,7 @@ def _plot_polygon_collection(
     vmax: float | int | None = None,
     autolim: bool = True,
     **kwargs,
-) -> GeoPandasPolyCollection:
+) -> _GeoPandasPolyCollection:
     """Plot a collection of Polygon and MultiPolygon geometries to `ax`.
 
     Note that all style keywords, like ``color`` that can be set as an array in
@@ -176,34 +172,36 @@ def _plot_polygon_collection(
 
     Parameters
     ----------
-    ax : _type_
-        _description_
-    geoms : _type_
-        _description_
-    values : _type_, optional
-        _description_, by default None
-    cmap : _type_, optional
-        _description_, by default None
-    vmin : _type_, optional
-        _description_, by default None
-    vmax : _type_, optional
-        _description_, by default None
+    ax : matplotlib.axes.Axes
+        Axes on which to add the collection
+    geoms : GeoSeries
+        GeoSeries of (Multi)Polygons
+    values : np.ndarray, optional
+        Values will be mapped to colors using vmin/vmax/norm/cmap. They should
+        have 1:1 correspondence with the geometries (not their components).
+        Otherwise follows `color` / `facecolor` kwargs, by default None
+    cmap : str or Colormap, optional
+        The colormap recognized by matplotlib, by default None
+    vmin : float, optional
+        Minimum value of cmap, by default None
+    vmax : float, optional
+        Maximum value of cmap, by default None
     autolim : bool, optional
-        _description_, by default True
+        Update axes data limits to contain the new geometries, by default True
 
     Returns
     -------
-    _type_
-        _description_
+    _GeoPandasPolyCollection
+        matplotlib.collections.Collection that was plotted
     """
-    # GeoPandasPolyCollection does not accept some kwargs.
+    # _GeoPandasPolyCollection does not accept some kwargs.
     kwargs = {
         att: value
         for att, value in kwargs.items()
         if att not in ["markersize", "marker"]
     }
 
-    collection = GeoPandasPolyCollection(
+    collection = _GeoPandasPolyCollection(
         [_PolygonPatch(poly) for poly in geoms], **kwargs
     )
 
@@ -235,20 +233,29 @@ def _plot_linestring_collection(
     Parameters
     ----------
     ax : matplotlib.axes.Axes
-        where shapes will be plotted
-    geoms : a sequence of `N` LineStrings and/or MultiLineStrings (can be
-            mixed)
-    values : a sequence of `N` values, optional
-        Values will be mapped to colors using vmin/vmax/cmap. They should
+        Axes on which to add the collection
+    geoms : GeoSeries
+        GeoSeries of (Multi)Polygons
+    values : np.ndarray, optional
+        Values will be mapped to colors using vmin/vmax/norm/cmap. They should
         have 1:1 correspondence with the geometries (not their components).
+        Otherwise follows `color` / `facecolor` kwargs, by default None
     color : single color or sequence of `N` colors
-        Cannot be used together with `values`.
-    autolim : bool (default True)
-        Update axes data limits to contain the new geometries.
+        Color definition understood by matplotlib. Cannot be used together with
+        `values`.
+    cmap : str or Colormap, optional
+        The colormap recognized by matplotlib, by default None
+    vmin : float, optional
+        Minimum value of cmap, by default None
+    vmax : float, optional
+        Maximum value of cmap, by default None
+    autolim : bool, optional
+        Update axes data limits to contain the new geometries, by default True
 
     Returns
     -------
-    collection : matplotlib.collections.Collection that was plotted
+    LineCollection
+        matplotlib.collections.Collection that was plotted
     """
     geoms, multiindex = shapely.get_parts(geoms, return_index=True)
     if values is not None:
@@ -299,12 +306,24 @@ def _plot_point_collection(
     Parameters
     ----------
     ax : matplotlib.axes.Axes
-        where shapes will be plotted
-    geoms : sequence of `N` Points or MultiPoints
-
-    values : a sequence of `N` values, optional
-        Values mapped to colors using vmin, vmax, and cmap.
-        Cannot be specified together with `color`.
+        Axes on which to add the collection
+    geoms : GeoSeries
+        GeoSeries of (Multi)Polygons
+    values : np.ndarray, optional
+        Values will be mapped to colors using vmin/vmax/norm/cmap. They should
+        have 1:1 correspondence with the geometries (not their components).
+        Otherwise follows `color` / `facecolor` kwargs, by default None
+    color : single color or sequence of `N` colors
+        Color definition understood by matplotlib. Cannot be used together with
+        `values`.
+    cmap : str or Colormap, optional
+        The colormap recognized by matplotlib, by default None
+    vmin : float, optional
+        Minimum value of cmap, by default None
+    vmax : float, optional
+        Maximum value of cmap, by default None
+    marker : str, MarkerStyle, Path
+        Style of the marker to be used.
     markersize : scalar or array-like, optional
         Size of the markers. Note that under the hood ``scatter`` is
         used, so the specified value will be proportional to the
@@ -314,8 +333,6 @@ def _plot_point_collection(
     -------
     collection : matplotlib.collections.Collection that was plotted
     """
-    import shapely
-
     geoms, multiindex = shapely.get_parts(geoms, return_index=True)
 
     xy = shapely.get_coordinates(geoms)
