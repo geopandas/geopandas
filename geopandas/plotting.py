@@ -485,7 +485,7 @@ def plot_series(
             # ensure indexes are consistent
             if isinstance(color, pd.Series):
                 color = color.reindex(s.index)
-            color = np.take(color, multiindex, axis=0)  # ty:ignore[invalid-assignment]
+            color = np.take(color, multiindex, axis=0)
 
     # subdivide by geometry type - each has its own collection
     geom_types = geoms.geom_type
@@ -505,7 +505,7 @@ def plot_series(
         facecolor = style_kwds.pop("facecolor", None)
 
         if color is not None:
-            facecolor = color[poly_idx] if color_given else color  # ty:ignore[invalid-argument-type]
+            facecolor = color[poly_idx] if color_given else color
 
         values_ = values[poly_idx] if values is not None else None
 
@@ -524,7 +524,7 @@ def plot_series(
     if not lines.empty:
         values_ = values[line_idx] if values is not None else None
 
-        color_ = color[line_idx] if color_given else color  # ty:ignore[not-subscriptable, invalid-argument-type]
+        color_ = color[line_idx] if color_given else color
 
         _plot_linestring_collection(
             ax, lines, values_, color=color_, cmap=cmap, autolim=autolim, **style_kwds
@@ -535,7 +535,7 @@ def plot_series(
     if not points.empty:
         values_ = values[point_idx] if values is not None else None
 
-        color_ = color[point_idx] if color_given else color  # ty:ignore[not-subscriptable, invalid-argument-type]
+        color_ = color[point_idx] if color_given else color
 
         _plot_point_collection(
             ax, points, values_, color=color_, cmap=cmap, **style_kwds
