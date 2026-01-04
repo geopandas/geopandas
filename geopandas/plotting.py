@@ -13,30 +13,19 @@ import shapely
 
 import geopandas
 
-from ._compat import HAS_MATPLOTLIB
 from ._decorator import doc
 
 if TYPE_CHECKING:
     from matplotlib.axes import Axes
+    from matplotlib.collections import (
+        LineCollection,
+        PatchCollection,
+        PathCollection,
+    )
+    from matplotlib.colors import Colormap
     from matplotlib.markers import MarkerStyle
-
-if HAS_MATPLOTLIB:
-    import matplotlib.pyplot as plt
-    from matplotlib.collections import LineCollection, PatchCollection, PathCollection
-    from matplotlib.colors import Colormap, is_color_like
-    from matplotlib.legend import Legend
-    from matplotlib.legend_handler import HandlerPolyCollection
     from matplotlib.patches import PathPatch
     from matplotlib.path import Path
-
-    class _GeoPandasPolyCollection(PatchCollection):
-        """Subclass to assign handler without overriding one for PatchCollection."""
-
-    # PatchCollection is not supported by Legend but we can use PolyCollection handler
-    # instead in our specific case. Define a subclass and assign a handler.
-    Legend.update_default_handler_map(
-        {_GeoPandasPolyCollection: HandlerPolyCollection()}
-    )
 
 
 def _sanitize_geoms(
@@ -96,6 +85,8 @@ def _expand_kwargs(kwargs: dict, multiindex: np.ndarray) -> None:
     it (in place) to the correct length/formats with help of 'multiindex', unless
     the value appears to already be a valid (single) value for the key.
     """
+    from matplotlib.colors import is_color_like
+
     scalar_kwargs = ["marker", "path_effects"]
     for att, value in kwargs.items():
         if "color" in att:  # color(s), edgecolor(s), facecolor(s)
@@ -137,6 +128,9 @@ def _PolygonPatch(polygon: shapely.Geometry, **kwargs) -> PathPatch:
     (BSD license, https://pypi.org/project/descartes) for PolygonPatch, but
     this dependency was removed in favor of the below matplotlib code.
     """
+    from matplotlib.patches import PathPatch
+    from matplotlib.path import Path
+
     if polygon.geom_type == "Polygon":
         path = Path.make_compound_path(
             Path(np.asarray(polygon.exterior.coords)[:, :2], closed=True),
@@ -167,7 +161,7 @@ def _plot_polygon_collection(
     vmax: float | int | None = None,
     autolim: bool = True,
     **kwargs,
-) -> _GeoPandasPolyCollection:
+) -> PatchCollection:
     """Plot a collection of Polygon and MultiPolygon geometries to `ax`.
 
     Note that all style keywords, like ``color`` that can be set as an array in
@@ -200,6 +194,19 @@ def _plot_polygon_collection(
     _GeoPandasPolyCollection
         matplotlib.collections.Collection that was plotted
     """
+    from matplotlib.collections import PatchCollection
+    from matplotlib.legend import Legend
+    from matplotlib.legend_handler import HandlerPolyCollection
+
+    class _GeoPandasPolyCollection(PatchCollection):
+        """Subclass to assign handler without overriding one for PatchCollection."""
+
+    # PatchCollection is not supported by Legend but we can use PolyCollection handler
+    # instead in our specific case. Define a subclass and assign a handler.
+    Legend.update_default_handler_map(
+        {_GeoPandasPolyCollection: HandlerPolyCollection()}
+    )
+
     # _GeoPandasPolyCollection does not accept some kwargs.
     kwargs = {
         att: value
@@ -263,6 +270,8 @@ def _plot_linestring_collection(
     LineCollection
         matplotlib.collections.Collection that was plotted
     """
+    from matplotlib.collections import LineCollection
+
     geoms, multiindex = shapely.get_parts(geoms, return_index=True)
     if values is not None:
         values = np.take(values, multiindex, axis=0)
@@ -421,12 +430,17 @@ def plot_series(
     -------
     ax : matplotlib axes instance
     """
-    if not HAS_MATPLOTLIB:
+    try:
+        import matplotlib  # noqa: F401
+        from matplotlib.colors import Colormap
+    except ImportError as err:
         raise ImportError(
             "The matplotlib package is required for plotting in geopandas. "
             "You can install it using 'conda install -c conda-forge matplotlib' or "
             "'pip install matplotlib'."
-        )
+        ) from err
+
+    import matplotlib.pyplot as plt
 
     if ax is None:
         _, ax = plt.subplots(figsize=figsize)
