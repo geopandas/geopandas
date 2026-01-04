@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING, Literal
 
 import numpy as np
 import pandas as pd
-from matplotlib.collections import PathCollection
 from pandas import CategoricalDtype
 from pandas.plotting import PlotAccessor
 
@@ -23,7 +22,7 @@ if TYPE_CHECKING:
 
 if HAS_MATPLOTLIB:
     import matplotlib.pyplot as plt
-    from matplotlib.collections import LineCollection, PatchCollection
+    from matplotlib.collections import LineCollection, PatchCollection, PathCollection
     from matplotlib.colors import Colormap, is_color_like
     from matplotlib.legend import Legend
     from matplotlib.legend_handler import HandlerPolyCollection
