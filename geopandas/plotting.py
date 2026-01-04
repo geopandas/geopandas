@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import warnings
 from collections.abc import Iterable, Sequence
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
 
 import numpy as np
 import pandas as pd
@@ -15,14 +17,16 @@ import geopandas
 from ._compat import HAS_MATPLOTLIB
 from ._decorator import doc
 
+if TYPE_CHECKING:
+    from matplotlib.axes import Axes
+    from matplotlib.markers import MarkerStyle
+
 if HAS_MATPLOTLIB:
     import matplotlib.pyplot as plt
-    from matplotlib.axes import Axes
     from matplotlib.collections import LineCollection, PatchCollection
     from matplotlib.colors import Colormap, is_color_like
     from matplotlib.legend import Legend
     from matplotlib.legend_handler import HandlerPolyCollection
-    from matplotlib.markers import MarkerStyle
     from matplotlib.patches import PathPatch
     from matplotlib.path import Path
 
@@ -114,7 +118,7 @@ def _expand_kwargs(kwargs: dict, multiindex: np.ndarray) -> None:
             kwargs[att] = np.take(value, multiindex, axis=0)
 
 
-def _PolygonPatch(polygon: shapely.Geometry, **kwargs) -> "PathPatch":
+def _PolygonPatch(polygon: shapely.Geometry, **kwargs) -> PathPatch:
     """Construct a matplotlib patch from a (Multi)Polygon geometry.
 
     The `kwargs` are those supported by the matplotlib.patches.PathPatch class
