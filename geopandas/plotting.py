@@ -34,7 +34,7 @@ def _sanitize_geoms(
     """Return sanitized geometry with the indices of original geometry.
 
     1. Normalize all geometry to ensure holes are correctly plotted.
-    2. Explode multi-part gometries to individual components. This generates an
+    2. Explode multi-part geometries to individual components. This generates an
        index where values are repeated for all components in the same
        collection.
     3. Filter out missing and empty geometry. The resulting index does not contain
@@ -132,22 +132,18 @@ def _PolygonPatch(polygon: shapely.Geometry, **kwargs) -> PathPatch:
     from matplotlib.path import Path
 
     if polygon.geom_type == "Polygon":
-        path = Path.make_compound_path(
-            Path(np.asarray(polygon.exterior.coords)[:, :2], closed=True),
-            *[
-                Path(np.asarray(ring.coords)[:, :2], closed=True)
-                for ring in polygon.interiors
-            ],
-        )
+        parts = [polygon]
     else:
-        paths = []
-        for part in polygon.geoms:
-            # exteriors
-            paths.append(Path(np.asarray(part.exterior.coords)[:, :2], closed=True))
-            # interiors
-            for ring in part.interiors:
-                paths.append(Path(np.asarray(ring.coords)[:, :2], closed=True))
-        path = Path.make_compound_path(*paths)
+        parts = polygon.geoms
+    paths = []
+    for part in parts:
+        # exteriors
+        paths.append(Path(np.asarray(part.exterior.coords)[:, :2], closed=True))
+        # interiors
+        paths.extend(
+            Path(np.asarray(ring.coords)[:, :2], closed=True) for ring in part.interiors
+        )
+    path = Path.make_compound_path(*paths)
 
     return PathPatch(path, **kwargs)
 
@@ -498,7 +494,7 @@ def plot_series(
     elif color is not None:
         color_given = pd.api.types.is_list_like(color) and len(color) == len(s)
         # have colors been given for all geometries?
-        if pd.api.types.is_list_like(color) and len(color) == len(s):
+        if color_given:
             # ensure indexes are consistent
             if isinstance(color, pd.Series):
                 color = color.reindex(s.index)
