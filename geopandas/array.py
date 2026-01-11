@@ -401,19 +401,25 @@ class GeometryArray(ExtensionArray):
                 )
             self._crs = None
 
-    def check_geographic_crs(self, stacklevel):
+    def check_geographic_crs(self, stacklevel, geodesic_supported=False):
         """Check CRS and warn if the planar operation is done in a geographic CRS."""
         if self.crs and self.crs.is_geographic:
-            warnings.warn(
+            msg = (
                 "Geometry is in a geographic CRS. Results from "
                 f"'{inspect.stack()[1].function}' are likely incorrect. "
-                "To obtain more accurate results, you can either enable the "
-                "geodesic calculation option by setting `geopandas.options.geodesic_calculation = True`, "
-                "or use 'GeoSeries.to_crs()' to re-project geometries to a "
-                "projected CRS before this operation.\n",
-                UserWarning,
-                stacklevel=stacklevel,
+                "Use 'GeoSeries.to_crs()' to re-project geometries to a "
+                "projected CRS before this operation.\n"
             )
+
+            if geodesic_supported:
+                msg += (
+                    "Alternatively, you can enable geodesic calculations by setting "
+                    "`geopandas.options.geodesic_calculation = True`. "
+                    "In GeoPandas 2.0, geodesic calculations will be enabled "
+                    "by default for this operation.\n"
+                )
+
+            warnings.warn(msg, UserWarning, stacklevel=stacklevel)
 
     @property
     def dtype(self):
@@ -572,15 +578,13 @@ class GeometryArray(ExtensionArray):
         import geopandas
 
         geodesic_calculation = geopandas.options.geodesic_calculation
-        if geodesic_calculation:
+        if geodesic_calculation and (self.crs and self.crs.is_geographic):
             return self._calculate_geodesic_area()
         
-        self.check_geographic_crs(stacklevel=5)
+        self.check_geographic_crs(stacklevel=5, geodesic_supported=True)
         return shapely.area(self._data)
 
-    def _calculate_geodesic_area(self):
-        from pyproj import Geod
-        
+    def _calculate_geodesic_area(self):        
         geod = self.crs.get_geod()
         def __geodesic_ring_area(rings):
             areas = np.array([abs(geod.geometry_area_perimeter(shapely.geometry.shape(ring))[0]) 
@@ -614,16 +618,15 @@ class GeometryArray(ExtensionArray):
         import geopandas
 
         geodesic_calculation = geopandas.options.geodesic_calculation
-        if geodesic_calculation:
+        if geodesic_calculation and (self.crs and self.crs.is_geographic):
             return self._calculate_geodesic_length()
 
-        self.check_geographic_crs(stacklevel=5)
+        self.check_geographic_crs(stacklevel=5, geodesic_supported=True)
         return shapely.length(self._data)
     
     def _calculate_geodesic_length(self):
-        from pyproj import Geod
         from shapely.geometry import LineString, MultiLineString, Polygon, MultiPolygon
-        geod = Geod(ellps="WGS84")
+        geod = self.crs.get_geod()
         individual_lengths = []
 
         def _get_length_of_linestring(linestring_obj_param):
@@ -665,7 +668,7 @@ class GeometryArray(ExtensionArray):
 
             individual_lengths.append(current_geom_total_length)
 
-        return pd.Series(individual_lengths)
+        return np.array(individual_lengths)
 
     def count_coordinates(self):
         return shapely.get_num_coordinates(self._data)
