@@ -16,7 +16,7 @@ Option = namedtuple("Option", "key default_value doc validator callback")
 class Options:
     """Provide attribute-style access to configuration dict."""
 
-    def __init__(self, options):
+    def __init__(self, options: dict[str, Option]) -> None:
         super().__setattr__("_options", options)
         # populate with default values
         config = {}
@@ -25,7 +25,7 @@ class Options:
 
         super().__setattr__("_config", config)
 
-    def __setattr__(self, key, value):
+    def __setattr__(self, key, value) -> None:
         # you can't set new keys
         if key in self._config:
             option = self._options[key]
@@ -44,10 +44,10 @@ class Options:
         except KeyError:
             raise AttributeError("No such option")
 
-    def __dir__(self):
+    def __dir__(self) -> list[str]:
         return list(self._config.keys())
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         cls = self.__class__.__name__
         description = ""
         for key, option in self._options.items():
@@ -67,7 +67,7 @@ class Options:
         return f"{cls}({space}{description})"
 
 
-def _validate_display_precision(value):
+def _validate_display_precision(value: int) -> None:
     if value is not None:
         if not isinstance(value, int) or not (0 <= value <= 16):
             raise ValueError("Invalid value, needs to be an integer [0-16]")
@@ -87,7 +87,7 @@ display_precision = Option(
 )
 
 
-def _warn_use_pygeos_deprecated(_value):
+def _warn_use_pygeos_deprecated(_value) -> None:
     warnings.warn(
         "pygeos support was removed in 1.0. "
         "geopandas.use_pygeos is a no-op and will be removed in geopandas 1.1.",
@@ -95,7 +95,7 @@ def _warn_use_pygeos_deprecated(_value):
     )
 
 
-def _validate_io_engine(value):
+def _validate_io_engine(value: str) -> None:
     if value is not None:
         if value not in ("pyogrio", "fiona"):
             raise ValueError(f"Expected 'pyogrio' or 'fiona', got '{value}'")
@@ -112,17 +112,6 @@ io_engine = Option(
     callback=None,
 )
 
-# TODO: deprecate this
-use_pygeos = Option(
-    key="use_pygeos",
-    default_value=False,
-    doc=(
-        "Deprecated option previously used to enable PyGEOS. "
-        "It will be removed in GeoPandas 1.1."
-    ),
-    validator=_warn_use_pygeos_deprecated,
-    callback=None,
-)
 
 def _validate_geodesic_calculation(value):
     if not isinstance(value, bool):
@@ -143,7 +132,6 @@ geodesic_calculation = Option(
 options = Options(
     {
         "display_precision": display_precision,
-        "use_pygeos": use_pygeos,
         "io_engine": io_engine,
         "geodesic_calculation":geodesic_calculation
     }

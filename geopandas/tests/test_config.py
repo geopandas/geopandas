@@ -8,7 +8,6 @@ def test_options():
 
     assert set(dir(geopandas.options)) == {
         "display_precision",
-        "use_pygeos",
         "io_engine",
         "geodesic_calculation",
     }

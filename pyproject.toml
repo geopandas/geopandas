@@ -1,6 +1,6 @@
 [build-system]
-requires = ["setuptools>=61.0.0"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
 
 [project]
 name = "geopandas"
@@ -19,27 +19,27 @@ classifiers = [
     "Programming Language :: Python :: 3 :: Only",
     "Topic :: Scientific/Engineering :: GIS",
 ]
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 dependencies = [
-    "numpy >= 1.24",
-    "pyogrio >= 0.7.2",
+    "numpy >= 2",
+    "pyogrio >= 0.8",
     "packaging",
-    "pandas >= 2.0.0",
-    "pyproj >= 3.5.0",
-    "shapely >= 2.0.0",
+    "pandas >= 2.2.0",
+    "pyproj >= 3.7.0",
+    "shapely >= 2.1.0",
 ]
 
 [project.optional-dependencies]
 all = [
-    "psycopg[binary]>=3.1.0",
+    "psycopg[binary]>=3.2.0",
     "SQLAlchemy>=2.0",
     "geopy",
-    "matplotlib>=3.7",
-    "mapclassify>=2.5",
+    "matplotlib>=3.9",
+    "mapclassify>=2.7",
     "xyzservices",
     "folium", # >=0.12 (implied minimum version, but older versions may work)
     "GeoAlchemy2",
-    "pyarrow>=10.0.0",
+    "pyarrow>=15.0.0",
     "scipy",
 ]
 
@@ -79,12 +79,17 @@ content-type = "text/x-rst"
 Home = "https://geopandas.org"
 Repository = "https://github.com/geopandas/geopandas"
 
-[tool.setuptools.packages.find]
-include = ["geopandas", "geopandas.*"]
+[tool.hatch.version]
+source = "vcs"
 
-[tool.setuptools.package-data]
-geopandas = [
-    "tests/data/null_geom.geojson"
+[tool.hatch.build.hooks.vcs]
+version-file = "geopandas/_version.py"
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/README.md",
+    "/geopandas/**/*.py",
+    "/geopandas/tests/data/null_geom.geojson",
 ]
 
 [tool.pytest.ini_options]
@@ -104,7 +109,7 @@ filterwarnings = [
 
 [tool.ruff]
 line-length = 88
-extend-exclude = ["doc/*", "benchmarks/*", "versioneer.py", "geopandas/_version.py"]
+extend-exclude = ["doc/*", "benchmarks/*"]
 
 [tool.ruff.lint]
 select = [
@@ -131,7 +136,7 @@ select = [
     # implicit string concatenation
     "ISC",
     # type-checking imports
-    "TCH",
+    "TC",
     # comprehensions
     "C4",
     # Ruff-specific rules
@@ -203,7 +208,10 @@ ignore = [
     # collection-literal-concatenation
     "RUF005",
     # Mutable class attributes should be annotated with `typing.ClassVar`,
-    "RUF012"
+    "RUF012",
+    # import should be at the top-level of a file
+    "PLC0415"
+
 ]
 
 [tool.ruff.lint.per-file-ignores]
