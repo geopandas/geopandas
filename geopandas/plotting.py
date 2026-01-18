@@ -1,4 +1,6 @@
 import warnings
+from collections.abc import Collection, Iterable
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -59,8 +61,6 @@ def _expand_kwargs(kwargs, multiindex):
     it (in place) to the correct length/formats with help of 'multiindex', unless
     the value appears to already be a valid (single) value for the key.
     """
-    from collections.abc import Iterable
-
     from matplotlib.colors import is_color_like
 
     scalar_kwargs = ["marker", "path_effects"]
@@ -639,6 +639,7 @@ def plot_dataframe(
             UserWarning,
             stacklevel=3,
         )
+        # TODO should these both be supported if column is a column-name?
         column = None
 
     try:
@@ -784,17 +785,12 @@ def plot_dataframe(
     if categorical:
         if cmap is None:
             cmap = "tab10"
-
-        cat = pd.Categorical(values, categories=categories)
+        cat = _check_invalid_categories(categories, values)
+        # if isinstance(values, pd.Categorical):
+        #     cat = values
+        # else:
+        #     cat = pd.Categorical(values, categories=categories)
         categories = list(cat.categories)
-
-        # values missing in the Categorical but not in original values
-        missing = list(np.unique(values[~nan_idx & cat.isna()]))
-        if missing:
-            raise ValueError(
-                "Column contains values not listed in categories. "
-                f"Missing categories: {missing}."
-            )
 
         values = cat.codes[~nan_idx]
         vmin = 0 if vmin is None else vmin
@@ -949,6 +945,35 @@ def plot_dataframe(
 
     ax.figure.canvas.draw_idle()
     return ax
+
+
+def _check_invalid_categories(
+    categories: Collection[Any] | None, values
+) -> pd.Categorical:
+    if categories is None:
+        cat = pd.Categorical(values, categories=categories)
+    else:
+        # Pandas 4 compat https://github.com/pandas-dev/pandas/pull/62142
+        # Could potentially be replaced with a try/except on the above once the warning
+        # becomes an exception. This logic is derived from
+        # pandas/core/arrays/categorical.py::_get_codes_for_values
+        dtype = CategoricalDtype._from_values_or_dtype(values, categories)
+        categories = dtype.categories
+        codes = categories.get_indexer_for(values)
+        wrong = (codes == -1) & ~pd.isna(values)
+        if wrong.any():
+            missing = list(np.unique(values[wrong]))
+        else:
+            missing = []
+            codes_downcast = pd.core.dtypes.cast.coerce_indexer_dtype(codes, categories)
+            cat = pd.Categorical.from_codes(codes_downcast, categories)
+
+        if missing:
+            raise ValueError(
+                "Column contains values not listed in categories. "
+                f"Missing categories: {missing}."
+            )
+    return cat
 
 
 @doc(plot_dataframe)
