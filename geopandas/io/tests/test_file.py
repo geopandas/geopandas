@@ -504,7 +504,7 @@ def test_to_file_column_len(tmpdir, df_points, engine):
     df = df_points.iloc[:1].copy()
     df["0123456789A"] = ["the column name is 11 characters"]
 
-    with warnings.catch_warnings(record=True) as captured:
+    with pytest.warns() as captured:
         df.to_file(tempfilename, driver="ESRI Shapefile", engine=engine)
 
     column_names_warning = [
@@ -1110,6 +1110,8 @@ def test_read_file_bbox_gdf(df_nybb, engine, nybb_filename, file_like):
     filtered_df_shape = filtered_df.shape
     assert full_df_shape != filtered_df_shape
     assert filtered_df_shape == (2, 5)
+    if file_like:
+        infile.close()
 
 
 @pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not installed")
@@ -1134,6 +1136,8 @@ def test_read_file_mask_gdf(df_nybb, engine, nybb_filename, file_like):
     filtered_df_shape = filtered_df.shape
     assert full_df_shape != filtered_df_shape
     assert filtered_df_shape == (2, 5)
+    if file_like:
+        infile.close()
 
 
 def test_read_file_mask_polygon(df_nybb, engine, nybb_filename):
