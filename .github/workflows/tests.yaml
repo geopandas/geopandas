@@ -31,12 +31,14 @@ jobs:
         env:
           - ci/envs/311-latest.yaml
           - ci/envs/311-minimal.yaml
-          - ci/envs/312-latest.yaml
+#          - ci/envs/311-pd22.yaml -> in postgis env below
+#          - ci/envs/312-latest.yaml -> in postgis env below
           - ci/envs/313-latest-no-pyogrio.yaml
           - ci/envs/313-latest-no-pyproj.yaml
-          - ci/envs/313-latest.yaml
+#          - ci/envs/313-latest.yaml -> in doctest env below
           - ci/envs/313-no-optional-deps.yaml
           - ci/envs/314-latest.yaml
+#          - ci/envs/313-dev.yaml -> in dev env below
         include:
           # PostGIS envs
           - env: ci/envs/311-pd22.yaml
