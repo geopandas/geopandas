@@ -588,8 +588,7 @@ def plot_dataframe(
 ):
     try:
         import matplotlib.pyplot as plt
-        from matplotlib import colormaps, colors
-        from mpl_toolkits.axes_grid1 import make_axes_locatable
+        from matplotlib import cm, colormaps, colors
     except ImportError:
         raise ImportError(
             "The matplotlib package is required for plotting in geopandas. "
@@ -779,36 +778,31 @@ def plot_dataframe(
         # plot all Polygons and all MultiPolygon components in the same collection
         polys = expl_series[poly_idx & np.invert(nan_idx)]
         subset = values[poly_idx & np.invert(nan_idx)]
-        collections = []
         if not polys.empty:
-            collections.append(
-                _plot_polygon_collection(
-                    ax,
-                    polys,
-                    subset,
-                    vmin=mn,
-                    vmax=mx,
-                    cmap=cmap,
-                    autolim=autolim,
-                    **style_kwds,
-                )
+            _plot_polygon_collection(
+                ax,
+                polys,
+                subset,
+                vmin=mn,
+                vmax=mx,
+                cmap=cmap,
+                autolim=autolim,
+                **style_kwds,
             )
 
         # plot all LineStrings and MultiLineString components in same collection
         lines = expl_series[line_idx & np.invert(nan_idx)]
         subset = values[line_idx & np.invert(nan_idx)]
         if not lines.empty:
-            collections.append(
-                _plot_linestring_collection(
-                    ax,
-                    lines,
-                    subset,
-                    vmin=mn,
-                    vmax=mx,
-                    cmap=cmap,
-                    autolim=autolim,
-                    **style_kwds,
-                )
+            _plot_linestring_collection(
+                ax,
+                lines,
+                subset,
+                vmin=mn,
+                vmax=mx,
+                cmap=cmap,
+                autolim=autolim,
+                **style_kwds,
             )
 
         # plot all Points in the same collection
@@ -818,7 +812,6 @@ def plot_dataframe(
             if isinstance(markersize, np.ndarray):
                 markersize = np.take(markersize, multiindex, axis=0)
                 markersize = markersize[point_idx & np.invert(nan_idx)]
-            collections.append(
                 _plot_point_collection(
                     ax,
                     points,
@@ -829,17 +822,8 @@ def plot_dataframe(
                     cmap=cmap,
                     **style_kwds,
                 )
-            )
 
         if legend:
-            if cax is None:
-                divider = make_axes_locatable(ax)
-                # ensure that specification of cax can be overriden via legend_kwds
-                position = legend_kwds.pop("position", "right")
-                size = legend_kwds.pop("size", "4%")
-                pad = legend_kwds.pop("pad", 0.2)
-                cax = divider.append_axes(position, size=size, pad=pad)
-
             # check if the colorbar needs to show value truncation
             if "extend" not in legend_kwds:
                 if (mn > values_min) & (mx < values_max):
@@ -849,9 +833,31 @@ def plot_dataframe(
                 elif mx < values_max:
                     legend_kwds["extend"] = "max"
 
-            # pull data for colorbar from the first collection.
-            if collections:  # special case is all NA values
-                ax.figure.colorbar(collections[0], cax=cax, **legend_kwds)
+            # shrink the colorbar based on the new apect ratio - that way we ensure
+            # that it is never much larger than the axis without complicated hacks
+            bbox = ax.get_position()
+            bbox_orig = ax.get_position(original=True)
+            if "shrink" not in legend_kwds:
+                if "location" in legend_kwds and legend_kwds["location"] in [
+                    "top",
+                    "bottom",
+                ]:
+                    ratio = bbox.width / bbox_orig.width
+                else:
+                    ratio = bbox.height / bbox_orig.height
+                legend_kwds["shrink"] = ratio
+                legend_kwds["aspect"] = ratio * 20
+
+            mappable = cm.ScalarMappable(
+                norm=style_kwds.get("norm", colors.Normalize(vmin=mn, vmax=mx)),
+                cmap=cmap,
+            )
+            ax.figure.colorbar(
+                mappable,
+                ax=ax,
+                cax=cax,
+                **legend_kwds,
+            )
 
         missing_data = not expl_series[nan_idx].empty
         if missing_kwds is not None and missing_data:
