@@ -27,10 +27,10 @@ jobs:
         os: [ubuntu-latest]
         postgis: [false]
         dev: [false]
+        doctest: [false]
         env:
           - ci/envs/311-latest.yaml
           - ci/envs/311-minimal.yaml
-          - ci/envs/311-pd22.yaml
           - ci/envs/312-latest.yaml
           - ci/envs/313-latest-no-pyogrio.yaml
           - ci/envs/313-latest-no-pyproj.yaml
@@ -38,6 +38,15 @@ jobs:
           - ci/envs/313-no-optional-deps.yaml
           - ci/envs/314-latest.yaml
         include:
+          # PostGIS envs
+          - env: ci/envs/311-pd22.yaml
+            postgis: true
+          - env: ci/envs/312-latest.yaml
+            postgis: true
+          # doctest env
+          - env: ci/envs/313-latest.yaml
+            doctest: true
+          # MacOS & Windows envs
           - env: ci/envs/313-latest-no-pyogrio.yaml
             os: macos-latest
           - env: ci/envs/313-latest.yaml
@@ -46,6 +55,8 @@ jobs:
             os: windows-latest
           - env: ci/envs/313-latest.yaml
             os: windows-latest
+
+          # Dev env
           - env: ci/envs/313-dev.yaml
             os: ubuntu-latest
             dev: true
@@ -77,8 +88,7 @@ jobs:
           pytest -v -r a -n auto --color=yes --cov=geopandas --cov-append --cov-report term-missing --cov-report xml geopandas/
 
       - name: Test with PostGIS
-        if: (contains(matrix.env, '311-pd22.yaml') || contains(matrix.env, '312-latest.yaml'))
-          && contains(matrix.os, 'ubuntu')
+        if: ${{ matrix.postgis }}
         env:
           PGUSER: postgres
           PGPASSWORD: postgres
@@ -91,7 +101,7 @@ jobs:
           pytest -v -r a --color=yes --cov=geopandas --cov-append --cov-report term-missing --cov-report xml geopandas/io/tests/test_sql.py | tee /dev/stderr | if grep SKIPPED >/dev/null;then echo "TESTS SKIPPED, FAILING" && exit 1;fi
 
       - name: Test docstrings
-        if: contains(matrix.env, '313-latest.yaml') && contains(matrix.os, 'ubuntu')
+        if: ${{ matrix.doctest }}
         run: |
           pytest -v --color=yes --doctest-only geopandas --ignore=geopandas/datasets
 
