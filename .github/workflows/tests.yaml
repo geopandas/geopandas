@@ -40,20 +40,12 @@ jobs:
         include:
           - env: ci/envs/313-latest-no-pyogrio.yaml
             os: macos-latest
-            postgis: false
-            dev: false
           - env: ci/envs/313-latest.yaml
             os: macos-latest
-            postgis: false
-            dev: false
           - env: ci/envs/313-latest-no-pyogrio.yaml
             os: windows-latest
-            postgis: false
-            dev: false
           - env: ci/envs/313-latest.yaml
             os: windows-latest
-            postgis: false
-            dev: false
           - env: ci/envs/313-dev.yaml
             os: ubuntu-latest
             dev: true
