@@ -1,5 +1,4 @@
 import json
-from packaging.version import Version
 
 import numpy as np
 import pandas as pd
@@ -10,7 +9,6 @@ import shapely
 from shapely import GeometryType
 
 from geopandas import GeoDataFrame
-from geopandas._compat import SHAPELY_GE_204
 from geopandas.array import from_shapely, from_wkb
 
 GEOARROW_ENCODINGS = [
@@ -287,24 +285,7 @@ def construct_geometry_array(
     )
 
     if mask.any():
-        if (
-            geom_type == GeometryType.POINT
-            and interleaved
-            and Version(pa.__version__) < Version("15.0.0")
-        ):
-            raise ValueError(
-                "Converting point geometries with missing values is not supported "
-                "for interleaved coordinates with pyarrow < 15.0.0. Please "
-                "upgrade to a newer version of pyarrow."
-            )
         mask = pa.array(mask, type=pa.bool_())
-
-        if geom_type == GeometryType.POINT and not SHAPELY_GE_204:
-            # bug in shapely < 2.0.4, see https://github.com/shapely/shapely/pull/2034
-            # this workaround only works if there are no empty points
-            indices = np.nonzero(mask)[0]
-            indices = indices - np.arange(len(indices))
-            coords = np.insert(coords, indices, np.nan, axis=0)
 
     else:
         mask = None
@@ -516,9 +497,6 @@ def arrow_to_geometry_array(arr):
 
     Specifically for GeoSeries.from_arrow.
     """
-    if Version(pa.__version__) < Version("14.0.0"):
-        raise ValueError("Importing from Arrow requires pyarrow >= 14.0.")
-
     schema_capsule, array_capsule = arr.__arrow_c_array__()
     field = pa.Field._import_from_c_capsule(schema_capsule)
     pa_arr = pa.Array._import_from_c_capsule(field.__arrow_c_schema__(), array_capsule)

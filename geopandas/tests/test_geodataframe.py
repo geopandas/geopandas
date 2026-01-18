@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import shutil
 import tempfile
 from enum import Enum
@@ -151,17 +152,19 @@ class TestDataFrame:
         df = GeoDataFrame(data)
         s = GeoSeries([Point(x, y + 1) for x, y in zip(range(5), range(5))])
 
+        expected = s.copy()
+
         # setting geometry column
         for vals in [s, s.values]:
             df["geometry"] = vals
-            assert_geoseries_equal(df["geometry"], s)
-            assert_geoseries_equal(df.geometry, s)
+            assert_geoseries_equal(df["geometry"], expected)
+            assert_geoseries_equal(df.geometry, expected)
 
         # non-aligned values
         s2 = GeoSeries([Point(x, y + 1) for x, y in zip(range(6), range(6))])
         df["geometry"] = s2
-        assert_geoseries_equal(df["geometry"], s)
-        assert_geoseries_equal(df.geometry, s)
+        assert_geoseries_equal(df["geometry"], expected)
+        assert_geoseries_equal(df.geometry, expected)
 
         # setting other column with geometry values -> preserve geometry type
         for vals in [s, s.values]:
@@ -289,7 +292,7 @@ class TestDataFrame:
     def test_set_geometry_col(self):
         g = self.df.geometry
         g_simplified = g.simplify(100)
-        self.df["simplified_geometry"] = g_simplified
+        self.df["simplified_geometry"] = g_simplified.copy()
         df2 = self.df.set_geometry("simplified_geometry")
 
         # Drop is false by default
@@ -352,7 +355,7 @@ class TestDataFrame:
         # "geometry" originally present but dropped (but still a gdf)
         col_subset_drop_geometry = ["BoroCode", "BoroName", "geom2"]
         df2 = self.df.copy().assign(geom2=self.df.geometry)[col_subset_drop_geometry]
-        with pytest.raises(AttributeError, match="is not present."):
+        with pytest.raises(AttributeError, match="is not present"):
             df2.geometry
 
         msg_other_geo_cols_present = "There are columns with geometry data type"
@@ -377,13 +380,13 @@ class TestDataFrame:
     @pytest.mark.skipif(not compat.HAS_PYPROJ, reason="Requires pyproj")
     def test_override_existing_crs_warning(self):
         with pytest.warns(
-            DeprecationWarning,
+            FutureWarning,
             match="Overriding the CRS of a GeoSeries that already has CRS",
         ):
             self.df.geometry.crs = "epsg:2100"
 
         with pytest.warns(
-            DeprecationWarning,
+            FutureWarning,
             match="Overriding the CRS of a GeoDataFrame that already has CRS",
         ):
             self.df.crs = "epsg:4326"
@@ -469,6 +472,18 @@ class TestDataFrame:
         # check it converts to WGS84
         coord = data["features"][0]["geometry"]["coordinates"][0][0][0]
         np.testing.assert_allclose(coord, [-74.0505080640324, 40.5664220341941])
+
+    def test_to_json_missing_geom_errors_nicely(self):
+        df = self.df.copy()
+        # mock doing some operation where the tracking of the active geometry
+        # column is lost
+        df._geometry_column_name = None
+        msg = re.escape(
+            "You are calling a geospatial method on the GeoDataFrame, but the "
+            "active geometry column to use has not been set"
+        )
+        with pytest.raises(AttributeError, match=msg):
+            df.to_json()
 
     def test_to_json_wgs84_false(self):
         text = self.df.to_json()
@@ -580,7 +595,7 @@ class TestDataFrame:
             data=[[1, 2, 3]], columns=["a", "b", "a"], geometry=[Point(1, 1)]
         )
         with pytest.raises(
-            ValueError, match="GeoDataFrame cannot contain duplicated column names."
+            ValueError, match="GeoDataFrame cannot contain duplicated column names"
         ):
             df.to_json()
 
@@ -938,7 +953,7 @@ class TestDataFrame:
         assert isinstance(result["properties"]["Shape_Leng"], float)
 
         with pytest.raises(
-            ValueError, match="GeoDataFrame cannot contain duplicated column names."
+            ValueError, match="GeoDataFrame cannot contain duplicated column names"
         ):
             df_with_duplicate_columns = df[
                 ["Shape_Leng", "Shape_Leng", "Shape_Area", "geometry"]
@@ -1401,7 +1416,7 @@ class TestConstructor:
         df.columns = pd.MultiIndex.from_product([["geometry"], [0, 1]])
         # don't error in constructor
         gdf = GeoDataFrame(df)
-        with pytest.raises(AttributeError, match=".*geometry .* has not been set.*"):
+        with pytest.raises(AttributeError, match=r".*geometry .* has not been set.*"):
             gdf.geometry
         res_gdf = gdf.set_geometry(("geometry", 0))
         assert res_gdf.shape == gdf.shape

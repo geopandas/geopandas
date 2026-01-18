@@ -26,9 +26,6 @@ from shapely.geometry.base import BaseGeometry
 from ._compat import (
     GEOS_GE_312,
     HAS_PYPROJ,
-    PANDAS_GE_21,
-    PANDAS_GE_22,
-    SHAPELY_GE_21,
     requires_pyproj,
 )
 from .sindex import SpatialIndex
@@ -452,6 +449,18 @@ class GeometryArray(ExtensionArray):
     def __getitem__(self, idx) -> GeometryArray:
         if isinstance(idx, numbers.Integral):
             return self._data[idx]
+        elif (
+            isinstance(idx, slice)
+            and idx.start is None
+            and idx.stop is None
+            and idx.step is None
+        ):
+            # special case of a full slice -> preserve the sindex
+            # (to ensure view() preserves it as well)
+            result = GeometryArray(self._data[idx], crs=self.crs)
+            result._sindex = self._sindex
+            return result
+
         # array-like, slice
         # validate and convert IntegerArray/BooleanArray
         # to numpy array, pass-through non-array-like indexers
@@ -533,16 +542,14 @@ class GeometryArray(ExtensionArray):
         return shapely.is_valid_reason(self._data)
 
     def is_valid_coverage(self, gap_width: float = 0.0):
-        if not (SHAPELY_GE_21 and GEOS_GE_312):
-            raise ImportError(
-                "Method 'is_valid_coverage' requires shapely>=2.1 and GEOS>=3.12."
-            )
+        if not GEOS_GE_312:
+            raise ImportError("Method 'is_valid_coverage' requires GEOS>=3.12.")
         return bool(shapely.coverage_is_valid(self._data, gap_width=gap_width))
 
     def invalid_coverage_edges(self, gap_width: float = 0.0):
-        if not (SHAPELY_GE_21 and GEOS_GE_312):
+        if not GEOS_GE_312:
             raise ImportError(
-                "Method 'invalid_coverage_edges' requires shapely>=2.1 and GEOS>=3.12."
+                "Method 'invalid_coverage_edges' requires and GEOS>=3.12."
             )
         return shapely.coverage_invalid_edges(self._data, gap_width=gap_width)
 
@@ -572,9 +579,6 @@ class GeometryArray(ExtensionArray):
 
     @property
     def has_m(self):
-        if not SHAPELY_GE_21:
-            raise ImportError("'has_m' requires shapely>=2.1.")
-
         return shapely.has_m(self._data)
 
     @property
@@ -636,9 +640,6 @@ class GeometryArray(ExtensionArray):
         return shapely.concave_hull(self._data, ratio=ratio, allow_holes=allow_holes)
 
     def constrained_delaunay_triangles(self) -> GeometryArray:
-        if not SHAPELY_GE_21:
-            raise ImportError("'constrained_delaunay_triangles' requires shapely>=2.1.")
-
         return GeometryArray(
             shapely.constrained_delaunay_triangles(self._data), crs=self.crs
         )
@@ -714,9 +715,6 @@ class GeometryArray(ExtensionArray):
         return GeometryArray(shapely.minimum_bounding_circle(self._data), crs=self.crs)
 
     def maximum_inscribed_circle(self, tolerance) -> GeometryArray:
-        if not SHAPELY_GE_21:
-            raise ImportError("'maximum_inscribed_circle' requires shapely>=2.1.")
-
         return GeometryArray(
             shapely.maximum_inscribed_circle(self._data, tolerance=tolerance),
             crs=self.crs,
@@ -729,16 +727,12 @@ class GeometryArray(ExtensionArray):
         return shapely.minimum_clearance(self._data)
 
     def minimum_clearance_line(self) -> GeometryArray:
-        if not SHAPELY_GE_21:
-            raise ImportError("'minimum_clearance_line' requires shapely>=2.1.")
         return GeometryArray(shapely.minimum_clearance_line(self._data), crs=self.crs)
 
     def normalize(self) -> GeometryArray:
         return GeometryArray(shapely.normalize(self._data), crs=self.crs)
 
     def orient_polygons(self, exterior_cw: bool = False) -> GeometryArray:
-        if not SHAPELY_GE_21:
-            raise ImportError("'orient_polygons' requires shapely>=2.1.")
         return GeometryArray(
             shapely.orient_polygons(self._data, exterior_cw=exterior_cw), crs=self.crs
         )
@@ -748,17 +742,12 @@ class GeometryArray(ExtensionArray):
         method: Literal["linework", "structure"] = "linework",
         keep_collapsed: bool = True,
     ) -> GeometryArray:
-        kwargs = {}
-        if SHAPELY_GE_21:
-            kwargs["method"] = method
-            kwargs["keep_collapsed"] = keep_collapsed
-        else:
-            if method != "linework":
-                raise ValueError(
-                    "Only the 'linework' method is supported for shapely < 2.1."
-                )
-
-        return GeometryArray(shapely.make_valid(self._data, **kwargs), crs=self.crs)
+        return GeometryArray(
+            shapely.make_valid(
+                self._data, method=method, keep_collapsed=keep_collapsed
+            ),
+            crs=self.crs,
+        )
 
     def reverse(self) -> GeometryArray:
         return GeometryArray(shapely.reverse(self._data), crs=self.crs)
@@ -852,8 +841,6 @@ class GeometryArray(ExtensionArray):
         return self._binary_method("equals_exact", self, other, tolerance=tolerance)
 
     def geom_equals_identical(self, other):
-        if not SHAPELY_GE_21:
-            raise ImportError("'geom_equals_identical' requires shapely>=2.1.")
         return self._binary_method("equals_identical", self, other)
 
     #
@@ -865,23 +852,30 @@ class GeometryArray(ExtensionArray):
             shapely.clip_by_rect(self._data, xmin, ymin, xmax, ymax), crs=self.crs
         )
 
-    def difference(self, other) -> GeometryArray:
+    def difference(self, other, grid_size=None) -> GeometryArray:
         return GeometryArray(
-            self._binary_method("difference", self, other), crs=self.crs
+            self._binary_method("difference", self, other, grid_size=grid_size),
+            crs=self.crs,
         )
 
-    def intersection(self, other) -> GeometryArray:
+    def intersection(self, other, grid_size=None) -> GeometryArray:
         return GeometryArray(
-            self._binary_method("intersection", self, other), crs=self.crs
+            self._binary_method("intersection", self, other, grid_size=grid_size),
+            crs=self.crs,
         )
 
-    def symmetric_difference(self, other) -> GeometryArray:
+    def symmetric_difference(self, other, grid_size=None) -> GeometryArray:
         return GeometryArray(
-            self._binary_method("symmetric_difference", self, other), crs=self.crs
+            self._binary_method(
+                "symmetric_difference", self, other, grid_size=grid_size
+            ),
+            crs=self.crs,
         )
 
-    def union(self, other) -> GeometryArray:
-        return GeometryArray(self._binary_method("union", self, other), crs=self.crs)
+    def union(self, other, grid_size=None) -> GeometryArray:
+        return GeometryArray(
+            self._binary_method("union", self, other, grid_size=grid_size), crs=self.crs
+        )
 
     def shortest_line(self, other) -> GeometryArray:
         return GeometryArray(
@@ -961,7 +955,7 @@ class GeometryArray(ExtensionArray):
     def simplify_coverage(
         self, tolerance, simplify_boundary: bool = True
     ) -> GeometryArray:
-        if not (SHAPELY_GE_21 and GEOS_GE_312):
+        if not GEOS_GE_312:
             raise ImportError(
                 "'simplify_coverage' requires shapely>=2.1 and GEOS>=3.12."
             )
@@ -1008,7 +1002,7 @@ class GeometryArray(ExtensionArray):
         elif method == "unary":
             return shapely.union_all(self._data, grid_size=grid_size)
         elif method == "disjoint_subset":
-            if not (SHAPELY_GE_21 and GEOS_GE_312):
+            if not GEOS_GE_312:
                 raise ImportError(
                     "Method 'disjoin_subset' requires shapely>=2.1 and GEOS>=3.12."
                 )
@@ -1325,9 +1319,6 @@ class GeometryArray(ExtensionArray):
     @property
     def m(self):
         """Return the m coordinate of point geometries in a GeoSeries."""
-        if not SHAPELY_GE_21:
-            raise ImportError("'m' requires shapely>=2.1.")
-
         if (self.geom_type[~self.isna()] == "Point").all():
             empty = self.is_empty
             if empty.any():
@@ -1404,13 +1395,7 @@ class GeometryArray(ExtensionArray):
     def _pad_or_backfill(
         self, method, limit=None, limit_area=None, copy=True, **kwargs
     ):
-        if PANDAS_GE_21 and not PANDAS_GE_22:
-            if limit_area is not None:
-                # limit area not supported, but, but we feed through
-                # so the caller gets the pandas exception
-                kwargs["limit_area"] = limit_area
-        else:
-            kwargs["limit_area"] = limit_area
+        kwargs["limit_area"] = limit_area
         return super()._pad_or_backfill(method=method, limit=limit, copy=copy, **kwargs)
 
     def fillna(
@@ -1423,7 +1408,7 @@ class GeometryArray(ExtensionArray):
         ----------
         value : shapely geometry object or GeometryArray
             If a geometry value is passed it is used to fill all missing values.
-            Alternatively, an GeometryArray 'value' can be given. It's expected
+            Alternatively, a GeometryArray 'value' can be given. It's expected
             that the GeometryArray has the same length as 'self'.
 
         method : {'backfill', 'bfill', 'pad', 'ffill', None}, default None
@@ -1547,7 +1532,7 @@ class GeometryArray(ExtensionArray):
         # Can't use fillna(None) or Index.putmask, as this gets converted back to nan
         # for object dtypes
         result.index = Index(
-            from_wkb(np.where(result.index.isna(), None, result.index))
+            from_wkb(np.where(result.index.isna(), None, result.index), crs=self.crs)
         )
         return result
 
@@ -1720,7 +1705,7 @@ class GeometryArray(ExtensionArray):
             # process those. The missing values are handled separately by
             # pandas regardless of the values we return here (to sort
             # first/last depending on 'na_position'), the distances for the
-            # empty geometries are substitued below with an appropriate value
+            # empty geometries are replaced below with an appropriate value
             geoms = self.copy()
             indices = np.nonzero(~mask)[0]
             if indices.size:
@@ -1748,17 +1733,6 @@ class GeometryArray(ExtensionArray):
             # smallest possible value for uints
             distances[mask_empty] = 0
         return distances
-
-    def _cast_pointwise_result(self, values) -> GeometryArray:
-        result = super()._cast_pointwise_result(values)
-        # only attempt to construct GeometryArray from object dtype result
-        if result.dtype.kind == self.dtype.kind:
-            try:
-                return type(self)._from_sequence(result)
-            except (TypeError, shapely.errors.GeometryTypeError):
-                return result
-        else:  # special case for ea eq/neq methods
-            return result
 
     def argmin(self, skipna: bool = True) -> int:
         raise TypeError("geometries have no minimum or maximum")

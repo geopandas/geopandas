@@ -170,6 +170,9 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
 
         super().__init__(data, *args, **kwargs)
 
+        if isinstance(data, DataFrame) and data.attrs:
+            self.attrs = data.attrs
+
         # set_geometry ensures the geometry data have the proper dtype,
         # but is not called if `geometry=None` ('geometry' column present
         # in the data), so therefore need to ensure it here manually
@@ -446,6 +449,8 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                 )
             if drop:
                 del frame[col]
+                frame.__class__ = GeoDataFrame
+                # revert the casting done in __delitem__, keep gdf
                 warnings.warn(
                     given_colname_drop_msg,
                     category=FutureWarning,
@@ -610,7 +615,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
                     "This unsafe behavior will be deprecated in future versions. "
                     "Use GeoDataFrame.set_crs method instead",
                     stacklevel=2,
-                    category=DeprecationWarning,
+                    category=FutureWarning,
                 )
             self.geometry.values.crs = value
         else:
@@ -908,7 +913,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         cls, table, geometry: str | None = None, to_pandas_kwargs: dict | None = None
     ):
         """
-        Construct a GeoDataFrame from a Arrow table object based on GeoArrow
+        Construct a GeoDataFrame from an Arrow table object based on GeoArrow
         extension types.
 
         See https://geoarrow.org/ for details on the GeoArrow specification.
@@ -942,6 +947,28 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
         -------
         GeoDataFrame
 
+        See Also
+        --------
+        GeoDataFrame.to_arrow
+        GeoSeries.from_arrow
+
+        Examples
+        --------
+        >>> import geoarrow.pyarrow as ga
+        >>> import pyarrow as pa
+        >>> table = pa.Table.from_arrays([
+        ...     ga.as_geoarrow(
+        ...     [None, "POLYGON ((0 0, 1 1, 0 1, 0 0))", "LINESTRING (0 0, -1 1, 0 -1)"]
+        ...     ),
+        ...     pa.array([1, 2, 3]),
+        ...     pa.array(["a", "b", "c"]),
+        ... ], names=["geometry", "id", "value"])
+        >>> gdf = geopandas.GeoDataFrame.from_arrow(table)
+        >>> gdf
+                                   geometry   id  value
+        0                              None    1      a
+        1    POLYGON ((0 0, 1 1, 0 1, 0 0))    2      b
+        2      LINESTRING (0 0, -1 1, 0 -1)    3      c
         """
         from geopandas.io._geoarrow import arrow_to_geopandas
 
@@ -1124,14 +1151,8 @@ individually so that features may have different properties
         if na not in ["null", "drop", "keep"]:
             raise ValueError(f"Unknown na method {na}")
 
-        if self._geometry_column_name not in self:
-            raise AttributeError(
-                "No geometry data set (expected in column "
-                f"'{self._geometry_column_name}')."
-            )
-
         ids = np.asarray(self.index)
-        geometries = np.asarray(self[self._geometry_column_name])
+        geometries = np.asarray(self.geometry)
 
         if not self.columns.is_unique:
             raise ValueError("GeoDataFrame cannot contain duplicated column names.")
@@ -1371,7 +1392,7 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
         >>> table
         pyarrow.Table
         col1: string
-        geometry: binary
+        geometry: extension<geoarrow.wkb<WkbType>>
         ----
         col1: [["name1","name2"]]
         geometry: [[0101000000000000000000F03F0000000000000040,\
@@ -1502,9 +1523,9 @@ default 'snappy'
         compression : {'zstd', 'lz4', 'uncompressed'}, optional
             Name of the compression to use. Use ``"uncompressed"`` for no
             compression. By default uses LZ4 if available, otherwise uncompressed.
-        schema_version : {'0.1.0', '0.4.0', '1.0.0', None}
+        schema_version : {'0.1.0', '0.4.0', '1.0.0', '1.1.0' None}
             GeoParquet specification version; if not provided will default to
-            latest supported version.
+            latest supported stable version (1.0.0).
         kwargs
             Additional keyword arguments passed to
             :func:`pyarrow.feather.write_feather`.
@@ -1914,6 +1935,12 @@ default 'snappy'
             else:
                 result.__class__ = DataFrame
         return result
+
+    def __delitem__(self, key) -> None:
+        """If the last geometry column is removed, downcast to a dataframe."""
+        super().__delitem__(key)
+        if (self.dtypes == "geometry").sum() == 0:
+            self.__class__ = DataFrame
 
     def _persist_old_default_geometry_colname(self) -> None:
         """Persist the default geometry column name of 'geometry' temporarily for

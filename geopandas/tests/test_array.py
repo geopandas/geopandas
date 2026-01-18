@@ -13,7 +13,7 @@ from shapely import MultiPolygon, Polygon, geos_version
 from shapely.geometry.base import CAP_STYLE, JOIN_STYLE
 
 import geopandas
-from geopandas._compat import GEOS_GE_312, HAS_PYPROJ, SHAPELY_GE_21
+from geopandas._compat import GEOS_GE_312, HAS_PYPROJ
 from geopandas.array import (
     GeometryArray,
     _check_crs,
@@ -692,11 +692,11 @@ def test_union_all():
     u_cov = G.union_all(method="coverage")
     assert u_cov.equals(expected)
 
-    if GEOS_GE_312 and SHAPELY_GE_21:
+    if GEOS_GE_312:
         u_disjoint = G.union_all(method="disjoint_subset")
         assert u_disjoint.equals(expected)
 
-    with pytest.raises(ValueError, match="Method 'invalid' not recognized."):
+    with pytest.raises(ValueError, match="Method 'invalid' not recognized"):
         G.union_all(method="invalid")
 
 
