@@ -312,6 +312,7 @@ def test_read_file_datetime_out_of_bounds_ns(tmpdir, ext, engine):
         assert isinstance(res["date"].iloc[0], str)
 
 
+@pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not installed")
 def test_read_file_datetime_mixed_offsets(tmpdir):
     # https://github.com/geopandas/geopandas/issues/2478
     tempfilename = os.path.join(str(tmpdir), "test_mixed_datetime.geojson")
