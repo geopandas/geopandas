@@ -838,10 +838,14 @@ def plot_dataframe(
             bbox = ax.get_position()
             bbox_orig = ax.get_position(original=True)
             if "shrink" not in legend_kwds:
-                if "location" in legend_kwds and legend_kwds["location"] in [
-                    "top",
-                    "bottom",
-                ]:
+                if (
+                    legend_kwds.get("location", "right")
+                    in [
+                        "top",
+                        "bottom",
+                    ]
+                    or legend_kwds.get("orientation", "vertical") == "horizontal"
+                ):
                     ratio = bbox.width / bbox_orig.width
                 else:
                     ratio = bbox.height / bbox_orig.height
@@ -869,6 +873,8 @@ def plot_dataframe(
             merged_kwds.update(missing_kwds)
 
             plot_series(expl_series[nan_idx], ax=ax, **merged_kwds, aspect=None)
+            if legend:
+                ax.legend()
 
     ax.figure.canvas.draw_idle()
     return ax
