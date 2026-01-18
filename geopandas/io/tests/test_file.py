@@ -670,26 +670,29 @@ def test_read_file_geojson_string_path(engine):
 
 
 def test_read_file_textio(file_path, engine):
-    file_text_stream = open(file_path)
-    file_stringio = io.StringIO(open(file_path).read())
-    gdf_text_stream = read_file(file_text_stream, engine=engine)
+    with open(file_path) as file_text_stream:
+        file_stringio = io.StringIO(file_text_stream.read())
+        file_text_stream.seek(0)
+        gdf_text_stream = read_file(file_text_stream, engine=engine)
     gdf_stringio = read_file(file_stringio, engine=engine)
     assert isinstance(gdf_text_stream, geopandas.GeoDataFrame)
     assert isinstance(gdf_stringio, geopandas.GeoDataFrame)
 
 
 def test_read_file_bytesio(file_path, engine):
-    file_binary_stream = open(file_path, "rb")
-    file_bytesio = io.BytesIO(open(file_path, "rb").read())
-    gdf_binary_stream = read_file(file_binary_stream, engine=engine)
+    with open(file_path, "rb") as file_binary_stream:
+        gdf_binary_stream = read_file(file_binary_stream, engine=engine)
+        file_binary_stream.seek(0)
+        file_bytesio = io.BytesIO(file_binary_stream.read())
+
     gdf_bytesio = read_file(file_bytesio, engine=engine)
     assert isinstance(gdf_binary_stream, geopandas.GeoDataFrame)
     assert isinstance(gdf_bytesio, geopandas.GeoDataFrame)
 
 
 def test_read_file_raw_stream(file_path, engine):
-    file_raw_stream = open(file_path, "rb", buffering=0)
-    gdf_raw_stream = read_file(file_raw_stream, engine=engine)
+    with open(file_path, "rb", buffering=0) as file_raw_stream:
+        gdf_raw_stream = read_file(file_raw_stream, engine=engine)
     assert isinstance(gdf_raw_stream, geopandas.GeoDataFrame)
 
 

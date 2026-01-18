@@ -639,6 +639,7 @@ def plot_dataframe(
             UserWarning,
             stacklevel=3,
         )
+        # TODO should these both be supported if column is a column-name?
         column = None
 
     try:
