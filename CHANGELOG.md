@@ -16,6 +16,11 @@ Deprecations and compatibility notes:
 - Expired deprecations; option `use_pygeos` which had no functionality,
   `seed` keyword in sample_points (replaced by `rng`) (#3613)
 
+Bug fixes:
+
+- Fix `GeoSeries.sample_points` not accepting list-like `size` when generating points using
+  `pointpaterns` (#3710).
+
 Community:
 
 - GeoPandas now uses the NumFOCUS Code of Conduct.

@@ -173,8 +173,11 @@ class TestPointPlotting:
         with pytest.raises((ValueError, TypeError)):
             self.df.plot(color="not color")
 
-        with warnings.catch_warnings(record=True) as _:  # don't print warning
+        with warnings.catch_warnings():
             # 'color' overrides 'column'
+            warnings.filterwarnings(
+                "ignore", message="Only specify one of 'column' or 'color'"
+            )
             ax = self.df.plot(column="values", color="green")
             _check_colors(
                 self.N, ax.collections[0].get_facecolors(), ["green"] * self.N
@@ -221,7 +224,11 @@ class TestPointPlotting:
             )
 
     def test_legend(self):
-        with warnings.catch_warnings(record=True) as _:  # don't print warning
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", message="Only specify one of 'column' or 'color'"
+            )
+            # 'color' overrides 'column'
             # legend ignored if color is given.
             ax = self.df.plot(column="values", color="green", legend=True)
             assert len(ax.get_figure().axes) == 1  # no separate legend axis
@@ -544,8 +551,11 @@ class TestLineStringPlotting:
         with pytest.raises((TypeError, ValueError)):
             self.df.plot(color="not color")
 
-        with warnings.catch_warnings(record=True) as _:  # don't print warning
+        with warnings.catch_warnings():
             # 'color' overrides 'column'
+            warnings.filterwarnings(
+                "ignore", message="Only specify one of 'column' or 'color'"
+            )
             ax = self.df.plot(column="values", color="green")
             _check_colors(self.N, ax.collections[0].get_colors(), ["green"] * self.N)
 
@@ -701,9 +711,11 @@ class TestPolygonPlotting:
         _check_colors(2, ax.collections[0].get_facecolors(), [(0.5, 0.5, 0.5, 0.5)] * 2)
         with pytest.raises((TypeError, ValueError)):
             self.df.plot(color="not color")
-
-        with warnings.catch_warnings(record=True) as _:  # don't print warning
-            # 'color' overrides 'values'
+        with warnings.catch_warnings():
+            # 'color' overrides 'column'
+            warnings.filterwarnings(
+                "ignore", message="Only specify one of 'column' or 'color'"
+            )
             ax = self.df.plot(column="values", color="green")
             _check_colors(2, ax.collections[0].get_facecolors(), ["green"] * 2)
 
