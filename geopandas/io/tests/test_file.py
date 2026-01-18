@@ -323,7 +323,7 @@ def test_read_file_datetime_mixed_offsets(tmpdir):
             ],
             "geometry": [Point(1, 1), Point(1, 1)],
         }
-    )
+    ).set_crs("EPSG:4326")
     df.to_file(tempfilename)
     # check mixed tz don't crash GH2478
     res = read_file(tempfilename)
