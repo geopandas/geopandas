@@ -423,6 +423,18 @@ class GeometryArray(ExtensionArray):
     def __getitem__(self, idx):
         if isinstance(idx, numbers.Integral):
             return self._data[idx]
+        elif (
+            isinstance(idx, slice)
+            and idx.start is None
+            and idx.stop is None
+            and idx.step is None
+        ):
+            # special case of a full slice -> preserve the sindex
+            # (to ensure view() preserves it as well)
+            result = GeometryArray(self._data[idx], crs=self.crs)
+            result._sindex = self._sindex
+            return result
+
         # array-like, slice
         # validate and convert IntegerArray/BooleanArray
         # to numpy array, pass-through non-array-like indexers
