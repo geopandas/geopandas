@@ -1,25 +1,49 @@
+from __future__ import annotations
+
 import warnings
-from collections.abc import Collection, Iterable
-from typing import Any
+from collections.abc import Collection, Iterable, Sequence
+from typing import TYPE_CHECKING, Any, Literal
 
 import numpy as np
 import pandas as pd
 from pandas import CategoricalDtype
 from pandas.plotting import PlotAccessor
 
+import shapely
+
 import geopandas
 
 from ._decorator import doc
 
+if TYPE_CHECKING:
+    from matplotlib.axes import Axes
+    from matplotlib.collections import (
+        LineCollection,
+        PatchCollection,
+        PathCollection,
+    )
+    from matplotlib.colors import Colormap
+    from matplotlib.markers import MarkerStyle
+    from matplotlib.patches import PathPatch
+    from matplotlib.path import Path
 
-def _sanitize_geoms(geoms, prefix="Multi"):
-    """Return Series like geoms and index, except that any Multi geometries
+
+def _sanitize_geoms(
+    geoms: geopandas.GeoSeries, prefix: str = "Multi"
+) -> tuple[geopandas.GeoSeries, np.ndarray]:
+    """Return sanitized geometry with the indices of original geometry.
+
+    1. Normalize all geometry to ensure holes are correctly plotted.
+    2. Explode multi-part geometries to individual components. This generates an
+       index where values are repeated for all components in the same
+       collection.
+    3. Filter out missing and empty geometry. The resulting index does not contain
+       their IDs.
+
+    Series like geoms and index, except that any Multi geometries
     are split into their components and indices are repeated for all component
     in the same Multi geometry. At the same time, empty or missing geometries are
-    filtered out.  Maintains 1:1 matching of geometry to value.
-
-    Prefix specifies type of geometry to be flatten. 'Multi' for MultiPoint and similar,
-    "Geom" for GeometryCollection.
+    filtered out. The index then maintains 1:1 matching of geometry to value.
 
     Returns
     -------
@@ -51,10 +75,10 @@ def _sanitize_geoms(geoms, prefix="Multi"):
             components.append(geom)
             component_index.append(ix)
 
-    return components, np.array(component_index)
+    return geopandas.GeoSeries(components, crs=geoms.crs), np.array(component_index)
 
 
-def _expand_kwargs(kwargs, multiindex):
+def _expand_kwargs(kwargs: dict, multiindex: np.ndarray) -> None:
     """
     Most arguments to the plot functions must be a (single) value, or a sequence
     of values. This function checks each key-value pair in 'kwargs' and expands
@@ -84,11 +108,15 @@ def _expand_kwargs(kwargs, multiindex):
             kwargs[att] = np.take(value, multiindex, axis=0)
 
 
-def _PolygonPatch(polygon, **kwargs):
-    """Construct a matplotlib patch from a Polygon geometry.
+def _PolygonPatch(polygon: shapely.Geometry, **kwargs) -> PathPatch:
+    """Construct a matplotlib patch from a (Multi)Polygon geometry.
 
     The `kwargs` are those supported by the matplotlib.patches.PathPatch class
     constructor. Returns an instance of matplotlib.patches.PathPatch.
+
+    To ensure proper rendering on the matplotlib side, winding order of individual
+    rings needs to be normalized as the order is what matplotlib uses to determine
+    if a Path represents a patch or a hole.
 
     Example (using Shapely Point and a matplotlib axes)::
 
@@ -103,78 +131,93 @@ def _PolygonPatch(polygon, **kwargs):
     from matplotlib.patches import PathPatch
     from matplotlib.path import Path
 
-    path = Path.make_compound_path(
-        Path(np.asarray(polygon.exterior.coords)[:, :2], closed=True),
-        *[
-            Path(np.asarray(ring.coords)[:, :2], closed=True)
-            for ring in polygon.interiors
-        ],
-    )
+    if polygon.geom_type == "Polygon":
+        parts = [polygon]
+    else:
+        parts = polygon.geoms
+    paths = []
+    for part in parts:
+        # exteriors
+        paths.append(Path(np.asarray(part.exterior.coords)[:, :2], closed=True))
+        # interiors
+        paths.extend(
+            Path(np.asarray(ring.coords)[:, :2], closed=True) for ring in part.interiors
+        )
+    path = Path.make_compound_path(*paths)
+
     return PathPatch(path, **kwargs)
 
 
 def _plot_polygon_collection(
-    ax,
-    geoms,
-    values=None,
-    color=None,
-    cmap=None,
-    vmin=None,
-    vmax=None,
-    autolim=True,
+    ax: Axes,
+    geoms: geopandas.GeoSeries,
+    values: np.ndarray | None = None,
+    cmap: str | Colormap | None = None,
+    vmin: float | int | None = None,
+    vmax: float | int | None = None,
+    autolim: bool = True,
     **kwargs,
-):
+) -> PatchCollection:
     """Plot a collection of Polygon and MultiPolygon geometries to `ax`.
+
+    Note that all style keywords, like ``color`` that can be set as an array in
+    matplotlib shall be passed directly via kwargs.
+
+    No need to explode geometries to single-parts as _PolygonPatch supports
+    MultiPolygons,
 
     Parameters
     ----------
     ax : matplotlib.axes.Axes
-        where shapes will be plotted
-    geoms : a sequence of `N` Polygons and/or MultiPolygons (can be mixed)
-
-    values : a sequence of `N` values, optional
-        Values will be mapped to colors using vmin/vmax/cmap. They should
+        Axes on which to add the collection
+    geoms : GeoSeries
+        GeoSeries of (Multi)Polygons
+    values : np.ndarray, optional
+        Values will be mapped to colors using vmin/vmax/norm/cmap. They should
         have 1:1 correspondence with the geometries (not their components).
-        Otherwise follows `color` / `facecolor` kwargs.
-    edgecolor : single color or sequence of `N` colors
-        Color for the edge of the polygons
-    facecolor : single color or sequence of `N` colors
-        Color to fill the polygons. Cannot be used together with `values`.
-    color : single color or sequence of `N` colors
-        Sets both `edgecolor` and `facecolor`
-    autolim : bool (default True)
-        Update axes data limits to contain the new geometries.
-    **kwargs
-        Additional keyword arguments passed to the collection
+        Otherwise follows `color` / `facecolor` kwargs, by default None
+    cmap : str or Colormap, optional
+        The colormap recognized by matplotlib, by default None
+    vmin : float, optional
+        Minimum value of cmap, by default None
+    vmax : float, optional
+        Maximum value of cmap, by default None
+    autolim : bool, optional
+        Update axes data limits to contain the new geometries, by default True
 
     Returns
     -------
-    collection : matplotlib.collections.Collection that was plotted
+    _GeoPandasPolyCollection
+        matplotlib.collections.Collection that was plotted
     """
     from matplotlib.collections import PatchCollection
+    from matplotlib.legend import Legend
+    from matplotlib.legend_handler import HandlerPolyCollection
 
-    geoms, multiindex = _sanitize_geoms(geoms)
-    if values is not None:
-        values = np.take(values, multiindex, axis=0)
+    class _GeoPandasPolyCollection(PatchCollection):
+        """Subclass to assign handler without overriding one for PatchCollection."""
 
-    # PatchCollection does not accept some kwargs.
+    # PatchCollection is not supported by Legend but we can use PolyCollection handler
+    # instead in our specific case. Define a subclass and assign a handler.
+    Legend.update_default_handler_map(
+        {_GeoPandasPolyCollection: HandlerPolyCollection()}
+    )
+
+    # _GeoPandasPolyCollection does not accept some kwargs.
     kwargs = {
         att: value
         for att, value in kwargs.items()
         if att not in ["markersize", "marker"]
     }
 
-    # Add to kwargs for easier checking below.
-    if color is not None:
-        kwargs["color"] = color
-
-    _expand_kwargs(kwargs, multiindex)
-
-    collection = PatchCollection([_PolygonPatch(poly) for poly in geoms], **kwargs)
+    collection = _GeoPandasPolyCollection(
+        [_PolygonPatch(poly) for poly in geoms], **kwargs
+    )
 
     if values is not None:
         collection.set_array(np.asarray(values))
-        collection.set_cmap(cmap)
+        if cmap:
+            collection.set_cmap(cmap)
         if "norm" not in kwargs:
             collection.set_clim(vmin, vmax)
 
@@ -184,39 +227,48 @@ def _plot_polygon_collection(
 
 
 def _plot_linestring_collection(
-    ax,
-    geoms,
-    values=None,
-    color=None,
-    cmap=None,
-    vmin=None,
-    vmax=None,
-    autolim=True,
+    ax: Axes,
+    geoms: geopandas.GeoSeries,
+    values: np.ndarray | None = None,
+    color: str | Sequence | None = None,
+    cmap: str | Colormap | None = None,
+    vmin: float | int | None = None,
+    vmax: float | int | None = None,
+    autolim: bool = True,
     **kwargs,
-):
+) -> LineCollection:
     """Plot a collection of LineString and MultiLineString geometries to `ax`.
 
     Parameters
     ----------
     ax : matplotlib.axes.Axes
-        where shapes will be plotted
-    geoms : a sequence of `N` LineStrings and/or MultiLineStrings (can be
-            mixed)
-    values : a sequence of `N` values, optional
-        Values will be mapped to colors using vmin/vmax/cmap. They should
+        Axes on which to add the collection
+    geoms : GeoSeries
+        GeoSeries of (Multi)Polygons
+    values : np.ndarray, optional
+        Values will be mapped to colors using vmin/vmax/norm/cmap. They should
         have 1:1 correspondence with the geometries (not their components).
+        Otherwise follows `color` / `facecolor` kwargs, by default None
     color : single color or sequence of `N` colors
-        Cannot be used together with `values`.
-    autolim : bool (default True)
-        Update axes data limits to contain the new geometries.
+        Color definition understood by matplotlib. Cannot be used together with
+        `values`.
+    cmap : str or Colormap, optional
+        The colormap recognized by matplotlib, by default None
+    vmin : float, optional
+        Minimum value of cmap, by default None
+    vmax : float, optional
+        Maximum value of cmap, by default None
+    autolim : bool, optional
+        Update axes data limits to contain the new geometries, by default True
 
     Returns
     -------
-    collection : matplotlib.collections.Collection that was plotted
+    LineCollection
+        matplotlib.collections.Collection that was plotted
     """
     from matplotlib.collections import LineCollection
 
-    geoms, multiindex = _sanitize_geoms(geoms)
+    geoms, multiindex = shapely.get_parts(geoms.values, return_index=True)
     if values is not None:
         values = np.take(values, multiindex, axis=0)
 
@@ -238,7 +290,8 @@ def _plot_linestring_collection(
 
     if values is not None:
         collection.set_array(np.asarray(values))
-        collection.set_cmap(cmap)
+        if cmap:
+            collection.set_cmap(cmap)
         if "norm" not in kwargs:
             collection.set_clim(vmin, vmax)
 
@@ -248,28 +301,40 @@ def _plot_linestring_collection(
 
 
 def _plot_point_collection(
-    ax,
-    geoms,
-    values=None,
-    color=None,
-    cmap=None,
-    vmin=None,
-    vmax=None,
-    marker="o",
-    markersize=None,
+    ax: Axes,
+    geoms: geopandas.GeoSeries,
+    values: np.ndarray | None = None,
+    color: str | Sequence | None = None,
+    cmap: str | Colormap | None = None,
+    vmin: float | int | None = None,
+    vmax: float | int | None = None,
+    marker: str | MarkerStyle | Path = "o",
+    markersize: float | Sequence[float] | None = None,
     **kwargs,
-):
+) -> PathCollection:
     """Plot a collection of Point and MultiPoint geometries to `ax`.
 
     Parameters
     ----------
     ax : matplotlib.axes.Axes
-        where shapes will be plotted
-    geoms : sequence of `N` Points or MultiPoints
-
-    values : a sequence of `N` values, optional
-        Values mapped to colors using vmin, vmax, and cmap.
-        Cannot be specified together with `color`.
+        Axes on which to add the collection
+    geoms : GeoSeries
+        GeoSeries of (Multi)Polygons
+    values : np.ndarray, optional
+        Values will be mapped to colors using vmin/vmax/norm/cmap. They should
+        have 1:1 correspondence with the geometries (not their components).
+        Otherwise follows `color` / `facecolor` kwargs, by default None
+    color : single color or sequence of `N` colors
+        Color definition understood by matplotlib. Cannot be used together with
+        `values`.
+    cmap : str or Colormap, optional
+        The colormap recognized by matplotlib, by default None
+    vmin : float, optional
+        Minimum value of cmap, by default None
+    vmax : float, optional
+        Maximum value of cmap, by default None
+    marker : str, MarkerStyle, Path
+        Style of the marker to be used.
     markersize : scalar or array-like, optional
         Size of the markers. Note that under the hood ``scatter`` is
         used, so the specified value will be proportional to the
@@ -279,46 +344,43 @@ def _plot_point_collection(
     -------
     collection : matplotlib.collections.Collection that was plotted
     """
-    if values is not None and color is not None:
-        raise ValueError("Can only specify one of 'values' and 'color' kwargs")
+    geoms, multiindex = shapely.get_parts(geoms.values, return_index=True)
 
-    geoms, multiindex = _sanitize_geoms(geoms)
-    # values are expanded below as kwargs["c"]
+    xy = shapely.get_coordinates(geoms)
 
-    x = [p.x if not p.is_empty else None for p in geoms]
-    y = [p.y if not p.is_empty else None for p in geoms]
-
-    # matplotlib 1.4 does not support c=None, and < 2.0 does not support s=None
+    # Add to kwargs for easier checking below.
     if values is not None:
         kwargs["c"] = values
     if markersize is not None:
         kwargs["s"] = markersize
-
-    # Add to kwargs for easier checking below.
     if color is not None:
         kwargs["color"] = color
     if marker is not None:
         kwargs["marker"] = marker
+
     _expand_kwargs(kwargs, multiindex)
 
+    # norm cannot be passed alongside vmin and vmax
     if "norm" not in kwargs:
-        collection = ax.scatter(x, y, vmin=vmin, vmax=vmax, cmap=cmap, **kwargs)
+        collection = ax.scatter(
+            xy[:, 0], xy[:, 1], vmin=vmin, vmax=vmax, cmap=cmap, **kwargs
+        )
     else:
-        collection = ax.scatter(x, y, cmap=cmap, **kwargs)
+        collection = ax.scatter(xy[:, 0], xy[:, 1], cmap=cmap, **kwargs)
 
     return collection
 
 
 def plot_series(
-    s,
-    cmap=None,
-    color=None,
-    ax=None,
-    figsize=None,
-    aspect="auto",
-    autolim=True,
+    s: geopandas.GeoSeries,
+    cmap: str | Colormap | None = None,
+    color: str | Sequence | None = None,
+    ax: Axes | None = None,
+    figsize: tuple[float, float] | None = None,
+    aspect: float | Literal["auto", "equal", None] = "auto",
+    autolim: bool = True,
     **style_kwds,
-):
+) -> Axes:
     """
     Plot a GeoSeries.
 
@@ -365,28 +427,19 @@ def plot_series(
     ax : matplotlib axes instance
     """
     try:
-        import matplotlib.pyplot as plt
-    except ImportError:
+        import matplotlib  # noqa: F401
+        from matplotlib.colors import Colormap
+    except ImportError as err:
         raise ImportError(
             "The matplotlib package is required for plotting in geopandas. "
             "You can install it using 'conda install -c conda-forge matplotlib' or "
             "'pip install matplotlib'."
-        )
+        ) from err
+
+    import matplotlib.pyplot as plt
 
     if ax is None:
-        _fig, ax = plt.subplots(figsize=figsize)
-
-    if aspect == "auto":
-        if s.crs and s.crs.is_geographic:
-            bounds = s.total_bounds
-            y_coord = np.mean([bounds[1], bounds[3]])
-            ax.set_aspect(1 / np.cos(y_coord * np.pi / 180))
-            # formula ported from R package sp
-            # https://github.com/edzer/sp/blob/master/R/mapasp.R
-        else:
-            ax.set_aspect("equal")
-    elif aspect is not None:
-        ax.set_aspect(aspect)
+        _, ax = plt.subplots(figsize=figsize)
 
     if s.empty:
         warnings.warn(
@@ -406,28 +459,49 @@ def plot_series(
         )
         return ax
 
-    # have colors been given for all geometries?
-    color_given = pd.api.types.is_list_like(color) and len(color) == len(s)
-
-    # if cmap is specified, create range of colors based on cmap
-    values = None
-    if cmap is not None:
-        values = np.arange(len(s))
-        if hasattr(cmap, "N"):
-            values = values % cmap.N
-        style_kwds["vmin"] = style_kwds.get("vmin", values.min())
-        style_kwds["vmax"] = style_kwds.get("vmax", values.max())
+    # set correct aspect to preserve proportions in geographic CRS
+    if aspect == "auto":
+        if s.crs and s.crs.is_geographic:
+            bounds = s.total_bounds
+            y_coord = np.mean([bounds[1], bounds[3]])
+            ax.set_aspect(1 / np.cos(y_coord * np.pi / 180))
+            # formula ported from R package sp
+            # https://github.com/edzer/sp/blob/master/R/mapasp.R
+        else:
+            ax.set_aspect("equal")
+    elif aspect is not None:
+        ax.set_aspect(aspect)
 
     # decompose GeometryCollections
-    geoms, multiindex = _sanitize_geoms(s.geometry, prefix="Geom")
-    values = np.take(values, multiindex, axis=0) if cmap else None
-    # ensure indexes are consistent
-    if color_given and isinstance(color, pd.Series):
-        color = color.reindex(s.index)
-    expl_color = np.take(color, multiindex, axis=0) if color_given else color
-    expl_series = geopandas.GeoSeries(geoms)
+    geoms, multiindex = _sanitize_geoms(s, "Geom")
 
-    geom_types = expl_series.geom_type
+    values = None
+    color_given = False
+
+    # if cmap is specified, create range of colors based on cmap
+    if cmap is not None:
+        values = np.arange(len(s))
+        if isinstance(cmap, Colormap) and hasattr(cmap, "N"):
+            # repeat for cmap with limited number of colors
+            values = values % cmap.N
+        style_kwds["vmin"] = values.min()
+        style_kwds["vmax"] = values.max()
+
+        # ensure proper mapping of values to components of GeometryCollections
+        values = np.take(values, multiindex, axis=0)
+
+    # if color is specified as a list-like, ensure it is properly mapped to components
+    elif color is not None:
+        color_given = pd.api.types.is_list_like(color) and len(color) == len(s)
+        # have colors been given for all geometries?
+        if color_given:
+            # ensure indexes are consistent
+            if isinstance(color, pd.Series):
+                color = color.reindex(s.index)
+            color = np.take(color, multiindex, axis=0)
+
+    # subdivide by geometry type - each has its own collection
+    geom_types = geoms.geom_type
     poly_idx = np.asarray((geom_types == "Polygon") | (geom_types == "MultiPolygon"))
     line_idx = np.asarray(
         (geom_types == "LineString")
@@ -437,16 +511,17 @@ def plot_series(
     point_idx = np.asarray((geom_types == "Point") | (geom_types == "MultiPoint"))
 
     # plot all Polygons and all MultiPolygon components in the same collection
-    polys = expl_series[poly_idx]
+    polys = geoms[poly_idx]
     if not polys.empty:
         # color overrides both face and edgecolor. As we want people to be
         # able to use edgecolor as well, pass color to facecolor
         facecolor = style_kwds.pop("facecolor", None)
-        color_ = expl_color[poly_idx] if color_given else color
-        if color is not None:
-            facecolor = color_
 
-        values_ = values[poly_idx] if cmap else None
+        if color is not None:
+            facecolor = color[poly_idx] if color_given else color
+
+        values_ = values[poly_idx] if values is not None else None
+
         _plot_polygon_collection(
             ax,
             polys,
@@ -458,26 +533,29 @@ def plot_series(
         )
 
     # plot all LineStrings and MultiLineString components in same collection
-    lines = expl_series[line_idx]
+    lines = geoms[line_idx]
     if not lines.empty:
-        values_ = values[line_idx] if cmap else None
-        color_ = expl_color[line_idx] if color_given else color
+        values_ = values[line_idx] if values is not None else None
+
+        color_ = color[line_idx] if color_given else color
 
         _plot_linestring_collection(
             ax, lines, values_, color=color_, cmap=cmap, autolim=autolim, **style_kwds
         )
 
     # plot all Points in the same collection
-    points = expl_series[point_idx]
+    points = geoms[point_idx]
     if not points.empty:
-        values_ = values[point_idx] if cmap else None
-        color_ = expl_color[point_idx] if color_given else color
+        values_ = values[point_idx] if values is not None else None
+
+        color_ = color[point_idx] if color_given else color
 
         _plot_point_collection(
             ax, points, values_, color=color_, cmap=cmap, **style_kwds
         )
 
     ax.figure.canvas.draw_idle()
+
     return ax
 
 
@@ -806,10 +884,9 @@ def plot_dataframe(
     mx = values[~np.isnan(values)].max() if vmax is None else vmax
 
     # decompose GeometryCollections
-    geoms, multiindex = _sanitize_geoms(df.geometry, prefix="Geom")
+    expl_series, multiindex = _sanitize_geoms(df.geometry, prefix="Geom")
     values = np.take(values, multiindex, axis=0)
     nan_idx = np.take(nan_idx, multiindex, axis=0)
-    expl_series = geopandas.GeoSeries(geoms)
 
     geom_types = expl_series.geom_type
     poly_idx = np.asarray((geom_types == "Polygon") | (geom_types == "MultiPolygon"))

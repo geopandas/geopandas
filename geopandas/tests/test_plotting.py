@@ -909,18 +909,18 @@ class TestPolygonPlotting:
     def test_multipolygons_color(self):
         # MultiPolygons
         ax = self.df2.plot()
-        assert len(ax.collections[0].get_paths()) == 4
-        _check_colors(4, ax.collections[0].get_facecolors(), [MPL_DFT_COLOR] * 4)
+        assert len(ax.collections[0].get_paths()) == 2
+        _check_colors(2, ax.collections[0].get_facecolors(), [MPL_DFT_COLOR] * 2)
 
         ax = self.df2.plot("values")
         cmap = plt.get_cmap(lut=2)
         # colors are repeated for all components within a MultiPolygon
-        expected_colors = [cmap(0), cmap(0), cmap(1), cmap(1)]
-        _check_colors(4, ax.collections[0].get_facecolors(), expected_colors)
+        expected_colors = [cmap(0), cmap(1)]
+        _check_colors(2, ax.collections[0].get_facecolors(), expected_colors)
 
         ax = self.df2.plot(color=["r", "b"])
         # colors are repeated for all components within a MultiPolygon
-        _check_colors(4, ax.collections[0].get_facecolors(), ["r", "r", "b", "b"])
+        _check_colors(2, ax.collections[0].get_facecolors(), ["r", "b"])
 
     def test_multipolygons_linestyle(self):
         # single
@@ -933,7 +933,7 @@ class TestPolygonPlotting:
 
         # multiple
         ls = ["dashed", "dotted"]
-        exp_ls = [_style_to_linestring_onoffseq(st, 1) for st in ls for i in range(2)]
+        exp_ls = [_style_to_linestring_onoffseq(st, 1) for st in ls]
         for ax in [
             self.df2.plot(linestyle=ls, linewidth=1),
             self.df2.plot(linestyles=ls, linewidth=1),
@@ -947,9 +947,7 @@ class TestPolygonPlotting:
 
         # multiple
         for ax in [self.df2.plot(linewidth=[2, 4]), self.df2.plot(linewidths=[2, 4])]:
-            np.testing.assert_array_equal(
-                [2, 2, 4, 4], ax.collections[0].get_linewidths()
-            )
+            np.testing.assert_array_equal([2, 4], ax.collections[0].get_linewidths())
 
     def test_multipolygons_alpha(self):
         ax = self.df2.plot(alpha=0.7)
@@ -960,9 +958,7 @@ class TestPolygonPlotting:
             # no list allowed for alpha up to matplotlib 3.3
             pass
         else:
-            np.testing.assert_array_equal(
-                [0.7, 0.7, 0.2, 0.2], ax.collections[0].get_alpha()
-            )
+            np.testing.assert_array_equal([0.7, 0.2], ax.collections[0].get_alpha())
 
     if MPL_DECORATORS:
         """Test multipolygons properly orient so holes will appear.
@@ -1063,9 +1059,9 @@ class TestColorParamArray:
             ["green"] * 2 + ["blue"] * 2,
         )
         _check_colors(
-            4,
+            2,
             np.concatenate([c.get_facecolor() for c in ax.collections]),
-            ["red"] * 2 + ["blue"] * 2,
+            ["red", "blue"],
         )
 
 
