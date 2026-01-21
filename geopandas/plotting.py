@@ -970,6 +970,9 @@ def plot_dataframe(
         if not norm:
             norm = Normalize(vmin=mn, vmax=mx)
         n_cmap = cm.ScalarMappable(norm=norm, cmap=cmap)
+        if len(set(values[~np.isnan(values)])) == 1:
+            categorical = True
+            categories = list(set(values[~np.isnan(values)]))
         if categorical:
             if scheme is not None:
                 categories = labels
