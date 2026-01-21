@@ -43,11 +43,14 @@ jobs:
           # PostGIS envs
           - env: ci/envs/311-pd22.yaml
             postgis: true
+            os: ubuntu-latest
           - env: ci/envs/312-latest.yaml
             postgis: true
+            os: ubuntu-latest
           # doctest env
           - env: ci/envs/313-latest.yaml
             doctest: true
+            os: ubuntu-latest
           # MacOS & Windows envs
           - env: ci/envs/313-latest-no-pyogrio.yaml
             os: macos-latest
