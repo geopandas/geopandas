@@ -28,21 +28,59 @@ if TYPE_CHECKING:
     from matplotlib.path import Path
 
 
+def _set_aspect(
+    aspect: float | Literal["auto", "equal", None],
+    s: geopandas.GeoSeries | geopandas.GeoDataFrame,
+    ax: Axes,
+) -> None:
+    """Set the aspect ratio of the axis.
+
+    - If `aspect` is "auto" and the CRS is geographic, the aspect ratio is adjusted to
+      account for latitude distortion, using a formula ported from the R package 'sp'.
+    - If the CRS is not geographic, the aspect is set to "equal".
+    - If `aspect` is not None or "auto", its value is passed directly to
+      `ax.set_aspect`.
+
+    Parameters
+    ----------
+    aspect : str or float or None
+        The aspect ratio to set. If "auto", the aspect is determined based on the
+        geometry's CRS. If a float or other valid matplotlib aspect value, it is passed
+        directly to `ax.set_aspect`.
+    s : GeoSeries or GeoDataFrame
+        The spatial data whose CRS and bounds are used to determine the aspect ratio if
+        `aspect` is "auto".
+    ax : matplotlib.axes.Axes
+        The axes on which to set the aspect ratio.
+    """
+    if aspect == "auto":
+        if s.crs and s.crs.is_geographic:
+            bounds = s.total_bounds
+            y_coord = np.mean([bounds[1], bounds[3]])
+            ax.set_aspect(1 / np.cos(y_coord * np.pi / 180))
+            # formula ported from R package sp
+            # https://github.com/edzer/sp/blob/master/R/mapasp.R
+        else:
+            ax.set_aspect("equal")
+    elif aspect is not None:
+        ax.set_aspect(aspect)
+
+
 def _sanitize_geoms(
-    geoms: geopandas.GeoSeries, prefix: str = "Multi"
+    geoms: geopandas.GeoSeries,
 ) -> tuple[geopandas.GeoSeries, np.ndarray]:
     """Return sanitized geometry with the indices of original geometry.
 
     1. Normalize all geometry to ensure holes are correctly plotted.
-    2. Explode multi-part geometries to individual components. This generates an
+    2. Explode GeometryCollections to individual components. This generates an
        index where values are repeated for all components in the same
        collection.
     3. Filter out missing and empty geometry. The resulting index does not contain
        their IDs.
 
-    Series like geoms and index, except that any Multi geometries
+    Series like geoms and index, except that any GeometryCollections
     are split into their components and indices are repeated for all component
-    in the same Multi geometry. At the same time, empty or missing geometries are
+    in the same collection. At the same time, empty or missing geometries are
     filtered out. The index then maintains 1:1 matching of geometry to value.
 
     Returns
@@ -50,7 +88,7 @@ def _sanitize_geoms(
     components : list of geometry
 
     component_index : index array
-        indices are repeated for all components in the same Multi geometry
+        indices are repeated for all components in the same collection
     """
     # TODO(shapely) look into simplifying this with
     # shapely.get_parts(geoms, return_index=True) from shapely 2.0
@@ -58,14 +96,14 @@ def _sanitize_geoms(
     components, component_index = [], []
 
     if (
-        not geoms.geom_type.str.startswith(prefix).any()
+        not geoms.geom_type.str.startswith("Geom").any()
         and not geoms.is_empty.any()
         and not geoms.isna().any()
     ):
         return geoms, np.arange(len(geoms))
 
     for ix, geom in enumerate(geoms):
-        if geom is not None and geom.geom_type.startswith(prefix) and not geom.is_empty:
+        if geom is not None and geom.geom_type.startswith("Geom") and not geom.is_empty:
             for poly in geom.geoms:
                 components.append(poly)
                 component_index.append(ix)
@@ -460,20 +498,10 @@ def plot_series(
         return ax
 
     # set correct aspect to preserve proportions in geographic CRS
-    if aspect == "auto":
-        if s.crs and s.crs.is_geographic:
-            bounds = s.total_bounds
-            y_coord = np.mean([bounds[1], bounds[3]])
-            ax.set_aspect(1 / np.cos(y_coord * np.pi / 180))
-            # formula ported from R package sp
-            # https://github.com/edzer/sp/blob/master/R/mapasp.R
-        else:
-            ax.set_aspect("equal")
-    elif aspect is not None:
-        ax.set_aspect(aspect)
+    _set_aspect(aspect, s, ax)
 
     # decompose GeometryCollections
-    geoms, multiindex = _sanitize_geoms(s, "Geom")
+    geoms, multiindex = _sanitize_geoms(s)
 
     values = None
     color_given = False
@@ -711,17 +739,10 @@ def plot_dataframe(
     See the User Guide page :doc:`../../user_guide/mapping` for details.
 
     """
-    if column is not None and color is not None:
-        warnings.warn(
-            "Only specify one of 'column' or 'color'. Using 'color'.",
-            UserWarning,
-            stacklevel=3,
-        )
-        # TODO should these both be supported if column is a column-name?
-        column = None
-
+    # TODO: check what happens when one categorical value appears in multiple geom types
     try:
         import matplotlib.pyplot as plt
+        from matplotlib import cm, colormaps, colors
     except ImportError:
         raise ImportError(
             "The matplotlib package is required for plotting in geopandas. "
@@ -729,40 +750,19 @@ def plot_dataframe(
             "'pip install matplotlib'."
         )
 
-    if ax is None:
-        if cax is not None:
-            raise ValueError("'ax' can not be None if 'cax' is not.")
-        _fig, ax = plt.subplots(figsize=figsize)
-
-    if aspect == "auto":
-        if df.crs and df.crs.is_geographic:
-            bounds = df.total_bounds
-            y_coord = np.mean([bounds[1], bounds[3]])
-            ax.set_aspect(1 / np.cos(y_coord * np.pi / 180))
-            # formula ported from R package sp
-            # https://github.com/edzer/sp/blob/master/R/mapasp.R
-        else:
-            ax.set_aspect("equal")
-    elif aspect is not None:
-        ax.set_aspect(aspect)
-
-    # GH 1555
-    # if legend_kwds set, copy so we don't update it in place
-    if legend_kwds is not None:
-        legend_kwds = legend_kwds.copy()
-
-    if df.empty:
+    if column is not None and color is not None:
         warnings.warn(
-            "The GeoDataFrame you are attempting to plot is "
-            "empty. Nothing has been displayed.",
+            "Only specify one of 'column' or 'color'. Using 'color'.",
             UserWarning,
             stacklevel=3,
         )
-        return ax
+        column = None
 
+    # Process polymorphic markersize
     if isinstance(markersize, str):
         markersize = df[markersize].values
 
+    # if column is not set, we're showing just geometries -> plot_series
     if column is None:
         return plot_series(
             df.geometry,
@@ -776,7 +776,48 @@ def plot_dataframe(
             **style_kwds,
         )
 
-    # To accept pd.Series and np.arrays as column
+    if ax is None:
+        if cax is not None:
+            raise ValueError("'ax' can not be None if 'cax' is not.")
+        _fig, ax = plt.subplots(figsize=figsize)
+
+    if df.empty:
+        warnings.warn(
+            "The GeoDataFrame you are attempting to plot is "
+            "empty. Nothing has been displayed.",
+            UserWarning,
+            stacklevel=3,
+        )
+        return ax
+
+    if df.is_empty.all():
+        warnings.warn(
+            "The GeoDataFrame you are attempting to plot is "
+            "composed of empty geometries. Nothing has been displayed.",
+            UserWarning,
+            stacklevel=3,
+        )
+        return ax
+
+    # clean-up legend_kwds arguments that are no longer supported
+    warn_about_legend = False
+    for arg in ["fmt", "interval"]:
+        if legend_kwds and arg in legend_kwds:
+            legend_kwds.pop(arg)
+            warn_about_legend = True
+    if warn_about_legend:
+        warnings.warn(
+            "Legend keywords 'fmt' and 'interval' are no longer supported"
+            "as the legend is no longer treated as categories but are mapped to a "
+            "colorbar. The kwywords make no effect and will raise an error in future.",
+            FutureWarning,
+            stacklevel=3,
+        )
+
+    # set correct aspect to preserve proportions in geographic CRS
+    _set_aspect(aspect, df, ax)
+
+    # Process polymorphic column argument (column name or array-like)
     if isinstance(column, np.ndarray | pd.Series | pd.Index):
         if column.shape[0] != df.shape[0]:
             raise ValueError(
@@ -793,6 +834,7 @@ def plot_dataframe(
     else:
         values = df[column]
 
+    # Infer categorical variable
     if isinstance(values.dtype, CategoricalDtype):
         if categories is not None:
             raise ValueError(
@@ -807,145 +849,230 @@ def plot_dataframe(
     ):
         categorical = True
 
+    if legend_kwds is None:
+        legend_kwds = {}
+    else:
+        # if legend_kwds set, copy so we don't update it in place. GH1555
+        legend_kwds = legend_kwds.copy()
+
     nan_idx = np.asarray(pd.isna(values), dtype="bool")
 
-    if scheme is not None:
-        mc_err = "The 'mapclassify' package is required to use the 'scheme' keyword."
-        try:
-            import mapclassify
+    # TODO: ensure that array-like inputs are correctly masked out
 
-        except ImportError:
-            raise ImportError(mc_err)
+    # Plot categorical values via groupby - each category is a group plotted using
+    # plot_series
+    if categorical:
+        if categories is not None:
+            values = _check_invalid_categories(categories, values)
+        grouped = df.groupby(values, observed=False)
+        ngroups = grouped.ngroups
 
-        if classification_kwds is None:
-            classification_kwds = {}
-        if "k" not in classification_kwds:
-            classification_kwds["k"] = k
+        if cmap is None:
+            cmap = colormaps["tab20"] if ngroups > 10 else colormaps["tab10"]
+        elif isinstance(cmap, str):
+            cmap = colormaps[cmap]
 
-        binning = mapclassify.classify(
-            np.asarray(values[~nan_idx]), scheme, **classification_kwds
-        )
-        # set categorical to True for creating the legend
-        categorical = True
-        if legend_kwds is not None and "labels" in legend_kwds:
-            if len(legend_kwds["labels"]) != binning.k:
-                raise ValueError(
-                    "Number of labels must match number of bins, "
-                    "received {} labels for {} bins".format(
-                        len(legend_kwds["labels"]), binning.k
-                    )
+        def _color(i, name, ngroups, cmap):
+            """Pull the color from the cmap for group."""
+            if isinstance(cmap, colors.Colormap):
+                if cmap.N < 32:
+                    # For categorical cmaps, iterate over colours for the optimal
+                    # contrast. Categorical cmaps have generally lower number of colors.
+                    # There's no way of pulling the info on the cmap type directly from
+                    # matplotlib.
+                    return cmap(i)
+                else:
+                    # For continuous cmaps, stretch alongside whole range
+                    return cmap(i / (ngroups - 1))
+            elif isinstance(cmap, dict):
+                return cmap[name]
+            else:
+                raise ValueError("cmap type is not supported.")
+
+        # add to style_kwds so it can be mapped to groups
+        if markersize is not None:
+            style_kwds["markersize"] = markersize
+
+        for i, (name, group) in enumerate(grouped["geometry"]):
+            # this ensures that any style kwd can be mapped to a value and that
+            # list-like kwds are properly split to groups
+            group_style_kwds = {}
+            for key, val in style_kwds.items():
+                if isinstance(val, dict):
+                    group_style_kwds[key] = val.get(name)
+                elif pd.api.types.is_list_like(val) and len(val) == len(df):
+                    group_style_kwds[key] = np.take(val, grouped.indices[name])
+                else:
+                    group_style_kwds[key] = val
+
+            # categoricals with more categories than observed values might be empty
+            # plot nothing to get an item for legend
+            # TODO: how to determine proper marker/icon? This defaults to line but
+            # TODO: it shoud ideally be the same as others. Get most common geom type?
+            if group.empty:
+                ax.plot(
+                    [],
+                    [],
+                    color=_color(i, name, ngroups, cmap),
+                    **group_style_kwds,
+                    label=name,
                 )
             else:
-                labels = list(legend_kwds.pop("labels"))
-        else:
-            fmt = "{:.2f}"
-            if legend_kwds is not None and "fmt" in legend_kwds:
-                fmt = legend_kwds.pop("fmt")
+                plot_series(
+                    group.geometry,
+                    label=name,
+                    color=_color(i, name, ngroups, cmap),
+                    ax=ax,
+                    aspect=None,
+                    **group_style_kwds,
+                )
 
-            labels = binning.get_legend_classes(fmt)
-            if legend_kwds is not None:
-                show_interval = legend_kwds.pop("interval", False)
-            else:
-                show_interval = False
-            if not show_interval:
-                labels = [c[1:-1] for c in labels]
+        missing_geoms = df.geometry[nan_idx]
+        missing_data = not missing_geoms.empty
+    else:
+        values_min = values[~nan_idx].min()
+        values_max = values[~nan_idx].max()
+        mn = values_min if vmin is None else vmin
+        mx = values_max if vmax is None else vmax
 
-        values = pd.Categorical(
-            [np.nan] * len(values), categories=binning.bins, ordered=True
+        # classification scheme sets boundary norm for segmented colorbar
+        if scheme:
+            if "norm" in style_kwds:
+                raise ValueError("cannot set norm and scheme")
+
+            try:
+                import mapclassify
+            except ImportError:
+                raise ImportError(
+                    "The 'mapclassify' package is required to use the 'scheme' keyword."
+                )
+
+            if classification_kwds is None:
+                classification_kwds = {}
+            if "k" not in classification_kwds:
+                classification_kwds["k"] = k
+            binning = mapclassify.classify(
+                values[~nan_idx],
+                scheme,
+            )
+            style_kwds["norm"] = colors.BoundaryNorm(
+                boundaries=[values_min] + list(binning.bins),
+                ncolors=256,
+            )
+
+            # default to proportional spacing of the colorbar when using a scheme
+            if "spacing" not in legend_kwds:
+                legend_kwds["spacing"] = "proportional"
+
+        # decompose GeometryCollections
+        expl_series, multiindex = _sanitize_geoms(df.geometry)
+        values = np.take(values, multiindex, axis=0)
+        nan_idx = np.take(nan_idx, multiindex, axis=0)
+
+        # TODO: expand array-like kwargs to match exploded series
+
+        geom_types = expl_series.geom_type
+        poly_idx = np.asarray(
+            (geom_types == "Polygon") | (geom_types == "MultiPolygon")
         )
-        values[~nan_idx] = pd.Categorical.from_codes(
-            binning.yb, categories=binning.bins, ordered=True
+        line_idx = np.asarray(
+            (geom_types == "LineString")
+            | (geom_types == "MultiLineString")
+            | (geom_types == "LinearRing")
         )
-        if cmap is None:
-            cmap = "viridis"
+        point_idx = np.asarray((geom_types == "Point") | (geom_types == "MultiPoint"))
 
-    # Define `values` as a Series
-    if categorical:
-        if cmap is None:
-            cmap = "tab10"
-        cat = _check_invalid_categories(categories, values)
-        # if isinstance(values, pd.Categorical):
-        #     cat = values
-        # else:
-        #     cat = pd.Categorical(values, categories=categories)
-        categories = list(cat.categories)
+        # plot all Polygons and all MultiPolygon components in the same collection
+        polys = expl_series[poly_idx & np.invert(nan_idx)]
+        subset = values[poly_idx & np.invert(nan_idx)]
+        if not polys.empty:
+            _plot_polygon_collection(
+                ax,
+                polys,
+                subset,
+                vmin=mn,
+                vmax=mx,
+                cmap=cmap,
+                autolim=autolim,
+                **style_kwds,
+            )
 
-        values = cat.codes[~nan_idx]
-        vmin = 0 if vmin is None else vmin
-        vmax = len(categories) - 1 if vmax is None else vmax
+        # plot all LineStrings and MultiLineString components in same collection
+        lines = expl_series[line_idx & np.invert(nan_idx)]
+        subset = values[line_idx & np.invert(nan_idx)]
+        if not lines.empty:
+            _plot_linestring_collection(
+                ax,
+                lines,
+                subset,
+                vmin=mn,
+                vmax=mx,
+                cmap=cmap,
+                autolim=autolim,
+                **style_kwds,
+            )
 
-    # fill values with placeholder where were NaNs originally to map them properly
-    # (after removing them in categorical or scheme)
-    if categorical:
-        for n in np.where(nan_idx)[0]:
-            values = np.insert(values, n, values[0])
+        # plot all Points in the same collection
+        points = expl_series[point_idx & np.invert(nan_idx)]
+        subset = values[point_idx & np.invert(nan_idx)]
+        if not points.empty:
+            if isinstance(markersize, np.ndarray):
+                markersize = np.take(markersize, multiindex, axis=0)
+                markersize = markersize[point_idx & np.invert(nan_idx)]
+            _plot_point_collection(
+                ax,
+                points,
+                subset,
+                vmin=mn,
+                vmax=mx,
+                markersize=markersize,
+                cmap=cmap,
+                **style_kwds,
+            )
 
-    mn = values[~np.isnan(values)].min() if vmin is None else vmin
-    mx = values[~np.isnan(values)].max() if vmax is None else vmax
+        if legend:
+            # check if the colorbar needs to show value truncation
+            if "extend" not in legend_kwds:
+                if (mn > values_min) & (mx < values_max):
+                    legend_kwds["extend"] = "both"
+                elif mn > values_min:
+                    legend_kwds["extend"] = "min"
+                elif mx < values_max:
+                    legend_kwds["extend"] = "max"
 
-    # decompose GeometryCollections
-    expl_series, multiindex = _sanitize_geoms(df.geometry, prefix="Geom")
-    values = np.take(values, multiindex, axis=0)
-    nan_idx = np.take(nan_idx, multiindex, axis=0)
+            # shrink the colorbar based on the new apect ratio - that way we ensure
+            # that it is never much larger than the axis without complicated hacks
+            bbox = ax.get_position()
+            bbox_orig = ax.get_position(original=True)
+            if "shrink" not in legend_kwds:
+                if (
+                    legend_kwds.get("location", "right")
+                    in [
+                        "top",
+                        "bottom",
+                    ]
+                    or legend_kwds.get("orientation", "vertical") == "horizontal"
+                ):
+                    ratio = bbox.width / bbox_orig.width
+                else:
+                    ratio = bbox.height / bbox_orig.height
+                legend_kwds["shrink"] = ratio
+                legend_kwds["aspect"] = ratio * 20
 
-    geom_types = expl_series.geom_type
-    poly_idx = np.asarray((geom_types == "Polygon") | (geom_types == "MultiPolygon"))
-    line_idx = np.asarray(
-        (geom_types == "LineString")
-        | (geom_types == "MultiLineString")
-        | (geom_types == "LinearRing")
-    )
-    point_idx = np.asarray((geom_types == "Point") | (geom_types == "MultiPoint"))
+            mappable = cm.ScalarMappable(
+                norm=style_kwds.get("norm", colors.Normalize(vmin=mn, vmax=mx)),
+                cmap=cmap,
+            )
+            ax.figure.colorbar(
+                mappable,
+                ax=ax,
+                cax=cax,
+                **legend_kwds,
+            )
 
-    # plot all Polygons and all MultiPolygon components in the same collection
-    polys = expl_series[poly_idx & np.invert(nan_idx)]
-    subset = values[poly_idx & np.invert(nan_idx)]
-    if not polys.empty:
-        _plot_polygon_collection(
-            ax,
-            polys,
-            subset,
-            vmin=mn,
-            vmax=mx,
-            cmap=cmap,
-            autolim=autolim,
-            **style_kwds,
-        )
+        missing_geoms = expl_series[nan_idx]
+        missing_data = not missing_geoms.empty
 
-    # plot all LineStrings and MultiLineString components in same collection
-    lines = expl_series[line_idx & np.invert(nan_idx)]
-    subset = values[line_idx & np.invert(nan_idx)]
-    if not lines.empty:
-        _plot_linestring_collection(
-            ax,
-            lines,
-            subset,
-            vmin=mn,
-            vmax=mx,
-            cmap=cmap,
-            autolim=autolim,
-            **style_kwds,
-        )
-
-    # plot all Points in the same collection
-    points = expl_series[point_idx & np.invert(nan_idx)]
-    subset = values[point_idx & np.invert(nan_idx)]
-    if not points.empty:
-        if isinstance(markersize, np.ndarray):
-            markersize = np.take(markersize, multiindex, axis=0)
-            markersize = markersize[point_idx & np.invert(nan_idx)]
-        _plot_point_collection(
-            ax,
-            points,
-            subset,
-            vmin=mn,
-            vmax=mx,
-            markersize=markersize,
-            cmap=cmap,
-            **style_kwds,
-        )
-
-    missing_data = not expl_series[nan_idx].empty
     if missing_kwds is not None and missing_data:
         if color:
             if "color" not in missing_kwds:
@@ -954,102 +1081,53 @@ def plot_dataframe(
         merged_kwds = style_kwds.copy()
         merged_kwds.update(missing_kwds)
 
-        plot_series(expl_series[nan_idx], ax=ax, **merged_kwds, aspect=None)
+        # ensure we take proper subset of list-like inputs related to missing
+        # and clear all the dicts mapping to categories - user shall specify
+        # style of missing in missing_kwds
+        for key, val in merged_kwds.items():
+            if pd.api.types.is_list_like(val) and len(val) == len(df):
+                merged_kwds[key] = val[nan_idx]
+            elif isinstance(val, dict):
+                merged_kwds[key] = None
 
-    if legend and not color:
-        if legend_kwds is None:
-            legend_kwds = {}
-        if "fmt" in legend_kwds:
-            legend_kwds.pop("fmt")
+        plot_series(
+            missing_geoms,
+            ax=ax,
+            aspect=None,
+            label=merged_kwds.pop("label", "NaN"),
+            **merged_kwds,
+        )
 
-        from matplotlib import cm
-        from matplotlib.colors import Normalize
-        from matplotlib.lines import Line2D
-
-        norm = style_kwds.get("norm", None)
-        if not norm:
-            norm = Normalize(vmin=mn, vmax=mx)
-        n_cmap = cm.ScalarMappable(norm=norm, cmap=cmap)
-        if categorical:
-            if scheme is not None:
-                categories = labels
-            patches = []
-            for i in range(len(categories)):
-                patches.append(
-                    Line2D(
-                        [0],
-                        [0],
-                        linestyle="none",
-                        marker="o",
-                        alpha=style_kwds.get("alpha", 1),
-                        markersize=10,
-                        markerfacecolor=n_cmap.to_rgba(i),
-                        markeredgewidth=0,
-                    )
-                )
-            if missing_kwds is not None and missing_data:
-                if "color" in merged_kwds:
-                    merged_kwds["facecolor"] = merged_kwds["color"]
-                patches.append(
-                    Line2D(
-                        [0],
-                        [0],
-                        linestyle="none",
-                        marker="o",
-                        alpha=merged_kwds.get("alpha", 1),
-                        markersize=10,
-                        markerfacecolor=merged_kwds.get("facecolor", None),
-                        markeredgecolor=merged_kwds.get("edgecolor", None),
-                        markeredgewidth=merged_kwds.get(
-                            "linewidth", 1 if merged_kwds.get("edgecolor", False) else 0
-                        ),
-                    )
-                )
-                categories.append(merged_kwds.get("label", "NaN"))
-            legend_kwds.setdefault("numpoints", 1)
-            legend_kwds.setdefault("loc", "best")
-            legend_kwds.setdefault("handles", patches)
-            legend_kwds.setdefault("labels", categories)
-            ax.legend(**legend_kwds)
-        else:
-            if cax is not None:
-                legend_kwds.setdefault("cax", cax)
-            else:
-                legend_kwds.setdefault("ax", ax)
-
-            n_cmap.set_array(np.array([]))
-            ax.get_figure().colorbar(n_cmap, **legend_kwds)
+    if (categorical or missing_data) and legend:
+        ax.legend(**legend_kwds)
 
     ax.figure.canvas.draw_idle()
     return ax
 
 
-def _check_invalid_categories(
-    categories: Collection[Any] | None, values
-) -> pd.Categorical:
-    if categories is None:
-        cat = pd.Categorical(values, categories=categories)
+def _check_invalid_categories(categories: Collection[Any], values) -> pd.Categorical:
+    """
+    Pandas 4 compat https://github.com/pandas-dev/pandas/pull/62142
+    Could potentially be replaced with a try/except on the above once the warning
+    becomes an exception. This logic is derived from
+    pandas/core/arrays/categorical.py::_get_codes_for_values.
+    """
+    dtype = CategoricalDtype._from_values_or_dtype(values, categories)
+    categories = dtype.categories
+    codes = categories.get_indexer_for(values)
+    wrong = (codes == -1) & ~pd.isna(values)
+    if wrong.any():
+        missing = list(np.unique(values[wrong]))
     else:
-        # Pandas 4 compat https://github.com/pandas-dev/pandas/pull/62142
-        # Could potentially be replaced with a try/except on the above once the warning
-        # becomes an exception. This logic is derived from
-        # pandas/core/arrays/categorical.py::_get_codes_for_values
-        dtype = CategoricalDtype._from_values_or_dtype(values, categories)
-        categories = dtype.categories
-        codes = categories.get_indexer_for(values)
-        wrong = (codes == -1) & ~pd.isna(values)
-        if wrong.any():
-            missing = list(np.unique(values[wrong]))
-        else:
-            missing = []
-            codes_downcast = pd.core.dtypes.cast.coerce_indexer_dtype(codes, categories)
-            cat = pd.Categorical.from_codes(codes_downcast, categories)
+        missing = []
+        codes_downcast = pd.core.dtypes.cast.coerce_indexer_dtype(codes, categories)
+        cat = pd.Categorical.from_codes(codes_downcast, categories)
 
-        if missing:
-            raise ValueError(
-                "Column contains values not listed in categories. "
-                f"Missing categories: {missing}."
-            )
+    if missing:
+        raise ValueError(
+            "Column contains values not listed in categories. "
+            f"Missing categories: {missing}."
+        )
     return cat
 
 
