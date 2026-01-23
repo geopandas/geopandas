@@ -691,8 +691,6 @@ def plot_dataframe(
     # Plot categorical values via groupby - each category is a group plotted using
     # plot_series
     if categorical:
-        # TODO: ensure all the other style kwargs can be mapped to values
-        # TODO: verify proper behaviour with missing values
         grouped = df.groupby(values)
         ngroups = grouped.ngroups
 
@@ -718,12 +716,32 @@ def plot_dataframe(
             else:
                 raise ValueError("cmap type is not supported.")
 
+        # add to style_kwds so it can be mapped to groups
+        if markersize is not None:
+            style_kwds["markersize"] = markersize
+
         for i, (name, group) in enumerate(grouped["geometry"]):
+            # this ensures that any style kwd can be mapped to a value and that
+            # list-like kwds are properly split to groups
+            group_style_kwds = {}
+            for key, val in style_kwds.items():
+                if isinstance(val, dict):
+                    group_style_kwds[key] = val.get(name)
+                elif pd.api.types.is_list_like(val) and len(val) == len(df):
+                    group_style_kwds[key] = np.take(val, grouped.indices[name])
+                else:
+                    group_style_kwds[key] = val
+
             plot_series(
-                group.geometry, label=name, color=_color(i, name, ngroups, cmap), ax=ax
+                group.geometry,
+                label=name,
+                color=_color(i, name, ngroups, cmap),
+                ax=ax,
+                **group_style_kwds,
             )
-        if legend:
-            ax.legend(**legend_kwds)
+
+        missing_geoms = df.geometry[nan_idx]
+        missing_data = not missing_geoms.empty
     else:
         values_min = values[~nan_idx].min()
         values_max = values[~nan_idx].max()
@@ -863,18 +881,36 @@ def plot_dataframe(
                 **legend_kwds,
             )
 
-        missing_data = not expl_series[nan_idx].empty
-        if missing_kwds is not None and missing_data:
-            if color:
-                if "color" not in missing_kwds:
-                    missing_kwds["color"] = color
+        missing_geoms = expl_series[nan_idx]
+        missing_data = not missing_geoms.empty
 
-            merged_kwds = style_kwds.copy()
-            merged_kwds.update(missing_kwds)
+    if missing_kwds is not None and missing_data:
+        if color:
+            if "color" not in missing_kwds:
+                missing_kwds["color"] = color
 
-            plot_series(expl_series[nan_idx], ax=ax, **merged_kwds, aspect=None)
-            if legend:
-                ax.legend()
+        merged_kwds = style_kwds.copy()
+        merged_kwds.update(missing_kwds)
+
+        # ensure we take proper subset of list-like inputs related to missing
+        # and clear all the dicts mapping to categories - user shall specify
+        # style of missing in missing_kwds
+        for key, val in merged_kwds.items():
+            if pd.api.types.is_list_like(val) and len(val) == len(df):
+                merged_kwds[key] = val[nan_idx]
+            elif isinstance(val, dict):
+                merged_kwds[key] = None
+
+        plot_series(
+            missing_geoms,
+            ax=ax,
+            aspect=None,
+            label=merged_kwds.pop("label", "NaN"),
+            **merged_kwds,
+        )
+
+    if legend:
+        ax.legend(**legend_kwds)
 
     ax.figure.canvas.draw_idle()
     return ax
