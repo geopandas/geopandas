@@ -1174,9 +1174,6 @@ class TestNonuniformGeometryPlotting:
         ax = self.series.plot(linestyle=(0, (3, 10, 1, 15)), linewidth=1)
         assert [(0, [3, 10, 1, 15])] == ax.collections[0].get_linestyle()
 
-    @pytest.mark.skip(
-        reason="array-like style_kwds not supported for mixed geometry types (#1379)"
-    )
     def test_style_kwargs_linestyle_listlike(self):
         # multiple
         ls = ["solid", "dotted", "dashdot"]
@@ -1193,9 +1190,6 @@ class TestNonuniformGeometryPlotting:
         ax = self.df.plot(linewidth=2)
         np.testing.assert_array_equal([2], ax.collections[0].get_linewidths())
 
-    @pytest.mark.skip(
-        reason="array-like style_kwds not supported for mixed geometry types (#1379)"
-    )
     def test_style_kwargs_linewidth_listlike(self):
         # multiple
         for ax in [
