@@ -403,6 +403,12 @@ class TestSeries:
         expected = self.g1.reindex(index)
         assert_geoseries_equal(expected, GeoSeries.from_wkt(s, index=index))
 
+    def test_from_wkt_with_missing(self):
+        s = pd.Series([self.t1.wkt, None, self.sq.wkt])
+        result = GeoSeries.from_wkt(s)
+        expected = GeoSeries([self.t1, None, self.sq])
+        assert_geoseries_equal(result, expected)
+
     def test_to_wkb(self):
         assert_series_equal(pd.Series([self.t1.wkb, self.sq.wkb]), self.g1.to_wkb())
         assert_series_equal(
