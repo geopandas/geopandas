@@ -955,8 +955,12 @@ def plot_dataframe(
                 values[~nan_idx],
                 scheme,
             )
+            if values_min > binning.bins[0]:
+                lowest = binning.bins[0]
+            else:
+                lowest = values_min
             style_kwds["norm"] = colors.BoundaryNorm(
-                boundaries=[values_min] + list(binning.bins),
+                boundaries=[lowest] + list(binning.bins),
                 ncolors=256,
             )
 
