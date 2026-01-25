@@ -27,33 +27,41 @@ jobs:
         os: [ubuntu-latest]
         postgis: [false]
         dev: [false]
+        doctest: [false]
         env:
           - ci/envs/311-latest.yaml
           - ci/envs/311-minimal.yaml
-          - ci/envs/311-pd22.yaml
-          - ci/envs/312-latest.yaml
+#          - ci/envs/311-pd22.yaml -> in postgis env below
+#          - ci/envs/312-latest.yaml -> in postgis env below
           - ci/envs/313-latest-no-pyogrio.yaml
           - ci/envs/313-latest-no-pyproj.yaml
-          - ci/envs/313-latest.yaml
+#          - ci/envs/313-latest.yaml -> in doctest env below
           - ci/envs/313-no-optional-deps.yaml
           - ci/envs/314-latest.yaml
+#          - ci/envs/313-dev.yaml -> in dev env below
         include:
+          # PostGIS envs
+          - env: ci/envs/311-pd22.yaml
+            postgis: true
+            os: ubuntu-latest
+          - env: ci/envs/312-latest.yaml
+            postgis: true
+            os: ubuntu-latest
+          # doctest env
+          - env: ci/envs/313-latest.yaml
+            doctest: true
+            os: ubuntu-latest
+          # MacOS & Windows envs
           - env: ci/envs/313-latest-no-pyogrio.yaml
             os: macos-latest
-            postgis: false
-            dev: false
           - env: ci/envs/313-latest.yaml
             os: macos-latest
-            postgis: false
-            dev: false
           - env: ci/envs/313-latest-no-pyogrio.yaml
             os: windows-latest
-            postgis: false
-            dev: false
           - env: ci/envs/313-latest.yaml
             os: windows-latest
-            postgis: false
-            dev: false
+
+          # Dev env
           - env: ci/envs/313-dev.yaml
             os: ubuntu-latest
             dev: true
@@ -84,8 +92,7 @@ jobs:
           pytest -v -r a -n auto --color=yes --cov=geopandas --cov-append --cov-report term-missing --cov-report xml geopandas/
 
       - name: Test with PostGIS
-        if: (contains(matrix.env, '311-pd22.yaml') || contains(matrix.env, '312-latest.yaml'))
-          && contains(matrix.os, 'ubuntu')
+        if: ${{ matrix.postgis }}
         env:
           PGUSER: postgres
           PGPASSWORD: postgres
@@ -98,7 +105,7 @@ jobs:
           pytest -v -r a --color=yes --cov=geopandas --cov-append --cov-report term-missing --cov-report xml geopandas/io/tests/test_sql.py | tee /dev/stderr | if grep SKIPPED >/dev/null;then echo "TESTS SKIPPED, FAILING" && exit 1;fi
 
       - name: Test docstrings
-        if: contains(matrix.env, '313-latest.yaml') && contains(matrix.os, 'ubuntu')
+        if: ${{ matrix.doctest }}
         run: |
           pytest -v --color=yes --doctest-only geopandas --ignore=geopandas/datasets
 
