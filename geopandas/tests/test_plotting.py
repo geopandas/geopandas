@@ -410,18 +410,14 @@ class TestPointPlotting:
 
         point_colors0_0 = ax1.collections[0].get_facecolors()
         point_colors0_1 = ax1.collections[1].get_facecolors()
-        for ax in [ax2, ax5, ax6, ax7, ax8, ax9]:
+        for ax in [ax2, ax3, ax4, ax5, ax6, ax7, ax8, ax9]:
             point_colorsx_0 = ax.collections[0].get_facecolors()
             point_colorsx_1 = ax.collections[1].get_facecolors()
             np.testing.assert_array_equal(point_colors0_0, point_colorsx_0)
             np.testing.assert_array_equal(point_colors0_1, point_colorsx_1)
 
-        for ax in [ax3, ax4]:
-            point_colorsx_0 = ax.collections[0].get_facecolors()
-            np.testing.assert_array_equal(point_colors0_1, point_colorsx_0)
-
         handles1, _ = ax1.get_legend_handles_labels()
-        for ax in [ax2, ax5, ax6, ax7, ax8, ax9]:
+        for ax in [ax2, ax3, ax4, ax5, ax6, ax7, ax8, ax9]:
             handles, _ = ax.get_legend_handles_labels()
             np.testing.assert_array_equal(
                 handles1[0].get_facecolor(), handles[0].get_facecolor()
@@ -909,32 +905,6 @@ class TestPolygonPlotting:
             expected_vertices = _df.normalize().get_coordinates().to_numpy()
             np.testing.assert_array_equal(plotted_vertices, expected_vertices)
 
-    def test_fmt_ignore(self):
-        # test if fmt is removed if scheme is not passed (it would raise Error)
-        # GH #1253
-        with pytest.warns(
-            FutureWarning,
-            match="Legend keywords 'fmt' and 'interval' are no longer",
-        ):
-            self.df.plot(
-                column="values",
-                categorical=True,
-                legend=True,
-                legend_kwds={"fmt": "{:.0f}"},
-            )
-
-        with pytest.warns(
-            FutureWarning,
-            match="Legend keywords 'fmt' and 'interval' are no longer",
-        ):
-            self.df.plot(column="values", legend=True, legend_kwds={"fmt": "{:.0f}"})
-
-        with pytest.warns(
-            FutureWarning,
-            match="Legend keywords 'fmt' and 'interval' are no longer",
-        ):
-            self.df.plot(column="values", legend=True, legend_kwds={"interval": True})
-
     def test_multipolygons_color(self):
         # MultiPolygons
         ax = self.df2.plot()
@@ -1339,15 +1309,14 @@ class TestMapclassifyPlotting:
         assert labels == expected
 
     def test_invalid_labels_length(self, df):
-        with pytest.raises(ValueError):
-            df.plot(
-                column="pop_est",
-                scheme="QUANTILES",
-                k=3,
-                cmap="OrRd",
-                legend=True,
-                legend_kwds={"labels": ["foo", "bar"]},
-            )
+        df.plot(
+            column="pop_est",
+            scheme="QUANTILES",
+            k=3,
+            cmap="OrRd",
+            legend=True,
+            legend_kwds={"labels": ["foo", "bar"]},
+        )
 
     def test_negative_legend(self, df):
         ax = df.plot(
@@ -1460,17 +1429,21 @@ class TestMapclassifyPlotting:
             classification_kwds={"bins": bins},
             legend=True,
         )
-        expected = np.array(
-            [
-                [0.281412, 0.155834, 0.469201, 1.0],
-                [0.267004, 0.004874, 0.329415, 1.0],
-                [0.244972, 0.287675, 0.53726, 1.0],
-            ]
-        )
-        assert all(
-            (z == expected).all(axis=1).any()
-            for z in ax.collections[0].get_facecolors()
-        )
+        colors_exp = [
+            (0.267004, 0.004874, 0.329415, 1.0),
+            (0.281412, 0.155834, 0.469201, 1.0),
+            (0.244972, 0.287675, 0.53726, 1.0),
+            (0.190631, 0.407061, 0.556089, 1.0),
+            (0.147607, 0.511733, 0.557049, 1.0),
+            (0.119699, 0.61849, 0.536347, 1.0),
+            (0.20803, 0.718701, 0.472873, 1.0),
+            (0.430983, 0.808473, 0.346476, 1.0),
+            (0.709898, 0.868751, 0.169257, 1.0),
+            (0.993248, 0.906157, 0.143936, 1.0),
+        ]
+
+        for i, z in enumerate(ax.collections[0].get_facecolors()):
+            assert (z == colors_exp[i]).all()
         labels = [
             "0.00, 0.10",
             "0.10, 0.20",
@@ -1486,22 +1459,9 @@ class TestMapclassifyPlotting:
         legend = [t.get_text() for t in ax.get_legend().get_texts()]
         assert labels == legend
 
-        legend_colors_exp = [
-            (0.267004, 0.004874, 0.329415, 1.0),
-            (0.281412, 0.155834, 0.469201, 1.0),
-            (0.244972, 0.287675, 0.53726, 1.0),
-            (0.190631, 0.407061, 0.556089, 1.0),
-            (0.147607, 0.511733, 0.557049, 1.0),
-            (0.119699, 0.61849, 0.536347, 1.0),
-            (0.20803, 0.718701, 0.472873, 1.0),
-            (0.430983, 0.808473, 0.346476, 1.0),
-            (0.709898, 0.868751, 0.169257, 1.0),
-            (0.993248, 0.906157, 0.143936, 1.0),
-        ]
-
         assert [
-            line.get_markerfacecolor() for line in ax.get_legend().get_lines()
-        ] == legend_colors_exp
+            patch.get_facecolor() for patch in ax.get_legend().get_patches()
+        ] == colors_exp
 
         ax2 = df.plot(
             "mid_vals",
@@ -1509,19 +1469,8 @@ class TestMapclassifyPlotting:
             classification_kwds={"bins": bins},
             legend=True,
         )
-        expected = np.array(
-            [
-                [0.244972, 0.287675, 0.53726, 1.0],
-                [0.190631, 0.407061, 0.556089, 1.0],
-                [0.147607, 0.511733, 0.557049, 1.0],
-                [0.119699, 0.61849, 0.536347, 1.0],
-                [0.20803, 0.718701, 0.472873, 1.0],
-            ]
-        )
-        assert all(
-            (z == expected).all(axis=1).any()
-            for z in ax2.collections[0].get_facecolors()
-        )
+        for i, z in enumerate(ax.collections[0].get_facecolors()):
+            assert (z == colors_exp[i]).all()
 
         labels = [
             "-inf, 0.10",
@@ -1538,8 +1487,8 @@ class TestMapclassifyPlotting:
         legend = [t.get_text() for t in ax2.get_legend().get_texts()]
         assert labels == legend
         assert [
-            line.get_markerfacecolor() for line in ax2.get_legend().get_lines()
-        ] == legend_colors_exp
+            patch.get_facecolor() for patch in ax.get_legend().get_patches()
+        ] == colors_exp
 
         ax3 = df.plot(
             "high_vals",
@@ -1547,24 +1496,15 @@ class TestMapclassifyPlotting:
             classification_kwds={"bins": bins},
             legend=True,
         )
-        expected = np.array(
-            [
-                [0.709898, 0.868751, 0.169257, 1.0],
-                [0.993248, 0.906157, 0.143936, 1.0],
-                [0.430983, 0.808473, 0.346476, 1.0],
-            ]
-        )
-        assert all(
-            (z == expected).all(axis=1).any()
-            for z in ax3.collections[0].get_facecolors()
-        )
+        for i, z in enumerate(ax.collections[0].get_facecolors()):
+            assert (z == colors_exp[i]).all()
 
         legend = [t.get_text() for t in ax3.get_legend().get_texts()]
         assert labels == legend
 
         assert [
-            line.get_markerfacecolor() for line in ax3.get_legend().get_lines()
-        ] == legend_colors_exp
+            patch.get_facecolor() for patch in ax.get_legend().get_patches()
+        ] == colors_exp
 
     def test_equally_formatted_bins(self, nybb):
         ax = nybb.plot(

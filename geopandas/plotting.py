@@ -795,7 +795,7 @@ def plot_dataframe(
     # TODO: check what happens when one categorical value appears in multiple geom types
     try:
         import matplotlib.pyplot as plt
-        from matplotlib import cm, colormaps, colors
+        from matplotlib import cm, collections, colormaps, colors
     except ImportError:
         raise ImportError(
             "The matplotlib package is required for plotting in geopandas. "
@@ -852,21 +852,6 @@ def plot_dataframe(
         )
         return ax
 
-    # clean-up legend_kwds arguments that are no longer supported
-    warn_about_legend = False
-    for arg in ["fmt", "interval"]:
-        if legend_kwds and arg in legend_kwds:
-            legend_kwds.pop(arg)
-            warn_about_legend = True
-    if warn_about_legend:
-        warnings.warn(
-            "Legend keywords 'fmt' and 'interval' are no longer supported"
-            "as the legend is no longer treated as categories but are mapped to a "
-            "colorbar. The kwywords make no effect and will raise an error in future.",
-            FutureWarning,
-            stacklevel=3,
-        )
-
     # set correct aspect to preserve proportions in geographic CRS
     _set_aspect(aspect, df, ax)
 
@@ -910,6 +895,40 @@ def plot_dataframe(
 
     nan_idx = np.asarray(pd.isna(values), dtype="bool")
 
+    if scheme:
+        try:
+            import mapclassify
+        except ImportError:
+            raise ImportError(
+                "The 'mapclassify' package is required to use the 'scheme' keyword."
+            )
+
+        if classification_kwds is None:
+            classification_kwds = {}
+        if "k" not in classification_kwds:
+            classification_kwds["k"] = k
+
+        binning = mapclassify.classify(values[~nan_idx], scheme, **classification_kwds)
+
+        if not legend_kwds.pop("colorbar", False):
+            if "labels" not in legend_kwds:
+                classes = binning.get_legend_classes(
+                    fmt=legend_kwds.pop("fmt", "{:.2f}")
+                )
+
+                if not legend_kwds.pop("interval", False):
+                    classes = [c[1:-1] for c in classes]
+
+                legend_kwds["labels"] = classes
+
+            values = pd.Categorical(
+                [np.nan] * len(values), categories=binning.bins, ordered=True
+            )
+            values[~nan_idx] = pd.Categorical.from_codes(
+                binning.yb, categories=binning.bins, ordered=True
+            )
+            categorical = True
+
     # Plot categorical values via groupby - each category is a group plotted using
     # plot_series
     if categorical:
@@ -919,7 +938,10 @@ def plot_dataframe(
         ngroups = grouped.ngroups
 
         if cmap is None:
-            cmap = colormaps["tab20"] if ngroups > 10 else colormaps["tab10"]
+            if scheme:
+                cmap = colormaps["viridis"]
+            else:
+                cmap = colormaps["tab20"] if ngroups > 10 else colormaps["tab10"]
         elif isinstance(cmap, str):
             cmap = colormaps[cmap]
 
@@ -944,6 +966,8 @@ def plot_dataframe(
         if markersize is not None:
             style_kwds["markersize"] = markersize
 
+        majority_geom_type = df.geom_type.mode().item()
+
         for i, (name, group) in enumerate(grouped["geometry"]):
             # this ensures that any style kwd can be mapped to a value and that
             # list-like kwds are properly split to groups
@@ -957,17 +981,34 @@ def plot_dataframe(
                     group_style_kwds[key] = val
 
             # categoricals with more categories than observed values might be empty
-            # plot nothing to get an item for legend
-            # TODO: how to determine proper marker/icon? This defaults to line but
-            # TODO: it shoud ideally be the same as others. Get most common geom type?
+            # plot nothing to get an item for legend. Determine how to plot nothing
+            # based on a majority geom type to get matching handle in the legend
             if group.empty:
-                ax.plot(
-                    [],
-                    [],
-                    color=_color(i, name, ngroups, cmap),
-                    **group_style_kwds,
-                    label=name,
-                )
+                if majority_geom_type.endswith("Polygon"):
+                    ax.add_collection(
+                        collections.PolyCollection(
+                            [],
+                            color=_color(i, name, ngroups, cmap),
+                            **group_style_kwds,
+                            label=name,
+                        )
+                    )
+                elif majority_geom_type.endswith("Point"):
+                    ax.scatter(
+                        [],
+                        [],
+                        color=_color(i, name, ngroups, cmap),
+                        **group_style_kwds,
+                        label=name,
+                    )
+                else:
+                    ax.plot(
+                        [],
+                        [],
+                        color=_color(i, name, ngroups, cmap),
+                        **group_style_kwds,
+                        label=name,
+                    )
             else:
                 plot_series(
                     group.geometry,
@@ -989,23 +1030,8 @@ def plot_dataframe(
         # classification scheme sets boundary norm for segmented colorbar
         if scheme:
             if "norm" in style_kwds:
-                raise ValueError("cannot set norm and scheme")
+                raise ValueError("Cannot set `norm` and `scheme` at the same time.")
 
-            try:
-                import mapclassify
-            except ImportError:
-                raise ImportError(
-                    "The 'mapclassify' package is required to use the 'scheme' keyword."
-                )
-
-            if classification_kwds is None:
-                classification_kwds = {}
-            if "k" not in classification_kwds:
-                classification_kwds["k"] = k
-            binning = mapclassify.classify(
-                values[~nan_idx],
-                scheme,
-            )
             if values_min > binning.bins[0]:
                 lowest = binning.bins[0]
             else:
