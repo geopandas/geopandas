@@ -81,15 +81,3 @@ def requires_pyproj(func):
         return func(*args, **kwargs)
 
     return wrapper
-
-
-# -----------------------------------------------------------------------------
-# matplotlib compat
-# -----------------------------------------------------------------------------
-try:
-    import matplotlib  # noqa: F401
-
-    HAS_MATPLOTLIB = True
-
-except ImportError:
-    HAS_MATPLOTLIB = False
