@@ -146,6 +146,30 @@ def _expand_kwargs(kwargs: dict, multiindex: np.ndarray) -> None:
             kwargs[att] = np.take(value, multiindex, axis=0)
 
 
+def _subset_kwds(kwds: dict, index: np.ndarray) -> dict:
+    """Subsets list-like keyword arguments based on a given index array.
+
+    Parameters
+    ----------
+    kwds : dict
+        Dictionary of keyword arguments to be subsetted.
+    index : np.ndarray
+        Array of indices used to subset list-like values in `kwds`.
+
+    Returns
+    -------
+    dict
+        Dictionary with values subsetted according to `index` where applicable.
+    """
+    subset_kwds = {}
+    for key, val in kwds.items():
+        if pd.api.types.is_list_like(val) and (len(val) == index.shape[0]):
+            subset_kwds[key] = np.asarray(val)[index]
+        else:
+            subset_kwds[key] = val
+    return subset_kwds
+
+
 def _PolygonPatch(polygon: shapely.Geometry, **kwargs) -> PathPatch:
     """Construct a matplotlib patch from a (Multi)Polygon geometry.
 
@@ -550,6 +574,8 @@ def plot_series(
 
         values_ = values[poly_idx] if values is not None else None
 
+        poly_kwds = _subset_kwds(style_kwds, poly_idx)
+
         _plot_polygon_collection(
             ax,
             polys,
@@ -557,7 +583,7 @@ def plot_series(
             facecolor=facecolor,
             cmap=cmap,
             autolim=autolim,
-            **style_kwds,
+            **poly_kwds,
         )
 
     # plot all LineStrings and MultiLineString components in same collection
@@ -567,8 +593,10 @@ def plot_series(
 
         color_ = color[line_idx] if color_given else color
 
+        lines_kwds = _subset_kwds(style_kwds, line_idx)
+
         _plot_linestring_collection(
-            ax, lines, values_, color=color_, cmap=cmap, autolim=autolim, **style_kwds
+            ax, lines, values_, color=color_, cmap=cmap, autolim=autolim, **lines_kwds
         )
 
     # plot all Points in the same collection
@@ -578,8 +606,10 @@ def plot_series(
 
         color_ = color[point_idx] if color_given else color
 
+        points_kwds = _subset_kwds(style_kwds, point_idx)
+
         _plot_point_collection(
-            ax, points, values_, color=color_, cmap=cmap, **style_kwds
+            ax, points, values_, color=color_, cmap=cmap, **points_kwds
         )
 
     ax.figure.canvas.draw_idle()
@@ -972,8 +1002,7 @@ def plot_dataframe(
         expl_series, multiindex = _sanitize_geoms(df.geometry)
         values = np.take(values, multiindex, axis=0)
         nan_idx = np.take(nan_idx, multiindex, axis=0)
-
-        # TODO: expand array-like kwargs to match exploded series
+        _expand_kwargs(style_kwds, multiindex)
 
         geom_types = expl_series.geom_type
         poly_idx = np.asarray(
@@ -987,9 +1016,12 @@ def plot_dataframe(
         point_idx = np.asarray((geom_types == "Point") | (geom_types == "MultiPoint"))
 
         # plot all Polygons and all MultiPolygon components in the same collection
-        polys = expl_series[poly_idx & np.invert(nan_idx)]
-        subset = values[poly_idx & np.invert(nan_idx)]
+        polys_notna = poly_idx & np.invert(nan_idx)
+        polys = expl_series[polys_notna]
         if not polys.empty:
+            subset = values[polys_notna]
+            poly_kwds = _subset_kwds(style_kwds, polys_notna)
+
             _plot_polygon_collection(
                 ax,
                 polys,
@@ -998,13 +1030,16 @@ def plot_dataframe(
                 vmax=mx,
                 cmap=cmap,
                 autolim=autolim,
-                **style_kwds,
+                **poly_kwds,
             )
 
         # plot all LineStrings and MultiLineString components in same collection
-        lines = expl_series[line_idx & np.invert(nan_idx)]
-        subset = values[line_idx & np.invert(nan_idx)]
+        lines_notna = line_idx & np.invert(nan_idx)
+        lines = expl_series[lines_notna]
         if not lines.empty:
+            subset = values[lines_notna]
+            lines_kwds = _subset_kwds(style_kwds, lines_notna)
+
             _plot_linestring_collection(
                 ax,
                 lines,
@@ -1013,16 +1048,16 @@ def plot_dataframe(
                 vmax=mx,
                 cmap=cmap,
                 autolim=autolim,
-                **style_kwds,
+                **lines_kwds,
             )
 
         # plot all Points in the same collection
-        points = expl_series[point_idx & np.invert(nan_idx)]
-        subset = values[point_idx & np.invert(nan_idx)]
+        points_notna = point_idx & np.invert(nan_idx)
+        points = expl_series[points_notna]
         if not points.empty:
-            if isinstance(markersize, np.ndarray):
-                markersize = np.take(markersize, multiindex, axis=0)
-                markersize = markersize[point_idx & np.invert(nan_idx)]
+            subset = values[point_idx & np.invert(nan_idx)]
+            points_kwds = _subset_kwds(style_kwds, points_notna)
+
             _plot_point_collection(
                 ax,
                 points,
@@ -1031,7 +1066,7 @@ def plot_dataframe(
                 vmax=mx,
                 markersize=markersize,
                 cmap=cmap,
-                **style_kwds,
+                **points_kwds,
             )
 
         if legend:

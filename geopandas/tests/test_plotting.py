@@ -1204,17 +1204,11 @@ class TestNonuniformGeometryPlotting:
     def test_style_kwargs_alpha(self):
         ax = self.df.plot(alpha=0.7)
         np.testing.assert_array_equal([0.7], ax.collections[0].get_alpha())
-        # TODO splitting array-like arguments for the different plot types
-        # is not yet supported - https://github.com/geopandas/geopandas/issues/1379
-        # try:
-        #     ax = self.df.plot(alpha=[0.7, 0.2, 0.9])
-        # except TypeError:
-        #     # no list allowed for alpha up to matplotlib 3.3
-        #     pass
-        # else:
-        #     np.testing.assert_array_equal(
-        #         [0.7, 0.2, 0.9], ax.collections[0].get_alpha()
-        #     )
+        ax = self.df.plot(alpha=[0.7, 0.2, 0.9])
+
+        np.testing.assert_array_equal([0.7], ax.collections[0].get_alpha())
+        np.testing.assert_array_equal([0.2], ax.collections[1].get_alpha())
+        np.testing.assert_array_equal([0.9], ax.collections[2].get_alpha())
 
 
 @pytest.fixture(scope="class")
