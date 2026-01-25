@@ -618,28 +618,28 @@ def plot_series(
 
 
 def plot_dataframe(
-    df,
-    column=None,
-    cmap=None,
-    color=None,
-    ax=None,
-    cax=None,
-    categorical=False,
-    legend=False,
-    scheme=None,
-    k=5,
-    vmin=None,
-    vmax=None,
-    markersize=None,
-    figsize=None,
-    legend_kwds=None,
-    categories=None,
-    classification_kwds=None,
-    missing_kwds=None,
-    aspect="auto",
-    autolim=True,
+    df: geopandas.GeoDataFrame,
+    column: str | np.ndarray | pd.Series | pd.Index | None = None,
+    cmap: str | Colormap | None = None,
+    color: str | Sequence | None = None,
+    ax: Axes | None = None,
+    cax: Axes | None = None,
+    categorical: bool = False,
+    legend: bool = False,
+    scheme: str | None = None,
+    k: int = 5,
+    vmin: float | None = None,
+    vmax: float | None = None,
+    markersize: str | float | Sequence | None = None,
+    figsize: tuple[float, float] | None = None,
+    legend_kwds: dict | None = None,
+    categories: Sequence | None = None,
+    classification_kwds: dict | None = None,
+    missing_kwds: dict | None = None,
+    aspect: float | Literal["auto", "equal", None] = "auto",
+    autolim: bool = True,
     **style_kwds,
-):
+) -> Axes:
     """
     Plot a GeoDataFrame.
 
@@ -886,8 +886,6 @@ def plot_dataframe(
         legend_kwds = legend_kwds.copy()
 
     nan_idx = np.asarray(pd.isna(values), dtype="bool")
-
-    # TODO: ensure that array-like inputs are correctly masked out
 
     # Plot categorical values via groupby - each category is a group plotted using
     # plot_series
