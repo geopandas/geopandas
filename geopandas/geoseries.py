@@ -1400,8 +1400,8 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
         0           010100000000000000000000000000000000000000
         1                                   010300000000000000
         2    0103000000010000000400000000000000000000000000...
-        3                                                 None
-        dtype: object
+        3                                                  NaN
+        dtype: str
         """
         return Series(to_wkb(self.array, hex=hex, **kwargs), index=self.index)
 
@@ -1432,7 +1432,7 @@ e": "Feature", "properties": {}, "geometry": {"type": "Point", "coordinates": [3
         0    POINT (1 1)
         1    POINT (2 2)
         2    POINT (3 3)
-        dtype: object
+        dtype: str
 
         See Also
         --------
