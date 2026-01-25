@@ -231,7 +231,7 @@ class GeoPandasBase:
         0         Point
         1       Polygon
         2    LineString
-        dtype: object
+        dtype: str
         """
         return _delegate_property("geom_type", self)
 
@@ -362,11 +362,11 @@ GeometryCollection
         dtype: geometry
 
         >>> s.is_valid_reason()
-        0    Valid Geometry
+        0                Valid Geometry
         1    Self-intersection[0.5 0.5]
-        2    Valid Geometry
-        3    None
-        dtype: object
+        2                Valid Geometry
+        3                           NaN
+        dtype: str
 
         See Also
         --------
@@ -5683,7 +5683,7 @@ GeometryCollection
         2    F11F00212
         3    F01FF0212
         4    F0FFFF212
-        dtype: object
+        dtype: str
 
         We can also check two GeoSeries against each other, row by row.
         The GeoSeries above have different indices. We can either align both GeoSeries
@@ -5694,13 +5694,13 @@ GeometryCollection
         .. image:: ../../../_static/binary_op-02.svg
 
         >>> s.relate(s2, align=True)
-        0         None
+        0          NaN
         1    212F11FF2
         2    0F1FF0102
         3    1FFF0FFF2
         4    FF0FFF0F2
-        5         None
-        dtype: object
+        5          NaN
+        dtype: str
 
         >>> s.relate(s2, align=False)
         0    212F11FF2
@@ -5708,7 +5708,7 @@ GeometryCollection
         2    0F1FF0102
         3    0F1FF0FF2
         4    0FFFFFFF2
-        dtype: object
+        dtype: str
 
         """
         return _binary_op("relate", self, other, align)

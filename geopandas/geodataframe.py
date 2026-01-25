@@ -119,7 +119,7 @@ class GeoDataFrame(GeoPandasBase, DataFrame):
     Notice that the inferred dtype of 'geometry' columns is geometry.
 
     >>> gdf.dtypes
-    col1          object
+    col1             str
     geometry    geometry
     dtype: object
 
@@ -1391,7 +1391,7 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
         >>> table = pa.table(arrow_table)
         >>> table
         pyarrow.Table
-        col1: string
+        col1: large_string
         geometry: extension<geoarrow.wkb<WkbType>>
         ----
         col1: [["name1","name2"]]
