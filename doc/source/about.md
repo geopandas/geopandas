@@ -16,12 +16,10 @@ currently implements `GeoSeries` and `GeoDataFrame` types which are subclasses o
 `pandas.Series` and `pandas.DataFrame` respectively. GeoPandas objects can act on
 `shapely` geometry objects and perform geometric operations.
 
-GeoPandas is a community-led project written, used and supported by a wide range of
-people from all around of world of a large variety of backgrounds. Want to get involved
+A wide range of people from all around the world with diverse backgrounds write, use, and support GeoPandas as a community-led project. Want to get involved
 in the community? See our [community guidelines](community).
 
-GeoPandas will always be 100% open source software, free for all to use and released
-under the liberal terms of the BSD-3-Clause license.
+The GeoPandas community will always distribute GeoPandas as 100% open source software under the liberal terms of the BSD-3-Clause license.
 
 ```{container} button
 
@@ -49,15 +47,14 @@ with your personal tax adviser or the IRS about your particular tax situation.
 
 Kelsey Jordahl founded GeoPandas project in 2013 during the Scipy Conference and
 released a version 0.1.0 in July 2014. In 2016, Joris Van den Bossche took the lead and
-became the maintainer of the project. Since the beginning, GeoPandas is a BSD-licensed
-open-source project supported by a [community of
+became the maintainer of the project. Since the beginning, a [community of
 contributors](https://github.com/geopandas/geopandas/graphs/contributors) from around
-the world and is now maintained by a [team](about/team) of core developers.
+the world has supported GeoPandas as a BSD-licensed open-source project, and a [team](about/team) of core developers now maintains it.
 
-In 2020 GeoPandas became [NumFOCUS Affiliated
-Project](https://numfocus.org/sponsored-projects/affiliated-projects) and received two
+In 2020, NumFOCUS designated GeoPandas as an [Affiliated
+Project](https://numfocus.org/sponsored-projects/affiliated-projects) and awarded it two
 [Small Development Grants](https://numfocus.org/programs/sustainability) to support its
-development. In 2023, GeoPandas became [NumFOCUS Sponsored
+development. In 2023, NumFOCUS designated GeoPandas as a [Sponsored
   Project](https://numfocus.org/project/geopandas).
 
 ## Timeline
