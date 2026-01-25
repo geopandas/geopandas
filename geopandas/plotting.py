@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import warnings
 from collections.abc import Collection, Iterable, Sequence
+from itertools import compress
 from typing import TYPE_CHECKING, Any, Literal
 
 import numpy as np
@@ -163,9 +164,31 @@ def _subset_kwds(kwds: dict, index: np.ndarray) -> dict:
     """
     subset_kwds = {}
     for key, val in kwds.items():
-        if pd.api.types.is_list_like(val) and (len(val) == index.shape[0]):
-            subset_kwds[key] = np.asarray(val)[index]
+        # fast indexing for arrays
+        if isinstance(val, (np.ndarray, pd.Series, pd.Index, pd.DataFrame)) and (
+            len(val) == index.shape[0]
+        ):
+            subset_kwds[key] = val[index]
+        # slowed indexing for lists - can contain mix of floats and tuples, generally
+        # unsafe coercing to arrays
+        elif pd.api.types.is_list_like(val) and (len(val) == index.shape[0]):
+            # corner case caused by the linestyle input being a tuple
+            if (
+                key.startswith("linestyle")
+                and isinstance(val[1], tuple)
+                and index.shape[0] == 2
+            ):
+                subset_kwds[key] = val
+            else:
+                # compress is like numpy indexing for lists
+                compressed = list(compress(val, index))
+                # if only one remains, extract scalar
+                if len(compressed) == 1:
+                    subset_kwds[key] = compressed[0]
+                else:
+                    subset_kwds[key] = compressed
         else:
+            # scalar
             subset_kwds[key] = val
     return subset_kwds
 

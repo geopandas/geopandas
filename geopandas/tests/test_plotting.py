@@ -1183,7 +1183,9 @@ class TestNonuniformGeometryPlotting:
             self.series.plot(linestyles=ls, linewidth=1),
             self.df.plot(linestyles=ls, linewidth=1),
         ]:
-            assert exp_ls == ax.collections[0].get_linestyle()
+            assert exp_ls[0] == ax.collections[0].get_linestyle()[0]
+            assert exp_ls[1] == ax.collections[1].get_linestyle()[0]
+            assert exp_ls[2] == ax.collections[2].get_linestyle()[0]
 
     def test_style_kwargs_linewidth(self):
         # single
@@ -1197,9 +1199,9 @@ class TestNonuniformGeometryPlotting:
             self.series.plot(linewidths=[2, 4, 5.5]),
             self.df.plot(linewidths=[2, 4, 5.5]),
         ]:
-            np.testing.assert_array_equal(
-                [2, 4, 5.5], ax.collections[0].get_linewidths()
-            )
+            np.testing.assert_array_equal([2], ax.collections[0].get_linewidths())
+            np.testing.assert_array_equal([4], ax.collections[1].get_linewidths())
+            np.testing.assert_array_equal([5.5], ax.collections[2].get_linewidths())
 
     def test_style_kwargs_alpha(self):
         ax = self.df.plot(alpha=0.7)
