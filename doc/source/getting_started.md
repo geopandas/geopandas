@@ -14,7 +14,7 @@ Examples Gallery <gallery/index>
 
 ## Installation
 
-Developers write GeoPandas in pure Python, but it has several dependencies written in C
+GeoPandas is written in pure Python, but has several dependencies written in C
 ([GEOS](https://geos.osgeo.org), [GDAL](https://www.gdal.org/), [PROJ](https://proj.org/)).  Those base C libraries can sometimes be a challenge to
 install. Therefore, we advise you to closely follow the recommendations below to avoid
 installation problems.
