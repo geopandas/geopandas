@@ -21,6 +21,7 @@ people from all around of world of a large variety of backgrounds. Want to get i
 in the community? See our [community guidelines](community).
 
 GeoPandas will always be 100% open source software, free for all to use and released
+under the liberal terms of the BSD-3-Clause license.
 
 ```{container} button
 
