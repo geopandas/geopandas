@@ -304,7 +304,7 @@ class TestClipWithSingleRectangleGdf:
             mask if _mask_is_list_like_rectangle(mask) else mask.total_bounds
         )
         assert np.array_equal(clipped.total_bounds, expected_bounds)
-        # Assert returned data is a not geometry collection
+        # Assert returned data is not a geometry collection
         assert (clipped.geom_type.isin(POLYGON_GEOM_TYPES)).all()
 
     def test_clip_multiline(self, multi_line, mask):
@@ -362,7 +362,7 @@ class TestClipWithSingleRectangleGdf:
         and keep_geom_type is True, no geometry collections should be returned."""
         clipped = clip(sliver_line, mask, keep_geom_type=True)
         assert len(clipped.geometry) == 1
-        # Assert returned data is a not geometry collection
+        # Assert returned data is not a geometry collection
         assert not (clipped.geom_type == "GeometryCollection").any()
 
     def test_clip_no_box_overlap(self, pointsoutside_nooverlap_gdf, mask):

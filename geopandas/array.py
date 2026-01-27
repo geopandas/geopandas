@@ -239,6 +239,8 @@ def from_wkb(
           without a warning. Requires GEOS >= 3.11 and shapely >= 2.1.
 
     """
+    if isinstance(data, ExtensionArray):
+        data = data.to_numpy(na_value=None)
     return GeometryArray(shapely.from_wkb(data, on_invalid=on_invalid), crs=crs)
 
 
@@ -275,6 +277,8 @@ def from_wkt(
           without a warning. Requires GEOS >= 3.11 and shapely >= 2.1.
 
     """
+    if isinstance(data, ExtensionArray):
+        data = data.to_numpy(na_value=None)
     return GeometryArray(shapely.from_wkt(data, on_invalid=on_invalid), crs=crs)
 
 
@@ -449,6 +453,18 @@ class GeometryArray(ExtensionArray):
     def __getitem__(self, idx) -> GeometryArray:
         if isinstance(idx, numbers.Integral):
             return self._data[idx]
+        elif (
+            isinstance(idx, slice)
+            and idx.start is None
+            and idx.stop is None
+            and idx.step is None
+        ):
+            # special case of a full slice -> preserve the sindex
+            # (to ensure view() preserves it as well)
+            result = GeometryArray(self._data[idx], crs=self.crs)
+            result._sindex = self._sindex
+            return result
+
         # array-like, slice
         # validate and convert IntegerArray/BooleanArray
         # to numpy array, pass-through non-array-like indexers
@@ -840,23 +856,30 @@ class GeometryArray(ExtensionArray):
             shapely.clip_by_rect(self._data, xmin, ymin, xmax, ymax), crs=self.crs
         )
 
-    def difference(self, other) -> GeometryArray:
+    def difference(self, other, grid_size=None) -> GeometryArray:
         return GeometryArray(
-            self._binary_method("difference", self, other), crs=self.crs
+            self._binary_method("difference", self, other, grid_size=grid_size),
+            crs=self.crs,
         )
 
-    def intersection(self, other) -> GeometryArray:
+    def intersection(self, other, grid_size=None) -> GeometryArray:
         return GeometryArray(
-            self._binary_method("intersection", self, other), crs=self.crs
+            self._binary_method("intersection", self, other, grid_size=grid_size),
+            crs=self.crs,
         )
 
-    def symmetric_difference(self, other) -> GeometryArray:
+    def symmetric_difference(self, other, grid_size=None) -> GeometryArray:
         return GeometryArray(
-            self._binary_method("symmetric_difference", self, other), crs=self.crs
+            self._binary_method(
+                "symmetric_difference", self, other, grid_size=grid_size
+            ),
+            crs=self.crs,
         )
 
-    def union(self, other) -> GeometryArray:
-        return GeometryArray(self._binary_method("union", self, other), crs=self.crs)
+    def union(self, other, grid_size=None) -> GeometryArray:
+        return GeometryArray(
+            self._binary_method("union", self, other, grid_size=grid_size), crs=self.crs
+        )
 
     def shortest_line(self, other) -> GeometryArray:
         return GeometryArray(
@@ -1714,17 +1737,6 @@ class GeometryArray(ExtensionArray):
             # smallest possible value for uints
             distances[mask_empty] = 0
         return distances
-
-    def _cast_pointwise_result(self, values) -> GeometryArray:
-        result = super()._cast_pointwise_result(values)
-        # only attempt to construct GeometryArray from object dtype result
-        if result.dtype.kind == self.dtype.kind:
-            try:
-                return type(self)._from_sequence(result)
-            except (TypeError, shapely.errors.GeometryTypeError):
-                return result
-        else:  # special case for ea eq/neq methods
-            return result
 
     def argmin(self, skipna: bool = True) -> int:
         raise TypeError("geometries have no minimum or maximum")
