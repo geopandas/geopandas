@@ -8,7 +8,7 @@ We have four versions of our logo:
 
 ### Primary logo
 
-The primary logo should be used in a majority of cases. Inverted logo or icon should be used only when necessary.
+Use the primary logo in the majority of cases. Use the inverted logo or icon only when necessary.
 
 ```{image} ../_static/logo/geopandas_logo.png
 :alt: geopandas-logo
