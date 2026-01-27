@@ -371,6 +371,12 @@ class TestSeries:
         expected = self.g1.reindex(index)
         assert_geoseries_equal(expected, GeoSeries.from_wkb(s, index=index))
 
+    def test_from_wkb_with_missing(self):
+        s = pd.Series([self.t1.wkb, None, self.sq.wkb])
+        result = GeoSeries.from_wkb(s)
+        expected = GeoSeries([self.t1, None, self.sq])
+        assert_geoseries_equal(result, expected)
+
     def test_from_wkt(self):
         assert_geoseries_equal(self.g1, GeoSeries.from_wkt([self.t1.wkt, self.sq.wkt]))
 
@@ -405,6 +411,13 @@ class TestSeries:
 
     def test_from_wkt_with_missing(self):
         s = pd.Series([self.t1.wkt, None, self.sq.wkt])
+        result = GeoSeries.from_wkt(s)
+        expected = GeoSeries([self.t1, None, self.sq])
+        assert_geoseries_equal(result, expected)
+
+    @pytest.mark.parametrize("missing_value", [None, np.nan, pd.NA])
+    def test_from_wkt_with_missing_object(self, missing_value):
+        s = pd.Series([self.t1.wkt, missing_value, self.sq.wkt], dtype="object")
         result = GeoSeries.from_wkt(s)
         expected = GeoSeries([self.t1, None, self.sq])
         assert_geoseries_equal(result, expected)
