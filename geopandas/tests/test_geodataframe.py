@@ -256,10 +256,12 @@ class TestDataFrame:
     def test_set_geometry(self):
         geom = GeoSeries([Point(x, y) for x, y in zip(range(5), range(5))])
         original_geom = self.df.geometry
+        expected = geom.copy()
+        expected.crs = self.df.crs
 
         df2 = self.df.set_geometry(geom)
-        assert self.df is not df2
-        assert_geoseries_equal(df2.geometry, geom, check_crs=False)
+        assert df2 is not self.df
+        assert_geoseries_equal(df2.geometry, expected)
         assert_geoseries_equal(self.df.geometry, original_geom)
         assert_geoseries_equal(self.df["geometry"], self.df.geometry)
         # unknown column
