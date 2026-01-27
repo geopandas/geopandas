@@ -1441,12 +1441,15 @@ properties': {'col1': 'name1'}, 'geometry': {'type': 'Point', 'coordinates': (1.
         compression : {'snappy', 'gzip', 'brotli', 'lz4', 'zstd', None}, \
 default 'snappy'
             Name of the compression to use. Use ``None`` for no compression.
-        geometry_encoding : {'WKB', 'geoarrow'}, default 'WKB'
-            The encoding to use for the geometry columns. Defaults to "WKB"
-            for maximum interoperability. Specify "geoarrow" to use one of the
-            native GeoArrow-based single-geometry type encodings.
-            Note: the "geoarrow" option is part of the newer GeoParquet 1.1
-            specification, should be considered as experimental, and may not
+        geometry_encoding : {'WKB', 'native', 'geoarrow'}, default 'WKB'
+            The encoding to use for the geometry columns. Defaults to "WKB" for maximum
+            interoperability. Specify "native" (or, for backwards compatibility,
+            "geoarrow")  to use one of the native single-geometry type encodings.
+
+            The native GeoParquet encodings are similar to the layout of GeoArrow.
+
+            Note: the "native" option is part of the newer GeoParquet 1.1
+            specification. It should be considered experimental, and may not
             be supported by all readers.
         write_covering_bbox : bool, default False
             Writes the bounding box column for each row entry with column
