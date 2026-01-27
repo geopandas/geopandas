@@ -1,0 +1,35 @@
+name: test
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  # required
+  - pandas=2.2
+  - numpy=1.26 # released 4 months before pandas 2.2
+  - shapely
+  - pyogrio
+  - pyproj
+  - packaging
+  # testing
+  - pytest
+  - pytest-cov
+  - pytest-xdist
+  - fsspec
+  - pytz
+  # optional
+  - matplotlib
+  - mapclassify
+  - folium
+  - xyzservices
+  - scipy
+  - geopy
+  - geodatasets
+  # installed in tests.yaml, because not available on windows
+  # - postgis
+  - SQLalchemy<2.1 # test oldest support sqlalchemy version
+  - psycopg2
+  - libspatialite
+  - geoalchemy2
+  - pyarrow
+  # doctest testing
+  - pytest-doctestplus

@@ -13,20 +13,23 @@ A set of fixtures are defined to provide data for the tests (the fixtures
 expected to be available to pytest by the inherited pandas tests).
 
 """
+
+import itertools
 import operator
 
 import numpy as np
-from numpy.testing import assert_array_equal
 import pandas as pd
+from pandas.api.types import is_object_dtype
 from pandas.tests.extension import base as extension_tests
 
 import shapely.geometry
 from shapely.geometry import Point
 
+from geopandas._compat import PANDAS_GE_30
 from geopandas.array import GeometryArray, GeometryDtype, from_shapely
-from geopandas._compat import ignore_shapely2_warnings, SHAPELY_GE_20, PANDAS_GE_15
 
 import pytest
+from pandas.testing import assert_frame_equal, assert_series_equal
 
 # -----------------------------------------------------------------------------
 # Compat with extension tests in older pandas versions
@@ -35,9 +38,6 @@ import pytest
 
 not_yet_implemented = pytest.mark.skip(reason="Not yet implemented")
 no_minmax = pytest.mark.skip(reason="Min/max not supported")
-requires_shapely2 = pytest.mark.skipif(
-    not SHAPELY_GE_20, reason="Requires hashable geometries"
-)
 
 
 # -----------------------------------------------------------------------------
@@ -52,9 +52,12 @@ def dtype():
 
 
 def make_data():
-    a = np.empty(100, dtype=object)
-    with ignore_shapely2_warnings():
-        a[:] = [shapely.geometry.Point(i, i) for i in range(100)]
+    if PANDAS_GE_30:
+        size = 10
+    else:
+        size = 100
+    a = np.empty(size, dtype=object)
+    a[:] = [shapely.geometry.Point(i, i) for i in range(size)]
     ga = from_shapely(a)
     return ga
 
@@ -130,7 +133,7 @@ def data_missing_for_sorting():
     This should be three items [B, NA, A] with
     A < B and NA missing.
     """
-    return from_shapely([Point(0, 1), None, Point(0, 0)])
+    return from_shapely([Point(1, 2), None, Point(0, 0)])
 
 
 @pytest.fixture
@@ -311,24 +314,10 @@ class TestDtype(extension_tests.BaseDtypeTests):
         result = s.astype("geometry")
         assert isinstance(result.array, GeometryArray)
         expected = pd.Series(data)
-        self.assert_series_equal(result, expected)
+        assert_series_equal(result, expected)
 
 
 class TestInterface(extension_tests.BaseInterfaceTests):
-    def test_array_interface(self, data):
-        # we are overriding this base test because the creation of `expected`
-        # potentially doesn't work for shapely geometries
-        # TODO can be removed with Shapely 2.0
-        result = np.array(data)
-        assert result[0] == data[0]
-
-        result = np.array(data, dtype=object)
-        # expected = np.array(list(data), dtype=object)
-        expected = np.empty(len(data), dtype=object)
-        with ignore_shapely2_warnings():
-            expected[:] = list(data)
-        assert_array_equal(result, expected)
-
     def test_contains(self, data, data_missing):
         # overridden due to the inconsistency between
         # GeometryDtype.na_value = np.nan
@@ -351,15 +340,91 @@ class TestConstructors(extension_tests.BaseConstructorsTests):
 
 
 class TestReshaping(extension_tests.BaseReshapingTests):
-    pass
+    # NOTE: this test is copied from pandas/tests/extension/base/reshaping.py
+    # because starting with pandas 3.0 the assert_frame_equal is strict regarding
+    # the exact missing value (None vs NaN)
+    # Our `result` uses None, but the way the `expected` is created results in
+    # NaNs (and specifying to use None as fill value in unstack also does not
+    # help)
+    # -> the only change compared to the upstream test is marked
+    @pytest.mark.parametrize(
+        "index",
+        [
+            # Two levels, uniform.
+            pd.MultiIndex.from_product(([["A", "B"], ["a", "b"]]), names=["a", "b"]),
+            # non-uniform
+            pd.MultiIndex.from_tuples([("A", "a"), ("A", "b"), ("B", "b")]),
+            # three levels, non-uniform
+            pd.MultiIndex.from_product([("A", "B"), ("a", "b"), (0, 1)])
+            if PANDAS_GE_30
+            else pd.MultiIndex.from_product([("A", "B"), ("a", "b", "c"), (0, 1, 2)]),
+            pd.MultiIndex.from_tuples(
+                [
+                    ("A", "a", 1),
+                    ("A", "b", 0),
+                    ("A", "a", 0),
+                    ("B", "a", 0),
+                    ("B", "c", 1),
+                ]
+            ),
+        ],
+    )
+    @pytest.mark.parametrize("obj", ["series", "frame"])
+    def test_unstack(self, data, index, obj):
+        data = data[: len(index)]
+        if obj == "series":
+            ser = pd.Series(data, index=index)
+        else:
+            ser = pd.DataFrame({"A": data, "B": data}, index=index)
+
+        n = index.nlevels
+        levels = list(range(n))
+        # [0, 1, 2]
+        # [(0,), (1,), (2,), (0, 1), (0, 2), (1, 0), (1, 2), (2, 0), (2, 1)]
+        combinations = itertools.chain.from_iterable(
+            itertools.permutations(levels, i) for i in range(1, n)
+        )
+
+        for level in combinations:
+            result = ser.unstack(level=level)
+            assert all(
+                isinstance(result[col].array, type(data)) for col in result.columns
+            )
+
+            if obj == "series":
+                # We should get the same result with to_frame+unstack+droplevel
+                df = ser.to_frame()
+
+                alt = df.unstack(level=level).droplevel(0, axis=1)
+                assert_frame_equal(result, alt)
+
+            obj_ser = ser.astype(object)
+
+            expected = obj_ser.unstack(level=level, fill_value=data.dtype.na_value)
+            if obj == "series":
+                assert all(is_object_dtype(x) for x in expected.dtypes)
+            # <------------ next line is added
+            expected[expected.isna()] = None
+            # ------------->
+
+            result = result.astype(object)
+            assert_frame_equal(result, expected)
 
 
 class TestGetitem(extension_tests.BaseGetitemTests):
-    pass
+    @pytest.mark.xfail(reason="read-only not yet implemented")
+    def test_getitem_propagates_readonly_property(self, data):
+        super().test_getitem_propagates_readonly_property(data)
 
 
 class TestSetitem(extension_tests.BaseSetitemTests):
-    pass
+    @pytest.mark.xfail(reason="read-only not yet implemented")
+    def test_readonly_property(self, data):
+        super().test_readonly_property(data)
+
+    @pytest.mark.xfail(reason="read-only not yet implemented")
+    def test_readonly_propagates_to_numpy_array(self, data):
+        super().test_readonly_propagates_to_numpy_array(data)
 
 
 class TestMissing(extension_tests.BaseMissingTests):
@@ -370,7 +435,7 @@ class TestMissing(extension_tests.BaseMissingTests):
         # Fill with a scalar
         result = ser.fillna(fill_value)
         expected = pd.Series(data_missing._from_sequence([fill_value, fill_value]))
-        self.assert_series_equal(result, expected)
+        assert_series_equal(result, expected)
 
         # Fill with a series
         filler = pd.Series(
@@ -383,7 +448,7 @@ class TestMissing(extension_tests.BaseMissingTests):
         )
         result = ser.fillna(filler)
         expected = pd.Series(data_missing._from_sequence([fill_value, fill_value]))
-        self.assert_series_equal(result, expected)
+        assert_series_equal(result, expected)
 
         # Fill with a series not affecting the missing values
         filler = pd.Series(
@@ -396,32 +461,35 @@ class TestMissing(extension_tests.BaseMissingTests):
             index=[10, 11],
         )
         result = ser.fillna(filler)
-        self.assert_series_equal(result, ser)
+        assert_series_equal(result, ser)
 
         # More `GeoSeries.fillna` testcases are in
         # `geopandas\tests\test_pandas_methods.py::test_fillna_scalar`
         # and `geopandas\tests\test_pandas_methods.py::test_fillna_series`.
 
-    @pytest.mark.skip("fillna method not supported")
     def test_fillna_limit_pad(self, data_missing):
-        pass
+        super().test_fillna_limit_pad(data_missing)
 
-    @pytest.mark.skip("fillna method not supported")
     def test_fillna_limit_backfill(self, data_missing):
-        pass
+        super().test_fillna_limit_backfill(data_missing)
 
-    @pytest.mark.skip("fillna method not supported")
-    def test_fillna_series_method(self, data_missing, method):
-        pass
+    def test_fillna_series_method(self, data_missing, fillna_method):
+        super().test_fillna_series_method(data_missing, fillna_method)
 
-    @pytest.mark.skip("fillna method not supported")
     def test_fillna_no_op_returns_copy(self, data):
-        pass
+        super().test_fillna_no_op_returns_copy(data)
+
+    @pytest.mark.xfail(reason="read-only not yet implemented")
+    def test_fillna_readonly(self, data_missing):
+        super().test_fillna_readonly(data_missing)
 
 
-class TestReduce(extension_tests.BaseNoReduceTests):
+from pandas.tests.extension.base import BaseReduceTests
+
+
+class TestReduce(BaseReduceTests):
     @pytest.mark.skip("boolean reduce (any/all) tested in test_pandas_methods")
-    def test_reduce_series_boolean():
+    def test_reduce_series_boolean(self):
         pass
 
 
@@ -477,14 +545,14 @@ class TestComparisonOps(extension_tests.BaseComparisonOpsTests):
         op = getattr(operator, op_name.strip("_"))
         result = op(s, other)
         expected = s.combine(other, op)
-        self.assert_series_equal(result, expected)
+        assert_series_equal(result, expected)
 
-    def test_compare_scalar(self, data, all_compare_operators):  # noqa
+    def test_compare_scalar(self, data, all_compare_operators):
         op_name = all_compare_operators
         s = pd.Series(data)
         self._compare_other(s, data, op_name, data[0])
 
-    def test_compare_array(self, data, all_compare_operators):  # noqa
+    def test_compare_array(self, data, all_compare_operators):
         op_name = all_compare_operators
         s = pd.Series(data)
         other = pd.Series([data[0]] * len(data))
@@ -492,20 +560,13 @@ class TestComparisonOps(extension_tests.BaseComparisonOpsTests):
 
 
 class TestMethods(extension_tests.BaseMethodsTests):
-    @pytest.mark.skipif(
-        not PANDAS_GE_15, reason="sorting index not yet working with older pandas"
-    )
     @pytest.mark.parametrize("dropna", [True, False])
     def test_value_counts(self, all_data, dropna):
         pass
 
-    @pytest.mark.skipif(
-        not PANDAS_GE_15, reason="sorting index not yet working with older pandas"
-    )
     def test_value_counts_with_normalize(self, data):
         pass
 
-    @requires_shapely2
     @pytest.mark.parametrize("ascending", [True, False])
     def test_sort_values_frame(self, data_for_sorting, ascending):
         super().test_sort_values_frame(data_for_sorting, ascending)
@@ -554,16 +615,13 @@ class TestCasting(extension_tests.BaseCastingTests):
 
 
 class TestGroupby(extension_tests.BaseGroupbyTests):
-    @requires_shapely2
     @pytest.mark.parametrize("as_index", [True, False])
     def test_groupby_extension_agg(self, as_index, data_for_grouping):
         super().test_groupby_extension_agg(as_index, data_for_grouping)
 
-    @requires_shapely2
     def test_groupby_extension_transform(self, data_for_grouping):
         super().test_groupby_extension_transform(data_for_grouping)
 
-    @requires_shapely2
     @pytest.mark.parametrize(
         "op",
         [

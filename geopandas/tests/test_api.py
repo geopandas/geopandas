@@ -1,3 +1,4 @@
+import os
 import subprocess
 import sys
 
@@ -13,26 +14,27 @@ def test_no_additional_imports():
         # "fiona",
         # "matplotlib",  # matplotlib gets imported by pandas, see below
         "mapclassify",
-        # 'rtree',  # rtree actually gets imported if installed
         "sqlalchemy",
+        "psycopg",
         "psycopg2",
         "geopy",
         "geoalchemy2",
         "matplotlib",
     }
 
-    code = """
+    code = f"""
 import sys
 import geopandas
-blacklist = {0!r}
+blacklist = {blacklist!r}
 
 mods = blacklist & set(m.split('.')[0] for m in sys.modules)
 if mods:
     sys.stderr.write('err: geopandas should not import: {{}}'.format(', '.join(mods)))
     sys.exit(len(mods))
-""".format(
-        blacklist
-    )
+"""
+    # remove COV_CORE_SOURCE to avoid pytest-cov importing itself in the subprocess
+    env = os.environ.copy()
+    env.pop("COV_CORE_SOURCE", None)
     call = [sys.executable, "-c", code]
-    returncode = subprocess.run(call).returncode
+    returncode = subprocess.run(call, check=False, env=env).returncode
     assert returncode == 0

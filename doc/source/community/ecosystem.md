@@ -4,12 +4,12 @@
 
 GeoPandas brings together the full capability of `pandas` and the open-source geospatial
 tools `Shapely`, which brings manipulation and analysis of geometric objects backed by
-[`GEOS`](https://trac.osgeo.org/geos) library, `Fiona`, allowing us to read and write
+[`GEOS`](https://trac.osgeo.org/geos) library, `pyogrio`, allowing us to read and write
 geographic data files using [`GDAL`](https://gdal.org), and `pyproj`, a library for
 cartographic projections and coordinate transformations, which is a Python interface to
 [`PROJ`](https://proj.org).
 
-Furthermore, GeoPandas has several optional dependencies as `rtree`, `pygeos`,
+Furthermore, GeoPandas has several optional dependencies as
 `mapclassify`, or `geopy`.
 
 ### Required dependencies
@@ -29,14 +29,10 @@ geometric objects. It is based on the widely deployed `GEOS` (the engine of Post
 `JTS` (from which `GEOS` is ported) libraries. `Shapely` is not concerned with data
 formats or coordinate systems, but can be readily integrated with packages that are.
 
-#### [Fiona](https://github.com/Toblerity/Fiona)
-`Fiona` is `GDAL’s` neat and nimble vector API for Python programmers. Fiona is designed
-to be simple and dependable. It focuses on reading and writing data in standard Python
-IO style and relies upon familiar Python types and protocols such as files,
-dictionaries, mappings, and iterators instead of classes specific to `OGR`. Fiona can
-read and write real-world data using multi-layered GIS formats and zipped virtual file
-systems and integrates readily with other Python GIS packages such as `pyproj`, `Rtree`,
-and `Shapely`.
+#### [pyogrio](https://github.com/geopandas/pyogrio)
+Pyogrio provides a GeoPandas-oriented API to OGR vector data sources, such as ESRI
+Shapefile, GeoPackage, and GeoJSON. Vector data sources have geometries, such as points,
+lines, or polygons, and associated records with potentially many columns worth of data.
 
 #### [pyproj](https://github.com/pyproj4/pyproj)
 `pyproj` is a Python interface to `PROJ` (cartographic projections and coordinate
@@ -44,16 +40,6 @@ transformations library). GeoPandas uses a `pyproj.crs.CRS` object to keep track
 projection of each `GeoSeries` and its `Transformer` object to manage re-projections.
 
 ### Optional dependencies
-
-#### [rtree](https://github.com/Toblerity/rtree)
-`Rtree` is a ctypes Python wrapper of `libspatialindex` that provides a number of
-advanced spatial indexing features for the spatially curious Python user.
-
-#### [PyGEOS](https://github.com/pygeos/pygeos)
-`PyGEOS` is a C/Python library with vectorized geometry functions. The geometry
-operations are done in the open-source geometry library `GEOS`. PyGEOS wraps these
-operations in `NumPy` ufuncs providing a performance improvement when operating on
-arrays of geometries.
 
 #### [mapclassify](https://github.com/pysal/mapclassify)
 `mapclassify` provides functionality for Choropleth map classification. Currently,
@@ -73,6 +59,15 @@ visualizations in Python. Matplotlib produces publication-quality figures in a v
 of hardcopy formats and interactive environments across platforms. Matplotlib can be
 used in Python scripts, the Python and IPython shell, web application servers, and
 various graphical user interface toolkits.
+
+#### [Fiona](https://github.com/Toblerity/Fiona)
+`Fiona` is `GDAL’s` neat and nimble vector API for Python programmers. Fiona is designed
+to be simple and dependable. It focuses on reading and writing data in standard Python
+IO style and relies upon familiar Python types and protocols such as files,
+dictionaries, mappings, and iterators instead of classes specific to `OGR`. Fiona can
+read and write real-world data using multi-layered GIS formats and zipped virtual file
+systems and integrates readily with other Python GIS packages such as `pyproj`, `Rtree`,
+and `Shapely`.
 
 ## GeoPandas ecosystem
 
@@ -233,6 +228,14 @@ level API supports the creation of publication-ready visualizations
 distribution of observations by color in a given map. These distributional
 visualizations for map classification schemes assist in analytical cartography and
 spatial data visualization.
+
+#### [buckaroo](https://github.com/paddymul/buckaroo)
+`buckaroo` is a modern data table for Jupyter that expedites the most
+common exploratory data analysis tasks. It provides scrollable tables,
+histograms, and summary stats. Buckaroo supports many DataFrame
+libraries including `geopandas`. It can display `GeoDataFrame`s as
+tables, it also supports rendering the Geometry as an SVG in the
+table.
 
 ### Geometry manipulation
 

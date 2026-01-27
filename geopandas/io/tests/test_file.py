@@ -1,41 +1,58 @@
 import datetime
 import io
+import json
 import os
 import pathlib
+import shutil
 import tempfile
+import warnings
+import zoneinfo
 from collections import OrderedDict
+from packaging.version import Version
 
 import numpy as np
 import pandas as pd
-import pytest
-import pytz
-from packaging.version import Version
 from pandas.api.types import is_datetime64_any_dtype
-from pandas.testing import assert_series_equal
-from shapely.geometry import Point, Polygon, box
+
+from shapely.geometry import Point, Polygon, box, mapping
 
 import geopandas
-from geopandas import GeoDataFrame, read_file
-from geopandas._compat import PANDAS_GE_20
-from geopandas.io.file import _detect_driver, _EXTENSION_TO_DRIVER
+from geopandas import GeoDataFrame, GeoSeries, points_from_xy, read_file
+from geopandas._compat import HAS_PYPROJ, PANDAS_GE_30, PANDAS_INFER_STR
+from geopandas.io.file import _EXTENSION_TO_DRIVER, _detect_driver
+
+import pytest
 from geopandas.testing import assert_geodataframe_equal, assert_geoseries_equal
 from geopandas.tests.util import PACKAGE_DIR, validate_boro_df
+from pandas.testing import assert_frame_equal, assert_series_equal
 
 try:
     import pyogrio
+
+    # those version checks have to be defined here instead of imported from
+    # geopandas.io.file (those are only initialized lazily on first usage)
+    PYOGRIO_GE_090 = Version(Version(pyogrio.__version__).base_version) >= Version(
+        "0.9.0"
+    )
+    PYOGRIO_GE_012 = Version(Version(pyogrio.__version__).base_version) >= Version(
+        "0.12.0"
+    )
+    PYOGRIO_GE_0121 = Version(Version(pyogrio.__version__).base_version) >= Version(
+        "0.12.1"
+    )
 except ImportError:
     pyogrio = False
+    PYOGRIO_GE_090 = False
+    PYOGRIO_GE_012 = False
+    PYOGRIO_GE_0121 = False
 
 
 try:
     import fiona
 
-    # invalid datetime handling
-    FIONA_GE_1821 = Version(fiona.__version__) >= Version("1.8.21")
     FIONA_GE_19 = Version(Version(fiona.__version__).base_version) >= Version("1.9.0")
 except ImportError:
     fiona = False
-    FIONA_GE_1821 = False
     FIONA_GE_19 = False
 
 
@@ -44,6 +61,9 @@ FIONA_MARK = pytest.mark.skipif(not fiona, reason="fiona not installed")
 
 
 _CRS = "epsg:4326"
+
+
+pytestmark = pytest.mark.filterwarnings("ignore:Value:RuntimeWarning:pyogrio")
 
 
 @pytest.fixture(
@@ -62,9 +82,8 @@ def skip_pyogrio_not_supported(engine):
 
 
 @pytest.fixture
-def df_nybb(engine):
-    nybb_path = geopandas.datasets.get_path("nybb")
-    df = read_file(nybb_path, engine=engine)
+def df_nybb(engine, nybb_filename):
+    df = read_file(nybb_filename, engine=engine)
     return df
 
 
@@ -130,7 +149,7 @@ def test_to_file(tmpdir, df_nybb, df_null, driver, ext, engine):
     df = GeoDataFrame.from_file(tempfilename, engine=engine)
     assert "geometry" in df
     assert len(df) == 5
-    assert np.alltrue(df["BoroName"].values == df_nybb["BoroName"])
+    assert np.all(df["BoroName"].values == df_nybb["BoroName"])
 
     # Write layer with null geometry out to file
     tempfilename = os.path.join(str(tmpdir), "null_geom" + ext)
@@ -139,7 +158,7 @@ def test_to_file(tmpdir, df_nybb, df_null, driver, ext, engine):
     df = GeoDataFrame.from_file(tempfilename, engine=engine)
     assert "geometry" in df
     assert len(df) == 2
-    assert np.alltrue(df["Name"].values == df_null["Name"])
+    assert np.all(df["Name"].values == df_null["Name"])
     # check the expected driver
     assert_correct_driver(tempfilename, ext, engine)
 
@@ -153,7 +172,7 @@ def test_to_file_pathlib(tmpdir, df_nybb, driver, ext, engine):
     df = GeoDataFrame.from_file(temppath, engine=engine)
     assert "geometry" in df
     assert len(df) == 5
-    assert np.alltrue(df["BoroName"].values == df_nybb["BoroName"])
+    assert np.all(df["BoroName"].values == df_nybb["BoroName"])
     # check the expected driver
     assert_correct_driver(temppath, ext, engine)
 
@@ -161,7 +180,7 @@ def test_to_file_pathlib(tmpdir, df_nybb, driver, ext, engine):
 @pytest.mark.parametrize("driver,ext", driver_ext_pairs)
 def test_to_file_bool(tmpdir, driver, ext, engine):
     """Test error raise when writing with a boolean column (GH #437)."""
-    tempfilename = os.path.join(str(tmpdir), "temp.{0}".format(ext))
+    tempfilename = os.path.join(str(tmpdir), f"temp.{ext}")
     df = GeoDataFrame(
         {
             "col": [True, False, True],
@@ -174,9 +193,10 @@ def test_to_file_bool(tmpdir, driver, ext, engine):
     result = read_file(tempfilename, engine=engine)
     if ext in (".shp", ""):
         # Shapefile does not support boolean, so is read back as int
-        if engine == "fiona":
+        # but since GDAL 3.9 supports boolean fields in SHP
+        if engine == "fiona" and fiona.gdal_version.minor < 9:
             df["col"] = df["col"].astype("int64")
-        else:
+        elif engine == "pyogrio" and pyogrio.__gdal_version__ < (3, 9):
             df["col"] = df["col"].astype("int32")
     assert_geodataframe_equal(result, df)
     # check the expected driver
@@ -184,20 +204,22 @@ def test_to_file_bool(tmpdir, driver, ext, engine):
 
 
 TEST_DATE = datetime.datetime(2021, 11, 21, 1, 7, 43, 17500)
-eastern = pytz.timezone("US/Eastern")
+# from pandas 2.0, utc equality checks less stringent, forward compat with zoneinfo
+utc = datetime.UTC
+eastern = zoneinfo.ZoneInfo("America/New_York")
+test_date_eastern = TEST_DATE.replace(tzinfo=eastern)
+datetime_type_tests = (TEST_DATE, test_date_eastern)
 
-datetime_type_tests = (TEST_DATE, eastern.localize(TEST_DATE))
 
-
+@pytest.mark.filterwarnings(
+    "ignore:Non-conformant content for record 1 in column b:RuntimeWarning"
+)  # for GPKG, GDAL writes the tz data but warns on reading (see DATETIME_FORMAT option)
 @pytest.mark.parametrize(
     "time", datetime_type_tests, ids=("naive_datetime", "datetime_with_timezone")
 )
 @pytest.mark.parametrize("driver,ext", driver_ext_pairs)
 def test_to_file_datetime(tmpdir, driver, ext, time, engine):
     """Test writing a data file with the datetime column type"""
-    if engine == "pyogrio" and time.tzinfo is not None:
-        # TODO
-        pytest.skip("pyogrio doesn't yet support timezones")
     if ext in (".shp", ""):
         pytest.skip(f"Driver corresponding to ext {ext} doesn't support dt fields")
 
@@ -207,23 +229,24 @@ def test_to_file_datetime(tmpdir, driver, ext, time, engine):
     df = GeoDataFrame(
         {"a": [1.0, 2.0], "b": [time, time]}, geometry=[point, point], crs=4326
     )
-    fiona_precision_limit = "ms"
-    df["b"] = df["b"].dt.round(freq=fiona_precision_limit)
+    df["b"] = df["b"].dt.round(freq="ms")
 
     df.to_file(tempfilename, driver=driver, engine=engine)
     df_read = read_file(tempfilename, engine=engine)
 
     assert_geodataframe_equal(df.drop(columns=["b"]), df_read.drop(columns=["b"]))
+    # Check datetime column
+    expected = df["b"]
+    expected = df["b"].dt.as_unit("ms")
+    actual = df_read["b"]
     if df["b"].dt.tz is not None:
-        # US/Eastern becomes pytz.FixedOffset(-300) when read from file
-        # so compare fairly in terms of UTC
-        assert_series_equal(
-            df["b"].dt.tz_convert(pytz.utc), df_read["b"].dt.tz_convert(pytz.utc)
-        )
-    else:
-        if engine == "pyogrio" and PANDAS_GE_20:
-            df["b"] = df["b"].astype("datetime64[ms]")
-        assert_series_equal(df["b"], df_read["b"])
+        # US/Eastern becomes a UTC-5 fixed offset when read from file
+        # as GDAL only models offsets, not timezones.
+        # Compare fair result in terms of UTC instead
+        expected = expected.dt.tz_convert(utc)
+        actual = actual.dt.tz_convert(utc)
+
+    assert_series_equal(expected, actual)
 
 
 dt_exts = ["gpkg", "geojson"]
@@ -237,50 +260,59 @@ def write_invalid_date_file(date_str, tmpdir, ext, engine):
             "geometry": [Point(1, 1), Point(1, 1), Point(1, 1)],
         }
     )
-    # Schema not required for GeoJSON since not typed, but needed for GPKG
-    if ext == "geojson":
-        df.to_file(tempfilename)
-    else:
-        schema = {"geometry": "Point", "properties": {"date": "datetime"}}
-        if engine == "pyogrio" and not fiona:
-            # (use schema to write the invalid date without pandas datetimes
-            pytest.skip("test requires fiona kwarg schema")
-        df.to_file(tempfilename, schema=schema, engine="fiona")
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")  # suppress warnings from writing file
+        # Schema not required for GeoJSON since not typed, but needed for GPKG
+        if ext == "geojson":
+            df.to_file(tempfilename, engine=engine)
+        else:
+            schema = {"geometry": "Point", "properties": {"date": "datetime"}}
+            if engine == "pyogrio" and not fiona:
+                # (use schema to write the invalid date without pandas datetimes
+                pytest.skip("test requires fiona kwarg schema")
+            df.to_file(tempfilename, schema=schema, engine="fiona")
     return tempfilename
 
 
 @pytest.mark.parametrize("ext", dt_exts)
+@pytest.mark.filterwarnings(
+    "ignore:Invalid content for record 3 in column date.*:RuntimeWarning"
+)
 def test_read_file_datetime_invalid(tmpdir, ext, engine):
     # https://github.com/geopandas/geopandas/issues/2502
-    if not FIONA_GE_1821 and ext == "gpkg":
-        # https://github.com/Toblerity/Fiona/issues/1035
-        pytest.skip("Invalid datetime throws in Fiona<1.8.21")
-
     date_str = "9999-99-99T00:00:00"  # invalid date handled by GDAL
     tempfilename = write_invalid_date_file(date_str, tmpdir, ext, engine)
-    res = read_file(tempfilename)
+    res = read_file(tempfilename, engine=engine)
     if ext == "gpkg":
         assert is_datetime64_any_dtype(res["date"])
         assert pd.isna(res["date"].iloc[-1])
     else:
-        assert res["date"].dtype == "object"
+        assert res["date"].dtype == "str" if PANDAS_INFER_STR else object
         assert isinstance(res["date"].iloc[-1], str)
 
 
 @pytest.mark.parametrize("ext", dt_exts)
 def test_read_file_datetime_out_of_bounds_ns(tmpdir, ext, engine):
     # https://github.com/geopandas/geopandas/issues/2502
-    if ext == "geojson":
-        skip_pyogrio_not_supported(engine)
-
     date_str = "9999-12-31T00:00:00"  # valid to GDAL, not to [ns] format
     tempfilename = write_invalid_date_file(date_str, tmpdir, ext, engine)
-    res = read_file(tempfilename)
-    # Pandas invalid datetimes are read in as object dtype (strings)
-    assert res["date"].dtype == "object"
-    assert isinstance(res["date"].iloc[0], str)
+    if engine == "pyogrio" and PYOGRIO_GE_012 and not PANDAS_GE_30:
+        with pytest.warns(
+            UserWarning, match="Error parsing datetimes, original strings are returned"
+        ):
+            res = read_file(tempfilename, engine=engine)
+    else:
+        res = read_file(tempfilename, engine=engine)
+    if PANDAS_GE_30:
+        assert res["date"].dtype == "datetime64[ms]"
+        assert res["date"].iloc[-1] == pd.Timestamp("9999-12-31 00:00:00")
+    else:
+        # Pandas invalid datetimes are read in as object dtype (strings)
+        assert res["date"].dtype == "str" if PANDAS_INFER_STR else "object"
+        assert isinstance(res["date"].iloc[0], str)
 
 
+@pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not installed")
 def test_read_file_datetime_mixed_offsets(tmpdir):
     # https://github.com/geopandas/geopandas/issues/2478
     tempfilename = os.path.join(str(tmpdir), "test_mixed_datetime.geojson")
@@ -292,21 +324,13 @@ def test_read_file_datetime_mixed_offsets(tmpdir):
             ],
             "geometry": [Point(1, 1), Point(1, 1)],
         }
-    )
+    ).set_crs("EPSG:4326")
     df.to_file(tempfilename)
     # check mixed tz don't crash GH2478
     res = read_file(tempfilename)
-    if engine == "fiona":
-        # Convert mixed timezones to UTC equivalent
-        assert is_datetime64_any_dtype(res["date"])
-        if not PANDAS_GE_20:
-            utc = pytz.utc
-        else:
-            utc = datetime.timezone.utc
-        assert res["date"].dt.tz == utc
-    else:
-        # old fiona and pyogrio ignore timezones and read as datetimes successfully
-        assert is_datetime64_any_dtype(res["date"])
+    # Convert mixed timezones to UTC equivalent
+    assert is_datetime64_any_dtype(res["date"])
+    assert res["date"].dt.tz == utc
 
 
 @pytest.mark.parametrize("driver,ext", driver_ext_pairs)
@@ -354,23 +378,50 @@ def test_to_file_types(tmpdir, df_points, engine):
         np.uint64,
     ]
     geometry = df_points.geometry
-    data = dict(
-        (str(i), np.arange(len(geometry), dtype=dtype))
+    data = {
+        str(i): np.arange(len(geometry), dtype=dtype)
         for i, dtype in enumerate(int_types)
-    )
+    }
     df = GeoDataFrame(data, geometry=geometry)
     df.to_file(tempfilename, engine=engine)
 
 
-def test_to_file_int64(tmpdir, df_points, engine):
-    skip_pyogrio_not_supported(engine)  # TODO
-    tempfilename = os.path.join(str(tmpdir), "int64.shp")
+@pytest.mark.parametrize("driver,ext", driver_ext_pairs + [("OGR_GMT", ".gmt")])
+def test_to_file_int32(tmpdir, df_points, engine, driver, ext):
+    tempfilename = os.path.join(str(tmpdir), f"int32.{ext}")
+    geometry = df_points.geometry
+    df = GeoDataFrame(geometry=geometry)
+    df["data"] = pd.array([1, np.nan] * 5, dtype=pd.Int32Dtype())
+    df.to_file(tempfilename, driver=driver, engine=engine)
+    df_read = GeoDataFrame.from_file(tempfilename, engine=engine)
+    # the int column with missing values comes back as float
+    expected = df.copy()
+    expected["data"] = expected["data"].astype("float64")
+    assert_geodataframe_equal(df_read, expected, check_like=True)
+
+    tempfilename2 = os.path.join(str(tmpdir), f"int32_2.{ext}")
+    df2 = df.dropna()
+    df2.to_file(tempfilename2, driver=driver, engine=engine)
+    df2_read = GeoDataFrame.from_file(tempfilename2, engine=engine)
+    if engine == "pyogrio":
+        assert df2_read["data"].dtype == "int32"
+    else:
+        # with the fiona engine the 32 bitwidth is not preserved
+        assert df2_read["data"].dtype == "int64"
+
+
+@pytest.mark.parametrize("driver,ext", driver_ext_pairs)
+def test_to_file_int64(tmpdir, df_points, engine, driver, ext):
+    tempfilename = os.path.join(str(tmpdir), f"int64.{ext}")
     geometry = df_points.geometry
     df = GeoDataFrame(geometry=geometry)
     df["data"] = pd.array([1, np.nan] * 5, dtype=pd.Int64Dtype())
-    df.to_file(tempfilename, engine=engine)
+    df.to_file(tempfilename, driver=driver, engine=engine)
     df_read = GeoDataFrame.from_file(tempfilename, engine=engine)
-    assert_geodataframe_equal(df_read, df, check_dtype=False, check_like=True)
+    # the int column with missing values comes back as float
+    expected = df.copy()
+    expected["data"] = expected["data"].astype("float64")
+    assert_geodataframe_equal(df_read, expected, check_like=True)
 
 
 def test_to_file_empty(tmpdir, engine):
@@ -378,12 +429,6 @@ def test_to_file_empty(tmpdir, engine):
     tempfilename = os.path.join(str(tmpdir), "test.shp")
     with pytest.warns(UserWarning):
         input_empty_df.to_file(tempfilename, engine=engine)
-
-
-def test_to_file_privacy(tmpdir, df_nybb):
-    tempfilename = os.path.join(str(tmpdir), "test.shp")
-    with pytest.warns(FutureWarning):
-        geopandas.io.file.to_file(df_nybb, tempfilename)
 
 
 def test_to_file_schema(tmpdir, df_nybb, engine):
@@ -418,12 +463,13 @@ def test_to_file_schema(tmpdir, df_nybb, engine):
         assert result_schema == schema
 
 
-def test_to_file_crs(tmpdir, engine):
+@pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not installed")
+def test_to_file_crs(tmpdir, engine, nybb_filename):
     """
     Ensure that the file is written according to the crs
     if it is specified
     """
-    df = read_file(geopandas.datasets.get_path("nybb"), engine=engine)
+    df = read_file(nybb_filename, engine=engine)
     tempfilename = os.path.join(str(tmpdir), "crs.shp")
 
     # save correct CRS
@@ -432,7 +478,7 @@ def test_to_file_crs(tmpdir, engine):
     assert result.crs == df.crs
 
     if engine == "pyogrio":
-        with pytest.raises(ValueError, match="Passing 'crs' it not supported"):
+        with pytest.raises(ValueError, match="Passing 'crs' is not supported"):
             df.to_file(tempfilename, crs=3857, engine=engine)
         return
 
@@ -442,8 +488,7 @@ def test_to_file_crs(tmpdir, engine):
     assert result.crs == "epsg:3857"
 
     # specify CRS for gdf without one
-    df2 = df.copy()
-    df2.crs = None
+    df2 = df.set_crs(None, allow_override=True)
     df2.to_file(tempfilename, crs=2263, engine=engine)
     df = GeoDataFrame.from_file(tempfilename, engine=engine)
     assert df.crs == "epsg:2263"
@@ -459,17 +504,23 @@ def test_to_file_column_len(tmpdir, df_points, engine):
     df = df_points.iloc[:1].copy()
     df["0123456789A"] = ["the column name is 11 characters"]
 
-    with pytest.warns(
-        UserWarning, match="Column names longer than 10 characters will be truncated"
-    ):
+    with pytest.warns() as captured:
         df.to_file(tempfilename, driver="ESRI Shapefile", engine=engine)
+
+    column_names_warning = [
+        w
+        for w in captured
+        if w.category is UserWarning
+        and "Column names longer than 10 characters will be truncated" in str(w.message)
+    ]
+    assert len(column_names_warning) == 1
 
 
 def test_to_file_with_duplicate_columns(tmpdir, engine):
     df = GeoDataFrame(data=[[1, 2, 3]], columns=["a", "b", "a"], geometry=[Point(1, 1)])
     tempfilename = os.path.join(str(tmpdir), "duplicate.shp")
     with pytest.raises(
-        ValueError, match="GeoDataFrame cannot contain duplicated column names."
+        ValueError, match="GeoDataFrame cannot contain duplicated column names"
     ):
         df.to_file(tempfilename, engine=engine)
 
@@ -517,6 +568,7 @@ def test_mode_unsupported(tmpdir, df_nybb, engine):
 
 
 @pytest.mark.parametrize("driver,ext", driver_ext_pairs)
+@pytest.mark.filterwarnings("ignore:'crs' was not provided.*:UserWarning")
 def test_empty_crs(tmpdir, driver, ext, engine):
     """Test handling of undefined CRS with GPKG driver (GH #1975)."""
     if ext == ".gpkg":
@@ -529,13 +581,13 @@ def test_empty_crs(tmpdir, driver, ext, engine):
             "geometry": [Point(0, 0), Point(1, 1), Point(2, 2)],
         },
     )
-
     df.to_file(tempfilename, driver=driver, engine=engine)
+
     result = read_file(tempfilename, engine=engine)
 
     if ext == ".geojson":
         # geojson by default assumes epsg:4326
-        df.crs = "EPSG:4326"
+        df.geometry.array.crs = "EPSG:4326"
 
     assert_geodataframe_equal(result, df)
 
@@ -548,55 +600,99 @@ def test_empty_crs(tmpdir, driver, ext, engine):
 NYBB_CRS = "epsg:2263"
 
 
-def test_read_file(engine):
-    df = read_file(geopandas.datasets.get_path("nybb"), engine=engine)
+def test_read_file(engine, nybb_filename):
+    df = read_file(nybb_filename, engine=engine)
     validate_boro_df(df)
-    assert df.crs == NYBB_CRS
+    if HAS_PYPROJ:
+        assert df.crs == NYBB_CRS
     expected_columns = ["BoroCode", "BoroName", "Shape_Leng", "Shape_Area"]
     assert (df.columns[:-1] == expected_columns).all()
 
 
 @pytest.mark.web
-def test_read_file_remote_geojson_url(engine):
-    url = (
+@pytest.mark.parametrize(
+    "url",
+    [
+        # geojson url
         "https://raw.githubusercontent.com/geopandas/geopandas/"
-        "main/geopandas/tests/data/null_geom.geojson"
-    )
+        "main/geopandas/tests/data/null_geom.geojson",
+        # url to zip file
+        "https://raw.githubusercontent.com/geopandas/geopandas/"
+        "main/geopandas/tests/data/nybb_16a.zip",
+        # url to web service
+        "https://demo.pygeoapi.io/stable/collections/obs/items",
+    ],
+)
+def test_read_file_url(engine, url):
     gdf = read_file(url, engine=engine)
     assert isinstance(gdf, geopandas.GeoDataFrame)
 
 
 @pytest.mark.web
-def test_read_file_remote_zipfile_url(engine):
-    url = (
-        "https://raw.githubusercontent.com/geopandas/geopandas/"
-        "main/geopandas/datasets/nybb_16a.zip"
-    )
+@pytest.mark.parametrize(
+    "url",
+    [
+        # url to zipfile without extension
+        "https://geonode.goosocean.org/download/480",
+    ],
+)
+# Marked strict=False as state is not stable see
+# #3584, #3585, #3644
+@pytest.mark.xfail(reason="SSL certificate issue", strict=False)
+def test_read_file_url_flaky(engine, url):
     gdf = read_file(url, engine=engine)
     assert isinstance(gdf, geopandas.GeoDataFrame)
 
 
+def test_read_file_local_uri(file_path, engine):
+    local_uri = "file://" + file_path
+    gdf = read_file(local_uri, engine=engine)
+    assert isinstance(gdf, geopandas.GeoDataFrame)
+
+
+@pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not installed")
+def test_read_file_geojson_string_path(engine):
+    if engine == "pyogrio" and not PYOGRIO_GE_090:
+        pytest.skip("fixed in pyogrio 0.9.0")
+    expected = GeoDataFrame({"val_with_hash": ["row # 0"], "geometry": [Point(0, 1)]})
+    features = {
+        "type": "FeatureCollection",
+        "features": [
+            {
+                "type": "Feature",
+                "properties": {"val_with_hash": "row # 0"},
+                "geometry": {"type": "Point", "coordinates": [0.0, 1.0]},
+            }
+        ],
+    }
+    df_read = read_file(json.dumps(features), engine=engine)
+    assert_geodataframe_equal(expected.set_crs("EPSG:4326"), df_read)
+
+
 def test_read_file_textio(file_path, engine):
-    file_text_stream = open(file_path)
-    file_stringio = io.StringIO(open(file_path).read())
-    gdf_text_stream = read_file(file_text_stream, engine=engine)
+    with open(file_path) as file_text_stream:
+        file_stringio = io.StringIO(file_text_stream.read())
+        file_text_stream.seek(0)
+        gdf_text_stream = read_file(file_text_stream, engine=engine)
     gdf_stringio = read_file(file_stringio, engine=engine)
     assert isinstance(gdf_text_stream, geopandas.GeoDataFrame)
     assert isinstance(gdf_stringio, geopandas.GeoDataFrame)
 
 
 def test_read_file_bytesio(file_path, engine):
-    file_binary_stream = open(file_path, "rb")
-    file_bytesio = io.BytesIO(open(file_path, "rb").read())
-    gdf_binary_stream = read_file(file_binary_stream, engine=engine)
+    with open(file_path, "rb") as file_binary_stream:
+        gdf_binary_stream = read_file(file_binary_stream, engine=engine)
+        file_binary_stream.seek(0)
+        file_bytesio = io.BytesIO(file_binary_stream.read())
+
     gdf_bytesio = read_file(file_bytesio, engine=engine)
     assert isinstance(gdf_binary_stream, geopandas.GeoDataFrame)
     assert isinstance(gdf_bytesio, geopandas.GeoDataFrame)
 
 
 def test_read_file_raw_stream(file_path, engine):
-    file_raw_stream = open(file_path, "rb", buffering=0)
-    gdf_raw_stream = read_file(file_raw_stream, engine=engine)
+    with open(file_path, "rb", buffering=0) as file_raw_stream:
+        gdf_raw_stream = read_file(file_raw_stream, engine=engine)
     assert isinstance(gdf_raw_stream, geopandas.GeoDataFrame)
 
 
@@ -628,11 +724,11 @@ def test_read_file_tempfile(engine):
     temp.close()
 
 
-def test_read_binary_file_fsspec(engine):
+def test_read_binary_file_fsspec(engine, nybb_filename):
     fsspec = pytest.importorskip("fsspec")
     # Remove the zip scheme so fsspec doesn't open as a zipped file,
     # instead we want to read as bytes and let fiona decode it.
-    path = geopandas.datasets.get_path("nybb")[6:]
+    path = nybb_filename[6:]
     with fsspec.open(path, "rb") as f:
         gdf = read_file(f, engine=engine)
         assert isinstance(gdf, geopandas.GeoDataFrame)
@@ -645,10 +741,89 @@ def test_read_text_file_fsspec(file_path, engine):
         assert isinstance(gdf, geopandas.GeoDataFrame)
 
 
-def test_infer_zipped_file(engine):
+@pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not installed")
+def test_read_file_crs_warning_messages(engine):
+    """
+    Testing warning messages when one of, or both of, the
+    file or mask is missing a crs.
+    """
+    file_with_crs = os.path.join(tempfile.mkdtemp(), "file_with_crs.shp")
+    file_without_crs = os.path.join(tempfile.mkdtemp(), "file_without_crs.shp")
+
+    df = pd.DataFrame(
+        {
+            "Latitude": [0, 1, 2, 3, 4],
+            "Longitude": [0, 1, 2, 3, 4],
+        }
+    )
+
+    gdf_with_crs = GeoDataFrame(
+        df, geometry=points_from_xy(df.Longitude, df.Latitude), crs="EPSG:4326"
+    )
+    gdf_without_crs = GeoDataFrame(
+        df, geometry=points_from_xy(df.Longitude, df.Latitude)
+    )
+
+    gdf_with_crs.to_file(file_with_crs)
+    with pytest.warns(UserWarning, match="""\'crs\' was not provided"""):
+        gdf_without_crs.to_file(file_without_crs)
+
+    with pytest.warns(UserWarning, match="""There is no CRS defined in the mask."""):
+        data = read_file(file_with_crs, mask=gdf_without_crs, engine=engine)
+        assert_geodataframe_equal(data, gdf_with_crs)
+
+    with pytest.warns(
+        UserWarning, match="""There is no CRS defined in the source dataset."""
+    ):
+        data = read_file(file_without_crs, mask=gdf_with_crs, engine=engine)
+        assert_geodataframe_equal(data, gdf_without_crs)
+
+    with pytest.warns(
+        UserWarning,
+        match="""There is no CRS defined in the source dataset nor mask.""",
+    ):
+        data = read_file(file_without_crs, mask=gdf_without_crs, engine=engine)
+        assert_geodataframe_equal(data, gdf_without_crs)
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        data = read_file(file_with_crs, mask=gdf_with_crs, engine=engine)
+        assert_geodataframe_equal(data, gdf_with_crs)
+
+    # Check with GeoSeries as a mask
+    series_with_crs = GeoSeries(
+        points_from_xy(df.Longitude, df.Latitude), crs="EPSG:4326"
+    )
+
+    series_without_crs = GeoSeries(points_from_xy(df.Longitude, df.Latitude))
+
+    with pytest.warns(UserWarning, match="""There is no CRS defined in the mask."""):
+        data = read_file(file_with_crs, mask=series_without_crs, engine=engine)
+        assert_geodataframe_equal(data, gdf_with_crs)
+
+    with pytest.warns(
+        UserWarning, match="""There is no CRS defined in the source dataset."""
+    ):
+        data = read_file(file_without_crs, mask=series_with_crs, engine=engine)
+        assert_geodataframe_equal(data, gdf_without_crs)
+
+    with pytest.warns(
+        UserWarning,
+        match="""There is no CRS defined in the source dataset nor mask.""",
+    ):
+        data = read_file(file_without_crs, mask=series_without_crs, engine=engine)
+        assert_geodataframe_equal(data, gdf_without_crs)
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        data = read_file(file_with_crs, mask=series_with_crs, engine=engine)
+        assert_geodataframe_equal(data, gdf_with_crs)
+
+
+def test_infer_zipped_file(engine, nybb_filename):
     # Remove the zip scheme so that the test for a zipped file can
     # check it and add it back.
-    path = geopandas.datasets.get_path("nybb")[6:]
+    path = nybb_filename[6:]
     gdf = read_file(path, engine=engine)
     assert isinstance(gdf, geopandas.GeoDataFrame)
 
@@ -663,15 +838,24 @@ def test_infer_zipped_file(engine):
     assert isinstance(gdf, geopandas.GeoDataFrame)
 
 
-def test_allow_legacy_gdal_path(engine):
+def test_allow_legacy_gdal_path(engine, nybb_filename):
     # Construct a GDAL-style zip path.
-    path = "/vsizip/" + geopandas.datasets.get_path("nybb")[6:]
+    path = "/vsizip/" + nybb_filename[6:]
     gdf = read_file(path, engine=engine)
     assert isinstance(gdf, geopandas.GeoDataFrame)
 
 
-def test_read_file_filtered__bbox(df_nybb, engine):
-    nybb_filename = geopandas.datasets.get_path("nybb")
+@pytest.mark.skipif(not PYOGRIO_GE_090, reason="bug fixed in pyogrio 0.9.0")
+def test_read_file_with_hash_in_path(engine, nybb_filename, tmp_path):
+    folder_with_hash = tmp_path / "path with # present"
+    folder_with_hash.mkdir(exist_ok=True, parents=True)
+    read_path = folder_with_hash / "nybb.zip"
+    shutil.copy(nybb_filename[6:], read_path)
+    gdf = read_file(read_path, engine=engine)
+    assert isinstance(gdf, geopandas.GeoDataFrame)
+
+
+def test_read_file_bbox_tuple(df_nybb, engine, nybb_filename):
     bbox = (
         1031051.7879884212,
         224272.49231459625,
@@ -683,8 +867,7 @@ def test_read_file_filtered__bbox(df_nybb, engine):
     assert_geodataframe_equal(filtered_df, expected.reset_index(drop=True))
 
 
-def test_read_file_filtered__bbox__polygon(df_nybb, engine):
-    nybb_filename = geopandas.datasets.get_path("nybb")
+def test_read_file_bbox_polygon(df_nybb, engine, nybb_filename):
     bbox = box(
         1031051.7879884212, 224272.49231459625, 1047224.3104931959, 244317.30894023244
     )
@@ -693,14 +876,12 @@ def test_read_file_filtered__bbox__polygon(df_nybb, engine):
     assert_geodataframe_equal(filtered_df, expected.reset_index(drop=True))
 
 
-def test_read_file_filtered__rows(df_nybb, engine):
-    nybb_filename = geopandas.datasets.get_path("nybb")
+def test_read_file_filtered__rows(df_nybb, engine, nybb_filename):
     filtered_df = read_file(nybb_filename, rows=1, engine=engine)
     assert_geodataframe_equal(filtered_df, df_nybb.iloc[[0], :])
 
 
-def test_read_file_filtered__rows_slice(df_nybb, engine):
-    nybb_filename = geopandas.datasets.get_path("nybb")
+def test_read_file_filtered__rows_slice(df_nybb, engine, nybb_filename):
     filtered_df = read_file(nybb_filename, rows=slice(1, 3), engine=engine)
     assert_geodataframe_equal(filtered_df, df_nybb.iloc[1:3, :].reset_index(drop=True))
 
@@ -708,21 +889,14 @@ def test_read_file_filtered__rows_slice(df_nybb, engine):
 @pytest.mark.filterwarnings(
     "ignore:Layer does not support OLC_FASTFEATURECOUNT:RuntimeWarning"
 )  # for the slice with -1
-def test_read_file_filtered__rows_bbox(df_nybb, engine):
-    nybb_filename = geopandas.datasets.get_path("nybb")
+def test_read_file_filtered__rows_bbox(df_nybb, engine, nybb_filename):
     bbox = (
         1031051.7879884212,
         224272.49231459625,
         1047224.3104931959,
         244317.30894023244,
     )
-    if engine == "pyogrio":
-        with pytest.raises(ValueError, match="'skip_features' must be between 0 and 1"):
-            # combination bbox and rows (rows slice applied after bbox filtering!)
-            filtered_df = read_file(
-                nybb_filename, bbox=bbox, rows=slice(4, None), engine=engine
-            )
-    else:  # fiona
+    if engine == "fiona":
         # combination bbox and rows (rows slice applied after bbox filtering!)
         filtered_df = read_file(
             nybb_filename, bbox=bbox, rows=slice(4, None), engine=engine
@@ -731,7 +905,10 @@ def test_read_file_filtered__rows_bbox(df_nybb, engine):
 
     if engine == "pyogrio":
         # TODO: support negative rows in pyogrio
-        with pytest.raises(ValueError, match="'skip_features' must be between 0 and 1"):
+        with pytest.raises(
+            ValueError,
+            match=r"'skip_features' must be between 0 and 1|Negative slice start",
+        ):
             filtered_df = read_file(
                 nybb_filename, bbox=bbox, rows=slice(-1, None), engine=engine
             )
@@ -745,16 +922,14 @@ def test_read_file_filtered__rows_bbox(df_nybb, engine):
         )
 
 
-def test_read_file_filtered_rows_invalid(engine):
+def test_read_file_filtered_rows_invalid(engine, nybb_filename):
     with pytest.raises(TypeError):
-        read_file(
-            geopandas.datasets.get_path("nybb"), rows="not_a_slice", engine=engine
-        )
+        read_file(nybb_filename, rows="not_a_slice", engine=engine)
 
 
-def test_read_file__ignore_geometry(engine):
+def test_read_file__ignore_geometry(engine, naturalearth_lowres):
     pdf = geopandas.read_file(
-        geopandas.datasets.get_path("naturalearth_lowres"),
+        naturalearth_lowres,
         ignore_geometry=True,
         engine=engine,
     )
@@ -762,20 +937,73 @@ def test_read_file__ignore_geometry(engine):
     assert isinstance(pdf, pd.DataFrame) and not isinstance(pdf, geopandas.GeoDataFrame)
 
 
-def test_read_file__ignore_all_fields(engine):
-    skip_pyogrio_not_supported(engine)  # pyogrio has "columns" keyword instead
+@pytest.mark.filterwarnings(
+    "ignore:The 'include_fields' and 'ignore_fields' keywords:DeprecationWarning"
+)
+def test_read_file__ignore_fields(engine, naturalearth_lowres):
     gdf = geopandas.read_file(
-        geopandas.datasets.get_path("naturalearth_lowres"),
+        naturalearth_lowres,
+        ignore_fields=["pop_est", "continent", "iso_a3", "gdp_md_est"],
+        engine=engine,
+    )
+    assert gdf.columns.tolist() == ["name", "geometry"]
+
+
+@pytest.mark.filterwarnings(
+    "ignore:The 'include_fields' and 'ignore_fields' keywords:DeprecationWarning"
+)
+def test_read_file__ignore_all_fields(engine, naturalearth_lowres):
+    gdf = geopandas.read_file(
+        naturalearth_lowres,
         ignore_fields=["pop_est", "continent", "name", "iso_a3", "gdp_md_est"],
-        engine="fiona",
+        engine=engine,
     )
     assert gdf.columns.tolist() == ["geometry"]
 
 
-def test_read_file__where_filter(engine):
+def test_read_file_missing_geometry(tmpdir, engine):
+    filename = str(tmpdir / "test.csv")
+
+    expected = pd.DataFrame(
+        {"col1": np.array([1, 2, 3], dtype="int64"), "col2": ["a", "b", "c"]}
+    )
+    expected.to_csv(filename, index=False)
+
+    df = geopandas.read_file(filename, engine=engine)
+    # both engines read integers as strings; force back to original type
+    df["col1"] = df["col1"].astype("int64")
+
+    assert isinstance(df, pd.DataFrame)
+    assert not isinstance(df, geopandas.GeoDataFrame)
+
+    assert_frame_equal(df, expected)
+
+
+def test_read_file_None_attribute(tmp_path, engine):
+    # Test added in context of https://github.com/geopandas/geopandas/issues/2901
+    test_path = tmp_path / "test.gpkg"
+    gdf = GeoDataFrame(
+        {"a": [None, None]}, geometry=[Point(1, 2), Point(3, 4)], crs=4326
+    )
+
+    gdf.to_file(test_path, engine=engine)
+    read_gdf = read_file(test_path, engine=engine)
+    assert_geodataframe_equal(gdf, read_gdf)
+
+
+def test_read_csv_dtype(tmpdir, df_nybb):
+    filename = str(tmpdir / "test.csv")
+
+    df_nybb.to_csv(filename, index=False)
+    pdf = pd.read_csv(filename, dtype={"geometry": "geometry"})
+
+    assert pdf.geometry.dtype == "geometry"
+
+
+def test_read_file__where_filter(engine, naturalearth_lowres):
     if FIONA_GE_19 or engine == "pyogrio":
         gdf = geopandas.read_file(
-            geopandas.datasets.get_path("naturalearth_lowres"),
+            naturalearth_lowres,
             where="continent='Africa'",
             engine=engine,
         )
@@ -783,26 +1011,87 @@ def test_read_file__where_filter(engine):
     else:
         with pytest.raises(NotImplementedError):
             geopandas.read_file(
-                geopandas.datasets.get_path("naturalearth_lowres"),
+                naturalearth_lowres,
                 where="continent='Africa'",
                 engine="fiona",
             )
 
 
-@PYOGRIO_MARK
-def test_read_file__columns():
-    # TODO: this is only support for pyogrio, but we could mimic it for fiona as well
+def test_read_file__columns(engine, naturalearth_lowres):
+    if engine == "fiona" and not FIONA_GE_19:
+        pytest.skip("columns requires fiona 1.9+")
+
     gdf = geopandas.read_file(
-        geopandas.datasets.get_path("naturalearth_lowres"),
-        columns=["name", "pop_est"],
-        engine="pyogrio",
+        naturalearth_lowres, columns=["name", "pop_est"], engine=engine
     )
-    assert gdf.columns.tolist() == ["name", "pop_est", "geometry"]
+
+    expected = (
+        ["pop_est", "name", "geometry"]
+        if engine == "pyogrio" and PYOGRIO_GE_0121
+        else ["name", "pop_est", "geometry"]
+    )
+    assert gdf.columns.tolist() == expected
 
 
-def test_read_file_filtered_with_gdf_boundary(df_nybb, engine):
+def test_read_file__columns_empty(engine, naturalearth_lowres):
+    if engine == "fiona" and not FIONA_GE_19:
+        pytest.skip("columns requires fiona 1.9+")
+
+    gdf = geopandas.read_file(naturalearth_lowres, columns=[], engine=engine)
+    assert gdf.columns.tolist() == ["geometry"]
+
+
+@pytest.mark.skipif(FIONA_GE_19 or not fiona, reason="test for fiona < 1.9")
+def test_read_file__columns_old_fiona(naturalearth_lowres):
+    with pytest.raises(NotImplementedError):
+        geopandas.read_file(
+            naturalearth_lowres, columns=["name", "pop_est"], engine="fiona"
+        )
+
+
+@pytest.mark.filterwarnings(
+    "ignore:The 'include_fields' and 'ignore_fields' keywords:DeprecationWarning"
+)
+def test_read_file__include_fields(engine, naturalearth_lowres):
+    if engine == "fiona" and not FIONA_GE_19:
+        pytest.skip("columns requires fiona 1.9+")
+
+    gdf = geopandas.read_file(
+        naturalearth_lowres, include_fields=["name", "pop_est"], engine=engine
+    )
+
+    expected = (
+        ["pop_est", "name", "geometry"]
+        if engine == "pyogrio" and PYOGRIO_GE_0121
+        else ["name", "pop_est", "geometry"]
+    )
+    assert gdf.columns.tolist() == expected
+
+
+@pytest.mark.skipif(not FIONA_GE_19, reason="columns requires fiona 1.9+")
+def test_read_file__columns_conflicting_keywords(engine, naturalearth_lowres):
+    path = naturalearth_lowres
+
+    with pytest.raises(ValueError, match="Cannot specify both"):
+        geopandas.read_file(
+            path, include_fields=["name"], ignore_fields=["pop_est"], engine=engine
+        )
+
+    with pytest.raises(ValueError, match="Cannot specify both"):
+        geopandas.read_file(
+            path, columns=["name"], include_fields=["pop_est"], engine=engine
+        )
+
+    with pytest.raises(ValueError, match="Cannot specify both"):
+        geopandas.read_file(
+            path, columns=["name"], ignore_fields=["pop_est"], engine=engine
+        )
+
+
+@pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not installed")
+@pytest.mark.parametrize("file_like", [False, True])
+def test_read_file_bbox_gdf(df_nybb, engine, nybb_filename, file_like):
     full_df_shape = df_nybb.shape
-    nybb_filename = geopandas.datasets.get_path("nybb")
     bbox = geopandas.GeoDataFrame(
         geometry=[
             box(
@@ -814,28 +1103,45 @@ def test_read_file_filtered_with_gdf_boundary(df_nybb, engine):
         ],
         crs=NYBB_CRS,
     )
-    filtered_df = read_file(nybb_filename, bbox=bbox, engine=engine)
+    infile = (
+        open(nybb_filename.replace("zip://", ""), "rb") if file_like else nybb_filename
+    )
+    filtered_df = read_file(infile, bbox=bbox, engine=engine)
     filtered_df_shape = filtered_df.shape
     assert full_df_shape != filtered_df_shape
     assert filtered_df_shape == (2, 5)
+    if file_like:
+        infile.close()
 
 
-def test_read_file_filtered_with_gdf_boundary__mask(df_nybb, engine):
-    skip_pyogrio_not_supported(engine)
-    gdf_mask = geopandas.read_file(geopandas.datasets.get_path("naturalearth_lowres"))
-    gdf = geopandas.read_file(
-        geopandas.datasets.get_path("naturalearth_cities"),
-        mask=gdf_mask[gdf_mask.continent == "Africa"],
-        engine=engine,
-    )
-    filtered_df_shape = gdf.shape
-    assert filtered_df_shape == (57, 2)
-
-
-def test_read_file_filtered_with_gdf_boundary__mask__polygon(df_nybb, engine):
-    skip_pyogrio_not_supported(engine)
+@pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not installed")
+@pytest.mark.parametrize("file_like", [False, True])
+def test_read_file_mask_gdf(df_nybb, engine, nybb_filename, file_like):
     full_df_shape = df_nybb.shape
-    nybb_filename = geopandas.datasets.get_path("nybb")
+    mask = geopandas.GeoDataFrame(
+        geometry=[
+            box(
+                1031051.7879884212,
+                224272.49231459625,
+                1047224.3104931959,
+                244317.30894023244,
+            )
+        ],
+        crs=NYBB_CRS,
+    )
+    infile = (
+        open(nybb_filename.replace("zip://", ""), "rb") if file_like else nybb_filename
+    )
+    filtered_df = read_file(infile, mask=mask, engine=engine)
+    filtered_df_shape = filtered_df.shape
+    assert full_df_shape != filtered_df_shape
+    assert filtered_df_shape == (2, 5)
+    if file_like:
+        infile.close()
+
+
+def test_read_file_mask_polygon(df_nybb, engine, nybb_filename):
+    full_df_shape = df_nybb.shape
     mask = box(
         1031051.7879884212, 224272.49231459625, 1047224.3104931959, 244317.30894023244
     )
@@ -845,10 +1151,25 @@ def test_read_file_filtered_with_gdf_boundary__mask__polygon(df_nybb, engine):
     assert filtered_df_shape == (2, 5)
 
 
-def test_read_file_filtered_with_gdf_boundary_mismatched_crs(df_nybb, engine):
-    skip_pyogrio_not_supported(engine)
+def test_read_file_mask_geojson(df_nybb, nybb_filename, engine):
     full_df_shape = df_nybb.shape
-    nybb_filename = geopandas.datasets.get_path("nybb")
+    mask = mapping(
+        box(
+            1031051.7879884212,
+            224272.49231459625,
+            1047224.3104931959,
+            244317.30894023244,
+        )
+    )
+    filtered_df = read_file(nybb_filename, mask=mask, engine=engine)
+    filtered_df_shape = filtered_df.shape
+    assert full_df_shape != filtered_df_shape
+    assert filtered_df_shape == (2, 5)
+
+
+@pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not installed")
+def test_read_file_bbox_gdf_mismatched_crs(df_nybb, engine, nybb_filename):
+    full_df_shape = df_nybb.shape
     bbox = geopandas.GeoDataFrame(
         geometry=[
             box(
@@ -867,10 +1188,9 @@ def test_read_file_filtered_with_gdf_boundary_mismatched_crs(df_nybb, engine):
     assert filtered_df_shape == (2, 5)
 
 
-def test_read_file_filtered_with_gdf_boundary_mismatched_crs__mask(df_nybb, engine):
-    skip_pyogrio_not_supported(engine)
+@pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not installed")
+def test_read_file_mask_gdf_mismatched_crs(df_nybb, engine, nybb_filename):
     full_df_shape = df_nybb.shape
-    nybb_filename = geopandas.datasets.get_path("nybb")
     mask = geopandas.GeoDataFrame(
         geometry=[
             box(
@@ -887,6 +1207,45 @@ def test_read_file_filtered_with_gdf_boundary_mismatched_crs__mask(df_nybb, engi
     filtered_df_shape = filtered_df.shape
     assert full_df_shape != filtered_df_shape
     assert filtered_df_shape == (2, 5)
+
+
+@pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not installed")
+def test_read_file_multi_layer_with_layer_arg_no_warning(tmp_path, engine):
+    # While reading a file with multiple layers, if the layer is properly
+    # specified, a "Specify layer" warning should not be emitted
+    data1 = {"geometry": [Point(1, 2), Point(2, 1)]}
+    gdf = geopandas.GeoDataFrame(data1, crs="EPSG:4326")
+    file_path = tmp_path / "out.gpkg"
+    gdf.to_file(file_path, layer="layer1", engine=engine)
+    gdf.to_file(file_path, layer="layer2", engine=engine)
+
+    with warnings.catch_warnings(record=True) as captured:
+        warnings.simplefilter("always")
+        read_file(file_path, bbox=gdf, layer="layer1", engine=engine)
+        read_file(file_path, mask=gdf, layer="layer1", engine=engine)
+        specify_layer_warnings = [
+            warning
+            for warning in captured
+            if warning.category is UserWarning
+            and "specify layer parameter" in str(warning.message).lower()
+        ]
+        assert len(specify_layer_warnings) == 0, (
+            "'Specify layer parameter' warning was raised, but the layer was specified."
+        )
+
+
+def test_read_file_bbox_mask_not_allowed(engine, nybb_filename):
+    bbox = (
+        1031051.7879884212,
+        224272.49231459625,
+        1047224.3104931959,
+        244317.30894023244,
+    )
+
+    mask = box(*bbox)
+
+    with pytest.raises(ValueError, match="mask and bbox can not be set together"):
+        read_file(nybb_filename, bbox=bbox, mask=mask)
 
 
 @pytest.mark.filterwarnings(
@@ -911,7 +1270,7 @@ def test_read_file_empty_shapefile(tmpdir, engine):
     fname = str(tmpdir.join("test_empty.shp"))
 
     with fiona_env():
-        with fiona.open(fname, "w", **meta) as _:  # noqa
+        with fiona.open(fname, "w", **meta) as _:
             pass
 
     empty = read_file(fname, engine=engine)
@@ -919,12 +1278,7 @@ def test_read_file_empty_shapefile(tmpdir, engine):
     assert all(empty.columns == ["A", "Z", "geometry"])
 
 
-def test_read_file_privacy(tmpdir, df_nybb):
-    with pytest.warns(FutureWarning):
-        geopandas.io.file.read_file(geopandas.datasets.get_path("nybb"))
-
-
-class FileNumber(object):
+class FileNumber:
     def __init__(self, tmpdir, base, ext):
         self.tmpdir = str(tmpdir)
         self.base = base
@@ -932,7 +1286,7 @@ class FileNumber(object):
         self.fileno = 0
 
     def __repr__(self):
-        filename = "{0}{1:02d}.{2}".format(self.base, self.fileno, self.ext)
+        filename = f"{self.base}{self.fileno:02d}.{self.ext}"
         return os.path.join(self.tmpdir, filename)
 
     def __next__(self):
@@ -1021,8 +1375,6 @@ def test_write_index_to_file(tmpdir, df_points, driver, ext, engine):
         df_check = read_file(tempfilename, engine=engine)
         assert list(df_check.columns) == driver_col + ["geometry"]
 
-        return
-
     #
     # Checks where index is not used/saved
     #
@@ -1036,7 +1388,7 @@ def test_write_index_to_file(tmpdir, df_points, driver, ext, engine):
     df.index += 1
     do_checks(df, index_is_used=False)
 
-    # index is a Int64Index regular sequence from 1
+    # index is an Int64Index regular sequence from 1
     df_p.index = list(range(1, len(df) + 1))
     df = GeoDataFrame(df_p["value1"], geometry=df_p.geometry)
     do_checks(df, index_is_used=False)
@@ -1092,7 +1444,7 @@ def test_write_index_to_file(tmpdir, df_points, driver, ext, engine):
     # index as string
     df_p = df_points.copy()
     df = GeoDataFrame(df_p["value1"], geometry=df_p.geometry)
-    df.index = pd.TimedeltaIndex(range(len(df)), "days")
+    df.index = pd.to_timedelta(range(len(df)), unit="days")
     # TODO: TimedeltaIndex is an invalid field type
     df.index = df.index.astype(str)
     do_checks(df, index_is_used=True)
@@ -1100,7 +1452,7 @@ def test_write_index_to_file(tmpdir, df_points, driver, ext, engine):
     # unnamed DatetimeIndex
     df_p = df_points.copy()
     df = GeoDataFrame(df_p["value1"], geometry=df_p.geometry)
-    df.index = pd.TimedeltaIndex(range(len(df)), "days") + pd.DatetimeIndex(
+    df.index = pd.to_timedelta(range(len(df)), unit="days") + pd.to_datetime(
         ["1999-12-27"] * len(df)
     )
     if driver == "ESRI Shapefile":
@@ -1129,3 +1481,150 @@ def test_write_read_file(test_file, engine):
     df_json = geopandas.read_file(test_file, engine=engine)
     assert_geodataframe_equal(gdf, df_json, check_crs=True)
     os.remove(os.path.expanduser(test_file))
+
+
+@pytest.mark.skipif(fiona is False, reason="Fiona not available")
+@pytest.mark.skipif(FIONA_GE_19, reason="Fiona >= 1.9 supports metadata")
+def test_to_file_metadata_unsupported_fiona_version(tmp_path, df_points):
+    metadata = {"title": "test"}
+    tmp_file = tmp_path / "test.gpkg"
+    match = "'metadata' keyword is only supported for Fiona >= 1.9"
+    with pytest.raises(NotImplementedError, match=match):
+        df_points.to_file(tmp_file, driver="GPKG", engine="fiona", metadata=metadata)
+
+
+@pytest.mark.skipif(not FIONA_GE_19, reason="only Fiona >= 1.9 supports metadata")
+def test_to_file_metadata_supported_fiona_version(tmp_path, df_points):
+    metadata = {"title": "test"}
+    tmp_file = tmp_path / "test.gpkg"
+
+    df_points.to_file(tmp_file, driver="GPKG", engine="fiona", metadata=metadata)
+
+    # Check that metadata is written to the file
+    with fiona.open(tmp_file) as src:
+        tags = src.tags()
+        assert tags == metadata
+
+
+@pytest.mark.skipif(pyogrio is False, reason="Pyogrio not available")
+def test_to_file_metadata_pyogrio(tmp_path, df_points):
+    metadata = {"title": "test"}
+    tmp_file = tmp_path / "test.gpkg"
+
+    df_points.to_file(tmp_file, driver="GPKG", engine="pyogrio", metadata=metadata)
+
+    # Check that metadata is written to the file
+    info = pyogrio.read_info(tmp_file)
+    layer_metadata = info["layer_metadata"]
+    assert layer_metadata == metadata
+
+
+@pytest.mark.parametrize(
+    "driver, ext", [("ESRI Shapefile", ".shp"), ("GeoJSON", ".geojson")]
+)
+def test_to_file_metadata_unsupported_driver(driver, ext, tmpdir, df_points, engine):
+    metadata = {"title": "Test"}
+    tempfilename = os.path.join(str(tmpdir), "test" + ext)
+    with pytest.raises(
+        NotImplementedError, match="'metadata' keyword is only supported for"
+    ):
+        df_points.to_file(tempfilename, driver=driver, metadata=metadata)
+
+
+def test_multiple_geom_cols_error(tmpdir, df_nybb):
+    df_nybb["geom2"] = df_nybb.geometry
+    with pytest.raises(ValueError, match="GeoDataFrame contains multiple geometry"):
+        df_nybb.to_file(os.path.join(str(tmpdir), "boros.gpkg"))
+
+
+@PYOGRIO_MARK
+@FIONA_MARK
+def test_option_io_engine(nybb_filename):
+    try:
+        geopandas.options.io_engine = "pyogrio"
+
+        # disallowing to read a Shapefile with fiona should ensure we are
+        # actually reading with pyogrio
+        import fiona
+
+        orig = fiona.supported_drivers["ESRI Shapefile"]
+        fiona.supported_drivers["ESRI Shapefile"] = "w"
+
+        _ = geopandas.read_file(nybb_filename)
+    finally:
+        fiona.supported_drivers["ESRI Shapefile"] = orig
+        geopandas.options.io_engine = None
+
+
+@pytest.mark.skipif(pyogrio, reason="test for pyogrio not installed")
+def test_error_engine_unavailable_pyogrio(tmp_path, df_points, file_path):
+    with pytest.raises(ImportError, match="the 'read_file' function requires"):
+        geopandas.read_file(file_path, engine="pyogrio")
+
+    with pytest.raises(ImportError, match="the 'to_file' method requires"):
+        df_points.to_file(tmp_path / "test.gpkg", engine="pyogrio")
+
+
+@pytest.mark.skipif(fiona, reason="test for fiona not installed")
+def test_error_engine_unavailable_fiona(tmp_path, df_points, file_path):
+    with pytest.raises(ImportError, match="the 'read_file' function requires"):
+        geopandas.read_file(file_path, engine="fiona")
+
+    with pytest.raises(ImportError, match="the 'to_file' method requires"):
+        df_points.to_file(tmp_path / "test.gpkg", engine="fiona")
+
+
+def test_error_monkeypatch_engine_unavailable_pyogrio(
+    monkeypatch, tmp_path, df_points, file_path
+) -> None:
+    # monkeypatch to make pyogrio unimportable
+    monkeypatch.setattr(geopandas.io.file, "_import_pyogrio", lambda: None)
+    monkeypatch.setattr(geopandas.io.file, "pyogrio", None)
+    monkeypatch.setattr(
+        geopandas.io.file, "pyogrio_import_error", "No module named 'pyogrio'"
+    )
+
+    with pytest.raises(ImportError, match="No module named 'pyogrio'"):
+        geopandas.read_file(file_path, engine="pyogrio")
+
+    with pytest.raises(ImportError, match="No module named 'pyogrio'"):
+        df_points.to_file(tmp_path / "test.gpkg", engine="pyogrio")
+
+
+def test_error_monkeypatch_engine_unavailable_fiona(
+    monkeypatch, tmp_path, df_points, file_path
+) -> None:
+    # monkeypatch to make fiona unimportable
+    monkeypatch.setattr(geopandas.io.file, "_import_fiona", lambda: None)
+    monkeypatch.setattr(geopandas.io.file, "fiona", None)
+    monkeypatch.setattr(
+        geopandas.io.file, "fiona_import_error", "No module named 'fiona'"
+    )
+
+    with pytest.raises(ImportError, match="No module named 'fiona'"):
+        geopandas.read_file(file_path, engine="fiona")
+
+    with pytest.raises(ImportError, match="No module named 'fiona'"):
+        df_points.to_file(tmp_path / "test.gpkg", engine="fiona")
+
+
+@PYOGRIO_MARK
+@pytest.mark.filterwarnings("ignore:Geometry is in a geographic CRS")
+def test_list_layers(df_points, tmpdir):
+    tempfilename = os.path.join(str(tmpdir), "dataset.gpkg")
+    df_points.to_file(tempfilename, layer="original")
+    df_points.set_geometry(df_points.buffer(1)).to_file(tempfilename, layer="buffered")
+    df_points.set_geometry(df_points.buffer(2).boundary).to_file(
+        tempfilename, layer="boundary"
+    )
+    pyogrio.write_dataframe(
+        df_points[["value1", "value2"]], tempfilename, layer="non-spatial"
+    )
+    layers = geopandas.list_layers(tempfilename)
+    expected = pd.DataFrame(
+        {
+            "name": ["original", "buffered", "boundary", "non-spatial"],
+            "geometry_type": ["Point", "Polygon", "LineString", None],
+        }
+    )
+    assert_frame_equal(layers, expected)

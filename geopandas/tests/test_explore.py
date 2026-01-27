@@ -1,33 +1,49 @@
-import geopandas as gpd
+import uuid
+from packaging.version import Version
+
 import numpy as np
 import pandas as pd
+
+import shapely
+
+import geopandas as gpd
+from geopandas._compat import HAS_PYPROJ
+
 import pytest
-from packaging.version import Version
 
 folium = pytest.importorskip("folium")
 branca = pytest.importorskip("branca")
 matplotlib = pytest.importorskip("matplotlib")
 mapclassify = pytest.importorskip("mapclassify")
+geodatasets = pytest.importorskip("geodatasets")
 
-import matplotlib.cm as cm  # noqa
-import matplotlib.colors as colors  # noqa
-from branca.colormap import StepColormap  # noqa
+from branca.colormap import StepColormap
+from matplotlib import cm, colors
 
-BRANCA_05 = Version(branca.__version__) > Version("0.4.2")
-FOLIUM_G_014 = Version(folium.__version__) > Version("0.14.0")
+FOLIUM_GE_019 = Version(folium.__version__) >= Version("0.19.0")
 
 
+@pytest.fixture(scope="class")
+def _setup_class_test_explore(
+    nybb_filename, naturalearth_lowres, naturalearth_cities, request
+):
+    request.cls.nybb = gpd.read_file(nybb_filename)
+    request.cls.world = gpd.read_file(naturalearth_lowres)
+    request.cls.cities = gpd.read_file(naturalearth_cities)
+    request.cls.chicago = gpd.read_file(geodatasets.get_path("geoda.chicago_commpop"))
+    request.cls.world["range"] = range(len(request.cls.world))
+    request.cls.missing = request.cls.world.copy()
+    np.random.seed(42)
+    request.cls.missing.loc[
+        np.random.choice(request.cls.missing.index, 40), "continent"
+    ] = np.nan
+    request.cls.missing.loc[
+        np.random.choice(request.cls.missing.index, 40), "pop_est"
+    ] = np.nan
+
+
+@pytest.mark.usefixtures("_setup_class_test_explore")
 class TestExplore:
-    def setup_method(self):
-        self.nybb = gpd.read_file(gpd.datasets.get_path("nybb"))
-        self.world = gpd.read_file(gpd.datasets.get_path("naturalearth_lowres"))
-        self.cities = gpd.read_file(gpd.datasets.get_path("naturalearth_cities"))
-        self.world["range"] = range(len(self.world))
-        self.missing = self.world.copy()
-        np.random.seed(42)
-        self.missing.loc[np.random.choice(self.missing.index, 40), "continent"] = np.nan
-        self.missing.loc[np.random.choice(self.missing.index, 40), "pop_est"] = np.nan
-
     def _fetch_map_string(self, m):
         out = m._parent.render()
         out_str = "".join(out.split())
@@ -44,6 +60,7 @@ class TestExplore:
         """Make sure default choropleth pass"""
         self.world.explore(column="pop_est")
 
+    @pytest.mark.skipif(not HAS_PYPROJ, reason="requires pyproj")
     def test_map_settings_default(self):
         """Check default map settings"""
         m = self.world.explore()
@@ -52,7 +69,10 @@ class TestExplore:
             pytest.approx(2.842170943040401e-14, rel=1e-6),
         ]
         assert m.options["zoom"] == 10
-        assert m.options["zoomControl"] is True
+        if not FOLIUM_GE_019:
+            assert m.options["zoomControl"] is True
+        else:
+            assert m.options["zoom_control"] is True
         assert m.position == "relative"
         assert m.height == (100.0, "%")
         assert m.width == (100.0, "%")
@@ -62,6 +82,7 @@ class TestExplore:
         assert m.global_switches.disable_3d is False
         assert "openstreetmap" in m.to_dict()["children"].keys()
 
+    @pytest.mark.skipif(not HAS_PYPROJ, reason="requires pyproj")
     def test_map_settings_custom(self):
         """Check custom map settings"""
         m = self.nybb.explore(
@@ -74,7 +95,10 @@ class TestExplore:
             pytest.approx(-73.9778006856748, rel=1e-6),
         ]
         assert m.options["zoom"] == 10
-        assert m.options["zoomControl"] is False
+        if not FOLIUM_GE_019:
+            assert m.options["zoomControl"] is False
+        else:
+            assert m.options["zoom_control"] is False
         assert m.height == (200.0, "px")
         assert m.width == (200.0, "px")
 
@@ -173,11 +197,24 @@ class TestExplore:
         assert '"fillColor":"#5ec962"' in out_str
         assert '"fillColor":"#fde725"' in out_str
         assert '"fillColor":"#440154"' in out_str
+
         # custom k
         m = self.world.explore(column="pop_est", scheme="naturalbreaks", k=3)
         out_str = self._fetch_map_string(m)
         assert '"fillColor":"#21918c"' in out_str
         assert '"fillColor":"#fde725"' in out_str
+        assert '"fillColor":"#440154"' in out_str
+
+        # UserDefined overriding default k
+        m = self.chicago.explore(
+            column="POP2010",
+            scheme="UserDefined",
+            classification_kwds={"bins": [25000, 50000, 75000, 100000]},
+        )
+        out_str = self._fetch_map_string(m)
+        assert '"fillColor":"#fde725"' in out_str
+        assert '"fillColor":"#35b779"' in out_str
+        assert '"fillColor":"#31688e"' in out_str
         assert '"fillColor":"#440154"' in out_str
 
     def test_categorical(self):
@@ -234,7 +271,7 @@ class TestExplore:
         for c in cmap:
             assert f'"fillColor":"{c}"' in out_str
 
-        with pytest.raises(ValueError, match="'cmap' is invalid."):
+        with pytest.raises(ValueError, match="'cmap' is invalid"):
             self.nybb.explore(column="BoroName", cmap="nonsense")
 
     def test_categories(self):
@@ -268,6 +305,42 @@ class TestExplore:
         out2_str = self._fetch_map_string(m2)
         assert '"__folium_color":"#9edae5","bool":true' in out2_str
         assert '"__folium_color":"#1f77b4","bool":false' in out2_str
+
+    def test_datetime(self):
+        df = self.nybb.copy().head(2)
+        date1 = pd.Timestamp(2022, 1, 1, 1, 22, 0, 0)
+        date2 = pd.Timestamp(2025, 1, 1, 1, 22, 0, 0)
+        df["datetime"] = [date1, date2]
+        m1 = df.explore("datetime")
+
+        out1_str = self._fetch_map_string(m1)
+        assert '"__folium_color":"#9edae5","datetime":"2025-01-0101:22:00"' in out1_str
+        assert '"__folium_color":"#1f77b4","datetime":"2022-01-0101:22:00"' in out1_str
+
+        df2 = df.set_index("datetime")
+        m2 = df2.explore()
+        out2_str = self._fetch_map_string(m2)
+        assert '"datetime":"2025-01-0101:22:00"' in out2_str
+        assert '"datetime":"2022-01-0101:22:00"' in out2_str
+
+    def test_non_json_serialisable(self):
+        df = self.nybb.copy().head(2)
+
+        u1 = "12345678-1234-5678-1234-567812345678"
+        uuid1 = uuid.UUID(u1)
+        u2 = "12345678-1234-5678-1234-567812345679"
+        uuid2 = uuid.UUID(u2)
+        df["object"] = [uuid1, uuid2]
+        m1 = df.explore("object")
+
+        out1_str = self._fetch_map_string(m1)
+        assert f'"__folium_color":"#9edae5","object":"{u2}"' in out1_str
+        assert f'"__folium_color":"#1f77b4","object":"{u1}"' in out1_str
+        df2 = df.set_index("object")
+        m2 = df2.explore()
+        out2_str = self._fetch_map_string(m2)
+        assert f'"object":"{u2}"' in out2_str
+        assert f'"object":"{u1}"' in out2_str
 
     def test_string(self):
         df = self.nybb.copy()
@@ -311,51 +384,49 @@ class TestExplore:
             in out2_fields_str
         )
 
-        # GeoDataframe and the given list have different number of rows
+        # GeoDataFrame and the given list have different number of rows
         with pytest.raises(ValueError, match="different number of rows"):
             self.world.explore(column=np.array([1, 2, 3]))
 
     def test_no_crs(self):
         """Naive geometry get no tiles"""
         df = self.world.copy()
-        df.crs = None
+        df.geometry.array.crs = None
         m = df.explore()
         assert "openstreetmap" not in m.to_dict()["children"].keys()
 
     def test_style_kwds(self):
         """Style keywords"""
         m = self.world.explore(
-            style_kwds=dict(fillOpacity=0.1, weight=0.5, fillColor="orange")
+            style_kwds={"fillOpacity": 0.1, "weight": 0.5, "fillColor": "orange"}
         )
         out_str = self._fetch_map_string(m)
         assert '"fillColor":"orange","fillOpacity":0.1,"weight":0.5' in out_str
-        m = self.world.explore(column="pop_est", style_kwds=dict(color="black"))
+        m = self.world.explore(column="pop_est", style_kwds={"color": "black"})
         assert '"color":"black"' in self._fetch_map_string(m)
 
         # custom style_function - geopandas/issues/2350
         m = self.world.explore(
             style_kwds={
                 "style_function": lambda x: {
-                    "fillColor": "red"
-                    if x["properties"]["gdp_md_est"] < 10**6
-                    else "green",
-                    "color": "black"
-                    if x["properties"]["gdp_md_est"] < 10**6
-                    else "white",
+                    "fillColor": (
+                        "red" if x["properties"]["gdp_md_est"] < 10**6 else "green"
+                    ),
+                    "color": (
+                        "black" if x["properties"]["gdp_md_est"] < 10**6 else "white"
+                    ),
                 }
             }
         )
         # two lines with formatting instructions from style_function.
         # make sure each passes test
         assert all(
-            [
-                ('"fillColor":"green"' in t and '"color":"white"' in t)
-                or ('"fillColor":"red"' in t and '"color":"black"' in t)
-                for t in [
-                    "".join(line.split())
-                    for line in m._parent.render().split("\n")
-                    if "return" in line and "color" in line
-                ]
+            ('"fillColor":"green"' in t and '"color":"white"' in t)
+            or ('"fillColor":"red"' in t and '"color":"black"' in t)
+            for t in [
+                "".join(line.split())
+                for line in m._parent.render().split("\n")
+                if "return" in line and "color" in line
             ]
         )
 
@@ -426,7 +497,7 @@ class TestExplore:
         m = self.world.explore(
             tooltip=True,
             popup=False,
-            tooltip_kwds=dict(aliases=[0, 1, 2, 3, 4, 5], sticky=False),
+            tooltip_kwds={"aliases": [0, 1, 2, 3, 4, 5], "sticky": False},
         )
         out_str = self._fetch_map_string(m)
         assert (
@@ -440,7 +511,7 @@ class TestExplore:
         m = self.world.explore(
             tooltip=False,
             popup=True,
-            popup_kwds=dict(aliases=[0, 1, 2, 3, 4, 5]),
+            popup_kwds={"aliases": [0, 1, 2, 3, 4, 5]},
         )
         out_str = self._fetch_map_string(m)
         assert (
@@ -454,8 +525,8 @@ class TestExplore:
         m = self.world.explore(
             tooltip=True,
             popup=True,
-            tooltip_kwds=dict(labels=False),
-            popup_kwds=dict(labels=False),
+            tooltip_kwds={"labels": False},
+            popup_kwds={"labels": False},
         )
         out_str = self._fetch_map_string(m)
         assert "<th>${aliases[i]" not in out_str
@@ -483,7 +554,7 @@ class TestExplore:
         for s in strings:
             assert s in out_str
 
-        m = self.cities.explore(marker_kwds=dict(radius=5, fill=False))
+        m = self.cities.explore(marker_kwds={"radius": 5, "fill": False})
         strings = ['"radius":5', '"fill":false', "CircleMarker(latlng,opts)"]
         out_str = self._fetch_map_string(m)
         for s in strings:
@@ -534,14 +605,10 @@ class TestExplore:
         df2["values"] = df2["BoroCode"] * 10.0
         m = df2[df2["values"] >= 30].explore("values", vmin=0)
         out_str = self._fetch_map_string(m)
-        if FOLIUM_G_014:
-            assert 'case"0":return{"color":"#fde725","fillColor":"#fde725"' in out_str
-            assert 'case"1":return{"color":"#7ad151","fillColor":"#7ad151"' in out_str
-            assert 'default:return{"color":"#22a884","fillColor":"#22a884"' in out_str
-        else:
-            assert 'case"1":return{"color":"#7ad151","fillColor":"#7ad151"' in out_str
-            assert 'case"2":return{"color":"#22a884","fillColor":"#22a884"' in out_str
-            assert 'default:return{"color":"#fde725","fillColor":"#fde725"' in out_str
+
+        assert 'case"0":return{"color":"#fde725","fillColor":"#fde725"' in out_str
+        assert 'case"1":return{"color":"#7ad151","fillColor":"#7ad151"' in out_str
+        assert 'default:return{"color":"#22a884","fillColor":"#22a884"' in out_str
 
         df2["values_negative"] = df2["BoroCode"] * -10.0
         m = df2[df2["values_negative"] <= 30].explore("values_negative", vmax=0)
@@ -556,10 +623,10 @@ class TestExplore:
         m = self.missing.explore("pop_est")
         assert '"fillColor":null' in self._fetch_map_string(m)
 
-        m = self.missing.explore("pop_est", missing_kwds=dict(color="red"))
+        m = self.missing.explore("pop_est", missing_kwds={"color": "red"})
         assert '"fillColor":"red"' in self._fetch_map_string(m)
 
-        m = self.missing.explore("continent", missing_kwds=dict(color="red"))
+        m = self.missing.explore("continent", missing_kwds={"color": "red"})
         assert '"fillColor":"red"' in self._fetch_map_string(m)
 
     def test_categorical_legend(self):
@@ -590,13 +657,13 @@ class TestExplore:
         assert quoted_in("text('range')", out_str)
 
         m = self.world.explore(
-            "range", legend=True, legend_kwds=dict(caption="my_caption")
+            "range", legend=True, legend_kwds={"caption": "my_caption"}
         )
         out_str = self._fetch_map_string(m)
         assert "attr(\"id\",'legend')" in out_str
         assert quoted_in("text('my_caption')", out_str)
 
-        m = self.missing.explore("pop_est", legend=True, missing_kwds=dict(color="red"))
+        m = self.missing.explore("pop_est", legend=True, missing_kwds={"color": "red"})
         out_str = self._fetch_map_string(m)
         assert "red'></span>NaN" in out_str
 
@@ -604,7 +671,7 @@ class TestExplore:
         m = self.world.explore(
             "pop_est",
             legend=True,
-            legend_kwds=dict(scale=False),
+            legend_kwds={"scale": False},
             scheme="Headtailbreaks",
         )
         out_str = self._fetch_map_string(m)
@@ -640,12 +707,11 @@ class TestExplore:
         assert out_str.count("f1e2ccff") == 62
         assert out_str.count("ccccccff") == 63
 
-    @pytest.mark.skipif(not BRANCA_05, reason="requires branca >= 0.5.0")
     def test_colorbar_max_labels(self):
         import re
 
         # linear
-        m = self.world.explore("pop_est", legend_kwds=dict(max_labels=3))
+        m = self.world.explore("pop_est", legend_kwds={"max_labels": 3})
         out_str = self._fetch_map_string(m)
         tick_str = re.search(r"tickValues\(\[[\',\,\.,0-9]*\]\)", out_str).group(0)
         assert (
@@ -655,13 +721,13 @@ class TestExplore:
 
         # scheme
         m = self.world.explore(
-            "pop_est", scheme="headtailbreaks", legend_kwds=dict(max_labels=3)
+            "pop_est", scheme="headtailbreaks", legend_kwds={"max_labels": 3}
         )
         out_str = self._fetch_map_string(m)
         assert "tickValues([140.0,'',184117213.1818182,'',1382066377.0,''])" in out_str
 
         # short cmap
-        m = self.world.explore("pop_est", legend_kwds=dict(max_labels=3), cmap="tab10")
+        m = self.world.explore("pop_est", legend_kwds={"max_labels": 3}, cmap="tab10")
         out_str = self._fetch_map_string(m)
 
         tick_str = re.search(r"tickValues\(\[[\',\,\.,0-9]*\]\)", out_str).group(0)
@@ -670,6 +736,7 @@ class TestExplore:
             == "tickValues([140.0,'','','',559086084.0,'','','',1118172028.0,'','',''])"
         )
 
+    @pytest.mark.skipif(not HAS_PYPROJ, reason="requires pyproj")
     def test_xyzservices_providers(self):
         xyzservices = pytest.importorskip("xyzservices")
 
@@ -684,8 +751,9 @@ class TestExplore:
             'attribution":"\\u0026copy;\\u003cahref=\\"https://www.openstreetmap.org'
             in out_str
         )
-        assert '"maxNativeZoom":20,"maxZoom":20,"minZoom":0' in out_str
+        assert '"maxZoom":20' in out_str
 
+    @pytest.mark.skipif(not HAS_PYPROJ, reason="requires pyproj")
     def test_xyzservices_query_name(self):
         pytest.importorskip("xyzservices")
 
@@ -700,8 +768,9 @@ class TestExplore:
             'attribution":"\\u0026copy;\\u003cahref=\\"https://www.openstreetmap.org'
             in out_str
         )
-        assert '"maxNativeZoom":20,"maxZoom":20,"minZoom":0' in out_str
+        assert '"maxZoom":20' in out_str
 
+    @pytest.mark.skipif(not HAS_PYPROJ, reason="requires pyproj")
     def test_xyzservices_providers_min_zoom_override(self):
         xyzservices = pytest.importorskip("xyzservices")
 
@@ -710,8 +779,9 @@ class TestExplore:
         )
         out_str = self._fetch_map_string(m)
 
-        assert '"maxNativeZoom":20,"maxZoom":20,"minZoom":3' in out_str
+        assert '"minZoom":3' in out_str
 
+    @pytest.mark.skipif(not HAS_PYPROJ, reason="requires pyproj")
     def test_xyzservices_providers_max_zoom_override(self):
         xyzservices = pytest.importorskip("xyzservices")
 
@@ -720,8 +790,9 @@ class TestExplore:
         )
         out_str = self._fetch_map_string(m)
 
-        assert '"maxNativeZoom":12,"maxZoom":12,"minZoom":0' in out_str
+        assert '"maxZoom":12' in out_str
 
+    @pytest.mark.skipif(not HAS_PYPROJ, reason="requires pyproj")
     def test_xyzservices_providers_both_zooms_override(self):
         xyzservices = pytest.importorskip("xyzservices")
 
@@ -732,7 +803,8 @@ class TestExplore:
         )
         out_str = self._fetch_map_string(m)
 
-        assert '"maxNativeZoom":12,"maxZoom":12,"minZoom":3' in out_str
+        assert '"maxZoom":12' in out_str
+        assert '"minZoom":3' in out_str
 
     def test_linearrings(self):
         rings = self.nybb.explode(index_parts=True).exterior
@@ -746,8 +818,8 @@ class TestExplore:
             column="pop_est",
             legend=True,
             scheme="naturalbreaks",
-            missing_kwds=dict(color="red", label="missing"),
-            legend_kwds=dict(colorbar=False, interval=True),
+            missing_kwds={"color": "red", "label": "missing"},
+            legend_kwds={"colorbar": False, "interval": True},
         )
         out_str = self._fetch_map_string(m)
 
@@ -767,8 +839,8 @@ class TestExplore:
             column="pop_est",
             legend=True,
             scheme="naturalbreaks",
-            missing_kwds=dict(color="red", label="missing"),
-            legend_kwds=dict(colorbar=False, interval=False),
+            missing_kwds={"color": "red", "label": "missing"},
+            legend_kwds={"colorbar": False, "interval": False},
         )
         out_str = self._fetch_map_string(m)
 
@@ -789,7 +861,7 @@ class TestExplore:
             legend=True,
             scheme="naturalbreaks",
             k=5,
-            legend_kwds=dict(colorbar=False, labels=["s", "m", "l", "xl", "xxl"]),
+            legend_kwds={"colorbar": False, "labels": ["s", "m", "l", "xl", "xxl"]},
         )
         out_str = self._fetch_map_string(m)
 
@@ -802,8 +874,8 @@ class TestExplore:
             column="pop_est",
             legend=True,
             scheme="naturalbreaks",
-            missing_kwds=dict(color="red", label="missing"),
-            legend_kwds=dict(colorbar=False, fmt="{:.0f}"),
+            missing_kwds={"color": "red", "label": "missing"},
+            legend_kwds={"colorbar": False, "fmt": "{:.0f}"},
         )
         out_str = self._fetch_map_string(m)
 
@@ -836,7 +908,7 @@ class TestExplore:
         assert '"fillOpacity":0.75' in out_str
 
         m = self.nybb.explore(
-            highlight=True, highlight_kwds=dict(fillOpacity=1, color="red")
+            highlight=True, highlight_kwds={"fillOpacity": 1, "color": "red"}
         )
         out_str = self._fetch_map_string(m)
 
@@ -908,18 +980,76 @@ class TestExplore:
     def test_map_kwds(self):
         def check():
             out_str = self._fetch_map_string(m)
-            assert "zoomControl:false" in out_str
-            assert "dragging:false" in out_str
-            assert "scrollWheelZoom:false" in out_str
+            if not FOLIUM_GE_019:
+                assert m.options["zoomControl"] is False
+            else:
+                assert m.options["zoom_control"] is False
+            assert "dragging:false" in out_str or '"dragging":false' in out_str
+            assert (
+                "scrollWheelZoom:false" in out_str
+                or '"scrollWheelZoom":false' in out_str
+            )
 
         # check that folium and leaflet Map() parameters can be passed
         m = self.world.explore(
-            zoom_control=False, map_kwds=dict(dragging=False, scrollWheelZoom=False)
+            zoom_control=False, map_kwds={"dragging": False, "scrollWheelZoom": False}
         )
         check()
         with pytest.raises(
             ValueError, match="'zoom_control' cannot be specified in 'map_kwds'"
         ):
             self.world.explore(
-                map_kwds=dict(dragging=False, scrollWheelZoom=False, zoom_control=False)
+                map_kwds={
+                    "dragging": False,
+                    "scrollWheelZoom": False,
+                    "zoom_control": False,
+                }
             )
+
+    def test_none_geometry(self):
+        # None and empty geoms are dropped prior plotting
+        df = self.nybb.copy()
+        df.loc[0, df.geometry.name] = None
+        m = df.explore()
+        self._fetch_map_string(m)
+
+    def test_empty_geometry(self):
+        # None and empty geoms are dropped prior plotting
+        df = self.nybb.copy()
+        df.loc[0, df.geometry.name] = shapely.Point()
+        m = df.explore()
+        self._fetch_map_string(m)
+
+    def test_all_empty(self):
+        with_crs = gpd.GeoDataFrame(
+            geometry=[shapely.Point(), shapely.Point()], crs=4326
+        )
+        with pytest.warns(
+            UserWarning,
+            match="The GeoSeries you are attempting to plot is composed of empty",
+        ):
+            m = with_crs.explore()
+        out_str = self._fetch_map_string(m)
+        if HAS_PYPROJ:
+            assert "center:[0.0,0.0],crs:L.CRS.EPSG3857" in out_str
+
+        no_crs = gpd.GeoDataFrame(geometry=[shapely.Point(), shapely.Point()])
+        with pytest.warns(
+            UserWarning,
+            match="The GeoSeries you are attempting to plot is composed of empty",
+        ):
+            m = no_crs.explore()
+        out_str = self._fetch_map_string(m)
+        assert "center:[0.0,0.0],crs:L.CRS.Simple" in out_str
+
+    def test_add_all_empty_named_index(self):
+        gdf1 = gpd.GeoDataFrame(geometry=[shapely.Point(0, 0), shapely.Point(1, 1)])
+        gdf2 = gpd.GeoDataFrame(geometry=[shapely.Point(), shapely.Point()])
+        m = gdf1.rename_axis(index="index_name").explore()
+        with pytest.warns(
+            UserWarning,
+            match="The GeoSeries you are attempting to plot is composed of empty",
+        ):
+            m = gdf2.rename_axis(index="index_name").explore(m=m, color="red")
+        out_str = self._fetch_map_string(m)
+        assert "center:[0.5,0.5],crs:L.CRS.Simple" in out_str

@@ -1,5 +1,9 @@
-import pytest
+import os.path
+
 import geopandas
+
+import pytest
+from geopandas.tests.util import _NATURALEARTH_CITIES, _NATURALEARTH_LOWRES, _NYBB
 
 
 @pytest.fixture(autouse=True)
@@ -7,21 +11,37 @@ def add_geopandas(doctest_namespace):
     doctest_namespace["geopandas"] = geopandas
 
 
-def pytest_configure(config):
-    config.addinivalue_line(
-        "markers",
-        "skip_no_sindex: skips the tests if there is no spatial index backend",
-    )
+# Datasets used in our tests
 
 
-try:
-    geopandas.sindex._get_sindex_class()
-    has_sindex_backend = True
-except ImportError:
-    has_sindex_backend = False
+@pytest.fixture(scope="session")
+def naturalearth_lowres() -> str:
+    # skip if data missing, unless on github actions
+    if os.path.isfile(_NATURALEARTH_LOWRES) or os.getenv("GITHUB_ACTIONS"):
+        return _NATURALEARTH_LOWRES
+    else:
+        pytest.skip("Naturalearth lowres dataset not found")
 
 
-def pytest_runtest_setup(item):
-    skip_no_sindex = any(mark for mark in item.iter_markers(name="skip_no_sindex"))
-    if skip_no_sindex and not has_sindex_backend:
-        pytest.skip("Skipped because there is no spatial index backend available")
+@pytest.fixture(scope="session")
+def naturalearth_cities() -> str:
+    # skip if data missing, unless on github actions
+    if os.path.isfile(_NATURALEARTH_CITIES) or os.getenv("GITHUB_ACTIONS"):
+        return _NATURALEARTH_CITIES
+    else:
+        pytest.skip("Naturalearth cities dataset not found")
+
+
+@pytest.fixture(scope="session")
+def nybb_filename() -> str:
+    # skip if data missing, unless on github actions
+    if os.path.isfile(_NYBB[len("zip://") :]) or os.getenv("GITHUB_ACTIONS"):
+        return _NYBB
+    else:
+        pytest.skip("NYBB dataset not found")
+
+
+@pytest.fixture(scope="class")
+def _setup_class_nybb_filename(nybb_filename, request):
+    """Attach nybb_filename class attribute for unittest style setup_method"""
+    request.cls.nybb_filename = nybb_filename

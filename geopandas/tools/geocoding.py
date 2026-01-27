@@ -1,5 +1,5 @@
-from collections import defaultdict
 import time
+from collections import defaultdict
 
 import pandas as pd
 
@@ -59,7 +59,6 @@ def geocode(strings, provider=None, **kwargs):
     0  POINT (-71.05863 42.35899)                          Boston, MA, United States
     1  POINT (-77.03651 38.89766)  1600 Pennsylvania Ave NW, Washington, DC 20006...
     """
-
     if provider is None:
         provider = "photon"
     throttle_time = _get_throttle_time(provider)
@@ -110,7 +109,6 @@ def reverse_geocode(points, provider=None, **kwargs):
     0  POINT (-71.05941 42.35837)       29 Court Sq, Boston, MA 02108, United States
     1  POINT (-77.03641 38.89766)  1600 Pennsylvania Ave NW, Washington, DC 20006...
     """
-
     if provider is None:
         provider = "photon"
     throttle_time = _get_throttle_time(provider)
@@ -120,8 +118,8 @@ def reverse_geocode(points, provider=None, **kwargs):
 
 def _query(data, forward, provider, throttle_time, **kwargs):
     # generic wrapper for calls over lists to geopy Geocoders
-    from geopy.geocoders.base import GeocoderQueryError
     from geopy.geocoders import get_geocoder_for_service
+    from geopy.geocoders.base import GeocoderQueryError
 
     if forward:
         if not isinstance(data, pd.Series):
@@ -150,8 +148,7 @@ def _query(data, forward, provider, throttle_time, **kwargs):
 
 
 def _prepare_geocode_result(results):
-    """
-    Helper function for the geocode function
+    """Convert the geocode results to a GeoDataFrame.
 
     Takes a dict where keys are index entries, values are tuples containing:
     (address, (lat, lon))

@@ -41,13 +41,11 @@ is a great way to get started if you'd like to make a contribution.
 Style
 -----
 
-- GeoPandas supports Python 3.8+ only. The last version of GeoPandas
-  supporting Python 2 is 0.6.
+- GeoPandas supports Python 3.10+ only.
 
 - GeoPandas follows [the PEP 8
   standard](http://www.python.org/dev/peps/pep-0008/) and uses
-  [Black](https://black.readthedocs.io/en/stable/) and
-  [Flake8](http://flake8.pycqa.org/en/latest/) to ensure a consistent
+  [ruff](https://docs.astral.sh/ruff/) to ensure a consistent
   code format throughout the project.
 
 - Imports should be grouped with standard library imports first,
@@ -57,7 +55,7 @@ Style
   imports when necessary in tests.
 
 - You can set up [pre-commit hooks](https://pre-commit.com/) to
-  automatically run `black` and `flake8` when you make a git
+  automatically run `ruff` when you make a git
   commit. This can be done by installing `pre-commit`:
 
     $ python -m pip install pre-commit
@@ -67,7 +65,7 @@ Style
 
     $ pre-commit install
 
-  Then `black` and `flake8` will be run automatically each time you
+  Then `ruff` will be run automatically each time you
   commit changes. You can skip these checks with `git commit
   --no-verify`. You can also configure your local git clone to have
   `git blame` ignore the commits that introduced large formatting-only

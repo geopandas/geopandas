@@ -1,3 +1,0 @@
-include versioneer.py
-include geopandas/_version.py
-include LICENSE.txt

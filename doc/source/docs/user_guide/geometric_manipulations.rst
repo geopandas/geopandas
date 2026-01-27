@@ -24,6 +24,13 @@ Constructive methods
 
   Returns a :class:`~geopandas.GeoSeries` of points for each geometric centroid.
 
+.. attribute:: GeoSeries.concave_hull
+
+  Returns a :class:`~geopandas.GeoSeries` of geometries representing the smallest
+  concave `Polygon` containing all the points in each object unless the
+  number of points in the object is less than three. For two points,
+  the concave hull collapses to a `LineString`; for 1, a `Point`.
+
 .. attribute:: GeoSeries.convex_hull
 
   Returns a :class:`~geopandas.GeoSeries` of geometries representing the smallest
@@ -31,18 +38,52 @@ Constructive methods
   number of points in the object is less than three. For two points,
   the convex hull collapses to a `LineString`; for 1, a `Point`.
 
+.. method:: GeoSeries.constrained_delaunay_triangles
+
+  Returns a :class:`~geopandas.GeoSeries` with the constrained Delaunay triangulation
+  of polygons. A constrained Delaunay triangulation requires the edges of the input
+  polygon(s) to be in the set of resulting triangle edges. An unconstrained
+  delaunay triangulation only triangulates based on the vertices, hence triangle
+  edges could cross polygon boundaries.
+
+.. method:: GeoSeries.delaunay_triangles(tolerance, preserve_topology=True)
+
+  Returns a :class:`~geopandas.GeoSeries` consisting of polygons (default) or linestrings
+  (`only_edges=True`) representing the computed Delaunay triangulation around the vertices
+  of an input geometry.
+
 .. attribute:: GeoSeries.envelope
 
   Returns a :class:`~geopandas.GeoSeries` of geometries representing the point or
   smallest rectangular polygon (with sides parallel to the coordinate
   axes) that contains each object.
 
+.. method:: GeoSeries.extract_unique_points
+
+  Returns a :class:`~geopandas.GeoSeries` of geometries containing all distinct
+  vertices of each input geometry as a multipoint.
+
+.. method:: GeoSeries.offset_curve(distance, quad_segs=8, join_style="round", mitre_limit=5.0)
+
+  Returns a :class:`~geopandas.GeoSeries` containing a `Linestring` or `MultiLineString`
+  geometry at a distance from the object on its right or its left side.
+
+.. method:: GeoSeries.remove_repeated_points
+
+   Returns a :class:`~geopandas.GeoSeries` containing a copy of the input geometry
+   with repeated points removed.
+
 .. method:: GeoSeries.simplify(tolerance, preserve_topology=True)
 
   Returns a :class:`~geopandas.GeoSeries` containing a simplified representation of
   each object.
 
-.. attribute:: GeoSeries.unary_union
+.. method:: GeoSeries.segmentize(max_segment_length)
+
+  Returns a :class:`~geopandas.GeoSeries` with additional vertices added to line
+  segments based on max_segment_length.
+
+.. method:: GeoSeries.union_all()
 
   Return a geometry containing the union of all geometries in the :class:`~geopandas.GeoSeries`.
 
@@ -73,7 +114,7 @@ Affine transformations
 
 
 Examples of geometric manipulations
-------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. sourcecode:: python
 
@@ -120,7 +161,7 @@ GeoPandas objects also know how to plot themselves. GeoPandas uses `matplotlib`_
 
     >>> g.plot()
 
-GeoPandas also implements alternate constructors that can read any data format recognized by `Fiona`_.  To read a zip file containing an ESRI shapefile with the `borough boundaries of New York City`_ (GeoPandas includes this as an example dataset):
+GeoPandas also implements alternate constructors that can read any data format recognized by `Pyogrio`_.  To read a zip file containing an ESRI shapefile with the `borough boundaries of New York City`_ (provided by the ``geodatasets`` package):
 
 .. sourcecode:: python
 
@@ -184,7 +225,7 @@ geometry with
 
 .. sourcecode:: python
 
-    >>> mp = circles.unary_union
+    >>> mp = circles.union_all()
 
 To extract the part of this geometry contained in each borough, you can
 just use:
@@ -224,7 +265,7 @@ borough that are in the holes:
     dtype: float64
 
 .. _matplotlib: http://matplotlib.org
-.. _fiona: http://fiona.readthedocs.io/en/latest/
+.. _pyogrio: http://pyogrio.readthedocs.io/en/latest/
 .. _geopy: https://github.com/geopy/geopy
 .. _geo_interface: https://gist.github.com/sgillies/2217756
 .. _borough boundaries of New York City: https://data.cityofnewyork.us/City-Government/Borough-Boundaries/tqmj-j8zm

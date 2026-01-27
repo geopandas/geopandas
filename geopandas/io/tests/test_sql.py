@@ -4,17 +4,27 @@ The spatial database tests may not work without additional system
 configuration. postGIS tests require a test database to have been setup;
 see geopandas.tests.util for more information.
 """
+
 import os
+import uuid
 import warnings
+from importlib.util import find_spec
 
 import pandas as pd
 
 import geopandas
 from geopandas import GeoDataFrame, read_file, read_postgis
+from geopandas._compat import HAS_PYPROJ
+from geopandas.io.sql import _get_conn as get_conn
+from geopandas.io.sql import _write_postgis as write_postgis
 
-from geopandas.io.sql import _get_conn as get_conn, _write_postgis as write_postgis
-from geopandas.tests.util import create_postgis, create_spatialite, validate_boro_df
 import pytest
+from geopandas.tests.util import (
+    create_postgis,
+    create_spatialite,
+    mock,
+    validate_boro_df,
+)
 
 try:
     from sqlalchemy import text
@@ -25,31 +35,48 @@ except ImportError:
 
 
 @pytest.fixture
-def df_nybb():
-    nybb_path = geopandas.datasets.get_path("nybb")
-    df = read_file(nybb_path)
+def df_nybb(nybb_filename):
+    df = read_file(nybb_filename)
     return df
 
 
-@pytest.fixture()
-def connection_postgis():
+def check_available_postgis_drivers() -> list[str]:
+    """Work out which of psycopg2 and psycopg are available.
+    This prevents tests running if the relevant package isn't installed
+    (rather than being skipped, as skips are treated as failures during postgis CI)
     """
-    Initiates a connection to a postGIS database that must already exist.
-    See create_postgis for more information.
-    """
-    psycopg2 = pytest.importorskip("psycopg2")
-    from psycopg2 import OperationalError
+    drivers = []
+    if find_spec("psycopg"):
+        drivers.append("psycopg")
+    if find_spec("psycopg2"):
+        drivers.append("psycopg2")
+    return drivers
 
-    dbname = "test_geopandas"
-    user = os.environ.get("PGUSER")
-    password = os.environ.get("PGPASSWORD")
-    host = os.environ.get("PGHOST")
-    port = os.environ.get("PGPORT")
+
+POSTGIS_DRIVERS = check_available_postgis_drivers()
+
+
+def prepare_database_credentials() -> dict:
+    """Gather postgres connection credentials from environment variables."""
+    return {
+        "dbname": "test_geopandas",
+        "user": os.environ.get("PGUSER"),
+        "password": os.environ.get("PGPASSWORD"),
+        "host": os.environ.get("PGHOST"),
+        "port": os.environ.get("PGPORT"),
+    }
+
+
+@pytest.fixture()
+def connection_postgis(request):
+    """Create a postgres connection using either psycopg2 or psycopg.
+
+    Use this as an indirect fixture, where the request parameter is POSTGIS_DRIVERS."""
+    psycopg = pytest.importorskip(request.param)
+
     try:
-        con = psycopg2.connect(
-            dbname=dbname, user=user, password=password, host=host, port=port
-        )
-    except OperationalError:
+        con = psycopg.connect(**prepare_database_credentials())
+    except psycopg.OperationalError:
         pytest.skip("Cannot connect with postgresql database")
     with warnings.catch_warnings():
         warnings.filterwarnings(
@@ -60,28 +87,25 @@ def connection_postgis():
 
 
 @pytest.fixture()
-def engine_postgis():
+def engine_postgis(request):
     """
-    Initiates a connection engine to a postGIS database that must already exist.
+    Initiate a sqlalchemy connection engine using either psycopg2 or psycopg.
+
+    Use this as an indirect fixture, where the request parameter is POSTGIS_DRIVERS.
     """
     sqlalchemy = pytest.importorskip("sqlalchemy")
     from sqlalchemy.engine.url import URL
 
-    user = os.environ.get("PGUSER")
-    password = os.environ.get("PGPASSWORD")
-    host = os.environ.get("PGHOST")
-    port = os.environ.get("PGPORT")
-    dbname = "test_geopandas"
-
+    credentials = prepare_database_credentials()
     try:
         con = sqlalchemy.create_engine(
             URL.create(
-                drivername="postgresql+psycopg2",
-                username=user,
-                database=dbname,
-                password=password,
-                host=host,
-                port=port,
+                drivername=f"postgresql+{request.param}",
+                username=credentials["user"],
+                database=credentials["dbname"],
+                password=credentials["password"],
+                host=credentials["host"],
+                port=credentials["port"],
             )
         )
         con.connect()
@@ -139,7 +163,7 @@ def drop_table_if_exists(conn_or_engine, table):
 
 @pytest.fixture
 def df_mixed_single_and_multi():
-    from shapely.geometry import Point, LineString, MultiLineString
+    from shapely.geometry import LineString, MultiLineString, Point
 
     df = geopandas.GeoDataFrame(
         {
@@ -156,7 +180,7 @@ def df_mixed_single_and_multi():
 
 @pytest.fixture
 def df_geom_collection():
-    from shapely.geometry import Point, LineString, Polygon, GeometryCollection
+    from shapely.geometry import GeometryCollection, LineString, Point, Polygon
 
     df = geopandas.GeoDataFrame(
         {
@@ -187,7 +211,7 @@ def df_linear_ring():
 
 @pytest.fixture
 def df_3D_geoms():
-    from shapely.geometry import Point, LineString, Polygon
+    from shapely.geometry import LineString, Point, Polygon
 
     df = geopandas.GeoDataFrame(
         {
@@ -203,6 +227,7 @@ def df_3D_geoms():
 
 
 class TestIO:
+    @pytest.mark.parametrize("engine_postgis", POSTGIS_DRIVERS, indirect=True)
     def test_get_conn(self, engine_postgis):
         Connection = pytest.importorskip("sqlalchemy.engine.base").Connection
 
@@ -216,6 +241,7 @@ class TestIO:
             with get_conn(object()):
                 pass
 
+    @pytest.mark.parametrize("connection_postgis", POSTGIS_DRIVERS, indirect=True)
     def test_read_postgis_default(self, connection_postgis, df_nybb):
         con = connection_postgis
         create_postgis(con, df_nybb)
@@ -228,6 +254,7 @@ class TestIO:
         # by user; should not be set to 0, as from get_srid failure
         assert df.crs is None
 
+    @pytest.mark.parametrize("connection_postgis", POSTGIS_DRIVERS, indirect=True)
     def test_read_postgis_custom_geom_col(self, connection_postgis, df_nybb):
         con = connection_postgis
         geom_col = "the_geom"
@@ -238,6 +265,7 @@ class TestIO:
 
         validate_boro_df(df)
 
+    @pytest.mark.parametrize("connection_postgis", POSTGIS_DRIVERS, indirect=True)
     def test_read_postgis_select_geom_as(self, connection_postgis, df_nybb):
         """Tests that a SELECT {geom} AS {some_other_geom} works."""
         con = connection_postgis
@@ -245,14 +273,13 @@ class TestIO:
         out_geom = "the_geom"
         create_postgis(con, df_nybb, geom_col=orig_geom)
 
-        sql = """SELECT borocode, boroname, shape_leng, shape_area,
-                    {} as {} FROM nybb;""".format(
-            orig_geom, out_geom
-        )
+        sql = f"""SELECT borocode, boroname, shape_leng, shape_area,
+                    {orig_geom} as {out_geom} FROM nybb;"""
         df = read_postgis(sql, con, geom_col=out_geom)
 
         validate_boro_df(df)
 
+    @pytest.mark.parametrize("connection_postgis", POSTGIS_DRIVERS, indirect=True)
     def test_read_postgis_get_srid(self, connection_postgis, df_nybb):
         """Tests that an SRID can be read from a geodatabase (GH #451)."""
         con = connection_postgis
@@ -266,6 +293,7 @@ class TestIO:
         validate_boro_df(df)
         assert df.crs == crs
 
+    @pytest.mark.parametrize("connection_postgis", POSTGIS_DRIVERS, indirect=True)
     def test_read_postgis_override_srid(self, connection_postgis, df_nybb):
         """Tests that a user specified CRS overrides the geodatabase SRID."""
         con = connection_postgis
@@ -278,6 +306,7 @@ class TestIO:
         validate_boro_df(df)
         assert df.crs == orig_crs
 
+    @pytest.mark.parametrize("connection_postgis", POSTGIS_DRIVERS, indirect=True)
     def test_from_postgis_default(self, connection_postgis, df_nybb):
         con = connection_postgis
         create_postgis(con, df_nybb)
@@ -287,6 +316,7 @@ class TestIO:
 
         validate_boro_df(df, case_sensitive=False)
 
+    @pytest.mark.parametrize("connection_postgis", POSTGIS_DRIVERS, indirect=True)
     def test_from_postgis_custom_geom_col(self, connection_postgis, df_nybb):
         con = connection_postgis
         geom_col = "the_geom"
@@ -301,11 +331,11 @@ class TestIO:
         """Tests that geometry with NULL is accepted."""
         con = connection_spatialite
         geom_col = df_nybb.geometry.name
-        df_nybb.geometry.iat[0] = None
+        df_nybb.loc[0, "geometry"] = None
         create_spatialite(con, df_nybb)
         sql = (
             "SELECT ogc_fid, borocode, boroname, shape_leng, shape_area, "
-            'AsEWKB("{0}") AS "{0}" FROM nybb'.format(geom_col)
+            f'AsEWKB("{geom_col}") AS "{geom_col}" FROM nybb'
         )
         df = read_postgis(sql, con, geom_col=geom_col)
         validate_boro_df(df)
@@ -317,11 +347,12 @@ class TestIO:
         create_spatialite(con, df_nybb)
         sql = (
             "SELECT ogc_fid, borocode, boroname, shape_leng, shape_area, "
-            'ST_AsBinary("{0}") AS "{0}" FROM nybb'.format(geom_col)
+            f'ST_AsBinary("{geom_col}") AS "{geom_col}" FROM nybb'
         )
         df = read_postgis(sql, con, geom_col=geom_col)
         validate_boro_df(df)
 
+    @pytest.mark.parametrize("connection_postgis", POSTGIS_DRIVERS, indirect=True)
     def test_read_postgis_chunksize(self, connection_postgis, df_nybb):
         """Test chunksize argument"""
         chunksize = 2
@@ -336,14 +367,7 @@ class TestIO:
         # by user; should not be set to 0, as from get_srid failure
         assert df.crs is None
 
-    def test_read_postgis_privacy(self, connection_postgis, df_nybb):
-        con = connection_postgis
-        create_postgis(con, df_nybb)
-
-        sql = "SELECT * FROM nybb;"
-        with pytest.warns(FutureWarning):
-            geopandas.io.sql.read_postgis(sql, con)
-
+    @pytest.mark.parametrize("engine_postgis", POSTGIS_DRIVERS, indirect=True)
     def test_write_postgis_default(self, engine_postgis, df_nybb):
         """Tests that GeoDataFrame can be written to PostGIS with defaults."""
         engine = engine_postgis
@@ -355,10 +379,11 @@ class TestIO:
         # Write to db
         write_postgis(df_nybb, con=engine, name=table, if_exists="fail")
         # Validate
-        sql = text("SELECT * FROM {table};".format(table=table))
+        sql = text(f"SELECT * FROM {table};")
         df = read_postgis(sql, engine, geom_col="geometry")
         validate_boro_df(df)
 
+    @pytest.mark.parametrize("engine_postgis", POSTGIS_DRIVERS, indirect=True)
     def test_write_postgis_uppercase_tablename(self, engine_postgis, df_nybb):
         """Tests writing GeoDataFrame to PostGIS with uppercase tablename."""
         engine = engine_postgis
@@ -370,10 +395,11 @@ class TestIO:
         # Write to db
         write_postgis(df_nybb, con=engine, name=table, if_exists="fail")
         # Validate
-        sql = text('SELECT * FROM "{table}";'.format(table=table))
+        sql = text(f'SELECT * FROM "{table}";')
         df = read_postgis(sql, engine, geom_col="geometry")
         validate_boro_df(df)
 
+    @pytest.mark.parametrize("engine_postgis", POSTGIS_DRIVERS, indirect=True)
     def test_write_postgis_sqlalchemy_connection(self, engine_postgis, df_nybb):
         """Tests that GeoDataFrame can be written to PostGIS with defaults."""
         with engine_postgis.begin() as con:
@@ -385,10 +411,11 @@ class TestIO:
             # Write to db
             write_postgis(df_nybb, con=con, name=table, if_exists="fail")
             # Validate
-            sql = text("SELECT * FROM {table};".format(table=table))
+            sql = text(f"SELECT * FROM {table};")
             df = read_postgis(sql, con, geom_col="geometry")
             validate_boro_df(df)
 
+    @pytest.mark.parametrize("engine_postgis", POSTGIS_DRIVERS, indirect=True)
     def test_write_postgis_fail_when_table_exists(self, engine_postgis, df_nybb):
         """
         Tests that uploading the same table raises error when: if_replace='fail'.
@@ -408,6 +435,7 @@ class TestIO:
             else:
                 raise e
 
+    @pytest.mark.parametrize("engine_postgis", POSTGIS_DRIVERS, indirect=True)
     def test_write_postgis_replace_when_table_exists(self, engine_postgis, df_nybb):
         """
         Tests that replacing a table is possible when: if_replace='replace'.
@@ -421,10 +449,11 @@ class TestIO:
         # Overwrite
         write_postgis(df_nybb, con=engine, name=table, if_exists="replace")
         # Validate
-        sql = text("SELECT * FROM {table};".format(table=table))
+        sql = text(f"SELECT * FROM {table};")
         df = read_postgis(sql, engine, geom_col="geometry")
         validate_boro_df(df)
 
+    @pytest.mark.parametrize("engine_postgis", POSTGIS_DRIVERS, indirect=True)
     def test_write_postgis_append_when_table_exists(self, engine_postgis, df_nybb):
         """
         Tests that appending to existing table produces correct results when:
@@ -438,21 +467,20 @@ class TestIO:
         write_postgis(df_nybb, con=engine, name=table, if_exists="replace")
         write_postgis(df_nybb, con=engine, name=table, if_exists="append")
         # Validate
-        sql = text("SELECT * FROM {table};".format(table=table))
+        sql = text(f"SELECT * FROM {table};")
         df = read_postgis(sql, engine, geom_col="geometry")
         new_rows, new_cols = df.shape
 
         # There should be twice as many rows in the new table
         assert new_rows == orig_rows * 2, (
-            "There should be {target} rows,"
-            "found: {current}".format(target=orig_rows * 2, current=new_rows),
+            f"There should be {orig_rows * 2} rows,found: {new_rows}",
         )
         # Number of columns should stay the same
         assert new_cols == orig_cols, (
-            "There should be {target} columns,"
-            "found: {current}".format(target=orig_cols, current=new_cols),
+            f"There should be {orig_cols} columns,found: {new_cols}",
         )
 
+    @pytest.mark.parametrize("engine_postgis", POSTGIS_DRIVERS, indirect=True)
     def test_write_postgis_without_crs(self, engine_postgis, df_nybb):
         """
         Tests that GeoDataFrame can be written to PostGIS without CRS information.
@@ -462,8 +490,7 @@ class TestIO:
         table = "nybb"
 
         # Write to db
-        df_nybb = df_nybb
-        df_nybb.crs = None
+        df_nybb.geometry.array.crs = None
         with pytest.warns(UserWarning, match="Could not parse CRS from the GeoDataF"):
             write_postgis(df_nybb, con=engine, name=table, if_exists="replace")
         # Validate that srid is -1
@@ -474,8 +501,9 @@ class TestIO:
         )
         with engine.connect() as conn:
             target_srid = conn.execute(sql).fetchone()[0]
-        assert target_srid == 0, "SRID should be 0, found %s" % target_srid
+        assert target_srid == 0, f"SRID should be 0, found {target_srid}"
 
+    @pytest.mark.parametrize("engine_postgis", POSTGIS_DRIVERS, indirect=True)
     def test_write_postgis_with_esri_authority(self, engine_postgis, df_nybb):
         """
         Tests that GeoDataFrame can be written to PostGIS with ESRI Authority
@@ -496,8 +524,9 @@ class TestIO:
         )
         with engine.connect() as conn:
             target_srid = conn.execute(sql).fetchone()[0]
-        assert target_srid == 102003, "SRID should be 102003, found %s" % target_srid
+        assert target_srid == 102003, f"SRID should be 102003, found {target_srid}"
 
+    @pytest.mark.parametrize("engine_postgis", POSTGIS_DRIVERS, indirect=True)
     def test_write_postgis_geometry_collection(
         self, engine_postgis, df_geom_collection
     ):
@@ -511,19 +540,16 @@ class TestIO:
         write_postgis(df_geom_collection, con=engine, name=table, if_exists="replace")
 
         # Validate geometry type
-        sql = text(
-            "SELECT DISTINCT(GeometryType(geometry)) FROM {table} ORDER BY 1;".format(
-                table=table
-            )
-        )
+        sql = text(f"SELECT DISTINCT(GeometryType(geometry)) FROM {table} ORDER BY 1;")
         with engine.connect() as conn:
             geom_type = conn.execute(sql).fetchone()[0]
-        sql = text("SELECT * FROM {table};".format(table=table))
+        sql = text(f"SELECT * FROM {table};")
         df = read_postgis(sql, engine, geom_col="geometry")
 
         assert geom_type.upper() == "GEOMETRYCOLLECTION"
         assert df.geom_type.unique()[0] == "GeometryCollection"
 
+    @pytest.mark.parametrize("engine_postgis", POSTGIS_DRIVERS, indirect=True)
     def test_write_postgis_mixed_geometry_types(
         self, engine_postgis, df_mixed_single_and_multi
     ):
@@ -539,17 +565,14 @@ class TestIO:
         )
 
         # Validate geometry type
-        sql = text(
-            "SELECT DISTINCT GeometryType(geometry) FROM {table} ORDER BY 1;".format(
-                table=table
-            )
-        )
+        sql = text(f"SELECT DISTINCT GeometryType(geometry) FROM {table} ORDER BY 1;")
         with engine.connect() as conn:
             res = conn.execute(sql).fetchall()
         assert res[0][0].upper() == "LINESTRING"
         assert res[1][0].upper() == "MULTILINESTRING"
         assert res[2][0].upper() == "POINT"
 
+    @pytest.mark.parametrize("engine_postgis", POSTGIS_DRIVERS, indirect=True)
     def test_write_postgis_linear_ring(self, engine_postgis, df_linear_ring):
         """
         Tests that writing a LinearRing.
@@ -561,16 +584,13 @@ class TestIO:
         write_postgis(df_linear_ring, con=engine, name=table, if_exists="replace")
 
         # Validate geometry type
-        sql = text(
-            "SELECT DISTINCT(GeometryType(geometry)) FROM {table} ORDER BY 1;".format(
-                table=table
-            )
-        )
+        sql = text(f"SELECT DISTINCT(GeometryType(geometry)) FROM {table} ORDER BY 1;")
         with engine.connect() as conn:
             geom_type = conn.execute(sql).fetchone()[0]
 
         assert geom_type.upper() == "LINESTRING"
 
+    @pytest.mark.parametrize("engine_postgis", POSTGIS_DRIVERS, indirect=True)
     def test_write_postgis_in_chunks(self, engine_postgis, df_mixed_single_and_multi):
         """
         Tests writing a LinearRing works.
@@ -587,23 +607,20 @@ class TestIO:
             chunksize=1,
         )
         # Validate row count
-        sql = text("SELECT COUNT(geometry) FROM {table};".format(table=table))
+        sql = text(f"SELECT COUNT(geometry) FROM {table};")
         with engine.connect() as conn:
             row_cnt = conn.execute(sql).fetchone()[0]
         assert row_cnt == 3
 
         # Validate geometry type
-        sql = text(
-            "SELECT DISTINCT GeometryType(geometry) FROM {table} ORDER BY 1;".format(
-                table=table
-            )
-        )
+        sql = text(f"SELECT DISTINCT GeometryType(geometry) FROM {table} ORDER BY 1;")
         with engine.connect() as conn:
             res = conn.execute(sql).fetchall()
         assert res[0][0].upper() == "LINESTRING"
         assert res[1][0].upper() == "MULTILINESTRING"
         assert res[2][0].upper() == "POINT"
 
+    @pytest.mark.parametrize("engine_postgis", POSTGIS_DRIVERS, indirect=True)
     def test_write_postgis_to_different_schema(self, engine_postgis, df_nybb):
         """
         Tests writing data to alternative schema.
@@ -612,7 +629,7 @@ class TestIO:
 
         table = "nybb"
         schema_to_use = "test"
-        sql = text("CREATE SCHEMA IF NOT EXISTS {schema};".format(schema=schema_to_use))
+        sql = text(f"CREATE SCHEMA IF NOT EXISTS {schema_to_use};")
         with engine.begin() as conn:
             conn.execute(sql)
 
@@ -620,13 +637,12 @@ class TestIO:
             df_nybb, con=engine, name=table, if_exists="replace", schema=schema_to_use
         )
         # Validate
-        sql = text(
-            "SELECT * FROM {schema}.{table};".format(schema=schema_to_use, table=table)
-        )
+        sql = text(f"SELECT * FROM {schema_to_use}.{table};")
 
         df = read_postgis(sql, engine, geom_col="geometry")
         validate_boro_df(df)
 
+    @pytest.mark.parametrize("engine_postgis", POSTGIS_DRIVERS, indirect=True)
     def test_write_postgis_to_different_schema_when_table_exists(
         self, engine_postgis, df_nybb
     ):
@@ -637,7 +653,7 @@ class TestIO:
 
         table = "nybb"
         schema_to_use = "test"
-        sql = text("CREATE SCHEMA IF NOT EXISTS {schema};".format(schema=schema_to_use))
+        sql = text(f"CREATE SCHEMA IF NOT EXISTS {schema_to_use};")
         with engine.begin() as conn:
             conn.execute(sql)
 
@@ -646,11 +662,7 @@ class TestIO:
                 df_nybb, con=engine, name=table, if_exists="fail", schema=schema_to_use
             )
             # Validate
-            sql = text(
-                "SELECT * FROM {schema}.{table};".format(
-                    schema=schema_to_use, table=table
-                )
-            )
+            sql = text(f"SELECT * FROM {schema_to_use}.{table};")
 
             df = read_postgis(sql, engine, geom_col="geometry")
             validate_boro_df(df)
@@ -664,13 +676,12 @@ class TestIO:
             df_nybb, con=engine, name=table, if_exists="replace", schema=schema_to_use
         )
         # Validate
-        sql = text(
-            "SELECT * FROM {schema}.{table};".format(schema=schema_to_use, table=table)
-        )
+        sql = text(f"SELECT * FROM {schema_to_use}.{table};")
 
         df = read_postgis(sql, engine, geom_col="geometry")
         validate_boro_df(df)
 
+    @pytest.mark.parametrize("engine_postgis", POSTGIS_DRIVERS, indirect=True)
     def test_write_postgis_3D_geometries(self, engine_postgis, df_3D_geoms):
         """
         Tests writing a geometries with 3 dimensions works.
@@ -682,10 +693,11 @@ class TestIO:
         write_postgis(df_3D_geoms, con=engine, name=table, if_exists="replace")
 
         # Check that all geometries have 3 dimensions
-        sql = text("SELECT * FROM {table};".format(table=table))
+        sql = text(f"SELECT * FROM {table};")
         df = read_postgis(sql, engine, geom_col="geometry")
         assert list(df.geometry.has_z) == [True, True, True]
 
+    @pytest.mark.parametrize("engine_postgis", POSTGIS_DRIVERS, indirect=True)
     def test_row_order(self, engine_postgis, df_nybb):
         """
         Tests that the row order in db table follows the order of the original frame.
@@ -698,10 +710,11 @@ class TestIO:
         write_postgis(df_nybb, con=engine, name=table, if_exists="replace")
 
         # Check that the row order matches
-        sql = text("SELECT * FROM {table};".format(table=table))
+        sql = text(f"SELECT * FROM {table};")
         df = read_postgis(sql, engine, geom_col="geometry")
         assert df["BoroCode"].tolist() == correct_order
 
+    @pytest.mark.parametrize("engine_postgis", POSTGIS_DRIVERS, indirect=True)
     def test_append_before_table_exists(self, engine_postgis, df_nybb):
         """
         Tests that insert works with if_exists='append' when table does not exist yet.
@@ -715,10 +728,11 @@ class TestIO:
         write_postgis(df_nybb, con=engine, name=table, if_exists="append")
 
         # Check that the row order matches
-        sql = text("SELECT * FROM {table};".format(table=table))
+        sql = text(f"SELECT * FROM {table};")
         df = read_postgis(sql, engine, geom_col="geometry")
         validate_boro_df(df)
 
+    @pytest.mark.parametrize("engine_postgis", POSTGIS_DRIVERS, indirect=True)
     def test_append_with_different_crs(self, engine_postgis, df_nybb):
         """
         Tests that the warning is raised if table CRS differs from frame.
@@ -734,3 +748,352 @@ class TestIO:
         # Should raise error when appending
         with pytest.raises(ValueError, match="CRS of the target table"):
             write_postgis(df_nybb2, con=engine, name=table, if_exists="append")
+
+    @pytest.mark.parametrize("engine_postgis", POSTGIS_DRIVERS, indirect=True)
+    def test_append_without_crs(self, engine_postgis, df_nybb):
+        # This test was included in #3328 when the default value for no
+        # CRS was changed from an SRID of -1 to 0. This resolves issues
+        # of appending dataframes to postgis that have no CRS as postgis
+        # no CRS value is 0.
+        engine = engine_postgis
+        df_nybb = df_nybb.set_crs(None, allow_override=True)
+        table = "nybb"
+
+        write_postgis(df_nybb, con=engine, name=table, if_exists="replace")
+        # append another dataframe with no crs
+
+        df_nybb2 = df_nybb
+        write_postgis(df_nybb2, con=engine, name=table, if_exists="append")
+
+    @pytest.mark.parametrize("engine_postgis", POSTGIS_DRIVERS, indirect=True)
+    def test_duplicate_geometry_column_fails(self, engine_postgis):
+        """
+        Tests that a ValueError is raised if an SQL query returns two geometry columns.
+        """
+        engine = engine_postgis
+
+        sql = "select ST_MakePoint(0, 0) as geom, ST_MakePoint(0, 0) as geom;"
+
+        with pytest.raises(ValueError):
+            read_postgis(sql, engine, geom_col="geom")
+
+    @pytest.mark.parametrize("connection_postgis", POSTGIS_DRIVERS, indirect=True)
+    def test_read_non_epsg_crs(self, connection_postgis, df_nybb):
+        con = connection_postgis
+        df_nybb = df_nybb.to_crs(crs="esri:54052")
+        create_postgis(con, df_nybb, srid=54052)
+
+        sql = "SELECT * FROM nybb;"
+        df = read_postgis(sql, con)
+        validate_boro_df(df)
+        assert df.crs == "ESRI:54052"
+
+    @pytest.mark.skipif(not HAS_PYPROJ, reason="pyproj not installed")
+    @mock.patch("shapely.get_srid")
+    @pytest.mark.parametrize("connection_postgis", POSTGIS_DRIVERS, indirect=True)
+    def test_read_srid_not_in_table(self, mock_get_srid, connection_postgis, df_nybb):
+        # mock a non-existent srid for edge case if shapely has an srid
+        # not present in postgis table.
+        pyproj = pytest.importorskip("pyproj")
+
+        mock_get_srid.return_value = 99999
+
+        con = connection_postgis
+        df_nybb = df_nybb.to_crs(crs="epsg:4326")
+        create_postgis(con, df_nybb)
+
+        sql = "SELECT * FROM nybb;"
+        with pytest.raises(pyproj.exceptions.CRSError, match="crs not found"):
+            with pytest.warns(UserWarning, match="Could not find srid 99999"):
+                read_postgis(sql, con)
+
+    @mock.patch("geopandas.io.sql._get_spatial_ref_sys_df")
+    @pytest.mark.parametrize("connection_postgis", POSTGIS_DRIVERS, indirect=True)
+    def test_read_no_spatial_ref_sys_table_in_postgis(
+        self, mock_get_spatial_ref_sys_df, connection_postgis, df_nybb
+    ):
+        # mock for a non-existent spatial_ref_sys database
+
+        mock_get_spatial_ref_sys_df.side_effect = pd.errors.DatabaseError
+
+        con = connection_postgis
+        df_nybb = df_nybb.to_crs(crs="epsg:4326")
+        create_postgis(con, df_nybb, srid=4326)
+
+        sql = "SELECT * FROM nybb;"
+        with pytest.warns(
+            UserWarning, match="Could not find the spatial reference system table"
+        ):
+            df = read_postgis(sql, con)
+
+        assert df.crs == "EPSG:4326"
+
+    @pytest.mark.parametrize("connection_postgis", POSTGIS_DRIVERS, indirect=True)
+    def test_read_non_epsg_crs_chunksize(self, connection_postgis, df_nybb):
+        """Test chunksize argument with non epsg crs"""
+        chunksize = 2
+        con = connection_postgis
+        df_nybb = df_nybb.to_crs(crs="esri:54052")
+
+        create_postgis(con, df_nybb, srid=54052)
+
+        sql = "SELECT * FROM nybb;"
+        df = pd.concat(read_postgis(sql, con, chunksize=chunksize))
+
+        validate_boro_df(df)
+        assert df.crs == "ESRI:54052"
+
+    @pytest.mark.parametrize("engine_postgis", POSTGIS_DRIVERS, indirect=True)
+    def test_to_postgis_append_with_custom_geometry_column_name(
+        self, engine_postgis, df_nybb
+    ):
+        """
+        Tests that appending works correctly with custom geometry column names.
+        This ensures the SQL injection fix doesn't break normal functionality.
+        """
+        engine = engine_postgis
+        table = "test_custom_geom"
+
+        # Create GeoDataFrame with custom geometry column name
+        gdf = df_nybb.copy()
+        gdf = gdf.rename_geometry("custom_geom")
+
+        # Write initial data
+        write_postgis(gdf, con=engine, name=table, if_exists="replace")
+
+        # Append more data - this should work without SQL injection vulnerability
+        write_postgis(gdf, con=engine, name=table, if_exists="append")
+
+        # Verify data was appended correctly
+        sql = text(f'SELECT * FROM "{table}";')
+        df = read_postgis(sql, engine, geom_col="custom_geom")
+        assert len(df) == len(gdf) * 2
+
+    @pytest.mark.parametrize("engine_postgis", POSTGIS_DRIVERS, indirect=True)
+    def test_to_postgis_sql_injection_prevention_geometry_column(
+        self, engine_postgis, df_nybb
+    ):
+        """
+        Tests that SQL injection attempts via geometry column name are prevented.
+        This test verifies that malicious geometry column names are treated as
+        literal strings and not executed as SQL code.
+
+        This test is based on issue #3679 which reported SQL injection vulnerability
+        in the Find_SRID query when using to_postgis with if_exists='append'.
+        """
+        engine = engine_postgis
+        table = "test_sql_injection"
+
+        # Create a test table first to ensure append mode triggers
+        # the vulnerable code path
+        gdf_normal = df_nybb.copy()
+        write_postgis(gdf_normal, con=engine, name=table, if_exists="replace")
+
+        # Create a test table that would be targeted by SQL injection
+        # If SQL injection works, this table would be dropped
+        # Use random name to avoid conflicts with existing tables
+        test_target_table = f"test_target_{uuid.uuid4().hex[:12]}"
+        with engine.begin() as conn:
+            conn.execute(
+                text(f"CREATE TABLE IF NOT EXISTS {test_target_table} (id INTEGER);")
+            )
+            conn.execute(text(f"INSERT INTO {test_target_table} (id) VALUES (1);"))
+
+        # Create GeoDataFrame with malicious geometry column name
+        # This simulates an attacker trying to inject SQL via geometry column name
+        gdf_malicious = df_nybb.copy()
+        malicious_geom_name = f"geom'; DROP TABLE {test_target_table}; --"
+        gdf_malicious = gdf_malicious.rename_geometry(malicious_geom_name)
+
+        # First, verify both tables exist
+        sql_check = text(f"SELECT COUNT(*) FROM {table};")
+        sql_check_target = text(f"SELECT COUNT(*) FROM {test_target_table};")
+        with engine.connect() as conn:
+            initial_count = conn.execute(sql_check).fetchone()[0]
+            target_exists = conn.execute(sql_check_target).fetchone()[0] == 1
+
+        assert target_exists, "Target table should exist before SQL injection attempt"
+
+        # Attempt append - this should fail because the geometry column name
+        # doesn't match, but it should NOT execute the injected SQL
+        try:
+            write_postgis(gdf_malicious, con=engine, name=table, if_exists="append")
+            # If it doesn't raise an error, that's also fine - the important
+            # thing is that SQL injection didn't occur
+        except (ValueError, Exception):
+            # Expected - the geometry column name doesn't exist in the table
+            pass
+
+        # Verify both tables still exist and weren't dropped by SQL injection
+        with engine.connect() as conn:
+            final_count = conn.execute(sql_check).fetchone()[0]
+            target_still_exists = conn.execute(sql_check_target).fetchone()[0] == 1
+
+        assert final_count == initial_count, (
+            "Test table should still exist after SQL injection attempt"
+        )
+        assert target_still_exists, (
+            f"Target table '{test_target_table}' should not be dropped by SQL injection"
+        )
+
+    @pytest.mark.parametrize("engine_postgis", POSTGIS_DRIVERS, indirect=True)
+    def test_to_postgis_sql_injection_prevention_geometry_column_union(
+        self, engine_postgis, df_nybb
+    ):
+        """
+        Tests another SQL injection pattern: UNION SELECT attack
+        via geometry column name.
+        """
+        engine = engine_postgis
+        table = "test_sql_injection_union"
+
+        # Create initial table
+        gdf_normal = df_nybb.copy()
+        write_postgis(gdf_normal, con=engine, name=table, if_exists="replace")
+
+        # Create a test table that would be targeted by UNION SELECT injection
+        # Use random name to avoid conflicts with existing tables
+        test_target_table = f"test_target_{uuid.uuid4().hex[:12]}"
+        with engine.begin() as conn:
+            conn.execute(
+                text(f"CREATE TABLE IF NOT EXISTS {test_target_table} (password TEXT);")
+            )
+            conn.execute(
+                text(f"INSERT INTO {test_target_table} (password) VALUES ('secret');")
+            )
+
+        # Create GeoDataFrame with UNION-based SQL injection attempt
+        gdf_malicious = df_nybb.copy()
+        malicious_geom_name = (
+            f"geom') UNION SELECT password FROM {test_target_table} WHERE '1'='1"
+        )
+        gdf_malicious = gdf_malicious.rename_geometry(malicious_geom_name)
+
+        # Verify tables exist before injection attempt
+        sql_check = text(f"SELECT COUNT(*) FROM {table};")
+        sql_check_target = text(f"SELECT COUNT(*) FROM {test_target_table};")
+        with engine.connect() as conn:
+            initial_count = conn.execute(sql_check).fetchone()[0]
+            target_exists = conn.execute(sql_check_target).fetchone()[0] == 1
+
+        assert target_exists, "Target table should exist before SQL injection attempt"
+
+        # Attempt append - should not execute the UNION SELECT
+        try:
+            write_postgis(gdf_malicious, con=engine, name=table, if_exists="append")
+        except (ValueError, Exception):
+            # Expected - geometry column name mismatch
+            pass
+
+        # Verify table integrity maintained
+        with engine.connect() as conn:
+            final_count = conn.execute(sql_check).fetchone()[0]
+            target_still_exists = conn.execute(sql_check_target).fetchone()[0] == 1
+
+        assert final_count == initial_count, (
+            "Test table should still exist after SQL injection attempt"
+        )
+        assert target_still_exists, (
+            f"Target table '{test_target_table}' should not be "
+            "affected by SQL injection"
+        )
+
+    @pytest.mark.parametrize("engine_postgis", POSTGIS_DRIVERS, indirect=True)
+    def test_to_postgis_sql_injection_prevention_geometry_column_comment(
+        self, engine_postgis, df_nybb
+    ):
+        """
+        Tests SQL injection via comment syntax in geometry column name.
+        """
+        engine = engine_postgis
+        table = "test_sql_injection_comment"
+
+        # Create initial table
+        gdf_normal = df_nybb.copy()
+        write_postgis(gdf_normal, con=engine, name=table, if_exists="replace")
+
+        # Create GeoDataFrame with comment-based SQL injection
+        gdf_malicious = df_nybb.copy()
+        malicious_geom_name = "geom' -- DROP TABLE test_sql_injection_comment;"
+        gdf_malicious = gdf_malicious.rename_geometry(malicious_geom_name)
+
+        # Verify table exists
+        sql_check = text(f"SELECT COUNT(*) FROM {table};")
+        with engine.connect() as conn:
+            initial_count = conn.execute(sql_check).fetchone()[0]
+
+        # Attempt append
+        try:
+            write_postgis(gdf_malicious, con=engine, name=table, if_exists="append")
+        except (ValueError, Exception):
+            pass
+
+        # Verify table still exists
+        with engine.connect() as conn:
+            final_count = conn.execute(sql_check).fetchone()[0]
+            assert final_count == initial_count
+
+    @pytest.mark.parametrize("engine_postgis", POSTGIS_DRIVERS, indirect=True)
+    def test_to_postgis_sql_injection_prevention_geometry_column_semicolon(
+        self, engine_postgis, df_nybb
+    ):
+        """
+        Tests SQL injection via semicolon in geometry column name.
+        """
+        engine = engine_postgis
+        table = "test_sql_injection_semicolon"
+
+        # Create initial table
+        gdf_normal = df_nybb.copy()
+        write_postgis(gdf_normal, con=engine, name=table, if_exists="replace")
+
+        # Create GeoDataFrame with semicolon-based SQL injection
+        gdf_malicious = df_nybb.copy()
+        malicious_geom_name = "geom; DELETE FROM test_sql_injection_semicolon;"
+        gdf_malicious = gdf_malicious.rename_geometry(malicious_geom_name)
+
+        # Verify table exists
+        sql_check = text(f"SELECT COUNT(*) FROM {table};")
+        with engine.connect() as conn:
+            initial_count = conn.execute(sql_check).fetchone()[0]
+
+        # Attempt append
+        try:
+            write_postgis(gdf_malicious, con=engine, name=table, if_exists="append")
+        except (ValueError, Exception):
+            pass
+
+        # Verify table still exists and data is intact
+        with engine.connect() as conn:
+            final_count = conn.execute(sql_check).fetchone()[0]
+            assert final_count == initial_count
+
+    @pytest.mark.parametrize("engine_postgis", POSTGIS_DRIVERS, indirect=True)
+    def test_to_postgis_append_with_special_characters_in_geometry_column(
+        self, engine_postgis, df_nybb
+    ):
+        """
+        Tests that legitimate geometry column names with special characters
+        (but not SQL injection) still work correctly.
+        This ensures the fix doesn't break normal functionality with valid
+        but unusual column names.
+        """
+        engine = engine_postgis
+        table = "test_special_chars"
+
+        # Create GeoDataFrame with geometry column name containing special characters
+        # (but not SQL injection patterns)
+        gdf = df_nybb.copy()
+        # Use a valid but unusual geometry column name
+        gdf = gdf.rename_geometry("geom_with_underscores_123")
+
+        # Write initial data
+        write_postgis(gdf, con=engine, name=table, if_exists="replace")
+
+        # Append more data - should work correctly
+        write_postgis(gdf, con=engine, name=table, if_exists="append")
+
+        # Verify data was appended correctly
+        sql = text(f'SELECT * FROM "{table}";')
+        df = read_postgis(sql, engine, geom_col="geom_with_underscores_123")
+        assert len(df) == len(gdf) * 2
