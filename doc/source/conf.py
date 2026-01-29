@@ -21,6 +21,7 @@ geodatasets.fetch(
         "ny.bb",
         "geoda.malaria",
         "geoda.chicago_health",
+        "geoda.chicago_commpop",
         "geoda.groceries",
         "geoda.natregimes",
         "geoda.nepal",
@@ -70,10 +71,11 @@ ipython_exec_lines = [
 
 # Fix issue with warnings from numpydoc (see discussion in PR #534)
 numpydoc_show_class_members = False
+autodoc_typehints = "none"
 
 
 def setup(app):
-    app.add_css_file("custom.css")  # may also be an URL
+    app.add_css_file("custom.css")  # may also be a URL
 
 
 # Add any paths that contain templates here, relative to this directory.
@@ -105,7 +107,7 @@ master_doc = "index"
 
 # General information about the project.
 project = "GeoPandas"
-copyright = "2013–2022, GeoPandas developers"
+copyright = "2013–, GeoPandas developers"
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -169,11 +171,6 @@ html_theme_options = {
             "name": "GitHub",
             "url": "https://github.com/geopandas/geopandas",
             "icon": "fab fa-github-square fa-xl",
-        },
-        {
-            "name": "Twitter",
-            "url": "https://twitter.com/geopandas",
-            "icon": "fab fa-twitter-square fa-xl",
         },
     ]
 }
@@ -243,6 +240,13 @@ moved_pages = [
 html_additional_pages = {page[0]: "redirect.html" for page in moved_pages}
 
 html_context = {"redirects": {old: new for old, new in moved_pages}}
+
+# Define the canonical URL if you are using a custom domain on Read the Docs
+html_baseurl = os.environ.get("READTHEDOCS_CANONICAL_URL", "")
+
+# Tell Jinja2 templates the build is running on Read the Docs
+if os.environ.get("READTHEDOCS", "") == "True":
+    html_context["READTHEDOCS"] = True
 
 # If false, no module index is generated.
 # html_domain_indices = True
@@ -369,8 +373,8 @@ nbsphinx_prolog = r"""
 # connect docs in other projects
 intersphinx_mapping = {
     "cartopy": (
-        "https://scitools.org.uk/cartopy/docs/latest/",
-        "https://scitools.org.uk/cartopy/docs/latest/objects.inv",
+        "https://cartopy.readthedocs.io/stable/",
+        "https://cartopy.readthedocs.io/stable/objects.inv",
     ),
     "contextily": (
         "https://contextily.readthedocs.io/en/stable/",
@@ -381,8 +385,8 @@ intersphinx_mapping = {
         "https://fiona.readthedocs.io/en/stable/objects.inv",
     ),
     "folium": (
-        "https://python-visualization.github.io/folium/",
-        "https://python-visualization.github.io/folium/objects.inv",
+        "https://python-visualization.github.io/folium/latest",
+        "https://python-visualization.github.io/folium/latest/objects.inv",
     ),
     "geoplot": (
         "https://residentmario.github.io/geoplot/index.html",
@@ -413,10 +417,6 @@ intersphinx_mapping = {
         "https://pyepsg.readthedocs.io/en/stable/",
         "https://pyepsg.readthedocs.io/en/stable/objects.inv",
     ),
-    "pygeos": (
-        "https://pygeos.readthedocs.io/en/latest/",
-        "https://pygeos.readthedocs.io/en/latest/objects.inv",
-    ),
     "pyproj": (
         "https://pyproj4.github.io/pyproj/stable/",
         "https://pyproj4.github.io/pyproj/stable/objects.inv",
@@ -424,10 +424,6 @@ intersphinx_mapping = {
     "python": (
         "https://docs.python.org/3",
         "https://docs.python.org/3/objects.inv",
-    ),
-    "rtree": (
-        "https://rtree.readthedocs.io/en/stable/",
-        "https://rtree.readthedocs.io/en/stable/objects.inv",
     ),
     "rasterio": (
         "https://rasterio.readthedocs.io/en/stable/",

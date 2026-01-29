@@ -1,6 +1,7 @@
 from shapely.geometry import Point
-
-from geopandas import read_file, datasets, GeoSeries
+from geopandas.tests.util import _NATURALEARTH_LOWRES
+from geopandas.tests.util import _NATURALEARTH_CITIES
+from geopandas import read_file, GeoSeries
 
 
 # Derive list of valid query predicates based on underlying index backend;
@@ -12,8 +13,8 @@ geom_types = ("mixed", "points", "polygons")
 
 
 def generate_test_df():
-    world = read_file(datasets.get_path("naturalearth_lowres"))
-    capitals = read_file(datasets.get_path("naturalearth_cities"))
+    world = read_file(_NATURALEARTH_LOWRES)
+    capitals = read_file(_NATURALEARTH_CITIES)
     countries = world.to_crs("epsg:3395")[["geometry"]]
     capitals = capitals.to_crs("epsg:3395")[["geometry"]]
     mixed = capitals.append(countries)  # get a mix of geometries

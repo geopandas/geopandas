@@ -1,3 +1,4 @@
+from .clip import clip
 from .geocoding import geocode, reverse_geocode
 from .overlay import overlay
 from .sjoin import sjoin, sjoin_nearest
@@ -6,6 +7,7 @@ from .clip import clip
 from .make_grid import make_grid
 
 __all__ = [
+    "clip",
     "collect",
     "geocode",
     "overlay",

@@ -4,10 +4,8 @@ channels:
 dependencies:
   - geopandas
   - shapely
-  - fiona
+  - pyogrio
   - pyproj
-  - pygeos
-  - rtree
   - mapclassify
   - libpysal
   - matplotlib
@@ -16,6 +14,5 @@ dependencies:
   - pyepsg
   - contextily
   - rasterio
-  - geoplot
   - folium
   - packaging

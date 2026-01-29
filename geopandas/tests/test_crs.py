@@ -1,14 +1,18 @@
 import random
+import warnings
 
 import numpy as np
 import pandas as pd
-import pyproj
-import pytest
-from shapely.geometry import Point, Polygon, LineString
 
-from geopandas import GeoSeries, GeoDataFrame, points_from_xy, datasets, read_file
-from geopandas.array import from_shapely, from_wkb, from_wkt, GeometryArray
+from shapely.geometry import LineString, Point, Polygon
+
+from geopandas import GeoDataFrame, GeoSeries, points_from_xy, read_file
+from geopandas.array import GeometryArray, from_shapely, from_wkb, from_wkt
+
+import pytest
 from geopandas.testing import assert_geodataframe_equal
+
+pyproj = pytest.importorskip("pyproj")
 
 
 def _create_df(x, y=None, crs=None):
@@ -82,6 +86,9 @@ def test_to_crs_dimension_z():
     assert result.has_z.all()
 
 
+# pyproj + numpy 1.25 trigger warning for single-element array -> recommendation is to
+# ignore the warning for now (https://github.com/pyproj4/pyproj/issues/1307)
+@pytest.mark.filterwarnings("ignore:Conversion of an array with:DeprecationWarning")
 def test_to_crs_dimension_mixed():
     s = GeoSeries([Point(1, 2), LineString([(1, 2, 3), (4, 5, 6)])], crs=2056)
     result = s.to_crs(epsg=4326)
@@ -112,36 +119,45 @@ def test_to_crs_dimension_mixed():
 )
 def epsg4326(request):
     if isinstance(request.param, int):
-        return dict(epsg=request.param)
-    return dict(crs=request.param)
+        return {"epsg": request.param}
+    return {"crs": request.param}
 
 
 @pytest.fixture(
     params=[
-        26918,
-        "epsg:26918",
+        pytest.param(26918, id="epsg_number"),
+        pytest.param("epsg:26918", id="epsg_string"),
         pytest.param(
             {"init": "epsg:26918", "no_defs": True},
+            id="epsg_dict",
         ),
-        "+proj=utm +zone=18 +ellps=GRS80 +datum=NAD83 +units=m +no_defs ",
-        {"proj": "utm", "zone": 18, "datum": "NAD83", "units": "m", "no_defs": True},
-    ],
-    ids=["epsg_number", "epsg_string", "epsg_dict", "proj4_string", "proj4_dict"],
+        pytest.param(
+            "+proj=utm +zone=18 +ellps=GRS80 +datum=NAD83 +units=m "
+            "+no_defs +nadgrids=null",
+            id="proj4_string",
+        ),
+        pytest.param(
+            {
+                "proj": "utm",
+                "zone": 18,
+                "datum": "NAD83",
+                "units": "m",
+                "no_defs": True,
+                "nadgrids": "null",
+            },
+            id="proj4_dict",
+        ),
+    ]
 )
 def epsg26918(request):
     if isinstance(request.param, int):
-        return dict(epsg=request.param)
-    return dict(crs=request.param)
+        return {"epsg": request.param}
+    return {"crs": request.param}
 
 
 @pytest.mark.filterwarnings("ignore:'\\+init:DeprecationWarning")
 @pytest.mark.filterwarnings("ignore:'\\+init:FutureWarning")
 def test_transform2(epsg4326, epsg26918):
-    # with PROJ >= 7, the transformation using EPSG code vs proj4 string is
-    # slightly different due to use of grid files or not -> turn off network
-    # to not use grid files at all for this test
-    pyproj.network.set_network_enabled(False)
-
     df = df_epsg26918()
     lonlat = df.to_crs(**epsg4326)
     utm = lonlat.to_crs(**epsg26918)
@@ -150,6 +166,9 @@ def test_transform2(epsg4326, epsg26918):
     assert_geodataframe_equal(df, utm, check_less_precise=True, check_crs=False)
 
 
+# pyproj + numpy 1.25 trigger warning for single-element array -> recommendation is to
+# ignore the warning for now (https://github.com/pyproj4/pyproj/issues/1307)
+@pytest.mark.filterwarnings("ignore:Conversion of an array with:DeprecationWarning")
 def test_crs_axis_order__always_xy():
     df = GeoDataFrame(geometry=[Point(-1683723, 6689139)], crs="epsg:26918")
     lonlat = df.to_crs("epsg:4326")
@@ -203,7 +222,7 @@ class TestGeometryArrayCRS:
         assert s.values.crs == self.osgb
 
         # manually change CRS
-        s.crs = 4326
+        s = s.set_crs(4326, allow_override=True)
         assert s.crs == self.wgs
         assert s.values.crs == self.wgs
 
@@ -252,7 +271,7 @@ class TestGeometryArrayCRS:
         arr = from_shapely(self.geoms)
         s = GeoSeries(arr, crs=27700)
         df = GeoDataFrame(geometry=s)
-        df.crs = 4326
+        df = df.set_crs(crs="epsg:4326", allow_override=True)
         assert df.crs == self.wgs
         assert df.geometry.crs == self.wgs
         assert df.geometry.values.crs == self.wgs
@@ -319,7 +338,11 @@ class TestGeometryArrayCRS:
             df.crs = 27700
 
         # geometry column without geometry
-        df = GeoDataFrame({"geometry": [Point(0, 1)]}).assign(geometry=[0])
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", "Geometry column does not contain geometry", UserWarning
+            )
+            df = GeoDataFrame({"geometry": [Point(0, 1)]}).assign(geometry=[0])
         with pytest.raises(
             ValueError,
             match="Assigning CRS to a GeoDataFrame without an active geometry",
@@ -404,7 +427,7 @@ class TestGeometryArrayCRS:
             FutureWarning, match="You are adding a column named 'geometry'"
         ):
             df["geometry"] = scalar
-        df.crs = 4326
+        df = df.set_crs(4326)
         assert df.crs == self.wgs
         assert df.geometry.crs == self.wgs
         assert df.geometry.values.crs == self.wgs
@@ -415,8 +438,7 @@ class TestGeometryArrayCRS:
             df = GeoDataFrame()
             df.crs = 4326
 
-    def test_read_file(self):
-        nybb_filename = datasets.get_path("nybb")
+    def test_read_file(self, nybb_filename):
         df = read_file(nybb_filename)
         assert df.crs == pyproj.CRS(2263)
         assert df.geometry.crs == pyproj.CRS(2263)
@@ -650,7 +672,7 @@ class TestGeometryArrayCRS:
         arr = from_shapely(self.geoms, crs=27700)
         df = GeoDataFrame({"col1": [0, 1]}, geometry=arr)
 
-        df["geometry"] = [g for g in df.geometry]
+        df["geometry"] = list(df.geometry)
         assert df.geometry.values.crs == self.osgb
 
         df2 = GeoDataFrame({"col1": [0, 1]}, geometry=arr)
@@ -728,6 +750,7 @@ class TestSetCRS:
         assert non_naive.crs == "EPSG:3857"
         assert result.crs == "EPSG:3857"
 
-        # raise error when no crs is passed
-        with pytest.raises(ValueError):
-            naive.set_crs(crs=None, epsg=None)
+        # set CRS to None
+        result = non_naive.set_crs(crs=None, allow_override=True)
+        assert result.crs is None
+        assert non_naive.crs == "EPSG:3857"

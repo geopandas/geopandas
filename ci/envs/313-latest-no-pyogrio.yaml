@@ -1,0 +1,31 @@
+name: test
+channels:
+  - conda-forge
+dependencies:
+  - python=3.13
+  # required
+  - pandas
+  - shapely
+  # - pyogrio  # build with only fiona
+  - libgdal
+  - pyproj
+  - packaging
+  # testing
+  - pytest
+  - pytest-cov
+  - pytest-xdist
+  - pytz
+  # - fsspec  # to have one non-minimal build without fsspec
+  # optional
+  - matplotlib>=3.6
+  - mapclassify
+  - folium
+  - xyzservices
+  - scipy
+  - geopy
+  - SQLalchemy
+  - libspatialite
+  - pyarrow
+  - fiona
+  - pointpats
+  - geodatasets

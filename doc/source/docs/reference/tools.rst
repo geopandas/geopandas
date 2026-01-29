@@ -15,5 +15,3 @@ Tools
    tools.reverse_geocode
    tools.collect
    points_from_xy
-   datasets.available
-   datasets.get_path

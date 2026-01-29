@@ -1,0 +1,34 @@
+name: test
+channels:
+  - conda-forge
+dependencies:
+  - python=3.13
+  # required
+  - pandas
+  - shapely
+  # - pyogrio
+  # - pyproj
+  - packaging
+  # testing
+  - pytest
+  - pytest-cov
+  - pytest-xdist
+  - fsspec
+  - requests
+  - aiohttp
+  - pytz
+  # optional
+  - fiona
+  - matplotlib
+  - mapclassify
+  - folium
+  - xyzservices
+  - scipy
+  - geopy
+  # - pointpats
+  - geodatasets
+  # - SQLalchemy>=2
+  # - psycopg2
+  # - libspatialite
+  # - geoalchemy2
+  - pyarrow

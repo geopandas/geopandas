@@ -1,11 +1,13 @@
+import warnings
 from statistics import mean
 
-import geopandas
-from shapely.geometry import LineString
 import numpy as np
 import pandas as pd
+from pandas.api.types import is_datetime64_any_dtype
 
-from packaging.version import Version
+from shapely.geometry import LineString
+
+import geopandas
 
 _MAP_KWARGS = [
     "location",
@@ -62,7 +64,7 @@ def _explore(
     map_kwds={},
     **kwargs,
 ):
-    """Interactive map based on GeoPandas and folium/leaflet.js
+    """Explore data in interactive map based on GeoPandas and folium/leaflet.js.
 
     Generate an interactive leaflet map based on :class:`~geopandas.GeoDataFrame`
 
@@ -93,8 +95,7 @@ def _explore(
         pass :class:`xyzservices.TileProvider` object or pass custom XYZ URL.
         The current list of built-in providers (when ``xyzservices`` is not available):
 
-        ``["OpenStreetMap", "Stamen Terrain", “Stamen Toner", “Stamen Watercolor"
-        "CartoDB positron", “CartoDB dark_matter"]``
+        ``["OpenStreetMap", "CartoDB positron", “CartoDB dark_matter"]``
 
         You can pass a custom tileset to Folium by passing a Leaflet-style URL
         to the tiles parameter: ``http://{s}.yourtiles.com/{z}/{x}/{y}.png``.
@@ -202,6 +203,13 @@ def _explore(
     highlight_kwds : dict (default {})
         Style to be passed to folium highlight_function. Uses the same keywords
         as ``style_kwds``. When empty, defaults to ``{"fillOpacity": 0.75}``.
+    missing_kwds : dict (default {})
+        Additional style for missing values:
+
+        color : str
+            Color of missing values. Defaults to ``None``, which uses Folium's default.
+        label : str (default "NaN")
+            Legend entry for missing values.
     tooltip_kwds : dict (default {})
         Additional keywords to be passed to :class:`folium.features.GeoJsonTooltip`,
         e.g. ``aliases``, ``labels``, or ``sticky``.
@@ -253,50 +261,46 @@ def _explore(
 
     Examples
     --------
-    >>> df = geopandas.read_file(geopandas.datasets.get_path("naturalearth_lowres"))
+    >>> import geodatasets
+    >>> df = geopandas.read_file(
+    ...     geodatasets.get_path("geoda.chicago_health")
+    ... )
     >>> df.head(2)  # doctest: +SKIP
-        pop_est      continent                      name iso_a3  \
-gdp_md_est                                           geometry
-    0     920938        Oceania                      Fiji    FJI      8374.0  MULTIPOLY\
-GON (((180.00000 -16.06713, 180.00000...
-    1   53950935         Africa                  Tanzania    TZA    150600.0  POLYGON (\
-(33.90371 -0.95000, 34.07262 -1.05982...
+       ComAreaID  ...                                           geometry
+    0         35  ...  POLYGON ((-87.60914 41.84469, -87.60915 41.844...
+    1         36  ...  POLYGON ((-87.59215 41.81693, -87.59231 41.816...
 
-    >>> df.explore("pop_est", cmap="Blues")  # doctest: +SKIP
+    [2 rows x 87 columns]
+
+    >>> df.explore("Pop2012", cmap="Blues")  # doctest: +SKIP
     """
 
     def _colormap_helper(_cmap, n_resample=None, idx=None):
-        """Helper for MPL deprecation - GH#2596"""
+        """Return the color map specified.
+
+        Helper function for MPL deprecation - GH#2596.
+        """
         if not n_resample:
             return cm.get_cmap(_cmap)
         else:
-            if MPL_361:
-                return cm.get_cmap(_cmap).resampled(n_resample)(idx)
-            else:
-                return cm.get_cmap(_cmap, n_resample)(idx)
+            return cm.get_cmap(_cmap).resampled(n_resample)(idx)
 
     try:
+        import re
+
         import branca as bc
         import folium
-        import re
-        import matplotlib
-        import matplotlib.colors as colors
         import matplotlib.pyplot as plt
         from mapclassify import classify
-
-        # isolate MPL version - GH#2596
-        MPL_361 = Version(matplotlib.__version__) >= Version("3.6.1")
-        if MPL_361:
-            from matplotlib import colormaps as cm
-        else:
-            import matplotlib.cm as cm
+        from matplotlib import colormaps as cm
+        from matplotlib import colors
 
     except (ImportError, ModuleNotFoundError):
         raise ImportError(
-            "The 'folium', 'matplotlib' and 'mapclassify' packages are required for "
-            "'explore()'. You can install them using "
-            "'conda install -c conda-forge folium matplotlib mapclassify' "
-            "or 'pip install folium matplotlib mapclassify'."
+            "The 'folium>=0.12', 'matplotlib' and 'mapclassify' packages "
+            "are required for 'explore()'. You can install them using "
+            "'conda install -c conda-forge \"folium>=0.12\" matplotlib mapclassify' "
+            "or 'pip install \"folium>=0.12\" matplotlib mapclassify'."
         )
 
     # xyservices is an optional dependency
@@ -315,6 +319,8 @@ GON (((180.00000 -16.06713, 180.00000...
         gdf.geometry[rings_mask] = gdf.geometry[rings_mask].apply(
             lambda g: LineString(g)
         )
+    if isinstance(gdf, geopandas.GeoSeries):
+        gdf = gdf.to_frame()
 
     if gdf.crs is None:
         kwargs["crs"] = "Simple"
@@ -322,12 +328,25 @@ GON (((180.00000 -16.06713, 180.00000...
     elif not gdf.crs.equals(4326):
         gdf = gdf.to_crs(4326)
 
+    # Fields which are not JSON serializable are coerced to strings
+    json_not_supported_cols = gdf.columns[
+        [is_datetime64_any_dtype(gdf[c]) for c in gdf.columns]
+    ].union(gdf.columns[gdf.dtypes == "object"])
+
+    if len(json_not_supported_cols) > 0:
+        gdf = gdf.astype({c: "string" for c in json_not_supported_cols})
+
+    if not isinstance(gdf.index, pd.MultiIndex) and (
+        is_datetime64_any_dtype(gdf.index) or (gdf.index.dtype == "object")
+    ):
+        gdf.index = gdf.index.astype("string")
+
     # create folium.Map object
     if m is None:
         # Get bounds to specify location and map extent
         bounds = gdf.total_bounds
         location = kwargs.pop("location", None)
-        if location is None:
+        if location is None and not np.isnan(bounds).all():
             x = mean([bounds[0], bounds[2]])
             y = mean([bounds[1], bounds[3]])
             location = (y, x)
@@ -380,6 +399,15 @@ GON (((180.00000 -16.06713, 180.00000...
         if fit:
             m.fit_bounds([[bounds[1], bounds[0]], [bounds[3], bounds[2]]])
 
+    if gdf.is_empty.all():
+        warnings.warn(
+            "The GeoSeries you are attempting to plot is "
+            "composed of empty geometries. Nothing has been displayed.",
+            UserWarning,
+            stacklevel=3,
+        )
+        return m
+
     for map_kwd in _MAP_KWARGS:
         kwargs.pop(map_kwd, None)
 
@@ -395,7 +423,7 @@ GON (((180.00000 -16.06713, 180.00000...
                 column_name = "__plottable_column"
                 gdf[column_name] = column
                 column = column_name
-        elif pd.api.types.is_categorical_dtype(gdf[column]):
+        elif isinstance(gdf[column].dtype, pd.CategoricalDtype):
             if categories is not None:
                 raise ValueError(
                     "Cannot specify 'categories' when column has categorical dtype"
@@ -447,7 +475,7 @@ GON (((180.00000 -16.06713, 180.00000...
 
         elif callable(cmap):
             # List of colors based on Branca colormaps or self-defined functions
-            color = list(map(lambda x: cmap(x), df[column]))
+            color = [cmap(x) for x in df[column]]
 
         else:
             vmin = gdf[column].min() if vmin is None else vmin
@@ -466,7 +494,7 @@ GON (((180.00000 -16.06713, 180.00000...
                 color = np.apply_along_axis(
                     colors.to_hex,
                     1,
-                    _colormap_helper(cmap, n_resample=k, idx=binning.yb),
+                    _colormap_helper(cmap, n_resample=binning.k, idx=binning.yb),
                 )
 
             else:
@@ -617,15 +645,17 @@ GON (((180.00000 -16.06713, 180.00000...
         tooltip = None
         popup = None
     # escape the curly braces {{}} for jinja2 templates
-    feature_collection = gdf.__geo_interface__
+    feature_collection = gdf[
+        ~(gdf.geometry.isna() | gdf.geometry.is_empty)  # drop missing or empty geoms
+    ].__geo_interface__
     for feature in feature_collection["features"]:
-        for k in feature["properties"]:
+        for prop in feature["properties"]:
             # escape the curly braces in values
-            if type(feature["properties"][k]) == str:
-                feature["properties"][k] = re.sub(
+            if isinstance(feature["properties"][prop], str):
+                feature["properties"][prop] = re.sub(
                     r"\{{2,}",
                     lambda x: "{% raw %}" + x.group(0) + "{% endraw %}",
-                    feature["properties"][k],
+                    feature["properties"][prop],
                 )
 
     # add dataframe to map
@@ -731,7 +761,7 @@ GON (((180.00000 -16.06713, 180.00000...
 
 
 def _tooltip_popup(type, fields, gdf, **kwds):
-    """get tooltip or popup"""
+    """Get tooltip or popup."""
     import folium
 
     # specify fields to show in the tooltip
@@ -758,8 +788,7 @@ def _tooltip_popup(type, fields, gdf, **kwds):
 
 
 def _categorical_legend(m, title, categories, colors):
-    """
-    Add categorical legend to a map
+    """Add categorical legend to a map.
 
     The implementation is using the code originally written by Michel Metran
     (@michelmetran) and released on GitHub
@@ -778,7 +807,6 @@ def _categorical_legend(m, title, categories, colors):
     colors : list-like
         list of colors (in the same order as categories)
     """
-
     # Header to Add
     head = """
     {% macro header(this, kwargs) %}
@@ -890,7 +918,7 @@ def _explore_geoseries(
     map_kwds={},
     **kwargs,
 ):
-    """Interactive map based on GeoPandas and folium/leaflet.js
+    """Interactive map based on GeoPandas and folium/leaflet.js.
 
     Generate an interactive leaflet map based on :class:`~geopandas.GeoSeries`
 
@@ -906,8 +934,7 @@ def _explore_geoseries(
         pass :class:`xyzservices.TileProvider` object or pass custom XYZ URL.
         The current list of built-in providers (when ``xyzservices`` is not available):
 
-        ``["OpenStreetMap", "Stamen Terrain", “Stamen Toner", “Stamen Watercolor"
-        "CartoDB positron", “CartoDB dark_matter"]``
+        ``["OpenStreetMap", "CartoDB positron", “CartoDB dark_matter"]``
 
         You can pass a custom tileset to Folium by passing a Leaflet-style URL
         to the tiles parameter: ``http://{s}.yourtiles.com/{z}/{x}/{y}.png``.
