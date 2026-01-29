@@ -684,7 +684,8 @@ class GeometryArray(ExtensionArray):
                     #     current_geom_total_length += _get_length_of_linestring(interior_ring)
 
             else:
-                print(f"Warning: Unsupported geometry type found: {type(geom_obj)}. Adding 0 length.")
+                msg=f"Warning: Unsupported geometry type found: {type(geom_obj)}. Adding 0 length."
+                warnings.warn(msg, UserWarning, stacklevel=2)
                 current_geom_total_length = 0
 
             individual_lengths.append(current_geom_total_length)
