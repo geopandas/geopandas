@@ -20,6 +20,7 @@ from shapely.geometry import (
 import geopandas._compat as compat
 from geopandas import GeoDataFrame, GeoSeries, read_file
 from geopandas.plotting import GeoplotAccessor
+from geopandas.plotting import _check_invalid_categories
 
 import pytest
 
@@ -427,6 +428,13 @@ class TestPointPlotting:
             ValueError, match="Cannot specify 'categories' when column has"
         ):
             self.df.plot(column="cats", categories=["cat1"])
+
+    def test_check_invalid_categories_raises_valueerror_not_unboundlocalerror(self):
+        values = np.array(["cat1", "cat2"], dtype=object)
+        categories = ["cat1"]
+
+        with pytest.raises(ValueError):
+            _check_invalid_categories(categories, values)
 
     def test_missing(self):
         self.df.loc[0, "values"] = np.nan
