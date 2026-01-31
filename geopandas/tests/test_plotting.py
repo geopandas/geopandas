@@ -19,8 +19,7 @@ from shapely.geometry import (
 
 import geopandas._compat as compat
 from geopandas import GeoDataFrame, GeoSeries, read_file
-from geopandas.plotting import GeoplotAccessor
-from geopandas.plotting import _check_invalid_categories
+from geopandas.plotting import GeoplotAccessor, _check_invalid_categories
 
 import pytest
 

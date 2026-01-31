@@ -1025,7 +1025,8 @@ def plot_dataframe(
 
 
 def _check_invalid_categories(
-    categories: Collection[Any] | None, values
+    categories: Collection[Any] | None,
+    values,
 ) -> pd.Categorical:
     if categories is None:
         cat = pd.Categorical(values, categories=categories)
@@ -1044,9 +1045,7 @@ def _check_invalid_categories(
             "Column contains values not listed in categories. "
             f"Missing categories: {missing}."
         )
-    codes_downcast = pd.core.dtypes.cast.coerce_indexer_dtype(
-        codes, categories
-    )
+    codes_downcast = pd.core.dtypes.cast.coerce_indexer_dtype(codes, categories)
     cat = pd.Categorical.from_codes(codes_downcast, categories)
     return cat
 
