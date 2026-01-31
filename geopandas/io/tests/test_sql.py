@@ -180,6 +180,23 @@ def df_mixed_single_and_multi():
 
 
 @pytest.fixture
+def df_mixed_none_geometry():
+    from shapely.geometry import MultiPolygon
+
+    df = geopandas.GeoDataFrame(
+        {
+            "geometry": [
+                None,
+                MultiPolygon([[[[0, 0], [0, 1], [1, 1], [1, 0]]]]),
+            ],
+            "id": [0, 1],
+        },
+        crs="epsg:4326",
+    )
+    return df
+
+
+@pytest.fixture
 def df_geom_collection():
     from shapely.geometry import GeometryCollection, LineString, Point, Polygon
 
@@ -549,6 +566,28 @@ class TestIO:
 
         assert geom_type.upper() == "GEOMETRYCOLLECTION"
         assert df.geom_type.unique()[0] == "GeometryCollection"
+
+    @pytest.mark.parametrize("engine_postgis", POSTGIS_DRIVERS, indirect=True)
+    def test_write_postgis_none_geometry_types(
+        self, engine_postgis, df_mixed_none_geometry
+    ):
+        """
+        Tests that writing a mix of None and MulitPolygons is possible.
+        """
+        engine = engine_postgis
+
+        table = "geomtype_tests"
+
+        write_postgis(
+            df_mixed_none_geometry, con=engine, name=table, if_exists="replace"
+        )
+
+        # Validate geometry type
+        sql = text(f"SELECT DISTINCT GeometryType(geometry) FROM {table} ORDER BY 1;")
+        with engine.connect() as conn:
+            res = conn.execute(sql).fetchall()
+        assert res[0][0].upper() == "MULTIPOLYGON"
+        assert pd.isna(res[1][0])
 
     @pytest.mark.parametrize("engine_postgis", POSTGIS_DRIVERS, indirect=True)
     def test_write_postgis_mixed_geometry_types(
