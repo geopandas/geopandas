@@ -122,7 +122,7 @@ class SpatialIndex:
 "crosses", "intersects", "overlaps", "touches", "within", "dwithin"}, optional
             If predicate is provided, the input geometries are tested
             using the predicate function against each item in the tree
-            whose extent intersects the envelope of the input geometry:
+            whose bounding box intersects the bounding box of the input geometry:
             ``predicate(input_geometry, tree_geometry)``.
             If possible, prepared geometries are used to help speed up the
             predicate operation.
