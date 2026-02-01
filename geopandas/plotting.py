@@ -889,7 +889,13 @@ def plot_dataframe(
         if "k" not in classification_kwds:
             classification_kwds["k"] = k
 
-        binning = mapclassify.classify(values[~nan_idx], scheme, **classification_kwds)
+        mask = ~nan_idx
+        if vmin is not None:
+            mask = mask & (values >= vmin)
+        if vmax is not None:
+            mask = mask & (values <= vmax)
+
+        binning = mapclassify.classify(values[mask], scheme, **classification_kwds)
 
         # if legend should not be a colorbar we need to treat this as
         # a categorical plot
@@ -905,11 +911,14 @@ def plot_dataframe(
 
                 legend_kwds["labels"] = classes
 
+            codes = binning.find_bin(values[~nan_idx])
             values = pd.Categorical(
                 [np.nan] * len(values), categories=binning.bins, ordered=True
             )
             values[~nan_idx] = pd.Categorical.from_codes(
-                binning.yb, categories=binning.bins, ordered=True
+                codes,
+                categories=binning.bins,
+                ordered=True,
             )
             categorical = True
 
@@ -1038,7 +1047,9 @@ def plot_dataframe(
             if "norm" in style_kwds:
                 raise ValueError("Cannot set `norm` and `scheme` at the same time.")
 
-            if getattr(binning, "lowest", None) is not None:
+            if vmin is not None:
+                lowest = vmin
+            elif getattr(binning, "lowest", None) is not None:
                 lowest = binning.lowest
             elif values_min > binning.bins[0]:
                 # we don't know the real lowest value for this scheme
@@ -1130,7 +1141,6 @@ def plot_dataframe(
         if legend:
             # check if the colorbar needs to show value truncation
             if "extend" not in legend_kwds:
-                #  TODO: this is messed up when using scheme
                 if (mn > values_min) & (mx < values_max):
                     legend_kwds["extend"] = "both"
                 elif mn > values_min:

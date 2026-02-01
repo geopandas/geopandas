@@ -1359,7 +1359,7 @@ class TestMapclassifyPlotting:
         )
         cbar = _get_ax(ax.get_figure(), "<colorbar>")
         labels = [label.get_text() for label in cbar.get_yticklabels()]
-        expected = ["−10.0", "−3.4", "3.3", "10.0"]  # noqa: RUF001
+        expected = ["−10.0", "−3.4", "3.3", "10.0"]
         assert labels == expected
 
     def test_fmt(self, df):
@@ -1753,6 +1753,104 @@ class TestMapclassifyPlotting:
         # duplication is expected, it is a fallback
         expected_labels = ["0.1", "0.1", "0.3", "0.5", "0.7", "0.9"]
 
+        cbar = _get_ax(ax.get_figure(), "<colorbar>")
+        labels = [label.get_text() for label in cbar.get_yticklabels()]
+        assert labels == expected_labels
+
+    def test_vmin_categorical(self, df):
+        ax = df.plot(
+            "NEGATIVES",
+            scheme="quantiles",
+            legend=True,
+            vmin=0,
+        )
+        expected = [106, 18, 17, 18, 18]
+        actual = [len(c.get_paths()) for c in ax.collections]
+        assert actual == expected
+        _handles, labels = ax.get_legend_handles_labels()
+        assert labels == [
+            " 0.00,  2.00",
+            " 2.00,  4.00",
+            " 4.00,  6.00",
+            " 6.00,  8.00",
+            " 8.00, 10.00",
+        ]
+
+    def test_vmax_categorical(self, df):
+        ax = df.plot(
+            "NEGATIVES",
+            scheme="quantiles",
+            legend=True,
+            vmax=0,
+        )
+        expected = [18, 18, 17, 18, 106]
+        actual = [len(c.get_paths()) for c in ax.collections]
+        assert actual == expected
+        _handles, labels = ax.get_legend_handles_labels()
+        assert labels == [
+            "-10.00,  -8.00",
+            " -8.00,  -6.00",
+            " -6.00,  -4.00",
+            " -4.00,  -2.00",
+            " -2.00,   0.00",
+        ]
+
+    def test_vmin_vmax_categorical(self, df):
+        ax = df.plot(
+            "NEGATIVES",
+            scheme="quantiles",
+            legend=True,
+            vmax=5,
+            vmin=-5,
+        )
+        expected = [62, 18, 17, 18, 62]
+        actual = [len(c.get_paths()) for c in ax.collections]
+        assert actual == expected
+        _handles, labels = ax.get_legend_handles_labels()
+        assert labels == [
+            "-5.00, -3.00",
+            "-3.00, -1.00",
+            "-1.00,  1.00",
+            " 1.00,  3.00",
+            " 3.00,  5.00",
+        ]
+
+    def test_vmin_colorbar(self, df):
+        ax = df.plot(
+            "NEGATIVES",
+            scheme="quantiles",
+            legend=True,
+            legend_kwds={"colorbar": True},
+            vmin=0,
+        )
+        expected_labels = ["0", "2", "4", "6", "8", "10"]
+        cbar = _get_ax(ax.get_figure(), "<colorbar>")
+        labels = [label.get_text() for label in cbar.get_yticklabels()]
+        assert labels == expected_labels
+
+    def test_vmax_colorbar(self, df):
+        ax = df.plot(
+            "NEGATIVES",
+            scheme="quantiles",
+            legend=True,
+            legend_kwds={"colorbar": True},
+            vmax=0,
+        )
+        expected_labels = ["−10", "−8", "−6", "−4", "−2", "0"]
+        cbar = _get_ax(ax.get_figure(), "<colorbar>")
+        labels = [label.get_text() for label in cbar.get_yticklabels()]
+        assert labels == expected_labels
+
+    def test_vmin_vmax_colorbar(self, df):
+        ax = df.plot(
+            "NEGATIVES",
+            scheme="quantiles",
+            legend_kwds={"colorbar": True},
+            legend=True,
+            vmax=5,
+            vmin=-5,
+        )
+        expected_labels = ["−5", "−3", "−1", "1", "3", "5"]
         cbar = _get_ax(ax.get_figure(), "<colorbar>")
         labels = [label.get_text() for label in cbar.get_yticklabels()]
         assert labels == expected_labels
