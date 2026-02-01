@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import warnings
 from collections.abc import Collection, Iterable, Sequence
-from itertools import compress
 from typing import TYPE_CHECKING, Any, Literal
 
 import numpy as np
@@ -155,7 +154,7 @@ def _subset_kwds(kwds: dict, index: np.ndarray) -> dict:
     kwds : dict
         Dictionary of keyword arguments to be subsetted.
     index : np.ndarray
-        Array of indices used to subset list-like values in `kwds`.
+        Array of bools used to subset list-like values in `kwds`.
 
     Returns
     -------
@@ -164,29 +163,15 @@ def _subset_kwds(kwds: dict, index: np.ndarray) -> dict:
     """
     subset_kwds = {}
     for key, val in kwds.items():
-        # fast indexing for arrays
         if isinstance(val, (np.ndarray, pd.Series, pd.Index, pd.DataFrame)) and (
             len(val) == index.shape[0]
         ):
-            subset_kwds[key] = val[index]
-        # slowed indexing for lists - can contain mix of floats and tuples, generally
-        # unsafe coercing to arrays
-        elif pd.api.types.is_list_like(val) and (len(val) == index.shape[0]):
-            # corner case caused by the linestyle input being a tuple
-            if (
-                key.startswith("linestyle")
-                and isinstance(val[1], tuple)
-                and index.shape[0] == 2
-            ):
-                subset_kwds[key] = val
+            subsetted = val[index]
+            # if only one remains, extract scalar
+            if len(subsetted) == 1:
+                subset_kwds[key] = subsetted[0]
             else:
-                # compress is like numpy indexing for lists
-                compressed = list(compress(val, index))
-                # if only one remains, extract scalar
-                if len(compressed) == 1:
-                    subset_kwds[key] = compressed[0]
-                else:
-                    subset_kwds[key] = compressed
+                subset_kwds[key] = subsetted
         else:
             # scalar
             subset_kwds[key] = val
@@ -289,11 +274,8 @@ def _plot_polygon_collection(
     )
 
     # _GeoPandasPolyCollection does not accept some kwargs.
-    kwargs = {
-        att: value
-        for att, value in kwargs.items()
-        if att not in ["markersize", "marker"]
-    }
+    kwargs.pop("markersize", None)
+    kwargs.pop("marker", None)
 
     collection = _GeoPandasPolyCollection(
         [_PolygonPatch(poly) for poly in geoms], **kwargs
@@ -358,11 +340,8 @@ def _plot_linestring_collection(
         values = np.take(values, multiindex, axis=0)
 
     # LineCollection does not accept some kwargs.
-    kwargs = {
-        att: value
-        for att, value in kwargs.items()
-        if att not in ["markersize", "marker"]
-    }
+    kwargs.pop("markersize", None)
+    kwargs.pop("marker", None)
 
     # Add to kwargs for easier checking below.
     if color is not None:
@@ -549,6 +528,7 @@ def plot_series(
 
     # decompose GeometryCollections
     geoms, multiindex = _sanitize_geoms(s)
+    _expand_kwargs(style_kwds, multiindex)
 
     values = None
     color_given = False
@@ -828,6 +808,10 @@ def plot_dataframe(
     if isinstance(markersize, str):
         markersize = df[markersize].values
 
+    # add to style_kwds so it can be mapped to groups and masked for NaN
+    if markersize is not None:
+        style_kwds["markersize"] = markersize
+
     # if column is not set, we're showing just geometries -> plot_series
     if column is None:
         return plot_series(
@@ -836,7 +820,6 @@ def plot_dataframe(
             color=color,
             ax=ax,
             figsize=figsize,
-            markersize=markersize,
             aspect=aspect,
             autolim=autolim,
             **style_kwds,
@@ -972,10 +955,6 @@ def plot_dataframe(
                     "to matplotlib colormap, `matplotlib.colors.Colormap` or a "
                     "dictionary mapping values to colors."
                 )
-
-        # add to style_kwds so it can be mapped to groups
-        if markersize is not None:
-            style_kwds["markersize"] = markersize
 
         # get majority geom type to know how to indicate empty value in the legend
         majority_geom_type = df.geom_type.mode().iloc[0]
@@ -1147,7 +1126,6 @@ def plot_dataframe(
                 subset,
                 vmin=mn,
                 vmax=mx,
-                markersize=markersize,
                 cmap=cmap,
                 **points_kwds,
             )

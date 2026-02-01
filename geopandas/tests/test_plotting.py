@@ -211,6 +211,20 @@ class TestPointPlotting:
         for i, col in enumerate(ax.collections):
             assert col.get_sizes() == self.df["values"][i]
 
+    def test_markersize_array_missing(self):
+        self.df.loc[1:4, "values"] = np.nan
+        ax = self.df.plot(column="values", markersize="values")
+        np.testing.assert_array_equal(
+            ax.collections[0].get_sizes(), [0.0, 5.0, 6.0, 7.0, 8.0, 9.0]
+        )
+        ax2 = self.df.plot(
+            column="values", markersize=np.arange(10), missing_kwds={"color": "r"}
+        )
+        np.testing.assert_array_equal(
+            ax2.collections[0].get_sizes(), [0.0, 5.0, 6.0, 7.0, 8.0, 9.0]
+        )
+        np.testing.assert_array_equal(ax2.collections[1].get_sizes(), [1, 2, 3, 4])
+
     def test_markerstyle(self):
         ax = self.df2.plot(marker="+")
         expected = _style_to_vertices("+")
@@ -1101,6 +1115,21 @@ class TestGeometryCollectionPlotting:
             2, ax.collections[1].get_edgecolors(), [exp_colors[0]] * 2
         )  # line
         _check_colors(1, ax.collections[2].get_facecolors(), [exp_colors[1]])  # point
+
+    def test_style_kwds_mapping(self):
+        poly = Polygon([(0, 0), (1, 0), (1, 1), (0, 1)])
+        poly2 = Polygon([(1, 1), (2, 1), (2, 2), (1, 2)])
+        poly3 = Polygon([(2, 2), (3, 2), (3, 3), (2, 3)])
+        gc = GeometryCollection([poly2, poly3])
+
+        df = GeoDataFrame({"geometry": [poly, gc]})
+        ax = df.plot(facecolor=["r", "g"])
+        np.testing.assert_array_equal(
+            ax.collections[0].get_facecolors(),
+            np.array(
+                [[1.0, 0.0, 0.0, 1.0], [0.0, 0.5, 0.0, 1.0], [0.0, 0.5, 0.0, 1.0]]
+            ),
+        )
 
 
 class TestNonuniformGeometryPlotting:
