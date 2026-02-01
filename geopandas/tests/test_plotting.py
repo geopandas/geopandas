@@ -272,6 +272,13 @@ class TestPointPlotting:
         # colorbar generated proper long transition
         assert cbar_colors.shape == (256, 4)
 
+        # specifying values with single value (GH1162)
+        self.df["one"] = 1
+        ax = self.df.plot(column="one", legend=True)
+        point_colors = ax.collections[0].get_facecolors()
+        legend_colors = ax.get_legend().axes.collections[0].get_facecolors()
+        np.testing.assert_array_equal(point_colors, legend_colors)
+
     def test_subplots_norm(self):
         # colors of subplots are the same as for plot (norm is applied)
         cmap = matplotlib.cm.viridis_r
