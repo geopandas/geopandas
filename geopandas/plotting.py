@@ -643,7 +643,7 @@ def plot_series(
 def plot_dataframe(
     df: geopandas.GeoDataFrame,
     column: str | np.ndarray | pd.Series | pd.Index | None = None,
-    cmap: str | Colormap | None = None,
+    cmap: str | Colormap | dict | None = None,
     color: str | Sequence | None = None,
     ax: Axes | None = None,
     cax: Axes | None = None,
@@ -653,7 +653,7 @@ def plot_dataframe(
     k: int = 5,
     vmin: float | None = None,
     vmax: float | None = None,
-    markersize: str | float | Sequence | None = None,
+    markersize: str | float | Sequence | dict | None = None,
     figsize: tuple[float, float] | None = None,
     legend_kwds: dict | None = None,
     categories: Sequence | None = None,
@@ -666,110 +666,125 @@ def plot_dataframe(
     """
     Plot a GeoDataFrame.
 
-    Generate a plot of a GeoDataFrame with matplotlib.  If a
-    column is specified, the plot coloring will be based on values
-    in that column.
+    Generate a plot of a GeoDataFrame with matplotlib. If a column is specified, the
+    plot coloring will be based on values in that column.
 
     Parameters
     ----------
-    column : str, np.array, pd.Series, pd.Index (default None)
-        The name of the dataframe column, np.array, pd.Series, or pd.Index
-        to be plotted. If np.array, pd.Series, or pd.Index are used then it
-        must have same length as dataframe. Values are used to color the plot.
-        Ignored if `color` is also set.
+    column : ``str``, ``np.array``, ``pd.Series``, ``pd.Index`` (default ``None``)
+        The name of the GeoDataFrame column, ``np.array``, ``pd.Series``, or
+        ``pd.Index`` to be plotted. If ``np.array``, ``pd.Series``, or ``pd.Index`` are
+        used then it must have same length as GeoDataFrame. Values are used to color the
+        plot. Ignored if ``color`` is also set.
     kind: str
-        The kind of plots to produce. The default is to create a map ("geo").
-        Other supported kinds of plots from pandas:
+        The kind of plots to produce. The default is to create a map (``"geo"``). Other
+        supported kinds of plots from pandas:
 
-        - 'line' : line plot
-        - 'bar' : vertical bar plot
-        - 'barh' : horizontal bar plot
-        - 'hist' : histogram
-        - 'box' : BoxPlot
-        - 'kde' : Kernel Density Estimation plot
-        - 'density' : same as 'kde'
-        - 'area' : area plot
-        - 'pie' : pie plot
-        - 'scatter' : scatter plot
-        - 'hexbin' : hexbin plot.
-    cmap : str (default None)
-        The name of a colormap recognized by matplotlib.
-    color : str, np.array, pd.Series (default None)
-        If specified, all objects will be colored uniformly.
-    ax : matplotlib.pyplot.Artist (default None)
-        axes on which to draw the plot
-    cax : matplotlib.pyplot Artist (default None)
-        axes on which to draw the legend in case of color map.
-    categorical : bool (default False)
-        If False, cmap will reflect numerical values of the
-        column being plotted.  For non-numerical columns, this
-        will be set to True.
-    legend : bool (default False)
-        Plot a legend. Ignored if no `column` is given, or if `color` is given.
+        - ``'line'`` : line plot
+        - ``'bar'`` : vertical bar plot
+        - ``'barh'`` : horizontal bar plot
+        - ``'hist'`` : histogram
+        - ``'box'`` : BoxPlot
+        - ``'kde'`` : Kernel Density Estimation plot
+        - ``'density'`` : same as ``'kde'``
+        - ``'area'`` : area plot
+        - ``'pie'`` : pie plot
+        - ``'scatter'`` : scatter plot
+        - ``'hexbin'`` : hexbin plot.
+    cmap : ``str`` | ``Colormap`` | ``dict`` (default ``None``)
+        The name of a colormap recognized by matplotlib, a
+        :class:`matplotlib.colors.Colormap` or a dictionary of ``value: color`` mapping
+        for categorical plots.
+    color : ``str``, ``np.array``, ``pd.Series`` (default ``None``)
+        Color of the geometry. If specified as scalar matplotlib understands as a color
+        (``str``, ``tuple`` or RGBA etc.), all objects will be colored uniformly. If
+        specifies as array-like of the same length as GeoDataFrame, individual colors
+        will be mapped to respective geometries.
+    ax : ``matplotlib.axes.Axes`` (default ``None``)
+        :class:`matplotlib.axes.Axes` axes on which to draw the plot
+    cax : ``matplotlib.axes.Axes`` (default ``None``)
+        :class:`matplotlib.axes.Axes` on which to draw the legend in case of a colorbar.
+    categorical : ``bool`` (default ``False``)
+        Determine whether values of ``column`` shall be treated as a categorical
+        variable or as a continuous one. For non-numerical columns, this will be set to
+        ``True`` automatically.
+    legend : ``bool`` (default ``False``)
+        Plot a legend. Ignored if no ``column`` is given, or if ``color`` is given. This
+        can be a :class:`matplotlib.legend.Legend` in case of categorical variables or
+        those with set ``scheme`` and a categorical legend, or a
+        :class`:matplotlib.colorbar.Colorbar` in case of continuous variables or those
+        with set ``scheme`` and a colorbar legend.
     scheme : str (default None)
-        Name of a choropleth classification scheme (requires mapclassify).
-        A mapclassify.MapClassifier object will be used
-        under the hood. Supported are all schemes provided by mapclassify (e.g.
-        'BoxPlot', 'EqualInterval', 'FisherJenks', 'FisherJenksSampled',
-        'HeadTailBreaks', 'JenksCaspall', 'JenksCaspallForced',
-        'JenksCaspallSampled', 'MaxP', 'MaximumBreaks',
-        'NaturalBreaks', 'Quantiles', 'Percentiles', 'StdMean',
-        'UserDefined'). Arguments can be passed in classification_kwds.
-    k : int (default 5)
-        Number of classes (ignored if scheme is None)
-    vmin : None or float (default None)
-        Minimum value of cmap. If None, the minimum data value
-        in the column to be plotted is used.
-    vmax : None or float (default None)
-        Maximum value of cmap. If None, the maximum data value
-        in the column to be plotted is used.
-    markersize : str or float or sequence (default None)
-        Only applies to point geometries within a frame.
-        If a str, will use the values in the column of the frame specified
-        by markersize to set the size of markers. Otherwise can be a value
-        to apply to all points, or a sequence of the same length as the
-        number of points.
-    figsize : tuple of integers (default None)
-        Size of the resulting matplotlib.figure.Figure. If the argument
-        axes is given explicitly, figsize is ignored.
+        Name of a choropleth classification scheme (requires ``mapclassify``). A
+        :class:`mapclassify.classifiers.MapClassifier` object will be used under the
+        hood. Supported are all schemes provided by ``mapclassify`` (e.g. ``'BoxPlot'``,
+        ``'EqualInterval'``, ``'FisherJenks'``, ``'FisherJenksSampled'``,
+        ``'HeadTailBreaks'``, ``'JenksCaspall'``, ``'JenksCaspallForced'``,
+        ``'JenksCaspallSampled'``, ``'MaxP'``, ``'MaximumBreaks'``, ``'NaturalBreaks'``,
+        ``'Quantiles'``, ``'Percentiles'``, ``'StdMean'``, ``'UserDefined'``). Arguments
+        can be passed in ``classification_kwds``.
+
+        This requires continuous variable and can result in a categorical plot where
+        each classification bin is mapped to a category (default behavior) or in a
+        continuous plot where bins are used to define
+        :class:`matplotlib.colors.BoundaryNorm`. The latter can be enabled by specifying
+        ``colorbar=True`` within ``legend_kwds`` and yields colorbar legend.
+    k : ``int`` (default ``5``)
+        Number of classes (ignored if ``scheme`` is ``None``)
+    vmin : ``None`` or ``float`` (default ``None``)
+        Minimum value of ``cmap`` or ``scheme``. If ``None``, the minimum data value in
+        the column to be plotted is used.
+    vmax : ``None`` or ``float`` (default ``None``)
+        Maximum value of ``cmap`` or ``scheme``. If ``None``, the maximum data value in
+        the column to be plotted is used.
+    markersize : ``str`` or ``float`` or ``Sequence`` (default None)
+        Only applies to point geometries within a GeoDataFrame. If a ``str``, will use
+        the values in the column of the GeoDataFrame specified by ``markersize`` to set
+        the size of markers. Otherwise can be a value to apply to all points, or a
+        sequence of the same length as the number of points.
+    figsize : ``tuple`` of integers (default None)
+        Size of the resulting :class:`matplotlib.figure.Figure`. If the argument ``ax``
+        is given explicitly, ``figsize`` is ignored.
     legend_kwds : dict (default None)
         Keyword arguments to pass to :func:`matplotlib.pyplot.legend` (e.g. ``labels``,
-        or ``frameon``) or :func:`matplotlib.pyplot.colorbar (e.g. ``orientation``).
-        Additional accepted keywords when `scheme` is specified:
+        or ``frameon``) or :func:`matplotlib.pyplot.colorbar` (e.g. ``orientation``).
+        Additional accepted keywords when ``scheme`` is specified:
 
-        fmt : string
-            A formatting specification for the bin edges of the classes in the
-            legend. For example, to have no decimals: ``{"fmt": "{:.0f}"}``.
-        interval : boolean (default False)
-            An option to control brackets from mapclassify legend.
-            If True, open/closed interval brackets are shown in the legend.
-        colorbar : boolean (default False)
-            An option to control whether the legend should be treated as categorical
-            or as a colorbar. When set to True, ``fmt`` and ``interval`` are ignored.
+        ``fmt`` : string
+            A formatting specification for the bin edges of the classes in the legend.
+            For example, to have no decimals: ``{"fmt": "{:.0f}"}``.
+        ``interval`` : boolean (default False)
+            An option to control brackets from mapclassify legend. If True, open/closed
+            interval brackets are shown in the legend.
+        ``colorbar`` : boolean (default False)
+            An option to control whether the legend should be treated as categorical or
+            as a colorbar. When set to True, ``fmt`` and ``interval`` shall not be used.
 
-    categories : list-like
+    categories : ``list-like``
         Ordered list-like object of categories to be used for categorical plot.
-    classification_kwds : dict (default None)
-        Keyword arguments to pass to mapclassify
-    missing_kwds : dict (default None)
-        Keyword arguments specifying color options (as style_kwds)
-        to be passed on to geometries with missing values in addition to
-        or overwriting other style kwds. If None, geometries with missing
-        values are not plotted.
-    aspect : 'auto', 'equal', None or float (default 'auto')
-        Set aspect of axis. If 'auto', the default aspect for map plots is 'equal'; if
-        however data are not projected (coordinates are long/lat), the aspect is by
-        default set to 1/cos(df_y * pi/180) with df_y the y coordinate of the middle of
-        the GeoDataFrame (the mean of the y range of bounding box) so that a long/lat
-        square appears square in the middle of the plot. This implies an
-        Equirectangular projection. If None, the aspect of `ax` won't be changed. It can
-        also be set manually (float) as the ratio of y-unit to x-unit.
-    autolim : bool (default True)
+    classification_kwds : ``dict`` (default ``None``)
+        Keyword arguments to pass to ``mapclassify`` when ``scheme`` is set.
+    missing_kwds : ``dict`` (default None)
+        Keyword arguments specifying style options (e.g. color, hatch, linewidth) to be
+        passed on to geometries with missing values in addition to or overwriting other
+        ``style_kwds``. If ``None``, geometries with missing values are not plotted.
+    aspect : `'auto'`, `'equal'`, ``None`` or ``float`` (default ``'auto'``)
+        Set aspect of axis. If ``'auto'``, the default aspect for map plots is
+        ``'equal'``; if however data are not projected (coordinates are long/lat), the
+        aspect is by default set to ``1/cos(df_y * pi/180)`` with ``df_y`` the y
+        coordinate of the middle of the GeoDataFrame (the mean of the y range of
+        bounding box) so that a long/lat square appears square in the middle of the
+        plot. This implies an Equirectangular projection. If ``None``, the aspect of
+        ``ax`` won't be changed. It can also be set manually (float) as the ratio of
+        y-unit to x-unit.
+    autolim : ``bool`` (default ``True``)
         Update axes data limits to contain the new geometries.
     **style_kwds : dict
-        Style options to be passed on to the actual plot function, such
-        as ``edgecolor``, ``facecolor``, ``linewidth``, ``markersize``,
-        ``alpha``.
+        Style options to be passed on to the actual plot function, such as
+        ``edgecolor``, ``facecolor``, ``linewidth``, ``markersize``, ``alpha``. These
+        can be scalar, which are uniformly mapped to all geometries, array-likes of the
+        same length as GeoDataFrame, which are mapped to their respective geometries, or
+        dictionaries mapping styles to values when dealing with categorical plots.
 
     Returns
     -------
@@ -790,7 +805,6 @@ def plot_dataframe(
     >>> df.plot("BoroName", cmap="Set1")  # doctest: +SKIP
 
     See the User Guide page :doc:`../../user_guide/mapping` for details.
-
     """
     try:
         import matplotlib.pyplot as plt
