@@ -761,11 +761,6 @@ class TestPolygonPlotting:
         ax = self.polys.plot(facecolor="k")
         _check_colors(2, ax.collections[0].get_facecolors(), ["k"] * 2)
 
-        # facecolor overrides more general-purpose color when both are set
-        ax = self.polys.plot(color="red", facecolor="k")
-        # TODO with new implementation, color overrides facecolor
-        # _check_colors(2, ax.collections[0], ['k']*2, alpha=0.5)
-
         # edgecolor
         ax = self.polys.plot(edgecolor="red")
         np.testing.assert_array_equal(
@@ -1490,8 +1485,11 @@ class TestMapclassifyPlotting:
             (0.993248, 0.906157, 0.143936, 1.0),
         ]
 
-        for i, z in enumerate(ax.collections[0].get_facecolors()):
-            assert (z == colors_exp[i]).all()
+        for i, c in enumerate(ax.collections):
+            assert (c.get_facecolors() == colors_exp[i]).all()
+            # 3 collections fall into bins, other are empty
+            if i > 2:
+                assert c.get_paths() == []
         labels = [
             "0.00, 0.10",
             "0.10, 0.20",
@@ -1517,9 +1515,11 @@ class TestMapclassifyPlotting:
             classification_kwds={"bins": bins, "lowest": 0},
             legend=True,
         )
-        for i, z in enumerate(ax.collections[0].get_facecolors()):
-            assert (z == colors_exp[i]).all()
-            # TODO: assert empty collections
+        for i, c in enumerate(ax2.collections):
+            assert (c.get_facecolors() == colors_exp[i]).all()
+            # 5 collections fall into bins, other are empty
+            if i not in range(2, 7):
+                assert c.get_paths() == []
 
         legend = [t.get_text() for t in ax2.get_legend().get_texts()]
         assert labels == legend
@@ -1533,8 +1533,11 @@ class TestMapclassifyPlotting:
             classification_kwds={"bins": bins, "lowest": 0},
             legend=True,
         )
-        for i, z in enumerate(ax.collections[0].get_facecolors()):
-            assert (z == colors_exp[i]).all()
+        for i, c in enumerate(ax3.collections):
+            assert (c.get_facecolors() == colors_exp[i]).all()
+            # 3 collections fall into bins, other are empty
+            if i < 7:
+                assert c.get_paths() == []
 
         legend = [t.get_text() for t in ax3.get_legend().get_texts()]
         assert labels == legend
