@@ -124,10 +124,7 @@ def make_grid(
                 ),
                 axis=1,
             )
-            if compat.SHAPELY_GE_20:
-                sq_polygons = shapely.polygons(sq_coords)
-            else:
-                sq_polygons = np.array([Polygon(sq_set) for sq_set in sq_coords])
+            sq_polygons = shapely.polygons(sq_coords)
 
             output_grid = from_shapely(sq_polygons)
 
@@ -199,10 +196,7 @@ def make_grid(
             hex_coords[:, :, 0] += grid_origin_x
             hex_coords[:, :, 1] += grid_origin_y
 
-            if compat.SHAPELY_GE_20:
-                hex_polygons = shapely.polygons(hex_coords)
-            else:
-                hex_polygons = np.array([Polygon(hex_set) for hex_set in hex_coords])
+            hex_polygons = shapely.polygons(hex_coords)
 
             output_grid = from_shapely(hex_polygons)
 
