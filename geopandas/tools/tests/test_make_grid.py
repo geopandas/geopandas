@@ -49,7 +49,7 @@ def neg_square():
 
 
 @pytest.fixture
-def excotic_polygon():
+def exotic_polygon():
     return Polygon(
         [(0, 0), (0.75, 0), (1, 0.5), (1.25, 0), (2, 0), (2, 0.9), (1, 2), (0, 2)]
     )
@@ -381,7 +381,7 @@ class TestMakeGridHexagon:
 
     def test_hexagon_polygons(self, square):
         cell_size = 3
-        with pytest.warn(UserWarning):
+        with pytest.warns(UserWarning):
             out = make_grid(
                 square, cell_size, what="polygons", cell_type="hexagon", intersect=False
             )
